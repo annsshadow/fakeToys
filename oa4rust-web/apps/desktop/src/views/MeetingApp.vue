@@ -34,7 +34,9 @@
         <div class="fg"><label>标题</label><input v-model="form.title" class="fi" placeholder="会议标题" /></div>
         <div class="fg"><label>楼栋</label><select v-model="form.buildingId" class="fs2" @change="loadRooms"><option value="">选择楼栋</option><option v-for="b in buildings" :key="b.id" :value="b.id">{{b.name}}</option></select></div>
         <div class="fg"><label>会议室</label><select v-model="form.roomId" class="fs2"><option value="">选择会议室</option><option v-for="r in rooms" :key="r.id" :value="r.id">{{r.name}}</option></select></div>
-        <div class="fg"><label>时间</label><input v-model="form.startTime" type="datetime-local" class="fi" /></div>
+        <div class="fg"><label>开始</label><input v-model="form.startTime" type="datetime-local" class="fi" /></div>
+        <div class="fg"><label>结束</label><input v-model="form.endTime" type="datetime-local" class="fi" /></div>
+        <div class="fg"><label>说明</label><input v-model="form.content" class="fi" placeholder="会议说明（可选）" /></div>
         <div v-if="err" class="em">{{err}}</div>
         <div class="mf"><button class="bc" @click="showCreate=false">取消</button><button class="bs" :disabled="!form.title" @click="createMeeting">创建</button></div>
       </div>
@@ -42,7 +44,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { api } from '@oa4rust/sdk'
+import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { onMounted, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
@@ -76,7 +78,8 @@ const searchKey = ref(''),
   showCreate = ref(false),
   err = ref(''),
   qc = useQueryClient()
-const form = ref({ title: '', buildingId: '', roomId: '', startTime: '' })
+const session = useSession()
+const form = ref({ title: '', content: '', buildingId: '', roomId: '', startTime: '', endTime: '' })
 const { data: bData } = useQuery({
   queryKey: ['meeting', 'bldgs'],
   queryFn: () => api.get('/api/meeting/assemble/control/building/list').then((r: any) => (r.data ?? []) as Bldg[]),
@@ -121,7 +124,16 @@ function fmtTime(t?: string) {
   }
 }
 const cm = useMutation({
-  mutationFn: () => api.post('/api/meeting/assemble/control/meeting/create', form.value),
+  // 后端 create_meeting 契约：title/content/startTime/endTime/creator/roomId（buildingId 仅用于筛选会议室，不下发）
+  mutationFn: () =>
+    api.post('/api/meeting/assemble/control/meeting/create', {
+      title: form.value.title,
+      content: form.value.content,
+      startTime: form.value.startTime,
+      endTime: form.value.endTime,
+      roomId: form.value.roomId,
+      creator: session.user?.unique ?? '',
+    }),
   onSuccess: () => {
     showCreate.value = false
     qc.invalidateQueries({ queryKey: ['meeting', 'list'] })

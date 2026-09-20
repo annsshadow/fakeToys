@@ -152,7 +152,7 @@ const avatarMutation = useMutation({
 
 function saveSignature(): void {
   api
-    .post('/api/person/signature/save', { signature: signature.value })
+    .post('/api/person/signature/save', { signature: signature.value, mimeType: 'image/png' })
     .then(() => toast.success('签名已保存'))
     .catch(() => toast.error('保存失败'))
 }

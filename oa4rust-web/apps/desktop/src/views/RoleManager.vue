@@ -96,10 +96,12 @@ async function onSave() {
   }
   creating.value = true
   try {
+    // 后端 role create/update 读取 name/description（flag 在 update 走 URL，create 由后端生成）。
+    const payload = { name: form.value.name, description: form.value.desc }
     if (editingRole.value) {
-      await api.put(`/api/role/${form.value.flag}`, form.value)
+      await api.put(`/api/role/${form.value.flag}`, payload)
     } else {
-      await api.post('/api/role', form.value)
+      await api.post('/api/role', payload)
     }
     showCreate.value = false
     editingRole.value = null
