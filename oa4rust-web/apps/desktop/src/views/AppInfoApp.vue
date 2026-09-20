@@ -15,7 +15,9 @@
         <input v-model="keyword" placeholder="搜索应用..." class="search-input" @keyup.enter="doSearch" />
         <button class="btn-primary" @click="doSearch">搜索</button>
         <button class="btn-primary" @click="createApp">+ 新建应用</button>
+        <button class="btn-primary" @click="loadAppViews">管理/视图/类型</button>
       </div>
+      <div v-if="appViewText" class="meta-note">{{ appViewText }}</div>
       <div class="list-panel">
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 5" :key="i"></div></div>
         <div v-else-if="items.length===0" class="empty"><div class="ei">📱</div><p>暂无应用数据</p></div>
@@ -85,6 +87,21 @@ async function viewDetail(item: any) {
   }
 }
 
+const appViewText = ref('')
+async function loadAppViews() {
+  try {
+    // GET appinfo/list/manage + list/user/view + list/appType —— 管理/用户视图/类型
+    const [manage, userView, types] = await Promise.all([
+      api.get('/api/appinfo/list/manage'),
+      api.get('/api/appinfo/list/user/view'),
+      api.get('/api/appinfo/list/appType'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    appViewText.value = `管理 ${n(manage)} / 用户视图 ${n(userView)} / 类型 ${n(types)}`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
 async function createApp() {
   const alias = prompt('应用别名 (alias):')
   if (!alias) return
@@ -183,4 +200,5 @@ const api_list_i_1_574_data = ref<any[]>([])
 .detail-pre{background:var(--bg-base);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:12px;font-size:12px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace;white-space:pre-wrap;word-break:break-all}
 .btn-close{margin-top:16px;padding:8px 20px;background:transparent;border:1px solid var(--color-primary);color:var(--color-primary);border-radius:var(--radius-md);cursor:pointer}
 @media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr)}}
+.meta-note{margin:8px 0;padding:6px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary)}
 </style>
