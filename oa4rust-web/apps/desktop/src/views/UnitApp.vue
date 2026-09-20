@@ -9,6 +9,11 @@
         <input v-model="keyword" placeholder="搜索单元..." class="search-input" @keyup.enter="doSearch" />
         <button class="btn-primary" @click="doSearch">搜索</button>
         <button class="btn-primary" @click="loadUnits">刷新全部</button>
+        <button class="btn-primary" @click="loadTopUnits">顶级单位</button>
+        <button class="btn-primary" @click="loadUnitTypes">单位类型</button>
+      </div>
+      <div v-if="unitTypes.length" class="ut-chips">
+        <span v-for="t in unitTypes" :key="t" class="ut-chip">{{ t }}</span>
       </div>
       <div class="list-panel">
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 6" :key="i"></div></div>
@@ -97,6 +102,30 @@ async function loadUnits() {
     units.value = []
   } finally {
     loading.value = false
+  }
+}
+async function loadTopUnits() {
+  loading.value = true
+  try {
+    // GET organization/assemble/control/unit/list/top —— 顶级单位
+    const r: any = await api.get('/api/organization/assemble/control/unit/list/top')
+    units.value = (r.data ?? []) as UnitItem[]
+  } catch {
+    units.value = []
+  } finally {
+    loading.value = false
+  }
+}
+const unitTypes = ref<string[]>([])
+async function loadUnitTypes() {
+  try {
+    // GET organization/assemble/control/unit/list/type —— 单位类型
+    const r: any = await api.get('/api/organization/assemble/control/unit/list/type')
+    unitTypes.value = ((r.data ?? []) as any[])
+      .map((t) => (typeof t === 'string' ? t : (t?.name ?? t?.type)))
+      .filter((t): t is string => !!t)
+  } catch {
+    unitTypes.value = []
   }
 }
 function doSearch() {
@@ -288,6 +317,8 @@ const api_organizati_842_data = ref<any[]>([])
 .meta{font-size:11px;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .btn-sm{padding:4px 10px;background:transparent;border:1px solid var(--border-subtle);color:var(--text-secondary);border-radius:var(--radius-sm);font-size:12px;cursor:pointer}
 .btn-sm:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.ut-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.ut-chip{padding:2px 10px;border-radius:10px;background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-primary)}
 .detail-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border-subtle)}
 .detail-head h2{font-size:16px;color:var(--color-primary);margin:0}
 .detail-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
