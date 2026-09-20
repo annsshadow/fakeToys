@@ -3,6 +3,8 @@
     <div class="view-header glass-card">
       <h1>组织架构</h1>
       <p class="subtitle">/api/organization/assemble/control/*</p>
+      <button class="org-meta-btn" @click="loadOrgMeta">权限/卡类型</button>
+      <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
       <aside class="org-tree glass-card">
@@ -62,6 +64,7 @@
 </template>
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
+import { toast } from '../utils/toast'
 import { useQuery } from '@tanstack/vue-query'
 import { ref } from 'vue'
 
@@ -72,6 +75,20 @@ interface N {
   _exp?: boolean
   children?: N[]
   childCount?: number
+}
+const orgMetaText = ref('')
+async function loadOrgMeta() {
+  try {
+    // GET permissionsetting/list + personcard/listgrouptypes —— 权限设置/人员卡分组类型
+    const [perms, cardTypes] = await Promise.all([
+      api.get('/api/organization/assemble/control/permissionsetting/list'),
+      api.get('/api/organization/assemble/control/personcard/listgrouptypes'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    orgMetaText.value = `权限设置 ${n(perms)} / 卡分组类型 ${n(cardTypes)}`
+  } catch (e: any) {
+    toast.error('加载组织元数据失败: ' + (e?.message ?? ''))
+  }
 }
 const keyword = ref('')
 const nodes = ref<N[]>([])
@@ -127,6 +144,8 @@ async function handleSearch() {
 }
 </script>
 <style scoped>
+.org-meta-btn{padding:6px 14px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer;font-size:13px}
+.org-meta-note{font-size:12px;color:var(--text-muted);margin-left:8px}
 .org-view{display:flex;flex-direction:column;gap:16px;height:100%}
 .view-header{padding:16px 24px}
 .view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
