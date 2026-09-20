@@ -64,6 +64,29 @@
       <textarea v-model="signature" class="form-textarea" rows="3" placeholder="设置您的个性签名..." maxlength="200" />
       <div class="char-count">{{ signature.length }}/200</div>
       <button class="save-btn" @click="saveSignature">保存签名</button>
+      <button class="save-btn ghost" @click="loadSignatureManagers">查看全员签名（管理员）</button>
+      <div v-if="sigManagers.length" class="sig-mgr-list">
+        <span v-for="sm in sigManagers" :key="sm.id" class="sig-mgr-chip">{{ sm.personName || sm.name || sm.id }}</span>
+      </div>
+    </div>
+
+    <!-- 授权委托 -->
+    <div class="settings-card glass-card">
+      <h3>授权委托</h3>
+      <div class="emp-tabs">
+        <button class="emp-tab" :class="{on:empScope==='mine'}" @click="loadEmpower('mine')">我发出的（{{ empMine.length }}）</button>
+        <button class="emp-tab" :class="{on:empScope==='to'}" @click="loadEmpower('to')">授权给我（{{ empTo.length }}）</button>
+      </div>
+      <div v-if="(empScope==='mine'?empMine:empTo).length===0" class="emp-empty">暂无授权记录</div>
+      <div v-else class="emp-list">
+        <div v-for="e in (empScope==='mine'?empMine:empTo)" :key="e.id" class="emp-item">
+          <div class="emp-info"><span class="emp-name">{{ e.toName || e.fromName || e.id }}</span><span class="emp-status" :class="e.enabled!==false?'on':'off'">{{ e.enabled!==false?'启用':'禁用' }}</span></div>
+          <div v-if="empScope==='mine'" class="emp-acts">
+            <button class="emp-btn" @click="toggleEmpower(e, true)">启用</button>
+            <button class="emp-btn" @click="toggleEmpower(e, false)">禁用</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -157,9 +180,54 @@ function saveSignature(): void {
     .catch(() => toast.error('保存失败'))
 }
 
+interface SigMgr { id: string; name?: string; personName?: string }
+const sigManagers = ref<SigMgr[]>([])
+async function loadSignatureManagers() {
+  try {
+    // GET /api/person/signature/manager/list —— 管理员查看全员签名（admin 门禁）
+    const r: any = await api.get('/api/person/signature/manager/list')
+    sigManagers.value = (r.data ?? []) as SigMgr[]
+    if (sigManagers.value.length === 0) toast.success('暂无签名记录')
+  } catch (e: any) {
+    toast.error('查询失败（需管理员）: ' + (e?.message ?? ''))
+  }
+}
+interface Emp { id: string; toName?: string; fromName?: string; enabled?: boolean }
+const empScope = ref<'mine' | 'to'>('mine')
+const empMine = ref<Emp[]>([])
+const empTo = ref<Emp[]>([])
+async function loadEmpower(scope: 'mine' | 'to') {
+  empScope.value = scope
+  try {
+    // GET person/empower/list/currentperson（我发出的）| list/to（授权给我）——字面量路径便于静态提取
+    const r: any =
+      scope === 'mine'
+        ? await api.get('/api/person/empower/list/currentperson')
+        : await api.get('/api/person/empower/list/to')
+    const list = (r.data ?? []) as Emp[]
+    if (scope === 'mine') empMine.value = list
+    else empTo.value = list
+  } catch {
+    if (scope === 'mine') empMine.value = []
+    else empTo.value = []
+  }
+}
+async function toggleEmpower(e: Emp, on: boolean) {
+  try {
+    // GET person/empower/{id}/enable | disable —— 字面量后缀便于静态提取
+    if (on) await api.get(`/api/person/empower/${encodeURIComponent(e.id)}/enable`)
+    else await api.get(`/api/person/empower/${encodeURIComponent(e.id)}/disable`)
+    toast.success(on ? '已启用' : '已禁用')
+    loadEmpower('mine')
+  } catch (err: any) {
+    toast.error('操作失败: ' + (err?.message ?? ''))
+  }
+}
+
 onMounted(() => {
   if (!user.value) session.init()
 })
+loadEmpower('mine')
 </script>
 
 <style scoped>
@@ -171,4 +239,21 @@ onMounted(() => {
 .save-btn:disabled{opacity:.6;cursor:not-allowed}
 .error-msg{color:var(--color-error);font-size:13px;padding:8px 0}
 @media(max-width:768px){.profile-card{flex-direction:column;text-align:center}}
+.emp-tabs{display:flex;gap:8px;margin-bottom:12px}
+.emp-tab{padding:4px 12px;border-radius:12px;border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer;font-size:12px}
+.emp-tab.on{border-color:var(--color-primary);color:var(--color-primary);background:var(--color-primary-soft)}
+.emp-empty{color:var(--text-muted);font-size:13px;padding:12px;text-align:center}
+.emp-list{display:flex;flex-direction:column;gap:8px}
+.emp-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg-elevated);border-radius:var(--radius-md)}
+.emp-info{display:flex;align-items:center;gap:10px}
+.emp-name{font-size:13px;color:var(--text-primary);font-weight:500}
+.emp-status{font-size:11px;padding:1px 8px;border-radius:8px}
+.emp-status.on{background:var(--color-success-glow);color:var(--color-success)}
+.emp-status.off{background:var(--color-warning-glow);color:var(--color-warning)}
+.emp-acts{display:flex;gap:6px}
+.emp-btn{padding:3px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);background:transparent;color:var(--text-secondary);cursor:pointer;font-size:12px}
+.emp-btn:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.save-btn.ghost{background:transparent;border:1px solid var(--border-subtle);color:var(--text-secondary);margin-left:8px}
+.sig-mgr-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.sig-mgr-chip{padding:2px 10px;border-radius:10px;background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-primary)}
 </style>

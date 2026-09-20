@@ -11,6 +11,17 @@
         <option value="">全部状态</option><option value="0">未开始</option><option value="1">进行中</option><option value="2">已结束</option>
       </select>
       <button class="sb" @click="loadMeetings">搜索</button>
+      <button class="sb" @click="addBuilding">+ 楼栋</button>
+    </div>
+    <div v-if="buildings.length" class="bld-bar glass-card">
+      <span class="bld-title">楼栋：</span>
+      <span v-for="b in buildings" :key="b.id" class="bld-chip">{{ b.name }}<button class="bld-del" @click="removeBuilding(b)">×</button></span>
+    </div>
+    <div class="bld-bar glass-card">
+      <span class="bld-title">会议室：</span>
+      <select v-model="roomBuildingId" class="fs" @change="loadRoomList"><option value="">选楼栋看会议室</option><option v-for="b in buildings" :key="b.id" :value="b.id">{{b.name}}</option></select>
+      <button class="sb" @click="addRoom">+ 会议室</button>
+      <span v-for="rm in roomList" :key="rm.id" class="bld-chip">{{ rm.name }}<button class="bld-del" @click="removeRoom(rm)">×</button></span>
     </div>
     <div class="content-panel glass-card">
       <div v-if="loading" class="ls"><div class="sk" v-for="i in 5" :key="i"></div></div>
@@ -24,7 +35,11 @@
             <span v-if="m.startTime">📅{{fmtTime(m.startTime)}}</span>
             <span v-if="m.attendeeCount">👤{{m.attendeeCount}}人</span>
           </div></div>
-          <div class="ma"><button class="bsm" @click.stop="joinMeeting(m)">加入</button></div>
+          <div class="ma">
+            <button class="bsm" @click.stop="joinMeeting(m)">加入</button>
+            <button class="bsm" @click.stop="showParticipants(m)">参会人</button>
+            <button class="bsm" @click.stop="inviteParticipant(m)">邀请</button>
+          </div>
         </div>
       </div>
     </div>
@@ -148,6 +163,90 @@ function createMeeting() {
   cm.mutate()
 }
 function viewMeeting(_m: M) {}
+async function showParticipants(m: M) {
+  try {
+    // GET /api/meeting/{meetingId}/participant/list —— 参会人列表
+    const r: any = await api.get(`/api/meeting/${encodeURIComponent(m.id)}/participant/list`)
+    const n = Array.isArray(r.data) ? r.data.length : 0
+    toast.success('参会人数：' + n)
+  } catch (e: any) {
+    toast.error('查询失败: ' + (e?.message ?? ''))
+  }
+}
+async function inviteParticipant(m: M) {
+  const invitee = prompt('邀请参会人（用户标识 invitee）:')
+  if (!invitee) return
+  try {
+    // POST /api/meeting/{meetingId}/participant/add —— 读 invitee
+    await api.post(`/api/meeting/${encodeURIComponent(m.id)}/participant/add`, { invitee })
+    toast.success('已邀请')
+  } catch (e: any) {
+    toast.error('邀请失败: ' + (e?.message ?? ''))
+  }
+}
+async function addBuilding() {
+  const name = prompt('楼栋名称:')
+  if (!name) return
+  try {
+    // POST /api/meeting/assemble/control/building —— u2_building_create 读 name
+    await api.post('/api/meeting/assemble/control/building', { name })
+    toast.success('已新建楼栋')
+    const r: any = await api.get('/api/meeting/assemble/control/building/list')
+    buildings.value = (r.data ?? []) as Bldg[]
+  } catch (e: any) {
+    toast.error('新建失败: ' + (e?.message ?? ''))
+  }
+}
+async function removeBuilding(b: Bldg) {
+  if (!(await confirmMsg('确定删除楼栋「' + (b.name || b.id) + '」？'))) return
+  try {
+    // DELETE /api/meeting/assemble/control/building/{id}
+    await api.delete('/api/meeting/assemble/control/building/' + encodeURIComponent(b.id))
+    buildings.value = buildings.value.filter((x) => x.id !== b.id)
+  } catch (e: any) {
+    toast.error('删除失败: ' + (e?.message ?? ''))
+  }
+}
+const roomBuildingId = ref('')
+const roomList = ref<Room[]>([])
+async function loadRoomList() {
+  if (!roomBuildingId.value) {
+    roomList.value = []
+    return
+  }
+  try {
+    const r: any = await api.get(`/api/meeting/assemble/control/room/list?buildingId=${roomBuildingId.value}`)
+    roomList.value = (r.data ?? []) as Room[]
+  } catch {
+    roomList.value = []
+  }
+}
+async function addRoom() {
+  if (!roomBuildingId.value) {
+    toast.error('请先选择楼栋')
+    return
+  }
+  const name = prompt('会议室名称:')
+  if (!name) return
+  try {
+    // POST /api/meeting/assemble/control/room —— u2_room_create 读 name/buildingId
+    await api.post('/api/meeting/assemble/control/room', { name, buildingId: roomBuildingId.value })
+    toast.success('已新建会议室')
+    loadRoomList()
+  } catch (e: any) {
+    toast.error('新建失败: ' + (e?.message ?? ''))
+  }
+}
+async function removeRoom(rm: Room) {
+  if (!(await confirmMsg('确定删除会议室「' + (rm.name || rm.id) + '」？'))) return
+  try {
+    // DELETE /api/meeting/assemble/control/room/{id}
+    await api.delete('/api/meeting/assemble/control/room/' + encodeURIComponent(rm.id))
+    roomList.value = roomList.value.filter((x) => x.id !== rm.id)
+  } catch (e: any) {
+    toast.error('删除失败: ' + (e?.message ?? ''))
+  }
+}
 onMounted(loadMeetings)
 
 async function updateMeeting(m: M) {
@@ -301,4 +400,8 @@ const api_meeting_as_895_data = ref<any[]>([])
 .bc{padding:8px 16px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);background:none;color:var(--text-secondary);cursor:pointer}
 .bs{padding:8px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:white;cursor:pointer;font-weight:600}
 .bs:disabled{opacity:.5;cursor:not-allowed}
+.bld-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 14px;margin-bottom:12px}
+.bld-title{font-size:13px;color:var(--text-muted)}
+.bld-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-primary)}
+.bld-del{border:none;background:none;color:var(--color-error);cursor:pointer;font-size:14px;line-height:1;padding:0 2px}
 </style>

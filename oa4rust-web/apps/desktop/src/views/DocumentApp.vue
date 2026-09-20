@@ -29,6 +29,16 @@
             <span class="col-id font-mono">{{ item.id?.slice(0,8) }}...</span>
             <span class="col-status" :class="docStatusCls(item.status)">{{ statusLabel(item) }}</span>
             <span class="col-actions">
+              <button class="btn-act" @click="onCommend(item)">推荐</button>
+              <button class="btn-act" @click="onUncommend(item)">取消推荐</button>
+              <button class="btn-act" @click="onTop(item)">置顶</button>
+              <button class="btn-act" @click="onUnTop(item)">取消置顶</button>
+              <button class="btn-act" @click="onPublish(item)">发布</button>
+              <button class="btn-act" @click="onPublishCancel(item)">撤发</button>
+              <button class="btn-act" @click="onViewCount(item)">阅读数</button>
+              <button class="btn-act" @click="onPersons(item)">可见人</button>
+              <button class="btn-act" @click="onNotify(item)">通知</button>
+              <button class="btn-act" @click="onDocLog(item)">日志</button>
               <button class="btn-del" @click="onDelete(item)">删除</button>
             </span>
           </div>
@@ -133,6 +143,101 @@ async function onDelete(item: DocItem) {
   }
 }
 
+async function onCommend(item: DocItem) {
+  try {
+    // GET document/{id}/commend —— 推荐（Path id，无 body）
+    await api.get(`/api/document/${item.id}/commend`)
+    toast.success('已推荐')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+async function onTop(item: DocItem) {
+  try {
+    // GET document/{id}/top —— 置顶
+    await api.get(`/api/document/${item.id}/top`)
+    toast.success('已置顶')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+async function onPublish(item: DocItem) {
+  try {
+    // PUT document/publish/{id} —— 发布
+    await api.put(`/api/document/publish/${item.id}`)
+    toast.success('已发布')
+    doSearch()
+  } catch (e: any) {
+    toast.error('发布失败: ' + (e?.message ?? ''))
+  }
+}
+async function onUncommend(item: DocItem) {
+  try {
+    // GET document/{id}/uncommend —— 取消推荐
+    await api.get(`/api/document/${item.id}/uncommend`)
+    toast.success('已取消推荐')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+async function onUnTop(item: DocItem) {
+  try {
+    // GET document/{id}/unTop —— 取消置顶
+    await api.get(`/api/document/${item.id}/unTop`)
+    toast.success('已取消置顶')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+async function onPublishCancel(item: DocItem) {
+  try {
+    // PUT document/publish/{id}/cancel —— 撤销发布
+    await api.put(`/api/document/publish/${item.id}/cancel`)
+    toast.success('已撤销发布')
+    doSearch()
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+async function onViewCount(item: DocItem) {
+  try {
+    // GET document/{id}/view/count —— 阅读数
+    const r: any = await api.get(`/api/document/${item.id}/view/count`)
+    toast.success('阅读数：' + (r.data?.count ?? r.data ?? 0))
+  } catch (e: any) {
+    toast.error('查询失败: ' + (e?.message ?? ''))
+  }
+}
+async function onPersons(item: DocItem) {
+  try {
+    // GET document/{id}/persons —— 可见人列表
+    const r: any = await api.get(`/api/document/${item.id}/persons`)
+    const n = Array.isArray(r.data) ? r.data.length : 0
+    toast.success('可见人数：' + n)
+  } catch (e: any) {
+    toast.error('查询失败: ' + (e?.message ?? ''))
+  }
+}
+async function onNotify(item: DocItem) {
+  try {
+    // POST document/{id}/notify —— 触发文档通知
+    await api.post(`/api/document/${item.id}/notify`, {})
+    toast.success('已发送通知')
+  } catch (e: any) {
+    toast.error('通知失败: ' + (e?.message ?? ''))
+  }
+}
+async function onDocLog(item: DocItem) {
+  try {
+    // GET /api/log/list/document/{documentId} —— 文档操作日志
+    const r: any = await api.get(`/api/log/list/document/${item.id}`)
+    const n = Array.isArray(r.data) ? r.data.length : 0
+    toast.success('操作日志：' + n + ' 条')
+  } catch (e: any) {
+    toast.error('查询日志失败: ' + (e?.message ?? ''))
+  }
+}
+
 doSearch()
 
 const document_category_change_ref = ref<any[]>([])
@@ -190,8 +295,8 @@ const api_document_l_855_data = ref<any[]>([])
 .btn-primary:disabled{opacity:0.5;cursor:not-allowed}
 .list-panel{flex:1}
 .item-table{display:flex;flex-direction:column;gap:8px}
-.table-header{display:grid;grid-template-columns:2fr 1fr 80px 80px;padding:8px 12px;background:var(--bg-elevated);border-radius:var(--radius-sm);font-size:12px;color:var(--text-muted);font-weight:600}
-.table-row{display:grid;grid-template-columns:2fr 1fr 80px 80px;padding:12px;align-items:center;transition:all var(--transition-fast);border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--bg-elevated)}
+.table-header{display:grid;grid-template-columns:1.5fr 0.7fr 60px 1.15fr;padding:8px 12px;background:var(--bg-elevated);border-radius:var(--radius-sm);font-size:12px;color:var(--text-muted);font-weight:600}
+.table-row{display:grid;grid-template-columns:1.5fr 0.7fr 60px 1.15fr;padding:12px;align-items:center;transition:all var(--transition-fast);border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--bg-elevated)}
 .table-row:hover{border-color:var(--color-primary)}
 .col-title{font-size:14px;font-weight:500;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .col-id{font-size:11px;color:var(--text-muted);font-family:'JetBrains Mono',monospace}
@@ -199,6 +304,9 @@ const api_document_l_855_data = ref<any[]>([])
 .col-status.published{background:rgba(16,185,129,.15);color:var(--color-success)}
 .col-status.draft{background:rgba(245,158,11,.15);color:var(--color-warning)}
 .btn-del{padding:4px 12px;background:transparent;border:1px solid var(--color-error);color:var(--color-error);border-radius:var(--radius-sm);font-size:12px;cursor:pointer}
+.btn-act{padding:4px 8px;background:transparent;border:1px solid var(--border-subtle);color:var(--text-secondary);border-radius:var(--radius-sm);font-size:12px;cursor:pointer;margin-right:4px}
+.btn-act:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.col-actions{display:flex;flex-wrap:wrap;gap:2px}
 .btn-del:hover{background:var(--color-error);color:#fff}
 .empty,.loading-row{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px;flex:1}
 .ei{font-size:48px;opacity:0.4}

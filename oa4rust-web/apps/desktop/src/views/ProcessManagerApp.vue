@@ -10,6 +10,10 @@
     <div class="content-panel glass-card">
       <div class="toolbar">
         <input v-model="search" placeholder="搜索流程 / 分类 / 创建人..." class="search-input" />
+        <button class="btn-refresh" @click="loadRunningProcesses">⚙️ 运行中流程</button>
+      </div>
+      <div v-if="runningProcs.length" class="rp-chips">
+        <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
       </div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🧩</div><p>暂无流程定义</p></div>
@@ -33,6 +37,7 @@
 import { api } from '@oa4rust/sdk'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+import { toast } from '../utils/toast'
 
 interface Item {
   id: string
@@ -46,6 +51,17 @@ interface Item {
 }
 
 const listEp = '/api/processplatform/assemble/surface/process_manager/list'
+const runningProcs = ref<Array<{ id?: string; name?: string }>>([])
+async function loadRunningProcesses() {
+  try {
+    // GET processplatform/service/processing/list/{category} —— 按分类取流程（running 分类）
+    const r: any = await api.get('/api/processplatform/service/processing/list/running')
+    runningProcs.value = (r.data ?? []) as Array<{ id?: string; name?: string }>
+    if (runningProcs.value.length === 0) toast.success('该分类暂无流程')
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
 const qk = ['ProcessManager', 'list']
 
 const search = ref('')
@@ -100,4 +116,6 @@ function loadData() {
 .empty-icon{font-size:32px;margin-bottom:8px}
 .skel{height:16px;background:var(--bg-elevated);border-radius:4px;margin-bottom:8px;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.rp-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.rp-chip{padding:2px 10px;border-radius:10px;background:var(--bg-elevated);border:1px solid var(--border-color);font-size:12px;color:var(--text-primary)}
 </style>

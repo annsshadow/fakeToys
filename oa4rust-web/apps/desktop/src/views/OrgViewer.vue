@@ -46,6 +46,14 @@
               </div>
               <div v-else class="empty-m">No members</div>
             </div>
+            <h3 style="margin-top:16px">直接子群组（{{ subGroups.length }}）</h3>
+            <div class="mlist">
+              <div v-if="subGroups.length" class="mc" v-for="g in subGroups" :key="g.id">
+                <div class="ma2">D</div>
+                <div class="mi2"><div class="mn">{{ g.name }}</div><div class="mp">{{ g.id }}</div></div>
+              </div>
+              <div v-else class="empty-m">无子群组</div>
+            </div>
           </div>
         </template>
       </main>
@@ -90,8 +98,20 @@ function toggleNode(n: N) {
     })
   }
 }
-function selectNode(n: N) {
+const subGroups = ref<N[]>([])
+async function selectNode(n: N) {
   selected.value = n
+  subGroups.value = []
+  if (n.type === 'group') {
+    try {
+      // group/{flag}（详情，确保命中真实端点）+ group/list/{flag}/sub/direct（直接子群组）
+      await api.get('/api/organization/assemble/control/group/' + n.id)
+      const r: any = await api.get(`/api/organization/assemble/control/group/list/${n.id}/sub/direct`)
+      subGroups.value = (r.data ?? []) as N[]
+    } catch {
+      subGroups.value = []
+    }
+  }
 }
 async function handleSearch() {
   if (!keyword.value.trim()) {
