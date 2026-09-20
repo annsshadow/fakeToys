@@ -12,6 +12,7 @@
         <input v-model="search" placeholder="搜索流程 / 分类 / 创建人..." class="search-input" />
         <button class="btn-refresh" @click="loadRunningProcesses">⚙️ 运行中流程</button>
         <button class="btn-refresh" @click="loadManagedApps">👤 我管理的应用</button>
+        <button class="btn-refresh" @click="loadOrphans">🧹 孤儿元素</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
@@ -61,6 +62,20 @@ async function loadRunningProcesses() {
     if (runningProcs.value.length === 0) toast.success('该分类暂无流程')
   } catch (e: any) {
     toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadOrphans() {
+  try {
+    // GET designer/elementtool/{form,process,script}/orphan —— 孤儿元素检测（表单/流程/脚本）
+    const [form, proc, script] = await Promise.all([
+      api.get('/api/processplatform/assemble/designer/elementtool/form/orphan'),
+      api.get('/api/processplatform/assemble/designer/elementtool/process/orphan'),
+      api.get('/api/processplatform/assemble/designer/elementtool/script/orphan'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    toast.success(`孤儿 表单 ${n(form)} / 流程 ${n(proc)} / 脚本 ${n(script)}`)
+  } catch (e: any) {
+    toast.error('检测失败: ' + (e?.message ?? ''))
   }
 }
 async function loadManagedApps() {
