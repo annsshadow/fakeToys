@@ -86,6 +86,7 @@
           <button class="cfg-tab" :class="{on:moreTab==='importlog'}" @click="switchMore('importlog')">导入记录</button>
           <button class="cfg-tab" :class="{on:moreTab==='statlog'}" @click="switchMore('statlog')">统计日志</button>
           <button class="cfg-tab" :class="{on:moreTab==='cycle'}" @click="switchMore('cycle')">统计周期</button>
+          <button class="cfg-tab" :class="{on:moreTab==='v2wp'}" @click="switchMore('v2wp')">v2地点</button>
         </span>
         <button class="mini-add" v-if="moreTab==='cycle'" @click="addCycle">+ 新建周期</button>
       </div>
@@ -360,7 +361,7 @@ async function removeSetting(s: ST) {
   }
 }
 type MoreItem = { id: string; name?: string; ruleName?: string }
-const moreTab = ref<'schedule' | 'employee' | 'holiday' | 'workday' | 'admin' | 'importlog' | 'statlog' | 'cycle'>('schedule')
+const moreTab = ref<'schedule' | 'employee' | 'holiday' | 'workday' | 'admin' | 'importlog' | 'statlog' | 'cycle' | 'v2wp'>('schedule')
 const moreItems = ref<MoreItem[]>([])
 const moreEndpoints: Record<string, string> = {
   schedule: '/api/attendance/assemble/control/attendanceschedulesetting/list/all',
@@ -370,8 +371,9 @@ const moreEndpoints: Record<string, string> = {
   admin: '/api/attendance/assemble/control/attendanceadmin/list/all',
   importlog: '/api/attendance/assemble/control/attendanceimportfileinfo/list/all',
   statlog: '/api/attendance/assemble/control/attendancestatisticrequirelog/list/all',
+  v2wp: '/api/attendance/assemble/control/v2/workplace/list/all',
 }
-async function switchMore(t: 'schedule' | 'employee' | 'holiday' | 'workday' | 'admin' | 'importlog' | 'statlog' | 'cycle') {
+async function switchMore(t: 'schedule' | 'employee' | 'holiday' | 'workday' | 'admin' | 'importlog' | 'statlog' | 'cycle' | 'v2wp') {
   moreTab.value = t
   if (t === 'cycle') {
     // 统计周期无 list/all 端点，仅支持按 id 建/删；切到该标签清空列表，由新建后展示
