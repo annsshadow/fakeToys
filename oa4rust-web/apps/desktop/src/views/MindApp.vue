@@ -6,6 +6,7 @@
         <button class="btn" :disabled="!currentFolder" @click="createMind">新建导图</button>
         <button class="btn secondary" :disabled="loadingFolder" @click="loadFolders">刷新目录</button>
         <button class="btn secondary" @click="loadAllMinds">全部导图</button>
+        <button class="btn secondary" @click="loadMindConfig">配置/我的目录</button>
       </div>
       <div v-if="allMindsText" class="notice">{{ allMindsText }}</div>
     </div>
@@ -175,6 +176,20 @@ function toggleFolder(folder: Folder) {
   expandedFolders.value = next
 }
 const allMindsText = ref('')
+async function loadMindConfig() {
+  try {
+    // GET mind/assemble/control/config + assemble/control/folder/tree/my —— 导图控制配置/我的目录树
+    const [cfg, folders] = await Promise.all([
+      api.get<unknown>('/api/mind/assemble/control/config'),
+      api.get<unknown>('/api/mind/assemble/control/folder/tree/my'),
+    ])
+    const hasCfg = (cfg as any)?.data ? '有' : '无'
+    const n = Array.isArray((folders as any)?.data) ? (folders as any).data.length : 0
+    allMindsText.value = `控制配置 ${hasCfg} / 我的目录 ${n} 个`
+  } catch (e: any) {
+    toast.error('加载导图配置失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadAllMinds() {
   try {
     // GET mind/core/entity/list + folder/list —— 全部导图与文件夹
