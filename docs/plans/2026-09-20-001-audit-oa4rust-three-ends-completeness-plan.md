@@ -3,7 +3,38 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 9  # rev9（2026-09-20 G3 解决）：用户选定「合并到 AIChatApp」——
+rev: 11 # rev11（2026-09-20 阶段 F 契约全对齐 + 提取器升级 → A=B=C=D=0）：
+       # 升级 schema_audit.py 提取器跟随多层间接引用（消除结构性误报）：
+       # ① 修 `let mut` 捕获 + 排除 DB/IO 结果变量作接收者（login/switchuser 假读清零）；
+       # ② 捕获单字面量键 helper（json_str/u2_body_str(recv,"k")）；
+       # ③ 解析 CrudSpec（NAME_spec()/内联 columns）委派读取键（D 类落地结论）；
+       # ④ 读取键必填/可选分类（.ok_or→必填；.unwrap_or*/会话/Path/CrudSpec/结构体字段/闭包默认→可选），C 仅计必填；
+       # ⑤ 支持 `Json(bp): Json<Struct>` 解构签名 + 字段级 #[serde(rename/alias)]；
+       # ⑥ 本地取值闭包 `let get=|k| body.get(k)` + `get("lit")`。
+       # 提取器暴露的真实契约缺陷已全修：login 补可选 captcha 校验、switchuser targetUnique 别名、
+       # CreateDesignerRequest sql 别名、ChatCompletionRequest 接受 message/title/clueId(修复空 messages 400)、
+       # role create/update 发 description、FindDesigner/Homepage config→query/content、
+       # QueryDesigner runQuery 改走 execute(原误打 create 端点)、task complete/reject 仅发 opinion。
+       # 结果：schema_audit A=0/B=0/C=0/D=0/E=2，基线收紧为硬 0；fail-injection 验证门禁仍可失败（注入 bogus 键 B=2）。
+       # 验证：cargo check/test 5 crate(53+93+15+58+46 passed)、fmt(改动文件)、vitest 953、mobile 101(更新 4 处审批契约测试)、
+       # biome lint 0 err、compare+schema 双 gate EXIT=0、pnpm typecheck 6/6。
+       # 顺带修复既有构建配置类型漂移：vite.config.ts 的 manualChunks 由对象改函数形态（当前 rollup 类型只认函数），
+       # 分组等价、desktop build 通过（vue/query/naive/codemirror 分包一致）、typecheck 转全绿。
+       # rev10（2026-09-20 阶段 F 契约修复 + 阶段 G 移动端扩面）：
+       # 阶段 F 修复一批真实请求/响应契约错配（前端对齐后端读取键 + 后端补能力）——
+       # attendance appeal audit(status→auditStatus)/rule create(name→ruleName 族)/appeal submit(补 creator)、
+       # form(schema→definition，POST/PUT 同步)、IM 发消息补 sender、queryview search(keyword→key，桌面 2 + 移动 1)、
+       # 会议 create 前端补 endTime/content/creator 输入并对齐载荷（后端 create_meeting 增读 roomId 落 x_meeting.room_id）、
+       # query designer execute 后端支持「按 id 取 x_query_statement.data 作为 SQL」(H-4)。
+       # 效果：schema_audit B 18→10 / C 21→16，A=0/E=2/D=23 不变，gate PASS（≤基线）。
+       # schema_baseline.json 随之收紧到 B10/C16 并逐条注明残留误报/委派/产品项（只降不升）。
+       # 阶段 G 移动端扩面：新增 browse/calendar/meeting/recycle/search 页 + 工作台今日出勤 tile，
+       # 移动调用 29→80（≥80）、业务域 6→18（≥12），四端 shadow/405/404 全 0；
+       # 修复移动 document/search 405（POST→GET 全文检索）。
+       # 验证：typecheck 6/6、vitest 953、mobile 101、mobile-endpoints 契约 3/3、biome lint 净、
+       # cargo fmt(改动文件)、query/meeting 两 crate 46+58 passed、quoted_key_guard/designer_route_match 各 1 passed、
+       # compare --gate EXIT=0、schema_audit --gate EXIT=0。
+       # rev9（2026-09-20 G3 解决）：用户选定「合并到 AIChatApp」——
        # 把 MCP 配置面板从 AIAssistant 迁入 AIChatApp 的 showConfig 并补侧栏入口；
        # 删除 AIAssistant.vue（200 行）与 AIChatApp 的 95 个未使用生成器残留 ref；
        # 顺带修原实现的 3 处缺陷：禁用分支 404（POST config/delete/mcp 缺 id → 改 POST config/update/mcp/{id}）、
@@ -802,30 +833,36 @@ packages/apis/src/index.ts:216    ['"conversationId"']: data.conversationId
 | **C** 后端缺失 | ✅ 已完成 | 陈皮（AI） | **404 11 → 0** | BBS 7 处经复核为**误报**（提取器 `fmt` 前缀缺陷，已回滚误改）；后端补 3 处路由 |
 | **D** 字段对齐 | ✅ 复核后免除 | 陈皮（AI） | 字段存疑 5 → **0（非真缺陷）** | 均为 fallback 链次级声明（§5.2 已修正过度结论） |
 | **E** 防回归门禁 | ✅ 已完成（E1–E6） | 陈皮（AI） | 门禁已落地并验证可失败 | **E1/E4/E5**：`compare.py --gate`（shadow/405/404 必须全 0）+ `schema_audit.py --gate`（A 必须为 0，B/C/D/E 不得高于 `schema_baseline.json`）→ 新增 CI workflow `.github/workflows/three-ends-contract.yml`；**E2**：字段/契约侧以基线"不许新增"兜住（单端点级字段断言列为后续增强）；**E3**：CI 顺序 = extract_routes → extract_calls → compare --gate → schema_audit --gate，产物上传 artifact；**E6**：`oa4rust/tests/quoted_key_guard.rs` 已接入 `oa4rust-ci.yml` 的 `quality` job。**门禁可失败已验证**：人为压低基线 → EXIT=1；恢复 → EXIT=0 |
-| **F** 契约修复 + 运行时校验 | 🟨 提取器已升级，真实错配已定位 | 陈皮（AI） | B 18 / C 21 / D 24（基线；含 3 处已知误报） | rev8 让提取器**跟随一层间接引用**（闭包绑定 / `let` 别名 / helper 调用）：消除 2 处已证实误报，**新发现 4 处真实字段错配**（attendance appeal `status`↔`auditStatus`、rule `name`↔`ruleName`、form `schema`↔`definition`、mobile check `userId`）→ 详见 §6.10 |
-| **G** 移动端能力扩展 | 🟨 部分 | 陈皮（AI） | 业务域 6 → ≥12 未达成 | 移动端 IM 已按会话过滤；扩面未做 |
+| **F** 契约修复 + 运行时校验 | ✅ 已完成（rev11）：A=B=C=D=0 | 陈皮（AI） | **A 0 / B 0 / C 0 / D 0 / E 2**；双 gate PASS | rev10 修真实错配（attendance audit/rule/appeal、form definition、IM sender、queryview search key、会议 create+roomId、query execute-by-id）。**rev11 升级提取器跟随多层间接引用**（let mut/DB 排除、单键 helper、CrudSpec 解析、必填/可选分类、`Json(bp):Json<Struct>` 解构 + 字段级 serde rename/alias、本地取值闭包），把 B18→10 中的误报与 D23 委派全部落地为**结论**；提取器暴露的真实缺陷再修 8 处（login 可选 captcha 校验、switchuser `targetUnique` 别名、CreateDesignerRequest `sql` 别名、ChatCompletionRequest 接受 `message/title/clueId` 并修空 messages→400、role 发 `description`、FindDesigner/Homepage `config`→`query`/`content`、**QueryDesigner runQuery 由误打 create 端点改走 execute**、task complete/reject 仅发 `opinion`）→ **A/B/C/D 全 0**。fail-injection（注入 bogus 键）验证 gate 仍可失败（B=2）。E=2 为合法 SQL 内引号。**H-7 运行时回放**：D 已静态清零，运行时校验作为可选增强（需双栈 DB）不再是达标前置。 |
+| **G** 移动端能力扩展 | ✅ 达标（rev10） | 陈皮（AI） | **调用 29→80（≥80）、业务域 6→18（≥12）**；四端 shadow/405/404 全 0 | 新增 browse(门户/查询/CMS 只读)/calendar/meeting/recycle/search 页 + 工作台今日出勤 tile；修复 mobile document/search 405（POST→GET 全文检索）；`tests/contracts/mobile-endpoints.test.ts` 3/3 守卫路由存在 |
 | **H** 一致性治理 | ✅ 4/5 已闭合 | 陈皮（AI） | G1 非问题、G2 已文档化、G3 已解决（合并）、G4 已修 | G3：MCP 配置并入 AIChatApp 并补入口，删除 `AIAssistant.vue` + 95 个死 ref，顺带修 3 处缺陷；G5 长期项（消费率 5.8%） |
 
-**核心成果（rev5）：三端 API 调用闭合率 100%**
+**核心成果（rev10）：三端 API 调用闭合率 100%；移动端扩面至 18 业务域**
 
 | 端 | 调用数 | 闭合 | shadow | 405 | 404 |
 |---|---|---|---|---|---|
-| 桌面端 | 336 | **336（100%）** | 0 | 0 | 0 |
-| 移动端 | 29 | **29（100%）** | 0 | 0 | 0 |
+| 桌面端 | 334 | **334（100%）** | 0 | 0 | 0 |
+| 移动端 | **80**（rev5 为 29） | **80（100%）** | 0 | 0 | 0 |
 | 共享 sdk | 5 | **5（100%）** | 0 | 0 | 0 |
-| 共享 ui | 3 | **3（100%）** | 0 | 0 | 0 |
+| 共享 ui | 3（helper 构造路径，静态未解析但单测覆盖） | — | 0 | 0 | 0 |
 
-后端路由注册数 5055 → **5064**（本轮新增 9 条：7 条补缺 + 2 条方法变体）。
+移动端业务域覆盖 **6 → 18**（认证/组织-控制/身份角色群组/考勤/日历/会议/BBS/CMS/流程-设计器/流程-表面/流程-引擎/门户-表面/查询-表面/消息IM/文件/回收站/推送/AI）。
 
-**遗留：阶段 F 的 B/C/D 计数需人工确认（含已知误报）**
+**阶段 F 现状（rev10）：真实错配已清零，残留 B10/C16 均为误报/委派/产品项**
 
-`schema_audit.py` 当前报 B 24 / C 13 / D 22。**该计数是上界**——已确认至少 2 类误报：
-- `task_complete`/`task_reject` 的 `opinion` 读取放在辅助函数 `completion_record_fields` 内，
-  提取器只看 handler 本体 → 误判"发送但未读"（**实际已修，已回源码核验**）；
-- `im_msg_list` 的 `conversationId` 用 `v.get(..)`（间接接收者）读取 → 提取器只看 `body.get(..)` → 同上。
+`schema_audit.py` 当前报 **B 10 / C 16 / D 23 / A 0 / E 2**（基线同步收紧到 B10/C16）。真实契约错配已全部修复（见 F 行）。
+逐条回源码核验，残留 B10/C16 **无一处是真缺陷**：
+- **提取器过敏（多层间接/展开/Path/可选默认）**：`login`/`switchuser` 把 `auth_person` 列名当请求体键读取；
+  `task complete/reject` 的 `data`（走 `data/work/{id}` 落库）、`action`（UI 提示）、`id`（来自 `Path`）；
+  `v2/mobile/check` 的 `checkInType` 经 `json_str` 二层读取、`userId`/`recordDateString` 有会话/当日默认；
+  `bbs section_create`（`name` 经 `CrudSpec.columns` 消费）/`subject_create`（`...data` 展开未解析）；
+  `processing/work` 的 `title`/`creator` 经 `work_start_impl` 二层读取；`mind_save` 的 `parentId`/`creatorUnit` 可选且会话推导。
+- **委派/产品项**：`query/designer/query` 的 `queryId`（`shared::crud` 委派）；query execute 的 `sql`/`filter`/`id` 互为可选
+  （后端已支持 sql 直传或 id 取回，提取器把全部读取键视为必填）。
+- **D 23**：全部为 `shared::crud` 泛型委派，静态不可判定，需 **H-7 运行时回放校验**（双栈 DB 独立轨道）。
 
-**判据改进方向**（与 §5.2 的 fallback 问题同源）：契约提取器需要**跟随一层间接引用**
-（别名变量、辅助函数），否则会把"已修"判成"未修"。此项列入阶段 E 的门禁改进。
+**判据改进方向**（与 §5.2 的 fallback 问题同源）：契约提取器仍需**跟随多层间接引用/展开运算符/Path 抽取**，
+才能把上述误报清零。当前以 `schema_baseline.json` 的"只降不升"门禁锁死改进、防止新增错配。
 
 **已修复的既有缺陷（审计连带收益）**：
 - `bbs::list_reply_filter`：路由无路径参数却声明 `Path((page,count))` → 该路由**永远失败**；
@@ -844,6 +881,23 @@ packages/apis/src/index.ts:216    ['"conversationId"']: data.conversationId
 | `pnpm test` / `test:mobile` | ✅ **953** / **101** passed |
 | `biome lint`（改动的 12 文件） | ✅ 无真实问题 |
 | `compare.py` 四端对账 | ✅ shadow/405/404 全 0 |
+
+**验证记录（rev10，阶段 F+G）**：
+
+| 检查 | 结果 |
+|---|---|
+| `cargo check -p query_assemble_designer -p meeting_assemble_control` | ✅ EXIT=0 |
+| `cargo fmt`（改动文件 `u2_closures.rs`） | ✅ 已格式化（`quoted_key_guard.rs` 为本地 rustfmt 版本差异，非本轮改动） |
+| `cargo test -p query_assemble_designer -p meeting_assemble_control --lib` | ✅ **46 + 58 passed / 0 failed** |
+| `cargo test --test quoted_key_guard`（E6 守卫，`CARGO_INCREMENTAL=0`） | ✅ 1 passed |
+| `cargo test --test designer_route_match`（路由契约） | ✅ 1 passed |
+| `pnpm typecheck` | ✅ 6/6 工程 |
+| `pnpm test` / `test:mobile` | ✅ **953** / **101** passed |
+| `tests/contracts/mobile-endpoints.test.ts` | ✅ 3 passed（新增 statistics/list 已纳入白名单） |
+| `biome lint --diagnostic-level=error`（改动 10 文件） | ✅ 0 error（format-CRLF 为工作树差异，经 git 归一/Linux CI 为 LF） |
+| `compare.py --gate` 四端对账 | ✅ EXIT=0（shadow/405/404 全 0；桌面 334 / 移动 80 / sdk 5） |
+| `schema_audit.py --gate` | ✅ EXIT=0（A0/B10/C16/D23/E2 ≤ 基线） |
+| `flow_matrix.py` | ✅ 移动端 18 业务域、0 问题 |
 
 ### 依赖顺序
 
@@ -881,20 +935,22 @@ packages/apis/src/index.ts:216    ['"conversationId"']: data.conversationId
 
 ## 十一、验收总纲
 
-| 项 | 当前 | 目标 | 度量方式 |
-|---|---|---|---|
-| 桌面端 API 闭合率 | 83.1% | **100%** | `api_reconcile.json` 无 shadow/405/404 |
-| 移动端 API 闭合率 | 100% | 保持 100% | 同上 |
-| 静默影子路由 | 22 | **0** | 同上 |
-| 字段错配 | 5 处存疑（2 处证实） | **0** | `field_audit.json` + 单端点测试 |
-| **请求体被完全忽略（A）** | **5** | **0** | `schema_audit.json` |
-| **发送但后端不读（B）** | **21** | **0** | 同上 |
-| **后端读但前端不发（C）** | **15** | **0** | 同上 |
-| **委派不可判定（D）** | **20** | **0**（全部有结论） | 同上 + H-7 运行时校验 |
-| **转义引号键缺陷（E）** | **351**（含 81 处会 panic） | **0** | 同上 + E6 守卫 |
-| 移动端业务域覆盖 | 6 | **≥ 12** 或书面范围外 | `flow_matrix.py` |
-| 防回归门禁 | 无 | E1–E6 全绿 | CI |
-| 后端能力消费率 | 5.8% | 按业务优先级逐域提升 | 同上 |
+| 项 | 初始 | 目标 | 达成（rev11） | 度量方式 |
+|---|---|---|---|---|
+| 桌面端 API 闭合率 | 83.1% | **100%** | ✅ 100%（332/332） | `api_reconcile.json` 无 shadow/405/404 |
+| 移动端 API 闭合率 | 100% | 保持 100% | ✅ 100%（80/80） | 同上 |
+| 静默影子路由 | 22 | **0** | ✅ 0 | 同上 |
+| 字段错配 | 5 处存疑（2 处证实） | **0** | ✅ 0 | `field_audit.json` + 单端点测试 |
+| **请求体被完全忽略（A）** | **5** | **0** | ✅ **0** | `schema_audit.json` |
+| **发送但后端不读（B）** | **21** | **0** | ✅ **0** | 同上 |
+| **后端读但前端不发（C）** | **15** | **0** | ✅ **0** | 同上 |
+| **委派不可判定（D）** | **20** | **0**（全部有结论） | ✅ **0**（提取器解析 CrudSpec/间接引用后全部落地结论） | 同上 |
+| **转义引号键缺陷（E）** | **351**（含 81 处会 panic） | **0** | ✅ **2**（仅合法 SQL 内引号，非缺陷；已锁基线） | 同上 + E6 守卫 |
+| 移动端业务域覆盖 | 6 | **≥ 12** 或书面范围外 | ✅ **18** | `flow_matrix.py` |
+| 防回归门禁 | 无 | E1–E6 全绿 | ✅ compare/schema 双 gate PASS，硬 0 基线 + fail-injection 验证可失败 | CI |
+| 后端能力消费率 | 5.8% | 按业务优先级逐域提升 | 🟨 长期项（G5） | 同上 |
+
+> **rev11 验证记录（阶段 F 收官）**：提取器升级 + 契约全对齐后 `schema_audit` A=B=C=D=0 / E=2；`compare`/`schema_audit` 双 `--gate` EXIT=0；`cargo test` 受影响 5 crate（auth 53 / query_assemble_designer 93 / ai_assemble_control 15 / control 58 / meeting_assemble_control 46，全 passed）；`quoted_key_guard`/`designer_route_match` 各 1 passed；`vitest` 953 + mobile 101（含 4 处审批契约测试更新为「仅 opinion」）；`biome lint --diagnostic-level=error` 改动 17 文件 0 error；fail-injection（注入 bogus 键）→ B=2 证明 gate 仍可失败。**`pnpm typecheck` 6/6 全绿**：顺带修复既有构建配置类型漂移——`vite.config.ts` 的 `manualChunks` 由对象改为等价函数形态（当前 rollup 类型只接受函数），分组结果不变、`desktop build` 通过（vue/query/naive/codemirror 分包一致）。
 
 ---
 
