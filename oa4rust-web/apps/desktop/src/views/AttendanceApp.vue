@@ -6,7 +6,9 @@
       <div class="hr">
         <input v-model="month" type="month" class="mi" @change="loadData" />
         <button class="eb" :disabled="exporting" @click="exportData">{{ exporting ? '导出中…' : '📤 导出' }}</button>
+        <button class="eb" @click="loadAttOverview">📊 汇总</button>
       </div>
+      <div v-if="attOverviewText" class="att-note">{{ attOverviewText }}</div>
     </div>
     <div class="stats-row">
       <div v-for="s in stats" :key="s.label" class="stat-card glass-card">
@@ -219,6 +221,21 @@ async function exportData() {
     toast.error('考勤导出失败，请稍后重试')
   } finally {
     exporting.value = false
+  }
+}
+const attOverviewText = ref('')
+async function loadAttOverview() {
+  try {
+    // GET attendancedetail/filter/list/user + list/persons/nonesign + attendancesetting/enable/type
+    const [byUser, nonesign, enableType] = await Promise.all([
+      api.get('/api/attendance/assemble/control/attendancedetail/filter/list/user'),
+      api.get('/api/attendance/assemble/control/attendancedetail/list/persons/nonesign'),
+      api.get('/api/attendance/assemble/control/attendancesetting/enable/type'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    attOverviewText.value = `按人 ${n(byUser)} / 未签到 ${n(nonesign)} / 启用类型 ${n(enableType)}`
+  } catch (e: any) {
+    toast.error('加载考勤汇总失败: ' + (e?.message ?? ''))
   }
 }
 onMounted(loadData)
@@ -474,4 +491,5 @@ async function loadStatistics() {
 .cfg-tabs{display:flex;gap:4px}
 .cfg-tab{padding:2px 10px;border-radius:10px;border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-muted);cursor:pointer;font-size:11px}
 .cfg-tab.on{border-color:var(--color-primary);color:var(--color-primary);background:var(--color-primary-soft)}
+.att-note{margin:8px 0;padding:6px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary)}
 </style>
