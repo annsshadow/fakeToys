@@ -7,6 +7,7 @@
         <input v-model="month" type="month" class="mi" @change="loadData" />
         <button class="eb" :disabled="exporting" @click="exportData">{{ exporting ? '导出中…' : '📤 导出' }}</button>
         <button class="eb" @click="loadAttOverview">📊 汇总</button>
+        <button class="eb" @click="loadAttOrg">🏢 按单位/同步</button>
       </div>
       <div v-if="attOverviewText" class="att-note">{{ attOverviewText }}</div>
     </div>
@@ -224,6 +225,20 @@ async function exportData() {
   }
 }
 const attOverviewText = ref('')
+async function loadAttOrg() {
+  try {
+    // GET attendancedetail/filter/list/topUnit + filter/list/unit + dingding/sync/list
+    const [topUnit, unit, dingding] = await Promise.all([
+      api.get('/api/attendance/assemble/control/attendancedetail/filter/list/topUnit'),
+      api.get('/api/attendance/assemble/control/attendancedetail/filter/list/unit'),
+      api.get('/api/attendance/assemble/control/dingding/sync/list'),
+    ])
+    const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    attOverviewText.value = `顶级单位 ${cnt(topUnit)} / 单位 ${cnt(unit)} / 钉钉同步 ${cnt(dingding)}`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadAttOverview() {
   try {
     // GET attendancedetail/filter/list/user + list/persons/nonesign + attendancesetting/enable/type
