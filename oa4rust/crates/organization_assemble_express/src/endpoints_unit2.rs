@@ -545,6 +545,38 @@ pub async fn unit_check_unit_has_identity(
 
 /// POST /api/unit/check/unit/has/unit (o2server ActionHasUnit，Wi{unit, subUnit, recursive})：
 /// 校验 subUnit 是否属于 unit 的下级（recursive 时含任意层级）。
+/// GET /api/unit/check/{id} — 校验单位是否存在（前端「验证」按钮）。
+/// 按 id 或 name 命中 x_org_unit；返回 exists + 归一后的 id/name。
+#[allow(non_snake_case)]
+pub async fn unit_check_id(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<AxumJson<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name FROM x_org_unit WHERE deleted_at IS NULL AND (id = $1 OR name = $1) LIMIT 1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let exists = row.is_some();
+    let (unit_id, unit_name) = match row {
+        Some(r) => (
+            r.get::<_, Option<String>>("id").unwrap_or_default(),
+            r.get::<_, Option<String>>("name").unwrap_or_default(),
+        ),
+        None => (String::new(), String::new()),
+    };
+    Ok(AxumJson(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(unit_id)),
+            ("name".to_string(), Value::String(unit_name)),
+            ("exists".to_string(), Value::Bool(exists)),
+        ]),
+    ))))
+}
+
 pub async fn unit_check_unit_has_unit(
     pool: Extension<Pool>,
     Json(body): Json<Value>,

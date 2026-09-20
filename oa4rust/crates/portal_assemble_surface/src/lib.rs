@@ -427,6 +427,22 @@ pub async fn surface_publish(
     ))))
 }
 
+/// DELETE /api/portal/assemble/surface/page/{id} — 删除门户页面
+#[allow(non_snake_case)]
+pub async fn page_id_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute("DELETE FROM x_portal_page WHERE id = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(result > 0))]),
+    ))))
+}
+
 pub fn portal_assemble_surface_router() -> Router {
     Router::new()
         .route("/api/portal/assemble/surface/get/{id}", get(get_surface))
@@ -494,6 +510,7 @@ pub fn portal_assemble_surface_router() -> Router {
         .route("/api/portal/assemble/surface/page/v2/{flag}/portal/{portalFlag}", get(crate::page_v2_flag_portal_portalFlag))
         .route("/api/portal/assemble/surface/page/v2/{flag}/portal/{portalFlag}/mobile", get(crate::page_v2_flag_portal_portalFlag_mobile))
         .route("/api/portal/assemble/surface/page/{id}/mobile", get(crate::page_id_mobile))
+        .route("/api/portal/assemble/surface/page/{id}", delete(crate::page_id_delete))
         .route("/api/portal/assemble/surface/page/{flag}/portal/{portalFlag}", get(crate::page_flag_portal_portalFlag))
         .route("/api/portal/assemble/surface/page/{flag}/portal/{portalFlag}/mobile", get(crate::page_flag_portal_portalFlag_mobile))
         .route("/api/portal/assemble/surface/portal/list/mobile", get(crate::portal_list_mobile))

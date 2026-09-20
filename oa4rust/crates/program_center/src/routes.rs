@@ -127,6 +127,7 @@ use crate::{
     dict_data_save_put,
     dict_delete_id,
     dict_dictFlag_data,
+    dict_dictFlag_data_post,
     dict_dictFlag_path_data,
     dict_dictFlag_path_data_mockdeletetoget,
     dict_dictFlag_path_data_mockputtopost,
@@ -461,6 +462,7 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/program_center/dict/list", get(dict_list))
         .route("/api/program_center/dict/list/paging/page/size/size", get(dict_list_paging_page_size_size))
         .route("/api/program_center/dict/dictFlag/data", get(dict_dictFlag_data))
+        .route("/api/program_center/dict/{dictFlag}/data", post(dict_dictFlag_data_post))
         .route("/api/program_center/dict/dictFlag/path/data", get(dict_dictFlag_path_data))
         .route("/api/program_center/dict/dictFlag/path/data/mockdeletetoget", delete(dict_dictFlag_path_data_mockdeletetoget))
         .route("/api/program_center/dict/dictFlag/path/data/mockputtopost", post(dict_dictFlag_path_data_mockputtopost))

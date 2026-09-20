@@ -567,6 +567,12 @@
    "file": "crates/attendance_assemble_control/src/routes.rs"
   },
   {
+   "method": "DELETE",
+   "path": "/api/attendance/assemble/control/rule/{id}",
+   "handler": "delete_control_rule",
+   "file": "crates/attendance_assemble_control/src/routes.rs"
+  },
+  {
    "method": "GET",
    "path": "/api/attendance/assemble/control/statistics/list",
    "handler": "list_statistics",
@@ -7151,6 +7157,18 @@
    "file": "crates/console/src/routes.rs"
   },
   {
+   "method": "PUT",
+   "path": "/api/config/update/{id}",
+   "handler": "config_update",
+   "file": "crates/console/src/routes.rs"
+  },
+  {
+   "method": "DELETE",
+   "path": "/api/config/delete/{id}",
+   "handler": "config_delete",
+   "file": "crates/console/src/routes.rs"
+  },
+  {
    "method": "GET",
    "path": "/api/server/deploy/list",
    "handler": "server_deploy_list",
@@ -10216,6 +10234,12 @@
    "method": "GET",
    "path": "/api/jpush/core/entity/device/{id}",
    "handler": "device_get",
+   "file": "crates/jpush_core_entity/src/lib.rs"
+  },
+  {
+   "method": "DELETE",
+   "path": "/api/jpush/core/entity/device/{id}",
+   "handler": "device_delete",
    "file": "crates/jpush_core_entity/src/lib.rs"
   },
   {
@@ -14301,6 +14325,12 @@
    "file": "crates/organization_assemble_express/src/routes.rs"
   },
   {
+   "method": "GET",
+   "path": "/api/unit/check/{id}",
+   "handler": "unit_check_id",
+   "file": "crates/organization_assemble_express/src/routes.rs"
+  },
+  {
    "method": "POST",
    "path": "/api/unit/list/types",
    "handler": "unit_list_types",
@@ -16192,6 +16222,12 @@
    "method": "GET",
    "path": "/api/portal/assemble/surface/page/{id}/mobile",
    "handler": "page_id_mobile",
+   "file": "crates/portal_assemble_surface/src/lib.rs"
+  },
+  {
+   "method": "DELETE",
+   "path": "/api/portal/assemble/surface/page/{id}",
+   "handler": "page_id_delete",
    "file": "crates/portal_assemble_surface/src/lib.rs"
   },
   {
@@ -26454,6 +26490,12 @@
    "method": "GET",
    "path": "/api/program_center/dict/dictFlag/data",
    "handler": "dict_dictFlag_data",
+   "file": "crates/program_center/src/routes.rs"
+  },
+  {
+   "method": "POST",
+   "path": "/api/program_center/dict/{dictFlag}/data",
+   "handler": "dict_dictFlag_data_post",
    "file": "crates/program_center/src/routes.rs"
   },
   {

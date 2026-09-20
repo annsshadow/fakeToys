@@ -1,4 +1,4 @@
-use axum::{extract::Extension, Json};
+use axum::{extract::Extension, extract::Path, Json};
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
@@ -373,6 +373,68 @@ pub async fn config_create(
             ("name".to_string(), Value::String(name)),
             ("created".to_string(), Value::Bool(true)),
         ]),
+    ))))
+}
+
+/// PUT /api/config/update/{id} — 更新系统配置（表 x_system_config）
+#[allow(non_snake_case)]
+pub async fn config_update(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let value = payload
+        .get("value")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let category = payload
+        .get("category")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let description = payload
+        .get("description")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+
+    let result = client
+        .execute(
+            "UPDATE x_system_config SET name = $1, value = $2, category = $3, \
+             description = $4, update_time = NOW() WHERE id = $5",
+            &[&name, &value, &category, &description, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("updated".to_string(), Value::Bool(result > 0)),
+        ]),
+    ))))
+}
+
+/// DELETE /api/config/delete/{id} — 删除系统配置（表 x_system_config）
+#[allow(non_snake_case)]
+pub async fn config_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute("DELETE FROM x_system_config WHERE id = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
