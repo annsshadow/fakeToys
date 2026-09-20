@@ -2143,11 +2143,38 @@ pub async fn designer_execute(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let sql = body.get("sql").and_then(Value::as_str).unwrap_or_default();
-    validate_single_select(sql).map_err(AppError::BadRequest)?;
-
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let limited = ensure_limit(sql, 500);
+    // 契约（阶段 F / H-4）：显式 sql 优先；否则按已保存查询 id 取回 data 列作为 SQL，
+    // 对齐前端「执行已保存查询」语义（QueryManager 传 {id[,filter]}）。
+    let explicit = body
+        .get("sql")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
+    // filter 目前作为保留入参接收（前端筛选框），暂不拼接进 SQL 以规避注入；后续以参数化落地。
+    let _filter = body
+        .get("filter")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let sql = if !explicit.trim().is_empty() {
+        explicit
+    } else if let Some(id) = body.get("id").and_then(Value::as_str) {
+        client
+            .query_opt(
+                "SELECT data FROM x_query_statement \
+                 WHERE id = $1 OR (COALESCE(alias,'') <> '' AND alias = $1) LIMIT 1",
+                &[&id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?
+            .and_then(|r| r.get::<_, Option<String>>("data"))
+            .unwrap_or_default()
+    } else {
+        String::new()
+    };
+    validate_single_select(&sql).map_err(AppError::BadRequest)?;
+
+    let limited = ensure_limit(&sql, 500);
     let rows = client
         .query(&limited, &[])
         .await
