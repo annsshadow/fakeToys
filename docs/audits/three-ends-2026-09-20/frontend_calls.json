@@ -4134,7 +4134,27 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ViewApp.vue",
-    "line": 70,
+    "line": 75,
+    "method": "GET",
+    "raw": "/api/viewcategory/list/all",
+    "path": "/api/viewcategory/list/all",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ViewApp.vue",
+    "line": 85,
+    "method": "GET",
+    "raw": "/api/viewfieldconfig/list/all",
+    "path": "/api/viewfieldconfig/list/all",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ViewApp.vue",
+    "line": 96,
     "method": "GET",
     "raw": "/api/view/list/all",
     "path": "/api/view/list/all",
@@ -4144,7 +4164,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ViewApp.vue",
-    "line": 86,
+    "line": 112,
     "method": "POST",
     "raw": "/api/view/viewdata/list/${v.id}/next/50",
     "path": "/api/view/viewdata/list/{}/next/50",
