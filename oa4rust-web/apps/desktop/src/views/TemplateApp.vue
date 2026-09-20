@@ -11,6 +11,7 @@
       <div class="toolbar">
         <input v-model="search" placeholder="搜索应用 / 名称..." class="search-input" />
         <button class="btn-refresh" @click="loadData">🔄 刷新</button>
+        <button class="btn-refresh" @click="loadTplCategory">分类</button>
       </div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">📐</div><p>暂无模板</p></div>
@@ -49,7 +50,7 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
-import { confirmMsg } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
 interface Item {
   id: string
@@ -60,6 +61,17 @@ interface Item {
 }
 
 const listEp = '/api/templateform/list'
+const tplCatText = ref('')
+async function loadTplCategory() {
+  try {
+    // GET /api/templateform/list/category —— 模板表单分类
+    const r: any = await api.get('/api/templateform/list/category')
+    tplCatText.value = '模板分类：' + (Array.isArray(r?.data) ? r.data.length : 0)
+    toast.success(tplCatText.value)
+  } catch (e: any) {
+    toast.error('加载分类失败: ' + (e?.message ?? ''))
+  }
+}
 const createEp = '/api/templateform/create'
 const qk = ['Template', 'list']
 
