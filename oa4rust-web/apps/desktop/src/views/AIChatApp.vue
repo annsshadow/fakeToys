@@ -4,6 +4,7 @@
       <h1>AI 助手</h1>
       <p class="subtitle">/api/ai_assemble_control/* — 智能对话与配置</p>
       <button class="btn-ai-meta" @click="loadAiMeta">模型/应用</button>
+      <button class="btn-ai-meta" @click="loadAiConv">会话/配置</button>
       <div v-if="aiMetaText" class="ai-meta-note">{{ aiMetaText }}</div>
     </div>
     <div class="split-layout">
@@ -122,6 +123,21 @@ const loading = ref(false)
 const messagesRef = ref<HTMLElement | null>(null)
 const showConfig = ref(false)
 const aiMetaText = ref('')
+async function loadAiConv() {
+  try {
+    // GET ai/conversation/list + ai/config/get + ai_assemble_control/list/ai/models
+    const [convs, cfg, models] = await Promise.all([
+      api.get('/api/ai/conversation/list'),
+      api.get('/api/ai/config/get'),
+      api.get('/api/ai_assemble_control/list/ai/models'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    const hasCfg = (cfg as any)?.data ? '有' : '无'
+    aiMetaText.value = `会话 ${n(convs)} / 配置 ${hasCfg} / 控制模型 ${n(models)}`
+  } catch (e: any) {
+    toast.error('加载 AI 会话/配置失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadAiMeta() {
   try {
     // GET ai/model/list + ai/app/list + ai/config/list/enable/model —— AI 模型/应用/可用模型
