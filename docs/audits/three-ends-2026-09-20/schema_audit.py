@@ -153,6 +153,43 @@ JSON_STRUCT_RE = re.compile(
 # 形如 body_str(&body, &["process", "processId"]) 的数组键表
 HELPER_KEYS_RE = re.compile(r"\b\w+\s*\(\s*&?\s*([A-Za-z_]\w*)\s*,\s*&\[([^\]]*)\]")
 STR_LIT_RE = re.compile(r'"([A-Za-z_][\w]*)"')
+# 形如 u2_body_str(&body, "name") / json_str(payload, "checkInType") 的单字面量键 helper。
+# receiver 可为 body / &body / payload / &payload / body.0 等。
+HELPER_ONE_KEY_RE = re.compile(
+    r"\b([a-z_]\w*)\s*\(\s*&?\s*([A-Za-z_]\w*)(?:\.\w+)?\s*,\s*\"([A-Za-z_][\w]*)\"\s*\)"
+)
+# CrudSpec 列声明：columns: &[("json_key","db_col"), ...] —— 取每个元组的第一个字面量（json_key）。
+CRUD_COLUMNS_RE = re.compile(r"columns\s*:\s*&\s*\[([\s\S]*?)\]")
+CRUD_PAIR_KEY_RE = re.compile(r'\(\s*"([A-Za-z_][\w]*)"\s*,')
+# 委派到 shared::crud 的入口函数（键读取由 CrudSpec.columns 驱动）。
+CRUD_ENTRY_RE = re.compile(r"\b(?:shared\s*::\s*)?(crud_create|crud_save|crud_update|crud_delete)\s*\(")
+# 形如 &section_create_spec() 的 spec 取用；或内联 CrudSpec { ... }。
+SPEC_CALL_RE = re.compile(r"&?\s*([a-z_]\w*_spec)\s*\(\s*\)")
+
+
+def scan_crud_specs():
+    """扫描全仓 `fn NAME(...) -> ... CrudSpec { columns: &[...] }`，
+    返回 {spec_fn_name: [json_key, ...]}，供委派 handler 解析读取键。"""
+    specs = {}
+    for base in (os.path.join(RUST, "crates"), os.path.join(RUST, "src")):
+        if not os.path.isdir(base):
+            continue
+        for dp, _d, fs in os.walk(base):
+            if os.sep + "target" in dp:
+                continue
+            for f in fs:
+                if not f.endswith(".rs"):
+                    continue
+                src = open(os.path.join(dp, f), encoding="utf-8", errors="replace").read()
+                for m in re.finditer(r"\bfn\s+([a-z_]\w*)\s*\([^)]*\)\s*->\s*[^\{]*CrudSpec[^\{]*\{", src):
+                    name = m.group(1)
+                    body = src[m.end() : m.end() + 800]
+                    cm = CRUD_COLUMNS_RE.search(body)
+                    if cm:
+                        keys = CRUD_PAIR_KEY_RE.findall(cm.group(1))
+                        if keys:
+                            specs[name] = keys
+    return specs
 STRUCT_DEF_RE = re.compile(r"#\[derive\([^)]*Deserialize[^)]*\)\][\s\S]{0,200}?pub struct\s+(\w+)\s*\{([^}]*)\}")
 STRUCT_PLAIN_RE = re.compile(r"pub struct\s+(\w+)\s*\{([^}]*)\}")
 STRUCT_ATTR_RE = re.compile(r"#\[serde\(([^)]*)\)\]\s*pub struct\s+(\w+)\s*\{")
@@ -171,6 +208,7 @@ def scan_rust_index():
     struct_index[name] = {"fields":[...], "rename": str|None}
     """
     handlers, structs = {}, {}
+    CRUD_SPECS = scan_crud_specs()
     for base in (os.path.join(RUST, "crates"), os.path.join(RUST, "src")):
         for dp, _d, fs in os.walk(base):
             if os.sep + "target" in dp:
@@ -198,10 +236,35 @@ def scan_rust_index():
                     if "rename_all" in attr:
                         rm = re.search(r'rename_all\s*=\s*"(\w+)"', attr)
                         rename = rm.group(1) if rm else None
-                    # 字段可为 pub 也可为私有（同模块内 serde 反序列化无需 pub）
-                    fields = [fm.group(1) for fm in re.finditer(r"(?:^|\n)\s*(?:pub\s+)?(\w+)\s*:", body)]
-                    if fields:
-                        structs[name] = {"fields": fields, "rename": rename}
+                    # 字段可为 pub 也可为私有（同模块内 serde 反序列化无需 pub）。
+                    # 为每个字段计算「可接受的 JSON 键」集合：
+                    #   = 字段级 #[serde(rename="X")]（覆盖）或 rename_all 变换后的名字
+                    #   ∪ 所有 #[serde(alias="Y")]  ∪ 原始字段名（serde 无 rename 时即原名）
+                    def _camel(fld):
+                        parts = fld.split("_")
+                        return parts[0] + "".join(x[:1].upper() + x[1:] for x in parts[1:])
+
+                    accepted = []
+                    field_iter = list(re.finditer(r"(?:^|\n)([ \t]*)(?:pub\s+)?(\w+)\s*:", body))
+                    for fi, fm in enumerate(field_iter):
+                        fld = fm.group(2)
+                        # 该字段前、上一个字段之后的文本 = 字段属性区
+                        seg_start = field_iter[fi - 1].end() if fi > 0 else 0
+                        attrs = body[seg_start : fm.start()]
+                        keys = set()
+                        rn = re.search(r'rename\s*=\s*"([^"]+)"', attrs)
+                        if rn:
+                            keys.add(rn.group(1))
+                        elif rename == "camelCase":
+                            keys.add(_camel(fld))
+                        else:
+                            keys.add(fld)
+                        for am2 in re.finditer(r'alias\s*=\s*"([^"]+)"', attrs):
+                            keys.add(am2.group(1))
+                        keys.add(fld)  # 原名兜底（serde 默认接受）
+                        accepted.extend(keys)
+                    if accepted:
+                        structs[name] = {"fields": sorted(set(accepted)), "rename": None}
 
                 # handler 函数体
                 for m in FN_RE.finditer(masked):
@@ -234,6 +297,14 @@ def scan_rust_index():
                             sig,
                         ):
                             body_params.append(pm2.group(1))
+                        # 也覆盖 `body: Option<&Json<Value>>` / `&Json<Value>` 形态的 helper 参数
+                        # （如 extract_stat_filter），否则跟随一层引用时读取键丢失。
+                        for pm3 in re.finditer(
+                            r"\b([A-Za-z_]\w*)\s*:\s*[^,)]*" + QJSON + r"\s*<\s*Value",
+                            sig,
+                        ):
+                            if pm3.group(1) not in body_params:
+                                body_params.append(pm3.group(1))
                     if not body_params:
                         continue
 
@@ -253,12 +324,21 @@ def scan_rust_index():
                         #    否则 pool→client→tx→row 这类 DB 句柄链会被当成请求体，
                         #    把 `row.get("task_status")` 误计为请求体读取键。
                         for lm in re.finditer(
-                            r"\blet\s+([A-Za-z_]\w*)\s*(?::[^=;\n]*)?=\s*([^;]*);", body_orig
+                            r"\blet\s+(?:mut\s+)?([A-Za-z_]\w*)\s*(?::[^=;\n]*)?=\s*([^;]*);", body_orig
                         ):
                             # 注意：不能用 name —— 它会覆盖外层 handler 名（曾因此把
                             # let 变量名当成函数名写入索引，使 handlers 从 921 掉到 479）
                             alias_name, expr = lm.group(1), lm.group(2)
                             if alias_name in receivers:
+                                continue
+                            # 排除 DB/IO 结果（Row/client/pool/事务）——它们不是请求体；
+                            # 否则 `let person = client.query_one(..)` 会把 `person.get("password_hash")`
+                            # 之类的**列名**误计为请求体读取键（login/switchuser 曾因此假报）。
+                            if re.search(
+                                r"\b(?:query_one|query_opt|query|execute|batch_execute|"
+                                r"prepare|get_client|transaction)\b|\.await\b|\bclient\b|\bpool\b|\btx\b",
+                                expr,
+                            ):
                                 continue
                             if any(
                                 re.search(r"\b" + re.escape(bp) + r"\b", expr)
@@ -282,6 +362,22 @@ def scan_rust_index():
                                     if nm and nm not in receivers:
                                         receivers.add(nm)
                                         changed = True
+                    # 键的"必填/可选"判定：读取点之后紧跟 .ok_or/.ok_or_else → 必填（缺失即 400）；
+                    # 紧跟 .unwrap_or*/? 之外的 default → 可选。可选键**不计入 C**（后端不要求前端发）。
+                    opt_keys = set()  # reads 中被判定为可选的键
+                    opt_alt_groups = []  # alt_groups 中被判定为可选的组
+
+                    def _is_required(end_pos):
+                        tail = body_orig[end_pos : end_pos + 90]
+                        if re.search(r"\.\s*ok_or(?:_else)?\s*\(", tail):
+                            return True
+                        if re.search(
+                            r"\.\s*unwrap_or(?:_default|_else)?\s*\(|\.\s*unwrap_or\b", tail
+                        ):
+                            return False
+                        # 默认按可选处理（保守：避免把带默认值的读取误判为必填 → 假 C）
+                        return False
+
                     # 先收集所有 .get("k") 及其位置，用于识别 or_else/|| 构成的"或"链
                     get_hits = []
                     for bp in sorted(receivers):
@@ -310,9 +406,14 @@ def scan_rust_index():
                                 grp.append(get_hits[j + 1][0])
                                 j += 1
                             alt_groups.append(grp)
+                            # 组的必填性看最后一个元素的尾部（or 链整体的落点）
+                            if not _is_required(get_hits[j][1]):
+                                opt_alt_groups.append(grp)
                             i = j + 1
                         else:
                             reads.add(get_hits[i][0])
+                            if not _is_required(get_hits[i][1]):
+                                opt_keys.add(get_hits[i][0])
                             i += 1
                     # 数组键表 helper：body_str(&body, &["process", "processId"]) —— 语义是"或"
                     for hm in HELPER_KEYS_RE.finditer(body_orig):
@@ -320,6 +421,55 @@ def scan_rust_index():
                             alts = [sm.group(1) for sm in STR_LIT_RE.finditer(hm.group(2))]
                             if alts:
                                 alt_groups.append(alts)
+                                if not _is_required(hm.end()):
+                                    opt_alt_groups.append(alts)
+                    # 单字面量键 helper：u2_body_str(&body,"name") / json_str(payload,"checkInType")
+                    for hm in HELPER_ONE_KEY_RE.finditer(body_orig):
+                        fn_called, recv, key = hm.group(1), hm.group(2), hm.group(3)
+                        if fn_called in ("get",):  # 已由 .get 分支覆盖
+                            continue
+                        if recv in receivers:
+                            reads.add(key)
+                            if not _is_required(hm.end()):
+                                opt_keys.add(key)
+                    # 本地取值闭包：`let get = |key| body.and_then(|Json(b)| b.get(key))...`
+                    # 随后 `get("person")` 的字面量即读取键（如 extract_stat_filter）。
+                    for clm in re.finditer(
+                        r"\blet\s+([A-Za-z_]\w*)\s*=\s*(?:move\s+)?\|\s*([A-Za-z_]\w*)\b[\s\S]{0,180}?\}\s*;",
+                        body_orig,
+                    ):
+                        cl_name, cl_param = clm.group(1), clm.group(2)
+                        cl_body = clm.group(0)
+                        # 闭包体须在某个接收者上按 param 取值（.get(param) / [param]）
+                        if not any(
+                            re.search(r"\b" + re.escape(rv) + r"\b", cl_body) for rv in receivers
+                        ):
+                            continue
+                        if not re.search(
+                            r"\.get\s*\(\s*" + re.escape(cl_param) + r"\b|\[\s*" + re.escape(cl_param) + r"\b",
+                            cl_body,
+                        ):
+                            continue
+                        for callm in re.finditer(
+                            r"\b" + re.escape(cl_name) + r"\s*\(\s*\"([A-Za-z_][\w]*)\"", body_orig
+                        ):
+                            reads.add(callm.group(1))
+                            opt_keys.add(callm.group(1))  # 闭包多带 unwrap_or 默认 → 可选
+                    # CrudSpec 委派解析：crud_create/save/update(&pool, &NAME_spec(), payload)
+                    # → 读取键 = 该 spec 的 columns json_keys（写入按存在键，均视为可选，不计 C）。
+                    crud_resolved = False
+                    if CRUD_ENTRY_RE.search(body_orig):
+                        spec_keys = []
+                        for scm in SPEC_CALL_RE.finditer(body_orig):
+                            spec_keys.extend(CRUD_SPECS.get(scm.group(1), []))
+                        # 内联 CrudSpec { columns: &[...] }
+                        for icm in re.finditer(r"CrudSpec\s*\{[\s\S]*?columns\s*:\s*&\s*\[([\s\S]*?)\]", body_orig):
+                            spec_keys.extend(CRUD_PAIR_KEY_RE.findall(icm.group(1)))
+                        if spec_keys:
+                            for k in spec_keys:
+                                reads.add(k)
+                                opt_keys.add(k)
+                            crud_resolved = True
                     # 委派检测 + 收集被调函数名（供"跟随一层间接引用"用）：
                     # body 被整体传给另一个函数 → 键读取可能发生在被调函数内
                     delegated = False
@@ -350,11 +500,23 @@ def scan_rust_index():
                         emits.add(em.group(1))
                     for em in re.finditer(r'"([A-Za-z_][\w]*)"\s*:', body_orig):
                         emits.add(em.group(1))
-                    # 若 Json<T> 是具名结构体，把结构体字段也算作读取键
+                    # 若 Json<T> 是具名结构体，把结构体字段也算作读取键。
+                    # 两种签名形态：① `bp: Json<Struct>`（普通参数）
+                    #              ② `Json(bp): Json<Struct>`（解构模式，struct 名在冒号后的类型注解里）
                     for bp in body_params:
                         sm = re.search(
                             re.escape(bp) + r"\s*:\s*" + QJSON + r"\s*<\s*([A-Za-z_]\w*)\s*>", sig
                         )
+                        if not sm:
+                            sm = re.search(
+                                QJSON
+                                + r"\s*\(\s*"
+                                + re.escape(bp)
+                                + r"\s*\)\s*:\s*(?:Option\s*<\s*)?"
+                                + QJSON
+                                + r"\s*<\s*([A-Za-z_]\w*)\s*>",
+                                sig,
+                            )
                         if sm and sm.group(1) in structs:
                             st = structs[sm.group(1)]
                             for fld in st["fields"]:
@@ -363,13 +525,19 @@ def scan_rust_index():
                                     parts = fld.split("_")
                                     nm = parts[0] + "".join(x[:1].upper() + x[1:] for x in parts[1:])
                                 reads.add(nm)
+                                # serde 结构体字段是否必填无法从此处静态判定（可能有 #[serde(default)]
+                                # 或 Option<T>）——保守计为可选，避免把结构体的每个字段都当必填产生假 C。
+                                opt_keys.add(nm)
                     handlers.setdefault(
                         (crate_of(p), name),
                         {
                             "body_params": body_params,
                             "reads": sorted(reads),
+                            "opt_keys": sorted(opt_keys),
                             "alt_groups": alt_groups,
+                            "opt_alt_groups": opt_alt_groups,
                             "delegated": delegated,
+                            "crud_resolved": crud_resolved,
                             "callees": sorted(callees),
                             "emits": sorted(emits),
                             "file": os.path.relpath(p, RUST).replace("\\", "/"),
@@ -381,18 +549,26 @@ def scan_rust_index():
     for _ in range(2):  # 两轮，覆盖 helper 再调 helper 的一层
         for key, h in handlers.items():
             crate = key[0]
-            extra_reads, extra_alts = set(), []
+            extra_reads, extra_alts, extra_opt, extra_opt_alts = set(), [], set(), []
             for callee in h.get("callees", []):
                 target = handlers.get((crate, callee))
                 if not target:
                     continue
                 extra_reads.update(target["reads"])
                 extra_alts.extend(target["alt_groups"])
+                extra_opt.update(target.get("opt_keys", []))
+                extra_opt_alts.extend(target.get("opt_alt_groups", []))
+                if target.get("crud_resolved"):
+                    h["crud_resolved"] = True
             if extra_reads or extra_alts:
                 h["reads"] = sorted(set(h["reads"]) | extra_reads)
+                h["opt_keys"] = sorted(set(h.get("opt_keys", [])) | extra_opt)
                 for g in extra_alts:
                     if g not in h["alt_groups"]:
                         h["alt_groups"].append(g)
+                for g in extra_opt_alts:
+                    if g not in h.get("opt_alt_groups", []):
+                        h.setdefault("opt_alt_groups", []).append(g)
                 h["delegated_resolved"] = True
     return handlers, structs
 
@@ -684,8 +860,11 @@ def main():
                     "handler": h,
                     "body_params": hi["body_params"] if hi else [],
                     "reads": hi["reads"] if hi else [],
+                    "opt_keys": hi.get("opt_keys", []) if hi else [],
                     "alt_groups": hi["alt_groups"] if hi else [],
+                    "opt_alt_groups": hi.get("opt_alt_groups", []) if hi else [],
                     "delegated": hi["delegated"] if hi else False,
+                    "crud_resolved": hi.get("crud_resolved", False) if hi else False,
                     "emits": hi["emits"] if hi else [],
                     "indexed": bool(hi),
                 }
@@ -719,12 +898,16 @@ def main():
         if not nonempty:
             continue
         agg_reads, agg_alts, has_body_param, delegated = set(), [], False, False
+        agg_opt, agg_opt_alts, crud_resolved = set(), [], False
         for c in cands:
             if c["body_params"]:
                 has_body_param = True
             agg_reads.update(c["reads"])
             agg_alts.extend(c["alt_groups"])
+            agg_opt.update(c.get("opt_keys", []))
+            agg_opt_alts.extend(c.get("opt_alt_groups", []))
             delegated = delegated or c["delegated"]
+            crud_resolved = crud_resolved or c.get("crud_resolved", False)
         rec = {
             "app": row["app"],
             "file": row["file"],
@@ -738,17 +921,22 @@ def main():
         if not has_body_param:
             report["A_body_ignored"].append(rec)
             continue
-        if delegated and not agg_reads and not agg_alts:
-            # 键读取发生在被委派的泛型 helper 内（如 shared::crud），静态不可判定
+        if delegated and not agg_reads and not agg_alts and not crud_resolved:
+            # 键读取发生在被委派的泛型 helper 内（无 CrudSpec 可解析）→ 静态不可判定
             report["D_delegated_unverifiable"].append(rec)
             continue
         notread = [k for k in nonempty if k not in agg_reads and not any(k in g for g in agg_alts)]
         if notread:
             report["B_sent_not_read"].append({**rec, "not_read": notread})
-        # C 类：硬读取键缺失（数组键表按"或"处理）
-        missing = sorted(agg_reads - set(nonempty))
+        # C 类：**必填**读取键缺失。可选键（.unwrap_or*/会话/Path/CrudSpec 列/结构体字段）不计。
+        req_reads = agg_reads - agg_opt
+        missing = sorted(req_reads - set(nonempty))
         missing_alts = [
-            g for g in agg_alts if not any(k in nonempty for k in g) and not any(k in agg_reads for k in g)
+            g
+            for g in agg_alts
+            if g not in agg_opt_alts
+            and not any(k in nonempty for k in g)
+            and not any(k in agg_reads for k in g)
         ]
         if missing or missing_alts:
             report["C_read_not_sent"].append(
