@@ -3,8 +3,12 @@
     <div class="view-header glass-card">
       <h1>查询管理</h1>
       <p class="subtitle">/api/query/assemble/designer/*</p>
-      <button class="nb" @click="showCreate=true">+ 新建查询</button>
+      <span class="hdr-a">
+        <button class="nb ghost" @click="loadQueryMeta">分类/语句</button>
+        <button class="nb" @click="showCreate=true">+ 新建查询</button>
+      </span>
     </div>
+    <div v-if="queryMetaText" class="qmeta">{{ queryMetaText }}</div>
     <div class="ql">
       <aside class="qs glass-card">
         <div class="sb2"><span class="si2">⌕</span><input v-model="sq" placeholder="搜索查询..." class="si3" /></div>
@@ -50,6 +54,7 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+import { toast } from '../utils/toast'
 
 interface Q {
   id: string
@@ -60,6 +65,20 @@ interface Q {
   entityCategory?: string
   updateTime?: string
   sql?: string
+}
+const queryMetaText = ref('')
+async function loadQueryMeta() {
+  try {
+    // GET querycategory/list + statement/list/manage —— 查询分类与语句管理列表
+    const [cats, stmts] = await Promise.all([
+      api.get('/api/query/assemble/designer/querycategory/list'),
+      api.get('/api/query/assemble/designer/statement/list/manage'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    queryMetaText.value = `查询分类 ${n(cats)} / 语句 ${n(stmts)}`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
 }
 const sq = ref(''),
   qs2 = ref<Q[]>([]),
@@ -179,4 +198,7 @@ function fmtT(t?: string) {
 .bs3{padding:8px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:white;cursor:pointer;font-weight:600}
 .bs3:disabled{opacity:.5;cursor:not-allowed}
 @media(max-width:768px){.ql{flex-direction:column}.qs{width:100%;max-height:200px}}
+.hdr-a{display:flex;gap:8px;align-items:center}
+.nb.ghost{background:transparent;border:1px solid var(--border-subtle);color:var(--text-secondary)}
+.qmeta{margin:8px 0;padding:8px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary)}
 </style>

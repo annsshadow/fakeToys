@@ -1941,7 +1941,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryManager.vue",
-    "line": 104,
+    "line": 123,
     "method": "DELETE",
     "raw": "/api/query/assemble/designer/delete/${id}",
     "path": "/api/query/assemble/designer/delete/{}",
@@ -4929,7 +4929,33 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryManager.vue",
-    "line": 76,
+    "line": 74,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/querycategory/list",
+    "path": "/api/query/assemble/designer/querycategory/list",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/query/assemble/designer/querycategory/list",
+    "hit_crate": "query_assemble_designer",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryManager.vue",
+    "line": 75,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/statement/list/manage",
+    "path": "/api/query/assemble/designer/statement/list/manage",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/query/assemble/designer/statement/list/manage",
+    "hit_crate": "query_assemble_designer",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryManager.vue",
+    "line": 95,
     "method": "GET",
     "raw": "/api/query/assemble/designer/list/all",
     "path": "/api/query/assemble/designer/list/all",
@@ -4942,7 +4968,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryManager.vue",
-    "line": 91,
+    "line": 110,
     "method": "POST",
     "raw": "/api/query/assemble/designer/execute",
     "path": "/api/query/assemble/designer/execute",
@@ -4955,7 +4981,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryManager.vue",
-    "line": 114,
+    "line": 133,
     "method": "POST",
     "raw": "/api/query/assemble/designer/create",
     "path": "/api/query/assemble/designer/create",
