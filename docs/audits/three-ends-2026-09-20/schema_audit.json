@@ -1142,7 +1142,7 @@
    }
   ],
   "meta": {
-   "handlers_indexed": 919,
+   "handlers_indexed": 921,
    "structs_indexed": 278,
    "frontend_body_calls": 172,
    "A": 0,
@@ -5211,6 +5211,24 @@
     "created",
     "id",
     "name"
+   ],
+   "file": "crates/console/src/lib.rs"
+  },
+  "console::config_update": {
+   "body_params": [
+    "payload"
+   ],
+   "reads": [
+    "category",
+    "description",
+    "name",
+    "value"
+   ],
+   "alt_groups": [],
+   "delegated": false,
+   "emits": [
+    "id",
+    "updated"
    ],
    "file": "crates/console/src/lib.rs"
   },
@@ -12437,6 +12455,16 @@
     "id",
     "key"
    ],
+   "file": "crates/program_center/src/lib.rs"
+  },
+  "program_center::dict_dictFlag_data_post": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [],
+   "alt_groups": [],
+   "delegated": false,
+   "emits": [],
    "file": "crates/program_center/src/lib.rs"
   },
   "program_center::dict_dictFlag_path_data_mockputtopost": {
