@@ -5,6 +5,7 @@
       <div class="header-actions">
         <button class="action-btn primary" @click="handleUpload">📤 上传</button>
         <button class="action-btn" @click="loadTopAttachments">📎 顶层附件</button>
+        <button class="action-btn" @click="loadFileMeta">🗄️ 附件2/编辑器</button>
         <button class="action-btn" @click="toggleView">{{ viewType === 'grid' ? '☰ 列表' : '⊞ 网格' }}</button>
       </div>
     </div>
@@ -105,6 +106,19 @@ const uploadProgress = ref(0)
 const queryClient = useQueryClient()
 
 // 加载文件列表
+async function loadFileMeta(): Promise<void> {
+  try {
+    // GET file/attachment2/list/top + file/editor/list —— 附件2 顶层 + 在线编辑器列表
+    const [att2, editors] = await Promise.all([
+      api.get('/api/file/attachment2/list/top'),
+      api.get('/api/file/editor/list'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    toast.success(`附件2 ${n(att2)} / 编辑器 ${n(editors)}`)
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadTopAttachments(): Promise<void> {
   try {
     // GET /api/file/attachment/list/top —— 顶层附件列表
