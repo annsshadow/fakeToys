@@ -3744,7 +3744,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 78,
+    "line": 80,
     "method": "POST",
     "raw": "/api/queryview/search",
     "path": "/api/queryview/search",
@@ -3754,7 +3754,17 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 91,
+    "line": 93,
+    "method": "GET",
+    "raw": "/api/queryview/query/list",
+    "path": "/api/queryview/query/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewApp.vue",
+    "line": 104,
     "method": "GET",
     "raw": "/api/queryview/view/list/query/all",
     "path": "/api/queryview/view/list/query/all",
@@ -3764,7 +3774,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 106,
+    "line": 119,
     "method": "GET",
     "raw": "/api/queryview/execute/${encodeURIComponent(v.flag || 'view')}/${encodeURIComponent(v.id)}",
     "path": "/api/queryview/execute/{}/{}",
@@ -3774,7 +3784,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 119,
+    "line": 132,
     "method": "GET",
     "raw": "/api/queryview/excel/${v.flag || v.id}",
     "path": "/api/queryview/excel/{}",
