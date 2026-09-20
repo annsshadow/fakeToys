@@ -39,6 +39,7 @@
               <button class="btn-act" @click="onPersons(item)">可见人</button>
               <button class="btn-act" @click="onNotify(item)">通知</button>
               <button class="btn-act" @click="onDocLog(item)">日志</button>
+              <button class="btn-act" @click="onCommendList(item)">点赞</button>
               <button class="btn-del" @click="onDelete(item)">删除</button>
             </span>
           </div>
@@ -237,6 +238,16 @@ async function onDocLog(item: DocItem) {
     toast.error('查询日志失败: ' + (e?.message ?? ''))
   }
 }
+async function onCommendList(item: DocItem) {
+  try {
+    // GET /api/commend/list/paging/{docId} —— 文档点赞列表
+    const r: any = await api.get(`/api/commend/list/paging/${item.id}`)
+    const n = Array.isArray(r.data) ? r.data.length : (r.data?.total ?? 0)
+    toast.success('点赞数：' + n)
+  } catch (e: any) {
+    toast.error('查询点赞失败: ' + (e?.message ?? ''))
+  }
+}
 
 doSearch()
 
@@ -295,8 +306,8 @@ const api_document_l_855_data = ref<any[]>([])
 .btn-primary:disabled{opacity:0.5;cursor:not-allowed}
 .list-panel{flex:1}
 .item-table{display:flex;flex-direction:column;gap:8px}
-.table-header{display:grid;grid-template-columns:1.5fr 0.7fr 60px 1.15fr;padding:8px 12px;background:var(--bg-elevated);border-radius:var(--radius-sm);font-size:12px;color:var(--text-muted);font-weight:600}
-.table-row{display:grid;grid-template-columns:1.5fr 0.7fr 60px 1.15fr;padding:12px;align-items:center;transition:all var(--transition-fast);border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--bg-elevated)}
+.table-header{display:grid;grid-template-columns:1.4fr 0.65fr 55px 1.3fr;padding:8px 12px;background:var(--bg-elevated);border-radius:var(--radius-sm);font-size:12px;color:var(--text-muted);font-weight:600}
+.table-row{display:grid;grid-template-columns:1.4fr 0.65fr 55px 1.3fr;padding:12px;align-items:center;transition:all var(--transition-fast);border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--bg-elevated)}
 .table-row:hover{border-color:var(--color-primary)}
 .col-title{font-size:14px;font-weight:500;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .col-id{font-size:11px;color:var(--text-muted);font-family:'JetBrains Mono',monospace}
