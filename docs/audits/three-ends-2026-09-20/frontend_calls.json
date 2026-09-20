@@ -4004,7 +4004,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/UnitApp.vue",
-    "line": 93,
+    "line": 98,
     "method": "GET",
     "raw": "/api/unit/list",
     "path": "/api/unit/list",
@@ -4014,7 +4014,27 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/UnitApp.vue",
-    "line": 112,
+    "line": 111,
+    "method": "GET",
+    "raw": "/api/organization/assemble/control/unit/list/top",
+    "path": "/api/organization/assemble/control/unit/list/top",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/UnitApp.vue",
+    "line": 123,
+    "method": "GET",
+    "raw": "/api/organization/assemble/control/unit/list/type",
+    "path": "/api/organization/assemble/control/unit/list/type",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/UnitApp.vue",
+    "line": 141,
     "method": "GET",
     "raw": "/api/unit/check/${u.flag || u.id}",
     "path": "/api/unit/check/{}",
@@ -4024,7 +4044,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/UnitApp.vue",
-    "line": 146,
+    "line": 175,
     "method": "GET",
     "raw": "/api/organization/assemble/control/identity/list/unit/{}",
     "path": "/api/organization/assemble/control/identity/list/unit/{}",
@@ -4034,7 +4054,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/UnitApp.vue",
-    "line": 157,
+    "line": 186,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unitattribute/list/unit/{}",
     "path": "/api/organization/assemble/control/unitattribute/list/unit/{}",
@@ -4044,7 +4064,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/UnitApp.vue",
-    "line": 172,
+    "line": 201,
     "method": "POST",
     "raw": "/api/organization/assemble/control/unitattribute",
     "path": "/api/organization/assemble/control/unitattribute",
@@ -4054,7 +4074,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/UnitApp.vue",
-    "line": 185,
+    "line": 214,
     "method": "DELETE",
     "raw": "/api/organization/assemble/control/unitattribute/{}",
     "path": "/api/organization/assemble/control/unitattribute/{}",
@@ -4064,7 +4084,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/UnitApp.vue",
-    "line": 194,
+    "line": 223,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unitduty/list/unit/{}",
     "path": "/api/organization/assemble/control/unitduty/list/unit/{}",
@@ -4074,7 +4094,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/UnitApp.vue",
-    "line": 208,
+    "line": 237,
     "method": "POST",
     "raw": "/api/organization/assemble/control/unitduty",
     "path": "/api/organization/assemble/control/unitduty",
@@ -4084,7 +4104,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/UnitApp.vue",
-    "line": 221,
+    "line": 250,
     "method": "DELETE",
     "raw": "/api/organization/assemble/control/unitduty/{}",
     "path": "/api/organization/assemble/control/unitduty/{}",
