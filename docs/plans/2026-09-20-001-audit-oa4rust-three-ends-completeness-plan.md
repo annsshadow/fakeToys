@@ -3,7 +3,15 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 8  # rev8（2026-09-20 契约提取器升级）：让提取器「跟随一层间接引用」——闭包绑定 Json、
+rev: 9  # rev9（2026-09-20 G3 解决）：用户选定「合并到 AIChatApp」——
+       # 把 MCP 配置面板从 AIAssistant 迁入 AIChatApp 的 showConfig 并补侧栏入口；
+       # 删除 AIAssistant.vue（200 行）与 AIChatApp 的 95 个未使用生成器残留 ref；
+       # 顺带修原实现的 3 处缺陷：禁用分支 404（POST config/delete/mcp 缺 id → 改 POST config/update/mcp/{id}）、
+       # addMcp 空函数（死控件→实现内联表单）、列表字段读 endpoint 而后端产出 url（该列恒为空）。
+       # 保留 AIChatApp 既有行为（chat/list/paging + 非流式），未采纳 AIAssistant 的流式端点。
+       # 验证：typecheck 6/6、pnpm test 953 passed、biome lint 干净、四端对账仍 100%（334 调用，
+       # shadow/405/404 全 0，gate PASS）。
+       # rev8（2026-09-20 契约提取器升级）：让提取器「跟随一层间接引用」——闭包绑定 Json、
        # `let` 别名、一层 helper 调用，并把「参数类型为 Value」的普通 helper 也纳入索引
        # （原先只索引有 Json 参数的 handler，导致跟随失败）。
        # 效果：消除 2 处已证实误报（task opinion / im_msg conversationId，B 24→18）；
@@ -774,7 +782,7 @@ packages/apis/src/index.ts:216    ['"conversationId"']: data.conversationId
 |---|---|
 | G1 | ✅ **复核为非问题**：`control::unit.rs:107` 产出的 JSON 键**本就是 `parentId`**（只是 SQL 列名是 `parent_id`）。原判断基于 SQL 列名而非 JSON 键，属**误判**，已修正。全仓亦无 `parent_id` 硬消费方（`organization-selector.ts:61` 是 `parentId ?? parent_id` 的 fallback 链）。 |
 | G2 | ✅ **已文档化**：407 条 `mock*`（`*mockputtopost` / `*mockdeletetoget`）为 **O2OA 兼容层**，用于承载"前端用 GET 模拟 PUT/POST"的历史行为，**不可清理**。已在本文件 §二 说明；对外契约文档如需可再摘录。 |
-| G3 | ⏳ **产品决策（不擅自改）**：`AIAssistant.vue`(200 行) 与 `AIChatApp.vue`(345 行) **标题同为「AI 助手」**，前者是含 **MCP 配置面板**的旧版、后者是已路由的新版。三选项：① 路由 AIAssistant 并下线 AIChatApp（取功能超集）；② 把 MCP 配置合并进 AIChatApp；③ 明确放弃 MCP 配置 UI 并删除 AIAssistant。**当前 MCP 配置功能对用户不可达**，需产品定夺。 |
+| G3 | ✅ **已解决（选项 1：合并到 AIChatApp）** —— 逐行读两视图后发现**不是重复，而是同一功能的两个半成品**：`AIAssistant`（200 行，未路由，0 残留）有**真实 MCP 配置实现**；`AIChatApp`（345 行，已路由）有**配置面板 UI 但 `showConfig` 无处设为 true**（永不可达）+ **95 个未使用的生成器残留 ref**（93 个死）。<br>**合并动作**：把 MCP 面板迁入 AIChatApp 的 `showConfig` 并补入口按钮（侧栏 ⚙）；删除 `AIAssistant.vue` 与 95 个死 ref；同时修掉原实现的 **3 处缺陷**——① 禁用分支调 `POST config/delete/mcp`（**缺 id 段**）→ 404，改为 `POST config/update/mcp/{id}`；② `addMcp` 原为**空函数**（死控件）→ 实现内联表单；③ 列表字段原读 `endpoint` 而**后端产出的是 `url`** → 该列恒为空。<br>**保留 AIChatApp 既有行为**（对话列表 `chat/list/paging`、非流式发送），只补缺失能力——最小改动。**未采纳**的差异：AIAssistant 的**流式发送**端点（`chat/completion/stream`）仍未被采用，留作后续决策。 |
 | G4 | ✅ **已修**：`EmptyApp.vue` 的 `title`/`subtitle` 原为**必填 props 但路由未传**（`main.ts` 的 `empty` 路由无 props）→ 改为可选 + 默认文案（"占位页面"/"该页面为通用占位模板，尚未接入具体业务"）。 |
 | G5 | ⏳ 长期项：后端能力消费率 5.8%（252/4327）→ 按业务优先级逐域提升，与阶段 G 联动。 |
 
@@ -796,7 +804,7 @@ packages/apis/src/index.ts:216    ['"conversationId"']: data.conversationId
 | **E** 防回归门禁 | ✅ 已完成（E1–E6） | 陈皮（AI） | 门禁已落地并验证可失败 | **E1/E4/E5**：`compare.py --gate`（shadow/405/404 必须全 0）+ `schema_audit.py --gate`（A 必须为 0，B/C/D/E 不得高于 `schema_baseline.json`）→ 新增 CI workflow `.github/workflows/three-ends-contract.yml`；**E2**：字段/契约侧以基线"不许新增"兜住（单端点级字段断言列为后续增强）；**E3**：CI 顺序 = extract_routes → extract_calls → compare --gate → schema_audit --gate，产物上传 artifact；**E6**：`oa4rust/tests/quoted_key_guard.rs` 已接入 `oa4rust-ci.yml` 的 `quality` job。**门禁可失败已验证**：人为压低基线 → EXIT=1；恢复 → EXIT=0 |
 | **F** 契约修复 + 运行时校验 | 🟨 提取器已升级，真实错配已定位 | 陈皮（AI） | B 18 / C 21 / D 24（基线；含 3 处已知误报） | rev8 让提取器**跟随一层间接引用**（闭包绑定 / `let` 别名 / helper 调用）：消除 2 处已证实误报，**新发现 4 处真实字段错配**（attendance appeal `status`↔`auditStatus`、rule `name`↔`ruleName`、form `schema`↔`definition`、mobile check `userId`）→ 详见 §6.10 |
 | **G** 移动端能力扩展 | 🟨 部分 | 陈皮（AI） | 业务域 6 → ≥12 未达成 | 移动端 IM 已按会话过滤；扩面未做 |
-| **H** 一致性治理 | 🟨 3/5 已闭合 | 陈皮（AI） | G1 非问题、G2 已文档化、G4 已修 | G3 待产品决策（两个同名「AI 助手」，MCP 配置当前不可达）；G5 长期项（消费率 5.8%） |
+| **H** 一致性治理 | ✅ 4/5 已闭合 | 陈皮（AI） | G1 非问题、G2 已文档化、G3 已解决（合并）、G4 已修 | G3：MCP 配置并入 AIChatApp 并补入口，删除 `AIAssistant.vue` + 95 个死 ref，顺带修 3 处缺陷；G5 长期项（消费率 5.8%） |
 
 **核心成果（rev5）：三端 API 调用闭合率 100%**
 
