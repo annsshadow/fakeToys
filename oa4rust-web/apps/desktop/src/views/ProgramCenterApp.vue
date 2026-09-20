@@ -125,6 +125,7 @@
       <div v-if="tab==='invoke'" class="tab-content">
         <div class="toolbar">
           <button class="btn-primary" @click="loadInvokes">刷新</button>
+          <button class="btn-primary" @click="loadInvokeByCategory">按分类</button>
           <button class="btn-create" @click="createInvoke">+ 新建接口</button>
         </div>
         <div v-if="loadingInvoke" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
@@ -762,6 +763,16 @@ async function loadMarketCats() {
 }
 
 // 接口调用（invoke）：列表 / 新建 / 删除 / 分类（program_center invoke 族）
+async function loadInvokeByCategory() {
+  try {
+    // GET program_center/invoke/list/with/category/category —— 按分类接口清单
+    const r: any = await api.get('/api/program_center/invoke/list/with/category/category')
+    invokes.value = (r.data ?? []) as Invoke[]
+    toast.success('按分类接口：' + invokes.value.length + ' 个')
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadInvokes() {
   loadingInvoke.value = true
   try {
