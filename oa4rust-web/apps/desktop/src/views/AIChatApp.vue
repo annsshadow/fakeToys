@@ -9,6 +9,7 @@
       <div class="sidebar glass-card">
         <div class="sidebar-header">
           <button class="btn-new" @click="createNewChat">+ 新对话</button>
+          <button class="btn-config" title="MCP 配置" @click="openConfig">⚙</button>
         </div>
         <div class="chat-list">
           <div
@@ -75,20 +76,30 @@
         </template>
       </div>
     </div>
-    <!-- Config panel -->
+    <!-- MCP 配置面板（合并自 AIAssistant.vue，并补上入口按钮） -->
     <div class="config-panel glass-card" v-if="showConfig">
-      <h3>AI 配置</h3>
-      <div class="config-grid">
-        <div class="config-item">
-          <label>Base Config</label>
-          <pre>{{ JSON.stringify(configData.base, null, 2) }}</pre>
-        </div>
-        <div class="config-item">
-          <label>Models</label>
-          <div v-for="m in configData.models" :key="m.id" class="model-tag">{{ m.name || m.id }}</div>
+      <h3>MCP 配置</h3>
+      <div v-if="mcpLoading" class="config-empty">加载中…</div>
+      <div v-else-if="mcps.length === 0" class="config-empty">暂无 MCP 服务</div>
+      <div v-else class="mcp-list">
+        <div v-for="m in mcps" :key="m.id" class="mcp-item">
+          <span class="mcp-name">{{ m.name }}</span>
+          <span class="mcp-url">{{ m.url || '—' }}</span>
+          <span class="mcp-state" :class="{ on: m.enabled }">{{ m.enabled ? '已启用' : '已禁用' }}</span>
+          <button class="btn-mcp" @click="toggleMcp(m)">{{ m.enabled ? '禁用' : '启用' }}</button>
+          <button class="btn-mcp danger" @click="delMcp(m.id)">删除</button>
         </div>
       </div>
-      <button class="btn-close-config" @click="showConfig = false">关闭</button>
+      <div v-if="showAddMcp" class="mcp-add">
+        <input v-model="mcpForm.name" placeholder="名称（必填）" class="mcp-input" />
+        <input v-model="mcpForm.url" placeholder="服务地址 URL" class="mcp-input" />
+        <button class="btn-mcp" @click="addMcp">保存</button>
+        <button class="btn-mcp" @click="showAddMcp = false">取消</button>
+      </div>
+      <div class="config-actions">
+        <button v-if="!showAddMcp" class="btn-mcp" @click="showAddMcp = true">+ 添加 MCP 服务</button>
+        <button class="btn-close-config" @click="showConfig = false">关闭</button>
+      </div>
     </div>
   </div>
 </template>
@@ -108,7 +119,6 @@ const inputText = ref('')
 const loading = ref(false)
 const messagesRef = ref<HTMLElement | null>(null)
 const showConfig = ref(false)
-const configData = ref({ base: null, models: [] as any[] })
 
 async function loadConversations() {
   try {
@@ -193,101 +203,74 @@ function formatDate(d?: string) {
 
 loadConversations()
 
-const api_list_ena_175_data = ref<any[]>([])
-const api_get_usag_355_data = ref<any[]>([])
-const api_delete_m_589_data = ref<any[]>([])
-const api_sync_to__866_data = ref<any[]>([])
-const api_1_size_1_data = ref<any[]>([])
-const api_delete_m_776_data = ref<any[]>([])
-const api_ai_chat_data = ref<any[]>([])
-const api_file_id__998_data = ref<any[]>([])
-const get_model_test_model_ref = ref<any[]>([])
-const api_config_c_366_data = ref<any[]>([])
-const api_get_model_flag_data = ref<any[]>([])
-const api_index_de_745_data = ref<any[]>([])
-const api_file_u2t_729_data = ref<any[]>([])
-const api_config_c_878_data = ref<any[]>([])
-const api_ai_assem_462_data = ref<any[]>([])
-const api_index_de_239_data = ref<any[]>([])
-const api_chat_del_208_data = ref<any[]>([])
-const api_id_downl_768_data = ref<any[]>([])
-const api_cms_doc_docid_data = ref<any[]>([])
-const cms_doc_test_doc_ref = ref<any[]>([])
-const ai_assemble_control_file_any_file_flag_ref = ref<any[]>([])
-const ai_assemble_control_file_copy_file_ref = ref<any[]>([])
-const ai_assemble_control_list_ai_models_ref = ref<any[]>([])
-const ai_assemble_control_config_save_ref = ref<any[]>([])
-const ai_assemble_control_ref = ref<any[]>([])
-const config_get_mcp_flag_ref = ref<any[]>([])
-const update_ai_control_config_ref = ref<any[]>([])
-const config_update_mcp_u2t_ref = ref<any[]>([])
-const file_u2t_download_scale_ref = ref<any[]>([])
-const ai_assemble_control_config_get_ref = ref<any[]>([])
-const config_delete_mcp_u2t_ref = ref<any[]>([])
-const config_update_mcp_flag_ref = ref<any[]>([])
-const ai_assemble_control_file_upload_ref = ref<any[]>([])
-const index_cms_doc_u2t_ref = ref<any[]>([])
-const config_update_model_u2t_ref = ref<any[]>([])
-const ai_assemble_control_file_u2t_ref = ref<any[]>([])
-const ai_assemble_control_file_delete_u2t_ref = ref<any[]>([])
-const config_get_mcp_u2t_ref = ref<any[]>([])
-const config_get_mcp_any_id_here_ref = ref<any[]>([])
-const ai_assemble_control_chat_delete_clue_1_ref = ref<any[]>([])
-const config_list_enable_model_ref = ref<any[]>([])
-const config_delete_model_flag_ref = ref<any[]>([])
-const ai_assemble_control_file_delete_flag_ref = ref<any[]>([])
-const ai_assemble_control_config_base_config_ref = ref<any[]>([])
-const config_update_model_flag_ref = ref<any[]>([])
-const ai_chat_delete_test_clue_ref = ref<any[]>([])
-const api_ai_confi_6_data = ref<any[]>([])
-const ai_ref = ref<any[]>([])
-const api_config_g_480_data = ref<any[]>([])
-const api_ai_chat_delete_data = ref<any[]>([])
-const ai_file_delete_test_flag_ref = ref<any[]>([])
-const api_ai_assem_983_data = ref<any[]>([])
-const api_ai_assem_794_data = ref<any[]>([])
-const ai_file_test_flag_ref = ref<any[]>([])
-const api_get_mcp__345_data = ref<any[]>([])
-const api_control__847_data = ref<any[]>([])
-const api_ai_core_list_data = ref<any[]>([])
-const api_ai_app_list_data = ref<any[]>([])
-const api_get_ai_c_25_data = ref<any[]>([])
-const api_index_sy_499_data = ref<any[]>([])
-const api_neural_list_data = ref<any[]>([])
-const neural_ref = ref<any[]>([])
-const config_get_mcp_test_mcp_ref = ref<any[]>([])
-const ai_index_delete_test_flag_ref = ref<any[]>([])
-const api_ai_config_get_data = ref<any[]>([])
-const api_ai_model_list_data = ref<any[]>([])
-const api_get_mcp__105_data = ref<any[]>([])
-const api_core_ent_791_data = ref<any[]>([])
-const ai_nonexistent_ref = ref<any[]>([])
-const api_core_ent_245_data = ref<any[]>([])
-const api_core_ent_9_data = ref<any[]>([])
-const api_ai_825_data = ref<any[]>([])
-const ai_chat_list_completion_test_clue_paging_1_size_10_ref = ref<any[]>([])
-const api_ai_570_data = ref<any[]>([])
-const api_ai_742_data = ref<any[]>([])
-const api_ai_373_data = ref<any[]>([])
-const api_ai_814_data = ref<any[]>([])
-const api_ai_703_data = ref<any[]>([])
-const api_ai_43_data = ref<any[]>([])
-const ai_index_cms_doc_with_app_test_app_ref = ref<any[]>([])
-const api_ai_934_data = ref<any[]>([])
-const api_ai_378_data = ref<any[]>([])
-const api_ai_463_data = ref<any[]>([])
-const api_ai_256_data = ref<any[]>([])
-const api_ai_110_data = ref<any[]>([])
-const api_ai_593_data = ref<any[]>([])
-const api_ai_431_data = ref<any[]>([])
-const api_ai_assembl_357_data = ref<any[]>([])
-const api_ai_assembl_232_data = ref<any[]>([])
-const api_ai_assembl_676_data = ref<any[]>([])
-const api_ai_assembl_616_data = ref<any[]>([])
-const api_ai_assembl_13_data = ref<any[]>([])
-const api_ai_assembl_934_data = ref<any[]>([])
-const api_ai_assembl_627_data = ref<any[]>([])
-const api_ai_assembl_83_data = ref<any[]>([])
+// ── MCP 配置（自 AIAssistant.vue 合并而来；见 docs/plans/2026-09-20-001 §九 G3）──
+// 合并时修正原实现的 3 处缺陷：
+//   ① 禁用分支调用 POST config/delete/mcp（缺 id 段）→ 404，改为 POST config/update/mcp/{id}
+//   ② addMcp 原为空函数（死控件）→ 实现内联表单
+//   ③ 列表字段原读 endpoint，而后端产出的是 url → 该列恒为空
+type McpItem = { id: string; name: string; url: string; enabled: boolean }
+const mcps = ref<McpItem[]>([])
+const mcpLoading = ref(false)
+const showAddMcp = ref(false)
+const mcpForm = ref({ name: '', url: '' })
+
+async function loadMcps() {
+  mcpLoading.value = true
+  try {
+    const r = await api.get('/api/ai_assemble_control/config/list/mcp/paging/1/size/50')
+    mcps.value = (r.data?.list ?? r.data ?? []) as McpItem[]
+  } catch {
+    mcps.value = []
+  } finally {
+    mcpLoading.value = false
+  }
+}
+
+function openConfig() {
+  showConfig.value = true
+  void loadMcps()
+}
+
+async function toggleMcp(m: McpItem) {
+  // 后端 update 读取 {name, url, enabled}，故回传现有 name/url 并翻转 enabled。
+  try {
+    await api.post(`/api/ai_assemble_control/config/update/mcp/${encodeURIComponent(m.id)}`, {
+      name: m.name,
+      url: m.url,
+      enabled: !m.enabled,
+    })
+    m.enabled = !m.enabled
+  } catch (e: any) {
+    toast.info('操作失败: ' + (e?.message ?? ''))
+  }
+}
+
+async function delMcp(id: string) {
+  if (!(await confirmMsg('删除该 MCP 服务？'))) return
+  try {
+    await api.delete(`/api/ai_assemble_control/config/delete/mcp/${encodeURIComponent(id)}`)
+    mcps.value = mcps.value.filter((x) => x.id !== id)
+  } catch (e: any) {
+    toast.info('删除失败: ' + (e?.message ?? ''))
+  }
+}
+
+async function addMcp() {
+  const name = mcpForm.value.name.trim()
+  const url = mcpForm.value.url.trim()
+  if (!name) {
+    toast.info('请填写名称')
+    return
+  }
+  try {
+    await api.post('/api/ai_assemble_control/config/create/mcp', { name, url, enabled: true })
+    mcpForm.value = { name: '', url: '' }
+    showAddMcp.value = false
+    await loadMcps()
+  } catch (e: any) {
+    toast.info('添加失败: ' + (e?.message ?? ''))
+  }
+}
 </script>
 
 <style scoped>
@@ -297,8 +280,10 @@ const api_ai_assembl_83_data = ref<any[]>([])
 .subtitle { font-size: 12px; color: var(--text-muted); margin: 0; font-family: 'JetBrains Mono', monospace }
 .split-layout { flex: 1; display: grid; grid-template-columns: 260px 1fr; gap: 16px; overflow: hidden }
 .sidebar { padding: 16px; display: flex; flex-direction: column; gap: 12px; overflow: hidden }
-.sidebar-header { display: flex; justify-content: flex-end }
+.sidebar-header { display: flex; justify-content: space-between; align-items: center; gap: 8px }
 .btn-new { padding: 6px 14px; background: var(--color-primary); color: #000; border: none; border-radius: var(--radius-md); font-size: 12px; cursor: pointer; font-weight: 600 }
+.btn-config { padding: 6px 10px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); font-size: 13px; cursor: pointer; line-height: 1 }
+.btn-config:hover { border-color: var(--color-primary); color: var(--color-primary) }
 .chat-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px }
 .chat-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-md); cursor: pointer; transition: all var(--transition-fast); border: 1px solid transparent }
 .chat-item:hover { background: var(--color-primary-soft); border-color: var(--border-active) }
@@ -336,10 +321,20 @@ const api_ai_assembl_83_data = ref<any[]>([])
 .btn-send:disabled { opacity: 0.5; cursor: not-allowed }
 .config-panel { padding: 20px; display: flex; flex-direction: column; gap: 12px; position: fixed; bottom: 20px; right: 20px; width: 400px; max-height: 60vh; overflow: auto; z-index: 50 }
 .config-panel h3 { margin: 0; font-family: 'Orbitron', sans-serif; color: var(--color-primary); font-size: 14px }
-.config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px }
-.config-item label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px }
-.config-item pre { font-size: 11px; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; background: var(--bg-base); padding: 8px; border-radius: var(--radius-sm); max-height: 120px; overflow: auto }
-.model-tag { display: inline-block; padding: 2px 8px; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); font-size: 11px; color: var(--text-secondary); margin: 2px }
-.btn-close-config { padding: 6px 16px; background: transparent; border: 1px solid var(--border-subtle); color: var(--text-secondary); border-radius: var(--radius-md); cursor: pointer; font-size: 12px; align-self: flex-end }
+.config-empty { font-size: 12px; color: var(--text-muted); padding: 8px 0 }
+.mcp-list { display: flex; flex-direction: column; gap: 6px }
+.mcp-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: var(--bg-elevated); border-radius: var(--radius-sm); font-size: 12px }
+.mcp-name { color: var(--text-primary); font-weight: 600; min-width: 72px }
+.mcp-url { flex: 1; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.mcp-state { font-size: 11px; color: var(--text-muted) }
+.mcp-state.on { color: var(--color-success) }
+.mcp-add { display: flex; flex-wrap: wrap; gap: 6px }
+.mcp-input { flex: 1; min-width: 120px; padding: 4px 8px; background: var(--bg-base); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 12px; outline: none }
+.mcp-input:focus { border-color: var(--color-primary) }
+.btn-mcp { padding: 4px 10px; background: transparent; border: 1px solid var(--border-subtle); color: var(--text-secondary); border-radius: var(--radius-sm); cursor: pointer; font-size: 11px }
+.btn-mcp:hover { border-color: var(--color-primary); color: var(--color-primary) }
+.btn-mcp.danger:hover { border-color: var(--color-error); color: var(--color-error) }
+.config-actions { display: flex; justify-content: space-between; align-items: center; gap: 8px }
+.btn-close-config { padding: 6px 16px; background: transparent; border: 1px solid var(--border-subtle); color: var(--text-secondary); border-radius: var(--radius-md); cursor: pointer; font-size: 12px }
 @media (max-width: 768px) { .split-layout { grid-template-columns: 1fr } .sidebar { display: none } }
 </style>
