@@ -4,6 +4,7 @@
       <h1>服务器管理</h1>
       <p class="subtitle">/api/server/* — 命令执行与授权管理</p>
       <button class="srv-meta-btn" @click="loadSysStatus">系统状态/信息</button>
+      <button class="srv-meta-btn" @click="loadGeneralMeta">通用/区域/工时</button>
       <div v-if="sysStatusText" class="srv-meta-note">{{ sysStatusText }}</div>
     </div>
     <div class="content-panel glass-card">
@@ -55,6 +56,20 @@ const loadingLicense = ref(false)
 const license = ref<Record<string, unknown> | null>(null)
 
 const sysStatusText = ref('')
+async function loadGeneralMeta() {
+  try {
+    // GET general/assemble/control/status + area/list + worktime/minutesofworkday —— 通用控制状态/区域/工作日分钟
+    const [status, area, worktime] = await Promise.all([
+      api.get('/api/general/assemble/control/status'),
+      api.get('/api/general/assemble/control/area/list'),
+      api.get('/api/general/assemble/control/worktime/minutesofworkday'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    sysStatusText.value = `通用状态 ${(status as any)?.data ? '有' : '无'} · 区域 ${n(area)} · 工时配置 ${(worktime as any)?.data ? '有' : '无'}`
+  } catch (e: any) {
+    toast.error('加载通用配置失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadSysStatus() {
   try {
     // GET console/status + console/system/info —— 控制台状态与系统信息
