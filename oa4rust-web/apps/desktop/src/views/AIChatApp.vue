@@ -5,6 +5,7 @@
       <p class="subtitle">/api/ai_assemble_control/* — 智能对话与配置</p>
       <button class="btn-ai-meta" @click="loadAiMeta">模型/应用</button>
       <button class="btn-ai-meta" @click="loadAiConv">会话/配置</button>
+      <button class="btn-ai-meta" @click="loadAiControl">基础配置/控制/用量</button>
       <div v-if="aiMetaText" class="ai-meta-note">{{ aiMetaText }}</div>
     </div>
     <div class="split-layout">
@@ -123,6 +124,20 @@ const loading = ref(false)
 const messagesRef = ref<HTMLElement | null>(null)
 const showConfig = ref(false)
 const aiMetaText = ref('')
+async function loadAiControl() {
+  try {
+    // 消费 ai_assemble_control 三条真实路由：基础配置 / AI 控制配置 / 用量统计
+    const [base, ctrl, usage] = await Promise.all([
+      api.get('/api/ai_assemble_control/config/base/config'),
+      api.get('/api/ai_assemble_control/get/ai/control/config'),
+      api.get('/api/ai_assemble_control/get/usage/stats'),
+    ])
+    const has = (r: any) => ((r as any)?.data ? '有' : '无')
+    aiMetaText.value = `基础配置 ${has(base)} / 控制配置 ${has(ctrl)} / 用量统计 ${has(usage)}`
+  } catch (e: any) {
+    toast.error('加载 AI 控制配置失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadAiConv() {
   try {
     // GET ai/conversation/list + ai/config/get + ai_assemble_control/list/ai/models
