@@ -3,7 +3,11 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 106 # rev106（2026-09-21 G5：门户-设计器 设计器/设计清单/门户列表）：
+rev: 107 # rev107（2026-09-21 G5：热图/统计 别名族 热图清单/控制面板/控制应用）：
+       # HotpicApp.vue 补第二按钮，消费 hotpic 别名族 hotpic/list/hotpics + hotpic/assemble/control/list/control/panels + .../list/control/applications 共 3 条真实路由（与既消费的 hotpic_assemble_control 前缀为不同注册路径）；全局消费 567→570（570/4638=12.3%）。
+       # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。热图/统计域缺口 46→43。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev106 # rev106（2026-09-21 G5：门户-设计器 设计器/设计清单/门户列表）：
        # PortalPageDesignerApp.vue 补第三按钮，消费 portal designer （designer 根）+ portal/design/list + designer/portal/list 共 3 条真实路由；全局消费 564→567（567/4638=12.2%）。
        # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。门户-设计器域缺口 66→63。
        # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。

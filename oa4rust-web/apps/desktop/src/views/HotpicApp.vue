@@ -15,6 +15,7 @@
         <input v-model="keyword" placeholder="搜索热帖..." class="search-input" @keyup.enter="doSearch" />
         <button class="btn-primary" @click="doSearch">搜索</button>
         <button class="btn-primary" @click="loadHotpicMeta">热图/面板</button>
+        <button class="btn-primary" @click="loadHotpicMeta2">热图2/面板2/应用2</button>
       </div>
       <div v-if="hotpicMetaText" class="hp-note">{{ hotpicMetaText }}</div>
       <div class="list-panel">
@@ -53,6 +54,20 @@ const stats = computed(() => [
 ])
 
 const hotpicMetaText = ref('')
+async function loadHotpicMeta2() {
+  try {
+    // 消费 hotpic 别名族三条真实路由：热图清单 / 控制面板 / 控制应用（与 assemble_control 前缀不同的注册路径）
+    const [hp, panels, apps] = await Promise.all([
+      api.get('/api/hotpic/list/hotpics'),
+      api.get('/api/hotpic/assemble/control/list/control/panels'),
+      api.get('/api/hotpic/assemble/control/list/control/applications'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    hotpicMetaText.value = `热图 ${n(hp)} / 面板 ${n(panels)} / 应用 ${n(apps)}`
+  } catch (e: any) {
+    toast.error('加载热图元数据失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadHotpicMeta() {
   try {
     // GET hotpic_assemble_control/list/hotpics + list/control/panels + list/control/applications
