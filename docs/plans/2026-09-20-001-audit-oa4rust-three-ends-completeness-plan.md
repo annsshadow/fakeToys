@@ -3,7 +3,12 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 94 # rev94（2026-09-21 G5：程序中心 系统Token/部署资源/节点命令）：
+rev: 95 # rev95（2026-09-21 G5：文件 顶层文件夹/我的分享/用户容量）：
+       # FileManager.vue 补「文件夹/分享/容量」按钮，消费 file folder/list/top + share/list + attachment2/user/capacity 共 3 条真实路由；全局消费 531→534（534/4638=11.5%）。
+       # 契约回源码核验：三 handler 均无写（folder_list_top 无参、share_list/attachment2_user_capacity 取会话 Extension 走 Cookie 鉴权），空库安全。文件/附件域缺口 179→176。
+       # 新增全仓扫描脚本口径：按 handler 签名无 Path/Query/Json + 函数体无 INSERT/UPDATE/DELETE 过滤「无参只读 GET」；surface 该类已近枯竭（仅剩 openapi/review 2 条），program_center 仍余 ~70，file 22。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev94 # rev94（2026-09-21 G5：程序中心 系统Token/部署资源/节点命令）：
        # ProgramCenterApp.vue Config 页补「Token/部署资源/节点」按钮，消费 program_center config/token + deploy/server/resource + command/list/node 共 3 条真实路由；全局消费 528→531（531/4638=11.4%）。
        # 契约回源码核验：三 handler 均无参 GET（config_token query_opt system.token、deploy_server_resource 查 x_program_deploy_resource、command_list_node 返回空数组），均无写、空库安全。程序中心域缺口 354→351。
        # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
