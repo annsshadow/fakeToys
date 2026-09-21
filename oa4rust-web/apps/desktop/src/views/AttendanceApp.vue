@@ -8,6 +8,7 @@
         <button class="eb" :disabled="exporting" @click="exportData">{{ exporting ? '导出中…' : '📤 导出' }}</button>
         <button class="eb" @click="loadAttOverview">📊 汇总</button>
         <button class="eb" @click="loadAttOrg">🏢 按单位/同步</button>
+        <button class="eb" @click="loadV2Meta">⚙️ v2配置/控件/请假模板</button>
       </div>
       <div v-if="attOverviewText" class="att-note">{{ attOverviewText }}</div>
     </div>
@@ -225,6 +226,20 @@ async function exportData() {
   }
 }
 const attOverviewText = ref('')
+async function loadV2Meta() {
+  try {
+    // 消费 attendance v2 三条真实路由：全局配置 / 我的控件 / 请假模板
+    const [config, controls, leave] = await Promise.all([
+      api.get('/api/attendance/assemble/control/v2/config'),
+      api.get('/api/attendance/assemble/control/v2/my/controls'),
+      api.get('/api/attendance/assemble/control/v2/leave/template'),
+    ])
+    const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    attOverviewText.value = `v2配置 ${cnt(config)} / 我的控件 ${cnt(controls)} / 请假模板 ${cnt(leave)}`
+  } catch (e: any) {
+    toast.error('加载 v2 配置失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadAttOrg() {
   try {
     // GET attendancedetail/filter/list/topUnit + filter/list/unit + dingding/sync/list
