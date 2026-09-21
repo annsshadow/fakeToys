@@ -4,7 +4,7 @@
 
 ### 1.1 项目架构
 ```
-ai/
+augmentor/
 ├── augmentor/          # 核心增强包（Python）
 │   ├── models/         # 模型后端
 │   ├── data/           # 数据处理
