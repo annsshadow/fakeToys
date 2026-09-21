@@ -3,7 +3,11 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 98 # rev98（2026-09-21 G5：组织-控制 群组/身份/角色 拼音首字母索引）：
+rev: 99 # rev99（2026-09-21 G5：组织-个人 内部邮件数/标题/注册方式）：
+       # Personal.vue 认证卡片补「内部邮件/注册方式」按钮，消费 personal person/exmail/new/count + exmail/list/title/passive + regist/mode 共 3 条真实路由；全局消费 543→546（546/4638=11.8%）。
+       # 契约回源码核验：exmail_new_count/list_title_passive 取会话 session_manager、regist_mode 无参常量，均无写、空库安全。组织-个人域缺口 105→102。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev98 # rev98（2026-09-21 G5：组织-控制 群组/身份/角色 拼音首字母索引）：
        # OrgViewer.vue 补「拼音首字母索引」按钮，消费 org control group/list/pinyininitial + identity/list/pinyininitial + role/list/pinyininitial 共 3 条真实路由；全局消费 540→543（543/4638=11.7%）。
        # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。组织-控制域缺口 142→139。
        # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
