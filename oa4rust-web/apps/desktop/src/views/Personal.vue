@@ -75,6 +75,7 @@
       <h3>登录方式 / 账户绑定</h3>
       <button class="save-btn ghost" @click="loadAuthMeta">查看</button>
       <button class="save-btn ghost" @click="loadOauthConfig">OAuth 配置</button>
+      <button class="save-btn ghost" @click="loadMailMeta">内部邮件/注册方式</button>
       <div v-if="authMetaText" class="auth-note">{{ authMetaText }}</div>
     </div>
 
@@ -190,6 +191,22 @@ function saveSignature(): void {
 
 interface SigMgr { id: string; name?: string; personName?: string }
 const authMetaText = ref('')
+async function loadMailMeta() {
+  try {
+    // 消费 personal 三条真实路由：内部邮件新邮件数 / 标题列表(被动) / 注册方式
+    const [count, titles, regist] = await Promise.all([
+      api.get('/api/person/exmail/new/count'),
+      api.get('/api/person/exmail/list/title/passive'),
+      api.get('/api/person/regist/mode'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    const cnt = (count as any)?.data
+    const cntText = typeof cnt === 'number' ? cnt : (cnt ?? '—')
+    authMetaText.value = `新邮件 ${cntText} · 邮件标题 ${n(titles)} · 注册方式 ${(regist as any)?.data ? '已配置' : '—'}`
+  } catch (e: any) {
+    toast.error('加载邮件信息失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadOauthConfig() {
   try {
     // GET org/auth oauth/qywx/config + oauth/dingding/config + captchaRSAPublicKey —— 企微/钉钉 OAuth 配置/验证码公钥
