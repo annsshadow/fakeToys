@@ -15,13 +15,30 @@ logger = logging.getLogger(__name__)
 
 
 class ExportFormat(Enum):
-    """导出格式"""
+    """导出格式枚举（全包唯一来源）
+
+    `augmentor/export.py` 曾经**另有一份同名枚举**（6 个成员），而
+    `augmentor/__init__.py` 导出的是这一份（13 个成员）。两份枚举的值大部分重叠，
+    但 `Enum.__call__` 按**成员身份**匹配（`cls._value2member_map_`），
+    于是公开名 `augmentor.ExportFormat` 的成员传给 `pipeline.export_dataset`
+    时，即使值完全一致也会被拒：
+
+        >>> ExportFormat.CHATML          # 来自本模块
+        >>> Exporter.export(items, p, ExportFormat.CHATML)
+        ValueError: <ExportFormat.CHATML: 'chatml'> is not a valid ExportFormat
+
+    现在 `augmentor/export.py` 直接复用本枚举，不再有第二份定义。
+    """
     JSON = "json"
     JSONL = "jsonl"
     CSV = "csv"
     TSV = "tsv"
     ALPACA = "alpaca"
     SHAREGPT = "sharegpt"
+    # 历史拼写（带下划线）。与 SHAREGPT **同值**，因此是别名而非独立成员：
+    # 迭代 ExportFormat 只产出 SHAREGPT，格式清单的长度不受影响。
+    # 保留它是因为 augmentor/export.py 曾用这个拼写，外部代码可能仍在引用。
+    SHARE_GPT = "sharegpt"
     CHATML = "chatml"
     LLAMA_FACTORY = "llama_factory"
     VICUNA = "vicuna"

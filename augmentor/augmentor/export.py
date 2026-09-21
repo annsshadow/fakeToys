@@ -5,20 +5,34 @@ import csv
 import logging
 from typing import List, Dict, Optional
 from pathlib import Path
-from enum import Enum
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+from .export_enhanced import EnhancedExporter, ExportFormat, ExportOptions
 
 logger = logging.getLogger(__name__)
 
+# Exporter **原生实现**的格式。其余成员（json / tsv / vicuna / belle / openai /
+# huggingface / raw）由 `Exporter.export` 委托给 EnhancedExporter 完成。
+#
+# 这个元组刻意**不等于**整个 ExportFormat：
+#   * `export_all_formats` 迭代它，从而保持「一次导出 6 个文件」的既有行为。
+#     若改为迭代 13 个成员的枚举，`pipeline.export_dataset(formats=None)` 与
+#     CLI 的 export 命令会突然产出 13 个文件，属破坏性变更；
+#   * `preview` 也以它为支持边界（预览只实现了这 6 种转换）。
+NATIVE_FORMATS: tuple = (
+    ExportFormat.JSONL,
+    ExportFormat.LLAMA_FACTORY,
+    ExportFormat.ALPACA,
+    ExportFormat.SHARE_GPT,
+    ExportFormat.CHATML,
+    ExportFormat.CSV,
+)
 
-class ExportFormat(Enum):
-    """导出格式枚举"""
-    JSONL = "jsonl"
-    LLAMA_FACTORY = "llama_factory"
-    ALPACA = "alpaca"
-    SHARE_GPT = "sharegpt"
-    CHATML = "chatml"
-    CSV = "csv"
+# 导出文件的扩展名。TSV 在枚举统一后变得可达，不能再落进 ".json" 兜底。
+_FORMAT_EXTENSIONS: Dict[str, str] = {
+    ExportFormat.CSV.value: ".csv",
+    ExportFormat.TSV.value: ".tsv",
+}
 
 
 class Exporter:
@@ -202,15 +216,28 @@ class Exporter:
         Args:
             items: 数据列表
             output_path: 输出文件路径
-            format: 导出格式，为 None 时使用默认格式
+            format: 导出格式，可传字符串（如 "jsonl"）或 `ExportFormat` 成员；
+                    为 None 时使用默认格式
         
         Returns:
-            实际使用的格式
+            实际使用的格式（字符串）
         """
         export_format = ExportFormat(format) if format else self.default_format
         
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        if export_format not in NATIVE_FORMATS:
+            # 没有原生实现的格式委托给 EnhancedExporter（它覆盖全部 13 种）。
+            # 不能只靠下面的 if/elif 链兜底：那些分支全不命中时会**静默地不写
+            # 任何文件**然后返回成功，比直接报错更难排查。
+            EnhancedExporter().export(
+                items, str(output_path), ExportOptions(format=export_format)
+            )
+            logger.info(
+                f"导出 {len(items)} 条数据到 {output_path}，格式: {export_format.value}"
+            )
+            return export_format.value
         
         if export_format == ExportFormat.JSONL:
             lines = self._convert_to_jsonl(items)
@@ -256,6 +283,9 @@ class Exporter:
                           use_parallel: bool = True) -> Dict[str, str]:
         """导出所有格式（优化版）
         
+        导出的是 `NATIVE_FORMATS`（6 种），**不是**整个 `ExportFormat` 枚举——
+        枚举统一后含 13 个成员，全量导出会让调用方的产物数量翻倍。
+        
         Args:
             items: 数据列表
             output_dir: 输出目录
@@ -271,24 +301,20 @@ class Exporter:
         results = {}
         
         def export_single(fmt):
-            if fmt == ExportFormat.CSV:
-                ext = ".csv"
-            else:
-                ext = ".json"
-            
+            ext = _FORMAT_EXTENSIONS.get(fmt.value, ".json")
             output_path = output_dir / f"{base_name}_{fmt.value}{ext}"
             self.export(items, str(output_path), fmt.value)
             return fmt.value, str(output_path)
         
         if not use_parallel:
             # 串行处理
-            for fmt in ExportFormat:
+            for fmt in NATIVE_FORMATS:
                 fmt_name, path = export_single(fmt)
                 results[fmt_name] = path
         else:
             # 并行处理
             with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-                futures = [executor.submit(export_single, fmt) for fmt in ExportFormat]
+                futures = [executor.submit(export_single, fmt) for fmt in NATIVE_FORMATS]
                 
                 for future in as_completed(futures):
                     try:
@@ -325,7 +351,7 @@ class Exporter:
             ExportFormat(fmt)
 
         def export_single(name: str, items: List[Dict], fmt: str):
-            ext = ".csv" if fmt == ExportFormat.CSV.value else ".json"
+            ext = _FORMAT_EXTENSIONS.get(fmt, ".json")
             output_path = output_dir_path / f"{name}_{fmt}{ext}"
             self.export(items, str(output_path), fmt)
             return name, fmt, str(output_path)

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from augmentor.export import Exporter, ExportFormat
+from augmentor.export import Exporter, ExportFormat, NATIVE_FORMATS
 
 
 class TestFormatConversion:
@@ -137,13 +137,18 @@ class TestExportAllFormats:
     """全格式导出"""
 
     def test_exports_every_format(self, tmp_path):
-        """export_all_formats 必须覆盖所有支持的格式"""
+        """export_all_formats 必须覆盖全部原生格式
+
+        注意断言的是 `NATIVE_FORMATS`（6 种）而不是整个 `ExportFormat` 枚举
+        （13 种）：枚举统一后两者不再相等，而 export_all_formats 刻意只导出原生
+        实现的那 6 种，以免调用方产物数量翻倍。
+        """
         exporter = Exporter()
         results = exporter.export_all_formats(
             [{"instruction": "问题", "output": "回答"}], str(tmp_path)
         )
 
-        assert set(results.keys()) == {f.value for f in ExportFormat}
+        assert set(results.keys()) == {f.value for f in NATIVE_FORMATS}
         for path in results.values():
             assert Path(path).exists()
 
@@ -153,7 +158,7 @@ class TestExportAllFormats:
         results = exporter.export_all_formats(
             [{"instruction": "问题", "output": "回答"}], str(tmp_path), use_parallel=False
         )
-        assert len(results) == len(ExportFormat)
+        assert len(results) == len(NATIVE_FORMATS)
 
 
 class TestExportBatch:
@@ -451,7 +456,7 @@ class TestExportContractGaps:
         )
 
         assert Path(results["csv"]).suffix == ".csv"
-        for fmt in ExportFormat:
+        for fmt in NATIVE_FORMATS:
             if fmt is not ExportFormat.CSV:
                 assert Path(results[fmt.value]).suffix == ".json", fmt
 
@@ -502,7 +507,7 @@ class TestExportContractGaps:
         results = Exporter().export_all_formats(
             [{"instruction": "q", "output": "a"}], str(tmp_path), use_parallel=False
         )
-        assert len(results) == len(ExportFormat)
+        assert len(results) == len(NATIVE_FORMATS)
 
     def test_batch_serial_mode_does_not_start_thread_pool(self, tmp_path, monkeypatch):
         """export_batch 的串行模式同样不得创建线程池"""
@@ -544,3 +549,87 @@ class TestExportContractGaps:
             "历史问题",
             "当前问题",
         ]
+
+
+class TestExportFormatIsSingleEnum:
+    """导出格式枚举必须全包唯一
+
+    历史上 `augmentor/export.py` 与 `augmentor/export_enhanced.py` 各定义一份同名
+    `ExportFormat`，而 `augmentor/__init__.py` 导出的是后者。两份枚举的值大部分
+    重叠，但 `Enum.__call__` 按**成员身份**匹配（`cls._value2member_map_`），
+    于是公开名 `augmentor.ExportFormat` 的成员传给 `Exporter` 时，**即使值完全
+    一致**也被拒：
+
+        ValueError: <ExportFormat.CHATML: 'chatml'> is not a valid ExportFormat
+
+    实测修复前 13 个成员**没有一个**能用，用户唯一可用的写法是裸字符串。
+    下面的用例分别锁住「定义只有一份」「公开成员能真的被消费」「历史拼写仍在」。
+    """
+
+    def test_single_definition_across_package(self):
+        """三个入口必须是同一个枚举类（重新分裂成两份就会红）"""
+        import augmentor
+        import augmentor.export as export_module
+        import augmentor.export_enhanced as enhanced_module
+
+        assert augmentor.ExportFormat is export_module.ExportFormat
+        assert augmentor.ExportFormat is enhanced_module.ExportFormat
+
+    def test_public_members_are_accepted_by_exporter(self, tmp_path):
+        """公开枚举成员必须能被 Exporter 直接消费（值相同的更要能）"""
+        import augmentor
+
+        for member in augmentor.ExportFormat:
+            out = tmp_path / f"{member.value}.out"
+            used = Exporter().export(
+                [{"instruction": "q", "output": "a"}], str(out), member
+            )
+            assert used == member.value
+            assert out.is_file(), member
+
+    def test_legacy_share_gpt_spelling_still_works(self, tmp_path):
+        """历史拼写 SHARE_GPT（带下划线）必须仍然可用
+
+        它是 SHAREGPT 的同值别名而非独立成员——迭代枚举不应因此多出一项。
+        """
+        assert ExportFormat.SHARE_GPT is ExportFormat.SHAREGPT
+        assert sum(1 for f in ExportFormat if f.value == "sharegpt") == 1
+
+        out = tmp_path / "sharegpt.json"
+        assert (
+            Exporter().export(
+                [{"instruction": "q", "output": "a"}], str(out), ExportFormat.SHARE_GPT
+            )
+            == "sharegpt"
+        )
+        assert out.is_file()
+
+    def test_all_formats_writes_exactly_the_native_set(self, tmp_path):
+        """export_all_formats 只写原生 6 种，不因枚举扩容而变成 13 个文件
+
+        枚举统一后 `ExportFormat` 有 13 个成员，若 export_all_formats 直接迭代它，
+        调用方（pipeline / CLI）的产物数量会从 6 变 13——属破坏性变更。
+        """
+        results = Exporter().export_all_formats(
+            [{"instruction": "q", "output": "a"}], str(tmp_path)
+        )
+
+        assert set(results) == {f.value for f in NATIVE_FORMATS}
+        assert len(results) < len(list(ExportFormat))
+
+    def test_non_native_format_delegates_instead_of_silently_skipping(self, tmp_path):
+        """非原生格式必须真的写出文件，而不是静默返回成功
+
+        `Exporter.export` 的 if/elif 链只覆盖原生 6 种。枚举统一后 openai 等 7 种
+        变成可达，若不加委托分支，它们会全部落空、**一个文件都不写**却返回
+        `export_format.value`——比直接报错更难排查。
+        """
+        out = tmp_path / "openai.json"
+        assert (
+            Exporter().export(
+                [{"instruction": "q", "output": "a"}], str(out), ExportFormat.OPENAI
+            )
+            == "openai"
+        )
+        assert out.is_file()
+        assert json.loads(out.read_text(encoding="utf-8"))
