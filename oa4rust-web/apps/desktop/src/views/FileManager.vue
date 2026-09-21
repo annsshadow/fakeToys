@@ -7,6 +7,7 @@
         <button class="action-btn" @click="loadTopAttachments">📎 顶层附件</button>
         <button class="action-btn" @click="loadFileMeta">🗄️ 附件2/编辑器</button>
         <button class="action-btn" @click="loadFolderShare">📂 文件夹/分享/容量</button>
+        <button class="action-btn" @click="loadShareScopes">🔗 文件夹2/我的分享/收到分享</button>
         <button class="action-btn" @click="toggleView">{{ viewType === 'grid' ? '☰ 列表' : '⊞ 网格' }}</button>
       </div>
     </div>
@@ -118,6 +119,20 @@ async function loadFileMeta(): Promise<void> {
     toast.success(`附件2 ${n(att2)} / 编辑器 ${n(editors)}`)
   } catch (e: any) {
     toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadShareScopes(): Promise<void> {
+  try {
+    // 消费 file 三条真实路由：顶层文件夹2 / 我发出的分享 / 收到的分享
+    const [folder2, myShares, toMe] = await Promise.all([
+      api.get('/api/file/folder2/list/top'),
+      api.get('/api/share/list/my'),
+      api.get('/api/share/list/to/me'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    toast.success(`文件夹2 ${n(folder2)} / 我的分享 ${n(myShares)} / 收到分享 ${n(toMe)}`)
+  } catch (e: any) {
+    toast.error('加载分享失败: ' + (e?.message ?? ''))
   }
 }
 async function loadFolderShare(): Promise<void> {
