@@ -171,6 +171,18 @@ class WebConfig:
     static_dir: str = "web/dist"
     cors_origins: list = field(default_factory=lambda: ["*"])
     cors_credentials: bool = True
+    # REST API 允许访问的目录白名单。客户端传入的文件路径必须落在其中某个根目录内，
+    # 否则返回 403。默认 ["."] 即进程工作目录；相对路径按工作目录解析。
+    # 环境变量 AUGMENTOR_DATA_ROOTS（os.pathsep 分隔）优先级更高。
+    data_roots: list = field(default_factory=lambda: ["."])
+    # 滑动窗口限流：窗口内单客户端最大请求数。0 表示关闭限流。
+    rate_limit_max_requests: int = 300
+    # 限流窗口长度（秒）
+    rate_limit_window_seconds: float = 60.0
+    # 免限流路径（前缀匹配）
+    rate_limit_exempt_paths: list = field(
+        default_factory=lambda: ["/api/health", "/docs", "/redoc", "/openapi.json"]
+    )
 
 
 @dataclass
@@ -348,7 +360,13 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
                 'enabled': False, 'frameworks': ['langchain', 'llamaindex']
             }),
             ('web', WebConfig, {
-                'port': 8000, 'host': '0.0.0.0', 'static_dir': 'web/dist'
+                'port': 8000, 'host': '0.0.0.0', 'static_dir': 'web/dist',
+                'data_roots': ['.'],
+                'rate_limit_max_requests': 300,
+                'rate_limit_window_seconds': 60.0,
+                'rate_limit_exempt_paths': [
+                    '/api/health', '/docs', '/redoc', '/openapi.json'
+                ],
             }),
             ('logging', LoggingConfig, {
                 'level': 'INFO', 'file': 'app.log',

@@ -1,9 +1,9 @@
 """配置与模型 API 路由"""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from ..deps import get_pipeline
+from ..deps import get_pipeline, verify_api_key
 
 router = APIRouter(tags=["config"])
 
@@ -60,7 +60,9 @@ async def get_config():
 
 
 @router.post("/api/config")
-async def update_config(request: ConfigUpdateRequest):
+async def update_config(
+    request: ConfigUpdateRequest, _auth: None = Depends(verify_api_key)
+):
     """更新配置并持久化到 config.yaml"""
     try:
         from augmentor.config import save_config

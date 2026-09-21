@@ -305,6 +305,27 @@ web:
   
   # 静态文件目录
   static_dir: web/dist
+  
+  # REST API 允许访问的目录白名单。
+  # 客户端传入的文件/目录路径必须落在其中某个根目录内，否则返回 403；
+  # 相对路径按进程工作目录解析。收紧到 ["data"] 可把 API 的可见范围限制在数据目录内。
+  # 环境变量 AUGMENTOR_DATA_ROOTS（os.pathsep 分隔）优先级高于此处。
+  data_roots:
+    - "."
+  
+  # 滑动窗口限流：窗口内单客户端（按 IP）最大请求数，0 表示关闭限流。
+  # 超限返回 429 并带 Retry-After 头。
+  rate_limit_max_requests: 300
+  
+  # 限流窗口长度（秒）
+  rate_limit_window_seconds: 60.0
+  
+  # 免限流路径（前缀匹配）。健康检查被容器探针高频调用，必须豁免。
+  rate_limit_exempt_paths:
+    - /api/health
+    - /docs
+    - /redoc
+    - /openapi.json
 
 # 日志配置
 logging:

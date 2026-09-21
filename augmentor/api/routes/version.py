@@ -2,10 +2,10 @@
 
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from ..deps import get_pipeline, read_json_file, run_in_thread, require_file
+from ..deps import get_pipeline, read_json_file, require_file, run_in_thread, verify_api_key
 
 router = APIRouter(tags=["version"])
 
@@ -45,7 +45,11 @@ async def list_versions():
 
 
 @router.post("/api/versions/create")
-async def create_version(filename: str, request: VersionCreateRequest):
+async def create_version(
+    filename: str,
+    request: VersionCreateRequest,
+    _auth: None = Depends(verify_api_key),
+):
     """创建新版本"""
     file_path = require_file(filename)
 
@@ -126,7 +130,9 @@ async def get_version_data(version_id: str):
 
 
 @router.post("/api/versions/{version_id}/rollback")
-async def rollback_version(version_id: str):
+async def rollback_version(
+    version_id: str, _auth: None = Depends(verify_api_key)
+):
     """回滚到指定版本"""
     try:
         p = get_pipeline()
@@ -137,7 +143,9 @@ async def rollback_version(version_id: str):
 
 
 @router.delete("/api/versions/{version_id}")
-async def delete_version(version_id: str):
+async def delete_version(
+    version_id: str, _auth: None = Depends(verify_api_key)
+):
     """删除版本"""
     try:
         p = get_pipeline()
