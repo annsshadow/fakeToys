@@ -2,19 +2,20 @@ import { useState, useEffect, useCallback } from 'react'
 import { Card, Select, Row, Col, Statistic, Table, Tag, Button, Space, message } from 'antd'
 import ReactECharts from 'echarts-for-react'
 import { getDataFiles, analyzeData, cleanData, runBenchmark } from '../services/api'
+import type { AnalyzeResponse, BenchmarkResponse, CleanResponse } from '../types/api'
 
 export default function Analysis() {
   const [files, setFiles] = useState<string[]>([])
   const [selectedFile, setSelectedFile] = useState('')
-  const [analysis, setAnalysis] = useState<any>(null)
-  const [cleaning, setCleaning] = useState<any>(null)
-  const [benchmark, setBenchmark] = useState<any>(null)
+  const [analysis, setAnalysis] = useState<AnalyzeResponse | null>(null)
+  const [cleaning, setCleaning] = useState<CleanResponse | null>(null)
+  const [benchmark, setBenchmark] = useState<BenchmarkResponse | null>(null)
   const [loading, setLoading] = useState(false)
 
   const loadFiles = useCallback(async () => {
     try {
       const result = await getDataFiles()
-      setFiles(result.files.map((f: any) => f.name))
+      setFiles(result.files.map(f => f.name))
     } catch {
       console.error('加载文件列表失败')
     }

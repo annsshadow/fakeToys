@@ -1,22 +1,21 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Table, Button, Space, message, Modal, Input, Pagination, Upload } from 'antd'
+import {
+  Table,
+  Button,
+  Space,
+  message,
+  Modal,
+  Input,
+  Pagination,
+  Upload,
+  type TableColumnsType,
+} from 'antd'
 import { DownloadOutlined, DeleteOutlined, EditOutlined, UploadOutlined, PlayCircleOutlined } from '@ant-design/icons'
 import { getDataFiles, loadData, updateDataItem, deleteDataItem, exportData, uploadData } from '../services/api'
-
-interface DataItem {
-  instruction: string
-  input: string
-  output: string
-}
-
-interface FileInfo {
-  name: string
-  path: string
-  size: number
-}
+import type { DataFileInfo, DataItem } from '../types/api'
 
 export default function DataManagement() {
-  const [files, setFiles] = useState<FileInfo[]>([])
+  const [files, setFiles] = useState<DataFileInfo[]>([])
   const [selectedFile, setSelectedFile] = useState<string>('')
   const [data, setData] = useState<DataItem[]>([])
   const [total, setTotal] = useState(0)
@@ -140,11 +139,11 @@ export default function DataManagement() {
     })
   }
 
-  const columns = [
+  const columns: TableColumnsType<DataItem> = [
     {
       title: '索引',
       width: 60,
-      render: (_: any, __: any, index: number) => (page - 1) * pageSize + index + 1
+      render: (_, __, index) => (page - 1) * pageSize + index + 1
     },
     {
       title: '问题 (instruction)',
@@ -161,7 +160,7 @@ export default function DataManagement() {
     {
       title: '操作',
       width: 120,
-      render: (_: any, record: DataItem, index: number) => (
+      render: (_, record, index) => (
         <Space>
           <Button
             type="link"

@@ -10,11 +10,20 @@ import {
   Form,
   Select,
   Input,
-  List
+  List,
+  type TableColumnsType
 } from 'antd'
 import DataList from '../components/DataList'
 import ExportDialog from '../components/ExportDialog'
 import { getExportFormats, previewExport, batchExport } from '../services/api'
+import type { ExportPreviewResponse } from '../types/api'
+
+/** 批量导出表单的字段，与各 `Form.Item` 的 `name` 一一对应 */
+interface BatchExportFormValues {
+  files: string[]
+  formats: string[]
+  outputDir: string
+}
 
 /**
  * 导出中心
@@ -26,11 +35,14 @@ export default function Export() {
   const [file, setFile] = useState('')
   const [formats, setFormats] = useState<string[]>([])
   const [previewFormat, setPreviewFormat] = useState('jsonl')
-  const [preview, setPreview] = useState<any>(null)
+  const [preview, setPreview] = useState<ExportPreviewResponse | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [batchForm] = Form.useForm()
-  const [batchResult, setBatchResult] = useState<any>(null)
+  const [batchResult, setBatchResult] = useState<Record<
+    string,
+    Record<string, string>
+  > | null>(null)
 
   useEffect(() => {
     getExportFormats()
@@ -53,10 +65,10 @@ export default function Export() {
     }
   }
 
-  const handleBatch = async (values: any) => {
+  const handleBatch = async (values: BatchExportFormValues) => {
     setLoading(true)
     try {
-      const datasets = (values.files as string[]).reduce(
+      const datasets = values.files.reduce(
         (acc: Record<string, string>, name: string) => {
           acc[name.replace(/\.[^.]+$/, '')] = name
           return acc
@@ -73,13 +85,14 @@ export default function Export() {
     }
   }
 
-  const previewColumns = preview?.converted_data?.length
+  const previewColumns: TableColumnsType<Record<string, unknown>> = preview?.converted_data
+    ?.length
     ? Object.keys(preview.converted_data[0]).map(key => ({
         title: key,
         dataIndex: key,
         key,
         ellipsis: true,
-        render: (value: any) =>
+        render: (value: unknown) =>
           typeof value === 'object' ? JSON.stringify(value) : String(value)
       }))
     : []
@@ -104,7 +117,9 @@ export default function Export() {
           </Button>
         </Space>
 
-        {preview?.warnings?.length > 0 && (
+        {/* 写成 `preview && …` 而不是 `preview?.warnings?.length > 0`：
+            后者收窄不了 `preview`，里面的 `preview.warnings.map` 会报「可能为 null」。 */}
+        {preview && preview.warnings.length > 0 && (
           <Alert
             type="warning"
             showIcon
@@ -112,7 +127,7 @@ export default function Export() {
             message="导出前请留意以下问题"
             description={
               <ul style={{ margin: 0, paddingLeft: 18 }}>
-                {preview.warnings.map((warning: string, index: number) => (
+                {preview.warnings.map((warning, index) => (
                   <li key={index}>{warning}</li>
                 ))}
               </ul>
@@ -178,7 +193,7 @@ export default function Export() {
             bordered
             header={<strong>导出结果</strong>}
             dataSource={Object.entries(batchResult)}
-            renderItem={([name, files]: [string, any]) => (
+            renderItem={([name, files]: [string, Record<string, string>]) => (
               <List.Item>
                 <Space wrap>
                   <Tag color="blue">{name}</Tag>

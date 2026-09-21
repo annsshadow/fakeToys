@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Card, Select, Table, Input, Space, Tag, message } from 'antd'
 import { getDataFiles, loadData } from '../services/api'
+import type { DataItem } from '../types/api'
 
 interface DataListProps {
   /** 当前选中的数据集文件名 */
@@ -25,14 +26,14 @@ export default function DataList({
   showPreview = true
 }: DataListProps) {
   const [files, setFiles] = useState<string[]>([])
-  const [items, setItems] = useState<any[]>([])
+  const [items, setItems] = useState<DataItem[]>([])
   const [total, setTotal] = useState(0)
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     getDataFiles()
-      .then(result => setFiles(result.files.map((f: any) => f.name)))
+      .then(result => setFiles(result.files.map(f => f.name)))
       .catch(() => message.error('加载数据文件列表失败'))
   }, [])
 

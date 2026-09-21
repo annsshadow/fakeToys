@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Card, Button, Space, Select, Switch, message, Progress, Tag } from 'antd'
 import { RocketOutlined } from '@ant-design/icons'
 import { startAugmentation, getProgress, getDataFiles } from '../services/api'
+import type { AugmentProgressDetail } from '../types/api'
 
 export default function Augmentation() {
   const [files, setFiles] = useState<string[]>([])
@@ -11,7 +12,7 @@ export default function Augmentation() {
   const [useDedup, setUseDedup] = useState(true)
   const [useCheckpoint, setUseCheckpoint] = useState(true)
   const [running, setRunning] = useState(false)
-  const [progress, setProgress] = useState<any>(null)
+  const [progress, setProgress] = useState<AugmentProgressDetail | null>(null)
 
   useEffect(() => {
     loadFiles()
@@ -22,7 +23,7 @@ export default function Augmentation() {
   const loadFiles = async () => {
     try {
       const result = await getDataFiles()
-      setFiles(result.files.map((f: any) => f.name))
+      setFiles(result.files.map(f => f.name))
     } catch {
       message.error('加载文件列表失败')
     }
@@ -31,7 +32,10 @@ export default function Augmentation() {
   const checkProgress = async () => {
     try {
       const result = await getProgress()
-      if (result && result.status !== 'no_checkpoint') {
+      // 后端有两种响应：`{ status: 'no_checkpoint' }`，或完整进度（**不带** `status`）。
+      // 所以判别只能用 `task_id` 在不在——读 `status` 既收窄不了类型，
+      // 也不比这个判断更贴合后端实现。
+      if ('task_id' in result) {
         setProgress(result)
         if (result.progress >= 1) {
           setRunning(false)

@@ -1,10 +1,20 @@
 import { useEffect, useState } from 'react'
 import { Card, Form, Select, Input, Button, Space, message, Alert } from 'antd'
 import { getDataFiles, startAugmentation, getProgress } from '../services/api'
+import type { AugmentProgress } from '../types/api'
 
 interface AugmentFormProps {
   /** 增强任务提交成功后的回调 */
   onSubmitted?: () => void
+}
+
+/** 表单字段，与各 `Form.Item` 的 `name` 一一对应 */
+interface AugmentFormValues {
+  inputFile: string
+  outputFile: string
+  useQuality: boolean
+  useDedup: boolean
+  useCheckpoint: boolean
 }
 
 const ENABLE_OPTIONS = [
@@ -22,11 +32,11 @@ export default function AugmentForm({ onSubmitted }: AugmentFormProps) {
   const [form] = Form.useForm()
   const [files, setFiles] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
-  const [progress, setProgress] = useState<any>(null)
+  const [progress, setProgress] = useState<AugmentProgress | null>(null)
 
   useEffect(() => {
     getDataFiles()
-      .then(result => setFiles(result.files.map((f: any) => f.name)))
+      .then(result => setFiles(result.files.map(f => f.name)))
       .catch(() => message.error('加载数据文件列表失败'))
   }, [])
 
@@ -39,7 +49,7 @@ export default function AugmentForm({ onSubmitted }: AugmentFormProps) {
     return () => clearInterval(timer)
   }, [])
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: AugmentFormValues) => {
     setSubmitting(true)
     try {
       await startAugmentation(
@@ -108,7 +118,8 @@ export default function AugmentForm({ onSubmitted }: AugmentFormProps) {
         </Form.Item>
       </Form>
 
-      {progress && progress.status !== 'no_checkpoint' && (
+      {/* 无进行中任务时后端只返回 `{ status: 'no_checkpoint' }`，靠 `task_id` 判别 */}
+      {progress && 'task_id' in progress && (
         <Alert
           style={{ marginTop: 16 }}
           type="info"

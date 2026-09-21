@@ -725,7 +725,7 @@ T0.1–T0.8 全部落地。**偏差项必须显式记录，不能当作"按计�
 | T1.12 | F10 | 修正 `docs/ARCHITECTURE.md` 的 4 处数字漂移；CI 加版本一致性检查 | `check-version-consistency` step 通过 |
 | ~~T1.13~~ | F11 | ~~新增 `augmentor/.gitignore`~~ → **取消**（根 `.gitignore` 已覆盖，见 F11 复核） | — |
 | T1.14 | F11 | `git rm --cached` 移出冗余数据（`train_data*.json`、`bak/`、重复的 `enhanceTXT.py`）（**需用户逐项确认**） | `git status` 干净且无数据丢失 |
-| T1.15 | F9 | **新增**：前端 API 响应类型层 —— 为约 24 个端点定义响应接口，消除 `src/pages` / `src/components` 里约 30 处 `useState<any>` | `no-explicit-any` 在页面/组件层恢复为 `error` |
+| T1.15 | F9 | **新增**：前端 API 响应类型层 —— ~~为约 24 个端点定义响应接口，消除 `src/pages` / `src/components` 里约 30 处 `useState<any>`~~ → **实测 36 个端点、42 处 `any`**（其中 22 处是 `useState<any>`），类型依据是 `TestClient` 打真实响应而非手抄路由 | `no-explicit-any` 在页面/组件层恢复为 `error` → **达成**（豁免收回，与 `src/**` 统一） |
 
 ### Phase 1 偏差登记
 
@@ -741,10 +741,13 @@ T0.1–T0.8 全部落地。**偏差项必须显式记录，不能当作"按计�
 | T1.8 | `build` 加 `tsc -b` | **`tsc --noEmit && vite build`** | 实测 `tsc -b` 会在仓库根生成 `vite.config.js`，**遮蔽 `vite.config.ts`**（vite 优先解析 `.js`）——这是个真实隐患；还会留下 `tsconfig*.tsbuildinfo`。`tsc --noEmit` 与既有 CI 步骤一致且零产物 |
 | T1.9 | ESLint 9 | **ESLint 10.11** | 当前最新稳定版；`typescript-eslint` 8.70 的 peer 已声明支持 `^10.0.0` |
 | T1.9 | 用 `reactHooks.configs.flat.recommended` | **只启用经典两规则**（`rules-of-hooks` / `exhaustive-deps`） | v7 的 recommended 额外含一批 **React Compiler 专用**规则（immutability / purity / static-components / preserve-manual-memoization / set-state-in-effect）。本项目用 React 18、无 `babel-plugin-react-compiler`，那 10 处 immutability 报的是 "prevents the compiler from…"（编译器无法优化）而非缺陷 |
-| T1.9 | "`npm run lint` 零 warning" | **前提不成立**：首次运行 91 处问题（89 error / 2 warning）。修掉 45 处，对 `no-explicit-any` 在页面/组件层**显式豁免**并登记 T1.15 | 44 处 `any` 里约 30 处是 `useState<any>` 承载 API 响应载荷；消除它们需先建响应类型层，属独立工程，硬塞进本次改动会把可能错误的类型假设固化下来 |
+| T1.9 | "`npm run lint` 零 warning" | **前提不成立**：首次运行 91 处问题（89 error / 2 warning）。修掉 45 处，对 `no-explicit-any` 在页面/组件层**显式豁免**并登记 T1.15（T1.15 完成后豁免已收回） | 42 处 `any`（当时误记为 44）里 22 处是 `useState<any>` 承载 API 响应载荷；消除它们需先建响应类型层，属独立工程，硬塞进本次改动会把可能错误的类型假设固化下来 |
 | T1.9 | 引入 Prettier | 引入配置与 `format` / `format:check` 脚本，但**不接入 CI 门禁** | 既有 18 个文件从未格式化，`format:check` 必然失败；强行 `--write` 会制造一个淹没真实改动的巨大 diff（违反"外科手术式改动"） |
 | T1.7 | 子命令 44 → **≤ 30** | **44 → 36**（帮助列表 36 行；usage choices 44 = 36 + 8 个 alias） | ≤30 这个数字来自 F8 的「9 组重复命令」，而规划自己的三分类表已推翻它：9 组里 1 组（`quality` / `quality-report`）不是重复，剩下 8 组各并 1 对 → 44 − 8 = 36 是**「只合并真重复」的上限**。要凑到 30 得再合并 6 个并非重复的命令，那等于删能力（F8 自己警告过）。按 36 收口，不为对齐数字而合并 |
 | T1.7 | 旧名保留弃用别名 | 用 argparse `aliases=` 注册成**同一个解析器对象**（`sub.choices[旧名] is sub.choices[规范名]`），`main()` 归一化并打印提示 | 若只在 handler 里 `if args.command == 旧名` 兜底，两套名字会各自演化；alias 从解析层就绑定同一对象，配一条测试守住 |
+| T1.15 | "约 24 个端点 / 约 30 处 `useState<any>`" | **36 个端点 / 42 处 `any`**（其中 22 处 `useState<any>`） | 两个数字都是估的：端点数来自 `ls api/routes/` 的粗算（漏了同一路由文件里的多个端点），`any` 数是估读。实测才是证据 —— 顺带更正 T1.9 那行写的「44 处」：44 是把注释里出现的 `any` 与 `unknown` 一并匹配进来的粗结果，真值是 42 |
+| T1.15 | 任务范围仅「消除 `any`」 | 顺带修掉 `QualityChart` 的**页面崩溃**与 `Settings` 的两处空值缺陷 | 给 `QualityChart` 的 `report` 标注类型，就必须诚实写出 `score_histogram` 的真实形态（桶名→条数的字典），一写就暴露 `.labels` / `.values` 不存在。**不修就无法完成类型化** —— 这反过来印证了 F9 当初的判断：没有类型层时这些错会被 `any` 一直盖住 |
+| T1.15 | 未规划 | `processMultimodal` 的 `text` 由必填改可选 | 类型层要求把「可能为 `undefined`」如实表达出来；后端 `MultimodalRequest.text` 默认 `""`、表单也标「可选」，原签名与之不符 |
 
 ### Phase 1 已完成部分（2026-09-21）
 
@@ -1206,16 +1209,96 @@ CI 的 `compileall -q augmentor api cli.py`、14 个集成测试的 `from cli im
 
 ---
 
+#### T1.15 — 前端 API 响应类型层（已完成）
+
+**做了什么**：
+
+| 产出 | 规模 |
+|------|------|
+| `web/src/types/api.ts`（新建） | 36 个端点的响应接口 + `DataItem` / `MutationResponse` / `CountDistribution` 等共用类型 |
+| `web/src/services/api.ts` | 35 个函数全部补返回类型（此前 `response.data` 是 `any`，所以每个函数隐式返回 `Promise<any>`） |
+| `web/src/pages` + `web/src/components` | 42 处 `any` → **0 处**（其中 22 处是 `useState<any>`） |
+| `web/eslint.config.js` | 页面/组件层的 `no-explicit-any: 'off'` 豁免**收回**，与 `src/**` 统一为 `error` |
+
+**类型从哪来 —— 这是本项的全部价值所在**：
+
+接口的**唯一依据**是对后端真实响应的探测，不是读 `api/routes/*.py` 的 `return {...}` 手抄。
+做法是用 `fastapi.testclient.TestClient` 打全部 36 个端点，把 JSON 渲染成 TS 风格的类型描述。
+三个不能手抄的理由：
+
+1. 部分字段来自 `to_dict()`（在 `augmentor/` 下，不在路由里），只看路由会漏；
+2. 同一端点可能返回不同形态 —— `/api/augment/progress` 在没有进行中的任务时只返回
+   `{status: 'no_checkpoint'}`，有任务时才返回完整进度，而且**完整形态里不带 `status`**；
+3. 手抄容易把「有时缺失」的字段写成必填，而那正是 TS 里最该标 `?` 的地方。
+
+首轮 30 个端点里有 6 个返回 404（`{filename}` 传裸文件名会按 cwd 解析），补测时传白名单内的
+**绝对路径**（`quote(path, safe="")`）才拿到真实形态。`get_progress` 的完整形态、
+`ImageInfo` / `AudioInfo` 这类只在真有媒体文件时才出现的结构，另从源码读齐。
+
+`/api/augment/progress` 的联合类型顺带改了收窄方式：原来判 `result.status !== 'no_checkpoint'`，
+但完整形态里没有 `status` 字段，判别只能用 `'task_id' in result`（等价且能收窄）。
+
+**顺带修掉的 1 个页面崩溃 + 3 处潜在缺陷**（都是类型层逼出来的，不是主动去找的）：
+
+1. **`QualityChart` 一点「生成报告」就白屏**（真实故障）。`augmentor/report.py: _build_charts`
+   里 `score_histogram` 是「桶名 → 条数」的**字典**，而组件按 `{labels, values}` 读：
+   `histogram.values` 恒为 `undefined`，`histogram.values.map(...)` 抛
+   `TypeError: Cannot read properties of undefined (reading 'map')`，把整个质量中心页打白。
+   同时 y 轴标着「占比」但数据是条数（原代码还乘了 100）。已改为按字典取
+   `Object.keys` / `Object.values`，y 轴改「样本数」。**同类误用全仓只此一处**（已 grep 确认）。
+   注意 `metric_radar` 确实是 `{labels, values}` —— 两个字段形态不同，混用就会踩这个坑。
+2. **`Settings` 在配置加载失败后一交互就抛异常**。原来是
+   `setConfig({ ...config, quality: { ...config.quality, … } })`，`config` 为 `null` 时
+   展开 `config.quality` 抛 `Cannot read properties of null`。改为函数式更新 +
+   `config` 为空时原样返回（顺带修掉「连改多个字段互相覆盖」）。
+3. **`Settings` 会把 `null` 写进 `config.yaml`**。`InputNumber` 的 `onChange` 给的是
+   `number | null`（清空输入框时是 `null`），原代码直接写进状态，保存后
+   `variants_per_seed: null` 落盘。现在清空时保留原值。
+4. **`processMultimodal` 的 `text` 标成了必填**，但后端 `MultimodalRequest.text` 默认是
+   `""`、表单上也写着「可选」。已改为 `text?: string`。
+
+**已知局限（不要误读成契约保证）**：这是**编译期声明**，不是运行时校验。`axios` 的
+`response.data` 是 `any`，赋给这些接口不会报错，因此后端若改了响应形态，`tsc` 不会发现。
+本层解决的是「页面层不再到处写 `any`、字段名写错能在编译期发现」。要真契约得引入运行时
+schema 校验（如 zod），不在本次范围内 —— 这一点已写进 `types/api.ts` 的文件头注释。
+
+**验证**：`npm run lint` RC=0、`npm run test:coverage` 29/29 用例且 `api.ts` 100%、
+`npm run build` RC=0（`build` 里含 `tsc --noEmit`）。`format:check` 未纳入门禁
+（既有 18 个文件从未格式化，见偏差登记），本次也没有对既有文件做格式化。
+
+**登记为独立后续任务**（本次未做）：
+
+- **组件层测试底座没接线**：`src/test/setup.ts` 已存在（引 `@testing-library/jest-dom/vitest`），
+  `jsdom` / `@testing-library/{react,dom}` 也都装了，但 `vite.config.ts` **没有 `test` 段**，
+  既没设 `environment: 'jsdom'` 也没配 `setupFiles` —— 所以 `setup.ts` 目前是**死代码**，
+  组件测试根本跑不起来。上面的 `QualityChart` 崩溃正是「组件层零测试」的直接后果
+  （`test:coverage` 显示 100%，但只统计被引用的 `api.ts`，不代表组件有覆盖）。
+  接线方式（含 echarts 在 jsdom 下必须 mock）是独立工程项。
+- **`augmentor/config.yaml` 会被 `POST /api/config` 覆写**：`save_config` 按设计剥离密钥，
+  顺带丢掉全部注释与 `${BAIDU_API_KEY}` 占位符。测试套件是隔离的
+  （`tests/integration/test_api_config_extended.py` 用 `monkeypatch.chdir(tmp_path)`），
+  但在 `augmentor/` 目录下手工或用脚本联调该端点会**直接改到受版本控制的文件**。
+  本次侦察命中过（该文件当前处于被覆写状态，未提交）。
+
+---
+
 **阶段门禁**：~~测试数从 3061 降至 ~2000~~ → **改为"测试卫生门禁全绿 + 覆盖率不下降"**
 （原目标基于错误估计，见 F6 复核；实际 3108 → 3047，覆盖率 99.41% → 99.50% 语句 / 98.63% 分支）；
-变异杀死率达标（逐模块 ≥ 60%）；前端三门禁（lint / test:coverage / build）全绿且都做过红→绿验证；
-CI 增加 lint / test / 版本一致性 / 测试卫生四个门禁；`docs/ARCHITECTURE.md` 与代码一致。
+变异杀死率达标（逐模块 ≥ 60%）；前端三门禁（lint / test:coverage / build）全绿且都做过红→绿验证
+（T1.15 完成后复跑仍全绿）；CI 增加 lint / test / 版本一致性 / 测试卫生四个门禁；
+`docs/ARCHITECTURE.md` 与代码一致。
 
-**Phase 1 剩余**：T1.15（前端 API 响应类型层），以及三项**登记为独立后续任务**的收尾：
+**Phase 1 剩余**：**无** —— T1.15 完成后 Phase 1 全部 15 项收口（T1.13 经复核取消）。
+以下 6 项**登记为独立后续任务**，均不在 Phase 1 范围内：
+
 `cleaner` / `data.cleaner` 合并（需先统一 `CleaningResult` / `CleanResult`）、
 `merge` / `aggregate` 按同一 `--enhanced` 机制合并（F8 未覆盖的第 9 对）、
-`quality` / `quality-report` 保持不合并（已确认为两种能力）。
-T1.5a / T1.5b / T1.6 / T1.7 / T1.14 均已完成，其中 **T1.5b 与 T1.7 的结论与原规划不同**，
+`quality` / `quality-report` 保持不合并（已确认为两种能力）、
+`augmentor/data/` 是否纳入 `.gitignore`（需先确认是否要放受版本控制的夹具数据）、
+前端组件测试底座接线（`vite.config.ts` 缺 `test` 段，`src/test/setup.ts` 目前是死代码）、
+`augmentor/config.yaml` 被 `save_config` 覆写（需确认是否要改 `POST /api/config` 的落盘路径）。
+
+T1.5a / T1.5b / T1.6 / T1.7 / T1.14 / T1.15 均已完成，其中 **T1.5b 与 T1.7 的结论与原规划不同**，
 已在各自小节与「Phase 1 偏差登记」中显式记录。
 
 ---
@@ -1353,4 +1436,10 @@ Phase 0 (P0 止血)  ──→  Phase 1 (工程质量)  ──→  Phase 2 (多�
 | F8 / T1.7 | 帮助列表 36 行；usage choices 44 = 36 规范名 + 8 旧别名 | `python cli.py --help`；`grep -cE "^    [a-z]"` = 36 |
 | F8 / T1.7 | 旧名与规范名是**同一个解析器对象**（argparse `aliases=`），不是 handler 里的 if 兜底 | `sub.choices["export-enhanced"] is sub.choices["export"]` |
 | F8 / T1.7 | 合并顺带修掉：`version --action load` 走基础分支时**静默正常退出** | 改前 `python cli.py version --action load` 退出码 0 且无输出；改后退出码 1 并提示加 `--enhanced` |
+| F9 / T1.15 | 页面/组件层 `any` 从 **42 处降到 0**（只剩 `Quality.tsx` 注释里 1 处） | `grep -rn "\bany\b" web/src/pages web/src/components` |
+| F9 / T1.15 | `no-explicit-any` 对**整个 `src/**`** 都是 `error`，页面/组件层的豁免已收回 | `grep -n -A3 "no-explicit-any" web/eslint.config.js` |
+| F9 / T1.15 | 36 个端点的真实响应形态（类型层的唯一依据） | `TestClient(app)` 逐端点打 + `shape()` 渲染成 TS 形态；`/api/augment/progress` 与 `/api/augment/checkpoints` 另从 `checkpoint.py` 读 |
+| F9 / T1.15 | `charts.score_histogram` 是「桶名→条数」字典（**没有** `labels`/`values`），`metric_radar` 才是 `{labels, values}` | `POST /api/quality/report` 的响应；或 `augmentor/report.py: _build_charts` |
+| F9 / T1.15 | 该误用会让「生成报告」直接白屏（`histogram.values` 恒为 `undefined`） | 修复前 `QualityChart` 的 `histogram.values.map(...)`；`grep -rn "score_histogram" web/src` 确认全仓只此一处 |
+| F9 / T1.15 | 三门禁在类型层落地后复跑仍全绿 | `cd augmentor/web && npm run lint && npm run test:coverage && npm run build` |
 | F13 | `json.dumps({"passed": np.False_})` → `TypeError` | `type(np.False_)` + `isinstance(..., bool)` |
