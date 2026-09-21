@@ -17,7 +17,17 @@ class QualityScore:
     relevance: float  # 回答相关性
     diversity: float  # 多样性
     total_score: float  # 总分
-    passed: bool  # 是否通过质量检查
+    passed: bool  # 是否通过质量检查（构造时必须 bool() 收敛，见下）
+    # 语义维度是否真实参与评分。当调用方无法提供原始种子问题（如对已落盘的数据集
+    # 做离线评估）时，语义相似度无从计算，此时该维度被跳过、权重在剩余维度上重归一化，
+    # 本字段为 False 且 semantic_similarity 不代表任何测量结果。
+    semantic_evaluated: bool = True
+
+    # 注意：passed 必须由 numpy 比较结果经 bool() 收敛为 Python 布尔。
+    # numpy 的 np.bool_ 不是 bool 的子类，且 json.dumps 无法序列化它
+    # （TypeError: Object of type bool is not JSON serializable），
+    # 一旦该字段进入任何 JSON 响应或落盘路径就会 500。
+    # total_score 无需转换：np.float64 是 float 的子类，可直接序列化。
 
 
 class QualityScorer:
@@ -196,11 +206,34 @@ class QualityScorer:
         self._existing_texts = []
         self._existing_texts_hash = None
     
+    def effective_weights(self, include_semantic: bool) -> List[float]:
+        """计算实际生效的权重
+
+        语义维度不可用时，其权重按比例分摊到其余维度，保证权重和仍为 1.0，
+        使总分继续落在 [0, 1] 区间，可与 threshold 直接比较。
+
+        Args:
+            include_semantic: 语义维度是否参与评分
+
+        Returns:
+            长度为 3 的权重列表；跳过语义时首元素为 0.0
+        """
+        if include_semantic:
+            return list(self.weights)
+
+        remaining = self.weights[1] + self.weights[2]
+        if remaining <= 0:
+            # 退化情形：相关性与多样性权重均为 0，无从重归一化
+            return [0.0, 0.5, 0.5]
+        scale = 1.0 / remaining
+        return [0.0, self.weights[1] * scale, self.weights[2] * scale]
+
     def score(self, 
               original: str, 
               generated: str, 
               output: str,
-              existing_generated: Optional[List[str]] = None) -> QualityScore:
+              existing_generated: Optional[List[str]] = None,
+              include_semantic: bool = True) -> QualityScore:
         """计算质量评分
         
         Args:
@@ -208,20 +241,27 @@ class QualityScorer:
             generated: 生成的问题
             output: 对应的回答
             existing_generated: 已生成的问题列表（用于多样性计算）
+            include_semantic: 是否计算语义相似度维度。无法提供原始种子问题时传 False，
+                该维度将被跳过，权重在剩余维度上重归一化。
         
         Returns:
             QualityScore 实例
         """
         self._load_models()
         
-        semantic_sim = self._calculate_semantic_similarity(original, generated)
+        weights = self.effective_weights(include_semantic)
+        
+        semantic_sim = (
+            self._calculate_semantic_similarity(original, generated)
+            if include_semantic else 0.0
+        )
         relevance = self._calculate_relevance(generated, output)
         diversity = self._calculate_diversity(generated, existing_generated or [])
         
         total_score = (
-            self.weights[0] * semantic_sim +
-            self.weights[1] * relevance +
-            self.weights[2] * diversity
+            weights[0] * semantic_sim +
+            weights[1] * relevance +
+            weights[2] * diversity
         )
         
         return QualityScore(
@@ -229,17 +269,24 @@ class QualityScorer:
             relevance=relevance,
             diversity=diversity,
             total_score=total_score,
-            passed=total_score >= self.threshold
+            passed=bool(total_score >= self.threshold),
+            semantic_evaluated=include_semantic,
         )
     
     def batch_score(self, 
                     items: List[Dict],
-                    existing_generated: Optional[List[str]] = None) -> List[QualityScore]:
+                    existing_generated: Optional[List[str]] = None,
+                    include_semantic: bool = True) -> List[QualityScore]:
         """批量计算质量评分 - 优化版
         
         Args:
             items: 数据列表，每项包含 original, generated, output 字段
             existing_generated: 已生成的问题列表
+            include_semantic: 是否计算语义相似度维度。为 False 时跳过语义相似度计算
+                （同时省去一次批量编码），权重在相关性与多样性上重归一化。
+                对已落盘的数据集做离线评估时应传 False——此时不存在原始种子问题，
+                若把 instruction 同时当作 original 与 generated，语义相似度会恒为 1.0，
+                使总分虚高。
         
         Returns:
             评分结果列表
@@ -248,6 +295,8 @@ class QualityScorer:
         
         if not items:
             return []
+        
+        weights = self.effective_weights(include_semantic)
         
         # 提取文本
         originals = [item.get("original", "") for item in items]
@@ -266,8 +315,10 @@ class QualityScorer:
             self._embedding_cache[cache_key] = embeddings
             return embeddings
         
-        # 批量编码原始文本（使用缓存优化）
-        if self._model != "fallback":
+        # 计算语义相似度（仅在需要时编码，跳过时省去两次批量编码）
+        if not include_semantic:
+            semantic_sims = np.zeros(len(items))
+        elif self._model != "fallback":
             original_embeddings = cached_encode(originals, "orig")
             generated_embeddings = cached_encode(generateds, "gen")
             
@@ -303,16 +354,20 @@ class QualityScorer:
         for i, gen in enumerate(generateds):
             diversity = self._calculate_diversity(gen, existing)
             diversity_scores.append(diversity)
-            if semantic_sims[i] >= self.threshold:  # 只有通过的才加入
+            # 只有质量达标的样本才进入多样性参照集，避免劣质样本污染基线。
+            # 语义维度被跳过时它恒为 0，若仍用它作门槛则参照集永不增长、
+            # 多样性会退化成恒 1.0，因此改用当前可用的质量维度（相关性）把关。
+            gate = semantic_sims[i] if include_semantic else relevance_scores[i]
+            if gate >= self.threshold:
                 existing.append(gen)
         
         diversity_scores = np.array(diversity_scores)
         
         # 计算总分
         total_scores = (
-            self.weights[0] * semantic_sims +
-            self.weights[1] * relevance_scores +
-            self.weights[2] * diversity_scores
+            weights[0] * semantic_sims +
+            weights[1] * relevance_scores +
+            weights[2] * diversity_scores
         )
         
         # 构建结果
@@ -323,7 +378,8 @@ class QualityScorer:
                 relevance=float(relevance_scores[i]),
                 diversity=float(diversity_scores[i]),
                 total_score=float(total_scores[i]),
-                passed=total_scores[i] >= self.threshold
+                passed=bool(total_scores[i] >= self.threshold),
+                semantic_evaluated=include_semantic,
             ))
         
         return scores
