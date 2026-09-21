@@ -293,6 +293,25 @@ class TestExportAndAnalyze:
 
         assert len(results) >= 5
 
+    def test_export_accepts_public_enum_members(self, pipeline, seed_file, tmp_path):
+        """公开的 ExportFormat 成员必须能直接传入，且文件名不得带类名
+
+        修复前 `augmentor.ExportFormat` 的成员会被 `Exporter` 以
+        `ValueError: ... is not a valid ExportFormat` 拒绝（值相同也拒）。
+        归一化之后还要保证文件名是 `train_data_chatml.json`，而不是 f-string
+        渲染枚举成员得到的 `train_data_ExportFormat.CHATML.json`。
+        """
+        import augmentor
+
+        results = pipeline.export_dataset(
+            seed_file, str(tmp_path / "enum"), [augmentor.ExportFormat.CHATML]
+        )
+
+        assert set(results.keys()) == {"chatml"}
+        path = Path(results["chatml"])
+        assert path.is_file()
+        assert path.name == "train_data_chatml.json"
+
     def test_analyze_dataset(self, pipeline, seed_file):
         """分析需返回覆盖分析、统计与去重报告三部分"""
         result = pipeline.analyze_dataset(seed_file)

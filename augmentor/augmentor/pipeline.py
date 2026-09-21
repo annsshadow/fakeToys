@@ -16,7 +16,7 @@ from .config import AppConfig, load_config, get_model_config
 from .models import create_model_backend
 from .quality import QualityScorer
 from .dedup import Deduplicator
-from .export import Exporter
+from .export import Exporter, ExportFormat
 from .context import ContextAugmentor
 from .checkpoint import CheckpointManager
 from .memory_monitor import MemoryMonitor, get_memory_summary
@@ -449,7 +449,7 @@ class AugmentorPipeline:
         Args:
             input_file: 输入文件路径
             output_dir: 输出目录
-            formats: 导出格式列表
+            formats: 导出格式列表，元素可传字符串（如 "jsonl"）或 `ExportFormat` 成员
         
         Returns:
             格式到文件路径的映射
@@ -461,9 +461,12 @@ class AugmentorPipeline:
         if formats:
             results = {}
             for fmt in formats:
-                output_path = Path(output_dir) / f"train_data_{fmt}.json"
-                self.exporter.export(items, str(output_path), fmt)
-                results[fmt] = str(output_path)
+                # 归一化为字符串：ExportFormat 成员直接进 f-string 会渲染成
+                # "ExportFormat.OPENAI"，把枚举类名写进文件名与返回值的键。
+                name = fmt.value if isinstance(fmt, ExportFormat) else fmt
+                output_path = Path(output_dir) / f"train_data_{name}.json"
+                self.exporter.export(items, str(output_path), name)
+                results[name] = str(output_path)
             return results
         else:
             return self.exporter.export_all_formats(items, output_dir)
