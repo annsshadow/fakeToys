@@ -156,6 +156,7 @@
           <button class="btn-primary" @click="loadSchedule">调度/本地调度/报告</button>
           <button class="btn-primary" @click="loadOutputMeta">输出/模块分类/存储映射</button>
           <button class="btn-primary" @click="loadErrorLogStats">错误日志/当前节点</button>
+          <button class="btn-primary" @click="loadWeixinMeta">微信菜单/校验元/输出结构</button>
           <button class="btn-create" @click="saveConfig">+ 新建/更新</button>
         </div>
         <div v-if="dsText" class="app-meta">{{ dsText }}</div>
@@ -852,6 +853,20 @@ async function loadDataStructure() {
     dsText.value = `数据结构模块 ${n(mods)} / 输出结构 ${n(structs)}`
   } catch (e: any) {
     toast.error('加载数据结构失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadWeixinMeta() {
+  try {
+    // 消费 program_center 三条无参真实路由：微信菜单清单 / 校验元数据 / 模块输出结构
+    const [menu, meta, struct] = await Promise.all([
+      api.get('/api/program_center/mpweixin/menu/list/weixin'),
+      api.get('/api/program_center/validation/meta'),
+      api.get('/api/program_center/module/output/structure'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    dsText.value = `微信菜单 ${n(menu)} / 校验元 ${n(meta)} / 输出结构 ${n(struct)}`
+  } catch (e: any) {
+    toast.error('加载微信/校验失败: ' + (e?.message ?? ''))
   }
 }
 async function loadErrorLogStats() {
