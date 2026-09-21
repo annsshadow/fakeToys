@@ -172,11 +172,27 @@ class ModelBackend(ABC):
             self._error_count = 0
     
     def close(self):
-        """关闭连接"""
-        if self._session:
-            self._session.close()
+        """关闭连接
+
+        用 getattr 兜底：__init__ 在赋值 _session 之前就抛异常（例如子类校验
+        密钥失败）时，对象仍会被 GC 回收并触发本方法，直接访问 self._session
+        会再抛 AttributeError 并污染解释器退出流程。
+        """
+        session = getattr(self, "_session", None)
+        if session is not None:
+            try:
+                session.close()
+            except Exception:  # 关闭失败不应影响回收
+                logger.debug("关闭 HTTP 会话失败", exc_info=True)
             self._session = None
-    
+
     def __del__(self):
-        """析构函数"""
-        self.close()
+        """析构函数
+
+        析构中抛出的异常会被解释器忽略并打印，但会干扰测试（pytest 会报
+        PytestUnraisableExceptionWarning），因此这里整体兜底。
+        """
+        try:
+            self.close()
+        except Exception:
+            pass
