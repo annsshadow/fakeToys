@@ -33,7 +33,7 @@ export default function VersionTimeline({
       await rollbackVersion(versionId)
       message.success(`已回滚到 ${versionId}`)
       onRollback?.()
-    } catch (error) {
+    } catch {
       message.error('回滚失败')
     }
   }

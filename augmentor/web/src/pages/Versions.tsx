@@ -32,7 +32,7 @@ export default function Versions() {
     try {
       const result = await getVersions()
       setVersions(result.versions)
-    } catch (error) {
+    } catch {
       message.error('加载版本列表失败')
     }
   }
@@ -41,7 +41,7 @@ export default function Versions() {
     try {
       const result = await getDataFiles()
       setFiles(result.files.map((f: any) => f.name))
-    } catch (error) {
+    } catch {
       message.error('加载文件列表失败')
     }
   }
@@ -59,7 +59,7 @@ export default function Versions() {
       setNewVersionLabel('')
       setNewVersionDesc('')
       loadVersions()
-    } catch (error) {
+    } catch {
       message.error('创建版本失败')
     }
   }
@@ -69,7 +69,7 @@ export default function Versions() {
       await rollbackVersion(versionId)
       message.success('回滚成功')
       loadVersions()
-    } catch (error) {
+    } catch {
       message.error('回滚失败')
     }
   }
@@ -79,7 +79,7 @@ export default function Versions() {
       await deleteVersion(versionId)
       message.success('删除成功')
       loadVersions()
-    } catch (error) {
+    } catch {
       message.error('删除失败')
     }
   }
@@ -93,7 +93,7 @@ export default function Versions() {
     try {
       const result = await diffVersions(diffVersion1, diffVersion2)
       setDiffResult(result)
-    } catch (error) {
+    } catch {
       message.error('对比失败')
     }
   }
