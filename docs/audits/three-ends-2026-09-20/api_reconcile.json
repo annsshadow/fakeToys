@@ -628,7 +628,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/DocumentApp.vue",
-    "line": 140,
+    "line": 157,
     "method": "DELETE",
     "raw": "/api/document/${item.id}",
     "path": "/api/document/{}",
@@ -641,7 +641,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/DocumentApp.vue",
-    "line": 150,
+    "line": 167,
     "method": "GET",
     "raw": "/api/document/${item.id}/commend",
     "path": "/api/document/{}/commend",
@@ -654,7 +654,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/DocumentApp.vue",
-    "line": 159,
+    "line": 176,
     "method": "GET",
     "raw": "/api/document/${item.id}/top",
     "path": "/api/document/{}/top",
@@ -667,7 +667,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/DocumentApp.vue",
-    "line": 168,
+    "line": 185,
     "method": "PUT",
     "raw": "/api/document/publish/${item.id}",
     "path": "/api/document/publish/{}",
@@ -680,7 +680,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/DocumentApp.vue",
-    "line": 178,
+    "line": 195,
     "method": "GET",
     "raw": "/api/document/${item.id}/uncommend",
     "path": "/api/document/{}/uncommend",
@@ -693,7 +693,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/DocumentApp.vue",
-    "line": 187,
+    "line": 204,
     "method": "GET",
     "raw": "/api/document/${item.id}/unTop",
     "path": "/api/document/{}/unTop",
@@ -706,7 +706,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/DocumentApp.vue",
-    "line": 196,
+    "line": 213,
     "method": "PUT",
     "raw": "/api/document/publish/${item.id}/cancel",
     "path": "/api/document/publish/{}/cancel",
@@ -719,7 +719,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/DocumentApp.vue",
-    "line": 206,
+    "line": 223,
     "method": "GET",
     "raw": "/api/document/${item.id}/view/count",
     "path": "/api/document/{}/view/count",
@@ -732,7 +732,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/DocumentApp.vue",
-    "line": 215,
+    "line": 232,
     "method": "GET",
     "raw": "/api/document/${item.id}/persons",
     "path": "/api/document/{}/persons",
@@ -745,7 +745,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/DocumentApp.vue",
-    "line": 225,
+    "line": 242,
     "method": "POST",
     "raw": "/api/document/${item.id}/notify",
     "path": "/api/document/{}/notify",
@@ -758,7 +758,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/DocumentApp.vue",
-    "line": 234,
+    "line": 251,
     "method": "GET",
     "raw": "/api/log/list/document/${item.id}",
     "path": "/api/log/list/document/{}",
@@ -771,7 +771,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/DocumentApp.vue",
-    "line": 244,
+    "line": 261,
     "method": "GET",
     "raw": "/api/commend/list/paging/${item.id}",
     "path": "/api/commend/list/paging/{}",
@@ -3931,7 +3931,46 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/DocumentApp.vue",
-    "line": 113,
+    "line": 90,
+    "method": "GET",
+    "raw": "/api/document/document/fields",
+    "path": "/api/document/document/fields",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/document/document/fields",
+    "hit_crate": "cms_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/DocumentApp.vue",
+    "line": 91,
+    "method": "GET",
+    "raw": "/api/document/batch/status",
+    "path": "/api/document/batch/status",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/document/batch/status",
+    "hit_crate": "cms_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/DocumentApp.vue",
+    "line": 92,
+    "method": "GET",
+    "raw": "/api/uuid/random",
+    "path": "/api/uuid/random",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/uuid/random",
+    "hit_crate": "cms_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/DocumentApp.vue",
+    "line": 130,
     "method": "POST",
     "raw": "/api/document/list/document",
     "path": "/api/document/list/document",
@@ -3944,7 +3983,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/DocumentApp.vue",
-    "line": 126,
+    "line": 143,
     "method": "POST",
     "raw": "/api/document",
     "path": "/api/document",

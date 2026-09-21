@@ -13,6 +13,8 @@
         <input v-model="keyword" placeholder="搜索文档..." class="search-input" @keyup.enter="doSearch" />
         <button class="btn-primary" @click="doSearch">搜索</button>
         <button class="btn-create" @click="showCreate=true">+ 新建文档</button>
+        <button class="btn-primary" @click="loadDocMeta">字段/批量状态</button>
+        <span v-if="docMetaText" class="doc-meta-note">{{ docMetaText }}</span>
       </div>
       <div class="list-panel">
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 5" :key="i"></div></div>
@@ -80,6 +82,21 @@ type DocItem = { id: string; title?: string; name?: string; content?: string; st
 const tab = ref<Tab>('published')
 const keyword = ref('')
 const loading = ref(false)
+const docMetaText = ref('')
+async function loadDocMeta() {
+  try {
+    // 消费 cms 三条无参真实路由：文档字段清单 / 批量状态 / uuid 随机
+    const [fields, status, uuid] = await Promise.all([
+      api.get('/api/document/document/fields'),
+      api.get('/api/document/batch/status'),
+      api.get('/api/uuid/random'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    docMetaText.value = `字段 ${n(fields)} / 批量状态 ${n(status)} / uuid ${(uuid as any)?.data ? '有' : '—'}`
+  } catch (e: any) {
+    toast.error('加载文档元数据失败: ' + (e?.message ?? ''))
+  }
+}
 const items = ref<DocItem[]>([])
 const showCreate = ref(false)
 const creating = ref(false)
