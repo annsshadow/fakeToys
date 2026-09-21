@@ -151,6 +151,7 @@
           <button class="btn-primary" @click="loadDataStructure">数据结构</button>
           <button class="btn-primary" @click="loadDsTables">表/字段/验证码</button>
           <button class="btn-primary" @click="loadDeployMeta">Token/部署资源/节点</button>
+          <button class="btn-primary" @click="loadConfigDump">配置转储/三元管理</button>
           <button class="btn-create" @click="saveConfig">+ 新建/更新</button>
         </div>
         <div v-if="dsText" class="app-meta">{{ dsText }}</div>
@@ -847,6 +848,20 @@ async function loadDataStructure() {
     dsText.value = `数据结构模块 ${n(mods)} / 输出结构 ${n(structs)}`
   } catch (e: any) {
     toast.error('加载数据结构失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadConfigDump() {
+  try {
+    // 消费 program_center 三条无参真实路由：配置转储 / 转储数据清单 / 三元配置管理
+    const [dump, dumpData, ternary] = await Promise.all([
+      api.get('/api/program_center/config'),
+      api.get('/api/program_center/config/list/dump/data'),
+      api.get('/api/program_center/config/ternary/management'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    dsText.value = `配置转储 ${n(dump)} / 转储数据 ${n(dumpData)} / 三元管理 ${n(ternary)}`
+  } catch (e: any) {
+    toast.error('加载配置转储失败: ' + (e?.message ?? ''))
   }
 }
 async function loadDeployMeta() {
