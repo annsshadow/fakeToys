@@ -5,6 +5,7 @@
       <p class="subtitle">/api/organization/assemble/control/*</p>
       <button class="org-meta-btn" @click="loadOrgMeta">权限/卡类型</button>
       <button class="org-meta-btn" @click="loadPinyinIndex">拼音首字母索引</button>
+      <button class="org-meta-btn" @click="loadExpressMeta">同步配置/单位/状态</button>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -89,6 +90,20 @@ async function loadOrgMeta() {
     orgMetaText.value = `权限设置 ${n(perms)} / 卡分组类型 ${n(cardTypes)}`
   } catch (e: any) {
     toast.error('加载组织元数据失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadExpressMeta() {
+  try {
+    // 消费 org express 三条无参真实路由：同步配置 / 组织单位清单 / 同步状态
+    const [config, units, status] = await Promise.all([
+      api.get('/api/organization/assemble/express/config/get'),
+      api.get('/api/organization/assemble/express/units/list'),
+      api.get('/api/organization/assemble/express/status/get'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    orgMetaText.value = `同步配置 ${n(config)} / 单位 ${n(units)} / 状态 ${n(status)}`
+  } catch (e: any) {
+    toast.error('加载同步元数据失败: ' + (e?.message ?? ''))
   }
 }
 async function loadPinyinIndex() {
