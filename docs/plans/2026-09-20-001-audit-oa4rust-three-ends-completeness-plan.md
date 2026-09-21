@@ -3,7 +3,11 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 104 # rev104（2026-09-21 G5：AI 基础配置/控制配置/用量统计）：
+rev: 105 # rev105（2026-09-21 G5：查询-设计器 全部查询/概要/query分类）：
+       # QueryManager.vue 补「全部查询/概要/分类」按钮，消费 query designer query/list/all + query/list/summary + query/querycategory/list 共 3 条真实路由；全局消费 561→564（564/4638=12.2%）。
+       # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。查询-设计器域缺口 141→138。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev104 # rev104（2026-09-21 G5：AI 基础配置/控制配置/用量统计）：
        # AIChatApp.vue 补「基础配置/控制/用量」按钮，消费 ai_assemble_control config/base/config + get/ai/control/config + get/usage/stats 共 3 条真实路由；全局消费 558→561（561/4638=12.1%）。
        # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。AI 域缺口 57→54。
        # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
