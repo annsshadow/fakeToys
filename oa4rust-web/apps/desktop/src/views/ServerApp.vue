@@ -6,6 +6,7 @@
       <button class="srv-meta-btn" @click="loadSysStatus">系统状态/信息</button>
       <button class="srv-meta-btn" @click="loadGeneralMeta">通用/区域/工时</button>
       <button class="srv-meta-btn" @click="loadGeneralMeta2">密级/考勤范围/二维码</button>
+      <button class="srv-meta-btn" @click="loadGeneralMeta3">密级对象/主体/内网</button>
       <div v-if="sysStatusText" class="srv-meta-note">{{ sysStatusText }}</div>
     </div>
     <div class="content-panel glass-card">
@@ -57,6 +58,20 @@ const loadingLicense = ref(false)
 const license = ref<Record<string, unknown> | null>(null)
 
 const sysStatusText = ref('')
+async function loadGeneralMeta3() {
+  try {
+    // 消费 general/assemble/control 三条真实路由：密级对象 / 密级主体 / 内网检查配置
+    const [obj, subj, ecnet] = await Promise.all([
+      api.get('/api/general/assemble/control/securityclearance/object'),
+      api.get('/api/general/assemble/control/securityclearance/subject'),
+      api.get('/api/general/assemble/control/ecnet/check'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    sysStatusText.value = `密级对象 ${n(obj)} · 密级主体 ${n(subj)} · 内网配置 ${n(ecnet)}`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadGeneralMeta2() {
   try {
     // GET general/assemble/control securityclearance/system + attendscope/list + qrcode/list —— 密级系统/考勤范围/二维码
