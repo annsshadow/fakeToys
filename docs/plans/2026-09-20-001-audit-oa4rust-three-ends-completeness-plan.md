@@ -3,7 +3,11 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 97 # rev97（2026-09-21 G5：流程-BAM 运行中/分类/组织维度状态监控）：
+rev: 98 # rev98（2026-09-21 G5：组织-控制 群组/身份/角色 拼音首字母索引）：
+       # OrgViewer.vue 补「拼音首字母索引」按钮，消费 org control group/list/pinyininitial + identity/list/pinyininitial + role/list/pinyininitial 共 3 条真实路由；全局消费 540→543（543/4638=11.7%）。
+       # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。组织-控制域缺口 142→139。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev97 # rev97（2026-09-21 G5：流程-BAM 运行中/分类/组织维度状态监控）：
        # BamApp.vue 补「状态监控」按钮，消费 bam state/running + state/category + state/organization 共 3 条真实路由；全局消费 537→540（540/4638=11.6%）。
        # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。流程-BAM 域缺口 88→85。
        # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。

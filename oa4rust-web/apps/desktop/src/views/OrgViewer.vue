@@ -4,6 +4,7 @@
       <h1>组织架构</h1>
       <p class="subtitle">/api/organization/assemble/control/*</p>
       <button class="org-meta-btn" @click="loadOrgMeta">权限/卡类型</button>
+      <button class="org-meta-btn" @click="loadPinyinIndex">拼音首字母索引</button>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -88,6 +89,20 @@ async function loadOrgMeta() {
     orgMetaText.value = `权限设置 ${n(perms)} / 卡分组类型 ${n(cardTypes)}`
   } catch (e: any) {
     toast.error('加载组织元数据失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadPinyinIndex() {
+  try {
+    // 消费 org control 三条无参真实路由：群组/身份/角色 按拼音首字母索引
+    const [groups, identities, roles] = await Promise.all([
+      api.get('/api/organization/assemble/control/group/list/pinyininitial'),
+      api.get('/api/organization/assemble/control/identity/list/pinyininitial'),
+      api.get('/api/organization/assemble/control/role/list/pinyininitial'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    orgMetaText.value = `群组首字母 ${n(groups)} / 身份首字母 ${n(identities)} / 角色首字母 ${n(roles)}`
+  } catch (e: any) {
+    toast.error('加载拼音索引失败: ' + (e?.message ?? ''))
   }
 }
 const keyword = ref('')
