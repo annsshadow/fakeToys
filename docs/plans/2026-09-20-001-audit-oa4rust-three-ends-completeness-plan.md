@@ -3,7 +3,11 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 112 # rev112（2026-09-21 G5：程序中心 微信菜单/校验元/模块输出结构）：
+rev: 113 # rev113（2026-09-21 G5：流程-BAM 起始周期存根 任务应用/工作应用/任务单位）：
+       # BamApp.vue 补「起始统计」按钮，消费 bam period/list/start/task/applicationstubs + start/work/applicationstubs + start/task/unitstubs 共 3 条真实路由；全局消费 585→588（588/4638=12.7%）。
+       # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。流程-BAM 域缺口 85→82。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev112 # rev112（2026-09-21 G5：程序中心 微信菜单/校验元/模块输出结构）：
        # ProgramCenterApp.vue Config 页补「微信菜单/校验元/输出结构」按钮，消费 program_center mpweixin/menu/list/weixin + validation/meta + module/output/structure 共 3 条真实路由；全局消费 582→585（585/4638=12.6%）。
        # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。程序中心域缺口 336→333。
        # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
