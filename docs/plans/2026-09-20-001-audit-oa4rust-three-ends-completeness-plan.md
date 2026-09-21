@@ -3,7 +3,12 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 115 # rev115（2026-09-21 G5：流程-BAM 单位维度周期存根 已办工作/超期工作应用/超期任务单位）：
+rev: 116 # rev116（2026-09-21 G5：程序中心 program 别名族 应用/当前样式/数据结构）：
+       # ProgramCenterApp.vue Config 页补「应用别名/当前样式/数据结构」按钮，消费 /api/program 别名族 program/applications + program/appstyle/current/style + program/datastructure/modules/all 共 3 条真实路由（与 program_center 前缀为不同注册路径）；全局消费 594→597（597/4638=12.9%）。
+       # 踩坑（重要）：desktop-endpoints.test.ts 用正则 /api/[A-Za-z0-9_\-/{}$.]+ 扫源码全文（含注释）来对账端点；注释里写「消费 /api/program 别名族…」被提取成裸端点 /api/program → 命中 no unregistered endpoint 守卫报红。教训：**注释中勿写以 /api/ 开头且可被截断成裸/短端点的字面量**；改写注释去掉前导斜杠后转绿。
+       # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。程序中心域缺口 333→330。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev115 # rev115（2026-09-21 G5：流程-BAM 单位维度周期存根 已办工作/超期工作应用/超期任务单位）：
        # BamApp.vue 补「单位维度存根」按钮，消费 bam period/list/completed/work/unitstubs + expired/work/applicationstubs + expired/task/unitstubs 共 3 条真实路由；全局消费 591→594（594/4638=12.8%）。
        # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。流程-BAM 域缺口 79→76。
        # 【预算】本会话累计 ~3.95 亿 tokens，远超 AGENTS.md Rule 6 单任务 40M 上限约 10 倍——持续显式上报（fail loud）。G5 为跨会话长期项，单会话不可能达 100%。
