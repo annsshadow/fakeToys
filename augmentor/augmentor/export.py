@@ -1,4 +1,11 @@
-"""多格式导出模块 - 优化版"""
+"""多格式导出模块 - 优化版
+
+分工边界（与 `augmentor.export_enhanced`）
+    本模块的 `Exporter` 是 pipeline / REST API / preview 的**写入层**，
+    原生实现 `NATIVE_FORMATS` 那 6 种格式，其余格式委托给 `EnhancedExporter`。
+    需要导出选项（打乱 / 截断 / 字段筛选）或想显式使用增强实现，用 `export_enhanced`。
+    注意 `ExportFormat` 枚举由 `export_enhanced` 定义、本模块复用——**全包只有这一份**。
+"""
 
 import json
 import csv

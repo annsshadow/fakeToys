@@ -1,6 +1,13 @@
 """数据清洗模块
 
 提供去噪、格式标准化、语言检测等纯规则能力，便于离线运行与单元测试。
+
+分工边界（与 `augmentor.cleaner`）
+    本模块的 `DataCleaner` / `CleanResult` 由 `augmentor.data` 包导出，
+    调用方是 CLI 的 `clean` 命令与 REST API 的清洗端点。
+    `augmentor.cleaner` 是另一套实现（`DatasetCleaner` / `CleaningResult`），
+    由 CLI 的 `clean-enhanced` 使用。两者是**同一能力的两种实现**，这一对才是
+    真正值得合并的（合并需先统一结果类型，登记为后续任务）。
 """
 
 import html
