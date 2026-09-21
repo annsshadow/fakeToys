@@ -3,7 +3,11 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 117 # rev117（2026-09-21 G5：组织-快递 同步配置/单位清单/同步状态，全局消费破 600）：
+rev: 118 # rev118（2026-09-21 G5：认证 我的单位/角色/群组，全局消费破 13%）：
+       # Personal.vue 认证卡片补「我的单位/角色/群组」按钮，消费 authentication unit/list + role/list + group/list 共 3 条真实路由；全局消费 600→603（603/4638=13.0%，破 13%）。
+       # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。认证/会话域缺口 30→27。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev117 # rev117（2026-09-21 G5：组织-快递 同步配置/单位清单/同步状态，全局消费破 600）：
        # OrgViewer.vue 补「同步配置/单位/状态」按钮，消费 org express config/get + units/list + status/get 共 3 条真实路由（组织-快递域此前 0 消费，本轮开域）；全局消费 597→600（600/4638=12.9%，里程碑 600）。
        # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。组织-快递域缺口 7→4。
        # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。

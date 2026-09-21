@@ -76,6 +76,7 @@
       <button class="save-btn ghost" @click="loadAuthMeta">查看</button>
       <button class="save-btn ghost" @click="loadOauthConfig">OAuth 配置</button>
       <button class="save-btn ghost" @click="loadMailMeta">内部邮件/注册方式</button>
+      <button class="save-btn ghost" @click="loadAuthScopes">我的单位/角色/群组</button>
       <div v-if="authMetaText" class="auth-note">{{ authMetaText }}</div>
     </div>
 
@@ -191,6 +192,20 @@ function saveSignature(): void {
 
 interface SigMgr { id: string; name?: string; personName?: string }
 const authMetaText = ref('')
+async function loadAuthScopes() {
+  try {
+    // 消费 authentication 三条无参真实路由：我的单位 / 角色 / 群组
+    const [units, roles, groups] = await Promise.all([
+      api.get('/api/authentication/unit/list'),
+      api.get('/api/authentication/role/list'),
+      api.get('/api/authentication/group/list'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    authMetaText.value = `单位 ${n(units)} · 角色 ${n(roles)} · 群组 ${n(groups)}`
+  } catch (e: any) {
+    toast.error('加载身份范围失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadMailMeta() {
   try {
     // 消费 personal 三条真实路由：内部邮件新邮件数 / 标题列表(被动) / 注册方式
