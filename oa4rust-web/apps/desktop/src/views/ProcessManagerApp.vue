@@ -12,6 +12,7 @@
         <input v-model="search" placeholder="搜索流程 / 分类 / 创建人..." class="search-input" />
         <button class="btn-refresh" @click="loadRunningProcesses">⚙️ 运行中流程</button>
         <button class="btn-refresh" @click="loadManagedApps">👤 我管理的应用</button>
+        <button class="btn-refresh" @click="loadAppProcesses">🗂️ 应用与流程</button>
         <button class="btn-refresh" @click="loadOrphans">🧹 孤儿元素</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
@@ -76,6 +77,21 @@ async function loadOrphans() {
     toast.success(`孤儿 表单 ${n(form)} / 流程 ${n(proc)} / 脚本 ${n(script)}`)
   } catch (e: any) {
     toast.error('检测失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadAppProcesses() {
+  try {
+    // 消费 surface 三条真实路由：按终端(pc)取应用 / 按 key 取应用 / 按应用取流程定义
+    const terminal = 'pc'
+    const [byTerminal, byKey, procs] = await Promise.all([
+      api.get(`/api/processplatform/assemble/surface/application/list/terminal/${terminal}`),
+      api.get(`/api/processplatform/assemble/surface/application/list/key/${terminal}`),
+      api.get(`/api/processplatform/assemble/surface/process/list/application/${terminal}`),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    toast.success(`终端应用 ${n(byTerminal)} / 按键应用 ${n(byKey)} / 应用流程 ${n(procs)}`)
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
   }
 }
 async function loadManagedApps() {
