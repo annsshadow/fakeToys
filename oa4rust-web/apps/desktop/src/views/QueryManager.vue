@@ -6,6 +6,7 @@
       <span class="hdr-a">
         <button class="nb ghost" @click="loadQueryMeta">分类/语句</button>
         <button class="nb ghost" @click="loadQueryExtra">模型/导出</button>
+        <button class="nb ghost" @click="loadQueryAll">全部查询/概要/分类</button>
         <button class="nb" @click="showCreate=true">+ 新建查询</button>
       </span>
     </div>
@@ -68,6 +69,20 @@ interface Q {
   sql?: string
 }
 const queryMetaText = ref('')
+async function loadQueryAll() {
+  try {
+    // 消费 query designer 三条无参真实路由：全部查询 / 查询概要 / query 分类
+    const [all, summary, cats] = await Promise.all([
+      api.get('/api/query/assemble/designer/query/list/all'),
+      api.get('/api/query/assemble/designer/query/list/summary'),
+      api.get('/api/query/assemble/designer/query/querycategory/list'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    queryMetaText.value = `全部查询 ${n(all)} / 概要 ${n(summary)} / 分类 ${n(cats)}`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadQueryExtra() {
   try {
     // GET neural/list/model + output/list + list/summary —— 神经模型/导出/查询概要
