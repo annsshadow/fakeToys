@@ -7,6 +7,7 @@
       <button class="srv-meta-btn" @click="loadGeneralMeta">通用/区域/工时</button>
       <button class="srv-meta-btn" @click="loadGeneralMeta2">密级/考勤范围/二维码</button>
       <button class="srv-meta-btn" @click="loadGeneralMeta3">密级对象/主体/内网</button>
+      <button class="srv-meta-btn" @click="loadBaseMeta">Echo/缓存详情/OpenAPI</button>
       <div v-if="sysStatusText" class="srv-meta-note">{{ sysStatusText }}</div>
     </div>
     <div class="content-panel glass-card">
@@ -58,6 +59,20 @@ const loadingLicense = ref(false)
 const license = ref<Record<string, unknown> | null>(null)
 
 const sysStatusText = ref('')
+async function loadBaseMeta() {
+  try {
+    // 消费 base 三条无参真实路由：echo 探活 / 缓存详情 / OpenAPI 信息
+    const [echo, cache, openapi] = await Promise.all([
+      api.get('/api/base/echo'),
+      api.get('/api/base/cache/detail'),
+      api.get('/api/base/openapi/info'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    sysStatusText.value = `Echo ${(echo as any)?.data ? '通' : '—'} · 缓存详情 ${n(cache)} · OpenAPI ${(openapi as any)?.data ? '有' : '—'}`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadGeneralMeta3() {
   try {
     // 消费 general/assemble/control 三条真实路由：密级对象 / 密级主体 / 内网检查配置

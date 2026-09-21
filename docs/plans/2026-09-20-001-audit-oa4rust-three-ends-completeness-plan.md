@@ -3,7 +3,11 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 118 # rev118（2026-09-21 G5：认证 我的单位/角色/群组，全局消费破 13%）：
+rev: 119 # rev119（2026-09-21 G5：base Echo/缓存详情/OpenAPI信息）：
+       # ServerApp.vue 补「Echo/缓存详情/OpenAPI」按钮，消费 base echo + cache/detail + openapi/info 共 3 条真实路由；全局消费 603→606（606/4638=13.1%）。
+       # 契约回源码核验：三 handler 均无参 GET（echo/openapi 无 pool、cache_detail 只读），无写、空库安全。base crate 属跨域基础设施（不在 33 业务域桶内，故域缺口表不体现，仅全局计数 +3）。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev118 # rev118（2026-09-21 G5：认证 我的单位/角色/群组，全局消费破 13%）：
        # Personal.vue 认证卡片补「我的单位/角色/群组」按钮，消费 authentication unit/list + role/list + group/list 共 3 条真实路由；全局消费 600→603（603/4638=13.0%，破 13%）。
        # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。认证/会话域缺口 30→27。
        # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
