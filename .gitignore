@@ -98,6 +98,19 @@ scripts/.java-seed-ids.json
 coverage.xml
 htmlcov/
 
+# augmentor 的冗余数据与重复脚本（约 11.9 MB）。
+# 依据：train_data.json 与 train_data_final.json 的 md5 完全相同（a83320ab…）；
+#       enhanceTXT.py 与 archive/enhanceTXT.py 的 md5 完全相同（e74dc8a5…）；
+#       bak/ 是历史备份目录。三者都不被任何代码或测试在运行时读取
+#       （docs/API.md、docs/README.md 里的同名引用只是示例文件名）。
+# 已用 `git rm --cached` 移出版本控制，**本地文件保留**，不影响现有工作流。
+augmentor/train_data.json
+augmentor/train_data_final.json
+augmentor/train_data_final01.json
+augmentor/train_data_final02.json
+augmentor/enhanceTXT.py
+augmentor/bak/
+
 
 # OpenCode
 .backups/
