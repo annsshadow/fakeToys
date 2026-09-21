@@ -365,3 +365,46 @@ class TestOpenAIBackend:
         backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
         result = backend.extract_json_from_response('{"a": 1} [1, 2]')
         assert result == [1, 2]
+
+
+class _BareBackend(ModelBackend):
+    """只实现抽象方法的最小后端
+
+    ``ModelBackend`` 是 ABC，无法直接实例化；析构测试又必须绕过 ``__init__``
+    （否则不会出现「没有 _session」的状态），因此用一个空壳子类承接 ``__new__``。
+    """
+
+    def _call_api(self, prompt: str) -> str:  # pragma: no cover - 析构测试不会调用
+        return ""
+
+
+class TestDestructorSafety:
+    """析构安全
+
+    __init__ 在赋值 _session 之前就抛异常时（子类校验密钥失败、测试用 __new__
+    绕过初始化），对象仍会被 GC 回收并触发 close()/__del__。修复前会再抛
+    AttributeError 并污染解释器退出流程（pytest 报 PytestUnraisableExceptionWarning）。
+    """
+
+    def test_close_tolerates_missing_session(self):
+        """绕过 __init__ 构造的实例调用 close() 不得抛异常"""
+        bare = _BareBackend.__new__(_BareBackend)
+        assert not hasattr(bare, "_session")
+        bare.close()  # 修复前：AttributeError: no attribute '_session'
+
+    def test_del_tolerates_missing_session(self):
+        """__del__ 必须整体兜底"""
+        bare = _BareBackend.__new__(_BareBackend)
+        bare.__del__()  # 修复前：AttributeError 冒泡
+
+    def test_close_tolerates_broken_session(self):
+        """会话对象自身 close() 抛错时不得影响回收"""
+
+        class BrokenSession:
+            def close(self):
+                raise RuntimeError("连接已断开")
+
+        bare = _BareBackend.__new__(_BareBackend)
+        bare._session = BrokenSession()
+        bare.close()
+        assert bare._session is None
