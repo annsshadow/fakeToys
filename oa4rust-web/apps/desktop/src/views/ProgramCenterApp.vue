@@ -152,6 +152,7 @@
           <button class="btn-primary" @click="loadDsTables">表/字段/验证码</button>
           <button class="btn-primary" @click="loadDeployMeta">Token/部署资源/节点</button>
           <button class="btn-primary" @click="loadConfigDump">配置转储/三元管理</button>
+          <button class="btn-primary" @click="loadJestModule">测试/版本/模块</button>
           <button class="btn-create" @click="saveConfig">+ 新建/更新</button>
         </div>
         <div v-if="dsText" class="app-meta">{{ dsText }}</div>
@@ -848,6 +849,21 @@ async function loadDataStructure() {
     dsText.value = `数据结构模块 ${n(mods)} / 输出结构 ${n(structs)}`
   } catch (e: any) {
     toast.error('加载数据结构失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadJestModule() {
+  try {
+    // 消费 program_center 三条无参真实路由：Jest 测试清单 / Jest 版本 / 模块清单
+    const [jest, version, modules] = await Promise.all([
+      api.get('/api/program_center/jest/list'),
+      api.get('/api/program_center/jest/version'),
+      api.get('/api/program_center/module/list'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const ver = (version as any)?.data?.version ?? ((version as any)?.data ? '有' : '—')
+    dsText.value = `测试 ${n(jest)} / 版本 ${ver} / 模块 ${n(modules)}`
+  } catch (e: any) {
+    toast.error('加载测试/模块失败: ' + (e?.message ?? ''))
   }
 }
 async function loadConfigDump() {
