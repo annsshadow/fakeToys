@@ -30,7 +30,7 @@
 ## 项目结构
 
 ```
-ai/
+augmentor/
 ├── augmentor/          # 核心增强包
 │   ├── models/         # 模型后端
 │   ├── data/           # 数据处理
