@@ -3,7 +3,11 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 101 # rev101（2026-09-21 G5：程序中心 配置转储/转储数据/三元管理）：
+rev: 102 # rev102（2026-09-21 G5：程序中心 Jest测试/版本/模块清单，全局破 12%）：
+       # ProgramCenterApp.vue Config 页补「测试/版本/模块」按钮，消费 program_center jest/list + jest/version + module/list 共 3 条真实路由；全局消费 552→555（555/4638=12.0%，破 12%）。
+       # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。程序中心域缺口 348→345。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev101 # rev101（2026-09-21 G5：程序中心 配置转储/转储数据/三元管理）：
        # ProgramCenterApp.vue Config 页补「配置转储/三元管理」按钮，消费 program_center config + config/list/dump/data + config/ternary/management 共 3 条真实路由；全局消费 549→552（552/4638=11.9%）。
        # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。程序中心域缺口 351→348。
        # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
