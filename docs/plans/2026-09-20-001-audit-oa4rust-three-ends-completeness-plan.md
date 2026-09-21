@@ -3,7 +3,11 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 113 # rev113（2026-09-21 G5：流程-BAM 起始周期存根 任务应用/工作应用/任务单位）：
+rev: 114 # rev114（2026-09-21 G5：流程-BAM 已办/超期周期存根 应用维度）：
+       # BamApp.vue 补「已办/超期存根」按钮，消费 bam period/list/completed/task/applicationstubs + completed/work/applicationstubs + expired/task/applicationstubs 共 3 条真实路由；全局消费 588→591（591/4638=12.7%）。
+       # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。流程-BAM 域缺口 82→79。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev113 # rev113（2026-09-21 G5：流程-BAM 起始周期存根 任务应用/工作应用/任务单位）：
        # BamApp.vue 补「起始统计」按钮，消费 bam period/list/start/task/applicationstubs + start/work/applicationstubs + start/task/unitstubs 共 3 条真实路由；全局消费 585→588（588/4638=12.7%）。
        # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。流程-BAM 域缺口 85→82。
        # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
