@@ -3,7 +3,12 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 107 # rev107（2026-09-21 G5：热图/统计 别名族 热图清单/控制面板/控制应用）：
+rev: 108 # rev108（2026-09-21 G5：程序中心 调度/本地调度/调度报告）：
+       # ProgramCenterApp.vue Config 页补「调度/本地调度/报告」按钮，消费 program_center schedule/list/schedule + schedule/list/schedulelocal + schedule/report 共 3 条真实路由；全局消费 570→573（573/4638=12.4%）。
+       # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。程序中心域缺口 345→342。
+       # 教训：JPushApp 全部 jpush 只读别名（list/jpushs、get/control/config、list/control/apps 及 hotpic 式双前缀）已被 JPushApp.test.ts 逐条 string-match 封禁（按钮触发也算命中源码字符串），该域不可再加只读消费点。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev107 # rev107（2026-09-21 G5：热图/统计 别名族 热图清单/控制面板/控制应用）：
        # HotpicApp.vue 补第二按钮，消费 hotpic 别名族 hotpic/list/hotpics + hotpic/assemble/control/list/control/panels + .../list/control/applications 共 3 条真实路由（与既消费的 hotpic_assemble_control 前缀为不同注册路径）；全局消费 567→570（570/4638=12.3%）。
        # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。热图/统计域缺口 46→43。
        # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
