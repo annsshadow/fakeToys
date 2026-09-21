@@ -714,7 +714,8 @@ T0.1–T0.8 全部落地。**偏差项必须显式记录，不能当作"按计�
 | T1.2 | F6 | ~~合并 32 个 `*_opt.py` 到主测试文件~~ → 25 个是占位（已删），7 个有真断言（已按模块归并/改写） | 无 `assert True` 残留 → **达成（0 处）** |
 | T1.3 | F6 | `pytest.ini` 加 `--cov-branch`；~~清理 `pragma: no cover` 滥用~~ → **复核发现是伪问题（生产源码 0 处）** | branch 覆盖率 ≥ 80% → **实际 98.63%** |
 | T1.4 | F6 | ~~引入 `mutmut`~~ → **Windows 不支持，改用 `cosmic-ray`**（显式偏差，见下），对 `quality.py` / `dedup.py` / `export.py` 做分层抽样变异测试 | 变异杀死率 ≥ 60% |
-| T1.5 | F7 | 六对重复模块各保留一个实现，另一个标 `@deprecated` | `grep -c "class ExportFormat"` == 1 |
+| T1.5a | F7 | **拆分出的高优先子项**：修 `ExportFormat` 同名冲突（前置侦察定性为**用户可见故障**，非"重复"） | `grep -c "class ExportFormat"` == 1 且三处入口同一对象；公开枚举成员可端到端消费 |
+| T1.5b | F7 | 六对重复模块各保留一个实现，另一个标 `@deprecated` | `__init__.py` 无同名二次导入；全量测试通过 |
 | T1.6 | F8 | `cli.py` 拆为 `cli/` 包（dispatch 表 + `commands/` + `io.py`） | `cli.py` 顶层 ≤ 80 行 |
 | T1.7 | F8 | 9 组重复命令合并为 `--enhanced` 开关，旧名保留弃用别名 | 子命令 44 → ≤ 30，CLI 集成测试全绿 |
 | T1.8 | F9 | `web/package.json`：~~`build` 加 `tsc -b`~~ → **改为 `tsc --noEmit && vite build`**（见偏差）；新增 `typecheck` / `lint` / `test` / `test:coverage` / `format` | 类型错误时 `npm run build` 失败 → **已验证（退出码 2）** |
@@ -1034,6 +1035,41 @@ enhanceTXT.py（重复一份） 19450 B  md5 e74dc8a5…（根目录与 archive/
 **结论**：T1.5–T1.7 不宜作为「机械重命名」推进。`ExportFormat` 那一条是**修 bug**，
 优先级最高且可独立完成；其余五对是收敛；T1.7 必须先按上表把「真重复 / 命名误导 / 非重复」三类
 分开处理，否则会把 `quality` 的能力合并掉。
+
+---
+
+#### T1.5a — 修 `ExportFormat` 同名冲突（已完成）
+
+**性质**：**修 bug**，不是清理重复。复现见上一节。
+
+**根因**：`Enum.__call__` 按**成员身份**匹配（`cls._value2member_map_`），
+跨枚举类的成员一律不认——所以公开名的 13 个成员**没有一个**能传给
+`pipeline.export_dataset`，连值完全相同的 `CHATML` 也不行。
+
+**修法**：让枚举成为全包唯一来源，并**显式声明**「原生支持」的边界。
+
+| 改动 | 文件 |
+|---|---|
+| 删除本地枚举定义，改为 `from .export_enhanced import EnhancedExporter, ExportFormat, ExportOptions` | `export.py` |
+| 新增 `NATIVE_FORMATS`（原生 6 种）与 `_FORMAT_EXTENSIONS` | `export.py` |
+| `Exporter.export` 对非原生格式委托 `EnhancedExporter` | `export.py` |
+| `export_all_formats` 改为迭代 `NATIVE_FORMATS`（保持「一次 6 个文件」） | `export.py` |
+| 保留 `SHARE_GPT = "sharegpt"` 为同值**别名**（非独立成员，不影响清单长度） | `export_enhanced.py` |
+| 预览的字典索引改 `.get()` + 明确 `ValueError`（否则退化成 `KeyError`） | `preview.py` |
+| `export_dataset` 把成员归一化为 `.value`（否则文件名变成 `train_data_ExportFormat.OPENAI.json`） | `pipeline.py` |
+
+**三处必须一起改的理由**（少任何一处都会引入**新**缺陷）：
+
+1. 只删枚举、不加委托 → 7 种非原生格式落空 `if/elif` 链，**静默不写任何文件却返回成功**，
+   比原来的 `ValueError` 更难排查；
+2. 只改 `Exporter`、不改 `export_all_formats` → 调用方（`pipeline` / CLI）的产物
+   从 6 个变 13 个，属破坏性变更；
+3. 只改 `export.py`、不改 `preview.py` → 预览的报错从约定的 `ValueError`
+   退化成 `KeyError`。
+
+**未做（刻意）**：`export_all_formats` 的**名字**仍暗示「所有格式」，但它现在只写 6 种。
+改名属破坏性变更，留待与 T1.7 的命令合并一并处理；当前以 `NATIVE_FORMATS` 的文档字符串
+说明边界。
 
 ---
 

@@ -9,7 +9,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional
 
-from .export import Exporter, ExportFormat
+from .export import Exporter, ExportFormat, NATIVE_FORMATS
 
 logger = logging.getLogger(__name__)
 
@@ -144,7 +144,7 @@ class PreviewGenerator:
             export_format = ExportFormat(fmt)
         except ValueError:
             raise ValueError(
-                f"不支持的导出格式: {fmt}。支持: {[f.value for f in ExportFormat]}"
+                f"不支持的导出格式: {fmt}。支持: {[f.value for f in NATIVE_FORMATS]}"
             )
 
         size = preview_size or self.preview_size
@@ -158,7 +158,15 @@ class PreviewGenerator:
             ExportFormat.SHARE_GPT: exporter._convert_to_sharegpt,
             ExportFormat.CHATML: exporter._convert_to_chatml,
             ExportFormat.CSV: exporter._convert_to_csv
-        }[export_format]
+        }.get(export_format)
+
+        # ExportFormat 统一后含 13 个成员，而预览只实现了 6 种转换。
+        # 必须用 .get() 而非 []：否则传 openai / tsv 等会抛 KeyError，
+        # 而不是这里约定的 ValueError。
+        if converter is None:
+            raise ValueError(
+                f"不支持的导出格式: {fmt}。支持: {[f.value for f in NATIVE_FORMATS]}"
+            )
 
         raw_converted = converter(sample)
 
