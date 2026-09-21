@@ -5,6 +5,7 @@
       <span class="hdr-a">
         <button class="btn-primary ghost" @click="loadPeriodStats">周期统计</button>
         <button class="btn-primary ghost" @click="loadStateStats">状态监控</button>
+        <button class="btn-primary ghost" @click="loadStartStubs">起始统计</button>
         <button class="btn-primary" @click="refresh">🔄 刷新</button>
       </span>
     </div>
@@ -53,6 +54,20 @@ async function loadPeriodStats() {
     periodText.value = `已办任务周期 ${n(done)} / 超期任务周期 ${n(expired)}`
   } catch (e: any) {
     toast.error('加载周期统计失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadStartStubs() {
+  try {
+    // 消费 bam 三条无参真实路由：起始 任务按应用/工作按应用/任务按单位 周期存根
+    const [taskApp, workApp, taskUnit] = await Promise.all([
+      api.get('/api/processplatform/assemble/bam/period/list/start/task/applicationstubs'),
+      api.get('/api/processplatform/assemble/bam/period/list/start/work/applicationstubs'),
+      api.get('/api/processplatform/assemble/bam/period/list/start/task/unitstubs'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    periodText.value = `起始任务(应用) ${n(taskApp)} / 起始工作(应用) ${n(workApp)} / 起始任务(单位) ${n(taskUnit)}`
+  } catch (e: any) {
+    toast.error('加载起始统计失败: ' + (e?.message ?? ''))
   }
 }
 async function loadStateStats() {
