@@ -7,6 +7,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from ..deps import get_pipeline
+from augmentor import __version__
 from augmentor.diagnostics import check_dependencies
 
 router = APIRouter(tags=["status"])
@@ -35,7 +36,7 @@ async def get_status():
     deps = check_dependencies()
     return StatusResponse(
         status="ok",
-        version="2.0.0",
+        version=__version__,
         model_default=default_model,
         model_available=model_available,
         dependencies=deps.to_dict(),

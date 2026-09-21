@@ -84,7 +84,7 @@ pytest --cov-report=html:htmlcov
 
 ```bash
 cd augmentor
-docker build -f docker/Dockerfile -t ai-data-platform:2.0.0 .
+docker build -f docker/Dockerfile -t ai-data-platform:2.2.0 .
 ```
 
 镜像基于 `python:3.11-slim`，预装 `libgomp1`（FAISS/OpenMP）、`libsndfile1`（音频）、
@@ -99,7 +99,7 @@ docker build -f docker/Dockerfile -t ai-data-platform:2.0.0 .
 ```bash
 docker build -f docker/Dockerfile \
   --build-arg INSTALL_OPTIONAL=1 \
-  -t ai-data-platform:2.0.0-full .
+  -t ai-data-platform:2.2.0-full .
 ```
 
 ### 2.2 启动

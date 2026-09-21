@@ -4,21 +4,36 @@ import asyncio
 import json
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 
-from ..deps import get_pipeline, read_json_file, run_in_thread, write_json_file
+from ..deps import (
+    get_pipeline,
+    read_json_file,
+    resolve_within_roots,
+    run_in_thread,
+    verify_api_key,
+    write_json_file,
+)
 
 router = APIRouter(tags=["data"])
 
 
 def _safe_data_path(filename: str) -> Path:
-    """将文件名规范化为安全路径，防止路径遍历"""
-    path = Path(filename)
-    # 禁止包含 .. 组件，防止跳出目录
-    parts = path.parts
-    if ".." in parts:
-        raise HTTPException(status_code=400, detail="路径包含非法组件")
-    return path.resolve()
+    """将文件名规范化为安全路径
+
+    委托给 deps 中的统一白名单校验：拒绝 `..` 组件与绝对路径逃逸，
+    并把结果限制在 `web.data_roots` 之内。是否要求文件存在由调用方判断。
+
+    Args:
+        filename: 客户端传入的文件名或路径
+
+    Returns:
+        已 resolve 的绝对路径
+
+    Raises:
+        HTTPException: 400 参数非法；403 路径越界
+    """
+    return resolve_within_roots(filename, "文件路径")
 
 
 @router.get("/api/data/list")
@@ -75,7 +90,12 @@ async def load_data(filename: str, page: int = 1, page_size: int = 20, search: s
 
 
 @router.put("/api/data/update/{filename}")
-async def update_data_item(filename: str, index: int, item: dict):
+async def update_data_item(
+    filename: str,
+    index: int,
+    item: dict,
+    _auth: None = Depends(verify_api_key),
+):
     """更新单条数据"""
     file_path = _safe_data_path(filename)
     if not file_path.exists():
@@ -98,7 +118,9 @@ async def update_data_item(filename: str, index: int, item: dict):
 
 
 @router.delete("/api/data/delete/{filename}")
-async def delete_data_item(filename: str, index: int):
+async def delete_data_item(
+    filename: str, index: int, _auth: None = Depends(verify_api_key)
+):
     """删除单条数据"""
     file_path = _safe_data_path(filename)
     if not file_path.exists():
@@ -121,7 +143,9 @@ async def delete_data_item(filename: str, index: int):
 
 
 @router.post("/api/data/upload")
-async def upload_data(file: UploadFile = File(...)):
+async def upload_data(
+    file: UploadFile = File(...), _auth: None = Depends(verify_api_key)
+):
     """上传数据文件"""
     try:
         content = await file.read()

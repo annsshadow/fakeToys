@@ -67,13 +67,18 @@ class TestExportEndpoint:
         for path in files.values():
             assert Path(path).exists()
 
-    def test_export_missing_input_500(self, export_env):
+    def test_export_missing_input_404(self, export_env):
+        """输入文件不存在应返回 404
+
+        早期实现未校验路径，异常一路冒泡成 500——「文件不存在」被误报为服务端故障，
+        调用方无法区分「我传错了」与「服务挂了」。路径校验前置后语义回归 404。
+        """
         client, _, _ = export_env
         response = client.post(
             "/api/data/export",
             json={"input_file": "no_such.json", "output_dir": "x"},
         )
-        assert response.status_code == 500
+        assert response.status_code == 404
 
 
 class TestBatchExportEndpoint:
