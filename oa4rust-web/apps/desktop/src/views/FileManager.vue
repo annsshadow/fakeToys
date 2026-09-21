@@ -6,6 +6,7 @@
         <button class="action-btn primary" @click="handleUpload">📤 上传</button>
         <button class="action-btn" @click="loadTopAttachments">📎 顶层附件</button>
         <button class="action-btn" @click="loadFileMeta">🗄️ 附件2/编辑器</button>
+        <button class="action-btn" @click="loadFolderShare">📂 文件夹/分享/容量</button>
         <button class="action-btn" @click="toggleView">{{ viewType === 'grid' ? '☰ 列表' : '⊞ 网格' }}</button>
       </div>
     </div>
@@ -115,6 +116,22 @@ async function loadFileMeta(): Promise<void> {
     ])
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     toast.success(`附件2 ${n(att2)} / 编辑器 ${n(editors)}`)
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadFolderShare(): Promise<void> {
+  try {
+    // 消费 file 三条真实路由：顶层文件夹 / 我的分享 / 附件2 用户容量
+    const [folders, shares, capacity] = await Promise.all([
+      api.get('/api/file/folder/list/top'),
+      api.get('/api/share/list'),
+      api.get('/api/attachment2/user/capacity'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    const cap = (capacity as any)?.data
+    const capText = cap && typeof cap === 'object' ? JSON.stringify(cap).slice(0, 40) : '—'
+    toast.success(`顶层文件夹 ${n(folders)} / 分享 ${n(shares)} / 容量 ${capText}`)
   } catch (e: any) {
     toast.error('加载失败: ' + (e?.message ?? ''))
   }
