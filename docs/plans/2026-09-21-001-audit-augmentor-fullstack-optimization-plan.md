@@ -716,8 +716,8 @@ T0.1–T0.8 全部落地。**偏差项必须显式记录，不能当作"按计�
 | T1.4 | F6 | ~~引入 `mutmut`~~ → **Windows 不支持，改用 `cosmic-ray`**（显式偏差，见下），对 `quality.py` / `dedup.py` / `export.py` 做分层抽样变异测试 | 变异杀死率 ≥ 60% |
 | T1.5a | F7 | **拆分出的高优先子项**：修 `ExportFormat` 同名冲突（前置侦察定性为**用户可见故障**，非"重复"） | `grep -c "class ExportFormat"` == 1 且三处入口同一对象；公开枚举成员可端到端消费 |
 | T1.5b | F7 | ~~六对重复模块各保留一个实现，另一个标 `@deprecated`~~ → **实测 API 交集为 0、双方互不包含、12 个模块全有活跃调用方，故改为「写明分工边界」**（见下） | 12 个模块 docstring 均含分工边界；`__init__.py` 无同名二次导入 |
-| T1.6 | F8 | `cli.py` 拆为 `cli/` 包（dispatch 表 + `commands/` + `io.py`） | `cli.py` 顶层 ≤ 80 行 |
-| T1.7 | F8 | 9 组重复命令合并为 `--enhanced` 开关，旧名保留弃用别名 | 子命令 44 → ≤ 30，CLI 集成测试全绿 |
+| T1.6 | F8 | `cli.py` 拆为 `cli/` 包（dispatch 表 + `commands/` + `io.py`） | `cli.py` 顶层 ≤ 80 行 → **实际 60 行** |
+| T1.7 | F8 | ~~9 组重复命令合并为 `--enhanced` 开关~~ → **实际合并 8 对**（第 9 组 `quality` / `quality-report` 经复核不是重复），旧名保留为 argparse alias | ~~子命令 44 → ≤ 30~~ → **实际 44 → 36**（≤30 与「只合并真重复」不相容，见下） |
 | T1.8 | F9 | `web/package.json`：~~`build` 加 `tsc -b`~~ → **改为 `tsc --noEmit && vite build`**（见偏差）；新增 `typecheck` / `lint` / `test` / `test:coverage` / `format` | 类型错误时 `npm run build` 失败 → **已验证（退出码 2）** |
 | T1.9 | F9 | 引入 ~~ESLint 9~~ **ESLint 10** flat config + Prettier；Vitest + RTL 覆盖 `api.ts` | `npm run lint` 零 warning → **达成**；`api.ts` 覆盖 ≥ 70% → **实际 100%** |
 | T1.10 | F9 | `ai-platform-ci.yml` 的 `frontend-build` 增加 Lint 与 Test-with-coverage-gate 两步 | CI 两 step 通过 → **本地等价命令全绿**（未在 GitHub 上实跑） |
@@ -743,6 +743,8 @@ T0.1–T0.8 全部落地。**偏差项必须显式记录，不能当作"按计�
 | T1.9 | 用 `reactHooks.configs.flat.recommended` | **只启用经典两规则**（`rules-of-hooks` / `exhaustive-deps`） | v7 的 recommended 额外含一批 **React Compiler 专用**规则（immutability / purity / static-components / preserve-manual-memoization / set-state-in-effect）。本项目用 React 18、无 `babel-plugin-react-compiler`，那 10 处 immutability 报的是 "prevents the compiler from…"（编译器无法优化）而非缺陷 |
 | T1.9 | "`npm run lint` 零 warning" | **前提不成立**：首次运行 91 处问题（89 error / 2 warning）。修掉 45 处，对 `no-explicit-any` 在页面/组件层**显式豁免**并登记 T1.15 | 44 处 `any` 里约 30 处是 `useState<any>` 承载 API 响应载荷；消除它们需先建响应类型层，属独立工程，硬塞进本次改动会把可能错误的类型假设固化下来 |
 | T1.9 | 引入 Prettier | 引入配置与 `format` / `format:check` 脚本，但**不接入 CI 门禁** | 既有 18 个文件从未格式化，`format:check` 必然失败；强行 `--write` 会制造一个淹没真实改动的巨大 diff（违反"外科手术式改动"） |
+| T1.7 | 子命令 44 → **≤ 30** | **44 → 36**（帮助列表 36 行；usage choices 44 = 36 + 8 个 alias） | ≤30 这个数字来自 F8 的「9 组重复命令」，而规划自己的三分类表已推翻它：9 组里 1 组（`quality` / `quality-report`）不是重复，剩下 8 组各并 1 对 → 44 − 8 = 36 是**「只合并真重复」的上限**。要凑到 30 得再合并 6 个并非重复的命令，那等于删能力（F8 自己警告过）。按 36 收口，不为对齐数字而合并 |
+| T1.7 | 旧名保留弃用别名 | 用 argparse `aliases=` 注册成**同一个解析器对象**（`sub.choices[旧名] is sub.choices[规范名]`），`main()` 归一化并打印提示 | 若只在 handler 里 `if args.command == 旧名` 兜底，两套名字会各自演化；alias 从解析层就绑定同一对象，配一条测试守住 |
 
 ### Phase 1 已完成部分（2026-09-21）
 
@@ -1115,8 +1117,92 @@ enhanceTXT.py（重复一份） 19450 B  md5 e74dc8a5…（根目录与 archive/
 
 **唯一真正值得合并的一对是 `cleaner` / `data.cleaner`**：两者都在做数据清洗，
 `CleaningResult` 与 `CleanResult` 是同一概念的两种命名。合并需先统一结果类型，
-并同时改动 CLI 的 `clean` / `clean-enhanced` 两个命令与 REST API 清洗端点，
+并同时改动 CLI 的 `clean` / `clean --enhanced` 两个命令与 REST API 清洗端点，
 登记为独立后续任务（不塞进 T1.7）。
+
+#### T1.6 — `cli.py` 拆为薄入口 + `cli` 包（已完成）
+
+1308 行单文件（`build_parser()` 329 行 + `main()` 922 行 if/elif 长链，每分支内部
+函数内 import）拆为：
+
+| 位置 | 内容 | 行数 |
+|---|---|---:|
+| `cli.py` | 薄入口：解析 → 归一化旧名 → 查表 → 统一异常 | 60 |
+| `augmentor/augmentor/cli/__init__.py` | 导出 `COMMANDS` | 11 |
+| `augmentor/augmentor/cli/io.py` | `_load_items` / `_save_items` / `_dump_json` / `_print` | 51 |
+| `augmentor/augmentor/cli/parser.py` | `build_parser()` | 332 |
+| `augmentor/augmentor/cli/commands/` | 9 个领域模块 + 分发表 | 950 |
+
+实现落在**包内**而非项目根，是为了仍被 `--cov=augmentor` 覆盖——放外面会凭空
+开出一块覆盖率盲区。`cli.py` 必须保留为入口：文档 58 处 `python cli.py`、
+CI 的 `compileall -q augmentor api cli.py`、14 个集成测试的 `from cli import main`
+都依赖这个路径。
+
+**等价性验证不能只看「能编译」**：拆分脚本用 `textwrap.dedent` 剥公共缩进，
+而 dedent 会**连多行字符串字面量内部的行一起剥**，可能静默改掉字符串的值。
+因此用 AST 比对（`ast.dump`，不含 `lineno` / `col_offset`）：
+
+- 44 个分支体 ↔ 44 个 `run_xxx` 函数体：**完全等价**
+- `build_parser`：完全等价；4 个 IO helper：完全等价
+- 分发表 44 条与 44 个分支一一对应
+- 行为面：`python cli.py --help` 与拆分前**逐字节一致**（仅 prog 名与随之变化的折行宽度不同）；
+  全量 `pytest` 3053 passed / 3 skipped / RC=0，与拆分前同值；覆盖率 98.60%
+
+顺带修正 `docs/ARCHITECTURE.md` 里 `cli.py` 的说明（原写「build_parser + 11 个子命令」，
+实际 44 个）。
+
+#### T1.7 — 8 对命令合并为「主命令 + `--enhanced`」（已完成，**验收数字未达成**）
+
+按前置侦察的三分类动手，**只合并 8 对**：
+
+| 类别 | 对 | 处理 |
+|---|---|---|
+| 真重复（6） | export / analyze / visualize / version / compare / search | 合并 |
+| 命名误导（2） | clean / stats（`-enhanced` 调的恰恰是基础模块） | 合并，并让名字不再声称「增强」 |
+| **非重复（1）** | quality / quality-report | **不合并**：一个筛数据、一个出报告 |
+
+做法：合并后的命令保留**一个解析器**，`--enhanced` 选择独立实现（绕过
+`AugmentorPipeline`）；旧名用 argparse `aliases=` 注册成**同一个解析器对象**，
+由 `main()` 归一化并打印弃用提示（映射表 `parser.py::LEGACY_ALIASES`）。
+
+| 指标 | 规划 | 实际 |
+|---|---|---|
+| 帮助列表中的子命令 | ≤ 30 | **36** |
+| usage `{...}` choices（含 alias） | — | 44（36 + 8 旧名） |
+| CLI 集成测试 | 全绿 | 全绿（含新增的旧名兼容测试） |
+
+> **偏差（Rule 12：失败要大声）**：**≤30 未达成，差 6 个。**
+> 这个数字来自 F8 的「9 组重复命令」，而规划自己的三分类表已推翻了它——
+> 9 组里有 1 组（`quality` / `quality-report`）根本不是重复，剩下 8 组各合并 1 对，
+> 44 − 8 = **36**，是「只合并真重复」的上限。要凑到 30 必须再合并 6 个**并非重复**
+> 的命令，那等于删能力，正是规划 F8 自己警告过的错法（「合并会丢功能」）。
+> 因此**按 36 收口，并把这个数字写进验收**，不为了对齐数字而合并。
+
+**合并带来的两处真实改进**（不只是改名）：
+
+1. `--action` 与后端不匹配时**显式报错**。原 `version` 的 if/elif 链在没有命中时
+   **什么都不做就正常退出**（例如 `--action load` 走基础分支），比报错更难排查；
+   现在给出「`load` / `compare` 需要 `--enhanced`」。
+2. `export` 的 `--output-dir`（批量、多格式）与 `--output`（单文件）互斥，argparse
+   表达不了「取决于另一个 flag」的必填，原来靠 `required=True` 只覆盖了一半；
+   现在两侧都显式校验，缺参数时给出「该用哪个 flag」的提示。
+
+**已知代价**：合并后 8 个命令的参数是两套实现的**并集**，`--help` 比原来长；
+且 `--output-dir` / `--output` 的必填从 argparse 层下移到 handler，缺参时报错
+从退出码 2 变成退出码 1（与仓库既有的 `version` / `backup` 写法一致）。
+
+**登记为新候选（不在 F8 范围内，本次未做）**：`merge` 与 `aggregate` 是同一模式的
+第 9 对——都是「合并多个数据集」，`merge` 只有 `--no-dedup`，`aggregate` 有
+`union/intersection/weighted/consistent` 四种策略，名字同样不揭示谁是谁。
+按同样的 `--enhanced` 机制合并可到 35，但超出 F8 的原始范围，登记待办。
+
+**同时登记的还有一处 `.gitignore` 缺口**（F11 的同类）：`config.py` 的
+`storage_dir` 默认是相对路径（`data/versions` / `data/vectors`），因此在
+`augmentor/` 目录下直接跑 `python cli.py version --action create` 会在工作区里
+生成 `augmentor/data/`，而它**没有被 `.gitignore` 覆盖**（对比：`augmentor/.backups/`
+已被第 116 行的 `.backups/` 覆盖），于是 `git status` 一直挂着一条 `??`。
+本次执行 T1.7 的冒烟测试时命中过这一条，产物已清理；是否把 `augmentor/data/`
+整体忽略需要先确认该目录将来是否要放**受版本控制**的夹具数据，因此只登记不动手。
 
 ---
 
@@ -1125,10 +1211,12 @@ enhanceTXT.py（重复一份） 19450 B  md5 e74dc8a5…（根目录与 archive/
 变异杀死率达标（逐模块 ≥ 60%）；前端三门禁（lint / test:coverage / build）全绿且都做过红→绿验证；
 CI 增加 lint / test / 版本一致性 / 测试卫生四个门禁；`docs/ARCHITECTURE.md` 与代码一致。
 
-**Phase 1 剩余**：T1.5–T1.7（会动公共接口）、T1.14（冗余数据，**需用户逐项确认**）、
-T1.15（前端 API 响应类型层）。其中 **T1.5 内部已可拆出独立子项**：
-`ExportFormat` 同名冲突是**修 bug**（用户可见、有复现），建议先做且单独验证；
-六对模块收敛是纯内部重构，可随后。T1.7 需先按「真重复 / 命名误导 / 非重复」分类再动手。
+**Phase 1 剩余**：T1.15（前端 API 响应类型层），以及三项**登记为独立后续任务**的收尾：
+`cleaner` / `data.cleaner` 合并（需先统一 `CleaningResult` / `CleanResult`）、
+`merge` / `aggregate` 按同一 `--enhanced` 机制合并（F8 未覆盖的第 9 对）、
+`quality` / `quality-report` 保持不合并（已确认为两种能力）。
+T1.5a / T1.5b / T1.6 / T1.7 / T1.14 均已完成，其中 **T1.5b 与 T1.7 的结论与原规划不同**，
+已在各自小节与「Phase 1 偏差登记」中显式记录。
 
 ---
 
@@ -1257,7 +1345,12 @@ Phase 0 (P0 止血)  ──→  Phase 1 (工程质量)  ──→  Phase 2 (多�
 | F7 / T1.5 | `augmentor.ExportFormat` 的 13 个成员**全部**被 `pipeline.export_dataset` 拒绝（`ValueError`） | 见「T1.5–T1.7 前置侦察」的复现块 |
 | F7 / T1.5 | 两个同名枚举成员数 6 vs 13；`SHARE_GPT`/`SHAREGPT` 同值不同名 | `augmentor/export.py:14`、`augmentor/export_enhanced.py:17` |
 | F7 / T1.5 | 六对模块的引用方与行数（用于选主实现） | 见「T1.5–T1.7 前置侦察」的收敛判据表 |
-| F8 / T1.7 | `clean-enhanced` 调 `cleaner`（基础模块）、`stats-enhanced` 调 `statistics`（基础模块） | `cli.py:863`、`cli.py:1074` |
-| F8 / T1.7 | `quality` 是内联 48 行筛选逻辑，与 `quality-report` 不是重复 | `cli.py:479-526` vs `cli.py:895-919` |
-| F8 / T1.6 | `cli.py` 1308 行 / 6 顶层函数 / 44 `add_parser` / `main()` 922 行 / 44 段 if-elif | `cd augmentor && grep -c add_parser cli.py` |
+| F8 / T1.7 | `clean --enhanced` 调 `cleaner.clean_dataset`、`stats --enhanced` 调 `statistics.calculate_statistics`（都是**基础模块**，`-enhanced` 后缀名不副实） | 拆分前 `cli.py:863` / `cli.py:1074`；现 `augmentor/cli/commands/quality.py` / `analysis.py` |
+| F8 / T1.7 | `quality` 是内联 48 行筛选逻辑，与 `quality-report` 不是重复 | 拆分前 `cli.py:479-526` vs `cli.py:895-919`；现 `augmentor/cli/commands/quality.py` 的两个 handler |
+| F8 / T1.6 | 拆分前：`cli.py` 1308 行 / 6 顶层函数 / 44 `add_parser` / `main()` 922 行 / 44 段 if-elif | `git show 1c3bb440:augmentor/cli.py \| wc -l` = 1308 |
+| F8 / T1.6 | 拆分后：`cli.py` **60 行**，实现全部落在 `augmentor/augmentor/cli/`（被 `--cov=augmentor` 覆盖） | `wc -l cli.py`；`find augmentor/cli -name "*.py"` |
+| F8 / T1.6 | 拆分是**语义等价**而非仅「能编译」：44 个分支体 / `build_parser` / 4 个 IO helper 的 AST 全等 | `ast.dump(..., include_attributes=False)` 逐对比对（见 T1.6 小节） |
+| F8 / T1.7 | 帮助列表 36 行；usage choices 44 = 36 规范名 + 8 旧别名 | `python cli.py --help`；`grep -cE "^    [a-z]"` = 36 |
+| F8 / T1.7 | 旧名与规范名是**同一个解析器对象**（argparse `aliases=`），不是 handler 里的 if 兜底 | `sub.choices["export-enhanced"] is sub.choices["export"]` |
+| F8 / T1.7 | 合并顺带修掉：`version --action load` 走基础分支时**静默正常退出** | 改前 `python cli.py version --action load` 退出码 0 且无输出；改后退出码 1 并提示加 `--enhanced` |
 | F13 | `json.dumps({"passed": np.False_})` → `TypeError` | `type(np.False_)` + `isinstance(..., bool)` |

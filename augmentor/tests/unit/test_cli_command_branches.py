@@ -110,7 +110,7 @@ class TestVersionControlCompare:
     def test_compare_without_current_version_exits(self, tmp_path):
         _, err, code = _run(
             [
-                "version-control",
+                "version", "--enhanced",
                 "--action",
                 "compare",
                 "--version",

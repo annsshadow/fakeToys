@@ -1,6 +1,42 @@
-"""CLI 参数解析器（由 cli.py 拆出，内容未改）"""
+"""CLI 参数解析器
+
+T1.7 起，同一能力的两种实现合并为**一个子命令 + `--enhanced` 开关**，
+旧命令名注册为 argparse alias（`export-enhanced` → `export`），
+由 `main()` 归一化并打印弃用提示。合并的 8 对：
+
+    export     ← export-enhanced      analyze  ← analyze-data
+    visualize  ← visualize-data       version  ← version-control
+    compare    ← compare-enhanced     search   ← search-enhanced
+    clean      ← clean-enhanced       stats    ← stats-enhanced
+
+`quality` 与 `quality-report` **未合并**：前者筛数据、后者出报告，是两种能力。
+"""
 
 import argparse
+
+# `--enhanced` 的统一说明。合并后它不再表示「更好」，而是表示
+# 「走独立实现，绕过 AugmentorPipeline」——旧名里的 enhanced 只是历史拼写。
+ENHANCED_HELP = "使用独立实现（等价于旧的 <命令>-enhanced），绕过 pipeline"
+
+# 旧名 → 规范名。`main()` 用它归一化 `args.command` 并置 `args.enhanced = True`。
+LEGACY_ALIASES: dict = {
+    "export-enhanced": "export",
+    "analyze-data": "analyze",
+    "visualize-data": "visualize",
+    "version-control": "version",
+    "compare-enhanced": "compare",
+    "search-enhanced": "search",
+    "clean-enhanced": "clean",
+    "stats-enhanced": "stats",
+}
+
+
+# `export --format`（独立实现）支持的格式。基础实现的 `--formats` 不限，
+# 因为它走 `Exporter.NATIVE_FORMATS` 并在内部委托，接受面更宽。
+EXPORT_FORMATS = [
+    "json", "jsonl", "csv", "tsv", "alpaca", "sharegpt", "chatml",
+    "llama_factory", "vicuna", "belle", "openai", "huggingface",
+]
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -22,11 +58,22 @@ def build_parser() -> argparse.ArgumentParser:
     augment_parser.add_argument("--no-dedup", action="store_true", help="禁用去重")
     augment_parser.add_argument("--no-checkpoint", action="store_true", help="禁用断点续传")
 
-    # 导出命令
-    export_parser = subparsers.add_parser("export", help="导出数据集")
+    # 导出命令（合并 export-enhanced）
+    # 基础实现走 pipeline.export_dataset：--output-dir + --formats（可多选，批量落盘）
+    # 独立实现走 export_enhanced.export_dataset：--output + --format（单文件，可截断/打乱）
+    export_parser = subparsers.add_parser(
+        "export", aliases=["export-enhanced"], help="导出数据集"
+    )
     export_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
-    export_parser.add_argument("--output-dir", type=str, required=True, help="输出目录")
-    export_parser.add_argument("--formats", nargs="+", help="导出格式")
+    export_parser.add_argument("--output-dir", type=str, help="输出目录（基础实现必填）")
+    export_parser.add_argument("--formats", nargs="+", help="导出格式（基础实现，可多选）")
+    export_parser.add_argument("--output", type=str, help="输出文件路径（--enhanced 必填）")
+    export_parser.add_argument("--format", type=str, default=None, choices=EXPORT_FORMATS,
+                               help="导出格式（--enhanced，默认 json）")
+    export_parser.add_argument("--max-items", type=int, help="最大导出数量（--enhanced）")
+    export_parser.add_argument("--shuffle", action="store_true", help="随机打乱（--enhanced）")
+    export_parser.add_argument("--seed", type=int, default=42, help="随机种子（--enhanced）")
+    export_parser.add_argument("--enhanced", action="store_true", help=ENHANCED_HELP)
 
     # 导出预览命令
     preview_parser = subparsers.add_parser("preview", help="预览导出格式转换结果")
@@ -40,11 +87,20 @@ def build_parser() -> argparse.ArgumentParser:
     quality_parser.add_argument("--output", type=str, help="过滤后数据的输出路径")
     quality_parser.add_argument("--report", type=str, help="质量报告输出路径（.md 或 .json）")
 
-    # 清洗命令
-    clean_parser = subparsers.add_parser("clean", help="数据清洗")
+    # 清洗命令（合并 clean-enhanced）
+    # 基础实现走 data.DataCleaner：--no-url-removal
+    # 独立实现走 cleaner.clean_dataset：--rules
+    clean_parser = subparsers.add_parser(
+        "clean", aliases=["clean-enhanced"], help="数据清洗"
+    )
     clean_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
     clean_parser.add_argument("--output", type=str, required=True, help="输出文件路径")
-    clean_parser.add_argument("--no-url-removal", action="store_true", help="保留 URL")
+    clean_parser.add_argument("--no-url-removal", action="store_true", help="保留 URL（基础实现）")
+    clean_parser.add_argument("--rules", type=str, nargs="+",
+                              default=["remove_empty", "remove_duplicates",
+                                       "normalize_whitespace", "trim_whitespace"],
+                              help="清洗规则（--enhanced）")
+    clean_parser.add_argument("--enhanced", action="store_true", help=ENHANCED_HELP)
 
     # 标注命令
     annotate_parser = subparsers.add_parser("annotate", help="自动标注")
@@ -65,30 +121,64 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_parser.add_argument("--save-baseline", action="store_true", help="将结果保存为基准")
     benchmark_parser.add_argument("--report", type=str, help="报告输出路径")
 
-    # 分析命令
-    analyze_parser = subparsers.add_parser("analyze", help="分析数据集")
+    # 分析命令（合并 analyze-data）
+    analyze_parser = subparsers.add_parser(
+        "analyze", aliases=["analyze-data"], help="分析数据集"
+    )
     analyze_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
-    # 可视化命令
-    visualize_parser = subparsers.add_parser("visualize", help="可视化数据集")
-    visualize_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
-    visualize_parser.add_argument("--output-dir", type=str, default="visualizations", help="输出目录")
+    analyze_parser.add_argument("--fields", type=str, nargs="+", default=["instruction", "output"],
+                                help="分析字段（--enhanced）")
+    analyze_parser.add_argument("--output", type=str, help="分析报告输出路径（--enhanced）")
+    analyze_parser.add_argument("--enhanced", action="store_true", help=ENHANCED_HELP)
 
-    # 版本管理命令
-    version_parser = subparsers.add_parser("version", help="版本管理")
-    version_parser.add_argument("--action",
-                                choices=["list", "create", "diff", "rollback", "history"],
+    # 可视化命令（合并 visualize-data）
+    visualize_parser = subparsers.add_parser(
+        "visualize", aliases=["visualize-data"], help="可视化数据集"
+    )
+    visualize_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    visualize_parser.add_argument("--output-dir", type=str, default="visualizations",
+                                  help="输出目录（基础实现）")
+    visualize_parser.add_argument("--output", type=str, help="输出报告路径（--enhanced）")
+    visualize_parser.add_argument("--format", type=str, default="text", choices=["text", "json"],
+                                  help="报告格式（--enhanced）")
+    visualize_parser.add_argument("--enhanced", action="store_true", help=ENHANCED_HELP)
+
+    # 版本管理命令（合并 version-control）
+    # 两者是**两套独立的版本后端**，不是同一实现的强弱版：
+    #   基础：pipeline.version_manager（augmentor/versioning.py），版本 ID 用 --version-id
+    #   独立：version_control.DatasetVersionManager，版本 ID 用 --version，另有 --versions-dir
+    # `--action` 取两者并集；`create`/`list` 两者都有，靠 --enhanced 区分后端。
+    version_parser = subparsers.add_parser(
+        "version", aliases=["version-control"], help="版本管理"
+    )
+    version_parser.add_argument("--action", type=str,
+                                choices=["list", "create", "diff", "rollback", "history",
+                                         "load", "compare"],
                                 required=True, help="操作类型")
     version_parser.add_argument("--input", type=str, help="输入文件路径")
-    version_parser.add_argument("--version-id", type=str, help="版本 ID")
-    version_parser.add_argument("--version-id-2", type=str, help="第二个版本 ID（用于 diff）")
+    version_parser.add_argument("--version-id", type=str, help="版本 ID（基础实现）")
+    version_parser.add_argument("--version-id-2", type=str, help="第二个版本 ID（基础实现 diff）")
+    version_parser.add_argument("--version", type=str, help="版本 ID（--enhanced）")
+    version_parser.add_argument("--output", type=str, help="输出文件路径（--enhanced）")
+    version_parser.add_argument("--description", type=str, default="", help="版本描述（--enhanced）")
+    version_parser.add_argument("--versions-dir", type=str, default=".versions",
+                                help="版本目录（--enhanced）")
+    version_parser.add_argument("--enhanced", action="store_true", help=ENHANCED_HELP)
 
-    # 数据集对比命令
-    compare_parser = subparsers.add_parser("compare", help="对比两个数据集")
+    # 数据集对比命令（合并 compare-enhanced）
+    compare_parser = subparsers.add_parser(
+        "compare", aliases=["compare-enhanced"], help="对比两个数据集"
+    )
     compare_parser.add_argument("--dataset-a", type=str, required=True, help="数据集A文件路径")
     compare_parser.add_argument("--dataset-b", type=str, required=True, help="数据集B文件路径")
-    compare_parser.add_argument("--name-a", type=str, default="Dataset A", help="数据集A的名称")
-    compare_parser.add_argument("--name-b", type=str, default="Dataset B", help="数据集B的名称")
+    compare_parser.add_argument("--name-a", type=str, default="Dataset A",
+                                help="数据集A的名称（基础实现）")
+    compare_parser.add_argument("--name-b", type=str, default="Dataset B",
+                                help="数据集B的名称（基础实现）")
+    compare_parser.add_argument("--key-fields", type=str, nargs="+", default=["instruction"],
+                                help="关键字段（--enhanced）")
     compare_parser.add_argument("--output", type=str, help="对比结果输出路径")
+    compare_parser.add_argument("--enhanced", action="store_true", help=ENHANCED_HELP)
 
     # 流式处理命令
     stream_parser = subparsers.add_parser("stream", help="流式处理大数据集")
@@ -124,9 +214,14 @@ def build_parser() -> argparse.ArgumentParser:
     split_parser.add_argument("--test-ratio", type=float, default=0.1, help="测试集比例")
     split_parser.add_argument("--seed", type=int, help="随机种子")
 
-    # 数据集统计命令
-    stats_parser = subparsers.add_parser("stats", help="数据集统计信息")
+    # 数据集统计命令（合并 stats-enhanced）
+    stats_parser = subparsers.add_parser(
+        "stats", aliases=["stats-enhanced"], help="数据集统计信息"
+    )
     stats_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    stats_parser.add_argument("--output", type=str, help="统计报告输出路径（--enhanced）")
+    stats_parser.add_argument("--fields", type=str, nargs="+", help="统计字段（--enhanced）")
+    stats_parser.add_argument("--enhanced", action="store_true", help=ENHANCED_HELP)
 
     # 数据集验证命令
     validate_parser = subparsers.add_parser("validate", help="验证数据集格式")
@@ -144,15 +239,22 @@ def build_parser() -> argparse.ArgumentParser:
                                         "chatml", "llama_factory", "vicuna", "belle"],
                                 help="目标格式")
 
-    # 数据集搜索命令
-    search_parser = subparsers.add_parser("search", help="搜索数据集")
+    # 数据集搜索命令（合并 search-enhanced）
+    # --method 取两者并集：基础支持 exact/contains/ngram，独立实现支持 exact/contains/fuzzy/regex
+    search_parser = subparsers.add_parser(
+        "search", aliases=["search-enhanced"], help="搜索数据集"
+    )
     search_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
     search_parser.add_argument("--query", type=str, required=True, help="搜索查询")
     search_parser.add_argument("--field", type=str, nargs="+", default=["instruction", "output"],
                                help="搜索字段")
     search_parser.add_argument("--method", type=str, default="contains",
-                               choices=["exact", "contains", "ngram"], help="搜索方法")
-    search_parser.add_argument("--limit", type=int, default=10, help="返回数量")
+                               choices=["exact", "contains", "ngram", "fuzzy", "regex"],
+                               help="搜索方法")
+    search_parser.add_argument("--limit", type=int, default=None, help="返回数量")
+    search_parser.add_argument("--offset", type=int, default=0, help="偏移量（--enhanced）")
+    search_parser.add_argument("--output", type=str, help="结果输出路径（--enhanced）")
+    search_parser.add_argument("--enhanced", action="store_true", help=ENHANCED_HELP)
 
     # 配置验证命令
     validate_config_parser = subparsers.add_parser("validate-config", help="验证配置文件")
@@ -161,32 +263,9 @@ def build_parser() -> argparse.ArgumentParser:
         "--config", type=str, default=argparse.SUPPRESS, help="配置文件路径"
     )
 
-    # 数据分析命令（合并到 analyze 子命令）
-    analyze_parser = subparsers.add_parser("analyze-data", help="数据分析")
-    analyze_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
-    analyze_parser.add_argument("--fields", type=str, nargs="+", default=["instruction", "output"],
-                               help="分析字段")
-    analyze_parser.add_argument("--output", type=str, help="输出报告路径")
-
-    # 数据清洗命令
-    clean_parser = subparsers.add_parser("clean-enhanced", help="增强数据清洗")
-    clean_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
-    clean_parser.add_argument("--output", type=str, required=True, help="输出文件路径")
-    clean_parser.add_argument("--rules", type=str, nargs="+", 
-                             default=["remove_empty", "remove_duplicates", "normalize_whitespace", "trim_whitespace"],
-                             help="清洗规则")
-
-    # 增强导出命令
-    export_enhanced_parser = subparsers.add_parser("export-enhanced", help="增强数据导出")
-    export_enhanced_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
-    export_enhanced_parser.add_argument("--output", type=str, required=True, help="输出文件路径")
-    export_enhanced_parser.add_argument("--format", type=str, default="json",
-                                       choices=["json", "jsonl", "csv", "tsv", "alpaca", "sharegpt", 
-                                               "chatml", "llama_factory", "vicuna", "belle", "openai", "huggingface"],
-                                       help="导出格式")
-    export_enhanced_parser.add_argument("--max-items", type=int, help="最大导出数量")
-    export_enhanced_parser.add_argument("--shuffle", action="store_true", help="随机打乱")
-    export_enhanced_parser.add_argument("--seed", type=int, default=42, help="随机种子")
+    # 数据分析 / 数据清洗 / 增强导出 / 数据可视化 四个旧命令
+    # （analyze-data / clean-enhanced / export-enhanced / visualize-data）
+    # 已合并进对应的主命令，旧名注册为 alias，不再单独定义解析器。
 
     # 质量报告命令
     quality_report_parser = subparsers.add_parser("quality-report", help="生成质量报告")
@@ -194,12 +273,6 @@ def build_parser() -> argparse.ArgumentParser:
     quality_report_parser.add_argument("--output", type=str, help="输出报告路径")
     quality_report_parser.add_argument("--format", type=str, default="json", choices=["json", "markdown"], help="报告格式")
     quality_report_parser.add_argument("--threshold", type=float, default=0.7, help="质量阈值")
-
-    # 可视化命令（增强版）
-    visualize_parser = subparsers.add_parser("visualize-data", help="数据可视化")
-    visualize_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
-    visualize_parser.add_argument("--output", type=str, help="输出报告路径")
-    visualize_parser.add_argument("--format", type=str, default="text", choices=["text", "json"], help="报告格式")
 
     # 备份命令
     backup_parser = subparsers.add_parser("backup", help="数据备份")
@@ -238,37 +311,9 @@ def build_parser() -> argparse.ArgumentParser:
     doctor_parser = subparsers.add_parser("doctor", help="运行时依赖诊断")
     doctor_parser.add_argument("--json", action="store_true", help="输出 JSON 报告")
 
-    # 增强搜索命令
-    search_enhanced_parser = subparsers.add_parser("search-enhanced", help="增强搜索")
-    search_enhanced_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
-    search_enhanced_parser.add_argument("--query", type=str, required=True, help="搜索查询")
-    search_enhanced_parser.add_argument("--field", type=str, nargs="+", default=["instruction", "output"], help="搜索字段")
-    search_enhanced_parser.add_argument("--method", type=str, default="contains", choices=["exact", "contains", "fuzzy", "regex"], help="搜索方法")
-    search_enhanced_parser.add_argument("--limit", type=int, default=100, help="返回数量")
-    search_enhanced_parser.add_argument("--offset", type=int, default=0, help="偏移量")
-    search_enhanced_parser.add_argument("--output", type=str, help="结果输出路径（.json）")
-
-    # 统计命令
-    stats_enhanced_parser = subparsers.add_parser("stats-enhanced", help="增强统计")
-    stats_enhanced_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
-    stats_enhanced_parser.add_argument("--output", type=str, help="输出报告路径")
-    stats_enhanced_parser.add_argument("--fields", type=str, nargs="+", help="统计字段")
-
-    # 增强比较命令
-    compare_enhanced_parser = subparsers.add_parser("compare-enhanced", help="增强比较")
-    compare_enhanced_parser.add_argument("--dataset-a", type=str, required=True, help="数据集A路径")
-    compare_enhanced_parser.add_argument("--dataset-b", type=str, required=True, help="数据集B路径")
-    compare_enhanced_parser.add_argument("--output", type=str, help="输出报告路径")
-    compare_enhanced_parser.add_argument("--key-fields", type=str, nargs="+", default=["instruction"], help="关键字段")
-
-    # 版本控制命令
-    version_parser = subparsers.add_parser("version-control", help="版本控制")
-    version_parser.add_argument("--action", type=str, required=True, choices=["create", "list", "load", "compare"], help="操作类型")
-    version_parser.add_argument("--input", type=str, help="输入文件路径")
-    version_parser.add_argument("--output", type=str, help="输出文件路径")
-    version_parser.add_argument("--version", type=str, help="版本ID")
-    version_parser.add_argument("--description", type=str, default="", help="版本描述")
-    version_parser.add_argument("--versions-dir", type=str, default=".versions", help="版本目录")
+    # 增强搜索 / 增强统计 / 增强比较 / 版本控制四个旧命令
+    # （search-enhanced / stats-enhanced / compare-enhanced / version-control）
+    # 已合并进对应的主命令，旧名注册为 alias，不再单独定义解析器。
 
     # 自动化测试命令
     auto_test_parser = subparsers.add_parser("auto-test", help="自动化测试")

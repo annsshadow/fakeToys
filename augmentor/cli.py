@@ -1,7 +1,7 @@
 """AI 训练数据增强工具 CLI 入口
 
-本文件只负责「解析参数 → 查分发表 → 调用 handler → 统一异常处理」。
-44 个子命令的实现分别在 `augmentor/cli/commands/` 包里，按领域分组：
+本文件只负责「解析参数 → 归一化旧命令名 → 查分发表 → 调用 handler → 统一异常处理」。
+36 个规范命令的实现分别在 `augmentor/cli/commands/` 包里，按领域分组：
 `profiling` / `pipeline` / `quality` / `export` / `analysis` /
 `data_ops` / `version` / `security` / `ops`。
 
@@ -15,7 +15,7 @@ import sys
 from augmentor import load_config
 
 from augmentor.cli import COMMANDS
-from augmentor.cli.parser import build_parser
+from augmentor.cli.parser import LEGACY_ALIASES, build_parser
 
 
 def main():
@@ -26,6 +26,19 @@ def main():
     if not args.command:
         parser.print_help()
         sys.exit(1)
+
+    # 旧命令名归一化。`export-enhanced` 等 8 个名字在 T1.7 合并进了主命令，
+    # 但保留了 argparse alias，因此 `args.command` 仍会是旧名——在这里映射成
+    # 规范名并置 `--enhanced`，让 handler 不必知道旧名的存在。
+    canonical = LEGACY_ALIASES.get(args.command)
+    if canonical is not None:
+        print(
+            f"提示: `{args.command}` 已合并为 `{canonical} --enhanced`，"
+            "旧名将在下个大版本移除",
+            file=sys.stderr,
+        )
+        args.command = canonical
+        args.enhanced = True
 
     handler = COMMANDS.get(args.command)
     if handler is None:

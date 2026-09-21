@@ -93,7 +93,7 @@ augmentor/
 │   │   ├── langchain.py
 │   │   └── llamaindex.py
 │   │
-│   └── cli/                   CLI 实现（44 个子命令，按领域分 9 组）
+│   └── cli/                   CLI 实现（36 个子命令，按领域分 9 组）
 │       ├── io.py              4 个共用 I/O helper
 │       ├── parser.py          build_parser()（全部 argparse 定义）
 │       └── commands/          profiling / pipeline / quality / export /

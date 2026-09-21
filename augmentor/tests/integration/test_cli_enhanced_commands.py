@@ -1,7 +1,12 @@
-"""CLI 增强命令族集成测试
+"""CLI 合并命令族集成测试
 
-覆盖 clean-enhanced / export-enhanced / quality-report / search-enhanced /
-stats-enhanced / compare-enhanced 六个增强命令。
+T1.7 把 8 对命令合并成「主命令 + `--enhanced`」后，本文件覆盖其中
+6 个走独立实现的路径：`clean --enhanced` / `export --enhanced` /
+`search --enhanced` / `stats --enhanced` / `compare --enhanced`，
+以及未参与合并的 `quality-report`。
+
+旧的 `*-enhanced` 命令名仍可用（argparse alias + 弃用提示），
+由末尾的 `TestLegacyCommandAliases` 单独守住。
 """
 
 import json
@@ -78,7 +83,7 @@ class TestCleanEnhancedCommand:
         out_file = tmp / "cleaned_enh.json"
         out, err, code = run_cli(
             [
-                "cli", "clean-enhanced", "--input", str(dirty),
+                "cli", "clean", "--enhanced", "--input", str(dirty),
                 "--output", str(out_file),
             ]
         )
@@ -92,7 +97,7 @@ class TestCleanEnhancedCommand:
         out_file = Path(dirty.parent / "cleaned_enh2.json")
         out, err, code = run_cli(
             [
-                "cli", "clean-enhanced", "--input", str(dirty),
+                "cli", "clean", "--enhanced", "--input", str(dirty),
                 "--output", str(out_file),
             ]
         )
@@ -112,7 +117,7 @@ class TestExportEnhancedCommand:
         out_file = tmp / f"exp_enh.{fmt}"
         out, err, code = run_cli(
             [
-                "cli", "export-enhanced", "--input", str(clean),
+                "cli", "export", "--enhanced", "--input", str(clean),
                 "--output", str(out_file), "--format", fmt,
             ]
         )
@@ -126,7 +131,7 @@ class TestExportEnhancedCommand:
         out_file = tmp / "exp_enh_trunc.json"
         out, err, code = run_cli(
             [
-                "cli", "export-enhanced", "--input", str(clean),
+                "cli", "export", "--enhanced", "--input", str(clean),
                 "--output", str(out_file), "--max-items", "2",
             ]
         )
@@ -168,7 +173,7 @@ class TestSearchEnhancedCommand:
         clean, _, tmp = enhanced_context
         out, err, code = run_cli(
             [
-                "cli", "search-enhanced", "--input", str(clean),
+                "cli", "search", "--enhanced", "--input", str(clean),
                 "--query", "租房", "--method", "fuzzy",
             ]
         )
@@ -181,7 +186,7 @@ class TestSearchEnhancedCommand:
         out_file = tmp / "se.json"
         out, err, code = run_cli(
             [
-                "cli", "search-enhanced", "--input", str(clean),
+                "cli", "search", "--enhanced", "--input", str(clean),
                 "--query", "租房", "--output", str(out_file),
             ]
         )
@@ -197,7 +202,7 @@ class TestStatsEnhancedCommand:
         out_file = tmp / "se_stats.json"
         out, err, code = run_cli(
             [
-                "cli", "stats-enhanced", "--input", str(clean),
+                "cli", "stats", "--enhanced", "--input", str(clean),
                 "--output", str(out_file),
             ]
         )
@@ -214,7 +219,7 @@ class TestCompareEnhancedCommand:
         out_file = tmp / "ce.json"
         out, err, code = run_cli(
             [
-                "cli", "compare-enhanced",
+                "cli", "compare", "--enhanced",
                 "--dataset-a", str(clean), "--dataset-b", str(clean),
                 "--output", str(out_file),
             ]
@@ -230,9 +235,98 @@ class TestCompareEnhancedCommand:
         clean, dirty, tmp = enhanced_context
         out, err, code = run_cli(
             [
-                "cli", "compare-enhanced",
+                "cli", "compare", "--enhanced",
                 "--dataset-a", str(clean), "--dataset-b", str(dirty),
             ]
         )
         assert code is None, err
         assert "仅在B中: 1" in out
+
+
+class TestLegacyCommandAliases:
+    """T1.7 的向后兼容承诺：8 个旧命令名必须仍可用，且映射到同一份实现。
+
+    只断言「还能跑」不够——必须断言旧写法与新写法产出**逐字节相同的 stdout**，
+    否则用户会以为自己还在用旧行为，实际已经换了实现。
+    """
+
+    @staticmethod
+    def _cases(clean, dirty, tmp):
+        """(旧名, 规范名, 共用 argv 尾部)
+
+        两侧用**完全相同的参数**（含输出路径），否则 stdout 里的路径不同，
+        比对就失去意义。规范侧由测试统一补 `--enhanced`。
+        """
+        return [
+            ("clean-enhanced", "clean",
+             ["--input", str(dirty), "--output", str(tmp / "legacy_clean.json")]),
+            ("export-enhanced", "export",
+             ["--input", str(clean), "--output", str(tmp / "legacy_exp.json"),
+              "--format", "json"]),
+            ("analyze-data", "analyze",
+             ["--input", str(clean)]),
+            ("stats-enhanced", "stats",
+             ["--input", str(clean)]),
+            ("visualize-data", "visualize",
+             ["--input", str(clean)]),
+            ("search-enhanced", "search",
+             ["--input", str(clean), "--query", "租房"]),
+            ("compare-enhanced", "compare",
+             ["--dataset-a", str(clean), "--dataset-b", str(clean)]),
+            ("version-control", "version",
+             ["--action", "list", "--versions-dir", str(tmp / "legacy_v")]),
+        ]
+
+    def test_legacy_name_matches_canonical_output(self, enhanced_context):
+        """旧名与「规范名 + --enhanced」必须同输出，且旧名要打印弃用提示"""
+        import re
+
+        def normalize(text):
+            # `search` 会打印耗时（`用时 0.03ms`），两次运行必然不同，
+            # 比对前抹平——否则这条测试会随机红，失去守门价值。
+            return re.sub(r"用时 [\d.]+ms", "用时 <t>ms", text)
+
+        clean, dirty, tmp = enhanced_context
+        for legacy, canonical, tail in self._cases(clean, dirty, tmp):
+            out_old, err_old, code_old = run_cli(["cli", legacy] + tail)
+            out_new, err_new, code_new = run_cli(["cli", canonical, "--enhanced"] + tail)
+            assert code_old is None, f"{legacy}: {err_old}"
+            assert code_new is None, f"{canonical} --enhanced: {err_new}"
+            assert normalize(out_old) == normalize(out_new), (
+                f"`{legacy}` 与 `{canonical} --enhanced` 输出不一致——"
+                "旧名没有映射到同一份实现"
+            )
+            assert "已合并为" in err_old, f"`{legacy}` 未打印弃用提示"
+            assert "已合并为" not in err_new, (
+                f"`{canonical} --enhanced` 不该打印弃用提示"
+            )
+
+    def test_legacy_aliases_are_registered_in_parser(self):
+        """别名必须由 argparse 注册（同一个解析器对象），而非 handler 里 if 兜底"""
+        from augmentor.cli.parser import LEGACY_ALIASES, build_parser
+
+        parser = build_parser()
+        sub = next(
+            a for a in parser._actions
+            if getattr(a, "choices", None) and "export" in a.choices
+        )
+        for legacy, canonical in LEGACY_ALIASES.items():
+            assert legacy in sub.choices, f"`{legacy}` 未注册为 alias"
+            assert sub.choices[legacy] is sub.choices[canonical], (
+                f"`{legacy}` 与 `{canonical}` 不是同一个解析器"
+            )
+
+    def test_canonical_commands_have_no_misleading_suffix(self):
+        """规范命令名里不应再出现 `-enhanced` / `-data` / `-control` 这类后缀
+
+        `quality-report` 不在被禁之列：它是真实能力名（生成报告），
+        与 `quality`（筛数据）是两件事，T1.7 刻意没有合并它们。
+        """
+        from augmentor.cli.commands import COMMANDS
+
+        assert "quality-report" in COMMANDS, "quality-report 不应被合并掉"
+        for name in COMMANDS:
+            assert not name.endswith("-enhanced"), f"{name} 是应被合并的旧名"
+            assert name not in {"analyze-data", "visualize-data", "version-control"}, (
+                f"{name} 是应被合并的旧名"
+            )

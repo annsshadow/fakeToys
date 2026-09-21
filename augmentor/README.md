@@ -148,20 +148,24 @@ python cli.py search --input data.json --query "租房" --method contains
 # 验证配置文件
 python cli.py validate-config --config config.yaml
 
-# 数据分析
-python cli.py analyze --input data.json --output analysis_report.json
+# 数据分析（默认走 pipeline；--enhanced 走 analytics，可 --output 落盘报告）
+python cli.py analyze --input data.json
+python cli.py analyze --input data.json --enhanced --output analysis_report.json
 
-# 增强数据清洗
-python cli.py clean-enhanced --input data.json --output cleaned.json --rules remove_empty remove_duplicates
+# 数据清洗（默认走 DataCleaner；--enhanced 走 cleaner，按 --rules 规则式清洗）
+python cli.py clean --input data.json --output cleaned.json
+python cli.py clean --input data.json --output cleaned.json --enhanced --rules remove_empty remove_duplicates
 
-# 增强数据导出
-python cli.py export-enhanced --input data.json --output exported.json --format alpaca
+# 数据导出（默认按目录批量导出；--enhanced 导出单个文件）
+python cli.py export --input data.json --output-dir out/
+python cli.py export --input data.json --enhanced --output exported.json --format alpaca
 
 # 质量报告
 python cli.py quality-report --input data.json --output quality_report.json
 
-# 数据可视化
-python cli.py visualize --input data.json --output visualization.txt
+# 数据可视化（默认落盘到 --output-dir；--enhanced 输出文本/JSON 报告）
+python cli.py visualize --input data.json --output-dir visualizations/
+python cli.py visualize --input data.json --enhanced --format text
 
 # 数据备份
 python cli.py backup --action create --input data.json --name my_backup
@@ -169,21 +173,34 @@ python cli.py backup --action list
 python cli.py backup --action restore --name my_backup --output restored.json
 python cli.py backup --action delete --name my_backup
 
-# 增强搜索
-python cli.py search-enhanced --input data.json --query "租房" --method contains
+# 搜索（默认 indexer；--enhanced 额外支持 fuzzy / regex 与 --offset）
+python cli.py search --input data.json --query "租房" --method contains
+python cli.py search --input data.json --query "租房" --enhanced --method fuzzy
 
-# 增强统计
-python cli.py stats-enhanced --input data.json --output stats.json
+# 统计（默认概要；--enhanced 逐字段填充率/长度/唯一值）
+python cli.py stats --input data.json
+python cli.py stats --input data.json --enhanced --output stats.json
 
-# 增强比较
-python cli.py compare-enhanced --dataset-a data1.json --dataset-b data2.json --output comparison.json
+# 比较（默认按文件路径；--enhanced 出字段级指标）
+python cli.py compare --dataset-a data1.json --dataset-b data2.json
+python cli.py compare --dataset-a data1.json --dataset-b data2.json --enhanced --output comparison.json
 
-# 版本控制
-python cli.py version-control --action create --input data.json --description "初始版本"
-python cli.py version-control --action list
-python cli.py version-control --action load --version v1.0.0 --output loaded.json
-python cli.py version-control --action compare --version v1.0.0 --output diff.json
+# 版本管理（默认 pipeline.version_manager；--enhanced 走独立的 DatasetVersionManager）
+python cli.py version --action create --input data.json
+python cli.py version --action list
+python cli.py version --action diff --version-id v1 --version-id-2 v2
+python cli.py version --action create --input data.json --enhanced --description "初始版本"
+python cli.py version --action list --enhanced
+python cli.py version --action load --version v1.0.0 --output loaded.json --enhanced
+python cli.py version --action compare --version v1.0.0 --output diff.json --enhanced
 ```
+
+> **关于 `--enhanced`**：它不表示「更高级」，只表示「走独立实现，绕过
+> `AugmentorPipeline`」。8 对同能力命令（`export` / `analyze` / `visualize` /
+> `version` / `compare` / `search` / `clean` / `stats`）在 T1.7 合并成
+> 「主命令 + `--enhanced`」，旧的 `*-enhanced` / `*-data` / `version-control`
+> 名字仍可用（会打印弃用提示），将在下个大版本移除。
+> `quality` 与 `quality-report` 未合并：前者筛数据、后者出报告，是两种能力。
 
 ### 高级功能
 

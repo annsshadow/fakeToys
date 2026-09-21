@@ -97,9 +97,44 @@ def run_validate_config(args, config):
             print(f"  - {w.path}: {w.message}")
 
 
-# ============ 数据集搜索 ============
+# ============ 数据集搜索（合并原 search-enhanced）============
 def run_search(args, config):
-    """`search` 子命令"""
+    """`search` 子命令
+
+    默认走 `indexer.DatasetIndexer`：支持 exact / contains / ngram，默认返回 10 条。
+    `--enhanced` 走 `search_enhanced.search_dataset`：额外支持 fuzzy / regex 与
+    `--offset`，默认返回 100 条，可 `--output` 落盘完整结果。
+
+    `--limit` 的两套默认值不同（10 / 100），所以解析器里留空，在这里按分支补。
+    """
+    if args.enhanced:
+        from augmentor.search_enhanced import search_dataset
+
+        items = _load_items(args.input)
+        result = search_dataset(
+            items,
+            args.query,
+            args.field,
+            args.method,
+            100 if args.limit is None else args.limit
+        )
+
+        print(f"找到 {result.total_matches} 条匹配结果，用时 {result.query_time_ms:.2f}ms")
+        print(f"搜索方法: {result.method}")
+
+        if result.items:
+            print("\n搜索结果:")
+            for i, item in enumerate(result.items[:10], 1):
+                print(f"  {i}. {item.get('instruction', '')[:50]}...")
+
+        if args.output:
+            output_path = Path(args.output)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(output_path, 'w', encoding='utf-8') as f:
+                json.dump(result.to_dict(), f, ensure_ascii=False, indent=2)
+            print(f"\n结果已保存到 {args.output}")
+        return
+
     from augmentor.indexer import DatasetIndexer
 
     items = _load_items(args.input)
@@ -112,38 +147,8 @@ def run_search(args, config):
     )
 
     # 限制返回数量
-    result.items = result.items[:args.limit]
+    result.items = result.items[:10 if args.limit is None else args.limit]
 
     print(f"找到 {result.total_matches} 条匹配结果，用时 {result.query_time_ms:.2f}ms")
     print(f"搜索索引: {result.index_used}")
     _print(result.items)
-
-
-# ============ 增强搜索 ============
-def run_search_enhanced(args, config):
-    """`search-enhanced` 子命令"""
-    from augmentor.search_enhanced import search_dataset
-
-    items = _load_items(args.input)
-    result = search_dataset(
-        items, 
-        args.query, 
-        args.field, 
-        args.method, 
-        args.limit
-    )
-
-    print(f"找到 {result.total_matches} 条匹配结果，用时 {result.query_time_ms:.2f}ms")
-    print(f"搜索方法: {result.method}")
-
-    if result.items:
-        print("\n搜索结果:")
-        for i, item in enumerate(result.items[:10], 1):
-            print(f"  {i}. {item.get('instruction', '')[:50]}...")
-
-    if args.output:
-        output_path = Path(args.output)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(result.to_dict(), f, ensure_ascii=False, indent=2)
-        print(f"\n结果已保存到 {args.output}")

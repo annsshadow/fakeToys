@@ -157,7 +157,7 @@ class TestVersionControlBranches:
         monkeypatch.chdir(tmp_path)
         out, err, code = run_cli(
             [
-                "cli", "version-control", "--action", "create",
+                "cli", "version", "--enhanced", "--action", "create",
                 "--versions-dir", str(tmp_path / "vc"),
             ]
         )
@@ -168,7 +168,7 @@ class TestVersionControlBranches:
         monkeypatch.chdir(tmp_path)
         out, err, code = run_cli(
             [
-                "cli", "version-control", "--action", "list",
+                "cli", "version", "--enhanced", "--action", "list",
                 "--versions-dir", str(tmp_path / "vc"),
             ]
         )
@@ -179,7 +179,7 @@ class TestVersionControlBranches:
         monkeypatch.chdir(tmp_path)
         out, err, code = run_cli(
             [
-                "cli", "version-control", "--action", "compare",
+                "cli", "version", "--enhanced", "--action", "compare",
                 "--versions-dir", str(tmp_path / "vc"),
             ]
         )
@@ -196,20 +196,20 @@ class TestVersionControlBranches:
         vdir = str(tmp_path / "vc")
 
         out1, _, c1 = run_cli(
-            ["cli", "version-control", "--action", "create",
+            ["cli", "version", "--enhanced", "--action", "create",
              "--input", str(data), "--versions-dir", vdir]
         )
         assert c1 is None
         vid1 = re.search(r"版本ID: (\S+)", out1).group(1)
         out2, _, c2 = run_cli(
-            ["cli", "version-control", "--action", "create",
+            ["cli", "version", "--enhanced", "--action", "create",
              "--input", str(data2), "--versions-dir", vdir]
         )
         assert c2 is None
         # current = vid2；比较 current vs vid1：vid2 比 vid1 少 3 条
         out3, err3, c3 = run_cli(
             [
-                "cli", "version-control", "--action", "compare",
+                "cli", "version", "--enhanced", "--action", "compare",
                 "--version", vid1, "--output", str(tmp_path / "cmp.json"),
                 "--versions-dir", vdir,
             ]
@@ -259,3 +259,69 @@ class TestBenchmarkSkipBranch:
         assert "跳过基准对比" in err
         parsed = json.loads(out)
         assert "comparisons" not in parsed
+
+
+class TestMergedCommandArgValidation:
+    """T1.7 合并后新增的错误分支
+
+    合并把「两个实现各自的必填参数」压进一个解析器，argparse 表达不了
+    「取决于另一个 flag」的必填，于是校验下移到 handler。这几条守住那些
+    分支——它们平时不会被走到，一旦回归就是「静默用了另一套实现」。
+    """
+
+    def test_export_without_output_dir_exits_1(self, branch_context):
+        """基础路径缺 --output-dir 需报错，而不是静默不落盘"""
+        data, _, _ = branch_context
+        out, err, code = run_cli(["cli", "export", "--input", str(data)])
+        assert code == 1
+        assert "--output-dir" in err
+        assert "--enhanced" in err, "错误信息要指出另一条路径的写法"
+
+    def test_export_enhanced_without_output_exits_1(self, branch_context):
+        """--enhanced 路径缺 --output 需报错"""
+        data, _, _ = branch_context
+        out, err, code = run_cli(
+            ["cli", "export", "--enhanced", "--input", str(data)]
+        )
+        assert code == 1
+        assert "--output" in err
+
+    def test_version_enhanced_rejects_base_only_action(self, tmp_path, monkeypatch):
+        """--enhanced 下 `diff` 属于基础后端，需显式报错而非静默无输出"""
+        monkeypatch.chdir(tmp_path)
+        out, err, code = run_cli(
+            ["cli", "version", "--enhanced", "--action", "diff",
+             "--versions-dir", str(tmp_path / "v")]
+        )
+        assert code == 1
+        assert "diff" in err
+
+    def test_version_base_rejects_enhanced_only_action(self, tmp_path, monkeypatch):
+        """基础后端下 `load` 只存在于独立实现，需提示加 --enhanced
+
+        改之前这条会**静默正常退出**（if/elif 全不命中），是本次合并顺带修掉的
+        可排查性缺陷，因此专门守一条。
+        """
+        monkeypatch.chdir(tmp_path)
+        out, err, code = run_cli(["cli", "version", "--action", "load"])
+        assert code == 1
+        assert "--enhanced" in err
+
+
+class TestUnimplementedSubcommandGuard:
+    def test_missing_dispatch_entry_fails_loud(self, tmp_path, monkeypatch):
+        """分发表漏登记时必须报错退出，而不是静默什么都不做
+
+        T1.6 拆包后 `main()` 用 `COMMANDS.get(...)` 查表；如果只是 `.get()` 后
+        直接调用，漏登记会变成 `None is not callable` 或静默跳过。这条守住那个
+        显式 `if handler is None` 分支。
+        """
+        monkeypatch.chdir(tmp_path)
+        # `cli.py` 是 `from augmentor.cli import COMMANDS`，名字在导入时已绑定，
+        # 所以要打在 `cli` 模块自己的命名空间上。
+        monkeypatch.setattr("cli.COMMANDS", {}, raising=True)
+        out, err, code = run_cli(
+            ["cli", "augment", "--input", "x.json", "--output", "y.json"]
+        )
+        assert code == 1
+        assert "未实现的子命令" in err

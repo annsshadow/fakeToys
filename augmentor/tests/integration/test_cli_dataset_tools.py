@@ -208,7 +208,7 @@ class TestLegacyDataCommandRegression:
     def test_analyze_data_prints_report(self, dataset):
         """analyze-data 需打印数据集大小与质量分数"""
         out, parsed, code = run_cli(
-            ["cli", "analyze-data", "--input", str(dataset)]
+            ["cli", "analyze", "--enhanced", "--input", str(dataset)]
         )
         assert code is None
         assert "数据集大小: 5" in out
@@ -218,7 +218,7 @@ class TestLegacyDataCommandRegression:
         """analyze-data --output 需写入报告文件"""
         out_file = tmp_path / "analysis.json"
         out, parsed, code = run_cli(
-            ["cli", "analyze-data", "--input", str(dataset), "--output", str(out_file)]
+            ["cli", "analyze", "--enhanced", "--input", str(dataset), "--output", str(out_file)]
         )
         assert code is None
         assert out_file.exists()
@@ -226,7 +226,7 @@ class TestLegacyDataCommandRegression:
     def test_visualize_data_json_format(self, dataset):
         """visualize-data --format json 需输出可解析 JSON"""
         out, parsed, code = run_cli(
-            ["cli", "visualize-data", "--input", str(dataset), "--format", "json"]
+            ["cli", "visualize", "--enhanced", "--input", str(dataset), "--format", "json"]
         )
         assert code is None
         assert parsed["total_items"] == 5
