@@ -150,6 +150,7 @@
           <button class="btn-primary" @click="loadConfigEntities">实体配置</button>
           <button class="btn-primary" @click="loadDataStructure">数据结构</button>
           <button class="btn-primary" @click="loadDsTables">表/字段/验证码</button>
+          <button class="btn-primary" @click="loadDeployMeta">Token/部署资源/节点</button>
           <button class="btn-create" @click="saveConfig">+ 新建/更新</button>
         </div>
         <div v-if="dsText" class="app-meta">{{ dsText }}</div>
@@ -846,6 +847,21 @@ async function loadDataStructure() {
     dsText.value = `数据结构模块 ${n(mods)} / 输出结构 ${n(structs)}`
   } catch (e: any) {
     toast.error('加载数据结构失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadDeployMeta() {
+  try {
+    // 消费 program_center 三条无参真实路由：系统 Token 配置 / 部署资源 / 节点命令清单
+    const [token, resource, nodes] = await Promise.all([
+      api.get('/api/program_center/config/token'),
+      api.get('/api/program_center/deploy/server/resource'),
+      api.get('/api/program_center/command/list/node'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    const hasToken = (token as any)?.data ? '有' : '无'
+    dsText.value = `系统Token ${hasToken} / 部署资源 ${n(resource)} / 节点 ${n(nodes)}`
+  } catch (e: any) {
+    toast.error('加载部署信息失败: ' + (e?.message ?? ''))
   }
 }
 async function loadDsTables() {
