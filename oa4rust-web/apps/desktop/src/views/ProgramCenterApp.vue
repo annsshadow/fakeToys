@@ -154,6 +154,7 @@
           <button class="btn-primary" @click="loadConfigDump">配置转储/三元管理</button>
           <button class="btn-primary" @click="loadJestModule">测试/版本/模块</button>
           <button class="btn-primary" @click="loadSchedule">调度/本地调度/报告</button>
+          <button class="btn-primary" @click="loadOutputMeta">输出/模块分类/存储映射</button>
           <button class="btn-create" @click="saveConfig">+ 新建/更新</button>
         </div>
         <div v-if="dsText" class="app-meta">{{ dsText }}</div>
@@ -850,6 +851,20 @@ async function loadDataStructure() {
     dsText.value = `数据结构模块 ${n(mods)} / 输出结构 ${n(structs)}`
   } catch (e: any) {
     toast.error('加载数据结构失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadOutputMeta() {
+  try {
+    // 消费 program_center 三条无参真实路由：输出清单 / 模块分类清单 / 存储映射
+    const [output, modCat, storage] = await Promise.all([
+      api.get('/api/program_center/output/list'),
+      api.get('/api/program_center/module/list/category'),
+      api.get('/api/program_center/storagemappings'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    dsText.value = `输出 ${n(output)} / 模块分类 ${n(modCat)} / 存储映射 ${n(storage)}`
+  } catch (e: any) {
+    toast.error('加载输出/存储失败: ' + (e?.message ?? ''))
   }
 }
 async function loadSchedule() {
