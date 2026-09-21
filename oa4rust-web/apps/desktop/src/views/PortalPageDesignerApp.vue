@@ -13,6 +13,7 @@
         <button class="btn-refresh" @click="loadData">🔄 刷新</button>
         <button class="btn-refresh" @click="loadPortalMeta">模板页/门户概要</button>
         <button class="btn-refresh" @click="loadPortalMeta2">分类/输出/门户</button>
+        <button class="btn-refresh" @click="loadPortalMeta3">设计器/设计清单/门户列表</button>
       </div>
       <div v-if="portalMetaText" class="pm-note">{{ portalMetaText }}</div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
@@ -68,6 +69,20 @@ interface PageForm {
 
 const listEp = '/api/portal/assemble/designer/page/list'
 const portalMetaText = ref('')
+async function loadPortalMeta3() {
+  try {
+    // 消费 portal designer 三条无参真实路由：设计器清单 / 设计清单 / 门户列表
+    const [designer, designs, portals] = await Promise.all([
+      api.get('/api/portal/assemble/designer'),
+      api.get('/api/portal/design/list'),
+      api.get('/api/portal/assemble/designer/portal/list'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    portalMetaText.value = `设计器 ${n(designer)} / 设计清单 ${n(designs)} / 门户 ${n(portals)}`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadPortalMeta2() {
   try {
     // GET templatepage/list/category + output/list + portalcategory/list —— 模板页分类/输出/门户分类
