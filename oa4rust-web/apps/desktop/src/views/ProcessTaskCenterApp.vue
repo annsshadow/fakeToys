@@ -12,6 +12,7 @@
         <input v-model="search" placeholder="搜索标题 / 流程 / 处理人..." class="search-input" />
         <button class="btn-refresh" @click="loadWorkList">📋 工作实例</button>
         <button class="btn-refresh" @click="loadCounts">📊 计数</button>
+        <button class="btn-refresh" @click="loadAppOverview">🗂️ 应用概览</button>
         <button class="btn-refresh" @click="loadTouch">⏰ 超期触发</button>
       </div>
       <div v-if="countsText" class="wk-chips"><span class="wk-chip">{{ countsText }}</span></div>
@@ -89,6 +90,20 @@ async function loadCounts() {
     countsText.value = `待办 ${n(task)} / 待阅 ${n(read)} / 已办工作 ${n(done)} / 已办任务 ${n(taskDone)} / 已阅 ${n(readDone)}`
   } catch (e: any) {
     toast.error('加载计数失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadAppOverview() {
+  try {
+    // 消费 surface 三条无参真实路由：全部应用 / 复杂应用清单 / 工作按应用计数汇总
+    const [apps, complex, workCount] = await Promise.all([
+      api.get('/api/processplatform/assemble/surface/application/list'),
+      api.get('/api/processplatform/assemble/surface/application/list/complex'),
+      api.get('/api/processplatform/assemble/surface/work/list/count/application'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    countsText.value = `全部应用 ${n(apps)} / 复杂应用 ${n(complex)} / 工作计数 ${n(workCount)}`
+  } catch (e: any) {
+    toast.error('加载应用概览失败: ' + (e?.message ?? ''))
   }
 }
 async function loadWorkList() {
