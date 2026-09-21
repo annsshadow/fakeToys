@@ -156,7 +156,7 @@ class TestVersionControlCommand:
 
         out, _, code = run_cli(
             [
-                "cli", "version-control", "--action", "create",
+                "cli", "version", "--enhanced", "--action", "create",
                 "--input", str(data), "--versions-dir", vdir,
             ]
         )
@@ -165,7 +165,7 @@ class TestVersionControlCommand:
         assert m is not None
 
         out2, _, code2 = run_cli(
-            ["cli", "version-control", "--action", "list", "--versions-dir", vdir]
+            ["cli", "version", "--enhanced", "--action", "list", "--versions-dir", vdir]
         )
         assert code2 is None
         assert "找到 1 个版本" in out2
@@ -173,7 +173,7 @@ class TestVersionControlCommand:
         restored = tmp_path / "restored.json"
         out3, _, code3 = run_cli(
             [
-                "cli", "version-control", "--action", "load",
+                "cli", "version", "--enhanced", "--action", "load",
                 "--version", m.group(1), "--output", str(restored),
                 "--versions-dir", vdir,
             ]
@@ -185,7 +185,7 @@ class TestVersionControlCommand:
         """compare 缺参数需以 exit 1 拒绝"""
         monkeypatch.chdir(tmp_path)
         out, err, code = run_cli(
-            ["cli", "version-control", "--action", "compare"]
+            ["cli", "version", "--enhanced", "--action", "compare"]
         )
         assert code == 1
         assert "必需" in err
