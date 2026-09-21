@@ -41,7 +41,7 @@
       </div>
       <!-- Application tab -->
       <div v-if="tab==='application'" class="tab-content">
-        <div class="toolbar"><button class="btn-primary" @click="loadAllApplications">全部应用</button><span v-if="appMetaText" class="app-meta">{{ appMetaText }}</span></div>
+        <div class="toolbar"><button class="btn-primary" @click="loadAllApplications">全部应用</button><button class="btn-primary" @click="loadCenterMeta">注册应用/版本/验证码</button><span v-if="appMetaText" class="app-meta">{{ appMetaText }}</span></div>
         <div v-if="loadingApp" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
         <div v-else-if="applications.length===0" class="empty"><div class="ei">📱</div><p>暂无Application</p></div>
         <div v-else class="item-grid">
@@ -362,6 +362,21 @@ async function loadAllApplications() {
     appMetaText.value = `全部应用 ${n(apps)} / 中心应用 ${n(center)}`
   } catch (e: any) {
     toast.error('加载应用清单失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadCenterMeta() {
+  try {
+    // 消费 program_center 三条真实路由：注册应用 / 中心版本 / 验证码脚本清单
+    const [regist, version, codes] = await Promise.all([
+      api.get('/api/program_center/center/regist/applications'),
+      api.get('/api/program_center/center/version'),
+      api.get('/api/program_center/code/list'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    const ver = (version as any)?.data?.version ?? '—'
+    appMetaText.value = `注册应用 ${n(regist)} / 版本 ${ver} / 验证码 ${n(codes)}`
+  } catch (e: any) {
+    toast.error('加载中心信息失败: ' + (e?.message ?? ''))
   }
 }
 async function loadApps() {

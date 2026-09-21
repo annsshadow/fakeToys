@@ -3,7 +3,11 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 90 # rev90（2026-09-21 G5：流程-表面 应用与流程 终端/按key/按应用）：
+rev: 91 # rev91（2026-09-21 G5：程序中心 注册应用/中心版本/验证码清单）：
+       # ProgramCenterApp.vue Application 页补「注册应用/版本/验证码」按钮，消费 program_center center/regist/applications + center/version + code/list 共 3 条真实路由；全局消费 519→522（522/4638=11.3%）。
+       # 契约回源码核验：三 handler 均无参 GET（regist 查 x_applications、version 返回常量、code_list 查 x_program_script category='code'），空库返空数组 200。程序中心域缺口 360→357。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev90 # rev90（2026-09-21 G5：流程-表面 应用与流程 终端/按key/按应用）：
        # ProcessManagerApp.vue 补「应用与流程」按钮，消费 surface application/list/terminal/{terminal} + application/list/key/{key} + process/list/application/{applicationFlag} 共 3 条真实路由；全局消费 516→519（519/4638=11.2%）。
        # 契约回源码核验：三 handler 均 Path 单参 + PP_E_APPLICATION/PP_E_PROCESS 查询，xid 非 NULL、空库返空数组 200（非裸路由 500 型）。缺口最大域 流程-表面 865→862。
        # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
