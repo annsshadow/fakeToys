@@ -495,7 +495,9 @@ class TestModelManager:
         """已缓存时走快速路径（line 40-41），不进入锁"""
         manager = ModelManager()
         monkeypatch.setattr(manager, "_sentence_model", "cached-model", raising=False)
-        assert manager.get_sentence_model() is "cached-model"
+        # 用 == 而不是 is：字符串身份取决于驻留（interning），靠 is 只是恰好通过，
+        # 且 CPython 会为此发 SyntaxWarning
+        assert manager.get_sentence_model() == "cached-model"
 
     def test_double_checked_locking_inner(self, monkeypatch):
         """进入锁后再次检查（line 44-45）应直接返回已缓存值"""
