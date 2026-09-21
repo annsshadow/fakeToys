@@ -4,6 +4,7 @@
       <div><h1>业务活动监控</h1><p class="subtitle">/api/processplatform/assemble/bam/*</p></div>
       <span class="hdr-a">
         <button class="btn-primary ghost" @click="loadPeriodStats">周期统计</button>
+        <button class="btn-primary ghost" @click="loadStateStats">状态监控</button>
         <button class="btn-primary" @click="refresh">🔄 刷新</button>
       </span>
     </div>
@@ -52,6 +53,20 @@ async function loadPeriodStats() {
     periodText.value = `已办任务周期 ${n(done)} / 超期任务周期 ${n(expired)}`
   } catch (e: any) {
     toast.error('加载周期统计失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadStateStats() {
+  try {
+    // 消费 bam 三条无参真实路由：运行中状态 / 状态分类 / 组织维度状态
+    const [running, category, org] = await Promise.all([
+      api.get('/api/processplatform/assemble/bam/state/running'),
+      api.get('/api/processplatform/assemble/bam/state/category'),
+      api.get('/api/processplatform/assemble/bam/state/organization'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    periodText.value = `运行中 ${n(running)} / 分类 ${n(category)} / 组织 ${n(org)}`
+  } catch (e: any) {
+    toast.error('加载状态监控失败: ' + (e?.message ?? ''))
   }
 }
 const events = ref<any[]>([])

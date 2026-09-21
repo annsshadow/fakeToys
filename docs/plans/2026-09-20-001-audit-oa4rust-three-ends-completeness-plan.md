@@ -3,7 +3,11 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 96 # rev96（2026-09-21 G5：文件 顶层文件夹2/我发出分享/我收到分享）：
+rev: 97 # rev97（2026-09-21 G5：流程-BAM 运行中/分类/组织维度状态监控）：
+       # BamApp.vue 补「状态监控」按钮，消费 bam state/running + state/category + state/organization 共 3 条真实路由；全局消费 537→540（540/4638=11.6%）。
+       # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。流程-BAM 域缺口 88→85。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev96 # rev96（2026-09-21 G5：文件 顶层文件夹2/我发出分享/我收到分享）：
        # FileManager.vue 补「文件夹2/我的分享/收到分享」按钮，消费 file folder2/list/top + share/list/my + share/list/to/me 共 3 条真实路由；全局消费 534→537（537/4638=11.6%）。
        # 契约回源码核验：folder2_list_top 无参、share_list_my/to_me 取会话 Extension 走 Cookie 鉴权，均无写、空库安全。文件/附件域缺口 176→173。
        # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
