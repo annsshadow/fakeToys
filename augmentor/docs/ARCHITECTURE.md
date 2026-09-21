@@ -45,7 +45,7 @@ augmentor/
 ├── .coveragerc                覆盖率报告配置
 │
 ├── augmentor/                 核心引擎
-│   ├── __init__.py            对外导出面（版本 2.0.0）
+│   ├── __init__.py            对外导出面（版本 2.2.0，全仓唯一版本声明）
 │   ├── pipeline.py            主流程编排
 │   ├── config.py              dataclass 配置中心
 │   ├── model_manager.py       sentence-transformers 单例
@@ -94,17 +94,21 @@ augmentor/
 │       └── llamaindex.py
 │
 ├── api/                       REST API
-│   ├── main.py                FastAPI 应用装配（29 行）
-│   ├── deps.py                依赖注入：管道单例、异步文件 IO
-│   ├── middleware/            请求日志与耗时统计
-│   └── routes/                按领域拆分的 7 个 router
+│   ├── main.py                FastAPI 应用装配（中间件 + 路由 + 静态文件）
+│   ├── deps.py                依赖注入：管道单例、路径白名单、鉴权、异步文件 IO
+│   ├── middleware/            限流、请求日志与耗时统计
+│   └── routes/                按领域拆分的 11 个 router
 │       ├── data.py            数据 CRUD / 上传 / 分析 / 可视化
 │       ├── augment.py         增强任务与进度
-│       ├── quality.py         评估 / 去重 / 报告 / 清洗 / 标注 / 基准
+│       ├── quality.py         评估 / 去重 / 报告 / 清洗 / 标注 / 基准 / 画像
 │       ├── export.py          导出 / 批量导出 / 预览 / 格式清单
 │       ├── version.py         版本 CRUD / 对比 / 回滚 / 历史
 │       ├── config.py          配置与模型清单
-│       └── multimodal.py      多模态处理与扫描
+│       ├── multimodal.py      多模态处理与扫描
+│       ├── status.py          健康与依赖诊断
+│       ├── audit.py           数据集审计
+│       ├── leakage.py         数据泄漏检测
+│       └── privacy.py         隐私风险检测
 │
 ├── web/                       Web UI
 │   └── src/
@@ -263,6 +267,111 @@ BLEU 使用标准裁剪计数与简短惩罚。当所有 n-gram 的裁剪计数�
 > 注意：当前 FastAPI 版本把 `include_router` 包装为不展开的 `_IncludedRouter`
 > 容器（`path` 与 `methods` 均为 `None`），因此不能遍历 `app.routes`，
 > 必须走 OpenAPI schema。
+
+### 3.12 安全边界
+
+三条防线：**路径白名单**、**写操作鉴权**、**限流**。共同前提是「默认单机开箱即用，
+生产部署再收紧」——因此三项都默认宽松，但都会在启动日志或响应中明确暴露当前状态，
+不制造「以为已经安全」的错觉。
+
+#### 3.12.1 路径白名单
+
+所有接受客户端传入路径的接口都必须经 `api/deps.py` 规范化，不允许直接把字符串拼进
+`open()`：
+
+| 函数 | 语义 | 失败码 |
+|------|------|--------|
+| `resolve_within_roots(name, label)` | 只做边界校验，不要求存在 | 400 / 403 |
+| `resolve_data_path(name, for_write=False)` | 文件路径；读操作要求 `is_file()` | 400 / 403 / 404 |
+| `resolve_data_dir(name)` | 目录路径 | 400 / 403 |
+
+校验顺序：
+
+1. 空值或非字符串 → `400`；
+2. 路径含 `..` 组件 → `400`（在 `resolve` 之前判断，避免依赖文件系统语义）；
+3. 相对路径按进程工作目录拼接，`Path.resolve()` 规范化并**展开符号链接**；
+4. 逐条与白名单根目录做 `relative_to` 比对，全部不匹配 → `403`。
+
+白名单来源按优先级解析（`_allowed_roots()`）：
+
+```
+AUGMENTOR_DATA_ROOTS（os.pathsep 分隔）
+  └─ 未设置 → config.yaml 的 web.data_roots
+       └─ 读取失败 → ["."]（进程工作目录）
+```
+
+环境变量优先是为了让容器部署与测试无需改配置文件即可收紧或放宽范围；
+`tests/conftest.py` 的 autouse fixture 正是通过它把 cwd 与临时目录注入白名单。
+
+> **为什么 `multimodal` 走 `resolve_within_roots` 而不是 `resolve_data_path`**
+>
+> `MultimodalProcessor` 对缺失或损坏的媒体文件是**降级**语义：在返回结果的 `errors`
+> 里记录问题，而不是中断整批处理。若在这里要求文件必须存在，一个坏文件会让整个
+> 请求变成 404，反而丢失了其余文件的处理结果。因此这里只做边界校验。
+
+#### 3.12.2 写操作鉴权
+
+写操作统一挂 `Depends(verify_api_key)`，校验请求头 `X-API-Key`：
+
+| 方法 | 路径 |
+|------|------|
+| PUT | `/api/data/update/{filename}` |
+| DELETE | `/api/data/delete/{filename}` |
+| POST | `/api/data/upload` |
+| POST | `/api/data/export`、`/api/export/batch` |
+| POST | `/api/augment/start` |
+| POST | `/api/config` |
+| POST | `/api/versions/create`、`/api/versions/{version_id}/rollback` |
+| DELETE | `/api/versions/{version_id}` |
+| POST | `/api/quality/profiling`（`save=true` 时会落盘） |
+
+读接口（列表、加载、分析、可视化、评估、去重、预览、进度、配置查询、版本查询）
+**不要求**密钥，保持匿名可读。
+
+认证模型是「**未配置即关闭**」：
+
+```python
+expected = os.environ.get("AUGMENTOR_API_KEY", "").strip()
+if not expected:
+    return          # 未配置 → 放行
+if not x_api_key or not secrets.compare_digest(x_api_key, expected):
+    raise HTTPException(status_code=401, ...)
+```
+
+- 密钥来自环境变量 `AUGMENTOR_API_KEY`，不写入 `config.yaml`，避免随仓库泄漏；
+- 比较使用 `secrets.compare_digest`，不泄漏长度与时序信息；
+- 未配置时 `api/main.py` 在启动阶段打印 WARNING，明确写出「当前无鉴权」，
+  让运维在日志里就能看到，而不是靠读文档才知道。
+
+> 该模型只能防「未授权访问」，不能防重放，也不做用户区分——定位是内网/单机部署的
+> 最低门槛。需要多用户或审计时应在前面加反向代理。
+
+#### 3.12.3 限流
+
+`RateLimitMiddleware`（Starlette `BaseHTTPMiddleware`）在 `api/main.py` 装配，
+配置项位于 `config.yaml` 的 `web` 段：
+
+| 配置 | 默认值 | 说明 |
+|------|--------|------|
+| `rate_limit_max_requests` | `300` | 窗口内允许的请求数；`<= 0` 表示关闭 |
+| `rate_limit_window_seconds` | `60.0` | 滑动窗口长度（秒） |
+| `rate_limit_exempt_paths` | `/api/health`、`/docs`、`/redoc`、`/openapi.json` | 豁免路径（前缀匹配） |
+
+超限返回 `429`，并带 `Retry-After` 与 `X-RateLimit-*` 响应头。
+
+`RateLimiter` 实例在 `api/main.py` 模块级创建后**共享注入**中间件，而不是让中间件
+自己 new 一个——这样测试可以用 `rate_limiter.reset()` 逐用例复位，否则用例之间会
+互相污染计数。中间件顺序（洋葱模型，后注册的先执行）：
+
+```
+RequestTraceMiddleware → RateLimitMiddleware → RequestLoggingMiddleware → CORSMiddleware
+```
+
+限流排在日志之前，保证被限流的请求也会被日志记录。
+
+回归测试见 `tests/integration/test_api_security.py`：覆盖「无关答案不得通过质量阈值」
+「越界路径 403 / `..` 400」「限流已装配且 429 生效」「密钥开启后写操作 401、读操作仍匿名」，
+共 18 例。
 
 ## 4. 核心数据流
 

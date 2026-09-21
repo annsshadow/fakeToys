@@ -27,6 +27,7 @@ oa4rust-web/playwright-report/
 oa4rust-web/coverage/
 oa4rust-web/coverage-mobile/
 oa4rust-web/apps/mobile/coverage-mobile/
+augmentor/web/coverage/
 
 # IDE
 .idea/
