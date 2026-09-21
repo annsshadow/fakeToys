@@ -6,6 +6,7 @@
         <button class="btn-primary ghost" @click="loadPeriodStats">周期统计</button>
         <button class="btn-primary ghost" @click="loadStateStats">状态监控</button>
         <button class="btn-primary ghost" @click="loadStartStubs">起始统计</button>
+        <button class="btn-primary ghost" @click="loadCompletedStubs">已办/超期存根</button>
         <button class="btn-primary" @click="refresh">🔄 刷新</button>
       </span>
     </div>
@@ -54,6 +55,20 @@ async function loadPeriodStats() {
     periodText.value = `已办任务周期 ${n(done)} / 超期任务周期 ${n(expired)}`
   } catch (e: any) {
     toast.error('加载周期统计失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadCompletedStubs() {
+  try {
+    // 消费 bam 三条无参真实路由：已办任务按应用/已办工作按应用/超期任务按应用 周期存根
+    const [taskApp, workApp, expTask] = await Promise.all([
+      api.get('/api/processplatform/assemble/bam/period/list/completed/task/applicationstubs'),
+      api.get('/api/processplatform/assemble/bam/period/list/completed/work/applicationstubs'),
+      api.get('/api/processplatform/assemble/bam/period/list/expired/task/applicationstubs'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    periodText.value = `已办任务(应用) ${n(taskApp)} / 已办工作(应用) ${n(workApp)} / 超期任务(应用) ${n(expTask)}`
+  } catch (e: any) {
+    toast.error('加载存根统计失败: ' + (e?.message ?? ''))
   }
 }
 async function loadStartStubs() {
