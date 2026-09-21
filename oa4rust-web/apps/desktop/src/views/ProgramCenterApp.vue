@@ -155,6 +155,7 @@
           <button class="btn-primary" @click="loadJestModule">测试/版本/模块</button>
           <button class="btn-primary" @click="loadSchedule">调度/本地调度/报告</button>
           <button class="btn-primary" @click="loadOutputMeta">输出/模块分类/存储映射</button>
+          <button class="btn-primary" @click="loadErrorLogStats">错误日志/当前节点</button>
           <button class="btn-create" @click="saveConfig">+ 新建/更新</button>
         </div>
         <div v-if="dsText" class="app-meta">{{ dsText }}</div>
@@ -851,6 +852,20 @@ async function loadDataStructure() {
     dsText.value = `数据结构模块 ${n(mods)} / 输出结构 ${n(structs)}`
   } catch (e: any) {
     toast.error('加载数据结构失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadErrorLogStats() {
+  try {
+    // 消费 program_center 三条无参真实路由：错误日志按异常类统计 / 按 logger 统计 / 当前节点转储数据
+    const [byExc, byLogger, curNode] = await Promise.all([
+      api.get('/api/program_center/prompterrorlog/count/exceptionclass'),
+      api.get('/api/program_center/prompterrorlog/count/loggername'),
+      api.get('/api/program_center/config/list/dump/data/current/node'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    dsText.value = `按异常类 ${n(byExc)} / 按Logger ${n(byLogger)} / 当前节点 ${n(curNode)}`
+  } catch (e: any) {
+    toast.error('加载错误日志统计失败: ' + (e?.message ?? ''))
   }
 }
 async function loadOutputMeta() {
