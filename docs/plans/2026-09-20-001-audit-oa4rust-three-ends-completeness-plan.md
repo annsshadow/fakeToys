@@ -3,7 +3,11 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 110 # rev110（2026-09-21 G5：程序中心 错误日志统计/当前节点转储）：
+rev: 111 # rev111（2026-09-21 G5：CMS 文档字段/批量状态/uuid随机）：
+       # DocumentApp.vue 工具栏补「字段/批量状态」按钮，消费 cms document/document/fields + document/batch/status + uuid/random 共 3 条真实路由；全局消费 579→582（582/4638=12.5%）。
+       # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。内容CMS域缺口 144→141。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev110 # rev110（2026-09-21 G5：程序中心 错误日志统计/当前节点转储）：
        # ProgramCenterApp.vue Config 页补「错误日志/当前节点」按钮，消费 program_center prompterrorlog/count/exceptionclass + prompterrorlog/count/loggername + config/list/dump/data/current/node 共 3 条真实路由；全局消费 576→579（579/4638=12.5%）。
        # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。程序中心域缺口 339→336。
        # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
