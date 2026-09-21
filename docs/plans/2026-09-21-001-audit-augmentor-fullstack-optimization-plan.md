@@ -716,7 +716,7 @@ T0.1–T0.8 全部落地。**偏差项必须显式记录，不能当作"按计�
 | T1.4 | F6 | ~~引入 `mutmut`~~ → **Windows 不支持，改用 `cosmic-ray`**（显式偏差，见下），对 `quality.py` / `dedup.py` / `export.py` 做分层抽样变异测试 | 变异杀死率 ≥ 60% |
 | T1.5a | F7 | **拆分出的高优先子项**：修 `ExportFormat` 同名冲突（前置侦察定性为**用户可见故障**，非"重复"） | `grep -c "class ExportFormat"` == 1 且三处入口同一对象；公开枚举成员可端到端消费 |
 | T1.5b | F7 | ~~六对重复模块各保留一个实现，另一个标 `@deprecated`~~ → **实测 API 交集为 0、双方互不包含、12 个模块全有活跃调用方，故改为「写明分工边界」**（见下） | 12 个模块 docstring 均含分工边界；`__init__.py` 无同名二次导入 |
-| T1.6 | F8 | `cli.py` 拆为 `cli/` 包（dispatch 表 + `commands/` + `io.py`） | `cli.py` 顶层 ≤ 80 行 → **实际 60 行** |
+| T1.6 | F8 | `cli.py` 拆为 `cli/` 包（dispatch 表 + `commands/` + `io.py`） | `cli.py` 顶层 ≤ 80 行 → **拆分时 45 行，T1.7 加旧名归一化后 58 行** |
 | T1.7 | F8 | ~~9 组重复命令合并为 `--enhanced` 开关~~ → **实际合并 8 对**（第 9 组 `quality` / `quality-report` 经复核不是重复），旧名保留为 argparse alias | ~~子命令 44 → ≤ 30~~ → **实际 44 → 36**（≤30 与「只合并真重复」不相容，见下） |
 | T1.8 | F9 | `web/package.json`：~~`build` 加 `tsc -b`~~ → **改为 `tsc --noEmit && vite build`**（见偏差）；新增 `typecheck` / `lint` / `test` / `test:coverage` / `format` | 类型错误时 `npm run build` 失败 → **已验证（退出码 2）** |
 | T1.9 | F9 | 引入 ~~ESLint 9~~ **ESLint 10** flat config + Prettier；Vitest + RTL 覆盖 `api.ts` | `npm run lint` 零 warning → **达成**；`api.ts` 覆盖 ≥ 70% → **实际 100%** |
@@ -1125,13 +1125,13 @@ enhanceTXT.py（重复一份） 19450 B  md5 e74dc8a5…（根目录与 archive/
 1308 行单文件（`build_parser()` 329 行 + `main()` 922 行 if/elif 长链，每分支内部
 函数内 import）拆为：
 
-| 位置 | 内容 | 行数 |
+| 位置 | 内容 | 行数（T1.6 拆分时 / T1.7 后） |
 |---|---|---:|
-| `cli.py` | 薄入口：解析 → 归一化旧名 → 查表 → 统一异常 | 60 |
-| `augmentor/augmentor/cli/__init__.py` | 导出 `COMMANDS` | 11 |
-| `augmentor/augmentor/cli/io.py` | `_load_items` / `_save_items` / `_dump_json` / `_print` | 51 |
-| `augmentor/augmentor/cli/parser.py` | `build_parser()` | 332 |
-| `augmentor/augmentor/cli/commands/` | 9 个领域模块 + 分发表 | 950 |
+| `cli.py` | 薄入口：解析 → 归一化旧名 → 查表 → 统一异常 | 45 / **58** |
+| `augmentor/augmentor/cli/__init__.py` | 导出 `COMMANDS` | 11 / 11 |
+| `augmentor/augmentor/cli/io.py` | `_load_items` / `_save_items` / `_dump_json` / `_print` | 51 / 51 |
+| `augmentor/augmentor/cli/parser.py` | `build_parser()` | 332 / 377 |
+| `augmentor/augmentor/cli/commands/` | 9 个领域模块 + 分发表 | 1100 / 1161 |
 
 实现落在**包内**而非项目根，是为了仍被 `--cov=augmentor` 覆盖——放外面会凭空
 开出一块覆盖率盲区。`cli.py` 必须保留为入口：文档 58 处 `python cli.py`、
@@ -1348,7 +1348,7 @@ Phase 0 (P0 止血)  ──→  Phase 1 (工程质量)  ──→  Phase 2 (多�
 | F8 / T1.7 | `clean --enhanced` 调 `cleaner.clean_dataset`、`stats --enhanced` 调 `statistics.calculate_statistics`（都是**基础模块**，`-enhanced` 后缀名不副实） | 拆分前 `cli.py:863` / `cli.py:1074`；现 `augmentor/cli/commands/quality.py` / `analysis.py` |
 | F8 / T1.7 | `quality` 是内联 48 行筛选逻辑，与 `quality-report` 不是重复 | 拆分前 `cli.py:479-526` vs `cli.py:895-919`；现 `augmentor/cli/commands/quality.py` 的两个 handler |
 | F8 / T1.6 | 拆分前：`cli.py` 1308 行 / 6 顶层函数 / 44 `add_parser` / `main()` 922 行 / 44 段 if-elif | `git show 1c3bb440:augmentor/cli.py \| wc -l` = 1308 |
-| F8 / T1.6 | 拆分后：`cli.py` **60 行**，实现全部落在 `augmentor/augmentor/cli/`（被 `--cov=augmentor` 覆盖） | `wc -l cli.py`；`find augmentor/cli -name "*.py"` |
+| F8 / T1.6 | 拆分后：`cli.py` **58 行**（T1.7 加旧名归一化前为 45 行），实现全部落在 `augmentor/augmentor/cli/`（被 `--cov=augmentor` 覆盖） | `wc -l cli.py`；`find augmentor/cli -name "*.py"` |
 | F8 / T1.6 | 拆分是**语义等价**而非仅「能编译」：44 个分支体 / `build_parser` / 4 个 IO helper 的 AST 全等 | `ast.dump(..., include_attributes=False)` 逐对比对（见 T1.6 小节） |
 | F8 / T1.7 | 帮助列表 36 行；usage choices 44 = 36 规范名 + 8 旧别名 | `python cli.py --help`；`grep -cE "^    [a-z]"` = 36 |
 | F8 / T1.7 | 旧名与规范名是**同一个解析器对象**（argparse `aliases=`），不是 handler 里的 if 兜底 | `sub.choices["export-enhanced"] is sub.choices["export"]` |
