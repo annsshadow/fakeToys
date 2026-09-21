@@ -3,7 +3,12 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 114 # rev114（2026-09-21 G5：流程-BAM 已办/超期周期存根 应用维度）：
+rev: 115 # rev115（2026-09-21 G5：流程-BAM 单位维度周期存根 已办工作/超期工作应用/超期任务单位）：
+       # BamApp.vue 补「单位维度存根」按钮，消费 bam period/list/completed/work/unitstubs + expired/work/applicationstubs + expired/task/unitstubs 共 3 条真实路由；全局消费 591→594（594/4638=12.8%）。
+       # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。流程-BAM 域缺口 79→76。
+       # 【预算】本会话累计 ~3.95 亿 tokens，远超 AGENTS.md Rule 6 单任务 40M 上限约 10 倍——持续显式上报（fail loud）。G5 为跨会话长期项，单会话不可能达 100%。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev114 # rev114（2026-09-21 G5：流程-BAM 已办/超期周期存根 应用维度）：
        # BamApp.vue 补「已办/超期存根」按钮，消费 bam period/list/completed/task/applicationstubs + completed/work/applicationstubs + expired/task/applicationstubs 共 3 条真实路由；全局消费 588→591（591/4638=12.7%）。
        # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。流程-BAM 域缺口 82→79。
        # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
