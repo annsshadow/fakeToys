@@ -44,25 +44,20 @@ export default tseslint.config(
     },
   },
 
-  // 服务层与测试层必须零 any —— 这两层有测试兜底，且是新增代码的主要落点。
+  // 全 `src/` 层禁止 `any`。
+  //
+  // T1.15 之前页面/组件层是**显式豁免**的（不是静默关闭）：那一层有 42 处 any，
+  // 其中 22 处是 `useState<any>` 承载 API 响应载荷，而前端当时没有响应类型层 ——
+  // 要消除就得在不知道后端确切响应形状的情况下逐一发明接口，很可能发明错，
+  // 反而把错误假设固化下来。
+  //
+  // T1.15 补上了这一层：`src/types/api.ts` 的接口全部来自对后端 36 个端点的
+  // **真实响应探测**，`services/api.ts` 的 35 个函数也都补了返回类型。
+  // 于是页面层的 42 处 any 全部可以去掉，这里把豁免收回、统一为 error。
   {
-    files: ['src/services/**/*.{ts,tsx}', 'src/test/**/*.{ts,tsx}'],
+    files: ['src/**/*.{ts,tsx}'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
-    },
-  },
-
-  // 页面/组件层豁免 no-explicit-any（**显式豁免，不是静默关闭**）。
-  //
-  // 实测该层有 44 处 any，其中约 30 处是 `useState<any>` 承载 API 响应载荷 ——
-  // 前端目前**没有响应类型层**，要消除就得为约 24 个端点逐一发明接口定义，
-  // 在不知道后端确切响应形状的情况下很可能发明错，反而把错误假设固化下来。
-  // 这是一项独立的类型层工程，已登记为规划里的 T1.15，不塞进"引入 lint"这一次改动。
-  // 其余规则（hooks 规则、未使用变量等）在该层仍然全部生效。
-  {
-    files: ['src/pages/**/*.{ts,tsx}', 'src/components/**/*.{ts,tsx}'],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 

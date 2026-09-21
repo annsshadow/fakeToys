@@ -3,6 +3,7 @@ import { Row, Col, Card, Statistic, Tag, Space, message } from 'antd'
 import AugmentForm from '../components/AugmentForm'
 import VersionTimeline from '../components/VersionTimeline'
 import { getConfig, getModels, getVersions, healthCheck } from '../services/api'
+import type { AppConfig, HealthResponse, ModelsResponse, VersionInfo } from '../types/api'
 
 /**
  * 平台仪表盘
@@ -11,10 +12,10 @@ import { getConfig, getModels, getVersions, healthCheck } from '../services/api'
  * 对应需求 R20 中的「平台管理和监控」视图。
  */
 export default function Dashboard() {
-  const [health, setHealth] = useState<any>(null)
-  const [config, setConfig] = useState<any>(null)
-  const [models, setModels] = useState<any>(null)
-  const [versions, setVersions] = useState<any[]>([])
+  const [health, setHealth] = useState<HealthResponse | null>(null)
+  const [config, setConfig] = useState<AppConfig | null>(null)
+  const [models, setModels] = useState<ModelsResponse | null>(null)
+  const [versions, setVersions] = useState<VersionInfo[]>([])
   const [currentVersion, setCurrentVersion] = useState<string | null>(null)
 
   const loadVersions = () => {

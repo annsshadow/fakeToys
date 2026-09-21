@@ -2,12 +2,26 @@ import { useState, useEffect } from 'react'
 import { Card, Form, InputNumber, Select, Switch, Button, message, Space } from 'antd'
 import { SaveOutlined } from '@ant-design/icons'
 import { getConfig, updateConfig, getModels } from '../services/api'
+import type { AppConfig } from '../types/api'
 
 export default function Settings() {
-  const [config, setConfig] = useState<any>(null)
+  const [config, setConfig] = useState<AppConfig | null>(null)
   const [models, setModels] = useState<string[]>([])
   const [defaultModel, setDefaultModel] = useState('')
   const [loading, setLoading] = useState(false)
+
+  /**
+   * 局部更新配置
+   *
+   * 两点不能省：
+   * - 用**函数式更新**而不是展开闭包里的 `config`：同一屏上连着改几个字段时，
+   *   后一次不会把前一次覆盖掉。
+   * - `config` 还没加载完（或加载失败）时原样返回。原来直接写
+   *   `setConfig({ ...config, quality: { ...config.quality, ... } })`，
+   *   `config` 为 null 时会在用户第一次交互时抛 `Cannot read properties of null`。
+   */
+  const patch = (fn: (prev: AppConfig) => AppConfig) =>
+    setConfig(prev => (prev ? fn(prev) : prev))
 
   useEffect(() => {
     loadConfig()
@@ -80,10 +94,15 @@ export default function Settings() {
                 value={config?.augmentation?.variants_per_seed}
                 min={1}
                 max={20}
-                onChange={(value) => setConfig({
-                  ...config,
-                  augmentation: { ...config.augmentation, variants_per_seed: value }
-                })}
+                onChange={(value) =>
+                  patch(c => ({
+                    ...c,
+                    augmentation: {
+                      ...c.augmentation,
+                      variants_per_seed: value ?? c.augmentation.variants_per_seed
+                    }
+                  }))
+                }
               />
             </Form.Item>
             <Form.Item label="并发线程数">
@@ -91,10 +110,15 @@ export default function Settings() {
                 value={config?.augmentation?.num_threads}
                 min={1}
                 max={100}
-                onChange={(value) => setConfig({
-                  ...config,
-                  augmentation: { ...config.augmentation, num_threads: value }
-                })}
+                onChange={(value) =>
+                  patch(c => ({
+                    ...c,
+                    augmentation: {
+                      ...c.augmentation,
+                      num_threads: value ?? c.augmentation.num_threads
+                    }
+                  }))
+                }
               />
             </Form.Item>
           </Space>
@@ -107,10 +131,9 @@ export default function Settings() {
             <Form.Item label="启用质量检查">
               <Switch
                 checked={config?.quality?.enabled}
-                onChange={(checked) => setConfig({
-                  ...config,
-                  quality: { ...config.quality, enabled: checked }
-                })}
+                onChange={(checked) =>
+                  patch(c => ({ ...c, quality: { ...c.quality, enabled: checked } }))
+                }
               />
             </Form.Item>
             <Form.Item label="质量阈值">
@@ -119,10 +142,12 @@ export default function Settings() {
                 min={0}
                 max={1}
                 step={0.1}
-                onChange={(value) => setConfig({
-                  ...config,
-                  quality: { ...config.quality, threshold: value }
-                })}
+                onChange={(value) =>
+                  patch(c => ({
+                    ...c,
+                    quality: { ...c.quality, threshold: value ?? c.quality.threshold }
+                  }))
+                }
               />
             </Form.Item>
           </Space>
@@ -135,10 +160,9 @@ export default function Settings() {
             <Form.Item label="启用水重">
               <Switch
                 checked={config?.dedup?.enabled}
-                onChange={(checked) => setConfig({
-                  ...config,
-                  dedup: { ...config.dedup, enabled: checked }
-                })}
+                onChange={(checked) =>
+                  patch(c => ({ ...c, dedup: { ...c.dedup, enabled: checked } }))
+                }
               />
             </Form.Item>
             <Form.Item label="相似度阈值">
@@ -147,10 +171,12 @@ export default function Settings() {
                 min={0}
                 max={1}
                 step={0.1}
-                onChange={(value) => setConfig({
-                  ...config,
-                  dedup: { ...config.dedup, threshold: value }
-                })}
+                onChange={(value) =>
+                  patch(c => ({
+                    ...c,
+                    dedup: { ...c.dedup, threshold: value ?? c.dedup.threshold }
+                  }))
+                }
               />
             </Form.Item>
           </Space>

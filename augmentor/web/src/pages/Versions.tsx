@@ -1,18 +1,22 @@
 import { useState, useEffect } from 'react'
-import { Card, Button, Space, Table, Modal, Input, message, Tag, Popconfirm } from 'antd'
+import {
+  Card,
+  Button,
+  Space,
+  Table,
+  Modal,
+  Input,
+  message,
+  Tag,
+  Popconfirm,
+  type TableColumnsType,
+} from 'antd'
 import { PlusOutlined, RollbackOutlined, DeleteOutlined, DiffOutlined } from '@ant-design/icons'
 import { getVersions, createVersion, deleteVersion, rollbackVersion, diffVersions, getDataFiles } from '../services/api'
-
-interface Version {
-  version_id: string
-  label: string
-  description: string
-  created_at: string
-  item_count: number
-}
+import type { VersionDiffResponse, VersionInfo } from '../types/api'
 
 export default function Versions() {
-  const [versions, setVersions] = useState<Version[]>([])
+  const [versions, setVersions] = useState<VersionInfo[]>([])
   const [files, setFiles] = useState<string[]>([])
   const [selectedFile, setSelectedFile] = useState('')
   const [createModalVisible, setCreateModalVisible] = useState(false)
@@ -21,7 +25,7 @@ export default function Versions() {
   const [newVersionDesc, setNewVersionDesc] = useState('')
   const [diffVersion1, setDiffVersion1] = useState('')
   const [diffVersion2, setDiffVersion2] = useState('')
-  const [diffResult, setDiffResult] = useState<any>(null)
+  const [diffResult, setDiffResult] = useState<VersionDiffResponse | null>(null)
 
   useEffect(() => {
     loadVersions()
@@ -40,7 +44,7 @@ export default function Versions() {
   const loadFiles = async () => {
     try {
       const result = await getDataFiles()
-      setFiles(result.files.map((f: any) => f.name))
+      setFiles(result.files.map(f => f.name))
     } catch {
       message.error('加载文件列表失败')
     }
@@ -98,7 +102,7 @@ export default function Versions() {
     }
   }
 
-  const columns = [
+  const columns: TableColumnsType<VersionInfo> = [
     {
       title: '版本 ID',
       dataIndex: 'version_id',
@@ -129,7 +133,7 @@ export default function Versions() {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: Version) => (
+      render: (_, record) => (
         <Space>
           <Popconfirm
             title="确定回滚到此版本？"

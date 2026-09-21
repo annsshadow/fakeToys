@@ -1,9 +1,10 @@
 import { Card, Timeline, Tag, Empty, Button, message } from 'antd'
 import { rollbackVersion } from '../services/api'
+import type { VersionInfo } from '../types/api'
 
 interface VersionTimelineProps {
   /** 版本列表 */
-  versions: any[]
+  versions: VersionInfo[]
   /** 回滚成功后的回调 */
   onRollback?: () => void
   /** 当前版本 ID */
