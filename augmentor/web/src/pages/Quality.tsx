@@ -49,7 +49,7 @@ export default function Quality() {
     setLoading(true)
     try {
       onDone(await task())
-    } catch (error) {
+    } catch {
       message.error(failText)
     } finally {
       setLoading(false)

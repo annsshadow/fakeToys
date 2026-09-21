@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, Select, Row, Col, Statistic, Table, Tag, Button, Space, message } from 'antd'
 import ReactECharts from 'echarts-for-react'
 import { getDataFiles, analyzeData, cleanData, runBenchmark } from '../services/api'
@@ -11,33 +11,34 @@ export default function Analysis() {
   const [benchmark, setBenchmark] = useState<any>(null)
   const [loading, setLoading] = useState(false)
 
+  const loadFiles = useCallback(async () => {
+    try {
+      const result = await getDataFiles()
+      setFiles(result.files.map((f: any) => f.name))
+    } catch {
+      console.error('加载文件列表失败')
+    }
+  }, [])
+
+  const loadAnalysis = useCallback(async () => {
+    try {
+      const result = await analyzeData(selectedFile)
+      setAnalysis(result)
+    } catch {
+      console.error('分析数据失败')
+    }
+  }, [selectedFile])
+
+  // effect 放在被调用函数的声明之后（理由同 DataManagement.tsx）
   useEffect(() => {
     loadFiles()
-  }, [])
+  }, [loadFiles])
 
   useEffect(() => {
     if (selectedFile) {
       loadAnalysis()
     }
-  }, [selectedFile])
-
-  const loadFiles = async () => {
-    try {
-      const result = await getDataFiles()
-      setFiles(result.files.map((f: any) => f.name))
-    } catch (error) {
-      console.error('加载文件列表失败')
-    }
-  }
-
-  const loadAnalysis = async () => {
-    try {
-      const result = await analyzeData(selectedFile)
-      setAnalysis(result)
-    } catch (error) {
-      console.error('分析数据失败')
-    }
-  }
+  }, [selectedFile, loadAnalysis])
 
   const handleClean = async () => {
     if (!selectedFile) {
@@ -47,7 +48,7 @@ export default function Analysis() {
     setLoading(true)
     try {
       setCleaning(await cleanData(selectedFile))
-    } catch (error) {
+    } catch {
       message.error('数据清洗失败')
     } finally {
       setLoading(false)
@@ -62,7 +63,7 @@ export default function Analysis() {
     setLoading(true)
     try {
       setBenchmark(await runBenchmark(selectedFile))
-    } catch (error) {
+    } catch {
       message.error('基准测试失败')
     } finally {
       setLoading(false)

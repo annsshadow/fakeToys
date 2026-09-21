@@ -46,7 +46,7 @@ export default function Export() {
     setLoading(true)
     try {
       setPreview(await previewExport(file, previewFormat))
-    } catch (error) {
+    } catch {
       message.error('预览失败')
     } finally {
       setLoading(false)
@@ -66,7 +66,7 @@ export default function Export() {
       const result = await batchExport(datasets, values.outputDir, values.formats)
       setBatchResult(result.results)
       message.success('批量导出完成')
-    } catch (error) {
+    } catch {
       message.error('批量导出失败')
     } finally {
       setLoading(false)

@@ -18,7 +18,7 @@ export default function Settings() {
     try {
       const result = await getConfig()
       setConfig(result)
-    } catch (error) {
+    } catch {
       message.error('加载配置失败')
     }
   }
@@ -28,7 +28,7 @@ export default function Settings() {
       const result = await getModels()
       setModels(result.models)
       setDefaultModel(result.default)
-    } catch (error) {
+    } catch {
       message.error('加载模型列表失败')
     }
   }
@@ -47,7 +47,7 @@ export default function Settings() {
         multimodal: config?.multimodal
       })
       message.success('配置已保存到 config.yaml，部分配置需要重启服务生效')
-    } catch (error) {
+    } catch {
       message.error('保存配置失败')
     } finally {
       setLoading(false)

@@ -43,7 +43,7 @@ export default function Multimodal() {
       setSingleResult(
         await processMultimodal(values.text, values.image, values.audio)
       )
-    } catch (error) {
+    } catch {
       message.error('多模态处理失败')
     } finally {
       setLoading(false)
@@ -54,7 +54,7 @@ export default function Multimodal() {
     setLoading(true)
     try {
       setScanResult(await scanMultimodal(values.directory))
-    } catch (error) {
+    } catch {
       message.error('目录扫描失败，请确认目录存在')
     } finally {
       setLoading(false)
