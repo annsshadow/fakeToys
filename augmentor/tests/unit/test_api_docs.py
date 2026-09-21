@@ -4,7 +4,7 @@ import pytest
 from pathlib import Path
 
 # 以测试文件位置为锚点解析文档路径，避免依赖 pytest 的当前工作目录
-# （CI 中 working-directory 为 ai/，而本地可能从仓库根运行）。
+# （CI 中 working-directory 为 augmentor/，而本地可能从仓库根运行）。
 AI_DIR = Path(__file__).resolve().parent.parent.parent
 
 

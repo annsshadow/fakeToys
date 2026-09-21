@@ -37,7 +37,7 @@
 ## 2. 目录结构
 
 ```
-ai/
+augmentor/
 ├── cli.py                     命令行入口（build_parser + 11 个子命令）
 ├── config.yaml                默认配置
 ├── requirements.txt           依赖清单（分组 + 版本上界）

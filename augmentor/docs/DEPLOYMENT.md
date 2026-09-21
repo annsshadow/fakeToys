@@ -15,7 +15,7 @@
 ### 1.1 最小可用
 
 ```bash
-cd ai
+cd augmentor
 
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
@@ -83,7 +83,7 @@ pytest --cov-report=html:htmlcov
 ### 2.1 构建镜像
 
 ```bash
-cd ai
+cd augmentor
 docker build -f docker/Dockerfile -t ai-data-platform:2.0.0 .
 ```
 
@@ -105,7 +105,7 @@ docker build -f docker/Dockerfile \
 ### 2.2 启动
 
 ```bash
-cd ai/docker
+cd augmentor/docker
 docker compose up -d
 ```
 
@@ -126,7 +126,7 @@ curl http://localhost:8000/api/health
 
 ### 2.4 环境变量
 
-在 `ai/docker/` 下创建 `.env`：
+在 `augmentor/docker/` 下创建 `.env`：
 
 ```bash
 BAIDU_API_KEY=your_api_key
@@ -164,7 +164,7 @@ sudo mkdir -p /opt/ai-data-platform
 sudo chown $USER:$USER /opt/ai-data-platform
 # 上传代码到 /opt/ai-data-platform
 
-cd /opt/ai-data-platform/ai
+cd /opt/ai-data-platform/augmentor
 python3.11 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 
@@ -183,11 +183,11 @@ After=network.target
 [Service]
 Type=simple
 User=www-data
-WorkingDirectory=/opt/ai-data-platform/ai
+WorkingDirectory=/opt/ai-data-platform/augmentor
 Environment="BAIDU_API_KEY=your_api_key"
 Environment="BAIDU_SECRET_KEY=your_secret_key"
 Environment="PYTHONUNBUFFERED=1"
-ExecStart=/opt/ai-data-platform/ai/.venv/bin/uvicorn api.main:app --host 127.0.0.1 --port 8000 --workers 1
+ExecStart=/opt/ai-data-platform/augmentor/.venv/bin/uvicorn api.main:app --host 127.0.0.1 --port 8000 --workers 1
 Restart=on-failure
 RestartSec=5
 
@@ -245,7 +245,7 @@ sudo certbot --nginx -d your-domain.com
 
 ```bash
 # 每日 02:00 增强新数据并生成质量报告
-0 2 * * * cd /opt/ai-data-platform/ai && .venv/bin/python cli.py augment \
+0 2 * * * cd /opt/ai-data-platform/augmentor && .venv/bin/python cli.py augment \
     --input data/new_seeds.json --output data/augmented_$(date +\%F).json \
     >> logs/daily.log 2>&1
 ```

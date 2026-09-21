@@ -11,7 +11,7 @@ name: ai-data-platform
 services:
   api:
     build:
-      # 构建上下文为 ai/，因为 Dockerfile 需要同时访问 api/ augmentor/ web/
+      # 构建上下文为 augmentor/，因为 Dockerfile 需要同时访问 api/ augmentor/ web/
       context: ..
       dockerfile: docker/Dockerfile
       args:

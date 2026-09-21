@@ -37,7 +37,7 @@
 ## 2. 安装
 
 ```bash
-cd ai
+cd augmentor
 
 # 推荐使用虚拟环境
 python -m venv .venv
