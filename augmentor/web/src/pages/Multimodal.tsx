@@ -11,13 +11,31 @@ import {
   Row,
   Col,
   Statistic,
-  message
+  message,
+  type TableColumnsType
 } from 'antd'
 import {
   getMultimodalFormats,
   processMultimodal,
   scanMultimodal
 } from '../services/api'
+import type {
+  MultimodalFormatsResponse,
+  MultimodalRecord,
+  MultimodalScanResponse
+} from '../types/api'
+
+/** 单条处理表单的字段 */
+interface ProcessFormValues {
+  text?: string
+  image?: string
+  audio?: string
+}
+
+/** 目录扫描表单的字段 */
+interface ScanFormValues {
+  directory: string
+}
 
 /**
  * 多模态数据处理
@@ -25,9 +43,9 @@ import {
  * 支持单条融合与目录扫描，对应需求 R19。
  */
 export default function Multimodal() {
-  const [formats, setFormats] = useState<any>(null)
-  const [singleResult, setSingleResult] = useState<any>(null)
-  const [scanResult, setScanResult] = useState<any>(null)
+  const [formats, setFormats] = useState<MultimodalFormatsResponse | null>(null)
+  const [singleResult, setSingleResult] = useState<MultimodalRecord | null>(null)
+  const [scanResult, setScanResult] = useState<MultimodalScanResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [form] = Form.useForm()
 
@@ -37,7 +55,7 @@ export default function Multimodal() {
       .catch(() => message.error('加载多模态格式失败'))
   }, [])
 
-  const handleProcess = async (values: any) => {
+  const handleProcess = async (values: ProcessFormValues) => {
     setLoading(true)
     try {
       setSingleResult(
@@ -50,7 +68,7 @@ export default function Multimodal() {
     }
   }
 
-  const handleScan = async (values: any) => {
+  const handleScan = async (values: ScanFormValues) => {
     setLoading(true)
     try {
       setScanResult(await scanMultimodal(values.directory))
@@ -61,7 +79,7 @@ export default function Multimodal() {
     }
   }
 
-  const recordColumns = [
+  const recordColumns: TableColumnsType<MultimodalRecord> = [
     { title: '文本', dataIndex: 'text', key: 'text', ellipsis: true },
     {
       title: '模态',
@@ -128,7 +146,7 @@ export default function Multimodal() {
             {singleResult && (
               <div style={{ marginTop: 16 }}>
                 <Space wrap>
-                  {(singleResult.modalities || []).map((item: string) => (
+                  {(singleResult.modalities || []).map(item => (
                     <Tag key={item} color="blue">
                       {item}
                     </Tag>

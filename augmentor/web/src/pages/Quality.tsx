@@ -23,6 +23,14 @@ import {
   annotateData,
   runBenchmark
 } from '../services/api'
+import type {
+  AnnotateResponse,
+  BenchmarkResponse,
+  CleanResponse,
+  DedupResponse,
+  QualityEvaluationResponse,
+  QualityReportResponse
+} from '../types/api'
 
 /**
  * 质量中心
@@ -34,14 +42,24 @@ export default function Quality() {
   const [file, setFile] = useState('')
   const [threshold, setThreshold] = useState(0.6)
   const [loading, setLoading] = useState(false)
-  const [evaluation, setEvaluation] = useState<any>(null)
-  const [dedup, setDedup] = useState<any>(null)
-  const [report, setReport] = useState<any>(null)
-  const [cleaning, setCleaning] = useState<any>(null)
-  const [annotation, setAnnotation] = useState<any>(null)
-  const [benchmark, setBenchmark] = useState<any>(null)
+  const [evaluation, setEvaluation] = useState<QualityEvaluationResponse | null>(null)
+  const [dedup, setDedup] = useState<DedupResponse | null>(null)
+  const [report, setReport] = useState<QualityReportResponse | null>(null)
+  const [cleaning, setCleaning] = useState<CleanResponse | null>(null)
+  const [annotation, setAnnotation] = useState<AnnotateResponse | null>(null)
+  const [benchmark, setBenchmark] = useState<BenchmarkResponse | null>(null)
 
-  const run = async (task: () => Promise<any>, onDone: (data: any) => void, failText: string) => {
+  /**
+   * 跑一个质量任务并把结果交给对应的 setState
+   *
+   * 泛型是为了让 `onDone` 与 `task` 的结果类型绑在一起：否则 `onDone` 只能是
+   * `(data: any) => void`，而 `src/pages` 层是禁止写 `any` 的。
+   */
+  const run = async <T,>(
+    task: () => Promise<T>,
+    onDone: (data: T) => void,
+    failText: string
+  ) => {
     if (!file) {
       message.warning('请先选择数据集')
       return
