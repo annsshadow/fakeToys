@@ -101,6 +101,15 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Lint
+        # --max-warnings 0 已写进 package.json 的 lint 脚本：任何新 warning 都会让 CI 失败
+        run: npm run lint
+
+      - name: Test with coverage gate
+        # 覆盖率门槛（70%）配置在 vitest.config.ts 的 coverage.thresholds，
+        # 所以必须跑 test:coverage 才会真正校验；npm run test 只跑用例
+        run: npm run test:coverage
+
       - name: Type-check
         run: npx tsc --noEmit
 
