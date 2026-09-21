@@ -49,9 +49,15 @@ class TestComparisonResult:
         result = comp.compare(_good(), _bad())
         assert result.dataset_a_count == 4
         assert result.dataset_b_count == 4
-        assert "quality_a" in result.quality_diff or True
+        # quality_diff 的键取自 quality_a（avg_score / pass_rate / min_score / max_score），
+        # 并不包含 "quality_a" 本身。原断言写成 `"quality_a" in result.quality_diff or True`，
+        # `or True` 让一个永远为假的判断恒真——等于没测。
+        assert set(result.quality_diff) == {
+            "avg_score", "pass_rate", "min_score", "max_score"
+        }
         # 摘要非空且含双方名称
-        assert "Dataset A" in result.summary or "A" in result.summary
+        assert "Dataset A" in result.summary
+        assert "Dataset B" in result.summary
 
     def test_save_comparison(self, tmp_path):
         comp = DatasetComparator()
