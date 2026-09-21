@@ -38,7 +38,7 @@
 
 ```
 augmentor/
-├── cli.py                     命令行入口（build_parser + 11 个子命令）
+├── cli.py                     命令行入口（薄壳：解析参数 → 查分发表 → 调用 handler）
 ├── config.yaml                默认配置
 ├── requirements.txt           依赖清单（分组 + 版本上界）
 ├── pytest.ini                 测试与覆盖率门禁配置
@@ -89,9 +89,15 @@ augmentor/
 │   │   ├── faiss.py           FAISS（缺失时回退 numpy）
 │   │   └── chromadb.py        ChromaDB
 │   │
-│   └── frameworks/            LLM 框架互转
-│       ├── langchain.py
-│       └── llamaindex.py
+│   ├── frameworks/            LLM 框架互转
+│   │   ├── langchain.py
+│   │   └── llamaindex.py
+│   │
+│   └── cli/                   CLI 实现（44 个子命令，按领域分 9 组）
+│       ├── io.py              4 个共用 I/O helper
+│       ├── parser.py          build_parser()（全部 argparse 定义）
+│       └── commands/          profiling / pipeline / quality / export /
+│                              analysis / data_ops / version / security / ops
 │
 ├── api/                       REST API
 │   ├── main.py                FastAPI 应用装配（中间件 + 路由 + 静态文件）
