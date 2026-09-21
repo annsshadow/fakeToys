@@ -22,8 +22,7 @@ class TestMultilingualExtended:
         assert CJK_PATTERN.search("如何租房") is not None
         assert CJK_PATTERN.search("hello") is None
     
-    def test_multilingual_support_exists(self, multilingual):
-        """多语言支持实例应可初始化"""
-        assert multilingual is not None
-        # 验证基本方法存在（代码路径验证）
-        assert hasattr(multilingual, 'detect_language') or True
+    def test_detect_language(self, multilingual):
+        """应能区分中英文——原断言是 `hasattr(...) or True`，恒真且什么都没测"""
+        assert multilingual.detect_language("如何租房？") == "zh"
+        assert multilingual.detect_language("How to rent a house?") == "en"
