@@ -1,9 +1,9 @@
 """质量评估 API 路由"""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from ..deps import load_items, run_in_thread
+from ..deps import load_items, resolve_data_path, run_in_thread, verify_api_key
 
 router = APIRouter(tags=["quality"])
 
@@ -23,15 +23,21 @@ class DedupRequest(BaseModel):
 def _build_scoring_items(items):
     """构造质量评分输入
 
+    API 拿到的是一份已落盘的数据集，条目只有 instruction / output，
+    **不存在原始种子问题**，因此无法计算语义相似度。
+
+    早期实现把 instruction 同时填入 original 与 generated，使语义相似度恒为 1.0
+    （占 0.3 权重），导致一条答案与问题完全无关的样本也能拿到 0.6 分并通过默认阈值。
+    现改为不伪造 original，由调用方以 include_semantic=False 跳过该维度。
+
     Args:
         items: 原始数据列表
 
     Returns:
-        评分输入列表
+        评分输入列表（仅含 generated 与 output）
     """
     return [
         {
-            "original": item.get("instruction", ""),
             "generated": item.get("instruction", ""),
             "output": item.get("output", "")
         }
@@ -49,7 +55,10 @@ async def evaluate_quality(request: QualityRequest):
             from augmentor.quality import QualityScorer
 
             scorer = QualityScorer(threshold=request.threshold)
-            scores = scorer.batch_score(_build_scoring_items(items))
+            # 无原始种子问题 → 跳过语义维度，权重在相关性与多样性上重归一化
+            scores = scorer.batch_score(
+                _build_scoring_items(items), include_semantic=False
+            )
             total_scores = [s.total_score for s in scores]
             passed = sum(1 for s in scores if s.passed)
 
@@ -61,7 +70,10 @@ async def evaluate_quality(request: QualityRequest):
                 "avg_score": (
                     sum(total_scores) / len(total_scores) if total_scores else 0.0
                 ),
-                "threshold": request.threshold
+                "threshold": request.threshold,
+                # 语义维度未参与评分：数据集条目不含原始种子问题
+                "semantic_evaluated": False,
+                "effective_weights": scorer.effective_weights(False)
             }
 
         return await run_in_thread(evaluate)
@@ -113,7 +125,10 @@ async def generate_report(request: QualityRequest):
             from augmentor.report import ReportGenerator
 
             scorer = QualityScorer(threshold=request.threshold)
-            scores = scorer.batch_score(_build_scoring_items(items))
+            # 同 evaluate：数据集不含原始种子问题，跳过语义维度
+            scores = scorer.batch_score(
+                _build_scoring_items(items), include_semantic=False
+            )
             dedup_summary = Deduplicator().generate_report(items)
 
             report = ReportGenerator(threshold=request.threshold).generate(
@@ -246,18 +261,25 @@ async def detect_outliers_endpoint(request: OutlierRequest):
 
 
 @router.post("/api/quality/profiling")
-async def profile_dataset(request: ProfilingRequest):
+async def profile_dataset(
+    request: ProfilingRequest, _auth: None = Depends(verify_api_key)
+):
     """生成数据集画像"""
     try:
         items = load_items(request.input_file)
+        # 落盘路径同样受白名单约束
+        output_path = (
+            resolve_data_path(request.output_path, for_write=True)
+            if request.save and request.output_path else None
+        )
 
         def profile():
             from augmentor.profiling import DataProfiler
 
             profiler = DataProfiler()
             report = profiler.profile(items)
-            if request.save and request.output_path:
-                profiler.save_profile(items, request.output_path)
+            if output_path is not None:
+                profiler.save_profile(items, str(output_path))
             return report
 
         return await run_in_thread(profile)

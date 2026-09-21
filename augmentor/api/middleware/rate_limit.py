@@ -80,16 +80,35 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     HEADER_LIMIT = "X-RateLimit-Limit"
     HEADER_REMAINING = "X-RateLimit-Remaining"
 
-    def __init__(self, app, max_requests: int = 100, window_seconds: float = 60.0):
+    def __init__(self, app, max_requests: int = 300, window_seconds: float = 60.0,
+                 limiter: RateLimiter = None, exempt_paths=None):
         """初始化中间件
 
         Args:
             app: ASGI 应用
-            max_requests: 窗口内最大请求数
+            max_requests: 窗口内最大请求数；<= 0 表示关闭限流
             window_seconds: 窗口长度（秒）
+            limiter: 复用外部限流器实例（便于测试注入与逐用例重置）；
+                为 None 时按 max_requests / window_seconds 新建
+            exempt_paths: 免限流路径前缀列表
         """
         super().__init__(app)
-        self.limiter = RateLimiter(max_requests, window_seconds)
+        self.limiter = limiter if limiter is not None else RateLimiter(
+            max_requests, window_seconds
+        )
+        self.exempt_paths = list(exempt_paths or ())
+        self.enabled = self.limiter.max_requests > 0
+
+    def _is_exempt(self, path: str) -> bool:
+        """判断路径是否免限流
+
+        Args:
+            path: 请求路径
+
+        Returns:
+            是否豁免
+        """
+        return any(path.startswith(prefix) for prefix in self.exempt_paths)
 
     def _client_key(self, request: Request) -> str:
         forwarded = request.headers.get("X-Forwarded-For")
@@ -98,6 +117,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return request.client.host if request.client else "unknown"
 
     async def dispatch(self, request: Request, call_next) -> Response:
+        if not self.enabled or self._is_exempt(request.url.path):
+            return await call_next(request)
+
         key = self._client_key(request)
         now = time.time()
         if not self.limiter.allow(key, now):

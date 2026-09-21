@@ -3,10 +3,17 @@
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from ..deps import get_pipeline, load_items, run_in_thread
+from ..deps import (
+    get_pipeline,
+    load_items,
+    resolve_data_path,
+    resolve_data_dir,
+    run_in_thread,
+    verify_api_key,
+)
 
 router = APIRouter(tags=["export"])
 
@@ -33,22 +40,30 @@ class PreviewRequest(BaseModel):
 
 
 @router.post("/api/data/export")
-async def export_data(request: ExportRequest):
+async def export_data(request: ExportRequest, _auth: None = Depends(verify_api_key)):
     """导出数据"""
     try:
+        # 读写路径都必须落在 web.data_roots 白名单内
+        input_path = resolve_data_path(request.input_file)
+        output_dir = resolve_data_dir(request.output_dir)
+
         p = get_pipeline()
         results = await run_in_thread(
-            p.export_dataset, request.input_file, request.output_dir, request.formats
+            p.export_dataset, str(input_path), str(output_dir), request.formats
         )
         return {"success": True, "files": results}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/api/export/batch")
-async def batch_export(request: BatchExportRequest):
+async def batch_export(request: BatchExportRequest, _auth: None = Depends(verify_api_key)):
     """批量导出多个数据集"""
     try:
+        output_dir = resolve_data_dir(request.output_dir)
+
         def run():
             from augmentor.export import Exporter
 
@@ -58,7 +73,7 @@ async def batch_export(request: BatchExportRequest):
 
             exporter = Exporter()
             return exporter.export_batch(
-                datasets, request.output_dir, request.formats
+                datasets, str(output_dir), request.formats
             )
 
         results = await run_in_thread(run)

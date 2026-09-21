@@ -5,6 +5,8 @@
 
 import pytest
 
+import augmentor
+
 
 @pytest.fixture
 def client_with_pipeline(tmp_path, monkeypatch):
@@ -37,7 +39,8 @@ class TestStatusEndpoint:
         assert response.status_code == 200
         payload = response.json()
         assert payload["status"] == "ok"
-        assert payload["version"] == "2.0.0"
+        # 版本号单一来源：断言与包版本一致，而不是硬编码某个字面量
+        assert payload["version"] == augmentor.__version__
         assert "dependencies" in payload
         assert "installed" in payload["dependencies"]
 

@@ -32,6 +32,46 @@ def force_fallback_model(monkeypatch):
     yield
 
 
+@pytest.fixture(autouse=True)
+def allow_temp_data_roots(monkeypatch):
+    """把系统临时目录并入 API 的路径白名单
+
+    `api.deps` 默认只允许 `web.data_roots`（进程工作目录）内的路径，
+    越界一律 403。而测试大量使用 `tmp_path`（位于系统临时目录下）传递
+    绝对路径，因此这里显式放宽白名单，使测试无需改动即可覆盖到白名单
+    逻辑之外的分支。
+
+    生产环境不受影响：那里不会设置 `AUGMENTOR_DATA_ROOTS`，
+    白名单仍由 `config.yaml` 的 `web.data_roots` 决定。
+
+    Args:
+        monkeypatch: pytest 内置 fixture
+    """
+    import tempfile
+
+    roots = [os.getcwd(), tempfile.gettempdir()]
+    monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", os.pathsep.join(roots))
+    yield
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limiter():
+    """逐用例重置限流计数
+
+    TestClient 的 `request.client.host` 恒为 "testclient"，整个测试会话共享
+    同一个限流键。若不重置，累积请求数迟早会突破窗口上限并让后续用例拿到 429。
+    重置后每个用例从零开始，限流逻辑本身仍由专门的用例覆盖。
+
+    Yields:
+        None
+    """
+    from api.main import rate_limiter
+
+    rate_limiter.reset()
+    yield
+    rate_limiter.reset()
+
+
 @pytest.fixture
 def sample_items():
     """基础样本数据
