@@ -152,9 +152,25 @@ export async function fetchSelf(page: Page, baseUrl: string): Promise<NewApiUser
   return { quota: result.quota, username: result.username };
 }
 
-/** 退出登录 */
+/**
+ * 退出登录：服务端退会话 + 清客户端存储。
+ *
+ * ⚠️ 必须清 localStorage/sessionStorage：new-api 把 user（含 quota）与
+ * access_token 缓存在 localStorage，仅调退出接口不会清它。若残留，后续
+ * fetchSelf 会走 localStorage 兜底（见本文件兜底分支）误判"仍登录"，
+ * 导致 oauthLogin 复用旧态、跳过真正的重登发奖（AgentRouter 奖励在登录动作发放）。
+ * 这也是手动在页面退出重登能领、而本工具只退接口不能领的差异所在。
+ */
 export async function logout(page: Page): Promise<void> {
   await pagePost(page, "/api/user/logout").catch(() => {});
+  await page
+    .evaluate(() => {
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch {}
+    })
+    .catch(() => {});
 }
 
 /** 尝试调用签到接口。返回 null 表示接口不存在（404） */
