@@ -158,6 +158,7 @@
           <button class="btn-primary" @click="loadErrorLogStats">错误日志/当前节点</button>
           <button class="btn-primary" @click="loadWeixinMeta">微信菜单/校验元/输出结构</button>
           <button class="btn-primary" @click="loadProgramAlias">应用别名/当前样式/数据结构</button>
+          <button class="btn-primary" @click="loadDesignerJest">设计器搜索/中心测试/脚本基准</button>
           <button class="btn-create" @click="saveConfig">+ 新建/更新</button>
         </div>
         <div v-if="dsText" class="app-meta">{{ dsText }}</div>
@@ -854,6 +855,20 @@ async function loadDataStructure() {
     dsText.value = `数据结构模块 ${n(mods)} / 输出结构 ${n(structs)}`
   } catch (e: any) {
     toast.error('加载数据结构失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadDesignerJest() {
+  try {
+    // 消费 program_center 三条无参真实路由：设计器搜索 / Jest 中心清单 / 脚本基准
+    const [designer, jestCenter, bench] = await Promise.all([
+      api.get('/api/program_center/designer/search'),
+      api.get('/api/program_center/jest/center/list'),
+      api.get('/api/program_center/validation/scripting/benchmark'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    dsText.value = `设计器搜索 ${n(designer)} / 中心测试 ${n(jestCenter)} / 脚本基准 ${n(bench)}`
+  } catch (e: any) {
+    toast.error('加载设计器/测试失败: ' + (e?.message ?? ''))
   }
 }
 async function loadProgramAlias() {
