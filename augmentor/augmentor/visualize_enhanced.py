@@ -1,6 +1,11 @@
 """数据集可视化增强模块
 
 提供数据集的可视化功能。
+
+分工边界（与 `augmentor.visualizer`）
+    本模块提供 `visualize_dataset(items, output, format)` 与 `VisualizationConfig`，
+    CLI 的 `visualize-data` 命令走这里。
+    走 pipeline 的可视化流程，用 `visualizer.DataVisualizer`。
 """
 
 import json

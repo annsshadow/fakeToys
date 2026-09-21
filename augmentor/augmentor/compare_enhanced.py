@@ -1,6 +1,11 @@
 """数据集比较增强模块
 
 提供更全面的数据集比较功能。
+
+分工边界（与 `augmentor.comparison`）
+    本模块按**内存数据**对比：`compare_datasets_enhanced(items_a, items_b)`，
+    产出字段级指标 `ComparisonMetrics` / `FieldComparison`。CLI 的 `compare-enhanced` 走这里。
+    只有文件路径、要一份简短摘要，用 `comparison`。
 """
 
 import logging

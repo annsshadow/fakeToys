@@ -1,6 +1,14 @@
 """数据清洗增强模块
 
 提供数据清洗、标准化和增强功能。
+
+分工边界（与 `augmentor.data.cleaner`）
+    本模块提供 `DatasetCleaner` + `TextNormalizer` 与规则化清洗
+    （`clean_dataset` / `clean_batch_optimized`）。CLI 的 `clean-enhanced` 命令走这里。
+    `augmentor.data.cleaner.DataCleaner` 是另一套实现，由 CLI 的 `clean` 命令与
+    REST API 的清洗端点使用；两者是**同一能力的两种实现**，
+    `CleaningResult` 与 `CleanResult` 也是同一概念的两种命名——这一对才是真正
+    值得合并的（合并需先统一结果类型，登记为后续任务）。
 """
 
 import re

@@ -1,6 +1,11 @@
 """数据集导出增强模块
 
 支持更多导出格式和导出选项。
+
+分工边界（与 `augmentor.export`）
+    本模块提供 `EnhancedExporter` 与导出选项 `ExportOptions`，覆盖全部 13 种格式，
+    并且是 `ExportFormat` 枚举的**唯一来源**（`export.py` 复用同一份）。
+    只要按格式落盘、不需要选项，用 `export.Exporter`（pipeline / API 走的就是它）。
 """
 
 import json
