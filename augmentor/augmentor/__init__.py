@@ -1,5 +1,8 @@
 """AI 训练数据增强工具包"""
 
+import warnings
+from typing import Any, Dict
+
 __version__ = "2.2.0"
 
 from .config import AppConfig, load_config
@@ -9,7 +12,7 @@ from .quality import QualityScorer
 from .dedup import Deduplicator
 from .export import Exporter
 from .preview import PreviewGenerator, ExportPreview
-from .report import ReportGenerator, QualityReport
+from .report import ReportGenerator, QualityReport as PipelineQualityReport
 from .context import ContextAugmentor
 from .checkpoint import CheckpointManager
 from .versioning import VersionManager
@@ -25,15 +28,15 @@ from .evaluation import ModelEvaluator
 from .streaming import StreamReader, StreamWriter, StreamProcessor, StreamAugmentor
 from .comparison import DatasetComparator, ComparisonResult, compare_datasets
 from .dataset_ops import DatasetOperations, MergeConfig, SampleConfig, SplitConfig
-from .validation import DatasetValidator, DataSanitizer, ValidationResult, ValidationSeverity
+from .validation import DatasetValidator, DataSanitizer, ValidationResult as DataValidationResult, ValidationSeverity
 from .converter import DatasetConverter, DataFormat, convert_dataset, convert_file, get_supported_formats
 from .indexer import DatasetIndexer, DatasetView, QueryResult, create_indexer, create_view
 from .cache import MemoryCache, DiskCache, CachedProcessor, cached, create_memory_cache, create_disk_cache
-from .config_validator import ConfigValidator, ValidationResult, validate_config_file, validate_config
+from .config_validator import ConfigValidator, ValidationResult as ConfigValidationResult, validate_config_file, validate_config
 from .analytics import DatasetAnalyzer, AnalysisReport, DataInsight, analyze_dataset, get_dataset_insights
 from .cleaner import DatasetCleaner, TextNormalizer, CleaningResult, clean_dataset, normalize_text, extract_keywords
 from .export_enhanced import EnhancedExporter, ExportOptions, ExportFormat, export_dataset, get_supported_formats as get_supported_export_formats
-from .quality_report import QualityReporter, QualityReport, QualityMetric, generate_quality_report, save_quality_report
+from .quality_report import QualityReporter, QualityReport as DatasetQualityReport, QualityMetric, generate_quality_report, save_quality_report
 from .visualize_enhanced import EnhancedVisualizer, VisualizationConfig, visualize_dataset
 from .backup import DatasetBackup, BackupInfo, create_backup, restore_backup, list_backups, delete_backup
 from .search_enhanced import EnhancedSearcher, SearchResult, SearchFilter, search_dataset, create_searcher
@@ -100,7 +103,7 @@ __all__ = [
     "PreviewGenerator",
     "ExportPreview",
     "ReportGenerator",
-    "QualityReport",
+    "PipelineQualityReport",
     "ContextAugmentor",
     "CheckpointManager",
     "VersionManager",
@@ -126,7 +129,7 @@ __all__ = [
     "SplitConfig",
     "DatasetValidator",
     "DataSanitizer",
-    "ValidationResult",
+    "DataValidationResult",
     "ValidationSeverity",
     "DatasetConverter",
     "DataFormat",
@@ -145,7 +148,7 @@ __all__ = [
     "create_memory_cache",
     "create_disk_cache",
     "ConfigValidator",
-    "ValidationResult",
+    "ConfigValidationResult",
     "validate_config_file",
     "validate_config",
     "DatasetAnalyzer",
@@ -165,7 +168,7 @@ __all__ = [
     "export_dataset",
     "get_supported_export_formats",
     "QualityReporter",
-    "QualityReport",
+    "DatasetQualityReport",
     "QualityMetric",
     "generate_quality_report",
     "save_quality_report",
@@ -299,3 +302,44 @@ __all__ = [
     "VersionError",
     "PipelineError"
 ]
+
+
+# ============ 历史歧义名兼容层 ============
+#
+# 早期版本中 `QualityReport` 与 `ValidationResult` 各被从两个模块导入到包级别，
+# 后者静默覆盖前者，导致 `augmentor.QualityReport` 指向的类与
+# `ReportGenerator.generate()` 实际返回的类不是同一个（`isinstance` 判定为 False）。
+#
+# 现已改为导出语义明确的独立名字：
+#   PipelineQualityReport   ← augmentor.report.QualityReport（ReportGenerator 产出）
+#   DatasetQualityReport    ← augmentor.quality_report.QualityReport（QualityReporter 产出）
+#   DataValidationResult    ← augmentor.validation.ValidationResult（数据集校验）
+#   ConfigValidationResult  ← augmentor.config_validator.ValidationResult（配置校验）
+#
+# 下面按「修复前的实际解析结果」保留旧名一个版本，并给出弃用警告。
+
+_LEGACY_ALIASES: Dict[str, str] = {
+    "QualityReport": "DatasetQualityReport",
+    "ValidationResult": "ConfigValidationResult",
+}
+
+_LEGACY_ORIGIN: Dict[str, str] = {
+    "QualityReport": "quality_report",
+    "ValidationResult": "config_validator",
+}
+
+
+def __getattr__(name: str) -> Any:
+    """按需解析历史歧义名并发出弃用警告（PEP 562）"""
+    target = _LEGACY_ALIASES.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    warnings.warn(
+        f"augmentor.{name} 存在歧义（历史上由两个模块的同名类互相覆盖），"
+        f"已弃用并将在下一大版本移除；请改用 augmentor.{target}，"
+        f"或直接 from augmentor.{_LEGACY_ORIGIN[name]} import {name}。",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return globals()[target]
+
