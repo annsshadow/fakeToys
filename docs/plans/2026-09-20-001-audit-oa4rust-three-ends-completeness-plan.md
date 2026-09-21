@@ -3,7 +3,11 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 116 # rev116（2026-09-21 G5：程序中心 program 别名族 应用/当前样式/数据结构）：
+rev: 117 # rev117（2026-09-21 G5：组织-快递 同步配置/单位清单/同步状态，全局消费破 600）：
+       # OrgViewer.vue 补「同步配置/单位/状态」按钮，消费 org express config/get + units/list + status/get 共 3 条真实路由（组织-快递域此前 0 消费，本轮开域）；全局消费 597→600（600/4638=12.9%，里程碑 600）。
+       # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。组织-快递域缺口 7→4。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev116 # rev116（2026-09-21 G5：程序中心 program 别名族 应用/当前样式/数据结构）：
        # ProgramCenterApp.vue Config 页补「应用别名/当前样式/数据结构」按钮，消费 /api/program 别名族 program/applications + program/appstyle/current/style + program/datastructure/modules/all 共 3 条真实路由（与 program_center 前缀为不同注册路径）；全局消费 594→597（597/4638=12.9%）。
        # 踩坑（重要）：desktop-endpoints.test.ts 用正则 /api/[A-Za-z0-9_\-/{}$.]+ 扫源码全文（含注释）来对账端点；注释里写「消费 /api/program 别名族…」被提取成裸端点 /api/program → 命中 no unregistered endpoint 守卫报红。教训：**注释中勿写以 /api/ 开头且可被截断成裸/短端点的字面量**；改写注释去掉前导斜杠后转绿。
        # 契约回源码核验：三 handler 均无参 GET、无写、空库安全。程序中心域缺口 333→330。
