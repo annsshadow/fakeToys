@@ -153,16 +153,28 @@ export async function fetchSelf(page: Page, baseUrl: string): Promise<NewApiUser
 }
 
 /**
- * 退出登录：服务端退会话 + 清客户端存储。
+ * 退出登录：服务端退会话 + 清本站 Cookie + 清客户端存储，等价于页面手动退出。
  *
- * ⚠️ 必须清 localStorage/sessionStorage：new-api 把 user（含 quota）与
- * access_token 缓存在 localStorage，仅调退出接口不会清它。若残留，后续
- * fetchSelf 会走 localStorage 兜底（见本文件兜底分支）误判"仍登录"，
- * 导致 oauthLogin 复用旧态、跳过真正的重登发奖（AgentRouter 奖励在登录动作发放）。
- * 这也是手动在页面退出重登能领、而本工具只退接口不能领的差异所在。
+ * ⚠️ 三步缺一不可（AgentRouter 奖励在"登录"动作发放，需真正退干净再重登才发）：
+ *   1. POST /api/user/logout —— 通知服务端退会话；
+ *   2. 清本站域名 Cookie —— 实测退出接口不会让会话 Cookie 失效，若残留，
+ *      oauthLogin 的 isSessionAlive 兜底会访问受保护页发现未被踢回登录页，
+ *      误判"仍登录"而跳过真正的 OAuth 重登；
+ *   3. 清 localStorage/sessionStorage —— new-api 把 user（含 quota）与
+ *      access_token 缓存于此，残留会让 fetchSelf 从缓存直接读出旧余额误判"仍登录"。
+ * 仅清本站域名，不动第三方（GitHub 会话在 github.com 域，保留则重登免密）。
  */
-export async function logout(page: Page): Promise<void> {
+export async function logout(page: Page, baseUrl: string): Promise<void> {
   await pagePost(page, "/api/user/logout").catch(() => {});
+  try {
+    const host = new URL(baseUrl).hostname;
+    const ctx = page.context();
+    const cookies = await ctx.cookies();
+    const domains = new Set(
+      cookies.map((c) => c.domain).filter((d) => d.replace(/^\./, "").endsWith(host)),
+    );
+    for (const domain of domains) await ctx.clearCookies({ domain });
+  } catch {}
   await page
     .evaluate(() => {
       try {
@@ -377,21 +389,27 @@ export async function oauthLogin(
   provider: OAuthProvider,
   log: (m: string) => void,
   loginPath = "/login",
+  forceLogin = false,
 ): Promise<{ user: NewApiUser | null; needManual: boolean }> {
   const meta = PROVIDER_META[provider];
-  // 已登录则直接复用
-  await page.goto(baseUrl, { waitUntil: "domcontentloaded" }).catch(() => {});
-  await page.waitForTimeout(1500);
-  let self = await fetchSelf(page, baseUrl);
-  if (self) {
-    log("已是登录态（复用会话）");
-    return { user: self, needManual: false };
-  }
-  // 兜底：token 类分支（如 JustWoker）fetchSelf 读不到，用「访问受保护页是否被踢回登录页」判断
-  const reused = await isSessionAlive(page, baseUrl);
-  if (reused) {
-    log("已是登录态（会话复用，接口读取受限）");
-    return { user: { quota: null, username: null }, needManual: false };
+  // forceLogin=true：跳过"复用会话"判断，强制走真实 OAuth 往返（用于退出后重登发奖，
+  // 否则 SPA 页面不立即跳转会被 isSessionAlive 误判为"仍登录"而根本不点登录按钮）。
+  let self: NewApiUser | null = null;
+  if (!forceLogin) {
+    // 已登录则直接复用
+    await page.goto(baseUrl, { waitUntil: "domcontentloaded" }).catch(() => {});
+    await page.waitForTimeout(1500);
+    self = await fetchSelf(page, baseUrl);
+    if (self) {
+      log("已是登录态（复用会话）");
+      return { user: self, needManual: false };
+    }
+    // 兜底：token 类分支（如 JustWoker）fetchSelf 读不到，用「访问受保护页是否被踢回登录页」判断
+    const reused = await isSessionAlive(page, baseUrl);
+    if (reused) {
+      log("已是登录态（会话复用，接口读取受限）");
+      return { user: { quota: null, username: null }, needManual: false };
+    }
   }
 
   // 打开登录页，点第三方登录按钮
