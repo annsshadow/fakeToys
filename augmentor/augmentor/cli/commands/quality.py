@@ -87,9 +87,31 @@ def run_quality_report(args, config):
         print(f"\n报告已保存到 {args.output}")
 
 
-# ============ 数据清洗 ============
+# ============ 数据清洗（合并原 clean-enhanced）============
 def run_clean(args, config):
-    """`clean` 子命令"""
+    """`clean` 子命令
+
+    默认走 `data.DataCleaner`：可 `--no-url-removal`，输出语言分布与问题清单。
+    `--enhanced` 走 `cleaner.clean_dataset`：按 `--rules` 规则式清洗。
+
+    两者是**不同实现**，不是同一实现的强弱版——旧的 `-enhanced` 后缀并不表示
+    「更高级」，这正是 T1.7 要合并它们的原因。
+    """
+    if args.enhanced:
+        from augmentor.cleaner import clean_dataset
+
+        items = _load_items(args.input)
+        cleaned, result = clean_dataset(items, rules=args.rules)
+
+        _save_items(cleaned, args.output)
+
+        print(f"原始数据: {result.original_count} 条")
+        print(f"清洗后: {result.cleaned_count} 条")
+        print(f"移除: {result.removed_count} 条")
+        print(f"应用规则: {', '.join(result.rules_applied)}")
+        print(f"已保存到 {args.output}")
+        return
+
     from augmentor.data import DataCleaner
 
     items = _load_items(args.input)
@@ -104,23 +126,6 @@ def run_clean(args, config):
         "language_distribution": result.language_distribution,
         "issues": result.issues
     })
-
-
-# ============ 增强数据清洗 ============
-def run_clean_enhanced(args, config):
-    """`clean-enhanced` 子命令"""
-    from augmentor.cleaner import clean_dataset
-
-    items = _load_items(args.input)
-    cleaned, result = clean_dataset(items, rules=args.rules)
-
-    _save_items(cleaned, args.output)
-
-    print(f"原始数据: {result.original_count} 条")
-    print(f"清洗后: {result.cleaned_count} 条")
-    print(f"移除: {result.removed_count} 条")
-    print(f"应用规则: {', '.join(result.rules_applied)}")
-    print(f"已保存到 {args.output}")
 
 
 # ============ 自动标注 ============

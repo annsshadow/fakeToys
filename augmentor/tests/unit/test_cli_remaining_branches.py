@@ -67,7 +67,7 @@ class TestAuditReadyMessage:
 class TestVersionControlMissingArgs:
     def test_load_requires_version_and_output(self, tmp_path):
         _, err, code = _run(
-            ["version-control", "--action", "load", "--versions-dir", str(tmp_path / "v")],
+            ["version", "--enhanced", "--action", "load", "--versions-dir", str(tmp_path / "v")],
             cwd=tmp_path,
         )
         assert code == 1
@@ -76,7 +76,7 @@ class TestVersionControlMissingArgs:
     def test_compare_without_current_version_exits(self, tmp_path):
         _, err, code = _run(
             [
-                "version-control",
+                "version", "--enhanced",
                 "--action",
                 "compare",
                 "--version",
