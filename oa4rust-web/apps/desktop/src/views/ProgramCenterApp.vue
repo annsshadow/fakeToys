@@ -149,6 +149,7 @@
           <button class="btn-primary" @click="loadConfigApps">应用配置</button>
           <button class="btn-primary" @click="loadConfigEntities">实体配置</button>
           <button class="btn-primary" @click="loadDataStructure">数据结构</button>
+          <button class="btn-primary" @click="loadDsTables">表/字段/验证码</button>
           <button class="btn-create" @click="saveConfig">+ 新建/更新</button>
         </div>
         <div v-if="dsText" class="app-meta">{{ dsText }}</div>
@@ -845,6 +846,20 @@ async function loadDataStructure() {
     dsText.value = `数据结构模块 ${n(mods)} / 输出结构 ${n(structs)}`
   } catch (e: any) {
     toast.error('加载数据结构失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadDsTables() {
+  try {
+    // 消费 program_center 三条无参真实路由：全部数据表 / 全部字段 / 验证码清单
+    const [tables, fields, captcha] = await Promise.all([
+      api.get('/api/program_center/datastructure/tables/all'),
+      api.get('/api/program_center/datastructure/fileds/all'),
+      api.get('/api/program_center/captcha/list'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    dsText.value = `数据表 ${n(tables)} / 字段 ${n(fields)} / 验证码 ${n(captcha)}`
+  } catch (e: any) {
+    toast.error('加载表结构失败: ' + (e?.message ?? ''))
   }
 }
 async function loadConfigs() {
