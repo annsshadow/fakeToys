@@ -3,6 +3,7 @@ import { startServer } from "./server.js";
 import { startScheduler } from "./scheduler.js";
 import { runAll, runSite } from "./runner.js";
 import { createLogger } from "./logger.js";
+import { acquireLock, releaseLock } from "./lock.js";
 
 const log = createLogger("main");
 
@@ -27,7 +28,20 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
-  // 常驻模式：启动面板 + 定时器
+  // 常驻模式：启动面板 + 定时器。先抢单实例锁，防止多个进程各跑一份 cron 重复触发
+  const lock = acquireLock();
+  if (!lock.ok) {
+    log.error(`已有常驻进程在运行（PID=${lock.holderPid}），本次启动退出。若确认旧进程已死，删除 sessions/.daemon.lock 后重试`);
+    process.exit(1);
+  }
+  for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
+    process.on(sig, () => {
+      releaseLock();
+      process.exit(0);
+    });
+  }
+  process.on("exit", releaseLock);
+
   log.info("常驻模式启动");
   startServer(config);
   startScheduler(config);
