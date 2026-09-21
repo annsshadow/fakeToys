@@ -1,6 +1,11 @@
 """数据集对比模块
 
 提供数据集之间的A/B测试对比功能。
+
+分工边界（与 `augmentor.compare_enhanced`）
+    本模块按**文件路径**对比：`compare_datasets(file_a, file_b)` 自行读盘，
+    产出 `ComparisonResult`。CLI 的 `compare` 命令走这里。
+    需要字段级指标（相似度 / 仅在 A / 仅在 B）或数据已在内存里，用 `compare_enhanced`。
 """
 
 import json

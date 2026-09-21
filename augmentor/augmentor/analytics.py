@@ -1,6 +1,11 @@
 """数据分析模块
 
 提供数据集的深度分析和洞察功能。
+
+分工边界（与 `augmentor.statistics`）
+    本模块做**整体分析**：质量 / 多样性 / 完整性分数与可执行的改进建议
+    （`AnalysisReport.insights`），入口 `analyze_dataset`。CLI 的 `analyze-data` 走这里。
+    要逐字段的填充率 / 长度 / 唯一值，用 `statistics`。
 """
 
 import re

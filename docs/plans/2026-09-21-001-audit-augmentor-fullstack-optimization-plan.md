@@ -715,7 +715,7 @@ T0.1–T0.8 全部落地。**偏差项必须显式记录，不能当作"按计�
 | T1.3 | F6 | `pytest.ini` 加 `--cov-branch`；~~清理 `pragma: no cover` 滥用~~ → **复核发现是伪问题（生产源码 0 处）** | branch 覆盖率 ≥ 80% → **实际 98.63%** |
 | T1.4 | F6 | ~~引入 `mutmut`~~ → **Windows 不支持，改用 `cosmic-ray`**（显式偏差，见下），对 `quality.py` / `dedup.py` / `export.py` 做分层抽样变异测试 | 变异杀死率 ≥ 60% |
 | T1.5a | F7 | **拆分出的高优先子项**：修 `ExportFormat` 同名冲突（前置侦察定性为**用户可见故障**，非"重复"） | `grep -c "class ExportFormat"` == 1 且三处入口同一对象；公开枚举成员可端到端消费 |
-| T1.5b | F7 | 六对重复模块各保留一个实现，另一个标 `@deprecated` | `__init__.py` 无同名二次导入；全量测试通过 |
+| T1.5b | F7 | ~~六对重复模块各保留一个实现，另一个标 `@deprecated`~~ → **实测 API 交集为 0、双方互不包含、12 个模块全有活跃调用方，故改为「写明分工边界」**（见下） | 12 个模块 docstring 均含分工边界；`__init__.py` 无同名二次导入 |
 | T1.6 | F8 | `cli.py` 拆为 `cli/` 包（dispatch 表 + `commands/` + `io.py`） | `cli.py` 顶层 ≤ 80 行 |
 | T1.7 | F8 | 9 组重复命令合并为 `--enhanced` 开关，旧名保留弃用别名 | 子命令 44 → ≤ 30，CLI 集成测试全绿 |
 | T1.8 | F9 | `web/package.json`：~~`build` 加 `tsc -b`~~ → **改为 `tsc --noEmit && vite build`**（见偏差）；新增 `typecheck` / `lint` / `test` / `test:coverage` / `format` | 类型错误时 `npm run build` 失败 → **已验证（退出码 2）** |
@@ -1009,7 +1009,14 @@ enhanceTXT.py（重复一份） 19450 B  md5 e74dc8a5…（根目录与 archive/
 | export / export_enhanced | 364 / 2 / **pipeline + api + preview** | 365 / 3 / cli | **export**（枚举取 B 的超集，见上） | 两条主链路都在 A 上；枚举是唯一冲突点 |
 | visualizer / visualize_enhanced | 333 / 1 / **pipeline** | 246 / 2 / cli | **visualizer** | `pipeline` 是唯一主链路消费者 |
 | statistics / analytics | 353 / 3 / cli | 527 / 4 / cli | **analytics** | 无 pipeline 引用；B 明显更完整 |
-| cleaner / data.cleaner | 470 / 4 / **data/__init__ + cli** + 8 测试 | 229 / 2 / **包内零引用** + 3 测试 | **cleaner** | `data/cleaner.py` 在包内无任何消费者，仅测试引用 → 实为死代码 |
+| cleaner / data.cleaner | 470 / 4 / cli + 8 测试 | 229 / 2 / cli + api + 3 测试 | **不可合并**（见下方更正） | 两者都在用 |
+
+> **侦察脚本的一处误报（已更正）**：上表初版把 `data/cleaner.py` 记为「包内零引用 → 死代码」，
+> **是错的**。侦察脚本的正则 `\bdata\.cleaner\b` 匹配的是**绝对模块路径**，而
+> `augmentor/data/__init__.py` 用的是**相对导入** `from .cleaner import DataCleaner, CleanResult`，
+> 不含字面量 `data.cleaner`，于是被漏判。实际上 `DataCleaner` 有 3 处活跃调用方：
+> `api/routes/quality.py:155`、`cli.py:540`、`cli.py:708`。
+> 教训与 T1.4 同源：**侦察手段本身要先被验证**，正则匹配模块路径时必须同时覆盖相对导入。
 
 **F8 的「9 组重复命令」描述不准确**（Rule 7：暴露冲突而非折中）：
 
@@ -1070,6 +1077,46 @@ enhanceTXT.py（重复一份） 19450 B  md5 e74dc8a5…（根目录与 archive/
 **未做（刻意）**：`export_all_formats` 的**名字**仍暗示「所有格式」，但它现在只写 6 种。
 改名属破坏性变更，留待与 T1.7 的命令合并一并处理；当前以 `NATIVE_FORMATS` 的文档字符串
 说明边界。
+
+---
+
+#### T1.5b — 六对模块收敛（已完成，**结论与原规划不同**）
+
+**实测判据：六对模块的公开 API 交集为 0。**
+
+用 `ast` 提取每个模块级定义的公开名与签名后比对：
+
+| 对 | A 的公开名 | B 的公开名 | 同名 |
+|---|---:|---:|---:|
+| comparison / compare_enhanced | 3 | 6 | **0** |
+| versioning / version_control | 3 | 5 | **0** |
+| export / export_enhanced | 1（枚举改为复用） | 5 | **0** |
+| visualizer / visualize_enhanced | 1 | 3 | **0** |
+| statistics / analytics | 5 | 7 | **0** |
+| cleaner / data.cleaner | 8 | 2 | **0** |
+
+而且双方**互不包含**：`visualizer.DataVisualizer` 有 7 个成员，
+`visualize_enhanced.EnhancedVisualizer` 只有 4 个——「enhanced」甚至不是超集。
+入参形态也是两个方向：`comparison.compare_datasets(file_a, file_b)` 收**文件路径**，
+`compare_enhanced.compare_datasets_enhanced(items_a, items_b)` 收**内存数据**。
+
+**12 个模块全部有活跃调用方**（CLI 命令 / pipeline / REST API / 包导出），
+删任何一个都是删功能。因此「各保留一个、另一个标 `@deprecated`」在本仓库
+**不成立**。真正的重复只有两处，且都已处理：
+
+- `ExportFormat` 枚举（6 vs 13 成员）→ **T1.5a 已消除**；
+- `get_supported_formats`（`converter.py` 的文件转换格式 vs `export_enhanced.py`
+  的导出格式）→ 已由 `__init__.py` 的 `as get_supported_export_formats` 别名区分，
+  两者本就是不同领域，保留。
+
+**实际动作**：把「分工边界」写进 12 个模块各自的 docstring——这恰好解决规划 F7
+描述的原始痛点（「同一能力两个入口，用户无法判断该用哪个」）。每条注明：本模块的
+入口形态、活跃调用方、以及什么情况下该改用另一个。
+
+**唯一真正值得合并的一对是 `cleaner` / `data.cleaner`**：两者都在做数据清洗，
+`CleaningResult` 与 `CleanResult` 是同一概念的两种命名。合并需先统一结果类型，
+并同时改动 CLI 的 `clean` / `clean-enhanced` 两个命令与 REST API 清洗端点，
+登记为独立后续任务（不塞进 T1.7）。
 
 ---
 

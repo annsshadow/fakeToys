@@ -1,4 +1,10 @@
-"""数据版本管理模块"""
+"""数据版本管理模块
+
+分工边界（与 `augmentor.version_control`）
+    本模块的 `VersionManager` 与 `AugmentorPipeline` 绑定（pipeline 会自动建快照），
+    CLI 的 `version` 命令走这里。
+    脱离 pipeline、用独立目录管理版本，用 `version_control` 的模块级函数。
+"""
 
 import json
 import shutil

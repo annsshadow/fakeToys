@@ -1,4 +1,10 @@
-"""数据分布可视化模块"""
+"""数据分布可视化模块
+
+分工边界（与 `augmentor.visualize_enhanced`）
+    本模块的 `DataVisualizer` 由 `AugmentorPipeline` 使用
+    （`pipeline.visualize_dataset`）。
+    直接对一份数据出图、或用 `VisualizationConfig` 配置样式，用 `visualize_enhanced`。
+"""
 
 import json
 import logging

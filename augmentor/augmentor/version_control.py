@@ -1,6 +1,12 @@
 """数据集版本控制模块
 
 提供数据集的版本控制功能。
+
+分工边界（与 `augmentor.versioning`）
+    本模块独立于 `AugmentorPipeline`，用模块级函数
+    （`create_version` / `load_version` / `list_versions`）管理版本目录。
+    CLI 的 `version-control` 命令走这里。
+    在 pipeline 流程内管版本（含自动快照），用 `versioning.VersionManager`。
 """
 
 import json
