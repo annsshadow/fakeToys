@@ -3,6 +3,8 @@
 质量分决定样本是否进入训练集，因此权重校验、阈值过滤与报告统计必须准确。
 """
 
+import json
+
 import pytest
 
 from augmentor.quality import QualityScorer, QualityScore
@@ -556,3 +558,95 @@ class TestQualityExtended2:
         scores = scorer.batch_score(items)
         assert all(isinstance(s, QualityScore) for s in scores)
         assert len(scores) == 4
+
+
+class TestSemanticDimensionOptional:
+    """语义维度可跳过（离线评估场景）
+
+    对已落盘的数据集做质量评估时拿不到原始种子问题。若把 instruction 同时
+    当作 original 与 generated，语义相似度会恒为 1.0 并虚增总分（见
+    docs/plans/2026-09-21-001-audit-augmentor-fullstack-optimization-plan.md F1）。
+    因此需要一条「跳过语义维度」的路径，且权重必须重归一化。
+    """
+
+    def test_effective_weights_unchanged_when_semantic_included(self):
+        """含语义时权重原样返回"""
+        scorer = QualityScorer(weights=[0.3, 0.4, 0.3])
+        assert scorer.effective_weights(True) == [0.3, 0.4, 0.3]
+
+    def test_effective_weights_renormalized_when_semantic_skipped(self):
+        """跳过语义时其权重按比例分摊，总和仍为 1.0"""
+        scorer = QualityScorer(weights=[0.3, 0.4, 0.3])
+        weights = scorer.effective_weights(False)
+
+        assert weights[0] == 0.0
+        assert abs(sum(weights) - 1.0) < 1e-9
+        # 0.4 : 0.3 的比例必须保持
+        assert abs(weights[1] / weights[2] - 0.4 / 0.3) < 1e-9
+
+    def test_effective_weights_degenerate_zero_remainder(self):
+        """相关性与多样性权重全为 0 时不得除零"""
+        scorer = QualityScorer(weights=[1.0, 0.0, 0.0])
+        weights = scorer.effective_weights(False)
+        assert weights == [0.0, 0.5, 0.5]
+
+    def test_batch_score_marks_semantic_not_evaluated(self):
+        """跳过语义时结果需带 semantic_evaluated=False 标记"""
+        scorer = QualityScorer()
+        scores = scorer.batch_score(
+            [{"generated": "q", "output": "a"}], include_semantic=False
+        )
+        assert scores[0].semantic_evaluated is False
+        assert scores[0].semantic_similarity == 0.0
+
+    def test_batch_score_default_keeps_semantic(self):
+        """默认路径行为不变（增强管道依赖它）"""
+        scorer = QualityScorer()
+        scores = scorer.batch_score(
+            [{"original": "种子问题", "generated": "变体问题", "output": "回答"}]
+        )
+        assert scores[0].semantic_evaluated is True
+
+    def test_irrelevant_answer_fails_without_semantic(self):
+        """无关答案必须被判不通过——修复前它恰好等于阈值 0.6"""
+        scorer = QualityScorer(threshold=0.6)
+        score = scorer.batch_score(
+            [{"generated": "怎么申请租房？", "output": "今天天气不错哈哈哈"}],
+            include_semantic=False,
+        )[0]
+        assert score.total_score < 0.6
+        assert score.passed is False
+
+    def test_passed_is_python_bool_and_json_serializable(self):
+        """passed 必须是 Python 布尔，而不是 numpy.bool_
+
+        评分链路是 numpy 的，比较结果是 np.bool_。np.bool_ 既不是 bool 的子类，
+        也无法被 json.dumps 序列化（TypeError），因此只要它进入任何 JSON 响应或
+        落盘路径就会 500。dataclass 声明的是 ``passed: bool``，这条断言守住该契约。
+        """
+        scorer = QualityScorer()
+        batch = scorer.batch_score(
+            [{"generated": "问题", "output": "回答"}], include_semantic=False
+        )[0]
+        single = scorer.score("种子", "变体", "回答", include_semantic=False)
+
+        assert isinstance(batch.passed, bool)
+        assert isinstance(single.passed, bool)
+        json.dumps({"batch": batch.passed, "single": single.passed})
+
+    def test_diversity_not_degenerate_when_semantic_skipped(self):
+        """跳过语义后多样性不得退化为恒 1.0
+
+        多样性参照集原本以语义分是否达标作为纳入门槛；语义被跳过时该分数恒为 0，
+        若仍以它把关则参照集永不增长、多样性恒为 1.0——等于把退化从语义维度
+        搬到了多样性维度。
+        """
+        scorer = QualityScorer(threshold=0.0)
+        items = [
+            {"generated": "完全相同的文本", "output": "完全相同的文本"},
+            {"generated": "完全相同的文本", "output": "完全相同的文本"},
+        ]
+        scores = scorer.batch_score(items, include_semantic=False)
+
+        assert scores[0].diversity == 1.0, "首条没有参照对象，多样性为 1.0"
+        assert scores[1].diversity < 1.0, "与首条完全相同，多样性必须下降"
