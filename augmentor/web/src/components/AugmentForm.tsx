@@ -51,7 +51,7 @@ export default function AugmentForm({ onSubmitted }: AugmentFormProps) {
       )
       message.success('增强任务已提交，可在进度面板查看状态')
       onSubmitted?.()
-    } catch (error) {
+    } catch {
       message.error('增强任务启动失败')
     } finally {
       setSubmitting(false)

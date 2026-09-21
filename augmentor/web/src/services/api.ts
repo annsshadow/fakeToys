@@ -18,7 +18,15 @@ export const loadData = async (filename: string, page: number, pageSize: number,
   return response.data
 }
 
-export const updateDataItem = async (filename: string, index: number, item: any) => {
+/**
+ * 更新单条数据
+ *
+ * `item` 的字段由数据集本身决定（前端不做建模），所以这里用 `unknown` 而不是 `any`：
+ * 语义是"本层不解释这个载荷、原样转发"，调用方的类型由调用方保证。
+ * 不写成 `Record<string, unknown>` 是因为 TS 的 interface 没有隐式索引签名，
+ * 会让 `DataItem` 这类调用方直接编译失败。
+ */
+export const updateDataItem = async (filename: string, index: number, item: unknown) => {
   const response = await api.put(`/data/update/${filename}`, item, {
     params: { index }
   })
@@ -226,7 +234,13 @@ export const getConfig = async () => {
   return response.data
 }
 
-export const updateConfig = async (config: any) => {
+/**
+ * 整份覆盖配置
+ *
+ * 同 `updateDataItem`：配置的完整结构由后端 `config.yaml` 定义，
+ * 前端只做转发，因此用 `unknown` 而非 `any`。
+ */
+export const updateConfig = async (config: unknown) => {
   const response = await api.post('/config', config)
   return response.data
 }

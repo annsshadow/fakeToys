@@ -23,7 +23,7 @@ export default function Augmentation() {
     try {
       const result = await getDataFiles()
       setFiles(result.files.map((f: any) => f.name))
-    } catch (error) {
+    } catch {
       message.error('加载文件列表失败')
     }
   }
@@ -38,7 +38,7 @@ export default function Augmentation() {
           message.success('增强任务完成！')
         }
       }
-    } catch (error) {
+    } catch {
       // 忽略错误
     }
   }
@@ -53,7 +53,7 @@ export default function Augmentation() {
     try {
       await startAugmentation(inputFile, outputFile, useQuality, useDedup, useCheckpoint)
       message.success('增强任务已启动')
-    } catch (error) {
+    } catch {
       message.error('启动失败')
       setRunning(false)
     }

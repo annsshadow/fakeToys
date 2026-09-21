@@ -52,7 +52,7 @@ export default function ExportDialog({ inputFile, open, onClose }: ExportDialogP
     try {
       const result = await previewExport(inputFile, values.format)
       setPreview(result)
-    } catch (error) {
+    } catch {
       message.error('预览失败，请检查数据集与格式')
     } finally {
       setLoading(false)
@@ -71,7 +71,7 @@ export default function ExportDialog({ inputFile, open, onClose }: ExportDialogP
       await batchExport({ dataset: inputFile }, values.outputDir, [values.format])
       message.success('导出完成')
       onClose()
-    } catch (error) {
+    } catch {
       message.error('导出失败')
     } finally {
       setLoading(false)
