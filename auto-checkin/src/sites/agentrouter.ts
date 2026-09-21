@@ -32,12 +32,12 @@ export const agentrouterAdapter: SiteAdapter = {
       ctx.log(`当前余额 quota=${beforeQuota}，准备退出重登`);
 
       // 2. 退出
-      await logout(page);
+      await logout(page, BASE_URL);
       await page.waitForTimeout(1500);
       ctx.log("已退出登录");
 
-      // 3. GitHub 重新授权登录（触发发奖）
-      const second = await oauthLogin(page, BASE_URL, "github", ctx.log);
+      // 3. GitHub 重新授权登录（触发发奖）——强制真实 OAuth 往返，绕开复用会话误判
+      const second = await oauthLogin(page, BASE_URL, "github", ctx.log, "/login", true);
       if (!second.user) {
         // 退出后 GitHub 会话通常仍在，理论上能自动重登；失败则回退到已有登录态
         ctx.log("自动重登未确认，回退读取当前余额");
