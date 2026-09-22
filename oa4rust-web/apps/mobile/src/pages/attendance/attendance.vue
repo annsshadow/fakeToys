@@ -39,6 +39,7 @@ async function load() {
 onShow(async () => {
   if (!(await ensureAuthenticated())) return
   load()
+  void loadMine()
 })
 
 async function doCheck(kind: 'checkIn' | 'checkOut'): Promise<void> {
@@ -61,6 +62,50 @@ async function doCheck(kind: 'checkIn' | 'checkOut'): Promise<void> {
 
 function todayRecords(): AttendancePreCheck['records'] {
   return pre.value?.records ?? []
+}
+
+// ── 我的月度考勤（v2/my/*，rev102）───────────────────────────────
+interface MyDetailRow {
+  id?: string
+  date?: string
+  status?: string
+  [key: string]: unknown
+}
+const myStat = ref<Record<string, unknown> | null>(null)
+const myDetails = ref<MyDetailRow[]>([])
+const apiVersion = ref('')
+const myLoading = ref(false)
+
+async function loadMine(): Promise<void> {
+  myLoading.value = true
+  try {
+    const [statResp, detailResp, verResp] = await Promise.all([
+      attendanceApi.myStatistic(),
+      attendanceApi.myDetailList(),
+      attendanceApi.myVersion(),
+    ])
+    myStat.value = (statResp.data ?? null) as Record<string, unknown> | null
+    myDetails.value = (detailResp.data ?? []) as MyDetailRow[]
+    apiVersion.value = String((verResp.data as { version?: string })?.version ?? '')
+  } catch {
+    myStat.value = null
+    myDetails.value = []
+  } finally {
+    myLoading.value = false
+  }
+}
+
+function statText(): string {
+  const s = myStat.value
+  if (!s) return '暂无统计'
+  const pick = (k: string): string => {
+    const v = s[k]
+    return v === undefined || v === null ? '' : String(v)
+  }
+  const normal = pick('normalCount') || pick('normal') || '0'
+  const abnormal = pick('abnormalCount') || pick('abnormal') || '0'
+  const month = pick('month') || pick('yearMonth') || '本月'
+  return `${month} · 正常 ${normal} · 异常 ${abnormal}`
 }
 </script>
 
@@ -95,6 +140,21 @@ function todayRecords(): AttendancePreCheck['records'] {
             <text class="rec-result">{{ r.checkInResult || '正常' }}</text>
           </view>
           <view class="rec-meta">{{ r.sourceType ? `${r.sourceType} · ` : '' }}{{ fmtTime(r.createTime) }}</view>
+        </view>
+      </view>
+
+      <view class="section">
+        <view class="section-title">
+          我的月度考勤<text v-if="apiVersion" class="ver">v{{ apiVersion }}</text>
+        </view>
+        <view class="stat-line">{{ statText() }}</view>
+        <view v-if="myLoading" class="tip">加载中…</view>
+        <view v-else-if="myDetails.length === 0" class="tip">暂无考勤明细</view>
+        <view v-for="d in myDetails" :key="d.id" class="rec">
+          <view class="rec-main">
+            <text class="rec-type">{{ d.date || '—' }}</text>
+            <text class="rec-result">{{ d.status || '正常' }}</text>
+          </view>
         </view>
       </view>
     </template>
@@ -181,5 +241,16 @@ function todayRecords(): AttendancePreCheck['records'] {
 .rec-meta {
   font-size: 24rpx;
   color: #90979f;
+}
+.ver {
+  margin-left: 12rpx;
+  font-size: 22rpx;
+  color: #2d8cf0;
+  font-weight: 400;
+}
+.stat-line {
+  font-size: 26rpx;
+  color: #5b6572;
+  margin-bottom: 16rpx;
 }
 </style>
