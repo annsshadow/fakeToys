@@ -102,10 +102,12 @@
           <button class="cfg-tab" :class="{on:moreTab==='v2wp'}" @click="switchMore('v2wp')">v2地点</button>
           <button class="cfg-tab" :class="{on:moreTab==='v2group'}" @click="switchMore('v2group')">v2考勤组</button>
           <button class="cfg-tab" :class="{on:moreTab==='v2shift'}" @click="switchMore('v2shift')">v2班次</button>
+          <button class="cfg-tab" :class="{on:moreTab==='v2leave'}" @click="switchMore('v2leave')">v2请假</button>
         </span>
         <button class="mini-add" v-if="moreTab==='cycle'" @click="addCycle">+ 新建周期</button>
         <button class="mini-add" v-if="moreTab==='v2group'" @click="addGroup">+ 新建考勤组</button>
         <button class="mini-add" v-if="moreTab==='v2shift'" @click="addShift">+ 新建班次</button>
+        <button class="mini-add" v-if="moreTab==='v2leave'" @click="addLeave">+ 新建请假</button>
       </div>
       <div v-if="moreItems.length === 0" class="es-sm"><p>暂无数据</p></div>
       <div v-else class="cfg-list">
@@ -113,6 +115,9 @@
           <div class="cfg-main"><span class="cfg-name">{{ it.name || it.ruleName || it.id }}</span><span class="cfg-sub">{{ it.id }}</span></div>
           <div class="cfg-act" v-if="moreTab==='v2group' || moreTab==='v2shift'">
             <button class="cfg-mini" @click="viewMore(it)">详情</button>
+            <button class="cfg-mini danger" @click="deleteMore(it)">删除</button>
+          </div>
+          <div class="cfg-act" v-else-if="moreTab==='v2leave'">
             <button class="cfg-mini danger" @click="deleteMore(it)">删除</button>
           </div>
         </div>
@@ -437,6 +442,7 @@ type MoreTabKey =
   | 'v2wp'
   | 'v2group'
   | 'v2shift'
+  | 'v2leave'
 const moreTab = ref<MoreTabKey>('schedule')
 const moreItems = ref<MoreItem[]>([])
 const moreEndpoints: Record<string, string> = {
@@ -468,6 +474,20 @@ async function switchMore(t: MoreTabKey) {
       moreItems.value = rows.map((row) => ({
         id: String(row.id ?? ''),
         name: String(row.groupName ?? row.shiftName ?? row.name ?? row.id ?? ''),
+      }))
+    } catch {
+      moreItems.value = []
+    }
+    return
+  }
+  // v2 请假：列表端点 POST paging（admin 见全量，否则本人）；字面量路径。
+  if (t === 'v2leave') {
+    try {
+      const r: any = await api.post('/api/attendance/assemble/control/v2/leave/list/1/size/50', {})
+      const rows = (r.data?.data ?? r.data ?? []) as Array<Record<string, unknown>>
+      moreItems.value = rows.map((row) => ({
+        id: String(row.id ?? ''),
+        name: `${String(row.leaveType ?? row.leave_type ?? '请假')} · ${String(row.person ?? '')}`,
       }))
     } catch {
       moreItems.value = []
@@ -513,6 +533,21 @@ async function addShift() {
     toast.error('新建失败: ' + (e?.message ?? ''))
   }
 }
+// v2 请假：新建（leaveType 必填，person 缺省取会话，落 x_attendance_v2_leave）
+async function addLeave() {
+  const leaveType = prompt('请假类型 (leaveType，如 事假/病假):', '')
+  if (!leaveType) return
+  const startTime = prompt('开始时间 (startTime, 如 2026-09-22 09:00):', '') || ''
+  const endTime = prompt('结束时间 (endTime, 如 2026-09-22 18:00):', '') || ''
+  try {
+    // POST v2/leave —— 新建请假
+    await api.post('/api/attendance/assemble/control/v2/leave', { leaveType, startTime, endTime })
+    toast.success('已新建请假')
+    switchMore('v2leave')
+  } catch (e: any) {
+    toast.error('新建失败: ' + (e?.message ?? ''))
+  }
+}
 // v2 详情：按 id GET 回读单条（字面量分支，提取器不解析 url 变量）
 async function viewMore(it: MoreItem) {
   try {
@@ -532,6 +567,9 @@ async function deleteMore(it: MoreItem) {
   try {
     if (moreTab.value === 'v2group') {
       await api.get(`/api/attendance/assemble/control/v2/group/${it.id}/delete`)
+    } else if (moreTab.value === 'v2leave') {
+      // GET v2/leave/delete/{id} —— 删除请假（owner/admin 门禁）
+      await api.get(`/api/attendance/assemble/control/v2/leave/delete/${it.id}`)
     } else {
       await api.get(`/api/attendance/assemble/control/v2/shift/delete/${it.id}`)
     }
