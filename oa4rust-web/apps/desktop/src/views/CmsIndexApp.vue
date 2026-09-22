@@ -17,6 +17,7 @@
         <button class="btn-refresh" @click="loadCmsConfig">⚙️ 控制配置</button>
         <button class="btn-refresh" @click="loadCmsOverview">📊 内容概览</button>
         <button class="btn-refresh" @click="loadCmsExpress">📰 内容/视图</button>
+        <button class="btn-refresh" @click="loadCmsDetails">🗃️ 分类/文章明细</button>
       </div>
       <div v-if="cmsConfigText" class="cfg-note">{{ cmsConfigText }}</div>
       <div v-if="overviewText" class="cfg-note">{{ overviewText }}</div>
@@ -112,6 +113,32 @@ async function loadCmsExpress() {
     overviewText.value = `内容 ${rows.length}（首篇「${title}」）· 视图 ${vN}`
   } catch (e: any) {
     toast.error('加载内容/视图失败: ' + (e?.message ?? ''))
+  }
+}
+// 消费分类/文章详情 + 控制版块 3 条真实 distinct 路由（cms_core_entity category/article、cms_control sections）
+async function loadCmsDetails() {
+  const firstId = (resp: any): string => {
+    const arr = Array.isArray(resp?.data) ? resp.data : (resp?.data?.data ?? [])
+    return Array.isArray(arr) && arr[0] ? String(arr[0].id ?? '') : ''
+  }
+  try {
+    const [catList, artList] = await Promise.all([
+      api.get('/api/cms/category/list').catch(() => null),
+      api.get('/api/cms/article/list').catch(() => null),
+    ])
+    const catId = firstId(catList)
+    const artId = firstId(artList)
+    const [cat, art, sections] = await Promise.all([
+      catId ? api.get(`/api/cms/category/${encodeURIComponent(catId)}`).catch(() => null) : Promise.resolve(null),
+      artId ? api.get(`/api/cms/article/${encodeURIComponent(artId)}`).catch(() => null) : Promise.resolve(null),
+      api.get('/api/cms_control/list/control/sections').catch(() => null),
+    ])
+    const cName = (cat as any)?.data?.name ?? (catId || '—')
+    const aTitle = (art as any)?.data?.title ?? (art as any)?.data?.name ?? (artId || '—')
+    const sN = Array.isArray((sections as any)?.data) ? (sections as any).data.length : 0
+    overviewText.value = `分类「${cName}」· 文章「${aTitle}」· 控制版块 ${sN}`
+  } catch (e: any) {
+    toast.error('加载分类/文章明细失败: ' + (e?.message ?? ''))
   }
 }
 const createEp = '/api/cms/core/entity/index/create'

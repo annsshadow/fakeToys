@@ -823,7 +823,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CmsIndexApp.vue",
-    "line": 107,
+    "line": 108,
     "method": "GET",
     "raw": "/api/cms/core/express/content/detail/${encodeURIComponent(cid)}",
     "path": "/api/cms/core/express/content/detail/{}",
@@ -836,7 +836,33 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CmsIndexApp.vue",
-    "line": 173,
+    "line": 132,
+    "method": "GET",
+    "raw": "/api/cms/category/${encodeURIComponent(catId)}",
+    "path": "/api/cms/category/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/cms/category/{id}",
+    "hit_crate": "cms_core_entity",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsIndexApp.vue",
+    "line": 133,
+    "method": "GET",
+    "raw": "/api/cms/article/${encodeURIComponent(artId)}",
+    "path": "/api/cms/article/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/cms/article/{id}",
+    "hit_crate": "cms_core_entity",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsIndexApp.vue",
+    "line": 200,
     "method": "PUT",
     "raw": "/api/cms/core/entity/index/save/${editingId.value}",
     "path": "/api/cms/core/entity/index/save/{}",
@@ -849,7 +875,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CmsIndexApp.vue",
-    "line": 188,
+    "line": 215,
     "method": "POST",
     "raw": "/api/cms/core/entity/index/delete/${id}",
     "path": "/api/cms/core/entity/index/delete/{}",
@@ -5456,7 +5482,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CmsIndexApp.vue",
-    "line": 78,
+    "line": 79,
     "method": "GET",
     "raw": "/api/cms_assemble_control/get/control/config",
     "path": "/api/cms_assemble_control/get/control/config",
@@ -5469,7 +5495,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CmsIndexApp.vue",
-    "line": 90,
+    "line": 91,
     "method": "GET",
     "raw": "/api/cms/category/list",
     "path": "/api/cms/category/list",
@@ -5482,7 +5508,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CmsIndexApp.vue",
-    "line": 91,
+    "line": 92,
     "method": "GET",
     "raw": "/api/cms/article/list",
     "path": "/api/cms/article/list",
@@ -5495,7 +5521,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CmsIndexApp.vue",
-    "line": 92,
+    "line": 93,
     "method": "GET",
     "raw": "/api/cms/templateform/list",
     "path": "/api/cms/templateform/list",
@@ -5508,7 +5534,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CmsIndexApp.vue",
-    "line": 103,
+    "line": 104,
     "method": "GET",
     "raw": "/api/cms/core/express/content/list",
     "path": "/api/cms/core/express/content/list",
@@ -5521,7 +5547,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CmsIndexApp.vue",
-    "line": 108,
+    "line": 109,
     "method": "GET",
     "raw": "/api/cms/view/list/all",
     "path": "/api/cms/view/list/all",
@@ -5534,7 +5560,46 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CmsIndexApp.vue",
-    "line": 135,
+    "line": 126,
+    "method": "GET",
+    "raw": "/api/cms/category/list",
+    "path": "/api/cms/category/list",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/cms/category/list",
+    "hit_crate": "cms_core_entity",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsIndexApp.vue",
+    "line": 127,
+    "method": "GET",
+    "raw": "/api/cms/article/list",
+    "path": "/api/cms/article/list",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/cms/article/list",
+    "hit_crate": "cms_core_entity",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsIndexApp.vue",
+    "line": 134,
+    "method": "GET",
+    "raw": "/api/cms_control/list/control/sections",
+    "path": "/api/cms_control/list/control/sections",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/cms_control/list/control/sections",
+    "hit_crate": "cms_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsIndexApp.vue",
+    "line": 162,
     "method": "GET",
     "raw": "/api/cms/core/entity/index/list",
     "path": "/api/cms/core/entity/index/list",
@@ -5547,7 +5612,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CmsIndexApp.vue",
-    "line": 174,
+    "line": 201,
     "method": "POST",
     "raw": "/api/cms/core/entity/index/create",
     "path": "/api/cms/core/entity/index/create",
