@@ -53,7 +53,44 @@
       <button class="cll-tab" :class="{on:calScope==='public'}" @click="loadCalendars('public')">公共（{{ pubCals.length }}）</button>
       <button class="cll-tab" @click="loadCalSettings">⚙️ 设置/权限</button>
       <span v-if="calSettingText" class="cll-note">{{ calSettingText }}</span>
-      <span v-for="c in (calScope==='my'?myCals:pubCals)" :key="c.id" class="cll-chip" :style="{borderColor:c.color||'var(--color-primary)'}">{{ c.name }}</span>
+      <span
+        v-for="c in (calScope==='my'?myCals:pubCals)"
+        :key="c.id"
+        class="cll-chip"
+        :class="{on: activeCal?.id === c.id}"
+        :style="{borderColor:c.color||'var(--color-primary)'}"
+        @click="selectCalendar(c)"
+      >{{ c.name }}</span>
+    </div>
+
+    <!-- 选中日历：事件管理面板 -->
+    <div v-if="activeCal" class="event-mgr glass-card">
+      <div class="panel-header">
+        <h3>{{ activeCal.name }} · 事件管理</h3>
+        <button class="close-btn" @click="closeCalendar">✕</button>
+      </div>
+      <div v-if="activeCalDetail" class="cll-note">类型：{{ activeCalDetail.calendarType || '—' }} · 负责人：{{ activeCalDetail.createor || '—' }}</div>
+
+      <form class="evt-form" @submit.prevent="createEvent">
+        <input v-model="evtForm.title" class="evt-input" placeholder="事件标题" required />
+        <input v-model="evtForm.startTime" class="evt-input" type="datetime-local" required />
+        <input v-model="evtForm.endTime" class="evt-input" type="datetime-local" required />
+        <input v-model="evtForm.location" class="evt-input" placeholder="地点（可选）" />
+        <button type="submit" class="today-btn">新建事件</button>
+      </form>
+
+      <div v-if="calEvents.length === 0" class="empty-events"><p>该日历暂无事件</p></div>
+      <div v-else class="event-list">
+        <div v-for="evt in calEvents" :key="evt.id" class="event-card">
+          <div class="event-color" :style="{ background: 'var(--color-primary)' }"></div>
+          <div class="event-info">
+            <div class="event-title">{{ evt.title }}</div>
+            <div class="event-time">{{ evt.startTime }} - {{ evt.endTime }}<span v-if="evt.location"> · 📍{{ evt.location }}</span></div>
+          </div>
+          <button class="evt-del" title="结束事件" @click="finishEvent(evt)">✓ 结束</button>
+          <button class="evt-del" title="删除事件" @click="removeEvent(evt)">✕</button>
+        </div>
+      </div>
     </div>
 
     <!-- 选中日期事件列表 -->
@@ -80,7 +117,7 @@
 
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
-import { toast } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 import { useQuery } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 
@@ -134,6 +171,89 @@ async function loadCalendars(scope: 'my' | 'public') {
   }
 }
 loadCalendars('my')
+
+// ── 选中日历 → 事件管理（消费 core calendar 事件族真实路由）──────────
+interface CalDetail { id: string; name?: string; calendarType?: string; createor?: string }
+const activeCal = ref<CalItem | null>(null)
+const activeCalDetail = ref<CalDetail | null>(null)
+const calEvents = ref<CalendarEvent[]>([])
+const evtForm = ref({ title: '', startTime: '', endTime: '', location: '' })
+
+async function selectCalendar(c: CalItem): Promise<void> {
+  activeCal.value = c
+  try {
+    // GET calendar/{id} —— 日历详情
+    const d: any = await api.get(`/api/calendar/calendar/${c.id}`)
+    activeCalDetail.value = (d?.data ?? null) as CalDetail | null
+  } catch {
+    activeCalDetail.value = null
+  }
+  await loadCalEvents()
+}
+
+function closeCalendar(): void {
+  activeCal.value = null
+  activeCalDetail.value = null
+  calEvents.value = []
+}
+
+async function loadCalEvents(): Promise<void> {
+  if (!activeCal.value) return
+  try {
+    // GET event/list/{calendarId} —— 按日历取事件
+    const r: any = await api.get(`/api/calendar/event/list/${activeCal.value.id}`)
+    calEvents.value = (r?.data ?? []) as CalendarEvent[]
+  } catch {
+    calEvents.value = []
+  }
+}
+
+async function createEvent(): Promise<void> {
+  if (!activeCal.value) return
+  const f = evtForm.value
+  if (!f.title || !f.startTime || !f.endTime) {
+    toast.error('标题与起止时间必填')
+    return
+  }
+  try {
+    // POST event/create —— 新建事件
+    await api.post('/api/calendar/event/create', {
+      calendarId: activeCal.value.id,
+      title: f.title,
+      startTime: f.startTime,
+      endTime: f.endTime,
+      location: f.location || undefined,
+    })
+    toast.success('事件已创建')
+    evtForm.value = { title: '', startTime: '', endTime: '', location: '' }
+    await loadCalEvents()
+  } catch (e: any) {
+    toast.error('创建事件失败: ' + (e?.message ?? ''))
+  }
+}
+
+async function finishEvent(evt: CalendarEvent): Promise<void> {
+  try {
+    // POST event/update —— 更新事件（置为结束状态）
+    await api.post('/api/calendar/event/update', { id: evt.id, status: 'CLOSED' })
+    toast.success('事件已结束')
+    await loadCalEvents()
+  } catch (e: any) {
+    toast.error('更新事件失败: ' + (e?.message ?? ''))
+  }
+}
+
+async function removeEvent(evt: CalendarEvent): Promise<void> {
+  if (!(await confirmMsg('确定删除该事件？'))) return
+  try {
+    // POST event/remove —— 删除事件
+    await api.post('/api/calendar/event/remove', { id: evt.id })
+    toast.success('事件已删除')
+    await loadCalEvents()
+  } catch (e: any) {
+    toast.error('删除事件失败: ' + (e?.message ?? ''))
+  }
+}
 
 const weekdays = ['日', '一', '二', '三', '四', '五', '六']
 
@@ -372,7 +492,13 @@ const api_calendar_a_291_data = ref<any[]>([])
 .cll-tab{padding:4px 12px;border-radius:12px;border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer;font-size:12px}
 .cll-tab.on{border-color:var(--color-primary);color:var(--color-primary);background:var(--color-primary-soft)}
 .cll-note{font-size:12px;color:var(--text-muted)}
-.cll-chip{padding:2px 10px;border-radius:10px;border-left:3px solid var(--color-primary);background:var(--bg-elevated);color:var(--text-primary);font-size:12px}
+.cll-chip{padding:2px 10px;border-radius:10px;border-left:3px solid var(--color-primary);background:var(--bg-elevated);color:var(--text-primary);font-size:12px;cursor:pointer}
+.cll-chip.on{background:var(--color-primary-soft);box-shadow:0 0 8px var(--color-primary-glow)}
+.event-mgr{padding:16px;display:flex;flex-direction:column;gap:12px}
+.evt-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.evt-input{padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-primary);font-size:12px}
+.evt-del{margin-left:8px;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-muted);cursor:pointer;font-size:11px}
+.evt-del:hover{border-color:var(--color-primary);color:var(--color-primary)}
 
 @media (max-width: 768px) {
   .view-header { flex-direction: column; gap: 8px; }

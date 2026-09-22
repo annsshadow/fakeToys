@@ -445,6 +445,32 @@
    },
    {
     "app": "desktop",
+    "file": "apps/desktop/src/views/CalendarApp.vue",
+    "line": 186,
+    "method": "GET",
+    "raw": "/api/calendar/calendar/${c.id}",
+    "path": "/api/calendar/calendar/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/calendar/calendar/{id}",
+    "hit_crate": "calendar",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CalendarApp.vue",
+    "line": 204,
+    "method": "GET",
+    "raw": "/api/calendar/event/list/${activeCal.value.id}",
+    "path": "/api/calendar/event/list/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/calendar/event/list/{calendarId}",
+    "hit_crate": "calendar",
+    "extra": null
+   },
+   {
+    "app": "desktop",
     "file": "apps/desktop/src/views/CategoryApp.vue",
     "line": 83,
     "method": "DELETE",
@@ -4004,7 +4030,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CalendarApp.vue",
-    "line": 110,
+    "line": 147,
     "method": "GET",
     "raw": "/api/calendar_assemble_control/setting/list/all",
     "path": "/api/calendar_assemble_control/setting/list/all",
@@ -4017,7 +4043,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CalendarApp.vue",
-    "line": 111,
+    "line": 148,
     "method": "GET",
     "raw": "/api/calendar_assemble_control/calendar/ismanager",
     "path": "/api/calendar_assemble_control/calendar/ismanager",
@@ -4030,7 +4056,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CalendarApp.vue",
-    "line": 126,
+    "line": 163,
     "method": "GET",
     "raw": "/api/calendar/calendar/list/my",
     "path": "/api/calendar/calendar/list/my",
@@ -4043,7 +4069,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CalendarApp.vue",
-    "line": 127,
+    "line": 164,
     "method": "GET",
     "raw": "/api/calendar/calendar/list/public",
     "path": "/api/calendar/calendar/list/public",
@@ -4056,7 +4082,46 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CalendarApp.vue",
-    "line": 145,
+    "line": 220,
+    "method": "POST",
+    "raw": "/api/calendar/event/create",
+    "path": "/api/calendar/event/create",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/calendar/event/create",
+    "hit_crate": "calendar",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CalendarApp.vue",
+    "line": 238,
+    "method": "POST",
+    "raw": "/api/calendar/event/update",
+    "path": "/api/calendar/event/update",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/calendar/event/update",
+    "hit_crate": "calendar",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CalendarApp.vue",
+    "line": 250,
+    "method": "POST",
+    "raw": "/api/calendar/event/remove",
+    "path": "/api/calendar/event/remove",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/calendar/event/remove",
+    "hit_crate": "calendar",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CalendarApp.vue",
+    "line": 265,
     "method": "PUT",
     "raw": "/api/calendar_assemble_control/event/list/filter",
     "path": "/api/calendar_assemble_control/event/list/filter",
@@ -9118,7 +9183,20 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 433,
+    "line": 427,
+    "method": "GET",
+    "raw": "/api/calendar/event/list/${calendarId}",
+    "path": "/api/calendar/event/list/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/calendar/event/list/{calendarId}",
+    "hit_crate": "calendar",
+    "extra": null
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 442,
     "method": "GET",
     "raw": "/api/portal/assemble/surface/page/list/portal/${portal}",
     "path": "/api/portal/assemble/surface/page/list/portal/{}",
@@ -9131,7 +9209,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 434,
+    "line": 443,
     "method": "GET",
     "raw": "/api/portal/assemble/surface/page/v2/${id}",
     "path": "/api/portal/assemble/surface/page/v2/{}",
@@ -9144,7 +9222,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 436,
+    "line": 445,
     "method": "GET",
     "raw": "/api/portal/assemble/surface/page/v2/${id}/mobile",
     "path": "/api/portal/assemble/surface/page/v2/{}/mobile",
@@ -9157,7 +9235,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 438,
+    "line": 447,
     "method": "GET",
     "raw": "/api/portal/assemble/surface/page/v2/${flag}/portal/${portalFlag}",
     "path": "/api/portal/assemble/surface/page/v2/{}/portal/{}",
@@ -9170,7 +9248,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 444,
+    "line": 453,
     "method": "GET",
     "raw": "/api/queryview/view/list/query/${queryFlag}",
     "path": "/api/queryview/view/list/query/{}",
@@ -9183,7 +9261,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 447,
+    "line": 456,
     "method": "GET",
     "raw": "/api/queryview/execute/${view}/${id}",
     "path": "/api/queryview/execute/{}/{}",
@@ -9196,7 +9274,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 450,
+    "line": 459,
     "method": "GET",
     "raw": "/api/queryview/execute/v2/${view}/${id}/${page}/${size}",
     "path": "/api/queryview/execute/v2/{}/{}/{}/{}",
@@ -9209,7 +9287,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 452,
+    "line": 461,
     "method": "GET",
     "raw": "/api/queryview/bundle/${view}/${id}",
     "path": "/api/queryview/bundle/{}/{}",
@@ -9222,7 +9300,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 453,
+    "line": 462,
     "method": "GET",
     "raw": "/api/queryview/bundle/v2/${view}/${id}",
     "path": "/api/queryview/bundle/v2/{}/{}",
@@ -9235,7 +9313,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 478,
+    "line": 487,
     "method": "GET",
     "raw": "/api/recycle/${id}",
     "path": "/api/recycle/{}",
@@ -9248,7 +9326,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 479,
+    "line": 488,
     "method": "DELETE",
     "raw": "/api/recycle/delete/${id}",
     "path": "/api/recycle/delete/{}",
@@ -9261,7 +9339,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 502,
+    "line": 511,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancestatisticalcycle/cycleDetail/${year}/${month}",
     "path": "/api/attendance/assemble/control/attendancestatisticalcycle/cycleDetail/{}/{}",
@@ -9274,7 +9352,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 507,
+    "line": 516,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/dingding/statistic/person/year/${year}/month/${month}",
     "path": "/api/attendance/assemble/control/dingding/statistic/person/year/{}/month/{}",
@@ -9287,7 +9365,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 518,
+    "line": 527,
     "method": "GET",
     "raw": "/api/jpush/assemble/control/device/list/${pushType}",
     "path": "/api/jpush/assemble/control/device/list/{}",
@@ -9629,7 +9707,33 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 455,
+    "line": 430,
+    "method": "POST",
+    "raw": "/api/calendar/event/create",
+    "path": "/api/calendar/event/create",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/calendar/event/create",
+    "hit_crate": "calendar",
+    "extra": []
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 433,
+    "method": "POST",
+    "raw": "/api/calendar/event/remove",
+    "path": "/api/calendar/event/remove",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/calendar/event/remove",
+    "hit_crate": "calendar",
+    "extra": []
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 464,
     "method": "GET",
     "raw": "/api/queryview/list",
     "path": "/api/queryview/list",
@@ -9642,7 +9746,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 460,
+    "line": 469,
     "method": "GET",
     "raw": "/api/cms/core/entity/column/list",
     "path": "/api/cms/core/entity/column/list",
@@ -9655,7 +9759,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 463,
+    "line": 472,
     "method": "GET",
     "raw": "/api/cms/core/entity/column_manager/list",
     "path": "/api/cms/core/entity/column_manager/list",
@@ -9668,7 +9772,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 467,
+    "line": 476,
     "method": "GET",
     "raw": "/api/cms_assemble_control/document/search",
     "path": "/api/cms_assemble_control/document/search",
@@ -9681,7 +9785,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 477,
+    "line": 486,
     "method": "GET",
     "raw": "/api/recycle/list",
     "path": "/api/recycle/list",
@@ -9694,7 +9798,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 481,
+    "line": 490,
     "method": "DELETE",
     "raw": "/api/recycle/empty",
     "path": "/api/recycle/empty",
@@ -9707,7 +9811,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 486,
+    "line": 495,
     "method": "POST",
     "raw": "/api/queryview/search",
     "path": "/api/queryview/search",
@@ -9720,7 +9824,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 490,
+    "line": 499,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/subject/search?keyword=${encodeURIComponent(keyword)}",
     "path": "/api/bbs/assemble/control/subject/search",
@@ -9733,7 +9837,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 499,
+    "line": 508,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancestatisticalcycle/list/all",
     "path": "/api/attendance/assemble/control/attendancestatisticalcycle/list/all",
@@ -9746,7 +9850,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 521,
+    "line": 530,
     "method": "GET",
     "raw": "/api/jpush/assemble/control/device/config/push/type",
     "path": "/api/jpush/assemble/control/device/config/push/type",
@@ -9759,7 +9863,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 523,
+    "line": 532,
     "method": "GET",
     "raw": "/api/jpush/assemble/control/list/control/apps",
     "path": "/api/jpush/assemble/control/list/control/apps",
@@ -9772,7 +9876,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 530,
+    "line": 539,
     "method": "GET",
     "raw": "/api/general/dict/list",
     "path": "/api/general/dict/list",

@@ -422,6 +422,15 @@ export const calendarApi = {
   /** 我可见的日历清单（控制面）。 */
   controlCalendars: () =>
     list(mapi.get<CalendarRow[]>('/api/calendar_assemble_control/list/control/calendars')),
+  /** 按日历取事件（core calendar 事件族）。 */
+  coreEventList: (calendarId: string) =>
+    list(mapi.get<CalendarEventRow[]>(`/api/calendar/event/list/${calendarId}`)),
+  /** 新建事件（core calendar，body: calendarId/title/startTime/endTime/location）。 */
+  coreEventCreate: (payload: Record<string, unknown>) =>
+    mapi.post<CalendarEventRow>('/api/calendar/event/create', payload),
+  /** 删除事件（core calendar，body: id）。 */
+  coreEventRemove: (id: string) =>
+    mapi.post<CalendarEventRow>('/api/calendar/event/remove', { id }),
 }
 
 // ─────────────────────────────────────────────────────────────
