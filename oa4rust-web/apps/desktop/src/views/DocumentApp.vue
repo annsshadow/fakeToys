@@ -45,6 +45,7 @@
               <button class="btn-act" @click="onNotify(item)">通知</button>
               <button class="btn-act" @click="onDocLog(item)">日志</button>
               <button class="btn-act" @click="onCommendList(item)">点赞</button>
+              <button class="btn-act" @click="onDetail(item)">详情</button>
               <button class="btn-del" @click="onDelete(item)">删除</button>
             </span>
           </div>
@@ -68,6 +69,25 @@
           <button class="btn-primary" :disabled="creating" @click="onCreate">
             {{ creating ? '创建中...' : '创建' }}
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detail modal -->
+    <div v-if="detail.open" class="modal-overlay" @click.self="detail.open=false">
+      <div class="modal glass-card">
+        <h3>文档详情</h3>
+        <div v-if="detail.loading" class="empty">加载中...</div>
+        <template v-else>
+          <div class="detail-row"><span class="detail-k">标题</span><span class="detail-v">{{ detail.title || '—' }}</span></div>
+          <div class="detail-row"><span class="detail-k">创建者</span><span class="detail-v">{{ detail.creator || '—' }}</span></div>
+          <div class="detail-row"><span class="detail-k">状态</span><span class="detail-v">{{ detail.status || '—' }}</span></div>
+          <div class="detail-row"><span class="detail-k">可读权限</span><span class="detail-v">{{ detail.canRead }}</span></div>
+          <div class="detail-row"><span class="detail-k">阅读入库</span><span class="detail-v">{{ detail.viewOk }}</span></div>
+          <div class="detail-row"><span class="detail-k">表单字段</span><span class="detail-v">{{ detail.fieldCount }} 项</span></div>
+        </template>
+        <div class="modal-actions">
+          <button class="btn-cancel" @click="detail.open=false">关闭</button>
         </div>
       </div>
     </div>
@@ -269,6 +289,42 @@ async function onCommendList(item: DocItem) {
   }
 }
 
+// 文档详情：一次性并发消费 5 条 detail 端点（均落 x_cms_data_document / *_field）：
+//   GET {id}（主体）/{id}/document/data（表单字段）/{id}/control（权限控制位）
+//   /{id}/permission/read（可读判定）/{id}/view（登记浏览，返回 200 即入库成功）
+const detail = ref({
+  open: false,
+  loading: false,
+  title: '',
+  creator: '',
+  status: '',
+  canRead: '—',
+  viewOk: '—',
+  fieldCount: 0,
+})
+async function onDetail(item: DocItem) {
+  detail.value = { open: true, loading: true, title: '', creator: '', status: '', canRead: '—', viewOk: '—', fieldCount: 0 }
+  const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [main, data, control, perm, view] = await Promise.all([
+    settle(api.get(`/api/document/${item.id}`)),
+    settle(api.get(`/api/document/${item.id}/document/data`)),
+    settle(api.get(`/api/document/${item.id}/control`)),
+    settle(api.get(`/api/document/${item.id}/permission/read`)),
+    settle(api.get(`/api/document/${item.id}/view`)),
+  ])
+  const m: any = (main as any)?.data ?? {}
+  detail.value.title = String(m.title ?? item.title ?? item.id)
+  detail.value.creator = String(m.creator ?? m.author_id ?? '')
+  const c: any = (control as any)?.data ?? {}
+  detail.value.status = String(m.status ?? c.status ?? '')
+  const fields = (data as any)?.data
+  detail.value.fieldCount = Array.isArray(fields) ? fields.length : Object.keys(fields ?? {}).length
+  const p: any = (perm as any)?.data
+  detail.value.canRead = perm ? (p?.canRead ?? p?.permission ?? p === true ? '是' : '否') : '查询失败'
+  detail.value.viewOk = view ? '已登记' : '失败'
+  detail.value.loading = false
+}
+
 doSearch()
 
 const document_category_change_ref = ref<any[]>([])
@@ -354,4 +410,7 @@ const api_document_l_855_data = ref<any[]>([])
 .modal-actions{display:flex;justify-content:flex-end;gap:8px}
 .btn-cancel{padding:8px 20px;background:transparent;border:1px solid var(--border-subtle);color:var(--text-secondary);border-radius:var(--radius-md);cursor:pointer}
 .font-mono{font-family:'JetBrains Mono',monospace}
+.detail-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--border-subtle)}
+.detail-k{color:var(--text-muted);font-size:13px}
+.detail-v{color:var(--text-primary);font-size:13px;text-align:right;word-break:break-all}
 </style>
