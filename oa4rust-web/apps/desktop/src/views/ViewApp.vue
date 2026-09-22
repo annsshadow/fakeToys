@@ -28,8 +28,26 @@
             <span class="col-id font-mono">{{ v.id?.slice(0,8) }}...</span>
             <span class="col-actions">
               <button class="btn-sm" @click="viewData(v)">查看数据</button>
+              <button class="btn-sm" @click="viewDetail(v)">详情</button>
+              <button class="btn-sm danger" @click="removeView(v)">删除</button>
             </span>
           </div>
+        </div>
+      </div>
+    </div>
+    <!-- Detail modal -->
+    <div v-if="detail.open" class="modal-overlay" @click.self="detail.open=false">
+      <div class="modal glass-card">
+        <div class="modal-header">
+          <h3>视图详情</h3>
+          <button class="btn-close" @click="detail.open=false">✕</button>
+        </div>
+        <div v-if="detail.loading" class="loading-row"><div class="sk" v-for="i in 3" :key="i"></div></div>
+        <div v-else class="detail-body">
+          <div class="detail-row"><span class="detail-k">名称</span><span class="detail-v">{{ detail.name || '—' }}</span></div>
+          <div class="detail-row"><span class="detail-k">ID</span><span class="detail-v font-mono">{{ detail.id }}</span></div>
+          <div class="detail-row"><span class="detail-k">所属分类</span><span class="detail-v">{{ detail.categoryCount }} 个</span></div>
+          <div class="detail-row"><span class="detail-k">字段配置</span><span class="detail-v">{{ detail.fieldCount }} 条</span></div>
         </div>
       </div>
     </div>
@@ -60,7 +78,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { ref } from 'vue'
-import { toast } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
 type ViewItem = { id: string; name?: string; viewName?: string; title?: string }
 
@@ -70,6 +88,36 @@ const activeView = ref<ViewItem | null>(null)
 const dataLoading = ref(false)
 const dataResult = ref<Record<string, unknown>[]>([])
 const cols = ref<string[]>([])
+
+// 视图详情：并发消费 view/{id} + viewcategory/list/view/{viewId} + viewfieldconfig/list/view/{viewId}
+const detail = ref({ open: false, loading: false, id: '', name: '', categoryCount: 0, fieldCount: 0 })
+async function viewDetail(v: ViewItem) {
+  detail.value = { open: true, loading: true, id: v.id, name: v.name || v.viewName || v.title || '', categoryCount: 0, fieldCount: 0 }
+  const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [main, cats, fields] = await Promise.all([
+    settle(api.get(`/api/view/${v.id}`)),
+    settle(api.get(`/api/viewcategory/list/view/${v.id}`)),
+    settle(api.get(`/api/viewfieldconfig/list/view/${v.id}`)),
+  ])
+  const m: any = (main as any)?.data
+  if (m && typeof m === 'object') detail.value.name = String(m.name ?? m.viewName ?? detail.value.name)
+  const cd = (cats as any)?.data
+  detail.value.categoryCount = Array.isArray(cd) ? cd.length : 0
+  const fd = (fields as any)?.data
+  detail.value.fieldCount = Array.isArray(fd) ? fd.length : 0
+  detail.value.loading = false
+}
+// 删除视图：DELETE view/{id}（owner/admin 门禁）
+async function removeView(v: ViewItem) {
+  if (!(await confirmMsg('确认删除该视图？'))) return
+  try {
+    await api.delete(`/api/view/${v.id}`)
+    toast.success('已删除')
+    loadViews()
+  } catch (e: any) {
+    toast.error('删除失败: ' + (e?.message ?? ''))
+  }
+}
 
 const metaText = ref('')
 async function loadViewCategories() {
@@ -142,8 +190,13 @@ loadViews()
 .table-row:hover{border-color:var(--color-primary)}
 .col-name{font-size:14px;font-weight:500;color:var(--text-primary)}
 .col-id{font-size:11px;color:var(--text-muted);font-family:'JetBrains Mono',monospace}
-.btn-sm{padding:4px 10px;background:transparent;border:1px solid var(--border-subtle);color:var(--text-secondary);border-radius:var(--radius-sm);font-size:12px;cursor:pointer}
+.btn-sm{padding:4px 10px;background:transparent;border:1px solid var(--border-subtle);color:var(--text-secondary);border-radius:var(--radius-sm);font-size:12px;cursor:pointer;margin-right:4px}
 .btn-sm:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.btn-sm.danger{border-color:var(--color-error);color:var(--color-error)}
+.detail-body{display:flex;flex-direction:column;gap:2px}
+.detail-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--border-subtle)}
+.detail-k{color:var(--text-muted);font-size:13px}
+.detail-v{color:var(--text-primary);font-size:13px;text-align:right;word-break:break-all}
 .empty,.loading-row{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px;flex:1}
 .ei{font-size:48px;opacity:0.4}
 .sk{height:40px;border-radius:var(--radius-md);background:var(--bg-elevated);animation:pulse 1.2s ease-in-out infinite}

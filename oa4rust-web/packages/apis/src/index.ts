@@ -769,6 +769,7 @@ export const viewApi = {
   list: () => api.get('/api/view/list'),
   detail: (id: string) => api.get(`/api/view/${id}`),
   viewData: (id: string, params?: unknown) => api.post(`/api/view/viewdata/${id}`, params ?? {}),
+  delete: (id: string) => api.delete(`/api/view/${id}`),
   request: createRequest('/api/view'),
 }
 
@@ -863,10 +864,12 @@ export const unitDutyApi = {
 export const viewCategoryApi = {
   list: () => api.get('/api/viewcategory/list'),
   detail: (id: string) => api.get(`/api/viewcategory/${id}`),
+  listByView: (viewId: string) => api.get(`/api/viewcategory/list/view/${viewId}`),
 }
 export const viewFieldConfigApi = {
   list: () => api.get('/api/viewfieldconfig/list'),
   detail: (id: string) => api.get(`/api/viewfieldconfig/${id}`),
+  listByView: (viewId: string) => api.get(`/api/viewfieldconfig/list/view/${viewId}`),
 }
 export const templateFormApi = {
   list: () => api.get('/api/templateform/list'),
