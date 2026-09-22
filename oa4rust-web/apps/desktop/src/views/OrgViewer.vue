@@ -13,6 +13,7 @@
       <button class="org-meta-btn" @click="loadOrgDetails">身份/角色/职务明细</button>
       <button class="org-meta-btn" @click="loadUnitDetails">单位明细</button>
       <button class="org-meta-btn" @click="loadAttrDetails">单位/个人属性</button>
+      <button class="org-meta-btn" @click="loadCursorLists">身份/角色/职务游标</button>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -262,6 +263,20 @@ async function loadAttrDetails() {
     orgMetaText.value = `单位属性 ${uN}（首「${uKey}」）· 个人属性 ${pN}（首「${pKey}」）`
   } catch (e: any) {
     toast.error('加载属性明细失败: ' + (e?.message ?? ''))
+  }
+}
+// 消费身份/角色/职务的头部游标列表（flag=0 从头）——3 条真实 distinct 路由
+async function loadCursorLists() {
+  try {
+    const [ident, role, duty] = await Promise.all([
+      api.get('/api/organization/assemble/control/identity/list/0/next/10').catch(() => null),
+      api.get('/api/organization/assemble/control/role/list/0/next/10').catch(() => null),
+      api.get('/api/organization/assemble/control/unitduty/list/0/next/10').catch(() => null),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    orgMetaText.value = `身份 ${n(ident)} · 角色 ${n(role)} · 职务 ${n(duty)}（头部游标各取 10）`
+  } catch (e: any) {
+    toast.error('加载游标列表失败: ' + (e?.message ?? ''))
   }
 }
 async function loadPinyinIndex() {
