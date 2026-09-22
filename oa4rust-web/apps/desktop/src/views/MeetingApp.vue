@@ -17,6 +17,7 @@
       <button class="sb" @click="loadMyApplied">我的申请</button>
       <button class="sb" @click="loadMyInvited">我的邀请</button>
       <button class="sb" @click="loadMeetingMore">待接受/本月/配置</button>
+      <button class="sb" @click="loadMeetingSearch">检索/前瞻</button>
       <button class="sb" @click="addBuilding">+ 楼栋</button>
     </div>
     <div v-if="appliedText" class="applied-note">{{ appliedText }}</div>
@@ -256,6 +257,22 @@ async function loadMyApplied() {
     appliedText.value = `待审 ${n(wait)} / 进行 ${n(proc)} / 已办 ${n(done)}`
   } catch (e: any) {
     toast.error('加载我的申请失败: ' + (e?.message ?? ''))
+  }
+}
+// 检索/前瞻族 3 条真实 distinct 路由：楼栋名模糊 building/list/like/{key}（x_meeting_building ILIKE）
+// + 会议室名模糊 room/list/like/{key}（x_meeting_room ILIKE）+ 未来 N 月会议 meeting/list/forward/monthcount/{monthCount}（x_meeting）
+async function loadMeetingSearch() {
+  const key = searchKey.value?.trim() || '会'
+  try {
+    const [blds, rooms, forward] = await Promise.all([
+      api.get(`/api/meeting/assemble/control/building/list/like/${encodeURIComponent(key)}`).catch(() => null),
+      api.get(`/api/meeting/assemble/control/room/list/like/${encodeURIComponent(key)}`).catch(() => null),
+      api.get('/api/meeting/assemble/control/meeting/list/forward/monthcount/3').catch(() => null),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    appliedText.value = `楼栋匹配 ${n(blds)} / 会议室匹配 ${n(rooms)} / 未来3月会议 ${n(forward)}`
+  } catch (e: any) {
+    toast.error('检索失败: ' + (e?.message ?? ''))
   }
 }
 async function loadMeetingMore() {
