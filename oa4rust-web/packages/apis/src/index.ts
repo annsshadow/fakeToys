@@ -656,6 +656,24 @@ export const attendanceDeepApi = {
   statisticalList: (params: unknown) => api.post('/api/attendance/statistical/list', params),
   ruleList: () => api.get('/api/attendance/rule/list'),
   employeeList: (params: unknown) => api.post('/api/attendance/employee/list', params),
+  // v2 考勤组（x_attendance_v2_group）：列表 POST paging、按 id 取/删、新建。
+  v2GroupList: (page: number, size: number, name = '') =>
+    api.post<PagedResponse<unknown>>(
+      `/api/attendance/assemble/control/v2/group/list/${page}/size/${size}`,
+      { name },
+    ),
+  v2GroupGet: (id: string) => api.get(`/api/attendance/assemble/control/v2/group/${id}`),
+  v2GroupCreate: (data: unknown) => api.post('/api/attendance/assemble/control/v2/group', data),
+  v2GroupDelete: (id: string) => api.get(`/api/attendance/assemble/control/v2/group/${id}/delete`),
+  // v2 班次（x_attendance_v2_shift）：列表 POST paging、按 id 取/删、新建。
+  v2ShiftList: (page: number, size: number, name = '') =>
+    api.post<PagedResponse<unknown>>(
+      `/api/attendance/assemble/control/v2/shift/list/${page}/size/${size}`,
+      { name },
+    ),
+  v2ShiftGet: (id: string) => api.get(`/api/attendance/assemble/control/v2/shift/${id}`),
+  v2ShiftCreate: (data: unknown) => api.post('/api/attendance/assemble/control/v2/shift/create', data),
+  v2ShiftDelete: (id: string) => api.get(`/api/attendance/assemble/control/v2/shift/delete/${id}`),
   request: createRequest('/api/attendance'),
 }
 
