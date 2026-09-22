@@ -84,6 +84,29 @@
               <div v-if="!supDirect.length && !supNested.length" class="empty-m">无上级群组</div>
             </div>
           </div>
+
+          <div v-else class="members">
+            <h3>所属群组（直接 {{ personGroups.length }} / 嵌套 {{ personGroupsNested.length }}）</h3>
+            <div class="mlist">
+              <div v-for="g in personGroups" :key="'pd'+g.id" class="mc">
+                <div class="ma2">D</div>
+                <div class="mi2"><div class="mn">{{ g.name }}</div><div class="mp">直接</div></div>
+              </div>
+              <div v-for="g in personGroupsNested" :key="'pn'+g.id" class="mc">
+                <div class="ma2">⇡</div>
+                <div class="mi2"><div class="mn">{{ g.name }}</div><div class="mp">嵌套</div></div>
+              </div>
+              <div v-if="!personGroups.length && !personGroupsNested.length" class="empty-m">无所属群组</div>
+            </div>
+            <h3 style="margin-top:16px">个人属性（{{ personAttrs.length }}）</h3>
+            <div class="mlist">
+              <div v-for="(a, i) in personAttrs" :key="'a'+i" class="mc">
+                <div class="ma2">A</div>
+                <div class="mi2"><div class="mn">{{ a.attributeKey || a.attribute_key || '属性' }}</div><div class="mp">{{ a.attributeValue || a.attribute_value || '' }}</div></div>
+              </div>
+              <div v-if="!personAttrs.length" class="empty-m">无个人属性</div>
+            </div>
+          </div>
         </template>
       </main>
     </div>
@@ -174,12 +197,18 @@ const subGroups = ref<N[]>([])
 const groupRoles = ref<N[]>([])
 const supDirect = ref<N[]>([])
 const supNested = ref<N[]>([])
+const personGroups = ref<N[]>([])
+const personGroupsNested = ref<N[]>([])
+const personAttrs = ref<Array<Record<string, unknown>>>([])
 async function selectNode(n: N) {
   selected.value = n
   subGroups.value = []
   groupRoles.value = []
   supDirect.value = []
   supNested.value = []
+  personGroups.value = []
+  personGroupsNested.value = []
+  personAttrs.value = []
   if (n.type === 'group') {
     const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     try {
@@ -199,6 +228,17 @@ async function selectNode(n: N) {
     groupRoles.value = ((roles as any)?.data ?? []) as N[]
     supDirect.value = ((dir as any)?.data ?? []) as N[]
     supNested.value = ((nested as any)?.data ?? []) as N[]
+  } else {
+    // 人员节点：所属群组（直接/嵌套）+ 个人属性——三条 distinct 真实路由
+    const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const [dir, nested, attrs] = await Promise.all([
+      settle(api.get(`/api/organization/assemble/control/group/list/person/${n.id}/sup/direct`)),
+      settle(api.get(`/api/organization/assemble/control/group/list/person/${n.id}/sup/nested`)),
+      settle(api.get(`/api/organization/assemble/control/personattribute/list/person/${n.id}`)),
+    ])
+    personGroups.value = ((dir as any)?.data ?? []) as N[]
+    personGroupsNested.value = ((nested as any)?.data ?? []) as N[]
+    personAttrs.value = ((attrs as any)?.data ?? []) as Array<Record<string, unknown>>
   }
 }
 async function handleSearch() {
