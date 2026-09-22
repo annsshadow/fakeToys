@@ -15,10 +15,12 @@
         <input v-model="search" placeholder="搜索表单 / 应用..." class="search-input" />
         <button class="btn-refresh" @click="loadData">🔄 刷新</button>
         <button class="btn-refresh" @click="loadTemplateForms">📄 模板表单</button>
+        <button class="btn-refresh" @click="loadFormDetails">🧾 表单明细</button>
       </div>
       <div v-if="templateForms.length" class="tf-chips">
         <span v-for="tf in templateForms" :key="tf.id || tf.name" class="tf-chip">{{ tf.name || tf.id }}</span>
       </div>
+      <div v-if="formDetailText" class="tf-note">{{ formDetailText }}</div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🧾</div><p>暂无流程表单</p></div>
       <table v-else class="data-table">
@@ -158,6 +160,31 @@ async function deleteItem(item: Item) {
 function loadData() {
   qc.invalidateQueries({ queryKey: qk })
 }
+// 表单明细族 3 条真实 distinct 路由：首表单 → 表单详情 form/{id}（form_id lib.rs:1336 query_opt）
+// + 该表单版本 formversion/list/form/{formId}（formversion_list_form_formId:1356）+ 应用下表单 form/list/application/{applicationId}（:1222）
+const formDetailText = ref('')
+async function loadFormDetails() {
+  const first = items.value[0]
+  if (!first) {
+    toast.success('请先刷新加载表单列表')
+    return
+  }
+  const fid = String(first.id ?? '')
+  const appId = String(first.application ?? '')
+  try {
+    const [detail, versions, appForms] = await Promise.all([
+      fid ? api.get(`/api/processplatform/assemble/designer/form/${encodeURIComponent(fid)}`).catch(() => null) : Promise.resolve(null),
+      fid ? api.get(`/api/processplatform/assemble/designer/formversion/list/form/${encodeURIComponent(fid)}`).catch(() => null) : Promise.resolve(null),
+      appId ? api.get(`/api/processplatform/assemble/designer/form/list/application/${encodeURIComponent(appId)}`).catch(() => null) : Promise.resolve(null),
+    ])
+    const fName = (detail as any)?.data?.name ?? (fid || '—')
+    const vN = Array.isArray((versions as any)?.data) ? (versions as any).data.length : 0
+    const aN = Array.isArray((appForms as any)?.data) ? (appForms as any).data.length : 0
+    formDetailText.value = `表单「${fName}」· 版本 ${vN} · 同应用表单 ${aN}`
+  } catch (e: any) {
+    toast.error('加载表单明细失败: ' + (e?.message ?? ''))
+  }
+}
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}
@@ -192,4 +219,5 @@ function loadData() {
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 .tf-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .tf-chip{padding:2px 10px;border-radius:10px;background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-primary)}
+.tf-note{margin:8px 0;padding:8px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:13px;color:var(--text-primary)}
 </style>
