@@ -1811,7 +1811,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalApp.vue",
-    "line": 93,
+    "line": 108,
     "method": "DELETE",
     "raw": "/api/portal/assemble/surface/page/${id}",
     "path": "/api/portal/assemble/surface/page/{}",
@@ -6577,7 +6577,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalApp.vue",
-    "line": 56,
+    "line": 57,
     "method": "GET",
     "raw": "/api/portal/surface/list",
     "path": "/api/portal/surface/list",
@@ -6590,7 +6590,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalApp.vue",
-    "line": 57,
+    "line": 58,
     "method": "GET",
     "raw": "/api/portal/assemble/surface/portal/list/mobile",
     "path": "/api/portal/assemble/surface/portal/list/mobile",
@@ -6603,7 +6603,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalApp.vue",
-    "line": 69,
+    "line": 70,
     "method": "GET",
     "raw": "/api/portal/list",
     "path": "/api/portal/list",
@@ -6616,7 +6616,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalApp.vue",
-    "line": 70,
+    "line": 71,
     "method": "GET",
     "raw": "/api/portalcategory/list",
     "path": "/api/portalcategory/list",
@@ -6629,7 +6629,52 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalApp.vue",
+    "line": 83,
+    "method": "GET",
+    "raw": "/api/portal/assemble/surface/dict/list/portal/default",
+    "path": "/api/portal/assemble/surface/dict/list/portal/default",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/portal/assemble/surface/dict/list/portal/{portalFlag}",
+    "hit_crate": "portal_assemble_surface",
+    "extra": [
+     "portalFlag=default"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalApp.vue",
+    "line": 84,
+    "method": "GET",
+    "raw": "/api/portal/assemble/surface/file/list/portal/default",
+    "path": "/api/portal/assemble/surface/file/list/portal/default",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/portal/assemble/surface/file/list/portal/{portalFlag}",
+    "hit_crate": "portal_assemble_surface",
+    "extra": [
+     "portalFlag=default"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalApp.vue",
     "line": 85,
+    "method": "GET",
+    "raw": "/api/portal/assemble/surface/list/portal/portal/default",
+    "path": "/api/portal/assemble/surface/list/portal/portal/default",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/portal/assemble/surface/list/portal/portal/{page}",
+    "hit_crate": "portal_assemble_surface",
+    "extra": [
+     "page=default"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalApp.vue",
+    "line": 100,
     "method": "GET",
     "raw": "/api/portal/assemble/surface/page/list/portal/default",
     "path": "/api/portal/assemble/surface/page/list/portal/default",
