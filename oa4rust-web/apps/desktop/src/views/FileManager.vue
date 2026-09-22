@@ -12,6 +12,7 @@
         <button class="action-btn" @click="loadFolderShare">📂 文件夹/分享/容量</button>
         <button class="action-btn" @click="loadShareScopes">🔗 文件夹2/我的分享/收到分享</button>
         <button class="action-btn" @click="loadRefTypes">🏷️ 引用类型</button>
+        <button class="action-btn" @click="loadDocFileInfo">📄 文档文件信息</button>
         <button class="action-btn" @click="toggleView">{{ viewType === 'grid' ? '☰ 列表' : '⊞ 网格' }}</button>
       </div>
     </div>
@@ -329,9 +330,32 @@ async function loadRefTypes(): Promise<void> {
     toast.error('加载引用类型失败: ' + (e?.message ?? ''))
   }
 }
+// 消费 fileinfo（x_cms_fileinfo 文档附件）真实 distinct 路由：文件信息 / 在线编辑信息 / PDF 预览信息
+async function loadDocFileInfo(): Promise<void> {
+  try {
+    const listResp: any = await api.get('/api/fileinfo/list/document/default')
+    const rows = (Array.isArray(listResp?.data) ? listResp.data : (listResp?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const id = rows[0] ? String(rows[0].id ?? rows[0].fileinfo_id ?? '') : ''
+    if (!id) {
+      toast.success(`文档文件 ${rows.length} 条（暂无可预览项）`)
+      return
+    }
+    const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const [info, online, pdf] = await Promise.all([
+      settle(api.get(`/api/fileinfo/${encodeURIComponent(id)}`)),
+      settle(api.get(`/api/fileinfo/${encodeURIComponent(id)}/online/info`)),
+      settle(api.get(`/api/fileinfo/${encodeURIComponent(id)}/preview/pdf`)),
+    ])
+    const name = (info as any)?.data?.name ?? id
+    const onlineOk = (online as any)?.data ? '可在线编辑' : '不可在线'
+    const pdfOk = (pdf as any)?.data ? '有PDF预览' : '无PDF预览'
+    toast.success(`文档文件 ${rows.length} 条 · 首个「${name}」· ${onlineOk} · ${pdfOk}`)
+  } catch (e: any) {
+    toast.error('加载文档文件信息失败: ' + (e?.message ?? ''))
+  }
+}
 
-const detail = ref<{ open: boolean; loading: boolean; name: string; size?: number; preview: string }>({
-  open: false,
+const detail = ref<{ open: boolean; loading: boolean; name: string; size?: number; preview: string }>({  open: false,
   loading: false,
   name: '',
   size: undefined,
