@@ -9105,7 +9105,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 301,
+    "line": 309,
     "method": "GET",
     "raw": "/api/organization/assemble/control/person/${flag}",
     "path": "/api/organization/assemble/control/person/{}",
@@ -9118,7 +9118,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 310,
+    "line": 318,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/${flag}/sub/nested",
     "path": "/api/organization/assemble/control/group/list/{}/sub/nested",
@@ -9131,7 +9131,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 313,
+    "line": 321,
     "method": "GET",
     "raw": "/api/organization/assemble/control/identity/list/person/${personFlag}",
     "path": "/api/organization/assemble/control/identity/list/person/{}",
@@ -9144,7 +9144,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 316,
+    "line": 324,
     "method": "GET",
     "raw": "/api/organization/assemble/control/role/list/person/${personFlag}",
     "path": "/api/organization/assemble/control/role/list/person/{}",
@@ -9157,7 +9157,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 358,
+    "line": 366,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/apply/${page}/size/${size}",
     "path": "/api/meeting/assemble/control/meeting/list/apply/{}/size/{}",
@@ -9170,7 +9170,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 365,
+    "line": 373,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/coming/day/${count}",
     "path": "/api/meeting/assemble/control/meeting/list/coming/day/{}",
@@ -9183,7 +9183,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 366,
+    "line": 374,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/${id}",
     "path": "/api/meeting/assemble/control/meeting/{}",
@@ -9196,7 +9196,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 369,
+    "line": 377,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/${id}/accept",
     "path": "/api/meeting/assemble/control/meeting/{}/accept",
@@ -9209,7 +9209,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 372,
+    "line": 380,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/${id}/reject",
     "path": "/api/meeting/assemble/control/meeting/{}/reject",
@@ -9222,7 +9222,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 375,
+    "line": 383,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/${id}/confirm/allow",
     "path": "/api/meeting/assemble/control/meeting/{}/confirm/allow",
@@ -9235,7 +9235,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 380,
+    "line": 388,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/${id}/confirm/deny",
     "path": "/api/meeting/assemble/control/meeting/{}/confirm/deny",
@@ -9248,7 +9248,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 385,
+    "line": 393,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/${id}/checkin",
     "path": "/api/meeting/assemble/control/meeting/{}/checkin",
@@ -9261,7 +9261,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 387,
+    "line": 395,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/${id}/checkin/code",
     "path": "/api/meeting/assemble/control/meeting/{}/checkin/code",
@@ -9274,7 +9274,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 413,
+    "line": 421,
     "method": "GET",
     "raw": "/api/calendar_assemble_control/calendar/${id}",
     "path": "/api/calendar_assemble_control/calendar/{}",
@@ -9287,7 +9287,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 417,
+    "line": 425,
     "method": "GET",
     "raw": "/api/calendar_assemble_control/event/${id}",
     "path": "/api/calendar_assemble_control/event/{}",
@@ -9300,7 +9300,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 419,
+    "line": 427,
     "method": "GET",
     "raw": "/api/calendar_assemble_control/event/rfc/${id}",
     "path": "/api/calendar_assemble_control/event/rfc/{}",
@@ -9313,7 +9313,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 427,
+    "line": 435,
     "method": "GET",
     "raw": "/api/calendar/event/list/${calendarId}",
     "path": "/api/calendar/event/list/{}",
@@ -9326,7 +9326,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 442,
+    "line": 450,
     "method": "GET",
     "raw": "/api/portal/assemble/surface/page/list/portal/${portal}",
     "path": "/api/portal/assemble/surface/page/list/portal/{}",
@@ -9339,7 +9339,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 443,
+    "line": 451,
     "method": "GET",
     "raw": "/api/portal/assemble/surface/page/v2/${id}",
     "path": "/api/portal/assemble/surface/page/v2/{}",
@@ -9352,7 +9352,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 445,
+    "line": 453,
     "method": "GET",
     "raw": "/api/portal/assemble/surface/page/v2/${id}/mobile",
     "path": "/api/portal/assemble/surface/page/v2/{}/mobile",
@@ -9365,7 +9365,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 447,
+    "line": 455,
     "method": "GET",
     "raw": "/api/portal/assemble/surface/page/v2/${flag}/portal/${portalFlag}",
     "path": "/api/portal/assemble/surface/page/v2/{}/portal/{}",
@@ -9378,7 +9378,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 453,
+    "line": 461,
     "method": "GET",
     "raw": "/api/queryview/view/list/query/${queryFlag}",
     "path": "/api/queryview/view/list/query/{}",
@@ -9391,7 +9391,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 456,
+    "line": 464,
     "method": "GET",
     "raw": "/api/queryview/execute/${view}/${id}",
     "path": "/api/queryview/execute/{}/{}",
@@ -9404,7 +9404,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 459,
+    "line": 467,
     "method": "GET",
     "raw": "/api/queryview/execute/v2/${view}/${id}/${page}/${size}",
     "path": "/api/queryview/execute/v2/{}/{}/{}/{}",
@@ -9417,7 +9417,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 461,
+    "line": 469,
     "method": "GET",
     "raw": "/api/queryview/bundle/${view}/${id}",
     "path": "/api/queryview/bundle/{}/{}",
@@ -9430,7 +9430,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 462,
+    "line": 470,
     "method": "GET",
     "raw": "/api/queryview/bundle/v2/${view}/${id}",
     "path": "/api/queryview/bundle/v2/{}/{}",
@@ -9443,7 +9443,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 487,
+    "line": 495,
     "method": "GET",
     "raw": "/api/recycle/${id}",
     "path": "/api/recycle/{}",
@@ -9456,7 +9456,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 488,
+    "line": 496,
     "method": "DELETE",
     "raw": "/api/recycle/delete/${id}",
     "path": "/api/recycle/delete/{}",
@@ -9469,7 +9469,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 511,
+    "line": 519,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancestatisticalcycle/cycleDetail/${year}/${month}",
     "path": "/api/attendance/assemble/control/attendancestatisticalcycle/cycleDetail/{}/{}",
@@ -9482,7 +9482,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 516,
+    "line": 524,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/dingding/statistic/person/year/${year}/month/${month}",
     "path": "/api/attendance/assemble/control/dingding/statistic/person/year/{}/month/{}",
@@ -9495,7 +9495,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 527,
+    "line": 535,
     "method": "GET",
     "raw": "/api/jpush/assemble/control/device/list/${pushType}",
     "path": "/api/jpush/assemble/control/device/list/{}",
@@ -9681,7 +9681,46 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 299,
+    "line": 270,
+    "method": "POST",
+    "raw": "/api/attendance/assemble/control/v2/my/statistic",
+    "path": "/api/attendance/assemble/control/v2/my/statistic",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/attendance/assemble/control/v2/my/statistic",
+    "hit_crate": "attendance_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 273,
+    "method": "POST",
+    "raw": "/api/attendance/assemble/control/v2/my/detail/list",
+    "path": "/api/attendance/assemble/control/v2/my/detail/list",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/attendance/assemble/control/v2/my/detail/list",
+    "hit_crate": "attendance_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 275,
+    "method": "GET",
+    "raw": "/api/attendance/assemble/control/v2/my/version",
+    "path": "/api/attendance/assemble/control/v2/my/version",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/attendance/assemble/control/v2/my/version",
+    "hit_crate": "attendance_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 307,
     "method": "POST",
     "raw": "/api/organization/assemble/control/person/list/like/mockputtopost",
     "path": "/api/organization/assemble/control/person/list/like/mockputtopost",
@@ -9694,7 +9733,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 303,
+    "line": 311,
     "method": "GET",
     "raw": "/api/unit/list/all",
     "path": "/api/unit/list/all",
@@ -9707,7 +9746,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 305,
+    "line": 313,
     "method": "POST",
     "raw": "/api/unit/list/unit/tree",
     "path": "/api/unit/list/unit/tree",
@@ -9720,7 +9759,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 307,
+    "line": 315,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/like",
     "path": "/api/organization/assemble/control/group/list/like",
@@ -9733,7 +9772,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 335,
+    "line": 343,
     "method": "GET",
     "raw": "/api/ai/assemble/control/ann/list",
     "path": "/api/ai/assemble/control/ann/list",
@@ -9746,7 +9785,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 360,
+    "line": 368,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/invited/wait",
     "path": "/api/meeting/assemble/control/meeting/list/invited/wait",
@@ -9759,7 +9798,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 362,
+    "line": 370,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/wait/confirm",
     "path": "/api/meeting/assemble/control/meeting/list/wait/confirm",
@@ -9772,7 +9811,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 410,
+    "line": 418,
     "method": "GET",
     "raw": "/api/calendar_assemble_control/calendar/list/my",
     "path": "/api/calendar_assemble_control/calendar/list/my",
@@ -9785,7 +9824,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 412,
+    "line": 420,
     "method": "GET",
     "raw": "/api/calendar_assemble_control/calendar/list/public",
     "path": "/api/calendar_assemble_control/calendar/list/public",
@@ -9798,7 +9837,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 416,
+    "line": 424,
     "method": "PUT",
     "raw": "/api/calendar_assemble_control/event/list/filter",
     "path": "/api/calendar_assemble_control/event/list/filter",
@@ -9811,7 +9850,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 421,
+    "line": 429,
     "method": "GET",
     "raw": "/api/calendar_assemble_control/get/control/config",
     "path": "/api/calendar_assemble_control/get/control/config",
@@ -9824,7 +9863,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 424,
+    "line": 432,
     "method": "GET",
     "raw": "/api/calendar_assemble_control/list/control/calendars",
     "path": "/api/calendar_assemble_control/list/control/calendars",
@@ -9837,7 +9876,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 430,
+    "line": 438,
     "method": "POST",
     "raw": "/api/calendar/event/create",
     "path": "/api/calendar/event/create",
@@ -9850,7 +9889,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 433,
+    "line": 441,
     "method": "POST",
     "raw": "/api/calendar/event/remove",
     "path": "/api/calendar/event/remove",
@@ -9863,7 +9902,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 464,
+    "line": 472,
     "method": "GET",
     "raw": "/api/queryview/list",
     "path": "/api/queryview/list",
@@ -9876,7 +9915,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 469,
+    "line": 477,
     "method": "GET",
     "raw": "/api/cms/core/entity/column/list",
     "path": "/api/cms/core/entity/column/list",
@@ -9889,7 +9928,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 472,
+    "line": 480,
     "method": "GET",
     "raw": "/api/cms/core/entity/column_manager/list",
     "path": "/api/cms/core/entity/column_manager/list",
@@ -9902,7 +9941,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 476,
+    "line": 484,
     "method": "GET",
     "raw": "/api/cms_assemble_control/document/search",
     "path": "/api/cms_assemble_control/document/search",
@@ -9915,7 +9954,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 486,
+    "line": 494,
     "method": "GET",
     "raw": "/api/recycle/list",
     "path": "/api/recycle/list",
@@ -9928,7 +9967,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 490,
+    "line": 498,
     "method": "DELETE",
     "raw": "/api/recycle/empty",
     "path": "/api/recycle/empty",
@@ -9941,7 +9980,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 495,
+    "line": 503,
     "method": "POST",
     "raw": "/api/queryview/search",
     "path": "/api/queryview/search",
@@ -9954,7 +9993,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 499,
+    "line": 507,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/subject/search?keyword=${encodeURIComponent(keyword)}",
     "path": "/api/bbs/assemble/control/subject/search",
@@ -9967,7 +10006,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 508,
+    "line": 516,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancestatisticalcycle/list/all",
     "path": "/api/attendance/assemble/control/attendancestatisticalcycle/list/all",
@@ -9980,7 +10019,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 530,
+    "line": 538,
     "method": "GET",
     "raw": "/api/jpush/assemble/control/device/config/push/type",
     "path": "/api/jpush/assemble/control/device/config/push/type",
@@ -9993,7 +10032,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 532,
+    "line": 540,
     "method": "GET",
     "raw": "/api/jpush/assemble/control/list/control/apps",
     "path": "/api/jpush/assemble/control/list/control/apps",
@@ -10006,7 +10045,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 539,
+    "line": 547,
     "method": "GET",
     "raw": "/api/general/dict/list",
     "path": "/api/general/dict/list",

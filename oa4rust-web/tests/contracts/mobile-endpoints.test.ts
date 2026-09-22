@@ -122,6 +122,10 @@ const REGISTERED_BACKEND_ROUTES: string[] = [
   '/api/attendance/assemble/control/attendancestatisticalcycle/list/all',
   '/api/attendance/assemble/control/attendancestatisticalcycle/cycleDetail/{year}/{month}',
   '/api/attendance/assemble/control/dingding/statistic/person/year/{year}/month/{month}',
+  // v2 我的考勤（attendance_assemble_control v2/my/*）——rev102
+  '/api/attendance/assemble/control/v2/my/statistic',
+  '/api/attendance/assemble/control/v2/my/detail/list',
+  '/api/attendance/assemble/control/v2/my/version',
   '/api/jpush/assemble/control/device/list/{pushType}',
   '/api/jpush/assemble/control/device/config/push/type',
   '/api/jpush/assemble/control/list/control/apps',

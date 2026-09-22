@@ -265,6 +265,14 @@ export const attendanceApi = {
   /** 出勤统计（按日聚合，工作台今日概览用）。 */
   statistics: () =>
     list(mapi.get<Array<{ date?: string; records?: number; status?: string }>>('/api/attendance/assemble/control/statistics/list')),
+  /** v2 我的月度统计（本人，body 可传 year/month，缺省当前月）。 */
+  myStatistic: (payload: Record<string, unknown> = {}) =>
+    mapi.post<Record<string, unknown>>('/api/attendance/assemble/control/v2/my/statistic', payload),
+  /** v2 我的考勤明细（本人，body 可传 date）。 */
+  myDetailList: (payload: Record<string, unknown> = {}) =>
+    list(mapi.post<Array<Record<string, unknown>>>('/api/attendance/assemble/control/v2/my/detail/list', payload)),
+  /** v2 考勤模块版本（用于客户端能力判定）。 */
+  myVersion: () => mapi.get<{ version?: string }>('/api/attendance/assemble/control/v2/my/version'),
 }
 
 // ─────────────────────────────────────────────────────────────
