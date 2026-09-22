@@ -7,6 +7,7 @@
       <div><h1>业务活动监控</h1><p class="subtitle">/api/processplatform/assemble/bam/*</p></div>
       <span class="hdr-a">
         <button class="btn-primary ghost" @click="loadPeriodStats">周期统计</button>
+        <button class="btn-primary ghost" @click="loadBamConfigs">BAM定义</button>
         <button class="btn-primary ghost" @click="loadStateStats">状态监控</button>
         <button class="btn-primary ghost" @click="loadStartStubs">起始统计</button>
         <button class="btn-primary ghost" @click="loadCompletedStubs">已办/超期存根</button>
@@ -48,6 +49,23 @@ import { toast } from '../utils/toast'
 const loading = ref(false)
 const stats = ref({ total: 0, active: 0, completed: 0, failed: 0 })
 const periodText = ref('')
+// 消费 BAM 定义族 3 条真实 distinct 路由：按类别列表→定义详情+运行状态（x_bam_config / x_bam_status）
+async function loadBamConfigs() {
+  try {
+    const listResp: any = await api.get('/api/processplatform/assemble/bam/list/default')
+    const rows = (Array.isArray(listResp?.data) ? listResp.data : (listResp?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const id = rows[0] ? String(rows[0].id ?? '') : ''
+    const [config, status] = await Promise.all([
+      id ? api.get(`/api/processplatform/assemble/bam/get/${encodeURIComponent(id)}`).catch(() => null) : Promise.resolve(null),
+      id ? api.get(`/api/processplatform/assemble/bam/status/${encodeURIComponent(id)}`).catch(() => null) : Promise.resolve(null),
+    ])
+    const name = (config as any)?.data?.name ?? (id || '—')
+    const st = (status as any)?.data?.status ?? ((status as any)?.data ? '有状态' : '无状态')
+    periodText.value = `BAM定义 ${rows.length}（首个「${name}」· ${st}）`
+  } catch (e: any) {
+    toast.error('加载 BAM 定义失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadPeriodStats() {
   try {
     // GET bam/period/list/completed/task/application + expired/task/application —— 已办/超期任务周期统计
