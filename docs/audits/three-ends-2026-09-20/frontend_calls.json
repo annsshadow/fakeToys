@@ -4204,7 +4204,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 144,
+    "line": 145,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/list",
     "path": "/api/portal/assemble/designer/list",
@@ -4214,7 +4214,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 155,
+    "line": 156,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/get/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/get/{}",
@@ -4224,7 +4224,37 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 192,
+    "line": 164,
+    "method": "GET",
+    "raw": "/api/portal/assemble/designer/portal/${encodeURIComponent(id)}",
+    "path": "/api/portal/assemble/designer/portal/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDesigner.vue",
+    "line": 165,
+    "method": "GET",
+    "raw": "/api/portal/assemble/designer/portal/permission/${encodeURIComponent(id)}",
+    "path": "/api/portal/assemble/designer/portal/permission/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDesigner.vue",
+    "line": 166,
+    "method": "GET",
+    "raw": "/api/portal/assemble/designer/widget/list/portal/${encodeURIComponent(id)}",
+    "path": "/api/portal/assemble/designer/widget/list/portal/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDesigner.vue",
+    "line": 204,
     "method": "POST",
     "raw": "/api/portal/assemble/designer/create",
     "path": "/api/portal/assemble/designer/create",
@@ -4234,7 +4264,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 205,
+    "line": 217,
     "method": "PUT",
     "raw": "/api/portal/assemble/designer/save/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/save/{}",
