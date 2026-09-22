@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 /**
  * 移动端导航守卫。uni-app 使用 pages.json + uni.* 导航（无 vue-router），
  * 故以函数式守卫代替 beforeEach：受保护页在 onShow 中调用 ensureAuthenticated。

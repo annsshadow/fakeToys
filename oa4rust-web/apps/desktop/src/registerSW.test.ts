@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // @vitest-environment node
 /**
  * Service Worker 注册守卫单测：只在（a）navigator 支持 serviceWorker

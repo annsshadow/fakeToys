@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 /**
  * API SDK Integration Tests
  * 这些测试实际调用 @oa4rust/sdk 的 API 函数

@@ -1,3 +1,6 @@
+<!-- Copyright (C) 2026 annsshadow -->
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+
 <script setup lang="ts">
 // uni-app 应用级生命周期组件（无渲染内容）。
 </script>

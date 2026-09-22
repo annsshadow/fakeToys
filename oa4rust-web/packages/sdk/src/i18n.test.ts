@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { getLocale, registerMessages, type SupportedLocale, setLocale, useI18nInstance } from './i18n'

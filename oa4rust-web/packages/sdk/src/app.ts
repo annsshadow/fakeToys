@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { createPinia } from 'pinia'
 import { type Component, createApp, type App as VueApp } from 'vue'
 import { createRouter, createWebHistory, type Router } from 'vue-router'

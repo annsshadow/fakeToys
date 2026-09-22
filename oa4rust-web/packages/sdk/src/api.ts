@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 /** 统一 API 响应结构（与 oa4rust ActionResult<T> 对齐） */
 export interface ApiResponse<T = unknown> {
   success: boolean

@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { createThemeProvider, useSession } from '@oa4rust/sdk'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { NConfigProvider } from 'naive-ui'

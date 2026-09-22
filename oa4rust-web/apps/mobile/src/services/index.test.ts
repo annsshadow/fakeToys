@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 /**
  * 移动端业务 API 层单测：纯函数语义钉死。
  * （端点路径本身由 tests/contracts/mobile-endpoints.test.ts 的契约守卫覆盖，

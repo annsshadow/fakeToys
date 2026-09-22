@@ -1,3 +1,6 @@
+<!-- Copyright (C) 2026 annsshadow -->
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+
 <script setup lang="ts">
 /**
  * 日历（阶段 G / F3）——我的日历 + 今日/本周日程。

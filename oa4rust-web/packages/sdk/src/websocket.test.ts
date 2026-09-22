@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // @vitest-environment node
 /**
  * O2WebSocketClient 单测：用 FakeWebSocket 替代全局 WebSocket，钉死

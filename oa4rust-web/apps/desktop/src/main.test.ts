@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 /**
  * Executable tests for main.ts
  * These tests attempt to mock Vue 3 and browser APIs to execute main.ts

@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 /**
  * 移动端「发起流程」表单解析（简版渲染 + 复杂控件）。
  *

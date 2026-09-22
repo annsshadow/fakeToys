@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { api } from '@oa4rust/sdk'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {

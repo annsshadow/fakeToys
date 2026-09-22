@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { type APIRequestContext, type APIResponse, expect, type Page, type Response } from '@playwright/test'
 
 export type ResponseAudit = {

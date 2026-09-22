@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { ref } from 'vue'
 import type { I18n } from 'vue-i18n'
 import { createI18n } from 'vue-i18n'

@@ -1,3 +1,6 @@
+<!-- Copyright (C) 2026 annsshadow -->
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+
 <script setup lang="ts">
 /**
  * 会议（阶段 G / F2）——移动场景刚需：我的会议 + 接受/拒绝/确认/签到。

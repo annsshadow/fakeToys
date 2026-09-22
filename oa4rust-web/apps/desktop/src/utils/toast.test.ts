@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // @vitest-environment node
 /**
  * toast / confirmMsg 单测：stub 最小 DOM，钉死

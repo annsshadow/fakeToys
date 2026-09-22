@@ -1,3 +1,6 @@
+<!-- Copyright (C) 2026 annsshadow -->
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+
 <template>
   <div class="organization-selector" :aria-busy="loading">
     <div v-if="selectableTypes.length > 1" class="selector-types" aria-label="可选类型">

@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // @vitest-environment jsdom
 /**
  * createO2App 生命周期与认证守卫行为测试。

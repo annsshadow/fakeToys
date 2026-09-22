@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { defineConfig, devices } from '@playwright/test'
 
 const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000'
