@@ -86,6 +86,16 @@ function openTable(item: TableSummary) {
     columns: (item.columns ?? []).map((column) => ({ ...column })),
   }
   executeResult.value = null
+  // GET designer/table/{flag} —— 表设计器单表详情（x_query_table），回填最新列/状态
+  void api
+    .get<any>(`/api/query/assemble/designer/table/${encodeURIComponent(item.tableFlag)}`)
+    .then((r) => {
+      const d = r?.data
+      if (d && typeof d === 'object' && Array.isArray(d.columns)) {
+        form.value.columns = d.columns.map((c: Record<string, unknown>) => ({ ...c }))
+      }
+    })
+    .catch(() => {})
 }
 async function loadTables() {
   loading.value = true
