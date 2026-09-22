@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // @vitest-environment jsdom
 /**
  * renderWidget 挂载路径测试：node 环境（widget.test.ts）只钉了「未注册即报错」，

@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // @vitest-environment jsdom
 /**
  * xform.ts 的 DOMParser 分支（domRootIds）只在有 DOM 的运行时生效：

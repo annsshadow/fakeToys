@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 export const O2_ACTIVITY_TYPES = [
   'begin',
   'manual',

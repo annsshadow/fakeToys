@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { type Ref, ref } from 'vue'
 
 export type ThemeMode = 'dark' | 'light'

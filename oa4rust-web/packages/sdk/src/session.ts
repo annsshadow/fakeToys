@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { defineStore } from 'pinia'
 import { computed, readonly, ref } from 'vue'
 import { AuthenticationError, api } from './api.js'

@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 /**
  * @oa4rust/locales — 国际化资源
  * 替代 o2web 的 lp/*.js 手动对象

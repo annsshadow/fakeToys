@@ -1,3 +1,6 @@
+<!-- Copyright (C) 2026 annsshadow -->
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+
 <template>
   <div class="designer-shell">
     <header class="designer-header glass-card"><div><h1>查询视图设计器</h1><p>可视化过滤、排序、分页与真实 simulate/bundle</p></div><div class="actions"><button class="btn" @click="newView">新建视图</button><button class="btn primary" :disabled="!canSave||saving" @click="saveView">{{saving?'保存中…':'保存'}}</button><button class="btn" :disabled="!activeId" @click="simulate">模拟</button><button class="btn" :disabled="!activeId" @click="bundle">Bundle</button></div></header>

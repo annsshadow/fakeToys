@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 /**
  * 移动端会话存储（pinia）。
  * 与桌面端 @oa4rust/sdk 的 session 语义对齐：init 时拉取 /who 恢复会话，

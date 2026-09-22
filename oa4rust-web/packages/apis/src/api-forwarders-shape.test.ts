@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 /**
  * apis/index.ts 尾段转发器形状测试（覆盖补盲）。
  *

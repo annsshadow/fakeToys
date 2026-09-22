@@ -1,3 +1,6 @@
+<!-- Copyright (C) 2026 annsshadow -->
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+
 <script setup lang="ts">
 /**
  * 只读浏览（阶段 G / F4）——移动端以「看」为主：门户页面 / 查询视图 / CMS 栏目。
