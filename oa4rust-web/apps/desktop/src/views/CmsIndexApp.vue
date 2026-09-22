@@ -16,6 +16,7 @@
         <button class="btn-refresh" @click="loadData">🔄 刷新</button>
         <button class="btn-refresh" @click="loadCmsConfig">⚙️ 控制配置</button>
         <button class="btn-refresh" @click="loadCmsOverview">📊 内容概览</button>
+        <button class="btn-refresh" @click="loadCmsExpress">📰 内容/视图</button>
       </div>
       <div v-if="cmsConfigText" class="cfg-note">{{ cmsConfigText }}</div>
       <div v-if="overviewText" class="cfg-note">{{ overviewText }}</div>
@@ -94,6 +95,23 @@ async function loadCmsOverview() {
     overviewText.value = `分类 ${n(cat)} / 文章 ${n(art)} / 模板表单 ${n(tf)}`
   } catch (e: any) {
     toast.error('加载概览失败: ' + (e?.message ?? ''))
+  }
+}
+// 消费 cms express/core 真实 distinct 路由：内容列表→内容详情 + 全部视图（x_cms_content / cms views）
+async function loadCmsExpress() {
+  try {
+    const listResp: any = await api.get('/api/cms/core/express/content/list')
+    const rows = (Array.isArray(listResp?.data) ? listResp.data : (listResp?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const cid = rows[0] ? String(rows[0].id ?? '') : ''
+    const [detail, views] = await Promise.all([
+      cid ? api.get(`/api/cms/core/express/content/detail/${encodeURIComponent(cid)}`).catch(() => null) : Promise.resolve(null),
+      api.get('/api/cms/view/list/all').catch(() => null),
+    ])
+    const title = (detail as any)?.data?.title ?? (cid || '—')
+    const vN = Array.isArray((views as any)?.data) ? (views as any).data.length : 0
+    overviewText.value = `内容 ${rows.length}（首篇「${title}」）· 视图 ${vN}`
+  } catch (e: any) {
+    toast.error('加载内容/视图失败: ' + (e?.message ?? ''))
   }
 }
 const createEp = '/api/cms/core/entity/index/create'
