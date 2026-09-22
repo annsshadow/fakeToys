@@ -61,6 +61,28 @@
               </div>
               <div v-else class="empty-m">无子群组</div>
             </div>
+
+            <h3 style="margin-top:16px">关联角色（{{ groupRoles.length }}）</h3>
+            <div class="mlist">
+              <div v-if="groupRoles.length" class="mc" v-for="r in groupRoles" :key="r.id">
+                <div class="ma2">R</div>
+                <div class="mi2"><div class="mn">{{ r.name }}</div><div class="mp">{{ r.id }}</div></div>
+              </div>
+              <div v-else class="empty-m">无关联角色</div>
+            </div>
+
+            <h3 style="margin-top:16px">上级群组（直接 {{ supDirect.length }} / 嵌套 {{ supNested.length }}）</h3>
+            <div class="mlist">
+              <div v-if="supDirect.length" class="mc" v-for="g in supDirect" :key="'d'+g.id">
+                <div class="ma2">↑</div>
+                <div class="mi2"><div class="mn">{{ g.name }}</div><div class="mp">直接上级</div></div>
+              </div>
+              <div v-for="g in supNested" :key="'n'+g.id" class="mc">
+                <div class="ma2">⇡</div>
+                <div class="mi2"><div class="mn">{{ g.name }}</div><div class="mp">嵌套上级</div></div>
+              </div>
+              <div v-if="!supDirect.length && !supNested.length" class="empty-m">无上级群组</div>
+            </div>
           </div>
         </template>
       </main>
@@ -149,10 +171,17 @@ function toggleNode(n: N) {
   }
 }
 const subGroups = ref<N[]>([])
+const groupRoles = ref<N[]>([])
+const supDirect = ref<N[]>([])
+const supNested = ref<N[]>([])
 async function selectNode(n: N) {
   selected.value = n
   subGroups.value = []
+  groupRoles.value = []
+  supDirect.value = []
+  supNested.value = []
   if (n.type === 'group') {
+    const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     try {
       // group/{flag}（详情，确保命中真实端点）+ group/list/{flag}/sub/direct（直接子群组）
       await api.get('/api/organization/assemble/control/group/' + n.id)
@@ -161,6 +190,15 @@ async function selectNode(n: N) {
     } catch {
       subGroups.value = []
     }
+    // 群组角色 + 上级群组（直接/嵌套）——三条 distinct 真实路由，并发拉取
+    const [roles, dir, nested] = await Promise.all([
+      settle(api.get(`/api/organization/assemble/control/role/list/group/${n.id}`)),
+      settle(api.get(`/api/organization/assemble/control/group/list/${n.id}/sup/direct`)),
+      settle(api.get(`/api/organization/assemble/control/group/list/${n.id}/sup/nested`)),
+    ])
+    groupRoles.value = ((roles as any)?.data ?? []) as N[]
+    supDirect.value = ((dir as any)?.data ?? []) as N[]
+    supNested.value = ((nested as any)?.data ?? []) as N[]
   }
 }
 async function handleSearch() {
