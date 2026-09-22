@@ -39,6 +39,7 @@
     <div v-if="showCreate||showEdit" class="modal-overlay" @click.self="closeModal">
       <div class="modal glass-card">
         <h3>{{ showEdit?'编辑':'新建' }}门户页面</h3>
+        <div v-if="showEdit && pageMeta" class="form-group" style="opacity:.75;font-size:12px">{{ pageMeta }}</div>
         <div class="form-group"><label>名称</label><input v-model="form.name" placeholder="页面名称" class="form-input" /></div>
         <div class="form-group"><label>分类</label><input v-model="form.category" placeholder="category" class="form-input mono" /></div>
         <div class="form-group"><label>内容（JSON）</label><textarea v-model="form.content" rows="6" placeholder='{"widgets":[...]}' class="form-textarea mono"></textarea></div>
@@ -124,6 +125,7 @@ const search = ref(''),
 const items = ref<Item[]>([]),
   form = ref<PageForm>({}),
   editingId = ref<string | null>(null)
+const pageMeta = ref('')
 const qc = useQueryClient()
 
 const { data } = useQuery({
@@ -179,6 +181,25 @@ function editItem(item: Item) {
   }
   editingId.value = item.id
   showEdit.value = true
+  void loadPageMeta(item.id)
+}
+// 消费 page/{id} 详情 + pageversion 版本族 3 条真实 distinct 路由（x_portal_page / x_portal_page_version）
+async function loadPageMeta(id: string) {
+  pageMeta.value = ''
+  const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [detail, versions] = await Promise.all([
+    settle(api.get(`/api/portal/assemble/designer/page/${encodeURIComponent(id)}`)),
+    settle(api.get(`/api/portal/assemble/designer/pageversion/list/page/${encodeURIComponent(id)}`)),
+  ])
+  const vrows = (Array.isArray((versions as any)?.data) ? (versions as any).data : []) as Array<Record<string, unknown>>
+  let latest = ''
+  const vid = vrows[0] ? String(vrows[0].id ?? '') : ''
+  if (vid) {
+    const vd: any = await api.get(`/api/portal/assemble/designer/pageversion/${encodeURIComponent(vid)}`).catch(() => null)
+    latest = vd?.data?.version ? ` · 最新版本 v${vd.data.version}` : ''
+  }
+  const cat = (detail as any)?.data?.category ?? '—'
+  pageMeta.value = `分类 ${cat} · 版本 ${vrows.length}${latest}`
 }
 function closeModal() {
   showCreate.value = false
