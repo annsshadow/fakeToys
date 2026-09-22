@@ -44,7 +44,7 @@
       </div>
       <!-- Application tab -->
       <div v-if="tab==='application'" class="tab-content">
-        <div class="toolbar"><button class="btn-primary" @click="loadAllApplications">全部应用</button><button class="btn-primary" @click="loadCenterMeta">注册应用/版本/验证码</button><span v-if="appMetaText" class="app-meta">{{ appMetaText }}</span></div>
+        <div class="toolbar"><button class="btn-primary" @click="loadAllApplications">全部应用</button><button class="btn-primary" @click="loadCenterMeta">注册应用/版本/验证码</button><button class="btn-primary" @click="loadProgramDetails">明细抽样</button><span v-if="appMetaText" class="app-meta">{{ appMetaText }}</span></div>
         <div v-if="loadingApp" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
         <div v-else-if="applications.length===0" class="empty"><div class="ei">📱</div><p>暂无Application</p></div>
         <div v-else class="item-grid">
@@ -364,6 +364,30 @@ async function loadAgents() {
   }
 }
 const appMetaText = ref('')
+// 消费 application/{id} 详情 + agent/{flag} 详情 + config/token 三条真实 distinct 路由
+async function loadProgramDetails() {
+  try {
+    const [appList, agentList] = await Promise.all([
+      api.get('/api/program_center/application/list').catch(() => null),
+      api.get('/api/program_center/agent').catch(() => null),
+    ])
+    const apps = (Array.isArray((appList as any)?.data) ? (appList as any).data : []) as Array<Record<string, unknown>>
+    const agents = (Array.isArray((agentList as any)?.data) ? (agentList as any).data : []) as Array<Record<string, unknown>>
+    const appId = apps[0] ? String(apps[0].id ?? '') : ''
+    const agentFlag = agents[0] ? String(agents[0].flag ?? agents[0].id ?? '') : ''
+    const [appDetail, agentDetail, token] = await Promise.all([
+      appId ? api.get(`/api/program_center/application/${encodeURIComponent(appId)}`).catch(() => null) : Promise.resolve(null),
+      agentFlag ? api.get(`/api/program_center/agent/${encodeURIComponent(agentFlag)}`).catch(() => null) : Promise.resolve(null),
+      api.get('/api/program_center/config/token').catch(() => null),
+    ])
+    const appName = (appDetail as any)?.data?.name ?? (appId || '—')
+    const agentName = (agentDetail as any)?.data?.name ?? (agentFlag || '—')
+    const hasToken = (token as any)?.data ? '有' : '无'
+    appMetaText.value = `应用「${appName}」· 代理「${agentName}」· token配置 ${hasToken}`
+  } catch (e: any) {
+    toast.error('加载明细失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadAllApplications() {
   try {
     // GET program_center/applications + center/applications —— 全部应用/中心应用
