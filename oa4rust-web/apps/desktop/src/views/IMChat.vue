@@ -463,6 +463,28 @@ function selectConversation(conv: Conversation): void {
   if (conv.unread > 0) markConversationRead(conv.id)
   // P5：会话房间即消息房间——选中会话时加入其房间（presence/回执按房间收敛）
   wsClient.value?.joinRoom(conv.id)
+  void loadConversationDetail(conv.id)
+}
+
+// 会话详情（rev116）：主体 + 单聊信息，两条 distinct 真实路由；业务会话按 businessId 反查
+async function loadConversationDetail(id: string): Promise<void> {
+  if (!id) return
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [detail, single] = await Promise.all([
+    // GET im/conversation/{id} —— 会话主体（x_message_conversation）
+    settle(api.get(`/api/message/assemble/communicate/im/conversation/${encodeURIComponent(id)}`)),
+    // GET im/conversation/{id}/single —— 单聊信息（type=single）
+    settle(api.get(`/api/message/assemble/communicate/im/conversation/${encodeURIComponent(id)}/single`)),
+  ])
+  const d = (detail as { data?: Record<string, unknown> } | null)?.data
+  const biz = d && typeof d === 'object' ? String(d.businessId ?? d.business_id ?? '') : ''
+  if (biz) {
+    // GET im/conversation/business/{businessId} —— 业务会话反查
+    void api
+      .get(`/api/message/assemble/communicate/im/conversation/business/${encodeURIComponent(biz)}`)
+      .catch(() => {})
+  }
+  void single
 }
 
 function handleScroll(): void {
