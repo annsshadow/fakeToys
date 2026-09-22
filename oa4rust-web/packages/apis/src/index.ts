@@ -604,6 +604,11 @@ export const documentApi = {
   cipherList: (id: string) => api.get(`/api/document/cipher/list/${id}`),
   publish: (id: string) => api.post(`/api/document/publish/${id}`, null),
   achive: (id: string) => api.post(`/api/document/achive/${id}`, null),
+  // 文档详情族（x_cms_data_document / *_field）：表单字段 / 权限控制位 / 可读判定 / 登记浏览。
+  documentData: (id: string) => api.get(`/api/document/${id}/document/data`),
+  control: (id: string) => api.get(`/api/document/${id}/control`),
+  permissionRead: (id: string) => api.get(`/api/document/${id}/permission/read`),
+  view: (id: string) => api.get(`/api/document/${id}/view`),
   request: createRequest('/api/document'),
 }
 
