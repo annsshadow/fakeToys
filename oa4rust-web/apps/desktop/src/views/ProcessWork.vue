@@ -107,8 +107,12 @@
               <li><span class="name">任务</span><span class="muted">{{ (taskInfo?.title as string) || (taskInfo?.activity as string) || effectiveTaskId }}</span></li>
               <li v-if="taskInfo?.person"><span class="name">处理人</span><span class="muted">{{ taskInfo?.person }}</span></li>
               <li v-if="taskExpireText"><span class="name">超时</span><span class="muted">{{ taskExpireText }}</span></li>
+              <li v-if="taskV2Status"><span class="name">v2 状态</span><span class="muted">{{ taskV2Status }}</span></li>
             </ul>
             <button class="btn-sm" :disabled="pressing" @click="pressTask">{{ pressing ? '催办中…' : '催办' }}</button>
+            <button class="btn-sm" :disabled="v2Busy" @click="taskV2Action('pause')">暂停</button>
+            <button class="btn-sm" :disabled="v2Busy" @click="taskV2Action('resume')">恢复</button>
+            <button class="btn-sm" :disabled="v2Busy" @click="taskV2Action('reset')">重置</button>
           </div>
         </section>
 
@@ -273,6 +277,7 @@ async function openWork(item: TaskItem): Promise<void> {
       handleTaskId.value = mine?.id ?? ''
     }
     void loadTaskInfo(activeTab.value === 'pending' ? String(item.id ?? '') : handleTaskId.value)
+    void loadTaskV2(activeTab.value === 'pending' ? String(item.id ?? '') : handleTaskId.value)
   } catch (error: any) {
     formDefinition.value = null
     detailError.value = error?.message || '加载表单失败'
@@ -369,6 +374,44 @@ async function pressTask(): Promise<void> {
     toast.error('催办失败: ' + (e?.message ?? ''))
   } finally {
     pressing.value = false
+  }
+}
+
+// ── 任务 v2 生命周期（暂停/恢复/重置，rev107）──────────────────
+const taskV2Status = ref('')
+const v2Busy = ref(false)
+async function loadTaskV2(taskId: string): Promise<void> {
+  taskV2Status.value = ''
+  if (!taskId) return
+  try {
+    // GET service/processing/task/v2/{id} —— v2 任务详情（含 task_status）
+    const r: any = await api.get(`/api/processplatform/service/processing/task/v2/${taskId}`)
+    taskV2Status.value = String((r?.data as { task_status?: string; taskStatus?: string })?.task_status ?? (r?.data as any)?.taskStatus ?? '')
+  } catch {
+    taskV2Status.value = ''
+  }
+}
+async function taskV2Action(kind: 'pause' | 'resume' | 'reset'): Promise<void> {
+  const taskId = effectiveTaskId.value
+  if (!taskId || v2Busy.value) return
+  v2Busy.value = true
+  try {
+    if (kind === 'pause') {
+      // GET task/v2/pause/{id} —— 暂停
+      await api.get(`/api/processplatform/service/processing/task/v2/pause/${taskId}`)
+    } else if (kind === 'resume') {
+      // POST task/v2/resume/{id} —— 恢复
+      await api.post(`/api/processplatform/service/processing/task/v2/resume/${taskId}`, {})
+    } else {
+      // POST task/v2/reset/{id} —— 重置
+      await api.post(`/api/processplatform/service/processing/task/v2/reset/${taskId}`, {})
+    }
+    toast.success('操作成功')
+    await loadTaskV2(taskId)
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  } finally {
+    v2Busy.value = false
   }
 }
 
