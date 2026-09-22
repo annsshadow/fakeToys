@@ -14,6 +14,7 @@
       <button class="org-meta-btn" @click="loadUnitDetails">单位明细</button>
       <button class="org-meta-btn" @click="loadAttrDetails">单位/个人属性</button>
       <button class="org-meta-btn" @click="loadCursorLists">身份/角色/职务游标</button>
+      <button class="org-meta-btn" @click="loadCursorListsPrev">游标(逆序)</button>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -277,6 +278,20 @@ async function loadCursorLists() {
     orgMetaText.value = `身份 ${n(ident)} · 角色 ${n(role)} · 职务 ${n(duty)}（头部游标各取 10）`
   } catch (e: any) {
     toast.error('加载游标列表失败: ' + (e?.message ?? ''))
+  }
+}
+// 消费身份/角色/职务的逆序游标列表（flag=0 从头）——3 条真实 distinct 路由（与 next 不同 handler）
+async function loadCursorListsPrev() {
+  try {
+    const [ident, role, duty] = await Promise.all([
+      api.get('/api/organization/assemble/control/identity/list/0/prev/10').catch(() => null),
+      api.get('/api/organization/assemble/control/role/list/0/prev/10').catch(() => null),
+      api.get('/api/organization/assemble/control/unitduty/list/0/prev/10').catch(() => null),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    orgMetaText.value = `逆序：身份 ${n(ident)} · 角色 ${n(role)} · 职务 ${n(duty)}（各取 10）`
+  } catch (e: any) {
+    toast.error('加载逆序游标失败: ' + (e?.message ?? ''))
   }
 }
 async function loadPinyinIndex() {
