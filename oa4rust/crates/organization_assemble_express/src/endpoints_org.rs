@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 (part 2): unit / group / role / unitduty express endpoints.
 //! Conventions: see endpoints.rs module docs.
 

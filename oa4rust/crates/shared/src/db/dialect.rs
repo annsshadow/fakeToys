@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use crate::db::rewriter::rewrite_pg_to_mysql;
 use std::sync::OnceLock;
 

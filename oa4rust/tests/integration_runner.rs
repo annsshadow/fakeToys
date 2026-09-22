@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! OA4Rust 集成测试运行器 (U6)
 //!
 //! 入口测试：初始化一次性测试数据库，然后按场景顺序执行所有集成测试。

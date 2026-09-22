@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Helper to create an isolated test database per test (no shared OnceLock).
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;

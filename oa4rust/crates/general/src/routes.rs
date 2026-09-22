@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use crate::{area_list, is_workday, security_clearance_enable};
 use axum::{extract::Extension, Router};
 use deadpool_postgres::Pool;

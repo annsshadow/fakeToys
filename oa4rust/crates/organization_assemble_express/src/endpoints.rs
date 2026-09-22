@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2: organization_assemble_express endpoint completion.
 //!
 //! Aligns with o2server `x_organization_assemble_express` (132 endpoints) for the

@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 收尾 (part 3): person 剩余 27 个端点。
 //!
 //! 对齐 o2server x_organization_assemble_express PersonAction 其余方法：

@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 #[allow(dead_code)]
 use axum::{extract::Extension, Json};
 use base64::Engine;

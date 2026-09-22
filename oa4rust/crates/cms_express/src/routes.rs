@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use crate::{entities::cms_view, template_form_list, uuid_random, view_list_all};
 use axum::{
     extract::{Extension, Json, Path},

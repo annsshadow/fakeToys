@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 收尾 (part 6): group 剩余 13 个端点。
 //!
 //! 对齐 o2server GroupAction 其余方法。群组层级依赖迁移 071 提供的

@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! 统一输入验证框架
 //!
 //! 提供可重用的验证器、验证宏和错误类型，供所有 crate 的 handler 使用。

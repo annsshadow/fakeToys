@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 缺口闭合：surface 侧 statement/stat/search/morelikethis/table/view 补齐
 //!
 //! statement 执行与 designer 同口径：sqlparser 校验（仅单条 SELECT）→

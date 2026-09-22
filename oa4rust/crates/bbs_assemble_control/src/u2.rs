@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 — BBS 端点全量闭合（对照 o2server 静态提取的 106 条 o2server 全集补齐）。
 //!
 //! 分层约定（沿用 cms_assemble_control U2 先例）：

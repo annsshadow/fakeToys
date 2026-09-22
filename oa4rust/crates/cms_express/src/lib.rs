@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use axum::{extract::Extension, Json, Router};
 use deadpool_postgres::Pool;
 use sea_orm::{DatabaseConnection, EntityTrait, QueryOrder, QuerySelect};

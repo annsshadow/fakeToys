@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use chrono::{DateTime, Duration, Utc};
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};

@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // ════════════ plan002 U2：file 模块端点全量闭合回归测试 ════════════
 // 覆盖：无引擎端点精确 501、BlobStorage 上传 fail-loud（db 占位 → 501 非假成功）、
 // blob key 规范化、输入校验先于 DB、各族路由可达性、既有路由回归保护。

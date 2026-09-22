@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use base64::{engine::general_purpose::URL_SAFE, Engine as _};
 use cipher::{Block, BlockDecryptMut, BlockEncrypt, KeyInit};
 use des::{Des, TdesEde2};

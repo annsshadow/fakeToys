@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 收尾：对齐 o2server x_organization_assemble_personal 残余端点。
 //!
 //! 路径约定：沿用本仓库既有前缀 `/api/person/**`（o2server war 前缀为

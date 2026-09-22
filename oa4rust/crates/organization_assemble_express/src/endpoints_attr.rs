@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 收尾 (part 8): personattribute / unitattribute 各 5 个端点 +
 //! empower / empowerlog / distinguishedname 各 1 个端点。
 //!

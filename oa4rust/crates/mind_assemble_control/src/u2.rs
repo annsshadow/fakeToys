@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 — mind_assemble_control 端点闭合（对照 x_mind_assemble_control
 //! o2server 全集 23 条，既有 8 条见 lib.rs / routes.rs，本文件补齐剩余 15 条，
 //! 并复用 lib.rs 既有 handler 修正 HTTP 方法对齐）。

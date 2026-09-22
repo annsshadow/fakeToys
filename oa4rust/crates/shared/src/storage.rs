@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // ──────────────────────────────────────────────────────────────────────────────
 // storage — Blob 存储后端抽象（plan002 U6a/U6b）
 //

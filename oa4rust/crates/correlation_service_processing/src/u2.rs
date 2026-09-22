@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 收尾：对齐 o2server x_correlation_service_processing CorrelationAction 契约。
 //!
 //! o2server 契约（{war}/api/correlation/**）：

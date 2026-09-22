@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 pub use crate::RowGet;
 
 use crate::{error::AppError, ControlClient, ControlPool, DynControlPool};

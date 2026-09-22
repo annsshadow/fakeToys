@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 缺口闭合：statement 全族 + importmodel/neural/stat/table/view CRUD
 //!
 //! statement 执行链路：按 flag/alias 加载语句 → sqlparser 校验（仅单条 SELECT）

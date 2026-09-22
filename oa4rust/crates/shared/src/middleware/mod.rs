@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // middleware submodule — 共享中间件与权限基础设施
 //
 // 模块结构：

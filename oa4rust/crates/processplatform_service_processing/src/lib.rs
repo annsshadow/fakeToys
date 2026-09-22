@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 #![allow(dead_code, clippy::type_complexity)]
 use axum::{extract::Extension, Json};
 use chrono::NaiveDateTime;

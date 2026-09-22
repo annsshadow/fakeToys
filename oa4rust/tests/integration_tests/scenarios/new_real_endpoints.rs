@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use reqwest::{Client, StatusCode};

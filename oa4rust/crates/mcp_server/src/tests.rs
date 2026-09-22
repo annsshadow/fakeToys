@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! MCP Server 测试套件（U13 / R-test-coverage）
 //!
 //! 覆盖公开 API：McpError 类型、JSON-RPC 序列化、

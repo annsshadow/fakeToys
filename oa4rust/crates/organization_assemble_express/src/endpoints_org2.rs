@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 收尾 (part 5): identity 剩余 9 个端点。
 //!
 //! 对齐 o2server IdentityAction 其余方法。x_org_identity.person_id/major 由迁移

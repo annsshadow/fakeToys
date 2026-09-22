@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use axum::response::{IntoResponse, Json};
 use deadpool_postgres::tokio_postgres::types::{FromSql, Type};
 use deadpool_postgres::tokio_postgres::Row;

@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use axum::{extract::Extension, http::HeaderMap, Json};
 use chrono::Utc;
 use serde_json::Value;

@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use axum::{routing::delete, routing::get, routing::post, Router};
 
 pub fn mind_routes() -> Router {

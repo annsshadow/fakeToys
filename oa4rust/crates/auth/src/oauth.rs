@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use axum::{extract::Extension, extract::Path, extract::Query, response::Response, Json};
 use base64::Engine;
 use deadpool_postgres::Pool;

@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use axum::{routing::post, Json, Router};
 use chrono::{DateTime, Duration, Utc};
 use serde::Deserialize;

@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! base_core_project 路由单元测试（沿用 general crate 的 dummy-pool + oneshot 模式）。
 //!
 //! 这些 handler 是纯桩（不触库），因此可直接断言 200 + 成功信封形状，

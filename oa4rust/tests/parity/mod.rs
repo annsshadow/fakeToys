@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Parity comparison module (Phase 4 takeover-regression scaffold).
 //!
 //! RECORD mode (see `tests/parity_runner.rs`) captures oa4rust endpoint

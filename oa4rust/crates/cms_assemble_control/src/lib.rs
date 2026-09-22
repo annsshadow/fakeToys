@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 #![allow(dead_code, non_snake_case)]
 use axum::{extract::Extension, Json, Router};
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
