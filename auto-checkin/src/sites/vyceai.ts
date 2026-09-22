@@ -42,10 +42,32 @@ export const vyceaiAdapter: SiteAdapter = {
       }
 
       const claim = await postJson(page, "/user/daily-reward");
-      const newBalance = await readBalance(page);
       const got = typeof reward.rewardAmount === "number" ? reward.rewardAmount : null;
-      ctx.log(`领取返回：${JSON.stringify(claim).slice(0, 120)}`);
-      return { status: "success", reward: got, balance: newBalance ?? balance, currency: "$", message: `领取成功 +${got ?? "?"}`, screenshot: null };
+      ctx.log(`领取返回：${JSON.stringify(claim).slice(0, 160)}`);
+
+      // HTTP 200 不代表落账：曾出现连续多天 200 但 canClaim/streak/lastClaim 纹丝不动（实际未领取，还导致断签）。
+      // 必须复查 daily-reward 状态，canClaim 变 false 才算真成功。
+      const after = await getJson(page, "/user/daily-reward");
+      if (after && after.canClaim === false) {
+        const newBalance = await readBalanceAfterClaim(page, balance);
+        return {
+          status: "success",
+          reward: got,
+          balance: newBalance ?? balance,
+          currency: "$",
+          message: `领取成功 +${got ?? "?"} · 连续${after.streak ?? "?"}天`,
+          screenshot: null,
+        };
+      }
+      const shot = await ctx.saveScreenshot(page, "vyceai-claim-ineffective");
+      return {
+        status: "failed",
+        reward: null,
+        balance,
+        currency: "$",
+        message: `领取未生效（返回 200 但 canClaim 仍为 true，streak=${after?.streak ?? "?"} lastClaim=${after?.lastClaim ?? "?"}）`,
+        screenshot: shot,
+      };
     } catch (err) {
       const shot = await ctx.saveScreenshot(page, "vyceai-error");
       return fail(`异常：${(err as Error).message}`, shot);
@@ -91,6 +113,18 @@ async function readBalance(page: Page): Promise<number | null> {
   return typeof b === "number" ? Number(b.toFixed(4)) : null;
 }
 
+/** 领取成功后 /user/dashboard 短时间内仍返回旧余额，轮询等待其更新（每 2s 一次，最多 ~10s） */
+async function readBalanceAfterClaim(page: Page, before: number | null): Promise<number | null> {
+  let last = await readBalance(page);
+  for (let i = 0; i < 5; i++) {
+    if (typeof last !== "number") break;
+    if (before === null || last > before) return last;
+    await page.waitForTimeout(2000);
+    last = await readBalance(page);
+  }
+  return last;
+}
+
 async function getJson(page: Page, path: string): Promise<any> {
   return page.evaluate(async (p) => {
     try {
@@ -108,7 +142,8 @@ async function postJson(page: Page, path: string): Promise<any> {
     try {
       const r = await fetch(p, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" } });
       const t = await r.text();
-      return t.trim().startsWith("{") ? JSON.parse(t) : { status: r.status };
+      // 非 JSON 响应体也保留前 120 字符，便于排查"返回 200 但未落账"类问题
+      return t.trim().startsWith("{") ? JSON.parse(t) : { status: r.status, body: t.slice(0, 120) };
     } catch (e) {
       return { error: String(e) };
     }
