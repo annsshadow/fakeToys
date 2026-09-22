@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """FeatureDetector 单元测试
 
 特征检测是主动学习的输入，覆盖率与唯一性口径必须稳定。

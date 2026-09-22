@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """数据清洗增强测试 - 批量清洗优化验证"""
 
 import pytest

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """DataPipeline 单元测试
 
 管道编排是数据清洗流水线的骨架，阶段顺序与失败语义必须确定。

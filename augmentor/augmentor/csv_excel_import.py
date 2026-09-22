@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """CSV/Excel 数据导入模块
 
 功能：支持从 CSV 和 Excel 文件导入数据集，

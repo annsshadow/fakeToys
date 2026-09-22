@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """streaming / preview 剩余分支补测
 
 streaming：内存监控模块缺失时 HAS_MEMORY_MONITOR 降级路径；

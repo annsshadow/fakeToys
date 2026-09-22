@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """CLI 剩余分支补测（L10）
 
 覆盖此前未触达的分支：version rollback、stream clean/直通操作、

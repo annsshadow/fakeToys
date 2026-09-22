@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """check-leakage CLI 与 leakage API 路由测试
 
 CLI：训练/测试集文件 → 泄漏报告（含 --output 落盘、无泄漏提示）；

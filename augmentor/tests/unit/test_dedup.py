@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """智能去重单元测试
 
 去重直接影响训练数据规模，阈值校验、索引保留与相似对查询必须正确。

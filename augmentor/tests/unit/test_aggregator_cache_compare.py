@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """aggregator / cache / compare_enhanced 剩余分支补测
 
 aggregator：空数据集 union、全零权重 weighted 归一化；

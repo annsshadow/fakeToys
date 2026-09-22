@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """leakage 泄漏检测模块测试
 
 覆盖精确/近似泄漏判定、归一化、倒排候选约束、空数据集、

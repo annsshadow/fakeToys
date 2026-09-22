@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """数据质量趋势追踪测试 - 验证趋势分析、方向计算和报告生成"""
 
 import pytest

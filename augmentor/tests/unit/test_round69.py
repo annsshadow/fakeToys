@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第69轮: auto_test自动测试"""
 import pytest
 from augmentor.auto_test import DatasetTestRunner

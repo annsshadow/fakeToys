@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """数据备份增强测试 - 自动清理和完整性验证"""
 
 import pytest

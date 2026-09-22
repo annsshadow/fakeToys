@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """indexer 搜索方法与视图/统计分支测试
 
 覆盖 exact/contains/ngram 三种搜索、get_item/get_batch、filter、

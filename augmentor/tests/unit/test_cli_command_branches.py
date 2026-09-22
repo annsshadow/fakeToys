@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """L73：cli.py 各命令的未完整走通分支（--field length / --output 落盘 / 完整流）
 
 覆盖 outliers 的长度字段附加、validate 结果落盘、backup 删除完整流、

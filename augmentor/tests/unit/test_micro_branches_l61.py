@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """微型分支收尾 L61：data 子包 + csv_excel_import + analytics + audit
 
 - data/cleaner: detect_language 四种文档词表值

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """quality API 路由扩展测试
 
 补齐 clean / annotate / benchmark / outliers 方法 / profiling save

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """质量门禁模块
 
 将多个质量指标组合为可配置的门禁规则，作为数据进入下游训练前的

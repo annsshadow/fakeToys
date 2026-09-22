@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """领域自适应增强测试 - 验证自动领域检测和策略适配"""
 
 import pytest

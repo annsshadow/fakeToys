@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """图像数据处理模块
 
 优先使用 Pillow，未安装时退化为标准库解析文件头，保证离线可用。

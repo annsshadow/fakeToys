@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """API 限流中间件（滑动窗口，按客户端 IP）
 
 防止滥用与雪崩。基于进程内滑动窗口计数，超限返回 429 与

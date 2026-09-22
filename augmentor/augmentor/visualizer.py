@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """数据分布可视化模块
 
 分工边界（与 `augmentor.visualize_enhanced`）

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """数据集特征检测模块
 
 自动识别数据集中存在的特征维度（字段、长度、语言、主题、意图等），

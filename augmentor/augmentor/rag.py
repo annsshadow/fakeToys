@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """RAG 训练数据格式模块
 
 支持 LlamaIndex、LangChain 标准格式以及自定义 JSON 结构，并提供文本分块能力。

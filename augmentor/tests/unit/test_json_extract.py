@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """json_extract LLM 响应 JSON 提取模块测试
 
 覆盖直接解析、markdown 围栏、前后缀说明文字（平衡扫描）、

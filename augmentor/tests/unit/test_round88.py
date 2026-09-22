@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第88轮: multilingual多语言增强"""
 import pytest
 from augmentor.multilingual import MultilingualSupport

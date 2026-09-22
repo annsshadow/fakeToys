@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """限流中间件测试
 
 覆盖滑动窗口放行/拒绝、Retry-After 计算、IP 键提取（XFF/直连）、

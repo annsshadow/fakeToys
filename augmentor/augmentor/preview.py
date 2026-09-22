@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """导出格式预览模块
 
 在真正导出前，预览数据经过格式转换后的结果，并给出潜在问题告警。

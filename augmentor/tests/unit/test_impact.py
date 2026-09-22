@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """ImpactEvaluator 单元测试
 
 增强收益必须可量化：规模、多样性、去重、长度分布四个维度都要有增益口径。

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """report_md 报告 Markdown 渲染模块测试
 
 覆盖 PII/泄漏/审计/通用报告渲染，含表格、空态、自定义标题与包级导出。

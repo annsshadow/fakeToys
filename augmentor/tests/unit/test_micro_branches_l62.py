@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """微型分支收尾 L62：models/base 会话池降级 + 抽象方法兜底、
 ModelManager 双重检查/加载成功、ERNIE token 双重检查
 """

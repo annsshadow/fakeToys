@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """diagnostics 依赖诊断 + doctor CLI 测试
 
 覆盖依赖探测、降级提示、缺依赖断言、摘要行、doctor 命令文本/JSON 输出。

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """流式处理模块
 
 提供大数据集的流式处理能力，支持分块读取、处理和写入。

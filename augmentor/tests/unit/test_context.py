@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """ContextAugmentor 单元测试
 
 覆盖多轮对话生成：后续问题抽取、重复过滤、串行/并行批量生成。

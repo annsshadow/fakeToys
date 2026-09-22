@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """数据集操作工具模块
 
 提供数据集的合并、采样、分割等常用操作。

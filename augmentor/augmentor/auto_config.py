@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """智能配置推荐模块
 
 根据数据集画像与特征检测结果，推荐去重阈值、质量门禁、采样策略等

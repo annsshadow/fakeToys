@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """version API 路由与请求日志中间件扩展测试
 
 版本生命周期（create/list/diff/rollback/delete/history/data）+

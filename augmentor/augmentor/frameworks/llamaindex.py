@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """LlamaIndex 集成模块
 
 在 LlamaIndex 未安装时退化为同构的字典表示，保证接口可用。

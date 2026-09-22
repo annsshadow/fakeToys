@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """向量数据库查询优化测试 - 查询缓存复用验证"""
 
 import pytest

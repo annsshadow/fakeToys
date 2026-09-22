@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """配置管理单元测试
 
 验证配置加载、环境变量解析、默认值合并与校验。

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """请求追踪中间件测试
 
 覆盖 X-Request-ID 自动生成、入站透传、空白头回退生成。

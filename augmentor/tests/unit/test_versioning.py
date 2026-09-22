@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """版本管理单元测试
 
 版本快照、对比、回滚与历史记录是数据可追溯性的基础。

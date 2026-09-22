@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """模型评估模块
 
 提供生成质量评估指标（BLEU / ROUGE-L / 相似度）与模型对比能力。

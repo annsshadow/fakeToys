@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """质量评估 API 路由"""
 
 from fastapi import APIRouter, Depends, HTTPException

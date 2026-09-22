@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """audit/leakage/privacy 路由异常分支注入测试
 
 正常路径已在各功能测试覆盖；本文件向路由模块注入 load_items 异常，

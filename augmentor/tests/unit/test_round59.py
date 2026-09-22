@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第59轮: expander域扩展"""
 import pytest
 from augmentor.expander import DomainExpander

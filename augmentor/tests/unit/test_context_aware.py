@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """上下文感知增强测试 - 验证意图分析和上下文增强功能"""
 
 import pytest

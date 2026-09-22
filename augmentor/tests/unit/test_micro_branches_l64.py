@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """微型分支收尾 L64：converter/health_score/impact/outlier/multilingual/perf
 
 - converter: csv→json 与 jsonl(非列表输入) 两条私有转换路径

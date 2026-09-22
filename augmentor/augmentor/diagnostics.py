@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """运行时诊断模块
 
 探测各可选依赖与运行能力，返回结构化诊断报告，便于部署前置检查

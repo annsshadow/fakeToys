@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """privacy PII 脱敏模块测试
 
 覆盖邮箱/手机号/身份证/IP 命中、长串优先匹配、占位符可定制、

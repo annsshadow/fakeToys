@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第80轮: quality_trend质量趋势"""
 import pytest
 from augmentor.quality_trend import QualityTrendTracker

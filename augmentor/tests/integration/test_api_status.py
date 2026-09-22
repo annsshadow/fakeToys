@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """status API 路由测试
 
 覆盖 /api/status 正常返回结构、管道缺失降级、依赖诊断嵌入。

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """数据清洗模块
 
 提供去噪、格式标准化、语言检测等纯规则能力，便于离线运行与单元测试。

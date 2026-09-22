@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """CLI 画像与聚合命令族测试
 
 profile / outliers / features / auto-config / aggregate 的参数组合、

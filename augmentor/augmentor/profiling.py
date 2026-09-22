@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """数据集画像模块
 
 对训练数据做全维度画像统计：字段完整性、长度分布、重复率、语言检测、

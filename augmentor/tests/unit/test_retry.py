@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """retry 指数退避重试模块测试
 
 覆盖 compute_delay 指数/封顶/抖动、with_retries 成功/重试耗尽/

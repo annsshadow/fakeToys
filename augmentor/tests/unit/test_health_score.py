@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """数据集健康度评分测试 - 验证数据完整性、多样性、均衡性、覆盖率评估"""
 
 import pytest

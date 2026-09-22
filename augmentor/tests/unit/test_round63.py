@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第63轮: checkpoint检查点管理"""
 import pytest
 from augmentor.checkpoint import CheckpointManager

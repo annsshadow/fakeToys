@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """CLI 共用 I/O helper（由 cli.py 拆出）"""
 
 import json

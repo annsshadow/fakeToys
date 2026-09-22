@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """models 工厂与会话池测试
 
 覆盖 create_model_backend 类型映射、不支持类型报错、_get_session

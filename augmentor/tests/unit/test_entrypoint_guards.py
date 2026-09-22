@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """L72：__main__ 入口守卫（cli.py / api/main.py）
 
 以 runpy 的 __main__ 身份执行两个入口模块，命中 `if __name__ == "__main__"`

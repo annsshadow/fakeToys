@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """FAISS 向量数据库实现
 
 优先使用 faiss-cpu 加速检索，未安装时退化为 numpy 精确检索，接口保持一致。

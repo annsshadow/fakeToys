@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """DataSplitter 单元测试
 
 分层划分必须保证各子集分布与总体一致，比例校验与可复现性都要覆盖。

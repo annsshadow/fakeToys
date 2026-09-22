@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """数据集验证增强测试 - 批量验证报告和自定义规则"""
 
 import pytest

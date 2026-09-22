@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """流水线错误恢复增强测试 - 错误记录和恢复机制验证"""
 
 import pytest

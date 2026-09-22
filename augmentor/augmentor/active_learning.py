@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """主动学习循环模块
 
 按不确定性 / 多样性 / 混合策略挑选最有价值的样本，并记录迭代历史。

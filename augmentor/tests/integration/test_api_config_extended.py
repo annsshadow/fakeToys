@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """config API 路由扩展测试
 
 覆盖 POST /api/config 的更新/持久化/未知键守卫，以及

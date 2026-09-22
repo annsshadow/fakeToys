@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """训练/测试集泄漏检测模块
 
 检测训练集与测试集之间是否存在重复或近似重复样本（数据泄漏），

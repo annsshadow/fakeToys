@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """schema 数据集结构校验模块测试
 
 覆盖必需键、类型（含 bool 非数值）、枚举、长度/数值范围、

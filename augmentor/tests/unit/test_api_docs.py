@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """核心模块API文档测试 - 验证文档完整性和可访问性"""
 
 import pytest

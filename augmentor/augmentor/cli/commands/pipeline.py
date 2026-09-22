@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """CLI `pipeline` 组命令（由 cli.py 拆出，逻辑未改）"""
 
 from ..io import _print

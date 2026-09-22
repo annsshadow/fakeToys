@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """多模态数据处理模块
 
 整合图像与音频处理，产出统一的多模态训练数据记录。

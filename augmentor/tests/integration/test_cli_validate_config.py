@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """CLI 配置验证命令测试
 
 validate-config 需通过校验器正确报告仓库自带配置为有效，

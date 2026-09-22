@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """CLI pipeline 命令与错误路径集成测试
 
 augment / export / analyze / visualize 走管道，需把 config 的版本存储与

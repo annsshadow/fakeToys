@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """多格式导出单元测试
 
 导出格式必须严格符合下游训练框架的字段约定，否则数据无法被消费。

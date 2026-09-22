@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """微型分支收尾 L63：quality/quality_report/quality_trend/report 残留分支
 
 - quality: cross-encoder 成功加载 + batch_score 真实 encoder 相关性路径

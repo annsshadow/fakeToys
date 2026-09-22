@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """comparison 胜者判定/摘要/保存分支测试
 
 覆盖 winner=a/b/tie 三分支、摘要生成、save_comparison 落盘与

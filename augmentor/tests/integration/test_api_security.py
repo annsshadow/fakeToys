@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """API 安全与正确性回归测试
 
 对应 docs/plans/2026-09-21-001-audit-augmentor-fullstack-optimization-plan.md 的 Phase 0：

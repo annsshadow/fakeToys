@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """数据集缓存模块
 
 提供数据集处理结果的缓存功能，避免重复计算。

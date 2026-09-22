@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """前端契约端到端测试
 
 前端通过 /api/* 与后端交互，任何一侧单方面改动都会导致线上白屏。

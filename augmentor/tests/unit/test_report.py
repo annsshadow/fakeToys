@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """质量报告单元测试
 
 报告是质量门禁的产出物，统计口径与建议逻辑必须可靠。

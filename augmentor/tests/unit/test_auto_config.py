@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """AutoConfig 单元测试
 
 配置推荐规则必须可解释：每个推荐值都要能从输入统计推导出来。

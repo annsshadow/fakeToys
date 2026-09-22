@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """微型分支收尾 L67：config/export/profiling/diagnostics/expander 残留分支
 
 - config: save_config 对非 default 模型去除密钥、load_config 幂等

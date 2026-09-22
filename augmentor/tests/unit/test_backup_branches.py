@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """backup 模块剩余分支测试
 
 覆盖 create/list/restore/delete 全生命周期、缺文件恢复报错、

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """模型缓存复用测试 - 验证单例模式和缓存优化"""
 
 import pytest

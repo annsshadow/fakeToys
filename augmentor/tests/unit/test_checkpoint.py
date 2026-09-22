@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """CheckpointManager 单元测试
 
 重点验证 R4「断点续传」的核心语义：

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """CSV/Excel 导出功能测试（csv_excel_import 模块的导出侧）
 
 覆盖 export_to_csv / export_to_excel 的正常导出、列选择、

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """DomainExpander 单元测试
 
 覆盖主题抽取、三种扩展策略、批量并行扩展与种子生成。

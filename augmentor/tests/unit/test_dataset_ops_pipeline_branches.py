@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """dataset_ops 不支持采样方法 + data_pipeline 报告阶段 补测"""
 
 import pytest

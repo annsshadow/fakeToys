@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """RAG 训练数据格式单元测试
 
 格式字段名必须与 LlamaIndex / LangChain 约定一致，否则下游无法加载。

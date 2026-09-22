@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """模型后端请求/响应处理单元测试
 
 各后端的 HTTP 请求构造与响应解析是平台与外部模型交互的唯一通道，

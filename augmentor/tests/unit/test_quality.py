@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """质量评分单元测试
 
 质量分决定样本是否进入训练集，因此权重校验、阈值过滤与报告统计必须准确。

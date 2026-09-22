@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """CLI sanitize 命令集成测试
 
 PII 脱敏命令端到端：输入 → 脱敏落盘 + 报告，含 --extra 与 --fields。

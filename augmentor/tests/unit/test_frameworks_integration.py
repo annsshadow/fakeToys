@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """frameworks 集成模块测试（langchain / llamaindex）
 
 覆盖未安装降级、伪框架注入后的 Document/TextNode 路径、

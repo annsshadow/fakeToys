@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """api.deps 依赖层单元测试
 
 覆盖惰性 get_pipeline、reset_pipeline、同步/异步 JSON 读写、

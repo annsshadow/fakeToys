@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """自动标注模块
 
 基于规则实现实体识别、意图分类与情感分析，无需外部模型即可运行。

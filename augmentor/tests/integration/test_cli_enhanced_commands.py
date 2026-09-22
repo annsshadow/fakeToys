@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """CLI 合并命令族集成测试
 
 T1.7 把 8 对命令合并成「主命令 + `--enhanced`」后，本文件覆盖其中

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """augmentor 包导出测试
 
 新增模块必须从包级别导出，保证 import augmentor 可直接使用。

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """QualityGate 单元测试
 
 门禁规则必须可解释：每条规则的判定、严重级别与组合语义都要有断言。

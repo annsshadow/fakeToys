@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第99轮: compare_enhanced增强对比"""
 import pytest
 from augmentor.compare_enhanced import EnhancedComparator

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """内存监控测试 - 验证内存使用趋势检测和警告功能"""
 
 import pytest

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """多语言支持扩展测试 - 语言检测和翻译功能验证"""
 
 import pytest

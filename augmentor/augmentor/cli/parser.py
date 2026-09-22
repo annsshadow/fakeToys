@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """CLI 参数解析器
 
 T1.7 起，同一能力的两种实现合并为**一个子命令 + `--enhanced` 开关**，

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """DataProfiler 单元测试
 
 数据画像是质量门禁的前置诊断，统计口径必须稳定可复现。

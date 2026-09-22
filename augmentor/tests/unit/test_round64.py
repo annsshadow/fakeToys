@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第64轮: cache缓存管理"""
 import pytest
 from augmentor.cache import MemoryCache, DiskCache

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """内存使用监控模块
 
 功能：提供内存快照、峰值检测、趋势分析和警告机制，

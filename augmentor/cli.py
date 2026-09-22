@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """AI 训练数据增强工具 CLI 入口
 
 本文件只负责「解析参数 → 归一化旧命令名 → 查分发表 → 调用 handler → 统一异常处理」。

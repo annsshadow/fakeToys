@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """pytest 全局配置
 
 确保测试能直接 import augmentor / api，并提供共享测试数据。

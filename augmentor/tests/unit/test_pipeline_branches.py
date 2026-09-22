@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """pipeline 剩余分支测试
 
 覆盖 augment_async（线程池+gather）、串行路径成功/失败、并行质量过滤

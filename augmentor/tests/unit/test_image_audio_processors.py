@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """data/image.py 与 data/audio.py 剩余分支测试
 
 image：文件头解析（png/gif/bmp/jpeg 直接调 _parse_header + 合成字节）、

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """faiss 向量库（含 faiss 可用/缓存/删除重建）与 performance_benchmark 测试
 
 faiss 未安装，通过向 sys.modules 注入伪 faiss 模块覆盖「faiss 可用」

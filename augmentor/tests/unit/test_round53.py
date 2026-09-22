@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第53轮: profiling内存分析测试"""
 import pytest
 from augmentor.profiling import estimate_memory, field_completeness

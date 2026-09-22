@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """数据分析功能增强测试 - 快速分析优化验证"""
 
 import pytest

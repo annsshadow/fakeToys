@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """LLM 框架集成单元测试
 
 框架未安装时接口必须退化为等价字典结构，保证平台在离线环境可用。

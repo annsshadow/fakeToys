@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """CLI 子命令分发表
 
 键是 argparse 的 `dest="command"` 取值，值是 handler。

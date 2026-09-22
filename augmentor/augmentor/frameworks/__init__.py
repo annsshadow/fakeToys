@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """LLM 框架集成模块
 
 提供 LangChain 与 LlamaIndex 的双向数据转换。

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """quality API 路由异常分支注入测试
 
 各端点的 except FileNotFoundError(404) 与 except Exception(500) 分支

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """L69：api 路由异常直通分支 + 限流器 reset
 
 自然路径下 require_file 已将缺文件转为 HTTPException(404)，

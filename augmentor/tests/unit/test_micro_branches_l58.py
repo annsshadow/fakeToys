@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """微型分支收尾：config_validator / context / evaluation 的残留未覆盖分支
 
 每个用例都锁定一条明确的行为契约（读文件失败上报、嵌套结构安全递归、

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """CSV/Excel 导入测试
 
 原实现的问题（本次重写的原因）：

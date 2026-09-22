@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """OutlierDetector 单元测试
 
 异常值检测必须可解释：方法选择、边界计算与过滤行为都要有明确断言。
