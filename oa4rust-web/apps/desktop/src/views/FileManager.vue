@@ -9,6 +9,7 @@
         <button class="action-btn primary" @click="handleUpload">📤 上传</button>
         <button class="action-btn" @click="loadTopAttachments">📎 顶层附件</button>
         <button class="action-btn" @click="loadFileMeta">🗄️ 附件2/编辑器</button>
+        <button class="action-btn" @click="loadAttachmentSearch">🔎 附件检索</button>
         <button class="action-btn" @click="loadFolderShare">📂 文件夹/分享/容量</button>
         <button class="action-btn" @click="loadShareScopes">🔗 文件夹2/我的分享/收到分享</button>
         <button class="action-btn" @click="loadRefTypes">🏷️ 引用类型</button>
@@ -154,6 +155,24 @@ async function loadFileMeta(): Promise<void> {
     toast.success(`附件2 ${n(att2)} / 编辑器 ${n(editors)}`)
   } catch (e: any) {
     toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+// 附件检索族 3 条真实 distinct 路由（均 FILE_FILE，WHERE 各异）：文件夹内附件 attachment/list/folder/{folderId}（WHERE folder_id）
+// + 按名模糊 attachment2/list/filter/{name}（WHERE name ILIKE）+ 未引用文件 file/list/unused/referencetype/cmsdocument/manage（WHERE reference_type='cmsdocument_manage'）
+async function loadAttachmentSearch(): Promise<void> {
+  try {
+    const folderResp: any = await api.get('/api/file/folder/list/top').catch(() => null)
+    const folders = (Array.isArray(folderResp?.data) ? folderResp.data : []) as Array<Record<string, unknown>>
+    const folderId = currentFolder.value || (folders[0] ? String(folders[0].id ?? '') : '')
+    const [inFolder, byName, unused] = await Promise.all([
+      folderId ? api.get(`/api/attachment/list/folder/${encodeURIComponent(folderId)}`).catch(() => null) : Promise.resolve(null),
+      api.get(`/api/attachment2/list/filter/${encodeURIComponent('文')}`).catch(() => null),
+      api.get('/api/file/list/unused/referencetype/cmsdocument/manage').catch(() => null),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    toast.success(`文件夹内 ${n(inFolder)} / 名称匹配 ${n(byName)} / 未引用 ${n(unused)}`)
+  } catch (e: any) {
+    toast.error('检索失败: ' + (e?.message ?? ''))
   }
 }
 async function loadShareScopes(): Promise<void> {
