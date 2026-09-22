@@ -640,7 +640,7 @@ async function loadTopicExtras(subjectId: string): Promise<void> {
   replyGate.value = ''
   topicMeta.value = ''
   const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
-  const [pics, gate, view, atts, perm] = await Promise.all([
+  const [pics, gate, view, atts, perm, replyList] = await Promise.all([
     // GET picture/list/{subjectId} —— 从正文抽取的图片 URL 列表
     settle(api.get(`/api/bbs/assemble/control/picture/list/${subjectId}`)),
     // GET permission/replyPublishable/{subjectId} —— 是否可回复
@@ -651,7 +651,15 @@ async function loadTopicExtras(subjectId: string): Promise<void> {
     settle(api.get(`/api/bbs/assemble/control/attachment/list/subject/${subjectId}`)),
     // GET permission/subject/{subjectId} —— 主题操作权限
     settle(api.get(`/api/bbs/assemble/control/permission/subject/${subjectId}`)),
+    // GET reply/list/sub/{id} —— 主题回复列表（reply_list_sub_id x_bbs_reply by topic_id）
+    settle(api.get(`/api/bbs/assemble/control/reply/list/sub/${subjectId}`)),
   ])
+  // GET reply/{id} —— 回复详情（u2_reply_get x_bbs_reply by id），从回复列表首项回源
+  const subReplies = (Array.isArray((replyList as { data?: unknown } | null)?.data) ? (replyList as { data: unknown[] }).data : []) as Array<Record<string, unknown>>
+  const rid = subReplies[0] ? String(subReplies[0].id ?? '') : ''
+  if (rid) {
+    await settle(api.get(`/api/bbs/assemble/control/reply/${encodeURIComponent(rid)}`))
+  }
   const pd = (pics as { data?: unknown } | null)?.data
   topicPics.value = (Array.isArray(pd) ? pd : Array.isArray((pd as { data?: unknown })?.data) ? (pd as { data: unknown[] }).data : []).map(String)
   const gd = (gate as { data?: unknown } | null)?.data
@@ -728,7 +736,15 @@ async function loadForums() {
   try {
     // GET bbs/assemble/control/forum/list —— 版块列表（no-param handler，非裸路由 500 型）
     const r: any = await api.get('/api/bbs/assemble/control/forum/list')
-    forumsText.value = '版块：' + (Array.isArray(r?.data) ? r.data.length : 0) + ' 个'
+    const forums = (Array.isArray(r?.data) ? r.data : []) as Array<Record<string, unknown>>
+    // GET forum/{id} —— 版块详情（get_forum x_bbs_forum by id），从列表首项回源
+    const fid = forums[0] ? String(forums[0].id ?? '') : ''
+    let detailName = ''
+    if (fid) {
+      const d: any = await api.get(`/api/bbs/assemble/control/forum/${encodeURIComponent(fid)}`).catch(() => null)
+      detailName = (d as any)?.data?.name ?? ''
+    }
+    forumsText.value = `版块：${forums.length} 个${detailName ? `（首「${detailName}」）` : ''}`
   } catch (e: any) {
     toast.error('加载版块失败: ' + (e?.message ?? ''))
   }
