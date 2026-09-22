@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! OA4Rust 性能基线测试 (Phase 4)
 //!
 //! 独立的集成测试目标，镜像 `tests/integration_runner.rs`：

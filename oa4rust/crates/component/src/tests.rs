@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 #[cfg(test)]
 mod tests {
     use crate::{component_router, ComponentInfo as Component};

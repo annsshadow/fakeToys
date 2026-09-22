@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use axum::Json;
 use serde_json::Value;
 use shared::response::ActionResult;

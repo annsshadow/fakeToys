@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 fn main() {
     // Print a valid bcrypt hash for 'it-admin' with cost 10
     // This is a known good hash generated with bcrypt cost 10

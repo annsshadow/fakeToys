@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // ════════════ plan002 U2：meeting 模块端点全量闭合回归测试 ════════════
 // 覆盖：blob key 规范化、归一化查重键、db 占位后端上传 fail-loud（501 非假成功）、
 // 各族新路由可达性、o2server 动词修正、IDOR 门禁（缺会话拒绝 / 非 owner 拒绝）、

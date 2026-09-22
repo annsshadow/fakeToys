@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use axum::{extract::Extension, routing::get, Json, Router};
 use sea_orm::{DatabaseConnection, EntityTrait, QueryOrder, QuerySelect};
 use serde_json::Value;

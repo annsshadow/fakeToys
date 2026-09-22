@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! 游标分页助手（占位）
 //!
 //! 由于 SeaORM 1.x 的泛型约束复杂性，分页逻辑需要在每个 crate 中具体实现。

@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! W7：process 脚本设计器写路径（u2 闭合）。
 //!
 //! 存储：PP_E_SCRIPT（parity 表，037 迁移补 deleted_at）+ PP_E_SCRIPTVERSION。

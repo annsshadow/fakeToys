@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! 转义引号键缺陷守卫（docs/plans/2026-09-20-001 §6.7 / 阶段 E6）
 //!
 //! 禁止源码出现 `"\"key\""` 形态的字面量 —— 键名里**字面包含引号**（转义错误）。

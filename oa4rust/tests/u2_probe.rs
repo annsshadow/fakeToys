@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Probe: build the FULL merged application (all ~50 crate routers) to surface
 //! any axum route-conflict panic at Router construction time (plan002 U2).
 

@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 收尾测试：98 条新增路由可达性 + 约定 helper 单测。
 //!
 //! mock_pool 无法建连：GET 命中 handler 后 500；POST 空 body 在 Json 提取层

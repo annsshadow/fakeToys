@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 收尾：对齐 o2server x_organization_assemble_authentication 残余端点。
 //!
 //! 路径约定：沿用本仓库前缀 `/api/organization/assemble/authentication/**`，

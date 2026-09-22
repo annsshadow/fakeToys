@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! openapi crate tests (U13 / R-test-coverage)
 //!
 //! 验证 OpenAPI 文档生成与安全方案注入正确性。

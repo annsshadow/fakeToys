@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 #[cfg(test)]
 mod tests {
     use crate::entities::{mind_folder::Model as MindFolder, mind_version::Model as MindVersion};

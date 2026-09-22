@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 鏂板绔偣鐨勮矾鐢卞彲杈炬祴璇曚笌濂戠害娴嬭瘯銆?
 //!
 //! 璺敱娴嬭瘯浣跨敤 mock_pool锛堟棤娉曞缓杩烇級锛氳姹傚懡涓矾鐢卞悗 handler 杩斿洖 500锛?

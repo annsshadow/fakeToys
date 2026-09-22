@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 — calendar_assemble_control 端点闭合（对照 x_calendar_assemble_control
 //! o2server 全集 31 条，第 1 批 7 条见下文，本文件补齐剩余 24 条）。
 //!

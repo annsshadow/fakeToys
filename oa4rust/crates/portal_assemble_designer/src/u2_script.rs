@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! W7：portal 脚本设计器写路径（u2 闭合）。
 //!
 //! 存储：x_portal_script（084 迁移补 content/portal_id/deleted_at 列）
