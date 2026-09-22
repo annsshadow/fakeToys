@@ -33,6 +33,12 @@
           <span class="td cot">{{r.checkOutTime||'—'}}</span>
           <span class="td hw">{{r.workHours??'—'}}</span>
           <span class="td"><span class="badge" :class="statusClass(r.status)">{{statusTxt(r.status)}}</span></span>
+          <span class="td rec-act">
+            <button class="cfg-mini" @click="detailInfo(r)">详情</button>
+            <button class="cfg-mini" @click="analyseOne(r)">分析</button>
+            <button class="cfg-mini" @click="archiveOne(r)">归档</button>
+            <button class="cfg-mini danger" @click="deleteDetail(r)">删除</button>
+          </span>
         </div>
       </template>
       <div v-if="totalPages>1" class="pagination">
@@ -570,6 +576,45 @@ async function loadStatistics() {
     attStats.value = []
   }
 }
+
+// 考勤明细逐行操作（x_attendance_detail，各为 distinct handler）：
+//   详情 GET {id}、分析 POST analyse/id/{id}（analysed=true）、
+//   归档 POST archive/{id}（archived=true）、删除 DELETE {id}
+async function detailInfo(r: R) {
+  try {
+    const resp: any = await api.get('/api/attendance/assemble/control/attendancedetail/' + r.id)
+    const d = resp?.data ?? {}
+    toast.success('明细：' + (d.status ?? statusTxt(r.status)) + ' / ' + (d.date ?? fmtDate(r.date)))
+  } catch (e: any) {
+    toast.error('加载明细失败: ' + (e?.message ?? ''))
+  }
+}
+async function analyseOne(r: R) {
+  try {
+    await api.post('/api/attendance/assemble/control/attendancedetail/analyse/id/' + r.id, {})
+    toast.success('已标记分析')
+  } catch (e: any) {
+    toast.error('分析失败: ' + (e?.message ?? ''))
+  }
+}
+async function archiveOne(r: R) {
+  try {
+    await api.post('/api/attendance/assemble/control/attendancedetail/archive/' + r.id, {})
+    toast.success('已归档')
+  } catch (e: any) {
+    toast.error('归档失败: ' + (e?.message ?? ''))
+  }
+}
+async function deleteDetail(r: R) {
+  if (!(await confirmMsg('确认删除该考勤明细？'))) return
+  try {
+    await api.delete('/api/attendance/assemble/control/attendancedetail/' + r.id)
+    toast.success('已删除')
+    records.value = records.value.filter((x) => x.id !== r.id)
+  } catch (e: any) {
+    toast.error('删除失败: ' + (e?.message ?? ''))
+  }
+}
 </script>
 <style scoped>
 .attendance-view{display:flex;flex-direction:column;gap:16px;height:100%}
@@ -586,7 +631,7 @@ async function loadStatistics() {
 .content-panel{flex:1;overflow-y:auto;padding:16px}
 .pt{font-size:14px;color:var(--color-primary);font-weight:600;margin-bottom:12px;font-family:'Orbitron',sans-serif}
 .th{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
-.tr{display:grid;grid-template-columns:80px 80px 90px 90px 60px 70px;gap:4px;padding:8px 12px;border-radius:var(--radius-sm);font-size:13px;color:var(--text-primary);transition:all var(--transition-fast)}
+.tr{display:grid;grid-template-columns:80px 80px 90px 90px 60px 70px 1fr;gap:4px;padding:8px 12px;border-radius:var(--radius-sm);font-size:13px;color:var(--text-primary);transition:all var(--transition-fast)}
 .tr:hover{background:var(--color-primary-soft)}
 .td{color:var(--text-primary)}
 .td.cit.late{color:var(--color-warning)}
@@ -614,14 +659,14 @@ async function loadStatistics() {
 .cfg-main{display:flex;flex-direction:column;gap:2px;flex:1}
 .cfg-name{font-weight:600;color:var(--text-primary);font-size:13px}
 .cfg-sub{font-size:12px;color:var(--text-muted)}
-.cfg-act{display:flex;gap:6px}
+.cfg-act,.rec-act{display:flex;gap:6px;flex-wrap:wrap}
 .cfg-mini{padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer;font-size:12px}
 .cfg-mini.danger{border-color:var(--color-error);color:var(--color-error)}
 .cfg-del{padding:4px 12px;border-radius:var(--radius-sm);border:1px solid var(--color-error);background:var(--color-error-glow);color:var(--color-error);cursor:pointer;font-size:12px}
 .es,.ls,.es-sm{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px}
 .ei{font-size:48px;opacity:0.4}
 .sk{height:36px;border-radius:var(--radius-sm);margin-bottom:6px;background:var(--bg-elevated)}
-@media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr)}.tr{grid-template-columns:60px 60px 70px 70px 50px 60px}}
+@media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr)}.tr{grid-template-columns:60px 60px 70px 70px 50px 60px 1fr}}
 .cfg-tabs{display:flex;gap:4px}
 .cfg-tab{padding:2px 10px;border-radius:10px;border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-muted);cursor:pointer;font-size:11px}
 .cfg-tab.on{border-color:var(--color-primary);color:var(--color-primary);background:var(--color-primary-soft)}
