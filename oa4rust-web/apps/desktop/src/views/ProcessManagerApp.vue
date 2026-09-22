@@ -17,10 +17,12 @@
         <button class="btn-refresh" @click="loadManagedApps">👤 我管理的应用</button>
         <button class="btn-refresh" @click="loadAppProcesses">🗂️ 应用与流程</button>
         <button class="btn-refresh" @click="loadOrphans">🧹 孤儿元素</button>
+        <button class="btn-refresh" @click="loadProcessDetails">🧬 流程明细</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
       </div>
+      <div v-if="procDetailText" class="rp-note">{{ procDetailText }}</div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🧩</div><p>暂无流程定义</p></div>
       <table v-else class="data-table">
@@ -142,6 +144,31 @@ const filtered = computed(() =>
 function loadData() {
   qc.invalidateQueries({ queryKey: qk })
 }
+// 设计器流程明细族 3 条真实 distinct 路由：首流程 → 流程详情 process/{id}（PP_E_PROCESS query_opt）
+// + 流程元素 process/list/element/{id}（PP_E_PROCESS_ELEMENT）+ 流程版本 processversion/list/process/{processId}（PP_E_PROCESSVERSION）
+const procDetailText = ref('')
+async function loadProcessDetails() {
+  const first = items.value[0]
+  if (!first) {
+    toast.success('请先刷新加载流程定义列表')
+    return
+  }
+  const pid = String(first.id ?? '')
+  if (!pid) return
+  try {
+    const [detail, elements, versions] = await Promise.all([
+      api.get(`/api/processplatform/assemble/designer/process/${encodeURIComponent(pid)}`).catch(() => null),
+      api.get(`/api/processplatform/assemble/designer/process/list/element/${encodeURIComponent(pid)}`).catch(() => null),
+      api.get(`/api/processplatform/assemble/designer/processversion/list/process/${encodeURIComponent(pid)}`).catch(() => null),
+    ])
+    const pName = (detail as any)?.data?.name ?? (pid || '—')
+    const eN = Array.isArray((elements as any)?.data) ? (elements as any).data.length : 0
+    const vN = Array.isArray((versions as any)?.data) ? (versions as any).data.length : 0
+    procDetailText.value = `流程「${pName}」· 元素 ${eN} · 版本 ${vN}`
+  } catch (e: any) {
+    toast.error('加载流程明细失败: ' + (e?.message ?? ''))
+  }
+}
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}
@@ -163,4 +190,5 @@ function loadData() {
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 .rp-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .rp-chip{padding:2px 10px;border-radius:10px;background:var(--bg-elevated);border:1px solid var(--border-color);font-size:12px;color:var(--text-primary)}
+.rp-note{margin:8px 0;padding:8px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-color);font-size:13px;color:var(--text-primary)}
 </style>
