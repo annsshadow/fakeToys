@@ -16,6 +16,7 @@
       <button class="sb" @click="loadMeetings">搜索</button>
       <button class="sb" @click="loadMyApplied">我的申请</button>
       <button class="sb" @click="loadMyInvited">我的邀请</button>
+      <button class="sb" @click="loadMeetingMore">待接受/本月/配置</button>
       <button class="sb" @click="addBuilding">+ 楼栋</button>
     </div>
     <div v-if="appliedText" class="applied-note">{{ appliedText }}</div>
@@ -249,6 +250,23 @@ async function loadMyApplied() {
     appliedText.value = `待审 ${n(wait)} / 进行 ${n(proc)} / 已办 ${n(done)}`
   } catch (e: any) {
     toast.error('加载我的申请失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadMeetingMore() {
+  try {
+    const now = new Date()
+    const y = now.getFullYear()
+    const mth = now.getMonth() + 1
+    // GET 待接受会议 + 本月会议 + 系统配置——三条 distinct 真实路由
+    const [wait, month, cfg] = await Promise.all([
+      api.get('/api/meeting/assemble/control/meeting/list/wait/accept'),
+      api.get(`/api/meeting/assemble/control/meeting/list/year/${y}/month/${mth}`),
+      api.get('/api/meeting/assemble/control/config/system/config'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : r?.data ? 1 : 0)
+    appliedText.value = `待接受 ${n(wait)} / 本月 ${n(month)} / 系统配置项 ${n(cfg)}`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
   }
 }
 async function addBuilding() {
