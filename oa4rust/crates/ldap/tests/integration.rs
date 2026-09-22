@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use ldap::{LdapAuthResult, LdapConfig};
 
 static LDAP_ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());

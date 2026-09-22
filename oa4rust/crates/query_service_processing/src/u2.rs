@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 收尾：对齐 o2server x_query_service_processing o2server 契约（24 端点）。
 //!
 //! o2server 契约（{war}/api/**）：

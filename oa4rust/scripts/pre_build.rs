@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Pre-build script: ensures web/dist exists before Rust compilation.
 //! Called via Cargo.toml build = "scripts/pre_build.rs"
 

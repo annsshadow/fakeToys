@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! 通用参数化 CRUD（针对已建表的家族家族补写端点用）。
 //!
 //! 安全模型：表名与列名只能取自调用方提供的静态白名单（`&'static str`），

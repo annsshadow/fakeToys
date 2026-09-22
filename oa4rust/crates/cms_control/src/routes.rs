@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use axum::{extract::Extension, routing::get, Router};
 
 use crate::{get_control_config, list_control_sections};

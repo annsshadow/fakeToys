@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 终扫闭合（U3 批次）新增端点的路由可达测试与单元测试。
 //!
 //! 约定与 tests_u2 相同：mock_pool 无法建连，DB 型请求断言 500（≠404 即路由可达）；

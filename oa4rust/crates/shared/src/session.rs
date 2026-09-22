@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use base64::Engine;
 use chrono::{Duration, NaiveDateTime, Utc};
 use deadpool_postgres::Pool;

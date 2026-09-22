@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 新增端点（cms_assemble_control）的测试。
 //!
 //! 三层：

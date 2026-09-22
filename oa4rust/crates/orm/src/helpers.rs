@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! 通用 CRUD 助手
 //!
 //! 由于 SeaORM 1.x 的泛型约束复杂性，这些助手需要提供具体的 Column 类型。

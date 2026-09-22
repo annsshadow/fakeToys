@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 — BBS 端点闭合测试。
 //!
 //! 覆盖三层意图：

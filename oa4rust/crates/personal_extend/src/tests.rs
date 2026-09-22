@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use super::avatar;
 use super::personal as personal_mod;
 use crate::routes::personal_extend_router;

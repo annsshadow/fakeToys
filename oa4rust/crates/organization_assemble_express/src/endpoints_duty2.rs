@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 收尾 (part 7): role 剩余 2 个 + unitduty 剩余 5 个端点。
 //!
 //! 对齐 o2server RoleAction / UnitDutyAction 其余方法。约定见 endpoints.rs。

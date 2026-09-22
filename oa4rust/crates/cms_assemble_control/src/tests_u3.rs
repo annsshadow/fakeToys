@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 收尾重试批次（U3，o2server canonical 对齐缺口）的测试。
 //!
 //! 三层（与 tests_u2 一致）：

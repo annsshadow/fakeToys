@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 续轮：appdict surface 家族（段序修正）与 data/document 通配族的测试。
 //!
 //! 三层：

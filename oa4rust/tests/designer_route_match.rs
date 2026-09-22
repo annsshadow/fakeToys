@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // 设计器前端调用点 ↔ 后端路由 逐条实测对账（docs/plans §9.4 的可复现硬证据）
 //
 // 用 axum Router::oneshot 命中各设计器前端真实调用路径，实测区分：

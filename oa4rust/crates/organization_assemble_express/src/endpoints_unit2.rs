@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 收尾 (part 4): unit 剩余 29 个端点。
 //!
 //! 对齐 o2server UnitAction 其余方法。新结构 x_org_unit."type" 由迁移 071 提供。

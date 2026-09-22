@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! OA4Rust parity-regression suite (Phase 4 / U4.1)
 //!
 //! Two modes, both run as `#[ignore]` integration tests (require a live

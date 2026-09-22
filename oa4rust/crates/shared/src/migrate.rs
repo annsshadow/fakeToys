@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // ──────────────────────────────────────────────────────────────────────────────
 // migrate — 内置数据库迁移运行器
 //

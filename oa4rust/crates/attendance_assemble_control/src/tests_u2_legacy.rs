@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! plan002 U2 legacy 族闭合端点的路由可达测试与单元测试。
 //!
 //! 路由测试使用 mock_pool（无法建连）：请求命中路由后 handler 返回 500，

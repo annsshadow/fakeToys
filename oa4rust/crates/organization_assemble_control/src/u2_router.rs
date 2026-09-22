@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use super::{u2_misc, u2_org, u2_person};
 use axum::Router;
 
