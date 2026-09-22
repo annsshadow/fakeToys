@@ -87,6 +87,7 @@
 
           <div v-else class="members">
             <h3>所属群组（直接 {{ personGroups.length }} / 嵌套 {{ personGroupsNested.length }}）</h3>
+            <div v-if="personContact" class="empty-m" style="text-align:left">{{ personContact }}</div>
             <div class="mlist">
               <div v-for="g in personGroups" :key="'pd'+g.id" class="mc">
                 <div class="ma2">D</div>
@@ -198,6 +199,7 @@ const groupRoles = ref<N[]>([])
 const supDirect = ref<N[]>([])
 const supNested = ref<N[]>([])
 const personGroups = ref<N[]>([])
+const personContact = ref('')
 const personGroupsNested = ref<N[]>([])
 const personAttrs = ref<Array<Record<string, unknown>>>([])
 async function selectNode(n: N) {
@@ -229,16 +231,23 @@ async function selectNode(n: N) {
     supDirect.value = ((dir as any)?.data ?? []) as N[]
     supNested.value = ((nested as any)?.data ?? []) as N[]
   } else {
-    // 人员节点：所属群组（直接/嵌套）+ 个人属性——三条 distinct 真实路由
+    // 人员节点：所属群组（直接/嵌套）+ 个人属性 + 认证信息/昵称/手机——六条 distinct 真实路由
     const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
-    const [dir, nested, attrs] = await Promise.all([
+    const [dir, nested, attrs, auth, nick, mobile] = await Promise.all([
       settle(api.get(`/api/organization/assemble/control/group/list/person/${n.id}/sup/direct`)),
       settle(api.get(`/api/organization/assemble/control/group/list/person/${n.id}/sup/nested`)),
       settle(api.get(`/api/organization/assemble/control/personattribute/list/person/${n.id}`)),
+      settle(api.get(`/api/person/auth/info/${encodeURIComponent(n.id)}`)),
+      settle(api.get(`/api/person/nick/name/${encodeURIComponent(n.id)}`)),
+      settle(api.get(`/api/person/mobile/${encodeURIComponent(n.id)}`)),
     ])
     personGroups.value = ((dir as any)?.data ?? []) as N[]
     personGroupsNested.value = ((nested as any)?.data ?? []) as N[]
     personAttrs.value = ((attrs as any)?.data ?? []) as Array<Record<string, unknown>>
+    const identN = Array.isArray((auth as any)?.data?.identityList) ? (auth as any).data.identityList.length : (Array.isArray((auth as any)?.data) ? (auth as any).data.length : 0)
+    const nickRow = Array.isArray((nick as any)?.data) ? (nick as any).data[0] : (nick as any)?.data
+    const mobRow = Array.isArray((mobile as any)?.data) ? (mobile as any).data[0] : (mobile as any)?.data
+    personContact.value = `身份 ${identN} · 昵称 ${nickRow?.name ?? '—'} · 手机 ${mobRow?.mobile ?? '—'}`
   }
 }
 async function handleSearch() {
