@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import type { SiteAdapter } from "../types.js";
 import { vyceaiAdapter } from "./vyceai.js";
 import { agentrouterAdapter } from "./agentrouter.js";

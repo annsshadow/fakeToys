@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { loadConfig } from "./config.js";
 import { openSiteContext, closeContext } from "./browser.js";
 import { fetchSelf } from "./sites/newapi-client.js";
