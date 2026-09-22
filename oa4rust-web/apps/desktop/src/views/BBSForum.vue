@@ -146,9 +146,31 @@
             <span>👁 {{ viewingTopic.viewCount ?? 0 }} 浏览</span>
           </div>
           <div class="detail-content" style="white-space:pre-wrap;word-break:break-word">{{formatContent(viewingTopic.content)}}</div>
+
+          <!-- 图片附件（picture/list） -->
+          <div v-if="topicPics.length" class="pic-gallery">
+            <img v-for="(u, i) in topicPics" :key="i" :src="u" class="pic-thumb" alt="附图" />
+          </div>
+
+          <!-- 版主管理工具栏（owner/admin 门禁；失败提示无权限） -->
+          <div class="mod-bar">
+            <span class="mod-label">版主管理：</span>
+            <button class="mod-btn" :class="{on: viewingTopic.creamed}" :disabled="modBusy" @click="toggleMod('cream', !viewingTopic.creamed)">
+              {{ viewingTopic.creamed ? '取消精华' : '设为精华' }}
+            </button>
+            <button class="mod-btn" :class="{on: viewingTopic.isTop}" :disabled="modBusy" @click="toggleMod('topSection', !viewingTopic.isTop)">
+              {{ viewingTopic.isTop ? '取消置顶' : '版块置顶' }}
+            </button>
+            <button class="mod-btn" :class="{on: viewingTopic.locked}" :disabled="modBusy" @click="toggleMod('lock', !viewingTopic.locked)">
+              {{ viewingTopic.locked ? '解锁' : '锁定' }}
+            </button>
+            <button class="mod-btn" :class="{on: viewingTopic.completed}" :disabled="modBusy" @click="toggleMod('complete', !viewingTopic.completed)">
+              {{ viewingTopic.completed ? '取消完结' : '标记完结' }}
+            </button>
+          </div>
         </div>
         <div class="reply-section">
-          <h4>回复 ({{ replies.length }})</h4>
+          <h4>回复 ({{ replies.length }})<span v-if="replyGate" class="reply-gate">· 回复权限：{{ replyGate }}</span></h4>
           <div v-if="replies.length === 0" class="empty-replies">暂无回复</div>
           <div v-for="reply in replies" :key="reply.id" class="reply-card">
             <div class="reply-avatar">{{ reply.author?.[0] }}</div>
@@ -597,11 +619,69 @@ async function openTopic(topic: Topic): Promise<void> {
   } catch {
     /* 详情拉取失败保留列表行数据，不阻塞阅读 */
   }
+  void loadTopicExtras(targetId)
 }
 
 function formatContent(content?: string): string {
   if (!content) return ''
   return content
+}
+
+// ── 帖子详情深化（rev101）：图片附件 + 回复权限 + 版主管理 ─────────────
+// 均为事件触发（打开详情时/点击按钮时），非 mounted useQuery，规避 autoquery-prune 守卫。
+const topicPics = ref<string[]>([])
+const replyGate = ref<'' | '允许' | '不允许' | '查询失败'>('')
+const modBusy = ref(false)
+
+async function loadTopicExtras(subjectId: string): Promise<void> {
+  topicPics.value = []
+  replyGate.value = ''
+  const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [pics, gate] = await Promise.all([
+    // GET picture/list/{subjectId} —— 从正文抽取的图片 URL 列表
+    settle(api.get(`/api/bbs/assemble/control/picture/list/${subjectId}`)),
+    // GET permission/replyPublishable/{subjectId} —— 是否可回复
+    settle(api.get(`/api/bbs/assemble/control/permission/replyPublishable/${subjectId}`)),
+  ])
+  const pd = (pics as { data?: unknown } | null)?.data
+  topicPics.value = (Array.isArray(pd) ? pd : Array.isArray((pd as { data?: unknown })?.data) ? (pd as { data: unknown[] }).data : []).map(String)
+  const gd = (gate as { data?: unknown } | null)?.data
+  replyGate.value = gate
+    ? (gd === true || (gd as { replyPublishable?: boolean })?.replyPublishable ? '允许' : '不允许')
+    : '查询失败'
+}
+
+/** 版主开关：flag 决定字面量路径（三元 ${on?'a':'b'} 会被提取器归一化误配，必须写字面量分支）。 */
+async function toggleMod(kind: 'cream' | 'lock' | 'complete' | 'topSection', on: boolean): Promise<void> {
+  const id = viewingTopic.value?.topicRef || viewingTopic.value?.id
+  if (!id || modBusy.value) return
+  modBusy.value = true
+  try {
+    if (kind === 'cream') {
+      if (on) await api.get(`/api/bbs/assemble/control/user/subject/setCream/${id}`)
+      else await api.get(`/api/bbs/assemble/control/user/subject/nonCream/${id}`)
+    } else if (kind === 'lock') {
+      if (on) await api.get(`/api/bbs/assemble/control/user/subject/lock/${id}`)
+      else await api.get(`/api/bbs/assemble/control/user/subject/unlock/${id}`)
+    } else if (kind === 'complete') {
+      if (on) await api.get(`/api/bbs/assemble/control/user/subject/complete/${id}`)
+      else await api.get(`/api/bbs/assemble/control/user/subject/uncomplete/${id}`)
+    } else {
+      if (on) await api.get(`/api/bbs/assemble/control/user/subject/topToSection/${id}`)
+      else await api.get(`/api/bbs/assemble/control/user/subject/nonTopToSection/${id}`)
+    }
+    // 本地即时反映（服务端已落库），供按钮态切换
+    if (viewingTopic.value) {
+      if (kind === 'cream') viewingTopic.value.creamed = on
+      else if (kind === 'topSection') viewingTopic.value.isTop = on
+      else (viewingTopic.value as Record<string, unknown>)[kind === 'lock' ? 'locked' : 'completed'] = on
+    }
+    toast.success('操作成功')
+  } catch (e) {
+    toast.error(e instanceof Error ? e.message : '操作失败（需版主/作者权限）')
+  } finally {
+    modBusy.value = false
+  }
 }
 
 function fmtTime(ts?: string): string {
@@ -868,4 +948,13 @@ const api_control_list_top_720_data = ref<any[]>([])
 .reply-btn { padding: 8px 16px; border-radius: var(--radius-md); border: none; background: var(--color-primary); color: white; cursor: pointer; font-size: 13px; font-weight: 600; }
 .new-topic-btn.ghost{background:transparent;border:1px solid var(--border-subtle);color:var(--text-secondary)}
 .forums-note{margin:8px 0;padding:6px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary)}
+.pic-gallery{display:flex;gap:8px;flex-wrap:wrap;padding:12px 0}
+.pic-thumb{width:96px;height:96px;object-fit:cover;border-radius:var(--radius-md);border:1px solid var(--border-subtle)}
+.mod-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 0;border-top:1px solid var(--border-subtle);margin-top:8px}
+.mod-label{font-size:12px;color:var(--text-muted)}
+.mod-btn{padding:4px 12px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer;font-size:12px;transition:all var(--transition-fast)}
+.mod-btn:hover:not(:disabled){border-color:var(--color-primary);color:var(--color-primary)}
+.mod-btn.on{background:var(--color-primary-soft);border-color:var(--color-primary);color:var(--color-primary)}
+.mod-btn:disabled{opacity:.5;cursor:not-allowed}
+.reply-gate{font-size:11px;color:var(--text-muted);margin-left:8px;font-weight:400}
 </style>
