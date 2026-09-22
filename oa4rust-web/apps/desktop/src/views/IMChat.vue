@@ -477,6 +477,10 @@ async function loadConversationDetail(id: string): Promise<void> {
     settle(api.get(`/api/message/assemble/communicate/im/conversation/${encodeURIComponent(id)}`)),
     // GET im/conversation/{id}/single —— 单聊信息（type=single）
     settle(api.get(`/api/message/assemble/communicate/im/conversation/${encodeURIComponent(id)}/single`)),
+    // GET im/conversation/{id}/group —— 群成员（x_message_conversation_member）
+    settle(api.get(`/api/message/assemble/communicate/im/conversation/${encodeURIComponent(id)}/group`)),
+    // GET im/conversation/{id}/icon —— 会话图标（x_message_conversation_icon）
+    settle(api.get(`/api/message/assemble/communicate/im/conversation/${encodeURIComponent(id)}/icon`)),
   ])
   const d = (detail as { data?: Record<string, unknown> } | null)?.data
   const biz = d && typeof d === 'object' ? String(d.businessId ?? d.business_id ?? '') : ''
@@ -555,13 +559,15 @@ async function loadImInstant() {
 // 消费消息归档族 3 条真实 distinct 路由：收藏消息分页 + 当前人全部已消费 + 全站消息分页
 async function loadImArchive() {
   try {
-    const [collection, consumedAll, msgPaging] = await Promise.all([
+    const [collection, consumedAll, msgPaging, coreList] = await Promise.all([
       api.get('/api/message/assemble/communicate/im/msg/collection/list/1/size/20').catch(() => null),
       api.get('/api/message/assemble/communicate/instant/currentperson/consumed/all').catch(() => null),
       api.get('/api/message/assemble/communicate/message/list/paging/1/size/20').catch(() => null),
+      // GET message/core/entity/list —— 核心消息实体列表
+      api.get('/api/message/core/entity/list').catch(() => null),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
-    toast.success(`收藏 ${n(collection)} / 全部已消费 ${n(consumedAll)} / 消息 ${n(msgPaging)}`)
+    toast.success(`收藏 ${n(collection)} / 全部已消费 ${n(consumedAll)} / 消息 ${n(msgPaging)} / 核心 ${n(coreList)}`)
   } catch (e: any) {
     toast.error('加载消息归档失败: ' + (e?.message ?? ''))
   }
