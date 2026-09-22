@@ -16,6 +16,7 @@
       <button class="org-meta-btn" @click="loadAttrDetails">单位/个人属性</button>
       <button class="org-meta-btn" @click="loadCursorLists">身份/角色/职务游标</button>
       <button class="org-meta-btn" @click="loadCursorListsPrev">游标(逆序)</button>
+      <button class="org-meta-btn" @click="loadGroupDetails">群组明细</button>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -296,6 +297,28 @@ async function loadAttrDetails() {
     orgMetaText.value = `单位属性 ${uN}（首「${uKey}」）· 个人属性 ${pN}（首「${pKey}」）`
   } catch (e: any) {
     toast.error('加载属性明细失败: ' + (e?.message ?? ''))
+  }
+}
+// 消费群组明细族 3 条真实 distinct 路由（x_org_group）：从 role/list 首项取角色 → 角色下群组 group/list/role/{roleFlag}（子查询 x_org_group_role）
+// + 群组游标 group/list/{flag}/next/{count}（WHERE id>$1）+ group/list/{flag}/prev/{count}（WHERE id<$1）；flag=0 从头
+async function loadGroupDetails() {
+  try {
+    const roleResp: any = await api.get('/api/organization/assemble/control/role/list/0/next/10').catch(() => null)
+    const roles = (Array.isArray(roleResp?.data) ? roleResp.data : []) as Array<Record<string, unknown>>
+    const roleFlag = roles[0] ? String(roles[0].id ?? '') : ''
+    const headFlag = '0'
+    const cnt = '10'
+    const [byRole, next, prev] = await Promise.all([
+      roleFlag ? api.get(`/api/organization/assemble/control/group/list/role/${encodeURIComponent(roleFlag)}`).catch(() => null) : Promise.resolve(null),
+      api.get(`/api/organization/assemble/control/group/list/${headFlag}/next/${cnt}`).catch(() => null),
+      api.get(`/api/organization/assemble/control/group/list/${headFlag}/prev/${cnt}`).catch(() => null),
+    ])
+    const rN = Array.isArray((byRole as any)?.data) ? (byRole as any).data.length : 0
+    const nN = Array.isArray((next as any)?.data) ? (next as any).data.length : 0
+    const pN = Array.isArray((prev as any)?.data) ? (prev as any).data.length : 0
+    orgMetaText.value = `角色下群组 ${rN} · 群组游标 next ${nN} / prev ${pN}`
+  } catch (e: any) {
+    toast.error('加载群组明细失败: ' + (e?.message ?? ''))
   }
 }
 // 消费身份/角色/职务的头部游标列表（flag=0 从头）——3 条真实 distinct 路由
