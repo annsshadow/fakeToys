@@ -15,10 +15,12 @@
         <input v-model="search" placeholder="搜索名称 / 应用 ID..." class="search-input" />
         <button class="btn-refresh" @click="loadData">🔄 刷新</button>
         <button class="btn-refresh" @click="loadCategories">📁 分类</button>
+        <button class="btn-refresh" @click="loadDesignerApp">🧩 设计器应用明细</button>
       </div>
       <div v-if="categories.length" class="cat-chips">
         <span v-for="c in categories" :key="c.id || c.name" class="cat-chip">{{ c.name || c.id }}</span>
       </div>
+      <div v-if="designerText" class="qv-note">{{ designerText }}</div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🧩</div><p>暂无应用</p></div>
       <table v-else class="data-table">
@@ -186,6 +188,30 @@ async function loadCategories() {
 function loadData() {
   qc.invalidateQueries({ queryKey: qk })
 }
+// 设计器流程应用族 3 条真实 distinct 路由：按分类列应用 application/list/applicationcategory/{cat}
+// → 首应用 → 应用详情 application/{id} + 应用权限 application/permission/{id}（均读 PP_E_APPLICATION，投影各异）
+const designerText = ref('')
+async function loadDesignerApp() {
+  try {
+    const catResp: any = await api.get('/api/processplatform/assemble/designer/applicationcategory/list')
+    const cats = (Array.isArray(catResp?.data) ? catResp.data : []) as Array<Record<string, unknown>>
+    const cat = cats[0] ? String(cats[0].id ?? cats[0].name ?? '') : ''
+    const appResp: any = cat
+      ? await api.get(`/api/processplatform/assemble/designer/application/list/applicationcategory/${encodeURIComponent(cat)}`).catch(() => null)
+      : null
+    const apps = (Array.isArray(appResp?.data?.data) ? appResp.data.data : (appResp?.data ?? [])) as Array<Record<string, unknown>>
+    const appId = apps[0] ? String(apps[0].id ?? '') : ''
+    const [detail, perm] = await Promise.all([
+      appId ? api.get(`/api/processplatform/assemble/designer/application/${encodeURIComponent(appId)}`).catch(() => null) : Promise.resolve(null),
+      appId ? api.get(`/api/processplatform/assemble/designer/application/permission/${encodeURIComponent(appId)}`).catch(() => null) : Promise.resolve(null),
+    ])
+    const dName = (detail as any)?.data?.name ?? (appId || '—')
+    const pKeys = perm && (perm as any).data?.permissions ? Object.keys((perm as any).data.permissions).length : 0
+    designerText.value = `分类 ${cats.length} · 应用「${dName}」· 权限项 ${pKeys}`
+  } catch (e: any) {
+    toast.error('加载设计器应用明细失败: ' + (e?.message ?? ''))
+  }
+}
 function fmtTime(t?: string) {
   if (!t) return ''
   try {
@@ -230,4 +256,5 @@ function fmtTime(t?: string) {
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 .cat-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .cat-chip{padding:2px 10px;border-radius:10px;background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-primary)}
+.qv-note{margin:8px 0;padding:8px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:13px;color:var(--text-primary)}
 </style>
