@@ -42,6 +42,7 @@
           <span class="sec-icon">{{ sec.icon || '💬' }}</span>
           <span class="sec-name">{{ sec.name }}</span>
           <span class="sec-actions">
+            <button class="sec-act" title="版块详情" aria-label="版块详情" @click.stop="openSectionInfo(sec)">ℹ</button>
             <button class="sec-act" title="重命名版块" aria-label="重命名版块" @click.stop="openSectionEdit(sec)">✎</button>
             <button class="sec-act" title="删除版块" aria-label="删除版块" @click.stop="deleteSection(sec)">✕</button>
           </span>
@@ -187,6 +188,27 @@
             {{ sectionBusy ? '保存中…' : '保存' }}
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- 版块详情弹窗（GET section/{id} + section/viewsub/{sectionId} + permission/section/{sectionId}） -->
+    <div v-if="sectionInfo.open" class="modal-overlay" @click.self="sectionInfo.open=false">
+      <div class="modal glass-card">
+        <div class="modal-header">
+          <h3>版块详情</h3>
+          <button class="close-btn" @click="sectionInfo.open=false">✕</button>
+        </div>
+        <div v-if="sectionInfo.loading" class="loading-state"><p>加载中…</p></div>
+        <div v-else class="modal-body">
+          <div class="detail-meta">
+            <span>🏷️ {{ sectionInfo.name || '—' }}</span>
+            <span>🆔 {{ sectionInfo.id }}</span>
+          </div>
+          <div class="form-group"><label>子版块</label><div>{{ sectionInfo.subCount }} 个</div></div>
+          <div class="form-group"><label>发帖权限</label><div>{{ sectionInfo.canPublish }}</div></div>
+          <div class="form-group"><label>描述</label><div>{{ sectionInfo.description || '—' }}</div></div>
+        </div>
+        <div class="modal-footer"><button class="btn-cancel" @click="sectionInfo.open=false">关闭</button></div>
       </div>
     </div>
   </div>
@@ -354,6 +376,33 @@ async function deleteSection(sec: Section): Promise<void> {
   } finally {
     sectionBusy.value = false
   }
+}
+
+// 版块详情：并发消费 section/{id}（主体）+ section/viewsub/{sectionId}（子版块）
+// + permission/section/{sectionId}（发帖权限判定）——均 distinct handler，事件触发（非 mounted useQuery）。
+const sectionInfo = ref({ open: false, loading: false, id: '', name: '', description: '', subCount: 0, canPublish: '—' })
+async function openSectionInfo(sec: Section): Promise<void> {
+  sectionInfo.value = { open: true, loading: true, id: sec.id, name: sec.name, description: '', subCount: 0, canPublish: '—' }
+  const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [main, subs, perm] = await Promise.all([
+    settle(api.get(`/api/bbs/assemble/control/section/${sec.id}`)),
+    settle(api.get(`/api/bbs/assemble/control/section/viewsub/${sec.id}`)),
+    settle(api.get(`/api/bbs/assemble/control/permission/section/${sec.id}`)),
+  ])
+  const m = (main as { data?: Record<string, unknown> } | null)?.data
+  if (m && typeof m === 'object') {
+    sectionInfo.value.name = String(m.name ?? sec.name)
+    sectionInfo.value.description = String(m.description ?? '')
+  }
+  const sd = (subs as { data?: unknown } | null)?.data
+  sectionInfo.value.subCount = Array.isArray(sd)
+    ? sd.length
+    : Array.isArray((sd as { data?: unknown })?.data)
+      ? ((sd as { data: unknown[] }).data).length
+      : 0
+  const pd = (perm as { data?: unknown } | null)?.data
+  sectionInfo.value.canPublish = perm ? (pd === true || (pd as { publishable?: boolean })?.publishable ? '允许' : '不允许') : '查询失败'
+  sectionInfo.value.loading = false
 }
 
 // 帖子列表
