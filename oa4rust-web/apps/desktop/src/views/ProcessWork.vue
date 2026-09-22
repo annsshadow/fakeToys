@@ -103,6 +103,10 @@
             <p v-else class="muted">无待阅记录</p>
             <p v-if="readDetailText" class="muted">{{ readDetailText }}</p>
           </div>
+          <div v-if="engineText" class="detail-block">
+            <h3>引擎明细</h3>
+            <p class="muted">{{ engineText }}</p>
+          </div>
           <div v-if="effectiveTaskId" class="detail-block">
             <h3>任务信息</h3>
             <ul class="detail-list">
@@ -234,6 +238,7 @@ const attachments = ref<AttachmentItem[]>([])
 const records = ref<RecordItem[]>([])
 const worklogs = ref<WorklogItem[]>([])
 const reads = ref<ReadItem[]>([])
+const engineText = ref('')
 
 function asRows(response: unknown): Record<string, unknown>[] {
   const payload = (response as { data?: unknown })?.data
@@ -273,6 +278,7 @@ async function openWork(item: TaskItem): Promise<void> {
       : ((payload?.data as Record<string, FormValue>) ?? payload ?? {})
     formValues.value = initialFormValues(formDefinition.value, values)
     void loadDetailPanels(id)
+    void loadEngineRecords(id)
     // “我发起的”详情：若本人有该工作的活动任务，允许在此办理（发起人 begin 环节）
     if (activeTab.value === 'started') {
       const pending: any = await api.get(endpoints.pending)
@@ -325,6 +331,23 @@ async function loadDetailPanels(id: string): Promise<void> {
   }))
 }
 
+// 引擎层明细（processplatform/service/processing 域，rev148）：以工作 id 消费 3 条真实 distinct 路由——
+// work/{id}（work_get x_work 详情）+ record/processing/{work}（record_work_processing x_record processing 记录，POST）
+// + record/terminate/{work}（record_work_terminate x_record terminate 记录，GET）。子请求各自静默降级。
+async function loadEngineRecords(id: string): Promise<void> {
+  engineText.value = ''
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [work, processing, terminate] = await Promise.all([
+    settle(api.get(`/api/processplatform/service/processing/work/${id}`)),
+    settle(api.post(`/api/processplatform/service/processing/record/processing/${id}`)),
+    settle(api.get(`/api/processplatform/service/processing/record/terminate/${id}`)),
+  ])
+  const wTitle = (work as any)?.data?.title ?? id
+  const pN = Array.isArray((processing as any)?.data) ? (processing as any).data.length : 0
+  const tN = Array.isArray((terminate as any)?.data) ? (terminate as any).data.length : 0
+  engineText.value = `引擎工作「${wTitle}」· 处理记录 ${pN} · 终止记录 ${tN}`
+}
+
 function closeWork(): void {
   opened.value = null
   formDefinition.value = null
@@ -334,6 +357,7 @@ function closeWork(): void {
   records.value = []
   worklogs.value = []
   reads.value = []
+  engineText.value = ''
 }
 
 const canHandle = computed(() => {
