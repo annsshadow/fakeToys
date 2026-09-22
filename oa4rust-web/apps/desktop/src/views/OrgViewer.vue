@@ -9,6 +9,7 @@
       <button class="org-meta-btn" @click="loadOrgMeta">权限/卡类型</button>
       <button class="org-meta-btn" @click="loadPinyinIndex">拼音首字母索引</button>
       <button class="org-meta-btn" @click="loadExpressMeta">同步配置/单位/状态</button>
+      <button class="org-meta-btn" @click="loadPersonCards">名片抽样</button>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -154,6 +155,27 @@ async function loadExpressMeta() {
     orgMetaText.value = `同步配置 ${n(config)} / 单位 ${n(units)} / 状态 ${n(status)}`
   } catch (e: any) {
     toast.error('加载同步元数据失败: ' + (e?.message ?? ''))
+  }
+}
+// 消费 personcard 名片族 3 条真实 distinct 路由：分页列表 → 首张详情 → 生成二维码
+async function loadPersonCards() {
+  try {
+    const listResp: any = await api.get('/api/organization/assemble/control/personcard/listpaging/page/1/size/20')
+    const rows = (Array.isArray(listResp?.data) ? listResp.data : (listResp?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const id = rows[0] ? String(rows[0].id ?? '') : ''
+    if (!id) {
+      orgMetaText.value = `名片 ${rows.length} 张（无可抽样项）`
+      return
+    }
+    const [detail, qr] = await Promise.all([
+      api.get(`/api/organization/assemble/control/personcard/${encodeURIComponent(id)}`).catch(() => null),
+      api.get(`/api/organization/assemble/control/personcard/createQR/${encodeURIComponent(id)}`).catch(() => null),
+    ])
+    const name = (detail as any)?.data?.name ?? id
+    const hasQR = (qr as any)?.data ? '已生成二维码' : '无二维码'
+    orgMetaText.value = `名片 ${rows.length} 张 · 首张「${name}」· ${hasQR}`
+  } catch (e: any) {
+    toast.error('加载名片失败: ' + (e?.message ?? ''))
   }
 }
 async function loadPinyinIndex() {
