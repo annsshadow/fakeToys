@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { type ApiResponse, api } from '@oa4rust/sdk'
 
 export const ORGANIZATION_SELECTOR_TYPES = ['unit', 'person', 'identity'] as const

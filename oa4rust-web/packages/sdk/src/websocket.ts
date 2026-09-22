@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 /**
  * WebSocket 封装
  * 替代 o2web 的 layout.desktop.socket

@@ -1,3 +1,6 @@
+<!-- Copyright (C) 2026 annsshadow -->
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+
 <script setup lang="ts">
 /**
  * 回收站（阶段 G / F5）——只读列表 + 单条彻底删除 + 清空。

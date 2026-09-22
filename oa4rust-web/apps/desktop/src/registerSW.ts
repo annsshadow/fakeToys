@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 /**
  * Service Worker 注册
  * 仅在 HTTPS 或 localhost 环境下生效

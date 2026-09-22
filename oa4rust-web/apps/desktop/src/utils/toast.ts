@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 /**
  * Lightweight toast/notification utility matching the project's sci-fi theme.
  * No external dependencies — uses native CSS + DOM APIs.

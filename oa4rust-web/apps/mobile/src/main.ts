@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { createPinia } from 'pinia'
 import { createSSRApp } from 'vue'
 import { setApiBase } from '@/services/http'

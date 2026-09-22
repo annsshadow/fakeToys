@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { createApp, type DefineComponent } from 'vue'
 import type { O2Desktop } from './types.js'
 

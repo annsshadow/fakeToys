@@ -1,3 +1,6 @@
+<!-- Copyright (C) 2026 annsshadow -->
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+
 <template>
   <div class="view-shell">
     <ScriptWorkbench title="门户脚本" :adapter="adapter" with-category />
