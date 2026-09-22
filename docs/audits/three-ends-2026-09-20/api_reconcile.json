@@ -1525,7 +1525,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/IMChat.vue",
-    "line": 388,
+    "line": 389,
     "method": "POST",
     "raw": "/api/message/assemble/communicate/mark_read/${convId}",
     "path": "/api/message/assemble/communicate/mark_read/{}",
@@ -1538,7 +1538,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/IMChat.vue",
-    "line": 476,
+    "line": 477,
     "method": "GET",
     "raw": "/api/message/assemble/communicate/im/conversation/${encodeURIComponent(id)}",
     "path": "/api/message/assemble/communicate/im/conversation/{}",
@@ -1551,7 +1551,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/IMChat.vue",
-    "line": 478,
+    "line": 479,
     "method": "GET",
     "raw": "/api/message/assemble/communicate/im/conversation/${encodeURIComponent(id)}/single",
     "path": "/api/message/assemble/communicate/im/conversation/{}/single",
@@ -1564,7 +1564,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/IMChat.vue",
-    "line": 484,
+    "line": 485,
     "method": "GET",
     "raw": "/api/message/assemble/communicate/im/conversation/business/${encodeURIComponent(biz)}",
     "path": "/api/message/assemble/communicate/im/conversation/business/{}",
@@ -6254,7 +6254,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/IMChat.vue",
-    "line": 256,
+    "line": 257,
     "method": "GET",
     "raw": "/api/message/assemble/communicate/im/conversation/list/my",
     "path": "/api/message/assemble/communicate/im/conversation/list/my",
@@ -6267,7 +6267,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/IMChat.vue",
-    "line": 289,
+    "line": 290,
     "method": "POST",
     "raw": "/api/message/assemble/communicate/im/msg/list/1/size/50",
     "path": "/api/message/assemble/communicate/im/msg/list/1/size/50",
@@ -6283,7 +6283,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/IMChat.vue",
-    "line": 324,
+    "line": 325,
     "method": "POST",
     "raw": "/api/message/assemble/communicate/im/msg",
     "path": "/api/message/assemble/communicate/im/msg",
@@ -6296,7 +6296,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/IMChat.vue",
-    "line": 511,
+    "line": 512,
     "method": "GET",
     "raw": "/api/message/unread/count",
     "path": "/api/message/unread/count",
@@ -6309,7 +6309,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/IMChat.vue",
-    "line": 512,
+    "line": 513,
     "method": "GET",
     "raw": "/api/message/assemble/communicate/ws/count/person",
     "path": "/api/message/assemble/communicate/ws/count/person",
@@ -6322,7 +6322,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/IMChat.vue",
-    "line": 513,
+    "line": 514,
     "method": "GET",
     "raw": "/api/message/assemble/communicate/im/manager/config",
     "path": "/api/message/assemble/communicate/im/manager/config",
@@ -6335,7 +6335,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/IMChat.vue",
-    "line": 528,
+    "line": 529,
     "method": "GET",
     "raw": "/api/message/assemble/communicate/im/conversation/list/with/person",
     "path": "/api/message/assemble/communicate/im/conversation/list/with/person",
@@ -6348,7 +6348,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/IMChat.vue",
-    "line": 529,
+    "line": 530,
     "method": "GET",
     "raw": "/api/message/assemble/communicate/ws/list/person",
     "path": "/api/message/assemble/communicate/ws/list/person",
@@ -6361,7 +6361,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/IMChat.vue",
-    "line": 541,
+    "line": 542,
     "method": "GET",
     "raw": "/api/message/assemble/communicate/instant/currentperson/consumed",
     "path": "/api/message/assemble/communicate/instant/currentperson/consumed",
@@ -6374,7 +6374,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/IMChat.vue",
-    "line": 542,
+    "line": 543,
     "method": "GET",
     "raw": "/api/message/assemble/communicate/instant/list/currentperson/count/20/desc",
     "path": "/api/message/assemble/communicate/instant/list/currentperson/count/20/desc",
@@ -6389,7 +6389,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/IMChat.vue",
-    "line": 543,
+    "line": 544,
     "method": "GET",
     "raw": "/api/message/assemble/communicate/mass/enable/type",
     "path": "/api/message/assemble/communicate/mass/enable/type",
@@ -6398,6 +6398,51 @@
     "hit": "/api/message/assemble/communicate/mass/enable/type",
     "hit_crate": "message_assemble_communicate",
     "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/IMChat.vue",
+    "line": 559,
+    "method": "GET",
+    "raw": "/api/message/assemble/communicate/im/msg/collection/list/1/size/20",
+    "path": "/api/message/assemble/communicate/im/msg/collection/list/1/size/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/message/assemble/communicate/im/msg/collection/list/{page}/size/{size}",
+    "hit_crate": "message_assemble_communicate",
+    "extra": [
+     "page=1",
+     "size=20"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/IMChat.vue",
+    "line": 560,
+    "method": "GET",
+    "raw": "/api/message/assemble/communicate/instant/currentperson/consumed/all",
+    "path": "/api/message/assemble/communicate/instant/currentperson/consumed/all",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/message/assemble/communicate/instant/currentperson/consumed/all",
+    "hit_crate": "message_assemble_communicate",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/IMChat.vue",
+    "line": 561,
+    "method": "GET",
+    "raw": "/api/message/assemble/communicate/message/list/paging/1/size/20",
+    "path": "/api/message/assemble/communicate/message/list/paging/1/size/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/message/assemble/communicate/message/list/paging/{page}/size/{size}",
+    "hit_crate": "message_assemble_communicate",
+    "extra": [
+     "page=1",
+     "size=20"
+    ]
    },
    {
     "app": "desktop",

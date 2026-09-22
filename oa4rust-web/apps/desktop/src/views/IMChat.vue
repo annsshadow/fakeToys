@@ -11,6 +11,7 @@
           <button class="new-chat-btn" title="在线/会话概览" @click="loadImMeta">✉</button>
           <button class="new-chat-btn" title="未读/在线数/IM配置" @click="loadImStats">🔔</button>
           <button class="new-chat-btn" title="即时消息/群发类型" @click="loadImInstant">📥</button>
+          <button class="new-chat-btn" title="收藏/已消费/消息分页" @click="loadImArchive">🗂️</button>
         </div>
       </div>
       <div class="search-bar">
@@ -549,6 +550,20 @@ async function loadImInstant() {
     toast.success(`已消费 ${n(consumed)} / 近期消息 ${n(listDesc)} / 群发类型 ${(massType as any)?.data ? '已启用' : '未启用'}`)
   } catch (e: any) {
     toast.error('加载即时消息失败: ' + (e?.message ?? ''))
+  }
+}
+// 消费消息归档族 3 条真实 distinct 路由：收藏消息分页 + 当前人全部已消费 + 全站消息分页
+async function loadImArchive() {
+  try {
+    const [collection, consumedAll, msgPaging] = await Promise.all([
+      api.get('/api/message/assemble/communicate/im/msg/collection/list/1/size/20').catch(() => null),
+      api.get('/api/message/assemble/communicate/instant/currentperson/consumed/all').catch(() => null),
+      api.get('/api/message/assemble/communicate/message/list/paging/1/size/20').catch(() => null),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    toast.success(`收藏 ${n(collection)} / 全部已消费 ${n(consumedAll)} / 消息 ${n(msgPaging)}`)
+  } catch (e: any) {
+    toast.error('加载消息归档失败: ' + (e?.message ?? ''))
   }
 }
 
