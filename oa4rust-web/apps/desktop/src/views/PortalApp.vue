@@ -10,6 +10,7 @@
         <button class="new-page-btn ghost" @click="loadPortalList">门户列表</button>
         <button class="new-page-btn ghost" @click="loadPortalSurface">表面/移动</button>
         <button class="new-page-btn ghost" @click="loadPortalResources">门户资源</button>
+        <button class="new-page-btn ghost" @click="loadPortalDetail">门户明细</button>
         <button class="new-page-btn" @click="showEditor = true">+ 新建页面</button>
       </span>
     </div>
@@ -88,6 +89,34 @@ async function loadPortalResources() {
     portalListText.value = `字典 ${n(dict)} / 文件 ${n(files)} / 页面 ${n(portalPages)}`
   } catch (e: any) {
     toast.error('加载门户资源失败: ' + (e?.message ?? ''))
+  }
+}
+// 门户明细族 3 条真实 distinct 路由：从 portal/list 首项取 flag → 门户详情 portal/{flag}（x_portal 全列）
+// + 角标 portal/corner/mark/{flag}（x_portal corner_mark）+ 门户文件详情 file/{flag}（x_portal_file by flag）
+async function loadPortalDetail() {
+  try {
+    const listResp: any = await api.get('/api/portal/list').catch(() => null)
+    const portals = (Array.isArray(listResp?.data) ? listResp.data : []) as Array<Record<string, unknown>>
+    const flag = portals[0] ? String(portals[0].flag ?? portals[0].id ?? '') : ''
+    if (!flag) {
+      portalListText.value = '暂无门户（无可抽样项）'
+      return
+    }
+    // 门户文件 flag 从 file/list/portal/default（已消费列表）首项回源
+    const fileListResp: any = await api.get('/api/portal/assemble/surface/file/list/portal/default').catch(() => null)
+    const files = (Array.isArray(fileListResp?.data) ? fileListResp.data : []) as Array<Record<string, unknown>>
+    const fileFlag = files[0] ? String(files[0].flag ?? files[0].id ?? '') : flag
+    const [detail, corner, file] = await Promise.all([
+      api.get(`/api/portal/assemble/surface/portal/${encodeURIComponent(flag)}`).catch(() => null),
+      api.get(`/api/portal/assemble/surface/portal/corner/mark/${encodeURIComponent(flag)}`).catch(() => null),
+      api.get(`/api/portal/assemble/surface/file/${encodeURIComponent(fileFlag)}`).catch(() => null),
+    ])
+    const name = (detail as any)?.data?.name ?? flag
+    const mark = (corner as any)?.data?.corner_mark ?? '—'
+    const fName = (file as any)?.data?.name ?? '—'
+    portalListText.value = `门户「${name}」· 角标 ${mark} · 文件「${fName}」`
+  } catch (e: any) {
+    toast.error('加载门户明细失败: ' + (e?.message ?? ''))
   }
 }
 const pages = ref<PortalPage[]>([])
