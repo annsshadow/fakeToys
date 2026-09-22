@@ -59,6 +59,50 @@
           :readonly="activeTab !== 'pending' && !handleTaskId"
         />
         <div v-else class="state">当前工作没有可渲染的表单定义</div>
+
+        <section v-if="!detailLoading && !detailError" class="detail-panels">
+          <div class="detail-block">
+            <h3>附件 ({{ attachments.length }})</h3>
+            <ul v-if="attachments.length" class="detail-list">
+              <li v-for="att in attachments" :key="att.id">
+                <span class="name">{{ att.name || att.id }}</span>
+                <span class="muted">{{ att.extension }} · {{ fmtSize(att.length) }}</span>
+              </li>
+            </ul>
+            <p v-else class="muted">无附件</p>
+          </div>
+          <div class="detail-block">
+            <h3>流转记录 ({{ records.length }})</h3>
+            <ul v-if="records.length" class="detail-list">
+              <li v-for="rec in records" :key="rec.id">
+                <span class="name">{{ rec.title || rec.id }}</span>
+                <span class="muted">{{ fmtTime(rec.createTime) }}</span>
+              </li>
+            </ul>
+            <p v-else class="muted">无流转记录</p>
+          </div>
+          <div class="detail-block">
+            <h3>工作日志 ({{ worklogs.length }})</h3>
+            <ul v-if="worklogs.length" class="detail-list">
+              <li v-for="log in worklogs" :key="log.id">
+                <span class="name">{{ log.activityName || log.title || log.id }}</span>
+                <span class="muted">{{ log.person }} · {{ fmtTime(log.createTime) }}</span>
+              </li>
+            </ul>
+            <p v-else class="muted">无工作日志</p>
+          </div>
+          <div class="detail-block">
+            <h3>待阅 ({{ reads.length }})</h3>
+            <ul v-if="reads.length" class="detail-list">
+              <li v-for="rd in reads" :key="rd.id">
+                <span class="name">{{ rd.person || rd.id }}</span>
+                <span class="muted">{{ fmtTime(rd.createTime) }}</span>
+              </li>
+            </ul>
+            <p v-else class="muted">无待阅记录</p>
+          </div>
+        </section>
+
         <textarea v-if="canHandle" v-model="opinion" class="opinion" placeholder="处理意见" aria-label="处理意见" />
         <footer v-if="canHandle">
           <button class="btn-sm reject" :disabled="submitting" @click="submit('reject')">驳回</button>
@@ -167,6 +211,23 @@ const opinion = ref('')
 const submitting = ref(false)
 const handleTaskId = ref('')
 
+interface AttachmentItem { id: string; name?: string; extension?: string; length?: number }
+interface RecordItem { id: string; title?: string; createTime?: string }
+interface WorklogItem { id: string; title?: string; activityName?: string; person?: string; createTime?: string }
+interface ReadItem { id: string; person?: string; createTime?: string }
+const attachments = ref<AttachmentItem[]>([])
+const records = ref<RecordItem[]>([])
+const worklogs = ref<WorklogItem[]>([])
+const reads = ref<ReadItem[]>([])
+
+function asRows(response: unknown): Record<string, unknown>[] {
+  const payload = (response as { data?: unknown })?.data
+  const rows = Array.isArray(payload)
+    ? payload
+    : ((payload as { data?: unknown })?.data ?? [])
+  return Array.isArray(rows) ? (rows as Record<string, unknown>[]) : []
+}
+
 function workId(item: TaskItem): string {
   return String(item.work || item.workId || item.id)
 }
@@ -178,6 +239,10 @@ async function openWork(item: TaskItem): Promise<void> {
   formErrors.value = {}
   opinion.value = ''
   handleTaskId.value = ''
+  attachments.value = []
+  records.value = []
+  worklogs.value = []
+  reads.value = []
   try {
     const id = workId(item)
     const [formResponse, dataResponse] = await Promise.all([
@@ -190,6 +255,7 @@ async function openWork(item: TaskItem): Promise<void> {
       ? (payload[0] ?? {})
       : ((payload?.data as Record<string, FormValue>) ?? payload ?? {})
     formValues.value = initialFormValues(formDefinition.value, values)
+    void loadDetailPanels(id)
     // “我发起的”详情：若本人有该工作的活动任务，允许在此办理（发起人 begin 环节）
     if (activeTab.value === 'started') {
       const pending: any = await api.get(endpoints.pending)
@@ -205,11 +271,50 @@ async function openWork(item: TaskItem): Promise<void> {
   }
 }
 
+// 详情侧栏：附件 / 流转记录 / 工作日志 / 待阅 —— 均按 workOrWorkCompleted 维度拉取。
+// 单个子列表失败不阻断其它面板（各自静默降级为空数组）。
+async function loadDetailPanels(id: string): Promise<void> {
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [attRes, recRes, logRes, readRes] = await Promise.all([
+    settle(api.get(`/api/processplatform/assemble/surface/attachment/list/work/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/record/list/workorworkcompleted/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/worklog/list/workorworkcompleted/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/read/list/workorworkcompleted/${id}`)),
+  ])
+  attachments.value = asRows(attRes).map((r) => ({
+    id: String(r.id ?? ''),
+    name: r.name as string | undefined,
+    extension: r.extension as string | undefined,
+    length: typeof r.length === 'number' ? r.length : undefined,
+  }))
+  records.value = asRows(recRes).map((r) => ({
+    id: String(r.id ?? ''),
+    title: r.title as string | undefined,
+    createTime: r.createTime as string | undefined,
+  }))
+  worklogs.value = asRows(logRes).map((r) => ({
+    id: String(r.id ?? ''),
+    title: r.title as string | undefined,
+    activityName: r.activityName as string | undefined,
+    person: r.person as string | undefined,
+    createTime: r.createTime as string | undefined,
+  }))
+  reads.value = asRows(readRes).map((r) => ({
+    id: String(r.id ?? ''),
+    person: r.person as string | undefined,
+    createTime: r.createTime as string | undefined,
+  }))
+}
+
 function closeWork(): void {
   opened.value = null
   formDefinition.value = null
   formValues.value = {}
   formErrors.value = {}
+  attachments.value = []
+  records.value = []
+  worklogs.value = []
+  reads.value = []
 }
 
 const canHandle = computed(() => {
@@ -352,6 +457,14 @@ function fmtTime(value: unknown): string {
   const date = new Date(String(value))
   return Number.isNaN(date.valueOf()) ? String(value) : date.toLocaleString('zh-CN')
 }
+
+function fmtSize(bytes: unknown): string {
+  const n = typeof bytes === 'number' ? bytes : Number(bytes)
+  if (!Number.isFinite(n) || n <= 0) return '0 B'
+  const units = ['B', 'KB', 'MB', 'GB']
+  const i = Math.min(units.length - 1, Math.floor(Math.log(n) / Math.log(1024)))
+  return `${(n / 1024 ** i).toFixed(i ? 1 : 0)} ${units[i]}`
+}
 </script>
 
 <style scoped>
@@ -379,4 +492,11 @@ function fmtTime(value: unknown): string {
 .work-dialog header { margin-bottom: 22px; }
 .work-dialog footer { justify-content: flex-end; margin-top: 18px; }
 .opinion { box-sizing: border-box; width: 100%; min-height: 80px; margin-top: 18px; padding: 10px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-elevated); color: var(--text-primary); }
+.detail-panels { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 18px; }
+.detail-block { padding: 12px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-elevated); }
+.detail-block h3 { margin: 0 0 8px; font-size: 13px; color: var(--color-primary); }
+.detail-list { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; max-height: 160px; overflow: auto; }
+.detail-list li { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--text-secondary); }
+.detail-list .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.detail-block .muted { margin: 0; color: var(--text-muted); font-size: 12px; }
 </style>

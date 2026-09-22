@@ -117,6 +117,28 @@ export const processApi = {
   /** 填报：把表单数据写回工作实例（仅当流程绑定了表单时调用）。 */
   saveWorkData: (workId: string, values: Record<string, unknown>) =>
     mapi.put<never>(`/api/processplatform/service/processing/data/work/${workId}`, values, { discardResponse: true }),
+  /** 工作详情：表单数据（x_data，按 work id）。 */
+  workData: (workId: string) =>
+    mapi.get<Record<string, unknown>>(`/api/processplatform/assemble/surface/data/work/${workId}`),
+  /** 工作详情：附件清单（PP_C_ATTACHMENT，按 work id）。 */
+  attachments: (workId: string) =>
+    list(
+      mapi.get<Record<string, unknown>[]>(`/api/processplatform/assemble/surface/attachment/list/work/${workId}`),
+    ),
+  /** 工作详情：流转记录（PP_C_RECORD，按 workOrWorkCompleted）。 */
+  records: (workId: string) =>
+    list(
+      mapi.get<Record<string, unknown>[]>(
+        `/api/processplatform/assemble/surface/record/list/workorworkcompleted/${workId}`,
+      ),
+    ),
+  /** 工作详情：工作日志（PP_C_WORKLOG，按 workOrWorkCompleted）。 */
+  worklogs: (workId: string) =>
+    list(
+      mapi.get<Record<string, unknown>[]>(
+        `/api/processplatform/assemble/surface/worklog/list/workorworkcompleted/${workId}`,
+      ),
+    ),
 }
 
 // ─────────────────────────────────────────────────────────────

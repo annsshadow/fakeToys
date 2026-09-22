@@ -152,6 +152,26 @@ export const processApi = {
   formView: (workId: string) => api.get(`/api/processplatform/assemble/surface/form/view/${workId}`),
   snapView: (workId: string) => api.get(`/api/processplatform/assemble/surface/snap/${workId}`),
   applicationDict: (flag: string) => api.get(`/api/processplatform/assemble/surface/applicationdict/${flag}`),
+  /** 工作表单数据（x_data，按 work id）。 */
+  workData: (workId: string) => api.get(`/api/processplatform/assemble/surface/data/work/${workId}`),
+  /** 工作附件清单（PP_C_ATTACHMENT，按 work id）。 */
+  attachmentList: (workId: string) =>
+    api.get<PagedResponse<unknown>>(`/api/processplatform/assemble/surface/attachment/list/work/${workId}`),
+  /** 流转记录（PP_C_RECORD，按 workOrWorkCompleted）。 */
+  recordList: (workOrWorkCompleted: string) =>
+    api.get<PagedResponse<unknown>>(
+      `/api/processplatform/assemble/surface/record/list/workorworkcompleted/${workOrWorkCompleted}`,
+    ),
+  /** 工作日志（PP_C_WORKLOG，按 workOrWorkCompleted）。 */
+  worklogList: (workOrWorkCompleted: string) =>
+    api.get<PagedResponse<unknown>>(
+      `/api/processplatform/assemble/surface/worklog/list/workorworkcompleted/${workOrWorkCompleted}`,
+    ),
+  /** 待阅清单（按 workOrWorkCompleted）。 */
+  readByWork: (workOrWorkCompleted: string) =>
+    api.get<PagedResponse<unknown>>(
+      `/api/processplatform/assemble/surface/read/list/workorworkcompleted/${workOrWorkCompleted}`,
+    ),
 
   // 已办 / 已读（surface 新栈）
   completedList: (page: number, size: number) =>
