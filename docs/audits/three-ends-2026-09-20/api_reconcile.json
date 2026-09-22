@@ -2561,6 +2561,58 @@
     "hit": "/api/organization/assemble/control/unitduty/{flag}",
     "hit_crate": "organization_assemble_control",
     "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ViewApp.vue",
+    "line": 98,
+    "method": "GET",
+    "raw": "/api/view/${v.id}",
+    "path": "/api/view/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/view/{id}",
+    "hit_crate": "cms_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ViewApp.vue",
+    "line": 99,
+    "method": "GET",
+    "raw": "/api/viewcategory/list/view/${v.id}",
+    "path": "/api/viewcategory/list/view/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/viewcategory/list/view/{viewId}",
+    "hit_crate": "cms_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ViewApp.vue",
+    "line": 100,
+    "method": "GET",
+    "raw": "/api/viewfieldconfig/list/view/${v.id}",
+    "path": "/api/viewfieldconfig/list/view/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/viewfieldconfig/list/view/{viewId}",
+    "hit_crate": "cms_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ViewApp.vue",
+    "line": 114,
+    "method": "DELETE",
+    "raw": "/api/view/${v.id}",
+    "path": "/api/view/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/view/{id}",
+    "hit_crate": "cms_assemble_control",
+    "extra": null
    }
   ],
   "param-ok": [
@@ -8296,7 +8348,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ViewApp.vue",
-    "line": 78,
+    "line": 126,
     "method": "GET",
     "raw": "/api/viewcategory/list/all",
     "path": "/api/viewcategory/list/all",
@@ -8309,7 +8361,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ViewApp.vue",
-    "line": 88,
+    "line": 136,
     "method": "GET",
     "raw": "/api/viewfieldconfig/list/all",
     "path": "/api/viewfieldconfig/list/all",
@@ -8322,7 +8374,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ViewApp.vue",
-    "line": 99,
+    "line": 147,
     "method": "GET",
     "raw": "/api/view/list/all",
     "path": "/api/view/list/all",
@@ -8335,7 +8387,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ViewApp.vue",
-    "line": 115,
+    "line": 163,
     "method": "POST",
     "raw": "/api/view/viewdata/list/${v.id}/next/50",
     "path": "/api/view/viewdata/list/{}/next/50",
