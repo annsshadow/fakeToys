@@ -1554,7 +1554,37 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CalendarApp.vue",
-    "line": 164,
+    "line": 159,
+    "method": "GET",
+    "raw": "/api/calendar_assemble_control/setting/${encodeURIComponent(sid)}",
+    "path": "/api/calendar_assemble_control/setting/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CalendarApp.vue",
+    "line": 160,
+    "method": "GET",
+    "raw": "/api/calendar_assemble_control/setting/code/${encodeURIComponent(scode)}",
+    "path": "/api/calendar_assemble_control/setting/code/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CalendarApp.vue",
+    "line": 161,
+    "method": "GET",
+    "raw": "/api/calendar_assemble_control/setting/ismanager",
+    "path": "/api/calendar_assemble_control/setting/ismanager",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CalendarApp.vue",
+    "line": 176,
     "method": "GET",
     "raw": "/api/calendar/calendar/list/my",
     "path": "/api/calendar/calendar/list/my",
@@ -1564,7 +1594,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CalendarApp.vue",
-    "line": 165,
+    "line": 177,
     "method": "GET",
     "raw": "/api/calendar/calendar/list/public",
     "path": "/api/calendar/calendar/list/public",
@@ -1574,7 +1604,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CalendarApp.vue",
-    "line": 188,
+    "line": 200,
     "method": "GET",
     "raw": "/api/calendar/calendar/${c.id}",
     "path": "/api/calendar/calendar/{}",
@@ -1584,7 +1614,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CalendarApp.vue",
-    "line": 201,
+    "line": 213,
     "method": "GET",
     "raw": "/api/calendar_assemble_control/calendar/follow/${encodeURIComponent(id)}",
     "path": "/api/calendar_assemble_control/calendar/follow/{}",
@@ -1594,7 +1624,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CalendarApp.vue",
-    "line": 202,
+    "line": 214,
     "method": "GET",
     "raw": "/api/calendar_assemble_control/calendar/ismanager/calendar/${encodeURIComponent(id)}",
     "path": "/api/calendar_assemble_control/calendar/ismanager/calendar/{}",
@@ -1604,7 +1634,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CalendarApp.vue",
-    "line": 203,
+    "line": 215,
     "method": "GET",
     "raw": "/api/calendar_assemble_control/calendar/manager/list/with/person/${encodeURIComponent(id)}",
     "path": "/api/calendar_assemble_control/calendar/manager/list/with/person/{}",
@@ -1614,7 +1644,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CalendarApp.vue",
-    "line": 225,
+    "line": 237,
     "method": "GET",
     "raw": "/api/calendar/event/list/${activeCal.value.id}",
     "path": "/api/calendar/event/list/{}",
@@ -1624,7 +1654,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CalendarApp.vue",
-    "line": 241,
+    "line": 253,
     "method": "POST",
     "raw": "/api/calendar/event/create",
     "path": "/api/calendar/event/create",
@@ -1634,7 +1664,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CalendarApp.vue",
-    "line": 259,
+    "line": 271,
     "method": "POST",
     "raw": "/api/calendar/event/update",
     "path": "/api/calendar/event/update",
@@ -1644,7 +1674,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CalendarApp.vue",
-    "line": 271,
+    "line": 283,
     "method": "POST",
     "raw": "/api/calendar/event/remove",
     "path": "/api/calendar/event/remove",
@@ -1654,7 +1684,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CalendarApp.vue",
-    "line": 286,
+    "line": 298,
     "method": "PUT",
     "raw": "/api/calendar_assemble_control/event/list/filter",
     "path": "/api/calendar_assemble_control/event/list/filter",

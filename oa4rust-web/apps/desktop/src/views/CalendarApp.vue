@@ -148,9 +148,21 @@ async function loadCalSettings() {
       api.get('/api/calendar_assemble_control/setting/list/all'),
       api.get('/api/calendar_assemble_control/calendar/ismanager'),
     ])
-    const n = Array.isArray((settings as any)?.data) ? (settings as any).data.length : 0
+    const rows = (Array.isArray((settings as any)?.data) ? (settings as any).data : []) as Array<Record<string, unknown>>
+    const n = rows.length
     const isMgr = (mgr as any)?.data === true || (mgr as any)?.data?.isManager === true
-    calSettingText.value = `设置 ${n} 项 · ${isMgr ? '你是管理员' : '普通用户'}`
+    // 设置明细族 3 条真实 distinct 路由（cal_setting）：按 id setting/{id}（setting_get）+ 按 code setting/code/{code}（setting_get_by_code）
+    // + 设置管理员判定 setting/ismanager（setting_ismanager，无参）。id/code 从 setting/list/all 首行回源。
+    const sid = rows[0] ? String(rows[0].id ?? '') : ''
+    const scode = rows[0] ? String(rows[0].code ?? '') : ''
+    const [byId, byCode, setMgr] = await Promise.all([
+      sid ? api.get(`/api/calendar_assemble_control/setting/${encodeURIComponent(sid)}`).catch(() => null) : Promise.resolve(null),
+      scode ? api.get(`/api/calendar_assemble_control/setting/code/${encodeURIComponent(scode)}`).catch(() => null) : Promise.resolve(null),
+      api.get('/api/calendar_assemble_control/setting/ismanager').catch(() => null),
+    ])
+    const sName = (byId as any)?.data?.name ?? (byCode as any)?.data?.name ?? (sid || '—')
+    const setIsMgr = (setMgr as any)?.data?.value === true
+    calSettingText.value = `设置 ${n} 项（首「${sName}」）· 日历${isMgr ? '管理员' : '普通'} · 设置${setIsMgr ? '可管' : '只读'}`
   } catch (e: any) {
     toast.error('加载日历设置失败: ' + (e?.message ?? ''))
   }
