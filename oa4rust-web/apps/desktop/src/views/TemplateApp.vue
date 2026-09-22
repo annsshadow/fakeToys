@@ -27,12 +27,27 @@
             <td>{{ item.status||'draft' }}</td>
             <td class="val-cell mono">{{ item.definition||'—' }}</td>
             <td>
+              <button class="btn-sm" @click="viewDetail(item)">详情</button>
               <button class="btn-sm" @click="editItem(item)">编辑</button>
               <button class="btn-sm btn-del" @click="deleteItem(item)">删除</button>
             </td>
           </tr>
         </tbody>
       </table>
+    </div>
+    <div v-if="detail.open" class="modal-overlay" @click.self="detail.open=false">
+      <div class="modal glass-card">
+        <h3>模板详情</h3>
+        <div v-if="detail.loading" class="loading-state">加载中…</div>
+        <template v-else>
+          <div class="form-group"><label>名称</label><div class="detail-val">{{ detail.name||'—' }}</div></div>
+          <div class="form-group"><label>应用 ID</label><div class="detail-val mono">{{ detail.appId||'—' }}</div></div>
+          <div class="form-group"><label>状态</label><div class="detail-val mono">{{ detail.status||'—' }}</div></div>
+          <div class="form-group"><label>创建者</label><div class="detail-val mono">{{ detail.creator||'—' }}</div></div>
+          <div class="form-group"><label>定义（JSON）</label><div class="detail-val mono val-cell">{{ detail.definition||'—' }}</div></div>
+        </template>
+        <div class="modal-actions"><button class="btn-cancel" @click="detail.open=false">关闭</button></div>
+      </div>
     </div>
     <div v-if="showCreate||showEdit" class="modal-overlay" @click.self="closeModal">
       <div class="modal glass-card">
@@ -122,6 +137,27 @@ function editItem(item: Item) {
   editingId.value = item.id
   showEdit.value = true
 }
+// 模板详情：GET /api/templateform/{id}（x_cms_form_v2 单行回读，distinct 于列表）
+const detail = ref({ open: false, loading: false, name: '', appId: '', status: '', creator: '', definition: '' })
+async function viewDetail(item: Item) {
+  detail.value = { open: true, loading: true, name: '', appId: '', status: '', creator: '', definition: '' }
+  try {
+    const r: any = await api.get(`/api/templateform/${item.id}`)
+    const d = r?.data ?? {}
+    detail.value = {
+      open: true,
+      loading: false,
+      name: String(d.name ?? item.name ?? ''),
+      appId: String(d.app_id ?? item.app_id ?? ''),
+      status: String(d.status ?? ''),
+      creator: String(d.creator ?? ''),
+      definition: String(d.definition ?? ''),
+    }
+  } catch (e: any) {
+    detail.value.loading = false
+    toast.error('加载详情失败: ' + (e?.message ?? ''))
+  }
+}
 function closeModal() {
   showCreate.value = false
   showEdit.value = false
@@ -177,6 +213,7 @@ function loadData() {
 .btn-sm{padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);cursor:pointer;font-size:12px}
 .btn-del{border-color:var(--color-danger);color:var(--color-danger)}
 .loading-state,.empty-state{padding:40px;text-align:center;color:var(--text-muted)}
+.detail-val{padding:8px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);color:var(--text-primary);word-break:break-all}
 .empty-icon{font-size:32px;margin-bottom:8px}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:100}
 .modal{padding:24px;width:520px;max-width:90vw}
