@@ -101,6 +101,15 @@
             </ul>
             <p v-else class="muted">无待阅记录</p>
           </div>
+          <div v-if="effectiveTaskId" class="detail-block">
+            <h3>任务信息</h3>
+            <ul class="detail-list">
+              <li><span class="name">任务</span><span class="muted">{{ (taskInfo?.title as string) || (taskInfo?.activity as string) || effectiveTaskId }}</span></li>
+              <li v-if="taskInfo?.person"><span class="name">处理人</span><span class="muted">{{ taskInfo?.person }}</span></li>
+              <li v-if="taskExpireText"><span class="name">超时</span><span class="muted">{{ taskExpireText }}</span></li>
+            </ul>
+            <button class="btn-sm" :disabled="pressing" @click="pressTask">{{ pressing ? '催办中…' : '催办' }}</button>
+          </div>
         </section>
 
         <textarea v-if="canHandle" v-model="opinion" class="opinion" placeholder="处理意见" aria-label="处理意见" />
@@ -263,6 +272,7 @@ async function openWork(item: TaskItem): Promise<void> {
       const mine = tasks.find((task) => workId(task) === id)
       handleTaskId.value = mine?.id ?? ''
     }
+    void loadTaskInfo(activeTab.value === 'pending' ? String(item.id ?? '') : handleTaskId.value)
   } catch (error: any) {
     formDefinition.value = null
     detailError.value = error?.message || '加载表单失败'
@@ -322,6 +332,45 @@ const canHandle = computed(() => {
   if (activeTab.value === 'pending') return true
   return Boolean(handleTaskId.value)
 })
+
+// ── 任务信息 + 催办（processplatform/service/processing/task 族，rev105）──
+// 有效任务 id：待办页取列表项 id（即 task id），其它页取本人活动任务 handleTaskId。
+const effectiveTaskId = computed(() =>
+  activeTab.value === 'pending' ? String(opened.value?.id ?? '') : handleTaskId.value,
+)
+const taskInfo = ref<Record<string, unknown> | null>(null)
+const taskExpireText = ref('')
+const pressing = ref(false)
+async function loadTaskInfo(taskId: string): Promise<void> {
+  taskInfo.value = null
+  taskExpireText.value = ''
+  if (!taskId) return
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [info, expire] = await Promise.all([
+    // GET service/processing/task/{id} —— 任务详情（x_task）
+    settle(api.get(`/api/processplatform/service/processing/task/${taskId}`)),
+    // GET service/processing/task/expire/{id} —— 超时信息
+    settle(api.get(`/api/processplatform/service/processing/task/expire/${taskId}`)),
+  ])
+  taskInfo.value = ((info as { data?: Record<string, unknown> } | null)?.data ?? null)
+  const ed = (expire as { data?: unknown } | null)?.data
+  taskExpireText.value =
+    ed && typeof ed === 'object' ? JSON.stringify(ed).slice(0, 80) : ed != null ? String(ed) : ''
+}
+async function pressTask(): Promise<void> {
+  const taskId = effectiveTaskId.value
+  if (!taskId || pressing.value) return
+  pressing.value = true
+  try {
+    // POST service/processing/task/press/{id} —— 催办
+    await api.post(`/api/processplatform/service/processing/task/press/${taskId}`, {})
+    toast.success('已催办')
+  } catch (e: any) {
+    toast.error('催办失败: ' + (e?.message ?? ''))
+  } finally {
+    pressing.value = false
+  }
+}
 
 // ── 发起流程（从零创建工作实例）────────────────────────────────
 const showStart = ref(false)
