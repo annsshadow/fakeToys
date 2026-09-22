@@ -2,8 +2,16 @@
   <div class="dash-view">
     <div class="view-header glass-card">
       <div><h1>业务活动监控</h1><p class="subtitle">/api/processplatform/assemble/bam/*</p></div>
-      <button class="btn-primary" @click="refresh">🔄 刷新</button>
+      <span class="hdr-a">
+        <button class="btn-primary ghost" @click="loadPeriodStats">周期统计</button>
+        <button class="btn-primary ghost" @click="loadStateStats">状态监控</button>
+        <button class="btn-primary ghost" @click="loadStartStubs">起始统计</button>
+        <button class="btn-primary ghost" @click="loadCompletedStubs">已办/超期存根</button>
+        <button class="btn-primary ghost" @click="loadUnitStubs">单位维度存根</button>
+        <button class="btn-primary" @click="refresh">🔄 刷新</button>
+      </span>
     </div>
+    <div v-if="periodText" class="period-note">{{ periodText }}</div>
     <div class="stats-grid glass-card">
       <div class="stat-card"><div class="stat-num">{{ stats.total }}</div><div class="stat-label">总活动</div></div>
       <div class="stat-card"><div class="stat-num">{{ stats.active }}</div><div class="stat-label">活跃中</div></div>
@@ -32,9 +40,80 @@
 import { api } from '@oa4rust/sdk'
 import { useQuery } from '@tanstack/vue-query'
 import { ref } from 'vue'
+import { toast } from '../utils/toast'
 
 const loading = ref(false)
 const stats = ref({ total: 0, active: 0, completed: 0, failed: 0 })
+const periodText = ref('')
+async function loadPeriodStats() {
+  try {
+    // GET bam/period/list/completed/task/application + expired/task/application —— 已办/超期任务周期统计
+    const [done, expired] = await Promise.all([
+      api.get('/api/processplatform/assemble/bam/period/list/completed/task/application'),
+      api.get('/api/processplatform/assemble/bam/period/list/expired/task/application'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    periodText.value = `已办任务周期 ${n(done)} / 超期任务周期 ${n(expired)}`
+  } catch (e: any) {
+    toast.error('加载周期统计失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadUnitStubs() {
+  try {
+    // 消费 bam 三条无参真实路由：已办工作按单位/超期工作按应用/超期任务按单位 周期存根
+    const [workUnit, expWorkApp, expTaskUnit] = await Promise.all([
+      api.get('/api/processplatform/assemble/bam/period/list/completed/work/unitstubs'),
+      api.get('/api/processplatform/assemble/bam/period/list/expired/work/applicationstubs'),
+      api.get('/api/processplatform/assemble/bam/period/list/expired/task/unitstubs'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    periodText.value = `已办工作(单位) ${n(workUnit)} / 超期工作(应用) ${n(expWorkApp)} / 超期任务(单位) ${n(expTaskUnit)}`
+  } catch (e: any) {
+    toast.error('加载单位存根失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadCompletedStubs() {
+  try {
+    // 消费 bam 三条无参真实路由：已办任务按应用/已办工作按应用/超期任务按应用 周期存根
+    const [taskApp, workApp, expTask] = await Promise.all([
+      api.get('/api/processplatform/assemble/bam/period/list/completed/task/applicationstubs'),
+      api.get('/api/processplatform/assemble/bam/period/list/completed/work/applicationstubs'),
+      api.get('/api/processplatform/assemble/bam/period/list/expired/task/applicationstubs'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    periodText.value = `已办任务(应用) ${n(taskApp)} / 已办工作(应用) ${n(workApp)} / 超期任务(应用) ${n(expTask)}`
+  } catch (e: any) {
+    toast.error('加载存根统计失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadStartStubs() {
+  try {
+    // 消费 bam 三条无参真实路由：起始 任务按应用/工作按应用/任务按单位 周期存根
+    const [taskApp, workApp, taskUnit] = await Promise.all([
+      api.get('/api/processplatform/assemble/bam/period/list/start/task/applicationstubs'),
+      api.get('/api/processplatform/assemble/bam/period/list/start/work/applicationstubs'),
+      api.get('/api/processplatform/assemble/bam/period/list/start/task/unitstubs'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    periodText.value = `起始任务(应用) ${n(taskApp)} / 起始工作(应用) ${n(workApp)} / 起始任务(单位) ${n(taskUnit)}`
+  } catch (e: any) {
+    toast.error('加载起始统计失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadStateStats() {
+  try {
+    // 消费 bam 三条无参真实路由：运行中状态 / 状态分类 / 组织维度状态
+    const [running, category, org] = await Promise.all([
+      api.get('/api/processplatform/assemble/bam/state/running'),
+      api.get('/api/processplatform/assemble/bam/state/category'),
+      api.get('/api/processplatform/assemble/bam/state/organization'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    periodText.value = `运行中 ${n(running)} / 分类 ${n(category)} / 组织 ${n(org)}`
+  } catch (e: any) {
+    toast.error('加载状态监控失败: ' + (e?.message ?? ''))
+  }
+}
 const events = ref<any[]>([])
 const { data } = useQuery({
   queryKey: ['bam', 'list'],
@@ -107,4 +186,7 @@ function statusCls(s?: string) {
 .status.failed{background:rgba(239,68,68,0.15);color:var(--color-danger)}
 .status.error{background:rgba(239,68,68,0.2);color:var(--color-danger)}
 .loading-state,.empty-state{padding:40px;text-align:center;color:var(--text-muted)}
+.hdr-a{display:flex;gap:8px;align-items:center}
+.btn-primary.ghost{background:transparent;border:1px solid var(--border-subtle);color:var(--text-secondary)}
+.period-note{margin:8px 0;padding:8px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary)}
 </style>

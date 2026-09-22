@@ -2070,13 +2070,18 @@ pub async fn create_meeting(
         .get("creator")
         .and_then(|v| v.as_str())
         .unwrap_or("system");
+    // roomId 落 x_meeting.room_id（前端选择会议室；buildingId 仅用于筛选会议室，可由 room 反查，不单独落库）
+    let room_id = payload
+        .get("roomId")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
 
     let id = uuid::Uuid::new_v4().to_string();
 
     client
         .execute(
-            "INSERT INTO x_meeting (id, title, content, start_time, end_time, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
-            &[&id, &title, &content, &start_time, &end_time, &creator],
+            "INSERT INTO x_meeting (id, title, content, room_id, start_time, end_time, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
+            &[&id, &title, &content, &room_id, &start_time, &end_time, &creator],
         )
         .await
         .map_err(|_| AppError::Internal)?;

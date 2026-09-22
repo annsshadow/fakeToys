@@ -9,6 +9,12 @@
         <input v-model="keyword" placeholder="搜索单元..." class="search-input" @keyup.enter="doSearch" />
         <button class="btn-primary" @click="doSearch">搜索</button>
         <button class="btn-primary" @click="loadUnits">刷新全部</button>
+        <button class="btn-primary" @click="loadTopUnits">顶级单位</button>
+        <button class="btn-primary" @click="loadUnitTypes">单位类型</button>
+        <button class="btn-primary" @click="loadUnitRoot">根/可控/名片</button>
+      </div>
+      <div v-if="unitTypes.length" class="ut-chips">
+        <span v-for="t in unitTypes" :key="t" class="ut-chip">{{ t }}</span>
       </div>
       <div class="list-panel">
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 6" :key="i"></div></div>
@@ -22,8 +28,47 @@
               <div class="meta">{{ u.desc || u.description || '' }}</div>
             </div>
             <button class="btn-sm" @click="checkUnit(u)">验证</button>
+            <button class="btn-sm" @click="openUnit(u)">管理</button>
           </div>
         </div>
+      </div>
+    </div>
+    <div v-if="selectedUnit" class="content-panel glass-card">
+      <div class="detail-head">
+        <h2>{{ selectedUnit.name || selectedUnit.title || '单位' }} — 属性与职务</h2>
+        <button class="btn-sm" @click="selectedUnit = null">关闭</button>
+      </div>
+      <div class="detail-cols">
+        <section class="dcol">
+          <div class="dcol-head"><span>单位属性</span><button class="mini-add" @click="addAttr">+ 新增</button></div>
+          <div v-if="attrs.length === 0" class="empty-sm">暂无属性</div>
+          <div v-else class="dlist">
+            <div v-for="a in attrs" :key="a.id" class="drow">
+              <div class="dmain"><span class="dname">{{ a.attributeKey }}</span><span class="dsub">{{ a.attributeValue || '—' }}</span></div>
+              <button class="dcol-del" @click="removeAttr(a)">删除</button>
+            </div>
+          </div>
+        </section>
+        <section class="dcol">
+          <div class="dcol-head"><span>单位职务</span><span><button class="mini-add" @click="loadDutyNames">常用名</button><button class="mini-add" @click="addDuty">+ 新增</button></span></div>
+          <div v-if="dutyNames.length" class="dn-chips"><span v-for="dn in dutyNames" :key="dn" class="dn-chip">{{ dn }}</span></div>
+          <div v-if="duties.length === 0" class="empty-sm">暂无职务</div>
+          <div v-else class="dlist">
+            <div v-for="d in duties" :key="d.id" class="drow">
+              <div class="dmain"><span class="dname">{{ d.name }}</span><span class="dsub">{{ d.identityId || '未指派' }}</span></div>
+              <button class="dcol-del" @click="removeDuty(d)">删除</button>
+            </div>
+          </div>
+        </section>
+        <section class="dcol">
+          <div class="dcol-head"><span>单位身份（{{ identities.length }}）</span></div>
+          <div v-if="identities.length === 0" class="empty-sm">暂无身份</div>
+          <div v-else class="dlist">
+            <div v-for="idn in identities" :key="idn.id" class="drow">
+              <div class="dmain"><span class="dname">{{ idn.name || idn.personName || idn.id }}</span><span class="dsub">{{ idn.unitName || '' }}</span></div>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   </div>
@@ -32,6 +77,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { ref } from 'vue'
+import { confirmMsg, toast } from '../utils/toast'
 
 type UnitItem = {
   id: string
@@ -47,17 +93,63 @@ const keyword = ref('')
 const loading = ref(false)
 const units = ref<UnitItem[]>([])
 
-async function doSearch() {
+let allUnits: UnitItem[] = []
+async function loadUnits() {
   loading.value = true
   try {
-    // Try search by keyword
     const r = await api.get('/api/unit/list')
-    units.value = r.data ?? []
+    allUnits = r.data ?? []
+    units.value = allUnits
   } catch {
     units.value = []
   } finally {
     loading.value = false
   }
+}
+async function loadUnitRoot() {
+  try {
+    // GET unit/get/root + unit/list/control/top + personcard/mylist —— 根单位/可控顶级/我的名片
+    const [root, ctrlTop, myCard] = await Promise.all([
+      api.get('/api/organization/assemble/control/unit/get/root'),
+      api.get('/api/organization/assemble/control/unit/list/control/top'),
+      api.get('/api/organization/assemble/control/personcard/mylist'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r?.data ? 1 : 0))
+    unitTypes.value = [`根单位 ${n(root)} · 可控顶级 ${n(ctrlTop)} · 我的名片 ${n(myCard)}`]
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadTopUnits() {
+  loading.value = true
+  try {
+    // GET organization/assemble/control/unit/list/top —— 顶级单位
+    const r: any = await api.get('/api/organization/assemble/control/unit/list/top')
+    units.value = (r.data ?? []) as UnitItem[]
+  } catch {
+    units.value = []
+  } finally {
+    loading.value = false
+  }
+}
+const unitTypes = ref<string[]>([])
+async function loadUnitTypes() {
+  try {
+    // GET organization/assemble/control/unit/list/type —— 单位类型
+    const r: any = await api.get('/api/organization/assemble/control/unit/list/type')
+    unitTypes.value = ((r.data ?? []) as any[])
+      .map((t) => (typeof t === 'string' ? t : (t?.name ?? t?.type)))
+      .filter((t): t is string => !!t)
+  } catch {
+    unitTypes.value = []
+  }
+}
+function doSearch() {
+  // /api/unit/list 无关键字参数，按已加载列表做本地名称过滤
+  const kw = keyword.value.trim().toLowerCase()
+  units.value = kw
+    ? allUnits.filter((u) => (u.name || u.title || '').toLowerCase().includes(kw))
+    : allUnits
 }
 
 async function checkUnit(u: UnitItem) {
@@ -69,6 +161,126 @@ async function checkUnit(u: UnitItem) {
 }
 
 loadUnits()
+
+// 选中单位 → 属性/职务管理（organization/assemble/control unitattribute + unitduty 族）
+interface Attr {
+  id: string
+  attributeKey: string
+  attributeValue?: string
+}
+interface Duty {
+  id: string
+  name: string
+  identityId?: string
+}
+const selectedUnit = ref<UnitItem | null>(null)
+const attrs = ref<Attr[]>([])
+const duties = ref<Duty[]>([])
+const identities = ref<Array<{ id: string; name?: string; personName?: string; unitName?: string }>>([])
+const dutyNames = ref<string[]>([])
+async function loadDutyNames() {
+  try {
+    // GET organization/assemble/control/unitduty/distinct/name —— 职务名去重列表
+    const r: any = await api.get('/api/organization/assemble/control/unitduty/distinct/name')
+    dutyNames.value = ((r.data ?? []) as any[])
+      .map((x) => (typeof x === 'string' ? x : (x?.name ?? x)))
+      .filter((x): x is string => !!x)
+  } catch {
+    dutyNames.value = []
+  }
+}
+function unitKey(u: UnitItem) {
+  return u.flag || u.unitFlag || u.id
+}
+async function openUnit(u: UnitItem) {
+  selectedUnit.value = u
+  await Promise.all([loadAttrs(), loadDuties(), loadIdentities()])
+}
+async function loadIdentities() {
+  if (!selectedUnit.value) return
+  try {
+    // GET organization/assemble/control/identity/list/unit/{unitFlag} —— 单位下身份
+    const r: any = await api.get(
+      '/api/organization/assemble/control/identity/list/unit/' + unitKey(selectedUnit.value),
+    )
+    identities.value = (r.data ?? []) as Array<{ id: string; name?: string; personName?: string; unitName?: string }>
+  } catch {
+    identities.value = []
+  }
+}
+async function loadAttrs() {
+  if (!selectedUnit.value) return
+  try {
+    const r: any = await api.get(
+      '/api/organization/assemble/control/unitattribute/list/unit/' + unitKey(selectedUnit.value),
+    )
+    attrs.value = (r.data ?? []) as Attr[]
+  } catch {
+    attrs.value = []
+  }
+}
+async function addAttr() {
+  if (!selectedUnit.value) return
+  const name = prompt('属性名 (attributeKey):')
+  if (!name) return
+  const value = prompt('属性值（可选）:', '') ?? ''
+  try {
+    // 后端 unit_attribute_create 读取 name(=attributeKey)/unitId(单位 flag)/attributeValue
+    await api.post('/api/organization/assemble/control/unitattribute', {
+      name,
+      unitId: unitKey(selectedUnit.value),
+      attributeValue: value,
+    })
+    loadAttrs()
+  } catch (e: any) {
+    toast.error('新增属性失败: ' + (e?.message ?? ''))
+  }
+}
+async function removeAttr(a: Attr) {
+  if (!(await confirmMsg('确定删除属性「' + a.attributeKey + '」？'))) return
+  try {
+    await api.delete('/api/organization/assemble/control/unitattribute/' + a.id)
+    loadAttrs()
+  } catch (e: any) {
+    toast.error('删除属性失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadDuties() {
+  if (!selectedUnit.value) return
+  try {
+    const r: any = await api.get(
+      '/api/organization/assemble/control/unitduty/list/unit/' + unitKey(selectedUnit.value),
+    )
+    duties.value = (r.data ?? []) as Duty[]
+  } catch {
+    duties.value = []
+  }
+}
+async function addDuty() {
+  if (!selectedUnit.value) return
+  const name = prompt('职务名称:')
+  if (!name) return
+  try {
+    // 后端 duty_create 读取 name(必填)/unitId(单位 flag)/identityList
+    await api.post('/api/organization/assemble/control/unitduty', {
+      name,
+      unitId: unitKey(selectedUnit.value),
+      identityList: [],
+    })
+    loadDuties()
+  } catch (e: any) {
+    toast.error('新增职务失败: ' + (e?.message ?? ''))
+  }
+}
+async function removeDuty(d: Duty) {
+  if (!(await confirmMsg('确定删除职务「' + d.name + '」？'))) return
+  try {
+    await api.delete('/api/organization/assemble/control/unitduty/' + d.id)
+    loadDuties()
+  } catch (e: any) {
+    toast.error('删除职务失败: ' + (e?.message ?? ''))
+  }
+}
 
 const list_person_sup_nested_ref = ref<any[]>([])
 const unit_list_level_ref = ref<any[]>([])
@@ -133,6 +345,23 @@ const api_organizati_842_data = ref<any[]>([])
 .meta{font-size:11px;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .btn-sm{padding:4px 10px;background:transparent;border:1px solid var(--border-subtle);color:var(--text-secondary);border-radius:var(--radius-sm);font-size:12px;cursor:pointer}
 .btn-sm:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.ut-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.ut-chip{padding:2px 10px;border-radius:10px;background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-primary)}
+.detail-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border-subtle)}
+.detail-head h2{font-size:16px;color:var(--color-primary);margin:0}
+.detail-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.dcol-head{display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--color-primary);font-weight:600;margin-bottom:10px}
+.mini-add{padding:4px 12px;border-radius:var(--radius-sm);border:1px solid var(--color-primary);background:var(--color-primary-soft);color:var(--color-primary);cursor:pointer;font-size:12px}
+.dlist{display:flex;flex-direction:column;gap:8px}
+.drow{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg-elevated);border-radius:var(--radius-md)}
+.dmain{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.dname{font-weight:600;color:var(--text-primary);font-size:13px}
+.dsub{font-size:12px;color:var(--text-muted)}
+.dcol-del{padding:4px 12px;border-radius:var(--radius-sm);border:1px solid var(--color-error);background:var(--color-error-glow);color:var(--color-error);cursor:pointer;font-size:12px}
+.dn-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.dn-chip{padding:1px 8px;border-radius:8px;background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:11px;color:var(--text-muted)}
+.empty-sm{color:var(--text-muted);font-size:13px;padding:16px;text-align:center}
+@media(max-width:768px){.detail-cols{grid-template-columns:1fr}}@media(min-width:769px) and (max-width:1100px){.detail-cols{grid-template-columns:1fr 1fr}}
 .empty,.loading-row{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px;flex:1}
 .ei{font-size:48px;opacity:0.4}
 .sk{height:40px;border-radius:var(--radius-md);background:var(--bg-elevated);animation:pulse 1.2s ease-in-out infinite}

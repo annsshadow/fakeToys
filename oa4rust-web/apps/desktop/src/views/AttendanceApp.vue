@@ -6,7 +6,11 @@
       <div class="hr">
         <input v-model="month" type="month" class="mi" @change="loadData" />
         <button class="eb" :disabled="exporting" @click="exportData">{{ exporting ? '导出中…' : '📤 导出' }}</button>
+        <button class="eb" @click="loadAttOverview">📊 汇总</button>
+        <button class="eb" @click="loadAttOrg">🏢 按单位/同步</button>
+        <button class="eb" @click="loadV2Meta">⚙️ v2配置/控件/请假模板</button>
       </div>
+      <div v-if="attOverviewText" class="att-note">{{ attOverviewText }}</div>
     </div>
     <div class="stats-row">
       <div v-for="s in stats" :key="s.label" class="stat-card glass-card">
@@ -48,13 +52,62 @@
         </div>
       </div>
     </div>
+    <div class="content-panel glass-card">
+      <div class="pt cfg-pt">
+        <span>打卡地点</span>
+        <button class="mini-add" @click="addWorkplace">+ 新增</button>
+      </div>
+      <div v-if="workplaces.length === 0" class="es-sm"><p>暂无打卡地点</p></div>
+      <div v-else class="cfg-list">
+        <div v-for="w in workplaces" :key="w.id" class="cfg-item">
+          <div class="cfg-main"><span class="cfg-name">{{ w.name || '—' }}</span><span class="cfg-sub">{{ w.address || '未填写地址' }}</span></div>
+          <button class="cfg-del" @click="removeWorkplace(w)">删除</button>
+        </div>
+      </div>
+    </div>
+    <div class="content-panel glass-card">
+      <div class="pt cfg-pt">
+        <span>考勤设置项</span>
+        <button class="mini-add" @click="addSetting">+ 新增</button>
+      </div>
+      <div v-if="settings.length === 0" class="es-sm"><p>暂无设置项</p></div>
+      <div v-else class="cfg-list">
+        <div v-for="s in settings" :key="s.id" class="cfg-item">
+          <div class="cfg-main"><span class="cfg-name">{{ s.name || s.code }}</span><span class="cfg-sub">{{ s.code }} = {{ s.value || '—' }}</span></div>
+          <button class="cfg-del" @click="removeSetting(s)">删除</button>
+        </div>
+      </div>
+    </div>
+    <div class="content-panel glass-card">
+      <div class="pt cfg-pt">
+        <span>排班与配置</span>
+        <span class="cfg-tabs">
+          <button class="cfg-tab" :class="{on:moreTab==='schedule'}" @click="switchMore('schedule')">排班</button>
+          <button class="cfg-tab" :class="{on:moreTab==='employee'}" @click="switchMore('employee')">员工配置</button>
+          <button class="cfg-tab" :class="{on:moreTab==='holiday'}" @click="switchMore('holiday')">自助假期</button>
+          <button class="cfg-tab" :class="{on:moreTab==='workday'}" @click="switchMore('workday')">工作日</button>
+          <button class="cfg-tab" :class="{on:moreTab==='admin'}" @click="switchMore('admin')">管理员</button>
+          <button class="cfg-tab" :class="{on:moreTab==='importlog'}" @click="switchMore('importlog')">导入记录</button>
+          <button class="cfg-tab" :class="{on:moreTab==='statlog'}" @click="switchMore('statlog')">统计日志</button>
+          <button class="cfg-tab" :class="{on:moreTab==='cycle'}" @click="switchMore('cycle')">统计周期</button>
+          <button class="cfg-tab" :class="{on:moreTab==='v2wp'}" @click="switchMore('v2wp')">v2地点</button>
+        </span>
+        <button class="mini-add" v-if="moreTab==='cycle'" @click="addCycle">+ 新建周期</button>
+      </div>
+      <div v-if="moreItems.length === 0" class="es-sm"><p>暂无数据</p></div>
+      <div v-else class="cfg-list">
+        <div v-for="it in moreItems" :key="it.id" class="cfg-item">
+          <div class="cfg-main"><span class="cfg-name">{{ it.name || it.ruleName || it.id }}</span><span class="cfg-sub">{{ it.id }}</span></div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
 import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref } from 'vue'
-import { toast } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
 const session = useSession()
 
@@ -132,8 +185,9 @@ function appealStatus(s?: string) {
   return s === 'approved' ? '已通过' : s === 'rejected' ? '已驳回' : s === 'pending' ? '待审批' : '—'
 }
 const am = useMutation({
+  // 后端 audit_appeal 读取 auditStatus（非 status）
   mutationFn: ({ id, status }: { id: string; status: string }) =>
-    api.post('/api/attendance/appeal/audit', { id, status }),
+    api.post('/api/attendance/appeal/audit', { id, auditStatus: status }),
   onSuccess: () => qc.invalidateQueries({ queryKey: ['att', 'apps'] }),
 })
 function audit(a: A, action: string) {
@@ -171,6 +225,49 @@ async function exportData() {
     exporting.value = false
   }
 }
+const attOverviewText = ref('')
+async function loadV2Meta() {
+  try {
+    // 消费 attendance v2 三条真实路由：全局配置 / 我的控件 / 请假模板
+    const [config, controls, leave] = await Promise.all([
+      api.get('/api/attendance/assemble/control/v2/config'),
+      api.get('/api/attendance/assemble/control/v2/my/controls'),
+      api.get('/api/attendance/assemble/control/v2/leave/template'),
+    ])
+    const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    attOverviewText.value = `v2配置 ${cnt(config)} / 我的控件 ${cnt(controls)} / 请假模板 ${cnt(leave)}`
+  } catch (e: any) {
+    toast.error('加载 v2 配置失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadAttOrg() {
+  try {
+    // GET attendancedetail/filter/list/topUnit + filter/list/unit + dingding/sync/list
+    const [topUnit, unit, dingding] = await Promise.all([
+      api.get('/api/attendance/assemble/control/attendancedetail/filter/list/topUnit'),
+      api.get('/api/attendance/assemble/control/attendancedetail/filter/list/unit'),
+      api.get('/api/attendance/assemble/control/dingding/sync/list'),
+    ])
+    const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    attOverviewText.value = `顶级单位 ${cnt(topUnit)} / 单位 ${cnt(unit)} / 钉钉同步 ${cnt(dingding)}`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadAttOverview() {
+  try {
+    // GET attendancedetail/filter/list/user + list/persons/nonesign + attendancesetting/enable/type
+    const [byUser, nonesign, enableType] = await Promise.all([
+      api.get('/api/attendance/assemble/control/attendancedetail/filter/list/user'),
+      api.get('/api/attendance/assemble/control/attendancedetail/list/persons/nonesign'),
+      api.get('/api/attendance/assemble/control/attendancesetting/enable/type'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    attOverviewText.value = `按人 ${n(byUser)} / 未签到 ${n(nonesign)} / 启用类型 ${n(enableType)}`
+  } catch (e: any) {
+    toast.error('加载考勤汇总失败: ' + (e?.message ?? ''))
+  }
+}
 onMounted(loadData)
 
 // Additional attendance API calls
@@ -187,7 +284,13 @@ async function createRule() {
   const name = prompt('规则名称:')
   if (!name) return
   try {
-    await api.post('/api/attendance/assemble/control/rule/create', { name })
+    // 后端 create_control_rule 读取 ruleName/ruleType/enabled/description
+    await api.post('/api/attendance/assemble/control/rule/create', {
+      ruleName: name,
+      ruleType: 'normal',
+      enabled: true,
+      description: '',
+    })
     loadRules()
   } catch (e: any) {
     toast.error('创建失败: ' + (e?.message ?? ''))
@@ -209,9 +312,10 @@ async function submitAppeal() {
   const end = prompt('结束日期:', new Date().toISOString().slice(0, 10))
   if (!start || !end) return
   try {
-    // 后端 appeal/submit 契约：personId + appealDate + reason（单日期，无结束日字段）
+    // 后端 appeal/submit 契约：personId + appealDate + reason + creator（单日期，无结束日字段）
     await api.post('/api/attendance/appeal/submit', {
       personId: session.state.user?.unique ?? '',
+      creator: session.state.user?.unique ?? '',
       appealDate: start,
       reason: type,
     })
@@ -229,6 +333,133 @@ async function loadAppeals() {
   }
 }
 loadRules()
+
+// 考勤配置：打卡地点 + 设置项（管理端 CRUD，后端 workplace/attendancesetting 族）
+interface WP {
+  id: string
+  name?: string
+  address?: string
+}
+interface ST {
+  id: string
+  code: string
+  name?: string
+  value?: string
+}
+const workplaces = ref<WP[]>([])
+const settings = ref<ST[]>([])
+async function loadWorkplaces() {
+  try {
+    const r: any = await api.get('/api/attendance/assemble/control/workplace/list/all')
+    workplaces.value = (r.data ?? []) as WP[]
+  } catch {
+    workplaces.value = []
+  }
+}
+async function addWorkplace() {
+  const name = prompt('打卡地点名称:')
+  if (!name) return
+  const address = prompt('地址（可选）:', '') ?? ''
+  try {
+    // 后端 workplace_create 读取 name(必填)/address(可选)，creator 取自会话
+    await api.post('/api/attendance/assemble/control/workplace', { name, address })
+    loadWorkplaces()
+  } catch (e: any) {
+    toast.error('新增失败: ' + (e?.message ?? ''))
+  }
+}
+async function removeWorkplace(w: WP) {
+  if (!(await confirmMsg('确定删除打卡地点「' + (w.name || w.id) + '」？'))) return
+  try {
+    await api.delete('/api/attendance/assemble/control/workplace/' + w.id)
+    loadWorkplaces()
+  } catch (e: any) {
+    toast.error('删除失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadSettings() {
+  try {
+    const r: any = await api.get('/api/attendance/assemble/control/attendancesetting/list/all')
+    settings.value = (r.data ?? []) as ST[]
+  } catch {
+    settings.value = []
+  }
+}
+async function addSetting() {
+  const code = prompt('设置项编码 (code):')
+  if (!code) return
+  const name = prompt('名称（可选）:', '') ?? ''
+  const value = prompt('值（可选）:', '') ?? ''
+  try {
+    // 后端 attendancesetting_create 读取 code(必填)/name/value
+    await api.post('/api/attendance/assemble/control/attendancesetting', { code, name, value })
+    loadSettings()
+  } catch (e: any) {
+    toast.error('新增失败: ' + (e?.message ?? ''))
+  }
+}
+async function removeSetting(s: ST) {
+  if (!(await confirmMsg('确定删除设置项「' + (s.name || s.code) + '」？'))) return
+  try {
+    await api.delete('/api/attendance/assemble/control/attendancesetting/' + s.id)
+    loadSettings()
+  } catch (e: any) {
+    toast.error('删除失败: ' + (e?.message ?? ''))
+  }
+}
+type MoreItem = { id: string; name?: string; ruleName?: string }
+const moreTab = ref<'schedule' | 'employee' | 'holiday' | 'workday' | 'admin' | 'importlog' | 'statlog' | 'cycle' | 'v2wp'>('schedule')
+const moreItems = ref<MoreItem[]>([])
+const moreEndpoints: Record<string, string> = {
+  schedule: '/api/attendance/assemble/control/attendanceschedulesetting/list/all',
+  employee: '/api/attendance/assemble/control/attendanceemployeeconfig/list/all',
+  holiday: '/api/attendance/assemble/control/attendanceselfholiday/list/all',
+  workday: '/api/attendance/assemble/control/attendanceworkdayconfig/list/all',
+  admin: '/api/attendance/assemble/control/attendanceadmin/list/all',
+  importlog: '/api/attendance/assemble/control/attendanceimportfileinfo/list/all',
+  statlog: '/api/attendance/assemble/control/attendancestatisticrequirelog/list/all',
+  v2wp: '/api/attendance/assemble/control/v2/workplace/list/all',
+}
+async function switchMore(t: 'schedule' | 'employee' | 'holiday' | 'workday' | 'admin' | 'importlog' | 'statlog' | 'cycle' | 'v2wp') {
+  moreTab.value = t
+  if (t === 'cycle') {
+    // 统计周期无 list/all 端点，仅支持按 id 建/删；切到该标签清空列表，由新建后展示
+    moreItems.value = []
+    return
+  }
+  try {
+    const r: any = await api.get(moreEndpoints[t])
+    moreItems.value = (r.data ?? []) as MoreItem[]
+  } catch {
+    moreItems.value = []
+  }
+}
+async function addCycle() {
+  const cycleYear = prompt('周期年份 (cycleYear):', String(new Date().getFullYear()))
+  if (!cycleYear) return
+  const cycleMonth = prompt('周期月份 (cycleMonth):', String(new Date().getMonth() + 1))
+  if (!cycleMonth) return
+  try {
+    // 后端 attendancestatisticalcycle_create 读 cycleYear/cycleMonth(必填)/topUnitName/unitName/description
+    const r: any = await api.post('/api/attendance/assemble/control/attendancestatisticalcycle', {
+      cycleYear,
+      cycleMonth,
+    })
+    const id = r.data?.id
+    if (id) {
+      // 回读一次确认（GET {id}）
+      const g: any = await api.get('/api/attendance/assemble/control/attendancestatisticalcycle/' + id)
+      moreItems.value = [(g.data ?? { id, name: cycleYear + '-' + cycleMonth }) as MoreItem]
+    }
+    toast.success('已新建统计周期')
+  } catch (e: any) {
+    toast.error('新建失败: ' + (e?.message ?? ''))
+  }
+}
+
+loadWorkplaces()
+loadSettings()
+switchMore('schedule')
 
 async function loadStatistics() {
   try {
@@ -275,8 +506,20 @@ async function loadStatistics() {
 .pgb{width:32px;height:32px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer;font-size:16px}
 .pgb:disabled{opacity:.3;cursor:not-allowed}
 .pgi{font-size:13px;color:var(--text-muted)}
+.cfg-pt{display:flex;align-items:center;justify-content:space-between}
+.mini-add{padding:4px 12px;border-radius:var(--radius-sm);border:1px solid var(--color-primary);background:var(--color-primary-soft);color:var(--color-primary);cursor:pointer;font-size:12px}
+.cfg-list{display:flex;flex-direction:column;gap:8px}
+.cfg-item{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg-elevated);border-radius:var(--radius-md)}
+.cfg-main{display:flex;flex-direction:column;gap:2px;flex:1}
+.cfg-name{font-weight:600;color:var(--text-primary);font-size:13px}
+.cfg-sub{font-size:12px;color:var(--text-muted)}
+.cfg-del{padding:4px 12px;border-radius:var(--radius-sm);border:1px solid var(--color-error);background:var(--color-error-glow);color:var(--color-error);cursor:pointer;font-size:12px}
 .es,.ls,.es-sm{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px}
 .ei{font-size:48px;opacity:0.4}
 .sk{height:36px;border-radius:var(--radius-sm);margin-bottom:6px;background:var(--bg-elevated)}
 @media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr)}.tr{grid-template-columns:60px 60px 70px 70px 50px 60px}}
+.cfg-tabs{display:flex;gap:4px}
+.cfg-tab{padding:2px 10px;border-radius:10px;border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-muted);cursor:pointer;font-size:11px}
+.cfg-tab.on{border-color:var(--color-primary);color:var(--color-primary);background:var(--color-primary-soft)}
+.att-note{margin:8px 0;padding:6px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary)}
 </style>

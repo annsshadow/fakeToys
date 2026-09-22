@@ -11,6 +11,20 @@
         <option value="">全部状态</option><option value="0">未开始</option><option value="1">进行中</option><option value="2">已结束</option>
       </select>
       <button class="sb" @click="loadMeetings">搜索</button>
+      <button class="sb" @click="loadMyApplied">我的申请</button>
+      <button class="sb" @click="loadMyInvited">我的邀请</button>
+      <button class="sb" @click="addBuilding">+ 楼栋</button>
+    </div>
+    <div v-if="appliedText" class="applied-note">{{ appliedText }}</div>
+    <div v-if="buildings.length" class="bld-bar glass-card">
+      <span class="bld-title">楼栋：</span>
+      <span v-for="b in buildings" :key="b.id" class="bld-chip">{{ b.name }}<button class="bld-del" @click="removeBuilding(b)">×</button></span>
+    </div>
+    <div class="bld-bar glass-card">
+      <span class="bld-title">会议室：</span>
+      <select v-model="roomBuildingId" class="fs" @change="loadRoomList"><option value="">选楼栋看会议室</option><option v-for="b in buildings" :key="b.id" :value="b.id">{{b.name}}</option></select>
+      <button class="sb" @click="addRoom">+ 会议室</button>
+      <span v-for="rm in roomList" :key="rm.id" class="bld-chip">{{ rm.name }}<button class="bld-del" @click="removeRoom(rm)">×</button></span>
     </div>
     <div class="content-panel glass-card">
       <div v-if="loading" class="ls"><div class="sk" v-for="i in 5" :key="i"></div></div>
@@ -24,7 +38,11 @@
             <span v-if="m.startTime">📅{{fmtTime(m.startTime)}}</span>
             <span v-if="m.attendeeCount">👤{{m.attendeeCount}}人</span>
           </div></div>
-          <div class="ma"><button class="bsm" @click.stop="joinMeeting(m)">加入</button></div>
+          <div class="ma">
+            <button class="bsm" @click.stop="joinMeeting(m)">加入</button>
+            <button class="bsm" @click.stop="showParticipants(m)">参会人</button>
+            <button class="bsm" @click.stop="inviteParticipant(m)">邀请</button>
+          </div>
         </div>
       </div>
     </div>
@@ -34,7 +52,9 @@
         <div class="fg"><label>标题</label><input v-model="form.title" class="fi" placeholder="会议标题" /></div>
         <div class="fg"><label>楼栋</label><select v-model="form.buildingId" class="fs2" @change="loadRooms"><option value="">选择楼栋</option><option v-for="b in buildings" :key="b.id" :value="b.id">{{b.name}}</option></select></div>
         <div class="fg"><label>会议室</label><select v-model="form.roomId" class="fs2"><option value="">选择会议室</option><option v-for="r in rooms" :key="r.id" :value="r.id">{{r.name}}</option></select></div>
-        <div class="fg"><label>时间</label><input v-model="form.startTime" type="datetime-local" class="fi" /></div>
+        <div class="fg"><label>开始</label><input v-model="form.startTime" type="datetime-local" class="fi" /></div>
+        <div class="fg"><label>结束</label><input v-model="form.endTime" type="datetime-local" class="fi" /></div>
+        <div class="fg"><label>说明</label><input v-model="form.content" class="fi" placeholder="会议说明（可选）" /></div>
         <div v-if="err" class="em">{{err}}</div>
         <div class="mf"><button class="bc" @click="showCreate=false">取消</button><button class="bs" :disabled="!form.title" @click="createMeeting">创建</button></div>
       </div>
@@ -42,7 +62,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { api } from '@oa4rust/sdk'
+import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { onMounted, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
@@ -76,7 +96,8 @@ const searchKey = ref(''),
   showCreate = ref(false),
   err = ref(''),
   qc = useQueryClient()
-const form = ref({ title: '', buildingId: '', roomId: '', startTime: '' })
+const session = useSession()
+const form = ref({ title: '', content: '', buildingId: '', roomId: '', startTime: '', endTime: '' })
 const { data: bData } = useQuery({
   queryKey: ['meeting', 'bldgs'],
   queryFn: () => api.get('/api/meeting/assemble/control/building/list').then((r: any) => (r.data ?? []) as Bldg[]),
@@ -121,7 +142,16 @@ function fmtTime(t?: string) {
   }
 }
 const cm = useMutation({
-  mutationFn: () => api.post('/api/meeting/assemble/control/meeting/create', form.value),
+  // 后端 create_meeting 契约：title/content/startTime/endTime/creator/roomId（buildingId 仅用于筛选会议室，不下发）
+  mutationFn: () =>
+    api.post('/api/meeting/assemble/control/meeting/create', {
+      title: form.value.title,
+      content: form.value.content,
+      startTime: form.value.startTime,
+      endTime: form.value.endTime,
+      roomId: form.value.roomId,
+      creator: session.user?.unique ?? '',
+    }),
   onSuccess: () => {
     showCreate.value = false
     qc.invalidateQueries({ queryKey: ['meeting', 'list'] })
@@ -136,6 +166,119 @@ function createMeeting() {
   cm.mutate()
 }
 function viewMeeting(_m: M) {}
+async function showParticipants(m: M) {
+  try {
+    // GET /api/meeting/{meetingId}/participant/list —— 参会人列表
+    const r: any = await api.get(`/api/meeting/${encodeURIComponent(m.id)}/participant/list`)
+    const n = Array.isArray(r.data) ? r.data.length : 0
+    toast.success('参会人数：' + n)
+  } catch (e: any) {
+    toast.error('查询失败: ' + (e?.message ?? ''))
+  }
+}
+async function inviteParticipant(m: M) {
+  const invitee = prompt('邀请参会人（用户标识 invitee）:')
+  if (!invitee) return
+  try {
+    // POST /api/meeting/{meetingId}/participant/add —— 读 invitee
+    await api.post(`/api/meeting/${encodeURIComponent(m.id)}/participant/add`, { invitee })
+    toast.success('已邀请')
+  } catch (e: any) {
+    toast.error('邀请失败: ' + (e?.message ?? ''))
+  }
+}
+const appliedText = ref('')
+async function loadMyInvited() {
+  try {
+    // GET meeting/list/invited/processing + completed + rejected —— 我受邀会议（进行/已办/已拒）
+    const [proc, done, rej] = await Promise.all([
+      api.get('/api/meeting/assemble/control/meeting/list/invited/processing'),
+      api.get('/api/meeting/assemble/control/meeting/list/invited/completed'),
+      api.get('/api/meeting/assemble/control/meeting/list/invited/rejected'),
+    ])
+    const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    appliedText.value = `受邀进行 ${cnt(proc)} / 已办 ${cnt(done)} / 已拒 ${cnt(rej)}`
+  } catch (e: any) {
+    toast.error('加载我的邀请失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadMyApplied() {
+  try {
+    // GET meeting/list/applied/wait + processing + completed —— 我申请的会议（待审/进行/已办）
+    const [wait, proc, done] = await Promise.all([
+      api.get('/api/meeting/assemble/control/meeting/list/applied/wait'),
+      api.get('/api/meeting/assemble/control/meeting/list/applied/processing'),
+      api.get('/api/meeting/assemble/control/meeting/list/applied/completed'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    appliedText.value = `待审 ${n(wait)} / 进行 ${n(proc)} / 已办 ${n(done)}`
+  } catch (e: any) {
+    toast.error('加载我的申请失败: ' + (e?.message ?? ''))
+  }
+}
+async function addBuilding() {
+  const name = prompt('楼栋名称:')
+  if (!name) return
+  try {
+    // POST /api/meeting/assemble/control/building —— u2_building_create 读 name
+    await api.post('/api/meeting/assemble/control/building', { name })
+    toast.success('已新建楼栋')
+    const r: any = await api.get('/api/meeting/assemble/control/building/list')
+    buildings.value = (r.data ?? []) as Bldg[]
+  } catch (e: any) {
+    toast.error('新建失败: ' + (e?.message ?? ''))
+  }
+}
+async function removeBuilding(b: Bldg) {
+  if (!(await confirmMsg('确定删除楼栋「' + (b.name || b.id) + '」？'))) return
+  try {
+    // DELETE /api/meeting/assemble/control/building/{id}
+    await api.delete('/api/meeting/assemble/control/building/' + encodeURIComponent(b.id))
+    buildings.value = buildings.value.filter((x) => x.id !== b.id)
+  } catch (e: any) {
+    toast.error('删除失败: ' + (e?.message ?? ''))
+  }
+}
+const roomBuildingId = ref('')
+const roomList = ref<Room[]>([])
+async function loadRoomList() {
+  if (!roomBuildingId.value) {
+    roomList.value = []
+    return
+  }
+  try {
+    const r: any = await api.get(`/api/meeting/assemble/control/room/list?buildingId=${roomBuildingId.value}`)
+    roomList.value = (r.data ?? []) as Room[]
+  } catch {
+    roomList.value = []
+  }
+}
+async function addRoom() {
+  if (!roomBuildingId.value) {
+    toast.error('请先选择楼栋')
+    return
+  }
+  const name = prompt('会议室名称:')
+  if (!name) return
+  try {
+    // POST /api/meeting/assemble/control/room —— u2_room_create 读 name/buildingId
+    await api.post('/api/meeting/assemble/control/room', { name, buildingId: roomBuildingId.value })
+    toast.success('已新建会议室')
+    loadRoomList()
+  } catch (e: any) {
+    toast.error('新建失败: ' + (e?.message ?? ''))
+  }
+}
+async function removeRoom(rm: Room) {
+  if (!(await confirmMsg('确定删除会议室「' + (rm.name || rm.id) + '」？'))) return
+  try {
+    // DELETE /api/meeting/assemble/control/room/{id}
+    await api.delete('/api/meeting/assemble/control/room/' + encodeURIComponent(rm.id))
+    roomList.value = roomList.value.filter((x) => x.id !== rm.id)
+  } catch (e: any) {
+    toast.error('删除失败: ' + (e?.message ?? ''))
+  }
+}
 onMounted(loadMeetings)
 
 async function updateMeeting(m: M) {
@@ -289,4 +432,9 @@ const api_meeting_as_895_data = ref<any[]>([])
 .bc{padding:8px 16px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);background:none;color:var(--text-secondary);cursor:pointer}
 .bs{padding:8px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:white;cursor:pointer;font-weight:600}
 .bs:disabled{opacity:.5;cursor:not-allowed}
+.bld-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 14px;margin-bottom:12px}
+.bld-title{font-size:13px;color:var(--text-muted)}
+.bld-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-primary)}
+.bld-del{border:none;background:none;color:var(--color-error);cursor:pointer;font-size:14px;line-height:1;padding:0 2px}
+.applied-note{margin:8px 0;padding:6px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary)}
 </style>

@@ -17,6 +17,8 @@ use tracing;
 /// 权限：仅 admin 可调用。
 #[derive(Debug, Deserialize)]
 pub struct SwitchUserRequest {
+    /// 目标用户标识（前端以 targetUnique 下发，兼容旧 credential 键）。
+    #[serde(alias = "targetUnique")]
     pub credential: String,
 }
 
