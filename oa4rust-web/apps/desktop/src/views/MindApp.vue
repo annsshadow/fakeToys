@@ -45,6 +45,7 @@
         <header class="editor-header">
           <input v-model="editor.name" class="title-input" aria-label="导图名称" @input="markDirty" />
           <div class="editor-actions"><span v-if="dirty" class="dirty">未保存</span><span v-if="saveMessage" class="save-message">{{ saveMessage }}</span>
+            <span v-if="mindMetaText" class="save-message">{{ mindMetaText }}</span>
             <button class="btn" :disabled="saving || !dirty" @click="saveMind">{{ saving ? '保存中...' : '保存' }}</button><button class="btn secondary" @click="closeEditor">关闭</button>
           </div>
         </header>
@@ -289,9 +290,27 @@ async function openMind(item: MindItem) {
     selectedNode.value = editor.value.root
     dirty.value = false
     saveMessage.value = ''
+    void loadMindMeta(detail.id || item.id)
   } catch (error) {
     loadError.value = error instanceof Error ? error.message : '导图加载失败'
   }
+}
+// 导图元信息（rev113）：版本列表 + 分享记录 + 视图，三条 distinct 真实路由
+const mindMetaText = ref('')
+async function loadMindMeta(id: string) {
+  mindMetaText.value = ''
+  if (!id) return
+  const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [ver, share, view] = await Promise.all([
+    settle(api.get(`/api/mind/assemble/control/mind/list/${encodeURIComponent(id)}/version`)),
+    settle(api.get(`/api/mind/assemble/control/mind/list/${encodeURIComponent(id)}/shareRecords`)),
+    settle(api.get(`/api/mind/assemble/control/mind/view/${encodeURIComponent(id)}`)),
+  ])
+  const n = (r: unknown): number => {
+    const d = (r as { data?: unknown } | null)?.data
+    return Array.isArray(d) ? d.length : Array.isArray((d as { data?: unknown })?.data) ? (d as { data: unknown[] }).data.length : d ? 1 : 0
+  }
+  mindMetaText.value = `版本 ${n(ver)} · 分享 ${n(share)}${view ? ' · 已浏览' : ''}`
 }
 function createMind() {
   if (!currentFolder.value) return
