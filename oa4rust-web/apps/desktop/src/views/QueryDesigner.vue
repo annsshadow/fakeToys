@@ -43,9 +43,11 @@
           <div class="dh-actions">
             <button class="btn-run" @click="runQuery">▶ 执行</button>
             <button class="btn-edit" @click="openEdit">✏ 编辑</button>
+            <button class="btn-edit" @click="loadQueryDetail">🔍 明细</button>
             <button class="btn-del" @click="deleteQuery(selected)">🗑</button>
           </div>
         </div>
+        <div v-if="queryDetailText" class="qd-note">{{ queryDetailText }}</div>
 
         <!-- 查询条件面板 -->
         <div class="condition-panel">
@@ -267,6 +269,7 @@ import { toast } from '../utils/toast'
 
 type QueryDef = {
   id?: string
+  flag?: string
   name?: string
   queryName?: string
   category?: string
@@ -320,6 +323,31 @@ function selectQuery(q: QueryDef) {
   selected.value = q
   resultData.value = []
   conditions.value = []
+  queryDetailText.value = ''
+}
+
+// 查询设计器明细族 3 条真实 distinct 路由（均按 query flag，读不同表）：查询定义 query/{flag}（x_query_design）
+// + 查询数据表 table/list/query/{flag}（x_query_table）+ 查询导入模型 importmodel/list/query/{flag}（x_query_import_model）
+const queryDetailText = ref('')
+async function loadQueryDetail() {
+  const flag = String(selected.value?.flag ?? selected.value?.id ?? '')
+  if (!flag) {
+    toast.error('请先选择查询')
+    return
+  }
+  try {
+    const [def, tables, models] = await Promise.all([
+      api.get(`/api/query/assemble/designer/query/${encodeURIComponent(flag)}`).catch(() => null),
+      api.get(`/api/query/assemble/designer/table/list/query/${encodeURIComponent(flag)}`).catch(() => null),
+      api.get(`/api/query/assemble/designer/importmodel/list/query/${encodeURIComponent(flag)}`).catch(() => null),
+    ])
+    const dName = (def as any)?.data?.name ?? flag
+    const tN = Array.isArray((tables as any)?.data) ? (tables as any).data.length : 0
+    const mN = Array.isArray((models as any)?.data) ? (models as any).data.length : 0
+    queryDetailText.value = `查询「${dName}」· 数据表 ${tN} · 导入模型 ${mN}`
+  } catch (e: any) {
+    toast.error('加载查询明细失败: ' + (e?.message ?? ''))
+  }
 }
 
 function openCreate() {
@@ -588,4 +616,5 @@ async function runQueryEnhanced() {
 
 <style scoped>
 /* optimized */
+.qd-note{margin:8px 0;padding:8px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:13px;color:var(--text-primary)}
 </style>
