@@ -168,7 +168,14 @@ async function openDesign(id: string) {
     const cat = (portal as any)?.data?.category ?? '—'
     const hasPerm = (perm as any)?.data?.permission ? '有权限配置' : '无权限配置'
     const widN = Array.isArray((wlist as any)?.data) ? (wlist as any).data.length : 0
-    portalMeta.value = `分类 ${cat} · ${hasPerm} · 组件 ${widN}`
+    // 该门户下的页面/脚本/字典列表 3 条真实 distinct 路由（x_portal_page / x_portal_script / x_portal_dict）
+    const [pages, scripts, dicts] = await Promise.all([
+      settle(api.get<any>(`/api/portal/assemble/designer/page/list/portal/${encodeURIComponent(id)}`)),
+      settle(api.get<any>(`/api/portal/assemble/designer/script/list/portal/${encodeURIComponent(id)}`)),
+      settle(api.get<any>(`/api/portal/assemble/designer/dict/list/portal/${encodeURIComponent(id)}`)),
+    ])
+    const len = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    portalMeta.value = `分类 ${cat} · ${hasPerm} · 组件 ${widN} · 页面 ${len(pages)} · 脚本 ${len(scripts)} · 字典 ${len(dicts)}`
   } catch (error: any) {
     toast.error(`加载设计失败: ${error?.message ?? '未知错误'}`)
   }
