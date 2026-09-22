@@ -12,6 +12,7 @@
       <button class="org-meta-btn" @click="loadPersonCards">名片抽样</button>
       <button class="org-meta-btn" @click="loadOrgDetails">身份/角色/职务明细</button>
       <button class="org-meta-btn" @click="loadUnitDetails">单位明细</button>
+      <button class="org-meta-btn" @click="loadDutyDetails">职务/身份明细</button>
       <button class="org-meta-btn" @click="loadAttrDetails">单位/个人属性</button>
       <button class="org-meta-btn" @click="loadCursorLists">身份/角色/职务游标</button>
       <button class="org-meta-btn" @click="loadCursorListsPrev">游标(逆序)</button>
@@ -238,6 +239,37 @@ async function loadUnitDetails() {
     orgMetaText.value = `单位「${name}」· 直接上级 ${supN} · 直接下级 ${subN}`
   } catch (e: any) {
     toast.error('加载单位明细失败: ' + (e?.message ?? ''))
+  }
+}
+// 消费职务/身份明细族 3 条真实 distinct 路由（均落 x_org_duty/x_org_identity，查询各异）：
+// 该职务名下身份 identity/list/unitduty/name/{unitDutyName}（x_org_identity 子查询）+ 同名职务 unitduty/list/name/{name}（x_org_duty name ILIKE）
+// + 职务名去重模糊 unitduty/distinct/name/like/{key}。职务名经已消费的 unitduty/list/unit/{unitFlag} 回源。
+async function loadDutyDetails() {
+  try {
+    const topResp: any = await api.get('/api/organization/assemble/control/unit/list/top')
+    const arr = (Array.isArray(topResp?.data) ? topResp.data : []) as Array<Record<string, unknown>>
+    const uid = arr[0] ? String(arr[0].id ?? '') : ''
+    if (!uid) {
+      orgMetaText.value = '顶级单位 0 个（无可抽样项）'
+      return
+    }
+    const dutyResp: any = await api
+      .get(`/api/organization/assemble/control/unitduty/list/unit/${encodeURIComponent(uid)}`)
+      .catch(() => null)
+    const duties = (Array.isArray(dutyResp?.data) ? dutyResp.data : []) as Array<Record<string, unknown>>
+    const dutyName = duties[0] ? String(duties[0].name ?? '') : ''
+    const key = dutyName ? dutyName.slice(0, 2) : '主'
+    const [identities, sameName, distinctName] = await Promise.all([
+      dutyName ? api.get(`/api/organization/assemble/control/identity/list/unitduty/name/${encodeURIComponent(dutyName)}`).catch(() => null) : Promise.resolve(null),
+      dutyName ? api.get(`/api/organization/assemble/control/unitduty/list/name/${encodeURIComponent(dutyName)}`).catch(() => null) : Promise.resolve(null),
+      api.get(`/api/organization/assemble/control/unitduty/distinct/name/like/${encodeURIComponent(key)}`).catch(() => null),
+    ])
+    const idN = Array.isArray((identities as any)?.data) ? (identities as any).data.length : 0
+    const snN = Array.isArray((sameName as any)?.data) ? (sameName as any).data.length : 0
+    const dnN = Array.isArray((distinctName as any)?.data) ? (distinctName as any).data.length : 0
+    orgMetaText.value = `职务「${dutyName || '—'}」· 名下身份 ${idN} · 同名职务 ${snN} · 去重名 ${dnN}`
+  } catch (e: any) {
+    toast.error('加载职务/身份明细失败: ' + (e?.message ?? ''))
   }
 }
 // 消费属性族：单位/个人属性游标列表（flag=0 从头）→取首个 attr id→属性详情。4 条真实 distinct 路由。
