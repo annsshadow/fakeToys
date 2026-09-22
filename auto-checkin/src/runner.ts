@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import type { AppConfig, CheckinResult, SiteAdapter } from "./types.js";
 import { getCredentials } from "./config.js";
 import { openSiteContext, closeContext, saveScreenshot } from "./browser.js";

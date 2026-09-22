@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import type { SiteAdapter, AdapterContext, AdapterOutcome } from "../types.js";
 import { oauthLogin, fetchSelf, logout, quotaToDisplay } from "./newapi-client.js";
 
