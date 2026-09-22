@@ -599,6 +599,8 @@ export const documentApi = {
   delete: (id: string) => api.delete(`/api/document/${id}`),
   draftList: (page: number, size: number) => api.post(`/api/document/draft/list/paging/${page}/${size}`, {}),
   filterList: (params: unknown) => api.post('/api/document/filter/list', params),
+  managerList: (page: number, size: number) =>
+    api.post(`/api/document/filter/list/${page}/size/${size}/manager`, {}),
   batch: (data: unknown) => api.post('/api/document/batch', data),
   categoryList: () => api.get('/api/document/category/list'),
   cipherList: (id: string) => api.get(`/api/document/cipher/list/${id}`),

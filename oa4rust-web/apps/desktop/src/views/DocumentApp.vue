@@ -17,6 +17,7 @@
         <button class="btn-primary" @click="doSearch">搜索</button>
         <button class="btn-create" @click="showCreate=true">+ 新建文档</button>
         <button class="btn-primary" @click="loadDocMeta">字段/批量状态</button>
+        <button class="btn-primary" @click="loadManagerList">管理视图</button>
         <span v-if="docMetaText" class="doc-meta-note">{{ docMetaText }}</span>
       </div>
       <div class="list-panel">
@@ -154,6 +155,21 @@ async function doSearch() {
     items.value = r.data?.list ?? r.data ?? []
   } catch {
     items.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+// 管理视图：GET document/filter/list/{page}/size/{size}/manager —— 管理员口径，
+// 后端 u2_require_admin 门禁，返回全量文档（区别于个人可见范围）。
+async function loadManagerList() {
+  loading.value = true
+  try {
+    const r: any = await api.post('/api/document/filter/list/1/size/50/manager', {})
+    items.value = (r.data?.list ?? r.data ?? []) as DocItem[]
+    toast.success('已加载管理视图（全量）：' + items.value.length + ' 条')
+  } catch (e: any) {
+    toast.error('管理视图加载失败（需管理员权限）: ' + (e?.message ?? ''))
   } finally {
     loading.value = false
   }
