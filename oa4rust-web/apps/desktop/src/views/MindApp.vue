@@ -10,8 +10,10 @@
         <button class="btn secondary" :disabled="loadingFolder" @click="loadFolders">刷新目录</button>
         <button class="btn secondary" @click="loadAllMinds">全部导图</button>
         <button class="btn secondary" @click="loadMindConfig">配置/我的目录</button>
+        <button class="btn secondary" @click="loadMindFilters">共享/回收站</button>
       </div>
       <div v-if="allMindsText" class="notice">{{ allMindsText }}</div>
+      <div v-if="mindFilterText" class="notice">{{ mindFilterText }}</div>
     </div>
     <div v-if="loadError" class="notice error">{{ loadError }}</div>
     <div class="split-panel">
@@ -89,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import { api } from '@oa4rust/sdk'
+import { api, useSession } from '@oa4rust/sdk'
 import { computed, nextTick, ref } from 'vue'
 import { toast } from '../utils/toast'
 
@@ -180,6 +182,23 @@ function toggleFolder(folder: Folder) {
   expandedFolders.value = next
 }
 const allMindsText = ref('')
+const mindFilterText = ref('')
+const session = useSession()
+// 消费 assemble_control 过滤族真实路由：收到共享 / 回收站 / 我共享出（{id}=当前 person，{page}=1）
+async function loadMindFilters() {
+  const me = session.state.user?.unique ?? ''
+  const pg = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+  try {
+    const [received, recycle, shared] = await Promise.all([
+      api.put(`/api/mind/assemble/control/mind/filter/recived/${encodeURIComponent(me)}/next/1`, {}).catch(() => null),
+      api.put(`/api/mind/assemble/control/mind/filter/recycle/${encodeURIComponent(me)}/next/1`, {}).catch(() => null),
+      api.put(`/api/mind/assemble/control/mind/filter/shared/${encodeURIComponent(me)}/next/1`, {}).catch(() => null),
+    ])
+    mindFilterText.value = `收到共享 ${pg(received)} · 回收站 ${pg(recycle)} · 我共享 ${pg(shared)}`
+  } catch (e: any) {
+    toast.error('加载共享/回收站失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadMindConfig() {
   try {
     // GET mind/assemble/control/config + assemble/control/folder/tree/my —— 导图控制配置/我的目录树
