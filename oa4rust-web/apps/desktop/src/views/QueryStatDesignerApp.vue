@@ -26,6 +26,7 @@
             <td class="mono">{{ item.statType||'—' }}</td>
             <td class="mono">{{ item.createTime||'—' }}</td>
             <td>
+              <button class="btn-sm" @click="viewStat(item)">详情</button>
               <button class="btn-sm" @click="editItem(item)">编辑</button>
               <button class="btn-sm btn-del" @click="deleteItem(item)">删除</button>
             </td>
@@ -51,7 +52,7 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
-import { confirmMsg } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
 interface Item {
   id: string
@@ -110,6 +111,16 @@ function editItem(item: Item) {
   form.value = { ...item }
   editingId.value = item.id
   showEdit.value = true
+}
+async function viewStat(item: Item) {
+  try {
+    // GET designer/stat/{id} —— 统计定义详情（x_query_stat）
+    const r: any = await api.get(`/api/query/assemble/designer/stat/${encodeURIComponent(item.id)}`)
+    const d = r?.data ?? {}
+    toast.success('统计: ' + (d.name || item.name || item.id) + ' · ' + (d.stat_type || d.statType || '—'))
+  } catch (e: any) {
+    toast.error('加载统计详情失败: ' + (e?.message ?? ''))
+  }
 }
 function closeModal() {
   showCreate.value = false
