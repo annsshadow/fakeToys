@@ -44,7 +44,7 @@
             </div>
           </div>
           <div class="canvas" @dragover.prevent @drop="dropModule">
-            <div class="canvas-head"><h2>{{ activeName }}</h2><span>{{ widgets.length }} 个模块</span></div>
+            <div class="canvas-head"><h2>{{ activeName }}</h2><span>{{ widgets.length }} 个模块<template v-if="portalMeta"> · {{ portalMeta }}</template></span></div>
             <p v-if="!widgets.length" class="drop-hint">将左侧模块拖到这里</p>
             <article
               v-for="(widget, index) in widgets"
@@ -128,6 +128,7 @@ const modules: ModuleItem[] = [
 const designs = ref<DesignSummary[]>([])
 const activeId = ref('')
 const activeName = ref('')
+const portalMeta = ref('')
 const widgets = ref<PortalWidget[]>([])
 const selectedId = ref('')
 const dragModule = ref<ModuleItem | null>(null)
@@ -157,6 +158,17 @@ async function openDesign(id: string) {
     activeName.value = response.data?.name ?? designs.value.find((item) => item.id === id)?.name ?? ''
     widgets.value = parsePortalContent(response.data).widgets
     selectedId.value = ''
+    // 附带消费门户设计详情/权限/组件列表 3 条真实 distinct 路由（x_portal / x_portal_widget）
+    const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const [portal, perm, wlist] = await Promise.all([
+      settle(api.get<any>(`/api/portal/assemble/designer/portal/${encodeURIComponent(id)}`)),
+      settle(api.get<any>(`/api/portal/assemble/designer/portal/permission/${encodeURIComponent(id)}`)),
+      settle(api.get<any>(`/api/portal/assemble/designer/widget/list/portal/${encodeURIComponent(id)}`)),
+    ])
+    const cat = (portal as any)?.data?.category ?? '—'
+    const hasPerm = (perm as any)?.data?.permission ? '有权限配置' : '无权限配置'
+    const widN = Array.isArray((wlist as any)?.data) ? (wlist as any).data.length : 0
+    portalMeta.value = `分类 ${cat} · ${hasPerm} · 组件 ${widN}`
   } catch (error: any) {
     toast.error(`加载设计失败: ${error?.message ?? '未知错误'}`)
   }
