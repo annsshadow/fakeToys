@@ -6784,7 +6784,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryDesigner.vue",
-    "line": 305,
+    "line": 308,
     "method": "GET",
     "raw": "/api/query/assemble/designer/list/all",
     "path": "/api/query/assemble/designer/list/all",
@@ -6794,7 +6794,37 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryDesigner.vue",
+    "line": 340,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/query/${encodeURIComponent(flag)}",
+    "path": "/api/query/assemble/designer/query/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryDesigner.vue",
+    "line": 341,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/table/list/query/${encodeURIComponent(flag)}",
+    "path": "/api/query/assemble/designer/table/list/query/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryDesigner.vue",
     "line": 342,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/importmodel/list/query/${encodeURIComponent(flag)}",
+    "path": "/api/query/assemble/designer/importmodel/list/query/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryDesigner.vue",
+    "line": 370,
     "method": "GET",
     "raw": "/api/query/assemble/designer/get/${encodeURIComponent(selected.value.id)}",
     "path": "/api/query/assemble/designer/get/{}",
@@ -6804,7 +6834,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryDesigner.vue",
-    "line": 364,
+    "line": 392,
     "method": "PUT",
     "raw": "/api/query/assemble/designer/save/${editingQuery.value.id}",
     "path": "/api/query/assemble/designer/save/{}",
@@ -6814,7 +6844,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryDesigner.vue",
-    "line": 366,
+    "line": 394,
     "method": "POST",
     "raw": "/api/query/assemble/designer/create",
     "path": "/api/query/assemble/designer/create",
@@ -6824,7 +6854,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryDesigner.vue",
-    "line": 385,
+    "line": 413,
     "method": "POST",
     "raw": "/api/query/assemble/designer/execute",
     "path": "/api/query/assemble/designer/execute",
@@ -6834,7 +6864,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryDesigner.vue",
-    "line": 400,
+    "line": 428,
     "method": "DELETE",
     "raw": "/api/query/assemble/designer/delete/${q.id}",
     "path": "/api/query/assemble/designer/delete/{}",
@@ -6844,7 +6874,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryDesigner.vue",
-    "line": 552,
+    "line": 580,
     "method": "POST",
     "raw": "/api/query/assemble/designer/create",
     "path": "/api/query/assemble/designer/create",
