@@ -5144,7 +5144,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessFormDesignerApp.vue",
-    "line": 72,
+    "line": 74,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/templateform/list/default",
     "path": "/api/processplatform/assemble/designer/templateform/list/default",
@@ -5154,7 +5154,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessFormDesignerApp.vue",
-    "line": 96,
+    "line": 98,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/form/list",
     "path": "/api/processplatform/assemble/designer/form/list",
@@ -5164,7 +5164,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessFormDesignerApp.vue",
-    "line": 135,
+    "line": 137,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/form/save/${editingId.value}",
     "path": "/api/processplatform/assemble/designer/form/save/{}",
@@ -5174,7 +5174,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessFormDesignerApp.vue",
-    "line": 136,
+    "line": 138,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/form/create",
     "path": "/api/processplatform/assemble/designer/form/create",
@@ -5184,10 +5184,40 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessFormDesignerApp.vue",
-    "line": 150,
+    "line": 152,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/form/delete/${id}",
     "path": "/api/processplatform/assemble/designer/form/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessFormDesignerApp.vue",
+    "line": 176,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/form/${encodeURIComponent(fid)}",
+    "path": "/api/processplatform/assemble/designer/form/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessFormDesignerApp.vue",
+    "line": 177,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/formversion/list/form/${encodeURIComponent(fid)}",
+    "path": "/api/processplatform/assemble/designer/formversion/list/form/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessFormDesignerApp.vue",
+    "line": 178,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/form/list/application/${encodeURIComponent(appId)}",
+    "path": "/api/processplatform/assemble/designer/form/list/application/{}",
     "via": "literal",
     "ambiguous": false
    },
