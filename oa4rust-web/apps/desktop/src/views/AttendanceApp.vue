@@ -94,13 +94,21 @@
           <button class="cfg-tab" :class="{on:moreTab==='statlog'}" @click="switchMore('statlog')">统计日志</button>
           <button class="cfg-tab" :class="{on:moreTab==='cycle'}" @click="switchMore('cycle')">统计周期</button>
           <button class="cfg-tab" :class="{on:moreTab==='v2wp'}" @click="switchMore('v2wp')">v2地点</button>
+          <button class="cfg-tab" :class="{on:moreTab==='v2group'}" @click="switchMore('v2group')">v2考勤组</button>
+          <button class="cfg-tab" :class="{on:moreTab==='v2shift'}" @click="switchMore('v2shift')">v2班次</button>
         </span>
         <button class="mini-add" v-if="moreTab==='cycle'" @click="addCycle">+ 新建周期</button>
+        <button class="mini-add" v-if="moreTab==='v2group'" @click="addGroup">+ 新建考勤组</button>
+        <button class="mini-add" v-if="moreTab==='v2shift'" @click="addShift">+ 新建班次</button>
       </div>
       <div v-if="moreItems.length === 0" class="es-sm"><p>暂无数据</p></div>
       <div v-else class="cfg-list">
         <div v-for="it in moreItems" :key="it.id" class="cfg-item">
           <div class="cfg-main"><span class="cfg-name">{{ it.name || it.ruleName || it.id }}</span><span class="cfg-sub">{{ it.id }}</span></div>
+          <div class="cfg-act" v-if="moreTab==='v2group' || moreTab==='v2shift'">
+            <button class="cfg-mini" @click="viewMore(it)">详情</button>
+            <button class="cfg-mini danger" @click="deleteMore(it)">删除</button>
+          </div>
         </div>
       </div>
     </div>
@@ -411,7 +419,19 @@ async function removeSetting(s: ST) {
   }
 }
 type MoreItem = { id: string; name?: string; ruleName?: string }
-const moreTab = ref<'schedule' | 'employee' | 'holiday' | 'workday' | 'admin' | 'importlog' | 'statlog' | 'cycle' | 'v2wp'>('schedule')
+type MoreTabKey =
+  | 'schedule'
+  | 'employee'
+  | 'holiday'
+  | 'workday'
+  | 'admin'
+  | 'importlog'
+  | 'statlog'
+  | 'cycle'
+  | 'v2wp'
+  | 'v2group'
+  | 'v2shift'
+const moreTab = ref<MoreTabKey>('schedule')
 const moreItems = ref<MoreItem[]>([])
 const moreEndpoints: Record<string, string> = {
   schedule: '/api/attendance/assemble/control/attendanceschedulesetting/list/all',
@@ -423,11 +443,29 @@ const moreEndpoints: Record<string, string> = {
   statlog: '/api/attendance/assemble/control/attendancestatisticrequirelog/list/all',
   v2wp: '/api/attendance/assemble/control/v2/workplace/list/all',
 }
-async function switchMore(t: 'schedule' | 'employee' | 'holiday' | 'workday' | 'admin' | 'importlog' | 'statlog' | 'cycle' | 'v2wp') {
+async function switchMore(t: MoreTabKey) {
   moreTab.value = t
   if (t === 'cycle') {
     // 统计周期无 list/all 端点，仅支持按 id 建/删；切到该标签清空列表，由新建后展示
     moreItems.value = []
+    return
+  }
+  // v2 考勤组/班次：列表端点为 POST paging（后端仅注册 POST），name 过滤置空取全量。
+  // 注意：路径必须写成 api.post 调用处的字面量（提取器不解析 base 变量/三元）。
+  if (t === 'v2group' || t === 'v2shift') {
+    try {
+      const r: any =
+        t === 'v2group'
+          ? await api.post('/api/attendance/assemble/control/v2/group/list/1/size/50', { name: '' })
+          : await api.post('/api/attendance/assemble/control/v2/shift/list/1/size/50', { name: '' })
+      const rows = (r.data?.data ?? r.data ?? []) as Array<Record<string, unknown>>
+      moreItems.value = rows.map((row) => ({
+        id: String(row.id ?? ''),
+        name: String(row.groupName ?? row.shiftName ?? row.name ?? row.id ?? ''),
+      }))
+    } catch {
+      moreItems.value = []
+    }
     return
   }
   try {
@@ -435,6 +473,66 @@ async function switchMore(t: 'schedule' | 'employee' | 'holiday' | 'workday' | '
     moreItems.value = (r.data ?? []) as MoreItem[]
   } catch {
     moreItems.value = []
+  }
+}
+
+// v2 考勤组：新建（groupName 必填，admin 门禁，落 x_attendance_v2_group）
+async function addGroup() {
+  const groupName = prompt('考勤组名称 (groupName):', '')
+  if (!groupName) return
+  try {
+    await api.post('/api/attendance/assemble/control/v2/group', { groupName, checkType: 'field', status: 1 })
+    toast.success('已新建考勤组')
+    switchMore('v2group')
+  } catch (e: any) {
+    toast.error('新建失败: ' + (e?.message ?? ''))
+  }
+}
+// v2 班次：新建（shiftName 必填，admin 门禁，落 x_attendance_v2_shift）
+async function addShift() {
+  const shiftName = prompt('班次名称 (shiftName):', '')
+  if (!shiftName) return
+  const onDutyTime = prompt('上班时间 (onDutyTime, 如 09:00):', '09:00') || ''
+  const offDutyTime = prompt('下班时间 (offDutyTime, 如 18:00):', '18:00') || ''
+  try {
+    await api.post('/api/attendance/assemble/control/v2/shift/create', {
+      shiftName,
+      onDutyTime,
+      offDutyTime,
+      workTime: 480,
+    })
+    toast.success('已新建班次')
+    switchMore('v2shift')
+  } catch (e: any) {
+    toast.error('新建失败: ' + (e?.message ?? ''))
+  }
+}
+// v2 详情：按 id GET 回读单条（字面量分支，提取器不解析 url 变量）
+async function viewMore(it: MoreItem) {
+  try {
+    const r: any =
+      moreTab.value === 'v2group'
+        ? await api.get(`/api/attendance/assemble/control/v2/group/${it.id}`)
+        : await api.get(`/api/attendance/assemble/control/v2/shift/${it.id}`)
+    const d = r.data ?? {}
+    toast.success('详情: ' + (d.groupName || d.shiftName || it.name || it.id))
+  } catch (e: any) {
+    toast.error('加载详情失败: ' + (e?.message ?? ''))
+  }
+}
+// v2 删除：group 走 {id}/delete，shift 走 delete/{id}（后端均 GET，owner/admin 门禁；字面量分支）
+async function deleteMore(it: MoreItem) {
+  if (!(await confirmMsg('确认删除该项？'))) return
+  try {
+    if (moreTab.value === 'v2group') {
+      await api.get(`/api/attendance/assemble/control/v2/group/${it.id}/delete`)
+    } else {
+      await api.get(`/api/attendance/assemble/control/v2/shift/delete/${it.id}`)
+    }
+    toast.success('已删除')
+    switchMore(moreTab.value)
+  } catch (e: any) {
+    toast.error('删除失败: ' + (e?.message ?? ''))
   }
 }
 async function addCycle() {
@@ -516,6 +614,9 @@ async function loadStatistics() {
 .cfg-main{display:flex;flex-direction:column;gap:2px;flex:1}
 .cfg-name{font-weight:600;color:var(--text-primary);font-size:13px}
 .cfg-sub{font-size:12px;color:var(--text-muted)}
+.cfg-act{display:flex;gap:6px}
+.cfg-mini{padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer;font-size:12px}
+.cfg-mini.danger{border-color:var(--color-error);color:var(--color-error)}
 .cfg-del{padding:4px 12px;border-radius:var(--radius-sm);border:1px solid var(--color-error);background:var(--color-error-glow);color:var(--color-error);cursor:pointer;font-size:12px}
 .es,.ls,.es-sm{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px}
 .ei{font-size:48px;opacity:0.4}
