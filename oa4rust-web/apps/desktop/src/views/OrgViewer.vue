@@ -88,6 +88,7 @@
           <div v-else class="members">
             <h3>所属群组（直接 {{ personGroups.length }} / 嵌套 {{ personGroupsNested.length }}）</h3>
             <div v-if="personContact" class="empty-m" style="text-align:left">{{ personContact }}</div>
+            <div v-if="personRel" class="empty-m" style="text-align:left">{{ personRel }}</div>
             <div class="mlist">
               <div v-for="g in personGroups" :key="'pd'+g.id" class="mc">
                 <div class="ma2">D</div>
@@ -200,6 +201,7 @@ const supDirect = ref<N[]>([])
 const supNested = ref<N[]>([])
 const personGroups = ref<N[]>([])
 const personContact = ref('')
+const personRel = ref('')
 const personGroupsNested = ref<N[]>([])
 const personAttrs = ref<Array<Record<string, unknown>>>([])
 async function selectNode(n: N) {
@@ -233,7 +235,7 @@ async function selectNode(n: N) {
   } else {
     // 人员节点：所属群组（直接/嵌套）+ 个人属性 + 认证信息/昵称/手机——六条 distinct 真实路由
     const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
-    const [dir, nested, attrs, auth, nick, mobile, ident, grp, role] = await Promise.all([
+    const [dir, nested, attrs, auth, nick, mobile, ident, grp, role, subD, subN, supN] = await Promise.all([
       settle(api.get(`/api/organization/assemble/control/group/list/person/${n.id}/sup/direct`)),
       settle(api.get(`/api/organization/assemble/control/group/list/person/${n.id}/sup/nested`)),
       settle(api.get(`/api/organization/assemble/control/personattribute/list/person/${n.id}`)),
@@ -244,6 +246,10 @@ async function selectNode(n: N) {
       settle(api.post('/api/person/list/identity', { personList: [n.id] })),
       settle(api.post('/api/person/list/group', { personList: [n.id] })),
       settle(api.post('/api/person/list/role', { personList: [n.id] })),
+      // POST 人员树关系（body personList）——直接下级/嵌套下级/嵌套上级，3 条 distinct 模板
+      settle(api.post('/api/person/list/person/sub/direct', { personList: [n.id] })),
+      settle(api.post('/api/person/list/person/sub/nested', { personList: [n.id] })),
+      settle(api.post('/api/person/list/person/sup/nested', { personList: [n.id] })),
     ])
     personGroups.value = ((dir as any)?.data ?? []) as N[]
     personGroupsNested.value = ((nested as any)?.data ?? []) as N[]
@@ -253,6 +259,7 @@ async function selectNode(n: N) {
     const mobRow = Array.isArray((mobile as any)?.data) ? (mobile as any).data[0] : (mobile as any)?.data
     const relLen = (r: any, key: string) => (Array.isArray(r?.data?.[key]) ? r.data[key].length : (Array.isArray(r?.data) ? r.data.length : 0))
     personContact.value = `身份 ${identN} · 昵称 ${nickRow?.name ?? '—'} · 手机 ${mobRow?.mobile ?? '—'} · 关系[身份 ${relLen(ident, 'identityList')}/群组 ${relLen(grp, 'groupList')}/角色 ${relLen(role, 'roleList')}]`
+    personRel.value = `人员树[直接下级 ${relLen(subD, 'personList')}/嵌套下级 ${relLen(subN, 'personList')}/嵌套上级 ${relLen(supN, 'personList')}]`
   }
 }
 async function handleSearch() {
