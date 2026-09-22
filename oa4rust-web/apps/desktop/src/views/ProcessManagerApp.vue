@@ -18,11 +18,13 @@
         <button class="btn-refresh" @click="loadAppProcesses">🗂️ 应用与流程</button>
         <button class="btn-refresh" @click="loadOrphans">🧹 孤儿元素</button>
         <button class="btn-refresh" @click="loadProcessDetails">🧬 流程明细</button>
+        <button class="btn-refresh" @click="loadMappingAccess">🗺️ 映射/项权限</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
       </div>
       <div v-if="procDetailText" class="rp-note">{{ procDetailText }}</div>
+      <div v-if="mappingText" class="rp-note">{{ mappingText }}</div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🧩</div><p>暂无流程定义</p></div>
       <table v-else class="data-table">
@@ -51,6 +53,7 @@ interface Item {
   id: string
   name?: string
   category?: string
+  application?: string
   status?: string
   version?: string
   creator?: string
@@ -143,6 +146,34 @@ const filtered = computed(() =>
 
 function loadData() {
   qc.invalidateQueries({ queryKey: qk })
+}
+// 设计器映射/项权限族 3 条真实 distinct 路由：首流程 → 项权限列表 item-access/process/{processId}（PP_E_ITEM_ACCESS by process）
+// → 首项权限 → 项权限详情 item-access/{id}（PP_E_ITEM_ACCESS by xid）；应用维度 → 数据映射 mapping/list/application/{applicationFlag}（PP_E_MAPPING by application）
+const mappingText = ref('')
+async function loadMappingAccess() {
+  const first = items.value[0]
+  if (!first) {
+    toast.success('请先刷新加载流程定义列表')
+    return
+  }
+  const pid = String(first.id ?? '')
+  const app = String(first.application ?? first.category ?? '')
+  try {
+    const accessResp: any = pid
+      ? await api.get(`/api/processplatform/assemble/designer/item-access/process/${encodeURIComponent(pid)}`).catch(() => null)
+      : null
+    const accessRows = (Array.isArray(accessResp?.data) ? accessResp.data : []) as Array<Record<string, unknown>>
+    const accId = accessRows[0] ? String(accessRows[0].id ?? accessRows[0].xid ?? '') : ''
+    const [accDetail, mappings] = await Promise.all([
+      accId ? api.get(`/api/processplatform/assemble/designer/item-access/${encodeURIComponent(accId)}`).catch(() => null) : Promise.resolve(null),
+      app ? api.get(`/api/processplatform/assemble/designer/mapping/list/application/${encodeURIComponent(app)}`).catch(() => null) : Promise.resolve(null),
+    ])
+    const accName = (accDetail as any)?.data?.name ?? (accId || '—')
+    const mN = Array.isArray((mappings as any)?.data) ? (mappings as any).data.length : 0
+    mappingText.value = `项权限 ${accessRows.length}（首「${accName}」）· 应用映射 ${mN}`
+  } catch (e: any) {
+    toast.error('加载映射/项权限失败: ' + (e?.message ?? ''))
+  }
 }
 // 设计器流程明细族 3 条真实 distinct 路由：首流程 → 流程详情 process/{id}（PP_E_PROCESS query_opt）
 // + 流程元素 process/list/element/{id}（PP_E_PROCESS_ELEMENT）+ 流程版本 processversion/list/process/{processId}（PP_E_PROCESSVERSION）
