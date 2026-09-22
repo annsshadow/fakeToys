@@ -86,6 +86,10 @@ const REGISTERED_BACKEND_ROUTES: string[] = [
   '/api/calendar_assemble_control/event/rfc/{id}',
   '/api/calendar_assemble_control/get/control/config',
   '/api/calendar_assemble_control/list/control/calendars',
+  // 日历核心事件管理（calendar/routes.rs）——rev100 三端配合
+  '/api/calendar/event/list/{calendarId}',
+  '/api/calendar/event/create',
+  '/api/calendar/event/remove',
   // 组织增强：单位 / 群组 / 身份 / 角色——F1
   '/api/unit/list/all',
   '/api/unit/list/unit/tree',

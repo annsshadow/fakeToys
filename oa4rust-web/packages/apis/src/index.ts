@@ -643,6 +643,17 @@ export const calendarDeepApi = {
 }
 
 // ─────────────────────────────────────────────────────────────
+// 日历核心实体 (calendar core) —— 事件管理 CRUD
+// ─────────────────────────────────────────────────────────────
+export const calendarCoreApi = {
+  calendarDetail: (id: string) => api.get(`/api/calendar/calendar/${id}`),
+  eventList: (calendarId: string) => api.get(`/api/calendar/event/list/${calendarId}`),
+  eventCreate: (data: unknown) => api.post('/api/calendar/event/create', data),
+  eventUpdate: (data: unknown) => api.post('/api/calendar/event/update', data),
+  eventRemove: (id: string) => api.post('/api/calendar/event/remove', { id }),
+}
+
+// ─────────────────────────────────────────────────────────────
 // 考勤深化
 // ─────────────────────────────────────────────────────────────
 export const attendanceDeepApi = {
