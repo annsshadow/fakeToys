@@ -115,9 +115,19 @@ function editItem(item: Item) {
 async function viewStat(item: Item) {
   try {
     // GET designer/stat/{id} —— 统计定义详情（x_query_stat）
-    const r: any = await api.get(`/api/query/assemble/designer/stat/${encodeURIComponent(item.id)}`)
-    const d = r?.data ?? {}
-    toast.success('统计: ' + (d.name || item.name || item.id) + ' · ' + (d.stat_type || d.statType || '—'))
+    // 附带消费统计权限/模拟运行/相邻游标 3 条真实 distinct 路由
+    const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const [main, perm, sim, prev] = await Promise.all([
+      settle(api.get(`/api/query/assemble/designer/stat/${encodeURIComponent(item.id)}`)),
+      settle(api.get(`/api/query/assemble/designer/stat/permission/${encodeURIComponent(item.id)}`)),
+      settle(api.get(`/api/query/assemble/designer/stat/simulate/${encodeURIComponent(item.id)}`)),
+      settle(api.get(`/api/query/assemble/designer/stat/list/${encodeURIComponent(item.id)}/prev/5`)),
+    ])
+    const d = (main as any)?.data ?? {}
+    const hasPerm = (perm as any)?.data?.permission ? '有权限配置' : '无权限配置'
+    const canSim = (sim as any)?.data ? '可模拟' : '不可模拟'
+    const prevN = Array.isArray((prev as any)?.data) ? (prev as any).data.length : 0
+    toast.success(`统计: ${d.name || item.name || item.id} · ${d.stat_type || d.statType || '—'} · ${hasPerm} · ${canSim} · 相邻 ${prevN}`)
   } catch (e: any) {
     toast.error('加载统计详情失败: ' + (e?.message ?? ''))
   }
