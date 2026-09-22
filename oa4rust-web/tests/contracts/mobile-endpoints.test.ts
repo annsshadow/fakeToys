@@ -49,6 +49,11 @@ const REGISTERED_BACKEND_ROUTES: string[] = [
   '/api/form/{id}',
   '/api/processplatform/service/processing/work',
   '/api/processplatform/service/processing/data/work/{id}',
+  // 工作详情侧栏（processplatform_assemble_surface/routes.rs：data/attachment/record/worklog）
+  '/api/processplatform/assemble/surface/data/work/{id}',
+  '/api/processplatform/assemble/surface/attachment/list/work/{workId}',
+  '/api/processplatform/assemble/surface/record/list/workorworkcompleted/{workOrWorkCompleted}',
+  '/api/processplatform/assemble/surface/worklog/list/workorworkcompleted/{workOrWorkCompleted}',
   // 考勤本人打卡（attendance_assemble_control v2 mobile）
   '/api/attendance/assemble/control/v2/mobile/check/pre',
   '/api/attendance/assemble/control/v2/mobile/check',
