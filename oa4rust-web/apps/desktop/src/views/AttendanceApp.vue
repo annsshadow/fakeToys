@@ -12,6 +12,7 @@
         <button class="eb" @click="loadAttOverview">📊 汇总</button>
         <button class="eb" @click="loadAttOrg">🏢 按单位/同步</button>
         <button class="eb" @click="loadV2Meta">⚙️ v2配置/控件/请假模板</button>
+        <button class="eb" @click="loadAttBase">🗂️ 打卡/周期/员工</button>
       </div>
       <div v-if="attOverviewText" class="att-note">{{ attOverviewText }}</div>
     </div>
@@ -288,6 +289,20 @@ async function loadAttOverview() {
     attOverviewText.value = `按人 ${n(byUser)} / 未签到 ${n(nonesign)} / 启用类型 ${n(enableType)}`
   } catch (e: any) {
     toast.error('加载考勤汇总失败: ' + (e?.message ?? ''))
+  }
+}
+// 消费 attendance 核心 crate 真实路由（打卡记录/统计周期/员工配置——独立表，非 v2 assemble/control 镜像）
+async function loadAttBase() {
+  try {
+    const [records, cycles, employees] = await Promise.all([
+      api.get('/api/attendance/record/list'),
+      api.get('/api/attendance/statistical/cycle/list/all'),
+      api.get('/api/attendance/employee/config/list/all'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    attOverviewText.value = `打卡记录 ${n(records)} / 统计周期 ${n(cycles)} / 员工配置 ${n(employees)}`
+  } catch (e: any) {
+    toast.error('加载考勤基础数据失败: ' + (e?.message ?? ''))
   }
 }
 onMounted(loadData)
