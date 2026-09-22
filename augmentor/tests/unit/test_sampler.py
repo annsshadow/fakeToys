@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """ActiveSampler 单元测试
 
 覆盖问题类型判定、长度/主题/复杂度分布分析，以及覆盖不足识别与选样推荐。

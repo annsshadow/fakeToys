@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """ChromaDB 后端单元测试
 
 通过向 sys.modules 注入假 chromadb 模块，在未安装 chromadb 的环境下

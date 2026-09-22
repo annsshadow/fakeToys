@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """自动标注单元测试
 
 标注结果会作为元数据进入训练流程，实体边界与意图判定必须稳定。

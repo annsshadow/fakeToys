@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """微型分支收尾 L70：语言检测重构回归 + profiling 空输入直调
 
 锁定 data/cleaner 与 multilingual 语言检测消除死尾段后的可达词表

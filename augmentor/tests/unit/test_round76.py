@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第76轮: quality_monitor质量监控"""
 import pytest
 from augmentor.quality_monitor import QualityMonitor, create_monitor

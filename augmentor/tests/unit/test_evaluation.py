@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """evaluation 模块单元测试
 
 覆盖 tokenize / BLEU / ROUGE-L / 相似度 / ModelEvaluator

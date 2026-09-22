@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """data API 路由扩展测试
 
 覆盖路径遍历防护、索引越界、upload 往返、demo 数据、

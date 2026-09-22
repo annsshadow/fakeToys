@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """向量矩阵分块处理测试 - 验证大矩阵计算的内存优化"""
 
 import pytest

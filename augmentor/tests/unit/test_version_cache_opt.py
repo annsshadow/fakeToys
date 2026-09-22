@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """版本控制优化测试 - 版本比较缓存验证"""
 
 import pytest

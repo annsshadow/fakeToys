@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """CLI 数据集工具命令集成测试
 
 覆盖 sample / split / stats / validate / convert / search 命令，

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """expander 批量并行异常吞并分支补测
 
 batch_expand / generate_seeds_from_topics 的 worker future 异常需被

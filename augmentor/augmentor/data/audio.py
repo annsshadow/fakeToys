@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """音频数据处理模块
 
 优先使用 soundfile，未安装时使用标准库 wave 解析 WAV，其余格式退化为基础信息。

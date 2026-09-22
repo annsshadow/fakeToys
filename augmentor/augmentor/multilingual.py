@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """多语言支持模块
 
 提供语言检测、翻译增强与中英混合处理能力。

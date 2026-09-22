@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """重试与指数退避模块
 
 为模型调用等易失败的外部操作提供统一的重试策略：

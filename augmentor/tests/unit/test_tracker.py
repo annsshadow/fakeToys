@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """ExperimentTracker 单元测试
 
 覆盖实验生命周期、指标记录、对比与报告生成。

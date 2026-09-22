@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """模型后端单元测试
 
 多后端工厂与重试机制是平台可靠性的基础。

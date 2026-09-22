@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """管道集成测试
 
 验证增强、导出、分析等主流程在真实组件协作下的行为。

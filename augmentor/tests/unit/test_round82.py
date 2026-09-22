@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第82轮: enhanced_searcher增强搜索"""
 import pytest
 from augmentor.search_enhanced import EnhancedSearcher

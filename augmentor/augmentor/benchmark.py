@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """数据质量基准模块
 
 提供标准化的质量评估指标、基准存档与对比能力。

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第89轮: streaming流式处理"""
 import pytest
 from augmentor.streaming import StreamReader, StreamWriter, StreamProcessor, create_stream_processor

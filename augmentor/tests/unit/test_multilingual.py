@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """多语言支持单元测试
 
 翻译依赖模型后端，因此后端缺失、语言不支持等边界必须明确报错。

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """主动学习循环单元测试
 
 选样策略决定标注预算的投放方向，策略校验与迭代收敛必须可靠。

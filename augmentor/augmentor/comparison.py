@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """数据集对比模块
 
 提供数据集之间的A/B测试对比功能。

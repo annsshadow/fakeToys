@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """测试套件自身的卫生门禁
 
 F6 的核心诊断是"覆盖率刷分"：套件里混入大量**恒真断言**（`assert True`、

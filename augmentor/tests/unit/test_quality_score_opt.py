@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """质量评分计算优化测试 - 批量评分缓存验证"""
 
 import pytest

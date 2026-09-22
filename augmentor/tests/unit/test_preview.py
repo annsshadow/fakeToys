@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """导出预览单元测试
 
 预览是导出前的最后一道校验，必须准确暴露字段缺失等问题。

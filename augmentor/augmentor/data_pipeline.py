@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """数据管道编排模块
 
 将画像、清洗、去重、异常检测、质量评分等独立模块编排为声明式管道，

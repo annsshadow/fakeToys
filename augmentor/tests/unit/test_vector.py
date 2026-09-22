@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """向量数据库单元测试
 
 向量检索是语义去重与相似样本推荐的基础，接口一致性必须被保证。

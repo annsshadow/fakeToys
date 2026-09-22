@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """微型分支收尾 L65：visualizer/visualize_enhanced/export_enhanced 残留分支
 
 - visualizer: 话题聚类结果写入 results + output_dir 方法

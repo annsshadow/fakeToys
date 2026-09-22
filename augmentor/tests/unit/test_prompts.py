@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """prompts 提示词模板模块测试
 
 覆盖变量替换、缺变量报错、字面花括号保持、注册表渲染与包级导出。

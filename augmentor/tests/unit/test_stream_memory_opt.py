@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """流式处理内存优化测试 - 验证内存监控集成和大数据处理优化"""
 
 import pytest

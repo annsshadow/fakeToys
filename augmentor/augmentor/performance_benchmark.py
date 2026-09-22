@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """性能基准测试模块 - 测量增强流程各阶段耗时和内存峰值"""
 
 import logging

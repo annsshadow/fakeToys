@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第58轮: quality_report质量报告"""
 import pytest
 from augmentor.quality_report import QualityReporter

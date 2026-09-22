@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第96轮: impact影响评估"""
 import pytest
 from augmentor.impact import ImpactEvaluator

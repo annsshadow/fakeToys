@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """export 与 multimodal API 路由扩展测试
 
 export: 单数据集导出/批量/预览/格式列表；

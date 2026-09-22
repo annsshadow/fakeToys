@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第73轮: exporter导出增强"""
 import pytest
 from augmentor.export import Exporter, ExportFormat

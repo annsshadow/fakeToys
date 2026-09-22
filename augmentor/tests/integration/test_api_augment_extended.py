@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """augment API 路由扩展测试
 
 覆盖 start 端点的后台任务执行、progress 结构、checkpoints 列表

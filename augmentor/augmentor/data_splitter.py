@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """分层数据划分模块
 
 在数据集划分（train/val/test）时支持按字段分层采样，

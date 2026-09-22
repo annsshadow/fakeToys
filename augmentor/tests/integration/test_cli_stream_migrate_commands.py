@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """CLI 流式/迁移/监控/自测/依赖命令集成测试
 
 覆盖 stream / migrate / monitor / auto-test / dependency 五个命令，

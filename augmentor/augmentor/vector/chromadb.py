@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """ChromaDB 向量数据库实现
 
 依赖 chromadb 包；未安装时在构造阶段抛出明确的 ImportError。

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """微型分支收尾 L68：version_control/versioning/validation/search/pipeline 残留分支
 
 - version_control: 版本比较二次命中缓存
