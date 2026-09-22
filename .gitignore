@@ -111,6 +111,13 @@ augmentor/train_data_final02.json
 augmentor/enhanceTXT.py
 augmentor/bak/
 
+# augmentor 的运行时副产物（2026-09-22）：
+#   data/  是版本快照（versions/v_*），程序运行时自动生成；
+#   up.json 是临时导出的训练样本。
+#   两者均为运行时产物，不进版本控制。
+augmentor/data/
+augmentor/up.json
+
 
 # OpenCode
 .backups/
