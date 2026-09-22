@@ -2642,6 +2642,58 @@
    },
    {
     "app": "desktop",
+    "file": "apps/desktop/src/views/QueryQueryApp.vue",
+    "line": 210,
+    "method": "GET",
+    "raw": "/api/query/assemble/surface/list/${encodeURIComponent(cat)}",
+    "path": "/api/query/assemble/surface/list/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/query/assemble/surface/list/{category}",
+    "hit_crate": "query_assemble_surface",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryQueryApp.vue",
+    "line": 219,
+    "method": "GET",
+    "raw": "/api/query/assemble/surface/get/${s.id}",
+    "path": "/api/query/assemble/surface/get/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/query/assemble/surface/get/{id}",
+    "hit_crate": "query_assemble_surface",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryQueryApp.vue",
+    "line": 247,
+    "method": "POST",
+    "raw": "/api/query/assemble/surface/save/${sfEditingId.value}",
+    "path": "/api/query/assemble/surface/save/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/query/assemble/surface/save/{id}",
+    "hit_crate": "query_assemble_surface",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryQueryApp.vue",
+    "line": 265,
+    "method": "POST",
+    "raw": "/api/query/assemble/surface/delete/${s.id}",
+    "path": "/api/query/assemble/surface/delete/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/query/assemble/surface/delete/{id}",
+    "hit_crate": "query_assemble_surface",
+    "extra": null
+   },
+   {
+    "app": "desktop",
     "file": "apps/desktop/src/views/QueryStatDesignerApp.vue",
     "line": 123,
     "method": "POST",
@@ -8140,7 +8192,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryQueryApp.vue",
-    "line": 81,
+    "line": 121,
     "method": "GET",
     "raw": "/api/query/assemble/designer/list",
     "path": "/api/query/assemble/designer/list",
@@ -8153,7 +8205,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryQueryApp.vue",
-    "line": 125,
+    "line": 165,
     "method": "POST",
     "raw": "/api/query/assemble/designer/save",
     "path": "/api/query/assemble/designer/save",
@@ -8166,7 +8218,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryQueryApp.vue",
-    "line": 139,
+    "line": 179,
     "method": "POST",
     "raw": "/api/query/assemble/designer/delete",
     "path": "/api/query/assemble/designer/delete",
@@ -8174,6 +8226,19 @@
     "ambiguous": false,
     "hit": "/api/query/assemble/designer/delete",
     "hit_crate": "query_assemble_designer",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryQueryApp.vue",
+    "line": 250,
+    "method": "POST",
+    "raw": "/api/query/assemble/surface/create",
+    "path": "/api/query/assemble/surface/create",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/query/assemble/surface/create",
+    "hit_crate": "query_assemble_surface",
     "extra": []
    },
    {
