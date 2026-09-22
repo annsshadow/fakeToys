@@ -12,6 +12,7 @@
       <button class="org-meta-btn" @click="loadPersonCards">名片抽样</button>
       <button class="org-meta-btn" @click="loadOrgDetails">身份/角色/职务明细</button>
       <button class="org-meta-btn" @click="loadUnitDetails">单位明细</button>
+      <button class="org-meta-btn" @click="loadAttrDetails">单位/个人属性</button>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -235,6 +236,32 @@ async function loadUnitDetails() {
     orgMetaText.value = `单位「${name}」· 直接上级 ${supN} · 直接下级 ${subN}`
   } catch (e: any) {
     toast.error('加载单位明细失败: ' + (e?.message ?? ''))
+  }
+}
+// 消费属性族：单位/个人属性游标列表（flag=0 从头）→取首个 attr id→属性详情。4 条真实 distinct 路由。
+async function loadAttrDetails() {
+  const firstId = (resp: any): string => {
+    const arr = Array.isArray(resp?.data) ? resp.data : []
+    return arr[0] ? String(arr[0].id ?? '') : ''
+  }
+  try {
+    const [uList, pList] = await Promise.all([
+      api.get('/api/organization/assemble/control/unitattribute/list/0/next/10').catch(() => null),
+      api.get('/api/organization/assemble/control/personattribute/list/0/next/10').catch(() => null),
+    ])
+    const uId = firstId(uList)
+    const pId = firstId(pList)
+    const [uDetail, pDetail] = await Promise.all([
+      uId ? api.get(`/api/organization/assemble/control/unitattribute/${encodeURIComponent(uId)}`).catch(() => null) : Promise.resolve(null),
+      pId ? api.get(`/api/organization/assemble/control/personattribute/${encodeURIComponent(pId)}`).catch(() => null) : Promise.resolve(null),
+    ])
+    const uKey = (uDetail as any)?.data?.attribute_key ?? (uId || '—')
+    const pKey = (pDetail as any)?.data?.attribute_key ?? (pId || '—')
+    const uN = Array.isArray((uList as any)?.data) ? (uList as any).data.length : 0
+    const pN = Array.isArray((pList as any)?.data) ? (pList as any).data.length : 0
+    orgMetaText.value = `单位属性 ${uN}（首「${uKey}」）· 个人属性 ${pN}（首「${pKey}」）`
+  } catch (e: any) {
+    toast.error('加载属性明细失败: ' + (e?.message ?? ''))
   }
 }
 async function loadPinyinIndex() {
