@@ -9,6 +9,7 @@
       <span class="hdr-actions">
         <button class="new-page-btn ghost" @click="loadPortalList">门户列表</button>
         <button class="new-page-btn ghost" @click="loadPortalSurface">表面/移动</button>
+        <button class="new-page-btn ghost" @click="loadPortalResources">门户资源</button>
         <button class="new-page-btn" @click="showEditor = true">+ 新建页面</button>
       </span>
     </div>
@@ -73,6 +74,20 @@ async function loadPortalList() {
     portalListText.value = `门户 ${n(portals)} 个 / 分类 ${n(cats)} 个`
   } catch (e: any) {
     toast.error('加载门户列表失败: ' + (e?.message ?? ''))
+  }
+}
+// 门户资源（default 门户）：字典 + 文件 + 页面——三条 distinct 真实路由（portalFlag/page 参数匹配）
+async function loadPortalResources() {
+  try {
+    const [dict, files, portalPages] = await Promise.all([
+      api.get('/api/portal/assemble/surface/dict/list/portal/default'),
+      api.get('/api/portal/assemble/surface/file/list/portal/default'),
+      api.get('/api/portal/assemble/surface/list/portal/portal/default'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    portalListText.value = `字典 ${n(dict)} / 文件 ${n(files)} / 页面 ${n(portalPages)}`
+  } catch (e: any) {
+    toast.error('加载门户资源失败: ' + (e?.message ?? ''))
   }
 }
 const pages = ref<PortalPage[]>([])
