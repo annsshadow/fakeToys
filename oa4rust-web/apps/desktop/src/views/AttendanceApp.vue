@@ -118,6 +118,9 @@
             <button class="cfg-mini" @click="viewMore(it)">详情</button>
             <button class="cfg-mini danger" @click="deleteMore(it)">删除</button>
           </div>
+          <div class="cfg-act" v-else-if="moreTab==='admin' || moreTab==='employee' || moreTab==='workday'">
+            <button class="cfg-mini" @click="viewMore(it)">详情</button>
+          </div>
           <div class="cfg-act" v-else-if="moreTab==='v2leave'">
             <button class="cfg-mini danger" @click="deleteMore(it)">删除</button>
           </div>
@@ -566,12 +569,25 @@ async function addLeave() {
 // v2 详情：按 id GET 回读单条（字面量分支，提取器不解析 url 变量）
 async function viewMore(it: MoreItem) {
   try {
-    const r: any =
-      moreTab.value === 'v2group'
-        ? await api.get(`/api/attendance/assemble/control/v2/group/${it.id}`)
-        : await api.get(`/api/attendance/assemble/control/v2/shift/${it.id}`)
+    // 配置明细族真实 distinct 路由（各读独立表）：管理员 attendanceadmin/{id}（x_attendance_admin）、
+    // 员工配置 attendanceemployeeconfig/{id}（x_attendance_employee_config）、工作日 attendanceworkdayconfig/{id}（x_attendance_workday_config）。
+    let r: any
+    if (moreTab.value === 'admin') {
+      r = await api.get(`/api/attendance/assemble/control/attendanceadmin/${it.id}`)
+    } else if (moreTab.value === 'employee') {
+      r = await api.get(`/api/attendance/assemble/control/attendanceemployeeconfig/${it.id}`)
+    } else if (moreTab.value === 'workday') {
+      r = await api.get(`/api/attendance/assemble/control/attendanceworkdayconfig/${it.id}`)
+    } else if (moreTab.value === 'v2group') {
+      r = await api.get(`/api/attendance/assemble/control/v2/group/${it.id}`)
+    } else {
+      r = await api.get(`/api/attendance/assemble/control/v2/shift/${it.id}`)
+    }
     const d = r.data ?? {}
-    toast.success('详情: ' + (d.groupName || d.shiftName || it.name || it.id))
+    toast.success(
+      '详情: ' +
+        (d.groupName || d.shiftName || d.personId || d.workDate || it.name || it.id),
+    )
   } catch (e: any) {
     toast.error('加载详情失败: ' + (e?.message ?? ''))
   }
