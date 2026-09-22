@@ -105,7 +105,16 @@
       </div>
       <div class="config-actions">
         <button v-if="!showAddMcp" class="btn-mcp" @click="showAddMcp = true">+ 添加 MCP 服务</button>
+        <button class="btn-mcp" @click="loadCoreModels">核心模型/MCP 管理</button>
         <button class="btn-close-config" @click="showConfig = false">关闭</button>
+      </div>
+      <div v-if="coreText" class="config-empty">{{ coreText }}</div>
+      <div v-if="coreModels.length" class="mcp-list">
+        <div v-for="m in coreModels" :key="m.id" class="mcp-item">
+          <span class="mcp-name">{{ m.name }}</span>
+          <span class="mcp-url">{{ m.model || m.type || '—' }}</span>
+          <button class="btn-mcp" @click="viewCoreModel(m.id)">详情</button>
+        </div>
       </div>
     </div>
   </div>
@@ -280,6 +289,39 @@ async function loadMcps() {
 function openConfig() {
   showConfig.value = true
   void loadMcps()
+}
+
+// ── 核心 AI 模型/MCP 管理（core ai crate，rev112）───────────────
+type CoreModel = { id: string; name?: string; model?: string; type?: string }
+const coreModels = ref<CoreModel[]>([])
+const coreText = ref('')
+async function loadCoreModels() {
+  try {
+    // GET ai/config/list/model/paging + ai/config/list/mcp/paging —— 核心模型/MCP 分页
+    const [models, mcp] = await Promise.all([
+      api.get('/api/ai/config/list/model/paging/1/size/50'),
+      api.get('/api/ai/config/list/mcp/paging/1/size/50'),
+    ])
+    coreModels.value = ((models as any)?.data?.list ?? (models as any)?.data ?? []) as CoreModel[]
+    const mcpN = Array.isArray((mcp as any)?.data?.list)
+      ? (mcp as any).data.list.length
+      : Array.isArray((mcp as any)?.data)
+        ? (mcp as any).data.length
+        : 0
+    coreText.value = `核心模型 ${coreModels.value.length} / MCP ${mcpN}`
+  } catch (e: any) {
+    toast.error('加载核心模型失败: ' + (e?.message ?? ''))
+  }
+}
+async function viewCoreModel(flag: string) {
+  try {
+    // GET ai/config/get/model/{flag} —— 模型详情
+    const r: any = await api.get(`/api/ai/config/get/model/${encodeURIComponent(flag)}`)
+    const d = r?.data ?? {}
+    toast.success('模型: ' + (d.name || d.model || flag))
+  } catch (e: any) {
+    toast.error('加载模型详情失败: ' + (e?.message ?? ''))
+  }
 }
 
 async function toggleMcp(m: McpItem) {
