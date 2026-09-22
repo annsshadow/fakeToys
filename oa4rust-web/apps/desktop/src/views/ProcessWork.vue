@@ -64,12 +64,13 @@
           <div class="detail-block">
             <h3>附件 ({{ attachments.length }})</h3>
             <ul v-if="attachments.length" class="detail-list">
-              <li v-for="att in attachments" :key="att.id">
+              <li v-for="att in attachments" :key="att.id" class="clickable" @click="viewAttachment(att.id)">
                 <span class="name">{{ att.name || att.id }}</span>
                 <span class="muted">{{ att.extension }} · {{ fmtSize(att.length) }}</span>
               </li>
             </ul>
             <p v-else class="muted">无附件</p>
+            <p v-if="attachDetailText" class="muted">{{ attachDetailText }}</p>
           </div>
           <div class="detail-block">
             <h3>流转记录 ({{ records.length }})</h3>
@@ -94,12 +95,13 @@
           <div class="detail-block">
             <h3>待阅 ({{ reads.length }})</h3>
             <ul v-if="reads.length" class="detail-list">
-              <li v-for="rd in reads" :key="rd.id">
+              <li v-for="rd in reads" :key="rd.id" class="clickable" @click="viewRead(rd.id)">
                 <span class="name">{{ rd.person || rd.id }}</span>
                 <span class="muted">{{ fmtTime(rd.createTime) }}</span>
               </li>
             </ul>
             <p v-else class="muted">无待阅记录</p>
+            <p v-if="readDetailText" class="muted">{{ readDetailText }}</p>
           </div>
           <div v-if="effectiveTaskId" class="detail-block">
             <h3>任务信息</h3>
@@ -256,6 +258,8 @@ async function openWork(item: TaskItem): Promise<void> {
   records.value = []
   worklogs.value = []
   reads.value = []
+  attachDetailText.value = ''
+  readDetailText.value = ''
   try {
     const id = workId(item)
     const [formResponse, dataResponse] = await Promise.all([
@@ -374,6 +378,32 @@ async function pressTask(): Promise<void> {
     toast.error('催办失败: ' + (e?.message ?? ''))
   } finally {
     pressing.value = false
+  }
+}
+
+// ── 附件详情 / 待阅详情（rev110，均按 id 拉单条 distinct handler）────
+const attachDetailText = ref('')
+const readDetailText = ref('')
+async function viewAttachment(id: string): Promise<void> {
+  if (!id) return
+  try {
+    // GET service/processing/attachment/{id} —— 附件详情（x_attachment）
+    const r: any = await api.get(`/api/processplatform/service/processing/attachment/${id}`)
+    const d = r?.data ?? {}
+    attachDetailText.value = `附件：${d.name ?? id} · 创建人 ${d.creator ?? '—'}`
+  } catch (e: any) {
+    toast.error('加载附件详情失败: ' + (e?.message ?? ''))
+  }
+}
+async function viewRead(id: string): Promise<void> {
+  if (!id) return
+  try {
+    // GET assemble/surface/read/{id} —— 待阅详情（PP_C_READ）
+    const r: any = await api.get(`/api/processplatform/assemble/surface/read/${id}`)
+    const d = r?.data ?? {}
+    readDetailText.value = `待阅：${d.xtitle ?? d.title ?? id} · ${d.xperson ?? d.person ?? '—'}`
+  } catch (e: any) {
+    toast.error('加载待阅详情失败: ' + (e?.message ?? ''))
   }
 }
 
@@ -590,5 +620,7 @@ function fmtSize(bytes: unknown): string {
 .detail-list { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; max-height: 160px; overflow: auto; }
 .detail-list li { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--text-secondary); }
 .detail-list .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.detail-list li.clickable { cursor: pointer; }
+.detail-list li.clickable:hover .name { color: var(--color-primary); }
 .detail-block .muted { margin: 0; color: var(--text-muted); font-size: 12px; }
 </style>
