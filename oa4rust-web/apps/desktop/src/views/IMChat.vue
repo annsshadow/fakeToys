@@ -10,6 +10,7 @@
         <div class="header-actions">
           <button class="new-chat-btn" title="在线/会话概览" @click="loadImMeta">✉</button>
           <button class="new-chat-btn" title="未读/在线数/IM配置" @click="loadImStats">🔔</button>
+          <button class="new-chat-btn" title="即时消息/群发类型" @click="loadImInstant">📥</button>
         </div>
       </div>
       <div class="search-bar">
@@ -531,6 +532,23 @@ async function loadImMeta() {
     toast.success(`会话 ${n(convs)} / 在线 ${n(online)}`)
   } catch (e: any) {
     toast.error('加载会话概览失败: ' + (e?.message ?? ''))
+  }
+}
+// 消费即时消息/群发族 3 条真实 distinct 路由：当前人已消费即时消息 + 当前人消息列表(desc) + 群发启用类型
+async function loadImInstant() {
+  try {
+    const [consumed, listDesc, massType] = await Promise.all([
+      api.get('/api/message/assemble/communicate/instant/currentperson/consumed').catch(() => null),
+      api.get('/api/message/assemble/communicate/instant/list/currentperson/count/20/desc').catch(() => null),
+      api.get('/api/message/assemble/communicate/mass/enable/type').catch(() => null),
+    ])
+    const n = (r: any) => {
+      const d = (r as any)?.data
+      return Array.isArray(d) ? d.length : (typeof d === 'number' ? d : (d?.count ?? (d ? 1 : 0)))
+    }
+    toast.success(`已消费 ${n(consumed)} / 近期消息 ${n(listDesc)} / 群发类型 ${(massType as any)?.data ? '已启用' : '未启用'}`)
+  } catch (e: any) {
+    toast.error('加载即时消息失败: ' + (e?.message ?? ''))
   }
 }
 
