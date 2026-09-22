@@ -22,6 +22,7 @@
             <span class="col-name">{{ r.name || r.roleName || r.title || '未命名' }}</span>
             <span class="col-flag font-mono">{{ r.flag || r.id || '-' }}</span>
             <span class="col-actions">
+              <button class="btn-edit" @click="showRoleMembers(r)">成员</button>
               <button class="btn-edit" @click="editRole(r)">编辑</button>
               <button class="btn-del" @click="deleteRole(r)">删除</button>
             </span>
@@ -65,6 +66,20 @@ type Role = { flag?: string; id?: string; name?: string; roleName?: string; titl
 
 const loading = ref(false)
 const roles = ref<Role[]>([])
+async function showRoleMembers(r: Role) {
+  const flag = r.flag || r.id
+  if (!flag) return
+  try {
+    // GET organization/assemble/control/person/list/role/{roleFlag} —— 角色下人员
+    const resp: any = await api.get(
+      '/api/organization/assemble/control/person/list/role/' + encodeURIComponent(flag),
+    )
+    const n = Array.isArray(resp.data) ? resp.data.length : 0
+    toast.success('角色成员：' + n + ' 人')
+  } catch (e: any) {
+    toast.error('查询成员失败: ' + (e?.message ?? ''))
+  }
+}
 const showCreate = ref(false)
 const creating = ref(false)
 const editingRole = ref<Role | null>(null)
@@ -96,10 +111,12 @@ async function onSave() {
   }
   creating.value = true
   try {
+    // 后端 role create/update 读取 name/description（flag 在 update 走 URL，create 由后端生成）。
+    const payload = { name: form.value.name, description: form.value.desc }
     if (editingRole.value) {
-      await api.put(`/api/role/${form.value.flag}`, form.value)
+      await api.put(`/api/role/${form.value.flag}`, payload)
     } else {
-      await api.post('/api/role', form.value)
+      await api.post('/api/role', payload)
     }
     showCreate.value = false
     editingRole.value = null

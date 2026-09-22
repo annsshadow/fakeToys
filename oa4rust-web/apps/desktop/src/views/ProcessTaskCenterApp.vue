@@ -10,6 +10,14 @@
     <div class="content-panel glass-card">
       <div class="toolbar">
         <input v-model="search" placeholder="搜索标题 / 流程 / 处理人..." class="search-input" />
+        <button class="btn-refresh" @click="loadWorkList">📋 工作实例</button>
+        <button class="btn-refresh" @click="loadCounts">📊 计数</button>
+        <button class="btn-refresh" @click="loadAppOverview">🗂️ 应用概览</button>
+        <button class="btn-refresh" @click="loadTouch">⏰ 超期触发</button>
+      </div>
+      <div v-if="countsText" class="wk-chips"><span class="wk-chip">{{ countsText }}</span></div>
+      <div v-if="workItems.length" class="wk-chips">
+        <span v-for="w in workItems" :key="w.id || w.title" class="wk-chip">{{ w.title || w.id }}</span>
       </div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">⚡</div><p>暂无任务</p></div>
@@ -38,7 +46,7 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
-import { confirmMsg } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
 interface Item {
   id: string
@@ -52,6 +60,62 @@ interface Item {
 }
 
 const listEp = '/api/processplatform/service/processing/task/list'
+const workItems = ref<Array<{ id?: string; title?: string }>>([])
+const countsText = ref('')
+async function loadTouch() {
+  try {
+    // GET surface touch/expire + passexpired + touchdetained —— 超期/超期通过/催办触发
+    const [exp, passExp, detained] = await Promise.all([
+      api.get('/api/processplatform/assemble/surface/touch/expire'),
+      api.get('/api/processplatform/assemble/surface/touch/passexpired'),
+      api.get('/api/processplatform/assemble/surface/touch/touchdetained'),
+    ])
+    const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    countsText.value = `超期 ${cnt(exp)} / 超期通过 ${cnt(passExp)} / 催办 ${cnt(detained)}`
+  } catch (e: any) {
+    toast.error('触发失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadCounts() {
+  try {
+    // GET surface task/read/workcompleted list/count/application —— 待办/待阅/已办按应用计数
+    const [task, read, done, taskDone, readDone] = await Promise.all([
+      api.get('/api/processplatform/assemble/surface/task/list/count/application'),
+      api.get('/api/processplatform/assemble/surface/read/list/count/application'),
+      api.get('/api/processplatform/assemble/surface/workcompleted/list/count/application'),
+      api.get('/api/processplatform/assemble/surface/taskcompleted/list/count/application'),
+      api.get('/api/processplatform/assemble/surface/readcompleted/list/count/application'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    countsText.value = `待办 ${n(task)} / 待阅 ${n(read)} / 已办工作 ${n(done)} / 已办任务 ${n(taskDone)} / 已阅 ${n(readDone)}`
+  } catch (e: any) {
+    toast.error('加载计数失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadAppOverview() {
+  try {
+    // 消费 surface 三条无参真实路由：全部应用 / 复杂应用清单 / 工作按应用计数汇总
+    const [apps, complex, workCount] = await Promise.all([
+      api.get('/api/processplatform/assemble/surface/application/list'),
+      api.get('/api/processplatform/assemble/surface/application/list/complex'),
+      api.get('/api/processplatform/assemble/surface/work/list/count/application'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    countsText.value = `全部应用 ${n(apps)} / 复杂应用 ${n(complex)} / 工作计数 ${n(workCount)}`
+  } catch (e: any) {
+    toast.error('加载应用概览失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadWorkList() {
+  try {
+    // GET processplatform/service/processing/work/list —— 工作实例列表（Query 可选）
+    const r: any = await api.get('/api/processplatform/service/processing/work/list')
+    workItems.value = (r.data ?? []) as Array<{ id?: string; title?: string }>
+    if (workItems.value.length === 0) toast.success('暂无工作实例')
+  } catch (e: any) {
+    toast.error('加载工作实例失败: ' + (e?.message ?? ''))
+  }
+}
 const qk = ['ProcessTaskCenter', 'list']
 
 const search = ref(''),
@@ -141,4 +205,6 @@ function fmtTime(t?: string) {
 .empty-icon{font-size:32px;margin-bottom:8px}
 .skel{height:16px;background:var(--bg-elevated);border-radius:4px;margin-bottom:8px;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.wk-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.wk-chip{padding:2px 10px;border-radius:10px;background:var(--bg-elevated);border:1px solid var(--border-color);font-size:12px;color:var(--text-primary)}
 </style>

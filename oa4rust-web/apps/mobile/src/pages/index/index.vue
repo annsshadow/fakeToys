@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
-import { annApi, processApi } from '@/services'
+import { annApi, attendanceApi, processApi } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated } from '@/utils/auth-guard'
 
 const session = useSession()
 const pendingCount = ref<number | null>(null)
+const todayRecords = ref<number | null>(null)
 const loading = ref(false)
 const notices = ref<Array<{ id?: string; title?: string; content?: string; createTime?: string }>>([])
 const viewNotice = ref<{ title?: string; content?: string; createTime?: string } | null>(null)
@@ -38,10 +39,21 @@ async function loadNotices() {
   }
 }
 
+/** 今日出勤概览：取按日聚合统计的最新一条记录数。 */
+async function loadTodayAttendance() {
+  try {
+    const resp = await attendanceApi.statistics()
+    todayRecords.value = resp.data?.[0]?.records ?? 0
+  } catch {
+    todayRecords.value = null
+  }
+}
+
 onShow(async () => {
   if (!(await ensureAuthenticated())) return
   loadPending()
   loadNotices()
+  loadTodayAttendance()
 })
 
 function goTab(url: string) {
@@ -64,6 +76,11 @@ function goPage(url: string) {
         {{ pendingCount === null ? (loading ? '…' : '–') : pendingCount }}
       </view>
       <view class="stat-label">待办审批</view>
+    </view>
+
+    <view class="stat-card" @tap="goTab('/pages/attendance/attendance')">
+      <view class="stat-num">{{ todayRecords === null ? '–' : todayRecords }}</view>
+      <view class="stat-label">今日出勤</view>
     </view>
 
     <view class="section-card">
@@ -99,6 +116,27 @@ function goPage(url: string) {
       <view class="cell" @tap="goPage('/pages/process/start')">
         <text class="cell-emoji">🚀</text>
         <text class="cell-text">发起流程</text>
+      </view>
+      <!-- 阶段 G：移动端能力扩展新增入口 -->
+      <view class="cell" @tap="goPage('/pages/meeting/meeting')">
+        <text class="cell-emoji">📅</text>
+        <text class="cell-text">会议</text>
+      </view>
+      <view class="cell" @tap="goPage('/pages/calendar/calendar')">
+        <text class="cell-emoji">🗓️</text>
+        <text class="cell-text">日程</text>
+      </view>
+      <view class="cell" @tap="goPage('/pages/browse/browse')">
+        <text class="cell-emoji">📚</text>
+        <text class="cell-text">浏览</text>
+      </view>
+      <view class="cell" @tap="goPage('/pages/search/search')">
+        <text class="cell-emoji">🔍</text>
+        <text class="cell-text">搜索</text>
+      </view>
+      <view class="cell" @tap="goPage('/pages/recycle/recycle')">
+        <text class="cell-emoji">🗑️</text>
+        <text class="cell-text">回收站</text>
       </view>
     </view>
 

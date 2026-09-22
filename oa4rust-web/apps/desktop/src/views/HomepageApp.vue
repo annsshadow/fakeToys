@@ -78,9 +78,10 @@ function save() {
     return
   }
   api
+    // 后端 save_page 读取 content（页面内容）；首页 config 即其内容。
     .put(`/api/portal/assemble/designer/page/${encodeURIComponent(item.flag)}`, {
       ...item,
-      config: config.value,
+      content: config.value,
     })
     .then(() => toast.success('保存成功'))
     .catch((e: any) => toast.error('保存失败: ' + (e?.message ?? '')))

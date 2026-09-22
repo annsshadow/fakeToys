@@ -21,27 +21,28 @@ function installRequestCapture() {
 }
 
 describe('processApi approval bodies (真实审批引擎 /api/task/{id}/complete|reject)', () => {
-  it('completeTask sends the engine-required action "approve" with data/opinion defaults', async () => {
-    // 引擎缺 action 会 400；data 缺省 {} 也是引擎约定。
+  it('completeTask 仅提交 opinion（后端 task_complete 只读 opinion；approve/reject 由端点区分）', async () => {
+    // 契约核实：后端 task_complete/task_reject 只从请求体读取 opinion，
+    // 不读 data（表单数据经 data/work/{id} 落库）也不读 action（动作由 URL 端点表达）。
     const calls = installRequestCapture()
     await processApi.completeTask('t-1', { opinion: '同意', data: { x: 1 } })
     const call = calls[0]
     expect(call.method).toBe('POST')
     expect(call.url).toBe('/api/task/t-1/complete')
-    expect(call.data).toEqual({ data: { x: 1 }, opinion: '同意', action: 'approve' })
+    expect(call.data).toEqual({ opinion: '同意' })
   })
 
-  it('completeTask without payload sends the full default body', async () => {
+  it('completeTask 无 payload 时提交空 opinion', async () => {
     const calls = installRequestCapture()
     await processApi.completeTask('t-2')
-    expect(calls[0].data).toEqual({ data: {}, opinion: '', action: 'approve' })
+    expect(calls[0].data).toEqual({ opinion: '' })
   })
 
-  it('rejectTask pins action "reject" on the reject endpoint', async () => {
+  it('rejectTask 打在 reject 端点上，仅提交 opinion', async () => {
     const calls = installRequestCapture()
     await processApi.rejectTask('t-3', { opinion: '材料不全' })
     expect(calls[0].url).toBe('/api/task/t-3/reject')
-    expect(calls[0].data).toEqual({ data: {}, opinion: '材料不全', action: 'reject' })
+    expect(calls[0].data).toEqual({ opinion: '材料不全' })
   })
 
   afterEach(() => {

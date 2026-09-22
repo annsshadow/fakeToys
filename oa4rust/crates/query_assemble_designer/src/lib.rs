@@ -340,6 +340,8 @@ pub async fn execute_table_definition(
 #[derive(Debug, Deserialize)]
 pub struct CreateDesignerRequest {
     pub name: Option<String>,
+    /// 查询定义（SQL）；兼容前端以 sql 键下发。
+    #[serde(alias = "sql")]
     pub query: Option<String>,
     pub category: Option<String>,
 }

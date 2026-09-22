@@ -11,6 +11,10 @@
       <div class="toolbar">
         <input v-model="search" placeholder="搜索表单 / 应用..." class="search-input" />
         <button class="btn-refresh" @click="loadData">🔄 刷新</button>
+        <button class="btn-refresh" @click="loadTemplateForms">📄 模板表单</button>
+      </div>
+      <div v-if="templateForms.length" class="tf-chips">
+        <span v-for="tf in templateForms" :key="tf.id || tf.name" class="tf-chip">{{ tf.name || tf.id }}</span>
       </div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🧾</div><p>暂无流程表单</p></div>
@@ -46,7 +50,7 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
-import { confirmMsg } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
 interface Item {
   id: string
@@ -58,6 +62,17 @@ interface Item {
 
 const listEp = '/api/processplatform/assemble/designer/form/list'
 const createEp = '/api/processplatform/assemble/designer/form/create'
+const templateForms = ref<Array<{ id?: string; name?: string }>>([])
+async function loadTemplateForms() {
+  try {
+    // GET processplatform/assemble/designer/templateform/list/{category} —— 按分类取模板表单（default）
+    const r: any = await api.get('/api/processplatform/assemble/designer/templateform/list/default')
+    templateForms.value = (r.data ?? []) as Array<{ id?: string; name?: string }>
+    if (templateForms.value.length === 0) toast.success('该分类暂无模板表单')
+  } catch (e: any) {
+    toast.error('加载模板表单失败: ' + (e?.message ?? ''))
+  }
+}
 const qk = ['ProcessFormDesigner', 'list']
 
 const search = ref(''),
@@ -172,4 +187,6 @@ function loadData() {
 .btn-save:disabled{opacity:0.5;cursor:not-allowed}
 .skel{height:16px;background:var(--bg-elevated);border-radius:4px;margin-bottom:8px;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.tf-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.tf-chip{padding:2px 10px;border-radius:10px;background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-primary)}
 </style>

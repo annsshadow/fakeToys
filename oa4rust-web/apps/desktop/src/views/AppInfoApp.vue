@@ -14,7 +14,13 @@
       <div class="list-toolbar">
         <input v-model="keyword" placeholder="搜索应用..." class="search-input" @keyup.enter="doSearch" />
         <button class="btn-primary" @click="doSearch">搜索</button>
+        <button class="btn-primary" @click="createApp">+ 新建应用</button>
+        <button class="btn-primary" @click="loadAppViews">管理/视图/类型</button>
+        <button class="btn-primary" @click="loadAppPublish">发布/全部视图/含文档</button>
+        <button class="btn-primary" @click="loadAppExtra">受控栏目/带流程/视图数据</button>
+        <button class="btn-primary" @click="loadAppExtra2">类型管理/含文档类型/输出</button>
       </div>
+      <div v-if="appViewText" class="meta-note">{{ appViewText }}</div>
       <div class="list-panel">
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 5" :key="i"></div></div>
         <div v-else-if="items.length===0" class="empty"><div class="ei">📱</div><p>暂无应用数据</p></div>
@@ -26,6 +32,8 @@
               <div class="im">{{ item.desc || item.content || item.description || '' }}</div>
               <div class="meta">ID: {{ item.id }}</div>
             </div>
+            <button class="btn-act2" @click.stop="showPerms(item)">权限</button>
+            <button class="btn-del" @click.stop="deleteApp(item)">删除</button>
           </div>
         </div>
       </div>
@@ -44,6 +52,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
+import { confirmMsg, toast } from '../utils/toast'
 
 const keyword = ref('')
 const loading = ref(false)
@@ -78,6 +87,100 @@ async function viewDetail(item: any) {
     detailItem.value = r.data ?? item
   } catch {
     detailItem.value = item
+  }
+}
+
+const appViewText = ref('')
+async function loadAppExtra2() {
+  try {
+    // GET appinfo/list/appType/manager + list/has/document/appType + output/list
+    const [mgr, hasDocType, out] = await Promise.all([
+      api.get('/api/appinfo/list/appType/manager'),
+      api.get('/api/appinfo/list/has/document/appType'),
+      api.get('/api/output/list'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    appViewText.value = `类型管理 ${n(mgr)} / 含文档类型 ${n(hasDocType)} / 输出 ${n(out)}`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadAppExtra() {
+  try {
+    // GET cms_assemble_control/list/control/sections + appinfo/list/user/publish/with/process + list/user/view/data
+    const [sections, pubProc, viewData] = await Promise.all([
+      api.get('/api/cms_assemble_control/list/control/sections'),
+      api.get('/api/appinfo/list/user/publish/with/process'),
+      api.get('/api/appinfo/list/user/view/data'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    appViewText.value = `受控栏目 ${n(sections)} / 带流程可发布 ${n(pubProc)} / 视图数据 ${n(viewData)}`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadAppPublish() {
+  try {
+    // GET appinfo/list/user/publish + list/user/view/all + list/has/document
+    const [pub, viewAll, hasDoc] = await Promise.all([
+      api.get('/api/appinfo/list/user/publish'),
+      api.get('/api/appinfo/list/user/view/all'),
+      api.get('/api/appinfo/list/has/document'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    appViewText.value = `可发布 ${n(pub)} / 全部视图 ${n(viewAll)} / 含文档 ${n(hasDoc)}`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadAppViews() {
+  try {
+    // GET appinfo/list/manage + list/user/view + list/appType —— 管理/用户视图/类型
+    const [manage, userView, types] = await Promise.all([
+      api.get('/api/appinfo/list/manage'),
+      api.get('/api/appinfo/list/user/view'),
+      api.get('/api/appinfo/list/appType'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    appViewText.value = `管理 ${n(manage)} / 用户视图 ${n(userView)} / 类型 ${n(types)}`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+async function createApp() {
+  const alias = prompt('应用别名 (alias):')
+  if (!alias) return
+  const appType = prompt('应用类型 (appType):', 'cms') ?? 'cms'
+  try {
+    // 后端 appinfo_u2_create：读 alias/appType/icon/manager（均可选，admin 门禁），manager 默认当前登录人
+    await api.post('/api/appinfo', { alias, appType })
+    doSearch()
+  } catch (e: any) {
+    toast.error('新建失败: ' + (e?.message ?? ''))
+  }
+}
+async function deleteApp(item: any) {
+  if (!(await confirmMsg('确定删除应用「' + (item.name || item.alias || item.id) + '」？'))) return
+  try {
+    await api.delete('/api/appinfo/' + item.id)
+    doSearch()
+  } catch (e: any) {
+    toast.error('删除失败: ' + (e?.message ?? ''))
+  }
+}
+async function showPerms(item: any) {
+  try {
+    // GET permission/appInfo/{id}/{managers|publishers|viewers} —— 应用权限成员
+    const id = encodeURIComponent(item.id)
+    const [mgr, pub, viewer] = await Promise.all([
+      api.get(`/api/permission/appInfo/${id}/managers`),
+      api.get(`/api/permission/appInfo/${id}/publishers`),
+      api.get(`/api/permission/appInfo/${id}/viewers`),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    toast.success(`管理者 ${n(mgr)} / 发布者 ${n(pub)} / 查看者 ${n(viewer)}`)
+  } catch (e: any) {
+    toast.error('查询权限失败: ' + (e?.message ?? ''))
   }
 }
 
@@ -129,6 +232,9 @@ const api_list_i_1_574_data = ref<any[]>([])
 .it{font-size:14px;font-weight:600;color:var(--text-primary)}
 .im{font-size:12px;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .meta{font-size:10px;color:var(--color-primary-deep);margin-top:4px;font-family:'JetBrains Mono',monospace}
+.btn-act2{padding:4px 10px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-secondary);border-radius:var(--radius-sm);font-size:12px;cursor:pointer;flex-shrink:0;margin-right:4px}
+.btn-act2:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.btn-del{padding:4px 10px;border:1px solid var(--color-error);background:var(--color-error-glow);color:var(--color-error);border-radius:var(--radius-sm);font-size:12px;cursor:pointer;flex-shrink:0}
 .empty,.loading-row{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px}
 .ei{font-size:48px;opacity:0.4}
 .sk{height:40px;border-radius:var(--radius-md);background:var(--bg-elevated);animation:pulse 1.2s ease-in-out infinite}
@@ -139,4 +245,5 @@ const api_list_i_1_574_data = ref<any[]>([])
 .detail-pre{background:var(--bg-base);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:12px;font-size:12px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace;white-space:pre-wrap;word-break:break-all}
 .btn-close{margin-top:16px;padding:8px 20px;background:transparent;border:1px solid var(--color-primary);color:var(--color-primary);border-radius:var(--radius-md);cursor:pointer}
 @media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr)}}
+.meta-note{margin:8px 0;padding:6px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary)}
 </style>

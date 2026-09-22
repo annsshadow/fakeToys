@@ -8,6 +8,11 @@
     { "path": "pages/attendance/attendance" },
     { "path": "pages/doc/doc" },
     { "path": "pages/contacts/contacts" },
+    { "path": "pages/meeting/meeting" },
+    { "path": "pages/calendar/calendar" },
+    { "path": "pages/browse/browse" },
+    { "path": "pages/search/search" },
+    { "path": "pages/recycle/recycle" },
     { "path": "pages/mine/mine" },
     { "path": "pages/login/login" }
   ],

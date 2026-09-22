@@ -1,8 +1,8 @@
-# 注意：本文件位于仓库根 .github/workflows/，而非计划文档中写的 ai/.github/workflows/。
+# 注意：本文件位于仓库根 .github/workflows/，而非计划文档中写的 augmentor/.github/workflows/。
 # 原因同 ai-platform-ci.yml：GitHub Actions 只识别仓库根目录下的 .github/workflows/。
 #
-# 触发方式：推送形如 ai-platform-v2.0.0 的 tag
-#   git tag ai-platform-v2.0.0 && git push origin ai-platform-v2.0.0
+# 触发方式：推送形如 ai-platform-v2.2.0 的 tag
+#   git tag ai-platform-v2.2.0 && git push origin ai-platform-v2.2.0
 name: AI platform CD
 
 on:
@@ -72,8 +72,8 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75
         with:
-          context: ai
-          file: ai/docker/Dockerfile
+          context: augmentor
+          file: augmentor/docker/Dockerfile
           push: true
           tags: |
             ${{ steps.meta.outputs.image_ref }}:${{ steps.meta.outputs.tag }}

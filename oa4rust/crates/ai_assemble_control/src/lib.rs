@@ -22,8 +22,18 @@ mod tests_generated;
 
 #[derive(Debug, Deserialize)]
 pub struct ChatCompletionRequest {
+    /// 会话 id；前端亦以 clueId 下发。
+    #[serde(alias = "clueId")]
     pub conversation_id: Option<String>,
+    /// 历史消息数组（可缺省：前端简写模式仅发单条 message / 或仅建会话发 title）。
+    #[serde(default)]
     pub messages: Vec<ChatMessage>,
+    /// 单条用户消息简写（前端 sendMessage）。
+    #[serde(default)]
+    pub message: Option<String>,
+    /// 新建会话标题（前端 createNewChat 仅发 title）。
+    #[serde(default)]
+    pub title: Option<String>,
     pub context_window: Option<i32>,
 }
 
@@ -1907,12 +1917,15 @@ pub async fn chat_completion(
         .conversation_id
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
 
+    // 取最后一条用户消息：优先 messages 数组，其次前端简写 message，最后 title（仅建会话）。
     let last_user_message = req
         .messages
         .iter()
         .rev()
         .find(|m| m.role == "user")
         .map(|m| m.content.clone())
+        .or_else(|| req.message.clone())
+        .or_else(|| req.title.clone())
         .unwrap_or_default();
 
     let context_window = req.context_window.unwrap_or(20).clamp(1, 100);
@@ -2042,12 +2055,15 @@ async fn process_chat_request(
         .clone()
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
 
+    // 取最后一条用户消息：优先 messages 数组，其次前端简写 message，最后 title（仅建会话）。
     let last_user_message = req
         .messages
         .iter()
         .rev()
         .find(|m| m.role == "user")
         .map(|m| m.content.clone())
+        .or_else(|| req.message.clone())
+        .or_else(|| req.title.clone())
         .unwrap_or_default();
 
     let context_window = req.context_window.unwrap_or(20).clamp(1, 100);

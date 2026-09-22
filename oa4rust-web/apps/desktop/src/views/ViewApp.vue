@@ -7,7 +7,10 @@
     <div class="content-panel glass-card">
       <div class="toolbar">
         <button class="btn-primary" @click="loadViews">刷新</button>
+        <button class="btn-primary" @click="loadViewCategories">视图分类</button>
+        <button class="btn-primary" @click="loadFieldConfigs">字段配置</button>
       </div>
+      <div v-if="metaText" class="meta-note">{{ metaText }}</div>
       <div class="list-panel">
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 5" :key="i"></div></div>
         <div v-else-if="views.length===0" class="empty"><div class="ei">📊</div><p>暂无视图数据</p></div>
@@ -54,6 +57,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { ref } from 'vue'
+import { toast } from '../utils/toast'
 
 type ViewItem = { id: string; name?: string; viewName?: string; title?: string }
 
@@ -63,6 +67,28 @@ const activeView = ref<ViewItem | null>(null)
 const dataLoading = ref(false)
 const dataResult = ref<Record<string, unknown>[]>([])
 const cols = ref<string[]>([])
+
+const metaText = ref('')
+async function loadViewCategories() {
+  try {
+    // GET /api/viewcategory/list/all —— 视图分类
+    const r: any = await api.get('/api/viewcategory/list/all')
+    const n = Array.isArray(r.data) ? r.data.length : 0
+    metaText.value = '视图分类：' + n + ' 个'
+  } catch (e: any) {
+    toast.error('加载分类失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadFieldConfigs() {
+  try {
+    // GET /api/viewfieldconfig/list/all —— 视图字段配置
+    const r: any = await api.get('/api/viewfieldconfig/list/all')
+    const n = Array.isArray(r.data) ? r.data.length : 0
+    metaText.value = '字段配置：' + n + ' 条'
+  } catch (e: any) {
+    toast.error('加载字段配置失败: ' + (e?.message ?? ''))
+  }
+}
 
 async function loadViews() {
   loading.value = true
@@ -104,6 +130,7 @@ loadViews()
 .subtitle{font-size:12px;color:var(--text-muted);margin:0;font-family:'JetBrains Mono',monospace}
 .content-panel{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px}
 .toolbar{display:flex;gap:8px}
+.meta-note{margin:8px 0;padding:8px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary)}
 .btn-primary{padding:8px 20px;background:var(--color-primary);color:#000;border:none;border-radius:var(--radius-md);font-size:13px;cursor:pointer;font-weight:600}
 .list-panel{flex:1}
 .item-table{display:flex;flex-direction:column;gap:8px}

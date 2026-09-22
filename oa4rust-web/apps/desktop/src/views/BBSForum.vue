@@ -16,9 +16,11 @@
           <span class="search-icon">⌕</span>
           <input v-model="searchQuery" @keydown.enter="handleSearch" placeholder="搜索帖子..." class="search-input" />
         </div>
+        <button class="new-topic-btn ghost" @click="loadForums">版块列表</button>
         <button class="new-topic-btn" @click="openNewTopic">✏️ 发帖</button>
       </div>
     </div>
+    <div v-if="forumsText" class="forums-note">{{ forumsText }}</div>
 
     <!-- 左侧：版块列表 -->
     <aside class="bbs-sidebar glass-card" :class="{ collapsed: showNewTopic }">
@@ -576,6 +578,16 @@ const api_bbs_post_list_data = ref<any[]>([])
 const api_section__170_data = ref<any[]>([])
 const api_topic_re_887_data = ref<any[]>([])
 const api_core_ent_461_data = ref<any[]>([])
+const forumsText = ref('')
+async function loadForums() {
+  try {
+    // GET bbs/assemble/control/forum/list —— 版块列表（no-param handler，非裸路由 500 型）
+    const r: any = await api.get('/api/bbs/assemble/control/forum/list')
+    forumsText.value = '版块：' + (Array.isArray(r?.data) ? r.data.length : 0) + ' 个'
+  } catch (e: any) {
+    toast.error('加载版块失败: ' + (e?.message ?? ''))
+  }
+}
 const api_forum_view_1_data = ref<any[]>([])
 const api_control__714_data = ref<any[]>([])
 const api_core_ent_602_data = ref<any[]>([])
@@ -802,4 +814,6 @@ const api_control_list_top_720_data = ref<any[]>([])
 }
 .reply-textarea:focus { border-color: var(--color-primary); }
 .reply-btn { padding: 8px 16px; border-radius: var(--radius-md); border: none; background: var(--color-primary); color: white; cursor: pointer; font-size: 13px; font-weight: 600; }
+.new-topic-btn.ghost{background:transparent;border:1px solid var(--border-subtle);color:var(--text-secondary)}
+.forums-note{margin:8px 0;padding:6px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary)}
 </style>

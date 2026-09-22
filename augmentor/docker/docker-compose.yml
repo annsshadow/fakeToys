@@ -1,0 +1,58 @@
+# AI 训练数据平台 — Docker Compose
+#
+# 使用：
+#   cp .env.example .env   # 填入模型密钥
+#   docker compose up -d --build
+#
+# 变量优先从本目录的 .env 读取，未提供时回落到宿主环境变量或默认值。
+
+name: ai-data-platform
+
+services:
+  api:
+    build:
+      # 构建上下文为 augmentor/，因为 Dockerfile 需要同时访问 api/ augmentor/ web/
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        # 设为 1 时安装全部可选依赖（镜像体积显著增大）
+        INSTALL_OPTIONAL: ${INSTALL_OPTIONAL:-0}
+    image: ai-data-platform:${IMAGE_TAG:-2.2.0}
+    container_name: ai-data-platform-api
+    restart: unless-stopped
+
+    ports:
+      - "${API_PORT:-8000}:8000"
+
+    environment:
+      # 未配置的变量为空字符串：对应模型后端在构造时才会报错，
+      # 不影响其他后端的正常使用
+      BAIDU_API_KEY: ${BAIDU_API_KEY:-}
+      BAIDU_SECRET_KEY: ${BAIDU_SECRET_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+
+    volumes:
+      # 持久化数据、断点、实验记录、图表与向量库
+      - ../data:/app/data
+      - ../checkpoints:/app/checkpoints
+      - ../experiments:/app/experiments
+      - ../visualizations:/app/visualizations
+
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+    # 断点、版本与向量库都基于本地文件，单副本部署避免写竞争
+    deploy:
+      replicas: 1
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

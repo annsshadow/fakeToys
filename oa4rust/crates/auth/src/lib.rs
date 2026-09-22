@@ -152,6 +152,11 @@ mod tests_generated;
 pub struct LoginRequest {
     pub credential: String,
     pub password: String,
+    /// 验证码（可选）：仅当前端下发时校验，兼容 camelCase 键。
+    #[serde(default, alias = "captchaId")]
+    pub captcha_id: Option<String>,
+    #[serde(default, alias = "captchaAnswer")]
+    pub captcha_answer: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -197,6 +202,15 @@ pub async fn login(
         return Ok(
             Json(ActionResult::<LoginResponse>::error("invalid credentials")).into_response(),
         );
+    }
+
+    // 验证码：仅当前端同时下发 id 与答案时才校验（兼容无验证码登录场景）。
+    if let (Some(cid), Some(ans)) = (req.captcha_id.as_deref(), req.captcha_answer.as_deref()) {
+        if !cid.is_empty() && !ans.is_empty() && !captcha_verify(cid, ans).await.unwrap_or(false) {
+            return Ok(
+                Json(ActionResult::<LoginResponse>::error("captcha invalid")).into_response(),
+            );
+        }
     }
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;

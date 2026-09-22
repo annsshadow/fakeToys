@@ -1,0 +1,21 @@
+# 变异抽检配置：augmentor/export.py
+# 用法（在 augmentor/ 目录下，用项目 venv 的 python）：
+#   python scripts/mutation/run.py export
+#
+# 不要直接用 cosmic_ray.cli —— `{python}` 是 run.py 的占位符，会被替换成
+# sys.executable。写裸 `python` 会解析到没装 pytest 的托管解释器，导致所有变异体
+# 被误判为 killed（假的 100% 杀死率）。
+#
+# test-command 只跑该模块自己的测试文件，并加 --no-cov（覆盖率统计会拖慢 10 倍以上）
+# 与 -x（首个失败即停，杀死变异体不需要跑完全部用例）。
+# 依据：tests/unit/test_export.py 对 augmentor/export.py 的语句覆盖率为 98%，
+# 因此模块级变异测试可以代表该模块的测试强度。
+
+[cosmic-ray]
+module-path = "augmentor/export.py"
+timeout = 60.0
+excluded-modules = []
+test-command = "{python} -m pytest tests/unit/test_export.py -q -p no:cacheprovider --no-cov -x"
+
+[cosmic-ray.distributor]
+name = "local"

@@ -11,6 +11,10 @@
           <div class="stat-label">{{s.label}}</div>
         </div>
       </div>
+      <div class="cat-toolbar">
+        <button class="btn-create" @click="createCategory">+ 新建分类</button>
+        <button class="btn-refresh" @click="load">刷新</button>
+      </div>
       <div class="list-panel">
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 6" :key="i"></div></div>
         <div v-else-if="items.length===0" class="empty"><div class="ei">📂</div><p>暂无分类数据</p></div>
@@ -22,6 +26,7 @@
               <div class="im">{{ item.desc || item.description || item.alias || '' }}</div>
               <div class="meta">flag: {{ item.flag || item.id }}</div>
             </div>
+            <button class="btn-del" @click.stop="deleteCategory(item)">删除</button>
           </div>
         </div>
       </div>
@@ -32,6 +37,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
+import { confirmMsg, toast } from '../utils/toast'
 
 const loading = ref(false)
 const items = ref<any[]>([])
@@ -53,6 +59,28 @@ async function load() {
     items.value = []
   } finally {
     loading.value = false
+  }
+}
+
+async function createCategory() {
+  const appId = prompt('所属应用 ID (appId，必填):')
+  if (!appId) return
+  const name = prompt('分类名称:', '') ?? ''
+  try {
+    // 后端 categoryinfo_u2_create：appId 必填（owner 门禁）+ name/parentCategoryId 可选
+    await api.post('/api/categoryinfo', { appId, name })
+    load()
+  } catch (e: any) {
+    toast.error('新建失败: ' + (e?.message ?? ''))
+  }
+}
+async function deleteCategory(item: any) {
+  if (!(await confirmMsg('确定删除分类「' + (item.name || item.id) + '」？'))) return
+  try {
+    await api.delete('/api/categoryinfo/' + item.id)
+    load()
+  } catch (e: any) {
+    toast.error('删除失败: ' + (e?.message ?? ''))
   }
 }
 
@@ -91,6 +119,10 @@ const api_list_p_1_860_data = ref<any[]>([])
 .it{font-size:14px;font-weight:600;color:var(--text-primary)}
 .im{font-size:12px;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .meta{font-size:10px;color:var(--color-primary-deep);margin-top:4px;font-family:'JetBrains Mono',monospace}
+.cat-toolbar{display:flex;gap:8px}
+.btn-create{padding:8px 16px;background:var(--color-primary);color:#000;border:none;border-radius:var(--radius-md);font-size:13px;cursor:pointer;font-weight:600}
+.btn-refresh{padding:8px 16px;background:var(--bg-elevated);border:1px solid var(--border-subtle);color:var(--text-secondary);border-radius:var(--radius-md);font-size:13px;cursor:pointer}
+.btn-del{padding:4px 10px;border:1px solid var(--color-error);background:var(--color-error-glow);color:var(--color-error);border-radius:var(--radius-sm);font-size:12px;cursor:pointer;flex-shrink:0}
 .empty,.loading-row{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px}
 .ei{font-size:48px;opacity:0.4}
 .sk{height:40px;border-radius:var(--radius-md);background:var(--bg-elevated);animation:pulse 1.2s ease-in-out infinite}

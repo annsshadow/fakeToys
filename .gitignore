@@ -27,6 +27,7 @@ oa4rust-web/playwright-report/
 oa4rust-web/coverage/
 oa4rust-web/coverage-mobile/
 oa4rust-web/apps/mobile/coverage-mobile/
+augmentor/web/coverage/
 
 # IDE
 .idea/
@@ -80,11 +81,11 @@ oa4rust/deploy/.backups/
 !oa4rust/docs/ops/*.txt
 # 审计/对账的文本证据（可读报告、候选路由对照）需入库，否则审计不可复现。
 !docs/audits/**/*.txt
-# ai 子项目的依赖清单必须纳入版本控制：CI 的 cache-dependency-path、
+# augmentor 子项目的依赖清单必须纳入版本控制：CI 的 cache-dependency-path、
 # Dockerfile 的 COPY requirements.txt 均依赖之，缺失会直接导致构建失败。
-!ai/requirements.txt
-!ai/requirements-core.txt
-!ai/requirements-dev.txt
+!augmentor/requirements.txt
+!augmentor/requirements-core.txt
+!augmentor/requirements-dev.txt
 scripts/cleanup_*.js
 
 # Environment secrets
@@ -96,6 +97,26 @@ scripts/.java-seed-ids.json
 .coverage
 coverage.xml
 htmlcov/
+
+# augmentor 的冗余数据与重复脚本（约 11.9 MB）。
+# 依据：train_data.json 与 train_data_final.json 的 md5 完全相同（a83320ab…）；
+#       enhanceTXT.py 与 archive/enhanceTXT.py 的 md5 完全相同（e74dc8a5…）；
+#       bak/ 是历史备份目录。三者都不被任何代码或测试在运行时读取
+#       （docs/API.md、docs/README.md 里的同名引用只是示例文件名）。
+# 已用 `git rm --cached` 移出版本控制，**本地文件保留**，不影响现有工作流。
+augmentor/train_data.json
+augmentor/train_data_final.json
+augmentor/train_data_final01.json
+augmentor/train_data_final02.json
+augmentor/enhanceTXT.py
+augmentor/bak/
+
+# augmentor 的运行时副产物（2026-09-22）：
+#   data/  是版本快照（versions/v_*），程序运行时自动生成；
+#   up.json 是临时导出的训练样本。
+#   两者均为运行时产物，不进版本控制。
+augmentor/data/
+augmentor/up.json
 
 
 # OpenCode

@@ -79,9 +79,10 @@ function save() {
     return
   }
   api
+    // 后端 save_designer 读取 query（查询定义）；find 的 config 即其定义。
     .put(`/api/query/assemble/designer/save/${encodeURIComponent(item.id)}`, {
       ...item,
-      config: config.value,
+      query: config.value,
     })
     .then(() => toast.info('保存成功'))
     .catch((e: any) => toast.error('保存失败: ' + (e?.message ?? '')))

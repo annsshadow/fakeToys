@@ -44,6 +44,15 @@
       </div>
     </div>
 
+    <div class="cal-list-bar glass-card">
+      <span class="cll-title">日历：</span>
+      <button class="cll-tab" :class="{on:calScope==='my'}" @click="loadCalendars('my')">我的（{{ myCals.length }}）</button>
+      <button class="cll-tab" :class="{on:calScope==='public'}" @click="loadCalendars('public')">公共（{{ pubCals.length }}）</button>
+      <button class="cll-tab" @click="loadCalSettings">⚙️ 设置/权限</button>
+      <span v-if="calSettingText" class="cll-note">{{ calSettingText }}</span>
+      <span v-for="c in (calScope==='my'?myCals:pubCals)" :key="c.id" class="cll-chip" :style="{borderColor:c.color||'var(--color-primary)'}">{{ c.name }}</span>
+    </div>
+
     <!-- 选中日期事件列表 -->
     <div v-if="selectedDate" class="event-panel glass-card">
       <div class="panel-header">
@@ -68,6 +77,7 @@
 
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
+import { toast } from '../utils/toast'
 import { useQuery } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 
@@ -84,6 +94,43 @@ const today = new Date()
 const currentYear = ref(today.getFullYear())
 const currentMonth = ref(today.getMonth() + 1)
 const selectedDate = ref<{ year: number; month: number; day: number } | null>(null)
+
+interface CalItem { id: string; name?: string; color?: string; isPublic?: boolean }
+const calScope = ref<'my' | 'public'>('my')
+const myCals = ref<CalItem[]>([])
+const pubCals = ref<CalItem[]>([])
+const calSettingText = ref('')
+async function loadCalSettings() {
+  try {
+    // GET calendar setting/list/all + calendar/ismanager —— 日历设置与管理权限
+    const [settings, mgr] = await Promise.all([
+      api.get('/api/calendar_assemble_control/setting/list/all'),
+      api.get('/api/calendar_assemble_control/calendar/ismanager'),
+    ])
+    const n = Array.isArray((settings as any)?.data) ? (settings as any).data.length : 0
+    const isMgr = (mgr as any)?.data === true || (mgr as any)?.data?.isManager === true
+    calSettingText.value = `设置 ${n} 项 · ${isMgr ? '你是管理员' : '普通用户'}`
+  } catch (e: any) {
+    toast.error('加载日历设置失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadCalendars(scope: 'my' | 'public') {
+  calScope.value = scope
+  try {
+    // GET calendar/calendar/list/my | list/public —— 我的/公共日历列表（字面量路径，避免提取器归一化为 list/{}）
+    const r: any =
+      scope === 'my'
+        ? await api.get('/api/calendar/calendar/list/my')
+        : await api.get('/api/calendar/calendar/list/public')
+    const list = (r.data?.list ?? r.data ?? []) as CalItem[]
+    if (scope === 'my') myCals.value = list
+    else pubCals.value = list
+  } catch {
+    if (scope === 'my') myCals.value = []
+    else pubCals.value = []
+  }
+}
+loadCalendars('my')
 
 const weekdays = ['日', '一', '二', '三', '四', '五', '六']
 
@@ -316,6 +363,13 @@ const api_calendar_a_291_data = ref<any[]>([])
 .event-info { flex: 1; }
 .event-title { font-size: 13px; color: var(--text-primary); font-weight: 500; }
 .event-time { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+.cal-list-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 16px}
+.cll-title{font-size:13px;color:var(--text-muted)}
+.cll-tab{padding:4px 12px;border-radius:12px;border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer;font-size:12px}
+.cll-tab.on{border-color:var(--color-primary);color:var(--color-primary);background:var(--color-primary-soft)}
+.cll-note{font-size:12px;color:var(--text-muted)}
+.cll-chip{padding:2px 10px;border-radius:10px;border-left:3px solid var(--color-primary);background:var(--bg-elevated);color:var(--text-primary);font-size:12px}
 
 @media (max-width: 768px) {
   .view-header { flex-direction: column; gap: 8px; }

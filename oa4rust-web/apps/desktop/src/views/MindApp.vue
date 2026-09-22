@@ -5,7 +5,10 @@
       <div class="header-actions">
         <button class="btn" :disabled="!currentFolder" @click="createMind">新建导图</button>
         <button class="btn secondary" :disabled="loadingFolder" @click="loadFolders">刷新目录</button>
+        <button class="btn secondary" @click="loadAllMinds">全部导图</button>
+        <button class="btn secondary" @click="loadMindConfig">配置/我的目录</button>
       </div>
+      <div v-if="allMindsText" class="notice">{{ allMindsText }}</div>
     </div>
     <div v-if="loadError" class="notice error">{{ loadError }}</div>
     <div class="split-panel">
@@ -84,6 +87,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { computed, nextTick, ref } from 'vue'
+import { toast } from '../utils/toast'
 
 type Folder = { id: string; name?: string; title?: string; parentId?: string; children?: Folder[] }
 type MindItem = {
@@ -171,6 +175,35 @@ function toggleFolder(folder: Folder) {
   else next.add(folder.id)
   expandedFolders.value = next
 }
+const allMindsText = ref('')
+async function loadMindConfig() {
+  try {
+    // GET mind/assemble/control/config + assemble/control/folder/tree/my —— 导图控制配置/我的目录树
+    const [cfg, folders] = await Promise.all([
+      api.get<unknown>('/api/mind/assemble/control/config'),
+      api.get<unknown>('/api/mind/assemble/control/folder/tree/my'),
+    ])
+    const hasCfg = (cfg as any)?.data ? '有' : '无'
+    const n = Array.isArray((folders as any)?.data) ? (folders as any).data.length : 0
+    allMindsText.value = `控制配置 ${hasCfg} / 我的目录 ${n} 个`
+  } catch (e: any) {
+    toast.error('加载导图配置失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadAllMinds() {
+  try {
+    // GET mind/core/entity/list + folder/list —— 全部导图与文件夹
+    const [minds, folders] = await Promise.all([
+      api.get<unknown>('/api/mind/core/entity/list'),
+      api.get<unknown>('/api/mind/core/entity/folder/list'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    allMindsText.value = `导图 ${n(minds)} 个 / 文件夹 ${n(folders)} 个`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+
 async function loadFolders() {
   loadingFolder.value = true
   loadError.value = ''

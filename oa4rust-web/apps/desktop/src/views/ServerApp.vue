@@ -3,6 +3,13 @@
     <div class="view-header glass-card">
       <h1>服务器管理</h1>
       <p class="subtitle">/api/server/* — 命令执行与授权管理</p>
+      <button class="srv-meta-btn" @click="loadSysStatus">系统状态/信息</button>
+      <button class="srv-meta-btn" @click="loadGeneralMeta">通用/区域/工时</button>
+      <button class="srv-meta-btn" @click="loadGeneralMeta2">密级/考勤范围/二维码</button>
+      <button class="srv-meta-btn" @click="loadGeneralMeta3">密级对象/主体/内网</button>
+      <button class="srv-meta-btn" @click="loadBaseMeta">Echo/缓存详情/OpenAPI</button>
+      <button class="srv-meta-btn" @click="loadBaseMeta2">根Echo/根缓存/根OpenAPI</button>
+      <div v-if="sysStatusText" class="srv-meta-note">{{ sysStatusText }}</div>
     </div>
     <div class="content-panel glass-card">
       <div class="grid-2col">
@@ -43,6 +50,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { ref } from 'vue'
+import { toast } from '../utils/toast'
 
 const command = ref('')
 const executing = ref(false)
@@ -50,6 +58,92 @@ const execOutput = ref('')
 const execError = ref('')
 const loadingLicense = ref(false)
 const license = ref<Record<string, unknown> | null>(null)
+
+const sysStatusText = ref('')
+async function loadBaseMeta2() {
+  try {
+    // 消费 base_core_project 根别名三条无参真实路由：echo / 缓存详情 / openapi（与 base/ 前缀不同注册路径）
+    const [echo, cache, openapi] = await Promise.all([
+      api.get('/api/echo'),
+      api.get('/api/cache/detail'),
+      api.get('/api/openapi'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    sysStatusText.value = `根Echo ${(echo as any)?.data ? '通' : '—'} · 根缓存 ${n(cache)} · 根OpenAPI ${(openapi as any)?.data ? '有' : '—'}`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadBaseMeta() {
+  try {
+    // 消费 base 三条无参真实路由：echo 探活 / 缓存详情 / OpenAPI 信息
+    const [echo, cache, openapi] = await Promise.all([
+      api.get('/api/base/echo'),
+      api.get('/api/base/cache/detail'),
+      api.get('/api/base/openapi/info'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    sysStatusText.value = `Echo ${(echo as any)?.data ? '通' : '—'} · 缓存详情 ${n(cache)} · OpenAPI ${(openapi as any)?.data ? '有' : '—'}`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadGeneralMeta3() {
+  try {
+    // 消费 general/assemble/control 三条真实路由：密级对象 / 密级主体 / 内网检查配置
+    const [obj, subj, ecnet] = await Promise.all([
+      api.get('/api/general/assemble/control/securityclearance/object'),
+      api.get('/api/general/assemble/control/securityclearance/subject'),
+      api.get('/api/general/assemble/control/ecnet/check'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    sysStatusText.value = `密级对象 ${n(obj)} · 密级主体 ${n(subj)} · 内网配置 ${n(ecnet)}`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadGeneralMeta2() {
+  try {
+    // GET general/assemble/control securityclearance/system + attendscope/list + qrcode/list —— 密级系统/考勤范围/二维码
+    const [sec, scope, qr] = await Promise.all([
+      api.get('/api/general/assemble/control/securityclearance/system'),
+      api.get('/api/general/assemble/control/attendscope/list'),
+      api.get('/api/general/assemble/control/qrcode/list'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    sysStatusText.value = `密级系统 ${(sec as any)?.data ? '有' : '无'} · 考勤范围 ${n(scope)} · 二维码 ${n(qr)}`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadGeneralMeta() {
+  try {
+    // GET general/assemble/control/status + area/list + worktime/minutesofworkday —— 通用控制状态/区域/工作日分钟
+    const [status, area, worktime] = await Promise.all([
+      api.get('/api/general/assemble/control/status'),
+      api.get('/api/general/assemble/control/area/list'),
+      api.get('/api/general/assemble/control/worktime/minutesofworkday'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    sysStatusText.value = `通用状态 ${(status as any)?.data ? '有' : '无'} · 区域 ${n(area)} · 工时配置 ${(worktime as any)?.data ? '有' : '无'}`
+  } catch (e: any) {
+    toast.error('加载通用配置失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadSysStatus() {
+  try {
+    // GET console/status + console/system/info —— 控制台状态与系统信息
+    const [status, info] = await Promise.all([
+      api.get('/api/console/status'),
+      api.get('/api/console/system/info'),
+    ])
+    const st = (status as any)?.data ? '在线' : '未知'
+    const infoObj = (info as any)?.data ?? {}
+    sysStatusText.value = `状态 ${st} · 信息 ${JSON.stringify(infoObj).slice(0, 60)}`
+  } catch (e: any) {
+    toast.error('加载系统状态失败: ' + (e?.message ?? ''))
+  }
+}
 
 async function loadLicense() {
   loadingLicense.value = true
@@ -117,6 +211,8 @@ const api_fireschedule_cla_721_data = ref<any[]>([])
 
 <style scoped>
 .mod-view{display:flex;flex-direction:column;gap:16px;height:100%}
+.srv-meta-btn{padding:6px 14px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer;font-size:13px}
+.srv-meta-note{margin-top:8px;padding:6px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary);word-break:break-all}
 .view-header{padding:16px 24px}
 .view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
 .subtitle{font-size:12px;color:var(--text-muted);margin:0;font-family:'JetBrains Mono',monospace}

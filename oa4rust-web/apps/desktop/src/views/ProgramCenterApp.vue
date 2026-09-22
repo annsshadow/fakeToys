@@ -11,6 +11,9 @@
         <button :class="{active:tab==='script'}" @click="tab='script'">Script</button>
         <button :class="{active:tab==='dict'}" @click="tab='dict'">Dict</button>
         <button :class="{active:tab==='market'}" @click="tab='market'">Market</button>
+        <button :class="{active:tab==='invoke'}" @click="switchTab('invoke')">Invoke</button>
+        <button :class="{active:tab==='config'}" @click="switchTab('config')">Config</button>
+        <button :class="{active:tab==='style'}" @click="switchTab('style')">Style</button>
       </div>
       <!-- Agent tab -->
       <div v-if="tab==='agent'" class="tab-content">
@@ -29,6 +32,7 @@
             <span class="col-status" :class="a.enabled!==false?'enabled':'disabled'">{{ a.enabled!==false?'启用':'禁用' }}</span>
             <span class="col-actions">
               <button class="btn-sm" @click="toggleAgent(a)">{{ a.enabled!==false ? '禁用' : '启用' }}</button>
+              <button class="btn-sm" @click="executeAgent(a)">执行</button>
               <button class="btn-sm" @click="editAgent(a)">编辑</button>
               <button class="btn-sm" style="color:var(--color-error)" @click="deleteAgent(a)">删除</button>
             </span>
@@ -37,6 +41,7 @@
       </div>
       <!-- Application tab -->
       <div v-if="tab==='application'" class="tab-content">
+        <div class="toolbar"><button class="btn-primary" @click="loadAllApplications">全部应用</button><button class="btn-primary" @click="loadCenterMeta">注册应用/版本/验证码</button><span v-if="appMetaText" class="app-meta">{{ appMetaText }}</span></div>
         <div v-if="loadingApp" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
         <div v-else-if="applications.length===0" class="empty"><div class="ei">📱</div><p>暂无Application</p></div>
         <div v-else class="item-grid">
@@ -92,6 +97,11 @@
       </div>
       <!-- Market tab -->
       <div v-if="tab==='market'" class="tab-content">
+        <div class="market-bar">
+          <button class="chip" :class="{on:marketCat===''}" @click="filterCat('')">全部</button>
+          <button v-for="c in marketCats" :key="c" class="chip" :class="{on:marketCat===c}" @click="filterCat(c)">{{ c }}</button>
+          <button class="chip" @click="loadTopThree">🔥 热门 Top3</button>
+        </div>
         <div v-if="loadingMarket" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
         <div v-else-if="markets.length===0" class="empty"><div class="ei">🏪</div><p>暂无市场数据</p></div>
         <div v-else class="item-grid">
@@ -100,11 +110,88 @@
             <div class="ib">
               <div class="it">{{ m.name || m.title || '未命名' }}</div>
               <div class="im">{{ m.desc || '' }}</div>
+              <div v-if="m.id && installedVer[m.id]" class="im">已装版本: {{ installedVer[m.id] }}</div>
+            </div>
+            <div class="market-acts">
+              <button class="btn-sm" @click="installMarket(m)">安装/更新</button>
+              <button class="btn-sm" @click="checkVersion(m)">版本</button>
+              <button class="btn-sm" @click="uninstallMarket(m)">卸载</button>
             </div>
           </div>
         </div>
       </div>
     </div>
+      <!-- Invoke tab -->
+      <div v-if="tab==='invoke'" class="tab-content">
+        <div class="toolbar">
+          <button class="btn-primary" @click="loadInvokes">刷新</button>
+          <button class="btn-primary" @click="loadInvokeByCategory">按分类</button>
+          <button class="btn-create" @click="createInvoke">+ 新建接口</button>
+        </div>
+        <div v-if="loadingInvoke" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
+        <div v-else-if="invokes.length===0" class="empty"><div class="ei">🔌</div><p>暂无接口</p></div>
+        <div v-else class="item-table">
+          <div class="table-header"><span class="col-name">名称</span><span class="col-flag">别名</span><span class="col-status">状态</span><span class="col-actions">操作</span></div>
+          <div v-for="iv in invokes" :key="iv.id" class="table-row glass-card">
+            <span class="col-name">{{ iv.name || '未命名' }}</span>
+            <span class="col-flag font-mono">{{ iv.alias || iv.category || '—' }}</span>
+            <span class="col-status" :class="iv.enable!==false?'enabled':'disabled'">{{ iv.enable!==false?'启用':'禁用' }}</span>
+            <span class="col-actions">
+              <button class="btn-sm" style="color:var(--color-error)" @click="deleteInvoke(iv)">删除</button>
+            </span>
+          </div>
+        </div>
+      </div>
+      <!-- Config tab -->
+      <div v-if="tab==='config'" class="tab-content">
+        <div class="toolbar">
+          <button class="btn-primary" @click="loadConfigs">全部配置</button>
+          <button class="btn-primary" @click="loadConfigApps">应用配置</button>
+          <button class="btn-primary" @click="loadConfigEntities">实体配置</button>
+          <button class="btn-primary" @click="loadDataStructure">数据结构</button>
+          <button class="btn-primary" @click="loadDsTables">表/字段/验证码</button>
+          <button class="btn-primary" @click="loadDeployMeta">Token/部署资源/节点</button>
+          <button class="btn-primary" @click="loadConfigDump">配置转储/三元管理</button>
+          <button class="btn-primary" @click="loadJestModule">测试/版本/模块</button>
+          <button class="btn-primary" @click="loadSchedule">调度/本地调度/报告</button>
+          <button class="btn-primary" @click="loadOutputMeta">输出/模块分类/存储映射</button>
+          <button class="btn-primary" @click="loadErrorLogStats">错误日志/当前节点</button>
+          <button class="btn-primary" @click="loadWeixinMeta">微信菜单/校验元/输出结构</button>
+          <button class="btn-primary" @click="loadProgramAlias">应用别名/当前样式/数据结构</button>
+          <button class="btn-primary" @click="loadDesignerJest">设计器搜索/中心测试/脚本基准</button>
+          <button class="btn-create" @click="saveConfig">+ 新建/更新</button>
+        </div>
+        <div v-if="dsText" class="app-meta">{{ dsText }}</div>
+        <div v-if="loadingConfig" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
+        <div v-else-if="configs.length===0" class="empty"><div class="ei">⚙️</div><p>暂无配置项</p></div>
+        <div v-else class="item-table">
+          <div class="table-header"><span class="col-name">Key</span><span class="col-flag">Value</span><span class="col-status">分类</span><span class="col-actions">—</span></div>
+          <div v-for="cf in configs" :key="cf.id || cf.key" class="table-row glass-card">
+            <span class="col-name">{{ cf.key || '—' }}</span>
+            <span class="col-flag font-mono">{{ cf.value || '—' }}</span>
+            <span class="col-status">{{ cf.category || '—' }}</span>
+            <span class="col-actions"></span>
+          </div>
+        </div>
+      </div>
+      <!-- Style tab -->
+      <div v-if="tab==='style'" class="tab-content">
+        <div class="toolbar">
+          <button class="btn-primary" @click="loadCurrentStyle">当前样式</button>
+          <button class="btn-primary" @click="loadPortalApps">门户应用</button>
+        </div>
+        <div v-if="loadingStyle" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
+        <div v-else-if="styleApps.length===0" class="empty"><div class="ei">🎨</div><p>暂无样式/应用</p></div>
+        <div v-else class="item-table">
+          <div class="table-header"><span class="col-name">应用</span><span class="col-flag">App ID</span><span class="col-status">状态</span><span class="col-actions">—</span></div>
+          <div v-for="ap in styleApps" :key="ap.id || ap.appId" class="table-row glass-card">
+            <span class="col-name">{{ ap.name || '—' }}</span>
+            <span class="col-flag font-mono">{{ ap.appId || ap.id || '—' }}</span>
+            <span class="col-status" :class="ap.disable?'disabled':'enabled'">{{ ap.disable?'停用':'启用' }}</span>
+            <span class="col-actions"></span>
+          </div>
+        </div>
+      </div>
     <!-- Create agent modal -->
     <div v-if="showCreateAgent" class="modal-overlay" @click.self="showCreateAgent=false">
       <div class="modal glass-card">
@@ -195,14 +282,17 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation } from '@tanstack/vue-query'
 import { computed, ref, watch } from 'vue'
-import { toast } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
-type Tab = 'agent' | 'application' | 'script' | 'dict' | 'market'
+type Tab = 'agent' | 'application' | 'script' | 'dict' | 'market' | 'invoke' | 'config' | 'style'
 type Agent = { id?: string; name?: string; label?: string; agentName?: string; flag?: string; enabled?: boolean }
 type App = { id?: string; name?: string; appName?: string; desc?: string; description?: string; flag?: string }
 type Script = { id?: string; name?: string; scriptName?: string; flag?: string }
 type Dict = { id?: string; name?: string; dictName?: string; flag?: string; keyName?: string }
 type Market = { id?: string; name?: string; title?: string; desc?: string }
+type Invoke = { id?: string; name?: string; alias?: string; category?: string; enable?: boolean }
+type Config = { id?: string; key?: string; value?: string; category?: string }
+type StyleApp = { id?: string; name?: string; appId?: string; disable?: boolean }
 
 const tab = ref<Tab>('agent')
 const loadingAgent = ref(false)
@@ -215,6 +305,12 @@ const applications = ref<App[]>([])
 const scripts = ref<Script[]>([])
 const dicts = ref<Dict[]>([])
 const markets = ref<Market[]>([])
+const invokes = ref<Invoke[]>([])
+const loadingInvoke = ref(false)
+const configs = ref<Config[]>([])
+const loadingConfig = ref(false)
+const styleApps = ref<StyleApp[]>([])
+const loadingStyle = ref(false)
 const showCreateAgent = ref(false)
 const showCreateDict = ref(false)
 const agentForm = ref({ name: '', flag: '' })
@@ -262,6 +358,35 @@ async function loadAgents() {
     agents.value = []
   } finally {
     loadingAgent.value = false
+  }
+}
+const appMetaText = ref('')
+async function loadAllApplications() {
+  try {
+    // GET program_center/applications + center/applications —— 全部应用/中心应用
+    const [apps, center] = await Promise.all([
+      api.get('/api/program_center/applications'),
+      api.get('/api/program_center/center/applications'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    appMetaText.value = `全部应用 ${n(apps)} / 中心应用 ${n(center)}`
+  } catch (e: any) {
+    toast.error('加载应用清单失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadCenterMeta() {
+  try {
+    // 消费 program_center 三条真实路由：注册应用 / 中心版本 / 验证码脚本清单
+    const [regist, version, codes] = await Promise.all([
+      api.get('/api/program_center/center/regist/applications'),
+      api.get('/api/program_center/center/version'),
+      api.get('/api/program_center/code/list'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    const ver = (version as any)?.data?.version ?? '—'
+    appMetaText.value = `注册应用 ${n(regist)} / 版本 ${ver} / 验证码 ${n(codes)}`
+  } catch (e: any) {
+    toast.error('加载中心信息失败: ' + (e?.message ?? ''))
   }
 }
 async function loadApps() {
@@ -317,16 +442,28 @@ function switchTab(t: Tab) {
   else if (t === 'script') loadScripts()
   else if (t === 'dict') loadDict()
   else if (t === 'market') loadMarket()
+  else if (t === 'invoke') loadInvokes()
+  else if (t === 'config') loadConfigs()
+  else if (t === 'style') loadCurrentStyle()
 }
 
 async function toggleAgent(a: Agent) {
   try {
     const action = a.enabled !== false ? 'disable' : 'enable'
-    await api.post(`/api/program_center/agent/${a.flag || a.id}/${action}`, null)
+    await api.get(`/api/program_center/agent/${a.flag || a.id}/${action}`)
     toast.success(action === 'enable' ? '已启用' : '已禁用')
     loadAgents()
   } catch (e: any) {
     toast.error(e?.message ?? '操作失败')
+  }
+}
+async function executeAgent(a: Agent) {
+  try {
+    // GET /agent/{flag}/execute —— 触发调度并记录日志
+    await api.get(`/api/program_center/agent/${a.flag || a.id}/execute`)
+    toast.success('已触发执行')
+  } catch (e: any) {
+    toast.error(e?.message ?? '执行失败')
   }
 }
 
@@ -637,6 +774,347 @@ function setMarketCover(flag: string) {
   marketCoverPicM.mutate(flag)
 }
 
+// 应用市场：分类 / 热门 / 安装-卸载-版本（program_center market 族，均 GET）
+const marketCats = ref<string[]>([])
+const marketCat = ref('')
+const installedVer = ref<Record<string, string>>({})
+async function loadMarketCats() {
+  try {
+    const r: any = await api.get('/api/program_center/market/list/category')
+    marketCats.value = ((r.data ?? []) as any[])
+      .map((c) => (typeof c === 'string' ? c : (c?.category ?? c?.name)))
+      .filter((c): c is string => !!c)
+  } catch {
+    marketCats.value = []
+  }
+}
+
+// 接口调用（invoke）：列表 / 新建 / 删除 / 分类（program_center invoke 族）
+async function loadInvokeByCategory() {
+  try {
+    // GET program_center/invoke/list/with/category/category —— 按分类接口清单
+    const r: any = await api.get('/api/program_center/invoke/list/with/category/category')
+    invokes.value = (r.data ?? []) as Invoke[]
+    toast.success('按分类接口：' + invokes.value.length + ' 个')
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadInvokes() {
+  loadingInvoke.value = true
+  try {
+    const r: any = await api.get('/api/program_center/invoke')
+    invokes.value = (r.data ?? []) as Invoke[]
+  } catch {
+    invokes.value = []
+  } finally {
+    loadingInvoke.value = false
+  }
+}
+async function createInvoke() {
+  const name = prompt('接口名称:')
+  if (!name) return
+  const alias = prompt('别名（可选）:', '') ?? ''
+  const category = prompt('分类（可选）:', '') ?? ''
+  try {
+    // 后端 u2_invoke_create：U2InvokeRequest{ name(必填)/alias/category/description }
+    await api.post('/api/program_center/invoke', { name, alias, category, description: '' })
+    loadInvokes()
+  } catch (e: any) {
+    toast.error('新建失败: ' + (e?.message ?? ''))
+  }
+}
+async function deleteInvoke(iv: Invoke) {
+  if (!(await confirmMsg('确定删除接口「' + (iv.name || iv.id) + '」？'))) return
+  try {
+    await api.delete('/api/program_center/invoke/' + (iv.id || ''))
+    loadInvokes()
+  } catch (e: any) {
+    toast.error('删除失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadInvokeCats() {
+  try {
+    await api.get('/api/program_center/invoke/list/category')
+  } catch {
+    /* 分类列表供后续过滤，失败忽略 */
+  }
+}
+loadInvokeCats()
+
+// 平台配置（config）：列表 / 应用 / 实体 / 新建更新（program_center config 族）
+const dsText = ref('')
+async function loadDataStructure() {
+  try {
+    // GET program_center/datastructure/modules/all + module/output/list/structure —— 数据结构模块
+    const [mods, structs] = await Promise.all([
+      api.get('/api/program_center/datastructure/modules/all'),
+      api.get('/api/program_center/module/output/list/structure'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    dsText.value = `数据结构模块 ${n(mods)} / 输出结构 ${n(structs)}`
+  } catch (e: any) {
+    toast.error('加载数据结构失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadDesignerJest() {
+  try {
+    // 消费 program_center 三条无参真实路由：设计器搜索 / Jest 中心清单 / 脚本基准
+    const [designer, jestCenter, bench] = await Promise.all([
+      api.get('/api/program_center/designer/search'),
+      api.get('/api/program_center/jest/center/list'),
+      api.get('/api/program_center/validation/scripting/benchmark'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    dsText.value = `设计器搜索 ${n(designer)} / 中心测试 ${n(jestCenter)} / 脚本基准 ${n(bench)}`
+  } catch (e: any) {
+    toast.error('加载设计器/测试失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadProgramAlias() {
+  try {
+    // 消费 program 别名族三条真实路由（与 program_center 前缀不同的注册路径）：应用清单 / 当前样式 / 数据结构模块
+    const [apps, style, modules] = await Promise.all([
+      api.get('/api/program/applications'),
+      api.get('/api/program/appstyle/current/style'),
+      api.get('/api/program/datastructure/modules/all'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    dsText.value = `应用 ${n(apps)} / 当前样式 ${n(style)} / 数据结构 ${n(modules)}`
+  } catch (e: any) {
+    toast.error('加载应用别名失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadWeixinMeta() {
+  try {
+    // 消费 program_center 三条无参真实路由：微信菜单清单 / 校验元数据 / 模块输出结构
+    const [menu, meta, struct] = await Promise.all([
+      api.get('/api/program_center/mpweixin/menu/list/weixin'),
+      api.get('/api/program_center/validation/meta'),
+      api.get('/api/program_center/module/output/structure'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    dsText.value = `微信菜单 ${n(menu)} / 校验元 ${n(meta)} / 输出结构 ${n(struct)}`
+  } catch (e: any) {
+    toast.error('加载微信/校验失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadErrorLogStats() {
+  try {
+    // 消费 program_center 三条无参真实路由：错误日志按异常类统计 / 按 logger 统计 / 当前节点转储数据
+    const [byExc, byLogger, curNode] = await Promise.all([
+      api.get('/api/program_center/prompterrorlog/count/exceptionclass'),
+      api.get('/api/program_center/prompterrorlog/count/loggername'),
+      api.get('/api/program_center/config/list/dump/data/current/node'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    dsText.value = `按异常类 ${n(byExc)} / 按Logger ${n(byLogger)} / 当前节点 ${n(curNode)}`
+  } catch (e: any) {
+    toast.error('加载错误日志统计失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadOutputMeta() {
+  try {
+    // 消费 program_center 三条无参真实路由：输出清单 / 模块分类清单 / 存储映射
+    const [output, modCat, storage] = await Promise.all([
+      api.get('/api/program_center/output/list'),
+      api.get('/api/program_center/module/list/category'),
+      api.get('/api/program_center/storagemappings'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    dsText.value = `输出 ${n(output)} / 模块分类 ${n(modCat)} / 存储映射 ${n(storage)}`
+  } catch (e: any) {
+    toast.error('加载输出/存储失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadSchedule() {
+  try {
+    // 消费 program_center 三条无参真实路由：调度清单 / 本地调度清单 / 调度报告
+    const [sched, local, report] = await Promise.all([
+      api.get('/api/program_center/schedule/list/schedule'),
+      api.get('/api/program_center/schedule/list/schedulelocal'),
+      api.get('/api/program_center/schedule/report'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    dsText.value = `调度 ${n(sched)} / 本地调度 ${n(local)} / 报告 ${n(report)}`
+  } catch (e: any) {
+    toast.error('加载调度失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadJestModule() {
+  try {
+    // 消费 program_center 三条无参真实路由：Jest 测试清单 / Jest 版本 / 模块清单
+    const [jest, version, modules] = await Promise.all([
+      api.get('/api/program_center/jest/list'),
+      api.get('/api/program_center/jest/version'),
+      api.get('/api/program_center/module/list'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const ver = (version as any)?.data?.version ?? ((version as any)?.data ? '有' : '—')
+    dsText.value = `测试 ${n(jest)} / 版本 ${ver} / 模块 ${n(modules)}`
+  } catch (e: any) {
+    toast.error('加载测试/模块失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadConfigDump() {
+  try {
+    // 消费 program_center 三条无参真实路由：配置转储 / 转储数据清单 / 三元配置管理
+    const [dump, dumpData, ternary] = await Promise.all([
+      api.get('/api/program_center/config'),
+      api.get('/api/program_center/config/list/dump/data'),
+      api.get('/api/program_center/config/ternary/management'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    dsText.value = `配置转储 ${n(dump)} / 转储数据 ${n(dumpData)} / 三元管理 ${n(ternary)}`
+  } catch (e: any) {
+    toast.error('加载配置转储失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadDeployMeta() {
+  try {
+    // 消费 program_center 三条无参真实路由：系统 Token 配置 / 部署资源 / 节点命令清单
+    const [token, resource, nodes] = await Promise.all([
+      api.get('/api/program_center/config/token'),
+      api.get('/api/program_center/deploy/server/resource'),
+      api.get('/api/program_center/command/list/node'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    const hasToken = (token as any)?.data ? '有' : '无'
+    dsText.value = `系统Token ${hasToken} / 部署资源 ${n(resource)} / 节点 ${n(nodes)}`
+  } catch (e: any) {
+    toast.error('加载部署信息失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadDsTables() {
+  try {
+    // 消费 program_center 三条无参真实路由：全部数据表 / 全部字段 / 验证码清单
+    const [tables, fields, captcha] = await Promise.all([
+      api.get('/api/program_center/datastructure/tables/all'),
+      api.get('/api/program_center/datastructure/fileds/all'),
+      api.get('/api/program_center/captcha/list'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    dsText.value = `数据表 ${n(tables)} / 字段 ${n(fields)} / 验证码 ${n(captcha)}`
+  } catch (e: any) {
+    toast.error('加载表结构失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadConfigs() {
+  loadingConfig.value = true
+  try {
+    const r: any = await api.get('/api/program_center/config/list')
+    configs.value = (r.data ?? []) as Config[]
+  } catch {
+    configs.value = []
+  } finally {
+    loadingConfig.value = false
+  }
+}
+async function loadConfigApps() {
+  loadingConfig.value = true
+  try {
+    const r: any = await api.get('/api/program_center/config/list/application')
+    configs.value = (r.data ?? []) as Config[]
+  } catch {
+    configs.value = []
+  } finally {
+    loadingConfig.value = false
+  }
+}
+async function loadConfigEntities() {
+  loadingConfig.value = true
+  try {
+    const r: any = await api.get('/api/program_center/config/list/entity')
+    configs.value = (r.data ?? []) as Config[]
+  } catch {
+    configs.value = []
+  } finally {
+    loadingConfig.value = false
+  }
+}
+async function saveConfig() {
+  const key = prompt('配置 Key:')
+  if (!key) return
+  const value = prompt('配置 Value（可选）:', '') ?? ''
+  const category = prompt('分类（可选）:', '') ?? ''
+  try {
+    // 后端 config_save：ConfigSaveRequest{ key(必填)/value/category/creator }，key 冲突则更新
+    await api.post('/api/program_center/config/save', { key, value, category })
+    loadConfigs()
+  } catch (e: any) {
+    toast.error('保存失败: ' + (e?.message ?? ''))
+  }
+}
+// 应用样式（appstyle）：当前样式 / 门户应用（program_center appstyle 族，GET 只读）
+async function loadCurrentStyle() {
+  loadingStyle.value = true
+  try {
+    const r: any = await api.get('/api/program_center/appstyle/current/style')
+    const d = r.data
+    styleApps.value = (Array.isArray(d) ? d : d ? [d] : []) as StyleApp[]
+  } catch {
+    styleApps.value = []
+  } finally {
+    loadingStyle.value = false
+  }
+}
+async function loadPortalApps() {
+  loadingStyle.value = true
+  try {
+    const r: any = await api.get('/api/program_center/appstyle/index/portal')
+    styleApps.value = (r.data ?? []) as StyleApp[]
+  } catch {
+    styleApps.value = []
+  } finally {
+    loadingStyle.value = false
+  }
+}
+loadMarketCats()
+function filterCat(cat: string) {
+  marketCat.value = cat
+  if (!cat) {
+    loadMarket()
+  } else {
+    markets.value = markets.value.filter((m) => (m as any).category === cat)
+  }
+}
+async function loadTopThree() {
+  try {
+    const r: any = await api.get('/api/program_center/market/list/top/three')
+    markets.value = (r.data ?? []) as Market[]
+  } catch {
+    toast.error('加载热门失败')
+  }
+}
+async function installMarket(m: Market) {
+  try {
+    await api.get(`/api/program_center/market/${encodeURIComponent(m.id || '')}/install/or/update`)
+    toast.success('安装/更新已触发')
+    checkVersion(m)
+  } catch {
+    toast.error('安装失败')
+  }
+}
+async function checkVersion(m: Market) {
+  if (!m.id) return
+  try {
+    const r: any = await api.get(`/api/program_center/market/${encodeURIComponent(m.id)}/installed/version`)
+    installedVer.value = { ...installedVer.value, [m.id]: r.data?.version || '未安装' }
+  } catch {
+    /* 未部署时后端返回 error，忽略 */
+  }
+}
+async function uninstallMarket(m: Market) {
+  if (!(await confirmMsg('确定卸载「' + (m.name || m.title || m.id) + '」？'))) return
+  try {
+    await api.get(`/api/program_center/market/${encodeURIComponent(m.id || '')}/uninstall`)
+    toast.success('卸载已触发')
+  } catch {
+    toast.error('卸载失败')
+  }
+}
+loadMarketCats()
+
 // MPWeixin 扩展
 // 注：后端 /api/program_center/mpweixin/check 与 /mpweixin/menu/add 为无参占位注册，
 // 其 handler 需 Path 参数 → 运行时必 500（同 BBS 裸路由问题），且无参数化正确路由可改调；
@@ -748,4 +1226,9 @@ const program_center_module_write_m_1_ref = ref<any[]>([])
 .ver-table{width:100%;border-collapse:collapse;margin-bottom:8px}
 .ver-table th,.ver-table td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border-subtle);font-size:13px}
 .ver-table th{color:var(--text-muted);font-size:11px;text-transform:uppercase}
+.market-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.chip{padding:4px 12px;border-radius:14px;border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer;font-size:12px}
+.chip.on{border-color:var(--color-primary);color:var(--color-primary);background:var(--color-primary-soft)}
+.market-acts{display:flex;gap:6px;flex-wrap:wrap}
+.app-meta{margin-left:10px;font-size:12px;color:var(--text-muted)}
 </style>

@@ -96,18 +96,18 @@ describe('processApi request shapes', () => {
     })
   })
 
-  it('complete/reject pin the engine task endpoints with action payload', async () => {
+  it('complete/reject 打在引擎任务端点上，仅提交 opinion（后端只读 opinion）', async () => {
     await processApi.completeTask('t-1', { opinion: 'ok' })
     expect(last()).toMatchObject({
       verb: 'post',
       path: '/api/task/t-1/complete',
-      body: { data: {}, opinion: 'ok', action: 'approve' },
+      body: { opinion: 'ok' },
     })
     await processApi.rejectTask('t-2')
     expect(last()).toMatchObject({
       verb: 'post',
       path: '/api/task/t-2/reject',
-      body: { data: {}, opinion: '', action: 'reject' },
+      body: { opinion: '' },
     })
   })
 
