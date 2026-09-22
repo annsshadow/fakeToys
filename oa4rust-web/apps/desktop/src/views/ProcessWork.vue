@@ -324,14 +324,15 @@ async function submit(action: 'approve' | 'reject'): Promise<void> {
   }
   submitting.value = true
   const id = workId(opened.value)
-  const payload = { data: formValues.value, opinion: opinion.value, action }
+  // 表单数据经 data/work/{id} 落库；complete/reject 仅需 opinion（后端只读 opinion）。
+  const opinionPayload = { opinion: opinion.value }
   try {
     await api.put(`/api/processplatform/service/processing/data/work/${id}`, formValues.value)
     const taskId = activeTab.value === 'started' ? handleTaskId.value : opened.value.id
     if (action === 'approve') {
-      await api.post(`/api/task/${taskId}/complete`, payload)
+      await api.post(`/api/task/${taskId}/complete`, opinionPayload)
     } else {
-      await api.post(`/api/task/${taskId}/reject`, payload)
+      await api.post(`/api/task/${taskId}/reject`, opinionPayload)
     }
     toast.success(action === 'approve' ? '审批通过' : '已驳回')
     closeWork()

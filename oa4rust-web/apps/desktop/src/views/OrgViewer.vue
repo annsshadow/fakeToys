@@ -3,6 +3,10 @@
     <div class="view-header glass-card">
       <h1>组织架构</h1>
       <p class="subtitle">/api/organization/assemble/control/*</p>
+      <button class="org-meta-btn" @click="loadOrgMeta">权限/卡类型</button>
+      <button class="org-meta-btn" @click="loadPinyinIndex">拼音首字母索引</button>
+      <button class="org-meta-btn" @click="loadExpressMeta">同步配置/单位/状态</button>
+      <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
       <aside class="org-tree glass-card">
@@ -46,6 +50,14 @@
               </div>
               <div v-else class="empty-m">No members</div>
             </div>
+            <h3 style="margin-top:16px">直接子群组（{{ subGroups.length }}）</h3>
+            <div class="mlist">
+              <div v-if="subGroups.length" class="mc" v-for="g in subGroups" :key="g.id">
+                <div class="ma2">D</div>
+                <div class="mi2"><div class="mn">{{ g.name }}</div><div class="mp">{{ g.id }}</div></div>
+              </div>
+              <div v-else class="empty-m">无子群组</div>
+            </div>
           </div>
         </template>
       </main>
@@ -54,6 +66,7 @@
 </template>
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
+import { toast } from '../utils/toast'
 import { useQuery } from '@tanstack/vue-query'
 import { ref } from 'vue'
 
@@ -64,6 +77,48 @@ interface N {
   _exp?: boolean
   children?: N[]
   childCount?: number
+}
+const orgMetaText = ref('')
+async function loadOrgMeta() {
+  try {
+    // GET permissionsetting/list + personcard/listgrouptypes —— 权限设置/人员卡分组类型
+    const [perms, cardTypes] = await Promise.all([
+      api.get('/api/organization/assemble/control/permissionsetting/list'),
+      api.get('/api/organization/assemble/control/personcard/listgrouptypes'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    orgMetaText.value = `权限设置 ${n(perms)} / 卡分组类型 ${n(cardTypes)}`
+  } catch (e: any) {
+    toast.error('加载组织元数据失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadExpressMeta() {
+  try {
+    // 消费 org express 三条无参真实路由：同步配置 / 组织单位清单 / 同步状态
+    const [config, units, status] = await Promise.all([
+      api.get('/api/organization/assemble/express/config/get'),
+      api.get('/api/organization/assemble/express/units/list'),
+      api.get('/api/organization/assemble/express/status/get'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    orgMetaText.value = `同步配置 ${n(config)} / 单位 ${n(units)} / 状态 ${n(status)}`
+  } catch (e: any) {
+    toast.error('加载同步元数据失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadPinyinIndex() {
+  try {
+    // 消费 org control 三条无参真实路由：群组/身份/角色 按拼音首字母索引
+    const [groups, identities, roles] = await Promise.all([
+      api.get('/api/organization/assemble/control/group/list/pinyininitial'),
+      api.get('/api/organization/assemble/control/identity/list/pinyininitial'),
+      api.get('/api/organization/assemble/control/role/list/pinyininitial'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    orgMetaText.value = `群组首字母 ${n(groups)} / 身份首字母 ${n(identities)} / 角色首字母 ${n(roles)}`
+  } catch (e: any) {
+    toast.error('加载拼音索引失败: ' + (e?.message ?? ''))
+  }
 }
 const keyword = ref('')
 const nodes = ref<N[]>([])
@@ -90,8 +145,20 @@ function toggleNode(n: N) {
     })
   }
 }
-function selectNode(n: N) {
+const subGroups = ref<N[]>([])
+async function selectNode(n: N) {
   selected.value = n
+  subGroups.value = []
+  if (n.type === 'group') {
+    try {
+      // group/{flag}（详情，确保命中真实端点）+ group/list/{flag}/sub/direct（直接子群组）
+      await api.get('/api/organization/assemble/control/group/' + n.id)
+      const r: any = await api.get(`/api/organization/assemble/control/group/list/${n.id}/sub/direct`)
+      subGroups.value = (r.data ?? []) as N[]
+    } catch {
+      subGroups.value = []
+    }
+  }
 }
 async function handleSearch() {
   if (!keyword.value.trim()) {
@@ -107,6 +174,8 @@ async function handleSearch() {
 }
 </script>
 <style scoped>
+.org-meta-btn{padding:6px 14px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer;font-size:13px}
+.org-meta-note{font-size:12px;color:var(--text-muted);margin-left:8px}
 .org-view{display:flex;flex-direction:column;gap:16px;height:100%}
 .view-header{padding:16px 24px}
 .view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}

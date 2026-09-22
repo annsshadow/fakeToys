@@ -14,7 +14,10 @@
       <div class="list-toolbar">
         <input v-model="keyword" placeholder="搜索热帖..." class="search-input" @keyup.enter="doSearch" />
         <button class="btn-primary" @click="doSearch">搜索</button>
+        <button class="btn-primary" @click="loadHotpicMeta">热图/面板</button>
+        <button class="btn-primary" @click="loadHotpicMeta2">热图2/面板2/应用2</button>
       </div>
+      <div v-if="hotpicMetaText" class="hp-note">{{ hotpicMetaText }}</div>
       <div class="list-panel">
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 5" :key="i"></div></div>
         <div v-else-if="items.length===0" class="empty"><div class="ei">🔥</div><p>暂无热帖数据</p></div>
@@ -37,6 +40,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
+import { toast } from '../utils/toast'
 
 const keyword = ref('')
 const loading = ref(false)
@@ -48,6 +52,36 @@ const stats = computed(() => [
   { label: '精华', value: items.value.filter((i) => i.isCream).length, color: 'var(--color-success)' },
   { label: '加载中', value: loading.value ? 1 : 0, color: 'var(--color-error)' },
 ])
+
+const hotpicMetaText = ref('')
+async function loadHotpicMeta2() {
+  try {
+    // 消费 hotpic 别名族三条真实路由：热图清单 / 控制面板 / 控制应用（与 assemble_control 前缀不同的注册路径）
+    const [hp, panels, apps] = await Promise.all([
+      api.get('/api/hotpic/list/hotpics'),
+      api.get('/api/hotpic/assemble/control/list/control/panels'),
+      api.get('/api/hotpic/assemble/control/list/control/applications'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    hotpicMetaText.value = `热图 ${n(hp)} / 面板 ${n(panels)} / 应用 ${n(apps)}`
+  } catch (e: any) {
+    toast.error('加载热图元数据失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadHotpicMeta() {
+  try {
+    // GET hotpic_assemble_control/list/hotpics + list/control/panels + list/control/applications
+    const [hp, panels, apps] = await Promise.all([
+      api.get('/api/hotpic_assemble_control/list/hotpics'),
+      api.get('/api/hotpic_assemble_control/list/control/panels'),
+      api.get('/api/hotpic_assemble_control/list/control/applications'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    hotpicMetaText.value = `热图 ${n(hp)} / 面板 ${n(panels)} / 应用 ${n(apps)}`
+  } catch (e: any) {
+    toast.error('加载热图元数据失败: ' + (e?.message ?? ''))
+  }
+}
 
 async function doSearch() {
   loading.value = true
@@ -148,4 +182,5 @@ const api_hotpic_cor_93_data = ref<any[]>([])
 .sk{height:40px;border-radius:var(--radius-md);background:var(--bg-elevated);animation:pulse 1.2s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:.4}50%{opacity:.8}}
 @media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr)}}
+.hp-note{margin:8px 0;padding:6px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary)}
 </style>

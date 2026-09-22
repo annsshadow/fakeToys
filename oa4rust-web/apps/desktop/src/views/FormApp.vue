@@ -308,10 +308,12 @@ async function saveForm() {
     return
   }
   try {
+    // 后端 form_u2 契约：name + definition（definition 兼容 JSON 字符串）
+    const payload = { name: mform.value.name, definition: mform.value.schema }
     if (editingForm.value?.id) {
-      await api.put('/api/form/' + editingForm.value.id, mform.value)
+      await api.put('/api/form/' + editingForm.value.id, payload)
     } else {
-      await api.post('/api/form', mform.value)
+      await api.post('/api/form', payload)
     }
     showCreate.value = false
     loadList()

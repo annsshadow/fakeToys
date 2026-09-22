@@ -9,7 +9,9 @@
         <input v-model="keyword" placeholder="搜索视图..." class="search-input" @keyup.enter="doSearch" />
         <button class="btn-primary" @click="doSearch">搜索</button>
         <button class="btn-primary" @click="loadViews">刷新</button>
+        <button class="btn-primary" @click="loadQueryList">查询列表</button>
       </div>
+      <div v-if="queryListText" class="qv-note">{{ queryListText }}</div>
       <div class="list-panel">
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 6" :key="i"></div></div>
         <div v-else-if="views.length===0" class="empty"><div class="ei">📊</div><p>暂无查询视图</p></div>
@@ -74,8 +76,8 @@ const execResult = ref<Record<string, unknown>[]>([])
 async function doSearch() {
   loading.value = true
   try {
-    // 后端 queryview/search 仅注册 POST。
-    const r = await api.post('/api/queryview/search', { keyword: keyword.value })
+    // 后端 queryview/search 仅注册 POST，读取键为 key（兼容 query）。
+    const r = await api.post('/api/queryview/search', { key: keyword.value })
     views.value = r.data ?? []
   } catch {
     views.value = []
@@ -84,6 +86,17 @@ async function doSearch() {
   }
 }
 
+const queryListText = ref('')
+async function loadQueryList() {
+  try {
+    // GET /api/queryview/query/list —— 查询视图-查询列表
+    const r: any = await api.get('/api/queryview/query/list')
+    const n = Array.isArray(r.data) ? r.data.length : 0
+    queryListText.value = '查询列表：' + n + ' 个'
+  } catch (e: any) {
+    toast.error('加载查询列表失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadViews() {
   loading.value = true
   try {
@@ -177,6 +190,7 @@ const api_queryview__430_data = ref<any[]>([])
 .subtitle{font-size:12px;color:var(--text-muted);margin:0;font-family:'JetBrains Mono',monospace}
 .content-panel{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px}
 .toolbar{display:flex;gap:8px}
+.qv-note{margin:8px 0;padding:8px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary)}
 .search-input{flex:1;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-md);color:var(--text-primary);padding:8px 12px;font-size:14px}
 .search-input:focus{outline:none;border-color:var(--color-primary)}
 .btn-primary{padding:8px 20px;background:var(--color-primary);color:#000;border:none;border-radius:var(--radius-md);font-size:13px;cursor:pointer;font-weight:600}
