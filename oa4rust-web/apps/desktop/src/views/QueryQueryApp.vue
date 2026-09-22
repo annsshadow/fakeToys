@@ -13,6 +13,8 @@
     <div class="content-panel glass-card">
       <div class="toolbar">
         <input v-model="search" placeholder="搜索名称 / 分类..." class="search-input" />
+        <input v-model="catFilter" placeholder="按分类精确加载" class="search-input mono" @keydown.enter="loadByCategory" />
+        <button class="btn-refresh" @click="loadByCategory">按分类</button>
         <button class="btn-refresh" @click="loadData">🔄 刷新</button>
       </div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
@@ -186,6 +188,22 @@ async function deleteItem(item: Item) {
 }
 function loadData() {
   qc.invalidateQueries({ queryKey: qk })
+}
+
+// 按分类精确加载（GET designer/list/{category}，handler list_designers，区别于 bare list）
+const catFilter = ref('')
+async function loadByCategory() {
+  const cat = catFilter.value.trim()
+  if (!cat) {
+    loadData()
+    return
+  }
+  try {
+    const r: any = await api.get(`/api/query/assemble/designer/list/${encodeURIComponent(cat)}`)
+    items.value = (Array.isArray(r?.data) ? r.data : (r?.data?.data ?? [])) as Item[]
+  } catch (e: any) {
+    toast.error('按分类加载失败: ' + (e?.message ?? ''))
+  }
 }
 
 // ── 表面查询 CRUD（x_query_surface，rev106）─────────────────────
