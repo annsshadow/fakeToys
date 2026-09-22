@@ -3072,7 +3072,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryStatDesignerApp.vue",
-    "line": 118,
+    "line": 121,
     "method": "GET",
     "raw": "/api/query/assemble/designer/stat/${encodeURIComponent(item.id)}",
     "path": "/api/query/assemble/designer/stat/{}",
@@ -3085,7 +3085,33 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryStatDesignerApp.vue",
-    "line": 134,
+    "line": 122,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/stat/permission/${encodeURIComponent(item.id)}",
+    "path": "/api/query/assemble/designer/stat/permission/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/query/assemble/designer/stat/permission/{id}",
+    "hit_crate": "query_assemble_designer",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryStatDesignerApp.vue",
+    "line": 123,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/stat/simulate/${encodeURIComponent(item.id)}",
+    "path": "/api/query/assemble/designer/stat/simulate/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/query/assemble/designer/stat/simulate/{id}",
+    "hit_crate": "query_assemble_designer",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryStatDesignerApp.vue",
+    "line": 144,
     "method": "POST",
     "raw": "/api/query/assemble/designer/stat/save/${editingId.value}",
     "path": "/api/query/assemble/designer/stat/save/{}",
@@ -3098,7 +3124,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryStatDesignerApp.vue",
-    "line": 150,
+    "line": 160,
     "method": "POST",
     "raw": "/api/query/assemble/designer/stat/delete/${id}",
     "path": "/api/query/assemble/designer/stat/delete/{}",
@@ -8947,7 +8973,22 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryStatDesignerApp.vue",
-    "line": 135,
+    "line": 124,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/stat/list/${encodeURIComponent(item.id)}/prev/5",
+    "path": "/api/query/assemble/designer/stat/list/{}/prev/5",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/query/assemble/designer/stat/list/{id}/prev/{count}",
+    "hit_crate": "query_assemble_designer",
+    "extra": [
+     "count=5"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryStatDesignerApp.vue",
+    "line": 145,
     "method": "POST",
     "raw": "/api/query/assemble/designer/stat/create",
     "path": "/api/query/assemble/designer/stat/create",

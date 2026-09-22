@@ -6404,7 +6404,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryStatDesignerApp.vue",
-    "line": 118,
+    "line": 121,
     "method": "GET",
     "raw": "/api/query/assemble/designer/stat/${encodeURIComponent(item.id)}",
     "path": "/api/query/assemble/designer/stat/{}",
@@ -6414,7 +6414,37 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryStatDesignerApp.vue",
-    "line": 134,
+    "line": 122,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/stat/permission/${encodeURIComponent(item.id)}",
+    "path": "/api/query/assemble/designer/stat/permission/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryStatDesignerApp.vue",
+    "line": 123,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/stat/simulate/${encodeURIComponent(item.id)}",
+    "path": "/api/query/assemble/designer/stat/simulate/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryStatDesignerApp.vue",
+    "line": 124,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/stat/list/${encodeURIComponent(item.id)}/prev/5",
+    "path": "/api/query/assemble/designer/stat/list/{}/prev/5",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryStatDesignerApp.vue",
+    "line": 144,
     "method": "POST",
     "raw": "/api/query/assemble/designer/stat/save/${editingId.value}",
     "path": "/api/query/assemble/designer/stat/save/{}",
@@ -6424,7 +6454,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryStatDesignerApp.vue",
-    "line": 135,
+    "line": 145,
     "method": "POST",
     "raw": "/api/query/assemble/designer/stat/create",
     "path": "/api/query/assemble/designer/stat/create",
@@ -6434,7 +6464,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryStatDesignerApp.vue",
-    "line": 150,
+    "line": 160,
     "method": "POST",
     "raw": "/api/query/assemble/designer/stat/delete/${id}",
     "path": "/api/query/assemble/designer/stat/delete/{}",
