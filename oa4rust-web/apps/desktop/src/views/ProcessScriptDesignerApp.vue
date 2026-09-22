@@ -18,8 +18,6 @@ import ScriptWorkbench, {
   type ScriptWorkbenchAdapter,
 } from '../components/ScriptWorkbench.vue'
 
-const base = '/api/processplatform/assemble/designer'
-
 function extractData(response: unknown): Record<string, unknown>[] {
   const data = (response as { data?: unknown })?.data
   if (Array.isArray(data)) return data
@@ -29,9 +27,10 @@ function extractData(response: unknown): Record<string, unknown>[] {
   return []
 }
 
+// 端点写成 api.* 调用处的字面量（提取器不解析 `${base}` 模板变量，否则真实消费漏计）。
 const adapter: ScriptWorkbenchAdapter = {
   async list(): Promise<ScriptListItem[]> {
-    const response = await api.get(`${base}/script/list/paging/1/50/50`)
+    const response = await api.get('/api/processplatform/assemble/designer/script/list/paging/1/50/50')
     return extractData(response).map((row) => ({
       id: String(row.id ?? ''),
       name: String(row.name ?? row.id ?? ''),
@@ -40,7 +39,7 @@ const adapter: ScriptWorkbenchAdapter = {
     }))
   },
   async load(id: string) {
-    const response = await api.get(`${base}/script/${encodeURIComponent(id)}`)
+    const response = await api.get(`/api/processplatform/assemble/designer/script/${encodeURIComponent(id)}`)
     const row = ((response as { data?: Record<string, unknown> })?.data ?? {}) as Record<string, unknown>
     return {
       name: String(row.name ?? ''),
@@ -48,11 +47,22 @@ const adapter: ScriptWorkbenchAdapter = {
       code: String(row.code ?? ''),
     }
   },
-  create: (data) => api.post(`${base}/script`, { name: data.name, application: data.category, code: data.code }),
-  save: (id, data) => api.put(`${base}/script/${encodeURIComponent(id)}`, { name: data.name, code: data.code }),
-  remove: (id) => api.delete(`${base}/script/${encodeURIComponent(id)}`),
+  create: (data) =>
+    api.post('/api/processplatform/assemble/designer/script', {
+      name: data.name,
+      application: data.category,
+      code: data.code,
+    }),
+  save: (id, data) =>
+    api.put(`/api/processplatform/assemble/designer/script/${encodeURIComponent(id)}`, {
+      name: data.name,
+      code: data.code,
+    }),
+  remove: (id) => api.delete(`/api/processplatform/assemble/designer/script/${encodeURIComponent(id)}`),
   async versions(id: string): Promise<ScriptVersion[]> {
-    const response = await api.get(`${base}/scriptversion/list/script/${encodeURIComponent(id)}`)
+    const response = await api.get(
+      `/api/processplatform/assemble/designer/scriptversion/list/script/${encodeURIComponent(id)}`,
+    )
     return extractData(response).map((row) => ({
       version: row.version === undefined ? undefined : String(row.version),
       content: row.code === undefined ? undefined : String(row.code),

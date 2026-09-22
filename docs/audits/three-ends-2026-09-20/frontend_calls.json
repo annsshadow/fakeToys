@@ -1514,11 +1514,51 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CmsScriptDesignerApp.vue",
-    "line": 46,
+    "line": 29,
+    "method": "POST",
+    "raw": "/api/script/list/manager",
+    "path": "/api/script/list/manager",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsScriptDesignerApp.vue",
+    "line": 37,
+    "method": "GET",
+    "raw": "/api/script/${encodeURIComponent(id)}",
+    "path": "/api/script/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsScriptDesignerApp.vue",
+    "line": 45,
     "method": "POST",
     "raw": "/api/script",
     "path": "/api/script",
-    "via": "const:base",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsScriptDesignerApp.vue",
+    "line": 46,
+    "method": "PUT",
+    "raw": "/api/script/${encodeURIComponent(id)}",
+    "path": "/api/script/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsScriptDesignerApp.vue",
+    "line": 47,
+    "method": "DELETE",
+    "raw": "/api/script/${encodeURIComponent(id)}",
+    "path": "/api/script/{}",
+    "via": "literal",
     "ambiguous": false
    },
    {
@@ -3889,6 +3929,66 @@
     "raw": "/api/processplatform/assemble/surface/process_manager/list",
     "path": "/api/processplatform/assemble/surface/process_manager/list",
     "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessScriptDesignerApp.vue",
+    "line": 33,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/script/list/paging/1/50/50",
+    "path": "/api/processplatform/assemble/designer/script/list/paging/1/50/50",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessScriptDesignerApp.vue",
+    "line": 42,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/script/${encodeURIComponent(id)}",
+    "path": "/api/processplatform/assemble/designer/script/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessScriptDesignerApp.vue",
+    "line": 51,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/designer/script",
+    "path": "/api/processplatform/assemble/designer/script",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessScriptDesignerApp.vue",
+    "line": 57,
+    "method": "PUT",
+    "raw": "/api/processplatform/assemble/designer/script/${encodeURIComponent(id)}",
+    "path": "/api/processplatform/assemble/designer/script/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessScriptDesignerApp.vue",
+    "line": 61,
+    "method": "DELETE",
+    "raw": "/api/processplatform/assemble/designer/script/${encodeURIComponent(id)}",
+    "path": "/api/processplatform/assemble/designer/script/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessScriptDesignerApp.vue",
+    "line": 63,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/scriptversion/list/script/${encodeURIComponent(id)}",
+    "path": "/api/processplatform/assemble/designer/scriptversion/list/script/{}",
+    "via": "literal",
     "ambiguous": false
    },
    {

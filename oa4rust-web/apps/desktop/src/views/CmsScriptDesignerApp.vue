@@ -14,8 +14,6 @@ import { api } from '@oa4rust/sdk'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ScriptWorkbench, { type ScriptListItem, type ScriptWorkbenchAdapter } from '../components/ScriptWorkbench.vue'
 
-const base = '/api/script'
-
 function extractData(response: unknown): Record<string, unknown>[] {
   const data = (response as { data?: unknown })?.data
   if (Array.isArray(data)) return data
@@ -25,9 +23,10 @@ function extractData(response: unknown): Record<string, unknown>[] {
   return []
 }
 
+// 端点写成 api.* 调用处的字面量（提取器不解析 `${base}` 模板变量，否则真实消费漏计）。
 const adapter: ScriptWorkbenchAdapter = {
   async list(): Promise<ScriptListItem[]> {
-    const response = await api.post(`${base}/list/manager`, {})
+    const response = await api.post('/api/script/list/manager', {})
     return extractData(response).map((row) => ({
       id: String(row.id ?? ''),
       name: String(row.name ?? row.uniqueName ?? row.id ?? ''),
@@ -35,7 +34,7 @@ const adapter: ScriptWorkbenchAdapter = {
     }))
   },
   async load(id: string) {
-    const response = await api.get(`${base}/${encodeURIComponent(id)}`)
+    const response = await api.get(`/api/script/${encodeURIComponent(id)}`)
     const row = ((response as { data?: Record<string, unknown> })?.data ?? {}) as Record<string, unknown>
     return {
       name: String(row.name ?? ''),
@@ -43,9 +42,9 @@ const adapter: ScriptWorkbenchAdapter = {
       code: String(row.scriptContent ?? ''),
     }
   },
-  create: (data) => api.post(base, { name: data.name, scriptContent: data.code }),
-  save: (id, data) => api.put(`${base}/${encodeURIComponent(id)}`, { name: data.name, scriptContent: data.code }),
-  remove: (id) => api.delete(`${base}/${encodeURIComponent(id)}`),
+  create: (data) => api.post('/api/script', { name: data.name, scriptContent: data.code }),
+  save: (id, data) => api.put(`/api/script/${encodeURIComponent(id)}`, { name: data.name, scriptContent: data.code }),
+  remove: (id) => api.delete(`/api/script/${encodeURIComponent(id)}`),
 }
 </script>
 
