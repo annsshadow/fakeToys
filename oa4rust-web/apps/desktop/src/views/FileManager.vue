@@ -11,6 +11,7 @@
         <button class="action-btn" @click="loadFileMeta">🗄️ 附件2/编辑器</button>
         <button class="action-btn" @click="loadFolderShare">📂 文件夹/分享/容量</button>
         <button class="action-btn" @click="loadShareScopes">🔗 文件夹2/我的分享/收到分享</button>
+        <button class="action-btn" @click="loadRefTypes">🏷️ 引用类型</button>
         <button class="action-btn" @click="toggleView">{{ viewType === 'grid' ? '☰ 列表' : '⊞ 网格' }}</button>
       </div>
     </div>
@@ -48,6 +49,7 @@
             <span class="col-size">{{ formatSize(f.size) }}</span>
             <span class="col-time">{{ fmtTime(f.updateTime) }}</span>
             <span class="col-actions">
+              <button class="icon-action" @click.stop="openDetail(f)" title="详情/预览">ℹ</button>
               <button class="icon-action" @click.stop="downloadFile(f)" title="下载">⬇</button>
               <button class="icon-action" @click.stop="shareFile(f)" title="分享">↗</button>
               <button class="icon-action danger" @click.stop="deleteFile(f)" title="删除">🗑</button>
@@ -62,6 +64,35 @@
           </div>
         </div>
       </template>
+    </div>
+
+    <!-- 引用类型浏览 -->
+    <div v-if="refPanel.open" class="ref-panel glass-card">
+      <div class="ref-head">
+        <span>我的文件引用类型（{{ refPanel.types.length }}）</span>
+        <button class="icon-action" @click="refPanel.open = false">✕</button>
+      </div>
+      <div v-if="refPanel.types.length === 0" class="empty-state"><p>暂无引用文件</p></div>
+      <div v-else class="ref-chips">
+        <span v-for="t in refPanel.types" :key="t.type" class="ref-chip">{{ t.type || '未分类' }} · {{ t.count }}</span>
+      </div>
+    </div>
+
+    <!-- 文件详情/预览弹窗（file/{id} + file/{id}/binary/base64） -->
+    <div v-if="detail.open" class="upload-overlay" @click.self="detail.open = false">
+      <div class="upload-dialog glass-card">
+        <div class="ref-head">
+          <h3>文件详情</h3>
+          <button class="icon-action" @click="detail.open = false">✕</button>
+        </div>
+        <div v-if="detail.loading" class="loading-state"><p>加载中…</p></div>
+        <template v-else>
+          <div class="detail-line">名称：{{ detail.name || '—' }}</div>
+          <div class="detail-line">大小：{{ formatSize(detail.size) }}</div>
+          <img v-if="detail.preview" :src="detail.preview" class="detail-preview" alt="预览" />
+          <div v-else class="detail-line">（无图片预览）</div>
+        </template>
+      </div>
     </div>
 
     <!-- 上传弹窗 -->
@@ -279,6 +310,56 @@ function shareFile(_f: FileItem): void {
   // Share functionality (future)
 }
 
+// ── 引用类型浏览 + 文件详情/预览（rev103）─────────────────────────
+const refPanel = ref<{ open: boolean; types: Array<{ type: string; count: number }> }>({
+  open: false,
+  types: [],
+})
+async function loadRefTypes(): Promise<void> {
+  try {
+    // GET file/list/referencetype —— 本人文件按 reference_type 分组计数
+    const resp: any = await api.get('/api/file/assemble/control/file/list/referencetype')
+    const rows = (Array.isArray(resp?.data) ? resp.data : []) as Array<Record<string, unknown>>
+    refPanel.value.types = rows.map((r) => ({
+      type: String(r.referenceType ?? r.rtype ?? r.type ?? ''),
+      count: Number(r.count ?? r.cnt ?? 0),
+    }))
+    refPanel.value.open = true
+  } catch (e: any) {
+    toast.error('加载引用类型失败: ' + (e?.message ?? ''))
+  }
+}
+
+const detail = ref<{ open: boolean; loading: boolean; name: string; size?: number; preview: string }>({
+  open: false,
+  loading: false,
+  name: '',
+  size: undefined,
+  preview: '',
+})
+async function openDetail(f: FileItem): Promise<void> {
+  detail.value = { open: true, loading: true, name: f.name, size: f.size, preview: '' }
+  const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [meta, b64] = await Promise.all([
+    // GET file/{id} —— 单文件元数据
+    settle(api.get(`/api/file/assemble/control/file/${f.id}`)),
+    // GET file/{id}/binary/base64 —— 内容 base64（图片可直接预览）
+    settle(api.get(`/api/file/assemble/control/file/${f.id}/binary/base64`)),
+  ])
+  const m = (meta as { data?: Record<string, unknown> } | null)?.data
+  if (m && typeof m === 'object') {
+    detail.value.name = String(m.name ?? f.name)
+    detail.value.size = Number(m.length ?? m.size ?? f.size ?? 0) || undefined
+  }
+  const bd = (b64 as { data?: unknown } | null)?.data
+  const raw = typeof bd === 'string' ? bd : ((bd as { content?: string })?.content ?? '')
+  const ext = (f.name.split('.').pop() ?? '').toLowerCase()
+  if (raw && ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) {
+    detail.value.preview = raw.startsWith('data:') ? raw : `data:image/${ext};base64,${raw}`
+  }
+  detail.value.loading = false
+}
+
 function handleUpload(): void {
   showUpload.value = true
 }
@@ -327,4 +408,10 @@ function uploadFile(file: File): void {
 .sk{height:40px;border-radius:var(--radius-md);background:var(--bg-elevated);animation:pulse 1.2s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:.4}50%{opacity:.8}}
 .empty-icon{font-size:48px;opacity:.4}
+.ref-panel{padding:16px;margin-top:8px}
+.ref-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-size:14px;color:var(--color-primary)}
+.ref-chips{display:flex;gap:8px;flex-wrap:wrap}
+.ref-chip{padding:4px 12px;border-radius:12px;border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);font-size:12px}
+.detail-line{font-size:13px;color:var(--text-secondary);margin:6px 0}
+.detail-preview{max-width:100%;max-height:320px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);margin-top:8px}
 </style>
