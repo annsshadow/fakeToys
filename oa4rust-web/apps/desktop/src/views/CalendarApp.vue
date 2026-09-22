@@ -70,6 +70,7 @@
         <button class="close-btn" @click="closeCalendar">✕</button>
       </div>
       <div v-if="activeCalDetail" class="cll-note">类型：{{ activeCalDetail.calendarType || '—' }} · 负责人：{{ activeCalDetail.createor || '—' }}</div>
+      <div v-if="calMeta" class="cll-note">{{ calMeta }}</div>
 
       <form class="evt-form" @submit.prevent="createEvent">
         <input v-model="evtForm.title" class="evt-input" placeholder="事件标题" required />
@@ -176,6 +177,7 @@ loadCalendars('my')
 interface CalDetail { id: string; name?: string; calendarType?: string; createor?: string }
 const activeCal = ref<CalItem | null>(null)
 const activeCalDetail = ref<CalDetail | null>(null)
+const calMeta = ref('')
 const calEvents = ref<CalendarEvent[]>([])
 const evtForm = ref({ title: '', startTime: '', endTime: '', location: '' })
 
@@ -188,12 +190,31 @@ async function selectCalendar(c: CalItem): Promise<void> {
   } catch {
     activeCalDetail.value = null
   }
-  await loadCalEvents()
+  await Promise.all([loadCalEvents(), loadCalMeta(c.id)])
 }
+
+// 消费 assemble_control 关注/管理员族真实路由（打开日历时展示关注状态、管理员身份、管理员名单）
+async function loadCalMeta(id: string): Promise<void> {
+  calMeta.value = ''
+  try {
+    const [follow, mgr, mgrList] = await Promise.all([
+      api.get(`/api/calendar_assemble_control/calendar/follow/${encodeURIComponent(id)}`).catch(() => null),
+      api.get(`/api/calendar_assemble_control/calendar/ismanager/calendar/${encodeURIComponent(id)}`).catch(() => null),
+      api.get(`/api/calendar_assemble_control/calendar/manager/list/with/person/${encodeURIComponent(id)}`).catch(() => null),
+    ])
+    const boolVal = (r: any) => r?.data?.value === true
+    const listLen = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    calMeta.value = `关注：${boolVal(follow) ? '已关注' : '未关注'} · ${boolVal(mgr) ? '你是管理员' : '非管理员'} · 管理员 ${listLen(mgrList)} 人`
+  } catch {
+    calMeta.value = ''
+  }
+}
+
 
 function closeCalendar(): void {
   activeCal.value = null
   activeCalDetail.value = null
+  calMeta.value = ''
   calEvents.value = []
 }
 
