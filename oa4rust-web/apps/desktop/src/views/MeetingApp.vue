@@ -62,6 +62,20 @@
         <div class="mf"><button class="bc" @click="showCreate=false">取消</button><button class="bs" :disabled="!form.title" @click="createMeeting">创建</button></div>
       </div>
     </div>
+    <div v-if="detail.open" class="mo" @click.self="detail.open=false">
+      <div class="modal glass-card">
+        <h3>会议详情</h3>
+        <div v-if="detail.loading" class="es"><p>加载中…</p></div>
+        <template v-else>
+          <div class="fg"><label>标题</label><div class="dv">{{detail.title||'—'}}</div></div>
+          <div class="fg"><label>时间</label><div class="dv">{{detail.startTime||'—'}} ~ {{detail.endTime||'—'}}</div></div>
+          <div class="fg"><label>创建者</label><div class="dv">{{detail.creator||'—'}}</div></div>
+          <div class="fg"><label>说明</label><div class="dv">{{detail.content||'—'}}</div></div>
+          <div class="fg"><label>控制项</label><div class="dv">{{detail.controlCount}} 项</div></div>
+        </template>
+        <div class="mf"><button class="bc" @click="detail.open=false">关闭</button></div>
+      </div>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
@@ -168,7 +182,25 @@ function createMeeting() {
   if (!form.value.title) return
   cm.mutate()
 }
-function viewMeeting(_m: M) {}
+// 会议详情：GET meeting/{id}（x_meeting 主体）+ list/{meetingId}（控制项 x_meeting_assemble_control）
+const detail = ref({ open: false, loading: false, title: '', startTime: '', endTime: '', creator: '', content: '', controlCount: 0 })
+async function viewMeeting(m: M) {
+  detail.value = { open: true, loading: true, title: m.title || m.name || '', startTime: '', endTime: '', creator: '', content: '', controlCount: 0 }
+  const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [main, ctrl] = await Promise.all([
+    settle(api.get(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}`)),
+    settle(api.get(`/api/meeting/assemble/control/list/${encodeURIComponent(m.id)}`)),
+  ])
+  const d: any = (main as any)?.data ?? {}
+  detail.value.title = String(d.title ?? m.title ?? m.name ?? '')
+  detail.value.startTime = String(d.start_time ?? d.startTime ?? '')
+  detail.value.endTime = String(d.end_time ?? d.endTime ?? '')
+  detail.value.creator = String(d.creator ?? '')
+  detail.value.content = String(d.content ?? '')
+  const cd: any = (ctrl as any)?.data
+  detail.value.controlCount = Array.isArray(cd) ? cd.length : Array.isArray(cd?.data) ? cd.data.length : 0
+  detail.value.loading = false
+}
 async function showParticipants(m: M) {
   try {
     // GET /api/meeting/{meetingId}/participant/list —— 参会人列表
@@ -428,6 +460,7 @@ const api_meeting_as_895_data = ref<any[]>([])
 .modal h3{color:var(--color-primary);font-family:'Orbitron',sans-serif;margin:0 0 16px;font-size:16px}
 .fg{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
 .fg label{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
+.dv{padding:8px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);color:var(--text-primary);word-break:break-all}
 .fi,.fs2{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:10px 14px;color:var(--text-primary);font-size:14px;outline:none;font-family:inherit}
 .fi:focus,.fs2:focus{border-color:var(--color-primary)}
 .em{color:var(--color-error);font-size:13px;padding:8px;background:var(--color-error-glow);border-radius:var(--radius-md);margin-bottom:12px}
