@@ -6404,7 +6404,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 83,
+    "line": 85,
     "method": "POST",
     "raw": "/api/queryview/search",
     "path": "/api/queryview/search",
@@ -6414,7 +6414,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 96,
+    "line": 98,
     "method": "GET",
     "raw": "/api/queryview/query/list",
     "path": "/api/queryview/query/list",
@@ -6424,7 +6424,37 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 107,
+    "line": 110,
+    "method": "GET",
+    "raw": "/api/queryview/table/list/paging/1/20/20",
+    "path": "/api/queryview/table/list/paging/1/20/20",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewApp.vue",
+    "line": 118,
+    "method": "GET",
+    "raw": "/api/queryview/table/${encodeURIComponent(flag)}",
+    "path": "/api/queryview/table/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewApp.vue",
+    "line": 120,
+    "method": "GET",
+    "raw": "/api/queryview/table/list/row/select/${encodeURIComponent(flag)}",
+    "path": "/api/queryview/table/list/row/select/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewApp.vue",
+    "line": 134,
     "method": "GET",
     "raw": "/api/queryview/view/list/query/all",
     "path": "/api/queryview/view/list/query/all",
@@ -6434,7 +6464,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 122,
+    "line": 149,
     "method": "GET",
     "raw": "/api/queryview/execute/${encodeURIComponent(v.flag || 'view')}/${encodeURIComponent(v.id)}",
     "path": "/api/queryview/execute/{}/{}",
@@ -6444,7 +6474,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 135,
+    "line": 162,
     "method": "GET",
     "raw": "/api/queryview/excel/${v.flag || v.id}",
     "path": "/api/queryview/excel/{}",

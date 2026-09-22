@@ -13,8 +13,10 @@
         <button class="btn-primary" @click="doSearch">搜索</button>
         <button class="btn-primary" @click="loadViews">刷新</button>
         <button class="btn-primary" @click="loadQueryList">查询列表</button>
+        <button class="btn-primary" @click="loadTables">数据表</button>
       </div>
       <div v-if="queryListText" class="qv-note">{{ queryListText }}</div>
+      <div v-if="tableText" class="qv-note">{{ tableText }}</div>
       <div class="list-panel">
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 6" :key="i"></div></div>
         <div v-else-if="views.length===0" class="empty"><div class="ei">📊</div><p>暂无查询视图</p></div>
@@ -98,6 +100,31 @@ async function loadQueryList() {
     queryListText.value = '查询列表：' + n + ' 个'
   } catch (e: any) {
     toast.error('加载查询列表失败: ' + (e?.message ?? ''))
+  }
+}
+// 数据表（rev117）：分页列表 + 首表详情 + 首表行数据，三条 distinct 真实路由
+const tableText = ref('')
+async function loadTables() {
+  try {
+    // GET queryview/table/list/paging/{page}/{size}/{size} —— 数据表分页（x_query_table）
+    const r: any = await api.get('/api/queryview/table/list/paging/1/20/20')
+    const rows = (Array.isArray(r?.data) ? r.data : (r?.data?.data ?? [])) as Array<Record<string, unknown>>
+    let extra = ''
+    const first = rows[0]
+    const flag = first ? String(first.table_flag ?? first.tableFlag ?? first.flag ?? '') : ''
+    if (flag) {
+      const [meta, dataRows] = await Promise.all([
+        // GET queryview/table/{flag} —— 表元信息
+        api.get(`/api/queryview/table/${encodeURIComponent(flag)}`).catch(() => null),
+        // GET queryview/table/list/row/select/{tableFlag} —— 表行数据（x_query_table_data）
+        api.get(`/api/queryview/table/list/row/select/${encodeURIComponent(flag)}`).catch(() => null),
+      ])
+      const rn = Array.isArray((dataRows as any)?.data) ? (dataRows as any).data.length : 0
+      extra = ` · 首表 ${(meta as any)?.data?.name ?? flag} 行 ${rn}`
+    }
+    tableText.value = `数据表 ${rows.length} 张${extra}`
+  } catch (e: any) {
+    toast.error('加载数据表失败: ' + (e?.message ?? ''))
   }
 }
 async function loadViews() {
