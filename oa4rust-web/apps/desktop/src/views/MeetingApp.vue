@@ -73,6 +73,7 @@
           <div class="fg"><label>创建者</label><div class="dv">{{detail.creator||'—'}}</div></div>
           <div class="fg"><label>说明</label><div class="dv">{{detail.content||'—'}}</div></div>
           <div class="fg"><label>控制项</label><div class="dv">{{detail.controlCount}} 项</div></div>
+          <div v-if="detail.extra" class="fg"><label>关联</label><div class="dv">{{detail.extra}}</div></div>
         </template>
         <div class="mf"><button class="bc" @click="detail.open=false">关闭</button></div>
       </div>
@@ -184,13 +185,16 @@ function createMeeting() {
   cm.mutate()
 }
 // 会议详情：GET meeting/{id}（x_meeting 主体）+ list/{meetingId}（控制项 x_meeting_assemble_control）
-const detail = ref({ open: false, loading: false, title: '', startTime: '', endTime: '', creator: '', content: '', controlCount: 0 })
+const detail = ref({ open: false, loading: false, title: '', startTime: '', endTime: '', creator: '', content: '', controlCount: 0, extra: '' })
 async function viewMeeting(m: M) {
-  detail.value = { open: true, loading: true, title: m.title || m.name || '', startTime: '', endTime: '', creator: '', content: '', controlCount: 0 }
+  detail.value = { open: true, loading: true, title: m.title || m.name || '', startTime: '', endTime: '', creator: '', content: '', controlCount: 0, extra: '' }
   const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
-  const [main, ctrl] = await Promise.all([
+  const [main, ctrl, atts, next, prev] = await Promise.all([
     settle(api.get(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}`)),
     settle(api.get(`/api/meeting/assemble/control/list/${encodeURIComponent(m.id)}`)),
+    settle(api.get(`/api/meeting/assemble/control/attachment/list/meeting/${encodeURIComponent(m.id)}`)),
+    settle(api.get(`/api/meeting/assemble/control/meeting/list/${encodeURIComponent(m.id)}/next/5`)),
+    settle(api.get(`/api/meeting/assemble/control/meeting/list/${encodeURIComponent(m.id)}/prev/5`)),
   ])
   const d: any = (main as any)?.data ?? {}
   detail.value.title = String(d.title ?? m.title ?? m.name ?? '')
@@ -200,6 +204,8 @@ async function viewMeeting(m: M) {
   detail.value.content = String(d.content ?? '')
   const cd: any = (ctrl as any)?.data
   detail.value.controlCount = Array.isArray(cd) ? cd.length : Array.isArray(cd?.data) ? cd.data.length : 0
+  const len = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+  detail.value.extra = `附件 ${len(atts)} · 后续会议 ${len(next)} · 前序会议 ${len(prev)}`
   detail.value.loading = false
 }
 async function showParticipants(m: M) {
