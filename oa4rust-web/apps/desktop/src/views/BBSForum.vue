@@ -144,6 +144,7 @@
             <span>📅 {{ fmtTime(viewingTopic.createTime) }}</span>
             <span>💬 {{ viewingTopic.replyCount ?? 0 }} 回复</span>
             <span>👁 {{ viewingTopic.viewCount ?? 0 }} 浏览</span>
+            <span v-if="topicMeta">📎 {{ topicMeta }}</span>
           </div>
           <div class="detail-content" style="white-space:pre-wrap;word-break:break-word">{{formatContent(viewingTopic.content)}}</div>
 
@@ -630,18 +631,26 @@ function formatContent(content?: string): string {
 // ── 帖子详情深化（rev101）：图片附件 + 回复权限 + 版主管理 ─────────────
 // 均为事件触发（打开详情时/点击按钮时），非 mounted useQuery，规避 autoquery-prune 守卫。
 const topicPics = ref<string[]>([])
+const topicMeta = ref('')
 const replyGate = ref<'' | '允许' | '不允许' | '查询失败'>('')
 const modBusy = ref(false)
 
 async function loadTopicExtras(subjectId: string): Promise<void> {
   topicPics.value = []
   replyGate.value = ''
+  topicMeta.value = ''
   const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
-  const [pics, gate] = await Promise.all([
+  const [pics, gate, view, atts, perm] = await Promise.all([
     // GET picture/list/{subjectId} —— 从正文抽取的图片 URL 列表
     settle(api.get(`/api/bbs/assemble/control/picture/list/${subjectId}`)),
     // GET permission/replyPublishable/{subjectId} —— 是否可回复
     settle(api.get(`/api/bbs/assemble/control/permission/replyPublishable/${subjectId}`)),
+    // GET subject/view/{id} —— 主题完整视图（含点击数累加）
+    settle(api.get(`/api/bbs/assemble/control/subject/view/${subjectId}`)),
+    // GET attachment/list/subject/{subjectId} —— 主题附件列表
+    settle(api.get(`/api/bbs/assemble/control/attachment/list/subject/${subjectId}`)),
+    // GET permission/subject/{subjectId} —— 主题操作权限
+    settle(api.get(`/api/bbs/assemble/control/permission/subject/${subjectId}`)),
   ])
   const pd = (pics as { data?: unknown } | null)?.data
   topicPics.value = (Array.isArray(pd) ? pd : Array.isArray((pd as { data?: unknown })?.data) ? (pd as { data: unknown[] }).data : []).map(String)
@@ -649,6 +658,10 @@ async function loadTopicExtras(subjectId: string): Promise<void> {
   replyGate.value = gate
     ? (gd === true || (gd as { replyPublishable?: boolean })?.replyPublishable ? '允许' : '不允许')
     : '查询失败'
+  const attData = (atts as { data?: unknown } | null)?.data
+  const attN = Array.isArray(attData) ? attData.length : Array.isArray((attData as { data?: unknown[] })?.data) ? (attData as { data: unknown[] }).data.length : 0
+  const canManage = Boolean((perm as { data?: { admin?: boolean; manage?: boolean } } | null)?.data?.admin || (perm as { data?: { manage?: boolean } } | null)?.data?.manage)
+  topicMeta.value = `${view ? '视图已载 · ' : ''}附件 ${attN} · ${canManage ? '可管理' : '只读'}`
 }
 
 /** 版主开关：flag 决定字面量路径（三元 ${on?'a':'b'} 会被提取器归一化误配，必须写字面量分支）。 */
