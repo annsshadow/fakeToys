@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """异步增强管道测试 - 验证 asyncio 并行处理和内存优化意图"""
 
 import pytest

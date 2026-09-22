@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """CLI 核心数据命令集成测试
 
 覆盖 quality / preview / clean / annotate 四个离线命令的端到端行为：

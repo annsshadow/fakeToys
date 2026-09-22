@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """提示词模板管理模块
 
 为数据增强等场景提供可复用的提示词模板：变量替换、缺省占位符、

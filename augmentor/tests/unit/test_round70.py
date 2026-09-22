@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第70轮: feature_detect特征检测"""
 import pytest
 from augmentor.feature_detect import FeatureDetector

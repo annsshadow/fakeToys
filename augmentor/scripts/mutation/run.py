@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """变异抽检运行器（cosmic-ray 包装）
 
 用法（在 `augmentor/` 目录下，用项目 venv 的 python 执行）：

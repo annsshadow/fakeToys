@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """CSV/Excel 导入真实数据驱动测试
 
 在 pandas/openpyxl 可用时验证实际导入行为；

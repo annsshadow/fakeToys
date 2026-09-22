@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """API 集成测试
 
 验证路由注册、参数校验、错误码与核心业务流程的端到端可用性。

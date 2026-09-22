@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """数据集就绪审计模块
 
 在数据交付/微调前做一次性体检，聚合若干高价值信号（不与质量评分重叠）：

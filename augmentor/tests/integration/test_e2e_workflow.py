@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """端到端工作流集成测试
 
 验证多个新模块（profiling/outlier/aggregator/impact/data_pipeline）

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第75轮: quality_gate质量门控"""
 import pytest
 from augmentor.quality_gate import QualityGate, build_default_gate

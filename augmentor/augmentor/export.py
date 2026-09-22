@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """多格式导出模块 - 优化版
 
 分工边界（与 `augmentor.export_enhanced`）

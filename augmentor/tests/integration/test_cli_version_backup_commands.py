@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """CLI 版本管理与备份命令集成测试
 
 version（管道 VersionManager）/ version-control（DatasetVersionManager）/

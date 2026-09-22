@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """memory_monitor 与 model_manager 剩余分支测试
 
 memory_monitor：注入伪 psutil 覆盖「可用」分支、趋势 increasing/

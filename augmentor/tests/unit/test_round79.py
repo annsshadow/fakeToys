@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第79轮: memory_monitor内存监控"""
 import pytest
 from augmentor.memory_monitor import MemoryMonitor

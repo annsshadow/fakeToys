@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """数据质量趋势追踪模块
 
 功能：记录数据集质量指标随时间变化，支持趋势方向分析、

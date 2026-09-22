@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """导出格式转换优化测试 - 导出缓存复用验证"""
 
 import pytest

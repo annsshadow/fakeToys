@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第85轮: backup备份管理"""
 import pytest
 from augmentor.backup import DatasetBackup

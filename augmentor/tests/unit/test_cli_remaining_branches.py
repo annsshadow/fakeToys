@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """L71：cli.py 剩余分支（错误参数 exit、就绪提示、告警/问题/错误详情打印）
 
 通过 monkeypatch 底层函数注入「有告警 / 有问题 / 有错误」的返回，

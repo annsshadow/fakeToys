@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """privacy API 路由测试
 
 /api/privacy/sanitize 脱敏往返与 404/500 分支、/api/privacy/patterns 列表。

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """数据集健康度评分模块
 
 功能：计算数据集的完整性、多样性、质量分布均衡性和覆盖率，

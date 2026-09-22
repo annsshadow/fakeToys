@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """versioning 模块剩余分支测试
 
 覆盖：同微秒版本 ID 去重后缀、历史写入失败降级、历史空行跳过、

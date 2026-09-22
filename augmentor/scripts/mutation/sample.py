@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """把 cosmic-ray 会话裁剪为分层抽样，使变异测试在可接受时间内完成
 
 ## 为什么需要抽样

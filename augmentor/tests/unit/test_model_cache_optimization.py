@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """模型后端缓存优化测试 - 验证生成结果缓存复用"""
 
 import pytest

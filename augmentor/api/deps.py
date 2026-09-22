@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """API 共享依赖
 
 集中管理管道单例、文件读写、路径校验与异步执行辅助。

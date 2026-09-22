@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """cleaner 规则与 checkpoint 增量分支补测
 
 cleaner：remove_special_chars / remove_long_texts / remove_short_texts /

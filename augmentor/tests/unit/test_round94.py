@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第94轮: enhanced_visualizer增强可视化"""
 import pytest
 from augmentor.visualize_enhanced import EnhancedVisualizer

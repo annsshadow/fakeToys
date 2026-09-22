@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第60轮: context上下文增强"""
 import pytest
 from augmentor.context import ContextAugmentor

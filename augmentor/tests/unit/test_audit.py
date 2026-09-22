@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """audit 数据集就绪审计模块测试
 
 覆盖 PII/重复/空字段/泄漏四类信号、就绪判定、空数据集、

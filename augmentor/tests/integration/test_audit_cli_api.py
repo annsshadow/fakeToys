@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """audit CLI 命令与 /api/audit 路由测试
 
 CLI：就绪/未就绪提示、--reference 泄漏、--output 落盘；

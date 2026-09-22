@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """多模态数据处理单元测试
 
 图像与音频元信息解析在无第三方库时也必须可用，否则离线环境无法工作。

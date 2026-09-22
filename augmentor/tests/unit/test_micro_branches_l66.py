@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """微型分支收尾 L66：vector 族 + auto_config/auto_test 残留分支
 
 - vector 工厂: chromadb 后端创建

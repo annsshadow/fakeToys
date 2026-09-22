@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第81轮: performance_benchmark性能基准"""
 import pytest
 from augmentor.performance_benchmark import PerformanceBenchmark

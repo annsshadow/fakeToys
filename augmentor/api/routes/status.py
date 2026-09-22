@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """服务状态 API 路由
 
 综合报告健康、版本、模型后端可用性与可选依赖诊断。

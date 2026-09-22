@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """CLI 数据操作命令集成测试
 
 覆盖 rag / benchmark / compare / merge 四个命令的端到端行为。

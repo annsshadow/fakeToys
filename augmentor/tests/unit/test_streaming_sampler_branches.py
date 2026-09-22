@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """streaming / sampler 剩余分支补测
 
 streaming：内存监控快照分支（块 >100 条）、StreamWriter.close() 的

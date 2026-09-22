@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """export/version/multimodal 路由剩余 500 异常分支注入测试
 
 正常路径与 404/400 分支已在 test_api_export_multimodal /

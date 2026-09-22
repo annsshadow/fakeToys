@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第52轮: dataset_ops批量操作测试"""
 import pytest
 from augmentor.dataset_ops import batch_merge, shuffle_dataset

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """data 路由剩余 500 异常分支注入测试
 
 向 read_json_file / get_pipeline 注入异常，确定性覆盖 load/update/

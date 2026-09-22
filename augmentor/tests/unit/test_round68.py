@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第68轮: dependency依赖管理"""
 import pytest
 from augmentor.dependency import DependencyManager

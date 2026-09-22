@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """集成测试扩展 - 新增功能端到端验证
 
 验证内存监控、数据质量趋势追踪、领域自适应增强、

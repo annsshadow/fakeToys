@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """migration 模块剩余分支测试
 
 覆盖 flatten_conversations 列表分支、自定义规则 transform/默认值、

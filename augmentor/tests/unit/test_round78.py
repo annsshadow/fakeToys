@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第78轮: health_score健康评分"""
 import pytest
 from augmentor.health_score import DatasetHealthScore

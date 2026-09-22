@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """微型分支收尾 L60：benchmark/cache/checkpoint/cleaner/active_learning 残留分支
 
 - benchmark: 无基准对比行（baseline=None → no_baseline）

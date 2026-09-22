@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """数据集 schema 校验模块
 
 对训练数据条目做轻量级结构校验（必需键、类型、枚举、长度/数值范围），

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """异常值检测模块
 
 基于统计分布（均值/标准差、分位数）检测数据集中数值型字段的异常样本，

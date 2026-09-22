@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """第67轮: versioning版本管理"""
 import pytest
 from augmentor.versioning import VersionManager

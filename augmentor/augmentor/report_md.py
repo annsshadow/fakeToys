@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """报告 Markdown 渲染模块
 
 把 PII/泄漏/审计等报告字典渲染为可读 Markdown，便于写进文档或

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """智能数据聚合模块
 
 将多个数据集按策略（并集/交集/加权采样/一致性过滤）聚合为单一

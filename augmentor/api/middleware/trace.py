@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """请求追踪中间件
 
 为每个请求注入/透传 X-Request-ID，便于日志与下游调用串联排障。

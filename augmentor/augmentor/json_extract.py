@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """LLM 响应 JSON 鲁棒提取模块
 
 模型生成的 JSON 常被 markdown 代码围栏、前后缀说明文字包裹，

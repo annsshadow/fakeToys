@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """DataAggregator 单元测试
 
 聚合策略是数据融合的核心，去重/交集/一致性口径必须稳定可追溯。

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """PII 脱敏模块
 
 对训练数据中的个人身份信息（邮箱、手机号、身份证号、IP 等）做掩码处理，

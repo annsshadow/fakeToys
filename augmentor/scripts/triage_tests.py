@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """测试文件分诊：找出占位测试与空洞断言
 
 用途：为 docs/plans/2026-09-21-001 的 T1.1 / T1.2 提供机器判据，

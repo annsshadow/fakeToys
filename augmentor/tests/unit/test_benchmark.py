@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """数据质量基准单元测试
 
 基准用于跨版本对比数据质量，存档与回归判定必须准确。
