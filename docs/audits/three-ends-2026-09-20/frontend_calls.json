@@ -3824,7 +3824,37 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 259,
+    "line": 244,
+    "method": "POST",
+    "raw": "/api/person/list/identity",
+    "path": "/api/person/list/identity",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 245,
+    "method": "POST",
+    "raw": "/api/person/list/group",
+    "path": "/api/person/list/group",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 246,
+    "method": "POST",
+    "raw": "/api/person/list/role",
+    "path": "/api/person/list/role",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 264,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/like",
     "path": "/api/organization/assemble/control/group/list/like",
