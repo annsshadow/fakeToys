@@ -10,6 +10,7 @@
       <button class="org-meta-btn" @click="loadPinyinIndex">拼音首字母索引</button>
       <button class="org-meta-btn" @click="loadExpressMeta">同步配置/单位/状态</button>
       <button class="org-meta-btn" @click="loadPersonCards">名片抽样</button>
+      <button class="org-meta-btn" @click="loadOrgDetails">身份/角色/职务明细</button>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -176,6 +177,40 @@ async function loadPersonCards() {
     orgMetaText.value = `名片 ${rows.length} 张 · 首张「${name}」· ${hasQR}`
   } catch (e: any) {
     toast.error('加载名片失败: ' + (e?.message ?? ''))
+  }
+}
+// 消费 org-control 明细族：角色详情 role/{flag} + 身份详情 identity/{flag} + 身份职务 unitduty/list/identity/{identityFlag}
+async function loadOrgDetails() {
+  // 从拼音首字母索引里挖出第一个实体 id（结构可能是 [{items:[{id}]}] 或 [{id}]）
+  const digId = (resp: any): string => {
+    const arr = Array.isArray(resp?.data) ? resp.data : []
+    for (const el of arr) {
+      if (el && typeof el === 'object') {
+        if (el.id) return String(el.id)
+        const items = (el.items ?? el.list ?? el.children) as any[] | undefined
+        if (Array.isArray(items) && items[0]?.id) return String(items[0].id)
+      }
+    }
+    return ''
+  }
+  try {
+    const [roleIdx, identIdx] = await Promise.all([
+      api.get('/api/organization/assemble/control/role/list/pinyininitial').catch(() => null),
+      api.get('/api/organization/assemble/control/identity/list/pinyininitial').catch(() => null),
+    ])
+    const roleId = digId(roleIdx)
+    const identId = digId(identIdx)
+    const [role, ident, duties] = await Promise.all([
+      roleId ? api.get(`/api/organization/assemble/control/role/${encodeURIComponent(roleId)}`).catch(() => null) : Promise.resolve(null),
+      identId ? api.get(`/api/organization/assemble/control/identity/${encodeURIComponent(identId)}`).catch(() => null) : Promise.resolve(null),
+      identId ? api.get(`/api/organization/assemble/control/unitduty/list/identity/${encodeURIComponent(identId)}`).catch(() => null) : Promise.resolve(null),
+    ])
+    const rName = (role as any)?.data?.name ?? (roleId || '—')
+    const iName = (ident as any)?.data?.name ?? (identId || '—')
+    const dN = Array.isArray((duties as any)?.data) ? (duties as any).data.length : 0
+    orgMetaText.value = `角色「${rName}」· 身份「${iName}」· 该身份职务 ${dN}`
+  } catch (e: any) {
+    toast.error('加载明细失败: ' + (e?.message ?? ''))
   }
 }
 async function loadPinyinIndex() {
