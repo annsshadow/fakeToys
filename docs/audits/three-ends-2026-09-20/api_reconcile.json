@@ -1590,7 +1590,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 187,
+    "line": 216,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/{}",
     "path": "/api/organization/assemble/control/group/{}",
@@ -1603,7 +1603,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 188,
+    "line": 217,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/${n.id}/sub/direct",
     "path": "/api/organization/assemble/control/group/list/{}/sub/direct",
@@ -1616,7 +1616,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 195,
+    "line": 224,
     "method": "GET",
     "raw": "/api/organization/assemble/control/role/list/group/${n.id}",
     "path": "/api/organization/assemble/control/role/list/group/{}",
@@ -1629,7 +1629,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 196,
+    "line": 225,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/${n.id}/sup/direct",
     "path": "/api/organization/assemble/control/group/list/{}/sup/direct",
@@ -1642,13 +1642,52 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 197,
+    "line": 226,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/${n.id}/sup/nested",
     "path": "/api/organization/assemble/control/group/list/{}/sup/nested",
     "via": "literal",
     "ambiguous": false,
     "hit": "/api/organization/assemble/control/group/list/{flag}/sup/nested",
+    "hit_crate": "organization_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 235,
+    "method": "GET",
+    "raw": "/api/organization/assemble/control/group/list/person/${n.id}/sup/direct",
+    "path": "/api/organization/assemble/control/group/list/person/{}/sup/direct",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/group/list/person/{personFlag}/sup/direct",
+    "hit_crate": "organization_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 236,
+    "method": "GET",
+    "raw": "/api/organization/assemble/control/group/list/person/${n.id}/sup/nested",
+    "path": "/api/organization/assemble/control/group/list/person/{}/sup/nested",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/group/list/person/{personFlag}/sup/nested",
+    "hit_crate": "organization_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 237,
+    "method": "GET",
+    "raw": "/api/organization/assemble/control/personattribute/list/person/${n.id}",
+    "path": "/api/organization/assemble/control/personattribute/list/person/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/personattribute/list/person/{personFlag}",
     "hit_crate": "organization_assemble_control",
     "extra": null
    },
@@ -5918,7 +5957,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 111,
+    "line": 134,
     "method": "GET",
     "raw": "/api/organization/assemble/control/permissionsetting/list",
     "path": "/api/organization/assemble/control/permissionsetting/list",
@@ -5931,7 +5970,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 112,
+    "line": 135,
     "method": "GET",
     "raw": "/api/organization/assemble/control/personcard/listgrouptypes",
     "path": "/api/organization/assemble/control/personcard/listgrouptypes",
@@ -5944,7 +5983,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 124,
+    "line": 147,
     "method": "GET",
     "raw": "/api/organization/assemble/express/config/get",
     "path": "/api/organization/assemble/express/config/get",
@@ -5957,7 +5996,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 125,
+    "line": 148,
     "method": "GET",
     "raw": "/api/organization/assemble/express/units/list",
     "path": "/api/organization/assemble/express/units/list",
@@ -5970,7 +6009,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 126,
+    "line": 149,
     "method": "GET",
     "raw": "/api/organization/assemble/express/status/get",
     "path": "/api/organization/assemble/express/status/get",
@@ -5983,7 +6022,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 138,
+    "line": 161,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/pinyininitial",
     "path": "/api/organization/assemble/control/group/list/pinyininitial",
@@ -5996,7 +6035,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 139,
+    "line": 162,
     "method": "GET",
     "raw": "/api/organization/assemble/control/identity/list/pinyininitial",
     "path": "/api/organization/assemble/control/identity/list/pinyininitial",
@@ -6009,7 +6048,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 140,
+    "line": 163,
     "method": "GET",
     "raw": "/api/organization/assemble/control/role/list/pinyininitial",
     "path": "/api/organization/assemble/control/role/list/pinyininitial",
@@ -6022,7 +6061,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 157,
+    "line": 180,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/like",
     "path": "/api/organization/assemble/control/group/list/like",
@@ -6035,7 +6074,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 168,
+    "line": 191,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/{}",
     "path": "/api/organization/assemble/control/group/list/{}",
@@ -6048,7 +6087,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 210,
+    "line": 250,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/like",
     "path": "/api/organization/assemble/control/group/list/like",
