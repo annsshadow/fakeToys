@@ -13,6 +13,7 @@
         <button class="btn-primary" @click="doSearch">搜索</button>
         <button class="btn-primary" @click="loadViews">刷新</button>
         <button class="btn-primary" @click="loadQueryList">查询列表</button>
+        <button class="btn-primary" @click="loadQvDetails">查询/视图明细</button>
         <button class="btn-primary" @click="loadTables">数据表</button>
       </div>
       <div v-if="queryListText" class="qv-note">{{ queryListText }}</div>
@@ -100,6 +101,26 @@ async function loadQueryList() {
     queryListText.value = '查询列表：' + n + ' 个'
   } catch (e: any) {
     toast.error('加载查询列表失败: ' + (e?.message ?? ''))
+  }
+}
+// 消费查询/视图明细 3 条真实 distinct 路由：查询详情 query/{flag} + 该查询统计 stat/list/query/{queryFlag} + 视图详情 view/{id}
+async function loadQvDetails() {
+  try {
+    const qResp: any = await api.get('/api/queryview/query/list')
+    const qrows = (Array.isArray(qResp?.data) ? qResp.data : (qResp?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const qflag = qrows[0] ? String(qrows[0].flag ?? qrows[0].id ?? '') : ''
+    const vid = views.value[0] ? String((views.value[0] as any).id ?? (views.value[0] as any).flag ?? '') : ''
+    const [query, stats, view] = await Promise.all([
+      qflag ? api.get(`/api/queryview/query/${encodeURIComponent(qflag)}`).catch(() => null) : Promise.resolve(null),
+      qflag ? api.get(`/api/queryview/stat/list/query/${encodeURIComponent(qflag)}`).catch(() => null) : Promise.resolve(null),
+      vid ? api.get(`/api/queryview/view/${encodeURIComponent(vid)}`).catch(() => null) : Promise.resolve(null),
+    ])
+    const qName = (query as any)?.data?.name ?? (qflag || '—')
+    const sN = Array.isArray((stats as any)?.data) ? (stats as any).data.length : 0
+    const vName = (view as any)?.data?.name ?? (vid || '—')
+    queryListText.value = `查询「${qName}」· 统计 ${sN} · 视图「${vName}」`
+  } catch (e: any) {
+    toast.error('加载查询/视图明细失败: ' + (e?.message ?? ''))
   }
 }
 // 数据表（rev117）：分页列表 + 首表详情 + 首表行数据，三条 distinct 真实路由
