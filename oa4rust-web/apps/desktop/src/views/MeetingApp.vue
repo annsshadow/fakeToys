@@ -53,6 +53,10 @@
             <button class="bsm" @click.stop="joinMeeting(m)">加入</button>
             <button class="bsm" @click.stop="showParticipants(m)">参会人</button>
             <button class="bsm" @click.stop="inviteParticipant(m)">邀请</button>
+            <button class="bsm" @click.stop="manageInvitee(m)">邀请管理</button>
+            <button class="bsm" @click.stop="modifyMeetingTime(m)">改时间</button>
+            <button class="bsm" @click.stop="markMeetingCompleted(m)">标记完成</button>
+            <button class="bsm" @click.stop="showCheckinCode(m)">签到码</button>
           </div>
         </div>
       </div>
@@ -552,6 +556,69 @@ async function leaveMeeting(m: M) {
     loadMeetings()
   } catch (e: any) {
     toast.error('离开失败: : ' + (e?.message ?? ''))
+  }
+}
+// rev314：会议管理真实写端点（用户触发，非挂载自动触发）——改时间/标记完成/签到码/邀请增删
+async function modifyMeetingTime(m: M) {
+  const startTime = prompt('新的开始时间 (YYYY-MM-DD HH:mm:ss):', m.startTime || '')
+  if (!startTime) return
+  const endTime = prompt('新的结束时间 (可留空):', '') || undefined
+  try {
+    // POST meeting/{id}/modify/starttime → UPDATE x_meeting start_time(+end_time?)
+    await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/modify/starttime`, {
+      startTime,
+      ...(endTime ? { endTime } : {}),
+    })
+    if (endTime) {
+      // POST meeting/{id}/modify/completedtime → UPDATE x_meeting completed_time
+      await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/modify/completedtime`, {
+        completedTime: endTime,
+      })
+    }
+    toast.success('会议时间已更新')
+    loadMeetings()
+  } catch (e: any) {
+    toast.error('改时间失败: ' + (e?.message ?? ''))
+  }
+}
+async function markMeetingCompleted(m: M) {
+  if (!(await confirmMsg('确定将该会议标记为已完成？'))) return
+  try {
+    // POST meeting/{id}/manual/completed → UPDATE x_meeting status='completed'（无 body）
+    await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/manual/completed`)
+    toast.success('已标记完成')
+    loadMeetings()
+  } catch (e: any) {
+    toast.error('标记完成失败: ' + (e?.message ?? ''))
+  }
+}
+async function showCheckinCode(m: M) {
+  try {
+    // POST meeting/checkin/code/{id} → 读取最新签到码（x_meeting_checkin_code）
+    const r: any = await api.post(`/api/meeting/assemble/control/meeting/checkin/code/${encodeURIComponent(m.id)}`)
+    const code = (r as any)?.data?.checkinCode
+    toast.info(code ? `签到码：${code}` : '暂无签到码')
+  } catch (e: any) {
+    toast.error('获取签到码失败: ' + (e?.message ?? ''))
+  }
+}
+async function manageInvitee(m: M) {
+  const invitee = prompt('输入受邀人（留空取消）:', '')
+  if (!invitee) return
+  const remove = await confirmMsg(`对「${invitee}」：确定=添加邀请，取消=移除邀请`)
+  try {
+    if (remove) {
+      // POST meeting/{id}/add/invite → INSERT x_meeting_invite {invitee}
+      await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/add/invite`, { invitee })
+      toast.success('已添加邀请')
+    } else {
+      // POST meeting/{id}/delete/invite → DELETE x_meeting_invite {invitee}
+      await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/delete/invite`, { invitee })
+      toast.success('已移除邀请')
+    }
+    loadMeetings()
+  } catch (e: any) {
+    toast.error('邀请管理失败: ' + (e?.message ?? ''))
   }
 }
 
