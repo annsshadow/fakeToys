@@ -19,6 +19,7 @@
       <button class="sb" @click="loadMeetingMore">待接受/本月/配置</button>
       <button class="sb" @click="loadMeetingSearch">检索/前瞻</button>
       <button class="sb" @click="loadMeetingCore">核心资源/日程</button>
+      <button class="sb" @click="loadMeetingPinyin">拼音检索</button>
       <button class="sb" @click="addBuilding">+ 楼栋</button>
     </div>
     <div v-if="appliedText" class="applied-note">{{ appliedText }}</div>
@@ -265,6 +266,25 @@ async function loadMyApplied() {
 // 会议核心资源/日程 4 条真实 distinct（rev203，meeting/meeting_core_entity crate，区别于 assemble/control 前缀）：
 // meeting/room/list（x_meeting_room）+ meeting/building/list（x_meeting_building）+ meeting/schedule/days/{days}
 // （x_meeting 未来 N 天）+ meeting/core/entity/room/list（SeaORM 房间实体）。
+// 会议拼音检索 4 条真实 distinct（rev204，meeting_assemble_control，x_meeting_building/room 拼音维度各异）：
+// building/list/like/pinyin/{key}（pinyin ILIKE）+ building/list/pinyininitial/{key}（pinyin_initial ILIKE）
+// + room/list/like/pinyin/{key} + room/list/pinyininitial/{key}。区别于已消费的 building/room/list/like/{key}（name ILIKE）。
+async function loadMeetingPinyin() {
+  const key = searchKey.value?.trim() || 'h'
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [bP, bI, rP, rI] = await Promise.all([
+      s(api.get(`/api/meeting/assemble/control/building/list/like/pinyin/${encodeURIComponent(key)}`)),
+      s(api.get(`/api/meeting/assemble/control/building/list/pinyininitial/${encodeURIComponent(key)}`)),
+      s(api.get(`/api/meeting/assemble/control/room/list/like/pinyin/${encodeURIComponent(key)}`)),
+      s(api.get(`/api/meeting/assemble/control/room/list/pinyininitial/${encodeURIComponent(key)}`)),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    appliedText.value = `楼栋拼音 ${n(bP)}/首字母 ${n(bI)} · 会议室拼音 ${n(rP)}/首字母 ${n(rI)}`
+  } catch (e: any) {
+    toast.error('加载拼音检索失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadMeetingCore() {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
