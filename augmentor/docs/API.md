@@ -40,6 +40,12 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 
 `GET /api/data/list` 的扫描范围与白名单同源，因此它列出的文件一定都读得到。
 
+**目录类参数的缺省值也在白名单内**。`/api/system/dependency/*` 三条端点的
+`registry_path` 可选；留空时使用白名单首个根目录下的 `.dependency_registry`
+（出厂默认即 `data/.dependency_registry`），因此 CLI 用
+`--registry-path data/.dependency_registry` 就能与 API 共用同一份登记。显式传入时照旧校验，越界 403；显式传空串（`?registry_path=`）是非法入参 → 400，
+不会被静默换成缺省值。
+
 ### 错误码
 
 | 状态码 | 含义 | 触发场景 |
