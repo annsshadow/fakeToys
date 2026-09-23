@@ -23,6 +23,7 @@
         <button class="btn-refresh" @click="loadViewRecords">👁️ 浏览记录(文档/人员)</button>
         <button class="btn-refresh" @click="loadCmsAppReads">📚 分类/表单/脚本按应用</button>
         <button class="btn-refresh" @click="loadCmsAppReads2">🔎 视图/搜索过滤/脚本游标/应用视图</button>
+        <button class="btn-refresh" @click="loadCmsDeepReads">🔬 控制配置/分类/文档批次/脚本版本</button>
       </div>
       <div v-if="cmsConfigText" class="cfg-note">{{ cmsConfigText }}</div>
       <div v-if="overviewText" class="cfg-note">{{ overviewText }}</div>
@@ -239,6 +240,26 @@ async function loadCmsAppReads() {
   }
 }
 // rev298：CMS 视图/搜索过滤/脚本游标/应用视图族 真实读端点集（appinfo view/publish/manage type、appinfo/categoryinfo/file flag、script 游标、searchfilter category、view/viewcategory list、viewrecord filter）；均只读 arity<=url 已核
+async function loadCmsDeepReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const uniqueName = 'default'
+  const flag = '0'
+  try {
+    // rev313：CMS 控制配置/分类详情/文档批次状态/脚本版本/应用脚本引出 5 条纯 SELECT
+    const rs = await Promise.all([
+      s(api.get(`/api/cms_control/get/control/config`)),
+      s(api.get(`/api/categoryinfo/${id}`)),
+      s(api.get(`/api/document/batch/${id}/status`)),
+      s(api.get(`/api/scriptversion/${id}`)),
+      s(api.get(`/api/script/${uniqueName}/app/${flag}/imported`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    cmsConfigText.value = `CMS 深度读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载 CMS 深度读失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadCmsAppReads2() {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const appType = 'all'

@@ -358,6 +358,9 @@ async function loadMeetingDateLists() {
     const y = String(now.getFullYear())
     const mo = String(now.getMonth() + 1)
     const d = String(now.getDate())
+    const mid = '0'
+    const sz = '20'
+    const rid = '0'
     const [building, coming, byMonth, byDay, allList, sysCfg, forward] = await Promise.all([
       s(api.get('/api/meeting/assemble/control/building/list/start/1/completed/0')),
       s(api.get('/api/meeting/assemble/control/meeting/list/coming/month/3')),
@@ -373,6 +376,12 @@ async function loadMeetingDateLists() {
       s(api.get('/api/meeting/assemble/control/building/list/start/1/completed/0/allmeeting')),
       // rev300：meeting/list/forward/monthcount/{monthCount}/all（另一段序，x_meeting 未来N月）补齐
       s(api.get('/api/meeting/assemble/control/meeting/list/forward/monthcount/6/all')),
+      // rev313：会议详情/即将(按月+计数)/邀请分页/游标/按年月日+房间 5 条纯 SELECT
+      s(api.get(`/api/meeting/${mid}`)),
+      s(api.get(`/api/meeting/assemble/control/meeting/list/coming/${mo}/20`)),
+      s(api.get(`/api/meeting/assemble/control/meeting/list/invite/1/${sz}/${sz}`)),
+      s(api.get(`/api/meeting/assemble/control/meeting/list/${mid}/0/20`)),
+      s(api.get(`/api/meeting/assemble/control/meeting/list/${y}/${y}/${mo}/${mo}/${d}/${d}/${rid}`)),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     appliedText.value = `楼栋(时间范围) ${n(building)} · 即将3月 ${n(coming)} · 本年月 ${n(byMonth)} · 本年月日 ${n(byDay)} · 全量会议 ${n(allList)} · 系统配置 ${(sysCfg as any)?.data ? '有' : '无'} · 未来6月 ${n(forward)}`

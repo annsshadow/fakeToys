@@ -255,6 +255,9 @@ async function loadOrgControlDeep() {
       s(api.get(`/api/organization/assemble/control/unitduty/update/member`)),
       s(api.get(`/api/organization/assemble/personal/${id}/role/list`)),
       s(api.get(`/api/identity/${id}`)),
+      s(api.get(`/api/group/${id}`)),
+      s(api.get(`/api/role/${id}`)),
+      s(api.get(`/api/unit/${id}`)),
     ])
     const hit = rs.filter((r) => (r as any)?.data != null).length
     orgMetaText.value = `组织控制深度读端点 ${rs.length} 条，命中 ${hit}`

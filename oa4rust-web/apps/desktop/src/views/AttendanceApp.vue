@@ -459,6 +459,12 @@ async function loadStatisticShow() {
       s(api.get(`/api/attendance/assemble/control/dingding/statistic/unit/year/${yr}/month/${mo}/day/${encodeURIComponent(nm)}`)),
       s(api.get(`/api/attendance/assemble/control/qywx/statistic/person/year/${yr}/month/${mo}`)),
       s(api.get(`/api/attendance/assemble/control/qywx/statistic/unit/year/${yr}/month/${mo}/day/${encodeURIComponent(nm)}`)),
+      // rev313：v2申诉起始检查/请假导入结果/工位/统计展示(topUnit·unit 按年月，区别于 unit/topUnit 组合) 5 条纯 SELECT
+      s(api.get(`/api/attendance/assemble/control/v2/appeal/${nm}/start/check`)),
+      s(api.get(`/api/attendance/assemble/control/v2/leave/import/result/flag/${nm}`)),
+      s(api.get(`/api/attendance/assemble/control/workplace/${nm}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/topUnit/${encodeURIComponent(nm)}/${yr}/${mo}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/unit/${encodeURIComponent(nm)}/${yr}/${mo}`)),
     ])
     const total = results.reduce((acc: number, r: any) => acc + (Array.isArray(r?.data) ? r.data.length : 0), 0)
     attOverviewText.value = `统计展示筛选：5 维度×2 方向 + 2 按日 = 12 路由，返回合计 ${total} 行`
