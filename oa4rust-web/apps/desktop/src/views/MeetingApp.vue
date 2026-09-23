@@ -358,7 +358,7 @@ async function loadMeetingDateLists() {
     const y = String(now.getFullYear())
     const mo = String(now.getMonth() + 1)
     const d = String(now.getDate())
-    const [building, coming, byMonth, byDay, allList, sysCfg] = await Promise.all([
+    const [building, coming, byMonth, byDay, allList, sysCfg, forward] = await Promise.all([
       s(api.get('/api/meeting/assemble/control/building/list/start/1/completed/0')),
       s(api.get('/api/meeting/assemble/control/meeting/list/coming/month/3')),
       s(api.get(`/api/meeting/assemble/control/meeting/list/year/${y}/month/${mo}/all`)),
@@ -366,9 +366,11 @@ async function loadMeetingDateLists() {
       // rev275：meeting/list → x_meeting 全量(无 WHERE，区别于日期范围) · config/system/config/manage → x_meeting_config；均 arity0 只读
       s(api.get('/api/meeting/list')),
       s(api.get('/api/meeting/assemble/control/config/system/config/manage')),
+      // rev280：meeting/list/forward/monthcount/all/{monthCount} → x_meeting WHERE start_time>=NOW() AND <=NOW()+INTERVAL（未来N月，区别于固定年月范围）
+      s(api.get('/api/meeting/assemble/control/meeting/list/forward/monthcount/all/6')),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
-    appliedText.value = `楼栋(时间范围) ${n(building)} · 即将3月 ${n(coming)} · 本年月 ${n(byMonth)} · 本年月日 ${n(byDay)} · 全量会议 ${n(allList)} · 系统配置 ${(sysCfg as any)?.data ? '有' : '无'}`
+    appliedText.value = `楼栋(时间范围) ${n(building)} · 即将3月 ${n(coming)} · 本年月 ${n(byMonth)} · 本年月日 ${n(byDay)} · 全量会议 ${n(allList)} · 系统配置 ${(sysCfg as any)?.data ? '有' : '无'} · 未来6月 ${n(forward)}`
   } catch (e: any) {
     toast.error('加载会议日期列表失败: ' + (e?.message ?? ''))
   }
