@@ -16,6 +16,7 @@
         <button class="eb" @click="loadV2AppealRecord">📝 v2申诉/记录</button>
         <button class="eb" @click="loadAttBase">🗂️ 打卡/周期/员工</button>
         <button class="eb" @click="loadCoreLists">🧩 核心记录/规则</button>
+        <button class="eb" @click="loadScheduleDetail">📅 排班设置明细</button>
       </div>
       <div v-if="attOverviewText" class="att-note">{{ attOverviewText }}</div>
     </div>
@@ -374,6 +375,28 @@ async function loadCoreLists() {
     attOverviewText.value = `管理员 ${n(admins)} / 排班规则 ${n(rules)} / 核心记录 ${n(coreRecords)} / 核心规则 ${n(coreRules)}`
   } catch (e: any) {
     toast.error('加载考勤核心记录/规则失败: ' + (e?.message ?? ''))
+  }
+}
+// 排班设置明细（rev185，3 条真实 distinct，x_attendance_schedule_setting）：schedulesetting/list/all 取首 id/unit
+// → attendanceschedulesetting/{id}（WHERE id）+ list/unit/{name}（WHERE unit_id=$1）+ list/topUnit/{name}（WHERE unit_id IS NULL）。
+async function loadScheduleDetail() {
+  try {
+    const listRes: any = await api.get('/api/attendance/assemble/control/attendanceschedulesetting/list/all').catch(() => null)
+    const rows = Array.isArray(listRes?.data) ? listRes.data : []
+    const first = rows[0] ?? null
+    const sid = String(first?.id ?? '0')
+    const nm = String(first?.unit ?? first?.name ?? '0')
+    const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const [detail, byUnit, byTop] = await Promise.all([
+      settle(api.get(`/api/attendance/assemble/control/attendanceschedulesetting/${sid}`)),
+      settle(api.get(`/api/attendance/assemble/control/attendanceschedulesetting/list/unit/${encodeURIComponent(nm)}`)),
+      settle(api.get(`/api/attendance/assemble/control/attendanceschedulesetting/list/topUnit/${encodeURIComponent(nm)}`)),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    const dName = (detail as any)?.data?.name ?? (rows.length ? sid : '—')
+    attOverviewText.value = `排班设置 ${rows.length}（首「${dName}」）· 按单位 ${n(byUnit)} · 顶级单位 ${n(byTop)}`
+  } catch (e: any) {
+    toast.error('加载排班设置明细失败: ' + (e?.message ?? ''))
   }
 }
 onMounted(loadData)
