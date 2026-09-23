@@ -18,6 +18,7 @@
         <button class="btn-sm" @click="loadTaskLists">全部任务</button>
         <button class="btn-sm" @click="loadWorkFilterCursors">工作游标/按工作</button>
         <button class="btn-sm" @click="loadWorkAuxReads">日志/流水号/文件</button>
+        <button class="btn-sm" @click="loadByWorkJobLists">按工作/按job</button>
         <button class="btn-sm primary" @click="openStart">发起流程</button>
       </div>
     </div>
@@ -29,6 +30,7 @@
     <p v-if="readListText" class="subtitle draft-note">{{ readListText }}</p>
     <p v-if="taskListText" class="subtitle draft-note">{{ taskListText }}</p>
     <p v-if="workCursorText" class="subtitle draft-note">{{ workCursorText }}</p>
+    <p v-if="byWorkJobText" class="subtitle draft-note">{{ byWorkJobText }}</p>
     <div class="tabs glass-card">
       <button
         v-for="tab in tabs"
@@ -311,6 +313,24 @@ async function loadWorkAuxReads(): Promise<void> {
   ])
   const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
   workCursorText.value = `应用文件 ${n(appFile)} · 已阅按工作 ${n(rcWork)}`
+}
+const byWorkJobText = ref('')
+// rev251：流程表面 待办/已办/待阅/已阅/工作日志 按工作·按job 7 条真实 distinct 读路由（各表 WHERE xwork/xjob 组合唯一；arity 1 已核）
+async function loadByWorkJobLists(): Promise<void> {
+  byWorkJobText.value = ''
+  const id = '0'
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [tW, tJ, tcW, tcJ, rJ, rcJ, wlJ] = await Promise.all([
+    settle(api.get(`/api/processplatform/assemble/surface/task/list/work/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/task/list/job/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/work/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/job/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/read/list/job/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/readcompleted/list/job/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/worklog/list/job/${id}`)),
+  ])
+  const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+  byWorkJobText.value = `待办 工作${n(tW)}/job${n(tJ)} · 已办 工作${n(tcW)}/job${n(tcJ)} · 待阅job ${n(rJ)} · 已阅job ${n(rcJ)} · 日志job ${n(wlJ)}`
 }
 // Job 关联/记录 4 条真实 distinct（rev202，surface 域按 job id）：attachment/list/job/{job}（xjob 附件）
 // + correlation/list/job/{job}（PP_C_JOB 关联）+ datarecord/list/job/{job}（PP_C_DATA_RECORD）
