@@ -20,6 +20,7 @@
       <button class="org-meta-btn" @click="loadGroupDetails">群组明细</button>
       <button class="org-meta-btn" @click="loadIdentityRelations">身份关系</button>
       <button class="org-meta-btn" @click="loadOrgMembers">成员/层级</button>
+      <button class="org-meta-btn" @click="loadUnitScope">单位归属/群角</button>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -445,6 +446,36 @@ async function loadOrgMembers() {
     orgMetaText.value = `群组人员 ${n(byGroup)} · 角色人员 ${n(byRole)} · 单位层级 ${n(byLevel)}`
   } catch (e: any) {
     toast.error('加载成员/层级失败: ' + (e?.message ?? ''))
+  }
+}
+// 单位归属/群角族 3 条真实 distinct 路由（express，SQL 各异）：身份所属单位 /api/unit/list/identity（JOIN x_org_identity）
+// + 人员所属单位 /api/unit/list/person（子查询 x_org_person.unit_id）+ 群组是否含角色 /api/group/has/role（EXISTS x_org_group_role）
+async function loadUnitScope() {
+  const firstName = (resp: any): string => {
+    const arr = Array.isArray(resp?.data) ? resp.data : []
+    return arr[0] ? String(arr[0].name ?? arr[0].id ?? '') : ''
+  }
+  try {
+    const [identResp, cardResp, groupResp, roleResp] = await Promise.all([
+      api.get('/api/organization/assemble/control/identity/list/0/next/10').catch(() => null),
+      api.get('/api/organization/assemble/control/personcard/listpaging/page/1/size/20').catch(() => null),
+      api.get('/api/organization/assemble/control/group/list/0/next/10').catch(() => null),
+      api.get('/api/organization/assemble/control/role/list/0/next/10').catch(() => null),
+    ])
+    const identityList = firstName(identResp) ? [firstName(identResp)] : []
+    const personList = firstName(cardResp) ? [firstName(cardResp)] : []
+    const group = firstName(groupResp)
+    const roleList = firstName(roleResp) ? [firstName(roleResp)] : []
+    const [byIdentity, byPerson, hasRole] = await Promise.all([
+      api.post('/api/unit/list/identity', { identityList }).catch(() => null),
+      api.post('/api/unit/list/person', { personList }).catch(() => null),
+      api.post('/api/group/has/role', { group, roleList }).catch(() => null),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    const hr = (hasRole as any)?.data ? '是' : '否'
+    orgMetaText.value = `身份所属单位 ${n(byIdentity)} · 人员所属单位 ${n(byPerson)} · 群组含角色 ${hr}`
+  } catch (e: any) {
+    toast.error('加载单位归属/群角失败: ' + (e?.message ?? ''))
   }
 }
 const keyword = ref('')
