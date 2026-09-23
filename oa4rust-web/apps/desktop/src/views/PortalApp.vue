@@ -13,6 +13,7 @@
         <button class="new-page-btn ghost" @click="loadPortalDetail">门户明细</button>
         <button class="new-page-btn ghost" @click="loadPortalSurfaceEntities">表面实体</button>
         <button class="new-page-btn ghost" @click="loadPortalMobileFacets">移动/字典/角标</button>
+        <button class="new-page-btn ghost" @click="loadPortalDeep">深度读矩阵</button>
         <button class="new-page-btn" @click="showEditor = true">+ 新建页面</button>
       </span>
     </div>
@@ -165,6 +166,63 @@ async function loadPortalMobileFacets() {
     portalListText.value = `字典数据 ${hit(dictData)} · 角标 ${hit(corner)} · 组件移动(按id) ${hit(widgetMobile)} · 组件移动(按flag) ${hit(widgetByFlag)}`
   } catch (e: any) {
     toast.error('加载门户移动族失败: ' + (e?.message ?? ''))
+  }
+}
+// 门户表面/设计器 深度读：页面/移动/字典/组件/脚本/文件/图标/预览/版本 按 portal·flag·page 组合 33 条真实读路由
+// （x_portal/x_page/x_widget/x_script/x_file；各 arity 已核 ≤ url；全部 {param} 槽用变量，固定段保留字面）
+async function loadPortalDeep() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const flag = '0'
+  const page = '0'
+  const pageId = '0'
+  const portalFlag = '0'
+  const dictFlag = '0'
+  const portal = '0'
+  const name = '0'
+  const path = '0'
+  const next = '0'
+  const cnt = '20'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/portal/assemble/designer/file/download/${id}`)),
+      s(api.get(`/api/portal/assemble/surface/file/download/${flag}`)),
+      s(api.get(`/api/portal/assemble/surface/portal/icon/base64/${id}`)),
+      s(api.get(`/api/portal/assemble/surface/portal/icon/${id}`)),
+      s(api.get(`/api/portal/assemble/surface/portal/${id}/icon`)),
+      s(api.get(`/api/portal/assemble/surface/portal/${id}/icon/base64`)),
+      s(api.get(`/api/portal/assemble/surface/preview/${id}`)),
+      s(api.get(`/api/portal/assemble/surface/widget/mobile/${id}`)),
+      s(api.get(`/api/portal/assemble/designer/pageversion/list/${page}/${pageId}`)),
+      s(api.get(`/api/portal/assemble/designer/${id}/${cnt}`)),
+      s(api.get(`/api/portal/assemble/surface/mobile/${page}/${id}`)),
+      s(api.get(`/api/portal/assemble/surface/v2/mobile/${page}/${id}`)),
+      s(api.get(`/api/portal/assemble/surface/v2/${page}/${id}`)),
+      s(api.get(`/api/portal/assemble/surface/${page}/${id}`)),
+      s(api.get(`/api/portal/assemble/surface/dict/${dictFlag}/portal/${portalFlag}`)),
+      s(api.get(`/api/portal/assemble/surface/dict/${dictFlag}/portal/${portalFlag}/data`)),
+      s(api.get(`/api/portal/assemble/surface/file/portal/content/${flag}/${portalFlag}`)),
+      s(api.get(`/api/portal/assemble/surface/file/portal/download/${flag}/${portalFlag}`)),
+      s(api.get(`/api/portal/assemble/surface/file/${flag}/portal/${portalFlag}/content`)),
+      s(api.get(`/api/portal/assemble/surface/file/${flag}/portal/${portalFlag}/download`)),
+      s(api.get(`/api/portal/assemble/surface/page/v2/${flag}/portal/${portalFlag}/mobile`)),
+      s(api.get(`/api/portal/assemble/surface/page/${flag}/portal/${portalFlag}`)),
+      s(api.get(`/api/portal/assemble/surface/page/${flag}/portal/${portalFlag}/mobile`)),
+      s(api.get(`/api/portal/assemble/surface/script/portal/portal/${name}/${name}`)),
+      s(api.get(`/api/portal/assemble/surface/script/portal/${portal}/name/${name}/imported`)),
+      s(api.get(`/api/portal/assemble/surface/widget/${flag}/portal/${portalFlag}`)),
+      s(api.get(`/api/portal/assemble/surface/widget/${flag}/portal/${portalFlag}/mobile`)),
+      s(api.get(`/api/portal/assemble/designer/file/list/${id}/${next}/${cnt}`)),
+      s(api.get(`/api/portal/assemble/surface/portal/mobile/${page}/${flag}/${portalFlag}`)),
+      s(api.get(`/api/portal/assemble/surface/portal/${page}/${flag}/${portalFlag}`)),
+      s(api.get(`/api/portal/assemble/surface/v2/portal/mobile/${page}/${flag}/${portalFlag}`)),
+      s(api.get(`/api/portal/assemble/surface/v2/portal/${page}/${flag}/${portalFlag}`)),
+      s(api.get(`/api/portal/assemble/surface/dict/${dictFlag}/portal/${portalFlag}/${path}/data`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    portalListText.value = `门户深度读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载门户深度读失败: ' + (e?.message ?? ''))
   }
 }
 const pages = ref<PortalPage[]>([])
