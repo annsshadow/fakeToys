@@ -15,6 +15,7 @@
           <button class="new-chat-btn" title="按类型/未消费/非IM消息" @click="loadMsgByType">📊</button>
           <button class="new-chat-btn" title="群发消息详情/游标" @click="loadMassMessages">📢</button>
           <button class="new-chat-btn" title="即时消息消费维度" @click="loadInstantFacets">🗓️</button>
+          <button class="new-chat-btn" title="消费队列/接收/未读" @click="loadConsumeFacets">📬</button>
         </div>
       </div>
       <div class="search-bar">
@@ -628,6 +629,31 @@ async function loadInstantFacets() {
     toast.success(`已消费 升 ${n(consAsc)}/降 ${n(consDesc)} · 全部升 ${n(allAsc)} · 未消费升 ${n(notCons)} · 游标 next ${n(next)}/prev ${n(prev)}`)
   } catch (e: any) {
     toast.error('加载即时消息维度失败: ' + (e?.message ?? ''))
+  }
+}
+
+// rev229：消息消费队列/接收族 6 条真实 distinct 路由（x_message_consume / SeaORM message）
+// assemble/communicate receive/{consume}（WHERE consume+consumed=false ASC）· consume/list/{consume}/count/{count}（WHERE consume DESC）
+// · consume/list/{consume}/currentperson/count/{count}（+sender=consume）· consume/list/{consume}/person/{person}/count/{count}（+sender=$2）
+// · core/entity/list/by/{consume}（ORM）· core/entity/unread/count/{consume}（ORM count 未读）
+async function loadConsumeFacets() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const consume = 'instant'
+  const person = '0'
+  try {
+    const [receive, listCount, curPerson, byPerson, coreList, unread] = await Promise.all([
+      s(api.get(`/api/message/assemble/communicate/receive/${encodeURIComponent(consume)}`)),
+      s(api.get(`/api/message/assemble/communicate/consume/list/${encodeURIComponent(consume)}/count/20`)),
+      s(api.get(`/api/message/assemble/communicate/consume/list/${encodeURIComponent(consume)}/currentperson/count/20`)),
+      s(api.get(`/api/message/assemble/communicate/consume/list/${encodeURIComponent(consume)}/person/${encodeURIComponent(person)}/count/20`)),
+      s(api.get(`/api/message/core/entity/list/by/${encodeURIComponent(consume)}`)),
+      s(api.get(`/api/message/core/entity/unread/count/${encodeURIComponent(consume)}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    const cnt = (r: any) => ((r as any)?.data?.count ?? (r as any)?.data ?? 0)
+    toast.success(`接收 ${n(receive)} · 队列 ${n(listCount)} · 当前人 ${n(curPerson)} · 指定人 ${n(byPerson)} · 实体 ${n(coreList)} · 未读 ${cnt(unread)}`)
+  } catch (e: any) {
+    toast.error('加载消费队列失败: ' + (e?.message ?? ''))
   }
 }
 
