@@ -17,6 +17,7 @@
         <button class="action-btn" @click="loadDocFileInfo">📄 文档文件信息</button>
         <button class="action-btn" @click="loadFileCoreEntities">🗂️ 文件实体</button>
         <button class="action-btn" @click="loadFolderTopByRef">🌳 顶层文件夹/按引用</button>
+        <button class="action-btn" @click="loadFileDeepReads">🔬 文件深度读</button>
         <button class="action-btn" @click="toggleView">{{ viewType === 'grid' ? '☰ 列表' : '⊞ 网格' }}</button>
       </div>
     </div>
@@ -190,6 +191,40 @@ async function loadFolderTopByRef(): Promise<void> {
     toast.success(`顶层文件夹 ${n(top)} / 按引用类型文件 ${n(byRef)} / 顶层附件 ${n(attTop)} / CMS文件游标 ${n(cmsNext)}·${n(cmsPrev)} / 全量游标 ${n(fNext)}·${n(fPrev)}`)
   } catch (e: any) {
     toast.error('加载顶层文件夹/引用文件失败: ' + (e?.message ?? ''))
+  }
+}
+// rev312：文件/附件 深度读 14 条（附件详情/base64/附件2/office预览/文件内容/appInfo内容/fileinfo文档/引用类型游标）；handler 体经核实纯 SELECT
+async function loadFileDeepReads(): Promise<void> {
+  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const type = 'pdf'
+  const flag = '0'
+  const appInfoFlag = '0'
+  const size = '200'
+  const docId = '0'
+  const count = '20'
+  const referenceType = 'attachment'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/attachment/${id}`)),
+      s(api.get(`/api/attachment/${id}/binary/base64`)),
+      s(api.get(`/api/attachment2/${id}`)),
+      s(api.get(`/api/attachment2/${id}/binary/base64`)),
+      s(api.get(`/api/file/folder/list/${id}`)),
+      s(api.get(`/api/file/${id}`)),
+      s(api.get(`/api/file/${id}/content`)),
+      s(api.get(`/api/attachment2/${id}/office/preview/type/${type}`)),
+      s(api.get(`/api/file/assemble/control/attachment2/${id}/office/preview/type/${type}`)),
+      s(api.get(`/api/file/${flag}/appInfo/${appInfoFlag}/content`)),
+      s(api.get(`/api/fileinfo/${id}/binary/base64/${size}`)),
+      s(api.get(`/api/fileinfo/${id}/document/${docId}`)),
+      s(api.get(`/api/file/assemble/control/file/list/${id}/next/${count}/referencetype/${referenceType}`)),
+      s(api.get(`/api/file/assemble/control/file/list/${id}/prev/${count}/referencetype/${referenceType}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`文件深度读端点 ${rs.length} 条，命中 ${hit}`)
+  } catch (e: any) {
+    toast.error('加载文件深度读失败: ' + (e?.message ?? ''))
   }
 }
 async function loadAttachmentShares(): Promise<void> {
