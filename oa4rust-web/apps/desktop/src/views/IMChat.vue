@@ -583,13 +583,15 @@ async function loadImArchive() {
 async function loadMsgByType() {
   const msgType = 'information'
   try {
-    const [byType, notConsumed, noim] = await Promise.all([
+    const [byType, notConsumed, noim, objList] = await Promise.all([
       api.get(`/api/message/assemble/communicate/consume/type/${msgType}`).catch(() => null),
       api.get('/api/message/assemble/communicate/instant/list/currentperson/not/consumed/count/20/desc').catch(() => null),
       api.get('/api/message/assemble/communicate/instant/list/currentperson/noim/count/20/desc').catch(() => null),
+      // rev277：im/msg/list/object → x_message WHERE type != 'text'（非文本消息清单，arity0）
+      api.get('/api/message/assemble/communicate/im/msg/list/object').catch(() => null),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
-    toast.success(`information类 ${n(byType)} / 未消费 ${n(notConsumed)} / 非IM ${n(noim)}`)
+    toast.success(`information类 ${n(byType)} / 未消费 ${n(notConsumed)} / 非IM ${n(noim)} / 非文本 ${n(objList)}`)
   } catch (e: any) {
     toast.error('加载消息分类失败: ' + (e?.message ?? ''))
   }
