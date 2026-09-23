@@ -25,6 +25,7 @@
         <button class="btn-refresh" @click="loadSurfaceDataForms">📑 完成件/草稿/表单</button>
         <button class="btn-refresh" @click="loadDesignerItemAccess">🔑 项访问/输出/版次</button>
         <button class="btn-refresh" @click="loadSurfaceRouteSign">🧭 路由/签署/可控流程</button>
+        <button class="btn-refresh" @click="loadMergeitemEnabled">🧩 合并项计划/启用流程</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
@@ -33,6 +34,7 @@
       <div v-if="mappingText" class="rp-note">{{ mappingText }}</div>
       <div v-if="designerExtraText" class="rp-note">{{ designerExtraText }}</div>
       <div v-if="surfaceRouteSignText" class="rp-note">{{ surfaceRouteSignText }}</div>
+      <div v-if="mergeEnabledText" class="rp-note">{{ mergeEnabledText }}</div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🧩</div><p>暂无流程定义</p></div>
       <table v-else class="data-table">
@@ -189,6 +191,27 @@ async function loadMappingAccess() {
 // + process/form/{formId}（xformid，formId 从首流程详情回源）。
 const designerExtraText = ref('')
 const surfaceRouteSignText = ref('')
+const mergeEnabledText = ref('')
+// rev267：流程设计器 合并项计划(按应用/全量分页)/启用流程 3 条真实 distinct 读路由
+// mergeitemplan/list/application/{app}/paging/{page}/size/{size} → pp_e_mergeitemplan WHERE xapplication(新表,arity3) · mergeitemplan/list/paging/{page}/size/{size} → 同表全量(arity2) · process/{id}/enabled → PP_E_PROCESS WHERE xid AND xstatus='enabled'(区别于已消费 xid，arity1)
+async function loadMergeitemEnabled() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const first: any = items.value[0] ?? {}
+  const appId = String(first.application ?? first.applicationFlag ?? first.id ?? '0')
+  const pid = String(first.id ?? '0')
+  try {
+    const [byApp, all, enabled] = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/designer/mergeitemplan/list/application/${encodeURIComponent(appId)}/paging/1/size/20`)),
+      s(api.get(`/api/processplatform/assemble/designer/mergeitemplan/list/paging/1/size/20`)),
+      s(api.get(`/api/processplatform/assemble/designer/process/${encodeURIComponent(pid)}/enabled`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
+    mergeEnabledText.value = `合并项计划(按应用) ${n(byApp)} · 合并项计划(全量) ${n(all)} · 启用流程 ${has(enabled)}`
+  } catch (e: any) {
+    toast.error('加载合并项计划/启用流程失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadDesignerExtras() {
   const first = items.value[0]
   const app = String(first?.application ?? first?.category ?? '0')
