@@ -81,6 +81,8 @@
       <button class="save-btn ghost" @click="loadMailMeta">内部邮件/注册方式</button>
       <button class="save-btn ghost" @click="loadAuthScopes">我的单位/角色/群组</button>
       <button class="save-btn ghost" @click="loadAuthDetails">认证明细/绑定</button>
+      <button class="save-btn ghost" @click="loadPersonalExtras">头像/签名/授权明细</button>
+      <span v-if="personalExtraText" class="muted">{{ personalExtraText }}</span>
       <div v-if="authMetaText" class="auth-note">{{ authMetaText }}</div>
       <div v-if="authDetailText" class="auth-note">{{ authDetailText }}</div>
     </div>
@@ -274,6 +276,30 @@ async function loadAuthDetails() {
     authDetailText.value = `身份详情 ${has(ident)} · 头像 ${has(icon)} · 验证码 ${has(captcha)} · 绑定元 ${has(bindMeta)}`
   } catch (e: any) {
     toast.error('加载认证明细失败: ' + (e?.message ?? ''))
+  }
+}
+// rev217：个人域 头像/签名/自定义/授权游标族 7 条真实 distinct 路由
+// person/icon/{person}（auth_person icon）· signature/list/person/{flag}（x_custom 签名 WHERE person LIKE）· definition/{name}（x_org_definition WHERE name）
+// · custom/{name}（x_custom WHERE person+name）· empower/list/{id}/next/{count}（x_empower keyset >）· empower/list/{id}/prev/{count}（keyset <）· empower/list/person/{flag}（x_empower by person）
+const personalExtraText = ref('')
+async function loadPersonalExtras() {
+  const uid = String(user.value?.unique ?? user.value?.id ?? '0')
+  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const empId = empMine.value[0] ? String(empMine.value[0].id ?? '0') : '0'
+  try {
+    const [icon, sigs, def, custom, empNext, empPrev, empByPerson] = await Promise.all([
+      s(api.get(`/api/person/icon/${encodeURIComponent(uid)}`)),
+      s(api.get(`/api/person/signature/list/person/${encodeURIComponent(uid)}`)),
+      s(api.get(`/api/person/definition/${encodeURIComponent(uid)}`)),
+      s(api.get(`/api/person/custom/${encodeURIComponent(uid)}`)),
+      s(api.get(`/api/person/empower/list/${encodeURIComponent(empId)}/next/20`)),
+      s(api.get(`/api/person/empower/list/${encodeURIComponent(empId)}/prev/20`)),
+      s(api.get(`/api/person/empower/list/person/${encodeURIComponent(uid)}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    personalExtraText.value = `头像 ${(icon as any)?.data ? '有' : '无'} · 签名 ${n(sigs)} · 定义 ${(def as any)?.data ? '有' : '无'} · 自定义 ${(custom as any)?.data ? '有' : '无'} · 授权前翻 ${n(empNext)} · 后翻 ${n(empPrev)} · 按人 ${n(empByPerson)}`
+  } catch (e: any) {
+    toast.error('加载个人扩展明细失败: ' + (e?.message ?? ''))
   }
 }
 const sigManagers = ref<SigMgr[]>([])
