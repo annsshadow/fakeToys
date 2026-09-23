@@ -285,15 +285,17 @@ async function loadQueryViewCursors() {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const flag = '0'
   try {
-    const [idNext, rowWhere, rowPrev, viewByFlag, rowNext] = await Promise.all([
+    const [idNext, rowWhere, rowPrev, viewByFlag, rowNext, viewDef] = await Promise.all([
       s(api.get(`/api/queryview/table/list/${encodeURIComponent(flag)}/next/20`)),
       s(api.get(`/api/queryview/table/list/${encodeURIComponent(flag)}/row/select/where/a`)),
       s(api.get(`/api/queryview/table/list/row/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}/prev/20`)),
       s(api.get(`/api/queryview/view/flag/${encodeURIComponent(flag)}/query/${encodeURIComponent(flag)}`)),
       s(api.get(`/api/queryview/table/list/${encodeURIComponent(flag)}/row/${encodeURIComponent(flag)}/next/20`)),
+      // rev270：queryview 视图定义 flag/{view_flag}/definition/{query_flag} → x_query_view WHERE view_flag AND query_flag(arity2)，区别于 view/flag/query
+      s(api.get(`/api/queryview/flag/${encodeURIComponent(flag)}/definition/${encodeURIComponent(flag)}`)),
     ])
     const n = (x: any) => (Array.isArray((x as any)?.data) ? (x as any).data.length : 0)
-    tableText.value = `全表后翻 ${n(idNext)} · 行过滤 ${n(rowWhere)} · 表内前翻 ${n(rowPrev)} · 视图(flag+query) ${(viewByFlag as any)?.data ? '命中' : '未命中'} · 行后翻 ${n(rowNext)}`
+    tableText.value = `全表后翻 ${n(idNext)} · 行过滤 ${n(rowWhere)} · 表内前翻 ${n(rowPrev)} · 视图(flag+query) ${(viewByFlag as any)?.data ? '命中' : '未命中'} · 行后翻 ${n(rowNext)} · 视图定义 ${(viewDef as any)?.data ? '命中' : '未命中'}`
   } catch (e: any) {
     toast.error('加载 queryview 游标失败: ' + (e?.message ?? ''))
   }
