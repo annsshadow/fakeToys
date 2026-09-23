@@ -28,6 +28,7 @@
       <button class="org-meta-btn" @click="loadPersonLogins">人员登录/配对</button>
       <button class="org-meta-btn" @click="loadOrgSearchCursors">搜索/人员游标</button>
       <button class="org-meta-btn" @click="loadOrgAttributes">属性/职务/拼音</button>
+      <button class="org-meta-btn" @click="loadOrgListCursors">核心列表游标</button>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -190,6 +191,26 @@ async function loadOrgSearchCursors() {
     orgMetaText.value = `人员前翻 ${n(pNext)} / 后翻 ${n(pPrev)} / 群组直属 ${n(pGroup)} / 身份搜索 ${n(idLike)} / 拼音 ${n(idPinyin)} / 顶层单位 ${n(unitTop)} / 角色搜索 ${n(roleLike)}`
   } catch (e: any) {
     toast.error('加载组织搜索/游标失败: ' + (e?.message ?? ''))
+  }
+}
+// rev238：核心 group/role/unit 列表游标 + 单位对象列表 7 条真实 distinct 读路由（不同表/方向/WHERE）
+async function loadOrgListCursors() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const flag = '0'
+    const [gPrev, rNext, rPrev, uNext, uPrev, uAll, uType] = await Promise.all([
+      s(api.get(`/api/group/list/${flag}/prev/20`)),
+      s(api.get(`/api/role/list/${flag}/next/20`)),
+      s(api.get(`/api/role/list/${flag}/prev/20`)),
+      s(api.get(`/api/unit/list/${flag}/next/20`)),
+      s(api.get(`/api/unit/list/${flag}/prev/20`)),
+      s(api.get('/api/unit/list/all/object')),
+      s(api.get(`/api/unit/list/type/${flag}/object`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    orgMetaText.value = `群组逆翻 ${n(gPrev)} / 角色顺翻 ${n(rNext)} / 角色逆翻 ${n(rPrev)} / 单位顺翻 ${n(uNext)} / 单位逆翻 ${n(uPrev)} / 单位全量 ${n(uAll)} / 单位按类型 ${n(uType)}`
+  } catch (e: any) {
+    toast.error('加载核心列表游标失败: ' + (e?.message ?? ''))
   }
 }
 async function loadOrgMeta() {
