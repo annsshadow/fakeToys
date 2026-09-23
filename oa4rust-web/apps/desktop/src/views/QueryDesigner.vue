@@ -46,6 +46,7 @@
             <button class="btn-edit" @click="loadQueryDetail">🔍 明细</button>
             <button class="btn-edit" @click="loadQueryPerms">🔐 权限/分类</button>
             <button class="btn-edit" @click="loadTableRows">📊 表数据/统计</button>
+            <button class="btn-edit" @click="loadTableCursors">🔀 表游标</button>
             <button class="btn-del" @click="deleteQuery(selected)">🗑</button>
           </div>
         </div>
@@ -411,6 +412,37 @@ async function loadTableRows() {
     tableRowText.value = `数据表 ${tables.length} · 行 ${rows.length}（首行 ${hasRow}）· 统计 ${statN}`
   } catch (e: any) {
     toast.error('加载表数据/统计失败: ' + (e?.message ?? ''))
+  }
+}
+// rev206：设计器表行游标族 5 条真实 distinct 路由（x_query_table_data）
+// list/row/select/where/where/{tableFlag}（ILIKE 过滤取行）· row/where/where/{tableFlag}/{count}（ILIKE COUNT(*)）
+// · list/{flag}/row/{id}/next/{count}（id> 下翻）· list/{flag}/row/{id}/prev/{count}（id< 上翻）· {flag}/row/{id}（按 flag+id 取单行）
+async function loadTableCursors() {
+  const flag = String(selected.value?.flag ?? selected.value?.id ?? '')
+  if (!flag) {
+    toast.error('请先选择查询')
+    return
+  }
+  try {
+    const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const tablesRes = await settle(api.get(`/api/query/assemble/designer/table/list/query/${encodeURIComponent(flag)}`))
+    const tables = Array.isArray((tablesRes as any)?.data) ? (tablesRes as any).data : []
+    const tableFlag = tables[0] ? String(tables[0].id ?? '0') : '0'
+    const rowsRes = await settle(api.get(`/api/query/assemble/designer/table/row/${encodeURIComponent(tableFlag)}`))
+    const rows = Array.isArray((rowsRes as any)?.data) ? (rowsRes as any).data : []
+    const rowId = rows[0] ? String(rows[0].id ?? '0') : '0'
+    const [filtered, cnt, next, prev, one] = await Promise.all([
+      settle(api.get(`/api/query/assemble/designer/table/list/row/select/where/where/${encodeURIComponent(tableFlag)}?where=a`)),
+      settle(api.get(`/api/query/assemble/designer/table/row/where/where/${encodeURIComponent(tableFlag)}/10?where=a`)),
+      settle(api.get(`/api/query/assemble/designer/table/list/${encodeURIComponent(tableFlag)}/row/${encodeURIComponent(rowId)}/next/10`)),
+      settle(api.get(`/api/query/assemble/designer/table/list/${encodeURIComponent(tableFlag)}/row/${encodeURIComponent(rowId)}/prev/10`)),
+      settle(api.get(`/api/query/assemble/designer/table/${encodeURIComponent(tableFlag)}/row/${encodeURIComponent(rowId)}`)),
+    ])
+    const n = (x: any) => (Array.isArray((x as any)?.data) ? (x as any).data.length : 0)
+    const cntV = (cnt as any)?.data?.count ?? (cnt as any)?.data ?? 0
+    tableRowText.value = `过滤行 ${n(filtered)} · 计数 ${cntV} · 下翻 ${n(next)} · 上翻 ${n(prev)} · 单行 ${(one as any)?.data?.id ? '命中' : '未命中'}`
+  } catch (e: any) {
+    toast.error('加载表游标失败: ' + (e?.message ?? ''))
   }
 }
 
