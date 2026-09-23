@@ -118,15 +118,17 @@ async function loadEngineMore() {
   workDetailText.value = ''
   const id = items.value[0] ? String(items.value[0].work ?? items.value[0].id ?? '0') : '0'
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
-  const [draft, wcProc, dataPath, dataWcPath, jobView] = await Promise.all([
+  const [draft, wcProc, dataPath, dataWcPath, jobView, attnWc, tcIdentity] = await Promise.all([
     s(api.get(`/api/processplatform/service/processing/draft/${id}/${id}`)),
     s(api.get(`/api/processplatform/service/processing/workcompleted/process/${id}`)),
     s(api.get(`/api/processplatform/service/processing/data/path/${id}/${id}`)),
     s(api.get(`/api/processplatform/service/processing/data/workcompleted/path/${id}`)),
     s(api.get(`/api/processplatform/service/processing/job/v2/${id}/person/${id}/view`)),
+    s(api.get(`/api/processplatform/service/processing/attachment/workcompleted/${id}/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/taskcompleted/task/identity/${id}`)),
   ])
   const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
-  workDetailText.value = `草稿 ${has(draft)} · 完成件按流程 ${has(wcProc)} · 数据路径 ${has(dataPath)} · 完成数据路径 ${has(dataWcPath)} · job视图 ${has(jobView)}`
+  workDetailText.value = `草稿 ${has(draft)} · 完成件按流程 ${has(wcProc)} · 数据路径 ${has(dataPath)} · 完成数据路径 ${has(dataWcPath)} · job视图 ${has(jobView)} · 完成件附件 ${has(attnWc)} · 已办任务身份 ${has(tcIdentity)}`
 }
 // rev247：流程表面 task/taskcompleted 游标基/按应用/按流程 6 条真实 distinct 读路由（PP_C_TASK 与 PP_C_TASKCOMPLETED 两表，base(WHERE xid) 与 +xapplication/+xprocess 各异；跳 prev/filter/manage 同 WHERE xid 桩孪生）
 async function loadTaskCursorFilters() {
