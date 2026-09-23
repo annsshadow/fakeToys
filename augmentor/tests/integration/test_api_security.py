@@ -540,28 +540,11 @@ class TestBareNameResolvesInsideRoots:
         assert candidates[-1] == (Path.cwd() / "train_data_ui.json").resolve()
 
     def test_candidates_are_deduplicated(self, monkeypatch):
-        """根目录就是工作目录时不产生重复候选
-
-        收紧前的出厂默认正是 ``["."]``，此时「根目录解释」与「工作目录解释」重合，
-        候选必须塌成一条，否则每个路径参数都白做一次 ``exists()``。
-        """
-        from api.deps import _relative_candidates, allowed_data_roots
-
-        cwd = Path.cwd()
-        monkeypatch.setenv(
-            "AUGMENTOR_DATA_ROOTS", os.pathsep.join([str(cwd), str(cwd / ".")])
-        )
-
-        candidates = _relative_candidates(Path("train_data_ui.json"), allowed_data_roots())
-
-        assert candidates == [(cwd / "train_data_ui.json").resolve()]
-
-    def test_candidates_are_deduplicated(self, monkeypatch):
         """重复根目录不产生重复候选
 
         旧部署把 ``data_roots`` 配成工作目录（收紧前的出厂默认）时，「根目录解释」
-        与「工作目录兜底」完全重合；若不去重，每个路径参数都要多stat 一遍同样的
-        路径，且 ``x`` 与 ``x/.`` 这类等价写法会被当成两个候选。
+        与「工作目录兜底」完全重合；若不去重，每个路径参数都要多跑一次同样的
+        ``exists()``，且 ``x`` 与 ``x/.`` 这类等价写法会被当成两个候选。
         """
         from api.deps import _relative_candidates, allowed_data_roots
 
@@ -622,6 +605,74 @@ class TestBareNameResolvesInsideRoots:
             resolve_data_path(str(outside))
 
         assert exc.value.status_code == 403
+
+
+class TestDependencyRegistryDefaultPath:
+    """依赖端点在不传 ``registry_path`` 时也必须可用
+
+    残留缺陷：三个 ``/api/system/dependency/*`` 端点的默认注册表目录曾写死为
+    ``.dependency_registry``（相对工作目录）。白名单收到 ``data`` 之后工作目录不再
+    在闸内，于是**默认参数自己**会被自己设置的闸拦下：实测收紧后 POST/GET
+    ``/api/system/dependency/datasets`` 与 GET ``/api/system/dependency/graph``
+    全部 403 —— 缺省调用一条都走不通。默认值必须跟着白名单走。
+    """
+
+    def _root(self, monkeypatch, tmp_path):
+        """造一个只含白名单根目录的环境，工作目录刻意留在闸外"""
+        root = tmp_path / "data"
+        root.mkdir()
+        _write_json(root / "demo.json", [{"instruction": "q", "output": "a"}])
+        monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(root))
+        monkeypatch.chdir(tmp_path)
+        return root
+
+    def test_dependency_endpoints_work_with_default_registry_path(
+        self, client, monkeypatch, tmp_path
+    ):
+        """登记 → 列表 → 依赖图 三段缺省调用都要走通，且产物落在白名单内"""
+        root = self._root(monkeypatch, tmp_path)
+
+        registered = client.post(
+            "/api/system/dependency/datasets", json={"name": "demo", "input_file": "demo.json"}
+        )
+        listed = client.get("/api/system/dependency/datasets")
+        graph = client.get("/api/system/dependency/graph")
+
+        assert registered.status_code == 200
+        assert listed.status_code == 200
+        assert [d["name"] for d in listed.json()["datasets"]] == ["demo"]
+        assert graph.status_code == 200
+        assert (root / ".dependency_registry").is_dir()
+        assert not (tmp_path / ".dependency_registry").exists()
+
+    def test_explicit_registry_path_outside_roots_is_still_rejected(
+        self, client, monkeypatch, tmp_path
+    ):
+        """显式传参不参与缺省兜底，越界仍然 403
+
+        否则「默认值跟白名单走」会被一个可选参数绕开，白名单形同虚设。
+        """
+        self._root(monkeypatch, tmp_path)
+
+        response = client.get(
+            "/api/system/dependency/datasets",
+            params={"registry_path": str(tmp_path / "outside_registry")},
+        )
+
+        assert response.status_code == 403
+        assert not (tmp_path / "outside_registry").exists()
+
+    def test_empty_explicit_registry_path_is_not_silently_defaulted(
+        self, client, monkeypatch, tmp_path
+    ):
+        """显式传空串是非法入参（400），不能因为「有默认值」就被吞掉"""
+        self._root(monkeypatch, tmp_path)
+
+        response = client.get(
+            "/api/system/dependency/datasets", params={"registry_path": ""}
+        )
+
+        assert response.status_code == 400
 
 
 class TestWriteRouteAuthCoverage:

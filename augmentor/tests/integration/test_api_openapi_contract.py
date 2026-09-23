@@ -706,6 +706,10 @@ def api_env(tmp_path, monkeypatch):
     monkeypatch.setattr(deps, "_pipeline", pipeline)
 
     monkeypatch.chdir(tmp_path)
+    # 白名单也收到临时目录：三个依赖端点不传 registry_path 时，默认注册表目录
+    # 跟着白名单首个根走（`api.deps.default_registry_dir`），这样契约测试不会在
+    # 仓库工作目录里留下 `.dependency_registry/`。
+    monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(tmp_path))
     payload = json.dumps(SAMPLE_ITEMS, ensure_ascii=False)
     (tmp_path / "data.json").write_text(payload, encoding="utf-8")
     (tmp_path / "train.json").write_text(payload, encoding="utf-8")
