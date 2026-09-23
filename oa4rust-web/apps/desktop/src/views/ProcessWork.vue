@@ -131,6 +131,10 @@
             <h3>附件归属校验</h3>
             <p class="muted">{{ attnDetailText }}</p>
           </div>
+          <div v-if="readFacetText" class="detail-block">
+            <h3>待阅维度</h3>
+            <p class="muted">{{ readFacetText }}</p>
+          </div>
           <div v-if="jobAssetText" class="detail-block">
             <h3>Job 关联/记录</h3>
             <p class="muted">{{ jobAssetText }}</p>
@@ -269,6 +273,7 @@ const reads = ref<ReadItem[]>([])
 const engineText = ref('')
 const surfaceExtraText = ref('')
 const attnDetailText = ref('')
+const readFacetText = ref('')
 const jobAssetText = ref('')
 // Job 关联/记录 4 条真实 distinct（rev202，surface 域按 job id）：attachment/list/job/{job}（xjob 附件）
 // + correlation/list/job/{job}（PP_C_JOB 关联）+ datarecord/list/job/{job}（PP_C_DATA_RECORD）
@@ -484,6 +489,7 @@ async function openWork(item: TaskItem): Promise<void> {
     void loadSurfaceExtras(id)
     void loadJobAssets(id)
     void loadAttachmentIdentity(id)
+    void loadReadFacets(id)
     // “我发起的”详情：若本人有该工作的活动任务，允许在此办理（发起人 begin 环节）
     if (activeTab.value === 'started') {
       const pending: any = await api.get(endpoints.pending)
@@ -603,6 +609,22 @@ async function loadAttachmentIdentity(id: string): Promise<void> {
   const txtLen = String((byWorkText as any)?.data ?? '').length
   attnDetailText.value = `按work校验 ${hit(byWork)} · 文本 ${txtLen}字 · 按已完成 ${hit(byWc)} · 二选一 ${hit(byEither)} · 已完成列表 ${wcN}`
 }
+// rev208：待阅多维度族 5 条真实 distinct 路由（PP_C_READ）
+// list/job/{job}（WHERE xjob）· list/work/{work}（WHERE xwork）· list/my/paging/{page}/{size}/{size}（WHERE 1=1 分页）
+// · count/{credential}（COUNT WHERE xperson）· work/{workId}（WHERE xid 取单条）
+async function loadReadFacets(id: string): Promise<void> {
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [byJob, byWork, myPaging, cnt, one] = await Promise.all([
+    settle(api.get(`/api/processplatform/assemble/surface/read/list/job/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/read/list/work/${id}`)),
+    settle(api.get('/api/processplatform/assemble/surface/read/list/my/paging/1/20/20')),
+    settle(api.get(`/api/processplatform/assemble/surface/read/count/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/read/work/${id}`)),
+  ])
+  const n = (r: any) => asRows(r).length
+  const cntV = (cnt as any)?.data?.count ?? (cnt as any)?.data ?? 0
+  readFacetText.value = `按job ${n(byJob)} · 按work ${n(byWork)} · 我的分页 ${n(myPaging)} · 我的计数 ${cntV} · 单条 ${(one as any)?.data?.id ? '命中' : '未命中'}`
+}
 
 function closeWork(): void {
   opened.value = null
@@ -617,6 +639,7 @@ function closeWork(): void {
   surfaceExtraText.value = ''
   jobAssetText.value = ''
   attnDetailText.value = ''
+  readFacetText.value = ''
 }
 
 const canHandle = computed(() => {
