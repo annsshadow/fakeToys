@@ -28,6 +28,7 @@
         <button class="btn-refresh" @click="loadMergeitemEnabled">🧩 合并项计划/启用流程</button>
         <button class="btn-refresh" @click="loadSurfaceMiscReads">🧾 表单/流程/脚本/快照读取</button>
         <button class="btn-refresh" @click="loadDesignerProcessReads">🎛️ 设计器流程/应用/引出/权限</button>
+        <button class="btn-refresh" @click="loadSurfaceManageReads">🗃️ 管理详情/计数/投影/路由配置</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
@@ -39,6 +40,7 @@
       <div v-if="mergeEnabledText" class="rp-note">{{ mergeEnabledText }}</div>
       <div v-if="surfaceMiscText" class="rp-note">{{ surfaceMiscText }}</div>
       <div v-if="designerProcText" class="rp-note">{{ designerProcText }}</div>
+      <div v-if="surfaceManageText" class="rp-note">{{ surfaceManageText }}</div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🧩</div><p>暂无流程定义</p></div>
       <table v-else class="data-table">
@@ -198,6 +200,50 @@ const surfaceRouteSignText = ref('')
 const mergeEnabledText = ref('')
 const surfaceMiscText = ref('')
 const designerProcText = ref('')
+const surfaceManageText = ref('')
+// rev297：流程表面 管理详情/计数/投影/路由配置/按日期/属性筛选 真实读端点集（read/readcompleted/task/work/workcompleted manage 详情、count、job projection、process complex、route selectconfig、sign by task、is-manager、form mobile、draft prev）
+// 均 query_opt/query_all 只读、arity<=url 已核（axum 前导参提取，多余段忽略不报 500）；排除 pause/reroute/goback/abandoned/close-check 等动作名
+async function loadSurfaceManageReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const cnt = '20'
+  const app = 'default'
+  const flag = 'default'
+  const dt = new Date().toISOString().slice(0, 10)
+  const first: any = items.value[0] ?? {}
+  const wid = String(first.id ?? '0')
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/surface/read/manage/${encodeURIComponent(wid)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/manage/${encodeURIComponent(wid)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/manage/${encodeURIComponent(wid)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/manage/${encodeURIComponent(wid)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/relative/manage/${encodeURIComponent(wid)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/single/manage/${encodeURIComponent(wid)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/${encodeURIComponent(wid)}/relative/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/review/application/manage/${encodeURIComponent(wid)}/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/route/selectconfig/${encodeURIComponent(wid)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/route/${encodeURIComponent(wid)}/selectconfig`)),
+      s(api.get(`/api/processplatform/assemble/surface/sign/task/${encodeURIComponent(wid)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/job/v2/${encodeURIComponent(wid)}/projection`)),
+      s(api.get(`/api/processplatform/assemble/surface/process/${flag}/complex`)),
+      s(api.get(`/api/processplatform/assemble/surface/read/list/date/${dt}/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/date/${dt}/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/${encodeURIComponent(wid)}/reference/control`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/count/application/${app}/process/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/count/application/${app}/process/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/workcompleted/filter/attribute/application/${app}/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/workcompleted/filter/attribute/application/manage/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/application/is/manager/${flag}`)),
+      s(api.get(`/api/processplatform/assemble/surface/form/mobile/${flag}`)),
+      s(api.get(`/api/processplatform/assemble/surface/draft/list/${id}/prev/${cnt}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    surfaceManageText.value = `表面管理/计数/投影 真实读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载表面管理读取失败: ' + (e?.message ?? ''))
+  }
+}
 // rev290：流程设计器 应用汇总/元素孤儿字典/流程引出/启用/权限 真实读端点集；均只读 arity 已核
 async function loadDesignerProcessReads() {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
