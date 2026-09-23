@@ -289,7 +289,7 @@ python cli.py version --action rollback --version v1.0.0
 >
 >    | 命令 | 实现 | 并入的独有能力 |
 >    | --- | --- | --- |
->    | `export` | `Exporter`（12 种格式） | 单文件模式、`--max-items` / `--shuffle` / `--seed` |
+>    | `export` | `Exporter`（`ExportFormat` 全量格式，含 `raw`） | 单文件模式、`--max-items` / `--shuffle` / `--seed` |
 >    | `clean` | 规则式 `DatasetCleaner` | 旧 `DataCleaner` 的噪声清除（`remove_urls` / `remove_html_tags` / `remove_control_chars` 三条规则），旧 `--no-url-removal` → `--rules` 里去掉 `remove_urls` |
 >    | `analyze` | `analytics.DatasetAnalyzer` | 旧 `pipeline.analyze_dataset` 的 `coverage_analysis` / `statistics` / `dedup_report` 三段 |
 >    | `stats` | `statistics.DatasetStatisticsCalculator` | —（本就是旧 `get_statistics` 的严格超集） |

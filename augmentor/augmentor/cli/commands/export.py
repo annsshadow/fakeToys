@@ -27,7 +27,7 @@ def run_export(args, config):
     """`export` 子命令
 
     单一实现：`Exporter`（`augmentor/export.py`）。它原生实现 6 种格式，其余
-    委托给 `EnhancedExporter`，因此覆盖 `EXPORT_FORMATS` 全部 12 种——这正是
+    委托给 `EnhancedExporter`，因此覆盖 `EXPORT_FORMATS` 全量条目——这正是
     原来「基础实现 / `--enhanced`」两条路可以合并的前提：两条路用的转换器本来
     就大量重叠，各写一份只会让同一种格式出现两种产物。
 

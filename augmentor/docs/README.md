@@ -186,8 +186,10 @@ python cli.py preview --input train_data.json --format sharegpt --size 5
 ```bash
 python cli.py clean --input raw.json --output cleaned.json
 
-# 保留 URL
-python cli.py clean --input raw.json --output cleaned.json --no-url-removal
+# 保留 URL：从默认规则里去掉 remove_urls
+python cli.py clean --input raw.json --output cleaned.json \
+  --rules remove_empty remove_duplicates remove_html_tags remove_control_chars \
+            normalize_whitespace remove_special_chars trim_whitespace
 ```
 
 清洗内容包括：HTML 标签与实体、URL、零宽字符、控制字符、空白折叠，以及全角标点归一化为半角。
@@ -226,8 +228,8 @@ python cli.py benchmark --input train_data_new.json --report benchmark.md
 ```bash
 python cli.py version --action list
 python cli.py version --action create --input train_data.json
-python cli.py version --action diff --version-id <v1> --version-id-2 <v2>
-python cli.py version --action rollback --version-id <v1>
+python cli.py version --action compare --version <v1> --version-b <v2>
+python cli.py version --action rollback --version <v1>
 python cli.py version --action history
 ```
 
