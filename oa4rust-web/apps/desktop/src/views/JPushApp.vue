@@ -114,6 +114,8 @@ async function loadJpushEntities() {
     s(api.get(`/api/jpush/device/list`)),
     s(api.get(`/api/jpush_assemble_control/list/jpushs`)),
     s(api.get(`/api/jpush_assemble_control/get/jpush/${encodeURIComponent(did)}`)),
+    // rev296：jpush/get/{id} 别名路由(x_jpush id) 补齐
+    s(api.get(`/api/jpush/get/${encodeURIComponent(did)}`)),
   ])
   const hit = (r: any) => ((r as any)?.data?.id ? '命中' : '未命中')
   const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
