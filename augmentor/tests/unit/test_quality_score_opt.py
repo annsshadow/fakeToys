@@ -27,11 +27,36 @@ class TestQualityScoreOptimization:
         assert len(scores) == len(items)
     
     def test_embedding_cache_exists_after_score(self, scorer):
-        """评分后应初始化嵌入缓存"""
-        # 使用简化测试：验证代码路径包含缓存机制
-        import inspect
-        source = inspect.getsource(scorer.batch_score)
-        assert "_embedding_cache" in source or "cached_encode" in source
+        """同一批数据重复评分不得重复整批编码（缓存必须真正命中）
+
+        原实现用 `inspect.getsource` 检查源码里是否出现 "_embedding_cache"
+        字样——无论缓存是否真的生效都会通过，无法在业务逻辑变化时失败。
+        """
+        import numpy as np
+
+        class _RecordingModel:
+            def __init__(self):
+                self.sizes = []
+
+            def encode(self, texts, show_progress_bar=False, batch_size=32):
+                self.sizes.append(len(texts))
+                return np.ones((len(texts), 4), dtype=np.float32)
+
+        model = _RecordingModel()
+        scorer._model = model
+        scorer._cross_encoder = "fallback"
+
+        items = [
+            {"original": f"问题{i}", "generated": f"生成{i}", "output": f"回答{i}"}
+            for i in range(4)
+        ]
+
+        scorer.batch_score(items, include_semantic=True)
+        assert 4 in model.sizes, "首轮应对整批做一次编码"
+
+        model.sizes.clear()
+        scorer.batch_score(items, include_semantic=True)
+        assert 4 not in model.sizes, "第二轮仍整批编码，嵌入缓存未命中"
     
     def test_score_result_has_required_fields(self, scorer):
         """评分结果应包含所有必要字段"""

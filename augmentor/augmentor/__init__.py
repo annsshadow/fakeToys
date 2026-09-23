@@ -1,12 +1,27 @@
 # Copyright (C) 2026 annsshadow
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-"""AI 训练数据增强工具包"""
+"""AI 训练数据增强工具包
 
-import warnings
-from typing import Any, Dict
+命名说明（3.0 起）
+------------------
 
-__version__ = "2.2.0"
+历史上有四个类因「两个模块同名、包级导出互相覆盖」而产生歧义，包级名字一度
+指向与产出方不一致的类（`isinstance` 判定为 False）。现已拆成语义明确的独立
+名字，**旧的歧义名（`augmentor.QualityReport` / `augmentor.ValidationResult`）
+已彻底移除**，请按下表使用：
+
+    PipelineQualityReport   ← augmentor.report.QualityReport
+                              （ReportGenerator 产出）
+    DatasetQualityReport    ← augmentor.quality_report.QualityReport
+                              （QualityReporter 产出）
+    DataValidationResult    ← augmentor.validation.ValidationResult
+                              （数据集校验）
+    ConfigValidationResult  ← augmentor.config_validator.ValidationResult
+                              （配置校验）
+"""
+
+__version__ = "3.0.0"
 
 from .config import AppConfig, load_config
 from .models import create_model_backend, ModelBackend
@@ -54,7 +69,18 @@ from .outlier import OutlierDetector, OutlierReport, detect_outliers
 from .privacy import PiiSanitizer, SanitizeReport, sanitize_pii
 from .leakage import LeakageDetector, LeakageReport, detect_leakage
 from .json_extract import ExtractResult, extract_json, extract_json_list
-from .retry import RetryStats, with_retries, compute_delay, should_retry
+from .retry import (
+    RetryStats,
+    with_retries,
+    compute_delay,
+    should_retry,
+    classify_error,
+    http_status_code,
+    parse_retry_after,
+    retry_after_seconds,
+    RETRYABLE_STATUS_CODES,
+    MAX_RETRY_AFTER,
+)
 from .audit import DatasetAuditor, AuditReport, audit_dataset
 from .prompts import PromptTemplate, PromptRegistry, TemplateError, create_template
 from .schema import DatasetSchema, FieldRule, SchemaValidationResult, validate_schema
@@ -81,6 +107,7 @@ from .exceptions import (
     ModelNotConfiguredError,
     ModelInitError,
     ModelGenerateError,
+    ModelResponseError,
     DataError,
     DataLoadError,
     DataFormatError,
@@ -90,8 +117,11 @@ from .exceptions import (
     ExportError,
     UnsupportedFormatError,
     CheckpointError,
+    StreamError,
     VersionError,
-    PipelineError
+    PipelineError,
+    BackupError,
+    VectorError
 )
 
 __all__ = [
@@ -244,6 +274,12 @@ __all__ = [
     "with_retries",
     "compute_delay",
     "should_retry",
+    "classify_error",
+    "http_status_code",
+    "parse_retry_after",
+    "retry_after_seconds",
+    "RETRYABLE_STATUS_CODES",
+    "MAX_RETRY_AFTER",
     "DatasetAuditor",
     "AuditReport",
     "audit_dataset",
@@ -293,6 +329,7 @@ __all__ = [
     "ModelNotConfiguredError",
     "ModelInitError",
     "ModelGenerateError",
+    "ModelResponseError",
     "DataError",
     "DataLoadError",
     "DataFormatError",
@@ -302,47 +339,10 @@ __all__ = [
     "ExportError",
     "UnsupportedFormatError",
     "CheckpointError",
+    "StreamError",
     "VersionError",
-    "PipelineError"
+    "PipelineError",
+    "BackupError",
+    "VectorError"
 ]
-
-
-# ============ 历史歧义名兼容层 ============
-#
-# 早期版本中 `QualityReport` 与 `ValidationResult` 各被从两个模块导入到包级别，
-# 后者静默覆盖前者，导致 `augmentor.QualityReport` 指向的类与
-# `ReportGenerator.generate()` 实际返回的类不是同一个（`isinstance` 判定为 False）。
-#
-# 现已改为导出语义明确的独立名字：
-#   PipelineQualityReport   ← augmentor.report.QualityReport（ReportGenerator 产出）
-#   DatasetQualityReport    ← augmentor.quality_report.QualityReport（QualityReporter 产出）
-#   DataValidationResult    ← augmentor.validation.ValidationResult（数据集校验）
-#   ConfigValidationResult  ← augmentor.config_validator.ValidationResult（配置校验）
-#
-# 下面按「修复前的实际解析结果」保留旧名一个版本，并给出弃用警告。
-
-_LEGACY_ALIASES: Dict[str, str] = {
-    "QualityReport": "DatasetQualityReport",
-    "ValidationResult": "ConfigValidationResult",
-}
-
-_LEGACY_ORIGIN: Dict[str, str] = {
-    "QualityReport": "quality_report",
-    "ValidationResult": "config_validator",
-}
-
-
-def __getattr__(name: str) -> Any:
-    """按需解析历史歧义名并发出弃用警告（PEP 562）"""
-    target = _LEGACY_ALIASES.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    warnings.warn(
-        f"augmentor.{name} 存在歧义（历史上由两个模块的同名类互相覆盖），"
-        f"已弃用并将在下一大版本移除；请改用 augmentor.{target}，"
-        f"或直接 from augmentor.{_LEGACY_ORIGIN[name]} import {name}。",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return globals()[target]
 

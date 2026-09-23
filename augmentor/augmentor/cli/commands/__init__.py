@@ -6,11 +6,14 @@
 键是 argparse 的 `dest="command"` 取值，值是 handler。
 每个 handler 的签名统一为 `(args, config) -> None`。
 
-T1.7 后这里是 **36 个规范命令**。8 个旧命令名（`export-enhanced` /
-`analyze-data` / `visualize-data` / `version-control` / `compare-enhanced` /
-`search-enhanced` / `clean-enhanced` / `stats-enhanced`）不再单独登记：
-它们注册为 argparse alias，由 `main()` 归一化成主命令 + `args.enhanced = True`
-（映射表在 `augmentor/cli/parser.py` 的 `LEGACY_ALIASES`）。
+这里登记的是 **36 个规范命令**。
+
+3.0 起有两项破坏性变更（详见 `augmentor/cli/parser.py` 的模块 docstring）：
+
+1. 8 个旧命令名（`export-enhanced` / `analyze-data` / `visualize-data` /
+   `version-control` / `compare-enhanced` / `search-enhanced` / `clean-enhanced` /
+   `stats-enhanced`）连同 argparse alias 一并移除，不再注册；
+2. `--enhanced` 开关也已移除——同一能力的两种实现各自合并为一套。
 """
 
 from .profiling import run_profile, run_outliers, run_features, run_auto_config, run_aggregate

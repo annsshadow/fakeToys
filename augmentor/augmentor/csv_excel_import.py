@@ -16,6 +16,7 @@
 import logging
 from typing import List, Dict, Optional, Union
 from pathlib import Path
+from .exceptions import DataValidationError, UnsupportedFormatError
 
 logger = logging.getLogger(__name__)
 
@@ -109,14 +110,14 @@ def import_dataset(file_path: Union[str, Path], format: Optional[str] = None) ->
         elif suffix in (".xlsx", ".xls"):
             format = "excel"
         else:
-            raise ValueError(f"无法识别文件格式: {suffix}，请指定 format 参数")
+            raise UnsupportedFormatError(f"无法识别文件格式: {suffix}，请指定 format 参数")
     
     if format == "csv":
         return import_from_csv(path)
     elif format == "excel":
         return import_from_excel(path)
     else:
-        raise ValueError(f"不支持的导入格式: {format}")
+        raise UnsupportedFormatError(f"不支持的导入格式: {format}")
 
 
 def export_to_csv(items: List[Dict],
@@ -139,7 +140,7 @@ def export_to_csv(items: List[Dict],
     if columns:
         missing = [c for c in columns if c not in df.columns]
         if missing:
-            raise ValueError(f"以下列不存在: {missing}")
+            raise DataValidationError(f"以下列不存在: {missing}")
         df = df[columns]
     out = Path(file_path)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -170,7 +171,7 @@ def export_to_excel(items: List[Dict],
     if columns:
         missing = [c for c in columns if c not in df.columns]
         if missing:
-            raise ValueError(f"以下列不存在: {missing}")
+            raise DataValidationError(f"以下列不存在: {missing}")
         df = df[columns]
     out = Path(file_path)
     out.parent.mkdir(parents=True, exist_ok=True)

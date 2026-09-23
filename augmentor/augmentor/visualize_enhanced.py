@@ -7,7 +7,8 @@
 
 分工边界（与 `augmentor.visualizer`）
     本模块提供 `visualize_dataset(items, output, format)` 与 `VisualizationConfig`，
-    CLI 的 `visualize-data` 命令走这里。
+    CLI 的 `visualize --output`（报告模式）走这里；不带 `--output` 时走
+    `augmentor.visualizer.DataVisualizer` 生成图表文件。
     走 pipeline 的可视化流程，用 `visualizer.DataVisualizer`。
 """
 

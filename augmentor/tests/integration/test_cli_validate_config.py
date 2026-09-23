@@ -64,14 +64,23 @@ class TestValidateConfigCommand:
         assert "失败" in out or "错误" in out or code is not None
 
     def test_invalid_config_lists_errors(self, tmp_path, monkeypatch):
-        """缺必填字段的配置需逐条列出错误路径"""
+        """缺必填字段的配置需逐条列出错误路径
+
+        缺的必须是**真正必填**的字段。`models.default` 是 `load_config` 读取默认
+        模型的唯一来源，缺了它会静默回落到 `ernie`，所以它是必填项。
+        （`app` / `app.name` / `app.version` 已降级为可选：`AppConfig` 没有对应
+        字段，也没有任何代码读它们，把它们设为必填会让 `save_config` 写出的配置
+        必然「不合法」。）
+        """
         monkeypatch.chdir(tmp_path)
         bad = tmp_path / "bad.yaml"
         bad.write_text(
             textwrap.dedent(
                 """
-                models:
-                  default: ernie
+                app:
+                  name: ai-augmentor
+                  version: '1.0'
+                models: {}
                 """
             ),
             encoding="utf-8",
@@ -80,7 +89,7 @@ class TestValidateConfigCommand:
             ["cli", "--config", str(bad), "validate-config"]
         )
         assert "失败" in out
-        assert "app" in out  # 缺 app 段应被列为错误
+        assert "models.default" in out  # 缺 models.default 应被列为错误
 
 
 class TestGlobalConfigRegression:

@@ -11,6 +11,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
+from .exceptions import DataValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +71,7 @@ class FeatureDetector:
             min_coverage: 低于该覆盖率的字段将被标记为稀疏特征
         """
         if not 0 <= min_coverage <= 1:
-            raise ValueError("min_coverage 必须在 [0, 1] 内")
+            raise DataValidationError("min_coverage 必须在 [0, 1] 内")
         self.text_field = text_field
         self.min_coverage = min_coverage
 

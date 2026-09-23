@@ -86,11 +86,18 @@ class ConfigValidator:
     """
     
     # 已知的配置模式
+    #
+    # `app` 段是历史遗留的元信息：`AppConfig` 没有对应字段，`load_config` 也从不
+    # 读它。因此**不能**把 `app.*` 设为必填——`save_config` 按 `AppConfig` 的字段集
+    # 落盘，永远写不出这个段，一旦设为必填，「保存配置」再「校验配置」必然失败
+    # （实测 4 个必填错误）。这里保留为已知字段，仍做类型检查，只是不强制存在。
     KNOWN_FIELDS = {
-        "app": {"type": dict, "required": True},
-        "app.name": {"type": str, "required": True},
-        "app.version": {"type": str, "required": True},
+        "app": {"type": dict},
+        "app.name": {"type": str},
+        "app.version": {"type": str},
         "app.debug": {"type": bool, "default": False},
+        # `models.default` 是 `default_model` 的**唯一**来源（见 load_config），
+        # 必须必填：缺了它默认模型会静默回落到 "ernie"。
         "models": {"type": dict, "required": True},
         "models.default": {"type": str, "required": True},
         "augmentation": {"type": dict},

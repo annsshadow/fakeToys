@@ -70,29 +70,28 @@ class TestAuditReadyMessage:
 class TestVersionControlMissingArgs:
     def test_load_requires_version_and_output(self, tmp_path):
         _, err, code = _run(
-            ["version", "--enhanced", "--action", "load", "--versions-dir", str(tmp_path / "v")],
+            ["version", "--action", "load", "--versions-dir", str(tmp_path / "v")],
             cwd=tmp_path,
         )
         assert code == 1
         assert "--version" in err and "--output" in err
 
     def test_compare_without_current_version_exits(self, tmp_path):
+        """版本目录为空时，`--version-b` 缺省取不到当前版本 → 显式报错"""
         _, err, code = _run(
             [
-                "version", "--enhanced",
+                "version",
                 "--action",
                 "compare",
                 "--version",
                 "v1",
-                "--output",
-                str(tmp_path / "o.json"),
                 "--versions-dir",
                 str(tmp_path / "empty"),
             ],
             cwd=tmp_path,
         )
         assert code == 1
-        assert "没有当前版本" in err
+        assert "--version-b" in err
 
 
 class TestMonitorAlerts:

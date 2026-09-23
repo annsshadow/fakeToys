@@ -11,6 +11,7 @@ import logging
 import random
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Tuple
+from .exceptions import DataValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -253,7 +254,7 @@ class DataAggregator:
             )
         if strategy == "consistent":
             return self.aggregate_consistent(datasets)
-        raise ValueError(f"不支持的聚合策略: {strategy}")
+        raise DataValidationError(f"不支持的聚合策略: {strategy}")
 
 
 def aggregate_datasets(datasets: Dict[str, List[Dict]],

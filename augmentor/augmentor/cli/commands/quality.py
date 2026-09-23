@@ -90,45 +90,28 @@ def run_quality_report(args, config):
         print(f"\n报告已保存到 {args.output}")
 
 
-# ============ 数据清洗（合并原 clean-enhanced）============
+# ============ 数据清洗 ============
 def run_clean(args, config):
     """`clean` 子命令
 
-    默认走 `data.DataCleaner`：可 `--no-url-removal`，输出语言分布与问题清单。
-    `--enhanced` 走 `cleaner.clean_dataset`：按 `--rules` 规则式清洗。
+    走 `cleaner.clean_dataset`（规则式）。合并前的另一套是
+    `data.DataCleaner`，它的噪声清除能力（去 URL / 去 HTML 标签 / 去控制字符）
+    已经作为 `remove_urls` / `remove_html_tags` / `remove_control_chars`
+    三条规则并进规则式实现，因此两套的能力面现在是并集而不是二选一：
+    规则式还额外能分别控制去空、去重、空白归一化、长短文本过滤、标点归一化。
 
-    两者是**不同实现**，不是同一实现的强弱版——旧的 `-enhanced` 后缀并不表示
-    「更高级」，这正是 T1.7 要合并它们的原因。
+    旧 `--no-url-removal` 的等价写法是 `--rules` 里不带 `remove_urls`。
+
+    stdout 输出 `CleaningResult` 的 JSON（合并前基础实现的契约），`--output`
+    只负责把清洗后的数据落盘。
     """
-    if args.enhanced:
-        from augmentor.cleaner import clean_dataset
-
-        items = _load_items(args.input)
-        cleaned, result = clean_dataset(items, rules=args.rules)
-
-        _save_items(cleaned, args.output)
-
-        print(f"原始数据: {result.original_count} 条")
-        print(f"清洗后: {result.cleaned_count} 条")
-        print(f"移除: {result.removed_count} 条")
-        print(f"应用规则: {', '.join(result.rules_applied)}")
-        print(f"已保存到 {args.output}")
-        return
-
-    from augmentor.data import DataCleaner
+    from augmentor.cleaner import clean_dataset
 
     items = _load_items(args.input)
-    cleaner = DataCleaner(remove_urls=not args.no_url_removal)
-    result = cleaner.clean(items)
-    _save_items(result.items, args.output)
-    _print({
-        "original_count": result.original_count,
-        "cleaned_count": result.cleaned_count,
-        "dropped_count": result.dropped_count,
-        "changed_count": result.changed_count,
-        "language_distribution": result.language_distribution,
-        "issues": result.issues
-    })
+    cleaned, result = clean_dataset(items, fields=args.fields, rules=args.rules)
+
+    _save_items(cleaned, args.output)
+    _print(result.to_dict())
 
 
 # ============ 自动标注 ============

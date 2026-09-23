@@ -11,6 +11,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional
+from .exceptions import QualityError
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ class QualityBenchmark:
 
         unsupported = [m for m in self.metrics if m not in SUPPORTED_METRICS]
         if unsupported:
-            raise ValueError(
+            raise QualityError(
                 f"不支持的基准指标: {unsupported}。支持: {SUPPORTED_METRICS}"
             )
 
@@ -154,10 +155,10 @@ class QualityBenchmark:
             基准文件路径
 
         Raises:
-            ValueError: 未配置 baseline_file
+            QualityError: 未配置 baseline_file
         """
         if self.baseline_file is None:
-            raise ValueError("未配置 baseline_file，无法保存基准")
+            raise QualityError("未配置 baseline_file，无法保存基准")
 
         self.baseline_file.parent.mkdir(parents=True, exist_ok=True)
         with open(self.baseline_file, 'w', encoding='utf-8') as f:
@@ -191,12 +192,12 @@ class QualityBenchmark:
             对比结果
 
         Raises:
-            ValueError: 基准不存在
+            QualityError: 基准不存在
         """
         baseline = baseline if baseline is not None else self.load_baseline()
 
         if not baseline:
-            raise ValueError("基准不存在，请先运行并保存基准")
+            raise QualityError("基准不存在，请先运行并保存基准")
 
         current_metrics = results.get("metrics", {})
         baseline_metrics = baseline.get("metrics", {})

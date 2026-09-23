@@ -8,6 +8,7 @@
 
 import pytest
 
+from augmentor.exceptions import ModelNotConfiguredError
 from augmentor.multilingual import MultilingualSupport
 
 
@@ -73,7 +74,7 @@ class TestTranslate:
 
     def test_requires_backend(self):
         """未配置后端时必须报错，而不是返回原文造成静默错误"""
-        with pytest.raises(RuntimeError):
+        with pytest.raises(ModelNotConfiguredError):
             MultilingualSupport().translate("你好", "en")
 
     def test_rejects_unsupported_target(self):

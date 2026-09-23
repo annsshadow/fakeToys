@@ -3,19 +3,19 @@
 
 """CLI 版本管理与备份命令集成测试
 
-version（管道 VersionManager）/ version-control（DatasetVersionManager）/
-backup（create/restore/list/delete）三个命令族，全部重定向到临时目录。
+3.0 起 `version` 只有一套后端（`version_control.DatasetVersionManager`，
+独立 `--versions-dir`）：原先并存的 `pipeline.version_manager` 已被合并掉，
+因此本文件不再需要「造一份指向临时目录的 config.yaml」那套脚手架。
+
+backup（create/restore/list/delete）未受影响。
 """
 
 import json
 import re
-from pathlib import Path
 
 import pytest
 
 from cli import main
-
-AI_DIR = Path(__file__).resolve().parent.parent.parent
 
 SAMPLE_ITEMS = [
     {"instruction": "如何申请租房？", "input": "", "output": "登录官网申请"},
@@ -54,144 +54,134 @@ def run_cli(argv):
 
 
 @pytest.fixture
-def sandbox(tmp_path, monkeypatch):
-    """在临时目录准备 config.yaml（版本存储指向临时目录）+ 两个数据集
+def vdir(tmp_path):
+    """版本目录（独立于 cwd，避免污染工作副本）"""
+    return str(tmp_path / ".versions")
+
+
+def create_version(data, versions_dir, description=""):
+    """创建版本并返回版本 ID
 
     Args:
-        tmp_path: pytest 临时目录
-        monkeypatch: pytest fixture
+        data: 数据文件路径
+        versions_dir: 版本目录
+        description: 版本描述
 
     Returns:
-        (数据文件A, 数据文件B, 配置文件路径, 临时目录)
+        版本 ID
     """
-    import yaml
-
-    monkeypatch.chdir(tmp_path)
-    src_cfg = AI_DIR / "config.yaml"
-    text = src_cfg.read_text(encoding="utf-8")
-    text = text.replace("storage_dir: data/versions",
-                        f"storage_dir: {tmp_path / 'versions'}")
-    text = text.replace("file: app.log", f"file: {tmp_path / 'app.log'}")
-    cfg = tmp_path / "config.yaml"
-    cfg.write_text(text, encoding="utf-8")
-
-    a = tmp_path / "ds_a.json"
-    b = tmp_path / "ds_b.json"
-    a.write_text(json.dumps(SAMPLE_ITEMS, ensure_ascii=False), encoding="utf-8")
-    b.write_text(json.dumps(SAMPLE_ITEMS[:3] + [
-        {"instruction": "新数据", "input": "", "output": "新答案"},
-    ], ensure_ascii=False), encoding="utf-8")
-    return a, b, cfg, tmp_path
+    out, err, code = run_cli(
+        ["cli", "version", "--action", "create", "--input", str(data),
+         "--versions-dir", versions_dir, "--description", description]
+    )
+    assert code is None, err
+    match = re.search(r"版本ID: (\S+)", out)
+    assert match is not None, f"未找到版本 ID: {out}"
+    return match.group(1)
 
 
-class TestVersionPipelineCommand:
-    """version 命令（管道内置 VersionManager）"""
+class TestVersionCommand:
+    """`version` 命令（单一后端 DatasetVersionManager）"""
 
-    def test_version_create_then_list(self, sandbox):
-        """create 需返回版本 ID，list 需列出已创建版本"""
-        a, _, cfg, _ = sandbox
-        out2, err2, code = run_cli(
-            [
-                "cli", "--config", str(cfg), "version",
-                "--action", "create", "--input", str(a),
-            ]
-        )
-        assert code is None
-        m = re.search(r"创建版本: (\S+)", out2)
-        assert m is not None, f"未找到版本 ID: {out2} {err2}"
-        version_id = m.group(1)
-
-        out3, err3, code3 = run_cli(
-            ["cli", "--config", str(cfg), "version", "--action", "list"]
-        )
-        assert code3 is None
-        assert version_id in out3
-
-    def test_version_diff_counts(self, sandbox):
-        """两版本 diff 需报告新增/移除计数"""
-        a, b, cfg, _ = sandbox
-        out2, _, _ = run_cli(
-            ["cli", "--config", str(cfg), "version",
-             "--action", "create", "--input", str(a)]
-        )
-        vid1 = re.search(r"创建版本: (\S+)", out2).group(1)
-        out3, _, _ = run_cli(
-            ["cli", "--config", str(cfg), "version",
-             "--action", "create", "--input", str(b)]
-        )
-        vid2 = re.search(r"创建版本: (\S+)", out3).group(1)
-
-        out4, err4, code = run_cli(
-            [
-                "cli", "--config", str(cfg), "version",
-                "--action", "diff",
-                "--version-id", vid1, "--version-id-2", vid2,
-            ]
-        )
-        assert code is None
-        m = re.search(r"新增: (\d+), 移除: (\d+)", out4)
-        assert m is not None, out4 + err4
-        assert int(m.group(2)) >= 1  # B 比 A 多 1 条
-
-    def test_version_history_json(self, sandbox):
-        """history 需输出可解析的 JSON 历史"""
-        a, _, cfg, _ = sandbox
-        run_cli(["cli", "--config", str(cfg), "version",
-                 "--action", "create", "--input", str(a)])
-        out, _, code = run_cli(
-            ["cli", "--config", str(cfg), "version", "--action", "history"]
-        )
-        assert code is None
-        parsed = json.loads(out)
-        assert isinstance(parsed, list)
-        assert len(parsed) >= 1
-
-
-class TestVersionControlCommand:
-    """version-control 命令（DatasetVersionManager，独立 --versions-dir）"""
-
-    def test_create_list_load_roundtrip(self, tmp_path, monkeypatch):
+    def test_create_list_load_roundtrip(self, tmp_path, monkeypatch, vdir):
         """create → list → load 需能往返恢复原始数据"""
         monkeypatch.chdir(tmp_path)
         data = tmp_path / "ds.json"
         data.write_text(json.dumps(SAMPLE_ITEMS, ensure_ascii=False), encoding="utf-8")
-        vdir = str(tmp_path / ".versions")
+
+        version_id = create_version(data, vdir)
 
         out, _, code = run_cli(
-            [
-                "cli", "version", "--enhanced", "--action", "create",
-                "--input", str(data), "--versions-dir", vdir,
-            ]
+            ["cli", "version", "--action", "list", "--versions-dir", vdir]
         )
         assert code is None
-        m = re.search(r"版本ID: (\S+)", out)
-        assert m is not None
-
-        out2, _, code2 = run_cli(
-            ["cli", "version", "--enhanced", "--action", "list", "--versions-dir", vdir]
-        )
-        assert code2 is None
-        assert "找到 1 个版本" in out2
+        assert "找到 1 个版本" in out
+        assert version_id in out
 
         restored = tmp_path / "restored.json"
-        out3, _, code3 = run_cli(
-            [
-                "cli", "version", "--enhanced", "--action", "load",
-                "--version", m.group(1), "--output", str(restored),
-                "--versions-dir", vdir,
-            ]
+        out, _, code = run_cli(
+            ["cli", "version", "--action", "load", "--version", version_id,
+             "--output", str(restored), "--versions-dir", vdir]
         )
-        assert code3 is None
+        assert code is None
         assert json.loads(restored.read_text(encoding="utf-8")) == SAMPLE_ITEMS
 
-    def test_compare_requires_args(self, tmp_path, monkeypatch):
-        """compare 缺参数需以 exit 1 拒绝"""
+    def test_compare_counts_are_internally_consistent(self, tmp_path, monkeypatch, vdir):
+        """compare 的三个计数必须自洽
+
+        旧 `diff` 动作已并入 `compare`，这条守住合并后仍能回答「差了多少条」。
+        断言用不变式而不是写死数字：only_in_a + in_both == |A|、
+        only_in_b + in_both == |B|。写死数字会随 key 字段定义变化而失效。
+        """
+        monkeypatch.chdir(tmp_path)
+        a = tmp_path / "ds_a.json"
+        b = tmp_path / "ds_b.json"
+        extra = {"instruction": "新数据", "input": "", "output": "新答案"}
+        a.write_text(json.dumps(SAMPLE_ITEMS, ensure_ascii=False), encoding="utf-8")
+        b.write_text(
+            json.dumps(SAMPLE_ITEMS[:3] + [extra], ensure_ascii=False), encoding="utf-8"
+        )
+
+        vid_a = create_version(a, vdir)
+        vid_b = create_version(b, vdir)
+
+        out, err, code = run_cli(
+            ["cli", "version", "--action", "compare", "--version", vid_a,
+             "--version-b", vid_b, "--versions-dir", vdir]
+        )
+        assert code is None, err
+
+        only_a = int(re.search(r"仅在A中: (\d+)", out).group(1))
+        only_b = int(re.search(r"仅在B中: (\d+)", out).group(1))
+        both = int(re.search(r"共同数据: (\d+)", out).group(1))
+
+        assert only_a + both == len(SAMPLE_ITEMS)
+        assert only_b + both == len(SAMPLE_ITEMS[:3]) + 1
+        assert only_b >= 1, "B 多出的那条必须体现在计数里"
+
+    def test_compare_defaults_to_current_version(self, tmp_path, monkeypatch, vdir):
+        """`--version-b` 缺省时与当前版本比较（旧 diff 的等价用法）"""
+        monkeypatch.chdir(tmp_path)
+        a = tmp_path / "ds_a.json"
+        b = tmp_path / "ds_b.json"
+        a.write_text(json.dumps(SAMPLE_ITEMS, ensure_ascii=False), encoding="utf-8")
+        b.write_text(json.dumps(SAMPLE_ITEMS[:2], ensure_ascii=False), encoding="utf-8")
+
+        vid_a = create_version(a, vdir)
+        vid_b = create_version(b, vdir)
+
+        out, err, code = run_cli(
+            ["cli", "version", "--action", "compare", "--version", vid_a,
+             "--versions-dir", vdir]
+        )
+        assert code is None, err
+        assert vid_a in out and vid_b in out, "比较的应是 vid_a 与当前版本 vid_b"
+
+    def test_compare_requires_version(self, tmp_path, monkeypatch, vdir):
         monkeypatch.chdir(tmp_path)
         out, err, code = run_cli(
-            ["cli", "version", "--enhanced", "--action", "compare"]
+            ["cli", "version", "--action", "compare", "--versions-dir", vdir]
         )
         assert code == 1
-        assert "必需" in err
+        assert "--version" in err
+
+    def test_rollback_changes_current(self, tmp_path, monkeypatch, vdir):
+        """rollback 必须真的改变 current（旧 pipeline 后端才有这个动作）"""
+        monkeypatch.chdir(tmp_path)
+        data = tmp_path / "ds.json"
+        data.write_text(json.dumps(SAMPLE_ITEMS, ensure_ascii=False), encoding="utf-8")
+        version_id = create_version(data, vdir)
+
+        out, err, code = run_cli(
+            ["cli", "version", "--action", "rollback", "--version", version_id,
+             "--versions-dir", vdir]
+        )
+        assert code is None, err
+        assert f"已回滚到 {version_id}" in out
+
+        from augmentor.version_control import DatasetVersionManager
+
+        assert DatasetVersionManager(vdir).get_current_version() == version_id
 
 
 class TestBackupCommand:

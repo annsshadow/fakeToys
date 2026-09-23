@@ -18,6 +18,7 @@ from typing import List, Dict, Optional, Any, TextIO
 from pathlib import Path
 from dataclasses import dataclass, field
 from enum import Enum
+from .exceptions import UnsupportedFormatError
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +126,7 @@ class EnhancedExporter:
         # 获取格式化函数
         formatter = self._formatters.get(options.format)
         if not formatter:
-            raise ValueError(f"不支持的格式: {options.format}")
+            raise UnsupportedFormatError(f"不支持的格式: {options.format}")
         
         # 创建输出目录
         output = Path(output_path)

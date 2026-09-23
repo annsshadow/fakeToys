@@ -15,12 +15,34 @@ def sample_items():
 class TestStreamingMemoryOptimization:
     """流式处理内存优化测试"""
     
-    def test_stream_processor_has_memory_check(self):
-        """流式处理应包含内存监控代码路径"""
-        import inspect
-        source = inspect.getsource(StreamProcessor.process)
-        assert "memory_monitor" in source
-        assert "MemoryMonitor" in source
+    def test_stream_processor_has_memory_check(self, tmp_path, monkeypatch):
+        """大块处理必须真的触发内存快照
+
+        原实现用 `inspect.getsource` 检查源码里是否出现 "MemoryMonitor" 字样——
+        无论内存监控是否真的被执行都会通过，无法在业务逻辑变化时失败。
+        """
+        import json
+
+        from augmentor import streaming as streaming_mod
+
+        snapshots = []
+        real_take_snapshot = streaming_mod.MemoryMonitor.take_snapshot
+
+        def spy(self):
+            snapshots.append(1)
+            return real_take_snapshot(self)
+
+        monkeypatch.setattr(streaming_mod.MemoryMonitor, "take_snapshot", spy)
+
+        file_path = tmp_path / "big_chunks.json"
+        data = [{"instruction": f"q{i}", "output": f"a{i}"} for i in range(300)]
+        file_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+        reader = StreamReader(str(file_path), chunk_size=150)
+        processor_obj = StreamProcessor(reader, lambda chunk: chunk)
+        processor_obj.process()
+
+        assert snapshots, "大块（>100 条）处理未触发内存快照，内存监控未生效"
     
     def test_large_chunk_triggers_memory_snapshot(self, tmp_path):
         """大数据块应触发内存快照"""

@@ -23,14 +23,22 @@ from augmentor.profiling import DataProfiler
 
 class TestConfigSaveSecret:
     def test_non_default_model_secret_stripped(self, tmp_path):
+        """非默认模型的密钥不落盘；`models.default` 归一化为模型名
+
+        早前这里断言 `models["default"]` 里那个畸形字典要**原样保留**，
+        等于把「密钥藏在 default 键下就能落盘」固化成了期望。而 `models.default`
+        在 `load_config` 里必须是模型名字符串（`config.default_model = ...get('default')`），
+        字典会让 `default_model` 变成一个 dict。因此这里断言的是修正后的语义。
+        """
         cfg = AppConfig()
-        cfg.models["default"] = {"api_key": "KEEP", "secret_key": "KEEP"}
+        cfg.models["default"] = {"api_key": "SHOULD_NOT_APPEAR", "secret_key": "SHOULD_NOT_APPEAR"}
         cfg.models["baidu"] = {"api_key": "DROP", "secret_key": "DROP"}
         out = tmp_path / "cfg.yaml"
         save_config(cfg, str(out))
         text = out.read_text(encoding="utf-8")
-        assert "KEEP" in text  # default 保留
-        assert "DROP" not in text  # 非 default 去除
+        assert "SHOULD_NOT_APPEAR" not in text  # 密钥不落盘
+        assert "DROP" not in text  # 非 default 模型密钥去除
+        assert "default: ernie" in text  # default 归一化为模型名
 
     def test_load_config_idempotent(self, tmp_path):
         path = tmp_path / "c.yaml"
