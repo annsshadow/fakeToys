@@ -12,6 +12,7 @@
         <button class="new-page-btn ghost" @click="loadPortalResources">门户资源</button>
         <button class="new-page-btn ghost" @click="loadPortalDetail">门户明细</button>
         <button class="new-page-btn ghost" @click="loadPortalSurfaceEntities">表面实体</button>
+        <button class="new-page-btn ghost" @click="loadPortalMobileFacets">移动/字典/角标</button>
         <button class="new-page-btn" @click="showEditor = true">+ 新建页面</button>
       </span>
     </div>
@@ -147,6 +148,23 @@ async function loadPortalSurfaceEntities() {
     portalListText.value = `表面 ${hit(surf)} · 分类列表 ${n(byCat)} · 组件 ${hit(widget)}（按flag ${hit(widgetByFlag)}）· 脚本 ${hit(script)} · 移动页 ${hit(pageMobile)} · 字典 ${(dict as any)?.data ? '有' : '无'}`
   } catch (e: any) {
     toast.error('加载门户表面实体失败: ' + (e?.message ?? ''))
+  }
+}
+// rev244：门户表面 字典/角标/组件移动 4 条真实 distinct 读路由（arity 已核；跳 get/layout·list/layouts·script/list/portal/portal·mobile/{page}/{id}·v2/{page}/{id} 等 handler Path 元数与 URL 参数数不符=运行时 500，及 dict/{}/portal/{}/data 双注册孪生）
+async function loadPortalMobileFacets() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const flag = '0'
+    const [dictData, corner, widgetMobile, widgetByFlag] = await Promise.all([
+      s(api.get(`/api/portal/assemble/surface/dict/portal/data/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}`)),
+      s(api.get(`/api/portal/assemble/surface/portal/${encodeURIComponent(flag)}/corner/mark`)),
+      s(api.get(`/api/portal/assemble/surface/widget/${encodeURIComponent(flag)}/mobile`)),
+      s(api.get(`/api/portal/assemble/surface/widget/portal/mobile/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}`)),
+    ])
+    const hit = (r: any) => ((r as any)?.data ? '命中' : '未命中')
+    portalListText.value = `字典数据 ${hit(dictData)} · 角标 ${hit(corner)} · 组件移动(按id) ${hit(widgetMobile)} · 组件移动(按flag) ${hit(widgetByFlag)}`
+  } catch (e: any) {
+    toast.error('加载门户移动族失败: ' + (e?.message ?? ''))
   }
 }
 const pages = ref<PortalPage[]>([])
