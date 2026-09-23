@@ -21,11 +21,13 @@
         </div>
         <button class="new-topic-btn ghost" @click="loadForums">版块列表</button>
         <button class="new-topic-btn ghost" @click="loadBbsViews">视图浏览</button>
+        <button class="new-topic-btn ghost" @click="loadBbsControl">控制台/检索</button>
         <button class="new-topic-btn" @click="openNewTopic">✏️ 发帖</button>
       </div>
     </div>
     <div v-if="forumsText" class="forums-note">{{ forumsText }}</div>
     <div v-if="bbsViewsText" class="forums-note">{{ bbsViewsText }}</div>
+    <div v-if="bbsControlText" class="forums-note">{{ bbsControlText }}</div>
 
     <!-- 左侧：版块列表 -->
     <aside class="bbs-sidebar glass-card" :class="{ collapsed: showNewTopic }">
@@ -774,6 +776,29 @@ async function loadBbsViews() {
     bbsViewsText.value = `论坛 ${forums.length}（首「${fName}」）· 分区 ${sections.length} · 首分区置顶帖 ${topN}`
   } catch (e: any) {
     toast.error('加载视图浏览失败: ' + (e?.message ?? ''))
+  }
+}
+const bbsControlText = ref('')
+// BBS 控制台/分区 3 条真实 distinct（rev200）：section/viewforum/{forumId}（bbs_section_info WHERE forum_id，从 forum/view/all 首个回源）
+// + assemble/control/config（控制配置）+ assemble/control/user/info（当前用户 BBS 信息）。
+// 注：subject/search 短 GET 被 BBSForum.test 禁止（须走参数化 subject/search/list/page/count），故不接。
+async function loadBbsControl() {
+  try {
+    const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const forumsRes = await s(api.get('/api/bbs/forum/view/all'))
+    const forums = Array.isArray((forumsRes as any)?.data) ? (forumsRes as any).data : []
+    const fid = forums[0] ? String(forums[0].id ?? '0') : '0'
+    const [byForum, config, userInfo] = await Promise.all([
+      s(api.get(`/api/bbs/section/viewforum/${encodeURIComponent(fid)}`)),
+      s(api.get('/api/bbs/assemble/control/config')),
+      s(api.get('/api/bbs/assemble/control/user/info')),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    const hasCfg = (config as any)?.data ? '有' : '无'
+    const hasUser = (userInfo as any)?.data ? '有' : '无'
+    bbsControlText.value = `版块下分区 ${n(byForum)} · 控制配置 ${hasCfg} · 用户信息 ${hasUser}`
+  } catch (e: any) {
+    toast.error('加载控制台/检索失败: ' + (e?.message ?? ''))
   }
 }
 const api_forum_view_1_data = ref<any[]>([])
