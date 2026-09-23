@@ -16,6 +16,7 @@
         <button class="btn-sm" @click="loadWorkV2">全部工作</button>
         <button class="btn-sm" @click="loadReadLists">待阅/已阅</button>
         <button class="btn-sm" @click="loadTaskLists">全部任务</button>
+        <button class="btn-sm" @click="loadWorkFilterCursors">工作游标/按工作</button>
         <button class="btn-sm primary" @click="openStart">发起流程</button>
       </div>
     </div>
@@ -26,6 +27,7 @@
     <p v-if="workV2Text" class="subtitle draft-note">{{ workV2Text }}</p>
     <p v-if="readListText" class="subtitle draft-note">{{ readListText }}</p>
     <p v-if="taskListText" class="subtitle draft-note">{{ taskListText }}</p>
+    <p v-if="workCursorText" class="subtitle draft-note">{{ workCursorText }}</p>
     <div class="tabs glass-card">
       <button
         v-for="tab in tabs"
@@ -280,6 +282,23 @@ const attnDetailText = ref('')
 const readFacetText = ref('')
 const recordReviewText = ref('')
 const jobAssetText = ref('')
+const workCursorText = ref('')
+// rev249：流程表面 work 游标(按应用/流程/创建人当前)+已办/阅记录按工作 5 条真实 distinct 读路由
+// work/list/next/application(WHERE xid+xapplication)·process(+xprocess)·creator/current(WHERE xid) · taskcompleted/list/workorworkcompleted(PP_C_TASKCOMPLETED xwork) · readrecord/list/workorworkcompleted(PP_C_DATA_RECORD xwork)
+async function loadWorkFilterCursors(): Promise<void> {
+  workCursorText.value = ''
+  const id = '0'
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [wApp, wProc, wCreator, tcWork, rrWork] = await Promise.all([
+    settle(api.get(`/api/processplatform/assemble/surface/work/list/next/application/${id}/20/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/work/list/next/process/${id}/20/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/work/list/next/creator/current/${id}/20`)),
+    settle(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/workorworkcompleted/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/readrecord/list/workorworkcompleted/${id}`)),
+  ])
+  const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+  workCursorText.value = `工作 应用${n(wApp)}/流程${n(wProc)}/我创建${n(wCreator)} · 已办按工作 ${n(tcWork)} · 阅记录按工作 ${n(rrWork)}`
+}
 // Job 关联/记录 4 条真实 distinct（rev202，surface 域按 job id）：attachment/list/job/{job}（xjob 附件）
 // + correlation/list/job/{job}（PP_C_JOB 关联）+ datarecord/list/job/{job}（PP_C_DATA_RECORD）
 // + documentversion/list/job/{job}（PP_C_DOCUMENTVERSION）。注：data/job/{job} 与 correlation SQL 全同=孪生已跳。
