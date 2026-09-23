@@ -21,6 +21,7 @@
         <button class="eb" @click="loadStatisticShow">📈 统计展示筛选</button>
         <button class="eb" @click="loadAppealDetailFilters">🧾 申诉/明细游标</button>
         <button class="eb" @click="loadHolidaySettingDetails">🏖️ 假期/设置明细</button>
+        <button class="eb" @click="loadAttendanceDetails">📋 考勤明细读</button>
       </div>
       <div v-if="attOverviewText" class="att-note">{{ attOverviewText }}</div>
     </div>
@@ -504,6 +505,27 @@ async function loadHolidaySettingDetails() {
     attOverviewText.value = `自助假期：正序 ${shRows.length}·逆序 ${n(shPrev)}·详情 ${has(shOne)} | 设置 by-id ${has(setById)}·by-code ${has(setByCode)} | 导入文件 ${has(impInfo)}·统计需求日志 ${has(reqLog)}`
   } catch (e: any) {
     toast.error('加载假期/设置明细失败: ' + (e?.message ?? ''))
+  }
+}
+// rev223：考勤明细读族 5 条真实 distinct 路由（x_attendance_detail，仅只读，UPDATE 的 analyse/archive/check 跳过）
+// attendancedetail/list/{file_id}（WHERE file_id）· mobile/my（WHERE person_id）· mobile/{id}（WHERE id）
+// · mobile/filter/list/page/{page}/count/{count}（LIMIT/OFFSET 分页）· mobile/mobilepreview（WHERE person_id+date）
+async function loadAttendanceDetails() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const fileId = '0'
+  const detailId = '0'
+  try {
+    const [byFile, my, byId, paging, preview] = await Promise.all([
+      s(api.get(`/api/attendance/assemble/control/attendancedetail/list/${encodeURIComponent(fileId)}`)),
+      s(api.get('/api/attendance/assemble/control/attendancedetail/mobile/my')),
+      s(api.get(`/api/attendance/assemble/control/attendancedetail/mobile/${encodeURIComponent(detailId)}`)),
+      s(api.get('/api/attendance/assemble/control/attendancedetail/mobile/filter/list/page/1/count/20')),
+      s(api.get('/api/attendance/assemble/control/attendancedetail/mobile/mobilepreview')),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    attOverviewText.value = `按文件 ${n(byFile)} · 我的 ${n(my)} · 单条 ${(byId as any)?.data?.id ? '命中' : '未命中'} · 分页 ${n(paging)} · 预览 ${(preview as any)?.data ? '有' : '无'}`
+  } catch (e: any) {
+    toast.error('加载考勤明细失败: ' + (e?.message ?? ''))
   }
 }
 onMounted(loadData)
