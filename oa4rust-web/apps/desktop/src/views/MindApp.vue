@@ -7,6 +7,8 @@
       <div><h1>思维导图</h1><p class="subtitle">真实 Minder JSON · /api/mind/assemble/control/*</p></div>
       <div class="header-actions">
         <button class="btn" :disabled="!currentFolder" @click="createMind">新建导图</button>
+        <button class="btn secondary" @click="createMindRest">新建导图(REST)</button>
+        <button class="btn secondary" @click="createMindFolder">新建目录</button>
         <button class="btn secondary" :disabled="loadingFolder" @click="loadFolders">刷新目录</button>
         <button class="btn secondary" @click="loadAllMinds">全部导图</button>
         <button class="btn secondary" @click="loadMindConfig">配置/我的目录</button>
@@ -50,6 +52,9 @@
           <div class="editor-actions"><span v-if="dirty" class="dirty">未保存</span><span v-if="saveMessage" class="save-message">{{ saveMessage }}</span>
             <span v-if="mindMetaText" class="save-message">{{ mindMetaText }}</span>
             <button class="btn" :disabled="saving || !dirty" @click="saveMind">{{ saving ? '保存中...' : '保存' }}</button><button class="btn secondary" @click="closeEditor">关闭</button>
+          <button v-if="editor" class="btn secondary" @click="renameMindRest({ id: editor.id, name: editor.name } as any)">重命名</button>
+          <button v-if="editor" class="btn secondary" @click="deleteMindRest({ id: editor.id, name: editor.name } as any)">删除</button>
+          <button v-if="editor" class="btn secondary" @click="shareMindToggle({ id: editor.id, name: editor.name } as any, !editor.shared)">{{ editor.shared ? '取消分享' : '分享' }}</button>
           </div>
         </header>
         <div class="editor-toolbar">
@@ -248,6 +253,68 @@ async function loadMindDetails() {
     allMindsText.value = `导图详情 ${(base as any)?.data?.id ? '命中' : '未命中'} / 版本 ${n(versions)} / 目录 ${(folder as any)?.data?.id ? '命中' : '未命中'} / 最新版 ${(latestVer as any)?.data ? '有' : '无'} / 图标 ${(icon as any)?.data ? '有' : '无'} / 实体版本 ${n(coreVer)}`
   } catch (e: any) {
     toast.error('加载导图明细失败: ' + (e?.message ?? ''))
+  }
+}
+// rev317：思维导图 RESTful CRUD + 分享 真实写端点（用户触发）；请求体经 handler 源码核实
+async function createMindRest() {
+  const name = prompt('导图名称:', '')
+  if (!name) return
+  try {
+    // POST mind/mind → INSERT {name, description?, folderId?, shared?}
+    await api.post('/api/mind/mind', { name, description: '', folderId: currentFolder.value?.id ?? '', shared: false })
+    toast.success('导图已创建')
+    if (currentFolder.value) loadMinds(currentFolder.value.id)
+  } catch (e: any) {
+    toast.error('新建导图失败: ' + (e?.message ?? ''))
+  }
+}
+async function renameMindRest(item: MindItem) {
+  const name = prompt('新名称:', item.name || '')
+  if (!name) return
+  try {
+    // POST mind/mind/{id} → UPDATE {name, description?, folderId?}
+    await api.post(`/api/mind/mind/${encodeURIComponent(item.id)}`, { name })
+    toast.success('导图已重命名')
+    if (currentFolder.value) loadMinds(currentFolder.value.id)
+  } catch (e: any) {
+    toast.error('重命名失败: ' + (e?.message ?? ''))
+  }
+}
+async function deleteMindRest(item: MindItem) {
+  if (!window.confirm('确定删除该导图？')) return
+  try {
+    // DELETE mind/mind/{id}
+    await api.delete(`/api/mind/mind/${encodeURIComponent(item.id)}`)
+    toast.success('导图已删除')
+    if (currentFolder.value) loadMinds(currentFolder.value.id)
+  } catch (e: any) {
+    toast.error('删除失败: ' + (e?.message ?? ''))
+  }
+}
+async function createMindFolder() {
+  const name = prompt('目录名称:', '')
+  if (!name) return
+  try {
+    // POST mind/folder → INSERT {name, parentId?, description?, orderNumber?}
+    await api.post('/api/mind/folder', { name, parentId: '', description: '', orderNumber: 0 })
+    toast.success('目录已创建')
+    loadFolders()
+  } catch (e: any) {
+    toast.error('新建目录失败: ' + (e?.message ?? ''))
+  }
+}
+async function shareMindToggle(item: MindItem, share: boolean) {
+  try {
+    // PUT mind/share/{id} | mind/share/{id}/cancel → 更新分享状态
+    if (share) {
+      await api.put(`/api/mind/assemble/control/mind/share/${encodeURIComponent(item.id)}`, {})
+      toast.success('已分享')
+    } else {
+      await api.put(`/api/mind/assemble/control/mind/share/${encodeURIComponent(item.id)}/cancel`, {})
+      toast.success('已取消分享')
+    }
+  } catch (e: any) {
+    toast.error('分享操作失败: ' + (e?.message ?? ''))
   }
 }
 
