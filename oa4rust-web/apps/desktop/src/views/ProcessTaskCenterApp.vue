@@ -18,9 +18,11 @@
         <button class="btn-refresh" @click="loadAppOverview">🗂️ 应用概览</button>
         <button class="btn-refresh" @click="loadTouch">⏰ 超期触发</button>
         <button class="btn-refresh" @click="loadWorkDetail">🧾 工作明细</button>
+        <button class="btn-refresh" @click="loadSnaps">📸 工作快照</button>
       </div>
       <div v-if="countsText" class="wk-chips"><span class="wk-chip">{{ countsText }}</span></div>
       <div v-if="workDetailText" class="wk-chips"><span class="wk-chip">{{ workDetailText }}</span></div>
+      <div v-if="snapText" class="wk-chips"><span class="wk-chip">{{ snapText }}</span></div>
       <div v-if="workItems.length" class="wk-chips">
         <span v-for="w in workItems" :key="w.id || w.title" class="wk-chip">{{ w.title || w.id }}</span>
       </div>
@@ -87,6 +89,26 @@ async function loadWorkDetail() {
   const projN = Array.isArray((projection as any)?.data) ? (projection as any).data.length : 0
   const docN = Array.isArray((docVer as any)?.data) ? (docVer as any).data.length : 0
   workDetailText.value = `工作「${wTitle}」· 任务投影 ${projN} · 文档版本 ${docN}`
+}
+
+const snapText = ref('')
+// 工作快照（rev183，service/processing 域 3 条真实 distinct，按工作 id 取不同 snap_type）：
+// snap/work/{workId}/type/snap（快照）+ /type/abandoned（废弃）+ /type/suspend（挂起），均读 x_snap WHERE work_id AND snap_type。
+async function loadSnaps() {
+  snapText.value = ''
+  const work = items.value[0] ? String(items.value[0].work ?? items.value[0].id ?? '') : ''
+  if (!work) {
+    snapText.value = '暂无任务可查快照'
+    return
+  }
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [snap, abandoned, suspend] = await Promise.all([
+    settle(api.get(`/api/processplatform/service/processing/snap/work/${work}/type/snap`)),
+    settle(api.get(`/api/processplatform/service/processing/snap/work/${work}/type/abandoned`)),
+    settle(api.get(`/api/processplatform/service/processing/snap/work/${work}/type/suspend`)),
+  ])
+  const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
+  snapText.value = `工作「${work}」快照 ${cnt(snap)} · 废弃 ${cnt(abandoned)} · 挂起 ${cnt(suspend)}`
 }
 async function loadTouch() {
   try {
