@@ -44,7 +44,7 @@
       </div>
       <!-- Application tab -->
       <div v-if="tab==='application'" class="tab-content">
-        <div class="toolbar"><button class="btn-primary" @click="loadAllApplications">全部应用</button><button class="btn-primary" @click="loadCenterMeta">注册应用/版本/验证码</button><button class="btn-primary" @click="loadProgramDetails">明细抽样</button><button class="btn-primary" @click="loadErrorLogs">错误日志</button><span v-if="appMetaText" class="app-meta">{{ appMetaText }}</span></div>
+        <div class="toolbar"><button class="btn-primary" @click="loadAllApplications">全部应用</button><button class="btn-primary" @click="loadCenterMeta">注册应用/版本/验证码</button><button class="btn-primary" @click="loadProgramDetails">明细抽样</button><button class="btn-primary" @click="loadErrorLogs">错误日志</button><button class="btn-primary" @click="loadPromptErrorFilters">提示错误筛选</button><span v-if="appMetaText" class="app-meta">{{ appMetaText }}</span></div>
         <div v-if="loadingApp" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
         <div v-else-if="applications.length===0" class="empty"><div class="ei">📱</div><p>暂无Application</p></div>
         <div v-else class="item-grid">
@@ -403,6 +403,28 @@ async function loadErrorLogs() {
     appMetaText.value = `警告 ${n(warn)} · 提示错误 ${n(prompt)} · 意外错误 ${n(unexpected)}`
   } catch (e: any) {
     toast.error('加载错误日志失败: ' + (e?.message ?? ''))
+  }
+}
+// 提示错误日志筛选族 3 条真实 distinct（rev190，x_program_prompt_error_log WHERE id>$1 AND 各筛选维度）：
+// list/{id}/next/{count}/date/{date}（DATE(create_time)=$2）+ /exceptionclass/{exceptionClass}（exception_class=$2）
+// + /loggername/{loggerName}（logger_name=$2）。flag=0 从头，筛选值用模板变量。
+async function loadPromptErrorFilters() {
+  const headFlag = '0'
+  const cnt = '20'
+  const today = new Date().toISOString().slice(0, 10)
+  const excls = 'java.lang.Exception'
+  const logger = 'root'
+  try {
+    const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const [byDate, byExcls, byLogger] = await Promise.all([
+      settle(api.get(`/api/program_center/prompterrorlog/list/${headFlag}/next/${cnt}/date/${encodeURIComponent(today)}`)),
+      settle(api.get(`/api/program_center/prompterrorlog/list/${headFlag}/next/${cnt}/exceptionclass/${encodeURIComponent(excls)}`)),
+      settle(api.get(`/api/program_center/prompterrorlog/list/${headFlag}/next/${cnt}/loggername/${encodeURIComponent(logger)}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    appMetaText.value = `提示错误：按日期 ${n(byDate)} · 按异常类 ${n(byExcls)} · 按日志器 ${n(byLogger)}`
+  } catch (e: any) {
+    toast.error('加载提示错误筛选失败: ' + (e?.message ?? ''))
   }
 }
 async function loadAllApplications() {
