@@ -16,6 +16,7 @@
 - [x] **L4** `perf(api)`: A2 白名单两条来源都按「值会变的东西」建缓存 → 7.06 ms/次 → 0.19 ms/次
 - [x] **L5** `perf(api)+fix`: A4 12 条端点的数据集读取离开事件循环（14 处读取点）
 - [x] **L6** `perf(impact)`: A14 `duplicate_rate` 的 `list.count` 每条扫全表 → `Counter` 一次计数，O(n²)→O(n)
+- [x] **L7** `perf(api)`: A13 `dataset_tools` / `system_ops` 的 11 处读取 + stats 的分析全部离开事件循环
 
 ## Backlog A — 性能（含 file:line 与实测线索）
 
@@ -33,8 +34,10 @@
 | A10 | `augmentor/quality.py:175-179` | 多样性回退里参照文本 n-gram 集合反复重建 | S |
 | A11 | `augmentor/indexer.py:117-123,345,352,372-399` | 每次 `DatasetView` 操作重建全部索引（filter 26 ms @ n=3000） | M |
 | A12 | `augmentor/validation.py:217-222`、`sampler.py:296-299` | 循环内未缓存的正则、`list.index`/`in` 线性扫描 | S |
-| A13 | `api/routes/dataset_tools.py:311,360,386,387,416,436,566,598` + `system_ops.py:320,348,514` | **A4 的同构族**：`read_items()`（同步版）在 11 个 `async def` 路由体里直接调用，同样占着事件循环；`dataset_tools.py:566` 还是「多个文件在循环里串行读」 | M |
+| ~~A13~~ | ~~`api/routes/dataset_tools.py:311,360,386,387,416,436,566,598` + `system_ops.py:320,348,514`~~ | ~~**A4 的同构族**：`read_items()`（同步版）在 11 个 `async def` 路由体里直接调用，同样占着事件循环；`dataset_tools.py:566` 还是「多个文件在循环里串行读」；`/api/dataset/stats` 连分析都留在循环上（43.4 ms）~~ 已修（L7） | M |
 | ~~A14~~ | ~~`augmentor/impact.py:66`~~ | ~~`duplicate_rate` 里 `texts.count(t)` 写在推导式中 → O(n²)~~ 已修（L6） | S |
+| A15 | `augmentor/statistics.py` `calculate_statistics`、`A3`/`A5` 那类纯 Python 分析 | **线程池对 CPU 型分析不产生并行**（GIL）：3 并发 stats 实测离线后请求方 173.7 → 192.7 ms（+11%），换来的只是循环停顿 170.1 → 60.0 ms。要么上 `ProcessPoolExecutor`，要么回到算法侧把 43.4 ms 这个数本身降下来 | M |
+| A16 | `api/routes/system_ops.py:514` `dependency_register` | 为了拿「条数」这一个整数把整个数据集解析一遍（3.4 MB / 9 ms 读 + 全量 list 物化）。登记动作本身只需要 count，可流式计数或延后到首次访问再回填 | S |
 
 ## Backlog B — 功能增强（价值 ÷ 工作量）
 
@@ -74,7 +77,7 @@
   第二条用例锁响应仍 200，防止「干脆不读了」把第一条糊过去。
   并发证据（人为把读取放慢到 50 ms 后 4 条并发）：**59.5 ms** 完成，读取若仍占循环
   至少 200 ms；并发期间循环空转 27349 次。红→绿：修复前 12 条 off-loop 用例全红。
-- **L6** `<待填>` `perf(impact)` A14 —— `ImpactEvaluator.measure()` 的 `duplicate_rate` 写成
+- **L6** `92729896b` `perf(impact)` A14 —— `ImpactEvaluator.measure()` 的 `duplicate_rate` 写成
   `[texts.count(t) for t in texts]`：每条扫一遍全表 → O(n²)。改成 `Counter(texts)` 一次计数后
   取 `sum(c for c in counts.values() if c > 1)`。n=1000/2000/4000 实测 **6.0 / 24.3 / 99.7 ms**
   （每翻倍一次 ×4，是干净的二次曲线）→ n=16000 **1630.2 ms → 4.38 ms**。
@@ -83,8 +86,32 @@
   （n=16000 预算 200 ms，带 trace）。红→绿：把推导式塞回去 → 用例红在 1630.2 ms。
   全仓扫了同一族（推导式里 `list.count`），只剩 `api/vector/chromadb.py:140` 的
   `self._collection.count() == 0`，那是数据库计数、不是列表扫描，族到此为止。
+- **L7** `<待填>` `perf(api)` A13 —— A4 的同构族第二处：`dataset_tools.py`（8 处）+
+  `system_ops.py`（3 处）在 `async def` 函数体里直接调同步 `read_items()`，全部改为
+  `await read_json_file(path)`（它就是 `read_items` 的异步外壳）；`/api/dataset/aggregate`
+  的「N 个文件在循环里串行读」改成逐个 await（保留按 `datasets` 顺序、第一个坏文件先报错的
+  语义）；`/api/dataset/stats` 连 `calculate_statistics` 都留在循环上，实测 6902 条 **43.4 ms**
+  （比读同一份文件的 9.2 ms 还贵 4 倍），一并离线。
+  守卫用例 24 → **45** 条：`_record_reads` 现在**同时**打在路由模块自己的
+  `read_items`/`load_items` 和收口处的 `deps.read_items` 上——只打前者，修好之后那个名字
+  已经不存在，什么都测不到；只打后者，缺陷态（各模块自己 import 的绑定）看不见。新加的
+  `test_stats_analysis_runs_off_the_event_loop` 打在**库模块** `augmentor.statistics` 上，
+  因为路由是在函数体里 `from ... import`，两个状态都拦得住。
+  红→绿：整族退回缺陷态 → 10 条 dataset/system 的 off-loop 用例全红（消息是
+  「在事件循环线程上同步读取了 [...]，会阻塞整个服务」），而 20 条 `status==200` 用例
+  **全绿**——旧代码功能本来就没坏，只有线程身份这个预言机看得见；单独把 stats 的分析塞回
+  循环 → 该用例红（`assert 27848 != 27848`）。
+  **实测边界（诚实记录）**：线程池买到的不是「这条请求更快」。3 并发 `/api/dataset/stats`
+  （真实 6902 条文件，预热后）——缺陷态总耗时 173.7 ms、循环最大停顿 **170.1 ms**、空转 6 次；
+  修复态总耗时 192.7 ms（请求方 +11%）、循环最大停顿 **60.0 ms**、空转 12 次。原因是 GIL：
+  纯 Python 分析在工作线程里照样攥着锁。据此新立 **A15**（要并行得换进程池，或回到算法侧把
+  43.4 ms 这个数本身降下来）与 **A16**（`dependency_register` 只为一个整数解析整份数据集）。
+  顺带**实测排掉**三处「看着像缺陷其实不是」：`check_dependencies()` 0.7 ms（用的是
+  `find_spec` 不是 import）、首次 `get_pipeline()` 6.7 ms（无密钥时不加载权重）、
+  `dataset_tools._dump` 的两个写盘点本就在线程内。
 - 全量：L4 后 **3679 passed / 3 skipped**（89.2 s），L5 后 **3703 passed / 3 skipped**
-  （90.2 s），L6 后 **3705 passed / 3 skipped**（91.1 s），覆盖率门禁均通过；基线 3668。
+  （90.2 s），L6 后 **3705 passed / 3 skipped**（91.1 s），L7 后 **3726 passed / 3 skipped**
+  （95.1 s），覆盖率门禁均通过（98.53%）；基线 3668。
 
 > **操作纪律**（L4 踩过）：验红用的是**定向反向 patch**，绝不用 `git checkout <file>` 撤注入 ——
 > 本轮 `api/deps.py` 有未提交工作，一次 `git checkout` 把整段缓存实现清掉了，只能重写。

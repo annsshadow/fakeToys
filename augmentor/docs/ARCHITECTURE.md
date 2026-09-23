@@ -214,6 +214,22 @@ results = await run_in_thread(p.export_dataset, input_file, output_dir, formats)
 >
 > 实测效果（把读盘人为放慢到 50 ms 后打 4 条并发请求）：并发总耗时 **59.5 ms**，
 > 而读取仍占着循环时同样是 4 次读取至少要 **200 ms**；并发期间事件循环空转 27349 次。
+>
+> **同一族还有第二处**：`dataset_tools.py` / `system_ops.py` 用的是收「已 resolve 路径」的
+> 同步 `read_items()`，11 处读取点同样躺在 `async def` 函数体里；`/api/dataset/stats` 甚至
+> 把 `calculate_statistics()` 也留在循环上——实测 6902 条要 **43.4 ms**，比读同一份文件的
+> 9.2 ms 还贵 4 倍。现在这些点位一律写成 `await read_json_file(path)`（就是 `read_items`
+> 的异步外壳），守卫用例从 24 条扩到 45 条；`_record_reads` 同时打在路由模块自己的
+> `read_items` / `load_items` 和收口处的 `deps.read_items` 上——只打其中一处，就只能看见
+> 缺陷态与修复态里的某一种。
+>
+> **线程池的边界是 GIL**。离线只对「等得起」的东西有效：文件读取是 I/O，工作线程阻塞时
+> GIL 是放开的，所以并发能重叠（上面那组 59.5 ms）。纯 Python 的分析不是——3 条并发
+> `/api/dataset/stats` 实测：缺陷态（在循环上算）总耗时 173.7 ms、事件循环最大停顿
+> **170.1 ms**、期间循环只空转 6 次；离线后总耗时 192.7 ms（线程交接 + GIL 争用，对
+> **发请求的人**慢 11%），但循环最大停顿降到 **60.0 ms**、空转 12 次。也就是说离线买到的是
+> 「别人的请求还能被服务」，不是「这条请求更快」。要让 CPU 型分析真并行，得换
+> `ProcessPoolExecutor` 或者把算法本身变快，线程池不是那个手段。
 
 管道实例由 `get_pipeline()` 惰性创建并缓存，`reset_pipeline()` 供测试注入替身。
 
