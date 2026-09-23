@@ -219,16 +219,17 @@ async function loadOrgControlReads() {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
     const flag = '0'
-    const [idByDuty, vcf, subDirectType, byIdLevel, byIdType, importResult] = await Promise.all([
+    const [idByDuty, vcf, subDirectType, byIdLevel, byIdType, importResult, cardPaging] = await Promise.all([
       s(api.get(`/api/organization/assemble/control/identity/list/${flag}/unitduty/name/${encodeURIComponent('管理员')}`)),
       s(api.get(`/api/organization/assemble/control/personcard/listVCf/${flag}`)),
       s(api.get(`/api/organization/assemble/control/unit/list/${flag}/sub/direct/type/${flag}`)),
       s(api.get(`/api/organization/assemble/control/unit/identity/${flag}/level/1`)),
       s(api.get(`/api/organization/assemble/control/unit/identity/${flag}/type/${flag}`)),
       s(api.get(`/api/organization/assemble/control/inputperson/result/flag/${flag}`)),
+      s(api.get(`/api/organization/assemble/control/personcard/listpagingwithgroup/page/1/size/20`)),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : ((r as any)?.data ? 1 : 0))
-    orgMetaText.value = `按职务名身份 ${n(idByDuty)} / 名片vCard ${n(vcf)} / 子直属按类型 ${n(subDirectType)} / 按身份层级单位 ${n(byIdLevel)} / 按身份类型单位 ${n(byIdType)} / 导入结果 ${n(importResult)}`
+    orgMetaText.value = `按职务名身份 ${n(idByDuty)} / 名片vCard ${n(vcf)} / 子直属按类型 ${n(subDirectType)} / 按身份层级单位 ${n(byIdLevel)} / 按身份类型单位 ${n(byIdType)} / 导入结果 ${n(importResult)} / 名片分页 ${n(cardPaging)}`
   } catch (e: any) {
     toast.error('加载组织控制读取失败: ' + (e?.message ?? ''))
   }

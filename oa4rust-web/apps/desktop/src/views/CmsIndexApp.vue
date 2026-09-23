@@ -178,14 +178,15 @@ async function loadCmsAliasForm() {
   const id = '0'
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
-    const [appAlias, appPublish, catAlias, formApp] = await Promise.all([
+    const [appAlias, appPublish, catAlias, formApp, docPerm] = await Promise.all([
       s(api.get(`/api/appinfo/alias/${encodeURIComponent(id)}`)),
       s(api.get(`/api/appinfo/get/user/publish/${encodeURIComponent(id)}`)),
       s(api.get(`/api/categoryinfo/alias/${encodeURIComponent(id)}`)),
       s(api.get(`/api/form/${encodeURIComponent(id)}/appinfo/${encodeURIComponent(id)}`)),
+      s(api.get(`/api/document/cipher/${encodeURIComponent(id)}/permission/read/person/${encodeURIComponent(id)}`)),
     ])
     const h = (r: any) => ((r as any)?.data ? '命中' : '未命中')
-    overviewText.value = `应用别名 ${h(appAlias)} · 应用发布 ${h(appPublish)} · 分类别名 ${h(catAlias)} · 表单(按应用) ${h(formApp)}`
+    overviewText.value = `应用别名 ${h(appAlias)} · 应用发布 ${h(appPublish)} · 分类别名 ${h(catAlias)} · 表单(按应用) ${h(formApp)} · 文档读权限 ${h(docPerm)}`
   } catch (e: any) {
     toast.error('加载别名/表单失败: ' + (e?.message ?? ''))
   }
