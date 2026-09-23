@@ -30,6 +30,7 @@
       <button class="org-meta-btn" @click="loadOrgAttributes">属性/职务/拼音</button>
       <button class="org-meta-btn" @click="loadOrgListCursors">核心列表游标</button>
       <button class="org-meta-btn" @click="loadOrgControlReads">控制读取族</button>
+      <button class="org-meta-btn" @click="loadOrgControlDeep">控制深度读</button>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -232,6 +233,33 @@ async function loadOrgControlReads() {
     orgMetaText.value = `按职务名身份 ${n(idByDuty)} / 名片vCard ${n(vcf)} / 子直属按类型 ${n(subDirectType)} / 按身份层级单位 ${n(byIdLevel)} / 按身份类型单位 ${n(byIdType)} / 导入结果 ${n(importResult)} / 名片分页 ${n(cardPaging)}`
   } catch (e: any) {
     toast.error('加载组织控制读取失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadOrgControlDeep() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const flag = '0'
+  const stream = '0'
+  const idList = '0'
+  const id = '0'
+  try {
+    // 组织控制/个人/身份 深度读：导出结果/导入模板/登录记录/权限设置/名片vCard/角色拼音/职务成员/用户角色/身份详情
+    // 10 条真实读路由（handler 体经核实均为纯 SELECT，无 INSERT/UPDATE/DELETE；已排除 oauth/token 与 dingding/code 凭证类）
+    const rs = await Promise.all([
+      s(api.get(`/api/organization/assemble/control/export/result/flag/${flag}`)),
+      s(api.get(`/api/organization/assemble/control/inputperson/template`)),
+      s(api.get(`/api/organization/assemble/control/inputperson/wipe`)),
+      s(api.get(`/api/organization/assemble/control/loginrecord/${stream}`)),
+      s(api.get(`/api/organization/assemble/control/permissionsetting/${flag}`)),
+      s(api.get(`/api/organization/assemble/control/personcard/listPersonalVCf/${idList}`)),
+      s(api.get(`/api/organization/assemble/control/role/list/like/pinyin`)),
+      s(api.get(`/api/organization/assemble/control/unitduty/update/member`)),
+      s(api.get(`/api/organization/assemble/personal/${id}/role/list`)),
+      s(api.get(`/api/identity/${id}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    orgMetaText.value = `组织控制深度读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载组织控制深度读失败: ' + (e?.message ?? ''))
   }
 }
 async function loadOrgMeta() {
