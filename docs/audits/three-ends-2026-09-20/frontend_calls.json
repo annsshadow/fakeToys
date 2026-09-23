@@ -1824,7 +1824,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 319,
+    "line": 321,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/section/list",
     "path": "/api/bbs/assemble/control/section/list",
@@ -1834,7 +1834,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 375,
+    "line": 377,
     "method": "POST",
     "raw": "/api/bbs/assemble/control/section/save/${sectionModalTarget.value.id}",
     "path": "/api/bbs/assemble/control/section/save/{}",
@@ -1844,7 +1844,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 378,
+    "line": 380,
     "method": "POST",
     "raw": "/api/bbs/assemble/control/section/create",
     "path": "/api/bbs/assemble/control/section/create",
@@ -1854,7 +1854,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 395,
+    "line": 397,
     "method": "POST",
     "raw": "/api/bbs/assemble/control/section/delete/${sec.id}",
     "path": "/api/bbs/assemble/control/section/delete/{}",
@@ -1864,7 +1864,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 415,
+    "line": 417,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/section/${sec.id}",
     "path": "/api/bbs/assemble/control/section/{}",
@@ -1874,7 +1874,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 416,
+    "line": 418,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/section/viewsub/${sec.id}",
     "path": "/api/bbs/assemble/control/section/viewsub/{}",
@@ -1884,7 +1884,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 417,
+    "line": 419,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/permission/section/${sec.id}",
     "path": "/api/bbs/assemble/control/permission/section/{}",
@@ -1894,7 +1894,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 452,
+    "line": 454,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/subject/search/list/page/1/count/${pageSize}",
     "path": "/api/bbs/assemble/control/subject/search/list/page/1/count/{}",
@@ -1904,7 +1904,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 456,
+    "line": 458,
     "method": "GET",
     "raw": "/api/bbs/subject/list/${selectedSection.value.id}",
     "path": "/api/bbs/subject/list/{}",
@@ -1914,7 +1914,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 458,
+    "line": 460,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/subject/recommended/list/page/${page.value}/count/${pageSize}",
     "path": "/api/bbs/assemble/control/subject/recommended/list/page/{}/count/{}",
@@ -1924,7 +1924,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 463,
+    "line": 465,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/subject/creamed/list/page/${page.value}/count/${pageSize}",
     "path": "/api/bbs/assemble/control/subject/creamed/list/page/{}/count/{}",
@@ -1934,7 +1934,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 469,
+    "line": 471,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/user/reply/my/list/page/${page.value}/count/${pageSize}",
     "path": "/api/bbs/assemble/control/user/reply/my/list/page/{}/count/{}",
@@ -1944,7 +1944,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 486,
+    "line": 488,
     "method": "POST",
     "raw": "/api/bbs/assemble/control/subject/filter/listsubjectinfo/page/${page.value}/count/${pageSize}",
     "path": "/api/bbs/assemble/control/subject/filter/listsubjectinfo/page/{}/count/{}",
@@ -1954,7 +1954,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 491,
+    "line": 493,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/subject/index/list/page/${page.value}/count/${pageSize}",
     "path": "/api/bbs/assemble/control/subject/index/list/page/{}/count/{}",
@@ -1964,7 +1964,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 522,
+    "line": 524,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/reply/filter/list/page/1/count/50",
     "path": "/api/bbs/assemble/control/reply/filter/list/page/1/count/50",
@@ -1974,7 +1974,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 538,
+    "line": 540,
     "method": "POST",
     "raw": "/api/bbs/subject/create",
     "path": "/api/bbs/subject/create",
@@ -1984,7 +1984,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 578,
+    "line": 580,
     "method": "POST",
     "raw": "/api/bbs/assemble/control/reply/create",
     "path": "/api/bbs/assemble/control/reply/create",
@@ -1994,7 +1994,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 619,
+    "line": 621,
     "method": "GET",
     "raw": "/api/bbs/subject/view/${targetId}",
     "path": "/api/bbs/subject/view/{}",
@@ -2004,7 +2004,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 649,
+    "line": 651,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/picture/list/${subjectId}",
     "path": "/api/bbs/assemble/control/picture/list/{}",
@@ -2014,7 +2014,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 651,
+    "line": 653,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/permission/replyPublishable/${subjectId}",
     "path": "/api/bbs/assemble/control/permission/replyPublishable/{}",
@@ -2024,7 +2024,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 653,
+    "line": 655,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/subject/view/${subjectId}",
     "path": "/api/bbs/assemble/control/subject/view/{}",
@@ -2034,7 +2034,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 655,
+    "line": 657,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/attachment/list/subject/${subjectId}",
     "path": "/api/bbs/assemble/control/attachment/list/subject/{}",
@@ -2044,7 +2044,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 657,
+    "line": 659,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/permission/subject/${subjectId}",
     "path": "/api/bbs/assemble/control/permission/subject/{}",
@@ -2054,7 +2054,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 659,
+    "line": 661,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/reply/list/sub/${subjectId}",
     "path": "/api/bbs/assemble/control/reply/list/sub/{}",
@@ -2064,7 +2064,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 665,
+    "line": 667,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/reply/${encodeURIComponent(rid)}",
     "path": "/api/bbs/assemble/control/reply/{}",
@@ -2074,7 +2074,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 686,
+    "line": 688,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/subject/setCream/${id}",
     "path": "/api/bbs/assemble/control/user/subject/setCream/{}",
@@ -2084,7 +2084,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 687,
+    "line": 689,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/subject/nonCream/${id}",
     "path": "/api/bbs/assemble/control/user/subject/nonCream/{}",
@@ -2094,7 +2094,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 689,
+    "line": 691,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/subject/lock/${id}",
     "path": "/api/bbs/assemble/control/user/subject/lock/{}",
@@ -2104,7 +2104,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 690,
+    "line": 692,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/subject/unlock/${id}",
     "path": "/api/bbs/assemble/control/user/subject/unlock/{}",
@@ -2114,7 +2114,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 692,
+    "line": 694,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/subject/complete/${id}",
     "path": "/api/bbs/assemble/control/user/subject/complete/{}",
@@ -2124,7 +2124,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 693,
+    "line": 695,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/subject/uncomplete/${id}",
     "path": "/api/bbs/assemble/control/user/subject/uncomplete/{}",
@@ -2134,7 +2134,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 695,
+    "line": 697,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/subject/topToSection/${id}",
     "path": "/api/bbs/assemble/control/user/subject/topToSection/{}",
@@ -2144,7 +2144,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 696,
+    "line": 698,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/subject/nonTopToSection/${id}",
     "path": "/api/bbs/assemble/control/user/subject/nonTopToSection/{}",
@@ -2154,7 +2154,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 742,
+    "line": 744,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/forum/list",
     "path": "/api/bbs/assemble/control/forum/list",
@@ -2164,7 +2164,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 748,
+    "line": 750,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/forum/${encodeURIComponent(fid)}",
     "path": "/api/bbs/assemble/control/forum/{}",
@@ -2174,7 +2174,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 763,
+    "line": 765,
     "method": "GET",
     "raw": "/api/bbs/forum/view/all",
     "path": "/api/bbs/forum/view/all",
@@ -2184,7 +2184,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 764,
+    "line": 766,
     "method": "GET",
     "raw": "/api/bbs/section/view/all",
     "path": "/api/bbs/section/view/all",
@@ -2194,7 +2194,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 771,
+    "line": 773,
     "method": "GET",
     "raw": "/api/bbs/forum/view/${encodeURIComponent(fid)}",
     "path": "/api/bbs/forum/view/{}",
@@ -2204,7 +2204,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 772,
+    "line": 774,
     "method": "GET",
     "raw": "/api/bbs/subject/top/${encodeURIComponent(sid)}",
     "path": "/api/bbs/subject/top/{}",
@@ -2214,7 +2214,57 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 788,
+    "line": 790,
+    "method": "GET",
+    "raw": "/api/bbs/core/entity/forum/list",
+    "path": "/api/bbs/core/entity/forum/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 793,
+    "method": "GET",
+    "raw": "/api/bbs/core/entity/section/list/${encodeURIComponent(fid)}",
+    "path": "/api/bbs/core/entity/section/list/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 797,
+    "method": "GET",
+    "raw": "/api/bbs/core/entity/subject/top/${encodeURIComponent(sid)}",
+    "path": "/api/bbs/core/entity/subject/top/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 798,
+    "method": "GET",
+    "raw": "/api/bbs/core/entity/subject/list/${encodeURIComponent(sid)}",
+    "path": "/api/bbs/core/entity/subject/list/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 799,
+    "method": "GET",
+    "raw": "/api/bbs/core/entity/subject/search?key=a",
+    "path": "/api/bbs/core/entity/subject/search",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 814,
     "method": "GET",
     "raw": "/api/bbs/forum/view/all",
     "path": "/api/bbs/forum/view/all",
@@ -2224,7 +2274,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 792,
+    "line": 818,
     "method": "GET",
     "raw": "/api/bbs/section/viewforum/${encodeURIComponent(fid)}",
     "path": "/api/bbs/section/viewforum/{}",
@@ -2234,7 +2284,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 793,
+    "line": 819,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/config",
     "path": "/api/bbs/assemble/control/config",
@@ -2244,7 +2294,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 794,
+    "line": 820,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/info",
     "path": "/api/bbs/assemble/control/user/info",

@@ -22,12 +22,14 @@
         <button class="new-topic-btn ghost" @click="loadForums">版块列表</button>
         <button class="new-topic-btn ghost" @click="loadBbsViews">视图浏览</button>
         <button class="new-topic-btn ghost" @click="loadBbsControl">控制台/检索</button>
+        <button class="new-topic-btn ghost" @click="loadBbsEntities">核心实体</button>
         <button class="new-topic-btn" @click="openNewTopic">✏️ 发帖</button>
       </div>
     </div>
     <div v-if="forumsText" class="forums-note">{{ forumsText }}</div>
     <div v-if="bbsViewsText" class="forums-note">{{ bbsViewsText }}</div>
     <div v-if="bbsControlText" class="forums-note">{{ bbsControlText }}</div>
+    <div v-if="bbsEntityText" class="forums-note">{{ bbsEntityText }}</div>
 
     <!-- 左侧：版块列表 -->
     <aside class="bbs-sidebar glass-card" :class="{ collapsed: showNewTopic }">
@@ -776,6 +778,30 @@ async function loadBbsViews() {
     bbsViewsText.value = `论坛 ${forums.length}（首「${fName}」）· 分区 ${sections.length} · 首分区置顶帖 ${topN}`
   } catch (e: any) {
     toast.error('加载视图浏览失败: ' + (e?.message ?? ''))
+  }
+}
+// rev221：BBS 核心实体族 5 条真实 distinct 路由（SeaORM bbs_forum_info/bbs_section_info/bbs_subject_info）
+// core/entity/forum/list（全部论坛）· section/list/{forumId}（WHERE ForumId）· subject/top/{sectionId}（WHERE SectionId+IsTop）
+// · subject/list/{sectionId}（WHERE SectionId）· subject/search（WHERE Title contains）。id 用变量避免 BBSForum.test 禁止的 test-* 字面量。
+const bbsEntityText = ref('')
+async function loadBbsEntities() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const forumsRes = await s(api.get('/api/bbs/core/entity/forum/list'))
+    const forums = Array.isArray((forumsRes as any)?.data) ? (forumsRes as any).data : []
+    const fid = forums[0] ? String(forums[0].id ?? '0') : '0'
+    const sectionsRes = await s(api.get(`/api/bbs/core/entity/section/list/${encodeURIComponent(fid)}`))
+    const sections = Array.isArray((sectionsRes as any)?.data) ? (sectionsRes as any).data : []
+    const sid = sections[0] ? String(sections[0].id ?? '0') : '0'
+    const [topSubs, subs, searched] = await Promise.all([
+      s(api.get(`/api/bbs/core/entity/subject/top/${encodeURIComponent(sid)}`)),
+      s(api.get(`/api/bbs/core/entity/subject/list/${encodeURIComponent(sid)}`)),
+      s(api.get('/api/bbs/core/entity/subject/search?key=a')),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    bbsEntityText.value = `实体论坛 ${forums.length} · 分区 ${sections.length} · 置顶帖 ${n(topSubs)} · 主题 ${n(subs)} · 搜索 ${n(searched)}`
+  } catch (e: any) {
+    toast.error('加载 BBS 实体失败: ' + (e?.message ?? ''))
   }
 }
 const bbsControlText = ref('')
