@@ -18,6 +18,7 @@
       <button class="org-meta-btn" @click="loadCursorLists">身份/角色/职务游标</button>
       <button class="org-meta-btn" @click="loadCursorListsPrev">游标(逆序)</button>
       <button class="org-meta-btn" @click="loadGroupDetails">群组明细</button>
+      <button class="org-meta-btn" @click="loadIdentityRelations">身份关系</button>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -385,6 +386,37 @@ async function loadPinyinIndex() {
     orgMetaText.value = `群组首字母 ${n(groups)} / 身份首字母 ${n(identities)} / 角色首字母 ${n(roles)}`
   } catch (e: any) {
     toast.error('加载拼音索引失败: ' + (e?.message ?? ''))
+  }
+}
+// 身份关系族 3 条真实 distinct 路由（express 批量查询，x_org_identity JOIN 各异）：
+// 单位∩人员身份 /api/identity/list/unit/person（WHERE person AND unit）+ 群组(含子群组)身份 /api/identity/list/group（递归 x_org_group_member）
+// + 人员主身份 /api/identity/list/major/person（WHERE i.major）；单位/群组/人员名从 control 抽样列表取
+async function loadIdentityRelations() {
+  const firstName = (resp: any): string => {
+    const arr = Array.isArray(resp?.data) ? resp.data : []
+    return arr[0] ? String(arr[0].name ?? arr[0].id ?? '') : ''
+  }
+  try {
+    const [unitResp, groupResp, cardResp] = await Promise.all([
+      api.get('/api/organization/assemble/control/unit/list/top').catch(() => null),
+      api.get('/api/organization/assemble/control/group/list/0/next/10').catch(() => null),
+      api.get('/api/organization/assemble/control/personcard/listpaging/page/1/size/20').catch(() => null),
+    ])
+    const unit = firstName(unitResp)
+    const group = firstName(groupResp)
+    const person = firstName(cardResp)
+    const unitList = unit ? [unit] : []
+    const groupList = group ? [group] : []
+    const personList = person ? [person] : []
+    const [byUnitPerson, byGroup, majorByPerson] = await Promise.all([
+      api.post('/api/identity/list/unit/person', { personList, unitList }).catch(() => null),
+      api.post('/api/identity/list/group', { groupList }).catch(() => null),
+      api.post('/api/identity/list/major/person', { personList }).catch(() => null),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    orgMetaText.value = `单位∩人员身份 ${n(byUnitPerson)} · 群组身份 ${n(byGroup)} · 主身份 ${n(majorByPerson)}`
+  } catch (e: any) {
+    toast.error('加载身份关系失败: ' + (e?.message ?? ''))
   }
 }
 const keyword = ref('')
