@@ -23,6 +23,7 @@
         <button class="new-topic-btn ghost" @click="loadBbsViews">视图浏览</button>
         <button class="new-topic-btn ghost" @click="loadBbsControl">控制台/检索</button>
         <button class="new-topic-btn ghost" @click="loadBbsEntities">核心实体</button>
+        <button class="new-topic-btn ghost" @click="loadBbsDeepReads">深度读矩阵</button>
         <button class="new-topic-btn" @click="openNewTopic">✏️ 发帖</button>
       </div>
     </div>
@@ -30,6 +31,7 @@
     <div v-if="bbsViewsText" class="forums-note">{{ bbsViewsText }}</div>
     <div v-if="bbsControlText" class="forums-note">{{ bbsControlText }}</div>
     <div v-if="bbsEntityText" class="forums-note">{{ bbsEntityText }}</div>
+    <div v-if="bbsDeepText" class="forums-note">{{ bbsDeepText }}</div>
 
     <!-- 左侧：版块列表 -->
     <aside class="bbs-sidebar glass-card" :class="{ collapsed: showNewTopic }">
@@ -825,6 +827,47 @@ async function loadBbsControl() {
     bbsControlText.value = `版块下分区 ${n(byForum)} · 控制配置 ${hasCfg} · 用户信息 ${hasUser}`
   } catch (e: any) {
     toast.error('加载控制台/检索失败: ' + (e?.message ?? ''))
+  }
+}
+const bbsDeepText = ref('')
+// rev310：BBS 主题检索/话题/回复筛选/附件/视图/权限/设置/禁言/推荐/置顶/用户角色设置 深度读 22 条真实路由
+// （handler 体经跨 crate 核实纯 SELECT；base64 附件为查询后编码字符串，非二进制流）
+async function loadBbsDeepReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const forumId = '0'
+  const id = '0'
+  const sectionId = '0'
+  const count = '20'
+  const size = '200'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/bbs/subject/search`)),
+      s(api.get(`/api/bbs/assemble/control/topic/list/forum/${forumId}`)),
+      s(api.get(`/api/bbs/assemble/control/list/reply/filter`)),
+      s(api.get(`/api/bbs/assemble/control/attachment/${id}`)),
+      s(api.get(`/api/bbs/assemble/control/forum/view/all`)),
+      s(api.get(`/api/bbs/assemble/control/mobile/view/all`)),
+      s(api.get(`/api/bbs/assemble/control/permission`)),
+      s(api.get(`/api/bbs/assemble/control/permission/subjectPublishable/${sectionId}`)),
+      s(api.get(`/api/bbs/assemble/control/setting/bbsName`)),
+      s(api.get(`/api/bbs/assemble/control/shutup/get/shutup`)),
+      s(api.get(`/api/bbs/assemble/control/subject/recommended/index/${count}`)),
+      s(api.get(`/api/bbs/assemble/control/subject/top/${sectionId}`)),
+      s(api.get(`/api/bbs/assemble/control/subjectattach/${id}`)),
+      s(api.get(`/api/bbs/assemble/control/subjectattach/${id}/binary/base64/${size}`)),
+      s(api.get(`/api/bbs/assemble/control/subjectattach/list/subject/${id}`)),
+      s(api.get(`/api/bbs/assemble/control/user/forum/all`)),
+      s(api.get(`/api/bbs/assemble/control/user/role/${id}`)),
+      s(api.get(`/api/bbs/assemble/control/user/role/all`)),
+      s(api.get(`/api/bbs/assemble/control/user/section/forum/${forumId}`)),
+      s(api.get(`/api/bbs/assemble/control/user/setting/${id}`)),
+      s(api.get(`/api/bbs/assemble/control/user/setting/all`)),
+      s(api.get(`/api/bbs/assemble/control/user/subject/${id}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    bbsDeepText.value = `BBS 深度读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载 BBS 深度读失败: ' + (e?.message ?? ''))
   }
 }
 const api_forum_view_1_data = ref<any[]>([])
