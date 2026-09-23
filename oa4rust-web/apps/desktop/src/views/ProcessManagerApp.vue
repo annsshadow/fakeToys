@@ -21,6 +21,7 @@
         <button class="btn-refresh" @click="loadMappingAccess">🗺️ 映射/项权限</button>
         <button class="btn-refresh" @click="loadDesignerExtras">🧩 映射游标/字典/流程</button>
         <button class="btn-refresh" @click="loadDesignerFileScript">📂 文件/脚本/图标</button>
+        <button class="btn-refresh" @click="loadSurfaceProcessReads">🖼️ 表面/字典/流程</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
@@ -236,6 +237,26 @@ async function loadDesignerFileScript() {
     designerExtraText.value = `文件 ${fRows.length}（详情 ${has(fileOne)}）| 脚本 ${sRows.length}（按名 ${has(scriptByName)}）| 合并项 ${has(mergeOne)} | 应用图标 ${has(icon)}`
   } catch (e: any) {
     toast.error('加载文件/脚本/图标失败: ' + (e?.message ?? ''))
+  }
+}
+// rev245：流程表面 surface实体/字典/流程复杂/按应用过滤 5 条真实 distinct 读路由（arity 已核；跳 applicationdict data(同 xid SQL 孪生)、controllable(与 filter 同 xapplication SQL 孪生)、is/manager(与 app get 同表投影)）
+async function loadSurfaceProcessReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const first: any = items.value[0] ?? {}
+  const appId = String(first.application ?? first.applicationFlag ?? first.id ?? '0')
+  try {
+    const [surfaceGet, surfaceList, appdict, complex, byApp] = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/surface/get/${encodeURIComponent(appId)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/list/${encodeURIComponent(appId)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/applicationdict/application/${encodeURIComponent(appId)}/${encodeURIComponent(appId)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/process/complex/${encodeURIComponent(appId)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/process/list/application/filter/${encodeURIComponent(appId)}`)),
+    ])
+    const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    designerExtraText.value = `表面实体 ${has(surfaceGet)} | 表面分类 ${n(surfaceList)} | 应用字典 ${has(appdict)} | 流程复杂 ${has(complex)} | 按应用流程 ${n(byApp)}`
+  } catch (e: any) {
+    toast.error('加载流程表面读取失败: ' + (e?.message ?? ''))
   }
 }
 // 设计器流程明细族 3 条真实 distinct 路由：首流程 → 流程详情 process/{id}（PP_E_PROCESS query_opt）
