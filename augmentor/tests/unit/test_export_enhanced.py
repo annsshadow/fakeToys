@@ -385,12 +385,33 @@ class TestExportEnhancedExtended:
         assert result["item_count"] == 2
 
     def test_export_with_shuffle(self, sample_dataset, tmp_path):
-        """导出时打乱顺序"""
+        """导出时打乱顺序：同种子可复现，且不污染进程级 RNG
+
+        实现原先走 `random.seed(seed)` + `random.shuffle(...)`，会把全局 RNG 状态
+        一起改掉——同进程里后续任何随机行为（抽样、切分、其它导出）都跟着变。
+        `cli/commands/export.py` 里同一个坑早已改成局部 Random，这里是漏网的一处。
+        """
+        import random
+
         exporter = EnhancedExporter()
-        output_path = tmp_path / "shuffled.json"
         options = ExportOptions(shuffle=True, seed=42)
-        result = exporter.export(sample_dataset, str(output_path), options)
-        assert output_path.exists()
+
+        first = tmp_path / "shuffled_a.json"
+        second = tmp_path / "shuffled_b.json"
+        assert exporter.export(sample_dataset, str(first), options)["item_count"] == 3
+        assert exporter.export(sample_dataset, str(second), options)["item_count"] == 3
+        assert first.read_text(encoding="utf-8") == second.read_text(encoding="utf-8"),             "同种子必须可复现"
+
+        # 参照序列：只取两次全局随机数，中间不做任何事
+        random.seed(1234)
+        random.random()
+        reference = random.random()
+
+        # 被测序列：两次取值之间插入一次导出，全局状态不得被改动
+        random.seed(1234)
+        random.random()
+        exporter.export(sample_dataset, str(tmp_path / "shuffled_c.json"), options)
+        assert random.random() == reference, "导出改写了进程级 RNG 状态"
 
     def test_get_supported_formats(self):
         """获取支持的格式列表"""
@@ -450,3 +471,32 @@ class TestExportEnhancedExtended:
         output_path = tmp_path / "single.json"
         result = exporter.export(data, str(output_path))
         assert result["item_count"] == 1
+
+
+class TestHeterogeneousDelimitedExport:
+    """CSV/TSV 导出必须按全量键并集建表头。
+
+    `EnhancedExporter` 直接写用户数据（不像 `Exporter` 的 CSV 会先归一成固定三列），
+    异构条目很常见：合并两路来源后某几条多出 `category`。表头只取首条的键时
+    `DictWriter` 会在后续行抛 `ValueError: dict contains fields not in fieldnames`，
+    整次导出失败。
+    """
+
+    @pytest.mark.parametrize("fmt,delimiter", [("csv", ","), ("tsv", "\t")])
+    def test_extra_key_in_later_item_does_not_break_export(
+            self, sample_dataset, tmp_path, fmt, delimiter):
+        items = sample_dataset + [{"instruction": "补充", "output": "x", "category": "y"}]
+        output_path = tmp_path / f"out.{fmt}"
+
+        result = EnhancedExporter().export(
+            items, str(output_path), ExportOptions(format=ExportFormat(fmt))
+        )
+
+        assert result["item_count"] == 4
+        lines = output_path.read_text(encoding="utf-8").splitlines()
+        header = lines[0].split(delimiter)
+        assert header == ["instruction", "input", "output", "category"], header
+        assert len(lines) == 5, lines
+        # 前三条没有 category，落为空单元格而不是整行丢失
+        assert lines[1].split(delimiter)[-1] == ""
+        assert lines[-1].split(delimiter)[-1] == "y"

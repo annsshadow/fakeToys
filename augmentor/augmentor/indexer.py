@@ -394,9 +394,8 @@ class DatasetView:
             新视图
         """
         import random
-        if seed is not None:
-            random.seed(seed)
-        sampled = random.sample(self._items, min(n, len(self._items)))
+        # 局部 Random：不改动进程级 RNG 状态（seed=None 时仍取系统熵）
+        sampled = random.Random(seed).sample(self._items, min(n, len(self._items)))
         return DatasetView(sampled, f"{self.name}_sample")
     
     def filter(self, predicate: Callable[[Dict], bool]) -> 'DatasetView':

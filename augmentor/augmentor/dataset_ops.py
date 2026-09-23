@@ -79,7 +79,7 @@ class DatasetOperations:
             merged = []
             for dataset in datasets:
                 merged.extend(dataset)
-            random.shuffle(merged)
+            random.Random().shuffle(merged)
         
         # 去重
         if config.deduplicate:
@@ -177,18 +177,19 @@ class DatasetOperations:
         else:
             sample_size = len(items)
         
-        # 设置随机种子
-        if config.seed is not None:
-            random.seed(config.seed)
+        # 局部 Random：`random.seed()` 会改写进程级 RNG 状态，污染同进程内
+        # 其它调用方的随机性（`seed=None` 时等价于取系统熵，行为不变）。
+        rng = random.Random(config.seed)
         
         # 根据方法采样
         if config.method == "random":
-            sampled = random.sample(items, sample_size)
+            sampled = rng.sample(items, sample_size)
         elif config.method == "systematic":
             step = max(1, len(items) // sample_size)
             sampled = items[::step][:sample_size]
         elif config.method == "stratified":
-            sampled = self._stratified_sample(items, sample_size, config.stratify_key)
+            sampled = self._stratified_sample(
+                items, sample_size, config.stratify_key, rng)
         else:
             raise DataValidationError(f"不支持的采样方法: {config.method}")
         
@@ -198,13 +199,15 @@ class DatasetOperations:
     def _stratified_sample(self,
                           items: List[Dict],
                           sample_size: int,
-                          key: str) -> List[Dict]:
+                          key: str,
+                          rng: "random.Random") -> List[Dict]:
         """分层采样
         
         Args:
             items: 数据列表
             sample_size: 采样数量
             key: 分层字段
+            rng: 调用方给的局部 Random，不得图省事用进程级 `random`
         
         Returns:
             采样后的数据列表
@@ -226,12 +229,13 @@ class DatasetOperations:
         for group_key, group_items in groups.items():
             group_ratio = len(group_items) / total
             group_sample_size = max(1, int(sample_size * group_ratio))
-            group_sampled = random.sample(group_items, min(group_sample_size, len(group_items)))
+            group_sampled = rng.sample(
+                group_items, min(group_sample_size, len(group_items)))
             sampled.extend(group_sampled)
         
         # 调整到目标数量
         if len(sampled) > sample_size:
-            sampled = random.sample(sampled, sample_size)
+            sampled = rng.sample(sampled, sample_size)
         
         return sampled
     
@@ -291,9 +295,7 @@ class DatasetOperations:
         # 打乱数据
         data = items.copy()
         if config.shuffle:
-            if config.seed is not None:
-                random.seed(config.seed)
-            random.shuffle(data)
+            random.Random(config.seed).shuffle(data)
         
         # 计算各部分大小
         n = len(data)
@@ -365,9 +367,7 @@ class DatasetOperations:
             打乱后的数据列表
         """
         shuffled = items.copy()
-        if seed is not None:
-            random.seed(seed)
-        random.shuffle(shuffled)
+        random.Random(seed).shuffle(shuffled)
         return shuffled
     
     def head(self, items: List[Dict], n: int = 10) -> List[Dict]:
@@ -524,6 +524,5 @@ def batch_merge(datasets: List[List[Dict]], deduplicate: bool = True) -> List[Di
 
 def shuffle_dataset(items: List[Dict], seed: Optional[int] = None) -> List[Dict]:
     result = list(items)
-    random.seed(seed)
-    random.shuffle(result)
+    random.Random(seed).shuffle(result)
     return result

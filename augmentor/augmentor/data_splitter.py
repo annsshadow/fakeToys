@@ -84,16 +84,18 @@ class DataSplitter:
         if not items:
             return SplitResult(train=[], val=[], test=[])
 
-        random.seed(self.seed)
+        # 局部 Random：`random.seed()` 会改写进程级 RNG 状态，污染同进程内其它
+        # 调用方的随机性（`seed=None` 时等价于取系统熵，行为不变）。
+        rng = random.Random(self.seed)
 
         if self.stratify_field:
-            return self._stratified_split(items)
-        return self._random_split(items)
+            return self._stratified_split(items, rng)
+        return self._random_split(items, rng)
 
-    def _random_split(self, items: List[Dict]) -> SplitResult:
+    def _random_split(self, items: List[Dict], rng: "random.Random") -> SplitResult:
         """随机划分（不分层）"""
         shuffled = list(items)
-        random.shuffle(shuffled)
+        rng.shuffle(shuffled)
 
         total = len(shuffled)
         train_end = int(total * self.train_ratio)
@@ -110,7 +112,7 @@ class DataSplitter:
             stratify_field=self.stratify_field,
         )
 
-    def _stratified_split(self, items: List[Dict]) -> SplitResult:
+    def _stratified_split(self, items: List[Dict], rng: "random.Random") -> SplitResult:
         """按 stratify_field 分层划分
 
         每个特征值组内按 train/val/test 比例切分，再合并，
@@ -127,7 +129,7 @@ class DataSplitter:
         distribution: Dict[str, Dict[str, int]] = {}
 
         for key, group in groups.items():
-            random.shuffle(group)
+            rng.shuffle(group)
             n = len(group)
             train_n = int(n * self.train_ratio)
             val_n = int(n * self.val_ratio)
@@ -147,9 +149,9 @@ class DataSplitter:
                 "test": len(g_test),
             }
 
-        random.shuffle(train)
-        random.shuffle(val)
-        random.shuffle(test)
+        rng.shuffle(train)
+        rng.shuffle(val)
+        rng.shuffle(test)
 
         logger.info(f"分层划分完成: {distribution}")
 

@@ -19,6 +19,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from enum import Enum
 from .exceptions import UnsupportedFormatError
+from .converter import csv_fieldnames
 
 logger = logging.getLogger(__name__)
 
@@ -158,8 +159,9 @@ class EnhancedExporter:
         
         # 随机打乱
         if options.shuffle:
-            random.seed(options.seed)
-            random.shuffle(processed)
+            # 局部 Random：`random.seed()` 会改写**进程级** RNG 状态，污染同进程
+            # 其它调用方的随机性（`cli/commands/export.py` 里同一个坑已修过）。
+            random.Random(options.seed).shuffle(processed)
         
         # 限制数量
         if options.max_items and options.max_items > 0:
@@ -195,7 +197,7 @@ class EnhancedExporter:
         if not items:
             return
         
-        fieldnames = list(items[0].keys())
+        fieldnames = csv_fieldnames(items)
         
         with open(output, 'w', encoding='utf-8', newline='') as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -207,7 +209,7 @@ class EnhancedExporter:
         if not items:
             return
         
-        fieldnames = list(items[0].keys())
+        fieldnames = csv_fieldnames(items)
         
         with open(output, 'w', encoding='utf-8', newline='') as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')

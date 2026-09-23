@@ -17,6 +17,24 @@ from .exceptions import DataFormatError, UnsupportedFormatError
 logger = logging.getLogger(__name__)
 
 
+def csv_fieldnames(items: List[Dict]) -> List[str]:
+    """CSV/TSV 的表头：全量键的**并集**，按首次出现顺序排列
+
+    不能只取 `items[0].keys()`。增强与合并的产物天然异构（某一路数据多了
+    `category` 字段），用首条的键建表头会让 `DictWriter` 在后续行上抛
+    `ValueError: dict contains fields not in fieldnames`，整次导出失败；
+    取并集后缺字段的行由 `restval` 落成空单元格。
+    """
+    keys: List[str] = []
+    seen = set()
+    for item in items:
+        for key in item:
+            if key not in seen:
+                seen.add(key)
+                keys.append(key)
+    return keys
+
+
 class DataFormat(Enum):
     """数据格式"""
     JSON = "json"
@@ -324,7 +342,9 @@ class DatasetConverter:
     
     def _read_file(self, path: Path, format: str) -> Any:
         """读取文件"""
-        with open(path, 'r', encoding='utf-8') as f:
+        # `newline=""` 是 csv 模块的硬要求：不传时 Python 会先把 `\r\n` 归一成
+        # `\n`，被引号包裹的字段内换行因此错位（写侧同理）。
+        with open(path, 'r', encoding='utf-8', newline='') as f:
             if format == "jsonl":
                 return [json.loads(line) for line in f if line.strip()]
             elif format == "csv":
@@ -334,16 +354,22 @@ class DatasetConverter:
                 return json.load(f)
     
     def _write_file(self, path: Path, data: Any, format: str) -> None:
-        """写入文件"""
+        """写入文件
+
+        `newline=""` 是 csv 模块的硬要求：默认文本模式会把 writer 的 `\\r\\n`
+        行尾再翻译一次，Windows 上落成 `\\r\\r\\n`，严格解析器会在每条记录之间
+        读出一个空行。`fieldnames` 取全量键并集而非 `data[0].keys()`，见
+        `csv_fieldnames`。
+        """
         path.parent.mkdir(parents=True, exist_ok=True)
         
-        with open(path, 'w', encoding='utf-8') as f:
+        with open(path, 'w', encoding='utf-8', newline='') as f:
             if format == "jsonl":
                 for item in data:
                     f.write(json.dumps(item, ensure_ascii=False) + '\n')
             elif format == "csv":
                 if data:
-                    writer = csv.DictWriter(f, fieldnames=data[0].keys())
+                    writer = csv.DictWriter(f, fieldnames=csv_fieldnames(data))
                     writer.writeheader()
                     writer.writerows(data)
             else:
@@ -385,9 +411,13 @@ def convert_file(input_path: str,
 
 
 def get_supported_formats() -> List[str]:
-    """获取支持的格式列表
-    
-    Returns:
-        格式列表
+    """列出**转换图真的支持**的目标格式
+
+    不能按 `DataFormat` 成员列：`TSV` 只是 `_infer_format` 认识的扩展名，图里
+    没有 `json -> tsv` 这条边，`convert_dataset(items, "tsv")` 会抛
+    `UnsupportedFormatError`。以枚举为来源会让这个公开出口虚报能力（CLI 的
+    `convert --format` 一直刻意没放 tsv，正是同一事实的另一侧）。
     """
-    return [f.value for f in DataFormat]
+    converters = DatasetConverter()._converters
+    supported = {"json"} | {target for source, target in converters if source == "json"}
+    return [fmt.value for fmt in DataFormat if fmt.value in supported]
