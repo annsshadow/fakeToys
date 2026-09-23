@@ -200,14 +200,17 @@ async function loadMergeitemEnabled() {
   const appId = String(first.application ?? first.applicationFlag ?? first.id ?? '0')
   const pid = String(first.id ?? '0')
   try {
-    const [byApp, all, enabled] = await Promise.all([
+    const [byApp, all, enabled, wcByApp, wcByProc] = await Promise.all([
       s(api.get(`/api/processplatform/assemble/designer/mergeitemplan/list/application/${encodeURIComponent(appId)}/paging/1/size/20`)),
       s(api.get(`/api/processplatform/assemble/designer/mergeitemplan/list/paging/1/size/20`)),
       s(api.get(`/api/processplatform/assemble/designer/process/${encodeURIComponent(pid)}/enabled`)),
+      // rev281：workcompleted merge/data 按应用(WHERE p.xapplication)/按流程(WHERE p.xid)→PP_E_WORKCOMPLETED JOIN PP_E_PROCESS，distinct 读 arity1
+      s(api.get(`/api/processplatform/assemble/designer/workcompleted/application/${encodeURIComponent(appId)}/merge/data`)),
+      s(api.get(`/api/processplatform/assemble/designer/workcompleted/process/${encodeURIComponent(pid)}/merge/data`)),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
-    mergeEnabledText.value = `合并项计划(按应用) ${n(byApp)} · 合并项计划(全量) ${n(all)} · 启用流程 ${has(enabled)}`
+    mergeEnabledText.value = `合并项计划(按应用) ${n(byApp)} · 合并项计划(全量) ${n(all)} · 启用流程 ${has(enabled)} · 完成件合并(按应用) ${n(wcByApp)} · 完成件合并(按流程) ${n(wcByProc)}`
   } catch (e: any) {
     toast.error('加载合并项计划/启用流程失败: ' + (e?.message ?? ''))
   }
