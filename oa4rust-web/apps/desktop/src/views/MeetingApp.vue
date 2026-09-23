@@ -23,6 +23,7 @@
       <button class="sb" @click="loadMeetingEntities">会议实体</button>
       <button class="sb" @click="loadMeetingControlAssets">控制台资源</button>
       <button class="sb" @click="loadMeetingDateLists">日期列表</button>
+      <button class="sb" @click="loadMeetingOpenRooms">开放会议室</button>
       <button class="sb" @click="addBuilding">+ 楼栋</button>
     </div>
     <div v-if="appliedText" class="applied-note">{{ appliedText }}</div>
@@ -367,6 +368,26 @@ async function loadMeetingDateLists() {
     appliedText.value = `楼栋(时间范围) ${n(building)} · 即将3月 ${n(coming)} · 本年月 ${n(byMonth)} · 本年月日 ${n(byDay)}`
   } catch (e: any) {
     toast.error('加载会议日期列表失败: ' + (e?.message ?? ''))
+  }
+}
+// rev240：会议 房间/开放会议 4 条真实 distinct 读路由（arity 已核；跳 day/{day}/all 与 building/.../allmeeting 同 SQL 孪生、invite/{page}/{size}/{size} 重复参 arity 不符）
+async function loadMeetingOpenRooms() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const now = new Date()
+    const y = String(now.getFullYear())
+    const mo = String(now.getMonth() + 1)
+    const d = String(now.getDate())
+    const [byRoom, buildingRoomMeeting, openRooms, openConfig] = await Promise.all([
+      s(api.get(`/api/meeting/assemble/control/meeting/list/year/${y}/month/${mo}/day/${d}/0`)),
+      s(api.get('/api/meeting/assemble/control/building/list/start/1/completed/0/room/0/meeting/0')),
+      s(api.get('/api/meeting/assemble/control/openmeeting/list/room')),
+      s(api.get('/api/meeting/assemble/control/openmeeting')),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    appliedText.value = `按房间日程 ${n(byRoom)} · 楼栋(房间/会议过滤) ${n(buildingRoomMeeting)} · 开放会议室 ${n(openRooms)} · 开放会议配置 ${n(openConfig)}`
+  } catch (e: any) {
+    toast.error('加载开放会议资源失败: ' + (e?.message ?? ''))
   }
 }
 async function loadMeetingSearch() {
