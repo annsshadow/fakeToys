@@ -235,6 +235,17 @@ def to_http_error(
     return HTTPException(status_code=500, detail=str(exc))
 
 
+_JSON_KIND_NAMES = {
+    dict: "对象", list: "数组", str: "字符串", int: "数字", float: "数字",
+    bool: "布尔值", type(None): "空值",
+}
+
+
+def _json_kind(value) -> str:
+    """JSON 值的类型中文名，用于「顶层形态不对」的 400 文案"""
+    return _JSON_KIND_NAMES.get(type(value), type(value).__name__)
+
+
 def read_items(file_path: Path) -> list:
     """同步读取**已 resolve** 的 JSON 数据集文件
 
@@ -249,13 +260,36 @@ def read_items(file_path: Path) -> list:
         数据列表
 
     Raises:
-        HTTPException: 400 文件不是合法 JSON
+        HTTPException: 400 文件不是合法 JSON；或顶层不是数组 / 数组元素不是对象
+
+    形态校验放在这里而不是各调用点，是因为下游一律按 `item.get(...)` 取字段：
+    顶层是对象时拿到的是键（字符串），元素是标量时拿到标量，都会深入到
+    `augmentor/` 内部才炸出 `'str' object has no attribute 'keys'` 这类
+    AttributeError，变成 500 并把 Python 内部措辞回给客户端。
+    唯一例外是 `/api/dataset/validate`——它的职责就是报告畸形数据项，
+    因此它不经本函数，自己走 `DatasetValidator.validate_file`。
     """
     try:
         with open(file_path, "r", encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
     except json.JSONDecodeError as e:
         raise to_http_error(e) from e
+
+    if not isinstance(data, list):
+        raise HTTPException(
+            status_code=400,
+            detail=f"数据文件的顶层必须是 JSON 数组，当前是{_json_kind(data)}",
+        )
+    for index, item in enumerate(data):
+        if not isinstance(item, dict):
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"数据文件的第 {index + 1} 个数据项必须是 JSON 对象，"
+                    f"当前是{_json_kind(item)}"
+                ),
+            )
+    return data
 
 
 async def read_json_file(file_path: Path) -> list:
