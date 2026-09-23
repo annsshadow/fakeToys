@@ -22,6 +22,9 @@
       <button class="org-meta-btn" @click="loadOrgMembers">成员/层级</button>
       <button class="org-meta-btn" @click="loadUnitScope">单位归属/群角</button>
       <button class="org-meta-btn" @click="loadDutyBatch">职务批量</button>
+      <button class="org-meta-btn" @click="loadGroupTree">群组树/关系</button>
+      <button class="org-meta-btn" @click="loadUnitRelations">单位关系</button>
+      <button class="org-meta-btn" @click="loadIdentityUnitTree">身份单位树</button>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -500,6 +503,68 @@ async function loadDutyBatch() {
     orgMetaText.value = `单位「${unit || '—'}」职务名 ${names.length}（首「${dutyName || '—'}」）· 按名批量 ${n(byName)} · 精确定位 ${fN}`
   } catch (e: any) {
     toast.error('加载职务批量失败: ' + (e?.message ?? ''))
+  }
+}
+// 群组树/关系 6 条真实 distinct（rev198，organization_assemble_express，body{groupList}）：group/list/group/
+// {sub/direct,sub/nested,sup/direct,sup/nested}（x_org_group parent_id 方向×递归各异）+ group/list/group/tree（WITH RECURSIVE）
+// + group/list/identity（该群组下身份）。/object 变体为富投影孪生已跳过。
+async function loadGroupTree() {
+  try {
+    const gResp: any = await api.get('/api/group/list/0/next/10').catch(() => null)
+    const groups = Array.isArray(gResp?.data) ? gResp.data : []
+    const g = groups[0] ? String(groups[0].id ?? groups[0].name ?? '0') : '0'
+    const body = { groupList: [g] }
+    const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const [subD, subN, supD, supN, tree, ident] = await Promise.all([
+      s(api.post('/api/group/list/group/sub/direct', body)),
+      s(api.post('/api/group/list/group/sub/nested', body)),
+      s(api.post('/api/group/list/group/sup/direct', body)),
+      s(api.post('/api/group/list/group/sup/nested', body)),
+      s(api.post('/api/group/list/group/tree', body)),
+      s(api.post('/api/group/list/identity', body)),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    orgMetaText.value = `群组「${g}」下级 直接${n(subD)}/嵌套${n(subN)} · 上级 直接${n(supD)}/嵌套${n(supN)} · 树 ${n(tree)} · 身份 ${n(ident)}`
+  } catch (e: any) {
+    toast.error('加载群组树/关系失败: ' + (e?.message ?? ''))
+  }
+}
+// 单位关系 3 条真实 distinct（rev199，express）：unit/list（body{unitList}，全部/按标识单位）+ unit/list/identity/sup/nested
+// （body{identityList}，身份所属单位递归上级）+ unit/list/person/sup/nested（body{personList}，人员所属单位递归上级）。
+async function loadUnitRelations() {
+  try {
+    const uResp: any = await api.get('/api/organization/assemble/control/unit/list/top').catch(() => null)
+    const units = Array.isArray(uResp?.data) ? uResp.data : []
+    const u = units[0] ? String(units[0].name ?? units[0].id ?? '0') : '0'
+    const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const [all, byIdent, byPerson] = await Promise.all([
+      s(api.post('/api/unit/list', { unitList: [u] })),
+      s(api.post('/api/unit/list/identity/sup/nested', { identityList: [u] })),
+      s(api.post('/api/unit/list/person/sup/nested', { personList: [u] })),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    orgMetaText.value = `单位关系：列表 ${n(all)} · 身份→单位上级 ${n(byIdent)} · 人员→单位上级 ${n(byPerson)}`
+  } catch (e: any) {
+    toast.error('加载单位关系失败: ' + (e?.message ?? ''))
+  }
+}
+// 身份单位树 3 条真实 distinct（rev200，express）：identity/list/person（body{personList}，人员的身份）
+// + identity/list/unit/sub/direct（body{unitList}，单位直接下级身份）+ identity/list/unit/sub/nested（递归下级身份）。
+async function loadIdentityUnitTree() {
+  try {
+    const uResp: any = await api.get('/api/organization/assemble/control/unit/list/top').catch(() => null)
+    const units = Array.isArray(uResp?.data) ? uResp.data : []
+    const u = units[0] ? String(units[0].name ?? units[0].id ?? '0') : '0'
+    const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const [byPerson, subD, subN] = await Promise.all([
+      s(api.post('/api/identity/list/person', { personList: [u] })),
+      s(api.post('/api/identity/list/unit/sub/direct', { unitList: [u] })),
+      s(api.post('/api/identity/list/unit/sub/nested', { unitList: [u] })),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    orgMetaText.value = `身份：按人员 ${n(byPerson)} · 单位直接下级 ${n(subD)} · 单位嵌套下级 ${n(subN)}`
+  } catch (e: any) {
+    toast.error('加载身份单位树失败: ' + (e?.message ?? ''))
   }
 }
 const keyword = ref('')
