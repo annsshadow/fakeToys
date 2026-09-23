@@ -178,6 +178,8 @@ async function loadFolderTopByRef(): Promise<void> {
       s(api.get(`/api/file/list/0/prev/20`)),
       s(api.get(`/api/file/assemble/control/file/list/0/next/20/all`)),
       s(api.get(`/api/file/assemble/control/file/list/0/prev/20/all`)),
+      // rev296：attachment2/list/top(FILE_FILE 顶层附件2) 补齐
+      s(api.get(`/api/attachment2/list/top`)),
     ])
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     toast.success(`顶层文件夹 ${n(top)} / 按引用类型文件 ${n(byRef)} / 顶层附件 ${n(attTop)} / CMS文件游标 ${n(cmsNext)}·${n(cmsPrev)} / 全量游标 ${n(fNext)}·${n(fPrev)}`)
