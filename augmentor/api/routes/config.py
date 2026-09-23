@@ -8,7 +8,7 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from ..deps import get_pipeline, verify_api_key
+from ..deps import config_file_path, get_pipeline, verify_api_key
 from ..schemas import MessageResponse
 
 router = APIRouter(tags=["config"])
@@ -112,7 +112,7 @@ async def update_config(
                     if hasattr(section_config, key):
                         setattr(section_config, key, value)
         
-        save_config(p.config, "config.yaml")
+        save_config(p.config, str(config_file_path()))
         return {"success": True, "message": "配置已保存，部分配置需要重启服务生效"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
