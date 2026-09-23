@@ -17,8 +17,10 @@
         <button class="btn-refresh" @click="loadCounts">📊 计数</button>
         <button class="btn-refresh" @click="loadAppOverview">🗂️ 应用概览</button>
         <button class="btn-refresh" @click="loadTouch">⏰ 超期触发</button>
+        <button class="btn-refresh" @click="loadWorkDetail">🧾 工作明细</button>
       </div>
       <div v-if="countsText" class="wk-chips"><span class="wk-chip">{{ countsText }}</span></div>
+      <div v-if="workDetailText" class="wk-chips"><span class="wk-chip">{{ workDetailText }}</span></div>
       <div v-if="workItems.length" class="wk-chips">
         <span v-for="w in workItems" :key="w.id || w.title" class="wk-chip">{{ w.title || w.id }}</span>
       </div>
@@ -65,6 +67,27 @@ interface Item {
 const listEp = '/api/processplatform/service/processing/task/list'
 const workItems = ref<Array<{ id?: string; title?: string }>>([])
 const countsText = ref('')
+const workDetailText = ref('')
+// 引擎工作明细（rev182，service/processing 域 3 条真实 distinct，按工作 id）：get/{work}（get_process x_work 详情）
+// + work/{work}/projection（work_id_projection x_task 任务投影）+ documentversion/{work}/{work}（x_document_version 版本）。
+async function loadWorkDetail() {
+  workDetailText.value = ''
+  const work = items.value[0] ? String(items.value[0].work ?? items.value[0].id ?? '') : ''
+  if (!work) {
+    workDetailText.value = '暂无任务可查工作明细'
+    return
+  }
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [detail, projection, docVer] = await Promise.all([
+    settle(api.get(`/api/processplatform/service/processing/get/${work}`)),
+    settle(api.get(`/api/processplatform/service/processing/work/${work}/projection`)),
+    settle(api.get(`/api/processplatform/service/processing/documentversion/${work}/${work}`)),
+  ])
+  const wTitle = (detail as any)?.data?.title ?? work
+  const projN = Array.isArray((projection as any)?.data) ? (projection as any).data.length : 0
+  const docN = Array.isArray((docVer as any)?.data) ? (docVer as any).data.length : 0
+  workDetailText.value = `工作「${wTitle}」· 任务投影 ${projN} · 文档版本 ${docN}`
+}
 async function loadTouch() {
   try {
     // GET surface touch/expire + passexpired + touchdetained —— 超期/超期通过/催办触发
