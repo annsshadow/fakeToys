@@ -24,6 +24,10 @@
         <button class="btn-refresh" @click="loadCmsAppReads">📚 分类/表单/脚本按应用</button>
         <button class="btn-refresh" @click="loadCmsAppReads2">🔎 视图/搜索过滤/脚本游标/应用视图</button>
         <button class="btn-refresh" @click="loadCmsDeepReads">🔬 控制配置/分类/文档批次/脚本版本</button>
+        <button class="btn-refresh" @click="createCmsCategory">➕ 新建分类</button>
+        <button class="btn-refresh" @click="createCmsArticle">📝 新建文章</button>
+        <button class="btn-refresh" @click="toggleViewPublish(true)">📢 发布视图</button>
+        <button class="btn-refresh" @click="toggleViewPublish(false)">🚫 取消发布</button>
       </div>
       <div v-if="cmsConfigText" class="cfg-note">{{ cmsConfigText }}</div>
       <div v-if="overviewText" class="cfg-note">{{ overviewText }}</div>
@@ -258,6 +262,42 @@ async function loadCmsDeepReads() {
     cmsConfigText.value = `CMS 深度读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
     toast.error('加载 CMS 深度读失败: ' + (e?.message ?? ''))
+  }
+}
+// rev316：CMS 内容真实写端点（用户触发）——新建分类/新建文章/发布·取消发布视图；请求体经 handler 源码核实
+async function createCmsCategory() {
+  const name = prompt('分类名称:', '')
+  if (!name) return
+  try {
+    // POST cms/category/create → INSERT {name, parentId?, sortOrder?, status?}
+    await api.post('/api/cms/category/create', { name, parentId: '', sortOrder: 0, status: 'enabled' })
+    toast.success('分类已创建')
+  } catch (e: any) {
+    toast.error('新建分类失败: ' + (e?.message ?? ''))
+  }
+}
+async function createCmsArticle() {
+  const title = prompt('文章标题:', '')
+  if (!title) return
+  const categoryId = prompt('所属分类 ID:', '') || ''
+  try {
+    // POST cms/article/create → INSERT {title, content, categoryId, authorId?, status?}
+    await api.post('/api/cms/article/create', { title, content: '', categoryId, status: 'draft' })
+    toast.success('文章已创建')
+  } catch (e: any) {
+    toast.error('新建文章失败: ' + (e?.message ?? ''))
+  }
+}
+async function toggleViewPublish(publish: boolean) {
+  const id = prompt(publish ? '要发布的视图 ID:' : '要取消发布的视图 ID:', '')
+  if (!id) return
+  try {
+    // POST cms/view/publish|unpublish/{id} → 更新视图发布状态（path only）
+    const seg = publish ? 'publish' : 'unpublish'
+    await api.post(`/api/cms/view/${seg}/${encodeURIComponent(id)}`)
+    toast.success(publish ? '视图已发布' : '视图已取消发布')
+  } catch (e: any) {
+    toast.error('视图发布操作失败: ' + (e?.message ?? ''))
   }
 }
 async function loadCmsAppReads2() {
