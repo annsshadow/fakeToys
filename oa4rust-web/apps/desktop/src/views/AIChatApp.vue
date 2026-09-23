@@ -176,6 +176,7 @@ async function loadAiEntities() {
   }
 }
 async function loadAiConv() {
+  try {
     // GET ai/conversation/list + ai/config/get + ai_assemble_control/list/ai/models
     const [convs, cfg, models] = await Promise.all([
       api.get('/api/ai/conversation/list'),
