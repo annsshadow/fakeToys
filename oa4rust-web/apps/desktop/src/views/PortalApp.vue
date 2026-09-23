@@ -11,6 +11,7 @@
         <button class="new-page-btn ghost" @click="loadPortalSurface">表面/移动</button>
         <button class="new-page-btn ghost" @click="loadPortalResources">门户资源</button>
         <button class="new-page-btn ghost" @click="loadPortalDetail">门户明细</button>
+        <button class="new-page-btn ghost" @click="loadPortalSurfaceEntities">表面实体</button>
         <button class="new-page-btn" @click="showEditor = true">+ 新建页面</button>
       </span>
     </div>
@@ -117,6 +118,35 @@ async function loadPortalDetail() {
     portalListText.value = `门户「${name}」· 角标 ${mark} · 文件「${fName}」`
   } catch (e: any) {
     toast.error('加载门户明细失败: ' + (e?.message ?? ''))
+  }
+}
+// rev214：门户表面组件/脚本/字典/页面族 7 条真实 distinct 路由
+// get/{id}（x_portal_surface WHERE id）· list/{category}（WHERE category）· widget/{id}（x_portal_widget WHERE id）
+// · widget/portal/{flag}/{portalFlag}（WHERE flag+portal_id）· script/{id}（x_portal_script WHERE id）· page/{id}/mobile（x_portal_page mobile_content）· dict/portal/{dictFlag}/{portalFlag}（x_portal_dict WHERE flag+portal_flag）
+async function loadPortalSurfaceEntities() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const listResp: any = await api.get('/api/portal/list').catch(() => null)
+    const portals = (Array.isArray(listResp?.data) ? listResp.data : []) as Array<Record<string, unknown>>
+    const flag = portals[0] ? String(portals[0].flag ?? portals[0].id ?? '0') : '0'
+    const wlist: any = await s(api.get('/api/portal/assemble/surface/widget/list/portal/portal'))
+    const wRows = Array.isArray(wlist?.data) ? wlist.data : []
+    const wid = wRows[0] ? String(wRows[0].id ?? '0') : '0'
+    const wflag = wRows[0] ? String(wRows[0].flag ?? wid) : wid
+    const [surf, byCat, widget, widgetByFlag, script, pageMobile, dict] = await Promise.all([
+      s(api.get(`/api/portal/assemble/surface/get/${encodeURIComponent(flag)}`)),
+      s(api.get(`/api/portal/assemble/surface/list/${encodeURIComponent(flag)}`)),
+      s(api.get(`/api/portal/assemble/surface/widget/${encodeURIComponent(wid)}`)),
+      s(api.get(`/api/portal/assemble/surface/widget/portal/${encodeURIComponent(wflag)}/${encodeURIComponent(flag)}`)),
+      s(api.get(`/api/portal/assemble/surface/script/${encodeURIComponent(wid)}`)),
+      s(api.get(`/api/portal/assemble/surface/page/${encodeURIComponent(flag)}/mobile`)),
+      s(api.get(`/api/portal/assemble/surface/dict/portal/${encodeURIComponent(wflag)}/${encodeURIComponent(flag)}`)),
+    ])
+    const hit = (r: any) => ((r as any)?.data?.id ? '命中' : '未命中')
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    portalListText.value = `表面 ${hit(surf)} · 分类列表 ${n(byCat)} · 组件 ${hit(widget)}（按flag ${hit(widgetByFlag)}）· 脚本 ${hit(script)} · 移动页 ${hit(pageMobile)} · 字典 ${(dict as any)?.data ? '有' : '无'}`
+  } catch (e: any) {
+    toast.error('加载门户表面实体失败: ' + (e?.message ?? ''))
   }
 }
 const pages = ref<PortalPage[]>([])
