@@ -4,7 +4,7 @@
 """L73：cli.py 各命令的未完整走通分支（--field length / --output 落盘 / 完整流）
 
 覆盖 outliers 的长度字段附加、validate 结果落盘、backup 删除完整流、
-version-control 比较、dependency 图/校验等此前未走通的方向。
+version --enhanced 比较、dependency 图/校验等此前未走通的方向。
 """
 
 import io
@@ -111,22 +111,21 @@ class TestBackupDeleteFlow:
 
 class TestVersionControlCompare:
     def test_compare_without_current_version_exits(self, tmp_path):
+        """版本目录为空时，`--version-b` 缺省取不到当前版本 → 显式报错"""
         _, err, code = _run(
             [
-                "version", "--enhanced",
+                "version",
                 "--action",
                 "compare",
                 "--version",
                 "v9",
-                "--output",
-                str(tmp_path / "o.json"),
                 "--versions-dir",
                 str(tmp_path / "vdir"),
             ],
             cwd=tmp_path,
         )
         assert code == 1
-        assert "没有当前版本" in err
+        assert "--version-b" in err
 
 
 class TestDependencyGraphAndValidate:

@@ -6,6 +6,7 @@
 import logging
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional, Any
+from .exceptions import QualityError
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +67,7 @@ class ReportGenerator:
     def generate(self, items: List[Dict], scores: List[Any],
                  dedup_summary: Optional[Dict[str, Any]] = None) -> QualityReport:
         if len(items) != len(scores):
-            raise ValueError("items和scores长度不一致")
+            raise QualityError("items和scores长度不一致")
 
         total = len(items)
         if total == 0:

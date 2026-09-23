@@ -3,6 +3,8 @@
 
 """数据清洗模块测试"""
 
+import json
+
 import pytest
 from augmentor.cleaner import (
     DatasetCleaner, TextNormalizer, CleaningRule, CleaningResult,
@@ -278,3 +280,100 @@ class TestCleanerExtended:
         cleaned, result = cleaner.clean([])
         assert cleaned == []
         assert result.original_count == 0
+
+
+class TestNoiseRemovalRules:
+    """噪声清除三条规则（`remove_urls` / `remove_html_tags` / `remove_control_chars`）
+
+    这三条是从 `data.cleaner.DataCleaner` 并进规则式实现的。合并 CLI 的 `clean`
+    命令时若漏掉它们，默认清洗行为就会静默变化（URL / HTML 标签留在数据里）。
+    """
+
+    ITEMS = [
+        {"instruction": "见 https://example.com/a?b=1 与 www.foo.cn", "output": "ok"},
+        {"instruction": "正文 <b>加粗</b> 结束", "output": "<p>段落</p>"},
+        {"instruction": "零宽\u200b空格与 BOM\ufeff", "output": "ok"},
+    ]
+
+    def _clean(self, rules, items=None):
+        cleaner = DatasetCleaner()
+        return cleaner.clean(items if items is not None else self.ITEMS, rules=rules)
+
+    def test_remove_urls(self):
+        cleaned, result = self._clean(["remove_urls"])
+        assert "remove_urls" in result.rules_applied
+        joined = " ".join(i["instruction"] for i in cleaned)
+        assert "example.com" not in joined
+        assert "www.foo.cn" not in joined
+
+    def test_remove_html_tags(self):
+        cleaned, result = self._clean(["remove_html_tags"])
+        assert "remove_html_tags" in result.rules_applied
+        joined = " ".join(i["instruction"] + i["output"] for i in cleaned)
+        assert "<b>" not in joined and "</b>" not in joined
+        assert "<p>" not in joined and "</p>" not in joined
+        # 标签内文本应保留，而不是整段删掉
+        assert "加粗" in joined and "段落" in joined
+
+    def test_remove_control_chars(self):
+        cleaned, result = self._clean(["remove_control_chars"])
+        assert "remove_control_chars" in result.rules_applied
+        joined = " ".join(i["instruction"] for i in cleaned)
+        assert "\u200b" not in joined
+        assert "\ufeff" not in joined
+
+    def test_omitting_remove_urls_keeps_url(self):
+        """不带 remove_urls 时 URL 原样保留（旧 `--no-url-removal` 的等价写法）"""
+        cleaned, result = self._clean(["trim_whitespace"])
+        assert "remove_urls" not in result.rules_applied
+        assert "https://example.com/a?b=1" in cleaned[0]["instruction"]
+
+    def test_remove_special_chars_is_not_url_removal(self):
+        """`remove_special_chars` 不能替代 `remove_urls`
+
+        它删的是「非中文/英文/数字/常用标点」的字符，只会把 URL 削成
+        `https:example.com`——`example.com` 仍在。这条测试守住两者的区别，
+        避免以后有人用前者去实现后者。
+        """
+        cleaned, _ = self._clean(["remove_special_chars"])
+        instruction = cleaned[0]["instruction"]
+        assert "example.com" in instruction
+        assert "https://example.com/a?b=1" not in instruction
+
+
+class TestCleanDoesNotMutateInput:
+    """`clean` 不得就地修改调用方传入的数据
+
+    规则是就地改 `item[field]` 的，只做 `items.copy()`（浅拷贝）会把调用方的
+    dict 一起改掉：`clean_dataset(items)` 之后 `items` 就不是原数据了。
+    这种缺陷很隐蔽——返回值是对的，坏掉的是调用方手上那份。
+    """
+
+    def test_clean_dataset_leaves_input_untouched(self):
+        items = [{"instruction": "见 http://a.com", "output": "y"}]
+        snapshot = json.dumps(items, ensure_ascii=False)
+
+        cleaned, _ = clean_dataset(
+            items, rules=["remove_urls", "normalize_whitespace", "trim_whitespace"]
+        )
+
+        assert json.dumps(items, ensure_ascii=False) == snapshot, "入参被就地修改"
+        assert "a.com" not in cleaned[0]["instruction"], "返回值未被清洗"
+
+    def test_cleaner_clean_leaves_input_untouched(self):
+        items = [{"instruction": "  首尾空白  ", "output": "y"}]
+        snapshot = json.dumps(items, ensure_ascii=False)
+
+        DatasetCleaner().clean(items, rules=["trim_whitespace"])
+
+        assert json.dumps(items, ensure_ascii=False) == snapshot
+
+    def test_batch_clean_leaves_input_untouched(self):
+        from augmentor.cleaner import clean_batch_optimized
+
+        items = [{"instruction": "见 http://a.com", "output": "y"}]
+        snapshot = json.dumps(items, ensure_ascii=False)
+
+        clean_batch_optimized(items, rules=["remove_urls"], batch_size=1)
+
+        assert json.dumps(items, ensure_ascii=False) == snapshot

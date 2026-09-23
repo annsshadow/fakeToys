@@ -4,8 +4,10 @@
 """Google Gemini 模型后端"""
 
 import logging
+from typing import Optional
 from .base import ModelBackend, extract_json_array
 from ..config import ModelConfig
+from ..exceptions import ModelGenerateError, ModelNotConfiguredError
 
 logger = logging.getLogger(__name__)
 
@@ -16,15 +18,27 @@ class GeminiBackend(ModelBackend):
     DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com"
     API_VERSION = "v1beta"
 
-    def __init__(self, config: ModelConfig):
+    def __init__(self,
+                 config: ModelConfig,
+                 response_cache_dir: Optional[str] = None,
+                 response_cache_ttl: Optional[float] = None,
+                 response_cache_max_bytes: Optional[int] = None):
         """初始化 Gemini 后端
 
         Args:
             config: 模型配置，必须包含 api_key
+            response_cache_dir: 磁盘响应缓存目录，None 即不启用（见基类说明）
+            response_cache_ttl: 磁盘缓存生存时间（秒）
+            response_cache_max_bytes: 磁盘缓存容量上限（字节）
         """
-        super().__init__(config)
+        super().__init__(
+            config,
+            response_cache_dir=response_cache_dir,
+            response_cache_ttl=response_cache_ttl,
+            response_cache_max_bytes=response_cache_max_bytes,
+        )
         if not config.api_key:
-            raise ValueError("Gemini 后端需要 api_key")
+            raise ModelNotConfiguredError("Gemini 后端需要 api_key")
 
         base_url = (config.base_url or self.DEFAULT_BASE_URL).rstrip('/')
         self.api_url = (
@@ -65,7 +79,7 @@ class GeminiBackend(ModelBackend):
 
         candidates = data.get("candidates")
         if not candidates:
-            raise RuntimeError(f"API 响应异常: {data}")
+            raise ModelGenerateError(f"API 响应异常: {data}")
 
         parts = candidates[0].get("content", {}).get("parts", [])
         return "".join(part.get("text", "") for part in parts)

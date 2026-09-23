@@ -7,7 +7,7 @@
 
 分工边界（与 `augmentor.analytics`）
     本模块做**字段级统计**：填充率 / 平均长度 / 唯一值 + `quality_metrics`，
-    入口 `calculate_statistics`。CLI 的 `stats-enhanced` 命令走这里。
+    入口 `calculate_statistics`。CLI 的 `stats` 命令走这里。
     要整体评估与改进建议（质量 / 多样性 / 完整性分数 + insights），用 `analytics`。
 """
 

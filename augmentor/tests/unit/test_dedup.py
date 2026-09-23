@@ -537,3 +537,146 @@ class TestDedupResultExtended:
         )
         assert r1.original_count == r2.original_count
         assert r1.kept_indices == r2.kept_indices
+
+
+class TestStreamingGrouping:
+    """按行分块去重：语义必须与旧的「完整矩阵 + 逐行贪心」完全一致，
+    但峰值内存不得随 n 平方增长（旧实现 n=50000 需约 10GB，会 OOM）。
+    """
+
+    @staticmethod
+    def _naive_groups(similarity, threshold):
+        """参照实现：直接照搬旧版基于完整相似度矩阵的逐行贪心"""
+        n = len(similarity)
+        visited = [False] * n
+        groups = []
+        for i in range(n):
+            if visited[i]:
+                continue
+            group = [i]
+            visited[i] = True
+            for j in range(i + 1, n):
+                if visited[j]:
+                    continue
+                if similarity[i, j] >= threshold:
+                    group.append(j)
+                    visited[j] = True
+            if len(group) > 1:
+                groups.append(group)
+        return groups
+
+    def test_streaming_matches_naive_reference(self, monkeypatch):
+        """构造带簇的向量，流式分组结果必须与旧算法逐组相同"""
+        n, dim = 60, 6
+        rng = np.random.default_rng(20260923)
+        emb = rng.random((n, dim), dtype=np.float32)
+        # 制造 3 组精确重复（相似度 = 1.0）
+        for base, copies in ((0, [5, 11, 23]), (7, [8, 19]), (30, [31, 44, 55])):
+            for c in copies:
+                emb[c] = emb[base]
+
+        dedup = Deduplicator(threshold=0.9)
+        monkeypatch.setattr(dedup, "_batch_encode", lambda texts: emb)
+
+        texts = ["t%d" % i for i in range(n)]
+        expected = self._naive_groups(
+            dedup._compute_similarity_matrix_chunked(emb), dedup.threshold
+        )
+        actual = dedup._find_duplicate_groups_chunked(texts)
+
+        assert actual == expected
+
+    def test_streaming_matches_naive_across_block_boundaries(self, monkeypatch):
+        """块边界不能改变分组结果：把 chunk_size 压到 1 也必须一致"""
+        n, dim = 25, 4
+        rng = np.random.default_rng(7)
+        emb = rng.random((n, dim), dtype=np.float32)
+        emb[3] = emb[0]
+        emb[9] = emb[0]
+        emb[20] = emb[15]
+
+        dedup = Deduplicator(threshold=0.85)
+        monkeypatch.setattr(dedup, "_batch_encode", lambda texts: emb)
+
+        texts = ["t%d" % i for i in range(n)]
+        expected = self._naive_groups(
+            dedup._compute_similarity_matrix_chunked(emb), dedup.threshold
+        )
+
+        for chunk_size in (1, 2, 3, 7, 25, 1000):
+            assert dedup._find_duplicate_groups_chunked(texts, chunk_size) == expected
+
+    def test_row_block_size_caps_block_cells(self):
+        """行块大小必须把「块单元数」压到上限内（4M 单元 = 16MB）"""
+        dedup = Deduplicator()
+
+        assert dedup._row_block_size(1000, 1000) == 1000
+        assert dedup._row_block_size(5000, 5000) == 800       # 4M // 5000
+        assert dedup._row_block_size(50_000, 1000) == 80      # 4M // 50000
+        assert dedup._row_block_size(0, 10) == 1
+
+        for n, requested in ((1000, 1000), (5000, 5000), (50_000, 1000), (200_000, 4096)):
+            rows = dedup._row_block_size(n, requested)
+            assert rows * n <= 4_000_000
+
+    def test_no_full_n_by_n_matrix_is_allocated(self, monkeypatch):
+        """结构性护栏：任何时刻都不允许出现 n×n 的相似度块"""
+        n, dim = 6000, 4
+        emb = np.random.default_rng(1).random((n, dim), dtype=np.float32)
+
+        dedup = Deduplicator(threshold=0.99)
+        monkeypatch.setattr(dedup, "_batch_encode", lambda texts: emb)
+
+        shapes = []
+        original = dedup._iter_similarity_row_blocks
+
+        def spy(normalized, block_rows):
+            for start, end, block in original(normalized, block_rows):
+                shapes.append(block.shape)
+                yield start, end, block
+
+        monkeypatch.setattr(dedup, "_iter_similarity_row_blocks", spy)
+
+        dedup._find_duplicate_groups_chunked(["x"] * n)
+
+        assert shapes, "应至少产出一个相似度块"
+        assert all(cols == n for _, cols in shapes), "每个块的列数必须等于 n"
+        max_cells = max(rows * cols for rows, cols in shapes)
+        assert max_cells <= 4_000_000, f"单块单元数 {max_cells} 超过上限 4M"
+        assert max_cells < n * n, "疑似仍在构造完整 n×n 相似度矩阵"
+
+    def test_peak_memory_is_far_below_full_matrix(self, monkeypatch):
+        """实测峰值内存：应约等于「一个块」，而不是完整 n×n 矩阵
+
+        n=5000 时完整矩阵需 95MB；分块路径应稳定在单块上限附近（约 16MB）。
+        若实现退化回「先构造完整矩阵」或「同时持有两块」，本测试会失败。
+        """
+        import tracemalloc
+
+        from augmentor.dedup import _MAX_BLOCK_CELLS
+
+        n, dim = 5000, 8
+        emb = np.random.default_rng(3).random((n, dim), dtype=np.float32)
+
+        dedup = Deduplicator(threshold=0.99)
+        monkeypatch.setattr(dedup, "_batch_encode", lambda texts: emb)
+
+        tracemalloc.start()
+        try:
+            dedup._find_duplicate_groups_chunked(["x"] * n)
+            _, peak = tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
+
+        one_block_bytes = _MAX_BLOCK_CELLS * 4
+        full_matrix_bytes = n * n * 4
+
+        assert peak < full_matrix_bytes / 4, (
+            f"峰值 {peak / 1024 / 1024:.1f}MB 已逼近完整矩阵 "
+            f"{full_matrix_bytes / 1024 / 1024:.0f}MB，疑似退化"
+        )
+        assert peak < one_block_bytes * 2, (
+            f"峰值 {peak / 1024 / 1024:.1f}MB 超过「两个块」"
+            f"（{one_block_bytes * 2 / 1024 / 1024:.1f}MB），"
+            "疑似块未被及时释放"
+        )

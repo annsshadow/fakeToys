@@ -8,6 +8,7 @@ from abc import ABC, abstractmethod
 from typing import List, Dict, Optional, Any
 
 import numpy as np
+from ..exceptions import VectorError
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ class VectorDB(ABC):
             collection: 集合名称
         """
         if dimension <= 0:
-            raise ValueError("向量维度必须为正整数")
+            raise VectorError("向量维度必须为正整数")
 
         self.dimension = dimension
         self.collection = collection
@@ -55,12 +56,12 @@ class VectorDB(ABC):
             vectors: 向量列表
 
         Raises:
-            ValueError: 向量维度不匹配
+            VectorError: 向量维度不匹配
         """
         for vector in vectors:
             array = np.asarray(vector)
             if array.ndim != 1 or array.shape[0] != self.dimension:
-                raise ValueError(
+                raise VectorError(
                     f"向量维度不匹配: 期望 {self.dimension}，实际 {array.shape}"
                 )
 
@@ -72,10 +73,10 @@ class VectorDB(ABC):
             metadata: 元数据列表
 
         Raises:
-            ValueError: 长度不一致
+            VectorError: 长度不一致
         """
         if len(vectors) != len(metadata):
-            raise ValueError("vectors 与 metadata 长度不一致")
+            raise VectorError("vectors 与 metadata 长度不一致")
 
     def _generate_ids(self, count: int, start: Optional[int] = None) -> List[str]:
         """生成自增 ID

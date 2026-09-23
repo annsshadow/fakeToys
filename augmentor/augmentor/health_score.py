@@ -16,6 +16,7 @@
 import logging
 from typing import List, Dict, Optional
 import numpy as np
+from .exceptions import DataValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +32,9 @@ class DatasetHealthScore:
         """
         self.weights = weights or [0.25, 0.25, 0.25, 0.25]
         if len(self.weights) != 4:
-            raise ValueError("权重必须包含 4 个元素")
+            raise DataValidationError("权重必须包含 4 个元素")
         if abs(sum(self.weights) - 1.0) > 0.01:
-            raise ValueError("权重之和必须为 1.0")
+            raise DataValidationError("权重之和必须为 1.0")
     
     def calculate_completeness(self, items: List[Dict]) -> float:
         """计算数据完整性（必填字段完整率）"""

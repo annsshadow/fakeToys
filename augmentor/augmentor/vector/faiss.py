@@ -15,12 +15,18 @@ from typing import List, Dict, Optional, Any
 import numpy as np
 
 from .base import VectorDB, normalize_vectors
+from ..cache import MemoryCache
+from ..exceptions import VectorError
 
 logger = logging.getLogger(__name__)
 
 
 class FAISSDB(VectorDB):
     """FAISS 向量数据库"""
+
+    # 查询结果缓存容量上限（条）。查询向量内容千变万化，原实现是无上限 dict，
+    # 长跑进程里每个新查询都会永久驻留一份 top-k 结果。
+    _QUERY_CACHE_MAX = 256
 
     def __init__(self,
                  dimension: int = 384,
@@ -39,6 +45,7 @@ class FAISSDB(VectorDB):
         self._vectors = np.zeros((0, dimension), dtype=np.float32)
         self._index = None
         self._faiss = None
+        self._query_cache = MemoryCache(max_size=self._QUERY_CACHE_MAX)
 
         self._init_index()
 
@@ -87,12 +94,12 @@ class FAISSDB(VectorDB):
 
         new_ids = ids or self._generate_ids(len(vectors))
         if len(new_ids) != len(vectors):
-            raise ValueError("ids 长度与 vectors 不一致")
+            raise VectorError("ids 长度与 vectors 不一致")
         if len(set(new_ids)) != len(new_ids):
-            raise ValueError("ids 中存在重复值")
+            raise VectorError("ids 中存在重复值")
         duplicates = set(new_ids) & set(self._ids)
         if duplicates:
-            raise ValueError(f"ID 已存在: {sorted(duplicates)[:5]}")
+            raise VectorError(f"ID 已存在: {sorted(duplicates)[:5]}")
 
         if self._index is not None:
             self._index.add(normalized)
@@ -100,6 +107,7 @@ class FAISSDB(VectorDB):
 
         self._ids.extend(new_ids)
         self._metadata.extend(metadata)
+        self._invalidate_query_cache()
 
         logger.info(f"添加 {len(new_ids)} 个向量，当前总数 {len(self._ids)}")
         return new_ids
@@ -122,26 +130,31 @@ class FAISSDB(VectorDB):
             query_array = query_array.reshape(1, -1)
 
         if query_array.shape[1] != self.dimension:
-            raise ValueError(
+            raise VectorError(
                 f"查询向量维度不匹配: 期望 {self.dimension}，实际 {query_array.shape[1]}"
             )
 
         normalized_query = normalize_vectors(query_array)
         k = min(top_k, len(self._ids))
-        
-        # 向量查询优化：缓存查询结果（基于查询向量内容的简单缓存）
-        query_key = hashlib.md5(query_array.tobytes()).hexdigest()[:12]
-        if hasattr(self, '_query_cache') and query_key in self._query_cache:
-            cached_results = self._query_cache[query_key]
-            # 根据当前索引状态过滤有效结果
-            valid_results = [
-                r for r in cached_results
-                if r["id"] in self._ids
-            ]
-            if valid_results:
-                logger.debug(f"查询缓存命中（优化）：返回缓存结果")
-                return [{"id": r["id"], "score": r["score"], "metadata": self.get_metadata(r["id"])} for r in valid_results[:k]]
-        
+
+        # 查询缓存：键必须覆盖所有影响结果的输入。
+        # 原实现只用查询向量做键，于是 search(q, top_k=5) 之后
+        # search(q, top_k=10) 会命中那条已经被截断成 5 条的缓存。
+        digest = hashlib.md5(query_array.tobytes()).hexdigest()[:12]
+        query_key = (digest, k)
+
+        cached_results = self._query_cache.get(query_key)
+        if cached_results is not None:
+            # 兜底：若有人绕过写接口直接改了 _ids，过滤掉已失效的条目；
+            # 一旦发生过滤就整条作废重算，避免返回「少几条」的残缺结果。
+            valid_results = [r for r in cached_results if r["id"] in self._ids]
+            if len(valid_results) == len(cached_results):
+                logger.debug(f"查询缓存命中: {digest}/k={k}")
+                return [
+                    {"id": r["id"], "score": r["score"], "metadata": self.get_metadata(r["id"])}
+                    for r in valid_results
+                ]
+
         if self._index is not None:
             distances, indices = self._index.search(normalized_query, k)
             pairs = list(zip(indices[0], distances[0]))
@@ -169,13 +182,17 @@ class FAISSDB(VectorDB):
                 "metadata": self._metadata[index]
             })
 
-        # 保存搜索结果到缓存（查询优化：避免重复计算相同查询）
-        if not hasattr(self, '_query_cache'):
-            self._query_cache = {}
-        self._query_cache[query_key] = results
-        
+        self._query_cache.set(query_key, results)
+
         return results
-    
+
+    def _invalidate_query_cache(self):
+        """写操作后失效查询缓存
+
+        缓存的是「某个索引状态下某个查询的 top-k」；索引一变结果就可能变，
+        继续命中会让新写入的向量永远查不出来。
+        """
+        self._query_cache.clear()
     def delete(self, ids: List[str]) -> int:
         """删除向量
 
@@ -208,6 +225,8 @@ class FAISSDB(VectorDB):
             if len(self._vectors):
                 self._index.add(self._vectors)
 
+        self._invalidate_query_cache()
+
         logger.info(f"删除 {removed} 个向量，当前总数 {len(self._ids)}")
         return removed
 
@@ -217,15 +236,16 @@ class FAISSDB(VectorDB):
         self._vectors = np.zeros((0, self.dimension), dtype=np.float32)
         if self._faiss is not None:
             self._index = self._faiss.IndexFlatIP(self.dimension)
+        self._invalidate_query_cache()
 
     def persist(self):
         """持久化到磁盘
 
         Raises:
-            ValueError: 未配置 storage_dir
+            VectorError: 未配置 storage_dir
         """
         if self.storage_dir is None:
-            raise ValueError("未配置 storage_dir，无法持久化")
+            raise VectorError("未配置 storage_dir，无法持久化")
 
         self.storage_dir.mkdir(parents=True, exist_ok=True)
 
@@ -268,6 +288,8 @@ class FAISSDB(VectorDB):
             self._index = self._faiss.IndexFlatIP(self.dimension)
             if len(vectors):
                 self._index.add(vectors)
+
+        self._invalidate_query_cache()
 
         logger.info(f"从 {self.storage_dir} 加载 {len(self._ids)} 个向量")
         return True

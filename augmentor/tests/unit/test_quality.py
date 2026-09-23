@@ -653,3 +653,139 @@ class TestSemanticDimensionOptional:
 
         assert scores[0].diversity == 1.0, "首条没有参照对象，多样性为 1.0"
         assert scores[1].diversity < 1.0, "与首条完全相同，多样性必须下降"
+
+
+class _RecordingModel:
+    """可记录调用内容的假向量模型
+
+    向量由文本内容哈希决定，因此「拿错向量」会立刻在相似度上暴露。
+    """
+
+    def __init__(self):
+        self.calls = []
+
+    def encode(self, texts, show_progress_bar=False, batch_size=32):
+        import hashlib as _hashlib
+
+        import numpy as _np
+
+        self.calls.append(list(texts))
+        rows = []
+        for t in texts:
+            digest = _hashlib.md5(t.encode("utf-8")).digest()
+            rows.append([b / 255.0 for b in digest[:8]])
+        return _np.array(rows, dtype=_np.float32)
+
+
+class TestEmbeddingCache:
+    """编码缓存与重复编码（3.0 修复）
+
+    原实现 `cached_encode` 的缓存键是 `hash(str(texts)[:200])` 且**忽略**
+    batch_key，于是「前若干条相同」的两个不同列表会互相命中缓存——
+    generated 的向量被当成 original 的向量返回，语义相似度静默变成 1.0。
+    """
+
+    @staticmethod
+    def _shared_prefix_lists():
+        """构造两个 str() 前 200 字符完全一致、但整体内容不同的列表"""
+        common = ["共享的开头文本内容" * 10] * 4
+        originals = common + ["original独有内容"]
+        generateds = common + ["generated独有内容"]
+        # 前提校验：若前 200 字符不同，本测试就覆盖不到原缺陷
+        assert str(originals)[:200] == str(generateds)[:200]
+        return originals, generateds
+
+    def test_cache_key_distinguishes_role_and_content(self):
+        """original 与 generated 不得互相命中缓存"""
+        originals, generateds = self._shared_prefix_lists()
+        model = _RecordingModel()
+        scorer = QualityScorer()
+        scorer._model = model
+
+        items = [
+            {"original": o, "generated": g, "output": g}
+            for o, g in zip(originals, generateds)
+        ]
+        scores = scorer.batch_score(items, include_semantic=True)
+
+        # 最后一条 original 与 generated 内容不同，相似度必须 < 1.0。
+        # 若缓存键碰撞，generated 拿到的是 original 的向量，相似度恒为 1.0。
+        assert scores[-1].semantic_similarity < 1.0, (
+            "original 与 generated 被当成同一批文本，编码缓存键发生了碰撞"
+        )
+        # 前 4 条两侧内容相同，相似度应为 1.0
+        assert scores[0].semantic_similarity == pytest.approx(1.0)
+
+    def test_calculate_diversity_reuses_supplied_embedding(self):
+        """已传入向量时不得再对当前文本单独编码"""
+        model = _RecordingModel()
+        scorer = QualityScorer()
+        scorer._model = model
+
+        existing = ["参照甲", "参照乙"]
+        target = "目标文本"
+        embedding = model.encode([target])[0]
+
+        calls_before = len(model.calls)
+        scorer._calculate_diversity(target, existing, embedding)
+
+        new_calls = model.calls[calls_before:]
+        assert [target] not in new_calls, "已传入向量却仍对当前文本单独编码"
+
+    def test_reference_set_is_not_reencoded_every_round(self):
+        """参照集向量不得逐轮整体重编码
+
+        缓存键必须精确等于被缓存的内容（`existing[:diversity_sample_size]`）。
+        原实现用 `existing[:100]` 做键，比实际缓存的 30 条更长，于是第 30~100
+        条增长期间缓存每轮都被判失效，参照集被反复整体重编码。
+        """
+        model = _RecordingModel()
+        scorer = QualityScorer(threshold=0.0)
+        scorer._model = model
+
+        n = 120
+        items = [
+            {"original": f"种子{i}", "generated": f"变体{i}", "output": f"变体{i}"}
+            for i in range(n)
+        ]
+        scorer.batch_score(items, include_semantic=True)
+
+        # 长度 < n 的调用即参照集编码（整批编码长度为 n）
+        ref_calls = [c for c in model.calls if len(c) < n]
+        assert len(ref_calls) <= 31, (
+            f"参照集被重编码 {len(ref_calls)} 次（应 ≤ 31），"
+            "缓存键与缓存内容不匹配"
+        )
+
+    def test_total_encoding_stays_bounded(self):
+        """总编码量必须有界，不得叠加冗余的参照集重编码"""
+        model = _RecordingModel()
+        scorer = QualityScorer(threshold=0.0)
+        scorer._model = model
+
+        n = 200
+        items = [
+            {"original": f"种子{i}", "generated": f"变体{i}", "output": f"变体{i}"}
+            for i in range(n)
+        ]
+        scorer.batch_score(items, include_semantic=True)
+
+        total = sum(len(c) for c in model.calls)
+        # 必要开销：两批各 n 条 + 参照集（≤ 1+2+…+30 = 465）
+        assert total <= 2 * n + 500, f"总编码量 {total} 过高，存在冗余重编码"
+
+    def test_diversity_with_precomputed_embedding_matches_manual(self):
+        """传入预算向量与自行编码必须得到完全相同的多样性分数"""
+        model = _RecordingModel()
+        scorer = QualityScorer()
+        scorer._model = model
+
+        existing = ["文本甲", "文本乙"]
+        target = "文本丙"
+
+        with_precomputed = scorer._calculate_diversity(
+            target, existing, model.encode([target])[0]
+        )
+        manual = scorer._calculate_diversity(target, existing)
+
+        assert with_precomputed == pytest.approx(manual)

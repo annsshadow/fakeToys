@@ -9,6 +9,7 @@
 import hashlib
 import logging
 from typing import List, Dict, Any, Optional
+from .exceptions import DataValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ class RAGFormatter:
             chunk_overlap: 分块重叠字符数
         """
         if chunk_overlap >= chunk_size:
-            raise ValueError("chunk_overlap 必须小于 chunk_size")
+            raise DataValidationError("chunk_overlap 必须小于 chunk_size")
 
         self.text_key = text_key
         self.answer_key = answer_key
@@ -193,10 +194,10 @@ class RAGFormatter:
             转换后的数据列表
 
         Raises:
-            ValueError: 不支持的格式
+            DataValidationError: 不支持的格式
         """
         if fmt not in SUPPORTED_FORMATS:
-            raise ValueError(
+            raise DataValidationError(
                 f"不支持的 RAG 格式: {fmt}。支持: {SUPPORTED_FORMATS}"
             )
 

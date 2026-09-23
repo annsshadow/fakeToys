@@ -6,6 +6,7 @@
 from ..io import _load_items, _print
 from pathlib import Path
 import json
+import sys
 
 
 # ============ 数据集合并 ============
@@ -100,58 +101,40 @@ def run_validate_config(args, config):
             print(f"  - {w.path}: {w.message}")
 
 
-# ============ 数据集搜索（合并原 search-enhanced）============
+# ============ 数据集搜索 ============
 def run_search(args, config):
     """`search` 子命令
 
-    默认走 `indexer.DatasetIndexer`：支持 exact / contains / ngram，默认返回 10 条。
-    `--enhanced` 走 `search_enhanced.search_dataset`：额外支持 fuzzy / regex 与
-    `--offset`，默认返回 100 条，可 `--output` 落盘完整结果。
+    走 `search_enhanced.search_dataset`：支持 exact / contains / ngram /
+    fuzzy / regex 五种方法，以及 `--offset` 分页与 `--output` 落盘完整结果。
 
-    `--limit` 的两套默认值不同（10 / 100），所以解析器里留空，在这里按分支补。
+    `ngram` 原先只存在于另一套实现（`indexer.DatasetIndexer`），已移植进
+    `EnhancedSearcher`——所以这里不是「少了一个方法」，而是五种方法齐全。
+
+    stdout 契约沿用合并前的基础实现：两行摘要 + **匹配条目的 JSON 列表**。
+    条目本身就是这个命令的产物，只打印摘要会逼着下游改用 `--output` 落盘再读，
+    属于输出能力的静默缩水。`--output` 额外落盘 `SearchResult` 的完整字典
+    （含 `total_matches` / `method` / `query_time_ms`）。
     """
-    if args.enhanced:
-        from augmentor.search_enhanced import search_dataset
-
-        items = _load_items(args.input)
-        result = search_dataset(
-            items,
-            args.query,
-            args.field,
-            args.method,
-            100 if args.limit is None else args.limit
-        )
-
-        print(f"找到 {result.total_matches} 条匹配结果，用时 {result.query_time_ms:.2f}ms")
-        print(f"搜索方法: {result.method}")
-
-        if result.items:
-            print("\n搜索结果:")
-            for i, item in enumerate(result.items[:10], 1):
-                print(f"  {i}. {item.get('instruction', '')[:50]}...")
-
-        if args.output:
-            output_path = Path(args.output)
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(output_path, 'w', encoding='utf-8') as f:
-                json.dump(result.to_dict(), f, ensure_ascii=False, indent=2)
-            print(f"\n结果已保存到 {args.output}")
-        return
-
-    from augmentor.indexer import DatasetIndexer
+    from augmentor.search_enhanced import search_dataset
 
     items = _load_items(args.input)
-    indexer = DatasetIndexer(items)
-
-    result = indexer.search(
+    result = search_dataset(
+        items,
         args.query,
-        fields=args.field,
-        method=args.method
+        args.field,
+        args.method,
+        100 if args.limit is None else args.limit,
+        args.offset,
     )
 
-    # 限制返回数量
-    result.items = result.items[:10 if args.limit is None else args.limit]
-
     print(f"找到 {result.total_matches} 条匹配结果，用时 {result.query_time_ms:.2f}ms")
-    print(f"搜索索引: {result.index_used}")
+    print(f"搜索方法: {result.method}")
     _print(result.items)
+
+    if args.output:
+        output_path = Path(args.output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(result.to_dict(), f, ensure_ascii=False, indent=2)
+        print(f"结果已保存到 {args.output}", file=sys.stderr)

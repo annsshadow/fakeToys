@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional, Callable
 
 from .evaluation import compute_similarity
+from .exceptions import DataValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -65,11 +66,11 @@ class ActiveLearningLoop:
             random_state: 随机种子，便于复现
         """
         if strategy not in SUPPORTED_STRATEGIES:
-            raise ValueError(
+            raise DataValidationError(
                 f"不支持的采样策略: {strategy}。支持: {SUPPORTED_STRATEGIES}"
             )
         if batch_size <= 0:
-            raise ValueError("batch_size 必须为正整数")
+            raise DataValidationError("batch_size 必须为正整数")
 
         self.strategy = strategy
         self.batch_size = batch_size
@@ -204,7 +205,7 @@ class ActiveLearningLoop:
         """
         strategy = strategy or self.strategy
         if strategy not in SUPPORTED_STRATEGIES:
-            raise ValueError(
+            raise DataValidationError(
                 f"不支持的采样策略: {strategy}。支持: {SUPPORTED_STRATEGIES}"
             )
 
@@ -299,7 +300,7 @@ class ActiveLearningLoop:
         rounds = iterations if iterations is not None else 1
 
         if rounds <= 0:
-            raise ValueError("iterations 必须为正整数")
+            raise DataValidationError("iterations 必须为正整数")
 
         # 保留原始下标，保证跨轮次的选中记录都能追溯到同一份输入数据
         remaining = [(index, item) for index, item in enumerate(data)]

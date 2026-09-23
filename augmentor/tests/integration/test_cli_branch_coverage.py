@@ -4,8 +4,11 @@
 """CLI 剩余分支补测（L10）
 
 覆盖此前未触达的分支：version rollback、stream clean/直通操作、
-backup 空列表/删除不存在、version-control 缺参与比较、dependency
+backup 空列表/删除不存在、version 缺参与比较、dependency
 空列表/依赖图、benchmark 空基准跳过对比。
+
+3.0 起 `--enhanced` 已移除，原先测 `--enhanced` 路径的用例改为测合并后的
+单一实现；pipeline 版 version 后端的用例改为守「不得再写 pipeline 存储目录」。
 """
 
 import json
@@ -73,36 +76,38 @@ def branch_context(tmp_path, monkeypatch):
     return data, empty_baseline, tmp_path
 
 
-class TestVersionRollback:
-    def test_rollback_to_older_version(self, tmp_path, monkeypatch):
-        """两版本后回滚到较老版本需成功"""
-        import yaml
+class TestVersionRollbackMoved:
+    """原 `TestVersionRollback`（pipeline 版 VersionManager 的 rollback）已移除。
 
+    3.0 把 `version` 的两套后端合并为 `version_control.DatasetVersionManager`，
+    pipeline 版的 `--version-id` / `config.versioning.storage_dir` 已不存在。
+    等价行为由 `tests/integration/test_cli_merged_commands.py` 的
+    `TestVersionCommand::test_rollback_sets_current_version` 覆盖
+    （它除了退出码与输出，还断言 `get_current_version()` 真的被改了）。
+    """
+
+    def test_only_versions_dir_is_written(self, tmp_path, monkeypatch):
+        """只能写 `--versions-dir`，不得再往 pipeline 的 storage_dir 写
+
+        用一个「空 cwd + 显式 --versions-dir」的行为信号来判断后端：
+        pipeline 版会把版本写进 `config.versioning.storage_dir`，
+        `DatasetVersionManager` 只认 `--versions-dir`。
+        """
         monkeypatch.chdir(tmp_path)
-        text = (AI_DIR / "config.yaml").read_text(encoding="utf-8")
-        text = text.replace("storage_dir: data/versions",
-                            f"storage_dir: {tmp_path / 'versions'}")
-        cfg = tmp_path / "config.yaml"
-        cfg.write_text(text, encoding="utf-8")
-        a = tmp_path / "a.json"
-        a.write_text(json.dumps(SAMPLE_ITEMS, ensure_ascii=False), encoding="utf-8")
-        b = tmp_path / "b.json"
-        b.write_text(json.dumps(SAMPLE_ITEMS[:3], ensure_ascii=False), encoding="utf-8")
+        data = tmp_path / "a.json"
+        data.write_text(json.dumps(SAMPLE_ITEMS, ensure_ascii=False), encoding="utf-8")
+        vdir = tmp_path / "vd"
 
-        out1, _, _ = run_cli(
-            ["cli", "--config", str(cfg), "version", "--action", "create", "--input", str(a)]
+        out, err, code = run_cli(
+            ["cli", "version", "--action", "create",
+             "--input", str(data), "--versions-dir", str(vdir)]
         )
-        vid1 = re.search(r"创建版本: (\S+)", out1).group(1)
-        run_cli(["cli", "--config", str(cfg), "version", "--action", "create", "--input", str(b)])
 
-        out3, err3, code = run_cli(
-            [
-                "cli", "--config", str(cfg), "version",
-                "--action", "rollback", "--version-id", vid1,
-            ]
+        assert code is None, err
+        assert vdir.is_dir(), "--versions-dir 未被使用"
+        assert not (tmp_path / "data" / "versions").exists(), (
+            "pipeline 版后端仍在写 config.versioning.storage_dir"
         )
-        assert code is None, err3
-        assert "回滚成功" in out3
 
 
 class TestStreamOtherOperations:
@@ -160,7 +165,7 @@ class TestVersionControlBranches:
         monkeypatch.chdir(tmp_path)
         out, err, code = run_cli(
             [
-                "cli", "version", "--enhanced", "--action", "create",
+                "cli", "version", "--action", "create",
                 "--versions-dir", str(tmp_path / "vc"),
             ]
         )
@@ -171,23 +176,24 @@ class TestVersionControlBranches:
         monkeypatch.chdir(tmp_path)
         out, err, code = run_cli(
             [
-                "cli", "version", "--enhanced", "--action", "list",
+                "cli", "version", "--action", "list",
                 "--versions-dir", str(tmp_path / "vc"),
             ]
         )
         assert code is None, err
         assert "没有找到版本" in out
 
-    def test_compare_requires_version_and_output(self, tmp_path, monkeypatch):
+    def test_compare_requires_version(self, tmp_path, monkeypatch):
+        """compare 不再需要 --output（旧实现的必填项其实从未被使用）"""
         monkeypatch.chdir(tmp_path)
         out, err, code = run_cli(
             [
-                "cli", "version", "--enhanced", "--action", "compare",
+                "cli", "version", "--action", "compare",
                 "--versions-dir", str(tmp_path / "vc"),
             ]
         )
         assert code == 1
-        assert "必需" in err
+        assert "--version" in err
 
     def test_compare_full_flow(self, tmp_path, monkeypatch):
         """两版本 + current 指向新版后，compare 旧版需报只在B中的条目"""
@@ -199,22 +205,21 @@ class TestVersionControlBranches:
         vdir = str(tmp_path / "vc")
 
         out1, _, c1 = run_cli(
-            ["cli", "version", "--enhanced", "--action", "create",
+            ["cli", "version", "--action", "create",
              "--input", str(data), "--versions-dir", vdir]
         )
         assert c1 is None
         vid1 = re.search(r"版本ID: (\S+)", out1).group(1)
         out2, _, c2 = run_cli(
-            ["cli", "version", "--enhanced", "--action", "create",
+            ["cli", "version", "--action", "create",
              "--input", str(data2), "--versions-dir", vdir]
         )
         assert c2 is None
         # current = vid2；比较 current vs vid1：vid2 比 vid1 少 3 条
         out3, err3, c3 = run_cli(
             [
-                "cli", "version", "--enhanced", "--action", "compare",
-                "--version", vid1, "--output", str(tmp_path / "cmp.json"),
-                "--versions-dir", vdir,
+                "cli", "version", "--action", "compare",
+                "--version", vid1, "--versions-dir", vdir,
             ]
         )
         assert c3 is None, err3
@@ -265,50 +270,58 @@ class TestBenchmarkSkipBranch:
 
 
 class TestMergedCommandArgValidation:
-    """T1.7 合并后新增的错误分支
+    """合并后残留的参数校验分支
 
     合并把「两个实现各自的必填参数」压进一个解析器，argparse 表达不了
     「取决于另一个 flag」的必填，于是校验下移到 handler。这几条守住那些
-    分支——它们平时不会被走到，一旦回归就是「静默用了另一套实现」。
+    分支——它们平时不会被走到，一旦回归就是「静默不落盘 / 静默用了别的后端」。
     """
 
-    def test_export_without_output_dir_exits_1(self, branch_context):
-        """基础路径缺 --output-dir 需报错，而不是静默不落盘"""
+    def test_export_without_any_output_target_exits_1(self, branch_context):
+        """既不给 --output 也不给 --output-dir 需报错，而不是静默不落盘"""
         data, _, _ = branch_context
         out, err, code = run_cli(["cli", "export", "--input", str(data)])
         assert code == 1
         assert "--output-dir" in err
-        assert "--enhanced" in err, "错误信息要指出另一条路径的写法"
+        assert "--output" in err, "错误信息要同时指出两种输出模式的写法"
 
-    def test_export_enhanced_without_output_exits_1(self, branch_context):
-        """--enhanced 路径缺 --output 需报错"""
-        data, _, _ = branch_context
+    def test_export_batch_without_formats_exits_1(self, branch_context):
+        """--output-dir 缺 --formats 需报错（否则会静默只导默认格式）"""
+        data, _, tmp = branch_context
         out, err, code = run_cli(
-            ["cli", "export", "--enhanced", "--input", str(data)]
+            ["cli", "export", "--input", str(data), "--output-dir", str(tmp / "b")]
         )
         assert code == 1
-        assert "--output" in err
+        assert "--formats" in err
 
-    def test_version_enhanced_rejects_base_only_action(self, tmp_path, monkeypatch):
-        """--enhanced 下 `diff` 属于基础后端，需显式报错而非静默无输出"""
-        monkeypatch.chdir(tmp_path)
-        out, err, code = run_cli(
-            ["cli", "version", "--enhanced", "--action", "diff",
-             "--versions-dir", str(tmp_path / "v")]
-        )
-        assert code == 1
-        assert "diff" in err
+    def test_version_diff_action_is_gone(self, tmp_path, monkeypatch):
+        """`diff` 已并入 `compare`，必须由 argparse 拒绝（退出码 2）
 
-    def test_version_base_rejects_enhanced_only_action(self, tmp_path, monkeypatch):
-        """基础后端下 `load` 只存在于独立实现，需提示加 --enhanced
-
-        改之前这条会**静默正常退出**（if/elif 全不命中），是本次合并顺带修掉的
-        可排查性缺陷，因此专门守一条。
+        若只是从 choices 里删掉而没删 handler 分支，就会变成「静默无输出」。
         """
         monkeypatch.chdir(tmp_path)
-        out, err, code = run_cli(["cli", "version", "--action", "load"])
+        out, err, code = run_cli(
+            ["cli", "version", "--action", "diff", "--versions-dir", str(tmp_path / "v")]
+        )
+        assert code == 2
+        assert "diff" in err
+
+    def test_version_load_without_args_exits_1(self, tmp_path, monkeypatch):
+        """`load` 现在是规范动作，缺 --version / --output 时需显式报错"""
+        monkeypatch.chdir(tmp_path)
+        out, err, code = run_cli(
+            ["cli", "version", "--action", "load", "--versions-dir", str(tmp_path / "v")]
+        )
         assert code == 1
-        assert "--enhanced" in err
+        assert "--version" in err
+
+    def test_version_rollback_without_version_exits_1(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        out, err, code = run_cli(
+            ["cli", "version", "--action", "rollback", "--versions-dir", str(tmp_path / "v")]
+        )
+        assert code == 1
+        assert "--version" in err
 
 
 class TestUnimplementedSubcommandGuard:

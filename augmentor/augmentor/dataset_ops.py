@@ -13,6 +13,7 @@ from typing import List, Dict, Optional, Tuple, Union
 from pathlib import Path
 from dataclasses import dataclass
 import hashlib
+from .exceptions import DataValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -189,7 +190,7 @@ class DatasetOperations:
         elif config.method == "stratified":
             sampled = self._stratified_sample(items, sample_size, config.stratify_key)
         else:
-            raise ValueError(f"不支持的采样方法: {config.method}")
+            raise DataValidationError(f"不支持的采样方法: {config.method}")
         
         logger.info(f"采样完成: {len(items)} -> {len(sampled)} 条数据")
         return sampled
@@ -285,7 +286,7 @@ class DatasetOperations:
         # 验证比例
         total_ratio = sum(config.ratios)
         if abs(total_ratio - 1.0) > 0.01:
-            raise ValueError(f"分割比例之和必须为1.0，当前为 {total_ratio}")
+            raise DataValidationError(f"分割比例之和必须为1.0，当前为 {total_ratio}")
         
         # 打乱数据
         data = items.copy()

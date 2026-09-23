@@ -239,3 +239,105 @@ class TestConfigExtended:
             data = yaml.safe_load(f)
         assert "api_key" not in data["models"]["openai"]
         assert "secret_key" not in data["models"]["ernie"]
+
+
+class TestSaveConfigRoundTrip:
+    """`save_config` → `load_config` / `ConfigValidator` 必须闭环
+
+    这一组测的是「保存再加载是否丢东西」。此前两处会静默丢配置：
+
+    * `default_model` 被写成顶层键，而 `load_config` 只读 `models.default`，
+      于是保存后默认模型回落到 `ernie`；
+    * 非默认模型的 `api_key` 被整个 `pop` 掉，于是 `api_key: ${BAIDU_API_KEY}`
+      这行消失，重载后该模型拿不到密钥。
+    """
+
+    def test_default_model_survives_round_trip(self, tmp_path):
+        """默认模型必须能从保存后的文件读回来"""
+        from augmentor.config import save_config
+
+        path = str(tmp_path / "c.yaml")
+        config = AppConfig()
+        config.default_model = "gemini"
+        save_config(config, path)
+
+        assert load_config(path).default_model == "gemini"
+
+    def test_env_placeholder_is_preserved(self, tmp_path):
+        """文件里原有的 `${VAR}` 占位符必须原样保留，而不是被删掉"""
+        import yaml
+        from augmentor.config import save_config
+
+        path = tmp_path / "c.yaml"
+        path.write_text(
+            "models:\n  default: ernie\n  ernie:\n    type: baidu\n"
+            "    api_key: ${BAIDU_API_KEY}\n    secret_key: ${BAIDU_SECRET_KEY}\n",
+            encoding="utf-8",
+        )
+        config = load_config(str(path))
+        save_config(config, str(path))
+
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        assert data["models"]["ernie"]["api_key"] == "${BAIDU_API_KEY}"
+        assert data["models"]["ernie"]["secret_key"] == "${BAIDU_SECRET_KEY}"
+
+    def test_plaintext_secret_is_never_written_back(self, tmp_path):
+        """文件里若写着明文密钥，保存时必须丢弃而非回写"""
+        from augmentor.config import save_config
+
+        path = tmp_path / "c.yaml"
+        path.write_text(
+            "models:\n  default: m1\n  m1:\n    type: openai\n"
+            "    api_key: sk-literal-secret\n",
+            encoding="utf-8",
+        )
+        save_config(load_config(str(path)), str(path))
+
+        text = path.read_text(encoding="utf-8")
+        assert "sk-literal-secret" not in text
+
+    def test_unmodelled_top_level_section_is_preserved(self, tmp_path):
+        """`AppConfig` 不建模的顶层段落（如 `app`）不得被覆盖掉"""
+        import yaml
+        from augmentor.config import save_config
+
+        path = tmp_path / "c.yaml"
+        path.write_text(
+            "app:\n  name: ai-augmentor\n  version: '1.0'\n"
+            "models:\n  default: ernie\n",
+            encoding="utf-8",
+        )
+        save_config(load_config(str(path)), str(path))
+
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        assert data["app"] == {"name": "ai-augmentor", "version": "1.0"}
+
+    def test_saved_config_passes_validator(self, tmp_path):
+        """保存出来的配置必须能通过项目自己的校验器
+
+        否则「保存配置」再「校验配置」必然失败——这曾是真实状态（4 个必填错误）。
+        """
+        from augmentor.config import save_config
+        from augmentor.config_validator import validate_config_file
+
+        path = str(tmp_path / "c.yaml")
+        config = AppConfig()
+        config.default_model = "openai"
+        save_config(config, path)
+
+        result = validate_config_file(path)
+        assert result.is_valid, [e.message for e in result.errors]
+
+    def test_stray_default_entry_is_normalised(self, tmp_path):
+        """`models["default"]` 塞了字典（畸形输入）时，落盘必须是模型名"""
+        import yaml
+        from augmentor.config import save_config
+
+        path = str(tmp_path / "c.yaml")
+        config = AppConfig()
+        config.models["default"] = {"api_key": "SHOULD_NOT_APPEAR"}
+        save_config(config, path)
+
+        text = Path(path).read_text(encoding="utf-8")
+        assert "SHOULD_NOT_APPEAR" not in text
+        assert yaml.safe_load(text)["models"]["default"] == "ernie"

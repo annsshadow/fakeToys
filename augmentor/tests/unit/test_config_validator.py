@@ -37,12 +37,16 @@ def valid_config():
 
 @pytest.fixture
 def invalid_config():
-    """创建无效配置"""
+    """创建无效配置
+
+    缺的是 `models.default`——`load_config` **只**从这个键读默认模型，
+    缺了它会静默回落到 `ernie`，所以它是真正的必填项。
+    （`app` / `app.name` / `app.version` 曾是必填，但 `AppConfig` 没有对应字段、
+    也没有任何代码读它们，属于历史遗留元信息，已降级为可选。）
+    """
     return {
-        "models": {
-            "default": "ernie"
-        }
-        # 缺少 app 必填字段
+        "app": {"name": "ai-augmentor", "version": "1.0"},
+        "models": {}
     }
 
 
@@ -527,13 +531,17 @@ class TestConfigValidatorEdgeCases:
         assert result.is_valid is False
 
     def test_validate_config_with_null_field(self):
-        """测试验证包含 null 字段的配置"""
+        """测试验证包含 null 字段的配置
+
+        用真正必填的 `models.default`：`app.name` 已不是必填项，
+        对 null 的必填检查不再作用于它。
+        """
         config = {
             "app": {
-                "name": None,  # null 值
+                "name": "ai-augmentor",
                 "version": "1.0.0"
             },
-            "models": {"default": "ernie"}
+            "models": {"default": None}  # null 值
         }
         
         validator = ConfigValidator()

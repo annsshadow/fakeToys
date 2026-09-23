@@ -139,3 +139,183 @@ class TestShouldRetry:
             pass
 
         assert should_retry(_Sub("x"), (ConnectionError,)) is True
+
+
+class _FakeResponse:
+    """模拟 requests 响应对象（只需 status_code / headers）"""
+
+    def __init__(self, status_code, headers=None):
+        self.status_code = status_code
+        self.headers = headers or {}
+
+
+class _FakeHTTPError(Exception):
+    """模拟 requests.exceptions.HTTPError：状态码挂在 .response 上"""
+
+    def __init__(self, status_code, headers=None):
+        super().__init__(f"HTTP {status_code}")
+        self.response = _FakeResponse(status_code, headers)
+
+
+class TestParseRetryAfter:
+    """Retry-After 解析"""
+
+    def test_seconds(self):
+        from augmentor import parse_retry_after
+
+        assert parse_retry_after("120") == 120.0
+        assert parse_retry_after("0") == 0.0
+        assert parse_retry_after(" 2.5 ") == 2.5
+
+    def test_negative_clamped_to_zero(self):
+        from augmentor import parse_retry_after
+
+        assert parse_retry_after("-5") == 0.0
+
+    def test_http_date(self):
+        """HTTP-date 形式应换算为剩余秒数"""
+        from email.utils import format_datetime
+        import datetime
+
+        from augmentor import parse_retry_after
+
+        future = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=90)
+        seconds = parse_retry_after(format_datetime(future))
+        assert seconds is not None
+        assert 80 <= seconds <= 95
+
+    def test_unparseable_returns_none(self):
+        from augmentor import parse_retry_after
+
+        assert parse_retry_after(None) is None
+        assert parse_retry_after("") is None
+        assert parse_retry_after("不是时间") is None
+
+
+class TestClassifyError:
+    """错误分类：区分「值得重试」与「重试纯属浪费」"""
+
+    def test_rate_limit_is_retryable_and_honors_retry_after(self):
+        from augmentor import classify_error
+
+        retryable, suggested = classify_error(_FakeHTTPError(429, {"Retry-After": "7"}))
+        assert retryable is True
+        assert suggested == 7.0
+
+    def test_server_error_is_retryable(self):
+        from augmentor import classify_error
+
+        assert classify_error(_FakeHTTPError(503)) == (True, None)
+
+    def test_auth_error_is_not_retryable(self):
+        """401/403 重试只会浪费配额与时间"""
+        from augmentor import classify_error
+
+        assert classify_error(_FakeHTTPError(401))[0] is False
+        assert classify_error(_FakeHTTPError(403))[0] is False
+
+    def test_bad_request_is_not_retryable(self):
+        from augmentor import classify_error
+
+        assert classify_error(_FakeHTTPError(400))[0] is False
+        assert classify_error(_FakeHTTPError(404))[0] is False
+        assert classify_error(_FakeHTTPError(422))[0] is False
+
+    def test_unknown_error_defaults_to_retryable(self):
+        """无法判定状态码时保持既有宽松行为"""
+        from augmentor import classify_error
+
+        assert classify_error(RuntimeError("boom")) == (True, None)
+
+    def test_connection_error_is_retryable(self):
+        import requests
+
+        from augmentor import classify_error
+
+        assert classify_error(requests.exceptions.ConnectionError("x"))[0] is True
+        assert classify_error(requests.exceptions.Timeout("x"))[0] is True
+
+
+class TestWithRetriesClassify:
+    """with_retries 的错误分类接入"""
+
+    def test_non_retryable_stops_immediately(self):
+        """被判为不可重试时应立即放弃：只调用一次且不 sleep"""
+        from augmentor import classify_error
+
+        calls = []
+        slept = []
+
+        def always_401():
+            calls.append(1)
+            raise _FakeHTTPError(401)
+
+        with pytest.raises(_FakeHTTPError):
+            with_retries(
+                always_401,
+                max_retries=5,
+                classify=classify_error,
+                sleeper=slept.append,
+            )
+
+        assert len(calls) == 1, "不可重试的错误不应重试"
+        assert slept == [], "不可重试的错误不应等待"
+
+    def test_retry_after_overrides_backoff(self):
+        """有 Retry-After 时应优先采用，而不是指数退避值"""
+        from augmentor import classify_error
+
+        slept = []
+        calls = []
+
+        def flaky():
+            calls.append(1)
+            if len(calls) == 1:
+                raise _FakeHTTPError(429, {"Retry-After": "3"})
+            return "ok"
+
+        result, stats = with_retries(
+            flaky,
+            max_retries=2,
+            base_delay=100.0,  # 若走了退避计算，等待会是 100s
+            classify=classify_error,
+            sleeper=slept.append,
+        )
+
+        assert result == "ok"
+        assert slept == [3.0]
+
+    def test_retry_after_is_capped(self):
+        """异常大的 Retry-After 应被上限截断，避免流水线长时间挂起"""
+        from augmentor import MAX_RETRY_AFTER, classify_error
+
+        slept = []
+        calls = []
+
+        def flaky():
+            calls.append(1)
+            if len(calls) == 1:
+                raise _FakeHTTPError(429, {"Retry-After": "99999"})
+            return "ok"
+
+        with_retries(
+            flaky,
+            max_retries=2,
+            classify=classify_error,
+            sleeper=slept.append,
+        )
+
+        assert slept == [MAX_RETRY_AFTER]
+
+    def test_classify_absent_keeps_legacy_behavior(self):
+        """不传 classify 时行为与旧版一致（任何异常都重试）"""
+        calls = []
+
+        def always_fail():
+            calls.append(1)
+            raise RuntimeError("x")
+
+        with pytest.raises(RuntimeError):
+            with_retries(always_fail, max_retries=2, sleeper=lambda d: None)
+
+        assert len(calls) == 3

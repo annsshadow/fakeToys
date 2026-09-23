@@ -9,6 +9,7 @@ from typing import List, Dict, Optional
 from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from .models.base import ModelBackend
+from .exceptions import DataValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -207,7 +208,7 @@ class DomainExpander:
         elif strategy == "scenario":
             expanded_topics = self._generate_scenario_topics(original_topics, num_topics)
         else:
-            raise ValueError(f"不支持的扩展策略: {strategy}")
+            raise DataValidationError(f"不支持的扩展策略: {strategy}")
         
         # 构建扩展结果
         expanded = [

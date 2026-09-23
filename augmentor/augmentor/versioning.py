@@ -16,6 +16,7 @@ from typing import List, Dict, Optional
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from datetime import datetime
+from .exceptions import VersionError
 
 logger = logging.getLogger(__name__)
 
@@ -210,7 +211,7 @@ class VersionManager:
         data_path = version_dir / "data.json"
         
         if not data_path.exists():
-            raise ValueError(f"版本不存在: {version_id}")
+            raise VersionError(f"版本不存在: {version_id}")
         
         with open(data_path, 'r', encoding='utf-8') as f:
             return json.load(f)
@@ -228,7 +229,7 @@ class VersionManager:
         info_path = version_dir / "metadata.json"
         
         if not info_path.exists():
-            raise ValueError(f"版本不存在: {version_id}")
+            raise VersionError(f"版本不存在: {version_id}")
         
         with open(info_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -283,7 +284,7 @@ class VersionManager:
         """
         current = self.get_current_version()
         if current == version_id:
-            raise ValueError("不能删除当前版本")
+            raise VersionError("不能删除当前版本")
         
         version_dir = self._get_version_dir(version_id)
         if version_dir.exists():

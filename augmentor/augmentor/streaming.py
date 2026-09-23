@@ -8,9 +8,10 @@
 
 import json
 import logging
-from typing import List, Dict, Iterator, Callable, Optional, Generator
+from typing import List, Dict, Iterator, Callable, Optional, Generator, Any
 from pathlib import Path
 from dataclasses import dataclass
+from .exceptions import StreamError, DataFormatError
 
 try:
     from .memory_monitor import MemoryMonitor
@@ -19,6 +20,194 @@ except ImportError:
     HAS_MEMORY_MONITOR = False
 
 logger = logging.getLogger(__name__)
+
+_WS = " \t\r\n"
+_DEFAULT_READ_SIZE = 65536
+
+
+def _peek_first_non_space(stream, read_size: int = 4096) -> Optional[str]:
+    """返回流中第一个非空白字符
+
+    .. note::
+       本函数会**消费**流内容，调用方需自行 `seek(0)` 复位。
+
+    Args:
+        stream: 已打开的文本流
+        read_size: 每次读取的字符数
+
+    Returns:
+        第一个非空白字符；流为空时返回 None
+    """
+    while True:
+        chunk = stream.read(read_size)
+        if not chunk:
+            return None
+        for ch in chunk:
+            if ch not in _WS:
+                return ch
+
+
+def _iter_json_array_items(stream, read_size: int = _DEFAULT_READ_SIZE) -> Iterator[Any]:
+    """增量解析 JSON 数组 `[...]`，逐条产出元素
+
+    这是本模块「真流式」的核心：任何时刻内存里只有约一个 `read_size` 的缓冲
+    加上当前元素，**不会把整个数组载入内存**。原实现用 `f.read()` + `json.loads`
+    先整体载入再切片，10GB 的数组必然 OOM。
+
+    元素边界交给 `json.JSONDecoder.raw_decode` 判定，因此字符串与嵌套结构内的
+    逗号/括号不会被误当成分隔符。
+
+    Args:
+        stream: 已打开并定位到数组起始处的文本流
+        read_size: 每次从流中读取的字符数
+
+    Yields:
+        数组中的每个元素
+
+    Raises:
+        DataFormatError: 内容不是合法 JSON 数组（如元素间缺少逗号、非法 JSON）
+    """
+    decoder = json.JSONDecoder()
+    buf = ""
+    pos = 0
+    eof = False
+
+    def fill() -> None:
+        nonlocal buf, eof
+        chunk = stream.read(read_size)
+        if chunk:
+            buf += chunk
+        else:
+            eof = True
+
+    def compact() -> None:
+        nonlocal buf, pos
+        if pos:
+            buf = buf[pos:]
+            pos = 0
+
+    def skip_ws() -> bool:
+        """跳过空白（必要时补充缓冲）；返回是否仍有内容可读"""
+        nonlocal buf, pos
+        while True:
+            while pos < len(buf) and buf[pos] in _WS:
+                pos += 1
+            if pos < len(buf):
+                return True
+            if eof:
+                return False
+            compact()
+            fill()
+
+    if not skip_ws() or buf[pos] != "[":
+        raise DataFormatError("流式数组读取要求文件以 '[' 开头")
+
+    pos += 1
+    first = True
+
+    while True:
+        if not skip_ws():
+            return  # 数组未闭合（文件被截断）：按已读到的元素结束
+        if buf[pos] == "]":
+            return
+        if not first:
+            if buf[pos] != ",":
+                raise DataFormatError(
+                    f"JSON 数组元素之间缺少逗号，实际遇到 {buf[pos]!r}"
+                )
+            pos += 1
+            if not skip_ws():
+                raise DataFormatError("JSON 数组在逗号之后意外结束")
+            if buf[pos] == "]":
+                return  # 容忍尾随逗号
+
+        while True:
+            try:
+                value, end = decoder.raw_decode(buf, pos)
+                break
+            except json.JSONDecodeError:
+                if eof:
+                    raise
+                fill()
+
+        yield value
+        pos = end
+        first = False
+        compact()
+
+
+def _chunked(items: Iterator[Any], size: int) -> Iterator[List[Any]]:
+    """把迭代器按 size 切分为列表块"""
+    chunk: List[Any] = []
+    for item in items:
+        chunk.append(item)
+        if len(chunk) >= size:
+            yield chunk
+            chunk = []
+    if chunk:
+        yield chunk
+
+
+def _is_single_json_value(stream, read_size: int = _DEFAULT_READ_SIZE) -> bool:
+    """判断整个流是否为「单个 JSON 值」（例如 `{"a": 1}`）
+
+    用于保持 `_count_items` 的既有语义：单个 JSON 值计 0 条。
+    对 JSONL 文件会在读到第二个值后立刻返回 False，代价很低。
+
+    .. note::
+       本函数会消费流内容，调用方需自行 `seek(0)` 复位。
+
+    Args:
+        stream: 已打开的文本流
+        read_size: 每次读取的字符数
+
+    Returns:
+        整个流是否恰好包含一个 JSON 值
+    """
+    decoder = json.JSONDecoder()
+    buf = ""
+    pos = 0
+    eof = False
+
+    while True:
+        while pos < len(buf) and buf[pos] in _WS:
+            pos += 1
+        if pos < len(buf):
+            break
+        if eof:
+            return False
+        more = stream.read(read_size)
+        if not more:
+            eof = True
+        else:
+            buf += more
+
+    while True:
+        try:
+            _, end = decoder.raw_decode(buf, pos)
+            break
+        except json.JSONDecodeError:
+            if eof:
+                return False
+            more = stream.read(read_size)
+            if not more:
+                eof = True
+            else:
+                buf += more
+
+    pos = end
+    while True:
+        while pos < len(buf) and buf[pos] in _WS:
+            pos += 1
+        if pos < len(buf):
+            return False  # 首个值之后仍有内容 → 不是单个值
+        if eof:
+            return True
+        more = stream.read(read_size)
+        if not more:
+            eof = True
+        else:
+            buf += more
 
 
 @dataclass
@@ -47,67 +236,70 @@ class StreamReader:
         self._total_count: Optional[int] = None
     
     def _count_items(self) -> int:
-        """统计文件中的数据条数
-        
+        """统计文件中的数据条数（流式，不整体载入内存）
+
         Returns:
             数据条数
         """
         if self._total_count is not None:
             return self._total_count
-        
-        count = 0
+
         with open(self.file_path, 'r', encoding='utf-8') as f:
-            # 尝试解析JSON数组
-            content = f.read()
-            try:
-                data = json.loads(content)
-                if isinstance(data, list):
-                    count = len(data)
-            except json.JSONDecodeError:
-                # 尝试JSONL格式
-                for line in content.strip().split('\n'):
-                    if line.strip():
-                        count += 1
-        
+            first = _peek_first_non_space(f)
+            f.seek(0)
+
+            if first == "[":
+                # JSON 数组：增量解析计数（原实现会先 f.read() 整个文件）
+                count = sum(1 for _ in _iter_json_array_items(f))
+            elif first is None:
+                count = 0
+            elif _is_single_json_value(f):
+                # 整个文件是单个 JSON 值（如 {"a": 1}）：保持既有语义，计 0 条
+                count = 0
+            else:
+                # JSONL：逐行统计非空行
+                f.seek(0)
+                count = sum(1 for line in f if line.strip())
+
         self._total_count = count
         return count
-    
+
     def read_chunks(self) -> Generator[List[Dict], None, None]:
-        """分块读取数据
-        
+        """分块读取数据（真流式：内存占用与文件大小无关）
+
+        原实现先 `f.read()` 整个文件再 `json.loads`，最后才切片——名为流式，
+        实际峰值内存等于整个数据集。现在数组走增量解析，JSONL 走逐行读取。
+
         Yields:
             数据块列表
         """
         with open(self.file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-        
-        try:
-            data = json.loads(content)
-            if isinstance(data, list):
-                # JSON数组格式
-                for i in range(0, len(data), self.chunk_size):
-                    yield data[i:i + self.chunk_size]
+            first = _peek_first_non_space(f)
+            f.seek(0)
+
+            if first == "[":
+                # JSON 数组格式：增量解析，逐块产出
+                yield from _chunked(_iter_json_array_items(f), self.chunk_size)
                 return
-        except json.JSONDecodeError:
-            pass
-        
-        # JSONL格式
-        chunk = []
-        with open(self.file_path, 'r', encoding='utf-8') as f:
+
+            # JSONL 格式：逐行流式读取，跳过无效行
+            chunk: List[Dict] = []
             for line in f:
                 line = line.strip()
-                if line:
-                    try:
-                        item = json.loads(line)
-                        chunk.append(item)
-                        if len(chunk) >= self.chunk_size:
-                            yield chunk
-                            chunk = []
-                    except json.JSONDecodeError:
-                        logger.warning(f"跳过无效行: {line[:100]}")
-        
-        if chunk:
-            yield chunk
+                if not line:
+                    continue
+                try:
+                    item = json.loads(line)
+                except json.JSONDecodeError:
+                    logger.warning(f"跳过无效行: {line[:100]}")
+                    continue
+                chunk.append(item)
+                if len(chunk) >= self.chunk_size:
+                    yield chunk
+                    chunk = []
+
+            if chunk:
+                yield chunk
     
     def read_all(self) -> List[Dict]:
         """读取全部数据（仅适用于小数据集）
@@ -154,7 +346,10 @@ class StreamProcessor:
             处理报告
         """
         self._processed_count = 0
-        results = []
+        # 只累计计数，不保留结果本身——原实现用 results.extend() 把全部输出
+        # 留在内存里，与其自身「不累积全部结果到内存」的注释相矛盾，
+        # 大数据集下等于把内存问题从读取端搬到了处理端。
+        total_output = 0
         memory_monitor = MemoryMonitor(interval_mb=512) if HAS_MEMORY_MONITOR else None
         
         for chunk in self.reader.read_chunks():
@@ -165,8 +360,7 @@ class StreamProcessor:
             if self.writer:
                 self.writer.write_chunk(processed_chunk)
             
-            # 只保留统计信息，不累积全部结果到内存（大数据优化）
-            results.extend(processed_chunk)
+            total_output += len(processed_chunk)
             
             # 内存监控检查（集成优化）
             if memory_monitor is not None and len(chunk) > 100:
@@ -182,7 +376,7 @@ class StreamProcessor:
         
         return {
             "total_input": self._total_count,
-            "total_output": len(results),
+            "total_output": total_output,
             "processed": self._processed_count
         }
 
@@ -230,7 +424,7 @@ class StreamWriter:
             chunk: 数据块列表
         """
         if not self._file:
-            raise RuntimeError("写入器未打开")
+            raise StreamError("写入器未打开")
         
         for item in chunk:
             if self.format == 'jsonl':

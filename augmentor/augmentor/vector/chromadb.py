@@ -14,6 +14,7 @@ from typing import List, Dict, Optional, Any
 import numpy as np
 
 from .base import VectorDB, normalize_vectors
+from ..exceptions import VectorError
 
 logger = logging.getLogger(__name__)
 
@@ -108,11 +109,11 @@ class ChromaDB(VectorDB):
         new_ids = ids or self._generate_ids(len(vectors))
 
         if len(new_ids) != len(vectors):
-            raise ValueError("ids 长度与 vectors 不一致")
+            raise VectorError("ids 长度与 vectors 不一致")
 
         existing = set(self._collection.get(ids=new_ids)["ids"])
         if existing:
-            raise ValueError(f"ID 已存在: {sorted(existing)[:5]}")
+            raise VectorError(f"ID 已存在: {sorted(existing)[:5]}")
 
         self._collection.add(
             ids=new_ids,
@@ -144,7 +145,7 @@ class ChromaDB(VectorDB):
             query_array = query_array.reshape(1, -1)
 
         if query_array.shape[1] != self.dimension:
-            raise ValueError(
+            raise VectorError(
                 f"查询向量维度不匹配: 期望 {self.dimension}，实际 {query_array.shape[1]}"
             )
 

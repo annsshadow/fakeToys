@@ -12,6 +12,7 @@ import re
 from collections import Counter
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional, Callable
+from .exceptions import DataValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -242,7 +243,7 @@ class ModelEvaluator:
 
         unsupported = [m for m in self.metrics if m not in METRIC_FUNCTIONS]
         if unsupported:
-            raise ValueError(
+            raise DataValidationError(
                 f"不支持的评估指标: {unsupported}。支持: {SUPPORTED_METRICS}"
             )
 
@@ -292,10 +293,10 @@ class ModelEvaluator:
             EvaluationResult 实例
 
         Raises:
-            ValueError: 两个列表长度不一致
+            DataValidationError: 两个列表长度不一致
         """
         if len(generated) != len(references):
-            raise ValueError("generated 与 references 长度不一致")
+            raise DataValidationError("generated 与 references 长度不一致")
 
         if not generated:
             return EvaluationResult(metrics={m: 0.0 for m in self.metrics})
@@ -401,13 +402,13 @@ class ModelEvaluator:
             模型后端实例
 
         Raises:
-            ValueError: 名称为字符串但未提供工厂函数
+            DataValidationError: 名称为字符串但未提供工厂函数
         """
         if not isinstance(model, str):
             return model
 
         if self.model_factory is None:
-            raise ValueError(
+            raise DataValidationError(
                 f"模型 '{model}' 为字符串时需要通过 model_factory 解析"
             )
 

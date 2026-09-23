@@ -14,6 +14,7 @@ from typing import List, Dict, Optional, Any
 from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime
+from .exceptions import BackupError
 
 logger = logging.getLogger(__name__)
 
@@ -157,7 +158,7 @@ class DatasetBackup:
                 break
         
         if not backup_info:
-            raise ValueError(f"备份不存在: {backup_id}")
+            raise BackupError(f"备份不存在: {backup_id}")
         
         backup_path = Path(backup_info["backup_path"])
         if not backup_path.exists():

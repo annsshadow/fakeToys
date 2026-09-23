@@ -8,6 +8,7 @@ import yaml
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 from pathlib import Path
+from .exceptions import ConfigError
 
 
 @dataclass
@@ -395,12 +396,21 @@ def get_model_config(config: AppConfig, model_name: Optional[str] = None) -> Mod
     """
     name = model_name or config.default_model
     if name not in config.models:
-        raise ValueError(f"模型 '{name}' 未配置。可用模型: {list(config.models.keys())}")
+        raise ConfigError(f"模型 '{name}' 未配置。可用模型: {list(config.models.keys())}")
     return config.models[name]
 
 
 def save_config(config: AppConfig, config_path: str = "config.yaml") -> None:
     """将配置保存回 YAML 文件（仅持久化非敏感运行时字段；密钥保留占位符）
+
+    有两件事必须保证，否则「保存 → 重新加载」会静默丢配置：
+
+    1. **默认模型要写成 `models.default`**。`load_config` 只从这个键读默认模型
+       （`config.default_model = raw_config['models'].get('default', 'ernie')`），
+       写成顶层 `default_model` 下次加载时会被忽略并回落到 `ernie`。
+    2. **文件里已经存在、而 `AppConfig` 不建模的顶层段落必须原样保留**。
+       `ConfigValidator` 会把它们当作配置的一部分，直接整体覆盖等于删掉用户
+       手写的段落。
 
     Args:
         config: 应用配置
@@ -415,12 +425,40 @@ def save_config(config: AppConfig, config_path: str = "config.yaml") -> None:
 
     data = _to_dict(config)
 
-    # 保留 models 下的 api_key/secret_key 为环境变量占位符，避免密钥落盘
+    # 默认模型并入 models.default：这是 load_config 唯一认的键
+    models = data.get("models") or {}
+    models["default"] = data.pop("default_model", config.default_model)
+    data["models"] = models
+
+    # 保留既有文件中 AppConfig 不建模的顶层键
+    existing = {}
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                existing = yaml.safe_load(f) or {}
+        except (OSError, yaml.YAMLError):
+            existing = {}
+        if not isinstance(existing, dict):
+            existing = {}
+        for key, value in existing.items():
+            if key not in data:
+                data[key] = value
+
+    # 密钥不落盘：沿用文件里原有的 `${ENV_VAR}` 占位符。
+    # 早前直接 pop 掉整个键，等于把 `api_key: ${BAIDU_API_KEY}` 这行删了——
+    # 重新加载时该模型拿不到密钥，增强能力静默失效。而如果文件里写的是明文
+    # 密钥，则一律丢弃（只保留环境变量引用，避免把明文写回磁盘）。
+    existing_models = existing.get("models") if isinstance(existing.get("models"), dict) else {}
     for name, model_conf in data.get("models", {}).items():
-        if name == "default":
+        if name == "default" or not isinstance(model_conf, dict):
             continue
-        model_conf.pop("api_key", None)
-        model_conf.pop("secret_key", None)
+        previous = existing_models.get(name) if isinstance(existing_models.get(name), dict) else {}
+        for secret in ("api_key", "secret_key"):
+            placeholder = previous.get(secret, "")
+            if isinstance(placeholder, str) and placeholder.startswith("${") and placeholder.endswith("}"):
+                model_conf[secret] = placeholder
+            else:
+                model_conf.pop(secret, None)
 
     with open(config_path, "w", encoding="utf-8") as f:
         yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)

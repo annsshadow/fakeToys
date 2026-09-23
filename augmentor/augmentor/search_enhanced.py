@@ -109,6 +109,54 @@ class EnhancedSearcher:
         # 简单分词：按标点和空格分割
         tokens = re.findall(r'[\u4e00-\u9fff]+|[a-zA-Z]+|\d+', text)
         return tokens
+
+    @staticmethod
+    def _ngrams(text: str, n: int) -> set:
+        """字符 n-gram 集合（小写化；文本短于 n 时返回空集）
+
+        Args:
+            text: 文本
+            n: n-gram 大小
+
+        Returns:
+            n-gram 集合
+        """
+        lowered = text.lower()
+        if len(lowered) < n:
+            return set()
+        return {lowered[i:i + n] for i in range(len(lowered) - n + 1)}
+
+    def _search_ngram(self, field: str, query: str, n: int = 2) -> Dict[int, float]:
+        """n-gram 搜索
+
+        按查询 n-gram 在文档中的覆盖率打分（命中数 / 查询 n-gram 总数）。
+
+        移植自 `indexer.DatasetIndexer.search_ngram`：那个方法只存在于被合并掉的
+        另一条 CLI 路径上，不一并移植的话 `--method ngram` 会在合并后凭空消失。
+        差别是这里返回 0~1 的覆盖率而不是裸命中计数，这样它能和其它方法一样参与
+        「多字段得分累加 + 按分排序」，否则混用多种方法时排序没有意义。
+
+        Args:
+            field: 字段名
+            query: 查询字符串
+            n: n-gram 大小
+
+        Returns:
+            {索引: 覆盖率}
+        """
+        query_ngrams = self._ngrams(query, n)
+        if not query_ngrams:
+            return {}
+
+        matches: Dict[int, float] = {}
+        for idx, item in enumerate(self._items):
+            value = item.get(field, "")
+            if not isinstance(value, str):
+                continue
+            hit = len(query_ngrams & self._ngrams(value, n))
+            if hit:
+                matches[idx] = hit / len(query_ngrams)
+        return matches
     
     def search(self, query: str, fields: List[str] = None, 
                method: str = "contains", filters: List[SearchFilter] = None,
@@ -118,7 +166,7 @@ class EnhancedSearcher:
         Args:
             query: 搜索查询
             fields: 搜索字段列表
-            method: 搜索方法 (exact/contains/fuzzy/regex)
+            method: 搜索方法 (exact/contains/ngram/fuzzy/regex)
             filters: 过滤器列表
             limit: 返回数量限制
             offset: 偏移量
@@ -135,6 +183,8 @@ class EnhancedSearcher:
         for field in fields:
             if method == "exact":
                 matches = self._search_exact(field, query)
+            elif method == "ngram":
+                matches = self._search_ngram(field, query)
             elif method == "fuzzy":
                 matches = self._search_fuzzy(field, query)
             elif method == "regex":
@@ -380,7 +430,8 @@ class EnhancedSearcher:
 
 
 def search_dataset(items: List[Dict], query: str, fields: List[str] = None,
-                   method: str = "contains", limit: int = 100) -> SearchResult:
+                   method: str = "contains", limit: int = 100,
+                   offset: int = 0) -> SearchResult:
     """搜索数据集
     
     Args:
@@ -389,12 +440,13 @@ def search_dataset(items: List[Dict], query: str, fields: List[str] = None,
         fields: 搜索字段列表
         method: 搜索方法
         limit: 返回数量限制
+        offset: 偏移量
     
     Returns:
         搜索结果
     """
     searcher = EnhancedSearcher(items)
-    return searcher.search(query, fields, method, limit=limit)
+    return searcher.search(query, fields, method, limit=limit, offset=offset)
 
 
 def create_searcher(items: List[Dict] = None) -> EnhancedSearcher:

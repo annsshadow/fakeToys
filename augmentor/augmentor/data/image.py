@@ -11,6 +11,7 @@ import struct
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Any, List
+from ..exceptions import DataFormatError
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +84,7 @@ def _parse_jpeg(data: bytes) -> Dict[str, Any]:
             return {"width": width, "height": height}
         segment_length = struct.unpack(">H", data[index + 2:index + 4])[0]
         index += 2 + segment_length
-    raise ValueError("无法解析 JPEG 尺寸")
+    raise DataFormatError("无法解析 JPEG 尺寸")
 
 
 _HEADER_PARSERS = {
@@ -152,13 +153,13 @@ class ImageProcessor:
         suffix = path.suffix.lower()
         parser = _HEADER_PARSERS.get(suffix)
         if parser is None:
-            raise ValueError(f"不支持通过文件头解析的格式: {suffix}")
+            raise DataFormatError(f"不支持通过文件头解析的格式: {suffix}")
 
         with open(path, 'rb') as f:
             data = f.read(65536)
 
         if len(data) < 26:
-            raise ValueError("文件过小，可能已损坏")
+            raise DataFormatError("文件过小，可能已损坏")
 
         dimensions = parser(data)
         return {

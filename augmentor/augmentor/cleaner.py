@@ -7,11 +7,17 @@
 
 分工边界（与 `augmentor.data.cleaner`）
     本模块提供 `DatasetCleaner` + `TextNormalizer` 与规则化清洗
-    （`clean_dataset` / `clean_batch_optimized`）。CLI 的 `clean-enhanced` 命令走这里。
-    `augmentor.data.cleaner.DataCleaner` 是另一套实现，由 CLI 的 `clean` 命令与
-    REST API 的清洗端点使用；两者是**同一能力的两种实现**，
-    `CleaningResult` 与 `CleanResult` 也是同一概念的两种命名——这一对才是真正
-    值得合并的（合并需先统一结果类型，登记为后续任务）。
+    （`clean_dataset` / `clean_batch_optimized`）。**CLI 的 `clean` 命令走这里**。
+
+    3.0 起 CLI 只用本模块。为此 `data.cleaner.DataCleaner` 的能力已被**并进来**
+    而不是丢掉：它的噪声清除三件套对应本模块的 `remove_urls` /
+    `remove_html_tags` / `remove_control_chars` 三条规则，`remove_urls=True`
+    等价于默认规则集里带 `remove_urls`，`--no-url-removal` 等价于把
+    `remove_urls` 从 `--rules` 里去掉。`data.cleaner` 仍由 REST API 的清洗端点使用。
+
+    注意 `remove_urls` 与 `remove_special_chars` **不是**同一件事：
+    `remove_special_chars` 删的是「非中文/英文/数字/常用标点」的字符，
+    它只会把 `https://a.com` 削成 `https:a.com`，并不能移除 URL。
 """
 
 import re
@@ -21,6 +27,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+# 噪声清除用的模式。与 `augmentor.data.cleaner` 保持一致，避免同一份数据
+# 在 CLI 与 REST API 两条路径上被清成不同结果。
+URL_PATTERN = re.compile(r"https?://\S+|www\.\S+")
+HTML_TAG_PATTERN = re.compile(r"<[^>]+>")
+# 控制字符 + 零宽字符（零宽空格/连接符/不连字符/BOM）
+CONTROL_CHAR_PATTERN = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\u200b\u200c\u200d\ufeff]")
 
 
 @dataclass
@@ -63,10 +76,15 @@ class DatasetCleaner:
         self._rules: List[CleaningRule] = []
         self._custom_rules: List[Callable] = []
         
-        # 默认规则
+        # 默认规则。字典顺序即 `clean(rules=None)` 的执行顺序，因此噪声清除
+        # （URL / HTML 标签 / 控制字符）必须排在 `normalize_whitespace` 之前：
+        # 删掉 URL 会在原位留下多余空白，先删后归一才不用归一两次。
         self._default_rules = {
             "remove_empty": self._remove_empty,
             "remove_duplicates": self._remove_duplicates,
+            "remove_urls": self._remove_urls,
+            "remove_html_tags": self._remove_html_tags,
+            "remove_control_chars": self._remove_control_chars,
             "normalize_whitespace": self._normalize_whitespace,
             "remove_special_chars": self._remove_special_chars,
             "trim_whitespace": self._trim_whitespace,
@@ -109,7 +127,10 @@ class DatasetCleaner:
         rules = rules or list(self._default_rules.keys())
         
         original_count = len(items)
-        cleaned_items = items.copy()
+        # 必须逐条浅拷贝：规则是就地改 `item[field]` 的，只做 `items.copy()`
+        # （浅拷贝）会把调用方传进来的 dict 一起改掉——`clean_dataset(items)`
+        # 之后 `items` 就不是原数据了。
+        cleaned_items = [dict(item) for item in items]
         applied_rules = []
         modified_count = 0
         
@@ -174,6 +195,70 @@ class DatasetCleaner:
         
         return cleaned, len(cleaned) != original_count
     
+    def _remove_urls(self, items: List[Dict], fields: List[str]) -> tuple:
+        """移除 URL
+
+        移植自 `data.cleaner.DataCleaner.remove_noise`：那条路径默认移除 URL，
+        合并到规则式实现时若丢掉这条规则，`clean` 的默认行为就会静默变化。
+
+        Args:
+            items: 数据列表
+            fields: 字段列表
+
+        Returns:
+            (清洗后的数据, 是否修改)
+        """
+        return self._sub_in_fields(items, fields, URL_PATTERN, " ")
+
+    def _remove_html_tags(self, items: List[Dict], fields: List[str]) -> tuple:
+        """移除 HTML 标签
+
+        Args:
+            items: 数据列表
+            fields: 字段列表
+
+        Returns:
+            (清洗后的数据, 是否修改)
+        """
+        return self._sub_in_fields(items, fields, HTML_TAG_PATTERN, " ")
+
+    def _remove_control_chars(self, items: List[Dict], fields: List[str]) -> tuple:
+        """移除控制字符与零宽字符
+
+        Args:
+            items: 数据列表
+            fields: 字段列表
+
+        Returns:
+            (清洗后的数据, 是否修改)
+        """
+        return self._sub_in_fields(items, fields, CONTROL_CHAR_PATTERN, "")
+
+    def _sub_in_fields(self, items: List[Dict], fields: List[str],
+                       pattern, replacement: str) -> tuple:
+        """对每个字段做一次正则替换（三条噪声清除规则的公共实现）
+
+        Args:
+            items: 数据列表
+            fields: 字段列表
+            pattern: 已编译的正则
+            replacement: 替换文本
+
+        Returns:
+            (清洗后的数据, 是否修改)
+        """
+        modified = False
+
+        for item in items:
+            for field in fields:
+                if field in item and isinstance(item[field], str):
+                    new_value = pattern.sub(replacement, item[field])
+                    if new_value != item[field]:
+                        item[field] = new_value
+                        modified = True
+
+        return items, modified
+
     def _normalize_whitespace(self, items: List[Dict], fields: List[str]) -> tuple:
         """标准化空白字符
         

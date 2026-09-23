@@ -4,7 +4,8 @@
 """CLI 数据集工具命令集成测试
 
 覆盖 sample / split / stats / validate / convert / search 命令，
-以及 analyze-data / visualize-data 两个曾静默失败的命令的回归。
+以及 `analyze` / `visualize` 两个曾静默失败的命令的回归
+（3.0 起 `--enhanced` 已移除，改为守规范命令名本身）。
 """
 
 import json
@@ -122,12 +123,13 @@ class TestSplitCommand:
 
 
 class TestStatsCommand:
-    def test_stats_summary_fields(self, dataset):
-        """统计输出需包含总量与长度分布"""
-        out2, parsed, code = run_cli(["cli", "stats", "--input", str(dataset)])
+    def test_stats_prints_field_statistics(self, dataset):
+        """统计输出需含总量与逐字段统计段（stdout 为可解析 JSON）"""
+        out, parsed, code = run_cli(["cli", "stats", "--input", str(dataset)])
         assert code is None
-        assert parsed["total"] == 5
-        assert parsed["min_length"] <= parsed["avg_length"] <= parsed["max_length"]
+        assert parsed["total_items"] == 5
+        assert "instruction" in parsed["field_statistics"]
+        assert parsed["field_statistics"]["instruction"]["unique_count"] == 5
 
 
 class TestValidateCommand:
@@ -178,20 +180,30 @@ class TestConvertCommand:
 
 
 class TestSearchCommand:
-    def test_search_contains_limit(self, dataset):
-        """contains 搜索需按 limit 截断结果（JSON 位于 stdout 的列表段）"""
+    def test_search_contains_limit(self, dataset, tmp_path):
+        """contains 搜索需按 limit 截断返回条目，且条目以 JSON 列表打在 stdout
+
+        stdout 契约沿用合并前的基础实现：两行摘要 + 匹配条目的 JSON 列表。
+        条目就是这个命令的产物，只打印摘要会逼下游改用 `--output` 落盘再读。
+        """
+        out_file = tmp_path / "search.json"
         out, parsed, code = run_cli(
             [
                 "cli", "search", "--input", str(dataset),
                 "--query", "租", "--limit", "2",
                 "--method", "contains", "--field", "instruction",
+                "--output", str(out_file),
             ]
         )
         assert code is None
         assert "找到" in out
-        # search 命令先打印两行摘要再输出 JSON 列表，需截取列表段解析
+        # 摘要两行之后是 JSON 列表，需截取列表段解析
         items = json.loads(out[out.index("["):])
         assert len(items) == 2
+
+        result = json.loads(out_file.read_text(encoding="utf-8"))
+        assert result["total_matches"] == 4, "全量匹配数应为 4"
+        assert len(result["items"]) == 2, "limit=2 未截断返回条目"
 
     def test_search_exact_no_match(self, dataset):
         """exact 方法搜索不存在的问题应得 0 匹配"""
@@ -202,34 +214,40 @@ class TestSearchCommand:
             ]
         )
         assert code is None
-        assert "0" in out
+        assert "找到 0 条" in out
 
 
-class TestLegacyDataCommandRegression:
-    """analyze-data / visualize-data 曾因分发名不匹配而静默无输出"""
+class TestAnalyzeVisualizeRegression:
+    """`analyze` / `visualize` 曾因分发名不匹配而静默无输出。
 
-    def test_analyze_data_prints_report(self, dataset):
-        """analyze-data 需打印数据集大小与质量分数"""
-        out, parsed, code = run_cli(
-            ["cli", "analyze", "--enhanced", "--input", str(dataset)]
-        )
+    3.0 起 `--enhanced` 已移除，这里改为守规范命令名本身仍有输出。
+    """
+
+    def test_analyze_prints_report(self, dataset):
+        out, parsed, code = run_cli(["cli", "analyze", "--input", str(dataset)])
         assert code is None
-        assert "数据集大小: 5" in out
-        assert "质量分数" in out
+        assert parsed["dataset_size"] == 5
+        assert parsed["scores"]["quality"] >= 0
+        # 合并不得丢掉旧基础实现的覆盖分析
+        assert parsed["coverage_analysis"]["total_items"] == 5
 
-    def test_analyze_data_saves_output(self, dataset, tmp_path):
-        """analyze-data --output 需写入报告文件"""
+    def test_analyze_saves_output(self, dataset, tmp_path):
         out_file = tmp_path / "analysis.json"
         out, parsed, code = run_cli(
-            ["cli", "analyze", "--enhanced", "--input", str(dataset), "--output", str(out_file)]
+            ["cli", "analyze", "--input", str(dataset), "--output", str(out_file)]
         )
         assert code is None
-        assert out_file.exists()
+        saved = json.loads(out_file.read_text(encoding="utf-8"))
+        assert saved["dataset_size"] == 5
+        assert "coverage_analysis" in saved
 
-    def test_visualize_data_json_format(self, dataset):
-        """visualize-data --format json 需输出可解析 JSON"""
+    def test_visualize_report_mode_json(self, dataset, tmp_path):
+        """`visualize --output --format json` 需写出可解析 JSON 报告"""
+        out_file = tmp_path / "vis.json"
         out, parsed, code = run_cli(
-            ["cli", "visualize", "--enhanced", "--input", str(dataset), "--format", "json"]
+            ["cli", "visualize", "--input", str(dataset),
+             "--output", str(out_file), "--format", "json"]
         )
         assert code is None
-        assert parsed["total_items"] == 5
+        report = json.loads(out_file.read_text(encoding="utf-8"))
+        assert report["total_items"] == 5

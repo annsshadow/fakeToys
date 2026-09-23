@@ -6,9 +6,17 @@
 提供数据集之间的A/B测试对比功能。
 
 分工边界（与 `augmentor.compare_enhanced`）
-    本模块按**文件路径**对比：`compare_datasets(file_a, file_b)` 自行读盘，
-    产出 `ComparisonResult`。CLI 的 `compare` 命令走这里。
-    需要字段级指标（相似度 / 仅在 A / 仅在 B）或数据已在内存里，用 `compare_enhanced`。
+    两者是**互补**的两种对比，不是同一件事的强弱版：
+
+    * 本模块做**质量向 A/B 对比**——质量分 / 通过率 / 长度 / 词汇量，并判定
+      获胜方，产出 markdown 摘要（`ComparisonResult.summary`）。入口
+      `DatasetComparator.compare` 接收已在内存里的两个列表；
+      `compare_datasets(file_a, file_b)` 是自行读盘的便捷包装。
+    * `compare_enhanced` 做**重叠度对比**——相似度 / 共同条数 / 各自独有条数 /
+      字段级差异 + 改进建议。
+
+    CLI 的 `compare` 命令**两者都调**（3.0 合并的结果）：stdout 打印本模块的
+    markdown 摘要并追加一段重叠度小节，`--output` 落盘两者的合并 JSON。
 """
 
 import json
@@ -55,6 +63,32 @@ class ComparisonResult:
     # 结论
     winner: str = "tie"  # "a", "b", "tie"
     summary: str = ""
+    
+    def to_dict(self) -> Dict:
+        """转换为字典
+        
+        Returns:
+            对比结果的字典表示
+        """
+        return {
+            "dataset_a_name": self.dataset_a_name,
+            "dataset_b_name": self.dataset_b_name,
+            "dataset_a_count": self.dataset_a_count,
+            "dataset_b_count": self.dataset_b_count,
+            "quality_a": self.quality_a,
+            "quality_b": self.quality_b,
+            "quality_diff": self.quality_diff,
+            "dedup_a": self.dedup_a,
+            "dedup_b": self.dedup_b,
+            "length_a": self.length_a,
+            "length_b": self.length_b,
+            "vocabulary_a": self.vocabulary_a,
+            "vocabulary_b": self.vocabulary_b,
+            "similarity_to_a": self.similarity_to_a,
+            "similarity_to_b": self.similarity_to_b,
+            "winner": self.winner,
+            "summary": self.summary
+        }
 
 
 class DatasetComparator:
@@ -275,23 +309,7 @@ class DatasetComparator:
         output.parent.mkdir(parents=True, exist_ok=True)
         
         with open(output, 'w', encoding='utf-8') as f:
-            json.dump({
-                "dataset_a_name": result.dataset_a_name,
-                "dataset_b_name": result.dataset_b_name,
-                "dataset_a_count": result.dataset_a_count,
-                "dataset_b_count": result.dataset_b_count,
-                "quality_a": result.quality_a,
-                "quality_b": result.quality_b,
-                "quality_diff": result.quality_diff,
-                "dedup_a": result.dedup_a,
-                "dedup_b": result.dedup_b,
-                "length_a": result.length_a,
-                "length_b": result.length_b,
-                "vocabulary_a": result.vocabulary_a,
-                "vocabulary_b": result.vocabulary_b,
-                "winner": result.winner,
-                "summary": result.summary
-            }, f, ensure_ascii=False, indent=2)
+            json.dump(result.to_dict(), f, ensure_ascii=False, indent=2)
         
         logger.info(f"对比结果已保存到 {output_path}")
 

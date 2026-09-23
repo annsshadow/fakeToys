@@ -35,16 +35,28 @@ logger = logging.getLogger(__name__)
 class AugmentorPipeline:
     """AI 训练数据增强管道 - 优化版"""
     
-    def __init__(self, config: Optional[AppConfig] = None, config_path: Optional[str] = None):
+    def __init__(self,
+                 config: Optional[AppConfig] = None,
+                 config_path: Optional[str] = None,
+                 response_cache_dir: Optional[str] = None,
+                 response_cache_ttl: Optional[float] = None,
+                 response_cache_max_bytes: Optional[int] = None):
         """初始化增强管道
-        
+
         Args:
             config: 应用配置，为 None 时从文件加载
             config_path: 配置文件路径
+            response_cache_dir: 模型响应磁盘缓存目录。**默认 None 即不启用**——
+                启用意味着把 prompt 与模型响应写入磁盘，属于需要显式选择的行为
+            response_cache_ttl: 磁盘缓存生存时间（秒），None 表示不按时间过期
+            response_cache_max_bytes: 磁盘缓存容量上限（字节）
         """
         self.config = config or load_config(config_path)
         self._lock = threading.Lock()
-        
+        self._response_cache_dir = response_cache_dir
+        self._response_cache_ttl = response_cache_ttl
+        self._response_cache_max_bytes = response_cache_max_bytes
+
         # 初始化组件
         self._init_components()
     
@@ -53,7 +65,12 @@ class AugmentorPipeline:
         # 模型后端（可选：未配置模型/密钥时降级，避免阻断断点续传等只读能力）
         try:
             model_config = get_model_config(self.config, self.config.default_model)
-            self.model_backend = create_model_backend(model_config)
+            self.model_backend = create_model_backend(
+                model_config,
+                response_cache_dir=self._response_cache_dir,
+                response_cache_ttl=self._response_cache_ttl,
+                response_cache_max_bytes=self._response_cache_max_bytes,
+            )
         except Exception as exc:
             logger.warning("模型后端初始化失败，增强功能将不可用：%s", exc)
             self.model_backend = None

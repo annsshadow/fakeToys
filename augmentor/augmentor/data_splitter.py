@@ -11,6 +11,7 @@ import logging
 import random
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
+from .exceptions import DataValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -59,11 +60,11 @@ class DataSplitter:
         """
         total = train_ratio + val_ratio + test_ratio
         if abs(total - 1.0) > 1e-6:
-            raise ValueError(
+            raise DataValidationError(
                 f"比例之和必须为 1.0，实际为 {total:.4f}"
             )
         if any(r < 0 for r in (train_ratio, val_ratio, test_ratio)):
-            raise ValueError("比例不能为负数")
+            raise DataValidationError("比例不能为负数")
 
         self.train_ratio = train_ratio
         self.val_ratio = val_ratio

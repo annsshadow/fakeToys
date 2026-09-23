@@ -4,22 +4,36 @@
 """Ollama 本地模型后端 - 优化版"""
 
 import json
+from typing import Optional
 from .base import ModelBackend
 from ..config import ModelConfig
+from ..exceptions import ModelGenerateError, ModelNotConfiguredError, ModelResponseError
 
 
 class OllamaBackend(ModelBackend):
     """Ollama 本地模型后端 - 优化版"""
     
-    def __init__(self, config: ModelConfig):
+    def __init__(self,
+                 config: ModelConfig,
+                 response_cache_dir: Optional[str] = None,
+                 response_cache_ttl: Optional[float] = None,
+                 response_cache_max_bytes: Optional[int] = None):
         """初始化 Ollama 后端
-        
+
         Args:
             config: 模型配置，必须包含 base_url
+            response_cache_dir: 磁盘响应缓存目录，None 即不启用（见基类说明）
+            response_cache_ttl: 磁盘缓存生存时间（秒）
+            response_cache_max_bytes: 磁盘缓存容量上限（字节）
         """
-        super().__init__(config)
+        super().__init__(
+            config,
+            response_cache_dir=response_cache_dir,
+            response_cache_ttl=response_cache_ttl,
+            response_cache_max_bytes=response_cache_max_bytes,
+        )
         if not config.base_url:
-            raise ValueError("Ollama 后端需要 base_url")
+            raise ModelNotConfiguredError("Ollama 后端需要 base_url")
         
         self.api_url = f"{config.base_url.rstrip('/')}/api/chat"
     
@@ -54,7 +68,7 @@ class OllamaBackend(ModelBackend):
         data = response.json()
         
         if "message" not in data:
-            raise RuntimeError(f"API 响应异常: {data}")
+            raise ModelGenerateError(f"API 响应异常: {data}")
         
         return data["message"]["content"]
     
@@ -81,6 +95,9 @@ class OllamaBackend(ModelBackend):
         
         if start >= 0 and end > start:
             json_str = response[start:end]
-            return json.loads(json_str)
+            try:
+                return json.loads(json_str)
+            except json.JSONDecodeError as e:
+                raise ModelResponseError(f"响应片段无法解析为 JSON 数组: {e}") from e
         
-        raise ValueError("无法从响应中提取 JSON 数组")
+        raise ModelResponseError("无法从响应中提取 JSON 数组")
