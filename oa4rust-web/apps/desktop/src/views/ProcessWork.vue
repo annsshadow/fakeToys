@@ -12,12 +12,14 @@
         <button class="btn-sm" @click="loadDrafts">草稿箱</button>
         <button class="btn-sm" @click="loadHandovers">工作交接</button>
         <button class="btn-sm" @click="loadReviews">审阅记录</button>
+        <button class="btn-sm" @click="loadSerials">流水号</button>
         <button class="btn-sm primary" @click="openStart">发起流程</button>
       </div>
     </div>
     <p v-if="draftText" class="subtitle draft-note">{{ draftText }}</p>
     <p v-if="handoverText" class="subtitle draft-note">{{ handoverText }}</p>
     <p v-if="reviewText" class="subtitle draft-note">{{ reviewText }}</p>
+    <p v-if="serialText" class="subtitle draft-note">{{ serialText }}</p>
     <div class="tabs glass-card">
       <button
         v-for="tab in tabs"
@@ -317,6 +319,32 @@ async function loadReviews(): Promise<void> {
     detailText = `首审阅「${dTitle}」· 后续 ${nextN}`
   }
   reviewText.value = `审阅记录 ${rows.length} · ${detailText}`
+}
+
+const serialText = ref('')
+// 流水号（rev178，surface 域 3 条真实 distinct，PP_C_SERIALNUMBER）：serialnumber/list/paging/{page}/{size}/{size}
+// → 首流水号 id/application → serialnumber/{id}（xid 详情）+ serialnumber/list/application/{applicationFlag}（xapplication 列表）。
+async function loadSerials(): Promise<void> {
+  serialText.value = ''
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const listRes = await settle(api.get('/api/processplatform/assemble/surface/serialnumber/list/paging/1/20/20'))
+  const rows = asRows(listRes)
+  const first = rows[0] ?? null
+  const firstId = first ? String(first.id ?? '') : ''
+  const appFlag = first ? String((first.application as string) ?? '') : ''
+  let detailText = '—'
+  if (firstId) {
+    const [detail, byApp] = await Promise.all([
+      settle(api.get(`/api/processplatform/assemble/surface/serialnumber/${firstId}`)),
+      appFlag
+        ? settle(api.get(`/api/processplatform/assemble/surface/serialnumber/list/application/${encodeURIComponent(appFlag)}`))
+        : Promise.resolve(null),
+    ])
+    const dName = (detail as any)?.data?.name ?? firstId
+    const appN = asRows(byApp).length
+    detailText = `首流水号「${dName}」· 同应用 ${appN}`
+  }
+  serialText.value = `流水号 ${rows.length} · ${detailText}`
 }
 
 function asRows(response: unknown): Record<string, unknown>[] {
