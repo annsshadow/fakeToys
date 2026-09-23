@@ -13,6 +13,7 @@
         <button class="btn-sm" @click="loadHandovers">工作交接</button>
         <button class="btn-sm" @click="loadReviews">审阅记录</button>
         <button class="btn-sm" @click="loadSerials">流水号</button>
+        <button class="btn-sm" @click="loadWorkV2">全部工作</button>
         <button class="btn-sm primary" @click="openStart">发起流程</button>
       </div>
     </div>
@@ -20,6 +21,7 @@
     <p v-if="handoverText" class="subtitle draft-note">{{ handoverText }}</p>
     <p v-if="reviewText" class="subtitle draft-note">{{ reviewText }}</p>
     <p v-if="serialText" class="subtitle draft-note">{{ serialText }}</p>
+    <p v-if="workV2Text" class="subtitle draft-note">{{ workV2Text }}</p>
     <div class="tabs glass-card">
       <button
         v-for="tab in tabs"
@@ -345,6 +347,28 @@ async function loadSerials(): Promise<void> {
     detailText = `首流水号「${dName}」· 同应用 ${appN}`
   }
   serialText.value = `流水号 ${rows.length} · ${detailText}`
+}
+
+const workV2Text = ref('')
+// 全部工作 v2（rev179，surface 域 3 条真实 distinct，PP_C_WORK）：work/v2/list/paging/{page}/{size}/{size}
+// → 首工作 id → work/v2/list/next/{id}/{count}（xid 游标）+ work/v2/workorworkcompleted/{flag}（按工作 id 取详情）。
+async function loadWorkV2(): Promise<void> {
+  workV2Text.value = ''
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const listRes = await settle(api.get('/api/processplatform/assemble/surface/work/v2/list/paging/1/20/20'))
+  const rows = asRows(listRes)
+  const firstId = rows[0] ? String(rows[0].id ?? '') : ''
+  let detailText = '—'
+  if (firstId) {
+    const [next, detail] = await Promise.all([
+      settle(api.get(`/api/processplatform/assemble/surface/work/v2/list/next/${firstId}/20`)),
+      settle(api.get(`/api/processplatform/assemble/surface/work/v2/workorworkcompleted/${firstId}`)),
+    ])
+    const nextN = asRows(next).length
+    const dTitle = (detail as any)?.data?.title ?? firstId
+    detailText = `后续 ${nextN} · 首工作「${dTitle}」`
+  }
+  workV2Text.value = `全部工作 ${rows.length} · ${detailText}`
 }
 
 function asRows(response: unknown): Record<string, unknown>[] {
