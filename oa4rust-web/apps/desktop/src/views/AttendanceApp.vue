@@ -17,6 +17,7 @@
         <button class="eb" @click="loadAttBase">🗂️ 打卡/周期/员工</button>
         <button class="eb" @click="loadCoreLists">🧩 核心记录/规则</button>
         <button class="eb" @click="loadScheduleDetail">📅 排班设置明细</button>
+        <button class="eb" @click="loadV2ConfigTpl">🧾 v2配置/模板/统计</button>
       </div>
       <div v-if="attOverviewText" class="att-note">{{ attOverviewText }}</div>
     </div>
@@ -397,6 +398,24 @@ async function loadScheduleDetail() {
     attOverviewText.value = `排班设置 ${rows.length}（首「${dName}」）· 按单位 ${n(byUnit)} · 顶级单位 ${n(byTop)}`
   } catch (e: any) {
     toast.error('加载排班设置明细失败: ' + (e?.message ?? ''))
+  }
+}
+// v2 配置/模板/统计（rev186，3 条真实 distinct 只读）：v2/config/person（v2_config_person_get，x_attendance_config
+// category='v2_person' AND creator=会话）+ v2/record/template（静态记录模板对象）+ v2/detail/statistic/{detailId}/list/record
+// （v2_detail_statistic_record_list，SELECT x_attendance_detail WHERE id，detailId 取当前记录表首行）。均只读，不触发写端点。
+async function loadV2ConfigTpl() {
+  try {
+    const detailId = records.value[0] ? String(records.value[0].id ?? '0') : '0'
+    const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const [cfg, tpl, stat] = await Promise.all([
+      settle(api.get('/api/attendance/assemble/control/v2/config/person')),
+      settle(api.get('/api/attendance/assemble/control/v2/record/template')),
+      settle(api.get(`/api/attendance/assemble/control/v2/detail/statistic/${detailId}/list/record`)),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
+    attOverviewText.value = `个人配置 ${n(cfg)} · 记录模板 ${(tpl as any)?.data ? '有' : '无'} · 明细统计记录 ${n(stat)}`
+  } catch (e: any) {
+    toast.error('加载 v2 配置/模板/统计失败: ' + (e?.message ?? ''))
   }
 }
 onMounted(loadData)
