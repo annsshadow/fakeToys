@@ -83,6 +83,7 @@
       <button class="save-btn ghost" @click="loadAuthDetails">认证明细/绑定</button>
       <button class="save-btn ghost" @click="loadPersonalExtras">头像/签名/授权明细</button>
       <button class="save-btn ghost" @click="loadPersonalMore">当前/日志/管理明细</button>
+      <button class="save-btn ghost" @click="loadPersonalRegistEmpower">人员游标/校验/授权启用</button>
       <span v-if="personalExtraText" class="muted">{{ personalExtraText }}</span>
       <div v-if="authMetaText" class="auth-note">{{ authMetaText }}</div>
       <div v-if="authDetailText" class="auth-note">{{ authDetailText }}</div>
@@ -325,6 +326,27 @@ async function loadPersonalMore() {
     personalExtraText.value = `当前 ${has(person)} · 管理自定义 ${has(custMgr)} · 授权日志 前${n(logNext)}/后${n(logPrev)} · info ${has(info)} · detail ${has(detail)} · 头像 ${has(icon)}`
   } catch (e: any) {
     toast.error('加载个人更多明细失败: ' + (e?.message ?? ''))
+  }
+}
+// rev243：人员游标/注册校验/授权启用 7 条真实 distinct 读路由（arity 已核；full-literal）
+// person/list/{flag}/next/{count}·prev（control x_org_person 游标）· regist/check name(unique_id)/mobile/email（auth_person 各 WHERE）· empower to/enable(to_person)·currentperson/enable(from_person)
+async function loadPersonalRegistEmpower() {
+  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const flag = '0'
+  try {
+    const [pNext, pPrev, ckName, ckMobile, ckEmail, empTo, empCur] = await Promise.all([
+      s(api.get(`/api/person/list/${flag}/next/20`)),
+      s(api.get(`/api/person/list/${flag}/prev/20`)),
+      s(api.get(`/api/person/regist/check/name/${encodeURIComponent('admin')}`)),
+      s(api.get(`/api/person/regist/check/mobile/${encodeURIComponent('13800000000')}`)),
+      s(api.get(`/api/person/regist/check/email/${encodeURIComponent('a@b.c')}`)),
+      s(api.get('/api/person/empower/list/to/enable')),
+      s(api.get('/api/person/empower/list/currentperson/enable')),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : ((r as any)?.data != null ? 1 : 0))
+    personalExtraText.value = `人员后翻 ${n(pNext)} · 前翻 ${n(pPrev)} · 名校验 ${n(ckName)} · 手机校验 ${n(ckMobile)} · 邮箱校验 ${n(ckEmail)} · 授权给我(启用) ${n(empTo)} · 我发出(启用) ${n(empCur)}`
+  } catch (e: any) {
+    toast.error('加载注册/授权启用失败: ' + (e?.message ?? ''))
   }
 }
 const sigManagers = ref<SigMgr[]>([])
