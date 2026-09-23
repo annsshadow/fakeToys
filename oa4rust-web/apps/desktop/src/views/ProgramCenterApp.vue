@@ -1027,6 +1027,8 @@ async function loadProgramExtraReads() {
       s(api.get(`/api/program_center/collect/controllermobile/name/${encodeURIComponent(name)}/mobile/${encodeURIComponent(mobile)}`)),
       // rev302：distribute webserver 源(X_PROGRAM_INVOKE，webserver 变体区别 rev263) 补齐
       s(api.get(`/api/program_center/distribute/webserver/assemble/source/${flag}`)),
+      // rev305：market/flag/installed/version 字面量版(x_program_deploy，区别于 rev299 参数版) 补齐
+      s(api.get(`/api/program_center/market/flag/installed/version`)),
     ])
     const n = (r: any) => ((r as any)?.data != null ? 1 : 0)
     const hit = rs.reduce((a, r) => a + n(r), 0)
