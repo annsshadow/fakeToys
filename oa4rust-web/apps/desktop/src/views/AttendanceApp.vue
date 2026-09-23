@@ -19,6 +19,7 @@
         <button class="eb" @click="loadScheduleDetail">📅 排班设置明细</button>
         <button class="eb" @click="loadV2ConfigTpl">🧾 v2配置/模板/统计</button>
         <button class="eb" @click="loadStatisticShow">📈 统计展示筛选</button>
+        <button class="eb" @click="loadAppealDetailFilters">🧾 申诉/明细游标</button>
       </div>
       <div v-if="attOverviewText" class="att-note">{{ attOverviewText }}</div>
     </div>
@@ -449,6 +450,31 @@ async function loadStatisticShow() {
     attOverviewText.value = `统计展示筛选：5 维度×2 方向 + 2 按日 = 12 路由，返回合计 ${total} 行`
   } catch (e: any) {
     toast.error('加载统计展示筛选失败: ' + (e?.message ?? ''))
+  }
+}
+// 申诉/明细游标族 6 条真实 distinct（rev193，各 WHERE 方向/维度异）：appealInfo filter/list next(id>)+prev(id<)
+// + manager/list next(id> AND creator) + appealInfo/{id}（WHERE id）；detail filter/list next(id>)+prev(id<)。
+async function loadAppealDetailFilters() {
+  const nx = '0'
+  const pv = '999999999'
+  const c = '20'
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const nextRes = await s(api.get(`/api/attendance/assemble/control/attendanceappealInfo/filter/list/${nx}/next/${c}`))
+    const rows = Array.isArray((nextRes as any)?.data) ? (nextRes as any).data : []
+    const aid = rows[0] ? String(rows[0].id ?? '0') : '0'
+    const [prev, mgr, detail, dNext, dPrev] = await Promise.all([
+      s(api.get(`/api/attendance/assemble/control/attendanceappealInfo/filter/list/${pv}/prev/${c}`)),
+      s(api.get(`/api/attendance/assemble/control/attendanceappealInfo/manager/list/${nx}/next/${c}`)),
+      s(api.get(`/api/attendance/assemble/control/attendanceappealInfo/${encodeURIComponent(aid)}`)),
+      s(api.get(`/api/attendance/assemble/control/attendancedetail/filter/list/${nx}/next/${c}`)),
+      s(api.get(`/api/attendance/assemble/control/attendancedetail/filter/list/${pv}/prev/${c}`)),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    const hasDetail = (detail as any)?.data?.id ? '命中' : '未命中'
+    attOverviewText.value = `申诉：正序 ${rows.length}·逆序 ${n(prev)}·管理 ${n(mgr)}·详情 ${hasDetail} | 明细：正序 ${n(dNext)}·逆序 ${n(dPrev)}`
+  } catch (e: any) {
+    toast.error('加载申诉/明细游标失败: ' + (e?.message ?? ''))
   }
 }
 onMounted(loadData)
