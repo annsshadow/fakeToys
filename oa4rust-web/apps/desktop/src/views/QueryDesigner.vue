@@ -47,6 +47,7 @@
             <button class="btn-edit" @click="loadQueryPerms">🔐 权限/分类</button>
             <button class="btn-edit" @click="loadTableRows">📊 表数据/统计</button>
             <button class="btn-edit" @click="loadTableCursors">🔀 表游标</button>
+            <button class="btn-edit" @click="loadDesignerViewStat">📐 视图/统计游标</button>
             <button class="btn-del" @click="deleteQuery(selected)">🗑</button>
           </div>
         </div>
@@ -443,6 +444,28 @@ async function loadTableCursors() {
     tableRowText.value = `过滤行 ${n(filtered)} · 计数 ${cntV} · 下翻 ${n(next)} · 上翻 ${n(prev)} · 单行 ${(one as any)?.data?.id ? '命中' : '未命中'}`
   } catch (e: any) {
     toast.error('加载表游标失败: ' + (e?.message ?? ''))
+  }
+}
+// rev227：设计器 视图/统计/分类游标族 6 条真实 distinct 路由
+// view/permission/{id}（x_query_view SELECT permission）· view/list/{id}/prev/{count}（id< DESC）· view/list/{id}/next/{count}（id> ASC）
+// · query/list/querycategory/{queryCategory}（x_query_design WHERE category）· stat/list/{query}/{flag}（x_query_stat WHERE query_flag）· stat/list/{id}/next/{count}（id> ASC）
+async function loadDesignerViewStat() {
+  const flag = String(selected.value?.flag ?? selected.value?.id ?? '0')
+  const cat = String((selected.value as any)?.category ?? 'default')
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [viewPerm, viewPrev, viewNext, byCat, statByQuery, statNext] = await Promise.all([
+      s(api.get(`/api/query/assemble/designer/view/permission/${encodeURIComponent(flag)}`)),
+      s(api.get(`/api/query/assemble/designer/view/list/${encodeURIComponent(flag)}/prev/20`)),
+      s(api.get(`/api/query/assemble/designer/view/list/${encodeURIComponent(flag)}/next/20`)),
+      s(api.get(`/api/query/assemble/designer/query/list/querycategory/${encodeURIComponent(cat)}`)),
+      s(api.get(`/api/query/assemble/designer/stat/list/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}`)),
+      s(api.get(`/api/query/assemble/designer/stat/list/${encodeURIComponent(flag)}/next/20`)),
+    ])
+    const n = (x: any) => (Array.isArray((x as any)?.data) ? (x as any).data.length : 0)
+    tableRowText.value = `视图权限 ${(viewPerm as any)?.data ? '有' : '无'} · 视图上翻 ${n(viewPrev)}·下翻 ${n(viewNext)} · 分类查询 ${n(byCat)} · 统计按查询 ${n(statByQuery)}·下翻 ${n(statNext)}`
+  } catch (e: any) {
+    toast.error('加载视图/统计游标失败: ' + (e?.message ?? ''))
   }
 }
 
