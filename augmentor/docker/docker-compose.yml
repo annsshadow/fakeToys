@@ -17,7 +17,7 @@ services:
       args:
         # 设为 1 时安装全部可选依赖（镜像体积显著增大）
         INSTALL_OPTIONAL: ${INSTALL_OPTIONAL:-0}
-    image: ai-data-platform:${IMAGE_TAG:-2.2.0}
+    image: ai-data-platform:${IMAGE_TAG:-3.0.0}
     container_name: ai-data-platform-api
     restart: unless-stopped
 
