@@ -18,6 +18,7 @@
         <button class="btn-refresh" @click="loadCmsOverview">📊 内容概览</button>
         <button class="btn-refresh" @click="loadCmsExpress">📰 内容/视图</button>
         <button class="btn-refresh" @click="loadCmsDetails">🗃️ 分类/文章明细</button>
+        <button class="btn-refresh" @click="loadFormDetails">📋 表单明细</button>
       </div>
       <div v-if="cmsConfigText" class="cfg-note">{{ cmsConfigText }}</div>
       <div v-if="overviewText" class="cfg-note">{{ overviewText }}</div>
@@ -139,6 +140,35 @@ async function loadCmsDetails() {
     overviewText.value = `分类「${cName}」· 文章「${aTitle}」· 控制版块 ${sN}`
   } catch (e: any) {
     toast.error('加载分类/文章明细失败: ' + (e?.message ?? ''))
+  }
+}
+// 表单明细族 3 条真实 distinct 路由：表单运行时 form/v2/{id}（form_runtime_by_id）+ 应用下表单 form/list/app/{appId}（x_cms_form WHERE app_id）
+// + 文档表单 form/v2/lookup/document/{docId}（form_runtime_by_document）。formId/appId 从 form/list/all、docId 从 article/list 回源。
+async function loadFormDetails() {
+  const firstId = (resp: any): string => {
+    const arr = Array.isArray(resp?.data) ? resp.data : (resp?.data?.data ?? [])
+    return Array.isArray(arr) && arr[0] ? String(arr[0].id ?? '') : ''
+  }
+  try {
+    const [formList, artList] = await Promise.all([
+      api.get('/api/form/list/all').catch(() => null),
+      api.get('/api/cms/article/list').catch(() => null),
+    ])
+    const forms = (Array.isArray((formList as any)?.data) ? (formList as any).data : ((formList as any)?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const formId = forms[0] ? String(forms[0].id ?? '') : ''
+    const appId = forms[0] ? String(forms[0].appId ?? forms[0].app_id ?? '') : ''
+    const docId = firstId(artList)
+    const [formDetail, appForms, docForm] = await Promise.all([
+      formId ? api.get(`/api/form/v2/${encodeURIComponent(formId)}`).catch(() => null) : Promise.resolve(null),
+      appId ? api.get(`/api/form/list/app/${encodeURIComponent(appId)}`).catch(() => null) : Promise.resolve(null),
+      docId ? api.get(`/api/form/v2/lookup/document/${encodeURIComponent(docId)}`).catch(() => null) : Promise.resolve(null),
+    ])
+    const fName = (formDetail as any)?.data?.name ?? (formId || '—')
+    const aN = Array.isArray((appForms as any)?.data) ? (appForms as any).data.length : 0
+    const hasDoc = (docForm as any)?.data ? '有' : '无'
+    overviewText.value = `表单「${fName}」· 应用下表单 ${aN} · 文档表单 ${hasDoc}`
+  } catch (e: any) {
+    toast.error('加载表单明细失败: ' + (e?.message ?? ''))
   }
 }
 const createEp = '/api/cms/core/entity/index/create'
