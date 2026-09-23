@@ -13,6 +13,7 @@
         <button class="btn-primary ghost" @click="loadCompletedStubs">已办/超期存根</button>
         <button class="btn-primary ghost" @click="loadUnitStubs">单位维度存根</button>
         <button class="btn-primary ghost" @click="loadDimensionStats">维度周期统计</button>
+        <button class="btn-primary ghost" @click="loadCountStats">计数聚合</button>
         <button class="btn-primary" @click="refresh">🔄 刷新</button>
       </span>
     </div>
@@ -88,6 +89,31 @@ async function loadDimensionStats() {
     periodText.value = `单位已办任务 ${n(doneTask)} · 应用已办工作 ${n(doneWork)} · 单位超期任务 ${n(expiredTask)}`
   } catch (e: any) {
     toast.error('加载维度统计失败: ' + (e?.message ?? ''))
+  }
+}
+// rev218：BAM 计数聚合族 7 条真实 distinct 路由（period_count_query 按 kind×period×group 分组统计）
+// count/completed task·work by/application · completed/task by/process · expired task·work by/application · start task·work by/application
+async function loadCountStats() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const unitResp: any = await api.get('/api/organization/assemble/control/unit/list/top').catch(() => null)
+    const units = (Array.isArray(unitResp?.data) ? unitResp.data : []) as Array<Record<string, unknown>>
+    const unit = units[0] ? String(units[0].id ?? '0') : '0'
+    const person = '0'
+    const app = 'default'
+    const [ctA, cwA, ctP, etA, ewA, stA, swA] = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/bam/period/list/count/completed/task/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application`)),
+      s(api.get(`/api/processplatform/assemble/bam/period/list/count/completed/work/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application`)),
+      s(api.get(`/api/processplatform/assemble/bam/period/list/count/completed/task/application/${encodeURIComponent(app)}/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/process`)),
+      s(api.get(`/api/processplatform/assemble/bam/period/list/count/expired/task/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application`)),
+      s(api.get(`/api/processplatform/assemble/bam/period/list/count/expired/work/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application`)),
+      s(api.get(`/api/processplatform/assemble/bam/period/list/count/start/task/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application`)),
+      s(api.get(`/api/processplatform/assemble/bam/period/list/count/start/work/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    periodText.value = `已办任务/应用 ${n(ctA)} · 已办工作/应用 ${n(cwA)} · 已办任务/流程 ${n(ctP)} · 超期任务/应用 ${n(etA)} · 超期工作/应用 ${n(ewA)} · 起始任务/应用 ${n(stA)} · 起始工作/应用 ${n(swA)}`
+  } catch (e: any) {
+    toast.error('加载计数统计失败: ' + (e?.message ?? ''))
   }
 }
 async function loadPeriodStats() {
