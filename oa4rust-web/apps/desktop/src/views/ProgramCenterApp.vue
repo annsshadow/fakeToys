@@ -44,7 +44,7 @@
       </div>
       <!-- Application tab -->
       <div v-if="tab==='application'" class="tab-content">
-        <div class="toolbar"><button class="btn-primary" @click="loadAllApplications">全部应用</button><button class="btn-primary" @click="loadCenterMeta">注册应用/版本/验证码</button><button class="btn-primary" @click="loadProgramDetails">明细抽样</button><button class="btn-primary" @click="loadErrorLogs">错误日志</button><button class="btn-primary" @click="loadPromptErrorFilters">提示错误筛选</button><button class="btn-primary" @click="loadPromptErrorPrev">提示错误(逆序筛选)</button><button class="btn-primary" @click="loadUnexpectedFilters">意外错误筛选</button><button class="btn-primary" @click="loadWarnFilters">警告筛选</button><span v-if="appMetaText" class="app-meta">{{ appMetaText }}</span></div>
+        <div class="toolbar"><button class="btn-primary" @click="loadAllApplications">全部应用</button><button class="btn-primary" @click="loadCenterMeta">注册应用/版本/验证码</button><button class="btn-primary" @click="loadProgramDetails">明细抽样</button><button class="btn-primary" @click="loadErrorLogs">错误日志</button><button class="btn-primary" @click="loadPromptErrorFilters">提示错误筛选</button><button class="btn-primary" @click="loadPromptErrorPrev">提示错误(逆序筛选)</button><button class="btn-primary" @click="loadUnexpectedFilters">意外错误筛选</button><button class="btn-primary" @click="loadWarnFilters">警告筛选</button><button class="btn-primary" @click="loadScheduleHotpic">调度日志/热图</button><span v-if="appMetaText" class="app-meta">{{ appMetaText }}</span></div>
         <div v-if="loadingApp" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
         <div v-else-if="applications.length===0" class="empty"><div class="ei">📱</div><p>暂无Application</p></div>
         <div v-else class="item-grid">
@@ -486,6 +486,24 @@ async function loadWarnFilters() {
     appMetaText.value = `警告：按日期(正序) ${n(nextDate)} · 逆序 ${n(prev)} · 逆序按日期 ${n(prevDate)}`
   } catch (e: any) {
     toast.error('加载警告筛选失败: ' + (e?.message ?? ''))
+  }
+}
+// rev257：调度日志/存储映射配置 + 热图实体列表/存在校验 4 条真实 distinct 读路由
+// x_program_schedule_log(application) · x_program_config(category=storageMapping) · hotpic ORM(application+info_id 列表/COUNT 存在)；arity 已核
+async function loadScheduleHotpic() {
+  const id = '0'
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [schedLog, warnCfg, hpList, hpExists] = await Promise.all([
+      settle(api.get(`/api/program_center/schedule/list/schedulelog/application/${encodeURIComponent(id)}`)),
+      settle(api.get(`/api/program_center/warnlog/view/system/log/tag/${encodeURIComponent(id)}`)),
+      settle(api.get(`/api/hotpic/core/entity/list/by/${encodeURIComponent(id)}/${encodeURIComponent(id)}`)),
+      settle(api.get(`/api/hotpic/core/entity/exists/check/${encodeURIComponent(id)}/${encodeURIComponent(id)}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    appMetaText.value = `调度日志 ${n(schedLog)} · 存储映射 ${n(warnCfg)} · 热图实体 ${n(hpList)} · 热图存在 ${(hpExists as any)?.data ? '有' : '无'}`
+  } catch (e: any) {
+    toast.error('加载调度/热图失败: ' + (e?.message ?? ''))
   }
 }
 async function loadAllApplications() {
