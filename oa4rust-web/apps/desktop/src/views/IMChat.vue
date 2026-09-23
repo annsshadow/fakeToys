@@ -13,6 +13,7 @@
           <button class="new-chat-btn" title="即时消息/群发类型" @click="loadImInstant">📥</button>
           <button class="new-chat-btn" title="收藏/已消费/消息分页" @click="loadImArchive">🗂️</button>
           <button class="new-chat-btn" title="按类型/未消费/非IM消息" @click="loadMsgByType">📊</button>
+          <button class="new-chat-btn" title="群发消息详情/游标" @click="loadMassMessages">📢</button>
         </div>
       </div>
       <div class="search-bar">
@@ -587,6 +588,24 @@ async function loadMsgByType() {
     toast.success(`information类 ${n(byType)} / 未消费 ${n(notConsumed)} / 非IM ${n(noim)}`)
   } catch (e: any) {
     toast.error('加载消息分类失败: ' + (e?.message ?? ''))
+  }
+}
+// 群发消息族 3 条真实 distinct 路由：群发详情 mass/{id}（x_message_mass by id）+ 群发消息游标
+// mass/list/{id}/next/{count}（x_message WHERE mass_id AND id>$2）+ mass/list/{id}/prev/{count}（WHERE mass_id AND id<$2）。id=0 从头。
+async function loadMassMessages() {
+  const headId = '0'
+  const cnt = '20'
+  try {
+    const [detail, next, prev] = await Promise.all([
+      api.get(`/api/message/assemble/communicate/mass/${headId}`).catch(() => null),
+      api.get(`/api/message/assemble/communicate/mass/list/${headId}/next/${cnt}`).catch(() => null),
+      api.get(`/api/message/assemble/communicate/mass/list/${headId}/prev/${cnt}`).catch(() => null),
+    ])
+    const title = (detail as any)?.data?.title ?? '—'
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    toast.success(`群发「${title}」· 游标 next ${n(next)} / prev ${n(prev)}`)
+  } catch (e: any) {
+    toast.error('加载群发消息失败: ' + (e?.message ?? ''))
   }
 }
 
