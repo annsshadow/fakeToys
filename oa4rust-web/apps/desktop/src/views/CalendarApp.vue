@@ -52,6 +52,7 @@
       <button class="cll-tab" :class="{on:calScope==='my'}" @click="loadCalendars('my')">我的（{{ myCals.length }}）</button>
       <button class="cll-tab" :class="{on:calScope==='public'}" @click="loadCalendars('public')">公共（{{ pubCals.length }}）</button>
       <button class="cll-tab" @click="loadCalSettings">⚙️ 设置/权限</button>
+      <button class="cll-tab" @click="loadCalCoreEntities">🗓️ 实体日历</button>
       <span v-if="calSettingText" class="cll-note">{{ calSettingText }}</span>
       <span
         v-for="c in (calScope==='my'?myCals:pubCals)"
@@ -165,6 +166,27 @@ async function loadCalSettings() {
     calSettingText.value = `设置 ${n} 项（首「${sName}」）· 日历${isMgr ? '管理员' : '普通'} · 设置${setIsMgr ? '可管' : '只读'}`
   } catch (e: any) {
     toast.error('加载日历设置失败: ' + (e?.message ?? ''))
+  }
+}
+// rev210：日历实体 4 条真实 distinct 路由（SeaORM cal_calendar/cal_event）
+// core/entity/calendar/list/public（IsPublic 过滤）· list/my（Status=OPEN 按创建降序）· calendar/{id}（find_by_id+Status=OPEN）· event/list/{calendarId}（CalendarId+Status=OPEN 事件）
+async function loadCalCoreEntities() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [pub, my] = await Promise.all([
+      s(api.get('/api/calendar/core/entity/calendar/list/public')),
+      s(api.get('/api/calendar/core/entity/calendar/list/my')),
+    ])
+    const rows = Array.isArray((my as any)?.data) ? (my as any).data : []
+    const cid = rows[0] ? String(rows[0].id ?? '0') : '0'
+    const [detail, events] = await Promise.all([
+      s(api.get(`/api/calendar/core/entity/calendar/${encodeURIComponent(cid)}`)),
+      s(api.get(`/api/calendar/core/entity/event/list/${encodeURIComponent(cid)}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    calSettingText.value = `实体公共 ${n(pub)} / 我的 ${n(my)} / 详情 ${(detail as any)?.data?.id ? '命中' : '未命中'} / 事件 ${n(events)}`
+  } catch (e: any) {
+    toast.error('加载日历实体失败: ' + (e?.message ?? ''))
   }
 }
 async function loadCalendars(scope: 'my' | 'public') {

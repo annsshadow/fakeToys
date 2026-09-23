@@ -20,6 +20,7 @@
       <button class="sb" @click="loadMeetingSearch">检索/前瞻</button>
       <button class="sb" @click="loadMeetingCore">核心资源/日程</button>
       <button class="sb" @click="loadMeetingPinyin">拼音检索</button>
+      <button class="sb" @click="loadMeetingEntities">会议实体</button>
       <button class="sb" @click="addBuilding">+ 楼栋</button>
     </div>
     <div v-if="appliedText" class="applied-note">{{ appliedText }}</div>
@@ -298,6 +299,27 @@ async function loadMeetingCore() {
     appliedText.value = `核心会议室 ${n(rooms)} / 楼栋 ${n(blds)} / 未来7天日程 ${n(sched)} / 实体房间 ${n(coreRooms)}`
   } catch (e: any) {
     toast.error('加载核心资源/日程失败: ' + (e?.message ?? ''))
+  }
+}
+// rev210：会议实体 4 条真实 distinct 路由（SeaORM）：core/entity/meeting/list（全部按开始降序 limit20）
+// · core/entity/meeting/list/by/{roomId}（按 RoomId 过滤）· core/entity/meeting/{id}（find_by_id 会议）· core/entity/room/{id}（find_by_id 房间）
+async function loadMeetingEntities() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const listResp = await s(api.get('/api/meeting/core/entity/meeting/list'))
+    const rows = Array.isArray((listResp as any)?.data) ? (listResp as any).data : []
+    const first = rows[0] ?? {}
+    const mid = String(first.id ?? '0')
+    const roomId = String(first.roomId ?? first.room_id ?? '0')
+    const [byRoom, meetingOne, roomOne] = await Promise.all([
+      s(api.get(`/api/meeting/core/entity/meeting/list/by/${encodeURIComponent(roomId)}`)),
+      s(api.get(`/api/meeting/core/entity/meeting/${encodeURIComponent(mid)}`)),
+      s(api.get(`/api/meeting/core/entity/room/${encodeURIComponent(roomId)}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    appliedText.value = `实体会议 ${rows.length} / 按房间 ${n(byRoom)} / 会议详情 ${(meetingOne as any)?.data?.id ? '命中' : '未命中'} / 房间详情 ${(roomOne as any)?.data?.id ? '命中' : '未命中'}`
+  } catch (e: any) {
+    toast.error('加载会议实体失败: ' + (e?.message ?? ''))
   }
 }
 async function loadMeetingSearch() {
