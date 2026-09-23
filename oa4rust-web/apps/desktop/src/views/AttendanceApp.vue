@@ -20,6 +20,7 @@
         <button class="eb" @click="loadV2ConfigTpl">🧾 v2配置/模板/统计</button>
         <button class="eb" @click="loadStatisticShow">📈 统计展示筛选</button>
         <button class="eb" @click="loadAppealDetailFilters">🧾 申诉/明细游标</button>
+        <button class="eb" @click="loadHolidaySettingDetails">🏖️ 假期/设置明细</button>
       </div>
       <div v-if="attOverviewText" class="att-note">{{ attOverviewText }}</div>
     </div>
@@ -475,6 +476,34 @@ async function loadAppealDetailFilters() {
     attOverviewText.value = `申诉：正序 ${rows.length}·逆序 ${n(prev)}·管理 ${n(mgr)}·详情 ${hasDetail} | 明细：正序 ${n(dNext)}·逆序 ${n(dPrev)}`
   } catch (e: any) {
     toast.error('加载申诉/明细游标失败: ' + (e?.message ?? ''))
+  }
+}
+// 假期/设置明细族 7 条真实 distinct（rev194，各读独立表/维度）：selfholiday filter/list next(id>)+prev(id<)+{id}
+// + setting/{id}（WHERE id）+ setting/code/{code}（WHERE code）+ importfileinfo/{id} + statisticrequirelog/{id}。
+async function loadHolidaySettingDetails() {
+  const nx = '0'
+  const pv = '999999999'
+  const c = '20'
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const shNext = await s(api.get(`/api/attendance/assemble/control/attendanceselfholiday/filter/list/${nx}/next/${c}`))
+    const shRows = Array.isArray((shNext as any)?.data) ? (shNext as any).data : []
+    const shId = shRows[0] ? String(shRows[0].id ?? '0') : '0'
+    const setId = settings.value[0] ? String(settings.value[0].id ?? '0') : '0'
+    const setCode = settings.value[0] ? String((settings.value[0] as any).code ?? 'default') : 'default'
+    const [shPrev, shOne, setById, setByCode, impInfo, reqLog] = await Promise.all([
+      s(api.get(`/api/attendance/assemble/control/attendanceselfholiday/filter/list/${pv}/prev/${c}`)),
+      s(api.get(`/api/attendance/assemble/control/attendanceselfholiday/${encodeURIComponent(shId)}`)),
+      s(api.get(`/api/attendance/assemble/control/attendancesetting/${encodeURIComponent(setId)}`)),
+      s(api.get(`/api/attendance/assemble/control/attendancesetting/code/${encodeURIComponent(setCode)}`)),
+      s(api.get(`/api/attendance/assemble/control/attendanceimportfileinfo/${encodeURIComponent(setId)}`)),
+      s(api.get(`/api/attendance/assemble/control/attendancestatisticrequirelog/${encodeURIComponent(setId)}`)),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    const has = (r: any) => ((r as any)?.data?.id ? '命中' : '未命中')
+    attOverviewText.value = `自助假期：正序 ${shRows.length}·逆序 ${n(shPrev)}·详情 ${has(shOne)} | 设置 by-id ${has(setById)}·by-code ${has(setByCode)} | 导入文件 ${has(impInfo)}·统计需求日志 ${has(reqLog)}`
+  } catch (e: any) {
+    toast.error('加载假期/设置明细失败: ' + (e?.message ?? ''))
   }
 }
 onMounted(loadData)
