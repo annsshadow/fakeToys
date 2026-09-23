@@ -363,9 +363,12 @@ class DatasetAnalyzer:
         
         unique_ratio = len(set(all_words)) / len(all_words)
         
-        # 计算长度多样性
+        # 计算长度多样性（均值先算一次：放进生成器里会变成 O(n^2) 的重复求和）
         lengths = [len(inst) for inst in instructions]
-        length_std = (sum((l - sum(lengths)/len(lengths))**2 for l in lengths) / len(lengths)) ** 0.5
+        mean_length = sum(lengths) / len(lengths)
+        length_std = (
+            sum((length - mean_length) ** 2 for length in lengths) / len(lengths)
+        ) ** 0.5
         length_diversity = min(length_std / 50, 1.0)  # 归一化
         
         # 综合分数
