@@ -163,9 +163,11 @@
           <button class="btn-primary" @click="loadProgramAlias">应用别名/当前样式/数据结构</button>
           <button class="btn-primary" @click="loadDesignerJest">设计器搜索/中心测试/脚本基准</button>
           <button class="btn-primary" @click="loadDeployDictDistribute">o2部署/市场模块/字典数据/分发源</button>
+          <button class="btn-primary" @click="loadAppStyleImages">应用风格图元(5类)</button>
           <button class="btn-create" @click="saveConfig">+ 新建/更新</button>
         </div>
         <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
+        <div v-if="appStyleText" class="app-meta">{{ appStyleText }}</div>
         <div v-if="dsText" class="app-meta">{{ dsText }}</div>
         <div v-if="loadingConfig" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
         <div v-else-if="configs.length===0" class="empty"><div class="ei">⚙️</div><p>暂无配置项</p></div>
@@ -993,6 +995,25 @@ loadInvokeCats()
 // 平台配置（config）：列表 / 应用 / 实体 / 新建更新（program_center config 族）
 const dsText = ref('')
 const deployDistText = ref('')
+const appStyleText = ref('')
+// rev279：program_center 应用风格图元 5 条真实 distinct 读路由（同表 x_program_deploy_resource 但 resource_type 各异，返回 id/name/type/path 元数据非二进制，arity0）
+// app_top/launch_logo/menu_logo_blur/menu_logo_focus/process_default
+async function loadAppStyleImages() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [top, launch, blur, focus, proc] = await Promise.all([
+      s(api.get(`/api/program_center/appstyle/image/application/top`)),
+      s(api.get(`/api/program_center/appstyle/image/launch/logo`)),
+      s(api.get(`/api/program_center/appstyle/image/menu/logo/blur`)),
+      s(api.get(`/api/program_center/appstyle/image/menu/logo/focus`)),
+      s(api.get(`/api/program_center/appstyle/image/process/default`)),
+    ])
+    const has = (r: any) => ((r as any)?.data ? '有' : '无')
+    appStyleText.value = `应用顶图 ${has(top)} | 启动Logo ${has(launch)} | 菜单Logo模糊 ${has(blur)} | 菜单Logo聚焦 ${has(focus)} | 流程默认 ${has(proc)}`
+  } catch (e: any) {
+    toast.error('加载应用风格图元失败: ' + (e?.message ?? ''))
+  }
+}
 // rev263：program_center o2部署/市场模块/字典数据/分发源 4 条真实 distinct 读路由
 // deploy/server/o2 → x_program_deploy_server(server_type='o2') · market/flag → x_program_module(deleted_at) · dict/{flag}/{path}/data → x_program_dict(flag=$1 arity2) · distribute/assemble/source/{source} → x_program_invoke(category=$1)；均 query_opt 只读、arity 已核
 async function loadDeployDictDistribute() {
