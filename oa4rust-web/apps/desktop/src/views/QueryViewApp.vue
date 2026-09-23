@@ -18,6 +18,7 @@
         <button class="btn-primary" @click="loadImportModels">导入模型</button>
         <button class="btn-primary" @click="loadTables">数据表</button>
         <button class="btn-primary" @click="loadTableRowsCursor">表行游标</button>
+        <button class="btn-primary" @click="loadQueryViewExtras">计数/导入/检索</button>
       </div>
       <div v-if="queryListText" class="qv-note">{{ queryListText }}</div>
       <div v-if="tableText" class="qv-note">{{ tableText }}</div>
@@ -249,6 +250,33 @@ async function loadTableRowsCursor() {
     tableText.value = `表「${flag}」全部行 ${n(all)} · 过滤 ${n(where)} · 上翻 ${n(prev)} · 首行详情 ${(detail as any)?.data ? '有' : '无'} · 语句格式「${fmtName}」`
   } catch (e: any) {
     toast.error('加载表行游标失败: ' + (e?.message ?? ''))
+  }
+}
+// rev233：查询表面 计数/导入记录/统计/查询检索族 6 条真实 distinct 路由
+// table/row/where/where/{tableFlag}/{count}（ILIKE COUNT）· importmodel/record/{recordId}（x_query_import_model_record 全字段）· importmodel/record/{recordId}/status（仅 status）
+// · stat/flag/{flag}/query/{queryFlag}（x_query_stat name|id+query_flag）· query/list/key/{key}（x_query_design name ILIKE 检索）· table/{flag}/row/{rid}（x_query_table_data WHERE table_flag+id）
+async function loadQueryViewExtras() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const r: any = await api.get('/api/queryview/table/list/paging/1/20/20')
+    const rows = (Array.isArray(r?.data) ? r.data : (r?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const flag = rows[0] ? String(rows[0].table_flag ?? rows[0].tableFlag ?? rows[0].flag ?? '0') : '0'
+    const rid = rows[0] ? String(rows[0].id ?? '0') : '0'
+    const recResp: any = await s(api.get('/api/queryview/importmodel/uuid'))
+    const recId = String(recResp?.data?.id ?? recResp?.data ?? rid)
+    const [cnt, rec, recStatus, stat, keySearch, rowById] = await Promise.all([
+      s(api.get(`/api/queryview/table/row/where/where/${encodeURIComponent(flag)}/10?where=a`)),
+      s(api.get(`/api/queryview/importmodel/record/${encodeURIComponent(recId)}`)),
+      s(api.get(`/api/queryview/importmodel/record/${encodeURIComponent(recId)}/status`)),
+      s(api.get(`/api/queryview/stat/flag/${encodeURIComponent(flag)}/query/${encodeURIComponent(flag)}`)),
+      s(api.get(`/api/queryview/query/list/key/${encodeURIComponent('a')}`)),
+      s(api.get(`/api/queryview/table/${encodeURIComponent(flag)}/row/${encodeURIComponent(rid)}`)),
+    ])
+    const cv = (cnt as any)?.data?.count ?? (cnt as any)?.data ?? 0
+    const nn = (x: any) => (Array.isArray((x as any)?.data) ? (x as any).data.length : 0)
+    tableText.value = `过滤计数 ${cv} · 导入记录 ${(rec as any)?.data ? '有' : '无'}（状态 ${(recStatus as any)?.data?.status ?? '—'}）· 统计 ${(stat as any)?.data ? '有' : '无'} · 查询检索 ${nn(keySearch)} · 单行 ${(rowById as any)?.data ? '命中' : '未命中'}`
+  } catch (e: any) {
+    toast.error('加载查询表面扩展失败: ' + (e?.message ?? ''))
   }
 }
 async function loadViews() {
