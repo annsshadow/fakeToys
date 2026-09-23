@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel
 
 from ..deps import (
+    allowed_data_roots,
     get_pipeline,
     read_json_file,
     resolve_within_roots,
@@ -94,14 +95,31 @@ def _safe_data_path(filename: str) -> Path:
 
 @router.get("/api/data/list", response_model=DataFileListResponse, summary="列出数据文件")
 async def list_data_files():
-    """列出数据文件"""
+    """列出白名单根目录下的 `train_data*.json`
+
+    扫描范围**必须**与 `allowed_data_roots` 同源：这里曾写死 `Path(".")`，
+    于是出厂默认收紧到 `["data"]` 之后，列表会把工作目录里的文件端给用户，而用户一点
+    就是 403——列表能给的，路由必须能读。
+
+    `name` 是裸文件名而 `{filename}` 只匹配单个路径段，所以它可加载的前提是
+    `resolve_within_roots` 会在白名单根目录内查找相对路径（见 `deps` 的说明）。
+    """
     loop = asyncio.get_event_loop()
 
     def scan_files():
-        data_dir = Path(".")
         files = []
-        for f in data_dir.glob("*.json"):
-            if f.name.startswith("train_data"):
+        seen = set()
+        # 白名单里的目录可能不存在（例如 `data/` 还没建）。Python 3.13 的
+        # `Path.glob` 对此返回空而不是抛错，因此无需 `is_dir()` 预检——加了
+        # 反而是一条永远不会走到的分支。
+        for root in allowed_data_roots():
+            for f in sorted(root.glob("*.json")):
+                if not f.name.startswith("train_data"):
+                    continue
+                resolved = f.resolve()
+                if resolved in seen:  # 多个根目录互相嵌套时去重
+                    continue
+                seen.add(resolved)
                 files.append({
                     "name": f.name,
                     "path": str(f),

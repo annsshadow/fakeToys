@@ -39,9 +39,9 @@ def force_fallback_model(monkeypatch):
 def allow_temp_data_roots(monkeypatch):
     """把系统临时目录并入 API 的路径白名单
 
-    `api.deps` 默认只允许 `web.data_roots`（进程工作目录）内的路径，
-    越界一律 403。而测试大量使用 `tmp_path`（位于系统临时目录下）传递
-    绝对路径，因此这里显式放宽白名单，使测试无需改动即可覆盖到白名单
+    `api.deps` 默认只允许 `web.data_roots`（出厂默认为工作目录下的 `data/`）
+    内的路径，越界一律 403。而测试大量使用 `tmp_path`（位于系统临时目录下）
+    传递绝对路径，因此这里显式放宽白名单，使测试无需改动即可覆盖到白名单
     逻辑之外的分支。
 
     生产环境不受影响：那里不会设置 `AUGMENTOR_DATA_ROOTS`，
