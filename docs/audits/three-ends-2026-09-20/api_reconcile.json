@@ -7778,7 +7778,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryDesigner.vue",
-    "line": 511,
+    "line": 512,
     "method": "GET",
     "raw": "/api/query/assemble/designer/get/${encodeURIComponent(selected.value.id)}",
     "path": "/api/query/assemble/designer/get/{}",
@@ -7791,7 +7791,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryDesigner.vue",
-    "line": 533,
+    "line": 534,
     "method": "PUT",
     "raw": "/api/query/assemble/designer/save/${editingQuery.value.id}",
     "path": "/api/query/assemble/designer/save/{}",
@@ -7804,7 +7804,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryDesigner.vue",
-    "line": 569,
+    "line": 570,
     "method": "DELETE",
     "raw": "/api/query/assemble/designer/delete/${q.id}",
     "path": "/api/query/assemble/designer/delete/{}",
@@ -17188,7 +17188,22 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryDesigner.vue",
-    "line": 535,
+    "line": 486,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/table/list/row/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}/prev/20",
+    "path": "/api/query/assemble/designer/table/list/row/{}/{}/prev/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/query/assemble/designer/table/list/row/{tableFlag}/{id}/prev/{count}",
+    "hit_crate": "query_assemble_designer",
+    "extra": [
+     "count=20"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryDesigner.vue",
+    "line": 536,
     "method": "POST",
     "raw": "/api/query/assemble/designer/create",
     "path": "/api/query/assemble/designer/create",
@@ -17201,7 +17216,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryDesigner.vue",
-    "line": 554,
+    "line": 555,
     "method": "POST",
     "raw": "/api/query/assemble/designer/execute",
     "path": "/api/query/assemble/designer/execute",
@@ -17214,7 +17229,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryDesigner.vue",
-    "line": 721,
+    "line": 722,
     "method": "POST",
     "raw": "/api/query/assemble/designer/create",
     "path": "/api/query/assemble/designer/create",

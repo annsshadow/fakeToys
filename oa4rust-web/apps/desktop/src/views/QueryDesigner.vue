@@ -475,7 +475,7 @@ async function loadDesignerOutputBundle() {
   const cat = String((selected.value as any)?.category ?? '0')
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
-    const [outFile, outSelect, bundle, entityProps, catSummary, statByQuery, tableRows] = await Promise.all([
+    const [outFile, outSelect, bundle, entityProps, catSummary, statByQuery, tableRows, tableRowsPrev] = await Promise.all([
       s(api.get(`/api/query/assemble/designer/output/select/file/${encodeURIComponent(flag)}`)),
       s(api.get(`/api/query/assemble/designer/output/select/${encodeURIComponent(flag)}`)),
       s(api.get(`/api/query/assemble/designer/bundle/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}`)),
@@ -483,9 +483,10 @@ async function loadDesignerOutputBundle() {
       s(api.get(`/api/query/assemble/designer/query/list/summary/querycategory/${encodeURIComponent(cat)}`)),
       s(api.get(`/api/query/assemble/designer/stat/list/query/${encodeURIComponent(flag)}`)),
       s(api.get(`/api/query/assemble/designer/table/list/${encodeURIComponent(flag)}/row/select/where/a`)),
+      s(api.get(`/api/query/assemble/designer/table/list/row/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}/prev/20`)),
     ])
     const n = (x: any) => (Array.isArray((x as any)?.data) ? (x as any).data.length : 0)
-    tableRowText.value = `输出文件 ${(outFile as any)?.data ? '有' : '无'} · 输出选择 ${n(outSelect)} · 视图包 ${(bundle as any)?.data ? '有' : '无'} · 实体属性 ${n(entityProps)} · 分类摘要 ${n(catSummary)} · 统计按查询 ${n(statByQuery)} · 表行过滤 ${n(tableRows)}`
+    tableRowText.value = `输出文件 ${(outFile as any)?.data ? '有' : '无'} · 输出选择 ${n(outSelect)} · 视图包 ${(bundle as any)?.data ? '有' : '无'} · 实体属性 ${n(entityProps)} · 分类摘要 ${n(catSummary)} · 统计按查询 ${n(statByQuery)} · 表行过滤 ${n(tableRows)} · 表行前翻 ${n(tableRowsPrev)}`
   } catch (e: any) {
     toast.error('加载输出/包/属性失败: ' + (e?.message ?? ''))
   }
