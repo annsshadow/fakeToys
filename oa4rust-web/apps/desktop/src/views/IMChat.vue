@@ -14,6 +14,7 @@
           <button class="new-chat-btn" title="收藏/已消费/消息分页" @click="loadImArchive">🗂️</button>
           <button class="new-chat-btn" title="按类型/未消费/非IM消息" @click="loadMsgByType">📊</button>
           <button class="new-chat-btn" title="群发消息详情/游标" @click="loadMassMessages">📢</button>
+          <button class="new-chat-btn" title="即时消息消费维度" @click="loadInstantFacets">🗓️</button>
         </div>
       </div>
       <div class="search-bar">
@@ -606,6 +607,27 @@ async function loadMassMessages() {
     toast.success(`群发「${title}」· 游标 next ${n(next)} / prev ${n(prev)}`)
   } catch (e: any) {
     toast.error('加载群发消息失败: ' + (e?.message ?? ''))
+  }
+}
+
+// rev224：即时消息消费维度族 6 条真实 distinct 路由（x_message_consume）
+// instant/list/currentperson/consumed/count/{count}/asc（consumed=true ASC）· /desc（DESC）· count/{count}/asc（全部 ASC）
+// · not/consumed/count/{count}/asc（consumed=false ASC）· instant/list/{id}/next/{count}（id> ASC）· instant/list/{id}/prev/{count}（id< DESC）
+async function loadInstantFacets() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [consAsc, consDesc, allAsc, notCons, next, prev] = await Promise.all([
+      s(api.get('/api/message/assemble/communicate/instant/list/currentperson/consumed/count/20/asc')),
+      s(api.get('/api/message/assemble/communicate/instant/list/currentperson/consumed/count/20/desc')),
+      s(api.get('/api/message/assemble/communicate/instant/list/currentperson/count/20/asc')),
+      s(api.get('/api/message/assemble/communicate/instant/list/currentperson/not/consumed/count/20/asc')),
+      s(api.get('/api/message/assemble/communicate/instant/list/0/next/20')),
+      s(api.get('/api/message/assemble/communicate/instant/list/999999999/prev/20')),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    toast.success(`已消费 升 ${n(consAsc)}/降 ${n(consDesc)} · 全部升 ${n(allAsc)} · 未消费升 ${n(notCons)} · 游标 next ${n(next)}/prev ${n(prev)}`)
+  } catch (e: any) {
+    toast.error('加载即时消息维度失败: ' + (e?.message ?? ''))
   }
 }
 
