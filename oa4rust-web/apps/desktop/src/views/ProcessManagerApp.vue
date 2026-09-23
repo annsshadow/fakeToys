@@ -26,6 +26,7 @@
         <button class="btn-refresh" @click="loadDesignerItemAccess">🔑 项访问/输出/版次</button>
         <button class="btn-refresh" @click="loadSurfaceRouteSign">🧭 路由/签署/可控流程</button>
         <button class="btn-refresh" @click="loadMergeitemEnabled">🧩 合并项计划/启用流程</button>
+        <button class="btn-refresh" @click="loadSurfaceMiscReads">🧾 表单/流程/脚本/快照读取</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
@@ -35,6 +36,7 @@
       <div v-if="designerExtraText" class="rp-note">{{ designerExtraText }}</div>
       <div v-if="surfaceRouteSignText" class="rp-note">{{ surfaceRouteSignText }}</div>
       <div v-if="mergeEnabledText" class="rp-note">{{ mergeEnabledText }}</div>
+      <div v-if="surfaceMiscText" class="rp-note">{{ surfaceMiscText }}</div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🧩</div><p>暂无流程定义</p></div>
       <table v-else class="data-table">
@@ -192,6 +194,50 @@ async function loadMappingAccess() {
 const designerExtraText = ref('')
 const surfaceRouteSignText = ref('')
 const mergeEnabledText = ref('')
+const surfaceMiscText = ref('')
+// rev288：流程表面 表单/流程/脚本/草稿/快照/审阅记录 真实读端点集（form v2 lookup/mobile、process activity/application/available、script application、draft、snap 游标、review v2、job allow/visit、readrecord）
+// 均只读 arity 已核；作为流程设计/运行态的表单渲染、流程定位、脚本查看、草稿与快照读取等真实 UI 读取
+async function loadSurfaceMiscReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const cnt = '20'
+  const app = 'default'
+  const flag = 'default'
+  const proc = 'default'
+  const person = 'current'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/surface/form/${flag}/application/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/form/${flag}/application/${app}/mobile`)),
+      s(api.get(`/api/processplatform/assemble/surface/form/application/mobile/${flag}/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/form/v2/mobile/${id}`)),
+      s(api.get(`/api/processplatform/assemble/surface/form/v2/${id}/mobile`)),
+      s(api.get(`/api/processplatform/assemble/surface/form/v2/lookup/taskcompleted/${id}`)),
+      s(api.get(`/api/processplatform/assemble/surface/form/v2/lookup/taskcompleted/${id}/mobile`)),
+      s(api.get(`/api/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/mobile/${id}`)),
+      s(api.get(`/api/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/${id}/mobile`)),
+      s(api.get(`/api/processplatform/assemble/surface/process/activity/${id}/activityType/${flag}`)),
+      s(api.get(`/api/processplatform/assemble/surface/process/application/${flag}/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/process/list/available/identity/process/${flag}`)),
+      s(api.get(`/api/processplatform/assemble/surface/script/application/${flag}/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/draft/list/${id}/next/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/draft/process/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/snap/list/${id}/next/${cnt}/application/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/snap/list/${id}/prev/${cnt}/application/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/snap/list/${id}/next/${cnt}/process/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/snap/list/${id}/next/${cnt}/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/snap/list/${id}/prev/${cnt}/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/review/v2/list/prev/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/job/${id}/allow/visit/person/${person}`)),
+      s(api.get(`/api/processplatform/assemble/surface/job/latest/work/workcompleted/serial/${id}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readrecord/list/job/${id}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    surfaceMiscText.value = `表单/流程/脚本/快照 真实读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载表面杂项读取失败: ' + (e?.message ?? ''))
+  }
+}
 // rev267：流程设计器 合并项计划(按应用/全量分页)/启用流程 3 条真实 distinct 读路由
 // mergeitemplan/list/application/{app}/paging/{page}/size/{size} → pp_e_mergeitemplan WHERE xapplication(新表,arity3) · mergeitemplan/list/paging/{page}/size/{size} → 同表全量(arity2) · process/{id}/enabled → PP_E_PROCESS WHERE xid AND xstatus='enabled'(区别于已消费 xid，arity1)
 async function loadMergeitemEnabled() {
