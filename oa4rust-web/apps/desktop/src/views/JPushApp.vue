@@ -105,6 +105,9 @@ async function loadJpushEntities() {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const did = devices.value[0] ? String((devices.value[0] as any).id ?? '0') : '0'
   const tid = templates.value[0] ? String((templates.value[0] as any).id ?? '0') : '0'
+  const dn = '0'
+  const dt = '0'
+  const pt = '0'
   const [dGet, tGet, coreDevGet, coreTplGet, devList, jpushList, jpushGet] = await Promise.all([
     s(api.get(`/api/jpush/device/${encodeURIComponent(did)}`)),
     s(api.get(`/api/jpush/template/${encodeURIComponent(tid)}`)),
@@ -121,6 +124,11 @@ async function loadJpushEntities() {
     // rev308：core/entity 设备清单/模板清单(SeaORM 全量列表，区别于 {id} 详情) 补齐
     s(api.get(`/api/jpush/core/entity/device/list`)),
     s(api.get(`/api/jpush/core/entity/template/list`)),
+    // rev313：jpush 控制配置/应用清单/设备检查(纯 SELECT，已排除 message/test/send 发送动作)
+    s(api.get(`/api/jpush/assemble/control/config`)),
+    s(api.get(`/api/jpush_assemble_control/get/control/config`)),
+    s(api.get(`/api/jpush_assemble_control/list/control/apps`)),
+    s(api.get(`/api/jpush_assemble_control/device/check/${dn}/${dt}/${pt}`)),
   ])
   const hit = (r: any) => ((r as any)?.data?.id ? '命中' : '未命中')
   const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
