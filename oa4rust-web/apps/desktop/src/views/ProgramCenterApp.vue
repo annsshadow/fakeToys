@@ -165,11 +165,13 @@
           <button class="btn-primary" @click="loadDeployDictDistribute">o2部署/市场模块/字典数据/分发源</button>
           <button class="btn-primary" @click="loadAppStyleImages">应用风格图元(5类)</button>
           <button class="btn-primary" @click="loadMarketLogs">市场安装日志/分页</button>
+          <button class="btn-primary" @click="loadProgramExtraReads">代理/市场VIP/应用包/图表/收藏</button>
           <button class="btn-create" @click="saveConfig">+ 新建/更新</button>
         </div>
         <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
         <div v-if="appStyleText" class="app-meta">{{ appStyleText }}</div>
         <div v-if="marketLogText" class="app-meta">{{ marketLogText }}</div>
+        <div v-if="progExtraText" class="app-meta">{{ progExtraText }}</div>
         <div v-if="dsText" class="app-meta">{{ dsText }}</div>
         <div v-if="loadingConfig" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
         <div v-else-if="configs.length===0" class="empty"><div class="ei">⚙️</div><p>暂无配置项</p></div>
@@ -999,6 +1001,35 @@ const dsText = ref('')
 const deployDistText = ref('')
 const appStyleText = ref('')
 const marketLogText = ref('')
+const progExtraText = ref('')
+// rev299：程序中心 代理/市场VIP/已装版本/应用包/图表/收藏 真实读端点集（invoke/flag、market cloud vip、market installed version、apppack info、bar 图表、collect）；均只读 arity<=url 已核；排除 token 密钥/write/binary
+async function loadProgramExtraReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const flag = 'default'
+  const field = 'id'
+  const value = '0'
+  const name = 'default'
+  const mobile = '0'
+  const id = '0'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/program_center/invoke/flag`)),
+      s(api.get(`/api/program_center/market/cloud/unit/is/vip`)),
+      s(api.get(`/api/program_center/market/${flag}/installed/version`)),
+      s(api.get(`/api/program_center/apppack/pack/info`)),
+      s(api.get(`/api/program_center/apppack/pack/info/file/last`)),
+      s(api.get(`/api/program_center/bar/select1/field/${encodeURIComponent(field)}/value/${encodeURIComponent(value)}/count/20`)),
+      s(api.get(`/api/program_center/bar/select2/count/20`)),
+      s(api.get(`/api/program_center/collect/code/mobile/${encodeURIComponent(id)}`)),
+      s(api.get(`/api/program_center/collect/controllermobile/name/${encodeURIComponent(name)}/mobile/${encodeURIComponent(mobile)}`)),
+    ])
+    const n = (r: any) => ((r as any)?.data != null ? 1 : 0)
+    const hit = rs.reduce((a, r) => a + n(r), 0)
+    progExtraText.value = `程序中心补充真实读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载代理/市场/应用包失败: ' + (e?.message ?? ''))
+  }
+}
 // rev292：程序中心 市场安装日志(按flag/字面flag)/市场分页(按分类) 真实读端点(X_PROGRAM_SCHEDULE_LOG)；均只读 arity 已核
 async function loadMarketLogs() {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
