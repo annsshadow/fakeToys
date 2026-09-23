@@ -7778,7 +7778,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1007,
+    "line": 1008,
     "method": "GET",
     "raw": "/api/program_center/dict/${encodeURIComponent(flag)}/${encodeURIComponent(path)}/data",
     "path": "/api/program_center/dict/{}/{}/data",
@@ -7791,7 +7791,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1008,
+    "line": 1009,
     "method": "GET",
     "raw": "/api/program_center/distribute/assemble/source/${encodeURIComponent(source)}",
     "path": "/api/program_center/distribute/assemble/source/{}",
@@ -7804,7 +7804,20 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1260,
+    "line": 1011,
+    "method": "GET",
+    "raw": "/api/program_center/collect/name/${encodeURIComponent(collectName)}/exist",
+    "path": "/api/program_center/collect/name/{}/exist",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/program_center/collect/name/{name}/exist",
+    "hit_crate": "program_center",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 1263,
     "method": "GET",
     "raw": "/api/program_center/market/${encodeURIComponent(m.id || '')}/install/or/update",
     "path": "/api/program_center/market/{}/install/or/update",
@@ -7817,7 +7830,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1270,
+    "line": 1273,
     "method": "GET",
     "raw": "/api/program_center/market/${encodeURIComponent(m.id)}/installed/version",
     "path": "/api/program_center/market/{}/installed/version",
@@ -7830,7 +7843,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1279,
+    "line": 1282,
     "method": "GET",
     "raw": "/api/program_center/market/${encodeURIComponent(m.id || '')}/uninstall",
     "path": "/api/program_center/market/{}/uninstall",
@@ -17069,7 +17082,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1005,
+    "line": 1006,
     "method": "GET",
     "raw": "/api/program_center/deploy/server/o2",
     "path": "/api/program_center/deploy/server/o2",
@@ -17082,7 +17095,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1006,
+    "line": 1007,
     "method": "GET",
     "raw": "/api/program_center/market/flag",
     "path": "/api/program_center/market/flag",
@@ -17095,7 +17108,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1020,
+    "line": 1023,
     "method": "GET",
     "raw": "/api/program_center/datastructure/modules/all",
     "path": "/api/program_center/datastructure/modules/all",
@@ -17108,7 +17121,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1021,
+    "line": 1024,
     "method": "GET",
     "raw": "/api/program_center/module/output/list/structure",
     "path": "/api/program_center/module/output/list/structure",
@@ -17121,7 +17134,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1033,
+    "line": 1036,
     "method": "GET",
     "raw": "/api/program_center/designer/search",
     "path": "/api/program_center/designer/search",
@@ -17134,7 +17147,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1034,
+    "line": 1037,
     "method": "GET",
     "raw": "/api/program_center/jest/center/list",
     "path": "/api/program_center/jest/center/list",
@@ -17147,7 +17160,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1035,
+    "line": 1038,
     "method": "GET",
     "raw": "/api/program_center/validation/scripting/benchmark",
     "path": "/api/program_center/validation/scripting/benchmark",
@@ -17160,7 +17173,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1047,
+    "line": 1050,
     "method": "GET",
     "raw": "/api/program/applications",
     "path": "/api/program/applications",
@@ -17173,7 +17186,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1048,
+    "line": 1051,
     "method": "GET",
     "raw": "/api/program/appstyle/current/style",
     "path": "/api/program/appstyle/current/style",
@@ -17186,7 +17199,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1049,
+    "line": 1052,
     "method": "GET",
     "raw": "/api/program/datastructure/modules/all",
     "path": "/api/program/datastructure/modules/all",
@@ -17199,7 +17212,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1061,
+    "line": 1064,
     "method": "GET",
     "raw": "/api/program_center/mpweixin/menu/list/weixin",
     "path": "/api/program_center/mpweixin/menu/list/weixin",
@@ -17212,7 +17225,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1062,
+    "line": 1065,
     "method": "GET",
     "raw": "/api/program_center/validation/meta",
     "path": "/api/program_center/validation/meta",
@@ -17225,7 +17238,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1063,
+    "line": 1066,
     "method": "GET",
     "raw": "/api/program_center/module/output/structure",
     "path": "/api/program_center/module/output/structure",
@@ -17238,7 +17251,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1075,
+    "line": 1078,
     "method": "GET",
     "raw": "/api/program_center/prompterrorlog/count/exceptionclass",
     "path": "/api/program_center/prompterrorlog/count/exceptionclass",
@@ -17251,7 +17264,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1076,
+    "line": 1079,
     "method": "GET",
     "raw": "/api/program_center/prompterrorlog/count/loggername",
     "path": "/api/program_center/prompterrorlog/count/loggername",
@@ -17264,7 +17277,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1077,
+    "line": 1080,
     "method": "GET",
     "raw": "/api/program_center/config/list/dump/data/current/node",
     "path": "/api/program_center/config/list/dump/data/current/node",
@@ -17277,7 +17290,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1089,
+    "line": 1092,
     "method": "GET",
     "raw": "/api/program_center/output/list",
     "path": "/api/program_center/output/list",
@@ -17290,7 +17303,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1090,
+    "line": 1093,
     "method": "GET",
     "raw": "/api/program_center/module/list/category",
     "path": "/api/program_center/module/list/category",
@@ -17303,7 +17316,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1091,
+    "line": 1094,
     "method": "GET",
     "raw": "/api/program_center/storagemappings",
     "path": "/api/program_center/storagemappings",
@@ -17316,7 +17329,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1103,
+    "line": 1106,
     "method": "GET",
     "raw": "/api/program_center/schedule/list/schedule",
     "path": "/api/program_center/schedule/list/schedule",
@@ -17329,7 +17342,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1104,
+    "line": 1107,
     "method": "GET",
     "raw": "/api/program_center/schedule/list/schedulelocal",
     "path": "/api/program_center/schedule/list/schedulelocal",
@@ -17342,7 +17355,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1105,
+    "line": 1108,
     "method": "GET",
     "raw": "/api/program_center/schedule/report",
     "path": "/api/program_center/schedule/report",
@@ -17355,7 +17368,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1117,
+    "line": 1120,
     "method": "GET",
     "raw": "/api/program_center/jest/list",
     "path": "/api/program_center/jest/list",
@@ -17368,7 +17381,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1118,
+    "line": 1121,
     "method": "GET",
     "raw": "/api/program_center/jest/version",
     "path": "/api/program_center/jest/version",
@@ -17381,7 +17394,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1119,
+    "line": 1122,
     "method": "GET",
     "raw": "/api/program_center/module/list",
     "path": "/api/program_center/module/list",
@@ -17394,7 +17407,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1132,
+    "line": 1135,
     "method": "GET",
     "raw": "/api/program_center/config",
     "path": "/api/program_center/config",
@@ -17407,7 +17420,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1133,
+    "line": 1136,
     "method": "GET",
     "raw": "/api/program_center/config/list/dump/data",
     "path": "/api/program_center/config/list/dump/data",
@@ -17420,7 +17433,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1134,
+    "line": 1137,
     "method": "GET",
     "raw": "/api/program_center/config/ternary/management",
     "path": "/api/program_center/config/ternary/management",
@@ -17433,7 +17446,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1146,
+    "line": 1149,
     "method": "GET",
     "raw": "/api/program_center/config/token",
     "path": "/api/program_center/config/token",
@@ -17446,7 +17459,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1147,
+    "line": 1150,
     "method": "GET",
     "raw": "/api/program_center/deploy/server/resource",
     "path": "/api/program_center/deploy/server/resource",
@@ -17459,7 +17472,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1148,
+    "line": 1151,
     "method": "GET",
     "raw": "/api/program_center/command/list/node",
     "path": "/api/program_center/command/list/node",
@@ -17472,7 +17485,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1161,
+    "line": 1164,
     "method": "GET",
     "raw": "/api/program_center/datastructure/tables/all",
     "path": "/api/program_center/datastructure/tables/all",
@@ -17485,7 +17498,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1162,
+    "line": 1165,
     "method": "GET",
     "raw": "/api/program_center/datastructure/fileds/all",
     "path": "/api/program_center/datastructure/fileds/all",
@@ -17498,7 +17511,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1163,
+    "line": 1166,
     "method": "GET",
     "raw": "/api/program_center/captcha/list",
     "path": "/api/program_center/captcha/list",
@@ -17511,7 +17524,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1174,
+    "line": 1177,
     "method": "GET",
     "raw": "/api/program_center/config/list",
     "path": "/api/program_center/config/list",
@@ -17524,7 +17537,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1185,
+    "line": 1188,
     "method": "GET",
     "raw": "/api/program_center/config/list/application",
     "path": "/api/program_center/config/list/application",
@@ -17537,7 +17550,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1196,
+    "line": 1199,
     "method": "GET",
     "raw": "/api/program_center/config/list/entity",
     "path": "/api/program_center/config/list/entity",
@@ -17550,7 +17563,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1211,
+    "line": 1214,
     "method": "POST",
     "raw": "/api/program_center/config/save",
     "path": "/api/program_center/config/save",
@@ -17563,7 +17576,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1221,
+    "line": 1224,
     "method": "GET",
     "raw": "/api/program_center/appstyle/current/style",
     "path": "/api/program_center/appstyle/current/style",
@@ -17576,7 +17589,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1233,
+    "line": 1236,
     "method": "GET",
     "raw": "/api/program_center/appstyle/index/portal",
     "path": "/api/program_center/appstyle/index/portal",
@@ -17589,7 +17602,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 1252,
+    "line": 1255,
     "method": "GET",
     "raw": "/api/program_center/market/list/top/three",
     "path": "/api/program_center/market/list/top/three",
