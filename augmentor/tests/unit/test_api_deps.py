@@ -79,12 +79,33 @@ class TestFileHelpers:
         import api.deps as deps
 
         f = tmp_path / "a.json"
-        f.write_text(json.dumps([1, 2]), encoding="utf-8")
+        f.write_text(json.dumps([{"instruction": "q1"}, {"instruction": "q2"}]),
+                     encoding="utf-8")
 
         async def run():
             return await deps.read_json_file(f)
 
-        assert asyncio.run(run()) == [1, 2]
+        assert asyncio.run(run()) == [{"instruction": "q1"}, {"instruction": "q2"}]
+
+    def test_read_json_file_async_applies_shape_gate(self, tmp_path):
+        """异步读盘同样受形态校验约束
+
+        原夹具写的是 ``[1, 2]`` 并断言原样返回 —— 那恰好把「非对象数据项也照收」
+        这个缺陷语义钉住了：`read_json_file` 只是 `read_items` 的执行器包装，
+        两者形态判据必须一致，否则异步路径会重新漏出 500。
+        """
+        import asyncio
+
+        import api.deps as deps
+        from fastapi import HTTPException
+
+        f = tmp_path / "shape.json"
+        f.write_text(json.dumps([1, 2]), encoding="utf-8")
+
+        with pytest.raises(HTTPException) as exc:
+            asyncio.run(deps.read_json_file(f))
+        assert exc.value.status_code == 400
+        assert "必须是 JSON 对象" in exc.value.detail
 
     def test_write_json_file_async(self, tmp_path):
         import asyncio

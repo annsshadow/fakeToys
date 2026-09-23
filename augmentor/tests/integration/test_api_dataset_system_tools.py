@@ -1633,3 +1633,100 @@ class TestUnexpectedFailureBecomes500:
         )
         assert response.status_code == 500, response.text
         assert FAULT_MESSAGE in response.json()["detail"]
+
+
+# ============================================================
+# 数据文件形态校验（read_items 的单点收敛）
+# ============================================================
+
+SHAPE_REJECTIONS = [
+    ("顶层是对象", '{"backups": []}', "顶层必须是 JSON 数组"),
+    ("顶层是字符串", '"just a string"', "顶层必须是 JSON 数组"),
+    ("顶层是数字", "42", "顶层必须是 JSON 数组"),
+    ("顶层是空值", "null", "顶层必须是 JSON 数组"),
+    ("元素是标量", "[1, 2, 3]", "第 1 个数据项必须是 JSON 对象"),
+    ("元素是字符串", '["a"]', "第 1 个数据项必须是 JSON 对象"),
+    ("元素是嵌套数组", '[[{"instruction": "q"}]]', "第 1 个数据项必须是 JSON 对象"),
+    ("第二个元素非对象",
+     '[{"instruction": "q", "output": "a"}, 42]', "第 2 个数据项必须是 JSON 对象"),
+]
+
+# 参与形态校验的端点，以及各端点除 `input_file` 外的必填字段
+# （`/api/dataset/search` 的 `query` 是必填，缺了会先撞上 422 而不是形态校验）
+SHAPE_ENDPOINTS = {
+    "/api/dataset/stats": {},
+    "/api/dataset/search": {"query": "q", "method": "contains"},
+    "/api/dataset/features": {},
+    "/api/quality/evaluate": {},
+}
+
+
+class TestShapeRejection:
+    """形态不合法的数据文件必须 400，而不是深入库内部炸成 500
+
+    审计证据（修复前实测，非推断）：
+
+    * `POST /api/dataset/stats {"input_file": "web/package.json"}` → **500**
+      `{"detail": "'str' object has no attribute 'items'"}`
+    * `POST /api/quality/evaluate` 同输入 → **500** `"'int' object has no attribute 'get'"`
+    * 读 `.backups/index.json`（内容是 `{"backups": []}`）→ **500**
+      `"'str' object has no attribute 'keys'"`
+
+    两个问题叠在一起：状态码把「调用方传错了」说成「服务挂了」（违反本项目
+    §2.8 定下的错误语义），且把 Python 属性错误的原文回显给了客户端。
+
+    根因是 `read_items` 声明返回列表却不校验形态：顶层是对象时下游拿到键
+    （字符串），元素是标量时拿到标量，都要深入到 `augmentor/` 里按 dict 用才炸。
+    """
+
+    @pytest.mark.parametrize("path", SHAPE_ENDPOINTS)
+    @pytest.mark.parametrize("label,body,expected", SHAPE_REJECTIONS,
+                             ids=[c[0] for c in SHAPE_REJECTIONS])
+    def test_rejected_with_400(self, tools_env, label, body, expected, path):
+        # 用序号而非 hash：hash() 每进程加盐，会让失败用例的文件名不可复现
+        index = SHAPE_REJECTIONS.index((label, body, expected))
+        target = tools_env.tmp / f"shape_{index}.json"
+        target.write_text(body, encoding="utf-8")
+
+        payload = {"input_file": str(target), **SHAPE_ENDPOINTS[path]}
+        response = tools_env.client.post(path, json=payload)
+
+        assert response.status_code == 400, (
+            f"{label} 在 {path} 上应 400，实际 {response.status_code}："
+            f"{response.text[:160]}"
+        )
+        detail = response.json()["detail"]
+        assert expected in detail, f"{label}：{detail}"
+        # 内部措辞不得外泄——这是本组用例区别于「只看状态码」的部分
+        assert "attribute" not in detail and "object has no" not in detail
+
+    def test_empty_array_still_accepted(self, tools_env):
+        """空数组是合法的空数据集，不能被形态校验误伤
+
+        加元素级校验时的边界：`[]` 迭代不到任何元素，因此必须仍然 200。
+        """
+        target = tools_env.tmp / "shape_empty.json"
+        target.write_text("[]", encoding="utf-8")
+
+        response = tools_env.client.post(
+            "/api/dataset/stats", json={"input_file": str(target)}
+        )
+        assert response.status_code == 200, response.text
+
+    def test_validate_endpoint_reports_instead_of_rejecting(self, tools_env):
+        """`/api/dataset/validate` 对畸形数据项必须**报告**而不是 400
+
+        它的职责就是告诉调用方「这些项不合法」，所以不经 `read_items`，
+        自己走 `DatasetValidator.validate_file`。这条用例钉住这个例外，
+        避免后来者把形态校验「统一」进去而砍掉验证端点的意义。
+        """
+        target = tools_env.tmp / "shape_scalars.json"
+        target.write_text("[1, 2, 3]", encoding="utf-8")
+
+        response = tools_env.client.post(
+            "/api/dataset/validate", json={"input_file": str(target)}
+        )
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["total_items"] == 3
+        assert body["error_count"] > 0, "标量数据项必须被报成问题，而不是静默通过"
