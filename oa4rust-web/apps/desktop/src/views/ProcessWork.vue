@@ -14,6 +14,7 @@
         <button class="btn-sm" @click="loadReviews">审阅记录</button>
         <button class="btn-sm" @click="loadSerials">流水号</button>
         <button class="btn-sm" @click="loadWorkV2">全部工作</button>
+        <button class="btn-sm" @click="loadReadLists">待阅/已阅</button>
         <button class="btn-sm primary" @click="openStart">发起流程</button>
       </div>
     </div>
@@ -22,6 +23,7 @@
     <p v-if="reviewText" class="subtitle draft-note">{{ reviewText }}</p>
     <p v-if="serialText" class="subtitle draft-note">{{ serialText }}</p>
     <p v-if="workV2Text" class="subtitle draft-note">{{ workV2Text }}</p>
+    <p v-if="readListText" class="subtitle draft-note">{{ readListText }}</p>
     <div class="tabs glass-card">
       <button
         v-for="tab in tabs"
@@ -369,6 +371,27 @@ async function loadWorkV2(): Promise<void> {
     detailText = `后续 ${nextN} · 首工作「${dTitle}」`
   }
   workV2Text.value = `全部工作 ${rows.length} · ${detailText}`
+}
+
+const readListText = ref('')
+// 待阅/已阅列表 v2（rev180，surface 域 4 条真实 distinct）：read/v2/list/paging（PP_C_READ 分页）+ read/v2/list/next/{id}/{count}
+// + readcompleted/v2/list/paging（PP_C_READCOMPLETED 分页）+ readcompleted/v2/list/next/{id}/{count}。next 与 prev 为孪生只取 next。
+async function loadReadLists(): Promise<void> {
+  readListText.value = ''
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [readList, readcList] = await Promise.all([
+    settle(api.get('/api/processplatform/assemble/surface/read/v2/list/paging/1/20/20')),
+    settle(api.get('/api/processplatform/assemble/surface/readcompleted/v2/list/paging/1/20/20')),
+  ])
+  const readRows = asRows(readList)
+  const readcRows = asRows(readcList)
+  const rId = readRows[0] ? String(readRows[0].id ?? '') : ''
+  const rcId = readcRows[0] ? String(readcRows[0].id ?? '') : ''
+  const [readNext, readcNext] = await Promise.all([
+    rId ? settle(api.get(`/api/processplatform/assemble/surface/read/v2/list/next/${rId}/20`)) : Promise.resolve(null),
+    rcId ? settle(api.get(`/api/processplatform/assemble/surface/readcompleted/v2/list/next/${rcId}/20`)) : Promise.resolve(null),
+  ])
+  readListText.value = `待阅 ${readRows.length}(后续 ${asRows(readNext).length}) · 已阅 ${readcRows.length}(后续 ${asRows(readcNext).length})`
 }
 
 function asRows(response: unknown): Record<string, unknown>[] {
