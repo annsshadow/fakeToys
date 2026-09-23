@@ -21,6 +21,8 @@
         <button class="btn-sm" @click="loadByWorkJobLists">按工作/按job</button>
         <button class="btn-sm" @click="loadDocReadPaging">文档版本/我的待阅</button>
         <button class="btn-sm" @click="loadWorkFullCursors">工作全量游标/详情</button>
+        <button class="btn-sm" @click="loadSurfaceReadA">表面深度读A</button>
+        <button class="btn-sm" @click="loadSurfaceReadB">表面深度读B</button>
         <button class="btn-sm primary" @click="openStart">发起流程</button>
       </div>
     </div>
@@ -32,6 +34,7 @@
     <p v-if="readListText" class="subtitle draft-note">{{ readListText }}</p>
     <p v-if="taskListText" class="subtitle draft-note">{{ taskListText }}</p>
     <p v-if="workCursorText" class="subtitle draft-note">{{ workCursorText }}</p>
+    <p v-if="surfaceReadText" class="subtitle draft-note">{{ surfaceReadText }}</p>
     <p v-if="byWorkJobText" class="subtitle draft-note">{{ byWorkJobText }}</p>
     <p v-if="docReadPagingText" class="subtitle draft-note">{{ docReadPagingText }}</p>
     <p v-if="workFullText" class="subtitle draft-note">{{ workFullText }}</p>
@@ -290,6 +293,7 @@ const readFacetText = ref('')
 const recordReviewText = ref('')
 const jobAssetText = ref('')
 const workCursorText = ref('')
+const surfaceReadText = ref('')
 // rev249：流程表面 work 游标(按应用/流程/创建人当前)+已办/阅记录按工作 5 条真实 distinct 读路由
 // work/list/next/application(WHERE xid+xapplication)·process(+xprocess)·creator/current(WHERE xid) · taskcompleted/list/workorworkcompleted(PP_C_TASKCOMPLETED xwork) · readrecord/list/workorworkcompleted(PP_C_DATA_RECORD xwork)
 async function loadWorkFilterCursors(): Promise<void> {
@@ -395,6 +399,158 @@ async function loadWorkFullCursors(): Promise<void> {
 }
 // rev252：文档版本按job+分类·按工作+分类 · 待阅按工作 · 待阅/已阅我的分页 5 条真实 distinct 读路由
 // documentversion(xjob+xcategory / xwork+xcategory) · read(xwork) · read/readcompleted(WHERE 1=1 分页)；arity 已核
+// rev309：流程表面 应用/字典/工作数据 path 深度/文档版本/文件/表单 深度读 48 条真实路由
+// （x_application/x_data/x_form 等；handler 体经跨 crate 核实均为纯 SELECT；已排除 pause/resume/reroute/terminate 等动作词与 anonymous）
+async function loadSurfaceReadA(): Promise<void> {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const flag = '0'
+  const onlyRemoveNotCompleted = '0'
+  const applicationDictFlag = '0'
+  const applicationFlag = '0'
+  const path0 = '0'
+  const path1 = '0'
+  const path2 = '0'
+  const path3 = '0'
+  const path4 = '0'
+  const path5 = '0'
+  const path6 = '0'
+  const path7 = '0'
+  const id = '0'
+  const job = '0'
+  const category = '0'
+  const workOrWorkCompleted = '0'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/surface/application/icon/${flag}`)),
+      s(api.get(`/api/processplatform/assemble/surface/application/${flag}`)),
+      s(api.get(`/api/processplatform/assemble/surface/application/${flag}/${onlyRemoveNotCompleted}`)),
+      s(api.get(`/api/processplatform/assemble/surface/applicationdict/application/data/${applicationDictFlag}/${applicationFlag}`)),
+      s(api.get(`/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}`)),
+      s(api.get(`/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/data`)),
+      s(api.get(`/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/data`)),
+      s(api.get(`/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/data`)),
+      s(api.get(`/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/data`)),
+      s(api.get(`/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/${path3}/data`)),
+      s(api.get(`/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/${path3}/${path4}/data`)),
+      s(api.get(`/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/data`)),
+      s(api.get(`/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}/data`)),
+      s(api.get(`/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}/${path7}/data`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/job/${job}/${path0}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}/${path2}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}/${path2}/${path3}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}/${path2}/${path3}/${path4}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}/${path7}`)),
+      // __SURFACE_A_PLACEHOLDER__
+      s(api.get(`/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/${id}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/work/${id}/${path0}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}/${path2}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}/${path2}/${path3}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}/${path2}/${path3}/${path4}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}/${path7}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/${id}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}/${path2}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}/${path2}/${path3}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}/${path2}/${path3}/${path4}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}/${path7}`)),
+      s(api.get(`/api/processplatform/assemble/surface/documentversion/list/job/job/${category}/${category}`)),
+      s(api.get(`/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/${workOrWorkCompleted}/${category}/${category}`)),
+      s(api.get(`/api/processplatform/assemble/surface/documentversion/${id}`)),
+      s(api.get(`/api/processplatform/assemble/surface/file/application/content/${flag}/${applicationFlag}`)),
+      s(api.get(`/api/processplatform/assemble/surface/file/${flag}/application/${applicationFlag}/content`)),
+      s(api.get(`/api/processplatform/assemble/surface/form/v2/${id}`)),
+      s(api.get(`/api/processplatform/assemble/surface/form/${flag}`)),
+      s(api.get(`/api/processplatform/assemble/surface/form/${flag}/mobile`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    surfaceReadText.value = `表面深度读A ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载表面深度读A失败: ' + (e?.message ?? ''))
+  }
+}
+// rev309：流程表面 预览/流程/待阅已阅/待办已办/记录/审阅/脚本/工作 计数与分页深度读 47 条真实路由
+async function loadSurfaceReadB(): Promise<void> {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const flag = '0'
+  const onlyRemoveNotCompleted = '0'
+  const applicationFlag = '0'
+  const activityType = '0'
+  const page = '1'
+  const size = '10'
+  const count = '20'
+  const credential = '0'
+  const id = '0'
+  const isExcludeDraft = 'y'
+  const date = '2026-09-23'
+  const hour = '9'
+  const workOrWorkCompleted = '0'
+  const appId = '0'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/surface/preview/${id}`)),
+      s(api.get(`/api/processplatform/assemble/surface/process/activity/activity/${activityType}/${activityType}`)),
+      s(api.get(`/api/processplatform/assemble/surface/process/${flag}`)),
+      s(api.get(`/api/processplatform/assemble/surface/process/${flag}/application/${applicationFlag}`)),
+      s(api.get(`/api/processplatform/assemble/surface/process/${flag}/${onlyRemoveNotCompleted}`)),
+      s(api.get(`/api/processplatform/assemble/surface/read/list/filter/manage/${page}/${size}/${size}`)),
+      s(api.get(`/api/processplatform/assemble/surface/read/list/my/filter/${page}/${size}/${size}`)),
+      s(api.get(`/api/processplatform/assemble/surface/read/${count}/${credential}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/count/${credential}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/filter/manage/${page}/${size}/${size}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/my/filter/${page}/${size}/${size}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/my/paging/${page}/${size}/${size}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/${count}/${credential}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/${id}`)),
+      s(api.get(`/api/processplatform/assemble/surface/record/list/job/job/paging/${page}/${size}/${size}`)),
+      s(api.get(`/api/processplatform/assemble/surface/record/list/workorworkcompleted/paging/${workOrWorkCompleted}/${page}/${size}/${size}`)),
+      s(api.get(`/api/processplatform/assemble/surface/review/person/${count}/${credential}`)),
+      s(api.get(`/api/processplatform/assemble/surface/review/v2/list/paging/manage/${page}/${size}/${size}`)),
+      s(api.get(`/api/processplatform/assemble/surface/script/application/imported/${flag}/${applicationFlag}`)),
+      s(api.get(`/api/processplatform/assemble/surface/script/${flag}/application/${applicationFlag}/imported`)),
+      // __SURFACE_B_PLACEHOLDER__
+      s(api.get(`/api/processplatform/assemble/surface/task/count/${credential}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/date/date/hour/hour/exclude/draft/manage/${isExcludeDraft}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/date/${date}/hour/${hour}/exclude/draft/${isExcludeDraft}/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/filter/manage/${page}/${size}/${size}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/my/filter/${page}/${size}/${size}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/my/paging/${page}/${size}/${size}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/person/person/exclude/draft/manage/${isExcludeDraft}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/${count}/${credential}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/${id}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/count/${credential}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/filter/manage/${page}/${size}/${size}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/my/filter/${page}/${size}/${size}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/my/paging/${page}/${size}/${size}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/prev/${id}/${count}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/${count}/${credential}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/${id}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/application/${count}/${credential}/${appId}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/count/${credential}/application/${appId}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/filter/manage/${page}/${size}/${size}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/my/paging/${page}/${size}/${size}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/paging/application/filter/manage/${page}/${size}/${size}/${applicationFlag}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/${count}/${credential}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/${id}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/${id}/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/filter/manage/${page}/${size}/${size}`)),
+      s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/paging/application/filter/manage/${page}/${size}/${size}/${applicationFlag}`)),
+      s(api.get(`/api/processplatform/assemble/surface/workcompleted/${id}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    surfaceReadText.value = `表面深度读B ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载表面深度读B失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadDocReadPaging(): Promise<void> {
   docReadPagingText.value = ''
   const id = '0'
