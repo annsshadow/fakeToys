@@ -25,7 +25,17 @@ class StatusResponse(BaseModel):
     dependencies: dict
 
 
-@router.get("/api/status")
+class HealthResponse(BaseModel):
+    """健康检查响应结构
+
+    只含存活信号与版本号：容器探针与前端启动检查依赖它，
+    因此不要往里加会阻塞或可能失败的字段。
+    """
+    status: str
+    version: str
+
+
+@router.get("/api/status", response_model=StatusResponse, summary="服务综合状态")
 async def get_status():
     """获取服务综合状态"""
     try:
