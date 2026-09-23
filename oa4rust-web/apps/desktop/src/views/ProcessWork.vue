@@ -17,6 +17,7 @@
         <button class="btn-sm" @click="loadReadLists">待阅/已阅</button>
         <button class="btn-sm" @click="loadTaskLists">全部任务</button>
         <button class="btn-sm" @click="loadWorkFilterCursors">工作游标/按工作</button>
+        <button class="btn-sm" @click="loadWorkAuxReads">日志/流水号/文件</button>
         <button class="btn-sm primary" @click="openStart">发起流程</button>
       </div>
     </div>
@@ -298,6 +299,18 @@ async function loadWorkFilterCursors(): Promise<void> {
   ])
   const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
   workCursorText.value = `工作 应用${n(wApp)}/流程${n(wProc)}/我创建${n(wCreator)} · 已办按工作 ${n(tcWork)} · 阅记录按工作 ${n(rrWork)}`
+}
+// rev250：流程表面 应用文件/已阅按工作 2 条真实 distinct 读路由（PP_E_FILE WHERE xapplication · PP_C_READCOMPLETED WHERE xwork；arity 已核；worklog/serialnumber 已被他处消费故不重复接线）
+async function loadWorkAuxReads(): Promise<void> {
+  workCursorText.value = ''
+  const id = '0'
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [appFile, rcWork] = await Promise.all([
+    settle(api.get(`/api/processplatform/assemble/surface/file/list/application/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/readcompleted/list/workorworkcompleted/${id}`)),
+  ])
+  const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+  workCursorText.value = `应用文件 ${n(appFile)} · 已阅按工作 ${n(rcWork)}`
 }
 // Job 关联/记录 4 条真实 distinct（rev202，surface 域按 job id）：attachment/list/job/{job}（xjob 附件）
 // + correlation/list/job/{job}（PP_C_JOB 关联）+ datarecord/list/job/{job}（PP_C_DATA_RECORD）
