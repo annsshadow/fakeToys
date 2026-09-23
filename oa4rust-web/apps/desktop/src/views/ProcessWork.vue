@@ -135,6 +135,10 @@
             <h3>待阅维度</h3>
             <p class="muted">{{ readFacetText }}</p>
           </div>
+          <div v-if="recordReviewText" class="detail-block">
+            <h3>记录/流转意见</h3>
+            <p class="muted">{{ recordReviewText }}</p>
+          </div>
           <div v-if="jobAssetText" class="detail-block">
             <h3>Job 关联/记录</h3>
             <p class="muted">{{ jobAssetText }}</p>
@@ -274,6 +278,7 @@ const engineText = ref('')
 const surfaceExtraText = ref('')
 const attnDetailText = ref('')
 const readFacetText = ref('')
+const recordReviewText = ref('')
 const jobAssetText = ref('')
 // Job 关联/记录 4 条真实 distinct（rev202，surface 域按 job id）：attachment/list/job/{job}（xjob 附件）
 // + correlation/list/job/{job}（PP_C_JOB 关联）+ datarecord/list/job/{job}（PP_C_DATA_RECORD）
@@ -490,6 +495,7 @@ async function openWork(item: TaskItem): Promise<void> {
     void loadJobAssets(id)
     void loadAttachmentIdentity(id)
     void loadReadFacets(id)
+    void loadRecordReview(id)
     // “我发起的”详情：若本人有该工作的活动任务，允许在此办理（发起人 begin 环节）
     if (activeTab.value === 'started') {
       const pending: any = await api.get(endpoints.pending)
@@ -625,6 +631,22 @@ async function loadReadFacets(id: string): Promise<void> {
   const cntV = (cnt as any)?.data?.count ?? (cnt as any)?.data ?? 0
   readFacetText.value = `按job ${n(byJob)} · 按work ${n(byWork)} · 我的分页 ${n(myPaging)} · 我的计数 ${cntV} · 单条 ${(one as any)?.data?.id ? '命中' : '未命中'}`
 }
+// rev219：记录/流转意见族 6 条真实 distinct 路由（PP_C_RECORD / PP_C_REVIEW）
+// record/manage/{id}（WHERE xid）· record/list/job/{job}（WHERE xjob）· record/list/job/{job}/paging（xjob LIMIT/OFFSET）
+// · record/list/workorworkcompleted/{w}/paging（WHERE xwork 分页）· review/list/job/{job}（PP_C_REVIEW WHERE xjob）· review/workorworkcompleted/{w}（PP_C_REVIEW WHERE xid）
+async function loadRecordReview(id: string): Promise<void> {
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [recOne, recJob, recJobPg, recWorkPg, revJob, revWoc] = await Promise.all([
+    settle(api.get(`/api/processplatform/assemble/surface/record/manage/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/record/list/job/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/record/list/job/${id}/paging/1/size/20`)),
+    settle(api.get(`/api/processplatform/assemble/surface/record/list/workorworkcompleted/${id}/paging/1/size/20`)),
+    settle(api.get(`/api/processplatform/assemble/surface/review/list/job/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/review/workorworkcompleted/${id}`)),
+  ])
+  const n = (r: any) => asRows(r).length
+  recordReviewText.value = `记录单条 ${(recOne as any)?.data?.xid || (recOne as any)?.data?.id ? '命中' : '未命中'} · 按job ${n(recJob)}（分页 ${n(recJobPg)}）· 按work分页 ${n(recWorkPg)} · 意见按job ${n(revJob)} · 意见按work ${(revWoc as any)?.data ? '有' : '无'}`
+}
 
 function closeWork(): void {
   opened.value = null
@@ -640,6 +662,7 @@ function closeWork(): void {
   jobAssetText.value = ''
   attnDetailText.value = ''
   readFacetText.value = ''
+  recordReviewText.value = ''
 }
 
 const canHandle = computed(() => {
