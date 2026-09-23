@@ -11,11 +11,13 @@
       <div class="header-actions">
         <button class="btn-sm" @click="loadDrafts">草稿箱</button>
         <button class="btn-sm" @click="loadHandovers">工作交接</button>
+        <button class="btn-sm" @click="loadReviews">审阅记录</button>
         <button class="btn-sm primary" @click="openStart">发起流程</button>
       </div>
     </div>
     <p v-if="draftText" class="subtitle draft-note">{{ draftText }}</p>
     <p v-if="handoverText" class="subtitle draft-note">{{ handoverText }}</p>
+    <p v-if="reviewText" class="subtitle draft-note">{{ reviewText }}</p>
     <div class="tabs glass-card">
       <button
         v-for="tab in tabs"
@@ -293,6 +295,28 @@ async function loadHandovers(): Promise<void> {
     detailText = `首交接「${dTitle}」· 处理信息 ${hasProc}`
   }
   handoverText.value = `工作交接 ${rows.length} · ${detailText}`
+}
+
+const reviewText = ref('')
+// 审阅记录（rev177，surface 域 3 条真实 distinct，PP_C_REVIEW）：review/v2/list/paging/{page}/{size}/{size}
+// → 首审阅 id → review/{id}（xid 详情）+ review/v2/list/next/{id}/{count}（xid 游标）。
+async function loadReviews(): Promise<void> {
+  reviewText.value = ''
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const listRes = await settle(api.get('/api/processplatform/assemble/surface/review/v2/list/paging/1/20/20'))
+  const rows = asRows(listRes)
+  const firstId = rows[0] ? String(rows[0].id ?? '') : ''
+  let detailText = '—'
+  if (firstId) {
+    const [detail, next] = await Promise.all([
+      settle(api.get(`/api/processplatform/assemble/surface/review/${firstId}`)),
+      settle(api.get(`/api/processplatform/assemble/surface/review/v2/list/next/${firstId}/20`)),
+    ])
+    const dTitle = (detail as any)?.data?.title ?? firstId
+    const nextN = asRows(next).length
+    detailText = `首审阅「${dTitle}」· 后续 ${nextN}`
+  }
+  reviewText.value = `审阅记录 ${rows.length} · ${detailText}`
 }
 
 function asRows(response: unknown): Record<string, unknown>[] {
