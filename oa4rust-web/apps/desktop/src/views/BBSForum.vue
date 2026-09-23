@@ -20,10 +20,12 @@
           <input v-model="searchQuery" @keydown.enter="handleSearch" placeholder="搜索帖子..." class="search-input" />
         </div>
         <button class="new-topic-btn ghost" @click="loadForums">版块列表</button>
+        <button class="new-topic-btn ghost" @click="loadBbsViews">视图浏览</button>
         <button class="new-topic-btn" @click="openNewTopic">✏️ 发帖</button>
       </div>
     </div>
     <div v-if="forumsText" class="forums-note">{{ forumsText }}</div>
+    <div v-if="bbsViewsText" class="forums-note">{{ bbsViewsText }}</div>
 
     <!-- 左侧：版块列表 -->
     <aside class="bbs-sidebar glass-card" :class="{ collapsed: showNewTopic }">
@@ -747,6 +749,31 @@ async function loadForums() {
     forumsText.value = `版块：${forums.length} 个${detailName ? `（首「${detailName}」）` : ''}`
   } catch (e: any) {
     toast.error('加载版块失败: ' + (e?.message ?? ''))
+  }
+}
+const bbsViewsText = ref('')
+// BBS 视图浏览（rev187，bbs crate 4 条真实 distinct）：forum/view/all（bbs_forum_info 全部）→ 首版块 →
+// forum/view/{id}（by id）；section/view/all（bbs_section_info 全部）→ 首分区 → subject/top/{sectionId}（该分区置顶帖）。
+async function loadBbsViews() {
+  try {
+    const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const [forumsRes, sectionsRes] = await Promise.all([
+      settle(api.get('/api/bbs/forum/view/all')),
+      settle(api.get('/api/bbs/section/view/all')),
+    ])
+    const forums = Array.isArray((forumsRes as any)?.data) ? (forumsRes as any).data : []
+    const sections = Array.isArray((sectionsRes as any)?.data) ? (sectionsRes as any).data : []
+    const fid = forums[0] ? String(forums[0].id ?? '0') : '0'
+    const sid = sections[0] ? String(sections[0].id ?? '0') : '0'
+    const [forumOne, topSubjects] = await Promise.all([
+      settle(api.get(`/api/bbs/forum/view/${encodeURIComponent(fid)}`)),
+      settle(api.get(`/api/bbs/subject/top/${encodeURIComponent(sid)}`)),
+    ])
+    const fName = (forumOne as any)?.data?.name ?? (forums.length ? fid : '—')
+    const topN = Array.isArray((topSubjects as any)?.data) ? (topSubjects as any).data.length : 0
+    bbsViewsText.value = `论坛 ${forums.length}（首「${fName}」）· 分区 ${sections.length} · 首分区置顶帖 ${topN}`
+  } catch (e: any) {
+    toast.error('加载视图浏览失败: ' + (e?.message ?? ''))
   }
 }
 const api_forum_view_1_data = ref<any[]>([])
