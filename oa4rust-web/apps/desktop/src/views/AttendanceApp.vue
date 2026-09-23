@@ -434,6 +434,8 @@ async function loadStatisticShow() {
   const c = '20'
   const nm = '0'
   const dt = new Date().toISOString().slice(0, 10)
+  const yr = String(new Date().getFullYear())
+  const mo = String(new Date().getMonth() + 1)
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
     const results = await Promise.all([
@@ -449,6 +451,8 @@ async function loadStatisticShow() {
       s(api.get(`/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/${pv}/prev/${c}`)),
       s(api.get(`/api/attendance/assemble/control/statisticshow/unit/day/${encodeURIComponent(nm)}/${encodeURIComponent(dt)}`)),
       s(api.get(`/api/attendance/assemble/control/statisticshow/unit/day/topUnit/${encodeURIComponent(nm)}/${encodeURIComponent(dt)}`)),
+      // rev278：statisticshow/unit/topUnit/{name}/{year}/{month} → x_attendance_statisticshow WHERE unit_id+year+month（按年月，区别于游标/按日；同 WHERE 的 persons/subnested 排序孪生取此一条）
+      s(api.get(`/api/attendance/assemble/control/statisticshow/unit/topUnit/${encodeURIComponent(nm)}/${yr}/${mo}`)),
     ])
     const total = results.reduce((acc: number, r: any) => acc + (Array.isArray(r?.data) ? r.data.length : 0), 0)
     attOverviewText.value = `统计展示筛选：5 维度×2 方向 + 2 按日 = 12 路由，返回合计 ${total} 行`
