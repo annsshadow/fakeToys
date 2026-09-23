@@ -9,6 +9,7 @@
       <button class="btn-ai-meta" @click="loadAiMeta">模型/应用</button>
       <button class="btn-ai-meta" @click="loadAiConv">会话/配置</button>
       <button class="btn-ai-meta" @click="loadAiControl">基础配置/控制/用量</button>
+      <button class="btn-ai-meta" @click="loadAiEntities">实体/聊天线索</button>
       <div v-if="aiMetaText" class="ai-meta-note">{{ aiMetaText }}</div>
     </div>
     <div class="split-layout">
@@ -150,8 +151,31 @@ async function loadAiControl() {
     toast.error('加载 AI 控制配置失败: ' + (e?.message ?? ''))
   }
 }
-async function loadAiConv() {
+// rev211：AI 实体/聊天/配置 7 条真实 distinct 路由
+// config/base/config（x_ai_model xenable=true）· config/get/mcp/{flag}（MCP 配置查询）· chat/list/paging（x_ai_clue 分页）
+// · chat/list/completion/{clue_id}/paging（x_ai_completion WHERE clueId 分页）· core/entity/app/list（ai_app）· model/list（ai_model）· conversation/list（ai_conversation）
+async function loadAiEntities() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
+    const clues = await s(api.get('/api/ai/chat/list/paging/1/size/20'))
+    const rows = Array.isArray((clues as any)?.data) ? (clues as any).data : []
+    const clueId = rows[0] ? String(rows[0].id ?? '0') : '0'
+    const mcpFlag = rows[0] ? String(rows[0].mcpFlag ?? rows[0].flag ?? clueId) : clueId
+    const [base, mcp, comps, apps, models, convs] = await Promise.all([
+      s(api.get('/api/ai/config/base/config')),
+      s(api.get(`/api/ai/config/get/mcp/${encodeURIComponent(mcpFlag)}`)),
+      s(api.get(`/api/ai/chat/list/completion/${encodeURIComponent(clueId)}/paging/1/size/20`)),
+      s(api.get('/api/ai/core/entity/app/list')),
+      s(api.get('/api/ai/core/entity/model/list')),
+      s(api.get('/api/ai/core/entity/conversation/list')),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    aiMetaText.value = `聊天线索 ${rows.length} / 补全 ${n(comps)} / 实体应用 ${n(apps)} / 模型 ${n(models)} / 会话 ${n(convs)} / 基础配置 ${(base as any)?.data ? '有' : '无'} / MCP ${(mcp as any)?.data ? '有' : '无'}`
+  } catch (e: any) {
+    toast.error('加载 AI 实体失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadAiConv() {
     // GET ai/conversation/list + ai/config/get + ai_assemble_control/list/ai/models
     const [convs, cfg, models] = await Promise.all([
       api.get('/api/ai/conversation/list'),
