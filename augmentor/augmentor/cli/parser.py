@@ -18,7 +18,7 @@ T1.7 曾把同一能力的两种实现合并为「一个子命令 + `--enhanced`
 
 | 命令 | 实现 | 并入的独有能力 |
 | --- | --- | --- |
-| `export` | `Exporter`（原生 6 种 + 委托 `EnhancedExporter`，共 12 种） | 单文件模式、`--max-items` / `--shuffle` / `--seed` |
+| `export` | `Exporter`（原生 6 种 + 委托 `EnhancedExporter`，覆盖 `ExportFormat` 全量成员） | 单文件模式、`--max-items` / `--shuffle` / `--seed` |
 | `clean` | `cleaner.DatasetCleaner`（规则式） | 旧 `DataCleaner` 的噪声清除（`remove_urls` / `remove_html_tags` / `remove_control_chars` 三条规则），旧 `--no-url-removal` 由「`--rules` 里去掉 `remove_urls`」表达 |
 | `analyze` | `analytics.DatasetAnalyzer`（洞察 + 建议 + 三个分数） | 旧 `pipeline.analyze_dataset` 的 `coverage_analysis` / `statistics` / `dedup_report` 三段 |
 | `stats` | `statistics.DatasetStatisticsCalculator`（逐字段） | — |
@@ -42,9 +42,14 @@ import argparse
 
 # `export` 支持的格式。`Exporter` 原生实现其中 6 种，其余委托给
 # `EnhancedExporter`，因此这个列表就是全量支持面。
+#
+# 必须与 `Exporter().get_supported_formats()`（即 `ExportFormat` 枚举去掉别名）
+# 一致：`raw` 曾被漏在这里，导致 API 与 SDK 都能导、CLI 却报「无效选择」，
+# 而注释还声称自己是全量支持面。由
+# `tests/integration/test_cli_merged_commands.py::TestExportFormatSurface` 守住。
 EXPORT_FORMATS = [
     "json", "jsonl", "csv", "tsv", "alpaca", "sharegpt", "chatml",
-    "llama_factory", "vicuna", "belle", "openai", "huggingface",
+    "llama_factory", "vicuna", "belle", "openai", "huggingface", "raw",
 ]
 
 # `clean --rules` 可选的规则名，与 `cleaner.DatasetCleaner._default_rules` 的键
@@ -174,7 +179,8 @@ def build_parser() -> argparse.ArgumentParser:
     # 用户必须靠 `--enhanced` 才知道自己在跟哪一套打交道。
     #   * `diff` 并入 `compare`（后者给出 only_in_a / only_in_b / in_both 统计）
     #   * `rollback` 由 `set_current_version` 实现
-    #   * `history` 取消：`list` 已按时间列出全部版本及其描述
+    #   * `history` 是**操作日志**（谁在何时 create / rollback），与 `list`
+    #     列出的版本清单项不是同一份数据，两者都保留
     version_parser = subparsers.add_parser("version", help="版本管理")
     version_parser.add_argument("--action", type=str,
                                 choices=["list", "create", "load", "compare", "rollback",

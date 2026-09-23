@@ -28,6 +28,8 @@ import pytest
 
 from cli import main
 
+from augmentor.cli.parser import EXPORT_FORMATS
+
 AI_DIR = Path(__file__).resolve().parent.parent.parent
 
 SAMPLE_ITEMS = [
@@ -803,3 +805,33 @@ class TestEnhancedFlagIsRemoved:
         _, err, code = run_cli(argv)
         assert code == 2, f"`{command} --enhanced` 未被拒绝: code={code}"
         assert "--enhanced" in err, f"错误信息未指出 --enhanced: {err!r}"
+
+
+class TestExportFormatSurface:
+    """CLI 的 `--format` 可选值必须等于后端真实支持的格式集合。
+
+    `EXPORT_FORMATS` 是手写清单，`ExportFormat` 枚举才是唯一事实来源，两者分处
+    两个模块、没有编译期约束。审计时 `raw` 就漏在清单里：SDK 与 API 都能导
+    `raw`，CLI 却由 argparse 拒绝，而 `parser.py` 的注释还声称自己是全量支持面。
+    """
+
+    def test_cli_choices_equal_backend_formats(self):
+        from augmentor.export import Exporter
+
+        backend = set(Exporter().get_supported_formats())
+        assert set(EXPORT_FORMATS) == backend, (
+            f"CLI 缺失 {sorted(backend - set(EXPORT_FORMATS))}，"
+            f"多余 {sorted(set(EXPORT_FORMATS) - backend)}"
+        )
+
+    @pytest.mark.parametrize("fmt", EXPORT_FORMATS)
+    def test_every_cli_choice_actually_exports(self, dataset_context, fmt):
+        """清单里每个值都要真能导出——防止把 `choices` 当声明随手加宽"""
+        clean, _, tmp = dataset_context
+        out_file = tmp / f"exp_{fmt}.out"
+        out, err, code = run_cli(
+            ["cli", "export", "--input", str(clean),
+             "--output", str(out_file), "--format", fmt]
+        )
+        assert code is None, err
+        assert out_file.exists(), f"{fmt} 未落盘: {out!r}{err!r}"
