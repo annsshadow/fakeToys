@@ -8,8 +8,12 @@
         <h1>工作流待办</h1>
         <p class="subtitle">真实任务、表单定义与流程数据闭环</p>
       </div>
-      <button class="btn-sm primary" @click="openStart">发起流程</button>
+      <div class="header-actions">
+        <button class="btn-sm" @click="loadDrafts">草稿箱</button>
+        <button class="btn-sm primary" @click="openStart">发起流程</button>
+      </div>
     </div>
+    <p v-if="draftText" class="subtitle draft-note">{{ draftText }}</p>
     <div class="tabs glass-card">
       <button
         v-for="tab in tabs"
@@ -244,6 +248,28 @@ const worklogs = ref<WorklogItem[]>([])
 const reads = ref<ReadItem[]>([])
 const engineText = ref('')
 const surfaceExtraText = ref('')
+const draftText = ref('')
+
+// 草稿箱（rev175，surface 域 3 条真实 distinct）：draft/list/my/paging/{page}/{size}/{size}
+// （PP_C_DRAFT 分页）→ 首草稿 id → draft/{id}（xid 详情 query_opt）+ draft/list/next/{id}/{count}（xid 游标）。
+async function loadDrafts(): Promise<void> {
+  draftText.value = ''
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const listRes = await settle(api.get('/api/processplatform/assemble/surface/draft/list/my/paging/1/20/20'))
+  const rows = asRows(listRes)
+  const firstId = rows[0] ? String(rows[0].id ?? '') : ''
+  let detailText = '—'
+  if (firstId) {
+    const [detail, next] = await Promise.all([
+      settle(api.get(`/api/processplatform/assemble/surface/draft/${firstId}`)),
+      settle(api.get(`/api/processplatform/assemble/surface/draft/list/next/${firstId}/20`)),
+    ])
+    const dTitle = (detail as any)?.data?.title ?? firstId
+    const nextN = asRows(next).length
+    detailText = `首草稿「${dTitle}」· 后续 ${nextN}`
+  }
+  draftText.value = `我的草稿 ${rows.length} · ${detailText}`
+}
 
 function asRows(response: unknown): Record<string, unknown>[] {
   const payload = (response as { data?: unknown })?.data
