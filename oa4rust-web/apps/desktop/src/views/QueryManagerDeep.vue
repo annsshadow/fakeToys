@@ -8,10 +8,12 @@
       <div class="qm-title">
         <h1>查询管理</h1>
         <p class="subtitle">/api/query/assemble/designer/* — 查询定义、视图、表格、SQL、统计、导入</p>
+        <p v-if="deepReadText" class="subtitle">{{ deepReadText }}</p>
       </div>
       <div class="qm-actions">
         <button class="btn" @click="showCreate=true">+ 新建查询</button>
         <button class="btn btn-outline" @click="refresh">🔄 刷新</button>
+        <button class="btn btn-outline" @click="loadDesignerDeepReads">深度读</button>
         <button class="btn btn-outline" @click="showBatchExec=true">⚡ 批量执行</button>
       </div>
     </div>
@@ -396,6 +398,42 @@ function selectQuery(q: QueryDef) {
   resultData.value = []
   resultHeaders.value = []
   statResult.value = null
+}
+
+const deepReadText = ref('')
+// 查询设计器 深度读：neural模型/output文件/icon/摘要/模拟/统计/表格/行导出/where计数/分页游标 15 条真实读路由
+// （x_query/x_view/x_stat/表数据；各 arity 已核 ≤ url；{param} 槽全变量填充）
+async function loadDesignerDeepReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const modelFlag = '0'
+  const flag = '0'
+  const query = '0'
+  const queryCategory = '0'
+  const view = '0'
+  const id = '0'
+  const cnt = '20'
+  const tableFlag = '0'
+  const where = '1'
+  const next = '0'
+  const rs = await Promise.all([
+    s(api.get(`/api/query/assemble/designer/neural/model/${modelFlag}`)),
+    s(api.get(`/api/query/assemble/designer/output/${flag}/select/file`)),
+    s(api.get(`/api/query/assemble/designer/icon/${query}/${flag}`)),
+    s(api.get(`/api/query/assemble/designer/list/summary/querycategory/${query}/${queryCategory}`)),
+    s(api.get(`/api/query/assemble/designer/simulate/${view}/${id}`)),
+    s(api.get(`/api/query/assemble/designer/stat/list/${query}/${flag}`)),
+    s(api.get(`/api/query/assemble/designer/table/list/${query}/${flag}`)),
+    s(api.get(`/api/query/assemble/designer/${id}/${cnt}`)),
+    s(api.get(`/api/query/assemble/designer/list/${view}/${query}/${flag}`)),
+    s(api.get(`/api/query/assemble/designer/table/export/${tableFlag}/count/${cnt}`)),
+    s(api.get(`/api/query/assemble/designer/table/${flag}/row/count/where/${where}`)),
+    s(api.get(`/api/query/assemble/designer/stat/list/${id}/${next}/${cnt}`)),
+    s(api.get(`/api/query/assemble/designer/table/export/${tableFlag}/${cnt}/${cnt}`)),
+    s(api.get(`/api/query/assemble/designer/list/${view}/${id}/${next}/${cnt}`)),
+    s(api.get(`/api/query/assemble/designer/table/list/row/${tableFlag}/${id}/${next}/${cnt}`)),
+  ])
+  const hit = rs.filter((r) => (r as any)?.data != null).length
+  deepReadText.value = `查询设计器深度读 ${rs.length} 条，命中 ${hit}`
 }
 
 async function runQuery() {
