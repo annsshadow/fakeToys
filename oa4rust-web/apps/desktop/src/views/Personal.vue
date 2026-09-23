@@ -80,7 +80,9 @@
       <button class="save-btn ghost" @click="loadOauthConfig">OAuth 配置</button>
       <button class="save-btn ghost" @click="loadMailMeta">内部邮件/注册方式</button>
       <button class="save-btn ghost" @click="loadAuthScopes">我的单位/角色/群组</button>
+      <button class="save-btn ghost" @click="loadAuthDetails">认证明细/绑定</button>
       <div v-if="authMetaText" class="auth-note">{{ authMetaText }}</div>
+      <div v-if="authDetailText" class="auth-note">{{ authDetailText }}</div>
     </div>
 
     <!-- 授权委托 -->
@@ -252,6 +254,26 @@ async function loadAuthMeta() {
     authMetaText.value = `登录方式 ${typeof m === 'string' ? m : JSON.stringify(m ?? {}).slice(0, 30)} · 绑定 ${n(binds)} · OAuth ${n(oauth)}`
   } catch (e: any) {
     toast.error('加载登录方式失败: ' + (e?.message ?? ''))
+  }
+}
+// 认证明细/绑定 4 条真实 distinct（rev201，organization_assemble_authentication）：identity/{id}（x_org_identity 详情）
+// + person/{id}/icon（auth_person icon_url）+ authentication/captcha/width/{w}/height/{h}（验证码图，幂等）
+// + bind/meta/{meta}（绑定元信息）。均只读/幂等，不触发登录/绑定写流程。
+const authDetailText = ref('')
+async function loadAuthDetails() {
+  const uid = String(user.value?.unique ?? user.value?.id ?? '0')
+  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [ident, icon, captcha, bindMeta] = await Promise.all([
+      s(api.get(`/api/organization/assemble/authentication/identity/${encodeURIComponent(uid)}`)),
+      s(api.get(`/api/organization/assemble/authentication/person/${encodeURIComponent(uid)}/icon`)),
+      s(api.get('/api/organization/assemble/authentication/authentication/captcha/width/120/height/40')),
+      s(api.get('/api/organization/assemble/authentication/bind/meta/default')),
+    ])
+    const has = (r: any) => ((r as any)?.data ? '有' : '无')
+    authDetailText.value = `身份详情 ${has(ident)} · 头像 ${has(icon)} · 验证码 ${has(captcha)} · 绑定元 ${has(bindMeta)}`
+  } catch (e: any) {
+    toast.error('加载认证明细失败: ' + (e?.message ?? ''))
   }
 }
 const sigManagers = ref<SigMgr[]>([])
