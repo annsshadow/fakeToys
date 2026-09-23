@@ -22,6 +22,7 @@
         <button class="eb" @click="loadAppealDetailFilters">🧾 申诉/明细游标</button>
         <button class="eb" @click="loadHolidaySettingDetails">🏖️ 假期/设置明细</button>
         <button class="eb" @click="loadAttendanceDetails">📋 考勤明细读</button>
+        <button class="eb" @click="loadStatisticAggregates">📊 统计聚合/平台</button>
       </div>
       <div v-if="attOverviewText" class="att-note">{{ attOverviewText }}</div>
     </div>
@@ -526,6 +527,30 @@ async function loadAttendanceDetails() {
     attOverviewText.value = `按文件 ${n(byFile)} · 我的 ${n(my)} · 单条 ${(byId as any)?.data?.id ? '命中' : '未命中'} · 分页 ${n(paging)} · 预览 ${(preview as any)?.data ? '有' : '无'}`
   } catch (e: any) {
     toast.error('加载考勤明细失败: ' + (e?.message ?? ''))
+  }
+}
+// rev232：考勤统计展示/钉钉企微聚合族 7 条真实 distinct 路由
+// statisticshow person（person_id LIMIT1）· persons/unit（unit_id ORDER person_id）· topUnit/day（unit_id IS NULL ORDER work_date）· unit/day（unit_id ORDER work_date）· unit/sum（order_number LIMIT1）
+// dingdingstatistic/unit（x_attendance_statistic_dd_unit_month）· qywxstatistic/unit（x_attendance_statistic_qywx_unit_month）
+async function loadStatisticAggregates() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const name = '0'
+  const y = String(new Date().getFullYear())
+  const mo = String(new Date().getMonth() + 1)
+  try {
+    const [person, personsUnit, topDay, unitDay, unitSum, ddUnit, qywxUnit] = await Promise.all([
+      s(api.get(`/api/attendance/assemble/control/statisticshow/person/${name}/${y}/${mo}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/persons/unit/${name}/${y}/${mo}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/topUnit/day/${name}/${y}/${mo}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/unit/day/${name}/${y}/${mo}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/unit/sum/${name}/${y}/${mo}`)),
+      s(api.get(`/api/attendance/assemble/control/dingdingstatistic/unit/${name}/${y}/${mo}`)),
+      s(api.get(`/api/attendance/assemble/control/qywxstatistic/unit/${name}/${y}/${mo}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : ((r as any)?.data ? 1 : 0))
+    attOverviewText.value = `个人 ${n(person)} · 单位人员 ${n(personsUnit)} · 顶层日 ${n(topDay)} · 单位日 ${n(unitDay)} · 单位汇总 ${n(unitSum)} · 钉钉单位 ${n(ddUnit)} · 企微单位 ${n(qywxUnit)}`
+  } catch (e: any) {
+    toast.error('加载统计聚合失败: ' + (e?.message ?? ''))
   }
 }
 onMounted(loadData)
