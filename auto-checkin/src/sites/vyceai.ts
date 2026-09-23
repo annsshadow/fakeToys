@@ -6,6 +6,10 @@ import type { SiteAdapter, AdapterContext, AdapterOutcome } from "../types.js";
 
 const BASE_URL = "https://vyceai.com";
 
+/** 领取端点（2026-09-23 由 /user/daily-reward 迁移至此；读取状态仍是 /user/daily-reward） */
+const CLAIM_PATH = "/user/daily-reward/claim";
+const STATUS_PATH = "/user/daily-reward";
+
 /**
  * 站点 1: VyceAI —— 点击签到即可领取。
  *
@@ -13,7 +17,12 @@ const BASE_URL = "https://vyceai.com";
  *   - POST /user/login               登录（返回 user.totalBalance，单位美元）
  *   - GET  /user/dashboard           读取余额
  *   - GET  /user/daily-reward        领取状态 {canClaim, streak, lastClaim, rewardAmount}
- *   - POST /user/daily-reward        领取每日奖励（canClaim=true 时）
+ *   - POST /user/daily-reward/claim  领取每日奖励（canClaim=true 时）
+ *
+ * ⚠️ 2026-09-23：领取端点从 POST /user/daily-reward 迁移到 POST /user/daily-reward/claim。
+ * 旧路径不会 404，而是被 SPA 路由兜底成 index.html 以 HTTP 200 返回，导致"看起来成功但没落账"。
+ * 改路径前请先核对前端 bundle 里的字面量（GET 状态端点路径未变）。
+ * 鉴权只需 session cookie（credentials: include）；前端另有 Bearer 头但服务端并不强制。
  *
  * 因 PoW 无法用裸接口复现，必须用真实浏览器让页面 SPA 自己完成登录（含 PoW），
  * 登录后再调 /user/* 端点。余额直接是美元，不做 quota 换算。
@@ -33,7 +42,7 @@ export const vyceaiAdapter: SiteAdapter = {
         return fail("登录失败（可能凭据错误或 PoW 未通过）", shot);
       }
 
-      const reward = await getJson(page, "/user/daily-reward");
+      const reward = await getJson(page, STATUS_PATH);
       const balance = await readBalance(page);
       if (!reward) {
         return { status: "failed", reward: null, balance, currency: "$", message: "无法读取每日奖励状态", screenshot: null };
@@ -44,31 +53,54 @@ export const vyceaiAdapter: SiteAdapter = {
         return { status: "already", reward: 0, balance, currency: "$", message: `今日已领 · 连续${reward.streak ?? "?"}天`, screenshot: null };
       }
 
-      const claim = await postJson(page, "/user/daily-reward");
-      const got = typeof reward.rewardAmount === "number" ? reward.rewardAmount : null;
+      const claim = await postJson(page, CLAIM_PATH);
       ctx.log(`领取返回：${JSON.stringify(claim).slice(0, 160)}`);
+
+      // 端点路径变更时，SPA 兜底会把 index.html 以 HTTP 200 返回（2026-09-23 真实踩过）。
+      // 显式识别这种响应，让"路径又变了"一眼可见，而不是伪装成普通的领取失败。
+      if (claim && typeof claim.body === "string" && claim.body.trimStart().toLowerCase().startsWith("<!doctype")) {
+        const shot = await ctx.saveScreenshot(page, "vyceai-claim-endpoint-moved");
+        return {
+          status: "failed",
+          reward: null,
+          balance,
+          currency: "$",
+          message: `领取端点返回 HTML（疑似路径变更，当前 ${CLAIM_PATH}）`,
+          screenshot: shot,
+        };
+      }
 
       // HTTP 200 不代表落账：曾出现连续多天 200 但 canClaim/streak/lastClaim 纹丝不动（实际未领取，还导致断签）。
       // 必须复查 daily-reward 状态，canClaim 变 false 才算真成功。
-      const after = await getJson(page, "/user/daily-reward");
+      const after = await getJson(page, STATUS_PATH);
       if (after && after.canClaim === false) {
+        const got =
+          typeof claim?.amount === "number"
+            ? claim.amount
+            : typeof reward.rewardAmount === "number"
+              ? reward.rewardAmount
+              : null;
         const newBalance = await readBalanceAfterClaim(page, balance);
         return {
           status: "success",
           reward: got,
-          balance: newBalance ?? balance,
+          balance: newBalance ?? (typeof claim?.newBalance === "number" ? claim.newBalance : balance),
           currency: "$",
           message: `领取成功 +${got ?? "?"} · 连续${after.streak ?? "?"}天`,
           screenshot: null,
         };
       }
       const shot = await ctx.saveScreenshot(page, "vyceai-claim-ineffective");
+      // 接口若返回了业务错误（如 {"error":{"message":...}}），一并带出，便于直接定位
+      const apiErr = claim?.error?.message;
       return {
         status: "failed",
         reward: null,
         balance,
         currency: "$",
-        message: `领取未生效（返回 200 但 canClaim 仍为 true，streak=${after?.streak ?? "?"} lastClaim=${after?.lastClaim ?? "?"}）`,
+        message:
+          `领取未生效（返回 200 但 canClaim 仍为 true，streak=${after?.streak ?? "?"} lastClaim=${after?.lastClaim ?? "?"}` +
+          `${apiErr ? `；接口报错：${apiErr}` : ""}）`,
         screenshot: shot,
       };
     } catch (err) {
