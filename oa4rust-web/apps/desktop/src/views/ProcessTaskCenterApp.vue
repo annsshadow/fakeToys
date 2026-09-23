@@ -247,6 +247,8 @@ async function loadTaskFullCursors() {
   const proc = 'default'
   const first: any = items.value[0] ?? {}
   const tid = String(first.id ?? '0')
+  const manualFlag = 'default'
+  const snapType = 'latest'
   try {
     const rs = await Promise.all([
       s(api.get(`/api/processplatform/assemble/surface/task/list/${id}/next/${cnt}`)),
@@ -269,6 +271,10 @@ async function loadTaskFullCursors() {
       s(api.get(`/api/processplatform/assemble/surface/task/v2/list/prev/${id}/${cnt}`)),
       s(api.get(`/api/processplatform/assemble/surface/task/manage/${encodeURIComponent(tid)}`)),
       s(api.get(`/api/processplatform/assemble/surface/task/${encodeURIComponent(tid)}/reference`)),
+      // rev294：待办按人排除草稿管理 + 已办手动前翻 + 完成件快照 3 条补齐（PP_C_TASK/PP_C_TASKCOMPLETED/X_WORKCOMPLETED 真读）
+      s(api.get(`/api/processplatform/assemble/surface/task/list/person/current/exclude/draft/1/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/prev/manual/${manualFlag}`)),
+      s(api.get(`/api/processplatform/service/processing/snap/workcompleted/snapworkcompleted/${encodeURIComponent(tid)}/${snapType}`)),
     ])
     const hit = rs.filter((r) => (r as any)?.data != null).length
     taskCursorText.value = `待办真实读端点 ${rs.length} 条，命中 ${hit}`
