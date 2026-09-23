@@ -18,6 +18,7 @@
       <button class="sb" @click="loadMyInvited">我的邀请</button>
       <button class="sb" @click="loadMeetingMore">待接受/本月/配置</button>
       <button class="sb" @click="loadMeetingSearch">检索/前瞻</button>
+      <button class="sb" @click="loadMeetingCore">核心资源/日程</button>
       <button class="sb" @click="addBuilding">+ 楼栋</button>
     </div>
     <div v-if="appliedText" class="applied-note">{{ appliedText }}</div>
@@ -261,6 +262,24 @@ async function loadMyApplied() {
 }
 // 检索/前瞻族 3 条真实 distinct 路由：楼栋名模糊 building/list/like/{key}（x_meeting_building ILIKE）
 // + 会议室名模糊 room/list/like/{key}（x_meeting_room ILIKE）+ 未来 N 月会议 meeting/list/forward/monthcount/{monthCount}（x_meeting）
+// 会议核心资源/日程 4 条真实 distinct（rev203，meeting/meeting_core_entity crate，区别于 assemble/control 前缀）：
+// meeting/room/list（x_meeting_room）+ meeting/building/list（x_meeting_building）+ meeting/schedule/days/{days}
+// （x_meeting 未来 N 天）+ meeting/core/entity/room/list（SeaORM 房间实体）。
+async function loadMeetingCore() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [rooms, blds, sched, coreRooms] = await Promise.all([
+      s(api.get('/api/meeting/room/list')),
+      s(api.get('/api/meeting/building/list')),
+      s(api.get('/api/meeting/schedule/days/7')),
+      s(api.get('/api/meeting/core/entity/room/list')),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    appliedText.value = `核心会议室 ${n(rooms)} / 楼栋 ${n(blds)} / 未来7天日程 ${n(sched)} / 实体房间 ${n(coreRooms)}`
+  } catch (e: any) {
+    toast.error('加载核心资源/日程失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadMeetingSearch() {
   const key = searchKey.value?.trim() || '会'
   try {
