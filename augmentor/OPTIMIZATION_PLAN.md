@@ -38,12 +38,12 @@ augmentor/
 | 维度 | 现状 |
 |------|------|
 | 版本 | **3.0.0**（`augmentor.__version__` 是全仓唯一声明） |
-| 测试 | **3418 个**（3416 passed / 2 skipped），覆盖率 **97.35%**（门槛 80%） |
+| 测试 | **3645 个**（3645 passed / 3 skipped），覆盖率 **98.54%**（门槛 80%） |
 | 版本一致性 | FastAPI 元数据 / `web/package.json` / `docker-compose.yml` 默认 tag 三处均由测试锁定 |
-| HTTP API | **68 个端点 / 13 个 tag**，全部声明 `response_model`，无「无 schema 的 200 响应」 |
+| HTTP API | **68 个端点 / 13 个 tag**，全部声明 `response_model`，无「无 schema 的 200 响应」；23 条写/删路由挂 `verify_api_key`，由动态发现的路由清单守门 |
 | 前端 | **11 个功能页**，服务层 43 个函数；契约测试 + 接线守门共 45 个用例 |
 | 模型后端 | ERNIE、OpenAI、Ollama、Claude、Gemini |
-| 导出格式 | JSONL、Llama-Factory、Alpaca、ShareGPT、ChatML、CSV 等 12 种 |
+| 导出格式 | 以 `ExportFormat` 枚举为准（13 种，含 `raw`）；CLI `--format` 与转换图的支持面由 `TestExportFormatSurface` / `TestConvertFormatSurface` 双向锁定 |
 
 ---
 
@@ -160,6 +160,37 @@ augmentor/
 
 ---
 
+### 2.9 3.0.0 复审：新缺陷与整改（本轮）
+
+对 3.0.0 重扫一遍，按「可复现实测证据」确认 6 项新缺陷。基线：本轮开始前
+3605 passed / 98.37%，本轮结束 **3645 passed, 3 skipped / 98.54%**
+（+40 用例，全部经红→绿校验：把修复代码退回缺陷态，新测试必须失败）。
+
+| 编号 | 缺陷 | 实测证据 | 整改 |
+|------|------|---------|------|
+| F-01 | **6 条写盘路由漏挂 `verify_api_key`**，且为此设的鉴权守门测试**自身失查** | 配了 `AUGMENTOR_API_KEY`、不带 `X-API-Key` 调 `POST /api/dataset/convert` → **200 并真的写出文件** | `dataset_tools.py` 6 条 + `system_ops.py` 2 条补挂；`test_api_security.py` 的模块清单由硬编码 11 项改为 `pkgutil.iter_modules` 动态发现，`PROTECTED` 11→23、`OPEN_ALLOWLIST` 31→44 |
+| F-02 | 数据文件**顶层形态不校验**，下游 Python 异常原文回给客户端 | 顶层是对象 / 元素是标量的文件进 `/api/dataset/stats` → 500，`detail` 里是 `'str' object has no attribute 'get'` | `deps.read_items()` 单点收口：非数组顶层 / 非对象元素 → 400 中文文案（`第 N 个数据项必须是 JSON 对象，当前是字符串`）。`/api/dataset/validate` 例外——它的职责就是**报告**坏数据，行为已由测试钉住 |
+| F-03 | CSV/TSV 导出三处产物缺陷 | `convert --format csv` 产物字节实测 `b'instruction,output\r\r\n...'`；异构条目 → `ValueError: dict contains fields not in fieldnames`；空数据集 → 0 字节却报成功 | 写侧补 `newline=''`（POSIX 不显形，只在 Windows 露头）；新增 `csv_fieldnames()` 取**全量键并集**，`converter` / `export_enhanced` 的 CSV+TSV 四条路径共用 |
+| F-04 | 公开「支持格式」清单与实现两处对不上 | `converter.get_supported_formats()` 报 `tsv`，但转换图没有 `json -> tsv` 边 → `UnsupportedFormatError`；CLI `export --format` 少了 SDK/API 都支持的 `raw` | 转换侧清单改为由 `_converters` **反推**（枚举不再是事实来源）；`EXPORT_FORMATS` 补 `raw`；新增三方一致门禁 `TestExportFormatSurface` / `TestConvertFormatSurface` |
+| F-05 | **6 处 SDK 随机操作污染进程级 RNG** | `DataSplitter.split()` 之后调用方的全局随机序列被改写（参照序列对照实测：`0.9097 != 0.2929`） | `dataset_ops`（sample/split/shuffle/merge/模块级 helper）、`data_splitter`、`indexer`、`export_enhanced` 全改局部 `random.Random(seed)`；新增 `tests/unit/test_rng_hygiene.py` 门禁。CLI 侧同一坑 3.0 已修，SDK 侧当时漏了 |
+| F-06 | 文档/注释漂移 4 处 | `docs/README.md` 教用户用已删除的 `--no-url-removal`；`parser.py` 注释写「`history` 取消」而 `choices` 与实现都在；导出格式数写死 12 | 改为真实可执行命令；注释与实现对齐；文档里的**会漂移数字**改成「以枚举/清单为准」的写法 |
+
+**方法学收获**（两条，都已写进对应用例的 docstring）：
+
+1. **守门测试自己需要守门**。`test_api_security.py` 用一份手抄的路由模块清单来
+   检查「新路由有没有挂鉴权」，于是新增 `dataset_tools.py` 时它静默失明。修法是
+   加一条**独立**判据：OpenAPI 声明的每条路由必须落在「已保护 ∪ 已豁免 ∪ 应用级」
+   之内，否则失败——这条不依赖那份清单，攻击者同时改两张表也骗不过去。
+2. **判据必须先做可失败性校准**。第一版 RNG 门禁写成「seed → 取值 → 调用 → 再
+   seed → 取值」，两次都重新播种所以恒等，注入缺陷后仍然绿灯。改成「同一序列中
+   插入调用，比较后续值」才真正可失败。这与 §2.7 的「同源预言机是假测试」同源。
+
+**未整改，需产品决策**：`config.yaml` 的 `web.data_roots` 默认 `["."]`，即 API 的
+路径白名单默认放行**整个工作目录子树**（含 `config.yaml` 自身、`.git`、备份目录）。
+收紧到 `["data"]` 才是白名单的本意，但这是改变出厂默认值的破坏性动作，需逐项确认。
+
+---
+
 ## 三、待办
 
 ### 3.1 前端
@@ -171,6 +202,9 @@ augmentor/
 
 ### 3.2 后端
 
+- [ ] **`web.data_roots` 出厂默认仍是 `["."]`**（放行整个工作目录子树，含 `config.yaml`
+      / `.git` / 备份目录）。收紧到 `["data"]` 才是白名单的本意，但这是改变默认行为的
+      破坏性动作，须由维护者决策后再动（详见 §2.9 末）
 - [x] 新增 `dataset` / `system` 两组共 25 个端点的业务分支集成测试
       → `tests/integration/test_api_dataset_system_tools.py`（151 用例，
       两个模块均达 100%）

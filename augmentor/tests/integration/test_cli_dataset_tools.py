@@ -15,6 +15,8 @@ import pytest
 
 from cli import main
 
+from augmentor.converter import DataFormat, get_supported_formats
+
 AI_DIR = Path(__file__).resolve().parent.parent.parent
 
 SAMPLE_ITEMS = [
@@ -251,3 +253,37 @@ class TestAnalyzeVisualizeRegression:
         assert code is None
         report = json.loads(out_file.read_text(encoding="utf-8"))
         assert report["total_items"] == 5
+
+
+class TestConvertFormatSurface:
+    """`convert --format` 的可选值必须等于转换图真的支持的格式集合。
+
+    两侧曾经说的是两套话：`converter.get_supported_formats()` 直接由 `DataFormat`
+    枚举生成，于是把转换图里没有 `json -> tsv` 这条边的 `tsv` 也报成支持能力
+    （照它调用只会拿到 `UnsupportedFormatError`），而 CLI 的 `choices` 里没有 tsv。
+    现在公开清单由 `_converters` 反推，这两条测试守住「公开清单 == 能真跑通的目标」。
+    """
+
+    @pytest.mark.parametrize("fmt", get_supported_formats())
+    def test_every_supported_target_really_converts(self, dataset, tmp_path, fmt):
+        """公开清单里的每个目标格式都要真能转换落盘"""
+        out_file = tmp_path / f"conv.{fmt}"
+        _, _, code = run_cli(
+            ["cli", "convert", "--input", str(dataset),
+             "--output", str(out_file), "--format", fmt]
+        )
+        assert code is None
+        assert out_file.exists()
+
+    def test_unsupported_tsv_is_not_claimed_by_either_side(self, dataset, tmp_path):
+        """`tsv` 是 `DataFormat` 成员，但转换图不支持：清单里没有，CLI 也拒绝"""
+        assert "tsv" in [f.value for f in DataFormat]
+        assert "tsv" not in get_supported_formats()
+
+        out_file = tmp_path / "x.tsv"
+        _, _, code = run_cli(
+            ["cli", "convert", "--input", str(dataset),
+             "--output", str(out_file), "--format", "tsv"]
+        )
+        assert code == 2, f"CLI 未拒绝 tsv: code={code}"
+        assert not out_file.exists()
