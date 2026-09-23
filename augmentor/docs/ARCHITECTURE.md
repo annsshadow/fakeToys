@@ -290,6 +290,7 @@ BLEU 使用标准裁剪计数与简短惩罚。当所有 n-gram 的裁剪计数�
 | `resolve_within_roots(name, label)` | 只做边界校验，不要求存在 | 400 / 403 |
 | `resolve_data_path(name, for_write=False)` | 文件路径；读操作要求 `is_file()` | 400 / 403 / 404 |
 | `resolve_data_dir(name)` | 目录路径 | 400 / 403 |
+| `default_registry_dir()` | 依赖注册表的缺省目录：白名单首个根目录下的 `.dependency_registry` | 不失败 |
 
 校验顺序：
 
@@ -326,6 +327,16 @@ AUGMENTOR_DATA_ROOTS（os.pathsep 分隔）
 > 或显式设 `AUGMENTOR_DATA_ROOTS` 覆盖。Docker 镜像的工作目录就是 `/app`、数据在
 > `/app/data`，因此新默认与部署方式一致。
 > `/api/data/list` 的扫描范围与白名单同源（`allowed_data_roots()`），不会出现「列得出、读不到」。
+
+> **缺省目录参数必须跟着白名单走**
+>
+> `/api/system/dependency/*` 三条端点有一个可选的 `registry_path`。它的缺省值曾写死为
+> `.dependency_registry`（相对工作目录），而工作目录收紧后已不在白名单内 —— 于是
+> **不传参的默认调用会被自己的闸拦下**，三条端点全部 403。现在由
+> `default_registry_dir()` 取白名单首个根目录（出厂默认即 `data/.dependency_registry`），
+> 显式传参时仍走 `resolve_data_dir()` 校验，越界照旧 403。
+> SDK / CLI 侧的 `DependencyManager()` 默认参数依然是相对工作目录，那是离线工具的
+> 常识落点，不经过 API 白名单。
 
 > **为什么 `multimodal` 走 `resolve_within_roots` 而不是 `resolve_data_path`**
 >

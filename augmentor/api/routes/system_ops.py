@@ -14,12 +14,13 @@
 import json
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from augmentor.exceptions import BackupError
 
 from ..deps import (
+    default_registry_dir,
     get_pipeline,
     read_items,
     resolve_data_dir,
@@ -453,11 +454,22 @@ async def system_stream(request: StreamRequest):
 
 # ============ 数据集依赖登记 ============
 
-def _dependency_manager(registry_path: str):
-    """构造依赖管理器（注册表目录受白名单约束）"""
+REGISTRY_PATH_DESC = (
+    "依赖注册表目录。缺省时使用白名单首个根目录下的 `.dependency_registry`"
+    "（出厂默认即 `data/.dependency_registry`）；显式传入时该目录必须落在白名单内。"
+)
+
+
+def _dependency_manager(registry_path: Optional[str]):
+    """构造依赖管理器（注册表目录受白名单约束，缺省时跟着白名单走）
+
+    只在参数**完全缺席**时用缺省目录；显式传空串（`?registry_path=`）仍是非法入参，
+    由 `resolve_data_dir()` 报 400，不能悄悄换成默认值。
+    """
     from augmentor.dependency import DependencyManager
 
-    return DependencyManager(str(resolve_data_dir(registry_path)))
+    path = default_registry_dir() if registry_path is None else resolve_data_dir(registry_path)
+    return DependencyManager(str(path))
 
 
 @router.get(
@@ -465,7 +477,9 @@ def _dependency_manager(registry_path: str):
     response_model=DependencyDatasetListResponse,
     summary="已登记数据集列表",
 )
-async def dependency_datasets(registry_path: str = ".dependency_registry"):
+async def dependency_datasets(
+    registry_path: Optional[str] = Query(None, description=REGISTRY_PATH_DESC),
+):
     """列出依赖注册表里登记过的数据集"""
     try:
         manager = _dependency_manager(registry_path)
@@ -483,7 +497,8 @@ async def dependency_datasets(registry_path: str = ".dependency_registry"):
     dependencies=[Depends(verify_api_key)],
 )
 async def dependency_register(
-    request: RegisterDatasetRequest, registry_path: str = ".dependency_registry"
+    request: RegisterDatasetRequest,
+    registry_path: Optional[str] = Query(None, description=REGISTRY_PATH_DESC),
 ):
     """把一个数据集登记进依赖注册表"""
     try:
@@ -511,7 +526,9 @@ async def dependency_register(
     response_model=DependencyGraphResponse,
     summary="数据集依赖图与校验问题",
 )
-async def dependency_graph(registry_path: str = ".dependency_registry"):
+async def dependency_graph(
+    registry_path: Optional[str] = Query(None, description=REGISTRY_PATH_DESC),
+):
     """返回依赖图的节点 / 边，以及依赖关系上的问题清单"""
     try:
         manager = _dependency_manager(registry_path)

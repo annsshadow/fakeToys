@@ -156,6 +156,23 @@ def _relative_candidates(raw: Path, roots: List[Path]) -> List[Path]:
     return candidates
 
 
+def default_registry_dir() -> Path:
+    """依赖注册表的默认目录：白名单**首个根目录**下的 `.dependency_registry`
+
+    这里刻意跟白名单走而不是跟工作目录走：`web.data_roots` 收紧到 `["data"]` 后，
+    历史上写死的 `.dependency_registry`（相对工作目录）落在了闸外面，
+    三个依赖端点连自己的默认值都会 403。目录名沿用历史值，因此
+    `--registry-path data/.dependency_registry` 可以让 CLI 与 API 共用同一份登记。
+
+    SDK 侧 `DependencyManager` 的默认参数仍是相对工作目录——那层没有白名单概念，
+    改它会影响所有直接调用方。
+
+    Returns:
+        已 resolve 的绝对目录路径（可能尚不存在，由 `DependencyManager` 创建）
+    """
+    return allowed_data_roots()[0] / ".dependency_registry"
+
+
 def resolve_within_roots(name: str, label: str) -> Path:
     """把客户端传入的路径规范化为白名单内的绝对路径
 
