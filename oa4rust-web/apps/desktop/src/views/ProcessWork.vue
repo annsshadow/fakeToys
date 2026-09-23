@@ -19,6 +19,7 @@
         <button class="btn-sm" @click="loadWorkFilterCursors">工作游标/按工作</button>
         <button class="btn-sm" @click="loadWorkAuxReads">日志/流水号/文件</button>
         <button class="btn-sm" @click="loadByWorkJobLists">按工作/按job</button>
+        <button class="btn-sm" @click="loadDocReadPaging">文档版本/我的待阅</button>
         <button class="btn-sm primary" @click="openStart">发起流程</button>
       </div>
     </div>
@@ -31,6 +32,7 @@
     <p v-if="taskListText" class="subtitle draft-note">{{ taskListText }}</p>
     <p v-if="workCursorText" class="subtitle draft-note">{{ workCursorText }}</p>
     <p v-if="byWorkJobText" class="subtitle draft-note">{{ byWorkJobText }}</p>
+    <p v-if="docReadPagingText" class="subtitle draft-note">{{ docReadPagingText }}</p>
     <div class="tabs glass-card">
       <button
         v-for="tab in tabs"
@@ -331,6 +333,23 @@ async function loadByWorkJobLists(): Promise<void> {
   ])
   const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
   byWorkJobText.value = `待办 工作${n(tW)}/job${n(tJ)} · 已办 工作${n(tcW)}/job${n(tcJ)} · 待阅job ${n(rJ)} · 已阅job ${n(rcJ)} · 日志job ${n(wlJ)}`
+}
+const docReadPagingText = ref('')
+// rev252：文档版本按job+分类·按工作+分类 · 待阅按工作 · 待阅/已阅我的分页 5 条真实 distinct 读路由
+// documentversion(xjob+xcategory / xwork+xcategory) · read(xwork) · read/readcompleted(WHERE 1=1 分页)；arity 已核
+async function loadDocReadPaging(): Promise<void> {
+  docReadPagingText.value = ''
+  const id = '0'
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [dvJob, dvWork, readWork, readMy, readcMy] = await Promise.all([
+    settle(api.get(`/api/processplatform/assemble/surface/documentversion/list/job/${id}/category/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/${id}/category/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/read/list/work/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/read/list/my/paging/1/size/20`)),
+    settle(api.get(`/api/processplatform/assemble/surface/readcompleted/list/my/paging/1/size/20`)),
+  ])
+  const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+  docReadPagingText.value = `文档版本 job分类${n(dvJob)}/工作分类${n(dvWork)} · 待阅按工作 ${n(readWork)} · 我的待阅 ${n(readMy)} · 我的已阅 ${n(readcMy)}`
 }
 // Job 关联/记录 4 条真实 distinct（rev202，surface 域按 job id）：attachment/list/job/{job}（xjob 附件）
 // + correlation/list/job/{job}（PP_C_JOB 关联）+ datarecord/list/job/{job}（PP_C_DATA_RECORD）
