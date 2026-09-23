@@ -44,10 +44,12 @@
             <button class="btn-run" @click="runQuery">▶ 执行</button>
             <button class="btn-edit" @click="openEdit">✏ 编辑</button>
             <button class="btn-edit" @click="loadQueryDetail">🔍 明细</button>
+            <button class="btn-edit" @click="loadQueryPerms">🔐 权限/分类</button>
             <button class="btn-del" @click="deleteQuery(selected)">🗑</button>
           </div>
         </div>
         <div v-if="queryDetailText" class="qd-note">{{ queryDetailText }}</div>
+        <div v-if="queryPermText" class="qd-note">{{ queryPermText }}</div>
 
         <!-- 查询条件面板 -->
         <div class="condition-panel">
@@ -347,6 +349,37 @@ async function loadQueryDetail() {
     queryDetailText.value = `查询「${dName}」· 数据表 ${tN} · 导入模型 ${mN}`
   } catch (e: any) {
     toast.error('加载查询明细失败: ' + (e?.message ?? ''))
+  }
+}
+
+// 查询设计器权限/分类 3 条真实 distinct（rev188）：permission/{query}/{id}（query_id_permission x_query_design 权限位）
+// + list/querycategory/{query}/{queryCategory}（同分类查询 WHERE category=$1）+ table/permission/{id}（table_id_permission
+// x_query_table 权限位，table id 从 table/list/query/{flag} 首行回源）。
+const queryPermText = ref('')
+async function loadQueryPerms() {
+  const flag = String(selected.value?.flag ?? selected.value?.id ?? '')
+  if (!flag) {
+    toast.error('请先选择查询')
+    return
+  }
+  const qid = String(selected.value?.id ?? flag)
+  const cat = String(selected.value?.category ?? '0')
+  try {
+    const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const tablesRes = await settle(api.get(`/api/query/assemble/designer/table/list/query/${encodeURIComponent(flag)}`))
+    const tables = Array.isArray((tablesRes as any)?.data) ? (tablesRes as any).data : []
+    const tableId = tables[0] ? String(tables[0].id ?? '0') : '0'
+    const [perm, byCat, tablePerm] = await Promise.all([
+      settle(api.get(`/api/query/assemble/designer/permission/${encodeURIComponent(flag)}/${encodeURIComponent(qid)}`)),
+      settle(api.get(`/api/query/assemble/designer/list/querycategory/${encodeURIComponent(flag)}/${encodeURIComponent(cat)}`)),
+      settle(api.get(`/api/query/assemble/designer/table/permission/${encodeURIComponent(tableId)}`)),
+    ])
+    const hasPerm = (perm as any)?.data?.id ? '有' : '无'
+    const catN = Array.isArray((byCat as any)?.data) ? (byCat as any).data.length : 0
+    const hasTblPerm = (tablePerm as any)?.data?.id ? '有' : '无'
+    queryPermText.value = `查询权限 ${hasPerm} · 同分类查询 ${catN} · 数据表权限 ${hasTblPerm}`
+  } catch (e: any) {
+    toast.error('加载查询权限/分类失败: ' + (e?.message ?? ''))
   }
 }
 
