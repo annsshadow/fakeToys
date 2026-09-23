@@ -7784,7 +7784,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 148,
+    "line": 149,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/widget/list/portal/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/widget/list/portal/{}",
@@ -7794,7 +7794,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 149,
+    "line": 150,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/script/list/portal/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/script/list/portal/{}",
@@ -7804,7 +7804,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 150,
+    "line": 151,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/dict/list/portal/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/dict/list/portal/{}",
@@ -7814,7 +7814,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 157,
+    "line": 158,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/scriptversion/list/script/${encodeURIComponent(sid)}",
     "path": "/api/portal/assemble/designer/scriptversion/list/script/{}",
@@ -7824,7 +7824,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 160,
+    "line": 161,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/widget/${encodeURIComponent(wid)}",
     "path": "/api/portal/assemble/designer/widget/{}",
@@ -7834,7 +7834,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 161,
+    "line": 162,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/script/${encodeURIComponent(sid)}",
     "path": "/api/portal/assemble/designer/script/{}",
@@ -7844,7 +7844,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 162,
+    "line": 163,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/scriptversion/${encodeURIComponent(svId)}",
     "path": "/api/portal/assemble/designer/scriptversion/{}",
@@ -7854,7 +7854,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 163,
+    "line": 164,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/templatepage/${encodeURIComponent(tid)}",
     "path": "/api/portal/assemble/designer/templatepage/{}",
@@ -7864,7 +7864,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 164,
+    "line": 165,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/dict/${encodeURIComponent(did)}",
     "path": "/api/portal/assemble/designer/dict/{}",
@@ -7874,7 +7874,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 183,
+    "line": 184,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/portal/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/portal/{}",
@@ -7884,7 +7884,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 188,
+    "line": 189,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/page/list/${encodeURIComponent(cat)}",
     "path": "/api/portal/assemble/designer/page/list/{}",
@@ -7894,7 +7894,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 189,
+    "line": 190,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/list/portal/${encodeURIComponent(pageNo)}/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/list/portal/{}/{}",
@@ -7904,7 +7904,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 190,
+    "line": 191,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/portal/icon/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/portal/icon/{}",
@@ -7914,7 +7914,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 191,
+    "line": 192,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/file/list/application/${encodeURIComponent(appFlag)}",
     "path": "/api/portal/assemble/designer/file/list/application/{}",
@@ -7924,7 +7924,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 192,
+    "line": 193,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/pageversion/list/${encodeURIComponent(pageNo)}/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/pageversion/list/{}/{}",
@@ -7934,7 +7934,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 193,
+    "line": 194,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/portal/list/portalcategory/${encodeURIComponent(cat)}",
     "path": "/api/portal/assemble/designer/portal/list/portalcategory/{}",
@@ -7944,7 +7944,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 212,
+    "line": 213,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/portal/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/portal/{}",
@@ -7954,7 +7954,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 216,
+    "line": 217,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/dict/list/paging/1/20/20",
     "path": "/api/portal/assemble/designer/dict/list/paging/1/20/20",
@@ -7964,7 +7964,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 217,
+    "line": 218,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/file/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/file/{}",
@@ -7974,7 +7974,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 218,
+    "line": 219,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/pageversion/list/${encodeURIComponent(pageNum)}/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/pageversion/list/{}/{}",
@@ -7984,7 +7984,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 219,
+    "line": 220,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/portal/list/summary/portalcategory/${encodeURIComponent(cat)}",
     "path": "/api/portal/assemble/designer/portal/list/summary/portalcategory/{}",
@@ -7994,7 +7994,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 220,
+    "line": 221,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/script/list/paging/1/20/20",
     "path": "/api/portal/assemble/designer/script/list/paging/1/20/20",
@@ -8004,7 +8004,37 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 241,
+    "line": 236,
+    "method": "GET",
+    "raw": "/api/portal/assemble/designer/output/select/file/${encodeURIComponent(id)}",
+    "path": "/api/portal/assemble/designer/output/select/file/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDesigner.vue",
+    "line": 237,
+    "method": "GET",
+    "raw": "/api/portal/assemble/designer/output/select/${encodeURIComponent(id)}",
+    "path": "/api/portal/assemble/designer/output/select/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDesigner.vue",
+    "line": 238,
+    "method": "GET",
+    "raw": "/api/portal/assemble/designer/file/list/${encodeURIComponent(id)}/prev/20",
+    "path": "/api/portal/assemble/designer/file/list/{}/prev/20",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDesigner.vue",
+    "line": 259,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/list",
     "path": "/api/portal/assemble/designer/list",
@@ -8014,7 +8044,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 252,
+    "line": 270,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/get/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/get/{}",
@@ -8024,7 +8054,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 260,
+    "line": 278,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/portal/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/portal/{}",
@@ -8034,7 +8064,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 261,
+    "line": 279,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/portal/permission/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/portal/permission/{}",
@@ -8044,7 +8074,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 262,
+    "line": 280,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/widget/list/portal/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/widget/list/portal/{}",
@@ -8054,7 +8084,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 269,
+    "line": 287,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/page/list/portal/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/page/list/portal/{}",
@@ -8064,7 +8094,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 270,
+    "line": 288,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/script/list/portal/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/script/list/portal/{}",
@@ -8074,7 +8104,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 271,
+    "line": 289,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/dict/list/portal/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/dict/list/portal/{}",
@@ -8084,7 +8114,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 307,
+    "line": 325,
     "method": "POST",
     "raw": "/api/portal/assemble/designer/create",
     "path": "/api/portal/assemble/designer/create",
@@ -8094,7 +8124,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 320,
+    "line": 338,
     "method": "PUT",
     "raw": "/api/portal/assemble/designer/save/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/save/{}",

@@ -10,6 +10,7 @@
         <button class="btn" :disabled="!activeId" @click="loadDesignerAssets">资产明细</button>
         <button class="btn" :disabled="!activeId" @click="loadDesignerCategories">分类/页面</button>
         <button class="btn" :disabled="!activeId" @click="loadDesignerPaging">分页/文件/版本</button>
+        <button class="btn" :disabled="!activeId" @click="loadDesignerOutputs">输出/文件前翻</button>
         <button class="btn primary" :disabled="!activeId || saving" @click="saveDesign">
           {{ saving ? '保存中…' : '保存布局' }}
         </button>
@@ -223,6 +224,23 @@ async function loadDesignerPaging() {
     assetText.value = `字典分页 ${n(dicts)} · 文件 ${(file as any)?.data?.id ? '命中' : '未命中'} · 页版本 ${n(versions)} · 同类摘要 ${n(summary)} · 脚本分页 ${n(scripts)}`
   } catch (e: any) {
     toast.error('加载分页/文件/版本失败: ' + (e?.message ?? ''))
+  }
+}
+// rev255：门户设计器 输出(按文件flag/按门户flag)·文件列表前翻 3 条真实 distinct 读路由
+// x_portal_output WHERE flag / portal_flag · x_portal_file WHERE id< 游标；arity 已核
+async function loadDesignerOutputs() {
+  const id = String(activeId.value ?? '0')
+  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [outFile, outPortal, filePrev] = await Promise.all([
+      s(api.get<any>(`/api/portal/assemble/designer/output/select/file/${encodeURIComponent(id)}`)),
+      s(api.get<any>(`/api/portal/assemble/designer/output/select/${encodeURIComponent(id)}`)),
+      s(api.get<any>(`/api/portal/assemble/designer/file/list/${encodeURIComponent(id)}/prev/20`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    assetText.value = `输出(按文件) ${(outFile as any)?.data ? '命中' : '未命中'} · 输出(按门户) ${n(outPortal)} · 文件前翻 ${n(filePrev)}`
+  } catch (e: any) {
+    toast.error('加载输出/文件前翻失败: ' + (e?.message ?? ''))
   }
 }
 const widgets = ref<PortalWidget[]>([])
