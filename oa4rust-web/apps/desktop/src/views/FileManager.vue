@@ -10,6 +10,7 @@
         <button class="action-btn" @click="loadTopAttachments">📎 顶层附件</button>
         <button class="action-btn" @click="loadFileMeta">🗄️ 附件2/编辑器</button>
         <button class="action-btn" @click="loadAttachmentSearch">🔎 附件检索</button>
+        <button class="action-btn" @click="loadAttachmentShares">📤 附件分享/附件2</button>
         <button class="action-btn" @click="loadFolderShare">📂 文件夹/分享/容量</button>
         <button class="action-btn" @click="loadShareScopes">🔗 文件夹2/我的分享/收到分享</button>
         <button class="action-btn" @click="loadRefTypes">🏷️ 引用类型</button>
@@ -156,6 +157,28 @@ async function loadFileMeta(): Promise<void> {
     toast.success(`附件2 ${n(att2)} / 编辑器 ${n(editors)}`)
   } catch (e: any) {
     toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+// rev236：附件分享/附件2 6 条真实 distinct 读路由（不同表/WHERE；跳过 top 双注册 twin 与 _all 退化）
+async function loadAttachmentShares(): Promise<void> {
+  try {
+    const owner = 'anonymous'
+    const md5 = '0'
+    const folderId = currentFolder.value || 'root'
+    const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const [attShare, att2Folder, att2Share, att2Exist, next, prev] = await Promise.all([
+      s(api.get(`/api/attachment/list/share/${encodeURIComponent(owner)}`)),
+      s(api.get(`/api/attachment2/list/folder/${encodeURIComponent(folderId)}`)),
+      s(api.get(`/api/attachment2/list/share/${encodeURIComponent(owner)}`)),
+      s(api.get(`/api/attachment2/exist/file/${encodeURIComponent(md5)}`)),
+      s(api.get(`/api/file/assemble/control/file/list/${encodeURIComponent(md5)}/next/20`)),
+      s(api.get(`/api/file/assemble/control/file/list/${encodeURIComponent(md5)}/prev/20`)),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    const has = (r: any) => ((r as any)?.data != null ? '有' : '无')
+    toast.success(`附件分享 ${n(attShare)} / 附件2文件夹 ${n(att2Folder)} / 附件2分享 ${n(att2Share)} / MD5存在 ${has(att2Exist)} / 后翻 ${n(next)} / 前翻 ${n(prev)}`)
+  } catch (e: any) {
+    toast.error('加载附件分享失败: ' + (e?.message ?? ''))
   }
 }
 // 附件检索族 3 条真实 distinct 路由（均 FILE_FILE，WHERE 各异）：文件夹内附件 attachment/list/folder/{folderId}（WHERE folder_id）
