@@ -162,8 +162,10 @@
           <button class="btn-primary" @click="loadWeixinMeta">微信菜单/校验元/输出结构</button>
           <button class="btn-primary" @click="loadProgramAlias">应用别名/当前样式/数据结构</button>
           <button class="btn-primary" @click="loadDesignerJest">设计器搜索/中心测试/脚本基准</button>
+          <button class="btn-primary" @click="loadDeployDictDistribute">o2部署/市场模块/字典数据/分发源</button>
           <button class="btn-create" @click="saveConfig">+ 新建/更新</button>
         </div>
+        <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
         <div v-if="dsText" class="app-meta">{{ dsText }}</div>
         <div v-if="loadingConfig" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
         <div v-else-if="configs.length===0" class="empty"><div class="ei">⚙️</div><p>暂无配置项</p></div>
@@ -990,6 +992,27 @@ loadInvokeCats()
 
 // 平台配置（config）：列表 / 应用 / 实体 / 新建更新（program_center config 族）
 const dsText = ref('')
+const deployDistText = ref('')
+// rev263：program_center o2部署/市场模块/字典数据/分发源 4 条真实 distinct 读路由
+// deploy/server/o2 → x_program_deploy_server(server_type='o2') · market/flag → x_program_module(deleted_at) · dict/{flag}/{path}/data → x_program_dict(flag=$1 arity2) · distribute/assemble/source/{source} → x_program_invoke(category=$1)；均 query_opt 只读、arity 已核
+async function loadDeployDictDistribute() {
+  const flag = 'default'
+  const path = 'data'
+  const source = 'default'
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [deploy, market, dict, distribute] = await Promise.all([
+      s(api.get(`/api/program_center/deploy/server/o2`)),
+      s(api.get(`/api/program_center/market/flag`)),
+      s(api.get(`/api/program_center/dict/${encodeURIComponent(flag)}/${encodeURIComponent(path)}/data`)),
+      s(api.get(`/api/program_center/distribute/assemble/source/${encodeURIComponent(source)}`)),
+    ])
+    const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
+    deployDistText.value = `o2部署 ${has(deploy)} | 市场模块 ${has(market)} | 字典数据 ${has(dict)} | 分发源 ${has(distribute)}`
+  } catch (e: any) {
+    toast.error('加载部署/字典/分发失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadDataStructure() {
   try {
     // GET program_center/datastructure/modules/all + module/output/list/structure —— 数据结构模块
