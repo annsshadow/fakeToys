@@ -17,6 +17,7 @@ from typing import Any, Callable, List, Optional, Tuple
 from fastapi import Header, HTTPException
 
 from augmentor import AugmentorPipeline, load_config
+from augmentor.config import WebConfig
 
 logger = logging.getLogger(__name__)
 
@@ -75,13 +76,13 @@ def reset_pipeline():
     _pipeline = None
 
 
-def _allowed_roots() -> List[Path]:
+def allowed_data_roots() -> List[Path]:
     """解析允许访问的数据目录白名单
 
     来源优先级：
       1. 环境变量 ``AUGMENTOR_DATA_ROOTS``（``os.pathsep`` 分隔）——便于容器与测试覆盖
       2. ``config.yaml`` 的 ``web.data_roots``
-      3. 默认 ``["."]``，即进程工作目录
+      3. 出厂默认 ``WebConfig.data_roots``（当前为 ``["data"]``）
 
     Returns:
         已 resolve 的根目录列表
@@ -92,21 +93,24 @@ def _allowed_roots() -> List[Path]:
     else:
         try:
             candidates = [str(p) for p in load_config("config.yaml").web.data_roots]
-        except Exception:  # 配置损坏不应让所有请求 500，退化为工作目录
-            logger.warning("读取 web.data_roots 失败，回退到工作目录", exc_info=True)
-            candidates = ["."]
+        except Exception:  # 配置损坏不应让所有请求 500
+            logger.warning("读取 web.data_roots 失败，回退到出厂默认", exc_info=True)
+            candidates = []
 
     if not candidates:
-        candidates = ["."]
+        # 空白名单等于「所有请求都 403」，比放宽更危险，因此两级降级都落到出厂默认：
+        # 绝不落到工作目录——那会把出厂默认刚刚收紧掉的范围又悄悄放开。
+        candidates = [str(p) for p in WebConfig().data_roots]
 
     return [Path(c).resolve() for c in candidates]
 
 
-def _assert_within_roots(path: Path) -> Path:
+def _assert_within_roots(path: Path, roots: List[Path]) -> Path:
     """校验路径落在白名单根目录内
 
     Args:
         path: 已 resolve 的绝对路径
+        roots: 已 resolve 的根目录列表（与候选生成共用同一份快照）
 
     Returns:
         原路径
@@ -114,7 +118,7 @@ def _assert_within_roots(path: Path) -> Path:
     Raises:
         HTTPException: 403 路径越界
     """
-    for root in _allowed_roots():
+    for root in roots:
         try:
             path.relative_to(root)
             return path
@@ -123,11 +127,45 @@ def _assert_within_roots(path: Path) -> Path:
     raise HTTPException(status_code=403, detail="路径超出允许的数据目录范围")
 
 
+def _relative_candidates(raw: Path, roots: List[Path]) -> List[Path]:
+    """为相对路径生成候选绝对路径，**顺序即优先级**
+
+    白名单根目录在前，进程工作目录在最后兜底。这么排是为收紧出厂默认
+    ``["data"]`` 补的必要一环：``/api/data/list`` 返回的 ``name`` 只是文件名，
+    前端 8 处都把它原样拼回 ``/api/data/load/{filename}``，而 ``{filename}``
+    只匹配单个路径段——若只认 ``data/xxx.json`` 这种写法，整个文件选择器会
+    集体 403。候选路径要么在白名单内、要么仍要过 ``_assert_within_roots``，
+    因此不放宽可达范围。
+
+    Args:
+        raw: 客户端传入的相对路径（已确认不含 ``..``）
+        roots: 已 resolve 的白名单根目录
+
+    Returns:
+        去重后的候选列表；最后一项恒为工作目录解释
+    """
+    candidates = []
+    for root in roots:
+        candidate = (root / raw).resolve()
+        if candidate not in candidates:
+            candidates.append(candidate)
+
+    fallback = (Path.cwd() / raw).resolve()
+    if fallback not in candidates:
+        candidates.append(fallback)
+    return candidates
+
+
 def resolve_within_roots(name: str, label: str) -> Path:
     """把客户端传入的路径规范化为白名单内的绝对路径
 
-    相对路径按进程工作目录解析（与既有行为一致）；``..`` 组件直接拒绝。
-    ``Path.resolve()`` 会展开符号链接，因此指向根目录之外的软链接同样被拦下。
+    相对路径按 ``_relative_candidates`` 的顺序取**第一个存在**的解释，白名单
+    根目录优先于工作目录。一个都不存在时（典型是写入新文件）落回工作目录解释，
+    由后续的存在性检查 404 或白名单闸 403 ——**不**替调用方凭空挑一个写入目录，
+    那种猜测会静默改掉产物落点。要写入请显式传 ``data/xxx.json``。
+
+    ``..`` 组件直接拒绝。``Path.resolve()`` 会展开符号链接，因此指向根目录
+    之外的软链接同样被拦下。
 
     Args:
         name: 客户端传入的路径
@@ -146,8 +184,14 @@ def resolve_within_roots(name: str, label: str) -> Path:
     if ".." in raw.parts:
         raise HTTPException(status_code=400, detail="路径包含非法组件")
 
-    candidate = (raw if raw.is_absolute() else Path.cwd() / raw).resolve()
-    return _assert_within_roots(candidate)
+    # 一次解析、两处共用：候选顺序与越界判定必须基于同一份白名单快照
+    roots = allowed_data_roots()
+    if raw.is_absolute():
+        return _assert_within_roots(raw.resolve(), roots)
+
+    candidates = _relative_candidates(raw, roots)
+    chosen = next((c for c in candidates if c.exists()), candidates[-1])
+    return _assert_within_roots(chosen, roots)
 
 
 def resolve_data_path(name: str, *, for_write: bool = False) -> Path:

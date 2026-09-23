@@ -38,9 +38,10 @@ augmentor/
 | 维度 | 现状 |
 |------|------|
 | 版本 | **3.0.0**（`augmentor.__version__` 是全仓唯一声明） |
-| 测试 | **3645 个**（3645 passed / 3 skipped），覆盖率 **98.54%**（门槛 80%） |
+| 测试 | **3658 个**（3658 passed / 3 skipped），覆盖率 **98.55%**（门槛 80%） |
 | 版本一致性 | FastAPI 元数据 / `web/package.json` / `docker-compose.yml` 默认 tag 三处均由测试锁定 |
 | HTTP API | **68 个端点 / 13 个 tag**，全部声明 `response_model`，无「无 schema 的 200 响应」；23 条写/删路由挂 `verify_api_key`，由动态发现的路由清单守门 |
+| 路径白名单 | 出厂默认 `web.data_roots` = **`["data"]`**（原 `["."]` 放行整个工作目录）；三处默认值由字面量钉住并交叉比对。`/api/data/list` 扫描范围与白名单同源；相对路径**先在根目录内查已存在的文件**、工作目录兜底，写入需显式 `data/x.json` |
 | 前端 | **11 个功能页**，服务层 43 个函数；契约测试 + 接线守门共 45 个用例 |
 | 模型后端 | ERNIE、OpenAI、Ollama、Claude、Gemini |
 | 导出格式 | 以 `ExportFormat` 枚举为准（13 种，含 `raw`）；CLI `--format` 与转换图的支持面由 `TestExportFormatSurface` / `TestConvertFormatSurface` 双向锁定 |
@@ -162,9 +163,10 @@ augmentor/
 
 ### 2.9 3.0.0 复审：新缺陷与整改（本轮）
 
-对 3.0.0 重扫一遍，按「可复现实测证据」确认 6 项新缺陷。基线：本轮开始前
-3605 passed / 98.37%，本轮结束 **3645 passed, 3 skipped / 98.54%**
-（+40 用例，全部经红→绿校验：把修复代码退回缺陷态，新测试必须失败）。
+对 3.0.0 重扫一遍，按「可复现实测证据」确认 8 项新缺陷（F-07 是需产品决策的出厂
+默认值，F-08 是收紧它时自己引出的前端回归）。基线：本轮开始前
+3605 passed / 98.37%，本轮结束 **3658 passed, 3 skipped / 98.55%**
+（+53 用例，全部经红→绿校验：把修复代码退回缺陷态，新测试必须失败）。
 
 | 编号 | 缺陷 | 实测证据 | 整改 |
 |------|------|---------|------|
@@ -174,6 +176,7 @@ augmentor/
 | F-04 | 公开「支持格式」清单与实现两处对不上 | `converter.get_supported_formats()` 报 `tsv`，但转换图没有 `json -> tsv` 边 → `UnsupportedFormatError`；CLI `export --format` 少了 SDK/API 都支持的 `raw` | 转换侧清单改为由 `_converters` **反推**（枚举不再是事实来源）；`EXPORT_FORMATS` 补 `raw`；新增三方一致门禁 `TestExportFormatSurface` / `TestConvertFormatSurface` |
 | F-05 | **6 处 SDK 随机操作污染进程级 RNG** | `DataSplitter.split()` 之后调用方的全局随机序列被改写（参照序列对照实测：`0.9097 != 0.2929`） | `dataset_ops`（sample/split/shuffle/merge/模块级 helper）、`data_splitter`、`indexer`、`export_enhanced` 全改局部 `random.Random(seed)`；新增 `tests/unit/test_rng_hygiene.py` 门禁。CLI 侧同一坑 3.0 已修，SDK 侧当时漏了 |
 | F-06 | 文档/注释漂移 4 处 | `docs/README.md` 教用户用已删除的 `--no-url-removal`；`parser.py` 注释写「`history` 取消」而 `choices` 与实现都在；导出格式数写死 12 | 改为真实可执行命令；注释与实现对齐；文档里的**会漂移数字**改成「以枚举/清单为准」的写法 |
+| F-08 | **收紧默认值会让前端文件选择器集体 403**（收紧动作自己引出的缺陷） | 实测：把 `data_roots` 收紧后按旧解析规则跑闭环 —— 列表给出 `train_data_ui.json`，`GET /api/data/load/train_data_ui.json` 返回 **403**（相对路径只按工作目录解释，而工作目录已不在白名单内）。前端 8 处（`DataList.tsx`/`Analysis.tsx`/`AugmentForm.tsx`/…）都把 `files[].name` 原样拼回 URL，且 `{filename}` 只匹配单个路径段，改传 `data/x.json` 也走不通 | `resolve_within_roots` 对相对路径生成候选：**白名单根目录在前、工作目录兜底**，取第一个存在的解释（`_relative_candidates`）。闭环由 `TestBareNameResolvesInsideRoots::test_listed_name_can_be_loaded_back` 钉住（红→绿已验：403 → 200）。**写**一侧保持显式（`data/out.json`）：目标不存在时不替调用方猜目录，那种猜测会静默改掉产物落点，宁可 403 |
 
 **方法学收获**（两条，都已写进对应用例的 docstring）：
 
@@ -185,9 +188,23 @@ augmentor/
    seed → 取值」，两次都重新播种所以恒等，注入缺陷后仍然绿灯。改成「同一序列中
    插入调用，比较后续值」才真正可失败。这与 §2.7 的「同源预言机是假测试」同源。
 
-**未整改，需产品决策**：`config.yaml` 的 `web.data_roots` 默认 `["."]`，即 API 的
-路径白名单默认放行**整个工作目录子树**（含 `config.yaml` 自身、`.git`、备份目录）。
-收紧到 `["data"]` 才是白名单的本意，但这是改变出厂默认值的破坏性动作，需逐项确认。
+**3.2 出厂默认已收紧（F-07，2026-09-23 由维护者决策执行）**：`web.data_roots` 由
+`["."]` 改为 `["data"]`。**代价是破坏性的，尚未替用户迁移数据**：
+
+- **读**一侧的写法不变：裸文件名会在白名单各根目录内查找（见 F-08），所以
+  `/api/data/load/train_data.json` 与前端列表都能继续用；命中不了工作目录解释时才 403。
+- **写**新文件必须显式给白名单内的路径，如 `data/out.json`；服务端不猜写入目录。
+- 工作目录（`augmentor/`）根下的 4 个 `train_data*.json`（共约 10.3 MB，
+  `train_data.json` / `train_data_final.json` / `train_data_final01.json` / `train_data_final02.json`）
+  以及 `up.json`、`test_output.json` 从此**对 API 不可见**（它们不在 `data/` 里，
+  裸文件名查找也找不到）。要继续用需自行移动：`mv train_data*.json data/`，
+  或把该目录并进 `AUGMENTOR_DATA_ROOTS`。
+  这些文件由 `.gitignore` 显式忽略（`augmentor/train_data.json` 等条目），**不在版本库里**，
+  所以移动后需同步 `.gitignore` 的路径，且换机器不会自动恢复。
+  文档示例（`docs/README.md`、`enhanceTXT.py` 等）里引用这些根路径的地方需同步。
+- Docker 部署不受影响：镜像工作目录 `/app`、数据在 `/app/data`，新默认与之一致。
+- 需要旧行为时显式声明 `web.data_roots: ["."]` 或设 `AUGMENTOR_DATA_ROOTS`——
+  白名单收紧后这两条是唯一的逃生阀，且都有测试覆盖。
 
 ---
 
@@ -202,9 +219,9 @@ augmentor/
 
 ### 3.2 后端
 
-- [ ] **`web.data_roots` 出厂默认仍是 `["."]`**（放行整个工作目录子树，含 `config.yaml`
-      / `.git` / 备份目录）。收紧到 `["data"]` 才是白名单的本意，但这是改变默认行为的
-      破坏性动作，须由维护者决策后再动（详见 §2.9 末）
+- [x] **`web.data_roots` 出厂默认 `["."]` → `["data"]`**（旧默认放行整个工作目录子树，
+      含 `config.yaml` 与备份目录）。已由维护者决策、本轮收紧并配三重钉住测试，
+      迁移代价与待办见 §2.9 末「3.2 出厂默认已收紧」
 - [x] 新增 `dataset` / `system` 两组共 25 个端点的业务分支集成测试
       → `tests/integration/test_api_dataset_system_tools.py`（151 用例，
       两个模块均达 100%）
