@@ -1,8 +1,12 @@
-# AI 训练数据增强工具 - 优化计划
+# AI 训练数据增强工具 — 优化计划与完成记录
 
-## 一、项目现状分析
+> 本文档既记录**计划**，也记录**实际结果**。所有数字都取自当前仓库的实跑输出，
+> 不是估算。与旧版本（2.2.0 时期的 89% / 648 passed）已完全不同，故整篇重写。
+
+## 一、项目现状
 
 ### 1.1 项目架构
+
 ```
 augmentor/
 ├── augmentor/          # 核心增强包（Python）
@@ -18,120 +22,185 @@ augmentor/
 │   ├── streaming.py    # 流式处理
 │   ├── comparison.py   # 数据集对比
 │   ├── dataset_ops.py  # 数据集操作
-│   └── exceptions.py   # 自定义异常
-├── web/               # Web前端（React + Ant Design）
-├── tests/             # 测试套件
-├── docs/              # 文档
-├── docker/            # Docker配置
-├── archive/           # 归档文件
-├── cli.py             # CLI入口
-└── config.yaml        # 配置文件
+│   └── exceptions.py   # 统一异常体系
+├── api/                # FastAPI 服务（routes/ 按能力分组）
+├── web/                # 前端（React 18 + Ant Design 5 + Vite）
+├── tests/              # 测试套件（unit / integration）
+├── docs/               # 文档
+├── docker/             # Docker 配置
+├── archive/            # 归档文件
+├── cli.py              # CLI 入口
+└── config.yaml         # 配置文件
 ```
 
 ### 1.2 当前状态
-- ✅ 测试覆盖率：89%（648 passed, 2 skipped）
-- ✅ 支持多种模型后端：ERNIE、OpenAI、Ollama、Claude、Gemini
-- ✅ 支持多种导出格式：JSONL、Llama-Factory、Alpaca、ShareGPT、ChatML、CSV
-- ✅ 完整的增强流程：质量评分、去重、断点续传、版本管理
-- ✅ 流式处理支持大数据集
-- ✅ 数据集对比功能
-- ✅ 数据集操作工具（合并、采样、分割）
+
+| 维度 | 现状 |
+|------|------|
+| 版本 | **3.0.0**（`augmentor.__version__` 是全仓唯一声明） |
+| 测试 | **3418 个**（3416 passed / 2 skipped），覆盖率 **97.35%**（门槛 80%） |
+| 版本一致性 | FastAPI 元数据 / `web/package.json` / `docker-compose.yml` 默认 tag 三处均由测试锁定 |
+| HTTP API | **68 个端点 / 13 个 tag**，全部声明 `response_model`，无「无 schema 的 200 响应」 |
+| 前端 | **11 个功能页**，服务层 43 个函数；契约测试 + 接线守门共 45 个用例 |
+| 模型后端 | ERNIE、OpenAI、Ollama、Claude、Gemini |
+| 导出格式 | JSONL、Llama-Factory、Alpaca、ShareGPT、ChatML、CSV 等 12 种 |
 
 ---
 
-## 二、已完成优化
+## 二、3.0 已完成的工作
 
-### 2.1 代码质量优化 ✅
+### 2.1 健壮性与正确性
 
-#### 2.1.1 清理遗留代码
-- [x] 归档 `enhanceTXT.py` 到 `archive/` 目录
+| # | 内容 | 验证 |
+|---|------|------|
+| 1 | 接入统一异常体系（85 处 raise / 40 个文件），消除「裸 `Exception` + 字符串」的不可判别错误 | 3130 passed |
+| 2 | 修静默吞异常（`except: pass` 之类）与 4 处契约违规 | 3130 passed |
+| 3 | 修 `config_validator` 的配置闭环缺陷：`save_config` 写出的配置**必然校验失败** | 见 2.4 |
+| 4 | 移除 `--enhanced` 双轨与 legacy 命令名/别名（8 对命令合并为一套实现，落败侧独有能力并入幸存侧） | 两轮共 17 项缺陷注入全部被捕获 |
 
-#### 2.1.2 错误处理优化
-- [x] 创建 `augmentor/exceptions.py`，定义统一异常类型
-- [x] 导出自定义异常类到 `__init__.py`
+### 2.2 性能（均为实测峰值/规模，非估算）
 
-#### 2.1.3 代码重构
-- [x] 优化配置加载（使用映射表减少重复代码）
+| # | 问题 | 结果 |
+|---|------|------|
+| 1 | dedup 的 N×N 相似度矩阵内存炸弹 | 峰值 **9536 MB → 20 MB** |
+| 2 | quality 缓存键两个 bug（导致缓存几乎不命中） | 编码量 **2965 → 865** |
+| 3 | 伪流式（先全量读进内存再分块）改为真流式 | 峰值 **22.70 MB → 1.66 MB** |
+| 4 | 无界缓存改为有界 + 接入 `cache.py` | 3199 passed / 98.78% |
+| 5 | 接入 `retry.py` + 限流识别 | 3157 passed |
+| 6 | `DiskCache` opt-in 接入模型响应缓存 | 3217 passed |
 
-### 2.2 性能优化 ✅
+### 2.3 契约与工程化
 
-#### 2.2.1 内存优化
-- [x] 实现流式处理模式（`augmentor/streaming.py`）
-  - `StreamReader`: 分块读取数据
-  - `StreamWriter`: 分块写入数据
-  - `StreamProcessor`: 流式处理
-  - `StreamAugmentor`: 高级流式增强接口
+| # | 内容 |
+|---|------|
+| 1 | OpenAPI 元数据补全（13 个 tag 的描述、`version` 取自包版本） |
+| 2 | **68 个端点全部补 `response_model`**，并加**双向守门**：既要每个端点都声明契约，也要每个已声明契约的端点都真实存在 |
+| 3 | 守门测试自身防空转：数组响应同时识别 `items.$ref`；枚举类断言配非空元断言；测试夹具钉住 `api.deps._pipeline` 单例 |
+| 4 | 前端服务层**接线守门**：`api.ts` 的每个导出函数都必须在页面源码里被真正引用（`import` 与注释都不算） |
+| 5 | 版本号单一来源，三处副本（FastAPI / `web/package.json` / `docker-compose.yml`）全部由测试锁定 |
 
-### 2.3 新功能增加 ✅
+### 2.4 配置闭环缺陷修复（由新端点暴露）
 
-#### 2.3.1 数据分析增强
-- [x] 数据集对比功能（`augmentor/comparison.py`）
-  - `DatasetComparator`: 数据集对比器
-  - `ComparisonResult`: 对比结果
-  - `compare_datasets`: 便捷函数
+| 问题 | 修复 |
+|------|------|
+| `save_config` 写顶层 `default_model`，而 `load_config` 只认 `models.default` | 写入时归一化进 `models.default`；旧文件的顶层键会被保留并合并 |
+| `AppConfig` 不建模的顶层段（如 `app`）在写配置时被抹掉 | 保留既有文件中未建模的顶层键 |
+| 模型密钥明文落盘 | 只在原文件是 `${ENV_VAR}` 占位符时保留，否则移除 |
+| `ConfigValidator` 要求 `app` / `app.name` / `app.version` 必填，而 `AppConfig` 无对应字段、`load_config` 从不读它 → **写出的配置必然不合法** | 降为可选；`models` / `models.default` 保持必填 |
 
-#### 2.3.2 数据集操作工具
-- [x] 数据集操作模块（`augmentor/dataset_ops.py`）
-  - 合并操作（`merge`, `merge_files`）
-  - 采样操作（`sample`, `sample_file`）
-  - 分割操作（`split`, `split_file`）
-  - 过滤操作（`filter_by_length`, `filter_by_keyword`）
-  - 统计操作（`get_statistics`）
+### 2.5 能力扩展
 
-#### 2.3.3 CLI 命令扩展
-- [x] `compare` - 对比两个数据集
-- [x] `stream` - 流式处理大数据集
-- [x] `merge` - 合并多个数据集
-- [x] `sample` - 采样数据集
-- [x] `split` - 分割数据集
-- [x] `stats` - 数据集统计信息
+| 分组 | 数量 | 说明 |
+|------|------|------|
+| `dataset`（新增） | 12 | CLI 数据集工具的 API 化：stats / validate / search / compare / features / auto-config / convert / merge / sample / split / aggregate / rag |
+| `system`（新增） | 13 | 依赖诊断 / 校验配置 / 监控 / 自动化测试 / 迁移 / 流式 / 依赖图 / 备份增删改查 |
+| 既有分组补齐 | — | privacy（脱敏）、leakage（泄漏）、audit（就绪审计）、quality 的 outliers / profiling、status（综合状态）、demo（演示数据） |
 
-### 2.4 测试完善 ✅
+约定：`dataset` 里**只读分析类**内联返回完整结果；**写盘变换类**必须给
+`output_path`，响应只回传「写到哪、写了多少」。
 
-#### 2.4.1 单元测试
-- [x] `tests/unit/test_streaming.py` - 流式处理测试
-- [x] `tests/unit/test_comparison.py` - 数据集对比测试
-- [x] `tests/unit/test_dataset_ops.py` - 数据集操作测试
+### 2.6 前端
+
+| 内容 | 说明 |
+|------|------|
+| 新增 `数据安全` 页 | 隐私脱敏（含 PII 模式清单）/ 泄漏检测 / 就绪审计 |
+| 新增 `系统状态` 页 | 服务综合状态、依赖明细、降级功能 |
+| 质量中心扩展 | 新增「离群点检测」（zscore / zscore_one_sided / iqr）与「数据画像」两个 Tab |
+| 数据管理 | 「载入演示数据」改走服务层，不再裸 `fetch` |
+| 类型层 | `src/types/api.ts` 增至 61 个接口 / 类型别名，全部来自对后端**真实响应**的探测 |
+| 服务层 | `services/api.ts` 增至 43 个函数，13 个新契约用例 + 4 个接线守门用例 |
+
+### 2.7 验证方法（这套方法本身是本次交付的一部分）
+
+1. **探针优先于猜测**：写 `response_model` / TS 类型前，先用真实 `TestClient`
+   逐个打端点、打印响应键。本轮因此当场抓到两处模型与真实返回不符
+   （`/api/dataset/stats` 的 `summary` 是字符串不是 dict、
+   `/api/dataset/features` 的 `field_features` 是列表不是 dict）。
+2. **反事实验证（缺陷注入）**：把「缺陷」改回生产代码，确认测试真的变红，
+   且失败信息里出现预期标记 —— 否则可能是「碰巧因为别的原因红了」。
+   本轮各任务累计注入 40+ 项，全部被捕获。最近一次（P3 后端两项）用
+   `_inject_check.py` 一次性验证 13 项，覆盖 `to_http_error` 的翻译分支、
+   四处枚举白名单、`preset` 默认值、`except HTTPException` 透传、
+   500 收尾分支，以及 `streaming.py` 的空白跳过 / 截断语义 / 补缓冲 /
+   `close()` 条件。脚本在 `try/finally` 里还原源文件，任何一步崩溃都不会留下脏改动。
+3. **同源预言机是假测试**：`set(payload) == _field_names(model)` 在模型漏字段时
+   恒真（响应与字段集一起变小）。正确做法是用**领域契约**（handler 实际返回的
+   `to_dict()` 键）作独立预言机。
+4. **当一次改动同时触及实现与它的测试时，绿灯不再构成证据**：修
+   `config_validator` 时有 5 个既有测试变红，其中 4 个**固化了缺陷语义**。
+   更新它们时必须同时把判据换成真正必填的 `models.default`，并写明旧断言为何错。
+5. **shell 引号坑（已栽三次）**：`python -c "...\n..."` 在 git-bash 下会把
+   `\n` 当字面量传进去，产生**假的失败**。本轮据此误判「最小合法配置校验不通过」，
+   换成真实文件后确认 `is_valid: true`。凡是要构造多行文本的探针，一律写
+   `.py` 文件再执行。
+
+### 2.8 新端点业务分支与错误语义收口
+
+契约测试只保证「响应形态对」，不保证「业务分支对」。本节补齐 25 个新端点的
+业务分支，并顺手收口了三处**同一语义两种结果**的不一致。
+
+| 内容 | 说明 |
+|------|------|
+| `api/deps.py` 新增 `to_http_error()` | 把 404/400/500 的判据收到一处。此前同一个「文件不是合法 JSON」在有的端点是 400、有的是 500，且都把 `"Expecting property name enclosed in double quotes: line 1 column 3"` 这种解析器措辞原样回给客户端。现在只回「数据文件不是合法 JSON（第 N 行第 M 列）」 |
+| `_sync_read_json` → 公开 `read_items()` | 收**已 resolve 的 Path**，供「一次校验、多次读取」的路由复用（对比读 2 个文件、聚合读任意多个）。同时删掉重复定义的 `read_json_file` |
+| 坏 JSON 泄漏端点 6 → **0** | 探针实测：`validate` / `convert` / `merge` / `sample` / `split` / `migrate` 曾把英文原文透出 |
+| 4 组枚举白名单 | `preset` / 搜索 `method` / 自动测试 `suite` / 迁移 `rules`。下游对未知值是**静默降级或静默过滤**的：`DatasetValidator` 回退 basic、`EnhancedSearcher` 回退 contains、`DatasetMigrator` 静默丢弃未知规则 id、`run_dataset_tests` 回退 default。调用方会以为「strict 校验通过了」「迁移跑了」 |
+| `ValidateRequest.preset` 默认值 `"default"` → `"basic"` | 旧默认值**根本不存在**于 `PRESET_RULES`，于是默认请求也在静默回退 |
+| 恢复不存在的备份 400 → **404** | 同一组路由里 `DELETE /api/system/backups/{id}` 对同样情况回 404，不该有两种状态码。为此给 `to_http_error` 加了 `not_found_types`（`BackupError` 在库里唯一的抛出点就是「备份不存在」） |
+| 折叠 24 处重复 `except` 块 | 脚本化替换，带三重自检（匹配数、残留 500 收尾数、`ast.parse`） |
+| `tests/integration/test_api_dataset_system_tools.py` | **151 个用例**：只读分析 / 写盘变换 / 依赖注册表 / 备份生命周期 / 跨端点错误语义 / HTTPException 透传 / 意外失败 → 500 故障注入 |
+| `tests/unit/test_streaming_edge_branches.py` | **22 个用例**：`_peek_first_non_space` 分块读取、`_is_single_json_value` 补缓冲、数组两种截断语义、JSONL 空行、`StreamWriter` 收尾分支 |
+| 覆盖率 | `api/routes/dataset_tools.py` 67% → **100%**；`api/routes/system_ops.py` 62% → **100%**；`augmentor/streaming.py` 89% → **100%** |
+| 反事实验证 | 13 项缺陷注入全部被捕获 |
+
+**流式端点为什么**不**并入「坏 JSON 一律 400」**：JSONL 是逐行格式，单行语法错误
+跳过并 `logger.warning`；而 JSON **数组**结构明确，截断必须报 400。两者行为相反，
+因此 `/api/system/stream` 单独钉住，包括「整份文件非法且以 `{` 开头 → 200 且产物为空」
+这个边界 —— 把它写清楚，避免日后被当成「静默吞异常」误改。
 
 ---
 
-## 三、待优化项
+## 三、待办
 
-### 3.1 性能优化（优先级：中）
-- [ ] 优化向量矩阵计算（分块处理）
-- [ ] 添加内存使用监控
-- [ ] 优化线程池使用
-- [ ] 添加异步处理支持（asyncio）
-- [ ] 实现模型缓存复用
+### 3.1 前端
 
-### 3.2 新功能增加（优先级：中）
-- [ ] 实现数据质量趋势追踪
-- [ ] 添加数据集健康度评分
-- [ ] 实现上下文感知增强（基于对话历史）
-- [ ] 添加领域自适应增强
-- [ ] 支持从CSV/Excel导入
-- [ ] 支持从数据库导入
+- [ ] 页面级组件测试（RTL 已就位，`src/test/setup.ts` 已引入 jest-dom，但尚无组件测试）
+- [ ] 5 个历史遗留的未接线服务函数：`getCheckpoints`、`visualizeData`、`getVersion`、`getVersionData`、`getVersionHistory`（已列入 `api.wiring.test.ts` 的显式白名单）
+- [ ] 运行时 schema 校验（如 zod），把「编译期声明」升级为「前后端契约有机器保证」
+- [ ] 前端 bundle 拆分：`antd-vendor`（946 kB）与 `echarts-vendor`（1146 kB）超过 800 kB 告警线
 
-### 3.3 文档完善（优先级：低）
-- [ ] 生成OpenAPI/Swagger文档
-- [ ] 添加模块级docstring
-- [ ] 添加使用示例
-- [ ] 添加FAQ
+### 3.2 后端
+
+- [x] 新增 `dataset` / `system` 两组共 25 个端点的业务分支集成测试
+      → `tests/integration/test_api_dataset_system_tools.py`（151 用例，
+      两个模块均达 100%）
+- [x] `augmentor/streaming.py` 覆盖率补齐 → `tests/unit/test_streaming_edge_branches.py`
+      （22 用例，89% → 100%）
+
+### 3.3 文档
+
+- [ ] 为 `dataset` / `system` 两组的 25 个端点补人读字段说明（目前只给端点总览，字段以 `/openapi.json` 为准）
+- [ ] FAQ
 
 ---
 
-## 四、优先级排序
+## 四、优先级
 
-### P0 - 已完成
-- ✅ 清理遗留代码
-- ✅ 完善错误处理
-- ✅ 补充关键测试
+### P0 — 已完成 ✅
 
-### P1 - 已完成
-- ✅ 性能优化（流式处理）
-- ✅ 新功能开发（数据集操作）
+统一异常体系、静默吞异常、配置闭环缺陷、dedup 内存炸弹、伪流式
 
-### P2 - 待完成
-- 高级性能优化
-- 更多功能扩展
-- 文档完善
+### P1 — 已完成 ✅
+
+缓存键 bug / 有界缓存 / DiskCache、`--enhanced` 双轨合并、OpenAPI 元数据与双向守门、版本号一致性锁定
+
+### P2 — 已完成 ✅
+
+68 个端点全量响应契约、`dataset` / `system` 能力补齐、前端数据安全页与系统状态页、接线守门
+
+### P3 — 待完成
+
+前端：页面级组件测试、5 个未接线服务函数、运行时 schema 校验、bundle 拆分
+文档：25 个端点的人读字段说明、FAQ
+
+（后端两项已于本轮完成：新端点业务分支测试、`streaming.py` 覆盖率补齐）

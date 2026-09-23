@@ -45,7 +45,7 @@ augmentor/
 ├── .coveragerc                覆盖率报告配置
 │
 ├── augmentor/                 核心引擎
-│   ├── __init__.py            对外导出面（版本 2.2.0，全仓唯一版本声明）
+│   ├── __init__.py            对外导出面（版本 3.0.0，全仓唯一版本声明）
 │   ├── pipeline.py            主流程编排
 │   ├── config.py              dataclass 配置中心
 │   ├── model_manager.py       sentence-transformers 单例

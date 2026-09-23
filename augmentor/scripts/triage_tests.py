@@ -177,7 +177,8 @@ def _collect_consts(func: ast.AST) -> dict:
        `except ... as` 或海象运算符；
     3. 没有被 `nonlocal` / `global` 声明；
     4. 没有作为可变方法的接收者（`x.append(...)` 等）；
-    5. **没有作为参数传给任何调用**——被调用方可能原地修改它。
+    5. **没有作为参数传给任何调用**——被调用方可能原地修改它（包括传出
+       绑定方法 `x.append` 这种"交出修改权"的写法）。
 
     条件 3~5 是保守的过度排除。早期版本只做"出现过 `name = <字面量>` 就当常量"，
     把 `call_count = 0`（后续被闭包 `+=`）、`missing = []`（后续被 `append`）误判为常量，
@@ -226,6 +227,11 @@ def _collect_consts(func: ast.AST) -> dict:
             for arg in list(node.args) + [kw.value for kw in node.keywords]:
                 if isinstance(arg, ast.Name):
                     tainted.add(arg.id)
+                elif isinstance(arg, ast.Attribute) and isinstance(arg.value, ast.Name):
+                    # 传的是绑定方法（如 `sleeper=slept.append`）：等于把该对象的
+                    # 修改权交了出去。早期只认 ast.Name，于是 `slept = []` 被当成
+                    # 常量，`assert slept == []` 这种有效断言被误报为空洞。
+                    tainted.add(arg.value.id)
 
     consts: dict = {}
     for node in nodes:
