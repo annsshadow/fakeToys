@@ -27,6 +27,7 @@
       <button class="org-meta-btn" @click="loadIdentityUnitTree">身份单位树</button>
       <button class="org-meta-btn" @click="loadPersonLogins">人员登录/配对</button>
       <button class="org-meta-btn" @click="loadOrgSearchCursors">搜索/人员游标</button>
+      <button class="org-meta-btn" @click="loadOrgAttributes">属性/职务/拼音</button>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -147,6 +148,28 @@ interface N {
   childCount?: number
 }
 const orgMetaText = ref('')
+// rev220：组织控制 属性/职务/拼音/单位游标族 6 条真实 distinct 路由
+// group/list/like/pinyin（x_org_group）· personattribute/list/{flag}/prev/{count}（x_org_person_attribute）· unitattribute/list/{flag}/prev/{count}（x_org_unit_attribute）
+// · unitduty/list/like（x_org_duty ILIKE）· unitduty/{flag}（x_org_duty WHERE id）· unit/list/{flag}/prev/{count}（x_org_unit 顶层游标）
+async function loadOrgAttributes() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const dutyResp: any = await s(api.get('/api/organization/assemble/control/unitduty/list/like?key=a'))
+    const duties = Array.isArray(dutyResp?.data) ? dutyResp.data : []
+    const dutyFlag = duties[0] ? String(duties[0].id ?? '0') : '0'
+    const [grpPinyin, personAttr, unitAttr, dutyOne, unitPrev] = await Promise.all([
+      s(api.get('/api/organization/assemble/control/group/list/like/pinyin?key=a')),
+      s(api.get('/api/organization/assemble/control/personattribute/list/0/prev/20')),
+      s(api.get('/api/organization/assemble/control/unitattribute/list/0/prev/20')),
+      s(api.get(`/api/organization/assemble/control/unitduty/${encodeURIComponent(dutyFlag)}`)),
+      s(api.get('/api/organization/assemble/control/unit/list/0/prev/20')),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    orgMetaText.value = `职务搜索 ${duties.length}（详情 ${(dutyOne as any)?.data?.id ? '命中' : '未命中'}）· 群组拼音 ${n(grpPinyin)} · 人员属性 ${n(personAttr)} · 单位属性 ${n(unitAttr)} · 单位上翻 ${n(unitPrev)}`
+  } catch (e: any) {
+    toast.error('加载组织属性/职务失败: ' + (e?.message ?? ''))
+  }
+}
 // rev215：组织控制 人员游标/关系 + like 搜索族 7 条真实 distinct 路由
 // person/list/{flag}/next/{count}（id> 游标）· person/list/{flag}/prev/{count}（id< 游标）· person/list/group/{groupFlag}/sub/direct（群组直属人员）
 // · identity/list/like（x_org_identity name ILIKE）· identity/list/like/pinyin（全量按创建降序）· unit/list/top/type/{type}（顶层单位按类型）· role/list/like（x_org_role name ILIKE）
