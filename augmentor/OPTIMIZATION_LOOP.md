@@ -14,6 +14,7 @@
 - [x] **L2** `fix(api)`: F-10 备份目录缺省值、F-11 服务配置文件路径收敛到 `deps.config_file_path()`（`13ec11eaa`）
 - [x] **L3** `perf(analytics)`: A1 多样性均值提出生成器 → 长度方差 O(n²)→O(n)
 - [x] **L4** `perf(api)`: A2 白名单两条来源都按「值会变的东西」建缓存 → 7.06 ms/次 → 0.19 ms/次
+- [x] **L5** `perf(api)+fix`: A4 12 条端点的数据集读取离开事件循环（14 处读取点）
 
 ## Backlog A — 性能（含 file:line 与实测线索）
 
@@ -22,7 +23,7 @@
 | ~~A1~~ | ~~`augmentor/analytics.py:368`~~ | ~~均值在生成器里重算 → O(n²)；实测 n=20000 时 **1043 ms vs 2 ms**~~ 已修（L3） | S |
 | ~~A2~~ | ~~`api/deps.py` `allowed_data_roots()`~~ | ~~每个路径参数都 `load_config()` 重新解析 YAML，实测 **6.8 ms/次**~~ 已修（L4，含环境变量分支 0.29 ms/次） | S |
 | A3 | `augmentor/analytics.py:403-412` | `get_duplicate_candidates()` 纯 O(n²) 且每对重建字符集合 | M |
-| A4 | `api/routes/quality.py:141,185,217,253,285,309,370,403` + `audit.py:31` `export.py:109,132` `leakage.py:46` `privacy.py:52` | `async def` 里同步 `load_items()` 阻塞事件循环，应走 `run_in_thread` | M |
+| ~~A4~~ | ~~`api/routes/quality.py:141,185,217,253,285,309,370,403` + `audit.py:31,32` `leakage.py:46,47` `privacy.py:52` `export.py:132`~~ | ~~`async def` 里同步 `load_items()` 阻塞事件循环，应走 `run_in_thread`~~ 已修（L5；`export.py:109` 本就在线程内，非缺陷） | M |
 | A5 | `augmentor/pipeline.py:205-210` + `quality.py:133,153` | 逐条 `encode()`/`predict()` 打分，已有 `batch_score()` 却没用 | M |
 | A6 | `augmentor/dedup.py:94-123,242-290` | 回退路径构造 **稠密 float64** n×vocab 矩阵（大词表 OOM）；应用稀疏 CSR / faiss range_search | L |
 | A7 | `augmentor/search_enhanced.py:448,82` | 每次查询重建索引（n=3000 重建 8 ms vs 查询 2 ms），且 contains/fuzzy 不查索引 | M |
@@ -54,13 +55,24 @@
   新增 `tests/unit/test_analytics_performance.py` 2 例：一条锁语义（手算 0.6/0.4 权重对照），
   一条锁量级（预算 500 ms；docstring 说明预算为何按**带覆盖率 trace** 的实测值取，而不是 2 ms）。
   红→绿：把均值塞回生成器 → 预算用例红在 1130.3 ms。
-- **L4** `perf(api)` A2 —— `allowed_data_roots()` 两条来源都加缓存：config 分支
+- **L4** `7cca1596a` `perf(api)` A2 —— `allowed_data_roots()` 两条来源都加缓存：config 分支
   `(路径, mtime_ns)` 键、环境变量分支 `(原值, os.getcwd())` 键。实测 7.06 ms/次 → **0.19 ms/次**、
   0.29 ms/次 → **0.0006 ms/次**。新增 `TestConfigDataRootsCache` 4 例 + `TestEnvDataRootsCache` 4 例；
   `docs/ARCHITECTURE.md` §3.12.1 补「缓存键都带值会变的东西」一节。红→绿两处注入：
   ①缓存键去掉 cwd → 相对根目录换目录用例红（`first/data` ≠ `second/data`）；
   ②关掉缓存读 → 「200 次查询解析了 201 次配置」红。
-- 全量：**3679 passed / 3 skipped**（89.2 s，覆盖率门禁通过；基线 3668）。
+- **L5** `perf(api) + fix` A4 —— 12 条端点 / 14 个读取点在事件循环上同步 `load_items()`，
+  改为 `await run_in_thread(load_items, ...)`。这条**是缺陷不只是优化**：`api/deps.py` 里
+  `load_items` 的文档串写着「供线程内使用」（同步版），异步版是 `read_json_file`；
+  这些路由把分析离线了、却把第一行读取留在循环上，等于每个请求让全站停 15 ms
+  （实测 3.6 MB / 6902 条 `train_data.json` 读一次 15.1 ms）。
+  新增 `tests/integration/test_api_event_loop_blocking.py` 24 例：预言机用**线程身份**
+  （`httpx.ASGITransport` 在当前线程跑循环，读取落在线程池还是循环上是确定的）而非计时，
+  第二条用例锁响应仍 200，防止「干脆不读了」把第一条糊过去。
+  并发证据（人为把读取放慢到 50 ms 后 4 条并发）：**59.5 ms** 完成，读取若仍占循环
+  至少 200 ms；并发期间循环空转 27349 次。红→绿：修复前 12 条 off-loop 用例全红。
+- 全量：L4 后 **3679 passed / 3 skipped**（89.2 s），L5 后 **3703 passed / 3 skipped**
+  （90.2 s），覆盖率门禁均通过；基线 3668。
 
 > **操作纪律**（L4 踩过）：验红用的是**定向反向 patch**，绝不用 `git checkout <file>` 撤注入 ——
 > 本轮 `api/deps.py` 有未提交工作，一次 `git checkout` 把整段缓存实现清掉了，只能重写。

@@ -43,8 +43,8 @@ class LeakageResponse(BaseModel):
 async def check_leakage(request: LeakageRequest):
     """检测训练/测试集之间的数据泄漏"""
     try:
-        train_items = load_items(request.train_file)
-        test_items = load_items(request.test_file)
+        train_items = await run_in_thread(load_items, request.train_file)
+        test_items = await run_in_thread(load_items, request.test_file)
 
         def run():
             report = detect_leakage(
