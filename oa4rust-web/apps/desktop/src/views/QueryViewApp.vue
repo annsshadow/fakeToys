@@ -15,6 +15,7 @@
         <button class="btn-primary" @click="loadQueryList">查询列表</button>
         <button class="btn-primary" @click="loadQvDetails">查询/视图明细</button>
         <button class="btn-primary" @click="loadStatementStat">语句/统计明细</button>
+        <button class="btn-primary" @click="loadImportModels">导入模型</button>
         <button class="btn-primary" @click="loadTables">数据表</button>
       </div>
       <div v-if="queryListText" class="qv-note">{{ queryListText }}</div>
@@ -152,6 +153,32 @@ async function loadStatementStat() {
     queryListText.value = `语句 ${stmtRows.length}（首「${stmtName}」）· 统计详情「${statName}」`
   } catch (e: any) {
     toast.error('加载语句/统计明细失败: ' + (e?.message ?? ''))
+  }
+}
+// 导入模型族 3 条真实 distinct 路由（x_query_import_model）：按查询列模型 importmodel/list/query/{queryFlag}（WHERE query_flag）
+// → 首模型 → 模型详情 importmodel/{id}（WHERE id，含 content）+ 按 flag+query 取模型 importmodel/flag/{flag}/query/{queryFlag}（WHERE flag AND query_flag）
+async function loadImportModels() {
+  try {
+    const qResp: any = await api.get('/api/queryview/query/list')
+    const qrows = (Array.isArray(qResp?.data) ? qResp.data : (qResp?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const qflag = qrows[0] ? String(qrows[0].flag ?? qrows[0].id ?? '') : ''
+    if (!qflag) {
+      queryListText.value = '暂无查询（无可抽样项）'
+      return
+    }
+    const listResp: any = await api.get(`/api/queryview/importmodel/list/query/${encodeURIComponent(qflag)}`).catch(() => null)
+    const models = (Array.isArray(listResp?.data) ? listResp.data : []) as Array<Record<string, unknown>>
+    const mid = models[0] ? String(models[0].id ?? '') : ''
+    const mflag = models[0] ? String(models[0].model_flag ?? models[0].flag ?? '') : ''
+    const [detail, byFlag] = await Promise.all([
+      mid ? api.get(`/api/queryview/importmodel/${encodeURIComponent(mid)}`).catch(() => null) : Promise.resolve(null),
+      mflag ? api.get(`/api/queryview/importmodel/flag/${encodeURIComponent(mflag)}/query/${encodeURIComponent(qflag)}`).catch(() => null) : Promise.resolve(null),
+    ])
+    const mName = (detail as any)?.data?.name ?? (mid || '—')
+    const hasByFlag = (byFlag as any)?.data ? '有' : '无'
+    queryListText.value = `导入模型 ${models.length}（首「${mName}」）· 按flag查询命中 ${hasByFlag}`
+  } catch (e: any) {
+    toast.error('加载导入模型失败: ' + (e?.message ?? ''))
   }
 }
 // 数据表（rev117）：分页列表 + 首表详情 + 首表行数据，三条 distinct 真实路由
