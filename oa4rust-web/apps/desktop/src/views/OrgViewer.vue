@@ -21,6 +21,7 @@
       <button class="org-meta-btn" @click="loadIdentityRelations">身份关系</button>
       <button class="org-meta-btn" @click="loadOrgMembers">成员/层级</button>
       <button class="org-meta-btn" @click="loadUnitScope">单位归属/群角</button>
+      <button class="org-meta-btn" @click="loadDutyBatch">职务批量</button>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -476,6 +477,29 @@ async function loadUnitScope() {
     orgMetaText.value = `身份所属单位 ${n(byIdentity)} · 人员所属单位 ${n(byPerson)} · 群组含角色 ${hr}`
   } catch (e: any) {
     toast.error('加载单位归属/群角失败: ' + (e?.message ?? ''))
+  }
+}
+// 职务批量族 3 条真实 distinct 路由（express，x_org_duty 各异）：单位下职务名 /api/unitduty/list/name/unit（JOIN x_org_unit，SELECT DISTINCT d.name）
+// → 首职务名 → 按名批量职务 /api/unitduty/list/name（WHERE name=ANY）+ 按单位名精确定位 /api/unitduty/find/by/unit/name（WHERE d.name=$1 AND unit_id IN(...)）
+async function loadDutyBatch() {
+  try {
+    const unitResp: any = await api.get('/api/organization/assemble/control/unit/list/top').catch(() => null)
+    const units = Array.isArray(unitResp?.data) ? unitResp.data : []
+    const unit = units[0] ? String(units[0].name ?? units[0].id ?? '') : ''
+    const namesResp: any = unit
+      ? await api.post('/api/unitduty/list/name/unit', { unitList: [unit] }).catch(() => null)
+      : null
+    const names = Array.isArray(namesResp?.data) ? namesResp.data : []
+    const dutyName = names[0] ? String(names[0].name ?? names[0]) : ''
+    const [byName, found] = await Promise.all([
+      dutyName ? api.post('/api/unitduty/list/name', { nameList: [dutyName] }).catch(() => null) : Promise.resolve(null),
+      dutyName && unit ? api.post('/api/unitduty/find/by/unit/name', { name: dutyName, unit }).catch(() => null) : Promise.resolve(null),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    const fN = (found as any)?.data ? '命中' : '未命中'
+    orgMetaText.value = `单位「${unit || '—'}」职务名 ${names.length}（首「${dutyName || '—'}」）· 按名批量 ${n(byName)} · 精确定位 ${fN}`
+  } catch (e: any) {
+    toast.error('加载职务批量失败: ' + (e?.message ?? ''))
   }
 }
 const keyword = ref('')
