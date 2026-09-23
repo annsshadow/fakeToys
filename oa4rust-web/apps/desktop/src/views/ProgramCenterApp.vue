@@ -494,14 +494,16 @@ async function loadScheduleHotpic() {
   const id = '0'
   const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
-    const [schedLog, warnCfg, hpList, hpExists] = await Promise.all([
+    const [schedLog, warnCfg, hpList, hpExists, hpCipher, hpPaging] = await Promise.all([
       settle(api.get(`/api/program_center/schedule/list/schedulelog/application/${encodeURIComponent(id)}`)),
       settle(api.get(`/api/program_center/warnlog/view/system/log/tag/${encodeURIComponent(id)}`)),
       settle(api.get(`/api/hotpic/core/entity/list/by/${encodeURIComponent(id)}/${encodeURIComponent(id)}`)),
       settle(api.get(`/api/hotpic/core/entity/exists/check/${encodeURIComponent(id)}/${encodeURIComponent(id)}`)),
+      settle(api.get(`/api/hotpic/assemble/control/cipher/hotpic/${encodeURIComponent(id)}`)),
+      settle(api.get(`/api/hotpic/assemble/control/cipher/hotpic/filter/list/page/1/count/20`)),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
-    appMetaText.value = `调度日志 ${n(schedLog)} · 存储映射 ${n(warnCfg)} · 热图实体 ${n(hpList)} · 热图存在 ${(hpExists as any)?.data ? '有' : '无'}`
+    appMetaText.value = `调度日志 ${n(schedLog)} · 存储映射 ${n(warnCfg)} · 热图实体 ${n(hpList)} · 热图存在 ${(hpExists as any)?.data ? '有' : '无'} · 热图密文 ${(hpCipher as any)?.data ? '有' : '无'} · 热图分页 ${n(hpPaging)}`
   } catch (e: any) {
     toast.error('加载调度/热图失败: ' + (e?.message ?? ''))
   }
