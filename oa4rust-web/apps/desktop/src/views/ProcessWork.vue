@@ -20,6 +20,7 @@
         <button class="btn-sm" @click="loadWorkAuxReads">日志/流水号/文件</button>
         <button class="btn-sm" @click="loadByWorkJobLists">按工作/按job</button>
         <button class="btn-sm" @click="loadDocReadPaging">文档版本/我的待阅</button>
+        <button class="btn-sm" @click="loadWorkFullCursors">工作全量游标/详情</button>
         <button class="btn-sm primary" @click="openStart">发起流程</button>
       </div>
     </div>
@@ -33,6 +34,7 @@
     <p v-if="workCursorText" class="subtitle draft-note">{{ workCursorText }}</p>
     <p v-if="byWorkJobText" class="subtitle draft-note">{{ byWorkJobText }}</p>
     <p v-if="docReadPagingText" class="subtitle draft-note">{{ docReadPagingText }}</p>
+    <p v-if="workFullText" class="subtitle draft-note">{{ workFullText }}</p>
     <div class="tabs glass-card">
       <button
         v-for="tab in tabs"
@@ -335,6 +337,60 @@ async function loadByWorkJobLists(): Promise<void> {
   byWorkJobText.value = `待办 工作${n(tW)}/job${n(tJ)} · 已办 工作${n(tcW)}/job${n(tcJ)} · 待阅job ${n(rJ)} · 已阅job ${n(rcJ)} · 日志job ${n(wlJ)}`
 }
 const docReadPagingText = ref('')
+const workFullText = ref('')
+// rev286：工作 PP_C_WORK 全量真实读端点（双向游标 application/process/creator/filter/manage + 属性筛选 filter/attribute + 投影/引用/权限/workorworkcompleted + 详情 assignment/manage）
+// 均 query_opt/query_all 只读、arity 已核；作为工作列表多维翻页/筛选与工作详情读取，非 mock/写(force/retract/trigger 已排除)/500 桩
+async function loadWorkFullCursors(): Promise<void> {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const cnt = '20'
+  const app = 'default'
+  const proc = 'default'
+  const wid = '0'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/surface/work/list/${id}/next/${cnt}/application/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/${id}/prev/${cnt}/application/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/${id}/next/${cnt}/application/${app}/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/${id}/prev/${cnt}/application/${app}/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/${id}/next/${cnt}/process/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/${id}/prev/${cnt}/process/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/${id}/next/${cnt}/creator/current`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/${id}/prev/${cnt}/creator/current`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/next/application/filter/${id}/${cnt}/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/prev/application/filter/${id}/${cnt}/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/next/application/filter/manage/${id}/${cnt}/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/prev/application/filter/manage/${id}/${cnt}/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/next/application/manage/${id}/${cnt}/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/prev/application/manage/${id}/${cnt}/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/prev/application/${id}/${cnt}/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/prev/process/${id}/${cnt}/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/next/creator/current/filter/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/prev/creator/current/filter/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/prev/creator/current/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/application/process/manage/${cnt}/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/v2/list/prev/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/filter/attribute/application/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/filter/attribute/application/${app}/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/filter/attribute/application/manage/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/application/process/${app}/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/process/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/projection/${encodeURIComponent(wid)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/${encodeURIComponent(wid)}/projection`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/refer/${encodeURIComponent(wid)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/${encodeURIComponent(wid)}/refer`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/assignment/manage/${encodeURIComponent(wid)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/${encodeURIComponent(wid)}/assignment/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/workorworkcompleted/${encodeURIComponent(wid)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/v3/workorworkcompleted/permission/${encodeURIComponent(wid)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/v3/workorworkcompleted/${encodeURIComponent(wid)}/permission`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    workFullText.value = `工作真实读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载工作全量游标失败: ' + (e?.message ?? ''))
+  }
+}
 // rev252：文档版本按job+分类·按工作+分类 · 待阅按工作 · 待阅/已阅我的分页 5 条真实 distinct 读路由
 // documentversion(xjob+xcategory / xwork+xcategory) · read(xwork) · read/readcompleted(WHERE 1=1 分页)；arity 已核
 async function loadDocReadPaging(): Promise<void> {
