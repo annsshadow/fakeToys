@@ -98,8 +98,14 @@ export interface NoCheckpointProgress {
 /**
  * 有进行中的任务时的进度详情
  *
- * 注意：后端在**这个分支里不返回 `status`**（见 `checkpoint.py: get_progress`），
- * 所以收窄只能靠 `'task_id' in result`，不能靠读 `status`。
+ * 两个已知的「声明比实际宽松/严格」之处：
+ *
+ * 1. 后端在**这个分支里不返回 `status`**（见 `checkpoint.py: get_progress`），
+ *    所以收窄只能靠 `'task_id' in result`，不能靠读 `status`。
+ * 2. 路由上开了 `response_model_exclude_none=True`，所以某个任务字段**恰为
+ *    `null` 时该键会被整个省略**——即「键永远存在」并不成立。页面里对
+ *    `avg_quality_score` 用 `> 0` 判断、对 `progress` 用 `|| 0` 兜底，
+ *    正好也是这个原因（`undefined > 0` 为 false，不会渲染 NaN）。
  */
 export interface AugmentProgressDetail {
   task_id: string
@@ -488,4 +494,153 @@ export interface ModelsResponse {
 export interface HealthResponse {
   status: string
   version: string
+}
+
+// ============ 服务状态（`GET /api/status`）============
+
+/**
+ * 可选依赖诊断（`DiagnosticsReport.to_dict()`）
+ *
+ * `all_required_present` 与 `available_count` 在后端是**计算属性**而非字段，
+ * 但它们出现在响应里，因此这里照实声明。
+ */
+export interface DependencyDiagnostics {
+  installed: Record<string, boolean>
+  missing: string[]
+  degraded_features: string[]
+  all_required_present: boolean
+  available_count: number
+}
+
+/**
+ * `GET /api/status`
+ *
+ * 与 `/api/health` 的区别：health 只报存活（给容器探针用，刻意不含可能失败的
+ * 字段），status 会真的去构造管道并检查依赖，因此可能比 health 慢或失败。
+ */
+export interface StatusResponse {
+  status: string
+  version: string
+  model_default: string
+  model_available: boolean
+  dependencies: DependencyDiagnostics
+}
+
+// ============ 隐私脱敏 ============
+
+/** `GET /api/privacy/patterns`：可用的 PII 模式名 */
+export interface PiiPatternsResponse {
+  default: string[]
+  extra: string[]
+}
+
+/**
+ * 脱敏报告（`SanitizeReport.to_dict()`）
+ *
+ * `matches` 是「模式名 → 命中次数」，`total_matches` 是它的总和（后端计算属性）。
+ */
+export interface SanitizeReport {
+  total_items: number
+  touched_items: number
+  matches: CountDistribution
+  total_matches: number
+}
+
+/** `POST /api/privacy/sanitize`：脱敏后的数据 + 报告 */
+export interface SanitizeResponse {
+  items: DataItem[]
+  report: SanitizeReport
+}
+
+// ============ 泄漏检测 ============
+
+/**
+ * `POST /api/leakage/check`
+ *
+ * `total_leaks` / `leak_rate` / `is_clean` 是 `LeakageReport` 上的计算属性，
+ * 必须声明——它们确实在响应里。
+ */
+export interface LeakageResponse {
+  train_size: number
+  test_size: number
+  exact_leaks: number
+  fuzzy_leaks: number
+  total_leaks: number
+  leak_rate: number
+  is_clean: boolean
+  leaked_examples: Record<string, unknown>[]
+}
+
+// ============ 数据集就绪审计 ============
+
+/**
+ * `POST /api/audit`
+ *
+ * 后端直接拿 `AuditReport`（dataclass）当 response_model，因此这里的字段
+ * 与它的 `to_dict()` 完全一致。
+ */
+export interface AuditResponse {
+  total_items: number
+  pii_matches: number
+  duplicate_count: number
+  duplicate_rate: number
+  empty_field_rate: number
+  leak_count: number
+  leak_rate: number
+  findings: string[]
+  ready: boolean
+}
+
+// ============ 离群点与画像 ============
+
+/** 单条离群样本（`{index, value, item}`） */
+export interface OutlierEntry {
+  index: number
+  value: number
+  item: DataItem
+}
+
+/** `POST /api/quality/outliers` */
+export interface OutliersResponse {
+  total_items: number
+  outlier_count: number
+  outlier_rate: number
+  method: string
+  threshold: number
+  field: string
+  outliers: OutlierEntry[]
+}
+
+/** 长度分布统计（单位：字符数） */
+export interface LengthStats {
+  min: number
+  max: number
+  avg: number
+  median: number
+}
+
+/** 单个高频关键词（`DataProfiler._top_keywords()`） */
+export interface KeywordCount {
+  keyword: string
+  count: number
+}
+
+/**
+ * `POST /api/quality/profiling`
+ *
+ * 两个容易写错的点（`augmentor/profiling.py`）：
+ * - `field_completeness` 是**字段名 → 非空率（0~1）**的扁平字典，
+ *   不是「字段名 → 字段画像对象」。`_field_completeness()` 返回 `Dict[str, float]`。
+ * - `length_stats` 在空数据集上是 `{}`（`profile()` 的早退分支），
+ *   所以这里用 `Partial` —— 四个字段要么全在，要么全不在。
+ */
+export interface ProfilingResponse {
+  total_items: number
+  /** 字段名 → 非空率（0~1） */
+  field_completeness: Record<string, number>
+  length_stats: Partial<LengthStats>
+  duplicate_rate: number
+  language_distribution: CountDistribution
+  /** 按频次降序 */
+  top_keywords: KeywordCount[]
 }
