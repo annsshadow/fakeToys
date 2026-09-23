@@ -24,9 +24,11 @@
         <button class="btn-refresh" @click="loadEngineMore">⚙️ 引擎扩展</button>
         <button class="btn-refresh" @click="loadTaskCursorFilters">📋 待办/已办游标</button>
         <button class="btn-refresh" @click="loadReadCursorFilters">📖 待阅/已阅游标</button>
+        <button class="btn-refresh" @click="loadJobDataReads">🧬 作业/数据记录/签署/发票</button>
       </div>
       <div v-if="countsText" class="wk-chips"><span class="wk-chip">{{ countsText }}</span></div>
       <div v-if="workDetailText" class="wk-chips"><span class="wk-chip">{{ workDetailText }}</span></div>
+      <div v-if="jobDataText" class="wk-chips"><span class="wk-chip">{{ jobDataText }}</span></div>
       <div v-if="snapText" class="wk-chips"><span class="wk-chip">{{ snapText }}</span></div>
       <div v-if="workItems.length" class="wk-chips">
         <span v-for="w in workItems" :key="w.id || w.title" class="wk-chip">{{ w.title || w.id }}</span>
@@ -74,6 +76,31 @@ interface Item {
 const listEp = '/api/processplatform/service/processing/task/list'
 const workItems = ref<Array<{ id?: string; title?: string }>>([])
 const countsText = ref('')
+const jobDataText = ref('')
+// rev266：流程表面 作业/数据记录/签署/发票 6 条真实 distinct 读路由（全字面量，arity 均已核）
+// PP_C_JOB 三态：data/job/{job}(xjob) · correlation/list/job/{job}/site/{site}(xjob+xsite) · job/{job}/find/work/workcompleted(xid)
+// + datarecord/get/job/{job}/path/{path}→PP_C_DATA_RECORD(xid,新表) · sign/list/job/{job}→PP_C_DOC_SIGN(xjob，区别 rev262 xid) · attachment/invoice/{flag}/joborworkorworkcompleted/{w}→x_general_invoice(id,新表)
+async function loadJobDataReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const first: any = items.value[0] ?? {}
+  const job = String(first.job ?? first.id ?? '0')
+  const wid = String(first.work ?? first.id ?? '0')
+  try {
+    const [byJob, corr, findWork, datarecord, signJob, invoice] = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/surface/data/job/${encodeURIComponent(job)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/correlation/list/job/${encodeURIComponent(job)}/site/${encodeURIComponent(job)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/job/${encodeURIComponent(job)}/find/work/workcompleted`)),
+      s(api.get(`/api/processplatform/assemble/surface/datarecord/get/job/${encodeURIComponent(job)}/path/${encodeURIComponent(job)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/sign/list/job/${encodeURIComponent(job)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/attachment/invoice/${encodeURIComponent(wid)}/joborworkorworkcompleted/${encodeURIComponent(wid)}`)),
+    ])
+    const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    jobDataText.value = `作业数据 ${has(byJob)} · 关联(job+site) ${n(corr)} · 作业定位工作 ${has(findWork)} · 数据记录 ${has(datarecord)} · 签署(按job) ${n(signJob)} · 发票 ${has(invoice)}`
+  } catch (e: any) {
+    toast.error('加载作业/数据/签署/发票失败: ' + (e?.message ?? ''))
+  }
+}
 const workDetailText = ref('')
 // 引擎工作明细（rev182，service/processing 域 3 条真实 distinct，按工作 id）：get/{work}（get_process x_work 详情）
 // + work/{work}/projection（work_id_projection x_task 任务投影）+ documentversion/{work}/{work}（x_document_version 版本）。
