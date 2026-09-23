@@ -21,6 +21,7 @@
         <button class="btn-refresh" @click="loadSnaps">📸 工作快照</button>
         <button class="btn-refresh" @click="loadSnapCursors">🎞️ 快照游标</button>
         <button class="btn-refresh" @click="loadEngineEntities">🔧 引擎实体</button>
+        <button class="btn-refresh" @click="loadEngineMore">⚙️ 引擎扩展</button>
       </div>
       <div v-if="countsText" class="wk-chips"><span class="wk-chip">{{ countsText }}</span></div>
       <div v-if="workDetailText" class="wk-chips"><span class="wk-chip">{{ workDetailText }}</span></div>
@@ -109,6 +110,21 @@ async function loadEngineEntities() {
   ])
   const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
   workDetailText.value = `实例 ${has(inst)} · 应用字典 ${has(appdict)} · 完成数据 ${has(dataWc)} · 表单适配 ${has(formAct)} · 已读完成 ${has(readc)} · 意见 ${has(review)} · 已办 ${has(taskc)} · 投影 ${has(proj)}`
+}
+// rev235：流程引擎 job/草稿/完成件 5 条真实 distinct 读路由（全字面量；跳过 v2/projection 双注册 twin）
+async function loadEngineMore() {
+  workDetailText.value = ''
+  const id = items.value[0] ? String(items.value[0].work ?? items.value[0].id ?? '0') : '0'
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [draft, wcProc, dataPath, dataWcPath, jobView] = await Promise.all([
+    s(api.get(`/api/processplatform/service/processing/draft/${id}/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/workcompleted/process/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/data/path/${id}/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/data/workcompleted/path/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/job/v2/${id}/person/${id}/view`)),
+  ])
+  const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
+  workDetailText.value = `草稿 ${has(draft)} · 完成件按流程 ${has(wcProc)} · 数据路径 ${has(dataPath)} · 完成数据路径 ${has(dataWcPath)} · job视图 ${has(jobView)}`
 }
 
 const snapText = ref('')
