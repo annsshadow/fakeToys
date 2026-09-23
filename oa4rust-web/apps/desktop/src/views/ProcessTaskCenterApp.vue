@@ -19,6 +19,7 @@
         <button class="btn-refresh" @click="loadTouch">⏰ 超期触发</button>
         <button class="btn-refresh" @click="loadWorkDetail">🧾 工作明细</button>
         <button class="btn-refresh" @click="loadSnaps">📸 工作快照</button>
+        <button class="btn-refresh" @click="loadSnapCursors">🎞️ 快照游标</button>
       </div>
       <div v-if="countsText" class="wk-chips"><span class="wk-chip">{{ countsText }}</span></div>
       <div v-if="workDetailText" class="wk-chips"><span class="wk-chip">{{ workDetailText }}</span></div>
@@ -109,6 +110,32 @@ async function loadSnaps() {
   ])
   const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
   snapText.value = `工作「${work}」快照 ${cnt(snap)} · 废弃 ${cnt(abandoned)} · 挂起 ${cnt(suspend)}`
+}
+// rev209：快照游标族 6 条真实 distinct 路由（pp_c_snap）：snap/{id}（WHERE id）
+// · list/{id}/next/{count}（xcreateTime> ASC 前翻）· list/{id}/prev/{count}（xcreateTime< DESC 后翻）
+// · workcompleted/{workCompletedId}/type/snapworkcompleted（by_type snapWorkCompleted）· /type/abandonedworkcompleted（abandonedWorkCompleted）
+// · list/my/paging/{page}/size/{size}（offset 分页）
+async function loadSnapCursors() {
+  snapText.value = ''
+  const work = items.value[0] ? String(items.value[0].work ?? items.value[0].id ?? '') : ''
+  if (!work) {
+    snapText.value = '暂无任务可查快照'
+    return
+  }
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const listResp = await settle(api.get(`/api/processplatform/assemble/surface/snap/work/${work}/type/snap`))
+  const rows = Array.isArray((listResp as any)?.data) ? (listResp as any).data : []
+  const sid = rows[0] ? String(rows[0].id ?? work) : work
+  const [one, next, prev, snapWc, abandonWc, myPaging] = await Promise.all([
+    settle(api.get(`/api/processplatform/assemble/surface/snap/${sid}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/snap/list/${sid}/next/10`)),
+    settle(api.get(`/api/processplatform/assemble/surface/snap/list/${sid}/prev/10`)),
+    settle(api.get(`/api/processplatform/assemble/surface/snap/workcompleted/${work}/type/snapworkcompleted`)),
+    settle(api.get(`/api/processplatform/assemble/surface/snap/workcompleted/${work}/type/abandonedworkcompleted`)),
+    settle(api.get('/api/processplatform/assemble/surface/snap/list/my/paging/1/size/20')),
+  ])
+  const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : ((r as any)?.data ? 1 : 0))
+  snapText.value = `单条 ${(one as any)?.data?.id ? '命中' : '未命中'} · 前翻 ${n(next)} · 后翻 ${n(prev)} · 完成快照 ${n(snapWc)} · 完成废弃 ${n(abandonWc)} · 我的分页 ${n(myPaging)}`
 }
 async function loadTouch() {
   try {
