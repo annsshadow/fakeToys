@@ -16,11 +16,13 @@
         <button class="btn-refresh" @click="loadData">🔄 刷新</button>
         <button class="btn-refresh" @click="loadTemplateForms">📄 模板表单</button>
         <button class="btn-refresh" @click="loadFormDetails">🧾 表单明细</button>
+        <button class="btn-refresh" @click="loadFormCursors">🔃 表单游标/字段/版本</button>
       </div>
       <div v-if="templateForms.length" class="tf-chips">
         <span v-for="tf in templateForms" :key="tf.id || tf.name" class="tf-chip">{{ tf.name || tf.id }}</span>
       </div>
       <div v-if="formDetailText" class="tf-note">{{ formDetailText }}</div>
+      <div v-if="formCursorText" class="tf-note">{{ formCursorText }}</div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🧾</div><p>暂无流程表单</p></div>
       <table v-else class="data-table">
@@ -183,6 +185,34 @@ async function loadFormDetails() {
     formDetailText.value = `表单「${fName}」· 版本 ${vN} · 同应用表单 ${aN}`
   } catch (e: any) {
     toast.error('加载表单明细失败: ' + (e?.message ?? ''))
+  }
+}
+
+// 表单游标/字段/版本族 5 条真实 distinct（rev195，PP_E_FORM/PP_E_FORMVERSION）：form/list/{id}/next/{count}（xid>）
+// + form/list/{id}/prev/{count}（xid<）+ form/list/formfield/{id}（表单字段）+ form/list/formfield/application/{applicationId}
+// + formversion/{id}（版本详情，从 formversion/list/form 首行回源）。
+const formCursorText = ref('')
+async function loadFormCursors() {
+  const first = items.value[0]
+  const fid = String(first?.id ?? '0')
+  const appId = String(first?.application ?? '0')
+  try {
+    const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const verList = await s(api.get(`/api/processplatform/assemble/designer/formversion/list/form/${encodeURIComponent(fid)}`))
+    const verRows = Array.isArray((verList as any)?.data) ? (verList as any).data : []
+    const vid = verRows[0] ? String(verRows[0].id ?? '0') : '0'
+    const [next, prev, fieldsById, fieldsByApp, verDetail] = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/designer/form/list/${encodeURIComponent(fid)}/next/20`)),
+      s(api.get(`/api/processplatform/assemble/designer/form/list/${encodeURIComponent(fid)}/prev/20`)),
+      s(api.get(`/api/processplatform/assemble/designer/form/list/formfield/${encodeURIComponent(fid)}`)),
+      s(api.get(`/api/processplatform/assemble/designer/form/list/formfield/application/${encodeURIComponent(appId)}`)),
+      s(api.get(`/api/processplatform/assemble/designer/formversion/${encodeURIComponent(vid)}`)),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    const hasVer = (verDetail as any)?.data?.id ? '命中' : '未命中'
+    formCursorText.value = `游标：后续 ${n(next)}·前序 ${n(prev)} | 字段(表单) ${n(fieldsById)}·字段(应用) ${n(fieldsByApp)} | 版本详情 ${hasVer}`
+  } catch (e: any) {
+    toast.error('加载表单游标/字段/版本失败: ' + (e?.message ?? ''))
   }
 }
 </script>
