@@ -11,6 +11,8 @@
       <div class="tabs">
         <button :class="{active:tab==='device'}" @click="tab='device'">设备管理</button>
         <button :class="{active:tab==='template'}" @click="tab='template'">推送模板</button>
+        <button @click="loadJpushEntities">实体明细</button>
+        <span v-if="entitiesText" class="subtitle">{{ entitiesText }}</span>
       </div>
       <div v-if="tab==='device'" class="tab-content">
         <div class="stats-row">
@@ -96,6 +98,23 @@ async function loadTemplates() {
   }
 }
 
+// rev216：JPush 设备/模板 实体明细 4 条真实 distinct 路由（id 源自已挂载的 devices/templates，避免 JPushApp.test 禁止的重复 list 查询）
+// jpush device/{id}（x_jpush_device 原生 SQL）· template/{id}（x_jpush_template）· core/entity device/{id}（SeaORM）· core/entity template/{id}（SeaORM）
+const entitiesText = ref('')
+async function loadJpushEntities() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const did = devices.value[0] ? String((devices.value[0] as any).id ?? '0') : '0'
+  const tid = templates.value[0] ? String((templates.value[0] as any).id ?? '0') : '0'
+  const [dGet, tGet, coreDevGet, coreTplGet] = await Promise.all([
+    s(api.get(`/api/jpush/device/${encodeURIComponent(did)}`)),
+    s(api.get(`/api/jpush/template/${encodeURIComponent(tid)}`)),
+    s(api.get(`/api/jpush/core/entity/device/${encodeURIComponent(did)}`)),
+    s(api.get(`/api/jpush/core/entity/template/${encodeURIComponent(tid)}`)),
+  ])
+  const hit = (r: any) => ((r as any)?.data?.id ? '命中' : '未命中')
+  entitiesText.value = `设备详情 ${hit(dGet)}（原生）/ ${hit(coreDevGet)}（实体）· 模板详情 ${hit(tGet)}（原生）/ ${hit(coreTplGet)}（实体）`
+}
+
 async function delDevice(d: any) {
   if (!(await confirmMsg(`确定删除设备「${d.alias || d.regId || d.deviceId}」？`))) return
   try {
@@ -107,8 +126,7 @@ async function delDevice(d: any) {
 }
 
 loadDevices()
-loadTemplates()
-</script>
+loadTemplates()</script>
 
 <style scoped>
 .mod-view{display:flex;flex-direction:column;gap:16px;height:100%}
