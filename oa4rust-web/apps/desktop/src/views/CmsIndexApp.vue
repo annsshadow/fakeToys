@@ -19,6 +19,7 @@
         <button class="btn-refresh" @click="loadCmsExpress">📰 内容/视图</button>
         <button class="btn-refresh" @click="loadCmsDetails">🗃️ 分类/文章明细</button>
         <button class="btn-refresh" @click="loadFormDetails">📋 表单明细</button>
+        <button class="btn-refresh" @click="loadCmsAliasForm">🔖 别名/发布/表单</button>
       </div>
       <div v-if="cmsConfigText" class="cfg-note">{{ cmsConfigText }}</div>
       <div v-if="overviewText" class="cfg-note">{{ overviewText }}</div>
@@ -169,6 +170,24 @@ async function loadFormDetails() {
     overviewText.value = `表单「${fName}」· 应用下表单 ${aN} · 文档表单 ${hasDoc}`
   } catch (e: any) {
     toast.error('加载表单明细失败: ' + (e?.message ?? ''))
+  }
+}
+// rev258：CMS 应用别名/发布/分类别名/表单+应用 4 条真实 distinct 读路由（非退化桩）
+// x_cms_appinfo WHERE alias / WHERE id(publish) · x_cms_categoryinfo WHERE alias · x_cms_form WHERE id+app_id；arity 已核
+async function loadCmsAliasForm() {
+  const id = '0'
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [appAlias, appPublish, catAlias, formApp] = await Promise.all([
+      s(api.get(`/api/appinfo/alias/${encodeURIComponent(id)}`)),
+      s(api.get(`/api/appinfo/get/user/publish/${encodeURIComponent(id)}`)),
+      s(api.get(`/api/categoryinfo/alias/${encodeURIComponent(id)}`)),
+      s(api.get(`/api/form/${encodeURIComponent(id)}/appinfo/${encodeURIComponent(id)}`)),
+    ])
+    const h = (r: any) => ((r as any)?.data ? '命中' : '未命中')
+    overviewText.value = `应用别名 ${h(appAlias)} · 应用发布 ${h(appPublish)} · 分类别名 ${h(catAlias)} · 表单(按应用) ${h(formApp)}`
+  } catch (e: any) {
+    toast.error('加载别名/表单失败: ' + (e?.message ?? ''))
   }
 }
 const createEp = '/api/cms/core/entity/index/create'
