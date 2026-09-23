@@ -16,11 +16,13 @@
         <button class="btn-refresh" @click="loadData">🔄 刷新</button>
         <button class="btn-refresh" @click="loadCategories">📁 分类</button>
         <button class="btn-refresh" @click="loadDesignerApp">🧩 设计器应用明细</button>
+        <button class="btn-refresh" @click="loadSurfaceApp">🌐 表面应用信息</button>
       </div>
       <div v-if="categories.length" class="cat-chips">
         <span v-for="c in categories" :key="c.id || c.name" class="cat-chip">{{ c.name || c.id }}</span>
       </div>
       <div v-if="designerText" class="qv-note">{{ designerText }}</div>
+      <div v-if="surfaceText" class="qv-note">{{ surfaceText }}</div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🧩</div><p>暂无应用</p></div>
       <table v-else class="data-table">
@@ -210,6 +212,37 @@ async function loadDesignerApp() {
     designerText.value = `分类 ${cats.length} · 应用「${dName}」· 权限项 ${pKeys}`
   } catch (e: any) {
     toast.error('加载设计器应用明细失败: ' + (e?.message ?? ''))
+  }
+}
+// 表面流程应用族 3 条真实 distinct 路由（surface，均以流程应用 id 定位，投影/表各异）：
+// 是否管理员 application/{flag}/is/manager（读 PP_E_APPLICATION 单条）
+// → 应用图标 application/{flag}/icon（同表 icon 变体路由）+ 应用数据字典列表 applicationdict/list/application/{applicationFlag}（读 PP_E_APPLICATIONDICT，WHERE xapplication=$1）
+const surfaceText = ref('')
+async function loadSurfaceApp() {
+  try {
+    const catResp: any = await api.get('/api/processplatform/assemble/designer/applicationcategory/list')
+    const cats = (Array.isArray(catResp?.data) ? catResp.data : []) as Array<Record<string, unknown>>
+    const cat = cats[0] ? String(cats[0].id ?? cats[0].name ?? '') : ''
+    const appResp: any = cat
+      ? await api.get(`/api/processplatform/assemble/designer/application/list/applicationcategory/${encodeURIComponent(cat)}`).catch(() => null)
+      : null
+    const apps = (Array.isArray(appResp?.data?.data) ? appResp.data.data : (appResp?.data ?? [])) as Array<Record<string, unknown>>
+    const appId = apps[0] ? String(apps[0].id ?? '') : ''
+    if (!appId) {
+      surfaceText.value = '暂无流程应用可查表面信息'
+      return
+    }
+    const [mgr, icon, dict] = await Promise.all([
+      api.get(`/api/processplatform/assemble/surface/application/${encodeURIComponent(appId)}/is/manager`).catch(() => null),
+      api.get(`/api/processplatform/assemble/surface/application/${encodeURIComponent(appId)}/icon`).catch(() => null),
+      api.get(`/api/processplatform/assemble/surface/applicationdict/list/application/${encodeURIComponent(appId)}`).catch(() => null),
+    ])
+    const isMgr = (mgr as any)?.data?.id ? '有权' : '未命中'
+    const hasIcon = (icon as any)?.data?.id ? '有' : '无'
+    const dictCount = Array.isArray((dict as any)?.data) ? (dict as any).data.length : 0
+    surfaceText.value = `应用「${appId}」· 管理员权限 ${isMgr} · 图标 ${hasIcon} · 数据字典 ${dictCount} 项`
+  } catch (e: any) {
+    toast.error('加载表面应用信息失败: ' + (e?.message ?? ''))
   }
 }
 function fmtTime(t?: string) {

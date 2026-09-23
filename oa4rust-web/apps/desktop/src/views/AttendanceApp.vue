@@ -272,7 +272,7 @@ async function loadV2Meta() {
 // + 群组月排班 groupschedule/list/group/{groupId}/month/{month}（x_attendance_v2_group_schedule）+ 按人日期查群组 group/person/{person}/date/{date}（x_attendance_v2_group）
 async function loadV2Schedule() {
   try {
-    const groupResp: any = await api.get('/api/attendance/assemble/control/v2/group/list/1/size/50').catch(() => null)
+    const groupResp: any = await api.post('/api/attendance/assemble/control/v2/group/list/1/size/50', {}).catch(() => null)
     const groups = (Array.isArray(groupResp?.data) ? groupResp.data : (groupResp?.data?.data ?? [])) as Array<Record<string, unknown>>
     const gid = groups[0] ? String(groups[0].id ?? '') : ''
     const person = session.state.user?.unique ?? ''
