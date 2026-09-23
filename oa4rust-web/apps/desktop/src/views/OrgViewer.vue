@@ -19,6 +19,7 @@
       <button class="org-meta-btn" @click="loadCursorListsPrev">游标(逆序)</button>
       <button class="org-meta-btn" @click="loadGroupDetails">群组明细</button>
       <button class="org-meta-btn" @click="loadIdentityRelations">身份关系</button>
+      <button class="org-meta-btn" @click="loadOrgMembers">成员/层级</button>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -417,6 +418,33 @@ async function loadIdentityRelations() {
     orgMetaText.value = `单位∩人员身份 ${n(byUnitPerson)} · 群组身份 ${n(byGroup)} · 主身份 ${n(majorByPerson)}`
   } catch (e: any) {
     toast.error('加载身份关系失败: ' + (e?.message ?? ''))
+  }
+}
+// 成员/层级族 3 条真实 distinct 路由（express 批量查询，SQL 各异）：群组人员 /api/group/list/person（JOIN x_org_group_member）
+// + 角色人员 /api/role/list/person（JOIN x_org_group_role→x_org_role）+ 单位按层级 /api/unit/list/level（level_query）；角色/群组/单位名从 control 抽样列表取
+async function loadOrgMembers() {
+  const firstName = (resp: any): string => {
+    const arr = Array.isArray(resp?.data) ? resp.data : []
+    return arr[0] ? String(arr[0].name ?? arr[0].id ?? '') : ''
+  }
+  try {
+    const [roleResp, groupResp, unitResp] = await Promise.all([
+      api.get('/api/organization/assemble/control/role/list/0/next/10').catch(() => null),
+      api.get('/api/organization/assemble/control/group/list/0/next/10').catch(() => null),
+      api.get('/api/organization/assemble/control/unit/list/top').catch(() => null),
+    ])
+    const roleList = firstName(roleResp) ? [firstName(roleResp)] : []
+    const groupList = firstName(groupResp) ? [firstName(groupResp)] : []
+    const unitList = firstName(unitResp) ? [firstName(unitResp)] : []
+    const [byGroup, byRole, byLevel] = await Promise.all([
+      api.post('/api/group/list/person', { groupList }).catch(() => null),
+      api.post('/api/role/list/person', { roleList }).catch(() => null),
+      api.post('/api/unit/list/level', { unitList }).catch(() => null),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    orgMetaText.value = `群组人员 ${n(byGroup)} · 角色人员 ${n(byRole)} · 单位层级 ${n(byLevel)}`
+  } catch (e: any) {
+    toast.error('加载成员/层级失败: ' + (e?.message ?? ''))
   }
 }
 const keyword = ref('')
