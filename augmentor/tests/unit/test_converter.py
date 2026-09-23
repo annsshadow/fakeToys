@@ -594,3 +594,72 @@ class TestConverterExtended2:
         jsonl = converter.convert(sample_dataset, "json", "jsonl")
         result = converter.convert(jsonl, "jsonl", "alpaca")
         assert len(result) == len(sample_dataset)
+
+
+class TestCsvWriteSurface:
+    """CSV 落盘的字节级正确性。
+
+    两处缺陷都是「本地看着没事、下游读坏了」那一类：
+
+    1. 写侧漏 `newline=''`。`csv.writer` 写出 `\r\n` 行尾，文本模式默认又把它里面的
+       `\n` 翻译成 `os.linesep`，Windows 上得到 `\r\r\n`——严格解析器会在每条记录
+       之间读出一个空行。POSIX 上不显形（`os.linesep` 就是 `\n`），所以这个缺陷只在
+       Windows 实测里露头。
+    2. `fieldnames` 只取 `data[0].keys()`。异构数据（增强/合并后某几条多了字段）
+       会让 `DictWriter` 抛 `ValueError: dict contains fields not in fieldnames`，
+       整次导出失败。
+    """
+
+    def test_csv_target_has_no_stray_cr(self, tmp_path, sample_dataset):
+        """`convert --format csv` 的产物行尾必须是单个 `\r\n`"""
+        src = tmp_path / "src.json"
+        src.write_text(json.dumps(sample_dataset, ensure_ascii=False), encoding="utf-8")
+        out = tmp_path / "out.csv"
+
+        convert_file(str(src), str(out), target_format="csv")
+
+        raw = out.read_bytes()
+        assert b"\r\r\n" not in raw, "Windows 上双写行尾，严格解析器会读出空行"
+        assert raw.count(b"\r\n") == len(sample_dataset) + 1  # 表头 + 数据行
+
+    def test_heterogeneous_items_export_without_error(self, tmp_path):
+        """异构条目（后一条多出字段）不得让整次导出失败"""
+        src = tmp_path / "src.json"
+        items = [
+            {"instruction": "a", "output": "b"},
+            {"instruction": "c", "output": "d", "category": "e"},
+        ]
+        src.write_text(json.dumps(items, ensure_ascii=False), encoding="utf-8")
+        out = tmp_path / "out.csv"
+
+        convert_file(str(src), str(out), target_format="csv")
+
+        with open(out, encoding="utf-8", newline="") as f:
+            rows = list(csv.DictReader(f))
+        assert rows[0]["category"] == ""          # 缺的字段落为空单元格
+        assert rows[1]["category"] == "e"
+
+    def test_empty_dataset_writes_nothing(self, tmp_path):
+        """空数据集仍走 `if data` 守卫：写出 0 字节，且不抛异常"""
+        src = tmp_path / "src.json"
+        src.write_text("[]", encoding="utf-8")
+        out = tmp_path / "out.csv"
+
+        convert_file(str(src), str(out), target_format="csv")
+
+        assert out.exists()
+        assert out.read_bytes() == b""
+
+    def test_read_side_uses_newline_empty(self, tmp_path, sample_dataset):
+        """含换行的字段要能原样往返：写侧引号包裹，读侧不得预先折叠行尾"""
+        src = tmp_path / "src.json"
+        items = [{"instruction": "第一行\n第二行", "output": "x"}]
+        src.write_text(json.dumps(items, ensure_ascii=False), encoding="utf-8")
+        out = tmp_path / "out.csv"
+
+        convert_file(str(src), str(out), target_format="csv")
+        converter = DatasetConverter()
+        rows = converter._read_file(out, "csv")
+
+        assert rows == items, f"多行字段被换行拆解: {rows}"
+        assert out.read_bytes().count(b"\r\r\n") == 0
