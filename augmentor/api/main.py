@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from augmentor import __version__
 from augmentor.config import load_config
+from api.deps import config_file_path
 from api.middleware import (
     RateLimitMiddleware,
     RequestLoggingMiddleware,
@@ -112,7 +113,7 @@ app = FastAPI(
 )
 
 # CORS 配置（从配置文件读取，生产环境请显式配置 origins）
-_config = load_config("config.yaml")
+_config = load_config(str(config_file_path()))
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_config.web.cors_origins,

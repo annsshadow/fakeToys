@@ -40,11 +40,17 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 
 `GET /api/data/list` 的扫描范围与白名单同源，因此它列出的文件一定都读得到。
 
-**目录类参数的缺省值也在白名单内**。`/api/system/dependency/*` 三条端点的
-`registry_path` 可选；留空时使用白名单首个根目录下的 `.dependency_registry`
-（出厂默认即 `data/.dependency_registry`），因此 CLI 用
-`--registry-path data/.dependency_registry` 就能与 API 共用同一份登记。显式传入时照旧校验，越界 403；显式传空串（`?registry_path=`）是非法入参 → 400，
-不会被静默换成缺省值。
+**目录类参数的缺省值也在白名单内**。`/api/system/dependency/*` 的 `registry_path`
+与 `/api/system/backups*` 的 `backup_dir` 都是可选参数；留空时分别使用白名单首个根目录下
+的 `.dependency_registry` 与 `.backups`（出厂默认即 `data/.dependency_registry` 与
+`data/.backups`），因此 CLI 用 `--registry-path data/.dependency_registry` 就能与 API
+共用同一份登记。显式传入时照旧校验，越界 403；显式传空串（`?backup_dir=`）是非法入参
+→ 400，不会被静默换成缺省值。
+
+**服务自身的配置文件不走数据白名单**。`POST /api/system/validate-config` 的 `path`
+可选：留空时校验服务端自己在用的那份配置（`AUGMENTOR_CONFIG_PATH`，未设置则是工作目录下
+的 `config.yaml`）；显式传入时仍按数据白名单校验。`POST /api/config` 保存的也是同一个
+路径，二者不会各写一遍字面量。
 
 ### 错误码
 

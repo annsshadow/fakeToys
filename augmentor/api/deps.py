@@ -57,6 +57,24 @@ def verify_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-Key")) -
         raise HTTPException(status_code=401, detail="缺少或无效的 X-API-Key")
 
 
+def config_file_path() -> Path:
+    """服务自身的配置文件路径 —— **不是**数据集，因此不过数据白名单
+
+    优先级：环境变量 ``AUGMENTOR_CONFIG_PATH`` > 工作目录下的 ``config.yaml``。
+    数据白名单管的是「客户端传进来的路径能读到哪些数据文件」；配置文件由服务端
+    自己读写，把它塞进数据闸会导致「不传参的默认调用被自己的闸拦下」（F-11：
+    ``POST /api/system/validate-config`` 的默认值就是这样 403 的）。
+    客户端**显式**指定的配置路径仍然要走白名单校验，见该端点的实现。
+
+    Returns:
+        已 resolve 的绝对路径（可能尚不存在，`load_config` 对此返回出厂默认）
+    """
+    raw = os.environ.get("AUGMENTOR_CONFIG_PATH")
+    if raw and raw.strip():
+        return Path(raw.strip()).resolve()
+    return (Path.cwd() / "config.yaml").resolve()
+
+
 def get_pipeline() -> AugmentorPipeline:
     """获取管道实例（惰性初始化）
 
@@ -65,7 +83,7 @@ def get_pipeline() -> AugmentorPipeline:
     """
     global _pipeline
     if _pipeline is None:
-        config = load_config("config.yaml")
+        config = load_config(str(config_file_path()))
         _pipeline = AugmentorPipeline(config)
     return _pipeline
 
@@ -92,7 +110,7 @@ def allowed_data_roots() -> List[Path]:
         candidates = [p.strip() for p in raw.split(os.pathsep) if p.strip()]
     else:
         try:
-            candidates = [str(p) for p in load_config("config.yaml").web.data_roots]
+            candidates = [str(p) for p in load_config(str(config_file_path())).web.data_roots]
         except Exception:  # 配置损坏不应让所有请求 500
             logger.warning("读取 web.data_roots 失败，回退到出厂默认", exc_info=True)
             candidates = []
@@ -156,6 +174,16 @@ def _relative_candidates(raw: Path, roots: List[Path]) -> List[Path]:
     return candidates
 
 
+def _default_root_subdir(name: str) -> Path:
+    """白名单首个根目录下的「服务端自己的产物目录」
+
+    注册表、备份这类目录由服务端创建，不是客户端传进来的路径，因此不参与
+    「根目录优先、工作目录兜底」的候选解析——跟着白名单首个根走，才能保证
+    **不传参的默认调用也落在自己的闸内**。
+    """
+    return allowed_data_roots()[0] / name
+
+
 def default_registry_dir() -> Path:
     """依赖注册表的默认目录：白名单**首个根目录**下的 `.dependency_registry`
 
@@ -170,7 +198,18 @@ def default_registry_dir() -> Path:
     Returns:
         已 resolve 的绝对目录路径（可能尚不存在，由 `DependencyManager` 创建）
     """
-    return allowed_data_roots()[0] / ".dependency_registry"
+    return _default_root_subdir(".dependency_registry")
+
+
+def default_backup_dir() -> Path:
+    """备份目录的默认值：白名单首个根目录下的 `.backups`
+
+    与 `default_registry_dir` 同构。历史上四条 `/api/system/backups*` 端点把默认值
+    写成相对工作目录的 `.backups`，白名单收到 `["data"]` 之后不传参的默认调用一律
+    403；显式传旧路径（``backup_dir=.backups``）的行为不变——仍然按候选顺序解析，
+    工作目录不在白名单内就是 403。
+    """
+    return _default_root_subdir(".backups")
 
 
 def resolve_within_roots(name: str, label: str) -> Path:

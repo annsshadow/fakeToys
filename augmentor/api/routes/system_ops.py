@@ -20,6 +20,8 @@ from pydantic import BaseModel
 from augmentor.exceptions import BackupError
 
 from ..deps import (
+    config_file_path,
+    default_backup_dir,
     default_registry_dir,
     get_pipeline,
     read_items,
@@ -52,8 +54,12 @@ MIGRATION_RULES = ("rename_instruction", "rename_output", "flatten_conversations
 # ============ 请求模型 ============
 
 class ValidateConfigRequest(BaseModel):
-    """配置验证请求"""
-    path: str = "config.yaml"
+    """配置验证请求
+
+    `path` 留空时校验**服务自己**正在使用的那份配置（见 `deps.config_file_path`，
+    可用 `AUGMENTOR_CONFIG_PATH` 指向别处）；显式传入时按数据白名单校验该路径。
+    """
+    path: Optional[str] = None
 
 
 class MonitorRequest(BaseModel):
@@ -288,7 +294,9 @@ async def system_validate_config(request: ValidateConfigRequest):
     try:
         from augmentor.config_validator import validate_config_file
 
-        path = resolve_data_path(request.path)
+        path = (
+            config_file_path() if request.path is None else resolve_data_path(request.path)
+        )
         result = await run_in_thread(validate_config_file, str(path))
         return result.to_dict()
     except HTTPException:
@@ -547,17 +555,30 @@ async def dependency_graph(
 
 # ============ 备份 ============
 
+BACKUP_DIR_DESC = (
+    "备份目录。缺省时使用白名单首个根目录下的 `.backups`"
+    "（出厂默认即 `data/.backups`）；显式传入时该目录必须落在白名单内。"
+)
+
+
+def _resolve_backup_dir(backup_dir: Optional[str]):
+    """备份目录：缺省跟着白名单走，显式传空串仍是非法入参（400）"""
+    return default_backup_dir() if backup_dir is None else resolve_data_dir(backup_dir)
+
+
 @router.get(
     "/api/system/backups",
     response_model=BackupListResponse,
     summary="列出备份",
 )
-async def list_backups_endpoint(backup_dir: str = ".backups"):
+async def list_backups_endpoint(
+    backup_dir: Optional[str] = Query(None, description=BACKUP_DIR_DESC),
+):
     """列出备份目录下的全部备份"""
     try:
         from augmentor.backup import list_backups
 
-        resolved = resolve_data_dir(backup_dir)
+        resolved = _resolve_backup_dir(backup_dir)
         return {"backups": list_backups(str(resolved))}
     except HTTPException:
         raise
@@ -572,14 +593,15 @@ async def list_backups_endpoint(backup_dir: str = ".backups"):
     dependencies=[Depends(verify_api_key)],
 )
 async def create_backup_endpoint(
-    request: CreateBackupRequest, backup_dir: str = ".backups"
+    request: CreateBackupRequest,
+    backup_dir: Optional[str] = Query(None, description=BACKUP_DIR_DESC),
 ):
     """为数据集创建一个带校验和的备份"""
     try:
         from augmentor.backup import create_backup
 
         source = resolve_data_path(request.input_file)
-        resolved_dir = resolve_data_dir(backup_dir)
+        resolved_dir = _resolve_backup_dir(backup_dir)
         info = await run_in_thread(
             create_backup, str(source), str(resolved_dir), request.name
         )
@@ -597,7 +619,9 @@ async def create_backup_endpoint(
     dependencies=[Depends(verify_api_key)],
 )
 async def restore_backup_endpoint(
-    backup_id: str, request: RestoreBackupRequest, backup_dir: str = ".backups"
+    backup_id: str,
+    request: RestoreBackupRequest,
+    backup_dir: Optional[str] = Query(None, description=BACKUP_DIR_DESC),
 ):
     """把备份恢复到指定路径
 
@@ -609,7 +633,7 @@ async def restore_backup_endpoint(
     try:
         from augmentor.backup import restore_backup
 
-        resolved_dir = resolve_data_dir(backup_dir)
+        resolved_dir = _resolve_backup_dir(backup_dir)
         output = resolve_data_path(request.output_file, for_write=True)
         return await run_in_thread(
             restore_backup, backup_id, str(output), str(resolved_dir)
@@ -628,12 +652,15 @@ async def restore_backup_endpoint(
     summary="删除备份",
     dependencies=[Depends(verify_api_key)],
 )
-async def delete_backup_endpoint(backup_id: str, backup_dir: str = ".backups"):
+async def delete_backup_endpoint(
+    backup_id: str,
+    backup_dir: Optional[str] = Query(None, description=BACKUP_DIR_DESC),
+):
     """删除一个备份"""
     try:
         from augmentor.backup import delete_backup
 
-        resolved_dir = resolve_data_dir(backup_dir)
+        resolved_dir = _resolve_backup_dir(backup_dir)
         success = await run_in_thread(delete_backup, backup_id, str(resolved_dir))
         if not success:
             raise HTTPException(status_code=404, detail="备份不存在")
