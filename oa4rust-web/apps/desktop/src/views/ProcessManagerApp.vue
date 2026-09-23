@@ -301,6 +301,9 @@ async function loadSurfaceMiscReads() {
       s(api.get(`/api/processplatform/assemble/surface/job/${id}/allow/visit/person/${person}`)),
       s(api.get(`/api/processplatform/assemble/surface/job/latest/work/workcompleted/serial/${id}`)),
       s(api.get(`/api/processplatform/assemble/surface/readrecord/list/job/${id}`)),
+      // rev302：设计器 file 按应用(PP_E_FILE a1/u2) + 表面 snap 按流程前翻游标 补齐
+      s(api.get(`/api/processplatform/assemble/designer/file/application/${flag}/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/snap/list/${id}/prev/${cnt}/process/${proc}`)),
     ])
     const hit = rs.filter((r) => (r as any)?.data != null).length
     surfaceMiscText.value = `表单/流程/脚本/快照 真实读端点 ${rs.length} 条，命中 ${hit}`
