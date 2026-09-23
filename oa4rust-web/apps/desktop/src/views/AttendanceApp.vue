@@ -19,6 +19,7 @@
         <button class="eb" @click="loadScheduleDetail">📅 排班设置明细</button>
         <button class="eb" @click="loadV2ConfigTpl">🧾 v2配置/模板/统计</button>
         <button class="eb" @click="loadStatisticShow">📈 统计展示筛选</button>
+        <button class="eb" @click="toggleAttType">🔧 启用/禁用考勤类型</button>
         <button class="eb" @click="loadAppealDetailFilters">🧾 申诉/明细游标</button>
         <button class="eb" @click="loadHolidaySettingDetails">🏖️ 假期/设置明细</button>
         <button class="eb" @click="loadAttendanceDetails">📋 考勤明细读</button>
@@ -69,6 +70,12 @@
           <div v-if="a.status==='pending'" class="aa">
             <button class="ba" @click="audit(a,'approved')">通过</button>
             <button class="br" @click="audit(a,'rejected')">驳回</button>
+          </div>
+          <div class="aa">
+            <button class="ba" @click="auditAppealV2(a,'approved')">审核</button>
+            <button class="ba" @click="checkAppeal(a)">检查</button>
+            <button class="ba" @click="updateAppealStatus(a,'processing')">改状态</button>
+            <button class="br" @click="archiveAppeal(a)">归档</button>
           </div>
         </div>
       </div>
@@ -229,6 +236,56 @@ const am = useMutation({
 })
 function audit(a: A, action: string) {
   am.mutate({ id: a.id, status: action })
+}
+// rev315：考勤申诉管理真实写端点（用户触发）——审核/检查/更新状态/归档 + 启用类型；请求体经 handler 源码核实
+async function auditAppealV2(a: A, auditStatus: string) {
+  try {
+    // POST attendanceappealInfo/audit → UPDATE 审核状态 {id, auditStatus}
+    await api.post('/api/attendance/assemble/control/attendanceappealInfo/audit', { id: a.id, auditStatus })
+    toast.success('已审核申诉')
+  } catch (e: any) {
+    toast.error('审核申诉失败: ' + (e?.message ?? ''))
+  }
+}
+async function checkAppeal(a: A) {
+  try {
+    // POST attendanceappealInfo/check → UPDATE {id, checked}
+    await api.post('/api/attendance/assemble/control/attendanceappealInfo/check', { id: a.id, checked: true })
+    toast.success('已标记检查')
+  } catch (e: any) {
+    toast.error('检查申诉失败: ' + (e?.message ?? ''))
+  }
+}
+async function updateAppealStatus(a: A, status: string) {
+  try {
+    // POST attendanceappealInfo/appeal/{id} → UPDATE {status}
+    await api.post(`/api/attendance/assemble/control/attendanceappealInfo/appeal/${encodeURIComponent(a.id)}`, { status })
+    toast.success('已更新申诉状态')
+  } catch (e: any) {
+    toast.error('更新申诉状态失败: ' + (e?.message ?? ''))
+  }
+}
+async function archiveAppeal(a: A) {
+  if (!(await confirmMsg('确定归档该申诉？'))) return
+  try {
+    // POST attendanceappealInfo/archive/{id} → UPDATE 归档 {id}
+    await api.post(`/api/attendance/assemble/control/attendanceappealInfo/archive/${encodeURIComponent(a.id)}`, { id: a.id })
+    toast.success('已归档申诉')
+  } catch (e: any) {
+    toast.error('归档申诉失败: ' + (e?.message ?? ''))
+  }
+}
+async function toggleAttType() {
+  const code = prompt('考勤类型编码:', '')
+  if (!code) return
+  const enabled = await confirmMsg(`「${code}」确定=启用，取消=禁用`)
+  try {
+    // POST attendancesetting/enable/type → UPDATE {code, enabled}
+    await api.post('/api/attendance/assemble/control/attendancesetting/enable/type', { code, enabled })
+    toast.success('已更新考勤类型启用状态')
+  } catch (e: any) {
+    toast.error('更新类型失败: ' + (e?.message ?? ''))
+  }
 }
 const exporting = ref(false)
 async function exportData() {
