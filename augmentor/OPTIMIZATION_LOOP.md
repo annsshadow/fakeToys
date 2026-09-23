@@ -15,6 +15,7 @@
 - [x] **L3** `perf(analytics)`: A1 多样性均值提出生成器 → 长度方差 O(n²)→O(n)
 - [x] **L4** `perf(api)`: A2 白名单两条来源都按「值会变的东西」建缓存 → 7.06 ms/次 → 0.19 ms/次
 - [x] **L5** `perf(api)+fix`: A4 12 条端点的数据集读取离开事件循环（14 处读取点）
+- [x] **L6** `perf(impact)`: A14 `duplicate_rate` 的 `list.count` 每条扫全表 → `Counter` 一次计数，O(n²)→O(n)
 
 ## Backlog A — 性能（含 file:line 与实测线索）
 
@@ -32,6 +33,8 @@
 | A10 | `augmentor/quality.py:175-179` | 多样性回退里参照文本 n-gram 集合反复重建 | S |
 | A11 | `augmentor/indexer.py:117-123,345,352,372-399` | 每次 `DatasetView` 操作重建全部索引（filter 26 ms @ n=3000） | M |
 | A12 | `augmentor/validation.py:217-222`、`sampler.py:296-299` | 循环内未缓存的正则、`list.index`/`in` 线性扫描 | S |
+| A13 | `api/routes/dataset_tools.py:311,360,386,387,416,436,566,598` + `system_ops.py:320,348,514` | **A4 的同构族**：`read_items()`（同步版）在 11 个 `async def` 路由体里直接调用，同样占着事件循环；`dataset_tools.py:566` 还是「多个文件在循环里串行读」 | M |
+| ~~A14~~ | ~~`augmentor/impact.py:66`~~ | ~~`duplicate_rate` 里 `texts.count(t)` 写在推导式中 → O(n²)~~ 已修（L6） | S |
 
 ## Backlog B — 功能增强（价值 ÷ 工作量）
 
@@ -61,7 +64,7 @@
   `docs/ARCHITECTURE.md` §3.12.1 补「缓存键都带值会变的东西」一节。红→绿两处注入：
   ①缓存键去掉 cwd → 相对根目录换目录用例红（`first/data` ≠ `second/data`）；
   ②关掉缓存读 → 「200 次查询解析了 201 次配置」红。
-- **L5** `perf(api) + fix` A4 —— 12 条端点 / 14 个读取点在事件循环上同步 `load_items()`，
+- **L5** `a97d57710` `perf(api) + fix` A4 —— 12 条端点 / 14 个读取点在事件循环上同步 `load_items()`，
   改为 `await run_in_thread(load_items, ...)`。这条**是缺陷不只是优化**：`api/deps.py` 里
   `load_items` 的文档串写着「供线程内使用」（同步版），异步版是 `read_json_file`；
   这些路由把分析离线了、却把第一行读取留在循环上，等于每个请求让全站停 15 ms
@@ -71,8 +74,17 @@
   第二条用例锁响应仍 200，防止「干脆不读了」把第一条糊过去。
   并发证据（人为把读取放慢到 50 ms 后 4 条并发）：**59.5 ms** 完成，读取若仍占循环
   至少 200 ms；并发期间循环空转 27349 次。红→绿：修复前 12 条 off-loop 用例全红。
+- **L6** `<待填>` `perf(impact)` A14 —— `ImpactEvaluator.measure()` 的 `duplicate_rate` 写成
+  `[texts.count(t) for t in texts]`：每条扫一遍全表 → O(n²)。改成 `Counter(texts)` 一次计数后
+  取 `sum(c for c in counts.values() if c > 1)`。n=1000/2000/4000 实测 **6.0 / 24.3 / 99.7 ms**
+  （每翻倍一次 ×4，是干净的二次曲线）→ n=16000 **1630.2 ms → 4.38 ms**。
+  新增 `tests/unit/test_impact.py` 2 例：一条锁语义（`a,a,a,b,c,c` 的重复率是 **5/6** 而不是
+  「有几条撞了车」的 4/6 —— 整组都算重复，这是 `duplicate_rate` 的口径），一条锁量级
+  （n=16000 预算 200 ms，带 trace）。红→绿：把推导式塞回去 → 用例红在 1630.2 ms。
+  全仓扫了同一族（推导式里 `list.count`），只剩 `api/vector/chromadb.py:140` 的
+  `self._collection.count() == 0`，那是数据库计数、不是列表扫描，族到此为止。
 - 全量：L4 后 **3679 passed / 3 skipped**（89.2 s），L5 后 **3703 passed / 3 skipped**
-  （90.2 s），覆盖率门禁均通过；基线 3668。
+  （90.2 s），L6 后 **3705 passed / 3 skipped**（91.1 s），覆盖率门禁均通过；基线 3668。
 
 > **操作纪律**（L4 踩过）：验红用的是**定向反向 patch**，绝不用 `git checkout <file>` 撤注入 ——
 > 本轮 `api/deps.py` 有未提交工作，一次 `git checkout` 把整段缓存实现清掉了，只能重写。
