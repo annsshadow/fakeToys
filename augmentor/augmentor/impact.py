@@ -4,6 +4,7 @@
 """Data augmentation impact evaluator"""
 
 import logging
+from collections import Counter
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
@@ -64,7 +65,10 @@ class ImpactEvaluator:
         texts = [str(item.get(self.text_field, "")) for item in items]
         lengths = [len(text) for text in texts]
         unique = set(texts)
-        duplicates = sum(1 for t in texts if texts.count(t) > 1)
+        # 一次计数，而不是每条一次 `texts.count()`：后者把整体变成 O(n²)
+        # （实测 n=1000/2000/4000 = 6.0/24.3/99.7 ms，每翻倍一次 ×4）。
+        counts = Counter(texts)
+        duplicates = sum(c for c in counts.values() if c > 1)
         avg = sum(lengths) / len(lengths)
         variance = sum((l - avg) ** 2 for l in lengths) / len(lengths)
         return AugmentationMetrics(
