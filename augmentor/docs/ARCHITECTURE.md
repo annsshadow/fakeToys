@@ -290,7 +290,9 @@ BLEU 使用标准裁剪计数与简短惩罚。当所有 n-gram 的裁剪计数�
 | `resolve_within_roots(name, label)` | 只做边界校验，不要求存在 | 400 / 403 |
 | `resolve_data_path(name, for_write=False)` | 文件路径；读操作要求 `is_file()` | 400 / 403 / 404 |
 | `resolve_data_dir(name)` | 目录路径 | 400 / 403 |
-| `default_registry_dir()` | 依赖注册表的缺省目录：白名单首个根目录下的 `.dependency_registry` | 不失败 |
+| `default_registry_dir()` | 依赖注册表缺省目录：白名单首个根目录下的 `.dependency_registry` | 不失败 |
+| `default_backup_dir()` | 备份目录缺省值：白名单首个根目录下的 `.backups` | 不失败 |
+| `config_file_path()` | 服务**自身**配置文件路径（`AUGMENTOR_CONFIG_PATH` > 工作目录 `config.yaml`），不过数据白名单 | 不失败 |
 
 校验顺序：
 
@@ -335,8 +337,13 @@ AUGMENTOR_DATA_ROOTS（os.pathsep 分隔）
 > **不传参的默认调用会被自己的闸拦下**，三条端点全部 403。现在由
 > `default_registry_dir()` 取白名单首个根目录（出厂默认即 `data/.dependency_registry`），
 > 显式传参时仍走 `resolve_data_dir()` 校验，越界照旧 403。
-> SDK / CLI 侧的 `DependencyManager()` 默认参数依然是相对工作目录，那是离线工具的
-> 常识落点，不经过 API 白名单。
+> SDK / CLI 侧的 `DependencyManager()` 与 `DatasetBackup()` 默认参数依然是相对工作目录，
+> 那是离线工具的常识落点，不经过 API 白名单。
+>
+> 例外是**服务自身的配置文件**：`config.yaml` 不是数据集，因此 `config_file_path()`
+> （`AUGMENTOR_CONFIG_PATH` > 工作目录 `config.yaml`）不过数据白名单，`get_pipeline`、
+> `allowed_data_roots`、CORS 读取与 `POST /api/config` 的落盘共用这一个入口。客户端
+> 显式传进来的配置路径仍然要过闸（F-11）。
 
 > **为什么 `multimodal` 走 `resolve_within_roots` 而不是 `resolve_data_path`**
 >

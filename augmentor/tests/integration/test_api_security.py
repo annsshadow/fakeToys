@@ -675,6 +675,134 @@ class TestDependencyRegistryDefaultPath:
         assert response.status_code == 400
 
 
+class TestBackupDirDefaultPath:
+    """备份端点在不传 ``backup_dir`` 时也必须可用（F-10，与 F-09 同构）
+
+    四条 ``/api/system/backups*`` 端点把默认目录写成相对工作目录的 ``.backups``；
+    白名单收到 ``data`` 之后工作目录不在闸内，实测不传参的 ``GET /api/system/backups``
+    与 ``POST`` 全部 **403**。同一份默认值还让备份测试把 ``.backups/`` 写进版本树。
+    """
+
+    def _root(self, monkeypatch, tmp_path):
+        root = tmp_path / "data"
+        root.mkdir()
+        _write_json(root / "demo.json", [{"instruction": "怎么办居住证", "output": "带上材料"}])
+        monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(root))
+        monkeypatch.chdir(tmp_path)
+        return root
+
+    def test_backup_lifecycle_works_with_default_backup_dir(
+        self, client, monkeypatch, tmp_path
+    ):
+        """创建 → 列表 → 恢复 → 删除，全程不传 ``backup_dir``"""
+        root = self._root(monkeypatch, tmp_path)
+
+        created = client.post(
+            "/api/system/backups", json={"input_file": "demo.json", "name": "snap"}
+        )
+        listed = client.get("/api/system/backups")
+        restored = client.post(
+            "/api/system/backups/snap/restore",
+            json={"output_file": "data/restored.json"},
+        )
+        deleted = client.delete("/api/system/backups/snap")
+
+        assert created.status_code == 200, created.text
+        assert created.json()["backup_id"] == "snap"
+        assert created.json()["item_count"] == 1
+        assert [b["backup_id"] for b in listed.json()["backups"]] == ["snap"]
+        assert restored.status_code == 200, restored.text
+        assert (root / "restored.json").is_file()
+        assert deleted.status_code == 200
+        # 产物一律落在白名单内，工作目录不留痕迹
+        assert (root / ".backups").is_dir()
+        assert not (tmp_path / ".backups").exists()
+
+    def test_explicit_backup_dir_outside_roots_is_rejected(
+        self, client, monkeypatch, tmp_path
+    ):
+        """显式传参不参与缺省兜底：越界仍 403"""
+        self._root(monkeypatch, tmp_path)
+
+        response = client.get(
+            "/api/system/backups", params={"backup_dir": str(tmp_path / "outside")}
+        )
+
+        assert response.status_code == 403
+
+    def test_empty_explicit_backup_dir_is_400(self, client, monkeypatch, tmp_path):
+        """空串是非法入参，不能被静默换成缺省目录"""
+        self._root(monkeypatch, tmp_path)
+
+        response = client.get("/api/system/backups", params={"backup_dir": ""})
+
+        assert response.status_code == 400
+
+
+class TestServiceConfigPath:
+    """服务自身的配置文件不过数据白名单（F-11）
+
+    ``POST /api/system/validate-config`` 的默认值曾写死成 ``config.yaml``（相对工作
+    目录），于是**不传参就是 403**；而配置文件本就不是数据集——它是服务端要读写的
+    东西。收口方式：默认校验 ``deps.config_file_path()``（可用
+    ``AUGMENTOR_CONFIG_PATH`` 指向别处），客户端**显式**给的路径仍按数据白名单校验。
+    """
+
+    def _env(self, monkeypatch, tmp_path):
+        root = tmp_path / "data"
+        root.mkdir()
+        service_cfg = tmp_path / "service.yaml"
+        service_cfg.write_text("models:\n  default: fallback\n", encoding="utf-8")
+        monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(root))
+        monkeypatch.setenv("AUGMENTOR_CONFIG_PATH", str(service_cfg))
+        monkeypatch.chdir(tmp_path)
+        return root
+
+    def test_default_validates_the_service_own_config(self, client, monkeypatch, tmp_path):
+        """缺省体 ``{}`` → 校验服务自己在用的那份配置，且它可以在白名单外"""
+        self._env(monkeypatch, tmp_path)
+
+        response = client.post("/api/system/validate-config", json={})
+
+        assert response.status_code == 200, response.text
+        assert response.json()["is_valid"] is True
+
+    def test_config_path_falls_back_to_cwd_and_explicit_stays_gated(
+        self, client, monkeypatch, tmp_path
+    ):
+        """无 ``AUGMENTOR_CONFIG_PATH`` 时回到工作目录的 ``config.yaml``；
+        但客户端**显式**传这个绝对路径仍然 403 —— 闸门只对服务端自己放行。
+        """
+        from api.deps import config_file_path
+
+        self._env(monkeypatch, tmp_path)
+        monkeypatch.delenv("AUGMENTOR_CONFIG_PATH")
+
+        assert config_file_path() == (tmp_path / "config.yaml").resolve()
+
+        response = client.post(
+            "/api/system/validate-config", json={"path": str(AI_DIR / "config.yaml")}
+        )
+
+        assert response.status_code == 403
+        assert "超出允许" in response.json()["detail"]
+
+    def test_client_supplied_config_path_is_still_gated(
+        self, client, monkeypatch, tmp_path
+    ):
+        """显式传入的配置路径仍在白名单内时照常可用"""
+        root = self._env(monkeypatch, tmp_path)
+        inside = root / "extra.yaml"
+        inside.write_text("models:\n  default: fallback\n", encoding="utf-8")
+
+        response = client.post(
+            "/api/system/validate-config", json={"path": "extra.yaml"}
+        )
+
+        assert response.status_code == 200, response.text
+        assert response.json()["is_valid"] is True
+
+
 class TestWriteRouteAuthCoverage:
     """写路由鉴权覆盖率（元测试）
 
