@@ -20,6 +20,7 @@
         <button class="btn-refresh" @click="loadProcessDetails">🧬 流程明细</button>
         <button class="btn-refresh" @click="loadMappingAccess">🗺️ 映射/项权限</button>
         <button class="btn-refresh" @click="loadDesignerExtras">🧩 映射游标/字典/流程</button>
+        <button class="btn-refresh" @click="loadDesignerFileScript">📂 文件/脚本/图标</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
@@ -209,6 +210,32 @@ async function loadDesignerExtras() {
     designerExtraText.value = `映射 ${mapRows.length}（详情 ${has(mapOne)}·后续 ${n(mapNext)}·前序 ${n(mapPrev)}）| 字典 ${dictRows.length}（详情 ${has(dictOne)}）| 应用流程 ${n(procByApp)}·按表单流程 ${n(procByForm)}`
   } catch (e: any) {
     toast.error('加载映射游标/字典/流程失败: ' + (e?.message ?? ''))
+  }
+}
+// rev225：设计器 文件/脚本/合并项/图标族 6 条真实 distinct 路由
+// file/{flag}（PP_E_FILE WHERE xid）· file/list/application/{applicationFlag}（WHERE xapplication）· mergeitemplan/{id}（PP_E_MERGEITEMPLAN）
+// · script/application/{applicationId}（PP_E_SCRIPT WHERE xapplication）· script/application/{applicationId}/name/{name}（WHERE xapplication+xname）· application/icon/{id}（PP_E_APPLICATION xicon）
+async function loadDesignerFileScript() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const first: any = items.value[0] ?? {}
+  const appId = String(first.application ?? first.applicationFlag ?? first.id ?? '0')
+  try {
+    const fileList = await s(api.get(`/api/processplatform/assemble/designer/file/list/application/${encodeURIComponent(appId)}`))
+    const fRows = Array.isArray((fileList as any)?.data) ? (fileList as any).data : []
+    const fFlag = fRows[0] ? String(fRows[0].id ?? '0') : '0'
+    const scriptList = await s(api.get(`/api/processplatform/assemble/designer/script/application/${encodeURIComponent(appId)}`))
+    const sRows = Array.isArray((scriptList as any)?.data) ? (scriptList as any).data : []
+    const sName = sRows[0] ? String(sRows[0].name ?? sRows[0].xname ?? 'default') : 'default'
+    const [fileOne, mergeOne, scriptByName, icon] = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/designer/file/${encodeURIComponent(fFlag)}`)),
+      s(api.get(`/api/processplatform/assemble/designer/mergeitemplan/${encodeURIComponent(fFlag)}`)),
+      s(api.get(`/api/processplatform/assemble/designer/script/application/${encodeURIComponent(appId)}/name/${encodeURIComponent(sName)}`)),
+      s(api.get(`/api/processplatform/assemble/designer/application/icon/${encodeURIComponent(appId)}`)),
+    ])
+    const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
+    designerExtraText.value = `文件 ${fRows.length}（详情 ${has(fileOne)}）| 脚本 ${sRows.length}（按名 ${has(scriptByName)}）| 合并项 ${has(mergeOne)} | 应用图标 ${has(icon)}`
+  } catch (e: any) {
+    toast.error('加载文件/脚本/图标失败: ' + (e?.message ?? ''))
   }
 }
 // 设计器流程明细族 3 条真实 distinct 路由：首流程 → 流程详情 process/{id}（PP_E_PROCESS query_opt）
