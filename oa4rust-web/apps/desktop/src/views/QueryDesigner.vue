@@ -48,6 +48,7 @@
             <button class="btn-edit" @click="loadTableRows">📊 表数据/统计</button>
             <button class="btn-edit" @click="loadTableCursors">🔀 表游标</button>
             <button class="btn-edit" @click="loadDesignerViewStat">📐 视图/统计游标</button>
+            <button class="btn-edit" @click="loadDesignerOutputBundle">📦 输出/包/属性</button>
             <button class="btn-del" @click="deleteQuery(selected)">🗑</button>
           </div>
         </div>
@@ -466,6 +467,27 @@ async function loadDesignerViewStat() {
     tableRowText.value = `视图权限 ${(viewPerm as any)?.data ? '有' : '无'} · 视图上翻 ${n(viewPrev)}·下翻 ${n(viewNext)} · 分类查询 ${n(byCat)} · 统计按查询 ${n(statByQuery)}·下翻 ${n(statNext)}`
   } catch (e: any) {
     toast.error('加载视图/统计游标失败: ' + (e?.message ?? ''))
+  }
+}
+// rev241：查询设计器 输出/包/实体属性/分类/统计/表行 7 条真实 distinct 读路由（arity 已核；跳 icon/{query}/{flag}=Path<String>与2参URL不符 500、row/count/where=row/select/where 投影孪生、list/summary/querycategory/{query}/{queryCategory}=同 handler 双注册）
+async function loadDesignerOutputBundle() {
+  const flag = String(selected.value?.flag ?? selected.value?.id ?? '0')
+  const cat = String((selected.value as any)?.category ?? '0')
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [outFile, outSelect, bundle, entityProps, catSummary, statByQuery, tableRows] = await Promise.all([
+      s(api.get(`/api/query/assemble/designer/output/select/file/${encodeURIComponent(flag)}`)),
+      s(api.get(`/api/query/assemble/designer/output/select/${encodeURIComponent(flag)}`)),
+      s(api.get(`/api/query/assemble/designer/bundle/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}`)),
+      s(api.get(`/api/query/assemble/designer/query/entity/${encodeURIComponent(flag)}/category/${encodeURIComponent(cat)}/properties`)),
+      s(api.get(`/api/query/assemble/designer/query/list/summary/querycategory/${encodeURIComponent(cat)}`)),
+      s(api.get(`/api/query/assemble/designer/stat/list/query/${encodeURIComponent(flag)}`)),
+      s(api.get(`/api/query/assemble/designer/table/list/${encodeURIComponent(flag)}/row/select/where/a`)),
+    ])
+    const n = (x: any) => (Array.isArray((x as any)?.data) ? (x as any).data.length : 0)
+    tableRowText.value = `输出文件 ${(outFile as any)?.data ? '有' : '无'} · 输出选择 ${n(outSelect)} · 视图包 ${(bundle as any)?.data ? '有' : '无'} · 实体属性 ${n(entityProps)} · 分类摘要 ${n(catSummary)} · 统计按查询 ${n(statByQuery)} · 表行过滤 ${n(tableRows)}`
+  } catch (e: any) {
+    toast.error('加载输出/包/属性失败: ' + (e?.message ?? ''))
   }
 }
 
