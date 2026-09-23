@@ -10,6 +10,7 @@
       <button class="btn-ai-meta" @click="loadAiConv">会话/配置</button>
       <button class="btn-ai-meta" @click="loadAiControl">基础配置/控制/用量</button>
       <button class="btn-ai-meta" @click="loadAiEntities">实体/聊天线索</button>
+      <button class="btn-ai-meta" @click="loadAiIndexFiles">索引/文件/MCP</button>
       <div v-if="aiMetaText" class="ai-meta-note">{{ aiMetaText }}</div>
     </div>
     <div class="split-layout">
@@ -173,6 +174,29 @@ async function loadAiEntities() {
     aiMetaText.value = `聊天线索 ${rows.length} / 补全 ${n(comps)} / 实体应用 ${n(apps)} / 模型 ${n(models)} / 会话 ${n(convs)} / 基础配置 ${(base as any)?.data ? '有' : '无'} / MCP ${(mcp as any)?.data ? '有' : '无'}`
   } catch (e: any) {
     toast.error('加载 AI 实体失败: ' + (e?.message ?? ''))
+  }
+}
+// rev226：AI 索引/文件/MCP 配置族 5 条真实 distinct 路由
+// index/cms/doc/{docId}（x_cms_document WHERE xid）· index/cms/doc/with/app/{appId}（WHERE xappId+publish）· file/{flag}（x_ai_file WHERE xid OR xname）
+// · assemble/control/config/list/mcp/paging/{page}/size/{size}（MCP 分页）· assemble/control/config/get/mcp/{id}（MCP WHERE id）
+async function loadAiIndexFiles() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const mcpList: any = await s(api.get('/api/ai/assemble/control/config/list/mcp/paging/1/size/20'))
+    const mcps = Array.isArray(mcpList?.data) ? mcpList.data : []
+    const mcpId = mcps[0] ? String(mcps[0].id ?? '0') : '0'
+    const docId = '0'
+    const appId = 'default'
+    const [cmsDoc, cmsDocApp, file, mcpOne] = await Promise.all([
+      s(api.get(`/api/ai/index/cms/doc/${encodeURIComponent(docId)}`)),
+      s(api.get(`/api/ai/index/cms/doc/with/app/${encodeURIComponent(appId)}`)),
+      s(api.get(`/api/ai/file/${encodeURIComponent(docId)}`)),
+      s(api.get(`/api/ai/assemble/control/config/get/mcp/${encodeURIComponent(mcpId)}`)),
+    ])
+    const has = (r: any) => ((r as any)?.data ? '有' : '无')
+    aiMetaText.value = `MCP ${mcps.length}（详情 ${has(mcpOne)}）· CMS文档 ${has(cmsDoc)}·按应用 ${has(cmsDocApp)} · AI文件 ${has(file)}`
+  } catch (e: any) {
+    toast.error('加载 AI 索引/文件失败: ' + (e?.message ?? ''))
   }
 }
 async function loadAiConv() {
