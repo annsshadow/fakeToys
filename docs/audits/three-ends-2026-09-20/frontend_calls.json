@@ -9504,7 +9504,237 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 107,
+    "line": 109,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/workcompleted/list/next/application/${id}/${cnt}/${app}",
+    "path": "/api/processplatform/assemble/surface/workcompleted/list/next/application/{}/{}/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 110,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/workcompleted/list/prev/application/${id}/${cnt}/${app}",
+    "path": "/api/processplatform/assemble/surface/workcompleted/list/prev/application/{}/{}/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 111,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/workcompleted/list/next/application/filter/${id}/${cnt}/${app}",
+    "path": "/api/processplatform/assemble/surface/workcompleted/list/next/application/filter/{}/{}/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 112,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/workcompleted/list/prev/application/filter/${id}/${cnt}/${app}",
+    "path": "/api/processplatform/assemble/surface/workcompleted/list/prev/application/filter/{}/{}/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 113,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/workcompleted/list/next/application/manage/${id}/${cnt}/${app}",
+    "path": "/api/processplatform/assemble/surface/workcompleted/list/next/application/manage/{}/{}/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 114,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/workcompleted/list/prev/application/manage/${id}/${cnt}/${app}",
+    "path": "/api/processplatform/assemble/surface/workcompleted/list/prev/application/manage/{}/{}/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 115,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/workcompleted/list/next/application/filter/manage/${id}/${cnt}/${app}",
+    "path": "/api/processplatform/assemble/surface/workcompleted/list/next/application/filter/manage/{}/{}/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 116,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/workcompleted/filter/list/prev/application/${id}/${cnt}/${app}",
+    "path": "/api/processplatform/assemble/surface/workcompleted/filter/list/prev/application/{}/{}/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 117,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/workcompleted/list/${id}/next/${cnt}/application/${app}",
+    "path": "/api/processplatform/assemble/surface/workcompleted/list/{}/next/{}/application/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 118,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/workcompleted/list/${id}/prev/${cnt}/application/${app}",
+    "path": "/api/processplatform/assemble/surface/workcompleted/list/{}/prev/{}/application/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 119,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/workcompleted/list/${id}/next/${cnt}/application/${app}/manage",
+    "path": "/api/processplatform/assemble/surface/workcompleted/list/{}/next/{}/application/{}/manage",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 120,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/workcompleted/list/${id}/prev/${cnt}/application/${app}/manage",
+    "path": "/api/processplatform/assemble/surface/workcompleted/list/{}/prev/{}/application/{}/manage",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 121,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/workcompleted/list/application/process/manage/${cnt}/${app}",
+    "path": "/api/processplatform/assemble/surface/workcompleted/list/application/process/manage/{}/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 122,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/workcompleted/filter/attribute/application/${app}",
+    "path": "/api/processplatform/assemble/surface/workcompleted/filter/attribute/application/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 123,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/workcompleted/process/${proc}",
+    "path": "/api/processplatform/assemble/surface/workcompleted/process/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 124,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/workcompleted/manage/${encodeURIComponent(wid)}",
+    "path": "/api/processplatform/assemble/surface/workcompleted/manage/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 125,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/workcompleted/${encodeURIComponent(wid)}/manage",
+    "path": "/api/processplatform/assemble/surface/workcompleted/{}/manage",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 126,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/workcompleted/assignment/manage/${encodeURIComponent(wid)}",
+    "path": "/api/processplatform/assemble/surface/workcompleted/assignment/manage/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 127,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/workcompleted/${encodeURIComponent(wid)}/assignment/manage",
+    "path": "/api/processplatform/assemble/surface/workcompleted/{}/assignment/manage",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 128,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/data/workcompleted/from/data/${encodeURIComponent(wid)}",
+    "path": "/api/processplatform/assemble/surface/data/workcompleted/from/data/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 129,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/data/workcompleted/from/item/${encodeURIComponent(wid)}",
+    "path": "/api/processplatform/assemble/surface/data/workcompleted/from/item/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 130,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/data/workcompleted/${encodeURIComponent(wid)}/from/data",
+    "path": "/api/processplatform/assemble/surface/data/workcompleted/{}/from/data",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 131,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/data/workcompleted/${encodeURIComponent(wid)}/from/item",
+    "path": "/api/processplatform/assemble/surface/data/workcompleted/{}/from/item",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 151,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/${id}/next/${cnt}",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/{}/next/{}",
@@ -9514,7 +9744,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 108,
+    "line": 152,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/${id}/prev/${cnt}",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/{}/prev/{}",
@@ -9524,7 +9754,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 109,
+    "line": 153,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/${id}/next/${cnt}/application/${app}",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/{}/next/{}/application/{}",
@@ -9534,7 +9764,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 110,
+    "line": 154,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/${id}/prev/${cnt}/application/${app}",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/{}/prev/{}/application/{}",
@@ -9544,7 +9774,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 111,
+    "line": 155,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/${id}/next/${cnt}/process/${proc}",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/{}/next/{}/process/{}",
@@ -9554,7 +9784,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 112,
+    "line": 156,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/${id}/prev/${cnt}/process/${proc}",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/{}/prev/{}/process/{}",
@@ -9564,7 +9794,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 113,
+    "line": 157,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/next/filter/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/next/filter/{}/{}",
@@ -9574,7 +9804,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 114,
+    "line": 158,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/prev/filter/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/prev/filter/{}/{}",
@@ -9584,7 +9814,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 115,
+    "line": 159,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/prev/application/${id}/${cnt}/${app}",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/prev/application/{}/{}/{}",
@@ -9594,7 +9824,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 116,
+    "line": 160,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/prev/process/${id}/${cnt}/${proc}",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/prev/process/{}/{}/{}",
@@ -9604,7 +9834,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 117,
+    "line": 161,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/prev/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/prev/{}/{}",
@@ -9614,7 +9844,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 118,
+    "line": 162,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/v2/list/prev/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/readcompleted/v2/list/prev/{}/{}",
@@ -9624,7 +9854,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 119,
+    "line": 163,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/work/${encodeURIComponent(work)}",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/work/{}",
@@ -9634,7 +9864,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 120,
+    "line": 164,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/${encodeURIComponent(rid)}/reference",
     "path": "/api/processplatform/assemble/surface/readcompleted/{}/reference",
@@ -9644,7 +9874,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 140,
+    "line": 184,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/${id}/next/${cnt}",
     "path": "/api/processplatform/assemble/surface/read/list/{}/next/{}",
@@ -9654,7 +9884,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 141,
+    "line": 185,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/${id}/prev/${cnt}",
     "path": "/api/processplatform/assemble/surface/read/list/{}/prev/{}",
@@ -9664,7 +9894,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 142,
+    "line": 186,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/${id}/next/${cnt}/application/${app}",
     "path": "/api/processplatform/assemble/surface/read/list/{}/next/{}/application/{}",
@@ -9674,7 +9904,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 143,
+    "line": 187,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/${id}/prev/${cnt}/application/${app}",
     "path": "/api/processplatform/assemble/surface/read/list/{}/prev/{}/application/{}",
@@ -9684,7 +9914,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 144,
+    "line": 188,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/${id}/next/${cnt}/process/${proc}",
     "path": "/api/processplatform/assemble/surface/read/list/{}/next/{}/process/{}",
@@ -9694,7 +9924,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 145,
+    "line": 189,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/${id}/prev/${cnt}/process/${proc}",
     "path": "/api/processplatform/assemble/surface/read/list/{}/prev/{}/process/{}",
@@ -9704,7 +9934,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 146,
+    "line": 190,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/next/filter/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/read/list/next/filter/{}/{}",
@@ -9714,7 +9944,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 147,
+    "line": 191,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/prev/filter/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/read/list/prev/filter/{}/{}",
@@ -9724,7 +9954,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 148,
+    "line": 192,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/prev/application/${id}/${cnt}/${app}",
     "path": "/api/processplatform/assemble/surface/read/list/prev/application/{}/{}/{}",
@@ -9734,7 +9964,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 149,
+    "line": 193,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/prev/process/${id}/${cnt}/${proc}",
     "path": "/api/processplatform/assemble/surface/read/list/prev/process/{}/{}/{}",
@@ -9744,7 +9974,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 150,
+    "line": 194,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/prev/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/read/list/prev/{}/{}",
@@ -9754,7 +9984,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 151,
+    "line": 195,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/v2/list/prev/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/read/v2/list/prev/{}/{}",
@@ -9764,7 +9994,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 152,
+    "line": 196,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/person/${person}/manage",
     "path": "/api/processplatform/assemble/surface/read/list/person/{}/manage",
@@ -9774,7 +10004,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 153,
+    "line": 197,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/workcompleted/${encodeURIComponent(rid)}",
     "path": "/api/processplatform/assemble/surface/read/workcompleted/{}",
@@ -9784,7 +10014,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 154,
+    "line": 198,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/${encodeURIComponent(rid)}/reference",
     "path": "/api/processplatform/assemble/surface/read/{}/reference",
@@ -9794,7 +10024,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 175,
+    "line": 219,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/${id}/next/${cnt}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/{}/next/{}",
@@ -9804,7 +10034,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 176,
+    "line": 220,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/${id}/prev/${cnt}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/{}/prev/{}",
@@ -9814,7 +10044,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 177,
+    "line": 221,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/${id}/next/${cnt}/application/${app}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/{}/next/{}/application/{}",
@@ -9824,7 +10054,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 178,
+    "line": 222,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/${id}/prev/${cnt}/application/${app}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/{}/prev/{}/application/{}",
@@ -9834,7 +10064,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 179,
+    "line": 223,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/${id}/next/${cnt}/process/${proc}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/{}/next/{}/process/{}",
@@ -9844,7 +10074,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 180,
+    "line": 224,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/${id}/prev/${cnt}/process/${proc}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/{}/prev/{}/process/{}",
@@ -9854,7 +10084,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 181,
+    "line": 225,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/next/filter/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/next/filter/{}/{}",
@@ -9864,7 +10094,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 182,
+    "line": 226,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/prev/filter/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/prev/filter/{}/{}",
@@ -9874,7 +10104,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 183,
+    "line": 227,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/prev/application/${id}/${cnt}/${app}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/prev/application/{}/{}/{}",
@@ -9884,7 +10114,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 184,
+    "line": 228,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/prev/process/${id}/${cnt}/${proc}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/prev/process/{}/{}/{}",
@@ -9894,7 +10124,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 185,
+    "line": 229,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/prev/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/prev/{}/{}",
@@ -9904,7 +10134,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 186,
+    "line": 230,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/v2/list/prev/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/v2/list/prev/{}/{}",
@@ -9914,7 +10144,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 187,
+    "line": 231,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/date/${dt}/hour/${hr}/manage",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/date/{}/hour/{}/manage",
@@ -9924,7 +10154,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 188,
+    "line": 232,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/${encodeURIComponent(tid)}/reference",
     "path": "/api/processplatform/assemble/surface/taskcompleted/{}/reference",
@@ -9934,7 +10164,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 208,
+    "line": 252,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/${id}/next/${cnt}",
     "path": "/api/processplatform/assemble/surface/task/list/{}/next/{}",
@@ -9944,7 +10174,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 209,
+    "line": 253,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/${id}/prev/${cnt}",
     "path": "/api/processplatform/assemble/surface/task/list/{}/prev/{}",
@@ -9954,7 +10184,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 210,
+    "line": 254,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/${id}/next/${cnt}/application/${app}",
     "path": "/api/processplatform/assemble/surface/task/list/{}/next/{}/application/{}",
@@ -9964,7 +10194,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 211,
+    "line": 255,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/${id}/prev/${cnt}/application/${app}",
     "path": "/api/processplatform/assemble/surface/task/list/{}/prev/{}/application/{}",
@@ -9974,7 +10204,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 212,
+    "line": 256,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/${id}/next/${cnt}/process/${proc}",
     "path": "/api/processplatform/assemble/surface/task/list/{}/next/{}/process/{}",
@@ -9984,7 +10214,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 213,
+    "line": 257,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/${id}/prev/${cnt}/process/${proc}",
     "path": "/api/processplatform/assemble/surface/task/list/{}/prev/{}/process/{}",
@@ -9994,7 +10224,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 214,
+    "line": 258,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/${id}/next/${cnt}/manage",
     "path": "/api/processplatform/assemble/surface/task/list/{}/next/{}/manage",
@@ -10004,7 +10234,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 215,
+    "line": 259,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/${id}/prev/${cnt}/manage",
     "path": "/api/processplatform/assemble/surface/task/list/{}/prev/{}/manage",
@@ -10014,7 +10244,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 216,
+    "line": 260,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/next/filter/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/task/list/next/filter/{}/{}",
@@ -10024,7 +10254,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 217,
+    "line": 261,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/prev/filter/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/task/list/prev/filter/{}/{}",
@@ -10034,7 +10264,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 218,
+    "line": 262,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/next/filter/manage/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/task/list/next/filter/manage/{}/{}",
@@ -10044,7 +10274,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 219,
+    "line": 263,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/prev/filter/manage/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/task/list/prev/filter/manage/{}/{}",
@@ -10054,7 +10284,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 220,
+    "line": 264,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/next/manage/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/task/list/next/manage/{}/{}",
@@ -10064,7 +10294,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 221,
+    "line": 265,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/prev/manage/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/task/list/prev/manage/{}/{}",
@@ -10074,7 +10304,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 222,
+    "line": 266,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/prev/application/${id}/${cnt}/${app}",
     "path": "/api/processplatform/assemble/surface/task/list/prev/application/{}/{}/{}",
@@ -10084,7 +10314,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 223,
+    "line": 267,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/prev/process/${id}/${cnt}/${proc}",
     "path": "/api/processplatform/assemble/surface/task/list/prev/process/{}/{}/{}",
@@ -10094,7 +10324,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 224,
+    "line": 268,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/prev/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/task/list/prev/{}/{}",
@@ -10104,7 +10334,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 225,
+    "line": 269,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/v2/list/prev/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/task/v2/list/prev/{}/{}",
@@ -10114,7 +10344,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 226,
+    "line": 270,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/manage/${encodeURIComponent(tid)}",
     "path": "/api/processplatform/assemble/surface/task/manage/{}",
@@ -10124,7 +10354,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 227,
+    "line": 271,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/${encodeURIComponent(tid)}/reference",
     "path": "/api/processplatform/assemble/surface/task/{}/reference",
@@ -10134,7 +10364,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 244,
+    "line": 288,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/process/${encodeURIComponent(wid)}/complex",
     "path": "/api/processplatform/service/processing/process/{}/complex",
@@ -10144,7 +10374,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 245,
+    "line": 289,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/job/v2/${encodeURIComponent(job)}/projection",
     "path": "/api/processplatform/service/processing/job/v2/{}/projection",
@@ -10154,7 +10384,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 263,
+    "line": 307,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/job/${encodeURIComponent(job)}",
     "path": "/api/processplatform/assemble/surface/data/job/{}",
@@ -10164,7 +10394,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 264,
+    "line": 308,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/correlation/list/job/${encodeURIComponent(job)}/site/${encodeURIComponent(job)}",
     "path": "/api/processplatform/assemble/surface/correlation/list/job/{}/site/{}",
@@ -10174,7 +10404,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 265,
+    "line": 309,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/job/${encodeURIComponent(job)}/find/work/workcompleted",
     "path": "/api/processplatform/assemble/surface/job/{}/find/work/workcompleted",
@@ -10184,7 +10414,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 266,
+    "line": 310,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/datarecord/get/job/${encodeURIComponent(job)}/path/${encodeURIComponent(job)}",
     "path": "/api/processplatform/assemble/surface/datarecord/get/job/{}/path/{}",
@@ -10194,7 +10424,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 267,
+    "line": 311,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/sign/list/job/${encodeURIComponent(job)}",
     "path": "/api/processplatform/assemble/surface/sign/list/job/{}",
@@ -10204,7 +10434,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 268,
+    "line": 312,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/attachment/invoice/${encodeURIComponent(wid)}/joborworkorworkcompleted/${encodeURIComponent(wid)}",
     "path": "/api/processplatform/assemble/surface/attachment/invoice/{}/joborworkorworkcompleted/{}",
@@ -10214,7 +10444,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 289,
+    "line": 333,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/get/${work}",
     "path": "/api/processplatform/service/processing/get/{}",
@@ -10224,7 +10454,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 290,
+    "line": 334,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/work/${work}/projection",
     "path": "/api/processplatform/service/processing/work/{}/projection",
@@ -10234,7 +10464,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 291,
+    "line": 335,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/documentversion/${work}/${work}",
     "path": "/api/processplatform/service/processing/documentversion/{}/{}",
@@ -10244,7 +10474,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 304,
+    "line": 348,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/instance/${id}",
     "path": "/api/processplatform/service/processing/instance/{}",
@@ -10254,7 +10484,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 305,
+    "line": 349,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/applicationdict/${id}",
     "path": "/api/processplatform/service/processing/applicationdict/{}",
@@ -10264,7 +10494,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 306,
+    "line": 350,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/data/workcompleted/${id}",
     "path": "/api/processplatform/service/processing/data/workcompleted/{}",
@@ -10274,7 +10504,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 307,
+    "line": 351,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/form/suitable/activity/${id}",
     "path": "/api/processplatform/service/processing/form/suitable/activity/{}",
@@ -10284,7 +10514,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 308,
+    "line": 352,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/readcompleted/${id}",
     "path": "/api/processplatform/service/processing/readcompleted/{}",
@@ -10294,7 +10524,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 309,
+    "line": 353,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/review/${id}",
     "path": "/api/processplatform/service/processing/review/{}",
@@ -10304,7 +10534,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 310,
+    "line": 354,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/taskcompleted/${id}",
     "path": "/api/processplatform/service/processing/taskcompleted/{}",
@@ -10314,7 +10544,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 311,
+    "line": 355,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/projection/${id}/${id}",
     "path": "/api/processplatform/service/processing/projection/{}/{}",
@@ -10324,7 +10554,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 322,
+    "line": 366,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/draft/${id}/${id}",
     "path": "/api/processplatform/service/processing/draft/{}/{}",
@@ -10334,7 +10564,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 323,
+    "line": 367,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/workcompleted/process/${id}",
     "path": "/api/processplatform/service/processing/workcompleted/process/{}",
@@ -10344,7 +10574,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 324,
+    "line": 368,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/data/path/${id}/${id}",
     "path": "/api/processplatform/service/processing/data/path/{}/{}",
@@ -10354,7 +10584,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 325,
+    "line": 369,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/data/workcompleted/path/${id}",
     "path": "/api/processplatform/service/processing/data/workcompleted/path/{}",
@@ -10364,7 +10594,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 326,
+    "line": 370,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/job/v2/${id}/person/${id}/view",
     "path": "/api/processplatform/service/processing/job/v2/{}/person/{}/view",
@@ -10374,7 +10604,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 327,
+    "line": 371,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/attachment/workcompleted/${id}/${id}",
     "path": "/api/processplatform/service/processing/attachment/workcompleted/{}/{}",
@@ -10384,7 +10614,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 328,
+    "line": 372,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/taskcompleted/task/identity/${id}",
     "path": "/api/processplatform/service/processing/taskcompleted/task/identity/{}",
@@ -10394,7 +10624,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 338,
+    "line": 382,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/next/${id}/20",
     "path": "/api/processplatform/assemble/surface/task/list/next/{}/20",
@@ -10404,7 +10634,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 339,
+    "line": 383,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/next/application/${id}/20/${id}",
     "path": "/api/processplatform/assemble/surface/task/list/next/application/{}/20/{}",
@@ -10414,7 +10644,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 340,
+    "line": 384,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/next/process/${id}/20/${id}",
     "path": "/api/processplatform/assemble/surface/task/list/next/process/{}/20/{}",
@@ -10424,7 +10654,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 341,
+    "line": 385,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/next/${id}/20",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/next/{}/20",
@@ -10434,7 +10664,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 342,
+    "line": 386,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/next/application/${id}/20/${id}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/next/application/{}/20/{}",
@@ -10444,7 +10674,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 343,
+    "line": 387,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/next/process/${id}/20/${id}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/next/process/{}/20/{}",
@@ -10454,7 +10684,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 353,
+    "line": 397,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/next/${id}/20",
     "path": "/api/processplatform/assemble/surface/read/list/next/{}/20",
@@ -10464,7 +10694,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 354,
+    "line": 398,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/next/application/${id}/20/${id}",
     "path": "/api/processplatform/assemble/surface/read/list/next/application/{}/20/{}",
@@ -10474,7 +10704,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 355,
+    "line": 399,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/next/process/${id}/20/${id}",
     "path": "/api/processplatform/assemble/surface/read/list/next/process/{}/20/{}",
@@ -10484,7 +10714,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 356,
+    "line": 400,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/next/${id}/20",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/next/{}/20",
@@ -10494,7 +10724,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 357,
+    "line": 401,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/next/application/${id}/20/${id}",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/next/application/{}/20/{}",
@@ -10504,7 +10734,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 358,
+    "line": 402,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/next/process/${id}/20/${id}",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/next/process/{}/20/{}",
@@ -10514,7 +10744,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 376,
+    "line": 420,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/snap/work/${work}/type/snap",
     "path": "/api/processplatform/service/processing/snap/work/{}/type/snap",
@@ -10524,7 +10754,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 377,
+    "line": 421,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/snap/work/${work}/type/abandoned",
     "path": "/api/processplatform/service/processing/snap/work/{}/type/abandoned",
@@ -10534,7 +10764,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 378,
+    "line": 422,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/snap/work/${work}/type/suspend",
     "path": "/api/processplatform/service/processing/snap/work/{}/type/suspend",
@@ -10544,7 +10774,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 395,
+    "line": 439,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/snap/work/${work}/type/snap",
     "path": "/api/processplatform/assemble/surface/snap/work/{}/type/snap",
@@ -10554,7 +10784,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 399,
+    "line": 443,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/snap/${sid}",
     "path": "/api/processplatform/assemble/surface/snap/{}",
@@ -10564,7 +10794,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 400,
+    "line": 444,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/snap/list/${sid}/next/10",
     "path": "/api/processplatform/assemble/surface/snap/list/{}/next/10",
@@ -10574,7 +10804,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 401,
+    "line": 445,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/snap/list/${sid}/prev/10",
     "path": "/api/processplatform/assemble/surface/snap/list/{}/prev/10",
@@ -10584,7 +10814,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 402,
+    "line": 446,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/snap/workcompleted/${work}/type/snapworkcompleted",
     "path": "/api/processplatform/assemble/surface/snap/workcompleted/{}/type/snapworkcompleted",
@@ -10594,7 +10824,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 403,
+    "line": 447,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/snap/workcompleted/${work}/type/abandonedworkcompleted",
     "path": "/api/processplatform/assemble/surface/snap/workcompleted/{}/type/abandonedworkcompleted",
@@ -10604,7 +10834,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 404,
+    "line": 448,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/snap/list/my/paging/1/size/20",
     "path": "/api/processplatform/assemble/surface/snap/list/my/paging/1/size/20",
@@ -10614,7 +10844,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 413,
+    "line": 457,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/touch/expire",
     "path": "/api/processplatform/assemble/surface/touch/expire",
@@ -10624,7 +10854,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 414,
+    "line": 458,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/touch/passexpired",
     "path": "/api/processplatform/assemble/surface/touch/passexpired",
@@ -10634,7 +10864,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 415,
+    "line": 459,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/touch/touchdetained",
     "path": "/api/processplatform/assemble/surface/touch/touchdetained",
@@ -10644,7 +10874,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 427,
+    "line": 471,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/count/application",
     "path": "/api/processplatform/assemble/surface/task/list/count/application",
@@ -10654,7 +10884,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 428,
+    "line": 472,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/count/application",
     "path": "/api/processplatform/assemble/surface/read/list/count/application",
@@ -10664,7 +10894,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 429,
+    "line": 473,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/workcompleted/list/count/application",
     "path": "/api/processplatform/assemble/surface/workcompleted/list/count/application",
@@ -10674,7 +10904,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 430,
+    "line": 474,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/count/application",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/count/application",
@@ -10684,7 +10914,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 431,
+    "line": 475,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/count/application",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/count/application",
@@ -10694,7 +10924,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 443,
+    "line": 487,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/application/list",
     "path": "/api/processplatform/assemble/surface/application/list",
@@ -10704,7 +10934,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 444,
+    "line": 488,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/application/list/complex",
     "path": "/api/processplatform/assemble/surface/application/list/complex",
@@ -10714,7 +10944,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 445,
+    "line": 489,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/count/application",
     "path": "/api/processplatform/assemble/surface/work/list/count/application",
@@ -10724,7 +10954,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 456,
+    "line": 500,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/work/list",
     "path": "/api/processplatform/service/processing/work/list",
@@ -10734,7 +10964,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 476,
+    "line": 520,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/task/list",
     "path": "/api/processplatform/service/processing/task/list",
@@ -10744,7 +10974,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 497,
+    "line": 541,
     "method": "POST",
     "raw": "/api/processplatform/service/processing/task/processing/${id}",
     "path": "/api/processplatform/service/processing/task/processing/{}",
@@ -10754,7 +10984,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 506,
+    "line": 550,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/task/urge/${id}",
     "path": "/api/processplatform/service/processing/task/urge/{}",
@@ -10764,7 +10994,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
-    "line": 513,
+    "line": 557,
     "method": "DELETE",
     "raw": "/api/processplatform/service/processing/task/${id}",
     "path": "/api/processplatform/service/processing/task/{}",
