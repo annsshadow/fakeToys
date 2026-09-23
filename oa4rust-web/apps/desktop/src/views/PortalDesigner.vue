@@ -9,6 +9,7 @@
         <button class="btn" @click="showCreate = true">新建设计</button>
         <button class="btn" :disabled="!activeId" @click="loadDesignerAssets">资产明细</button>
         <button class="btn" :disabled="!activeId" @click="loadDesignerCategories">分类/页面</button>
+        <button class="btn" :disabled="!activeId" @click="loadDesignerPaging">分页/文件/版本</button>
         <button class="btn primary" :disabled="!activeId || saving" @click="saveDesign">
           {{ saving ? '保存中…' : '保存布局' }}
         </button>
@@ -195,6 +196,33 @@ async function loadDesignerCategories() {
     assetText.value = `分类页 ${n(byCat)} · 门户页 ${n(byPortal)} · 图标 ${(icon as any)?.data ? '有' : '无'} · 应用文件 ${n(files)} · 页版本 ${n(versions)} · 同类门户 ${n(catFull)}`
   } catch (e: any) {
     toast.error('加载分类/页面明细失败: ' + (e?.message ?? ''))
+  }
+}
+// rev228：门户设计器 分页/文件/版本/摘要族 5 条真实 distinct 路由
+// dict/list/paging/{page}/{size}/{size}（x_portal_dict 分页）· file/{flag}（x_portal_file WHERE flag）· pageversion/list/{page}/{pageId}（x_portal_page_version WHERE page_id）
+// · portal/list/summary/portalcategory/{portalCategory}（x_portal 摘要投影）· script/list/paging/{page}/{size}/{size}（x_portal_script 分页）
+async function loadDesignerPaging() {
+  const id = String(activeId.value ?? '')
+  if (!id) {
+    toast.error('请先打开一个门户设计')
+    return
+  }
+  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const portalResp = await s(api.get<any>(`/api/portal/assemble/designer/portal/${encodeURIComponent(id)}`))
+    const cat = String((portalResp as any)?.data?.category ?? 'default')
+    const pageNum = '1'
+    const [dicts, file, versions, summary, scripts] = await Promise.all([
+      s(api.get<any>('/api/portal/assemble/designer/dict/list/paging/1/20/20')),
+      s(api.get<any>(`/api/portal/assemble/designer/file/${encodeURIComponent(id)}`)),
+      s(api.get<any>(`/api/portal/assemble/designer/pageversion/list/${encodeURIComponent(pageNum)}/${encodeURIComponent(id)}`)),
+      s(api.get<any>(`/api/portal/assemble/designer/portal/list/summary/portalcategory/${encodeURIComponent(cat)}`)),
+      s(api.get<any>('/api/portal/assemble/designer/script/list/paging/1/20/20')),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    assetText.value = `字典分页 ${n(dicts)} · 文件 ${(file as any)?.data?.id ? '命中' : '未命中'} · 页版本 ${n(versions)} · 同类摘要 ${n(summary)} · 脚本分页 ${n(scripts)}`
+  } catch (e: any) {
+    toast.error('加载分页/文件/版本失败: ' + (e?.message ?? ''))
   }
 }
 const widgets = ref<PortalWidget[]>([])
