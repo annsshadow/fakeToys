@@ -45,11 +45,13 @@
             <button class="btn-edit" @click="openEdit">✏ 编辑</button>
             <button class="btn-edit" @click="loadQueryDetail">🔍 明细</button>
             <button class="btn-edit" @click="loadQueryPerms">🔐 权限/分类</button>
+            <button class="btn-edit" @click="loadTableRows">📊 表数据/统计</button>
             <button class="btn-del" @click="deleteQuery(selected)">🗑</button>
           </div>
         </div>
         <div v-if="queryDetailText" class="qd-note">{{ queryDetailText }}</div>
         <div v-if="queryPermText" class="qd-note">{{ queryPermText }}</div>
+        <div v-if="tableRowText" class="qd-note">{{ tableRowText }}</div>
 
         <!-- 查询条件面板 -->
         <div class="condition-panel">
@@ -380,6 +382,35 @@ async function loadQueryPerms() {
     queryPermText.value = `查询权限 ${hasPerm} · 同分类查询 ${catN} · 数据表权限 ${hasTblPerm}`
   } catch (e: any) {
     toast.error('加载查询权限/分类失败: ' + (e?.message ?? ''))
+  }
+}
+
+// 查询设计器表数据/统计 3 条真实 distinct 只读（rev189）：table/row/{tableFlag}（x_query_table_data WHERE table_flag，LIMIT 100）
+// → 首行 → table/row/{tableFlag}/{id}（WHERE table_flag AND id）+ stat/list/{query}/{flag}（stat_list_query_flag x_query_stat WHERE query_flag）。
+const tableRowText = ref('')
+async function loadTableRows() {
+  const flag = String(selected.value?.flag ?? selected.value?.id ?? '')
+  if (!flag) {
+    toast.error('请先选择查询')
+    return
+  }
+  try {
+    const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const tablesRes = await settle(api.get(`/api/query/assemble/designer/table/list/query/${encodeURIComponent(flag)}`))
+    const tables = Array.isArray((tablesRes as any)?.data) ? (tablesRes as any).data : []
+    const tableFlag = tables[0] ? String(tables[0].id ?? '0') : '0'
+    const rowsRes = await settle(api.get(`/api/query/assemble/designer/table/row/${encodeURIComponent(tableFlag)}`))
+    const rows = Array.isArray((rowsRes as any)?.data) ? (rowsRes as any).data : []
+    const rowId = rows[0] ? String(rows[0].id ?? '0') : '0'
+    const [oneRow, stats] = await Promise.all([
+      settle(api.get(`/api/query/assemble/designer/table/row/${encodeURIComponent(tableFlag)}/${encodeURIComponent(rowId)}`)),
+      settle(api.get(`/api/query/assemble/designer/stat/list/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}`)),
+    ])
+    const hasRow = (oneRow as any)?.data?.id ? '命中' : '未命中'
+    const statN = Array.isArray((stats as any)?.data) ? (stats as any).data.length : 0
+    tableRowText.value = `数据表 ${tables.length} · 行 ${rows.length}（首行 ${hasRow}）· 统计 ${statN}`
+  } catch (e: any) {
+    toast.error('加载表数据/统计失败: ' + (e?.message ?? ''))
   }
 }
 
