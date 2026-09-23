@@ -7,6 +7,7 @@
       <div><h1>门户设计器</h1><p>拖拽模块并保存到 portal design content</p></div>
       <div class="header-actions">
         <button class="btn" @click="showCreate = true">新建设计</button>
+        <button class="btn" :disabled="!activeId" @click="loadDesignerAssets">资产明细</button>
         <button class="btn primary" :disabled="!activeId || saving" @click="saveDesign">
           {{ saving ? '保存中…' : '保存布局' }}
         </button>
@@ -44,7 +45,7 @@
             </div>
           </div>
           <div class="canvas" @dragover.prevent @drop="dropModule">
-            <div class="canvas-head"><h2>{{ activeName }}</h2><span>{{ widgets.length }} 个模块<template v-if="portalMeta"> · {{ portalMeta }}</template></span></div>
+            <div class="canvas-head"><h2>{{ activeName }}</h2><span>{{ widgets.length }} 个模块<template v-if="portalMeta"> · {{ portalMeta }}</template><template v-if="assetText"> · {{ assetText }}</template></span></div>
             <p v-if="!widgets.length" class="drop-hint">将左侧模块拖到这里</p>
             <article
               v-for="(widget, index) in widgets"
@@ -129,6 +130,43 @@ const designs = ref<DesignSummary[]>([])
 const activeId = ref('')
 const activeName = ref('')
 const portalMeta = ref('')
+// 门户设计器资产明细族 6 条真实 distinct（rev197，各读独立表）：从 widget/script/dict/list/portal 取首 id →
+// widget/{id}（x_portal_widget）+ script/{id}（x_portal_script）+ scriptversion/list/script/{scriptId}→scriptversion/{id}
+// （x_portal_script_version）+ templatepage/{id}（x_portal_template_page）+ dict/{id}（x_portal_dict）。
+const assetText = ref('')
+async function loadDesignerAssets() {
+  const id = String(activeId.value ?? '')
+  if (!id) {
+    toast.error('请先打开一个门户设计')
+    return
+  }
+  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [wlist, slist, dlist] = await Promise.all([
+      s(api.get<any>(`/api/portal/assemble/designer/widget/list/portal/${encodeURIComponent(id)}`)),
+      s(api.get<any>(`/api/portal/assemble/designer/script/list/portal/${encodeURIComponent(id)}`)),
+      s(api.get<any>(`/api/portal/assemble/designer/dict/list/portal/${encodeURIComponent(id)}`)),
+    ])
+    const pick = (r: any) => (Array.isArray(r?.data) && r.data[0] ? String(r.data[0].id ?? '0') : '0')
+    const wid = pick(wlist)
+    const sid = pick(slist)
+    const did = pick(dlist)
+    const tid = '0'
+    const svList = await s(api.get<any>(`/api/portal/assemble/designer/scriptversion/list/script/${encodeURIComponent(sid)}`))
+    const svId = Array.isArray((svList as any)?.data) && (svList as any).data[0] ? String((svList as any).data[0].id ?? '0') : '0'
+    const [widget, script, svDetail, templatepage, dict] = await Promise.all([
+      s(api.get<any>(`/api/portal/assemble/designer/widget/${encodeURIComponent(wid)}`)),
+      s(api.get<any>(`/api/portal/assemble/designer/script/${encodeURIComponent(sid)}`)),
+      s(api.get<any>(`/api/portal/assemble/designer/scriptversion/${encodeURIComponent(svId)}`)),
+      s(api.get<any>(`/api/portal/assemble/designer/templatepage/${encodeURIComponent(tid)}`)),
+      s(api.get<any>(`/api/portal/assemble/designer/dict/${encodeURIComponent(did)}`)),
+    ])
+    const has = (r: any) => ((r as any)?.data?.id ? '命中' : '未命中')
+    assetText.value = `组件 ${has(widget)} · 脚本 ${has(script)}（版本 ${has(svDetail)}）· 模板页 ${has(templatepage)} · 字典 ${has(dict)}`
+  } catch (e: any) {
+    toast.error('加载资产明细失败: ' + (e?.message ?? ''))
+  }
+}
 const widgets = ref<PortalWidget[]>([])
 const selectedId = ref('')
 const dragModule = ref<ModuleItem | null>(null)
