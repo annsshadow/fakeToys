@@ -15,6 +15,7 @@
         <button class="eb" @click="loadV2Schedule">🗓️ v2排班/群组</button>
         <button class="eb" @click="loadV2AppealRecord">📝 v2申诉/记录</button>
         <button class="eb" @click="loadAttBase">🗂️ 打卡/周期/员工</button>
+        <button class="eb" @click="loadCoreLists">🧩 核心记录/规则</button>
       </div>
       <div v-if="attOverviewText" class="att-note">{{ attOverviewText }}</div>
     </div>
@@ -356,6 +357,23 @@ async function loadAttBase() {
     attOverviewText.value = `打卡记录 ${n(records)} / 统计周期 ${n(cycles)} / 员工配置 ${n(employees)}`
   } catch (e: any) {
     toast.error('加载考勤基础数据失败: ' + (e?.message ?? ''))
+  }
+}
+// 考勤核心记录/规则（rev184，4 条真实 distinct 无参列表）：admin/list/all（list_admins x_attendance_admin）
+// + rule/list（list_schedule_rules x_attendance_rule）+ core/entity/record/list（SeaORM attendance_record）
+// + core/entity/rule/list（SeaORM attendance_rule）。前二属 attendance crate、后二属 attendance_core_entity crate。
+async function loadCoreLists() {
+  try {
+    const [admins, rules, coreRecords, coreRules] = await Promise.all([
+      api.get('/api/attendance/admin/list/all'),
+      api.get('/api/attendance/rule/list'),
+      api.get('/api/attendance/core/entity/record/list'),
+      api.get('/api/attendance/core/entity/rule/list'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    attOverviewText.value = `管理员 ${n(admins)} / 排班规则 ${n(rules)} / 核心记录 ${n(coreRecords)} / 核心规则 ${n(coreRules)}`
+  } catch (e: any) {
+    toast.error('加载考勤核心记录/规则失败: ' + (e?.message ?? ''))
   }
 }
 onMounted(loadData)
