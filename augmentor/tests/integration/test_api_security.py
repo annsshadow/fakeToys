@@ -399,20 +399,32 @@ class TestWriteRouteAuthCoverage:
 
     # 会落盘或改变服务状态的路由，必须挂鉴权
     PROTECTED = {
+        ("DELETE", "/api/data/delete/{filename}"),
+        ("DELETE", "/api/system/backups/{backup_id}"),
+        ("DELETE", "/api/versions/{version_id}"),
         ("POST", "/api/augment/start"),
         ("POST", "/api/config"),
         ("POST", "/api/data/export"),
         ("POST", "/api/data/upload"),
-        ("DELETE", "/api/data/delete/{filename}"),
-        ("PUT", "/api/data/update/{filename}"),
+        ("POST", "/api/dataset/aggregate"),
+        ("POST", "/api/dataset/convert"),
+        ("POST", "/api/dataset/merge"),
+        ("POST", "/api/dataset/rag"),
+        ("POST", "/api/dataset/sample"),
+        ("POST", "/api/dataset/split"),
         ("POST", "/api/export/batch"),
         ("POST", "/api/quality/profiling"),
+        ("POST", "/api/system/backups"),
+        ("POST", "/api/system/backups/{backup_id}/restore"),
+        ("POST", "/api/system/dependency/datasets"),
+        ("POST", "/api/system/migrate"),
+        ("POST", "/api/system/stream"),
         ("POST", "/api/versions/create"),
-        ("DELETE", "/api/versions/{version_id}"),
         ("POST", "/api/versions/{version_id}/rollback"),
+        ("PUT", "/api/data/update/{filename}"),
     }
 
-    # 只读路由：全部经 `load_items` / 白名单校验，不落盘
+    # 只读路由：全部经 `read_items` / 白名单校验，不落盘
     OPEN_ALLOWLIST = {
         ("GET", "/api/analyze/{filename}"),
         ("GET", "/api/augment/checkpoints"),
@@ -426,12 +438,22 @@ class TestWriteRouteAuthCoverage:
         ("GET", "/api/multimodal/formats"),
         ("GET", "/api/privacy/patterns"),
         ("GET", "/api/status"),
+        ("GET", "/api/system/backups"),
+        ("GET", "/api/system/dependencies"),
+        ("GET", "/api/system/dependency/datasets"),
+        ("GET", "/api/system/dependency/graph"),
         ("GET", "/api/versions"),
         ("GET", "/api/versions/history"),
         ("GET", "/api/versions/{version_id}"),
         ("GET", "/api/versions/{version_id}/data"),
         ("GET", "/api/visualize/{filename}"),
         ("POST", "/api/audit"),
+        ("POST", "/api/dataset/auto-config"),
+        ("POST", "/api/dataset/compare"),
+        ("POST", "/api/dataset/features"),
+        ("POST", "/api/dataset/search"),
+        ("POST", "/api/dataset/stats"),
+        ("POST", "/api/dataset/validate"),
         ("POST", "/api/export/preview"),
         ("POST", "/api/leakage/check"),
         ("POST", "/api/multimodal/process"),
@@ -444,24 +466,38 @@ class TestWriteRouteAuthCoverage:
         ("POST", "/api/quality/evaluate"),
         ("POST", "/api/quality/outliers"),
         ("POST", "/api/quality/report"),
+        ("POST", "/api/system/auto-test"),
+        ("POST", "/api/system/monitor"),
+        ("POST", "/api/system/validate-config"),
         ("POST", "/api/versions/diff"),
     }
 
     @staticmethod
     def _collect():
-        """枚举全部路由及其是否挂载鉴权依赖
+        """枚举全部路由模块的鉴权挂载状态
 
         Returns:
             (受鉴权保护的路由集合, 未受保护的路由集合)
+
+        模块清单用 `pkgutil` **动态发现**，不写死。上一版写死了 11 个模块，
+        而 `dataset_tools` / `system_ops` 两个新模块不在其中，于是它们名下
+        25 条路由（含 8 条会落盘的）从未进入本测试的视野——「新增写路由会让
+        本测试变红」这个承诺恰好在它最该生效的那次改动上失效了。实测：配置了
+        `AUGMENTOR_API_KEY` 后不带密钥 `POST /api/dataset/convert` 返回 200
+        并把文件写了出来。
+
+        注意：不能用 `app.routes` 枚举。当前 FastAPI 版本把 `include_router`
+        包装成不展开的 `_IncludedRouter` 容器，必须回到各 router 模块的
+        `router.routes`。
         """
-        from api.routes import (
-            augment, audit, config, data, export, leakage,
-            multimodal, privacy, quality, status, version,
-        )
+        import importlib
+        import pkgutil
+
+        import api.routes as routes_pkg
 
         modules = [
-            augment, audit, config, data, export, leakage,
-            multimodal, privacy, quality, status, version,
+            importlib.import_module(f"api.routes.{info.name}")
+            for info in pkgutil.iter_modules(routes_pkg.__path__)
         ]
 
         protected, open_routes = set(), set()
@@ -499,7 +535,42 @@ class TestWriteRouteAuthCoverage:
         )
 
     def test_no_route_is_both(self):
-        """两个集合不得有交集，且覆盖全部路由"""
+        """两个集合不得有交集"""
         protected, open_routes = self._collect()
         assert not (protected & open_routes)
-        assert len(protected) + len(open_routes) == 42
+
+    def test_enumeration_covers_every_openapi_route(self):
+        """枚举结果必须覆盖 OpenAPI 声明的每条 /api 路由
+
+        这条是上一版盲区真正的守门。`_collect()` 的模块清单哪怕再次写死、
+        再次漏掉一个新模块，漏掉的路由仍会出现在 OpenAPI 里，于是这里变红。
+        等价地，把某条路由从 OpenAPI 里摘掉（`include_in_schema=False`）来
+        躲开鉴权分类，也会被这里抓到——它既不在两个集合里，也躲不过 schema。
+        """
+        from fastapi.routing import APIRoute
+
+        from api.main import app
+
+        protected, open_routes = self._collect()
+        # app 级直接声明的路由（`/api/health`），不在任何 router 模块里
+        app_level = {
+            (method, route.path)
+            for route in app.routes
+            if isinstance(route, APIRoute) and route.path.startswith("/api")
+            for method in route.methods
+        }
+        enumerated = protected | open_routes | app_level
+
+        declared = {
+            (method.upper(), path)
+            for path, operations in app.openapi()["paths"].items()
+            if path.startswith("/api")
+            for method in operations
+        }
+
+        unclassified = sorted(declared - enumerated)
+        assert not unclassified, (
+            f"以下路由出现在 OpenAPI 里，但没进入鉴权分类——"
+            f"很可能是新增了路由模块而 `_collect()` 没发现它：{unclassified}"
+        )
+        assert len(declared) == len(enumerated) | len(declared & enumerated)

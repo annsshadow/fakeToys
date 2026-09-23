@@ -351,6 +351,7 @@ async def system_auto_test(request: AutoTestRequest):
     "/api/system/migrate",
     response_model=MigrationResponse,
     summary="迁移数据集结构",
+    dependencies=[Depends(verify_api_key)],
 )
 async def system_migrate(request: MigrateRequest):
     """按规则把数据集迁移到新的字段结构并落盘"""
@@ -382,6 +383,7 @@ async def system_migrate(request: MigrateRequest):
     "/api/system/stream",
     response_model=StreamReportResponse,
     summary="流式处理数据集",
+    dependencies=[Depends(verify_api_key)],
 )
 async def system_stream(request: StreamRequest):
     """分块处理数据集（质量过滤 / 去重 / 清洗 / 原样），内存占用与文件大小无关
