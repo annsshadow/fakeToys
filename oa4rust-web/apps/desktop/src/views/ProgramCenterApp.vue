@@ -44,7 +44,7 @@
       </div>
       <!-- Application tab -->
       <div v-if="tab==='application'" class="tab-content">
-        <div class="toolbar"><button class="btn-primary" @click="loadAllApplications">全部应用</button><button class="btn-primary" @click="loadCenterMeta">注册应用/版本/验证码</button><button class="btn-primary" @click="loadProgramDetails">明细抽样</button><button class="btn-primary" @click="loadErrorLogs">错误日志</button><button class="btn-primary" @click="loadPromptErrorFilters">提示错误筛选</button><span v-if="appMetaText" class="app-meta">{{ appMetaText }}</span></div>
+        <div class="toolbar"><button class="btn-primary" @click="loadAllApplications">全部应用</button><button class="btn-primary" @click="loadCenterMeta">注册应用/版本/验证码</button><button class="btn-primary" @click="loadProgramDetails">明细抽样</button><button class="btn-primary" @click="loadErrorLogs">错误日志</button><button class="btn-primary" @click="loadPromptErrorFilters">提示错误筛选</button><button class="btn-primary" @click="loadPromptErrorPrev">提示错误(逆序筛选)</button><button class="btn-primary" @click="loadUnexpectedFilters">意外错误筛选</button><button class="btn-primary" @click="loadWarnFilters">警告筛选</button><span v-if="appMetaText" class="app-meta">{{ appMetaText }}</span></div>
         <div v-if="loadingApp" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
         <div v-else-if="applications.length===0" class="empty"><div class="ei">📱</div><p>暂无Application</p></div>
         <div v-else class="item-grid">
@@ -425,6 +425,67 @@ async function loadPromptErrorFilters() {
     appMetaText.value = `提示错误：按日期 ${n(byDate)} · 按异常类 ${n(byExcls)} · 按日志器 ${n(byLogger)}`
   } catch (e: any) {
     toast.error('加载提示错误筛选失败: ' + (e?.message ?? ''))
+  }
+}
+// 提示错误日志逆序筛选族 4 条真实 distinct（rev191，x_program_prompt_error_log WHERE id<$1 DESC AND 维度）：
+// prev/{count}（纯逆序）+ prev/{count}/date/{date} + prev/{count}/exceptionclass/{exceptionClass} + prev/{count}/loggername/{loggerName}。
+async function loadPromptErrorPrev() {
+  const headFlag = '999999999'
+  const cnt = '20'
+  const today = new Date().toISOString().slice(0, 10)
+  const excls = 'java.lang.Exception'
+  const logger = 'root'
+  try {
+    const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const [prev, byDate, byExcls, byLogger] = await Promise.all([
+      settle(api.get(`/api/program_center/prompterrorlog/list/${headFlag}/prev/${cnt}`)),
+      settle(api.get(`/api/program_center/prompterrorlog/list/${headFlag}/prev/${cnt}/date/${encodeURIComponent(today)}`)),
+      settle(api.get(`/api/program_center/prompterrorlog/list/${headFlag}/prev/${cnt}/exceptionclass/${encodeURIComponent(excls)}`)),
+      settle(api.get(`/api/program_center/prompterrorlog/list/${headFlag}/prev/${cnt}/loggername/${encodeURIComponent(logger)}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    appMetaText.value = `提示错误(逆序)：全部 ${n(prev)} · 按日期 ${n(byDate)} · 按异常类 ${n(byExcls)} · 按日志器 ${n(byLogger)}`
+  } catch (e: any) {
+    toast.error('加载提示错误逆序筛选失败: ' + (e?.message ?? ''))
+  }
+}
+// 意外错误日志筛选族 3 条真实 distinct（rev192，x_program_unexpected_error_log）：next/{count}/date/{date}（id>$1）
+// + prev/{count}（id<$1 逆序）+ prev/{count}/date/{date}（id<$1 AND date）。
+async function loadUnexpectedFilters() {
+  const headFlag = '0'
+  const prevFlag = '999999999'
+  const cnt = '20'
+  const today = new Date().toISOString().slice(0, 10)
+  try {
+    const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const [nextDate, prev, prevDate] = await Promise.all([
+      settle(api.get(`/api/program_center/unexpectederrorlog/list/${headFlag}/next/${cnt}/date/${encodeURIComponent(today)}`)),
+      settle(api.get(`/api/program_center/unexpectederrorlog/list/${prevFlag}/prev/${cnt}`)),
+      settle(api.get(`/api/program_center/unexpectederrorlog/list/${prevFlag}/prev/${cnt}/date/${encodeURIComponent(today)}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    appMetaText.value = `意外错误：按日期(正序) ${n(nextDate)} · 逆序 ${n(prev)} · 逆序按日期 ${n(prevDate)}`
+  } catch (e: any) {
+    toast.error('加载意外错误筛选失败: ' + (e?.message ?? ''))
+  }
+}
+// 警告日志筛选族 3 条真实 distinct（rev193，warnlog_list 拼 WHERE）：next/{count}/date/{date} + prev/{count} + prev/{count}/date/{date}。
+async function loadWarnFilters() {
+  const headFlag = '0'
+  const prevFlag = '999999999'
+  const cnt = '20'
+  const today = new Date().toISOString().slice(0, 10)
+  try {
+    const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const [nextDate, prev, prevDate] = await Promise.all([
+      settle(api.get(`/api/program_center/warnlog/list/${headFlag}/next/${cnt}/date/${encodeURIComponent(today)}`)),
+      settle(api.get(`/api/program_center/warnlog/list/${prevFlag}/prev/${cnt}`)),
+      settle(api.get(`/api/program_center/warnlog/list/${prevFlag}/prev/${cnt}/date/${encodeURIComponent(today)}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    appMetaText.value = `警告：按日期(正序) ${n(nextDate)} · 逆序 ${n(prev)} · 逆序按日期 ${n(prevDate)}`
+  } catch (e: any) {
+    toast.error('加载警告筛选失败: ' + (e?.message ?? ''))
   }
 }
 async function loadAllApplications() {
