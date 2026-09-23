@@ -27,6 +27,7 @@
         <button class="btn-refresh" @click="loadSurfaceRouteSign">🧭 路由/签署/可控流程</button>
         <button class="btn-refresh" @click="loadMergeitemEnabled">🧩 合并项计划/启用流程</button>
         <button class="btn-refresh" @click="loadSurfaceMiscReads">🧾 表单/流程/脚本/快照读取</button>
+        <button class="btn-refresh" @click="loadDesignerProcessReads">🎛️ 设计器流程/应用/引出/权限</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
@@ -37,6 +38,7 @@
       <div v-if="surfaceRouteSignText" class="rp-note">{{ surfaceRouteSignText }}</div>
       <div v-if="mergeEnabledText" class="rp-note">{{ mergeEnabledText }}</div>
       <div v-if="surfaceMiscText" class="rp-note">{{ surfaceMiscText }}</div>
+      <div v-if="designerProcText" class="rp-note">{{ designerProcText }}</div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🧩</div><p>暂无流程定义</p></div>
       <table v-else class="data-table">
@@ -195,6 +197,28 @@ const designerExtraText = ref('')
 const surfaceRouteSignText = ref('')
 const mergeEnabledText = ref('')
 const surfaceMiscText = ref('')
+const designerProcText = ref('')
+// rev290：流程设计器 应用汇总/元素孤儿字典/流程引出/启用/权限 真实读端点集；均只读 arity 已核
+async function loadDesignerProcessReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const first: any = items.value[0] ?? {}
+  const cat = String(first.category ?? first.application ?? 'default')
+  const pid = String(first.id ?? '0')
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/designer/application/list/summary/applicationcategory/${encodeURIComponent(cat)}`)),
+      s(api.get(`/api/processplatform/assemble/designer/elementtool/applicationdict/orphan`)),
+      s(api.get(`/api/processplatform/assemble/designer/process/${encodeURIComponent(pid)}/lead/out`)),
+      s(api.get(`/api/processplatform/assemble/designer/process/lead/out/${encodeURIComponent(pid)}`)),
+      s(api.get(`/api/processplatform/assemble/designer/process/enabled/${encodeURIComponent(pid)}`)),
+      s(api.get(`/api/processplatform/assemble/designer/process/permission/${encodeURIComponent(pid)}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    designerProcText.value = `设计器流程真实读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载设计器流程读取失败: ' + (e?.message ?? ''))
+  }
+}
 // rev288：流程表面 表单/流程/脚本/草稿/快照/审阅记录 真实读端点集（form v2 lookup/mobile、process activity/application/available、script application、draft、snap 游标、review v2、job allow/visit、readrecord）
 // 均只读 arity 已核；作为流程设计/运行态的表单渲染、流程定位、脚本查看、草稿与快照读取等真实 UI 读取
 async function loadSurfaceMiscReads() {
