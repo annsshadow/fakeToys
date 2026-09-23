@@ -3,13 +3,13 @@
 
 """泄漏检测 API 路由"""
 
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from ..deps import load_items, run_in_thread
-from augmentor.leakage import detect_leakage
+from augmentor.leakage import LeakageReport, detect_leakage
 
 router = APIRouter(tags=["leakage"])
 
@@ -22,7 +22,24 @@ class LeakageRequest(BaseModel):
     fuzzy_threshold: float = 0.8
 
 
-@router.post("/api/leakage/check")
+class LeakageResponse(BaseModel):
+    """泄漏检测响应
+
+    字段必须与 `LeakageReport.to_dict()` 的键完全一致。其中
+    `total_leaks` / `leak_rate` / `is_clean` 是 dataclass 上的**计算属性**，
+    不是字段——直接拿 `LeakageReport` 当 response_model 会把这三个键静默丢掉。
+    """
+    train_size: int
+    test_size: int
+    exact_leaks: int
+    fuzzy_leaks: int
+    total_leaks: int
+    leak_rate: float
+    is_clean: bool
+    leaked_examples: List[Dict[str, Any]]
+
+
+@router.post("/api/leakage/check", response_model=LeakageResponse, summary="训练/测试集泄漏检测")
 async def check_leakage(request: LeakageRequest):
     """检测训练/测试集之间的数据泄漏"""
     try:

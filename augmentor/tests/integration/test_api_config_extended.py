@@ -74,8 +74,15 @@ class TestUpdateConfig:
         assert pipeline.config.quality.threshold == 0.6
 
     def test_post_persists_to_cwd_config(self, pipeline, monkeypatch):
-        """POST 成功后 CWD 的 config.yaml 需被实际写回"""
+        """POST 成功后 CWD 的 config.yaml 需被实际写回，且能被重新加载
+
+        断言落在 `models.default` 上而不是顶层 `default_model`：
+        `load_config` 只从 `models.default` 读默认模型，写成顶层键等于没保存
+        （下次加载会静默回落到 `ernie`）。
+        """
         import os
+
+        from augmentor.config import load_config
 
         client = _client(monkeypatch)
         cwd = Path(os.getcwd())
@@ -87,7 +94,9 @@ class TestUpdateConfig:
         import yaml
 
         data = yaml.safe_load((cwd / "config.yaml").read_text(encoding="utf-8"))
-        assert data["default_model"] == "gemini"
+        assert data["models"]["default"] == "gemini"
+        # 真正的判据：保存后的文件必须能读回同一个默认模型
+        assert load_config(str(cwd / "config.yaml")).default_model == "gemini"
 
     def test_models_section_updates(self, pipeline, monkeypatch):
         client = _client(monkeypatch)

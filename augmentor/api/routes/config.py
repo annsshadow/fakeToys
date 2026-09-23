@@ -3,12 +3,37 @@
 
 """配置与模型 API 路由"""
 
+from typing import Any, Dict, List
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from ..deps import get_pipeline, verify_api_key
+from ..schemas import MessageResponse
 
 router = APIRouter(tags=["config"])
+
+
+class ConfigResponse(BaseModel):
+    """当前生效的配置
+
+    只暴露各分区的**关键项**，不是 `AppConfig` 的完整镜像——密钥等敏感字段
+    不会出现在响应里。各分区用 `Dict` 承载，因此新增配置项不需要改这个模型。
+    """
+    default_model: str
+    augmentation: Dict[str, Any]
+    quality: Dict[str, Any]
+    dedup: Dict[str, Any]
+    export: Dict[str, Any]
+    vector: Dict[str, Any]
+    rag: Dict[str, Any]
+    multimodal: Dict[str, Any]
+
+
+class ModelsResponse(BaseModel):
+    """可用模型清单"""
+    models: List[str]
+    default: str
 
 
 class ConfigUpdateRequest(BaseModel):
@@ -23,7 +48,7 @@ class ConfigUpdateRequest(BaseModel):
     multimodal: dict | None = None
 
 
-@router.get("/api/config")
+@router.get("/api/config", response_model=ConfigResponse, summary="获取配置")
 async def get_config():
     """获取配置"""
     try:
@@ -62,7 +87,11 @@ async def get_config():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/api/config")
+@router.post(
+    "/api/config",
+    response_model=MessageResponse,
+    summary="更新配置",
+)
 async def update_config(
     request: ConfigUpdateRequest, _auth: None = Depends(verify_api_key)
 ):
@@ -89,7 +118,7 @@ async def update_config(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/api/models")
+@router.get("/api/models", response_model=ModelsResponse, summary="列出可用模型")
 async def list_models():
     """列出可用模型"""
     try:

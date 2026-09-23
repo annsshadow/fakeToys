@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from ..deps import load_items, run_in_thread
-from augmentor.audit import DatasetAuditor
+from augmentor.audit import AuditReport, DatasetAuditor
 
 router = APIRouter(tags=["audit"])
 
@@ -21,7 +21,10 @@ class AuditRequest(BaseModel):
     fields: Optional[List[str]] = None
 
 
-@router.post("/api/audit")
+# 直接用 dataclass 作 response_model：FastAPI 能为其生成 OpenAPI schema，
+# 且字段集自动跟随 dataclass，不存在「模型漏字段导致响应被静默裁剪」的风险。
+# AuditReport 没有计算属性（to_dict() 的键与字段一一对应），因此可以直接用。
+@router.post("/api/audit", response_model=AuditReport, summary="数据集就绪审计")
 async def audit_dataset_endpoint(request: AuditRequest):
     """对数据集做就绪审计，返回组合信号与总体判定"""
     try:
