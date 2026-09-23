@@ -44,7 +44,7 @@
       </div>
       <!-- Application tab -->
       <div v-if="tab==='application'" class="tab-content">
-        <div class="toolbar"><button class="btn-primary" @click="loadAllApplications">全部应用</button><button class="btn-primary" @click="loadCenterMeta">注册应用/版本/验证码</button><button class="btn-primary" @click="loadProgramDetails">明细抽样</button><span v-if="appMetaText" class="app-meta">{{ appMetaText }}</span></div>
+        <div class="toolbar"><button class="btn-primary" @click="loadAllApplications">全部应用</button><button class="btn-primary" @click="loadCenterMeta">注册应用/版本/验证码</button><button class="btn-primary" @click="loadProgramDetails">明细抽样</button><button class="btn-primary" @click="loadErrorLogs">错误日志</button><span v-if="appMetaText" class="app-meta">{{ appMetaText }}</span></div>
         <div v-if="loadingApp" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
         <div v-else-if="applications.length===0" class="empty"><div class="ei">📱</div><p>暂无Application</p></div>
         <div v-else class="item-grid">
@@ -388,12 +388,28 @@ async function loadProgramDetails() {
     toast.error('加载明细失败: ' + (e?.message ?? ''))
   }
 }
+// 错误日志族 3 条真实 distinct 路由（各读独立表游标）：警告日志 warnlog/list/{id}/next/{count}
+// + 提示错误 prompterrorlog/list/{id}/next/{count}（x_program_prompt_error_log）+ 意外错误 unexpectederrorlog/list/{id}/next/{count}（x_program_unexpected_error_log）；flag=0 从头
+async function loadErrorLogs() {
+  const headFlag = '0'
+  const cnt = '20'
+  try {
+    const [warn, prompt, unexpected] = await Promise.all([
+      api.get(`/api/program_center/warnlog/list/${headFlag}/next/${cnt}`).catch(() => null),
+      api.get(`/api/program_center/prompterrorlog/list/${headFlag}/next/${cnt}`).catch(() => null),
+      api.get(`/api/program_center/unexpectederrorlog/list/${headFlag}/next/${cnt}`).catch(() => null),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    appMetaText.value = `警告 ${n(warn)} · 提示错误 ${n(prompt)} · 意外错误 ${n(unexpected)}`
+  } catch (e: any) {
+    toast.error('加载错误日志失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadAllApplications() {
   try {
     // GET program_center/applications + center/applications —— 全部应用/中心应用
     const [apps, center] = await Promise.all([
-      api.get('/api/program_center/applications'),
-      api.get('/api/program_center/center/applications'),
+      api.get('/api/program_center/applications'),      api.get('/api/program_center/center/applications'),
     ])
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     appMetaText.value = `全部应用 ${n(apps)} / 中心应用 ${n(center)}`
