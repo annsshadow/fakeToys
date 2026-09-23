@@ -21,6 +21,7 @@
       <button class="sb" @click="loadMeetingCore">核心资源/日程</button>
       <button class="sb" @click="loadMeetingPinyin">拼音检索</button>
       <button class="sb" @click="loadMeetingEntities">会议实体</button>
+      <button class="sb" @click="loadMeetingControlAssets">控制台资源</button>
       <button class="sb" @click="addBuilding">+ 楼栋</button>
     </div>
     <div v-if="appliedText" class="applied-note">{{ appliedText }}</div>
@@ -320,6 +321,30 @@ async function loadMeetingEntities() {
     appliedText.value = `实体会议 ${rows.length} / 按房间 ${n(byRoom)} / 会议详情 ${(meetingOne as any)?.data?.id ? '命中' : '未命中'} / 房间详情 ${(roomOne as any)?.data?.id ? '命中' : '未命中'}`
   } catch (e: any) {
     toast.error('加载会议实体失败: ' + (e?.message ?? ''))
+  }
+}
+// rev222：会议控制台 楼栋/会议室/照片/附件游标族 7 条真实 distinct 路由
+// building/{id}（x_meeting_building）· room/{id}（x_meeting_room）· meeting/list/{id}/{next}/{count}（x_meeting 游标）· room/photo/{id}（x_meeting_room_photo WHERE room_id）
+// · attachment/{id}（x_meeting_attachment）· attachment/list/{id}/next/{count}（分页前）· attachment/list/{id}/prev/{count}（分页后）
+async function loadMeetingControlAssets() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const roomsResp: any = await s(api.get('/api/meeting/room/list'))
+    const rooms = Array.isArray(roomsResp?.data) ? roomsResp.data : []
+    const rid = rooms[0] ? String(rooms[0].id ?? '0') : '0'
+    const [building, room, meetingCursor, photo, attach, attNext, attPrev] = await Promise.all([
+      s(api.get(`/api/meeting/assemble/control/building/${encodeURIComponent(rid)}`)),
+      s(api.get(`/api/meeting/assemble/control/room/${encodeURIComponent(rid)}`)),
+      s(api.get(`/api/meeting/assemble/control/meeting/list/${encodeURIComponent(rid)}/next/20`)),
+      s(api.get(`/api/meeting/assemble/control/room/photo/${encodeURIComponent(rid)}`)),
+      s(api.get(`/api/meeting/assemble/control/attachment/${encodeURIComponent(rid)}`)),
+      s(api.get(`/api/meeting/assemble/control/attachment/list/${encodeURIComponent(rid)}/next/20`)),
+      s(api.get(`/api/meeting/assemble/control/attachment/list/${encodeURIComponent(rid)}/prev/20`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    appliedText.value = `楼栋 ${(building as any)?.data?.id ? '命中' : '未命中'} · 会议室 ${(room as any)?.data?.id ? '命中' : '未命中'} · 会议游标 ${n(meetingCursor)} · 照片 ${(photo as any)?.data ? '有' : '无'} · 附件 ${(attach as any)?.data ? '有' : '无'}（前 ${n(attNext)}/后 ${n(attPrev)}）`
+  } catch (e: any) {
+    toast.error('加载会议控制台资源失败: ' + (e?.message ?? ''))
   }
 }
 async function loadMeetingSearch() {
