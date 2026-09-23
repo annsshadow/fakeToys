@@ -19,6 +19,10 @@ RAG 格式转换。此前这些能力只能通过命令行使用。
 
 所有路径都经 `deps.resolve_data_path` / `deps.resolve_data_dir` 做白名单校验，
 与其它路由一致；越界返回 403，参数非法返回 400。
+
+**异步约定**：这些路由是 `async def`，所以读文件一律 `await read_json_file(path)`
+（`read_items` 的异步外壳），重活一律 `await run_in_thread(...)`。直接在函数体里
+调同步版本 = 让整个服务在那几十毫秒内无法响应任何其他请求，见 A4 / A13。
 """
 
 import json
@@ -29,7 +33,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from ..deps import (
-    read_items,
+    read_json_file,
     resolve_data_dir,
     resolve_data_path,
     run_in_thread,
@@ -308,8 +312,10 @@ async def dataset_stats(request: StatsRequest):
         from augmentor.statistics import calculate_statistics
 
         path = resolve_data_path(request.input_file)
-        items = read_items(path)
-        stats = calculate_statistics(items, Path(path).stem, request.fields)
+        items = await read_json_file(path)
+        stats = await run_in_thread(
+            calculate_statistics, items, Path(path).stem, request.fields
+        )
         return stats.to_dict()
     except HTTPException:
         raise
@@ -357,7 +363,7 @@ async def dataset_search(request: SearchRequest):
         from augmentor.search_enhanced import search_dataset
 
         path = resolve_data_path(request.input_file)
-        items = read_items(path)
+        items = await read_json_file(path)
         result = await run_in_thread(
             search_dataset,
             items,
@@ -383,8 +389,8 @@ async def dataset_compare(request: CompareRequest):
 
         path_a = resolve_data_path(request.dataset_a)
         path_b = resolve_data_path(request.dataset_b)
-        items_a = read_items(path_a)
-        items_b = read_items(path_b)
+        items_a = await read_json_file(path_a)
+        items_b = await read_json_file(path_b)
 
         name_a = request.name_a or Path(path_a).stem
         name_b = request.name_b or Path(path_b).stem
@@ -413,7 +419,7 @@ async def dataset_features(request: DatasetFileRequest):
         from augmentor.feature_detect import FeatureDetector
 
         path = resolve_data_path(request.input_file)
-        items = read_items(path)
+        items = await read_json_file(path)
         return await run_in_thread(lambda: FeatureDetector().detect(items))
     except HTTPException:
         raise
@@ -433,7 +439,7 @@ async def dataset_auto_config(request: DatasetFileRequest):
         from augmentor.profiling import DataProfiler
 
         path = resolve_data_path(request.input_file)
-        items = read_items(path)
+        items = await read_json_file(path)
 
         def run():
             profile = DataProfiler().profile(items)
@@ -563,7 +569,11 @@ async def dataset_aggregate(request: AggregateRequest):
         if not request.datasets:
             raise HTTPException(status_code=400, detail="datasets 不能为空")
 
-        datasets = {name: read_items(resolve_data_path(p)) for name, p in request.datasets.items()}
+        # 逐个 await 而不是循环里同步 read：保持原有的「按 datasets 顺序解析、
+        # 第一个坏文件先报错」语义，同时不再占着事件循环。
+        datasets: Dict[str, list] = {}
+        for name, source in request.datasets.items():
+            datasets[name] = await read_json_file(resolve_data_path(source))
         output_path = resolve_data_path(request.output_file, for_write=True)
 
         def run():
@@ -595,7 +605,7 @@ async def dataset_rag(request: RagRequest):
 
         input_path = resolve_data_path(request.input_file)
         output_path = resolve_data_path(request.output_file, for_write=True)
-        items = read_items(input_path)
+        items = await read_json_file(input_path)
 
         def run():
             from ..deps import get_pipeline

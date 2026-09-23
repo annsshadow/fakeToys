@@ -24,7 +24,7 @@ from ..deps import (
     default_backup_dir,
     default_registry_dir,
     get_pipeline,
-    read_items,
+    read_json_file,
     resolve_data_dir,
     resolve_data_path,
     run_in_thread,
@@ -317,7 +317,7 @@ async def system_monitor(request: MonitorRequest):
     try:
         from augmentor.quality_monitor import monitor_quality
 
-        items = read_items(resolve_data_path(request.input_file))
+        items = await read_json_file(resolve_data_path(request.input_file))
         snapshot = await run_in_thread(monitor_quality, items)
         return snapshot.to_dict()
     except HTTPException:
@@ -345,7 +345,7 @@ async def system_auto_test(request: AutoTestRequest):
     try:
         from augmentor.auto_test import run_dataset_tests
 
-        items = read_items(resolve_data_path(request.input_file))
+        items = await read_json_file(resolve_data_path(request.input_file))
         suite = await run_in_thread(run_dataset_tests, items, request.suite)
         return suite.to_dict()
     except HTTPException:
@@ -511,7 +511,7 @@ async def dependency_register(
     """把一个数据集登记进依赖注册表"""
     try:
         path = resolve_data_path(request.input_file)
-        items = read_items(path)
+        items = await read_json_file(path)
 
         def run():
             manager = _dependency_manager(registry_path)
