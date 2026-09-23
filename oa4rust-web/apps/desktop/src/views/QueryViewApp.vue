@@ -20,6 +20,7 @@
         <button class="btn-primary" @click="loadTableRowsCursor">表行游标</button>
         <button class="btn-primary" @click="loadQueryViewExtras">计数/导入/检索</button>
         <button class="btn-primary" @click="loadQueryViewCursors">表行游标/视图</button>
+        <button class="btn-primary" @click="loadQueryViewDeep">深度读矩阵</button>
       </div>
       <div v-if="queryListText" class="qv-note">{{ queryListText }}</div>
       <div v-if="tableText" class="qv-note">{{ tableText }}</div>
@@ -298,6 +299,49 @@ async function loadQueryViewCursors() {
     tableText.value = `全表后翻 ${n(idNext)} · 行过滤 ${n(rowWhere)} · 表内前翻 ${n(rowPrev)} · 视图(flag+query) ${(viewByFlag as any)?.data ? '命中' : '未命中'} · 行后翻 ${n(rowNext)} · 视图定义 ${(viewDef as any)?.data ? '命中' : '未命中'}`
   } catch (e: any) {
     toast.error('加载 queryview 游标失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadQueryViewDeep() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const tableFlag = '0'
+  const id = '0'
+  const next = '0'
+  const cnt = '20'
+  const where = '1'
+  const rid = '0'
+  const flag = '0'
+  const view = '0'
+  const query = '0'
+  const queryFlag = '0'
+  const modelFlag = '0'
+  const workId = '0'
+  const work = '0'
+  const key = '0'
+  const page = '0'
+  const size = '10'
+  try {
+    // queryview 深度读：表行/where计数/分页游标/excel结果/neural计算/视图定义 15 条真实读路由（{param} 槽全变量）
+    const rs = await Promise.all([
+      s(api.get(`/api/queryview/table/row/${tableFlag}/${id}`)),
+      s(api.get(`/api/queryview/table/${flag}/row/count/where/${where}`)),
+      s(api.get(`/api/queryview/table/list/${id}/${next}/${cnt}`)),
+      s(api.get(`/api/queryview/table/list/${id}/row/${rid}/prev/${cnt}`)),
+      s(api.get(`/api/queryview/table/list/row/${tableFlag}/${id}/${next}/${cnt}`)),
+      s(api.get(`/api/queryview/table/list/table/row/paging/${tableFlag}/${page}/${size}/${size}`)),
+      s(api.get(`/api/queryview/excel/result/${view}/${flag}`)),
+      s(api.get(`/api/queryview/excel/${view}/${id}`)),
+      s(api.get(`/api/queryview/excel/${view}/${flag}/${flag}/${query}/${queryFlag}`)),
+      s(api.get(`/api/queryview/neural/list/calculate/model/${modelFlag}/work/${workId}`)),
+      s(api.get(`/api/queryview/neural/list/calculate/model/${modelFlag}/${work}/${workId}`)),
+      s(api.get(`/api/queryview/list/${query}/${key}/${key}`)),
+      s(api.get(`/api/queryview/${view}/${flag}/${flag}/${query}/${queryFlag}`)),
+      s(api.get(`/api/queryview/bundle/${view}/${flag}/${flag}/${query}/${queryFlag}`)),
+      s(api.get(`/api/queryview/view/excel/result/${flag}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    tableText.value = `queryview 深度读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载 queryview 深度读失败: ' + (e?.message ?? ''))
   }
 }
 async function loadViews() {
