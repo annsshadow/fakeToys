@@ -16,6 +16,7 @@
         <button class="action-btn" @click="loadRefTypes">🏷️ 引用类型</button>
         <button class="action-btn" @click="loadDocFileInfo">📄 文档文件信息</button>
         <button class="action-btn" @click="loadFileCoreEntities">🗂️ 文件实体</button>
+        <button class="action-btn" @click="loadFolderTopByRef">🌳 顶层文件夹/按引用</button>
         <button class="action-btn" @click="toggleView">{{ viewType === 'grid' ? '☰ 列表' : '⊞ 网格' }}</button>
       </div>
     </div>
@@ -160,6 +161,23 @@ async function loadFileMeta(): Promise<void> {
   }
 }
 // rev236：附件分享/附件2 6 条真实 distinct 读路由（不同表/WHERE；跳过 top 双注册 twin 与 _all 退化）
+// rev264：file 顶层文件夹/按引用类型 2 条真实 distinct 读路由
+// complex/top → FILE_FOLDER(superior IS NULL/'' 顶层，arity 0) · file/list/referencetype/{referenceType}/reference/{reference} → FILE_FILE(reference_type=$1 AND reference_id=$2，arity 2)；均只读、区别于 folder_id/name/cmsdocument WHERE
+async function loadFolderTopByRef(): Promise<void> {
+  try {
+    const refType = 'attachment'
+    const refId = currentFolder.value || 'root'
+    const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const [top, byRef] = await Promise.all([
+      s(api.get(`/api/file/complex/top`)),
+      s(api.get(`/api/file/assemble/control/file/list/referencetype/${encodeURIComponent(refType)}/reference/${encodeURIComponent(refId)}`)),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    toast.success(`顶层文件夹 ${n(top)} / 按引用类型文件 ${n(byRef)}`)
+  } catch (e: any) {
+    toast.error('加载顶层文件夹/引用文件失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadAttachmentShares(): Promise<void> {
   try {
     const owner = 'anonymous'
