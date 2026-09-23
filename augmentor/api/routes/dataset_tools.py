@@ -14,6 +14,8 @@ RAG 格式转换。此前这些能力只能通过命令行使用。
 * **写盘变换类**（convert / merge / sample / split / aggregate / rag）
   必须给输出路径，响应只回传「写到哪、写了多少」。产物规模与输入同量级，
   塞进 HTTP 响应既慢又容易被客户端或网关截断。
+  这 6 条**挂 `verify_api_key`**（与 `/api/data/export` 同一策略）：它们会往
+  白名单内的路径写文件，属于写操作；只读分析类不挂，保持零配置可用。
 
 所有路径都经 `deps.resolve_data_path` / `deps.resolve_data_dir` 做白名单校验，
 与其它路由一致；越界返回 403，参数非法返回 400。
@@ -23,7 +25,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from ..deps import (
@@ -32,6 +34,7 @@ from ..deps import (
     resolve_data_path,
     run_in_thread,
     to_http_error,
+    verify_api_key,
 )
 
 router = APIRouter(tags=["dataset"])
@@ -446,7 +449,8 @@ async def dataset_auto_config(request: DatasetFileRequest):
 
 # ============ 写盘变换 ============
 
-@router.post("/api/dataset/convert", response_model=ConvertResponse, summary="格式转换")
+@router.post("/api/dataset/convert", response_model=ConvertResponse,
+             summary="格式转换", dependencies=[Depends(verify_api_key)])
 async def dataset_convert(request: ConvertRequest):
     """把数据集转换为另一种格式并落盘"""
     try:
@@ -463,7 +467,8 @@ async def dataset_convert(request: ConvertRequest):
         raise to_http_error(e) from e
 
 
-@router.post("/api/dataset/merge", response_model=MergeResponse, summary="合并数据集")
+@router.post("/api/dataset/merge", response_model=MergeResponse, summary="合并数据集",
+             dependencies=[Depends(verify_api_key)])
 async def dataset_merge(request: MergeRequest):
     """把多个数据集合并为一份，可选去重"""
     try:
@@ -490,7 +495,8 @@ async def dataset_merge(request: MergeRequest):
         raise to_http_error(e) from e
 
 
-@router.post("/api/dataset/sample", response_model=SampleResponse, summary="数据集采样")
+@router.post("/api/dataset/sample", response_model=SampleResponse, summary="数据集采样",
+             dependencies=[Depends(verify_api_key)])
 async def dataset_sample(request: SampleRequest):
     """按数量或比例采样并落盘"""
     try:
@@ -519,7 +525,8 @@ async def dataset_sample(request: SampleRequest):
         raise to_http_error(e) from e
 
 
-@router.post("/api/dataset/split", response_model=SplitResponse, summary="分割数据集")
+@router.post("/api/dataset/split", response_model=SplitResponse, summary="分割数据集",
+             dependencies=[Depends(verify_api_key)])
 async def dataset_split(request: SplitRequest):
     """按比例把数据集切成 train / val / test 三份"""
     try:
@@ -546,7 +553,8 @@ async def dataset_split(request: SplitRequest):
         raise to_http_error(e) from e
 
 
-@router.post("/api/dataset/aggregate", response_model=AggregateResponse, summary="多源聚合")
+@router.post("/api/dataset/aggregate", response_model=AggregateResponse,
+             summary="多源聚合", dependencies=[Depends(verify_api_key)])
 async def dataset_aggregate(request: AggregateRequest):
     """按 union / intersection / weighted / consistent 策略聚合多个数据源"""
     try:
@@ -578,7 +586,8 @@ async def dataset_aggregate(request: AggregateRequest):
         raise to_http_error(e) from e
 
 
-@router.post("/api/dataset/rag", response_model=RagResponse, summary="转换为 RAG 格式")
+@router.post("/api/dataset/rag", response_model=RagResponse, summary="转换为 RAG 格式",
+             dependencies=[Depends(verify_api_key)])
 async def dataset_rag(request: RagRequest):
     """把数据集转换为 RAG 检索记录（langchain / llama_index 等）并落盘"""
     try:
