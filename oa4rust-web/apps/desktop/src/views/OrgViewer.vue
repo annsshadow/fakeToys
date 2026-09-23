@@ -25,6 +25,7 @@
       <button class="org-meta-btn" @click="loadGroupTree">群组树/关系</button>
       <button class="org-meta-btn" @click="loadUnitRelations">单位关系</button>
       <button class="org-meta-btn" @click="loadIdentityUnitTree">身份单位树</button>
+      <button class="org-meta-btn" @click="loadPersonLogins">人员登录/配对</button>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -565,6 +566,27 @@ async function loadIdentityUnitTree() {
     orgMetaText.value = `身份：按人员 ${n(byPerson)} · 单位直接下级 ${n(subD)} · 单位嵌套下级 ${n(subN)}`
   } catch (e: any) {
     toast.error('加载身份单位树失败: ' + (e?.message ?? ''))
+  }
+}
+// 人员登录/配对 4 条真实 distinct（rev199，express，x_org_person）：person/list/all（全部人员）
+// + person/list/login/after（body，最近登录之后）+ person/list/login/recent（最近登录）+ person/list/pair/identity
+// （body{identityList}，身份-人员配对 identityPersonPairList）。均非 /object 孪生。
+async function loadPersonLogins() {
+  try {
+    const cardResp: any = await api.get('/api/organization/assemble/control/personcard/listpaging/page/1/size/20').catch(() => null)
+    const cards = Array.isArray(cardResp?.data) ? cardResp.data : []
+    const idv = cards[0] ? String(cards[0].id ?? cards[0].name ?? '0') : '0'
+    const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const [all, after, recent, pair] = await Promise.all([
+      s(api.get('/api/person/list/all')),
+      s(api.post('/api/person/list/login/after', { personList: [idv] })),
+      s(api.post('/api/person/list/login/recent', { personList: [idv] })),
+      s(api.post('/api/person/list/pair/identity', { identityList: [idv] })),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    orgMetaText.value = `全部人员 ${n(all)} · 登录之后 ${n(after)} · 最近登录 ${n(recent)} · 身份配对 ${n(pair)}`
+  } catch (e: any) {
+    toast.error('加载人员登录/配对失败: ' + (e?.message ?? ''))
   }
 }
 const keyword = ref('')
