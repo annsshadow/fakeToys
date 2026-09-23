@@ -14,7 +14,31 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 | 请求体 | `Content-Type: application/json`（上传接口除外） |
 | 响应体 | JSON |
 | 响应头 | 每个响应携带 `X-Process-Time`（秒，浮点数） |
-| 文件参数 | 所有 `input_file` / `filename` 均为**服务端路径**，非 URL |
+| 文件参数 | 所有 `input_file` / `filename` 均为**服务端路径**，非 URL，且必须落在路径白名单内（见下） |
+
+### 路径白名单
+
+服务端不会打开白名单之外的任何路径。出厂默认只有一个根目录 —— 进程工作目录下的
+`data/`。
+
+**相对路径的解释顺序**：先在白名单各根目录内查找，再退回按工作目录解释。所以
+`GET /api/data/load/train_data.json` 会命中 `data/train_data.json`，前端从
+`/api/data/list` 拿到的裸文件名可以直接用。
+
+**写入必须显式给出路径**（如 `data/out.json`）。目标文件不存在时服务端**不会**替你
+猜该写到哪个根目录 —— 那种猜测会静默改掉产物落点，宁可返回 403。
+
+优先级：环境变量 `AUGMENTOR_DATA_ROOTS`（`os.pathsep` 分隔）> `config.yaml` 的
+`web.data_roots` > 出厂默认 `["data"]`。
+
+| 输入 | 结果 |
+|------|------|
+| 空字符串 / 纯空白 | 400 |
+| 含 `..` 组件 | 400 |
+| resolve 后（含跟随符号链接）不在白名单内 | **403** |
+| 在白名单内但文件不存在 | 404 |
+
+`GET /api/data/list` 的扫描范围与白名单同源，因此它列出的文件一定都读得到。
 
 ### 错误码
 
@@ -22,6 +46,8 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 |--------|------|----------|
 | 200 | 成功 | — |
 | 400 | 请求参数错误 | 索引越界、扩展名不支持、`chunk_overlap >= chunk_size` |
+| 401 | 鉴权失败 | 服务端已设置 `AUGMENTOR_API_KEY`，而写/删请求未携带或携带了错误的 `X-API-Key` |
+| 403 | 路径超出白名单 | 见上「路径白名单」（`detail` 为「路径超出允许的数据目录范围」，与 401 的鉴权失败可区分） |
 | 404 | 资源不存在 | 文件不存在、版本不存在 |
 | 422 | 请求体校验失败 | 缺少必填字段、字段类型错误（由 FastAPI 自动返回） |
 | 500 | 服务端错误 | 模型调用失败、依赖缺失、磁盘写入失败 |
@@ -241,12 +267,14 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 
 ### `GET /api/data/list`
 
-扫描当前工作目录下以 `train_data` 开头的 JSON 文件。
+扫描**路径白名单**各根目录下以 `train_data` 开头的 JSON 文件（出厂默认即 `data/`）。
+`name` 是文件名，`path` 是服务端拼接出来的完整路径 —— 两者都可以直接喂给
+`/api/data/load/{filename}`。
 
 ```json
 {
   "files": [
-    {"name": "train_data.json", "path": "train_data.json", "size": 123456}
+    {"name": "train_data.json", "path": "/app/data/train_data.json", "size": 123456}
   ]
 }
 ```

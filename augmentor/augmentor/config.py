@@ -175,10 +175,13 @@ class WebConfig:
     static_dir: str = "web/dist"
     cors_origins: list = field(default_factory=lambda: ["*"])
     cors_credentials: bool = True
-    # REST API 允许访问的目录白名单。客户端传入的文件路径必须落在其中某个根目录内，
-    # 否则返回 403。默认 ["."] 即进程工作目录；相对路径按工作目录解析。
+    # REST API 允许访问的目录白名单。客户端传入的文件路径 resolve 后必须落在其中
+    # 某个根目录内，否则返回 403。默认 `["data"]`，即只放行数据目录。
+    # 相对路径的解析顺序：先在白名单各根目录内找已存在的文件（所以裸文件名可用），
+    # 找不到才按**进程工作目录**解释（见 `api.deps.resolve_within_roots`）。
+    # 写入必须显式给出白名单内的路径，例如 `data/xxx.json`。
     # 环境变量 AUGMENTOR_DATA_ROOTS（os.pathsep 分隔）优先级更高。
-    data_roots: list = field(default_factory=lambda: ["."])
+    data_roots: list = field(default_factory=lambda: ["data"])
     # 滑动窗口限流：窗口内单客户端最大请求数。0 表示关闭限流。
     rate_limit_max_requests: int = 300
     # 限流窗口长度（秒）
@@ -365,7 +368,7 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
             }),
             ('web', WebConfig, {
                 'port': 8000, 'host': '0.0.0.0', 'static_dir': 'web/dist',
-                'data_roots': ['.'],
+                'data_roots': ['data'],
                 'rate_limit_max_requests': 300,
                 'rate_limit_window_seconds': 60.0,
                 'rate_limit_exempt_paths': [

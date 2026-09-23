@@ -295,19 +295,37 @@ BLEU 使用标准裁剪计数与简短惩罚。当所有 n-gram 的裁剪计数�
 
 1. 空值或非字符串 → `400`；
 2. 路径含 `..` 组件 → `400`（在 `resolve` 之前判断，避免依赖文件系统语义）；
-3. 相对路径按进程工作目录拼接，`Path.resolve()` 规范化并**展开符号链接**；
+3. 相对路径先生成候选：白名单各根目录在前、进程工作目录兜底，取第一个**存在**的解释
+   （裸文件名因此能在 `data/` 内命中，见 `_relative_candidates`）；一个都不存在时落回
+   工作目录解释，**不**替写入请求猜目录。`Path.resolve()` 规范化并**展开符号链接**；
 4. 逐条与白名单根目录做 `relative_to` 比对，全部不匹配 → `403`。
 
-白名单来源按优先级解析（`_allowed_roots()`）：
+白名单来源按优先级解析（`allowed_data_roots()`）：
 
 ```
 AUGMENTOR_DATA_ROOTS（os.pathsep 分隔）
   └─ 未设置 → config.yaml 的 web.data_roots
-       └─ 读取失败 → ["."]（进程工作目录）
+       └─ 读取失败或解析为空 → 出厂默认 WebConfig.data_roots（["data"]）
 ```
+
+两级降级都落到**出厂默认**而不是工作目录：空白名单意味着所有请求 403，比放宽更危险，
+但降级到 `["."]` 会把出厂默认刚收紧掉的范围又悄悄放开，等于修复失效。
+出厂默认在 `WebConfig` 字段、`load_config` 的兜底字典、仓库根 `config.yaml` 三处各写一遍，
+由 `tests/integration/test_api_security.py::TestShippedDataRootsDefault` 用字面量分别钉住并交叉比对。
 
 环境变量优先是为了让容器部署与测试无需改配置文件即可收紧或放宽范围；
 `tests/conftest.py` 的 autouse fixture 正是通过它把 cwd 与临时目录注入白名单。
+
+> **收紧到 `["data"]` 的兼容性代价**
+>
+> 读一侧的写法没变：`/api/data/load/train_data.json` 这类裸文件名会在白名单根目录内
+> 查找，因此前端把 `files[].name` 原样拼回 URL 的 8 处调用照常可用
+> （由 `TestBareNameResolvesInsideRoots` 钉住这条闭环）。
+> **写**一侧必须显式传 `data/xxx.json` —— 目标不存在时服务端不猜目录，越界就是 403。
+> 历史上直接放在工作目录根下的数据集（如本仓库的 `train_data*.json`）需要移入 `data/`，
+> 或显式设 `AUGMENTOR_DATA_ROOTS` 覆盖。Docker 镜像的工作目录就是 `/app`、数据在
+> `/app/data`，因此新默认与部署方式一致。
+> `/api/data/list` 的扫描范围与白名单同源（`allowed_data_roots()`），不会出现「列得出、读不到」。
 
 > **为什么 `multimodal` 走 `resolve_within_roots` 而不是 `resolve_data_path`**
 >

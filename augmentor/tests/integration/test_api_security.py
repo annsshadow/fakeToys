@@ -327,39 +327,41 @@ class TestAllowedRootsResolution:
     """白名单来源的优先级与降级
 
     ``tests/conftest.py`` 的 autouse fixture 总会注入 ``AUGMENTOR_DATA_ROOTS``，
-    因此「未设置环境变量 → 读 config.yaml」与「配置损坏 → 回退工作目录」两条路径
-    必须显式解除注入才能覆盖。
+    因此「未设置环境变量 → 读 config.yaml」与「配置损坏/为空 → 回退出厂默认」
+    两条路径必须显式解除注入才能覆盖。
 
-    这两条降级路径的意义在于：白名单一旦解析为空列表，**所有**请求都会 403，
-    比「放宽到工作目录」危险得多，所以必须验证它们不会产生空白名单。
+    两条降级都落到 ``WebConfig.data_roots``，理由有两个：
+      - 白名单一旦解析为空列表，**所有**请求都会 403，比放宽更危险；
+      - 降级到工作目录会把出厂默认刚收紧掉的范围又悄悄放开，等于修复失效。
     """
 
     def test_env_var_takes_priority(self, monkeypatch, tmp_path):
         """环境变量优先于 config.yaml"""
-        from api.deps import _allowed_roots
+        from api.deps import allowed_data_roots
 
         monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(tmp_path))
-        assert _allowed_roots() == [tmp_path.resolve()]
+        assert allowed_data_roots() == [tmp_path.resolve()]
 
     def test_falls_back_to_config_when_env_absent(self, monkeypatch):
         """未设置环境变量时读取 config.yaml 的 web.data_roots"""
-        from api.deps import _allowed_roots
+        from api.deps import allowed_data_roots
 
         monkeypatch.delenv("AUGMENTOR_DATA_ROOTS", raising=False)
-        roots = _allowed_roots()
+        roots = allowed_data_roots()
 
         assert roots, "白名单不得为空，否则所有请求都会 403"
         assert all(isinstance(r, Path) and r.is_absolute() for r in roots)
 
-    def test_empty_env_value_falls_back_to_cwd(self, monkeypatch):
-        """环境变量仅含分隔符时回退到工作目录"""
-        from api.deps import _allowed_roots
+    def test_empty_env_value_falls_back_to_shipped_default(self, monkeypatch):
+        """环境变量仅含分隔符时落到出厂默认，而不是工作目录"""
+        from api.deps import allowed_data_roots
 
         monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", os.pathsep)
-        assert _allowed_roots() == [Path.cwd().resolve()]
 
-    def test_broken_config_falls_back_to_cwd(self, monkeypatch):
-        """配置读取失败时回退工作目录，而不是抛异常或留空"""
+        assert allowed_data_roots() == [(Path.cwd() / "data").resolve()]
+
+    def test_broken_config_falls_back_to_shipped_default(self, monkeypatch):
+        """配置读取失败时落到出厂默认，而不是抛异常、留空或退回工作目录"""
 
         def _boom(*args, **kwargs):
             raise RuntimeError("配置损坏")
@@ -369,7 +371,7 @@ class TestAllowedRootsResolution:
         monkeypatch.delenv("AUGMENTOR_DATA_ROOTS", raising=False)
         monkeypatch.setattr(deps, "load_config", _boom)
 
-        assert deps._allowed_roots() == [Path.cwd().resolve()]
+        assert deps.allowed_data_roots() == [(Path.cwd() / "data").resolve()]
 
     @pytest.mark.parametrize("bad", ["", "   "])
     def test_empty_path_rejected_with_400(self, bad):
@@ -381,6 +383,245 @@ class TestAllowedRootsResolution:
         with pytest.raises(HTTPException) as exc:
             resolve_within_roots(bad, "文件路径")
         assert exc.value.status_code == 400
+
+
+class TestShippedDataRootsDefault:
+    """出厂默认 ``web.data_roots`` 必须是 ``["data"]``
+
+    默认值在三个地方各写了一遍：``WebConfig`` 的字段、``load_config`` 的
+    ``config_sections`` 兜底字典、仓库根的 ``config.yaml``。任何一处漏改都会
+    让「有配置文件」和「没有配置文件」两种部署的可见范围不一致，因此这里
+    分别用字面量钉死——不能拿 ``WebConfig()`` 去校验另外两处，那是同源预言机。
+    """
+
+    def test_webconfig_field_default(self):
+        """SDK 配置类的字段默认值"""
+        from augmentor.config import WebConfig
+
+        assert WebConfig().data_roots == ["data"]
+
+    def test_defaults_apply_when_config_omits_web_section(self, tmp_path):
+        """配置文件存在但缺 web 段时，兜底字典同样给出 data"""
+        from augmentor.config import load_config
+
+        quiet = tmp_path / "no_web.yaml"
+        quiet.write_text("models:\n  default: ernie\n", encoding="utf-8")
+
+        assert load_config(str(quiet)).web.data_roots == ["data"]
+
+    def test_shipped_config_yaml(self):
+        """随仓库分发的 config.yaml"""
+        import yaml
+
+        from augmentor.config import WebConfig
+
+        with open(AI_DIR / "config.yaml", encoding="utf-8") as handle:
+            raw = yaml.safe_load(handle)
+
+        shipped = raw["web"]["data_roots"]
+        assert shipped == ["data"]
+        # 三处默认值必须一致，否则有无配置文件是两种安全边界
+        assert shipped == WebConfig().data_roots
+
+    def test_workdir_is_not_a_default_root(self, monkeypatch, tmp_path):
+        """出厂默认不得把工作目录整体暴露给 API"""
+        from fastapi import HTTPException
+
+        from api.deps import resolve_data_path
+
+        monkeypatch.delenv("AUGMENTOR_DATA_ROOTS", raising=False)
+        inside = tmp_path / "train_data_leaked.json"
+        inside.write_text("[]", encoding="utf-8")
+
+        with pytest.raises(HTTPException) as exc:
+            resolve_data_path(str(inside))
+        assert exc.value.status_code == 403
+
+
+class TestDataListScansWhitelist:
+    """"列表能给的，路由必须能读"
+
+    ``/api/data/list`` 早期硬编码扫描 ``Path(".")``，与 ``resolve_within_roots``
+    的白名单是两套来源：收紧 ``data_roots`` 后它会报出读不到的文件（点开的
+    403 看起来像白名单没生效），或漏报白名单内其它根目录的文件。
+    """
+
+    def test_only_whitelisted_roots_are_listed(self, client, monkeypatch, tmp_path):
+        """结果严格等于白名单根目录内的文件"""
+        listed = tmp_path / "in"
+        hidden = tmp_path / "out"
+        listed.mkdir()
+        hidden.mkdir()
+        for root in (listed, hidden):
+            (root / "train_data_visible.json").write_text("[]", encoding="utf-8")
+        # 非 train_data 前缀即使在白名单内也不列
+        (listed / "other.json").write_text("[]", encoding="utf-8")
+
+        monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(listed))
+
+        files = client.get("/api/data/list").json()["files"]
+
+        assert len(files) == 1
+        assert files[0]["name"] == "train_data_visible.json"
+        assert Path(files[0]["path"]).resolve() == (listed / "train_data_visible.json").resolve()
+
+    def test_duplicated_roots_are_deduplicated(self, client, monkeypatch, tmp_path):
+        """同一目录被重复列出时只报一次
+
+        去重按 resolve 后的路径比较，因此 ``x`` 与 ``x/.`` 这类等价写法不会
+        产生两条同文件记录。
+        """
+        root = tmp_path / "data"
+        root.mkdir()
+        target = root / "train_data_same.json"
+        target.write_text("[]", encoding="utf-8")
+
+        monkeypatch.setenv(
+            "AUGMENTOR_DATA_ROOTS", os.pathsep.join([str(root), str(root / ".")])
+        )
+
+        files = client.get("/api/data/list").json()["files"]
+
+        assert len(files) == 1
+        assert Path(files[0]["path"]).resolve() == target.resolve()
+        assert "size" in files[0]
+
+    def test_missing_root_lists_nothing(self, client, monkeypatch, tmp_path):
+        """白名单指向不存在的目录时返回空列表，而不是 500
+
+        出厂默认收到 ``data`` 之后，「数据目录还没建」是全新部署的正常状态。
+        """
+        monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(tmp_path / "not_created_yet"))
+
+        response = client.get("/api/data/list")
+
+        assert response.status_code == 200
+        assert response.json()["files"] == []
+
+
+class TestBareNameResolvesInsideRoots:
+    """裸文件名要在白名单根目录内解析，前端才用得起来
+
+    收紧出厂默认后最容易踩的坑：``/api/data/list`` 返回的 ``name`` 只是文件名，
+    而前端 8 处（``DataList.tsx``、``Analysis.tsx``、``AugmentForm.tsx`` 等）都把它
+    原样拼回 ``/api/data/load/{filename}``；``{filename}`` 只匹配单个路径段，
+    传不了 ``data/xxx.json``。若相对路径只按工作目录解释，文件选择器会集体 403。
+    """
+
+    def test_listed_name_can_be_loaded_back(self, client, monkeypatch, tmp_path):
+        """列表 → 选择 → 加载 的完整闭环必须走通（前端契约）"""
+        root = tmp_path / "data"
+        root.mkdir()
+        items = [{"instruction": "怎么办居住证", "output": "带上材料"}]
+        (root / "train_data_ui.json").write_text(
+            json.dumps(items, ensure_ascii=False), encoding="utf-8"
+        )
+        monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(root))
+
+        listed = client.get("/api/data/list").json()["files"]
+        assert [f["name"] for f in listed] == ["train_data_ui.json"]
+
+        response = client.get(f"/api/data/load/{listed[0]['name']}")
+
+        assert response.status_code == 200
+        assert response.json()["items"][0]["instruction"] == "怎么办居住证"
+
+    def test_root_wins_over_working_directory(self, monkeypatch, tmp_path):
+        """候选顺序：白名单根目录在前，工作目录兜底"""
+        from api.deps import _relative_candidates, allowed_data_roots
+
+        root = tmp_path / "data"
+        root.mkdir()
+        monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(root))
+
+        candidates = _relative_candidates(Path("train_data_ui.json"), allowed_data_roots())
+
+        assert candidates[0] == (root / "train_data_ui.json").resolve()
+        assert candidates[-1] == (Path.cwd() / "train_data_ui.json").resolve()
+
+    def test_candidates_are_deduplicated(self, monkeypatch):
+        """根目录就是工作目录时不产生重复候选
+
+        收紧前的出厂默认正是 ``["."]``，此时「根目录解释」与「工作目录解释」重合，
+        候选必须塌成一条，否则每个路径参数都白做一次 ``exists()``。
+        """
+        from api.deps import _relative_candidates, allowed_data_roots
+
+        cwd = Path.cwd()
+        monkeypatch.setenv(
+            "AUGMENTOR_DATA_ROOTS", os.pathsep.join([str(cwd), str(cwd / ".")])
+        )
+
+        candidates = _relative_candidates(Path("train_data_ui.json"), allowed_data_roots())
+
+        assert candidates == [(cwd / "train_data_ui.json").resolve()]
+
+    def test_candidates_are_deduplicated(self, monkeypatch):
+        """重复根目录不产生重复候选
+
+        旧部署把 ``data_roots`` 配成工作目录（收紧前的出厂默认）时，「根目录解释」
+        与「工作目录兜底」完全重合；若不去重，每个路径参数都要多stat 一遍同样的
+        路径，且 ``x`` 与 ``x/.`` 这类等价写法会被当成两个候选。
+        """
+        from api.deps import _relative_candidates, allowed_data_roots
+
+        cwd = Path.cwd()
+        monkeypatch.setenv(
+            "AUGMENTOR_DATA_ROOTS", os.pathsep.join([str(cwd), str(cwd / ".")])
+        )
+
+        candidates = _relative_candidates(Path("train_data_ui.json"), allowed_data_roots())
+
+        assert candidates == [(cwd / "train_data_ui.json").resolve()]
+
+    def test_new_file_is_not_guessed_into_a_root(self, monkeypatch, tmp_path):
+        """写入不存在的路径时**不**替调用方挑目录
+
+        猜测会把产物静默挪进某个根目录；这里宁可 403，让调用方显式写
+        ``data/xxx.json``。
+        """
+        from fastapi import HTTPException
+
+        from api.deps import resolve_data_path
+
+        root = tmp_path / "data"
+        root.mkdir()
+        monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(root))
+
+        with pytest.raises(HTTPException) as exc:
+            resolve_data_path("brand_new_output.json", for_write=True)
+
+        assert exc.value.status_code == 403
+        assert not (root / "brand_new_output.json").exists()
+
+    def test_explicit_root_relative_spelling_works(self, monkeypatch, tmp_path):
+        """显式 ``sub/xxx.json`` 这种写法照旧可用"""
+        from api.deps import resolve_within_roots
+
+        root = tmp_path / "data"
+        (root / "sub").mkdir(parents=True)
+        target = root / "sub" / "x.json"
+        target.write_text("[]", encoding="utf-8")
+        monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(root))
+
+        assert resolve_within_roots("sub/x.json", "文件路径") == target.resolve()
+
+    def test_absolute_path_still_needs_to_be_inside_roots(self, monkeypatch, tmp_path):
+        """绝对路径不参与候选回退，越界仍 403"""
+        from fastapi import HTTPException
+
+        from api.deps import resolve_data_path
+
+        outside = tmp_path / "outside.json"
+        outside.write_text("[]", encoding="utf-8")
+        root = tmp_path / "data"
+        root.mkdir()
+        monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(root))
+
+        with pytest.raises(HTTPException) as exc:
+            resolve_data_path(str(outside))
+
+        assert exc.value.status_code == 403
 
 
 class TestWriteRouteAuthCoverage:
