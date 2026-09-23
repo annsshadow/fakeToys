@@ -4,6 +4,7 @@ import type {
   AnalyzeResponse,
   AnnotateResponse,
   AppConfig,
+  AuditResponse,
   AugmentProgress,
   BatchExportResponse,
   BenchmarkResponse,
@@ -11,20 +12,27 @@ import type {
   CleanResponse,
   CreateVersionResponse,
   DataFileListResponse,
+  DataItem,
   DataPageResponse,
   DatasetExportResponse,
   DedupResponse,
   ExportFormatsResponse,
   ExportPreviewResponse,
   HealthResponse,
+  LeakageResponse,
   ModelsResponse,
   MultimodalFormatsResponse,
   MultimodalRecord,
   MultimodalScanResponse,
   MutationResponse,
+  OutliersResponse,
+  PiiPatternsResponse,
+  ProfilingResponse,
   QualityEvaluationResponse,
   QualityReportResponse,
+  SanitizeResponse,
   StartAugmentResponse,
+  StatusResponse,
   UpdateConfigResponse,
   UploadResponse,
   VersionDataResponse,
@@ -342,5 +350,111 @@ export const getModels = async (): Promise<ModelsResponse> => {
 // 健康检查
 export const healthCheck = async (): Promise<HealthResponse> => {
   const response = await api.get('/health')
+  return response.data
+}
+
+// ============ 服务综合状态 ============
+
+/**
+ * 服务综合状态（含依赖诊断）
+ *
+ * 与 `healthCheck` 的区别：health 是给容器探针用的轻量存活检查，
+ * status 会构造管道并检查可选依赖，因此能回答「当前环境缺什么」。
+ */
+export const getServiceStatus = async (): Promise<StatusResponse> => {
+  const response = await api.get('/status')
+  return response.data
+}
+
+// ============ 内置演示数据 ============
+
+/**
+ * 拉取内置演示数据集（**裸数组**，不是 `{data: [...]}` 包装）
+ *
+ * 返回的条目结构与 `DataItem` 一致，可直接喂给 `uploadData` 落盘成数据集。
+ */
+export const getDemoData = async (): Promise<DataItem[]> => {
+  const response = await api.get('/demo/data')
+  return response.data
+}
+
+// ============ 隐私脱敏 ============
+
+export const getPiiPatterns = async (): Promise<PiiPatternsResponse> => {
+  const response = await api.get('/privacy/patterns')
+  return response.data
+}
+
+/**
+ * PII 脱敏
+ *
+ * `fields` 留空表示按后端默认字段集脱敏；`includeExtra` 打开后会额外套用
+ * 一组更激进的模式（误伤率也更高，默认关闭）。
+ */
+export const sanitizeData = async (
+  inputFile: string,
+  fields?: string[],
+  includeExtra: boolean = false
+): Promise<SanitizeResponse> => {
+  const response = await api.post('/privacy/sanitize', {
+    input_file: inputFile,
+    fields,
+    include_extra: includeExtra
+  })
+  return response.data
+}
+
+// ============ 训练/测试集泄漏检测 ============
+
+export const checkLeakage = async (
+  trainFile: string,
+  testFile: string,
+  fuzzyThreshold: number = 0.8
+): Promise<LeakageResponse> => {
+  const response = await api.post('/leakage/check', {
+    train_file: trainFile,
+    test_file: testFile,
+    fuzzy_threshold: fuzzyThreshold
+  })
+  return response.data
+}
+
+// ============ 数据集就绪审计 ============
+
+/**
+ * 数据集就绪审计
+ *
+ * `referenceFile` 留空表示不做「与参照集对比」的那部分检查。
+ */
+export const auditDataset = async (
+  inputFile: string,
+  referenceFile?: string
+): Promise<AuditResponse> => {
+  const response = await api.post('/audit', {
+    input_file: inputFile,
+    reference_file: referenceFile
+  })
+  return response.data
+}
+
+// ============ 离群点与画像 ============
+
+export const detectOutliers = async (
+  inputFile: string,
+  method: string = 'zscore',
+  threshold: number = 3,
+  field: string = 'length'
+): Promise<OutliersResponse> => {
+  const response = await api.post('/quality/outliers', {
+    input_file: inputFile,
+    method,
+    threshold,
+    field
+  })
+  return response.data
+}
+
+export const profileDataset = async (inputFile: string): Promise<ProfilingResponse> => {
+  const response = await api.post('/quality/profiling', { input_file: inputFile })
   return response.data
 }

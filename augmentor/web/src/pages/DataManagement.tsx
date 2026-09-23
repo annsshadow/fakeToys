@@ -11,7 +11,7 @@ import {
   type TableColumnsType,
 } from 'antd'
 import { DownloadOutlined, DeleteOutlined, EditOutlined, UploadOutlined, PlayCircleOutlined } from '@ant-design/icons'
-import { getDataFiles, loadData, updateDataItem, deleteDataItem, exportData, uploadData } from '../services/api'
+import { getDataFiles, loadData, updateDataItem, deleteDataItem, exportData, uploadData, getDemoData } from '../services/api'
 import type { DataFileInfo, DataItem } from '../types/api'
 
 export default function DataManagement() {
@@ -90,12 +90,20 @@ export default function DataManagement() {
     return false
   }
 
+  /**
+   * 载入内置演示数据
+   *
+   * 走服务层而不是裸 `fetch('/api/demo/data')`：端点返回的是**裸数组**，
+   * `getDemoData()` 已经把「解包 + 类型」都声明好了，这里只需再包成 `File`
+   * 喂给 `uploadData`（上传端点只吃 multipart，不能直接收 JSON body）。
+   */
   const handleLoadDemo = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/demo/data')
-      const blob = await response.blob()
-      const file = new File([blob], 'demo_data.json', { type: 'application/json' })
+      const items = await getDemoData()
+      const file = new File([JSON.stringify(items, null, 2)], 'demo_data.json', {
+        type: 'application/json'
+      })
       await handleUpload(file)
     } catch {
       message.error('加载演示数据失败')

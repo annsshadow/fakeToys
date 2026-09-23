@@ -355,3 +355,142 @@ describe('配置与健康检查', () => {
     expect(instance.post).toHaveBeenCalledWith('/config', config)
   })
 })
+
+describe('服务状态与演示数据', () => {
+  it('getServiceStatus 请求 /status（不是 /health）', async () => {
+    respondWith({})
+
+    await api.getServiceStatus()
+
+    expect(instance.get).toHaveBeenCalledWith('/status')
+  })
+
+  it('getDemoData 请求 /demo/data 并把裸数组原样返回', async () => {
+    // 端点返回的是裸数组，不是 { data: [...] } 包装；解包写错这里会立刻变红
+    const payload = [{ instruction: 'q', input: '', output: 'a' }]
+    respondWith(payload)
+
+    await expect(api.getDemoData()).resolves.toBe(payload)
+    expect(instance.get).toHaveBeenCalledWith('/demo/data')
+  })
+})
+
+describe('隐私脱敏', () => {
+  it('getPiiPatterns 请求 /privacy/patterns', async () => {
+    respondWith({})
+
+    await api.getPiiPatterns()
+
+    expect(instance.get).toHaveBeenCalledWith('/privacy/patterns')
+  })
+
+  it('sanitizeData 默认不传 fields、include_extra 为 false', async () => {
+    respondWith({})
+
+    await api.sanitizeData('a.json')
+
+    expect(instance.post).toHaveBeenCalledWith('/privacy/sanitize', {
+      input_file: 'a.json',
+      fields: undefined,
+      include_extra: false,
+    })
+  })
+
+  it('sanitizeData 可指定 fields 并打开增强模式', async () => {
+    respondWith({})
+
+    await api.sanitizeData('a.json', ['instruction'], true)
+
+    expect(instance.post).toHaveBeenCalledWith('/privacy/sanitize', {
+      input_file: 'a.json',
+      fields: ['instruction'],
+      include_extra: true,
+    })
+  })
+})
+
+describe('泄漏检测与就绪审计', () => {
+  it('checkLeakage 传 train_file / test_file，模糊阈值默认 0.8', async () => {
+    respondWith({})
+
+    await api.checkLeakage('train.json', 'test.json')
+
+    expect(instance.post).toHaveBeenCalledWith('/leakage/check', {
+      train_file: 'train.json',
+      test_file: 'test.json',
+      fuzzy_threshold: 0.8,
+    })
+  })
+
+  it('checkLeakage 的模糊阈值可覆盖', async () => {
+    respondWith({})
+
+    await api.checkLeakage('train.json', 'test.json', 0.5)
+
+    expect(instance.post).toHaveBeenCalledWith('/leakage/check', {
+      train_file: 'train.json',
+      test_file: 'test.json',
+      fuzzy_threshold: 0.5,
+    })
+  })
+
+  it('auditDataset 不传参照集时 reference_file 为 undefined', async () => {
+    respondWith({})
+
+    await api.auditDataset('a.json')
+
+    expect(instance.post).toHaveBeenCalledWith('/audit', {
+      input_file: 'a.json',
+      reference_file: undefined,
+    })
+  })
+
+  it('auditDataset 可带参照集', async () => {
+    respondWith({})
+
+    await api.auditDataset('a.json', 'ref.json')
+
+    expect(instance.post).toHaveBeenCalledWith('/audit', {
+      input_file: 'a.json',
+      reference_file: 'ref.json',
+    })
+  })
+})
+
+describe('离群点与画像', () => {
+  it('detectOutliers 默认 method=zscore、threshold=3、field=length', async () => {
+    respondWith({})
+
+    await api.detectOutliers('a.json')
+
+    expect(instance.post).toHaveBeenCalledWith('/quality/outliers', {
+      input_file: 'a.json',
+      method: 'zscore',
+      threshold: 3,
+      field: 'length',
+    })
+  })
+
+  it('detectOutliers 的三个参数都可覆盖', async () => {
+    respondWith({})
+
+    await api.detectOutliers('a.json', 'iqr', 1.5, 'output')
+
+    expect(instance.post).toHaveBeenCalledWith('/quality/outliers', {
+      input_file: 'a.json',
+      method: 'iqr',
+      threshold: 1.5,
+      field: 'output',
+    })
+  })
+
+  it('profileDataset 只传 input_file（save 交给后端默认值 false）', async () => {
+    respondWith({})
+
+    await api.profileDataset('a.json')
+
+    expect(instance.post).toHaveBeenCalledWith('/quality/profiling', {
+      input_file: 'a.json',
+    })
+  })
+})
