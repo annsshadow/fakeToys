@@ -1025,6 +1025,8 @@ async function loadProgramExtraReads() {
       s(api.get(`/api/program_center/bar/select2/count/20`)),
       s(api.get(`/api/program_center/collect/code/mobile/${encodeURIComponent(id)}`)),
       s(api.get(`/api/program_center/collect/controllermobile/name/${encodeURIComponent(name)}/mobile/${encodeURIComponent(mobile)}`)),
+      // rev302：distribute webserver 源(X_PROGRAM_INVOKE，webserver 变体区别 rev263) 补齐
+      s(api.get(`/api/program_center/distribute/webserver/assemble/source/${flag}`)),
     ])
     const n = (r: any) => ((r as any)?.data != null ? 1 : 0)
     const hit = rs.reduce((a, r) => a + n(r), 0)
