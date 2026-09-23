@@ -16,6 +16,7 @@
 
 import json
 import os
+import time
 from pathlib import Path
 
 import pytest
@@ -801,6 +802,180 @@ class TestServiceConfigPath:
 
         assert response.status_code == 200, response.text
         assert response.json()["is_valid"] is True
+
+
+class TestConfigDataRootsCache:
+    """配置文件来源的白名单不能每个请求重解析一遍
+
+    实测：未设置 ``AUGMENTOR_DATA_ROOTS`` 时 ``allowed_data_roots()`` 每次
+    **7.06 ms**，全部花在重新解析 ``config.yaml`` 上；而任何带路径参数的请求都
+    至少要过一次白名单，等于给每个请求凭空加 7 ms。缓存按 ``(路径, mtime_ns)``
+    建键——「改完配置立刻生效」这条不能为了省时间牺牲掉。
+    """
+
+    def _cfg(self, tmp_path, root_dir: Path):
+        """写一份只声明 ``web.data_roots`` 的配置"""
+        (tmp_path / "config.yaml").write_text(
+            f"web:\n  data_roots:\n    - {root_dir.as_posix()}\n", encoding="utf-8"
+        )
+
+    def _instrument(self, monkeypatch, tmp_path):
+        """清缓存、撤掉环境变量、返回 ``load_config`` 的调用记录"""
+        import api.deps as deps
+
+        calls: list = []
+        real = deps.load_config
+
+        def counting(config_path=None):
+            calls.append(config_path)
+            return real(config_path)
+
+        monkeypatch.delenv("AUGMENTOR_DATA_ROOTS", raising=False)
+        monkeypatch.setattr(deps, "load_config", counting)
+        monkeypatch.setattr(deps, "_config_roots_cache", {})
+        monkeypatch.chdir(tmp_path)
+        return deps, calls
+
+    def test_config_parsed_once_across_calls(self, monkeypatch, tmp_path):
+        """连查五次白名单，配置文件只解析一次"""
+        allowed = tmp_path / "allowed_a"
+        allowed.mkdir()
+        self._cfg(tmp_path, allowed)
+        deps, calls = self._instrument(monkeypatch, tmp_path)
+
+        roots = [deps.allowed_data_roots() for _ in range(5)][-1]
+
+        assert roots == [allowed.resolve()]
+        assert len(calls) == 1
+
+    def test_config_edit_takes_effect_immediately(self, monkeypatch, tmp_path):
+        """换根目录后必须立刻生效——缓存不能把白名单冻在旧值上"""
+        first = tmp_path / "allowed_a"
+        second = tmp_path / "allowed_b"
+        first.mkdir()
+        second.mkdir()
+        self._cfg(tmp_path, first)
+        deps, calls = self._instrument(monkeypatch, tmp_path)
+
+        assert deps.allowed_data_roots() == [first.resolve()]
+
+        self._cfg(tmp_path, second)
+        cfg = tmp_path / "config.yaml"
+        stat = cfg.stat()
+        os.utime(cfg, ns=(stat.st_atime_ns, stat.st_mtime_ns + 1_000_000))
+
+        assert deps.allowed_data_roots() == [second.resolve()]
+        assert len(calls) == 2
+
+    def test_broken_config_is_not_cached(self, monkeypatch, tmp_path):
+        """坏配置降级到出厂默认，且**不**进缓存（修好后下一次就该读到）"""
+        (tmp_path / "config.yaml").write_text(
+            "web:\n  data_roots: [unclosed\n", encoding="utf-8"
+        )
+        deps, calls = self._instrument(monkeypatch, tmp_path)
+
+        first = deps.allowed_data_roots()
+        second = deps.allowed_data_roots()
+
+        assert first == second == [(Path.cwd() / "data").resolve()]
+        assert len(calls) == 2
+
+    def test_whitelist_lookup_stays_sub_millisecond(self, monkeypatch, tmp_path):
+        """200 次白名单解析的总耗时预算（未加缓存时实测约 1400 ms）
+
+        时间断言本身不是预言机——所以同时钉住「200 次查询只解析过 1 次配置」，
+        否则缓存失效时只剩一个可能因机器抖动而误判的数字。
+        """
+        allowed = tmp_path / "allowed_a"
+        allowed.mkdir()
+        self._cfg(tmp_path, allowed)
+        deps, calls = self._instrument(monkeypatch, tmp_path)
+
+        deps.allowed_data_roots()
+        start = time.perf_counter()
+        for _ in range(200):
+            deps.allowed_data_roots()
+        elapsed_ms = (time.perf_counter() - start) * 1000
+
+        assert len(calls) == 1, f"200 次查询解析了 {len(calls)} 次配置，缓存未生效"
+        assert elapsed_ms < 200, f"白名单解析 200 次用了 {elapsed_ms:.1f} ms（缓存未生效？）"
+
+    def test_returned_roots_are_a_fresh_list(self, monkeypatch, tmp_path):
+        """缓存命中时也要返回新列表——调用方 append 不能污染白名单"""
+        allowed = tmp_path / "allowed_a"
+        allowed.mkdir()
+        self._cfg(tmp_path, allowed)
+        deps, _ = self._instrument(monkeypatch, tmp_path)
+
+        first = deps.allowed_data_roots()
+        first.append(Path(tmp_path.as_posix()))
+        second = deps.allowed_data_roots()
+
+        assert second == [allowed.resolve()]
+
+
+class TestEnvDataRootsCache:
+    """环境变量来源的白名单也要缓存，但缓存键必须带上工作目录
+
+    实测：``AUGMENTOR_DATA_ROOTS`` 设两个根目录时 ``allowed_data_roots()``
+    每次 **0.29 ms**，全花在 ``Path.resolve()`` 的系统调用上；测试环境恒设该
+    变量，等于整个套件每个请求都重复解析同一串值。
+
+    缓存按 ``(原值, 工作目录)`` 建键：白名单允许相对路径，只按原值建键会把
+    上一个目录的解释带到新目录下——那是**放宽**边界，比慢更糟。
+    """
+
+    def _roots(self, monkeypatch, value: str):
+        import api.deps as deps
+
+        monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", value)
+        monkeypatch.setattr(deps, "_env_roots_cache", {})
+        return deps
+
+    def test_relative_env_root_follows_cwd(self, monkeypatch, tmp_path):
+        """换工作目录后，同一个相对根目录必须重新解析"""
+        first = tmp_path / "first"
+        second = tmp_path / "second"
+        first.mkdir()
+        second.mkdir()
+
+        deps = self._roots(monkeypatch, "data")
+
+        monkeypatch.chdir(first)
+        assert deps.allowed_data_roots() == [(first / "data").resolve()]
+
+        monkeypatch.chdir(second)
+        assert deps.allowed_data_roots() == [(second / "data").resolve()]
+
+    def test_changed_env_value_takes_effect(self, monkeypatch, tmp_path):
+        """改环境变量值必须立刻生效，不能读到上一个值的缓存"""
+        deps = self._roots(monkeypatch, str(tmp_path / "a"))
+        assert deps.allowed_data_roots() == [(tmp_path / "a").resolve()]
+
+        monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(tmp_path / "b"))
+        assert deps.allowed_data_roots() == [(tmp_path / "b").resolve()]
+
+    def test_blank_env_value_falls_back_to_shipped_default(self, monkeypatch, tmp_path):
+        """环境变量全是分隔符/空白时按「未设置」处理，降级到出厂默认"""
+        deps = self._roots(monkeypatch, os.pathsep + "   " + os.pathsep)
+
+        roots = deps.allowed_data_roots()
+
+        assert roots == [(Path.cwd() / "data").resolve()]
+
+    def test_env_lookup_budget(self, monkeypatch, tmp_path):
+        """500 次白名单解析的总耗时预算（未缓存时实测约 145 ms，其中 resolve 占九成）"""
+        deps = self._roots(
+            monkeypatch, os.pathsep.join([str(tmp_path / "a"), str(tmp_path / "b")])
+        )
+
+        deps.allowed_data_roots()
+        start = time.perf_counter()
+        for _ in range(500):
+            deps.allowed_data_roots()
+        elapsed_ms = (time.perf_counter() - start) * 1000
+
+        assert elapsed_ms < 50, f"环境变量白名单解析 500 次用了 {elapsed_ms:.1f} ms"
 
 
 class TestWriteRouteAuthCoverage:
