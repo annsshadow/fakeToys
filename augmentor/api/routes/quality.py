@@ -138,7 +138,7 @@ def _build_scoring_items(items):
 async def evaluate_quality(request: QualityRequest):
     """质量评估"""
     try:
-        items = load_items(request.input_file)
+        items = await run_in_thread(load_items, request.input_file)
 
         def evaluate():
             from augmentor.quality import QualityScorer
@@ -182,7 +182,7 @@ async def evaluate_quality(request: QualityRequest):
 async def deduplicate(request: DedupRequest):
     """智能去重"""
     try:
-        items = load_items(request.input_file)
+        items = await run_in_thread(load_items, request.input_file)
 
         def dedup():
             from augmentor.dedup import Deduplicator
@@ -214,7 +214,7 @@ async def deduplicate(request: DedupRequest):
 async def generate_report(request: QualityRequest):
     """生成质量报告"""
     try:
-        items = load_items(request.input_file)
+        items = await run_in_thread(load_items, request.input_file)
 
         def build_report():
             from augmentor.quality import QualityScorer
@@ -250,7 +250,7 @@ async def generate_report(request: QualityRequest):
 async def clean_data(request: QualityRequest):
     """数据清洗"""
     try:
-        items = load_items(request.input_file)
+        items = await run_in_thread(load_items, request.input_file)
 
         def clean():
             from augmentor.data import DataCleaner
@@ -282,7 +282,7 @@ async def clean_data(request: QualityRequest):
 async def annotate_data(request: QualityRequest):
     """自动标注"""
     try:
-        items = load_items(request.input_file)
+        items = await run_in_thread(load_items, request.input_file)
 
         def annotate():
             from augmentor.data import AutoAnnotator
@@ -306,7 +306,7 @@ async def annotate_data(request: QualityRequest):
 async def run_benchmark(request: QualityRequest):
     """运行数据质量基准"""
     try:
-        items = load_items(request.input_file)
+        items = await run_in_thread(load_items, request.input_file)
 
         def benchmark():
             from augmentor.benchmark import QualityBenchmark
@@ -367,7 +367,7 @@ class ProfilingResponse(BaseModel):
 async def detect_outliers_endpoint(request: OutlierRequest):
     """检测长度异常样本"""
     try:
-        raw_items = load_items(request.input_file)
+        raw_items = await run_in_thread(load_items, request.input_file)
 
         def detect():
             from augmentor.outlier import OutlierDetector
@@ -400,7 +400,7 @@ async def profile_dataset(
 ):
     """生成数据集画像"""
     try:
-        items = load_items(request.input_file)
+        items = await run_in_thread(load_items, request.input_file)
         # 落盘路径同样受白名单约束
         output_path = (
             resolve_data_path(request.output_path, for_write=True)
