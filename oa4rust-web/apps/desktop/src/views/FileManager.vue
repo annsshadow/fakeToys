@@ -182,6 +182,9 @@ async function loadFolderTopByRef(): Promise<void> {
       s(api.get(`/api/attachment2/list/top`)),
       // rev301：attachment2/list/editor/{owner}(FILE_FILE 按属主编辑器附件) 补齐
       s(api.get(`/api/attachment2/list/editor/${encodeURIComponent(refId)}`)),
+      // rev302：config/is/file/manager(是否文件管理员) + 未引用文件清单 补齐
+      s(api.get(`/api/config/is/file/manager`)),
+      s(api.get(`/api/file/assemble/control/file/list/unused/referencetype/cmsdocument/manage`)),
     ])
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     toast.success(`顶层文件夹 ${n(top)} / 按引用类型文件 ${n(byRef)} / 顶层附件 ${n(attTop)} / CMS文件游标 ${n(cmsNext)}·${n(cmsPrev)} / 全量游标 ${n(fNext)}·${n(fPrev)}`)
