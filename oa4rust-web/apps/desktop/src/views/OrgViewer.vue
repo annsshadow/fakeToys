@@ -29,6 +29,7 @@
       <button class="org-meta-btn" @click="loadOrgSearchCursors">搜索/人员游标</button>
       <button class="org-meta-btn" @click="loadOrgAttributes">属性/职务/拼音</button>
       <button class="org-meta-btn" @click="loadOrgListCursors">核心列表游标</button>
+      <button class="org-meta-btn" @click="loadOrgControlReads">控制读取族</button>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -211,6 +212,25 @@ async function loadOrgListCursors() {
     orgMetaText.value = `群组逆翻 ${n(gPrev)} / 角色顺翻 ${n(rNext)} / 角色逆翻 ${n(rPrev)} / 单位顺翻 ${n(uNext)} / 单位逆翻 ${n(uPrev)} / 单位全量 ${n(uAll)} / 单位按类型 ${n(uType)}`
   } catch (e: any) {
     toast.error('加载核心列表游标失败: ' + (e?.message ?? ''))
+  }
+}
+// rev242：组织控制 身份职务名/名片/单位子直属+按身份 6 条真实 distinct 读路由（arity 已核；跳 mockputtopost 别名、sup/nested/type 忽略 type 孪生、role/list/like/pinyin 无 WHERE 退化、person/list/group/sub/nested 双 Path 抽取风险）
+async function loadOrgControlReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const flag = '0'
+    const [idByDuty, vcf, subDirectType, byIdLevel, byIdType, importResult] = await Promise.all([
+      s(api.get(`/api/organization/assemble/control/identity/list/${flag}/unitduty/name/${encodeURIComponent('管理员')}`)),
+      s(api.get(`/api/organization/assemble/control/personcard/listVCf/${flag}`)),
+      s(api.get(`/api/organization/assemble/control/unit/list/${flag}/sub/direct/type/${flag}`)),
+      s(api.get(`/api/organization/assemble/control/unit/identity/${flag}/level/1`)),
+      s(api.get(`/api/organization/assemble/control/unit/identity/${flag}/type/${flag}`)),
+      s(api.get(`/api/organization/assemble/control/inputperson/result/flag/${flag}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : ((r as any)?.data ? 1 : 0))
+    orgMetaText.value = `按职务名身份 ${n(idByDuty)} / 名片vCard ${n(vcf)} / 子直属按类型 ${n(subDirectType)} / 按身份层级单位 ${n(byIdLevel)} / 按身份类型单位 ${n(byIdType)} / 导入结果 ${n(importResult)}`
+  } catch (e: any) {
+    toast.error('加载组织控制读取失败: ' + (e?.message ?? ''))
   }
 }
 async function loadOrgMeta() {
