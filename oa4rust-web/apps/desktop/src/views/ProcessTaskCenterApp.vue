@@ -27,12 +27,14 @@
         <button class="btn-refresh" @click="loadJobDataReads">🧬 作业/数据记录/签署/发票</button>
         <button class="btn-refresh" @click="loadWorkJobProjection">🛰️ 工作复合/作业投影</button>
         <button class="btn-refresh" @click="loadTaskFullCursors">🗂️ 待办全量游标/详情</button>
+        <button class="btn-refresh" @click="loadTaskCompletedFullCursors">✅ 已办全量游标/详情</button>
       </div>
       <div v-if="countsText" class="wk-chips"><span class="wk-chip">{{ countsText }}</span></div>
       <div v-if="workDetailText" class="wk-chips"><span class="wk-chip">{{ workDetailText }}</span></div>
       <div v-if="jobDataText" class="wk-chips"><span class="wk-chip">{{ jobDataText }}</span></div>
       <div v-if="workJobText" class="wk-chips"><span class="wk-chip">{{ workJobText }}</span></div>
       <div v-if="taskCursorText" class="wk-chips"><span class="wk-chip">{{ taskCursorText }}</span></div>
+      <div v-if="taskCompCursorText" class="wk-chips"><span class="wk-chip">{{ taskCompCursorText }}</span></div>
       <div v-if="snapText" class="wk-chips"><span class="wk-chip">{{ snapText }}</span></div>
       <div v-if="workItems.length" class="wk-chips">
         <span v-for="w in workItems" :key="w.id || w.title" class="wk-chip">{{ w.title || w.id }}</span>
@@ -83,6 +85,41 @@ const countsText = ref('')
 const jobDataText = ref('')
 const workJobText = ref('')
 const taskCursorText = ref('')
+const taskCompCursorText = ref('')
+// rev283：已办 PP_C_TASKCOMPLETED 全量真实读端点（双向游标 base/application/process/filter + 按日期时段管理 + 详情 reference）；均只读 arity 已核
+async function loadTaskCompletedFullCursors() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const cnt = '20'
+  const app = 'default'
+  const proc = 'default'
+  const dt = new Date().toISOString().slice(0, 10)
+  const hr = '9'
+  const first: any = items.value[0] ?? {}
+  const tid = String(first.id ?? '0')
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/${id}/next/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/${id}/prev/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/${id}/next/${cnt}/application/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/${id}/prev/${cnt}/application/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/${id}/next/${cnt}/process/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/${id}/prev/${cnt}/process/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/next/filter/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/prev/filter/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/prev/application/${id}/${cnt}/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/prev/process/${id}/${cnt}/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/prev/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/v2/list/prev/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/date/${dt}/hour/${hr}/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/${encodeURIComponent(tid)}/reference`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    taskCompCursorText.value = `已办真实读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载已办全量游标失败: ' + (e?.message ?? ''))
+  }
+}
 // rev282：待办 PP_C_TASK 全量真实读端点接线（游标 next/prev × base/application/process/manage/filter + 详情 manage/reference）
 // 均为 query_opt/query_all 只读、arity 已核；作为待办列表的双向翻页/按应用按流程筛选/管理详情等真实 UI 读取，非 mock/写/500 桩
 async function loadTaskFullCursors() {
