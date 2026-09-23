@@ -20,6 +20,7 @@
         <button class="btn-refresh" @click="loadWorkDetail">🧾 工作明细</button>
         <button class="btn-refresh" @click="loadSnaps">📸 工作快照</button>
         <button class="btn-refresh" @click="loadSnapCursors">🎞️ 快照游标</button>
+        <button class="btn-refresh" @click="loadEngineEntities">🔧 引擎实体</button>
       </div>
       <div v-if="countsText" class="wk-chips"><span class="wk-chip">{{ countsText }}</span></div>
       <div v-if="workDetailText" class="wk-chips"><span class="wk-chip">{{ workDetailText }}</span></div>
@@ -90,6 +91,24 @@ async function loadWorkDetail() {
   const projN = Array.isArray((projection as any)?.data) ? (projection as any).data.length : 0
   const docN = Array.isArray((docVer as any)?.data) ? (docVer as any).data.length : 0
   workDetailText.value = `工作「${wTitle}」· 任务投影 ${projN} · 文档版本 ${docN}`
+}
+// rev234：流程引擎按 id 实体族 8 条真实 distinct 路由（不同处理函数/表；全字面量路径避免变量前缀失配）
+async function loadEngineEntities() {
+  workDetailText.value = ''
+  const id = items.value[0] ? String(items.value[0].work ?? items.value[0].id ?? '0') : '0'
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [inst, appdict, dataWc, formAct, readc, review, taskc, proj] = await Promise.all([
+    s(api.get(`/api/processplatform/service/processing/instance/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/applicationdict/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/data/workcompleted/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/form/suitable/activity/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/readcompleted/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/review/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/taskcompleted/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/projection/${id}/${id}`)),
+  ])
+  const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
+  workDetailText.value = `实例 ${has(inst)} · 应用字典 ${has(appdict)} · 完成数据 ${has(dataWc)} · 表单适配 ${has(formAct)} · 已读完成 ${has(readc)} · 意见 ${has(review)} · 已办 ${has(taskc)} · 投影 ${has(proj)}`
 }
 
 const snapText = ref('')
