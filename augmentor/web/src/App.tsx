@@ -10,7 +10,9 @@ import {
   RocketOutlined,
   SafetyCertificateOutlined,
   ExportOutlined,
-  PictureOutlined
+  PictureOutlined,
+  LockOutlined,
+  MonitorOutlined
 } from '@ant-design/icons'
 
 const DataManagement = lazy(() => import('./pages/DataManagement'))
@@ -22,6 +24,8 @@ const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Quality = lazy(() => import('./pages/Quality'))
 const Export = lazy(() => import('./pages/Export'))
 const Multimodal = lazy(() => import('./pages/Multimodal'))
+const Security = lazy(() => import('./pages/Security'))
+const System = lazy(() => import('./pages/System'))
 
 const { Header, Sider, Content } = Layout
 
@@ -47,6 +51,11 @@ const menuItems = [
     label: '质量中心'
   },
   {
+    key: '/security',
+    icon: <LockOutlined />,
+    label: '数据安全'
+  },
+  {
     key: '/export',
     icon: <ExportOutlined />,
     label: '导出中心'
@@ -70,6 +79,11 @@ const menuItems = [
     key: '/settings',
     icon: <SettingOutlined />,
     label: '配置管理'
+  },
+  {
+    key: '/system',
+    icon: <MonitorOutlined />,
+    label: '系统状态'
   }
 ]
 
@@ -114,11 +128,13 @@ function AppLayout() {
                 <Route path="/" element={<DataManagement />} />
                 <Route path="/augment" element={<Augmentation />} />
                 <Route path="/quality" element={<Quality />} />
+                <Route path="/security" element={<Security />} />
                 <Route path="/export" element={<Export />} />
                 <Route path="/analysis" element={<Analysis />} />
                 <Route path="/multimodal" element={<Multimodal />} />
                 <Route path="/versions" element={<Versions />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/system" element={<System />} />
               </Routes>
             </Suspense>
           </div>

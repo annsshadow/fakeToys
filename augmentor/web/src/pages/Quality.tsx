@@ -7,6 +7,7 @@ import {
   Button,
   Space,
   InputNumber,
+  Select,
   Table,
   Tabs,
   message,
@@ -21,26 +22,43 @@ import {
   qualityReport,
   cleanData,
   annotateData,
-  runBenchmark
+  runBenchmark,
+  detectOutliers,
+  profileDataset
 } from '../services/api'
 import type {
   AnnotateResponse,
   BenchmarkResponse,
   CleanResponse,
   DedupResponse,
+  OutlierEntry,
+  OutliersResponse,
+  ProfilingResponse,
   QualityEvaluationResponse,
   QualityReportResponse
 } from '../types/api'
 
+/** 离群点检测可选方法（与 `OutlierDetector` 支持的三档一致） */
+const OUTLIER_METHODS = [
+  { value: 'zscore', label: 'Z-Score（双侧）' },
+  { value: 'zscore_one_sided', label: 'Z-Score（仅上侧，适合过长文本）' },
+  { value: 'iqr', label: 'IQR（四分位距）' }
+]
+
 /**
  * 质量中心
  *
- * 聚合质量评估、去重、清洗、标注与基准五项能力，
+ * 聚合质量评估、去重、清洗、标注、基准、离群点检测与数据画像七项能力，
  * 对应需求 R5 / R6 / R7 / R12 / R13 / R28。
+ *
+ * 后两项（离群点 / 画像）与其它五项的区别是：它们**不参与打分**，
+ * 只输出「这批数据长什么样」，所以结果单独用 Tab 呈现而不是并入指标卡。
  */
 export default function Quality() {
   const [file, setFile] = useState('')
   const [threshold, setThreshold] = useState(0.6)
+  const [outlierMethod, setOutlierMethod] = useState('zscore')
+  const [outlierThreshold, setOutlierThreshold] = useState(3)
   const [loading, setLoading] = useState(false)
   const [evaluation, setEvaluation] = useState<QualityEvaluationResponse | null>(null)
   const [dedup, setDedup] = useState<DedupResponse | null>(null)
@@ -48,6 +66,8 @@ export default function Quality() {
   const [cleaning, setCleaning] = useState<CleanResponse | null>(null)
   const [annotation, setAnnotation] = useState<AnnotateResponse | null>(null)
   const [benchmark, setBenchmark] = useState<BenchmarkResponse | null>(null)
+  const [outliers, setOutliers] = useState<OutliersResponse | null>(null)
+  const [profiling, setProfiling] = useState<ProfilingResponse | null>(null)
 
   /**
    * 跑一个质量任务并把结果交给对应的 setState
@@ -97,6 +117,20 @@ export default function Quality() {
       value: typeof value === 'number' ? value.toFixed(4) : String(value)
     })
   )
+
+  // 离群点条目自带 `index`（它在数据集里的位置），可直接当行 key
+  const outlierRows = (outliers?.outliers || []).map((entry: OutlierEntry) => ({
+    index: entry.index,
+    value: entry.value,
+    instruction: entry.item.instruction
+  }))
+
+  // `field_completeness` 是「字段名 → 非空率」的扁平字典，展开成两列即可
+  const completenessRows = Object.entries(profiling?.field_completeness || {}).map(
+    ([field, rate]) => ({ field, rate })
+  )
+
+  const keywordRows = profiling?.top_keywords || []
 
   return (
     <div>
@@ -148,6 +182,40 @@ export default function Quality() {
             onClick={() => run(() => runBenchmark(file, threshold), setBenchmark, '基准测试失败')}
           >
             质量基准
+          </Button>
+        </Space>
+        <Space wrap style={{ marginTop: 12 }}>
+          <span>离群点方法</span>
+          <Select
+            value={outlierMethod}
+            onChange={setOutlierMethod}
+            options={OUTLIER_METHODS}
+            style={{ width: 240 }}
+          />
+          <span>离群阈值</span>
+          <InputNumber
+            min={0.1}
+            step={0.5}
+            value={outlierThreshold}
+            onChange={value => setOutlierThreshold(Number(value ?? 3))}
+          />
+          <Button
+            loading={loading}
+            onClick={() =>
+              run(
+                () => detectOutliers(file, outlierMethod, outlierThreshold),
+                setOutliers,
+                '离群点检测失败'
+              )
+            }
+          >
+            离群点检测
+          </Button>
+          <Button
+            loading={loading}
+            onClick={() => run(() => profileDataset(file), setProfiling, '数据画像失败')}
+          >
+            数据画像
           </Button>
         </Space>
       </Card>
@@ -295,6 +363,140 @@ export default function Quality() {
               </Card>
             ) : (
               <Card>点击「质量基准」运行标准化评估指标</Card>
+            )
+          },
+          {
+            key: 'outliers',
+            label: '离群点检测',
+            children: outliers ? (
+              <>
+                <Row gutter={16} style={{ marginBottom: 16 }}>
+                  <Col span={8}>
+                    <Card>
+                      <Statistic title="样本总数" value={outliers.total_items} />
+                    </Card>
+                  </Col>
+                  <Col span={8}>
+                    <Card>
+                      <Statistic title="离群样本" value={outliers.outlier_count} />
+                    </Card>
+                  </Col>
+                  <Col span={8}>
+                    <Card>
+                      <Statistic
+                        title="离群比例"
+                        value={(outliers.outlier_rate * 100).toFixed(2)}
+                        suffix="%"
+                      />
+                    </Card>
+                  </Col>
+                </Row>
+                <Card
+                  title={`离群样本（${outliers.method} · 阈值 ${outliers.threshold} · 字段 ${outliers.field}）`}
+                >
+                  <Table
+                    size="small"
+                    rowKey="index"
+                    columns={[
+                      { title: '序号', dataIndex: 'index', width: 80 },
+                      { title: '长度', dataIndex: 'value', width: 100 },
+                      { title: '内容', dataIndex: 'instruction', ellipsis: true }
+                    ]}
+                    dataSource={outlierRows}
+                  />
+                </Card>
+              </>
+            ) : (
+              <Card>点击「离群点检测」找出长度异常的样本</Card>
+            )
+          },
+          {
+            key: 'profiling',
+            label: '数据画像',
+            children: profiling ? (
+              <>
+                <Row gutter={16} style={{ marginBottom: 16 }}>
+                  <Col span={8}>
+                    <Card>
+                      <Statistic title="样本总数" value={profiling.total_items} />
+                    </Card>
+                  </Col>
+                  <Col span={8}>
+                    <Card>
+                      <Statistic
+                        title="重复率"
+                        value={(profiling.duplicate_rate * 100).toFixed(2)}
+                        suffix="%"
+                      />
+                    </Card>
+                  </Col>
+                  <Col span={8}>
+                    <Card>
+                      {/* 空数据集时 length_stats 是 {}，所以这里逐项兜底成 "-" */}
+                      <Statistic
+                        title="平均长度"
+                        value={profiling.length_stats.avg?.toFixed(1) ?? '-'}
+                      />
+                    </Card>
+                  </Col>
+                </Row>
+                <Row gutter={16}>
+                  <Col span={8}>
+                    <Card title="字段完整度">
+                      <Table
+                        size="small"
+                        rowKey="field"
+                        pagination={false}
+                        columns={[
+                          { title: '字段', dataIndex: 'field' },
+                          {
+                            title: '非空率',
+                            dataIndex: 'rate',
+                            render: (value: number) => `${(value * 100).toFixed(1)}%`
+                          }
+                        ]}
+                        dataSource={completenessRows}
+                      />
+                    </Card>
+                  </Col>
+                  <Col span={8}>
+                    <Card title="长度分布">
+                      <Space direction="vertical">
+                        <span>最短：{profiling.length_stats.min ?? '-'}</span>
+                        <span>最长：{profiling.length_stats.max ?? '-'}</span>
+                        <span>平均：{profiling.length_stats.avg?.toFixed(1) ?? '-'}</span>
+                        <span>中位：{profiling.length_stats.median ?? '-'}</span>
+                      </Space>
+                      <div style={{ marginTop: 12 }}>
+                        语言分布：
+                        {Object.entries(profiling.language_distribution || {}).map(
+                          ([lang, count]) => (
+                            <Tag key={lang} color="purple">
+                              {lang}: {String(count)}
+                            </Tag>
+                          )
+                        )}
+                      </div>
+                    </Card>
+                  </Col>
+                  <Col span={8}>
+                    <Card title="高频关键词">
+                      <Table
+                        size="small"
+                        rowKey="keyword"
+                        pagination={{ pageSize: 8 }}
+                        columns={[
+                          { title: '关键词', dataIndex: 'keyword' },
+                          { title: '频次', dataIndex: 'count', width: 80 }
+                        ]}
+                        dataSource={keywordRows}
+                      />
+                    </Card>
+                  </Col>
+                </Row>
+              </>
+            ) : (
+              <Card>点击「数据画像」查看字段完整度、长度分布与高频关键词</Card>
             )
           }
         ]}
