@@ -21,6 +21,7 @@
         <button class="btn-refresh" @click="loadFormDetails">📋 表单明细</button>
         <button class="btn-refresh" @click="loadCmsAliasForm">🔖 别名/发布/表单</button>
         <button class="btn-refresh" @click="loadViewRecords">👁️ 浏览记录(文档/人员)</button>
+        <button class="btn-refresh" @click="loadCmsAppReads">📚 分类/表单/脚本按应用</button>
       </div>
       <div v-if="cmsConfigText" class="cfg-note">{{ cmsConfigText }}</div>
       <div v-if="overviewText" class="cfg-note">{{ overviewText }}</div>
@@ -207,6 +208,33 @@ async function loadViewRecords() {
     overviewText.value = `文档浏览 ${h(byDoc)} · 人员浏览记录 ${n(byPerson)}`
   } catch (e: any) {
     toast.error('加载浏览记录失败: ' + (e?.message ?? ''))
+  }
+}
+// rev289：CMS 分类/表单/表单版本/脚本 按应用真实读端点集（categoryinfo publish/view、form formfield/v2、formversion、appinfo control、script list）；均只读 arity 已核
+async function loadCmsAppReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const appId = '0'
+  const id = '0'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/categoryinfo/list/publish/app/${encodeURIComponent(appId)}`)),
+      s(api.get(`/api/categoryinfo/list/view/app/${encodeURIComponent(appId)}`)),
+      s(api.get(`/api/categoryinfo/list/view/app/${encodeURIComponent(appId)}/all`)),
+      s(api.get(`/api/categoryinfo/list/view/app/${encodeURIComponent(appId)}/data`)),
+      s(api.get(`/api/categoryinfo/${encodeURIComponent(id)}/control`)),
+      s(api.get(`/api/form/list/formfield/appInfo/${encodeURIComponent(appId)}`)),
+      s(api.get(`/api/form/list/${encodeURIComponent(id)}/formfield`)),
+      s(api.get(`/api/form/v2/${encodeURIComponent(id)}/mobile`)),
+      s(api.get(`/api/form/v2/lookup/document/${encodeURIComponent(id)}/mobile`)),
+      s(api.get(`/api/formversion/${encodeURIComponent(id)}`)),
+      s(api.get(`/api/formversion/list/form/${encodeURIComponent(id)}`)),
+      s(api.get(`/api/appinfo/${encodeURIComponent(id)}/control`)),
+      s(api.get(`/api/script/list/app/${encodeURIComponent(appId)}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    overviewText.value = `CMS 按应用真实读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载分类/表单/脚本失败: ' + (e?.message ?? ''))
   }
 }
 const createEp = '/api/cms/core/entity/index/create'
