@@ -14,6 +14,7 @@
         <button class="action-btn" @click="loadShareScopes">🔗 文件夹2/我的分享/收到分享</button>
         <button class="action-btn" @click="loadRefTypes">🏷️ 引用类型</button>
         <button class="action-btn" @click="loadDocFileInfo">📄 文档文件信息</button>
+        <button class="action-btn" @click="loadFileCoreEntities">🗂️ 文件实体</button>
         <button class="action-btn" @click="toggleView">{{ viewType === 'grid' ? '☰ 列表' : '⊞ 网格' }}</button>
       </div>
     </div>
@@ -371,6 +372,25 @@ async function loadDocFileInfo(): Promise<void> {
     toast.success(`文档文件 ${rows.length} 条 · 首个「${name}」· ${onlineOk} · ${pdfOk}`)
   } catch (e: any) {
     toast.error('加载文档文件信息失败: ' + (e?.message ?? ''))
+  }
+}
+// rev231：文件核心实体族 4 条真实 distinct 路由（SeaORM file_folder/file_file）
+// core/entity/folder/list/top（Superior IS NULL 顶层）· folder/list/{id}（按 superior 子目录）· file/list（DeletedAt null 全部文件）· complex/top（顶层文件夹+文件复合）
+async function loadFileCoreEntities(): Promise<void> {
+  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const topResp = await s(api.get('/api/file/core/entity/folder/list/top'))
+    const folders = Array.isArray((topResp as any)?.data) ? (topResp as any).data : []
+    const fid = folders[0] ? String(folders[0].id ?? '0') : '0'
+    const [subFolders, files, complex] = await Promise.all([
+      s(api.get(`/api/file/core/entity/folder/list/${encodeURIComponent(fid)}`)),
+      s(api.get('/api/file/core/entity/file/list')),
+      s(api.get('/api/file/core/entity/complex/top')),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    toast.success(`顶层文件夹 ${folders.length} · 子目录 ${n(subFolders)} · 文件 ${n(files)} · 复合顶层 ${n(complex)}`)
+  } catch (e: any) {
+    toast.error('加载文件实体失败: ' + (e?.message ?? ''))
   }
 }
 
