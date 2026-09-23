@@ -23,6 +23,7 @@
         <button class="eb" @click="loadHolidaySettingDetails">🏖️ 假期/设置明细</button>
         <button class="eb" @click="loadAttendanceDetails">📋 考勤明细读</button>
         <button class="eb" @click="loadStatisticAggregates">📊 统计聚合/平台</button>
+        <button class="eb" @click="loadPersonMonthStats">📈 人员月统计</button>
       </div>
       <div v-if="attOverviewText" class="att-note">{{ attOverviewText }}</div>
     </div>
@@ -551,6 +552,27 @@ async function loadStatisticAggregates() {
     attOverviewText.value = `个人 ${n(person)} · 单位人员 ${n(personsUnit)} · 顶层日 ${n(topDay)} · 单位日 ${n(unitDay)} · 单位汇总 ${n(unitSum)} · 钉钉单位 ${n(ddUnit)} · 企微单位 ${n(qywxUnit)}`
   } catch (e: any) {
     toast.error('加载统计聚合失败: ' + (e?.message ?? ''))
+  }
+}
+// rev237：考勤 钉钉/企微 人员月统计 + 自助假 5 条真实 distinct 读路由
+// dd_person_month(WHERE person) · dd_person_month(WHERE unit) · qy_person_month(WHERE person) · qy_person_month(WHERE unit) · x_attendance_selfholiday(doc_id)
+async function loadPersonMonthStats() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const y = String(new Date().getFullYear())
+  const mo = String(new Date().getMonth() + 1)
+  try {
+    const [ddPerson, ddPersonUnit, qyPerson, qyPersonUnit, selfHoliday] = await Promise.all([
+      s(api.get(`/api/attendance/assemble/control/dingdingstatistic/person/${id}/${y}/${mo}`)),
+      s(api.get(`/api/attendance/assemble/control/dingdingstatistic/person/unit/${id}/${y}/${mo}`)),
+      s(api.get(`/api/attendance/assemble/control/qywxstatistic/person/${id}/${y}/${mo}`)),
+      s(api.get(`/api/attendance/assemble/control/qywxstatistic/person/unit/${id}/${y}/${mo}`)),
+      s(api.get(`/api/attendance/assemble/control/selfholidaysimple/docId/${id}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : ((r as any)?.data ? 1 : 0))
+    attOverviewText.value = `钉钉个人 ${n(ddPerson)} · 钉钉部门 ${n(ddPersonUnit)} · 企微个人 ${n(qyPerson)} · 企微部门 ${n(qyPersonUnit)} · 自助假 ${n(selfHoliday)}`
+  } catch (e: any) {
+    toast.error('加载人员月统计失败: ' + (e?.message ?? ''))
   }
 }
 onMounted(loadData)
