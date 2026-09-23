@@ -127,6 +127,10 @@
             <h3>附件/文档版本</h3>
             <p class="muted">{{ surfaceExtraText }}</p>
           </div>
+          <div v-if="attnDetailText" class="detail-block">
+            <h3>附件归属校验</h3>
+            <p class="muted">{{ attnDetailText }}</p>
+          </div>
           <div v-if="jobAssetText" class="detail-block">
             <h3>Job 关联/记录</h3>
             <p class="muted">{{ jobAssetText }}</p>
@@ -264,6 +268,7 @@ const worklogs = ref<WorklogItem[]>([])
 const reads = ref<ReadItem[]>([])
 const engineText = ref('')
 const surfaceExtraText = ref('')
+const attnDetailText = ref('')
 const jobAssetText = ref('')
 // Job 关联/记录 4 条真实 distinct（rev202，surface 域按 job id）：attachment/list/job/{job}（xjob 附件）
 // + correlation/list/job/{job}（PP_C_JOB 关联）+ datarecord/list/job/{job}（PP_C_DATA_RECORD）
@@ -478,6 +483,7 @@ async function openWork(item: TaskItem): Promise<void> {
     void loadEngineRecords(id)
     void loadSurfaceExtras(id)
     void loadJobAssets(id)
+    void loadAttachmentIdentity(id)
     // “我发起的”详情：若本人有该工作的活动任务，允许在此办理（发起人 begin 环节）
     if (activeTab.value === 'started') {
       const pending: any = await api.get(endpoints.pending)
@@ -573,6 +579,30 @@ async function loadSurfaceExtras(id: string): Promise<void> {
   }
   surfaceExtraText.value = `附件(含已完成) ${attRows.length} · 文档版本 ${docN} · 首附件 ${availText}`
 }
+// rev207：附件归属校验族 5 条真实 distinct 路由（pp_c_attachment）
+// list/workcompleted/{workCompletedId}（WHERE xworkCompleted 列表）· {id}/work/{workId}（按 xwork 校验取件）
+// · {id}/work/{workId}/text（SELECT xtext 文本）· {id}/workcompleted/{workCompletedId}（按 xworkCompleted 校验）
+// · {id}/workorworkcompleted/{flag}（先 xwork 再 xworkCompleted 回退）
+async function loadAttachmentIdentity(id: string): Promise<void> {
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const attList = await settle(api.get(`/api/processplatform/assemble/surface/attachment/list/work/${id}`))
+  const attId = asRows(attList)[0] ? String(asRows(attList)[0].id ?? '') : ''
+  if (!attId) {
+    attnDetailText.value = '本工作无附件（无可校验项）'
+    return
+  }
+  const [byWork, byWorkText, byWc, byEither, wcList] = await Promise.all([
+    settle(api.get(`/api/processplatform/assemble/surface/attachment/${attId}/work/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/attachment/${attId}/work/${id}/text`)),
+    settle(api.get(`/api/processplatform/assemble/surface/attachment/${attId}/workcompleted/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/attachment/${attId}/workorworkcompleted/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/attachment/list/workcompleted/${id}`)),
+  ])
+  const hit = (r: any) => ((r as any)?.data?.id ? '命中' : '未命中')
+  const wcN = asRows(wcList).length
+  const txtLen = String((byWorkText as any)?.data ?? '').length
+  attnDetailText.value = `按work校验 ${hit(byWork)} · 文本 ${txtLen}字 · 按已完成 ${hit(byWc)} · 二选一 ${hit(byEither)} · 已完成列表 ${wcN}`
+}
 
 function closeWork(): void {
   opened.value = null
@@ -586,6 +616,7 @@ function closeWork(): void {
   engineText.value = ''
   surfaceExtraText.value = ''
   jobAssetText.value = ''
+  attnDetailText.value = ''
 }
 
 const canHandle = computed(() => {
