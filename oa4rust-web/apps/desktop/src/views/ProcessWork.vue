@@ -15,6 +15,7 @@
         <button class="btn-sm" @click="loadSerials">流水号</button>
         <button class="btn-sm" @click="loadWorkV2">全部工作</button>
         <button class="btn-sm" @click="loadReadLists">待阅/已阅</button>
+        <button class="btn-sm" @click="loadTaskLists">全部任务</button>
         <button class="btn-sm primary" @click="openStart">发起流程</button>
       </div>
     </div>
@@ -24,6 +25,7 @@
     <p v-if="serialText" class="subtitle draft-note">{{ serialText }}</p>
     <p v-if="workV2Text" class="subtitle draft-note">{{ workV2Text }}</p>
     <p v-if="readListText" class="subtitle draft-note">{{ readListText }}</p>
+    <p v-if="taskListText" class="subtitle draft-note">{{ taskListText }}</p>
     <div class="tabs glass-card">
       <button
         v-for="tab in tabs"
@@ -392,6 +394,27 @@ async function loadReadLists(): Promise<void> {
     rcId ? settle(api.get(`/api/processplatform/assemble/surface/readcompleted/v2/list/next/${rcId}/20`)) : Promise.resolve(null),
   ])
   readListText.value = `待阅 ${readRows.length}(后续 ${asRows(readNext).length}) · 已阅 ${readcRows.length}(后续 ${asRows(readcNext).length})`
+}
+
+const taskListText = ref('')
+// 全部任务列表 v2（rev181，surface 域 4 条真实 distinct）：task/v2/list/paging（PP_C_TASK 分页）+ task/v2/list/next/{id}/{count}
+// + taskcompleted/v2/list/paging（PP_C_TASKCOMPLETED 分页）+ taskcompleted/v2/list/next/{id}/{count}。next 与 prev 孪生只取 next。
+async function loadTaskLists(): Promise<void> {
+  taskListText.value = ''
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [taskList, taskcList] = await Promise.all([
+    settle(api.get('/api/processplatform/assemble/surface/task/v2/list/paging/1/20/20')),
+    settle(api.get('/api/processplatform/assemble/surface/taskcompleted/v2/list/paging/1/20/20')),
+  ])
+  const taskRows = asRows(taskList)
+  const taskcRows = asRows(taskcList)
+  const tId = taskRows[0] ? String(taskRows[0].id ?? '') : ''
+  const tcId = taskcRows[0] ? String(taskcRows[0].id ?? '') : ''
+  const [taskNext, taskcNext] = await Promise.all([
+    tId ? settle(api.get(`/api/processplatform/assemble/surface/task/v2/list/next/${tId}/20`)) : Promise.resolve(null),
+    tcId ? settle(api.get(`/api/processplatform/assemble/surface/taskcompleted/v2/list/next/${tcId}/20`)) : Promise.resolve(null),
+  ])
+  taskListText.value = `待办 ${taskRows.length}(后续 ${asRows(taskNext).length}) · 已办 ${taskcRows.length}(后续 ${asRows(taskcNext).length})`
 }
 
 function asRows(response: unknown): Record<string, unknown>[] {
