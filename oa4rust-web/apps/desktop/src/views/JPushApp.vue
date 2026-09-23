@@ -105,14 +105,19 @@ async function loadJpushEntities() {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const did = devices.value[0] ? String((devices.value[0] as any).id ?? '0') : '0'
   const tid = templates.value[0] ? String((templates.value[0] as any).id ?? '0') : '0'
-  const [dGet, tGet, coreDevGet, coreTplGet] = await Promise.all([
+  const [dGet, tGet, coreDevGet, coreTplGet, devList, jpushList, jpushGet] = await Promise.all([
     s(api.get(`/api/jpush/device/${encodeURIComponent(did)}`)),
     s(api.get(`/api/jpush/template/${encodeURIComponent(tid)}`)),
     s(api.get(`/api/jpush/core/entity/device/${encodeURIComponent(did)}`)),
     s(api.get(`/api/jpush/core/entity/template/${encodeURIComponent(tid)}`)),
+    // rev276：jpush 设备清单 device/list(x_jpush_device 全量)·推送清单 list/jpushs(x_jpush deleted_at)·推送详情 get/jpush/{id}(x_jpush id)；均只读
+    s(api.get(`/api/jpush/device/list`)),
+    s(api.get(`/api/jpush_assemble_control/list/jpushs`)),
+    s(api.get(`/api/jpush_assemble_control/get/jpush/${encodeURIComponent(did)}`)),
   ])
   const hit = (r: any) => ((r as any)?.data?.id ? '命中' : '未命中')
-  entitiesText.value = `设备详情 ${hit(dGet)}（原生）/ ${hit(coreDevGet)}（实体）· 模板详情 ${hit(tGet)}（原生）/ ${hit(coreTplGet)}（实体）`
+  const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+  entitiesText.value = `设备详情 ${hit(dGet)}（原生）/ ${hit(coreDevGet)}（实体）· 模板详情 ${hit(tGet)}（原生）/ ${hit(coreTplGet)}（实体）· 设备清单 ${n(devList)} · 推送清单 ${n(jpushList)} · 推送详情 ${hit(jpushGet)}`
 }
 
 async function delDevice(d: any) {
