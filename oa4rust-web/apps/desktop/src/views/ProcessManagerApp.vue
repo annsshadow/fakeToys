@@ -22,6 +22,7 @@
         <button class="btn-refresh" @click="loadDesignerExtras">🧩 映射游标/字典/流程</button>
         <button class="btn-refresh" @click="loadDesignerFileScript">📂 文件/脚本/图标</button>
         <button class="btn-refresh" @click="loadSurfaceProcessReads">🖼️ 表面/字典/流程</button>
+        <button class="btn-refresh" @click="loadSurfaceDataForms">📑 完成件/草稿/表单</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
@@ -257,6 +258,25 @@ async function loadSurfaceProcessReads() {
     designerExtraText.value = `表面实体 ${has(surfaceGet)} | 表面分类 ${n(surfaceList)} | 应用字典 ${has(appdict)} | 流程复杂 ${has(complex)} | 按应用流程 ${n(byApp)}`
   } catch (e: any) {
     toast.error('加载流程表面读取失败: ' + (e?.message ?? ''))
+  }
+}
+// rev246：流程表面 完成件/草稿/表单/键锁 4 条真实 distinct 读路由（不同表 PP_C_WORKCOMPLETED/PP_C_DRAFT/PP_E_FORM/PP_C_KEYLOCK；arity 已核；跳 from/data·from/item·form/mobile·allowrerouteto·available/identity 等 xid-桩孪生 与 datarecord/documentversion/job/job 字面量 0 参=500）
+async function loadSurfaceDataForms() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const first: any = items.value[0] ?? {}
+  const appId = String(first.application ?? first.applicationFlag ?? first.id ?? '0')
+  try {
+    const [wc, draft, form, keylock] = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/${encodeURIComponent(appId)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/draft/list/prev/${encodeURIComponent(appId)}/20`)),
+      s(api.get(`/api/processplatform/assemble/surface/form/application/${encodeURIComponent(appId)}/${encodeURIComponent(appId)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/control/workorworkcompleted/${encodeURIComponent(appId)}`)),
+    ])
+    const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    designerExtraText.value = `完成件数据 ${has(wc)} | 草稿游标 ${n(draft)} | 表单 ${has(form)} | 键锁 ${has(keylock)}`
+  } catch (e: any) {
+    toast.error('加载完成件/草稿/表单失败: ' + (e?.message ?? ''))
   }
 }
 // 设计器流程明细族 3 条真实 distinct 路由：首流程 → 流程详情 process/{id}（PP_E_PROCESS query_opt）
