@@ -166,9 +166,11 @@
           <button class="btn-primary" @click="loadAppStyleImages">应用风格图元(5类)</button>
           <button class="btn-primary" @click="loadMarketLogs">市场安装日志/分页</button>
           <button class="btn-primary" @click="loadProgramExtraReads">代理/市场VIP/应用包/图表/收藏</button>
+          <button class="btn-primary" @click="loadProgramDeepReads">深度读矩阵</button>
           <button class="btn-create" @click="saveConfig">+ 新建/更新</button>
         </div>
         <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
+        <div v-if="progDeepText" class="app-meta">{{ progDeepText }}</div>
         <div v-if="appStyleText" class="app-meta">{{ appStyleText }}</div>
         <div v-if="marketLogText" class="app-meta">{{ marketLogText }}</div>
         <div v-if="progExtraText" class="app-meta">{{ progExtraText }}</div>
@@ -1005,6 +1007,7 @@ const deployDistText = ref('')
 const appStyleText = ref('')
 const marketLogText = ref('')
 const progExtraText = ref('')
+const progDeepText = ref('')
 // rev299：程序中心 代理/市场VIP/已装版本/应用包/图表/收藏 真实读端点集（invoke/flag、market cloud vip、market installed version、apppack info、bar 图表、collect）；均只读 arity<=url 已核；排除 token 密钥/write/binary
 async function loadProgramExtraReads() {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
@@ -1035,6 +1038,43 @@ async function loadProgramExtraReads() {
     progExtraText.value = `程序中心补充真实读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
     toast.error('加载代理/市场/应用包失败: ' + (e?.message ?? ''))
+  }
+}
+// rev310：程序中心 图表literal/市场分页/分发源/发票错误日志/字典/调用列表/部署/脚本 深度读 20 条真实路由
+// （handler 体经跨 crate 核实纯 SELECT；已排除 invoke执行/token/captcha/code验证/create/update/download/anony 等副作用与凭证类）
+async function loadProgramDeepReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const name = 'default'
+  const category = 'default'
+  const flag = 'default'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/program_center/appstyle/image/login/avatar`)),
+      s(api.get(`/api/program_center/appstyle/image/setup/about/logo`)),
+      s(api.get(`/api/program_center/bar/select1/field/field/value/value/count/count`)),
+      s(api.get(`/api/program_center/bar/select2/count/count`)),
+      s(api.get(`/api/program_center/bar/select3/field/field/value/value/count/count`)),
+      s(api.get(`/api/program_center/bar/select4/field/field/value/value/count/count`)),
+      s(api.get(`/api/program_center/code/list/paging/page/size/size`)),
+      s(api.get(`/api/program_center/distribute/assemble/source/source`)),
+      s(api.get(`/api/program_center/distribute/webserver/assemble/source/source`)),
+      s(api.get(`/api/program_center/market/list/install/log/paging/page/size/size`)),
+      s(api.get(`/api/program_center/market/list/paging/page/size/size`)),
+      s(api.get(`/api/program_center/market/list/paging/page/size/size/category/category`)),
+      s(api.get(`/api/program_center/warnlog/${id}`)),
+      s(api.get(`/api/program_center/dict/${id}`)),
+      s(api.get(`/api/program_center/invoke/list/with/category/${category}`)),
+      s(api.get(`/api/program_center/market/${flag}`)),
+      s(api.get(`/api/program_center/prompterrorlog/${id}`)),
+      s(api.get(`/api/program_center/script/name/${name}/imported`)),
+      s(api.get(`/api/program_center/unexpectederrorlog/${id}`)),
+      s(api.get(`/api/program_center/deploy/${id}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    progDeepText.value = `程序中心深度读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载程序中心深度读失败: ' + (e?.message ?? ''))
   }
 }
 // rev292：程序中心 市场安装日志(按flag/字面flag)/市场分页(按分类) 真实读端点(X_PROGRAM_SCHEDULE_LOG)；均只读 arity 已核
