@@ -22,6 +22,7 @@
       <button class="sb" @click="loadMeetingPinyin">拼音检索</button>
       <button class="sb" @click="loadMeetingEntities">会议实体</button>
       <button class="sb" @click="loadMeetingControlAssets">控制台资源</button>
+      <button class="sb" @click="loadMeetingDateLists">日期列表</button>
       <button class="sb" @click="addBuilding">+ 楼栋</button>
     </div>
     <div v-if="appliedText" class="applied-note">{{ appliedText }}</div>
@@ -345,6 +346,27 @@ async function loadMeetingControlAssets() {
     appliedText.value = `楼栋 ${(building as any)?.data?.id ? '命中' : '未命中'} · 会议室 ${(room as any)?.data?.id ? '命中' : '未命中'} · 会议游标 ${n(meetingCursor)} · 照片 ${(photo as any)?.data ? '有' : '无'} · 附件 ${(attach as any)?.data ? '有' : '无'}（前 ${n(attNext)}/后 ${n(attPrev)}）`
   } catch (e: any) {
     toast.error('加载会议控制台资源失败: ' + (e?.message ?? ''))
+  }
+}
+// rev239：会议按日期/时间范围列表 4 条真实 distinct 读路由（arity 已核：URL 参数数==handler Path 元数）
+// building 时间范围(start/end) · 本月即将(count) · 年月(year,month) · 年月日(year,month,day)；跳 list/meeting/controls(0参却 Path<String>=500) 与 forward/monthcount(与 coming SQL 完全相同=孪生)
+async function loadMeetingDateLists() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const now = new Date()
+    const y = String(now.getFullYear())
+    const mo = String(now.getMonth() + 1)
+    const d = String(now.getDate())
+    const [building, coming, byMonth, byDay] = await Promise.all([
+      s(api.get('/api/meeting/assemble/control/building/list/start/1/completed/0')),
+      s(api.get('/api/meeting/assemble/control/meeting/list/coming/month/3')),
+      s(api.get(`/api/meeting/assemble/control/meeting/list/year/${y}/month/${mo}/all`)),
+      s(api.get(`/api/meeting/assemble/control/meeting/list/year/${y}/month/${mo}/day/${d}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    appliedText.value = `楼栋(时间范围) ${n(building)} · 即将3月 ${n(coming)} · 本年月 ${n(byMonth)} · 本年月日 ${n(byDay)}`
+  } catch (e: any) {
+    toast.error('加载会议日期列表失败: ' + (e?.message ?? ''))
   }
 }
 async function loadMeetingSearch() {
