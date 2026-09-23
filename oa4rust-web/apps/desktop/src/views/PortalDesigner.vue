@@ -8,6 +8,7 @@
       <div class="header-actions">
         <button class="btn" @click="showCreate = true">新建设计</button>
         <button class="btn" :disabled="!activeId" @click="loadDesignerAssets">资产明细</button>
+        <button class="btn" :disabled="!activeId" @click="loadDesignerCategories">分类/页面</button>
         <button class="btn primary" :disabled="!activeId || saving" @click="saveDesign">
           {{ saving ? '保存中…' : '保存布局' }}
         </button>
@@ -165,6 +166,35 @@ async function loadDesignerAssets() {
     assetText.value = `组件 ${has(widget)} · 脚本 ${has(script)}（版本 ${has(svDetail)}）· 模板页 ${has(templatepage)} · 字典 ${has(dict)}`
   } catch (e: any) {
     toast.error('加载资产明细失败: ' + (e?.message ?? ''))
+  }
+}
+// rev213：门户设计器分类/页面/文件族 6 条真实 distinct 路由
+// page/list/{category}（x_portal_page WHERE category）· list/portal/{page}/{portalId}（x_portal_page WHERE portal_id）· portal/icon/{id}（x_portal SELECT logo）
+// · file/list/application/{applicationFlag}（x_portal_file WHERE application_flag）· pageversion/list/{page}/{pageId}（x_portal_page_version WHERE page_id）· portal/list/portalcategory/{portalCategory}（x_portal WHERE category）
+async function loadDesignerCategories() {
+  const id = String(activeId.value ?? '')
+  if (!id) {
+    toast.error('请先打开一个门户设计')
+    return
+  }
+  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const portalResp = await s(api.get<any>(`/api/portal/assemble/designer/portal/${encodeURIComponent(id)}`))
+    const cat = String((portalResp as any)?.data?.category ?? 'default')
+    const appFlag = String((portalResp as any)?.data?.applicationFlag ?? (portalResp as any)?.data?.application ?? id)
+    const pageNo = String((portalResp as any)?.data?.pageIndex ?? '1')
+    const [byCat, byPortal, icon, files, versions, catFull] = await Promise.all([
+      s(api.get<any>(`/api/portal/assemble/designer/page/list/${encodeURIComponent(cat)}`)),
+      s(api.get<any>(`/api/portal/assemble/designer/list/portal/${encodeURIComponent(pageNo)}/${encodeURIComponent(id)}`)),
+      s(api.get<any>(`/api/portal/assemble/designer/portal/icon/${encodeURIComponent(id)}`)),
+      s(api.get<any>(`/api/portal/assemble/designer/file/list/application/${encodeURIComponent(appFlag)}`)),
+      s(api.get<any>(`/api/portal/assemble/designer/pageversion/list/${encodeURIComponent(pageNo)}/${encodeURIComponent(id)}`)),
+      s(api.get<any>(`/api/portal/assemble/designer/portal/list/portalcategory/${encodeURIComponent(cat)}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    assetText.value = `分类页 ${n(byCat)} · 门户页 ${n(byPortal)} · 图标 ${(icon as any)?.data ? '有' : '无'} · 应用文件 ${n(files)} · 页版本 ${n(versions)} · 同类门户 ${n(catFull)}`
+  } catch (e: any) {
+    toast.error('加载分类/页面明细失败: ' + (e?.message ?? ''))
   }
 }
 const widgets = ref<PortalWidget[]>([])
