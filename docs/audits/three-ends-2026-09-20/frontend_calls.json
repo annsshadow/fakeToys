@@ -104,7 +104,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 181,
+    "line": 182,
     "method": "GET",
     "raw": "/api/ai/conversation/list",
     "path": "/api/ai/conversation/list",
@@ -114,7 +114,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 182,
+    "line": 183,
     "method": "GET",
     "raw": "/api/ai/config/get",
     "path": "/api/ai/config/get",
@@ -124,7 +124,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 183,
+    "line": 184,
     "method": "GET",
     "raw": "/api/ai_assemble_control/list/ai/models",
     "path": "/api/ai_assemble_control/list/ai/models",
@@ -134,7 +134,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 196,
+    "line": 197,
     "method": "GET",
     "raw": "/api/ai/model/list",
     "path": "/api/ai/model/list",
@@ -144,7 +144,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 197,
+    "line": 198,
     "method": "GET",
     "raw": "/api/ai/app/list",
     "path": "/api/ai/app/list",
@@ -154,7 +154,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 198,
+    "line": 199,
     "method": "GET",
     "raw": "/api/ai/config/list/enable/model",
     "path": "/api/ai/config/list/enable/model",
@@ -164,7 +164,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 209,
+    "line": 210,
     "method": "GET",
     "raw": "/api/ai_assemble_control/chat/list/paging/1/size/20",
     "path": "/api/ai_assemble_control/chat/list/paging/1/size/20",
@@ -174,7 +174,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 220,
+    "line": 221,
     "method": "GET",
     "raw": "/api/ai_assemble_control/chat/list/completion/${chat.id}/paging/1/size/50",
     "path": "/api/ai_assemble_control/chat/list/completion/{}/paging/1/size/50",
@@ -184,7 +184,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 234,
+    "line": 235,
     "method": "POST",
     "raw": "/api/ai_assemble_control/chat/completion",
     "path": "/api/ai_assemble_control/chat/completion",
@@ -194,7 +194,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 246,
+    "line": 247,
     "method": "DELETE",
     "raw": "/api/ai_assemble_control/chat/delete/${chat.id}",
     "path": "/api/ai_assemble_control/chat/delete/{}",
@@ -204,7 +204,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 264,
+    "line": 265,
     "method": "POST",
     "raw": "/api/ai_assemble_control/chat/completion",
     "path": "/api/ai_assemble_control/chat/completion",
@@ -214,7 +214,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 304,
+    "line": 305,
     "method": "GET",
     "raw": "/api/ai_assemble_control/config/list/mcp/paging/1/size/50",
     "path": "/api/ai_assemble_control/config/list/mcp/paging/1/size/50",
@@ -224,7 +224,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 326,
+    "line": 327,
     "method": "GET",
     "raw": "/api/ai/config/list/model/paging/1/size/50",
     "path": "/api/ai/config/list/model/paging/1/size/50",
@@ -234,7 +234,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 327,
+    "line": 328,
     "method": "GET",
     "raw": "/api/ai/config/list/mcp/paging/1/size/50",
     "path": "/api/ai/config/list/mcp/paging/1/size/50",
@@ -244,7 +244,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 343,
+    "line": 344,
     "method": "GET",
     "raw": "/api/ai/config/get/model/${encodeURIComponent(flag)}",
     "path": "/api/ai/config/get/model/{}",
@@ -254,7 +254,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 354,
+    "line": 355,
     "method": "POST",
     "raw": "/api/ai_assemble_control/config/update/mcp/${encodeURIComponent(m.id)}",
     "path": "/api/ai_assemble_control/config/update/mcp/{}",
@@ -264,7 +264,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 368,
+    "line": 369,
     "method": "DELETE",
     "raw": "/api/ai_assemble_control/config/delete/mcp/${encodeURIComponent(id)}",
     "path": "/api/ai_assemble_control/config/delete/mcp/{}",
@@ -274,7 +274,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 383,
+    "line": 384,
     "method": "POST",
     "raw": "/api/ai_assemble_control/config/create/mcp",
     "path": "/api/ai_assemble_control/config/create/mcp",
@@ -6414,7 +6414,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 146,
+    "line": 147,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/widget/list/portal/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/widget/list/portal/{}",
@@ -6424,7 +6424,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 147,
+    "line": 148,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/script/list/portal/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/script/list/portal/{}",
@@ -6434,7 +6434,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 148,
+    "line": 149,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/dict/list/portal/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/dict/list/portal/{}",
@@ -6444,7 +6444,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 155,
+    "line": 156,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/scriptversion/list/script/${encodeURIComponent(sid)}",
     "path": "/api/portal/assemble/designer/scriptversion/list/script/{}",
@@ -6454,7 +6454,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 158,
+    "line": 159,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/widget/${encodeURIComponent(wid)}",
     "path": "/api/portal/assemble/designer/widget/{}",
@@ -6464,7 +6464,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 159,
+    "line": 160,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/script/${encodeURIComponent(sid)}",
     "path": "/api/portal/assemble/designer/script/{}",
@@ -6474,7 +6474,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 160,
+    "line": 161,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/scriptversion/${encodeURIComponent(svId)}",
     "path": "/api/portal/assemble/designer/scriptversion/{}",
@@ -6484,7 +6484,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 161,
+    "line": 162,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/templatepage/${encodeURIComponent(tid)}",
     "path": "/api/portal/assemble/designer/templatepage/{}",
@@ -6494,7 +6494,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 162,
+    "line": 163,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/dict/${encodeURIComponent(did)}",
     "path": "/api/portal/assemble/designer/dict/{}",
@@ -6504,27 +6504,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 183,
-    "method": "GET",
-    "raw": "/api/portal/assemble/designer/list",
-    "path": "/api/portal/assemble/designer/list",
-    "via": "obj:designerPaths.portalList",
-    "ambiguous": false
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 194,
-    "method": "GET",
-    "raw": "/api/portal/assemble/designer/get/${encodeURIComponent(id)}",
-    "path": "/api/portal/assemble/designer/get/{}",
-    "via": "obj-fn:designerPaths.portalGet",
-    "ambiguous": false
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 202,
+    "line": 182,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/portal/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/portal/{}",
@@ -6534,7 +6514,97 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 203,
+    "line": 187,
+    "method": "GET",
+    "raw": "/api/portal/assemble/designer/page/list/${encodeURIComponent(cat)}",
+    "path": "/api/portal/assemble/designer/page/list/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDesigner.vue",
+    "line": 188,
+    "method": "GET",
+    "raw": "/api/portal/assemble/designer/list/portal/${encodeURIComponent(pageNo)}/${encodeURIComponent(id)}",
+    "path": "/api/portal/assemble/designer/list/portal/{}/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDesigner.vue",
+    "line": 189,
+    "method": "GET",
+    "raw": "/api/portal/assemble/designer/portal/icon/${encodeURIComponent(id)}",
+    "path": "/api/portal/assemble/designer/portal/icon/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDesigner.vue",
+    "line": 190,
+    "method": "GET",
+    "raw": "/api/portal/assemble/designer/file/list/application/${encodeURIComponent(appFlag)}",
+    "path": "/api/portal/assemble/designer/file/list/application/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDesigner.vue",
+    "line": 191,
+    "method": "GET",
+    "raw": "/api/portal/assemble/designer/pageversion/list/${encodeURIComponent(pageNo)}/${encodeURIComponent(id)}",
+    "path": "/api/portal/assemble/designer/pageversion/list/{}/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDesigner.vue",
+    "line": 192,
+    "method": "GET",
+    "raw": "/api/portal/assemble/designer/portal/list/portalcategory/${encodeURIComponent(cat)}",
+    "path": "/api/portal/assemble/designer/portal/list/portalcategory/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDesigner.vue",
+    "line": 213,
+    "method": "GET",
+    "raw": "/api/portal/assemble/designer/list",
+    "path": "/api/portal/assemble/designer/list",
+    "via": "obj:designerPaths.portalList",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDesigner.vue",
+    "line": 224,
+    "method": "GET",
+    "raw": "/api/portal/assemble/designer/get/${encodeURIComponent(id)}",
+    "path": "/api/portal/assemble/designer/get/{}",
+    "via": "obj-fn:designerPaths.portalGet",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDesigner.vue",
+    "line": 232,
+    "method": "GET",
+    "raw": "/api/portal/assemble/designer/portal/${encodeURIComponent(id)}",
+    "path": "/api/portal/assemble/designer/portal/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDesigner.vue",
+    "line": 233,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/portal/permission/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/portal/permission/{}",
@@ -6544,7 +6614,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 204,
+    "line": 234,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/widget/list/portal/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/widget/list/portal/{}",
@@ -6554,7 +6624,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 211,
+    "line": 241,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/page/list/portal/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/page/list/portal/{}",
@@ -6564,7 +6634,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 212,
+    "line": 242,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/script/list/portal/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/script/list/portal/{}",
@@ -6574,7 +6644,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 213,
+    "line": 243,
     "method": "GET",
     "raw": "/api/portal/assemble/designer/dict/list/portal/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/dict/list/portal/{}",
@@ -6584,7 +6654,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 249,
+    "line": 279,
     "method": "POST",
     "raw": "/api/portal/assemble/designer/create",
     "path": "/api/portal/assemble/designer/create",
@@ -6594,7 +6664,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/PortalDesigner.vue",
-    "line": 262,
+    "line": 292,
     "method": "PUT",
     "raw": "/api/portal/assemble/designer/save/${encodeURIComponent(id)}",
     "path": "/api/portal/assemble/designer/save/{}",
