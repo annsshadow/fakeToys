@@ -155,6 +155,23 @@ BLOCKING_SITES = [
     ),
     (
         "api.routes.dataset_tools",
+        "/api/dataset/impact",
+        lambda env: {"before_file": str(env.data), "after_file": str(env.second)},
+        2,
+        None,
+    ),
+    (
+        "api.routes.dataset_tools",
+        "/api/dataset/evaluate",
+        lambda env: {
+            "generated_file": str(env.data),
+            "reference_file": str(env.second),
+        },
+        2,
+        None,
+    ),
+    (
+        "api.routes.dataset_tools",
         "/api/dataset/features",
         lambda env: {"input_file": str(env.data)},
         1,

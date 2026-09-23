@@ -984,9 +984,9 @@ class TestWriteRouteAuthCoverage:
     残留风险：`verify_api_key` 是**逐个路由手动挂载**的，新增一条写路由时很容易漏挂，
     而漏挂不会让任何既有测试变红——鉴权静默失效。
 
-    因此这里把「全部 42 条路由的鉴权状态」固化下来：新增或删除路由都会让本测试失败，
-    迫使改动者显式做出分类——要么挂 `Depends(verify_api_key)`，要么把它加进
-    `OPEN_ALLOWLIST` 并说明为什么只读。
+    因此这里把「全部路由的鉴权状态」固化下来（条数不写死，以两份集合为准）：
+    新增或删除路由都会让本测试失败，迫使改动者显式做出分类——要么挂
+    `Depends(verify_api_key)`，要么把它加进 `OPEN_ALLOWLIST` 并说明为什么只读。
 
     注意：不能用 `app.routes` 枚举。当前 FastAPI 版本把 `include_router` 包装成不展开的
     `_IncludedRouter` 容器，必须回到各 router 模块的 `router.routes`。
@@ -1045,7 +1045,9 @@ class TestWriteRouteAuthCoverage:
         ("POST", "/api/audit"),
         ("POST", "/api/dataset/auto-config"),
         ("POST", "/api/dataset/compare"),
+        ("POST", "/api/dataset/evaluate"),
         ("POST", "/api/dataset/features"),
+        ("POST", "/api/dataset/impact"),
         ("POST", "/api/dataset/search"),
         ("POST", "/api/dataset/stats"),
         ("POST", "/api/dataset/validate"),

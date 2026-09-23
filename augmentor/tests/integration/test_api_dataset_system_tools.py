@@ -1730,3 +1730,271 @@ class TestShapeRejection:
         body = response.json()
         assert body["total_items"] == 3
         assert body["error_count"] > 0, "标量数据项必须被报成问题，而不是静默通过"
+
+
+class TestDatasetImpact:
+    """/api/dataset/impact —— 增强前后的四项增益必须可核对
+
+    断言全部来自**手算**，不是拿 `ImpactEvaluator` 再跑一遍当预期（同源预言机什么也
+    测不出来）。样本挑得能被口算：
+
+    | | before | after |
+    |---|---|---|
+    | 条数 | 2 | 4 |
+    | 唯一文本 | 1（`a` `a`） | 3（`a` `a` `b` `cc`） |
+    | 重复率 | 2/2 = 1.0 | 2/4 = 0.5 |
+    | 长度 | 1, 1 → std 0 | 1, 1, 1, 2 → std = sqrt(0.1875) |
+
+    → scale_gain = (4-2)/2 = **1.0**；diversity_gain = (3-1)/1 = **2.0**；
+    dedup_gain = 1.0-0.5 = **0.5**；length_spread_gain = **0.4330127018922193**。
+    """
+
+    BEFORE = [{"instruction": "a", "output": "x"}, {"instruction": "a", "output": "y"}]
+    AFTER = [
+        {"instruction": "a", "output": "x"},
+        {"instruction": "a", "output": "y"},
+        {"instruction": "b", "output": "z"},
+        {"instruction": "cc", "output": "w"},
+    ]
+
+    def _post(self, env, before, after, **extra):
+        """写两份数据集并打一次 impact
+
+        Args:
+            env: tools_env
+            before: 基线数据列表
+            after: 增强后数据列表
+            **extra: 透传给请求体的其它字段
+
+        Returns:
+            httpx.Response
+        """
+        _write_json(env.tmp / "before.json", before)
+        _write_json(env.tmp / "after.json", after)
+        return env.client.post(
+            "/api/dataset/impact",
+            json={
+                "before_file": str(env.tmp / "before.json"),
+                "after_file": str(env.tmp / "after.json"),
+                **extra,
+            },
+        )
+
+    def test_gains_match_hand_computed(self, tools_env):
+        """四项增益逐项对上上面那张表"""
+        response = self._post(tools_env, self.BEFORE, self.AFTER)
+        assert response.status_code == 200, response.text
+
+        body = response.json()
+        assert body["gains"] == pytest.approx(
+            {
+                "scale_gain": 1.0,
+                "diversity_gain": 2.0,
+                "dedup_gain": 0.5,
+                "length_spread_gain": 0.4330127018922193,
+            }
+        )
+        assert body["before"]["total_items"] == 2
+        assert body["after"]["unique_instructions"] == 3
+        assert body["before"]["duplicate_rate"] == pytest.approx(1.0)
+        assert body["after"]["duplicate_rate"] == pytest.approx(0.5)
+        assert body["beneficial"] is True
+
+    def test_min_scale_gain_is_not_decorative(self, tools_env):
+        """`min_scale_gain` 必须真的参与判定，而不是个装饰性参数
+
+        同一份数据只挪门槛：数字不变、结论翻转。少了这条，参数写错成「传进去但没人读」
+        也能全绿。
+        """
+        loose = self._post(tools_env, self.BEFORE, self.AFTER)
+        strict = self._post(tools_env, self.BEFORE, self.AFTER, min_scale_gain=2.0)
+
+        assert loose.json()["gains"] == strict.json()["gains"]
+        assert loose.json()["beneficial"] is True
+        assert strict.json()["beneficial"] is False
+
+    def test_empty_baseline_is_400_not_zero_gains(self, tools_env):
+        """空基线 → 400：四项增益的分母都是基线，「增益 0.0」会被读成「增强无效」"""
+        response = self._post(tools_env, [], self.AFTER)
+        assert response.status_code == 400, response.text
+        assert "基线数据集为空" in response.json()["detail"]
+
+    def test_empty_after_is_a_verdict_not_an_error(self, tools_env):
+        """增强后为空是**结论**：规模增益 -1.0、判定不划算，不能报 400"""
+        response = self._post(tools_env, self.BEFORE, [])
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["gains"]["scale_gain"] == pytest.approx(-1.0)
+        assert body["beneficial"] is False
+
+    def test_typo_text_field_rejected_instead_of_degrading(self, tools_env):
+        """字段名拼错必须 400，而不是把每条文本静默读成空串
+
+        `ImpactEvaluator.measure()` 取字段用 `item.get(field, "")`：拼错时
+        「唯一文本 = 1、重复率 = 100%」，一份**根本没被读过**的数据集会被报告成
+        「多样性极差」。静默降级比报错危险。
+        """
+        response = self._post(
+            tools_env, self.BEFORE, self.AFTER, text_field="instructionn"
+        )
+        assert response.status_code == 400, response.text
+        detail = response.json()["detail"]
+        assert "instructionn" in detail, "要回显拼错的字段名"
+        assert "instruction" in detail, "要给出该数据集实际有的字段"
+
+
+class TestDatasetEvaluate:
+    """/api/dataset/evaluate —— 指标数值必须能被手算复核
+
+    两条样本（全小写英文单词，分词结果就是按空格切开）：
+
+    * A：生成 == 参考 `how do i sort a list` → bleu / rouge_l / similarity 全 1.0；
+    * B：生成同上、参考 `how do i filter a list` →
+      rouge_l：LCS = `how do i a list` 共 5 个词元，P = R = 5/6 → F1 = 5/6；
+      similarity：交集 5 / 并集 7 = 5/7；
+      bleu：4 元文法**零重叠**，`compute_bleu` 对「完全无重叠」直接判 0。
+
+    均值：bleu = (1+0)/2 = 0.5；rouge_l = (1+5/6)/2 = 11/12；similarity = (1+5/7)/2 = 6/7。
+    """
+
+    GENERATED = [
+        {"output": "how do i sort a list"},
+        {"output": "how do i sort a list"},
+    ]
+    REFERENCE = [
+        {"output": "how do i sort a list"},
+        {"output": "how do i filter a list"},
+    ]
+
+    def _post(self, env, generated, reference, **extra):
+        """写两侧数据集并打一次 evaluate
+
+        Args:
+            env: tools_env
+            generated: 生成侧数据列表
+            reference: 参考侧数据列表
+            **extra: 透传给请求体的其它字段
+
+        Returns:
+            httpx.Response
+        """
+        _write_json(env.tmp / "generated.json", generated)
+        _write_json(env.tmp / "reference.json", reference)
+        return env.client.post(
+            "/api/dataset/evaluate",
+            json={
+                "generated_file": str(env.tmp / "generated.json"),
+                "reference_file": str(env.tmp / "reference.json"),
+                **extra,
+            },
+        )
+
+    def test_batch_metrics_match_hand_computed(self, tools_env):
+        """三项指标均值逐项对上注释里的推导"""
+        response = self._post(tools_env, self.GENERATED, self.REFERENCE)
+        assert response.status_code == 200, response.text
+
+        body = response.json()
+        assert body["metrics"] == pytest.approx(
+            {"bleu": 0.5, "rouge_l": 11 / 12, "similarity": 6 / 7}
+        )
+        assert body["sample_count"] == 2
+        assert [d["index"] for d in body["details"]] == [0, 1]
+        assert body["details"][1]["scores"]["rouge_l"] == pytest.approx(5 / 6)
+
+    def test_metrics_subset(self, tools_env):
+        """`metrics` 只要 rouge_l 时，产物里就只有它，均值口径不变"""
+        response = self._post(
+            tools_env, self.GENERATED, self.REFERENCE, metrics=["rouge_l"]
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["metrics"] == pytest.approx({"rouge_l": 11 / 12})
+
+    def test_unknown_metric_lists_options(self, tools_env):
+        """未知指标 400，且**在读盘之前**就拒掉
+
+        库里的 `ModelEvaluator.__init__` 也会拒绝未知指标（`DataValidationError` → 400），
+        所以只断言状态码抓不到这道路由守卫——实测撤掉守卫后本用例仍绿。这条守卫的真正
+        契约是「参数校验先于 I/O」：这里故意传一个不存在的 `generated_file`，若顺序颠倒
+        就会先撞出 404，等于为一个格式就不对的请求去读盘。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/evaluate",
+            json={
+                "generated_file": str(tools_env.tmp / "never-created.json"),
+                "reference_file": str(tools_env.tmp / "never-created.json"),
+                "metrics": ["bleu", "meteor"],
+            },
+        )
+        assert response.status_code == 400, response.text
+        detail = response.json()["detail"]
+        assert "未知的评估指标" in detail, "必须是路由守卫的报错，不是透传库内异常"
+        assert "rouge_l" in detail, "可选项由 METRIC_FUNCTIONS 反推，不能手抄"
+
+    def test_length_mismatch_rejected_with_counts(self, tools_env):
+        """两侧条数不等时按索引配对没有意义 → 400，且把两个数都回出来"""
+        response = self._post(tools_env, self.GENERATED, self.REFERENCE[:1])
+        assert response.status_code == 400, response.text
+        detail = response.json()["detail"]
+        assert "生成侧 2 条" in detail and "参考侧 1 条" in detail
+
+    def test_missing_field_names_the_offending_index(self, tools_env):
+        """某一条缺字段 → 400 并带**下标**，不能静默补空串
+
+        补空串等于凭空造一条 0 分样本：均值被稀释，却完全看不出来源。
+        """
+        response = self._post(
+            tools_env, self.GENERATED, [{"output": "how do i sort a list"}, {"text": "x"}]
+        )
+        assert response.status_code == 400, response.text
+        detail = response.json()["detail"]
+        assert "参考侧 第 1 条" in detail, "必须带下标，否则调用方不知道是哪条数据坏了"
+        assert "output" in detail
+
+    def test_empty_side_rejected(self, tools_env):
+        """空数据集 → 400：空集合上「各项 0.0」会被误读成模型差，实际是没数据"""
+        response = self._post(tools_env, [], [])
+        assert response.status_code == 400, response.text
+        assert "参与评估的数据集为空" in response.json()["detail"]
+
+    def test_include_details_false_keeps_sample_count(self, tools_env):
+        """`include_details=false` 只裁 details，`sample_count` 仍是真实条数"""
+        response = self._post(
+            tools_env, self.GENERATED, self.REFERENCE, include_details=False
+        )
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["details"] == []
+        assert body["sample_count"] == 2
+        assert body["metrics"]["bleu"] == pytest.approx(0.5)
+
+    def test_two_fields_of_the_same_file(self, tools_env):
+        """两侧传同一路径、不同字段：这是最常见的「同一份语料的两个版本」用法
+
+        也是「同路径只读一遍盘」那条分支的功能证据（读取次数由
+        `test_api_event_loop_blocking.py` 从另一侧盯着）。
+        """
+        both = [
+            {
+                "output": "how do i sort a list",
+                "reference_output": "how do i sort a list",
+            },
+            {
+                "output": "how do i sort a list",
+                "reference_output": "how do i filter a list",
+            },
+        ]
+        _write_json(tools_env.tmp / "both.json", both)
+        response = tools_env.client.post(
+            "/api/dataset/evaluate",
+            json={
+                "generated_file": str(tools_env.tmp / "both.json"),
+                "reference_file": str(tools_env.tmp / "both.json"),
+                "generated_field": "output",
+                "reference_field": "reference_output",
+            },
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["metrics"] == pytest.approx(
+            {"bleu": 0.5, "rouge_l": 11 / 12, "similarity": 6 / 7}
+        )
