@@ -194,7 +194,26 @@ FastAPI 路由是 `async def`，但核心引擎是同步阻塞的。所有可能
 results = await run_in_thread(p.export_dataset, input_file, output_dir, formats)
 ```
 
-文件读写同理，由 `deps.read_json_file` / `write_json_file` 封装为异步接口。
+> **`load_items()` / `save_items()` 的「供线程内使用」是契约，不是建议**
+>
+> `api/deps.py` 里同时存在两对读写函数：`read_json_file` / `write_json_file` 是
+> **异步**的（内部已 `run_in_executor`），而 `load_items` / `save_items` 是**同步**的，
+> 文档串里就写着「供线程内使用」——它们是给 `run_in_thread(run)` 里的那个 `run` 用的。
+>
+> 12 条端点（`/api/quality/*` 8 条 + `/api/audit` + `/api/leakage/check` +
+> `/api/privacy/sanitize` + `/api/export/preview`）曾经把**分析**离线了、却把开头那行
+> `items = load_items(request.input_file)` 留在 `async def` 函数体里，于是每个请求都在
+> 事件循环上同步读盘：实测 3.6 MB / 6902 条的 `train_data.json` 要 **15 ms**，这段时间
+> 全站其他请求一起停。现在这 14 处读取点统一写成
+> `items = await run_in_thread(load_items, request.input_file)`。
+>
+> 这条不变量由 `tests/integration/test_api_event_loop_blocking.py` 用**线程身份**守着，
+> 而不是靠计时（计时在 CI 上只会误报）：`httpx.ASGITransport` 在当前线程直接跑事件循环，
+> 所以「读文件发生在哪个线程」是确定的。同文件的第二条用例锁住响应仍是 200，
+> 防止「干脆不读了」把第一条糊过去。
+>
+> 实测效果（把读盘人为放慢到 50 ms 后打 4 条并发请求）：并发总耗时 **59.5 ms**，
+> 而读取仍占着循环时同样是 4 次读取至少要 **200 ms**；并发期间事件循环空转 27349 次。
 
 管道实例由 `get_pipeline()` 惰性创建并缓存，`reset_pipeline()` 供测试注入替身。
 

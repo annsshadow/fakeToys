@@ -49,7 +49,7 @@ class PiiPatternsResponse(BaseModel):
 async def sanitize_items(request: SanitizeRequest):
     """对数据文件做 PII 脱敏，返回脱敏后数据与报告"""
     try:
-        items = load_items(request.input_file)
+        items = await run_in_thread(load_items, request.input_file)
 
         def run():
             patterns = dict(DEFAULT_PATTERNS)
