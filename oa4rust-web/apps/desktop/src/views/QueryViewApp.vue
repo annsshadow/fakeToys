@@ -17,6 +17,7 @@
         <button class="btn-primary" @click="loadStatementStat">语句/统计明细</button>
         <button class="btn-primary" @click="loadImportModels">导入模型</button>
         <button class="btn-primary" @click="loadTables">数据表</button>
+        <button class="btn-primary" @click="loadTableRowsCursor">表行游标</button>
       </div>
       <div v-if="queryListText" class="qv-note">{{ queryListText }}</div>
       <div v-if="tableText" class="qv-note">{{ tableText }}</div>
@@ -204,6 +205,50 @@ async function loadTables() {
     tableText.value = `数据表 ${rows.length} 张${extra}`
   } catch (e: any) {
     toast.error('加载数据表失败: ' + (e?.message ?? ''))
+  }
+}
+// rev205：表行游标族 6 条真实 distinct 路由（x_query_table_data / x_query_statement）
+// table/row/{tableFlag}（WHERE table_flag ORDER id DESC）· table/row/one/{tableFlag}（LIMIT 1）
+// · table/row/{tableFlag}/{id}（WHERE table_flag AND id）· table/list/row/select/where/where/{tableFlag}（ILIKE 过滤）
+// · table/list/{id}/prev/{count}（WHERE id< 上翻游标）· statement/{id}/format（语句格式化 type+data）
+async function loadTableRowsCursor() {
+  try {
+    const r: any = await api.get('/api/queryview/table/list/paging/1/20/20')
+    const rows = (Array.isArray(r?.data) ? r.data : (r?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const first = rows[0]
+    const flag = first ? String(first.table_flag ?? first.tableFlag ?? first.flag ?? '') : ''
+    const tid = first ? String(first.id ?? '') : ''
+    if (!flag) {
+      tableText.value = '暂无数据表（无可抽样项）'
+      return
+    }
+    const [all, one, where, prev] = await Promise.all([
+      api.get(`/api/queryview/table/row/${encodeURIComponent(flag)}`).catch(() => null),
+      api.get(`/api/queryview/table/row/one/${encodeURIComponent(flag)}`).catch(() => null),
+      api.get(`/api/queryview/table/list/row/select/where/where/${encodeURIComponent(flag)}?where=a`).catch(() => null),
+      tid ? api.get(`/api/queryview/table/list/${encodeURIComponent(tid)}/prev/10`).catch(() => null) : Promise.resolve(null),
+    ])
+    const oneId = (one as any)?.data?.id ?? ''
+    const detail = oneId
+      ? await api.get(`/api/queryview/table/row/${encodeURIComponent(flag)}/${encodeURIComponent(String(oneId))}`).catch(() => null)
+      : null
+    // 语句格式化：借首个查询的首条语句 id
+    const qResp: any = await api.get('/api/queryview/query/list')
+    const qrows = (Array.isArray(qResp?.data) ? qResp.data : (qResp?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const qflag = qrows[0] ? String(qrows[0].flag ?? qrows[0].id ?? '') : ''
+    let fmtName = '—'
+    if (qflag) {
+      const stmts: any = await api.post(`/api/queryview/statement/list/query/${encodeURIComponent(qflag)}`).catch(() => null)
+      const sid = Array.isArray(stmts?.data) && stmts.data[0] ? String(stmts.data[0].id ?? '') : ''
+      if (sid) {
+        const fmt: any = await api.get(`/api/queryview/statement/${encodeURIComponent(sid)}/format`).catch(() => null)
+        fmtName = fmt?.data?.name ?? sid
+      }
+    }
+    const n = (x: any) => (Array.isArray(x?.data) ? x.data.length : 0)
+    tableText.value = `表「${flag}」全部行 ${n(all)} · 过滤 ${n(where)} · 上翻 ${n(prev)} · 首行详情 ${(detail as any)?.data ? '有' : '无'} · 语句格式「${fmtName}」`
+  } catch (e: any) {
+    toast.error('加载表行游标失败: ' + (e?.message ?? ''))
   }
 }
 async function loadViews() {
