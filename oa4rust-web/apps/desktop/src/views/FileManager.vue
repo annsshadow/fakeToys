@@ -168,14 +168,19 @@ async function loadFolderTopByRef(): Promise<void> {
     const refType = 'attachment'
     const refId = currentFolder.value || 'root'
     const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
-    const [top, byRef, attTop] = await Promise.all([
+    const [top, byRef, attTop, cmsNext, cmsPrev, fNext, fPrev] = await Promise.all([
       s(api.get(`/api/file/complex/top`)),
       s(api.get(`/api/file/assemble/control/file/list/referencetype/${encodeURIComponent(refType)}/reference/${encodeURIComponent(refId)}`)),
       // rev271：attachment/list/top → FILE_FILE(deleted_at IS NULL 顶层附件，arity0)，区别于 FILE_FOLDER complex/top
       s(api.get(`/api/attachment/list/top`)),
+      // rev291：CMS 文件双向游标 file/list/{id}/next|prev/{count}(X_CMS_FILE) + FILE_FILE 全量游标 /all
+      s(api.get(`/api/file/list/0/next/20`)),
+      s(api.get(`/api/file/list/0/prev/20`)),
+      s(api.get(`/api/file/assemble/control/file/list/0/next/20/all`)),
+      s(api.get(`/api/file/assemble/control/file/list/0/prev/20/all`)),
     ])
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
-    toast.success(`顶层文件夹 ${n(top)} / 按引用类型文件 ${n(byRef)} / 顶层附件 ${n(attTop)}`)
+    toast.success(`顶层文件夹 ${n(top)} / 按引用类型文件 ${n(byRef)} / 顶层附件 ${n(attTop)} / CMS文件游标 ${n(cmsNext)}·${n(cmsPrev)} / 全量游标 ${n(fNext)}·${n(fPrev)}`)
   } catch (e: any) {
     toast.error('加载顶层文件夹/引用文件失败: ' + (e?.message ?? ''))
   }
