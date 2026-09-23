@@ -368,6 +368,9 @@ async function loadMeetingDateLists() {
       s(api.get('/api/meeting/assemble/control/config/system/config/manage')),
       // rev280：meeting/list/forward/monthcount/all/{monthCount} → x_meeting WHERE start_time>=NOW() AND <=NOW()+INTERVAL（未来N月，区别于固定年月范围）
       s(api.get('/api/meeting/assemble/control/meeting/list/forward/monthcount/all/6')),
+      // rev295：某日全部会议 year/month/day/all(x_meeting) + 楼栋全部会议 building/.../allmeeting(x_meeting_building) 补齐
+      s(api.get(`/api/meeting/assemble/control/meeting/list/year/${y}/month/${mo}/day/${d}/all`)),
+      s(api.get('/api/meeting/assemble/control/building/list/start/1/completed/0/allmeeting')),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     appliedText.value = `楼栋(时间范围) ${n(building)} · 即将3月 ${n(coming)} · 本年月 ${n(byMonth)} · 本年月日 ${n(byDay)} · 全量会议 ${n(allList)} · 系统配置 ${(sysCfg as any)?.data ? '有' : '无'} · 未来6月 ${n(forward)}`
