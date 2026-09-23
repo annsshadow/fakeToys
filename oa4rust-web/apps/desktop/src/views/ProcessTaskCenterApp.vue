@@ -25,10 +25,12 @@
         <button class="btn-refresh" @click="loadTaskCursorFilters">📋 待办/已办游标</button>
         <button class="btn-refresh" @click="loadReadCursorFilters">📖 待阅/已阅游标</button>
         <button class="btn-refresh" @click="loadJobDataReads">🧬 作业/数据记录/签署/发票</button>
+        <button class="btn-refresh" @click="loadWorkJobProjection">🛰️ 工作复合/作业投影</button>
       </div>
       <div v-if="countsText" class="wk-chips"><span class="wk-chip">{{ countsText }}</span></div>
       <div v-if="workDetailText" class="wk-chips"><span class="wk-chip">{{ workDetailText }}</span></div>
       <div v-if="jobDataText" class="wk-chips"><span class="wk-chip">{{ jobDataText }}</span></div>
+      <div v-if="workJobText" class="wk-chips"><span class="wk-chip">{{ workJobText }}</span></div>
       <div v-if="snapText" class="wk-chips"><span class="wk-chip">{{ snapText }}</span></div>
       <div v-if="workItems.length" class="wk-chips">
         <span v-for="w in workItems" :key="w.id || w.title" class="wk-chip">{{ w.title || w.id }}</span>
@@ -77,6 +79,25 @@ const listEp = '/api/processplatform/service/processing/task/list'
 const workItems = ref<Array<{ id?: string; title?: string }>>([])
 const countsText = ref('')
 const jobDataText = ref('')
+const workJobText = ref('')
+// rev269：流程引擎 工作复合/作业投影 2 条真实 distinct 读路由（引擎表，区别于表面 PP_C_*）
+// process/{id}/complex → x_work WHERE id(query_opt) · job/v2/{job}/projection → x_job WHERE id(query_one)；均只读 arity1
+async function loadWorkJobProjection() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const first: any = items.value[0] ?? {}
+  const wid = String(first.work ?? first.id ?? '0')
+  const job = String(first.job ?? first.id ?? '0')
+  try {
+    const [complex, projection] = await Promise.all([
+      s(api.get(`/api/processplatform/service/processing/process/${encodeURIComponent(wid)}/complex`)),
+      s(api.get(`/api/processplatform/service/processing/job/v2/${encodeURIComponent(job)}/projection`)),
+    ])
+    const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
+    workJobText.value = `工作复合 ${has(complex)} · 作业投影 ${has(projection)}`
+  } catch (e: any) {
+    toast.error('加载工作复合/作业投影失败: ' + (e?.message ?? ''))
+  }
+}
 // rev266：流程表面 作业/数据记录/签署/发票 6 条真实 distinct 读路由（全字面量，arity 均已核）
 // PP_C_JOB 三态：data/job/{job}(xjob) · correlation/list/job/{job}/site/{site}(xjob+xsite) · job/{job}/find/work/workcompleted(xid)
 // + datarecord/get/job/{job}/path/{path}→PP_C_DATA_RECORD(xid,新表) · sign/list/job/{job}→PP_C_DOC_SIGN(xjob，区别 rev262 xid) · attachment/invoice/{flag}/joborworkorworkcompleted/{w}→x_general_invoice(id,新表)
