@@ -7,10 +7,14 @@
 格式转换、合并、采样、分割、搜索、对比、特征检测、聚合、自动配置推荐、
 RAG 格式转换。此前这些能力只能通过命令行使用。
 
+末尾两条（`impact` / `evaluate`）连 CLI 也没有：`ImpactEvaluator` 与
+`ModelEvaluator` 在 3.0 之前只在 `augmentor/__init__.py` 里导出，任何入口都够不到，
+属于「库里有、路上没有」。
+
 **分组约定**（与 CLI 的语义一致，不是随手定的）：
 
-* **只读分析类**（stats / validate / search / compare / features /
-  auto-config）把完整结果直接返回——结果本身就是调用方要的东西；
+* **只读分析类**（stats / validate / search / compare / features / auto-config /
+  impact / evaluate）把完整结果直接返回——结果本身就是调用方要的东西；
 * **写盘变换类**（convert / merge / sample / split / aggregate / rag）
   必须给输出路径，响应只回传「写到哪、写了多少」。产物规模与输入同量级，
   塞进 HTTP 响应既慢又容易被客户端或网关截断。
@@ -165,6 +169,34 @@ class RagRequest(BaseModel):
     format: str = "langchain"
 
 
+class ImpactRequest(BaseModel):
+    """增强前后影响评估请求
+
+    `text_field` 是「算多样性/重复率时看哪个字段」，默认 `instruction`，与 SDK 的
+    `ImpactEvaluator` 默认值一致。`min_scale_gain` 抬高 `beneficial` 的门槛
+    （规模增益低于它就判 False），默认 0.0 即 SDK 口径「规模不许缩水」。
+    """
+    before_file: str
+    after_file: str
+    text_field: str = "instruction"
+    min_scale_gain: float = 0.0
+
+
+class EvaluateRequest(BaseModel):
+    """生成文本指标评估请求
+
+    两侧默认都取 `output` 字段；用同一份文件的两个字段做对照时，把
+    `generated_file` 与 `reference_file` 传成同一路径即可。
+    `metrics` 留空 = 全算（`bleu` / `rouge_l` / `similarity`）。
+    """
+    generated_file: str
+    reference_file: str
+    generated_field: str = "output"
+    reference_field: str = "output"
+    metrics: Optional[List[str]] = None
+    include_details: bool = True
+
+
 # ============ 响应模型 ============
 
 class StatisticsResponse(BaseModel):
@@ -294,6 +326,29 @@ class RagResponse(BaseModel):
     format: str
     input_count: int
     record_count: int
+
+
+class ImpactResponse(BaseModel):
+    """增强前后对比（与 `AugmentationImpact.to_dict()` 的键一一对应）
+
+    `beneficial` 是这条路由替调用方做的判定：`AugmentationImpact` 本身只给数字，
+    「这次增强到底划不划算」取决于 `ImpactEvaluator.is_beneficial` 的口径。
+    """
+    before: Dict[str, Any]
+    after: Dict[str, Any]
+    gains: Dict[str, float]
+    beneficial: bool
+
+
+class EvaluateResponse(BaseModel):
+    """批量指标结果（与 `EvaluationResult.to_dict()` 的键一一对应）
+
+    两侧条数在门口就校验过相等，所以只回 `sample_count` 一个数。
+    `details` 在 `include_details=false` 时是空数组，`sample_count` 仍是真实条数。
+    """
+    metrics: Dict[str, float]
+    sample_count: int
+    details: List[Dict[str, Any]]
 
 
 def _dump(items: Any, path: Path) -> None:
@@ -445,6 +500,161 @@ async def dataset_auto_config(request: DatasetFileRequest):
             profile = DataProfiler().profile(items)
             recommendation = AutoConfig().recommend(profile, len(items))
             return recommendation.to_dict()
+
+        return await run_in_thread(run)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise to_http_error(e) from e
+
+
+def _require_any_field(items: List[dict], field_name: str, label: str) -> None:
+    """字段名整体拼错时立刻报错，而不是让统计悄悄退化成「全空」
+
+    `ImpactEvaluator.measure()` 用 `item.get(field, "")` 取文本：字段名写错时每条都
+    取到空串，于是「唯一指令数 = 1、重复率 = 100%」——一份**根本没被读过**的数据集会
+    被报告成「多样性极差」。静默降级比报错危险，所以在门口拦下。
+    """
+    if items and not any(field_name in item for item in items):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"{label} 里没有任何一条含字段 '{field_name}'（大概率是字段名拼错了）；"
+                f"首条实际字段: {', '.join(sorted(items[0])) or '（无）'}"
+            ),
+        )
+
+
+def _as_column(items: List[dict], field_name: str, label: str) -> List[str]:
+    """按字段取出一列文本；缺字段的那一条带下标报 400
+
+    与 `_require_any_field` 管「整体拼错」不同，这里管**逐条**：评估会把两侧按索引
+    配对，静默补空串等于凭空造一条 0 分样本，指标被稀释却看不出来源。
+    """
+    values: List[str] = []
+    for index, item in enumerate(items):
+        if field_name not in item:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"{label} 第 {index} 条没有字段 '{field_name}'"
+                    f"（该条实际字段: {', '.join(sorted(item)) or '（无）'}）"
+                ),
+            )
+        values.append(str(item[field_name]))
+    return values
+
+
+@router.post(
+    "/api/dataset/impact",
+    response_model=ImpactResponse,
+    summary="增强前后影响评估",
+)
+async def dataset_impact(request: ImpactRequest):
+    """量化「增强前 → 增强后」的规模 / 多样性 / 去重 / 长度分布四项增益
+
+    只读分析类，结果本身就是产物，所以整体直接返回。两条口径说明：
+
+    * `before_file` 为空 → **400**：四项增益的分母都是基线，空基线会算出「增益 0.0」，
+      那会被读成「这次增强毫无效果」，而实际是「没有可比的东西」；
+    * `after_file` 允许为空：那是一次把数据清光的增强，规模增益 -1.0、`beneficial`
+      判 False，这是有意义的结论而不是错误。
+    """
+    try:
+        from augmentor.impact import ImpactEvaluator
+
+        before = await read_json_file(resolve_data_path(request.before_file))
+        after = await read_json_file(resolve_data_path(request.after_file))
+        if not before:
+            raise HTTPException(
+                status_code=400, detail="基线数据集为空，四项增益没有定义（分母为 0）"
+            )
+        _require_any_field(before, request.text_field, "基线数据集")
+        _require_any_field(after, request.text_field, "增强后数据集")
+
+        def run():
+            evaluator = ImpactEvaluator(text_field=request.text_field)
+            impact = evaluator.evaluate(before, after)
+            return {
+                "before": impact.before,
+                "after": impact.after,
+                "gains": impact.gains,
+                "beneficial": evaluator.is_beneficial(
+                    impact, min_scale_gain=request.min_scale_gain
+                ),
+            }
+
+        return await run_in_thread(run)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise to_http_error(e) from e
+
+
+@router.post(
+    "/api/dataset/evaluate",
+    response_model=EvaluateResponse,
+    summary="生成文本指标评估",
+)
+async def dataset_evaluate(request: EvaluateRequest):
+    """把生成侧与参考侧按索引逐条配对，算 BLEU / ROUGE-L / 相似度均值
+
+    指标白名单由 `augmentor.evaluation.METRIC_FUNCTIONS` **反推**，不在这里再抄一份
+    枚举——F-04 那族缺陷的教训是：手抄的枚举会成为第二事实来源并与实现漂移。
+    """
+    try:
+        from augmentor.evaluation import METRIC_FUNCTIONS, ModelEvaluator
+
+        unknown = [m for m in (request.metrics or []) if m not in METRIC_FUNCTIONS]
+        if unknown:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"未知的评估指标: {', '.join(unknown)}"
+                    f"（可选 {' / '.join(sorted(METRIC_FUNCTIONS))}）"
+                ),
+            )
+
+        generated_path = resolve_data_path(request.generated_file)
+        reference_path = resolve_data_path(request.reference_file)
+        generated_items = await read_json_file(generated_path)
+        # 用同一份文件的两个字段做对照是常见用法（`output` vs `reference_output`），
+        # 这时不必再读一遍盘。
+        reference_items = (
+            generated_items
+            if reference_path == generated_path
+            else await read_json_file(reference_path)
+        )
+
+        if not generated_items or not reference_items:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"参与评估的数据集为空（生成侧 {len(generated_items)} 条、"
+                    f"参考侧 {len(reference_items)} 条）；空集合上「各项指标 0.0」"
+                    "会被误读成模型差，实际是没数据"
+                ),
+            )
+
+        generated = _as_column(generated_items, request.generated_field, "生成侧")
+        references = _as_column(reference_items, request.reference_field, "参考侧")
+        if len(generated) != len(references):
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"生成侧 {len(generated)} 条、参考侧 {len(references)} 条，"
+                    "无法按索引逐条配对"
+                ),
+            )
+
+        def run():
+            result = ModelEvaluator(metrics=request.metrics).evaluate_batch(
+                generated, references
+            )
+            payload = result.to_dict()
+            if not request.include_details:
+                payload["details"] = []
+            return payload
 
         return await run_in_thread(run)
     except HTTPException:

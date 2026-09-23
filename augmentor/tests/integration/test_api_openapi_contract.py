@@ -466,6 +466,39 @@ CALLS = {
             "reasoning", "source_stats",
         ),
     ),
+    ("POST", "/api/dataset/impact"): _Case(
+        request=lambda c: c.post(
+            "/api/dataset/impact",
+            json={"before_file": "data.json", "after_file": "train.json"},
+        ),
+        keys=_keys("before", "after", "gains", "beneficial"),
+        # before/after 是 `AugmentationMetrics.to_dict()`（含 `extra`），gains 是
+        # 四项增益。它们是 `Dict[str, Any]`，顶层模型只会保证「有这个键」，
+        # 里面漏一项都不会在顶层显形——所以必须递归钉。
+        nested={
+            "before": _keys(
+                "total_items", "unique_instructions", "avg_length",
+                "length_std", "duplicate_rate", "extra",
+            ),
+            "after": _keys(
+                "total_items", "unique_instructions", "avg_length",
+                "length_std", "duplicate_rate", "extra",
+            ),
+            "gains": _keys(
+                "scale_gain", "diversity_gain", "dedup_gain", "length_spread_gain"
+            ),
+        },
+    ),
+    ("POST", "/api/dataset/evaluate"): _Case(
+        request=lambda c: c.post(
+            "/api/dataset/evaluate",
+            json={
+                "generated_file": "data.json",
+                "reference_file": "train.json",
+            },
+        ),
+        keys=_keys("metrics", "sample_count", "details"),
+    ),
     ("POST", "/api/dataset/convert"): _Case(
         request=lambda c: c.post(
             "/api/dataset/convert",

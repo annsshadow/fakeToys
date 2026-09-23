@@ -17,6 +17,7 @@
 - [x] **L5** `perf(api)+fix`: A4 12 条端点的数据集读取离开事件循环（14 处读取点）
 - [x] **L6** `perf(impact)`: A14 `duplicate_rate` 的 `list.count` 每条扫全表 → `Counter` 一次计数，O(n²)→O(n)
 - [x] **L7** `perf(api)`: A13 `dataset_tools` / `system_ops` 的 11 处读取 + stats 的分析全部离开事件循环
+- [x] **L8** `feat(api)`: B6 新增 `/api/dataset/impact` + `/api/dataset/evaluate` 两条只读端点（SDK 里「有、路上没有」的能力）
 
 ## Backlog A — 性能（含 file:line 与实测线索）
 
@@ -48,7 +49,7 @@
 | B3 | 反向转换边 `alpaca/sharegpt/chatml/vicuna/belle/tsv → json` | `converter.py:60-66` 只读 json/jsonl/csv，导出侧 13 种 → 不可回环 | M |
 | B4 | `QualityGate` / `DatasetHealthScore` 暴露为 CLI 子命令 + 端点 | 两者在 `augmentor/__init__.py:38+` 导出但无人可达 | S |
 | B5 | 死配置项：读取或显式废弃（`config.py:75-167` 的 sampler/expander/tracker/visualization/multilingual/evaluation/vector/active_learning 等） | 无代码路径读取 | M |
-| B6 | `/api/dataset/evaluate`（BLEU/ROUGE）+ `/api/dataset/impact`（前后对比） | `evaluation.py:74,155,211`、`impact.py:49,96` 纯函数已就绪 | S |
+| ~~B6~~ | ~~/api/dataset/evaluate（BLEU/ROUGE）+ /api/dataset/impact（前后对比）~~ | ~~`evaluation.py:74,155,211`、`impact.py:49,96` 纯函数已就绪~~ 已做（L8） | S |
 | B7 | 主动学习 + 实验跟踪回路（`active_learning.py:46`、`tracker.py:29`） | 公开导出但无 CLI/API | L |
 | B8 | 前端 5 个未接线服务函数 + 运行时 schema 校验 | `api.ts:141,152,175,180,206` | M |
 
@@ -86,7 +87,7 @@
   （n=16000 预算 200 ms，带 trace）。红→绿：把推导式塞回去 → 用例红在 1630.2 ms。
   全仓扫了同一族（推导式里 `list.count`），只剩 `api/vector/chromadb.py:140` 的
   `self._collection.count() == 0`，那是数据库计数、不是列表扫描，族到此为止。
-- **L7** `<待填>` `perf(api)` A13 —— A4 的同构族第二处：`dataset_tools.py`（8 处）+
+- **L7** `0d5040f24` `perf(api)` A13 —— A4 的同构族第二处：`dataset_tools.py`（8 处）+
   `system_ops.py`（3 处）在 `async def` 函数体里直接调同步 `read_items()`，全部改为
   `await read_json_file(path)`（它就是 `read_items` 的异步外壳）；`/api/dataset/aggregate`
   的「N 个文件在循环里串行读」改成逐个 await（保留按 `datasets` 顺序、第一个坏文件先报错的
@@ -109,9 +110,35 @@
   顺带**实测排掉**三处「看着像缺陷其实不是」：`check_dependencies()` 0.7 ms（用的是
   `find_spec` 不是 import）、首次 `get_pipeline()` 6.7 ms（无密钥时不加载权重）、
   `dataset_tools._dump` 的两个写盘点本就在线程内。
+- **L8** （提交后补）`feat(api)` B6 —— 把 SDK 里「有、路上没有」的两个能力接成只读端点：
+  `POST /api/dataset/impact`（`ImpactEvaluator` 的四项增益 + `is_beneficial` 判定）与
+  `POST /api/dataset/evaluate`（`ModelEvaluator.evaluate_batch` 的 BLEU / ROUGE-L / 相似度均值）。
+  两条都在门口做了**静默降级**拦截，因为库的取文本方式是 `item.get(field, "")`：
+  字段名整体拼错会得到「唯一指令数 1、重复率 100%」这种**根本没读过数据**的结论（→ 400 并回
+  首条实际字段），逐条缺字段则会凭空造一条 0 分样本稀释均值（→ 400 并带**下标**）；
+  空基线 → 400（四项增益分母都是基线，报 0.0 会被读成「增强毫无效果」），
+  空 after → **200**（规模增益 -1.0、`beneficial` False，那是一次清光数据的合法结论）；
+  指标白名单由 `METRIC_FUNCTIONS` **反推**，不手抄第二份枚举（F-04 那族教训）。
+  新增 13 例（`TestDatasetImpact` 5 + `TestDatasetEvaluate` 8），预言机全部**手算**、不复用被测库：
+  `a,a,a,b,c,c → after 3 唯一文本 → diversity_gain = (3-1)/1 = 2.0`；
+  `how do i sort a list` vs `how do i filter a list` → rouge_l = LCS 5/6 的 F1、
+  similarity = 5/7、bleu = 0（4 元文法零重叠），两侧均值 0.5 / 11÷12 / 6÷7。
+  另加 2 条矩阵行进 `test_api_event_loop_blocking.py`（两条新端点各有读取点，同 L7 口径）。
+  **红→绿**：定向反向 patch 逐个撤守卫 → 6 条用例全红（撤空基线/拼错字段/空评估侧 → `200 == 400`；
+  撤逐条缺字段 → `500 == 400`，KeyError 逃出；撤长度不匹配 → 报错文案换成库里的英文那句）。
+  其中「未知指标」那条**第一次注入时没红**——库的 `ModelEvaluator.__init__` 也抛
+  `DataValidationError` → 400，只断言状态码等于把守卫和兜底混为一谈。据此把用例改成断言
+  「参数校验**先于 I/O**」：传一个不存在的文件仍得 400 且文案是守卫那句（撤守卫后变 404），
+  这条守卫的真正契约这才可 falsifiable。
+  **两道既有闸门各自抓到一件事**：`TestWriteRouteAuthCoverage` 要求新路由显式归类（已加
+  `OPEN_ALLOWLIST`：两条都是只读）；`test_api_openapi_contract.py` 的
+  `test_all_modelled_endpoints_have_a_no_drop_case` 直接变红，要求为两个新 `response_model`
+  补「不裁字段」用例——补了 2×2 条（含递归钉 `before/after` 的 6 个键与 `gains` 的 4 个键，
+  它们是 `Dict[str, Any]`，顶层模型漏字段不会在顶层显形），并反向验证：从 `ImpactResponse`
+  删掉 `beneficial` → 行为层与 OpenAPI 文档层**双双变红**。
 - 全量：L4 后 **3679 passed / 3 skipped**（89.2 s），L5 后 **3703 passed / 3 skipped**
   （90.2 s），L6 后 **3705 passed / 3 skipped**（91.1 s），L7 后 **3726 passed / 3 skipped**
-  （95.1 s），覆盖率门禁均通过（98.53%）；基线 3668。
+  （95.1 s），L8 后 **3747 passed / 3 skipped**（98.0 s），覆盖率门禁均通过（98.52%）；基线 3668。
 
 > **操作纪律**（L4 踩过）：验红用的是**定向反向 patch**，绝不用 `git checkout <file>` 撤注入 ——
 > 本轮 `api/deps.py` 有未提交工作，一次 `git checkout` 把整段缓存实现清掉了，只能重写。
