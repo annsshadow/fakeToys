@@ -324,7 +324,7 @@ async function loadByWorkJobLists(): Promise<void> {
   byWorkJobText.value = ''
   const id = '0'
   const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
-  const [tW, tJ, tcW, tcJ, rJ, rcJ, wlJ] = await Promise.all([
+  const [tW, tJ, tcW, tcJ, rJ, rcJ, wlJ, wlAdd] = await Promise.all([
     settle(api.get(`/api/processplatform/assemble/surface/task/list/work/${id}`)),
     settle(api.get(`/api/processplatform/assemble/surface/task/list/job/${id}`)),
     settle(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/work/${id}`)),
@@ -332,9 +332,11 @@ async function loadByWorkJobLists(): Promise<void> {
     settle(api.get(`/api/processplatform/assemble/surface/read/list/job/${id}`)),
     settle(api.get(`/api/processplatform/assemble/surface/readcompleted/list/job/${id}`)),
     settle(api.get(`/api/processplatform/assemble/surface/worklog/list/job/${id}`)),
+    // rev303：worklog/list/add/split/work/{workId} → PP_C_WORKLOG WHERE xwork（拆分新增视图的工作日志清单，只读 arity1，此前被 add 关键字误排）
+    settle(api.get(`/api/processplatform/assemble/surface/worklog/list/add/split/work/${id}`)),
   ])
   const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
-  byWorkJobText.value = `待办 工作${n(tW)}/job${n(tJ)} · 已办 工作${n(tcW)}/job${n(tcJ)} · 待阅job ${n(rJ)} · 已阅job ${n(rcJ)} · 日志job ${n(wlJ)}`
+  byWorkJobText.value = `待办 工作${n(tW)}/job${n(tJ)} · 已办 工作${n(tcW)}/job${n(tcJ)} · 待阅job ${n(rJ)} · 已阅job ${n(rcJ)} · 日志job ${n(wlJ)} · 日志拆分 ${n(wlAdd)}`
 }
 const docReadPagingText = ref('')
 const workFullText = ref('')
