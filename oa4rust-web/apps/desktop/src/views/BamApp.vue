@@ -12,6 +12,7 @@
         <button class="btn-primary ghost" @click="loadStartStubs">起始统计</button>
         <button class="btn-primary ghost" @click="loadCompletedStubs">已办/超期存根</button>
         <button class="btn-primary ghost" @click="loadUnitStubs">单位维度存根</button>
+        <button class="btn-primary ghost" @click="loadDimensionStats">维度周期统计</button>
         <button class="btn-primary" @click="refresh">🔄 刷新</button>
       </span>
     </div>
@@ -64,6 +65,29 @@ async function loadBamConfigs() {
     periodText.value = `BAM定义 ${rows.length}（首个「${name}」· ${st}）`
   } catch (e: any) {
     toast.error('加载 BAM 定义失败: ' + (e?.message ?? ''))
+  }
+}
+// BAM 维度周期统计族 3 条真实 distinct 路由（各 SQL 维度不同，非退化）：按单位已办任务 period/list/completed/task/{unit}（x_task 该单位人员已办）
+// + 按应用已办工作 period/list/completed/application/{work}（x_work by application）+ 按单位超期任务 period/list/expired/task/{unit}（x_task 该单位超期）。unit 从组织顶级单位、application 从 BAM 定义回源。
+async function loadDimensionStats() {
+  try {
+    const [unitResp, bamResp]: any[] = await Promise.all([
+      api.get('/api/organization/assemble/control/unit/list/top').catch(() => null),
+      api.get('/api/processplatform/assemble/bam/list/default').catch(() => null),
+    ])
+    const units = (Array.isArray(unitResp?.data) ? unitResp.data : []) as Array<Record<string, unknown>>
+    const bams = (Array.isArray(bamResp?.data) ? bamResp.data : (bamResp?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const unit = units[0] ? String(units[0].id ?? '') : '0'
+    const application = bams[0] ? String(bams[0].application ?? bams[0].id ?? 'default') : 'default'
+    const [doneTask, doneWork, expiredTask] = await Promise.all([
+      api.get(`/api/processplatform/assemble/bam/period/list/completed/task/${encodeURIComponent(unit)}`).catch(() => null),
+      api.get(`/api/processplatform/assemble/bam/period/list/completed/application/${encodeURIComponent(application)}`).catch(() => null),
+      api.get(`/api/processplatform/assemble/bam/period/list/expired/task/${encodeURIComponent(unit)}`).catch(() => null),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    periodText.value = `单位已办任务 ${n(doneTask)} · 应用已办工作 ${n(doneWork)} · 单位超期任务 ${n(expiredTask)}`
+  } catch (e: any) {
+    toast.error('加载维度统计失败: ' + (e?.message ?? ''))
   }
 }
 async function loadPeriodStats() {
