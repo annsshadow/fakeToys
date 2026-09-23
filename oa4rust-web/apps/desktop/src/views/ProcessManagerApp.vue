@@ -23,6 +23,7 @@
         <button class="btn-refresh" @click="loadDesignerFileScript">📂 文件/脚本/图标</button>
         <button class="btn-refresh" @click="loadSurfaceProcessReads">🖼️ 表面/字典/流程</button>
         <button class="btn-refresh" @click="loadSurfaceDataForms">📑 完成件/草稿/表单</button>
+        <button class="btn-refresh" @click="loadDesignerItemAccess">🔑 项访问/输出/版次</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
@@ -277,6 +278,25 @@ async function loadSurfaceDataForms() {
     designerExtraText.value = `完成件数据 ${has(wc)} | 草稿游标 ${n(draft)} | 表单 ${has(form)} | 键锁 ${has(keylock)}`
   } catch (e: any) {
     toast.error('加载完成件/草稿/表单失败: ' + (e?.message ?? ''))
+  }
+}
+// rev254：设计器 项访问(按路径/按流程)·输出(按应用)·流程(按应用+版次) 4 条真实 distinct 读路由
+// pp_e_item_access WHERE xpath / xprocess · PP_E_OUTPUT WHERE xapplication · pp_e_process WHERE xapplication AND xedition；arity 已核，跳 file/application(Path<String>与2参URL不符 500)·process/permission(xid 孪生)
+async function loadDesignerItemAccess() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const first: any = items.value[0] ?? {}
+  const appId = String(first.application ?? first.applicationFlag ?? first.id ?? '0')
+  try {
+    const [byPath, byProcess, output, edition] = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/designer/item-access/path/${encodeURIComponent(appId)}`)),
+      s(api.get(`/api/processplatform/assemble/designer/item-access/process/${encodeURIComponent(appId)}/path/${encodeURIComponent(appId)}`)),
+      s(api.get(`/api/processplatform/assemble/designer/output/select/${encodeURIComponent(appId)}`)),
+      s(api.get(`/api/processplatform/assemble/designer/process/application/${encodeURIComponent(appId)}/edition/${encodeURIComponent(appId)}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    designerExtraText.value = `项访问 按路径${n(byPath)}/按流程${n(byProcess)} | 输出(按应用) ${n(output)} | 流程(按应用+版次) ${n(edition)}`
+  } catch (e: any) {
+    toast.error('加载项访问/输出失败: ' + (e?.message ?? ''))
   }
 }
 // 设计器流程明细族 3 条真实 distinct 路由：首流程 → 流程详情 process/{id}（PP_E_PROCESS query_opt）
