@@ -3,7 +3,7 @@
 
 """多模态数据处理 API 路由"""
 
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -11,6 +11,41 @@ from pydantic import BaseModel
 from ..deps import resolve_data_dir, resolve_within_roots, run_in_thread
 
 router = APIRouter(tags=["multimodal"])
+
+
+class MultimodalRecordResponse(BaseModel):
+    """单条多模态记录（与 `MultimodalRecord.to_dict()` 的键一一对应）
+
+    `image` / `audio` 对缺失或损坏的媒体是 **None**，这里刻意不启用
+    `exclude_none`：契约要求这两个键始终存在，值为 null 才是「该模态没有内容」
+    与「该模态解析失败」之外的正确表达。
+    """
+    text: str
+    image: Optional[Dict[str, Any]]
+    audio: Optional[Dict[str, Any]]
+    modalities: List[str]
+    valid: bool
+    errors: List[str]
+
+
+class MultimodalScanResponse(BaseModel):
+    """目录扫描结果：汇总报告 + 逐条记录
+
+    前 6 个键来自 `MultimodalProcessor.generate_report()`，`records` 由路由补上。
+    """
+    total_records: int
+    valid_records: int
+    invalid_records: int
+    modality_counts: Dict[str, int]
+    error_count: int
+    errors: List[str]
+    records: List[MultimodalRecordResponse]
+
+
+class MultimodalFormatsResponse(BaseModel):
+    """支持的媒体扩展名"""
+    image_extensions: List[str]
+    audio_extensions: List[str]
 
 
 class MultimodalRequest(BaseModel):
@@ -25,7 +60,11 @@ class ScanRequest(BaseModel):
     directory: str
 
 
-@router.post("/api/multimodal/process")
+@router.post(
+    "/api/multimodal/process",
+    response_model=MultimodalRecordResponse,
+    summary="处理单条多模态数据",
+)
 async def process_multimodal(request: MultimodalRequest):
     """处理单条多模态数据"""
     try:
@@ -53,7 +92,11 @@ async def process_multimodal(request: MultimodalRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/api/multimodal/scan")
+@router.post(
+    "/api/multimodal/scan",
+    response_model=MultimodalScanResponse,
+    summary="扫描目录并处理多模态文件",
+)
 async def scan_directory(request: ScanRequest):
     """扫描目录并处理多模态文件"""
     try:
@@ -77,7 +120,11 @@ async def scan_directory(request: ScanRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/api/multimodal/formats")
+@router.get(
+    "/api/multimodal/formats",
+    response_model=MultimodalFormatsResponse,
+    summary="列出支持的多模态格式",
+)
 async def supported_formats():
     """列出支持的多模态格式"""
     from augmentor.data import ImageProcessor, AudioProcessor

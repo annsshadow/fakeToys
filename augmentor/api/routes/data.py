@@ -6,8 +6,10 @@
 import asyncio
 import json
 from pathlib import Path
+from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from pydantic import BaseModel
 
 from ..deps import (
     get_pipeline,
@@ -17,8 +19,59 @@ from ..deps import (
     verify_api_key,
     write_json_file,
 )
+from ..schemas import SuccessResponse
 
 router = APIRouter(tags=["data"])
+
+
+class DataFileInfo(BaseModel):
+    """单个数据文件条目"""
+    name: str
+    path: str
+    size: int
+
+
+class DataFileListResponse(BaseModel):
+    """数据文件列表"""
+    files: List[DataFileInfo]
+
+
+class DataLoadResponse(BaseModel):
+    """分页读取结果
+
+    `total` 是**过滤后**的总条数（`search` 生效时小于文件总条数），
+    客户端据此翻页。
+    """
+    total: int
+    page: int
+    page_size: int
+    items: List[Dict[str, Any]]
+
+
+class DataUploadResponse(BaseModel):
+    """上传结果：落盘路径与实际写入条数"""
+    success: bool
+    path: str
+    count: int
+
+
+class DatasetAnalysisResponse(BaseModel):
+    """数据集分析结果（与 `Pipeline.analyze_dataset()` 的返回键一致）"""
+    coverage_analysis: Dict[str, Any]
+    statistics: Dict[str, Any]
+    dedup_report: Dict[str, Any]
+
+
+class VisualizeResponse(BaseModel):
+    """可视化结果：图表名到文件路径的映射"""
+    charts: Dict[str, str]
+
+
+class DemoItem(BaseModel):
+    """演示数据条目"""
+    instruction: str
+    input: str
+    output: str
 
 
 def _safe_data_path(filename: str) -> Path:
@@ -39,7 +92,7 @@ def _safe_data_path(filename: str) -> Path:
     return resolve_within_roots(filename, "文件路径")
 
 
-@router.get("/api/data/list")
+@router.get("/api/data/list", response_model=DataFileListResponse, summary="列出数据文件")
 async def list_data_files():
     """列出数据文件"""
     loop = asyncio.get_event_loop()
@@ -60,7 +113,11 @@ async def list_data_files():
     return {"files": files}
 
 
-@router.get("/api/data/load/{filename}")
+@router.get(
+    "/api/data/load/{filename}",
+    response_model=DataLoadResponse,
+    summary="分页加载数据",
+)
 async def load_data(filename: str, page: int = 1, page_size: int = 20, search: str = ""):
     """加载数据（分页）"""
     file_path = _safe_data_path(filename)
@@ -92,7 +149,11 @@ async def load_data(filename: str, page: int = 1, page_size: int = 20, search: s
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.put("/api/data/update/{filename}")
+@router.put(
+    "/api/data/update/{filename}",
+    response_model=SuccessResponse,
+    summary="更新单条数据",
+)
 async def update_data_item(
     filename: str,
     index: int,
@@ -120,7 +181,11 @@ async def update_data_item(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.delete("/api/data/delete/{filename}")
+@router.delete(
+    "/api/data/delete/{filename}",
+    response_model=SuccessResponse,
+    summary="删除单条数据",
+)
 async def delete_data_item(
     filename: str, index: int, _auth: None = Depends(verify_api_key)
 ):
@@ -145,7 +210,11 @@ async def delete_data_item(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/api/data/upload")
+@router.post(
+    "/api/data/upload",
+    response_model=DataUploadResponse,
+    summary="上传数据文件",
+)
 async def upload_data(
     file: UploadFile = File(...), _auth: None = Depends(verify_api_key)
 ):
@@ -167,7 +236,11 @@ async def upload_data(
 
 # ============ 数据分析 ============
 
-@router.get("/api/analyze/{filename}")
+@router.get(
+    "/api/analyze/{filename}",
+    response_model=DatasetAnalysisResponse,
+    summary="分析数据集",
+)
 async def analyze_data(filename: str):
     """分析数据集（覆盖度、统计信息、去重报告）"""
     file_path = _safe_data_path(filename)
@@ -183,7 +256,11 @@ async def analyze_data(filename: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/api/visualize/{filename}")
+@router.get(
+    "/api/visualize/{filename}",
+    response_model=VisualizeResponse,
+    summary="生成可视化图表",
+)
 async def visualize_data(filename: str):
     """生成数据集可视化图表"""
     file_path = _safe_data_path(filename)
@@ -231,8 +308,16 @@ _DEMO_DATA = [
 ]
 
 
-@router.get("/api/demo/data")
+@router.get(
+    "/api/demo/data",
+    response_model=List[DemoItem],
+    summary="内置演示数据集",
+)
 async def get_demo_data():
-    """获取内置演示数据集，开箱即用"""
-    from fastapi.responses import JSONResponse
-    return JSONResponse(_DEMO_DATA)
+    """获取内置演示数据集，开箱即用
+
+    返回的是**裸数组**（不是 `{"data": [...]}` 包装），前端可直接当数据集喂给
+    其它端点。这里刻意返回列表而不是 `JSONResponse`：后者会绕过
+    response_model，让上面声明的契约退化成装饰。
+    """
+    return _DEMO_DATA

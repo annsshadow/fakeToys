@@ -3,14 +3,66 @@
 
 """版本管理 API 路由"""
 
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from ..deps import get_pipeline, read_json_file, require_file, run_in_thread, verify_api_key
+from ..schemas import SuccessResponse
 
 router = APIRouter(tags=["version"])
+
+
+class VersionInfo(BaseModel):
+    """版本摘要
+
+    `label` 允许为 null（创建时未指定），因此声明为可选且**不**启用
+    `exclude_none`——键必须始终存在。
+    """
+    version_id: str
+    label: Optional[str]
+    description: str
+    created_at: str
+    item_count: int
+
+
+class VersionDetailResponse(VersionInfo):
+    """版本详情：在摘要基础上多一份 `metadata`"""
+    metadata: Dict[str, Any]
+
+
+class VersionListResponse(BaseModel):
+    """版本列表"""
+    versions: List[VersionInfo]
+
+
+class VersionCreateResponse(BaseModel):
+    """版本创建结果"""
+    success: bool
+    version_id: str
+
+
+class VersionDiffResponse(BaseModel):
+    """版本对比结果
+
+    `added_count` / `removed_count` / `modified_count` 以 version1 为基准。
+    """
+    version1: str
+    version2: str
+    added_count: int
+    removed_count: int
+    modified_count: int
+
+
+class VersionHistoryResponse(BaseModel):
+    """版本操作历史（由版本目录下的操作日志 JSONL 支撑）"""
+    history: List[Dict[str, Any]]
+
+
+class VersionDataResponse(BaseModel):
+    """某个版本的数据快照"""
+    items: List[Dict[str, Any]]
 
 
 class VersionCreateRequest(BaseModel):
@@ -25,7 +77,7 @@ class DiffRequest(BaseModel):
     version2: str
 
 
-@router.get("/api/versions")
+@router.get("/api/versions", response_model=VersionListResponse, summary="列出所有版本")
 async def list_versions():
     """列出所有版本"""
     try:
@@ -47,7 +99,11 @@ async def list_versions():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/api/versions/create")
+@router.post(
+    "/api/versions/create",
+    response_model=VersionCreateResponse,
+    summary="创建新版本",
+)
 async def create_version(
     filename: str,
     request: VersionCreateRequest,
@@ -74,7 +130,11 @@ async def create_version(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/api/versions/diff")
+@router.post(
+    "/api/versions/diff",
+    response_model=VersionDiffResponse,
+    summary="对比两个版本",
+)
 async def diff_versions(request: DiffRequest):
     """对比两个版本"""
     try:
@@ -93,7 +153,11 @@ async def diff_versions(request: DiffRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/api/versions/history")
+@router.get(
+    "/api/versions/history",
+    response_model=VersionHistoryResponse,
+    summary="获取版本操作历史",
+)
 async def version_history(limit: int = 20):
     """获取版本操作历史"""
     try:
@@ -103,7 +167,11 @@ async def version_history(limit: int = 20):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/api/versions/{version_id}")
+@router.get(
+    "/api/versions/{version_id}",
+    response_model=VersionDetailResponse,
+    summary="获取版本信息",
+)
 async def get_version(version_id: str):
     """获取版本信息"""
     try:
@@ -121,7 +189,11 @@ async def get_version(version_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/api/versions/{version_id}/data")
+@router.get(
+    "/api/versions/{version_id}/data",
+    response_model=VersionDataResponse,
+    summary="获取版本数据",
+)
 async def get_version_data(version_id: str):
     """获取版本数据"""
     try:
@@ -132,7 +204,11 @@ async def get_version_data(version_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/api/versions/{version_id}/rollback")
+@router.post(
+    "/api/versions/{version_id}/rollback",
+    response_model=SuccessResponse,
+    summary="回滚到指定版本",
+)
 async def rollback_version(
     version_id: str, _auth: None = Depends(verify_api_key)
 ):
@@ -145,7 +221,11 @@ async def rollback_version(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.delete("/api/versions/{version_id}")
+@router.delete(
+    "/api/versions/{version_id}",
+    response_model=SuccessResponse,
+    summary="删除版本",
+)
 async def delete_version(
     version_id: str, _auth: None = Depends(verify_api_key)
 ):

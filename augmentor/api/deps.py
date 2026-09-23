@@ -12,7 +12,7 @@ import logging
 import os
 import secrets
 from pathlib import Path
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Tuple
 
 from fastapi import Header, HTTPException
 
@@ -186,17 +186,92 @@ def resolve_data_dir(name: str) -> Path:
     return resolve_within_roots(name, "目录路径")
 
 
-def _sync_read_json(file_path: Path) -> list:
-    """同步读取 JSON 文件
+def to_http_error(
+    exc: Exception,
+    *,
+    not_found: str = "文件不存在",
+    not_found_types: Tuple[type, ...] = (),
+) -> HTTPException:
+    """把下游抛出的异常映射成 HTTP 错误
+
+    统一三件事，避免每个 handler 各写一套 ``except`` 分支：
+
+    1. ``FileNotFoundError`` → 404（``not_found`` 可定制文案，如「备份不存在」）；
+    2. ``JSONDecodeError`` → 400，且**不转发 json 模块的英文原文**；
+    3. 其余 ``ValueError`` → 400（参数或数据不合法），其它 → 500。
+
+    顺序有讲究：``JSONDecodeError`` 是 ``ValueError`` 的子类，必须先判。
+    ``HTTPException`` **不**在这里处理 —— 它应当由调用方原样抛出，否则会被
+    降级成 500。
+
+    之所以把 400/500 的判据收在一处：此前两条路径是分散的，同一个
+    「文件不是合法 JSON」在有的端点是 400、有的端点是 500，且都把
+    ``"Expecting property name enclosed in double quotes: line 1 column 3"``
+    这种解析器内部措辞原样回给了客户端。
+
+    Args:
+        exc: 下游抛出的异常
+        not_found: 判定为「资源不存在」时使用的文案
+        not_found_types: 额外视为「资源不存在」的异常类型。用于语义明确、
+            但不是 ``FileNotFoundError`` 的情况（如 ``BackupError`` 唯一
+            的抛出点就是「备份不存在」）。这些类型同样是 ``ValueError``
+            子类，因此必须排在 ``ValueError`` 分支之前判定。
+
+    Returns:
+        对应的 HTTPException
+    """
+    if isinstance(exc, FileNotFoundError) or (
+        not_found_types and isinstance(exc, not_found_types)
+    ):
+        return HTTPException(status_code=404, detail=not_found)
+    if isinstance(exc, json.JSONDecodeError):
+        # 只回传行列号：足够定位，又不泄漏实现细节。
+        return HTTPException(
+            status_code=400,
+            detail=f"数据文件不是合法 JSON（第 {exc.lineno} 行第 {exc.colno} 列）",
+        )
+    if isinstance(exc, ValueError):
+        return HTTPException(status_code=400, detail=str(exc))
+    return HTTPException(status_code=500, detail=str(exc))
+
+
+def read_items(file_path: Path) -> list:
+    """同步读取**已 resolve** 的 JSON 数据集文件
+
+    与 ``load_items`` 的分工：``load_items`` 收客户端传入的**名字**（负责解析与
+    白名单校验），本函数收**已经 resolve 过的路径**——供「一次校验、多次读取」
+    的路由复用（数据集对比要读两个文件，聚合要读任意多个）。
+
+    Args:
+        file_path: 已 resolve 的绝对路径
+
+    Returns:
+        数据列表
+
+    Raises:
+        HTTPException: 400 文件不是合法 JSON
+    """
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except json.JSONDecodeError as e:
+        raise to_http_error(e) from e
+
+
+async def read_json_file(file_path: Path) -> list:
+    """异步读取 JSON 文件
 
     Args:
         file_path: 文件路径
 
     Returns:
         数据列表
+
+    Raises:
+        HTTPException: 400 文件不是合法 JSON
     """
-    with open(file_path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, read_items, file_path)
 
 
 def _sync_write_json(file_path: Path, data: list):
@@ -209,19 +284,6 @@ def _sync_write_json(file_path: Path, data: list):
     file_path.parent.mkdir(parents=True, exist_ok=True)
     with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
-
-
-async def read_json_file(file_path: Path) -> list:
-    """异步读取 JSON 文件
-
-    Args:
-        file_path: 文件路径
-
-    Returns:
-        数据列表
-    """
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, _sync_read_json, file_path)
 
 
 async def write_json_file(file_path: Path, data: list):
@@ -273,8 +335,11 @@ def load_items(filename: str) -> List[dict]:
 
     Returns:
         数据列表
+
+    Raises:
+        HTTPException: 400 参数非法 / 文件不是合法 JSON；403 路径越界；404 文件不存在
     """
-    return _sync_read_json(require_file(filename))
+    return read_items(require_file(filename))
 
 
 def save_items(filename: str, items: List[dict]):

@@ -4,7 +4,7 @@
 """数据导出 API 路由"""
 
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -19,6 +19,32 @@ from ..deps import (
 )
 
 router = APIRouter(tags=["export"])
+
+
+class ExportResponse(BaseModel):
+    """单数据集导出结果：格式名到输出文件路径的映射"""
+    success: bool
+    files: Dict[str, str]
+
+
+class BatchExportResponse(BaseModel):
+    """批量导出结果：数据集名 → (格式名 → 输出文件路径)"""
+    success: bool
+    results: Dict[str, Dict[str, str]]
+
+
+class PreviewResponse(BaseModel):
+    """格式预览结果（与 `ExportPreview.to_dict()` 的键一一对应）"""
+    format: str
+    original_data: List[Dict[str, Any]]
+    converted_data: List[Dict[str, Any]]
+    format_info: Dict[str, Any]
+    warnings: List[str]
+
+
+class ExportFormatsResponse(BaseModel):
+    """支持的导出格式"""
+    formats: List[str]
 
 
 class ExportRequest(BaseModel):
@@ -42,7 +68,11 @@ class PreviewRequest(BaseModel):
     size: int = 5
 
 
-@router.post("/api/data/export")
+@router.post(
+    "/api/data/export",
+    response_model=ExportResponse,
+    summary="导出数据",
+)
 async def export_data(request: ExportRequest, _auth: None = Depends(verify_api_key)):
     """导出数据"""
     try:
@@ -61,7 +91,11 @@ async def export_data(request: ExportRequest, _auth: None = Depends(verify_api_k
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/api/export/batch")
+@router.post(
+    "/api/export/batch",
+    response_model=BatchExportResponse,
+    summary="批量导出多个数据集",
+)
 async def batch_export(request: BatchExportRequest, _auth: None = Depends(verify_api_key)):
     """批量导出多个数据集"""
     try:
@@ -87,7 +121,11 @@ async def batch_export(request: BatchExportRequest, _auth: None = Depends(verify
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/api/export/preview")
+@router.post(
+    "/api/export/preview",
+    response_model=PreviewResponse,
+    summary="预览导出格式转换结果",
+)
 async def preview_export(request: PreviewRequest):
     """预览导出格式转换结果"""
     try:
@@ -107,7 +145,11 @@ async def preview_export(request: PreviewRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/api/export/formats")
+@router.get(
+    "/api/export/formats",
+    response_model=ExportFormatsResponse,
+    summary="列出支持的导出格式",
+)
 async def list_export_formats():
     """列出支持的导出格式"""
     try:
