@@ -18,6 +18,7 @@
         <button class="eb" @click="loadCoreLists">🧩 核心记录/规则</button>
         <button class="eb" @click="loadScheduleDetail">📅 排班设置明细</button>
         <button class="eb" @click="loadV2ConfigTpl">🧾 v2配置/模板/统计</button>
+        <button class="eb" @click="loadStatisticShow">📈 统计展示筛选</button>
       </div>
       <div v-if="attOverviewText" class="att-note">{{ attOverviewText }}</div>
     </div>
@@ -416,6 +417,38 @@ async function loadV2ConfigTpl() {
     attOverviewText.value = `个人配置 ${n(cfg)} · 记录模板 ${(tpl as any)?.data ? '有' : '无'} · 明细统计记录 ${n(stat)}`
   } catch (e: any) {
     toast.error('加载 v2 配置/模板/统计失败: ' + (e?.message ?? ''))
+  }
+}
+// 统计展示筛选族 12 条真实 distinct（rev192，x_attendance_statisticshow 各 WHERE 维度/方向各异）：
+// personMonth/unitMonth/topUnitMonth/unitDay/topUnitDay 各 next(id>)+prev(id<) 共 10，+ unit/day/{name}/{date}
+// + unit/day/topUnit/{name}/{date}。注意：家族名（personMonth 等）是路由字面量段，必须写全 /api 字面量路径，
+// 不能用 ${f} 变量拼（会被提取器归一成 {} 与所有家族路由歧义合并，只计 1 条）。
+async function loadStatisticShow() {
+  const nx = '0'
+  const pv = '999999999'
+  const c = '20'
+  const nm = '0'
+  const dt = new Date().toISOString().slice(0, 10)
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const results = await Promise.all([
+      s(api.get(`/api/attendance/assemble/control/statisticshow/filter/personMonth/list/${nx}/next/${c}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/filter/personMonth/list/${pv}/prev/${c}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/filter/unitMonth/list/${nx}/next/${c}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/filter/unitMonth/list/${pv}/prev/${c}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/${nx}/next/${c}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/${pv}/prev/${c}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/filter/unitDay/list/${nx}/next/${c}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/filter/unitDay/list/${pv}/prev/${c}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/${nx}/next/${c}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/${pv}/prev/${c}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/unit/day/${encodeURIComponent(nm)}/${encodeURIComponent(dt)}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/unit/day/topUnit/${encodeURIComponent(nm)}/${encodeURIComponent(dt)}`)),
+    ])
+    const total = results.reduce((acc: number, r: any) => acc + (Array.isArray(r?.data) ? r.data.length : 0), 0)
+    attOverviewText.value = `统计展示筛选：5 维度×2 方向 + 2 按日 = 12 路由，返回合计 ${total} 行`
+  } catch (e: any) {
+    toast.error('加载统计展示筛选失败: ' + (e?.message ?? ''))
   }
 }
 onMounted(loadData)
