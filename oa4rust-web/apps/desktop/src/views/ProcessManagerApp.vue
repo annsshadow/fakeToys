@@ -19,12 +19,14 @@
         <button class="btn-refresh" @click="loadOrphans">🧹 孤儿元素</button>
         <button class="btn-refresh" @click="loadProcessDetails">🧬 流程明细</button>
         <button class="btn-refresh" @click="loadMappingAccess">🗺️ 映射/项权限</button>
+        <button class="btn-refresh" @click="loadDesignerExtras">🧩 映射游标/字典/流程</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
       </div>
       <div v-if="procDetailText" class="rp-note">{{ procDetailText }}</div>
       <div v-if="mappingText" class="rp-note">{{ mappingText }}</div>
+      <div v-if="designerExtraText" class="rp-note">{{ designerExtraText }}</div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🧩</div><p>暂无流程定义</p></div>
       <table v-else class="data-table">
@@ -173,6 +175,40 @@ async function loadMappingAccess() {
     mappingText.value = `项权限 ${accessRows.length}（首「${accName}」）· 应用映射 ${mN}`
   } catch (e: any) {
     toast.error('加载映射/项权限失败: ' + (e?.message ?? ''))
+  }
+}
+// 映射游标/字典/流程族 7 条真实 distinct（rev196，PP_E_MAPPING/APPLICATIONDICT/PROCESS）：mapping/list/application 取首映射 →
+// mapping/{flag}（xid 详情）+ mapping/list/{id}/next/{count}（xid>）+ mapping/list/{id}/prev/{count}（xid<）；
+// applicationdict/list/application/{applicationId} 取首字典 → applicationdict/{id}；process/application/{applicationId}（xapplication）
+// + process/form/{formId}（xformid，formId 从首流程详情回源）。
+const designerExtraText = ref('')
+async function loadDesignerExtras() {
+  const first = items.value[0]
+  const app = String(first?.application ?? first?.category ?? '0')
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [mapList, dictList] = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/designer/mapping/list/application/${encodeURIComponent(app)}`)),
+      s(api.get(`/api/processplatform/assemble/designer/applicationdict/list/application/${encodeURIComponent(app)}`)),
+    ])
+    const mapRows = Array.isArray((mapList as any)?.data) ? (mapList as any).data : []
+    const dictRows = Array.isArray((dictList as any)?.data) ? (dictList as any).data : []
+    const mid = mapRows[0] ? String(mapRows[0].id ?? mapRows[0].xid ?? '0') : '0'
+    const did = dictRows[0] ? String(dictRows[0].id ?? dictRows[0].xid ?? '0') : '0'
+    const formId = String(first?.form ?? first?.formId ?? '0')
+    const [mapOne, mapNext, mapPrev, dictOne, procByApp, procByForm] = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/designer/mapping/${encodeURIComponent(mid)}`)),
+      s(api.get(`/api/processplatform/assemble/designer/mapping/list/${encodeURIComponent(mid)}/next/20`)),
+      s(api.get(`/api/processplatform/assemble/designer/mapping/list/${encodeURIComponent(mid)}/prev/20`)),
+      s(api.get(`/api/processplatform/assemble/designer/applicationdict/${encodeURIComponent(did)}`)),
+      s(api.get(`/api/processplatform/assemble/designer/process/application/${encodeURIComponent(app)}`)),
+      s(api.get(`/api/processplatform/assemble/designer/process/form/${encodeURIComponent(formId)}`)),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    const has = (r: any) => ((r as any)?.data?.id || (r as any)?.data?.xid ? '命中' : '未命中')
+    designerExtraText.value = `映射 ${mapRows.length}（详情 ${has(mapOne)}·后续 ${n(mapNext)}·前序 ${n(mapPrev)}）| 字典 ${dictRows.length}（详情 ${has(dictOne)}）| 应用流程 ${n(procByApp)}·按表单流程 ${n(procByForm)}`
+  } catch (e: any) {
+    toast.error('加载映射游标/字典/流程失败: ' + (e?.message ?? ''))
   }
 }
 // 设计器流程明细族 3 条真实 distinct 路由：首流程 → 流程详情 process/{id}（PP_E_PROCESS query_opt）
