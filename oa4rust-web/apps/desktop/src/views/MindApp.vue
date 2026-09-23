@@ -11,6 +11,7 @@
         <button class="btn secondary" @click="loadAllMinds">全部导图</button>
         <button class="btn secondary" @click="loadMindConfig">配置/我的目录</button>
         <button class="btn secondary" @click="loadMindFilters">共享/回收站</button>
+        <button class="btn secondary" @click="loadMindDetails">导图明细/版本</button>
       </div>
       <div v-if="allMindsText" class="notice">{{ allMindsText }}</div>
       <div v-if="mindFilterText" class="notice">{{ mindFilterText }}</div>
@@ -224,6 +225,29 @@ async function loadAllMinds() {
     allMindsText.value = `导图 ${n(minds)} 个 / 文件夹 ${n(folders)} 个`
   } catch (e: any) {
     toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+// rev212：导图明细/版本族 6 条真实 distinct 路由
+// mind/mind/{id}（mind_base_info WHERE id）· mind/list/{id}/version（mind_version_info WHERE mind_id）· assemble/control/folder/{id}（x_mind WHERE id 目录）
+// · assemble/control/mind/version/{id}（x_mind_version_info 最新版）· assemble/control/mind/{id}/icon（x_mind 图标）· core/entity/version/list/{mindId}（mind_version ORM）
+async function loadMindDetails() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const listResp = await s(api.get<unknown>('/api/mind/core/entity/list'))
+    const rows = Array.isArray((listResp as any)?.data) ? (listResp as any).data : []
+    const mid = rows[0] ? String(rows[0].id ?? '0') : '0'
+    const [base, versions, folder, latestVer, icon, coreVer] = await Promise.all([
+      s(api.get(`/api/mind/mind/${encodeURIComponent(mid)}`)),
+      s(api.get(`/api/mind/mind/list/${encodeURIComponent(mid)}/version`)),
+      s(api.get(`/api/mind/assemble/control/folder/${encodeURIComponent(mid)}`)),
+      s(api.get(`/api/mind/assemble/control/mind/version/${encodeURIComponent(mid)}`)),
+      s(api.get(`/api/mind/assemble/control/mind/${encodeURIComponent(mid)}/icon`)),
+      s(api.get(`/api/mind/core/entity/version/list/${encodeURIComponent(mid)}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    allMindsText.value = `导图详情 ${(base as any)?.data?.id ? '命中' : '未命中'} / 版本 ${n(versions)} / 目录 ${(folder as any)?.data?.id ? '命中' : '未命中'} / 最新版 ${(latestVer as any)?.data ? '有' : '无'} / 图标 ${(icon as any)?.data ? '有' : '无'} / 实体版本 ${n(coreVer)}`
+  } catch (e: any) {
+    toast.error('加载导图明细失败: ' + (e?.message ?? ''))
   }
 }
 
