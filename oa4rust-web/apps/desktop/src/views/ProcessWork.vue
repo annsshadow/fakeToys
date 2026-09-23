@@ -10,10 +10,12 @@
       </div>
       <div class="header-actions">
         <button class="btn-sm" @click="loadDrafts">草稿箱</button>
+        <button class="btn-sm" @click="loadHandovers">工作交接</button>
         <button class="btn-sm primary" @click="openStart">发起流程</button>
       </div>
     </div>
     <p v-if="draftText" class="subtitle draft-note">{{ draftText }}</p>
+    <p v-if="handoverText" class="subtitle draft-note">{{ handoverText }}</p>
     <div class="tabs glass-card">
       <button
         v-for="tab in tabs"
@@ -269,6 +271,28 @@ async function loadDrafts(): Promise<void> {
     detailText = `首草稿「${dTitle}」· 后续 ${nextN}`
   }
   draftText.value = `我的草稿 ${rows.length} · ${detailText}`
+}
+
+const handoverText = ref('')
+// 工作交接（rev176，surface 域 3 条真实 distinct，PP_C_HANDOVER）：handover/list/paging/{page}/{size}/{size}
+// → 首交接 id → handover/{id}（xid 详情）+ handover/process/{id}（xid 处理信息）。
+async function loadHandovers(): Promise<void> {
+  handoverText.value = ''
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const listRes = await settle(api.get('/api/processplatform/assemble/surface/handover/list/paging/1/20/20'))
+  const rows = asRows(listRes)
+  const firstId = rows[0] ? String(rows[0].id ?? '') : ''
+  let detailText = '—'
+  if (firstId) {
+    const [detail, proc] = await Promise.all([
+      settle(api.get(`/api/processplatform/assemble/surface/handover/${firstId}`)),
+      settle(api.get(`/api/processplatform/assemble/surface/handover/process/${firstId}`)),
+    ])
+    const dTitle = (detail as any)?.data?.title ?? firstId
+    const hasProc = (proc as any)?.data?.id ? '有' : '无'
+    detailText = `首交接「${dTitle}」· 处理信息 ${hasProc}`
+  }
+  handoverText.value = `工作交接 ${rows.length} · ${detailText}`
 }
 
 function asRows(response: unknown): Record<string, unknown>[] {
