@@ -12,6 +12,7 @@
       <button class="org-meta-btn" @click="loadPersonCards">名片抽样</button>
       <button class="org-meta-btn" @click="loadOrgDetails">身份/角色/职务明细</button>
       <button class="org-meta-btn" @click="loadUnitDetails">单位明细</button>
+      <button class="org-meta-btn" @click="loadUnitNested">单位嵌套/游标</button>
       <button class="org-meta-btn" @click="loadDutyDetails">职务/身份明细</button>
       <button class="org-meta-btn" @click="loadAttrDetails">单位/个人属性</button>
       <button class="org-meta-btn" @click="loadCursorLists">身份/角色/职务游标</button>
@@ -240,6 +241,29 @@ async function loadUnitDetails() {
     orgMetaText.value = `单位「${name}」· 直接上级 ${supN} · 直接下级 ${subN}`
   } catch (e: any) {
     toast.error('加载单位明细失败: ' + (e?.message ?? ''))
+  }
+}
+// 消费单位嵌套/游标族 3 条真实 distinct 路由（x_org_unit）：顶级单位 → 嵌套下级 unit/list/{flag}/sub/nested（WITH RECURSIVE sub）
+// + 嵌套上级 unit/list/{flag}/sup/nested（WITH RECURSIVE sup）+ 单位游标 unit/list/{flag}/next/{count}
+async function loadUnitNested() {
+  try {
+    const topResp: any = await api.get('/api/organization/assemble/control/unit/list/top')
+    const arr = (Array.isArray(topResp?.data) ? topResp.data : []) as Array<Record<string, unknown>>
+    const uid = arr[0] ? String(arr[0].id ?? '') : ''
+    if (!uid) {
+      orgMetaText.value = '顶级单位 0 个（无可抽样项）'
+      return
+    }
+    const cnt = '10'
+    const [subN, supN, next] = await Promise.all([
+      api.get(`/api/organization/assemble/control/unit/list/${encodeURIComponent(uid)}/sub/nested`).catch(() => null),
+      api.get(`/api/organization/assemble/control/unit/list/${encodeURIComponent(uid)}/sup/nested`).catch(() => null),
+      api.get(`/api/organization/assemble/control/unit/list/${encodeURIComponent(uid)}/next/${cnt}`).catch(() => null),
+    ])
+    const c = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    orgMetaText.value = `嵌套下级 ${c(subN)} · 嵌套上级 ${c(supN)} · 单位游标 ${c(next)}`
+  } catch (e: any) {
+    toast.error('加载单位嵌套失败: ' + (e?.message ?? ''))
   }
 }
 // 消费职务/身份明细族 3 条真实 distinct 路由（均落 x_org_duty/x_org_identity，查询各异）：
