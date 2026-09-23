@@ -127,6 +127,10 @@
             <h3>附件/文档版本</h3>
             <p class="muted">{{ surfaceExtraText }}</p>
           </div>
+          <div v-if="jobAssetText" class="detail-block">
+            <h3>Job 关联/记录</h3>
+            <p class="muted">{{ jobAssetText }}</p>
+          </div>
           <div v-if="effectiveTaskId" class="detail-block">
             <h3>任务信息</h3>
             <ul class="detail-list">
@@ -260,6 +264,22 @@ const worklogs = ref<WorklogItem[]>([])
 const reads = ref<ReadItem[]>([])
 const engineText = ref('')
 const surfaceExtraText = ref('')
+const jobAssetText = ref('')
+// Job 关联/记录 4 条真实 distinct（rev202，surface 域按 job id）：attachment/list/job/{job}（xjob 附件）
+// + correlation/list/job/{job}（PP_C_JOB 关联）+ datarecord/list/job/{job}（PP_C_DATA_RECORD）
+// + documentversion/list/job/{job}（PP_C_DOCUMENTVERSION）。注：data/job/{job} 与 correlation SQL 全同=孪生已跳。
+async function loadJobAssets(job: string): Promise<void> {
+  jobAssetText.value = ''
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [att, corr, drec, dver] = await Promise.all([
+    settle(api.get(`/api/processplatform/assemble/surface/attachment/list/job/${job}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/correlation/list/job/${job}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/datarecord/list/job/${job}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/documentversion/list/job/${job}`)),
+  ])
+  const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+  jobAssetText.value = `Job 附件 ${n(att)} · 关联 ${n(corr)} · 数据记录 ${n(drec)} · 文档版本 ${n(dver)}`
+}
 const draftText = ref('')
 
 // 草稿箱（rev175，surface 域 3 条真实 distinct）：draft/list/my/paging/{page}/{size}/{size}
@@ -457,6 +477,7 @@ async function openWork(item: TaskItem): Promise<void> {
     void loadDetailPanels(id)
     void loadEngineRecords(id)
     void loadSurfaceExtras(id)
+    void loadJobAssets(id)
     // “我发起的”详情：若本人有该工作的活动任务，允许在此办理（发起人 begin 环节）
     if (activeTab.value === 'started') {
       const pending: any = await api.get(endpoints.pending)
@@ -564,6 +585,7 @@ function closeWork(): void {
   reads.value = []
   engineText.value = ''
   surfaceExtraText.value = ''
+  jobAssetText.value = ''
 }
 
 const canHandle = computed(() => {
