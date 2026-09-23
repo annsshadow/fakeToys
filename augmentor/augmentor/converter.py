@@ -12,6 +12,7 @@ import logging
 from typing import List, Dict, Optional, Any
 from pathlib import Path
 from enum import Enum
+from .exceptions import DataFormatError, UnsupportedFormatError
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +86,7 @@ class DatasetConverter:
             json_data = self._to_json(data, source_format)
             return self.convert(json_data, "json", target_format, **kwargs)
         
-        raise ValueError(f"不支持的转换: {source_format} -> {target_format}")
+        raise UnsupportedFormatError(f"不支持的转换: {source_format} -> {target_format}")
     
     def _normalize_format(self, format_name: str) -> str:
         """标准化格式名称"""
@@ -110,7 +111,7 @@ class DatasetConverter:
         elif source_format == "csv":
             return self._csv_to_json(data)
         else:
-            raise ValueError(f"无法从 {source_format} 转换到 JSON")
+            raise DataFormatError(f"无法从 {source_format} 转换到 JSON")
     
     # ==================== 基础格式转换 ====================
     

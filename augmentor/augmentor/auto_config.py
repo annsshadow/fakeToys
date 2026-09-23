@@ -10,6 +10,7 @@
 import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
+from .exceptions import ConfigError
 
 logger = logging.getLogger(__name__)
 
@@ -55,9 +56,9 @@ class AutoConfig:
             sample_ratio_range: 采样比例范围
         """
         if dedup_range[0] >= dedup_range[1]:
-            raise ValueError("dedup_range 下界必须小于上界")
+            raise ConfigError("dedup_range 下界必须小于上界")
         if quality_range[0] >= quality_range[1]:
-            raise ValueError("quality_range 下界必须小于上界")
+            raise ConfigError("quality_range 下界必须小于上界")
 
         self.dedup_range = dedup_range
         self.quality_range = quality_range
@@ -77,7 +78,7 @@ class AutoConfig:
             推荐配置
         """
         if total_items <= 0:
-            raise ValueError("total_items 必须为正数")
+            raise ConfigError("total_items 必须为正数")
 
         reasoning: List[str] = []
 

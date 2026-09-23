@@ -10,6 +10,7 @@
 import logging
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
+from .exceptions import PipelineError
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +76,7 @@ class DataPipeline:
             自身（支持链式调用）
         """
         if any(stage["name"] == name for stage in self._stages):
-            raise ValueError(f"阶段名重复: {name}")
+            raise PipelineError(f"阶段名重复: {name}")
         self._stages.append({
             "name": name,
             "func": func,
@@ -113,7 +114,7 @@ class DataPipeline:
             try:
                 current = stage["func"](current, context)
                 if not isinstance(current, list):
-                    raise TypeError(
+                    raise PipelineError(
                         f"阶段 {stage['name']} 必须返回列表，"
                         f"实际返回 {type(current).__name__}"
                     )
@@ -166,7 +167,7 @@ class DataPipeline:
         for stage in self._stages:
             if stage["name"] == name:
                 return stage
-        raise ValueError(f"未注册的阶段: {name}")
+        raise PipelineError(f"未注册的阶段: {name}")
 
     def get_report(self) -> Dict[str, Any]:
         """生成管道执行报告

@@ -7,7 +7,10 @@
 
 分工边界（与 `augmentor.statistics`）
     本模块做**整体分析**：质量 / 多样性 / 完整性分数与可执行的改进建议
-    （`AnalysisReport.insights`），入口 `analyze_dataset`。CLI 的 `analyze-data` 走这里。
+    （`AnalysisReport.insights`），入口 `analyze_dataset`。CLI 的 `analyze`
+    命令走这里，并把旧 `pipeline.analyze_dataset` 独有的三段
+    （`coverage_analysis` / `statistics` / `dedup_report`）并进同一份 JSON
+    输出——合并 CLI 时若丢掉它们，`analyze` 就会少掉覆盖分析能力。
     要逐字段的填充率 / 长度 / 唯一值，用 `statistics`。
 """
 

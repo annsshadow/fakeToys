@@ -10,6 +10,7 @@
 import logging
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
+from .exceptions import QualityError
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +62,7 @@ class GateRule:
         if self.operator == "not_in":
             return current not in self.value
 
-        raise ValueError(f"不支持的操作符: {self.operator}")
+        raise QualityError(f"不支持的操作符: {self.operator}")
 
 
 @dataclass

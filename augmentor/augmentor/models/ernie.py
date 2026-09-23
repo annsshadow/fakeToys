@@ -7,8 +7,10 @@ import json
 import time
 import logging
 import threading
+from typing import Optional
 from .base import ModelBackend
 from ..config import ModelConfig
+from ..exceptions import ModelGenerateError, ModelNotConfiguredError, ModelResponseError
 
 logger = logging.getLogger(__name__)
 
@@ -20,15 +22,27 @@ class ERNIEBackend(ModelBackend):
     TOKEN_URL = "https://aip.baidubce.com/oauth/2.0/token"
     CHAT_URL = "https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions"
     
-    def __init__(self, config: ModelConfig):
+    def __init__(self,
+                 config: ModelConfig,
+                 response_cache_dir: Optional[str] = None,
+                 response_cache_ttl: Optional[float] = None,
+                 response_cache_max_bytes: Optional[int] = None):
         """初始化 ERNIE 后端
-        
+
         Args:
             config: 模型配置，必须包含 api_key 和 secret_key
+            response_cache_dir: 磁盘响应缓存目录，None 即不启用（见基类说明）
+            response_cache_ttl: 磁盘缓存生存时间（秒）
+            response_cache_max_bytes: 磁盘缓存容量上限（字节）
         """
-        super().__init__(config)
+        super().__init__(
+            config,
+            response_cache_dir=response_cache_dir,
+            response_cache_ttl=response_cache_ttl,
+            response_cache_max_bytes=response_cache_max_bytes,
+        )
         if not config.api_key or not config.secret_key:
-            raise ValueError("ERNIE 后端需要 api_key 和 secret_key")
+            raise ModelNotConfiguredError("ERNIE 后端需要 api_key 和 secret_key")
         self._access_token = None
         self._token_expires_at = 0
         self._token_lock = threading.Lock()
@@ -64,7 +78,7 @@ class ERNIEBackend(ModelBackend):
             self._token_expires_at = time.time() + expires_in
             
             if not self._access_token:
-                raise RuntimeError(f"获取访问令牌失败: {data}")
+                raise ModelGenerateError(f"获取访问令牌失败: {data}")
             
             logger.info(f"获取访问令牌成功，有效期 {expires_in} 秒")
             return self._access_token
@@ -99,7 +113,7 @@ class ERNIEBackend(ModelBackend):
         data = response.json()
         
         if data.get("is_truncated"):
-            raise RuntimeError("响应被截断")
+            raise ModelGenerateError("响应被截断")
         
         return data.get("result", "")
     
@@ -117,6 +131,9 @@ class ERNIEBackend(ModelBackend):
         
         if start >= 0 and end > start:
             json_str = response[start:end]
-            return json.loads(json_str)
+            try:
+                return json.loads(json_str)
+            except json.JSONDecodeError as e:
+                raise ModelResponseError(f"响应片段无法解析为 JSON 数组: {e}") from e
         
-        raise ValueError("无法从响应中提取 JSON 数组")
+        raise ModelResponseError("无法从响应中提取 JSON 数组")

@@ -262,4 +262,5 @@ class ExperimentTracker:
             else:
                 return f"{duration / 3600:.1f}小时"
         except Exception:
+            logger.debug("计算实验时长失败，回退为「未知」", exc_info=True)
             return "未知"

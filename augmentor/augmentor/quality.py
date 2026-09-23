@@ -9,6 +9,7 @@ from typing import List, Dict, Optional
 from dataclasses import dataclass
 import numpy as np
 from .model_manager import model_manager
+from .exceptions import QualityError
 
 logger = logging.getLogger(__name__)
 
@@ -52,10 +53,10 @@ class QualityScorer:
         self.diversity_sample_size = diversity_sample_size
         
         if len(self.weights) != 3:
-            raise ValueError("权重必须包含 3 个元素")
+            raise QualityError("权重必须包含 3 个元素")
         
         if abs(sum(self.weights) - 1.0) > 0.01:
-            raise ValueError("权重之和必须为 1.0")
+            raise QualityError("权重之和必须为 1.0")
         
         self._model = None
         self._cross_encoder = None
@@ -153,12 +154,15 @@ class QualityScorer:
         # 归一化到 0-1
         return float(max(0.0, min(1.0, (score + 1) / 2)))
     
-    def _calculate_diversity(self, text: str, existing_texts: List[str]) -> float:
+    def _calculate_diversity(self, text: str, existing_texts: List[str],
+                             text_embedding: Optional[np.ndarray] = None) -> float:
         """计算多样性 - 优化版
         
         Args:
             text: 当前文本
             existing_texts: 已有文本列表
+            text_embedding: 当前文本的向量。调用方若已批量编码过则传入，
+                避免对同一条文本重复编码（为 None 时本方法自行编码）
         
         Returns:
             多样性分数 (0-1)
@@ -174,15 +178,21 @@ class QualityScorer:
                 max_sim = max(max_sim, sim)
             return float(max(0.0, 1.0 - max_sim))
         
-        # 编码当前文本
-        text_embedding = self._model.encode([text])[0]
+        # 编码当前文本（调用方已编码时直接复用）
+        if text_embedding is None:
+            text_embedding = self._model.encode([text])[0]
         
         # 使用缓存的 embeddings
-        current_hash = self._compute_texts_hash(existing_texts)
+        # 缓存键必须精确等于「被缓存的东西」：参照集向量只取
+        # existing_texts[:diversity_sample_size]，所以 hash 也必须只覆盖这一段。
+        # 原实现 hash 的是 existing_texts[:100]，比实际缓存的 30 条更长，
+        # 于是第 30~100 条仍在增长时缓存被判定为失效，每轮都整体重编码参照集
+        # （n=1000 时约 2565 次冗余编码）。
+        sample_texts = existing_texts[:self.diversity_sample_size]
+        current_hash = self._compute_texts_hash(sample_texts)
         if self._existing_texts_hash != current_hash:
             # 需要重新计算
-            if existing_texts:
-                sample_texts = existing_texts[:self.diversity_sample_size]
+            if sample_texts:
                 self._existing_embeddings = self._model.encode(
                     sample_texts,
                     show_progress_bar=False,
@@ -311,19 +321,36 @@ class QualityScorer:
             self._embedding_cache = {}
         
         def cached_encode(texts, batch_key):
-            cache_key = hash(tuple(texts)) if isinstance(texts, tuple) else hash(str(texts)[:200])
+            # 缓存键必须同时包含 batch_key 与**全部**内容。
+            # 原实现用 str(texts)[:200] 且忽略 batch_key，导致「前若干条相同」
+            # 的两个不同列表互相命中：generated 的向量会被当作 original 的
+            # 向量返回，语义相似度静默变成 1.0。
+            digest = hashlib.md5("\x00".join(texts).encode("utf-8")).hexdigest()
+            cache_key = (batch_key, digest)
             if cache_key in self._embedding_cache:
                 return self._embedding_cache[cache_key]
             embeddings = self._model.encode(texts, show_progress_bar=False, batch_size=32)
             self._embedding_cache[cache_key] = embeddings
             return embeddings
+
+        # 生成文本的批量编码是「语义相似度」与「多样性」共用的输入。
+        # 这里惰性求值：只有真正需要向量时才编码，且整批只编一次。
+        # 原实现在 _calculate_diversity 内对每条文本单独编码，同一条文本
+        # 在语义维度已批量编码过之后又被单条编码一次。
+        generated_embeddings = None
+
+        def get_generated_embeddings():
+            nonlocal generated_embeddings
+            if generated_embeddings is None:
+                generated_embeddings = cached_encode(generateds, "gen")
+            return generated_embeddings
         
         # 计算语义相似度（仅在需要时编码，跳过时省去两次批量编码）
         if not include_semantic:
             semantic_sims = np.zeros(len(items))
         elif self._model != "fallback":
             original_embeddings = cached_encode(originals, "orig")
-            generated_embeddings = cached_encode(generateds, "gen")
+            generated_embeddings = get_generated_embeddings()
             
             # 计算语义相似度
             semantic_sims = np.array([
@@ -355,7 +382,12 @@ class QualityScorer:
         diversity_scores = []
         
         for i, gen in enumerate(generateds):
-            diversity = self._calculate_diversity(gen, existing)
+            # 仅在多样性真正需要向量时才取：existing 为空时它会提前返回 1.0，
+            # 此时不该为此触发一次批量编码。
+            text_embedding = None
+            if existing and self._model != "fallback":
+                text_embedding = get_generated_embeddings()[i]
+            diversity = self._calculate_diversity(gen, existing, text_embedding)
             diversity_scores.append(diversity)
             # 只有质量达标的样本才进入多样性参照集，避免劣质样本污染基线。
             # 语义维度被跳过时它恒为 0，若仍用它作门槛则参照集永不增长、

@@ -7,10 +7,12 @@
 
 分工边界（与 `augmentor.cleaner`）
     本模块的 `DataCleaner` / `CleanResult` 由 `augmentor.data` 包导出，
-    调用方是 CLI 的 `clean` 命令与 REST API 的清洗端点。
-    `augmentor.cleaner` 是另一套实现（`DatasetCleaner` / `CleaningResult`），
-    由 CLI 的 `clean-enhanced` 使用。两者是**同一能力的两种实现**，这一对才是
-    真正值得合并的（合并需先统一结果类型，登记为后续任务）。
+    调用方是 **REST API 的清洗端点**。
+    `augmentor.cleaner` 是规则式实现（`DatasetCleaner` / `CleaningResult`），
+    **CLI 的 `clean` 命令走那一套**。本模块的噪声清除能力（去 URL / 去 HTML
+    标签 / 去控制字符）已作为 `remove_urls` / `remove_html_tags` /
+    `remove_control_chars` 三条规则并进规则式实现，两边的默认清洗结果一致，
+    所以 CLI 侧不再保留两条实现轨道。
 """
 
 import html

@@ -5,116 +5,105 @@
 
 from ..io import _load_items, _print, _save_items
 import sys
-from augmentor import AugmentorPipeline
 
 
-# ============ 版本管理（合并原 version-control）============
+# ============ 版本管理 ============
 def run_version(args, config):
     """`version` 子命令
 
-    默认走 `pipeline.version_manager`（`augmentor/versioning.py`）：
-    `list` / `create` / `diff` / `rollback` / `history`，版本 ID 用 `--version-id`。
-    `--enhanced` 走 `version_control.DatasetVersionManager`（独立版本目录）：
-    `create` / `list` / `load` / `compare`，版本 ID 用 `--version`。
+    单一后端：`version_control.DatasetVersionManager`（独立 `--versions-dir`，
+    不依赖 pipeline，因此不需要 config.yaml 与模型后端）。
 
-    两者是**两套独立后端**而非同一实现的强弱版，所以合并后仍有 `--enhanced`
-    开关；`create` / `list` 两个动作两边都有，靠 `--enhanced` 区分。
+    原先还有一套走 `pipeline.version_manager` 的后端。两套的版本 ID 规则与存储
+    目录都不同，用户必须靠 `--enhanced` 才知道自己在跟哪一套打交道——这正是
+    双轨最糟的形态，所以按「保留动作更全、依赖更少的那套」合并：
 
-    动作与后端不匹配时显式报错：原来基础分支的 if/elif 链在没有命中时
-    **什么都不做**就正常退出，比报错更难排查。
+    * `diff` → 并入 `compare`（后者给出 only_in_a / only_in_b / in_both 统计）
+    * `rollback` → 由 `set_current_version` 实现
+    * `history` → 由 `DatasetVersionManager.get_history` 实现（操作日志，
+      见 `version_control` 模块 docstring）。它记录「做过什么操作」，与
+      `list` 的「现在有哪些版本」是两件事，所以不能靠 `list` 顶替。
+
+    `compare` 的参数方向：版本A = `--version`，版本B = `--version-b`；
+    `--version-b` 缺省时取当前版本（即「从 `--version` 到现在改了什么」）。
     """
-    if args.enhanced:
-        from augmentor.version_control import DatasetVersionManager
+    from augmentor.version_control import DatasetVersionManager
 
-        manager = DatasetVersionManager(args.versions_dir)
+    manager = DatasetVersionManager(args.versions_dir)
+    action = args.action
 
-        if args.action == "create":
-            if not args.input:
-                print("错误: --input 参数是必需的", file=sys.stderr)
-                sys.exit(1)
-            items = _load_items(args.input)
-            version = manager.create_version(items, args.description)
-            print(f"版本创建成功")
-            print(f"版本ID: {version.version_id}")
-            print(f"版本号: {version.version_number}")
-            print(f"数据量: {version.item_count} 条")
+    if action == "create":
+        if not args.input:
+            print("错误: --input 参数是必需的", file=sys.stderr)
+            sys.exit(1)
+        items = _load_items(args.input)
+        version = manager.create_version(items, args.description)
+        print(f"版本创建成功")
+        print(f"版本ID: {version.version_id}")
+        print(f"版本号: {version.version_number}")
+        print(f"数据量: {version.item_count} 条")
 
-        elif args.action == "list":
-            versions = manager.list_versions()
-            if not versions:
-                print("没有找到版本")
-            else:
-                print(f"找到 {len(versions)} 个版本:")
-                for v in versions:
-                    print(f"  - {v['version_id']}: {v['item_count']} 条 ({v['timestamp']})")
-
-        elif args.action == "load":
-            if not args.version or not args.output:
-                print("错误: --version 和 --output 参数是必需的", file=sys.stderr)
-                sys.exit(1)
-            items = manager.load_version(args.version)
-            _save_items(items, args.output)
-            print(f"版本加载成功")
-            print(f"数据量: {len(items)} 条")
-            print(f"保存到: {args.output}")
-
-        elif args.action == "compare":
-            if not args.version or not args.output:
-                print("错误: --version 和 --output 参数是必需的", file=sys.stderr)
-                sys.exit(1)
-            # 比较当前版本和指定版本
-            current_version = manager.get_current_version()
-            if not current_version:
-                print("错误: 没有当前版本", file=sys.stderr)
-                sys.exit(1)
-            result = manager.compare_versions(current_version, args.version)
-            print(f"版本比较结果:")
-            print(f"  版本A: {result['version_a']}")
-            print(f"  版本B: {result['version_b']}")
-            print(f"  仅在A中: {result['stats']['only_in_a_count']} 条")
-            print(f"  仅在B中: {result['stats']['only_in_b_count']} 条")
-            print(f"  共同数据: {result['stats']['in_both_count']} 条")
-
+    elif action == "list":
+        versions = manager.list_versions()
+        if not versions:
+            print("没有找到版本")
         else:
+            print(f"找到 {len(versions)} 个版本:")
+            for v in versions:
+                print(f"  - {v['version_id']}: {v['item_count']} 条 ({v['timestamp']})")
+
+    elif action == "history":
+        _print(manager.get_history(limit=20))
+
+    elif action == "load":
+        if not args.version or not args.output:
+            print("错误: --version 和 --output 参数是必需的", file=sys.stderr)
+            sys.exit(1)
+        items = manager.load_version(args.version)
+        _save_items(items, args.output)
+        print(f"版本加载成功")
+        print(f"数据量: {len(items)} 条")
+        print(f"保存到: {args.output}")
+
+    elif action == "compare":
+        # 版本A = --version，版本B = --version-b（缺省时取当前版本）
+        if not args.version:
+            print("错误: --version 参数是必需的", file=sys.stderr)
+            sys.exit(1)
+        version_b = args.version_b or manager.get_current_version()
+        if not version_b:
             print(
-                f"错误: --enhanced 不支持 --action {args.action}，"
-                "支持: create / list / load / compare",
+                "错误: --version-b 缺省时需要已存在当前版本",
                 file=sys.stderr,
             )
             sys.exit(1)
-        return
+        result = manager.compare_versions(args.version, version_b)
+        print(f"版本比较结果:")
+        print(f"  版本A: {result['version_a']}")
+        print(f"  版本B: {result['version_b']}")
+        print(f"  仅在A中: {result['stats']['only_in_a_count']} 条")
+        print(f"  仅在B中: {result['stats']['only_in_b_count']} 条")
+        print(f"  共同数据: {result['stats']['in_both_count']} 条")
 
-    pipeline = AugmentorPipeline(config)
+    elif action == "rollback":
+        if not args.version:
+            print("错误: --version 参数是必需的", file=sys.stderr)
+            sys.exit(1)
+        if manager.set_current_version(args.version):
+            print(f"已回滚到 {args.version}")
+        else:
+            print(f"回滚失败: 版本不存在 {args.version}", file=sys.stderr)
+            sys.exit(1)
 
-    if args.action == "list":
-        versions = pipeline.version_manager.list_versions()
-        for v in versions:
-            print(f"{v.version_id}: {v.label} ({v.item_count} items)")
-
-    elif args.action == "create":
-        items = _load_items(args.input)
-        version = pipeline.version_manager.create_version(items)
-        print(f"创建版本: {version.version_id}")
-
-    elif args.action == "diff":
-        diff = pipeline.version_manager.diff(args.version_id, args.version_id_2)
-        print(f"新增: {diff.added_count}, 移除: {diff.removed_count}")
-
-    elif args.action == "rollback":
-        success = pipeline.version_manager.rollback(args.version_id)
-        print("回滚成功" if success else "回滚失败")
-
-    elif args.action == "history":
-        _print(pipeline.version_manager.get_history(limit=20))
-
-    else:
-        print(
-            f"错误: 不支持 --action {args.action}，"
-            "支持: list / create / diff / rollback / history"
-            "（load / compare 需要 --enhanced）",
-            file=sys.stderr,
-        )
-        sys.exit(1)
+    elif action == "delete":
+        if not args.version:
+            print("错误: --version 参数是必需的", file=sys.stderr)
+            sys.exit(1)
+        if manager.delete_version(args.version):
+            print(f"删除成功: {args.version}")
+        else:
+            print(f"删除失败: 版本不存在 {args.version}", file=sys.stderr)
+            sys.exit(1)
 
 
 # ============ 数据备份 ============

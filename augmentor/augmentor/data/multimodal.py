@@ -13,6 +13,7 @@ from typing import Dict, Any, List, Optional
 
 from .image import ImageProcessor
 from .audio import AudioProcessor
+from ..exceptions import DataLoadError
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +136,7 @@ class MultimodalProcessor:
         """
         dir_path = Path(directory)
         if not dir_path.is_dir():
-            raise ValueError(f"目录不存在: {directory}")
+            raise DataLoadError(f"目录不存在: {directory}")
 
         grouped: Dict[str, Dict[str, Any]] = {}
 

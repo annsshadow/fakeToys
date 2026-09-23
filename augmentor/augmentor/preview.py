@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional
 
 from .export import Exporter, ExportFormat, NATIVE_FORMATS
+from .exceptions import DataValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -140,13 +141,13 @@ class PreviewGenerator:
             ExportPreview 实例
 
         Raises:
-            ValueError: 不支持的导出格式
+            DataValidationError: 不支持的导出格式
         """
         fmt = format or "jsonl"
         try:
             export_format = ExportFormat(fmt)
         except ValueError:
-            raise ValueError(
+            raise DataValidationError(
                 f"不支持的导出格式: {fmt}。支持: {[f.value for f in NATIVE_FORMATS]}"
             )
 
@@ -167,7 +168,7 @@ class PreviewGenerator:
         # 必须用 .get() 而非 []：否则传 openai / tsv 等会抛 KeyError，
         # 而不是这里约定的 ValueError。
         if converter is None:
-            raise ValueError(
+            raise DataValidationError(
                 f"不支持的导出格式: {fmt}。支持: {[f.value for f in NATIVE_FORMATS]}"
             )
 

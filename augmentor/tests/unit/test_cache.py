@@ -369,3 +369,126 @@ class TestMemoryCacheExtended:
         cache.set("key1", "value1")
         cache.clear()
         assert cache.get("key1") is None
+
+
+class TestMemoryCacheBounded:
+    """MemoryCache 容量约束"""
+
+    def test_max_size_is_never_unbounded(self):
+        """max_size <= 0 时缓存仍必须有界
+
+        _evict 的判据是 `len >= max_size`，max_size=0 时恒真；而
+        `sorted_keys[:len//2]` 在长度为 1 时是空切片，删不掉任何东西——
+        缓存会静默退化成无上限 dict。
+        """
+        for max_size in (0, -5):
+            cache = MemoryCache(max_size=max_size)
+            for i in range(50):
+                cache.set(f"k{i}", i)
+            assert len(cache) <= 1, f"max_size={max_size} 时缓存无界"
+
+    def test_evicts_down_to_limit(self):
+        cache = MemoryCache(max_size=10)
+        for i in range(100):
+            cache.set(f"k{i}", i)
+        assert len(cache) <= 10
+
+    def test_overwriting_existing_key_does_not_evict(self):
+        """覆盖已有键不增长容量，不应白白淘汰一半条目"""
+        cache = MemoryCache(max_size=4)
+        for i in range(4):
+            cache.set(f"k{i}", i)
+
+        cache.set("k0", "updated")
+
+        assert len(cache) == 4
+        assert cache.get("k0") == "updated"
+
+
+class TestMemoryCacheContainerProtocol:
+    """len / in 语义"""
+
+    def test_len_reflects_entry_count(self):
+        cache = MemoryCache()
+        assert len(cache) == 0
+        cache.set("a", 1)
+        assert len(cache) == 1
+
+    def test_contains_ignores_expired_entries(self):
+        cache = MemoryCache()
+        cache.set("alive", 1, ttl=3600)
+        cache.set("dead", 2, ttl=0.01)
+
+        assert "alive" in cache
+        time.sleep(0.05)
+        assert "dead" not in cache
+
+    def test_contains_has_no_side_effects(self):
+        """`in` 不应污染命中统计"""
+        cache = MemoryCache()
+        cache.set("a", 1)
+        assert "a" in cache
+        assert cache.stats["hits"] == 0
+
+
+class TestCachedProcessorCacheIdentity:
+    """CachedProcessor 必须使用调用方传入的缓存实例"""
+
+    def test_supplied_empty_cache_is_used(self):
+        """传入一个空缓存时不得被替换成内部新建的缓存
+
+        MemoryCache 定义了 __len__，空缓存是 falsy。原实现写的是
+        `cache or MemoryCache()`，于是调用方传入的空缓存被丢弃，
+        wrapper.clear_cache() 清的是另一个对象，缓存永远清不掉。
+        """
+        cache = MemoryCache()
+        processor = CachedProcessor(lambda x: x * 2, cache, 60)
+
+        assert processor._cache is cache
+        processor.process(5)
+        assert cache.get(processor._make_key(5)) == 10
+
+    def test_supplied_empty_disk_cache_is_used(self, tmp_path):
+        cache = DiskCache(str(tmp_path / "c"))
+        processor = CachedProcessor(lambda x: x * 2, cache, 60)
+
+        assert processor._cache is cache
+        processor.process(7)
+        assert cache.get(processor._make_key(7)) == 14
+
+
+class TestDiskCacheBounded:
+    """DiskCache 容量约束"""
+
+    def test_evicts_oldest_when_over_max_bytes(self, tmp_path):
+        """超出容量上限时应淘汰最旧条目（而不是无限占用磁盘）"""
+        cache = DiskCache(str(tmp_path / "c"), max_bytes=600)
+
+        for i in range(20):
+            cache.set(f"key{i}", "x" * 100)
+
+        stats = cache.stats
+        assert stats["total_size_bytes"] <= 600
+        assert stats["max_bytes"] == 600
+        # 最新的仍在，最旧的已被淘汰
+        assert cache.get("key19") is not None
+        assert cache.get("key0") is None
+
+    def test_unlimited_by_default(self, tmp_path):
+        cache = DiskCache(str(tmp_path / "c"))
+        for i in range(20):
+            cache.set(f"key{i}", "x" * 100)
+        assert cache.stats["entries"] == 20
+        assert cache.stats["max_bytes"] is None
+
+    def test_orphan_metadata_is_cleaned_up(self, tmp_path):
+        """缓存文件被外部删除后，元数据不应无限残留"""
+        cache_dir = tmp_path / "c"
+        cache = DiskCache(str(cache_dir), max_bytes=10 ** 9)
+        cache.set("key1", "value1")
+
+        cache._get_cache_path("key1").unlink()
+        cache.set("key2", "value2")   # 触发一次容量检查
+
+        assert "key1" not in cache._metadata
+        assert cache.get("key1") is None

@@ -12,6 +12,7 @@ from typing import Optional
 from .base import VectorDB, normalize_vectors
 from .faiss import FAISSDB
 from .chromadb import ChromaDB
+from ..exceptions import VectorError
 
 logger = logging.getLogger(__name__)
 
@@ -34,11 +35,11 @@ def create_vector_db(backend: str = "faiss",
         VectorDB 实例
 
     Raises:
-        ValueError: 不支持的后端类型
+        VectorError: 不支持的后端类型
         ImportError: 所选后端依赖未安装
     """
     if backend not in SUPPORTED_BACKENDS:
-        raise ValueError(
+        raise VectorError(
             f"不支持的向量数据库后端: {backend}。支持: {SUPPORTED_BACKENDS}"
         )
 

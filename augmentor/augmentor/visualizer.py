@@ -306,33 +306,56 @@ class DataVisualizer:
     
     def generate_statistics(self, items: List[Dict], text_key: str = "instruction") -> Dict:
         """生成统计信息
-        
+
+        委托给模块级 `generate_statistics`：实现只保留一份，实例调用与函数调用
+        不会给出不同结果。
+
         Args:
             items: 数据列表
             text_key: 文本字段名
-        
+
         Returns:
             统计信息字典
         """
-        texts = [item.get(text_key, "") for item in items]
-        lengths = [len(t) for t in texts]
-        
-        # 词频统计
-        all_words = []
-        for text in texts:
-            words = re.findall(r'[\u4e00-\u9fa5]+', text)
-            all_words.extend(words)
-        
-        word_freq = Counter(all_words)
-        
-        return {
-            "total_items": len(items),
-            "avg_length": sum(lengths) / len(lengths) if lengths else 0,
-            "min_length": min(lengths) if lengths else 0,
-            "max_length": max(lengths) if lengths else 0,
-            "unique_words": len(word_freq),
-            "top_words": dict(word_freq.most_common(10))
-        }
+        return generate_statistics(items, text_key)
+
+
+def generate_statistics(items: List[Dict], text_key: str = "instruction") -> Dict:
+    """生成统计信息（模块级便捷函数）
+
+    等价于 `DataVisualizer.generate_statistics`，但**不会构造可视化器实例**——
+    `DataVisualizer.__init__` 会 `mkdir` 输出目录，只想拿统计数字的调用方不该
+    因此凭空多出一个 `visualizations/` 目录。
+
+    本函数在 `__all__` 里早已声明，此前却只存在于类上，`from augmentor.visualizer
+    import *` 会直接 `AttributeError`；这里把它补齐。
+
+    Args:
+        items: 数据列表
+        text_key: 文本字段名
+
+    Returns:
+        统计信息字典
+    """
+    texts = [item.get(text_key, "") for item in items]
+    lengths = [len(t) for t in texts]
+
+    # 词频统计
+    all_words = []
+    for text in texts:
+        words = re.findall(r'[\u4e00-\u9fa5]+', text)
+        all_words.extend(words)
+
+    word_freq = Counter(all_words)
+
+    return {
+        "total_items": len(items),
+        "avg_length": sum(lengths) / len(lengths) if lengths else 0,
+        "min_length": min(lengths) if lengths else 0,
+        "max_length": max(lengths) if lengths else 0,
+        "unique_words": len(word_freq),
+        "top_words": dict(word_freq.most_common(10))
+    }
 
 
 __all__ = [

@@ -589,3 +589,121 @@ class TestStreamingExtended:
         """StreamConfig buffer_size"""
         config = StreamConfig(buffer_size=1024)
         assert config.buffer_size == 1024
+
+
+class TestJsonArrayStreaming:
+    """增量 JSON 数组解析（3.0：真流式）
+
+    原实现先 `f.read()` 整个文件再 `json.loads`，名为流式、实则峰值内存
+    等于整个数据集。以下锁定增量解析的正确性与边界。
+    """
+
+    @staticmethod
+    def _read_items(tmp_path, text, chunk_size=2, name="d.json"):
+        path = tmp_path / name
+        path.write_text(text, encoding="utf-8")
+        reader = StreamReader(str(path), chunk_size=chunk_size)
+        return [item for chunk in reader.read_chunks() for item in chunk]
+
+    def test_handles_commas_and_brackets_inside_strings(self, tmp_path):
+        """字符串内的逗号与括号不得被误判为结构分隔符"""
+        items = [{"a": "x,y]z[", "b": {"c": [1, 2, {"d": "}"}]}}]
+        assert self._read_items(tmp_path, json.dumps(items, ensure_ascii=False)) == items
+
+    def test_handles_escaped_quotes_and_backslash(self, tmp_path):
+        """转义引号与反斜杠不得打乱元素边界"""
+        items = [{"a": 'he said "hi", ok'}, {"a": "反斜杠\\结尾"}]
+        assert self._read_items(tmp_path, json.dumps(items, ensure_ascii=False)) == items
+
+    def test_handles_whitespace_and_newlines(self, tmp_path):
+        """元素之间允许任意空白与换行"""
+        text = '[\n  {"a": 1},\n\n  {"a": 2}\n]\n'
+        assert self._read_items(tmp_path, text, chunk_size=1) == [{"a": 1}, {"a": 2}]
+
+    def test_tolerates_trailing_comma(self, tmp_path):
+        """容忍尾随逗号"""
+        assert self._read_items(tmp_path, '[{"a": 1},]', chunk_size=1) == [{"a": 1}]
+
+    def test_rejects_missing_comma_between_elements(self, tmp_path):
+        """元素间缺逗号必须报错
+
+        否则「JSONL 里每行是一个数组」这类文件会被误当成一个数组，
+        把第二个数组整体读成第一个数组的元素。
+        """
+        from augmentor.exceptions import DataFormatError
+
+        with pytest.raises(DataFormatError):
+            self._read_items(tmp_path, '[{"a": 1}\n{"a": 2}]')
+
+    def test_element_larger_than_read_buffer(self, tmp_path):
+        """单个元素远大于读取缓冲时也必须正确解析"""
+        items = [{"a": "x" * 200000}]
+        assert self._read_items(tmp_path, json.dumps(items, ensure_ascii=False)) == items
+
+    def test_count_items_streams_json_array(self, tmp_path):
+        """数组计数走增量解析且结果准确"""
+        path = tmp_path / "arr.json"
+        path.write_text(json.dumps([{"i": i} for i in range(1234)]), encoding="utf-8")
+        assert StreamReader(str(path))._count_items() == 1234
+
+
+class TestStreamingMemoryBounded:
+    """真流式：峰值内存不得随数据规模线性增长"""
+
+    def test_read_chunks_peak_memory_far_below_file_size(self, tmp_path):
+        """分块读取的峰值内存应远小于文件体积"""
+        import tracemalloc
+
+        n = 20000
+        payload = [
+            {"instruction": f"问题{i}" + "填充" * 20, "output": f"回答{i}" + "填充" * 20}
+            for i in range(n)
+        ]
+        path = tmp_path / "big.json"
+        path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        file_bytes = path.stat().st_size
+        del payload
+
+        reader = StreamReader(str(path), chunk_size=500)
+
+        tracemalloc.start()
+        try:
+            seen = sum(len(chunk) for chunk in reader.read_chunks())
+            _, peak = tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
+
+        assert seen == n
+        assert peak < file_bytes / 2, (
+            f"峰值 {peak / 1024 / 1024:.1f}MB 相对文件 "
+            f"{file_bytes / 1024 / 1024:.1f}MB 过高，疑似整体载入"
+        )
+
+    def test_processor_does_not_accumulate_all_output(self, tmp_path):
+        """处理输出远大于输入时，峰值内存不得随输出总量增长"""
+        import tracemalloc
+
+        n = 20000
+        path = tmp_path / "in.json"
+        path.write_text(
+            json.dumps([{"instruction": f"q{i}"} for i in range(n)]), encoding="utf-8"
+        )
+        reader = StreamReader(str(path), chunk_size=500)
+
+        def process(items):
+            # 每个输入扩成 5 条输出，模拟增强放大
+            return [{"x": item["instruction"] * 5} for item in items for _ in range(5)]
+
+        processor = StreamProcessor(reader, process)
+
+        tracemalloc.start()
+        try:
+            report = processor.process()
+            _, peak = tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
+
+        assert report["total_output"] == n * 5
+        assert peak < 5 * 1024 * 1024, (
+            f"峰值 {peak / 1024 / 1024:.1f}MB，疑似仍在累积全部输出"
+        )

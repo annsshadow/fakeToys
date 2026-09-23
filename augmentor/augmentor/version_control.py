@@ -8,8 +8,14 @@
 分工边界（与 `augmentor.versioning`）
     本模块独立于 `AugmentorPipeline`，用模块级函数
     （`create_version` / `load_version` / `list_versions`）管理版本目录。
-    CLI 的 `version-control` 命令走这里。
+    CLI 的 `version` 命令走这里（3.0 起是唯一后端；原先并存的
+    `pipeline.version_manager` 已被合并掉）。
     在 pipeline 流程内管版本（含自动快照），用 `versioning.VersionManager`。
+
+    为承接被合并掉的 `version --action history`，本模块自带一份**操作日志**
+    （`<versions_dir>/history.jsonl`，由 `get_history` 读取）。它记录的是
+    「做过什么操作」（create / rollback / delete），与 `list_versions` 记录的
+    「现在有哪些版本」是两件事。
 """
 
 import json
@@ -64,7 +70,52 @@ class DatasetVersionManager:
         self._versions_dir = Path(versions_dir)
         self._versions_dir.mkdir(parents=True, exist_ok=True)
         self._index_file = self._versions_dir / "index.json"
+        self._history_file = self._versions_dir / "history.jsonl"
         self._index = self._load_index()
+    
+    def _record(self, action: str, **details):
+        """追加一条操作日志
+
+        只追加、不重写（JSONL）。日志写失败不能影响版本操作本身——
+        版本已经建好了，因为记不上日志而报错是本末倒置。
+
+        Args:
+            action: 操作名（create / rollback / delete …）
+            **details: 附加字段
+        """
+        entry = {"timestamp": datetime.now().isoformat(), "action": action}
+        entry.update(details)
+        try:
+            with open(self._history_file, 'a', encoding='utf-8') as f:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        except OSError:
+            logger.warning("操作日志写入失败: %s", self._history_file, exc_info=True)
+
+    def get_history(self, limit: Optional[int] = None) -> List[Dict]:
+        """获取版本操作历史（按时间倒序）
+
+        Args:
+            limit: 最多返回的条数（从最新开始）
+
+        Returns:
+            历史记录列表
+        """
+        if not self._history_file.exists():
+            return []
+
+        entries = []
+        with open(self._history_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entries.append(json.loads(line))
+                except json.JSONDecodeError:
+                    logger.warning("跳过无法解析的历史记录行")
+
+        entries.reverse()
+        return entries[:limit] if limit else entries
     
     def _load_index(self) -> Dict:
         """加载索引文件"""
@@ -147,7 +198,10 @@ class DatasetVersionManager:
         self._index["versions"].append(version.to_dict())
         self._index["current_version"] = version_id
         self._save_index()
-        
+
+        self._record("create", version_id=version_id,
+                     version_number=version_number, item_count=len(items))
+
         logger.info(f"版本创建成功: {version_id}")
         return version
     
@@ -239,6 +293,7 @@ class DatasetVersionManager:
             if version_data["version_id"] == version_id:
                 self._index["current_version"] = version_id
                 self._save_index()
+                self._record("set_current", version_id=version_id)
                 return True
         return False
     
@@ -278,7 +333,9 @@ class DatasetVersionManager:
                 self._index["current_version"] = None
         
         self._save_index()
-        
+
+        self._record("delete", version_id=version_id)
+
         logger.info(f"版本删除成功: {version_id}")
         return True
     

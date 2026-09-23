@@ -10,9 +10,9 @@ import pytest
 
 
 class TestVersion:
-    def test_version_bumped_to_2_2(self):
+    def test_version_bumped_to_3_0(self):
         import augmentor
-        assert augmentor.__version__ == "2.2.0"
+        assert augmentor.__version__ == "3.0.0"
 
 
 class TestVersionConsistency:
@@ -39,6 +39,28 @@ class TestVersionConsistency:
         if not web_pkg.is_file():
             pytest.skip("前端目录不存在")
         assert json.loads(web_pkg.read_text(encoding="utf-8"))["version"] == augmentor.__version__
+
+    def test_docker_compose_default_image_tag_follows_package(self):
+        """`docker-compose.yml` 的默认镜像 tag 也是版本号的一份副本
+
+        它写在 ``${IMAGE_TAG:-<默认值>}`` 的兜底位上：不检查的话，直接
+        ``docker compose up`` 会得到一个 tag 与代码版本不符的镜像 ——
+        和上面两处是同一类漂移，只是更容易被忘掉。
+        """
+        import re
+        from pathlib import Path
+
+        import augmentor
+
+        compose = (
+            Path(__file__).resolve().parent.parent.parent / "docker" / "docker-compose.yml"
+        )
+        if not compose.is_file():
+            pytest.skip("docker 目录不存在")
+
+        match = re.search(r"\$\{IMAGE_TAG:-([^}]+)\}", compose.read_text(encoding="utf-8"))
+        assert match is not None, "docker-compose.yml 中找不到 IMAGE_TAG 的默认值"
+        assert match.group(1) == augmentor.__version__
 
 
 class TestOutlierExports:
@@ -158,21 +180,33 @@ class TestSymbolIntegrity:
         )
         assert augmentor.DataValidationResult is not augmentor.ConfigValidationResult
 
-    def test_legacy_ambiguous_names_warn_but_still_work(self):
-        """历史歧义名保留一个版本，但必须发出弃用警告"""
-        import warnings
+    def test_legacy_ambiguous_names_are_removed(self):
+        """历史歧义名必须在 3.0 彻底移除，而不是继续解析到某个同名类
+
+        这两个名字曾因「两个模块同名、包级导出互相覆盖」而指向与产出方
+        不一致的类。保留它们（哪怕带弃用警告）会让 `isinstance` 判定继续
+        出错；正确做法是让调用方显式选择语义明确的名字。
+        """
+        import pytest as _pytest
 
         import augmentor
 
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            legacy_quality = augmentor.QualityReport
-            legacy_validation = augmentor.ValidationResult
+        for name in ("QualityReport", "ValidationResult"):
+            assert not hasattr(augmentor, name), f"augmentor.{name} 仍可访问"
+            with _pytest.raises(AttributeError):
+                getattr(augmentor, name)
 
-        assert legacy_quality is augmentor.DatasetQualityReport
-        assert legacy_validation is augmentor.ConfigValidationResult
-        assert len(caught) == 2
-        assert all(issubclass(w.category, DeprecationWarning) for w in caught)
+        # 明确名字必须仍在，否则用户无路可走
+        assert augmentor.PipelineQualityReport is not None
+        assert augmentor.DatasetQualityReport is not None
+        assert augmentor.DataValidationResult is not None
+        assert augmentor.ConfigValidationResult is not None
+
+    def test_no_pep562_fallback_hook(self):
+        """包级不得再保留 __getattr__ 兜底（它会掩盖拼错的符号名）"""
+        import augmentor
+
+        assert "__getattr__" not in vars(augmentor)
 
     def test_unknown_attribute_raises(self):
         """未定义的属性仍应抛 AttributeError，不能被 __getattr__ 吞掉"""

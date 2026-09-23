@@ -170,14 +170,14 @@ class TestCleanCommand:
         assert parsed["original_count"] == 2
 
     def test_clean_summary_counts_consistent(self, cli_context):
-        """摘要计数需满足 清洗+丢弃 == 原始 的不变式"""
+        """摘要计数需满足 清洗+移除 == 原始 的不变式"""
         data_file, _ = cli_context
         out_path = Path(data_file.parent / "cleaned2.json")
         out, parsed, code = run_cli(
             ["cli", "clean", "--input", str(data_file), "--output", str(out_path)]
         )
         assert code is None
-        assert parsed["cleaned_count"] + parsed["dropped_count"] == parsed["original_count"]
+        assert parsed["cleaned_count"] + parsed["removed_count"] == parsed["original_count"]
 
 
 class TestAnnotateCommand:

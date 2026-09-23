@@ -10,6 +10,7 @@ import logging
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Dict, Optional, Any
+from .exceptions import DataValidationError, ModelNotConfiguredError
 
 logger = logging.getLogger(__name__)
 
@@ -113,16 +114,16 @@ class MultilingualSupport:
             翻译结果
 
         Raises:
-            ValueError: 目标语言不受支持
-            RuntimeError: 未配置模型后端或翻译失败
+            DataValidationError: 目标语言不受支持
+            ModelNotConfiguredError: 未配置模型后端或翻译失败
         """
         if target_lang not in self.supported_langs:
-            raise ValueError(
+            raise DataValidationError(
                 f"不支持的目标语言: {target_lang}。支持: {self.supported_langs}"
             )
 
         if self.model_backend is None:
-            raise RuntimeError("翻译需要配置模型后端")
+            raise ModelNotConfiguredError("翻译需要配置模型后端")
 
         if not isinstance(text, str) or not text.strip():
             return ""
@@ -154,7 +155,7 @@ class MultilingualSupport:
             翻译后的数据列表
         """
         if target_lang not in self.supported_langs:
-            raise ValueError(
+            raise DataValidationError(
                 f"不支持的目标语言: {target_lang}。支持: {self.supported_langs}"
             )
 
