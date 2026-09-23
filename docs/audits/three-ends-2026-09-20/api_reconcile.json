@@ -7999,7 +7999,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 118,
+    "line": 119,
     "method": "GET",
     "raw": "/api/queryview/query/${encodeURIComponent(qflag)}",
     "path": "/api/queryview/query/{}",
@@ -8012,7 +8012,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 119,
+    "line": 120,
     "method": "GET",
     "raw": "/api/queryview/stat/list/query/${encodeURIComponent(qflag)}",
     "path": "/api/queryview/stat/list/query/{}",
@@ -8025,7 +8025,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 120,
+    "line": 121,
     "method": "GET",
     "raw": "/api/queryview/view/${encodeURIComponent(vid)}",
     "path": "/api/queryview/view/{}",
@@ -8038,7 +8038,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 142,
+    "line": 143,
     "method": "POST",
     "raw": "/api/queryview/statement/list/query/${encodeURIComponent(qflag)}",
     "path": "/api/queryview/statement/list/query/{}",
@@ -8051,7 +8051,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 143,
+    "line": 144,
     "method": "GET",
     "raw": "/api/queryview/stat/list/query/${encodeURIComponent(qflag)}",
     "path": "/api/queryview/stat/list/query/{}",
@@ -8064,7 +8064,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 150,
+    "line": 151,
     "method": "GET",
     "raw": "/api/queryview/statement/${encodeURIComponent(sid)}",
     "path": "/api/queryview/statement/{}",
@@ -8077,7 +8077,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 151,
+    "line": 152,
     "method": "GET",
     "raw": "/api/queryview/stat/${encodeURIComponent(stId)}",
     "path": "/api/queryview/stat/{}",
@@ -8090,7 +8090,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 171,
+    "line": 172,
     "method": "GET",
     "raw": "/api/queryview/importmodel/list/query/${encodeURIComponent(qflag)}",
     "path": "/api/queryview/importmodel/list/query/{}",
@@ -8103,7 +8103,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 176,
+    "line": 177,
     "method": "GET",
     "raw": "/api/queryview/importmodel/${encodeURIComponent(mid)}",
     "path": "/api/queryview/importmodel/{}",
@@ -8116,7 +8116,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 177,
+    "line": 178,
     "method": "GET",
     "raw": "/api/queryview/importmodel/flag/${encodeURIComponent(mflag)}/query/${encodeURIComponent(qflag)}",
     "path": "/api/queryview/importmodel/flag/{}/query/{}",
@@ -8129,7 +8129,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 199,
+    "line": 200,
     "method": "GET",
     "raw": "/api/queryview/table/${encodeURIComponent(flag)}",
     "path": "/api/queryview/table/{}",
@@ -8142,7 +8142,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 201,
+    "line": 202,
     "method": "GET",
     "raw": "/api/queryview/table/list/row/select/${encodeURIComponent(flag)}",
     "path": "/api/queryview/table/list/row/select/{}",
@@ -8155,7 +8155,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 227,
+    "line": 228,
     "method": "GET",
     "raw": "/api/queryview/table/row/${encodeURIComponent(flag)}",
     "path": "/api/queryview/table/row/{}",
@@ -8168,7 +8168,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 228,
+    "line": 229,
     "method": "GET",
     "raw": "/api/queryview/table/row/one/${encodeURIComponent(flag)}",
     "path": "/api/queryview/table/row/one/{}",
@@ -8181,7 +8181,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 229,
+    "line": 230,
     "method": "GET",
     "raw": "/api/queryview/table/list/row/select/where/where/${encodeURIComponent(flag)}?where=a",
     "path": "/api/queryview/table/list/row/select/where/where/{}",
@@ -8194,7 +8194,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 234,
+    "line": 235,
     "method": "GET",
     "raw": "/api/queryview/table/row/${encodeURIComponent(flag)}/${encodeURIComponent(String(oneId))}",
     "path": "/api/queryview/table/row/{}/{}",
@@ -8207,7 +8207,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 242,
+    "line": 243,
     "method": "POST",
     "raw": "/api/queryview/statement/list/query/${encodeURIComponent(qflag)}",
     "path": "/api/queryview/statement/list/query/{}",
@@ -8220,7 +8220,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 245,
+    "line": 246,
     "method": "GET",
     "raw": "/api/queryview/statement/${encodeURIComponent(sid)}/format",
     "path": "/api/queryview/statement/{}/format",
@@ -8233,7 +8233,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 269,
+    "line": 270,
     "method": "GET",
     "raw": "/api/queryview/importmodel/record/${encodeURIComponent(recId)}",
     "path": "/api/queryview/importmodel/record/{}",
@@ -8246,7 +8246,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 270,
+    "line": 271,
     "method": "GET",
     "raw": "/api/queryview/importmodel/record/${encodeURIComponent(recId)}/status",
     "path": "/api/queryview/importmodel/record/{}/status",
@@ -8259,7 +8259,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 271,
+    "line": 272,
     "method": "GET",
     "raw": "/api/queryview/stat/flag/${encodeURIComponent(flag)}/query/${encodeURIComponent(flag)}",
     "path": "/api/queryview/stat/flag/{}/query/{}",
@@ -8272,7 +8272,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 272,
+    "line": 273,
     "method": "GET",
     "raw": "/api/queryview/query/list/key/${encodeURIComponent('a')}",
     "path": "/api/queryview/query/list/key/{}",
@@ -8285,7 +8285,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 273,
+    "line": 274,
     "method": "GET",
     "raw": "/api/queryview/table/${encodeURIComponent(flag)}/row/${encodeURIComponent(rid)}",
     "path": "/api/queryview/table/{}/row/{}",
@@ -8298,7 +8298,20 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 301,
+    "line": 292,
+    "method": "GET",
+    "raw": "/api/queryview/view/flag/${encodeURIComponent(flag)}/query/${encodeURIComponent(flag)}",
+    "path": "/api/queryview/view/flag/{}/query/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/queryview/view/flag/{flag}/query/{queryFlag}",
+    "hit_crate": "query_assemble_surface",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewApp.vue",
+    "line": 320,
     "method": "GET",
     "raw": "/api/queryview/execute/${encodeURIComponent(v.flag || 'view')}/${encodeURIComponent(v.id)}",
     "path": "/api/queryview/execute/{}/{}",
@@ -17581,7 +17594,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 90,
+    "line": 91,
     "method": "POST",
     "raw": "/api/queryview/search",
     "path": "/api/queryview/search",
@@ -17594,7 +17607,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 103,
+    "line": 104,
     "method": "GET",
     "raw": "/api/queryview/query/list",
     "path": "/api/queryview/query/list",
@@ -17607,7 +17620,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 113,
+    "line": 114,
     "method": "GET",
     "raw": "/api/queryview/query/list",
     "path": "/api/queryview/query/list",
@@ -17620,7 +17633,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 134,
+    "line": 135,
     "method": "GET",
     "raw": "/api/queryview/query/list",
     "path": "/api/queryview/query/list",
@@ -17633,7 +17646,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 164,
+    "line": 165,
     "method": "GET",
     "raw": "/api/queryview/query/list",
     "path": "/api/queryview/query/list",
@@ -17646,7 +17659,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 191,
+    "line": 192,
     "method": "GET",
     "raw": "/api/queryview/table/list/paging/1/20/20",
     "path": "/api/queryview/table/list/paging/1/20/20",
@@ -17663,7 +17676,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 217,
+    "line": 218,
     "method": "GET",
     "raw": "/api/queryview/table/list/paging/1/20/20",
     "path": "/api/queryview/table/list/paging/1/20/20",
@@ -17680,7 +17693,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 230,
+    "line": 231,
     "method": "GET",
     "raw": "/api/queryview/table/list/${encodeURIComponent(tid)}/prev/10",
     "path": "/api/queryview/table/list/{}/prev/10",
@@ -17695,7 +17708,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 237,
+    "line": 238,
     "method": "GET",
     "raw": "/api/queryview/query/list",
     "path": "/api/queryview/query/list",
@@ -17708,7 +17721,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 261,
+    "line": 262,
     "method": "GET",
     "raw": "/api/queryview/table/list/paging/1/20/20",
     "path": "/api/queryview/table/list/paging/1/20/20",
@@ -17725,7 +17738,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 265,
+    "line": 266,
     "method": "GET",
     "raw": "/api/queryview/importmodel/uuid",
     "path": "/api/queryview/importmodel/uuid",
@@ -17738,7 +17751,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 268,
+    "line": 269,
     "method": "GET",
     "raw": "/api/queryview/table/row/where/where/${encodeURIComponent(flag)}/10?where=a",
     "path": "/api/queryview/table/row/where/where/{}/10",
@@ -17753,7 +17766,67 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 286,
+    "line": 289,
+    "method": "GET",
+    "raw": "/api/queryview/table/list/${encodeURIComponent(flag)}/next/20",
+    "path": "/api/queryview/table/list/{}/next/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/queryview/table/list/{id}/next/{count}",
+    "hit_crate": "query_assemble_surface",
+    "extra": [
+     "count=20"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewApp.vue",
+    "line": 290,
+    "method": "GET",
+    "raw": "/api/queryview/table/list/${encodeURIComponent(flag)}/row/select/where/a",
+    "path": "/api/queryview/table/list/{}/row/select/where/a",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/queryview/table/list/{id}/row/select/where/{where}",
+    "hit_crate": "query_assemble_surface",
+    "extra": [
+     "where=a"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewApp.vue",
+    "line": 291,
+    "method": "GET",
+    "raw": "/api/queryview/table/list/row/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}/prev/20",
+    "path": "/api/queryview/table/list/row/{}/{}/prev/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/queryview/table/list/row/{tableFlag}/{id}/prev/{count}",
+    "hit_crate": "query_assemble_surface",
+    "extra": [
+     "count=20"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewApp.vue",
+    "line": 293,
+    "method": "GET",
+    "raw": "/api/queryview/table/list/${encodeURIComponent(flag)}/row/${encodeURIComponent(flag)}/next/20",
+    "path": "/api/queryview/table/list/{}/row/{}/next/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/queryview/table/list/{id}/row/{rid}/next/{count}",
+    "hit_crate": "query_assemble_surface",
+    "extra": [
+     "count=20"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewApp.vue",
+    "line": 305,
     "method": "GET",
     "raw": "/api/queryview/view/list/query/all",
     "path": "/api/queryview/view/list/query/all",
@@ -17768,7 +17841,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 314,
+    "line": 333,
     "method": "GET",
     "raw": "/api/queryview/excel/${v.flag || v.id}",
     "path": "/api/queryview/excel/{}",
