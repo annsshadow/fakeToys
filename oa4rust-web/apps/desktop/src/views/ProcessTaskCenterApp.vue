@@ -23,6 +23,7 @@
         <button class="btn-refresh" @click="loadEngineEntities">🔧 引擎实体</button>
         <button class="btn-refresh" @click="loadEngineMore">⚙️ 引擎扩展</button>
         <button class="btn-refresh" @click="loadTaskCursorFilters">📋 待办/已办游标</button>
+        <button class="btn-refresh" @click="loadReadCursorFilters">📖 待阅/已阅游标</button>
       </div>
       <div v-if="countsText" class="wk-chips"><span class="wk-chip">{{ countsText }}</span></div>
       <div v-if="workDetailText" class="wk-chips"><span class="wk-chip">{{ workDetailText }}</span></div>
@@ -141,6 +142,21 @@ async function loadTaskCursorFilters() {
   ])
   const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
   workDetailText.value = `待办 基${n(tBase)}/应用${n(tApp)}/流程${n(tProc)} · 已办 基${n(tcBase)}/应用${n(tcApp)}/流程${n(tcProc)}`
+}
+// rev248：流程表面 read/readcompleted 游标基/按应用/按流程 6 条真实 distinct 读路由（PP_C_READ 与 PP_C_READCOMPLETED 两表，base(WHERE xid) 与 +xapplication/+xprocess 各异；跳 filter/prev 同 WHERE xid 桩孪生）
+async function loadReadCursorFilters() {
+  const id = items.value[0] ? String(items.value[0].work ?? items.value[0].id ?? '0') : '0'
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [rBase, rApp, rProc, rcBase, rcApp, rcProc] = await Promise.all([
+    s(api.get(`/api/processplatform/assemble/surface/read/list/next/${id}/20`)),
+    s(api.get(`/api/processplatform/assemble/surface/read/list/next/application/${id}/20/${id}`)),
+    s(api.get(`/api/processplatform/assemble/surface/read/list/next/process/${id}/20/${id}`)),
+    s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/next/${id}/20`)),
+    s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/next/application/${id}/20/${id}`)),
+    s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/next/process/${id}/20/${id}`)),
+  ])
+  const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+  workDetailText.value = `待阅 基${n(rBase)}/应用${n(rApp)}/流程${n(rProc)} · 已阅 基${n(rcBase)}/应用${n(rcApp)}/流程${n(rcProc)}`
 }
 
 const snapText = ref('')
