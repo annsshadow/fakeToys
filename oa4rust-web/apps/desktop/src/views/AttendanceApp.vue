@@ -12,6 +12,7 @@
         <button class="eb" @click="loadAttOverview">📊 汇总</button>
         <button class="eb" @click="loadAttOrg">🏢 按单位/同步</button>
         <button class="eb" @click="loadV2Meta">⚙️ v2配置/控件/请假模板</button>
+        <button class="eb" @click="loadV2Schedule">🗓️ v2排班/群组</button>
         <button class="eb" @click="loadAttBase">🗂️ 打卡/周期/员工</button>
       </div>
       <div v-if="attOverviewText" class="att-note">{{ attOverviewText }}</div>
@@ -266,11 +267,33 @@ async function loadV2Meta() {
     toast.error('加载 v2 配置失败: ' + (e?.message ?? ''))
   }
 }
+// v2 排班/群组明细族 3 条真实 distinct 路由（表各异）：群组排班配置 groupschedule/config/group/{groupId}（x_attendance_v2_group_schedule_config）
+// + 群组月排班 groupschedule/list/group/{groupId}/month/{month}（x_attendance_v2_group_schedule）+ 按人日期查群组 group/person/{person}/date/{date}（x_attendance_v2_group）
+async function loadV2Schedule() {
+  try {
+    const groupResp: any = await api.get('/api/attendance/assemble/control/v2/group/list/1/size/50').catch(() => null)
+    const groups = (Array.isArray(groupResp?.data) ? groupResp.data : (groupResp?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const gid = groups[0] ? String(groups[0].id ?? '') : ''
+    const person = session.state.user?.unique ?? ''
+    const monthStr = month.value
+    const today = new Date().toISOString().slice(0, 10)
+    const [cfg, list, byPerson] = await Promise.all([
+      gid ? api.get(`/api/attendance/assemble/control/v2/groupschedule/config/group/${encodeURIComponent(gid)}`).catch(() => null) : Promise.resolve(null),
+      gid ? api.get(`/api/attendance/assemble/control/v2/groupschedule/list/group/${encodeURIComponent(gid)}/month/${encodeURIComponent(monthStr)}`).catch(() => null) : Promise.resolve(null),
+      person ? api.get(`/api/attendance/assemble/control/v2/group/person/${encodeURIComponent(person)}/date/${encodeURIComponent(today)}`).catch(() => null) : Promise.resolve(null),
+    ])
+    const hasCfg = (cfg as any)?.data ? '有' : '无'
+    const lN = Array.isArray((list as any)?.data) ? (list as any).data.length : 0
+    const pN = Array.isArray((byPerson as any)?.data) ? (byPerson as any).data.length : 0
+    attOverviewText.value = `群组 ${groups.length} · 排班配置 ${hasCfg} · 月排班 ${lN} · 我所属群组 ${pN}`
+  } catch (e: any) {
+    toast.error('加载 v2 排班失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadAttOrg() {
   try {
     // GET attendancedetail/filter/list/topUnit + filter/list/unit + dingding/sync/list
-    const [topUnit, unit, dingding] = await Promise.all([
-      api.get('/api/attendance/assemble/control/attendancedetail/filter/list/topUnit'),
+    const [topUnit, unit, dingding] = await Promise.all([      api.get('/api/attendance/assemble/control/attendancedetail/filter/list/topUnit'),
       api.get('/api/attendance/assemble/control/attendancedetail/filter/list/unit'),
       api.get('/api/attendance/assemble/control/dingding/sync/list'),
     ])
