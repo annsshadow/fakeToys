@@ -509,6 +509,9 @@ async function loadScheduleHotpic() {
       settle(api.get(`/api/hotpic/core/entity/exists/check/${encodeURIComponent(id)}/${encodeURIComponent(id)}`)),
       settle(api.get(`/api/hotpic/assemble/control/cipher/hotpic/${encodeURIComponent(id)}`)),
       settle(api.get(`/api/hotpic/assemble/control/cipher/hotpic/filter/list/page/1/count/20`)),
+      // rev300：hotpic 用户热图/取热图 详情(x_hotpic id) 补齐
+      settle(api.get(`/api/hotpic/user/hotpic/${encodeURIComponent(id)}`)),
+      settle(api.get(`/api/hotpic/get/hotpic/${encodeURIComponent(id)}`)),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     appMetaText.value = `调度日志 ${n(schedLog)} · 存储映射 ${n(warnCfg)} · 热图实体 ${n(hpList)} · 热图存在 ${(hpExists as any)?.data ? '有' : '无'} · 热图密文 ${(hpCipher as any)?.data ? '有' : '无'} · 热图分页 ${n(hpPaging)}`
