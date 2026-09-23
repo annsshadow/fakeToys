@@ -36,6 +36,164 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 
 中间件会记录每个请求的处理耗时。超过 **2.0 秒**会写入 WARNING 日志，便于定位性能瓶颈。
 
+### 响应契约
+
+**每个端点都声明了 `response_model`**（共 68 个），因此 `/openapi.json` 里不存在
+「无 schema 的 200 响应」。这条由 `tests/integration/test_api_openapi_contract.py`
+双向守门：既要每个端点都声明契约，也要**每个已声明契约的端点都真实存在**
+（防止文档里留着一个早就删掉的端点）。
+
+需要精确到字段的契约时，以 `/openapi.json` 为准 —— 本文档只对下面第 1~7 节
+的端点给出人读说明，其余端点的字段请查 schema。**不要从本文档手抄字段名**：
+它会漂移，而 schema 由代码生成。
+
+---
+
+## 端点总览
+
+按 OpenAPI tag 分组，共 **68** 个端点。
+
+### audit（1）
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `POST` | `/api/audit` | 数据集就绪审计 |
+
+### augment（3）
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/api/augment/checkpoints` | 列出断点 |
+| `GET` | `/api/augment/progress` | 获取增强进度 |
+| `POST` | `/api/augment/start` | 启动增强任务 |
+
+### config（3）
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/api/config` | 获取配置 |
+| `POST` | `/api/config` | 更新配置 |
+| `GET` | `/api/models` | 列出可用模型 |
+
+### data（8）
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/api/analyze/{filename}` | 分析数据集 |
+| `DELETE` | `/api/data/delete/{filename}` | 删除单条数据 |
+| `GET` | `/api/data/list` | 列出数据文件 |
+| `GET` | `/api/data/load/{filename}` | 分页加载数据 |
+| `PUT` | `/api/data/update/{filename}` | 更新单条数据 |
+| `POST` | `/api/data/upload` | 上传数据文件 |
+| `GET` | `/api/demo/data` | 内置演示数据集（**裸数组**） |
+| `GET` | `/api/visualize/{filename}` | 生成可视化图表 |
+
+### dataset（12）
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `POST` | `/api/dataset/aggregate` | 多源聚合 |
+| `POST` | `/api/dataset/auto-config` | 自动配置推荐 |
+| `POST` | `/api/dataset/compare` | 数据集对比 |
+| `POST` | `/api/dataset/convert` | 格式转换 |
+| `POST` | `/api/dataset/features` | 字段特征检测 |
+| `POST` | `/api/dataset/merge` | 合并数据集 |
+| `POST` | `/api/dataset/rag` | 转换为 RAG 格式 |
+| `POST` | `/api/dataset/sample` | 数据集采样 |
+| `POST` | `/api/dataset/search` | 数据集搜索 |
+| `POST` | `/api/dataset/split` | 分割数据集 |
+| `POST` | `/api/dataset/stats` | 数据集统计 |
+| `POST` | `/api/dataset/validate` | 数据集验证 |
+
+> `dataset` 分组的约定：**只读分析类**（stats / validate / search / compare /
+> features / auto-config）内联返回完整结果；**写盘变换类**（convert / merge /
+> sample / split / aggregate / rag）必须给 `output_path`，响应只回传「写到哪、
+> 写了多少」，不回传数据本身。
+
+### export（4）
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `POST` | `/api/data/export` | 导出数据 |
+| `POST` | `/api/export/batch` | 批量导出多个数据集 |
+| `GET` | `/api/export/formats` | 列出支持的导出格式 |
+| `POST` | `/api/export/preview` | 预览导出格式转换结果 |
+
+### leakage（1）
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `POST` | `/api/leakage/check` | 训练/测试集泄漏检测 |
+
+### multimodal（3）
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/api/multimodal/formats` | 列出支持的多模态格式 |
+| `POST` | `/api/multimodal/process` | 处理单条多模态数据 |
+| `POST` | `/api/multimodal/scan` | 扫描目录并处理多模态文件 |
+
+### privacy（2）
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/api/privacy/patterns` | PII 模式清单 |
+| `POST` | `/api/privacy/sanitize` | PII 脱敏 |
+
+### quality（8）
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `POST` | `/api/quality/annotate` | 自动标注 |
+| `POST` | `/api/quality/benchmark` | 运行数据质量基准 |
+| `POST` | `/api/quality/clean` | 数据清洗 |
+| `POST` | `/api/quality/dedup` | 智能去重 |
+| `POST` | `/api/quality/evaluate` | 质量评分 |
+| `POST` | `/api/quality/outliers` | 长度离群点检测 |
+| `POST` | `/api/quality/profiling` | 数据集画像 |
+| `POST` | `/api/quality/report` | 生成质量报告 |
+
+### status（2）
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/api/health` | 健康检查（轻量存活，给容器探针） |
+| `GET` | `/api/status` | 服务综合状态（含可选依赖诊断） |
+
+> `health` 刻意只报存活，不含可能失败的字段；`status` 会真的构造管道并检查
+> 可选依赖，因此能回答「当前环境缺什么、哪些功能会降级」，也可能更慢或失败。
+
+### system（13）
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `POST` | `/api/system/auto-test` | 运行数据集自动化测试 |
+| `GET` | `/api/system/backups` | 列出备份 |
+| `POST` | `/api/system/backups` | 创建备份 |
+| `DELETE` | `/api/system/backups/{backup_id}` | 删除备份 |
+| `POST` | `/api/system/backups/{backup_id}/restore` | 恢复备份 |
+| `GET` | `/api/system/dependencies` | 可选依赖诊断 |
+| `GET` | `/api/system/dependency/datasets` | 已登记数据集列表 |
+| `POST` | `/api/system/dependency/datasets` | 登记数据集 |
+| `GET` | `/api/system/dependency/graph` | 数据集依赖图与校验问题 |
+| `POST` | `/api/system/migrate` | 迁移数据集结构 |
+| `POST` | `/api/system/monitor` | 质量监控快照 |
+| `POST` | `/api/system/stream` | 流式处理数据集 |
+| `POST` | `/api/system/validate-config` | 校验配置文件 |
+
+### version（8）
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/api/versions` | 列出所有版本 |
+| `POST` | `/api/versions/create` | 创建新版本 |
+| `POST` | `/api/versions/diff` | 对比两个版本 |
+| `GET` | `/api/versions/history` | 获取版本操作历史 |
+| `GET` | `/api/versions/{version_id}` | 获取版本信息 |
+| `DELETE` | `/api/versions/{version_id}` | 删除版本 |
+| `GET` | `/api/versions/{version_id}/data` | 获取版本数据 |
+| `POST` | `/api/versions/{version_id}/rollback` | 回滚到指定版本 |
+
 ---
 
 ## 1. 健康检查
