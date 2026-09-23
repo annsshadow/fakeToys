@@ -319,6 +319,22 @@ AUGMENTOR_DATA_ROOTS（os.pathsep 分隔）
 环境变量优先是为了让容器部署与测试无需改配置文件即可收紧或放宽范围；
 `tests/conftest.py` 的 autouse fixture 正是通过它把 cwd 与临时目录注入白名单。
 
+> **两条来源都带缓存，缓存键都带「值会变的东西」**
+>
+> 任何带路径参数的请求至少要过一次白名单，而未缓存时 `_config_data_roots` 每次要
+> **重解析一遍 YAML + 重 resolve 一遍根目录**（实测 7.06 ms/次），环境变量分支则把
+> 0.29 ms/次 全花在 `Path.resolve()` 的系统调用上。因此：
+>
+> | 来源 | 缓存键 | 为什么这个必须在键里 |
+> |------|--------|----------------------|
+> | `config.yaml` | `(路径, mtime_ns)` | 改过配置文件要立刻生效，不能等到重启 |
+> | `AUGMENTOR_DATA_ROOTS` | `(原值, os.getcwd())` | 白名单允许相对路径，换目录后同一个原值指向不同目录 |
+>
+> 缓存值存**已 resolve 的 `Path`**，`allowed_data_roots()` 每次返回新列表，调用方可以
+> 放心增删。配置文件 stat 不到（不存在）时**不**写缓存——降级到出厂默认这条路径不该
+> 被冻住。由 `TestConfigDataRootsCache` / `TestEnvDataRootsCache` 分别钉住
+> 「200 次查询只解析 1 次配置」「改 mtime 立刻换根」「改相对值后换 cwd 立刻换根」。
+
 > **收紧到 `["data"]` 的兼容性代价**
 >
 > 读一侧的写法没变：`/api/data/load/train_data.json` 这类裸文件名会在白名单根目录内

@@ -11,14 +11,16 @@
 ## 已完成
 
 - [x] **L1** `fix(api)`: F-09 依赖注册表缺省目录跟白名单走 + 测试不再污染版本树（`d5601369b`）
-- [x] **L2** `fix(api)`: F-10 备份目录缺省值、F-11 服务配置文件路径收敛到 `deps.config_file_path()`
+- [x] **L2** `fix(api)`: F-10 备份目录缺省值、F-11 服务配置文件路径收敛到 `deps.config_file_path()`（`13ec11eaa`）
+- [x] **L3** `perf(analytics)`: A1 多样性均值提出生成器 → 长度方差 O(n²)→O(n)
+- [x] **L4** `perf(api)`: A2 白名单两条来源都按「值会变的东西」建缓存 → 7.06 ms/次 → 0.19 ms/次
 
 ## Backlog A — 性能（含 file:line 与实测线索）
 
 | # | 位置 | 问题 | 量级 |
 |---|------|------|------|
-| A1 | `augmentor/analytics.py:368` | 均值在生成器里重算 → O(n²)；实测 n=20000 时 **1043 ms vs 2 ms** | S |
-| A2 | `api/deps.py` `allowed_data_roots()` | 每个路径参数都 `load_config()` 重新解析 YAML，实测 **6.8 ms/次**；应按 (path, mtime) 缓存 | S |
+| ~~A1~~ | ~~`augmentor/analytics.py:368`~~ | ~~均值在生成器里重算 → O(n²)；实测 n=20000 时 **1043 ms vs 2 ms**~~ 已修（L3） | S |
+| ~~A2~~ | ~~`api/deps.py` `allowed_data_roots()`~~ | ~~每个路径参数都 `load_config()` 重新解析 YAML，实测 **6.8 ms/次**~~ 已修（L4，含环境变量分支 0.29 ms/次） | S |
 | A3 | `augmentor/analytics.py:403-412` | `get_duplicate_candidates()` 纯 O(n²) 且每对重建字符集合 | M |
 | A4 | `api/routes/quality.py:141,185,217,253,285,309,370,403` + `audit.py:31` `export.py:109,132` `leakage.py:46` `privacy.py:52` | `async def` 里同步 `load_items()` 阻塞事件循环，应走 `run_in_thread` | M |
 | A5 | `augmentor/pipeline.py:205-210` + `quality.py:133,153` | 逐条 `encode()`/`predict()` 打分，已有 `batch_score()` 却没用 | M |
@@ -46,3 +48,19 @@
 ## 循环日志
 
 （每轮追加一行：`L<n>` 提交哈希 · 做了什么 · 实测数字 · 测试计数）
+
+- **L3** `e7e051279` `perf(analytics)` A1 —— `_calculate_diversity_score()` 长度方差把均值提出生成器，
+  O(n²)→O(n)。n=20000 实测 **1147.7 ms → 2 ms**（不带 trace）/ **1130 ms → 143 ms**（带 trace）。
+  新增 `tests/unit/test_analytics_performance.py` 2 例：一条锁语义（手算 0.6/0.4 权重对照），
+  一条锁量级（预算 500 ms；docstring 说明预算为何按**带覆盖率 trace** 的实测值取，而不是 2 ms）。
+  红→绿：把均值塞回生成器 → 预算用例红在 1130.3 ms。
+- **L4** `perf(api)` A2 —— `allowed_data_roots()` 两条来源都加缓存：config 分支
+  `(路径, mtime_ns)` 键、环境变量分支 `(原值, os.getcwd())` 键。实测 7.06 ms/次 → **0.19 ms/次**、
+  0.29 ms/次 → **0.0006 ms/次**。新增 `TestConfigDataRootsCache` 4 例 + `TestEnvDataRootsCache` 4 例；
+  `docs/ARCHITECTURE.md` §3.12.1 补「缓存键都带值会变的东西」一节。红→绿两处注入：
+  ①缓存键去掉 cwd → 相对根目录换目录用例红（`first/data` ≠ `second/data`）；
+  ②关掉缓存读 → 「200 次查询解析了 201 次配置」红。
+- 全量：**3679 passed / 3 skipped**（89.2 s，覆盖率门禁通过；基线 3668）。
+
+> **操作纪律**（L4 踩过）：验红用的是**定向反向 patch**，绝不用 `git checkout <file>` 撤注入 ——
+> 本轮 `api/deps.py` 有未提交工作，一次 `git checkout` 把整段缓存实现清掉了，只能重写。
