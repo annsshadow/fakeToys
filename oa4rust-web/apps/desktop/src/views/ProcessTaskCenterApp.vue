@@ -22,6 +22,7 @@
         <button class="btn-refresh" @click="loadSnapCursors">🎞️ 快照游标</button>
         <button class="btn-refresh" @click="loadEngineEntities">🔧 引擎实体</button>
         <button class="btn-refresh" @click="loadEngineMore">⚙️ 引擎扩展</button>
+        <button class="btn-refresh" @click="loadTaskCursorFilters">📋 待办/已办游标</button>
       </div>
       <div v-if="countsText" class="wk-chips"><span class="wk-chip">{{ countsText }}</span></div>
       <div v-if="workDetailText" class="wk-chips"><span class="wk-chip">{{ workDetailText }}</span></div>
@@ -125,6 +126,21 @@ async function loadEngineMore() {
   ])
   const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
   workDetailText.value = `草稿 ${has(draft)} · 完成件按流程 ${has(wcProc)} · 数据路径 ${has(dataPath)} · 完成数据路径 ${has(dataWcPath)} · job视图 ${has(jobView)}`
+}
+// rev247：流程表面 task/taskcompleted 游标基/按应用/按流程 6 条真实 distinct 读路由（PP_C_TASK 与 PP_C_TASKCOMPLETED 两表，base(WHERE xid) 与 +xapplication/+xprocess 各异；跳 prev/filter/manage 同 WHERE xid 桩孪生）
+async function loadTaskCursorFilters() {
+  const id = items.value[0] ? String(items.value[0].work ?? items.value[0].id ?? '0') : '0'
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [tBase, tApp, tProc, tcBase, tcApp, tcProc] = await Promise.all([
+    s(api.get(`/api/processplatform/assemble/surface/task/list/next/${id}/20`)),
+    s(api.get(`/api/processplatform/assemble/surface/task/list/next/application/${id}/20/${id}`)),
+    s(api.get(`/api/processplatform/assemble/surface/task/list/next/process/${id}/20/${id}`)),
+    s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/next/${id}/20`)),
+    s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/next/application/${id}/20/${id}`)),
+    s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/next/process/${id}/20/${id}`)),
+  ])
+  const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+  workDetailText.value = `待办 基${n(tBase)}/应用${n(tApp)}/流程${n(tProc)} · 已办 基${n(tcBase)}/应用${n(tcApp)}/流程${n(tcProc)}`
 }
 
 const snapText = ref('')
