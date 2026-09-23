@@ -14,6 +14,7 @@
         <button class="btn-primary" @click="loadViews">刷新</button>
         <button class="btn-primary" @click="loadQueryList">查询列表</button>
         <button class="btn-primary" @click="loadQvDetails">查询/视图明细</button>
+        <button class="btn-primary" @click="loadStatementStat">语句/统计明细</button>
         <button class="btn-primary" @click="loadTables">数据表</button>
       </div>
       <div v-if="queryListText" class="qv-note">{{ queryListText }}</div>
@@ -121,6 +122,36 @@ async function loadQvDetails() {
     queryListText.value = `查询「${qName}」· 统计 ${sN} · 视图「${vName}」`
   } catch (e: any) {
     toast.error('加载查询/视图明细失败: ' + (e?.message ?? ''))
+  }
+}
+// 语句/统计明细 3 条真实 distinct 路由：查询语句列表 statement/list/query/{queryFlag}（POST x_query_statement by query_flag）
+// → 首语句 → 语句详情 statement/{id}（x_query_statement by id）；查询统计 stat/list/query（已消费）→ 首统计 → 统计详情 stat/{id}（x_query_stat by id）
+async function loadStatementStat() {
+  try {
+    const qResp: any = await api.get('/api/queryview/query/list')
+    const qrows = (Array.isArray(qResp?.data) ? qResp.data : (qResp?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const qflag = qrows[0] ? String(qrows[0].flag ?? qrows[0].id ?? '') : ''
+    if (!qflag) {
+      queryListText.value = '暂无查询（无可抽样项）'
+      return
+    }
+    const [stmts, stats] = await Promise.all([
+      api.post(`/api/queryview/statement/list/query/${encodeURIComponent(qflag)}`).catch(() => null),
+      api.get(`/api/queryview/stat/list/query/${encodeURIComponent(qflag)}`).catch(() => null),
+    ])
+    const stmtRows = (Array.isArray((stmts as any)?.data) ? (stmts as any).data : []) as Array<Record<string, unknown>>
+    const statRows = (Array.isArray((stats as any)?.data) ? (stats as any).data : []) as Array<Record<string, unknown>>
+    const sid = stmtRows[0] ? String(stmtRows[0].id ?? '') : ''
+    const stId = statRows[0] ? String(statRows[0].id ?? '') : ''
+    const [stmtDetail, statDetail] = await Promise.all([
+      sid ? api.get(`/api/queryview/statement/${encodeURIComponent(sid)}`).catch(() => null) : Promise.resolve(null),
+      stId ? api.get(`/api/queryview/stat/${encodeURIComponent(stId)}`).catch(() => null) : Promise.resolve(null),
+    ])
+    const stmtName = (stmtDetail as any)?.data?.name ?? (sid || '—')
+    const statName = (statDetail as any)?.data?.name ?? (stId || '—')
+    queryListText.value = `语句 ${stmtRows.length}（首「${stmtName}」）· 统计详情「${statName}」`
+  } catch (e: any) {
+    toast.error('加载语句/统计明细失败: ' + (e?.message ?? ''))
   }
 }
 // 数据表（rev117）：分页列表 + 首表详情 + 首表行数据，三条 distinct 真实路由
