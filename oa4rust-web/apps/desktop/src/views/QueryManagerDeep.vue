@@ -431,6 +431,7 @@ async function loadDesignerDeepReads() {
     s(api.get(`/api/query/assemble/designer/table/export/${tableFlag}/${cnt}/${cnt}`)),
     s(api.get(`/api/query/assemble/designer/list/${view}/${id}/${next}/${cnt}`)),
     s(api.get(`/api/query/assemble/designer/table/list/row/${tableFlag}/${id}/${next}/${cnt}`)),
+    s(api.get(`/api/query/assemble/designer/statement/${flag}`)),
   ])
   const hit = rs.filter((r) => (r as any)?.data != null).length
   deepReadText.value = `查询设计器深度读 ${rs.length} 条，命中 ${hit}`

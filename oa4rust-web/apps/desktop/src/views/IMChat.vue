@@ -589,6 +589,9 @@ async function loadMsgByType() {
       api.get('/api/message/assemble/communicate/instant/list/currentperson/noim/count/20/desc').catch(() => null),
       // rev277：im/msg/list/object → x_message WHERE type != 'text'（非文本消息清单，arity0）
       api.get('/api/message/assemble/communicate/im/msg/list/object').catch(() => null),
+      // rev313：IM 消息分页 + 消费清单游标（x_message 纯 SELECT）
+      api.get('/api/message/assemble/communicate/im/msg/list/1/size/20').catch(() => null),
+      api.get('/api/message/consume/list/0/count/20').catch(() => null),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     toast.success(`information类 ${n(byType)} / 未消费 ${n(notConsumed)} / 非IM ${n(noim)} / 非文本 ${n(objList)}`)

@@ -337,6 +337,7 @@ async function loadQueryViewDeep() {
       s(api.get(`/api/queryview/${view}/${flag}/${flag}/${query}/${queryFlag}`)),
       s(api.get(`/api/queryview/bundle/${view}/${flag}/${flag}/${query}/${queryFlag}`)),
       s(api.get(`/api/queryview/view/excel/result/${flag}`)),
+      s(api.get(`/api/query/assemble/surface/preview/${id}`)),
     ])
     const hit = rs.filter((r) => (r as any)?.data != null).length
     tableText.value = `queryview 深度读端点 ${rs.length} 条，命中 ${hit}`
