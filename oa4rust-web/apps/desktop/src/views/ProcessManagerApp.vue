@@ -24,6 +24,7 @@
         <button class="btn-refresh" @click="loadSurfaceProcessReads">🖼️ 表面/字典/流程</button>
         <button class="btn-refresh" @click="loadSurfaceDataForms">📑 完成件/草稿/表单</button>
         <button class="btn-refresh" @click="loadDesignerItemAccess">🔑 项访问/输出/版次</button>
+        <button class="btn-refresh" @click="loadSurfaceRouteSign">🧭 路由/签署/可控流程</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
@@ -31,6 +32,7 @@
       <div v-if="procDetailText" class="rp-note">{{ procDetailText }}</div>
       <div v-if="mappingText" class="rp-note">{{ mappingText }}</div>
       <div v-if="designerExtraText" class="rp-note">{{ designerExtraText }}</div>
+      <div v-if="surfaceRouteSignText" class="rp-note">{{ surfaceRouteSignText }}</div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🧩</div><p>暂无流程定义</p></div>
       <table v-else class="data-table">
@@ -186,6 +188,7 @@ async function loadMappingAccess() {
 // applicationdict/list/application/{applicationId} 取首字典 → applicationdict/{id}；process/application/{applicationId}（xapplication）
 // + process/form/{formId}（xformid，formId 从首流程详情回源）。
 const designerExtraText = ref('')
+const surfaceRouteSignText = ref('')
 async function loadDesignerExtras() {
   const first = items.value[0]
   const app = String(first?.application ?? first?.category ?? '0')
@@ -297,6 +300,26 @@ async function loadDesignerItemAccess() {
     designerExtraText.value = `项访问 按路径${n(byPath)}/按流程${n(byProcess)} | 输出(按应用) ${n(output)} | 流程(按应用+版次) ${n(edition)}`
   } catch (e: any) {
     toast.error('加载项访问/输出失败: ' + (e?.message ?? ''))
+  }
+}
+// rev262：流程表面 路由/签署/可控流程 3 条真实 distinct 读路由
+// route/{id} → PP_E_ROUTE WHERE xid（新表）· sign/{id} → PP_C_DOC_SIGN WHERE xid（新表）· process/list/controllable/application/{applicationFlag} → PP_E_PROCESS WHERE xapplication（区别于已消费 xid）；arity 均 1 已核
+async function loadSurfaceRouteSign() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const first: any = items.value[0] ?? {}
+  const id = String(first.id ?? '0')
+  const appId = String(first.application ?? first.applicationFlag ?? first.id ?? '0')
+  try {
+    const [route, sign, controllable] = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/surface/route/${encodeURIComponent(id)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/sign/${encodeURIComponent(id)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/process/list/controllable/application/${encodeURIComponent(appId)}`)),
+    ])
+    const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    surfaceRouteSignText.value = `路由 ${has(route)} | 签署 ${has(sign)} | 可控流程(按应用) ${n(controllable)}`
+  } catch (e: any) {
+    toast.error('加载路由/签署失败: ' + (e?.message ?? ''))
   }
 }
 // 设计器流程明细族 3 条真实 distinct 路由：首流程 → 流程详情 process/{id}（PP_E_PROCESS query_opt）
