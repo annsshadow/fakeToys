@@ -76,7 +76,7 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 
 ### 响应契约
 
-**每个端点都声明了 `response_model`**（共 68 个），因此 `/openapi.json` 里不存在
+**每个端点都声明了 `response_model`**（共 70 个），因此 `/openapi.json` 里不存在
 「无 schema 的 200 响应」。这条由 `tests/integration/test_api_openapi_contract.py`
 双向守门：既要每个端点都声明契约，也要**每个已声明契约的端点都真实存在**
 （防止文档里留着一个早就删掉的端点）。
@@ -89,7 +89,7 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 
 ## 端点总览
 
-按 OpenAPI tag 分组，共 **68** 个端点。
+按 OpenAPI tag 分组，共 **70** 个端点。
 
 ### audit（1）
 
@@ -126,7 +126,7 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 | `GET` | `/api/demo/data` | 内置演示数据集（**裸数组**） |
 | `GET` | `/api/visualize/{filename}` | 生成可视化图表 |
 
-### dataset（12）
+### dataset（14）
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
@@ -134,7 +134,9 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 | `POST` | `/api/dataset/auto-config` | 自动配置推荐 |
 | `POST` | `/api/dataset/compare` | 数据集对比 |
 | `POST` | `/api/dataset/convert` | 格式转换 |
+| `POST` | `/api/dataset/evaluate` | 生成文本指标评估（BLEU / ROUGE-L / 相似度） |
 | `POST` | `/api/dataset/features` | 字段特征检测 |
+| `POST` | `/api/dataset/impact` | 增强前后影响评估（四项增益） |
 | `POST` | `/api/dataset/merge` | 合并数据集 |
 | `POST` | `/api/dataset/rag` | 转换为 RAG 格式 |
 | `POST` | `/api/dataset/sample` | 数据集采样 |
@@ -144,9 +146,13 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 | `POST` | `/api/dataset/validate` | 数据集验证 |
 
 > `dataset` 分组的约定：**只读分析类**（stats / validate / search / compare /
-> features / auto-config）内联返回完整结果；**写盘变换类**（convert / merge /
+> features / auto-config / impact / evaluate）内联返回完整结果；**写盘变换类**（convert / merge /
 > sample / split / aggregate / rag）必须给 `output_path`，响应只回传「写到哪、
 > 写了多少」，不回传数据本身。
+>
+> `impact` / `evaluate` 的口径细节（哪一侧空算 400、哪一侧空算结论，字段名拼错为什么
+> 必须报错而不是给一份「全空」统计）写在 `api/routes/dataset_tools.py` 对应函数的
+> 文档串里，并由 `tests/integration/test_api_dataset_system_tools.py` 逐条钉住。
 
 ### export（4）
 
