@@ -11,6 +11,7 @@
       <button class="btn-ai-meta" @click="loadAiControl">基础配置/控制/用量</button>
       <button class="btn-ai-meta" @click="loadAiEntities">实体/聊天线索</button>
       <button class="btn-ai-meta" @click="loadAiIndexFiles">索引/文件/MCP</button>
+      <button class="btn-ai-meta" @click="loadAiDeep">控制深度读</button>
       <div v-if="aiMetaText" class="ai-meta-note">{{ aiMetaText }}</div>
     </div>
     <div class="split-layout">
@@ -197,6 +198,31 @@ async function loadAiIndexFiles() {
     aiMetaText.value = `MCP ${mcps.length}（详情 ${has(mcpOne)}）· CMS文档 ${has(cmsDoc)}·按应用 ${has(cmsDocApp)} · AI文件 ${has(file)}`
   } catch (e: any) {
     toast.error('加载 AI 索引/文件失败: ' + (e?.message ?? ''))
+  }
+}
+// rev312：AI 控制配置 深度读 8 条（可用模型/MCP扩展·MCP·模型配置/AI文件/CMS文档索引/模型分页）；handler 体经核实纯 SELECT
+async function loadAiDeep() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const flag = '0'
+  const appId = 'default'
+  const docId = '0'
+  const page = '1'
+  const size = '20'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/ai_assemble_control/config/list/enable/model`)),
+      s(api.get(`/api/ai_assemble_control/config/get/mcp/ext/${flag}`)),
+      s(api.get(`/api/ai_assemble_control/config/get/mcp/${flag}`)),
+      s(api.get(`/api/ai_assemble_control/config/get/model/${flag}`)),
+      s(api.get(`/api/ai_assemble_control/file/${flag}`)),
+      s(api.get(`/api/ai_assemble_control/index/cms/doc/with/app/${appId}`)),
+      s(api.get(`/api/ai_assemble_control/index/cms/doc/${docId}`)),
+      s(api.get(`/api/ai_assemble_control/config/list/model/paging/${page}/size/${size}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    aiMetaText.value = `AI 控制深度读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载 AI 控制深度读失败: ' + (e?.message ?? ''))
   }
 }
 async function loadAiConv() {
