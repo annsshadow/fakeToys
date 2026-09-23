@@ -82,6 +82,7 @@
       <button class="save-btn ghost" @click="loadAuthScopes">我的单位/角色/群组</button>
       <button class="save-btn ghost" @click="loadAuthDetails">认证明细/绑定</button>
       <button class="save-btn ghost" @click="loadPersonalExtras">头像/签名/授权明细</button>
+      <button class="save-btn ghost" @click="loadPersonalMore">当前/日志/管理明细</button>
       <span v-if="personalExtraText" class="muted">{{ personalExtraText }}</span>
       <div v-if="authMetaText" class="auth-note">{{ authMetaText }}</div>
       <div v-if="authDetailText" class="auth-note">{{ authDetailText }}</div>
@@ -300,6 +301,30 @@ async function loadPersonalExtras() {
     personalExtraText.value = `头像 ${(icon as any)?.data ? '有' : '无'} · 签名 ${n(sigs)} · 定义 ${(def as any)?.data ? '有' : '无'} · 自定义 ${(custom as any)?.data ? '有' : '无'} · 授权前翻 ${n(empNext)} · 后翻 ${n(empPrev)} · 按人 ${n(empByPerson)}`
   } catch (e: any) {
     toast.error('加载个人扩展明细失败: ' + (e?.message ?? ''))
+  }
+}
+// rev230：个人 当前信息/授权日志/管理自定义族 7 条真实 distinct 路由
+// person（auth_person 当前）· custom/manager/person/{person}/name/{name}（x_custom 管理域）· empowerlog/list/{id}/next/{count}（x_org_empower_log DESC）· prev（ASC）
+// · personal/info（auth_person WHERE unique_id via token）· personal/detail/{id}（by id）· icon/{person}（头像）
+async function loadPersonalMore() {
+  const uid = String(user.value?.unique ?? user.value?.id ?? '0')
+  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const cfgName = String((user.value as any)?.customName ?? uid)
+  try {
+    const [person, custMgr, logNext, logPrev, info, detail, icon] = await Promise.all([
+      s(api.get('/api/person')),
+      s(api.get(`/api/person/custom/manager/person/${encodeURIComponent(uid)}/name/${encodeURIComponent(cfgName)}`)),
+      s(api.get('/api/person/empowerlog/list/0/next/20')),
+      s(api.get('/api/person/empowerlog/list/999999999/prev/20')),
+      s(api.get('/api/personal/info')),
+      s(api.get(`/api/personal/detail/${encodeURIComponent(uid)}`)),
+      s(api.get(`/api/icon/${encodeURIComponent(uid)}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    const has = (r: any) => ((r as any)?.data ? '有' : '无')
+    personalExtraText.value = `当前 ${has(person)} · 管理自定义 ${has(custMgr)} · 授权日志 前${n(logNext)}/后${n(logPrev)} · info ${has(info)} · detail ${has(detail)} · 头像 ${has(icon)}`
+  } catch (e: any) {
+    toast.error('加载个人更多明细失败: ' + (e?.message ?? ''))
   }
 }
 const sigManagers = ref<SigMgr[]>([])
