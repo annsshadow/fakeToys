@@ -15,6 +15,7 @@
         <button class="btn-primary ghost" @click="loadDimensionStats">维度周期统计</button>
         <button class="btn-primary ghost" @click="loadCountStats">计数聚合</button>
         <button class="btn-primary ghost" @click="loadPeriodMatrix">周期多维矩阵</button>
+        <button class="btn-primary ghost" @click="loadPeriodMatrix2">周期维度聚合</button>
         <button class="btn-primary" @click="refresh">🔄 刷新</button>
       </span>
     </div>
@@ -231,6 +232,37 @@ async function loadPeriodMatrix() {
     periodText.value = `周期多维统计 真实读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
     toast.error('加载周期多维统计失败: ' + (e?.message ?? ''))
+  }
+}
+// rev312：period/list/count by/unit·by/process·by/activity 维度聚合 14 条真实读路由（x_work/x_task period 聚合）
+async function loadPeriodMatrix2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const applicationId = '0'
+  const processId = '0'
+  const activityId = '0'
+  const unit = '0'
+  const person = '0'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/bam/period/list/count/completed/work/application/${applicationId}/process/${processId}/by/unit`)),
+      s(api.get(`/api/processplatform/assemble/bam/period/list/count/expired/work/application/${applicationId}/process/${processId}/by/unit`)),
+      s(api.get(`/api/processplatform/assemble/bam/period/list/count/start/work/application/${applicationId}/process/${processId}/by/unit`)),
+      s(api.get(`/api/processplatform/assemble/bam/period/list/count/completed/task/application/${applicationId}/process/${processId}/activity/${activityId}/by/unit`)),
+      s(api.get(`/api/processplatform/assemble/bam/period/list/count/completed/work/application/${applicationId}/unit/${unit}/person/${person}/by/process`)),
+      s(api.get(`/api/processplatform/assemble/bam/period/list/count/expired/task/application/${applicationId}/process/${processId}/activity/${activityId}/by/unit`)),
+      s(api.get(`/api/processplatform/assemble/bam/period/list/count/expired/task/application/${applicationId}/unit/${unit}/person/${person}/by/process`)),
+      s(api.get(`/api/processplatform/assemble/bam/period/list/count/expired/work/application/${applicationId}/unit/${unit}/person/${person}/by/process`)),
+      s(api.get(`/api/processplatform/assemble/bam/period/list/count/start/task/application/${applicationId}/process/${processId}/activity/${activityId}/by/unit`)),
+      s(api.get(`/api/processplatform/assemble/bam/period/list/count/start/task/application/${applicationId}/unit/${unit}/person/${person}/by/process`)),
+      s(api.get(`/api/processplatform/assemble/bam/period/list/count/start/work/application/${applicationId}/unit/${unit}/person/${person}/by/process`)),
+      s(api.get(`/api/processplatform/assemble/bam/period/list/count/completed/task/application/${applicationId}/process/${processId}/unit/${unit}/person/${person}/by/activity`)),
+      s(api.get(`/api/processplatform/assemble/bam/period/list/count/expired/task/application/${applicationId}/process/${processId}/unit/${unit}/person/${person}/by/activity`)),
+      s(api.get(`/api/processplatform/assemble/bam/period/list/count/start/task/application/${applicationId}/process/${processId}/unit/${unit}/person/${person}/by/activity`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    periodText.value = `周期维度聚合 真实读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载周期维度聚合失败: ' + (e?.message ?? ''))
   }
 }
 const events = ref<any[]>([])

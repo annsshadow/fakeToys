@@ -19,6 +19,7 @@
         <button class="btn-primary" @click="doSearch">搜索</button>
         <button class="btn-primary" @click="loadHotpicMeta">热图/面板</button>
         <button class="btn-primary" @click="loadHotpicMeta2">热图2/面板2/应用2</button>
+        <button class="btn-primary" @click="loadHotpicDeep">深度读</button>
       </div>
       <div v-if="hotpicMetaText" class="hp-note">{{ hotpicMetaText }}</div>
       <div class="list-panel">
@@ -69,6 +70,32 @@ async function loadHotpicMeta2() {
     hotpicMetaText.value = `热图 ${n(hp)} / 面板 ${n(panels)} / 应用 ${n(apps)}`
   } catch (e: any) {
     toast.error('加载热图元数据失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadHotpicDeep() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const page = '1'
+  const count = '20'
+  const application = 'default'
+  const infoId = '0'
+  try {
+    // rev312：hotpic 深度读 9 条（配置/用户存在检查/密文bbs·cms/详情/筛选清单/用户热图）；handler 体经核实纯 SELECT
+    const rs = await Promise.all([
+      s(api.get(`/api/hotpic/assemble/control/config`)),
+      s(api.get(`/api/hotpic/assemble/control/user/hotpic/exists/check`)),
+      s(api.get(`/api/hotpic_assemble_control/get/control/config`)),
+      s(api.get(`/api/hotpic_assemble_control/user/hotpic/exists/check`)),
+      s(api.get(`/api/hotpic/assemble/control/cipher/hotpic/bbs/${id}`)),
+      s(api.get(`/api/hotpic/assemble/control/cipher/hotpic/cms/${id}`)),
+      s(api.get(`/api/hotpic_assemble_control/get/hotpic/${id}`)),
+      s(api.get(`/api/hotpic/assemble/control/user/hotpic/filter/list/page/${page}/count/${count}`)),
+      s(api.get(`/api/hotpic/user/hotpic/${application}/${infoId}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    hotpicMetaText.value = `热图深度读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载热图深度读失败: ' + (e?.message ?? ''))
   }
 }
 async function loadHotpicMeta() {
