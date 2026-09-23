@@ -26,6 +26,7 @@
       <button class="org-meta-btn" @click="loadUnitRelations">单位关系</button>
       <button class="org-meta-btn" @click="loadIdentityUnitTree">身份单位树</button>
       <button class="org-meta-btn" @click="loadPersonLogins">人员登录/配对</button>
+      <button class="org-meta-btn" @click="loadOrgSearchCursors">搜索/人员游标</button>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -146,6 +147,28 @@ interface N {
   childCount?: number
 }
 const orgMetaText = ref('')
+// rev215：组织控制 人员游标/关系 + like 搜索族 7 条真实 distinct 路由
+// person/list/{flag}/next/{count}（id> 游标）· person/list/{flag}/prev/{count}（id< 游标）· person/list/group/{groupFlag}/sub/direct（群组直属人员）
+// · identity/list/like（x_org_identity name ILIKE）· identity/list/like/pinyin（全量按创建降序）· unit/list/top/type/{type}（顶层单位按类型）· role/list/like（x_org_role name ILIKE）
+async function loadOrgSearchCursors() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const sampleType = 'all'
+    const [pNext, pPrev, pGroup, idLike, idPinyin, unitTop, roleLike] = await Promise.all([
+      s(api.get('/api/organization/assemble/control/person/list/0/next/20')),
+      s(api.get('/api/organization/assemble/control/person/list/0/prev/20')),
+      s(api.get('/api/organization/assemble/control/person/list/group/all/sub/direct')),
+      s(api.get('/api/organization/assemble/control/identity/list/like?key=a')),
+      s(api.get('/api/organization/assemble/control/identity/list/like/pinyin?key=a')),
+      s(api.get(`/api/organization/assemble/control/unit/list/top/type/${encodeURIComponent(sampleType)}`)),
+      s(api.get('/api/organization/assemble/control/role/list/like?key=a')),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    orgMetaText.value = `人员前翻 ${n(pNext)} / 后翻 ${n(pPrev)} / 群组直属 ${n(pGroup)} / 身份搜索 ${n(idLike)} / 拼音 ${n(idPinyin)} / 顶层单位 ${n(unitTop)} / 角色搜索 ${n(roleLike)}`
+  } catch (e: any) {
+    toast.error('加载组织搜索/游标失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadOrgMeta() {
   try {
     // GET permissionsetting/list + personcard/listgrouptypes —— 权限设置/人员卡分组类型
