@@ -8908,6 +8908,19 @@
    },
    {
     "app": "desktop",
+    "file": "apps/desktop/src/views/ServerApp.vue",
+    "line": 144,
+    "method": "GET",
+    "raw": "/api/console/metric/${encodeURIComponent(metricName)}",
+    "path": "/api/console/metric/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/console/metric/{name}",
+    "hit_crate": "console",
+    "extra": null
+   },
+   {
+    "app": "desktop",
     "file": "apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
     "line": 137,
     "method": "POST",
@@ -18769,7 +18782,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 140,
+    "line": 142,
     "method": "GET",
     "raw": "/api/console/status",
     "path": "/api/console/status",
@@ -18782,7 +18795,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 141,
+    "line": 143,
     "method": "GET",
     "raw": "/api/console/system/info",
     "path": "/api/console/system/info",
@@ -18795,7 +18808,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 154,
+    "line": 157,
     "method": "GET",
     "raw": "/api/server/license",
     "path": "/api/server/license",
@@ -18808,7 +18821,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 170,
+    "line": 173,
     "method": "GET",
     "raw": "/api/server/execute?command=${encodeURIComponent(command.value)}",
     "path": "/api/server/execute",
@@ -18821,7 +18834,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 183,
+    "line": 186,
     "method": "GET",
     "raw": "/api/server/stop",
     "path": "/api/server/stop",

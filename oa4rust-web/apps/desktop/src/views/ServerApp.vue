@@ -136,13 +136,16 @@ async function loadGeneralMeta() {
 async function loadSysStatus() {
   try {
     // GET console/status + console/system/info —— 控制台状态与系统信息
-    const [status, info] = await Promise.all([
+    // rev273：+console/metric/{name} → x_console_metric WHERE xname(命名指标查询，arity1)
+    const metricName = 'cpu'
+    const [status, info, metric] = await Promise.all([
       api.get('/api/console/status'),
       api.get('/api/console/system/info'),
+      api.get(`/api/console/metric/${encodeURIComponent(metricName)}`).catch(() => null),
     ])
     const st = (status as any)?.data ? '在线' : '未知'
     const infoObj = (info as any)?.data ?? {}
-    sysStatusText.value = `状态 ${st} · 信息 ${JSON.stringify(infoObj).slice(0, 60)}`
+    sysStatusText.value = `状态 ${st} · 信息 ${JSON.stringify(infoObj).slice(0, 60)} · 指标 ${(metric as any)?.data ? '命中' : '未命中'}`
   } catch (e: any) {
     toast.error('加载系统状态失败: ' + (e?.message ?? ''))
   }
