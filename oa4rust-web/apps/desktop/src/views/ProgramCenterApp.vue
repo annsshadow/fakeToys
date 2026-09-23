@@ -999,16 +999,19 @@ async function loadDeployDictDistribute() {
   const flag = 'default'
   const path = 'data'
   const source = 'default'
+  const collectName = 'default'
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
-    const [deploy, market, dict, distribute] = await Promise.all([
+    const [deploy, market, dict, distribute, collect] = await Promise.all([
       s(api.get(`/api/program_center/deploy/server/o2`)),
       s(api.get(`/api/program_center/market/flag`)),
       s(api.get(`/api/program_center/dict/${encodeURIComponent(flag)}/${encodeURIComponent(path)}/data`)),
       s(api.get(`/api/program_center/distribute/assemble/source/${encodeURIComponent(source)}`)),
+      // rev274：collect/name/{name}/exist → x_program_collect(新表，query_opt arity1)
+      s(api.get(`/api/program_center/collect/name/${encodeURIComponent(collectName)}/exist`)),
     ])
     const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
-    deployDistText.value = `o2部署 ${has(deploy)} | 市场模块 ${has(market)} | 字典数据 ${has(dict)} | 分发源 ${has(distribute)}`
+    deployDistText.value = `o2部署 ${has(deploy)} | 市场模块 ${has(market)} | 字典数据 ${has(dict)} | 分发源 ${has(distribute)} | 收藏存在 ${has(collect)}`
   } catch (e: any) {
     toast.error('加载部署/字典/分发失败: ' + (e?.message ?? ''))
   }
