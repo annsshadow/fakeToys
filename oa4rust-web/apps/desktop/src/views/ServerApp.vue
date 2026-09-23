@@ -138,10 +138,13 @@ async function loadSysStatus() {
     // GET console/status + console/system/info —— 控制台状态与系统信息
     // rev273：+console/metric/{name} → x_console_metric WHERE xname(命名指标查询，arity1)
     const metricName = 'cpu'
-    const [status, info, metric] = await Promise.all([
+    const logType = 'info'
+    const [status, info, metric, logs] = await Promise.all([
       api.get('/api/console/status'),
       api.get('/api/console/system/info'),
       api.get(`/api/console/metric/${encodeURIComponent(metricName)}`).catch(() => null),
+      // rev301：console/logs/{type} → x_console_log(按类型日志) 补齐
+      api.get(`/api/console/logs/${encodeURIComponent(logType)}`).catch(() => null),
     ])
     const st = (status as any)?.data ? '在线' : '未知'
     const infoObj = (info as any)?.data ?? {}
