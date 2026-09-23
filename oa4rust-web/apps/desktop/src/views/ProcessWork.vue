@@ -107,6 +107,10 @@
             <h3>引擎明细</h3>
             <p class="muted">{{ engineText }}</p>
           </div>
+          <div v-if="surfaceExtraText" class="detail-block">
+            <h3>附件/文档版本</h3>
+            <p class="muted">{{ surfaceExtraText }}</p>
+          </div>
           <div v-if="effectiveTaskId" class="detail-block">
             <h3>任务信息</h3>
             <ul class="detail-list">
@@ -239,6 +243,7 @@ const records = ref<RecordItem[]>([])
 const worklogs = ref<WorklogItem[]>([])
 const reads = ref<ReadItem[]>([])
 const engineText = ref('')
+const surfaceExtraText = ref('')
 
 function asRows(response: unknown): Record<string, unknown>[] {
   const payload = (response as { data?: unknown })?.data
@@ -279,6 +284,7 @@ async function openWork(item: TaskItem): Promise<void> {
     formValues.value = initialFormValues(formDefinition.value, values)
     void loadDetailPanels(id)
     void loadEngineRecords(id)
+    void loadSurfaceExtras(id)
     // “我发起的”详情：若本人有该工作的活动任务，允许在此办理（发起人 begin 环节）
     if (activeTab.value === 'started') {
       const pending: any = await api.get(endpoints.pending)
@@ -348,6 +354,33 @@ async function loadEngineRecords(id: string): Promise<void> {
   engineText.value = `引擎工作「${wTitle}」· 处理记录 ${pN} · 终止记录 ${tN}`
 }
 
+// 表面附件/文档版本扩展（rev174，surface 域 4 条真实 distinct）：以工作 id 按 workOrWorkCompleted 维度拉
+// attachment/list/workorworkcompleted/{flag}（xwork=$1 OR xworkCompleted=$1）+ documentversion/list/workorworkcompleted/{flag}
+// （PP_C_DOCUMENTVERSION）；再取首个附件 id 查 attachment/{id}/available（pp_c_attachment xstorage/xlength 可用性）
+// + attachment/{id}/online/info（在线编辑信息）。子请求各自静默降级。
+async function loadSurfaceExtras(id: string): Promise<void> {
+  surfaceExtraText.value = ''
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [attList, docVer] = await Promise.all([
+    settle(api.get(`/api/processplatform/assemble/surface/attachment/list/workorworkcompleted/${id}`)),
+    settle(api.get(`/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/${id}`)),
+  ])
+  const attRows = asRows(attList)
+  const docN = asRows(docVer).length
+  const attId = attRows[0] ? String(attRows[0].id ?? '') : ''
+  let availText = '—'
+  if (attId) {
+    const [avail, online] = await Promise.all([
+      settle(api.get(`/api/processplatform/assemble/surface/attachment/${attId}/available`)),
+      settle(api.get(`/api/processplatform/assemble/surface/attachment/${attId}/online/info`)),
+    ])
+    const ok = (avail as any)?.data?.available === true ? '可用' : '不可用'
+    const editable = (online as any)?.data?.onlineEditable === true ? '可在线编辑' : '不可在线编辑'
+    availText = `${ok}·${editable}`
+  }
+  surfaceExtraText.value = `附件(含已完成) ${attRows.length} · 文档版本 ${docN} · 首附件 ${availText}`
+}
+
 function closeWork(): void {
   opened.value = null
   formDefinition.value = null
@@ -358,6 +391,7 @@ function closeWork(): void {
   worklogs.value = []
   reads.value = []
   engineText.value = ''
+  surfaceExtraText.value = ''
 }
 
 const canHandle = computed(() => {
