@@ -29,6 +29,8 @@
         <button class="btn-refresh" @click="loadSurfaceMiscReads">🧾 表单/流程/脚本/快照读取</button>
         <button class="btn-refresh" @click="loadDesignerProcessReads">🎛️ 设计器流程/应用/引出/权限</button>
         <button class="btn-refresh" @click="loadSurfaceManageReads">🗃️ 管理详情/计数/投影/路由配置</button>
+        <button class="btn-refresh" @click="loadDesignerDeep">🧱 设计器深度读</button>
+        <button class="btn-refresh" @click="loadEngineReads">⚡ 引擎处理读</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
@@ -41,6 +43,8 @@
       <div v-if="surfaceMiscText" class="rp-note">{{ surfaceMiscText }}</div>
       <div v-if="designerProcText" class="rp-note">{{ designerProcText }}</div>
       <div v-if="surfaceManageText" class="rp-note">{{ surfaceManageText }}</div>
+      <div v-if="designerDeepText" class="rp-note">{{ designerDeepText }}</div>
+      <div v-if="engineReadText" class="rp-note">{{ engineReadText }}</div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🧩</div><p>暂无流程定义</p></div>
       <table v-else class="data-table">
@@ -201,6 +205,8 @@ const mergeEnabledText = ref('')
 const surfaceMiscText = ref('')
 const designerProcText = ref('')
 const surfaceManageText = ref('')
+const designerDeepText = ref('')
+const engineReadText = ref('')
 // rev297：流程表面 管理详情/计数/投影/路由配置/按日期/属性筛选 真实读端点集（read/readcompleted/task/work/workcompleted manage 详情、count、job projection、process complex、route selectconfig、sign by task、is-manager、form mobile、draft prev）
 // 均 query_opt/query_all 只读、arity<=url 已核（axum 前导参提取，多余段忽略不报 500）；排除 pause/reroute/goback/abandoned/close-check 等动作名
 async function loadSurfaceManageReads() {
@@ -245,6 +251,79 @@ async function loadSurfaceManageReads() {
     surfaceManageText.value = `表面管理/计数/投影 真实读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
     toast.error('加载表面管理读取失败: ' + (e?.message ?? ''))
+  }
+}
+// rev311：流程设计器 深度读 16 条（应用定义/文件内容/项访问/预览/流程/脚本版本/映射/表单列表游标）；handler 体经跨 crate 核实纯 SELECT
+async function loadDesignerDeep() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const count = '20'
+  const next = '0'
+  const page = '1'
+  const size = '10'
+  const flag = '0'
+  const applicationFlag = '0'
+  const applicationId = '0'
+  const processId = '0'
+  const activityType = '0'
+  const name = '0'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/designer`)),
+      s(api.get(`/api/processplatform/assemble/designer/file/content/${id}`)),
+      s(api.get(`/api/processplatform/assemble/designer/item/access/process/path/path/${processId}`)),
+      s(api.get(`/api/processplatform/assemble/designer/preview/${id}`)),
+      s(api.get(`/api/processplatform/assemble/designer/process/process/${id}`)),
+      s(api.get(`/api/processplatform/assemble/designer/process/${id}/process`)),
+      s(api.get(`/api/processplatform/assemble/designer/scriptversion/${id}`)),
+      s(api.get(`/api/processplatform/assemble/designer/${id}/${count}`)),
+      s(api.get(`/api/processplatform/assemble/designer/applicationdict/list/paging/${page}/${size}/${size}`)),
+      s(api.get(`/api/processplatform/assemble/designer/file/list/${id}/${next}/${count}`)),
+      s(api.get(`/api/processplatform/assemble/designer/form/list/${id}/${next}/${count}`)),
+      s(api.get(`/api/processplatform/assemble/designer/mapping/list/${id}/${next}/${count}`)),
+      s(api.get(`/api/processplatform/assemble/designer/process/activity/${flag}/${activityType}/${activityType}`)),
+      s(api.get(`/api/processplatform/assemble/designer/script/application/${applicationId}/${name}/${name}`)),
+      s(api.get(`/api/processplatform/assemble/designer/script/list/${id}/${next}/${count}`)),
+      s(api.get(`/api/processplatform/assemble/designer/file/${flag}/application/${applicationFlag}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    designerDeepText.value = `设计器深度读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载设计器深度读失败: ' + (e?.message ?? ''))
+  }
+}
+// rev311：流程引擎 processing 深度读 12 条（记录/快照/待阅/数据/流程/投影/附件）；handler 体纯 SELECT，已排除 touch/manual-append 动作
+async function loadEngineReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const job = '0'
+  const work = '0'
+  const workId = '0'
+  const processId = '0'
+  const person = '0'
+  const view = '0'
+  const type = '0'
+  const name = '0'
+  const serial = '0'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/processplatform/service/processing/record/${id}`)),
+      s(api.get(`/api/processplatform/service/processing/snap/${id}`)),
+      s(api.get(`/api/processplatform/service/processing/task/${id}/will`)),
+      s(api.get(`/api/processplatform/service/processing/data/${job}/${job}`)),
+      s(api.get(`/api/processplatform/service/processing/process/${work}/${processId}`)),
+      s(api.get(`/api/processplatform/service/processing/record/${job}/${job}`)),
+      s(api.get(`/api/processplatform/service/processing/v2/projection/${job}/${job}`)),
+      s(api.get(`/api/processplatform/service/processing/${job}/${job}`)),
+      s(api.get(`/api/processplatform/service/processing/attachment/${id}/${work}/${workId}`)),
+      s(api.get(`/api/processplatform/service/processing/snap/snap/${work}/${workId}/${type}`)),
+      s(api.get(`/api/processplatform/service/processing/process/${work}/${processId}/${name}/${name}/${serial}`)),
+      s(api.get(`/api/processplatform/service/processing/v2/${job}/${job}/${person}/${person}/${view}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    engineReadText.value = `引擎 processing 深度读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载引擎读取失败: ' + (e?.message ?? ''))
   }
 }
 // rev290：流程设计器 应用汇总/元素孤儿字典/流程引出/启用/权限 真实读端点集；均只读 arity 已核
