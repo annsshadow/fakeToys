@@ -13,6 +13,7 @@
         <button class="eb" @click="loadAttOrg">🏢 按单位/同步</button>
         <button class="eb" @click="loadV2Meta">⚙️ v2配置/控件/请假模板</button>
         <button class="eb" @click="loadV2Schedule">🗓️ v2排班/群组</button>
+        <button class="eb" @click="loadV2AppealRecord">📝 v2申诉/记录</button>
         <button class="eb" @click="loadAttBase">🗂️ 打卡/周期/员工</button>
       </div>
       <div v-if="attOverviewText" class="att-note">{{ attOverviewText }}</div>
@@ -290,10 +291,36 @@ async function loadV2Schedule() {
     toast.error('加载 v2 排班失败: ' + (e?.message ?? ''))
   }
 }
+// v2 申诉/记录明细族 4 条真实 distinct 路由（x_attendance_record / x_attendance_v2_appeal_info）：记录分页 v2/record/list/{page}/size/{size}（POST）
+// → 首记录 → 记录详情 v2/record/{id}（GET）；申诉分页 v2/appeal/list/{page}/size/{size}（POST）→ 首申诉 → 申诉详情 v2/appeal/{id}（GET）
+async function loadV2AppealRecord() {
+  const page = '1'
+  const size = '20'
+  try {
+    const [recList, appealList]: any[] = await Promise.all([
+      api.post(`/api/attendance/assemble/control/v2/record/list/${page}/size/${size}`).catch(() => null),
+      api.post(`/api/attendance/assemble/control/v2/appeal/list/${page}/size/${size}`).catch(() => null),
+    ])
+    const recs = (Array.isArray(recList?.data) ? recList.data : (recList?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const appeals2 = (Array.isArray(appealList?.data) ? appealList.data : (appealList?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const rid = recs[0] ? String(recs[0].id ?? '') : ''
+    const aid = appeals2[0] ? String(appeals2[0].id ?? '') : ''
+    const [recDetail, appealDetail] = await Promise.all([
+      rid ? api.get(`/api/attendance/assemble/control/v2/record/${encodeURIComponent(rid)}`).catch(() => null) : Promise.resolve(null),
+      aid ? api.get(`/api/attendance/assemble/control/v2/appeal/${encodeURIComponent(aid)}`).catch(() => null) : Promise.resolve(null),
+    ])
+    const rStatus = (recDetail as any)?.data?.status ?? (rid || '—')
+    const aStatus = (appealDetail as any)?.data?.status ?? (aid || '—')
+    attOverviewText.value = `打卡记录 ${recs.length}（首状态 ${rStatus}）· 申诉 ${appeals2.length}（首状态 ${aStatus}）`
+  } catch (e: any) {
+    toast.error('加载 v2 申诉/记录失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadAttOrg() {
   try {
     // GET attendancedetail/filter/list/topUnit + filter/list/unit + dingding/sync/list
-    const [topUnit, unit, dingding] = await Promise.all([      api.get('/api/attendance/assemble/control/attendancedetail/filter/list/topUnit'),
+    const [topUnit, unit, dingding] = await Promise.all([
+      api.get('/api/attendance/assemble/control/attendancedetail/filter/list/topUnit'),
       api.get('/api/attendance/assemble/control/attendancedetail/filter/list/unit'),
       api.get('/api/attendance/assemble/control/dingding/sync/list'),
     ])
