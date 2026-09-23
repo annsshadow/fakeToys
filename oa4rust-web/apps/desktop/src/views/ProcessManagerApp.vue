@@ -237,6 +237,9 @@ async function loadSurfaceManageReads() {
       s(api.get(`/api/processplatform/assemble/surface/application/is/manager/${flag}`)),
       s(api.get(`/api/processplatform/assemble/surface/form/mobile/${flag}`)),
       s(api.get(`/api/processplatform/assemble/surface/draft/list/${id}/prev/${cnt}`)),
+      // rev304：流程可改签目标 process/allowrerouteto/{flag} 与 process/{flag}/allowrerouteto（两注册同 handler，PP_E_PROCESS 只读 arity1）
+      s(api.get(`/api/processplatform/assemble/surface/process/allowrerouteto/${flag}`)),
+      s(api.get(`/api/processplatform/assemble/surface/process/${flag}/allowrerouteto`)),
     ])
     const hit = rs.filter((r) => (r as any)?.data != null).length
     surfaceManageText.value = `表面管理/计数/投影 真实读端点 ${rs.length} 条，命中 ${hit}`
@@ -258,6 +261,8 @@ async function loadDesignerProcessReads() {
       s(api.get(`/api/processplatform/assemble/designer/process/lead/out/${encodeURIComponent(pid)}`)),
       s(api.get(`/api/processplatform/assemble/designer/process/enabled/${encodeURIComponent(pid)}`)),
       s(api.get(`/api/processplatform/assemble/designer/process/permission/${encodeURIComponent(pid)}`)),
+      // rev304：设计器 停用版次清单 process/application/{applicationId}/disable/edition → pp_e_processversion（只读 arity1）
+      s(api.get(`/api/processplatform/assemble/designer/process/application/${encodeURIComponent(cat)}/disable/edition`)),
     ])
     const hit = rs.filter((r) => (r as any)?.data != null).length
     designerProcText.value = `设计器流程真实读端点 ${rs.length} 条，命中 ${hit}`
