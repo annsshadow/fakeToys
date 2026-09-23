@@ -20,6 +20,7 @@
         <button class="btn-refresh" @click="loadCmsDetails">🗃️ 分类/文章明细</button>
         <button class="btn-refresh" @click="loadFormDetails">📋 表单明细</button>
         <button class="btn-refresh" @click="loadCmsAliasForm">🔖 别名/发布/表单</button>
+        <button class="btn-refresh" @click="loadViewRecords">👁️ 浏览记录(文档/人员)</button>
       </div>
       <div v-if="cmsConfigText" class="cfg-note">{{ cmsConfigText }}</div>
       <div v-if="overviewText" class="cfg-note">{{ overviewText }}</div>
@@ -189,6 +190,23 @@ async function loadCmsAliasForm() {
     overviewText.value = `应用别名 ${h(appAlias)} · 应用发布 ${h(appPublish)} · 分类别名 ${h(catAlias)} · 表单(按应用) ${h(formApp)} · 文档读权限 ${h(docPerm)}`
   } catch (e: any) {
     toast.error('加载别名/表单失败: ' + (e?.message ?? ''))
+  }
+}
+// rev268：CMS 浏览记录 文档/人员 2 条真实 distinct 读路由
+// viewrecord/document/{docId}/has/view → x_cms_viewrecord WHERE doc_id · viewrecord/person/{person} → 同表 WHERE person_id（distinct 列）；均只读 arity1；跳 form/v2/lookup mobile(form_runtime_by_document 孪生)+formfield(list_from_table_filtered_legacy 退化桩)
+async function loadViewRecords() {
+  const id = '0'
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [byDoc, byPerson] = await Promise.all([
+      s(api.get(`/api/viewrecord/document/${encodeURIComponent(id)}/has/view`)),
+      s(api.get(`/api/viewrecord/person/${encodeURIComponent(id)}`)),
+    ])
+    const h = (r: any) => ((r as any)?.data ? '命中' : '未命中')
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    overviewText.value = `文档浏览 ${h(byDoc)} · 人员浏览记录 ${n(byPerson)}`
+  } catch (e: any) {
+    toast.error('加载浏览记录失败: ' + (e?.message ?? ''))
   }
 }
 const createEp = '/api/cms/core/entity/index/create'
