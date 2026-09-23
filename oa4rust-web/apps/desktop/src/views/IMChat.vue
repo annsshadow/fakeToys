@@ -516,16 +516,18 @@ function formatContent(content: string): string {
 async function loadImStats() {
   try {
     // GET message/unread/count + ws/count/person + im/manager/config —— 未读消息数/在线人数/IM 管理配置
-    const [unread, online, cfg] = await Promise.all([
+    // rev272：+ws/list/person/current/node → x_message_ws_session(disconnected_at IS NULL 在线人员清单，区别于 ws/count 计数)
+    const [unread, online, cfg, wsList] = await Promise.all([
       api.get('/api/message/unread/count'),
       api.get('/api/message/assemble/communicate/ws/count/person'),
       api.get('/api/message/assemble/communicate/im/manager/config'),
+      api.get('/api/message/assemble/communicate/ws/list/person/current/node').catch(() => null),
     ])
     const num = (r: any) => {
       const d = (r as any)?.data
       return typeof d === 'number' ? d : (Array.isArray(d) ? d.length : (d?.count ?? 0))
     }
-    toast.success(`未读 ${num(unread)} / 在线 ${num(online)} / IM配置 ${(cfg as any)?.data ? '有' : '无'}`)
+    toast.success(`未读 ${num(unread)} / 在线 ${num(online)} / IM配置 ${(cfg as any)?.data ? '有' : '无'} / 在线清单 ${num(wsList)}`)
   } catch (e: any) {
     toast.error('加载 IM 统计失败: ' + (e?.message ?? ''))
   }
