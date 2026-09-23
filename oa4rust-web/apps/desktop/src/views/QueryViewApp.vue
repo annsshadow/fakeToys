@@ -19,6 +19,7 @@
         <button class="btn-primary" @click="loadTables">数据表</button>
         <button class="btn-primary" @click="loadTableRowsCursor">表行游标</button>
         <button class="btn-primary" @click="loadQueryViewExtras">计数/导入/检索</button>
+        <button class="btn-primary" @click="loadQueryViewCursors">表行游标/视图</button>
       </div>
       <div v-if="queryListText" class="qv-note">{{ queryListText }}</div>
       <div v-if="tableText" class="qv-note">{{ tableText }}</div>
@@ -277,6 +278,24 @@ async function loadQueryViewExtras() {
     tableText.value = `过滤计数 ${cv} · 导入记录 ${(rec as any)?.data ? '有' : '无'}（状态 ${(recStatus as any)?.data?.status ?? '—'}）· 统计 ${(stat as any)?.data ? '有' : '无'} · 查询检索 ${nn(keySearch)} · 单行 ${(rowById as any)?.data ? '命中' : '未命中'}`
   } catch (e: any) {
     toast.error('加载查询表面扩展失败: ' + (e?.message ?? ''))
+  }
+}
+// rev253：queryview 表行游标(id 全表/表内 next/prev)·行过滤·视图按flag+query 5 条真实 distinct 读路由（arity 已核，全 x_query_table_data 各 WHERE/方向 与 x_query_view）
+async function loadQueryViewCursors() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const flag = '0'
+  try {
+    const [idNext, rowWhere, rowPrev, viewByFlag, rowNext] = await Promise.all([
+      s(api.get(`/api/queryview/table/list/${encodeURIComponent(flag)}/next/20`)),
+      s(api.get(`/api/queryview/table/list/${encodeURIComponent(flag)}/row/select/where/a`)),
+      s(api.get(`/api/queryview/table/list/row/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}/prev/20`)),
+      s(api.get(`/api/queryview/view/flag/${encodeURIComponent(flag)}/query/${encodeURIComponent(flag)}`)),
+      s(api.get(`/api/queryview/table/list/${encodeURIComponent(flag)}/row/${encodeURIComponent(flag)}/next/20`)),
+    ])
+    const n = (x: any) => (Array.isArray((x as any)?.data) ? (x as any).data.length : 0)
+    tableText.value = `全表后翻 ${n(idNext)} · 行过滤 ${n(rowWhere)} · 表内前翻 ${n(rowPrev)} · 视图(flag+query) ${(viewByFlag as any)?.data ? '命中' : '未命中'} · 行后翻 ${n(rowNext)}`
+  } catch (e: any) {
+    toast.error('加载 queryview 游标失败: ' + (e?.message ?? ''))
   }
 }
 async function loadViews() {
