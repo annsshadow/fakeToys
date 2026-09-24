@@ -106,6 +106,21 @@
         <button class="btn-refresh" @click="dataWrite('dictEngineSet')">字典建(引擎)</button>
         <button class="btn-refresh" @click="dataWrite('dictEnginePut')">字典改(引擎)</button>
         <button class="btn-refresh" @click="dataWrite('dictEngineDel')">字典删(引擎)</button>
+        <button class="btn-refresh" @click="pdDesigner2('appdictPaging')">应用字典分页</button>
+        <button class="btn-refresh" @click="pdDesigner2('fileByApp')">按应用文件</button>
+        <button class="btn-refresh" @click="pdDesigner2('fileDownload')">下载设计器文件</button>
+        <button class="btn-refresh" @click="pdDesigner2('procVersion')">流程版本详情</button>
+        <button class="btn-refresh" @click="pdDesigner2('procProjection')">流程投影执行</button>
+        <button class="btn-refresh" @click="pdDesigner2('procDisable')">停用流程</button>
+        <button class="btn-refresh" @click="pdDesigner2('procEnable')">启用流程</button>
+        <button class="btn-refresh" @click="pdDesigner2('procUpgradeAll')">升级全部流程</button>
+        <button class="btn-refresh" @click="pdDesigner2('procUpgrade')">升级流程</button>
+        <button class="btn-refresh" @click="pdDesigner2('mappingExecute')">执行映射</button>
+        <button class="btn-refresh" @click="pdDesigner2('mergePlan')">合并计划</button>
+        <button class="btn-refresh" @click="pdDesigner2('appEditionDisable')">停应用版次</button>
+        <button class="btn-refresh" @click="pdDesigner2('appEdition')">应用版次</button>
+        <button class="btn-refresh" @click="pdDesigner2('itemAccessDel')">删项权限</button>
+        <button class="btn-refresh" @click="pdDesigner2('designerDelete')">删设计器对象</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
@@ -675,6 +690,29 @@ async function dataWrite(op: string) {
       }
     }
     toast.success('数据操作已提交')
+  } catch (err: any) {
+    toast.error('操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev371：流程设计器 应用字典分页/文件/版本/投影读 + 流程启停/升级/合并计划/版次/项权限删/设计器删 真实路由（避 mergeitemplan 三参 arity trap；enable/disable 择 {id}/... 一式）
+async function pdDesigner2(op: string) {
+  try {
+    if (op === 'appdictPaging') await api.post('/api/processplatform/assemble/designer/applicationdict/list/paging/1/size/20', {})
+    else if (op === 'fileByApp') { const f = prompt('文件 flag:', '') || ''; const af = prompt('应用 flag:', '') || ''; await api.get(`/api/processplatform/assemble/designer/file/${encodeURIComponent(f)}/application/${encodeURIComponent(af)}`) }
+    else if (op === 'fileDownload') { const id = prompt('文件 ID:', '') || ''; await api.get(`/api/processplatform/assemble/designer/file/download/${encodeURIComponent(id)}`) }
+    else if (op === 'procVersion') { const id = prompt('流程版本 ID:', '') || ''; await api.get(`/api/processplatform/assemble/designer/processversion/${encodeURIComponent(id)}`) }
+    else if (op === 'procProjection') { const id = prompt('流程 ID:', '') || ''; await api.get(`/api/processplatform/assemble/designer/process/execute/projection/${encodeURIComponent(id)}`) }
+    else if (op === 'procDisable') { const id = prompt('流程 ID:', '') || ''; await api.get(`/api/processplatform/assemble/designer/process/${encodeURIComponent(id)}/disable`) }
+    else if (op === 'procEnable') { const id = prompt('流程 ID:', '') || ''; await api.get(`/api/processplatform/assemble/designer/process/${encodeURIComponent(id)}/enable`) }
+    else if (op === 'procUpgradeAll') await api.get('/api/processplatform/assemble/designer/process/upgrade/all')
+    else if (op === 'procUpgrade') { const id = prompt('流程 ID:', '') || ''; await api.get(`/api/processplatform/assemble/designer/process/upgrade/${encodeURIComponent(id)}`) }
+    else if (op === 'mappingExecute') { const flag = prompt('映射 flag:', '') || ''; await api.get(`/api/processplatform/assemble/designer/mapping/${encodeURIComponent(flag)}/execute`) }
+    else if (op === 'mergePlan') { const id = prompt('合并计划 ID:', '') || ''; await api.post(`/api/processplatform/assemble/designer/mergeitemplan/${encodeURIComponent(id)}`, {}) }
+    else if (op === 'appEditionDisable') { const id = prompt('应用 ID:', '') || ''; await api.post(`/api/processplatform/assemble/designer/process/application/disable/edition/${encodeURIComponent(id)}`, {}) }
+    else if (op === 'appEdition') { const id = prompt('应用 ID:', '') || ''; await api.post(`/api/processplatform/assemble/designer/process/application/edition/edition/${encodeURIComponent(id)}`, {}) }
+    else if (op === 'itemAccessDel') { const pid = prompt('流程 ID:', '') || ''; if (!(await confirmMsg('确定删除该流程项权限？'))) return; await api.post(`/api/processplatform/assemble/designer/item/access/delete/process/path/path/${encodeURIComponent(pid)}`, {}) }
+    else { const id = prompt('要删除的设计器对象 ID:', '') || ''; if (!(await confirmMsg('确定删除该设计器对象？'))) return; await api.post(`/api/processplatform/assemble/designer/delete/${encodeURIComponent(id)}`, {}) }
+    toast.success('流程设计器操作已提交')
   } catch (err: any) {
     toast.error('操作失败: ' + (err?.message ?? ''))
   }
