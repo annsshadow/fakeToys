@@ -807,6 +807,13 @@ async function loadSurfaceReadB(): Promise<void> {
       s(api.get(`/api/processplatform/assemble/surface/script/application/imported/${flag}/${applicationFlag}`)),
       s(api.get(`/api/processplatform/assemble/surface/script/${flag}/application/${applicationFlag}/imported`)),
       // __SURFACE_B_PLACEHOLDER__
+      // rev458：v2 游标创建/过滤列表 待办·已办·在办 6 条真实读（*_list_*_id_*_count Path<(String,i64)> pool-only，路由 {id}/{count} 与 handler arity 一致；create/next/prev/filter 字面段唯一避 matcher 误配）
+      s(api.post(`/api/processplatform/assemble/surface/task/v2/list/create/${id}/next/${count}`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/task/v2/list/create/${id}/prev/${count}`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/taskcompleted/list/${id}/next/${count}/filter`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/taskcompleted/list/${id}/prev/${count}/filter`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/work/v2/list/${id}/next/${count}`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/work/v2/list/${id}/prev/${count}`, {})),
       // rev451：按应用统计 待办/已办/在办/已完成 数量 4 条真实读（*_list_count_application_applicationFlag_process Path<String>，路由 {applicationFlag} + 字面 process，arity 一致）
       s(api.get(`/api/processplatform/assemble/surface/task/list/count/application/${applicationFlag}/process`)),
       s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/count/application/${applicationFlag}/process`)),
