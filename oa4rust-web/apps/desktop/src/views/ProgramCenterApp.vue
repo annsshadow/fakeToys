@@ -236,6 +236,9 @@
           <button class="btn-sm" @click="pcU16">注册应用/输出选择/调用器改</button>
           <button class="btn-sm" @click="pcU17">部署资源/企微注册/Agent文件</button>
           <button class="btn-sm" @click="pcU18">触发调度/公众号菜单核对</button>
+          <button class="btn-sm" @click="pcU19('appstyle')">存应用样式配置</button>
+          <button class="btn-sm" @click="pcU19('runtime')">存运行时配置</button>
+          <button class="btn-sm" @click="pcU19('moduleOutput')">模块输出同步</button>
           <div v-if="pcU4Text" class="app-meta">{{ pcU4Text }}</div>
         </div>
         <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
@@ -1538,6 +1541,29 @@ async function pcU18() {
     await api.post('/api/program_center/schedule/schedule/fire', sid.trim() ? { id: sid } : {})
     const r: any = await s(api.post('/api/program_center/mpweixin/check', {}))
     toast.success(`调度已触发 · 公众号菜单 ${(r as any)?.data?.menus ?? '—'}`)
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev448：程序中心 配置/模块写域 3 条真实路由——PUT appstyle[u3_appstyle_put session+Json→u2_config_domain_put 写 appstyle]·POST config/open/run/time/config[u3_config_open_run_time_post 写 open.runtime]·PUT module/output[u3_module_output_put pool-only module 同步 output]，均 Json/pool 无 Path 字面量匹配
+async function pcU19(op: string) {
+  try {
+    if (op === 'appstyle') {
+      const raw = prompt('appstyle 配置(JSON):', '{}') || '{}'
+      let data: any
+      try { data = JSON.parse(raw) } catch { toast.error('JSON 解析失败'); return }
+      await api.put('/api/program_center/appstyle', data)
+      toast.success('应用样式配置已保存')
+    } else if (op === 'runtime') {
+      const raw = prompt('运行时配置(JSON):', '{}') || '{}'
+      let data: any
+      try { data = JSON.parse(raw) } catch { toast.error('JSON 解析失败'); return }
+      await api.post('/api/program_center/config/open/run/time/config', data)
+      toast.success('运行时配置已保存')
+    } else {
+      await api.put('/api/program_center/module/output', {})
+      toast.success('模块输出同步已触发')
+    }
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
   }
