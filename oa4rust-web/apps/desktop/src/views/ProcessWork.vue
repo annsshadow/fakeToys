@@ -219,6 +219,26 @@
             <button class="btn-sm" @click="engineReadAction('replace')">待阅接替</button>
             <button class="btn-sm" @click="engineReadAction('reset')">待阅重置</button>
             <button class="btn-sm" @click="engineReadAction('delete')">删待阅</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('workStart')">启动工作</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('workComplete')">完成工作</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('workProcessing')">工作处理中</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('workTerminate')">终止工作</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('workRetract')">撤回工作</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('taskClaim')">认领任务</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('taskTransfer')">转交任务</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('timerCancel')">取消定时器</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('attCopy')">复制附件</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('attEditText')">改附件文本</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('snapRestore')">恢复快照</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('v2Goback')">v2退回</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('v2Reroute')">v2改路由</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('v2Rollback')">v2回滚</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('v2AddSplit')">v2分叉追加</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('v3Retract')">v3撤回</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('wcMerge')">已办合并</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('wcRollback')">已办回滚</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('taskPassExpired')">超时通过</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('taskReplace')">任务替换</button>
           </div>
         </section>
 
@@ -1109,6 +1129,40 @@ async function engineAttAction(kind: string): Promise<void> {
     toast.success('附件操作已提交')
   } catch (e: any) {
     toast.error('附件操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev359：流程引擎 REST 式工作/任务生命周期 + v2/v3 双参 + 快照 + 已办合并回滚 + 定时器取消 真实动作（全 Path 参数无 body 或 {}；handler 已核 Path-only；用户触发 prompt+确认）
+async function engineRest(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    const wid = () => encodeURIComponent(prompt('工作 ID:', workId(opened.value ?? {}) || '') || '')
+    const tid = () => encodeURIComponent(prompt('任务 ID:', effectiveTaskId.value || '') || '')
+    if (op === 'workProcessing') await api.put(`/api/work/${wid()}/processing`, {})
+    else if (op === 'workTerminate') { if (!(await confirmMsg('确定终止该工作？'))) return; await api.post(`/api/work/${wid()}/terminate`, {}) }
+    else if (op === 'workRetract') { if (!(await confirmMsg('确定撤回该工作？'))) return; await api.post(`/api/work/${wid()}/retract`, {}) }
+    else if (op === 'workStart') await api.post(`/api/work/${wid()}/start`, {})
+    else if (op === 'workComplete') await api.post(`/api/work/${wid()}/complete`, {})
+    else if (op === 'taskClaim') await api.post(`/api/task/${tid()}/claim`, {})
+    else if (op === 'taskTransfer') { const p = encodeURIComponent(prompt('转交给（人员）:', '') || ''); await api.post(`/api/task/${tid()}/transfer/${p}`, {}) }
+    else if (op === 'timerCancel') { const j = encodeURIComponent(prompt('定时器 job:', '') || ''); await api.post(`/api/processplatform/service/processing/timer/${j}/cancel`, {}) }
+    else if (op === 'attCopy') { const w = wid(); const wi = encodeURIComponent(prompt('目标 workId:', '') || ''); await api.post(`/api/processplatform/service/processing/attachment/copy/${w}/${wi}`, {}) }
+    else if (op === 'attEditText') { const i = encodeURIComponent(prompt('附件 ID:', '') || ''); await api.post(`/api/processplatform/service/processing/attachment/edit/text/${i}`, {}) }
+    else if (op === 'snapRestore') { const i = encodeURIComponent(prompt('快照 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/snap/restore/${i}`) }
+    else if (op === 'v2Goback') { const w = wid(); const i = encodeURIComponent(prompt('活动 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/v2/goback/${w}/${i}`) }
+    else if (op === 'v2Reroute') { const w = wid(); const i = encodeURIComponent(prompt('活动 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/v2/reroute/${w}/${i}`) }
+    else if (op === 'v2Rollback') { const w = wid(); const i = encodeURIComponent(prompt('活动 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/v2/rollback/${w}/${i}`) }
+    else if (op === 'v2AddSplit') { const w = wid(); const i = encodeURIComponent(prompt('活动 ID:', '') || ''); await api.post(`/api/processplatform/service/processing/v2/add/split/${w}/${i}`, {}) }
+    else if (op === 'v3Retract') { const w = wid(); await api.get(`/api/processplatform/service/processing/v3/retract/${w}`) }
+    else if (op === 'wcMerge') { const f = encodeURIComponent(prompt('已办 flag:', '') || ''); await api.post(`/api/processplatform/service/processing/workcompleted/merge/${f}`, {}) }
+    else if (op === 'wcRollback') { const f = encodeURIComponent(prompt('已办 flag:', '') || ''); await api.get(`/api/processplatform/service/processing/workcompleted/rollback/${f}`) }
+    else if (op === 'taskPassExpired') { const i = encodeURIComponent(prompt('任务 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/task/pass/expired/${i}`) }
+    else { const i = encodeURIComponent(prompt('任务 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/task/replace/${i}`) }
+    toast.success('引擎操作已提交')
+  } catch (e: any) {
+    toast.error('引擎操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
   }
 }
 async function engineReadAction(kind: string): Promise<void> {
