@@ -26,6 +26,9 @@
       <button class="sb" @click="loadMeetingOpenRooms">开放会议室</button>
       <button class="sb" @click="addBuilding">+ 楼栋</button>
       <button class="sb" @click="meetingWrite('accept')">接受会议</button>
+      <button class="sb" @click="meetingWrite('mtgCreate')">建会议(根)</button>
+      <button class="sb" @click="meetingWrite('mtgCtrlCreate')">建会议控制</button>
+      <button class="sb" @click="meetingWrite('sysCfgManage')">系统配置(管理)</button>
       <button class="sb" @click="meetingWrite('reject')">拒绝会议</button>
       <button class="sb" @click="meetingWrite('confirmAllow')">确认允许</button>
       <button class="sb" @click="meetingWrite('confirmDeny')">确认拒绝</button>
@@ -680,6 +683,19 @@ async function meetingWrite(op: string) {
     else if (op === 'attDelete') {
       if (!(await confirmMsg('确定删除该附件？'))) return
       await api.delete(`/api/meeting/assemble/control/attachment/${e}`)
+    } else if (op === 'mtgCreate') {
+      const title = prompt('会议主题:', '') || ''
+      const startTime = prompt('开始时间(YYYY-MM-DD HH:mm):', '') || ''
+      const endTime = prompt('结束时间(YYYY-MM-DD HH:mm):', '') || ''
+      await api.post('/api/meeting/create', { title, startTime, endTime })
+    } else if (op === 'mtgCtrlCreate') {
+      const meetingId = prompt('会议 ID:', '') || ''
+      const controlType = prompt('控制类型(如 checkin/record):', '') || ''
+      await api.post('/api/meeting/assemble/control/create', { meetingId, controlType, enabled: true })
+    } else if (op === 'sysCfgManage') {
+      const configKey = prompt('配置项 key:', '') || ''
+      const configValue = prompt('配置值:', '') || ''
+      await api.post('/api/meeting/assemble/control/config/system/config/manage', { configKey, configValue })
     } else await api.put(`/api/meeting/assemble/control/attachment/${e}/update`, {})
     toast.success('会议操作已提交')
   } catch (err: any) {
