@@ -97,6 +97,15 @@
         <button class="btn-refresh" @click="pdEngine('readCompletedDelete')">删已阅2</button>
         <button class="btn-refresh" @click="pdEngine('taskDelete')">删任务</button>
         <button class="btn-refresh" @click="pdEngine('workDelete')">删工作</button>
+        <button class="btn-refresh" @click="dataWrite('workDataCreate')">建工作数据</button>
+        <button class="btn-refresh" @click="dataWrite('workDataDelete')">删工作数据</button>
+        <button class="btn-refresh" @click="dataWrite('wcDataUpdate')">改已办数据</button>
+        <button class="btn-refresh" @click="dataWrite('dictSurfaceSet')">字典建(表面)</button>
+        <button class="btn-refresh" @click="dataWrite('dictSurfacePut')">字典改(表面)</button>
+        <button class="btn-refresh" @click="dataWrite('dictSurfaceDel')">字典删(表面)</button>
+        <button class="btn-refresh" @click="dataWrite('dictEngineSet')">字典建(引擎)</button>
+        <button class="btn-refresh" @click="dataWrite('dictEnginePut')">字典改(引擎)</button>
+        <button class="btn-refresh" @click="dataWrite('dictEngineDel')">字典删(引擎)</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
@@ -634,6 +643,38 @@ async function pdEngine(op: string) {
       await api.delete(`/api/processplatform/service/processing/work/${e}`)
     }
     toast.success('引擎操作已提交')
+  } catch (err: any) {
+    toast.error('操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev352：流程工作数据/应用字典单层数据 建改删 真实写端点（用户触发，shape 已核；仅取 path0 单层，不铺 path1-7 深度扇；全字面量含参数占位）
+async function dataWrite(op: string) {
+  const id = prompt('工作/字典 ID:', '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (op === 'workDataCreate') await api.post(`/api/processplatform/service/processing/data/work/${e}`, {})
+    else if (op === 'workDataDelete') {
+      if (!(await confirmMsg('确定删除该工作数据？'))) return
+      await api.post(`/api/processplatform/service/processing/data/work/${e}/delete`, {})
+    } else if (op === 'wcDataUpdate') await api.put(`/api/processplatform/service/processing/data/workcompleted/${e}`, {})
+    else {
+      const af = prompt('应用 flag:', '') || ''
+      const p0 = prompt('字典键路径:', 'field') || 'field'
+      const af2 = encodeURIComponent(af)
+      const p0e = encodeURIComponent(p0)
+      if (op === 'dictSurfaceSet') await api.post(`/api/processplatform/assemble/surface/applicationdict/${e}/application/${af2}/${p0e}/data`, {})
+      else if (op === 'dictSurfacePut') await api.put(`/api/processplatform/assemble/surface/applicationdict/${e}/application/${af2}/${p0e}/data`, {})
+      else if (op === 'dictSurfaceDel') {
+        if (!(await confirmMsg('确定删除该字典数据？'))) return
+        await api.delete(`/api/processplatform/assemble/surface/applicationdict/${e}/application/${af2}/${p0e}/data`)
+      } else if (op === 'dictEngineSet') await api.post(`/api/processplatform/service/processing/applicationdict/${e}/${p0e}/data`, {})
+      else if (op === 'dictEnginePut') await api.put(`/api/processplatform/service/processing/applicationdict/${e}/${p0e}/data`, {})
+      else {
+        if (!(await confirmMsg('确定删除该字典数据？'))) return
+        await api.delete(`/api/processplatform/service/processing/applicationdict/${e}/${p0e}/data`)
+      }
+    }
+    toast.success('数据操作已提交')
   } catch (err: any) {
     toast.error('操作失败: ' + (err?.message ?? ''))
   }
