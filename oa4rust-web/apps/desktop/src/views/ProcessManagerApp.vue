@@ -75,6 +75,14 @@
         <button class="btn-refresh" @click="psCompleted('workTouch')">触达工作</button>
         <button class="btn-refresh" @click="psCompleted('recordDelete')">删记录</button>
         <button class="btn-refresh" @click="psCompleted('recordJob')">Job记录管理</button>
+        <button class="btn-refresh" @click="pdMisc('projection')">流程投影</button>
+        <button class="btn-refresh" @click="pdMisc('listElement')">元素列举</button>
+        <button class="btn-refresh" @click="pdMisc('upgrade')">流程升级</button>
+        <button class="btn-refresh" @click="pdMisc('mergeEstimate')">合并项估算</button>
+        <button class="btn-refresh" @click="pdMisc('itemAccessDel')">删项权限(精确)</button>
+        <button class="btn-refresh" @click="pdMisc('appDictDel')">删应用字典</button>
+        <button class="btn-refresh" @click="pdMisc('mergeDataApp')">应用合并数据</button>
+        <button class="btn-refresh" @click="pdMisc('mergeDataProc')">流程合并数据</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
@@ -550,6 +558,31 @@ async function psCompleted(op: string) {
       await api.delete(`/api/processplatform/assemble/surface/record/${e}/manage`)
     } else await api.post(`/api/processplatform/assemble/surface/record/job/${e}/manage`, {})
     toast.success('管理操作已提交')
+  } catch (err: any) {
+    toast.error('操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev343：流程设计器 流程投影/元素列举/升级/合并项估算/项权限精删/应用字典删/合并数据 真实写端点（用户触发，shape 已核）
+async function pdMisc(op: string) {
+  const id = prompt('目标 ID/flag:', '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (op === 'projection') await api.post(`/api/processplatform/assemble/designer/process/${e}/execute/projection`, {})
+    else if (op === 'listElement') await api.post(`/api/processplatform/assemble/designer/process/${e}/list/element`, {})
+    else if (op === 'upgrade') {
+      if (!(await confirmMsg('确定升级该流程？'))) return
+      await api.post(`/api/processplatform/assemble/designer/process/${e}/upgrade`, {})
+    } else if (op === 'mergeEstimate') await api.post('/api/processplatform/assemble/designer/mergeitemplan/estimate', {})
+    else if (op === 'itemAccessDel') {
+      const path = prompt('项权限路径:', '') || ''
+      if (!(await confirmMsg('确定删除该项权限？'))) return
+      await api.delete(`/api/processplatform/assemble/designer/item-access/delete/process/${e}/path/${encodeURIComponent(path)}`)
+    } else if (op === 'appDictDel') {
+      if (!(await confirmMsg('确定删除该应用字典？'))) return
+      await api.delete(`/api/processplatform/assemble/designer/applicationdict/${e}`)
+    } else if (op === 'mergeDataApp') await api.post(`/api/processplatform/assemble/designer/workcompleted/application/merge/data/${e}`, {})
+    else await api.post(`/api/processplatform/assemble/designer/workcompleted/process/merge/data/${e}`, {})
+    toast.success('设计器操作已提交')
   } catch (err: any) {
     toast.error('操作失败: ' + (err?.message ?? ''))
   }
