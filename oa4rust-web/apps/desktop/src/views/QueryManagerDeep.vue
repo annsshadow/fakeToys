@@ -54,6 +54,14 @@
         <button class="btn btn-outline" @click="qdTableRow('delete')">表行删除</button>
         <button class="btn btn-outline" @click="qdTableRow('save')">表行保存</button>
         <button class="btn btn-outline" @click="qdTableRow('deleteAll')">表行清空</button>
+        <button class="btn btn-outline" @click="qdMisc('search')">设计器检索</button>
+        <button class="btn btn-outline" @click="qdMisc('searchV2')">检索V2</button>
+        <button class="btn btn-outline" @click="qdMisc('tableExecute')">执行表</button>
+        <button class="btn btn-outline" @click="qdMisc('statSimulate')">统计模拟</button>
+        <button class="btn btn-outline" @click="qdMisc('queryIcon')">查询图标</button>
+        <button class="btn btn-outline" @click="qdMisc('iconSet')">设图标</button>
+        <button class="btn btn-outline" @click="qdMisc('outputSelect')">输出选择</button>
+        <button class="btn btn-outline" @click="qdMisc('statementList')">语句列举</button>
       </div>
     </div>
 
@@ -542,6 +550,35 @@ async function qdPerm(kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 
     toast.success(`${kind} 权限已设置`)
   } catch (e: any) {
     toast.error(`设置${kind}权限失败: ` + (e?.message ?? ''))
+  }
+}
+// rev334：查询设计器 检索/表执行/统计模拟/图标/输出选择/语句列举 真实写端点（用户触发，shape 已核；避 neural/reset 双参 arity trap）
+async function qdMisc(op: string) {
+  try {
+    if (op === 'search') await api.post('/api/query/assemble/designer/search', {})
+    else if (op === 'searchV2') await api.post('/api/query/assemble/designer/designer/search', { key: '' })
+    else if (op === 'tableExecute') {
+      const flag = prompt('数据表 flag:', '') || ''
+      await api.post(`/api/query/assemble/designer/table/execute/${encodeURIComponent(flag)}`, {})
+    } else if (op === 'statSimulate') {
+      const id = prompt('统计 ID:', '') || ''
+      await api.put(`/api/query/assemble/designer/stat/${encodeURIComponent(id)}/simulate`, {})
+    } else if (op === 'queryIcon') {
+      const flag = prompt('查询 flag:', '') || ''
+      await api.put(`/api/query/assemble/designer/query/${encodeURIComponent(flag)}/icon`, {})
+    } else if (op === 'iconSet') {
+      const flag = prompt('查询 flag:', '') || ''
+      await api.put(`/api/query/assemble/designer/icon/set/${encodeURIComponent(flag)}`, {})
+    } else if (op === 'outputSelect') {
+      const flag = prompt('输出 flag:', '') || ''
+      await api.put(`/api/query/assemble/designer/output/${encodeURIComponent(flag)}/select`, {})
+    } else {
+      const qf = prompt('查询 flag:', '') || ''
+      await api.post(`/api/query/assemble/designer/statement/list/query/${encodeURIComponent(qf)}`, {})
+    }
+    toast.success('查询设计器操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
   }
 }
 async function qdInput(op: 'compare' | 'cover' | 'create' | 'prepare/cover' | 'prepare/create') {
