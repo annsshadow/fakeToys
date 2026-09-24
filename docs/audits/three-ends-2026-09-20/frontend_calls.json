@@ -7764,7 +7764,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/JPushApp.vue",
-    "line": 80,
+    "line": 92,
     "method": "GET",
     "raw": "/api/jpush_assemble_control/device/list/jpush",
     "path": "/api/jpush_assemble_control/device/list/jpush",
@@ -7774,7 +7774,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/JPushApp.vue",
-    "line": 92,
+    "line": 104,
     "method": "GET",
     "raw": "/api/jpush/template/list",
     "path": "/api/jpush/template/list",
@@ -7784,7 +7784,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/JPushApp.vue",
-    "line": 112,
+    "line": 124,
     "method": "GET",
     "raw": "/api/jpush/device/${encodeURIComponent(did)}",
     "path": "/api/jpush/device/{}",
@@ -7794,7 +7794,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/JPushApp.vue",
-    "line": 113,
+    "line": 125,
     "method": "GET",
     "raw": "/api/jpush/template/${encodeURIComponent(tid)}",
     "path": "/api/jpush/template/{}",
@@ -7804,7 +7804,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/JPushApp.vue",
-    "line": 114,
+    "line": 126,
     "method": "GET",
     "raw": "/api/jpush/core/entity/device/${encodeURIComponent(did)}",
     "path": "/api/jpush/core/entity/device/{}",
@@ -7814,7 +7814,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/JPushApp.vue",
-    "line": 115,
+    "line": 127,
     "method": "GET",
     "raw": "/api/jpush/core/entity/template/${encodeURIComponent(tid)}",
     "path": "/api/jpush/core/entity/template/{}",
@@ -7824,7 +7824,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/JPushApp.vue",
-    "line": 117,
+    "line": 129,
     "method": "GET",
     "raw": "/api/jpush/device/list",
     "path": "/api/jpush/device/list",
@@ -7834,7 +7834,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/JPushApp.vue",
-    "line": 118,
+    "line": 130,
     "method": "GET",
     "raw": "/api/jpush_assemble_control/list/jpushs",
     "path": "/api/jpush_assemble_control/list/jpushs",
@@ -7844,7 +7844,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/JPushApp.vue",
-    "line": 119,
+    "line": 131,
     "method": "GET",
     "raw": "/api/jpush_assemble_control/get/jpush/${encodeURIComponent(did)}",
     "path": "/api/jpush_assemble_control/get/jpush/{}",
@@ -7854,7 +7854,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/JPushApp.vue",
-    "line": 121,
+    "line": 133,
     "method": "GET",
     "raw": "/api/jpush/get/${encodeURIComponent(did)}",
     "path": "/api/jpush/get/{}",
@@ -7864,7 +7864,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/JPushApp.vue",
-    "line": 123,
+    "line": 135,
     "method": "GET",
     "raw": "/api/jpush/list",
     "path": "/api/jpush/list",
@@ -7874,7 +7874,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/JPushApp.vue",
-    "line": 125,
+    "line": 137,
     "method": "GET",
     "raw": "/api/jpush/core/entity/device/list",
     "path": "/api/jpush/core/entity/device/list",
@@ -7884,7 +7884,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/JPushApp.vue",
-    "line": 126,
+    "line": 138,
     "method": "GET",
     "raw": "/api/jpush/core/entity/template/list",
     "path": "/api/jpush/core/entity/template/list",
@@ -7894,7 +7894,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/JPushApp.vue",
-    "line": 128,
+    "line": 140,
     "method": "GET",
     "raw": "/api/jpush/assemble/control/config",
     "path": "/api/jpush/assemble/control/config",
@@ -7904,7 +7904,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/JPushApp.vue",
-    "line": 129,
+    "line": 141,
     "method": "GET",
     "raw": "/api/jpush_assemble_control/get/control/config",
     "path": "/api/jpush_assemble_control/get/control/config",
@@ -7914,7 +7914,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/JPushApp.vue",
-    "line": 130,
+    "line": 142,
     "method": "GET",
     "raw": "/api/jpush_assemble_control/list/control/apps",
     "path": "/api/jpush_assemble_control/list/control/apps",
@@ -7924,7 +7924,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/JPushApp.vue",
-    "line": 131,
+    "line": 143,
     "method": "GET",
     "raw": "/api/jpush_assemble_control/device/check/${dn}/${dt}/${pt}",
     "path": "/api/jpush_assemble_control/device/check/{}/{}/{}",
@@ -7934,7 +7934,117 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/JPushApp.vue",
-    "line": 141,
+    "line": 155,
+    "method": "POST",
+    "raw": "/api/jpush/create",
+    "path": "/api/jpush/create",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/JPushApp.vue",
+    "line": 158,
+    "method": "POST",
+    "raw": "/api/jpush/save/${encodeURIComponent(id)}",
+    "path": "/api/jpush/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/JPushApp.vue",
+    "line": 162,
+    "method": "POST",
+    "raw": "/api/jpush/delete/${encodeURIComponent(id)}",
+    "path": "/api/jpush/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/JPushApp.vue",
+    "line": 165,
+    "method": "POST",
+    "raw": "/api/jpush/device/create",
+    "path": "/api/jpush/device/create",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/JPushApp.vue",
+    "line": 168,
+    "method": "POST",
+    "raw": "/api/jpush_assemble_control/device/bind",
+    "path": "/api/jpush_assemble_control/device/bind",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/JPushApp.vue",
+    "line": 171,
+    "method": "POST",
+    "raw": "/api/jpush_assemble_control/device/admin/unbind/all/person",
+    "path": "/api/jpush_assemble_control/device/admin/unbind/all/person",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/JPushApp.vue",
+    "line": 176,
+    "method": "DELETE",
+    "raw": "/api/jpush_assemble_control/device/unbind/${encodeURIComponent(dn)}/${encodeURIComponent(dt)}",
+    "path": "/api/jpush_assemble_control/device/unbind/{}/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/JPushApp.vue",
+    "line": 178,
+    "method": "POST",
+    "raw": "/api/jpush_assemble_control/message/send",
+    "path": "/api/jpush_assemble_control/message/send",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/JPushApp.vue",
+    "line": 180,
+    "method": "POST",
+    "raw": "/api/jpush_assemble_control/message/test/send",
+    "path": "/api/jpush_assemble_control/message/test/send",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/JPushApp.vue",
+    "line": 183,
+    "method": "POST",
+    "raw": "/api/jpush/core/entity/device/create",
+    "path": "/api/jpush/core/entity/device/create",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/JPushApp.vue",
+    "line": 187,
+    "method": "DELETE",
+    "raw": "/api/jpush/core/entity/device/${encodeURIComponent(id)}",
+    "path": "/api/jpush/core/entity/device/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/JPushApp.vue",
+    "line": 198,
     "method": "DELETE",
     "raw": "/api/jpush/core/entity/device/${d.id}",
     "path": "/api/jpush/core/entity/device/{}",

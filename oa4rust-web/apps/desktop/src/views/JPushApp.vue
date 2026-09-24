@@ -12,6 +12,17 @@
         <button :class="{active:tab==='device'}" @click="tab='device'">设备管理</button>
         <button :class="{active:tab==='template'}" @click="tab='template'">推送模板</button>
         <button @click="loadJpushEntities">实体明细</button>
+        <button @click="jpushWrite('jpushCreate')">建推送</button>
+        <button @click="jpushWrite('jpushSave')">存推送</button>
+        <button @click="jpushWrite('jpushDelete')">删推送</button>
+        <button @click="jpushWrite('deviceCreate')">建设备</button>
+        <button @click="jpushWrite('deviceBind')">绑设备</button>
+        <button @click="jpushWrite('deviceUnbind')">解绑设备</button>
+        <button @click="jpushWrite('deviceUnbindAll')">解绑全部</button>
+        <button @click="jpushWrite('messageSend')">发送消息</button>
+        <button @click="jpushWrite('messageTest')">测试发送</button>
+        <button @click="jpushWrite('coreDeviceCreate')">建实体设备</button>
+        <button @click="jpushWrite('coreDeviceDelete')">删实体设备</button>
         <span v-if="entitiesText" class="subtitle">{{ entitiesText }}</span>
       </div>
       <div v-if="tab==='device'" class="tab-content">
@@ -60,6 +71,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
+import { confirmMsg, toast } from '../utils/toast'
 
 type Tab = 'device' | 'template'
 const tab = ref<Tab>('device')
@@ -133,6 +145,51 @@ async function loadJpushEntities() {
   const hit = (r: any) => ((r as any)?.data?.id ? '命中' : '未命中')
   const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
   entitiesText.value = `设备详情 ${hit(dGet)}（原生）/ ${hit(coreDevGet)}（实体）· 模板详情 ${hit(tGet)}（原生）/ ${hit(coreTplGet)}（实体）· 设备清单 ${n(devList)} · 推送清单 ${n(jpushList)} · 推送详情 ${hit(jpushGet)}`
+}
+// rev339：JPush 推送/设备/消息 真实写端点（用户触发，shape 已核；避 autoquery-guards 禁的 update/control/config 路径）
+async function jpushWrite(op: string) {
+  try {
+    if (op === 'jpushCreate') {
+      const title = prompt('推送标题:', '') || ''
+      const content = prompt('推送内容:', '') || ''
+      await api.post('/api/jpush/create', { title, content })
+    } else if (op === 'jpushSave') {
+      const id = prompt('推送 ID:', '') || ''
+      await api.post(`/api/jpush/save/${encodeURIComponent(id)}`, { title: '更新推送' })
+    } else if (op === 'jpushDelete') {
+      const id = prompt('要删除的推送 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该推送？'))) return
+      await api.post(`/api/jpush/delete/${encodeURIComponent(id)}`, {})
+    } else if (op === 'deviceCreate') {
+      const name = prompt('设备名称:', '') || ''
+      await api.post('/api/jpush/device/create', { deviceName: name })
+    } else if (op === 'deviceBind') {
+      const name = prompt('绑定设备名:', '') || ''
+      await api.post('/api/jpush_assemble_control/device/bind', { deviceName: name })
+    } else if (op === 'deviceUnbindAll') {
+      if (!(await confirmMsg('确定解绑该人全部设备？'))) return
+      await api.post('/api/jpush_assemble_control/device/admin/unbind/all/person', {})
+    } else if (op === 'deviceUnbind') {
+      const dn = prompt('设备名:', '') || ''
+      const dt = prompt('设备类型:', '') || ''
+      if (!(await confirmMsg('确定解绑该设备？'))) return
+      await api.delete(`/api/jpush_assemble_control/device/unbind/${encodeURIComponent(dn)}/${encodeURIComponent(dt)}`)
+    } else if (op === 'messageSend') {
+      await api.post('/api/jpush_assemble_control/message/send', {})
+    } else if (op === 'messageTest') {
+      await api.post('/api/jpush_assemble_control/message/test/send', {})
+    } else if (op === 'coreDeviceCreate') {
+      const name = prompt('实体设备名:', '') || ''
+      await api.post('/api/jpush/core/entity/device/create', { deviceName: name })
+    } else {
+      const id = prompt('要删除的实体设备 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该实体设备？'))) return
+      await api.delete(`/api/jpush/core/entity/device/${encodeURIComponent(id)}`)
+    }
+    toast.success('推送操作已提交')
+  } catch (e: any) {
+    toast.error('推送操作失败: ' + (e?.message ?? ''))
+  }
 }
 
 async function delDevice(d: any) {
