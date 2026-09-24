@@ -1223,6 +1223,62 @@ class TestDatasetAggregate:
         assert response.status_code == 200, response.text
         assert response.json()["aggregated_count"] == 3
 
+    def test_weighted_without_target_size_uses_the_default(self, tools_env):
+        """省略可选的 `target_size` 必须回落到默认 100，而不是炸
+
+        `AggregateRequest.target_size` 是 `Optional[int] = None`，路由把它原样
+        塞进 `aggregate(..., target_size=...)`。缺陷态：`kwargs.get("target_size",
+        100)` 拿到的是**存在的键 + None 值**，于是 `int(None * 占比)` 抛裸
+        TypeError → **500**。用户什么也没填，反而拿不到结果。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/aggregate",
+            json={
+                "datasets": {"a": str(tools_env.data)},
+                "output_file": str(tools_env.out),
+                "strategy": "weighted",
+            },
+        )
+        assert response.status_code == 200, response.text
+        # 默认 100 的配额大于单源条数，5 条全取；weighted 内部按 key 去重 → 4 条
+        assert response.json()["aggregated_count"] == 4
+
+    def test_negative_target_size_is_a_param_error_naming_the_knob(self, tools_env):
+        """`target_size=-1` 必须 400 并指名参数
+
+        缺陷态：实测 -1 与 -50 都是 **200 + `aggregated_count: 0`** ——
+        与「三个源都是空的」同形，调用方看不出是自己填的参数坏了。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/aggregate",
+            json={
+                "datasets": {"a": str(tools_env.data)},
+                "output_file": str(tools_env.out),
+                "strategy": "weighted",
+                "target_size": -1,
+            },
+        )
+        assert response.status_code == 400, response.text
+        assert "target_size" in response.json()["detail"]
+        assert not tools_env.out.exists()
+
+    def test_zero_target_size_delivers_an_empty_file(self, tools_env):
+        """0 条是合法请求：「只要源计数，不要条目」"""
+        response = tools_env.client.post(
+            "/api/dataset/aggregate",
+            json={
+                "datasets": {"a": str(tools_env.data)},
+                "output_file": str(tools_env.out),
+                "strategy": "weighted",
+                "target_size": 0,
+            },
+        )
+        assert response.status_code == 200, response.text
+        payload = response.json()
+        assert payload["aggregated_count"] == 0
+        assert payload["source_counts"] == {"a": len(ITEMS)}
+        assert _read_json(tools_env.out) == []
+
     def test_empty_datasets_rejected(self, tools_env):
         """空 datasets 必须 400"""
         response = tools_env.client.post(
@@ -1515,6 +1571,41 @@ class TestSystemStream:
         assert payload["total_input"] == len(ITEMS)
         assert payload["total_output"] == len(ITEMS)
         assert payload["processed"] == len(ITEMS)
+
+    @pytest.mark.parametrize("chunk_size", [0, -1])
+    def test_out_of_range_chunk_size_is_a_param_error_naming_the_knob(self, tools_env, chunk_size):
+        """`chunk_size` 是步长不是条数：0 与 -1 都必须 400，且不得留下产物
+
+        缺陷态实测（真实 6902 条数据集）：0 与 -1 都被 `len(chunk) >= size` 读成
+        「步长 1」，7 块变 6902 块，端到端 64.0 ms → 103.2 ms（+61%），HTTP 侧
+        仍是 200 且逐条结果一模一样 —— 纯静默的性能塌陷，没有任何信号。
+        """
+        response = tools_env.client.post(
+            "/api/system/stream",
+            json={
+                "input_file": str(tools_env.jsonl),
+                "output_file": str(tools_env.out),
+                "operation": "none",
+                "chunk_size": chunk_size,
+            },
+        )
+        assert response.status_code == 400, response.text
+        assert "chunk_size" in response.json()["detail"]
+        assert not tools_env.out.exists()
+
+    def test_smallest_legal_chunk_size_still_copies_everything(self, tools_env):
+        """反向护栏：下界 1 不得把「逐条切块」一起拒掉"""
+        response = tools_env.client.post(
+            "/api/system/stream",
+            json={
+                "input_file": str(tools_env.jsonl),
+                "output_file": str(tools_env.out),
+                "operation": "none",
+                "chunk_size": 1,
+            },
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["total_output"] == len(ITEMS)
 
     def test_dedup_operation_drops_duplicate(self, tools_env):
         """去重：5 条里有一对重复 → 4 条"""
