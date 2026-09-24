@@ -820,6 +820,9 @@ async function loadSurfaceReadB(): Promise<void> {
       s(api.get(`/api/processplatform/assemble/surface/taskcompleted/press/work/${id}`)),
       s(api.get(`/api/processplatform/assemble/surface/anonymous/task/count/${credential}`)),
       s(api.get(`/api/processplatform/assemble/surface/anonymous/read/count/${credential}`)),
+      // rev461：任务处理态/神经处理态 2 条真实读（task_id_processing·_neural handler 体为 SELECT xid/xjob 纯读，pool+Path<String> arity 一致，POST 空体；字面尾段 processing/neural 唯一）
+      s(api.post(`/api/processplatform/assemble/surface/task/${id}/processing`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/task/${id}/processing/neural`, {})),
       // rev451：按应用统计 待办/已办/在办/已完成 数量 4 条真实读（*_list_count_application_applicationFlag_process Path<String>，路由 {applicationFlag} + 字面 process，arity 一致）
       s(api.get(`/api/processplatform/assemble/surface/task/list/count/application/${applicationFlag}/process`)),
       s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/count/application/${applicationFlag}/process`)),
