@@ -8480,7 +8480,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 272,
+    "line": 284,
     "method": "GET",
     "raw": "/api/organization/assemble/authentication/identity/${encodeURIComponent(uid)}",
     "path": "/api/organization/assemble/authentication/identity/{}",
@@ -8493,7 +8493,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 273,
+    "line": 285,
     "method": "GET",
     "raw": "/api/organization/assemble/authentication/person/${encodeURIComponent(uid)}/icon",
     "path": "/api/organization/assemble/authentication/person/{}/icon",
@@ -8506,7 +8506,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 293,
+    "line": 305,
     "method": "GET",
     "raw": "/api/person/icon/${encodeURIComponent(uid)}",
     "path": "/api/person/icon/{}",
@@ -8519,7 +8519,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 294,
+    "line": 306,
     "method": "GET",
     "raw": "/api/person/signature/list/person/${encodeURIComponent(uid)}",
     "path": "/api/person/signature/list/person/{}",
@@ -8532,7 +8532,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 295,
+    "line": 307,
     "method": "GET",
     "raw": "/api/person/definition/${encodeURIComponent(uid)}",
     "path": "/api/person/definition/{}",
@@ -8545,7 +8545,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 296,
+    "line": 308,
     "method": "GET",
     "raw": "/api/person/custom/${encodeURIComponent(uid)}",
     "path": "/api/person/custom/{}",
@@ -8558,7 +8558,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 299,
+    "line": 311,
     "method": "GET",
     "raw": "/api/person/empower/list/person/${encodeURIComponent(uid)}",
     "path": "/api/person/empower/list/person/{}",
@@ -8571,7 +8571,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 317,
+    "line": 329,
     "method": "GET",
     "raw": "/api/person/custom/manager/person/${encodeURIComponent(uid)}/name/${encodeURIComponent(cfgName)}",
     "path": "/api/person/custom/manager/person/{}/name/{}",
@@ -8584,7 +8584,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 321,
+    "line": 333,
     "method": "GET",
     "raw": "/api/personal/detail/${encodeURIComponent(uid)}",
     "path": "/api/personal/detail/{}",
@@ -8597,7 +8597,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 322,
+    "line": 334,
     "method": "GET",
     "raw": "/api/icon/${encodeURIComponent(uid)}",
     "path": "/api/icon/{}",
@@ -8610,7 +8610,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 340,
+    "line": 352,
     "method": "GET",
     "raw": "/api/person/regist/check/name/${encodeURIComponent('admin')}",
     "path": "/api/person/regist/check/name/{}",
@@ -8623,7 +8623,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 341,
+    "line": 353,
     "method": "GET",
     "raw": "/api/person/regist/check/mobile/${encodeURIComponent('13800000000')}",
     "path": "/api/person/regist/check/mobile/{}",
@@ -8636,7 +8636,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 342,
+    "line": 354,
     "method": "GET",
     "raw": "/api/person/regist/check/email/${encodeURIComponent('a@b.c')}",
     "path": "/api/person/regist/check/email/{}",
@@ -8649,7 +8649,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 386,
+    "line": 398,
     "method": "GET",
     "raw": "/api/person/empower/${encodeURIComponent(e.id)}/enable",
     "path": "/api/person/empower/{}/enable",
@@ -8662,7 +8662,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 387,
+    "line": 399,
     "method": "GET",
     "raw": "/api/person/empower/${encodeURIComponent(e.id)}/disable",
     "path": "/api/person/empower/{}/disable",
@@ -8670,6 +8670,58 @@
     "ambiguous": false,
     "hit": "/api/person/empower/{id}/disable",
     "hit_crate": "empower",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/Personal.vue",
+    "line": 416,
+    "method": "GET",
+    "raw": "/api/person/empower/${encodeURIComponent(id)}",
+    "path": "/api/person/empower/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/person/empower/{id}",
+    "hit_crate": "empower",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/Personal.vue",
+    "line": 419,
+    "method": "PUT",
+    "raw": "/api/person/empower/${encodeURIComponent(id)}",
+    "path": "/api/person/empower/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/person/empower/{id}",
+    "hit_crate": "empower",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/Personal.vue",
+    "line": 423,
+    "method": "DELETE",
+    "raw": "/api/person/empower/${encodeURIComponent(id)}",
+    "path": "/api/person/empower/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/person/empower/{id}",
+    "hit_crate": "empower",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/Personal.vue",
+    "line": 439,
+    "method": "DELETE",
+    "raw": "/api/person/empowerlog/${encodeURIComponent(id)}",
+    "path": "/api/person/empowerlog/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/person/empowerlog/{id}",
+    "hit_crate": "personal",
     "extra": null
    },
    {
@@ -28642,7 +28694,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 132,
+    "line": 144,
     "method": "GET",
     "raw": "/api/person/signature/list",
     "path": "/api/person/signature/list",
@@ -28655,7 +28707,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 141,
+    "line": 153,
     "method": "PUT",
     "raw": "/api/person/password",
     "path": "/api/person/password",
@@ -28668,7 +28720,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 186,
+    "line": 198,
     "method": "UPLOAD",
     "raw": "/api/person/icon/${user.value!.unique}",
     "path": "/api/person/icon/{}",
@@ -28681,7 +28733,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 196,
+    "line": 208,
     "method": "POST",
     "raw": "/api/person/signature/save",
     "path": "/api/person/signature/save",
@@ -28694,7 +28746,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 208,
+    "line": 220,
     "method": "GET",
     "raw": "/api/authentication/unit/list",
     "path": "/api/authentication/unit/list",
@@ -28707,7 +28759,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 209,
+    "line": 221,
     "method": "GET",
     "raw": "/api/authentication/role/list",
     "path": "/api/authentication/role/list",
@@ -28720,7 +28772,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 210,
+    "line": 222,
     "method": "GET",
     "raw": "/api/authentication/group/list",
     "path": "/api/authentication/group/list",
@@ -28733,7 +28785,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 222,
+    "line": 234,
     "method": "GET",
     "raw": "/api/person/exmail/new/count",
     "path": "/api/person/exmail/new/count",
@@ -28746,7 +28798,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 223,
+    "line": 235,
     "method": "GET",
     "raw": "/api/person/exmail/list/title/passive",
     "path": "/api/person/exmail/list/title/passive",
@@ -28759,7 +28811,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 224,
+    "line": 236,
     "method": "GET",
     "raw": "/api/person/regist/mode",
     "path": "/api/person/regist/mode",
@@ -28772,7 +28824,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 238,
+    "line": 250,
     "method": "GET",
     "raw": "/api/organization/assemble/authentication/authentication/oauth/qywx/config",
     "path": "/api/organization/assemble/authentication/authentication/oauth/qywx/config",
@@ -28785,7 +28837,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 239,
+    "line": 251,
     "method": "GET",
     "raw": "/api/organization/assemble/authentication/authentication/oauth/dingding/config",
     "path": "/api/organization/assemble/authentication/authentication/oauth/dingding/config",
@@ -28798,7 +28850,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 240,
+    "line": 252,
     "method": "GET",
     "raw": "/api/organization/assemble/authentication/authentication/captchaRSAPublicKey",
     "path": "/api/organization/assemble/authentication/authentication/captchaRSAPublicKey",
@@ -28811,7 +28863,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 252,
+    "line": 264,
     "method": "GET",
     "raw": "/api/organization/assemble/authentication/authentication/mode",
     "path": "/api/organization/assemble/authentication/authentication/mode",
@@ -28824,7 +28876,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 253,
+    "line": 265,
     "method": "GET",
     "raw": "/api/organization/assemble/authentication/bind/list",
     "path": "/api/organization/assemble/authentication/bind/list",
@@ -28837,7 +28889,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 254,
+    "line": 266,
     "method": "GET",
     "raw": "/api/organization/assemble/authentication/authentication/oauth/list",
     "path": "/api/organization/assemble/authentication/authentication/oauth/list",
@@ -28850,7 +28902,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 274,
+    "line": 286,
     "method": "GET",
     "raw": "/api/organization/assemble/authentication/authentication/captcha/width/120/height/40",
     "path": "/api/organization/assemble/authentication/authentication/captcha/width/120/height/40",
@@ -28866,7 +28918,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 275,
+    "line": 287,
     "method": "GET",
     "raw": "/api/organization/assemble/authentication/bind/meta/default",
     "path": "/api/organization/assemble/authentication/bind/meta/default",
@@ -28881,7 +28933,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 297,
+    "line": 309,
     "method": "GET",
     "raw": "/api/person/empower/list/${encodeURIComponent(empId)}/next/20",
     "path": "/api/person/empower/list/{}/next/20",
@@ -28896,7 +28948,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 298,
+    "line": 310,
     "method": "GET",
     "raw": "/api/person/empower/list/${encodeURIComponent(empId)}/prev/20",
     "path": "/api/person/empower/list/{}/prev/20",
@@ -28911,7 +28963,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 316,
+    "line": 328,
     "method": "GET",
     "raw": "/api/person",
     "path": "/api/person",
@@ -28924,7 +28976,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 318,
+    "line": 330,
     "method": "GET",
     "raw": "/api/person/empowerlog/list/0/next/20",
     "path": "/api/person/empowerlog/list/0/next/20",
@@ -28940,7 +28992,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 319,
+    "line": 331,
     "method": "GET",
     "raw": "/api/person/empowerlog/list/999999999/prev/20",
     "path": "/api/person/empowerlog/list/999999999/prev/20",
@@ -28956,7 +29008,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 320,
+    "line": 332,
     "method": "GET",
     "raw": "/api/personal/info",
     "path": "/api/personal/info",
@@ -28969,7 +29021,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 338,
+    "line": 350,
     "method": "GET",
     "raw": "/api/person/list/${flag}/next/20",
     "path": "/api/person/list/{}/next/20",
@@ -28984,7 +29036,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 339,
+    "line": 351,
     "method": "GET",
     "raw": "/api/person/list/${flag}/prev/20",
     "path": "/api/person/list/{}/prev/20",
@@ -28999,7 +29051,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 343,
+    "line": 355,
     "method": "GET",
     "raw": "/api/person/empower/list/to/enable",
     "path": "/api/person/empower/list/to/enable",
@@ -29012,7 +29064,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 344,
+    "line": 356,
     "method": "GET",
     "raw": "/api/person/empower/list/currentperson/enable",
     "path": "/api/person/empower/list/currentperson/enable",
@@ -29025,7 +29077,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 356,
+    "line": 368,
     "method": "GET",
     "raw": "/api/person/signature/manager/list",
     "path": "/api/person/signature/manager/list",
@@ -29038,7 +29090,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 373,
+    "line": 385,
     "method": "GET",
     "raw": "/api/person/empower/list/currentperson",
     "path": "/api/person/empower/list/currentperson",
@@ -29051,7 +29103,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/Personal.vue",
-    "line": 374,
+    "line": 386,
     "method": "GET",
     "raw": "/api/person/empower/list/to",
     "path": "/api/person/empower/list/to",
@@ -29060,6 +29112,96 @@
     "hit": "/api/person/empower/list/to",
     "hit_crate": "empower",
     "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/Personal.vue",
+    "line": 413,
+    "method": "POST",
+    "raw": "/api/person/empower",
+    "path": "/api/person/empower",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/person/empower",
+    "hit_crate": "empower",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/Personal.vue",
+    "line": 427,
+    "method": "POST",
+    "raw": "/api/person/empower/manager",
+    "path": "/api/person/empower/manager",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/person/empower/manager",
+    "hit_crate": "empower",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/Personal.vue",
+    "line": 429,
+    "method": "POST",
+    "raw": "/api/person/empower/manager/list/paging/1/size/20",
+    "path": "/api/person/empower/manager/list/paging/1/size/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/person/empower/manager/list/paging/{page}/size/{size}",
+    "hit_crate": "empower",
+    "extra": [
+     "page=1",
+     "size=20"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/Personal.vue",
+    "line": 431,
+    "method": "POST",
+    "raw": "/api/person/empowerlog/list/currentperson/paging/1/size/20",
+    "path": "/api/person/empowerlog/list/currentperson/paging/1/size/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/person/empowerlog/list/currentperson/paging/{page}/size/{size}",
+    "hit_crate": "personal",
+    "extra": [
+     "page=1",
+     "size=20"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/Personal.vue",
+    "line": 433,
+    "method": "POST",
+    "raw": "/api/person/empowerlog/list/to/currentperson/paging/1/size/20",
+    "path": "/api/person/empowerlog/list/to/currentperson/paging/1/size/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/person/empowerlog/list/to/currentperson/paging/{page}/size/{size}",
+    "hit_crate": "personal",
+    "extra": [
+     "page=1",
+     "size=20"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/Personal.vue",
+    "line": 435,
+    "method": "POST",
+    "raw": "/api/person/empowerlog/manager/list/paging/1/size/20",
+    "path": "/api/person/empowerlog/manager/list/paging/1/size/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/person/empowerlog/manager/list/paging/{page}/size/{size}",
+    "hit_crate": "personal",
+    "extra": [
+     "page=1",
+     "size=20"
+    ]
    },
    {
     "app": "desktop",
