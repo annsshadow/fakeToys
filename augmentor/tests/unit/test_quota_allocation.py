@@ -3,7 +3,7 @@
 
 """「比例 → 条数」的配额分配测试（L36 口径：余数必须有确定归属）
 
-钉住六条主张：
+钉住七条主张：
 
 1. **分配之和 == 请求条数**。`int(total * 比例)` 逐份下取整会少交：等权 4 组要 7 条，
    实测 HEAD 逐组 `int(1.75)` → 只交回 **4** 条，报告照写「采样完成」。
@@ -16,6 +16,10 @@
 5. **可整除时行为不变**（改分配口径不许顺手改掉正常路径）。
 6. **让渡一次算清，代价不随 `total` 放大**。装不下的那份把名额交给还有空间的段，
    轮数只与**份数**同阶：1e9 条的名额与 7 条的名额走同一套算式。
+7. **「每份上限都是 1」的快路与一般定义同答**（L37 口径：还上一轮的代价账，一行答案
+   都不许改）。分层采样用 `instruction` 作组键时每组只有 1 条 ⇒ 份数 == 行数，
+   逐段下取整 + 排序在 6902 段上是 6.8 ms；快路换成「按权重降序、平局按输入顺序取
+   前 `total` 份」，所以这里钉的是换算法不换答案，而不只是换算法不换总数。
 """
 import random
 
@@ -71,9 +75,24 @@ class TestLargestRemainderCore:
             assert abs(got - want) < 1, f"{got} 偏离名义 {want:.2f} 超过 1 条"
 
     def test_ties_resolve_by_input_order(self):
-        """20 个单条组只要 5 条：谁进谁出是平局，按输入顺序取前 5 组（确定、可复现）"""
+        """20 个单条组只要 5 条：谁进谁出是平局，按输入顺序取前 5 组（确定、可复现）
+
+        L37 起这一形状走的是「上限全 1」快路，一般路径的平局次序由
+        `test_general_path_ties_resolve_by_input_order` 另行钉住。
+        """
         quotas = largest_remainder(5, [1] * 20, caps=[1] * 20, minimum_each=1)
         assert quotas == [1, 1, 1, 1, 1] + [0] * 15
+
+    def test_general_path_ties_resolve_by_input_order(self):
+        """不带 `caps` 的形状不走快路，平局仍按输入顺序补
+
+        钉的是「小数部分相同 ⇒ 先出现的先补」：4 段等权要 7 条，下取整各 1 条后
+        剩 3 条名额，四段的小数部分全是 0.75 ⇒ 前 3 段各 +1。次序若改成按权重表
+        原地遍历的倒序或按段长，答案会变成别的三元组。
+        """
+        assert largest_remainder(7, [1, 1, 1, 1]) == [2, 2, 2, 1]
+        assert largest_remainder(5, [2, 2, 1]) == [2, 2, 1]
+        assert largest_remainder(9, [1] * 6) == [2, 2, 2, 1, 1, 1]
 
     def test_caps_hand_the_leftover_to_the_next_part(self):
         assert largest_remainder(10, [1, 1], caps=[3, 20]) == [3, 7]
@@ -119,6 +138,135 @@ class TestLargestRemainderCore:
     def test_evenly_divisible_split_is_untouched(self):
         assert largest_remainder(8, [1, 1, 1, 1]) == [2, 2, 2, 2]
         assert largest_remainder(12, [0.5, 0.25, 0.25]) == [6, 3, 3]
+
+
+class TestUnitCapFastPath:
+    """主张 7：`caps` 全为 1 时的快路必须与一般定义逐例同答
+
+    一般路径在这一形状上的代价按份数收：6902 段（真实数据集上组键 = `instruction`，
+    每组恰好 1 条）实测 6.8 ms/次，比它服务的分组循环本身还贵。快路只做一次排序取
+    阈值（等权时连排序都省掉），所以这里钉的是「选中集 = 按 `exact`（权重乘完比例的
+    浮点值）降序、平局按输入顺序的前 `total` 份」。
+    """
+
+    @pytest.mark.parametrize("total,weights,expected", [
+        (2, [1, 5, 3, 2], [0, 1, 1, 0]),
+        (3, [1, 2, 2, 1], [1, 1, 1, 0]),
+        (3, [-1, 0, 5, -2], [1, 1, 1, 0]),
+        (1, [2, 2, 2], [1, 0, 0]),
+        (4, [1] * 4, [1, 1, 1, 1]),
+        (0, [3, 1, 2], [0, 0, 0]),
+        (1, [0.5, 0.5, 5], [0, 0, 1]),
+    ])
+    def test_picks_the_heaviest_segments(self, total, weights, expected):
+        assert largest_remainder(total, weights, caps=[1] * len(weights)) == expected
+
+    def test_quota_at_or_above_the_pool_takes_every_segment(self):
+        """名额盖得住份数 ⇒ 每份 1 条，且不得逐条去挪名额（1e9 也一次答完）"""
+        assert largest_remainder(9, [1] * 4, caps=[1] * 4, minimum_each=1) == [1] * 4
+        assert largest_remainder(10 ** 9, [1] * 3, caps=[1] * 3) == [1, 1, 1]
+
+    def test_minimum_each_cannot_overissue_under_unit_caps(self):
+        """上限 1 之下 `minimum_each` 再大也只能要 1 条，快路不得把它读成超发理由"""
+        for each in (0, 1, 2, 5):
+            quotas = largest_remainder(3, [7, 1, 1, 1, 1],
+                                       caps=[1] * 5, minimum_each=each)
+            assert quotas == [1, 1, 1, 0, 0], f"minimum_each={each} 改写了答案"
+
+    @pytest.mark.parametrize("seed", [11, 12, 13, 14])
+    def test_fast_path_answers_the_general_definition(self, seed):
+        """独立 oracle 对答案：按 `(-exact, 段序)` 排序取前 `total` 份
+
+        与实现共用的那条定义是分开写的（这里逐段算出名义值再排序，实现用阈值 +
+        平局补位），所以两条路任一写歪都会在这里露出来。权重掺浮点数，因为快路
+        比较的必须是舍入之后的 `exact`。
+        """
+        rng = random.Random(seed)
+        for _ in range(60):
+            count = rng.randint(1, 25)
+            weights = []
+            for _ in range(count):
+                w = rng.choice([0, 1, 2, 5, 0.5, -3, 7.25])
+                weights.append(w * (1 + rng.random() * 1e-12)
+                               if rng.random() < 0.5 else w)
+            total = rng.randint(0, count + 2)
+            clamped = [w if w > 0 else 0.0 for w in weights]
+            weight_sum = sum(clamped)
+            if weight_sum <= 0:
+                clamped = [1.0] * count
+                weight_sum = float(count)
+            exacts = [total * s / weight_sum for s in clamped]
+            order = sorted(range(count), key=lambda i: (-exacts[i], i))
+            wanted = [0] * count
+            for i in order[:total]:
+                wanted[i] = 1
+            got = largest_remainder(total, weights, caps=[1] * count)
+            assert got == wanted, f"seed={seed} total={total} weights={weights}"
+
+    def test_fast_path_compares_the_same_float_as_the_general_path(self):
+        """排序键必须是 `exact`（乘完比例之后的浮点），不是原始权重
+
+        权重取**相邻 double** 时，`total * 权重 / 权重和` 会把它们舍入成同一个
+        `exact`；一般路径把这视为平局（先到先得），按权重排序却会挑后出现的那份。
+        实测两个形状：10 段要 3 条、20 段要 6 条，正确答案都不是「权重最大的前 N 段」。
+        """
+        eps = 2.0 ** -52
+        ten = [1.0 + i * eps for i in range(10)]
+        assert largest_remainder(3, ten, caps=[1] * 10) == \
+            [0, 0, 0, 0, 0, 0, 1, 0, 1, 1]
+        assert largest_remainder(3, ten, caps=[1] * 10, minimum_each=1) == \
+            [0, 0, 0, 0, 0, 0, 1, 0, 1, 1]
+        twenty = [1.0 + i * eps for i in range(20)]
+        assert largest_remainder(6, twenty, caps=[1] * 20) == \
+            [0] * 13 + [1, 0, 1, 1, 1, 1, 1]
+
+    def test_two_thousand_single_row_groups_answer_in_one_pass(self):
+        """2000 段要 500 条：和 == 500、前 500 段各 1 条，且不会退化成逐条挪名额"""
+        quotas = largest_remainder(500, [1] * 2000, caps=[1] * 2000, minimum_each=1)
+        assert sum(quotas) == 500
+        assert quotas[:500] == [1] * 500
+        assert 1 not in quotas[500:]
+
+    @pytest.mark.parametrize("total,weights,expected", [
+        (2, [1] * 4, [1, 1, 0, 0]),
+        (3, [7, 7, 7], [1, 1, 1]),
+        (1, [0, 0, 0, 0], [1, 0, 0, 0]),
+        (2, [-0.0, 0.0, 0.0], [1, 1, 0]),
+        (5, [2.5] * 8, [1, 1, 1, 1, 1, 0, 0, 0]),
+    ])
+    def test_equal_weights_take_the_input_order_prefix(self, total, weights, expected):
+        """权重全相等 ⇒ 全体平局 ⇒ 前 `total` 份，掺零权重与非负零也一样
+
+        这条是快路里「等权短路」的依据：`exact` 由同一个算式作用在同一个值上，必然全体
+        相同，于是「按 `exact` 降序、平局按段序」退化成的就是输入顺序。真实分层采样正落在
+        这一形状上（`weights` 与 `caps` 都是组大小，上限全 1 就意味着每组只有 1 条），
+        所以它既要答对，也必须便宜。
+        """
+        assert largest_remainder(total, weights, caps=[1] * len(weights)) == expected
+
+    def test_nan_weight_is_read_as_zero_like_the_general_path(self):
+        """`NaN` 既不大于 0、按 `==` 也不等于自己：短路不触发，且按 0 权重读
+
+        钉的是「快路不得因为 `count` 判不出等权就换一个答案」。两个 `NaN` 必须写成
+        **两个不同对象**：`list.count` 带身份快路径，同一个对象会被判成等权而走短路，
+        那样这条用例量的就不是「全零权重按份数均分」的回落了（两种写法答案相同，但只有
+        后者在回落被摘掉时会红）。
+        """
+        nan = float("nan")
+        assert largest_remainder(2, [nan, 1, 1], caps=[1] * 3) == [0, 1, 1]
+        assert largest_remainder(1, [float("nan"), float("nan")], caps=[1] * 2) == [1, 0]
+        # 同一个 NaN 对象会被 `count` 判成等权 ⇒ 走另一条支路，答案仍必须同
+        assert largest_remainder(1, [nan, nan], caps=[1] * 2) == [1, 0]
+
+    def test_mixed_caps_still_go_through_the_general_path(self):
+        """反向护栏：只要有一段上限不是 1，快路就必须让位给一般路径
+
+        钉的是快路的准入条件写歪成 `1 in caps` / `caps[0] == 1` 之类：`[1, 1, 1, 5]`
+        这种上限参差的形状若被当成全 1，第 4 段会被压到 1 条，6 条名额只交回 4 条，
+        而一般路径会把它让渡到 3 条。
+        """
+        assert largest_remainder(6, [1, 1, 1, 5], caps=[1, 1, 1, 5]) == [1, 1, 1, 3]
+        assert largest_remainder(17, [1, 1, 1, 1], caps=[1, 1, 1, 5]) == [1, 1, 1, 5]
 
 
 class TestAggregateWeightedQuota:
