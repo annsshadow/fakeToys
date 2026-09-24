@@ -468,6 +468,71 @@ class TestDatasetConvert:
         assert response.status_code == 400, response.text
         assert "不支持的转换" in response.json()["detail"]
 
+    def test_declared_source_format_converts_container_file(self, tools_env):
+        """`source_format` 让对话类文件（落盘也是 .json）能转回规范形再导出
+
+        用 sharegpt 而不是 alpaca：alpaca 记录本身就带 `instruction`/`output`，
+        按 json 读走也能出对的结果，测不出这条边；`conversations` 只有声明了源格式
+        才会被折叠。断言值是手写字面量。
+        """
+        src = _write_json(tools_env.tmp / "sharegpt.json", [{
+            "conversations": [
+                {"from": "system", "value": "你是租房顾问"},
+                {"from": "user", "value": "可以月付吗"},
+                {"from": "assistant", "value": "支持月付"},
+            ]}])
+        response = tools_env.client.post(
+            "/api/dataset/convert",
+            json={
+                "input_file": str(src),
+                "output_file": str(tools_env.out),
+                "target_format": "chatml",
+                "source_format": "sharegpt",
+            },
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["source_format"] == "sharegpt"
+        assert json.loads(tools_env.out.read_text(encoding="utf-8")) == [{
+            "messages": [
+                {"role": "system", "content": "你是租房顾问"},
+                {"role": "user", "content": "可以月付吗"},
+                {"role": "assistant", "content": "支持月付"},
+            ]}]
+
+    def test_unknown_source_format_rejected(self, tools_env):
+        """未知源格式 → 400，而不是 500 或静默按 json 读"""
+        response = tools_env.client.post(
+            "/api/dataset/convert",
+            json={
+                "input_file": str(tools_env.data),
+                "output_file": str(tools_env.out),
+                "target_format": "jsonl",
+                "source_format": "tsv",
+            },
+        )
+        assert response.status_code == 400, response.text
+        assert "无法从 tsv 转换到 JSON" in response.json()["detail"]
+
+    def test_dirty_container_row_reports_row_number(self, tools_env):
+        """源文件里有坏记录：400 的错误信息带条目下标，便于调用方定位"""
+        src = _write_json(tools_env.tmp / "bad_sharegpt.json", [
+            {"conversations": [{"from": "human", "value": "q"}, {"from": "gpt", "value": "a"}]},
+            {"conversations": [{"from": "tool", "value": "外部返回"},
+                               {"from": "gpt", "value": "a"}]},
+        ])
+        response = tools_env.client.post(
+            "/api/dataset/convert",
+            json={
+                "input_file": str(src),
+                "output_file": str(tools_env.out),
+                "target_format": "json",
+                "source_format": "sharegpt",
+            },
+        )
+        assert response.status_code == 400, response.text
+        assert "第 2 条 sharegpt 记录含未认识的角色: tool" in response.json()["detail"]
+        assert not tools_env.out.exists()
+
 
 class TestDatasetMerge:
     """/api/dataset/merge"""

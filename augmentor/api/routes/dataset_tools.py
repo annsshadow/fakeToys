@@ -89,6 +89,9 @@ class ConvertRequest(BaseModel):
     input_file: str
     output_file: str
     target_format: str = "jsonl"
+    # alpaca/sharegpt/chatml 等容器格式落盘也是 `.json`，扩展名推不出来，
+    # 只能由请求方显式声明；为 None 时沿用「按扩展名推断」。
+    source_format: Optional[str] = None
 
 
 class MergeRequest(BaseModel):
@@ -675,7 +678,8 @@ async def dataset_convert(request: ConvertRequest):
         input_path = resolve_data_path(request.input_file)
         output_path = resolve_data_path(request.output_file, for_write=True)
         return await run_in_thread(
-            convert_file, str(input_path), str(output_path), request.target_format
+            convert_file, str(input_path), str(output_path), request.target_format,
+            source_format=request.source_format
         )
     except HTTPException:
         raise

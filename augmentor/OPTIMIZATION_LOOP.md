@@ -26,6 +26,7 @@
 - [x] **L13** `perf(search)`: A7 的「重建」那一半 —— 倒排索引改成按需构建，真实 6902 条默认 contains 查询 **90.30 → 7.96 ms（11.34×）**、regex **19.41×**、单次查询峰值 **6.30 MB → 0.13 MB**
 - [x] **L14** `perf(quality)`: A10 —— 回退多样性的参照 n-gram 集合整批只切一次（与向量分支同构），真实 1500 条 `batch_score` **339.5 → 61.8 ms（5.49×，9/9 轮）**、`_ngram_similarity` **46500 → 1500 次**，五项分数逐条相同；**代价：峰值内存 +80 KB**
 - [x] **L15** `perf(vector)`: A22（新发现）—— `FAISSDB.add_vectors` 的逐条写入从 O(n²) 收成 O(n)：几何扩容 + ID 镜像集合，真实维度 384 逐条写 3000 条 **1671.3 → 31.7 ms（52.72×，3/3 轮）**，缩放从平方变线性
+- [x] **L16** `feat(converter)`: B3 前半 —— 补上 6 条反向转换边（`alpaca/belle/llama_factory/sharegpt/vicuna/chatml → json`），并给 CLI `--input-format` / API `source_format` 接线；导出→再增强的回路打通，新增 42 例
 
 ## Backlog A — 性能（含 file:line 与实测线索）
 
@@ -60,7 +61,8 @@
 |---|------|------|------|
 | B1 | 把 `/api/system/*`(13) 与 `/api/dataset/*`(12) 接入 UI | `web/src/services/api.ts` 对二者零引用；`System.tsx:3` 只用了 status | M |
 | B2 | Excel/CSV 摄取端到端（上传 + `convert --input-format xlsx`） | SDK `csv_excel_import.py:61,152` 可达性为零；`data.py:236-243` 只认 JSON | M |
-| B3 | 反向转换边 `alpaca/sharegpt/chatml/vicuna/belle/tsv → json` | `converter.py:60-66` 只读 json/jsonl/csv，导出侧 13 种 → 不可回环 | M |
+| B3① | ~~反向转换边 `alpaca/sharegpt/chatml/vicuna/belle → json`~~ | ~~`converter.py:60-66` 只读 json/jsonl/csv，导出侧不可回环~~ 已做（L16，6 条反向边 + CLI/API 接线；原记「导出侧 13 种」不准，实测 `json →` 只有 8 条边）。**剩余另立 B3②** | M |
+| B3② | `tsv ↔ json` 两条边都缺；`convert_file(source_format="alpaca")` 读 `.jsonl` 容器文件会走 `json.load` 而失败；`_json_to_csv` 里 `all_keys` 算了不用 | 转换图实测：`json →` 8 条、`→ json` 8 条，`tsv` 两侧皆无 | S |
 | ~~B4~~ | ~~`QualityGate` / `DatasetHealthScore` 暴露为 CLI 子命令 + 端点~~ | ~~两者在 `augmentor/__init__.py:38+` 导出但无人可达~~ 已做（L11：库函数 `gate_dataset_health()` + `/api/quality/health-gate` + `health-gate` 子命令，并已加入包级导出） | S |
 | B5 | 死配置项：读取或显式废弃（`config.py:75-167` 的 sampler/expander/tracker/visualization/multilingual/evaluation/vector/active_learning 等） | 无代码路径读取 | M |
 | ~~B6~~ | ~~/api/dataset/evaluate（BLEU/ROUGE）+ /api/dataset/impact（前后对比）~~ | ~~`evaluation.py:74,155,211`、`impact.py:49,96` 纯函数已就绪~~ 已做（L8） | S |
@@ -366,6 +368,40 @@
   `in` + `index` 两次全表扫同样落在这 0.2 ms 里，量级不值得。② `context.py:112-114`
   的「每条候选重算已有问题列表」是 O(n²) 形态，但它每一步都要跑一次 LLM 调用
   —— 这条**没有实测**，只按调用形态判掉，不当作证据。
+- **L16** `feat(converter)` B3① —— 转换图此前是**单向**的：`json →` 有 8 条边
+  （实测，Backlog 原记「导出侧 13 种」不准），`→ json` 只有 jsonl/csv 两条，
+  导出的训练格式再也回不来。补 6 条反向边并接线（CLI `--input-format`、
+  API `ConvertRequest.source_format`）。**接线不是可选项，而是这条功能的本体**：
+  容器格式落盘也是 `.json`，`_infer_format` 只能看扩展名，于是
+  「把 sharegpt 文件转成 chatml 而不声明源格式」在修复前后都是**退出码 0 的静默坏数据**
+  —— 走 `json → chatml` 时 `conversations` 整个被忽略，产物是
+  `{"role":"user","content":""}` + `{"role":"assistant","content":""}`。
+  这条实测结果写成了用例（`test_omitting_the_flag_keeps_extension_inference`、
+  `test_sharegpt_file_without_declaration_keeps_the_old_behaviour`），它同时钉住
+  「老调用语义不变」和「为什么必须有显式声明」。
+  口径决策三条，都写进了代码注释：① 反向**不给 `input` 补空串**（`validation` 里
+  `input` 可选，凭空造键会让「源文件有没有这一列」失去可辨性，下游稀疏字段检测漏报）；
+  ② 不认识的角色（`tool` / 函数调用）**报错不猜**，猜成 user 会把工具输出静默变成
+  「用户说的话」；③ 对话必须以「user → assistant」结尾才还原问答，否则按位置硬切
+  会把答案切错。`_to_json` 顺手从 if/elif 改成查表，`sharegpt → chatml` 这类
+  「非 json 源 → 非 json 目标」因此自动经规范形中转。
+  新增 **42 例**（34 单元 + 5 CLI + 3 API）：反向边的字段保留/复制语义、
+  6 条 `json → 格式 → json` 的**逐家有损表**（alpaca/belle 丢 system+history、
+  llama_factory 只丢 history、sharegpt 丢 input+system、vicuna 丢 input+system+history、
+  chatml 只丢 input）全部用手写字面量钉住，8 类结构错误各带条目下标与字段名。
+  **红→绿**：4 个源文件整份退回 HEAD → 新用例 **34 单元 + 4/5 CLI + 3/3 API 全红**，
+  唯一绿的是白名单里那条「老行为不变」；对照（既有 61 单元 + 13 CLI + 2 API）全程绿。
+  注入脚本本轮起**改为逐条列红/绿**而非只看组级退出码——第一版只看组级，
+  `test_tsv_is_not_accepted_as_input_format` 在缺陷态靠「argparse 根本不认识
+  `--input-format`」也算退出码 2 而混过去，属于假红依赖；补断言
+  `invalid choice` 后才真正锁住「清单里排除了 tsv」这件事。
+  同样被逐条模式抓出来的还有 API 的 happy path：第一版用 alpaca 样本，而 alpaca 记录
+  本身带 `instruction`/`output`，按 json 读也能出对的结果，**测不出这条边**；换成
+  sharegpt（只有 `conversations`）才是真依赖。
+  **本轮无性能主张**：反向边是新能力，没有「修复前也能跑」的对照组可测。
+  遗留 **B3②**：`tsv ↔ json` 两侧皆无边（CLI/API 的 choices 里刻意不放 tsv，与
+  `get_supported_formats()` 同源）；`convert_file(source_format="alpaca")` 读 `.jsonl`
+  容器文件会落到 `json.load` 而失败；`_json_to_csv` 里 `all_keys` 算完不用（死代码）。
 - 全量：L4 后 **3679 passed / 3 skipped**（89.2 s），L5 后 **3703 passed / 3 skipped**
   （90.2 s），L6 后 **3705 passed / 3 skipped**（91.1 s），L7 后 **3726 passed / 3 skipped**
   （95.1 s），L8 后 **3747 passed / 3 skipped**（98.0 s），L9 后 **3747 passed / 3 skipped**
@@ -375,7 +411,8 @@
   L12 后 **3792 passed / 3 skipped**（64.3 s，coverage.xml 总计 98.51%），
   L13 后 **3802 passed / 3 skipped**（65.8 s，总计 98.50%），
   L14 后 **3809 passed / 3 skipped**（52.0 s，总计 98.51%），
-  L15 后 **3816 passed / 3 skipped**（51.3 s，总计 98.51%）。
+  L15 后 **3816 passed / 3 skipped**（51.3 s，总计 98.51%），
+  L16 后 **3858 passed / 3 skipped**（56.4 s，总计 98.52%）。
   **注意**：这些墙钟秒数**彼此不可比**——本工作树与并行 agent 共用一台机器，
   它跑全量时我会慢 40%+（L9 时 92 s、L10 时无竞争 55.7 s）。跨轮只比
   **同一进程内 back-to-back 的对照组**，绝对秒数只作当次快照。

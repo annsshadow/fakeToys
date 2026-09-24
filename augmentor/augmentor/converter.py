@@ -49,6 +49,89 @@ class DataFormat(Enum):
     BELLE = "belle"
 
 
+# 「字段映射类」格式：与规范形（instruction/input/output）共用字段名，逆向只是补默认值
+FLAT_FORMATS = ("alpaca", "belle", "llama_factory")
+
+# 「对话类」格式：正文存在对话数组里，逆向要把它折回 instruction/output/history
+CONVERSATION_FORMATS = ("sharegpt", "vicuna", "chatml")
+
+# 对话容器字段名与其中「角色」的写法差异
+_CONVERSATION_KEY = {"sharegpt": "conversations", "vicuna": "conversations",
+                     "chatml": "messages"}
+_TURN_VALUE_KEY = {"sharegpt": "value", "vicuna": "value", "chatml": "content"}
+_TURN_ROLE_KEY = {"sharegpt": "from", "vicuna": "from", "chatml": "role"}
+
+# 各家的同义角色；未列出的角色一律报错而不是猜
+_ROLE_ALIASES = {"human": "user", "user": "user",
+                 "gpt": "assistant", "assistant": "assistant",
+                 "system": "system"}
+
+
+def turns_to_canonical(turns: List[Dict[str, str]], format_name: str) -> Dict[str, str]:
+    """把一轮对话折成规范形的 `instruction` / `output` / `history` / `system`
+
+    写侧（`_json_to_sharegpt` 等）总是把 `history` 摊在前面、`instruction`/`output`
+    放在最后，所以逆运算取**最后两问一答**为当前轮，其余进 `history`；开头的
+    system 轮还原成 `system` 字段。
+
+    Raises:
+        DataFormatError: 对话不足两轮，或末尾不是「用户 → 助手」
+    """
+    if len(turns) < 2:
+        raise DataFormatError(f"{format_name} 对话少于两轮，无法还原问答")
+    if turns[-2]["role"] != "user" or turns[-1]["role"] != "assistant":
+        raise DataFormatError(
+            f"{format_name} 对话必须以「user → assistant」结尾，"
+            f"实际是「{turns[-2]['role']} → {turns[-1]['role']}」"
+        )
+
+    head = turns[:-2]
+    item: Dict[str, Any] = {}
+    if head and head[0]["role"] == "system":
+        item["system"] = head[0]["content"]
+        head = head[1:]
+    if head:
+        item["history"] = head
+    item["instruction"] = turns[-2]["content"]
+    item["output"] = turns[-1]["content"]
+    return item
+
+
+def read_conversation_turns(record: Any, format_name: str, index: int) -> List[Dict[str, str]]:
+    """读出一条对话记录的轮次，角色按 `_ROLE_ALIASES` 归一
+
+    Raises:
+        DataFormatError: 记录不是对象、缺对话数组、轮次缺字段或角色不认识
+    """
+    if not isinstance(record, dict):
+        raise DataFormatError(
+            f"第 {index + 1} 条 {format_name} 记录必须是 JSON 对象，"
+            f"当前是{type(record).__name__}"
+        )
+    raw_turns = record.get(_CONVERSATION_KEY[format_name])
+    if not isinstance(raw_turns, list):
+        raise DataFormatError(
+            f"第 {index + 1} 条 {format_name} 记录缺少 "
+            f"`{_CONVERSATION_KEY[format_name]}` 数组"
+        )
+
+    role_key = _TURN_ROLE_KEY[format_name]
+    value_key = _TURN_VALUE_KEY[format_name]
+    turns: List[Dict[str, str]] = []
+    for turn in raw_turns:
+        if not isinstance(turn, dict) or role_key not in turn or value_key not in turn:
+            raise DataFormatError(
+                f"第 {index + 1} 条 {format_name} 记录的某一轮缺少 `{role_key}` / `{value_key}`"
+            )
+        role = _ROLE_ALIASES.get(str(turn[role_key]).lower())
+        if role is None:
+            raise DataFormatError(
+                f"第 {index + 1} 条 {format_name} 记录含未认识的角色: {turn[role_key]}"
+            )
+        turns.append({"role": role, "content": turn[value_key]})
+    return turns
+
+
 class DatasetConverter:
     """数据集格式转换器
     
@@ -68,6 +151,12 @@ class DatasetConverter:
             ("json", "llama_factory"): self._json_to_llama_factory,
             ("json", "vicuna"): self._json_to_vicuna,
             ("json", "belle"): self._json_to_belle,
+            ("alpaca", "json"): self._alpaca_to_json,
+            ("belle", "json"): self._belle_to_json,
+            ("llama_factory", "json"): self._llama_factory_to_json,
+            ("sharegpt", "json"): self._sharegpt_to_json,
+            ("vicuna", "json"): self._vicuna_to_json,
+            ("chatml", "json"): self._chatml_to_json,
         }
     
     def convert(self, 
@@ -124,12 +213,10 @@ class DatasetConverter:
     
     def _to_json(self, data: Any, source_format: str) -> List[Dict]:
         """转换为JSON格式"""
-        if source_format == "jsonl":
-            return self._jsonl_to_json(data)
-        elif source_format == "csv":
-            return self._csv_to_json(data)
-        else:
-            raise DataFormatError(f"无法从 {source_format} 转换到 JSON")
+        to_json = self._converters.get((source_format, "json"))
+        if to_json is not None:
+            return to_json(data)
+        raise DataFormatError(f"无法从 {source_format} 转换到 JSON")
     
     # ==================== 基础格式转换 ====================
     
@@ -284,8 +371,79 @@ class DatasetConverter:
             result.append(record)
         return result
     
+    # ==================== 训练格式 → JSON（反向边） ====================
+
+    @staticmethod
+    def _flat_to_json(data: Any, format_name: str) -> List[Dict]:
+        """字段映射类格式 → 规范形：认形状、保字段，不发明源文件里没有的键
+
+        与写侧相反的一侧**不**给 `input` 补空串：`validation` 里 `input` 是可选字段，
+        凭空造一个空字段只会让「源文件有没有这一列」这件事失去可辨性。
+        """
+        if not isinstance(data, list):
+            raise DataFormatError(
+                f"{format_name} 数据集的顶层必须是 JSON 数组，当前是{type(data).__name__}"
+            )
+        result = []
+        for index, record in enumerate(data):
+            if not isinstance(record, dict):
+                raise DataFormatError(
+                    f"第 {index + 1} 条 {format_name} 记录必须是 JSON 对象，"
+                    f"当前是{type(record).__name__}"
+                )
+            missing = [key for key in ("instruction", "output") if key not in record]
+            if missing:
+                raise DataFormatError(
+                    f"第 {index + 1} 条 {format_name} 记录缺少字段: {', '.join(missing)}"
+                )
+            result.append(dict(record))
+        return result
+
+    def _alpaca_to_json(self, data: Any, **kwargs) -> List[Dict]:
+        """Alpaca 转 JSON"""
+        return self._flat_to_json(data, "alpaca")
+
+    def _belle_to_json(self, data: Any, **kwargs) -> List[Dict]:
+        """BELLE 转 JSON"""
+        return self._flat_to_json(data, "belle")
+
+    def _llama_factory_to_json(self, data: Any, **kwargs) -> List[Dict]:
+        """Llama-Factory 转 JSON"""
+        return self._flat_to_json(data, "llama_factory")
+
+    def _conversations_to_json(self, data: Any, format_name: str) -> List[Dict]:
+        """对话类格式 → 规范形：容器字段之外的键原样保留，容器本身折成问答"""
+        if not isinstance(data, list):
+            raise DataFormatError(
+                f"{format_name} 数据集的顶层必须是 JSON 数组，当前是{type(data).__name__}"
+            )
+        container = _CONVERSATION_KEY[format_name]
+        result = []
+        for index, record in enumerate(data):
+            turns = read_conversation_turns(record, format_name, index)
+            try:
+                canonical = turns_to_canonical(turns, format_name)
+            except DataFormatError as e:
+                raise DataFormatError(f"第 {index + 1} 条 {e}") from e
+            item = {key: value for key, value in record.items() if key != container}
+            item.update(canonical)
+            result.append(item)
+        return result
+
+    def _sharegpt_to_json(self, data: Any, **kwargs) -> List[Dict]:
+        """ShareGPT 转 JSON"""
+        return self._conversations_to_json(data, "sharegpt")
+
+    def _vicuna_to_json(self, data: Any, **kwargs) -> List[Dict]:
+        """Vicuna 转 JSON（`id` 随容器外的键一起保留）"""
+        return self._conversations_to_json(data, "vicuna")
+
+    def _chatml_to_json(self, data: Any, **kwargs) -> List[Dict]:
+        """ChatML 转 JSON"""
+        return self._conversations_to_json(data, "chatml")
+
     # ==================== 文件操作 ====================
-    
+
     def convert_file(self,
                     input_path: str,
                     output_path: str,
@@ -395,19 +553,24 @@ def convert_dataset(data: List[Dict],
 def convert_file(input_path: str,
                 output_path: str,
                 target_format: Optional[str] = None,
+                source_format: Optional[str] = None,
                 **kwargs) -> Dict:
     """转换文件格式
-    
+
     Args:
         input_path: 输入文件路径
         output_path: 输出文件路径
         target_format: 目标格式
-    
+        source_format: 源格式（为 None 时从扩展名推断；alpaca/sharegpt/chatml
+            这类容器格式落盘也是 `.json`，扩展名推不出来，只能显式给）
+
     Returns:
         转换结果
     """
     converter = DatasetConverter()
-    return converter.convert_file(input_path, output_path, target_format=target_format, **kwargs)
+    return converter.convert_file(input_path, output_path,
+                                  source_format=source_format,
+                                  target_format=target_format, **kwargs)
 
 
 def get_supported_formats() -> List[str]:
