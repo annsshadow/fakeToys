@@ -65,6 +65,16 @@
         <button class="btn-refresh" @click="psDraft('byProcess')">按流程建草稿</button>
         <button class="btn-refresh" @click="psDraft('delete')">删草稿</button>
         <button class="btn-refresh" @click="psModeDelete">删查询模式</button>
+        <button class="btn-refresh" @click="psCompleted('taskOpinion')">已办意见</button>
+        <button class="btn-refresh" @click="psCompleted('taskReference')">已办引用</button>
+        <button class="btn-refresh" @click="psCompleted('taskDelete')">删已办</button>
+        <button class="btn-refresh" @click="psCompleted('readOpinion')">已阅意见</button>
+        <button class="btn-refresh" @click="psCompleted('readReference')">已阅引用</button>
+        <button class="btn-refresh" @click="psCompleted('readDelete')">删已阅</button>
+        <button class="btn-refresh" @click="psCompleted('snapDelete')">删快照</button>
+        <button class="btn-refresh" @click="psCompleted('workTouch')">触达工作</button>
+        <button class="btn-refresh" @click="psCompleted('recordDelete')">删记录</button>
+        <button class="btn-refresh" @click="psCompleted('recordJob')">Job记录管理</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
@@ -514,6 +524,34 @@ async function psModeDelete() {
     toast.success('查询模式已删除')
   } catch (e: any) {
     toast.error('删除失败: ' + (e?.message ?? ''))
+  }
+}
+// rev333：流程已办/已阅/记录/快照 管理写端点（用户触发，shape 已核；避 review/create/work·press/work/work trap500）
+async function psCompleted(op: string) {
+  const id = prompt('目标 ID:', '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (op === 'taskOpinion') await api.post(`/api/processplatform/assemble/surface/taskcompleted/opinion/manage/${e}`, {})
+    else if (op === 'taskReference') await api.post(`/api/processplatform/assemble/surface/taskcompleted/reference/${e}`, {})
+    else if (op === 'taskDelete') {
+      if (!(await confirmMsg('确定删除该已办？'))) return
+      await api.delete(`/api/processplatform/assemble/surface/taskcompleted/${e}/manage`)
+    } else if (op === 'readOpinion') await api.post(`/api/processplatform/assemble/surface/readcompleted/opinion/manage/${e}`, {})
+    else if (op === 'readReference') await api.post(`/api/processplatform/assemble/surface/readcompleted/reference/${e}`, {})
+    else if (op === 'readDelete') {
+      if (!(await confirmMsg('确定删除该已阅？'))) return
+      await api.delete(`/api/processplatform/assemble/surface/readcompleted/${e}/manage`)
+    } else if (op === 'snapDelete') {
+      if (!(await confirmMsg('确定删除该快照？'))) return
+      await api.delete(`/api/processplatform/assemble/surface/snap/${e}`)
+    } else if (op === 'workTouch') await api.post(`/api/processplatform/assemble/surface/service/work/touch/${e}`, {})
+    else if (op === 'recordDelete') {
+      if (!(await confirmMsg('确定删除该记录？'))) return
+      await api.delete(`/api/processplatform/assemble/surface/record/${e}/manage`)
+    } else await api.post(`/api/processplatform/assemble/surface/record/job/${e}/manage`, {})
+    toast.success('管理操作已提交')
+  } catch (err: any) {
+    toast.error('操作失败: ' + (err?.message ?? ''))
   }
 }
 // rev290：流程设计器 应用汇总/元素孤儿字典/流程引出/启用/权限 真实读端点集；均只读 arity 已核
