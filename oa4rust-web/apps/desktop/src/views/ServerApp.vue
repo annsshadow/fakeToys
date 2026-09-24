@@ -18,6 +18,7 @@
       <button class="srv-meta-btn" @click="serverConsoleOps('deploySave')">保存部署</button>
       <button class="srv-meta-btn" @click="serverConsoleOps('deployDelete')">删除部署</button>
       <button class="srv-meta-btn" @click="serverConsoleOps('sysConfig')">系统配置读</button>
+      <button class="srv-meta-btn" @click="loadExecuteStatus">执行状态</button>
       <div v-if="sysStatusText" class="srv-meta-note">{{ sysStatusText }}</div>
     </div>
     <div class="content-panel glass-card">
@@ -185,6 +186,17 @@ async function executeCommand() {
     execError.value = e?.message ?? '命令执行失败'
   } finally {
     executing.value = false
+  }
+}
+
+// rev436：读取最近一次服务器命令执行状态（server_execute_status 仅取 pool、查 init_server_command 末行，字面量路由匹配；用户触发）
+async function loadExecuteStatus() {
+  try {
+    const r: any = await api.get('/api/server/execute/status')
+    execOutput.value = JSON.stringify(r?.data ?? {}, null, 2)
+    execError.value = ''
+  } catch (e: any) {
+    execError.value = '读取执行状态失败: ' + (e?.message ?? '')
   }
 }
 
