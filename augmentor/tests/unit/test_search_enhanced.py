@@ -5,6 +5,7 @@
 
 import re
 import pytest
+from augmentor.exceptions import DataValidationError
 from augmentor.search_enhanced import (
     EnhancedSearcher, SearchResult, SearchFilter,
     search_dataset, create_searcher
@@ -775,3 +776,240 @@ class TestFuzzySlidesAWindow:
 
         assert result.total_matches == len(items)
         assert result.items == [items[1], items[0]]
+
+
+class TestTuningKnobsReachTheScoring:
+    """fuzzy 的阈值与 ngram 的 gram 长度必须是**公开可调**的
+
+    L25 把 fuzzy 修活之后留下的口子（A28④）：`threshold` 只活在私有方法
+    `_search_fuzzy` 的默认参数上，`search()` 调它时不传，`search_dataset()` 也不收，
+    CLI 没有 `--fuzzy-threshold`，API 的 `SearchRequest` 没有对应字段。于是「松紧」这个
+    决定结果长什么样的旋钮，用户只能改库源码——而它的影响是**成倍**的：真实 6902 条上
+    「租房合同」阈值 0.5 → 1272 命中、0.6 → 159、0.8 → 38；「公租屋」0.6 → 63、0.7 → **0**
+    （错 1 字的得分正好是 0.667）。这跟 A23/A27 是同一个形状：能力在库里，入口摸不到。
+
+    语料沿用 CLI/API 集成用例那 5 条租房问答，所以本轮三个数在三种端上必须一致：
+    「租房」在阈值 0.5 下 4 条、0.6 下 2 条；「腿租押金」在 0.75 下 1 条、0.8 下 0 条；
+    「租房」ngram n=1 4 条、n=2 2 条、n=3 0 条。
+    """
+
+    ITEMS = [
+        {"instruction": "如何申请租房？", "input": "", "output": "登录官网申请"},
+        {"instruction": "租房多少钱？", "input": "", "output": "按房型定价"},
+        {"instruction": "如何退租押金？", "input": "", "output": "满一年后退还"},
+        {"instruction": "可以申请月付吗？", "input": "", "output": "支持月付"},
+        {"instruction": "租期最短多久？", "input": "", "output": "一个月起租"},
+    ]
+    FIELDS = ["instruction", "output"]
+
+    @staticmethod
+    def oracle_hits(items, field, query, oracle, **kwargs):
+        """把朴素 oracle 套到每条记录上，得到「该字段有命中」的下标集合
+
+        故意不写第二份打分实现：oracle 用前两类用例各自钉过的那份（gram 集合 /
+        朴素窗口），这里只负责逐条调用，免得同一条口径在三处各写一遍、
+        下一轮改口径时漏改一处。
+        """
+        return {index for index, item in enumerate(items)
+                if oracle([item], field, query, **kwargs)}
+
+    def fuzzy_hits(self, threshold):
+        """库口径：两字段并起来数命中条目"""
+        searcher = EnhancedSearcher(self.ITEMS)
+        result = searcher.search("腿租押金", fields=self.FIELDS, method="fuzzy",
+                                 fuzzy_threshold=threshold, limit=99)
+        return {item["instruction"] for item in result.items}
+
+    def test_the_threshold_moves_the_hit_set(self):
+        """阈值不是摆设：调松一档必须真的多出命中，且多出来的那些与朴素窗口一致
+
+        「租房」在 0.6 下 2 条、0.5 下 4 条。两边都跟朴素窗口 oracle（L25 那份）对齐，
+        所以这里同时钉住了三件事：旋钮走到了打分代码、走的是那份 oracle 的语义、
+        以及 0.6 的命中集合是 0.5 的子集（阈值越松命中越多的单调方向不能反）。
+        """
+        searcher = EnhancedSearcher(self.ITEMS)
+        loose = searcher.search("租房", fields=self.FIELDS, method="fuzzy",
+                                fuzzy_threshold=0.5, limit=99)
+        strict = searcher.search("租房", fields=self.FIELDS, method="fuzzy",
+                                 fuzzy_threshold=0.6, limit=99)
+        loose_set = self.oracle_hits(self.ITEMS, "instruction", "租房",
+                                     TestFuzzySlidesAWindow.naive_window_scores, threshold=0.5) \
+            | self.oracle_hits(self.ITEMS, "output", "租房",
+                               TestFuzzySlidesAWindow.naive_window_scores, threshold=0.5)
+        strict_set = self.oracle_hits(self.ITEMS, "instruction", "租房",
+                                      TestFuzzySlidesAWindow.naive_window_scores, threshold=0.6) \
+            | self.oracle_hits(self.ITEMS, "output", "租房",
+                               TestFuzzySlidesAWindow.naive_window_scores, threshold=0.6)
+
+        assert loose.total_matches == len(loose_set)
+        assert strict.total_matches == len(strict_set)
+        assert len(strict.items) < len(loose.items), "阈值调松了命中数却没变——旋钮没生效"
+        assert {i["instruction"] for i in strict.items} <= {i["instruction"] for i in loose.items}
+
+    def test_the_threshold_boundary_is_inclusive(self):
+        """`分数 >= 阈值` 才算命中，等号这一侧要钉住
+
+        「腿租押金」对「如何退租押金？」的最优窗口是「退租押金」，错 1 字 / 4 字 = 0.75。
+        所以阈值取 0.75 必须**还在**、取 0.8 才走。写成 `>` 的话 0.75 会掉成 0 条，
+        而这个边界恰恰是用户最常自己设的值（「允许错一个字」= 1 - 1/字数）。
+        """
+        assert self.fuzzy_hits(0.75) == {"如何退租押金？"}
+        assert self.fuzzy_hits(0.8) == set()
+
+    @pytest.mark.parametrize("query, method, knob", [
+        ("租房", "fuzzy", "fuzzy_threshold"),
+        ("月付", "fuzzy", "fuzzy_threshold"),
+        ("腿租押金", "fuzzy", "fuzzy_threshold"),
+        ("租房", "ngram", "ngram_n"),
+        ("可以申请", "ngram", "ngram_n"),
+    ])
+    def test_the_default_stays_the_shipped_semantics(self, query, method, knob):
+        """不传旋钮 = 显式传默认值（0.6 / 2）——新参数不得改动既有口径
+
+        三端默认值一致是回归的前提：CLI 的 `--fuzzy-threshold`、API 的
+        `SearchRequest.fuzzy_threshold` 都以这里的默认值为准。
+        """
+        searcher = EnhancedSearcher(self.ITEMS)
+        defaults = {"fuzzy_threshold": 0.6, "ngram_n": 2}
+
+        implicit = searcher.search(query, fields=self.FIELDS, method=method, limit=99)
+        explicit = searcher.search(query, fields=self.FIELDS, method=method, limit=99,
+                                   **{knob: defaults[knob]})
+
+        assert explicit.items == implicit.items
+        assert explicit.total_matches == implicit.total_matches
+
+    def test_the_ngram_length_moves_the_hit_set(self):
+        """`ngram_n` 同样要走到打分代码：n=1 逐字覆盖、n=2 二元、n=3 对 2 字查询无解
+
+        三个数都跟 L24 那份 gram 集合 oracle 逐条对齐（不是字面量），顺带钉住
+        「n 比查询还长 → gram 集合为空 → 零命中」是**定义内**的结果而非崩溃。
+        """
+        searcher = EnhancedSearcher(self.ITEMS)
+        for n in (1, 2, 3):
+            result = searcher.search("租房", fields=self.FIELDS, method="ngram",
+                                     ngram_n=n, limit=99)
+            expected = self.oracle_hits(self.ITEMS, "instruction", "租房",
+                                        TestNgramCostFollowsTheQuery.naive_gram_scores, n=n) \
+                | self.oracle_hits(self.ITEMS, "output", "租房",
+                                   TestNgramCostFollowsTheQuery.naive_gram_scores, n=n)
+            assert result.total_matches == len(expected), f"n={n} 与 gram 集合 oracle 不一致"
+            assert {i["instruction"] for i in result.items} == \
+                {self.ITEMS[index]["instruction"] for index in expected}
+        assert searcher.search("租房", fields=self.FIELDS, method="ngram",
+                               ngram_n=3, limit=99).total_matches == 0
+
+    @pytest.mark.parametrize("method, knob", [
+        ("contains", "fuzzy_threshold"),
+        ("ngram", "fuzzy_threshold"),
+        ("fuzzy", "ngram_n"),
+        ("regex", "ngram_n"),
+    ])
+    def test_a_knob_only_bends_its_own_method(self, method, knob):
+        """旋钮不许串台：fuzzy 的阈值不影响 contains/ngram，n 也不影响 fuzzy/regex
+
+        `regex` 用「租」这种字面式（语料里含「租」的条目都算命中），否则模式里的元字符
+        会让「两个结果一样」这条判断变成在测正则引擎。
+        """
+        searcher = EnhancedSearcher(self.ITEMS)
+        query = "租" if method == "regex" else "租房"
+        baseline = searcher.search(query, fields=self.FIELDS, method=method, limit=99)
+        bent = searcher.search(query, fields=self.FIELDS, method=method, limit=99,
+                               **{knob: 1.0 if knob == "fuzzy_threshold" else 4})
+
+        assert bent.items == baseline.items
+        assert bent.total_matches == baseline.total_matches
+
+    @pytest.mark.parametrize("value", [0, -1, 1.5, 1.0000001])
+    def test_an_out_of_range_threshold_fails_loudly(self, value):
+        """阈值越界要报错，不许静默交出 0 条
+
+        这正是 A27 的形状：`_search_fuzzy` 内部对越界值返回 `{}`，作为私有护栏没问题，
+        但公开入口若跟着返回空，用户读到的是「语料里没有」，而真相是「参数写错了」。
+        异常用 `DataValidationError`（与 `batch_size`/聚合策略那几处入参校验同族），
+        它同时是 `ValueError` —— API 的 400 映射与 `except ValueError` 的老调用方都不断。
+        """
+        searcher = EnhancedSearcher(self.ITEMS)
+
+        with pytest.raises(DataValidationError) as excinfo:
+            searcher.search("租房", method="fuzzy", fuzzy_threshold=value)
+
+        assert isinstance(excinfo.value, ValueError)
+        assert "模糊阈值" in str(excinfo.value)
+
+    @pytest.mark.parametrize("value", [0, -2, 2.5, True])
+    def test_an_out_of_range_gram_length_fails_loudly(self, value):
+        """`ngram_n` 必须是 >=1 的整数；`True` 这种「看起来像 1」的也一并拒掉
+
+        允许 float 会静默走进 `text[i:i+2.5]` 的 TypeError（等于把校验推给解释器），
+        允许 bool 则 `True` 悄悄当 1 用——两个都是把坏参数往下传。
+        """
+        searcher = EnhancedSearcher(self.ITEMS)
+
+        with pytest.raises(DataValidationError) as excinfo:
+            searcher.search("租房", method="ngram", ngram_n=value)
+
+        assert isinstance(excinfo.value, ValueError)
+        assert "n-gram 长度" in str(excinfo.value)
+
+    def test_validation_happens_before_the_corpus_is_touched(self):
+        """报错发生在打分之前：一个字段都不许扫
+
+        计数探针把五种私有方法全部替换成记账版，坏参数若先走到分发口就会留下次数。
+        探针自己也要证明是响的——所以同一处再用**合法**参数跑一遍，断言次数 > 0，
+        否则「0 次」可能只是探针根本没生效（L14 的教训）。
+        """
+        calls = []
+
+        class Counting(EnhancedSearcher):
+            def _search_exact(self, *args, **kwargs):
+                calls.append("exact")
+                return {}
+
+            def _search_contains(self, *args, **kwargs):
+                calls.append("contains")
+                return {}
+
+            def _search_ngram(self, *args, **kwargs):
+                calls.append("ngram")
+                return {}
+
+            def _search_fuzzy(self, *args, **kwargs):
+                calls.append("fuzzy")
+                return {}
+
+            def _search_regex(self, *args, **kwargs):
+                calls.append("regex")
+                return {}
+
+        searcher = Counting(self.ITEMS)
+        with pytest.raises(DataValidationError):
+            searcher.search("租房", fields=self.FIELDS, method="contains",
+                            fuzzy_threshold=0)
+        with pytest.raises(DataValidationError):
+            searcher.search("租房", fields=self.FIELDS, method="ngram", ngram_n=0)
+        assert calls == []
+
+        searcher.search("租房", fields=self.FIELDS, method="contains", limit=99)
+        assert calls, "计数探针没生效，上面那两条断言不算证据"
+
+    def test_the_shared_entry_point_forwards_both_knobs(self):
+        """真实入口（CLI 与 `/api/dataset/search` 共用 `search_dataset`）两个旋钮都收
+
+        钉的是「转发」这一步：`search()` 有了参数而 `search_dataset()` 忘了传，
+        上面所有用例照样绿，用户却仍然只能拿默认值。所以这里只走公开入口，
+        并且拿同一份语料上「0.75 有 1 条 / 0.8 有 0 条」「n=1 有 4 条 / n=2 有 2 条」
+        两组**彼此不同**的结果来证明参数真的穿过去了。
+        """
+        loose = search_dataset(self.ITEMS, "腿租押金", fields=self.FIELDS,
+                               method="fuzzy", fuzzy_threshold=0.75)
+        strict = search_dataset(self.ITEMS, "腿租押金", fields=self.FIELDS,
+                                method="fuzzy", fuzzy_threshold=0.8)
+        unigram = search_dataset(self.ITEMS, "租房", fields=self.FIELDS,
+                                 method="ngram", ngram_n=1)
+        bigram = search_dataset(self.ITEMS, "租房", fields=self.FIELDS,
+                                method="ngram", ngram_n=2)
+
+        assert loose.total_matches == 1
+        assert strict.total_matches == 0
+        assert unigram.total_matches > bigram.total_matches

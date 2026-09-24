@@ -312,6 +312,58 @@ class TestDatasetSearch:
         assert payload["total_matches"] == 2
         assert len(payload["items"]) == 1
 
+    def test_fuzzy_threshold_is_a_request_field(self, tools_env):
+        """`fuzzy_threshold` 走得到打分代码：0.6 → 2 条，抬到 0.667 → 0 条
+
+        「公租屋」对「如何申请公租房」的最优窗口是「公租房」，错 1/3 字 = 0.6666…，
+        所以 0.6 收、0.667 已经不收。这条同时补上 L25 那格数字的来历：默认阈值下
+        命中 2 条不是「编辑距离」的功劳，是 2/3 这个分数恰好过了 0.6。
+        """
+        def total(extra):
+            response = tools_env.client.post(
+                "/api/dataset/search",
+                json={"input_file": str(tools_env.data), "query": "公租屋",
+                      "method": "fuzzy", **extra},
+            )
+            assert response.status_code == 200, response.text
+            return response.json()["total_matches"]
+
+        assert total({}) == 2
+        assert total({"fuzzy_threshold": 0.667}) == 0
+        assert total({"fuzzy_threshold": 0.5}) == 2
+
+    def test_ngram_n_is_a_request_field(self, tools_env):
+        """`ngram_n` 也是请求字段：整句查询在 n=1 下 4 条、n=2 起 2 条"""
+        def total(n):
+            response = tools_env.client.post(
+                "/api/dataset/search",
+                json={"input_file": str(tools_env.data), "query": "如何申请公租房",
+                      "method": "ngram", "ngram_n": n},
+            )
+            assert response.status_code == 200, response.text
+            return response.json()["total_matches"]
+
+        assert total(1) == 4
+        assert total(2) == 2
+
+    @pytest.mark.parametrize("extra, phrase", [
+        ({"fuzzy_threshold": 0}, "模糊阈值"),
+        ({"fuzzy_threshold": 2}, "模糊阈值"),
+        ({"ngram_n": 0}, "n-gram 长度"),
+    ])
+    def test_out_of_range_knobs_are_400(self, tools_env, extra, phrase):
+        """越界旋钮是 400，不是「查询成功、零命中」
+
+        判据在 SDK 那一处（`ValueError` → `to_http_error` → 400），路由没有第二份校验；
+        所以这条用例同时也是「字段被转发了」的证据——没转发的话 pydantic 收下就没人管。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/search",
+            json={"input_file": str(tools_env.data), "query": "公租房", **extra},
+        )
+        assert response.status_code == 400, response.text
+        assert phrase in response.json()["detail"]
+
     def test_unknown_method_rejected(self, tools_env):
         """未知检索方法必须 400 —— 不能静默回退到 contains"""
         response = tools_env.client.post(

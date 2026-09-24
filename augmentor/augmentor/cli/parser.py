@@ -307,6 +307,10 @@ def build_parser() -> argparse.ArgumentParser:
                                help="搜索方法")
     search_parser.add_argument("--limit", type=int, default=None, help="返回数量")
     search_parser.add_argument("--offset", type=int, default=0, help="偏移量")
+    search_parser.add_argument("--fuzzy-threshold", type=float, default=0.6,
+                               help="fuzzy 的相似度门槛 (0, 1]，越大越严格；1.0 即要求整串出现")
+    search_parser.add_argument("--ngram-n", type=int, default=2,
+                               help="ngram 的 gram 长度（>=1），越大越严格")
     search_parser.add_argument("--output", type=str, help="结果输出路径（.json）")
 
     # 配置验证命令
