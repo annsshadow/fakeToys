@@ -31,6 +31,27 @@
         <button class="btn-refresh" @click="loadSurfaceManageReads">🗃️ 管理详情/计数/投影/路由配置</button>
         <button class="btn-refresh" @click="loadDesignerDeep">🧱 设计器深度读</button>
         <button class="btn-refresh" @click="loadEngineReads">⚡ 引擎处理读</button>
+        <button class="btn-refresh" @click="pdCreate('applicationdict')">建应用字典</button>
+        <button class="btn-refresh" @click="pdCreate('mapping')">建映射</button>
+        <button class="btn-refresh" @click="pdCreate('mergeitemplan')">建合并项计划</button>
+        <button class="btn-refresh" @click="pdCreate('itemaccess')">建项权限</button>
+        <button class="btn-refresh" @click="pdCreate('itemaccessBach')">批存项权限</button>
+        <button class="btn-refresh" @click="pdEdit('application')">改应用</button>
+        <button class="btn-refresh" @click="pdEdit('appicon')">改应用图标</button>
+        <button class="btn-refresh" @click="pdEdit('mapping')">改映射</button>
+        <button class="btn-refresh" @click="pdEdit('mergeitemplan')">改合并项计划</button>
+        <button class="btn-refresh" @click="pdEdit('process')">改流程</button>
+        <button class="btn-refresh" @click="pdEdit('dict')">存字典</button>
+        <button class="btn-refresh" @click="pdEdit('form')">存表单</button>
+        <button class="btn-refresh" @click="pdEdit('xform')">存xform</button>
+        <button class="btn-refresh" @click="pdDelete('applicationdict')">删应用字典</button>
+        <button class="btn-refresh" @click="pdDelete('mapping')">删映射</button>
+        <button class="btn-refresh" @click="pdDelete('mergeitemplan')">删合并项计划</button>
+        <button class="btn-refresh" @click="pdDelete('dict')">删字典</button>
+        <button class="btn-refresh" @click="pdDelete('form')">删表单</button>
+        <button class="btn-refresh" @click="pdDelete('xform')">删xform</button>
+        <button class="btn-refresh" @click="pdPerm('application')">应用权限</button>
+        <button class="btn-refresh" @click="pdPerm('process')">流程权限</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
@@ -324,6 +345,69 @@ async function loadEngineReads() {
     engineReadText.value = `引擎 processing 深度读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
     toast.error('加载引擎读取失败: ' + (e?.message ?? ''))
+  }
+}
+// rev320：流程设计器 真实写端点（用户触发 prompt+确认，非造假）——应用/字典/映射/合并项计划/item-access/流程/表单/xform 建改删+权限
+// 全字面量路径；请求体经 handler 签名核实（多为 Json<Value>），已排除 upgrade/disable/edition/merge-data 等生命周期动作
+async function pdCreate(kind: 'applicationdict' | 'mapping' | 'mergeitemplan' | 'itemaccess' | 'itemaccessBach') {
+  const name = prompt(`新建${kind}（输入名称/标识）:`, '')
+  if (!name) return
+  try {
+    if (kind === 'applicationdict') await api.post('/api/processplatform/assemble/designer/applicationdict', { name })
+    else if (kind === 'mapping') await api.post('/api/processplatform/assemble/designer/mapping', { name })
+    else if (kind === 'mergeitemplan') await api.post('/api/processplatform/assemble/designer/mergeitemplan', { name })
+    else if (kind === 'itemaccess') await api.post('/api/processplatform/assemble/designer/item-access', { name })
+    else await api.post('/api/processplatform/assemble/designer/item-access/bach/save', { list: [] })
+    toast.success(`${kind} 已创建`)
+  } catch (e: any) {
+    toast.error(`新建${kind}失败: ` + (e?.message ?? ''))
+  }
+}
+async function pdEdit(kind: 'application' | 'appicon' | 'mapping' | 'mergeitemplan' | 'process' | 'dict' | 'form' | 'xform') {
+  const id = prompt(`要编辑的${kind} ID/flag:`, '')
+  if (!id) return
+  const e = encodeURIComponent(id)
+  try {
+    if (kind === 'application') await api.put(`/api/processplatform/assemble/designer/application/${e}`, { name: '更新应用' })
+    else if (kind === 'appicon') await api.put(`/api/processplatform/assemble/designer/application/${e}/icon`, { icon: '' })
+    else if (kind === 'mapping') await api.put(`/api/processplatform/assemble/designer/mapping/${e}`, { name: '更新映射' })
+    else if (kind === 'mergeitemplan') await api.put(`/api/processplatform/assemble/designer/mergeitemplan/${e}`, { name: '更新合并项计划' })
+    else if (kind === 'process') await api.put(`/api/processplatform/assemble/designer/process/${e}`, { name: '更新流程' })
+    else if (kind === 'dict') await api.put(`/api/processplatform/assemble/designer/dict/save/${e}`, { data: {} })
+    else if (kind === 'form') await api.put(`/api/processplatform/assemble/designer/form/save/${e}`, { data: {} })
+    else await api.put(`/api/processplatform/assemble/designer/xform/save/${e}`, { data: {} })
+    toast.success(`${kind} 已更新`)
+  } catch (err: any) {
+    toast.error(`更新${kind}失败: ` + (err?.message ?? ''))
+  }
+}
+async function pdDelete(kind: 'applicationdict' | 'mapping' | 'mergeitemplan' | 'dict' | 'form' | 'xform') {
+  const id = prompt(`要删除的${kind} ID/flag:`, '')
+  if (!id) return
+  if (!window.confirm(`确定删除该${kind}？`)) return
+  const e = encodeURIComponent(id)
+  try {
+    if (kind === 'applicationdict') await api.delete(`/api/processplatform/assemble/designer/applicationdict/${e}`)
+    else if (kind === 'mapping') await api.delete(`/api/processplatform/assemble/designer/mapping/${e}`)
+    else if (kind === 'mergeitemplan') await api.delete(`/api/processplatform/assemble/designer/mergeitemplan/${e}`)
+    else if (kind === 'dict') await api.delete(`/api/processplatform/assemble/designer/dict/delete/${e}`)
+    else if (kind === 'form') await api.delete(`/api/processplatform/assemble/designer/form/delete/${e}`)
+    else await api.delete(`/api/processplatform/assemble/designer/xform/delete/${e}`)
+    toast.success(`${kind} 已删除`)
+  } catch (err: any) {
+    toast.error(`删除${kind}失败: ` + (err?.message ?? ''))
+  }
+}
+async function pdPerm(kind: 'application' | 'process') {
+  const id = prompt(`设置权限的${kind} ID:`, '')
+  if (!id) return
+  const e = encodeURIComponent(id)
+  try {
+    if (kind === 'application') await api.post(`/api/processplatform/assemble/designer/application/${e}/permission`, {})
+    else await api.post(`/api/processplatform/assemble/designer/process/${e}/permission`, {})
+    toast.success(`${kind} 权限已设置`)
+  } catch (err: any) {
+    toast.error(`设置${kind}权限失败: ` + (err?.message ?? ''))
   }
 }
 // rev290：流程设计器 应用汇总/元素孤儿字典/流程引出/启用/权限 真实读端点集；均只读 arity 已核
