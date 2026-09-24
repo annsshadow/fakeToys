@@ -31,6 +31,15 @@
       <button class="org-meta-btn" @click="loadOrgListCursors">核心列表游标</button>
       <button class="org-meta-btn" @click="loadOrgControlReads">控制读取族</button>
       <button class="org-meta-btn" @click="loadOrgControlDeep">控制深度读</button>
+      <button class="org-meta-btn" @click="orgUnitExpress">单位树/校验/属性读</button>
+      <button class="org-meta-btn" @click="orgUnitWrite('attrSet')">单位属性替换</button>
+      <button class="org-meta-btn" @click="orgUnitWrite('attrAppend')">单位属性追加</button>
+      <button class="org-meta-btn" @click="orgUnitWrite('groupCreate')">建群组(express)</button>
+      <button class="org-meta-btn" @click="orgUnitWrite('groupUpdate')">改群组(express)</button>
+      <button class="org-meta-btn" @click="orgUnitWrite('groupDelete')">删群组(express)</button>
+      <button class="org-meta-btn" @click="orgUnitWrite('unitCreate')">建单位(express)</button>
+      <button class="org-meta-btn" @click="orgUnitWrite('unitUpdate')">改单位(express)</button>
+      <button class="org-meta-btn" @click="orgUnitWrite('unitDelete')">删单位(express)</button>
       <button class="org-meta-btn" @click="orgCreate('person')">建人员</button>
       <button class="org-meta-btn" @click="orgCreate('unit')">建单位</button>
       <button class="org-meta-btn" @click="orgCreate('identity')">建身份</button>
@@ -192,7 +201,7 @@
 </template>
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
-import { toast } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 import { useQuery } from '@tanstack/vue-query'
 import { ref } from 'vue'
 
@@ -317,6 +326,70 @@ async function loadOrgControlDeep() {
     orgMetaText.value = `组织控制深度读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
     toast.error('加载组织控制深度读失败: ' + (e?.message ?? ''))
+  }
+}
+// rev357：组织 express 单位树/校验/属性职务读（POST body{unitList}/{unit,name}），全字面量路径，用户触发按钮
+async function orgUnitExpress() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const unit = prompt('单位（id 或名称）:', '') || ''
+  const ul = { unitList: unit ? [unit] : [] }
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/unit/list/unit/sub/direct', ul)),
+      s(api.post('/api/unit/list/unit/sub/nested', ul)),
+      s(api.post('/api/unit/list/unit/sup/direct', ul)),
+      s(api.post('/api/unit/list/unit/sup/nested', ul)),
+      s(api.post('/api/unit/list/unitattribute', ul)),
+      s(api.post('/api/unit/list/unitduty', ul)),
+      s(api.post('/api/unit/list/types', { typeList: [] })),
+      s(api.post('/api/unit/check/unit/has/person', { unit, person: '' })),
+      s(api.post('/api/unit/check/unit/has/unit', { unit, subUnit: '' })),
+      s(api.post('/api/unitattribute/list/name/unit', ul)),
+      s(api.post('/api/unitattribute/list/attribute/unit/name', { unit, name: '' })),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    orgMetaText.value = `单位树/校验/属性读 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载单位 express 读失败: ' + (e?.message ?? ''))
+  }
+}
+// rev357：组织 单位属性 全量替换/追加 + 群组/单位 express 建改删 真实写（shape 已核：attr{unit,name,attributeList}）
+async function orgUnitWrite(op: string) {
+  try {
+    if (op === 'attrSet' || op === 'attrAppend') {
+      const unit = prompt('单位（id 或名称）:', '') || ''
+      if (!unit) return
+      const name = prompt('属性名:', '') || ''
+      const val = prompt('属性值（逗号分隔）:', '') || ''
+      const attributeList = val.split(',').map((x) => x.trim()).filter(Boolean)
+      const path = op === 'attrSet' ? '/api/unitattribute/set/unit/name' : '/api/unitattribute/append/unit/name'
+      await api.post(path, { unit, name, attributeList })
+    } else if (op === 'groupCreate') {
+      const name = prompt('群组名称:', '') || ''
+      if (!name) return
+      await api.post('/api/group', { name })
+    } else if (op === 'groupUpdate') {
+      const flag = prompt('群组 flag:', '') || ''
+      await api.put(`/api/group/${encodeURIComponent(flag)}`, { name: prompt('新名称:', '') || '' })
+    } else if (op === 'groupDelete') {
+      const flag = prompt('要删除的群组 flag:', '') || ''
+      if (!(await confirmMsg('确定删除该群组？'))) return
+      await api.delete(`/api/group/${encodeURIComponent(flag)}`)
+    } else if (op === 'unitCreate') {
+      const name = prompt('单位名称:', '') || ''
+      if (!name) return
+      await api.post('/api/unit', { name })
+    } else if (op === 'unitUpdate') {
+      const flag = prompt('单位 flag:', '') || ''
+      await api.put(`/api/unit/${encodeURIComponent(flag)}`, { name: prompt('新名称:', '') || '' })
+    } else {
+      const flag = prompt('要删除的单位 flag:', '') || ''
+      if (!(await confirmMsg('确定删除该单位？'))) return
+      await api.delete(`/api/unit/${encodeURIComponent(flag)}`)
+    }
+    toast.success('组织 express 写操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
   }
 }
 // rev322：组织控制 真实写端点（用户触发 prompt+确认，非造假）——人员/单位/身份/群组/角色/属性/权限设置/名片 建改删+成员+账号；全字面量路径
