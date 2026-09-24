@@ -231,6 +231,7 @@
           <button class="btn-sm" @click="pcU11">企微/政务钉钉/打包读</button>
           <button class="btn-sm" @click="pcU12">样式/公众号/打包连接读</button>
           <button class="btn-sm" @click="pcU13">WeLink同步/异常日志上报</button>
+          <button class="btn-sm" @click="pcU14">政务钉钉/安装日志/重打包</button>
           <div v-if="pcU4Text" class="app-meta">{{ pcU4Text }}</div>
         </div>
         <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
@@ -1469,6 +1470,21 @@ async function pcU13() {
     toast.success('同步/异常日志已上报')
   } catch (e: any) {
     toast.error('上报失败: ' + (e?.message ?? ''))
+  }
+}
+// rev428：程序中心 政务钉钉拉取同步(x_program_sync_log)·安装日志分页读(x_program_schedule_log)·App安卓重打包(x_program_app_pack 状态置 repacking) 三条 pool-only，distinct 表，无外部 HTTP
+async function pcU14() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/program_center/zhengwudingding/pull/sync')),
+      s(api.get('/api/program_center/market/list/install/log/paging/page/size/size')),
+      s(api.get('/api/program_center/apppack/pack/info/android/repack')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`政务钉钉/安装日志/重打包 ${rs.length} 条命中 ${hit}`)
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
   }
 }
 async function loadMarketLogs() {
