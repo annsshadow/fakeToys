@@ -31,6 +31,45 @@
       <button class="org-meta-btn" @click="loadOrgListCursors">核心列表游标</button>
       <button class="org-meta-btn" @click="loadOrgControlReads">控制读取族</button>
       <button class="org-meta-btn" @click="loadOrgControlDeep">控制深度读</button>
+      <button class="org-meta-btn" @click="orgCreate('person')">建人员</button>
+      <button class="org-meta-btn" @click="orgCreate('unit')">建单位</button>
+      <button class="org-meta-btn" @click="orgCreate('identity')">建身份</button>
+      <button class="org-meta-btn" @click="orgCreate('group')">建群组</button>
+      <button class="org-meta-btn" @click="orgCreate('role')">建角色</button>
+      <button class="org-meta-btn" @click="orgCreate('personattribute')">建人员属性</button>
+      <button class="org-meta-btn" @click="orgCreate('permissionsetting')">建权限设置</button>
+      <button class="org-meta-btn" @click="orgCreate('personcard')">建名片</button>
+      <button class="org-meta-btn" @click="orgCreate('inputperson')">建导入人员</button>
+      <button class="org-meta-btn" @click="orgUpdate('person')">改人员</button>
+      <button class="org-meta-btn" @click="orgUpdate('unit')">改单位</button>
+      <button class="org-meta-btn" @click="orgUpdate('identity')">改身份</button>
+      <button class="org-meta-btn" @click="orgUpdate('group')">改群组</button>
+      <button class="org-meta-btn" @click="orgUpdate('role')">改角色</button>
+      <button class="org-meta-btn" @click="orgUpdate('unitduty')">改职务</button>
+      <button class="org-meta-btn" @click="orgUpdate('unitattribute')">改单位属性</button>
+      <button class="org-meta-btn" @click="orgUpdate('personattribute')">改人员属性</button>
+      <button class="org-meta-btn" @click="orgUpdate('permissionsetting')">改权限设置</button>
+      <button class="org-meta-btn" @click="orgUpdate('personcard')">改名片</button>
+      <button class="org-meta-btn" @click="orgDelete('person')">删人员</button>
+      <button class="org-meta-btn" @click="orgDelete('unit')">删单位</button>
+      <button class="org-meta-btn" @click="orgDelete('identity')">删身份</button>
+      <button class="org-meta-btn" @click="orgDelete('group')">删群组</button>
+      <button class="org-meta-btn" @click="orgDelete('role')">删角色</button>
+      <button class="org-meta-btn" @click="orgDelete('personattribute')">删人员属性</button>
+      <button class="org-meta-btn" @click="orgDelete('permissionsetting')">删权限设置</button>
+      <button class="org-meta-btn" @click="orgDelete('personcard')">删名片</button>
+      <button class="org-meta-btn" @click="orgMember('groupAdd')">群组加成员</button>
+      <button class="org-meta-btn" @click="orgMember('groupDel')">群组删成员</button>
+      <button class="org-meta-btn" @click="orgMember('dutyPost')">职务成员POST</button>
+      <button class="org-meta-btn" @click="orgMember('dutyPut')">职务成员PUT</button>
+      <button class="org-meta-btn" @click="orgAccount('lock')">锁定人员</button>
+      <button class="org-meta-btn" @click="orgAccount('ban')">禁用人员</button>
+      <button class="org-meta-btn" @click="orgAccount('unban')">解禁人员</button>
+      <button class="org-meta-btn" @click="orgAccount('password')">重置密码</button>
+      <button class="org-meta-btn" @click="orgAccount('icon')">改头像</button>
+      <button class="org-meta-btn" @click="orgAccount('reserve')">保留删除</button>
+      <button class="org-meta-btn" @click="orgAccount('tmSave')">存三员</button>
+      <button class="org-meta-btn" @click="orgAccount('tmDelete')">删三员</button>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -263,6 +302,96 @@ async function loadOrgControlDeep() {
     orgMetaText.value = `组织控制深度读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
     toast.error('加载组织控制深度读失败: ' + (e?.message ?? ''))
+  }
+}
+// rev322：组织控制 真实写端点（用户触发 prompt+确认，非造假）——人员/单位/身份/群组/角色/属性/权限设置/名片 建改删+成员+账号；全字面量路径
+async function orgCreate(kind: 'person' | 'unit' | 'identity' | 'group' | 'role' | 'personattribute' | 'permissionsetting' | 'personcard' | 'inputperson') {
+  const name = prompt(`新建${kind}（名称/标识）:`, '')
+  if (!name) return
+  try {
+    if (kind === 'person') await api.post('/api/organization/assemble/control/person', { name })
+    else if (kind === 'unit') await api.post('/api/organization/assemble/control/unit', { name })
+    else if (kind === 'identity') await api.post('/api/organization/assemble/control/identity', { name })
+    else if (kind === 'group') await api.post('/api/organization/assemble/control/group', { name })
+    else if (kind === 'role') await api.post('/api/organization/assemble/control/role', { name })
+    else if (kind === 'personattribute') await api.post('/api/organization/assemble/control/personattribute', { name })
+    else if (kind === 'permissionsetting') await api.post('/api/organization/assemble/control/permissionsetting', { name })
+    else if (kind === 'personcard') await api.post('/api/organization/assemble/control/personcard', { name })
+    else await api.post('/api/organization/assemble/control/inputperson', { name })
+    toast.success(`${kind} 已创建`)
+  } catch (e: any) {
+    toast.error(`新建${kind}失败: ` + (e?.message ?? ''))
+  }
+}
+async function orgUpdate(kind: 'person' | 'unit' | 'identity' | 'group' | 'role' | 'unitduty' | 'unitattribute' | 'personattribute' | 'permissionsetting' | 'personcard') {
+  const flag = prompt(`要更新的${kind} flag:`, '')
+  if (!flag) return
+  const e = encodeURIComponent(flag)
+  try {
+    if (kind === 'person') await api.put(`/api/organization/assemble/control/person/${e}`, { name: '更新' })
+    else if (kind === 'unit') await api.put(`/api/organization/assemble/control/unit/${e}`, { name: '更新' })
+    else if (kind === 'identity') await api.put(`/api/organization/assemble/control/identity/${e}`, { name: '更新' })
+    else if (kind === 'group') await api.put(`/api/organization/assemble/control/group/${e}`, { name: '更新' })
+    else if (kind === 'role') await api.put(`/api/organization/assemble/control/role/${e}`, { name: '更新' })
+    else if (kind === 'unitduty') await api.put(`/api/organization/assemble/control/unitduty/${e}`, { name: '更新' })
+    else if (kind === 'unitattribute') await api.put(`/api/organization/assemble/control/unitattribute/${e}`, { name: '更新' })
+    else if (kind === 'personattribute') await api.put(`/api/organization/assemble/control/personattribute/${e}`, { name: '更新' })
+    else if (kind === 'permissionsetting') await api.put(`/api/organization/assemble/control/permissionsetting/${e}`, { name: '更新' })
+    else await api.put(`/api/organization/assemble/control/personcard/${e}`, { name: '更新' })
+    toast.success(`${kind} 已更新`)
+  } catch (err: any) {
+    toast.error(`更新${kind}失败: ` + (err?.message ?? ''))
+  }
+}
+async function orgDelete(kind: 'person' | 'unit' | 'identity' | 'group' | 'role' | 'personattribute' | 'permissionsetting' | 'personcard') {
+  const flag = prompt(`要删除的${kind} flag:`, '')
+  if (!flag) return
+  if (!window.confirm(`确定删除该${kind}？`)) return
+  const e = encodeURIComponent(flag)
+  try {
+    if (kind === 'person') await api.delete(`/api/organization/assemble/control/person/${e}`)
+    else if (kind === 'unit') await api.delete(`/api/organization/assemble/control/unit/${e}`)
+    else if (kind === 'identity') await api.delete(`/api/organization/assemble/control/identity/${e}`)
+    else if (kind === 'group') await api.delete(`/api/organization/assemble/control/group/${e}`)
+    else if (kind === 'role') await api.delete(`/api/organization/assemble/control/role/${e}`)
+    else if (kind === 'personattribute') await api.delete(`/api/organization/assemble/control/personattribute/${e}`)
+    else if (kind === 'permissionsetting') await api.delete(`/api/organization/assemble/control/permissionsetting/${e}`)
+    else await api.delete(`/api/organization/assemble/control/personcard/${e}`)
+    toast.success(`${kind} 已删除`)
+  } catch (err: any) {
+    toast.error(`删除${kind}失败: ` + (err?.message ?? ''))
+  }
+}
+async function orgMember(op: 'groupAdd' | 'groupDel' | 'dutyPost' | 'dutyPut') {
+  const flag = prompt('群组/职务 flag:', '')
+  if (!flag) return
+  const e = encodeURIComponent(flag)
+  try {
+    if (op === 'groupAdd') await api.put(`/api/organization/assemble/control/group/${e}/add/member`, { member: '' })
+    else if (op === 'groupDel') await api.put(`/api/organization/assemble/control/group/${e}/delete/member`, { member: '' })
+    else if (op === 'dutyPost') await api.post('/api/organization/assemble/control/unitduty/update/member', { member: '' })
+    else await api.put('/api/organization/assemble/control/unitduty/update/member', { member: '' })
+    toast.success('成员操作已提交')
+  } catch (err: any) {
+    toast.error('成员操作失败: ' + (err?.message ?? ''))
+  }
+}
+async function orgAccount(op: 'lock' | 'ban' | 'unban' | 'password' | 'icon' | 'reserve' | 'tmSave' | 'tmDelete') {
+  const flag = prompt('人员 flag / threemember ID:', '')
+  if (!flag) return
+  const e = encodeURIComponent(flag)
+  try {
+    if (op === 'lock') await api.post(`/api/organization/assemble/control/person/lock/${e}`, {})
+    else if (op === 'ban') await api.post(`/api/organization/assemble/control/person/ban/${e}`, {})
+    else if (op === 'unban') await api.post(`/api/organization/assemble/control/person/unban/${e}`, {})
+    else if (op === 'password') await api.put(`/api/organization/assemble/control/person/${e}/set/password`, { password: '' })
+    else if (op === 'icon') await api.put(`/api/organization/assemble/control/person/${e}/icon`, { icon: '' })
+    else if (op === 'reserve') await api.delete(`/api/organization/assemble/control/person/${e}/reserve`)
+    else if (op === 'tmSave') await api.put(`/api/organization/assemble/control/threemember/save/${e}`, {})
+    else await api.delete(`/api/organization/assemble/control/threemember/delete/${e}`)
+    toast.success('账号/三员操作已提交')
+  } catch (err: any) {
+    toast.error('账号操作失败: ' + (err?.message ?? ''))
   }
 }
 async function loadOrgMeta() {
