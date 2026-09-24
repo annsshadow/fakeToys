@@ -219,6 +219,12 @@
           <button class="btn-sm" @click="pcU6('moduleWrite')">写模块</button>
           <button class="btn-sm" @click="pcU6('moduleRemoveStruct')">删模块结构</button>
           <button class="btn-sm" @click="pcU6('applicationSave')">保存应用</button>
+          <button class="btn-sm" @click="pcU7('inputCompare')">输入比较</button>
+          <button class="btn-sm" @click="pcU7('inputCover')">输入覆盖</button>
+          <button class="btn-sm" @click="pcU7('inputCreate')">输入创建</button>
+          <button class="btn-sm" @click="pcU7('inputPrepareCover')">预备覆盖</button>
+          <button class="btn-sm" @click="pcU7('inputPrepareCreate')">预备创建</button>
+          <button class="btn-sm" @click="pcU7('jestClear')">Jest清缓存</button>
           <div v-if="pcU4Text" class="app-meta">{{ pcU4Text }}</div>
         </div>
         <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
@@ -1360,7 +1366,20 @@ async function pcU6(op: string) {
     toast.error('操作失败: ' + (e?.message ?? ''))
   }
 }
-// rev292：程序中心 市场安装日志(按flag/字面flag)/市场分页(按分类) 真实读端点(X_PROGRAM_SCHEDULE_LOG)；均只读 arity 已核
+// rev396：程序中心 数据输入 比较/覆盖/创建/预备覆盖/预备创建 + Jest 清缓存(按源) 真实路由（input_* 均 Path-free pool-only 空体、jest_clear_cache handler 忽略 {source} 参不 trap500；POST/PUT 孪生择一，用户触发）
+async function pcU7(op: string) {
+  try {
+    if (op === 'inputCompare') await api.post('/api/program_center/input/compare', {})
+    else if (op === 'inputCover') await api.post('/api/program_center/input/cover', {})
+    else if (op === 'inputCreate') await api.put('/api/program_center/input/create', {})
+    else if (op === 'inputPrepareCover') await api.post('/api/program_center/input/prepare/cover', {})
+    else if (op === 'inputPrepareCreate') await api.post('/api/program_center/input/prepare/create', {})
+    else { const src = encodeURIComponent(prompt('缓存源:', '') || ''); await api.get(`/api/program_center/jest/clear/cache/${src}`) }
+    toast.success('程序中心操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadMarketLogs() {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const flag = 'default'
