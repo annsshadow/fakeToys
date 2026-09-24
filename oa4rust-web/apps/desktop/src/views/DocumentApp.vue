@@ -18,6 +18,7 @@
         <button class="btn-create" @click="showCreate=true">+ 新建文档</button>
         <button class="btn-primary" @click="loadDocMeta">字段/批量状态</button>
         <button class="btn-primary" @click="loadManagerList">管理视图</button>
+        <button class="btn-primary" @click="loadCipherList">密文文档列表</button>
         <span v-if="docMetaText" class="doc-meta-note">{{ docMetaText }}</span>
       </div>
       <div class="list-panel">
@@ -41,6 +42,7 @@
               <button class="btn-act" @click="onUnTop(item)">取消置顶</button>
               <button class="btn-act" @click="onPublish(item)">发布</button>
               <button class="btn-act" @click="onPublishCancel(item)">撤发</button>
+              <button class="btn-act" @click="onCipherPublish(item)">密文发布</button>
               <button class="btn-act" @click="onViewCount(item)">阅读数</button>
               <button class="btn-act" @click="onPersons(item)">可见人</button>
               <button class="btn-act" @click="onNotify(item)">通知</button>
@@ -120,6 +122,29 @@ async function loadDocMeta() {
     docMetaText.value = `字段 ${n(fields)} / 批量状态 ${n(status)} / uuid ${(uuid as any)?.data ? '有' : '—'}`
   } catch (e: any) {
     toast.error('加载文档元数据失败: ' + (e?.message ?? ''))
+  }
+}
+// rev437：密文文档筛选列表读（document_cipher_filter_list_page_size_size 仅取 pool 查 x_cms_document_cipher，{page}/size/{size} 参数被忽略但字面量路由匹配、非 arity trap）
+async function loadCipherList() {
+  try {
+    const page = 1
+    const size = 20
+    const r: any = await api.put(`/api/document/cipher/filter/list/${page}/size/${size}`, {})
+    const n = Array.isArray(r?.data) ? r.data.length : (Array.isArray(r?.data?.data) ? r.data.data.length : 0)
+    docMetaText.value = `密文文档：${n} 条`
+  } catch (e: any) {
+    toast.error('加载密文列表失败: ' + (e?.message ?? ''))
+  }
+}
+// rev437：密文文档发布（document_cipher_publish_workflow_u3 取 Json docIds/docId+cipherText+personId→u3_cipher_upsert 写；空 ids 不落库无垃圾，用户以真实 docId+密文触发）
+async function onCipherPublish(item: DocItem) {
+  const cipherText = prompt(`为文档「${item.title ?? item.id}」输入密文内容:`, '') || ''
+  if (!cipherText.trim()) return
+  try {
+    const r: any = await api.put('/api/document/cipher/publish/content', { docId: item.id, cipherText })
+    toast.success(`密文已发布：${(r as any)?.data?.ciphered ?? 0} 条`)
+  } catch (e: any) {
+    toast.error('密文发布失败: ' + (e?.message ?? ''))
   }
 }
 const items = ref<DocItem[]>([])

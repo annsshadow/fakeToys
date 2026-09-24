@@ -441,6 +441,8 @@
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('attCopy2')">附件复制(源→工作)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('snapUpload')">上传快照</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('jobDelete')">删 Job</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('urge')">催办超时任务</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('handover')">接管无主作业</button>
           </div>
         </section>
 
@@ -1879,6 +1881,26 @@ async function engineRest4(op: string): Promise<void> {
     else if (op === 'workSerial') { const pid = encodeURIComponent(prompt('流程 ID:', '') || ''); const name = encodeURIComponent(prompt('活动名:', '') || ''); await api.post(`/api/processplatform/service/processing/work/process/${pid}/name/${name}/serial`, {}) }
     else { const t = encodeURIComponent(prompt('快照类型:', '') || ''); await api.get(`/api/processplatform/service/processing/snap/workcompleted/abandonedworkcompleted/${id()}/${t}`) }
     toast.success('引擎操作已提交')
+  } catch (e: any) {
+    toast.error('引擎操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev437：service/processing 引擎 触达域批处理 GET touch/urge（催办超时活动任务，record_insert 记录）·GET touch/handoverjob（接管无主 job，person←work.creator）真实路由（u2 版仅取 pool 无 Path，字面量路由匹配；POST 同名走 crate:: Path<String> 属字面末段 trap 已避）
+async function engineTouch(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    if (op === 'urge') {
+      const r: any = await api.get('/api/processplatform/service/processing/touch/urge')
+      const n = Array.isArray(r?.data) ? r.data.length : (r?.data?.count ?? 0)
+      toast.success(`已催办超时任务：${n}`)
+    } else {
+      const r: any = await api.get('/api/processplatform/service/processing/touch/handoverjob')
+      const n = r?.data?.count ?? (Array.isArray(r?.data) ? r.data.length : 0)
+      toast.success(`已接管无主作业：${n}`)
+    }
   } catch (e: any) {
     toast.error('引擎操作失败: ' + (e?.message ?? ''))
   } finally {
