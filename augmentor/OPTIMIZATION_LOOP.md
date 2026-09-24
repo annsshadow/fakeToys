@@ -27,6 +27,7 @@
 - [x] **L14** `perf(quality)`: A10 —— 回退多样性的参照 n-gram 集合整批只切一次（与向量分支同构），真实 1500 条 `batch_score` **339.5 → 61.8 ms（5.49×，9/9 轮）**、`_ngram_similarity` **46500 → 1500 次**，五项分数逐条相同；**代价：峰值内存 +80 KB**
 - [x] **L15** `perf(vector)`: A22（新发现）—— `FAISSDB.add_vectors` 的逐条写入从 O(n²) 收成 O(n)：几何扩容 + ID 镜像集合，真实维度 384 逐条写 3000 条 **1671.3 → 31.7 ms（52.72×，3/3 轮）**，缩放从平方变线性
 - [x] **L16** `feat(converter)`: B3 前半 —— 补上 6 条反向转换边（`alpaca/belle/llama_factory/sharegpt/vicuna/chatml → json`），并给 CLI `--input-format` / API `source_format` 接线；导出→再增强的回路打通，新增 42 例
+- [x] **L17** `perf(validation) + fix`: A12① —— 禁止模式预编译并把 `import re` 提到模块级，真实 6902 条 strict 整档校验 **28.99 → 19.49 ms（1.49×，9/9 轮）**、该段 **1.69–1.88×**；**顺带修掉一个新发现的缺陷**：`DatasetValidator(preset=...)` 直接把类级预设字典挂到实例上，任一实例改规则即污染全部预设
 
 ## Backlog A — 性能（含 file:line 与实测线索）
 
@@ -43,11 +44,11 @@
 | ~~A9~~ | ~~`augmentor/tracker.py:114` → `:87-99`~~ | ~~每个指标点整文件重写 → O(points²) 字节~~ **L9 实测排除**：`log_metric`/`start_experiment` 除测试外无调用者（`ExperimentTracker` 本身在 `pipeline.py:118` 有构造，别误判成死模块）。等 B7 把实验回路接上再优化才有意义 | S |
 | ~~A10~~ | ~~`augmentor/quality.py:175-179`~~ | ~~多样性回退里参照文本 n-gram 集合反复重建~~ **已修（L14）**：真实 1500 条 `batch_score` 同进程交替中位 **339.5 → 61.8 ms（5.49×，9/9 轮）**、`_ngram_similarity` **46500 → 1500 次**、集合分配约 **37200 → 9930 个**（N=300 单测），五项分数逐条相同；**峰值内存反向 +79.6 KB**（缓存常驻 30 个 frozenset），本轮只买 CPU | S |
 | A11 | `augmentor/indexer.py:117-123,345,352,372-399` | 每次 `DatasetView` 操作重建全部索引（filter 26 ms @ n=3000） | M |
-| A12 | `augmentor/validation.py:217-222`、`sampler.py:296-299` | **L13 实测拆成两半**：①`_validate_item` 里 `import re` + 每条每模式一次 `re.search` —— 真实 6902 条 strict 预设 29.2 ms vs basic 11.7 ms，`re.search` 调了 **27608 次 = 每条 4 次**，预编译 + 提到模块级预计省 ~5 ms（1.2×），量级小但确实是门口必经；②`sampler.generate_report()` 的 `items.index(seed)` **实测不是缺陷**：真实数据只推荐 4 个种子、反查 0.0 ms，而单趟 id 映射要 1.1 ms —— **改了反而更慢**，这一半作废（且它还会改变「值相等但不同对象」时的下标语义，真实数据里正好有 367 条重复 dict） | S |
+| ~~A12~~ | ~~`augmentor/validation.py:217-222`~~、`sampler.py:296-299` | **L13 实测拆成两半**：①`_validate_item` 里 `import re` + 每条每模式一次 `re.search`；②`sampler.generate_report()` 的 `items.index(seed)` **实测不是缺陷**（真实数据只推荐 4 个种子、反查 0.0 ms，单趟 id 映射要 1.1 ms，改了反而更慢；且它还会改变「值相等但不同对象」时的下标语义，真实数据里正好有 367 条重复 dict）—— 这一半作废。**①已修（L17）**：真实 6902 条 strict **28.99 → 19.49 ms（1.49×）**，禁止模式段占整档 53–55%、该段自身 **1.69–1.88×**（L13 预估的「~5 ms / 1.2×」偏保守）；`re.search` 逐条调用 **27608 → 0**、`re.compile` 与条数无关恒为 2 | S |
 | ~~A13~~ | ~~`api/routes/dataset_tools.py:311,360,386,387,416,436,566,598` + `system_ops.py:320,348,514`~~ | ~~**A4 的同构族**：`read_items()`（同步版）在 11 个 `async def` 路由体里直接调用，同样占着事件循环；`dataset_tools.py:566` 还是「多个文件在循环里串行读」；`/api/dataset/stats` 连分析都留在循环上（43.4 ms）~~ 已修（L7） | M |
 | ~~A14~~ | ~~`augmentor/impact.py:66`~~ | ~~`duplicate_rate` 里 `texts.count(t)` 写在推导式中 → O(n²)~~ 已修（L6） | S |
 | ~~A15~~ | ~~`augmentor/statistics.py` `calculate_statistics`、`A3`/`A5` 那类纯 Python 分析~~ | ~~**线程池对 CPU 型分析不产生并行**（GIL）：3 并发 stats 实测离线后请求方 173.7 → 192.7 ms（+11%），换来的只是循环停顿 170.1 → 60.0 ms。要么上 `ProcessPoolExecutor`，要么回到算法侧把 43.4 ms 这个数本身降下来~~ **算法侧已修（L12）**：真实 6902 条 `calculate()` 同进程交替中位 **50.94 → 43.87 ms（1.16×）**、词汇统计峰值 **8.15 MB → 2.22 MB**。**GIL 那半仍然成立**——进程池本轮不做（跨进程要序列化整份数据集，代价未实测），所以「3 并发总耗时」这个数不会因为 L12 变成并行 | M |
-| A16 | `api/routes/system_ops.py:514` `dependency_register` | 为了拿「条数」这一个整数把整个数据集解析一遍（3.4 MB / 9 ms 读 + 全量 list 物化）。登记动作本身只需要 count，可流式计数或延后到首次访问再回填 | S |
+| ~~A16~~ | ~~`api/routes/system_ops.py:514` `dependency_register`~~ | ~~为了拿「条数」这一个整数把整个数据集解析一遍（3.6 MB / 6902 条），可流式计数或延后到首次访问再回填~~ **L17 实测排除，未改**：同一份真实数据 back-to-back 量得 `await read_json_file` **14.93 ms**、同步 `json.load` **12.89 ms**、「读字节 + `loads` 只取长度」**9.89 ms**，而手写纯 Python 顶层元素扫描器 **77.84 ms（慢 8 倍）且把 6902 条数成了 13804**（内层数组的花括号它分不清）。结论：C 级解析就是拿这个整数最便宜的路子，「流式计数」在此不但更慢还会放松掉「登记时就拒绝坏 JSON」的语义。 | S |
 | ~~A17~~ | ~~`augmentor/dedup.py:111`、`:241-242`~~ | ~~A6 剩下的一半：fallback 编码 `np.zeros((n, vocab))` 是**稠密 float64**（真实 6902 条 × 23033 词表 = 1.27 GB），调用方再 `np.asarray(..., dtype=np.float32)` 整份复制、再 `_normalize` 另起一份~~ **已修（L10）**：float32 + `_row_norms`/`np.divide(out=)` 全程原地，真实数据峰值 **2429 MB → 622 MB**。剩下的只有「稀疏 CSR 表示」（nnz 194293、稀疏度 0.9988 → 理论 2 MB），但本环境**没装 scipy 与 faiss**，手写稀疏结构体属于另起一套索引子系统，不在性能轮范围内 → 本轮不做，装依赖后再议 | L |
 | ~~A18~~ | ~~`augmentor/dedup.py:132-147,172-174`~~ | ~~块行数按剩余列数自适应放大，把 L9 归因微基准里的 68.9 → 91.5 GFLOP/s 捡回来~~ **L10 实测证伪，未采纳**：合成基准（dim=8192）预测 1.28×，真实数据（dim=vocab=23033）同一进程内 back-to-back 实测 **0.95×（更慢）**。归因假设（窄块让 BLAS 变笨）**不随 K 维迁移**，代码已回退 | S |
 | A19 | `augmentor/dedup.py:104-116` | 词表构建与 TF 填充是**两遍** Python 双循环（`for text: for i:` 再 `for i, text: for j:`），每条文本的每个字符都进解释器一次。实测真实 6902 条走完 0.36 s（L10 后），**这还称不上瓶颈**；只有在 n 到 10⁵ 量级时才可能翻盘——该外推**未实测**，先记着别当依据 | S |
@@ -402,6 +403,33 @@
   遗留 **B3②**：`tsv ↔ json` 两侧皆无边（CLI/API 的 choices 里刻意不放 tsv，与
   `get_supported_formats()` 同源）；`convert_file(source_format="alpaca")` 读 `.jsonl`
   容器文件会落到 `json.load` 而失败；`_json_to_csv` 里 `all_keys` 算完不用（死代码）。
+- **L17** `perf(validation) + fix` A12① —— `_validate_item` 里每条数据 `import re`、每个字段
+  每个模式一次 `re.search(字符串, ...)`。禁止模式预编译成 `re.Pattern` 并缓存，`import re`
+  提到模块级。**实测（真实 6902 条 `train_data.json`、strict 预设、同进程交替 9 轮）**：
+  整档校验 **28.99 → 19.49 ms（中位 1.49×，9/9 轮新快于旧，逐轮比 1.23–1.59）**；
+  单独把「禁止模式那一段」拎出来 **15.44 / 16.37 → 8.71 / 9.14 ms（1.69–1.88×）**，
+  它占整档耗时的 **53–55%** —— 这一段就是当初立 A12 的全部理由，也印证了 L13 那句
+  预估（「~5 ms / 1.2×」）偏保守。basic 预设没有回退（新/旧 **0.92–0.94**）。
+  确定性预言机：500 条数据上 `re.search` **2000 → 0 次**（提交进用例的 300 条即
+  **1200 → 0**），`re.compile` **恒为 2**（= strict 的模式条数）与条数无关；
+  strict / basic / chat 三套预设的 `(字段, 消息, 级别, 下标)` 元组序列**逐条相同**，
+  tracemalloc 峰值 3.2 → 3.4 KB（多出的是一份编译结果，量级可忽略）。
+  **顺带修掉一个新发现的缺陷**：`DatasetValidator(preset="strict")` 以前是
+  `self.rules = self.PRESET_RULES[preset]`——把**类级字典本身**挂到实例上，于是任一实例
+  `validator.rules["min_instruction_length"] = 5` 会污染该预设下**所有**验证器、
+  并且跨请求存活（构造时改浅拷贝）。用例 `test_preset_rules_are_not_shared_state`
+  用 `monkeypatch.setitem` 保证「泄漏」这一侧真能红。
+  **红→绿（逐条）**：整份退回 HEAD 后，8 例新用例里 3 例按缺陷起因红——
+  「仍有 1200 次逐条字符串模式搜索」「验证器每条数据 import 一次 re（300 次）」
+  「改动污染了类级预设」；另 3 例**设计上两侧都绿**，它们是语义等价护栏
+  （报错时机、大小写不敏感、问题清单逐条相同），写进注入脚本的 `ALLOW_GREEN` 白名单
+  而不是靠它们冒充证据。
+  **方法论补一条**：数 `re.compile` 的调用次数**不能**证明旧代码在重复编译——
+  CPython 里 `re.search(字符串, ...)` 走的是 `re._compile`（另一个全局名），
+  所以计数必须打在 `re.search` 上。
+  **A16 本轮实测排除**（数字已写回 Backlog）：`dependency_register` 那个「只为一个整数
+  解析整档」看着可优化，实际纯 Python 顶层扫描器比 `json.load` 慢 8 倍还数错条数。
+  新增 **8 例**（`tests/unit/test_validation.py`，该文件现 44 例）。
 - 全量：L4 后 **3679 passed / 3 skipped**（89.2 s），L5 后 **3703 passed / 3 skipped**
   （90.2 s），L6 后 **3705 passed / 3 skipped**（91.1 s），L7 后 **3726 passed / 3 skipped**
   （95.1 s），L8 后 **3747 passed / 3 skipped**（98.0 s），L9 后 **3747 passed / 3 skipped**
@@ -412,7 +440,8 @@
   L13 后 **3802 passed / 3 skipped**（65.8 s，总计 98.50%），
   L14 后 **3809 passed / 3 skipped**（52.0 s，总计 98.51%），
   L15 后 **3816 passed / 3 skipped**（51.3 s，总计 98.51%），
-  L16 后 **3858 passed / 3 skipped**（56.4 s，总计 98.52%）。
+  L16 后 **3858 passed / 3 skipped**（56.4 s，总计 98.52%），
+  L17 后 **3866 passed / 3 skipped**（54.0 s，总计 98.52%）。
   **注意**：这些墙钟秒数**彼此不可比**——本工作树与并行 agent 共用一台机器，
   它跑全量时我会慢 40%+（L9 时 92 s、L10 时无竞争 55.7 s）。跨轮只比
   **同一进程内 back-to-back 的对照组**，绝对秒数只作当次快照。
