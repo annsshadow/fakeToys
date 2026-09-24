@@ -42,12 +42,39 @@ class FAISSDB(VectorDB):
         super().__init__(dimension=dimension, collection=collection)
 
         self.storage_dir = Path(storage_dir) if storage_dir else None
-        self._vectors = np.zeros((0, dimension), dtype=np.float32)
+        # 写缓冲按几何倍率增长，`_vectors` 只是它的前缀视图（见下面的属性）。
+        # 原实现每次 `add_vectors` 都 `np.vstack` 整份矩阵：逐条写入时复制总量
+        # 是 n²/2 行（真实规模 6902 条 × 384 维 ≈ 36 GB memcpy）。
+        self._buffer = np.zeros((0, dimension), dtype=np.float32)
+        self._size = 0
+        # `_ids` 的镜像集合：重复 ID 检测原本每次 `set(self._ids)` 全量重建，
+        # 同样是逐条写入时的 O(n²)。
+        self._id_set: set = set()
         self._index = None
         self._faiss = None
         self._query_cache = MemoryCache(max_size=self._QUERY_CACHE_MAX)
 
         self._init_index()
+
+    @property
+    def _vectors(self) -> np.ndarray:
+        """行与 `_ids` / `_metadata` 对齐的向量矩阵（写缓冲的有效前缀）"""
+        return self._buffer[:self._size]
+
+    @_vectors.setter
+    def _vectors(self, matrix: np.ndarray) -> None:
+        matrix = np.ascontiguousarray(matrix, dtype=np.float32)
+        self._buffer = matrix
+        self._size = matrix.shape[0]
+
+    def _grow(self, rows_needed: int) -> None:
+        """扩容写缓冲（只在装不下时才复制，所以逐条 add 的复制总量是 O(n)）"""
+        capacity = self._buffer.shape[0]
+        buffer = np.zeros((max(rows_needed, capacity * 2, 8), self.dimension),
+                          dtype=np.float32)
+        if self._size:
+            buffer[:self._size] = self._buffer[:self._size]
+        self._buffer = buffer
 
     def _init_index(self):
         """初始化 FAISS 索引（不可用时退化为 numpy）"""
@@ -97,16 +124,26 @@ class FAISSDB(VectorDB):
             raise VectorError("ids 长度与 vectors 不一致")
         if len(set(new_ids)) != len(new_ids):
             raise VectorError("ids 中存在重复值")
-        duplicates = set(new_ids) & set(self._ids)
+        if len(self._id_set) != len(self._ids):
+            # 镜像集合与 `_ids` 长度不符 → 有人绕过写接口改了 `_ids`，整份重建。
+            # 长度相同而内容不同是重建不到的，但那种改法本身就会让 `_vectors`
+            # 与 `_ids` 错位，不在受支持的用法里。
+            self._id_set = set(self._ids)
+        duplicates = self._id_set.intersection(new_ids)
         if duplicates:
             raise VectorError(f"ID 已存在: {sorted(duplicates)[:5]}")
 
         if self._index is not None:
             self._index.add(normalized)
-        self._vectors = np.vstack([self._vectors, normalized])
+        rows = self._size + normalized.shape[0]
+        if rows > self._buffer.shape[0]:
+            self._grow(rows)
+        self._buffer[self._size:rows] = normalized
+        self._size = rows
 
         self._ids.extend(new_ids)
         self._metadata.extend(metadata)
+        self._id_set.update(new_ids)
         self._invalidate_query_cache()
 
         logger.info(f"添加 {len(new_ids)} 个向量，当前总数 {len(self._ids)}")
@@ -160,11 +197,12 @@ class FAISSDB(VectorDB):
             pairs = list(zip(indices[0], distances[0]))
         else:
             # 分块计算：避免大矩阵直接计算导致内存峰值
-            chunk_size = max(1000, len(self._vectors) // 4 + 1)
+            matrix = self._vectors
+            chunk_size = max(1000, len(matrix) // 4 + 1)
             best_pairs = []
-            for chunk_start in range(0, len(self._vectors), chunk_size):
-                chunk_end = min(chunk_start + chunk_size, len(self._vectors))
-                chunk_vectors = self._vectors[chunk_start:chunk_end]
+            for chunk_start in range(0, len(matrix), chunk_size):
+                chunk_end = min(chunk_start + chunk_size, len(matrix))
+                chunk_vectors = matrix[chunk_start:chunk_end]
                 similarities = (chunk_vectors @ normalized_query[0])
                 top_in_chunk = np.argsort(-similarities)[:k]
                 for idx in top_in_chunk:
@@ -219,6 +257,7 @@ class FAISSDB(VectorDB):
         self._vectors = self._vectors[keep_indices] if keep_indices else np.zeros(
             (0, self.dimension), dtype=np.float32
         )
+        self._id_set = set(self._ids)
 
         if self._faiss is not None:
             self._index = self._faiss.IndexFlatIP(self.dimension)
@@ -234,6 +273,7 @@ class FAISSDB(VectorDB):
         """清空数据库"""
         super().clear()
         self._vectors = np.zeros((0, self.dimension), dtype=np.float32)
+        self._id_set = set()
         if self._faiss is not None:
             self._index = self._faiss.IndexFlatIP(self.dimension)
         self._invalidate_query_cache()
@@ -283,6 +323,7 @@ class FAISSDB(VectorDB):
         self._ids = payload.get("ids", [])
         self._metadata = payload.get("metadata", [])
         self._vectors = vectors
+        self._id_set = set(self._ids)
 
         if self._faiss is not None:
             self._index = self._faiss.IndexFlatIP(self.dimension)
