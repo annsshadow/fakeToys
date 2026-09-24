@@ -452,6 +452,9 @@
             <button class="btn-sm" :disabled="engineBusy" @click="engineReviewWork('reviewWc')">建已办待阅</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineReviewWork('manualAfterBody')">工作后处理(体)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineReviewWork('v3RetractBody')">工作v3撤回(体)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineReviewWork('reviewInit')">初始化待阅</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineReviewWork('nextIdentity')">改已办下一身份</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineReviewWork('dataJobPut')">按Job写数据</button>
           </div>
         </section>
 
@@ -1960,6 +1963,28 @@ async function engineReviewWork(op: string): Promise<void> {
       if (!workId.trim()) return
       await api.post('/api/processplatform/service/processing/work/manual/after/processing', { workId })
       toast.success('工作后处理已提交')
+    } else if (op === 'reviewInit') {
+      // rev446：初始化全量待阅（review_init_for_view 仅取 pool，扫 x_task distinct work/person）
+      const r: any = await api.post('/api/processplatform/service/processing/review/init/review', {})
+      const n = Array.isArray(r?.data) ? r.data.length : (r?.data?.count ?? 0)
+      toast.success(`待阅初始化：${n}`)
+    } else if (op === 'nextIdentity') {
+      // rev446：更新已办下一处理身份（taskcompleted_update_next_identity 取 Json id+identity）
+      const id = prompt('已办/任务 ID:', '') || ''
+      if (!id.trim()) return
+      const nextTaskIdentity = prompt('下一处理身份:', '') || ''
+      if (!nextTaskIdentity.trim()) return
+      await api.put('/api/processplatform/service/processing/taskcompleted/next/task/identity', { id, nextTaskIdentity })
+      toast.success('下一身份已更新')
+    } else if (op === 'dataJobPut') {
+      // rev446：按 job 整体写数据（data_job_put Path<job>+Json）
+      const job = encodeURIComponent(prompt('Job ID:', '') || '')
+      if (!job) return
+      const raw = prompt('数据(JSON):', '{}') || '{}'
+      let data: any
+      try { data = JSON.parse(raw) } catch { toast.error('JSON 解析失败'); return }
+      await api.put(`/api/processplatform/service/processing/data/job/${job}`, data)
+      toast.success('Job 数据已写入')
     } else {
       const workId = prompt('工作 ID:', '') || ''
       if (!workId.trim()) return
