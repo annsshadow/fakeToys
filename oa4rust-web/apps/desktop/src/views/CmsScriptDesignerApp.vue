@@ -3,6 +3,9 @@
 
 <template>
   <div class="view-shell">
+    <div class="script-toolbar">
+      <button class="stb" @click="loadByUnique">按唯一名加载脚本</button>
+    </div>
     <ScriptWorkbench title="CMS 脚本" :adapter="adapter" />
   </div>
 </template>
@@ -11,6 +14,7 @@
 // W7：真实脚本设计器——CodeMirror 编辑器（ScriptWorkbench 内建 XScript 补全）
 // + /api/script u2 CRUD + 脚本内容（scriptContent）。
 import { api } from '@oa4rust/sdk'
+import { toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ScriptWorkbench, { type ScriptListItem, type ScriptWorkbenchAdapter } from '../components/ScriptWorkbench.vue'
 
@@ -45,6 +49,18 @@ const adapter: ScriptWorkbenchAdapter = {
   create: (data) => api.post('/api/script', { name: data.name, scriptContent: data.code }),
   save: (id, data) => api.put(`/api/script/${encodeURIComponent(id)}`, { name: data.name, scriptContent: data.code }),
   remove: (id) => api.delete(`/api/script/${encodeURIComponent(id)}`),
+}
+// rev431：按唯一名+应用加载脚本 POST /api/script/{uniqueName}/appInfo/{appFlag}（读 x_cms_script by unique_name/app；用户输入真实 uniqueName/appFlag 触发）
+async function loadByUnique() {
+  const uniqueName = prompt('脚本唯一名:', '') || ''
+  if (!uniqueName.trim()) return
+  const appFlag = prompt('应用 flag:', '') || ''
+  try {
+    const r: any = await api.post(`/api/script/${encodeURIComponent(uniqueName)}/appInfo/${encodeURIComponent(appFlag)}`, {})
+    toast.success(`脚本：${(r as any)?.data?.name ?? uniqueName}`)
+  } catch (e: any) {
+    toast.error('加载脚本失败: ' + (e?.message ?? ''))
+  }
 }
 </script>
 
