@@ -327,7 +327,7 @@ async function loadPersonalExtras() {
   const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const empId = empMine.value[0] ? String(empMine.value[0].id ?? '0') : '0'
   try {
-    const [icon, sigs, def, custom, empNext, empPrev, empByPerson] = await Promise.all([
+    const [icon, sigs, def, custom, empNext, empPrev, empByPerson, curIcon] = await Promise.all([
       s(api.get(`/api/person/icon/${encodeURIComponent(uid)}`)),
       s(api.get(`/api/person/signature/list/person/${encodeURIComponent(uid)}`)),
       s(api.get(`/api/person/definition/${encodeURIComponent(uid)}`)),
@@ -335,9 +335,11 @@ async function loadPersonalExtras() {
       s(api.get(`/api/person/empower/list/${encodeURIComponent(empId)}/next/20`)),
       s(api.get(`/api/person/empower/list/${encodeURIComponent(empId)}/prev/20`)),
       s(api.get(`/api/person/empower/list/person/${encodeURIComponent(uid)}`)),
+      // rev439：当前登录人头像（get_current_icon 仅凭会话 token 取本人 unique，无 Path、字面量路由匹配）
+      s(api.get('/api/person/icon')),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
-    personalExtraText.value = `头像 ${(icon as any)?.data ? '有' : '无'} · 签名 ${n(sigs)} · 定义 ${(def as any)?.data ? '有' : '无'} · 自定义 ${(custom as any)?.data ? '有' : '无'} · 授权前翻 ${n(empNext)} · 后翻 ${n(empPrev)} · 按人 ${n(empByPerson)}`
+    personalExtraText.value = `头像 ${(icon as any)?.data ? '有' : '无'} · 当前头像 ${(curIcon as any)?.data ? '有' : '无'} · 签名 ${n(sigs)} · 定义 ${(def as any)?.data ? '有' : '无'} · 自定义 ${(custom as any)?.data ? '有' : '无'} · 授权前翻 ${n(empNext)} · 后翻 ${n(empPrev)} · 按人 ${n(empByPerson)}`
   } catch (e: any) {
     toast.error('加载个人扩展明细失败: ' + (e?.message ?? ''))
   }
