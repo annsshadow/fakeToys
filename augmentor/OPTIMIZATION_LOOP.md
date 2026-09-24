@@ -37,6 +37,7 @@
 - [x] **L24** `perf(search_enhanced)`: A21 的 ngram 那一半 —— `_search_ngram` 不再**为每条文档建一整个 gram 集合**：查询串先切成 k 个 n-gram，判「文档命中某 gram」只需 `gram in 文档`（子串关系与建集合完全等价），于是每文档的工作量从 O(文档长度) 次 set 插入降到 O(k) 次子串查找。真实 6902 条单字段 **22.2 → 3.2 ms（中位 6.03×，20 字长查询最不利 2.35×）**，默认三字段端到端 **104–113 → 12–16 ms（中位 7.57×）**，ngram 从「比 contains 慢一个数量级的可用方法」（旧 **104–113 ms** vs contains ~8 ms）变成同量级（新 **12–16 ms** vs contains 8.2 ms，约 1.6×）；缩放对照 n=2000/4000/6000 的新旧比 **6.60× / 6.58× / 6.85×**（比值不随规模漂移）；确定性预言机：`_ngrams` 的调用次数 **6902 次（逐文档）→ 1 次（只有查询串）**。新增 20 例（12 例是与旧实现逐条等价的参数化对照），A21 只剩 contains/fuzzy/regex，另立 **A27**（fuzzy 在中文语料上恒 0 命中）
 - [x] **L25** `fix(search_enhanced)`: A27 —— `method="fuzzy"` 从「按整段中文 token 算 Jaccard、恒 0 命中」换成**等长滑窗 + 阈值门 + 鸽笼预筛**：分数 = `max(1 - 错配数/查询长度)`（只替换、不增删，是 Hamming 不是编辑距离），且**必须凑不出任何一片**才淘汰候选（片数 = 错配预算 + 1），所以预筛是纯优化、不改语义。真实 6902 条：「公租屋」 **0 → 63 命中**、带错字的「腿租押金」在 CLI 里 contains **0** 而 fuzzy **1**（这就是它存在的理由）；「租房」 **823 命中 = contains 逐条相同**（子集不变式：含即满分）。**代价同时实测**（min-of-7，三字段端到端）：「租房」 21.23 ms（contains 8.06 / ngram 13.05）、「公租屋」 174.41 ms、「租房合同」 167.02 ms/159 命中（旧 fuzzy 48.45 ms 却**返回 0 条**）—— 单字段扫窗是主开销，鸽笼预筛在 `output` 上省 **2.94–22.47×**（60.78 vs 1365.64 ms 等三档，命中集合逐档 SAME），`input` 全空档 0.98–1.00× 作无开销对照。等价性：真实语料随机 **70 组**（3 字段 × 5 阈值 × 含错字查询）与朴素全扫 oracle **0 不一致**，另 42 组参数化用例常驻。新增 51 例（unit 单文件 72 → 122），改写 2 处**钉住旧缺陷**的期望（API 的「fuzzy 公租屋 期望 0 命中」、CLI 的模糊「找到」），另立 **A28**（fuzzy 现在是真全表扫，最贵的方法）
 - [x] **L26** `feat(search_enhanced)`: A28④ —— fuzzy 的阈值与 ngram 的 gram 长度从**私有方法的默认参数**提到三端公开入口（`search()` / `search_dataset()` 的 `fuzzy_threshold` / `ngram_n`、CLI `--fuzzy-threshold` / `--ngram-n`、API `SearchRequest` 同名字段）。**为什么值得做**（只能绕私有方法量的真实 6902 条）：同一句「租房合同」阈值 0.5 → **1272** 命中、0.6 → 159、0.8 → 38；「公租屋」0.6 → 63、**0.7 → 0**（错 1 字 / 3 字 = 0.667 正好掉出门槛）；ngram 同查询 n=1 → 4565、n=2 → 1271、n=3 → 42 —— 命中数**差到 33 倍**的旋钮，此前用户一个都摸不到，只能改库源码。**症状的另一半**：API 的 pydantic 对未知字段**默认吞掉**（注入态实测 HTTP **200** + 默认阈值的结果，而不是 422），所以「传了没生效」在 HTTP 层是完全静默的。校验只挂 `search()` **一处**（承 L21/L22 的共同咽喉），越界抛 `DataValidationError`（双继承 `ValueError` → API 照旧 400、CLI 照旧 `错误: …` + 退出码 1）；默认值 = 原行为，另用 5 例参数化钉「不传 ≡ 显式传 0.6/2」。计数预言机：坏参数时五种 `_search_*` 被调 **0 次**（校验发生在扫表之前），同一探针再以合法参数跑一遍证明探针是响的。**自家结构护栏抓了我一次**：第一版写 `raise ValueError`，全量红在 `test_no_bare_builtin_raises_left_in_package` → 改领域异常。新增 33 例（unit 122→144 / CLI 73→79 / API 207→212），注入 **33 红 / 406 绿**（红的恰是全部新例、绿的恰是全部既有例），全量 **4106 passed / 2 skipped**（98.98%），`search_enhanced.py` 211 语句 0 missed；另立 **A29**（生效的旋钮不回显）
+- [x] **L27** `feat(search_enhanced)`: A29 —— `SearchResult` 回显**本次真正生效**的松紧旋钮（新增 `fuzzy_threshold` / `ngram_n` 两字段，`to_dict()` 一并导出），口径取「**方法没消费它就是 `None`**」而不是一律回显默认值：`contains` 旁边印个 0.6 会让人以为阈值管得到它，那与 A27/A28④ 是同一类静默。落点：**两条「找到 0 条」终于可分辨**——「公租屋」阈值 0.667 → 0 条（最优窗口分数正好 0.667，差一点就过）vs contains 同查询 → 0 条（语料里真没有）。CLI 把生效值印在**第二行末尾**（`搜索方法: fuzzy (生效阈值 0.6)`）而不是新起一行，因为下游按 `out[out.index("["):]` 取条目，「两行摘要 + JSON」是既有契约；`--output` 落盘的字典自然带两键。API 侧必须**同时**在 `SearchResponse` 声明这两键——FastAPI 按 `response_model` 过滤返回值，模型少写一键就**静默**从响应里消失（本轮由既有的 `test_api_openapi_contract.py` 抓到，红信息直接写出「response_model 漏声明字段…会被静默裁掉」）。代价实测（同进程 back-to-back min-of-7，真实 6902 条）：默认路径四组比值 **0.9834 / 0.9994 / 0.9873 / 1.0000**（命中集合逐条相同 823/823/38/0），`to_dict()` 单次 0.00014 → 0.00017 ms（**+30 ns** 换两个键）。新增 26 例（unit 144→155 / CLI 79→87 / API 212→219）+ 更新 1 处既有契约用例（该用例在缺陷态驱动 **2** 条红），注入 **24 红 / 590 绿**（其中 4 绿是白名单：3 条钉「不消费旋钮的方法不许印数字」+ 1 条钉 stdout 形状，缺陷态必然绿），全量 **4132 passed / 2 skipped**（98.98%，4106 + 26 = 4132 精确对上）；另立 **A30**（`SearchFilter` 的九种算子只在 SDK 里摸得到）
 
 ## Backlog A — 性能（含 file:line 与实测线索）
 
@@ -59,7 +60,10 @@
 | ~~A26~~ | ~~`augmentor/converter.py`（同一批 `_json_to_*` 写边）~~ | **L21 新记（护栏刻意没管的两个口子）**：①~~列表里躺着**非对象条目**（`[null]`、`["x"]`）或 `data` 根本不是列表时，写边直接 `item.get(...)` → `AttributeError: 'NoneType' object has no attribute 'get'`，经 API 就是 **500**——而同族 shape 问题（顶层必须是数组、记录缺字段）早已是 400。修法：写边入口统一做一次「条目必须是对象」，与 `read_conversation_turns` 同口径~~ **已修（L22）**：一处判据挂在 `convert()` 分发口，八类要取字段的目标全覆盖（六 schema + csv/tsv），实测代价 `alpaca` +0.23 ms / `chatml` +0.49 ms（6902 条，同进程对照），且 csv/tsv 不再留下按字符展开的半截产物；`json`/`jsonl` 目标是原样序列化、明确豁免。②~~**仍未修**：记录既无问答也无对话数组（`{"text": …}`、`{"question":…,"answer":…}`）时静默产出空问答；L21 不收是因为给不出「该声明什么」的建议，②的合理判据是「整档零可用问答 → 失败」，需要实测确认没有合法数据集恰好全空~~ **已修（L23）**：`_reject_all_empty_qa` 同一咽喉下整档判定，一条可用问答都取不到 → `DataFormatError`（带条数 + 所认的键）。**误伤前置实测**：train_data / train_data_final / final01 / final02 / up 共 **20706 条**，缺可用问答 **0 条**；问答键**按目标算**（只有 sharegpt/chatml 读 `history`），容器目标与 `[]` 明确豁免。干净数据单次 **0.4~0.7 µs**（早退），报错路径 1.32 ms / 6902 条 | S |
 | ~~A27~~ | ~~`augmentor/search_enhanced.py:129-140` × `:308-336`~~ | ~~**L24 新记（结构性死方法，A23/A26 同族：静默返回空）**：`method="fuzzy"` 在中文语料上**任何阈值都取不到命中**。根因不是阈值，是**分词粒度**：`_tokenize` 的 `re.findall(r'[\u4e00-\u9fff]+\|...')` 把**一整段连续中文当成一个 token**，于是查询 `{'租房'}` 与文档 `{'如何申请租房', ...}` 的交集恒空 → Jaccard 恒 0。真实 6902 条实测：「租房」三字段 fuzzy **命中 0 / 48.45 ms**（contains 同查询 823 命中、8.20 ms），把 threshold 从 0.6 一路降到 0.02 命中数**仍是 0**，output 侧相似度 top3 = `0.0, 0.0, 0.0` —— 即「扫了全表、付了最贵的钱（fuzzy 是五种方法里唯一比 contains 慢的）、返回空」。它是 CLI 与 `/api/dataset/search` 的公开可选项，用户点得到。修法方向：fuzzy 改在**字符 n-gram / CJK 逐字**集合上算相似度（`_ngrams` 已在 L24 变便宜），并逐条与朴素 oracle 对照；**必须先实测英文侧会不会被改掉**（现在 `[a-zA-Z]+` 是按词的，逐字符化会让 `cat` 与 `cart` 突然相似），必要时按脚本分流。同一处 `:122` 的 `_build_indexes` 也吃这个 token，所以 `exact` 对中文整段才算一条键（「租房」0 命中属定义内，但同样值得在案）。~~**本轮没动**（L24 的边界是 ngram 的性能口径，不顺手改语义）~~ **已修（L25）**：不再碰 `_tokenize`，改成**与分词无关**的等长滑窗 Hamming（`_search_fuzzy`），`_tokenize` 一行没改 → `exact` / `_build_indexes` 的中文整段键**保持原语义**（A27 里那半条「顺带值得在案」的怀疑没有被顺手改掉）。**当初提的「必须先实测英文侧会不会被改掉」有了答案：会，而且改的方向正是这个方法的存在理由**——实测 `"buy a cart today"` 上「cat」旧实现 `{}`（按词 token，`{'cat'}` ∩ `{'cart','buy',…}` 恒空）→ 新实现 **0.667**、「cars」 **0.75**，即错一字母的拉丁词现在能互相命中；反过来 `AAAa` vs `aaaa` 两侧都是 **1.0**（`lower()` 在前，大小写不参与错配）。所以**没有按脚本分流**：分流会把「错字容忍」人为切成两种语义，而旧实现真正的缺陷是「任何语言的错字都判不相似」。真实语料侧的不变式也复核了：「2024」fuzzy **9 = contains 9**（数字串同样守子集不变式）、「rent」两侧 **0**（该词不在语料里，fuzzy 不该凭空造命中）。真实语料随机 70 组（3 字段 × 5 阈值 × 含错字查询）与朴素全扫 oracle 对照 **0 不一致**。子集不变式（contains 命中必是 fuzzy 满分命中）在真实数据与用例两侧都成立。代价另立 **A28** | M |
 | A28 | `augmentor/search_enhanced.py:308-360`（`_search_fuzzy`） | **L25 新记（成本，不是缺陷；A21 同族）**：修好语义之后 fuzzy 成为**五种方法里最贵的一档**，因为每文档要扫 `len(文档)-len(查询)+1` 个窗口 × `len(查询)` 次字符比较。真实 6902 条 min-of-7 实测：三字段端到端「租房」 21.23 ms / 「公租屋」 174.41 ms / 「租房合同」 167.02 ms（同一查询 contains 只有 7–12 ms）；单字段拆开更清楚——`output` 长字段 60.78 / 478.50 / 430.37 ms，`instruction` 5.86 / 18.90 / 15.84 ms，`input`（全空）0.82 ms。鸽笼预筛已经把「无筛」的 1365–1612 ms 砍到 430–480 ms（2.94–22.47×），**剩下的钱在窗口本身**：短查询 + 高预算（`allowed` 大 → 筛片少而文档多）时退化最明显。可修方向按性价比排序：①**按长度预筛**（`len(文档)` 与 `len(查询)` 差距过大时窗口注定不达标？——不行，等长窗口允许任意偏移，长度不设上界，需要先确认语义是否允许「窗口必须在文档内」这条本身收紧）；②把 `zip` 逐位比较换成 `sum(a != b for ...)` 的向等价（如 `os.path.commonprefix` 式的分块比较）；③建 **trigram 倒排**做候选集，再对候选精算（与 A21/A24 的「n-gram 倒排」同一套基础设施，应合并决策）；④~~公开 `--threshold` / API 字段（CLI parser 现在**没有** `--threshold`，只有 `search_dataset(..., threshold=)` 的默认 0.6，用户想放宽只能改代码——属于 B 类接线，缺的是入口不是算法）~~ **已做（L26）**，顺带纠正 L25 那句话里的错：`search_dataset()` 当时**根本没有** `threshold` 形参（我记错了），唯一能调的地方是私有方法 `_search_fuzzy` 的默认值；L26 把两个旋钮（阈值 + ngram 的 `n`）一起提到 `search()` / `search_dataset()` / CLI / API 四处，默认值不变。**A28 剩下的仍是 ①②③（窗口本身的成本）** | M |
-| A29 | `augmentor/search_enhanced.py`（`SearchResult` / `search()`）+ `augmentor/cli/commands/data_ops.py`（`run_search` 摘要） | **L26 新记（回显缺失，A27/A28④ 同族的「用户无从判断参数起了作用」）**：旋钮能调了，但**结果不告诉用户当时生效的是哪一档**。`SearchResult` 只带 `query` / `method`，CLI 摘要只印 `搜索方法: fuzzy`，于是「找到 0 条」仍然分不清是「语料里没有」还是「阈值拧太紧了」——而 L26 实测过这两者的差别有多大：「公租屋」 0.6 → 63 条、0.7 → **0** 条。修法：`SearchResult` 加 `fuzzy_threshold` / `ngram_n` 两个字段（`to_dict()` 一并导出，API 响应自然带上），CLI 摘要行跟着印实际生效值；**要一并决定**：非 fuzzy 方法时这两个字段是 `None`（诚实）还是重复默认值（会让用户以为阈值管到了 contains）。**本轮没动**（L26 的边界是把参数接进来了并守住默认口径，不改 `SearchResult` 的既有形状） | S |
+| A29 | `augmentor/search_enhanced.py`（`SearchResult` / `search()`）+ `augmentor/cli/commands/data_ops.py`（`run_search` 摘要） | **L26 新记（回显缺失，A27/A28④ 同族的「用户无从判断参数起了作用」）**：旋钮能调了，但**结果不告诉用户当时生效的是哪一档**。`SearchResult` 只带 `query` / `method`，CLI 摘要只印 `搜索方法: fuzzy`，于是「找到 0 条」仍然分不清是「语料里没有」还是「阈值拧太紧了」——而 L26 实测过这两者的差别有多大：「公租屋」 0.6 → 63 条、0.7 → **0** 条。修法：`SearchResult` 加 `fuzzy_threshold` / `ngram_n` 两个字段（`to_dict()` 一并导出，API 响应自然带上），CLI 摘要行跟着印实际生效值；**要一并决定**：非 fuzzy 方法时这两个字段是 `None`（诚实）还是重复默认值（会让用户以为阈值管到了 contains）。**已做（L27）**：取 `None` 那一支，并且**没消费的方法连印都不印**（CLI 第二行只在有值时加括号）；两键都进 `to_dict()`，`SearchResponse` 同步声明（否则 FastAPI 静默裁掉，本轮由既有契约用例抓到）。实测代价：默认路径四组比值 0.9834–1.0000、`to_dict()` +30 ns | S |
+| A30 | `augmentor/search_enhanced.py:202`（`search(filters=)`）× `:529`（`search_dataset`）**没有** `filters` 形参 × CLI `search_parser` × `SearchRequest` | **L27 新记（与 A28④ 同族：能力在库里，入口摸不到）**：`SearchFilter` 支持 9 种算子（`eq/ne/contains/gt/lt/gte/lte/in/not_in`，`_evaluate_filter`），`EnhancedSearcher.search()` 也接 `filters`，但**共享入口 `search_dataset()` 不收**，CLI 的 `search` 子命令与 `/api/dataset/search` 更没有任何过滤参数（`grep -n filter augmentor/cli/parser.py api/routes/dataset_tools.py` 零命中）。于是「先按字段检索、再按元数据收窄」这条路径只有直接 import 库类才用得到。真实 6902 条实测它确实会改变答案：contains「租房」单字段 `instruction` **419** 条，叠加 `instruction contains 申请` 过滤 → **10** 条（收窄 42 倍）。**做之前要先定的两件事**：①过滤与分页的先后次序**已经定了**——`search()` 里是「打分汇总 →
+逐条过滤器收窄候选集 → 排序 → 切页」（`:268-273`），所以接 CLI 时不许顺手改成「先切页再过滤」，
+那会让 `--offset` 的语义随过滤变化；②`input` 字段在真实语料里**整档为空**，所以 `input ne ""` 这类示范过滤会得到 **0 条**（实测），文档与用例不要拿它当正例。另需注意 `filters` 传进来的是对象而不是字典，CLI 只能接 JSON 字符串再构造 → 报错口径要走同一处咽喉（A27/A28④ 形状） | M |
 | ~~A12~~ | ~~`augmentor/validation.py:217-222`~~、`sampler.py:296-299` | **L13 实测拆成两半**：①`_validate_item` 里 `import re` + 每条每模式一次 `re.search`；②`sampler.generate_report()` 的 `items.index(seed)` **实测不是缺陷**（真实数据只推荐 4 个种子、反查 0.0 ms，单趟 id 映射要 1.1 ms，改了反而更慢；且它还会改变「值相等但不同对象」时的下标语义，真实数据里正好有 367 条重复 dict）—— 这一半作废。**①已修（L17）**：真实 6902 条 strict **28.99 → 19.49 ms（1.49×）**，禁止模式段占整档 53–55%、该段自身 **1.69–1.88×**（L13 预估的「~5 ms / 1.2×」偏保守）；`re.search` 逐条调用 **27608 → 0**、`re.compile` 与条数无关恒为 2 | S |
 | ~~A13~~ | ~~`api/routes/dataset_tools.py:311,360,386,387,416,436,566,598` + `system_ops.py:320,348,514`~~ | ~~**A4 的同构族**：`read_items()`（同步版）在 11 个 `async def` 路由体里直接调用，同样占着事件循环；`dataset_tools.py:566` 还是「多个文件在循环里串行读」；`/api/dataset/stats` 连分析都留在循环上（43.4 ms）~~ 已修（L7） | M |
 | ~~A14~~ | ~~`augmentor/impact.py:66`~~ | ~~`duplicate_rate` 里 `texts.count(t)` 写在推导式中 → O(n²)~~ 已修（L6） | S |
@@ -869,6 +873,60 @@
     语句 0 missed，`dataset_tools.py` 只余 4 行既有未覆盖（599/600/671/672，别的路由的
     `except HTTPException: raise`）。计数 **4075 + 33 = 4108** 与 L25 口径精确衔接
     （4108 − 2 skip = 4106 passed）。
+- **L27** （哈希由下一轮提交补） `feat(search_enhanced)` A29 —— 让结果回显**本次真正生效**的松紧旋钮。
+  - **症状**：L26 把两个旋钮接到三端之后，`SearchResult` 仍然只带 `query` / `method`，
+    CLI 摘要只有 `搜索方法: fuzzy`。于是「找到 0 条」这两种成因读起来一模一样：
+    语料里确实没有 / 旋钮拧得太紧。而 L26 已经量过这两者的差别有多大——真实 6902 条
+    「公租屋」阈值 0.6 → **63** 条、0.7 → **0** 条，两条结果的 `method` 都是 `fuzzy`。
+  - **口径（本轮唯一的设计决定）**：`fuzzy_threshold` / `ngram_n` 只在**本次方法真的消费它**时
+    非空，否则 `None`。反面选择是「一律回显」，那会在 contains 旁边印一个 0.6，
+    让用户以为阈值管得到 contains——正是 A27/A28④ 那一类「以为参数起了作用」的静默，
+    所以宁可不印。同时**没传参也要回显**（回显 0.6 而不是 `None`）：回显的是生效值，
+    不是「用户是否显式传过」，否则默认路径上仍然什么都看不出来。
+  - **落点用例（不是「有字段」而是「能分辨」）**：`test_two_zero_hit_results_now_tell_apart_a_tight_knob`
+    与 API 的 `test_a_starved_result_names_the_threshold_that_starved_it` 都拿**两条 0 命中**
+    做对照（fuzzy 0.667 饿死 vs contains 语料没有），缺陷态两者除 `method` 外完全同形。
+  - **CLI 的 stdout 契约先查再改**：既有下游按 `out[out.index("["):]` 取条目（本轮新增的
+    `test_the_echo_stays_inside_the_two_summary_lines` 把「两行摘要 + JSON」钉死），
+    所以生效值印在**第二行末尾**（`搜索方法: fuzzy (生效阈值 0.6)`）而不是新起一行——
+    新起一行会把提示语混进 JSON 前面。这条用例在缺陷态**必然是绿的**（HEAD 本来就是两行），
+    它钉的是「本轮不许撑坏既有形状」，进白名单而不是混在红里。
+  - **FastAPI 静默裁剪被仓库自己的契约用例抓了一次**：给 `to_dict()` 加两键后，
+    `test_api_openapi_contract.py::TestResponseModelDoesNotDropFields::test_response_matches_domain_contract[route_key40]`
+    立刻红，红信息就是它自己写的「缺项：['fuzzy_threshold', 'ngram_n'] …
+    response_model 漏声明字段…会被静默裁掉」。所以本轮的 API 侧证据链是两层的：
+    ①`SearchResponse` 声明两键（否则响应里根本没有这两键，**且不报错**）；
+    ②新增 `test_the_http_shape_matches_the_sdk_result_dict` 拿 **SDK 的 `to_dict()` 键集合**
+    当预言机比对 HTTP 载荷——不能用 `SearchResponse.model_fields`，那与被测对象同源、恒真。
+    未消费时的两键还得**存在且为 `null`**（`test_the_knob_keys_are_present_even_when_unused`
+    断言 `"fuzzy_threshold" in payload`，因为 `.get(...) is None` 在键被裁掉时照样通过）。
+  - **代价实测（同进程 back-to-back min-of-7，真实 6902 条）**：默认路径四组
+    contains「租房」/ ngram「租房」/ contains「租房合同」/ exact「租房」比值
+    **0.9834 / 0.9994 / 0.9873 / 1.0000**（7.31→7.19 / 12.31→12.30 / 6.53→6.45 / 0.00→0.00 ms，
+    两个 <1.0 是噪声不是加速），命中集合逐条相同（823 / 823 / 38 / 0）；
+    隔离出来看 `to_dict()` 单次 **0.00014 → 0.00017 ms（+30 ns）** 换两个键。
+    结论：回显是**免费的**，不进 Backlog。
+  - 新增 **26 例**（unit 144 → **155**、CLI 79 → **87**、API 212 → **219**）+ **更新 1 处既有契约用例**
+    （`/api/dataset/search` 那格键集合从 6 加到 8，它在缺陷态驱动 **2** 条红：域契约比对 + OpenAPI 声明）。
+  - **注入对照（最后一次测试改动之后跑）**：3 份实现（`search_enhanced.py` /
+    `cli/commands/data_ops.py` / `api/routes/dataset_tools.py`）退回 HEAD → **24 红 / 590 绿**。
+    红的构成：新用例里 22 条真行为红（unit 11 全红、CLI 4、API 7）+ 更新的契约用例 2 条；
+    其余 **4 绿是白名单**（3 条 `不消费旋钮的方法不许印数字` + 1 条 stdout 形状，
+    理由逐条写在注入脚本里）。红因全部是「字段不存在 / 键集合缺项」这类**行为断言**
+    （`AttributeError: 'SearchResult' object has no attribute 'fuzzy_threshold'` × 8、
+    `KeyError: 'fuzzy_threshold'` × 4、`缺项: ['fuzzy_threshold','ngram_n']` 等），
+    没有崩溃式红。恢复后三份实现字节一致（`e7b41d52b3fe` / `e1cf45f7df50` / `7eec9cd84b21`，
+    573 / 154 / 858 行全 CRLF、0 纯 LF）。
+  - **另立 A30**：`SearchFilter` 九种算子只在 SDK 里摸得到——`search_dataset()` 不收 `filters`，
+    CLI/API 零命中（`grep -n filter`）。真实 6902 条实测它会改变答案：contains「租房」
+    `instruction` **419** 条，叠加 `instruction contains 申请` 过滤 → **10** 条（收窄 42 倍）。
+    顺序约束（「打分汇总 → 过滤 → 排序 → 切页」，`:268-273`）与「`input` 整档为空所以
+    `input ne ""` 会得到 0 条」两件事都写进行，避免下一轮拿它当正例示范。
+  - 全量：**4132 passed / 2 skipped**（最后一次改动后复跑 113.31 s，首跑 126.00 s 含并行竞争；
+    总计 **98.98%**）。计数 **4106 + 26 = 4132 精确对上**，无外部漂移。
+    `search_enhanced.py` **213 语句 0 missed**、只余 `112->exit`（双重检查锁的 `with` 出口，
+    先于本轮，即 L25 记的 `101->exit` 换了行号）；`data_ops.py` 71 语句 0 missed、
+    只余 `61->68`（`run_validate` 的 `if args.output:` 假分支，本轮没碰那个命令）。
 - 全量：L4 后 **3679 passed / 3 skipped**（89.2 s），L5 后 **3703 passed / 3 skipped**
   （90.2 s），L6 后 **3705 passed / 3 skipped**（91.1 s），L7 后 **3726 passed / 3 skipped**
   （95.1 s），L8 后 **3747 passed / 3 skipped**（98.0 s），L9 后 **3747 passed / 3 skipped**
@@ -892,7 +950,9 @@
   L25 后 **4073 passed / 2 skipped**（152.46 s 含并行竞争，总计 **98.98%**，`search_enhanced.py`
   语句 0 missed；**计数 4024 + 51 = 4075 精确对上**，解释器与分目录快照见 L25 日志），
   L26 后 **4106 passed / 2 skipped**（113.45 s，总计 **98.98%**，`search_enhanced.py`
-  211 语句 0 missed；**计数 4075 + 33 = 4108 精确对上**，纯增量、0 处既有断言改写）。
+  211 语句 0 missed；**计数 4075 + 33 = 4108 精确对上**，纯增量、0 处既有断言改写），
+  L27 后 **4132 passed / 2 skipped**（113.31 s，总计 **98.98%**；**计数 4106 + 26 = 4132 精确对上**，
+  本轮更新了 1 处既有契约用例（驱动 2 条红），注入 **24 红 / 590 绿**，4 绿全在白名单）。
   **注意**：这些墙钟秒数**彼此不可比**——本工作树与并行 agent 共用一台机器，
   它跑全量时我会慢 40%+（L9 时 92 s、L10 时无竞争 55.7 s）。跨轮只比
   **同一进程内 back-to-back 的对照组**，绝对秒数只作当次快照。

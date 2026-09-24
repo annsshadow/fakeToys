@@ -406,6 +406,96 @@ class TestSearchCommand:
         assert phrase in err, f"stderr 没指出越界的是哪个旋钮: {err!r}"
         assert "找到" not in out, "报错的同时还打印了结果摘要"
 
+    def run_search(self, dataset_context, *extra):
+        """跑一次 `search` 并返回 stdout（摘要行 + JSON 列表）"""
+        clean, _, _ = dataset_context
+        out, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "租房", *extra]
+        )
+        assert code is None, err
+        return out
+
+    def test_the_summary_line_echoes_the_effective_threshold(self, dataset_context):
+        """`搜索方法` 那行要带上**当时生效**的阈值，包括没传参时的默认档
+
+        回显的是 `SearchResult.fuzzy_threshold`（SDK 算完的那份）而不是 argparse 的
+        `args.fuzzy_threshold`：两者在默认路径上恰好相同，但一旦某端改了默认值，
+        只有前者还能骗人。
+        """
+        assert "搜索方法: fuzzy (生效阈值 0.6)" in \
+            self.run_search(dataset_context, "--method", "fuzzy")
+        assert "搜索方法: fuzzy (生效阈值 0.5)" in \
+            self.run_search(dataset_context, "--method", "fuzzy",
+                            "--fuzzy-threshold", "0.5")
+
+    def test_the_summary_line_echoes_the_gram_length(self, dataset_context):
+        assert "搜索方法: ngram (生效 gram 长度 2)" in \
+            self.run_search(dataset_context, "--method", "ngram")
+        assert "搜索方法: ngram (生效 gram 长度 1)" in \
+            self.run_search(dataset_context, "--method", "ngram", "--ngram-n", "1")
+
+    @pytest.mark.parametrize("method", ["exact", "contains", "regex"])
+    def test_a_method_that_consumes_no_knob_prints_a_bare_method_line(self, method,
+                                                                      dataset_context):
+        """不消费旋钮的方法**不许**在旁边印一个数字
+
+        「搜索方法: contains (生效阈值 0.6)」会让人以为阈值管得到 contains，
+        而它根本没参与打分——这与 A27/A28④ 的「以为参数起了作用」是同一类静默。
+        """
+        out = self.run_search(dataset_context, "--method", method)
+
+        assert "搜索方法: " + method in out
+        assert "生效" not in out
+
+    def test_zero_hits_now_tell_apart_a_tight_knob_from_an_empty_corpus(self, dataset_context):
+        """本轮的落点：两条「找到 0 条」在 stdout 上终于有了区别
+
+        「腿租押金」阈值 0.8 → 0 条是**旋钮拧太紧**（0.75 就有 1 条），contains
+        「腿租押金」→ 0 条是**语料里真没有**。缺陷态两者除了方法名之外没有任何信息差。
+        """
+        clean, _, _ = dataset_context
+
+        def run(*extra):
+            out, err, code = run_cli(
+                ["cli", "search", "--input", str(clean), "--query", "腿租押金", *extra]
+            )
+            assert code is None, err
+            return out
+
+        tight = run("--method", "fuzzy", "--fuzzy-threshold", "0.8")
+        absent = run("--method", "contains")
+
+        assert "找到 0 条匹配结果" in tight and "找到 0 条匹配结果" in absent
+        assert "生效阈值 0.8" in tight
+        assert "生效" not in absent
+
+    def test_the_echo_stays_inside_the_two_summary_lines(self, dataset_context):
+        """回显不许改变 stdout 形状：仍是**两行摘要 + JSON 列表**
+
+        下游按 `out[out.index("["):]` 取条目，多印一行会把提示语混进 JSON 前面；
+        这条钉住「旋钮进第二行末尾」而不是新起一行。
+        """
+        out = self.run_search(dataset_context, "--method", "fuzzy")
+        lines = out.splitlines()
+
+        assert lines[0].startswith("找到 ")
+        assert lines[1].startswith("搜索方法: fuzzy")
+        assert len(json.loads("\n".join(lines[2:]))) == 2
+
+    def test_output_file_carries_the_effective_knobs(self, dataset_context):
+        """`--output` 落盘的 `to_dict()` 同样带旋钮（落盘的是结果，不是摘要行）"""
+        clean, _, tmp = dataset_context
+        out_file = tmp / "echo.json"
+        out, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "租房",
+             "--method", "fuzzy", "--fuzzy-threshold", "0.5", "--output", str(out_file)]
+        )
+        assert code is None, err
+        parsed = json.loads(out_file.read_text(encoding="utf-8"))
+
+        assert parsed["fuzzy_threshold"] == 0.5
+        assert parsed["ngram_n"] is None
+
     def test_saves_output(self, dataset_context):
         """--output 需写入可解析的结果 JSON"""
         clean, _, tmp = dataset_context

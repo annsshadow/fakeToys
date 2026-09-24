@@ -271,13 +271,20 @@ class SplitResponse(BaseModel):
 
 
 class SearchResponse(BaseModel):
-    """搜索结果（与 `SearchResult.to_dict()` 的键一一对应）"""
+    """搜索结果（与 `SearchResult.to_dict()` 的键一一对应）
+
+    `fuzzy_threshold` / `ngram_n` 只在**本次方法真的消费它**时非空：`method` 不是
+    `fuzzy` / `ngram` 时为 `null`。两个键都必须声明在这里——FastAPI 会按模型字段
+    过滤返回值，模型少写一键，该键就从响应里**静默消失**且不报错。
+    """
     query: str
     method: str
     total_matches: int
     query_time_ms: float
     items: List[Dict[str, Any]]
     highlights: List[Dict[str, Any]]
+    fuzzy_threshold: Optional[float] = None
+    ngram_n: Optional[int] = None
 
 
 class CompareResponse(BaseModel):
