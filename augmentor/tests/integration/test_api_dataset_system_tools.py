@@ -364,6 +364,75 @@ class TestDatasetSearch:
         assert response.status_code == 400, response.text
         assert phrase in response.json()["detail"]
 
+    def search(self, tools_env, **extra):
+        """POST 一次 `/api/dataset/search` 并返回 JSON 载荷"""
+        response = tools_env.client.post(
+            "/api/dataset/search",
+            json={"input_file": str(tools_env.data), "query": "公租屋", **extra},
+        )
+        assert response.status_code == 200, response.text
+        return response.json()
+
+    def test_the_response_echoes_the_effective_threshold(self, tools_env):
+        """响应里的 `fuzzy_threshold` 是**打分时用的那份**，没传参时是默认 0.6
+
+        回显走的是 `SearchResult` → `SearchResponse`，不是请求体回显：请求体里
+        根本没有这个键（`{}`）时也要有 0.6，用户才知道 0 条该怪谁。
+        """
+        default = self.search(tools_env, method="fuzzy")
+        loose = self.search(tools_env, method="fuzzy", fuzzy_threshold=0.5)
+
+        assert default["fuzzy_threshold"] == 0.6
+        assert default["ngram_n"] is None
+        assert loose["fuzzy_threshold"] == 0.5
+
+    def test_the_response_echoes_the_gram_length(self, tools_env):
+        payload = self.search(tools_env, method="ngram", ngram_n=1)
+
+        assert payload["ngram_n"] == 1
+        assert payload["fuzzy_threshold"] is None
+
+    @pytest.mark.parametrize("method", ["exact", "contains", "regex"])
+    def test_the_knob_keys_are_present_even_when_unused(self, tools_env, method):
+        """未被消费时是 `null`，但**键必须在**
+
+        FastAPI 按 `response_model` 过滤返回值：`SearchResponse` 少声明一键，该键就从
+        响应里消失且**不报错**。所以这里断言的是键存在，而不是值等于 None（后者在
+        键被裁掉时靠 `.get()` 也会通过）。
+        """
+        payload = self.search(tools_env, method=method, query="公租房")
+
+        assert "fuzzy_threshold" in payload and "ngram_n" in payload
+        assert payload["fuzzy_threshold"] is None and payload["ngram_n"] is None
+
+    def test_the_http_shape_matches_the_sdk_result_dict(self, tools_env):
+        """HTTP 响应键集合 ≡ SDK `to_dict()` 键集合（两边不同源，才是有效预言机）
+
+        拿 `SearchResponse.model_fields` 当预期是**恒真**的——模型漏声明字段时，
+        响应和字段集一起变小（见本文件模块 docstring 里那条预言机警告）。
+        """
+        from augmentor.search_enhanced import search_dataset
+
+        items = json.loads(tools_env.data.read_text(encoding="utf-8"))
+        sdk = search_dataset(items, "公租屋", method="fuzzy").to_dict()
+        payload = self.search(tools_env, method="fuzzy")
+
+        assert set(payload) == set(sdk)
+        assert payload["fuzzy_threshold"] == sdk["fuzzy_threshold"] == 0.6
+
+    def test_a_starved_result_names_the_threshold_that_starved_it(self, tools_env):
+        """两条 0 命中要能分辨：阈值拧太紧 vs 语料里真没有
+
+        「公租屋」最优窗口分数 0.667：阈值 0.667 → 0 条（差一点就过），contains 同查询
+        → 0 条且没有旋钮可怪。缺陷态两条响应除了 `method` 之外完全同形。
+        """
+        starved = self.search(tools_env, method="fuzzy", fuzzy_threshold=0.667)
+        absent = self.search(tools_env, method="contains")
+
+        assert (starved["total_matches"], absent["total_matches"]) == (0, 0)
+        assert starved["fuzzy_threshold"] == 0.667
+        assert absent["fuzzy_threshold"] is None
+
     def test_unknown_method_rejected(self, tools_env):
         """未知检索方法必须 400 —— 不能静默回退到 contains"""
         response = tools_env.client.post(

@@ -21,13 +21,20 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class SearchResult:
-    """搜索结果"""
+    """搜索结果
+    
+    `fuzzy_threshold` / `ngram_n` 是**本次方法真正消费的**松紧旋钮：方法不是
+    `fuzzy` / `ngram` 时为 `None`，而不是重复默认值。回显的意义在于「找到 0 条」
+    有两种完全不同的成因（语料里确实没有 / 旋钮拧得太紧），只报 `method` 分不出这两者。
+    """
     items: List[Dict]
     total_matches: int
     query_time_ms: float
     query: str
     method: str
     highlights: List[Dict] = field(default_factory=list)
+    fuzzy_threshold: Optional[float] = None
+    ngram_n: Optional[int] = None
     
     def to_dict(self) -> Dict:
         """转换为字典"""
@@ -37,7 +44,9 @@ class SearchResult:
             "query_time_ms": self.query_time_ms,
             "query": self.query,
             "method": self.method,
-            "highlights": self.highlights
+            "highlights": self.highlights,
+            "fuzzy_threshold": self.fuzzy_threshold,
+            "ngram_n": self.ngram_n
         }
 
 
@@ -217,7 +226,8 @@ class EnhancedSearcher:
             ngram_n: ngram 的 gram 长度，`>= 1`；越大越严格
 
         Returns:
-            搜索结果
+            搜索结果。`fuzzy_threshold` / `ngram_n` 两键回显**本次方法真正生效**的档位，
+                方法没消费那个旋钮时是 `None`（见 `SearchResult`）。
 
         Raises:
             DataValidationError: `fuzzy_threshold` 或 `ngram_n` 越界（它同时是
@@ -284,7 +294,9 @@ class EnhancedSearcher:
             query_time_ms=query_time,
             query=query,
             method=method,
-            highlights=highlights
+            highlights=highlights,
+            fuzzy_threshold=fuzzy_threshold if method == "fuzzy" else None,
+            ngram_n=ngram_n if method == "ngram" else None,
         )
     
     def _search_exact(self, field: str, query: str) -> Dict[int, float]:

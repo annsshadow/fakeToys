@@ -118,7 +118,8 @@ def run_search(args, config):
     stdout 契约沿用合并前的基础实现：两行摘要 + **匹配条目的 JSON 列表**。
     条目本身就是这个命令的产物，只打印摘要会逼着下游改用 `--output` 落盘再读，
     属于输出能力的静默缩水。`--output` 额外落盘 `SearchResult` 的完整字典
-    （含 `total_matches` / `method` / `query_time_ms`）。
+    （含 `total_matches` / `method` / `query_time_ms`）。生效的松紧旋钮印在
+    **第二行末尾**（不另起一行），所以「两行摘要 + JSON」这个形状对下游解析不变。
     """
     from augmentor.search_enhanced import search_dataset
 
@@ -135,7 +136,14 @@ def run_search(args, config):
     )
 
     print(f"找到 {result.total_matches} 条匹配结果，用时 {result.query_time_ms:.2f}ms")
-    print(f"搜索方法: {result.method}")
+    # 生效的旋钮并排印出（不是回显用户输入的那份）：「找到 0 条」有两种成因——
+    # 语料里确实没有，和阈值/ gram 长度拧得太紧，只报方法名分不开这两种。
+    effective = ""
+    if result.fuzzy_threshold is not None:
+        effective = f" (生效阈值 {result.fuzzy_threshold})"
+    elif result.ngram_n is not None:
+        effective = f" (生效 gram 长度 {result.ngram_n})"
+    print(f"搜索方法: {result.method}{effective}")
     _print(result.items)
 
     if args.output:
