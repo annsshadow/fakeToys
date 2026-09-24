@@ -354,6 +354,17 @@
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps7('copyToWc')">附件复制到已办</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps7('updateContent')">附件内容更新</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps7('updateByWork')">附件更新(按工作)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('appComplexManage')">应用复杂清单(按人)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('dataJobArray')">数据Job数组</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('dataFetchJob')">数据抓取Job</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('readPrevFilter')">待阅前翻过滤</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('readcompletedPrevFilter')">已阅前翻过滤</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('readV2ListNext')">待阅v2列表后翻</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('readV2ListPrev')">待阅v2列表前翻</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('modeClear')">清模式(按人)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('attTransfer')">附件转存下载</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('attPreviewPdfResult')">附件PDF预览结果</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('attPreviewImgResult')">附件图片预览结果</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdProcessing')">任务处理(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdReplace')">任务替换(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdPress')">任务催办(位置态)</button>
@@ -1501,6 +1512,30 @@ async function surfaceOps7(op: string): Promise<void> {
     else if (op === 'copyToWc') { const wc = encodeURIComponent(prompt('已办 ID:', '') || ''); await api.post(`/api/processplatform/assemble/surface/attachment/copy/workcompleted/${wc}`, {}) }
     else if (op === 'updateContent') { const a = id(); const w = wk(); await api.put(`/api/processplatform/assemble/surface/attachment/update/content/${a}/work/${w}`, {}) }
     else { const a = id(); const w = wk(); await api.put(`/api/processplatform/assemble/surface/attachment/update/${a}/work/${w}`, {}) }
+    toast.success('流程表面操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev397：流程表面 应用复杂清单(按人管理)/数据 job 数组·抓取/待阅·已阅前翻过滤/待阅v2 list 后翻·前翻/清模式(按人管理)/附件转存下载·PDF·图片预览结果 真实路由（Path 已核，job/filter/mode 空体；用户触发）
+async function surfaceOps8(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
+    if (op === 'appComplexManage') { const p = encodeURIComponent(prompt('人员:', '') || ''); await api.get(`/api/processplatform/assemble/surface/application/list/complex/manage/${p}`) }
+    else if (op === 'dataJobArray') { const j = encodeURIComponent(prompt('Job ID:', '') || ''); await api.post(`/api/processplatform/assemble/surface/data/job/${j}/array/data`, {}) }
+    else if (op === 'dataFetchJob') { const j = encodeURIComponent(prompt('Job ID:', '') || ''); await api.post(`/api/processplatform/assemble/surface/data/fetch/job/${j}`, {}) }
+    else if (op === 'readPrevFilter') { const c = 20; await api.post(`/api/processplatform/assemble/surface/read/list/${id()}/prev/${c}/filter`, {}) }
+    else if (op === 'readcompletedPrevFilter') { const c = 20; await api.post(`/api/processplatform/assemble/surface/readcompleted/list/${id()}/prev/${c}/filter`, {}) }
+    else if (op === 'readV2ListNext') { const c = 20; await api.post(`/api/processplatform/assemble/surface/read/v2/list/${id()}/next/${c}`, {}) }
+    else if (op === 'readV2ListPrev') { const c = 20; await api.post(`/api/processplatform/assemble/surface/read/v2/list/${id()}/prev/${c}`, {}) }
+    else if (op === 'modeClear') { const p = encodeURIComponent(prompt('人员:', '') || ''); if (!(await confirmMsg('确定清理该人模式？'))) return; await api.post(`/api/processplatform/assemble/surface/mode/clear/person/${p}/manager`, {}) }
+    else if (op === 'attTransfer') { const f = encodeURIComponent(prompt('转存标识:', '') || ''); await api.get(`/api/processplatform/assemble/surface/attachment/download/transfer/flag/${f}`) }
+    else if (op === 'attPreviewPdfResult') { const f = encodeURIComponent(prompt('附件标识:', '') || ''); await api.get(`/api/processplatform/assemble/surface/attachment/preview/pdf/${f}/result`) }
+    else { const f = encodeURIComponent(prompt('附件标识:', '') || ''); await api.get(`/api/processplatform/assemble/surface/attachment/preview/image/${f}/result`) }
     toast.success('流程表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
