@@ -84,6 +84,12 @@
         <button class="btn-refresh" @click="cmsQuery3('scriptPaging')">脚本分页</button>
         <button class="btn-refresh" @click="cmsQuery3('viewRecordLog')">视图记录日志</button>
         <button class="btn-refresh" @click="cmsQuery3('viewCat')">视图分类详情</button>
+        <button class="btn-refresh" @click="cmsWrite3('catPermission')">分类权限</button>
+        <button class="btn-refresh" @click="cmsWrite3('catExtContent')">分类扩展内容</button>
+        <button class="btn-refresh" @click="cmsWrite3('catListObjects')">分类对象清单</button>
+        <button class="btn-refresh" @click="cmsWrite3('catProjection')">分类投影执行</button>
+        <button class="btn-refresh" @click="cmsWrite3('docPublishContent')">文档发布内容</button>
+        <button class="btn-refresh" @click="cmsWrite3('scriptRunApp')">脚本按应用运行</button>
         <button class="btn-refresh" @click="cmsQuery3('viewField')">视图字段详情</button>
         <button class="btn-refresh" @click="cmsQuery3('docArchive')">文档归档</button>
         <button class="btn-refresh" @click="cmsQuery3('uuid')">UUID</button>
@@ -514,6 +520,20 @@ async function cmsWrite2(op: string) {
     else if (op === 'indexDelete') { const id = prompt('索引 ID:', '') || ''; if (!(await confirmMsg('确定删除该索引？'))) return; await api.delete(`/api/cms/core/entity/index/delete/${encodeURIComponent(id)}`) }
     else { const id = prompt('笔记 ID:', '') || ''; if (!(await confirmMsg('确定删除该笔记？'))) return; await api.delete(`/api/cms/core/entity/note/delete/${encodeURIComponent(id)}`) }
     toast.success('CMS 写操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev403：CMS 分类信息 权限/扩展内容存/对象清单/投影执行 + 文档密文发布内容 + 脚本按应用运行 真实路由（categoryinfo/document/script handler 已核 Path+Json，projection Path-only；用户触发）
+async function cmsWrite3(op: string) {
+  try {
+    if (op === 'catPermission') { const id = encodeURIComponent(prompt('分类 ID:', '') || ''); await api.post(`/api/categoryinfo/${id}/permission`, {}) }
+    else if (op === 'catExtContent') await api.post('/api/categoryinfo/extContent', {})
+    else if (op === 'catListObjects') await api.post('/api/categoryinfo/list/objects', {})
+    else if (op === 'catProjection') { const id = encodeURIComponent(prompt('分类 ID:', '') || ''); await api.post(`/api/categoryinfo/${id}/execute/projection`, {}) }
+    else if (op === 'docPublishContent') await api.put('/api/document/publish/content', {})
+    else { const un = encodeURIComponent(prompt('脚本唯一名:', '') || ''); const flag = encodeURIComponent(prompt('应用标识:', '') || ''); await api.post(`/api/script/${un}/app/${flag}`, {}) }
+    toast.success('CMS 操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
   }
