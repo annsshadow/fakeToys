@@ -167,6 +167,24 @@
             <button class="btn-sm" :disabled="v2Busy" @click="taskV2Action('pause')">暂停</button>
             <button class="btn-sm" :disabled="v2Busy" @click="taskV2Action('resume')">恢复</button>
             <button class="btn-sm" :disabled="v2Busy" @click="taskV2Action('reset')">重置</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineTaskAction('will')">待办转正</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineTaskAction('v3add')">追加任务</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineTaskAction('processing')">进入处理</button>
+          </div>
+          <div class="detail-block">
+            <h3>流程引擎动作</h3>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineWorkAction('goback')">退回</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineWorkAction('reroute')">改路由</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineWorkAction('retract')">撤回</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineWorkAction('rollback')">回滚</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineWorkAction('edit')">改标题</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineWorkAction('draftDelete')">删草稿</button>
+            <button class="btn-sm" @click="engineAttAction('edit')">改附件名</button>
+            <button class="btn-sm" @click="engineAttAction('delete')">删附件</button>
+            <button class="btn-sm" @click="engineReadAction('processing')">待阅处理</button>
+            <button class="btn-sm" @click="engineReadAction('replace')">待阅接替</button>
+            <button class="btn-sm" @click="engineReadAction('reset')">待阅重置</button>
+            <button class="btn-sm" @click="engineReadAction('delete')">删待阅</button>
           </div>
         </section>
 
@@ -228,7 +246,7 @@ import {
   validateFormValues,
   type XformDefinition,
 } from '../contracts/xform'
-import { toast } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
 interface TaskItem {
   id: string
@@ -992,6 +1010,92 @@ async function pressTask(): Promise<void> {
     toast.error('催办失败: ' + (e?.message ?? ''))
   } finally {
     pressing.value = false
+  }
+}
+
+// rev327：流程引擎 work/task/attachment/read 真实写端点（用户触发，shape 已核 processplatform_service_processing handler）
+const engineBusy = ref(false)
+async function engineWorkAction(kind: string): Promise<void> {
+  if (!opened.value || engineBusy.value) return
+  const id = workId(opened.value)
+  engineBusy.value = true
+  try {
+    if (kind === 'goback') {
+      if (!(await confirmMsg('确定退回该工作？'))) return
+      await api.post(`/api/processplatform/service/processing/work/v2/${id}/goback`, {})
+    } else if (kind === 'reroute') {
+      if (!(await confirmMsg('确定改变路由？'))) return
+      await api.put(`/api/processplatform/service/processing/work/v2/${id}/reroute`, {})
+    } else if (kind === 'retract') {
+      if (!(await confirmMsg('确定撤回该工作？'))) return
+      await api.put(`/api/processplatform/service/processing/work/v2/${id}/retract`, {})
+    } else if (kind === 'rollback') {
+      if (!(await confirmMsg('确定回滚该工作？'))) return
+      await api.put(`/api/processplatform/service/processing/work/v2/${id}/rollback`, {})
+    } else if (kind === 'edit') {
+      const title = prompt('工作新标题:', opened.value.title ?? '') || ''
+      await api.put(`/api/processplatform/service/processing/work/${id}`, { title })
+    } else if (kind === 'draftDelete') {
+      if (!(await confirmMsg('确定删除该草稿工作？'))) return
+      await api.delete(`/api/processplatform/service/processing/work/${id}/draft`)
+    }
+    toast.success('操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+async function engineTaskAction(kind: string): Promise<void> {
+  const id = effectiveTaskId.value
+  if (!id || engineBusy.value) return
+  engineBusy.value = true
+  try {
+    if (kind === 'will') await api.post(`/api/processplatform/service/processing/task/will/${id}`, {})
+    else if (kind === 'v3add') await api.post(`/api/processplatform/service/processing/task/v3/add/${id}`, {})
+    else if (kind === 'processing') await api.post(`/api/processplatform/service/processing/task/processing/${id}`, {})
+    toast.success('任务操作已提交')
+  } catch (e: any) {
+    toast.error('任务操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+async function engineAttAction(kind: string): Promise<void> {
+  const id = prompt('附件 ID:', attachments.value?.[0]?.id ?? '') || ''
+  if (!id) return
+  try {
+    if (kind === 'edit') {
+      const name = prompt('附件新名称:', '') || ''
+      await api.put(`/api/processplatform/service/processing/attachment/${encodeURIComponent(id)}`, { name })
+    } else {
+      if (!(await confirmMsg('确定删除该附件？'))) return
+      await api.delete(`/api/processplatform/service/processing/attachment/${encodeURIComponent(id)}`)
+    }
+    toast.success('附件操作已提交')
+  } catch (e: any) {
+    toast.error('附件操作失败: ' + (e?.message ?? ''))
+  }
+}
+async function engineReadAction(kind: string): Promise<void> {
+  const id = prompt('待阅 ID:', reads.value?.[0]?.id ?? '') || ''
+  if (!id) return
+  const e = encodeURIComponent(id)
+  try {
+    if (kind === 'processing') await api.put(`/api/processplatform/service/processing/read/${e}/processing`, {})
+    else if (kind === 'replace') {
+      const person = prompt('接替人:', '') || ''
+      await api.post(`/api/processplatform/service/processing/read/${e}/replace`, { person })
+    } else if (kind === 'reset') {
+      const person = prompt('重置为处理人:', '') || ''
+      await api.post(`/api/processplatform/service/processing/read/${e}/reset`, { person })
+    } else {
+      if (!(await confirmMsg('确定删除该待阅？'))) return
+      await api.delete(`/api/processplatform/service/processing/read/${e}`)
+    }
+    toast.success('待阅操作已提交')
+  } catch (err: any) {
+    toast.error('待阅操作失败: ' + (err?.message ?? ''))
   }
 }
 
