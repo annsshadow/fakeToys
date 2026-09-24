@@ -63,6 +63,17 @@
         <button class="btn-refresh" @click="cmsRoot('entModuleSave')">存实体模块</button>
         <button class="btn-refresh" @click="cmsRoot('entIndexSave')">存实体索引</button>
         <button class="btn-refresh" @click="cmsRoot('entNoteSave')">存实体备注</button>
+        <button class="btn-refresh" @click="cmsQuery('docFilterPaging')">文档筛选分页</button>
+        <button class="btn-refresh" @click="cmsQuery('docFilterManager')">文档管理筛选</button>
+        <button class="btn-refresh" @click="cmsQuery('docDraft')">文档草稿列表</button>
+        <button class="btn-refresh" @click="cmsQuery('docListData')">文档数据列表</button>
+        <button class="btn-refresh" @click="cmsQuery('docFilterCount')">文档筛选计数</button>
+        <button class="btn-refresh" @click="cmsQuery('logFilterList')">日志筛选列表</button>
+        <button class="btn-refresh" @click="cmsQuery('logFilterNext')">日志游标</button>
+        <button class="btn-refresh" @click="cmsQuery('catFilter')">分类筛选</button>
+        <button class="btn-refresh" @click="cmsQuery('appFilterNext')">应用游标</button>
+        <button class="btn-refresh" @click="cmsQuery('commentNext')">评论游标</button>
+        <button class="btn-refresh" @click="cmsQuery('commentPaging')">评论分页</button>
       </div>
       <div v-if="cmsConfigText" class="cfg-note">{{ cmsConfigText }}</div>
       <div v-if="overviewText" class="cfg-note">{{ overviewText }}</div>
@@ -418,6 +429,25 @@ async function cmsRoot(op: string) {
     toast.success('CMS 操作已提交')
   } catch (err: any) {
     toast.error('CMS 操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev349：CMS 分页/游标筛选查询（文档/日志/分类/应用/表单/评论）真实读端点（POST/PUT 数据查询，用户触发；全字面量路径）
+async function cmsQuery(op: string) {
+  try {
+    if (op === 'docFilterPaging') await api.put('/api/document/filter/list/1/size/20', {})
+    else if (op === 'docFilterManager') await api.post('/api/document/filter/list/1/size/20/manager', {})
+    else if (op === 'docDraft') await api.put('/api/document/draft/list/0/next/20', {})
+    else if (op === 'docListData') await api.post('/api/document/list/document/data', {})
+    else if (op === 'docFilterCount') await api.put('/api/document/filter/count', {})
+    else if (op === 'logFilterList') await api.post('/api/log/list/filter/1/size/20', {})
+    else if (op === 'logFilterNext') await api.post('/api/log/filter/list/0/next/20', {})
+    else if (op === 'catFilter') await api.put('/api/categoryinfo/filter/list/1/size/20', {})
+    else if (op === 'appFilterNext') await api.put('/api/appinfo/filter/list/0/next/20', {})
+    else if (op === 'commentNext') await api.put('/api/comment/list/0/next/20', {})
+    else await api.put('/api/comment/list/1/size/20', {})
+    toast.success('查询已提交')
+  } catch (e: any) {
+    toast.error('查询失败: ' + (e?.message ?? ''))
   }
 }
 async function loadCmsAppReads2() {
