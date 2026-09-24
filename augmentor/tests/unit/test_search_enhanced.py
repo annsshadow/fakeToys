@@ -1113,3 +1113,259 @@ class TestTheResultEchoesTheKnobsItUsed:
 
         assert (fuzzy.fuzzy_threshold, fuzzy.ngram_n) == (0.75, None)
         assert (ngram.fuzzy_threshold, ngram.ngram_n) == (None, 1)
+
+
+class TestFiltersReachThePublicEntry:
+    """`filters` 必须从公开入口就到得了，而且写坏了要当场报（A30）
+
+    `SearchFilter` 的九种算子和 `search(filters=)` 一直都在库里，但共享入口
+    `search_dataset()` 不收这个形参，CLI 与 `/api/dataset/search` 也没有任何过滤参数
+    （L27 grep 零命中），所以「检索完再按字段收窄」这条路径只有直接 import 类才用得到。
+    真实 6902 条实测它确实会改变答案：contains「租房」在 `instruction` 上 419 条，
+    叠加 `instruction contains 申请` 后只剩 **10** 条（收窄 42 倍）。
+
+    接线同时必须补校验，因为缺陷态的坏参数是**静默**的：未知算子在 `_evaluate_filter`
+    里落到最后的 `return False`（整条查询被清零），`in` 拿到字符串同样全清，
+    `not_in` 拿到字符串却**全留**，而 `gt` 拿到字符串会在 `10 > "5"` 上抛 TypeError。
+    判据只放在 `search()` 咽喉一处（承 L21/L22、L26）。**只判用户传的那个值**：
+    文档字段里的类型不合是数据事实，照旧算「不匹配」而不是报错。
+    """
+
+    ROWS = [
+        {"instruction": "如何申请租房？", "input": "", "output": "登录官网申请",
+         "views": 30, "status": "published"},
+        {"instruction": "租房多少钱？", "input": "", "output": "按房型定价",
+         "views": 5, "status": "draft"},
+        {"instruction": "如何退租押金？", "input": "", "output": "满一年后退还",
+         "views": 12, "status": "published"},
+    ]
+
+    def hits(self, query, *filters, method="contains", entry="search"):
+        """按 `instruction` 数命中，走哪条入口可切换（两条必须同结果）"""
+        if entry == "sdk":
+            result = EnhancedSearcher(self.ROWS).search(
+                query, fields=["instruction"], method=method, filters=list(filters),
+                limit=99)
+        else:
+            result = search_dataset(self.ROWS, query, fields=["instruction"],
+                                    method=method, filters=list(filters), limit=99)
+        return {item["instruction"] for item in result.items}
+
+    def test_a_dict_filter_narrows_the_hit_set(self):
+        """字典形态的过滤器真的动了结果：contains「租房」2 条 → 加 `status eq published` 1 条
+
+        手算：`instruction` 含「租房」的是「如何申请租房？」与「租房多少钱？」两条，
+        后者 status 是 draft，所以收窄后只剩前者。
+        """
+        assert self.hits("租房") == {"如何申请租房？", "租房多少钱？"}
+        assert self.hits("租房", {"field": "status", "operator": "eq",
+                                  "value": "published"}) == {"如何申请租房？"}
+
+    def test_numeric_and_collection_operators_work_through_the_same_entry(self):
+        """`gte` 与 `in` 这两种「值不是字符串」的算子也走得到（CLI/API 全靠字典）"""
+        assert self.hits("租房", {"field": "views", "operator": "gte",
+                                  "value": 12}) == {"如何申请租房？"}
+        assert self.hits("租房", {"field": "status", "operator": "in",
+                                  "value": ["draft"]}) == {"租房多少钱？"}
+
+    def test_objects_and_dicts_are_equivalent(self):
+        """同一条件写成 `SearchFilter` 对象或字典必须给出同一批命中"""
+        as_object = self.hits("租房", SearchFilter("status", "eq", "published"),
+                              entry="sdk")
+        as_dict = self.hits("租房", {"field": "status", "operator": "eq",
+                                     "value": "published"})
+
+        assert as_object == as_dict == {"如何申请租房？"}
+
+    def test_several_filters_are_anded(self):
+        """多个过滤器是**逐条交集**，不是并集
+
+        contains「租房」命中前两条。单看过滤器：`views gte 12` 留下「如何申请租房？」，
+        `status eq draft` 留下「租房多少钱？」；两个一起传必须谁都不留——并集口径会留 2 条。
+        """
+        def instructions(*filters):
+            result = EnhancedSearcher(self.ROWS).search(
+                "租房", fields=["instruction"], method="contains", limit=99,
+                filters=[{"field": f, "operator": o, "value": v} for f, o, v in filters])
+            return {item["instruction"] for item in result.items}
+
+        assert instructions(("views", "gte", 12)) == {"如何申请租房？"}
+        assert instructions(("status", "eq", "draft")) == {"租房多少钱？"}
+        assert instructions(("views", "gte", 12), ("status", "eq", "draft")) == set()
+
+    def test_an_empty_filter_list_is_the_same_as_no_filter(self):
+        """`filters=[]` 与不传同义（本轮不许把空清单当成「全清」）"""
+        none = EnhancedSearcher(self.ROWS).search("租房", fields=["instruction"], limit=99)
+        empty = EnhancedSearcher(self.ROWS).search("租房", fields=["instruction"],
+                                                   limit=99, filters=[])
+
+        assert [i["instruction"] for i in none.items] == \
+            [i["instruction"] for i in empty.items]
+        assert len(none.items) == 2, "语料本身没按预期给出 2 条命中"
+
+    def test_a_document_field_of_the_wrong_type_is_data_not_an_error(self):
+        """文档侧字段类型不合只算「不匹配」，**不许**报错
+
+        第 4 条的 `views` 是字符串「几千」：`gte` 判据里的 `isinstance` 走的是这一支，
+        它与「用户把过滤值写成字符串」是两件事，后者才该报错。
+        """
+        rows = self.ROWS + [{"instruction": "租房合同怎么签？", "input": "",
+                             "output": "面签", "views": "几千", "status": "published"}]
+        result = EnhancedSearcher(rows).search(
+            "租房", fields=["instruction"], method="contains", limit=99,
+            filters=[{"field": "views", "operator": "gte", "value": 12}])
+
+        assert {item["instruction"] for item in result.items} == {"如何申请租房？"}
+
+    @pytest.mark.parametrize("operator", ["equals", "EQ", "", "gte_", "regex"])
+    def test_an_unknown_operator_fails_loudly(self, operator):
+        """算子写错要报错，不许静默交出 0 条
+
+        缺陷态：`_evaluate_filter` 落到最后的 `return False`，于是整条检索被清零，
+        用户读到的是「语料里没有」。报错信息里必须列出可选算子，否则改不动。
+        """
+        searcher = EnhancedSearcher(self.ROWS)
+
+        with pytest.raises(DataValidationError) as excinfo:
+            searcher.search("租房", fields=["instruction"],
+                            filters=[{"field": "status", "operator": operator,
+                                      "value": "published"}])
+
+        assert isinstance(excinfo.value, ValueError)
+        assert "算子" in str(excinfo.value)
+        assert "not_in" in str(excinfo.value), "没列出可选算子，用户改不动"
+
+    @pytest.mark.parametrize("operator", ["in", "not_in"])
+    def test_a_membership_filter_needs_a_collection(self, operator):
+        """`in` / `not_in` 拿到字符串就报错
+
+        缺陷态这两条是**相反的静默**：`in` + 字符串全清（`return False`），
+        `not_in` + 字符串全留（`return True`）。同一个形状给出两种结果，
+        比直接崩还难查。
+        """
+        with pytest.raises(DataValidationError) as excinfo:
+            search_dataset(self.ROWS, "租房", fields=["instruction"],
+                           filters=[{"field": "status", "operator": operator,
+                                     "value": "published"}])
+
+        assert "列表或集合" in str(excinfo.value)
+
+    @pytest.mark.parametrize("operator", ["gt", "lt", "gte", "lte"])
+    def test_a_comparison_filter_needs_a_number(self, operator):
+        """`gt/lt/gte/lte` 拿到字符串当场报错，而不是在比较时抛 TypeError
+
+        缺陷态：文档侧 `isinstance(30, (int, float))` 通过之后执行 `30 > "5"` →
+        TypeError，经 API 是 500、经 CLI 是「错误: '>' not supported…」。
+        """
+        with pytest.raises(DataValidationError) as excinfo:
+            search_dataset(self.ROWS, "租房", fields=["instruction"],
+                           filters=[{"field": "views", "operator": operator,
+                                     "value": "5"}])
+
+        assert "数字" in str(excinfo.value)
+
+    @pytest.mark.parametrize("operator, value, expected", [
+        ("contains", 5, None),           # None = 该报错
+        ("eq", "x", set()),              # 没有任何 status 等于 "x" → 收窄成 0 条
+        ("ne", None, {"如何申请租房？", "租房多少钱？"}),   # 两行的 status 都不是 None → 全留
+    ])
+    def test_value_shape_rules_follow_the_operator(self, operator, value, expected):
+        """`contains` 要字符串；`eq` / `ne` 不挑形状（它们比的是任意值）
+
+        `eq` / `ne` 那两格给出**具体命中集合**而不是「没报错」，否则换成「过滤器被忽略」
+        也照样绿。
+        """
+        def call():
+            return search_dataset(
+                self.ROWS, "租房", fields=["instruction"],
+                filters=[{"field": "status", "operator": operator, "value": value}],
+                limit=99)
+
+        if expected is None:
+            with pytest.raises(DataValidationError) as excinfo:
+                call()
+            assert "字符串" in str(excinfo.value)
+        else:
+            assert {item["instruction"] for item in call().items} == expected
+
+    @pytest.mark.parametrize("value", [True, False])
+    def test_a_boolean_is_not_a_number_for_comparison(self, value):
+        """`True` 不算数字（它是 int 的子类，`views > True` 会静默变成 `> 1`）
+
+        与 L26 拒绝 `--ngram-n true` 同一判据。
+        """
+        with pytest.raises(DataValidationError):
+            search_dataset(self.ROWS, "租房", fields=["instruction"],
+                           filters=[{"field": "views", "operator": "gt",
+                                     "value": value}])
+
+    @pytest.mark.parametrize("broken, phrase", [
+        ({"field": "status"}, "缺少键"),
+        ({"operator": "eq", "value": "x"}, "缺少键"),
+        ({"field": "status", "operator": "eq"}, "缺少键"),
+        ("status eq published", "既不是 SearchFilter 也不是字典"),
+        (["status", "eq", "published"], "既不是 SearchFilter 也不是字典"),
+    ])
+    def test_a_malformed_filter_element_is_named_by_position(self, broken, phrase):
+        """元素形状不对时报错要指明**第几个**（三端都可能一次传多条）"""
+        with pytest.raises(DataValidationError) as excinfo:
+            search_dataset(self.ROWS, "租房", fields=["instruction"],
+                           filters=[{"field": "status", "operator": "eq",
+                                     "value": "published"}, broken])
+
+        assert "第 2 个过滤器" in str(excinfo.value)
+        assert phrase in str(excinfo.value)
+
+    @pytest.mark.parametrize("not_a_list", [
+        SearchFilter("status", "eq", "published"), "status eq published", 5, {"a": 1},
+    ])
+    def test_filters_must_be_a_list_not_a_single_filter(self, not_a_list):
+        """整个 `filters` 参数不是清单时也要报错（少见的用户错法：忘了套列表）"""
+        with pytest.raises(DataValidationError) as excinfo:
+            search_dataset(self.ROWS, "租房", fields=["instruction"],
+                           filters=not_a_list)
+
+        assert "必须是列表" in str(excinfo.value)
+
+    def test_a_non_string_field_name_is_rejected(self):
+        """字段名必须是字符串：缺陷态 `item.get(["a"])` 直接 TypeError"""
+        with pytest.raises(DataValidationError) as excinfo:
+            search_dataset(self.ROWS, "租房", fields=["instruction"],
+                           filters=[{"field": ["status"], "operator": "eq",
+                                     "value": "published"}])
+
+        assert "字段名必须是字符串" in str(excinfo.value)
+
+    def test_bad_filters_are_rejected_before_the_corpus_is_touched(self):
+        """校验发生在扫表之前：坏参数不许付一遍全表扫描的钱
+
+        探针自己要先证明是响的（L14 教训）：断言 0 次之后再用合法参数跑一次，
+        否则「0 次」可能只是根本没数到。
+        """
+        calls = []
+
+        class Counting(EnhancedSearcher):
+            def _search_exact(self, *args, **kwargs):
+                calls.append("exact"); return {}
+
+            def _search_contains(self, *args, **kwargs):
+                calls.append("contains"); return {}
+
+            def _search_ngram(self, *args, **kwargs):
+                calls.append("ngram"); return {}
+
+            def _search_fuzzy(self, *args, **kwargs):
+                calls.append("fuzzy"); return {}
+
+            def _search_regex(self, *args, **kwargs):
+                calls.append("regex"); return {}
+
+        searcher = Counting(self.ROWS)
+        with pytest.raises(DataValidationError):
+            searcher.search("租房", fields=["instruction"],
+                            filters=[{"field": "status", "operator": "equals",
+                                      "value": "published"}])
+        assert calls == []
+
+        searcher.search("租房", fields=["instruction"], limit=99)
+        assert calls, "计数探针没生效，上面那条断言不算证据"

@@ -433,6 +433,102 @@ class TestDatasetSearch:
         assert starved["fuzzy_threshold"] == 0.667
         assert absent["fuzzy_threshold"] is None
 
+    def test_filters_narrow_the_hits(self, tools_env):
+        """`filters` 是请求字段：contains「房」4 条 → 叠 `output contains 签约` 1 条"""
+        def total(*filters):
+            response = tools_env.client.post(
+                "/api/dataset/search",
+                json={"input_file": str(tools_env.data), "query": "房",
+                      "filters": list(filters)},
+            )
+            assert response.status_code == 200, response.text
+            return response.json()["total_matches"]
+
+        assert total() == 4
+        assert total({"field": "output", "operator": "contains",
+                      "value": "签约"}) == 1
+        # 两条一起是交集：`二手房交易流程` 两条判据都过，`贷款利率是多少` 那两条不过
+        assert total({"field": "output", "operator": "contains", "value": "签约"},
+                     {"field": "instruction", "operator": "not_in",
+                      "value": ["贷款利率是多少"]}) == 1
+        assert total({"field": "instruction", "operator": "not_in",
+                      "value": ["贷款利率是多少"]}) == 3
+
+    def test_a_collection_operator_reaches_the_scoring(self, tools_env):
+        """`in` 的列表值穿到 HTTP 里仍然有效（JSON 数组 → Python 列表）"""
+        def total(values):
+            response = tools_env.client.post(
+                "/api/dataset/search",
+                json={"input_file": str(tools_env.data), "query": "公租房",
+                      "filters": [{"field": "instruction", "operator": "in",
+                                   "value": values}]},
+            )
+            assert response.status_code == 200, response.text
+            return response.json()["total_matches"]
+
+        assert total(["如何申请公租房"]) == 2
+        assert total(["二手房交易流程"]) == 0
+
+    @pytest.mark.parametrize("operator", ["equals", "EQ", ""])
+    def test_an_unknown_operator_is_400(self, tools_env, operator):
+        """算子不存在是 400 并列出可选算子，不是「查询成功、零命中」"""
+        response = tools_env.client.post(
+            "/api/dataset/search",
+            json={"input_file": str(tools_env.data), "query": "公租房",
+                  "filters": [{"field": "input", "operator": operator, "value": ""}]},
+        )
+        assert response.status_code == 400, response.text
+        detail = response.json()["detail"]
+        assert "算子" in detail and "not_in" in detail
+
+    def test_a_string_value_for_a_membership_operator_is_400(self, tools_env):
+        """`in` 拿到字符串是 400
+
+        缺陷态这条是 200 + `total_matches: 0`：`_evaluate_filter` 对非集合走
+        `return False`，于是整条查询被静默清零——用户读到「语料里没有」，
+        真相是「值该写成数组」。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/search",
+            json={"input_file": str(tools_env.data), "query": "公租房",
+                  "filters": [{"field": "instruction", "operator": "in",
+                               "value": "如何申请公租房"}]},
+        )
+        assert response.status_code == 400, response.text
+        assert "列表或集合" in response.json()["detail"]
+
+    @pytest.mark.parametrize("operator, value, phrase", [
+        ("gte", "5", "数字"),
+        ("contains", 5, "字符串"),
+    ])
+    def test_a_wrongly_typed_filter_value_is_400(self, tools_env, operator, value,
+                                                 phrase):
+        """过滤值的形状不对一律 400，不留给比较时炸 TypeError
+
+        缺陷态这两条分别是：`gte` + 字符串 → 文档侧一旦有数字字段就 `30 > "5"` 抛
+        TypeError（→ 500）；`contains` + 数字 → `"x" in 5` 同样 TypeError。
+        校验只看用户传的那个值，所以字段存不存在都无所谓（这里用的就是语料里没有的
+        `views`），报错发生在扫表之前。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/search",
+            json={"input_file": str(tools_env.data), "query": "公租房",
+                  "filters": [{"field": "views", "operator": operator,
+                               "value": value}]},
+        )
+        assert response.status_code == 400, response.text
+        assert phrase in response.json()["detail"]
+
+    def test_a_filter_without_the_required_keys_is_400(self, tools_env):
+        """字典缺键由 SDK 咽喉点名（pydantic 的 `Dict[str, Any]` 不管键名）"""
+        response = tools_env.client.post(
+            "/api/dataset/search",
+            json={"input_file": str(tools_env.data), "query": "公租房",
+                  "filters": [{"field": "input"}]},
+        )
+        assert response.status_code == 400, response.text
+        assert "缺少键" in response.json()["detail"]
+
     def test_unknown_method_rejected(self, tools_env):
         """未知检索方法必须 400 —— 不能静默回退到 contains"""
         response = tools_env.client.post(
