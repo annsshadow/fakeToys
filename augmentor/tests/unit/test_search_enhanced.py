@@ -463,3 +463,155 @@ class TestIndexBuiltOnDemand:
         assert stats["indexed_fields"] == ["instruction", "output"]
         assert stats["field_counts"] == {"instruction": 6, "output": 2}
         assert build_counter == [2]
+
+
+class TestNgramCostFollowsTheQuery:
+    """ngram 打分的开销跟着**查询**走，不再跟着**文档**走
+
+    旧实现为每条文档物化整串的 n-gram 集合（`len(query_ngrams & _ngrams(value, n))`），
+    代价是每条 O(文档长度) 个字符串对象。真实 6902 条 × 3 字段实测一次
+    `method="ngram"` 查询 **104~113 ms**，而同样的数据 contains 只要 **8.2 ms**——
+    慢就慢在这个与查询无关的整档集合上。一个查询 gram 命中文档，定义上就等价于
+    「它是文档的子串」，所以按查询侧那 k 个 gram 各做一次子串判定即可：结果逐条
+    相同，单字段实测 22.2 → 3.2 ms（中位）。
+
+    预言机用「`_ngrams` 被喂了哪些文本」这种确定性计数（L12/L17 的教训：墙钟与
+    分配量都不如调用次数可复现），并用一份独立写的朴素 gram 集合对照语义。
+    """
+
+    CORPUS = [
+        {"instruction": "如何申请租房？", "output": "请登录官网申请"},
+        {"instruction": "租房租房租房", "output": "重复很多遍的租房"},
+        {"instruction": "买房需要什么材料？", "output": "身份证、收入证明"},
+        {"instruction": "AAAa", "output": "aaaa"},
+        {"instruction": "", "output": "空串没有 gram"},
+        {"instruction": 42, "output": None},
+    ]
+
+    @staticmethod
+    def naive_gram_scores(items, field, query, n=2):
+        """独立实现的参照：整档 gram 集合 + 交集（也就是被换掉的那套算法）"""
+        def grams(text):
+            lowered = text.lower()
+            if len(lowered) < n:
+                return set()
+            return {lowered[i:i + n] for i in range(len(lowered) - n + 1)}
+
+        query_grams = grams(query)
+        if not query_grams:
+            return {}
+        scores = {}
+        for index, item in enumerate(items):
+            value = item.get(field, "")
+            if not isinstance(value, str):
+                continue
+            hit = len(query_grams & grams(value))
+            if hit:
+                scores[index] = hit / len(query_grams)
+        return scores
+
+    @pytest.mark.parametrize("query", ["租房", "如何申请租房？", "aaa", "AAaa",
+                                       "空串", "不会命中的查询"])
+    @pytest.mark.parametrize("n", [2, 3])
+    def test_scores_are_identical_to_a_naive_gram_set(self, query, n):
+        """等价性逐条对照：索引与分数都要和旧算法一字不差
+
+        这条是本轮的语义护栏——把子串判定换回集合交集之外的任何改动（漏掉 `lower()`、
+        分母取错、跳过了非字符串分支）都会在这里红。
+        """
+        searcher = EnhancedSearcher(self.CORPUS)
+
+        assert searcher._search_ngram("instruction", query, n) == \
+            self.naive_gram_scores(self.CORPUS, "instruction", query, n)
+        assert searcher._search_ngram("output", query, n) == \
+            self.naive_gram_scores(self.CORPUS, "output", query, n)
+
+    def test_gram_sets_are_built_for_the_query_only(self, monkeypatch):
+        """计数预言机：`_ngrams` 只许见到查询串，一条文档都不许进去"""
+        seen = []
+        real = EnhancedSearcher._ngrams
+
+        def spying(text, n):
+            seen.append(text)
+            return real(text, n)
+
+        monkeypatch.setattr(EnhancedSearcher, "_ngrams", staticmethod(spying))
+        searcher = EnhancedSearcher(self.CORPUS * 20)
+
+        assert searcher._search_ngram("instruction", "租房")
+        assert seen == ["租房"], f"文档也被建了 gram 集合：{seen[1:4]}"
+
+    def test_a_repeated_gram_in_one_document_scores_once(self):
+        """覆盖率是「命中了几个查询 gram」，不是「出现了几次」"""
+        searcher = EnhancedSearcher(self.CORPUS)
+
+        # 「租房租房租房」只有一个 distinct bigram `租房`，覆盖率仍是 1.0
+        assert searcher._search_ngram("instruction", "租房") == {0: 1.0, 1: 1.0}
+
+    def test_case_folding_reaches_both_sides(self):
+        """查询与文档都小写化：大小写不敏感这件事不能只在一侧做"""
+        searcher = EnhancedSearcher(self.CORPUS)
+
+        assert searcher._search_ngram("instruction", "AAA") == {3: 1.0}
+        assert searcher._search_ngram("output", "AAAA") == {3: 1.0}
+
+    def test_a_query_shorter_than_n_matches_nothing(self):
+        """单字查询（短于 n）：没有 gram 可算，返回空而不是整档扫一遍"""
+        searcher = EnhancedSearcher(self.CORPUS)
+
+        assert searcher._search_ngram("instruction", "租") == {}
+        assert searcher._search_ngram("instruction", "") == {}
+
+    def test_non_string_field_values_are_skipped(self):
+        """`42` / `None` 这类字段值不参与打分，也不许把查询砸了"""
+        searcher = EnhancedSearcher(self.CORPUS)
+
+        scores = searcher._search_ngram("instruction", "身份")
+
+        assert scores == {}
+        assert searcher._search_ngram("output", "身份") == {2: 1.0}
+
+    def test_ranking_through_the_public_entry_is_unchanged(self, sample_dataset):
+        """端到端：`search(method="ngram")` 的命中数与排序口径保持原样
+
+        换算法最坏的错误不是慢，而是把「覆盖率高」的文档排到后面去却仍然返回 200。
+        """
+        expected = self.naive_gram_scores(sample_dataset, "instruction", "租房流程")
+
+        result = EnhancedSearcher(sample_dataset).search(
+            "租房流程", method="ngram", fields=["instruction"])
+
+        assert result.total_matches == len(expected)
+        assert result.items == [sample_dataset[i] for i in sorted(
+            expected, key=lambda i: expected[i], reverse=True)]
+
+    def test_ngram_still_pays_no_index_build(self, monkeypatch):
+        """本轮不许把倒排索引顺带建回来：ngram 与索引无关（L13 的结论）"""
+        calls = []
+        monkeypatch.setattr(EnhancedSearcher, "_build_indexes",
+                            lambda self: calls.append(1))
+
+        EnhancedSearcher(self.CORPUS).search("租房", method="ngram")
+
+        assert calls == []
+
+    def test_the_public_entry_point_accumulates_fields_identically(self):
+        """真实入口（CLI 与 `/api/dataset/search` 共用）的多字段累加口径不变
+
+        默认三字段各算一次覆盖率再**相加**，是 ngram 与其它方法能混用的前提；参照那份
+        朴素实现按同样的顺序累加，绕开被测库。语料是刻意挑的：doc0 三个字段各 0.5
+        （合计 1.5）、doc1 只在 instruction 上满覆盖（1.0），所以「按字段求和」排在
+        doc0 在前，而「取最大字段分」或「只看第一个字段」都会把 doc1 提到前面——
+        排序本身就把累加口径钉住了。
+        """
+        items = [{"instruction": "租房合同要点", "input": "租房补贴", "output": "签约前看清租房条款"},
+                 {"instruction": "租房约定", "input": "", "output": "咨询销售"}]
+        expected = {}
+        for field in ("instruction", "input", "output"):
+            for index, score in self.naive_gram_scores(items, field, "租房约").items():
+                expected[index] = expected.get(index, 0) + score
+
+        result = search_dataset(items, "租房约", method="ngram")
+
+        assert result.total_matches == len(expected)
+        assert result.items == [items[0], items[1]]
