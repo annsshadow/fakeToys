@@ -106,6 +106,18 @@
           </div>
         </div>
       </div>
+      <div class="emp-manage">
+        <button class="save-btn ghost" @click="empManage('create')">新建授权</button>
+        <button class="save-btn ghost" @click="empManage('detail')">授权详情</button>
+        <button class="save-btn ghost" @click="empManage('update')">改授权</button>
+        <button class="save-btn ghost" @click="empManage('delete')">删授权</button>
+        <button class="save-btn ghost" @click="empManage('managerCreate')">管理员授权</button>
+        <button class="save-btn ghost" @click="empManage('managerList')">管理授权列表</button>
+        <button class="save-btn ghost" @click="empManage('logMine')">我的授权日志</button>
+        <button class="save-btn ghost" @click="empManage('logTo')">授给我日志</button>
+        <button class="save-btn ghost" @click="empManage('logManager')">管理授权日志</button>
+        <button class="save-btn ghost" @click="empManage('logDelete')">删授权日志</button>
+      </div>
     </div>
   </div>
 </template>
@@ -114,7 +126,7 @@
 import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery } from '@tanstack/vue-query'
 import { computed, onMounted, ref } from 'vue'
-import { toast } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
 const session = useSession()
 const user = computed(() => session.state.user ?? null)
@@ -387,6 +399,46 @@ async function toggleEmpower(e: Emp, on: boolean) {
     else await api.get(`/api/person/empower/${encodeURIComponent(e.id)}/disable`)
     toast.success(on ? '已启用' : '已禁用')
     loadEmpower('mine')
+  } catch (err: any) {
+    toast.error('操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev356：授权委托 建/详情/改/删 + 管理员授权建/列表 + 授权日志(本人发出/授权给我/管理)分页 + 日志删 真实写读（shape 已核：empower{to_person 必填,role_id?}、update{role_id?,enabled?}、log 分页 POST body{}）
+async function empManage(op: string) {
+  try {
+    if (op === 'create') {
+      const toPerson = prompt('授权给（人员唯一标识）:', '') || ''
+      if (!toPerson) return
+      const roleId = prompt('角色 ID（可空）:', '') || ''
+      await api.post('/api/person/empower', { to_person: toPerson, role_id: roleId || undefined })
+    } else if (op === 'detail') {
+      const id = prompt('授权 ID:', '') || ''
+      await api.get(`/api/person/empower/${encodeURIComponent(id)}`)
+    } else if (op === 'update') {
+      const id = prompt('授权 ID:', '') || ''
+      await api.put(`/api/person/empower/${encodeURIComponent(id)}`, { enabled: true })
+    } else if (op === 'delete') {
+      const id = prompt('要删除的授权 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该授权？'))) return
+      await api.delete(`/api/person/empower/${encodeURIComponent(id)}`)
+    } else if (op === 'managerCreate') {
+      const toPerson = prompt('（管理员）授权给:', '') || ''
+      if (!toPerson) return
+      await api.post('/api/person/empower/manager', { to_person: toPerson })
+    } else if (op === 'managerList') {
+      await api.post('/api/person/empower/manager/list/paging/1/size/20', {})
+    } else if (op === 'logMine') {
+      await api.post('/api/person/empowerlog/list/currentperson/paging/1/size/20', {})
+    } else if (op === 'logTo') {
+      await api.post('/api/person/empowerlog/list/to/currentperson/paging/1/size/20', {})
+    } else if (op === 'logManager') {
+      await api.post('/api/person/empowerlog/manager/list/paging/1/size/20', {})
+    } else {
+      const id = prompt('要删除的授权日志 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该授权日志？'))) return
+      await api.delete(`/api/person/empowerlog/${encodeURIComponent(id)}`)
+    }
+    toast.success('授权委托操作已提交')
   } catch (err: any) {
     toast.error('操作失败: ' + (err?.message ?? ''))
   }
