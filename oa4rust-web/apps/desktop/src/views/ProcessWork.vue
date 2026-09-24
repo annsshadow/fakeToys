@@ -805,6 +805,11 @@ async function loadSurfaceReadB(): Promise<void> {
       s(api.get(`/api/processplatform/assemble/surface/script/application/imported/${flag}/${applicationFlag}`)),
       s(api.get(`/api/processplatform/assemble/surface/script/${flag}/application/${applicationFlag}/imported`)),
       // __SURFACE_B_PLACEHOLDER__
+      // rev451：按应用统计 待办/已办/在办/已完成 数量 4 条真实读（*_list_count_application_applicationFlag_process Path<String>，路由 {applicationFlag} + 字面 process，arity 一致）
+      s(api.get(`/api/processplatform/assemble/surface/task/list/count/application/${applicationFlag}/process`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/count/application/${applicationFlag}/process`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/list/count/application/${applicationFlag}/process`)),
+      s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/count/application/${applicationFlag}/process`)),
       s(api.get(`/api/processplatform/assemble/surface/task/count/${credential}`)),
       s(api.get(`/api/processplatform/assemble/surface/task/list/date/date/hour/hour/exclude/draft/manage/${isExcludeDraft}`)),
       s(api.get(`/api/processplatform/assemble/surface/task/list/date/${date}/hour/${hour}/exclude/draft/${isExcludeDraft}/manage`)),
