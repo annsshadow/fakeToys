@@ -176,3 +176,30 @@ def run_benchmark(args, config):
         print(f"基准报告已保存到 {args.report}")
 
     _print(results)
+
+
+# ============ 健康度门禁 ============
+def run_health_gate(args, config):
+    """`health-gate` 子命令：健康度评分 + 质量门禁
+
+    门禁不通过时以退出码 1 结束——这是它作为 CI 关卡的全部意义。判定明细仍然会
+    打印出来，用来定位是哪条规则拦住的。`skipped_rules` 非空表示有规则因缺指标
+    而未参与判定（最常见是 `--pass-rate` 没传）。
+    """
+    from augmentor.quality_gate import gate_dataset_health
+
+    items = _load_items(args.input)
+    result = gate_dataset_health(
+        items,
+        text_field=args.text_field,
+        weights=args.weights,
+        pass_rate=args.pass_rate,
+        pass_rate_min=args.pass_rate_min,
+        duplicate_rate_max=args.duplicate_rate_max,
+        completeness_min=args.completeness_min,
+        block_on_warning=args.block_on_warning,
+    )
+
+    _print(result)
+    if not result["gate"]["passed"]:
+        sys.exit(1)

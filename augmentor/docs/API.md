@@ -193,6 +193,7 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 | `POST` | `/api/quality/clean` | 数据清洗 |
 | `POST` | `/api/quality/dedup` | 智能去重 |
 | `POST` | `/api/quality/evaluate` | 质量评分 |
+| `POST` | `/api/quality/health-gate` | 数据集健康度评分 + 质量门禁 |
 | `POST` | `/api/quality/outliers` | 长度离群点检测 |
 | `POST` | `/api/quality/profiling` | 数据集画像 |
 | `POST` | `/api/quality/report` | 生成质量报告 |
@@ -515,6 +516,61 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
   "duplication_rate": 0.09
 }
 ```
+
+### `POST /api/quality/health-gate`
+
+数据集健康度评分 + 质量门禁：把「这份数据能不能进下游训练」压成一次只读判定。
+
+```json
+{
+  "input_file": "train_data.json",
+  "text_field": "instruction",
+  "weights": [0.4, 0.3, 0.2, 0.1],
+  "pass_rate": 0.78,
+  "pass_rate_min": 0.6,
+  "duplicate_rate_max": 0.3,
+  "completeness_min": 0.8,
+  "block_on_warning": false
+}
+```
+
+`weights` 是健康分四项（完整性 / 多样性 / 质量分布均衡性 / 覆盖率）的权重，必须 4 个
+且之和为 1.0，省略则各 0.25；非法值在**读文件之前**就返回 400。`text_field` 决定重复率
+按哪个字段算（默认 `instruction`）。
+
+```json
+{
+  "health": {
+    "health_score": 0.74,
+    "level": "healthy",
+    "metrics": {"completeness": 1.0, "diversity": 0.667, "quality_balance": 0.222, "coverage": 1.0},
+    "weights": [0.4, 0.3, 0.2, 0.1],
+    "total_samples": 3
+  },
+  "gate": {
+    "verdict": "failed",
+    "passed": false,
+    "failed_rules": ["duplicate_rate"],
+    "warned_rules": [],
+    "metrics": {"completeness": 1.0, "diversity": 0.667, "quality_balance": 0.222,
+                 "coverage": 1.0, "duplicate_rate": 0.667, "pass_rate": 0.78}
+  },
+  "skipped_rules": []
+}
+```
+
+门禁规则为 `pass_rate >= pass_rate_min`（error）、`duplicate_rate <= duplicate_rate_max`
+（error）、`completeness >= completeness_min`（warning）。`verdict` 取
+`passed` / `warned` / `failed`，`passed` 字段对前两者为 `true`；`block_on_warning` 为
+`true` 时 warning 也判负。
+
+**`pass_rate` 必须由调用方自带**（即 `POST /api/quality/evaluate` 的返回值）。数据集里
+不含原始种子问题，本端点无法自行算出通过率；而规则对**缺失的指标**判为不满足，所以省略
+`pass_rate` 时该规则会被摘掉并出现在 `skipped_rules` 里 —— 端点不会把「没测这一项」表达成
+「这一项不及格」。空数据集（`[]`）返回 400 而不是放行。
+
+CLI 侧等价命令：`augmentor health-gate --input data/train_data.json --pass-rate 0.78`，
+门禁判负时退出码为 1（warning 默认不阻断，加 `--block-on-warning` 才阻断）。
 
 ---
 

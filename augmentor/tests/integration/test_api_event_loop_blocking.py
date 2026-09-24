@@ -103,6 +103,13 @@ BLOCKING_SITES = [
         None,
     ),
     (
+        "api.routes.quality",
+        "/api/quality/health-gate",
+        {"input_file": "ds.json"},
+        1,
+        None,
+    ),
+    (
         "api.routes.audit",
         "/api/audit",
         {"input_file": "ds.json", "reference_file": "ref.json"},

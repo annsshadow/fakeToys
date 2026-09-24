@@ -250,6 +250,21 @@ CALLS = {
             "duplicate_rate", "language_distribution", "top_keywords",
         ),
     ),
+    ("POST", "/api/quality/health-gate"): _Case(
+        request=lambda c: c.post(
+            "/api/quality/health-gate", json={"input_file": "data.json"}
+        ),
+        keys=_keys("health", "gate", "skipped_rules"),
+        nested={
+            # 与 `DatasetHealthScore.score()` / `GateReport.to_dict()` 一一对应
+            "health": _keys(
+                "health_score", "level", "metrics", "weights", "total_samples",
+            ),
+            "gate": _keys(
+                "verdict", "passed", "failed_rules", "warned_rules", "metrics",
+            ),
+        },
+    ),
     # ---------- config ----------
     ("GET", "/api/config"): _Case(
         request=lambda c: c.get("/api/config"),

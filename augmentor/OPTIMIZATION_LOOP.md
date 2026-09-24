@@ -20,6 +20,7 @@
 - [x] **L8** `feat(api)`: B6 新增 `/api/dataset/impact` + `/api/dataset/evaluate` 两条只读端点（SDK 里「有、路上没有」的能力）
 - [x] **L9** `perf(dedup)`: A6 前半 —— 相似度行块只算 `[start, n)` 的窄列，不再白算整个下三角
 - [x] **L10** `perf(dedup)`: A17 可落地的一半 —— 稠密编码矩阵改 float32 + 全程原地归一化（峰值 2429 MB → 622 MB）
+- [x] **L11** `feat(quality-gate)`: B4 `QualityGate` + `DatasetHealthScore` 接线 —— 库函数 `gate_dataset_health()` + `/api/quality/health-gate` + CLI `health-gate`（判负退出 1）
 
 ## Backlog A — 性能（含 file:line 与实测线索）
 
@@ -52,7 +53,7 @@
 | B1 | 把 `/api/system/*`(13) 与 `/api/dataset/*`(12) 接入 UI | `web/src/services/api.ts` 对二者零引用；`System.tsx:3` 只用了 status | M |
 | B2 | Excel/CSV 摄取端到端（上传 + `convert --input-format xlsx`） | SDK `csv_excel_import.py:61,152` 可达性为零；`data.py:236-243` 只认 JSON | M |
 | B3 | 反向转换边 `alpaca/sharegpt/chatml/vicuna/belle/tsv → json` | `converter.py:60-66` 只读 json/jsonl/csv，导出侧 13 种 → 不可回环 | M |
-| B4 | `QualityGate` / `DatasetHealthScore` 暴露为 CLI 子命令 + 端点 | 两者在 `augmentor/__init__.py:38+` 导出但无人可达 | S |
+| ~~B4~~ | ~~`QualityGate` / `DatasetHealthScore` 暴露为 CLI 子命令 + 端点~~ | ~~两者在 `augmentor/__init__.py:38+` 导出但无人可达~~ 已做（L11：库函数 `gate_dataset_health()` + `/api/quality/health-gate` + `health-gate` 子命令，并已加入包级导出） | S |
 | B5 | 死配置项：读取或显式废弃（`config.py:75-167` 的 sampler/expander/tracker/visualization/multilingual/evaluation/vector/active_learning 等） | 无代码路径读取 | M |
 | ~~B6~~ | ~~/api/dataset/evaluate（BLEU/ROUGE）+ /api/dataset/impact（前后对比）~~ | ~~`evaluation.py:74,155,211`、`impact.py:49,96` 纯函数已就绪~~ 已做（L8） | S |
 | B7 | 主动学习 + 实验跟踪回路（`active_learning.py:46`、`tracker.py:29`） | 公开导出但无 CLI/API | L |
@@ -194,11 +195,44 @@
   改完转绿；路径峰值那例**第一次注入没红**（预算 1.6×矩阵 + 整个 16MB 块上限太松，
   注入态 39.8MB 仍低于 45.6MB），据此把预算改成「一个编码矩阵 + 按公式精确算出的
   一个相似度块」再留 25%，同一个注入立刻红在 `39.8MB > 27.7MB`。
+- **L11** `feat(quality-gate)` B4 —— 把 `QualityGate` / `DatasetHealthScore` 从
+  「在 `augmentor/__init__.py` 导出但无人可达」接成一条真实判定链：新增库函数
+  `augmentor/quality_gate.py:gate_dataset_health()`（**唯一**入口，CLI 与 API 共用它，
+  门禁口径一旦有两份实现，两边就会给出不同的放行结论）、端点
+  `POST /api/quality/health-gate`（`api/routes/quality.py`，只读 → 进 `OPEN_ALLOWLIST`）、
+  CLI 子命令 `health-gate`（判负 = 退出码 1）。命令数 36→37。
+  三条设计都是**被缺陷逼出来的**，不是风格选择：
+  ① `GateRule.evaluate()` 对缺失的指标键返回 False（既有 `test_missing_metric_returns_false`
+  早已固化），所以调用方没传 `pass_rate` 时必须**摘掉该规则并记进 `skipped_rules`**，
+  否则「没人算过通过率」会被表达成「通过率不及格」——对 CI 这两种结论完全相反；
+  ② 空数据集上每项指标都是 0.0，`duplicate_rate <= 上限` 以「0 ≤ 0.3」恒成立，
+  门禁会给一份空文件放行，故 `gate_dataset_health([])` 抛 `DataValidationError`
+  （API 400 / CLI 退出 1）；
+  ③ 权重非法在**读文件之前**判掉（`_validate_health_gate`），否则客户端要用 500 或 404
+  去读回一个「参数写错」。
+  新增 30 例：单元 12（`TestGateDatasetHealth`：手算四项健康分与加权总分
+  `0.7444365314734798`、`text_field` 两口径对照、pass_rate 三态、warning 两态、空集、
+  非法权重、包级导出）；API 9（`TestHealthGateEndpoint`）；CLI 9
+  （`tests/integration/test_cli_health_gate.py`，断言重心是退出码而非 stdout）。
+  三条 API 守门同步登记：`OPEN_ALLOWLIST` +1、`BLOCKING_SITES` +1（读取 1 次且离线）、
+  OpenAPI `CALLS` 70→71（`health` / `gate` 两层 nested 契约）。文档同步：
+  `docs/API.md` 端点表 + 详细节、`docs/README.md` §5.3、`cli.py` 与 `docs/ARCHITECTURE.md`
+  的命令数。
+  **红→绿**：7 个注入全部让对应用例变红且源文件逐一还原（摘掉跳过逻辑 / 写死
+  `text_field` / 去掉空集防线 / 去掉门口校验 / 去掉退出码 / 忽略 `block_on_warning` /
+  不喂 `duplicate_rate`）。
+  **一处诚实附注**：注入「去掉 `_validate_health_gate`」时「权重之和不为 1」那条用例
+  仍然绿——库层 `DataValidationError` 是 `ValueError` 子类，被路由的
+  `except ValueError → 400` 兜住了。所以门口校验的**独有**证据只有「权重个数」与
+  「`pass_rate` 越界」两条（它们在缺陷态确实变红），而「校验早于读取」由
+  `test_bad_weights_rejected_before_reading_file`（缺文件 + 非法权重 → 400 而非 404/500）
+  单独承担。本轮为功能轮，无性能主张。
 - 全量：L4 后 **3679 passed / 3 skipped**（89.2 s），L5 后 **3703 passed / 3 skipped**
   （90.2 s），L6 后 **3705 passed / 3 skipped**（91.1 s），L7 后 **3726 passed / 3 skipped**
   （95.1 s），L8 后 **3747 passed / 3 skipped**（98.0 s），L9 后 **3747 passed / 3 skipped**
   （92.4 s）——L9 用例数不变是**有意**的：它**改写**了既有的结构护栏用例而非新增。
-  L10 后 **3750 passed / 3 skipped**（55.7 s，coverage.xml line-rate 0.9927）。
+  L10 后 **3750 passed / 3 skipped**（55.7 s，coverage.xml line-rate 0.9927），
+  L11 后 **3780 passed / 3 skipped**（101.7 s，coverage.xml 总计 98.51%）。
   **注意**：这些墙钟秒数**彼此不可比**——本工作树与并行 agent 共用一台机器，
   它跑全量时我会慢 40%+（L9 时 92 s、L10 时无竞争 55.7 s）。跨轮只比
   **同一进程内 back-to-back 的对照组**，绝对秒数只作当次快照。

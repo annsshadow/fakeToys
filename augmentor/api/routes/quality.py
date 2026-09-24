@@ -3,7 +3,7 @@
 
 """质量评估 API 路由"""
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -419,6 +419,123 @@ async def profile_dataset(
         return await run_in_thread(profile)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="文件不存在")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class HealthGateRequest(BaseModel):
+    """健康度门禁请求
+
+    `pass_rate` 必须由调用方自带（即 `/api/quality/evaluate` 的产物）。这不是偷懒，
+    而是 `GateRule.evaluate()` 对**缺失的指标键返回 False**：指标字典里没有
+    `pass_rate` 时那条规则会被判为「不满足」，门禁于是给出 FAILED——把「没算这一项」
+    伪装成「算出来不及格」，而这两种情况对下游的意义完全相反。所以这里显式跳过该规则，
+    并在响应的 `skipped_rules` 里报出来。
+    """
+    input_file: str
+    text_field: str = "instruction"
+    weights: Optional[List[float]] = None
+    pass_rate: Optional[float] = None
+    pass_rate_min: float = 0.6
+    duplicate_rate_max: float = 0.3
+    completeness_min: float = 0.8
+    block_on_warning: bool = False
+
+
+class HealthMetricsResponse(BaseModel):
+    """健康度分项指标（`DatasetHealthScore.score()["metrics"]`）"""
+    completeness: float
+    diversity: float
+    quality_balance: float
+    coverage: float
+
+
+class HealthReportResponse(BaseModel):
+    """健康度评分（与 `DatasetHealthScore.score()` 的返回键一致）"""
+    health_score: float
+    level: str
+    metrics: HealthMetricsResponse
+    weights: List[float]
+    total_samples: int
+
+
+class GateReportResponse(BaseModel):
+    """门禁判定（与 `GateReport.to_dict()` 的键一致）
+
+    `metrics` 是门禁**实际看到**的那份指标，用它可复核 verdict 是怎么来的。
+    """
+    verdict: str
+    passed: bool
+    failed_rules: List[str]
+    warned_rules: List[str]
+    metrics: Dict[str, Any]
+
+
+class HealthGateResponse(BaseModel):
+    """健康度门禁响应"""
+    health: HealthReportResponse
+    gate: GateReportResponse
+    skipped_rules: List[str]
+
+
+def _validate_health_gate(request: HealthGateRequest) -> None:
+    """在门口拒绝非法参数
+
+    两件事必须在这里做，而不是交给评分器：
+
+    1. `DatasetHealthScore` 对权重的校验抛 `DataValidationError`。若等到评分阶段
+       才失败，路由的兜底 `except Exception` 会把它报成 500——可这是纯参数错误，
+       而且那时文件已经读完了。
+    2. 校验规则与评分器内部保持一一对应（4 个元素、之和 ≈ 1.0），不额外发明
+       更严的约束，否则门口能过而评分器拒绝、或反之。
+    """
+    if request.weights is not None:
+        if len(request.weights) != 4:
+            raise HTTPException(status_code=400, detail="权重必须包含 4 个元素")
+        if abs(sum(request.weights) - 1.0) > 0.01:
+            raise HTTPException(status_code=400, detail="权重之和必须为 1.0")
+    if request.pass_rate is not None and not 0.0 <= request.pass_rate <= 1.0:
+        raise HTTPException(status_code=400, detail="pass_rate 必须在 [0, 1] 区间内")
+
+
+@router.post(
+    "/api/quality/health-gate",
+    response_model=HealthGateResponse,
+    summary="健康度评分 + 质量门禁",
+)
+async def health_gate(request: HealthGateRequest):
+    """对数据集打健康分，并用默认门禁规则判定能否放行
+
+    组合的三个模块此前都只有库内 API（`DatasetHealthScore` / `QualityGate` /
+    `ImpactEvaluator` 在 `augmentor/__init__.py` 导出却无任何调用入口），本端点
+    把它们接成一条「数据能否进下游训练」的只读判定链。
+    """
+    _validate_health_gate(request)
+    try:
+        items = await run_in_thread(load_items, request.input_file)
+
+        def judge():
+            from augmentor.quality_gate import gate_dataset_health
+
+            return gate_dataset_health(
+                items,
+                text_field=request.text_field,
+                weights=request.weights,
+                pass_rate=request.pass_rate,
+                pass_rate_min=request.pass_rate_min,
+                duplicate_rate_max=request.duplicate_rate_max,
+                completeness_min=request.completeness_min,
+                block_on_warning=request.block_on_warning,
+            )
+
+        return await run_in_thread(judge)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="文件不存在")
+    except ValueError as e:
+        # 数据本身不合法（如空数据集）：`DataValidationError` 是 ValueError 的子类
+        raise HTTPException(status_code=400, detail=str(e))
     except HTTPException:
         raise
     except Exception as e:
