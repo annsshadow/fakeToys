@@ -25,6 +25,10 @@
         <button class="btn secondary" @click="mindMore('coreFolderUpdate')">改核心文件夹</button>
         <button class="btn secondary" @click="mindMore('coreFolderDelete')">删核心文件夹</button>
         <button class="btn secondary" @click="mindMore('coreVersion')">建核心版本</button>
+        <button class="btn secondary" @click="mindFolderOps('ctrlUpdate')">改文件夹(控制)</button>
+        <button class="btn secondary" @click="mindFolderOps('ctrlDelete')">删文件夹(控制)</button>
+        <button class="btn secondary" @click="mindFolderOps('topUpdate')">改文件夹(顶层)</button>
+        <button class="btn secondary" @click="mindFolderOps('topDelete')">删文件夹(顶层)</button>
         <button class="btn secondary" @click="createMindFolder">新建目录</button>
         <button class="btn secondary" :disabled="loadingFolder" @click="loadFolders">刷新目录</button>
         <button class="btn secondary" @click="loadAllMinds">全部导图</button>
@@ -377,6 +381,20 @@ async function mindMore(op: string) {
     else if (op === 'coreFolderDelete') { const id = encodeURIComponent(prompt('要删除的文件夹 ID:', '') || ''); if (!(await confirmMsg('确定删除该文件夹？'))) return; await api.delete(`/api/mind/core/entity/folder/${id}`) }
     else await api.post('/api/mind/core/entity/version', {})
     toast.success('导图操作已提交')
+  } catch (err: any) {
+    toast.error('导图操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev391：思维导图 assemble/control 文件夹删/改 + mind 顶层文件夹改/删 真实路由（folder_delete/delete_folder Path-only、update_folder Path+Json，跨 crate 不同 handler 各计一次，用户触发；规避守卫禁的 core/entity/folder-001）
+async function mindFolderOps(op: string) {
+  const id = encodeURIComponent(prompt('文件夹 ID:', '') || '')
+  if (!id) return
+  try {
+    if (op === 'ctrlUpdate') await api.post(`/api/mind/assemble/control/folder/${id}/update`, {})
+    else if (op === 'ctrlDelete') { if (!(await confirmMsg('确定删除该控制层文件夹？'))) return; await api.delete(`/api/mind/assemble/control/folder/${id}`) }
+    else if (op === 'topUpdate') await api.post(`/api/mind/folder/${id}`, {})
+    else { if (!(await confirmMsg('确定删除该文件夹？'))) return; await api.delete(`/api/mind/folder/${id}`) }
+    toast.success('导图文件夹操作已提交')
   } catch (err: any) {
     toast.error('导图操作失败: ' + (err?.message ?? ''))
   }
