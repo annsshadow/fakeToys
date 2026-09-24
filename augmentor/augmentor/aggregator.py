@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from .exceptions import DataValidationError
 from .validation import require_count
+from .allocation import largest_remainder
 
 logger = logging.getLogger(__name__)
 
@@ -157,19 +158,23 @@ class DataAggregator:
         if target_size is None:
             target_size = DEFAULT_TARGET_SIZE
         weights = weights or {}
-        total_weight = sum(max(0.0, weights.get(name, 1.0))
-                           for name in datasets)
-        if total_weight <= 0:
-            total_weight = 1.0
+
+        names = list(datasets)
+        # 逐源 `int(target * 占比)` 会把余数整份丢掉：3 源等权要 1 条 → 三源各 0 条，
+        # 「采 1 条」交付空数据集。分配交给一处最大余数法，和恰好等于 target_size。
+        quotas = largest_remainder(
+            target_size,
+            [max(0.0, weights.get(name, 1.0)) for name in names],
+            caps=[len(datasets[name]) for name in names],
+        )
 
         source_counts: Dict[str, int] = {}
         seen: Dict[str, int] = {}
         result: List[Dict] = []
 
-        for source, items in datasets.items():
+        for source, quota in zip(names, quotas):
+            items = datasets[source]
             source_counts[source] = len(items)
-            weight = max(0.0, weights.get(source, 1.0))
-            quota = int(target_size * (weight / total_weight))
 
             pool = list(items)
             self._random.shuffle(pool)
