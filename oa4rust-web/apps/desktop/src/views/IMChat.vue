@@ -73,6 +73,18 @@
             <button class="icon-btn" :title="callState === 'idle' ? '语音通话' : '结束通话'" @click="toggleCall">
               {{ callState === 'idle' ? '📞' : '⏹' }}
             </button>
+            <button class="icon-btn" title="标记已读" @click="imConvAction('read')">✓</button>
+            <button class="icon-btn" title="置顶" @click="imConvAction('topSet')">📌</button>
+            <button class="icon-btn" title="取消置顶" @click="imConvAction('topCancel')">📍</button>
+            <button class="icon-btn" title="重命名会话" @click="imConvAction('rename')">✎</button>
+            <button class="icon-btn" title="退出群聊" @click="imConvAction('quitGroup')">🚪</button>
+            <button class="icon-btn" title="解散群" @click="imConvAction('dismissGroup')">💥</button>
+            <button class="icon-btn" title="删除单聊" @click="imConvAction('delSingle')">🗑</button>
+            <button class="icon-btn" title="收藏消息" @click="imMsgAction('collect')">⭐</button>
+            <button class="icon-btn" title="取消收藏" @click="imMsgAction('uncollect')">☆</button>
+            <button class="icon-btn" title="撤回消息" @click="imMsgAction('revoke')">↩</button>
+            <button class="icon-btn" title="自定义消息" @click="imMsgAction('custom')">✉</button>
+            <button class="icon-btn" title="群发" @click="imMsgAction('mass')">📢</button>
             <button class="icon-btn" title="更多信息">⋯</button>
           </div>
         </div>
@@ -127,7 +139,7 @@
 
 <script setup lang="ts">
 import { api, type O2WebSocketClient, useSession, useWebSocket } from '@oa4rust/sdk'
-import { toast } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 
@@ -495,6 +507,71 @@ async function loadConversationDetail(id: string): Promise<void> {
       .catch(() => {})
   }
   void single
+}
+
+// rev326：IM 会话/消息 真实写端点（用户触发，非自动；shape 已核 message crate handler 源码）
+async function imConvAction(kind: string): Promise<void> {
+  const id = selectedChat.value?.id
+  if (!id) {
+    toast.error('请先选择会话')
+    return
+  }
+  const e = encodeURIComponent(id)
+  try {
+    if (kind === 'read') await api.post(`/api/message/assemble/communicate/im/conversation/${e}/read`, {})
+    else if (kind === 'topSet') await api.post(`/api/message/assemble/communicate/im/conversation/${e}/top/set`, {})
+    else if (kind === 'topCancel') await api.post(`/api/message/assemble/communicate/im/conversation/${e}/top/cancel`, {})
+    else if (kind === 'quitGroup') {
+      if (!(await confirmMsg('确定退出该群聊？'))) return
+      await api.post(`/api/message/assemble/communicate/im/conversation/${e}/group/quit/self`, {})
+    } else if (kind === 'dismissGroup') {
+      if (!(await confirmMsg('确定解散该群会话？'))) return
+      await api.delete(`/api/message/assemble/communicate/im/conversation/${e}/group`)
+    } else if (kind === 'delSingle') {
+      if (!(await confirmMsg('确定删除该单聊会话？'))) return
+      await api.delete(`/api/message/assemble/communicate/im/conversation/${e}/single`)
+    } else if (kind === 'rename') {
+      const name = prompt('会话新名称:', selectedChat.value?.name ?? '') || ''
+      await api.put(`/api/message/assemble/communicate/im/conversation/${e}`, { name })
+    }
+    toast.success('操作已提交')
+  } catch (err: any) {
+    toast.error('操作失败: ' + (err?.message ?? ''))
+  }
+}
+async function imMsgAction(kind: string): Promise<void> {
+  try {
+    if (kind === 'collect') {
+      const mid = prompt('要收藏的消息 ID:', '') || ''
+      await api.post('/api/message/assemble/communicate/im/msg/collection', { messageId: mid })
+      toast.success('已收藏')
+    } else if (kind === 'uncollect') {
+      const mid = prompt('要取消收藏的消息 ID:', '') || ''
+      await api.post('/api/message/assemble/communicate/im/msg/collection/remove', { messageId: mid })
+      toast.success('已取消收藏')
+    } else if (kind === 'revoke') {
+      const mid = prompt('要撤回的消息 ID:', '') || ''
+      if (!(await confirmMsg('确定撤回该消息？'))) return
+      await api.post(`/api/message/assemble/communicate/im/msg/revoke/${encodeURIComponent(mid)}`, {})
+      toast.success('已撤回')
+    } else if (kind === 'custom') {
+      const title = prompt('自定义消息标题:', '') || ''
+      const body = prompt('内容:', '') || ''
+      await api.post('/api/message/custom/create', { title, body })
+      toast.success('自定义消息已创建')
+    } else if (kind === 'mass') {
+      const body = prompt('群发内容:', '') || ''
+      const person = prompt('接收人（逗号分隔）:', '') || ''
+      await api.post('/api/message/assemble/communicate/mass', {
+        personList: person.split(',').map((s) => s.trim()).filter(Boolean),
+        body,
+        title: '群发通知',
+      })
+      toast.success('群发已提交')
+    }
+  } catch (err: any) {
+    toast.error('操作失败: ' + (err?.message ?? ''))
+  }
 }
 
 function handleScroll(): void {
