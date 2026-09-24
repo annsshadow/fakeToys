@@ -16,6 +16,15 @@
         <button class="btn secondary" @click="mindWrite('destroyMind')">彻底删导图</button>
         <button class="btn secondary" @click="mindWrite('destroyRecycle')">清回收站项</button>
         <button class="btn secondary" @click="mindWrite('icon')">设图标</button>
+        <button class="btn secondary" @click="mindMore('restore')">恢复导图</button>
+        <button class="btn secondary" @click="mindMore('version')">建版本</button>
+        <button class="btn secondary" @click="mindMore('coreMindCreate')">建核心导图</button>
+        <button class="btn secondary" @click="mindMore('coreMindUpdate')">改核心导图</button>
+        <button class="btn secondary" @click="mindMore('coreMindDelete')">删核心导图</button>
+        <button class="btn secondary" @click="mindMore('coreFolderCreate')">建核心文件夹</button>
+        <button class="btn secondary" @click="mindMore('coreFolderUpdate')">改核心文件夹</button>
+        <button class="btn secondary" @click="mindMore('coreFolderDelete')">删核心文件夹</button>
+        <button class="btn secondary" @click="mindMore('coreVersion')">建核心版本</button>
         <button class="btn secondary" @click="createMindFolder">新建目录</button>
         <button class="btn secondary" :disabled="loadingFolder" @click="loadFolders">刷新目录</button>
         <button class="btn secondary" @click="loadAllMinds">全部导图</button>
@@ -350,6 +359,23 @@ async function mindWrite(op: string) {
     } else {
       await api.post(`/api/mind/assemble/control/mind/${e}/icon/size/200`, {})
     }
+    toast.success('导图操作已提交')
+  } catch (err: any) {
+    toast.error('导图操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev378：思维导图 恢复/版本 + core entity 导图/文件夹/版本 建改删 真实路由（core/entity 为独立 SeaORM crate 首次消费；短/assemble 轨 folder CRUD 属镜像已跳过）
+async function mindMore(op: string) {
+  try {
+    if (op === 'restore') { const id = encodeURIComponent(prompt('要恢复的导图 ID:', '') || ''); await api.get(`/api/mind/assemble/control/mind/restore/${id}`) }
+    else if (op === 'version') await api.post('/api/mind/version', {})
+    else if (op === 'coreMindCreate') await api.post('/api/mind/core/entity/mind', {})
+    else if (op === 'coreMindUpdate') { const id = encodeURIComponent(prompt('导图 ID:', '') || ''); await api.post(`/api/mind/core/entity/mind/${id}`, {}) }
+    else if (op === 'coreMindDelete') { const id = encodeURIComponent(prompt('要删除的导图 ID:', '') || ''); if (!(await confirmMsg('确定删除该导图？'))) return; await api.delete(`/api/mind/core/entity/mind/${id}`) }
+    else if (op === 'coreFolderCreate') await api.post('/api/mind/core/entity/folder', {})
+    else if (op === 'coreFolderUpdate') { const id = encodeURIComponent(prompt('文件夹 ID:', '') || ''); await api.post(`/api/mind/core/entity/folder/${id}`, {}) }
+    else if (op === 'coreFolderDelete') { const id = encodeURIComponent(prompt('要删除的文件夹 ID:', '') || ''); if (!(await confirmMsg('确定删除该文件夹？'))) return; await api.delete(`/api/mind/core/entity/folder/${id}`) }
+    else await api.post('/api/mind/core/entity/version', {})
     toast.success('导图操作已提交')
   } catch (err: any) {
     toast.error('导图操作失败: ' + (err?.message ?? ''))
