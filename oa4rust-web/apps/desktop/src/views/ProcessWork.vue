@@ -413,6 +413,11 @@
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps18('workProcess')">按流程发起工作</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps18('wcProcess')">已办按流程</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps18('wcRollback')">已办回滚</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps19('reroute')">工作v2改流</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps19('retract')">工作v2召回</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps19('rollback')">工作v2回滚</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps19('addSplit')">工作v2分裂</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps19('terminate')">工作v2终止</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdProcessing')">任务处理(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdReplace')">任务替换(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdPress')">任务催办(位置态)</button>
@@ -1779,6 +1784,24 @@ async function surfaceOps18(op: string): Promise<void> {
       const flag = encodeURIComponent(prompt('已办 ID:', '') || '')
       await api.put(`/api/processplatform/assemble/surface/workcompleted/${flag}/rollback`, {})
     }
+    toast.success('流程表面操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev419：流程表面 工作v2位置态写族 reroute·retract·rollback·add/split(PUT) + terminate(POST)（均 work/v2/{id}/* 独立函数名 handler，Path-only，PP_C_WORK v2 O2OA 改流/召回/回滚/分裂/终止独立操作；用户输入真实 work id 触发）
+async function surfaceOps19(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    const id = encodeURIComponent(prompt('工作 ID:', '') || '')
+    if (op === 'reroute') await api.put(`/api/processplatform/assemble/surface/work/v2/${id}/reroute`, {})
+    else if (op === 'retract') await api.put(`/api/processplatform/assemble/surface/work/v2/${id}/retract`, {})
+    else if (op === 'rollback') await api.put(`/api/processplatform/assemble/surface/work/v2/${id}/rollback`, {})
+    else if (op === 'addSplit') await api.put(`/api/processplatform/assemble/surface/work/v2/${id}/add/split`, {})
+    else await api.post(`/api/processplatform/assemble/surface/work/v2/${id}/terminate`, {})
     toast.success('流程表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
