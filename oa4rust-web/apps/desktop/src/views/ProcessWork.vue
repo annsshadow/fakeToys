@@ -390,6 +390,11 @@
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps11('readCompletedV2Count')">已阅v2计数</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps11('reviewCountApp')">摘要按应用计数</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps11('taskCompletedV2Count')">已办v2计数</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps12('createSurface')">新建流程表面</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps12('openapi')">表面OpenAPI</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps12('reviewFilterEntry')">摘要过滤入口</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps12('workV3Retract')">工作v3召回</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps12('wcShiftTime')">已办调整时间</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdProcessing')">任务处理(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdReplace')">任务替换(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdPress')">任务催办(位置态)</button>
@@ -1619,6 +1624,23 @@ async function surfaceOps11(op: string): Promise<void> {
     else if (op === 'readCompletedV2Count') await api.post('/api/processplatform/assemble/surface/readcompleted/v2/count', {})
     else if (op === 'reviewCountApp') await api.post('/api/processplatform/assemble/surface/review/count/application', {})
     else await api.post('/api/processplatform/assemble/surface/taskcompleted/v2/count', {})
+    toast.success('流程表面操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev409：流程表面 新建(create pool+Json 全 Option 空体优雅报名必填)·OpenAPI(无参内省)·摘要过滤入口(GET pool+session)·工作v3召回·已办调整时间(POST pool+session Json #[serde(default)] 空体优雅报必填) 真实路由（handler 源码核实空体不 panic 不 422，规避 batch/upload multipart 与 upload/with/url 501·html/to/pdf·image 未实装桩；用户触发）
+async function surfaceOps12(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    if (op === 'createSurface') await api.post('/api/processplatform/assemble/surface/create', {})
+    else if (op === 'openapi') await api.get('/api/processplatform/assemble/surface/openapi')
+    else if (op === 'reviewFilterEntry') await api.get('/api/processplatform/assemble/surface/review/filter/create/entry')
+    else if (op === 'workV3Retract') await api.post('/api/processplatform/assemble/surface/work/v3/retract', {})
+    else await api.post('/api/processplatform/assemble/surface/workcompleted/shift/time', {})
     toast.success('流程表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
