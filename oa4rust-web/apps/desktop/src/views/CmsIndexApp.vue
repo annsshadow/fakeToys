@@ -28,6 +28,18 @@
         <button class="btn-refresh" @click="createCmsArticle">📝 新建文章</button>
         <button class="btn-refresh" @click="toggleViewPublish(true)">📢 发布视图</button>
         <button class="btn-refresh" @click="toggleViewPublish(false)">🚫 取消发布</button>
+        <button class="btn-refresh" @click="cmsSave('dict')">存字典</button>
+        <button class="btn-refresh" @click="cmsSave('form')">存表单</button>
+        <button class="btn-refresh" @click="cmsSave('view')">存视图</button>
+        <button class="btn-refresh" @click="cmsSave('xform')">存xform</button>
+        <button class="btn-refresh" @click="cmsSave('templateform')">存模板表单</button>
+        <button class="btn-refresh" @click="cmsDelete('dict')">删字典</button>
+        <button class="btn-refresh" @click="cmsDelete('form')">删表单</button>
+        <button class="btn-refresh" @click="cmsDelete('view')">删视图</button>
+        <button class="btn-refresh" @click="cmsDelete('xform')">删xform</button>
+        <button class="btn-refresh" @click="cmsDelete('templateform')">删模板表单</button>
+        <button class="btn-refresh" @click="cmsSaveConfig">存控制配置</button>
+        <button class="btn-refresh" @click="cmsUpdateDocument">更新文档</button>
       </div>
       <div v-if="cmsConfigText" class="cfg-note">{{ cmsConfigText }}</div>
       <div v-if="overviewText" class="cfg-note">{{ overviewText }}</div>
@@ -298,6 +310,58 @@ async function toggleViewPublish(publish: boolean) {
     toast.success(publish ? '视图已发布' : '视图已取消发布')
   } catch (e: any) {
     toast.error('视图发布操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev321：CMS 定义 保存/删除 真实写端点（用户触发）——字典/表单/视图/xform/模板表单 + 控制配置 + 文档更新；全字面量路径
+async function cmsSave(kind: 'dict' | 'form' | 'view' | 'xform' | 'templateform') {
+  const id = prompt(`要保存的${kind} ID:`, '')
+  if (!id) return
+  const e = encodeURIComponent(id)
+  try {
+    if (kind === 'dict') await api.put(`/api/cms/assemble/control/dict/save/${e}`, { data: {} })
+    else if (kind === 'form') await api.put(`/api/cms/assemble/control/form/save/${e}`, { data: {} })
+    else if (kind === 'view') await api.put(`/api/cms/assemble/control/view/save/${e}`, { data: {} })
+    else if (kind === 'xform') await api.put(`/api/cms/assemble/control/xform/save/${e}`, { data: {} })
+    else await api.put(`/api/templateform/save/${e}`, { data: {} })
+    toast.success(`${kind} 已保存`)
+  } catch (err: any) {
+    toast.error(`保存${kind}失败: ` + (err?.message ?? ''))
+  }
+}
+async function cmsDelete(kind: 'dict' | 'form' | 'view' | 'xform' | 'templateform') {
+  const id = prompt(`要删除的${kind} ID:`, '')
+  if (!id) return
+  if (!(await confirmMsg(`确定删除该${kind}？`))) return
+  const e = encodeURIComponent(id)
+  try {
+    if (kind === 'dict') await api.delete(`/api/cms/assemble/control/dict/delete/${e}`)
+    else if (kind === 'form') await api.delete(`/api/cms/assemble/control/form/delete/${e}`)
+    else if (kind === 'view') await api.delete(`/api/cms/assemble/control/view/delete/${e}`)
+    else if (kind === 'xform') await api.delete(`/api/cms/assemble/control/xform/delete/${e}`)
+    else await api.delete(`/api/templateform/delete/${e}`)
+    toast.success(`${kind} 已删除`)
+  } catch (err: any) {
+    toast.error(`删除${kind}失败: ` + (err?.message ?? ''))
+  }
+}
+async function cmsSaveConfig() {
+  try {
+    // PUT cms_assemble_control/update/control/config → 保存 CMS 控制配置
+    await api.put('/api/cms_assemble_control/update/control/config', {})
+    toast.success('CMS 控制配置已保存')
+  } catch (e: any) {
+    toast.error('保存配置失败: ' + (e?.message ?? ''))
+  }
+}
+async function cmsUpdateDocument() {
+  const id = prompt('要更新的文档 ID:', '')
+  if (!id) return
+  try {
+    // POST document/{id}/update → 更新文档
+    await api.post(`/api/document/${encodeURIComponent(id)}/update`, {})
+    toast.success('文档已更新')
+  } catch (e: any) {
+    toast.error('更新文档失败: ' + (e?.message ?? ''))
   }
 }
 async function loadCmsAppReads2() {
