@@ -957,24 +957,26 @@ class TestReverseEdgesOnFiles:
                           {"role": "assistant", "content": "a"}]}
         ]
 
-    def test_sharegpt_file_without_declaration_keeps_the_old_behaviour(self, tmp_path):
-        """不声明 `source_format` 时仍按扩展名当 json 读：老调用的行为不变。
+    def test_sharegpt_file_without_declaration_fails_loud(self, tmp_path):
+        """不声明 `source_format` 时不再静默产出空问答，而是报错并给出该声明什么。
 
-        这条同时说明了为什么必须有 `--input_format` / `source_format`：
-        按 json 读走的 `json → chatml` 边只认 `instruction`/`history` 字段，
-        对话数组整个被忽略，产物是空问答——静默坏数据。
+        这条曾经是**坏结果的护栏**（`json → chatml` 只认 `instruction`/`history`，
+        `conversations` 整个被忽略，产物是空问答、退出码 0），因为那时新增声明选项
+        不能顺手改掉老调用的语义。L21 把它改成显式失败：判据很窄（取不到问答 **且**
+        记录里躺着对话数组），而按这个形状产出的数据集一定不可用，静默比报错更坏。
         """
         rows = [{"conversations": [{"from": "human", "value": "q"},
                                    {"from": "gpt", "value": "a"}]}]
         src = self.write(tmp_path, "in.json", rows)
         out = tmp_path / "out.json"
 
-        convert_file(str(src), str(out), target_format="chatml")
+        with pytest.raises(ValueError, match="第 1 条记录取不到") as exc:
+            convert_file(str(src), str(out), target_format="chatml")
 
-        assert json.loads(out.read_text(encoding="utf-8")) == [{
-            "messages": [{"role": "system", "content": "You are a helpful assistant."},
-                         {"role": "user", "content": ""},
-                         {"role": "assistant", "content": ""}]}]
+        assert "`conversations`" in str(exc.value)
+        assert "sharegpt / vicuna" in str(exc.value)
+        assert "--input-format" in str(exc.value)
+        assert not out.exists(), "报错前不得先落一份半成品"
 
         declared = tmp_path / "out2.json"
         convert_file(str(src), str(declared), target_format="chatml", source_format="sharegpt")
@@ -1253,3 +1255,107 @@ class TestSchemaIsNotContainer:
 
         assert result == [{"instruction": "q", "input": "", "output": "a"}]
 
+
+
+class TestUndeclaredConversationGuard:
+    """「源格式没声明、其实是对话类」必须当场失败，而不是产出一份合法的空数据集。
+
+    `json → alpaca/sharegpt/chatml/…` 六条写边只认 `instruction` / `output` /
+    `history` / `system`。一份实际是 sharegpt 的数据若没声明源格式，以前会被读成
+    「每条都没有问答」，退出码 0、HTTP 200，下游直接拿去训练 —— 真实 6902 条实测
+    会产出 **6902 条全空问答**（L21）。护栏判据取窄：只有「取不到问答 **且** 记录里
+    躺着对话数组」才报，代价是与写边同趟数量级（6902 条实测增量 0.0 ms）。
+    """
+
+    SHAREGPT = [{"conversations": [{"from": "human", "value": "可以月付吗"},
+                                   {"from": "gpt", "value": "支持月付"}]}]
+
+    @pytest.mark.parametrize("target", ["alpaca", "sharegpt", "chatml",
+                                        "llama_factory", "vicuna", "belle"])
+    def test_every_schema_target_is_guarded(self, target):
+        """六条写边一条都不漏：判据挂在 `convert()` 的分发口，不挂在各边里"""
+        with pytest.raises(ValueError, match="全空数据集"):
+            convert_dataset(self.SHAREGPT, target)
+
+    def test_the_hint_names_the_format_to_declare(self):
+        """`conversations` 指向 sharegpt/vicuna，`messages` 指向 chatml"""
+        with pytest.raises(ValueError, match="sharegpt / vicuna"):
+            convert_dataset(self.SHAREGPT, "chatml")
+
+        with pytest.raises(ValueError, match="若源数据是 chatml"):
+            convert_dataset([{"messages": [{"role": "user", "content": "q"}]}], "alpaca")
+
+    def test_error_names_the_offending_row(self):
+        """报错带条目下标：只说「这份数据不对」等于让调用方整份手查"""
+        rows = [{"instruction": "q", "output": "a"}] * 3 + self.SHAREGPT
+        with pytest.raises(ValueError, match="第 4 条记录取不到"):
+            convert_dataset(rows, "chatml")
+
+    def test_a_container_key_next_to_real_qa_is_not_flagged(self):
+        """记录同时带问答与对话数组时不误伤：问答能用就按问答走"""
+        rows = [{"instruction": "可以月付吗", "output": "支持月付",
+                 "conversations": [{"from": "human", "value": "旧轮次"}]}]
+
+        assert convert_dataset(rows, "alpaca") == [
+            {"instruction": "可以月付吗", "input": "", "output": "支持月付"}]
+
+    def test_a_string_column_named_messages_is_not_a_conversation(self):
+        """csv / tsv 读出来的 `messages` 是**字符串列**，不是对话数组 → 不在护栏里
+
+        `DictReader` 交出的每个值都是 str，所以护栏要求 `isinstance(list)`。这条
+        钉的是「护栏没有过度伸展」；这类记录转出来仍是空问答，属 A26 的范围。
+        """
+        rows = [{"messages": "hello", "category": "租房"}]
+
+        assert convert_dataset(rows, "alpaca") == [
+            {"instruction": "", "input": "", "output": ""}]
+
+    @pytest.mark.parametrize("target", ["json", "csv", "tsv"])
+    def test_container_targets_are_not_guarded(self, target):
+        """目标是容器格式时不经写边、也就没有「凭空造空问答」，护栏不得插手
+
+        容器目标只是把行原样交给 `_write_file` 排版，对话数组不会被人吃掉。
+        """
+        assert convert_dataset(self.SHAREGPT, target) == self.SHAREGPT
+
+    def test_jsonl_target_keeps_the_conversation_array_intact(self):
+        """`json → jsonl` 同样不经写边：一行一条，对话数组原样保留"""
+        assert convert_dataset(self.SHAREGPT, "jsonl") == [
+            json.dumps(row, ensure_ascii=False) for row in self.SHAREGPT]
+
+    def test_declaring_the_source_format_clears_the_guard(self):
+        """同一批数据声明后立刻能转：报错里的建议必须真能照做"""
+        converter = DatasetConverter()
+
+        assert converter.convert(self.SHAREGPT, "sharegpt", "chatml") == [{
+            "messages": [{"role": "system", "content": "You are a helpful assistant."},
+                         {"role": "user", "content": "可以月付吗"},
+                         {"role": "assistant", "content": "支持月付"}]}]
+
+    def test_no_partial_output_is_written(self, tmp_path):
+        """报错发生在写盘之前，输出路径不得留下半截文件"""
+        src = tmp_path / "in.json"
+        src.write_text(json.dumps(self.SHAREGPT, ensure_ascii=False), encoding="utf-8")
+        out = tmp_path / "brand_new_out.json"
+
+        with pytest.raises(ValueError, match="全空数据集"):
+            convert_file(str(src), str(out), target_format="chatml")
+
+        assert not out.exists()
+
+    def test_the_guard_stays_out_of_non_record_shapes(self):
+        """护栏只判断「像不像被误标的对话数据」，不接管别的脏输入
+
+        非列表的 `data`、列表里的非对象条目都直接放行，仍然由写边自己绊倒
+        （`AttributeError`，真实报错是 `'NoneType' object has no attribute 'get'`）。
+        这条路属 **A26**：护栏若顺手把它们也报了，就会把「误标源格式」这一条清晰的
+        建议混成泛泛的「数据不是对象」，L21 不混。这条用例钉的是边界没伸展过头。
+        """
+        converter = DatasetConverter()
+
+        with pytest.raises(AttributeError, match="has no attribute 'get'"):
+            converter.convert({"instruction": "q"}, "json", "chatml")
+        with pytest.raises(AttributeError, match="has no attribute 'get'"):
+            converter.convert([None], "json", "chatml")
+        with pytest.raises(TypeError):
+            converter.convert(42, "json", "chatml")

@@ -320,8 +320,8 @@ class TestConvertInputFormat:
 
     容器格式（sharegpt / vicuna / chatml）落盘也是 `.json`，**扩展名推不出源格式**，
     只能由调用方显式声明。不声明时按 json 原样读，而 `json → chatml` 这条边只认
-    `instruction` / `history` 字段，`conversations` 整个被忽略 —— 产物是空问答且
-    退出码为 0，属于最坏的那类失败：静默坏数据。
+    `instruction` / `history` 字段，`conversations` 整个被忽略。L16 加了声明入口，
+    L21 补上了「没声明就直接失败」的护栏——以前它会静默产出全空问答且退出码 0。
     """
 
     def write(self, tmp_path, payload):
@@ -363,11 +363,12 @@ class TestConvertInputFormat:
         assert json.loads(out_file.read_text(encoding="utf-8")) == [
             {"instruction": "可以月付吗", "output": "支持月付", "category": "付款"}]
 
-    def test_omitting_the_flag_keeps_extension_inference(self, tmp_path):
-        """不给 `--input-format` 时行为与从前一致（按扩展名当 json 读）→ 空问答。
+    def test_omitting_the_flag_fails_loud_instead_of_emptying_the_dataset(self, tmp_path, capsys):
+        """不给 `--input-format` 时以非 0 退出，并把该声明什么写在报错里
 
-        这条断言的是**坏结果**，因为它是新增选项存在的理由：不加声明就无法从
-        `.json` 里认出 sharegpt，而 CLI 不能凭猜测改老调用的语义。
+        这条以前断言的是**坏结果**（退出码 0 + 全空问答），理由是「CLI 不能凭猜测
+        改老调用的语义」。L21 改了：判据窄到「取不到问答 且 记录里有对话数组」，
+        而这种产物的业务价值恒为 0，静默比失败更坏，所以宁可让老调用在这里停下。
         """
         src = self.write(tmp_path, [{"conversations": [
             {"from": "human", "value": "如何退租"}, {"from": "gpt", "value": "满一年后退还"}]}])
@@ -377,13 +378,37 @@ class TestConvertInputFormat:
             ["cli", "convert", "--input", str(src), "--output", str(out_file),
              "--format", "chatml"]
         )
+        err = capsys.readouterr().err
+        assert code == 1, f"误标源格式应当以非 0 退出: code={code}"
+        assert "`conversations`" in err and "--input-format" in err, err
+        assert not out_file.exists()
+
+        # 同一个文件声明后立刻能转，报错里的建议是真能照做的
+        _, parsed, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--input-format", "sharegpt", "--format", "chatml"]
+        )
         assert code is None
-        assert json.loads(out_file.read_text(encoding="utf-8")) == [{
-            "messages": [
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": ""},
-                {"role": "assistant", "content": ""},
-            ]}]
+        assert parsed["output_count"] == 1
+        assert json.loads(out_file.read_text(encoding="utf-8"))[0]["messages"][1] == {
+            "role": "user", "content": "如何退租"}
+
+    def test_plain_json_still_infers_from_the_extension(self, tmp_path):
+        """不给 `--input-format` 的常规路径不变：按扩展名当 json 读、正常产出
+
+        报错只针对「取不到问答 + 有对话数组」这一种误标，普通规范形数据不受影响。
+        """
+        src = self.write(tmp_path, [{"instruction": "如何退租", "output": "满一年后退还"}])
+        out_file = tmp_path / "out.json"
+
+        _, parsed, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--format", "chatml"]
+        )
+        assert code is None
+        assert parsed["source_format"] == "json"
+        assert json.loads(out_file.read_text(encoding="utf-8"))[0]["messages"][1] == {
+            "role": "user", "content": "如何退租"}
 
     def test_bad_container_row_fails_with_row_number(self, tmp_path, capsys):
         """源文件里第 2 条缺 `output`：退出码非 0、报错带条目下标、且不留半截产物"""
