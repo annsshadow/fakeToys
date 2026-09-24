@@ -3319,7 +3319,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 921,
+    "line": 923,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/topic/list/forum/${forumId}",
     "path": "/api/bbs/assemble/control/topic/list/forum/{}",
@@ -3332,7 +3332,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 923,
+    "line": 925,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/attachment/${id}",
     "path": "/api/bbs/assemble/control/attachment/{}",
@@ -3345,7 +3345,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 927,
+    "line": 929,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/permission/subjectPublishable/${sectionId}",
     "path": "/api/bbs/assemble/control/permission/subjectPublishable/{}",
@@ -3358,7 +3358,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 930,
+    "line": 932,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/subject/recommended/index/${count}",
     "path": "/api/bbs/assemble/control/subject/recommended/index/{}",
@@ -3371,7 +3371,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 931,
+    "line": 933,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/subject/top/${sectionId}",
     "path": "/api/bbs/assemble/control/subject/top/{}",
@@ -3384,7 +3384,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 932,
+    "line": 934,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/subjectattach/${id}",
     "path": "/api/bbs/assemble/control/subjectattach/{}",
@@ -3397,7 +3397,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 933,
+    "line": 935,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/subjectattach/${id}/binary/base64/${size}",
     "path": "/api/bbs/assemble/control/subjectattach/{}/binary/base64/{}",
@@ -3410,7 +3410,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 934,
+    "line": 936,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/subjectattach/list/subject/${id}",
     "path": "/api/bbs/assemble/control/subjectattach/list/subject/{}",
@@ -3423,7 +3423,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 936,
+    "line": 938,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/role/${id}",
     "path": "/api/bbs/assemble/control/user/role/{}",
@@ -3436,7 +3436,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 938,
+    "line": 940,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/section/forum/${forumId}",
     "path": "/api/bbs/assemble/control/user/section/forum/{}",
@@ -3449,7 +3449,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 939,
+    "line": 941,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/setting/${id}",
     "path": "/api/bbs/assemble/control/user/setting/{}",
@@ -3462,7 +3462,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 941,
+    "line": 943,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/subject/${id}",
     "path": "/api/bbs/assemble/control/user/subject/{}",
@@ -3475,7 +3475,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 973,
+    "line": 975,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/section/save/${e}",
     "path": "/api/bbs/assemble/control/section/save/{}",
@@ -3488,7 +3488,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 978,
+    "line": 980,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/user/role/forum/${e}",
     "path": "/api/bbs/assemble/control/user/role/forum/{}",
@@ -3501,7 +3501,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 980,
+    "line": 982,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/user/role/section/${e}",
     "path": "/api/bbs/assemble/control/user/role/section/{}",
@@ -3514,7 +3514,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 998,
+    "line": 1000,
     "method": "DELETE",
     "raw": "/api/bbs/assemble/control/section/delete/${e}",
     "path": "/api/bbs/assemble/control/section/delete/{}",
@@ -3527,7 +3527,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 999,
+    "line": 1001,
     "method": "DELETE",
     "raw": "/api/bbs/assemble/control/attachment/${e}",
     "path": "/api/bbs/assemble/control/attachment/{}",
@@ -3540,7 +3540,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1000,
+    "line": 1002,
     "method": "DELETE",
     "raw": "/api/bbs/assemble/control/shutup/${e}",
     "path": "/api/bbs/assemble/control/shutup/{}",
@@ -3553,7 +3553,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1001,
+    "line": 1003,
     "method": "DELETE",
     "raw": "/api/bbs/assemble/control/subjectattach/${e}",
     "path": "/api/bbs/assemble/control/subjectattach/{}",
@@ -3566,7 +3566,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1002,
+    "line": 1004,
     "method": "DELETE",
     "raw": "/api/bbs/assemble/control/user/forum/${e}",
     "path": "/api/bbs/assemble/control/user/forum/{}",
@@ -3579,7 +3579,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1003,
+    "line": 1005,
     "method": "DELETE",
     "raw": "/api/bbs/assemble/control/user/reply/${e}",
     "path": "/api/bbs/assemble/control/user/reply/{}",
@@ -3592,7 +3592,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1004,
+    "line": 1006,
     "method": "DELETE",
     "raw": "/api/bbs/assemble/control/user/role/${e}",
     "path": "/api/bbs/assemble/control/user/role/{}",
@@ -3605,7 +3605,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1005,
+    "line": 1007,
     "method": "DELETE",
     "raw": "/api/bbs/assemble/control/user/section/force/${e}",
     "path": "/api/bbs/assemble/control/user/section/force/{}",
@@ -3618,7 +3618,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1006,
+    "line": 1008,
     "method": "DELETE",
     "raw": "/api/bbs/assemble/control/user/section/${e}",
     "path": "/api/bbs/assemble/control/user/section/{}",
@@ -3631,7 +3631,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1007,
+    "line": 1009,
     "method": "DELETE",
     "raw": "/api/bbs/assemble/control/user/subject/${e}",
     "path": "/api/bbs/assemble/control/user/subject/{}",
@@ -3644,7 +3644,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1008,
+    "line": 1010,
     "method": "DELETE",
     "raw": "/api/bbs/core/entity/forum/${e}",
     "path": "/api/bbs/core/entity/forum/{}",
@@ -3657,7 +3657,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1009,
+    "line": 1011,
     "method": "DELETE",
     "raw": "/api/bbs/core/entity/subject/${e}",
     "path": "/api/bbs/core/entity/subject/{}",
@@ -3670,21 +3670,8 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1021,
+    "line": 1023,
     "method": "POST",
-    "raw": "/api/bbs/core/entity/forum/${e}",
-    "path": "/api/bbs/core/entity/forum/{}",
-    "via": "literal",
-    "ambiguous": false,
-    "hit": "/api/bbs/core/entity/forum/{id}",
-    "hit_crate": "bbs_core_entity",
-    "extra": null
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1022,
-    "method": "DELETE",
     "raw": "/api/bbs/core/entity/forum/${e}",
     "path": "/api/bbs/core/entity/forum/{}",
     "via": "literal",
@@ -3697,20 +3684,20 @@
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
     "line": 1024,
-    "method": "POST",
-    "raw": "/api/bbs/core/entity/section/${e}",
-    "path": "/api/bbs/core/entity/section/{}",
+    "method": "DELETE",
+    "raw": "/api/bbs/core/entity/forum/${e}",
+    "path": "/api/bbs/core/entity/forum/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/bbs/core/entity/section/{id}",
+    "hit": "/api/bbs/core/entity/forum/{id}",
     "hit_crate": "bbs_core_entity",
     "extra": null
    },
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1025,
-    "method": "DELETE",
+    "line": 1026,
+    "method": "POST",
     "raw": "/api/bbs/core/entity/section/${e}",
     "path": "/api/bbs/core/entity/section/{}",
     "via": "literal",
@@ -3723,6 +3710,19 @@
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
     "line": 1027,
+    "method": "DELETE",
+    "raw": "/api/bbs/core/entity/section/${e}",
+    "path": "/api/bbs/core/entity/section/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/bbs/core/entity/section/{id}",
+    "hit_crate": "bbs_core_entity",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 1029,
     "method": "POST",
     "raw": "/api/bbs/core/entity/subject/${e}",
     "path": "/api/bbs/core/entity/subject/{}",
@@ -3735,7 +3735,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1028,
+    "line": 1030,
     "method": "DELETE",
     "raw": "/api/bbs/core/entity/subject/${e}",
     "path": "/api/bbs/core/entity/subject/{}",
@@ -3748,7 +3748,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1048,
+    "line": 1050,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/subject/setOriginal/${e}",
     "path": "/api/bbs/assemble/control/user/subject/setOriginal/{}",
@@ -3761,7 +3761,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1049,
+    "line": 1051,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/subject/nonOriginal/${e}",
     "path": "/api/bbs/assemble/control/user/subject/nonOriginal/{}",
@@ -3774,7 +3774,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1050,
+    "line": 1052,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/subject/setRecommendToBBSIndex/${e}",
     "path": "/api/bbs/assemble/control/user/subject/setRecommendToBBSIndex/{}",
@@ -3787,7 +3787,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1051,
+    "line": 1053,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/subject/nonRecommendToBBSIndex/${e}",
     "path": "/api/bbs/assemble/control/user/subject/nonRecommendToBBSIndex/{}",
@@ -3800,7 +3800,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1052,
+    "line": 1054,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/subject/topToBBS/${e}",
     "path": "/api/bbs/assemble/control/user/subject/topToBBS/{}",
@@ -3813,7 +3813,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1053,
+    "line": 1055,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/subject/nonTopToBBS/${e}",
     "path": "/api/bbs/assemble/control/user/subject/nonTopToBBS/{}",
@@ -3826,7 +3826,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1054,
+    "line": 1056,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/subject/topToForum/${e}",
     "path": "/api/bbs/assemble/control/user/subject/topToForum/{}",
@@ -3839,7 +3839,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1055,
+    "line": 1057,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/subject/nonTopToForum/${e}",
     "path": "/api/bbs/assemble/control/user/subject/nonTopToForum/{}",
@@ -3852,7 +3852,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1056,
+    "line": 1058,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/subject/topToMainSection/${e}",
     "path": "/api/bbs/assemble/control/user/subject/topToMainSection/{}",
@@ -3865,7 +3865,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1057,
+    "line": 1059,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/subject/nonTopToMainSection/${e}",
     "path": "/api/bbs/assemble/control/user/subject/nonTopToMainSection/{}",
@@ -3878,7 +3878,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1060,
+    "line": 1062,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/subject/acceptreply/${e}/${encodeURIComponent(rid)}",
     "path": "/api/bbs/assemble/control/user/subject/acceptreply/{}/{}",
@@ -3891,7 +3891,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1061,
+    "line": 1063,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/subject/unacceptreply/${e}",
     "path": "/api/bbs/assemble/control/user/subject/unacceptreply/{}",
@@ -3904,7 +3904,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1075,
+    "line": 1077,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/section/sub/${e}",
     "path": "/api/bbs/assemble/control/user/section/sub/{}",
@@ -3917,7 +3917,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1076,
+    "line": 1078,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/section/viewforum/${e}",
     "path": "/api/bbs/assemble/control/section/viewforum/{}",
@@ -3930,7 +3930,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1077,
+    "line": 1079,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/permission/forum/${e}",
     "path": "/api/bbs/assemble/control/user/permission/forum/{}",
@@ -3943,7 +3943,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1078,
+    "line": 1080,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/permission/section/${e}",
     "path": "/api/bbs/assemble/control/user/permission/section/{}",
@@ -3956,7 +3956,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1106,
+    "line": 1108,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/userinfo/update/nick/name/${person}?nickname=${nick}",
     "path": "/api/bbs/assemble/control/userinfo/update/nick/name/{}",
@@ -24951,7 +24951,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 171,
+    "line": 173,
     "method": "GET",
     "raw": "/api/queryview/query/${encodeURIComponent(qflag)}",
     "path": "/api/queryview/query/{}",
@@ -24964,7 +24964,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 172,
+    "line": 174,
     "method": "GET",
     "raw": "/api/queryview/stat/list/query/${encodeURIComponent(qflag)}",
     "path": "/api/queryview/stat/list/query/{}",
@@ -24977,7 +24977,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 173,
+    "line": 175,
     "method": "GET",
     "raw": "/api/queryview/view/${encodeURIComponent(vid)}",
     "path": "/api/queryview/view/{}",
@@ -24990,7 +24990,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 195,
+    "line": 197,
     "method": "POST",
     "raw": "/api/queryview/statement/list/query/${encodeURIComponent(qflag)}",
     "path": "/api/queryview/statement/list/query/{}",
@@ -25003,7 +25003,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 196,
+    "line": 198,
     "method": "GET",
     "raw": "/api/queryview/stat/list/query/${encodeURIComponent(qflag)}",
     "path": "/api/queryview/stat/list/query/{}",
@@ -25016,7 +25016,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 203,
+    "line": 205,
     "method": "GET",
     "raw": "/api/queryview/statement/${encodeURIComponent(sid)}",
     "path": "/api/queryview/statement/{}",
@@ -25029,7 +25029,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 204,
+    "line": 206,
     "method": "GET",
     "raw": "/api/queryview/stat/${encodeURIComponent(stId)}",
     "path": "/api/queryview/stat/{}",
@@ -25042,7 +25042,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 224,
+    "line": 226,
     "method": "GET",
     "raw": "/api/queryview/importmodel/list/query/${encodeURIComponent(qflag)}",
     "path": "/api/queryview/importmodel/list/query/{}",
@@ -25055,7 +25055,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 229,
+    "line": 231,
     "method": "GET",
     "raw": "/api/queryview/importmodel/${encodeURIComponent(mid)}",
     "path": "/api/queryview/importmodel/{}",
@@ -25068,7 +25068,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 230,
+    "line": 232,
     "method": "GET",
     "raw": "/api/queryview/importmodel/flag/${encodeURIComponent(mflag)}/query/${encodeURIComponent(qflag)}",
     "path": "/api/queryview/importmodel/flag/{}/query/{}",
@@ -25081,7 +25081,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 252,
+    "line": 254,
     "method": "GET",
     "raw": "/api/queryview/table/${encodeURIComponent(flag)}",
     "path": "/api/queryview/table/{}",
@@ -25094,7 +25094,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 254,
+    "line": 256,
     "method": "GET",
     "raw": "/api/queryview/table/list/row/select/${encodeURIComponent(flag)}",
     "path": "/api/queryview/table/list/row/select/{}",
@@ -25107,7 +25107,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 280,
+    "line": 282,
     "method": "GET",
     "raw": "/api/queryview/table/row/${encodeURIComponent(flag)}",
     "path": "/api/queryview/table/row/{}",
@@ -25120,7 +25120,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 281,
+    "line": 283,
     "method": "GET",
     "raw": "/api/queryview/table/row/one/${encodeURIComponent(flag)}",
     "path": "/api/queryview/table/row/one/{}",
@@ -25133,7 +25133,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 282,
+    "line": 284,
     "method": "GET",
     "raw": "/api/queryview/table/list/row/select/where/where/${encodeURIComponent(flag)}?where=a",
     "path": "/api/queryview/table/list/row/select/where/where/{}",
@@ -25146,7 +25146,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 287,
+    "line": 289,
     "method": "GET",
     "raw": "/api/queryview/table/row/${encodeURIComponent(flag)}/${encodeURIComponent(String(oneId))}",
     "path": "/api/queryview/table/row/{}/{}",
@@ -25159,7 +25159,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 295,
+    "line": 297,
     "method": "POST",
     "raw": "/api/queryview/statement/list/query/${encodeURIComponent(qflag)}",
     "path": "/api/queryview/statement/list/query/{}",
@@ -25172,7 +25172,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 298,
+    "line": 300,
     "method": "GET",
     "raw": "/api/queryview/statement/${encodeURIComponent(sid)}/format",
     "path": "/api/queryview/statement/{}/format",
@@ -25185,7 +25185,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 322,
+    "line": 324,
     "method": "GET",
     "raw": "/api/queryview/importmodel/record/${encodeURIComponent(recId)}",
     "path": "/api/queryview/importmodel/record/{}",
@@ -25198,7 +25198,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 323,
+    "line": 325,
     "method": "GET",
     "raw": "/api/queryview/importmodel/record/${encodeURIComponent(recId)}/status",
     "path": "/api/queryview/importmodel/record/{}/status",
@@ -25211,7 +25211,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 324,
+    "line": 326,
     "method": "GET",
     "raw": "/api/queryview/stat/flag/${encodeURIComponent(flag)}/query/${encodeURIComponent(flag)}",
     "path": "/api/queryview/stat/flag/{}/query/{}",
@@ -25224,7 +25224,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 325,
+    "line": 327,
     "method": "GET",
     "raw": "/api/queryview/query/list/key/${encodeURIComponent('a')}",
     "path": "/api/queryview/query/list/key/{}",
@@ -25237,7 +25237,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 326,
+    "line": 328,
     "method": "GET",
     "raw": "/api/queryview/table/${encodeURIComponent(flag)}/row/${encodeURIComponent(rid)}",
     "path": "/api/queryview/table/{}/row/{}",
@@ -25250,7 +25250,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 344,
+    "line": 346,
     "method": "GET",
     "raw": "/api/queryview/view/flag/${encodeURIComponent(flag)}/query/${encodeURIComponent(flag)}",
     "path": "/api/queryview/view/flag/{}/query/{}",
@@ -25263,7 +25263,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 347,
+    "line": 349,
     "method": "GET",
     "raw": "/api/queryview/flag/${encodeURIComponent(flag)}/definition/${encodeURIComponent(flag)}",
     "path": "/api/queryview/flag/{}/definition/{}",
@@ -25276,7 +25276,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 376,
+    "line": 378,
     "method": "GET",
     "raw": "/api/queryview/table/row/${tableFlag}/${id}",
     "path": "/api/queryview/table/row/{}/{}",
@@ -25289,7 +25289,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 377,
+    "line": 379,
     "method": "GET",
     "raw": "/api/queryview/table/${flag}/row/count/where/${where}",
     "path": "/api/queryview/table/{}/row/count/where/{}",
@@ -25302,7 +25302,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 378,
+    "line": 380,
     "method": "GET",
     "raw": "/api/queryview/table/list/${id}/${next}/${cnt}",
     "path": "/api/queryview/table/list/{}/{}/{}",
@@ -25315,7 +25315,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 379,
+    "line": 381,
     "method": "GET",
     "raw": "/api/queryview/table/list/${id}/row/${rid}/prev/${cnt}",
     "path": "/api/queryview/table/list/{}/row/{}/prev/{}",
@@ -25328,7 +25328,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 380,
+    "line": 382,
     "method": "GET",
     "raw": "/api/queryview/table/list/row/${tableFlag}/${id}/${next}/${cnt}",
     "path": "/api/queryview/table/list/row/{}/{}/{}/{}",
@@ -25341,7 +25341,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 381,
+    "line": 383,
     "method": "GET",
     "raw": "/api/queryview/table/list/table/row/paging/${tableFlag}/${page}/${size}/${size}",
     "path": "/api/queryview/table/list/table/row/paging/{}/{}/{}/{}",
@@ -25354,7 +25354,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 382,
+    "line": 384,
     "method": "GET",
     "raw": "/api/queryview/excel/result/${view}/${flag}",
     "path": "/api/queryview/excel/result/{}/{}",
@@ -25367,7 +25367,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 383,
+    "line": 385,
     "method": "GET",
     "raw": "/api/queryview/excel/${view}/${id}",
     "path": "/api/queryview/excel/{}/{}",
@@ -25380,7 +25380,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 384,
+    "line": 386,
     "method": "GET",
     "raw": "/api/queryview/excel/${view}/${flag}/${flag}/${query}/${queryFlag}",
     "path": "/api/queryview/excel/{}/{}/{}/{}/{}",
@@ -25393,7 +25393,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 385,
+    "line": 387,
     "method": "GET",
     "raw": "/api/queryview/neural/list/calculate/model/${modelFlag}/work/${workId}",
     "path": "/api/queryview/neural/list/calculate/model/{}/work/{}",
@@ -25406,7 +25406,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 386,
+    "line": 388,
     "method": "GET",
     "raw": "/api/queryview/neural/list/calculate/model/${modelFlag}/${work}/${workId}",
     "path": "/api/queryview/neural/list/calculate/model/{}/{}/{}",
@@ -25419,7 +25419,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 387,
+    "line": 389,
     "method": "GET",
     "raw": "/api/queryview/list/${query}/${key}/${key}",
     "path": "/api/queryview/list/{}/{}/{}",
@@ -25432,7 +25432,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 388,
+    "line": 390,
     "method": "GET",
     "raw": "/api/queryview/${view}/${flag}/${flag}/${query}/${queryFlag}",
     "path": "/api/queryview/{}/{}/{}/{}/{}",
@@ -25445,7 +25445,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 389,
+    "line": 391,
     "method": "GET",
     "raw": "/api/queryview/bundle/${view}/${flag}/${flag}/${query}/${queryFlag}",
     "path": "/api/queryview/bundle/{}/{}/{}/{}/{}",
@@ -25458,7 +25458,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 390,
+    "line": 392,
     "method": "GET",
     "raw": "/api/queryview/view/excel/result/${flag}",
     "path": "/api/queryview/view/excel/result/{}",
@@ -25471,7 +25471,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 391,
+    "line": 393,
     "method": "GET",
     "raw": "/api/query/assemble/surface/preview/${id}",
     "path": "/api/query/assemble/surface/preview/{}",
@@ -25484,7 +25484,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 404,
+    "line": 406,
     "method": "POST",
     "raw": "/api/queryview/table/row/insert/${encodeURIComponent(tf)}",
     "path": "/api/queryview/table/row/insert/{}",
@@ -25497,7 +25497,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 407,
+    "line": 409,
     "method": "POST",
     "raw": "/api/queryview/table/row/one/insert/${encodeURIComponent(tf)}",
     "path": "/api/queryview/table/row/one/insert/{}",
@@ -25510,7 +25510,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 412,
+    "line": 414,
     "method": "DELETE",
     "raw": "/api/queryview/table/row/delete/${encodeURIComponent(tf)}/${encodeURIComponent(rid)}",
     "path": "/api/queryview/table/row/delete/{}/{}",
@@ -25523,7 +25523,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 416,
+    "line": 418,
     "method": "POST",
     "raw": "/api/queryview/table/row/delete/all/${encodeURIComponent(tf)}",
     "path": "/api/queryview/table/row/delete/all/{}",
@@ -25536,7 +25536,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 420,
+    "line": 422,
     "method": "POST",
     "raw": "/api/queryview/table/row/part/update/${encodeURIComponent(tf)}/${encodeURIComponent(rid)}",
     "path": "/api/queryview/table/row/part/update/{}/{}",
@@ -25549,7 +25549,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 423,
+    "line": 425,
     "method": "PUT",
     "raw": "/api/queryview/view/${encodeURIComponent(id)}/execute",
     "path": "/api/queryview/view/{}/execute",
@@ -25562,7 +25562,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 426,
+    "line": 428,
     "method": "PUT",
     "raw": "/api/queryview/view/${encodeURIComponent(id)}/bundle",
     "path": "/api/queryview/view/{}/bundle",
@@ -25575,7 +25575,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 429,
+    "line": 431,
     "method": "PUT",
     "raw": "/api/queryview/view/${encodeURIComponent(id)}/excel",
     "path": "/api/queryview/view/{}/excel",
@@ -25588,7 +25588,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 432,
+    "line": 434,
     "method": "PUT",
     "raw": "/api/queryview/stat/${encodeURIComponent(id)}/execute",
     "path": "/api/queryview/stat/{}/execute",
@@ -25601,7 +25601,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 435,
+    "line": 437,
     "method": "POST",
     "raw": "/api/queryview/importmodel/${encodeURIComponent(id)}/execute",
     "path": "/api/queryview/importmodel/{}/execute",
@@ -25614,7 +25614,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 439,
+    "line": 441,
     "method": "DELETE",
     "raw": "/api/queryview/importmodel/record/delete/${encodeURIComponent(rid)}",
     "path": "/api/queryview/importmodel/record/delete/{}",
@@ -25627,7 +25627,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 454,
+    "line": 456,
     "method": "GET",
     "raw": "/api/queryview/${v}/application/${a}/execute",
     "path": "/api/queryview/{}/application/{}/execute",
@@ -25640,7 +25640,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 456,
+    "line": 458,
     "method": "PUT",
     "raw": "/api/queryview/view/flag/${flag()}/query/${qf()}/bundle",
     "path": "/api/queryview/view/flag/{}/query/{}/bundle",
@@ -25653,7 +25653,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 457,
+    "line": 459,
     "method": "PUT",
     "raw": "/api/queryview/view/flag/${flag()}/query/${qf()}/excel",
     "path": "/api/queryview/view/flag/{}/query/{}/excel",
@@ -25666,7 +25666,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 458,
+    "line": 460,
     "method": "PUT",
     "raw": "/api/queryview/view/flag/${flag()}/query/${qf()}/execute",
     "path": "/api/queryview/view/flag/{}/query/{}/execute",
@@ -25679,7 +25679,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 460,
+    "line": 462,
     "method": "POST",
     "raw": "/api/queryview/view/${id}/bundle/v2",
     "path": "/api/queryview/view/{}/bundle/v2",
@@ -25692,7 +25692,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 462,
+    "line": 464,
     "method": "PUT",
     "raw": "/api/queryview/stat/flag/${flag()}/query/${qf()}/execute",
     "path": "/api/queryview/stat/flag/{}/query/{}/execute",
@@ -25705,7 +25705,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 463,
+    "line": 465,
     "method": "POST",
     "raw": "/api/queryview/bundle/v2/post/${id}",
     "path": "/api/queryview/bundle/v2/post/{}",
@@ -25718,7 +25718,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 464,
+    "line": 466,
     "method": "POST",
     "raw": "/api/queryview/importmodel/${id}",
     "path": "/api/queryview/importmodel/{}",
@@ -25731,7 +25731,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 465,
+    "line": 467,
     "method": "POST",
     "raw": "/api/queryview/importmodel/execute/record/${rid}",
     "path": "/api/queryview/importmodel/execute/record/{}",
@@ -25744,7 +25744,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 466,
+    "line": 468,
     "method": "GET",
     "raw": "/api/queryview/importmodel/execute/record/${rid}",
     "path": "/api/queryview/importmodel/execute/record/{}",
@@ -25757,7 +25757,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 467,
+    "line": 469,
     "method": "POST",
     "raw": "/api/queryview/importmodel/list/${qf()}/${qf()}",
     "path": "/api/queryview/importmodel/list/{}/{}",
@@ -25770,7 +25770,20 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 480,
+    "line": 481,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/importmodel/permission/${id}",
+    "path": "/api/query/assemble/designer/importmodel/permission/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/query/assemble/designer/importmodel/permission/{id}",
+    "hit_crate": "query_assemble_designer",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewApp.vue",
+    "line": 485,
     "method": "GET",
     "raw": "/api/queryview/table/row/${tf}/${id}",
     "path": "/api/queryview/table/row/{}/{}",
@@ -25783,7 +25796,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 482,
+    "line": 487,
     "method": "GET",
     "raw": "/api/queryview/neural/list/calculate/model/${mf}/${w}/${wi}",
     "path": "/api/queryview/neural/list/calculate/model/{}/{}/{}",
@@ -25796,7 +25809,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 492,
+    "line": 497,
     "method": "GET",
     "raw": "/api/queryview/table/row/${f}/${rid}",
     "path": "/api/queryview/table/row/{}/{}",
@@ -25809,7 +25822,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 493,
+    "line": 498,
     "method": "POST",
     "raw": "/api/queryview/table/${flag()}/row",
     "path": "/api/queryview/table/{}/row",
@@ -25822,7 +25835,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 494,
+    "line": 499,
     "method": "POST",
     "raw": "/api/queryview/table/${flag()}/row/one",
     "path": "/api/queryview/table/{}/row/one",
@@ -25835,7 +25848,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 495,
+    "line": 500,
     "method": "DELETE",
     "raw": "/api/queryview/table/${f}/row/delete/all",
     "path": "/api/queryview/table/{}/row/delete/all",
@@ -25848,7 +25861,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 496,
+    "line": 501,
     "method": "DELETE",
     "raw": "/api/queryview/table/${f}/row/${rid}",
     "path": "/api/queryview/table/{}/row/{}",
@@ -25861,7 +25874,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 497,
+    "line": 502,
     "method": "POST",
     "raw": "/api/queryview/table/list/${f}/row/select",
     "path": "/api/queryview/table/list/{}/row/select",
@@ -25874,7 +25887,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 498,
+    "line": 503,
     "method": "POST",
     "raw": "/api/queryview/table/${f}/row/${rid}/part/update",
     "path": "/api/queryview/table/{}/row/{}/part/update",
@@ -25887,7 +25900,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 514,
+    "line": 519,
     "method": "POST",
     "raw": "/api/query/assemble/designer/table/row/insert/${flag}",
     "path": "/api/query/assemble/designer/table/row/insert/{}",
@@ -25900,7 +25913,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 523,
+    "line": 528,
     "method": "PUT",
     "raw": "/api/query/assemble/designer/table/row/update/${flag}/${rid}",
     "path": "/api/query/assemble/designer/table/row/update/{}/{}",
@@ -25913,7 +25926,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 531,
+    "line": 536,
     "method": "POST",
     "raw": "/api/query/assemble/designer/table/row/save/${flag}",
     "path": "/api/query/assemble/designer/table/row/save/{}",
@@ -25926,7 +25939,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 535,
+    "line": 540,
     "method": "GET",
     "raw": "/api/query/assemble/designer/table/query/${flag}/build",
     "path": "/api/query/assemble/designer/table/query/{}/build",
@@ -25939,7 +25952,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 540,
+    "line": 545,
     "method": "POST",
     "raw": "/api/query/assemble/designer/table/row/delete/all/${flag}",
     "path": "/api/query/assemble/designer/table/row/delete/all/{}",
@@ -25952,7 +25965,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 546,
+    "line": 551,
     "method": "DELETE",
     "raw": "/api/query/assemble/designer/table/row/delete/${flag}/${rid}",
     "path": "/api/query/assemble/designer/table/row/delete/{}/{}",
@@ -25965,7 +25978,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 572,
+    "line": 577,
     "method": "GET",
     "raw": "/api/queryview/execute/${encodeURIComponent(v.flag || 'view')}/${encodeURIComponent(v.id)}",
     "path": "/api/queryview/execute/{}/{}",
@@ -28998,7 +29011,23 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 920,
+    "line": 899,
+    "method": "GET",
+    "raw": "/api/bbs/assemble/control/subject/statgrade/sectionName/default/subjectType/all",
+    "path": "/api/bbs/assemble/control/subject/statgrade/sectionName/default/subjectType/all",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/bbs/assemble/control/subject/statgrade/sectionName/{sectionName}/subjectType/{subjectType}",
+    "hit_crate": "bbs_assemble_control",
+    "extra": [
+     "sectionName=default",
+     "subjectType=all"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 922,
     "method": "GET",
     "raw": "/api/bbs/subject/search",
     "path": "/api/bbs/subject/search",
@@ -29011,7 +29040,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 922,
+    "line": 924,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/list/reply/filter",
     "path": "/api/bbs/assemble/control/list/reply/filter",
@@ -29024,7 +29053,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 924,
+    "line": 926,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/forum/view/all",
     "path": "/api/bbs/assemble/control/forum/view/all",
@@ -29037,7 +29066,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 925,
+    "line": 927,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/mobile/view/all",
     "path": "/api/bbs/assemble/control/mobile/view/all",
@@ -29050,7 +29079,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 926,
+    "line": 928,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/permission",
     "path": "/api/bbs/assemble/control/permission",
@@ -29063,7 +29092,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 928,
+    "line": 930,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/setting/bbsName",
     "path": "/api/bbs/assemble/control/setting/bbsName",
@@ -29076,7 +29105,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 929,
+    "line": 931,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/shutup/get/shutup",
     "path": "/api/bbs/assemble/control/shutup/get/shutup",
@@ -29089,7 +29118,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 935,
+    "line": 937,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/forum/all",
     "path": "/api/bbs/assemble/control/user/forum/all",
@@ -29102,7 +29131,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 937,
+    "line": 939,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/role/all",
     "path": "/api/bbs/assemble/control/user/role/all",
@@ -29115,7 +29144,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 940,
+    "line": 942,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/setting/all",
     "path": "/api/bbs/assemble/control/user/setting/all",
@@ -29128,7 +29157,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 953,
+    "line": 955,
     "method": "POST",
     "raw": "/api/bbs/assemble/control/shutup/save",
     "path": "/api/bbs/assemble/control/shutup/save",
@@ -29141,7 +29170,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 954,
+    "line": 956,
     "method": "POST",
     "raw": "/api/bbs/assemble/control/shutup/delete",
     "path": "/api/bbs/assemble/control/shutup/delete",
@@ -29154,7 +29183,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 955,
+    "line": 957,
     "method": "POST",
     "raw": "/api/bbs/assemble/control/delete/forum",
     "path": "/api/bbs/assemble/control/delete/forum",
@@ -29167,7 +29196,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 956,
+    "line": 958,
     "method": "POST",
     "raw": "/api/bbs/assemble/control/delete/reply",
     "path": "/api/bbs/assemble/control/delete/reply",
@@ -29180,7 +29209,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 957,
+    "line": 959,
     "method": "POST",
     "raw": "/api/bbs/assemble/control/user/forum",
     "path": "/api/bbs/assemble/control/user/forum",
@@ -29193,7 +29222,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 958,
+    "line": 960,
     "method": "POST",
     "raw": "/api/bbs/assemble/control/user/reply",
     "path": "/api/bbs/assemble/control/user/reply",
@@ -29206,7 +29235,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 959,
+    "line": 961,
     "method": "POST",
     "raw": "/api/bbs/assemble/control/user/role",
     "path": "/api/bbs/assemble/control/user/role",
@@ -29219,7 +29248,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 960,
+    "line": 962,
     "method": "POST",
     "raw": "/api/bbs/assemble/control/user/section",
     "path": "/api/bbs/assemble/control/user/section",
@@ -29232,7 +29261,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 961,
+    "line": 963,
     "method": "POST",
     "raw": "/api/bbs/assemble/control/user/subject",
     "path": "/api/bbs/assemble/control/user/subject",
@@ -29245,7 +29274,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 962,
+    "line": 964,
     "method": "POST",
     "raw": "/api/bbs/assemble/control/update/control/config",
     "path": "/api/bbs/assemble/control/update/control/config",
@@ -29258,7 +29287,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 963,
+    "line": 965,
     "method": "POST",
     "raw": "/api/bbs/core/entity/reply",
     "path": "/api/bbs/core/entity/reply",
@@ -29271,7 +29300,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 974,
+    "line": 976,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/update/control/config",
     "path": "/api/bbs/assemble/control/update/control/config",
@@ -29284,7 +29313,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 975,
+    "line": 977,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/user/reply/accept",
     "path": "/api/bbs/assemble/control/user/reply/accept",
@@ -29297,7 +29326,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 976,
+    "line": 978,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/user/role/bind/object",
     "path": "/api/bbs/assemble/control/user/role/bind/object",
@@ -29310,7 +29339,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 977,
+    "line": 979,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/user/role/bind/role",
     "path": "/api/bbs/assemble/control/user/role/bind/role",
@@ -29323,7 +29352,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 979,
+    "line": 981,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/user/role/rolecode/selected",
     "path": "/api/bbs/assemble/control/user/role/rolecode/selected",
@@ -29336,7 +29365,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 981,
+    "line": 983,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/user/role/unit/selected",
     "path": "/api/bbs/assemble/control/user/role/unit/selected",
@@ -29349,7 +29378,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 982,
+    "line": 984,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/user/role/user/selected",
     "path": "/api/bbs/assemble/control/user/role/user/selected",
@@ -29362,7 +29391,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 983,
+    "line": 985,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/user/setting/code",
     "path": "/api/bbs/assemble/control/user/setting/code",
@@ -29375,7 +29404,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 984,
+    "line": 986,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/user/setting",
     "path": "/api/bbs/assemble/control/user/setting",
@@ -29388,7 +29417,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 985,
+    "line": 987,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/user/subject/change/section",
     "path": "/api/bbs/assemble/control/user/subject/change/section",
@@ -29401,7 +29430,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 986,
+    "line": 988,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/user/subject/vote/submit",
     "path": "/api/bbs/assemble/control/user/subject/vote/submit",
@@ -29414,7 +29443,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 987,
+    "line": 989,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/userinfo",
     "path": "/api/bbs/assemble/control/userinfo",
@@ -29427,7 +29456,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1020,
+    "line": 1022,
     "method": "POST",
     "raw": "/api/bbs/core/entity/forum",
     "path": "/api/bbs/core/entity/forum",
@@ -29440,7 +29469,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1023,
+    "line": 1025,
     "method": "POST",
     "raw": "/api/bbs/core/entity/section",
     "path": "/api/bbs/core/entity/section",
@@ -29453,7 +29482,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1026,
+    "line": 1028,
     "method": "POST",
     "raw": "/api/bbs/core/entity/subject",
     "path": "/api/bbs/core/entity/subject",
@@ -29466,7 +29495,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1029,
+    "line": 1031,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/subject/creamed/list/page/1/count/20",
     "path": "/api/bbs/assemble/control/subject/creamed/list/page/1/count/20",
@@ -29482,7 +29511,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1030,
+    "line": 1032,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/subject/index/list/page/1/count/20",
     "path": "/api/bbs/assemble/control/subject/index/list/page/1/count/20",
@@ -29498,7 +29527,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1031,
+    "line": 1033,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/subject/recommended/list/page/1/count/20",
     "path": "/api/bbs/assemble/control/subject/recommended/list/page/1/count/20",
@@ -29514,7 +29543,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1032,
+    "line": 1034,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/subject/search/list/page/1/count/20",
     "path": "/api/bbs/assemble/control/subject/search/list/page/1/count/20",
@@ -29530,7 +29559,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1033,
+    "line": 1035,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/subject/filter/list/page/1/count/20",
     "path": "/api/bbs/assemble/control/subject/filter/list/page/1/count/20",
@@ -29546,7 +29575,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1034,
+    "line": 1036,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/reply/filter/list/page/1/count/20",
     "path": "/api/bbs/assemble/control/reply/filter/list/page/1/count/20",
@@ -29562,7 +29591,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1035,
+    "line": 1037,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/user/reply/my/list/page/1/count/20",
     "path": "/api/bbs/assemble/control/user/reply/my/list/page/1/count/20",
@@ -29578,7 +29607,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1036,
+    "line": 1038,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/user/subject/my/list/page/1/count/20",
     "path": "/api/bbs/assemble/control/user/subject/my/list/page/1/count/20",
@@ -29594,7 +29623,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1037,
+    "line": 1039,
     "method": "PUT",
     "raw": "/api/bbs/assemble/control/user/subject/voterecord/list/page/1/count/20",
     "path": "/api/bbs/assemble/control/user/subject/voterecord/list/page/1/count/20",
@@ -29610,7 +29639,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1074,
+    "line": 1076,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/section/all",
     "path": "/api/bbs/assemble/control/user/section/all",
@@ -29623,7 +29652,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1079,
+    "line": 1081,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/user/permission/role/USER",
     "path": "/api/bbs/assemble/control/user/permission/role/USER",
@@ -29638,7 +29667,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1092,
+    "line": 1094,
     "method": "POST",
     "raw": "/api/bbs/assemble/control/shutup/list/paging/1/size/20",
     "path": "/api/bbs/assemble/control/shutup/list/paging/1/size/20",
@@ -29654,7 +29683,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1093,
+    "line": 1095,
     "method": "POST",
     "raw": "/api/bbs/assemble/control/topic/filter/listsubjectinfo",
     "path": "/api/bbs/assemble/control/topic/filter/listsubjectinfo",
@@ -29667,7 +29696,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
-    "line": 1094,
+    "line": 1096,
     "method": "GET",
     "raw": "/api/bbs/assemble/control/uuid",
     "path": "/api/bbs/assemble/control/uuid",
@@ -43903,7 +43932,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 143,
+    "line": 145,
     "method": "POST",
     "raw": "/api/queryview/search",
     "path": "/api/queryview/search",
@@ -43916,7 +43945,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 156,
+    "line": 158,
     "method": "GET",
     "raw": "/api/queryview/query/list",
     "path": "/api/queryview/query/list",
@@ -43929,7 +43958,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 166,
+    "line": 168,
     "method": "GET",
     "raw": "/api/queryview/query/list",
     "path": "/api/queryview/query/list",
@@ -43942,7 +43971,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 187,
+    "line": 189,
     "method": "GET",
     "raw": "/api/queryview/query/list",
     "path": "/api/queryview/query/list",
@@ -43955,7 +43984,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 217,
+    "line": 219,
     "method": "GET",
     "raw": "/api/queryview/query/list",
     "path": "/api/queryview/query/list",
@@ -43968,7 +43997,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 244,
+    "line": 246,
     "method": "GET",
     "raw": "/api/queryview/table/list/paging/1/20/20",
     "path": "/api/queryview/table/list/paging/1/20/20",
@@ -43985,7 +44014,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 270,
+    "line": 272,
     "method": "GET",
     "raw": "/api/queryview/table/list/paging/1/20/20",
     "path": "/api/queryview/table/list/paging/1/20/20",
@@ -44002,7 +44031,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 283,
+    "line": 285,
     "method": "GET",
     "raw": "/api/queryview/table/list/${encodeURIComponent(tid)}/prev/10",
     "path": "/api/queryview/table/list/{}/prev/10",
@@ -44017,7 +44046,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 290,
+    "line": 292,
     "method": "GET",
     "raw": "/api/queryview/query/list",
     "path": "/api/queryview/query/list",
@@ -44030,7 +44059,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 314,
+    "line": 316,
     "method": "GET",
     "raw": "/api/queryview/table/list/paging/1/20/20",
     "path": "/api/queryview/table/list/paging/1/20/20",
@@ -44047,7 +44076,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 318,
+    "line": 320,
     "method": "GET",
     "raw": "/api/queryview/importmodel/uuid",
     "path": "/api/queryview/importmodel/uuid",
@@ -44060,7 +44089,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 321,
+    "line": 323,
     "method": "GET",
     "raw": "/api/queryview/table/row/where/where/${encodeURIComponent(flag)}/10?where=a",
     "path": "/api/queryview/table/row/where/where/{}/10",
@@ -44075,7 +44104,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 341,
+    "line": 343,
     "method": "GET",
     "raw": "/api/queryview/table/list/${encodeURIComponent(flag)}/next/20",
     "path": "/api/queryview/table/list/{}/next/20",
@@ -44090,7 +44119,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 342,
+    "line": 344,
     "method": "GET",
     "raw": "/api/queryview/table/list/${encodeURIComponent(flag)}/row/select/where/a",
     "path": "/api/queryview/table/list/{}/row/select/where/a",
@@ -44105,7 +44134,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 343,
+    "line": 345,
     "method": "GET",
     "raw": "/api/queryview/table/list/row/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}/prev/20",
     "path": "/api/queryview/table/list/row/{}/{}/prev/20",
@@ -44120,7 +44149,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 345,
+    "line": 347,
     "method": "GET",
     "raw": "/api/queryview/table/list/${encodeURIComponent(flag)}/row/${encodeURIComponent(flag)}/next/20",
     "path": "/api/queryview/table/list/{}/row/{}/next/20",
@@ -44135,7 +44164,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 442,
+    "line": 444,
     "method": "POST",
     "raw": "/api/queryview/morelikethis",
     "path": "/api/queryview/morelikethis",
@@ -44148,7 +44177,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 455,
+    "line": 457,
     "method": "GET",
     "raw": "/api/queryview/${v}/application/${a}/execute/page/1/size/20",
     "path": "/api/queryview/{}/application/{}/execute/page/1/size/20",
@@ -44164,7 +44193,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 459,
+    "line": 461,
     "method": "POST",
     "raw": "/api/queryview/view/flag/${flag()}/query/${qf()}/execute/v2/page/1/size/20",
     "path": "/api/queryview/view/flag/{}/query/{}/execute/v2/page/1/size/20",
@@ -44180,7 +44209,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 461,
+    "line": 463,
     "method": "POST",
     "raw": "/api/queryview/view/${id}/execute/v2/page/1/size/20",
     "path": "/api/queryview/view/{}/execute/v2/page/1/size/20",
@@ -44196,7 +44225,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 468,
+    "line": 470,
     "method": "POST",
     "raw": "/api/queryview/importmodel/list/record/paging/1/size/20",
     "path": "/api/queryview/importmodel/list/record/paging/1/size/20",
@@ -44212,7 +44241,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 469,
+    "line": 471,
     "method": "POST",
     "raw": "/api/queryview/importmodel/list/record/item/paging/1/size/20",
     "path": "/api/queryview/importmodel/list/record/item/paging/1/size/20",
@@ -44228,7 +44257,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 470,
+    "line": 472,
     "method": "POST",
     "raw": "/api/queryview/statement/execute/${flag()}/page/1/size/20",
     "path": "/api/queryview/statement/execute/{}/page/1/size/20",
@@ -44244,7 +44273,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 471,
+    "line": 473,
     "method": "POST",
     "raw": "/api/queryview/statement/execute/${f}/mode/${mode}/page/1/size/20",
     "path": "/api/queryview/statement/execute/{}/mode/{}/page/1/size/20",
@@ -44260,7 +44289,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 473,
+    "line": 475,
     "method": "POST",
     "raw": "/api/queryview/statement/${f}/execute/page/1/size/20",
     "path": "/api/queryview/statement/{}/execute/page/1/size/20",
@@ -44276,7 +44305,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 474,
+    "line": 476,
     "method": "POST",
     "raw": "/api/queryview/statement/${f}/execute/mode/${mode}/page/1/size/20",
     "path": "/api/queryview/statement/{}/execute/mode/{}/page/1/size/20",
@@ -44292,7 +44321,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 476,
+    "line": 478,
     "method": "POST",
     "raw": "/api/query/assemble/designer/statement/${f}/execute/page/1/size/20",
     "path": "/api/query/assemble/designer/statement/{}/execute/page/1/size/20",
@@ -44308,7 +44337,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 477,
+    "line": 479,
     "method": "POST",
     "raw": "/api/query/assemble/designer/statement/${f}/execute/mode/${mode}/page/1/size/20",
     "path": "/api/query/assemble/designer/statement/{}/execute/mode/{}/page/1/size/20",
@@ -44324,7 +44353,23 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 478,
+    "line": 482,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/statement/execute/${f}/mode/${mode}/page/1/size/20",
+    "path": "/api/query/assemble/designer/statement/execute/{}/mode/{}/page/1/size/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/query/assemble/designer/statement/execute/{flag}/mode/{mode}/page/{page}/size/{size}",
+    "hit_crate": "query_assemble_designer",
+    "extra": [
+     "page=1",
+     "size=20"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewApp.vue",
+    "line": 483,
     "method": "POST",
     "raw": "/api/queryview/table/list/paging/1/size/20",
     "path": "/api/queryview/table/list/paging/1/size/20",
@@ -44340,7 +44385,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 479,
+    "line": 484,
     "method": "POST",
     "raw": "/api/queryview/table/list/table/${tf}/row/paging/1/size/20",
     "path": "/api/queryview/table/list/table/{}/row/paging/1/size/20",
@@ -44356,7 +44401,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 481,
+    "line": 486,
     "method": "GET",
     "raw": "/api/queryview/table/reload/dynamic",
     "path": "/api/queryview/table/reload/dynamic",
@@ -44369,7 +44414,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 557,
+    "line": 562,
     "method": "GET",
     "raw": "/api/queryview/view/list/query/all",
     "path": "/api/queryview/view/list/query/all",
@@ -44384,7 +44429,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryViewApp.vue",
-    "line": 585,
+    "line": 590,
     "method": "GET",
     "raw": "/api/queryview/excel/${v.flag || v.id}",
     "path": "/api/queryview/excel/{}",

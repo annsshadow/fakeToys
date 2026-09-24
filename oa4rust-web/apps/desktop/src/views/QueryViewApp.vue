@@ -46,6 +46,8 @@
         <button class="btn-primary" @click="qvMore('stmtExecMode2')">语句按模式执行(flag前置)</button>
         <button class="btn-primary" @click="qvMore('designerStmtExec')">设计器语句执行</button>
         <button class="btn-primary" @click="qvMore('designerStmtExecMode')">设计器语句按模式执行</button>
+        <button class="btn-primary" @click="qvMore('designerImportPerm')">设计器导入模型权限</button>
+        <button class="btn-primary" @click="qvMore('designerStmtExecFlagMode')">设计器语句exec前置模式</button>
         <button class="btn-primary" @click="qvMore('bundlePost')">打包提交</button>
         <button class="btn-primary" @click="qvRows('rowGet')">读表行</button>
         <button class="btn-primary" @click="qvRows('rowSelect')">按表选择行</button>
@@ -475,6 +477,9 @@ async function qvMore(op: string) {
     // rev447：查询设计器语句执行（statement_execute_v2 / statement_execute_mode_v2，designer 前缀 Path<(flag[,mode],page,size)>+Json）
     else if (op === 'designerStmtExec') { const f = flag(); await api.post(`/api/query/assemble/designer/statement/${f}/execute/page/1/size/20`, { parameter: {} }) }
     else if (op === 'designerStmtExecMode') { const f = flag(); const mode = encodeURIComponent(prompt('模式:', 'data') || 'data'); await api.post(`/api/query/assemble/designer/statement/${f}/execute/mode/${mode}/page/1/size/20`, { parameter: {} }) }
+    // rev450：查询设计器 导入模型权限读（importmodel_id_permission Path<id>）· 语句 execute-前置/mode 变体（statement_execute_mode_v2，路径 statement/execute/{flag}/mode/... 区别于 statement/{flag}/execute/...）
+    else if (op === 'designerImportPerm') { const id = encodeURIComponent(prompt('导入模型 ID:', '') || ''); if (!id) return; await api.post(`/api/query/assemble/designer/importmodel/permission/${id}`, {}) }
+    else if (op === 'designerStmtExecFlagMode') { const f = flag(); const mode = encodeURIComponent(prompt('模式:', 'data') || 'data'); await api.post(`/api/query/assemble/designer/statement/execute/${f}/mode/${mode}/page/1/size/20`, { parameter: {} }) }
     else if (op === 'tablePaging') await api.post('/api/queryview/table/list/paging/1/size/20', {})
     else if (op === 'tableRowPaging') { const tf = flag(); await api.post(`/api/queryview/table/list/table/${tf}/row/paging/1/size/20`, {}) }
     else if (op === 'tableRow') { const tf = flag(); const id = encodeURIComponent(prompt('行 ID:', '') || ''); await api.get(`/api/queryview/table/row/${tf}/${id}`) }
