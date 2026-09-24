@@ -19,6 +19,7 @@ import logging
 from typing import List, Dict, Optional, Any, Set, Tuple
 from dataclasses import dataclass, field
 from collections import Counter, defaultdict
+from .validation import require_count
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -513,11 +514,15 @@ def analyze_dataset_fast(items: List[Dict], top_k: int = 5) -> Dict:
     
     Args:
         items: 数据列表
-        top_k: 返回前k个关键词
+        top_k: 返回前 k 个关键词，不小于 0 的整数。越界值在进入
+            `Counter.most_common(top_k)` 之前报错：负数在那里不报错，只是
+            静默返回空列表，「要 1 个」于是答出 0 个
     
     Returns:
         快速分析结果（包含基本统计、关键词、趋势简要信息）
     """
+    require_count("top_k", top_k)
+
     from collections import Counter
     
     # 快速提取基础信息（避免完整分析的计算开销）

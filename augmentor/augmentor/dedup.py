@@ -8,6 +8,7 @@ from typing import List, Dict, Optional, Tuple
 from dataclasses import dataclass
 import numpy as np
 from .model_manager import model_manager
+from .validation import require_count
 from .exceptions import DedupError
 
 logger = logging.getLogger(__name__)
@@ -819,11 +820,15 @@ class Deduplicator:
         Args:
             items: 数据列表
             text_key: 用于比较的文本字段名
-            top_k: 返回前 k 个最相似对
+            top_k: 返回前 k 个最相似对，不小于 0 的整数。判据在
+                `augmentor.validation.require_count`：负数会以「裁掉保留集末尾
+                |top_k| 个」的身份穿过剪枝逻辑，把有解的请求答成空列表
 
         Returns:
             相似对列表 [(idx1, idx2, similarity), ...]
         """
+        require_count("top_k", top_k)
+
         self._load_model()
 
         texts = [item.get(text_key, "") for item in items]

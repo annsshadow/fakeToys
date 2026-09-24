@@ -17,6 +17,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from datetime import datetime
 from .exceptions import VersionError
+from .validation import require_count
 
 logger = logging.getLogger(__name__)
 
@@ -85,11 +86,15 @@ class VersionManager:
         """获取版本操作历史
         
         Args:
-            limit: 最多返回的条数（从最新开始）
+            limit: 最多返回的条数（从最新开始）。`None` 表示「全部」，这是它特有的
+                一档语义；0 表示「一条都不要」，与 `None` 不是一回事。负数与非整数
+                报错，判据见 `augmentor.validation.require_count`
         
         Returns:
             历史记录列表（按时间倒序）
         """
+        require_count("limit", limit)
+
         if not self._history_path.exists():
             return []
         
@@ -105,7 +110,8 @@ class VersionManager:
                     logger.warning("跳过无法解析的历史记录行")
         
         entries.reverse()
-        return entries[:limit] if limit else entries
+        # 以前是 `if limit else entries`：`limit=0` 于是被读成「没传参数」而返回全部
+        return entries[:limit] if limit is not None else entries
     
     def _get_version_dir(self, version_id: str) -> Path:
         """获取版本目录路径
