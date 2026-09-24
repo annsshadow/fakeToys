@@ -843,6 +843,10 @@ async function loadSurfaceReadB(): Promise<void> {
       s(api.post(`/api/processplatform/assemble/surface/workcompleted/list/${id}/next/${count}/application/${applicationFlag}/filter/manage`, {})),
       s(api.post(`/api/processplatform/assemble/surface/snap/list/${id}/next/${count}/filter/manage`, {})),
       s(api.post(`/api/processplatform/assemble/surface/snap/list/${id}/prev/${count}/filter/manage`, {})),
+      // rev457：管理态分页过滤列表 3 条（*_list_paging_page_size_size_application_applicationFlag_filter_manage Path<(i64,i64,appFlag)>）
+      s(api.post(`/api/processplatform/assemble/surface/work/list/paging/${page}/size/${size}/application/${applicationFlag}/filter/manage`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/workcompleted/list/paging/${page}/size/${size}/application/${applicationFlag}/filter/manage`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/snap/list/paging/${page}/size/${size}/application/${applicationFlag}/filter/manage`, {})),
       s(api.get(`/api/processplatform/assemble/surface/task/count/${credential}`)),
       s(api.get(`/api/processplatform/assemble/surface/task/list/date/date/hour/hour/exclude/draft/manage/${isExcludeDraft}`)),
       s(api.get(`/api/processplatform/assemble/surface/task/list/date/${date}/hour/${hour}/exclude/draft/${isExcludeDraft}/manage`)),
