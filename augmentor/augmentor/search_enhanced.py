@@ -307,33 +307,67 @@ class EnhancedSearcher:
         return matches
     
     def _search_fuzzy(self, field: str, query: str, threshold: float = 0.6) -> Dict[int, float]:
-        """模糊搜索
-        
+        """模糊搜索：把查询当成**等长窗口**在文档里滑动，容许换字
+
+        分数 = 最好的那个窗口的 `1 - 错配数 / 查询长度`，门槛是 `threshold`。所以
+        完整包含查询的文档必然得 1.0 —— `contains` 命中的条目在这里一定是子集，
+        fuzzy 多出来的那部分是「允许把几个字换掉」的近似命中（「公租屋」找得到
+        「公租房」）。只处理**替换**（Hamming），不做插入/删除（Levenshtein）：
+        窗口式全扫的代价是 O(文档长度 × 查询长度)，换成编辑距离 DP 会再乘一个查询长度。
+
+        以前这里算的是查询 token 与**整条文档** token 集合的 Jaccard，在真实 6902 条
+        上任何查询都恒 0 命中（A27），两条病因叠加致命：①`_tokenize` 把一整段连续
+        中文当成**一个** token，查询 `{'租房'}` 与文档 `{'如何申请租房'}` 永不相交；
+        ②即便相交，分母是并集，短查询摊不过长文档的 token 数，0.6 根本够不着
+        （实测把阈值从 0.6 一路降到 0.02 仍为 0 命中）。对称的整档相似度对
+        「短查询 vs 长文档」本身就是错的度量，所以换成窗口式。
+
+        为了不把它退化成裸扫（朴素窗口实测 6902 条 1.0~1.9 s），加一层**鸽笼过滤**：
+        错配 ≤ d 的窗口必然与查询切成 `d+1` 段中的某一段完全相同，于是先用 `in`
+        把整条文档排除掉，只对候选做逐窗口校验。过滤是**纯优化**，结果与朴素全扫
+        逐条相同（用例里拿朴素实现做等价对照）。
+
         Args:
             field: 字段名
             query: 搜索查询
-            threshold: 相似度阈值
-        
+            threshold: 相似度阈值，`(0, 1]`；越大越严格（1.0 即要求整串出现）
+
         Returns:
             匹配结果 {索引: 分数}
         """
-        matches = {}
-        query_tokens = set(self._tokenize(query.lower()))
-        
+        matches: Dict[int, float] = {}
+        lowered_query = query.lower()
+        length = len(lowered_query)
+        if not length or not 0 < threshold <= 1:
+            return matches
+
+        allowed = int(length * (1.0 - threshold))   # 允许的错配数
+        pieces = min(allowed + 1, length)           # 鸽笼：片数 = 错配预算 + 1
+        filters = [lowered_query[i * length // pieces:(i + 1) * length // pieces]
+                   for i in range(pieces)]
+
         for idx, item in enumerate(self._items):
             value = item.get(field, "")
-            if isinstance(value, str):
-                value_tokens = set(self._tokenize(value.lower()))
-                
-                # 计算Jaccard相似度
-                if query_tokens and value_tokens:
-                    intersection = query_tokens & value_tokens
-                    union = query_tokens | value_tokens
-                    similarity = len(intersection) / len(union) if union else 0
-                    
-                    if similarity >= threshold:
-                        matches[idx] = similarity
-        
+            if not isinstance(value, str) or len(value) < length:
+                continue
+            lowered = value.lower()
+            if not any(piece in lowered for piece in filters):
+                continue
+
+            best = 0.0
+            for start in range(len(lowered) - length + 1):
+                window = lowered[start:start + length]
+                mismatches = sum(1 for a, b in zip(lowered_query, window) if a != b)
+                if not mismatches:
+                    best = 1.0
+                    break
+                score = 1.0 - mismatches / length
+                if score > best:
+                    best = score
+
+            if best >= threshold:
+                matches[idx] = best
+
         return matches
     
     def _search_regex(self, field: str, query: str) -> Dict[int, float]:
