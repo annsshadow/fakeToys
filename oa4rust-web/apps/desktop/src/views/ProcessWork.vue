@@ -395,6 +395,9 @@
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps12('reviewFilterEntry')">摘要过滤入口</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps12('workV3Retract')">工作v3召回</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps12('wcShiftTime')">已办调整时间</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps13('taskWill')">任务将办信息</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps13('taskPressManage')">任务催办(管理)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps13('workCloseCheck')">工作可关闭校验</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdProcessing')">任务处理(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdReplace')">任务替换(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdPress')">任务催办(位置态)</button>
@@ -1641,6 +1644,22 @@ async function surfaceOps12(op: string): Promise<void> {
     else if (op === 'reviewFilterEntry') await api.get('/api/processplatform/assemble/surface/review/filter/create/entry')
     else if (op === 'workV3Retract') await api.post('/api/processplatform/assemble/surface/work/v3/retract', {})
     else await api.post('/api/processplatform/assemble/surface/workcompleted/shift/time', {})
+    toast.success('流程表面操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev413：流程表面 按 id 的任务将办信息/任务催办(管理)/工作可关闭校验 真实路由（{id} 参数化，handler query_opt PP_C_TASK/PP_C_WORK by xid=$1，是 O2OA will/press-manage/close-check 三种独立操作；用户输入真实 id 触发）
+async function surfaceOps13(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    const id = encodeURIComponent(prompt(op === 'workCloseCheck' ? '工作 ID:' : '任务 ID:', '') || '')
+    if (op === 'taskWill') await api.get(`/api/processplatform/assemble/surface/task/${id}/will`)
+    else if (op === 'taskPressManage') await api.get(`/api/processplatform/assemble/surface/task/${id}/press/manage`)
+    else await api.get(`/api/processplatform/assemble/surface/work/${id}/close/check`)
     toast.success('流程表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
