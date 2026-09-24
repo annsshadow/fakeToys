@@ -420,6 +420,10 @@ async function loadMeetingDateLists() {
       s(api.get(`/api/meeting/assemble/control/meeting/list/invite/1/${sz}/${sz}`)),
       s(api.get(`/api/meeting/assemble/control/meeting/list/${mid}/0/20`)),
       s(api.get(`/api/meeting/assemble/control/meeting/list/${y}/${y}/${mo}/${mo}/${d}/${d}/${rid}`)),
+      // rev449：楼栋按时间范围查询 POST building/list/completed/completed/{start}/{start}（building_list_start_start_completed_completed Path<(start,completed)> 查 x_meeting_building start_time>=$1 AND end_time<=$2）
+      s(api.post('/api/meeting/assemble/control/building/list/completed/completed/1970-01-01/2099-12-31', {})),
+      // rev449：楼栋按时间范围(含全部会议) POST building/list/completed/completed/allmeeting/{start}/{start}
+      s(api.post('/api/meeting/assemble/control/building/list/completed/completed/allmeeting/1970-01-01/2099-12-31', {})),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     appliedText.value = `楼栋(时间范围) ${n(building)} · 即将3月 ${n(coming)} · 本年月 ${n(byMonth)} · 本年月日 ${n(byDay)} · 全量会议 ${n(allList)} · 系统配置 ${(sysCfg as any)?.data ? '有' : '无'} · 未来6月 ${n(forward)}`
