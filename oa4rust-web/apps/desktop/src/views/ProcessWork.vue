@@ -449,6 +449,9 @@
             <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('cleanevent')">清理过期事件</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('loglong')">登记长滞留</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('reviewCreate')">建工作待阅</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineReviewWork('reviewWc')">建已办待阅</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineReviewWork('manualAfterBody')">工作后处理(体)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineReviewWork('v3RetractBody')">工作v3撤回(体)</button>
           </div>
         </section>
 
@@ -1935,6 +1938,34 @@ async function engineTouch(op: string): Promise<void> {
       const r: any = await api.get('/api/processplatform/service/processing/touch/handoverjob')
       const n = r?.data?.count ?? (Array.isArray(r?.data) ? r.data.length : 0)
       toast.success(`已接管无主作业：${n}`)
+    }
+  } catch (e: any) {
+    toast.error('引擎操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev445：service/processing 引擎 待阅/工作后处理域 3 条真实写路由（Json 无 Path 字面量匹配，空 workId 拒绝无垃圾）——review/create/workcompleted[review_create_workcompleted INSERT 待阅]·work/manual/after/processing[work_manual_after body work 校验存在]·work/v3/retract[work_v3_retract_body 事务撤回]
+async function engineReviewWork(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    if (op === 'reviewWc') {
+      const workCompletedId = prompt('已办 ID:', '') || ''
+      if (!workCompletedId.trim()) return
+      await api.post('/api/processplatform/service/processing/review/create/workcompleted', { workCompletedId })
+      toast.success('已办待阅已创建')
+    } else if (op === 'manualAfterBody') {
+      const workId = prompt('工作 ID:', '') || ''
+      if (!workId.trim()) return
+      await api.post('/api/processplatform/service/processing/work/manual/after/processing', { workId })
+      toast.success('工作后处理已提交')
+    } else {
+      const workId = prompt('工作 ID:', '') || ''
+      if (!workId.trim()) return
+      if (!(await confirmMsg('确定 v3 撤回该工作？'))) return
+      await api.post('/api/processplatform/service/processing/work/v3/retract', { workId })
+      toast.success('工作已 v3 撤回')
     }
   } catch (e: any) {
     toast.error('引擎操作失败: ' + (e?.message ?? ''))
