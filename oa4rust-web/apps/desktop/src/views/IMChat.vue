@@ -101,6 +101,8 @@
             <button class="icon-btn" title="删群发" @click="imMore('massDelete')">🗑</button>
             <button class="icon-btn" title="会话置顶" @click="imMore2('topSet')">📌</button>
             <button class="icon-btn" title="取消置顶" @click="imMore2('topCancel')">📍</button>
+            <button class="icon-btn" title="标记即时已消费" @click="imMore3('instantConsumedPut')">✅</button>
+            <button class="icon-btn" title="移除消息收藏" @click="imMore3('collectionRemove')">🗂</button>
             <button class="icon-btn" title="会话标记已读" @click="imMore2('convRead')">✔</button>
             <button class="icon-btn" title="退出群会话" @click="imMore2('groupQuit')">🚪</button>
             <button class="icon-btn" title="撤回消息" @click="imMore2('msgRevoke')">↩</button>
@@ -626,6 +628,21 @@ async function imMore2(op: string) {
     else if (op === 'msgRevoke') { const id = encodeURIComponent(prompt('消息 ID:', '') || ''); await api.get(`/api/message/assemble/communicate/im/msg/revoke/${id}`) }
     else if (op === 'consumeType') { const id = encodeURIComponent(prompt('消息 ID:', '') || ''); const t = encodeURIComponent(prompt('消息类型:', '') || ''); await api.get(`/api/message/assemble/communicate/consume/${id}/type/${t}`) }
     else await api.get('/api/message/assemble/communicate/instant/currentperson/consumed')
+    toast.success('IM 操作已提交')
+  } catch (err: any) {
+    toast.error('操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev412：IM 即时消息全部标记已消费(PUT session UPDATE，区别于既有 GET 读) + 按消息移除收藏(DELETE body messageId x_message_collection) 真实写
+async function imMore3(op: string) {
+  try {
+    if (op === 'instantConsumedPut') {
+      await api.put('/api/message/assemble/communicate/instant/currentperson/consumed', {})
+    } else {
+      const messageId = prompt('要移除收藏的消息 ID:', '') || ''
+      if (!(await confirmMsg('确定移除该消息的收藏？'))) return
+      await api.delete('/api/message/assemble/communicate/im/msg/collection/remove', { body: { messageId } })
+    }
     toast.success('IM 操作已提交')
   } catch (err: any) {
     toast.error('操作失败: ' + (err?.message ?? ''))
