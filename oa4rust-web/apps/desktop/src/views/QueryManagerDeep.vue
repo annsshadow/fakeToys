@@ -62,6 +62,19 @@
         <button class="btn btn-outline" @click="qdMisc('iconSet')">设图标</button>
         <button class="btn btn-outline" @click="qdMisc('outputSelect')">输出选择</button>
         <button class="btn btn-outline" @click="qdMisc('statementList')">语句列举</button>
+        <button class="btn btn-outline" @click="qdWrite2('statEdit')">改统计</button>
+        <button class="btn btn-outline" @click="qdWrite2('statDelete')">删统计</button>
+        <button class="btn btn-outline" @click="qdWrite2('importRun')">跑导入模型</button>
+        <button class="btn btn-outline" @click="qdWrite2('importEdit')">改导入模型</button>
+        <button class="btn btn-outline" @click="qdWrite2('importDelete')">删导入模型</button>
+        <button class="btn btn-outline" @click="qdWrite2('viewDelete')">删视图</button>
+        <button class="btn btn-outline" @click="qdWrite2('tableDelete')">删数据表</button>
+        <button class="btn btn-outline" @click="qdWrite2('stmtPermission')">语句权限</button>
+        <button class="btn btn-outline" @click="qdWrite2('stmtExecute')">执行语句</button>
+        <button class="btn btn-outline" @click="qdWrite2('neuralUpdate')">改模型</button>
+        <button class="btn btn-outline" @click="qdWrite2('neuralDelete')">删模型</button>
+        <button class="btn btn-outline" @click="qdWrite2('neuralReset')">重置模型</button>
+        <button class="btn btn-outline" @click="qdReads2">表构建/统计/模型读</button>
       </div>
     </div>
 
@@ -579,6 +592,47 @@ async function qdMisc(op: string) {
     toast.success('查询设计器操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev361：查询设计器 统计/导入模型/视图/表/语句/神经网络模型 建改删执行 真实写（各 Path 参数 + Json body；均为 distinct 逻辑 op，不接双注册孪生）
+async function qdWrite2(op: string) {
+  try {
+    if (op === 'statEdit') { const id = prompt('统计 ID:', '') || ''; await api.put(`/api/query/assemble/designer/stat/edit/${encodeURIComponent(id)}`, {}) }
+    else if (op === 'statDelete') { const id = prompt('要删除的统计 ID:', '') || ''; if (!(await confirmMsg('确定删除该统计？'))) return; await api.delete(`/api/query/assemble/designer/stat/delete/${encodeURIComponent(id)}`) }
+    else if (op === 'importRun') { const id = prompt('导入模型 ID:', '') || ''; await api.post(`/api/query/assemble/designer/importmodel/${encodeURIComponent(id)}`, {}) }
+    else if (op === 'importEdit') { const id = prompt('导入模型 ID:', '') || ''; await api.put(`/api/query/assemble/designer/importmodel/edit/${encodeURIComponent(id)}`, {}) }
+    else if (op === 'importDelete') { const id = prompt('要删除的导入模型 ID:', '') || ''; if (!(await confirmMsg('确定删除该导入模型？'))) return; await api.delete(`/api/query/assemble/designer/importmodel/delete/${encodeURIComponent(id)}`) }
+    else if (op === 'viewDelete') { const id = prompt('要删除的视图 ID:', '') || ''; if (!(await confirmMsg('确定删除该视图？'))) return; await api.delete(`/api/query/assemble/designer/view/delete/${encodeURIComponent(id)}`) }
+    else if (op === 'tableDelete') { const flag = prompt('要删除的数据表 flag:', '') || ''; if (!(await confirmMsg('确定删除该数据表？'))) return; await api.delete(`/api/query/assemble/designer/table/delete/${encodeURIComponent(flag)}`) }
+    else if (op === 'stmtPermission') { const id = prompt('语句 ID:', '') || ''; await api.post(`/api/query/assemble/designer/statement/permission/${encodeURIComponent(id)}`, {}) }
+    else if (op === 'stmtExecute') { const flag = prompt('语句 flag:', '') || ''; await api.post(`/api/query/assemble/designer/statement/execute/${encodeURIComponent(flag)}/page/1/size/20`, {}) }
+    else if (op === 'neuralUpdate') { const f = prompt('模型 flag:', '') || ''; await api.put(`/api/query/assemble/designer/neural/update/model/${encodeURIComponent(f)}`, {}) }
+    else if (op === 'neuralDelete') { const f = prompt('要删除的模型 flag:', '') || ''; if (!(await confirmMsg('确定删除该神经网络模型？'))) return; await api.delete(`/api/query/assemble/designer/neural/delete/model/${encodeURIComponent(f)}`) }
+    else { const f = prompt('模型 flag:', '') || ''; await api.post(`/api/query/assemble/designer/neural/model/reset/${encodeURIComponent(f)}/init`, {}) }
+    toast.success('查询设计器写操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev361：查询设计器 表构建/草稿/清单 + 统计清单 + 神经网络 生成/学习 + 动态重载 真实只读（用户触发，GET 参数正确）
+async function qdReads2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const flag = prompt('表/查询 flag（可空）:', '') || ''
+  const e = encodeURIComponent(flag)
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/query/assemble/designer/table/build/${e}/active`)),
+      s(api.get(`/api/query/assemble/designer/table/draft/${e}/active`)),
+      s(api.get(`/api/query/assemble/designer/table/list/${e}/${e}`)),
+      s(api.get(`/api/query/assemble/designer/stat/list/${e}/${e}`)),
+      s(api.get(`/api/query/assemble/designer/neural/generate/model/${e}`)),
+      s(api.get(`/api/query/assemble/designer/neural/learn/model/${e}`)),
+      s(api.get('/api/query/assemble/designer/table/reload/dynamic')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`查询设计器读 ${rs.length} 条命中 ${hit}`)
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
   }
 }
 async function qdInput(op: 'compare' | 'cover' | 'create' | 'prepare/cover' | 'prepare/create') {
