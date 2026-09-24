@@ -346,6 +346,14 @@
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest4('dataPathDel')">按路径删数据</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest4('workSerial')">流水号建工作</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest4('snapWcAbandoned')">已办废弃快照(按类型)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps7('docToWord')">附件转Word(按工作)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps7('docToWordWowc')">附件转Word(工作或已办)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps7('editByWork')">附件编辑(按工作)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps7('copyToWork')">附件复制到工作</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps7('copyToWorkSoft')">附件软复制到工作</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps7('copyToWc')">附件复制到已办</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps7('updateContent')">附件内容更新</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps7('updateByWork')">附件更新(按工作)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdProcessing')">任务处理(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdReplace')">任务替换(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdPress')">任务催办(位置态)</button>
@@ -1471,6 +1479,28 @@ async function surfaceOps6(op: string): Promise<void> {
     else if (op === 'readcompletedListFilter') { const c = 20; await api.post(`/api/processplatform/assemble/surface/readcompleted/list/${id()}/next/${c}/filter`, {}) }
     else if (op === 'processListFilter') { const af = encodeURIComponent(prompt('应用标识:', '') || ''); await api.post(`/api/processplatform/assemble/surface/process/list/application/${af}/filter`, {}) }
     else { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); await api.post(`/api/processplatform/assemble/surface/documentversion/work/${w}`, {}) }
+    toast.success('流程表面操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev395：流程表面 附件转Word(按工作/按工作或已办)、附件编辑(按工作)、附件复制到工作·软复制·复制到已办、附件内容更新·更新(按工作) 真实路由（Path 已核，copy/edit/update Json 空体，doc/to/word Path-only；用户触发）
+async function surfaceOps7(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
+    const wk = () => encodeURIComponent(prompt('工作 ID:', '') || '')
+    if (op === 'docToWord') await api.post(`/api/processplatform/assemble/surface/attachment/doc/to/word/work/${wk()}`, {})
+    else if (op === 'docToWordWowc') { const f = encodeURIComponent(prompt('工作或已办 ID:', '') || ''); await api.post(`/api/processplatform/assemble/surface/attachment/doc/to/word/workorworkcompleted/${f}`, {}) }
+    else if (op === 'editByWork') { const a = id(); const w = wk(); await api.put(`/api/processplatform/assemble/surface/attachment/edit/${a}/work/${w}`, {}) }
+    else if (op === 'copyToWork') await api.post(`/api/processplatform/assemble/surface/attachment/copy/work/${wk()}`, {})
+    else if (op === 'copyToWorkSoft') await api.post(`/api/processplatform/assemble/surface/attachment/copy/work/${wk()}/soft`, {})
+    else if (op === 'copyToWc') { const wc = encodeURIComponent(prompt('已办 ID:', '') || ''); await api.post(`/api/processplatform/assemble/surface/attachment/copy/workcompleted/${wc}`, {}) }
+    else if (op === 'updateContent') { const a = id(); const w = wk(); await api.put(`/api/processplatform/assemble/surface/attachment/update/content/${a}/work/${w}`, {}) }
+    else { const a = id(); const w = wk(); await api.put(`/api/processplatform/assemble/surface/attachment/update/${a}/work/${w}`, {}) }
     toast.success('流程表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
