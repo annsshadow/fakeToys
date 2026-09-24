@@ -500,18 +500,23 @@ class TestDatasetConvert:
             ]}]
 
     def test_unknown_source_format_rejected(self, tools_env):
-        """未知源格式 → 400，而不是 500 或静默按 json 读"""
+        """未知源格式 → 400，而不是 500 或静默按 json 读
+
+        用 `parquet` 而不是 `tsv` 当「未知」的例子：`tsv` 一度确实不在转换图里，
+        L20 补上 `json -> tsv` / `tsv -> json` 两条边之后它是受支持格式，拿它举例
+        会把「清单收紧」误读成「回归」。
+        """
         response = tools_env.client.post(
             "/api/dataset/convert",
             json={
                 "input_file": str(tools_env.data),
                 "output_file": str(tools_env.out),
                 "target_format": "jsonl",
-                "source_format": "tsv",
+                "source_format": "parquet",
             },
         )
         assert response.status_code == 400, response.text
-        assert "无法从 tsv 转换到 JSON" in response.json()["detail"]
+        assert "无法从 parquet 转换到 JSON" in response.json()["detail"]
 
     def test_dirty_container_row_reports_row_number(self, tools_env):
         """源文件里有坏记录：400 的错误信息带条目下标，便于调用方定位"""

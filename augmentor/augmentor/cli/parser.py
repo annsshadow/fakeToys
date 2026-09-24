@@ -284,13 +284,13 @@ def build_parser() -> argparse.ArgumentParser:
     convert_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
     convert_parser.add_argument("--output", type=str, required=True, help="输出文件路径")
     convert_parser.add_argument("--format", type=str, required=True,
-                                choices=["json", "jsonl", "csv", "alpaca", "sharegpt", 
+                                choices=["json", "jsonl", "csv", "tsv", "alpaca", "sharegpt",
                                         "chatml", "llama_factory", "vicuna", "belle"],
                                 help="目标格式")
     # 反向边（alpaca/sharegpt/chatml/... → json）：这些格式落盘也是 `.json`，
     # 扩展名推不出来，只能显式声明；不给就按扩展名当 json 原样读。
     convert_parser.add_argument("--input-format", type=str, default=None,
-                                choices=["json", "jsonl", "csv", "alpaca", "sharegpt",
+                                choices=["json", "jsonl", "csv", "tsv", "alpaca", "sharegpt",
                                          "chatml", "llama_factory", "vicuna", "belle"],
                                 help="源格式（默认从输入文件扩展名推断）")
 
