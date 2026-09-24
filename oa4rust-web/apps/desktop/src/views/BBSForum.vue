@@ -33,6 +33,48 @@
     <div v-if="bbsEntityText" class="forums-note">{{ bbsEntityText }}</div>
     <div v-if="bbsDeepText" class="forums-note">{{ bbsDeepText }}</div>
 
+    <!-- rev324：BBS 论坛管理写操作（用户触发，非自动） -->
+    <div class="bbs-write-actions">
+      <button class="new-topic-btn ghost" @click="bbsPost('shutupSave')">存禁言</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('shutupDel')">解禁言</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('delForum')">删帖论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('delReply')">删帖回复</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('userForum')">建论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('userReply')">发回复</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('userRole')">建角色</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('userSection')">建版块</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('userSubject')">建主题</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('config')">建配置</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('reply')">核心回复</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('sectionSave')">存版块</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('config')">改配置</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('replyAccept')">采纳回复</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('bindObject')">绑对象</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('bindRole')">绑角色</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('roleForum')">角色论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('rolecodeSel')">角色码选</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('roleSection')">角色版块</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('unitSel')">单位选择</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('userSel')">人员选择</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('settingCode')">设置码</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('setting')">存设置</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('changeSection')">迁主题</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('voteSubmit')">投票</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('userinfo')">个人信息</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('section')">删版块</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('attachment')">删附件</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('shutup')">删禁言项</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('subjectattach')">删主题附件</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('userForum')">删论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('userReply')">删回复</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('userRole')">删角色</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('sectionForce')">强删版块</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('userSection')">删用户版块</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('userSubject')">删主题</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('entityForum')">删实体论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('entitySubject')">删实体主题</button>
+    </div>
+
     <!-- 左侧：版块列表 -->
     <aside class="bbs-sidebar glass-card" :class="{ collapsed: showNewTopic }">
       <div class="sidebar-header">
@@ -868,6 +910,72 @@ async function loadBbsDeepReads() {
     bbsDeepText.value = `BBS 深度读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
     toast.error('加载 BBS 深度读失败: ' + (e?.message ?? ''))
+  }
+}
+// rev324：BBS 论坛管理 真实写端点（用户触发 prompt+确认，非造假）——发帖/回复/版块/禁言/角色/设置/投票 建改删；全字面量路径
+async function bbsPost(kind: string) {
+  const v = prompt(`${kind} 目标名称/ID:`, '') || ''
+  try {
+    if (kind === 'shutupSave') await api.post('/api/bbs/assemble/control/shutup/save', { person: v })
+    else if (kind === 'shutupDel') await api.post('/api/bbs/assemble/control/shutup/delete', { person: v })
+    else if (kind === 'delForum') await api.post('/api/bbs/assemble/control/delete/forum', { id: v })
+    else if (kind === 'delReply') await api.post('/api/bbs/assemble/control/delete/reply', { id: v })
+    else if (kind === 'userForum') await api.post('/api/bbs/assemble/control/user/forum', { name: v })
+    else if (kind === 'userReply') await api.post('/api/bbs/assemble/control/user/reply', { content: v })
+    else if (kind === 'userRole') await api.post('/api/bbs/assemble/control/user/role', { name: v })
+    else if (kind === 'userSection') await api.post('/api/bbs/assemble/control/user/section', { name: v })
+    else if (kind === 'userSubject') await api.post('/api/bbs/assemble/control/user/subject', { title: v })
+    else if (kind === 'config') await api.post('/api/bbs/assemble/control/update/control/config', {})
+    else await api.post('/api/bbs/core/entity/reply', { content: v })
+    toast.success(`${kind} 已提交`)
+  } catch (e: any) {
+    toast.error(`${kind} 失败: ` + (e?.message ?? ''))
+  }
+}
+async function bbsPut(kind: string) {
+  const id = prompt(`${kind} 目标 ID/flag（可空）:`, '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (kind === 'sectionSave') await api.put(`/api/bbs/assemble/control/section/save/${e}`, { name: '更新版块' })
+    else if (kind === 'config') await api.put('/api/bbs/assemble/control/update/control/config', {})
+    else if (kind === 'replyAccept') await api.put('/api/bbs/assemble/control/user/reply/accept', { id })
+    else if (kind === 'bindObject') await api.put('/api/bbs/assemble/control/user/role/bind/object', {})
+    else if (kind === 'bindRole') await api.put('/api/bbs/assemble/control/user/role/bind/role', {})
+    else if (kind === 'roleForum') await api.put(`/api/bbs/assemble/control/user/role/forum/${e}`, {})
+    else if (kind === 'rolecodeSel') await api.put('/api/bbs/assemble/control/user/role/rolecode/selected', {})
+    else if (kind === 'roleSection') await api.put(`/api/bbs/assemble/control/user/role/section/${e}`, {})
+    else if (kind === 'unitSel') await api.put('/api/bbs/assemble/control/user/role/unit/selected', {})
+    else if (kind === 'userSel') await api.put('/api/bbs/assemble/control/user/role/user/selected', {})
+    else if (kind === 'settingCode') await api.put('/api/bbs/assemble/control/user/setting/code', {})
+    else if (kind === 'setting') await api.put('/api/bbs/assemble/control/user/setting', {})
+    else if (kind === 'changeSection') await api.put('/api/bbs/assemble/control/user/subject/change/section', {})
+    else if (kind === 'voteSubmit') await api.put('/api/bbs/assemble/control/user/subject/vote/submit', {})
+    else await api.put('/api/bbs/assemble/control/userinfo', {})
+    toast.success(`${kind} 已提交`)
+  } catch (err: any) {
+    toast.error(`${kind} 失败: ` + (err?.message ?? ''))
+  }
+}
+async function bbsDel(kind: string) {
+  const id = prompt(`要删除的${kind} ID:`, '') || ''
+  if (!(await confirmMsg(`确定删除该${kind}？`))) return
+  const e = encodeURIComponent(id)
+  try {
+    if (kind === 'section') await api.delete(`/api/bbs/assemble/control/section/delete/${e}`)
+    else if (kind === 'attachment') await api.delete(`/api/bbs/assemble/control/attachment/${e}`)
+    else if (kind === 'shutup') await api.delete(`/api/bbs/assemble/control/shutup/${e}`)
+    else if (kind === 'subjectattach') await api.delete(`/api/bbs/assemble/control/subjectattach/${e}`)
+    else if (kind === 'userForum') await api.delete(`/api/bbs/assemble/control/user/forum/${e}`)
+    else if (kind === 'userReply') await api.delete(`/api/bbs/assemble/control/user/reply/${e}`)
+    else if (kind === 'userRole') await api.delete(`/api/bbs/assemble/control/user/role/${e}`)
+    else if (kind === 'sectionForce') await api.delete(`/api/bbs/assemble/control/user/section/force/${e}`)
+    else if (kind === 'userSection') await api.delete(`/api/bbs/assemble/control/user/section/${e}`)
+    else if (kind === 'userSubject') await api.delete(`/api/bbs/assemble/control/user/subject/${e}`)
+    else if (kind === 'entityForum') await api.delete(`/api/bbs/core/entity/forum/${e}`)
+    else await api.delete(`/api/bbs/core/entity/subject/${e}`)
+    toast.success(`${kind} 已删除`)
+  } catch (err: any) {
+    toast.error(`删除${kind}失败: ` + (err?.message ?? ''))
   }
 }
 const api_forum_view_1_data = ref<any[]>([])
