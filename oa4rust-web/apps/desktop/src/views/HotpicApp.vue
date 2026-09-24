@@ -29,6 +29,12 @@
         <button class="btn-primary" @click="hotpicWrite('cipherCms')">清CMS密文</button>
         <button class="btn-primary" @click="hotpicWrite('coreCreate')">建实体热图</button>
         <button class="btn-primary" @click="hotpicWrite('coreDelete')">删实体热图</button>
+        <button class="btn-primary" @click="hotpicMore('existsCheck')">存在校验</button>
+        <button class="btn-primary" @click="hotpicMore('byApp')">按应用热图</button>
+        <button class="btn-primary" @click="hotpicMore('byId')">按ID热图</button>
+        <button class="btn-primary" @click="hotpicMore('cipherList')">密文热图列表</button>
+        <button class="btn-primary" @click="hotpicMore('userList')">用户热图列表</button>
+        <button class="btn-primary" @click="hotpicMore('userDelete2')">删用户热图2</button>
       </div>
       <div v-if="hotpicMetaText" class="hp-note">{{ hotpicMetaText }}</div>
       <div class="list-panel">
@@ -140,6 +146,32 @@ async function hotpicWrite(op: string) {
       const id = prompt('要删除的实体热图 ID:', '') || ''
       if (!(await confirmMsg('确定删除该实体热图？'))) return
       await api.delete(`/api/hotpic/core/entity/delete/${encodeURIComponent(id)}`)
+    }
+    toast.success('热图操作已提交')
+  } catch (e: any) {
+    toast.error('热图操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev363：热图 存在校验 + 用户热图按应用/按 id + 密文/用户热图 分页过滤读 + 用户热图删（复合 id/{id2}）真实路由（避开 autoquery-guards 禁的 save/hotpic·delete/hotpic）
+async function hotpicMore(op: string) {
+  try {
+    if (op === 'existsCheck') {
+      await api.get('/api/hotpic/user/hotpic/exists/check')
+    } else if (op === 'byApp') {
+      const infoId = prompt('应用 infoId:', '') || ''
+      await api.get(`/api/hotpic/assemble/control/user/hotpic/application/${encodeURIComponent(infoId)}`)
+    } else if (op === 'byId') {
+      const id = prompt('热图 ID:', '') || ''
+      await api.get(`/api/hotpic/assemble/control/user/hotpic/${encodeURIComponent(id)}`)
+    } else if (op === 'cipherList') {
+      await api.put('/api/hotpic/assemble/control/cipher/hotpic/filter/list/page/1/count/20', {})
+    } else if (op === 'userList') {
+      await api.put('/api/hotpic/assemble/control/user/hotpic/filter/list/page/1/count/20', {})
+    } else {
+      const id = prompt('热图 ID:', '') || ''
+      const id2 = prompt('子 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该用户热图？'))) return
+      await api.delete(`/api/hotpic/assemble/control/user/hotpic/${encodeURIComponent(id)}/${encodeURIComponent(id2)}`)
     }
     toast.success('热图操作已提交')
   } catch (e: any) {
