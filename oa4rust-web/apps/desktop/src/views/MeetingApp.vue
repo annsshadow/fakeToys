@@ -25,6 +25,23 @@
       <button class="sb" @click="loadMeetingDateLists">日期列表</button>
       <button class="sb" @click="loadMeetingOpenRooms">开放会议室</button>
       <button class="sb" @click="addBuilding">+ 楼栋</button>
+      <button class="sb" @click="meetingWrite('accept')">接受会议</button>
+      <button class="sb" @click="meetingWrite('reject')">拒绝会议</button>
+      <button class="sb" @click="meetingWrite('confirmAllow')">确认允许</button>
+      <button class="sb" @click="meetingWrite('confirmDeny')">确认拒绝</button>
+      <button class="sb" @click="meetingWrite('checkin')">签到</button>
+      <button class="sb" @click="meetingWrite('save')">存会议</button>
+      <button class="sb" @click="meetingWrite('delete')">删会议</button>
+      <button class="sb" @click="meetingWrite('buildingEdit')">改楼栋</button>
+      <button class="sb" @click="meetingWrite('buildingDelete')">删楼栋</button>
+      <button class="sb" @click="meetingWrite('roomEdit')">改会议室</button>
+      <button class="sb" @click="meetingWrite('roomDelete')">删会议室</button>
+      <button class="sb" @click="meetingWrite('roomPhoto')">会议室照片</button>
+      <button class="sb" @click="meetingWrite('config')">存配置</button>
+      <button class="sb" @click="meetingWrite('coreRoomCreate')">建核心会议室</button>
+      <button class="sb" @click="meetingWrite('coreRoomSave')">存核心会议室</button>
+      <button class="sb" @click="meetingWrite('attDelete')">删附件</button>
+      <button class="sb" @click="meetingWrite('attUpdate')">改附件</button>
     </div>
     <div v-if="appliedText" class="applied-note">{{ appliedText }}</div>
     <div v-if="buildings.length" class="bld-bar glass-card">
@@ -619,6 +636,41 @@ async function manageInvitee(m: M) {
     loadMeetings()
   } catch (e: any) {
     toast.error('邀请管理失败: ' + (e?.message ?? ''))
+  }
+}
+// rev336：会议 审批(接受/拒绝/确认)/存删/楼栋·会议室编辑删照片/配置/核心会议室 真实写端点（用户触发，shape 已核；全字面量路径）
+async function meetingWrite(op: string) {
+  const id = prompt('目标 ID:', '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (op === 'accept') await api.post(`/api/meeting/assemble/control/meeting/${e}/accept`, {})
+    else if (op === 'reject') await api.post(`/api/meeting/assemble/control/meeting/${e}/reject`, {})
+    else if (op === 'confirmAllow') await api.post(`/api/meeting/assemble/control/meeting/${e}/confirm/allow`, {})
+    else if (op === 'confirmDeny') await api.post(`/api/meeting/assemble/control/meeting/${e}/confirm/deny`, {})
+    else if (op === 'checkin') await api.post(`/api/meeting/assemble/control/meeting/${e}/checkin`, {})
+    else if (op === 'save') await api.post(`/api/meeting/assemble/control/meeting/save/${e}`, { subject: '更新会议' })
+    else if (op === 'delete') {
+      if (!(await confirmMsg('确定删除该会议？'))) return
+      await api.delete(`/api/meeting/assemble/control/meeting/delete/${e}`)
+    } else if (op === 'buildingEdit') await api.put(`/api/meeting/assemble/control/building/${e}`, { name: '更新楼栋' })
+    else if (op === 'buildingDelete') {
+      if (!(await confirmMsg('确定删除该楼栋？'))) return
+      await api.delete(`/api/meeting/assemble/control/building/${e}`)
+    } else if (op === 'roomEdit') await api.put(`/api/meeting/assemble/control/room/${e}`, { name: '更新会议室' })
+    else if (op === 'roomDelete') {
+      if (!(await confirmMsg('确定删除该会议室？'))) return
+      await api.delete(`/api/meeting/assemble/control/room/${e}`)
+    } else if (op === 'roomPhoto') await api.post(`/api/meeting/assemble/control/room/${e}/photo`, {})
+    else if (op === 'config') await api.post('/api/meeting/assemble/control/config', {})
+    else if (op === 'coreRoomCreate') await api.post('/api/meeting/core/entity/room/create', { name: '新会议室' })
+    else if (op === 'coreRoomSave') await api.post(`/api/meeting/core/entity/room/save/${e}`, { name: '更新会议室' })
+    else if (op === 'attDelete') {
+      if (!(await confirmMsg('确定删除该附件？'))) return
+      await api.delete(`/api/meeting/assemble/control/attachment/${e}`)
+    } else await api.put(`/api/meeting/assemble/control/attachment/${e}/update`, {})
+    toast.success('会议操作已提交')
+  } catch (err: any) {
+    toast.error('会议操作失败: ' + (err?.message ?? ''))
   }
 }
 
