@@ -165,6 +165,14 @@ class EnhancedSearcher:
         差别是这里返回 0~1 的覆盖率而不是裸命中计数，这样它能和其它方法一样参与
         「多字段得分累加 + 按分排序」，否则混用多种方法时排序没有意义。
 
+        **打分规模跟着查询走，不跟着文档走**：一个查询 gram 出现在文档里，等价于
+        「它是文档的子串」，所以只需要对查询侧那 k 个 gram 各做一次子串判定。以前
+        这里为每条文档都物化整串的 gram 集合（`_ngrams(value, n)`），代价是每条
+        O(文档长度) 个字符串对象——真实 6902 条 × 3 字段实测一次 ngram 查询
+        104~113 ms，而同样的数据 contains 只要 8.2 ms。改成子串判定后单字段
+        22.2 → 3.2 ms（中位），三字段端到端 12~16 ms，结果与旧实现逐条相同
+        （见 `test_scores_are_identical_to_a_naive_gram_set`）。
+
         Args:
             field: 字段名
             query: 查询字符串
@@ -177,14 +185,16 @@ class EnhancedSearcher:
         if not query_ngrams:
             return {}
 
+        total = len(query_ngrams)
         matches: Dict[int, float] = {}
         for idx, item in enumerate(self._items):
             value = item.get(field, "")
             if not isinstance(value, str):
                 continue
-            hit = len(query_ngrams & self._ngrams(value, n))
+            lowered = value.lower()
+            hit = sum(1 for gram in query_ngrams if gram in lowered)
             if hit:
-                matches[idx] = hit / len(query_ngrams)
+                matches[idx] = hit / total
         return matches
     
     def search(self, query: str, fields: List[str] = None, 
