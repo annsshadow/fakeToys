@@ -23,6 +23,7 @@
 - [x] **L11** `feat(quality-gate)`: B4 `QualityGate` + `DatasetHealthScore` 接线 —— 库函数 `gate_dataset_health()` + `/api/quality/health-gate` + CLI `health-gate`（判负退出 1）
 - [x] **L12** `perf(api)`: A20 服务配置文件路径的 `Path.resolve()` 收成缓存 —— 200 次查询 29.9 ms → 0.15 ms（安静态）
 - [x] **L12** `perf(statistics)`: A15 的算法侧 —— 三处重复扫描合成单趟 + token 分批入 `Counter`，真实 6902 条 `calculate()` **50.94 → 43.87 ms**、词汇统计峰值 **8.15 MB → 2.22 MB**，`to_dict()` 逐字节不变
+- [x] **L13** `perf(search)`: A7 的「重建」那一半 —— 倒排索引改成按需构建，真实 6902 条默认 contains 查询 **90.30 → 7.96 ms（11.34×）**、regex **19.41×**、单次查询峰值 **6.30 MB → 0.13 MB**
 
 ## Backlog A — 性能（含 file:line 与实测线索）
 
@@ -34,12 +35,12 @@
 | ~~A4~~ | ~~`api/routes/quality.py:141,185,217,253,285,309,370,403` + `audit.py:31,32` `leakage.py:46,47` `privacy.py:52` `export.py:132`~~ | ~~`async def` 里同步 `load_items()` 阻塞事件循环，应走 `run_in_thread`~~ 已修（L5；`export.py:109` 本就在线程内，非缺陷） | M |
 | A5 | `augmentor/pipeline.py:205-210` + `quality.py:133,153` | 逐条 `encode()`/`predict()` 打分，已有 `batch_score()` 却没用 | M |
 | ~~A6~~ | ~~`augmentor/dedup.py:242-290`~~ | ~~贪心归组只消费 `j > i`，行块却每次算满 `block_rows × n` → 整个下三角白算。真实 6902 条实测分组 **30.0 s → 20.7 s**~~ 已修（L9）；剩下的稠密编码另立 **A17**，块行数另立 **A18** | L |
-| A7 | `augmentor/search_enhanced.py:448,82` | 每次查询重建索引（n=3000 重建 8 ms vs 查询 2 ms），且 contains/fuzzy 不查索引 | M |
+| ~~A7~~ | ~~`augmentor/search_enhanced.py:448,82`~~ | ~~每次查询重建索引（n=3000 重建 8 ms vs 查询 2 ms），且 contains/fuzzy 不查索引~~ **前半已修（L13）**：`search_dataset()` 每次都新建搜索器，而构造即无条件建索引（真实 6902 条 64.5 ms + 6.17 MB），五种方法里只有 exact 读它 → 改成按需构建。**「不查索引」那一半另立 A21** | M |
 | ~~A8~~ | ~~`api/routes/data.py:146-164`~~ | ~~整文件解析 + 全量过滤后再切片，无早停~~ **L9 实测排除**：响应里的 `total` 按定义要求「过滤后的总数」，早停会把它算错；能省的只有物化切片，量级不值得 | M |
 | ~~A9~~ | ~~`augmentor/tracker.py:114` → `:87-99`~~ | ~~每个指标点整文件重写 → O(points²) 字节~~ **L9 实测排除**：`log_metric`/`start_experiment` 除测试外无调用者（`ExperimentTracker` 本身在 `pipeline.py:118` 有构造，别误判成死模块）。等 B7 把实验回路接上再优化才有意义 | S |
 | A10 | `augmentor/quality.py:175-179` | 多样性回退里参照文本 n-gram 集合反复重建 | S |
 | A11 | `augmentor/indexer.py:117-123,345,352,372-399` | 每次 `DatasetView` 操作重建全部索引（filter 26 ms @ n=3000） | M |
-| A12 | `augmentor/validation.py:217-222`、`sampler.py:296-299` | 循环内未缓存的正则、`list.index`/`in` 线性扫描 | S |
+| A12 | `augmentor/validation.py:217-222`、`sampler.py:296-299` | **L13 实测拆成两半**：①`_validate_item` 里 `import re` + 每条每模式一次 `re.search` —— 真实 6902 条 strict 预设 29.2 ms vs basic 11.7 ms，`re.search` 调了 **27608 次 = 每条 4 次**，预编译 + 提到模块级预计省 ~5 ms（1.2×），量级小但确实是门口必经；②`sampler.generate_report()` 的 `items.index(seed)` **实测不是缺陷**：真实数据只推荐 4 个种子、反查 0.0 ms，而单趟 id 映射要 1.1 ms —— **改了反而更慢**，这一半作废（且它还会改变「值相等但不同对象」时的下标语义，真实数据里正好有 367 条重复 dict） | S |
 | ~~A13~~ | ~~`api/routes/dataset_tools.py:311,360,386,387,416,436,566,598` + `system_ops.py:320,348,514`~~ | ~~**A4 的同构族**：`read_items()`（同步版）在 11 个 `async def` 路由体里直接调用，同样占着事件循环；`dataset_tools.py:566` 还是「多个文件在循环里串行读」；`/api/dataset/stats` 连分析都留在循环上（43.4 ms）~~ 已修（L7） | M |
 | ~~A14~~ | ~~`augmentor/impact.py:66`~~ | ~~`duplicate_rate` 里 `texts.count(t)` 写在推导式中 → O(n²)~~ 已修（L6） | S |
 | ~~A15~~ | ~~`augmentor/statistics.py` `calculate_statistics`、`A3`/`A5` 那类纯 Python 分析~~ | ~~**线程池对 CPU 型分析不产生并行**（GIL）：3 并发 stats 实测离线后请求方 173.7 → 192.7 ms（+11%），换来的只是循环停顿 170.1 → 60.0 ms。要么上 `ProcessPoolExecutor`，要么回到算法侧把 43.4 ms 这个数本身降下来~~ **算法侧已修（L12）**：真实 6902 条 `calculate()` 同进程交替中位 **50.94 → 43.87 ms（1.16×）**、词汇统计峰值 **8.15 MB → 2.22 MB**。**GIL 那半仍然成立**——进程池本轮不做（跨进程要序列化整份数据集，代价未实测），所以「3 并发总耗时」这个数不会因为 L12 变成并行 | M |
@@ -48,6 +49,7 @@
 | ~~A18~~ | ~~`augmentor/dedup.py:132-147,172-174`~~ | ~~块行数按剩余列数自适应放大，把 L9 归因微基准里的 68.9 → 91.5 GFLOP/s 捡回来~~ **L10 实测证伪，未采纳**：合成基准（dim=8192）预测 1.28×，真实数据（dim=vocab=23033）同一进程内 back-to-back 实测 **0.95×（更慢）**。归因假设（窄块让 BLAS 变笨）**不随 K 维迁移**，代码已回退 | S |
 | A19 | `augmentor/dedup.py:104-116` | 词表构建与 TF 填充是**两遍** Python 双循环（`for text: for i:` 再 `for i, text: for j:`），每条文本的每个字符都进解释器一次。实测真实 6902 条走完 0.36 s（L10 后），**这还称不上瓶颈**；只有在 n 到 10⁵ 量级时才可能翻盘——该外推**未实测**，先记着别当依据 | S |
 | ~~A20~~ | ~~`api/deps.py` `config_file_path()`~~ | ~~A2 的同构缺陷第三处：L4 把白名单里的 YAML 重解析缓存掉了，但「服务自身的配置文件路径」这一步仍**每次调用**做一次 `Path.resolve()`（Windows 上要问长路径句柄并归一大小写）。任何带路径参数的请求都至少过一次白名单，等于每个请求白加一份系统调用。安静态同进程交替实测：200 次 **29.9 ms（缺陷）→ 0.15 ms（缓存）**；同一台机器带负载时同一份工作量到 187 ms~~ **已修（L12）**：缓存按 `(环境变量原值, os.getcwd())` 建键、单条目、只在未命中时 resolve；`allowed_data_roots()` 200 次 **218.0 ms → 1.87 ms** | S |
+| A21 | `augmentor/search_enhanced.py:248-320` | L13 剩下的那一半：contains / ngram / fuzzy / regex **仍逐条扫全表**（真实 6902 条：ngram 116.8 ms、fuzzy 56.7 ms、contains 8.0 ms）。倒排索引里其实已经存了这些词项，但按「子串」「Jaccard 阈值」「bigram 覆盖率」查需要**不同的索引结构**（n-gram 倒排 / token 集合按文档存），不是把现有索引接上去就行——属于「另起一套」，与 A17 的稀疏化同一档 | M |
 
 ## Backlog B — 功能增强（价值 ÷ 工作量）
 
@@ -267,13 +269,36 @@
   换成故意逆序的 `m`/`k` 才能真正让「按字母排序」的注入变红；
   ②`test_top_word_order_survives_chunk_boundaries` **没有 HEAD 基线**（缺陷版无
   `_TOKEN_CHUNK` 概念），它锁的是新实现的边界行为，不属于红→绿证据链。
+- **L13** `perf(search)` A7 前半 —— `EnhancedSearcher` 在**构造函数**里无条件建倒排索引，
+  而五种方法里只有 `exact` 读它；更要命的是 CLI 与 `/api/dataset/search` 的唯一入口
+  `search_dataset()` **每次调用都新建一个搜索器**。真实 6902 条实测：建索引 64.5 ms、
+  常驻 6.17 MB，而 contains 查询本身 7.5 ms —— 端到端 80.85 ms 里 80% 是没读者的工作。
+  改成 `_ensure_indexes()`（`_index_ready` 标志 + 锁内二次检查 + 建在局部字典上再整体发布，
+  这样并发首查不会有人读到半成品索引并把结果误报成「无匹配」），`load()` 换数据时作废。
+  **同进程新旧交替 9 轮**（`train_data.json` 只读）：contains **90.30 → 7.96 ms（11.34×，9/9 轮）**、
+  regex **19.41×（9/9）**、fuzzy 2.45×、ngram 1.69×、exact 0.97×（**噪声带内，无变化**——它是
+  唯一本来就要建这份索引的方法）；contains 单次查询 tracemalloc 峰值 **6.30 MB → 0.13 MB**；
+  五种方法的 `total_matches` 与 `items` 逐条相同。
+  新增 10 例（`TestIndexBuiltOnDemand`），预言机是**构建次数**（monkeypatch 类方法计数，
+  构造期也计得到）而非计时；另有一条与**朴素全表扫描**逐条对照的正确性用例、
+  一条「换数据必须作废」用例、一条 `get_statistics()` 统计口径手算对照（6 个词项 / 2 个词项）。
+  **红→绿**：整份退回 HEAD → `TestIndexBuiltOnDemand` **6 红 4 绿**（构造即建：
+  `build_counter == [5]` ≠ `[]`；contains/ngram/fuzzy/regex 四种各红一次；`search_dataset`
+  入口红），被改写的既有 `test_build_indexes_non_string` 因 `_ensure_indexes` 不存在而
+  AttributeError 红；4 个既有类 31 例全绿，`已还原=True`。**类里那 4 例两侧都绿**，
+  它们是语义护栏（exact 只建一次、朴素扫描对照、load 作废、统计口径），不是这处缺陷的
+  证据——缺陷态同样满足它们，写在这里是为了不让它们冒充红→绿。
+  **顺带实测排掉 A12 的一半**：`sampler.generate_report()` 的 `items.index(seed)` 看着像
+  O(n²)，真实数据只推荐 4 个种子、反查 **0.0 ms**，单趟 id 映射反而要 1.1 ms；
+  且真实数据里有 367 条「值相等但不同对象」的 dict，改语义会挪动下标。已写回 A12。
 - 全量：L4 后 **3679 passed / 3 skipped**（89.2 s），L5 后 **3703 passed / 3 skipped**
   （90.2 s），L6 后 **3705 passed / 3 skipped**（91.1 s），L7 后 **3726 passed / 3 skipped**
   （95.1 s），L8 后 **3747 passed / 3 skipped**（98.0 s），L9 后 **3747 passed / 3 skipped**
   （92.4 s）——L9 用例数不变是**有意**的：它**改写**了既有的结构护栏用例而非新增。
   L10 后 **3750 passed / 3 skipped**（55.7 s，coverage.xml line-rate 0.9927），
   L11 后 **3780 passed / 3 skipped**（101.7 s，coverage.xml 总计 98.51%），
-  L12 后 **3792 passed / 3 skipped**（64.3 s，coverage.xml 总计 98.51%）。
+  L12 后 **3792 passed / 3 skipped**（64.3 s，coverage.xml 总计 98.51%），
+  L13 后 **3802 passed / 3 skipped**（65.8 s，总计 98.50%）。
   **注意**：这些墙钟秒数**彼此不可比**——本工作树与并行 agent 共用一台机器，
   它跑全量时我会慢 40%+（L9 时 92 s、L10 时无竞争 55.7 s）。跨轮只比
   **同一进程内 back-to-back 的对照组**，绝对秒数只作当次快照。
