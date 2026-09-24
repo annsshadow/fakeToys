@@ -40,6 +40,15 @@
       <button class="org-meta-btn" @click="orgUnitWrite('unitCreate')">建单位(express)</button>
       <button class="org-meta-btn" @click="orgUnitWrite('unitUpdate')">改单位(express)</button>
       <button class="org-meta-btn" @click="orgUnitWrite('unitDelete')">删单位(express)</button>
+      <button class="org-meta-btn" @click="orgLikeReads">模糊/拼音/分页读</button>
+      <button class="org-meta-btn" @click="orgCtlActions('memberAdd')">加群组成员</button>
+      <button class="org-meta-btn" @click="orgCtlActions('memberDel')">删群组成员</button>
+      <button class="org-meta-btn" @click="orgCtlActions('identityOrder')">身份排序</button>
+      <button class="org-meta-btn" @click="orgCtlActions('cardQr')">名片二维码</button>
+      <button class="org-meta-btn" @click="orgCtlActions('unitSupType')">单位上级按类型</button>
+      <button class="org-meta-btn" @click="orgCtlActions('personByGroup')">群组下人员</button>
+      <button class="org-meta-btn" @click="orgCtlActions('exportAll')">导出全部</button>
+      <button class="org-meta-btn" @click="orgCtlActions('personBatchDel')">批量删人员</button>
       <button class="org-meta-btn" @click="orgCreate('person')">建人员</button>
       <button class="org-meta-btn" @click="orgCreate('unit')">建单位</button>
       <button class="org-meta-btn" @click="orgCreate('identity')">建身份</button>
@@ -388,6 +397,56 @@ async function orgUnitWrite(op: string) {
       await api.delete(`/api/unit/${encodeURIComponent(flag)}`)
     }
     toast.success('组织 express 写操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev369：组织控制 人员/单位/身份/群组/角色/职务 模糊·拼音·首字母 清单 + 名片分页 + 过滤/控制器 真实只读（PUT/POST body{}，用户触发；避 password/credential）
+async function orgLikeReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.put('/api/organization/assemble/control/person/list/pinyininitial', {})),
+      s(api.put('/api/organization/assemble/control/person/list/like', {})),
+      s(api.put('/api/organization/assemble/control/person/list/like/pinyin', {})),
+      s(api.put('/api/organization/assemble/control/unit/list/unit/type', {})),
+      s(api.put('/api/organization/assemble/control/unit/list/pinyininitial', {})),
+      s(api.put('/api/organization/assemble/control/unit/list/like', {})),
+      s(api.put('/api/organization/assemble/control/unit/list/like/pinyin', {})),
+      s(api.put('/api/organization/assemble/control/identity/list/like', {})),
+      s(api.put('/api/organization/assemble/control/identity/list/like/pinyin', {})),
+      s(api.put('/api/organization/assemble/control/identity/list/pinyininitial', {})),
+      s(api.put('/api/organization/assemble/control/group/list/like', {})),
+      s(api.put('/api/organization/assemble/control/group/list/like/pinyin', {})),
+      s(api.put('/api/organization/assemble/control/group/list/pinyininitial', {})),
+      s(api.put('/api/organization/assemble/control/role/list/like', {})),
+      s(api.put('/api/organization/assemble/control/role/list/like/pinyin', {})),
+      s(api.put('/api/organization/assemble/control/role/list/pinyininitial', {})),
+      s(api.put('/api/organization/assemble/control/unitduty/list/like', {})),
+      s(api.put('/api/organization/assemble/control/personcard/listpaging/page/1/size/20', {})),
+      s(api.put('/api/organization/assemble/control/personcard/listpagingwithgroup/page/1/size/20', {})),
+      s(api.post('/api/organization/assemble/control/unit/list', {})),
+      s(api.post('/api/organization/assemble/control/unit/list/controller', {})),
+      s(api.post('/api/organization/assemble/control/person/list/filter/1/size/20', {})),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    orgMetaText.value = `组织控制模糊/拼音/分页读 ${rs.length} 条命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载组织控制清单失败: ' + (e?.message ?? ''))
+  }
+}
+// rev369：组织控制 群组成员增删/身份排序/名片二维码/单位下级按类型/群组下人员/批量删除 真实动作（GET/POST，用户触发确认；避 password/unlock/icon 凭证类）
+async function orgCtlActions(op: string) {
+  try {
+    if (op === 'memberAdd') { const flag = prompt('群组 flag:', '') || ''; await api.get(`/api/organization/assemble/control/group/${encodeURIComponent(flag)}/add/member`) }
+    else if (op === 'memberDel') { const flag = prompt('群组 flag:', '') || ''; if (!(await confirmMsg('确定移除群组成员？'))) return; await api.get(`/api/organization/assemble/control/group/${encodeURIComponent(flag)}/delete/member`) }
+    else if (op === 'identityOrder') { const flag = prompt('身份 flag:', '') || ''; const follow = prompt('置于此身份之前 flag:', '') || ''; await api.get(`/api/organization/assemble/control/identity/${encodeURIComponent(flag)}/order/before/${encodeURIComponent(follow)}`) }
+    else if (op === 'cardQr') { const id = prompt('名片 cardId:', '') || ''; await api.get(`/api/organization/assemble/control/personcard/createCode/${encodeURIComponent(id)}`) }
+    else if (op === 'unitSupType') { const flag = prompt('单位 flag:', '') || ''; const type = prompt('类型:', '') || ''; await api.get(`/api/organization/assemble/control/unit/list/${encodeURIComponent(flag)}/sup/nested/type/${encodeURIComponent(type)}`) }
+    else if (op === 'personByGroup') { const flag = prompt('群组 flag:', '') || ''; await api.get(`/api/organization/assemble/control/person/list/group/${encodeURIComponent(flag)}/sub/nested`) }
+    else if (op === 'exportAll') await api.get('/api/organization/assemble/control/export/export/all')
+    else { if (!(await confirmMsg('确定批量删除人员？'))) return; await api.post('/api/organization/assemble/control/person/list/delete/1/size/20', {}) }
+    toast.success('组织控制操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
   }
