@@ -228,6 +228,7 @@
           <button class="btn-sm" @click="pcU8">命令/部署读</button>
           <button class="btn-sm" @click="pcU9">调用器/市场/钉钉只读</button>
           <button class="btn-sm" @click="pcU10">集成同步/清缓存</button>
+          <button class="btn-sm" @click="pcU11">企微/政务钉钉/打包读</button>
           <div v-if="pcU4Text" class="app-meta">{{ pcU4Text }}</div>
         </div>
         <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
@@ -1423,6 +1424,21 @@ async function pcU10() {
     await api.get('/api/program_center/dingding/pull/sync')
     await api.get('/api/program_center/jest/clear/cache/source')
     toast.success('集成同步已触发')
+  } catch (e: any) {
+    toast.error('触发失败: ' + (e?.message ?? ''))
+  }
+}
+// rev424：程序中心 企微拉取同步 + 政务钉钉注册回调 + App 打包 logo 信息（三者 pool-only：前两条落 x_program_sync_log/x_program_callback_registration 审计行，logo 读 x_program_app_pack；无外部 HTTP；管理员触发的独立后端能力）
+async function pcU11() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/program_center/qiyeweixin/pull/sync')),
+      s(api.get('/api/program_center/zhengwudingding/regist/callback')),
+      s(api.get('/api/program_center/apppack/pack/info/logo')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`企微/政务钉钉/打包 ${rs.length} 条命中 ${hit}`)
   } catch (e: any) {
     toast.error('触发失败: ' + (e?.message ?? ''))
   }
