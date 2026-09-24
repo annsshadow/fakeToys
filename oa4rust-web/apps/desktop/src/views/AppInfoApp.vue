@@ -37,6 +37,7 @@
             </div>
             <button class="btn-act2" @click.stop="showPerms(item)">权限</button>
             <button class="btn-act2" @click.stop="writePerms(item)">设权限</button>
+            <button class="btn-act2" @click.stop="createFile(item)">建文件</button>
             <button class="btn-del" @click.stop="deleteApp(item)">删除</button>
           </div>
         </div>
@@ -173,6 +174,17 @@ async function deleteApp(item: any) {
   }
 }
 // rev422：设置应用权限 POST /api/appinfo/{id}/permission（u2_require_admin，写 x_cms_appinfo 权限位；管理员用真实成员标识提交，查不到应用优雅报错）
+// rev432：新建 CMS 文件 POST /api/file（body {appId,name}，INSERT x_cms_file；用真实应用 id+文件名触发）
+async function createFile(item: any) {
+  const name = prompt('文件名:', '') || ''
+  if (!name.trim()) return
+  try {
+    await api.post('/api/file', { appId: item.id, name })
+    toast.success('文件已创建')
+  } catch (e: any) {
+    toast.error('创建文件失败: ' + (e?.message ?? ''))
+  }
+}
 async function writePerms(item: any) {
   const id = encodeURIComponent(item.id)
   const readers = (prompt('查看者(逗号分隔标识，可空):', '') || '').split(',').map((s) => s.trim()).filter(Boolean)
