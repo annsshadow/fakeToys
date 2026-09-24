@@ -117,6 +117,27 @@
         <button class="save-btn ghost" @click="empManage('logTo')">授给我日志</button>
         <button class="save-btn ghost" @click="empManage('logManager')">管理授权日志</button>
         <button class="save-btn ghost" @click="empManage('logDelete')">删授权日志</button>
+        <button class="save-btn ghost" @click="personMore('personGet')">人员详情</button>
+        <button class="save-btn ghost" @click="personMore('personPut')">改人员</button>
+        <button class="save-btn ghost" @click="personMore('personDelete')">删人员</button>
+        <button class="save-btn ghost" @click="personMore('mgrEmpPut')">改管理授权</button>
+        <button class="save-btn ghost" @click="personMore('mgrEmpDel')">删管理授权</button>
+        <button class="save-btn ghost" @click="personMore('personList')">人员清单</button>
+        <button class="save-btn ghost" @click="personMore('personFilter')">人员过滤</button>
+        <button class="save-btn ghost" @click="personMore('personDetail')">人员详情2</button>
+        <button class="save-btn ghost" @click="personMore('personAttr')">人员属性</button>
+        <button class="save-btn ghost" @click="personMore('personSupDirect')">上级人员</button>
+        <button class="save-btn ghost" @click="personMore('unitSubDirect')">单位下人员</button>
+        <button class="save-btn ghost" @click="personMore('unitSubNested')">单位嵌套人员</button>
+        <button class="save-btn ghost" @click="personMore('unitSubDirectLike')">单位模糊人员</button>
+        <button class="save-btn ghost" @click="personMore('unitSubNestedLike')">单位嵌套模糊</button>
+        <button class="save-btn ghost" @click="personMore('personalSetting')">个人设置</button>
+        <button class="save-btn ghost" @click="personMore('customPut')">存自定义</button>
+        <button class="save-btn ghost" @click="personMore('customDel')">删自定义</button>
+        <button class="save-btn ghost" @click="personMore('customMgr')">管理自定义</button>
+        <button class="save-btn ghost" @click="personMore('defPut')">存定义</button>
+        <button class="save-btn ghost" @click="personMore('defDel')">删定义</button>
+        <button class="save-btn ghost" @click="personMore('personalUpdate')">更新资料</button>
       </div>
     </div>
   </div>
@@ -439,6 +460,35 @@ async function empManage(op: string) {
       await api.delete(`/api/person/empowerlog/${encodeURIComponent(id)}`)
     }
     toast.success('授权委托操作已提交')
+  } catch (err: any) {
+    toast.error('操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev376：人员 详情/改/删 + 管理授权改删 + 人员清单/过滤/详情/属性/关系(sup·unit sub/nested/like) + 个人设置/自定义/定义/资料更新 真实路由（body{personList}/{unitList}；custom·definition PUT/POST 孪生择一）
+async function personMore(op: string) {
+  try {
+    if (op === 'personGet') { const f = encodeURIComponent(prompt('人员 flag:', '') || ''); await api.get(`/api/person/${f}`) }
+    else if (op === 'personPut') { const f = encodeURIComponent(prompt('人员 flag:', '') || ''); await api.put(`/api/person/${f}`, {}) }
+    else if (op === 'personDelete') { const f = encodeURIComponent(prompt('要删除的人员 flag:', '') || ''); if (!(await confirmMsg('确定删除该人员？'))) return; await api.delete(`/api/person/${f}`) }
+    else if (op === 'mgrEmpPut') { const id = encodeURIComponent(prompt('管理授权 ID:', '') || ''); await api.put(`/api/person/empower/manager/${id}`, {}) }
+    else if (op === 'mgrEmpDel') { const id = encodeURIComponent(prompt('管理授权 ID:', '') || ''); if (!(await confirmMsg('确定删除该管理授权？'))) return; await api.delete(`/api/person/empower/manager/${id}`) }
+    else if (op === 'personList') await api.post('/api/person/list', {})
+    else if (op === 'personFilter') await api.post('/api/person/list/filter/1/size/20', {})
+    else if (op === 'personDetail') { const f = encodeURIComponent(prompt('人员 flag:', '') || ''); await api.post(`/api/person/detail/${f}`, {}) }
+    else if (op === 'personAttr') await api.post('/api/person/list/personattribute', {})
+    else if (op === 'personSupDirect') await api.post('/api/person/list/person/sup/direct', {})
+    else if (op === 'unitSubDirect') await api.post('/api/person/list/unit/sub/direct', {})
+    else if (op === 'unitSubNested') await api.post('/api/person/list/unit/sub/nested', {})
+    else if (op === 'unitSubDirectLike') await api.post('/api/person/list/unit/sub/direct/like', {})
+    else if (op === 'unitSubNestedLike') await api.post('/api/person/list/unit/sub/nested/like', {})
+    else if (op === 'personalSetting') { const id = encodeURIComponent(prompt('人员 ID:', '') || ''); await api.get(`/api/organization/assemble/personal/${id}/setting`) }
+    else if (op === 'customPut') { const name = encodeURIComponent(prompt('自定义名:', '') || ''); await api.put(`/api/person/custom/${name}`, {}) }
+    else if (op === 'customDel') { const name = encodeURIComponent(prompt('要删除的自定义名:', '') || ''); if (!(await confirmMsg('确定删除该自定义？'))) return; await api.delete(`/api/person/custom/${name}`) }
+    else if (op === 'customMgr') { const person = encodeURIComponent(prompt('人员:', '') || ''); const name = encodeURIComponent(prompt('自定义名:', '') || ''); await api.put(`/api/person/custom/manager/person/${person}/name/${name}`, {}) }
+    else if (op === 'defPut') { const name = encodeURIComponent(prompt('定义名:', '') || ''); await api.put(`/api/person/definition/${name}`, {}) }
+    else if (op === 'defDel') { const name = encodeURIComponent(prompt('要删除的定义名:', '') || ''); if (!(await confirmMsg('确定删除该定义？'))) return; await api.delete(`/api/person/definition/${name}`) }
+    else await api.put('/api/personal/update', {})
+    toast.success('人员操作已提交')
   } catch (err: any) {
     toast.error('操作失败: ' + (err?.message ?? ''))
   }
