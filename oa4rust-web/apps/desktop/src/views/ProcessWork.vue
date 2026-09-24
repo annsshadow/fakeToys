@@ -315,6 +315,22 @@
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('appFlagDel')">按应用清未完成</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('procFlagGet')">按流程查未完成</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('procFlagDel')">按流程清未完成</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdProcessing')">任务处理(位置态)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdReplace')">任务替换(位置态)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdPress')">任务催办(位置态)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdExpire')">任务超时(位置态)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskV2Pause')">v2暂停(位置态)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskV2Reset')">v2重置(位置态)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskV2Resume')">v2恢复(位置态)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskV3Add')">v3追加(位置态)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('attEditText')">附件文本编辑</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('dataPathDelete')">按路径删数据</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('manualAfter')">手工后处理</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('manualAppendId')">手工追加身份</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('recordJob')">记录 Job</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('serviceWorkTouch')">服务触达工作</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('snapIdRestore')">恢复快照(位置态)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('jobDelete')">删 Job</button>
           </div>
         </section>
 
@@ -1377,6 +1393,35 @@ async function surfaceOps4(op: string): Promise<void> {
     toast.success('流程表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev381：service/processing 引擎 task RESTful 位置态（{id}/processing·replace·press·expire、v2 {id}/pause·reset·resume、v3 {id}/add）+ 附件文本编辑/数据按路径删/手工后处理·追加身份/记录 job/服务触达/快照恢复/job 删 真实路由（Path-only 用户触发）
+async function engineRest3(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
+    if (op === 'taskIdProcessing') await api.put(`/api/processplatform/service/processing/task/${id()}/processing`, {})
+    else if (op === 'taskIdReplace') await api.post(`/api/processplatform/service/processing/task/${id()}/replace`, {})
+    else if (op === 'taskIdPress') await api.get(`/api/processplatform/service/processing/task/${id()}/press`)
+    else if (op === 'taskIdExpire') await api.get(`/api/processplatform/service/processing/task/${id()}/expire`)
+    else if (op === 'taskV2Pause') await api.get(`/api/processplatform/service/processing/task/v2/${id()}/pause`)
+    else if (op === 'taskV2Reset') await api.put(`/api/processplatform/service/processing/task/v2/${id()}/reset`, {})
+    else if (op === 'taskV2Resume') await api.get(`/api/processplatform/service/processing/task/v2/${id()}/resume`)
+    else if (op === 'taskV3Add') await api.post(`/api/processplatform/service/processing/task/v3/${id()}/add`, {})
+    else if (op === 'attEditText') await api.put(`/api/processplatform/service/processing/attachment/edit/${id()}/text`, {})
+    else if (op === 'dataPathDelete') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); if (!(await confirmMsg('确定删除该路径数据？'))) return; await api.post(`/api/processplatform/service/processing/data/path/delete/${w}/${id()}`, {}) }
+    else if (op === 'manualAfter') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); await api.post(`/api/processplatform/service/processing/manual/after/processing/${w}`, {}) }
+    else if (op === 'manualAppendId') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/manual/append/identity/${w}/${id()}`) }
+    else if (op === 'recordJob') { const j = encodeURIComponent(prompt('Job ID:', '') || ''); await api.post(`/api/processplatform/service/processing/record/job/${j}`, {}) }
+    else if (op === 'serviceWorkTouch') await api.put(`/api/processplatform/service/processing/service/work/${id()}/touch`, {})
+    else if (op === 'snapIdRestore') await api.get(`/api/processplatform/service/processing/snap/${id()}/restore`)
+    else { const j = encodeURIComponent(prompt('Job ID:', '') || ''); if (!(await confirmMsg('确定删除该 Job？'))) return; await api.delete(`/api/processplatform/service/processing/job/${j}`) }
+    toast.success('引擎操作已提交')
+  } catch (e: any) {
+    toast.error('引擎操作失败: ' + (e?.message ?? ''))
   } finally {
     engineBusy.value = false
   }
