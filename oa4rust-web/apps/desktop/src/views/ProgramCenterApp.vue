@@ -226,6 +226,7 @@
           <button class="btn-sm" @click="pcU7('inputPrepareCreate')">预备创建</button>
           <button class="btn-sm" @click="pcU7('jestClear')">Jest清缓存</button>
           <button class="btn-sm" @click="pcU8">命令/部署读</button>
+          <button class="btn-sm" @click="pcU9">调用器/市场/钉钉只读</button>
           <div v-if="pcU4Text" class="app-meta">{{ pcU4Text }}</div>
         </div>
         <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
@@ -1393,6 +1394,22 @@ async function pcU8() {
     ])
     const hit = rs.filter((r) => (r as any)?.data != null).length
     toast.success(`程序中心命令/部署读 ${rs.length} 条命中 ${hit}`)
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+// rev410：程序中心 调用标记文件·调用器令牌·市场封面图·钉钉回调AES 真实只读（均 GET pool-only query_opt SELECT，handler 源码核实无 Path 提取无副作用；用户触发）
+async function pcU9() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/program_center/invoke/flag/file')),
+      s(api.get('/api/program_center/invoke/token')),
+      s(api.get('/api/program_center/market/flag/cover/pic')),
+      s(api.get('/api/program_center/dingding/get/callback/aes')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`程序中心只读 ${rs.length} 条命中 ${hit}`)
   } catch (e: any) {
     toast.error('加载失败: ' + (e?.message ?? ''))
   }
