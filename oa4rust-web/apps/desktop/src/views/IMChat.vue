@@ -99,6 +99,13 @@
             <button class="icon-btn" title="消息分页" @click="imMore('msgPaging')">📄</button>
             <button class="icon-btn" title="群发类型" @click="imMore('massEnable')">📣</button>
             <button class="icon-btn" title="删群发" @click="imMore('massDelete')">🗑</button>
+            <button class="icon-btn" title="会话置顶" @click="imMore2('topSet')">📌</button>
+            <button class="icon-btn" title="取消置顶" @click="imMore2('topCancel')">📍</button>
+            <button class="icon-btn" title="会话标记已读" @click="imMore2('convRead')">✔</button>
+            <button class="icon-btn" title="退出群会话" @click="imMore2('groupQuit')">🚪</button>
+            <button class="icon-btn" title="撤回消息" @click="imMore2('msgRevoke')">↩</button>
+            <button class="icon-btn" title="按类型消费(会话)" @click="imMore2('consumeType')">🔖</button>
+            <button class="icon-btn" title="当前人已消费" @click="imMore2('consumed')">📥</button>
             <button class="icon-btn" title="更多信息">⋯</button>
           </div>
         </div>
@@ -604,6 +611,21 @@ async function imMore(op: string) {
     else if (op === 'msgPaging') await api.post('/api/message/assemble/communicate/message/list/paging/1/size/20', {})
     else if (op === 'massEnable') await api.post('/api/message/assemble/communicate/mass/enable/type', {})
     else { const id = prompt('要删除的群发 ID:', '') || ''; if (!(await confirmMsg('确定删除该群发？'))) return; await api.delete(`/api/message/assemble/communicate/mass/${encodeURIComponent(id)}`) }
+    toast.success('IM 操作已提交')
+  } catch (err: any) {
+    toast.error('操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev387：IM assemble/communicate 会话置顶/取消置顶/标记已读/退群、消息撤回、按类型消费、当前人已消费读 真实路由（均 Path-only 已核，各方法孪生择一；规避 im/msg/clear 裸路由 trap500）
+async function imMore2(op: string) {
+  try {
+    if (op === 'topSet') { const id = encodeURIComponent(prompt('会话 ID:', '') || ''); await api.put(`/api/message/assemble/communicate/im/conversation/${id}/top/set`, {}) }
+    else if (op === 'topCancel') { const id = encodeURIComponent(prompt('会话 ID:', '') || ''); await api.put(`/api/message/assemble/communicate/im/conversation/${id}/top/cancel`, {}) }
+    else if (op === 'convRead') { const id = encodeURIComponent(prompt('会话 ID:', '') || ''); await api.put(`/api/message/assemble/communicate/im/conversation/${id}/read`, {}) }
+    else if (op === 'groupQuit') { const id = encodeURIComponent(prompt('群会话 ID:', '') || ''); if (!(await confirmMsg('确定退出该群会话？'))) return; await api.post(`/api/message/assemble/communicate/im/conversation/${id}/group/quit/self`, {}) }
+    else if (op === 'msgRevoke') { const id = encodeURIComponent(prompt('消息 ID:', '') || ''); await api.get(`/api/message/assemble/communicate/im/msg/revoke/${id}`) }
+    else if (op === 'consumeType') { const id = encodeURIComponent(prompt('消息 ID:', '') || ''); const t = encodeURIComponent(prompt('消息类型:', '') || ''); await api.get(`/api/message/assemble/communicate/consume/${id}/type/${t}`) }
+    else await api.get('/api/message/assemble/communicate/instant/currentperson/consumed')
     toast.success('IM 操作已提交')
   } catch (err: any) {
     toast.error('操作失败: ' + (err?.message ?? ''))
