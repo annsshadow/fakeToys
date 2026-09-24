@@ -45,6 +45,9 @@
         <button class="btn-primary" @click="qvMore('bundlePost')">打包提交</button>
         <button class="btn-primary" @click="qvRows('rowGet')">读表行</button>
         <button class="btn-primary" @click="qvRows('rowSelect')">按表选择行</button>
+        <button class="btn-primary" @click="qvDesignerRows('insert')">设计器插行</button>
+        <button class="btn-primary" @click="qvDesignerRows('update')">设计器改行</button>
+        <button class="btn-primary" @click="qvDesignerRows('delete')">设计器删行</button>
         <button class="btn-primary" @click="qvRows('rowInsert')">插入行</button>
         <button class="btn-primary" @click="qvRows('rowInsertOne')">插入单行</button>
         <button class="btn-primary" @click="qvRows('rowDeleteAll')">清空表行</button>
@@ -483,6 +486,38 @@ async function qvRows(op: string) {
     toast.success('数据表行操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev442：查询设计器动态表行 CRUD 3 条真实路由（designer 前缀，区别于已消费的 surface/queryview 表行）——insert{tableFlag}[u2 INSERT x_query_table_data，要求非空 data 避免垃圾]·update{tableFlag}/{id}[UPDATE by flag+id]·delete{tableFlag}/{id}[DELETE by flag+id]，Path arity 与路由严格一致
+async function qvDesignerRows(op: string) {
+  try {
+    const flag = encodeURIComponent(prompt('数据表 flag:', '') || '')
+    if (!flag) return
+    if (op === 'insert') {
+      const raw = prompt('行数据(JSON，如 {"name":"x"}):', '') || ''
+      if (!raw.trim()) return
+      let data: any
+      try { data = JSON.parse(raw) } catch { toast.error('JSON 解析失败'); return }
+      await api.post(`/api/query/assemble/designer/table/row/insert/${flag}`, data)
+      toast.success('设计器表行已插入')
+    } else if (op === 'update') {
+      const rid = encodeURIComponent(prompt('行 ID:', '') || '')
+      if (!rid) return
+      const raw = prompt('新行数据(JSON):', '') || ''
+      if (!raw.trim()) return
+      let data: any
+      try { data = JSON.parse(raw) } catch { toast.error('JSON 解析失败'); return }
+      await api.put(`/api/query/assemble/designer/table/row/update/${flag}/${rid}`, data)
+      toast.success('设计器表行已更新')
+    } else {
+      const rid = encodeURIComponent(prompt('行 ID:', '') || '')
+      if (!rid) return
+      if (!(await confirmMsg('确定删除该设计器表行？'))) return
+      await api.delete(`/api/query/assemble/designer/table/row/delete/${flag}/${rid}`)
+      toast.success('设计器表行已删除')
+    }
+  } catch (e: any) {
+    toast.error('设计器表行操作失败: ' + (e?.message ?? ''))
   }
 }
 async function loadViews() {
