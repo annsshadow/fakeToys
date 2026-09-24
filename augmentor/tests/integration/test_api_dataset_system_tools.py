@@ -499,6 +499,28 @@ class TestDatasetConvert:
                 {"role": "assistant", "content": "支持月付"},
             ]}]
 
+    def test_undeclared_conversation_source_is_a_400_not_an_empty_dataset(self, tools_env):
+        """不声明 `source_format` 转对话类文件：400 且带可执行建议，不落半截产物
+
+        以前这一路是 **200 + 一份全空问答的数据集**（写边只认 `instruction`/`output`，
+        `conversations` 整个被忽略），调用方拿到成功状态却把空数据喂进训练。
+        """
+        src = _write_json(tools_env.tmp / "sharegpt_undeclared.json", [{
+            "conversations": [{"from": "human", "value": "可以月付吗"},
+                              {"from": "assistant", "value": "支持月付"}]}])
+        response = tools_env.client.post(
+            "/api/dataset/convert",
+            json={
+                "input_file": str(src),
+                "output_file": str(tools_env.out),
+                "target_format": "chatml",
+            },
+        )
+        assert response.status_code == 400, response.text
+        detail = response.json()["detail"]
+        assert "全空数据集" in detail and "`conversations`" in detail, detail
+        assert not tools_env.out.exists()
+
     def test_unknown_source_format_rejected(self, tools_env):
         """未知源格式 → 400，而不是 500 或静默按 json 读
 
