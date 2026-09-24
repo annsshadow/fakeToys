@@ -48,6 +48,9 @@
         <button class="btn-primary" @click="qvDesignerRows('insert')">设计器插行</button>
         <button class="btn-primary" @click="qvDesignerRows('update')">设计器改行</button>
         <button class="btn-primary" @click="qvDesignerRows('delete')">设计器删行</button>
+        <button class="btn-primary" @click="qvDesignerRows('save')">设计器存行</button>
+        <button class="btn-primary" @click="qvDesignerRows('build')">设计器建表</button>
+        <button class="btn-primary" @click="qvDesignerRows('deleteAll')">设计器清表</button>
         <button class="btn-primary" @click="qvRows('rowInsert')">插入行</button>
         <button class="btn-primary" @click="qvRows('rowInsertOne')">插入单行</button>
         <button class="btn-primary" @click="qvRows('rowDeleteAll')">清空表行</button>
@@ -509,6 +512,23 @@ async function qvDesignerRows(op: string) {
       try { data = JSON.parse(raw) } catch { toast.error('JSON 解析失败'); return }
       await api.put(`/api/query/assemble/designer/table/row/update/${flag}/${rid}`, data)
       toast.success('设计器表行已更新')
+    } else if (op === 'save') {
+      // rev443：designer 表行保存（row_save uuid INSERT x_query_table_data，要求非空 JSON）
+      const raw = prompt('保存行数据(JSON):', '') || ''
+      if (!raw.trim()) return
+      let data: any
+      try { data = JSON.parse(raw) } catch { toast.error('JSON 解析失败'); return }
+      await api.post(`/api/query/assemble/designer/table/row/save/${flag}`, data)
+      toast.success('设计器表行已保存')
+    } else if (op === 'build') {
+      // rev443：按 query flag 触发数据表构建（table_query_build_dispatch UPDATE x_query_table status='build'）
+      await api.get(`/api/query/assemble/designer/table/query/${flag}/build`)
+      toast.success('数据表构建已触发')
+    } else if (op === 'deleteAll') {
+      // rev443：清空 designer 数据表全部行（table_tableFlag_row_delete_all）
+      if (!(await confirmMsg('确定清空该设计器表所有行？'))) return
+      await api.post(`/api/query/assemble/designer/table/row/delete/all/${flag}`, {})
+      toast.success('设计器表已清空')
     } else {
       const rid = encodeURIComponent(prompt('行 ID:', '') || '')
       if (!rid) return
