@@ -22,6 +22,7 @@
         <button class="eb" @click="checkMyRestDate">🏖️ 我的休息日校验</button>
         <button class="eb" @click="importLeave">📥 批量导入请假</button>
         <button class="eb" @click="reciveMobileDetail">📱 移动端接收考勤</button>
+        <button class="eb" @click="myMobileDetail">📱 我的移动端明细</button>
         <button class="eb" @click="reciveDetailById">✅ 按id接收明细</button>
         <button class="eb" @click="createAttDetail">➕ 新建考勤明细</button>
         <button class="eb" @click="toggleAttType">🔧 启用/禁用考勤类型</button>
@@ -756,6 +757,18 @@ async function reciveMobileDetail() {
     toast.success('移动端接收已提交')
   } catch (e: any) {
     toast.error('接收失败: ' + (e?.message ?? ''))
+  }
+}
+// rev436：移动端「我的」考勤明细（attendancedetail_mobile_my 仅取 Json 无 Path、按 personId 查 x_attendance_detail，字面量路由匹配；用户以真实 personId 触发）
+async function myMobileDetail() {
+  const personId = prompt('人员标识:', '') || ''
+  if (!personId.trim()) return
+  try {
+    const r: any = await api.post('/api/attendance/assemble/control/attendancedetail/mobile/my', { personId })
+    const n = Array.isArray(r?.data) ? r.data.length : (Array.isArray(r?.data?.data) ? r.data.data.length : 0)
+    toast.success(`我的考勤明细：${n} 条`)
+  } catch (e: any) {
+    toast.error('读取失败: ' + (e?.message ?? ''))
   }
 }
 async function importLeave() {

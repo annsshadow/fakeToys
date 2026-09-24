@@ -20,6 +20,7 @@
         <button @click="jpushWrite('deviceUnbind')">解绑设备</button>
         <button @click="jpushWrite('deviceUnbindAll')">解绑全部</button>
         <button @click="jpushUnbindNew">新版解绑设备</button>
+        <button @click="jpushCtrlWrite('ctrlBind')">控制绑设备</button>
         <button @click="jpushWrite('messageSend')">发送消息</button>
         <button @click="jpushWrite('messageTest')">测试发送</button>
         <button @click="jpushWrite('coreDeviceCreate')">建实体设备</button>
@@ -202,6 +203,20 @@ async function jpushUnbindNew() {
     toast.success('设备已解绑')
   } catch (e: any) {
     toast.error('解绑失败: ' + (e?.message ?? ''))
+  }
+}
+
+// rev436：极光推送控制域 绑定设备 真实写路由（device_bind INSERT x_jpush 仅取 Json 无 Path，字面量路由匹配；用户以真实设备信息触发；控制域 update/control/config 属 autoquery-guards 禁清单不接）
+async function jpushCtrlWrite(_op: string) {
+  try {
+    const deviceName = prompt('设备名:', '') || ''
+    if (!deviceName) return
+    const deviceType = prompt('设备类型(android/ios):', 'android') || 'android'
+    const pushType = prompt('推送类型:', 'jpush') || 'jpush'
+    await api.post('/api/jpush/assemble/control/device/bind', { deviceName, deviceType, pushType })
+    toast.success('控制操作已提交')
+  } catch (e: any) {
+    toast.error('控制操作失败: ' + (e?.message ?? ''))
   }
 }
 
