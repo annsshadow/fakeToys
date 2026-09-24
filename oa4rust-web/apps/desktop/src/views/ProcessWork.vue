@@ -814,6 +814,12 @@ async function loadSurfaceReadB(): Promise<void> {
       s(api.post(`/api/processplatform/assemble/surface/taskcompleted/list/${id}/prev/${count}/filter`, {})),
       s(api.post(`/api/processplatform/assemble/surface/work/v2/list/${id}/next/${count}`, {})),
       s(api.post(`/api/processplatform/assemble/surface/work/v2/list/${id}/prev/${count}`, {})),
+      // rev459：v2 状态 GET 读 + 匿名计数 + 已办按工作压 5 条真实读（全 pool-only Path<String>，路由参一致；trigger/processing·terminate/manage·press/work 字面尾段唯一避误配）
+      s(api.get(`/api/processplatform/assemble/surface/work/v2/${id}/trigger/processing`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/v2/${id}/terminate/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/press/work/${id}`)),
+      s(api.get(`/api/processplatform/assemble/surface/anonymous/task/count/${credential}`)),
+      s(api.get(`/api/processplatform/assemble/surface/anonymous/read/count/${credential}`)),
       // rev451：按应用统计 待办/已办/在办/已完成 数量 4 条真实读（*_list_count_application_applicationFlag_process Path<String>，路由 {applicationFlag} + 字面 process，arity 一致）
       s(api.get(`/api/processplatform/assemble/surface/task/list/count/application/${applicationFlag}/process`)),
       s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/count/application/${applicationFlag}/process`)),
