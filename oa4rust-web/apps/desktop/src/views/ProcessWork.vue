@@ -372,6 +372,11 @@
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps9('readcompletedV2Paging')">已阅v2分页</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps9('reviewV2Paging')">传阅v2分页</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps9('taskcompletedV2Paging')">已办v2分页</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest5('dataWorkCreatePath')">按路径建数据</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest5('dataWorkUpdatePath')">按路径改数据</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest5('dataJobPath')">按路径改Job数据</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest5('dataWcPath')">按路径改已办数据</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest5('attCopyWork')">附件复制到工作</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdProcessing')">任务处理(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdReplace')">任务替换(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdPress')">任务催办(位置态)</button>
@@ -1613,6 +1618,25 @@ async function engineRest4(op: string): Promise<void> {
     else if (op === 'dataPathDel') { const path = encodeURIComponent(prompt('数据路径:', '') || ''); if (!(await confirmMsg('确定删除该路径数据？'))) return; await api.post(`/api/processplatform/service/processing/data/work/${id()}/${path}/delete`, {}) }
     else if (op === 'workSerial') { const pid = encodeURIComponent(prompt('流程 ID:', '') || ''); const name = encodeURIComponent(prompt('活动名:', '') || ''); await api.post(`/api/processplatform/service/processing/work/process/${pid}/name/${name}/serial`, {}) }
     else { const t = encodeURIComponent(prompt('快照类型:', '') || ''); await api.get(`/api/processplatform/service/processing/snap/workcompleted/abandonedworkcompleted/${id()}/${t}`) }
+    toast.success('引擎操作已提交')
+  } catch (e: any) {
+    toast.error('引擎操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev405：service/processing 引擎 按路径 建/改工作数据、按路径改 job·已办数据、附件复制到工作 真实路由（data_*_path Path<2-tuple>+Json 空体、attachment_copy Path<2-tuple>；create/update 为不同 handler 各计；用户触发）
+async function engineRest5(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
+    const path = () => encodeURIComponent(prompt('数据路径:', '') || '')
+    if (op === 'dataWorkCreatePath') { const i = id(); const p = path(); await api.post(`/api/processplatform/service/processing/data/work/${i}/${p}`, {}) }
+    else if (op === 'dataWorkUpdatePath') { const i = id(); const p = path(); await api.put(`/api/processplatform/service/processing/data/work/${i}/${p}`, {}) }
+    else if (op === 'dataJobPath') { const j = encodeURIComponent(prompt('Job ID:', '') || ''); const p = path(); await api.put(`/api/processplatform/service/processing/data/job/${j}/${p}`, {}) }
+    else if (op === 'dataWcPath') { const i = id(); const p = path(); await api.put(`/api/processplatform/service/processing/data/workcompleted/${i}/${p}`, {}) }
+    else { const w = encodeURIComponent(prompt('源附件所属工作:', '') || ''); const wi = encodeURIComponent(prompt('目标 workId:', '') || ''); await api.post(`/api/processplatform/service/processing/attachment/copy/${w}/${wi}`, {}) }
     toast.success('引擎操作已提交')
   } catch (e: any) {
     toast.error('引擎操作失败: ' + (e?.message ?? ''))
