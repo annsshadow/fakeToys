@@ -407,6 +407,9 @@
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps16('worklogRollback')">回滚工作日志清单</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps16('reviewCountPerson')">按人摘要计数</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps16('attDownloadManage')">附件管理流下载</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps17('readProcessing')">待阅处理(管理)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps17('readCompletedOpinion')">已阅意见(管理)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps17('taskCompletedOpinion')">已办意见(管理)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdProcessing')">任务处理(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdReplace')">任务替换(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdPress')">任务催办(位置态)</button>
@@ -1735,6 +1738,22 @@ async function surfaceOps16(op: string): Promise<void> {
       const id = encodeURIComponent(prompt('附件 ID:', '') || '')
       await api.get(`/api/processplatform/assemble/surface/attachment/download/${id}/manage/stream`)
     }
+    toast.success('流程表面操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev417：流程表面 待阅处理(管理) read/processing/manage/{id}[PP_C_READ]·已阅意见(管理) readcompleted/{id}/opinion/manage[PP_C_READCOMPLETED]·已办意见(管理) taskcompleted/{id}/opinion/manage[PP_C_TASKCOMPLETED] 真实路由（三读独立表 distinct，Path-only 无 body；用户输入真实 id 触发）
+async function surfaceOps17(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    const id = encodeURIComponent(prompt('目标 ID:', '') || '')
+    if (op === 'readProcessing') await api.post(`/api/processplatform/assemble/surface/read/processing/manage/${id}`, {})
+    else if (op === 'readCompletedOpinion') await api.post(`/api/processplatform/assemble/surface/readcompleted/${id}/opinion/manage`, {})
+    else await api.put(`/api/processplatform/assemble/surface/taskcompleted/${id}/opinion/manage`, {})
     toast.success('流程表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
