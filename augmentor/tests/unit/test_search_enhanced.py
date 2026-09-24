@@ -615,3 +615,163 @@ class TestNgramCostFollowsTheQuery:
 
         assert result.total_matches == len(expected)
         assert result.items == [items[0], items[1]]
+
+
+class TestFuzzySlidesAWindow:
+    """fuzzy 从「整档 Jaccard」换成「查询作为等长窗口在文档上滑」
+
+    旧的 `_search_fuzzy` 拿查询 token 集合与**整条文档** token 集合算 Jaccard，在真实
+    6902 条中文语料上**任何查询都恒 0 命中**（A27）：`_tokenize` 把一整段连续中文当成
+    一个 token，`{'租房'}` 与 `{'如何申请租房？'}` 永不相交；阈值从 0.6 一路降到 0.02
+    仍然是 0，所以这不是阈值太严，是度量本身错——对称的整档相似度对「短查询 vs 长文档」
+    根本不成立。新语义：`分数 = 最好的等长窗口的 1 - 错配数/查询长度`，门槛 `threshold`，
+    于是 `contains` 的命中必然是 fuzzy 的子集（且得 1.0），多出来的是允许换字的近似命中。
+
+    为了不退化成 O(文档长度 × 查询长度) 的裸扫（朴素窗口在 6902 条上实测 1.0~1.9 秒），
+    实现里加了一层鸽笼过滤：错配 ≤ d 的窗口必然与查询切成 d+1 段中的某一段完全相同，
+    先用 `in` 排除整条文档。**过滤是纯优化**，所以下面每一条都用一份不带过滤的朴素
+    实现做等价对照——过滤掉错了就会在这里红，而不是在用户的搜索结果里静默少几条。
+    """
+
+    CORPUS = [
+        {"instruction": "如何申请租房？", "output": "请登录官网申请"},
+        {"instruction": "公租房补贴政策", "output": "租房补贴"},
+        {"instruction": "AAAa", "output": "aaaa"},
+        {"instruction": "", "output": "短"},
+        {"instruction": 42, "output": None},
+        {"instruction": "买房需要什么材料", "output": "身份证、收入证明"},
+    ]
+
+    @staticmethod
+    def naive_window_scores(items, field, query, threshold=0.6):
+        """朴素参照：把查询当窗口在文档上**逐位滑到底**，不用任何过滤
+
+        这是被优化掉的那条直路，故意写得最笨：对每个起点数一遍错配字数，取最高分。
+        与被测库唯一的差别就是「有没有鸽笼过滤」，所以两边必须逐条、逐分相同。
+        """
+        pattern = query.lower()
+        size = len(pattern)
+        scores = {}
+        if not size or not 0 < threshold <= 1:
+            return scores
+        for index, item in enumerate(items):
+            value = item.get(field, "")
+            if not isinstance(value, str) or len(value) < size:
+                continue
+            text = value.lower()
+            best = 0.0
+            for start in range(len(text) - size + 1):
+                window = text[start:start + size]
+                mismatches = sum(1 for a, b in zip(pattern, window) if a != b)
+                score = 1.0 - mismatches / size
+                if score > best:
+                    best = score
+            if best >= threshold:
+                scores[index] = best
+        return scores
+
+    @pytest.mark.parametrize("query", [
+        "租房", "公租房", "租方房", "AAA", "aaaa", "身份", "不存在的东西",
+    ])
+    @pytest.mark.parametrize("threshold", [0.6, 1.0, 0.5])
+    @pytest.mark.parametrize("field", ["instruction", "output"])
+    def test_matches_a_naive_window_scan(self, query, threshold, field):
+        """等价性主护栏：加过滤的实现要和朴素全扫**逐条逐分**相同
+
+        覆盖 `threshold=1.0`（退化为 contains）、0.6（默认）、0.5（放宽）三档，
+        以及中文/拉丁/大小写/空串/非字符串字段五类取值。
+        """
+        searcher = EnhancedSearcher(self.CORPUS)
+        expected = self.naive_window_scores(self.CORPUS, field, query, threshold)
+
+        assert searcher._search_fuzzy(field, query, threshold) == expected
+
+    def test_contains_hits_are_a_subset_scoring_one(self):
+        """`contains` 能搜到的，fuzzy 一定要能搜到且得满分
+
+        这是新语义的**定义级**不变式：窗口完全对齐时错配数为 0。反过来不成立
+        （fuzzy 多找到的就是允许换字的那批），所以两条一起才说明 fuzzy 没退化成 contains。
+        """
+        searcher = EnhancedSearcher(self.CORPUS)
+        contains = searcher._search_contains("instruction", "公租房")
+        fuzzy = searcher._search_fuzzy("instruction", "公租房")
+
+        assert set(contains) <= set(fuzzy)
+        for index in contains:
+            assert fuzzy[index] == 1.0
+        assert fuzzy[0] == pytest.approx(2 / 3)
+
+    def test_a_typo_query_finds_the_record(self):
+        """真实缺陷的正例：一个字不同也该命中，旧实现在这里返回空
+
+        「公租房」查 `"如何申请租房？"`：最佳窗口是 `请租房`（3 字里 2 字相同 = 0.667），
+        旧 Jaccard 因为整段中文算一个 token，交集为空 → 恒 0 命中。
+        """
+        searcher = EnhancedSearcher([{"instruction": "如何申请租房？"}])
+
+        assert searcher._search_fuzzy("instruction", "公租房") == {0: pytest.approx(2 / 3)}
+        assert searcher._search_fuzzy("instruction", "租房") == {0: 1.0}
+
+    def test_the_whole_field_is_not_treated_as_one_token(self, monkeypatch):
+        """新实现不许再走 `_tokenize`——那正是「整段中文当一个 token」的病根
+
+        计数预言机：旧实现每条文档都要 `_tokenize` 两次（查询 + 文档），所以这里
+        只要**一次都不许发生**。承 L17 的教训，被数的名字必须是旧路真走的那一个。
+        """
+        calls = []
+        real = EnhancedSearcher._tokenize
+        monkeypatch.setattr(EnhancedSearcher, "_tokenize",
+                            lambda self, text: (calls.append(text), real(self, text))[1])
+        searcher = EnhancedSearcher(self.CORPUS * 20)
+
+        assert searcher._search_fuzzy("instruction", "租房")
+        assert calls == [], f"fuzzy 又去整档切 token 了：{calls[:3]}"
+
+    def test_threshold_outside_the_usable_range_matches_nothing(self):
+        """阈值不是 `(0, 1]` 时返回空，而不是「全给 1.0」或抛异常
+
+        `threshold=0` 旧语义等于不过滤，窗口分数会退化成整档相似度；越界的
+        `1.5` / `-1` 更没有任何合理含义。三档都必须安静地返回空。
+        """
+        searcher = EnhancedSearcher(self.CORPUS)
+
+        for threshold in (0, -1, 1.5):
+            assert searcher._search_fuzzy("instruction", "租房", threshold) == {}
+
+    def test_an_empty_query_matches_nothing(self):
+        """空查询没有窗口可言，不许退化成「每行 0 错配 = 满分」"""
+        searcher = EnhancedSearcher(self.CORPUS)
+
+        assert searcher._search_fuzzy("instruction", "") == {}
+
+    def test_a_query_longer_than_the_field_never_hits(self):
+        """查询比字段还长：一个窗口都放不下，返回空而不是按可用长度打折"""
+        searcher = EnhancedSearcher([{"instruction": "租房"}])
+
+        assert searcher._search_fuzzy("instruction", "租房补贴政策") == {}
+
+    def test_non_string_field_values_are_skipped(self):
+        """`42` / `None` / 空串这类值不参与滑动窗口，也不许把整条查询砸了
+
+        语料第 4 条是 `{"instruction": 42, "output": None}`、第 3 条 instruction 是空串，
+        它们只能被跳过。留下的必须是真含窗口的：`如何申请租房？` 与 `公租房补贴政策`
+        都含连续的「租房」（后者是「公**租房**」）→ 各 1.0，别的字段值都不许混进来。
+        """
+        searcher = EnhancedSearcher(self.CORPUS)
+
+        assert searcher._search_fuzzy("instruction", "租房") == {0: 1.0, 1: 1.0}
+        assert searcher._search_fuzzy("output", "租房") == {1: 1.0}
+
+    def test_the_public_entry_reports_the_fuzzy_hits_it_found(self):
+        """端到端：真实入口（CLI 与 `/api/dataset/search` 共用）不再交出 0 条
+
+        症状就是本轮要修的：以前 fuzzy 无论查什么都返回 `total_matches=0`，
+        用户以为语料里没有，其实是被度量吃掉了。
+        """
+        items = [{"instruction": "如何申请租房？", "output": "请登录官网申请"},
+                 {"instruction": "公租房补贴政策", "output": "租房补贴"}]
+
+        result = search_dataset(items, "公租房", method="fuzzy")
+
+        assert result.total_matches == len(items)
+        assert result.items == [items[1], items[0]]

@@ -267,7 +267,9 @@ class TestDatasetSearch:
             ("exact", "公租房", 0),           # 子串不匹配
             ("ngram", "交易", 1),
             ("regex", "^如何", 2),
-            ("fuzzy", "公租屋", 0),           # 编辑距离不足
+            # 「公租屋」与「公租房」只差最后一个字：3 字窗口错配 1 → 0.667 ≥ 0.6 → 命中。
+            # L25 之前这里是 0，理由是整档 Jaccard 在中文上恒 0（A27），不是「编辑距离不足」。
+            ("fuzzy", "公租屋", 2),
         ],
     )
     def test_each_method_has_its_own_semantics(self, tools_env, method, query, expected):

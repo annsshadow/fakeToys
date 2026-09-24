@@ -326,7 +326,28 @@ class TestSearchCommand:
             ["cli", "search", "--input", str(clean), "--query", "租房", "--method", "fuzzy"]
         )
         assert code is None, err
-        assert "找到" in out
+        assert "找到 2 条匹配结果" in out
+
+    def test_fuzzy_finds_a_typo_query_that_contains_misses(self, dataset_context):
+        """把字换掉也要能找到——这正是 fuzzy 与 contains 的分工（L25 / A27）
+
+        样本里有「如何退租押金？」。查询写成「腿租押金」时 `contains` 找不到（0 条），
+        fuzzy 的等长窗口错配 1/4 = 0.75 ≥ 阈值 0.6 → 1 条。
+        修 A27 之前 fuzzy 也是 0 条：整段中文被 `_tokenize` 当成一个 token，
+        与整档 token 集合的 Jaccard 恒为 0，**任何**中文查询都搜不到东西。
+        """
+        clean, _, _ = dataset_context
+        typo = "腿租押金"
+
+        def count(method):
+            out, err, code = run_cli(
+                ["cli", "search", "--input", str(clean), "--query", typo, "--method", method]
+            )
+            assert code is None, err
+            return out
+
+        assert "找到 0 条匹配结果" in count("contains")
+        assert "找到 1 条匹配结果" in count("fuzzy")
 
     def test_saves_output(self, dataset_context):
         """--output 需写入可解析的结果 JSON"""
