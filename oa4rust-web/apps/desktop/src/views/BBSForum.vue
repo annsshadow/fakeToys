@@ -89,6 +89,19 @@
       <button class="new-topic-btn ghost" @click="bbsEntity('myReply')">我的回复</button>
       <button class="new-topic-btn ghost" @click="bbsEntity('mySubject')">我的主题</button>
       <button class="new-topic-btn ghost" @click="bbsEntity('voterecord')">投票记录</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('setOriginal')">设原创</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('nonOriginal')">取消原创</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('setRecommend')">首页推荐</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('nonRecommend')">取消首页推荐</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('topToBBS')">置顶BBS</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('nonTopToBBS')">取消置顶BBS</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('topToForum')">置顶论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('nonTopToForum')">取消置顶论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('topToMain')">置顶主版块</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('nonTopToMain')">取消置顶主版块</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('acceptReply')">采纳回复</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('unacceptReply')">取消采纳</button>
+      <button class="new-topic-btn ghost" @click="bbsUserReads">版块/权限读</button>
     </div>
 
     <!-- 左侧：版块列表 -->
@@ -1020,6 +1033,50 @@ async function bbsEntity(op: string) {
     toast.success('BBS 实体操作已提交')
   } catch (err: any) {
     toast.error('BBS 实体操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev358：BBS 主题版主动作 原创/推荐首页/置顶(BBS/论坛/主版块)各 set/non + 采纳/取消采纳回复 真实 GET 列标志 UPDATE（事件触发按主题 id，非 mounted；u2_subject_* 宏生成各列 distinct）
+async function bbsSubjectMod(op: string) {
+  const id = prompt('主题 ID:', '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (op === 'setOriginal') await api.get(`/api/bbs/assemble/control/user/subject/setOriginal/${e}`)
+    else if (op === 'nonOriginal') await api.get(`/api/bbs/assemble/control/user/subject/nonOriginal/${e}`)
+    else if (op === 'setRecommend') await api.get(`/api/bbs/assemble/control/user/subject/setRecommendToBBSIndex/${e}`)
+    else if (op === 'nonRecommend') await api.get(`/api/bbs/assemble/control/user/subject/nonRecommendToBBSIndex/${e}`)
+    else if (op === 'topToBBS') await api.get(`/api/bbs/assemble/control/user/subject/topToBBS/${e}`)
+    else if (op === 'nonTopToBBS') await api.get(`/api/bbs/assemble/control/user/subject/nonTopToBBS/${e}`)
+    else if (op === 'topToForum') await api.get(`/api/bbs/assemble/control/user/subject/topToForum/${e}`)
+    else if (op === 'nonTopToForum') await api.get(`/api/bbs/assemble/control/user/subject/nonTopToForum/${e}`)
+    else if (op === 'topToMain') await api.get(`/api/bbs/assemble/control/user/subject/topToMainSection/${e}`)
+    else if (op === 'nonTopToMain') await api.get(`/api/bbs/assemble/control/user/subject/nonTopToMainSection/${e}`)
+    else if (op === 'acceptReply') {
+      const rid = prompt('回复 ID:', '') || ''
+      await api.get(`/api/bbs/assemble/control/user/subject/acceptreply/${e}/${encodeURIComponent(rid)}`)
+    } else await api.get(`/api/bbs/assemble/control/user/subject/unacceptreply/${e}`)
+    toast.success('主题版主动作已提交')
+  } catch (err: any) {
+    toast.error('操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev358：BBS 用户版块/权限 真实只读（用户触发按钮；section/all·sub·viewforum + permission forum/section/role）
+async function bbsUserReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const sid = prompt('版块/论坛 ID（可空）:', '') || ''
+  const e = encodeURIComponent(sid)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/bbs/assemble/control/user/section/all')),
+      s(api.get(`/api/bbs/assemble/control/user/section/sub/${e}`)),
+      s(api.get(`/api/bbs/assemble/control/section/viewforum/${e}`)),
+      s(api.get(`/api/bbs/assemble/control/user/permission/forum/${e}`)),
+      s(api.get(`/api/bbs/assemble/control/user/permission/section/${e}`)),
+      s(api.get('/api/bbs/assemble/control/user/permission/role/USER')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`BBS 版块/权限读 ${rs.length} 条命中 ${hit}`)
+  } catch (err: any) {
+    toast.error('BBS 读失败: ' + (err?.message ?? ''))
   }
 }
 const api_forum_view_1_data = ref<any[]>([])
