@@ -451,14 +451,16 @@ async function loadV2AppealRecord() {
 }
 async function loadAttOrg() {
   try {
-    // GET attendancedetail/filter/list/topUnit + filter/list/unit + dingding/sync/list
-    const [topUnit, unit, dingding] = await Promise.all([
+    // GET attendancedetail/filter/list/topUnit + filter/list/unit + dingding/sync/list + qywx/sync/list
+    const [topUnit, unit, dingding, qywx] = await Promise.all([
       api.get('/api/attendance/assemble/control/attendancedetail/filter/list/topUnit'),
       api.get('/api/attendance/assemble/control/attendancedetail/filter/list/unit'),
       api.get('/api/attendance/assemble/control/dingding/sync/list'),
+      // rev439：企业微信同步记录（qywx_sync_list 仅取 pool 查 x_attendance_sync_record type='qywx'，本地读非外部）
+      api.get('/api/attendance/assemble/control/qywx/sync/list'),
     ])
     const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
-    attOverviewText.value = `顶级单位 ${cnt(topUnit)} / 单位 ${cnt(unit)} / 钉钉同步 ${cnt(dingding)}`
+    attOverviewText.value = `顶级单位 ${cnt(topUnit)} / 单位 ${cnt(unit)} / 钉钉同步 ${cnt(dingding)} / 企微同步 ${cnt(qywx)}`
   } catch (e: any) {
     toast.error('加载失败: ' + (e?.message ?? ''))
   }
