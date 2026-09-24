@@ -208,6 +208,17 @@
           <button class="btn-sm" @click="pcU5Write('cacheDispatch')">缓存调度</button>
           <button class="btn-sm" @click="pcU5Write('scheduleReport')">调度上报</button>
           <button class="btn-sm" @click="pcU5Write('moduleList')">模块列表</button>
+          <button class="btn-sm" @click="pcU6('agentDisable')">禁用代理</button>
+          <button class="btn-sm" @click="pcU6('agentEnable')">启用代理</button>
+          <button class="btn-sm" @click="pcU6('agentSave')">保存代理</button>
+          <button class="btn-sm" @click="pcU6('invokeGet')">读调用器</button>
+          <button class="btn-sm" @click="pcU6('invokeUpdate')">更新调用器</button>
+          <button class="btn-sm" @click="pcU6('invokeDelete')">删调用器</button>
+          <button class="btn-sm" @click="pcU6('invokeExecGet')">调用器执行读取</button>
+          <button class="btn-sm" @click="pcU6('moduleOutputFile')">模块输出文件</button>
+          <button class="btn-sm" @click="pcU6('moduleWrite')">写模块</button>
+          <button class="btn-sm" @click="pcU6('moduleRemoveStruct')">删模块结构</button>
+          <button class="btn-sm" @click="pcU6('applicationSave')">保存应用</button>
           <div v-if="pcU4Text" class="app-meta">{{ pcU4Text }}</div>
         </div>
         <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
@@ -1326,6 +1337,25 @@ async function pcU5Write(op: string) {
     else if (op === 'scheduleReport') await api.post('/api/program_center/schedule/report', {})
     else await api.put('/api/program_center/module/list', {})
     toast.success('程序中心写操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev382：程序中心 agent 代理禁用/启用/保存、invoke 调用器读/删/执行读取/更新、module 输出文件/删结构/写、application 保存 真实路由（Path-only + 已核 struct 字段体，用户触发）
+async function pcU6(op: string) {
+  try {
+    if (op === 'agentDisable') { const f = encodeURIComponent(prompt('代理 flag:', '') || ''); await api.get(`/api/program_center/agent/${f}/disable`) }
+    else if (op === 'agentEnable') { const f = encodeURIComponent(prompt('代理 flag:', '') || ''); await api.get(`/api/program_center/agent/${f}/enable`) }
+    else if (op === 'agentSave') { const id = encodeURIComponent(prompt('代理 ID:', '') || ''); const name = prompt('代理名称:', '') || ''; await api.put(`/api/program_center/agent/save/${id}`, { name }) }
+    else if (op === 'invokeGet') { const f = encodeURIComponent(prompt('调用器 flag:', '') || ''); await api.get(`/api/program_center/invoke/${f}`) }
+    else if (op === 'invokeUpdate') { const f = encodeURIComponent(prompt('调用器 flag:', '') || ''); const name = prompt('调用器名称:', '') || ''; await api.put(`/api/program_center/invoke/${f}`, { name, alias: '', category: '', description: '', enable: true, enableToken: false }) }
+    else if (op === 'invokeDelete') { const f = encodeURIComponent(prompt('调用器 flag:', '') || ''); if (!(await confirmMsg('确定删除该调用器？'))) return; await api.delete(`/api/program_center/invoke/${f}`) }
+    else if (op === 'invokeExecGet') { const f = encodeURIComponent(prompt('调用器 flag:', '') || ''); await api.get(`/api/program_center/invoke/${f}/execute/get`) }
+    else if (op === 'moduleOutputFile') { const id = encodeURIComponent(prompt('模块 ID:', '') || ''); await api.get(`/api/program_center/module/output/${id}/file`) }
+    else if (op === 'moduleWrite') { const id = encodeURIComponent(prompt('模块 ID:', '') || ''); await api.put(`/api/program_center/module/write/${id}`, {}) }
+    else if (op === 'moduleRemoveStruct') { const id = encodeURIComponent(prompt('模块 ID:', '') || ''); if (!(await confirmMsg('确定删除该模块结构？'))) return; await api.delete(`/api/program_center/module/remove/structure/${id}`) }
+    else { const id = encodeURIComponent(prompt('应用 ID:', '') || ''); const name = prompt('应用名称:', '') || ''; await api.put(`/api/program_center/application/save/${id}`, { name }) }
+    toast.success('程序中心操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
   }
