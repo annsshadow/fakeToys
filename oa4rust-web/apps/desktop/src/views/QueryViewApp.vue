@@ -43,6 +43,12 @@
         <button class="btn-primary" @click="qvMore('viewExecV2Id')">视图v2按ID执行</button>
         <button class="btn-primary" @click="qvMore('statExec')">统计执行2</button>
         <button class="btn-primary" @click="qvMore('bundlePost')">打包提交</button>
+        <button class="btn-primary" @click="qvRows('rowGet')">读表行</button>
+        <button class="btn-primary" @click="qvRows('rowInsert')">插入行</button>
+        <button class="btn-primary" @click="qvRows('rowInsertOne')">插入单行</button>
+        <button class="btn-primary" @click="qvRows('rowDeleteAll')">清空表行</button>
+        <button class="btn-primary" @click="qvRows('rowDelete')">删表行</button>
+        <button class="btn-primary" @click="qvRows('rowPartUpdate')">部分更新行</button>
         <button class="btn-primary" @click="qvMore('importRun')">跑导入模型</button>
         <button class="btn-primary" @click="qvMore('importExecRecPost')">执行导入记录</button>
         <button class="btn-primary" @click="qvMore('importExecRecGet')">读导入记录执行</button>
@@ -458,6 +464,21 @@ async function qvMore(op: string) {
     else if (op === 'tableReload') await api.get('/api/queryview/table/reload/dynamic')
     else { const mf = encodeURIComponent(prompt('模型 flag:', '') || ''); const w = encodeURIComponent(prompt('工作:', '') || ''); const wi = encodeURIComponent(prompt('workId:', '') || ''); await api.get(`/api/queryview/neural/list/calculate/model/${mf}/${w}/${wi}`) }
     toast.success('queryview 操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev402：查询视图 数据表行 读(按表·id)/插入/单行插入/清空/按行删/部分更新 真实路由（Path arity 已核，insert/part-update Json 空体；用户触发，规避守卫禁 importmodel/record 与 query 探针）
+async function qvRows(op: string) {
+  try {
+    const flag = () => encodeURIComponent(prompt('数据表 flag:', '') || '')
+    if (op === 'rowGet') { const f = flag(); const rid = encodeURIComponent(prompt('行 ID:', '') || ''); await api.get(`/api/queryview/table/row/${f}/${rid}`) }
+    else if (op === 'rowInsert') await api.post(`/api/queryview/table/${flag()}/row`, {})
+    else if (op === 'rowInsertOne') await api.post(`/api/queryview/table/${flag()}/row/one`, {})
+    else if (op === 'rowDeleteAll') { const f = flag(); if (!(await confirmMsg('确定清空该表所有行？'))) return; await api.delete(`/api/queryview/table/${f}/row/delete/all`) }
+    else if (op === 'rowDelete') { const f = flag(); const rid = encodeURIComponent(prompt('行 ID:', '') || ''); if (!(await confirmMsg('确定删除该行？'))) return; await api.delete(`/api/queryview/table/${f}/row/${rid}`) }
+    else { const f = flag(); const rid = encodeURIComponent(prompt('行 ID:', '') || ''); await api.post(`/api/queryview/table/${f}/row/${rid}/part/update`, {}) }
+    toast.success('数据表行操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
   }
