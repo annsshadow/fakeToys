@@ -836,6 +836,13 @@ async function loadSurfaceReadB(): Promise<void> {
       s(api.post(`/api/processplatform/assemble/surface/workcompleted/list/${id}/prev/${count}/application/${applicationFlag}/filter`, {})),
       s(api.post(`/api/processplatform/assemble/surface/workcompleted/filter/list/${id}/prev/${count}/application/${applicationFlag}`, {})),
       s(api.post(`/api/processplatform/assemble/surface/work/list/${id}/next/${count}/application/${applicationFlag}/filter/manage`, {})),
+      // rev456：管理态过滤游标读 6 条（task/work/workcompleted/snap filter/manage，Path 2~3 参与路由一致，终端 filter/manage 字面段稳定计数）
+      s(api.post(`/api/processplatform/assemble/surface/task/list/${id}/next/${count}/filter/manage`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/task/list/${id}/prev/${count}/filter/manage`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/work/list/${id}/prev/${count}/application/${applicationFlag}/filter/manage`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/workcompleted/list/${id}/next/${count}/application/${applicationFlag}/filter/manage`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/snap/list/${id}/next/${count}/filter/manage`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/snap/list/${id}/prev/${count}/filter/manage`, {})),
       s(api.get(`/api/processplatform/assemble/surface/task/count/${credential}`)),
       s(api.get(`/api/processplatform/assemble/surface/task/list/date/date/hour/hour/exclude/draft/manage/${isExcludeDraft}`)),
       s(api.get(`/api/processplatform/assemble/surface/task/list/date/${date}/hour/${hour}/exclude/draft/${isExcludeDraft}/manage`)),
