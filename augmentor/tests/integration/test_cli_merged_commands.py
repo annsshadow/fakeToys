@@ -1146,3 +1146,137 @@ class TestSearchFilterSurface:
         )
         assert code is None, err
         assert "找到" in out, f"{operator} 没有跑出结果摘要: {out!r}{err!r}"
+
+
+class TestFilterEchoOnStdout:
+    """`--filter` 生效后，第二行要说清「筛掉了多少」（A31 的 CLI 侧）
+
+    L28 把九种算子接到三端之后，「找到 0 条」在 CLI 上仍有三种读不出成因的形状：
+    ①语料里确实没有、②阈值/gram 拧太紧（L27 已治）、③**检索命中了却被过滤器筛光**。
+    第三种最隐蔽，而且它只在加了 `--filter` 后出现，所以本轮把收窄的数印在同一行末尾：
+    「(N 个过滤器: 检索 X → 保留 Y)」。承 L27 的两条口径：印在第二行末尾不另起一行
+    （下游按 `out[out.index("["):]` 取条目），且没消费时什么都不印（不印「0 个过滤器」，
+    否则「没过滤」与「过滤后剩 0 条」又同形）。
+    """
+
+    def run(self, dataset_context, *extra):
+        clean, _, _ = dataset_context
+        out, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "租房", *extra]
+        )
+        assert code is None, err
+        return out
+
+    def test_a_narrowing_filter_prints_before_and_after_counts(self, dataset_context):
+        """contains「租房」2 条 → `output contains 登录` 后 1 条，两个数都要印出来"""
+        out = self.run(dataset_context, "--filter", "output", "contains", "登录")
+
+        assert "找到 1 条匹配结果" in out
+        assert "(1 个过滤器: 检索 2 → 保留 1)" in out
+
+    def test_unfiltered_search_prints_no_filter_section(self, dataset_context):
+        """没传 `--filter` 时不许印「0 个过滤器」
+
+        那一行会让人以为后端跑了一遍过滤，而它连清单都没收到。
+        """
+        out = self.run(dataset_context, "--method", "contains")
+
+        assert "过滤器" not in out
+        assert "(" not in out.splitlines()[1]
+
+    def test_a_filter_that_narrows_nothing_still_prints_its_counts(self, dataset_context):
+        """一条都没筛掉时（2 → 2）也要印：用户问的正是「加了过滤器条数怎么没变」"""
+        out = self.run(dataset_context, "--filter", "input", "eq", '""')
+
+        assert "(1 个过滤器: 检索 2 → 保留 2)" in out
+
+    def test_two_filters_are_counted(self, dataset_context):
+        """`--filter` 可重复，回显的是**条数**而不是拼接的条件"""
+        out = self.run(dataset_context,
+                       "--filter", "input", "eq", '""',
+                       "--filter", "output", "contains", "登录")
+
+        assert "(2 个过滤器: 检索 2 → 保留 1)" in out
+
+    def test_the_two_zero_hit_causes_now_read_differently(self, dataset_context):
+        """本轮落点：同为「找到 0 条」，被筛光与本来没命中在 stdout 上分开了
+
+        前者「检索 2 → 保留 0」（「退租」在命中那两条的 output 里都不存在），
+        后者「检索 0 → 保留 0」（查询词根本不在语料里）。缺陷态这两份 stdout 完全同形。
+        """
+        clean, _, _ = dataset_context
+
+        def run(query, *extra):
+            out, err, code = run_cli(
+                ["cli", "search", "--input", str(clean), "--query", query, *extra]
+            )
+            assert code is None, err
+            return out
+
+        starved = run("租房", "--filter", "output", "contains", "退租")
+        absent = run("根本没有这个词", "--filter", "input", "eq", '""')
+
+        assert "找到 0 条匹配结果" in starved and "找到 0 条匹配结果" in absent
+        assert "检索 2 → 保留 0" in starved
+        assert "检索 0 → 保留 0" in absent
+
+    def test_the_filter_section_coexists_with_the_knob_section(self, dataset_context):
+        """旋钮段与过滤器段并排印在同一段里，谁也不覆盖谁
+
+        取 fuzzy：它是唯一既回显旋钮又能被过滤器收窄的方法（`elif` 保证旋钮段只有一个）。
+        """
+        out = self.run(dataset_context, "--method", "fuzzy",
+                       "--filter", "output", "contains", "登录")
+
+        line = out.splitlines()[1]
+        assert line == "搜索方法: fuzzy (生效阈值 0.6) (1 个过滤器: 检索 2 → 保留 1)"
+
+    def test_pagination_does_not_change_the_printed_counts(self, dataset_context):
+        """`--limit 1` 只切条目：印的仍是分页前的全集口径，否则这句话就是假话"""
+        out = self.run(dataset_context, "--filter", "input", "eq", '""', "--limit", "1")
+
+        assert "找到 2 条匹配结果" in out
+        assert "(1 个过滤器: 检索 2 → 保留 2)" in out
+        assert len(json.loads(out[out.index("["):])) == 1
+
+    def test_stdout_shape_is_still_two_summary_lines_then_json(self, dataset_context):
+        """带过滤器时 stdout 形状不变：两行摘要 + JSON 列表
+
+        下游解析依赖这个形状（`test_the_echo_stays_inside_the_two_summary_lines` 同源），
+        本轮把新段追加在第二行末尾，所以缺陷态这条也必须是绿的（进白名单）。
+        """
+        lines = self.run(dataset_context, "--filter", "output", "contains", "登录").splitlines()
+
+        assert lines[0].startswith("找到 ")
+        assert lines[1].startswith("搜索方法: contains")
+        assert len(json.loads("\n".join(lines[2:]))) == 1
+
+    def test_output_file_carries_both_filter_counts(self, dataset_context):
+        """`--output` 落盘的 `to_dict()` 带两键，机器读者不必解析中文摘要"""
+        clean, _, tmp = dataset_context
+        out_file = tmp / "filter_echo.json"
+        out, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "租房",
+             "--filter", "output", "contains", "登录", "--output", str(out_file)]
+        )
+        assert code is None, err
+        parsed = json.loads(out_file.read_text(encoding="utf-8"))
+
+        assert parsed["matches_before_filters"] == 2
+        assert parsed["applied_filters"] == [
+            {"field": "output", "operator": "contains", "value": "登录"}]
+
+    def test_output_file_has_neither_key_when_unfiltered(self, dataset_context):
+        """没过滤时落盘的是 `null`，不是 `[]` / `0`（与 SDK 同口径）"""
+        clean, _, tmp = dataset_context
+        out_file = tmp / "no_filter_echo.json"
+        out, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "租房",
+             "--output", str(out_file)]
+        )
+        assert code is None, err
+        parsed = json.loads(out_file.read_text(encoding="utf-8"))
+
+        assert "applied_filters" in parsed and parsed["applied_filters"] is None
+        assert "matches_before_filters" in parsed
+        assert parsed["matches_before_filters"] is None

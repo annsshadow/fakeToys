@@ -1086,19 +1086,30 @@ class TestTheResultEchoesTheKnobsItUsed:
         d = self.search("fuzzy", fuzzy_threshold=0.75).to_dict()
 
         assert set(d) == {"items", "total_matches", "query_time_ms", "query",
-                          "method", "highlights", "fuzzy_threshold", "ngram_n"}
+                          "method", "highlights", "fuzzy_threshold", "ngram_n",
+                          "applied_filters", "matches_before_filters"}
         assert d["fuzzy_threshold"] == 0.75
         assert d["ngram_n"] is None
         assert d["method"] == "fuzzy"
         assert d["total_matches"] == 1
 
     def test_a_result_built_without_the_new_fields_still_works(self):
-        """`SearchResult` 是导出类型，外部按前 6 个字段构造必须照旧可用（新字段有默认值）"""
-        legacy = SearchResult(items=[], total_matches=0, query_time_ms=0.0,
-                              query="租房", method="fuzzy", highlights=[])
+        """`SearchResult` 是导出类型，按前 6 / 前 8 个字段构造的旧代码必须照旧可用
 
-        assert legacy.fuzzy_threshold is None
-        assert legacy.ngram_n is None
+        L29 之后「新字段」有两批：旋钮（L27）与过滤器回显（L29），所以这里同时构造
+        6 字段和 8 字段两种旧形态。
+        """
+        six_fields = SearchResult(items=[], total_matches=0, query_time_ms=0.0,
+                                  query="租房", method="fuzzy", highlights=[])
+        eight_fields = SearchResult(items=[], total_matches=0, query_time_ms=0.0,
+                                    query="租房", method="fuzzy", highlights=[],
+                                    fuzzy_threshold=0.6, ngram_n=None)
+
+        assert (eight_fields.fuzzy_threshold, eight_fields.ngram_n) == (0.6, None)
+        for legacy in (six_fields, eight_fields):
+            assert legacy.applied_filters is None
+            assert legacy.matches_before_filters is None
+            assert legacy.to_dict()["applied_filters"] is None
 
     def test_the_shared_entry_point_echoes_both_knobs(self):
         """公开入口的转发要一路到**结果**：`search_dataset()` 造的是同一个 `SearchResult`
@@ -1369,3 +1380,230 @@ class TestFiltersReachThePublicEntry:
 
         searcher.search("租房", fields=["instruction"], limit=99)
         assert calls, "计数探针没生效，上面那条断言不算证据"
+
+
+class TestTheResultEchoesTheFiltersItApplied:
+    """结果必须回显**本次真的用上了哪些过滤器**、以及过滤前有多少候选（A31）
+
+    L28 把 `filters` 接到三端之后，「找到 0 条」攒齐了三种成因，而前一轮的回显
+    （L27 的两个旋钮）只覆盖其中两种：
+    ①语料里确实没有、②旋钮拧太紧、③**检索命中了但被过滤器筛光**。
+    第三种最隐蔽——`--filter` 明明生效了，读起来却和「什么都没搜到」一样。
+    所以这里既回显用了哪些过滤器（`applied_filters`），也回显过滤**之前**的候选数
+    （`matches_before_filters`）：只有前者仍然分不出「0 条是筛出来的」还是「0 条是搜出来的」。
+
+    口径承 L27：没消费就是 `None`，不是一律回显 `[]` / `0`——「没过滤」与
+    「过滤后剩 0 条」必须是两个读得出来的状态。
+    """
+
+    ROWS = TestFiltersReachThePublicEntry.ROWS
+
+    def run(self, query, *filters, fields=("instruction",), method="contains",
+            limit=99, offset=0, **knobs):
+        return EnhancedSearcher(self.ROWS).search(
+            query, fields=list(fields), method=method, filters=list(filters),
+            limit=limit, offset=offset, **knobs)
+
+    def test_a_narrowing_filter_reports_what_it_narrowed(self):
+        """收窄要留下数字：contains「租房」2 条 → `status eq published` 后 1 条"""
+        result = self.run("租房", {"field": "status", "operator": "eq", "value": "published"})
+
+        assert result.matches_before_filters == 2
+        assert result.total_matches == 1
+        assert result.applied_filters == [
+            {"field": "status", "operator": "eq", "value": "published"}]
+
+    @pytest.mark.parametrize("shape", ["omitted", "empty-list"])
+    def test_no_filter_echoes_neither_key(self, shape):
+        """没过滤（包括空清单）时两键都是 `None`，不是 `[]` / `0`
+
+        回显 `0` / `[]` 会让「过滤后剩 0 条」与「压根没过滤」又同形，而那正是本轮要治的。
+        两种「没过滤」的调用形状要分开走：`run()` 总会把 `filters` 传下去，所以「压根没传」
+        这一侧只能直接调 `search()`，否则测的是默认值而不是省略路径。
+        """
+        if shape == "omitted":
+            result = EnhancedSearcher(self.ROWS).search("租房", fields=["instruction"])
+        else:
+            result = self.run("租房")
+
+        assert (result.applied_filters, result.matches_before_filters) == (None, None)
+
+    def test_filtered_to_nothing_is_now_distinguishable_from_a_corpus_miss(self):
+        """本轮的全部意义：两条「0 条」现在读得出成因
+
+        同为 `total_matches == 0`：一条是检索就没命中（before=0），一条是被两个
+        互斥过滤器筛光（before=2）。缺陷态这两份结果除 `query` 外完全同形。
+        """
+        starved = self.run("租房",
+                           {"field": "views", "operator": "gte", "value": 12},
+                           {"field": "status", "operator": "eq", "value": "draft"})
+        absent = self.run("不存在这个词",
+                          {"field": "status", "operator": "eq", "value": "draft"})
+
+        assert (starved.total_matches, absent.total_matches) == (0, 0)
+        assert starved.matches_before_filters == 2
+        assert absent.matches_before_filters == 0
+        assert len(starved.applied_filters) == 2
+        assert len(absent.applied_filters) == 1
+
+    def test_a_filter_that_narrows_nothing_is_still_echoed(self):
+        """过滤器一条都没筛掉时也要回显：`views gte 0` 之下 2 → 2
+
+        只报收窄条数的话这种情形会被读成「压根没过滤」，而用户恰恰需要知道条件是
+        **生效了的**（最常见的调试场景：为什么加了过滤器条数没变）。
+        """
+        result = self.run("租房", {"field": "views", "operator": "gte", "value": 0})
+
+        assert result.matches_before_filters == result.total_matches == 2
+        assert result.applied_filters == [{"field": "views", "operator": "gte", "value": 0}]
+
+    def test_the_echo_is_the_normalized_form_not_the_caller_s_object(self):
+        """传 `SearchFilter` 对象时回显的也是字典（规范化产物只有一种形态）"""
+        result = self.run("租房", SearchFilter("status", "eq", "published"))
+
+        assert all(type(item) is dict for item in result.applied_filters)
+        assert result.applied_filters == [
+            {"field": "status", "operator": "eq", "value": "published"}]
+
+    def test_the_echo_is_a_fresh_list_the_caller_can_mutate(self):
+        """回显是新建的容器：改它不得污染入参，也不得影响下一次查询"""
+        spec = {"field": "status", "operator": "eq", "value": "published"}
+        result = self.run("租房", spec)
+
+        result.applied_filters.append("junk")
+        result.applied_filters[0]["operator"] = "eq"
+
+        assert spec == {"field": "status", "operator": "eq", "value": "published"}
+        again = self.run("租房", spec)
+        assert again.applied_filters == [
+            {"field": "status", "operator": "eq", "value": "published"}]
+
+    def test_a_set_filter_value_still_leaves_a_json_serializable_result(self):
+        """成员档收集合是 L28 允许的，但回显必须能进 JSON（集合不能）
+
+        落盘点有两个：CLI `--output` 与 API 响应，两者都把 `to_dict()` 交给 JSON 序列化。
+        """
+        import json
+
+        result = self.run("租房", {"field": "status", "operator": "in",
+                                   "value": {"draft"}})
+
+        assert result.applied_filters == [
+            {"field": "status", "operator": "in", "value": ["draft"]}]
+        assert json.dumps(result.to_dict(), ensure_ascii=False)
+        assert {item["instruction"] for item in result.items} == {"租房多少钱？"}
+
+    def test_pagination_does_not_move_the_two_counts(self):
+        """`limit` / `offset` 只切条目，两键都是**分页前**的全集口径
+
+        否则「检索 2 → 保留 2」配上 `--limit 1` 就变成假话，而分页是 CLI 的常用项。
+        """
+        first_page = self.run("租房", {"field": "views", "operator": "gte", "value": 0},
+                              limit=1)
+        second_page = self.run("租房", {"field": "views", "operator": "gte", "value": 0},
+                               limit=1, offset=1)
+
+        assert len(first_page.items) == len(second_page.items) == 1
+        for page in (first_page, second_page):
+            assert page.matches_before_filters == 2
+            assert page.total_matches == 2
+
+    def test_before_counts_candidates_not_per_field_hits(self):
+        """多字段时 before 是**打分汇总之后**的候选数：「申请」在两字段各命中 r0 一次
+
+        这条同时是「打分汇总 → 过滤 → 排序 → 切页」次序的可观测证据：若先切页再过滤，
+        或先逐字段过滤再汇总，这个数就不是 1。
+        """
+        result = self.run("申请", {"field": "views", "operator": "gte", "value": 0},
+                          fields=("instruction", "output"))
+
+        assert result.matches_before_filters == 1
+        assert result.total_matches == 1
+
+    @pytest.mark.parametrize("method", ["exact", "contains", "ngram", "fuzzy", "regex"])
+    def test_every_method_echoes_the_filters_it_applied(self, method):
+        """回显挂在 `search()` 的公共段上，五种方法一视同仁
+
+        查询「如何申请租房？」五种方法都至少找回第 1 条（`？` 是全角字符，在正则里
+        就是字面量，不是「前一字符可选」）。过滤条件 `views gte 0` 一条都不筛，
+        所以两键必须相等——这正是「过滤器生效了但没收窄」的可读形态。
+        """
+        result = self.run("如何申请租房？", {"field": "views", "operator": "gte",
+                                            "value": 0}, method=method)
+
+        assert result.applied_filters == [
+            {"field": "views", "operator": "gte", "value": 0}]
+        assert result.matches_before_filters == result.total_matches >= 1
+
+    def test_knobs_and_filters_echo_side_by_side(self):
+        """两套回显互不覆盖：fuzzy 的阈值 + 过滤器同时非空
+
+        只加一套回显的话，「0 条」还是读不出成因；旋钮与过滤器叠在一起才是完整链条。
+        """
+        result = self.run("腿租押金", {"field": "status", "operator": "ne",
+                                      "value": "draft"},
+                          method="fuzzy", fuzzy_threshold=0.5)
+
+        assert result.fuzzy_threshold == 0.5
+        assert result.ngram_n is None
+        assert result.applied_filters is not None
+        assert result.matches_before_filters >= result.total_matches
+
+    def test_the_shared_entry_point_echoes_the_filters_too(self):
+        """`search_dataset()` 造的是同一个 `SearchResult`，CLI 与 API 才有的可读"""
+        result = search_dataset(self.ROWS, "租房", fields=["instruction"],
+                                method="contains", limit=99,
+                                filters=[{"field": "status", "operator": "eq",
+                                          "value": "published"}])
+
+        assert (result.matches_before_filters, result.total_matches) == (2, 1)
+        assert result.applied_filters == [
+            {"field": "status", "operator": "eq", "value": "published"}]
+
+    def test_to_dict_carries_the_filter_values_not_just_the_keys(self):
+        """两键真的进了 `to_dict()`（键集合本身由 L27 那条契约用例钉，这里只看值）
+
+        取的是「被筛光」的那一档：`total_matches` 为 0 时，能读成因的载荷才是本轮的产物。
+        """
+        result = self.run("租房",
+                          {"field": "views", "operator": "gte", "value": 12},
+                          {"field": "status", "operator": "eq", "value": "draft"})
+        payload = result.to_dict()
+
+        assert payload["applied_filters"] == [
+            {"field": "views", "operator": "gte", "value": 12},
+            {"field": "status", "operator": "eq", "value": "draft"}]
+        assert payload["matches_before_filters"] == 2
+        assert payload["total_matches"] == 0
+
+    def test_the_echo_builds_one_dict_per_filter_not_per_candidate(self, monkeypatch):
+        """回显的成本上界是**过滤器条数**，不是候选条数（本轮唯一的性能断言）
+
+        实现把 `[f.to_dict() ...]` 放在过滤分支里、逐条判定之外；挪进循环就会在
+        6902 条语料上多打几千次调用，而结果看起来一模一样。计数式断言比墙钟可靠
+        （承 L12：本机绝对毫秒不可信）。这里同时自证探针是响的：带 1 个过滤器时
+        计数非 0，不带时恰为 0——否则「等于 1」可能只是探针根本没生效。
+        """
+        from augmentor.search_enhanced import SearchFilter as FilterClass
+
+        calls = []
+        original = FilterClass.to_dict
+
+        def spy(self, *args, **kwargs):
+            calls.append(self.field)
+            return original(self, *args, **kwargs)
+
+        monkeypatch.setattr(FilterClass, "to_dict", spy)
+
+        rows = [{"instruction": f"租房问答{i}", "status": "draft" if i else "published"}
+                for i in range(5)]
+        narrowed = EnhancedSearcher(rows).search(
+            "租房", fields=["instruction"],
+            filters=[{"field": "status", "operator": "eq", "value": "published"}])
+        assert calls == ["status"], f"探针没生效，或者回显被逐条重复了: {calls!r}"
+
+        calls.clear()
+        plain = EnhancedSearcher(rows).search("租房", fields=["instruction"])
+        assert calls == [], f"没过滤也要建回显字典: {calls!r}"
+        assert (plain.applied_filters, plain.matches_before_filters) == (None, None)
+        assert narrowed.total_matches == 1
