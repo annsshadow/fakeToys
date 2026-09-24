@@ -482,3 +482,148 @@ class TestValidationExtended:
         validator = DatasetValidator(preset="chat")
         result = validator.validate(valid_dataset)
         assert result.total_items == 3
+
+
+class TestForbiddenPatternCompilation:
+    """禁止模式：整档只编译一次，而不是每条数据每次查表。
+
+    `re.search(字符串模式, ...)` 每次调用都要在 `re` 内部重做「按 (pattern, flags)
+    查编译缓存」。真实 6902 条数据的 strict 校验里，禁止模式那一段占整档耗时 53%，
+    预编译实测快 1.69×、整档 **28.99 → 19.49 ms（1.49×，9/9 轮比值 1.23–1.59）**。
+    护栏因此全部写成**调用次数**（确定性、不受机器负载影响），不用墙钟预算。
+    """
+
+    ITEMS = [
+        {"instruction": "如何申请租房？", "output": "请登录官网申请租房流程"},
+        {"instruction": "含 <SCRIPT> 标签的问题", "output": "正常回答内容足够长度"},
+        {"instruction": "干净的问题", "output": "里面写了 javascript:alert"},
+    ]
+
+    def compile_spy(self, monkeypatch):
+        """替换 `re.compile` 计数，返回调用记录列表"""
+        import re
+
+        real = re.compile
+        calls = []
+
+        def spy(pattern, flags=0):
+            calls.append((pattern, flags))
+            return real(pattern, flags)
+
+        monkeypatch.setattr(re, "compile", spy)
+        return calls
+
+    def test_patterns_compile_once_regardless_of_item_count(self, monkeypatch):
+        calls = self.compile_spy(monkeypatch)
+        # 探针先证明计数是响的：直接调一次必须被数到
+        import re
+        re.compile("probe", re.IGNORECASE)
+        assert len(calls) == 1, "计数探针没生效"
+        calls.clear()
+
+        validator = DatasetValidator(preset="strict")
+        validator.validate(self.ITEMS * 100)
+        first = len(calls)
+        calls.clear()
+        validator.validate(self.ITEMS * 400)
+
+        pattern_count = len(DatasetValidator.PRESET_RULES["strict"]["forbidden_patterns"])
+        assert first == pattern_count, f"400 条数据编译了 {first} 次，没复用编译结果"
+        assert calls == [], f"同一验证器第二次整档又编译了 {len(calls)} 次"
+
+    def test_no_re_search_per_item(self, monkeypatch):
+        """整档校验期间不得再出现「按字符串模式调 `re.search`」的调用"""
+        import re
+
+        real = re.search
+        calls = []
+
+        def spy(pattern, text, flags=0):
+            calls.append((pattern, flags))
+            return real(pattern, text, flags)
+
+        monkeypatch.setattr(re, "search", spy)
+        # 探针自证：0 条调用必须区分「复用了编译对象」与「探针没接上」
+        re.search("probe", "probe", re.IGNORECASE)
+        assert len(calls) == 1, "计数探针没生效"
+        calls.clear()
+
+        DatasetValidator(preset="strict").validate(self.ITEMS * 100)
+        assert calls == [], f"仍有 {len(calls)} 次逐条字符串模式搜索"
+
+    def test_no_per_item_import_of_re(self, monkeypatch):
+        """`import re` 必须在模块顶层，不能在逐条验证的函数体里"""
+        import builtins
+
+        real_import = builtins.__import__
+        calls = []
+
+        def spy(name, *args, **kwargs):
+            if name == "re":
+                calls.append(name)
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", spy)
+        __import__("re")  # 已在 sys.modules，仍会走一次 __import__
+        assert len(calls) == 1, "计数探针没生效"
+        calls.clear()
+
+        DatasetValidator(preset="strict").validate(self.ITEMS * 100)
+        assert calls == [], f"验证器每条数据 import 一次 re（{len(calls)} 次）"
+
+    def test_issue_semantics_unchanged(self):
+        """语义必须是逐字不变：字段、消息、严重程度、条目下标"""
+        result = DatasetValidator(preset="strict").validate(self.ITEMS)
+
+        assert [(i.field, i.message, i.severity.value, i.index) for i in result.issues] == [
+            ("instruction", "字段 instruction 包含禁止的模式: <script>", "error", 1),
+            ("output", "字段 output 包含禁止的模式: javascript:", "error", 2),
+        ]
+        assert result.total_items == 3
+        assert result.valid_items == 1
+        assert result.is_valid is False
+
+    def test_case_insensitive_still_matches(self):
+        """IGNORECASE 是原实现的行为，预编译不得丢掉它"""
+        result = DatasetValidator(preset="strict").validate(
+            [{"instruction": "标题 <ScRiPt> 混排", "output": "正常回答内容足够长度"}]
+        )
+        assert any("禁止的模式" in i.message for i in result.issues)
+
+    def test_replacing_pattern_list_recompiles(self, monkeypatch):
+        """换掉 `rules["forbidden_patterns"]` 必须生效：缓存键是列表对象本身"""
+        calls = self.compile_spy(monkeypatch)
+        validator = DatasetValidator(preset="strict")
+        validator.validate(self.ITEMS)
+        calls.clear()
+
+        validator.rules["forbidden_patterns"] = ["TODO"]
+        result = validator.validate(
+            [{"instruction": "TODO 待补答案", "output": "正常回答内容足够长度"}])
+
+        assert [c[0] for c in calls] == ["TODO"]
+        assert [i.message for i in result.issues] == ["字段 instruction 包含禁止的模式: TODO"]
+
+    def test_preset_rules_are_not_shared_state(self, monkeypatch):
+        """预设必须被拷贝：`self.rules = PRESET_RULES[preset]` 会让一个实例改坏全部预设"""
+        strict = DatasetValidator.PRESET_RULES["strict"]
+        # 用 monkeypatch 兜底复原：即使断言失败也不能把污染留给其它用例
+        monkeypatch.setitem(strict, "min_instruction_length", 5)
+
+        validator = DatasetValidator(preset="strict")
+        validator.rules["min_instruction_length"] = 1
+
+        assert strict["min_instruction_length"] == 5, "改动污染了类级预设"
+        assert DatasetValidator(preset="strict").rules["min_instruction_length"] == 5
+
+    def test_invalid_pattern_raises_during_validation_not_construction(self):
+        """非法模式的报错时机保持原样：构造时不抛，验证第一条数据时才抛"""
+        validator = DatasetValidator(rules={
+            "required_fields": ["instruction", "output"],
+            "forbidden_patterns": ["("],
+        })
+        import re
+
+        validator.validate([])  # 空数据集不触发编译
+        with pytest.raises(re.error):
+            validator.validate([{"instruction": "q", "output": "a"}])
