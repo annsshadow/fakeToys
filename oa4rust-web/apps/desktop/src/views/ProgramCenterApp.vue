@@ -232,6 +232,7 @@
           <button class="btn-sm" @click="pcU12">样式/公众号/打包连接读</button>
           <button class="btn-sm" @click="pcU13">WeLink同步/异常日志上报</button>
           <button class="btn-sm" @click="pcU14">政务钉钉/安装日志/重打包</button>
+          <button class="btn-sm" @click="pcU15">安卓打包/发布/WeLink同步</button>
           <div v-if="pcU4Text" class="app-meta">{{ pcU4Text }}</div>
         </div>
         <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
@@ -1483,6 +1484,20 @@ async function pcU14() {
     ])
     const hit = rs.filter((r) => (r as any)?.data != null).length
     toast.success(`政务钉钉/安装日志/重打包 ${rs.length} 条命中 ${hit}`)
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev429：程序中心 开始安卓打包(INSERT x_program_app_pack building)·发布打包(UPDATE status=published by id)·WeLink 请求同步(x_program_sync_log) 三条写端点，distinct 表/动作，无外部 HTTP，用真实 name/version/id 触发
+async function pcU15() {
+  try {
+    const name = prompt('打包名称:', 'android-pack') || 'android-pack'
+    const version = prompt('版本号:', '1.0.0') || '1.0.0'
+    await api.post('/api/program_center/apppack/pack/info/android/start', { name, version })
+    const pubId = prompt('要发布的打包 ID（可空跳过发布）:', '') || ''
+    if (pubId.trim()) await api.post('/api/program_center/apppack/pack/info/file/publish', { id: pubId })
+    await api.post('/api/program_center/welink/request/pull/sync', {})
+    toast.success('打包/同步已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
   }
