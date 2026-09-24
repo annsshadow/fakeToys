@@ -14,6 +14,22 @@
         <button class="new-page-btn ghost" @click="loadPortalSurfaceEntities">表面实体</button>
         <button class="new-page-btn ghost" @click="loadPortalMobileFacets">移动/字典/角标</button>
         <button class="new-page-btn ghost" @click="loadPortalDeep">深度读矩阵</button>
+        <button class="new-page-btn ghost" @click="designerCreate('portal')">建门户</button>
+        <button class="new-page-btn ghost" @click="designerUpdate('portal')">改门户</button>
+        <button class="new-page-btn ghost" @click="designerDelete('portal')">删门户</button>
+        <button class="new-page-btn ghost" @click="designerCreate('page')">建页面</button>
+        <button class="new-page-btn ghost" @click="designerUpdate('page')">改页面</button>
+        <button class="new-page-btn ghost" @click="designerDelete('page')">删页面</button>
+        <button class="new-page-btn ghost" @click="designerCreate('widget')">建组件</button>
+        <button class="new-page-btn ghost" @click="designerUpdate('widget')">改组件</button>
+        <button class="new-page-btn ghost" @click="designerDelete('widget')">删组件</button>
+        <button class="new-page-btn ghost" @click="designerCreate('templatepage')">建模板页</button>
+        <button class="new-page-btn ghost" @click="designerDelete('templatepage')">删模板页</button>
+        <button class="new-page-btn ghost" @click="designerUpdate('dict')">存字典</button>
+        <button class="new-page-btn ghost" @click="designerDelete('dict')">删字典</button>
+        <button class="new-page-btn ghost" @click="designerCreate('script')">建脚本</button>
+        <button class="new-page-btn ghost" @click="designerUpdate('script')">改脚本</button>
+        <button class="new-page-btn ghost" @click="designerDelete('script')">删脚本</button>
         <button class="new-page-btn" @click="showEditor = true">+ 新建页面</button>
       </span>
     </div>
@@ -223,6 +239,52 @@ async function loadPortalDeep() {
     portalListText.value = `门户深度读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
     toast.error('加载门户深度读失败: ' + (e?.message ?? ''))
+  }
+}
+// rev318：门户设计器 真实写端点（用户触发）——门户/页面/组件/模板页/字典/脚本 建·改·删；请求体经 handler 源码/结构体核实
+// 注意：api 调用内必须是完整字面量路径（前缀常量会被 extract_calls 截断致 +0）
+async function designerCreate(kind: 'portal' | 'page' | 'widget' | 'templatepage' | 'script') {
+  const name = prompt(`新建${kind}名称:`, '')
+  if (!name) return
+  try {
+    if (kind === 'portal') await api.post(`/api/portal/assemble/designer/portal`, { name, description: '' })
+    else if (kind === 'page') await api.post(`/api/portal/assemble/designer/page`, { name, category: 'default', content: {} })
+    else if (kind === 'widget') await api.post(`/api/portal/assemble/designer/widget`, { name })
+    else if (kind === 'templatepage') await api.post(`/api/portal/assemble/designer/templatepage`, { name })
+    else await api.post(`/api/portal/assemble/designer/script`, { name })
+    toast.success(`${kind} 已创建`)
+  } catch (e: any) {
+    toast.error(`新建${kind}失败: ` + (e?.message ?? ''))
+  }
+}
+async function designerUpdate(kind: 'portal' | 'page' | 'widget' | 'dict' | 'script') {
+  const id = prompt(`要更新的${kind} ID:`, '')
+  if (!id) return
+  try {
+    if (kind === 'portal') await api.put(`/api/portal/assemble/designer/portal/${encodeURIComponent(id)}`, { name: '更新门户', description: '' })
+    else if (kind === 'page') await api.put(`/api/portal/assemble/designer/page/${encodeURIComponent(id)}`, { content: {} })
+    else if (kind === 'widget') await api.put(`/api/portal/assemble/designer/widget/${encodeURIComponent(id)}`, { name: '更新组件' })
+    else if (kind === 'dict') await api.put(`/api/portal/assemble/designer/dict/save/${encodeURIComponent(id)}`, { data: {} })
+    else await api.put(`/api/portal/assemble/designer/script/${encodeURIComponent(id)}`, { text: '' })
+    toast.success(`${kind} 已更新`)
+  } catch (e: any) {
+    toast.error(`更新${kind}失败: ` + (e?.message ?? ''))
+  }
+}
+async function designerDelete(kind: 'portal' | 'page' | 'widget' | 'templatepage' | 'dict' | 'script') {
+  const id = prompt(`要删除的${kind} ID:`, '')
+  if (!id) return
+  if (!(await confirmMsg(`确定删除该${kind}？`))) return
+  try {
+    if (kind === 'portal') await api.delete(`/api/portal/assemble/designer/portal/${encodeURIComponent(id)}`)
+    else if (kind === 'page') await api.delete(`/api/portal/assemble/designer/page/${encodeURIComponent(id)}`)
+    else if (kind === 'widget') await api.delete(`/api/portal/assemble/designer/widget/${encodeURIComponent(id)}`)
+    else if (kind === 'templatepage') await api.delete(`/api/portal/assemble/designer/templatepage/${encodeURIComponent(id)}`)
+    else if (kind === 'dict') await api.delete(`/api/portal/assemble/designer/dict/delete/${encodeURIComponent(id)}`)
+    else await api.delete(`/api/portal/assemble/designer/script/${encodeURIComponent(id)}`)
+    toast.success(`${kind} 已删除`)
+  } catch (e: any) {
+    toast.error(`删除${kind}失败: ` + (e?.message ?? ''))
   }
 }
 const pages = ref<PortalPage[]>([])
