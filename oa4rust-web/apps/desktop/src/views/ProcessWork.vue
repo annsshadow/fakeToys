@@ -404,6 +404,9 @@
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps15('serialGen')">按流程生成流水号</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps15('signDownload')">签名下载</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps15('snapDownload')">快照下载</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps16('worklogRollback')">回滚工作日志清单</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps16('reviewCountPerson')">按人摘要计数</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps16('attDownloadManage')">附件管理流下载</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdProcessing')">任务处理(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdReplace')">任务替换(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdPress')">任务催办(位置态)</button>
@@ -1709,6 +1712,28 @@ async function surfaceOps15(op: string): Promise<void> {
     } else {
       const id = encodeURIComponent(prompt('快照 ID:', '') || '')
       await api.get(`/api/processplatform/assemble/surface/snap/${id}/download`)
+    }
+    toast.success('流程表面操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev416：流程表面 回滚工作日志清单 worklog/list/rollback/workorworkcompleted/{w}(PP_C_WORKLOG by xwork)·按人摘要计数 review/count/person/{credential}(PP_C_REVIEW COUNT WHERE xperson，credential=人员标识非鉴权凭证)·附件管理流下载 attachment/download/{id}/manage/stream 真实路由（各读独立表/流，distinct handler；用户输入真实 id 触发）
+async function surfaceOps16(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    if (op === 'worklogRollback') {
+      const w = encodeURIComponent(prompt('工作/已办 ID:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/worklog/list/rollback/workorworkcompleted/${w}`)
+    } else if (op === 'reviewCountPerson') {
+      const cred = encodeURIComponent(prompt('人员标识:', '') || '')
+      await api.post(`/api/processplatform/assemble/surface/review/count/person/${cred}`, {})
+    } else {
+      const id = encodeURIComponent(prompt('附件 ID:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/attachment/download/${id}/manage/stream`)
     }
     toast.success('流程表面操作已提交')
   } catch (e: any) {
