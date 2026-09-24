@@ -47,6 +47,16 @@
         <button class="action-btn" @click="fileNetDisk('entityFolderCreate')">建实体夹</button>
         <button class="action-btn" @click="fileNetDisk('entityFileCreate')">建实体文件2</button>
         <button class="action-btn" @click="fileNetDisk('entityFolderDelete')">删实体夹</button>
+        <button class="action-btn" @click="fileAtt('attUpdate')">改附件REST</button>
+        <button class="action-btn" @click="fileAtt('attDelete')">删附件REST</button>
+        <button class="action-btn" @click="fileAtt('attContent')">改附件内容</button>
+        <button class="action-btn" @click="fileAtt('att2Update')">改附件2</button>
+        <button class="action-btn" @click="fileAtt('att2Delete')">删附件2</button>
+        <button class="action-btn" @click="fileAtt('att2List')">附件2按类型</button>
+        <button class="action-btn" @click="fileAtt('fileById')">删文件byId</button>
+        <button class="action-btn" @click="fileAtt('fileClean')">清未用文件</button>
+        <button class="action-btn" @click="fileAtt('fileByRef')">按引用删文件</button>
+        <button class="action-btn" @click="fileAtt('coreFolderDel')">删核心文件夹</button>
         <button class="action-btn" @click="toggleView">{{ viewType === 'grid' ? '☰ 列表' : '⊞ 网格' }}</button>
       </div>
     </div>
@@ -367,6 +377,42 @@ async function fileNetDisk(op: string) {
     toast.success('网盘操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev346：附件/附件2/文件 REST 更新删除+按引用清理 真实写端点（用户触发，shape 已核；全字面量路径）
+async function fileAtt(op: string) {
+  const id = prompt('目标 ID:', '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (op === 'attUpdate') await api.put(`/api/attachment/${e}`, {})
+    else if (op === 'attDelete') {
+      if (!(await confirmMsg('确定删除该附件？'))) return
+      await api.delete(`/api/attachment/${e}`)
+    } else if (op === 'attContent') await api.put(`/api/attachment/${e}/update`, {})
+    else if (op === 'att2Update') await api.put(`/api/attachment2/${e}`, {})
+    else if (op === 'att2Delete') {
+      if (!(await confirmMsg('确定删除该附件2？'))) return
+      await api.delete(`/api/attachment2/${e}`)
+    } else if (op === 'att2List') {
+      await api.post('/api/attachment2/list/type/1/size/20', {})
+    } else if (op === 'fileById') {
+      if (!(await confirmMsg('确定删除该文件？'))) return
+      await api.delete(`/api/file/assemble/control/file/${e}`)
+    } else if (op === 'fileClean') {
+      if (!(await confirmMsg('确定清理未使用 cmsdocument 文件？'))) return
+      await api.delete('/api/file/assemble/control/file/clean/unused/referencetype/cmsdocument/manage')
+    } else if (op === 'fileByRef') {
+      const rt = prompt('reference_type:', '') || ''
+      const r = prompt('reference:', '') || ''
+      if (!(await confirmMsg('确定按引用删除文件？'))) return
+      await api.delete(`/api/file/assemble/control/file/referencetype/${encodeURIComponent(rt)}/reference/${encodeURIComponent(r)}`)
+    } else {
+      if (!(await confirmMsg('确定删除该实体文件夹？'))) return
+      await api.delete(`/api/file/core/entity/folder/${e}`)
+    }
+    toast.success('文件操作已提交')
+  } catch (err: any) {
+    toast.error('文件操作失败: ' + (err?.message ?? ''))
   }
 }
 async function loadAttachmentShares(): Promise<void> {
