@@ -36,6 +36,7 @@
               <div class="meta">ID: {{ item.id }}</div>
             </div>
             <button class="btn-act2" @click.stop="showPerms(item)">权限</button>
+            <button class="btn-act2" @click.stop="writePerms(item)">设权限</button>
             <button class="btn-del" @click.stop="deleteApp(item)">删除</button>
           </div>
         </div>
@@ -169,6 +170,18 @@ async function deleteApp(item: any) {
     doSearch()
   } catch (e: any) {
     toast.error('删除失败: ' + (e?.message ?? ''))
+  }
+}
+// rev422：设置应用权限 POST /api/appinfo/{id}/permission（u2_require_admin，写 x_cms_appinfo 权限位；管理员用真实成员标识提交，查不到应用优雅报错）
+async function writePerms(item: any) {
+  const id = encodeURIComponent(item.id)
+  const readers = (prompt('查看者(逗号分隔标识，可空):', '') || '').split(',').map((s) => s.trim()).filter(Boolean)
+  if (!(await confirmMsg('确定写入该应用权限？'))) return
+  try {
+    await api.post(`/api/appinfo/${id}/permission`, { viewerList: readers })
+    toast.success('应用权限已写入')
+  } catch (e: any) {
+    toast.error('写入权限失败: ' + (e?.message ?? ''))
   }
 }
 async function showPerms(item: any) {
