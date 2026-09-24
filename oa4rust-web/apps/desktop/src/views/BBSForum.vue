@@ -102,6 +102,8 @@
       <button class="new-topic-btn ghost" @click="bbsSubjectMod('acceptReply')">采纳回复</button>
       <button class="new-topic-btn ghost" @click="bbsSubjectMod('unacceptReply')">取消采纳</button>
       <button class="new-topic-btn ghost" @click="bbsUserReads">版块/权限读</button>
+      <button class="new-topic-btn ghost" @click="bbsMore2">禁言/主题信息/UUID</button>
+      <button class="new-topic-btn ghost" @click="bbsUpdateNick">更新昵称</button>
     </div>
 
     <!-- 左侧：版块列表 -->
@@ -1079,7 +1081,31 @@ async function bbsUserReads() {
     toast.error('BBS 读失败: ' + (err?.message ?? ''))
   }
 }
-const api_forum_view_1_data = ref<any[]>([])
+// rev384：BBS 禁言分页/主题过滤主题信息/UUID 读 + 用户昵称更新 真实路由（shutup_list Path(page,count)/topic_filter_listsubjectinfo Json 体/uuid_generate 无 Path/u2_userinfo_update_nick Path+Query，用户触发；规避 shutup/create·topic/create·delete/subject·comment commend 守卫禁词与 501/trap500 裸路由）
+async function bbsMore2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/bbs/assemble/control/shutup/list/paging/1/size/20', {})),
+      s(api.post('/api/bbs/assemble/control/topic/filter/listsubjectinfo', {})),
+      s(api.get('/api/bbs/assemble/control/uuid')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`BBS 禁言/主题信息/UUID 读 ${rs.length} 条命中 ${hit}`)
+  } catch (err: any) {
+    toast.error('BBS 读失败: ' + (err?.message ?? ''))
+  }
+}
+async function bbsUpdateNick() {
+  const person = encodeURIComponent(prompt('人员标识:', '') || '')
+  const nick = encodeURIComponent(prompt('新昵称:', '') || '')
+  try {
+    await api.get(`/api/bbs/assemble/control/userinfo/update/nick/name/${person}?nickname=${nick}`)
+    toast.success('昵称已更新')
+  } catch (err: any) {
+    toast.error('昵称更新失败: ' + (err?.message ?? ''))
+  }
+}
 const api_control__714_data = ref<any[]>([])
 const api_core_ent_602_data = ref<any[]>([])
 const api_bbs_asse_881_data = ref<any[]>([])
