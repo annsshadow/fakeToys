@@ -74,6 +74,32 @@
         <button class="btn-refresh" @click="cmsQuery('appFilterNext')">应用游标</button>
         <button class="btn-refresh" @click="cmsQuery('commentNext')">评论游标</button>
         <button class="btn-refresh" @click="cmsQuery('commentPaging')">评论分页</button>
+        <button class="btn-refresh" @click="cmsQuery3('catNextApp')">分类游标(应用)</button>
+        <button class="btn-refresh" @click="cmsQuery3('catPrevApp')">分类逆游标(应用)</button>
+        <button class="btn-refresh" @click="cmsQuery3('formNextApp')">表单游标(应用)</button>
+        <button class="btn-refresh" @click="cmsQuery3('formPrevApp')">表单逆游标(应用)</button>
+        <button class="btn-refresh" @click="cmsQuery3('docNext')">文档游标</button>
+        <button class="btn-refresh" @click="cmsQuery3('docPrev')">文档逆游标</button>
+        <button class="btn-refresh" @click="cmsQuery3('appPrev')">应用逆游标</button>
+        <button class="btn-refresh" @click="cmsQuery3('scriptPaging')">脚本分页</button>
+        <button class="btn-refresh" @click="cmsQuery3('viewRecordLog')">视图记录日志</button>
+        <button class="btn-refresh" @click="cmsQuery3('viewCat')">视图分类详情</button>
+        <button class="btn-refresh" @click="cmsQuery3('viewField')">视图字段详情</button>
+        <button class="btn-refresh" @click="cmsQuery3('docArchive')">文档归档</button>
+        <button class="btn-refresh" @click="cmsQuery3('uuid')">UUID</button>
+        <button class="btn-refresh" @click="cmsQuery3('viewUnread')">视图未读</button>
+        <button class="btn-refresh" @click="cmsWrite2('docCatChange')">改文档分类</button>
+        <button class="btn-refresh" @click="cmsWrite2('catBindView')">分类绑视图</button>
+        <button class="btn-refresh" @click="cmsWrite2('appErase')">擦除应用</button>
+        <button class="btn-refresh" @click="cmsWrite2('catErase')">擦除分类</button>
+        <button class="btn-refresh" @click="cmsWrite2('docBatchModify')">批量改文档</button>
+        <button class="btn-refresh" @click="cmsWrite2('docBatchDelete')">批量删文档</button>
+        <button class="btn-refresh" @click="cmsWrite2('docPublishHtml')">发布HTML</button>
+        <button class="btn-refresh" @click="cmsWrite2('viewPublish')">发布视图</button>
+        <button class="btn-refresh" @click="cmsWrite2('colDelete')">删栏目</button>
+        <button class="btn-refresh" @click="cmsWrite2('moduleDelete')">删模块</button>
+        <button class="btn-refresh" @click="cmsWrite2('indexDelete')">删索引</button>
+        <button class="btn-refresh" @click="cmsWrite2('noteDelete')">删笔记</button>
       </div>
       <div v-if="cmsConfigText" class="cfg-note">{{ cmsConfigText }}</div>
       <div v-if="overviewText" class="cfg-note">{{ overviewText }}</div>
@@ -448,6 +474,48 @@ async function cmsQuery(op: string) {
     toast.success('查询已提交')
   } catch (e: any) {
     toast.error('查询失败: ' + (e?.message ?? ''))
+  }
+}
+// rev365：CMS 分类/表单/文档 游标过滤 + 视图分类/字段配置详情 + 归档 + 脚本/视图记录分页 真实只读（用户触发，参数正确；app 维度过滤走 {id}/next/{count}/app/{appId}）
+async function cmsQuery3(op: string) {
+  try {
+    if (op === 'catNextApp') await api.put('/api/categoryinfo/filter/list/0/next/20/app/default', {})
+    else if (op === 'catPrevApp') await api.put('/api/categoryinfo/filter/list/0/prev/20/app/default', {})
+    else if (op === 'formNextApp') await api.put('/api/form/filter/list/0/next/20/app/default', {})
+    else if (op === 'formPrevApp') await api.put('/api/form/filter/list/0/prev/20/app/default', {})
+    else if (op === 'docNext') await api.put('/api/document/filter/list/0/next/20', {})
+    else if (op === 'docPrev') await api.put('/api/document/filter/list/0/prev/20', {})
+    else if (op === 'appPrev') await api.put('/api/appinfo/filter/list/0/prev/20', {})
+    else if (op === 'scriptPaging') await api.post('/api/script/list/paging/1/size/20', {})
+    else if (op === 'viewRecordLog') await api.post('/api/viewrecord/list/install/log/paging/1/size/20', {})
+    else if (op === 'viewCat') { const id = prompt('视图分类 ID:', '') || ''; await api.get(`/api/viewcategory/${encodeURIComponent(id)}`) }
+    else if (op === 'viewField') { const id = prompt('视图字段配置 ID:', '') || ''; await api.get(`/api/viewfieldconfig/${encodeURIComponent(id)}`) }
+    else if (op === 'docArchive') { const id = prompt('文档 ID:', '') || ''; await api.get(`/api/document/achive/${encodeURIComponent(id)}`) }
+    else if (op === 'uuid') await api.get('/api/cms/uuid/random')
+    else await api.put('/api/viewrecord/unread', {})
+    toast.success('CMS 查询已提交')
+  } catch (e: any) {
+    toast.error('查询失败: ' + (e?.message ?? ''))
+  }
+}
+// rev365：CMS 分类变更/绑定视图/擦除 + 文档批量改删/发布HTML + 视图发布 + core entity 列/模块/索引/笔记删 真实写（Path 参数，用户触发确认）
+async function cmsWrite2(op: string) {
+  try {
+    if (op === 'docCatChange') await api.put('/api/document/category/change', {})
+    else if (op === 'catBindView') { const id = prompt('分类 ID:', '') || ''; await api.put(`/api/categoryinfo/bind/${encodeURIComponent(id)}/view`, {}) }
+    else if (op === 'appErase') { const id = prompt('要擦除的应用 ID:', '') || ''; if (!(await confirmMsg('确定擦除该应用？'))) return; await api.delete(`/api/appinfo/erase/app/${encodeURIComponent(id)}`) }
+    else if (op === 'catErase') { const id = prompt('要擦除的分类 ID:', '') || ''; if (!(await confirmMsg('确定擦除该分类？'))) return; await api.delete(`/api/categoryinfo/erase/category/${encodeURIComponent(id)}`) }
+    else if (op === 'docBatchModify') await api.put('/api/document/batch/data/modify', {})
+    else if (op === 'docBatchDelete') { const id = prompt('批次 ID:', '') || ''; if (!(await confirmMsg('确定批量删除该文档？'))) return; await api.delete(`/api/document/batch/${encodeURIComponent(id)}`) }
+    else if (op === 'docPublishHtml') { const id = prompt('文档 ID:', '') || ''; await api.post(`/api/document/${encodeURIComponent(id)}/publish/html`, {}) }
+    else if (op === 'viewPublish') { const id = prompt('视图 ID:', '') || ''; await api.post(`/api/cms/view/publish/${encodeURIComponent(id)}`, {}) }
+    else if (op === 'colDelete') { const id = prompt('栏目 ID:', '') || ''; if (!(await confirmMsg('确定删除该栏目？'))) return; await api.delete(`/api/cms/core/entity/column/delete/${encodeURIComponent(id)}`) }
+    else if (op === 'moduleDelete') { const id = prompt('模块 ID:', '') || ''; if (!(await confirmMsg('确定删除该模块？'))) return; await api.delete(`/api/cms/core/entity/module/delete/${encodeURIComponent(id)}`) }
+    else if (op === 'indexDelete') { const id = prompt('索引 ID:', '') || ''; if (!(await confirmMsg('确定删除该索引？'))) return; await api.delete(`/api/cms/core/entity/index/delete/${encodeURIComponent(id)}`) }
+    else { const id = prompt('笔记 ID:', '') || ''; if (!(await confirmMsg('确定删除该笔记？'))) return; await api.delete(`/api/cms/core/entity/note/delete/${encodeURIComponent(id)}`) }
+    toast.success('CMS 写操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
   }
 }
 async function loadCmsAppReads2() {
