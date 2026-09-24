@@ -83,6 +83,20 @@
         <button class="btn-refresh" @click="pdMisc('appDictDel')">删应用字典</button>
         <button class="btn-refresh" @click="pdMisc('mergeDataApp')">应用合并数据</button>
         <button class="btn-refresh" @click="pdMisc('mergeDataProc')">流程合并数据</button>
+        <button class="btn-refresh" @click="pdEngine('instanceCreate')">建流程实例</button>
+        <button class="btn-refresh" @click="pdEngine('instanceExecute')">执行实例</button>
+        <button class="btn-refresh" @click="pdEngine('instanceCancel')">取消实例</button>
+        <button class="btn-refresh" @click="pdEngine('gatewayFork')">网关分叉</button>
+        <button class="btn-refresh" @click="pdEngine('timerStart')">启动定时器</button>
+        <button class="btn-refresh" @click="pdEngine('touchMerge')">合并触达</button>
+        <button class="btn-refresh" @click="pdEngine('recordEdit')">改记录</button>
+        <button class="btn-refresh" @click="pdEngine('recordDelete')">删记录2</button>
+        <button class="btn-refresh" @click="pdEngine('reviewDelete')">删评审</button>
+        <button class="btn-refresh" @click="pdEngine('eventTable')">事件更新表</button>
+        <button class="btn-refresh" @click="pdEngine('taskCompletedDelete')">删已办2</button>
+        <button class="btn-refresh" @click="pdEngine('readCompletedDelete')">删已阅2</button>
+        <button class="btn-refresh" @click="pdEngine('taskDelete')">删任务</button>
+        <button class="btn-refresh" @click="pdEngine('workDelete')">删工作</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
@@ -583,6 +597,43 @@ async function pdMisc(op: string) {
     } else if (op === 'mergeDataApp') await api.post(`/api/processplatform/assemble/designer/workcompleted/application/merge/data/${e}`, {})
     else await api.post(`/api/processplatform/assemble/designer/workcompleted/process/merge/data/${e}`, {})
     toast.success('设计器操作已提交')
+  } catch (err: any) {
+    toast.error('操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev345：流程引擎 流程实例建/执行/取消/网关分叉/定时器/合并触达/记录·评审·已办已阅·任务·工作删/事件表 真实写端点（用户触发，shape 已核，全字面量；避 touch 无参 Path trap500）
+async function pdEngine(op: string) {
+  const id = prompt('目标 ID:', '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (op === 'instanceCreate') await api.post('/api/processplatform/service/processing/create', {})
+    else if (op === 'instanceExecute') await api.post(`/api/processplatform/service/processing/execute/${e}`, {})
+    else if (op === 'instanceCancel') await api.post(`/api/processplatform/service/processing/cancel/${e}`, {})
+    else if (op === 'gatewayFork') await api.post(`/api/processplatform/service/processing/gateway/fork/${e}`, {})
+    else if (op === 'timerStart') await api.post('/api/processplatform/service/processing/timer/start', {})
+    else if (op === 'touchMerge') await api.post('/api/processplatform/service/processing/touch/merge', {})
+    else if (op === 'recordEdit') await api.put(`/api/processplatform/service/processing/record/${e}`, {})
+    else if (op === 'recordDelete') {
+      if (!(await confirmMsg('确定删除该记录？'))) return
+      await api.delete(`/api/processplatform/service/processing/record/${e}`)
+    } else if (op === 'reviewDelete') {
+      if (!(await confirmMsg('确定删除该评审？'))) return
+      await api.delete(`/api/processplatform/service/processing/review/${e}`)
+    } else if (op === 'eventTable') await api.post('/api/processplatform/service/processing/event/add/update/table', {})
+    else if (op === 'taskCompletedDelete') {
+      if (!(await confirmMsg('确定删除该已办？'))) return
+      await api.delete(`/api/processplatform/service/processing/taskcompleted/${e}`)
+    } else if (op === 'readCompletedDelete') {
+      if (!(await confirmMsg('确定删除该已阅？'))) return
+      await api.delete(`/api/processplatform/service/processing/readcompleted/${e}`)
+    } else if (op === 'taskDelete') {
+      if (!(await confirmMsg('确定删除该任务？'))) return
+      await api.delete(`/api/processplatform/service/processing/task/${e}`)
+    } else {
+      if (!(await confirmMsg('确定删除该工作？'))) return
+      await api.delete(`/api/processplatform/service/processing/work/${e}`)
+    }
+    toast.success('引擎操作已提交')
   } catch (err: any) {
     toast.error('操作失败: ' + (err?.message ?? ''))
   }
