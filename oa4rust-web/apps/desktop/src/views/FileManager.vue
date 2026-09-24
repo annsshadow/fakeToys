@@ -19,6 +19,30 @@
         <button class="action-btn" @click="loadFolderTopByRef">🌳 顶层文件夹/按引用</button>
         <button class="action-btn" @click="loadFileDeepReads">🔬 文件深度读</button>
         <button class="action-btn" @click="fileRead2">📋 文件清单/翻页</button>
+        <button class="action-btn" @click="fileRest3('fiDocGet')">fileinfo文档</button>
+        <button class="action-btn" @click="fileRest3('fiDelete')">删fileinfo</button>
+        <button class="action-btn" @click="fileRest3('fiListFilter')">fileinfo筛选</button>
+        <button class="action-btn" @click="fileRest3('fiCopyDoc')">复制到文档</button>
+        <button class="action-btn" @click="fileRest3('fiReplaceDoc')">替换到文档</button>
+        <button class="action-btn" @click="fileRest3('fiDocStream')">文档流下载</button>
+        <button class="action-btn" @click="fileRest3('fiTransfer')">传输下载</button>
+        <button class="action-btn" @click="fileRest3('fiEditDoc')">编辑文档文件</button>
+        <button class="action-btn" @click="fileRest3('fiContent')">改文件内容</button>
+        <button class="action-btn" @click="fileRest3('fiUpdateAtt')">更新文档附件</button>
+        <button class="action-btn" @click="fileRest3('fileDelete')">删文件REST</button>
+        <button class="action-btn" @click="fileRest3('filePut')">改文件REST</button>
+        <button class="action-btn" @click="fileRest3('fileDownload')">下载文件REST</button>
+        <button class="action-btn" @click="fileRest3('fileAppInfo')">文件按应用</button>
+        <button class="action-btn" @click="fileRest3('fileStream')">文件流下载</button>
+        <button class="action-btn" @click="fileRest3('fileDownloadById')">按ID下载</button>
+        <button class="action-btn" @click="fileRest3('attDownload')">下载附件</button>
+        <button class="action-btn" @click="fileRest3('attStream')">附件流</button>
+        <button class="action-btn" @click="fileRest3('attScale')">附件缩放</button>
+        <button class="action-btn" @click="fileRest3('attWH')">附件宽高</button>
+        <button class="action-btn" @click="fileRest3('att2Download')">下载附件2</button>
+        <button class="action-btn" @click="fileRest3('att2Stream')">附件2流</button>
+        <button class="action-btn" @click="fileRest3('att2WH')">附件2宽高</button>
+        <button class="action-btn" @click="fileRest3('att2Scale')">附件2缩放</button>
         <span v-if="fileRead2Text" class="app-meta">{{ fileRead2Text }}</span>
         <button class="action-btn" @click="fileCreate('control')">建文件</button>
         <button class="action-btn" @click="fileCreate('entity')">建实体文件</button>
@@ -439,6 +463,39 @@ async function fileRead2(): Promise<void> {
     toast.success('文件清单已加载')
   } catch (err: any) {
     toast.error('文件清单加载失败: ' + (err?.message ?? ''))
+  }
+}
+// rev373：fileinfo 文档附件族 + file/attachment/attachment2 REST（真实 {id}/{docId}/{flag} 参数）读改删下载 真实路由（避 /id/ 字面段 trap500 与 upload 多部件）
+async function fileRest3(op: string) {
+  try {
+    const id = () => encodeURIComponent(prompt('文件/附件 ID:', '') || '')
+    if (op === 'fiDocGet') { const i = id(); const d = encodeURIComponent(prompt('文档 docId:', '') || ''); await api.get(`/api/fileinfo/${i}/document/${d}`) }
+    else if (op === 'fiDelete') { const i = id(); if (!(await confirmMsg('确定删除该 fileinfo？'))) return; await api.delete(`/api/fileinfo/${i}`) }
+    else if (op === 'fiListFilter') await api.post('/api/fileinfo/list/filter', {})
+    else if (op === 'fiCopyDoc') { const d = encodeURIComponent(prompt('目标文档 docId:', '') || ''); await api.post(`/api/fileinfo/copy/to/doc/${d}`, {}) }
+    else if (op === 'fiReplaceDoc') { const d = encodeURIComponent(prompt('目标文档 docId:', '') || ''); await api.post(`/api/fileinfo/replace/to/doc/${d}`, {}) }
+    else if (op === 'fiDocStream') { const i = id(); await api.get(`/api/fileinfo/download/document/${i}/stream`) }
+    else if (op === 'fiTransfer') { const f = encodeURIComponent(prompt('传输 flag:', '') || ''); await api.get(`/api/fileinfo/download/transfer/flag/${f}`) }
+    else if (op === 'fiEditDoc') { const i = id(); const d = encodeURIComponent(prompt('文档 docId:', '') || ''); await api.put(`/api/fileinfo/edit/${i}/doc/${d}`, {}) }
+    else if (op === 'fiContent') { const i = id(); await api.post(`/api/fileinfo/update/${i}/content`, {}) }
+    else if (op === 'fiUpdateAtt') { const d = encodeURIComponent(prompt('文档 docId:', '') || ''); const i = id(); await api.post(`/api/fileinfo/update/document/${d}/attachment/${i}`, {}) }
+    else if (op === 'fileDelete') { const i = id(); if (!(await confirmMsg('确定删除该文件？'))) return; await api.delete(`/api/file/${i}`) }
+    else if (op === 'filePut') { const i = id(); await api.put(`/api/file/${i}`, {}) }
+    else if (op === 'fileDownload') { const i = id(); await api.get(`/api/file/${i}/download`) }
+    else if (op === 'fileAppInfo') { const f = encodeURIComponent(prompt('文件 flag:', '') || ''); const af = encodeURIComponent(prompt('应用 flag:', '') || ''); await api.get(`/api/file/${f}/appInfo/${af}`) }
+    else if (op === 'fileStream') { const i = id(); await api.get(`/api/file/${i}/download/stream`) }
+    else if (op === 'fileDownloadById') { const i = id(); await api.get(`/api/file/download/${i}`) }
+    else if (op === 'attDownload') { const i = id(); await api.get(`/api/attachment/${i}/download`) }
+    else if (op === 'attStream') { const i = id(); await api.get(`/api/attachment/${i}/download/stream`) }
+    else if (op === 'attScale') { const i = id(); await api.get(`/api/attachment/${i}/image/scale/2/binary/base64`) }
+    else if (op === 'attWH') { const i = id(); await api.get(`/api/attachment/${i}/image/width/120/height/120/binary/base64`) }
+    else if (op === 'att2Download') { const i = id(); await api.get(`/api/attachment2/${i}/download`) }
+    else if (op === 'att2Stream') { const i = id(); await api.get(`/api/attachment2/${i}/download/stream`) }
+    else if (op === 'att2WH') { const i = id(); await api.get(`/api/attachment2/${i}/download/image/width/120/height/120`) }
+    else { const i = id(); await api.get(`/api/attachment2/${i}/image/scale/2/binary/base64`) }
+    toast.success('文件操作已提交')
+  } catch (err: any) {
+    toast.error('文件操作失败: ' + (err?.message ?? ''))
   }
 }
 async function loadAttachmentShares(): Promise<void> {
