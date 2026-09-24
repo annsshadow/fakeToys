@@ -225,6 +225,7 @@
           <button class="btn-sm" @click="pcU7('inputPrepareCover')">预备覆盖</button>
           <button class="btn-sm" @click="pcU7('inputPrepareCreate')">预备创建</button>
           <button class="btn-sm" @click="pcU7('jestClear')">Jest清缓存</button>
+          <button class="btn-sm" @click="pcU8">命令/部署读</button>
           <div v-if="pcU4Text" class="app-meta">{{ pcU4Text }}</div>
         </div>
         <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
@@ -1378,6 +1379,22 @@ async function pcU7(op: string) {
     toast.success('程序中心操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev400：程序中心 命令执行/部署服务器o2·资源/中心注册应用 真实只读（均 Path-free pool-only；规避 config/get·deploy/id·module/id/compare 是 handler 取 Path 但路由无参的 trap500）
+async function pcU8() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/program_center/command/execute')),
+      s(api.get('/api/program_center/deploy/server/o2')),
+      s(api.get('/api/program_center/deploy/server/resource')),
+      s(api.get('/api/program_center/center/regist/applications')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`程序中心命令/部署读 ${rs.length} 条命中 ${hit}`)
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
   }
 }
 async function loadMarketLogs() {
