@@ -401,6 +401,9 @@
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps14('taskV2Trigger')">任务v2触发处理</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps14('workV2Goback')">工作v2活动回退清单</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps14('workV3RetractStage')">工作v3按job召回阶段</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps15('serialGen')">按流程生成流水号</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps15('signDownload')">签名下载</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps15('snapDownload')">快照下载</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdProcessing')">任务处理(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdReplace')">任务替换(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdPress')">任务催办(位置态)</button>
@@ -1684,6 +1687,28 @@ async function surfaceOps14(op: string): Promise<void> {
     } else {
       const job = encodeURIComponent(prompt('Job ID:', '') || '')
       await api.get(`/api/processplatform/assemble/surface/work/v3/retract/stage/job/${job}`)
+    }
+    toast.success('流程表面操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev415：流程表面 按流程生成流水号 serialnumber/.../{processId}(PP_C_SERIALNUMBER)·签名下载 sign/download/{scrawlId}(PP_C_DOC_SIGN)·快照下载 snap/{id}/download(U2Gate owner 门禁) 真实路由（各读独立表，distinct handler；用户输入真实 id 触发）
+async function surfaceOps15(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    if (op === 'serialGen') {
+      const pid = encodeURIComponent(prompt('流程 ID:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/serialnumber/generate/process/name/name/serial/${pid}`)
+    } else if (op === 'signDownload') {
+      const sid = encodeURIComponent(prompt('签名 ID:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/sign/download/${sid}`)
+    } else {
+      const id = encodeURIComponent(prompt('快照 ID:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/snap/${id}/download`)
     }
     toast.success('流程表面操作已提交')
   } catch (e: any) {
