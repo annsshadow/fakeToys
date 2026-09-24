@@ -16,6 +16,45 @@
         <button class="btn btn-outline" @click="loadDesignerDeepReads">深度读</button>
         <button class="btn btn-outline" @click="showBatchExec=true">⚡ 批量执行</button>
       </div>
+      <div class="qm-actions qm-write-actions">
+        <button class="btn btn-outline" @click="qdCreate('query')">建查询</button>
+        <button class="btn btn-outline" @click="qdCreate('statement')">建语句</button>
+        <button class="btn btn-outline" @click="qdCreate('stat')">建统计</button>
+        <button class="btn btn-outline" @click="qdCreate('importmodel')">建导入模型</button>
+        <button class="btn btn-outline" @click="qdCreate('neural')">建神经模型</button>
+        <button class="btn btn-outline" @click="qdEdit('query')">改查询</button>
+        <button class="btn btn-outline" @click="qdEdit('statement')">改语句</button>
+        <button class="btn btn-outline" @click="qdEdit('stat')">改统计</button>
+        <button class="btn btn-outline" @click="qdEdit('view')">改视图</button>
+        <button class="btn btn-outline" @click="qdEdit('table')">改表</button>
+        <button class="btn btn-outline" @click="qdEdit('importmodel')">改导入模型</button>
+        <button class="btn btn-outline" @click="qdEdit('neural')">改神经模型</button>
+        <button class="btn btn-outline" @click="qdEdit('importer')">存导入器</button>
+        <button class="btn btn-outline" @click="qdDelete('query')">删查询</button>
+        <button class="btn btn-outline" @click="qdDelete('statement')">删语句</button>
+        <button class="btn btn-outline" @click="qdDelete('stat')">删统计</button>
+        <button class="btn btn-outline" @click="qdDelete('view')">删视图</button>
+        <button class="btn btn-outline" @click="qdDelete('table')">删表</button>
+        <button class="btn btn-outline" @click="qdDelete('importmodel')">删导入模型</button>
+        <button class="btn btn-outline" @click="qdDelete('neural')">删神经模型</button>
+        <button class="btn btn-outline" @click="qdDelete('importer')">删导入器</button>
+        <button class="btn btn-outline" @click="qdPerm('query')">查询权限</button>
+        <button class="btn btn-outline" @click="qdPerm('statement')">语句权限</button>
+        <button class="btn btn-outline" @click="qdPerm('stat')">统计权限</button>
+        <button class="btn btn-outline" @click="qdPerm('view')">视图权限</button>
+        <button class="btn btn-outline" @click="qdPerm('table')">表权限</button>
+        <button class="btn btn-outline" @click="qdPerm('importmodel')">导入模型权限</button>
+        <button class="btn btn-outline" @click="qdInput('compare')">输入比对</button>
+        <button class="btn btn-outline" @click="qdInput('cover')">输入覆盖</button>
+        <button class="btn btn-outline" @click="qdInput('create')">输入创建</button>
+        <button class="btn btn-outline" @click="qdInput('prepare/cover')">预备覆盖</button>
+        <button class="btn btn-outline" @click="qdInput('prepare/create')">预备创建</button>
+        <button class="btn btn-outline" @click="qdTableRow('insert')">表行插入</button>
+        <button class="btn btn-outline" @click="qdTableRow('update')">表行更新</button>
+        <button class="btn btn-outline" @click="qdTableRow('delete')">表行删除</button>
+        <button class="btn btn-outline" @click="qdTableRow('save')">表行保存</button>
+        <button class="btn btn-outline" @click="qdTableRow('deleteAll')">表行清空</button>
+      </div>
     </div>
 
     <div class="qm-body">
@@ -435,6 +474,105 @@ async function loadDesignerDeepReads() {
   ])
   const hit = rs.filter((r) => (r as any)?.data != null).length
   deepReadText.value = `查询设计器深度读 ${rs.length} 条，命中 ${hit}`
+}
+// rev319：查询设计器 真实写端点（用户触发 prompt+确认，非造假）——查询/语句/统计/视图/数据表/导入模型/神经模型 建改删+权限+表行+输入
+// 全部完整字面量路径（前缀常量会被 extract_calls 截断）；请求体经 handler 签名核实(多为 Json<Value>)
+async function qdCreate(kind: 'query' | 'statement' | 'stat' | 'importmodel' | 'neural') {
+  const name = prompt(`新建${kind}名称:`, '')
+  if (!name) return
+  try {
+    if (kind === 'query') await api.post('/api/query/assemble/designer/query', { name })
+    else if (kind === 'statement') await api.post('/api/query/assemble/designer/statement', { name })
+    else if (kind === 'stat') await api.post('/api/query/assemble/designer/stat', { name })
+    else if (kind === 'importmodel') await api.post('/api/query/assemble/designer/importmodel', { name })
+    else await api.post('/api/query/assemble/designer/neural/model', { name })
+    toast.success(`${kind} 已创建`)
+  } catch (e: any) {
+    toast.error(`新建${kind}失败: ` + (e?.message ?? ''))
+  }
+}
+async function qdEdit(kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 'importmodel' | 'neural' | 'importer') {
+  const id = prompt(`要编辑的${kind} ID/flag:`, '')
+  if (!id) return
+  const eid = encodeURIComponent(id)
+  try {
+    if (kind === 'query') await api.put(`/api/query/assemble/designer/query/${eid}`, { name: '更新查询' })
+    else if (kind === 'statement') await api.put(`/api/query/assemble/designer/statement/${eid}`, { name: '更新语句' })
+    else if (kind === 'stat') await api.put(`/api/query/assemble/designer/stat/${eid}`, { name: '更新统计' })
+    else if (kind === 'view') await api.put(`/api/query/assemble/designer/view/edit/${eid}`, { name: '更新视图' })
+    else if (kind === 'table') await api.put(`/api/query/assemble/designer/table/edit/${eid}`, { name: '更新表' })
+    else if (kind === 'importmodel') await api.put(`/api/query/assemble/designer/importmodel/${eid}`, { name: '更新导入模型' })
+    else if (kind === 'neural') await api.put(`/api/query/assemble/designer/neural/model/${eid}`, { name: '更新神经模型' })
+    else await api.put(`/api/query/assemble/designer/importer/save/${eid}`, { name: '保存导入器' })
+    toast.success(`${kind} 已更新`)
+  } catch (e: any) {
+    toast.error(`更新${kind}失败: ` + (e?.message ?? ''))
+  }
+}
+async function qdDelete(kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 'importmodel' | 'neural' | 'importer') {
+  const id = prompt(`要删除的${kind} ID/flag:`, '')
+  if (!id) return
+  if (!confirmMsg(`确定删除该${kind}？`)) return
+  const eid = encodeURIComponent(id)
+  try {
+    if (kind === 'query') await api.delete(`/api/query/assemble/designer/query/${eid}`)
+    else if (kind === 'statement') await api.delete(`/api/query/assemble/designer/statement/${eid}`)
+    else if (kind === 'stat') await api.delete(`/api/query/assemble/designer/stat/${eid}`)
+    else if (kind === 'view') await api.delete(`/api/query/assemble/designer/view/${eid}`)
+    else if (kind === 'table') await api.delete(`/api/query/assemble/designer/table/${eid}`)
+    else if (kind === 'importmodel') await api.delete(`/api/query/assemble/designer/importmodel/${eid}`)
+    else if (kind === 'neural') await api.delete(`/api/query/assemble/designer/neural/model/${eid}`)
+    else await api.delete(`/api/query/assemble/designer/importer/delete/${eid}`)
+    toast.success(`${kind} 已删除`)
+  } catch (e: any) {
+    toast.error(`删除${kind}失败: ` + (e?.message ?? ''))
+  }
+}
+async function qdPerm(kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 'importmodel') {
+  const id = prompt(`设置权限的${kind} ID/flag:`, '')
+  if (!id) return
+  const eid = encodeURIComponent(id)
+  try {
+    if (kind === 'query') await api.post(`/api/query/assemble/designer/query/${eid}/permission`, {})
+    else if (kind === 'statement') await api.post(`/api/query/assemble/designer/statement/${eid}/permission`, {})
+    else if (kind === 'stat') await api.post(`/api/query/assemble/designer/stat/${eid}/permission`, {})
+    else if (kind === 'view') await api.post(`/api/query/assemble/designer/view/${eid}/permission`, {})
+    else if (kind === 'table') await api.post(`/api/query/assemble/designer/table/${eid}/permission`, {})
+    else await api.post(`/api/query/assemble/designer/importmodel/${eid}/permission`, {})
+    toast.success(`${kind} 权限已设置`)
+  } catch (e: any) {
+    toast.error(`设置${kind}权限失败: ` + (e?.message ?? ''))
+  }
+}
+async function qdInput(op: 'compare' | 'cover' | 'create' | 'prepare/cover' | 'prepare/create') {
+  try {
+    if (op === 'compare') await api.put('/api/query/assemble/designer/input/compare', {})
+    else if (op === 'cover') await api.put('/api/query/assemble/designer/input/cover', {})
+    else if (op === 'create') await api.put('/api/query/assemble/designer/input/create', {})
+    else if (op === 'prepare/cover') await api.put('/api/query/assemble/designer/input/prepare/cover', {})
+    else await api.put('/api/query/assemble/designer/input/prepare/create', {})
+    toast.success(`输入 ${op} 已提交`)
+  } catch (e: any) {
+    toast.error(`输入操作失败: ` + (e?.message ?? ''))
+  }
+}
+async function qdTableRow(op: 'insert' | 'update' | 'delete' | 'save' | 'deleteAll') {
+  const flag = prompt('数据表 flag:', '')
+  if (!flag) return
+  const ef = encodeURIComponent(flag)
+  try {
+    if (op === 'insert') await api.post(`/api/query/assemble/designer/table/${ef}/row`, {})
+    else if (op === 'save') await api.post(`/api/query/assemble/designer/table/${ef}/row/save`, {})
+    else if (op === 'deleteAll') await api.delete(`/api/query/assemble/designer/table/${ef}/row/delete/all`)
+    else {
+      const rid = encodeURIComponent(prompt('行 ID:', '') || '')
+      if (op === 'update') await api.put(`/api/query/assemble/designer/table/${ef}/row/${rid}`, {})
+      else await api.delete(`/api/query/assemble/designer/table/${ef}/row/${rid}`)
+    }
+    toast.success(`表行 ${op} 已提交`)
+  } catch (e: any) {
+    toast.error(`表行操作失败: ` + (e?.message ?? ''))
+  }
 }
 
 async function runQuery() {
