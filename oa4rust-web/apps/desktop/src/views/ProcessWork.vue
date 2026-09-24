@@ -398,6 +398,9 @@
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps13('taskWill')">任务将办信息</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps13('taskPressManage')">任务催办(管理)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps13('workCloseCheck')">工作可关闭校验</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps14('taskV2Trigger')">任务v2触发处理</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps14('workV2Goback')">工作v2活动回退清单</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps14('workV3RetractStage')">工作v3按job召回阶段</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdProcessing')">任务处理(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdReplace')">任务替换(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdPress')">任务催办(位置态)</button>
@@ -1660,6 +1663,28 @@ async function surfaceOps13(op: string): Promise<void> {
     if (op === 'taskWill') await api.get(`/api/processplatform/assemble/surface/task/${id}/will`)
     else if (op === 'taskPressManage') await api.get(`/api/processplatform/assemble/surface/task/${id}/press/manage`)
     else await api.get(`/api/processplatform/assemble/surface/work/${id}/close/check`)
+    toast.success('流程表面操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev414：流程表面 任务v2触发处理 task/v2/{id}/trigger/processing·工作v2活动回退清单 work/v2/list/{id}/activity/goback·工作v3按job召回阶段 work/v3/retract/stage/job/{job} 真实路由（{id}/{job} 参数化 query PP_C_TASK/PP_C_WORK by xid/job，O2OA v2/v3 位置态独立操作；用户输入真实 id/job 触发）
+async function surfaceOps14(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    if (op === 'taskV2Trigger') {
+      const id = encodeURIComponent(prompt('任务 ID:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/task/v2/${id}/trigger/processing`)
+    } else if (op === 'workV2Goback') {
+      const id = encodeURIComponent(prompt('工作 ID:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/work/v2/list/${id}/activity/goback`)
+    } else {
+      const job = encodeURIComponent(prompt('Job ID:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/work/v3/retract/stage/job/${job}`)
+    }
     toast.success('流程表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
