@@ -184,6 +184,15 @@
           <button class="btn-sm" @click="pcConfigSave('centerserver')">存中心服务配置</button>
           <button class="btn-sm" @click="pcConfigSave('person')">存人员配置</button>
           <button class="btn-sm" @click="pcTokenThreshold">设令牌阈值</button>
+          <button class="btn-sm" @click="pcU3('warnlog')">建告警日志</button>
+          <button class="btn-sm" @click="pcU3('dictData')">建字典数据</button>
+          <button class="btn-sm" @click="pcU3('dictUpdate')">改字典</button>
+          <button class="btn-sm" @click="pcU3('dictDelete')">删字典</button>
+          <button class="btn-sm" @click="pcU3('agentUpdate')">改代理</button>
+          <button class="btn-sm" @click="pcU3('agentDelete')">删代理</button>
+          <button class="btn-sm" @click="pcU3('menuUpdate')">改公众号菜单</button>
+          <button class="btn-sm" @click="pcU3('menuDelete')">删公众号菜单</button>
+          <button class="btn-sm" @click="pcU3('dictPaging')">字典分页</button>
         </div>
         <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
         <div v-if="progDeepText" class="app-meta">{{ progDeepText }}</div>
@@ -1168,6 +1177,45 @@ async function pcTokenThreshold() {
     toast.success('令牌阈值已更新')
   } catch (e: any) {
     toast.error('更新失败: ' + (e?.message ?? ''))
+  }
+}
+// rev344：程序中心 告警日志/字典数据·增改删/代理改删/公众号菜单改删 真实写端点（用户触发，shape 已核；避 add·output·updateUnit·create/to/weixin 无参 Path trap500）
+async function pcU3(op: string) {
+  try {
+    if (op === 'warnlog') {
+      const message = prompt('告警内容:', '') || ''
+      await api.post('/api/program_center/warnlog', { level: 'WARN', message })
+    } else if (op === 'dictData') {
+      const flag = prompt('字典 flag:', '') || ''
+      await api.post(`/api/program_center/dict/${encodeURIComponent(flag)}/data`, {})
+    } else if (op === 'dictUpdate') {
+      const id = prompt('字典 ID:', '') || ''
+      const name = prompt('新名称:', '') || ''
+      await api.put(`/api/program_center/dict/${encodeURIComponent(id)}`, { name })
+    } else if (op === 'dictDelete') {
+      const id = prompt('要删除的字典 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该字典？'))) return
+      await api.delete(`/api/program_center/dict/${encodeURIComponent(id)}`)
+    } else if (op === 'agentUpdate') {
+      const flag = prompt('代理 flag:', '') || ''
+      await api.put(`/api/program_center/agent/${encodeURIComponent(flag)}`, {})
+    } else if (op === 'agentDelete') {
+      const flag = prompt('要删除的代理 flag:', '') || ''
+      if (!(await confirmMsg('确定删除该代理？'))) return
+      await api.delete(`/api/program_center/agent/${encodeURIComponent(flag)}`)
+    } else if (op === 'menuUpdate') {
+      const id = prompt('公众号菜单 ID:', '') || ''
+      await api.post(`/api/program_center/mpweixin/menu/update/${encodeURIComponent(id)}`, {})
+    } else if (op === 'menuDelete') {
+      const id = prompt('要删除的公众号菜单 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该公众号菜单？'))) return
+      await api.delete(`/api/program_center/mpweixin/menu/delete/${encodeURIComponent(id)}`)
+    } else {
+      await api.post('/api/program_center/dict/list/paging/1/size/20', {})
+    }
+    toast.success('程序中心操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
   }
 }
 // rev292：程序中心 市场安装日志(按flag/字面flag)/市场分页(按分类) 真实读端点(X_PROGRAM_SCHEDULE_LOG)；均只读 arity 已核
