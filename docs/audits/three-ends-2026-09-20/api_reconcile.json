@@ -8246,7 +8246,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 230,
+    "line": 239,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unitduty/${encodeURIComponent(dutyFlag)}",
     "path": "/api/organization/assemble/control/unitduty/{}",
@@ -8259,7 +8259,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 252,
+    "line": 261,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unit/list/top/type/${encodeURIComponent(sampleType)}",
     "path": "/api/organization/assemble/control/unit/list/top/type/{}",
@@ -8272,7 +8272,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 273,
+    "line": 282,
     "method": "GET",
     "raw": "/api/unit/list/type/${flag}/object",
     "path": "/api/unit/list/type/{}/object",
@@ -8285,7 +8285,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 287,
+    "line": 296,
     "method": "GET",
     "raw": "/api/organization/assemble/control/identity/list/${flag}/unitduty/name/${encodeURIComponent('管理员')}",
     "path": "/api/organization/assemble/control/identity/list/{}/unitduty/name/{}",
@@ -8298,7 +8298,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 288,
+    "line": 297,
     "method": "GET",
     "raw": "/api/organization/assemble/control/personcard/listVCf/${flag}",
     "path": "/api/organization/assemble/control/personcard/listVCf/{}",
@@ -8311,7 +8311,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 289,
+    "line": 298,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unit/list/${flag}/sub/direct/type/${flag}",
     "path": "/api/organization/assemble/control/unit/list/{}/sub/direct/type/{}",
@@ -8324,7 +8324,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 291,
+    "line": 300,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unit/identity/${flag}/type/${flag}",
     "path": "/api/organization/assemble/control/unit/identity/{}/type/{}",
@@ -8337,7 +8337,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 292,
+    "line": 301,
     "method": "GET",
     "raw": "/api/organization/assemble/control/inputperson/result/flag/${flag}",
     "path": "/api/organization/assemble/control/inputperson/result/flag/{}",
@@ -8350,7 +8350,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 311,
+    "line": 320,
     "method": "GET",
     "raw": "/api/organization/assemble/control/export/result/flag/${flag}",
     "path": "/api/organization/assemble/control/export/result/flag/{}",
@@ -8363,7 +8363,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 314,
+    "line": 323,
     "method": "GET",
     "raw": "/api/organization/assemble/control/loginrecord/${stream}",
     "path": "/api/organization/assemble/control/loginrecord/{}",
@@ -8376,7 +8376,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 315,
+    "line": 324,
     "method": "GET",
     "raw": "/api/organization/assemble/control/permissionsetting/${flag}",
     "path": "/api/organization/assemble/control/permissionsetting/{}",
@@ -8389,7 +8389,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 316,
+    "line": 325,
     "method": "GET",
     "raw": "/api/organization/assemble/control/personcard/listPersonalVCf/${idList}",
     "path": "/api/organization/assemble/control/personcard/listPersonalVCf/{}",
@@ -8402,7 +8402,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 319,
+    "line": 328,
     "method": "GET",
     "raw": "/api/organization/assemble/personal/${id}/role/list",
     "path": "/api/organization/assemble/personal/{}/role/list",
@@ -8415,7 +8415,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 320,
+    "line": 329,
     "method": "GET",
     "raw": "/api/identity/${id}",
     "path": "/api/identity/{}",
@@ -8428,7 +8428,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 321,
+    "line": 330,
     "method": "GET",
     "raw": "/api/group/${id}",
     "path": "/api/group/{}",
@@ -8441,7 +8441,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 322,
+    "line": 331,
     "method": "GET",
     "raw": "/api/role/${id}",
     "path": "/api/role/{}",
@@ -8454,7 +8454,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 323,
+    "line": 332,
     "method": "GET",
     "raw": "/api/unit/${id}",
     "path": "/api/unit/{}",
@@ -8467,7 +8467,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 373,
+    "line": 382,
     "method": "PUT",
     "raw": "/api/group/${encodeURIComponent(flag)}",
     "path": "/api/group/{}",
@@ -8480,7 +8480,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 377,
+    "line": 386,
     "method": "DELETE",
     "raw": "/api/group/${encodeURIComponent(flag)}",
     "path": "/api/group/{}",
@@ -8493,7 +8493,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 384,
+    "line": 393,
     "method": "PUT",
     "raw": "/api/unit/${encodeURIComponent(flag)}",
     "path": "/api/unit/{}",
@@ -8506,7 +8506,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 388,
+    "line": 397,
     "method": "DELETE",
     "raw": "/api/unit/${encodeURIComponent(flag)}",
     "path": "/api/unit/{}",
@@ -8519,7 +8519,85 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 419,
+    "line": 441,
+    "method": "GET",
+    "raw": "/api/organization/assemble/control/group/${encodeURIComponent(flag)}/add/member",
+    "path": "/api/organization/assemble/control/group/{}/add/member",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/group/{flag}/add/member",
+    "hit_crate": "organization_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 442,
+    "method": "GET",
+    "raw": "/api/organization/assemble/control/group/${encodeURIComponent(flag)}/delete/member",
+    "path": "/api/organization/assemble/control/group/{}/delete/member",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/group/{flag}/delete/member",
+    "hit_crate": "organization_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 443,
+    "method": "GET",
+    "raw": "/api/organization/assemble/control/identity/${encodeURIComponent(flag)}/order/before/${encodeURIComponent(follow)}",
+    "path": "/api/organization/assemble/control/identity/{}/order/before/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/identity/{flag}/order/before/{followFlag}",
+    "hit_crate": "organization_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 444,
+    "method": "GET",
+    "raw": "/api/organization/assemble/control/personcard/createCode/${encodeURIComponent(id)}",
+    "path": "/api/organization/assemble/control/personcard/createCode/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/personcard/createCode/{cardId}",
+    "hit_crate": "organization_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 445,
+    "method": "GET",
+    "raw": "/api/organization/assemble/control/unit/list/${encodeURIComponent(flag)}/sup/nested/type/${encodeURIComponent(type)}",
+    "path": "/api/organization/assemble/control/unit/list/{}/sup/nested/type/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/unit/list/{flag}/sup/nested/type/{type}",
+    "hit_crate": "organization_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 446,
+    "method": "GET",
+    "raw": "/api/organization/assemble/control/person/list/group/${encodeURIComponent(flag)}/sub/nested",
+    "path": "/api/organization/assemble/control/person/list/group/{}/sub/nested",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/person/list/group/{groupFlag}/sub/nested",
+    "hit_crate": "organization_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 478,
     "method": "PUT",
     "raw": "/api/organization/assemble/control/person/${e}",
     "path": "/api/organization/assemble/control/person/{}",
@@ -8532,7 +8610,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 420,
+    "line": 479,
     "method": "PUT",
     "raw": "/api/organization/assemble/control/unit/${e}",
     "path": "/api/organization/assemble/control/unit/{}",
@@ -8545,7 +8623,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 421,
+    "line": 480,
     "method": "PUT",
     "raw": "/api/organization/assemble/control/identity/${e}",
     "path": "/api/organization/assemble/control/identity/{}",
@@ -8558,7 +8636,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 422,
+    "line": 481,
     "method": "PUT",
     "raw": "/api/organization/assemble/control/group/${e}",
     "path": "/api/organization/assemble/control/group/{}",
@@ -8571,7 +8649,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 423,
+    "line": 482,
     "method": "PUT",
     "raw": "/api/organization/assemble/control/role/${e}",
     "path": "/api/organization/assemble/control/role/{}",
@@ -8584,7 +8662,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 424,
+    "line": 483,
     "method": "PUT",
     "raw": "/api/organization/assemble/control/unitduty/${e}",
     "path": "/api/organization/assemble/control/unitduty/{}",
@@ -8597,7 +8675,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 425,
+    "line": 484,
     "method": "PUT",
     "raw": "/api/organization/assemble/control/unitattribute/${e}",
     "path": "/api/organization/assemble/control/unitattribute/{}",
@@ -8610,7 +8688,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 426,
+    "line": 485,
     "method": "PUT",
     "raw": "/api/organization/assemble/control/personattribute/${e}",
     "path": "/api/organization/assemble/control/personattribute/{}",
@@ -8623,7 +8701,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 427,
+    "line": 486,
     "method": "PUT",
     "raw": "/api/organization/assemble/control/permissionsetting/${e}",
     "path": "/api/organization/assemble/control/permissionsetting/{}",
@@ -8636,7 +8714,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 428,
+    "line": 487,
     "method": "PUT",
     "raw": "/api/organization/assemble/control/personcard/${e}",
     "path": "/api/organization/assemble/control/personcard/{}",
@@ -8649,7 +8727,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 440,
+    "line": 499,
     "method": "DELETE",
     "raw": "/api/organization/assemble/control/person/${e}",
     "path": "/api/organization/assemble/control/person/{}",
@@ -8662,7 +8740,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 441,
+    "line": 500,
     "method": "DELETE",
     "raw": "/api/organization/assemble/control/unit/${e}",
     "path": "/api/organization/assemble/control/unit/{}",
@@ -8675,7 +8753,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 442,
+    "line": 501,
     "method": "DELETE",
     "raw": "/api/organization/assemble/control/identity/${e}",
     "path": "/api/organization/assemble/control/identity/{}",
@@ -8688,7 +8766,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 443,
+    "line": 502,
     "method": "DELETE",
     "raw": "/api/organization/assemble/control/group/${e}",
     "path": "/api/organization/assemble/control/group/{}",
@@ -8701,7 +8779,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 444,
+    "line": 503,
     "method": "DELETE",
     "raw": "/api/organization/assemble/control/role/${e}",
     "path": "/api/organization/assemble/control/role/{}",
@@ -8714,7 +8792,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 445,
+    "line": 504,
     "method": "DELETE",
     "raw": "/api/organization/assemble/control/personattribute/${e}",
     "path": "/api/organization/assemble/control/personattribute/{}",
@@ -8727,7 +8805,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 446,
+    "line": 505,
     "method": "DELETE",
     "raw": "/api/organization/assemble/control/permissionsetting/${e}",
     "path": "/api/organization/assemble/control/permissionsetting/{}",
@@ -8740,7 +8818,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 447,
+    "line": 506,
     "method": "DELETE",
     "raw": "/api/organization/assemble/control/personcard/${e}",
     "path": "/api/organization/assemble/control/personcard/{}",
@@ -8753,7 +8831,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 458,
+    "line": 517,
     "method": "PUT",
     "raw": "/api/organization/assemble/control/group/${e}/add/member",
     "path": "/api/organization/assemble/control/group/{}/add/member",
@@ -8766,7 +8844,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 459,
+    "line": 518,
     "method": "PUT",
     "raw": "/api/organization/assemble/control/group/${e}/delete/member",
     "path": "/api/organization/assemble/control/group/{}/delete/member",
@@ -8779,7 +8857,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 472,
+    "line": 531,
     "method": "POST",
     "raw": "/api/organization/assemble/control/person/lock/${e}",
     "path": "/api/organization/assemble/control/person/lock/{}",
@@ -8792,7 +8870,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 473,
+    "line": 532,
     "method": "POST",
     "raw": "/api/organization/assemble/control/person/ban/${e}",
     "path": "/api/organization/assemble/control/person/ban/{}",
@@ -8805,7 +8883,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 474,
+    "line": 533,
     "method": "POST",
     "raw": "/api/organization/assemble/control/person/unban/${e}",
     "path": "/api/organization/assemble/control/person/unban/{}",
@@ -8818,7 +8896,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 475,
+    "line": 534,
     "method": "PUT",
     "raw": "/api/organization/assemble/control/person/${e}/set/password",
     "path": "/api/organization/assemble/control/person/{}/set/password",
@@ -8831,7 +8909,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 476,
+    "line": 535,
     "method": "PUT",
     "raw": "/api/organization/assemble/control/person/${e}/icon",
     "path": "/api/organization/assemble/control/person/{}/icon",
@@ -8844,7 +8922,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 477,
+    "line": 536,
     "method": "DELETE",
     "raw": "/api/organization/assemble/control/person/${e}/reserve",
     "path": "/api/organization/assemble/control/person/{}/reserve",
@@ -8857,7 +8935,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 478,
+    "line": 537,
     "method": "PUT",
     "raw": "/api/organization/assemble/control/threemember/save/${e}",
     "path": "/api/organization/assemble/control/threemember/save/{}",
@@ -8870,7 +8948,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 479,
+    "line": 538,
     "method": "DELETE",
     "raw": "/api/organization/assemble/control/threemember/delete/${e}",
     "path": "/api/organization/assemble/control/threemember/delete/{}",
@@ -8883,7 +8961,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 494,
+    "line": 553,
     "method": "PUT",
     "raw": "/api/organization/group/${encodeURIComponent(id)}",
     "path": "/api/organization/group/{}",
@@ -8896,7 +8974,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 498,
+    "line": 557,
     "method": "DELETE",
     "raw": "/api/organization/group/${encodeURIComponent(id)}",
     "path": "/api/organization/group/{}",
@@ -8909,7 +8987,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 505,
+    "line": 564,
     "method": "PUT",
     "raw": "/api/organization/identity/${encodeURIComponent(id)}",
     "path": "/api/organization/identity/{}",
@@ -8922,7 +9000,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 509,
+    "line": 568,
     "method": "DELETE",
     "raw": "/api/organization/identity/${encodeURIComponent(id)}",
     "path": "/api/organization/identity/{}",
@@ -8935,7 +9013,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 571,
+    "line": 630,
     "method": "GET",
     "raw": "/api/organization/assemble/control/personcard/${encodeURIComponent(id)}",
     "path": "/api/organization/assemble/control/personcard/{}",
@@ -8948,7 +9026,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 572,
+    "line": 631,
     "method": "GET",
     "raw": "/api/organization/assemble/control/personcard/createQR/${encodeURIComponent(id)}",
     "path": "/api/organization/assemble/control/personcard/createQR/{}",
@@ -8961,7 +9039,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 603,
+    "line": 662,
     "method": "GET",
     "raw": "/api/organization/assemble/control/role/${encodeURIComponent(roleId)}",
     "path": "/api/organization/assemble/control/role/{}",
@@ -8974,7 +9052,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 604,
+    "line": 663,
     "method": "GET",
     "raw": "/api/organization/assemble/control/identity/${encodeURIComponent(identId)}",
     "path": "/api/organization/assemble/control/identity/{}",
@@ -8987,7 +9065,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 605,
+    "line": 664,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unitduty/list/identity/${encodeURIComponent(identId)}",
     "path": "/api/organization/assemble/control/unitduty/list/identity/{}",
@@ -9000,7 +9078,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 626,
+    "line": 685,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unit/${encodeURIComponent(uid)}",
     "path": "/api/organization/assemble/control/unit/{}",
@@ -9013,7 +9091,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 627,
+    "line": 686,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unit/${encodeURIComponent(uid)}/sup/direct",
     "path": "/api/organization/assemble/control/unit/{}/sup/direct",
@@ -9026,7 +9104,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 628,
+    "line": 687,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unit/list/${encodeURIComponent(uid)}/sub/direct",
     "path": "/api/organization/assemble/control/unit/list/{}/sub/direct",
@@ -9039,7 +9117,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 651,
+    "line": 710,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unit/list/${encodeURIComponent(uid)}/sub/nested",
     "path": "/api/organization/assemble/control/unit/list/{}/sub/nested",
@@ -9052,7 +9130,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 652,
+    "line": 711,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unit/list/${encodeURIComponent(uid)}/sup/nested",
     "path": "/api/organization/assemble/control/unit/list/{}/sup/nested",
@@ -9065,7 +9143,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 653,
+    "line": 712,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unit/list/${encodeURIComponent(uid)}/next/${cnt}",
     "path": "/api/organization/assemble/control/unit/list/{}/next/{}",
@@ -9078,7 +9156,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 673,
+    "line": 732,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unitduty/list/unit/${encodeURIComponent(uid)}",
     "path": "/api/organization/assemble/control/unitduty/list/unit/{}",
@@ -9091,7 +9169,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 680,
+    "line": 739,
     "method": "GET",
     "raw": "/api/organization/assemble/control/identity/list/unitduty/name/${encodeURIComponent(dutyName)}",
     "path": "/api/organization/assemble/control/identity/list/unitduty/name/{}",
@@ -9104,7 +9182,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 681,
+    "line": 740,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unitduty/list/name/${encodeURIComponent(dutyName)}",
     "path": "/api/organization/assemble/control/unitduty/list/name/{}",
@@ -9117,7 +9195,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 682,
+    "line": 741,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unitduty/distinct/name/like/${encodeURIComponent(key)}",
     "path": "/api/organization/assemble/control/unitduty/distinct/name/like/{}",
@@ -9130,7 +9208,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 706,
+    "line": 765,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unitattribute/${encodeURIComponent(uId)}",
     "path": "/api/organization/assemble/control/unitattribute/{}",
@@ -9143,7 +9221,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 707,
+    "line": 766,
     "method": "GET",
     "raw": "/api/organization/assemble/control/personattribute/${encodeURIComponent(pId)}",
     "path": "/api/organization/assemble/control/personattribute/{}",
@@ -9156,7 +9234,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 728,
+    "line": 787,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/role/${encodeURIComponent(roleFlag)}",
     "path": "/api/organization/assemble/control/group/list/role/{}",
@@ -9169,7 +9247,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 729,
+    "line": 788,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/${headFlag}/next/${cnt}",
     "path": "/api/organization/assemble/control/group/list/{}/next/{}",
@@ -9182,7 +9260,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 730,
+    "line": 789,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/${headFlag}/prev/${cnt}",
     "path": "/api/organization/assemble/control/group/list/{}/prev/{}",
@@ -9195,7 +9273,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 1023,
+    "line": 1082,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/{}",
     "path": "/api/organization/assemble/control/group/{}",
@@ -9208,7 +9286,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 1024,
+    "line": 1083,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/${n.id}/sub/direct",
     "path": "/api/organization/assemble/control/group/list/{}/sub/direct",
@@ -9221,7 +9299,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 1031,
+    "line": 1090,
     "method": "GET",
     "raw": "/api/organization/assemble/control/role/list/group/${n.id}",
     "path": "/api/organization/assemble/control/role/list/group/{}",
@@ -9234,7 +9312,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 1032,
+    "line": 1091,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/${n.id}/sup/direct",
     "path": "/api/organization/assemble/control/group/list/{}/sup/direct",
@@ -9247,7 +9325,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 1033,
+    "line": 1092,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/${n.id}/sup/nested",
     "path": "/api/organization/assemble/control/group/list/{}/sup/nested",
@@ -9260,7 +9338,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 1042,
+    "line": 1101,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/person/${n.id}/sup/direct",
     "path": "/api/organization/assemble/control/group/list/person/{}/sup/direct",
@@ -9273,7 +9351,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 1043,
+    "line": 1102,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/person/${n.id}/sup/nested",
     "path": "/api/organization/assemble/control/group/list/person/{}/sup/nested",
@@ -9286,7 +9364,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 1044,
+    "line": 1103,
     "method": "GET",
     "raw": "/api/organization/assemble/control/personattribute/list/person/${n.id}",
     "path": "/api/organization/assemble/control/personattribute/list/person/{}",
@@ -9299,7 +9377,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 1045,
+    "line": 1104,
     "method": "GET",
     "raw": "/api/person/auth/info/${encodeURIComponent(n.id)}",
     "path": "/api/person/auth/info/{}",
@@ -9312,7 +9390,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 1046,
+    "line": 1105,
     "method": "GET",
     "raw": "/api/person/nick/name/${encodeURIComponent(n.id)}",
     "path": "/api/person/nick/name/{}",
@@ -9325,7 +9403,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 1047,
+    "line": 1106,
     "method": "GET",
     "raw": "/api/person/mobile/${encodeURIComponent(n.id)}",
     "path": "/api/person/mobile/{}",
@@ -29220,7 +29298,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 223,
+    "line": 232,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unitduty/list/like?key=a",
     "path": "/api/organization/assemble/control/unitduty/list/like",
@@ -29233,7 +29311,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 227,
+    "line": 236,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/like/pinyin?key=a",
     "path": "/api/organization/assemble/control/group/list/like/pinyin",
@@ -29246,7 +29324,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 228,
+    "line": 237,
     "method": "GET",
     "raw": "/api/organization/assemble/control/personattribute/list/0/prev/20",
     "path": "/api/organization/assemble/control/personattribute/list/0/prev/20",
@@ -29262,7 +29340,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 229,
+    "line": 238,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unitattribute/list/0/prev/20",
     "path": "/api/organization/assemble/control/unitattribute/list/0/prev/20",
@@ -29278,7 +29356,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 231,
+    "line": 240,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unit/list/0/prev/20",
     "path": "/api/organization/assemble/control/unit/list/0/prev/20",
@@ -29294,7 +29372,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 247,
+    "line": 256,
     "method": "GET",
     "raw": "/api/organization/assemble/control/person/list/0/next/20",
     "path": "/api/organization/assemble/control/person/list/0/next/20",
@@ -29310,7 +29388,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 248,
+    "line": 257,
     "method": "GET",
     "raw": "/api/organization/assemble/control/person/list/0/prev/20",
     "path": "/api/organization/assemble/control/person/list/0/prev/20",
@@ -29326,7 +29404,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 249,
+    "line": 258,
     "method": "GET",
     "raw": "/api/organization/assemble/control/person/list/group/all/sub/direct",
     "path": "/api/organization/assemble/control/person/list/group/all/sub/direct",
@@ -29341,7 +29419,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 250,
+    "line": 259,
     "method": "GET",
     "raw": "/api/organization/assemble/control/identity/list/like?key=a",
     "path": "/api/organization/assemble/control/identity/list/like",
@@ -29354,7 +29432,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 251,
+    "line": 260,
     "method": "GET",
     "raw": "/api/organization/assemble/control/identity/list/like/pinyin?key=a",
     "path": "/api/organization/assemble/control/identity/list/like/pinyin",
@@ -29367,7 +29445,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 253,
+    "line": 262,
     "method": "GET",
     "raw": "/api/organization/assemble/control/role/list/like?key=a",
     "path": "/api/organization/assemble/control/role/list/like",
@@ -29380,7 +29458,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 267,
+    "line": 276,
     "method": "GET",
     "raw": "/api/group/list/${flag}/prev/20",
     "path": "/api/group/list/{}/prev/20",
@@ -29395,7 +29473,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 268,
+    "line": 277,
     "method": "GET",
     "raw": "/api/role/list/${flag}/next/20",
     "path": "/api/role/list/{}/next/20",
@@ -29410,7 +29488,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 269,
+    "line": 278,
     "method": "GET",
     "raw": "/api/role/list/${flag}/prev/20",
     "path": "/api/role/list/{}/prev/20",
@@ -29425,7 +29503,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 270,
+    "line": 279,
     "method": "GET",
     "raw": "/api/unit/list/${flag}/next/20",
     "path": "/api/unit/list/{}/next/20",
@@ -29440,7 +29518,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 271,
+    "line": 280,
     "method": "GET",
     "raw": "/api/unit/list/${flag}/prev/20",
     "path": "/api/unit/list/{}/prev/20",
@@ -29455,7 +29533,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 272,
+    "line": 281,
     "method": "GET",
     "raw": "/api/unit/list/all/object",
     "path": "/api/unit/list/all/object",
@@ -29468,7 +29546,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 290,
+    "line": 299,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unit/identity/${flag}/level/1",
     "path": "/api/organization/assemble/control/unit/identity/{}/level/1",
@@ -29483,7 +29561,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 293,
+    "line": 302,
     "method": "GET",
     "raw": "/api/organization/assemble/control/personcard/listpagingwithgroup/page/1/size/20",
     "path": "/api/organization/assemble/control/personcard/listpagingwithgroup/page/1/size/20",
@@ -29499,7 +29577,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 312,
+    "line": 321,
     "method": "GET",
     "raw": "/api/organization/assemble/control/inputperson/template",
     "path": "/api/organization/assemble/control/inputperson/template",
@@ -29512,7 +29590,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 313,
+    "line": 322,
     "method": "GET",
     "raw": "/api/organization/assemble/control/inputperson/wipe",
     "path": "/api/organization/assemble/control/inputperson/wipe",
@@ -29525,7 +29603,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 317,
+    "line": 326,
     "method": "GET",
     "raw": "/api/organization/assemble/control/role/list/like/pinyin",
     "path": "/api/organization/assemble/control/role/list/like/pinyin",
@@ -29538,7 +29616,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 318,
+    "line": 327,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unitduty/update/member",
     "path": "/api/organization/assemble/control/unitduty/update/member",
@@ -29551,7 +29629,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 338,
+    "line": 347,
     "method": "POST",
     "raw": "/api/unit/list/unit/sub/direct",
     "path": "/api/unit/list/unit/sub/direct",
@@ -29564,7 +29642,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 339,
+    "line": 348,
     "method": "POST",
     "raw": "/api/unit/list/unit/sub/nested",
     "path": "/api/unit/list/unit/sub/nested",
@@ -29577,7 +29655,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 340,
+    "line": 349,
     "method": "POST",
     "raw": "/api/unit/list/unit/sup/direct",
     "path": "/api/unit/list/unit/sup/direct",
@@ -29590,7 +29668,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 341,
+    "line": 350,
     "method": "POST",
     "raw": "/api/unit/list/unit/sup/nested",
     "path": "/api/unit/list/unit/sup/nested",
@@ -29603,7 +29681,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 342,
+    "line": 351,
     "method": "POST",
     "raw": "/api/unit/list/unitattribute",
     "path": "/api/unit/list/unitattribute",
@@ -29616,7 +29694,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 343,
+    "line": 352,
     "method": "POST",
     "raw": "/api/unit/list/unitduty",
     "path": "/api/unit/list/unitduty",
@@ -29629,7 +29707,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 344,
+    "line": 353,
     "method": "POST",
     "raw": "/api/unit/list/types",
     "path": "/api/unit/list/types",
@@ -29642,7 +29720,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 345,
+    "line": 354,
     "method": "POST",
     "raw": "/api/unit/check/unit/has/person",
     "path": "/api/unit/check/unit/has/person",
@@ -29655,7 +29733,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 346,
+    "line": 355,
     "method": "POST",
     "raw": "/api/unit/check/unit/has/unit",
     "path": "/api/unit/check/unit/has/unit",
@@ -29668,7 +29746,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 347,
+    "line": 356,
     "method": "POST",
     "raw": "/api/unitattribute/list/name/unit",
     "path": "/api/unitattribute/list/name/unit",
@@ -29681,7 +29759,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 348,
+    "line": 357,
     "method": "POST",
     "raw": "/api/unitattribute/list/attribute/unit/name",
     "path": "/api/unitattribute/list/attribute/unit/name",
@@ -29694,7 +29772,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 370,
+    "line": 379,
     "method": "POST",
     "raw": "/api/group",
     "path": "/api/group",
@@ -29707,7 +29785,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 381,
+    "line": 390,
     "method": "POST",
     "raw": "/api/unit",
     "path": "/api/unit",
@@ -29720,7 +29798,331 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 400,
+    "line": 409,
+    "method": "PUT",
+    "raw": "/api/organization/assemble/control/person/list/pinyininitial",
+    "path": "/api/organization/assemble/control/person/list/pinyininitial",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/person/list/pinyininitial",
+    "hit_crate": "organization_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 410,
+    "method": "PUT",
+    "raw": "/api/organization/assemble/control/person/list/like",
+    "path": "/api/organization/assemble/control/person/list/like",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/person/list/like",
+    "hit_crate": "organization_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 411,
+    "method": "PUT",
+    "raw": "/api/organization/assemble/control/person/list/like/pinyin",
+    "path": "/api/organization/assemble/control/person/list/like/pinyin",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/person/list/like/pinyin",
+    "hit_crate": "organization_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 412,
+    "method": "PUT",
+    "raw": "/api/organization/assemble/control/unit/list/unit/type",
+    "path": "/api/organization/assemble/control/unit/list/unit/type",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/unit/list/unit/type",
+    "hit_crate": "organization_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 413,
+    "method": "PUT",
+    "raw": "/api/organization/assemble/control/unit/list/pinyininitial",
+    "path": "/api/organization/assemble/control/unit/list/pinyininitial",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/unit/list/pinyininitial",
+    "hit_crate": "organization_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 414,
+    "method": "PUT",
+    "raw": "/api/organization/assemble/control/unit/list/like",
+    "path": "/api/organization/assemble/control/unit/list/like",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/unit/list/like",
+    "hit_crate": "organization_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 415,
+    "method": "PUT",
+    "raw": "/api/organization/assemble/control/unit/list/like/pinyin",
+    "path": "/api/organization/assemble/control/unit/list/like/pinyin",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/unit/list/like/pinyin",
+    "hit_crate": "organization_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 416,
+    "method": "PUT",
+    "raw": "/api/organization/assemble/control/identity/list/like",
+    "path": "/api/organization/assemble/control/identity/list/like",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/identity/list/like",
+    "hit_crate": "organization_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 417,
+    "method": "PUT",
+    "raw": "/api/organization/assemble/control/identity/list/like/pinyin",
+    "path": "/api/organization/assemble/control/identity/list/like/pinyin",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/identity/list/like/pinyin",
+    "hit_crate": "organization_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 418,
+    "method": "PUT",
+    "raw": "/api/organization/assemble/control/identity/list/pinyininitial",
+    "path": "/api/organization/assemble/control/identity/list/pinyininitial",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/identity/list/pinyininitial",
+    "hit_crate": "organization_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 419,
+    "method": "PUT",
+    "raw": "/api/organization/assemble/control/group/list/like",
+    "path": "/api/organization/assemble/control/group/list/like",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/group/list/like",
+    "hit_crate": "organization_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 420,
+    "method": "PUT",
+    "raw": "/api/organization/assemble/control/group/list/like/pinyin",
+    "path": "/api/organization/assemble/control/group/list/like/pinyin",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/group/list/like/pinyin",
+    "hit_crate": "organization_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 421,
+    "method": "PUT",
+    "raw": "/api/organization/assemble/control/group/list/pinyininitial",
+    "path": "/api/organization/assemble/control/group/list/pinyininitial",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/group/list/pinyininitial",
+    "hit_crate": "organization_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 422,
+    "method": "PUT",
+    "raw": "/api/organization/assemble/control/role/list/like",
+    "path": "/api/organization/assemble/control/role/list/like",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/role/list/like",
+    "hit_crate": "organization_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 423,
+    "method": "PUT",
+    "raw": "/api/organization/assemble/control/role/list/like/pinyin",
+    "path": "/api/organization/assemble/control/role/list/like/pinyin",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/role/list/like/pinyin",
+    "hit_crate": "organization_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 424,
+    "method": "PUT",
+    "raw": "/api/organization/assemble/control/role/list/pinyininitial",
+    "path": "/api/organization/assemble/control/role/list/pinyininitial",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/role/list/pinyininitial",
+    "hit_crate": "organization_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 425,
+    "method": "PUT",
+    "raw": "/api/organization/assemble/control/unitduty/list/like",
+    "path": "/api/organization/assemble/control/unitduty/list/like",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/unitduty/list/like",
+    "hit_crate": "organization_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 426,
+    "method": "PUT",
+    "raw": "/api/organization/assemble/control/personcard/listpaging/page/1/size/20",
+    "path": "/api/organization/assemble/control/personcard/listpaging/page/1/size/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/personcard/listpaging/page/{page}/size/{size}",
+    "hit_crate": "organization_assemble_control",
+    "extra": [
+     "page=1",
+     "size=20"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 427,
+    "method": "PUT",
+    "raw": "/api/organization/assemble/control/personcard/listpagingwithgroup/page/1/size/20",
+    "path": "/api/organization/assemble/control/personcard/listpagingwithgroup/page/1/size/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/personcard/listpagingwithgroup/page/{page}/size/{size}",
+    "hit_crate": "organization_assemble_control",
+    "extra": [
+     "page=1",
+     "size=20"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 428,
+    "method": "POST",
+    "raw": "/api/organization/assemble/control/unit/list",
+    "path": "/api/organization/assemble/control/unit/list",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/unit/list",
+    "hit_crate": "organization_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 429,
+    "method": "POST",
+    "raw": "/api/organization/assemble/control/unit/list/controller",
+    "path": "/api/organization/assemble/control/unit/list/controller",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/unit/list/controller",
+    "hit_crate": "organization_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 430,
+    "method": "POST",
+    "raw": "/api/organization/assemble/control/person/list/filter/1/size/20",
+    "path": "/api/organization/assemble/control/person/list/filter/1/size/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/person/list/filter/{page}/size/{size}",
+    "hit_crate": "organization_assemble_control",
+    "extra": [
+     "page=1",
+     "size=20"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 447,
+    "method": "GET",
+    "raw": "/api/organization/assemble/control/export/export/all",
+    "path": "/api/organization/assemble/control/export/export/all",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/export/export/all",
+    "hit_crate": "organization_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 448,
+    "method": "POST",
+    "raw": "/api/organization/assemble/control/person/list/delete/1/size/20",
+    "path": "/api/organization/assemble/control/person/list/delete/1/size/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/organization/assemble/control/person/list/delete/{page}/size/{size}",
+    "hit_crate": "organization_assemble_control",
+    "extra": [
+     "page=1",
+     "size=20"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 459,
     "method": "POST",
     "raw": "/api/organization/assemble/control/person",
     "path": "/api/organization/assemble/control/person",
@@ -29733,7 +30135,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 401,
+    "line": 460,
     "method": "POST",
     "raw": "/api/organization/assemble/control/unit",
     "path": "/api/organization/assemble/control/unit",
@@ -29746,7 +30148,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 402,
+    "line": 461,
     "method": "POST",
     "raw": "/api/organization/assemble/control/identity",
     "path": "/api/organization/assemble/control/identity",
@@ -29759,7 +30161,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 403,
+    "line": 462,
     "method": "POST",
     "raw": "/api/organization/assemble/control/group",
     "path": "/api/organization/assemble/control/group",
@@ -29772,7 +30174,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 404,
+    "line": 463,
     "method": "POST",
     "raw": "/api/organization/assemble/control/role",
     "path": "/api/organization/assemble/control/role",
@@ -29785,7 +30187,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 405,
+    "line": 464,
     "method": "POST",
     "raw": "/api/organization/assemble/control/personattribute",
     "path": "/api/organization/assemble/control/personattribute",
@@ -29798,7 +30200,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 406,
+    "line": 465,
     "method": "POST",
     "raw": "/api/organization/assemble/control/permissionsetting",
     "path": "/api/organization/assemble/control/permissionsetting",
@@ -29811,7 +30213,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 407,
+    "line": 466,
     "method": "POST",
     "raw": "/api/organization/assemble/control/personcard",
     "path": "/api/organization/assemble/control/personcard",
@@ -29824,7 +30226,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 408,
+    "line": 467,
     "method": "POST",
     "raw": "/api/organization/assemble/control/inputperson",
     "path": "/api/organization/assemble/control/inputperson",
@@ -29837,7 +30239,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 460,
+    "line": 519,
     "method": "POST",
     "raw": "/api/organization/assemble/control/unitduty/update/member",
     "path": "/api/organization/assemble/control/unitduty/update/member",
@@ -29850,7 +30252,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 461,
+    "line": 520,
     "method": "PUT",
     "raw": "/api/organization/assemble/control/unitduty/update/member",
     "path": "/api/organization/assemble/control/unitduty/update/member",
@@ -29863,7 +30265,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 490,
+    "line": 549,
     "method": "POST",
     "raw": "/api/organization/group",
     "path": "/api/organization/group",
@@ -29876,7 +30278,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 501,
+    "line": 560,
     "method": "POST",
     "raw": "/api/organization/identity",
     "path": "/api/organization/identity",
@@ -29889,7 +30291,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 519,
+    "line": 578,
     "method": "POST",
     "raw": "/api/person/has/role",
     "path": "/api/person/has/role",
@@ -29902,7 +30304,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 520,
+    "line": 579,
     "method": "POST",
     "raw": "/api/identity/list",
     "path": "/api/identity/list",
@@ -29915,7 +30317,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 521,
+    "line": 580,
     "method": "POST",
     "raw": "/api/group/list",
     "path": "/api/group/list",
@@ -29928,7 +30330,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 522,
+    "line": 581,
     "method": "POST",
     "raw": "/api/role/list",
     "path": "/api/role/list",
@@ -29941,7 +30343,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 523,
+    "line": 582,
     "method": "POST",
     "raw": "/api/unit/identity/level",
     "path": "/api/unit/identity/level",
@@ -29954,7 +30356,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 524,
+    "line": 583,
     "method": "POST",
     "raw": "/api/unit/identity/type",
     "path": "/api/unit/identity/type",
@@ -29967,7 +30369,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 525,
+    "line": 584,
     "method": "POST",
     "raw": "/api/unit/check/unit/has/identity",
     "path": "/api/unit/check/unit/has/identity",
@@ -29980,7 +30382,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 526,
+    "line": 585,
     "method": "POST",
     "raw": "/api/unitduty/list/name/identity",
     "path": "/api/unitduty/list/name/identity",
@@ -29993,7 +30395,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 527,
+    "line": 586,
     "method": "POST",
     "raw": "/api/unitduty/list/identity/unit/name",
     "path": "/api/unitduty/list/identity/unit/name",
@@ -30006,7 +30408,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 537,
+    "line": 596,
     "method": "GET",
     "raw": "/api/organization/assemble/control/permissionsetting/list",
     "path": "/api/organization/assemble/control/permissionsetting/list",
@@ -30019,7 +30421,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 538,
+    "line": 597,
     "method": "GET",
     "raw": "/api/organization/assemble/control/personcard/listgrouptypes",
     "path": "/api/organization/assemble/control/personcard/listgrouptypes",
@@ -30032,7 +30434,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 550,
+    "line": 609,
     "method": "GET",
     "raw": "/api/organization/assemble/express/config/get",
     "path": "/api/organization/assemble/express/config/get",
@@ -30045,7 +30447,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 551,
+    "line": 610,
     "method": "GET",
     "raw": "/api/organization/assemble/express/units/list",
     "path": "/api/organization/assemble/express/units/list",
@@ -30058,7 +30460,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 552,
+    "line": 611,
     "method": "GET",
     "raw": "/api/organization/assemble/express/status/get",
     "path": "/api/organization/assemble/express/status/get",
@@ -30071,7 +30473,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 563,
+    "line": 622,
     "method": "GET",
     "raw": "/api/organization/assemble/control/personcard/listpaging/page/1/size/20",
     "path": "/api/organization/assemble/control/personcard/listpaging/page/1/size/20",
@@ -30087,7 +30489,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 597,
+    "line": 656,
     "method": "GET",
     "raw": "/api/organization/assemble/control/role/list/pinyininitial",
     "path": "/api/organization/assemble/control/role/list/pinyininitial",
@@ -30100,7 +30502,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 598,
+    "line": 657,
     "method": "GET",
     "raw": "/api/organization/assemble/control/identity/list/pinyininitial",
     "path": "/api/organization/assemble/control/identity/list/pinyininitial",
@@ -30113,7 +30515,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 618,
+    "line": 677,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unit/list/top",
     "path": "/api/organization/assemble/control/unit/list/top",
@@ -30126,7 +30528,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 642,
+    "line": 701,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unit/list/top",
     "path": "/api/organization/assemble/control/unit/list/top",
@@ -30139,7 +30541,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 666,
+    "line": 725,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unit/list/top",
     "path": "/api/organization/assemble/control/unit/list/top",
@@ -30152,7 +30554,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 700,
+    "line": 759,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unitattribute/list/0/next/10",
     "path": "/api/organization/assemble/control/unitattribute/list/0/next/10",
@@ -30168,7 +30570,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 701,
+    "line": 760,
     "method": "GET",
     "raw": "/api/organization/assemble/control/personattribute/list/0/next/10",
     "path": "/api/organization/assemble/control/personattribute/list/0/next/10",
@@ -30184,7 +30586,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 722,
+    "line": 781,
     "method": "GET",
     "raw": "/api/organization/assemble/control/role/list/0/next/10",
     "path": "/api/organization/assemble/control/role/list/0/next/10",
@@ -30200,7 +30602,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 744,
+    "line": 803,
     "method": "GET",
     "raw": "/api/organization/assemble/control/identity/list/0/next/10",
     "path": "/api/organization/assemble/control/identity/list/0/next/10",
@@ -30216,7 +30618,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 745,
+    "line": 804,
     "method": "GET",
     "raw": "/api/organization/assemble/control/role/list/0/next/10",
     "path": "/api/organization/assemble/control/role/list/0/next/10",
@@ -30232,7 +30634,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 746,
+    "line": 805,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unitduty/list/0/next/10",
     "path": "/api/organization/assemble/control/unitduty/list/0/next/10",
@@ -30248,7 +30650,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 758,
+    "line": 817,
     "method": "GET",
     "raw": "/api/organization/assemble/control/identity/list/0/prev/10",
     "path": "/api/organization/assemble/control/identity/list/0/prev/10",
@@ -30264,7 +30666,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 759,
+    "line": 818,
     "method": "GET",
     "raw": "/api/organization/assemble/control/role/list/0/prev/10",
     "path": "/api/organization/assemble/control/role/list/0/prev/10",
@@ -30280,7 +30682,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 760,
+    "line": 819,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unitduty/list/0/prev/10",
     "path": "/api/organization/assemble/control/unitduty/list/0/prev/10",
@@ -30296,7 +30698,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 772,
+    "line": 831,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/pinyininitial",
     "path": "/api/organization/assemble/control/group/list/pinyininitial",
@@ -30309,7 +30711,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 773,
+    "line": 832,
     "method": "GET",
     "raw": "/api/organization/assemble/control/identity/list/pinyininitial",
     "path": "/api/organization/assemble/control/identity/list/pinyininitial",
@@ -30322,7 +30724,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 774,
+    "line": 833,
     "method": "GET",
     "raw": "/api/organization/assemble/control/role/list/pinyininitial",
     "path": "/api/organization/assemble/control/role/list/pinyininitial",
@@ -30335,7 +30737,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 792,
+    "line": 851,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unit/list/top",
     "path": "/api/organization/assemble/control/unit/list/top",
@@ -30348,7 +30750,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 793,
+    "line": 852,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/0/next/10",
     "path": "/api/organization/assemble/control/group/list/0/next/10",
@@ -30364,7 +30766,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 794,
+    "line": 853,
     "method": "GET",
     "raw": "/api/organization/assemble/control/personcard/listpaging/page/1/size/20",
     "path": "/api/organization/assemble/control/personcard/listpaging/page/1/size/20",
@@ -30380,7 +30782,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 803,
+    "line": 862,
     "method": "POST",
     "raw": "/api/identity/list/unit/person",
     "path": "/api/identity/list/unit/person",
@@ -30393,7 +30795,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 804,
+    "line": 863,
     "method": "POST",
     "raw": "/api/identity/list/group",
     "path": "/api/identity/list/group",
@@ -30406,7 +30808,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 805,
+    "line": 864,
     "method": "POST",
     "raw": "/api/identity/list/major/person",
     "path": "/api/identity/list/major/person",
@@ -30419,7 +30821,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 822,
+    "line": 881,
     "method": "GET",
     "raw": "/api/organization/assemble/control/role/list/0/next/10",
     "path": "/api/organization/assemble/control/role/list/0/next/10",
@@ -30435,7 +30837,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 823,
+    "line": 882,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/0/next/10",
     "path": "/api/organization/assemble/control/group/list/0/next/10",
@@ -30451,7 +30853,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 824,
+    "line": 883,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unit/list/top",
     "path": "/api/organization/assemble/control/unit/list/top",
@@ -30464,7 +30866,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 830,
+    "line": 889,
     "method": "POST",
     "raw": "/api/group/list/person",
     "path": "/api/group/list/person",
@@ -30477,7 +30879,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 831,
+    "line": 890,
     "method": "POST",
     "raw": "/api/role/list/person",
     "path": "/api/role/list/person",
@@ -30490,7 +30892,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 832,
+    "line": 891,
     "method": "POST",
     "raw": "/api/unit/list/level",
     "path": "/api/unit/list/level",
@@ -30503,7 +30905,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 849,
+    "line": 908,
     "method": "GET",
     "raw": "/api/organization/assemble/control/identity/list/0/next/10",
     "path": "/api/organization/assemble/control/identity/list/0/next/10",
@@ -30519,7 +30921,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 850,
+    "line": 909,
     "method": "GET",
     "raw": "/api/organization/assemble/control/personcard/listpaging/page/1/size/20",
     "path": "/api/organization/assemble/control/personcard/listpaging/page/1/size/20",
@@ -30535,7 +30937,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 851,
+    "line": 910,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/0/next/10",
     "path": "/api/organization/assemble/control/group/list/0/next/10",
@@ -30551,7 +30953,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 852,
+    "line": 911,
     "method": "GET",
     "raw": "/api/organization/assemble/control/role/list/0/next/10",
     "path": "/api/organization/assemble/control/role/list/0/next/10",
@@ -30567,7 +30969,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 859,
+    "line": 918,
     "method": "POST",
     "raw": "/api/unit/list/identity",
     "path": "/api/unit/list/identity",
@@ -30580,7 +30982,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 860,
+    "line": 919,
     "method": "POST",
     "raw": "/api/unit/list/person",
     "path": "/api/unit/list/person",
@@ -30593,7 +30995,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 861,
+    "line": 920,
     "method": "POST",
     "raw": "/api/group/has/role",
     "path": "/api/group/has/role",
@@ -30606,7 +31008,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 874,
+    "line": 933,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unit/list/top",
     "path": "/api/organization/assemble/control/unit/list/top",
@@ -30619,7 +31021,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 878,
+    "line": 937,
     "method": "POST",
     "raw": "/api/unitduty/list/name/unit",
     "path": "/api/unitduty/list/name/unit",
@@ -30632,7 +31034,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 883,
+    "line": 942,
     "method": "POST",
     "raw": "/api/unitduty/list/name",
     "path": "/api/unitduty/list/name",
@@ -30645,7 +31047,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 884,
+    "line": 943,
     "method": "POST",
     "raw": "/api/unitduty/find/by/unit/name",
     "path": "/api/unitduty/find/by/unit/name",
@@ -30658,7 +31060,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 898,
+    "line": 957,
     "method": "GET",
     "raw": "/api/group/list/0/next/10",
     "path": "/api/group/list/0/next/10",
@@ -30674,7 +31076,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 904,
+    "line": 963,
     "method": "POST",
     "raw": "/api/group/list/group/sub/direct",
     "path": "/api/group/list/group/sub/direct",
@@ -30687,7 +31089,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 905,
+    "line": 964,
     "method": "POST",
     "raw": "/api/group/list/group/sub/nested",
     "path": "/api/group/list/group/sub/nested",
@@ -30700,7 +31102,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 906,
+    "line": 965,
     "method": "POST",
     "raw": "/api/group/list/group/sup/direct",
     "path": "/api/group/list/group/sup/direct",
@@ -30713,7 +31115,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 907,
+    "line": 966,
     "method": "POST",
     "raw": "/api/group/list/group/sup/nested",
     "path": "/api/group/list/group/sup/nested",
@@ -30726,7 +31128,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 908,
+    "line": 967,
     "method": "POST",
     "raw": "/api/group/list/group/tree",
     "path": "/api/group/list/group/tree",
@@ -30739,7 +31141,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 909,
+    "line": 968,
     "method": "POST",
     "raw": "/api/group/list/identity",
     "path": "/api/group/list/identity",
@@ -30752,7 +31154,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 921,
+    "line": 980,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unit/list/top",
     "path": "/api/organization/assemble/control/unit/list/top",
@@ -30765,7 +31167,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 926,
+    "line": 985,
     "method": "POST",
     "raw": "/api/unit/list",
     "path": "/api/unit/list",
@@ -30778,7 +31180,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 927,
+    "line": 986,
     "method": "POST",
     "raw": "/api/unit/list/identity/sup/nested",
     "path": "/api/unit/list/identity/sup/nested",
@@ -30791,7 +31193,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 928,
+    "line": 987,
     "method": "POST",
     "raw": "/api/unit/list/person/sup/nested",
     "path": "/api/unit/list/person/sup/nested",
@@ -30804,7 +31206,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 940,
+    "line": 999,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unit/list/top",
     "path": "/api/organization/assemble/control/unit/list/top",
@@ -30817,7 +31219,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 945,
+    "line": 1004,
     "method": "POST",
     "raw": "/api/identity/list/person",
     "path": "/api/identity/list/person",
@@ -30830,7 +31232,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 946,
+    "line": 1005,
     "method": "POST",
     "raw": "/api/identity/list/unit/sub/direct",
     "path": "/api/identity/list/unit/sub/direct",
@@ -30843,7 +31245,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 947,
+    "line": 1006,
     "method": "POST",
     "raw": "/api/identity/list/unit/sub/nested",
     "path": "/api/identity/list/unit/sub/nested",
@@ -30856,7 +31258,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 960,
+    "line": 1019,
     "method": "GET",
     "raw": "/api/organization/assemble/control/personcard/listpaging/page/1/size/20",
     "path": "/api/organization/assemble/control/personcard/listpaging/page/1/size/20",
@@ -30872,7 +31274,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 965,
+    "line": 1024,
     "method": "GET",
     "raw": "/api/person/list/all",
     "path": "/api/person/list/all",
@@ -30885,7 +31287,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 966,
+    "line": 1025,
     "method": "POST",
     "raw": "/api/person/list/login/after",
     "path": "/api/person/list/login/after",
@@ -30898,7 +31300,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 967,
+    "line": 1026,
     "method": "POST",
     "raw": "/api/person/list/login/recent",
     "path": "/api/person/list/login/recent",
@@ -30911,7 +31313,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 968,
+    "line": 1027,
     "method": "POST",
     "raw": "/api/person/list/pair/identity",
     "path": "/api/person/list/pair/identity",
@@ -30924,7 +31326,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 985,
+    "line": 1044,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/like",
     "path": "/api/organization/assemble/control/group/list/like",
@@ -30937,7 +31339,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 996,
+    "line": 1055,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/{}",
     "path": "/api/organization/assemble/control/group/list/{}",
@@ -30950,7 +31352,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 1049,
+    "line": 1108,
     "method": "POST",
     "raw": "/api/person/list/identity",
     "path": "/api/person/list/identity",
@@ -30963,7 +31365,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 1050,
+    "line": 1109,
     "method": "POST",
     "raw": "/api/person/list/group",
     "path": "/api/person/list/group",
@@ -30976,7 +31378,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 1051,
+    "line": 1110,
     "method": "POST",
     "raw": "/api/person/list/role",
     "path": "/api/person/list/role",
@@ -30989,7 +31391,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 1053,
+    "line": 1112,
     "method": "POST",
     "raw": "/api/person/list/person/sub/direct",
     "path": "/api/person/list/person/sub/direct",
@@ -31002,7 +31404,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 1054,
+    "line": 1113,
     "method": "POST",
     "raw": "/api/person/list/person/sub/nested",
     "path": "/api/person/list/person/sub/nested",
@@ -31015,7 +31417,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 1055,
+    "line": 1114,
     "method": "POST",
     "raw": "/api/person/list/person/sup/nested",
     "path": "/api/person/list/person/sup/nested",
@@ -31028,7 +31430,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/OrgViewer.vue",
-    "line": 1074,
+    "line": 1133,
     "method": "GET",
     "raw": "/api/organization/assemble/control/group/list/like",
     "path": "/api/organization/assemble/control/group/list/like",
