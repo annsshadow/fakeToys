@@ -21,6 +21,8 @@
 - [x] **L9** `perf(dedup)`: A6 前半 —— 相似度行块只算 `[start, n)` 的窄列，不再白算整个下三角
 - [x] **L10** `perf(dedup)`: A17 可落地的一半 —— 稠密编码矩阵改 float32 + 全程原地归一化（峰值 2429 MB → 622 MB）
 - [x] **L11** `feat(quality-gate)`: B4 `QualityGate` + `DatasetHealthScore` 接线 —— 库函数 `gate_dataset_health()` + `/api/quality/health-gate` + CLI `health-gate`（判负退出 1）
+- [x] **L12** `perf(api)`: A20 服务配置文件路径的 `Path.resolve()` 收成缓存 —— 200 次查询 29.9 ms → 0.15 ms（安静态）
+- [x] **L12** `perf(statistics)`: A15 的算法侧 —— 三处重复扫描合成单趟 + token 分批入 `Counter`，真实 6902 条 `calculate()` **50.94 → 43.87 ms**、词汇统计峰值 **8.15 MB → 2.22 MB**，`to_dict()` 逐字节不变
 
 ## Backlog A — 性能（含 file:line 与实测线索）
 
@@ -40,11 +42,12 @@
 | A12 | `augmentor/validation.py:217-222`、`sampler.py:296-299` | 循环内未缓存的正则、`list.index`/`in` 线性扫描 | S |
 | ~~A13~~ | ~~`api/routes/dataset_tools.py:311,360,386,387,416,436,566,598` + `system_ops.py:320,348,514`~~ | ~~**A4 的同构族**：`read_items()`（同步版）在 11 个 `async def` 路由体里直接调用，同样占着事件循环；`dataset_tools.py:566` 还是「多个文件在循环里串行读」；`/api/dataset/stats` 连分析都留在循环上（43.4 ms）~~ 已修（L7） | M |
 | ~~A14~~ | ~~`augmentor/impact.py:66`~~ | ~~`duplicate_rate` 里 `texts.count(t)` 写在推导式中 → O(n²)~~ 已修（L6） | S |
-| A15 | `augmentor/statistics.py` `calculate_statistics`、`A3`/`A5` 那类纯 Python 分析 | **线程池对 CPU 型分析不产生并行**（GIL）：3 并发 stats 实测离线后请求方 173.7 → 192.7 ms（+11%），换来的只是循环停顿 170.1 → 60.0 ms。要么上 `ProcessPoolExecutor`，要么回到算法侧把 43.4 ms 这个数本身降下来 | M |
+| ~~A15~~ | ~~`augmentor/statistics.py` `calculate_statistics`、`A3`/`A5` 那类纯 Python 分析~~ | ~~**线程池对 CPU 型分析不产生并行**（GIL）：3 并发 stats 实测离线后请求方 173.7 → 192.7 ms（+11%），换来的只是循环停顿 170.1 → 60.0 ms。要么上 `ProcessPoolExecutor`，要么回到算法侧把 43.4 ms 这个数本身降下来~~ **算法侧已修（L12）**：真实 6902 条 `calculate()` 同进程交替中位 **50.94 → 43.87 ms（1.16×）**、词汇统计峰值 **8.15 MB → 2.22 MB**。**GIL 那半仍然成立**——进程池本轮不做（跨进程要序列化整份数据集，代价未实测），所以「3 并发总耗时」这个数不会因为 L12 变成并行 | M |
 | A16 | `api/routes/system_ops.py:514` `dependency_register` | 为了拿「条数」这一个整数把整个数据集解析一遍（3.4 MB / 9 ms 读 + 全量 list 物化）。登记动作本身只需要 count，可流式计数或延后到首次访问再回填 | S |
 | ~~A17~~ | ~~`augmentor/dedup.py:111`、`:241-242`~~ | ~~A6 剩下的一半：fallback 编码 `np.zeros((n, vocab))` 是**稠密 float64**（真实 6902 条 × 23033 词表 = 1.27 GB），调用方再 `np.asarray(..., dtype=np.float32)` 整份复制、再 `_normalize` 另起一份~~ **已修（L10）**：float32 + `_row_norms`/`np.divide(out=)` 全程原地，真实数据峰值 **2429 MB → 622 MB**。剩下的只有「稀疏 CSR 表示」（nnz 194293、稀疏度 0.9988 → 理论 2 MB），但本环境**没装 scipy 与 faiss**，手写稀疏结构体属于另起一套索引子系统，不在性能轮范围内 → 本轮不做，装依赖后再议 | L |
 | ~~A18~~ | ~~`augmentor/dedup.py:132-147,172-174`~~ | ~~块行数按剩余列数自适应放大，把 L9 归因微基准里的 68.9 → 91.5 GFLOP/s 捡回来~~ **L10 实测证伪，未采纳**：合成基准（dim=8192）预测 1.28×，真实数据（dim=vocab=23033）同一进程内 back-to-back 实测 **0.95×（更慢）**。归因假设（窄块让 BLAS 变笨）**不随 K 维迁移**，代码已回退 | S |
 | A19 | `augmentor/dedup.py:104-116` | 词表构建与 TF 填充是**两遍** Python 双循环（`for text: for i:` 再 `for i, text: for j:`），每条文本的每个字符都进解释器一次。实测真实 6902 条走完 0.36 s（L10 后），**这还称不上瓶颈**；只有在 n 到 10⁵ 量级时才可能翻盘——该外推**未实测**，先记着别当依据 | S |
+| ~~A20~~ | ~~`api/deps.py` `config_file_path()`~~ | ~~A2 的同构缺陷第三处：L4 把白名单里的 YAML 重解析缓存掉了，但「服务自身的配置文件路径」这一步仍**每次调用**做一次 `Path.resolve()`（Windows 上要问长路径句柄并归一大小写）。任何带路径参数的请求都至少过一次白名单，等于每个请求白加一份系统调用。安静态同进程交替实测：200 次 **29.9 ms（缺陷）→ 0.15 ms（缓存）**；同一台机器带负载时同一份工作量到 187 ms~~ **已修（L12）**：缓存按 `(环境变量原值, os.getcwd())` 建键、单条目、只在未命中时 resolve；`allowed_data_roots()` 200 次 **218.0 ms → 1.87 ms** | S |
 
 ## Backlog B — 功能增强（价值 ÷ 工作量）
 
@@ -227,12 +230,50 @@
   「`pass_rate` 越界」两条（它们在缺陷态确实变红），而「校验早于读取」由
   `test_bad_weights_rejected_before_reading_file`（缺文件 + 非法权重 → 400 而非 404/500）
   单独承担。本轮为功能轮，无性能主张。
+- **L12a** `perf(api)` A20 —— `api/deps.py:config_file_path()` 每次调用都 `Path.resolve()`，
+  而它是白名单查表的必经一步（L4 只缓存了 YAML 重解析，漏了这一处）。改成按
+  `(AUGMENTOR_CONFIG_PATH 原值, os.getcwd())` 建键的单条目缓存，**只在未命中时 resolve**。
+  实测：200 次 `config_file_path()` 同进程交替 **29.9 / 31.7 / 29.8 ms → 0.30 / 0.15 / 0.15 ms**，
+  带并行负载时同一份工作曾到 187 ms；`allowed_data_roots()` 200 次 **218.0 ms → 1.87 ms**。
+  新增 `TestConfigPathResolveCache` 4 例，预言机是 **resolve 次数**而不是时间
+  （冷/热调用计数差、换 cwd 计数、换环境变量计数、白名单命中不 resolve）。
+  **红→绿**：把函数退回 HEAD 版 → 4 例全红（`4 failed, 59 deselected`），5 个对照组
+  （含「改配置立刻生效」「坏配置不缓存」）**全绿**，`已还原=True`。
+  **一条负结果，必须写清**：既有的时间预算用例
+  `test_whitelist_lookup_stays_sub_millisecond` 在缺陷态**安静时也能通过**（本轮注入实测 GREEN），
+  它当初在全量套件里红在 1049.9 ms > 200 ms 是「覆盖率 trace + 并行 agent 抢 CPU」叠出来的。
+  也就是说**它不是这处缺陷的可靠预言机**，真正拦住回归的是那 4 条计数用例；
+  本轮**没有**新增任何墙钟预算断言。
+- **L12b** `perf(statistics)` A15 的算法侧 —— `augmentor/statistics.py` 三处重复扫描：
+  ①`_calculate_field_statistics` 先拼一遍字符串再 `Counter` → 每个值 `str()` 三次改成一次
+  + 只扫一趟；②`_calculate_content_statistics` 的词汇统计原本一次性物化「全数据集所有 token」
+  的大列表，改成攒够 1000 个 token 整块 `update()`；③`_calculate_quality_metrics` 三个独立
+  循环合成一趟（每条文本 6 次 `item.get` → 2 次）。真实 6902 条、同进程交替中位：
+  字段统计 **7.56 → 5.41 ms（1.40×）**、内容统计 **42.02 → 37.05 ms（1.13×）**、
+  质量指标 **2.08 → 1.24 ms（1.68×）**、`calculate()` **50.94 → 43.87 ms（1.16×）**；
+  tracemalloc 真实峰值 **8.15 MB → 2.22 MB**。**`to_dict()` 输出逐字节不变。**
+  **一条自己踩出来的负结果**：中途我把「一次性大列表」换成「逐条 `word_freq.update(tokens)`」，
+  先量到 1.20× 的说法**没复现**（同进程交替 0.93×，即更慢）——原因是 `Counter(列表)` 走 C 实现的
+  `_count_elements`，逐条 update 要为 13804 条文本各付一次 Python 调用开销。据此才改成
+  分批（`_TOKEN_CHUNK = 1000`）这版：既拿回 C 路径，又把峰值从 7.91 MB 压到 1.97 MB（合成集）。
+  **（L7 记录的 43.4 ms 与本轮「缺陷态 50.94 ms」不是同一批次，绝对值不可跨批比，只认同进程交替比值。）**
+  新增 8 例，全部**确定性预言机**：`__str__` 调用计数、`dict.get` 调用计数、
+  monkeypatch `re.findall` 证明走的是预编译模式、tracemalloc 峰值预算（缺陷态 1292.0 KB vs
+  预算 400 KB，修复后 66.6 KB）、以及 4 例**手算对照**（含标准差 `sqrt(1.1875)`、
+  `avg/min/max/total`、三项质量指标 0.75 / 2÷3 / 0.25）。
+  **红→绿**：9 个注入变体逐个验（去掉单趟复用 / 去掉分批 / 去掉合并循环 / 去掉 `if output:`
+  / 把正则塞回循环内 / 按字母序打乱并列次序 等），全部符合预期且文件还原。
+  两条设计教训：①并列次序用例最初选的 token 让「首次出现序」恰好等于字母序，
+  换成故意逆序的 `m`/`k` 才能真正让「按字母排序」的注入变红；
+  ②`test_top_word_order_survives_chunk_boundaries` **没有 HEAD 基线**（缺陷版无
+  `_TOKEN_CHUNK` 概念），它锁的是新实现的边界行为，不属于红→绿证据链。
 - 全量：L4 后 **3679 passed / 3 skipped**（89.2 s），L5 后 **3703 passed / 3 skipped**
   （90.2 s），L6 后 **3705 passed / 3 skipped**（91.1 s），L7 后 **3726 passed / 3 skipped**
   （95.1 s），L8 后 **3747 passed / 3 skipped**（98.0 s），L9 后 **3747 passed / 3 skipped**
   （92.4 s）——L9 用例数不变是**有意**的：它**改写**了既有的结构护栏用例而非新增。
   L10 后 **3750 passed / 3 skipped**（55.7 s，coverage.xml line-rate 0.9927），
-  L11 后 **3780 passed / 3 skipped**（101.7 s，coverage.xml 总计 98.51%）。
+  L11 后 **3780 passed / 3 skipped**（101.7 s，coverage.xml 总计 98.51%），
+  L12 后 **3792 passed / 3 skipped**（64.3 s，coverage.xml 总计 98.51%）。
   **注意**：这些墙钟秒数**彼此不可比**——本工作树与并行 agent 共用一台机器，
   它跑全量时我会慢 40%+（L9 时 92 s、L10 时无竞争 55.7 s）。跨轮只比
   **同一进程内 back-to-back 的对照组**，绝对秒数只作当次快照。

@@ -3,6 +3,10 @@
 
 """数据集统计模块测试"""
 
+import math
+import re
+import tracemalloc
+
 import pytest
 from augmentor.statistics import (
     DatasetStatisticsCalculator, DatasetStatistics, FieldStatistics,
@@ -387,3 +391,203 @@ class TestStatisticsExtended:
         """便捷函数 get_field_summary 应返回字段摘要"""
         summary = get_field_summary(sample_dataset, "instruction")
         assert summary is not None
+
+
+class TestSinglePassInvariants:
+    """合并遍历的**可数**不变量：同一条数据不许被反复扫
+
+    这几条是 L12 的性能预言机。预言机故意不用耗时 —— 同一份真实数据在这台共享
+    机器上不同批次量到过 47 ms 与 69 ms，任何耗时阈值都会飘；用的是解释器被叫
+    起来的**次数**，它确定、可复现，而且恰好就是这些合并想省的东西。
+    「before」数字均为 HEAD 版实现在同一负载上的实测。
+    """
+
+    def test_each_value_is_stringified_once(self):
+        """字段统计里每个值的 `str()` 只该发生 1 次，不是 3 次
+
+        HEAD 版把原始值存进 `values`，之后「长度」「唯一值数量」「热门值」各自
+        扫一遍并各自 `str(v)`，同一个值转 3 次。
+        """
+        calls = []
+
+        class Valued:
+            def __init__(self, text):
+                self.text = text
+
+            def __str__(self):
+                calls.append(self.text)
+                return self.text
+
+        items = [{"f": Valued("v%d" % (i % 2))} for i in range(10)]
+        stats = DatasetStatisticsCalculator(items)._calculate_field_statistics("f")
+
+        assert stats.unique_count == 2
+        assert stats.top_values == [("v0", 5), ("v1", 5)]
+        assert len(calls) == 10, (
+            f"`str()` 被调了 {len(calls)} 次（只有 10 条数据）：每个值至多转一次，"
+            "多出来的是「唯一值」与「热门值」各自重扫了全表（HEAD 版是 3 次/值）"
+        )
+
+    def test_quality_metrics_reads_two_keys_per_item(self):
+        """完整性/多样性/一致性共用一趟遍历：每条只读 2 个键
+
+        三项指标都只看 `instruction` 与 `output`，HEAD 版分三遍扫表、每条
+        `item.get()` 6 次。
+        """
+        gets = []
+
+        class Counted(dict):
+            def get(self, *args, **kwargs):
+                gets.append(1)
+                return super().get(*args, **kwargs)
+
+        items = [Counted({"instruction": "q%d" % i, "output": "a%d" % i})
+                 for i in range(20)]
+        metrics = DatasetStatisticsCalculator(items)._calculate_quality_metrics()
+
+        assert metrics == {"completeness": 1.0, "diversity": 1.0, "consistency": 1.0}
+        assert len(gets) <= 3 * len(items), (
+            f"质量指标调了 {len(gets)} 次 `item.get()`（{len(items)} 条，上限 "
+            f"{3 * len(items)}）：三项指标又各自扫了一遍全表（HEAD 版 6 次/条）"
+        )
+
+    def test_tokenizer_uses_the_precompiled_pattern(self, monkeypatch):
+        """逐条切词不许回退到 `re` 的模块级入口
+
+        `re.findall(字面模式, text)` 每次都要走一遍 `re._compile()` 的缓存查找，
+        真实 6902 条 × 3 字段 = 13804 次纯查找开销。模块级 `_TOKEN_PATTERN`
+        编译一次，之后只碰已编译对象的 `findall`。
+        """
+        seen = []
+        original = re.findall
+
+        def spy(pattern, text, *args, **kwargs):
+            seen.append(pattern)
+            return original(pattern, text, *args, **kwargs)
+
+        monkeypatch.setattr(re, "findall", spy)
+        stats = DatasetStatisticsCalculator(
+            [{"t": "租 房 流 程 how to rent 123"}]
+        )._calculate_content_statistics()
+
+        assert stats["vocabulary"]["total_words"] == 8
+        assert not seen, (
+            f"切词调了 {len(seen)} 次 `re.findall`：每次都要重查编译缓存，"
+            "应在模块级编译一次 `_TOKEN_PATTERN` 再复用"
+        )
+
+
+class TestVocabularyMemoryBudget:
+    """词汇统计的峰值内存：token 缓冲区必须有上界
+
+    HEAD 版把全数据集的 token 攒成一个巨列表再交给 `Counter`；`findall` 每次
+    返回的都是新建字符串对象，所以那个巨列表是**真实占内存**的，不只是指针数组。
+    攒够 `_TOKEN_CHUNK`（1000）个就整块并进计数器后，同一负载峰值 1292 KB →
+    66.6 KB（真实 6902 条上是 8.15 MB → 2.22 MB），时间实测中性（配对 21 轮
+    比值中位 1.005）。
+    """
+
+    def test_token_buffer_stays_bounded(self):
+        text = " ".join(["alpha beta gamma delta"] * 10)   # 每条 40 个 token
+        items = [{"i": text, "o": text} for _ in range(300)]
+
+        tracemalloc.start()
+        try:
+            stats = DatasetStatisticsCalculator(items)._calculate_content_statistics()
+            peak = tracemalloc.get_traced_memory()[1]
+        finally:
+            tracemalloc.stop()
+
+        # 巨列表有 24000 个元素：省下来的必须是它，而不是「干脆没数」
+        assert stats["vocabulary"]["total_words"] == 24000
+        assert stats["vocabulary"]["unique_words"] == 4
+        assert stats["vocabulary"]["top_words"][0] == ("alpha", 6000)
+
+        assert peak < 400 * 1024, (
+            f"峰值 {peak / 1024:.0f} KB：24000 个 token 的巨列表就要 1.3 MB，"
+            "说明又回到「整表物化再一次计数」"
+        )
+
+
+class TestMergedPassSemantics:
+    """合并遍历的语义：期望值全部手算，不向被测库要参照
+
+    性能轮最怕「优化到一半把结果优化错了」。下面四组的数字都是纸面上算出来的。
+    """
+
+    def test_field_statistics_match_hand_computation(self):
+        """长度、唯一值、热门值在一份手算数据集上的全部数字
+
+        非空值 `aa`、`aaaa`、`aa`、`'7'`（长度 2,4,2,1）：均值 9/4=2.25；
+        排序 [1,2,2,4] → 中位数 (2+2)/2=2；方差 (0.0625+3.0625+0.0625+1.5625)/4
+        =1.1875 → 标准差 √1.1875；唯一值 {aa, aaaa, '7'} 共 3 个；
+        热门值同频时按首次出现排，`aa` 出现 2 次排第一。
+        """
+        items = [{"f": "aa"}, {"f": ""}, {"f": "aaaa"}, {"f": "aa"}, {"f": 7}]
+        stats = DatasetStatisticsCalculator(items)._calculate_field_statistics("f")
+
+        assert stats.total_count == 5
+        assert stats.filled_count == 4
+        assert stats.empty_count == 1
+        assert stats.avg_length == 2.25
+        assert (stats.min_length, stats.max_length) == (1, 4)
+        assert stats.median_length == 2.0
+        assert stats.std_deviation == math.sqrt(1.1875)
+        assert stats.unique_count == 3
+        assert stats.top_values == [("aa", 2), ("aaaa", 1), ("7", 1)]
+
+    def test_content_statistics_match_hand_computation(self):
+        """`text_length.total` 与 `avg` 共用一次求和后的真值
+
+        文本 `"m k m"` 与 `"k"`：长度 5 和 1 → 总长 6、均值 3.0；token 依次
+        m,k,m,k → 共 4 个、2 个不同。**故意**让先出现的 `m` 排在 `k` 后面（字面序），
+        这样「按字面序破并列」的错误实现会被这条用例抓到。
+        """
+        items = [{"a": "m k m"}, {"b": "k"}]
+        stats = DatasetStatisticsCalculator(items)._calculate_content_statistics()
+
+        assert stats["text_length"] == {"avg": 3.0, "min": 1, "max": 5, "total": 6}
+        assert stats["vocabulary"]["total_words"] == 4
+        assert stats["vocabulary"]["unique_words"] == 2
+        assert stats["vocabulary"]["top_words"] == [("m", 2), ("k", 2)]
+
+    def test_quality_metrics_match_hand_computation(self):
+        """三项指标合并成一趟遍历后的真值
+
+        4 条 × 2 个必填字段共 8 格，填了 6 格 → completeness 6/8=0.75；
+        非空 instruction 是 q1,q1,q4 → 多样性 2/3；
+        只有第 1 条「两个字段都有且不相等」→ 一致性 1/4=0.25。
+        """
+        items = [
+            {"instruction": "q1", "output": "a1"},
+            {"instruction": "q1", "output": ""},
+            {"instruction": "", "output": "a3"},
+            {"instruction": "q4", "output": "q4"},
+        ]
+        metrics = DatasetStatisticsCalculator(items)._calculate_quality_metrics()
+
+        assert metrics["completeness"] == 0.75
+        assert metrics["diversity"] == pytest.approx(2 / 3)
+        assert metrics["consistency"] == 0.25
+
+    def test_top_word_order_survives_chunk_boundaries(self, monkeypatch):
+        """分批计数不许改变并列词的先后：把批次压到 1 个 token 也要一样
+
+        `most_common` 对同频次的词按**首次出现**排序，而每个批次边界都是一次潜在
+        的重排点。把 `_TOKEN_CHUNK` 调到 1（最碎的分批）与默认值跑同一份数据，
+        结果必须完全相同，且必须是手算的那个顺序。
+        """
+        import augmentor.statistics as statistics_module
+
+        items = [{"t": "m k"}, {"t": "k m"}]
+        # token 依次 m,k,k,m → 两个各 2 次，先出现的 m 必须排在 k 前面
+        expected = [("m", 2), ("k", 2)]
+
+        def top_words():
+            stats = DatasetStatisticsCalculator(items)._calculate_content_statistics()
+            assert stats["vocabulary"]["total_words"] == 4
+            return stats["vocabulary"]["top_words"]
+
+        assert top_words() == expected
+        monkeypatch.setattr(statistics_module, "_TOKEN_CHUNK", 1)
+        assert top_words() == expected
