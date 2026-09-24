@@ -29,7 +29,7 @@
 - [x] **L16** `feat(converter)`: B3 前半 —— 补上 6 条反向转换边（`alpaca/belle/llama_factory/sharegpt/vicuna/chatml → json`），并给 CLI `--input-format` / API `source_format` 接线；导出→再增强的回路打通，新增 42 例
 - [x] **L17** `perf(validation) + fix`: A12① —— 禁止模式预编译并把 `import re` 提到模块级，真实 6902 条 strict 整档校验 **28.99 → 19.49 ms（1.49×，9/9 轮）**、该段 **1.69–1.88×**；**顺带修掉一个新发现的缺陷**：`DatasetValidator(preset=...)` 直接把类级预设字典挂到实例上，任一实例改规则即污染全部预设
 - [x] **L18** `perf(indexer)`: A11（A7/L13 的同构缺陷）—— `DatasetIndexer` 的 4 份默认索引改成**按需、按份**构建，`DatasetView` 的切片/过滤/采样从「每次白建 19 MB 索引」变成零构建：真实 6902 条 `filter()` **132.7 → 0.44 ms**、冷启动 contains **79.9 → 7.1 ms**、构造视图（n=4000）内存 **峰值 11.7 MB → 驻留 1.2 KB**，新增 12 例
-- [ ] **A23（L18 新记，未修）**：`search_exact` / `search_ngram` 对默认清单外的字段**静默返回空**（`DatasetIndexer(items).search_exact("answer", "b") == []`），`search(fields=[...])` 传自定义字段时同样空手而归却报 200
+- [x] **L19** `feat(indexer)`: A23 —— `search_exact` / `search_ngram` 不再被默认清单限死：清单外字段、任意 `n` 第一次被查询时按需建自己的索引。真实 6902 条 `search_ngram("output", …)` **0 → 8 命中**（朴素全表扫描同为 8），`search(method="ngram")` 的命中数从「少报一半」变成与 contains 逐条相同（租房 **419 → 823**）；**代价也实测了**：冷 ngram 查询 **55–65 → 225–240 ms**（要多建一份 `output_2`，单份 170.9 ms），另立 **A24**；新增 8 例、改写 3 例
 
 ## Backlog A — 性能（含 file:line 与实测线索）
 
@@ -39,14 +39,15 @@
 | ~~A2~~ | ~~`api/deps.py` `allowed_data_roots()`~~ | ~~每个路径参数都 `load_config()` 重新解析 YAML，实测 **6.8 ms/次**~~ 已修（L4，含环境变量分支 0.29 ms/次） | S |
 | ~~A3~~ | ~~`augmentor/analytics.py:403-412`~~ | ~~`get_duplicate_candidates()` 纯 O(n²) 且每对重建字符集合~~ **L9 实测排除**：生产路径零调用者（只有测试与自身），优化它不会改变任何用户可见耗时；真要做属于 B 类「接线」而非 A 类 | M |
 | ~~A4~~ | ~~`api/routes/quality.py:141,185,217,253,285,309,370,403` + `audit.py:31,32` `leakage.py:46,47` `privacy.py:52` `export.py:132`~~ | ~~`async def` 里同步 `load_items()` 阻塞事件循环，应走 `run_in_thread`~~ 已修（L5；`export.py:109` 本就在线程内，非缺陷） | M |
-| A5 | `augmentor/pipeline.py:205-210` + `quality.py:133,153` | 逐条 `encode()`/`predict()` 打分，已有 `batch_score()` 却没用 | M |
+| ~~A5~~ | ~~`augmentor/pipeline.py:205-210` + `quality.py:133,153`~~ | ~~逐条 `encode()`/`predict()` 打分，已有 `batch_score()` 却没用~~ **L19 读代码后判定：不能直接换（未实测收益，因为换了就不是同一件事）**。`pipeline.py` 那里有一条**写明在代码注释里的刻意语义**（「不使用已有生成文本，避免锁竞争」），而 `batch_score()` 的多样性是**渐进**的：它把已通过门槛的样本逐个追加进参照集（`quality.py:417-433`），所以「同一批 8 个变体各自独立打分」与「一批丢进 `batch_score`」的多样性维度**按定义不同**，`passed` 阈值判定会跟着变，结果是**静默丢掉原本会被采纳的样本**。真要动它属于改质量口径（B 类决策），不属于性能轮顺手能改；且本环境缺 sentence-transformers，`encode()` 走回退路径，收益量级也无法真实测量。 | M |
 | ~~A6~~ | ~~`augmentor/dedup.py:242-290`~~ | ~~贪心归组只消费 `j > i`，行块却每次算满 `block_rows × n` → 整个下三角白算。真实 6902 条实测分组 **30.0 s → 20.7 s**~~ 已修（L9）；剩下的稠密编码另立 **A17**，块行数另立 **A18** | L |
 | ~~A7~~ | ~~`augmentor/search_enhanced.py:448,82`~~ | ~~每次查询重建索引（n=3000 重建 8 ms vs 查询 2 ms），且 contains/fuzzy 不查索引~~ **前半已修（L13）**：`search_dataset()` 每次都新建搜索器，而构造即无条件建索引（真实 6902 条 64.5 ms + 6.17 MB），五种方法里只有 exact 读它 → 改成按需构建。**「不查索引」那一半另立 A21** | M |
 | ~~A8~~ | ~~`api/routes/data.py:146-164`~~ | ~~整文件解析 + 全量过滤后再切片，无早停~~ **L9 实测排除**：响应里的 `total` 按定义要求「过滤后的总数」，早停会把它算错；能省的只有物化切片，量级不值得 | M |
 | ~~A9~~ | ~~`augmentor/tracker.py:114` → `:87-99`~~ | ~~每个指标点整文件重写 → O(points²) 字节~~ **L9 实测排除**：`log_metric`/`start_experiment` 除测试外无调用者（`ExperimentTracker` 本身在 `pipeline.py:118` 有构造，别误判成死模块）。等 B7 把实验回路接上再优化才有意义 | S |
 | ~~A10~~ | ~~`augmentor/quality.py:175-179`~~ | ~~多样性回退里参照文本 n-gram 集合反复重建~~ **已修（L14）**：真实 1500 条 `batch_score` 同进程交替中位 **339.5 → 61.8 ms（5.49×，9/9 轮）**、`_ngram_similarity` **46500 → 1500 次**、集合分配约 **37200 → 9930 个**（N=300 单测），五项分数逐条相同；**峰值内存反向 +79.6 KB**（缓存常驻 30 个 frozenset），本轮只买 CPU | S |
 | ~~A11~~ | ~~`augmentor/indexer.py:117-123,345,352,372-399`~~ | ~~每次 `DatasetView` 操作重建全部索引（filter 26 ms @ n=3000）~~ **已修（L18）**：这是 A7/L13 的同构缺陷——`DatasetView.__init__` 无条件 `DatasetIndexer(items)`，而构造即建齐 3 份倒排 + 1 份 n-gram（真实 6902 条 **70 ms / 峰值 19.2 MB**），可是 `search()` 的默认方法 contains 和 `filter/head/tail/sample/切片` **一份都不读**。改成「按份、按需」构建：`filter()` **132.7 → 0.44 ms**、链式三级 **195 → 0.9 ms**、冷启动 contains **79.9 → 7.1 ms（10.9×）**、exact **68.8 → 8.4 ms**、ngram **65.0 → 56.8 ms（只省 3 份倒排）**；构造视图（n=4000）内存 **峰值 11.7 MB → 驻留 1.2 KB**；旧版构造耗时随 n 线性（15.65/34.08/54.79 ms @ 2000/4000/6000），新版与 n 无关 | M |
-| A23 | `augmentor/indexer.py:127-141,163-178` | **L18 新发现（口径缺陷，不是性能）**：`search_exact` / `search_ngram` 只对默认清单（`instruction/output/input` + `instruction_2`）生效，清单外的字段**静默返回空列表**——`DatasetIndexer(items).search_exact("answer", "b")` 永远是 `[]`，`search(query, fields=["answer"])` 同样空手而归。L18 刻意**没有**顺手改（按需构建时明确拒绝为清单外字段建索引，并写了用例 `test_non_default_field_query_stays_empty_without_building` 把这个行为钉住）。要修就得连同「新建一份索引的耗时由谁承担」一起决策 | S |
+| ~~A23~~ | ~~`augmentor/indexer.py:127-141,163-178`~~ | ~~**L18 新发现（口径缺陷，不是性能）**：`search_exact` / `search_ngram` 只对默认清单（`instruction/output/input` + `instruction_2`）生效，清单外的字段**静默返回空列表**~~ **已修（L19）**：判据换成「要么欠着默认清单的账，要么手上真有数据可建」，字段与 `n` 都不再受限。**真实数据上的症状比预想的重**：`search(query, method="ngram")` 的默认字段是 `instruction`+`output`，而 `output_2` 从来没人建过，于是这条查询一直在**静默少报 output 侧的全部命中**——真实 6902 条「租房」 **419 → 823**（与 contains 逐条相同）、「如何」 **2019 → 2035**；`search_ngram("output","，晨")` **0 → 8**（朴素全表扫描 8）。代价同轮实测：冷 ngram 查询 **55–65 → 225–240 ms**（多出的一份 `output_2` 单份 170.9 ms），临时倒排一份只 4.3 ms。`search_enhanced.py` 里**没有同构缺陷**（`_build_indexes` 遍历 `item.items()` 不收清单，`_search_ngram` 走扫表） | S |
+| A24 | `augmentor/indexer.py:213-242` | **L19 新记（成本，不是缺陷）**：一次性的 n-gram 查询要付**整份索引**的钱——真实 6902 条首查 `output_2` 170.9 ms、`instruction_2` 58.7 ms，而查询串本身只有 1～k 个 n-gram。对「只查一次」的调用方，直接扫全表算 bigram 交集比建索引便宜得多（contains 扫全表实测 7.3 ms 就是上界参照）。修法与 A21 同族：给 `search_ngram` 加「首查扫表、累计第 N 次才建索引」的策略，或者把 n-gram 倒排改成按需局部化。**本轮没动**（L19 的边界是把语义修对并如实记下代价，不顺手改性能口径） | M |
 | ~~A12~~ | ~~`augmentor/validation.py:217-222`~~、`sampler.py:296-299` | **L13 实测拆成两半**：①`_validate_item` 里 `import re` + 每条每模式一次 `re.search`；②`sampler.generate_report()` 的 `items.index(seed)` **实测不是缺陷**（真实数据只推荐 4 个种子、反查 0.0 ms，单趟 id 映射要 1.1 ms，改了反而更慢；且它还会改变「值相等但不同对象」时的下标语义，真实数据里正好有 367 条重复 dict）—— 这一半作废。**①已修（L17）**：真实 6902 条 strict **28.99 → 19.49 ms（1.49×）**，禁止模式段占整档 53–55%、该段自身 **1.69–1.88×**（L13 预估的「~5 ms / 1.2×」偏保守）；`re.search` 逐条调用 **27608 → 0**、`re.compile` 与条数无关恒为 2 | S |
 | ~~A13~~ | ~~`api/routes/dataset_tools.py:311,360,386,387,416,436,566,598` + `system_ops.py:320,348,514`~~ | ~~**A4 的同构族**：`read_items()`（同步版）在 11 个 `async def` 路由体里直接调用，同样占着事件循环；`dataset_tools.py:566` 还是「多个文件在循环里串行读」；`/api/dataset/stats` 连分析都留在循环上（43.4 ms）~~ 已修（L7） | M |
 | ~~A14~~ | ~~`augmentor/impact.py:66`~~ | ~~`duplicate_rate` 里 `texts.count(t)` 写在推导式中 → O(n²)~~ 已修（L6） | S |
@@ -479,6 +480,64 @@
   （「视图操作白建了索引：[4 份]」「构造视图后仍驻留 2410.6 KB」「切片查询一份都没建」），
   不是崩溃。对照 6 组（既有 44 例 + branches 18 + rng_hygiene 10 + round90 4 +
   round100 2 + CLI 合并命令 72）全程绿，恢复后全绿。
+- **L19** `feat(indexer)` A23 —— 把 L18 **刻意留下**的那条口径缺陷修成真能力。
+  L18 让索引变成「按份、按需」之后，「哪些份」仍由两张默认清单写死：
+  `_ensure_field_index` 开头一句 `if field not in DEFAULT_INDEX_FIELDS: return`，
+  `_ensure_ngram_index` 同理。后果不是「慢」而是**静默查不到**：调用方拿到 `[]`，
+  真相却是「我压根没为这个字段建过索引」。判据换成
+  「**要么欠着默认清单的账，要么手上真有数据可建**」（`or self._items` 保住空数据集
+  不凭空造空索引，`list_indexes()` 的两种旧口径原样不动），清单从此只决定
+  「报告里该有哪几份」，不再决定「能查什么」。
+  **真实数据上的症状比 L18 记录的更重**：`search(query, method="ngram")` 的默认字段
+  是 `instruction`+`output`，可 `output_2` 从来没被建过 —— 也就是说这条查询**一直在
+  静默少报 output 侧的全部命中**，而且它返回的是正常 `QueryResult`、HTTP 侧是 200。
+  实测（真实 6902 条）：ngram「租房」**419 → 823**、「如何」**2019 → 2035**（两者修后
+  与 contains 的命中数逐条相同，contains 不受影响所以正好可作对照），
+  「写一篇」6 → 6 不变；`search_ngram("output", "，晨")` **0 → 8**，同一份数据的朴素
+  全表扫描就是 8。新能力：`search_ngram("instruction", …, n=4)` **0 → 5**、
+  `search(fields=["answer"], method="exact")` 由空手而归变成真命中。
+  **代价同轮实测，没有藏**：冷 ngram 查询 **55–65 → 225–240 ms**，因为要多建一份
+  `output_2`（单份 170.9 ms；`instruction_2` 58.7 ms）；临时倒排一份只 4.3 ms
+  （`search_exact` 的按需建索引跟文本长度线性，n-gram 跟字符数 × n 线性）。
+  这条成本另立 **A24**（「一次性 n-gram 查询付整份索引的钱」），L19 不动它 ——
+  一轮只改一类口径，否则红→绿归因就混了。
+  **L18 的收益没回退**（同进程交替，真实 6902 条）：构造索引器 0.00 ms、
+  `indexer.filter()` 0.17 ms、冷 contains 7.31 ms、冷 exact 7.87 ms、
+  `list_indexes()` 61.9 ms 且仍报 4 份、合成 4000 条构造视图后驻留仍 1.2 KB。
+  **建索引份数预言机（每行全新对象）**：默认路径全部不变（构造 0、filter 0、
+  冷 contains 0、冷 exact 2、`list_indexes()` 4），变化只在本来就不该空手而归的几行 ——
+  冷 ngram 查询 **1 → 2 份**（`instruction_2` + `output_2`）、n=3 **0 → 1**、
+  清单外字段 exact **0 → 1**、清单外字段 ngram **0 → 1**、`fields=["answer"]` **0 → 1**。
+  **等价性**：默认流程下 `_field_indexes` / `_ngram_indexes` 连**键序**都逐项相等；
+  contains / exact 九组查询命中序列逐条相同；空数据集三种口径（`DatasetIndexer([])`
+  报 0 份、`load([])` 后报 4 份、清单外字段返回 `[]`）两侧全等。
+  **一条有意的口径变化**：临时索引建了就会被 `list_indexes()` / `get_statistics()`
+  报出来（顺序是先建的字段在前、再补齐默认清单），不再等于「默认清单四项」。
+  把它藏起来等于新增一层「报的不是真相」，与本轮方向相反，所以选择暴露 + 用
+  `test_ad_hoc_index_appears_in_the_report` 钉住。另一条后果：`_field_indexes` 的上限
+  从「清单里的 3 份」变成「被查过的字段种类数」——一个索引器活多久它就长多久，
+  量级是每字段一份 O(文本总量) 的倒排。本仓库没有任何请求路径会拿用户输入当字段名
+  （`DatasetIndexer.search` 在 `create_indexer/create_view` 之外零调用者，CLI/API 走的是
+  `search_enhanced`），所以这不是可被外部放大的增长；SDK 用户若拿不受信的字段名查，
+  需要自己复用同一个索引器的生命周期。
+  **同构排查**：`search_enhanced.py` 没有这个缺陷 —— `_build_indexes()` 遍历
+  `item.items()` 收全部字符串字段（无清单），`_search_ngram` 走扫表（与 `n` 无关）。
+  顺手把 **A5** 也判了：`pipeline.py` 那处逐条打分**不能**换成 `batch_score()`，
+  因为后者的多样性参照集是渐进累积的（`quality.py:417-433`），换了会静默改变
+  `passed` 判定 —— 理由已写进 Backlog，未做任何代码改动。
+  **用例**：新增 **8 例**（`tests/unit/test_indexer.py::TestArbitraryFieldQueries`，
+  含一条 8 线程同发清单外字段首查询只建 1 份），改写 **3 例**：L18 的
+  `test_non_default_field_query_stays_empty_without_building`（钉的正是被修掉的缺陷）
+  换成 `test_ad_hoc_field_on_empty_indexer_builds_nothing`（钉住保留下来的豁免），
+  `test_ngram_query_builds_only_its_own_ngram_index` 与
+  `test_each_index_is_built_once_and_reused` 的期望从 1 份 n-gram 改成 2 份，并给前者
+  补了一条「命中数必须等于朴素全表扫描」的交叉校验，防止用「少建一份索引」冒充「省」。
+  **红→绿（逐条）**：`indexer.py` 整份退回 HEAD → 新用例 **10 红**（8 + 改写的 2）、
+  白名单 1 绿（`test_ad_hoc_field_on_empty_indexer_builds_nothing`，设计上两侧都绿），
+  失败理由全是「命中数/建索引份数不符」（`assert 0 == 3`、`assert [] != []`、
+  `['ngram:instruction_2']` 少一份），不是崩溃。对照 6 组（TestLazyIndexConstruction
+  余下 10 例 + branches 18 + enh 1 + search_enhanced 52 + CLI 合并命令 72 +
+  round90 4 / round100 2）全程绿，恢复后全绿。
 - 全量：L4 后 **3679 passed / 3 skipped**（89.2 s），L5 后 **3703 passed / 3 skipped**
   （90.2 s），L6 后 **3705 passed / 3 skipped**（91.1 s），L7 后 **3726 passed / 3 skipped**
   （95.1 s），L8 后 **3747 passed / 3 skipped**（98.0 s），L9 后 **3747 passed / 3 skipped**
@@ -491,7 +550,8 @@
   L15 后 **3816 passed / 3 skipped**（51.3 s，总计 98.51%），
   L16 后 **3858 passed / 3 skipped**（56.4 s，总计 98.52%），
   L17 后 **3866 passed / 3 skipped**（54.0 s，总计 98.52%），
-  L18 后 **3878 passed / 3 skipped**（54.8 s，总计 98.52%）。
+  L18 后 **3878 passed / 3 skipped**（54.8 s，总计 98.52%），
+  L19 后 **3886 passed / 3 skipped**（57.4 s，总计 98.53%）。
   **注意**：这些墙钟秒数**彼此不可比**——本工作树与并行 agent 共用一台机器，
   它跑全量时我会慢 40%+（L9 时 92 s、L10 时无竞争 55.7 s）。跨轮只比
   **同一进程内 back-to-back 的对照组**，绝对秒数只作当次快照。
