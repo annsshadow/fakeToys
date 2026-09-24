@@ -40,6 +40,7 @@
 - [x] **L27** `feat(search_enhanced)`: A29 —— `SearchResult` 回显**本次真正生效**的松紧旋钮（新增 `fuzzy_threshold` / `ngram_n` 两字段，`to_dict()` 一并导出），口径取「**方法没消费它就是 `None`**」而不是一律回显默认值：`contains` 旁边印个 0.6 会让人以为阈值管得到它，那与 A27/A28④ 是同一类静默。落点：**两条「找到 0 条」终于可分辨**——「公租屋」阈值 0.667 → 0 条（最优窗口分数正好 0.667，差一点就过）vs contains 同查询 → 0 条（语料里真没有）。CLI 把生效值印在**第二行末尾**（`搜索方法: fuzzy (生效阈值 0.6)`）而不是新起一行，因为下游按 `out[out.index("["):]` 取条目，「两行摘要 + JSON」是既有契约；`--output` 落盘的字典自然带两键。API 侧必须**同时**在 `SearchResponse` 声明这两键——FastAPI 按 `response_model` 过滤返回值，模型少写一键就**静默**从响应里消失（本轮由既有的 `test_api_openapi_contract.py` 抓到，红信息直接写出「response_model 漏声明字段…会被静默裁掉」）。代价实测（同进程 back-to-back min-of-7，真实 6902 条）：默认路径四组比值 **0.9834 / 0.9994 / 0.9873 / 1.0000**（命中集合逐条相同 823/823/38/0），`to_dict()` 单次 0.00014 → 0.00017 ms（**+30 ns** 换两个键）。新增 26 例（unit 144→155 / CLI 79→87 / API 212→219）+ 更新 1 处既有契约用例（该用例在缺陷态驱动 **2** 条红），注入 **24 红 / 590 绿**（其中 4 绿是白名单：3 条钉「不消费旋钮的方法不许印数字」+ 1 条钉 stdout 形状，缺陷态必然绿），全量 **4132 passed / 2 skipped**（98.98%，4106 + 26 = 4132 精确对上）；另立 **A30**（`SearchFilter` 的九种算子只在 SDK 里摸得到）
 - [x] **L28** `feat(search_enhanced)`: A30 —— `filters` 从「只有 import 库类才用得到」接到三端（`search_dataset(filters=)` / CLI `--filter FIELD OP VALUE`（可重复）/ API `SearchRequest.filters`），并在 `search()` 的**同一处咽喉**新增公开 `normalize_filters()`，把四种旧行为里**静默或崩溃**的坏形状变成 `DataValidationError`：未知算子（旧：**0 命中**，与「语料里没有」同形）、`in`/`not_in` 配标量（旧：**0 命中** / **全留**，即「没过滤」被伪装成「过滤通过」）、值类型不符（旧：`TypeError` 冒到 API 成 **500**）。顺手修掉同族的第五条：`filters` 传**字典**在 HEAD 里是 `AttributeError: 'dict' object has no attribute 'field'`（实测，崩在扫描第 445 行深处），现在字典是与 `SearchFilter` 对象等价的合法形态。**一轮只改一类口径**：判据只看**用户给的参数**，文档字段类型不对仍是「不匹配」而不是报错（那是数据）；`_evaluate_filter` 的 11 条私有方法既有用例因此**一条都不必改写**。CLI 的算子清单与咽喉 `FILTER_OPERATORS` 是跨模块两份手写表（`--filter` 的 `nargs=3` 用不了 `choices=`，实测 argparse 会把 FIELD 也比成算子 → `invalid choice: 'output'` + 退出码 2），于是照 `EXPORT_FORMATS` 的先例由新用例 `TestSearchFilterSurface` 双向钉住（集合并**顺序**相等 + 九个算子逐个真跑通）。实测收益（真实 6902 条）：contains「租房」`instruction` **419 → 叠加 `instruction contains 申请` = 10 条**（收窄 42 倍）。代价（同进程 back-to-back min-of-7）：五组比值 **0.976 / 0.971 / 0.991 / 0.983 / 1.003**（不传 `filters` 的热路径零回归，`normalize_filters(None)` 立即返回），命中集合新旧逐条相同。新增 **59 例**（unit 155→188 / CLI 87→94→**104** / API 219→228），**既有例 0 改写**，注入 **58 红 / 615 绿**（1 绿是白名单 CONTROL：空 `filters` ≡ 不过滤，缺陷态必然绿，守的是「新校验没改动无过滤路径」），全量 **4191 passed / 2 skipped**（98.98%，4132 + 59 = 4191 精确对上），`search_enhanced.py` 213→**243** 语句 0 missed、`cli/parser.py` **199 语句 100%**；另立 **A31**（生效的过滤器不回显）、**A32**（`normalize_filters` / `FILTER_OPERATORS` 不在包级导出 + API 请求侧 schema 不表达算子域）
 - [x] **L29** `feat(search_enhanced)`: A31 —— 承 A29 的回显口径补齐第三种「找到 0 条」成因：`SearchResult` 新增 **`applied_filters`**（**规范化之后**的 `{field, operator, value}` 字典清单，不外泄调用方对象）与 **`matches_before_filters`**（过滤**之前**的候选数），三端各自落到能读的地方——CLI 第二行末尾追加「`(N 个过滤器: 检索 X → 保留 Y)`」（继续不另起一行，`out[out.index("["):]` 是既有契约）、`--output` 与 `/api/dataset/search` 各带两键（`SearchResponse` **同步声明**，否则 FastAPI 静默裁剪，L27 已实测过一次）。口径承 L27：没过滤是 `None` 而不是 `[]` / `0`，否则「没过滤」与「过滤后剩 0 条」重新同形；`matches_before_filters` 与 `total_matches` 都是**分页前**的全集口径。顺带一条规范化：成员档收到 `set` 时落成 `list`，因为回显取自规范化产物而集合进不了 JSON（`--output` / 响应都会 `TypeError`）。实测收益（真实 6902 条）：contains「租房」419 条候选 → `instruction contains 申请` 后 **10** 条，且「419 → 10」这句话现在三端都印得出来；「检索 2 → 保留 0」与「检索 0 → 保留 0」在 stdout 与 JSON 上首次可分辨。代价（同进程 back-to-back min-of-7，四组比值 **0.990 / 0.997 / 1.007 / 0.983**，绝对值 1.82/1.80 · 1.79/1.78 · 1.75/1.76 ms + fuzzy 17.47/17.16 ms）——回显在 `if normalized_filters` 分支内、逐条判定外，所以**真正的护栏是计数式**：`SearchFilter.to_dict` 每次查询调用数 == 过滤器条数（不是候选数），带 1 个过滤器时非 0 以自证探针是响的。新增 **38 例**（unit 188→207 / CLI 104→114 / API 228→237），**改写 2 处既有用例期望**（L27 的 `to_dict` 键集合 8→10、旧构造用例扩两字段）+ **1 处契约期望 8→10**（后者驱动 2 条红），注入 **40 红 / 667 绿**（2 绿在白名单：`test_unfiltered_search_prints_no_filter_section` 钉「没传参数不许印数字」、`test_stdout_shape_is_still_two_summary_lines_then_json` 钉下游形状，两者缺陷态必然绿），全量 **4229 passed / 2 skipped**（109.62 s，98.98%，4191 + 38 = 4229 精确对上），`search_enhanced.py` 243→**251** 语句 0 missed；另立 **A33**（多条过滤器只有合计数，说不出是哪一条把候选清零）、**A34**（集合值回显顺序跨进程不稳定，实测）
+- [x] **L30** `perf(dedup)`: A17 剩下的那一半（稀疏化）—— fallback 去重**不再物化 n×vocab 矩阵**，改由「倒排 postings 散射累加」产出同形状相似度块，两条实测账选路。实测（真实 6902 条 `instruction`，min-of-3 同进程 back-to-back）端到端 **969 ms vs 10484 ms（比值 0.092，≈10.8 倍）**、峰值 **149.1 MiB vs 621.8 MiB（4.17 倍）**、`duplicate_groups` / `kept_indices` **逐组完全相同**（369 组 / 移除 377 条）；逐块最大绝对差 9.537e-7，阈值 0.9 上**判定不同的单元 0 个**、离阈值最近的一对还有 2.644e-4。根因**不是** A19 那条 Python 双循环，而是 **BLAS 在 0.12% 密度的矩阵上乘零**：nnz 只有 194,293 / 6902×23033=1.59 亿格。选路判据两条独立账：时间 `pair_adds×3000 < n²/2×vocab`、内存 `n×vocab×4×100 > pair_adds×block_rows×96×125`（单价 96 B 由七档实测峰值拟合，比值 0.97～1.13）。**本轮内自我推翻一次**：内存账最初写成「稠密矩阵超过 64 MiB 就换」，随后逐档实测随机语料 n=1200…7200，发现倒排峰值**一直是稠密的 1.4～2.4 倍**（n=4800：171.3 vs 85.7 MiB 且慢 7%），固定 MiB 线会在其中三档判错方向 → 换成按「最大那个块的 pair 级临时数组」估算。收益边界实测：`output`（V=17450、pair_adds 1.466 亿）与 `input`（V=0）两条账都判负、保持旧行为；全重复语料（V=9）倒排慢 69 倍同样被挡。新增 **42 例**（`test_dedup.py` 52→94），**既有断言 0 改写**，注入 **42 红 / 0 绿**（本轮无白名单绿例）、既有 52 例在缺陷态全绿，全量 **4271 passed / 2 skipped**（48.94 s，总计 98.98%，**计数 4229 + 42 = 4271 精确对上**），`dedup.py` 222→**266 语句 0 missed**、只余 `171->169`（`_fallback_encode` 里 `if ngram in vocab` 恒真的死分支，先于本轮，并入 A19）；另立 **A35**（`find_similar_pairs` 仍构造 n×vocab）、**A36**（阈值恰好压在「数学上精确相等」的相似度上时判定由 float32 最后位决定，实测 9 对 / 18 单元）、**A37**（倒排峰值仍随 `pair_adds×block_rows/n` 增长，149.1 MiB 远高于「一个块」的 16 MiB 上限）
 
 ## Backlog A — 性能（含 file:line 与实测线索）
 
@@ -69,15 +70,18 @@
 | A31 | `augmentor/search_enhanced.py`（`SearchResult`）+ CLI 摘要 + `SearchResponse` | **L28 新记（A29 同族：回显不全）**：L28 之后 `filters` 能收窄结果，但 `SearchResult` 只回显两个松紧旋钮，**不回显本次真正应用了哪些过滤器**。于是「找到 0 条」新增第三种成因（检索没命中 / 旋钮太紧 / **过滤器把候选全筛掉了**）里最隐蔽的那种仍然读不出来——尤其 `not_in` 配错值形状时旧行为是「全留」，用户看到 419 条会以为过滤器没起作用，而新行为虽然改成报错，**成功路径上仍然没有「过滤器生效了、收窄到 10 条」的正向证据**。修法：`SearchResult.filters`（或 `applied_filters`）回显**规范化后**的过滤器列表（`{field, operator, value}` 字典，不回显原始对象，避免把调用方的可变对象泄进结果），CLI 摘要第二行跟着印 `过滤 N 条`，`SearchResponse` 必须**同步声明**否则 FastAPI 静默裁剪（L27 已实测过一次）。要先决定：空过滤器回显 `[]` 还是 `None`（L27 的口径是「方法没消费就不印」，这里对应「没过滤就是 `None`」）。**已做（L29）**：口径取「没过滤 = `None`」，CLI 印在第二行末尾「`(N 个过滤器: 检索 X → 保留 Y)`」，`SearchResponse` 与契约用例同步改到 10 键；额外踩到一条本行没预见的坑——成员档的 `set` 值进不了 JSON，所以在 `normalize_filters` 里归一成 `list`（其副作用另立 **A34**），逐条过滤器是谁筛光的仍没有（另立 **A33**） | ~~S~~ |
 | A33 | `augmentor/search_enhanced.py:385-391`（`search()` 的过滤分支）+ CLI 第二行 | **L29 新记（本轮产物自己的残留）**：多条 `--filter` 现在只回显**合计数**（「3 个过滤器: 检索 419 → 保留 10」），说不出**是哪一条**把候选清零的——而这正是三条以上时唯一真正想知道的事。修法是在逐条应用处记 `len(filtered_indices)` 快照并回显成 `filters_funnel: [419, 12, 10, 0]` 这类并列清单。要先定：①它进不进 `to_dict()`（进则 `SearchResponse` 必须同步声明，见 L27 那条静默裁剪）；②CLI 第二行已经很长，印不印逐条数还是只印「最后为 0 的那条」；③与 A31 同口径：没过滤时是 `None` 而不是 `[]` | S |
 | A34 | `augmentor/search_enhanced.py:160-166`（`normalize_filters` 的 set→list） | **L29 新记（实测，不是猜想）**：成员档收到 `set` 时归一成 `list`，而 `list({...})` 的顺序由字符串哈希决定 → 同一份代码三个进程里量到 `['alpha','beta','gamma']` / `['gamma','beta','alpha']` / `['alpha','beta','gamma']`（`PYTHONHASHSEED` 随机化）。于是 SDK 调用方传集合时 `to_dict()` 的回显**跨进程不是字节稳定**的（CLI 与 API 走 JSON 数组，不受影响）。修法两个方向：同质（全 str 或全数字）集合排序、或在 `SearchResult` 文档里明写「回显不保证顺序」并停止归一。选前先量排序对混合类型的 `TypeError` 面 | S |
+| A35 | `augmentor/dedup.py`（`find_similar_pairs`） | **L30 新记（L30 的边界之外，如实记下）**：A17 的倒排化只覆盖了「归组」这条主线（`_find_duplicate_groups_chunked` → `_similarity_blocks`），**`find_similar_pairs` 仍然走 `_batch_encode` 物化整份 `n×vocab` 稠密矩阵**——它是公开 API，真实 6902 条上被调用就是 606 MB 峰值 + 那 5486 亿次乘加，L30 的 10.8× 一分钱都拿不到。修法直接：让它也过 `_similarity_blocks`（块形状契约已经和稠密一致，逐块取上三角即可），并补一条「两条公开入口共用同一个生产者」的用例。**没在本轮做**是因为 L30 的边界是「换掉归组的生产者 + 判据」，一处口径一轮改。先实测 `find_similar_pairs` 在真实数据上的端到端耗时，否则改了也不知道值不值 | M |
+| A36 | `augmentor/dedup.py`（阈值判定）+ `test_dedup.py`（`test_an_exact_tie_is_not_a_producer_bug`） | **L30 新记（浮点意义上的诚实残留）**：两条生产者在**恰好等于阈值**的配对上会给不同答案——真实小语料上 0.5 这一档有 9 对精确 0.5，稠密路径（`_normalize` 除两次、结果恰好落在 0.5）判进，倒排路径（`float32` 散射累加一次归一）量到 `0.4999999701976776` 判出，**18 个单元翻转**。这不是 bug 而是两种算法各自的舍入方向，L30 已把它钉成用例（而不是把阈值挪开糊过去），并要求「任意翻转单元离阈值的距离 ≤ 2e-6」。残留风险：调用方若**恰好**用「相似度等于某个二进制可精确表示的值」当阈值（0.5、0.25、0.75…）做去重，换生产者会改变分组结果。**该做的是**在 `Deduplicator` 文档里写明「阈值比较是 `>=`，落在浮点边界上的配折不保证跨实现一致」，或干脆内部留 1e-7 容差——两条路都要用户拍口径，故未当轮顺手选 | S |
+| A37 | `augmentor/dedup.py`（`_iter_inverted_similarity_row_blocks` 的峰值） | **L30 新记（L30 产物自己的成本残留）**：倒排路径确实不再物化 `n×vocab`，但**峰值仍随 `pair_adds × block_rows ÷ n` 增长**，真实 6902 条端到端峰值 **149.1 MiB**，离「一个块的上界 16 MiB」还差一个量级——因为 postings 视图（`terms/docs/values` + 排序后的副本）是**整份常驻**的，块内又各自有 `flat/picked/weights` 三份临时。随机 60 字符语料逐档实测更说明问题：n=1200…7200 时倒排峰值**一直是稠密的 1.4～2.4 倍**（54.2/22.2、104.0/44.4、153.9/66.6、171.3/85.7、173.9/103.3、175.9/120.9 MiB），**直到 n≥6000 才在时间上反超稠密**。内存账（`pair_adds × block_rows × 96 B` 拟合 + 125% 裕度）就是为此才存在，它现在能挡住这些档位，但**拟合是在 n≤7200 上做的**，更大语料未外推实测。修法候选：postings 按词项分段流式消费（不整体 `argsort`）、或把 `_INVERTED_PAIR_BYTES` 在更大 n 上重拟合 | M |
 | A32 | `augmentor/__init__.py:60,220` × `api/routes/dataset_tools.py`（`SearchRequest.filters`） | **L28 新记（两处「同源但没接上」，都不算缺陷）**：①包级 `__init__` 导出了 `SearchFilter` / `SearchResult` / `search_dataset`，却没有导出 `normalize_filters` 与 `FILTER_OPERATORS`——想在自己代码里复用「算子白名单」或提前校验配置的调用方只能 `from augmentor.search_enhanced import ...`，绕过门面；要不要进来需要一并决定 `__all__` 的口径（`tests/unit/test_package_exports.py` 显示这份清单是**刻意策展**的，不是越全越好）。②API 的 `SearchRequest.filters` 是 `Optional[List[Dict[str, Any]]]`，OpenAPI schema 里**算子域与值形状完全不表达**，唯一的契约是咽喉那句 400 文案。修法是把 `filters` 声明成 pydantic 子模型（`Literal` 算子 + 自定义校验），但**代价要先算清**：pydantic 一旦判下来就是 **422**，会把本轮刻意做成 400 的那批语义（与 SDK/CLI 同一口径的领域错误）换掉，而且 `normalize_filters` 仍是 SDK 侧唯一的判据——两层校验谁是第一道要写明，不能靠「反正都会拒」 | S |
 | ~~A12~~ | ~~`augmentor/validation.py:217-222`~~、`sampler.py:296-299` | **L13 实测拆成两半**：①`_validate_item` 里 `import re` + 每条每模式一次 `re.search`；②`sampler.generate_report()` 的 `items.index(seed)` **实测不是缺陷**（真实数据只推荐 4 个种子、反查 0.0 ms，单趟 id 映射要 1.1 ms，改了反而更慢；且它还会改变「值相等但不同对象」时的下标语义，真实数据里正好有 367 条重复 dict）—— 这一半作废。**①已修（L17）**：真实 6902 条 strict **28.99 → 19.49 ms（1.49×）**，禁止模式段占整档 53–55%、该段自身 **1.69–1.88×**（L13 预估的「~5 ms / 1.2×」偏保守）；`re.search` 逐条调用 **27608 → 0**、`re.compile` 与条数无关恒为 2 | S |
 | ~~A13~~ | ~~`api/routes/dataset_tools.py:311,360,386,387,416,436,566,598` + `system_ops.py:320,348,514`~~ | ~~**A4 的同构族**：`read_items()`（同步版）在 11 个 `async def` 路由体里直接调用，同样占着事件循环；`dataset_tools.py:566` 还是「多个文件在循环里串行读」；`/api/dataset/stats` 连分析都留在循环上（43.4 ms）~~ 已修（L7） | M |
 | ~~A14~~ | ~~`augmentor/impact.py:66`~~ | ~~`duplicate_rate` 里 `texts.count(t)` 写在推导式中 → O(n²)~~ 已修（L6） | S |
 | ~~A15~~ | ~~`augmentor/statistics.py` `calculate_statistics`、`A3`/`A5` 那类纯 Python 分析~~ | ~~**线程池对 CPU 型分析不产生并行**（GIL）：3 并发 stats 实测离线后请求方 173.7 → 192.7 ms（+11%），换来的只是循环停顿 170.1 → 60.0 ms。要么上 `ProcessPoolExecutor`，要么回到算法侧把 43.4 ms 这个数本身降下来~~ **算法侧已修（L12）**：真实 6902 条 `calculate()` 同进程交替中位 **50.94 → 43.87 ms（1.16×）**、词汇统计峰值 **8.15 MB → 2.22 MB**。**GIL 那半仍然成立**——进程池本轮不做（跨进程要序列化整份数据集，代价未实测），所以「3 并发总耗时」这个数不会因为 L12 变成并行 | M |
 | ~~A16~~ | ~~`api/routes/system_ops.py:514` `dependency_register`~~ | ~~为了拿「条数」这一个整数把整个数据集解析一遍（3.6 MB / 6902 条），可流式计数或延后到首次访问再回填~~ **L17 实测排除，未改**：同一份真实数据 back-to-back 量得 `await read_json_file` **14.93 ms**、同步 `json.load` **12.89 ms**、「读字节 + `loads` 只取长度」**9.89 ms**，而手写纯 Python 顶层元素扫描器 **77.84 ms（慢 8 倍）且把 6902 条数成了 13804**（内层数组的花括号它分不清）。结论：C 级解析就是拿这个整数最便宜的路子，「流式计数」在此不但更慢还会放松掉「登记时就拒绝坏 JSON」的语义。 | S |
-| ~~A17~~ | ~~`augmentor/dedup.py:111`、`:241-242`~~ | ~~A6 剩下的一半：fallback 编码 `np.zeros((n, vocab))` 是**稠密 float64**（真实 6902 条 × 23033 词表 = 1.27 GB），调用方再 `np.asarray(..., dtype=np.float32)` 整份复制、再 `_normalize` 另起一份~~ **已修（L10）**：float32 + `_row_norms`/`np.divide(out=)` 全程原地，真实数据峰值 **2429 MB → 622 MB**。剩下的只有「稀疏 CSR 表示」（nnz 194293、稀疏度 0.9988 → 理论 2 MB），但本环境**没装 scipy 与 faiss**，手写稀疏结构体属于另起一套索引子系统，不在性能轮范围内 → 本轮不做，装依赖后再议 | L |
+| ~~A17~~ | ~~`augmentor/dedup.py:111`、`:241-242`~~ | ~~A6 剩下的一半：fallback 编码 `np.zeros((n, vocab))` 是**稠密 float64**（真实 6902 条 × 23033 词表 = 1.27 GB），调用方再 `np.asarray(..., dtype=np.float32)` 整份复制、再 `_normalize` 另起一份~~ **已修（L10）**：float32 + `_row_norms`/`np.divide(out=)` 全程原地，真实数据峰值 **2429 MB → 622 MB**。剩下的只有「稀疏 CSR 表示」（nnz 194293、稀疏度 0.9988 → 理论 2 MB），但本环境**没装 scipy 与 faiss**，手写稀疏结构体属于另起一套索引子系统，不在性能轮范围内 → 本轮不做，装依赖后再议。**「装依赖后再议」那一半已由 L30 做完，而且没装任何依赖**：用 numpy 原语（单趟收集 + `np.unique` 压缩 + `np.bincount` 散射累加）手写倒排 postings，把「先物化 `n×vocab` 稠密矩阵、再让 BLAS 去乘 99.88% 的零」换成「只对真正共现的词项做累加」，产出**与原稠密路径同形状**的相似度行块 → 真实 6902 条端到端 **969 ms vs 10484 ms（10.8×）**、峰值 **149.1 MiB vs 621.8 MiB（4.17×）**，`duplicate_groups` 与 HEAD **逐组完全相同**。换不换路由由**两条独立实测的成本账**决定（时间账 + 内存账，见 L30 日志与 A35/A37），退化语料（全重复、零词表、小矩阵）仍走稠密 | ~~L~~ |
 | ~~A18~~ | ~~`augmentor/dedup.py:132-147,172-174`~~ | ~~块行数按剩余列数自适应放大，把 L9 归因微基准里的 68.9 → 91.5 GFLOP/s 捡回来~~ **L10 实测证伪，未采纳**：合成基准（dim=8192）预测 1.28×，真实数据（dim=vocab=23033）同一进程内 back-to-back 实测 **0.95×（更慢）**。归因假设（窄块让 BLAS 变笨）**不随 K 维迁移**，代码已回退 | S |
-| A19 | `augmentor/dedup.py:104-116` | 词表构建与 TF 填充是**两遍** Python 双循环（`for text: for i:` 再 `for i, text: for j:`），每条文本的每个字符都进解释器一次。实测真实 6902 条走完 0.36 s（L10 后），**这还称不上瓶颈**；只有在 n 到 10⁵ 量级时才可能翻盘——该外推**未实测**，先记着别当依据 | S |
+| A19 | `augmentor/dedup.py:104-116`（HEAD）→ `:155-172`（L30 后工作行号） | 词表构建与 TF 填充是**两遍** Python 双循环（`for text: for i:` 再 `for i, text: for j:`），每条文本的每个字符都进解释器一次。实测真实 6902 条走完 0.36 s（L10 后），**这还称不上瓶颈**；只有在 n 到 10⁵ 量级时才可能翻盘——该外推**未实测**，先记着别当依据。**L30 两处更新**：①**「什么时候翻盘」有了实测答案，而且方向和外推相反**——真实 6902 条稠密路径 10.5 s 里 99% 是 BLAS 在乘零（86 G MAC/s × 5486 亿次乘加），那两遍循环的 0.36 s 连 4% 都不到；换句话说在**本量级**优化双循环是找错了地方，L30 换掉的是乘零那一半。②**倒排路径已经顺手做成了单趟**：`_ngram_entries` 一次扫完收集 + `np.unique` 压缩 + `np.bincount` 计数，同一份真实 6902 条 **73 ms vs `_fallback_encode` 的 330 ms（4.5×）**——这是「单趟确实便宜」的直接证据，但**稠密那条路没改**（`_fallback_encode` 仍是两遍，它的既有用例与语义独立于 L30）。顺带坐实一条 coverage 里长期读出来的 partial 分支：`171->169` 是**永不到达的死分支**——第二遍里的 `if ngram in vocab` 恒为真，因为 `vocab` 就是同一个 `texts` 在 `:155-159` 建出来的，任何出现的 n-gram 必在其中。所以那遍循环里每次字符都白付一次哈希查表 + 分支判定。剩余修法（合并成单趟 + 删死分支）见 **A35** 相邻，未在本轮做 | S |
 | ~~A20~~ | ~~`api/deps.py` `config_file_path()`~~ | ~~A2 的同构缺陷第三处：L4 把白名单里的 YAML 重解析缓存掉了，但「服务自身的配置文件路径」这一步仍**每次调用**做一次 `Path.resolve()`（Windows 上要问长路径句柄并归一大小写）。任何带路径参数的请求都至少过一次白名单，等于每个请求白加一份系统调用。安静态同进程交替实测：200 次 **29.9 ms（缺陷）→ 0.15 ms（缓存）**；同一台机器带负载时同一份工作量到 187 ms~~ **已修（L12）**：缓存按 `(环境变量原值, os.getcwd())` 建键、单条目、只在未命中时 resolve；`allowed_data_roots()` 200 次 **218.0 ms → 1.87 ms** | S |
 | A21 | `augmentor/search_enhanced.py:158-360` | L13 剩下的那一半：~~contains / ngram / fuzzy / regex~~ **ngram 已修（L24）**，contains / fuzzy / regex 仍逐条扫全表（真实 6902 条、L24 后同进程 5 次中位：三字段端到端 ngram **13.34 ms**、contains 8.20、regex 4.98、fuzzy 48.45（**命中 0**，见 A27）；单字段 ngram instruction 3.87 / output 6.66 ms）。倒排索引里其实已经存了这些词项，但按「子串」「Jaccard 阈值」查需要**不同的索引结构**（n-gram 倒排 / token 集合按文档存），不是把现有索引接上去就行——属于「另起一套」，与 A17 的稀疏化同一档。**注意 L24 走的是另一条路**：没建索引，只把「为文档建集合」换成「用子串判等」，所以 ngram 仍是全表扫，只是每行便宜了 6–7 倍。**L25 更新**：fuzzy 那一格的旧数字（48.45 ms / 命中 0）**作废**——它是「A27 死方法」的副作用而不是成本参照；fuzzy 现在真的返回命中，其成本单独立在 **A28**，本行只剩 contains / regex 两格待办 | M |
 | ~~A22~~ | ~~`augmentor/vector/faiss.py:100,106`~~ | ~~**L15 新发现**：`add_vectors` 每次都 `np.vstack` 整份矩阵 + 每次都 `set(self._ids)` 重建镜像 → 「一条一批」的写入是 O(n²)。真实维度 384 逐条写入实测 750/1500/3000 条 **58.2 / 386.1 / 1671.3 ms**（输入翻倍时间 ×6.6、×4.3）~~ **已修（L15）**：写缓冲几何扩容 + `_vectors` 改前缀视图 + `_id_set` 增量维护（带长度自愈判据），同一实验 **6.5 / 13.1 / 31.7 ms（×2.0、×2.4 即线性，8.94×/29.55×/52.72×）**；稳态驻留多 ≤1× 数据量的空槽，峰值不变 | M |
@@ -1066,6 +1070,73 @@
     `except Exception → to_http_error`，先于本轮）。
   - **另立 A33 / A34**：A33 = 多条过滤器只有合计数，说不出**哪一条**把候选清零（本轮回显
     自己的下一步）；A34 = 集合值回显跨进程顺序不稳（上面实测的三个排列）。
+- **L30** （哈希由下一轮提交补） `perf(dedup)` A17 剩下的那一半 —— 不装 scipy/faiss，用 numpy 原语把稠密 n-gram 矩阵换成倒排 postings，并让**两条实测成本账**决定换不换。
+  - **症状定位（先量再改）**：`_find_duplicate_groups_chunked` 在 fallback 编码下先把
+    `n×vocab` 稠密 float32 整份物化（真实 6902 条 × 词表 23033 = **606 MiB**，而非零元
+    只有 194,293 个，稀疏度 0.9988），再让 BLAS 去乘。归因实测：那条路上
+    `n²/2 × vocab ≈ 5486 亿`次乘加，按本机 86 G MAC/s 折 **≈ 6.4 s**，占端到端 10.5 s 的
+    绝大部分；A19 那两遍 Python 双循环只占 0.36 s（4%）——**所以本轮改的是乘零，不是循环**。
+  - **改法**：`_ngram_entries`（单趟收集 + `np.unique` 压缩 + `np.bincount` 计数，
+    真实数据 **73 ms vs `_fallback_encode` 330 ms**）→ `_inverted_view`（ postings 按词项
+    `argsort` 稳定排序、行内 L2 归一在 float64 算完再降 float32、顺带算出
+    `pair_adds = Σ df(df+1)/2`）→ `_iter_inverted_similarity_row_blocks`（逐块用
+    `searchsorted` 取该块文档命中的词项区间，一次 `np.bincount(flat, weights=...)` 做完整
+    散射累加）。**产出形状与原稠密路径逐块一致**（`(end-start) × (n-start)` float32、
+    同一列语义），所以 L9 的块契约、L6 的贪心归组、以及 **52 条既有 dedup 用例全部不用改**。
+  - **判据是两条独立的账，不是一条**（`_inverted_blocks_win`）：
+    ①**时间账** `pair_adds × 3000 < n²/2 × vocab` —— 单价 3000 来自实测：稠密 BLAS
+    86 G MAC/s vs 倒排 29.5 M add/s（比值 2914，取 3000 偏保守）；
+    ②**内存账** `稠密 n×vocab×4×100 > pair_adds × block_rows × 96 × 125` —— 96 B/pair
+    由逐档实测峰值拟合（随机语料 n=1200→93.5、2400→93.5、3600→94.5、4800→95.0、
+    6000→96.9、7200→98.8 B/pair，真实 6902 条 85.2 B/pair，取上沿），125% 是裕度。
+    **两条都对倒排有利才换路**；判据不看 `_model` 是刻意的——它在 `fallback_encode` 之前
+    调用，拿不到编码结果，只能从 `_inverted_view` 顺手算出的三个整数推断。
+  - **收益（真实 6902 条 `instruction`，min-of-3，同进程对照 HEAD）**：端到端
+    **969 ms（分布 982/960/954）vs 10484 ms（10660/9644/8792），比值 0.092 ≈ 10.8×**；
+    `tracemalloc` 峰值 **149.1 MiB vs 621.8 MiB（4.17×）**；
+    `duplicate_groups` 与 HEAD **逐组完全相同**（369 组 / 移除 377 条），
+    逐块最大绝对差 **9.537e-07**、阈值 0.9 上判定翻转的单元数 **0**。
+  - **本轮内自我推翻一次（这是最有价值的部分）**：内存账最初写成「稠密矩阵超过 64 MiB
+    就换」，听起来合理，但**没实测**。随后逐档跑随机 60 字符语料 n=1200…7200，发现
+    倒排峰值**一直是稠密的 1.4～2.4 倍**（54.2/22.2、104.0/44.4、153.9/66.6、
+    171.3/85.7、173.9/103.3、175.9/120.9 MiB），且 n=4800 档倒排还**慢 7%**（620 vs 577 ms）
+    ——按 64 MiB 那条线会在**内存反而更贵**的三档上判赢。于是把代理量换成拟合的
+    `pair_adds × block_rows × 96 B`，并**给判据加了第 4 个形参 `block_rows`**（同一份语料，
+    块越大越贵，判据必须跟着变）。真实语料不受影响（606 MiB vs 估算 176 MiB，裕度充足）。
+  - **退化语料必须留在稠密**（判据的第二半，全部实测）：全重复语料 vocab 塌成 9，
+    `pair_adds` 2.1440 亿 ≈ 稠密乘加 2.1437 亿（**次数上零优势**，输在单价 ×3000），
+    实测倒排 6.23 s vs 稠密 0.09 s（**慢 69 倍**）→ 判 False；`["x"]*6000`（长度<2 无
+    二元组 → vocab 0）判 False，这一档同时兜住既有护栏
+    `test_no_full_n_by_n_matrix_is_allocated` 不因换路而假红；n=1200 的 fixture 判 False
+    （省下的 17.6 MiB 不值 postings 常驻）。真实 `output` 字段 pair_adds 1.466 亿 → 判
+    False（**赢是 instruction 那一类多样性带来的，不是普遍属性**），`input` 全空 → False。
+  - 新增 **42 例**（`test_dedup.py` 52 → **94**），**既有断言 0 改写**。三组新用例的分工：
+    `TestNgramInvertedView`（16）钉表示本身；`TestInvertedBlocksMatchDenseBlocks`（28）
+    拿稠密当 oracle 逐元素对照（含 block_rows=1/2/3/5/1000、零语料、同文得 1.0）；
+    `TestTheProducerIsChosenByMeasuredCost`（22）把上面**实测表**写进 `MEASURED` 并要求
+    判据复现（含时间账/内存账的**精确边界翻转**、单价拟合 0.8–1.3 倍带宽）；
+    `TestOnlyOneProducerRuns`（18）用 4 个计数探针证明选定后另一条**一次都没跑**，
+    并有第三条独立浮点路径（float64 手工点积）作参照。
+  - **等价性用例一度是红的，而且红得有意义**：阈值 0.5 上「逐组相同」断言失败
+    （`[0,1,7,…]` vs `[0,1,2,7,…]`）。没有挪阈值糊过去，而是查到底：9 对文本的相似度
+    **精确等于 0.5**，稠密（双归一）落在 0.500000，倒排（散射累加）落在
+    0.4999999701976776，**18 个单元在阈值线上翻转**。改法是把断言写成
+    「误差 ≤ 2e-6 带宽 **且** 任何翻转单元离阈值不超过该带宽」，并专门留一条
+    `test_an_exact_tie_is_not_a_producer_bug` 把这个事实钉住；端到端一致性用例则用
+    自证前置（`margin > 1e-4`）挑无平局的阈值档。**残留口径另立 A36**。
+  - **注入对照（最后一次测试改动之后跑）**：`dedup.py` 退回 HEAD → 新增 42 例
+    **42 红 / 0 绿**（无白名单绿例：倒排的表示、块等价、判据、生产者互斥，四条面在
+    HEAD 里全都不存在），**52 条既有用例在缺陷态全绿**（= 未改既有断言的正面证据）。
+    恢复后实现字节一致 `6bf5bf1564b4`（769 CRLF / 769 LF / 34,719 B）。
+  - 全量：**4271 passed / 2 skipped**（48.94 s，总计 **98.98%**）。计数
+    **4229 + 42 = 4271 精确对上**，无外部漂移。`dedup.py` **266 语句 0 missed**，
+    只余 1 条 partial 分支 `171->169` —— 本轮**查明**它是永不到达的死分支
+    （`if ngram in vocab` 恒真，vocab 由同一个 texts 建成），已写进 **A19**。
+  - **另立 A35 / A36 / A37**：A35 = `find_similar_pairs` 还在物化整份稠密矩阵，
+    L30 的 10.8× 它一分拿不到（本轮边界外，如实记）；A36 = 恰好等于阈值的平局在两条
+    生产者下判定不同（已钉成用例，但文档口径待拍）；A37 = 倒排峰值 149.1 MiB 仍随
+    `pair_adds × block_rows / n` 增长，离 16 MiB 单块上界差一个量级，且 96 B/pair 的拟合
+    只在 n≤7200 上做过、未外推。
 - 全量：L4 后 **3679 passed / 3 skipped**（89.2 s），L5 后 **3703 passed / 3 skipped**
   （90.2 s），L6 后 **3705 passed / 3 skipped**（91.1 s），L7 后 **3726 passed / 3 skipped**
   （95.1 s），L8 后 **3747 passed / 3 skipped**（98.0 s），L9 后 **3747 passed / 3 skipped**
@@ -1097,6 +1168,9 @@
   L29 后 **4229 passed / 2 skipped**（109.62 s，总计 **98.98%**；**计数 4191 + 38 = 4229 精确对上**，
   改写既有断言 2 处 + 契约期望 1 处（驱动 2 条红），注入 **40 红 / 667 绿**（707 与恢复后同批
   4 文件的全绿数一一对上），2 绿在白名单，恢复后三份实现字节一致）。
+  L30 后 **4271 passed / 2 skipped**（48.94 s，总计 **98.98%**；**计数 4229 + 42 = 4271
+  精确对上**，**0 处既有断言改写**，注入 **42 红 / 0 绿**、无白名单绿例，52 条既有用例在
+  缺陷态全绿，恢复后实现字节一致 `6bf5bf1564b4`；`dedup.py` 266 语句 0 missed）。
   **注意**：这些墙钟秒数**彼此不可比**——本工作树与并行 agent 共用一台机器，
   它跑全量时我会慢 40%+（L9 时 92 s、L10 时无竞争 55.7 s）。跨轮只比
   **同一进程内 back-to-back 的对照组**，绝对秒数只作当次快照。

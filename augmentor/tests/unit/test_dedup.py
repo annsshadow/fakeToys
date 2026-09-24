@@ -781,3 +781,467 @@ class TestStreamingGrouping:
             f"（{one_block_bytes * 2 / 1024 / 1024:.1f}MB），"
             "疑似块未被及时释放"
         )
+
+
+class TestNgramInvertedView:
+    """倒排视图的构造契约
+
+    这组用例钉的是「倒排视图代表的就是那批 TF 向量」：计数口径、归一化口径、
+    排序前提，以及选路判据的输入 `pair_adds`。它们任何一条塌掉，下一组的
+    逐元素等价都不会成立，所以分开钉——等价用例红的时候要先知道是哪一层塌的。
+    """
+
+    ROWS = [
+        "如何申请公租房",
+        "如何申请公租房呢",
+        "公租房申请流程",
+        "二手房交易流程",
+        "物业费按建筑面积计算",
+        "",          # 零向量：一个二元组都没有
+        "a",         # 零向量：长度 < 2
+        "公租房",
+    ]
+
+    def view(self, texts=None):
+        return Deduplicator()._inverted_view(self.ROWS if texts is None else texts)
+
+    def test_repeated_ngrams_inside_one_document_are_counted(self):
+        """同一篇里重复出现的二元组必须计多次，与稠密实现同一个 TF 口径
+
+        取 "abab" 是因为它同时含重叠与非重叠的重复：ab 两次、ba 一次。
+        """
+        docs, terms, counts, vocab_size = Deduplicator()._ngram_entries(["abab", "bcb"])
+
+        assert vocab_size == 4, f"词表应是 ab/ba/bc/cb 四项，实得 {vocab_size}"
+        per_doc = [sorted(int(c) for d, _t, c in zip(docs, terms, counts) if int(d) == i)
+                   for i in (0, 1)]
+        assert per_doc == [[1, 2], [1, 1]], f"TF 计数是 {per_doc}，应为 [[1, 2], [1, 1]]"
+
+    def test_document_norms_cover_hapax_ngrams_too(self):
+        """每篇的值必须按**全部**词条（含只在本篇出现的）归一化，行平方和 = 1
+
+        「只出现一次的词条对非对角没有贡献」不等于「可以不算进范数」——稠密
+        实现把它算进去了。漏掉它，所有相似度都会被整体抬高，重复组随之变多。
+        零向量那两篇必须保持 0（除以 1 而不是除以 0，与 `norms[norms == 0] = 1` 同口径）。
+        """
+        inverted = self.view()
+        squares = np.bincount(inverted.docs,
+                              weights=inverted.values.astype(np.float64) ** 2,
+                              minlength=len(self.ROWS))
+        has_ngrams = np.asarray([len(t) > 1 for t in self.ROWS])
+
+        np.testing.assert_allclose(squares[has_ngrams], 1.0, atol=1e-6)
+        assert (squares[~has_ngrams] == 0).all(), "零向量那两篇不该有任何 postings"
+
+    def test_pair_adds_matches_an_independent_df_formula(self):
+        """`pair_adds` 必须是 Σ df(df+1)/2，且用独立的 Counter 算法对照
+
+        它是选路判据唯一的代价输入：算小了会让倒排在退化语料上吃掉稠密，
+        算大了会让倒排在该赢的地方弃权。
+        """
+        inverted = self.view()
+        df = {}
+        for text in self.ROWS:
+            for ngram in {text[j:j + 2] for j in range(len(text) - 1)}:
+                df[ngram] = df.get(ngram, 0) + 1
+
+        assert inverted.pair_adds == sum(d * (d + 1) // 2 for d in df.values())
+        assert inverted.pair_adds > 0, "样本撑不起可判别的代价，这条用例是空跑"
+
+    def test_postings_are_sorted_by_term_and_then_by_document(self):
+        """块生产者靠两次 `searchsorted` 夹出同词条的一段 postings
+
+        前提是：整体按词条升序、同词条内按文档升序。后者还保证展开顺序可复现，
+        于是同一个语料跑两次的块逐位相同。
+        """
+        inverted = self.view()
+
+        assert (np.diff(inverted.terms.astype(np.int64)) >= 0).all()
+        same_term = np.flatnonzero(np.diff(inverted.terms) == 0)
+        assert same_term.size, "样本里得有同词条的多篇，否则这条排序是空断言"
+        assert (np.diff(inverted.docs)[same_term] > 0).all()
+
+    @pytest.mark.parametrize("texts", [[], [""], ["", "a", "之"]])
+    def test_a_corpus_without_any_ngram_still_builds(self, texts):
+        """没有任何二元组的语料（含空语料）不能炸，代价记为 0"""
+        inverted = self.view(texts)
+
+        assert (inverted.doc_count, inverted.vocab_size) == (len(texts), 0)
+        assert (inverted.pair_adds, len(inverted.terms)) == (0, 0)
+
+    def test_values_are_float32(self):
+        """倒排的值必须与稠密编码同为 float32：那是 nnz 份而非 n×vocab 份的分配"""
+        assert self.view().values.dtype == np.float32
+
+
+class TestInvertedBlocksMatchDenseBlocks:
+    """两条块生产者必须产出同一批相似度——「换算法不换语义」的唯一凭据"""
+
+    CORPUS = TestNgramInvertedView.ROWS * 3      # 24 条：含三组精确重复与零向量
+
+    def pair(self, block_rows):
+        dedup = Deduplicator(threshold=0.9)
+        dense = dedup._fallback_encode(self.CORPUS)
+        reference = list(dedup._iter_similarity_row_blocks(dense, block_rows))
+        inverted = list(dedup._iter_inverted_similarity_row_blocks(
+            dedup._inverted_view(self.CORPUS), block_rows))
+        return reference, inverted
+
+    @pytest.mark.parametrize("block_rows", [1, 2, 3, 5, 1000])
+    def test_blocks_agree_element_by_element(self, block_rows):
+        """逐块、逐元素对照（含块边界与末块的非满形状）"""
+        reference, inverted = self.pair(block_rows)
+
+        assert [(s, e) for s, e, _ in inverted] == [(s, e) for s, e, _ in reference]
+        assert reference, "两条路都没产出块，这条对照是空跑"
+        for (_, _, got), (_, _, want) in zip(inverted, reference):
+            assert got.shape == want.shape
+            np.testing.assert_allclose(got, want, atol=1e-6,
+                                       err_msg=f"block_rows={block_rows} 时两条路不一致")
+
+    def test_the_inverted_blocks_keep_the_column_contract(self):
+        """倒排版必须守住稠密版的两条结构约束：列宽 n-start、单块单元数封顶
+
+        归组只消费 `row[i + 1 - start:]`，列宽不是 `n - start` 就会读错下标；
+        单元数不封顶则意味着峰值又随 n 平方长回去。
+        """
+        from augmentor.dedup import _MAX_BLOCK_CELLS
+
+        n = len(self.CORPUS)
+        _, inverted = self.pair(5)
+
+        for start, end, block in inverted:
+            assert block.shape == (end - start, n - start)
+            assert block.shape[0] * block.shape[1] <= _MAX_BLOCK_CELLS
+
+    @pytest.mark.parametrize("threshold", [0.1, 0.3, 0.5, 0.7, 0.9, 0.99])
+    def test_units_only_flip_within_the_agreement_band(self, threshold):
+        """两条路的判定差异必须全部落在它们的数值一致带之内
+
+        逐元素 allclose 只说明数值接近，这里说明**判定**差在哪：归组只读判定，
+        判定差一个下标就是数据被多删或漏删，所以「差多少」必须能被数值差解释；
+        离阈值远的单元一个都不许差。带宽 2e-6 取自实测：本语料两条路逐元素最大
+        差 1.2e-7，走生产路径（稠密那条还要再过一次归一化）最大差 1.8e-7。
+        """
+        band = 2e-6
+        reference, inverted = self.pair(3)
+
+        assert reference, "两条路都没产出块，这条对照是空跑"
+        for (_, _, got), (_, _, want) in zip(inverted, reference):
+            assert float(np.abs(got - want).max()) <= band, (
+                f"阈值 {threshold} 处有单元数值差超过判定带 {band:.0e}"
+            )
+            for k in np.flatnonzero((got >= threshold) != (want >= threshold)):
+                r, c = np.unravel_index(k, got.shape)
+                assert abs(float(got[r, c]) - threshold) <= band and \
+                       abs(float(want[r, c]) - threshold) <= band, (
+                    f"单元 ({r},{c}) 判定不同却两者都离阈值 {threshold} 很远："
+                    f"{float(got[r, c])} vs {float(want[r, c])}——不是浮点并列，是真不一致"
+                )
+
+    def test_a_corpus_without_ngrams_yields_zero_blocks(self):
+        """零语料在倒排版上必须是全零块（而不是崩溃，也不是未初始化内存）"""
+        dedup = Deduplicator()
+        empty = dedup._inverted_view(["", "a", "之", "b"])
+
+        blocks = list(dedup._iter_inverted_similarity_row_blocks(empty, 3))
+
+        assert [(s, e) for s, e, _ in blocks] == [(0, 3), (3, 4)]
+        assert all(not b.any() for _, _, b in blocks), "全零块里出现了非零值"
+
+    def test_identical_documents_still_score_one(self):
+        """完全相同的两篇在倒排块里必须仍是 1.0，否则重复组永远配不出来"""
+        dedup = Deduplicator()
+        blocks = list(dedup._iter_inverted_similarity_row_blocks(
+            dedup._inverted_view(["如何申请公租房", "如何申请公租房"]), 1))
+
+        assert [(s, e) for s, e, _ in blocks] == [(0, 1), (1, 2)]
+        assert float(blocks[0][2][0, 1]) == pytest.approx(1.0, abs=1e-6)
+
+
+class TestTheProducerIsChosenByMeasuredCost:
+    """选路必须由两条实测账决定，而不是「有倒排就一律用倒排」
+
+    下面每一组 `(n, vocab, pair_adds)` 都是同机实测出来的，不是编出来的边界值：
+    预言机一旦退化成单账、常数、或「矩阵超过某个固定 MiB 就换」这类坏代理，本类
+    就会红。真实数据上的收益（端到端 10.8 倍）与它挡住的退化档（全重复语料倒排慢
+    69 倍；随机中段语料倒排峰值贵 1.4～2.4 倍）都凭这张实测表说话。
+    """
+
+    #: (文档数, 词表, pair_adds, 实测「倒排路径」端到端峰值 MiB)
+    #: 随机档取 60 字符随机串语料、n=1200×k；首行是 train_data.json 的 instruction
+    MEASURED = [
+        (6902, 23033, 21_917_714, 149.1),
+        (1200, 3844, 730_095, 54.2),
+        (2400, 3844, 2_784_345, 104.0),
+        (3600, 3844, 6_156_473, 153.9),
+        (4800, 3844, 10_866_219, 171.3),
+        (6000, 3844, 16_885_523, 173.9),
+        (7200, 3844, 24_211_675, 175.9),
+    ]
+    REAL = MEASURED[0]
+
+    def win(self, doc_count, vocab_size, pair_adds):
+        """按生产路径同款的行块大小问一次预言机"""
+        dedup = Deduplicator()
+        return dedup._inverted_blocks_win(doc_count, vocab_size, pair_adds,
+                                          dedup._row_block_size(doc_count, 1000))
+
+    def test_the_cost_constants_are_the_measured_ones(self):
+        """三个代价常数钉死：动它们等于动判据，必须连带重测再改这里"""
+        from augmentor.dedup import (_INVERTED_ADD_COST, _INVERTED_MEM_MARGIN,
+                                     _INVERTED_PAIR_BYTES)
+
+        assert _INVERTED_ADD_COST == 3000
+        assert _INVERTED_PAIR_BYTES == 96
+        assert _INVERTED_MEM_MARGIN == 125
+
+    def test_the_memory_unit_price_reproduces_the_measured_peaks(self):
+        """内存单价 96 B 必须仍然复现实测峰值，否则它就是个漂移的魔数
+
+        估的是「最大那个块」的 pair 级临时数组：`pair_adds × block_rows ÷ n × 单价`。
+        七档实测比值 0.97～1.13 全在带内（带宽留到拟合余量 0.8～1.3）。这条不判方向，
+        只判拟合——它替 `_INVERTED_PAIR_BYTES` 守住「有实测背书」这个身份：
+        改了常数而不重测，就会在这里红。
+        """
+        from augmentor.dedup import _INVERTED_PAIR_BYTES
+
+        dedup = Deduplicator()
+        for doc_count, _vocab_size, pair_adds, measured_mib in self.MEASURED:
+            block_rows = dedup._row_block_size(doc_count, 1000)
+            est_mib = pair_adds * block_rows * _INVERTED_PAIR_BYTES / doc_count / 2 ** 20
+            assert 0.8 <= est_mib / measured_mib <= 1.3, (
+                f"n={doc_count}：估算 {est_mib:.1f} MiB 复现不了实测 {measured_mib} MiB"
+            )
+
+    def test_the_real_corpus_takes_the_inverted_path(self):
+        """本轮修复的全部收益系于这一位返回值：真实 6902 条必须判倒排赢
+
+        实测（min-of-3、同进程 back-to-back）倒排 969 ms / 149.1 MiB，稠密那条
+        10484 ms / 621.8 MiB，逐组结果完全相同（比值 0.092）。这条变红就说明倒排生产者成了死代码：
+        逐元素等价用例照跑，生产路径却一点没变快。
+        """
+        assert self.win(*self.REAL[:3]) is True
+
+    def test_a_fully_duplicated_corpus_loses_the_time_account(self):
+        """全重复语料：vocab 塌成 9，散射累加次数反而和稠密乘加数一样多
+
+        实测 n=6902、vocab=9：稠密那条 2.1437 亿次乘加，倒排这条 pair_adds 也是
+        2.1440 亿次——次数上没有优势，而单次散射贵约 3000 倍，于是倒排 6.23 s
+        vs 稠密 0.09 s。这类语料的稠密矩阵只有 0.24 MiB，两条账同时判负。
+        """
+        assert self.win(6902, 9, 214_400_277) is False
+
+    def test_the_mid_range_random_corpus_stays_dense_though_the_matrix_is_big(self):
+        """本轮实测推翻了一条「矩阵超过 64 MiB 就换」的代理判据
+
+        随机 60 字符语料 n=1200…7200 共六档，逐档实测：倒排峰值一直是稠密的
+        1.4～2.4 倍（54.2 vs 22.2、171.3 vs 85.7、175.9 vs 120.9 MiB），时间上
+        n=4800 那档还慢 7%（620 vs 577 ms），要到 n≥6000 才反过来自身省 22～25%。
+        而其中 n=4800/6000/7200 三档的稠密矩阵是 70.4/88.0/105.6 MiB——**按固定
+        MiB 线早该换路**。内存账因此必须跟着 pair 级临时数组走，不跟着矩阵大小走。
+        本用例把这六档全部钉成判负，并钉住「恰好三档越过那条坏线」——少于三档说明
+        表或行块大小变了，用例不再能区分新旧判据。
+        """
+        crossed = 0
+        for doc_count, vocab_size, pair_adds, _measured in self.MEASURED[1:]:
+            assert self.win(doc_count, vocab_size, pair_adds) is False, (
+                f"n={doc_count}、vocab={vocab_size} 实测倒排峰值更贵，不该换路"
+            )
+            crossed += doc_count * vocab_size * 4 > 64 * 1024 * 1024
+        assert crossed == 3, f"越过 64 MiB 坏线的档数应是 3，实得 {crossed}"
+
+    def test_only_the_instruction_shaped_field_qualifies_on_this_dataset(self):
+        """收益边界实测：同一份真实数据换字段，判据跟着翻
+
+        `output` 字段 V=17450 但 pair_adds 高达 1.466 亿（时间比值 1.06）→ 判负；
+        `input` 字段整档为空 → V=0、pair_adds=0 → 判负。所以本轮那 10.8 倍是
+        「instruction 这一档的多样性」换来的，不是「任何去重都快了 10 倍」。
+        """
+        assert self.win(6902, 17450, 146_586_300) is False
+        assert self.win(6902, 0, 0) is False
+
+    @pytest.mark.parametrize("doc_count,vocab_size,pair_adds", [
+        (6902, 0, 0),          # 零词表：稠密那条本来也不做任何乘法
+        (1, 1, 0),             # 单文档：没有配对
+        (10, 4, 1),            # 小语料：稠密矩阵只有 160 字节
+    ])
+    def test_degenerate_inputs_never_switch_producer(self, doc_count, vocab_size, pair_adds):
+        """退化输入必须一律判「不换路」
+
+        零词表这一档还兜住了既有护栏用例：
+        :meth:`TestStreamingGrouping.test_no_full_n_by_n_matrix_is_allocated` 喂的是
+        `["x"] * 6000`（长度 < 2 没有二元组 → vocab 0），它靠 spy 稠密生产者来数块
+        形状；这里一旦判赢，那条用例就会因为「稠密生产者没被调用」而假红。
+        """
+        assert self.win(doc_count, vocab_size, pair_adds) is False
+
+    def test_the_time_account_flips_at_its_exact_boundary(self):
+        """时间账严格单调：换算后乘加数**等于**稠密乘加数时就不该换
+
+        越过一格就必须判负，否则判据成了「差不多就换」，实测收益不再有依据。
+        这里把 `block_rows` 取成 1 把内存账请出对照——真实块大小下这个点位两条账
+        同时判负，就测不出时间账自己的边界了。
+        """
+        from augmentor.dedup import _INVERTED_ADD_COST
+
+        doc_count, vocab_size = self.REAL[:2]
+        dense_madds = doc_count * doc_count // 2 * vocab_size
+        boundary = dense_madds // _INVERTED_ADD_COST
+
+        assert boundary * _INVERTED_ADD_COST < dense_madds, "边界取错了"
+        assert Deduplicator._inverted_blocks_win(doc_count, vocab_size, boundary, 1) is True
+        assert Deduplicator._inverted_blocks_win(doc_count, vocab_size, boundary + 1, 1) is False
+
+    def test_the_memory_account_is_monotone_in_block_rows(self):
+        """块越大、倒排的临时数组越贵——判据必须随之单调收紧
+
+        同一形状（真实语料的 n/vocab/pair_adds）只把行块放大：一路判赢到某格为止，
+        判负之后不许回弯。这条挡住「块大小不参与判据」的写法——那会让小 n 换路、
+        大 n 反而一直换。
+        """
+        doc_count, vocab_size, pair_adds = self.REAL[:3]
+        decisions = [Deduplicator._inverted_blocks_win(doc_count, vocab_size, pair_adds, br)
+                     for br in (1, 100, 500, 579, 1000, 1500, 2000, 3000)]
+
+        assert decisions[0] is True and decisions[-1] is False, f"两端就该一判一判负: {decisions}"
+        assert decisions == sorted(decisions, reverse=True), f"判据非单调（块变大又判赢）: {decisions}"
+
+
+class TestOnlyOneProducerRuns:
+    """选定一条生产者之后，另一条必须一次都没被调用
+
+    两条生产者各自的峰值都不小（真实数据上稠密那份是 606 MB），所以「两条都算一遍
+    再挑」是不能接受的退路；判负时也一样，postings 要立刻松手。这里用计数器把
+    选路钉成结构约束——预言机返回什么，另一条接缝就不许被碰。
+
+    小语料在任何真实判据下都过不了内存账（24 条的矩阵才几 KB），所以必须
+    monkeypatch 预言机才能测到「只跑一条」这件事本身。
+    """
+
+    CORPUS = TestNgramInvertedView.ROWS * 3
+
+    #: 接缝名 → 计数键的映射，顺序即断言里比对的顺序
+    SPIED = {
+        "batch_encode": "_batch_encode",
+        "fallback_encode": "_fallback_encode",
+        "dense": "_iter_similarity_row_blocks",
+        "inverted": "_iter_inverted_similarity_row_blocks",
+    }
+
+    def armed(self, monkeypatch, win):
+        """钉住选路，给四条接缝装计数器，返回 (去重器, 调用次数)"""
+        monkeypatch.setattr(Deduplicator, "_inverted_blocks_win",
+                            staticmethod(lambda *args: win))
+        calls = dict.fromkeys(self.SPIED, 0)
+
+        def counting(original, key):
+            def wrapper(*args, **kwargs):
+                calls[key] += 1
+                return original(*args, **kwargs)
+            return wrapper
+
+        for key, name in self.SPIED.items():
+            monkeypatch.setattr(Deduplicator, name,
+                                counting(getattr(Deduplicator, name), key))
+
+        dedup = Deduplicator()
+        # 显式设成 fallback：真实语义模型的向量处处非零，倒排按判据本就不该候选，
+        # 而本用例测的是「二选一」这个结构，与本机装没装 sentence-transformers 无关。
+        dedup._model = "fallback"
+        return dedup, calls
+
+    def test_the_inverted_choice_never_encodes_a_dense_matrix(self, monkeypatch):
+        """判倒排赢时，稠密那条的三个入口都不许被碰一下"""
+        dedup, calls = self.armed(monkeypatch, True)
+
+        groups = dedup._find_duplicate_groups_chunked(self.CORPUS, chunk_size=5)
+
+        assert calls == {"batch_encode": 0, "fallback_encode": 0, "dense": 0, "inverted": 1}, (
+            f"判倒排赢却碰了稠密生产者: {calls}"
+        )
+        assert groups, "这条语料应至少分出一组重复，否则本用例是空跑"
+
+    def test_the_dense_choice_never_runs_the_inverted_producer(self, monkeypatch):
+        """判稠密赢时回到原来的编码→分块那条路，倒排生产者一次都不跑"""
+        dedup, calls = self.armed(monkeypatch, False)
+
+        groups = dedup._find_duplicate_groups_chunked(self.CORPUS, chunk_size=5)
+
+        assert calls == {"batch_encode": 1, "fallback_encode": 1, "dense": 1, "inverted": 0}, (
+            f"判稠密赢却跑了倒排生产者，等于两条路都算了一遍: {calls}"
+        )
+        assert groups, "这条语料应至少分出一组重复，否则本用例是空跑"
+
+    @staticmethod
+    def reference_pair_sims(texts):
+        """独立第三路：float64 重新累加的上三角相似度
+
+        只用来回答「这个阈值离语料里最近的一对有多远」，即该阈值上有没有精确并列，
+        不参与等价断言本身（量级 1e-2 的判断不受 float32 输入的影响）。
+        """
+        dedup = Deduplicator()
+        dedup._model = "fallback"
+        emb = dedup._fallback_encode(texts).astype(np.float64)
+        sims = emb @ emb.T
+        return sims[np.triu_indices(len(texts), 1)]
+
+    def production_pair(self, monkeypatch, texts):
+        """按生产路径 `_similarity_blocks` 分别取两条路的块"""
+        blocks = {}
+        for win in (True, False):
+            dedup, _ = self.armed(monkeypatch, win)
+            blocks[win] = list(dedup._similarity_blocks(texts, 1000))
+        return blocks[True], blocks[False]
+
+    def test_an_exact_tie_is_not_a_producer_bug(self, monkeypatch):
+        """阈值恰好压在「数学上正好相等」的一对上时，判定不由实现决定
+
+        本语料有 9 对文档的二元组重合率精确等于 0.5。实测走生产路径时它们在
+        两条路上分别得到 0.49999997 与 0.50000000（差 1.2e-8），于是 `>= 0.5`
+        一真一假、18 个单元（对称计）判定相反，端到端分组随之不同。
+        这不是本轮引入的性质：同一份 float64 参考给出的值是 0.4999999634，
+        离 0.5 也有 3.7e-8——并列点上任何 float32 实现都无从裁定。
+        本用例把「差异有界」这件事钉住：并列点上可以判不同，但数值差必须 ≤ 2e-6，
+        超出即真不一致。也因此，等价断言只在无并列的阈值上做（见下一条）。
+        """
+        band = 2e-6
+        inverted, reference = self.production_pair(monkeypatch, self.CORPUS)
+
+        ties = self.reference_pair_sims(self.CORPUS)
+        ties = ties[np.abs(ties - 0.5) < 5e-7]
+        assert ties.size == 9, f"预期语料里有 9 对精确并列于 0.5，实得 {ties.size}"
+
+        flips = 0
+        for (_, _, got), (_, _, want) in zip(inverted, reference):
+            assert float(np.abs(got - want).max()) <= band
+            flips += int(np.flatnonzero((got >= 0.5) != (want >= 0.5)).size)
+        assert flips == 18, f"并列点上的判定相反数应恰为 18（9 对×对称），实得 {flips}"
+
+    @pytest.mark.parametrize("threshold", [0.1, 0.3, 0.7, 0.85, 0.9, 0.99])
+    def test_the_public_entry_gives_the_same_result_either_way(self, monkeypatch, threshold):
+        """从公开入口 `deduplicate()` 进去，两条生产者给出的分组必须逐位相同
+
+        逐元素等价那一组用例钉的是块，这里钉的是接线：选路只能发生在「挑一条」，
+        不能挑到一半又换（那会让 `kept_indices` 与 `duplicate_groups` 对不上）。
+        阈值不能取 0.5——那是精确并列点，见上一条用例。
+        """
+        margin = float(np.abs(self.reference_pair_sims(self.CORPUS) - threshold).min())
+        assert margin > 1e-4, (
+            f"阈值 {threshold} 距语料里最近的一对只有 {margin:.1e}，"
+            "落进浮点判定带，不适合做逐位等价断言"
+        )
+
+        items = [{"instruction": text} for text in self.CORPUS]
+        results = []
+        for win in (True, False):
+            dedup, _ = self.armed(monkeypatch, win)
+            dedup.threshold = threshold
+            results.append(dedup.deduplicate(items))
+
+        got, want = results
+        assert got.duplicate_groups == want.duplicate_groups
+        assert got.kept_indices == want.kept_indices
+        assert (got.removed_count, got.deduplicated_count) == \
+               (want.removed_count, want.deduplicated_count)
+        assert got.duplicate_groups, f"阈值 {threshold} 下一组重复都没分到，本用例是空跑"
