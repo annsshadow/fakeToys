@@ -7622,7 +7622,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 230,
+    "line": 234,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}",
     "path": "/api/meeting/assemble/control/meeting/{}",
@@ -7635,7 +7635,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 231,
+    "line": 235,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/list/${encodeURIComponent(m.id)}",
     "path": "/api/meeting/assemble/control/list/{}",
@@ -7648,7 +7648,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 232,
+    "line": 236,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/attachment/list/meeting/${encodeURIComponent(m.id)}",
     "path": "/api/meeting/assemble/control/attachment/list/meeting/{}",
@@ -7661,7 +7661,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 251,
+    "line": 255,
     "method": "GET",
     "raw": "/api/meeting/${encodeURIComponent(m.id)}/participant/list",
     "path": "/api/meeting/{}/participant/list",
@@ -7674,7 +7674,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 263,
+    "line": 267,
     "method": "POST",
     "raw": "/api/meeting/${encodeURIComponent(m.id)}/participant/add",
     "path": "/api/meeting/{}/participant/add",
@@ -7687,7 +7687,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 311,
+    "line": 315,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/building/list/like/pinyin/${encodeURIComponent(key)}",
     "path": "/api/meeting/assemble/control/building/list/like/pinyin/{}",
@@ -7700,7 +7700,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 312,
+    "line": 316,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/building/list/pinyininitial/${encodeURIComponent(key)}",
     "path": "/api/meeting/assemble/control/building/list/pinyininitial/{}",
@@ -7713,7 +7713,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 313,
+    "line": 317,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/room/list/like/pinyin/${encodeURIComponent(key)}",
     "path": "/api/meeting/assemble/control/room/list/like/pinyin/{}",
@@ -7726,7 +7726,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 314,
+    "line": 318,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/room/list/pinyininitial/${encodeURIComponent(key)}",
     "path": "/api/meeting/assemble/control/room/list/pinyininitial/{}",
@@ -7739,7 +7739,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 348,
+    "line": 352,
     "method": "GET",
     "raw": "/api/meeting/core/entity/meeting/list/by/${encodeURIComponent(roomId)}",
     "path": "/api/meeting/core/entity/meeting/list/by/{}",
@@ -7752,7 +7752,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 349,
+    "line": 353,
     "method": "GET",
     "raw": "/api/meeting/core/entity/meeting/${encodeURIComponent(mid)}",
     "path": "/api/meeting/core/entity/meeting/{}",
@@ -7765,7 +7765,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 350,
+    "line": 354,
     "method": "GET",
     "raw": "/api/meeting/core/entity/room/${encodeURIComponent(roomId)}",
     "path": "/api/meeting/core/entity/room/{}",
@@ -7778,7 +7778,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 368,
+    "line": 372,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/building/${encodeURIComponent(rid)}",
     "path": "/api/meeting/assemble/control/building/{}",
@@ -7791,7 +7791,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 369,
+    "line": 373,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/room/${encodeURIComponent(rid)}",
     "path": "/api/meeting/assemble/control/room/{}",
@@ -7804,7 +7804,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 371,
+    "line": 375,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/room/photo/${encodeURIComponent(rid)}",
     "path": "/api/meeting/assemble/control/room/photo/{}",
@@ -7817,7 +7817,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 372,
+    "line": 376,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/attachment/${encodeURIComponent(rid)}",
     "path": "/api/meeting/assemble/control/attachment/{}",
@@ -7830,7 +7830,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 397,
+    "line": 401,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/year/${y}/month/${mo}/all",
     "path": "/api/meeting/assemble/control/meeting/list/year/{}/month/{}/all",
@@ -7843,7 +7843,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 398,
+    "line": 402,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/year/${y}/month/${mo}/day/${d}",
     "path": "/api/meeting/assemble/control/meeting/list/year/{}/month/{}/day/{}",
@@ -7856,7 +7856,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 405,
+    "line": 409,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/year/${y}/month/${mo}/day/${d}/all",
     "path": "/api/meeting/assemble/control/meeting/list/year/{}/month/{}/day/{}/all",
@@ -7869,7 +7869,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 410,
+    "line": 414,
     "method": "GET",
     "raw": "/api/meeting/${mid}",
     "path": "/api/meeting/{}",
@@ -7882,7 +7882,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 414,
+    "line": 418,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/${y}/${y}/${mo}/${mo}/${d}/${d}/${rid}",
     "path": "/api/meeting/assemble/control/meeting/list/{}/{}/{}/{}/{}/{}/{}",
@@ -7895,7 +7895,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 446,
+    "line": 450,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/building/list/like/${encodeURIComponent(key)}",
     "path": "/api/meeting/assemble/control/building/list/like/{}",
@@ -7908,7 +7908,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 447,
+    "line": 451,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/room/list/like/${encodeURIComponent(key)}",
     "path": "/api/meeting/assemble/control/room/list/like/{}",
@@ -7921,7 +7921,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 464,
+    "line": 468,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/year/${y}/month/${mth}",
     "path": "/api/meeting/assemble/control/meeting/list/year/{}/month/{}",
@@ -7934,7 +7934,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 490,
+    "line": 494,
     "method": "DELETE",
     "raw": "/api/meeting/assemble/control/building/{}",
     "path": "/api/meeting/assemble/control/building/{}",
@@ -7947,7 +7947,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 530,
+    "line": 534,
     "method": "DELETE",
     "raw": "/api/meeting/assemble/control/room/{}",
     "path": "/api/meeting/assemble/control/room/{}",
@@ -7960,7 +7960,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 543,
+    "line": 547,
     "method": "PUT",
     "raw": "/api/meeting/assemble/control/meeting/{}",
     "path": "/api/meeting/assemble/control/meeting/{}",
@@ -7973,7 +7973,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 553,
+    "line": 557,
     "method": "DELETE",
     "raw": "/api/meeting/assemble/control/meeting/{}",
     "path": "/api/meeting/assemble/control/meeting/{}",
@@ -7986,7 +7986,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 562,
+    "line": 566,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/confirm/allow",
     "path": "/api/meeting/assemble/control/meeting/{}/confirm/allow",
@@ -7999,7 +7999,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 571,
+    "line": 575,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/accept",
     "path": "/api/meeting/assemble/control/meeting/{}/accept",
@@ -8012,7 +8012,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 581,
+    "line": 585,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/reject",
     "path": "/api/meeting/assemble/control/meeting/{}/reject",
@@ -8025,7 +8025,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 594,
+    "line": 598,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/modify/starttime",
     "path": "/api/meeting/assemble/control/meeting/{}/modify/starttime",
@@ -8038,7 +8038,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 600,
+    "line": 604,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/modify/completedtime",
     "path": "/api/meeting/assemble/control/meeting/{}/modify/completedtime",
@@ -8051,7 +8051,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 614,
+    "line": 618,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/manual/completed",
     "path": "/api/meeting/assemble/control/meeting/{}/manual/completed",
@@ -8064,7 +8064,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 624,
+    "line": 628,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/checkin/code/${encodeURIComponent(m.id)}",
     "path": "/api/meeting/assemble/control/meeting/checkin/code/{}",
@@ -8077,7 +8077,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 638,
+    "line": 642,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/add/invite",
     "path": "/api/meeting/assemble/control/meeting/{}/add/invite",
@@ -8090,7 +8090,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 642,
+    "line": 646,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/delete/invite",
     "path": "/api/meeting/assemble/control/meeting/{}/delete/invite",
@@ -8103,7 +8103,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 655,
+    "line": 659,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/${e}/accept",
     "path": "/api/meeting/assemble/control/meeting/{}/accept",
@@ -8116,7 +8116,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 656,
+    "line": 660,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/${e}/reject",
     "path": "/api/meeting/assemble/control/meeting/{}/reject",
@@ -8129,7 +8129,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 657,
+    "line": 661,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/${e}/confirm/allow",
     "path": "/api/meeting/assemble/control/meeting/{}/confirm/allow",
@@ -8142,7 +8142,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 658,
+    "line": 662,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/${e}/confirm/deny",
     "path": "/api/meeting/assemble/control/meeting/{}/confirm/deny",
@@ -8155,7 +8155,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 659,
+    "line": 663,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/${e}/checkin",
     "path": "/api/meeting/assemble/control/meeting/{}/checkin",
@@ -8168,7 +8168,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 660,
+    "line": 664,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/save/${e}",
     "path": "/api/meeting/assemble/control/meeting/save/{}",
@@ -8181,7 +8181,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 663,
+    "line": 667,
     "method": "DELETE",
     "raw": "/api/meeting/assemble/control/meeting/delete/${e}",
     "path": "/api/meeting/assemble/control/meeting/delete/{}",
@@ -8194,39 +8194,13 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 664,
-    "method": "PUT",
-    "raw": "/api/meeting/assemble/control/building/${e}",
-    "path": "/api/meeting/assemble/control/building/{}",
-    "via": "literal",
-    "ambiguous": false,
-    "hit": "/api/meeting/assemble/control/building/{id}",
-    "hit_crate": "meeting_assemble_control",
-    "extra": null
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 667,
-    "method": "DELETE",
-    "raw": "/api/meeting/assemble/control/building/${e}",
-    "path": "/api/meeting/assemble/control/building/{}",
-    "via": "literal",
-    "ambiguous": false,
-    "hit": "/api/meeting/assemble/control/building/{id}",
-    "hit_crate": "meeting_assemble_control",
-    "extra": null
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/MeetingApp.vue",
     "line": 668,
     "method": "PUT",
-    "raw": "/api/meeting/assemble/control/room/${e}",
-    "path": "/api/meeting/assemble/control/room/{}",
+    "raw": "/api/meeting/assemble/control/building/${e}",
+    "path": "/api/meeting/assemble/control/building/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/meeting/assemble/control/room/{id}",
+    "hit": "/api/meeting/assemble/control/building/{id}",
     "hit_crate": "meeting_assemble_control",
     "extra": null
    },
@@ -8235,6 +8209,19 @@
     "file": "apps/desktop/src/views/MeetingApp.vue",
     "line": 671,
     "method": "DELETE",
+    "raw": "/api/meeting/assemble/control/building/${e}",
+    "path": "/api/meeting/assemble/control/building/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/meeting/assemble/control/building/{id}",
+    "hit_crate": "meeting_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MeetingApp.vue",
+    "line": 672,
+    "method": "PUT",
     "raw": "/api/meeting/assemble/control/room/${e}",
     "path": "/api/meeting/assemble/control/room/{}",
     "via": "literal",
@@ -8246,7 +8233,20 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 672,
+    "line": 675,
+    "method": "DELETE",
+    "raw": "/api/meeting/assemble/control/room/${e}",
+    "path": "/api/meeting/assemble/control/room/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/meeting/assemble/control/room/{id}",
+    "hit_crate": "meeting_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MeetingApp.vue",
+    "line": 676,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/room/${e}/photo",
     "path": "/api/meeting/assemble/control/room/{}/photo",
@@ -8259,7 +8259,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 675,
+    "line": 679,
     "method": "POST",
     "raw": "/api/meeting/core/entity/room/save/${e}",
     "path": "/api/meeting/core/entity/room/save/{}",
@@ -8272,7 +8272,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 678,
+    "line": 682,
     "method": "DELETE",
     "raw": "/api/meeting/assemble/control/attachment/${e}",
     "path": "/api/meeting/assemble/control/attachment/{}",
@@ -8285,7 +8285,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 679,
+    "line": 683,
     "method": "PUT",
     "raw": "/api/meeting/assemble/control/attachment/${e}/update",
     "path": "/api/meeting/assemble/control/attachment/{}/update",
@@ -8298,7 +8298,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 692,
+    "line": 696,
     "method": "PUT",
     "raw": "/api/meeting/assemble/control/meeting/${e}/add/invite",
     "path": "/api/meeting/assemble/control/meeting/{}/add/invite",
@@ -8311,7 +8311,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 695,
+    "line": 699,
     "method": "PUT",
     "raw": "/api/meeting/assemble/control/meeting/${e}/delete/invite",
     "path": "/api/meeting/assemble/control/meeting/{}/delete/invite",
@@ -8324,7 +8324,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 698,
+    "line": 702,
     "method": "PUT",
     "raw": "/api/meeting/assemble/control/meeting/${e}/modify/starttime",
     "path": "/api/meeting/assemble/control/meeting/{}/modify/starttime",
@@ -8337,7 +8337,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 701,
+    "line": 705,
     "method": "PUT",
     "raw": "/api/meeting/assemble/control/meeting/${e}/modify/completedtime",
     "path": "/api/meeting/assemble/control/meeting/{}/modify/completedtime",
@@ -8350,7 +8350,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 703,
+    "line": 707,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/${e}/manual/completed",
     "path": "/api/meeting/assemble/control/meeting/{}/manual/completed",
@@ -8363,7 +8363,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 709,
+    "line": 713,
     "method": "POST",
     "raw": "/api/meeting/core/entity/meeting/save/${e}",
     "path": "/api/meeting/core/entity/meeting/save/{}",
@@ -8376,7 +8376,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 712,
+    "line": 716,
     "method": "POST",
     "raw": "/api/meeting/core/entity/meeting/delete/${e}",
     "path": "/api/meeting/core/entity/meeting/delete/{}",
@@ -8384,6 +8384,58 @@
     "ambiguous": false,
     "hit": "/api/meeting/core/entity/meeting/delete/{id}",
     "hit_crate": "meeting_core_entity",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MeetingApp.vue",
+    "line": 728,
+    "method": "DELETE",
+    "raw": "/api/meeting/assemble/control/delete/${id}",
+    "path": "/api/meeting/assemble/control/delete/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/meeting/assemble/control/delete/{id}",
+    "hit_crate": "meeting_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MeetingApp.vue",
+    "line": 729,
+    "method": "POST",
+    "raw": "/api/meeting/assemble/control/meeting/delete/${id}",
+    "path": "/api/meeting/assemble/control/meeting/delete/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/meeting/assemble/control/meeting/delete/{id}",
+    "hit_crate": "meeting_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MeetingApp.vue",
+    "line": 730,
+    "method": "POST",
+    "raw": "/api/meeting/core/entity/room/delete/${id}",
+    "path": "/api/meeting/core/entity/room/delete/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/meeting/core/entity/room/delete/{id}",
+    "hit_crate": "meeting_core_entity",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MeetingApp.vue",
+    "line": 731,
+    "method": "GET",
+    "raw": "/api/meeting/assemble/control/attachment/${id}/download/${stream}",
+    "path": "/api/meeting/assemble/control/attachment/{}/download/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/meeting/assemble/control/attachment/{id}/download/{stream}",
+    "hit_crate": "meeting_assemble_control",
     "extra": null
    },
    {
@@ -31056,7 +31108,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 159,
+    "line": 163,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/building/list",
     "path": "/api/meeting/assemble/control/building/list",
@@ -31069,7 +31121,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 168,
+    "line": 172,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/room/list?buildingId=${form.value.buildingId}",
     "path": "/api/meeting/assemble/control/room/list",
@@ -31082,7 +31134,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 178,
+    "line": 182,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/apply/1/size/50",
     "path": "/api/meeting/assemble/control/meeting/list/apply/1/size/50",
@@ -31098,7 +31150,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 203,
+    "line": 207,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/create",
     "path": "/api/meeting/assemble/control/meeting/create",
@@ -31111,7 +31163,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 233,
+    "line": 237,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/${encodeURIComponent(m.id)}/next/5",
     "path": "/api/meeting/assemble/control/meeting/list/{}/next/5",
@@ -31126,7 +31178,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 234,
+    "line": 238,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/${encodeURIComponent(m.id)}/prev/5",
     "path": "/api/meeting/assemble/control/meeting/list/{}/prev/5",
@@ -31141,7 +31193,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 274,
+    "line": 278,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/invited/processing",
     "path": "/api/meeting/assemble/control/meeting/list/invited/processing",
@@ -31154,7 +31206,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 275,
+    "line": 279,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/invited/completed",
     "path": "/api/meeting/assemble/control/meeting/list/invited/completed",
@@ -31167,7 +31219,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 276,
+    "line": 280,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/invited/rejected",
     "path": "/api/meeting/assemble/control/meeting/list/invited/rejected",
@@ -31180,7 +31232,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 288,
+    "line": 292,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/applied/wait",
     "path": "/api/meeting/assemble/control/meeting/list/applied/wait",
@@ -31193,7 +31245,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 289,
+    "line": 293,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/applied/processing",
     "path": "/api/meeting/assemble/control/meeting/list/applied/processing",
@@ -31206,7 +31258,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 290,
+    "line": 294,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/applied/completed",
     "path": "/api/meeting/assemble/control/meeting/list/applied/completed",
@@ -31219,7 +31271,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 326,
+    "line": 330,
     "method": "GET",
     "raw": "/api/meeting/room/list",
     "path": "/api/meeting/room/list",
@@ -31232,7 +31284,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 327,
+    "line": 331,
     "method": "GET",
     "raw": "/api/meeting/building/list",
     "path": "/api/meeting/building/list",
@@ -31245,7 +31297,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 328,
+    "line": 332,
     "method": "GET",
     "raw": "/api/meeting/schedule/days/7",
     "path": "/api/meeting/schedule/days/7",
@@ -31260,7 +31312,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 329,
+    "line": 333,
     "method": "GET",
     "raw": "/api/meeting/core/entity/room/list",
     "path": "/api/meeting/core/entity/room/list",
@@ -31273,7 +31325,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 342,
+    "line": 346,
     "method": "GET",
     "raw": "/api/meeting/core/entity/meeting/list",
     "path": "/api/meeting/core/entity/meeting/list",
@@ -31286,7 +31338,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 364,
+    "line": 368,
     "method": "GET",
     "raw": "/api/meeting/room/list",
     "path": "/api/meeting/room/list",
@@ -31299,7 +31351,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 370,
+    "line": 374,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/${encodeURIComponent(rid)}/next/20",
     "path": "/api/meeting/assemble/control/meeting/list/{}/next/20",
@@ -31314,7 +31366,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 373,
+    "line": 377,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/attachment/list/${encodeURIComponent(rid)}/next/20",
     "path": "/api/meeting/assemble/control/attachment/list/{}/next/20",
@@ -31329,7 +31381,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 374,
+    "line": 378,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/attachment/list/${encodeURIComponent(rid)}/prev/20",
     "path": "/api/meeting/assemble/control/attachment/list/{}/prev/20",
@@ -31344,7 +31396,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 395,
+    "line": 399,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/building/list/start/1/completed/0",
     "path": "/api/meeting/assemble/control/building/list/start/1/completed/0",
@@ -31360,7 +31412,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 396,
+    "line": 400,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/coming/month/3",
     "path": "/api/meeting/assemble/control/meeting/list/coming/month/3",
@@ -31375,7 +31427,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 400,
+    "line": 404,
     "method": "GET",
     "raw": "/api/meeting/list",
     "path": "/api/meeting/list",
@@ -31388,7 +31440,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 401,
+    "line": 405,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/config/system/config/manage",
     "path": "/api/meeting/assemble/control/config/system/config/manage",
@@ -31401,7 +31453,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 403,
+    "line": 407,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/forward/monthcount/all/6",
     "path": "/api/meeting/assemble/control/meeting/list/forward/monthcount/all/6",
@@ -31416,7 +31468,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 406,
+    "line": 410,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/building/list/start/1/completed/0/allmeeting",
     "path": "/api/meeting/assemble/control/building/list/start/1/completed/0/allmeeting",
@@ -31432,7 +31484,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 408,
+    "line": 412,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/forward/monthcount/6/all",
     "path": "/api/meeting/assemble/control/meeting/list/forward/monthcount/6/all",
@@ -31447,7 +31499,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 411,
+    "line": 415,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/coming/${mo}/20",
     "path": "/api/meeting/assemble/control/meeting/list/coming/{}/20",
@@ -31462,7 +31514,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 412,
+    "line": 416,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/invite/1/${sz}/${sz}",
     "path": "/api/meeting/assemble/control/meeting/list/invite/1/{}/{}",
@@ -31477,7 +31529,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 413,
+    "line": 417,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/${mid}/0/20",
     "path": "/api/meeting/assemble/control/meeting/list/{}/0/20",
@@ -31493,7 +31545,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 431,
+    "line": 435,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/year/${y}/month/${mo}/day/${d}/0",
     "path": "/api/meeting/assemble/control/meeting/list/year/{}/month/{}/day/{}/0",
@@ -31508,7 +31560,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 432,
+    "line": 436,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/building/list/start/1/completed/0/room/0/meeting/0",
     "path": "/api/meeting/assemble/control/building/list/start/1/completed/0/room/0/meeting/0",
@@ -31526,7 +31578,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 433,
+    "line": 437,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/openmeeting/list/room",
     "path": "/api/meeting/assemble/control/openmeeting/list/room",
@@ -31539,7 +31591,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 434,
+    "line": 438,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/openmeeting",
     "path": "/api/meeting/assemble/control/openmeeting",
@@ -31552,7 +31604,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 448,
+    "line": 452,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/forward/monthcount/3",
     "path": "/api/meeting/assemble/control/meeting/list/forward/monthcount/3",
@@ -31567,7 +31619,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 463,
+    "line": 467,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/wait/accept",
     "path": "/api/meeting/assemble/control/meeting/list/wait/accept",
@@ -31580,7 +31632,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 465,
+    "line": 469,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/config/system/config",
     "path": "/api/meeting/assemble/control/config/system/config",
@@ -31593,7 +31645,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 478,
+    "line": 482,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/building",
     "path": "/api/meeting/assemble/control/building",
@@ -31606,7 +31658,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 480,
+    "line": 484,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/building/list",
     "path": "/api/meeting/assemble/control/building/list",
@@ -31619,7 +31671,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 504,
+    "line": 508,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/room/list?buildingId=${roomBuildingId.value}",
     "path": "/api/meeting/assemble/control/room/list",
@@ -31632,7 +31684,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 519,
+    "line": 523,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/room",
     "path": "/api/meeting/assemble/control/room",
@@ -31645,7 +31697,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 673,
+    "line": 677,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/config",
     "path": "/api/meeting/assemble/control/config",
@@ -31658,7 +31710,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 674,
+    "line": 678,
     "method": "POST",
     "raw": "/api/meeting/core/entity/room/create",
     "path": "/api/meeting/core/entity/room/create",
@@ -31671,7 +31723,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 707,
+    "line": 711,
     "method": "POST",
     "raw": "/api/meeting/core/entity/meeting/create",
     "path": "/api/meeting/core/entity/meeting/create",
@@ -31684,7 +31736,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 724,
+    "line": 742,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/list/1/size/20",
     "path": "/api/meeting/assemble/control/meeting/list/1/size/20",
@@ -31700,7 +31752,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 725,
+    "line": 743,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/list/1/size/20/manage",
     "path": "/api/meeting/assemble/control/meeting/list/1/size/20/manage",
@@ -31716,7 +31768,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 726,
+    "line": 744,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/list/invite/1/size/20",
     "path": "/api/meeting/assemble/control/meeting/list/invite/1/size/20",
@@ -31732,7 +31784,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 727,
+    "line": 745,
     "method": "POST",
     "raw": "/api/meeting/assemble/control/meeting/list/apply/1/size/20",
     "path": "/api/meeting/assemble/control/meeting/list/apply/1/size/20",
@@ -31748,7 +31800,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 728,
+    "line": 746,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/list/meeting/controls",
     "path": "/api/meeting/assemble/control/list/meeting/controls",
@@ -31761,7 +31813,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 729,
+    "line": 747,
     "method": "GET",
     "raw": "/api/meeting/openmeeting/list/room",
     "path": "/api/meeting/openmeeting/list/room",
@@ -31774,7 +31826,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 741,
+    "line": 759,
     "method": "GET",
     "raw": "/api/meeting/assemble/control/meeting/list/apply/1/size/50",
     "path": "/api/meeting/assemble/control/meeting/list/apply/1/size/50",
