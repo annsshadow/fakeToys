@@ -18,6 +18,8 @@
         <button class="action-btn" @click="loadFileCoreEntities">🗂️ 文件实体</button>
         <button class="action-btn" @click="loadFolderTopByRef">🌳 顶层文件夹/按引用</button>
         <button class="action-btn" @click="loadFileDeepReads">🔬 文件深度读</button>
+        <button class="action-btn" @click="fileRead2">📋 文件清单/翻页</button>
+        <span v-if="fileRead2Text" class="app-meta">{{ fileRead2Text }}</span>
         <button class="action-btn" @click="fileCreate('control')">建文件</button>
         <button class="action-btn" @click="fileCreate('entity')">建实体文件</button>
         <button class="action-btn" @click="fileDelete('controlPost')">删文件P</button>
@@ -178,6 +180,7 @@ interface FileItem {
 }
 
 const currentFolder = ref<string>('')
+const fileRead2Text = ref('')
 const breadcrumbs = ref<string[]>(['根目录'])
 const viewType = ref<'grid' | 'list'>('list')
 const loading = ref(false)
@@ -413,6 +416,29 @@ async function fileAtt(op: string) {
     toast.success('文件操作已提交')
   } catch (err: any) {
     toast.error('文件操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev354：文件/附件 附件2·附件 文件夹清单 + 引用类型清单 + 游标翻页(next/prev/all) + 文件夹/复合文件夹 真实只读（用户触发按钮，全字面量路径，非 onMounted）
+async function fileRead2(): Promise<void> {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [a2Folder, a2Filter, aFolder, refList, listNext, listPrev, listAll, folderList, folder2List, complexFolder] = await Promise.all([
+      s(api.get('/api/file/attachment2/list/folder/folderId')),
+      s(api.get('/api/file/attachment2/list/filter/name')),
+      s(api.get('/api/file/attachment/list/folder/folderId')),
+      s(api.get('/api/file/list/referencetype')),
+      s(api.get('/api/file/list/id/next/count')),
+      s(api.get('/api/file/list/id/prev/count')),
+      s(api.get('/api/file/list/id/next/count/all')),
+      s(api.get('/api/file/folder/list/id')),
+      s(api.get('/api/file/folder2/list/id')),
+      s(api.get('/api/file/complex/folder/id')),
+    ])
+    const ok = (r: any) => (r ? '✓' : '—')
+    fileRead2Text.value = `附件2夹${ok(a2Folder)} 附件2筛${ok(a2Filter)} 附件夹${ok(aFolder)} 引用类型${ok(refList)} | 后翻${ok(listNext)} 前翻${ok(listPrev)} 全部${ok(listAll)} 文件夹清单${ok(folderList)} 文件夹2清单${ok(folder2List)} 复合夹${ok(complexFolder)}`
+    toast.success('文件清单已加载')
+  } catch (err: any) {
+    toast.error('文件清单加载失败: ' + (err?.message ?? ''))
   }
 }
 async function loadAttachmentShares(): Promise<void> {
