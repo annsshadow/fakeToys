@@ -18,6 +18,7 @@
 - [x] **L6** `perf(impact)`: A14 `duplicate_rate` 的 `list.count` 每条扫全表 → `Counter` 一次计数，O(n²)→O(n)
 - [x] **L7** `perf(api)`: A13 `dataset_tools` / `system_ops` 的 11 处读取 + stats 的分析全部离开事件循环
 - [x] **L8** `feat(api)`: B6 新增 `/api/dataset/impact` + `/api/dataset/evaluate` 两条只读端点（SDK 里「有、路上没有」的能力）
+- [x] **L9** `perf(dedup)`: A6 前半 —— 相似度行块只算 `[start, n)` 的窄列，不再白算整个下三角
 
 ## Backlog A — 性能（含 file:line 与实测线索）
 
@@ -25,13 +26,13 @@
 |---|------|------|------|
 | ~~A1~~ | ~~`augmentor/analytics.py:368`~~ | ~~均值在生成器里重算 → O(n²)；实测 n=20000 时 **1043 ms vs 2 ms**~~ 已修（L3） | S |
 | ~~A2~~ | ~~`api/deps.py` `allowed_data_roots()`~~ | ~~每个路径参数都 `load_config()` 重新解析 YAML，实测 **6.8 ms/次**~~ 已修（L4，含环境变量分支 0.29 ms/次） | S |
-| A3 | `augmentor/analytics.py:403-412` | `get_duplicate_candidates()` 纯 O(n²) 且每对重建字符集合 | M |
+| ~~A3~~ | ~~`augmentor/analytics.py:403-412`~~ | ~~`get_duplicate_candidates()` 纯 O(n²) 且每对重建字符集合~~ **L9 实测排除**：生产路径零调用者（只有测试与自身），优化它不会改变任何用户可见耗时；真要做属于 B 类「接线」而非 A 类 | M |
 | ~~A4~~ | ~~`api/routes/quality.py:141,185,217,253,285,309,370,403` + `audit.py:31,32` `leakage.py:46,47` `privacy.py:52` `export.py:132`~~ | ~~`async def` 里同步 `load_items()` 阻塞事件循环，应走 `run_in_thread`~~ 已修（L5；`export.py:109` 本就在线程内，非缺陷） | M |
 | A5 | `augmentor/pipeline.py:205-210` + `quality.py:133,153` | 逐条 `encode()`/`predict()` 打分，已有 `batch_score()` 却没用 | M |
-| A6 | `augmentor/dedup.py:94-123,242-290` | 回退路径构造 **稠密 float64** n×vocab 矩阵（大词表 OOM）；应用稀疏 CSR / faiss range_search | L |
+| ~~A6~~ | ~~`augmentor/dedup.py:242-290`~~ | ~~贪心归组只消费 `j > i`，行块却每次算满 `block_rows × n` → 整个下三角白算。真实 6902 条实测分组 **30.0 s → 20.7 s**~~ 已修（L9）；剩下的稠密编码另立 **A17**，块行数另立 **A18** | L |
 | A7 | `augmentor/search_enhanced.py:448,82` | 每次查询重建索引（n=3000 重建 8 ms vs 查询 2 ms），且 contains/fuzzy 不查索引 | M |
-| A8 | `api/routes/data.py:146-164` | 整文件解析 + 全量过滤后再切片，无早停 | M |
-| A9 | `augmentor/tracker.py:114` → `:87-99` | 每个指标点整文件重写 → O(points²) 字节 | S |
+| ~~A8~~ | ~~`api/routes/data.py:146-164`~~ | ~~整文件解析 + 全量过滤后再切片，无早停~~ **L9 实测排除**：响应里的 `total` 按定义要求「过滤后的总数」，早停会把它算错；能省的只有物化切片，量级不值得 | M |
+| ~~A9~~ | ~~`augmentor/tracker.py:114` → `:87-99`~~ | ~~每个指标点整文件重写 → O(points²) 字节~~ **L9 实测排除**：`log_metric`/`start_experiment` 除测试外无调用者（`ExperimentTracker` 本身在 `pipeline.py:118` 有构造，别误判成死模块）。等 B7 把实验回路接上再优化才有意义 | S |
 | A10 | `augmentor/quality.py:175-179` | 多样性回退里参照文本 n-gram 集合反复重建 | S |
 | A11 | `augmentor/indexer.py:117-123,345,352,372-399` | 每次 `DatasetView` 操作重建全部索引（filter 26 ms @ n=3000） | M |
 | A12 | `augmentor/validation.py:217-222`、`sampler.py:296-299` | 循环内未缓存的正则、`list.index`/`in` 线性扫描 | S |
@@ -39,6 +40,8 @@
 | ~~A14~~ | ~~`augmentor/impact.py:66`~~ | ~~`duplicate_rate` 里 `texts.count(t)` 写在推导式中 → O(n²)~~ 已修（L6） | S |
 | A15 | `augmentor/statistics.py` `calculate_statistics`、`A3`/`A5` 那类纯 Python 分析 | **线程池对 CPU 型分析不产生并行**（GIL）：3 并发 stats 实测离线后请求方 173.7 → 192.7 ms（+11%），换来的只是循环停顿 170.1 → 60.0 ms。要么上 `ProcessPoolExecutor`，要么回到算法侧把 43.4 ms 这个数本身降下来 | M |
 | A16 | `api/routes/system_ops.py:514` `dependency_register` | 为了拿「条数」这一个整数把整个数据集解析一遍（3.4 MB / 9 ms 读 + 全量 list 物化）。登记动作本身只需要 count，可流式计数或延后到首次访问再回填 | S |
+| A17 | `augmentor/dedup.py:111`、`:241-242` | A6 剩下的一半：fallback 编码 `np.zeros((n, vocab))` 是**稠密 float64**，真实 6902 条 × 23033 词表 = **1.27 GB**（nnz 仅 194293，稀疏度 0.9988 → 99.88% 是零）；调用方随后 `np.asarray(..., dtype=np.float32)` 又整份复制一份 0.64 GB，并对**已归一化**的向量再 `_normalize` 一遍。稀疏 CSR 需要 scipy、`range_search` 需要 faiss，**本环境两者都没装**，所以可落地的只是 dtype 与重复归一化那部分 | L |
+| A18 | `augmentor/dedup.py:132-147,172-174` | L9 的归因后续：`_row_block_size` 用**最大列数 n** 定块行数，窄块化之后每一块的列数在递减，块行数却固定在 `4M // n`。实测（n=6902/dim=8192 合成）固定 579 行只到 68.9 GFLOP/s，而**按剩余列数自适应**能回到 91.5 GFLOP/s（满宽是 108.3），即再快 **1.28×**；峰值内存上限不变（每块仍 ≤ 4M 单元） | S |
 
 ## Backlog B — 功能增强（价值 ÷ 工作量）
 
@@ -136,9 +139,36 @@
   补「不裁字段」用例——补了 2×2 条（含递归钉 `before/after` 的 6 个键与 `gains` 的 4 个键，
   它们是 `Dict[str, Any]`，顶层模型漏字段不会在顶层显形），并反向验证：从 `ImpactResponse`
   删掉 `beneficial` → 行为层与 OpenAPI 文档层**双双变红**。
+- **L9** `perf(dedup)` A6 —— 去重分组只消费 `j > i` 方向的相似度（见
+  `_greedy_group_from_row` 的 `row[i + 1 - start:]`），行块却每次算满 `block_rows × n`：
+  整个下三角的结果**按定义没有读者**。改成让 `_iter_similarity_row_blocks` 产出
+  `(end-start) × (n-start)` 的窄块后，用用户自己的真实 `train_data.json`（6902 条；
+  本环境没装 sentence-transformers，走的正是 fallback 编码路径）只读实测：
+  **端到端 31.2 s → 22.4 s**，其中相似度分组 **30.0 s → 20.7 s**，组数 369 不变；
+  另写一份「新旧实现各跑一遍」的对照脚本，得到 **1.37×** 且 `结果完全相同=True`。
+  **没有到达理论的 2×，因此做了归因微基准**（n=6902、dim=8192 的合成归一化矩阵）：
+  满宽块 7.20 s / 有效算力 108.3 GFLOP/s，固定 579 行的窄块 6.14 s / **68.9 GFLOP/s**
+  ——结果单元数减半而耗时只降 15%，说明**窄块本身让 BLAS 分块效率掉了 36%**。
+  同一基准里「块行数按剩余列数自适应」跑出 4.79 s / 91.5 GFLOP/s（相对满宽 **1.50×**），
+  这就是 **A18** 的候选，留给 L10；本轮的边界是「只把没读者的列砍掉」。
+  **红→绿**：定向反向 patch 恢复 `np.dot(normalized[start:end], normalized.T)` +
+  `row[i + 1:]` → 结构护栏用例红在 `第 666 行的块列数是 6000，应为 n - start = 5334`。
+  该用例把「不白算」写成了**可失败的断言**（每块 `cols == n - start`、
+  总计算单元 ≤ `n²/2 + n·block_rows`），而不是只测墙钟；既有的「与满矩阵朴素参照逐块等价」
+  用例（chunk_size 1/2/3/7/25/1000）在注入态**仍然全绿**——这正说明只靠等价性测不出浪费，
+  护栏必须断言「算了多少」。
+  **顺带实测排掉 4 个 backlog 候选**（都是「看着像缺陷、量了不是」）：
+  `A3 get_duplicate_candidates()` 在生产路径零调用者（全仓只搜到定义本身）；
+  `A9` 的 O(points²) 重写只在 `log_metric()` 里发生，而 `grep` 显示**除测试外无人调用**
+  `log_metric`/`start_experiment`——注意别记成「死模块」：`pipeline.py:118` 确实
+  `self.tracker = ExperimentTracker()`，构造是活的，只是这条写入路径没被走；
+  `A8` 的切片看似无早停，但响应里的 `total` 按定义要求全量过滤，砍不得；
+  `A5` 的语义分支本环境根本没装 sentence-transformers，无法实测。
 - 全量：L4 后 **3679 passed / 3 skipped**（89.2 s），L5 后 **3703 passed / 3 skipped**
   （90.2 s），L6 后 **3705 passed / 3 skipped**（91.1 s），L7 后 **3726 passed / 3 skipped**
-  （95.1 s），L8 后 **3747 passed / 3 skipped**（98.0 s），覆盖率门禁均通过（98.52%）；基线 3668。
+  （95.1 s），L8 后 **3747 passed / 3 skipped**（98.0 s），L9 后 **3747 passed / 3 skipped**
+  （92.4 s）——L9 用例数不变是**有意**的：它**改写**了既有的结构护栏用例而非新增。
+  覆盖率门禁均通过（98.52%）；基线 3668。
 
 > **操作纪律**（L4 踩过）：验红用的是**定向反向 patch**，绝不用 `git checkout <file>` 撤注入 ——
 > 本轮 `api/deps.py` 有未提交工作，一次 `git checkout` 把整段缓存实现清掉了，只能重写。
@@ -149,3 +179,11 @@
 > 我能控制的**，经用户确认，L9 起改到独立分支 `augmentor-opt100` 上继续（起点 `39e968d47`，
 > 含 L1–L8 全部成果）。同一工作树同一时刻只能检出一个分支：切到本分支后，并行 agent 若继续
 > 提交，会落在 `augmentor-opt100` 而不是 `main`。
+>
+> **该预言在 L9 时兑现**：`main` 停在 `39e968d47`（G5 rev347），而 rev348–rev351 四条
+> 并行 agent 的提交全部落在了 `augmentor-opt100` 上（`git rev-list --count main..augmentor-opt100`
+> = 5，含我自己那条文档整理）。这不是故障而是同一工作树只有一份检出的必然后果，
+> 记录在此是为了说明：**本分支的哈希不纯是 augmentor 的线性历史**，两方的工作交错在一起；
+> 合并时不能按「只挑 augmentor 提交」来 rebase。并行 agent 的 4 条提交都没碰 `augmentor/`
+> 下任何文件（工作树里 `augmentor/` 只有我改的 dedup.py 与 test_dedup.py），所以 L1–L8
+> 成果完好，全量 3747 例可证。

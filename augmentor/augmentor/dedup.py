@@ -150,20 +150,28 @@ class Deduplicator:
         """按行分块产出 `(行起点, 行终点, 相似度块)`
 
         与 :meth:`_compute_similarity_matrix_chunked` 的本质区别：这里
-        **从不构造完整的 n×n 矩阵**，每次只产出一个 `(block_rows × n)` 的块，
-        调用方消费完该块后即可被回收。
+        **从不构造完整的 n×n 矩阵**，每次只产出一个 `(block_rows × (n-start))`
+        的块，调用方消费完该块后即可被回收。
+
+        列从 `start` 起算，而不是从 0：贪心归组只在 `j > i` 的方向上消费
+        （见 :meth:`_greedy_group_from_row` 的 `row[i + 1 - start:]`），而块内
+        最小的行号就是 `start`，所以列 < start 的那些结果**按定义没有读者**。
+        以前每次都算满 `block_rows × n`，等于把整个下三角白算一遍——实测
+        全量 6902 条真实数据时，相似度这一步占 31.2 s 里的 30.0 s，
+        其中约一半 flops 落在这段被丢弃的列上。
 
         Args:
             normalized: 已 L2 归一化的向量矩阵
             block_rows: 每个块包含的行数
 
         Yields:
-            (start, end, block)，block 形状为 (end-start, n)
+            (start, end, block)，block 形状为 (end-start, n-start)，
+            其列下标 c 对应全局下标 c + start
         """
         n = len(normalized)
         for start in range(0, n, block_rows):
             end = min(start + block_rows, n)
-            block = np.dot(normalized[start:end], normalized.T)
+            block = np.dot(normalized[start:end], normalized[start:].T)
             yield start, end, block
             # 交付后立刻松开生成器自身的引用：否则恢复执行时会先算好下一块、
             # 再覆盖这个变量，导致新旧两块同时存活（峰值凭空翻倍）。
@@ -244,7 +252,7 @@ class Deduplicator:
                 if visited[i]:
                     continue
 
-                group = self._greedy_group_from_row(block, offset, i, visited)
+                group = self._greedy_group_from_row(block, offset, i, start, visited)
                 if len(group) > 1:
                     duplicate_groups.append(group)
 
@@ -259,15 +267,17 @@ class Deduplicator:
                                block: np.ndarray,
                                offset: int,
                                i: int,
+                               start: int,
                                visited: List[bool]) -> List[int]:
         """以 i 为组代表，把其后「相似度达标且尚未归组」的 j 并入同一组
 
         贪心语义与逐行扫描一致：只在 i 之后找，且已归组的 j 不再被认领。
 
         Args:
-            block: 当前相似度块，形状 (block_rows, n)
+            block: 当前相似度块，形状 (block_rows, n - start)，列下标 c 对应全局 c + start
             offset: i 在 block 中的行下标
             i: 全局行索引，作为组代表
+            start: 本块的起始全局行号（用于把块内列下标换回全局下标）
             visited: 归组标记（原地修改）
 
         Returns:
@@ -279,8 +289,10 @@ class Deduplicator:
         # 先在 C 层筛出相似度达标的候选，再在 Python 层做归组。
         # 若写成 `for j in range(i+1, n)` 逐元素比较，会把 O(n²) 次比较
         # 全部压到解释器里，大数据集下慢到不可用。
+        # 块只覆盖列 [start, n)，故全局列 j 在块内是 j - start；i >= start，
+        # 切片起点 `i + 1 - start` 恒 >= 1（跳过自己及自己左侧的列）。
         row = block[offset]
-        candidates = np.flatnonzero(row[i + 1:] >= self.threshold) + i + 1
+        candidates = np.flatnonzero(row[i + 1 - start:] >= self.threshold) + i + 1
         for j in candidates:
             j = int(j)
             if not visited[j]:
