@@ -103,6 +103,9 @@
             <button class="icon-btn" title="取消置顶" @click="imMore2('topCancel')">📍</button>
             <button class="icon-btn" title="标记即时已消费" @click="imMore3('instantConsumedPut')">✅</button>
             <button class="icon-btn" title="移除消息收藏" @click="imMore3('collectionRemove')">🗂</button>
+            <button class="icon-btn" title="发送(communicate)" @click="imMore4('sendMsg')">📨</button>
+            <button class="icon-btn" title="创建即时消息" @click="imMore4('connectorCreate')">🔔</button>
+            <button class="icon-btn" title="创建ws消费消息" @click="imMore4('wsCreate')">🌐</button>
             <button class="icon-btn" title="会话标记已读" @click="imMore2('convRead')">✔</button>
             <button class="icon-btn" title="退出群会话" @click="imMore2('groupQuit')">🚪</button>
             <button class="icon-btn" title="撤回消息" @click="imMore2('msgRevoke')">↩</button>
@@ -644,6 +647,27 @@ async function imMore3(op: string) {
       await api.delete('/api/message/assemble/communicate/im/msg/collection/remove', { body: { messageId } })
     }
     toast.success('IM 操作已提交')
+  } catch (err: any) {
+    toast.error('操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev426：IM communicate 写端点 发送消息(send→x_message)·创建连接器即时消息(connector→x_message_instant)·创建ws消费消息(ws→x_message_consume)（handler unwrap_or_default 不 guard，故用 prompt 真实内容避免插垃圾行；用户触发）
+async function imMore4(op: string) {
+  try {
+    if (op === 'sendMsg') {
+      const content = prompt('消息内容:', '') || ''
+      if (!content.trim()) return
+      await api.post('/api/message/assemble/communicate/send', { conversationId: selectedChat.value?.id ?? '', content, type: 'text' })
+    } else if (op === 'connectorCreate') {
+      const title = prompt('即时消息标题:', '') || ''
+      if (!title.trim()) return
+      await api.post('/api/message/assemble/communicate/connector', { type: 'text', person: session.user?.unique ?? '', title, body: title })
+    } else {
+      const content = prompt('ws 消费内容:', '') || ''
+      if (!content.trim()) return
+      await api.post('/api/message/assemble/communicate/ws', { person: session.user?.unique ?? '', sender: session.user?.unique ?? '', body: content })
+    }
+    toast.success('IM 消息已提交')
   } catch (err: any) {
     toast.error('操作失败: ' + (err?.message ?? ''))
   }
