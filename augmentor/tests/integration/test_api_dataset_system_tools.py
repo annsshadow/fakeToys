@@ -55,6 +55,15 @@ SECOND_ITEMS = ITEMS[:3]
 # 字段结构不同，用于迁移
 MIGRATION_ITEMS = [{"question": "q1", "answer": "a1"}, {"question": "q2", "answer": "a2"}]
 
+# 分层采样的输入：4 类 × 5 条。同类的 `instruction` 必须完全相同 ——
+# 分组键取 `instruction[:10]`（见 `dataset_ops._stratified_sample`），同类内加
+# 序号会把 20 条拆成 20 组，就测不到「类与类之间怎么分余数」。
+STRATIFIED_ITEMS = [
+    {"instruction": f"类别{cat}", "input": "", "output": f"{cat}答案{i}"}
+    for cat in ("甲", "乙", "丙", "丁")
+    for i in range(1, 6)
+]
+
 
 def _write_json(path: Path, items) -> Path:
     """写入 JSON 数据集文件
@@ -1138,6 +1147,33 @@ class TestDatasetSample:
         assert response.status_code == 200, response.text
         assert response.json()["output_count"] == 0
 
+    def test_stratified_sample_delivers_the_requested_size(self, tools_env):
+        """分层采样要 7 条就给 7 条，余数按类间最大余数分
+
+        缺陷态：逐类 `int(7 * 5/20) = 1`，四类各 1 条、余下 3 条整份丢掉 →
+        `output_count` 回 4，用户要的 7 条既没补齐也没人报错。
+        """
+        src = _write_json(tools_env.tmp / "stratified.json", STRATIFIED_ITEMS)
+        response = tools_env.client.post(
+            "/api/dataset/sample",
+            json={
+                "input_file": str(src),
+                "output_file": str(tools_env.out),
+                "method": "stratified",
+                "size": 7,
+                "seed": 7,
+            },
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["output_count"] == 7
+        rows = _read_json(tools_env.out)
+        assert len(rows) == 7
+        counts = {}
+        for row in rows:
+            counts[row["instruction"]] = counts.get(row["instruction"], 0) + 1
+        # 每类都不缺席（≥1），余数也不堆到单一类（≤2）
+        assert sorted(counts.values()) == [1, 2, 2, 2]
+
 
 class TestDatasetSplit:
     """/api/dataset/split"""
@@ -1175,6 +1211,31 @@ class TestDatasetSplit:
         )
         assert response.status_code == 400, response.text
         assert "分割比例之和" in response.json()["detail"]
+
+    def test_small_val_slice_is_not_rounded_away(self, tools_env):
+        """7 条按 0.8/0.1/0.1 分割：val 名义 0.7 条，不能被抹平成 0
+
+        缺陷态：`int(7 * 0.1) = 0` 且余数整份给了 test → (5, 0, 2)，
+        test 实占 28.6% 而标称 10%，用户拿不到任何验证集。
+        """
+        src = _write_json(
+            tools_env.tmp / "seven.json",
+            [{"instruction": f"条目{i}", "input": "", "output": f"结果{i}"}
+             for i in range(7)],
+        )
+        response = tools_env.client.post(
+            "/api/dataset/split",
+            json={
+                "input_file": str(src),
+                "output_dir": str(tools_env.out_dir),
+                "seed": 7,
+            },
+        )
+        assert response.status_code == 200, response.text
+        splits = response.json()["splits"]
+        counts = {name: part["count"] for name, part in splits.items()}
+        assert counts == {"train": 5, "val": 1, "test": 1}
+        assert Path(splits["val"]["file"]).is_file()
 
 
 class TestDatasetAggregate:
@@ -1300,6 +1361,29 @@ class TestDatasetAggregate:
         )
         assert response.status_code == 400, response.text
         assert "不支持的聚合策略" in response.json()["detail"]
+
+    def test_weighted_target_size_delivers_rows(self, tools_env):
+        """三源等权要 1 条时必须交付 1 条，而不是空数据集
+
+        缺陷态：逐源 `int(1 * 1/3) = 0` → 三源各 0 条，`aggregated_count` 回 0，
+        与「三个源本来就是空的」同形，调用方看不出区别。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/aggregate",
+            json={
+                "datasets": {
+                    "a": str(tools_env.data),
+                    "b": str(tools_env.second),
+                    "c": str(tools_env.migration),
+                },
+                "output_file": str(tools_env.out),
+                "strategy": "weighted",
+                "target_size": 1,
+            },
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["aggregated_count"] == 1
+        assert len(_read_json(tools_env.out)) == 1
 
 
 class TestDatasetRag:

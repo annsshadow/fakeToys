@@ -12,6 +12,7 @@ import random
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 from .exceptions import DataValidationError
+from .allocation import largest_remainder
 
 logger = logging.getLogger(__name__)
 
@@ -98,8 +99,10 @@ class DataSplitter:
         rng.shuffle(shuffled)
 
         total = len(shuffled)
-        train_end = int(total * self.train_ratio)
-        val_end = train_end + int(total * self.val_ratio)
+        # 余数按最大余数法分给三段，不再整份留给 test
+        train_end, val_n, _ = largest_remainder(
+            total, (self.train_ratio, self.val_ratio, self.test_ratio))
+        val_end = train_end + val_n
 
         train = shuffled[:train_end]
         val = shuffled[train_end:val_end]
