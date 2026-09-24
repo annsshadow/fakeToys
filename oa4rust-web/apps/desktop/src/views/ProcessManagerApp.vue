@@ -52,6 +52,19 @@
         <button class="btn-refresh" @click="pdDelete('xform')">删xform</button>
         <button class="btn-refresh" @click="pdPerm('application')">应用权限</button>
         <button class="btn-refresh" @click="pdPerm('process')">流程权限</button>
+        <button class="btn-refresh" @click="psSerial('create')">建流水号</button>
+        <button class="btn-refresh" @click="psSerial('delete')">删流水号</button>
+        <button class="btn-refresh" @click="psHandover('create')">建交接</button>
+        <button class="btn-refresh" @click="psHandover('cancel')">取消交接</button>
+        <button class="btn-refresh" @click="psHandover('process')">执行交接</button>
+        <button class="btn-refresh" @click="psSign('saveTask')">存会签</button>
+        <button class="btn-refresh" @click="psSign('delId')">删会签</button>
+        <button class="btn-refresh" @click="psSign('delTask')">删任务会签</button>
+        <button class="btn-refresh" @click="psDraft('save')">存草稿</button>
+        <button class="btn-refresh" @click="psDraft('start')">发起草稿</button>
+        <button class="btn-refresh" @click="psDraft('byProcess')">按流程建草稿</button>
+        <button class="btn-refresh" @click="psDraft('delete')">删草稿</button>
+        <button class="btn-refresh" @click="psModeDelete">删查询模式</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
@@ -88,8 +101,7 @@
 import { api } from '@oa4rust/sdk'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
-import { toast } from '../utils/toast'
-
+import { confirmMsg, toast } from '../utils/toast'
 interface Item {
   id: string
   name?: string
@@ -408,6 +420,100 @@ async function pdPerm(kind: 'application' | 'process') {
     toast.success(`${kind} 权限已设置`)
   } catch (err: any) {
     toast.error(`设置${kind}权限失败: ` + (err?.message ?? ''))
+  }
+}
+// rev328：流程表面管理 流水号/交接/会签/草稿/模式 真实写端点（用户触发，shape 已核 processplatform_assemble_surface handler）
+async function psSerial(kind: string) {
+  try {
+    if (kind === 'create') {
+      const process = prompt('流水号所属流程 ID:', '') || ''
+      const serial = Number(prompt('起始流水号（数字）:', '1') || '0')
+      await api.post('/api/processplatform/assemble/surface/serialnumber', { process, serial, name: '流水号' })
+      toast.success('流水号已创建')
+    } else {
+      const id = prompt('要删除的流水号 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该流水号？'))) return
+      await api.delete(`/api/processplatform/assemble/surface/serialnumber/${encodeURIComponent(id)}`)
+      toast.success('流水号已删除')
+    }
+  } catch (e: any) {
+    toast.error('流水号操作失败: ' + (e?.message ?? ''))
+  }
+}
+async function psHandover(kind: string) {
+  try {
+    if (kind === 'create') {
+      const person = prompt('交接来源人:', '') || ''
+      const targetIdentity = prompt('目标身份:', '') || ''
+      await api.post('/api/processplatform/assemble/surface/handover', {
+        type: 'process',
+        scheme: 'all',
+        person,
+        targetIdentity,
+        title: '工作交接',
+      })
+      toast.success('交接已创建')
+    } else {
+      const id = prompt('交接单 ID:', '') || ''
+      const e = encodeURIComponent(id)
+      if (kind === 'cancel') await api.post(`/api/processplatform/assemble/surface/handover/${e}/cancel`, {})
+      else await api.post(`/api/processplatform/assemble/surface/handover/${e}/process`, {})
+      toast.success('交接操作已提交')
+    }
+  } catch (e: any) {
+    toast.error('交接操作失败: ' + (e?.message ?? ''))
+  }
+}
+async function psSign(kind: string) {
+  const id = prompt(kind === 'saveTask' ? '会签任务 ID:' : '会签记录 ID:', '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (kind === 'saveTask') await api.post(`/api/processplatform/assemble/surface/sign/save/task/${e}`, {})
+    else if (kind === 'delId') {
+      if (!(await confirmMsg('确定删除该会签？'))) return
+      await api.delete(`/api/processplatform/assemble/surface/sign/${e}`)
+    } else {
+      if (!(await confirmMsg('确定删除该任务全部会签？'))) return
+      await api.delete(`/api/processplatform/assemble/surface/sign/task/${e}`)
+    }
+    toast.success('会签操作已提交')
+  } catch (err: any) {
+    toast.error('会签操作失败: ' + (err?.message ?? ''))
+  }
+}
+async function psDraft(kind: string) {
+  try {
+    if (kind === 'save') {
+      const title = prompt('草稿标题:', '') || ''
+      const process = prompt('流程 ID:', '') || ''
+      await api.put('/api/processplatform/assemble/surface/draft', { title, process })
+      toast.success('草稿已保存')
+    } else if (kind === 'start') {
+      const id = prompt('要发起的草稿 ID:', '') || ''
+      await api.post(`/api/processplatform/assemble/surface/draft/start/${encodeURIComponent(id)}`, {})
+      toast.success('草稿已发起')
+    } else if (kind === 'byProcess') {
+      const pf = prompt('流程 flag:', '') || ''
+      await api.post(`/api/processplatform/assemble/surface/draft/process/${encodeURIComponent(pf)}`, {})
+      toast.success('草稿已按流程创建')
+    } else {
+      const id = prompt('要删除的草稿 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该草稿？'))) return
+      await api.delete(`/api/processplatform/assemble/surface/draft/${encodeURIComponent(id)}`)
+      toast.success('草稿已删除')
+    }
+  } catch (e: any) {
+    toast.error('草稿操作失败: ' + (e?.message ?? ''))
+  }
+}
+async function psModeDelete() {
+  const id = prompt('要删除的查询模式 ID:', '') || ''
+  if (!(await confirmMsg('确定删除该查询模式？'))) return
+  try {
+    await api.post(`/api/processplatform/assemble/surface/mode/delete/${encodeURIComponent(id)}`, {})
+    toast.success('查询模式已删除')
+  } catch (e: any) {
+    toast.error('删除失败: ' + (e?.message ?? ''))
   }
 }
 // rev290：流程设计器 应用汇总/元素孤儿字典/流程引出/启用/权限 真实读端点集；均只读 arity 已核
