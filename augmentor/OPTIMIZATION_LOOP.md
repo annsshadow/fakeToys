@@ -33,6 +33,7 @@
 - [x] **L20** `feat(converter)`: B3② —— 读写两侧终于分清「文件容器」与「行内 schema」（新导出 `CONTAINER_FORMATS`）：补齐 `json ↔ tsv` 两条边（公开清单 9 → 10，与 `DataFormat` 同集合），声明了 `source_format="alpaca"` 却因落盘是 `.jsonl` 而 `json.load` 崩掉的读侧改成按内容嗅探，写侧容器改由输出扩展名决定（`--format alpaca` 写 `.jsonl` 现在真是一行一条、能原样读回）。真实 6902 条往返 **49.7 / 59.9 ms**、tsv **34.5 / 55.5 ms**；另删 `_json_to_csv` 的死代码；新增 20 例、删 2 例、改写 1 例，另立 **A25**
 - [x] **L21** `fix(converter)`: A25 —— 「源格式压根没声明」时的静默坏数据变成响亮报错：护栏只有**一处**，挂在 `convert()` 的分发口（`converter.py:212-213`，L22 后行号）而不是六条 `_json_to_*` 写边里，判据取窄（记录**既取不到 `instruction`/`output`**、**又带着对话数组** `conversations`/`messages` 且必须 `isinstance(list)`）才抛 `DataFormatError`，文案含条目下标 + 「该声明哪个 `source_format`」的可执行建议，且发生在写盘**之前**。真实 6902 条这一路以前产出 **6902 条全空问答**（96.9 ms、退出码 0、HTTP 200），现在 **16.7 ms 内失败、零半截产物**；干净数据的转换**耗时增量 0.0 ms**（3.8 vs 3.8 ms）。新增 19 例、改写 2 例（把钉住「静默空数据集」的旧例改成钉住「响亮失败」），另立 **A26**
 - [x] **L22** `fix(converter)`: A26① —— 「记录不是 JSON 对象」在八条写边入口变成 400：`[null]` / 字符串 / 数字 / 嵌套数组以前把整条链路砸成 `AttributeError: 'NoneType' object has no attribute 'get'`（CLI 文案就是这句解释器内部措辞、API **500**），写 `csv`/`tsv` 更坏——`DictWriter` **先把半截文件落盘再崩**（实测产物 `j,u,s,t, ,a,r,i,n,g`，字符串被按字符展开成表头）。护栏同样只挂**一处**（`convert()` 分发口 `converter.py:203-207`，新导出 `PASSTHROUGH_TARGETS` 写明 `json`/`jsonl` 两类豁免原因），文案与 L16 读边对齐（「第 N 条记录必须是 JSON 对象，当前是X」）。真实 6902 条干净数据、同进程 back-to-back 实测代价：`alpaca` **+0.23 ms**（×1.18）、`chatml` **+0.49 ms**（×1.13）、`csv` **+0.14 ms**（×2.34，基数只有 0.11 ms）、豁免路径 `jsonl` **×1.00** 作噪声对照；n/2n/3n 缩放仍线性。新增 27 例、改写 1 例，A26 只剩 ②（既无问答也无数组 → 静默空产物）
+- [x] **L23** `fix(converter)`: A26② —— 「整档一条问答都取不到」从静默空产物变成响亮报错：`{"question":…,"answer":…}`、`{"text":…}` 这类字段名认不出的语料走 `json → 六个训练格式`，以前每条都读到 `""`，**退出码 0 / HTTP 200**、产物结构合法却零问答（比崩溃更坏，下游直接拿去训练）。判据仍只挂**一处**分发口（`converter.py:214`，`_reject_all_empty_qa`），且**只看整档不看单条**（个别记录缺问答是常态）。问答键**按目标算**（`_qa_keys()` + `_HISTORY_AWARE_TARGETS`）：六条写边只有 sharegpt/chatml 读 `history`，因此「全是 history」转 chatml 放行、转 alpaca 照样拦。实测四份真实语料共 **20706 条**，可用问答缺失 **0 条** → 判定不误伤；干净数据单次调用 **0.4~0.7 µs**（命中第一条即返回），报错路径整档扫描 **1.32 ms / 6902 条**（一次性代价）。新增 31 例、改写 1 例（L21 那条钉「字符串 `messages` 列转出来仍是空问答」的豁免例，本轮把它改成钉「由 L23 接管、且不得给出声明源格式的建议」），**A26 两条口子全部关闭**
 
 ## Backlog A — 性能（含 file:line 与实测线索）
 
@@ -52,7 +53,7 @@
 | ~~A23~~ | ~~`augmentor/indexer.py:127-141,163-178`~~ | ~~**L18 新发现（口径缺陷，不是性能）**：`search_exact` / `search_ngram` 只对默认清单（`instruction/output/input` + `instruction_2`）生效，清单外的字段**静默返回空列表**~~ **已修（L19）**：判据换成「要么欠着默认清单的账，要么手上真有数据可建」，字段与 `n` 都不再受限。**真实数据上的症状比预想的重**：`search(query, method="ngram")` 的默认字段是 `instruction`+`output`，而 `output_2` 从来没人建过，于是这条查询一直在**静默少报 output 侧的全部命中**——真实 6902 条「租房」 **419 → 823**（与 contains 逐条相同）、「如何」 **2019 → 2035**；`search_ngram("output","，晨")` **0 → 8**（朴素全表扫描 8）。代价同轮实测：冷 ngram 查询 **55–65 → 225–240 ms**（多出的一份 `output_2` 单份 170.9 ms），临时倒排一份只 4.3 ms。`search_enhanced.py` 里**没有同构缺陷**（`_build_indexes` 遍历 `item.items()` 不收清单，`_search_ngram` 走扫表） | S |
 | A24 | `augmentor/indexer.py:213-242` | **L19 新记（成本，不是缺陷）**：一次性的 n-gram 查询要付**整份索引**的钱——真实 6902 条首查 `output_2` 170.9 ms、`instruction_2` 58.7 ms，而查询串本身只有 1～k 个 n-gram。对「只查一次」的调用方，直接扫全表算 bigram 交集比建索引便宜得多（contains 扫全表实测 7.3 ms 就是上界参照）。修法与 A21 同族：给 `search_ngram` 加「首查扫表、累计第 N 次才建索引」的策略，或者把 n-gram 倒排改成按需局部化。**本轮没动**（L19 的边界是把语义修对并如实记下代价，不顺手改性能口径） | M |
 | ~~A25~~ | ~~`augmentor/converter.py`（`_json_to_*` 六条写边）~~ | ~~**L20 新记（静默坏数据，与 B3② 同族但方向不同）**：源格式**未声明**时按扩展名当 json 读，而 `json → chatml/sharegpt/…` 只认 `instruction` / `output` / `history` 三个键。一份实际是 sharegpt 的 `.json` 于是被逐条读成「没有问答」，产物是**空问答的合法文件**、退出码 0、HTTP 200。L20 修的是「声明对了却绊在容器上」，这一条是「压根没声明」，嗅探帮不上~~ **已修（L21）**：护栏挂在 `convert()` 的分发口而不是六条边里，判据取窄——记录**取不到 `instruction`/`output`（任一非空）却又带着对话数组**（`conversations` / `messages`，且必须 `isinstance(list)`）才抛 `DataFormatError`，报错带条目下标 + 「该声明哪个 `source_format`」的可执行建议，且发生在写盘之前。**真实 6902 条实测**：这一路以前产出 **6902 条全空问答**（96.9 ms、退出码 0），现在 16.7 ms 内失败、零半截产物；干净数据转换的耗时**增量为 0.0 ms**（3.8 vs 3.8 ms，与写边同趟）。三端各有用例（SDK 17 例 / CLI 2 例 / API 1 例），六条写边由参数化逐个覆盖 | S |
-| A26 | `augmentor/converter.py`（同一批 `_json_to_*` 写边） | **L21 新记（护栏刻意没管的两个口子）**：①~~列表里躺着**非对象条目**（`[null]`、`["x"]`）或 `data` 根本不是列表时，写边直接 `item.get(...)` → `AttributeError: 'NoneType' object has no attribute 'get'`，经 API 就是 **500**——而同族 shape 问题（顶层必须是数组、记录缺字段）早已是 400。修法：写边入口统一做一次「条目必须是对象」，与 `read_conversation_turns` 同口径~~ **已修（L22）**：一处判据挂在 `convert()` 分发口，八类要取字段的目标全覆盖（六 schema + csv/tsv），实测代价 `alpaca` +0.23 ms / `chatml` +0.49 ms（6902 条，同进程对照），且 csv/tsv 不再留下按字符展开的半截产物；`json`/`jsonl` 目标是原样序列化、明确豁免。②**仍未修**：记录既无问答也无对话数组（`{"text": …}`、`{"question":…,"answer":…}`）时静默产出空问答；L21 不收是因为给不出「该声明什么」的建议，②的合理判据是「整档零可用问答 → 失败」，需要实测确认没有合法数据集恰好全空 | S |
+| ~~A26~~ | ~~`augmentor/converter.py`（同一批 `_json_to_*` 写边）~~ | **L21 新记（护栏刻意没管的两个口子）**：①~~列表里躺着**非对象条目**（`[null]`、`["x"]`）或 `data` 根本不是列表时，写边直接 `item.get(...)` → `AttributeError: 'NoneType' object has no attribute 'get'`，经 API 就是 **500**——而同族 shape 问题（顶层必须是数组、记录缺字段）早已是 400。修法：写边入口统一做一次「条目必须是对象」，与 `read_conversation_turns` 同口径~~ **已修（L22）**：一处判据挂在 `convert()` 分发口，八类要取字段的目标全覆盖（六 schema + csv/tsv），实测代价 `alpaca` +0.23 ms / `chatml` +0.49 ms（6902 条，同进程对照），且 csv/tsv 不再留下按字符展开的半截产物；`json`/`jsonl` 目标是原样序列化、明确豁免。②~~**仍未修**：记录既无问答也无对话数组（`{"text": …}`、`{"question":…,"answer":…}`）时静默产出空问答；L21 不收是因为给不出「该声明什么」的建议，②的合理判据是「整档零可用问答 → 失败」，需要实测确认没有合法数据集恰好全空~~ **已修（L23）**：`_reject_all_empty_qa` 同一咽喉下整档判定，一条可用问答都取不到 → `DataFormatError`（带条数 + 所认的键）。**误伤前置实测**：train_data / train_data_final / final01 / final02 / up 共 **20706 条**，缺可用问答 **0 条**；问答键**按目标算**（只有 sharegpt/chatml 读 `history`），容器目标与 `[]` 明确豁免。干净数据单次 **0.4~0.7 µs**（早退），报错路径 1.32 ms / 6902 条 | S |
 | ~~A12~~ | ~~`augmentor/validation.py:217-222`~~、`sampler.py:296-299` | **L13 实测拆成两半**：①`_validate_item` 里 `import re` + 每条每模式一次 `re.search`；②`sampler.generate_report()` 的 `items.index(seed)` **实测不是缺陷**（真实数据只推荐 4 个种子、反查 0.0 ms，单趟 id 映射要 1.1 ms，改了反而更慢；且它还会改变「值相等但不同对象」时的下标语义，真实数据里正好有 367 条重复 dict）—— 这一半作废。**①已修（L17）**：真实 6902 条 strict **28.99 → 19.49 ms（1.49×）**，禁止模式段占整档 53–55%、该段自身 **1.69–1.88×**（L13 预估的「~5 ms / 1.2×」偏保守）；`re.search` 逐条调用 **27608 → 0**、`re.compile` 与条数无关恒为 2 | S |
 | ~~A13~~ | ~~`api/routes/dataset_tools.py:311,360,386,387,416,436,566,598` + `system_ops.py:320,348,514`~~ | ~~**A4 的同构族**：`read_items()`（同步版）在 11 个 `async def` 路由体里直接调用，同样占着事件循环；`dataset_tools.py:566` 还是「多个文件在循环里串行读」；`/api/dataset/stats` 连分析都留在循环上（43.4 ms）~~ 已修（L7） | M |
 | ~~A14~~ | ~~`augmentor/impact.py:66`~~ | ~~`duplicate_rate` 里 `texts.count(t)` 写在推导式中 → O(n²)~~ 已修（L6） | S |
@@ -670,6 +671,47 @@
   恢复后全量 **3951 passed / 3 skipped**。`converter.py` 语句覆盖 **100%**
   （0 missed），分支残留仍是那条 L20 之前就有的 `_json_to_chatml` 空 system（`400->407`）。
   **A26 只剩 ②**（既无问答也无数组 → 静默空产物），继续另轮实测。
+- **L23** `fix(converter)` A26② —— 收 A26 最后一个口子，症状回到 L21 那一族「静默
+  坏数据」，但命中面更宽：字段名认不出（`question`/`answer`、`text`、`prompt`/
+  `completion`……）的记录既没有问答也没有对话数组，L21 的窄判据抓不到，六条写边于是
+  逐条读到 `""`，实测 **CLI 退出码 0、API 200**，产物是 N 条结构合法的空问答数据集。
+  **不收的两个理由本轮逐一实测掉**：①「给不出该声明什么的建议」——改成给「认哪几个
+  键 + 多少条」；②「万一有合法数据集恰好全空」——四份真实语料（6902 / 6902 / 1124 /
+  5778，加 up.json 共 **20706 条**）扫下来缺可用问答的是 **0 条**，故整档判定不会
+  误伤现有数据；`[]` 空数据集是既有合法行为（`test_an_empty_dataset_stays_legal`），
+  不在拦的范围。
+  **判据只挂一处**（`converter.py:214`），与 L21/L22 同一咽喉；顺序在 L21 之后 ——
+  误标的对话数组那条给得出「声明 `--input-format`」，比「改字段名」更准，先报它
+  （`test_a_mislabeled_conversation_still_gets_the_better_advice` 钉住两条护栏不打架）。
+  **本轮真正的收获是问答键必须逐边算**：第一版把 `history` 当六个目标通用的素材键，
+  写完用例才发现六条写边里**只有 sharegpt 与 chatml** 会把 `history` 展开进产物，
+  `alpaca`/`llama_factory`/`vicuna`/`belle` 读都不读——「整档只有 history」转这四条边
+  仍然是一份空问答，放过去等于 A26② 原地复活。于是提出 `_qa_keys()` +
+  `_HISTORY_AWARE_TARGETS`，报错文案跟着目标变（alpaca 只列两键、chatml 列三键），
+  两侧各有用例（`test_targets_that_ignore_history_do_not_count_it_as_qa` /
+  `test_history_aware_targets_accept_history_only_rows`）。
+  **代价**：护栏对干净语料命中第一条即返回，单次 **0.4~0.7 µs**；端到端 6902 条
+  7 组配对交替实测 `alpaca` 差值中位数 **+0.021 ms**、`chatml` **+0.345 ms**
+  （基数 4.5 ms，且隔离测得的护栏本身只有 0.0007 ms → 该差值是测量噪声）；
+  真要说代价只有**报错路径**要扫完整档再抛，实测 **1.32 ms / 6902 条**，一次性。
+  **用例**：新增 **31 例**（`TestAllEmptyQaRejected` 25：六目标参数化、文案带条数与
+  所认的键、history 的两侧、system 不算问答、整档宽松只需一条可用、空格不 strip、
+  `[]` 仍合法、容器目标与 jsonl 直通豁免、两条护栏不打架、写盘前失败、**分发口只跑一次**、
+  **早退用中毒列表子类证明**；CLI 3 例：非 0 + 文案 + stdout 不报成功、csv 例外侧仍成功、
+  单条可用即整档放行；API 3 例：`chatml`/`vicuna` 是 **400** 且不留产物、history-only
+  仍 **200**）+ 改写 1 例（L21 的 `test_a_string_column_named_messages_is_not_a_conversation`
+  原本钉「转出来仍是空问答」，即本轮要修的行为，改成钉「由 L23 接管且不得误报成声明源格式」）。
+  **红→绿（逐条）**：`converter.py` 整份退回 L22 提交态（`38d4879af`，31597 B，
+  CRLF 还原后 sha256 `4fe3fff419ec…` 与 L22 注入时一致）→ 新/改写用例 **19 红**
+  （unit 16：`TestAllEmptyQaRejected` 15 + 改写那条 L21 豁免例；CLI 1；API 2），
+  **白名单 13 绿**且逐条有理由：钉的全是本轮**没**改的
+  豁免与宽松侧（容器/`[]`/空格/history-only/单条可用/csv 例外/CLI 成功路径），
+  缺陷态本来就这样，它们防的是下一轮把判据放宽到容器目标或逐条报错。
+  对照：缺陷态全量 **19 红 / 3963 绿 / 3 跳**，其中绿 = 既有 **3950** 例全过（= 没有
+  任何既有用例依赖「静默空产物」）+ 上述 13 条白名单，恢复后
+  全量 **3982 passed / 3 skipped**（56.6 s，总计 98.54%）。`converter.py` 语句覆盖
+  **100%**（0 missed），分支残留仍是 L20 之前那条 `_json_to_chatml` 空 system
+  （`454->461`，护栏新增的 `_qa_keys` 分支两侧都覆盖）。**A26 两条口子全部关闭。**
 - 全量：L4 后 **3679 passed / 3 skipped**（89.2 s），L5 后 **3703 passed / 3 skipped**
   （90.2 s），L6 后 **3705 passed / 3 skipped**（91.1 s），L7 后 **3726 passed / 3 skipped**
   （95.1 s），L8 后 **3747 passed / 3 skipped**（98.0 s），L9 后 **3747 passed / 3 skipped**
@@ -686,7 +728,8 @@
   L19 后 **3886 passed / 3 skipped**（57.4 s，总计 98.53%），
   L20 后 **3905 passed / 3 skipped**（55.5 s，总计 98.50%），
   L21 后 **3924 passed / 3 skipped**（61.0 s，总计 98.54%），
-  L22 后 **3951 passed / 3 skipped**（55.7 s，总计 98.54%）。
+  L22 后 **3951 passed / 3 skipped**（55.7 s，总计 98.54%），
+  L23 后 **3982 passed / 3 skipped**（56.6 s，总计 98.54%，`converter.py` 语句 0 missed）。
   **注意**：这些墙钟秒数**彼此不可比**——本工作树与并行 agent 共用一台机器，
   它跑全量时我会慢 40%+（L9 时 92 s、L10 时无竞争 55.7 s）。跨轮只比
   **同一进程内 back-to-back 的对照组**，绝对秒数只作当次快照。

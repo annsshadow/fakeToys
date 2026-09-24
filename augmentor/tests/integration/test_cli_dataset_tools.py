@@ -502,3 +502,65 @@ class TestNonObjectRecordAtTheCli:
         assert code == 1
         assert "第 1 条记录必须是 JSON 对象" in capsys.readouterr().err
         assert not out_file.exists(), "报错前不得留下半截 csv"
+
+
+class TestEmptyQaProductAtTheCli:
+    """整档字段名认不出时 CLI 必须非 0 退出，而不是打一句「转换成功」。
+
+    A26② 的原始症状：一份 `question`/`answer` 语料按通用 json 转 chatml，退出码 0、
+    stdout 报成功，产物是 N 条 `{"messages": [{"content": ""}]}` —— 用户以为转换成了，
+    下游拿它去训练。L23 之后这一路是「N 条记录里取不到任何问答」，且不落盘。
+    """
+
+    ROWS = [{"question": "可以月付吗", "answer": "支持月付"},
+            {"question": "押金多少", "answer": "一个月"}]
+
+    def write(self, tmp_path, name, payload):
+        path = tmp_path / name
+        path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        return path
+
+    def test_unreadable_field_names_exit_non_zero(self, tmp_path, capsys):
+        """报错文案带条数与所认的键，用户照着改字段名就能跑通"""
+        src = self.write(tmp_path, "in.json", self.ROWS)
+        out_file = tmp_path / "out.json"
+
+        out, _, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--format", "chatml"]
+        )
+        err = capsys.readouterr().err
+        assert code == 1, f"空问答产物应当以非 0 退出: code={code} stdout={out}"
+        assert "2 条记录里取不到任何问答" in err, err
+        assert "成功" not in out, "失败时 stdout 不该报成功"
+        assert not out_file.exists()
+
+    def test_csv_target_keeps_columns_it_does_not_understand(self, tmp_path, capsys):
+        """例外的一侧：`csv` 表头取键并集，`question`/`answer` 照样是好产物，不得拦
+
+        整档空问答判定只适用于「写边会按固定键读字段」的六个训练格式。容器目标是
+        原样排版，拦它就等于禁止一切非训练格式的数据搬运。
+        """
+        src = self.write(tmp_path, "in.json", self.ROWS)
+        out_file = tmp_path / "out.csv"
+
+        _, _, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--format", "csv"]
+        )
+        assert code is None, capsys.readouterr().err
+        with out_file.open(newline="", encoding="utf-8") as f:
+            assert next(csv.reader(f)) == ["question", "answer"]
+
+    def test_a_single_readable_row_makes_the_run_succeed(self, tmp_path, capsys):
+        """整档判定不能把「大部分缺字段、至少一条能用」的数据集砸掉"""
+        src = self.write(tmp_path, "in.json",
+                         self.ROWS + [{"instruction": "可以月付吗", "output": "支持月付"}])
+        out_file = tmp_path / "out.json"
+
+        _, _, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--format", "chatml"]
+        )
+        assert code is None, capsys.readouterr().err
+        assert json.loads(out_file.read_text(encoding="utf-8"))[0]["messages"][1]["content"] == ""

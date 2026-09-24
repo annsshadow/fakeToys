@@ -9,7 +9,7 @@
 import json
 import csv
 import logging
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Tuple
 from pathlib import Path
 from enum import Enum
 from .exceptions import DataFormatError, UnsupportedFormatError
@@ -211,6 +211,7 @@ class DatasetConverter:
         if key in self._converters:
             if source_format == "json" and target_format not in CONTAINER_FORMATS:
                 self._reject_undeclared_conversations(data, target_format)
+                self._reject_all_empty_qa(data, target_format)
             return self._converters[key](data, **kwargs)
         
         # 尝试通过JSON中间格式转换
@@ -319,6 +320,58 @@ class DatasetConverter:
     _CONTAINER_HINT = {"conversations": "sharegpt / vicuna",
                        "messages": "chatml"}
 
+    #: 写边能拿去构成「一问 / 一答」的键。`system` 不在其中：只有系统提示词的记录
+    #: 转成任何训练格式都是空问答。判据比 `_reject_undeclared_conversations` 宽一点
+    #: 是有意的——那条按记录找「误标的对话数组」，宁窄；这一条下的是整档结论。
+    _QA_KEYS = ("instruction", "output")
+
+    #: `history` 是**逐边**才作数的键：六条写边里只有 sharegpt 和 chatml 会把历史轮次
+    #: 展开进产物，其余四条（alpaca / llama_factory / vicuna / belle）读都不读它。
+    #: 所以「整档只有 history」对 chatml 是可用数据、对 alpaca 仍是一份空问答数据集，
+    #: 按目标分键才不把后者放过去。
+    _HISTORY_AWARE_TARGETS = ("sharegpt", "chatml")
+
+    def _qa_keys(self, target_format: str) -> Tuple[str, ...]:
+        """给定目标格式，返回它的写边真正会读走的问答键"""
+        if target_format in self._HISTORY_AWARE_TARGETS:
+            return self._QA_KEYS + ("history",)
+        return self._QA_KEYS
+
+    def _reject_all_empty_qa(self, data: List[Dict], target_format: str) -> None:
+        """整档一条问答都取不到时当场失败，而不是交出一份空问答数据集
+
+        六个 schema 写边只认 `_qa_keys` 给的那几把钥匙。真实语料四份（6902 / 6902 /
+        1124 / 5778 条，共 20706 条）实测「四个键全空」的记录是 **0 条**，所以
+        **整档**都取不到问答几乎只有一种成因：这批数据用的是别的字段名
+        （`question`/`answer`、`text`、`prompt`/`completion`……），而不是它真的
+        应该被转成一份空数据集。以前这一路是退出码 0、HTTP 200、产物结构合法但
+        一行问答都没有（A26②）。
+
+        只看整档不看单条：个别记录缺问答是数据本身的常态（增强、清洗都会引入），
+        逐条报错会把可用数据集砸掉。空数据集不在这里管——`[]` 转任何格式都是
+        合法的 0 条产物（既有行为，见 `test_empty_dataset_still_yields_empty_list`）。
+
+        只按真值判断，不做 strip：`" "` 是 truthy，因此只含空格的字段算「有内容」。
+        与 `_reject_undeclared_conversations` 同一口径，也是为了不替调用方裁决
+        「空白到底算不算标签」——那是清洗该管的事，不是转换护栏。
+
+        找到第一条可用问答立刻返回：干净数据上这是 O(1)，与扫描整档不同量级。
+
+        Raises:
+            DataFormatError: 非空数据集里没有任何一条带 `_qa_keys` 之一的非空值
+        """
+        keys = self._qa_keys(target_format)
+        for record in data:
+            if any(record.get(key) for key in keys):
+                return
+        if data:
+            raise DataFormatError(
+                f"{len(data)} 条记录里取不到任何问答：`json → {target_format}` 只认 "
+                f"`{'` / `'.join(keys)}` 这几个键（任一非空）。产物会是 "
+                f"{len(data)} 条空问答数据集，训练不出东西。若源数据另有字段名"
+                f"（如 `question`/`answer`），请先改成这几个键"
+            )
+
     def _reject_undeclared_conversations(self, data: List[Dict], target_format: str) -> None:
         """拦住「源格式没声明、其实是对话类」的误标，而不是产出全空问答
 
@@ -330,7 +383,8 @@ class DatasetConverter:
         判据刻意取窄：记录里既有**可用的** `instruction`/`output`（任一非空）就不管，
         只有「取不到问答 + 躺着对话数组」才报。所以 csv/tsv 里恰好有一列叫
         `messages` 的字符串字段不会误伤（`DictReader` 交出来的是 str，不是 list）。
-        真·认不出字段的记录（既无问答也无对话数组）不在这里管，见 Backlog A26。
+        真·认不出字段的记录（既无问答也无对话数组）不在这一条里逐条报，由紧随其后的
+        `_reject_all_empty_qa` 下整档结论（L23）。
 
         调用前提是 `data` 已经过 `_require_object_records`（两者同在 `convert()`
         分发口），所以这里不再复核记录形状。
