@@ -498,7 +498,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 323,
+    "line": 324,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendanceappealInfo/appeal/${encodeURIComponent(a.id)}",
     "path": "/api/attendance/assemble/control/attendanceappealInfo/appeal/{}",
@@ -511,7 +511,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 333,
+    "line": 334,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendanceappealInfo/archive/${encodeURIComponent(a.id)}",
     "path": "/api/attendance/assemble/control/attendanceappealInfo/archive/{}",
@@ -524,7 +524,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 410,
+    "line": 411,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/groupschedule/config/group/${encodeURIComponent(gid)}",
     "path": "/api/attendance/assemble/control/v2/groupschedule/config/group/{}",
@@ -537,7 +537,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 411,
+    "line": 412,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/groupschedule/list/group/${encodeURIComponent(gid)}/month/${encodeURIComponent(monthStr)}",
     "path": "/api/attendance/assemble/control/v2/groupschedule/list/group/{}/month/{}",
@@ -550,7 +550,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 412,
+    "line": 413,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/group/person/${encodeURIComponent(person)}/date/${encodeURIComponent(today)}",
     "path": "/api/attendance/assemble/control/v2/group/person/{}/date/{}",
@@ -563,7 +563,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 429,
+    "line": 430,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/record/list/${page}/size/${size}",
     "path": "/api/attendance/assemble/control/v2/record/list/{}/size/{}",
@@ -576,7 +576,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 430,
+    "line": 431,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/appeal/list/${page}/size/${size}",
     "path": "/api/attendance/assemble/control/v2/appeal/list/{}/size/{}",
@@ -589,7 +589,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 437,
+    "line": 438,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/record/${encodeURIComponent(rid)}",
     "path": "/api/attendance/assemble/control/v2/record/{}",
@@ -602,7 +602,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 438,
+    "line": 439,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/appeal/${encodeURIComponent(aid)}",
     "path": "/api/attendance/assemble/control/v2/appeal/{}",
@@ -615,7 +615,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 499,
+    "line": 500,
     "method": "DELETE",
     "raw": "/api/attendance/assemble/control/v2/workplace/${encodeURIComponent(id)}",
     "path": "/api/attendance/assemble/control/v2/workplace/{}",
@@ -628,7 +628,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 514,
+    "line": 515,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/appeal/${encodeURIComponent(id)}/start/process",
     "path": "/api/attendance/assemble/control/v2/appeal/{}/start/process",
@@ -641,7 +641,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 517,
+    "line": 518,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/appeal/${encodeURIComponent(id)}/end/process",
     "path": "/api/attendance/assemble/control/v2/appeal/{}/end/process",
@@ -654,7 +654,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 526,
+    "line": 527,
     "method": "DELETE",
     "raw": "/api/attendance/assemble/control/attendanceselfholiday/${encodeURIComponent(id)}",
     "path": "/api/attendance/assemble/control/attendanceselfholiday/{}",
@@ -667,7 +667,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 533,
+    "line": 534,
     "method": "DELETE",
     "raw": "/api/attendance/assemble/control/selfholidaysimple/docId/${encodeURIComponent(docId)}",
     "path": "/api/attendance/assemble/control/selfholidaysimple/docId/{}",
@@ -680,7 +680,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 547,
+    "line": 548,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/statisticshow/filter/personMonth/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}",
     "path": "/api/attendance/assemble/control/statisticshow/filter/personMonth/list/{}/next/{}",
@@ -693,7 +693,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 548,
+    "line": 549,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/statisticshow/filter/personMonth/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}",
     "path": "/api/attendance/assemble/control/statisticshow/filter/personMonth/list/{}/prev/{}",
@@ -706,7 +706,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 549,
+    "line": 550,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}",
     "path": "/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/{}/next/{}",
@@ -719,7 +719,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 550,
+    "line": 551,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}",
     "path": "/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/{}/prev/{}",
@@ -732,7 +732,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 551,
+    "line": 552,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}",
     "path": "/api/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/{}/next/{}",
@@ -745,7 +745,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 552,
+    "line": 553,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}",
     "path": "/api/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/{}/prev/{}",
@@ -758,7 +758,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 553,
+    "line": 554,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/statisticshow/filter/unitDay/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}",
     "path": "/api/attendance/assemble/control/statisticshow/filter/unitDay/list/{}/next/{}",
@@ -771,7 +771,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 554,
+    "line": 555,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/statisticshow/filter/unitDay/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}",
     "path": "/api/attendance/assemble/control/statisticshow/filter/unitDay/list/{}/prev/{}",
@@ -784,7 +784,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 555,
+    "line": 556,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/statisticshow/filter/unitMonth/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}",
     "path": "/api/attendance/assemble/control/statisticshow/filter/unitMonth/list/{}/next/{}",
@@ -797,7 +797,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 556,
+    "line": 557,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/statisticshow/filter/unitMonth/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}",
     "path": "/api/attendance/assemble/control/statisticshow/filter/unitMonth/list/{}/prev/{}",
@@ -810,7 +810,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 561,
+    "line": 562,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/attendanceappealInfo/filter/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}",
     "path": "/api/attendance/assemble/control/attendanceappealInfo/filter/list/{}/next/{}",
@@ -823,7 +823,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 562,
+    "line": 563,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/attendanceappealInfo/manager/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}",
     "path": "/api/attendance/assemble/control/attendanceappealInfo/manager/list/{}/next/{}",
@@ -836,7 +836,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 563,
+    "line": 564,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/attendanceselfholiday/filter/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}",
     "path": "/api/attendance/assemble/control/attendanceselfholiday/filter/list/{}/next/{}",
@@ -849,7 +849,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 564,
+    "line": 565,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/attendanceselfholiday/filter/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}",
     "path": "/api/attendance/assemble/control/attendanceselfholiday/filter/list/{}/prev/{}",
@@ -862,7 +862,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 582,
+    "line": 583,
     "method": "POST",
     "raw": "/api/attendance/core/entity/record/${encodeURIComponent(id)}/update",
     "path": "/api/attendance/core/entity/record/{}/update",
@@ -875,7 +875,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 586,
+    "line": 587,
     "method": "GET",
     "raw": "/api/attendance/core/entity/record/${encodeURIComponent(id)}/delete",
     "path": "/api/attendance/core/entity/record/{}/delete",
@@ -888,7 +888,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 594,
+    "line": 595,
     "method": "POST",
     "raw": "/api/attendance/core/entity/rule/${encodeURIComponent(id)}/update",
     "path": "/api/attendance/core/entity/rule/{}/update",
@@ -901,7 +901,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 598,
+    "line": 599,
     "method": "GET",
     "raw": "/api/attendance/core/entity/rule/${encodeURIComponent(id)}/delete",
     "path": "/api/attendance/core/entity/rule/{}/delete",
@@ -914,7 +914,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 609,
+    "line": 610,
     "method": "DELETE",
     "raw": "/api/attendance/assemble/control/attendanceadmin/${encodeURIComponent(id)}",
     "path": "/api/attendance/assemble/control/attendanceadmin/{}",
@@ -927,7 +927,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 611,
+    "line": 612,
     "method": "DELETE",
     "raw": "/api/attendance/assemble/control/attendanceemployeeconfig/${encodeURIComponent(id)}",
     "path": "/api/attendance/assemble/control/attendanceemployeeconfig/{}",
@@ -940,7 +940,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 613,
+    "line": 614,
     "method": "DELETE",
     "raw": "/api/attendance/assemble/control/attendanceschedulesetting/${encodeURIComponent(id)}",
     "path": "/api/attendance/assemble/control/attendanceschedulesetting/{}",
@@ -953,7 +953,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 615,
+    "line": 616,
     "method": "DELETE",
     "raw": "/api/attendance/assemble/control/attendanceworkdayconfig/${encodeURIComponent(id)}",
     "path": "/api/attendance/assemble/control/attendanceworkdayconfig/{}",
@@ -966,7 +966,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 618,
+    "line": 619,
     "method": "DELETE",
     "raw": "/api/attendance/assemble/control/attendancestatisticrequirelog/${encodeURIComponent(id)}",
     "path": "/api/attendance/assemble/control/attendancestatisticrequirelog/{}",
@@ -979,7 +979,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 619,
+    "line": 620,
     "method": "DELETE",
     "raw": "/api/attendance/assemble/control/attendancestatisticalcycle/${encodeURIComponent(id)}",
     "path": "/api/attendance/assemble/control/attendancestatisticalcycle/{}",
@@ -992,7 +992,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 620,
+    "line": 621,
     "method": "DELETE",
     "raw": "/api/attendance/assemble/control/attendanceimportfileinfo/${encodeURIComponent(id)}",
     "path": "/api/attendance/assemble/control/attendanceimportfileinfo/{}",
@@ -1005,7 +1005,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 623,
+    "line": 624,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/attendanceappealInfo/appeal/${encodeURIComponent(id)}",
     "path": "/api/attendance/assemble/control/attendanceappealInfo/appeal/{}",
@@ -1018,7 +1018,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 624,
+    "line": 625,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceappealInfo/archive/${encodeURIComponent(id)}",
     "path": "/api/attendance/assemble/control/attendanceappealInfo/archive/{}",
@@ -1031,7 +1031,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 625,
+    "line": 626,
     "method": "DELETE",
     "raw": "/api/attendance/assemble/control/attendanceappealInfo/${encodeURIComponent(id)}",
     "path": "/api/attendance/assemble/control/attendanceappealInfo/{}",
@@ -1044,7 +1044,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 627,
+    "line": 628,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancedetail/analyse/id/${encodeURIComponent(id)}",
     "path": "/api/attendance/assemble/control/attendancedetail/analyse/id/{}",
@@ -1057,7 +1057,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 628,
+    "line": 629,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancedetail/archive/${encodeURIComponent(id)}",
     "path": "/api/attendance/assemble/control/attendancedetail/archive/{}",
@@ -1070,7 +1070,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 629,
+    "line": 630,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/rule/${encodeURIComponent(id)}/toggle",
     "path": "/api/attendance/assemble/control/rule/{}/toggle",
@@ -1083,7 +1083,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 645,
+    "line": 646,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/appeal/${id()}/manager/status",
     "path": "/api/attendance/assemble/control/v2/appeal/{}/manager/status",
@@ -1096,7 +1096,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 646,
+    "line": 647,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/appeal/${id()}/reset/status",
     "path": "/api/attendance/assemble/control/v2/appeal/{}/reset/status",
@@ -1109,7 +1109,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 647,
+    "line": 648,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/detail/rebuild/person/${p}/date/${d}",
     "path": "/api/attendance/assemble/control/v2/detail/rebuild/person/{}/date/{}",
@@ -1122,7 +1122,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 648,
+    "line": 649,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/group/rebuild/detail/group/${g}/date/${d}",
     "path": "/api/attendance/assemble/control/v2/group/rebuild/detail/group/{}/date/{}",
@@ -1135,7 +1135,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 649,
+    "line": 650,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/group/${id()}/refresh/participate",
     "path": "/api/attendance/assemble/control/v2/group/{}/refresh/participate",
@@ -1148,7 +1148,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 650,
+    "line": 651,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/record/delete/people/${p}/date/${d}",
     "path": "/api/attendance/assemble/control/v2/record/delete/people/{}/date/{}",
@@ -1161,7 +1161,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 651,
+    "line": 652,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancedetail/analyse/${sd}/${ed}",
     "path": "/api/attendance/assemble/control/attendancedetail/analyse/{}/{}",
@@ -1174,7 +1174,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 652,
+    "line": 653,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/${y}/${mo}",
     "path": "/api/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/{}/{}",
@@ -1187,7 +1187,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 653,
+    "line": 654,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancedetail/filter/list/${id()}/next/${cnt}",
     "path": "/api/attendance/assemble/control/attendancedetail/filter/list/{}/next/{}",
@@ -1200,7 +1200,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 654,
+    "line": 655,
     "method": "POST",
     "raw": "/api/attendance/appeal/archive/${id()}",
     "path": "/api/attendance/appeal/archive/{}",
@@ -1213,7 +1213,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 655,
+    "line": 656,
     "method": "DELETE",
     "raw": "/api/attendance/assemble/control/attendancedetail/mobile/${id()}",
     "path": "/api/attendance/assemble/control/attendancedetail/mobile/{}",
@@ -1226,7 +1226,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 687,
+    "line": 688,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceschedulesetting/${sid}",
     "path": "/api/attendance/assemble/control/attendanceschedulesetting/{}",
@@ -1239,7 +1239,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 688,
+    "line": 689,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceschedulesetting/list/unit/${encodeURIComponent(nm)}",
     "path": "/api/attendance/assemble/control/attendanceschedulesetting/list/unit/{}",
@@ -1252,7 +1252,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 689,
+    "line": 690,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceschedulesetting/list/topUnit/${encodeURIComponent(nm)}",
     "path": "/api/attendance/assemble/control/attendanceschedulesetting/list/topUnit/{}",
@@ -1265,7 +1265,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 708,
+    "line": 709,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/detail/statistic/${detailId}/list/record",
     "path": "/api/attendance/assemble/control/v2/detail/statistic/{}/list/record",
@@ -1278,7 +1278,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 741,
+    "line": 754,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statisticshow/filter/personMonth/list/${nx}/next/${c}",
     "path": "/api/attendance/assemble/control/statisticshow/filter/personMonth/list/{}/next/{}",
@@ -1291,7 +1291,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 742,
+    "line": 755,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statisticshow/filter/personMonth/list/${pv}/prev/${c}",
     "path": "/api/attendance/assemble/control/statisticshow/filter/personMonth/list/{}/prev/{}",
@@ -1304,7 +1304,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 743,
+    "line": 756,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statisticshow/filter/unitMonth/list/${nx}/next/${c}",
     "path": "/api/attendance/assemble/control/statisticshow/filter/unitMonth/list/{}/next/{}",
@@ -1317,7 +1317,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 744,
+    "line": 757,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statisticshow/filter/unitMonth/list/${pv}/prev/${c}",
     "path": "/api/attendance/assemble/control/statisticshow/filter/unitMonth/list/{}/prev/{}",
@@ -1330,7 +1330,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 745,
+    "line": 758,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/${nx}/next/${c}",
     "path": "/api/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/{}/next/{}",
@@ -1343,7 +1343,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 746,
+    "line": 759,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/${pv}/prev/${c}",
     "path": "/api/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/{}/prev/{}",
@@ -1356,7 +1356,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 747,
+    "line": 760,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statisticshow/filter/unitDay/list/${nx}/next/${c}",
     "path": "/api/attendance/assemble/control/statisticshow/filter/unitDay/list/{}/next/{}",
@@ -1369,7 +1369,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 748,
+    "line": 761,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statisticshow/filter/unitDay/list/${pv}/prev/${c}",
     "path": "/api/attendance/assemble/control/statisticshow/filter/unitDay/list/{}/prev/{}",
@@ -1382,7 +1382,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 749,
+    "line": 762,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/${nx}/next/${c}",
     "path": "/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/{}/next/{}",
@@ -1395,7 +1395,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 750,
+    "line": 763,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/${pv}/prev/${c}",
     "path": "/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/{}/prev/{}",
@@ -1408,7 +1408,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 751,
+    "line": 764,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statisticshow/unit/day/${encodeURIComponent(nm)}/${encodeURIComponent(dt)}",
     "path": "/api/attendance/assemble/control/statisticshow/unit/day/{}/{}",
@@ -1421,7 +1421,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 752,
+    "line": 765,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statisticshow/unit/day/topUnit/${encodeURIComponent(nm)}/${encodeURIComponent(dt)}",
     "path": "/api/attendance/assemble/control/statisticshow/unit/day/topUnit/{}/{}",
@@ -1434,7 +1434,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 754,
+    "line": 767,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statisticshow/unit/topUnit/${encodeURIComponent(nm)}/${yr}/${mo}",
     "path": "/api/attendance/assemble/control/statisticshow/unit/topUnit/{}/{}/{}",
@@ -1447,7 +1447,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 756,
+    "line": 769,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statisticshow/persons/unit/subnested/${encodeURIComponent(nm)}/${yr}/${mo}",
     "path": "/api/attendance/assemble/control/statisticshow/persons/unit/subnested/{}/{}/{}",
@@ -1460,7 +1460,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 757,
+    "line": 770,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statisticshow/unit/subnested/${encodeURIComponent(nm)}/${yr}/${mo}",
     "path": "/api/attendance/assemble/control/statisticshow/unit/subnested/{}/{}/{}",
@@ -1473,7 +1473,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 758,
+    "line": 771,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/dingding/statistic/unit/year/${yr}/month/${mo}/day/${encodeURIComponent(nm)}",
     "path": "/api/attendance/assemble/control/dingding/statistic/unit/year/{}/month/{}/day/{}",
@@ -1486,7 +1486,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 759,
+    "line": 772,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/qywx/statistic/person/year/${yr}/month/${mo}",
     "path": "/api/attendance/assemble/control/qywx/statistic/person/year/{}/month/{}",
@@ -1499,7 +1499,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 760,
+    "line": 773,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/qywx/statistic/unit/year/${yr}/month/${mo}/day/${encodeURIComponent(nm)}",
     "path": "/api/attendance/assemble/control/qywx/statistic/unit/year/{}/month/{}/day/{}",
@@ -1512,7 +1512,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 762,
+    "line": 775,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/appeal/${nm}/start/check",
     "path": "/api/attendance/assemble/control/v2/appeal/{}/start/check",
@@ -1525,7 +1525,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 763,
+    "line": 776,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/leave/import/result/flag/${nm}",
     "path": "/api/attendance/assemble/control/v2/leave/import/result/flag/{}",
@@ -1538,7 +1538,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 764,
+    "line": 777,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/workplace/${nm}",
     "path": "/api/attendance/assemble/control/workplace/{}",
@@ -1551,7 +1551,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 765,
+    "line": 778,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statisticshow/topUnit/${encodeURIComponent(nm)}/${yr}/${mo}",
     "path": "/api/attendance/assemble/control/statisticshow/topUnit/{}/{}/{}",
@@ -1564,7 +1564,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 766,
+    "line": 779,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statisticshow/unit/${encodeURIComponent(nm)}/${yr}/${mo}",
     "path": "/api/attendance/assemble/control/statisticshow/unit/{}/{}/{}",
@@ -1577,7 +1577,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 782,
+    "line": 795,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceappealInfo/filter/list/${nx}/next/${c}",
     "path": "/api/attendance/assemble/control/attendanceappealInfo/filter/list/{}/next/{}",
@@ -1590,7 +1590,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 786,
+    "line": 799,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceappealInfo/filter/list/${pv}/prev/${c}",
     "path": "/api/attendance/assemble/control/attendanceappealInfo/filter/list/{}/prev/{}",
@@ -1603,7 +1603,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 787,
+    "line": 800,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceappealInfo/manager/list/${nx}/next/${c}",
     "path": "/api/attendance/assemble/control/attendanceappealInfo/manager/list/{}/next/{}",
@@ -1616,7 +1616,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 788,
+    "line": 801,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceappealInfo/${encodeURIComponent(aid)}",
     "path": "/api/attendance/assemble/control/attendanceappealInfo/{}",
@@ -1629,7 +1629,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 789,
+    "line": 802,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancedetail/filter/list/${nx}/next/${c}",
     "path": "/api/attendance/assemble/control/attendancedetail/filter/list/{}/next/{}",
@@ -1642,7 +1642,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 790,
+    "line": 803,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancedetail/filter/list/${pv}/prev/${c}",
     "path": "/api/attendance/assemble/control/attendancedetail/filter/list/{}/prev/{}",
@@ -1655,7 +1655,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 807,
+    "line": 820,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceselfholiday/filter/list/${nx}/next/${c}",
     "path": "/api/attendance/assemble/control/attendanceselfholiday/filter/list/{}/next/{}",
@@ -1668,7 +1668,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 813,
+    "line": 826,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceselfholiday/filter/list/${pv}/prev/${c}",
     "path": "/api/attendance/assemble/control/attendanceselfholiday/filter/list/{}/prev/{}",
@@ -1681,7 +1681,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 814,
+    "line": 827,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceselfholiday/${encodeURIComponent(shId)}",
     "path": "/api/attendance/assemble/control/attendanceselfholiday/{}",
@@ -1694,7 +1694,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 815,
+    "line": 828,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancesetting/${encodeURIComponent(setId)}",
     "path": "/api/attendance/assemble/control/attendancesetting/{}",
@@ -1707,7 +1707,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 816,
+    "line": 829,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancesetting/code/${encodeURIComponent(setCode)}",
     "path": "/api/attendance/assemble/control/attendancesetting/code/{}",
@@ -1720,7 +1720,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 817,
+    "line": 830,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceimportfileinfo/${encodeURIComponent(setId)}",
     "path": "/api/attendance/assemble/control/attendanceimportfileinfo/{}",
@@ -1733,7 +1733,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 818,
+    "line": 831,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancestatisticrequirelog/${encodeURIComponent(setId)}",
     "path": "/api/attendance/assemble/control/attendancestatisticrequirelog/{}",
@@ -1746,7 +1746,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 836,
+    "line": 849,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancedetail/list/${encodeURIComponent(fileId)}",
     "path": "/api/attendance/assemble/control/attendancedetail/list/{}",
@@ -1759,7 +1759,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 838,
+    "line": 851,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancedetail/mobile/${encodeURIComponent(detailId)}",
     "path": "/api/attendance/assemble/control/attendancedetail/mobile/{}",
@@ -1772,7 +1772,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 858,
+    "line": 871,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statisticshow/person/${name}/${y}/${mo}",
     "path": "/api/attendance/assemble/control/statisticshow/person/{}/{}/{}",
@@ -1785,7 +1785,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 859,
+    "line": 872,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statisticshow/persons/unit/${name}/${y}/${mo}",
     "path": "/api/attendance/assemble/control/statisticshow/persons/unit/{}/{}/{}",
@@ -1798,7 +1798,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 860,
+    "line": 873,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statisticshow/topUnit/day/${name}/${y}/${mo}",
     "path": "/api/attendance/assemble/control/statisticshow/topUnit/day/{}/{}/{}",
@@ -1811,7 +1811,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 861,
+    "line": 874,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statisticshow/unit/day/${name}/${y}/${mo}",
     "path": "/api/attendance/assemble/control/statisticshow/unit/day/{}/{}/{}",
@@ -1824,7 +1824,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 862,
+    "line": 875,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statisticshow/unit/sum/${name}/${y}/${mo}",
     "path": "/api/attendance/assemble/control/statisticshow/unit/sum/{}/{}/{}",
@@ -1837,7 +1837,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 863,
+    "line": 876,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/dingdingstatistic/unit/${name}/${y}/${mo}",
     "path": "/api/attendance/assemble/control/dingdingstatistic/unit/{}/{}/{}",
@@ -1850,7 +1850,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 864,
+    "line": 877,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/qywxstatistic/unit/${name}/${y}/${mo}",
     "path": "/api/attendance/assemble/control/qywxstatistic/unit/{}/{}/{}",
@@ -1863,7 +1863,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 881,
+    "line": 894,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/dingdingstatistic/person/${id}/${y}/${mo}",
     "path": "/api/attendance/assemble/control/dingdingstatistic/person/{}/{}/{}",
@@ -1876,7 +1876,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 882,
+    "line": 895,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/dingdingstatistic/person/unit/${id}/${y}/${mo}",
     "path": "/api/attendance/assemble/control/dingdingstatistic/person/unit/{}/{}/{}",
@@ -1889,7 +1889,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 883,
+    "line": 896,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/qywxstatistic/person/${id}/${y}/${mo}",
     "path": "/api/attendance/assemble/control/qywxstatistic/person/{}/{}/{}",
@@ -1902,7 +1902,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 884,
+    "line": 897,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/qywxstatistic/person/unit/${id}/${y}/${mo}",
     "path": "/api/attendance/assemble/control/qywxstatistic/person/unit/{}/{}/{}",
@@ -1915,7 +1915,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 885,
+    "line": 898,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/selfholidaysimple/docId/${id}",
     "path": "/api/attendance/assemble/control/selfholidaysimple/docId/{}",
@@ -1928,7 +1928,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 924,
+    "line": 937,
     "method": "DELETE",
     "raw": "/api/attendance/assemble/control/rule/{}",
     "path": "/api/attendance/assemble/control/rule/{}",
@@ -1941,7 +1941,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 996,
+    "line": 1009,
     "method": "DELETE",
     "raw": "/api/attendance/assemble/control/workplace/{}",
     "path": "/api/attendance/assemble/control/workplace/{}",
@@ -1954,7 +1954,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1026,
+    "line": 1039,
     "method": "DELETE",
     "raw": "/api/attendance/assemble/control/attendancesetting/{}",
     "path": "/api/attendance/assemble/control/attendancesetting/{}",
@@ -1967,7 +1967,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1158,
+    "line": 1171,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceadmin/${it.id}",
     "path": "/api/attendance/assemble/control/attendanceadmin/{}",
@@ -1980,7 +1980,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1160,
+    "line": 1173,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceemployeeconfig/${it.id}",
     "path": "/api/attendance/assemble/control/attendanceemployeeconfig/{}",
@@ -1993,7 +1993,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1162,
+    "line": 1175,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceworkdayconfig/${it.id}",
     "path": "/api/attendance/assemble/control/attendanceworkdayconfig/{}",
@@ -2006,7 +2006,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1164,
+    "line": 1177,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/group/${it.id}",
     "path": "/api/attendance/assemble/control/v2/group/{}",
@@ -2019,7 +2019,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1166,
+    "line": 1179,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/shift/${it.id}",
     "path": "/api/attendance/assemble/control/v2/shift/{}",
@@ -2032,7 +2032,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1182,
+    "line": 1195,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/group/${it.id}/delete",
     "path": "/api/attendance/assemble/control/v2/group/{}/delete",
@@ -2045,7 +2045,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1185,
+    "line": 1198,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/leave/delete/${it.id}",
     "path": "/api/attendance/assemble/control/v2/leave/delete/{}",
@@ -2058,7 +2058,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1187,
+    "line": 1200,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/shift/delete/${it.id}",
     "path": "/api/attendance/assemble/control/v2/shift/delete/{}",
@@ -2071,7 +2071,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1209,
+    "line": 1222,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancestatisticalcycle/{}",
     "path": "/api/attendance/assemble/control/attendancestatisticalcycle/{}",
@@ -2084,7 +2084,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1236,
+    "line": 1249,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancedetail/{}",
     "path": "/api/attendance/assemble/control/attendancedetail/{}",
@@ -2097,7 +2097,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1245,
+    "line": 1258,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendancedetail/analyse/id/{}",
     "path": "/api/attendance/assemble/control/attendancedetail/analyse/id/{}",
@@ -2110,7 +2110,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1253,
+    "line": 1266,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendancedetail/archive/{}",
     "path": "/api/attendance/assemble/control/attendancedetail/archive/{}",
@@ -2123,7 +2123,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1262,
+    "line": 1275,
     "method": "DELETE",
     "raw": "/api/attendance/assemble/control/attendancedetail/{}",
     "path": "/api/attendance/assemble/control/attendancedetail/{}",
@@ -5542,7 +5542,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CmsScriptDesignerApp.vue",
-    "line": 37,
+    "line": 41,
     "method": "GET",
     "raw": "/api/script/${encodeURIComponent(id)}",
     "path": "/api/script/{}",
@@ -5555,7 +5555,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CmsScriptDesignerApp.vue",
-    "line": 46,
+    "line": 50,
     "method": "PUT",
     "raw": "/api/script/${encodeURIComponent(id)}",
     "path": "/api/script/{}",
@@ -5568,13 +5568,26 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CmsScriptDesignerApp.vue",
-    "line": 47,
+    "line": 51,
     "method": "DELETE",
     "raw": "/api/script/${encodeURIComponent(id)}",
     "path": "/api/script/{}",
     "via": "literal",
     "ambiguous": false,
     "hit": "/api/script/{id}",
+    "hit_crate": "cms_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsScriptDesignerApp.vue",
+    "line": 59,
+    "method": "POST",
+    "raw": "/api/script/${encodeURIComponent(uniqueName)}/appInfo/${encodeURIComponent(appFlag)}",
+    "path": "/api/script/{}/appInfo/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/script/{uniqueName}/appInfo/{appFlag}",
     "hit_crate": "cms_assemble_control",
     "extra": null
    },
@@ -12406,7 +12419,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 208,
+    "line": 209,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/application/list/terminal/${terminal}",
     "path": "/api/processplatform/assemble/surface/application/list/terminal/{}",
@@ -12419,7 +12432,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 209,
+    "line": 210,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/application/list/key/${terminal}",
     "path": "/api/processplatform/assemble/surface/application/list/key/{}",
@@ -12432,7 +12445,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 210,
+    "line": 211,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/list/application/${terminal}",
     "path": "/api/processplatform/assemble/surface/process/list/application/{}",
@@ -12445,7 +12458,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 276,
+    "line": 277,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/item-access/process/${encodeURIComponent(pid)}",
     "path": "/api/processplatform/assemble/designer/item-access/process/{}",
@@ -12458,7 +12471,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 281,
+    "line": 282,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/item-access/${encodeURIComponent(accId)}",
     "path": "/api/processplatform/assemble/designer/item-access/{}",
@@ -12471,7 +12484,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 282,
+    "line": 283,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/mapping/list/application/${encodeURIComponent(app)}",
     "path": "/api/processplatform/assemble/designer/mapping/list/application/{}",
@@ -12484,7 +12497,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 316,
+    "line": 317,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/manage/${encodeURIComponent(wid)}",
     "path": "/api/processplatform/assemble/surface/read/manage/{}",
@@ -12497,7 +12510,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 317,
+    "line": 318,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/manage/${encodeURIComponent(wid)}",
     "path": "/api/processplatform/assemble/surface/readcompleted/manage/{}",
@@ -12510,7 +12523,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 318,
+    "line": 319,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/manage/${encodeURIComponent(wid)}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/manage/{}",
@@ -12523,7 +12536,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 319,
+    "line": 320,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/manage/${encodeURIComponent(wid)}",
     "path": "/api/processplatform/assemble/surface/work/manage/{}",
@@ -12536,7 +12549,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 320,
+    "line": 321,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/relative/manage/${encodeURIComponent(wid)}",
     "path": "/api/processplatform/assemble/surface/work/relative/manage/{}",
@@ -12549,7 +12562,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 321,
+    "line": 322,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/single/manage/${encodeURIComponent(wid)}",
     "path": "/api/processplatform/assemble/surface/work/single/manage/{}",
@@ -12562,7 +12575,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 322,
+    "line": 323,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/${encodeURIComponent(wid)}/relative/manage",
     "path": "/api/processplatform/assemble/surface/work/{}/relative/manage",
@@ -12575,7 +12588,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 323,
+    "line": 324,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/review/application/manage/${encodeURIComponent(wid)}/${app}",
     "path": "/api/processplatform/assemble/surface/review/application/manage/{}/{}",
@@ -12588,7 +12601,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 324,
+    "line": 325,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/route/selectconfig/${encodeURIComponent(wid)}",
     "path": "/api/processplatform/assemble/surface/route/selectconfig/{}",
@@ -12601,7 +12614,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 325,
+    "line": 326,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/route/${encodeURIComponent(wid)}/selectconfig",
     "path": "/api/processplatform/assemble/surface/route/{}/selectconfig",
@@ -12614,7 +12627,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 326,
+    "line": 327,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/sign/task/${encodeURIComponent(wid)}",
     "path": "/api/processplatform/assemble/surface/sign/task/{}",
@@ -12627,7 +12640,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 327,
+    "line": 328,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/job/v2/${encodeURIComponent(wid)}/projection",
     "path": "/api/processplatform/assemble/surface/job/v2/{}/projection",
@@ -12640,7 +12653,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 328,
+    "line": 329,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/${flag}/complex",
     "path": "/api/processplatform/assemble/surface/process/{}/complex",
@@ -12653,7 +12666,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 329,
+    "line": 330,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/date/${dt}/manage",
     "path": "/api/processplatform/assemble/surface/read/list/date/{}/manage",
@@ -12666,7 +12679,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 330,
+    "line": 331,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/date/${dt}/manage",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/date/{}/manage",
@@ -12679,7 +12692,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 331,
+    "line": 332,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/${encodeURIComponent(wid)}/reference/control",
     "path": "/api/processplatform/assemble/surface/taskcompleted/{}/reference/control",
@@ -12692,7 +12705,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 332,
+    "line": 333,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/count/application/${app}/process/manage",
     "path": "/api/processplatform/assemble/surface/work/list/count/application/{}/process/manage",
@@ -12705,7 +12718,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 333,
+    "line": 334,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/workcompleted/list/count/application/${app}/process/manage",
     "path": "/api/processplatform/assemble/surface/workcompleted/list/count/application/{}/process/manage",
@@ -12718,7 +12731,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 334,
+    "line": 335,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/workcompleted/filter/attribute/application/${app}/manage",
     "path": "/api/processplatform/assemble/surface/workcompleted/filter/attribute/application/{}/manage",
@@ -12731,7 +12744,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 335,
+    "line": 336,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/workcompleted/filter/attribute/application/manage/${app}",
     "path": "/api/processplatform/assemble/surface/workcompleted/filter/attribute/application/manage/{}",
@@ -12744,7 +12757,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 336,
+    "line": 337,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/application/is/manager/${flag}",
     "path": "/api/processplatform/assemble/surface/application/is/manager/{}",
@@ -12757,7 +12770,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 337,
+    "line": 338,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/mobile/${flag}",
     "path": "/api/processplatform/assemble/surface/form/mobile/{}",
@@ -12770,7 +12783,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 338,
+    "line": 339,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/draft/list/${id}/prev/${cnt}",
     "path": "/api/processplatform/assemble/surface/draft/list/{}/prev/{}",
@@ -12783,7 +12796,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 340,
+    "line": 341,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/allowrerouteto/${flag}",
     "path": "/api/processplatform/assemble/surface/process/allowrerouteto/{}",
@@ -12796,7 +12809,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 341,
+    "line": 342,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/${flag}/allowrerouteto",
     "path": "/api/processplatform/assemble/surface/process/{}/allowrerouteto",
@@ -12809,7 +12822,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 366,
+    "line": 367,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/file/content/${id}",
     "path": "/api/processplatform/assemble/designer/file/content/{}",
@@ -12822,7 +12835,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 367,
+    "line": 368,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/item/access/process/path/path/${processId}",
     "path": "/api/processplatform/assemble/designer/item/access/process/path/path/{}",
@@ -12835,7 +12848,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 368,
+    "line": 369,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/preview/${id}",
     "path": "/api/processplatform/assemble/designer/preview/{}",
@@ -12848,7 +12861,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 369,
+    "line": 370,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/process/${id}",
     "path": "/api/processplatform/assemble/designer/process/process/{}",
@@ -12861,7 +12874,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 370,
+    "line": 371,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/${id}/process",
     "path": "/api/processplatform/assemble/designer/process/{}/process",
@@ -12874,7 +12887,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 371,
+    "line": 372,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/scriptversion/${id}",
     "path": "/api/processplatform/assemble/designer/scriptversion/{}",
@@ -12887,7 +12900,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 372,
+    "line": 373,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/${id}/${count}",
     "path": "/api/processplatform/assemble/designer/{}/{}",
@@ -12900,7 +12913,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 373,
+    "line": 374,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/applicationdict/list/paging/${page}/${size}/${size}",
     "path": "/api/processplatform/assemble/designer/applicationdict/list/paging/{}/{}/{}",
@@ -12913,7 +12926,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 374,
+    "line": 375,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/file/list/${id}/${next}/${count}",
     "path": "/api/processplatform/assemble/designer/file/list/{}/{}/{}",
@@ -12926,7 +12939,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 375,
+    "line": 376,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/form/list/${id}/${next}/${count}",
     "path": "/api/processplatform/assemble/designer/form/list/{}/{}/{}",
@@ -12939,7 +12952,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 376,
+    "line": 377,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/mapping/list/${id}/${next}/${count}",
     "path": "/api/processplatform/assemble/designer/mapping/list/{}/{}/{}",
@@ -12952,7 +12965,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 377,
+    "line": 378,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/activity/${flag}/${activityType}/${activityType}",
     "path": "/api/processplatform/assemble/designer/process/activity/{}/{}/{}",
@@ -12965,7 +12978,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 378,
+    "line": 379,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/script/application/${applicationId}/${name}/${name}",
     "path": "/api/processplatform/assemble/designer/script/application/{}/{}/{}",
@@ -12978,7 +12991,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 379,
+    "line": 380,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/script/list/${id}/${next}/${count}",
     "path": "/api/processplatform/assemble/designer/script/list/{}/{}/{}",
@@ -12991,7 +13004,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 380,
+    "line": 381,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/file/${flag}/application/${applicationFlag}",
     "path": "/api/processplatform/assemble/designer/file/{}/application/{}",
@@ -13004,7 +13017,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 403,
+    "line": 404,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/record/${id}",
     "path": "/api/processplatform/service/processing/record/{}",
@@ -13017,7 +13030,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 404,
+    "line": 405,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/snap/${id}",
     "path": "/api/processplatform/service/processing/snap/{}",
@@ -13030,7 +13043,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 405,
+    "line": 406,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/task/${id}/will",
     "path": "/api/processplatform/service/processing/task/{}/will",
@@ -13043,7 +13056,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 406,
+    "line": 407,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/data/${job}/${job}",
     "path": "/api/processplatform/service/processing/data/{}/{}",
@@ -13056,7 +13069,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 407,
+    "line": 408,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/process/${work}/${processId}",
     "path": "/api/processplatform/service/processing/process/{}/{}",
@@ -13069,7 +13082,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 408,
+    "line": 409,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/record/${job}/${job}",
     "path": "/api/processplatform/service/processing/record/{}/{}",
@@ -13082,7 +13095,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 409,
+    "line": 410,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/v2/projection/${job}/${job}",
     "path": "/api/processplatform/service/processing/v2/projection/{}/{}",
@@ -13095,7 +13108,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 410,
+    "line": 411,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/${job}/${job}",
     "path": "/api/processplatform/service/processing/{}/{}",
@@ -13108,7 +13121,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 411,
+    "line": 412,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/attachment/${id}/${work}/${workId}",
     "path": "/api/processplatform/service/processing/attachment/{}/{}/{}",
@@ -13121,7 +13134,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 412,
+    "line": 413,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/snap/snap/${work}/${workId}/${type}",
     "path": "/api/processplatform/service/processing/snap/snap/{}/{}/{}",
@@ -13134,7 +13147,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 413,
+    "line": 414,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/process/${work}/${processId}/${name}/${name}/${serial}",
     "path": "/api/processplatform/service/processing/process/{}/{}/{}/{}/{}",
@@ -13147,7 +13160,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 414,
+    "line": 415,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/v2/${job}/${job}/${person}/${person}/${view}",
     "path": "/api/processplatform/service/processing/v2/{}/{}/{}/{}/{}",
@@ -13160,7 +13173,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 443,
+    "line": 444,
     "method": "PUT",
     "raw": "/api/processplatform/assemble/designer/application/${e}",
     "path": "/api/processplatform/assemble/designer/application/{}",
@@ -13173,7 +13186,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 444,
+    "line": 445,
     "method": "PUT",
     "raw": "/api/processplatform/assemble/designer/application/${e}/icon",
     "path": "/api/processplatform/assemble/designer/application/{}/icon",
@@ -13186,7 +13199,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 445,
+    "line": 446,
     "method": "PUT",
     "raw": "/api/processplatform/assemble/designer/mapping/${e}",
     "path": "/api/processplatform/assemble/designer/mapping/{}",
@@ -13199,7 +13212,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 446,
+    "line": 447,
     "method": "PUT",
     "raw": "/api/processplatform/assemble/designer/mergeitemplan/${e}",
     "path": "/api/processplatform/assemble/designer/mergeitemplan/{}",
@@ -13212,7 +13225,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 447,
+    "line": 448,
     "method": "PUT",
     "raw": "/api/processplatform/assemble/designer/process/${e}",
     "path": "/api/processplatform/assemble/designer/process/{}",
@@ -13225,7 +13238,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 448,
+    "line": 449,
     "method": "PUT",
     "raw": "/api/processplatform/assemble/designer/dict/save/${e}",
     "path": "/api/processplatform/assemble/designer/dict/save/{}",
@@ -13238,7 +13251,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 449,
+    "line": 450,
     "method": "PUT",
     "raw": "/api/processplatform/assemble/designer/form/save/${e}",
     "path": "/api/processplatform/assemble/designer/form/save/{}",
@@ -13251,7 +13264,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 450,
+    "line": 451,
     "method": "PUT",
     "raw": "/api/processplatform/assemble/designer/xform/save/${e}",
     "path": "/api/processplatform/assemble/designer/xform/save/{}",
@@ -13264,7 +13277,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 462,
+    "line": 463,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/designer/applicationdict/${e}",
     "path": "/api/processplatform/assemble/designer/applicationdict/{}",
@@ -13277,7 +13290,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 463,
+    "line": 464,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/designer/mapping/${e}",
     "path": "/api/processplatform/assemble/designer/mapping/{}",
@@ -13290,7 +13303,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 464,
+    "line": 465,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/designer/mergeitemplan/${e}",
     "path": "/api/processplatform/assemble/designer/mergeitemplan/{}",
@@ -13303,7 +13316,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 465,
+    "line": 466,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/designer/dict/delete/${e}",
     "path": "/api/processplatform/assemble/designer/dict/delete/{}",
@@ -13316,7 +13329,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 466,
+    "line": 467,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/designer/form/delete/${e}",
     "path": "/api/processplatform/assemble/designer/form/delete/{}",
@@ -13329,7 +13342,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 467,
+    "line": 468,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/designer/xform/delete/${e}",
     "path": "/api/processplatform/assemble/designer/xform/delete/{}",
@@ -13342,7 +13355,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 478,
+    "line": 479,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/application/${e}/permission",
     "path": "/api/processplatform/assemble/designer/application/{}/permission",
@@ -13355,7 +13368,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 479,
+    "line": 480,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/process/${e}/permission",
     "path": "/api/processplatform/assemble/designer/process/{}/permission",
@@ -13368,7 +13381,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 496,
+    "line": 497,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/surface/serialnumber/${encodeURIComponent(id)}",
     "path": "/api/processplatform/assemble/surface/serialnumber/{}",
@@ -13381,7 +13394,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 519,
+    "line": 520,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/handover/${e}/cancel",
     "path": "/api/processplatform/assemble/surface/handover/{}/cancel",
@@ -13394,7 +13407,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 520,
+    "line": 521,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/handover/${e}/process",
     "path": "/api/processplatform/assemble/surface/handover/{}/process",
@@ -13407,7 +13420,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 531,
+    "line": 532,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/sign/save/task/${e}",
     "path": "/api/processplatform/assemble/surface/sign/save/task/{}",
@@ -13420,7 +13433,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 534,
+    "line": 535,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/surface/sign/${e}",
     "path": "/api/processplatform/assemble/surface/sign/{}",
@@ -13433,7 +13446,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 537,
+    "line": 538,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/surface/sign/task/${e}",
     "path": "/api/processplatform/assemble/surface/sign/task/{}",
@@ -13446,7 +13459,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 553,
+    "line": 554,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/draft/start/${encodeURIComponent(id)}",
     "path": "/api/processplatform/assemble/surface/draft/start/{}",
@@ -13459,7 +13472,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 557,
+    "line": 558,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/draft/process/${encodeURIComponent(pf)}",
     "path": "/api/processplatform/assemble/surface/draft/process/{}",
@@ -13472,7 +13485,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 562,
+    "line": 563,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/surface/draft/${encodeURIComponent(id)}",
     "path": "/api/processplatform/assemble/surface/draft/{}",
@@ -13485,7 +13498,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 573,
+    "line": 574,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/mode/delete/${encodeURIComponent(id)}",
     "path": "/api/processplatform/assemble/surface/mode/delete/{}",
@@ -13498,7 +13511,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 584,
+    "line": 585,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/opinion/manage/${e}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/opinion/manage/{}",
@@ -13511,7 +13524,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 585,
+    "line": 586,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/reference/${e}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/reference/{}",
@@ -13524,7 +13537,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 588,
+    "line": 589,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/${e}/manage",
     "path": "/api/processplatform/assemble/surface/taskcompleted/{}/manage",
@@ -13537,7 +13550,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 589,
+    "line": 590,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/readcompleted/opinion/manage/${e}",
     "path": "/api/processplatform/assemble/surface/readcompleted/opinion/manage/{}",
@@ -13550,7 +13563,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 590,
+    "line": 591,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/readcompleted/reference/${e}",
     "path": "/api/processplatform/assemble/surface/readcompleted/reference/{}",
@@ -13563,7 +13576,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 593,
+    "line": 594,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/surface/readcompleted/${e}/manage",
     "path": "/api/processplatform/assemble/surface/readcompleted/{}/manage",
@@ -13576,7 +13589,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 596,
+    "line": 597,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/surface/snap/${e}",
     "path": "/api/processplatform/assemble/surface/snap/{}",
@@ -13589,7 +13602,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 597,
+    "line": 598,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/service/work/touch/${e}",
     "path": "/api/processplatform/assemble/surface/service/work/touch/{}",
@@ -13602,7 +13615,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 600,
+    "line": 601,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/surface/record/${e}/manage",
     "path": "/api/processplatform/assemble/surface/record/{}/manage",
@@ -13615,7 +13628,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 601,
+    "line": 602,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/record/job/${e}/manage",
     "path": "/api/processplatform/assemble/surface/record/job/{}/manage",
@@ -13628,7 +13641,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 612,
+    "line": 613,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/process/${e}/execute/projection",
     "path": "/api/processplatform/assemble/designer/process/{}/execute/projection",
@@ -13641,7 +13654,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 613,
+    "line": 614,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/process/${e}/list/element",
     "path": "/api/processplatform/assemble/designer/process/{}/list/element",
@@ -13654,7 +13667,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 616,
+    "line": 617,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/process/${e}/upgrade",
     "path": "/api/processplatform/assemble/designer/process/{}/upgrade",
@@ -13667,7 +13680,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 621,
+    "line": 622,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/designer/item-access/delete/process/${e}/path/${encodeURIComponent(path)}",
     "path": "/api/processplatform/assemble/designer/item-access/delete/process/{}/path/{}",
@@ -13680,7 +13693,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 624,
+    "line": 625,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/designer/applicationdict/${e}",
     "path": "/api/processplatform/assemble/designer/applicationdict/{}",
@@ -13693,7 +13706,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 625,
+    "line": 626,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/workcompleted/application/merge/data/${e}",
     "path": "/api/processplatform/assemble/designer/workcompleted/application/merge/data/{}",
@@ -13706,7 +13719,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 626,
+    "line": 627,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/workcompleted/process/merge/data/${e}",
     "path": "/api/processplatform/assemble/designer/workcompleted/process/merge/data/{}",
@@ -13719,7 +13732,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 638,
+    "line": 639,
     "method": "POST",
     "raw": "/api/processplatform/service/processing/execute/${e}",
     "path": "/api/processplatform/service/processing/execute/{}",
@@ -13732,7 +13745,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 639,
+    "line": 640,
     "method": "POST",
     "raw": "/api/processplatform/service/processing/cancel/${e}",
     "path": "/api/processplatform/service/processing/cancel/{}",
@@ -13745,7 +13758,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 640,
+    "line": 641,
     "method": "POST",
     "raw": "/api/processplatform/service/processing/gateway/fork/${e}",
     "path": "/api/processplatform/service/processing/gateway/fork/{}",
@@ -13758,7 +13771,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 643,
+    "line": 644,
     "method": "PUT",
     "raw": "/api/processplatform/service/processing/record/${e}",
     "path": "/api/processplatform/service/processing/record/{}",
@@ -13771,7 +13784,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 646,
+    "line": 647,
     "method": "DELETE",
     "raw": "/api/processplatform/service/processing/record/${e}",
     "path": "/api/processplatform/service/processing/record/{}",
@@ -13784,7 +13797,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 649,
+    "line": 650,
     "method": "DELETE",
     "raw": "/api/processplatform/service/processing/review/${e}",
     "path": "/api/processplatform/service/processing/review/{}",
@@ -13797,7 +13810,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 653,
+    "line": 654,
     "method": "DELETE",
     "raw": "/api/processplatform/service/processing/taskcompleted/${e}",
     "path": "/api/processplatform/service/processing/taskcompleted/{}",
@@ -13810,7 +13823,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 656,
+    "line": 657,
     "method": "DELETE",
     "raw": "/api/processplatform/service/processing/readcompleted/${e}",
     "path": "/api/processplatform/service/processing/readcompleted/{}",
@@ -13823,7 +13836,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 659,
+    "line": 660,
     "method": "DELETE",
     "raw": "/api/processplatform/service/processing/task/${e}",
     "path": "/api/processplatform/service/processing/task/{}",
@@ -13836,7 +13849,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 662,
+    "line": 663,
     "method": "DELETE",
     "raw": "/api/processplatform/service/processing/work/${e}",
     "path": "/api/processplatform/service/processing/work/{}",
@@ -13849,7 +13862,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 674,
+    "line": 675,
     "method": "POST",
     "raw": "/api/processplatform/service/processing/data/work/${e}",
     "path": "/api/processplatform/service/processing/data/work/{}",
@@ -13862,7 +13875,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 677,
+    "line": 678,
     "method": "POST",
     "raw": "/api/processplatform/service/processing/data/work/${e}/delete",
     "path": "/api/processplatform/service/processing/data/work/{}/delete",
@@ -13875,7 +13888,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 678,
+    "line": 679,
     "method": "PUT",
     "raw": "/api/processplatform/service/processing/data/workcompleted/${e}",
     "path": "/api/processplatform/service/processing/data/workcompleted/{}",
@@ -13888,7 +13901,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 684,
+    "line": 685,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/applicationdict/${e}/application/${af2}/${p0e}/data",
     "path": "/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/data",
@@ -13901,21 +13914,8 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 685,
+    "line": 686,
     "method": "PUT",
-    "raw": "/api/processplatform/assemble/surface/applicationdict/${e}/application/${af2}/${p0e}/data",
-    "path": "/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/data",
-    "via": "literal",
-    "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/data",
-    "hit_crate": "processplatform_assemble_surface",
-    "extra": null
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 688,
-    "method": "DELETE",
     "raw": "/api/processplatform/assemble/surface/applicationdict/${e}/application/${af2}/${p0e}/data",
     "path": "/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/data",
     "via": "literal",
@@ -13928,6 +13928,19 @@
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
     "line": 689,
+    "method": "DELETE",
+    "raw": "/api/processplatform/assemble/surface/applicationdict/${e}/application/${af2}/${p0e}/data",
+    "path": "/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/data",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/data",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
+    "line": 690,
     "method": "POST",
     "raw": "/api/processplatform/service/processing/applicationdict/${e}/${p0e}/data",
     "path": "/api/processplatform/service/processing/applicationdict/{}/{}/data",
@@ -13940,7 +13953,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 690,
+    "line": 691,
     "method": "PUT",
     "raw": "/api/processplatform/service/processing/applicationdict/${e}/${p0e}/data",
     "path": "/api/processplatform/service/processing/applicationdict/{}/{}/data",
@@ -13953,7 +13966,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 693,
+    "line": 694,
     "method": "DELETE",
     "raw": "/api/processplatform/service/processing/applicationdict/${e}/${p0e}/data",
     "path": "/api/processplatform/service/processing/applicationdict/{}/{}/data",
@@ -13966,7 +13979,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 705,
+    "line": 706,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/file/${encodeURIComponent(f)}/application/${encodeURIComponent(af)}",
     "path": "/api/processplatform/assemble/designer/file/{}/application/{}",
@@ -13979,7 +13992,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 706,
+    "line": 707,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/file/download/${encodeURIComponent(id)}",
     "path": "/api/processplatform/assemble/designer/file/download/{}",
@@ -13992,7 +14005,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 707,
+    "line": 708,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/processversion/${encodeURIComponent(id)}",
     "path": "/api/processplatform/assemble/designer/processversion/{}",
@@ -14005,7 +14018,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 708,
+    "line": 709,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/execute/projection/${encodeURIComponent(id)}",
     "path": "/api/processplatform/assemble/designer/process/execute/projection/{}",
@@ -14018,7 +14031,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 709,
+    "line": 710,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/${encodeURIComponent(id)}/disable",
     "path": "/api/processplatform/assemble/designer/process/{}/disable",
@@ -14031,7 +14044,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 710,
+    "line": 711,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/${encodeURIComponent(id)}/enable",
     "path": "/api/processplatform/assemble/designer/process/{}/enable",
@@ -14044,7 +14057,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 712,
+    "line": 713,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/upgrade/${encodeURIComponent(id)}",
     "path": "/api/processplatform/assemble/designer/process/upgrade/{}",
@@ -14057,7 +14070,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 713,
+    "line": 714,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/mapping/${encodeURIComponent(flag)}/execute",
     "path": "/api/processplatform/assemble/designer/mapping/{}/execute",
@@ -14070,7 +14083,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 714,
+    "line": 715,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/mergeitemplan/${encodeURIComponent(id)}",
     "path": "/api/processplatform/assemble/designer/mergeitemplan/{}",
@@ -14083,7 +14096,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 715,
+    "line": 716,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/process/application/disable/edition/${encodeURIComponent(id)}",
     "path": "/api/processplatform/assemble/designer/process/application/disable/edition/{}",
@@ -14096,7 +14109,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 716,
+    "line": 717,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/process/application/edition/edition/${encodeURIComponent(id)}",
     "path": "/api/processplatform/assemble/designer/process/application/edition/edition/{}",
@@ -14109,7 +14122,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 717,
+    "line": 718,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/item/access/delete/process/path/path/${encodeURIComponent(pid)}",
     "path": "/api/processplatform/assemble/designer/item/access/delete/process/path/path/{}",
@@ -14122,7 +14135,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 718,
+    "line": 719,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/delete/${encodeURIComponent(id)}",
     "path": "/api/processplatform/assemble/designer/delete/{}",
@@ -14135,7 +14148,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 727,
+    "line": 728,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/mapping/execute/${f}",
     "path": "/api/processplatform/assemble/designer/mapping/execute/{}",
@@ -14148,7 +14161,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 728,
+    "line": 729,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/enable/${id}",
     "path": "/api/processplatform/assemble/designer/process/enable/{}",
@@ -14161,7 +14174,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 729,
+    "line": 730,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/disable/${id}",
     "path": "/api/processplatform/assemble/designer/process/disable/{}",
@@ -14174,7 +14187,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 730,
+    "line": 731,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/designer/process/${id}/${orn}/edition",
     "path": "/api/processplatform/assemble/designer/process/{}/{}/edition",
@@ -14187,7 +14200,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 744,
+    "line": 745,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/application/list/summary/applicationcategory/${encodeURIComponent(cat)}",
     "path": "/api/processplatform/assemble/designer/application/list/summary/applicationcategory/{}",
@@ -14200,7 +14213,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 746,
+    "line": 747,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/${encodeURIComponent(pid)}/lead/out",
     "path": "/api/processplatform/assemble/designer/process/{}/lead/out",
@@ -14213,7 +14226,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 747,
+    "line": 748,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/lead/out/${encodeURIComponent(pid)}",
     "path": "/api/processplatform/assemble/designer/process/lead/out/{}",
@@ -14226,7 +14239,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 748,
+    "line": 749,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/enabled/${encodeURIComponent(pid)}",
     "path": "/api/processplatform/assemble/designer/process/enabled/{}",
@@ -14239,7 +14252,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 749,
+    "line": 750,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/permission/${encodeURIComponent(pid)}",
     "path": "/api/processplatform/assemble/designer/process/permission/{}",
@@ -14252,7 +14265,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 751,
+    "line": 752,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/application/${encodeURIComponent(cat)}/disable/edition",
     "path": "/api/processplatform/assemble/designer/process/application/{}/disable/edition",
@@ -14265,7 +14278,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 771,
+    "line": 772,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/${flag}/application/${app}",
     "path": "/api/processplatform/assemble/surface/form/{}/application/{}",
@@ -14278,7 +14291,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 772,
+    "line": 773,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/${flag}/application/${app}/mobile",
     "path": "/api/processplatform/assemble/surface/form/{}/application/{}/mobile",
@@ -14291,7 +14304,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 773,
+    "line": 774,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/application/mobile/${flag}/${app}",
     "path": "/api/processplatform/assemble/surface/form/application/mobile/{}/{}",
@@ -14304,7 +14317,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 774,
+    "line": 775,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/v2/mobile/${id}",
     "path": "/api/processplatform/assemble/surface/form/v2/mobile/{}",
@@ -14317,7 +14330,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 775,
+    "line": 776,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/v2/${id}/mobile",
     "path": "/api/processplatform/assemble/surface/form/v2/{}/mobile",
@@ -14330,7 +14343,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 776,
+    "line": 777,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/v2/lookup/taskcompleted/${id}",
     "path": "/api/processplatform/assemble/surface/form/v2/lookup/taskcompleted/{}",
@@ -14343,7 +14356,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 777,
+    "line": 778,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/v2/lookup/taskcompleted/${id}/mobile",
     "path": "/api/processplatform/assemble/surface/form/v2/lookup/taskcompleted/{}/mobile",
@@ -14356,7 +14369,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 778,
+    "line": 779,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/mobile/${id}",
     "path": "/api/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/mobile/{}",
@@ -14369,7 +14382,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 779,
+    "line": 780,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/${id}/mobile",
     "path": "/api/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/{}/mobile",
@@ -14382,7 +14395,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 780,
+    "line": 781,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/activity/${id}/activityType/${flag}",
     "path": "/api/processplatform/assemble/surface/process/activity/{}/activityType/{}",
@@ -14395,7 +14408,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 781,
+    "line": 782,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/application/${flag}/${app}",
     "path": "/api/processplatform/assemble/surface/process/application/{}/{}",
@@ -14408,7 +14421,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 782,
+    "line": 783,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/list/available/identity/process/${flag}",
     "path": "/api/processplatform/assemble/surface/process/list/available/identity/process/{}",
@@ -14421,7 +14434,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 783,
+    "line": 784,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/script/application/${flag}/${app}",
     "path": "/api/processplatform/assemble/surface/script/application/{}/{}",
@@ -14434,7 +14447,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 784,
+    "line": 785,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/draft/list/${id}/next/${cnt}",
     "path": "/api/processplatform/assemble/surface/draft/list/{}/next/{}",
@@ -14447,7 +14460,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 785,
+    "line": 786,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/draft/process/${proc}",
     "path": "/api/processplatform/assemble/surface/draft/process/{}",
@@ -14460,7 +14473,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 786,
+    "line": 787,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/snap/list/${id}/next/${cnt}/application/${app}",
     "path": "/api/processplatform/assemble/surface/snap/list/{}/next/{}/application/{}",
@@ -14473,7 +14486,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 787,
+    "line": 788,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/snap/list/${id}/prev/${cnt}/application/${app}",
     "path": "/api/processplatform/assemble/surface/snap/list/{}/prev/{}/application/{}",
@@ -14486,7 +14499,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 788,
+    "line": 789,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/snap/list/${id}/next/${cnt}/process/${proc}",
     "path": "/api/processplatform/assemble/surface/snap/list/{}/next/{}/process/{}",
@@ -14499,7 +14512,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 789,
+    "line": 790,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/snap/list/${id}/next/${cnt}/manage",
     "path": "/api/processplatform/assemble/surface/snap/list/{}/next/{}/manage",
@@ -14512,7 +14525,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 790,
+    "line": 791,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/snap/list/${id}/prev/${cnt}/manage",
     "path": "/api/processplatform/assemble/surface/snap/list/{}/prev/{}/manage",
@@ -14525,7 +14538,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 791,
+    "line": 792,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/review/v2/list/prev/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/review/v2/list/prev/{}/{}",
@@ -14538,7 +14551,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 792,
+    "line": 793,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/job/${id}/allow/visit/person/${person}",
     "path": "/api/processplatform/assemble/surface/job/{}/allow/visit/person/{}",
@@ -14551,7 +14564,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 793,
+    "line": 794,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/job/latest/work/workcompleted/serial/${id}",
     "path": "/api/processplatform/assemble/surface/job/latest/work/workcompleted/serial/{}",
@@ -14564,7 +14577,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 794,
+    "line": 795,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readrecord/list/job/${id}",
     "path": "/api/processplatform/assemble/surface/readrecord/list/job/{}",
@@ -14577,7 +14590,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 796,
+    "line": 797,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/file/application/${flag}/${app}",
     "path": "/api/processplatform/assemble/designer/file/application/{}/{}",
@@ -14590,7 +14603,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 797,
+    "line": 798,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/snap/list/${id}/prev/${cnt}/process/${proc}",
     "path": "/api/processplatform/assemble/surface/snap/list/{}/prev/{}/process/{}",
@@ -14603,7 +14616,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 816,
+    "line": 817,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/${encodeURIComponent(pid)}/enabled",
     "path": "/api/processplatform/assemble/designer/process/{}/enabled",
@@ -14616,7 +14629,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 818,
+    "line": 819,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/workcompleted/application/${encodeURIComponent(appId)}/merge/data",
     "path": "/api/processplatform/assemble/designer/workcompleted/application/{}/merge/data",
@@ -14629,7 +14642,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 819,
+    "line": 820,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/workcompleted/process/${encodeURIComponent(pid)}/merge/data",
     "path": "/api/processplatform/assemble/designer/workcompleted/process/{}/merge/data",
@@ -14642,7 +14655,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 834,
+    "line": 835,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/mapping/list/application/${encodeURIComponent(app)}",
     "path": "/api/processplatform/assemble/designer/mapping/list/application/{}",
@@ -14655,7 +14668,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 835,
+    "line": 836,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/applicationdict/list/application/${encodeURIComponent(app)}",
     "path": "/api/processplatform/assemble/designer/applicationdict/list/application/{}",
@@ -14668,7 +14681,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 843,
+    "line": 844,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/mapping/${encodeURIComponent(mid)}",
     "path": "/api/processplatform/assemble/designer/mapping/{}",
@@ -14681,7 +14694,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 846,
+    "line": 847,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/applicationdict/${encodeURIComponent(did)}",
     "path": "/api/processplatform/assemble/designer/applicationdict/{}",
@@ -14694,7 +14707,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 847,
+    "line": 848,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/application/${encodeURIComponent(app)}",
     "path": "/api/processplatform/assemble/designer/process/application/{}",
@@ -14707,7 +14720,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 848,
+    "line": 849,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/form/${encodeURIComponent(formId)}",
     "path": "/api/processplatform/assemble/designer/process/form/{}",
@@ -14720,7 +14733,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 865,
+    "line": 866,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/file/list/application/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/designer/file/list/application/{}",
@@ -14733,7 +14746,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 868,
+    "line": 869,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/script/application/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/designer/script/application/{}",
@@ -14746,7 +14759,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 872,
+    "line": 873,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/file/${encodeURIComponent(fFlag)}",
     "path": "/api/processplatform/assemble/designer/file/{}",
@@ -14759,7 +14772,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 873,
+    "line": 874,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/mergeitemplan/${encodeURIComponent(fFlag)}",
     "path": "/api/processplatform/assemble/designer/mergeitemplan/{}",
@@ -14772,7 +14785,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 874,
+    "line": 875,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/script/application/${encodeURIComponent(appId)}/name/${encodeURIComponent(sName)}",
     "path": "/api/processplatform/assemble/designer/script/application/{}/name/{}",
@@ -14785,7 +14798,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 875,
+    "line": 876,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/application/icon/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/designer/application/icon/{}",
@@ -14798,7 +14811,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 890,
+    "line": 891,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/get/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/surface/get/{}",
@@ -14811,7 +14824,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 891,
+    "line": 892,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/list/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/surface/list/{}",
@@ -14824,7 +14837,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 892,
+    "line": 893,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/applicationdict/application/${encodeURIComponent(appId)}/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/surface/applicationdict/application/{}/{}",
@@ -14837,7 +14850,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 893,
+    "line": 894,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/complex/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/surface/process/complex/{}",
@@ -14850,7 +14863,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 894,
+    "line": 895,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/list/application/filter/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/surface/process/list/application/filter/{}",
@@ -14863,7 +14876,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 910,
+    "line": 911,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/workcompleted/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/surface/data/workcompleted/{}",
@@ -14876,7 +14889,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 912,
+    "line": 913,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/application/${encodeURIComponent(appId)}/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/surface/form/application/{}/{}",
@@ -14889,7 +14902,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 913,
+    "line": 914,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/control/workorworkcompleted/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/surface/control/workorworkcompleted/{}",
@@ -14902,7 +14915,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 930,
+    "line": 931,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/item-access/path/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/designer/item-access/path/{}",
@@ -14915,7 +14928,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 931,
+    "line": 932,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/item-access/process/${encodeURIComponent(appId)}/path/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/designer/item-access/process/{}/path/{}",
@@ -14928,7 +14941,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 932,
+    "line": 933,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/output/select/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/designer/output/select/{}",
@@ -14941,7 +14954,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 933,
+    "line": 934,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/application/${encodeURIComponent(appId)}/edition/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/designer/process/application/{}/edition/{}",
@@ -14954,7 +14967,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 950,
+    "line": 951,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/route/${encodeURIComponent(id)}",
     "path": "/api/processplatform/assemble/surface/route/{}",
@@ -14967,7 +14980,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 951,
+    "line": 952,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/sign/${encodeURIComponent(id)}",
     "path": "/api/processplatform/assemble/surface/sign/{}",
@@ -14980,7 +14993,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 952,
+    "line": 953,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/list/controllable/application/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/surface/process/list/controllable/application/{}",
@@ -14993,7 +15006,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 974,
+    "line": 975,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/${encodeURIComponent(pid)}",
     "path": "/api/processplatform/assemble/designer/process/{}",
@@ -15006,7 +15019,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 975,
+    "line": 976,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/list/element/${encodeURIComponent(pid)}",
     "path": "/api/processplatform/assemble/designer/process/list/element/{}",
@@ -15019,13 +15032,26 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 976,
+    "line": 977,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/processversion/list/process/${encodeURIComponent(pid)}",
     "path": "/api/processplatform/assemble/designer/processversion/list/process/{}",
     "via": "literal",
     "ambiguous": false,
     "hit": "/api/processplatform/assemble/designer/processversion/list/process/{processId}",
+    "hit_crate": "processplatform_assemble_designer",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
+    "line": 994,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/file/${encodeURIComponent(flag)}/application/${encodeURIComponent(appFlag)}",
+    "path": "/api/processplatform/assemble/designer/file/{}/application/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/designer/file/list/application/{applicationFlag}",
     "hit_crate": "processplatform_assemble_designer",
     "extra": null
    },
@@ -26920,7 +26946,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 256,
+    "line": 257,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancedetail/filter/list?month=${month.value}&page=${page.value}&size=20",
     "path": "/api/attendance/assemble/control/attendancedetail/filter/list",
@@ -26933,7 +26959,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 266,
+    "line": 267,
     "method": "GET",
     "raw": "/api/attendance/appeal/list",
     "path": "/api/attendance/appeal/list",
@@ -26946,7 +26972,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 295,
+    "line": 296,
     "method": "POST",
     "raw": "/api/attendance/appeal/audit",
     "path": "/api/attendance/appeal/audit",
@@ -26959,7 +26985,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 305,
+    "line": 306,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendanceappealInfo/audit",
     "path": "/api/attendance/assemble/control/attendanceappealInfo/audit",
@@ -26972,7 +26998,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 314,
+    "line": 315,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendanceappealInfo/check",
     "path": "/api/attendance/assemble/control/attendanceappealInfo/check",
@@ -26985,7 +27011,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 345,
+    "line": 346,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendancesetting/enable/type",
     "path": "/api/attendance/assemble/control/attendancesetting/enable/type",
@@ -26998,7 +27024,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 361,
+    "line": 362,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/detail/statistic/export/filter",
     "path": "/api/attendance/assemble/control/v2/detail/statistic/export/filter",
@@ -27011,7 +27037,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 389,
+    "line": 390,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/config",
     "path": "/api/attendance/assemble/control/v2/config",
@@ -27024,7 +27050,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 390,
+    "line": 391,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/my/controls",
     "path": "/api/attendance/assemble/control/v2/my/controls",
@@ -27037,7 +27063,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 391,
+    "line": 392,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/leave/template",
     "path": "/api/attendance/assemble/control/v2/leave/template",
@@ -27050,7 +27076,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 403,
+    "line": 404,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/group/list/1/size/50",
     "path": "/api/attendance/assemble/control/v2/group/list/1/size/50",
@@ -27066,7 +27092,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 451,
+    "line": 452,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancedetail/filter/list/topUnit",
     "path": "/api/attendance/assemble/control/attendancedetail/filter/list/topUnit",
@@ -27079,7 +27105,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 452,
+    "line": 453,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancedetail/filter/list/unit",
     "path": "/api/attendance/assemble/control/attendancedetail/filter/list/unit",
@@ -27092,7 +27118,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 453,
+    "line": 454,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/dingding/sync/list",
     "path": "/api/attendance/assemble/control/dingding/sync/list",
@@ -27105,7 +27131,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 465,
+    "line": 466,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancedetail/filter/list/user",
     "path": "/api/attendance/assemble/control/attendancedetail/filter/list/user",
@@ -27118,7 +27144,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 466,
+    "line": 467,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancedetail/list/persons/nonesign",
     "path": "/api/attendance/assemble/control/attendancedetail/list/persons/nonesign",
@@ -27131,7 +27157,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 467,
+    "line": 468,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancesetting/enable/type",
     "path": "/api/attendance/assemble/control/attendancesetting/enable/type",
@@ -27144,7 +27170,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 479,
+    "line": 480,
     "method": "GET",
     "raw": "/api/attendance/record/list",
     "path": "/api/attendance/record/list",
@@ -27157,7 +27183,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 480,
+    "line": 481,
     "method": "GET",
     "raw": "/api/attendance/statistical/cycle/list/all",
     "path": "/api/attendance/statistical/cycle/list/all",
@@ -27170,7 +27196,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 481,
+    "line": 482,
     "method": "GET",
     "raw": "/api/attendance/employee/config/list/all",
     "path": "/api/attendance/employee/config/list/all",
@@ -27183,7 +27209,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 495,
+    "line": 496,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/workplace",
     "path": "/api/attendance/assemble/control/v2/workplace",
@@ -27196,7 +27222,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 502,
+    "line": 503,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/workplace/list/ids",
     "path": "/api/attendance/assemble/control/v2/workplace/list/ids",
@@ -27209,7 +27235,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 505,
+    "line": 506,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/groupschedule",
     "path": "/api/attendance/assemble/control/v2/groupschedule",
@@ -27222,7 +27248,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 507,
+    "line": 508,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/groupschedule/list/filter",
     "path": "/api/attendance/assemble/control/v2/groupschedule/list/filter",
@@ -27235,7 +27261,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 511,
+    "line": 512,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/shift/update",
     "path": "/api/attendance/assemble/control/v2/shift/update",
@@ -27248,7 +27274,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 519,
+    "line": 520,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/detail/statistic/filter",
     "path": "/api/attendance/assemble/control/v2/detail/statistic/filter",
@@ -27261,7 +27287,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 522,
+    "line": 523,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendanceselfholiday",
     "path": "/api/attendance/assemble/control/attendanceselfholiday",
@@ -27274,7 +27300,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 529,
+    "line": 530,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/selfholidaysimple",
     "path": "/api/attendance/assemble/control/selfholidaysimple",
@@ -27287,7 +27313,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 557,
+    "line": 558,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/attendancedetail/filter/list/topUnit",
     "path": "/api/attendance/assemble/control/attendancedetail/filter/list/topUnit",
@@ -27300,7 +27326,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 558,
+    "line": 559,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/attendancedetail/filter/list/unit",
     "path": "/api/attendance/assemble/control/attendancedetail/filter/list/unit",
@@ -27313,7 +27339,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 559,
+    "line": 560,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/attendancedetail/filter/list/user",
     "path": "/api/attendance/assemble/control/attendancedetail/filter/list/user",
@@ -27326,7 +27352,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 560,
+    "line": 561,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/attendancedetail/list/persons/nonesign",
     "path": "/api/attendance/assemble/control/attendancedetail/list/persons/nonesign",
@@ -27339,7 +27365,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 579,
+    "line": 580,
     "method": "POST",
     "raw": "/api/attendance/core/entity/record/create",
     "path": "/api/attendance/core/entity/record/create",
@@ -27352,7 +27378,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 591,
+    "line": 592,
     "method": "POST",
     "raw": "/api/attendance/core/entity/rule/create",
     "path": "/api/attendance/core/entity/rule/create",
@@ -27365,7 +27391,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 608,
+    "line": 609,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendanceadmin",
     "path": "/api/attendance/assemble/control/attendanceadmin",
@@ -27378,7 +27404,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 610,
+    "line": 611,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendanceemployeeconfig",
     "path": "/api/attendance/assemble/control/attendanceemployeeconfig",
@@ -27391,7 +27417,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 612,
+    "line": 613,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendanceschedulesetting",
     "path": "/api/attendance/assemble/control/attendanceschedulesetting",
@@ -27404,7 +27430,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 614,
+    "line": 615,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendanceworkdayconfig",
     "path": "/api/attendance/assemble/control/attendanceworkdayconfig",
@@ -27417,7 +27443,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 616,
+    "line": 617,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendanceworkdayconfig/filter",
     "path": "/api/attendance/assemble/control/attendanceworkdayconfig/filter",
@@ -27430,7 +27456,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 617,
+    "line": 618,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendancestatisticrequirelog",
     "path": "/api/attendance/assemble/control/attendancestatisticrequirelog",
@@ -27443,7 +27469,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 621,
+    "line": 622,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/attendanceappealInfo/audit",
     "path": "/api/attendance/assemble/control/attendanceappealInfo/audit",
@@ -27456,7 +27482,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 622,
+    "line": 623,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/attendanceappealInfo/check",
     "path": "/api/attendance/assemble/control/attendanceappealInfo/check",
@@ -27469,7 +27495,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 626,
+    "line": 627,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendancedetail/analyse",
     "path": "/api/attendance/assemble/control/attendancedetail/analyse",
@@ -27482,7 +27508,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 630,
+    "line": 631,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/statistic/do",
     "path": "/api/attendance/assemble/control/statistic/do",
@@ -27495,7 +27521,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 631,
+    "line": 632,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/config",
     "path": "/api/attendance/assemble/control/v2/config",
@@ -27508,7 +27534,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 632,
+    "line": 633,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/config/person",
     "path": "/api/attendance/assemble/control/v2/config/person",
@@ -27521,7 +27547,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 633,
+    "line": 634,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/detail/list/1/size/20",
     "path": "/api/attendance/assemble/control/v2/detail/list/1/size/20",
@@ -27537,7 +27563,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 634,
+    "line": 635,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/appeal/list/manager/1/size/20",
     "path": "/api/attendance/assemble/control/v2/appeal/list/manager/1/size/20",
@@ -27553,7 +27579,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 635,
+    "line": 636,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/uuid/random",
     "path": "/api/attendance/assemble/control/uuid/random",
@@ -27566,7 +27592,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 665,
+    "line": 666,
     "method": "GET",
     "raw": "/api/attendance/admin/list/all",
     "path": "/api/attendance/admin/list/all",
@@ -27579,7 +27605,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 666,
+    "line": 667,
     "method": "GET",
     "raw": "/api/attendance/rule/list",
     "path": "/api/attendance/rule/list",
@@ -27592,7 +27618,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 667,
+    "line": 668,
     "method": "GET",
     "raw": "/api/attendance/core/entity/record/list",
     "path": "/api/attendance/core/entity/record/list",
@@ -27605,7 +27631,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 668,
+    "line": 669,
     "method": "GET",
     "raw": "/api/attendance/core/entity/rule/list",
     "path": "/api/attendance/core/entity/rule/list",
@@ -27618,7 +27644,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 680,
+    "line": 681,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceschedulesetting/list/all",
     "path": "/api/attendance/assemble/control/attendanceschedulesetting/list/all",
@@ -27631,7 +27657,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 706,
+    "line": 707,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/config/person",
     "path": "/api/attendance/assemble/control/v2/config/person",
@@ -27644,7 +27670,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 707,
+    "line": 708,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/record/template",
     "path": "/api/attendance/assemble/control/v2/record/template",
@@ -27657,7 +27683,20 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 724,
+    "line": 728,
+    "method": "POST",
+    "raw": "/api/attendance/assemble/control/v2/leave/import",
+    "path": "/api/attendance/assemble/control/v2/leave/import",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/attendance/assemble/control/v2/leave/import",
+    "hit_crate": "attendance_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AttendanceApp.vue",
+    "line": 737,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/my/rest/date/check",
     "path": "/api/attendance/assemble/control/v2/my/rest/date/check",
@@ -27670,7 +27709,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 837,
+    "line": 850,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancedetail/mobile/my",
     "path": "/api/attendance/assemble/control/attendancedetail/mobile/my",
@@ -27683,7 +27722,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 839,
+    "line": 852,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancedetail/mobile/filter/list/page/1/count/20",
     "path": "/api/attendance/assemble/control/attendancedetail/mobile/filter/list/page/1/count/20",
@@ -27699,7 +27738,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 840,
+    "line": 853,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancedetail/mobile/mobilepreview",
     "path": "/api/attendance/assemble/control/attendancedetail/mobile/mobilepreview",
@@ -27712,7 +27751,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 899,
+    "line": 912,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/rule/list",
     "path": "/api/attendance/assemble/control/rule/list",
@@ -27725,7 +27764,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 910,
+    "line": 923,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/rule/create",
     "path": "/api/attendance/assemble/control/rule/create",
@@ -27738,7 +27777,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 938,
+    "line": 951,
     "method": "POST",
     "raw": "/api/attendance/appeal/submit",
     "path": "/api/attendance/appeal/submit",
@@ -27751,7 +27790,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 951,
+    "line": 964,
     "method": "GET",
     "raw": "/api/attendance/appeal/list",
     "path": "/api/attendance/appeal/list",
@@ -27764,7 +27803,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 975,
+    "line": 988,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/workplace/list/all",
     "path": "/api/attendance/assemble/control/workplace/list/all",
@@ -27777,7 +27816,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 987,
+    "line": 1000,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/workplace",
     "path": "/api/attendance/assemble/control/workplace",
@@ -27790,7 +27829,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1004,
+    "line": 1017,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancesetting/list/all",
     "path": "/api/attendance/assemble/control/attendancesetting/list/all",
@@ -27803,7 +27842,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1017,
+    "line": 1030,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendancesetting",
     "path": "/api/attendance/assemble/control/attendancesetting",
@@ -27816,7 +27855,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1071,
+    "line": 1084,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/group/list/1/size/50",
     "path": "/api/attendance/assemble/control/v2/group/list/1/size/50",
@@ -27832,7 +27871,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1072,
+    "line": 1085,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/shift/list/1/size/50",
     "path": "/api/attendance/assemble/control/v2/shift/list/1/size/50",
@@ -27848,7 +27887,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1086,
+    "line": 1099,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/leave/list/1/size/50",
     "path": "/api/attendance/assemble/control/v2/leave/list/1/size/50",
@@ -27864,7 +27903,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1098,
+    "line": 1111,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceschedulesetting/list/all",
     "path": "/api/attendance/assemble/control/attendanceschedulesetting/list/all",
@@ -27877,7 +27916,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1098,
+    "line": 1111,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceemployeeconfig/list/all",
     "path": "/api/attendance/assemble/control/attendanceemployeeconfig/list/all",
@@ -27890,7 +27929,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1098,
+    "line": 1111,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceselfholiday/list/all",
     "path": "/api/attendance/assemble/control/attendanceselfholiday/list/all",
@@ -27903,7 +27942,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1098,
+    "line": 1111,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceworkdayconfig/list/all",
     "path": "/api/attendance/assemble/control/attendanceworkdayconfig/list/all",
@@ -27916,7 +27955,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1098,
+    "line": 1111,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceadmin/list/all",
     "path": "/api/attendance/assemble/control/attendanceadmin/list/all",
@@ -27929,7 +27968,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1098,
+    "line": 1111,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceimportfileinfo/list/all",
     "path": "/api/attendance/assemble/control/attendanceimportfileinfo/list/all",
@@ -27942,7 +27981,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1098,
+    "line": 1111,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancestatisticrequirelog/list/all",
     "path": "/api/attendance/assemble/control/attendancestatisticrequirelog/list/all",
@@ -27955,7 +27994,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1098,
+    "line": 1111,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/workplace/list/all",
     "path": "/api/attendance/assemble/control/v2/workplace/list/all",
@@ -27968,7 +28007,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1110,
+    "line": 1123,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/group",
     "path": "/api/attendance/assemble/control/v2/group",
@@ -27981,7 +28020,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1124,
+    "line": 1137,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/shift/create",
     "path": "/api/attendance/assemble/control/v2/shift/create",
@@ -27994,7 +28033,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1144,
+    "line": 1157,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/leave",
     "path": "/api/attendance/assemble/control/v2/leave",
@@ -28007,7 +28046,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1202,
+    "line": 1215,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendancestatisticalcycle",
     "path": "/api/attendance/assemble/control/attendancestatisticalcycle",
@@ -28020,7 +28059,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1224,
+    "line": 1237,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statistics/list?month=/{}",
     "path": "/api/attendance/assemble/control/statistics/list",
@@ -30574,7 +30613,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CmsScriptDesignerApp.vue",
-    "line": 29,
+    "line": 33,
     "method": "POST",
     "raw": "/api/script/list/manager",
     "path": "/api/script/list/manager",
@@ -30587,7 +30626,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CmsScriptDesignerApp.vue",
-    "line": 45,
+    "line": 49,
     "method": "POST",
     "raw": "/api/script",
     "path": "/api/script",
@@ -37835,7 +37874,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 182,
+    "line": 183,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/list/running",
     "path": "/api/processplatform/service/processing/list/running",
@@ -37850,7 +37889,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 193,
+    "line": 194,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/elementtool/form/orphan",
     "path": "/api/processplatform/assemble/designer/elementtool/form/orphan",
@@ -37863,7 +37902,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 194,
+    "line": 195,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/elementtool/process/orphan",
     "path": "/api/processplatform/assemble/designer/elementtool/process/orphan",
@@ -37876,7 +37915,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 195,
+    "line": 196,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/elementtool/script/orphan",
     "path": "/api/processplatform/assemble/designer/elementtool/script/orphan",
@@ -37889,7 +37928,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 221,
+    "line": 222,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/application/list/complex/manage/person",
     "path": "/api/processplatform/assemble/surface/application/list/complex/manage/person",
@@ -37902,7 +37941,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 240,
+    "line": 241,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process_manager/list",
     "path": "/api/processplatform/assemble/surface/process_manager/list",
@@ -37915,7 +37954,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 365,
+    "line": 366,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer",
     "path": "/api/processplatform/assemble/designer",
@@ -37928,7 +37967,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 428,
+    "line": 429,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/applicationdict",
     "path": "/api/processplatform/assemble/designer/applicationdict",
@@ -37941,7 +37980,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 429,
+    "line": 430,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/mapping",
     "path": "/api/processplatform/assemble/designer/mapping",
@@ -37954,7 +37993,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 430,
+    "line": 431,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/mergeitemplan",
     "path": "/api/processplatform/assemble/designer/mergeitemplan",
@@ -37967,7 +38006,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 431,
+    "line": 432,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/item-access",
     "path": "/api/processplatform/assemble/designer/item-access",
@@ -37980,7 +38019,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 432,
+    "line": 433,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/item-access/bach/save",
     "path": "/api/processplatform/assemble/designer/item-access/bach/save",
@@ -37993,7 +38032,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 491,
+    "line": 492,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/serialnumber",
     "path": "/api/processplatform/assemble/surface/serialnumber",
@@ -38006,7 +38045,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 508,
+    "line": 509,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/handover",
     "path": "/api/processplatform/assemble/surface/handover",
@@ -38019,7 +38058,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 549,
+    "line": 550,
     "method": "PUT",
     "raw": "/api/processplatform/assemble/surface/draft",
     "path": "/api/processplatform/assemble/surface/draft",
@@ -38032,7 +38071,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 617,
+    "line": 618,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/mergeitemplan/estimate",
     "path": "/api/processplatform/assemble/designer/mergeitemplan/estimate",
@@ -38045,7 +38084,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 637,
+    "line": 638,
     "method": "POST",
     "raw": "/api/processplatform/service/processing/create",
     "path": "/api/processplatform/service/processing/create",
@@ -38058,7 +38097,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 641,
+    "line": 642,
     "method": "POST",
     "raw": "/api/processplatform/service/processing/timer/start",
     "path": "/api/processplatform/service/processing/timer/start",
@@ -38071,7 +38110,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 642,
+    "line": 643,
     "method": "POST",
     "raw": "/api/processplatform/service/processing/touch/merge",
     "path": "/api/processplatform/service/processing/touch/merge",
@@ -38084,7 +38123,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 650,
+    "line": 651,
     "method": "POST",
     "raw": "/api/processplatform/service/processing/event/add/update/table",
     "path": "/api/processplatform/service/processing/event/add/update/table",
@@ -38097,7 +38136,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 704,
+    "line": 705,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/applicationdict/list/paging/1/size/20",
     "path": "/api/processplatform/assemble/designer/applicationdict/list/paging/1/size/20",
@@ -38113,7 +38152,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 711,
+    "line": 712,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/upgrade/all",
     "path": "/api/processplatform/assemble/designer/process/upgrade/all",
@@ -38126,7 +38165,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 745,
+    "line": 746,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/elementtool/applicationdict/orphan",
     "path": "/api/processplatform/assemble/designer/elementtool/applicationdict/orphan",
@@ -38139,7 +38178,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 814,
+    "line": 815,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/mergeitemplan/list/application/${encodeURIComponent(appId)}/paging/1/size/20",
     "path": "/api/processplatform/assemble/designer/mergeitemplan/list/application/{}/paging/1/size/20",
@@ -38155,7 +38194,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 815,
+    "line": 816,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/mergeitemplan/list/paging/1/size/20",
     "path": "/api/processplatform/assemble/designer/mergeitemplan/list/paging/1/size/20",
@@ -38171,7 +38210,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 844,
+    "line": 845,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/mapping/list/${encodeURIComponent(mid)}/next/20",
     "path": "/api/processplatform/assemble/designer/mapping/list/{}/next/20",
@@ -38186,7 +38225,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 845,
+    "line": 846,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/mapping/list/${encodeURIComponent(mid)}/prev/20",
     "path": "/api/processplatform/assemble/designer/mapping/list/{}/prev/20",
@@ -38201,7 +38240,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 911,
+    "line": 912,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/draft/list/prev/${encodeURIComponent(appId)}/20",
     "path": "/api/processplatform/assemble/surface/draft/list/prev/{}/20",
