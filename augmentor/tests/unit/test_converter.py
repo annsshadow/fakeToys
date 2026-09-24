@@ -552,6 +552,17 @@ class TestConverterExtended2:
         converter = DatasetConverter()
         assert converter._csv_to_json(None) == []
 
+    def test_tsv_to_json_mirrors_the_csv_edge(self, sample_dataset):
+        """`tsv → json` 与 `csv → json` 是同一条边：分隔符在读写两侧，边本身只搬运行"""
+        converter = DatasetConverter()
+        assert converter._tsv_to_json(sample_dataset) is sample_dataset
+        assert converter._tsv_to_json(None) == []
+
+    def test_tsv_to_csv_edge_is_a_passthrough(self, sample_dataset):
+        """`tsv → csv` 经规范形中转：两份表头不同、数据同一份"""
+        converter = DatasetConverter()
+        assert converter.convert(sample_dataset, "tsv", "csv") == sample_dataset
+
     def test_normalize_format_case_insensitive(self):
         """格式名标准化应忽略大小写"""
         converter = DatasetConverter()
@@ -982,3 +993,263 @@ class TestReverseEdgesOnFiles:
 
         with pytest.raises(ValueError, match="第 2 条 alpaca 记录缺少字段: output"):
             convert_file(str(src), str(out), target_format="json", source_format="alpaca")
+
+
+class TestSchemaIsNotContainer:
+    """`DataFormat` 里只有四个值决定**文件布局**，其余六个只是**行内 schema**。
+
+    旧实现把两件事混成一件：`_read_file` 只特判 jsonl/csv，其余（含 alpaca/
+    sharegpt/chatml/llama_factory/vicuna/belle）一律 `json.load` 整份文件。于是
+    同一批 alpaca 记录，写成 `.json` 能读、写成 `.jsonl` 就抛
+    `JSONDecodeError: Extra data: line 2 column 1`——调用方已经正确声明了源格式，
+    却绊在没声明过的容器上。写侧同理：`target="alpaca"` 配 `.jsonl` 输出落成一整个
+    JSON 数组，自己那一侧再也读不回来。
+
+    现在读侧按内容嗅探（整份 JSON → 单条对象 → 逐行），写侧由**输出扩展名**定容器。
+    下面每条用例都同时是「老路径会怎么坏」的说明。
+    """
+
+    def write(self, tmp_path, name, payload):
+        path = tmp_path / name
+        path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        return path
+
+    def write_jsonl(self, tmp_path, name, rows):
+        path = tmp_path / name
+        path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows),
+                        encoding="utf-8")
+        return path
+
+    # ============ 读侧：schema 声明 + 任意容器 ============
+
+    def test_alpaca_records_in_a_jsonl_file_read_back(self, tmp_path):
+        """alpaca 落成 `.jsonl`：声明源格式后要能读（旧行为 Extra data 崩在第二行）"""
+        src = self.write_jsonl(tmp_path, "a.jsonl", [
+            {"instruction": "q1", "input": "", "output": "a1"},
+            {"instruction": "q2", "input": "", "output": "a2"},
+        ])
+        out = tmp_path / "out.json"
+
+        result = convert_file(str(src), str(out), target_format="json",
+                              source_format="alpaca")
+
+        assert result["input_count"] == 2
+        assert json.loads(out.read_text(encoding="utf-8")) == [
+            {"instruction": "q1", "input": "", "output": "a1"},
+            {"instruction": "q2", "input": "", "output": "a2"},
+        ]
+
+    def test_conversation_schema_in_a_jsonl_file_reaches_the_other_side(self, tmp_path):
+        """跨格式（sharegpt 的 `.jsonl` → chatml 的 `.json`）经规范形中转要跑通"""
+        src = self.write_jsonl(tmp_path, "s.jsonl", [{
+            "conversations": [{"from": "human", "value": "可以月付吗"},
+                              {"from": "gpt", "value": "支持月付"}]}])
+        out = tmp_path / "out.json"
+
+        convert_file(str(src), str(out), target_format="chatml",
+                     source_format="sharegpt")
+
+        assert json.loads(out.read_text(encoding="utf-8")) == [{
+            "messages": [{"role": "system", "content": "You are a helpful assistant."},
+                         {"role": "user", "content": "可以月付吗"},
+                         {"role": "assistant", "content": "支持月付"}]}]
+
+    def test_single_object_jsonl_counts_as_one_record(self, tmp_path):
+        """只有一行的 JSONL：整份本身也是合法 JSON（一个对象），按一条记录算
+
+        这是嗅探最容易走偏的情形——整份解析成功不等于「顶层是数组」。按老写法
+        `json.load` 返回 dict，下游会以「顶层必须是 JSON 数组」拒绝一份合法文件。
+        """
+        src = self.write_jsonl(tmp_path, "one.jsonl", [
+            {"instruction": "q", "input": "", "output": "a"}])
+        out = tmp_path / "out.json"
+
+        result = convert_file(str(src), str(out), target_format="json",
+                             source_format="alpaca")
+
+        assert result["input_count"] == 1
+        assert json.loads(out.read_text(encoding="utf-8")) == [
+            {"instruction": "q", "input": "", "output": "a"}]
+
+    def test_blank_jsonl_is_an_empty_dataset_not_a_broken_one(self, tmp_path):
+        """全空白文件 = 零条记录，与 `_read_file` 的 jsonl 分支同口径
+
+        报成「不是合法 JSON」会把一份空数据集说成一份坏数据集。
+        """
+        src = self.write_jsonl(tmp_path, "empty.jsonl", [])
+        out = tmp_path / "out.json"
+
+        result = convert_file(str(src), str(out), target_format="json",
+                              source_format="sharegpt")
+
+        assert result["input_count"] == 0
+        assert json.loads(out.read_text(encoding="utf-8")) == []
+
+    def test_unparsable_container_error_names_file_and_line(self, tmp_path):
+        """两条路都不通时抛 `DataFormatError`，带文件名与行号，不漏解析器黑话"""
+        src = tmp_path / "broken.jsonl"
+        src.write_text("这不是 JSON\n第二行也不是\n", encoding="utf-8")
+        out = tmp_path / "out.json"
+
+        with pytest.raises(ValueError, match="broken.jsonl.*第 1 行也不是合法 JSON") as exc:
+            convert_file(str(src), str(out), target_format="json",
+                         source_format="alpaca")
+
+        assert "Extra data" not in str(exc.value)
+
+    # ============ 写侧：容器跟着输出扩展名走 ============
+
+    def test_schema_target_lands_in_the_container_the_extension_asks_for(self, tmp_path):
+        """`target="alpaca"` 写进 `.jsonl` 就真是一行一条
+
+        旧实现一律 `json.dump` 成数组，写出来的 `.jsonl` 连转换器自己都读不回来。
+        """
+        src = self.write(tmp_path, "in.json", [
+            {"instruction": "q1", "input": "", "output": "a1"},
+            {"instruction": "q2", "input": "", "output": "a2"},
+        ])
+        out = tmp_path / "out.jsonl"
+
+        convert_file(str(src), str(out), target_format="alpaca", source_format="json")
+
+        lines = out.read_text(encoding="utf-8").splitlines()
+        assert [json.loads(line) for line in lines] == [
+            {"instruction": "q1", "input": "", "output": "a1"},
+            {"instruction": "q2", "input": "", "output": "a2"},
+        ]
+
+    def test_schema_target_to_json_keeps_writing_an_array(self, tmp_path):
+        """`.json` 输出的 schema 目标仍是一整个 JSON 数组：老行为不变"""
+        src = self.write(tmp_path, "in.json",
+                         [{"instruction": "q", "input": "", "output": "a"}])
+        out = tmp_path / "out.json"
+
+        convert_file(str(src), str(out), target_format="alpaca", source_format="json")
+
+        text = out.read_text(encoding="utf-8")
+        assert text.lstrip().startswith("[")
+        assert json.loads(text) == [{"instruction": "q", "input": "", "output": "a"}]
+
+    def test_alpaca_jsonl_round_trips_through_the_cli_surface(self, tmp_path):
+        """json → alpaca `.jsonl` → json：写侧与读侧的容器判断必须对称
+
+        只断言「绕一圈数据没丢」是测不出缺陷的：旧实现把两侧都写错成同一个形状
+        （`.jsonl` 里落一整个 JSON 数组，读侧再整份 load 回来），往返自然对得上。
+        所以这里必须把中间产物的**物理布局**也钉住。
+        """
+        rows = [{"instruction": "租期最短多久", "input": "", "output": "一个月起租"},
+                {"instruction": "如何退租押金", "input": "", "output": "满一年后退还"}]
+        src = self.write(tmp_path, "in.json", rows)
+        mid = tmp_path / "mid.jsonl"
+        back = tmp_path / "back.json"
+
+        convert_file(str(src), str(mid), target_format="alpaca", source_format="json")
+
+        lines = [line for line in mid.read_text(encoding="utf-8").splitlines() if line]
+        assert len(lines) == 2, f"`.jsonl` 中间产物不是一行一条: {lines}"
+
+        result = convert_file(str(mid), str(back), target_format="json",
+                              source_format="alpaca")
+
+        assert result["input_count"] == 2
+        assert json.loads(back.read_text(encoding="utf-8")) == rows
+
+    # ============ tsv：补齐的两条边 ============
+
+    def test_blank_lines_between_records_are_skipped(self, tmp_path):
+        """记录之间夹空行：跳过而不是当成坏数据
+
+        手写/拼接出来的 `.jsonl` 常有尾随或中间空行，`jsonl` 分支一直容忍
+        （`if line.strip()`），嗅探分支必须同口径。
+        """
+        src = tmp_path / "blank.jsonl"
+        src.write_text(
+            '{"instruction": "q1", "input": "", "output": "a1"}\n'
+            "\n"
+            '{"instruction": "q2", "input": "", "output": "a2"}\n'
+            "\n",
+            encoding="utf-8")
+        out = tmp_path / "out.json"
+
+        result = convert_file(str(src), str(out), target_format="json",
+                              source_format="alpaca")
+
+        assert result["input_count"] == 2
+        assert json.loads(out.read_text(encoding="utf-8")) == [
+            {"instruction": "q1", "input": "", "output": "a1"},
+            {"instruction": "q2", "input": "", "output": "a2"},
+        ]
+
+    def test_scalar_lines_do_not_become_records(self, tmp_path):
+        """整份是合法 JSON 但既非数组也非对象（如 `null`）：不得当成读通了
+
+        嗅探只认「记录数组」和「单条记录」两种形态；顶层是标量时继续逐行走，让
+        报错停在真正的问题上（这条记录不是对象），而不是凭空多出一条空记录。
+        """
+        src = tmp_path / "scalars.jsonl"
+        src.write_text("null\n", encoding="utf-8")
+        out = tmp_path / "out.json"
+
+        with pytest.raises(ValueError, match="第 1 条 alpaca 记录必须是 JSON 对象") as exc:
+            convert_file(str(src), str(out), target_format="json",
+                         source_format="alpaca")
+
+        assert not out.exists()
+
+    def test_tsv_edges_are_in_the_graph_and_the_public_list(self):
+        """`tsv` 从「枚举有成员、图里没有边」变成两侧同真"""
+        assert "tsv" in get_supported_formats()
+        converters = DatasetConverter()._converters
+        assert ("json", "tsv") in converters and ("tsv", "json") in converters
+
+    def test_tsv_write_is_tab_separated_and_quotes_like_csv(self, tmp_path):
+        """写 tsv：制表符分列，字段内的制表符/逗号/换行由引号保住，严格解析读回
+
+        与 csv 共用 `csv_fieldnames`（全量键并集），所以缺列也要补空表头。
+        """
+        rows = [{"instruction": "含\t制表", "output": "含,逗号"},
+                {"instruction": "含\n换行", "output": "正常", "extra": "多出来的键"}]
+        src = self.write(tmp_path, "in.json", rows)
+        out = tmp_path / "out.tsv"
+
+        convert_file(str(src), str(out), target_format="tsv", source_format="json")
+
+        with out.open(newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f, delimiter="\t")
+            assert reader.fieldnames == ["instruction", "output", "extra"]
+            assert list(reader) == [{"instruction": "含\t制表", "output": "含,逗号",
+                                     "extra": ""},
+                                    {"instruction": "含\n换行", "output": "正常",
+                                     "extra": "多出来的键"}]
+
+    def test_tsv_reads_by_extension_inference(self, tmp_path):
+        """不给任何显式格式时，`.tsv → .json` 靠扩展名就该推断出来"""
+        src = tmp_path / "in.tsv"
+        src.write_text("instruction\toutput\n可以月付吗\t支持月付\n", encoding="utf-8")
+        out = tmp_path / "out.json"
+
+        result = convert_file(str(src), str(out))
+
+        assert (result["source_format"], result["target_format"]) == ("tsv", "json")
+        assert json.loads(out.read_text(encoding="utf-8")) == [
+            {"instruction": "可以月付吗", "output": "支持月付"}]
+
+    def test_empty_dataset_writes_an_empty_tsv(self, tmp_path):
+        """空数据集写 `.tsv`：写出 0 字节、不抛异常（与 csv 同一守卫）
+
+        连表头都不写，是 `_write_file` 里 `if data:` 的既有口径；tsv 分支照抄，
+        两份表格格式在「空数据集」上不得有第二种行为。
+        """
+        src = self.write(tmp_path, "src.json", [])
+        out = tmp_path / "out.tsv"
+
+        convert_file(str(src), str(out), target_format="tsv", source_format="json")
+
+        assert out.read_bytes() == b""
+
+    def test_convert_dataset_to_tsv_no_longer_raises(self):
+        """`convert_dataset(items, "tsv")` 曾是虚报：清单说有、一调就抛"""
+        result = convert_dataset([{"instruction": "q", "input": "", "output": "a"}], "tsv")
+
+        assert result == [{"instruction": "q", "input": "", "output": "a"}]
+
