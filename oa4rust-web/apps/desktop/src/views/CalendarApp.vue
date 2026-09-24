@@ -53,6 +53,16 @@
       <button class="cll-tab" :class="{on:calScope==='public'}" @click="loadCalendars('public')">公共（{{ pubCals.length }}）</button>
       <button class="cll-tab" @click="loadCalSettings">⚙️ 设置/权限</button>
       <button class="cll-tab" @click="loadCalCoreEntities">🗓️ 实体日历</button>
+      <button class="cll-tab" @click="calWrite('eventDelSingle')">删单次</button>
+      <button class="cll-tab" @click="calWrite('eventDelAfter')">删此后</button>
+      <button class="cll-tab" @click="calWrite('eventDelAll')">删全部</button>
+      <button class="cll-tab" @click="calWrite('eventUpdSingle')">改单次</button>
+      <button class="cll-tab" @click="calWrite('eventUpdAfter')">改此后</button>
+      <button class="cll-tab" @click="calWrite('eventUpdAll')">改全部</button>
+      <button class="cll-tab" @click="calWrite('eventManage')">事件管理</button>
+      <button class="cll-tab" @click="calWrite('calDelete')">删日历</button>
+      <button class="cll-tab" @click="calWrite('settingCreate')">建设置</button>
+      <button class="cll-tab" @click="calWrite('messageCreate')">建提醒</button>
       <span v-if="calSettingText" class="cll-note">{{ calSettingText }}</span>
       <span
         v-for="c in (calScope==='my'?myCals:pubCals)"
@@ -168,7 +178,34 @@ async function loadCalSettings() {
     toast.error('加载日历设置失败: ' + (e?.message ?? ''))
   }
 }
-// rev210：日历实体 4 条真实 distinct 路由（SeaORM cal_calendar/cal_event）
+// rev337：日历 assemble_control 事件重复范围删改/事件管理/日历删/设置·提醒建 真实写端点（用户触发，shape 已核；避 3 轨镜像 create/update/remove）
+async function calWrite(op: string) {
+  const id = prompt('目标 ID（事件/日历）:', '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (op === 'eventDelSingle') {
+      if (!(await confirmMsg('确定删除该单次事件？'))) return
+      await api.delete(`/api/calendar_assemble_control/event/single/${e}`)
+    } else if (op === 'eventDelAfter') {
+      if (!(await confirmMsg('确定删除该事件及之后？'))) return
+      await api.delete(`/api/calendar_assemble_control/event/after/${e}`)
+    } else if (op === 'eventDelAll') {
+      if (!(await confirmMsg('确定删除全部重复事件？'))) return
+      await api.delete(`/api/calendar_assemble_control/event/all/${e}`)
+    } else if (op === 'eventUpdSingle') await api.put(`/api/calendar_assemble_control/event/update/single/${e}`, {})
+    else if (op === 'eventUpdAfter') await api.put(`/api/calendar_assemble_control/event/update/after/${e}`, {})
+    else if (op === 'eventUpdAll') await api.put(`/api/calendar_assemble_control/event/update/all/${e}`, {})
+    else if (op === 'eventManage') await api.post('/api/calendar_assemble_control/event/manage', {})
+    else if (op === 'calDelete') {
+      if (!(await confirmMsg('确定删除该日历？'))) return
+      await api.delete(`/api/calendar_assemble_control/calendar/${e}`)
+    } else if (op === 'settingCreate') await api.post('/api/calendar_assemble_control/setting', { name: '日历设置' })
+    else await api.post('/api/calendar_assemble_control/message', { content: '日历提醒' })
+    toast.success('日历操作已提交')
+  } catch (err: any) {
+    toast.error('日历操作失败: ' + (err?.message ?? ''))
+  }
+}
 // core/entity/calendar/list/public（IsPublic 过滤）· list/my（Status=OPEN 按创建降序）· calendar/{id}（find_by_id+Status=OPEN）· event/list/{calendarId}（CalendarId+Status=OPEN 事件）
 async function loadCalCoreEntities() {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
