@@ -459,3 +459,46 @@ class TestConvertInputFormat:
             assert list(csv.reader(f, delimiter="\t"))[0] == [
                 "instruction", "input", "output"]
         assert json.loads(out_file.read_text(encoding="utf-8")) == rows
+
+
+class TestNonObjectRecordAtTheCli:
+    """记录不是对象（`null` / 标量）时 CLI 的三件事：非 0 退出、人话文案、不留半截文件。
+
+    A26① 的原始症状：`[null]` 转 alpaca 会把解释器内部措辞原样打给用户
+    （`错误: 'NoneType' object has no attribute 'get'`），转 csv 更坏——`DictWriter`
+    先把「按字符展开的表头」落盘再崩，退出码同样是 1，但磁盘上多出一份**看起来存在**
+    的坏文件。L22 之后两者都是 `DataFormatError`，文案带条目下标与实际类型。
+    """
+
+    def write(self, tmp_path, name, payload):
+        path = tmp_path / name
+        path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        return path
+
+    def test_scalar_record_exits_non_zero_with_row_number(self, tmp_path, capsys):
+        """alpaca 目标：以前是 `AttributeError` 文案，现在是「第 1 条记录必须是 JSON 对象」"""
+        src = self.write(tmp_path, "in.json", [None])
+        out_file = tmp_path / "out.json"
+
+        _, _, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--format", "alpaca"]
+        )
+        err = capsys.readouterr().err
+        assert code == 1, f"非对象记录应当以非 0 退出: code={code}"
+        assert "第 1 条记录必须是 JSON 对象" in err, err
+        assert "has no attribute" not in err, "不该再把解释器内部措辞当文案"
+        assert not out_file.exists()
+
+    def test_csv_target_leaves_no_half_written_file(self, tmp_path, capsys):
+        """最坏的一条：以前 csv 会先落一个按字符展开的表头再崩"""
+        src = self.write(tmp_path, "in.json", ["just a string"])
+        out_file = tmp_path / "out.csv"
+
+        _, _, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--format", "csv"]
+        )
+        assert code == 1
+        assert "第 1 条记录必须是 JSON 对象" in capsys.readouterr().err
+        assert not out_file.exists(), "报错前不得留下半截 csv"
