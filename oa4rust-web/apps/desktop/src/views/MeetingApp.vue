@@ -42,6 +42,15 @@
       <button class="sb" @click="meetingWrite('coreRoomSave')">存核心会议室</button>
       <button class="sb" @click="meetingWrite('attDelete')">删附件</button>
       <button class="sb" @click="meetingWrite('attUpdate')">改附件</button>
+      <button class="sb" @click="meetingMore('addInvite')">加邀请</button>
+      <button class="sb" @click="meetingMore('delInvite')">删邀请</button>
+      <button class="sb" @click="meetingMore('modifyStart')">改开始时间</button>
+      <button class="sb" @click="meetingMore('modifyComplete')">改结束时间</button>
+      <button class="sb" @click="meetingMore('manualComplete')">手动结束</button>
+      <button class="sb" @click="meetingMore('coreCreate')">建核心会议</button>
+      <button class="sb" @click="meetingMore('coreSave')">存核心会议</button>
+      <button class="sb" @click="meetingMore('coreDelete')">删核心会议</button>
+      <button class="sb" @click="meetingLists">会议清单读</button>
     </div>
     <div v-if="appliedText" class="applied-note">{{ appliedText }}</div>
     <div v-if="buildings.length" class="bld-bar glass-card">
@@ -671,6 +680,58 @@ async function meetingWrite(op: string) {
     toast.success('会议操作已提交')
   } catch (err: any) {
     toast.error('会议操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev360：会议 邀请增删/改起止时间/手动结束 + 核心实体会议建改删 真实写（shape 已核：add/delete invite{invitee}、modify starttime{startTime,endTime?}·completedtime{completedTime}、core create{title,content?,roomId?}）
+async function meetingMore(op: string) {
+  const id = prompt('会议 ID:', '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (op === 'addInvite') {
+      const invitee = prompt('邀请人员:', '') || ''
+      await api.put(`/api/meeting/assemble/control/meeting/${e}/add/invite`, { invitee })
+    } else if (op === 'delInvite') {
+      const invitee = prompt('移除邀请人员:', '') || ''
+      await api.put(`/api/meeting/assemble/control/meeting/${e}/delete/invite`, { invitee })
+    } else if (op === 'modifyStart') {
+      const startTime = prompt('开始时间:', '') || ''
+      await api.put(`/api/meeting/assemble/control/meeting/${e}/modify/starttime`, { startTime })
+    } else if (op === 'modifyComplete') {
+      const completedTime = prompt('结束时间:', '') || ''
+      await api.put(`/api/meeting/assemble/control/meeting/${e}/modify/completedtime`, { completedTime })
+    } else if (op === 'manualComplete') {
+      await api.get(`/api/meeting/assemble/control/meeting/${e}/manual/completed`)
+    } else if (op === 'coreCreate') {
+      const title = prompt('会议标题:', '') || ''
+      if (!title) return
+      await api.post('/api/meeting/core/entity/meeting/create', { title })
+    } else if (op === 'coreSave') {
+      await api.post(`/api/meeting/core/entity/meeting/save/${e}`, {})
+    } else {
+      if (!(await confirmMsg('确定删除该核心会议？'))) return
+      await api.post(`/api/meeting/core/entity/meeting/delete/${e}`, {})
+    }
+    toast.success('会议操作已提交')
+  } catch (err: any) {
+    toast.error('会议操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev360：会议 我的/管理/受邀/申请 分页 + 会议控制项 + 开放会议室 真实只读（用户触发，分页参数正确 {page}/size/{size}）
+async function meetingLists() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/meeting/assemble/control/meeting/list/1/size/20', {})),
+      s(api.post('/api/meeting/assemble/control/meeting/list/1/size/20/manage', {})),
+      s(api.post('/api/meeting/assemble/control/meeting/list/invite/1/size/20', {})),
+      s(api.post('/api/meeting/assemble/control/meeting/list/apply/1/size/20', {})),
+      s(api.get('/api/meeting/assemble/control/list/meeting/controls')),
+      s(api.get('/api/meeting/openmeeting/list/room')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`会议清单读 ${rs.length} 条命中 ${hit}`)
+  } catch (err: any) {
+    toast.error('会议清单加载失败: ' + (err?.message ?? ''))
   }
 }
 
