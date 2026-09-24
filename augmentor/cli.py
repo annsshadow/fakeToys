@@ -4,7 +4,7 @@
 """AI 训练数据增强工具 CLI 入口
 
 本文件只负责「解析参数 → 查分发表 → 调用 handler → 统一异常处理」。
-36 个规范命令的实现分别在 `augmentor/cli/commands/` 包里，按领域分组：
+37 个规范命令的实现分别在 `augmentor/cli/commands/` 包里，按领域分组：
 `profiling` / `pipeline` / `quality` / `export` / `analysis` /
 `data_ops` / `version` / `security` / `ops`。
 

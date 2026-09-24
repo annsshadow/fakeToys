@@ -164,6 +164,17 @@ python cli.py quality --input train_data.json \
 报告包含：总分分布直方图、通过率、各分项均值、过滤统计、去重汇总与改进建议。
 报告路径以 `.json` 结尾时输出 JSON 结构，否则输出 Markdown。
 
+```bash
+# 健康度门禁：把「这份数据能不能进训练」压成退出码（判负 = 1）
+python cli.py health-gate --input train_data.json --pass-rate 0.78
+```
+
+输出含 `health`（完整性 / 多样性 / 质量分布均衡性 / 覆盖率与综合分）与 `gate`
+（`verdict` / `failed_rules` / `warned_rules`）。`--pass-rate` 取自 `quality` 打印的
+`pass_rate`（该命令只在既不给 `--output` 也不给 `--report` 时才输出 JSON）；不传时这条
+规则不参与判定，并会出现在 `skipped_rules` 里 —— 门禁不会把「没人算过这一项」说成
+「这一项不及格」。`--weights` 自定义健康分权重（4 个、之和须为 1.0）。
+
 ### 5.4 导出
 
 ```bash

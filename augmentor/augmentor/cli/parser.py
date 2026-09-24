@@ -154,6 +154,30 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_parser.add_argument("--save-baseline", action="store_true", help="将结果保存为基准")
     benchmark_parser.add_argument("--report", type=str, help="报告输出路径")
 
+    # 健康度门禁命令
+    # 与 `benchmark` / `quality` 的区别：那两个只**产出**指标，这一条把指标
+    # 组合成「放行 / 拦下」的判定，并以退出码表达（拦下 = 1），可直接当 CI 关卡。
+    health_gate_parser = subparsers.add_parser(
+        "health-gate", help="数据集健康度评分 + 质量门禁（门禁不通过时退出码为 1）"
+    )
+    health_gate_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    health_gate_parser.add_argument("--text-field", type=str, default="instruction",
+                                    help="计算重复率使用的文本字段")
+    health_gate_parser.add_argument("--weights", type=float, nargs=4,
+                                    metavar=("COMPLETENESS", "DIVERSITY", "BALANCE", "COVERAGE"),
+                                    help="健康分权重（4 个，之和须为 1.0；缺省各 0.25）")
+    health_gate_parser.add_argument("--pass-rate", type=float,
+                                    help="质量通过率，取自 `quality` 的 pass_rate；"
+                                         "不传则该规则不参与判定并出现在 skipped_rules 里")
+    health_gate_parser.add_argument("--pass-rate-min", type=float, default=0.6,
+                                    help="pass_rate 规则的最低阈值")
+    health_gate_parser.add_argument("--duplicate-rate-max", type=float, default=0.3,
+                                    help="duplicate_rate 规则的最高阈值")
+    health_gate_parser.add_argument("--completeness-min", type=float, default=0.8,
+                                    help="completeness 规则的最低阈值（warning 级）")
+    health_gate_parser.add_argument("--block-on-warning", action="store_true",
+                                    help="warning 级规则失败也阻断")
+
     # 分析命令
     analyze_parser = subparsers.add_parser("analyze", help="分析数据集")
     analyze_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
