@@ -284,6 +284,53 @@ class TestFallbackEncode:
         for norm in norms:
             assert abs(norm - 1.0) < 1e-6
 
+    def test_fallback_encode_is_float32(self):
+        """稠密编码矩阵必须用 float32，它同时是这条路径上最大的一笔分配
+
+        回退编码产出 n×vocab 的**稠密**字符二元组 TF 矩阵：真实 6902 条数据
+        的 vocab 就有 23033 项，float64 是 1.27 GB，float32 只要 0.64 GB。
+        更要紧的是调用方写的是 `np.asarray(self._batch_encode(texts), dtype=np.float32)`
+        —— dtype 不符时那是**整份再复制一遍**，等于 float64 的实现凭空多出 0.64 GB。
+        TF 值是「某二元组在该文档里出现几次」，量级个位数，float32 在 2^24 以内
+        精确表示整数，改 dtype 不会改变任何一次计数。
+        """
+        dedup = Deduplicator()
+        vectors = dedup._fallback_encode(["abcdef", "abcdefg", "xyz abc def"])
+
+        assert vectors.dtype == np.float32, (
+            f"编码矩阵 dtype 是 {vectors.dtype}：稠密大矩阵用 float64 会让峰值凭空翻倍"
+        )
+
+    def test_fallback_encode_peak_holds_only_one_matrix(self):
+        """归一化必须**原地**做：`vectors / norms` 会再多养一份同尺寸矩阵
+
+        这一步在真实数据上是 0.64 GB 量级的第二份拷贝，而它换来的是「同一份
+        数据的另一种 dtype」——纯浪费。原地除之后峰值就是一个矩阵。
+        预言机是独立算出来的「一个 float32 矩阵的字节数」，不是被测库的返回值。
+        """
+        import tracemalloc
+
+        n = 2000
+        texts = [f"instruction number {i} please sort a list of items" for i in range(n)]
+        dedup = Deduplicator()
+
+        cols = dedup._fallback_encode(texts).shape[1]
+        one_matrix_bytes = n * cols * 4
+
+        tracemalloc.start()
+        try:
+            vectors = dedup._fallback_encode(texts)
+            _, peak = tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
+
+        assert vectors.shape == (n, cols)
+        assert peak < one_matrix_bytes * 1.5, (
+            f"峰值 {peak / 1024 / 1024:.1f}MB 超过「一个 float32 矩阵」"
+            f"（{one_matrix_bytes / 1024 / 1024:.1f}MB）的 1.5 倍，"
+            "疑似仍在用 float64 或归一化时另起了一份拷贝"
+        )
+
 
 class TestComputeSimilarityMatrixChunked:
     """分块相似度矩阵测试"""
@@ -605,6 +652,44 @@ class TestStreamingGrouping:
 
         for chunk_size in (1, 2, 3, 7, 25, 1000):
             assert dedup._find_duplicate_groups_chunked(texts, chunk_size) == expected
+
+    def test_grouping_path_holds_only_one_encoding_matrix(self):
+        """整条分组路径的峰值应≈「一个编码矩阵 + 一个相似度块」
+
+        编码产出的是 n×vocab 稠密矩阵（vocab 常常上千列），所以「归一化时另起
+        一份」在这一步上是实打实的翻倍：真实 6902 条数据那一份就是 0.64 GB。
+        预言机用独立算出的 `n × vocab × 4` 字节数，不取自被测库的返回值。
+        """
+        import random
+        import tracemalloc
+
+        rng = random.Random(0)
+        alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        n = 1200
+        texts = ["".join(rng.choice(alphabet) for _ in range(60)) for _ in range(n)]
+
+        dedup = Deduplicator(threshold=0.99)
+        dedup._load_model()
+        cols = dedup._fallback_encode(texts).shape[1]
+        one_matrix_bytes = n * cols * 4
+        assert cols > 1000, f"词表只有 {cols} 列，样本撑不起可判别的内存边界"
+        # 峰值预算只由「一个编码矩阵 + 一个相似度块」构成，两块都按公式独立算出
+        block_bytes = dedup._row_block_size(n, 1000) * n * 4
+
+        tracemalloc.start()
+        try:
+            dedup._find_duplicate_groups_chunked(texts)
+            _, peak = tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
+
+        bound = (one_matrix_bytes + block_bytes) * 1.25
+        assert peak < bound, (
+            f"峰值 {peak / 1024 / 1024:.1f}MB 超过「一个编码矩阵 "
+            f"({one_matrix_bytes / 1024 / 1024:.1f}MB) + 一个相似度块 "
+            f"({block_bytes / 1024 / 1024:.1f}MB)」再留 25% 余量的预算 "
+            f"{bound / 1024 / 1024:.1f}MB：归一化疑似又物化了一份同尺寸矩阵"
+        )
 
     def test_row_block_size_caps_block_cells(self):
         """行块大小必须把「块单元数」压到上限内（4M 单元 = 16MB）"""
