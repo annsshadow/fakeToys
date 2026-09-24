@@ -144,6 +144,8 @@ def run_search(args, config):
     属于输出能力的静默缩水。`--output` 额外落盘 `SearchResult` 的完整字典
     （含 `total_matches` / `method` / `query_time_ms`）。生效的松紧旋钮印在
     **第二行末尾**（不另起一行），所以「两行摘要 + JSON」这个形状对下游解析不变。
+    带 `--filter` 时同一行末尾再追一段「N 个过滤器: 检索 X → 保留 Y」，
+    让「被过滤到 0 条」与「检索本来就没命中」在 stdout 上也分得开。
     """
     from augmentor.search_enhanced import search_dataset
 
@@ -165,9 +167,14 @@ def run_search(args, config):
     # 语料里确实没有，和阈值/ gram 长度拧得太紧，只报方法名分不开这两种。
     effective = ""
     if result.fuzzy_threshold is not None:
-        effective = f" (生效阈值 {result.fuzzy_threshold})"
+        effective += f" (生效阈值 {result.fuzzy_threshold})"
     elif result.ngram_n is not None:
-        effective = f" (生效 gram 长度 {result.ngram_n})"
+        effective += f" (生效 gram 长度 {result.ngram_n})"
+    # 第三种成因：过滤器把候选筛掉了。没有这一段时，「找到 0 条」配上
+    # `--filter` 读起来和「检索本身就没命中」一模一样，而收窄其实是生效了的。
+    if result.applied_filters is not None:
+        effective += (f" ({len(result.applied_filters)} 个过滤器: "
+                      f"检索 {result.matches_before_filters} → 保留 {result.total_matches})")
     print(f"搜索方法: {result.method}{effective}")
     _print(result.items)
 

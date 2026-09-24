@@ -555,9 +555,120 @@ class TestDatasetSearch:
         assert "数据文件不是合法 JSON" in response.json()["detail"]
 
 
+class TestSearchFilterEcho:
+    """响应要说清「过滤器筛掉了多少」（A31 的 API 侧）
+
+    L28 接上 `filters` 之后，HTTP 侧的「找到 0 条」仍有三种读不出成因的形状：
+    ①语料里确实没有、②阈值拧太紧（L27 已治）、③**检索命中了却被筛光**。
+    第三种只在传了 `filters` 后出现，且对 API 用户更隐蔽——他们拿不到 stderr 提示，
+    只有这份 JSON。所以 `applied_filters`（用了哪些）+ `matches_before_filters`
+    （筛之前几条）两键都要进响应。口径承 L27：**没消费时是 `null` 但键必须在**，
+    因为一律回显 `[]` / `0` 会让①和③重新同形。
+    """
+
+    def search(self, tools_env, query="房", **extra):
+        """POST 一次 `/api/dataset/search` 并返回 JSON 载荷"""
+        response = tools_env.client.post(
+            "/api/dataset/search",
+            json={"input_file": str(tools_env.data), "query": query, **extra},
+        )
+        assert response.status_code == 200, response.text
+        return response.json()
+
+    def test_a_narrowing_filter_echoes_both_counts(self, tools_env):
+        """contains「房」4 条 → `output contains 签约` 后 1 条，两个数与条件都在响应里"""
+        payload = self.search(tools_env, filters=[
+            {"field": "output", "operator": "contains", "value": "签约"}])
+
+        assert payload["matches_before_filters"] == 4
+        assert payload["total_matches"] == 1
+        assert payload["applied_filters"] == [
+            {"field": "output", "operator": "contains", "value": "签约"}]
+
+    @pytest.mark.parametrize("shape", ["omitted", "empty-list"])
+    def test_the_filter_keys_are_present_and_null_when_unused(self, tools_env, shape):
+        """没过滤（含传空清单）时两键是 `null`，但**键必须在**
+
+        与 L27 的旋钮同一理由：FastAPI 按 `response_model` 裁剪未声明的键，
+        所以断言的是键存在；而一律回显 `[]` / `0` 会把「没过滤」伪装成「过滤后剩 0 条」。
+        """
+        extra = {} if shape == "omitted" else {"filters": []}
+        payload = self.search(tools_env, **extra)
+
+        assert "applied_filters" in payload and "matches_before_filters" in payload
+        assert payload["applied_filters"] is None
+        assert payload["matches_before_filters"] is None
+
+    def test_a_starved_result_reads_differently_from_a_corpus_miss(self, tools_env):
+        """本轮的全部意义：两条 0 命中在 JSON 上分得开
+
+        `output contains 过户两步` 把 4 条候选全筛掉（before=4）；换成语料里没有的查询词
+        则是检索就没命中（before=0）。缺陷态两份响应除了 `query` 外完全同形。
+        """
+        starved = self.search(tools_env, filters=[
+            {"field": "output", "operator": "contains", "value": "过户两步"}])
+        absent = self.search(tools_env, query="根本没有这个词", filters=[
+            {"field": "input", "operator": "eq", "value": ""}])
+
+        assert (starved["total_matches"], absent["total_matches"]) == (0, 0)
+        assert (starved["matches_before_filters"], absent["matches_before_filters"]) == (4, 0)
+        assert len(starved["applied_filters"]) == len(absent["applied_filters"]) == 1
+
+    def test_the_echo_counts_conditions_not_a_concatenated_string(self, tools_env):
+        """两条过滤器是**清单**（各带 field / operator / value），不是拼起来的条件串"""
+        payload = self.search(tools_env, filters=[
+            {"field": "instruction", "operator": "in", "value": ["二手房交易流程"]},
+            {"field": "input", "operator": "eq", "value": ""}])
+
+        assert payload["matches_before_filters"] == 4
+        assert payload["total_matches"] == 1
+        assert [f["operator"] for f in payload["applied_filters"]] == ["in", "eq"]
+
+    def test_the_echoed_value_keeps_its_json_type(self, tools_env):
+        """回显的是规范化后的**值本身**：成员档的数组不会被退化成字符串"""
+        payload = self.search(tools_env, filters=[
+            {"field": "instruction", "operator": "in", "value": ["物业费怎么算"]}])
+
+        assert payload["applied_filters"][0]["value"] == ["物业费怎么算"]
+        assert type(payload["applied_filters"][0]["value"]) is list
+
+    def test_the_counts_are_pre_pagination(self, tools_env):
+        """`limit` 只切条目：两键仍是全集口径，否则这句话在分页时就是假话"""
+        payload = self.search(tools_env, limit=1, offset=1, filters=[
+            {"field": "input", "operator": "eq", "value": ""}])
+
+        assert (payload["matches_before_filters"], payload["total_matches"]) == (4, 4)
+        assert len(payload["items"]) == 1
+
+    def test_the_knob_and_the_filter_sections_coexist(self, tools_env):
+        """旋钮与过滤器同时回显，互不覆盖：fuzzy「公租屋」2 条 → 筛完 0 条
+
+        这条是②与③**同时**成立的情形（阈值 0.6 收了 2 条，过滤器又把 2 条筛光），
+        只回显任一侧都会把成因说成一半。
+        """
+        payload = self.search(tools_env, query="公租屋", method="fuzzy", filters=[
+            {"field": "output", "operator": "contains", "value": "签约"}])
+
+        assert payload["fuzzy_threshold"] == 0.6
+        assert (payload["matches_before_filters"], payload["total_matches"]) == (2, 0)
+
+    def test_the_http_shape_still_matches_the_sdk_when_filtering(self, tools_env):
+        """带过滤器时两边键集仍要一致（承 L27 的预言机：拿 SDK 的 `to_dict()` 比，
+        不拿 `SearchResponse.model_fields`——后者与被测对象同源、恒真）"""
+        from augmentor.search_enhanced import search_dataset
+
+        items = json.loads(tools_env.data.read_text(encoding="utf-8"))
+        specs = [{"field": "output", "operator": "contains", "value": "签约"}]
+        sdk = search_dataset(items, "房", filters=specs).to_dict()
+        payload = self.search(tools_env, filters=specs)
+
+        assert set(payload) == set(sdk)
+        assert payload["applied_filters"] == sdk["applied_filters"]
+        assert payload["matches_before_filters"] == sdk["matches_before_filters"] == 4
+
+
 class TestDatasetCompareFeaturesAutoConfig:
     """/api/dataset/compare、features、auto-config"""
-
     def test_compare_returns_both_conclusions(self, tools_env):
         """质量向与重叠度两份结论缺一不可"""
         response = tools_env.client.post(

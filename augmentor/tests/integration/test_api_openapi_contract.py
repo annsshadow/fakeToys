@@ -456,11 +456,12 @@ CALLS = {
         request=lambda c: c.post(
             "/api/dataset/search", json={"input_file": "data.json", "query": "租房"}
         ),
-        # 后两键是**生效的**松紧旋钮：默认方法 contains 谁都不消费，所以响应里是 null，
-        # 但键必须在——少一键就是 `SearchResponse` 漏声明、FastAPI 静默裁剪。
+        # 后四键是**生效的**松紧旋钮与过滤口径：默认方法 contains 谁都不消费、也没传
+        # filters，所以响应里全是 null，但键必须在——少一键就是 `SearchResponse`
+        # 漏声明、FastAPI 静默裁剪（`test_search_echoes_the_filters_it_applied` 钉值）。
         keys=_keys(
             "query", "method", "total_matches", "query_time_ms", "items", "highlights",
-            "fuzzy_threshold", "ngram_n",
+            "fuzzy_threshold", "ngram_n", "applied_filters", "matches_before_filters",
         ),
     ),
     ("POST", "/api/dataset/compare"): _Case(
