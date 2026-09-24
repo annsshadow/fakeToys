@@ -22,6 +22,14 @@
       <button class="btn-ai-meta" @click="aiWrite('annDelete')">删公告</button>
       <button class="btn-ai-meta" @click="aiWrite('chatDelete')">删聊天线索</button>
       <button class="btn-ai-meta" @click="aiWrite('chatExtra')">写补全额外</button>
+      <button class="btn-ai-meta" @click="aiMore('indexSync')">索引同步知识</button>
+      <button class="btn-ai-meta" @click="aiMore('indexDelete')">删索引</button>
+      <button class="btn-ai-meta" @click="aiMore('fileDownload')">下载文件</button>
+      <button class="btn-ai-meta" @click="aiMore('fileScale')">缩放下载</button>
+      <button class="btn-ai-meta" @click="aiMore('fileDelete')">删文件</button>
+      <button class="btn-ai-meta" @click="aiMore('fileListPaging')">文件分页</button>
+      <button class="btn-ai-meta" @click="aiMore('indexListPaging')">索引分页</button>
+      <button class="btn-ai-meta" @click="aiMore('fileList')">文件列表</button>
       <button class="btn-ai-meta" @click="aiWrite('fileCopy')">复制文件</button>
       <div v-if="aiMetaText" class="ai-meta-note">{{ aiMetaText }}</div>
     </div>
@@ -272,6 +280,22 @@ async function aiWrite(op: string) {
     } else {
       await api.post('/api/ai_assemble_control/file/copy/file', {})
     }
+    toast.success('AI 操作已提交')
+  } catch (e: any) {
+    toast.error('AI 操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev366：AI 知识索引同步/删除 + 文件下载/缩放/删除 + 文件·索引 分页清单 真实路由（每 op 择一轨，避开双轨孪生与 guard 禁的 mcp 删除与聊天端点）
+async function aiMore(op: string) {
+  try {
+    if (op === 'indexSync') await api.get('/api/ai/index/sync/to/knowledge')
+    else if (op === 'indexDelete') { const f = prompt('索引 flag:', '') || ''; if (!(await confirmMsg('确定删除该索引？'))) return; await api.get(`/api/ai/index/delete/${encodeURIComponent(f)}`) }
+    else if (op === 'fileDownload') { const id = prompt('文件 ID:', '') || ''; await api.get(`/api/ai/file/${encodeURIComponent(id)}/download`) }
+    else if (op === 'fileScale') { const id = prompt('文件 ID:', '') || ''; await api.get(`/api/ai/file/${encodeURIComponent(id)}/download/scale`) }
+    else if (op === 'fileDelete') { const f = prompt('文件 flag:', '') || ''; if (!(await confirmMsg('确定删除该文件？'))) return; await api.get(`/api/ai/file/delete/${encodeURIComponent(f)}`) }
+    else if (op === 'fileListPaging') await api.post('/api/ai_assemble_control/file/list/paging/1/size/20', {})
+    else if (op === 'indexListPaging') await api.post('/api/ai_assemble_control/index/list/paging/1/size/20', {})
+    else await api.post('/api/ai_assemble_control/file/list', {})
     toast.success('AI 操作已提交')
   } catch (e: any) {
     toast.error('AI 操作失败: ' + (e?.message ?? ''))
