@@ -19,6 +19,7 @@
         <button class="btn-refresh" @click="loadOrphans">🧹 孤儿元素</button>
         <button class="btn-refresh" @click="loadProcessDetails">🧬 流程明细</button>
         <button class="btn-refresh" @click="loadMappingAccess">🗺️ 映射/项权限</button>
+        <button class="btn-refresh" @click="loadDesignerFile">📎 设计器文件读</button>
         <button class="btn-refresh" @click="loadDesignerExtras">🧩 映射游标/字典/流程</button>
         <button class="btn-refresh" @click="loadDesignerFileScript">📂 文件/脚本/图标</button>
         <button class="btn-refresh" @click="loadSurfaceProcessReads">🖼️ 表面/字典/流程</button>
@@ -981,6 +982,19 @@ async function loadProcessDetails() {
     procDetailText.value = `流程「${pName}」· 元素 ${eN} · 版本 ${vN}`
   } catch (e: any) {
     toast.error('加载流程明细失败: ' + (e?.message ?? ''))
+  }
+}
+// rev431：设计器文件读 GET /api/processplatform/assemble/designer/file/{flag}/application/{applicationFlag}（读 pp_e_file by xid+xapplication；flag 用 prompt、application 取首行）
+async function loadDesignerFile() {
+  const first = items.value[0]
+  const appFlag = String((first as any)?.application ?? (first as any)?.category ?? '')
+  const flag = prompt('设计器文件 flag:', '') || ''
+  if (!flag.trim() || !appFlag) { toast.success('需要文件 flag 与应用（先刷新列表）'); return }
+  try {
+    const r: any = await api.get(`/api/processplatform/assemble/designer/file/${encodeURIComponent(flag)}/application/${encodeURIComponent(appFlag)}`)
+    toast.success(`设计器文件：${(r as any)?.data?.name ?? '—'}`)
+  } catch (e: any) {
+    toast.error('读取设计器文件失败: ' + (e?.message ?? ''))
   }
 }
 </script>
