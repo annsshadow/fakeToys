@@ -21,6 +21,7 @@
         <button class="eb" @click="loadStatisticShow">📈 统计展示筛选</button>
         <button class="eb" @click="checkMyRestDate">🏖️ 我的休息日校验</button>
         <button class="eb" @click="importLeave">📥 批量导入请假</button>
+        <button class="eb" @click="reciveMobileDetail">📱 移动端接收考勤</button>
         <button class="eb" @click="toggleAttType">🔧 启用/禁用考勤类型</button>
         <button class="eb" @click="loadAppealDetailFilters">🧾 申诉/明细游标</button>
         <button class="eb" @click="loadHolidaySettingDetails">🏖️ 假期/设置明细</button>
@@ -720,6 +721,18 @@ async function loadV2ConfigTpl() {
 // 不能用 ${f} 变量拼（会被提取器归一成 {} 与所有家族路由歧义合并，只计 1 条）。
 // rev423：我的休息日校验 POST /api/attendance/assemble/control/v2/my/rest/date/check（body {date}，读 x_attendance_workday_config，缺 date 优雅 400；本人自助真实日期触发）
 // rev431：批量导入请假 POST /api/attendance/assemble/control/v2/leave/import（Json body 非 multipart，INSERT x_attendance_v2_leave；管理员用真实 leaveType/person 触发）
+// rev432：移动端接收考勤明细 POST attendancedetail/mobile/recive（body {personId,date}，UPDATE x_attendance_detail received=true；用户输入真实人员/日期触发）
+async function reciveMobileDetail() {
+  const personId = prompt('人员标识:', '') || ''
+  if (!personId.trim()) return
+  const date = prompt('日期(YYYY-MM-DD):', new Date().toISOString().slice(0, 10)) || ''
+  try {
+    await api.post('/api/attendance/assemble/control/attendancedetail/mobile/recive', { personId, date })
+    toast.success('移动端接收已提交')
+  } catch (e: any) {
+    toast.error('接收失败: ' + (e?.message ?? ''))
+  }
+}
 async function importLeave() {
   const leaveType = prompt('请假类型(如 annual/sick):', '') || ''
   if (!leaveType.trim()) return
