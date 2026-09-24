@@ -418,6 +418,11 @@
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps19('rollback')">工作v2回滚</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps19('addSplit')">工作v2分裂</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps19('terminate')">工作v2终止</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps20('v2Pause')">任务v2暂停</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps20('v2Resume')">任务v2恢复</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps20('v2Reset')">任务v2重置</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps20('v3Pin')">任务v3置顶</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps20('v3Add')">任务v3追加</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdProcessing')">任务处理(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdReplace')">任务替换(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdPress')">任务催办(位置态)</button>
@@ -1802,6 +1807,24 @@ async function surfaceOps19(op: string): Promise<void> {
     else if (op === 'rollback') await api.put(`/api/processplatform/assemble/surface/work/v2/${id}/rollback`, {})
     else if (op === 'addSplit') await api.put(`/api/processplatform/assemble/surface/work/v2/${id}/add/split`, {})
     else await api.post(`/api/processplatform/assemble/surface/work/v2/${id}/terminate`, {})
+    toast.success('流程表面操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev420：流程表面 任务v2/v3 生命周期位置态 pause·resume(GET)·reset(PUT)·v3 pin(GET)·v3 add(POST)（均 task/v{2,3}/{id}/* 独立函数名 handler，arity 匹配 Path(id) 非 trap；O2OA 任务暂停/恢复/重置/置顶/追加独立操作，后端建模为 PP_C_TASK 读；用户输入真实 task id 触发）
+async function surfaceOps20(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    const id = encodeURIComponent(prompt('任务 ID:', '') || '')
+    if (op === 'v2Pause') await api.get(`/api/processplatform/assemble/surface/task/v2/${id}/pause`)
+    else if (op === 'v2Resume') await api.get(`/api/processplatform/assemble/surface/task/v2/${id}/resume`)
+    else if (op === 'v2Reset') await api.put(`/api/processplatform/assemble/surface/task/v2/${id}/reset`, {})
+    else if (op === 'v3Pin') await api.get(`/api/processplatform/assemble/surface/task/v3/${id}/pin`)
+    else await api.post(`/api/processplatform/assemble/surface/task/v3/${id}/add`, {})
     toast.success('流程表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
