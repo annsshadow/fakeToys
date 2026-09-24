@@ -461,14 +461,22 @@ class TestLazyIndexConstruction:
         assert result.total_matches > 0
 
     def test_ngram_query_builds_only_its_own_ngram_index(self, build_log):
-        """ngram 查询只用 n-gram 索引，三份倒排索引不该陪跑"""
+        """ngram 查询只建它读的那两份 n-gram 索引，三份倒排索引不该陪跑
+
+        L19 起 `search(method="ngram")` 不再只对 `instruction` 有效：默认字段清单
+        里的 `output` 也有了自己的 n-gram 索引，所以这里是 2 份而不是 1 份。
+        """
         assert_probe_alive(build_log)
         items = _items(300)
 
         result = DatasetIndexer(items).search("办理", method="ngram")
 
-        assert build_log == ["ngram:instruction_2"], build_log
-        assert result.total_matches > 0
+        assert build_log == ["ngram:instruction_2", "ngram:output_2"], build_log
+        # 命中数不能靠「少建一份索引就少报一堆」糊过去：与朴素全表扫描对齐
+        # （查询串长 2、n=2，所以「命中 1 个 2-gram」等价于「含这个子串」）
+        expected = {i for i, it in enumerate(items)
+                    if "办理" in it["instruction"] or "办理" in it["output"]}
+        assert result.total_matches == len(expected) > 0
 
     def test_each_index_is_built_once_and_reused(self, build_log):
         """同一索引器上重复查询不得重复建：按需 ≠ 每次查都建"""
@@ -480,8 +488,9 @@ class TestLazyIndexConstruction:
         for _ in range(2):
             indexer.search("办理", method="ngram")
 
-        assert sorted(build_log) == sorted(
-            ["field:instruction", "field:output", "ngram:instruction_2"]), build_log
+        assert sorted(build_log) == sorted([
+            "field:instruction", "field:output",
+            "ngram:instruction_2", "ngram:output_2"]), build_log
 
     def test_statistics_and_list_indexes_still_report_all_defaults(self, build_log):
         """对外可见的「建了哪些索引」口径不能因为按需构建而少报"""
@@ -543,18 +552,21 @@ class TestLazyIndexConstruction:
         # 第 5 条也在父视图里满足同一条查询，但它不在切片内
         assert items[5]["instruction"] != items[15]["instruction"]
 
-    def test_non_default_field_query_stays_empty_without_building(self, build_log):
-        """默认清单之外的字段：既不多建一份索引，也不改变「查无此项」的语义
+    def test_ad_hoc_field_on_empty_indexer_builds_nothing(self, build_log):
+        """空索引器查任何字段都不该凭空造出一份空索引
 
-        「exact 查自定义字段永远返回空」本身是个坑（已另立 A23 记录），但那是
-        改语义的另一件事，性能轮不顺手改。
+        L18 那条「清单外字段永远查不到」的护栏在 L19 被修成真能力（A23），但
+        「没有数据就不建索引」的豁免要留住：否则 `DatasetIndexer([])` 的
+        `list_indexes()` 会从「0 份」变成「4 份空索引」。这条在修复前后都绿，
+        它钉的是 `_ensure_*` 里那个 `or self._items`。
         """
         assert_probe_alive(build_log)
-        indexer = DatasetIndexer([{"instruction": "a", "answer": "b"}])
+        indexer = DatasetIndexer([])
 
         assert indexer.search_exact("answer", "b") == []
         assert indexer.search_ngram("answer", "b") == []
-        assert build_log == [], f"为清单外的字段建了索引：{build_log}"
+        assert indexer.list_indexes() == []
+        assert build_log == [], f"空数据集凭空建了索引：{build_log}"
 
     def test_concurrent_first_queries_all_get_the_same_answer(self, build_log):
         """多线程同时发来第一条查询：只能有一个建索引，其余复用
@@ -585,4 +597,120 @@ class TestLazyIndexConstruction:
         assert all(r == expected for r in results), "并发首查询读到了半成品索引"
         # 8 个线程抢第一条查询，也只能建 1 份索引
         assert build_log == ["field:instruction"], build_log
+
+
+def _custom_items():
+    """带默认清单之外字段的数据集：`answer` 是清单外字段，值刻意重复以便命中成组"""
+    return [
+        {"instruction": f"问题 {i}", "answer": f"答复第{i % 3}号"}
+        for i in range(9)
+    ]
+
+
+class TestArbitraryFieldQueries:
+    """清单外的字段、任意的 n 都能查（A23：exact/ngram 曾被默认清单限死）
+
+    旧实现只对 `instruction/output/input` 和 `(instruction, 2)` 建索引，
+    `search_exact("answer", ...)` 于是**静默返回空列表**——调用方拿到的是
+    「查无此项」，而真相是「我根本没为这个字段建过索引」。L19 把它修成真能力：
+    清单只决定报告里该有哪几份，不再决定能查什么。
+    """
+
+    def test_exact_on_custom_field_finds_hits(self, build_log):
+        """查清单外的字段：命中要真给出来，且只为它建那一份索引"""
+        assert_probe_alive(build_log)
+        indexer = DatasetIndexer(_custom_items())
+
+        assert indexer.search_exact("answer", "答复第0号") == [0, 3, 6]
+        assert build_log == ["field:answer"], build_log
+
+    def test_custom_field_index_is_built_once(self, build_log):
+        """按需建的临时索引同样只建一次，后续查询直接复用"""
+        assert_probe_alive(build_log)
+        indexer = DatasetIndexer(_custom_items())
+
+        assert indexer.search_exact("answer", "答复第1号") == [1, 4, 7]
+        assert indexer.search_exact("answer", "答复第2号") == [2, 5, 8]
+        assert build_log == ["field:answer"], build_log
+
+    def test_search_accepts_fields_outside_the_default_list(self, build_log):
+        """通用入口 `search(fields=[...])` 走 exact 时同样不受清单限制"""
+        assert_probe_alive(build_log)
+        indexer = DatasetIndexer(_custom_items())
+
+        result = indexer.search("答复第2号", fields=["answer"], method="exact")
+
+        assert result.total_matches == 3
+        assert [it["instruction"] for it in result.items] == ["问题 2", "问题 5", "问题 8"]
+        assert build_log == ["field:answer"], build_log
+
+    def test_ngram_on_custom_field_and_on_arbitrary_n(self, build_log):
+        """n-gram 索引按 (字段, n) 一份份建：清单外的字段、非默认的 n 都能查"""
+        assert_probe_alive(build_log)
+        indexer = DatasetIndexer(_custom_items())
+
+        hits = indexer.search_ngram("answer", "答复第1号", n=3)
+        assert set(hits) >= {1, 4, 7}, hits
+        assert build_log == ["ngram:answer_3"], build_log
+
+        build_log.clear()
+        # 换个 n 就是另一份索引，不能拿 n=3 的结果冒充 n=2
+        assert indexer.search_ngram("answer", "答复", n=2) != []
+        assert build_log == ["ngram:answer_2"], build_log
+
+    def test_non_default_n_on_a_default_field_builds_its_own_index(self, build_log):
+        """默认字段配非默认 n（`instruction` + n=3）也是「现查现建」的一份新索引"""
+        assert_probe_alive(build_log)
+        indexer = DatasetIndexer(_items(40))
+
+        assert indexer.search_ngram("instruction", "如何办理", n=3) != []
+        assert build_log == ["ngram:instruction_3"], build_log
+
+    def test_field_absent_from_every_item_answers_empty_after_one_build(self, build_log):
+        """真不存在的字段：建一份空索引、答「无匹配」——诚实的代价，不是静默失效
+
+        这条把「查不到」与「没建索引所以查不到」分开：前者仍然返回空列表（语义
+        没变），但代价要如实体现在计数上。
+        """
+        assert_probe_alive(build_log)
+        indexer = DatasetIndexer(_custom_items())
+
+        assert indexer.search_exact("no_such_field", "x") == []
+        assert build_log == ["field:no_such_field"], build_log
+
+    def test_ad_hoc_index_appears_in_the_report(self, build_log):
+        """临时索引建了就该被报告出来（口径从「只报默认清单」变为「报真实存在」）"""
+        assert_probe_alive(build_log)
+        indexer = DatasetIndexer(_custom_items())
+        assert indexer.search_exact("answer", "答复第0号") == [0, 3, 6]
+        build_log.clear()
+
+        names = [i.name for i in indexer.list_indexes()]
+
+        # 先建的是被查的那个，`list_indexes()` 再把默认清单欠的账补齐
+        assert names == ["field_answer", "field_instruction", "field_output",
+                         "field_input", "ngram_instruction_2"], names
+        assert build_log == ["field:instruction", "field:output", "field:input",
+                             "ngram:instruction_2"], build_log
+
+    def test_concurrent_queries_on_a_custom_field_build_once(self, build_log):
+        """8 个线程同时首发同一个临时字段的查询，也只能建 1 份索引、答案一致"""
+        items = _custom_items()
+        indexer = DatasetIndexer(items)
+        results = []
+        barrier = threading.Barrier(8)
+
+        def worker():
+            barrier.wait()
+            results.append(indexer.search_exact("answer", "答复第2号"))
+
+        threads = [threading.Thread(target=worker) for _ in range(8)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        assert len(results) == 8
+        assert all(r == [2, 5, 8] for r in results), results
+        assert build_log == ["field:answer"], build_log
 
