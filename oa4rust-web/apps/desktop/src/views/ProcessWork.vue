@@ -455,6 +455,8 @@
             <button class="btn-sm" :disabled="engineBusy" @click="engineReviewWork('reviewInit')">初始化待阅</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineReviewWork('nextIdentity')">改已办下一身份</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineReviewWork('dataJobPut')">按Job写数据</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineAttachmentOrder('site')">附件改站点</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineAttachmentOrder('order')">附件改顺序</button>
           </div>
         </section>
 
@@ -820,6 +822,13 @@ async function loadSurfaceReadB(): Promise<void> {
       s(api.post(`/api/processplatform/assemble/surface/review/v2/list/create/${id}/prev/${count}`, {})),
       s(api.post(`/api/processplatform/assemble/surface/review/v2/list/${id}/next/${count}`, {})),
       s(api.post(`/api/processplatform/assemble/surface/review/v2/list/${id}/prev/${count}`, {})),
+      // rev454：已办任务上翻游标列表（taskcompleted_list_id_prev_count Path<(id,i64)>）
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/prev/${id}/${count}`)),
+      // rev454：待办/在办 过滤游标列表 4 条真实读（*_list_id_next|prev_count_*filter Path<(id,i64)>，终端字面段 filter/creator 避免 matcher 误配）
+      s(api.post(`/api/processplatform/assemble/surface/task/list/${id}/next/${count}/filter`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/task/list/${id}/prev/${count}/filter`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/work/list/${id}/next/${count}/creator/current/filter`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/work/list/${id}/prev/${count}/creator/current/filter`, {})),
       s(api.get(`/api/processplatform/assemble/surface/task/count/${credential}`)),
       s(api.get(`/api/processplatform/assemble/surface/task/list/date/date/hour/hour/exclude/draft/manage/${isExcludeDraft}`)),
       s(api.get(`/api/processplatform/assemble/surface/task/list/date/${date}/hour/${hour}/exclude/draft/${isExcludeDraft}/manage`)),
@@ -2006,6 +2015,29 @@ async function engineReviewWork(op: string): Promise<void> {
       if (!(await confirmMsg('确定 v3 撤回该工作？'))) return
       await api.post('/api/processplatform/service/processing/work/v3/retract', { workId })
       toast.success('工作已 v3 撤回')
+    }
+  } catch (e: any) {
+    toast.error('引擎操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev454：surface 附件 U2B 调整 站点/顺序 2 条真实写（GET 但 UPDATE pp_c_attachment，Path<(id,work,site|i64)> 3 参，u2_gate 校验归属；用户以真实附件/工作 ID 触发）
+async function engineAttachmentOrder(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    const id = encodeURIComponent(prompt('附件 ID:', '') || '')
+    const work = encodeURIComponent(prompt('工作 ID:', '') || '')
+    if (!id || !work) return
+    if (op === 'site') {
+      const site = encodeURIComponent(prompt('站点(site):', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/attachment/${id}/work/${work}/change/site/${site}`)
+      toast.success('附件站点已调整')
+    } else {
+      const num = encodeURIComponent(prompt('顺序号(数字):', '0') || '0')
+      await api.get(`/api/processplatform/assemble/surface/attachment/${id}/work/${work}/change/ordernumber/${num}`)
+      toast.success('附件顺序已调整')
     }
   } catch (e: any) {
     toast.error('引擎操作失败: ' + (e?.message ?? ''))
