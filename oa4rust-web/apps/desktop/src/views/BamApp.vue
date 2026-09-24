@@ -23,6 +23,14 @@
         <button class="btn-primary ghost" @click="bamWrite('periodTaskUnit')">周期任务单位</button>
         <button class="btn-primary ghost" @click="bamWrite('periodAppWork')">周期应用工作</button>
         <button class="btn-primary ghost" @click="bamWrite('periodWorkUnit')">周期工作单位</button>
+        <button class="btn-primary ghost" @click="bamMore('delete')">删BAM定义</button>
+        <button class="btn-primary ghost" @click="bamMore('completedStubs')">完成任务存根</button>
+        <button class="btn-primary ghost" @click="bamMore('expiredStubs')">超时工作存根</button>
+        <button class="btn-primary ghost" @click="bamMore('startStubs')">开始工作存根</button>
+        <button class="btn-primary ghost" @click="bamMore('appTrigger')">应用状态触发</button>
+        <button class="btn-primary ghost" @click="bamMore('catTrigger')">分类状态触发</button>
+        <button class="btn-primary ghost" @click="bamMore('periodTaskByApp')">周期任务按应用</button>
+        <button class="btn-primary ghost" @click="bamMore('periodByApp')">周期按应用</button>
         <button class="btn-primary" @click="refresh">🔄 刷新</button>
       </span>
     </div>
@@ -293,6 +301,30 @@ async function bamWrite(op: string) {
       await api.post('/api/processplatform/assemble/bam/period/list/application/0/0', {})
     } else {
       await api.post('/api/processplatform/assemble/bam/period/list/0/0/0', {})
+    }
+    toast.success('BAM 操作已提交')
+  } catch (e: any) {
+    toast.error('BAM 操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev372：BAM 定义删 + 完成任务/超时工作/开始工作 单位存根 + 应用/分类状态触发 + 周期任务/工作 多维统计 真实路由（清 GET 无参 + 多参统计用户填值）
+async function bamMore(op: string) {
+  try {
+    if (op === 'delete') { const id = prompt('BAM 定义 ID:', '') || ''; if (!(await confirmMsg('确定删除该 BAM 定义？'))) return; await api.post(`/api/processplatform/assemble/bam/delete/${encodeURIComponent(id)}`, {}) }
+    else if (op === 'completedStubs') await api.get('/api/processplatform/assemble/bam/period/list/completed/task/unitstubs')
+    else if (op === 'expiredStubs') await api.get('/api/processplatform/assemble/bam/period/list/expired/work/unitstubs')
+    else if (op === 'startStubs') await api.get('/api/processplatform/assemble/bam/period/list/start/work/unitstubs')
+    else if (op === 'appTrigger') await api.get('/api/processplatform/assemble/bam/state/applicationtstubs/trigger')
+    else if (op === 'catTrigger') await api.get('/api/processplatform/assemble/bam/state/category/trigger')
+    else if (op === 'periodTaskByApp') {
+      const u = encodeURIComponent(prompt('单位:', '') || '')
+      const p = encodeURIComponent(prompt('人员:', '') || '')
+      await api.post(`/api/processplatform/assemble/bam/period/list/task/by/application/20/0/${u}/${u}/${p}/${p}`, {})
+    } else {
+      const u = encodeURIComponent(prompt('单位:', '') || '')
+      const p = encodeURIComponent(prompt('人员:', '') || '')
+      const w = encodeURIComponent(prompt('工作:', '') || '')
+      await api.post(`/api/processplatform/assemble/bam/period/list/by/application/20/0/${w}/${u}/${u}/${p}/${p}`, {})
     }
     toast.success('BAM 操作已提交')
   } catch (e: any) {
