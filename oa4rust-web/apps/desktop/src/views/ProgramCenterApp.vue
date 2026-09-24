@@ -230,6 +230,7 @@
           <button class="btn-sm" @click="pcU10">集成同步/清缓存</button>
           <button class="btn-sm" @click="pcU11">企微/政务钉钉/打包读</button>
           <button class="btn-sm" @click="pcU12">样式/公众号/打包连接读</button>
+          <button class="btn-sm" @click="pcU13">WeLink同步/异常日志上报</button>
           <div v-if="pcU4Text" class="app-meta">{{ pcU4Text }}</div>
         </div>
         <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
@@ -1457,6 +1458,17 @@ async function pcU12() {
     toast.success(`样式/公众号/打包 ${rs.length} 条命中 ${hit}`)
   } catch (e: any) {
     toast.error('读取失败: ' + (e?.message ?? ''))
+  }
+}
+// rev427：程序中心 WeLink 拉取同步(落 x_program_sync_log)·前端异常日志上报(prompterrorlog→x_program_prompt_error_log·unexpectederrorlog→x_program_unexpected_error_log) 三条 pool-only 写审计/日志，distinct 表，无外部 HTTP
+async function pcU13() {
+  try {
+    await api.get('/api/program_center/welink/pull/sync')
+    await api.post('/api/program_center/prompterrorlog', { exceptionClass: 'ClientPromptError', loggerName: 'ProgramCenterApp', message: '控制台手动上报提示异常' })
+    await api.post('/api/program_center/unexpectederrorlog', { errorType: 'ClientUnexpected', message: '控制台手动上报未预期异常', stackTrace: '' })
+    toast.success('同步/异常日志已上报')
+  } catch (e: any) {
+    toast.error('上报失败: ' + (e?.message ?? ''))
   }
 }
 async function loadMarketLogs() {
