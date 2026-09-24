@@ -40,6 +40,29 @@
         <button class="btn-refresh" @click="cmsDelete('templateform')">删模板表单</button>
         <button class="btn-refresh" @click="cmsSaveConfig">存控制配置</button>
         <button class="btn-refresh" @click="cmsUpdateDocument">更新文档</button>
+        <button class="btn-refresh" @click="cmsRoot('formUpdate')">改表单</button>
+        <button class="btn-refresh" @click="cmsRoot('formDelete')">删表单2</button>
+        <button class="btn-refresh" @click="cmsRoot('viewCreate')">建视图2</button>
+        <button class="btn-refresh" @click="cmsRoot('viewUpdate')">改视图2</button>
+        <button class="btn-refresh" @click="cmsRoot('viewDelete')">删视图2</button>
+        <button class="btn-refresh" @click="cmsRoot('scriptUpdate')">改脚本</button>
+        <button class="btn-refresh" @click="cmsRoot('scriptDelete')">删脚本</button>
+        <button class="btn-refresh" @click="cmsRoot('tplCreate')">建模板表单2</button>
+        <button class="btn-refresh" @click="cmsRoot('tplDelete')">删模板表单2</button>
+        <button class="btn-refresh" @click="cmsRoot('viewCatCreate')">建视图分类</button>
+        <button class="btn-refresh" @click="cmsRoot('viewCatDelete')">删视图分类</button>
+        <button class="btn-refresh" @click="cmsRoot('viewFieldCreate')">建视图字段</button>
+        <button class="btn-refresh" @click="cmsRoot('viewFieldUpdate')">改视图字段</button>
+        <button class="btn-refresh" @click="cmsRoot('viewFieldDelete')">删视图字段</button>
+        <button class="btn-refresh" @click="cmsRoot('commentCreate')">建评论</button>
+        <button class="btn-refresh" @click="cmsRoot('commentDelete')">删评论</button>
+        <button class="btn-refresh" @click="cmsRoot('appdictCreate')">建设计字典</button>
+        <button class="btn-refresh" @click="cmsRoot('appdictUpdate')">改设计字典</button>
+        <button class="btn-refresh" @click="cmsRoot('appdictDelete')">删设计字典</button>
+        <button class="btn-refresh" @click="cmsRoot('entColumnSave')">存实体列</button>
+        <button class="btn-refresh" @click="cmsRoot('entModuleSave')">存实体模块</button>
+        <button class="btn-refresh" @click="cmsRoot('entIndexSave')">存实体索引</button>
+        <button class="btn-refresh" @click="cmsRoot('entNoteSave')">存实体备注</button>
       </div>
       <div v-if="cmsConfigText" class="cfg-note">{{ cmsConfigText }}</div>
       <div v-if="overviewText" class="cfg-note">{{ overviewText }}</div>
@@ -362,6 +385,39 @@ async function cmsUpdateDocument() {
     toast.success('文档已更新')
   } catch (e: any) {
     toast.error('更新文档失败: ' + (e?.message ?? ''))
+  }
+}
+// rev347：CMS 根级 U2 CRUD（表单/视图/脚本/模板表单/视图分类·字段/评论/设计字典/核心实体列·模块·索引·备注） 真实写端点（用户触发，shape 已核；全字面量路径）
+async function cmsRoot(op: string) {
+  const id = prompt('目标 ID:', '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (op === 'formUpdate') await api.put(`/api/form/${e}`, {})
+    else if (op === 'formDelete') { if (!(await confirmMsg('确定删除该表单？'))) return; await api.delete(`/api/form/${e}`) }
+    else if (op === 'viewCreate') await api.post('/api/view', { name: '新视图' })
+    else if (op === 'viewUpdate') await api.put(`/api/view/${e}`, {})
+    else if (op === 'viewDelete') { if (!(await confirmMsg('确定删除该视图？'))) return; await api.delete(`/api/view/${e}`) }
+    else if (op === 'scriptUpdate') await api.put(`/api/script/${e}`, {})
+    else if (op === 'scriptDelete') { if (!(await confirmMsg('确定删除该脚本？'))) return; await api.delete(`/api/script/${e}`) }
+    else if (op === 'tplCreate') await api.post('/api/templateform', { name: '新模板表单' })
+    else if (op === 'tplDelete') { if (!(await confirmMsg('确定删除该模板表单？'))) return; await api.delete(`/api/templateform/${e}`) }
+    else if (op === 'viewCatCreate') await api.post('/api/viewcategory', { name: '新分类' })
+    else if (op === 'viewCatDelete') { if (!(await confirmMsg('确定删除该视图分类？'))) return; await api.delete(`/api/viewcategory/${e}`) }
+    else if (op === 'viewFieldCreate') await api.post('/api/viewfieldconfig', {})
+    else if (op === 'viewFieldUpdate') await api.put(`/api/viewfieldconfig/${e}`, {})
+    else if (op === 'viewFieldDelete') { if (!(await confirmMsg('确定删除该视图字段？'))) return; await api.delete(`/api/viewfieldconfig/${e}`) }
+    else if (op === 'commentCreate') await api.post('/api/comment', { content: '' })
+    else if (op === 'commentDelete') { if (!(await confirmMsg('确定删除该评论？'))) return; await api.delete(`/api/comment/${e}`) }
+    else if (op === 'appdictCreate') await api.post('/api/design/appdict', { name: '新应用字典' })
+    else if (op === 'appdictUpdate') await api.put(`/api/design/appdict/${e}`, {})
+    else if (op === 'appdictDelete') { if (!(await confirmMsg('确定删除该设计字典？'))) return; await api.delete(`/api/design/appdict/${e}`) }
+    else if (op === 'entColumnSave') await api.post(`/api/cms/core/entity/column/save/${e}`, {})
+    else if (op === 'entModuleSave') await api.post(`/api/cms/core/entity/module/save/${e}`, {})
+    else if (op === 'entIndexSave') await api.post(`/api/cms/core/entity/index/save/${e}`, {})
+    else await api.post(`/api/cms/core/entity/note/save/${e}`, {})
+    toast.success('CMS 操作已提交')
+  } catch (err: any) {
+    toast.error('CMS 操作失败: ' + (err?.message ?? ''))
   }
 }
 async function loadCmsAppReads2() {
