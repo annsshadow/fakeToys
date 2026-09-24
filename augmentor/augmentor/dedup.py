@@ -107,27 +107,59 @@ class Deduplicator:
                 ngram = text[i:i+2]
                 if ngram not in vocab:
                     vocab[ngram] = len(vocab)
-        
-        vectors = np.zeros((len(texts), len(vocab)))
+
+        # dtype 必须是 float32：这是**稠密** n×vocab 矩阵，也是这条路径上最大的
+        # 一笔分配（真实 6902 条数据的 vocab 有 23033 项 → float64 要 1.27 GB，
+        # float32 只要 0.64 GB）。调用方写的 `np.asarray(..., dtype=np.float32)`
+        # 在 dtype 不符时是整份再复制一遍，所以 float64 还额外多出 0.64 GB。
+        # TF 值是「某二元组在该文档里出现几次」，个位数量级，float32 在 2^24
+        # 以内精确表示整数，计数不会有任何损失。
+        vectors = np.zeros((len(texts), len(vocab)), dtype=np.float32)
         for i, text in enumerate(texts):
             for j in range(len(text) - 1):
                 ngram = text[j:j+2]
                 if ngram in vocab:
                     vectors[i, vocab[ngram]] += 1
-        
-        # L2 归一化
-        norms = np.linalg.norm(vectors, axis=1, keepdims=True)
+
+        # L2 归一化，全程原地：`np.linalg.norm` 内部要先算平方和并**另起一份
+        # 同尺寸临时矩阵**，`vectors / norms` 又是一份——那两步在 0.64 GB 量级
+        # 的矩阵上等于凭空多养两份。einsum 直接把行平方和压成一个向量。
+        norms = self._row_norms(vectors)
         norms[norms == 0] = 1
-        vectors = vectors / norms
-        
+        np.divide(vectors, norms[:, None], out=vectors)
+
         return vectors
+
+    @staticmethod
+    def _row_norms(matrix: np.ndarray) -> np.ndarray:
+        """每行的 L2 范数，形状 (n,)，**不**产生 n×vocab 的临时矩阵
+
+        `np.linalg.norm(matrix, axis=1)` 语义相同但会另起一份同尺寸矩阵做平方和；
+        在稠密编码矩阵（n×vocab，真实数据 0.64 GB 起）上那是纯浪费。
+        einsum 的逐行点积不物化中间矩阵，且 float32 累加结果与原实现逐元素相同。
+        """
+        return np.sqrt(np.einsum("ij,ij->i", matrix, matrix))
     
     @staticmethod
     def _normalize(embeddings: np.ndarray) -> np.ndarray:
-        """按行做 L2 归一化（零向量保持零向量，避免除零）"""
-        norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+        """按行做 L2 归一化（零向量保持零向量，避免除零）
+
+        返回**新矩阵**；就地版本见 :meth:`_normalize_inplace`——在 n×vocab 的
+        稠密编码矩阵上，多养一份同尺寸矩阵是 0.64 GB 量级的浪费。
+        """
+        norms = Deduplicator._row_norms(embeddings)[:, None]
         norms[norms == 0] = 1
         return embeddings / norms
+
+    @staticmethod
+    def _normalize_inplace(embeddings: np.ndarray) -> None:
+        """就地按行 L2 归一化（零向量保持零向量，避免除零）
+
+        只可用于**调用方自己拥有**的矩阵：它不返回新数组，直接改写传入的矩阵。
+        """
+        norms = Deduplicator._row_norms(embeddings)[:, None]
+        norms[norms == 0] = 1
+        np.divide(embeddings, norms, out=embeddings)
 
     def _row_block_size(self, n: int, requested: int) -> int:
         """把行块大小压到「单块单元数 ≤ _MAX_BLOCK_CELLS」
@@ -237,9 +269,12 @@ class Deduplicator:
         if n == 0:
             return []
 
-        # 批量编码
+        # 批量编码。dtype 已是 float32 时 np.asarray 不复制，所以这份矩阵归
+        # 本方法所有；就地归一化省掉的正是「再养一份 n×vocab」——真实 6902 条
+        # 数据的稠密编码矩阵有 0.64 GB，复制一次的峰值直接翻倍。
         embeddings = np.asarray(self._batch_encode(texts), dtype=np.float32)
-        normalized = self._normalize(embeddings)
+        self._normalize_inplace(embeddings)
+        normalized = embeddings
 
         block_rows = self._row_block_size(n, chunk_size)
 
