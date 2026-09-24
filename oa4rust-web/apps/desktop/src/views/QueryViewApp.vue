@@ -44,6 +44,7 @@
         <button class="btn-primary" @click="qvMore('statExec')">统计执行2</button>
         <button class="btn-primary" @click="qvMore('bundlePost')">打包提交</button>
         <button class="btn-primary" @click="qvRows('rowGet')">读表行</button>
+        <button class="btn-primary" @click="qvRows('rowSelect')">按表选择行</button>
         <button class="btn-primary" @click="qvRows('rowInsert')">插入行</button>
         <button class="btn-primary" @click="qvRows('rowInsertOne')">插入单行</button>
         <button class="btn-primary" @click="qvRows('rowDeleteAll')">清空表行</button>
@@ -477,6 +478,7 @@ async function qvRows(op: string) {
     else if (op === 'rowInsertOne') await api.post(`/api/queryview/table/${flag()}/row/one`, {})
     else if (op === 'rowDeleteAll') { const f = flag(); if (!(await confirmMsg('确定清空该表所有行？'))) return; await api.delete(`/api/queryview/table/${f}/row/delete/all`) }
     else if (op === 'rowDelete') { const f = flag(); const rid = encodeURIComponent(prompt('行 ID:', '') || ''); if (!(await confirmMsg('确定删除该行？'))) return; await api.delete(`/api/queryview/table/${f}/row/${rid}`) }
+    else if (op === 'rowSelect') { const f = flag(); await api.post(`/api/queryview/table/list/${f}/row/select`, {}) }
     else { const f = flag(); const rid = encodeURIComponent(prompt('行 ID:', '') || ''); await api.post(`/api/queryview/table/${f}/row/${rid}/part/update`, {}) }
     toast.success('数据表行操作已提交')
   } catch (e: any) {
