@@ -31,6 +31,7 @@
       <button class="org-meta-btn" @click="loadOrgListCursors">核心列表游标</button>
       <button class="org-meta-btn" @click="loadOrgControlReads">控制读取族</button>
       <button class="org-meta-btn" @click="loadOrgControlDeep">控制深度读</button>
+      <button class="org-meta-btn" @click="loadOrgObjectReads">对象投影批读</button>
       <button class="org-meta-btn" @click="orgUnitExpress">单位树/校验/属性读</button>
       <button class="org-meta-btn" @click="orgUnitWrite('attrSet')">单位属性替换</button>
       <button class="org-meta-btn" @click="orgUnitWrite('attrAppend')">单位属性追加</button>
@@ -336,6 +337,24 @@ async function loadOrgControlDeep() {
     orgMetaText.value = `组织控制深度读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
     toast.error('加载组织控制深度读失败: ' + (e?.message ?? ''))
+  }
+}
+// rev460：express 对象投影批读 5 条真实读（unit 按层级名/职务、person 属性、unit 属性、empower 身份；均 pool+Json<Value> 纯 SELECT，body 传对应 *List 键；无已消费同源基路由故非投影孪生）
+async function loadOrgObjectReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const flags = ['0']
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/unit/list/level/name/object', { unitList: flags })),
+      s(api.post('/api/unitduty/list/unit/object', { unitList: flags })),
+      s(api.post('/api/personattribute/list/person/object', { personList: flags })),
+      s(api.post('/api/unitattribute/list/unit/object', { unitList: flags })),
+      s(api.post('/api/empower/list/identity/object', { identityList: flags })),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    orgMetaText.value = `对象投影批读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('加载对象投影批读失败: ' + (e?.message ?? ''))
   }
 }
 // rev357：组织 express 单位树/校验/属性职务读（POST body{unitList}/{unit,name}），全字面量路径，用户触发按钮

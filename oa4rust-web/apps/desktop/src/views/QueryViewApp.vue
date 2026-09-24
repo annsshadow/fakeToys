@@ -173,6 +173,8 @@ async function loadQvDetails() {
       qflag ? api.get(`/api/queryview/query/${encodeURIComponent(qflag)}`).catch(() => null) : Promise.resolve(null),
       qflag ? api.get(`/api/queryview/stat/list/query/${encodeURIComponent(qflag)}`).catch(() => null) : Promise.resolve(null),
       vid ? api.get(`/api/queryview/view/${encodeURIComponent(vid)}`).catch(() => null) : Promise.resolve(null),
+      // rev460：设计器分配 id 批（designer_id_count，Path<i64> arity 一致，返回 N 个新 id 供设计器占位）
+      api.get('/api/query/assemble/designer/id/20').catch(() => null),
     ])
     const qName = (query as any)?.data?.name ?? (qflag || '—')
     const sN = Array.isArray((stats as any)?.data) ? (stats as any).data.length : 0
