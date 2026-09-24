@@ -8,6 +8,7 @@
 （3.0 起 `--enhanced` 已移除，改为守规范命令名本身）。
 """
 
+import csv
 import json
 from pathlib import Path
 
@@ -261,7 +262,8 @@ class TestConvertFormatSurface:
     两侧曾经说的是两套话：`converter.get_supported_formats()` 直接由 `DataFormat`
     枚举生成，于是把转换图里没有 `json -> tsv` 这条边的 `tsv` 也报成支持能力
     （照它调用只会拿到 `UnsupportedFormatError`），而 CLI 的 `choices` 里没有 tsv。
-    现在公开清单由 `_converters` 反推，这两条测试守住「公开清单 == 能真跑通的目标」。
+    现在公开清单由 `_converters` 反推，守住「公开清单 == 能真跑通的目标 == CLI 收的
+    那批」。`tsv` 两条边已在 L20 补齐，所以它两侧都收。
     """
 
     @pytest.mark.parametrize("fmt", get_supported_formats())
@@ -275,18 +277,42 @@ class TestConvertFormatSurface:
         assert code is None
         assert out_file.exists()
 
-    def test_unsupported_tsv_is_not_claimed_by_either_side(self, dataset, tmp_path):
-        """`tsv` 是 `DataFormat` 成员，但转换图不支持：清单里没有，CLI 也拒绝"""
-        assert "tsv" in [f.value for f in DataFormat]
-        assert "tsv" not in get_supported_formats()
+    def test_format_outside_the_graph_is_rejected_by_cli(self, dataset, tmp_path, capsys):
+        """清单外的格式 CLI 要拒收（`invalid choice`），且不留下产物
 
-        out_file = tmp_path / "x.tsv"
+        用 `xml` 而不是某个 `DataFormat` 成员举例：转换图现已覆盖枚举全量，成员
+        里挑不出「枚举有、图里没有」的那个了；这一条守的是反方向不漂移——将来往
+        枚举加成员而没补转换边时，CLI 不能跟着虚报。
+        """
+        assert "xml" not in get_supported_formats()
+
+        out_file = tmp_path / "x.xml"
         _, _, code = run_cli(
             ["cli", "convert", "--input", str(dataset),
-             "--output", str(out_file), "--format", "tsv"]
+             "--output", str(out_file), "--format", "xml"]
         )
-        assert code == 2, f"CLI 未拒绝 tsv: code={code}"
+        err = capsys.readouterr().err
+        assert code == 2, f"CLI 未拒绝 xml: code={code}"
+        assert "invalid choice" in err, err
         assert not out_file.exists()
+
+    def test_cli_choices_cover_the_whole_graph(self, dataset, tmp_path):
+        """清单里的每个格式 CLI 都收：两侧清单必须等价，不是各写一份常量
+
+        `EXPORT_FORMATS` 那条漏了 `raw` 的老事故就是「两份清单各写各的」的结果，
+        这里用「清单逐个跑通」把等价关系钉住（`--format` 的 choices 是硬编码列表，
+        所以只能这么验）。
+        """
+        assert set(get_supported_formats()) == {f.value for f in DataFormat}, \
+            "转换图与 DataFormat 枚举已不再同集合：先确认新格式该不该支持，再改这里"
+
+        for fmt in get_supported_formats():
+            out_file = tmp_path / f"cover.{fmt}"
+            _, _, code = run_cli(
+                ["cli", "convert", "--input", str(dataset),
+                 "--output", str(out_file), "--format", fmt]
+            )
+            assert code is None, f"CLI 不收清单内的 {fmt}"
 
 
 class TestConvertInputFormat:
@@ -373,21 +399,38 @@ class TestConvertInputFormat:
         assert "第 2 条 alpaca 记录缺少字段: output" in capsys.readouterr().err
         assert not out_file.exists()
 
-    def test_tsv_is_not_accepted_as_input_format(self, tmp_path, capsys):
-        """源格式清单与目标格式同源：转换图里没有 `tsv → json`，CLI 两侧都不收
+    def test_tsv_is_accepted_on_both_sides(self, tmp_path):
+        """`tsv` 两条边补齐后，CLI 两侧都收它，且引号规则与 csv 同严
 
-        断言的是 argparse 的「invalid choice」而不是任意非 0 退出码 —— 后者在
-        `--input-format` 根本不存在时也会出现（unrecognized arguments），那样这条
-        用例就测不出「清单里排除了 tsv」这个事实。
+        断言而不是只看退出码：`--input-format` 曾经根本不认 tsv，光看「不报错」
+        分不清是支持了还是绕过了。字段里塞进制表符、逗号、换行各一个，严格解析器
+        （`csv.reader`，非宽松模式）能原样读回才算真支持。
         """
-        src = self.write(tmp_path, [{"instruction": "q", "output": "a"}])
+        rows = [{"instruction": "含\t制表", "input": "含,逗号", "output": "含\n换行"},
+                {"instruction": "正常", "input": "", "output": "回答"}]
+        src = tmp_path / "in.tsv"
+        with src.open("w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=["instruction", "input", "output"],
+                                    delimiter="\t")
+            writer.writeheader()
+            writer.writerows(rows)
         out_file = tmp_path / "out.json"
 
-        _, _, code = run_cli(
+        _, parsed, code = run_cli(
             ["cli", "convert", "--input", str(src), "--output", str(out_file),
              "--input-format", "tsv", "--format", "json"]
         )
-        err = capsys.readouterr().err
-        assert code == 2, f"CLI 未拒绝 tsv 源格式: code={code}"
-        assert "--input-format" in err and "invalid choice" in err, err
-        assert not out_file.exists()
+        assert code is None
+        assert parsed["input_count"] == 2
+        assert json.loads(out_file.read_text(encoding="utf-8")) == rows
+
+        back = tmp_path / "back.tsv"
+        _, _, code = run_cli(
+            ["cli", "convert", "--input", str(out_file), "--output", str(back),
+             "--format", "tsv"]
+        )
+        assert code is None
+        with back.open(newline="", encoding="utf-8") as f:
+            assert list(csv.reader(f, delimiter="\t"))[0] == [
+                "instruction", "input", "output"]
+        assert json.loads(out_file.read_text(encoding="utf-8")) == rows

@@ -35,6 +35,13 @@ def csv_fieldnames(items: List[Dict]) -> List[str]:
     return keys
 
 
+#: 「容器」格式：只有这四个决定文件本身的物理布局（`_read_file` / `_write_file`
+#: 选哪个解析器）。其余 `DataFormat` 成员（alpaca/sharegpt/chatml/llama_factory/
+#: vicuna/belle）只是**行内 schema**，同一份 schema 既可以落成一个 JSON 数组，
+#: 也可以落成一行一条的 JSONL。
+CONTAINER_FORMATS = ("json", "jsonl", "csv", "tsv")
+
+
 class DataFormat(Enum):
     """数据格式"""
     JSON = "json"
@@ -145,6 +152,8 @@ class DatasetConverter:
             ("jsonl", "json"): self._jsonl_to_json,
             ("json", "csv"): self._json_to_csv,
             ("csv", "json"): self._csv_to_json,
+            ("json", "tsv"): self._json_to_tsv,
+            ("tsv", "json"): self._tsv_to_json,
             ("json", "alpaca"): self._json_to_alpaca,
             ("json", "sharegpt"): self._json_to_sharegpt,
             ("json", "chatml"): self._json_to_chatml,
@@ -231,21 +240,27 @@ class DatasetConverter:
         return [json.loads(line) for line in data]
     
     def _json_to_csv(self, data: List[Dict], **kwargs) -> List[Dict]:
-        """JSON 转 CSV（返回字典列表）"""
-        if not data:
-            return []
-        
-        # 收集所有字段
-        all_keys = []
-        for item in data:
-            for key in item.keys():
-                if key not in all_keys:
-                    all_keys.append(key)
-        
+        """JSON 转 CSV（返回字典列表）
+
+        这里**只**做「行集合的原样传递」：表头取全量键并集、缺列补空，是
+        `_write_file` 用 `csv_fieldnames()` 干的事。曾经这里另有一份收集 `all_keys`
+        的循环，算完既不进返回值也不进表头（`return [item for item in data]`），
+        是一份看着像在做键归一、其实什么都没做的死代码。
+        """
         return [item for item in data]
-    
+
     def _csv_to_json(self, data: Any, **kwargs) -> List[Dict]:
         """CSV 转 JSON"""
+        if isinstance(data, list):
+            return data
+        return []
+
+    def _json_to_tsv(self, data: List[Dict], **kwargs) -> List[Dict]:
+        """JSON 转 TSV（与 `_json_to_csv` 同理，分隔符由读写两侧决定）"""
+        return [item for item in data]
+
+    def _tsv_to_json(self, data: Any, **kwargs) -> List[Dict]:
+        """TSV 转 JSON"""
         if isinstance(data, list):
             return data
         return []
@@ -499,17 +514,69 @@ class DatasetConverter:
         return ext_map.get(path.suffix.lower(), "json")
     
     def _read_file(self, path: Path, format: str) -> Any:
-        """读取文件"""
-        # `newline=""` 是 csv 模块的硬要求：不传时 Python 会先把 `\r\n` 归一成
-        # `\n`，被引号包裹的字段内换行因此错位（写侧同理）。
+        """读取文件
+
+        `newline=""` 是 csv 模块的硬要求：不传时 Python 会先把 `\\r\\n` 归一成
+        `\\n`，被引号包裹的字段内换行因此错位（写侧同理）。
+
+        只有 `CONTAINER_FORMATS` 里那四个值决定「怎么解析这个文件」。声明成
+        alpaca/sharegpt/chatml/… 时它只是**行内 schema**，容器交给内容嗅探：整份能
+        解析成一个 JSON 数组（或单条对象）就按 JSON 读，否则按 JSONL 一行一条读。
+        旧实现把 schema 当容器用、一律 `json.load`，于是同一批 alpaca 记录写成
+        `.jsonl` 就抛 `JSONDecodeError: Extra data: line 2 column 1`——调用方已经
+        声明了正确的源格式，却绊在容器上。
+        """
         with open(path, 'r', encoding='utf-8', newline='') as f:
             if format == "jsonl":
                 return [json.loads(line) for line in f if line.strip()]
             elif format == "csv":
                 reader = csv.DictReader(f)
                 return list(reader)
-            else:
+            elif format == "tsv":
+                reader = csv.DictReader(f, delimiter="\t")
+                return list(reader)
+            elif format == "json":
                 return json.load(f)
+            return self._read_schema_container(f, path, format)
+
+    @staticmethod
+    def _read_schema_container(f, path: Path, format: str) -> Any:
+        """读「schema 已声明、容器未声明」的文件：先整份 JSON，再退到一行一条
+
+        只接受「记录数组」与「单条记录对象」两种整份形态；顶层是裸标量（`null`、
+        `42`）时不算读通，继续走逐行分支，让报错停在「这条记录不是对象」上，而不是
+        凭空多出一条空记录。
+
+        两条路都不通时抛 `DataFormatError` 而不是漏出 `JSONDecodeError`：前者带
+        文件名与行号，后者只有解析器的内部措辞（`Extra data: line 2 column 1`）。
+        """
+        text = f.read()
+        try:
+            value = json.loads(text)
+        except json.JSONDecodeError:
+            pass
+        else:
+            if isinstance(value, list):
+                return value
+            if isinstance(value, dict):
+                return [value]
+
+        rows: List[Any] = []
+        for lineno, line in enumerate(text.splitlines(), start=1):
+            if not line.strip():
+                continue
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError as exc:
+                raise DataFormatError(
+                    f"{path.name} 声明为 {format}，但它既不是合法 JSON，"
+                    f"第 {lineno} 行也不是合法 JSON: {exc}"
+                ) from exc
+        if not rows:
+            # 全空白 = 零条记录，和 `_read_file` 的 jsonl 分支口径一致；
+            # 报成「不是合法 JSON」会把一份空数据集说成一份坏数据集。
+            return []
+        return rows
     
     def _write_file(self, path: Path, data: Any, format: str) -> None:
         """写入文件
@@ -518,9 +585,18 @@ class DatasetConverter:
         行尾再翻译一次，Windows 上落成 `\\r\\r\\n`，严格解析器会在每条记录之间
         读出一个空行。`fieldnames` 取全量键并集而非 `data[0].keys()`，见
         `csv_fieldnames`。
+
+        与 `_read_file` 对称：schema 格式（alpaca 等）自己不定容器，落盘布局由
+        **输出扩展名**决定，所以 `convert_file(a.json, b.jsonl, target="alpaca")`
+        写出来的真是一份 `.jsonl`，下一次能被 `_read_file` 原样读回。旧实现把
+        任何非 jsonl/csv 的目标一律 `json.dump` 成一个数组，写进 `.jsonl` 之后
+        自己那一侧就读不回来了。
         """
         path.parent.mkdir(parents=True, exist_ok=True)
-        
+        if format not in CONTAINER_FORMATS:
+            container = self._infer_format(path)
+            format = container if container in CONTAINER_FORMATS else "json"
+
         with open(path, 'w', encoding='utf-8', newline='') as f:
             if format == "jsonl":
                 for item in data:
@@ -528,6 +604,12 @@ class DatasetConverter:
             elif format == "csv":
                 if data:
                     writer = csv.DictWriter(f, fieldnames=csv_fieldnames(data))
+                    writer.writeheader()
+                    writer.writerows(data)
+            elif format == "tsv":
+                if data:
+                    writer = csv.DictWriter(f, fieldnames=csv_fieldnames(data),
+                                            delimiter="\t")
                     writer.writeheader()
                     writer.writerows(data)
             else:
@@ -561,8 +643,9 @@ def convert_file(input_path: str,
         input_path: 输入文件路径
         output_path: 输出文件路径
         target_format: 目标格式
-        source_format: 源格式（为 None 时从扩展名推断；alpaca/sharegpt/chatml
-            这类容器格式落盘也是 `.json`，扩展名推不出来，只能显式给）
+        source_format: 源格式（为 None 时从扩展名推断）。alpaca/sharegpt/chatml 这类
+            只是**行内 schema**，扩展名推不出来，只能显式给；给了之后文件本身是
+            `.json` 还是 `.jsonl` 由内容嗅探，不用再声明第三个参数。
 
     Returns:
         转换结果
@@ -576,10 +659,10 @@ def convert_file(input_path: str,
 def get_supported_formats() -> List[str]:
     """列出**转换图真的支持**的目标格式
 
-    不能按 `DataFormat` 成员列：`TSV` 只是 `_infer_format` 认识的扩展名，图里
-    没有 `json -> tsv` 这条边，`convert_dataset(items, "tsv")` 会抛
-    `UnsupportedFormatError`。以枚举为来源会让这个公开出口虚报能力（CLI 的
-    `convert --format` 一直刻意没放 tsv，正是同一事实的另一侧）。
+    由 `_converters` 反推，不按 `DataFormat` 成员列：枚举里可以有图里没有的边，
+    以枚举为来源就会虚报能力（照它调用只会拿到 `UnsupportedFormatError`）。
+    `tsv` 曾经是这种虚报——枚举有成员、`_infer_format` 认扩展名，但图里缺
+    `json -> tsv` 这条边；补上边之后它才真的进这份清单。
     """
     converters = DatasetConverter()._converters
     supported = {"json"} | {target for source, target in converters if source == "json"}

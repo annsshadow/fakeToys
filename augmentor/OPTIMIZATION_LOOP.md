@@ -30,6 +30,7 @@
 - [x] **L17** `perf(validation) + fix`: A12① —— 禁止模式预编译并把 `import re` 提到模块级，真实 6902 条 strict 整档校验 **28.99 → 19.49 ms（1.49×，9/9 轮）**、该段 **1.69–1.88×**；**顺带修掉一个新发现的缺陷**：`DatasetValidator(preset=...)` 直接把类级预设字典挂到实例上，任一实例改规则即污染全部预设
 - [x] **L18** `perf(indexer)`: A11（A7/L13 的同构缺陷）—— `DatasetIndexer` 的 4 份默认索引改成**按需、按份**构建，`DatasetView` 的切片/过滤/采样从「每次白建 19 MB 索引」变成零构建：真实 6902 条 `filter()` **132.7 → 0.44 ms**、冷启动 contains **79.9 → 7.1 ms**、构造视图（n=4000）内存 **峰值 11.7 MB → 驻留 1.2 KB**，新增 12 例
 - [x] **L19** `feat(indexer)`: A23 —— `search_exact` / `search_ngram` 不再被默认清单限死：清单外字段、任意 `n` 第一次被查询时按需建自己的索引。真实 6902 条 `search_ngram("output", …)` **0 → 8 命中**（朴素全表扫描同为 8），`search(method="ngram")` 的命中数从「少报一半」变成与 contains 逐条相同（租房 **419 → 823**）；**代价也实测了**：冷 ngram 查询 **55–65 → 225–240 ms**（要多建一份 `output_2`，单份 170.9 ms），另立 **A24**；新增 8 例、改写 3 例
+- [x] **L20** `feat(converter)`: B3② —— 读写两侧终于分清「文件容器」与「行内 schema」（新导出 `CONTAINER_FORMATS`）：补齐 `json ↔ tsv` 两条边（公开清单 9 → 10，与 `DataFormat` 同集合），声明了 `source_format="alpaca"` 却因落盘是 `.jsonl` 而 `json.load` 崩掉的读侧改成按内容嗅探，写侧容器改由输出扩展名决定（`--format alpaca` 写 `.jsonl` 现在真是一行一条、能原样读回）。真实 6902 条往返 **49.7 / 59.9 ms**、tsv **34.5 / 55.5 ms**；另删 `_json_to_csv` 的死代码；新增 20 例、删 2 例、改写 1 例，另立 **A25**
 
 ## Backlog A — 性能（含 file:line 与实测线索）
 
@@ -48,6 +49,8 @@
 | ~~A11~~ | ~~`augmentor/indexer.py:117-123,345,352,372-399`~~ | ~~每次 `DatasetView` 操作重建全部索引（filter 26 ms @ n=3000）~~ **已修（L18）**：这是 A7/L13 的同构缺陷——`DatasetView.__init__` 无条件 `DatasetIndexer(items)`，而构造即建齐 3 份倒排 + 1 份 n-gram（真实 6902 条 **70 ms / 峰值 19.2 MB**），可是 `search()` 的默认方法 contains 和 `filter/head/tail/sample/切片` **一份都不读**。改成「按份、按需」构建：`filter()` **132.7 → 0.44 ms**、链式三级 **195 → 0.9 ms**、冷启动 contains **79.9 → 7.1 ms（10.9×）**、exact **68.8 → 8.4 ms**、ngram **65.0 → 56.8 ms（只省 3 份倒排）**；构造视图（n=4000）内存 **峰值 11.7 MB → 驻留 1.2 KB**；旧版构造耗时随 n 线性（15.65/34.08/54.79 ms @ 2000/4000/6000），新版与 n 无关 | M |
 | ~~A23~~ | ~~`augmentor/indexer.py:127-141,163-178`~~ | ~~**L18 新发现（口径缺陷，不是性能）**：`search_exact` / `search_ngram` 只对默认清单（`instruction/output/input` + `instruction_2`）生效，清单外的字段**静默返回空列表**~~ **已修（L19）**：判据换成「要么欠着默认清单的账，要么手上真有数据可建」，字段与 `n` 都不再受限。**真实数据上的症状比预想的重**：`search(query, method="ngram")` 的默认字段是 `instruction`+`output`，而 `output_2` 从来没人建过，于是这条查询一直在**静默少报 output 侧的全部命中**——真实 6902 条「租房」 **419 → 823**（与 contains 逐条相同）、「如何」 **2019 → 2035**；`search_ngram("output","，晨")` **0 → 8**（朴素全表扫描 8）。代价同轮实测：冷 ngram 查询 **55–65 → 225–240 ms**（多出的一份 `output_2` 单份 170.9 ms），临时倒排一份只 4.3 ms。`search_enhanced.py` 里**没有同构缺陷**（`_build_indexes` 遍历 `item.items()` 不收清单，`_search_ngram` 走扫表） | S |
 | A24 | `augmentor/indexer.py:213-242` | **L19 新记（成本，不是缺陷）**：一次性的 n-gram 查询要付**整份索引**的钱——真实 6902 条首查 `output_2` 170.9 ms、`instruction_2` 58.7 ms，而查询串本身只有 1～k 个 n-gram。对「只查一次」的调用方，直接扫全表算 bigram 交集比建索引便宜得多（contains 扫全表实测 7.3 ms 就是上界参照）。修法与 A21 同族：给 `search_ngram` 加「首查扫表、累计第 N 次才建索引」的策略，或者把 n-gram 倒排改成按需局部化。**本轮没动**（L19 的边界是把语义修对并如实记下代价，不顺手改性能口径） | M |
+| A25 | `augmentor/converter.py:270-342`（`_json_to_*` 六条写边） | **L20 新记（静默坏数据，与 B3② 同族但方向不同）**：源格式**未声明**时按扩展名当 json 读，而 `json → chatml/sharegpt/…` 只认 `instruction` / `output` / `history` 三个键。一份实际是 sharegpt 的 `.json` 于是被逐条读成「没有问答」，产物是**空问答的合法文件**、退出码 0、HTTP 200。L20 修的是「声明对了却绊在容器上」，这一条是「压根没声明」，嗅探帮不上（文件确实是一份合法 JSON 数组）。可行判据：写边入口发现记录里带着**别的 schema 的容器键**（`conversations` / `messages`）却又取不到 `instruction`/`output` 时，抛 `DataFormatError` 提示「疑似 X 格式，请声明 source_format」——两个条件同时成立才报，误报面很小。**本轮没动**（L20 已含三处结构改动，不再叠第四处；且既有 `TestReverseEdgesOnFiles::test_sharegpt_file_without_declaration_keeps_the_old_behaviour` 与 CLI 的
+`test_omitting_the_flag_keeps_extension_inference` 明确钉住了老语义，改它属于口径决策） | S |
 | ~~A12~~ | ~~`augmentor/validation.py:217-222`~~、`sampler.py:296-299` | **L13 实测拆成两半**：①`_validate_item` 里 `import re` + 每条每模式一次 `re.search`；②`sampler.generate_report()` 的 `items.index(seed)` **实测不是缺陷**（真实数据只推荐 4 个种子、反查 0.0 ms，单趟 id 映射要 1.1 ms，改了反而更慢；且它还会改变「值相等但不同对象」时的下标语义，真实数据里正好有 367 条重复 dict）—— 这一半作废。**①已修（L17）**：真实 6902 条 strict **28.99 → 19.49 ms（1.49×）**，禁止模式段占整档 53–55%、该段自身 **1.69–1.88×**（L13 预估的「~5 ms / 1.2×」偏保守）；`re.search` 逐条调用 **27608 → 0**、`re.compile` 与条数无关恒为 2 | S |
 | ~~A13~~ | ~~`api/routes/dataset_tools.py:311,360,386,387,416,436,566,598` + `system_ops.py:320,348,514`~~ | ~~**A4 的同构族**：`read_items()`（同步版）在 11 个 `async def` 路由体里直接调用，同样占着事件循环；`dataset_tools.py:566` 还是「多个文件在循环里串行读」；`/api/dataset/stats` 连分析都留在循环上（43.4 ms）~~ 已修（L7） | M |
 | ~~A14~~ | ~~`augmentor/impact.py:66`~~ | ~~`duplicate_rate` 里 `texts.count(t)` 写在推导式中 → O(n²)~~ 已修（L6） | S |
@@ -67,7 +70,7 @@
 | B1 | 把 `/api/system/*`(13) 与 `/api/dataset/*`(12) 接入 UI | `web/src/services/api.ts` 对二者零引用；`System.tsx:3` 只用了 status | M |
 | B2 | Excel/CSV 摄取端到端（上传 + `convert --input-format xlsx`） | SDK `csv_excel_import.py:61,152` 可达性为零；`data.py:236-243` 只认 JSON | M |
 | B3① | ~~反向转换边 `alpaca/sharegpt/chatml/vicuna/belle → json`~~ | ~~`converter.py:60-66` 只读 json/jsonl/csv，导出侧不可回环~~ 已做（L16，6 条反向边 + CLI/API 接线；原记「导出侧 13 种」不准，实测 `json →` 只有 8 条边）。**剩余另立 B3②** | M |
-| B3② | `tsv ↔ json` 两条边都缺；`convert_file(source_format="alpaca")` 读 `.jsonl` 容器文件会走 `json.load` 而失败；`_json_to_csv` 里 `all_keys` 算了不用 | 转换图实测：`json →` 8 条、`→ json` 8 条，`tsv` 两侧皆无 | S |
+| ~~B3②~~ | ~~`tsv ↔ json` 两条边都缺；`convert_file(source_format="alpaca")` 读 `.jsonl` 容器文件会走 `json.load` 而失败；`_json_to_csv` 里 `all_keys` 算了不用~~ | ~~转换图实测：`json →` 8 条、`→ json` 8 条，`tsv` 两侧皆无~~ **已做（L20）**：三条一起，且查明它们是同一个根因的三个症状——`DataFormat` 十个成员里只有 `json/jsonl/csv/tsv` 是**文件容器**，其余六个是**行内 schema**，读写两侧都曾把两者混为一谈。现在图 `json →` 9 条、`→ json` 9 条，`CONTAINER_FORMATS` 写明边界，读侧嗅探、写侧看扩展名；`all_keys` 死代码已删 | S |
 | ~~B4~~ | ~~`QualityGate` / `DatasetHealthScore` 暴露为 CLI 子命令 + 端点~~ | ~~两者在 `augmentor/__init__.py:38+` 导出但无人可达~~ 已做（L11：库函数 `gate_dataset_health()` + `/api/quality/health-gate` + `health-gate` 子命令，并已加入包级导出） | S |
 | B5 | 死配置项：读取或显式废弃（`config.py:75-167` 的 sampler/expander/tracker/visualization/multilingual/evaluation/vector/active_learning 等） | 无代码路径读取 | M |
 | ~~B6~~ | ~~/api/dataset/evaluate（BLEU/ROUGE）+ /api/dataset/impact（前后对比）~~ | ~~`evaluation.py:74,155,211`、`impact.py:49,96` 纯函数已就绪~~ 已做（L8） | S |
@@ -538,6 +541,41 @@
   `['ngram:instruction_2']` 少一份），不是崩溃。对照 6 组（TestLazyIndexConstruction
   余下 10 例 + branches 18 + enh 1 + search_enhanced 52 + CLI 合并命令 72 +
   round90 4 / round100 2）全程绿，恢复后全绿。
+- **L20** `feat(converter)` B3② —— 把 L16 刻意留下的「剩余」清掉，顺手挖出这一族
+  真正的根因：**`DataFormat` 十个成员里有四个是「文件容器」，六个只是「行内 schema」，
+  而读写两侧都把它们当同一件事**（`converter.py:35-45` 现在写明这一点，并导出
+  `CONTAINER_FORMATS`）。三处症状：
+  ①**tsv 两侧皆无边**：`get_supported_formats()` 由 `_converters` 反推所以不虚报，
+  但 CLI 的 `--format`/`--input-format` 清单里也就没有 tsv，而 `_infer_format` 认
+  `.tsv` 扩展名、`export_enhanced._export_tsv` 早就在用制表符写盘 —— 同一件事三个模块
+  三种说法。补 `json ↔ tsv` 两条边后清单自动长到 10 个，与枚举同集合。
+  ②**读侧把 schema 当容器**：`_read_file` 只特判 jsonl/csv，其余一律 `json.load`
+  整份文件，于是同一批 alpaca 记录写成 `.jsonl` 就抛 `JSONDecodeError: Extra data:
+  line 2 column 1`（真实 6902 条实测复现）——调用方已经**正确声明了源格式**，却绊在
+  从没声明过的容器上。改成按内容嗅探：整份 JSON 数组 → 单条对象 → 逐行 → 全空白=零条，
+  两条路都不通才抛带**文件名与行号**的 `DataFormatError`（不再是解析器黑话）。
+  ③**写侧不对称**：`target="alpaca"` 配 `.jsonl` 输出一律 `json.dump` 成一整个数组，
+  产物连自己那一侧都读不回来。改成容器由**输出扩展名**决定，schema 只管行内形状。
+  **真实语料（6902 条）实测**：`json → alpaca .jsonl` 49.7 ms / 读回 59.9 ms，
+  往返 6902 行对 6902 条；`json → tsv` 34.5 ms 落 3.04 MB、`tsv → json` 55.5 ms
+  全量回来。顺带删掉 `_json_to_csv` 里那份算了又用的 `all_keys` 死循环。
+  **用例**：新增 **20 例**（`TestSchemaIsNotContainer` 15 + `TestConverterExtended2`
+  的 tsv 镜像 2 + CLI 清单防漂移 2 + CLI tsv 双向 1）、删除 2 例（`test_unsupported_tsv_is_not_claimed_by_either_side`
+  与 `test_tsv_is_not_accepted_as_input_format` 钉的正是被修掉的行为）、改写 1 例
+  （API 的「未知源格式」例子从 `tsv` 换成 `parquet`，否则下一轮它就不再是未知格式）；
+  `test_every_supported_target_really_converts` 是参数化用例，清单长到 10 个后自动多一条。
+  **一条值得记的教训**：`test_alpaca_jsonl_round_trips` 第一次写完在缺陷态是**绿的**——
+  老实现把读写两侧都错成同一个形状（`.jsonl` 里落一整个数组，再整份 load 回来），
+  往返自然对得上。补了一句「中间产物必须真是 6902 行」才红。往返型用例单独存在时
+  测不出对称的错误。
+  **红→绿（逐条）**：`converter.py` + `parser.py` 整份退回 HEAD → 新用例 **18 红**、
+  白名单 2 绿（`test_schema_target_to_json_keeps_writing_an_array` 钉住保留下来的老
+  行为、`test_format_outside_the_graph_is_rejected_by_cli` 是防漂移，两侧本就该同绿），
+  对照 325 例（test_converter 全量 + CLI 数据集工具 + API 数据集/系统工具）全程绿，
+  恢复后全量全绿。`converter.py` 语句覆盖 100%（唯一残留分支 `317->324` 是 L20 之前就有
+  的 `_json_to_chatml` 空 system 分支）。
+  **L21 待办另立 A25**：源格式**未声明**时的静默坏数据（`.json` 里的 sharegpt 记录按
+  json 读，`json → chatml` 只认 `instruction`/`output`，产物是空问答且退出码 0）。
 - 全量：L4 后 **3679 passed / 3 skipped**（89.2 s），L5 后 **3703 passed / 3 skipped**
   （90.2 s），L6 后 **3705 passed / 3 skipped**（91.1 s），L7 后 **3726 passed / 3 skipped**
   （95.1 s），L8 后 **3747 passed / 3 skipped**（98.0 s），L9 后 **3747 passed / 3 skipped**
@@ -551,7 +589,8 @@
   L16 后 **3858 passed / 3 skipped**（56.4 s，总计 98.52%），
   L17 后 **3866 passed / 3 skipped**（54.0 s，总计 98.52%），
   L18 后 **3878 passed / 3 skipped**（54.8 s，总计 98.52%），
-  L19 后 **3886 passed / 3 skipped**（57.4 s，总计 98.53%）。
+  L19 后 **3886 passed / 3 skipped**（57.4 s，总计 98.53%），
+  L20 后 **3905 passed / 3 skipped**（55.5 s，总计 98.50%）。
   **注意**：这些墙钟秒数**彼此不可比**——本工作树与并行 agent 共用一台机器，
   它跑全量时我会慢 40%+（L9 时 92 s、L10 时无竞争 55.7 s）。跨轮只比
   **同一进程内 back-to-back 的对照组**，绝对秒数只作当次快照。
