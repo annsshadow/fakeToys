@@ -169,6 +169,22 @@
           <button class="btn-primary" @click="loadProgramDeepReads">深度读矩阵</button>
           <button class="btn-create" @click="saveConfig">+ 新建/更新</button>
         </div>
+        <div class="toolbar pc-write-actions">
+          <button class="btn-sm" @click="pcStyleErase('appTop')">清顶部图</button>
+          <button class="btn-sm" @click="pcStyleErase('launchLogo')">清启动Logo</button>
+          <button class="btn-sm" @click="pcStyleErase('loginAvatar')">清登录头像</button>
+          <button class="btn-sm" @click="pcStyleErase('menuBlur')">清菜单模糊图</button>
+          <button class="btn-sm" @click="pcStyleErase('menuFocus')">清菜单聚焦图</button>
+          <button class="btn-sm" @click="pcStyleErase('processDefault')">清流程默认图</button>
+          <button class="btn-sm" @click="pcStyleErase('setupAbout')">清关于Logo</button>
+          <button class="btn-sm" @click="pcCollectSave">存采集</button>
+          <button class="btn-sm" @click="pcCollectDelete">删采集</button>
+          <button class="btn-sm" @click="pcInvokeSaveById">存接口(按ID)</button>
+          <button class="btn-sm" @click="pcInvokeDeleteById">删接口(按ID)</button>
+          <button class="btn-sm" @click="pcConfigSave('centerserver')">存中心服务配置</button>
+          <button class="btn-sm" @click="pcConfigSave('person')">存人员配置</button>
+          <button class="btn-sm" @click="pcTokenThreshold">设令牌阈值</button>
+        </div>
         <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
         <div v-if="progDeepText" class="app-meta">{{ progDeepText }}</div>
         <div v-if="appStyleText" class="app-meta">{{ appStyleText }}</div>
@@ -1075,6 +1091,83 @@ async function loadProgramDeepReads() {
     progDeepText.value = `程序中心深度读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
     toast.error('加载程序中心深度读失败: ' + (e?.message ?? ''))
+  }
+}
+// rev325：程序中心 应用风格图清除/采集保存删除/接口保存删除/中心-人员配置/令牌阈值 真实写端点（用户触发，非自动；shape 已核 handler 源码）
+async function pcStyleErase(kind: string) {
+  if (!(await confirmMsg(`确定清除该风格图片（${kind}）？`))) return
+  try {
+    if (kind === 'appTop') await api.delete('/api/program_center/appstyle/image/application/top/erase')
+    else if (kind === 'launchLogo') await api.delete('/api/program_center/appstyle/image/launch/logo/erase')
+    else if (kind === 'loginAvatar') await api.delete('/api/program_center/appstyle/image/login/avatar/erase')
+    else if (kind === 'menuBlur') await api.delete('/api/program_center/appstyle/image/menu/logo/blur/erase')
+    else if (kind === 'menuFocus') await api.delete('/api/program_center/appstyle/image/menu/logo/focus/erase')
+    else if (kind === 'processDefault') await api.delete('/api/program_center/appstyle/image/process/default/erase')
+    else await api.delete('/api/program_center/appstyle/image/setup/about/logo/erase')
+    toast.success('已清除风格图片')
+  } catch (e: any) {
+    toast.error('清除失败: ' + (e?.message ?? ''))
+  }
+}
+async function pcCollectSave() {
+  const id = prompt('采集配置 ID:', '') || ''
+  const name = prompt('名称:', '') || ''
+  try {
+    await api.put(`/api/program_center/collect/save/${encodeURIComponent(id)}`, { name })
+    toast.success('采集配置已保存')
+  } catch (e: any) {
+    toast.error('保存失败: ' + (e?.message ?? ''))
+  }
+}
+async function pcCollectDelete() {
+  const id = prompt('要删除的采集配置 ID:', '') || ''
+  if (!(await confirmMsg('确定删除该采集配置？'))) return
+  try {
+    await api.delete(`/api/program_center/collect/delete/${encodeURIComponent(id)}`)
+    toast.success('采集配置已删除')
+  } catch (e: any) {
+    toast.error('删除失败: ' + (e?.message ?? ''))
+  }
+}
+async function pcInvokeSaveById() {
+  const id = prompt('接口配置 ID:', '') || ''
+  const name = prompt('名称:', '') || ''
+  try {
+    await api.put(`/api/program_center/invoke/save/${encodeURIComponent(id)}`, { name })
+    toast.success('接口配置已保存')
+  } catch (e: any) {
+    toast.error('保存失败: ' + (e?.message ?? ''))
+  }
+}
+async function pcInvokeDeleteById() {
+  const id = prompt('要删除的接口配置 ID:', '') || ''
+  if (!(await confirmMsg('确定删除该接口配置？'))) return
+  try {
+    await api.delete(`/api/program_center/invoke/delete/${encodeURIComponent(id)}`)
+    toast.success('接口配置已删除')
+  } catch (e: any) {
+    toast.error('删除失败: ' + (e?.message ?? ''))
+  }
+}
+async function pcConfigSave(kind: string) {
+  const val = prompt(`${kind} 配置 JSON（可空）:`, '') || ''
+  let body: any = {}
+  try { if (val) body = JSON.parse(val) } catch { body = { value: val } }
+  try {
+    if (kind === 'centerserver') await api.put('/api/program_center/config/centerserver', body)
+    else await api.put('/api/program_center/config/person', body)
+    toast.success('配置已保存')
+  } catch (e: any) {
+    toast.error('保存失败: ' + (e?.message ?? ''))
+  }
+}
+async function pcTokenThreshold() {
+  const t = prompt('令牌阈值（数字）:', '1000') || '0'
+  try {
+    await api.post('/api/program_center/tokenthreshold/update', { threshold: Number(t) })
+    toast.success('令牌阈值已更新')
+  } catch (e: any) {
+    toast.error('更新失败: ' + (e?.message ?? ''))
   }
 }
 // rev292：程序中心 市场安装日志(按flag/字面flag)/市场分页(按分类) 真实读端点(X_PROGRAM_SCHEDULE_LOG)；均只读 arity 已核
