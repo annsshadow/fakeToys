@@ -580,7 +580,90 @@ class Deduplicator:
                 visited[j] = True
 
         return group
-    
+
+    def _row_pairs_above(self, block: np.ndarray, offset: int, i: int,
+                         floor: float):
+        """取一行里「与 i 达标」的 `(全局 j, 相似度)`，只看 `j > i` 的方向
+
+        返回的是**新建数组**（fancy indexing 会复制），所以调用方留着它们
+        也不会把整个块钉在内存里——同 :meth:`_greedy_group_from_row` 的顾虑：
+        块切片是**视图**，视图活着块就回收不掉，生成器算下一块时新旧两块并存。
+
+        Args:
+            block: 当前相似度块，形状 (block_rows, n - start)，列下标 c 对应全局 c + start
+            offset: i 在 block 中的行下标
+            i: 全局行索引
+            floor: 收录门槛（相似度下界）
+
+        Returns:
+            (j 数组, 相似度数组)；本行无达标项时为 (None, None)
+        """
+        row = block[offset, offset + 1:]
+        hits = np.flatnonzero(row >= floor)
+        if hits.size == 0:
+            return None, None
+        return hits + i + 1, row[hits]
+
+    def _find_similar_pairs_chunked(self, texts: List[str], top_k: int,
+                                    chunk_size: int = 1000) -> List[Tuple[int, int, float]]:
+        """在**全部**文档的两两相似度里取前 top_k（峰值不随达标对数增长）
+
+        相似度块由 :meth:`_similarity_blocks` 供给，与归组那条路共用同一个
+        生产者、同一份代价选路（稠密 BLAS 或倒排累加）。这里从不构造 n×n，
+        也不构造 n×vocab 的编码矩阵（判倒排赢时）；候选对按行消费，每行结束
+        就把保留集裁回 top_k，所以它的大小至多 `top_k + 单行达标数`（≤ top_k+n），
+        **不随总达标对数增长**——「整档两两都达标」的全重复语料在「先收完再排」
+        的写法下要养 O(n²) 个候选，在这里只养这么多。
+
+        Args:
+            texts: 文本列表（长度 ≥ 2）
+            top_k: 返回的最相似对数量
+            chunk_size: 期望的行块大小（会被 `_MAX_BLOCK_CELLS` 进一步压缩）
+
+        Returns:
+            `[(i, j, similarity), ...]`，相似度降序；同分时按 `(i, j)` 升序
+        """
+        floor = self.threshold * 0.8
+
+        kept_i = np.empty(0, dtype=np.int64)
+        kept_j = np.empty(0, dtype=np.int64)
+        kept_s = np.empty(0, dtype=np.float32)
+
+        for start, end, block in self._similarity_blocks(texts, chunk_size):
+            for offset in range(end - start):
+                i = start + offset
+                js, sims = self._row_pairs_above(block, offset, i, floor)
+                if js is None:
+                    continue
+                kept_i = np.concatenate((kept_i, np.full(js.size, i, dtype=np.int64)))
+                kept_j = np.concatenate((kept_j, js))
+                kept_s = np.concatenate((kept_s, sims))
+                if kept_s.size > top_k:
+                    order = self._pair_rank(kept_i, kept_j, kept_s)[:top_k]
+                    kept_i, kept_j, kept_s = kept_i[order], kept_j[order], kept_s[order]
+            # 显式松开本块：上面三个 kept_* 都是新建数组，不是视图，所以这里
+            # 一 del 整个块就能回收。
+            del block
+
+        if kept_s.size == 0:
+            return []
+        order = self._pair_rank(kept_i, kept_j, kept_s)
+        return [(int(i), int(j), float(s))
+                for i, j, s in zip(kept_i[order], kept_j[order], kept_s[order])]
+
+    @staticmethod
+    def _pair_rank(pair_i: np.ndarray, pair_j: np.ndarray,
+                   pair_s: np.ndarray) -> np.ndarray:
+        """候选对的名次下标：相似度降序，同分按 `(i, j)` 升序
+
+        同分档的次序不是可有可无的细节：旧实现把候选按 `(i, j)` 生成后用
+        **稳定** `sort(key=相似度)`，于是并列时就是 `(i, j)` 升序。倒排/稠密两条
+        生产者的 float32 末位差异会在「数学上恰好相等」的配对上造成并列
+        （见 A36），名次规则必须与生产者无关，否则同一份数据换个内部实现
+        就会换一批 top_k。
+        """
+        return np.lexsort((pair_j, pair_i, -pair_s))
+
     def _find_duplicates_faiss(self, texts: List[str], embeddings: np.ndarray) -> List[List[int]]:
         """使用 FAISS 加速查找重复
         
@@ -727,43 +810,25 @@ class Deduplicator:
                           items: List[Dict],
                           text_key: str = "instruction",
                           top_k: int = 10) -> List[Tuple[int, int, float]]:
-        """查找最相似的文本对
-        
+        """查找最相似的文本对（在**全部**条目之间比较）
+
+        收录门槛是 `threshold × 0.8`——刻意比去重阈值松一档，让调用方看得见
+        「接近但没到重复」的配对；这个 0.8 是既有口径，改动会让 top_k 内容
+        整体漂移（见 A39）。名次规则：相似度降序，**同分时按 `(i, j)` 升序**。
+
         Args:
             items: 数据列表
             text_key: 用于比较的文本字段名
             top_k: 返回前 k 个最相似对
-        
+
         Returns:
             相似对列表 [(idx1, idx2, similarity), ...]
         """
         self._load_model()
-        
+
         texts = [item.get(text_key, "") for item in items]
-        n = len(texts)
-        
-        if n < 2:
+
+        if len(texts) < 2:
             return []
-        
-        # 批量编码（需对全部文本编码：fallback 的词表由全体文本决定，
-        # 只编码前 200 条会改变向量本身，进而改变相似对结果）
-        embeddings = np.asarray(self._batch_encode(texts), dtype=np.float32)
 
-        # 只需前 limit 行的两两相似度，因此只算这一个 (limit × limit) 小块，
-        # 不再构造完整的 n×n 矩阵。
-        limit = min(n, 200)
-        head = self._normalize(embeddings[:limit])
-        similarity_block = np.dot(head, head.T)
-
-        # 提取相似对
-        pairs = []
-        for i in range(limit):
-            for j in range(i + 1, limit):
-                sim = similarity_block[i, j]
-                if sim >= self.threshold * 0.8:
-                    pairs.append((i, j, float(sim)))
-        
-        # 按相似度排序
-        pairs.sort(key=lambda x: x[2], reverse=True)
-        
-        return pairs[:top_k]
+        return self._find_similar_pairs_chunked(texts, top_k)

@@ -287,8 +287,15 @@ total_score = 0.3 × 语义相似度 + 0.4 × 回答相关性 + 0.3 × 多样性
 `Deduplicator` 对 N 条数据计算 N×N 相似度矩阵，N 较大时内存会爆炸。
 实现按 `chunk_size=1000` 分块计算，只保留超过阈值的相似对。
 
-`find_similar_pairs()` 早期调用了不存在的 `_compute_similarity_matrix`，
-运行期必然 `AttributeError`；已修正为调用实际存在的 `_compute_similarity_matrix_chunked`。
+`find_similar_pairs()` 与 `deduplicate()` 现在**共用同一个相似度块生产者** `_similarity_blocks`：
+逐块取上三角、边并入边按「相似度降序、同分按 `(i, j)` 升序」剪到 `top_k`，所以保留
+集大小至多 `top_k + 单行达标数`，**不随总达标对数增长**。收录门槛是 `threshold × 0.8`
+（刻意比去重阈值松一档，让调用方看得见「接近但没到重复」的配对）。
+
+**早期版本只比较前 200 条**：真实 6902 条语料上它报出的最大下标是 `instruction` 158 /
+`output` 49，第 250 条之后的重复永远不会被报出，且不报错、不提示截断 —— 该缺陷已在
+优化轮 L31 修掉（`find_similar_pairs()` 早期还曾调用不存在的 `_compute_similarity_matrix`，
+运行期必然 `AttributeError`，那也是同一方法上的历史缺陷）。
 
 ### 3.10 评估指标的数值稳定性
 
