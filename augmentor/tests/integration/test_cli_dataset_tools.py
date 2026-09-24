@@ -105,6 +105,51 @@ class TestSampleCommand:
         assert code is None
         assert len(json.loads(out.read_text(encoding="utf-8"))) == 3
 
+    def test_sample_zero_size_writes_an_empty_file(self, dataset, tmp_path):
+        """`--size 0` 交付空数据集
+
+        缺陷态：`if config.size:` 把 0 当成「没传 --size」，命令回「output_count: 5」
+        并把全部数据写进 --output —— 用户点名要的产物是空的，拿到的却是整份语料。
+        """
+        out = tmp_path / "sampled_zero.json"
+        _, parsed, code = run_cli(
+            [
+                "cli", "sample", "--input", str(dataset),
+                "--output", str(out), "--size", "0",
+            ]
+        )
+        assert code is None
+        assert parsed["output_count"] == 0
+        assert json.loads(out.read_text(encoding="utf-8")) == []
+
+    def test_sample_negative_size_is_a_param_error_and_writes_nothing(self, dataset, tmp_path):
+        """`--size -1` 报「指名参数」的错并退出 1，且不得留下产物文件
+
+        缺陷态分两支：random 走 `random.sample(items, -1)` 抛裸
+        「Sample larger than population or is negative」，报错文案里没有 `size`，
+        调用方看不出是自己填的参数坏了；systematic 干脆 exit 0 交出 4 条。
+        """
+        import io
+        import sys
+        from contextlib import redirect_stderr
+
+        out = tmp_path / "sampled_neg.json"
+        sys.argv = [
+            "cli", "sample", "--input", str(dataset),
+            "--output", str(out), "--size", "-1",
+        ]
+        err = io.StringIO()
+        with redirect_stderr(err):
+            try:
+                main()
+            except SystemExit as exc:
+                code = exc.code
+            else:
+                code = None
+        assert code == 1
+        assert "size" in err.getvalue()
+        assert not out.exists()
+
 
 class TestSplitCommand:
     def test_split_three_way(self, dataset, tmp_path):

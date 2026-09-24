@@ -572,19 +572,27 @@ RequestTraceMiddleware → RateLimitMiddleware → RequestLoggingMiddleware → 
 | 配置缺失 | 使用 dataclass 默认值；环境变量缺失替换为空字符串 |
 | 配置文件损坏 | 抛出异常，不吞掉 |
 | API 层 | 转换为 `HTTPException`，`404` / `400` / `500` 语义明确 |
-| 计数 / 分页旋钮越界 | 在 SDK 入参处一次判掉（`validation.require_count`），抛 `DataValidationError`；CLI 变退出码 1，API 变 400 |
+| 计数 / 分页 / 窗口 / 保留数旋钮越界 | 在 SDK 入参处一次判掉（`validation.require_count`），抛 `DataValidationError`；CLI 变退出码 1，API 变 400 |
 | 断点文件损坏 | 记录 ERROR 并返回 `None`，退化为从头开始 |
 
-「取前 N 条」这一类旋钮（`limit` / `offset` / `top_k` / `preview_size` / `batch_size`）
-在实现里都落到下标切片，而切片对越界值不报错、只换语义：`[:top_k]` 在 `top_k` 为负时
-读成「丢掉末尾几个」，`[-limit:]` 在 `limit` 为 0 时读成「全要」。所以判据集中在
+「取前 N 条」这一类旋钮（`limit` / `offset` / `top_k` / `preview_size` / `batch_size`
+/ `size` / `n` / `diversity_sample_size` / `max_backups`）在实现里都落到下标切片或
+`range()` 步长，而切片对越界值不报错、只换语义：`[:top_k]` 在 `top_k` 为负时读成
+「丢掉末尾几个」，`[-limit:]` 在 `limit` 为 0 时读成「全要」。所以判据集中在
 `augmentor/validation.py:require_count` 一处，各调用点不再各自校验（API 侧也因此不需要
-`ge=` 约束，见 `api/routes/dataset_tools.py` 的 `SearchRequest`）。两条边界值得记住：
+`ge=` 约束，见 `api/routes/dataset_tools.py` 的 `SearchRequest` 与 `SampleRequest`）。
+四条边界值得记住：
 **0 是合法值**（「一条都不要」，与「没传参数」`None` 必须区分开，因此回落一律写
 `x if x is None else default`），**判参先于数据短路**（空输入配坏参数仍要报参数错，
-否则坏参数会被空结果掩护掉）。唯一的例外是 `ActiveLearningLoop`：它的每一轮都必须选出
-样本，所以下界取 1 而不是 0——构造器与逐次覆盖参数用同一个下界，逐次覆盖不再是绕过
-构造器校验的侧门。
+否则坏参数会被空结果掩护掉），**判参先于副作用**（`backup.clean_old_backups` 的守卫排在
+`DatasetBackup(backup_dir)` 之前，因为构造本身会 mkdir 并写一份 `index.json`），
+**0 在不可逆语义下不放行**（`max_backups=0` 与手滑想打的 10 无从分辨，而后果是删光全部
+备份，所以那类旋钮的下界是 1）。取 `minimum=1` 的站点共四处，各自的理由都是「窗口没有
+0 条这个合法读法」：`ActiveLearningLoop.batch_size`（每轮必须选出样本）、
+`cleaner.clean_batch_optimized.batch_size`（`range()` 的步长）、
+`quality.QualityScorer.diversity_sample_size`（空参照会被判成「完全多样」）、
+`backup.clean_old_backups.max_backups`。其余站点下界是 0。
+
 
 ## 7. 测试架构
 

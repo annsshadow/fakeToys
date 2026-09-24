@@ -1083,6 +1083,61 @@ class TestDatasetSample:
         assert response.status_code == 400, response.text
         assert "不支持的采样方法" in response.json()["detail"]
 
+    def test_size_zero_is_a_request_for_no_rows(self, tools_env):
+        """`size=0` 是「一条都不要」，不是「没传 size」
+
+        缺陷态：库层 `if config.size:` 把 0 读成缺省，端点回 200 且
+        `output_count` 等于全量（5 条），并把整份数据写进了目标文件。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/sample",
+            json={
+                "input_file": str(tools_env.data),
+                "output_file": str(tools_env.out),
+                "size": 0,
+            },
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["output_count"] == 0
+        assert _read_json(tools_env.out) == []
+
+    def test_negative_size_is_a_param_error_naming_the_knob(self, tools_env):
+        """负数 size 必须是「指名参数」的 400，且不得落盘
+
+        缺陷态下 systematic 分支既不是 400 也不是 500，而是**答对数量都错**的
+        200：`min(-1, 5) = -1` → `items[::1][:-1]` 交出 4 条。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/sample",
+            json={
+                "input_file": str(tools_env.data),
+                "output_file": str(tools_env.out),
+                "size": -1,
+                "method": "systematic",
+            },
+        )
+        assert response.status_code == 400, response.text
+        assert "size" in response.json()["detail"]
+        assert not tools_env.out.exists()
+
+    def test_tiny_ratio_reaches_the_systematic_branch(self, tools_env):
+        """`ratio` 小到归零时 systematic 不得是 500
+
+        缺陷态：`len(items) // 0` → 裸 `ZeroDivisionError`，它不是 `ValueError`，
+        于是经 `to_http_error` 落进 500 分支 —— 客户端参数错被报成服务端故障。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/sample",
+            json={
+                "input_file": str(tools_env.data),
+                "output_file": str(tools_env.out),
+                "ratio": 0.0001,
+                "method": "systematic",
+            },
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["output_count"] == 0
+
 
 class TestDatasetSplit:
     """/api/dataset/split"""

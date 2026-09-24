@@ -543,11 +543,17 @@ def clean_batch_optimized(items: List[Dict],
         items: 数据列表
         fields: 要清洗的字段列表
         rules: 要应用的规则列表
-        batch_size: 批处理大小
+        batch_size: 批处理大小，不小于 1 的整数（判据见 `require_count`）
     
     Returns:
         (清洗后的数据, 清洗结果汇总)
     """
+    # `batch_size` 是 `range()` 的步长，越界值在这行不报错、只改产物：0 抛裸
+    # `ValueError: range() arg 3 must not be zero`（经 API 就是 500 而不是 400），
+    # -1 则**静默交出空数据集**而清洗报告仍写 original_count=10（实测 10 条进 0 条出）。
+    # 步长没有「0 条」这种合法读法，故 minimum=1。
+    require_count("batch_size", batch_size, minimum=1)
+
     cleaner = DatasetCleaner()
     cleaned_items = []
     total_modified = 0
