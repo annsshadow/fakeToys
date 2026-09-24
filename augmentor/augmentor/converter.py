@@ -195,6 +195,8 @@ class DatasetConverter:
         # 查找转换器
         key = (source_format, target_format)
         if key in self._converters:
+            if source_format == "json" and target_format not in CONTAINER_FORMATS:
+                self._reject_undeclared_conversations(data, target_format)
             return self._converters[key](data, **kwargs)
         
         # 尝试通过JSON中间格式转换
@@ -264,8 +266,44 @@ class DatasetConverter:
         if isinstance(data, list):
             return data
         return []
-    
+
     # ==================== 训练格式转换 ====================
+
+    #: 对话容器键 → 它可能对应的源格式，用于报错时给出可执行的建议
+    _CONTAINER_HINT = {"conversations": "sharegpt / vicuna",
+                       "messages": "chatml"}
+
+    def _reject_undeclared_conversations(self, data: Any, target_format: str) -> None:
+        """拦住「源格式没声明、其实是对话类」的误标，而不是产出全空问答
+
+        `json → alpaca/sharegpt/chatml/…` 这六条写边只认 `instruction` / `output`
+        / `history` / `system` 四个键。一份实际是 sharegpt 的文件如果没声明源格式，
+        会被按通用 json 读成「每条都没有问答」，产物是**结构完全合法的空白数据集**，
+        退出码 0、HTTP 200 —— 比崩溃更坏，因为下游会直接拿去训练。
+
+        判据刻意取窄：记录里既有**可用的** `instruction`/`output`（任一非空）就不管，
+        只有「取不到问答 + 躺着对话数组」才报。所以 csv/tsv 里恰好有一列叫
+        `messages` 的字符串字段不会误伤（`DictReader` 交出来的是 str，不是 list）。
+        真·认不出字段的记录（既无问答也无对话数组）不在这里管，见 Backlog A26。
+
+        Raises:
+            DataFormatError: 第一条命中的记录，带条目下标与建议的 `source_format`
+        """
+        if not isinstance(data, list):
+            return
+        for index, record in enumerate(data):
+            if not isinstance(record, dict):
+                continue
+            if record.get("instruction") or record.get("output"):
+                continue
+            for key, hint in self._CONTAINER_HINT.items():
+                if isinstance(record.get(key), list):
+                    raise DataFormatError(
+                        f"第 {index + 1} 条记录取不到 `instruction`/`output`，"
+                        f"问答在 `{key}` 数组里：按通用 json 转 {target_format} 会得到"
+                        f"全空数据集。若源数据是 {hint}，请声明 source_format"
+                        f"（CLI 为 --input-format）"
+                    )
     
     def _json_to_alpaca(self, data: List[Dict], **kwargs) -> List[Dict]:
         """转换为 Alpaca 格式"""
