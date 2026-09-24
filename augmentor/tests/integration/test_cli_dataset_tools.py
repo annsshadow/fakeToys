@@ -28,6 +28,13 @@ SAMPLE_ITEMS = [
     {"instruction": "租期最短多久？", "input": "", "output": "一个月起租"},
 ]
 
+# 分层采样输入：4 类各 5 条，`instruction` 就是类别名（分组键 = 它的前 10 字）
+STRATIFIED_ITEMS = [
+    {"instruction": f"类别{cat}", "input": "", "output": f"{cat}答案{i}"}
+    for cat in ("甲", "乙", "丙", "丁")
+    for i in range(1, 6)
+]
+
 
 @pytest.fixture
 def dataset(tmp_path, monkeypatch):
@@ -43,6 +50,23 @@ def dataset(tmp_path, monkeypatch):
     monkeypatch.chdir(AI_DIR)
     path = tmp_path / "dataset.json"
     path.write_text(json.dumps(SAMPLE_ITEMS, ensure_ascii=False), encoding="utf-8")
+    return path
+
+
+@pytest.fixture
+def stratified_dataset(tmp_path, monkeypatch):
+    """写入 4 类 × 5 条的分层采样数据集
+
+    Args:
+        tmp_path: pytest 临时目录
+        monkeypatch: pytest fixture
+
+    Returns:
+        数据集文件路径
+    """
+    monkeypatch.chdir(AI_DIR)
+    path = tmp_path / "stratified.json"
+    path.write_text(json.dumps(STRATIFIED_ITEMS, ensure_ascii=False), encoding="utf-8")
     return path
 
 
@@ -150,6 +174,29 @@ class TestSampleCommand:
         assert "size" in err.getvalue()
         assert not out.exists()
 
+    def test_stratified_sample_delivers_the_requested_size(self, stratified_dataset, tmp_path):
+        """分层采样要 7 条就给 7 条，且四类按 2/2/2/1 分到
+
+        缺陷态：逐类 `int(7 * 5/20) = 1` → 四类各 1 条，产物只有 4 条，
+        余下 3 条整份丢掉，命令退出码仍是 0。
+        """
+        out = tmp_path / "stratified_out.json"
+        _, parsed, code = run_cli(
+            [
+                "cli", "sample", "--input", str(stratified_dataset),
+                "--output", str(out), "--method", "stratified",
+                "--size", "7", "--seed", "7",
+            ]
+        )
+        assert code is None
+        assert parsed["output_count"] == 7
+        items = json.loads(out.read_text(encoding="utf-8"))
+        assert len(items) == 7
+        counts = {}
+        for item in items:
+            counts[item["instruction"]] = counts.get(item["instruction"], 0) + 1
+        assert sorted(counts.values()) == [1, 2, 2, 2]
+
 
 class TestSplitCommand:
     def test_split_three_way(self, dataset, tmp_path):
@@ -168,6 +215,31 @@ class TestSplitCommand:
         assert total == len(SAMPLE_ITEMS)
         for name, meta in splits.items():
             assert Path(meta["file"]).exists()
+
+    def test_small_val_slice_is_not_rounded_away(self, tmp_path, monkeypatch):
+        """7 条按 0.8/0.1/0.1 分割，val 名义 0.7 条不能被抹平成 0
+
+        缺陷态：`int(7 * 0.1) = 0` 且余数整份给了 test → (5, 0, 2)，
+        test 实占 28.6% 而标称 10%。
+        """
+        monkeypatch.chdir(AI_DIR)
+        src = tmp_path / "seven.json"
+        rows = [{"instruction": f"条目{i}", "input": "", "output": f"结果{i}"}
+                for i in range(7)]
+        src.write_text(json.dumps(rows, ensure_ascii=False), encoding="utf-8")
+        out_dir = tmp_path / "splits7"
+        _, parsed, code = run_cli(
+            [
+                "cli", "split", "--input", str(src),
+                "--output-dir", str(out_dir),
+                "--train-ratio", "0.8", "--val-ratio", "0.1", "--test-ratio", "0.1",
+                "--seed", "7",
+            ]
+        )
+        assert code is None
+        counts = {name: meta["count"] for name, meta in parsed["splits"].items()}
+        assert counts == {"train": 5, "val": 1, "test": 1}
+        assert Path(parsed["splits"]["val"]["file"]).exists()
 
 
 class TestStatsCommand:

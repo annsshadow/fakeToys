@@ -15,6 +15,7 @@ from dataclasses import dataclass
 import hashlib
 from .exceptions import DataValidationError
 from .validation import require_count
+from .allocation import largest_remainder
 
 logger = logging.getLogger(__name__)
 
@@ -232,21 +233,22 @@ class DatasetOperations:
                 groups[group_key] = []
             groups[group_key].append(item)
         
-        # 按比例从每组采样
-        sampled = []
-        total = len(items)
-        
-        for group_key, group_items in groups.items():
-            group_ratio = len(group_items) / total
-            group_sample_size = max(1, int(sample_size * group_ratio))
-            group_sampled = rng.sample(
-                group_items, min(group_sample_size, len(group_items)))
-            sampled.extend(group_sampled)
-        
-        # 调整到目标数量
-        if len(sampled) > sample_size:
-            sampled = rng.sample(sampled, sample_size)
-        
+        # 每组的配额一次算清。HEAD 两头都不守恒，中间靠砍：`max(1, int(...))` 先超发
+        # （20 组各 1 条、要 5 条 → 先攒 20 条），再 `rng.sample(sampled, 5)` 随机砍
+        # （实测三个种子交出三组互不相干的类别，「分层」退化成「随机挑组」）；而
+        # 4 组等权要 7 条时逐组 `int(1.75)` 只交回 4 条，少 3 条且无人提示。
+        names = list(groups)
+        group_sizes = [len(groups[name]) for name in names]
+        quotas = largest_remainder(sample_size, group_sizes,
+                                   caps=group_sizes, minimum_each=1)
+        sampled: List[Dict] = []
+        for name, quota in zip(names, quotas):
+            group_items = groups[name]
+            if quota >= len(group_items):
+                sampled.extend(group_items)
+            else:
+                sampled.extend(rng.sample(group_items, quota))
+
         return sampled
     
     def sample_file(self,
@@ -307,10 +309,10 @@ class DatasetOperations:
         if config.shuffle:
             random.Random(config.seed).shuffle(data)
         
-        # 计算各部分大小
+        # 计算各部分大小：余数不得整份偏给 test（实测 n=7 名义 10% 的测试集
+        # 实际拿到 28.6%，而 0.1 的验证集在 n ≤ 9 时交出 0 条）
         n = len(data)
-        train_size = int(n * config.ratios[0])
-        val_size = int(n * config.ratios[1])
+        train_size, val_size, _ = largest_remainder(n, config.ratios)
         
         # 分割
         train = data[:train_size]
