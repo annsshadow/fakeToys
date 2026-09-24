@@ -41,6 +41,14 @@ def csv_fieldnames(items: List[Dict]) -> List[str]:
 #: 也可以落成一行一条的 JSONL。
 CONTAINER_FORMATS = ("json", "jsonl", "csv", "tsv")
 
+#: 「原样序列化」的目标格式：把输入当作任意 JSON 值落盘，因此**不要求**记录是对象。
+#: 其余八个目标都必须逐条读字段——六个行内 schema 取 `instruction`/`output` 之类的键，
+#: `csv`/`tsv` 用 `DictWriter` 按列名写盘——记录是标量时以前会崩在边里
+#: （`AttributeError: 'NoneType' object has no attribute 'get'`，经 API 就是 500，
+#: 且 csv/tsv 会留下半截文件）。只作用于「源是通用 json」的写边，见
+#: `_require_object_records`。
+PASSTHROUGH_TARGETS = ("json", "jsonl")
+
 
 class DataFormat(Enum):
     """数据格式"""
@@ -192,6 +200,12 @@ class DatasetConverter:
         if source_format == target_format:
             return data
         
+        # 写边形状复核：只有「源是通用 json」这一路需要，六条 schema 读边自己已经
+        # 带格式名报「第 N 条 X 记录必须是 JSON 对象」（比这里的措辞更准），
+        # 不必在分发口抢着替它们报错
+        if source_format == "json" and target_format not in PASSTHROUGH_TARGETS:
+            self._require_object_records(data, source_format, target_format)
+        
         # 查找转换器
         key = (source_format, target_format)
         if key in self._converters:
@@ -269,11 +283,43 @@ class DatasetConverter:
 
     # ==================== 训练格式转换 ====================
 
+    def _require_object_records(self, data: Any, source_format: str,
+                                target_format: str) -> None:
+        """`json → 八类要取字段的目标`，先确认每条记录真是对象，而不是崩在边里
+
+        六条 schema 写边用 `item.get("instruction")` 取问答，`csv`/`tsv` 写盘用
+        `DictWriter` 按列名取键——都要求记录是对象。以前一条 `null` 就能把整条链路
+        砸成 `AttributeError: 'NoneType' object has no attribute 'get'`（经 API 是
+        500、文案是解释器内部措辞），写 csv/tsv 时还会**先落一个半截文件**再崩
+        （`DictWriter` 把字符串按字符展开成表头，实测产物是 `j,u,s,t, ,a,...`）。
+
+        `json`/`jsonl` 目标不查：它们把输入原样序列化，任何合法 JSON 值都能落盘并
+        原样读回。源不是 `json` 时也不查：`csv`/`tsv` 的读边交给 `DictReader`
+        （交出来必是对象），`jsonl` 在内存里本来就是字符串列表，六个 schema 读边
+        自己带格式名报错——那一侧的护栏早就在了。
+
+        Raises:
+            DataFormatError: 数据集不是列表，或第一条非对象记录（带条目下标）
+        """
+        hop = f"{source_format} → {target_format}"
+        if not isinstance(data, list):
+            raise DataFormatError(
+                f"数据集必须是记录列表，当前是{type(data).__name__}："
+                f"{hop} 需要逐条读取字段"
+            )
+        for index, record in enumerate(data):
+            if not isinstance(record, dict):
+                raise DataFormatError(
+                    f"第 {index + 1} 条记录必须是 JSON 对象，当前是"
+                    f"{type(record).__name__}：{hop} 需要每条记录带字段，"
+                    f"标量与数组都没有可读的键"
+                )
+
     #: 对话容器键 → 它可能对应的源格式，用于报错时给出可执行的建议
     _CONTAINER_HINT = {"conversations": "sharegpt / vicuna",
                        "messages": "chatml"}
 
-    def _reject_undeclared_conversations(self, data: Any, target_format: str) -> None:
+    def _reject_undeclared_conversations(self, data: List[Dict], target_format: str) -> None:
         """拦住「源格式没声明、其实是对话类」的误标，而不是产出全空问答
 
         `json → alpaca/sharegpt/chatml/…` 这六条写边只认 `instruction` / `output`
@@ -286,14 +332,13 @@ class DatasetConverter:
         `messages` 的字符串字段不会误伤（`DictReader` 交出来的是 str，不是 list）。
         真·认不出字段的记录（既无问答也无对话数组）不在这里管，见 Backlog A26。
 
+        调用前提是 `data` 已经过 `_require_object_records`（两者同在 `convert()`
+        分发口），所以这里不再复核记录形状。
+
         Raises:
             DataFormatError: 第一条命中的记录，带条目下标与建议的 `source_format`
         """
-        if not isinstance(data, list):
-            return
         for index, record in enumerate(data):
-            if not isinstance(record, dict):
-                continue
             if record.get("instruction") or record.get("output"):
                 continue
             for key, hint in self._CONTAINER_HINT.items():

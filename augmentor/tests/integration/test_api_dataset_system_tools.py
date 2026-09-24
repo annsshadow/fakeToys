@@ -521,6 +521,30 @@ class TestDatasetConvert:
         assert "全空数据集" in detail and "`conversations`" in detail, detail
         assert not tools_env.out.exists()
 
+    @pytest.mark.parametrize("target,ext", [("chatml", "json"), ("csv", "csv")])
+    def test_non_object_record_is_a_400_not_a_500(self, tools_env, target, ext):
+        """记录不是对象 → 400 带条目下标；以前是 500 + 解释器内部措辞
+
+        `DataFormatError` 走 `to_http_error()` 的 `ValueError` 分支（400），而
+        写边以前抛的是 `AttributeError: 'NoneType' object has no attribute 'get'`
+        —— 500 会把「你的数据坏了」说成「服务器坏了」，且 csv 那一侧还会先落下
+        按字符展开的半截文件（A26①）。
+        """
+        src = _write_json(tools_env.tmp / "scalars.json", [None])
+        out = tools_env.tmp / f"l22_out.{ext}"
+        out.unlink(missing_ok=True)
+
+        response = tools_env.client.post(
+            "/api/dataset/convert",
+            json={"input_file": str(src), "output_file": str(out),
+                  "target_format": target},
+        )
+        assert response.status_code == 400, response.text
+        detail = response.json()["detail"]
+        assert "第 1 条记录必须是 JSON 对象" in detail, detail
+        assert "has no attribute" not in detail, detail
+        assert not out.exists(), "报错前不得留下半截产物"
+
     def test_unknown_source_format_rejected(self, tools_env):
         """未知源格式 → 400，而不是 500 或静默按 json 读
 
