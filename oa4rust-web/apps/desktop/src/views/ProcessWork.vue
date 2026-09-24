@@ -263,6 +263,35 @@
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('taskUrge')">任务催办</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('dataDelete')">删工作数据</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('touch')">触达服务</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskProcessing')">表面办理</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskProcMgr')">表面办理(管理)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskOpinion')">表面意见</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskPress')">表面催办</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskNeural')">表面智能办理</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskReference')">表面参考</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskResetMgr')">表面重置</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskWill')">表面待办转正</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskV2Pause')">表面v2暂停</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskV2Reset')">表面v2重置</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskV2Resume')">表面v2恢复</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskV2Trigger')">表面v2触发</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskV3Add')">表面v3追加</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskV3Pin')">表面v3置顶</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('readOpinion')">表面阅意见</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('readProcessing')">表面阅处理</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('readReference')">表面阅参考</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('readResetMgr')">表面阅重置</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('workCloseCheck')">表面关闭校验</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('workProcessing')">表面工作处理</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('workV2Split')">表面v2分叉</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('workV2Reroute')">表面v2改路由</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('workV2Retract')">表面v2撤回</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('workV2Rollback')">表面v2回滚</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('workV2Terminate')">表面v2终止</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('workV2Goback')">表面v2退回</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('handoverCancel')">取消交接</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('wcDeleteMgr')">删已办(管理)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceReads3">表面清单读</button>
           </div>
         </section>
 
@@ -1224,6 +1253,73 @@ async function engineRest2(op: string): Promise<void> {
     toast.error('引擎操作失败: ' + (e?.message ?? ''))
   } finally {
     engineBusy.value = false
+  }
+}
+// rev379：流程表面 task/read/work 处理·催办·退回·参考·重置·v2/v3生命周期 + save/publish/delete/handover 真实路由（全字面量含参占位；避 {credential} 凭证与 {page}/{size}/{size} 三参 arity）
+async function surfaceOps3(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
+    if (op === 'taskOpinion') await api.post(`/api/processplatform/assemble/surface/task/opinion/manage/${id()}`, {})
+    else if (op === 'taskPress') await api.post(`/api/processplatform/assemble/surface/task/press/manage/${id()}`, {})
+    else if (op === 'taskProcessing') await api.post(`/api/processplatform/assemble/surface/task/processing/${id()}`, {})
+    else if (op === 'taskProcMgr') await api.post(`/api/processplatform/assemble/surface/task/processing/manage/${id()}`, {})
+    else if (op === 'taskNeural') await api.post(`/api/processplatform/assemble/surface/task/processing/neural/${id()}`, {})
+    else if (op === 'taskReference') await api.post(`/api/processplatform/assemble/surface/task/reference/${id()}`, {})
+    else if (op === 'taskResetMgr') await api.post(`/api/processplatform/assemble/surface/task/reset/manage/${id()}`, {})
+    else if (op === 'taskWill') await api.post(`/api/processplatform/assemble/surface/task/will/${id()}`, {})
+    else if (op === 'taskV2Pause') await api.get(`/api/processplatform/assemble/surface/task/v2/pause/${id()}`)
+    else if (op === 'taskV2Reset') await api.post(`/api/processplatform/assemble/surface/task/v2/reset/${id()}`, {})
+    else if (op === 'taskV2Resume') await api.post(`/api/processplatform/assemble/surface/task/v2/resume/${id()}`, {})
+    else if (op === 'taskV2Trigger') await api.post(`/api/processplatform/assemble/surface/task/v2/trigger/processing/${id()}`, {})
+    else if (op === 'taskV3Add') await api.post(`/api/processplatform/assemble/surface/task/v3/add/${id()}`, {})
+    else if (op === 'taskV3Pin') await api.get(`/api/processplatform/assemble/surface/task/v3/pin/${id()}`)
+    else if (op === 'readOpinion') await api.post(`/api/processplatform/assemble/surface/read/opinion/manage/${id()}`, {})
+    else if (op === 'readProcessing') await api.post(`/api/processplatform/assemble/surface/read/processing/${id()}`, {})
+    else if (op === 'readReference') await api.post(`/api/processplatform/assemble/surface/read/reference/${id()}`, {})
+    else if (op === 'readResetMgr') await api.post(`/api/processplatform/assemble/surface/read/reset/manage/${id()}`, {})
+    else if (op === 'workCloseCheck') await api.get(`/api/processplatform/assemble/surface/work/close/check/${id()}`)
+    else if (op === 'workProcessing') await api.post(`/api/processplatform/assemble/surface/work/processing/${id()}`, {})
+    else if (op === 'workV2Split') await api.post(`/api/processplatform/assemble/surface/work/v2/add/split/${id()}`, {})
+    else if (op === 'workV2Reroute') await api.get(`/api/processplatform/assemble/surface/work/v2/reroute/${id()}`)
+    else if (op === 'workV2Retract') await api.get(`/api/processplatform/assemble/surface/work/v2/retract/${id()}`)
+    else if (op === 'workV2Rollback') await api.get(`/api/processplatform/assemble/surface/work/v2/rollback/${id()}`)
+    else if (op === 'workV2Terminate') await api.get(`/api/processplatform/assemble/surface/work/v2/terminate/${id()}`)
+    else if (op === 'workV2Goback') await api.get(`/api/processplatform/assemble/surface/work/v2/list/activity/goback/${id()}`)
+    else if (op === 'handoverCancel') await api.get(`/api/processplatform/assemble/surface/handover/cancel/${id()}`)
+    else if (op === 'wcDeleteMgr') { if (!(await confirmMsg('确定删除该已办？'))) return; await api.post(`/api/processplatform/assemble/surface/workcompleted/delete/manage/${id()}`, {}) }
+    else if (op === 'save') await api.post(`/api/processplatform/assemble/surface/save/${id()}`, {})
+    else if (op === 'publish') await api.post(`/api/processplatform/assemble/surface/publish/${id()}`, {})
+    else await api.post(`/api/processplatform/assemble/surface/delete/${id()}`, {})
+    toast.success('流程表面操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev379：流程表面 task/read/work/taskcompleted/workcompleted 按应用流程清单 + v2 游标 真实只读（{count}/{applicationFlag} 与 next/{id}/{count} 双参，用户触发）
+async function surfaceReads3(): Promise<void> {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/processplatform/assemble/surface/task/list/application/process/20/default')),
+      s(api.get('/api/processplatform/assemble/surface/read/list/application/process/20/default')),
+      s(api.get('/api/processplatform/assemble/surface/work/list/application/process/20/default')),
+      s(api.get('/api/processplatform/assemble/surface/taskcompleted/list/application/process/20/default')),
+      s(api.get('/api/processplatform/assemble/surface/workcompleted/list/application/process/20/default')),
+      s(api.get('/api/processplatform/assemble/surface/readcompleted/list/application/process/20/default')),
+      s(api.post('/api/processplatform/assemble/surface/task/v2/list/create/next/0/20', {})),
+      s(api.post('/api/processplatform/assemble/surface/read/v2/list/create/next/0/20', {})),
+      s(api.post('/api/processplatform/assemble/surface/readcompleted/v2/list/create/next/0/20', {})),
+      s(api.post('/api/processplatform/assemble/surface/review/v2/list/create/next/0/20', {})),
+      s(api.post('/api/processplatform/assemble/surface/taskcompleted/v2/list/create/next/0/20', {})),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`流程表面清单读 ${rs.length} 条命中 ${hit}`)
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
   }
 }
 async function engineReadAction(kind: string): Promise<void> {
