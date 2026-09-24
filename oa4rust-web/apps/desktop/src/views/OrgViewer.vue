@@ -350,6 +350,9 @@ async function loadOrgObjectReads() {
       s(api.post('/api/personattribute/list/person/object', { personList: flags })),
       s(api.post('/api/unitattribute/list/unit/object', { unitList: flags })),
       s(api.post('/api/empower/list/identity/object', { identityList: flags })),
+      // rev461：个人属性键/按属性名批读 2 条真实读（pool+Json 纯 SELECT，无同路径孪生、非 /object 投影）
+      s(api.post('/api/personattribute/list/name/person', { personList: flags })),
+      s(api.post('/api/personattribute/list/attribute/person/name', { person: '0', name: '0' })),
     ])
     const hit = rs.filter((r) => (r as any)?.data != null).length
     orgMetaText.value = `对象投影批读端点 ${rs.length} 条，命中 ${hit}`
