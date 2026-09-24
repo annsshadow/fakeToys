@@ -51,6 +51,10 @@
       <button class="sb" @click="meetingMore('coreSave')">存核心会议</button>
       <button class="sb" @click="meetingMore('coreDelete')">删核心会议</button>
       <button class="sb" @click="meetingLists">会议清单读</button>
+      <button class="sb" @click="meetingMore2('ctrlDelete')">删会议(控制级)</button>
+      <button class="sb" @click="meetingMore2('meetingDelete')">删会议</button>
+      <button class="sb" @click="meetingMore2('roomDelete')">删会议室</button>
+      <button class="sb" @click="meetingMore2('attDownload')">附件下载</button>
     </div>
     <div v-if="appliedText" class="applied-note">{{ appliedText }}</div>
     <div v-if="buildings.length" class="bld-bar glass-card">
@@ -711,6 +715,20 @@ async function meetingMore(op: string) {
       if (!(await confirmMsg('确定删除该核心会议？'))) return
       await api.post(`/api/meeting/core/entity/meeting/delete/${e}`, {})
     }
+    toast.success('会议操作已提交')
+  } catch (err: any) {
+    toast.error('会议操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev386：会议 控制级删会议(delete_meeting_control)/会议实体删(delete_meeting)/核心实体会议室删(delete_room)/附件下载(2参) 真实路由（均 Path-only 已核，用户触发；delete/invite PUT 已由 delInvite 消费为同 handler 孪生故跳过）
+async function meetingMore2(op: string) {
+  const id = encodeURIComponent(prompt('目标 ID:', '') || '')
+  if (!id) return
+  try {
+    if (op === 'ctrlDelete') { if (!(await confirmMsg('确定删除该会议（控制级）？'))) return; await api.delete(`/api/meeting/assemble/control/delete/${id}`) }
+    else if (op === 'meetingDelete') { if (!(await confirmMsg('确定删除该会议？'))) return; await api.post(`/api/meeting/assemble/control/meeting/delete/${id}`, {}) }
+    else if (op === 'roomDelete') { if (!(await confirmMsg('确定删除该会议室？'))) return; await api.post(`/api/meeting/core/entity/room/delete/${id}`, {}) }
+    else { const stream = encodeURIComponent(prompt('流标识(如 false):', 'false') || 'false'); await api.get(`/api/meeting/assemble/control/attachment/${id}/download/${stream}`) }
     toast.success('会议操作已提交')
   } catch (err: any) {
     toast.error('会议操作失败: ' + (err?.message ?? ''))
