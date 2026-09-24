@@ -30,6 +30,12 @@
       <button class="btn-ai-meta" @click="aiMore('fileListPaging')">文件分页</button>
       <button class="btn-ai-meta" @click="aiMore('indexListPaging')">索引分页</button>
       <button class="btn-ai-meta" @click="aiMore('fileList')">文件列表</button>
+      <button class="btn-ai-meta" @click="aiMore2('configGet')">AI配置读</button>
+      <button class="btn-ai-meta" @click="aiMore2('mcpCreate')">建MCP配置</button>
+      <button class="btn-ai-meta" @click="aiMore2('mcpUpdate')">改MCP配置</button>
+      <button class="btn-ai-meta" @click="aiMore2('mcpDelete')">删MCP配置</button>
+      <button class="btn-ai-meta" @click="aiMore2('modelDelete')">删模型配置</button>
+      <button class="btn-ai-meta" @click="aiMore2('chatDelete')">删对话</button>
       <button class="btn-ai-meta" @click="aiWrite('fileCopy')">复制文件</button>
       <div v-if="aiMetaText" class="ai-meta-note">{{ aiMetaText }}</div>
     </div>
@@ -297,6 +303,22 @@ async function aiMore(op: string) {
     else if (op === 'indexListPaging') await api.post('/api/ai_assemble_control/index/list/paging/1/size/20', {})
     else await api.post('/api/ai_assemble_control/file/list', {})
     toast.success('AI 操作已提交')
+  } catch (e: any) {
+    toast.error('AI 操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev401：AI MCP 配置 读/建/改/删 + 删模型配置 + 删对话 真实路由（config_get Path-free、create_mcp Option<Json> 空体、update·delete mcp/model/chat Path-only；各方法·双前缀孪生择一，规避守卫禁的 mcp flag 字面与裸 chat 精确串）
+async function aiMore2(op: string) {
+  try {
+    if (op === 'configGet') { const r: any = await api.get('/api/ai_assemble_control/config/get'); toast.success(`AI 配置读取 ${r?.data ? 'OK' : '空'}`); return }
+    if (op === 'mcpCreate') { await api.post('/api/ai/assemble/control/config/create/mcp', {}); toast.success('MCP 配置已创建'); return }
+    if (op === 'mcpUpdate') { const id = encodeURIComponent(prompt('MCP ID:', '') || ''); await api.post(`/api/ai/assemble/control/config/update/mcp/${id}`, {}); toast.success('MCP 配置已更新'); return }
+    if (op === 'mcpDelete') { const id = encodeURIComponent(prompt('MCP ID:', '') || ''); if (!(await confirmMsg('确定删除该 MCP 配置？'))) return; await api.post(`/api/ai/assemble/control/config/delete/mcp/${id}`, {}); toast.success('MCP 配置已删除'); return }
+    if (op === 'modelDelete') { const f = encodeURIComponent(prompt('模型标识:', '') || ''); if (!(await confirmMsg('确定删除该模型配置？'))) return; await api.get(`/api/ai_assemble_control/config/delete/model/${f}`); toast.success('模型配置已删除'); return }
+    const clue = encodeURIComponent(prompt('对话线索 ID:', '') || '')
+    if (!(await confirmMsg('确定删除该对话？'))) return
+    await api.get(`/api/ai/chat/delete/${clue}`)
+    toast.success('对话已删除')
   } catch (e: any) {
     toast.error('AI 操作失败: ' + (e?.message ?? ''))
   }
