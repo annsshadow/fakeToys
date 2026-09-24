@@ -229,6 +229,7 @@
           <button class="btn-sm" @click="pcU9">调用器/市场/钉钉只读</button>
           <button class="btn-sm" @click="pcU10">集成同步/清缓存</button>
           <button class="btn-sm" @click="pcU11">企微/政务钉钉/打包读</button>
+          <button class="btn-sm" @click="pcU12">样式/公众号/打包连接读</button>
           <div v-if="pcU4Text" class="app-meta">{{ pcU4Text }}</div>
         </div>
         <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
@@ -1441,6 +1442,21 @@ async function pcU11() {
     toast.success(`企微/政务钉钉/打包 ${rs.length} 条命中 ${hit}`)
   } catch (e: any) {
     toast.error('触发失败: ' + (e?.message ?? ''))
+  }
+}
+// rev425：程序中心 当前应用样式(读 x_program_config appstyle)·公众号菜单最新(读 x_program_mpweixin_menu)·App打包服务连接(读 x_program_app_pack 计数) 三条 pool-only 只读，distinct 表
+async function pcU12() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/program_center/appstyle/current/update')),
+      s(api.get('/api/program_center/mpweixin/menu/create/to/weixin')),
+      s(api.get('/api/program_center/apppack/server/connect')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`样式/公众号/打包 ${rs.length} 条命中 ${hit}`)
+  } catch (e: any) {
+    toast.error('读取失败: ' + (e?.message ?? ''))
   }
 }
 async function loadMarketLogs() {
