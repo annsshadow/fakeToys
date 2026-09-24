@@ -11,6 +11,14 @@
         <button class="new-page-btn ghost" @click="loadPortalSurface">表面/移动</button>
         <button class="new-page-btn ghost" @click="loadPortalResources">门户资源</button>
         <button class="new-page-btn ghost" @click="loadPortalDetail">门户明细</button>
+        <button class="new-page-btn ghost" @click="surfaceOps('create')">建门户</button>
+        <button class="new-page-btn ghost" @click="surfaceOps('publish')">发布门户</button>
+        <button class="new-page-btn ghost" @click="surfaceOps('portalPage')">门户分页</button>
+        <button class="new-page-btn ghost" @click="surfaceOps('pageById')">页面详情</button>
+        <button class="new-page-btn ghost" @click="surfaceOps('dictData')">字典路径数据</button>
+        <button class="new-page-btn ghost" @click="surfaceOps('dictSet')">存字典数据</button>
+        <button class="new-page-btn ghost" @click="surfaceOps('dictDel')">删字典数据</button>
+        <button class="new-page-btn ghost" @click="surfaceOps('scriptByName')">按名建脚本</button>
         <button class="new-page-btn ghost" @click="loadPortalSurfaceEntities">表面实体</button>
         <button class="new-page-btn ghost" @click="loadPortalMobileFacets">移动/字典/角标</button>
         <button class="new-page-btn ghost" @click="loadPortalDeep">深度读矩阵</button>
@@ -332,6 +340,46 @@ async function designerMisc(op: string) {
       await api.post('/api/portal/assemble/designer/script/list/manager', {})
     }
     toast.success('门户设计器操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev364：门户表面 建/发布 + 分页门户/页面 + 门户字典路径数据 读写删 + 门户脚本按名建 真实路由（避开 get/layout·list/layouts 裸路由500；dict data POST/DELETE 各一 op）
+async function surfaceOps(op: string) {
+  try {
+    if (op === 'create') {
+      const name = prompt('门户名称:', '') || ''
+      await api.post('/api/portal/assemble/surface/create', { name })
+    } else if (op === 'publish') {
+      const id = prompt('门户 ID:', '') || ''
+      await api.post(`/api/portal/assemble/surface/publish/${encodeURIComponent(id)}`, {})
+    } else if (op === 'portalPage') {
+      const flag = prompt('门户 flag:', 'default') || 'default'
+      await api.get(`/api/portal/assemble/surface/portal/1/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}`)
+    } else if (op === 'pageById') {
+      const id = prompt('页面 ID:', '') || ''
+      await api.get(`/api/portal/assemble/surface/1/${encodeURIComponent(id)}`)
+    } else if (op === 'dictData') {
+      const df = prompt('字典 flag:', '') || ''
+      const pf = prompt('门户 flag:', 'default') || 'default'
+      await api.get(`/api/portal/assemble/surface/dict/portal/path/data/${encodeURIComponent(df)}/${encodeURIComponent(pf)}`)
+    } else if (op === 'dictSet') {
+      const df = prompt('字典 flag:', '') || ''
+      const pf = prompt('门户 flag:', 'default') || 'default'
+      const path = prompt('路径:', 'root') || 'root'
+      await api.post(`/api/portal/assemble/surface/dict/${encodeURIComponent(df)}/portal/${encodeURIComponent(pf)}/${encodeURIComponent(path)}/data`, {})
+    } else if (op === 'dictDel') {
+      const df = prompt('字典 flag:', '') || ''
+      const pf = prompt('门户 flag:', 'default') || 'default'
+      const path = prompt('路径:', 'root') || 'root'
+      if (!(await confirmMsg('确定删除该门户字典数据？'))) return
+      await api.delete(`/api/portal/assemble/surface/dict/${encodeURIComponent(df)}/portal/${encodeURIComponent(pf)}/${encodeURIComponent(path)}/data`)
+    } else {
+      const portal = prompt('门户 flag:', 'default') || 'default'
+      const name = prompt('脚本名:', '') || ''
+      await api.post(`/api/portal/assemble/surface/script/portal/${encodeURIComponent(portal)}/name/${encodeURIComponent(name)}`, {})
+    }
+    toast.success('门户表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
   }
