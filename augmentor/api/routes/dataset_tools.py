@@ -134,6 +134,10 @@ class SearchRequest(BaseModel):
     exact / contains / ngram / fuzzy / regex。
     `fuzzy_threshold` / `ngram_n` 分别是 fuzzy 与 ngram 的松紧旋钮，越界由 SDK
     的判据拦下（`ValueError` → 400）。
+    `filters` 是检索**之后**按字段值收窄的清单，每项形如
+    `{"field": ..., "operator": ..., "value": ...}`，算子取 eq / ne / contains /
+    gt / lt / gte / lte / in / not_in；算子不存在或值的形状不合该算子的要求同样由
+    SDK 那一处判据拦下（400），不在路由里重复校验。
     """
     input_file: str
     query: str
@@ -143,6 +147,7 @@ class SearchRequest(BaseModel):
     offset: int = 0
     fuzzy_threshold: float = 0.6
     ngram_n: int = 2
+    filters: Optional[List[Dict[str, Any]]] = None
 
 
 class CompareRequest(BaseModel):
@@ -443,6 +448,7 @@ async def dataset_search(request: SearchRequest):
             request.offset,
             fuzzy_threshold=request.fuzzy_threshold,
             ngram_n=request.ngram_n,
+            filters=request.filters,
         )
         return result.to_dict()
     except HTTPException:
