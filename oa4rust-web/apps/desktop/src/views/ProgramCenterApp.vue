@@ -193,6 +193,15 @@
           <button class="btn-sm" @click="pcU3('menuUpdate')">改公众号菜单</button>
           <button class="btn-sm" @click="pcU3('menuDelete')">删公众号菜单</button>
           <button class="btn-sm" @click="pcU3('dictPaging')">字典分页</button>
+          <button class="btn-sm" @click="pcU4Write('configSave')">存配置</button>
+          <button class="btn-sm" @click="pcU4Write('scriptCreate')">建脚本</button>
+          <button class="btn-sm" @click="pcU4Write('dictDataPut')">改字典数据</button>
+          <button class="btn-sm" @click="pcU4Write('dictDataDel')">清字典数据</button>
+          <button class="btn-sm" @click="pcU4Write('inputCreate')">输入创建</button>
+          <button class="btn-sm" @click="pcU4Write('outputList')">输出列表</button>
+          <button class="btn-sm" @click="pcU4Write('designerSearch')">设计器检索</button>
+          <button class="btn-sm" @click="pcU4Read">读配置/日志</button>
+          <div v-if="pcU4Text" class="app-meta">{{ pcU4Text }}</div>
         </div>
         <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
         <div v-if="progDeepText" class="app-meta">{{ progDeepText }}</div>
@@ -1031,6 +1040,7 @@ const dsText = ref('')
 const deployDistText = ref('')
 const appStyleText = ref('')
 const marketLogText = ref('')
+const pcU4Text = ref('')
 const progExtraText = ref('')
 const progDeepText = ref('')
 // rev299：程序中心 代理/市场VIP/已装版本/应用包/图表/收藏 真实读端点集（invoke/flag、market cloud vip、market installed version、apppack info、bar 图表、collect）；均只读 arity<=url 已核；排除 token 密钥/write/binary
@@ -1216,6 +1226,64 @@ async function pcU3(op: string) {
     toast.success('程序中心操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev353：程序中心 配置/脚本/字典数据/输入·输出·设计器 真实写端点（用户触发，shape 已核；config_save 需 key，script_create 可选字段，dict data 任意值）
+async function pcU4Write(op: string) {
+  try {
+    if (op === 'configSave') {
+      const key = prompt('配置键(key):', '') || ''
+      if (!key) return
+      const value = prompt('配置值(value):', '') || ''
+      await api.put('/api/program_center/config/save', { key, value })
+    } else if (op === 'scriptCreate') {
+      const name = prompt('脚本名称:', 'script') || 'script'
+      const content = prompt('脚本内容:', '') || ''
+      await api.post('/api/program_center/script', { name, content })
+    } else if (op === 'dictDataPut') {
+      const flag = prompt('字典 flag:', '') || ''
+      const path = prompt('字典路径:', 'root') || 'root'
+      const value = prompt('数据值(JSON/文本):', '') || ''
+      await api.put(`/api/program_center/dict/${encodeURIComponent(flag)}/${encodeURIComponent(path)}/data`, value)
+    } else if (op === 'dictDataDel') {
+      const flag = prompt('字典 flag:', '') || ''
+      const path = prompt('字典路径:', 'root') || 'root'
+      if (!(await confirmMsg('确定清空该字典数据？'))) return
+      await api.delete(`/api/program_center/dict/${encodeURIComponent(flag)}/${encodeURIComponent(path)}/data`)
+    } else if (op === 'inputCreate') {
+      await api.post('/api/program_center/input/create', {})
+    } else if (op === 'outputList') {
+      await api.post('/api/program_center/output/list', {})
+    } else {
+      await api.post('/api/program_center/designer/search', {})
+    }
+    toast.success('程序中心操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev353：程序中心 中心服务/许可/人员/门户/代理/开放 配置读 + 部署·脚本·字典分页 + 提示/异常错误日志 真实只读（用户触发按钮，全字面量，非 onMounted）
+async function pcU4Read() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [center, license, person, portal, proxy, open, dep, scr, dictP, promptLog, unexLog] = await Promise.all([
+      s(api.get('/api/program_center/config/centerserver')),
+      s(api.get('/api/program_center/config/license')),
+      s(api.get('/api/program_center/config/person')),
+      s(api.get('/api/program_center/config/portal')),
+      s(api.get('/api/program_center/config/proxy')),
+      s(api.get('/api/program_center/config/open')),
+      s(api.get('/api/program_center/deploy/list/paging/page/size/size')),
+      s(api.get('/api/program_center/script/list/paging/page/size/size')),
+      s(api.get('/api/program_center/dict/list/paging/page/size/size')),
+      s(api.get('/api/program_center/prompterrorlog/list/id/next/count')),
+      s(api.get('/api/program_center/unexpectederrorlog/list/id/next/count')),
+    ])
+    const ok = (r: any) => (r ? '✓' : '—')
+    pcU4Text.value = `中心${ok(center)} 许可${ok(license)} 人员${ok(person)} 门户${ok(portal)} 代理${ok(proxy)} 开放${ok(open)} | 部署${ok(dep)} 脚本${ok(scr)} 字典${ok(dictP)} 提示日志${ok(promptLog)} 异常日志${ok(unexLog)}`
+    toast.success('程序中心配置/日志已加载')
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
   }
 }
 // rev292：程序中心 市场安装日志(按flag/字面flag)/市场分页(按分类) 真实读端点(X_PROGRAM_SCHEDULE_LOG)；均只读 arity 已核
