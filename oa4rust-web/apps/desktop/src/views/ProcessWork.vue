@@ -315,6 +315,21 @@
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('appFlagDel')">按应用清未完成</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('procFlagGet')">按流程查未完成</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('procFlagDel')">按流程清未完成</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('readCountApp')">待阅按应用计数</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('readcompletedCountApp')">已阅按应用计数</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('attDownload')">附件下载</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('attDownloadStream')">附件流下载</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('attPreviewPdf')">附件PDF预览</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('readV2Next')">待阅v2后翻</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('readV2Prev')">待阅v2前翻</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('readcompletedV2Next')">已阅v2后翻</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('readcompletedV2Prev')">已阅v2前翻</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('correlationJob')">建关联</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('correlationUpdate')">改关联</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('correlationDelete')">删关联</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('readOpinionMgr')">待阅意见(管理)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('attDelete')">删附件</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('modeDelete')">删模式</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdProcessing')">任务处理(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdReplace')">任务替换(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdPress')">任务催办(位置态)</button>
@@ -1390,6 +1405,34 @@ async function surfaceOps4(op: string): Promise<void> {
     else if (op === 'appFlagDel') { const orn = 'false'; if (!(await confirmMsg('确定按应用清理未完成工作？'))) return; await api.delete(`/api/processplatform/assemble/surface/application/${id()}/${orn}`) }
     else if (op === 'procFlagGet') { const orn = 'false'; await api.get(`/api/processplatform/assemble/surface/process/${id()}/${orn}`) }
     else { const orn = 'false'; if (!(await confirmMsg('确定按流程清理未完成工作？'))) return; await api.delete(`/api/processplatform/assemble/surface/process/${id()}/${orn}`) }
+    toast.success('流程表面操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev392：流程表面 待阅/已阅按应用计数、附件下载/流/PDF预览、v2 创建游标 next/prev（读/已阅）、correlation 关联 建/改/删、待阅意见管理、附件删、模式删 真实路由（全 Path-only 已核，correlation/opinion 空体；用户触发）
+async function surfaceOps5(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
+    if (op === 'readCountApp') { const af = encodeURIComponent(prompt('应用标识:', '') || ''); await api.get(`/api/processplatform/assemble/surface/read/list/count/application/${af}/process`) }
+    else if (op === 'readcompletedCountApp') { const af = encodeURIComponent(prompt('应用标识:', '') || ''); await api.get(`/api/processplatform/assemble/surface/readcompleted/list/count/application/${af}/process`) }
+    else if (op === 'attDownload') await api.get(`/api/processplatform/assemble/surface/attachment/download/${id()}`)
+    else if (op === 'attDownloadStream') await api.get(`/api/processplatform/assemble/surface/attachment/download/${id()}/stream`)
+    else if (op === 'attPreviewPdf') await api.get(`/api/processplatform/assemble/surface/attachment/${id()}/preview/pdf`)
+    else if (op === 'readV2Next') { const c = 20; await api.post(`/api/processplatform/assemble/surface/read/v2/list/create/${id()}/next/${c}`, {}) }
+    else if (op === 'readV2Prev') { const c = 20; await api.post(`/api/processplatform/assemble/surface/read/v2/list/create/${id()}/prev/${c}`, {}) }
+    else if (op === 'readcompletedV2Next') { const c = 20; await api.post(`/api/processplatform/assemble/surface/readcompleted/v2/list/create/${id()}/next/${c}`, {}) }
+    else if (op === 'readcompletedV2Prev') { const c = 20; await api.post(`/api/processplatform/assemble/surface/readcompleted/v2/list/create/${id()}/prev/${c}`, {}) }
+    else if (op === 'correlationJob') { const j = encodeURIComponent(prompt('Job ID:', '') || ''); await api.post(`/api/processplatform/assemble/surface/correlation/job/${j}`, {}) }
+    else if (op === 'correlationUpdate') { const j = encodeURIComponent(prompt('Job ID:', '') || ''); await api.post(`/api/processplatform/assemble/surface/correlation/update/job/${j}`, {}) }
+    else if (op === 'correlationDelete') { const j = encodeURIComponent(prompt('Job ID:', '') || ''); if (!(await confirmMsg('确定删除该关联？'))) return; await api.post(`/api/processplatform/assemble/surface/correlation/job/${j}/delete`, {}) }
+    else if (op === 'readOpinionMgr') await api.put(`/api/processplatform/assemble/surface/read/${id()}/opinion/manage`, {})
+    else if (op === 'attDelete') { if (!(await confirmMsg('确定删除该附件？'))) return; await api.delete(`/api/processplatform/assemble/surface/attachment/${id()}`) }
+    else { if (!(await confirmMsg('确定删除该模式？'))) return; await api.get(`/api/processplatform/assemble/surface/mode/${id()}/delete`) }
     toast.success('流程表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
