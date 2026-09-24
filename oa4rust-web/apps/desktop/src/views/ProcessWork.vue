@@ -377,6 +377,13 @@
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest5('dataJobPath')">按路径改Job数据</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest5('dataWcPath')">按路径改已办数据</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest5('attCopyWork')">附件复制到工作</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('appListRange')">应用范围清单</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('modeList')">模式清单</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('processListIds')">按ids取流程</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('readCountFilter')">待阅计数过滤</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('readV2Count')">待阅v2计数</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('attBatchDelete')">附件批量删</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('attBatchUpdate')">附件批量改</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdProcessing')">任务处理(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdReplace')">任务替换(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdPress')">任务催办(位置态)</button>
@@ -1569,6 +1576,25 @@ async function surfaceOps9(op: string): Promise<void> {
     else if (op === 'readcompletedV2Paging') await api.post(`/api/processplatform/assemble/surface/readcompleted/v2/list/create/paging/${pg}/size/${sz}`, {})
     else if (op === 'reviewV2Paging') await api.post(`/api/processplatform/assemble/surface/review/v2/list/create/paging/${pg}/size/${sz}`, {})
     else await api.post(`/api/processplatform/assemble/surface/taskcompleted/v2/list/create/paging/${pg}/size/${sz}`, {})
+    toast.success('流程表面操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev407：流程表面 应用范围清单/模式清单/按ids流程/待阅计数过滤·v2计数/附件批量删·改(管理) 真实路由（均 Path-free pool/Json 空体，已核；用户触发；规避 keylock·mode/save·read/filter/attribute 等 handler 取 Path 但路由无参的 trap500 与 html/to/pdf·image 能力未实装桩）
+async function surfaceOps10(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    if (op === 'appListRange') await api.post('/api/processplatform/assemble/surface/application/list/range', {})
+    else if (op === 'modeList') await api.post('/api/processplatform/assemble/surface/mode/list', {})
+    else if (op === 'processListIds') await api.post('/api/processplatform/assemble/surface/process/list/ids', {})
+    else if (op === 'readCountFilter') await api.post('/api/processplatform/assemble/surface/read/count/filter', {})
+    else if (op === 'readV2Count') await api.post('/api/processplatform/assemble/surface/read/v2/count', {})
+    else if (op === 'attBatchDelete') { if (!(await confirmMsg('确定批量删除附件？'))) return; await api.post('/api/processplatform/assemble/surface/attachment/batch/delete/manage', {}) }
+    else await api.post('/api/processplatform/assemble/surface/attachment/batch/update/manage', {})
     toast.success('流程表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
