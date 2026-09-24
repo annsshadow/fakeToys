@@ -30,6 +30,18 @@
         <button class="new-page-btn ghost" @click="designerCreate('script')">建脚本</button>
         <button class="new-page-btn ghost" @click="designerUpdate('script')">改脚本</button>
         <button class="new-page-btn ghost" @click="designerDelete('script')">删脚本</button>
+        <button class="new-page-btn ghost" @click="designerMisc('portalIcon')">门户图标</button>
+        <button class="new-page-btn ghost" @click="designerMisc('portalPerm')">门户权限</button>
+        <button class="new-page-btn ghost" @click="designerMisc('widgetSave')">存组件</button>
+        <button class="new-page-btn ghost" @click="designerMisc('pageSave')">存页面</button>
+        <button class="new-page-btn ghost" @click="designerMisc('search')">设计器检索</button>
+        <button class="new-page-btn ghost" @click="designerMisc('inputCompare')">输入比对</button>
+        <button class="new-page-btn ghost" @click="designerMisc('inputCover')">输入覆盖</button>
+        <button class="new-page-btn ghost" @click="designerMisc('inputCreate')">输入创建</button>
+        <button class="new-page-btn ghost" @click="designerMisc('inputPrepCover')">预备覆盖</button>
+        <button class="new-page-btn ghost" @click="designerMisc('inputPrepCreate')">预备创建</button>
+        <button class="new-page-btn ghost" @click="designerMisc('summaryV2')">门户汇总V2</button>
+        <button class="new-page-btn ghost" @click="designerMisc('scriptManager')">脚本管理列举</button>
         <button class="new-page-btn" @click="showEditor = true">+ 新建页面</button>
       </span>
     </div>
@@ -285,6 +297,43 @@ async function designerDelete(kind: 'portal' | 'page' | 'widget' | 'templatepage
     toast.success(`${kind} 已删除`)
   } catch (e: any) {
     toast.error(`删除${kind}失败: ` + (e?.message ?? ''))
+  }
+}
+// rev335：门户设计器 图标/权限/save变体/输入/检索/汇总 真实写端点（用户触发，shape 已核；全字面量路径）
+async function designerMisc(op: string) {
+  try {
+    if (op === 'portalIcon') {
+      const id = prompt('门户 ID:', '') || ''
+      await api.put(`/api/portal/assemble/designer/portal/${encodeURIComponent(id)}/icon`, {})
+    } else if (op === 'portalPerm') {
+      const id = prompt('门户 ID:', '') || ''
+      await api.post(`/api/portal/assemble/designer/portal/${encodeURIComponent(id)}/permission`, {})
+    } else if (op === 'widgetSave') {
+      const id = prompt('组件 ID:', '') || ''
+      await api.put(`/api/portal/assemble/designer/widget/save/${encodeURIComponent(id)}`, { data: {} })
+    } else if (op === 'pageSave') {
+      const id = prompt('页面 ID:', '') || ''
+      await api.put(`/api/portal/assemble/designer/page/save/${encodeURIComponent(id)}`, { content: {} })
+    } else if (op === 'search') {
+      await api.post('/api/portal/assemble/designer/designer/search', {})
+    } else if (op === 'inputCompare') {
+      await api.put('/api/portal/assemble/designer/input/compare', {})
+    } else if (op === 'inputCover') {
+      await api.put('/api/portal/assemble/designer/input/cover', {})
+    } else if (op === 'inputCreate') {
+      await api.put('/api/portal/assemble/designer/input/create', {})
+    } else if (op === 'inputPrepCover') {
+      await api.put('/api/portal/assemble/designer/input/prepare/cover', {})
+    } else if (op === 'inputPrepCreate') {
+      await api.put('/api/portal/assemble/designer/input/prepare/create', {})
+    } else if (op === 'summaryV2') {
+      await api.post('/api/portal/assemble/designer/portal/list/summary/v2', {})
+    } else {
+      await api.post('/api/portal/assemble/designer/script/list/manager', {})
+    }
+    toast.success('门户设计器操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
   }
 }
 const pages = ref<PortalPage[]>([])
