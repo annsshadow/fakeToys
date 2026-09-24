@@ -545,6 +545,45 @@ class TestDatasetConvert:
         assert "has no attribute" not in detail, detail
         assert not out.exists(), "报错前不得留下半截产物"
 
+    @pytest.mark.parametrize("target", ["chatml", "vicuna"])
+    def test_a_dataset_with_no_readable_qa_is_a_400_not_a_200(self, tools_env, target):
+        """整档字段名认不出 → 400；以前这一路是 200 + 一份空问答数据集
+
+        A26②：写边只认 `instruction`/`output`（`vicuna` 连 `history` 都不读），
+        `question`/`answer` 语料每条都读到 `""`，HTTP 状态好看、产物结构合法却一行
+        问答都没有。200 会把「你的数据不可用」说成「转换完成」，下游直接拿去训练。
+        """
+        src = _write_json(tools_env.tmp / "wrong_fields.json", [
+            {"question": "可以月付吗", "answer": "支持月付"},
+            {"question": "押金多少", "answer": "一个月"}])
+        out = tools_env.tmp / f"l23_{target}_out.json"
+        out.unlink(missing_ok=True)
+
+        response = tools_env.client.post(
+            "/api/dataset/convert",
+            json={"input_file": str(src), "output_file": str(out),
+                  "target_format": target},
+        )
+        assert response.status_code == 400, response.text
+        detail = response.json()["detail"]
+        assert "2 条记录里取不到任何问答" in detail, detail
+        assert not out.exists(), "报错前不得留下空问答产物"
+
+    def test_history_only_rows_still_convert_to_chatml(self, tools_env):
+        """带内容的数据集不得被整档判定砸掉：`chatml` 写边会读 `history`"""
+        src = _write_json(tools_env.tmp / "history_only.json", [{
+            "history": [{"role": "user", "content": "可以月付吗"},
+                        {"role": "assistant", "content": "支持月付"}]}])
+        out = tools_env.tmp / "l23_history_out.json"
+
+        response = tools_env.client.post(
+            "/api/dataset/convert",
+            json={"input_file": str(src), "output_file": str(out),
+                  "target_format": "chatml"},
+        )
+        assert response.status_code == 200, response.text
+        assert "可以月付吗" in out.read_text(encoding="utf-8")
+
     def test_unknown_source_format_rejected(self, tools_env):
         """未知源格式 → 400，而不是 500 或静默按 json 读
 
