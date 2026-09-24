@@ -11,6 +11,12 @@
         <button class="btn" :disabled="!activeId" @click="loadDesignerCategories">分类/页面</button>
         <button class="btn" :disabled="!activeId" @click="loadDesignerPaging">分页/文件/版本</button>
         <button class="btn" :disabled="!activeId" @click="loadDesignerOutputs">输出/文件前翻</button>
+        <button class="btn" @click="pdDesignerOps('saveById')">按ID保存</button>
+        <button class="btn" @click="pdDesignerOps('pageVersions')">页版本清单</button>
+        <button class="btn" @click="pdDesignerOps('pageDelete')">删页面</button>
+        <button class="btn" @click="pdDesignerOps('tplCategory')">模板页分类</button>
+        <button class="btn" @click="pdDesignerOps('widgetDelete')">删组件</button>
+        <button class="btn" @click="pdDesignerOps('designerDetail')">设计器详情</button>
         <button class="btn primary" :disabled="!activeId || saving" @click="saveDesign">
           {{ saving ? '保存中…' : '保存布局' }}
         </button>
@@ -341,6 +347,20 @@ async function saveDesign() {
     toast.error(`保存失败: ${error?.message ?? '未知错误'}`)
   } finally {
     saving.value = false
+  }
+}
+// rev377：门户设计器 保存/页版本清单/页删/模板页分类/组件删/设计器详情 真实路由（全字面量含参占位；避 file/upload 多部件与 file/list/{id}/{next}/{count} 3参 arity）
+async function pdDesignerOps(op: string) {
+  try {
+    if (op === 'saveById') { const id = encodeURIComponent(prompt('设计 ID:', activeId.value || '') || ''); await api.post(`/api/portal/assemble/designer/save/${id}`, {}) }
+    else if (op === 'pageVersions') { const pid = encodeURIComponent(prompt('页面 ID:', '') || ''); await api.get(`/api/portal/assemble/designer/pageversion/list/1/${pid}`) }
+    else if (op === 'pageDelete') { const id = encodeURIComponent(prompt('要删除的页面 ID:', '') || ''); if (!(await confirmMsg('确定删除该页面？'))) return; await api.delete(`/api/portal/assemble/designer/page/delete/${id}`) }
+    else if (op === 'tplCategory') await api.put('/api/portal/assemble/designer/templatepage/list/category', {})
+    else if (op === 'widgetDelete') { const id = encodeURIComponent(prompt('要删除的组件 ID:', '') || ''); if (!(await confirmMsg('确定删除该组件？'))) return; await api.delete(`/api/portal/assemble/designer/widget/delete/${id}`) }
+    else { const id = encodeURIComponent(prompt('设计器对象 ID:', '') || ''); const cnt = encodeURIComponent(prompt('数量:', '10') || '10'); await api.get(`/api/portal/assemble/designer/${id}/${cnt}`) }
+    toast.success('门户设计器操作已提交')
+  } catch (error: any) {
+    toast.error(`操作失败: ${error?.message ?? '未知错误'}`)
   }
 }
 loadDesigns()

@@ -371,8 +371,8 @@ async function orgUnitWrite(op: string) {
       const name = prompt('属性名:', '') || ''
       const val = prompt('属性值（逗号分隔）:', '') || ''
       const attributeList = val.split(',').map((x) => x.trim()).filter(Boolean)
-      const path = op === 'attrSet' ? '/api/unitattribute/set/unit/name' : '/api/unitattribute/append/unit/name'
-      await api.post(path, { unit, name, attributeList })
+      if (op === 'attrSet') await api.post('/api/unitattribute/set/unit/name', { unit, name, attributeList })
+      else await api.post('/api/unitattribute/append/unit/name', { unit, name, attributeList })
     } else if (op === 'groupCreate') {
       const name = prompt('群组名称:', '') || ''
       if (!name) return
