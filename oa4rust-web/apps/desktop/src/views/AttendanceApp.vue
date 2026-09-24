@@ -25,6 +25,19 @@
         <button class="eb" @click="loadAttendanceDetails">📋 考勤明细读</button>
         <button class="eb" @click="loadStatisticAggregates">📊 统计聚合/平台</button>
         <button class="eb" @click="loadPersonMonthStats">📈 人员月统计</button>
+        <button class="eb" @click="attV2Write('workplaceCreate')">建打卡点</button>
+        <button class="eb" @click="attV2Write('workplaceDelete')">删打卡点</button>
+        <button class="eb" @click="attV2Write('workplaceListIds')">按ID查打卡点</button>
+        <button class="eb" @click="attV2Write('scheduleCreate')">建排班</button>
+        <button class="eb" @click="attV2Write('scheduleListFilter')">排班筛选</button>
+        <button class="eb" @click="attV2Write('shiftUpdate')">改班次</button>
+        <button class="eb" @click="attV2Write('appealStart')">申诉起流程</button>
+        <button class="eb" @click="attV2Write('appealEnd')">申诉结流程</button>
+        <button class="eb" @click="attV2Write('detailStat')">明细统计筛选</button>
+        <button class="eb" @click="attV2Write('selfHolidayCreate')">建自定义假期</button>
+        <button class="eb" @click="attV2Write('selfHolidayDelete')">删自定义假期</button>
+        <button class="eb" @click="attV2Write('holidaySimpleCreate')">建简易假期</button>
+        <button class="eb" @click="attV2Write('holidaySimpleDelete')">删简易假期</button>
       </div>
       <div v-if="attOverviewText" class="att-note">{{ attOverviewText }}</div>
     </div>
@@ -422,6 +435,57 @@ async function loadAttBase() {
     attOverviewText.value = `打卡记录 ${n(records)} / 统计周期 ${n(cycles)} / 员工配置 ${n(employees)}`
   } catch (e: any) {
     toast.error('加载考勤基础数据失败: ' + (e?.message ?? ''))
+  }
+}
+// rev330：考勤 v2 打卡点/排班/申诉流程/班次/自定义假期 真实写端点（用户触发，shape 已核 attendance_assemble_control handler；全字面量路径）
+async function attV2Write(op: string) {
+  try {
+    if (op === 'workplaceCreate') {
+      const name = prompt('打卡点名称:', '') || ''
+      const address = prompt('地址:', '') || ''
+      await api.post('/api/attendance/assemble/control/v2/workplace', { name, address })
+    } else if (op === 'workplaceDelete') {
+      const id = prompt('要删除的打卡点 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该打卡点？'))) return
+      await api.delete(`/api/attendance/assemble/control/v2/workplace/${encodeURIComponent(id)}`)
+    } else if (op === 'workplaceListIds') {
+      const ids = (prompt('打卡点 ID（逗号分隔）:', '') || '').split(',').map((s) => s.trim()).filter(Boolean)
+      await api.post('/api/attendance/assemble/control/v2/workplace/list/ids', { ids })
+    } else if (op === 'scheduleCreate') {
+      const name = prompt('排班名称:', '') || ''
+      await api.post('/api/attendance/assemble/control/v2/groupschedule', { name })
+    } else if (op === 'scheduleListFilter') {
+      await api.post('/api/attendance/assemble/control/v2/groupschedule/list/filter', {})
+    } else if (op === 'shiftUpdate') {
+      const id = prompt('班次 ID:', '') || ''
+      const shiftName = prompt('班次名称:', '') || ''
+      await api.post('/api/attendance/assemble/control/v2/shift/update', { id, shiftName })
+    } else if (op === 'appealStart') {
+      const id = prompt('申诉 ID:', '') || ''
+      await api.post(`/api/attendance/assemble/control/v2/appeal/${encodeURIComponent(id)}/start/process`, {})
+    } else if (op === 'appealEnd') {
+      const id = prompt('申诉 ID:', '') || ''
+      await api.post(`/api/attendance/assemble/control/v2/appeal/${encodeURIComponent(id)}/end/process`, {})
+    } else if (op === 'detailStat') {
+      await api.post('/api/attendance/assemble/control/v2/detail/statistic/filter', {})
+    } else if (op === 'selfHolidayCreate') {
+      const name = prompt('自定义假期名称:', '') || ''
+      await api.post('/api/attendance/assemble/control/attendanceselfholiday', { name })
+    } else if (op === 'selfHolidayDelete') {
+      const id = prompt('要删除的自定义假期 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该自定义假期？'))) return
+      await api.delete(`/api/attendance/assemble/control/attendanceselfholiday/${encodeURIComponent(id)}`)
+    } else if (op === 'holidaySimpleCreate') {
+      const name = prompt('简易假期名称:', '') || ''
+      await api.post('/api/attendance/assemble/control/selfholidaysimple', { name })
+    } else {
+      const docId = prompt('要删除的简易假期 docId:', '') || ''
+      if (!(await confirmMsg('确定删除该简易假期？'))) return
+      await api.delete(`/api/attendance/assemble/control/selfholidaysimple/docId/${encodeURIComponent(docId)}`)
+    }
+    toast.success('考勤 v2 操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
   }
 }
 // 考勤核心记录/规则（rev184，4 条真实 distinct 无参列表）：admin/list/all（list_admins x_attendance_admin）
