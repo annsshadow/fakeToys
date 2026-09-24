@@ -330,6 +330,15 @@
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('readOpinionMgr')">待阅意见(管理)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('attDelete')">删附件</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('modeDelete')">删模式</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps6('attDownloadManage')">附件下载(管理)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps6('attDownloadByWork')">附件下载(按工作)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps6('attDownloadByWc')">附件下载(按已办)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps6('attDownloadWorkAtt')">工作附件下载</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps6('attPreviewImgPage')">附件图片分页预览</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps6('readListFilter')">待阅过滤游标</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps6('readcompletedListFilter')">已阅过滤游标</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps6('processListFilter')">按应用流程过滤</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps6('documentVersion')">文档版本</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdProcessing')">任务处理(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdReplace')">任务替换(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdPress')">任务催办(位置态)</button>
@@ -1433,6 +1442,28 @@ async function surfaceOps5(op: string): Promise<void> {
     else if (op === 'readOpinionMgr') await api.put(`/api/processplatform/assemble/surface/read/${id()}/opinion/manage`, {})
     else if (op === 'attDelete') { if (!(await confirmMsg('确定删除该附件？'))) return; await api.delete(`/api/processplatform/assemble/surface/attachment/${id()}`) }
     else { if (!(await confirmMsg('确定删除该模式？'))) return; await api.get(`/api/processplatform/assemble/surface/mode/${id()}/delete`) }
+    toast.success('流程表面操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev393：流程表面 附件下载(管理/按工作/按已办/工作附件)、附件图片分页预览、待阅·已阅过滤游标、按应用流程过滤、文档版本 真实路由（Path 已核 arity 匹配，filter/文档版本空体；用户触发）
+async function surfaceOps6(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
+    if (op === 'attDownloadManage') await api.get(`/api/processplatform/assemble/surface/attachment/download/${id()}/manage`)
+    else if (op === 'attDownloadByWork') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); await api.get(`/api/processplatform/assemble/surface/attachment/download/${id()}/work/${w}`) }
+    else if (op === 'attDownloadByWc') { const wc = encodeURIComponent(prompt('已办 ID:', '') || ''); await api.get(`/api/processplatform/assemble/surface/attachment/download/${id()}/workcompleted/${wc}`) }
+    else if (op === 'attDownloadWorkAtt') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); const a = encodeURIComponent(prompt('附件 ID:', '') || ''); await api.get(`/api/processplatform/assemble/surface/attachment/download/work/${w}/att/${a}`) }
+    else if (op === 'attPreviewImgPage') { const pg = 1; await api.get(`/api/processplatform/assemble/surface/attachment/${id()}/preview/image/page/${pg}`) }
+    else if (op === 'readListFilter') { const c = 20; await api.post(`/api/processplatform/assemble/surface/read/list/${id()}/next/${c}/filter`, {}) }
+    else if (op === 'readcompletedListFilter') { const c = 20; await api.post(`/api/processplatform/assemble/surface/readcompleted/list/${id()}/next/${c}/filter`, {}) }
+    else if (op === 'processListFilter') { const af = encodeURIComponent(prompt('应用标识:', '') || ''); await api.post(`/api/processplatform/assemble/surface/process/list/application/${af}/filter`, {}) }
+    else { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); await api.post(`/api/processplatform/assemble/surface/documentversion/work/${w}`, {}) }
     toast.success('流程表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
