@@ -13,6 +13,7 @@ from typing import List, Dict, Any, Optional, Callable
 
 from .evaluation import compute_similarity
 from .exceptions import DataValidationError
+from .validation import require_count
 
 logger = logging.getLogger(__name__)
 
@@ -69,8 +70,10 @@ class ActiveLearningLoop:
             raise DataValidationError(
                 f"不支持的采样策略: {strategy}。支持: {SUPPORTED_STRATEGIES}"
             )
-        if batch_size <= 0:
-            raise DataValidationError("batch_size 必须为正整数")
+        # 每轮必须选出样本，所以下界是 1 而不是 0（`select_samples` 的逐次覆盖
+        # 用同一个下界，见该方法）。非整数以前会在 `batch_size <= 0` 那里抛
+        # TypeError，绕过本模块的错误口径。
+        require_count("batch_size", batch_size, minimum=1)
 
         self.strategy = strategy
         self.batch_size = batch_size
@@ -198,10 +201,14 @@ class ActiveLearningLoop:
         Args:
             data: 候选数据列表
             strategy: 采样策略，为 None 时使用默认策略
-            batch_size: 选择数量，为 None 时使用默认值
+            batch_size: 选择数量，为 None 时使用默认值。越界值（负数、非整数）
+                与构造器同判据（不小于 1），不在这里另立一套
 
         Returns:
             选中的样本列表（按分值降序）
+
+        Raises:
+            DataValidationError: 策略名不存在，或 `batch_size` 越界
         """
         strategy = strategy or self.strategy
         if strategy not in SUPPORTED_STRATEGIES:
@@ -209,9 +216,14 @@ class ActiveLearningLoop:
                 f"不支持的采样策略: {strategy}。支持: {SUPPORTED_STRATEGIES}"
             )
 
+        # 先判参再短路：`if not data: return []` 排在这行之前时，
+        # `select_samples([], batch_size=-1)` 会静默返回空列表，把坏参数藏掉。
+        require_count("batch_size", batch_size, minimum=1)
+
         if not data:
             return []
 
+        # 下界已在上面判掉，`or` 在这里吞不掉任何合法值
         size = min(batch_size or self.batch_size, len(data))
         scores = self._compute_scores(data, strategy)
 

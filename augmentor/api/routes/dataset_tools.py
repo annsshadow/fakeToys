@@ -133,7 +133,9 @@ class SearchRequest(BaseModel):
     `fields` 为 None 时搜索全部字段；`method` 支持
     exact / contains / ngram / fuzzy / regex。
     `fuzzy_threshold` / `ngram_n` 分别是 fuzzy 与 ngram 的松紧旋钮，越界由 SDK
-    的判据拦下（`ValueError` → 400）。
+    的判据拦下（`ValueError` → 400）。`limit` / `offset` 同样由 SDK 那一处判据
+    拦下（负数以前会经切片换成反向窗口），所以这里不加 `ge=` 约束——一处判据，
+    不在路由里重复校验。`limit=0` 是合法请求：`total_matches` 照给，条目为空。
     `filters` 是检索**之后**按字段值收窄的清单，每项形如
     `{"field": ..., "operator": ..., "value": ...}`，算子取 eq / ne / contains /
     gt / lt / gte / lte / in / not_in；算子不存在或值的形状不合该算子的要求同样由

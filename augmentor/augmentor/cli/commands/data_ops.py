@@ -132,9 +132,12 @@ def run_search(args, config):
     fuzzy / regex 五种方法，以及 `--offset` 分页与 `--output` 落盘完整结果。
     `--fuzzy-threshold` / `--ngram-n` 是 fuzzy 与 ngram 的松紧旋钮（`search()` 的
     `fuzzy_threshold` / `ngram_n`），默认 0.6 / 2；`--filter FIELD OP VALUE` 是可重复的
-    收窄条件（`search()` 的 `filters`，检索之后按字段值再筛一遍）。三者的越界值都由
-    SDK 那**一处**判据拦下，经 `main()` 的 `except Exception` 变成 `错误: …` + 退出码 1，
-    不在此重复校验。
+    收窄条件（`search()` 的 `filters`，检索之后按字段值再筛一遍）；`--limit` /
+    `--offset` 是分页窗口。这四类的越界值都由 SDK 那**一处**判据拦下，经 `main()`
+    的 `except Exception` 变成 `错误: …` + 退出码 1，不在此重复校验。
+    分页以前不在拒绝名单里：`--limit -1` 打印「找到 2 条」却把除最后一条以外的
+    全部条目吐进 JSON（切片把负数读成反向窗口）。`--limit 0` 不是越界值，它报
+    总数不给条目，是合法答案。
 
     `ngram` 原先只存在于另一套实现（`indexer.DatasetIndexer`），已移植进
     `EnhancedSearcher`——所以这里不是「少了一个方法」，而是五种方法齐全。

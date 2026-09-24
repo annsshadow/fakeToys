@@ -16,6 +16,7 @@ from collections.abc import Mapping
 import time
 
 from augmentor.exceptions import DataValidationError
+from augmentor.validation import require_count
 
 logger = logging.getLogger(__name__)
 
@@ -342,7 +343,10 @@ class EnhancedSearcher:
                 有意义，但**不判方法**——判据是值本身是否在文档域内，所以
                 `--method contains --fuzzy-threshold 0` 也会失败：那是在请求一个
                 任何方法都给不出结果的门槛，静默忽略等于骗人。
-                同样在这里判的还有 `filters` 的形状（见 `normalize_filters`）。
+                同样在这里判的还有 `filters` 的形状（见 `normalize_filters`），以及
+                分页两参数 `limit` / `offset`（见 `require_count`）：`limit` 允许 0，
+                含义是「只要总数，不要条目」——`total_matches` 本来就是分页前的
+                全集条数，所以这是一个有意义的答案，不能被当成「没传参数」。
         """
         if not 0 < fuzzy_threshold <= 1:
             raise DataValidationError(
@@ -352,6 +356,12 @@ class EnhancedSearcher:
             raise DataValidationError(
                 f"n-gram 长度必须是大于 0 的整数，当前是 {ngram_n}"
             )
+        # 分页窗口是一个下标切片，而切片对越界值不会报错，只会换语义：
+        # `seq[0:0 + -1]` 读作「除了最后一条」，于是「要 1 条」答出 19 条，
+        # 比 `total_matches` 还多——自相矛盾且不吭声。`offset` 为负时同理
+        # （`seq[-1:...]` 变成倒数窗口，窗口起点直接落到列表尾部）。
+        require_count("limit", limit)
+        require_count("offset", offset)
         # 只在这一处判；`_evaluate_filter` 里那些 `isinstance` 是文档侧的「不匹配」，
         # 不是参数校验，两者不能混（见 `normalize_filters` 的说明）。
         normalized_filters = normalize_filters(filters)
