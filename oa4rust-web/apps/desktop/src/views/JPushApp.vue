@@ -19,6 +19,7 @@
         <button @click="jpushWrite('deviceBind')">绑设备</button>
         <button @click="jpushWrite('deviceUnbind')">解绑设备</button>
         <button @click="jpushWrite('deviceUnbindAll')">解绑全部</button>
+        <button @click="jpushUnbindNew">新版解绑设备</button>
         <button @click="jpushWrite('messageSend')">发送消息</button>
         <button @click="jpushWrite('messageTest')">测试发送</button>
         <button @click="jpushWrite('coreDeviceCreate')">建实体设备</button>
@@ -189,6 +190,18 @@ async function jpushWrite(op: string) {
     toast.success('推送操作已提交')
   } catch (e: any) {
     toast.error('推送操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev406：极光推送 按设备名·类型·推送类型 新版解绑 真实路由（device_unbind_new Path<3-tuple> 已核；规避 device/config/push/type 是 handler 取 Path 但路由末段字面 'type' 的 trap500；用户触发）
+async function jpushUnbindNew() {
+  const dn = encodeURIComponent(prompt('设备名:', '') || '')
+  const dt = encodeURIComponent(prompt('设备类型:', '') || '')
+  const pt = encodeURIComponent(prompt('推送类型:', '') || '')
+  try {
+    await api.get(`/api/jpush_assemble_control/device/unbind/new/${dn}/${dt}/${pt}`)
+    toast.success('设备已解绑')
+  } catch (e: any) {
+    toast.error('解绑失败: ' + (e?.message ?? ''))
   }
 }
 
