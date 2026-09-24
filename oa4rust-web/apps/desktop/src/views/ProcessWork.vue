@@ -339,6 +339,13 @@
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps6('readcompletedListFilter')">已阅过滤游标</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps6('processListFilter')">按应用流程过滤</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps6('documentVersion')">文档版本</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest4('tcPressWork')">已办催办(按工作)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest4('wcMergeFlag')">已办合并(按flag)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest4('wcRollbackFlag')">已办回滚(按flag)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest4('workProcessing')">工作处理(位置态)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest4('dataPathDel')">按路径删数据</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest4('workSerial')">流水号建工作</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest4('snapWcAbandoned')">已办废弃快照(按类型)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdProcessing')">任务处理(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdReplace')">任务替换(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdPress')">任务催办(位置态)</button>
@@ -1493,6 +1500,26 @@ async function engineRest3(op: string): Promise<void> {
     else if (op === 'serviceWorkTouch') await api.put(`/api/processplatform/service/processing/service/work/${id()}/touch`, {})
     else if (op === 'snapIdRestore') await api.get(`/api/processplatform/service/processing/snap/${id()}/restore`)
     else { const j = encodeURIComponent(prompt('Job ID:', '') || ''); if (!(await confirmMsg('确定删除该 Job？'))) return; await api.delete(`/api/processplatform/service/processing/job/${j}`) }
+    toast.success('引擎操作已提交')
+  } catch (e: any) {
+    toast.error('引擎操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev394：service/processing 引擎 已办催办按工作/已办合并·回滚(按flag)/工作处理(位置态PUT)/按路径删数据/按流程名生成流水号建工作/已办废弃快照按类型 真实路由（Path arity 已核，serial 空体；用户触发）
+async function engineRest4(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
+    if (op === 'tcPressWork') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/taskcompleted/${id()}/press/work/${w}`) }
+    else if (op === 'wcMergeFlag') await api.get(`/api/processplatform/service/processing/workcompleted/${id()}/merge`)
+    else if (op === 'wcRollbackFlag') await api.put(`/api/processplatform/service/processing/workcompleted/${id()}/rollback`, {})
+    else if (op === 'workProcessing') await api.put(`/api/processplatform/service/processing/work/${id()}/processing`, {})
+    else if (op === 'dataPathDel') { const path = encodeURIComponent(prompt('数据路径:', '') || ''); if (!(await confirmMsg('确定删除该路径数据？'))) return; await api.post(`/api/processplatform/service/processing/data/work/${id()}/${path}/delete`, {}) }
+    else if (op === 'workSerial') { const pid = encodeURIComponent(prompt('流程 ID:', '') || ''); const name = encodeURIComponent(prompt('活动名:', '') || ''); await api.post(`/api/processplatform/service/processing/work/process/${pid}/name/${name}/serial`, {}) }
+    else { const t = encodeURIComponent(prompt('快照类型:', '') || ''); await api.get(`/api/processplatform/service/processing/snap/workcompleted/abandonedworkcompleted/${id()}/${t}`) }
     toast.success('引擎操作已提交')
   } catch (e: any) {
     toast.error('引擎操作失败: ' + (e?.message ?? ''))
