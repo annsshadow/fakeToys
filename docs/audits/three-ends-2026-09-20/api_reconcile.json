@@ -14031,7 +14031,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 325,
+    "line": 343,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/workorworkcompleted/${id}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/workorworkcompleted/{}",
@@ -14044,7 +14044,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 326,
+    "line": 344,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readrecord/list/workorworkcompleted/${id}",
     "path": "/api/processplatform/assemble/surface/readrecord/list/workorworkcompleted/{}",
@@ -14057,7 +14057,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 337,
+    "line": 355,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/file/list/application/${id}",
     "path": "/api/processplatform/assemble/surface/file/list/application/{}",
@@ -14070,7 +14070,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 338,
+    "line": 356,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/workorworkcompleted/${id}",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/workorworkcompleted/{}",
@@ -14083,7 +14083,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 350,
+    "line": 368,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/work/${id}",
     "path": "/api/processplatform/assemble/surface/task/list/work/{}",
@@ -14096,7 +14096,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 351,
+    "line": 369,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/job/${id}",
     "path": "/api/processplatform/assemble/surface/task/list/job/{}",
@@ -14109,7 +14109,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 352,
+    "line": 370,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/work/${id}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/work/{}",
@@ -14122,7 +14122,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 353,
+    "line": 371,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/job/${id}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/job/{}",
@@ -14135,7 +14135,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 354,
+    "line": 372,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/job/${id}",
     "path": "/api/processplatform/assemble/surface/read/list/job/{}",
@@ -14148,7 +14148,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 355,
+    "line": 373,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/job/${id}",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/job/{}",
@@ -14161,7 +14161,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 356,
+    "line": 374,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/worklog/list/job/${id}",
     "path": "/api/processplatform/assemble/surface/worklog/list/job/{}",
@@ -14174,7 +14174,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 358,
+    "line": 376,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/worklog/list/add/split/work/${id}",
     "path": "/api/processplatform/assemble/surface/worklog/list/add/split/work/{}",
@@ -14187,7 +14187,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 376,
+    "line": 394,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/${id}/next/${cnt}/application/${app}",
     "path": "/api/processplatform/assemble/surface/work/list/{}/next/{}/application/{}",
@@ -14200,7 +14200,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 377,
+    "line": 395,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/${id}/prev/${cnt}/application/${app}",
     "path": "/api/processplatform/assemble/surface/work/list/{}/prev/{}/application/{}",
@@ -14213,7 +14213,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 378,
+    "line": 396,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/${id}/next/${cnt}/application/${app}/manage",
     "path": "/api/processplatform/assemble/surface/work/list/{}/next/{}/application/{}/manage",
@@ -14226,7 +14226,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 379,
+    "line": 397,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/${id}/prev/${cnt}/application/${app}/manage",
     "path": "/api/processplatform/assemble/surface/work/list/{}/prev/{}/application/{}/manage",
@@ -14239,7 +14239,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 380,
+    "line": 398,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/${id}/next/${cnt}/process/${proc}",
     "path": "/api/processplatform/assemble/surface/work/list/{}/next/{}/process/{}",
@@ -14252,7 +14252,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 381,
+    "line": 399,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/${id}/prev/${cnt}/process/${proc}",
     "path": "/api/processplatform/assemble/surface/work/list/{}/prev/{}/process/{}",
@@ -14265,7 +14265,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 382,
+    "line": 400,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/${id}/next/${cnt}/creator/current",
     "path": "/api/processplatform/assemble/surface/work/list/{}/next/{}/creator/current",
@@ -14278,7 +14278,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 383,
+    "line": 401,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/${id}/prev/${cnt}/creator/current",
     "path": "/api/processplatform/assemble/surface/work/list/{}/prev/{}/creator/current",
@@ -14291,7 +14291,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 384,
+    "line": 402,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/next/application/filter/${id}/${cnt}/${app}",
     "path": "/api/processplatform/assemble/surface/work/list/next/application/filter/{}/{}/{}",
@@ -14304,7 +14304,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 385,
+    "line": 403,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/prev/application/filter/${id}/${cnt}/${app}",
     "path": "/api/processplatform/assemble/surface/work/list/prev/application/filter/{}/{}/{}",
@@ -14317,7 +14317,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 386,
+    "line": 404,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/next/application/filter/manage/${id}/${cnt}/${app}",
     "path": "/api/processplatform/assemble/surface/work/list/next/application/filter/manage/{}/{}/{}",
@@ -14330,7 +14330,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 387,
+    "line": 405,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/prev/application/filter/manage/${id}/${cnt}/${app}",
     "path": "/api/processplatform/assemble/surface/work/list/prev/application/filter/manage/{}/{}/{}",
@@ -14343,7 +14343,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 388,
+    "line": 406,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/next/application/manage/${id}/${cnt}/${app}",
     "path": "/api/processplatform/assemble/surface/work/list/next/application/manage/{}/{}/{}",
@@ -14356,7 +14356,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 389,
+    "line": 407,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/prev/application/manage/${id}/${cnt}/${app}",
     "path": "/api/processplatform/assemble/surface/work/list/prev/application/manage/{}/{}/{}",
@@ -14369,7 +14369,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 390,
+    "line": 408,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/prev/application/${id}/${cnt}/${app}",
     "path": "/api/processplatform/assemble/surface/work/list/prev/application/{}/{}/{}",
@@ -14382,7 +14382,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 391,
+    "line": 409,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/prev/process/${id}/${cnt}/${proc}",
     "path": "/api/processplatform/assemble/surface/work/list/prev/process/{}/{}/{}",
@@ -14395,7 +14395,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 392,
+    "line": 410,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/next/creator/current/filter/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/work/list/next/creator/current/filter/{}/{}",
@@ -14408,7 +14408,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 393,
+    "line": 411,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/prev/creator/current/filter/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/work/list/prev/creator/current/filter/{}/{}",
@@ -14421,7 +14421,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 394,
+    "line": 412,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/prev/creator/current/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/work/list/prev/creator/current/{}/{}",
@@ -14434,7 +14434,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 395,
+    "line": 413,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/application/process/manage/${cnt}/${app}",
     "path": "/api/processplatform/assemble/surface/work/list/application/process/manage/{}/{}",
@@ -14447,7 +14447,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 396,
+    "line": 414,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/v2/list/prev/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/work/v2/list/prev/{}/{}",
@@ -14460,7 +14460,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 397,
+    "line": 415,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/filter/attribute/application/${app}",
     "path": "/api/processplatform/assemble/surface/work/filter/attribute/application/{}",
@@ -14473,7 +14473,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 398,
+    "line": 416,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/filter/attribute/application/${app}/manage",
     "path": "/api/processplatform/assemble/surface/work/filter/attribute/application/{}/manage",
@@ -14486,7 +14486,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 399,
+    "line": 417,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/filter/attribute/application/manage/${app}",
     "path": "/api/processplatform/assemble/surface/work/filter/attribute/application/manage/{}",
@@ -14499,7 +14499,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 400,
+    "line": 418,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/application/process/${app}/${proc}",
     "path": "/api/processplatform/assemble/surface/work/application/process/{}/{}",
@@ -14512,7 +14512,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 401,
+    "line": 419,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/process/${proc}",
     "path": "/api/processplatform/assemble/surface/work/process/{}",
@@ -14525,7 +14525,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 402,
+    "line": 420,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/projection/${encodeURIComponent(wid)}",
     "path": "/api/processplatform/assemble/surface/work/projection/{}",
@@ -14538,7 +14538,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 403,
+    "line": 421,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/${encodeURIComponent(wid)}/projection",
     "path": "/api/processplatform/assemble/surface/work/{}/projection",
@@ -14551,7 +14551,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 404,
+    "line": 422,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/refer/${encodeURIComponent(wid)}",
     "path": "/api/processplatform/assemble/surface/work/refer/{}",
@@ -14564,7 +14564,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 405,
+    "line": 423,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/${encodeURIComponent(wid)}/refer",
     "path": "/api/processplatform/assemble/surface/work/{}/refer",
@@ -14577,7 +14577,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 406,
+    "line": 424,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/assignment/manage/${encodeURIComponent(wid)}",
     "path": "/api/processplatform/assemble/surface/work/assignment/manage/{}",
@@ -14590,7 +14590,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 407,
+    "line": 425,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/${encodeURIComponent(wid)}/assignment/manage",
     "path": "/api/processplatform/assemble/surface/work/{}/assignment/manage",
@@ -14603,7 +14603,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 408,
+    "line": 426,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/workorworkcompleted/${encodeURIComponent(wid)}",
     "path": "/api/processplatform/assemble/surface/work/workorworkcompleted/{}",
@@ -14616,7 +14616,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 409,
+    "line": 427,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/v3/workorworkcompleted/permission/${encodeURIComponent(wid)}",
     "path": "/api/processplatform/assemble/surface/work/v3/workorworkcompleted/permission/{}",
@@ -14629,7 +14629,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 410,
+    "line": 428,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/v3/workorworkcompleted/${encodeURIComponent(wid)}/permission",
     "path": "/api/processplatform/assemble/surface/work/v3/workorworkcompleted/{}/permission",
@@ -14642,7 +14642,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 442,
+    "line": 460,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/application/icon/${flag}",
     "path": "/api/processplatform/assemble/surface/application/icon/{}",
@@ -14655,7 +14655,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 443,
+    "line": 461,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/application/${flag}",
     "path": "/api/processplatform/assemble/surface/application/{}",
@@ -14668,7 +14668,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 444,
+    "line": 462,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/application/${flag}/${onlyRemoveNotCompleted}",
     "path": "/api/processplatform/assemble/surface/application/{}/{}",
@@ -14681,7 +14681,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 445,
+    "line": 463,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/applicationdict/application/data/${applicationDictFlag}/${applicationFlag}",
     "path": "/api/processplatform/assemble/surface/applicationdict/application/data/{}/{}",
@@ -14694,7 +14694,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 446,
+    "line": 464,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}",
     "path": "/api/processplatform/assemble/surface/applicationdict/{}/application/{}",
@@ -14707,7 +14707,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 447,
+    "line": 465,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/data",
     "path": "/api/processplatform/assemble/surface/applicationdict/{}/application/{}/data",
@@ -14720,7 +14720,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 448,
+    "line": 466,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/data",
     "path": "/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/data",
@@ -14733,7 +14733,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 449,
+    "line": 467,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/data",
     "path": "/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/data",
@@ -14746,7 +14746,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 450,
+    "line": 468,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/data",
     "path": "/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/data",
@@ -14759,7 +14759,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 451,
+    "line": 469,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/${path3}/data",
     "path": "/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/data",
@@ -14772,7 +14772,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 452,
+    "line": 470,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/${path3}/${path4}/data",
     "path": "/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/data",
@@ -14785,7 +14785,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 453,
+    "line": 471,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/data",
     "path": "/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/{}/data",
@@ -14798,7 +14798,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 454,
+    "line": 472,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}/data",
     "path": "/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/{}/{}/data",
@@ -14811,7 +14811,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 455,
+    "line": 473,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}/${path7}/data",
     "path": "/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/{}/{}/{}/data",
@@ -14824,7 +14824,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 456,
+    "line": 474,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/job/${job}/${path0}",
     "path": "/api/processplatform/assemble/surface/data/job/{}/{}",
@@ -14837,7 +14837,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 457,
+    "line": 475,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}",
     "path": "/api/processplatform/assemble/surface/data/job/{}/{}/{}",
@@ -14850,7 +14850,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 458,
+    "line": 476,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}/${path2}",
     "path": "/api/processplatform/assemble/surface/data/job/{}/{}/{}/{}",
@@ -14863,7 +14863,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 459,
+    "line": 477,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}/${path2}/${path3}",
     "path": "/api/processplatform/assemble/surface/data/job/{}/{}/{}/{}/{}",
@@ -14876,7 +14876,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 460,
+    "line": 478,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}/${path2}/${path3}/${path4}",
     "path": "/api/processplatform/assemble/surface/data/job/{}/{}/{}/{}/{}/{}",
@@ -14889,7 +14889,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 461,
+    "line": 479,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}",
     "path": "/api/processplatform/assemble/surface/data/job/{}/{}/{}/{}/{}/{}/{}",
@@ -14902,7 +14902,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 462,
+    "line": 480,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}",
     "path": "/api/processplatform/assemble/surface/data/job/{}/{}/{}/{}/{}/{}/{}/{}",
@@ -14915,7 +14915,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 463,
+    "line": 481,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}/${path7}",
     "path": "/api/processplatform/assemble/surface/data/job/{}/{}/{}/{}/{}/{}/{}/{}/{}",
@@ -14928,7 +14928,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 465,
+    "line": 483,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/${id}",
     "path": "/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/{}",
@@ -14941,7 +14941,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 466,
+    "line": 484,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/work/${id}/${path0}",
     "path": "/api/processplatform/assemble/surface/data/work/{}/{}",
@@ -14954,7 +14954,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 467,
+    "line": 485,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}",
     "path": "/api/processplatform/assemble/surface/data/work/{}/{}/{}",
@@ -14967,7 +14967,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 468,
+    "line": 486,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}/${path2}",
     "path": "/api/processplatform/assemble/surface/data/work/{}/{}/{}/{}",
@@ -14980,7 +14980,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 469,
+    "line": 487,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}/${path2}/${path3}",
     "path": "/api/processplatform/assemble/surface/data/work/{}/{}/{}/{}/{}",
@@ -14993,7 +14993,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 470,
+    "line": 488,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}/${path2}/${path3}/${path4}",
     "path": "/api/processplatform/assemble/surface/data/work/{}/{}/{}/{}/{}/{}",
@@ -15006,7 +15006,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 471,
+    "line": 489,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}",
     "path": "/api/processplatform/assemble/surface/data/work/{}/{}/{}/{}/{}/{}/{}",
@@ -15019,7 +15019,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 472,
+    "line": 490,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}",
     "path": "/api/processplatform/assemble/surface/data/work/{}/{}/{}/{}/{}/{}/{}/{}",
@@ -15032,7 +15032,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 473,
+    "line": 491,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}/${path7}",
     "path": "/api/processplatform/assemble/surface/data/work/{}/{}/{}/{}/{}/{}/{}/{}/{}",
@@ -15045,7 +15045,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 474,
+    "line": 492,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/${id}",
     "path": "/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/{}",
@@ -15058,7 +15058,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 475,
+    "line": 493,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}",
     "path": "/api/processplatform/assemble/surface/data/workcompleted/{}/{}",
@@ -15071,7 +15071,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 476,
+    "line": 494,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}",
     "path": "/api/processplatform/assemble/surface/data/workcompleted/{}/{}/{}",
@@ -15084,7 +15084,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 477,
+    "line": 495,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}/${path2}",
     "path": "/api/processplatform/assemble/surface/data/workcompleted/{}/{}/{}/{}",
@@ -15097,7 +15097,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 478,
+    "line": 496,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}/${path2}/${path3}",
     "path": "/api/processplatform/assemble/surface/data/workcompleted/{}/{}/{}/{}/{}",
@@ -15110,7 +15110,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 479,
+    "line": 497,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}/${path2}/${path3}/${path4}",
     "path": "/api/processplatform/assemble/surface/data/workcompleted/{}/{}/{}/{}/{}/{}",
@@ -15123,7 +15123,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 480,
+    "line": 498,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}",
     "path": "/api/processplatform/assemble/surface/data/workcompleted/{}/{}/{}/{}/{}/{}/{}",
@@ -15136,7 +15136,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 481,
+    "line": 499,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}",
     "path": "/api/processplatform/assemble/surface/data/workcompleted/{}/{}/{}/{}/{}/{}/{}/{}",
@@ -15149,7 +15149,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 482,
+    "line": 500,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}/${path7}",
     "path": "/api/processplatform/assemble/surface/data/workcompleted/{}/{}/{}/{}/{}/{}/{}/{}/{}",
@@ -15162,7 +15162,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 483,
+    "line": 501,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/documentversion/list/job/job/${category}/${category}",
     "path": "/api/processplatform/assemble/surface/documentversion/list/job/job/{}/{}",
@@ -15175,7 +15175,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 484,
+    "line": 502,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/${workOrWorkCompleted}/${category}/${category}",
     "path": "/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/{}/{}/{}",
@@ -15188,7 +15188,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 485,
+    "line": 503,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/documentversion/${id}",
     "path": "/api/processplatform/assemble/surface/documentversion/{}",
@@ -15201,7 +15201,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 486,
+    "line": 504,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/file/application/content/${flag}/${applicationFlag}",
     "path": "/api/processplatform/assemble/surface/file/application/content/{}/{}",
@@ -15214,7 +15214,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 487,
+    "line": 505,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/file/${flag}/application/${applicationFlag}/content",
     "path": "/api/processplatform/assemble/surface/file/{}/application/{}/content",
@@ -15227,7 +15227,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 488,
+    "line": 506,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/v2/${id}",
     "path": "/api/processplatform/assemble/surface/form/v2/{}",
@@ -15240,7 +15240,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 489,
+    "line": 507,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/${flag}",
     "path": "/api/processplatform/assemble/surface/form/{}",
@@ -15253,7 +15253,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 490,
+    "line": 508,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/${flag}/mobile",
     "path": "/api/processplatform/assemble/surface/form/{}/mobile",
@@ -15266,7 +15266,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 517,
+    "line": 535,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/preview/${id}",
     "path": "/api/processplatform/assemble/surface/preview/{}",
@@ -15279,7 +15279,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 518,
+    "line": 536,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/activity/activity/${activityType}/${activityType}",
     "path": "/api/processplatform/assemble/surface/process/activity/activity/{}/{}",
@@ -15292,7 +15292,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 519,
+    "line": 537,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/${flag}",
     "path": "/api/processplatform/assemble/surface/process/{}",
@@ -15305,7 +15305,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 520,
+    "line": 538,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/${flag}/application/${applicationFlag}",
     "path": "/api/processplatform/assemble/surface/process/{}/application/{}",
@@ -15318,7 +15318,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 521,
+    "line": 539,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/${flag}/${onlyRemoveNotCompleted}",
     "path": "/api/processplatform/assemble/surface/process/{}/{}",
@@ -15331,7 +15331,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 522,
+    "line": 540,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/filter/manage/${page}/${size}/${size}",
     "path": "/api/processplatform/assemble/surface/read/list/filter/manage/{}/{}/{}",
@@ -15344,7 +15344,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 523,
+    "line": 541,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/my/filter/${page}/${size}/${size}",
     "path": "/api/processplatform/assemble/surface/read/list/my/filter/{}/{}/{}",
@@ -15357,7 +15357,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 524,
+    "line": 542,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/${count}/${credential}",
     "path": "/api/processplatform/assemble/surface/read/{}/{}",
@@ -15370,7 +15370,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 525,
+    "line": 543,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/count/${credential}",
     "path": "/api/processplatform/assemble/surface/readcompleted/count/{}",
@@ -15383,7 +15383,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 526,
+    "line": 544,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/filter/manage/${page}/${size}/${size}",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/filter/manage/{}/{}/{}",
@@ -15396,7 +15396,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 527,
+    "line": 545,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/my/filter/${page}/${size}/${size}",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/my/filter/{}/{}/{}",
@@ -15409,7 +15409,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 528,
+    "line": 546,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/my/paging/${page}/${size}/${size}",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/my/paging/{}/{}/{}",
@@ -15422,7 +15422,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 529,
+    "line": 547,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/${count}/${credential}",
     "path": "/api/processplatform/assemble/surface/readcompleted/{}/{}",
@@ -15435,7 +15435,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 530,
+    "line": 548,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/${id}",
     "path": "/api/processplatform/assemble/surface/readcompleted/{}",
@@ -15448,7 +15448,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 531,
+    "line": 549,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/record/list/job/job/paging/${page}/${size}/${size}",
     "path": "/api/processplatform/assemble/surface/record/list/job/job/paging/{}/{}/{}",
@@ -15461,7 +15461,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 532,
+    "line": 550,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/record/list/workorworkcompleted/paging/${workOrWorkCompleted}/${page}/${size}/${size}",
     "path": "/api/processplatform/assemble/surface/record/list/workorworkcompleted/paging/{}/{}/{}/{}",
@@ -15474,7 +15474,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 533,
+    "line": 551,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/review/person/${count}/${credential}",
     "path": "/api/processplatform/assemble/surface/review/person/{}/{}",
@@ -15487,7 +15487,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 534,
+    "line": 552,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/review/v2/list/paging/manage/${page}/${size}/${size}",
     "path": "/api/processplatform/assemble/surface/review/v2/list/paging/manage/{}/{}/{}",
@@ -15500,7 +15500,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 535,
+    "line": 553,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/script/application/imported/${flag}/${applicationFlag}",
     "path": "/api/processplatform/assemble/surface/script/application/imported/{}/{}",
@@ -15513,7 +15513,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 536,
+    "line": 554,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/script/${flag}/application/${applicationFlag}/imported",
     "path": "/api/processplatform/assemble/surface/script/{}/application/{}/imported",
@@ -15526,7 +15526,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 538,
+    "line": 556,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/count/${credential}",
     "path": "/api/processplatform/assemble/surface/task/count/{}",
@@ -15539,7 +15539,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 539,
+    "line": 557,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/date/date/hour/hour/exclude/draft/manage/${isExcludeDraft}",
     "path": "/api/processplatform/assemble/surface/task/list/date/date/hour/hour/exclude/draft/manage/{}",
@@ -15552,7 +15552,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 540,
+    "line": 558,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/date/${date}/hour/${hour}/exclude/draft/${isExcludeDraft}/manage",
     "path": "/api/processplatform/assemble/surface/task/list/date/{}/hour/{}/exclude/draft/{}/manage",
@@ -15565,7 +15565,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 541,
+    "line": 559,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/filter/manage/${page}/${size}/${size}",
     "path": "/api/processplatform/assemble/surface/task/list/filter/manage/{}/{}/{}",
@@ -15578,7 +15578,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 542,
+    "line": 560,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/my/filter/${page}/${size}/${size}",
     "path": "/api/processplatform/assemble/surface/task/list/my/filter/{}/{}/{}",
@@ -15591,7 +15591,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 543,
+    "line": 561,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/my/paging/${page}/${size}/${size}",
     "path": "/api/processplatform/assemble/surface/task/list/my/paging/{}/{}/{}",
@@ -15604,7 +15604,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 544,
+    "line": 562,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/person/person/exclude/draft/manage/${isExcludeDraft}",
     "path": "/api/processplatform/assemble/surface/task/list/person/person/exclude/draft/manage/{}",
@@ -15617,7 +15617,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 545,
+    "line": 563,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/${count}/${credential}",
     "path": "/api/processplatform/assemble/surface/task/{}/{}",
@@ -15630,7 +15630,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 546,
+    "line": 564,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/${id}",
     "path": "/api/processplatform/assemble/surface/task/{}",
@@ -15643,7 +15643,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 547,
+    "line": 565,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/count/${credential}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/count/{}",
@@ -15656,7 +15656,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 548,
+    "line": 566,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/filter/manage/${page}/${size}/${size}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/filter/manage/{}/{}/{}",
@@ -15669,7 +15669,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 549,
+    "line": 567,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/my/filter/${page}/${size}/${size}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/my/filter/{}/{}/{}",
@@ -15682,7 +15682,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 550,
+    "line": 568,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/my/paging/${page}/${size}/${size}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/my/paging/{}/{}/{}",
@@ -15695,7 +15695,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 551,
+    "line": 569,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/prev/${id}/${count}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/prev/{}/{}",
@@ -15708,7 +15708,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 552,
+    "line": 570,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/${count}/${credential}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/{}/{}",
@@ -15721,7 +15721,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 553,
+    "line": 571,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/${id}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/{}",
@@ -15734,7 +15734,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 554,
+    "line": 572,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/application/${count}/${credential}/${appId}",
     "path": "/api/processplatform/assemble/surface/work/application/{}/{}/{}",
@@ -15747,7 +15747,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 555,
+    "line": 573,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/count/${credential}/application/${appId}",
     "path": "/api/processplatform/assemble/surface/work/count/{}/application/{}",
@@ -15760,7 +15760,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 556,
+    "line": 574,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/filter/manage/${page}/${size}/${size}",
     "path": "/api/processplatform/assemble/surface/work/list/filter/manage/{}/{}/{}",
@@ -15773,7 +15773,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 557,
+    "line": 575,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/my/paging/${page}/${size}/${size}",
     "path": "/api/processplatform/assemble/surface/work/list/my/paging/{}/{}/{}",
@@ -15786,7 +15786,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 558,
+    "line": 576,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/paging/application/filter/manage/${page}/${size}/${size}/${applicationFlag}",
     "path": "/api/processplatform/assemble/surface/work/list/paging/application/filter/manage/{}/{}/{}/{}",
@@ -15799,7 +15799,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 559,
+    "line": 577,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/${count}/${credential}",
     "path": "/api/processplatform/assemble/surface/work/{}/{}",
@@ -15812,7 +15812,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 560,
+    "line": 578,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/${id}",
     "path": "/api/processplatform/assemble/surface/work/{}",
@@ -15825,7 +15825,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 561,
+    "line": 579,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/${id}/manage",
     "path": "/api/processplatform/assemble/surface/work/{}/manage",
@@ -15838,7 +15838,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 562,
+    "line": 580,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/workcompleted/list/filter/manage/${page}/${size}/${size}",
     "path": "/api/processplatform/assemble/surface/workcompleted/list/filter/manage/{}/{}/{}",
@@ -15851,7 +15851,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 563,
+    "line": 581,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/workcompleted/list/paging/application/filter/manage/${page}/${size}/${size}/${applicationFlag}",
     "path": "/api/processplatform/assemble/surface/workcompleted/list/paging/application/filter/manage/{}/{}/{}/{}",
@@ -15864,7 +15864,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 564,
+    "line": 582,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/workcompleted/${id}",
     "path": "/api/processplatform/assemble/surface/workcompleted/{}",
@@ -15877,7 +15877,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 577,
+    "line": 595,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/documentversion/list/job/${id}/category/${id}",
     "path": "/api/processplatform/assemble/surface/documentversion/list/job/{}/category/{}",
@@ -15890,7 +15890,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 578,
+    "line": 596,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/${id}/category/${id}",
     "path": "/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/{}/category/{}",
@@ -15903,7 +15903,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 579,
+    "line": 597,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/work/${id}",
     "path": "/api/processplatform/assemble/surface/read/list/work/{}",
@@ -15916,7 +15916,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 593,
+    "line": 611,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/attachment/list/job/${job}",
     "path": "/api/processplatform/assemble/surface/attachment/list/job/{}",
@@ -15929,7 +15929,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 594,
+    "line": 612,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/correlation/list/job/${job}",
     "path": "/api/processplatform/assemble/surface/correlation/list/job/{}",
@@ -15942,7 +15942,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 595,
+    "line": 613,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/datarecord/list/job/${job}",
     "path": "/api/processplatform/assemble/surface/datarecord/list/job/{}",
@@ -15955,7 +15955,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 596,
+    "line": 614,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/documentversion/list/job/${job}",
     "path": "/api/processplatform/assemble/surface/documentversion/list/job/{}",
@@ -15968,7 +15968,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 614,
+    "line": 632,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/draft/${firstId}",
     "path": "/api/processplatform/assemble/surface/draft/{}",
@@ -15981,7 +15981,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 636,
+    "line": 654,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/handover/${firstId}",
     "path": "/api/processplatform/assemble/surface/handover/{}",
@@ -15994,7 +15994,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 637,
+    "line": 655,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/handover/process/${firstId}",
     "path": "/api/processplatform/assemble/surface/handover/process/{}",
@@ -16007,7 +16007,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 658,
+    "line": 676,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/review/${firstId}",
     "path": "/api/processplatform/assemble/surface/review/{}",
@@ -16020,7 +16020,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 682,
+    "line": 700,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/serialnumber/${firstId}",
     "path": "/api/processplatform/assemble/surface/serialnumber/{}",
@@ -16033,7 +16033,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 684,
+    "line": 702,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/serialnumber/list/application/${encodeURIComponent(appFlag)}",
     "path": "/api/processplatform/assemble/surface/serialnumber/list/application/{}",
@@ -16046,7 +16046,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 707,
+    "line": 725,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/v2/workorworkcompleted/${firstId}",
     "path": "/api/processplatform/assemble/surface/work/v2/workorworkcompleted/{}",
@@ -16059,7 +16059,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 786,
+    "line": 804,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/${id}",
     "path": "/api/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/{}",
@@ -16072,7 +16072,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 787,
+    "line": 805,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/work/${id}",
     "path": "/api/processplatform/assemble/surface/data/work/{}",
@@ -16085,7 +16085,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 824,
+    "line": 842,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/attachment/list/work/${id}",
     "path": "/api/processplatform/assemble/surface/attachment/list/work/{}",
@@ -16098,7 +16098,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 825,
+    "line": 843,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/record/list/workorworkcompleted/${id}",
     "path": "/api/processplatform/assemble/surface/record/list/workorworkcompleted/{}",
@@ -16111,7 +16111,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 826,
+    "line": 844,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/worklog/list/workorworkcompleted/${id}",
     "path": "/api/processplatform/assemble/surface/worklog/list/workorworkcompleted/{}",
@@ -16124,7 +16124,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 827,
+    "line": 845,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/workorworkcompleted/${id}",
     "path": "/api/processplatform/assemble/surface/read/list/workorworkcompleted/{}",
@@ -16137,7 +16137,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 861,
+    "line": 879,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/work/${id}",
     "path": "/api/processplatform/service/processing/work/{}",
@@ -16150,7 +16150,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 862,
+    "line": 880,
     "method": "POST",
     "raw": "/api/processplatform/service/processing/record/processing/${id}",
     "path": "/api/processplatform/service/processing/record/processing/{}",
@@ -16163,7 +16163,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 863,
+    "line": 881,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/record/terminate/${id}",
     "path": "/api/processplatform/service/processing/record/terminate/{}",
@@ -16176,7 +16176,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 879,
+    "line": 897,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/attachment/list/workorworkcompleted/${id}",
     "path": "/api/processplatform/assemble/surface/attachment/list/workorworkcompleted/{}",
@@ -16189,7 +16189,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 880,
+    "line": 898,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/${id}",
     "path": "/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/{}",
@@ -16202,7 +16202,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 888,
+    "line": 906,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/attachment/${attId}/available",
     "path": "/api/processplatform/assemble/surface/attachment/{}/available",
@@ -16215,7 +16215,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 889,
+    "line": 907,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/attachment/${attId}/online/info",
     "path": "/api/processplatform/assemble/surface/attachment/{}/online/info",
@@ -16228,7 +16228,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 903,
+    "line": 921,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/attachment/list/work/${id}",
     "path": "/api/processplatform/assemble/surface/attachment/list/work/{}",
@@ -16241,7 +16241,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 910,
+    "line": 928,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/attachment/${attId}/work/${id}",
     "path": "/api/processplatform/assemble/surface/attachment/{}/work/{}",
@@ -16254,7 +16254,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 911,
+    "line": 929,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/attachment/${attId}/work/${id}/text",
     "path": "/api/processplatform/assemble/surface/attachment/{}/work/{}/text",
@@ -16267,7 +16267,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 912,
+    "line": 930,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/attachment/${attId}/workcompleted/${id}",
     "path": "/api/processplatform/assemble/surface/attachment/{}/workcompleted/{}",
@@ -16280,7 +16280,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 913,
+    "line": 931,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/attachment/${attId}/workorworkcompleted/${id}",
     "path": "/api/processplatform/assemble/surface/attachment/{}/workorworkcompleted/{}",
@@ -16293,7 +16293,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 914,
+    "line": 932,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/attachment/list/workcompleted/${id}",
     "path": "/api/processplatform/assemble/surface/attachment/list/workcompleted/{}",
@@ -16306,7 +16306,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 927,
+    "line": 945,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/job/${id}",
     "path": "/api/processplatform/assemble/surface/read/list/job/{}",
@@ -16319,7 +16319,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 928,
+    "line": 946,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/work/${id}",
     "path": "/api/processplatform/assemble/surface/read/list/work/{}",
@@ -16332,7 +16332,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 930,
+    "line": 948,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/count/${id}",
     "path": "/api/processplatform/assemble/surface/read/count/{}",
@@ -16345,7 +16345,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 931,
+    "line": 949,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/work/${id}",
     "path": "/api/processplatform/assemble/surface/read/work/{}",
@@ -16358,7 +16358,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 943,
+    "line": 961,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/record/manage/${id}",
     "path": "/api/processplatform/assemble/surface/record/manage/{}",
@@ -16371,7 +16371,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 944,
+    "line": 962,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/record/list/job/${id}",
     "path": "/api/processplatform/assemble/surface/record/list/job/{}",
@@ -16384,7 +16384,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 947,
+    "line": 965,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/review/list/job/${id}",
     "path": "/api/processplatform/assemble/surface/review/list/job/{}",
@@ -16397,7 +16397,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 948,
+    "line": 966,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/review/workorworkcompleted/${id}",
     "path": "/api/processplatform/assemble/surface/review/workorworkcompleted/{}",
@@ -16410,7 +16410,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 992,
+    "line": 1010,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/task/${taskId}",
     "path": "/api/processplatform/service/processing/task/{}",
@@ -16423,7 +16423,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 994,
+    "line": 1012,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/task/expire/${taskId}",
     "path": "/api/processplatform/service/processing/task/expire/{}",
@@ -16436,7 +16436,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1007,
+    "line": 1025,
     "method": "POST",
     "raw": "/api/processplatform/service/processing/task/press/${taskId}",
     "path": "/api/processplatform/service/processing/task/press/{}",
@@ -16449,7 +16449,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1025,
+    "line": 1043,
     "method": "POST",
     "raw": "/api/processplatform/service/processing/work/v2/${id}/goback",
     "path": "/api/processplatform/service/processing/work/v2/{}/goback",
@@ -16462,7 +16462,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1028,
+    "line": 1046,
     "method": "PUT",
     "raw": "/api/processplatform/service/processing/work/v2/${id}/reroute",
     "path": "/api/processplatform/service/processing/work/v2/{}/reroute",
@@ -16475,7 +16475,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1031,
+    "line": 1049,
     "method": "PUT",
     "raw": "/api/processplatform/service/processing/work/v2/${id}/retract",
     "path": "/api/processplatform/service/processing/work/v2/{}/retract",
@@ -16488,7 +16488,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1034,
+    "line": 1052,
     "method": "PUT",
     "raw": "/api/processplatform/service/processing/work/v2/${id}/rollback",
     "path": "/api/processplatform/service/processing/work/v2/{}/rollback",
@@ -16501,7 +16501,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1037,
+    "line": 1055,
     "method": "PUT",
     "raw": "/api/processplatform/service/processing/work/${id}",
     "path": "/api/processplatform/service/processing/work/{}",
@@ -16514,7 +16514,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1040,
+    "line": 1058,
     "method": "DELETE",
     "raw": "/api/processplatform/service/processing/work/${id}/draft",
     "path": "/api/processplatform/service/processing/work/{}/draft",
@@ -16527,7 +16527,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1054,
+    "line": 1072,
     "method": "POST",
     "raw": "/api/processplatform/service/processing/task/will/${id}",
     "path": "/api/processplatform/service/processing/task/will/{}",
@@ -16540,7 +16540,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1055,
+    "line": 1073,
     "method": "POST",
     "raw": "/api/processplatform/service/processing/task/v3/add/${id}",
     "path": "/api/processplatform/service/processing/task/v3/add/{}",
@@ -16553,7 +16553,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1056,
+    "line": 1074,
     "method": "POST",
     "raw": "/api/processplatform/service/processing/task/processing/${id}",
     "path": "/api/processplatform/service/processing/task/processing/{}",
@@ -16566,7 +16566,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1070,
+    "line": 1088,
     "method": "PUT",
     "raw": "/api/processplatform/service/processing/attachment/${encodeURIComponent(id)}",
     "path": "/api/processplatform/service/processing/attachment/{}",
@@ -16579,7 +16579,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1073,
+    "line": 1091,
     "method": "DELETE",
     "raw": "/api/processplatform/service/processing/attachment/${encodeURIComponent(id)}",
     "path": "/api/processplatform/service/processing/attachment/{}",
@@ -16592,7 +16592,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1085,
+    "line": 1103,
     "method": "PUT",
     "raw": "/api/processplatform/service/processing/read/${e}/processing",
     "path": "/api/processplatform/service/processing/read/{}/processing",
@@ -16605,7 +16605,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1088,
+    "line": 1106,
     "method": "POST",
     "raw": "/api/processplatform/service/processing/read/${e}/replace",
     "path": "/api/processplatform/service/processing/read/{}/replace",
@@ -16618,7 +16618,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1091,
+    "line": 1109,
     "method": "POST",
     "raw": "/api/processplatform/service/processing/read/${e}/reset",
     "path": "/api/processplatform/service/processing/read/{}/reset",
@@ -16631,7 +16631,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1094,
+    "line": 1112,
     "method": "DELETE",
     "raw": "/api/processplatform/service/processing/read/${e}",
     "path": "/api/processplatform/service/processing/read/{}",
@@ -16644,7 +16644,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1109,
+    "line": 1153,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/attachment/${id}",
     "path": "/api/processplatform/service/processing/attachment/{}",
@@ -16657,7 +16657,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1120,
+    "line": 1164,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/${id}",
     "path": "/api/processplatform/assemble/surface/read/{}",
@@ -16670,7 +16670,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1136,
+    "line": 1180,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/task/v2/${taskId}",
     "path": "/api/processplatform/service/processing/task/v2/{}",
@@ -16683,7 +16683,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1149,
+    "line": 1193,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/task/v2/pause/${taskId}",
     "path": "/api/processplatform/service/processing/task/v2/pause/{}",
@@ -16696,7 +16696,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1152,
+    "line": 1196,
     "method": "POST",
     "raw": "/api/processplatform/service/processing/task/v2/resume/${taskId}",
     "path": "/api/processplatform/service/processing/task/v2/resume/{}",
@@ -16709,7 +16709,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1155,
+    "line": 1199,
     "method": "POST",
     "raw": "/api/processplatform/service/processing/task/v2/reset/${taskId}",
     "path": "/api/processplatform/service/processing/task/v2/reset/{}",
@@ -16722,7 +16722,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1215,
+    "line": 1259,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/get/${encodeURIComponent(startProcessId.value)}",
     "path": "/api/processplatform/assemble/designer/get/{}",
@@ -16735,7 +16735,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1227,
+    "line": 1271,
     "method": "GET",
     "raw": "/api/form/${encodeURIComponent(formFlag)}",
     "path": "/api/form/{}",
@@ -16748,7 +16748,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1253,
+    "line": 1297,
     "method": "PUT",
     "raw": "/api/processplatform/service/processing/data/work/${workId}",
     "path": "/api/processplatform/service/processing/data/work/{}",
@@ -16761,7 +16761,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1278,
+    "line": 1322,
     "method": "PUT",
     "raw": "/api/processplatform/service/processing/data/work/${id}",
     "path": "/api/processplatform/service/processing/data/work/{}",
@@ -16774,7 +16774,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1281,
+    "line": 1325,
     "method": "POST",
     "raw": "/api/task/${taskId}/complete",
     "path": "/api/task/{}/complete",
@@ -16787,7 +16787,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1283,
+    "line": 1327,
     "method": "POST",
     "raw": "/api/task/${taskId}/reject",
     "path": "/api/task/{}/reject",
@@ -30054,7 +30054,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 282,
+    "line": 300,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/task/list/my/paging/1/size/20",
     "path": "/api/processplatform/assemble/surface/task/list/my/paging/1/size/20",
@@ -30070,7 +30070,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 282,
+    "line": 300,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/my/paging/1/size/20",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/my/paging/1/size/20",
@@ -30086,7 +30086,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 282,
+    "line": 300,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/work/list/my/paging/1/size/20",
     "path": "/api/processplatform/assemble/surface/work/list/my/paging/1/size/20",
@@ -30102,7 +30102,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 283,
+    "line": 301,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/my/paging/1/size/20",
     "path": "/api/processplatform/assemble/surface/task/list/my/paging/1/size/20",
@@ -30118,7 +30118,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 283,
+    "line": 301,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/list/my/paging/1/size/20",
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/my/paging/1/size/20",
@@ -30134,7 +30134,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 283,
+    "line": 301,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/my/paging/1/size/20",
     "path": "/api/processplatform/assemble/surface/work/list/my/paging/1/size/20",
@@ -30150,7 +30150,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 322,
+    "line": 340,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/next/application/${id}/20/${id}",
     "path": "/api/processplatform/assemble/surface/work/list/next/application/{}/20/{}",
@@ -30165,7 +30165,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 323,
+    "line": 341,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/next/process/${id}/20/${id}",
     "path": "/api/processplatform/assemble/surface/work/list/next/process/{}/20/{}",
@@ -30180,7 +30180,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 324,
+    "line": 342,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/next/creator/current/${id}/20",
     "path": "/api/processplatform/assemble/surface/work/list/next/creator/current/{}/20",
@@ -30195,7 +30195,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 580,
+    "line": 598,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/my/paging/1/size/20",
     "path": "/api/processplatform/assemble/surface/read/list/my/paging/1/size/20",
@@ -30211,7 +30211,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 581,
+    "line": 599,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/my/paging/1/size/20",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/my/paging/1/size/20",
@@ -30227,7 +30227,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 608,
+    "line": 626,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/draft/list/my/paging/1/20/20",
     "path": "/api/processplatform/assemble/surface/draft/list/my/paging/1/20/20",
@@ -30244,7 +30244,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 615,
+    "line": 633,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/draft/list/next/${firstId}/20",
     "path": "/api/processplatform/assemble/surface/draft/list/next/{}/20",
@@ -30259,7 +30259,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 630,
+    "line": 648,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/handover/list/paging/1/20/20",
     "path": "/api/processplatform/assemble/surface/handover/list/paging/1/20/20",
@@ -30276,7 +30276,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 652,
+    "line": 670,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/review/v2/list/paging/1/20/20",
     "path": "/api/processplatform/assemble/surface/review/v2/list/paging/1/20/20",
@@ -30293,7 +30293,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 659,
+    "line": 677,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/review/v2/list/next/${firstId}/20",
     "path": "/api/processplatform/assemble/surface/review/v2/list/next/{}/20",
@@ -30308,7 +30308,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 674,
+    "line": 692,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/serialnumber/list/paging/1/20/20",
     "path": "/api/processplatform/assemble/surface/serialnumber/list/paging/1/20/20",
@@ -30325,7 +30325,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 700,
+    "line": 718,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/v2/list/paging/1/20/20",
     "path": "/api/processplatform/assemble/surface/work/v2/list/paging/1/20/20",
@@ -30342,7 +30342,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 706,
+    "line": 724,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/v2/list/next/${firstId}/20",
     "path": "/api/processplatform/assemble/surface/work/v2/list/next/{}/20",
@@ -30357,7 +30357,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 723,
+    "line": 741,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/v2/list/paging/1/20/20",
     "path": "/api/processplatform/assemble/surface/read/v2/list/paging/1/20/20",
@@ -30374,7 +30374,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 724,
+    "line": 742,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/v2/list/paging/1/20/20",
     "path": "/api/processplatform/assemble/surface/readcompleted/v2/list/paging/1/20/20",
@@ -30391,7 +30391,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 731,
+    "line": 749,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/v2/list/next/${rId}/20",
     "path": "/api/processplatform/assemble/surface/read/v2/list/next/{}/20",
@@ -30406,7 +30406,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 732,
+    "line": 750,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/v2/list/next/${rcId}/20",
     "path": "/api/processplatform/assemble/surface/readcompleted/v2/list/next/{}/20",
@@ -30421,7 +30421,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 744,
+    "line": 762,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/v2/list/paging/1/20/20",
     "path": "/api/processplatform/assemble/surface/task/v2/list/paging/1/20/20",
@@ -30438,7 +30438,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 745,
+    "line": 763,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/v2/list/paging/1/20/20",
     "path": "/api/processplatform/assemble/surface/taskcompleted/v2/list/paging/1/20/20",
@@ -30455,7 +30455,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 752,
+    "line": 770,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/v2/list/next/${tId}/20",
     "path": "/api/processplatform/assemble/surface/task/v2/list/next/{}/20",
@@ -30470,7 +30470,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 753,
+    "line": 771,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/v2/list/next/${tcId}/20",
     "path": "/api/processplatform/assemble/surface/taskcompleted/v2/list/next/{}/20",
@@ -30485,7 +30485,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 804,
+    "line": 822,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/task/list/my/paging/1/size/20",
     "path": "/api/processplatform/assemble/surface/task/list/my/paging/1/size/20",
@@ -30501,7 +30501,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 929,
+    "line": 947,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/my/paging/1/20/20",
     "path": "/api/processplatform/assemble/surface/read/list/my/paging/1/20/20",
@@ -30518,7 +30518,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 945,
+    "line": 963,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/record/list/job/${id}/paging/1/size/20",
     "path": "/api/processplatform/assemble/surface/record/list/job/{}/paging/1/size/20",
@@ -30534,7 +30534,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 946,
+    "line": 964,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/record/list/workorworkcompleted/${id}/paging/1/size/20",
     "path": "/api/processplatform/assemble/surface/record/list/workorworkcompleted/{}/paging/1/size/20",
@@ -30550,7 +30550,268 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1186,
+    "line": 1122,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/task/v2/list",
+    "path": "/api/processplatform/assemble/surface/task/v2/list",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/task/v2/list",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 1123,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/task/v2/count",
+    "path": "/api/processplatform/assemble/surface/task/v2/count",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/task/v2/count",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 1124,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/task/list/my/filter/1/size/20",
+    "path": "/api/processplatform/assemble/surface/task/list/my/filter/1/size/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/task/list/my/filter/{page}/size/{size}",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": [
+     "page=1",
+     "size=20"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 1125,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/taskcompleted/v2/list",
+    "path": "/api/processplatform/assemble/surface/taskcompleted/v2/list",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/taskcompleted/v2/list",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 1126,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/taskcompleted/list/my/filter/1/size/20",
+    "path": "/api/processplatform/assemble/surface/taskcompleted/list/my/filter/1/size/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/taskcompleted/list/my/filter/{page}/size/{size}",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": [
+     "page=1",
+     "size=20"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 1127,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/read/v2/list",
+    "path": "/api/processplatform/assemble/surface/read/v2/list",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/read/v2/list",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 1128,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/read/list/my/filter/1/size/20",
+    "path": "/api/processplatform/assemble/surface/read/list/my/filter/1/size/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/read/list/my/filter/{page}/size/{size}",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": [
+     "page=1",
+     "size=20"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 1129,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/readcompleted/v2/list",
+    "path": "/api/processplatform/assemble/surface/readcompleted/v2/list",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/readcompleted/v2/list",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 1130,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/readcompleted/list/my/filter/1/size/20",
+    "path": "/api/processplatform/assemble/surface/readcompleted/list/my/filter/1/size/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/readcompleted/list/my/filter/{page}/size/{size}",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": [
+     "page=1",
+     "size=20"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 1131,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/review/v2/list",
+    "path": "/api/processplatform/assemble/surface/review/v2/list",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/review/v2/list",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 1132,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/review/v2/count",
+    "path": "/api/processplatform/assemble/surface/review/v2/count",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/review/v2/count",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 1133,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/review/v2/search",
+    "path": "/api/processplatform/assemble/surface/review/v2/search",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/review/v2/search",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 1134,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/work/v2/list",
+    "path": "/api/processplatform/assemble/surface/work/v2/list",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/work/v2/list",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 1135,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/work/list/my/paging/1/size/20",
+    "path": "/api/processplatform/assemble/surface/work/list/my/paging/1/size/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/work/list/my/paging/{page}/size/{size}",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": [
+     "page=1",
+     "size=20"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 1136,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/draft/list/my/paging/1/size/20",
+    "path": "/api/processplatform/assemble/surface/draft/list/my/paging/1/size/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/draft/list/my/paging/{page}/size/{size}",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": [
+     "page=1",
+     "size=20"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 1137,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/handover/list/paging/1/size/20",
+    "path": "/api/processplatform/assemble/surface/handover/list/paging/1/size/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/handover/list/paging/{page}/size/{size}",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": [
+     "page=1",
+     "size=20"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 1138,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/serialnumber/list/paging/1/size/20",
+    "path": "/api/processplatform/assemble/surface/serialnumber/list/paging/1/size/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/serialnumber/list/paging/{page}/size/{size}",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": [
+     "page=1",
+     "size=20"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 1139,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/snap/list/my/filter/1/size/20",
+    "path": "/api/processplatform/assemble/surface/snap/list/my/filter/1/size/20",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/snap/list/my/filter/{page}/size/{size}",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": [
+     "page=1",
+     "size=20"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 1230,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/list/all",
     "path": "/api/processplatform/assemble/designer/list/all",
@@ -30565,7 +30826,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 1246,
+    "line": 1290,
     "method": "POST",
     "raw": "/api/processplatform/service/processing/work",
     "path": "/api/processplatform/service/processing/work",

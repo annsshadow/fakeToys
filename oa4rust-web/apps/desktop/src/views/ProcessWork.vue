@@ -23,6 +23,24 @@
         <button class="btn-sm" @click="loadWorkFullCursors">工作全量游标/详情</button>
         <button class="btn-sm" @click="loadSurfaceReadA">表面深度读A</button>
         <button class="btn-sm" @click="loadSurfaceReadB">表面深度读B</button>
+        <button class="btn-sm" @click="surfaceList('taskV2')">待办v2</button>
+        <button class="btn-sm" @click="surfaceList('taskCount')">待办计数</button>
+        <button class="btn-sm" @click="surfaceList('taskMy')">我的待办</button>
+        <button class="btn-sm" @click="surfaceList('taskCompletedV2')">已办v2</button>
+        <button class="btn-sm" @click="surfaceList('taskCompletedMy')">我的已办</button>
+        <button class="btn-sm" @click="surfaceList('readV2')">待阅v2</button>
+        <button class="btn-sm" @click="surfaceList('readMy')">我的待阅</button>
+        <button class="btn-sm" @click="surfaceList('readCompletedV2')">已阅v2</button>
+        <button class="btn-sm" @click="surfaceList('readCompletedMy')">我的已阅</button>
+        <button class="btn-sm" @click="surfaceList('reviewV2')">评审v2</button>
+        <button class="btn-sm" @click="surfaceList('reviewCount')">评审计数</button>
+        <button class="btn-sm" @click="surfaceList('reviewSearch')">评审搜索</button>
+        <button class="btn-sm" @click="surfaceList('workV2')">工作v2</button>
+        <button class="btn-sm" @click="surfaceList('workMy')">我的工作</button>
+        <button class="btn-sm" @click="surfaceList('draftMy')">我的草稿</button>
+        <button class="btn-sm" @click="surfaceList('handover')">交接分页</button>
+        <button class="btn-sm" @click="surfaceList('serialnumber')">流水号分页</button>
+        <button class="btn-sm" @click="surfaceList('snapMy')">我的快照</button>
         <button class="btn-sm primary" @click="openStart">发起流程</button>
       </div>
     </div>
@@ -1096,6 +1114,32 @@ async function engineReadAction(kind: string): Promise<void> {
     toast.success('待阅操作已提交')
   } catch (err: any) {
     toast.error('待阅操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev350：流程表面 待办/已办/待阅/已阅/评审/工作/草稿/交接/快照 分页筛选数据查询（POST 真实读，用户触发；全字面量路径）
+async function surfaceList(op: string): Promise<void> {
+  try {
+    if (op === 'taskV2') await api.post('/api/processplatform/assemble/surface/task/v2/list', {})
+    else if (op === 'taskCount') await api.post('/api/processplatform/assemble/surface/task/v2/count', {})
+    else if (op === 'taskMy') await api.post('/api/processplatform/assemble/surface/task/list/my/filter/1/size/20', {})
+    else if (op === 'taskCompletedV2') await api.post('/api/processplatform/assemble/surface/taskcompleted/v2/list', {})
+    else if (op === 'taskCompletedMy') await api.post('/api/processplatform/assemble/surface/taskcompleted/list/my/filter/1/size/20', {})
+    else if (op === 'readV2') await api.post('/api/processplatform/assemble/surface/read/v2/list', {})
+    else if (op === 'readMy') await api.post('/api/processplatform/assemble/surface/read/list/my/filter/1/size/20', {})
+    else if (op === 'readCompletedV2') await api.post('/api/processplatform/assemble/surface/readcompleted/v2/list', {})
+    else if (op === 'readCompletedMy') await api.post('/api/processplatform/assemble/surface/readcompleted/list/my/filter/1/size/20', {})
+    else if (op === 'reviewV2') await api.post('/api/processplatform/assemble/surface/review/v2/list', {})
+    else if (op === 'reviewCount') await api.post('/api/processplatform/assemble/surface/review/v2/count', {})
+    else if (op === 'reviewSearch') await api.post('/api/processplatform/assemble/surface/review/v2/search', {})
+    else if (op === 'workV2') await api.post('/api/processplatform/assemble/surface/work/v2/list', {})
+    else if (op === 'workMy') await api.post('/api/processplatform/assemble/surface/work/list/my/paging/1/size/20', {})
+    else if (op === 'draftMy') await api.post('/api/processplatform/assemble/surface/draft/list/my/paging/1/size/20', {})
+    else if (op === 'handover') await api.post('/api/processplatform/assemble/surface/handover/list/paging/1/size/20', {})
+    else if (op === 'serialnumber') await api.post('/api/processplatform/assemble/surface/serialnumber/list/paging/1/size/20', {})
+    else await api.post('/api/processplatform/assemble/surface/snap/list/my/filter/1/size/20', {})
+    toast.success('数据查询已提交')
+  } catch (e: any) {
+    toast.error('数据查询失败: ' + (e?.message ?? ''))
   }
 }
 
