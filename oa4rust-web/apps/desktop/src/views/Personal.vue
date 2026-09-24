@@ -138,6 +138,11 @@
         <button class="save-btn ghost" @click="personMore('defPut')">存定义</button>
         <button class="save-btn ghost" @click="personMore('defDel')">删定义</button>
         <button class="save-btn ghost" @click="personMore('personalUpdate')">更新资料</button>
+        <button class="save-btn ghost" @click="personExtra('empEnable')">启用授权</button>
+        <button class="save-btn ghost" @click="personExtra('empDisable')">禁用授权</button>
+        <button class="save-btn ghost" @click="personExtra('exmail')">企业邮箱回调</button>
+        <button class="save-btn ghost" @click="personExtra('exmailSso')">企业邮箱SSO</button>
+        <button class="save-btn ghost" @click="personExtra('exmailCount')">邮箱新邮件计数</button>
       </div>
     </div>
   </div>
@@ -489,6 +494,19 @@ async function personMore(op: string) {
     else if (op === 'defDel') { const name = encodeURIComponent(prompt('要删除的定义名:', '') || ''); if (!(await confirmMsg('确定删除该定义？'))) return; await api.delete(`/api/person/definition/${name}`) }
     else await api.put('/api/personal/update', {})
     toast.success('人员操作已提交')
+  } catch (err: any) {
+    toast.error('操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev398：组织-个人 授权 启用/禁用(按id) + 企业邮箱 回调/SSO/被动新邮件计数 真实路由（empower enable/disable Path-only、exmail 读 Path-free/Query；用户触发）
+async function personExtra(op: string) {
+  try {
+    if (op === 'empEnable') { const id = encodeURIComponent(prompt('授权 ID:', '') || ''); await api.post(`/api/person/empower/${id}/enable`, {}) }
+    else if (op === 'empDisable') { const id = encodeURIComponent(prompt('授权 ID:', '') || ''); await api.post(`/api/person/empower/${id}/disable`, {}) }
+    else if (op === 'exmail') await api.get('/api/person/exmail')
+    else if (op === 'exmailSso') await api.get('/api/person/exmail/sso')
+    else await api.get('/api/person/exmail/new/count/passive')
+    toast.success('个人操作已提交')
   } catch (err: any) {
     toast.error('操作失败: ' + (err?.message ?? ''))
   }
