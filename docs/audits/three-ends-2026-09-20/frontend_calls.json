@@ -2214,7 +2214,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 59,
+    "line": 66,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/list/default",
     "path": "/api/processplatform/assemble/bam/list/default",
@@ -2224,7 +2224,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 63,
+    "line": 70,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/get/${encodeURIComponent(id)}",
     "path": "/api/processplatform/assemble/bam/get/{}",
@@ -2234,7 +2234,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 64,
+    "line": 71,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/status/${encodeURIComponent(id)}",
     "path": "/api/processplatform/assemble/bam/status/{}",
@@ -2244,7 +2244,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 78,
+    "line": 85,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unit/list/top",
     "path": "/api/organization/assemble/control/unit/list/top",
@@ -2254,7 +2254,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 79,
+    "line": 86,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/list/default",
     "path": "/api/processplatform/assemble/bam/list/default",
@@ -2264,7 +2264,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 86,
+    "line": 93,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/completed/task/${encodeURIComponent(unit)}",
     "path": "/api/processplatform/assemble/bam/period/list/completed/task/{}",
@@ -2274,7 +2274,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 87,
+    "line": 94,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/completed/application/${encodeURIComponent(application)}",
     "path": "/api/processplatform/assemble/bam/period/list/completed/application/{}",
@@ -2284,7 +2284,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 88,
+    "line": 95,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/expired/task/${encodeURIComponent(unit)}",
     "path": "/api/processplatform/assemble/bam/period/list/expired/task/{}",
@@ -2294,7 +2294,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 101,
+    "line": 108,
     "method": "GET",
     "raw": "/api/organization/assemble/control/unit/list/top",
     "path": "/api/organization/assemble/control/unit/list/top",
@@ -2304,7 +2304,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 107,
+    "line": 114,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/completed/task/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application",
     "path": "/api/processplatform/assemble/bam/period/list/count/completed/task/unit/{}/person/{}/by/application",
@@ -2314,7 +2314,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 108,
+    "line": 115,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/completed/work/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application",
     "path": "/api/processplatform/assemble/bam/period/list/count/completed/work/unit/{}/person/{}/by/application",
@@ -2324,7 +2324,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 109,
+    "line": 116,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/completed/task/application/${encodeURIComponent(app)}/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/process",
     "path": "/api/processplatform/assemble/bam/period/list/count/completed/task/application/{}/unit/{}/person/{}/by/process",
@@ -2334,7 +2334,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 110,
+    "line": 117,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/expired/task/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application",
     "path": "/api/processplatform/assemble/bam/period/list/count/expired/task/unit/{}/person/{}/by/application",
@@ -2344,7 +2344,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 111,
+    "line": 118,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/expired/work/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application",
     "path": "/api/processplatform/assemble/bam/period/list/count/expired/work/unit/{}/person/{}/by/application",
@@ -2354,7 +2354,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 112,
+    "line": 119,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/start/task/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application",
     "path": "/api/processplatform/assemble/bam/period/list/count/start/task/unit/{}/person/{}/by/application",
@@ -2364,7 +2364,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 113,
+    "line": 120,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/start/work/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application",
     "path": "/api/processplatform/assemble/bam/period/list/count/start/work/unit/{}/person/{}/by/application",
@@ -2374,7 +2374,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 125,
+    "line": 132,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/completed/task/application",
     "path": "/api/processplatform/assemble/bam/period/list/completed/task/application",
@@ -2384,7 +2384,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 126,
+    "line": 133,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/expired/task/application",
     "path": "/api/processplatform/assemble/bam/period/list/expired/task/application",
@@ -2394,7 +2394,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 138,
+    "line": 145,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/completed/work/unitstubs",
     "path": "/api/processplatform/assemble/bam/period/list/completed/work/unitstubs",
@@ -2404,7 +2404,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 139,
+    "line": 146,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/expired/work/applicationstubs",
     "path": "/api/processplatform/assemble/bam/period/list/expired/work/applicationstubs",
@@ -2414,7 +2414,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 140,
+    "line": 147,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/expired/task/unitstubs",
     "path": "/api/processplatform/assemble/bam/period/list/expired/task/unitstubs",
@@ -2424,7 +2424,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 152,
+    "line": 159,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/completed/task/applicationstubs",
     "path": "/api/processplatform/assemble/bam/period/list/completed/task/applicationstubs",
@@ -2434,7 +2434,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 153,
+    "line": 160,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/completed/work/applicationstubs",
     "path": "/api/processplatform/assemble/bam/period/list/completed/work/applicationstubs",
@@ -2444,7 +2444,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 154,
+    "line": 161,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/expired/task/applicationstubs",
     "path": "/api/processplatform/assemble/bam/period/list/expired/task/applicationstubs",
@@ -2454,7 +2454,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 166,
+    "line": 173,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/start/task/applicationstubs",
     "path": "/api/processplatform/assemble/bam/period/list/start/task/applicationstubs",
@@ -2464,7 +2464,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 167,
+    "line": 174,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/start/work/applicationstubs",
     "path": "/api/processplatform/assemble/bam/period/list/start/work/applicationstubs",
@@ -2474,7 +2474,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 168,
+    "line": 175,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/start/task/unitstubs",
     "path": "/api/processplatform/assemble/bam/period/list/start/task/unitstubs",
@@ -2484,7 +2484,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 180,
+    "line": 187,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/state/running",
     "path": "/api/processplatform/assemble/bam/state/running",
@@ -2494,7 +2494,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 181,
+    "line": 188,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/state/category",
     "path": "/api/processplatform/assemble/bam/state/category",
@@ -2504,7 +2504,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 182,
+    "line": 189,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/state/organization",
     "path": "/api/processplatform/assemble/bam/state/organization",
@@ -2514,7 +2514,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 203,
+    "line": 210,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/completed/work/application/${app}/process/${proc}/unit/${unit}/person/${person}",
     "path": "/api/processplatform/assemble/bam/period/list/count/completed/work/application/{}/process/{}/unit/{}/person/{}",
@@ -2524,7 +2524,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 204,
+    "line": 211,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/expired/work/application/${app}/process/${proc}/unit/${unit}/person/${person}",
     "path": "/api/processplatform/assemble/bam/period/list/count/expired/work/application/{}/process/{}/unit/{}/person/{}",
@@ -2534,7 +2534,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 205,
+    "line": 212,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/start/work/application/${app}/process/${proc}/unit/${unit}/person/${person}",
     "path": "/api/processplatform/assemble/bam/period/list/count/start/work/application/{}/process/{}/unit/{}/person/{}",
@@ -2544,7 +2544,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 206,
+    "line": 213,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/completed/task/application/${app}/process/${proc}/activity/${act}/unit/${unit}/person/${person}",
     "path": "/api/processplatform/assemble/bam/period/list/count/completed/task/application/{}/process/{}/activity/{}/unit/{}/person/{}",
@@ -2554,7 +2554,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 207,
+    "line": 214,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/expired/task/application/${app}/process/${proc}/activity/${act}/unit/${unit}/person/${person}",
     "path": "/api/processplatform/assemble/bam/period/list/count/expired/task/application/{}/process/{}/activity/{}/unit/{}/person/{}",
@@ -2564,7 +2564,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 208,
+    "line": 215,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/start/task/application/${app}/process/${proc}/activity/${act}/unit/${unit}/person/${person}",
     "path": "/api/processplatform/assemble/bam/period/list/count/start/task/application/{}/process/{}/activity/{}/unit/{}/person/{}",
@@ -2574,7 +2574,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 209,
+    "line": 216,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/expired/application/${work}",
     "path": "/api/processplatform/assemble/bam/period/list/expired/application/{}",
@@ -2584,7 +2584,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 210,
+    "line": 217,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/completed/${work}/${unit}",
     "path": "/api/processplatform/assemble/bam/period/list/completed/{}/{}",
@@ -2594,7 +2594,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 211,
+    "line": 218,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/expired/${work}/${unit}",
     "path": "/api/processplatform/assemble/bam/period/list/expired/{}/{}",
@@ -2604,7 +2604,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 212,
+    "line": 219,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/expired/task/by/application/${cnt}/${unit}/${unit}/${person}/${person}",
     "path": "/api/processplatform/assemble/bam/period/list/expired/task/by/application/{}/{}/{}/{}/{}",
@@ -2614,7 +2614,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 213,
+    "line": 220,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/completed/by/application/${cnt}/${work}/${unit}/${unit}/${person}/${person}",
     "path": "/api/processplatform/assemble/bam/period/list/completed/by/application/{}/{}/{}/{}/{}/{}",
@@ -2624,7 +2624,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 214,
+    "line": 221,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/expired/by/application/${cnt}/${work}/${unit}/${unit}/${person}/${person}",
     "path": "/api/processplatform/assemble/bam/period/list/expired/by/application/{}/{}/{}/{}/{}/{}",
@@ -2634,7 +2634,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 215,
+    "line": 222,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/expired/task/application/process/activity/${cnt}/${app}/${proc}/${act}/${unit}/${unit}/${person}/${person}",
     "path": "/api/processplatform/assemble/bam/period/list/expired/task/application/process/activity/{}/{}/{}/{}/{}/{}/{}/{}",
@@ -2644,7 +2644,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 216,
+    "line": 223,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/completed/application/process/by/${cnt}/${work}/${app}/${proc}/${unit}",
     "path": "/api/processplatform/assemble/bam/period/list/completed/application/process/by/{}/{}/{}/{}/{}",
@@ -2654,7 +2654,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 217,
+    "line": 224,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/completed/task/by/application/${cnt}/${unit}/${unit}/${person}/${person}",
     "path": "/api/processplatform/assemble/bam/period/list/completed/task/by/application/{}/{}/{}/{}/{}",
@@ -2664,7 +2664,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 218,
+    "line": 225,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/expired/application/process/by/${cnt}/${work}/${app}/${proc}/${unit}",
     "path": "/api/processplatform/assemble/bam/period/list/expired/application/process/by/{}/{}/{}/{}/{}",
@@ -2674,7 +2674,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 219,
+    "line": 226,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/expired/task/application/by/process/${cnt}/${app}/${unit}/${unit}/${person}/${person}",
     "path": "/api/processplatform/assemble/bam/period/list/expired/task/application/by/process/{}/{}/{}/{}/{}/{}",
@@ -2684,7 +2684,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 220,
+    "line": 227,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/completed/application/by/process/${cnt}/${work}/${app}/${unit}/${unit}/${person}/${person}",
     "path": "/api/processplatform/assemble/bam/period/list/completed/application/by/process/{}/{}/{}/{}/{}/{}/{}",
@@ -2694,7 +2694,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 221,
+    "line": 228,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/expired/application/by/process/${cnt}/${work}/${app}/${unit}/${unit}/${person}/${person}",
     "path": "/api/processplatform/assemble/bam/period/list/expired/application/by/process/{}/{}/{}/{}/{}/{}/{}",
@@ -2704,7 +2704,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 222,
+    "line": 229,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/completed/task/application/process/activity/by/${cnt}/${app}/${proc}/${act}/${unit}",
     "path": "/api/processplatform/assemble/bam/period/list/completed/task/application/process/activity/by/{}/{}/{}/{}/{}",
@@ -2714,7 +2714,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 223,
+    "line": 230,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/expired/task/application/process/activity/by/${cnt}/${app}/${proc}/${act}/${unit}",
     "path": "/api/processplatform/assemble/bam/period/list/expired/task/application/process/activity/by/{}/{}/{}/{}/{}",
@@ -2724,7 +2724,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 224,
+    "line": 231,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/completed/task/application/by/process/${cnt}/${app}/${unit}/${unit}/${person}/${person}",
     "path": "/api/processplatform/assemble/bam/period/list/completed/task/application/by/process/{}/{}/{}/{}/{}/{}",
@@ -2734,7 +2734,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 225,
+    "line": 232,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/expired/task/application/process/by/activity/${cnt}/${app}/${proc}/${unit}/${unit}/${person}/${person}",
     "path": "/api/processplatform/assemble/bam/period/list/expired/task/application/process/by/activity/{}/{}/{}/{}/{}/{}/{}",
@@ -2744,7 +2744,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 226,
+    "line": 233,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/completed/application/process/${cnt}/${work}/${app}/${proc}/${unit}/${unit}/${person}/${person}",
     "path": "/api/processplatform/assemble/bam/period/list/completed/application/process/{}/{}/{}/{}/{}/{}/{}/{}",
@@ -2754,7 +2754,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 227,
+    "line": 234,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/expired/application/process/${cnt}/${work}/${app}/${proc}/${unit}/${unit}/${person}/${person}",
     "path": "/api/processplatform/assemble/bam/period/list/expired/application/process/{}/{}/{}/{}/{}/{}/{}/{}",
@@ -2764,7 +2764,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 228,
+    "line": 235,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/completed/task/application/process/by/activity/${cnt}/${app}/${proc}/${unit}/${unit}/${person}/${person}",
     "path": "/api/processplatform/assemble/bam/period/list/completed/task/application/process/by/activity/{}/{}/{}/{}/{}/{}/{}",
@@ -2774,7 +2774,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 229,
+    "line": 236,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/completed/task/application/process/activity/${cnt}/${app}/${proc}/${act}/${unit}/${unit}/${person}/${person}",
     "path": "/api/processplatform/assemble/bam/period/list/completed/task/application/process/activity/{}/{}/{}/{}/{}/{}/{}/{}",
@@ -2784,7 +2784,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 247,
+    "line": 254,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/completed/work/application/${applicationId}/process/${processId}/by/unit",
     "path": "/api/processplatform/assemble/bam/period/list/count/completed/work/application/{}/process/{}/by/unit",
@@ -2794,7 +2794,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 248,
+    "line": 255,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/expired/work/application/${applicationId}/process/${processId}/by/unit",
     "path": "/api/processplatform/assemble/bam/period/list/count/expired/work/application/{}/process/{}/by/unit",
@@ -2804,7 +2804,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 249,
+    "line": 256,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/start/work/application/${applicationId}/process/${processId}/by/unit",
     "path": "/api/processplatform/assemble/bam/period/list/count/start/work/application/{}/process/{}/by/unit",
@@ -2814,7 +2814,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 250,
+    "line": 257,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/completed/task/application/${applicationId}/process/${processId}/activity/${activityId}/by/unit",
     "path": "/api/processplatform/assemble/bam/period/list/count/completed/task/application/{}/process/{}/activity/{}/by/unit",
@@ -2824,7 +2824,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 251,
+    "line": 258,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/completed/work/application/${applicationId}/unit/${unit}/person/${person}/by/process",
     "path": "/api/processplatform/assemble/bam/period/list/count/completed/work/application/{}/unit/{}/person/{}/by/process",
@@ -2834,7 +2834,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 252,
+    "line": 259,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/expired/task/application/${applicationId}/process/${processId}/activity/${activityId}/by/unit",
     "path": "/api/processplatform/assemble/bam/period/list/count/expired/task/application/{}/process/{}/activity/{}/by/unit",
@@ -2844,7 +2844,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 253,
+    "line": 260,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/expired/task/application/${applicationId}/unit/${unit}/person/${person}/by/process",
     "path": "/api/processplatform/assemble/bam/period/list/count/expired/task/application/{}/unit/{}/person/{}/by/process",
@@ -2854,7 +2854,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 254,
+    "line": 261,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/expired/work/application/${applicationId}/unit/${unit}/person/${person}/by/process",
     "path": "/api/processplatform/assemble/bam/period/list/count/expired/work/application/{}/unit/{}/person/{}/by/process",
@@ -2864,7 +2864,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 255,
+    "line": 262,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/start/task/application/${applicationId}/process/${processId}/activity/${activityId}/by/unit",
     "path": "/api/processplatform/assemble/bam/period/list/count/start/task/application/{}/process/{}/activity/{}/by/unit",
@@ -2874,7 +2874,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 256,
+    "line": 263,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/start/task/application/${applicationId}/unit/${unit}/person/${person}/by/process",
     "path": "/api/processplatform/assemble/bam/period/list/count/start/task/application/{}/unit/{}/person/{}/by/process",
@@ -2884,7 +2884,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 257,
+    "line": 264,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/start/work/application/${applicationId}/unit/${unit}/person/${person}/by/process",
     "path": "/api/processplatform/assemble/bam/period/list/count/start/work/application/{}/unit/{}/person/{}/by/process",
@@ -2894,7 +2894,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 258,
+    "line": 265,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/completed/task/application/${applicationId}/process/${processId}/unit/${unit}/person/${person}/by/activity",
     "path": "/api/processplatform/assemble/bam/period/list/count/completed/task/application/{}/process/{}/unit/{}/person/{}/by/activity",
@@ -2904,7 +2904,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 259,
+    "line": 266,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/expired/task/application/${applicationId}/process/${processId}/unit/${unit}/person/${person}/by/activity",
     "path": "/api/processplatform/assemble/bam/period/list/count/expired/task/application/{}/process/{}/unit/{}/person/{}/by/activity",
@@ -2914,7 +2914,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 260,
+    "line": 267,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/period/list/count/start/task/application/${applicationId}/process/${processId}/unit/${unit}/person/${person}/by/activity",
     "path": "/api/processplatform/assemble/bam/period/list/count/start/task/application/{}/process/{}/unit/{}/person/{}/by/activity",
@@ -2924,7 +2924,77 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 275,
+    "line": 280,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/bam/create",
+    "path": "/api/processplatform/assemble/bam/create",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BamApp.vue",
+    "line": 284,
+    "method": "DELETE",
+    "raw": "/api/processplatform/assemble/bam/delete/${encodeURIComponent(id)}",
+    "path": "/api/processplatform/assemble/bam/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BamApp.vue",
+    "line": 287,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/bam/state/trigger/${encodeURIComponent(cat)}",
+    "path": "/api/processplatform/assemble/bam/state/trigger/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BamApp.vue",
+    "line": 289,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/bam/period/list/task/application/0",
+    "path": "/api/processplatform/assemble/bam/period/list/task/application/0",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BamApp.vue",
+    "line": 291,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/bam/period/list/task/0/0",
+    "path": "/api/processplatform/assemble/bam/period/list/task/0/0",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BamApp.vue",
+    "line": 293,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/bam/period/list/application/0/0",
+    "path": "/api/processplatform/assemble/bam/period/list/application/0/0",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BamApp.vue",
+    "line": 295,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/bam/period/list/0/0/0",
+    "path": "/api/processplatform/assemble/bam/period/list/0/0/0",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BamApp.vue",
+    "line": 309,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/state/summary",
     "path": "/api/processplatform/assemble/bam/state/summary",

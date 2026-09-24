@@ -16,6 +16,13 @@
         <button class="btn-primary ghost" @click="loadCountStats">计数聚合</button>
         <button class="btn-primary ghost" @click="loadPeriodMatrix">周期多维矩阵</button>
         <button class="btn-primary ghost" @click="loadPeriodMatrix2">周期维度聚合</button>
+        <button class="btn-primary ghost" @click="bamWrite('create')">建BAM</button>
+        <button class="btn-primary ghost" @click="bamWrite('delete')">删BAM</button>
+        <button class="btn-primary ghost" @click="bamWrite('trigger')">触发状态</button>
+        <button class="btn-primary ghost" @click="bamWrite('periodTaskApp')">周期任务应用</button>
+        <button class="btn-primary ghost" @click="bamWrite('periodTaskUnit')">周期任务单位</button>
+        <button class="btn-primary ghost" @click="bamWrite('periodAppWork')">周期应用工作</button>
+        <button class="btn-primary ghost" @click="bamWrite('periodWorkUnit')">周期工作单位</button>
         <button class="btn-primary" @click="refresh">🔄 刷新</button>
       </span>
     </div>
@@ -48,7 +55,7 @@
 import { api } from '@oa4rust/sdk'
 import { useQuery } from '@tanstack/vue-query'
 import { ref } from 'vue'
-import { toast } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
 const loading = ref(false)
 const stats = ref({ total: 0, active: 0, completed: 0, failed: 0 })
@@ -263,6 +270,33 @@ async function loadPeriodMatrix2() {
     periodText.value = `周期维度聚合 真实读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
     toast.error('加载周期维度聚合失败: ' + (e?.message ?? ''))
+  }
+}
+// rev342：BAM 定义建删/状态触发/周期统计查询 真实写端点（用户触发，shape 已核；全字面量路径）
+async function bamWrite(op: string) {
+  try {
+    if (op === 'create') {
+      const name = prompt('BAM 名称:', '') || ''
+      await api.post('/api/processplatform/assemble/bam/create', { name })
+    } else if (op === 'delete') {
+      const id = prompt('要删除的 BAM ID:', '') || ''
+      if (!(await confirmMsg('确定删除该 BAM 定义？'))) return
+      await api.delete(`/api/processplatform/assemble/bam/delete/${encodeURIComponent(id)}`)
+    } else if (op === 'trigger') {
+      const cat = prompt('触发类别:', 'default') || 'default'
+      await api.post(`/api/processplatform/assemble/bam/state/trigger/${encodeURIComponent(cat)}`, {})
+    } else if (op === 'periodTaskApp') {
+      await api.post('/api/processplatform/assemble/bam/period/list/task/application/0', {})
+    } else if (op === 'periodTaskUnit') {
+      await api.post('/api/processplatform/assemble/bam/period/list/task/0/0', {})
+    } else if (op === 'periodAppWork') {
+      await api.post('/api/processplatform/assemble/bam/period/list/application/0/0', {})
+    } else {
+      await api.post('/api/processplatform/assemble/bam/period/list/0/0/0', {})
+    }
+    toast.success('BAM 操作已提交')
+  } catch (e: any) {
+    toast.error('BAM 操作失败: ' + (e?.message ?? ''))
   }
 }
 const events = ref<any[]>([])
