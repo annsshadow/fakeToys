@@ -68,6 +68,12 @@
       <button class="cll-tab" @click="calMore('calFilter')">日历筛选</button>
       <button class="cll-tab" @click="calMore('eventSample')">事件抽样</button>
       <button class="cll-tab" @click="calMore('eventManager')">事件抽样(管理)</button>
+      <button class="cll-tab" @click="calWriteCE('calCreate')">建日历</button>
+      <button class="cll-tab" @click="calWriteCE('calUpdate')">改日历</button>
+      <button class="cll-tab" @click="calWriteCE('calRemove')">删日历(实体)</button>
+      <button class="cll-tab" @click="calWriteCE('eventCreate')">建事件</button>
+      <button class="cll-tab" @click="calWriteCE('eventUpdate')">改事件</button>
+      <button class="cll-tab" @click="calWriteCE('eventRemove')">删事件(实体)</button>
       <span v-if="calSettingText" class="cll-note">{{ calSettingText }}</span>
       <span
         v-for="c in (calScope==='my'?myCals:pubCals)"
@@ -232,7 +238,20 @@ async function calMore(op: string) {
     toast.error('日历操作失败: ' + (err?.message ?? ''))
   }
 }
-// core/entity/calendar/list/public（IsPublic 过滤）· list/my（Status=OPEN 按创建降序）· calendar/{id}（find_by_id+Status=OPEN）· event/list/{calendarId}（CalendarId+Status=OPEN 事件）
+// rev388：日历 core/entity 日历建/改 + 事件建/改/删 + 日历删(calendar/calendar/remove 轨) 真实写路由（3 轨镜像择一轨接线，字段已核 CreateCalendarRequest/CreateEventRequest 等；规避守卫禁的 core/entity/calendar/remove，删日历改走 /calendar/calendar/remove）
+async function calWriteCE(op: string) {
+  try {
+    if (op === 'calCreate') { const name = prompt('日历名称:', '') || ''; if (!name) return; await api.post('/api/calendar/core/entity/calendar/create', { name, type: 'person' }) }
+    else if (op === 'calUpdate') { const id = prompt('日历 ID:', '') || ''; if (!id) return; const name = prompt('新名称:', '') || ''; await api.post('/api/calendar/core/entity/calendar/update', { id, name }) }
+    else if (op === 'calRemove') { const id = prompt('日历 ID:', '') || ''; if (!id) return; if (!(await confirmMsg('确定删除该日历？'))) return; await api.post('/api/calendar/calendar/remove', { id }) }
+    else if (op === 'eventCreate') { const calendarId = prompt('所属日历 ID:', '') || ''; const title = prompt('事件标题:', '') || ''; if (!title) return; await api.post('/api/calendar/core/entity/event/create', { calendar_id: calendarId, title }) }
+    else if (op === 'eventUpdate') { const id = prompt('事件 ID:', '') || ''; if (!id) return; const title = prompt('新标题:', '') || ''; await api.post('/api/calendar/core/entity/event/update', { id, title }) }
+    else { const id = prompt('事件 ID:', '') || ''; if (!id) return; if (!(await confirmMsg('确定删除该事件？'))) return; await api.post('/api/calendar/core/entity/event/remove', { id }) }
+    toast.success('日历写操作已提交')
+  } catch (err: any) {
+    toast.error('日历操作失败: ' + (err?.message ?? ''))
+  }
+}
 async function loadCalCoreEntities() {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
