@@ -3,12 +3,12 @@
 
 """「取前 N 条」这类计数旋钮的同构判据
 
-这些旋钮（`limit` / `offset` / `top_k` / `preview_size` / `batch_size`）在实现里
-几乎都落到下标切片，而切片对越界值不报错、只换语义。本文件把 `search()` 早已
-对 `fuzzy_threshold` / `ngram_n` 采用的判据推广到整个家族，判据本身只有
-`augmentor.validation.require_count` 一处。
+这些旋钮（`limit` / `offset` / `top_k` / `preview_size` / `batch_size` / `size` /
+`n` / `diversity_sample_size` / `max_backups`）在实现里几乎都落到下标切片，而切片
+对越界值不报错、只换语义。本文件把 `search()` 早已对 `fuzzy_threshold` / `ngram_n`
+采用的判据推广到整个家族，判据本身只有 `augmentor.validation.require_count` 一处。
 
-三条一起成立的主张：
+五条一起成立的主张：
 1. 负数报错。以前 `[:top_k]` 读成「丢掉末尾 |top_k| 个」，`[-limit:]` 读成
    「去掉最前面 |limit| 条」，请求与答案正好相反，且没有任何信号。
 2. `0` 是合法答案，不是「没传参数」。以前走 `value or default` 的调用点会把
@@ -16,6 +16,10 @@
    `x[-0:]` 更是直接等于「全部」。
 3. 判参先于数据短路。空输入 + 坏参数必须仍然报参数错，否则坏参数会被
    空结果掩护掉。
+4. 判参先于副作用。构造备份管理器会 mkdir 并写 index.json，这类站点必须先判参
+   再实例化，否则一次坏参数调用就在磁盘上留下一个空目录。
+5. `0` 在不可逆语义下不放行。删备份的 `max_backups=0` 与手滑想打的 10 无从分辨，
+   而后果是删光全部备份，所以那类旋钮的下界是 1（见 `minimum=1`）。
 """
 
 import json
@@ -24,17 +28,28 @@ import pytest
 
 from augmentor.active_learning import ActiveLearningLoop
 from augmentor.analytics import analyze_dataset_fast
-from augmentor.cleaner import extract_keywords
+from augmentor.backup import DatasetBackup, clean_old_backups
+from augmentor.cleaner import clean_batch_optimized, extract_keywords
 from augmentor.dedup import Deduplicator
 from augmentor.exceptions import DataValidationError
+from augmentor.indexer import DatasetView
 from augmentor.preview import PreviewGenerator
+from augmentor.quality import QualityScorer
 from augmentor.quality_monitor import QualityMonitor
+from augmentor.sampler import ActiveSampler
 from augmentor.search_enhanced import search_dataset
+from augmentor.dataset_ops import DatasetOperations, SampleConfig
 from augmentor.validation import require_count
 from augmentor.versioning import VersionManager
 
 ITEMS = [{"instruction": f"如何租房{i}", "output": f"登录官网办理第{i}步"} for i in range(12)]
 KEYWORD_TEXT = "租房合同 租房合同 租房合同 押金 押金 中介 中介 房东 合同 签约 违约" * 2
+# 覆盖分析要的是「存在比例低于 0.1 的类型」，18 中 + 1 短 + 1 长给出 3 个欠采样类型
+# （question_type:other / length:short / length:long），于是 top_k 在 1/2/3 上有区分度。
+SEED_CORPUS = ([{"instruction": f"如何办理第{i}步租房合同续签手续并保存凭证材料"} for i in range(18)]
+               + [{"instruction": "租房?"},
+                  {"instruction": "请详细说明在跨城市搬迁时如何分阶段处理租房合同、押金转移、"
+                                  "中介对接、违约条款审查以及后续报销凭证归档的全部流程细节"}])
 
 
 class TestRequireCount:
@@ -242,3 +257,208 @@ class TestActiveLearningBatchSize:
         loop = ActiveLearningLoop(batch_size=2)
         assert len(loop.select_samples(ITEMS, batch_size=4)) == 4
         assert len(loop.select_samples(ITEMS[:2], batch_size=4)) == 2
+
+
+class TestSampleSizeKnob:
+    """`DatasetOperations.sample` 的 `config.size`：`if config.size:` + 三条 method"""
+
+    def test_negative_size_is_rejected_on_every_method(self):
+        """以前 random / stratified 抛裸 `ValueError: Sample larger than population`
+        （经 API 是 500），systematic 更是把 -1 读成「丢掉末条」交出 6901 条"""
+        for method in ("random", "systematic", "stratified"):
+            with pytest.raises(DataValidationError, match="size"):
+                DatasetOperations().sample(ITEMS, SampleConfig(method=method, size=-1))
+
+    def test_zero_size_is_not_read_as_no_size(self):
+        """`if config.size:` 把 0 当成「没传参数」→ 采 0 条交付整份数据集
+        （真实 6902 条实测 size=0 → 6902 条，三种 method 一样）"""
+        for method in ("random", "systematic", "stratified"):
+            assert DatasetOperations().sample(ITEMS, SampleConfig(method=method, size=0)) == []
+
+    def test_none_still_means_whole_dataset(self):
+        """反向护栏：判据不许把「没给 size」一起改掉"""
+        assert len(DatasetOperations().sample(ITEMS, SampleConfig(size=None))) == len(ITEMS)
+        assert len(DatasetOperations().sample(ITEMS)) == len(ITEMS)
+
+    def test_valid_size_still_truncates(self):
+        assert len(DatasetOperations().sample(ITEMS, SampleConfig(size=5))) == 5
+        assert len(DatasetOperations().sample(ITEMS, SampleConfig(size=999))) == len(ITEMS)
+
+    def test_zero_sample_size_short_circuits_before_the_method_dispatch(self):
+        """`ratio` 小到 int() 归零时 systematic 那支是 `len(items) // 0`：
+        实测 HEAD 在真实语料上 ratio=0.0001 → 裸 ZeroDivisionError，
+        同一个 0 在三种 method 下给出三种后果（0 条 / 0 条 / 除零）"""
+        for method in ("random", "systematic", "stratified"):
+            ops = DatasetOperations().sample(ITEMS, SampleConfig(method=method, ratio=0.0001))
+            assert ops == []
+
+
+class TestHeadTailSliceKnobs:
+    """`items[:n]` 与 `items[-n:]`：同一对表达式在 dataset_ops 与 DatasetView 各写一遍"""
+
+    def test_negative_n_is_rejected(self):
+        """`[-1:]` 不是「倒数第 1 条」的反面，而是「丢掉第 1 条」：实测真实语料
+        head(-1) → 6901 条、tail(-1) → 6901 条"""
+        ops = DatasetOperations()
+        with pytest.raises(DataValidationError, match="n"):
+            ops.head(ITEMS, -1)
+        with pytest.raises(DataValidationError, match="n"):
+            ops.tail(ITEMS, -1)
+
+    def test_tail_zero_is_empty_not_everything(self):
+        """`[-0:] == [0:]`：实测 HEAD 里 tail(0) 在真实语料上返回全部 6902 条"""
+        ops = DatasetOperations()
+        assert ops.head(ITEMS, 0) == []
+        assert ops.tail(ITEMS, 0) == []
+
+    def test_view_head_and_tail_share_the_rule(self):
+        """视图版实测（100 条）：head(-1)→99、tail(0)→100、sample(-1)→裸 ValueError"""
+        view = DatasetView(SEED_CORPUS, "probe")
+        with pytest.raises(DataValidationError, match="n"):
+            view.head(-1)
+        with pytest.raises(DataValidationError, match="n"):
+            view.tail(-1)
+        with pytest.raises(DataValidationError, match="n"):
+            view.sample(-1)
+        with pytest.raises(DataValidationError, match="n"):
+            view.head("3")
+
+    def test_view_tail_zero_is_empty(self):
+        assert len(DatasetView(SEED_CORPUS, "probe").tail(0)) == 0
+
+    def test_valid_window_still_slices(self):
+        """反向护栏：正常路径照旧，且 head/tail 互为补集"""
+        ops = DatasetOperations()
+        assert ops.head(ITEMS, 3) == ITEMS[:3]
+        assert ops.tail(ITEMS, 3) == ITEMS[-3:]
+        view = DatasetView(SEED_CORPUS, "probe")
+        assert len(view.head(2)) == 2
+        assert len(view.sample(2)) == 2
+        assert len(view.sample(999)) == len(SEED_CORPUS)
+
+
+class TestBatchStepSize:
+    """`clean_batch_optimized` 的 `batch_size`：它是 `range()` 的步长"""
+
+    def test_zero_step_is_a_client_error_not_a_crash(self):
+        """实测 HEAD 抛裸 `ValueError: range() arg 3 must not be zero`，
+        经 API 那道映射不成 400"""
+        with pytest.raises(DataValidationError, match="batch_size"):
+            clean_batch_optimized(ITEMS, batch_size=0)
+
+    def test_negative_step_silently_returns_an_empty_dataset(self):
+        """实测 HEAD：10 条进 0 条出，清洗报告仍写 original_count=10 ——
+        调用方按报告以为洗干净了"""
+        with pytest.raises(DataValidationError, match="batch_size"):
+            clean_batch_optimized(ITEMS, batch_size=-1)
+
+    def test_bad_step_fails_before_any_cleaner_is_built(self):
+        """判参先于副作用：坏步长不得留下半成品产物"""
+        with pytest.raises(DataValidationError, match="batch_size"):
+            clean_batch_optimized([], batch_size=0)
+
+    def test_smallest_legal_step_produces_the_same_rows(self):
+        """反向护栏：步长只该影响内存峰值，不该影响产物条数"""
+        rows, report = clean_batch_optimized(ITEMS, batch_size=1)
+        assert len(rows) == len(ITEMS)
+        assert report.original_count == len(ITEMS)
+
+
+class TestSeedRecommendationTopK:
+    """`recommend_seeds` 的 `top_k`：同一表达式裁了两遍"""
+
+    def test_the_corpus_actually_has_underrepresented_types(self):
+        """用例前提：欠采样类型有 3 个，否则「裁到 2」与「裁到 3」无从分辨"""
+        assert len(ActiveSampler().recommend_seeds(SEED_CORPUS, top_k=3).recommended_seeds) == 3
+
+    def test_negative_top_k_is_rejected(self):
+        """实测真实 6902 条：-1 → 2 个种子、-3 → 0 个，同一个负数随数据换答案"""
+        with pytest.raises(DataValidationError, match="top_k"):
+            ActiveSampler().recommend_seeds(SEED_CORPUS, top_k=-1)
+
+    def test_zero_top_k_returns_no_seeds(self):
+        assert ActiveSampler().recommend_seeds(SEED_CORPUS, top_k=0).recommended_seeds == []
+
+    def test_bad_knob_fails_on_an_empty_dataset(self):
+        """判参先于 `if not items:` 短路"""
+        with pytest.raises(DataValidationError, match="top_k"):
+            ActiveSampler().recommend_seeds([], top_k=-1)
+
+    def test_valid_top_k_still_clamps_to_the_ceiling(self):
+        assert len(ActiveSampler().recommend_seeds(SEED_CORPUS, top_k=1).recommended_seeds) == 1
+        assert len(ActiveSampler().recommend_seeds(SEED_CORPUS, top_k=99).recommended_seeds) == 3
+
+
+class TestDiversityWindowSize:
+    """`QualityScorer.diversity_sample_size`：`existing_generated[:n]` 的窗口"""
+
+    def test_zero_window_declares_a_duplicate_fully_diverse(self):
+        """承 A41：实测候选与参照逐字相同时，窗口 0 → 空参照 → 判成「完全多样」，
+        diversity 0.0 → 1.0，总分 0.063492 → 0.492063（+0.428571）"""
+        with pytest.raises(DataValidationError, match="diversity_sample_size"):
+            QualityScorer(diversity_sample_size=0)
+
+    def test_negative_window_is_rejected_too(self):
+        with pytest.raises(DataValidationError, match="diversity_sample_size"):
+            QualityScorer(diversity_sample_size=-1)
+
+    def test_smallest_window_still_scores(self):
+        """反向护栏：下界 1 不得让正常打分路径换口径——窗口 1 与默认 30
+        在这份 2 条参照上都覆盖全部参照"""
+        reference = ["甲乙丙丁戊己", "戊己庚辛壬癸"]
+        narrow = QualityScorer(diversity_sample_size=1).score(
+            "甲乙丙丁戊己", "甲乙丙丁戊己", "戊己庚辛壬癸",
+            existing_generated=reference, include_semantic=False)
+        wide = QualityScorer().score("甲乙丙丁戊己", "甲乙丙丁戊己", "戊己庚辛壬癸",
+                                     existing_generated=reference, include_semantic=False)
+        assert narrow.diversity == wide.diversity == 0.0
+        assert narrow.total_score == wide.total_score
+
+
+class TestBackupRetention:
+    """`clean_old_backups` 的 `max_backups`：`sorted[:len - max_backups]`"""
+
+    @staticmethod
+    def _sandbox(tmp_path, count=5):
+        source = tmp_path / "src.json"
+        source.write_text(json.dumps(ITEMS, ensure_ascii=False), encoding="utf-8")
+        manager = DatasetBackup(str(tmp_path / "bk"))
+        for i in range(count):
+            manager.backup(str(source), name=f"bk{i}")
+        return tmp_path / "bk"
+
+    @pytest.mark.parametrize("max_backups", [-1, -999])
+    def test_negative_retention_deletes_every_backup(self, tmp_path, max_backups):
+        """实测 Temp 沙箱 5 个备份：-1 与 -999 都删到剩 0 个，日志却写「保留最新 -1 个」"""
+        directory = self._sandbox(tmp_path)
+        with pytest.raises(DataValidationError, match="max_backups"):
+            clean_old_backups(str(directory), max_backups)
+        assert len(list(directory.glob("bk*.json"))) == 5
+
+    def test_zero_retention_is_not_a_legal_request(self, tmp_path):
+        """「保留 0 个」与手滑想打的 10 无从分辨，而后果不可逆，故 minimum=1。
+        实测 HEAD：0 → 5 个备份全删"""
+        directory = self._sandbox(tmp_path)
+        with pytest.raises(DataValidationError, match="max_backups"):
+            clean_old_backups(str(directory), 0)
+        assert len(list(directory.glob("bk*.json"))) == 5
+
+    def test_guard_runs_before_the_directory_is_created(self, tmp_path):
+        """判参先于副作用：`DatasetBackup(backup_dir)` 会 mkdir 并写 index.json，
+        一次坏参数调用不该在磁盘上留下空目录"""
+        target = tmp_path / "never-created"
+        with pytest.raises(DataValidationError, match="max_backups"):
+            clean_old_backups(str(target), -1)
+        assert not target.exists()
+
+    def test_valid_retention_still_prunes(self, tmp_path):
+        """反向护栏：5 个备份、保留 2 → 删 3 个"""
+        directory = self._sandbox(tmp_path)
+        assert clean_old_backups(str(directory), 2) == 3
+        assert len(list(directory.glob("bk*.json"))) == 2
+
+    def test_retention_above_the_current_count_is_a_noop(self, tmp_path):
+        directory = self._sandbox(tmp_path)
+        assert clean_old_backups(str(directory), 5) == 0
+        assert len(list(directory.glob("bk*.json"))) == 5
+

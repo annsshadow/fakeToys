@@ -14,6 +14,7 @@ from typing import List, Dict, Optional, Any
 from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime
+from .validation import require_count
 from .exceptions import BackupError
 
 logger = logging.getLogger(__name__)
@@ -310,6 +311,12 @@ def clean_old_backups(backup_dir: str = ".backups", max_backups: int = 10) -> in
     Returns:
         删除的备份数量
     """
+    # 判参必须排在 `DatasetBackup(backup_dir)` **之前**：构造本身会 mkdir 并落一份
+    # index.json（副作用），而 HEAD 的删除算术 `sorted[:len - max_backups]` 在 -1 / -999
+    # 上等于 `sorted[:len+k]` → **删光全部备份**，日志却写「保留最新 -1 个」
+    # （Temp 沙箱 5 个备份实测：-1 → 剩 0 个，与 0 无差别）。0 同样不放行：
+    # 「保留 0 个备份」与手滑想打 10 无从分辨，而后果是不可逆删档。
+    require_count("max_backups", max_backups, minimum=1)
     manager = DatasetBackup(backup_dir)
     backups = manager.list_backups()
     if len(backups) <= max_backups:
