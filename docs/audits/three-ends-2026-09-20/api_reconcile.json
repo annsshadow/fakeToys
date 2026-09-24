@@ -9065,7 +9065,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 148,
+    "line": 158,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/application/list/terminal/${terminal}",
     "path": "/api/processplatform/assemble/surface/application/list/terminal/{}",
@@ -9078,7 +9078,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 149,
+    "line": 159,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/application/list/key/${terminal}",
     "path": "/api/processplatform/assemble/surface/application/list/key/{}",
@@ -9091,7 +9091,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 150,
+    "line": 160,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/list/application/${terminal}",
     "path": "/api/processplatform/assemble/surface/process/list/application/{}",
@@ -9104,7 +9104,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 216,
+    "line": 226,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/item-access/process/${encodeURIComponent(pid)}",
     "path": "/api/processplatform/assemble/designer/item-access/process/{}",
@@ -9117,7 +9117,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 221,
+    "line": 231,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/item-access/${encodeURIComponent(accId)}",
     "path": "/api/processplatform/assemble/designer/item-access/{}",
@@ -9130,7 +9130,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 222,
+    "line": 232,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/mapping/list/application/${encodeURIComponent(app)}",
     "path": "/api/processplatform/assemble/designer/mapping/list/application/{}",
@@ -9143,7 +9143,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 256,
+    "line": 266,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/manage/${encodeURIComponent(wid)}",
     "path": "/api/processplatform/assemble/surface/read/manage/{}",
@@ -9156,7 +9156,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 257,
+    "line": 267,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/manage/${encodeURIComponent(wid)}",
     "path": "/api/processplatform/assemble/surface/readcompleted/manage/{}",
@@ -9169,7 +9169,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 258,
+    "line": 268,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/manage/${encodeURIComponent(wid)}",
     "path": "/api/processplatform/assemble/surface/taskcompleted/manage/{}",
@@ -9182,7 +9182,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 259,
+    "line": 269,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/manage/${encodeURIComponent(wid)}",
     "path": "/api/processplatform/assemble/surface/work/manage/{}",
@@ -9195,7 +9195,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 260,
+    "line": 270,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/relative/manage/${encodeURIComponent(wid)}",
     "path": "/api/processplatform/assemble/surface/work/relative/manage/{}",
@@ -9208,7 +9208,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 261,
+    "line": 271,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/single/manage/${encodeURIComponent(wid)}",
     "path": "/api/processplatform/assemble/surface/work/single/manage/{}",
@@ -9221,7 +9221,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 262,
+    "line": 272,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/${encodeURIComponent(wid)}/relative/manage",
     "path": "/api/processplatform/assemble/surface/work/{}/relative/manage",
@@ -9234,7 +9234,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 263,
+    "line": 273,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/review/application/manage/${encodeURIComponent(wid)}/${app}",
     "path": "/api/processplatform/assemble/surface/review/application/manage/{}/{}",
@@ -9247,7 +9247,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 264,
+    "line": 274,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/route/selectconfig/${encodeURIComponent(wid)}",
     "path": "/api/processplatform/assemble/surface/route/selectconfig/{}",
@@ -9260,7 +9260,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 265,
+    "line": 275,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/route/${encodeURIComponent(wid)}/selectconfig",
     "path": "/api/processplatform/assemble/surface/route/{}/selectconfig",
@@ -9273,7 +9273,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 266,
+    "line": 276,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/sign/task/${encodeURIComponent(wid)}",
     "path": "/api/processplatform/assemble/surface/sign/task/{}",
@@ -9286,7 +9286,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 267,
+    "line": 277,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/job/v2/${encodeURIComponent(wid)}/projection",
     "path": "/api/processplatform/assemble/surface/job/v2/{}/projection",
@@ -9299,7 +9299,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 268,
+    "line": 278,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/${flag}/complex",
     "path": "/api/processplatform/assemble/surface/process/{}/complex",
@@ -9312,7 +9312,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 269,
+    "line": 279,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/read/list/date/${dt}/manage",
     "path": "/api/processplatform/assemble/surface/read/list/date/{}/manage",
@@ -9325,7 +9325,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 270,
+    "line": 280,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readcompleted/list/date/${dt}/manage",
     "path": "/api/processplatform/assemble/surface/readcompleted/list/date/{}/manage",
@@ -9338,7 +9338,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 271,
+    "line": 281,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/taskcompleted/${encodeURIComponent(wid)}/reference/control",
     "path": "/api/processplatform/assemble/surface/taskcompleted/{}/reference/control",
@@ -9351,7 +9351,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 272,
+    "line": 282,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/work/list/count/application/${app}/process/manage",
     "path": "/api/processplatform/assemble/surface/work/list/count/application/{}/process/manage",
@@ -9364,7 +9364,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 273,
+    "line": 283,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/workcompleted/list/count/application/${app}/process/manage",
     "path": "/api/processplatform/assemble/surface/workcompleted/list/count/application/{}/process/manage",
@@ -9377,7 +9377,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 274,
+    "line": 284,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/workcompleted/filter/attribute/application/${app}/manage",
     "path": "/api/processplatform/assemble/surface/workcompleted/filter/attribute/application/{}/manage",
@@ -9390,7 +9390,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 275,
+    "line": 285,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/workcompleted/filter/attribute/application/manage/${app}",
     "path": "/api/processplatform/assemble/surface/workcompleted/filter/attribute/application/manage/{}",
@@ -9403,7 +9403,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 276,
+    "line": 286,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/application/is/manager/${flag}",
     "path": "/api/processplatform/assemble/surface/application/is/manager/{}",
@@ -9416,7 +9416,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 277,
+    "line": 287,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/mobile/${flag}",
     "path": "/api/processplatform/assemble/surface/form/mobile/{}",
@@ -9429,7 +9429,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 278,
+    "line": 288,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/draft/list/${id}/prev/${cnt}",
     "path": "/api/processplatform/assemble/surface/draft/list/{}/prev/{}",
@@ -9442,7 +9442,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 280,
+    "line": 290,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/allowrerouteto/${flag}",
     "path": "/api/processplatform/assemble/surface/process/allowrerouteto/{}",
@@ -9455,7 +9455,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 281,
+    "line": 291,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/${flag}/allowrerouteto",
     "path": "/api/processplatform/assemble/surface/process/{}/allowrerouteto",
@@ -9468,7 +9468,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 306,
+    "line": 316,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/file/content/${id}",
     "path": "/api/processplatform/assemble/designer/file/content/{}",
@@ -9481,7 +9481,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 307,
+    "line": 317,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/item/access/process/path/path/${processId}",
     "path": "/api/processplatform/assemble/designer/item/access/process/path/path/{}",
@@ -9494,7 +9494,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 308,
+    "line": 318,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/preview/${id}",
     "path": "/api/processplatform/assemble/designer/preview/{}",
@@ -9507,7 +9507,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 309,
+    "line": 319,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/process/${id}",
     "path": "/api/processplatform/assemble/designer/process/process/{}",
@@ -9520,7 +9520,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 310,
+    "line": 320,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/${id}/process",
     "path": "/api/processplatform/assemble/designer/process/{}/process",
@@ -9533,7 +9533,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 311,
+    "line": 321,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/scriptversion/${id}",
     "path": "/api/processplatform/assemble/designer/scriptversion/{}",
@@ -9546,7 +9546,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 312,
+    "line": 322,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/${id}/${count}",
     "path": "/api/processplatform/assemble/designer/{}/{}",
@@ -9559,7 +9559,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 313,
+    "line": 323,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/applicationdict/list/paging/${page}/${size}/${size}",
     "path": "/api/processplatform/assemble/designer/applicationdict/list/paging/{}/{}/{}",
@@ -9572,7 +9572,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 314,
+    "line": 324,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/file/list/${id}/${next}/${count}",
     "path": "/api/processplatform/assemble/designer/file/list/{}/{}/{}",
@@ -9585,7 +9585,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 315,
+    "line": 325,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/form/list/${id}/${next}/${count}",
     "path": "/api/processplatform/assemble/designer/form/list/{}/{}/{}",
@@ -9598,7 +9598,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 316,
+    "line": 326,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/mapping/list/${id}/${next}/${count}",
     "path": "/api/processplatform/assemble/designer/mapping/list/{}/{}/{}",
@@ -9611,7 +9611,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 317,
+    "line": 327,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/activity/${flag}/${activityType}/${activityType}",
     "path": "/api/processplatform/assemble/designer/process/activity/{}/{}/{}",
@@ -9624,7 +9624,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 318,
+    "line": 328,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/script/application/${applicationId}/${name}/${name}",
     "path": "/api/processplatform/assemble/designer/script/application/{}/{}/{}",
@@ -9637,7 +9637,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 319,
+    "line": 329,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/script/list/${id}/${next}/${count}",
     "path": "/api/processplatform/assemble/designer/script/list/{}/{}/{}",
@@ -9650,7 +9650,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 320,
+    "line": 330,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/file/${flag}/application/${applicationFlag}",
     "path": "/api/processplatform/assemble/designer/file/{}/application/{}",
@@ -9663,7 +9663,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 343,
+    "line": 353,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/record/${id}",
     "path": "/api/processplatform/service/processing/record/{}",
@@ -9676,7 +9676,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 344,
+    "line": 354,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/snap/${id}",
     "path": "/api/processplatform/service/processing/snap/{}",
@@ -9689,7 +9689,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 345,
+    "line": 355,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/task/${id}/will",
     "path": "/api/processplatform/service/processing/task/{}/will",
@@ -9702,7 +9702,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 346,
+    "line": 356,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/data/${job}/${job}",
     "path": "/api/processplatform/service/processing/data/{}/{}",
@@ -9715,7 +9715,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 347,
+    "line": 357,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/process/${work}/${processId}",
     "path": "/api/processplatform/service/processing/process/{}/{}",
@@ -9728,7 +9728,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 348,
+    "line": 358,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/record/${job}/${job}",
     "path": "/api/processplatform/service/processing/record/{}/{}",
@@ -9741,7 +9741,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 349,
+    "line": 359,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/v2/projection/${job}/${job}",
     "path": "/api/processplatform/service/processing/v2/projection/{}/{}",
@@ -9754,7 +9754,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 350,
+    "line": 360,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/${job}/${job}",
     "path": "/api/processplatform/service/processing/{}/{}",
@@ -9767,7 +9767,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 351,
+    "line": 361,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/attachment/${id}/${work}/${workId}",
     "path": "/api/processplatform/service/processing/attachment/{}/{}/{}",
@@ -9780,7 +9780,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 352,
+    "line": 362,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/snap/snap/${work}/${workId}/${type}",
     "path": "/api/processplatform/service/processing/snap/snap/{}/{}/{}",
@@ -9793,7 +9793,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 353,
+    "line": 363,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/process/${work}/${processId}/${name}/${name}/${serial}",
     "path": "/api/processplatform/service/processing/process/{}/{}/{}/{}/{}",
@@ -9806,7 +9806,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 354,
+    "line": 364,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/v2/${job}/${job}/${person}/${person}/${view}",
     "path": "/api/processplatform/service/processing/v2/{}/{}/{}/{}/{}",
@@ -9819,7 +9819,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 383,
+    "line": 393,
     "method": "PUT",
     "raw": "/api/processplatform/assemble/designer/application/${e}",
     "path": "/api/processplatform/assemble/designer/application/{}",
@@ -9832,7 +9832,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 384,
+    "line": 394,
     "method": "PUT",
     "raw": "/api/processplatform/assemble/designer/application/${e}/icon",
     "path": "/api/processplatform/assemble/designer/application/{}/icon",
@@ -9845,7 +9845,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 385,
+    "line": 395,
     "method": "PUT",
     "raw": "/api/processplatform/assemble/designer/mapping/${e}",
     "path": "/api/processplatform/assemble/designer/mapping/{}",
@@ -9858,7 +9858,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 386,
+    "line": 396,
     "method": "PUT",
     "raw": "/api/processplatform/assemble/designer/mergeitemplan/${e}",
     "path": "/api/processplatform/assemble/designer/mergeitemplan/{}",
@@ -9871,7 +9871,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 387,
+    "line": 397,
     "method": "PUT",
     "raw": "/api/processplatform/assemble/designer/process/${e}",
     "path": "/api/processplatform/assemble/designer/process/{}",
@@ -9884,7 +9884,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 388,
+    "line": 398,
     "method": "PUT",
     "raw": "/api/processplatform/assemble/designer/dict/save/${e}",
     "path": "/api/processplatform/assemble/designer/dict/save/{}",
@@ -9897,7 +9897,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 389,
+    "line": 399,
     "method": "PUT",
     "raw": "/api/processplatform/assemble/designer/form/save/${e}",
     "path": "/api/processplatform/assemble/designer/form/save/{}",
@@ -9910,7 +9910,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 390,
+    "line": 400,
     "method": "PUT",
     "raw": "/api/processplatform/assemble/designer/xform/save/${e}",
     "path": "/api/processplatform/assemble/designer/xform/save/{}",
@@ -9923,7 +9923,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 402,
+    "line": 412,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/designer/applicationdict/${e}",
     "path": "/api/processplatform/assemble/designer/applicationdict/{}",
@@ -9936,7 +9936,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 403,
+    "line": 413,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/designer/mapping/${e}",
     "path": "/api/processplatform/assemble/designer/mapping/{}",
@@ -9949,7 +9949,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 404,
+    "line": 414,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/designer/mergeitemplan/${e}",
     "path": "/api/processplatform/assemble/designer/mergeitemplan/{}",
@@ -9962,7 +9962,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 405,
+    "line": 415,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/designer/dict/delete/${e}",
     "path": "/api/processplatform/assemble/designer/dict/delete/{}",
@@ -9975,7 +9975,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 406,
+    "line": 416,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/designer/form/delete/${e}",
     "path": "/api/processplatform/assemble/designer/form/delete/{}",
@@ -9988,7 +9988,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 407,
+    "line": 417,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/designer/xform/delete/${e}",
     "path": "/api/processplatform/assemble/designer/xform/delete/{}",
@@ -10001,7 +10001,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 418,
+    "line": 428,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/application/${e}/permission",
     "path": "/api/processplatform/assemble/designer/application/{}/permission",
@@ -10014,7 +10014,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 419,
+    "line": 429,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/process/${e}/permission",
     "path": "/api/processplatform/assemble/designer/process/{}/permission",
@@ -10027,7 +10027,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 436,
+    "line": 446,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/surface/serialnumber/${encodeURIComponent(id)}",
     "path": "/api/processplatform/assemble/surface/serialnumber/{}",
@@ -10040,7 +10040,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 459,
+    "line": 469,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/handover/${e}/cancel",
     "path": "/api/processplatform/assemble/surface/handover/{}/cancel",
@@ -10053,7 +10053,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 460,
+    "line": 470,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/handover/${e}/process",
     "path": "/api/processplatform/assemble/surface/handover/{}/process",
@@ -10066,7 +10066,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 471,
+    "line": 481,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/sign/save/task/${e}",
     "path": "/api/processplatform/assemble/surface/sign/save/task/{}",
@@ -10079,7 +10079,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 474,
+    "line": 484,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/surface/sign/${e}",
     "path": "/api/processplatform/assemble/surface/sign/{}",
@@ -10092,7 +10092,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 477,
+    "line": 487,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/surface/sign/task/${e}",
     "path": "/api/processplatform/assemble/surface/sign/task/{}",
@@ -10105,7 +10105,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 493,
+    "line": 503,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/draft/start/${encodeURIComponent(id)}",
     "path": "/api/processplatform/assemble/surface/draft/start/{}",
@@ -10118,7 +10118,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 497,
+    "line": 507,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/draft/process/${encodeURIComponent(pf)}",
     "path": "/api/processplatform/assemble/surface/draft/process/{}",
@@ -10131,7 +10131,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 502,
+    "line": 512,
     "method": "DELETE",
     "raw": "/api/processplatform/assemble/surface/draft/${encodeURIComponent(id)}",
     "path": "/api/processplatform/assemble/surface/draft/{}",
@@ -10144,7 +10144,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 513,
+    "line": 523,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/mode/delete/${encodeURIComponent(id)}",
     "path": "/api/processplatform/assemble/surface/mode/delete/{}",
@@ -10157,7 +10157,137 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 527,
+    "line": 534,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/taskcompleted/opinion/manage/${e}",
+    "path": "/api/processplatform/assemble/surface/taskcompleted/opinion/manage/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/taskcompleted/opinion/manage/{id}",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
+    "line": 535,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/taskcompleted/reference/${e}",
+    "path": "/api/processplatform/assemble/surface/taskcompleted/reference/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/taskcompleted/reference/{id}",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
+    "line": 538,
+    "method": "DELETE",
+    "raw": "/api/processplatform/assemble/surface/taskcompleted/${e}/manage",
+    "path": "/api/processplatform/assemble/surface/taskcompleted/{}/manage",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/taskcompleted/{id}/manage",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
+    "line": 539,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/readcompleted/opinion/manage/${e}",
+    "path": "/api/processplatform/assemble/surface/readcompleted/opinion/manage/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/readcompleted/opinion/manage/{id}",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
+    "line": 540,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/readcompleted/reference/${e}",
+    "path": "/api/processplatform/assemble/surface/readcompleted/reference/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/readcompleted/reference/{id}",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
+    "line": 543,
+    "method": "DELETE",
+    "raw": "/api/processplatform/assemble/surface/readcompleted/${e}/manage",
+    "path": "/api/processplatform/assemble/surface/readcompleted/{}/manage",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/readcompleted/{id}/manage",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
+    "line": 546,
+    "method": "DELETE",
+    "raw": "/api/processplatform/assemble/surface/snap/${e}",
+    "path": "/api/processplatform/assemble/surface/snap/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/snap/{id}",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
+    "line": 547,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/service/work/touch/${e}",
+    "path": "/api/processplatform/assemble/surface/service/work/touch/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/service/work/touch/{id}",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
+    "line": 550,
+    "method": "DELETE",
+    "raw": "/api/processplatform/assemble/surface/record/${e}/manage",
+    "path": "/api/processplatform/assemble/surface/record/{}/manage",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/record/{id}/manage",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
+    "line": 551,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/record/job/${e}/manage",
+    "path": "/api/processplatform/assemble/surface/record/job/{}/manage",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/record/job/{job}/manage",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
+    "line": 565,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/application/list/summary/applicationcategory/${encodeURIComponent(cat)}",
     "path": "/api/processplatform/assemble/designer/application/list/summary/applicationcategory/{}",
@@ -10170,7 +10300,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 529,
+    "line": 567,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/${encodeURIComponent(pid)}/lead/out",
     "path": "/api/processplatform/assemble/designer/process/{}/lead/out",
@@ -10183,7 +10313,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 530,
+    "line": 568,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/lead/out/${encodeURIComponent(pid)}",
     "path": "/api/processplatform/assemble/designer/process/lead/out/{}",
@@ -10196,7 +10326,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 531,
+    "line": 569,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/enabled/${encodeURIComponent(pid)}",
     "path": "/api/processplatform/assemble/designer/process/enabled/{}",
@@ -10209,7 +10339,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 532,
+    "line": 570,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/permission/${encodeURIComponent(pid)}",
     "path": "/api/processplatform/assemble/designer/process/permission/{}",
@@ -10222,7 +10352,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 534,
+    "line": 572,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/application/${encodeURIComponent(cat)}/disable/edition",
     "path": "/api/processplatform/assemble/designer/process/application/{}/disable/edition",
@@ -10235,7 +10365,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 554,
+    "line": 592,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/${flag}/application/${app}",
     "path": "/api/processplatform/assemble/surface/form/{}/application/{}",
@@ -10248,7 +10378,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 555,
+    "line": 593,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/${flag}/application/${app}/mobile",
     "path": "/api/processplatform/assemble/surface/form/{}/application/{}/mobile",
@@ -10261,7 +10391,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 556,
+    "line": 594,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/application/mobile/${flag}/${app}",
     "path": "/api/processplatform/assemble/surface/form/application/mobile/{}/{}",
@@ -10274,7 +10404,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 557,
+    "line": 595,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/v2/mobile/${id}",
     "path": "/api/processplatform/assemble/surface/form/v2/mobile/{}",
@@ -10287,7 +10417,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 558,
+    "line": 596,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/v2/${id}/mobile",
     "path": "/api/processplatform/assemble/surface/form/v2/{}/mobile",
@@ -10300,7 +10430,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 559,
+    "line": 597,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/v2/lookup/taskcompleted/${id}",
     "path": "/api/processplatform/assemble/surface/form/v2/lookup/taskcompleted/{}",
@@ -10313,7 +10443,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 560,
+    "line": 598,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/v2/lookup/taskcompleted/${id}/mobile",
     "path": "/api/processplatform/assemble/surface/form/v2/lookup/taskcompleted/{}/mobile",
@@ -10326,7 +10456,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 561,
+    "line": 599,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/mobile/${id}",
     "path": "/api/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/mobile/{}",
@@ -10339,7 +10469,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 562,
+    "line": 600,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/${id}/mobile",
     "path": "/api/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/{}/mobile",
@@ -10352,7 +10482,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 563,
+    "line": 601,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/activity/${id}/activityType/${flag}",
     "path": "/api/processplatform/assemble/surface/process/activity/{}/activityType/{}",
@@ -10365,7 +10495,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 564,
+    "line": 602,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/application/${flag}/${app}",
     "path": "/api/processplatform/assemble/surface/process/application/{}/{}",
@@ -10378,7 +10508,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 565,
+    "line": 603,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/list/available/identity/process/${flag}",
     "path": "/api/processplatform/assemble/surface/process/list/available/identity/process/{}",
@@ -10391,7 +10521,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 566,
+    "line": 604,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/script/application/${flag}/${app}",
     "path": "/api/processplatform/assemble/surface/script/application/{}/{}",
@@ -10404,7 +10534,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 567,
+    "line": 605,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/draft/list/${id}/next/${cnt}",
     "path": "/api/processplatform/assemble/surface/draft/list/{}/next/{}",
@@ -10417,7 +10547,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 568,
+    "line": 606,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/draft/process/${proc}",
     "path": "/api/processplatform/assemble/surface/draft/process/{}",
@@ -10430,7 +10560,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 569,
+    "line": 607,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/snap/list/${id}/next/${cnt}/application/${app}",
     "path": "/api/processplatform/assemble/surface/snap/list/{}/next/{}/application/{}",
@@ -10443,7 +10573,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 570,
+    "line": 608,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/snap/list/${id}/prev/${cnt}/application/${app}",
     "path": "/api/processplatform/assemble/surface/snap/list/{}/prev/{}/application/{}",
@@ -10456,7 +10586,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 571,
+    "line": 609,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/snap/list/${id}/next/${cnt}/process/${proc}",
     "path": "/api/processplatform/assemble/surface/snap/list/{}/next/{}/process/{}",
@@ -10469,7 +10599,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 572,
+    "line": 610,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/snap/list/${id}/next/${cnt}/manage",
     "path": "/api/processplatform/assemble/surface/snap/list/{}/next/{}/manage",
@@ -10482,7 +10612,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 573,
+    "line": 611,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/snap/list/${id}/prev/${cnt}/manage",
     "path": "/api/processplatform/assemble/surface/snap/list/{}/prev/{}/manage",
@@ -10495,7 +10625,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 574,
+    "line": 612,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/review/v2/list/prev/${id}/${cnt}",
     "path": "/api/processplatform/assemble/surface/review/v2/list/prev/{}/{}",
@@ -10508,7 +10638,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 575,
+    "line": 613,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/job/${id}/allow/visit/person/${person}",
     "path": "/api/processplatform/assemble/surface/job/{}/allow/visit/person/{}",
@@ -10521,7 +10651,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 576,
+    "line": 614,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/job/latest/work/workcompleted/serial/${id}",
     "path": "/api/processplatform/assemble/surface/job/latest/work/workcompleted/serial/{}",
@@ -10534,7 +10664,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 577,
+    "line": 615,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/readrecord/list/job/${id}",
     "path": "/api/processplatform/assemble/surface/readrecord/list/job/{}",
@@ -10547,7 +10677,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 579,
+    "line": 617,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/file/application/${flag}/${app}",
     "path": "/api/processplatform/assemble/designer/file/application/{}/{}",
@@ -10560,7 +10690,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 580,
+    "line": 618,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/snap/list/${id}/prev/${cnt}/process/${proc}",
     "path": "/api/processplatform/assemble/surface/snap/list/{}/prev/{}/process/{}",
@@ -10573,7 +10703,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 599,
+    "line": 637,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/${encodeURIComponent(pid)}/enabled",
     "path": "/api/processplatform/assemble/designer/process/{}/enabled",
@@ -10586,7 +10716,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 601,
+    "line": 639,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/workcompleted/application/${encodeURIComponent(appId)}/merge/data",
     "path": "/api/processplatform/assemble/designer/workcompleted/application/{}/merge/data",
@@ -10599,7 +10729,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 602,
+    "line": 640,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/workcompleted/process/${encodeURIComponent(pid)}/merge/data",
     "path": "/api/processplatform/assemble/designer/workcompleted/process/{}/merge/data",
@@ -10612,7 +10742,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 617,
+    "line": 655,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/mapping/list/application/${encodeURIComponent(app)}",
     "path": "/api/processplatform/assemble/designer/mapping/list/application/{}",
@@ -10625,7 +10755,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 618,
+    "line": 656,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/applicationdict/list/application/${encodeURIComponent(app)}",
     "path": "/api/processplatform/assemble/designer/applicationdict/list/application/{}",
@@ -10638,7 +10768,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 626,
+    "line": 664,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/mapping/${encodeURIComponent(mid)}",
     "path": "/api/processplatform/assemble/designer/mapping/{}",
@@ -10651,7 +10781,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 629,
+    "line": 667,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/applicationdict/${encodeURIComponent(did)}",
     "path": "/api/processplatform/assemble/designer/applicationdict/{}",
@@ -10664,7 +10794,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 630,
+    "line": 668,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/application/${encodeURIComponent(app)}",
     "path": "/api/processplatform/assemble/designer/process/application/{}",
@@ -10677,7 +10807,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 631,
+    "line": 669,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/form/${encodeURIComponent(formId)}",
     "path": "/api/processplatform/assemble/designer/process/form/{}",
@@ -10690,7 +10820,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 648,
+    "line": 686,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/file/list/application/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/designer/file/list/application/{}",
@@ -10703,7 +10833,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 651,
+    "line": 689,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/script/application/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/designer/script/application/{}",
@@ -10716,7 +10846,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 655,
+    "line": 693,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/file/${encodeURIComponent(fFlag)}",
     "path": "/api/processplatform/assemble/designer/file/{}",
@@ -10729,7 +10859,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 656,
+    "line": 694,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/mergeitemplan/${encodeURIComponent(fFlag)}",
     "path": "/api/processplatform/assemble/designer/mergeitemplan/{}",
@@ -10742,7 +10872,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 657,
+    "line": 695,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/script/application/${encodeURIComponent(appId)}/name/${encodeURIComponent(sName)}",
     "path": "/api/processplatform/assemble/designer/script/application/{}/name/{}",
@@ -10755,7 +10885,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 658,
+    "line": 696,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/application/icon/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/designer/application/icon/{}",
@@ -10768,7 +10898,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 673,
+    "line": 711,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/get/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/surface/get/{}",
@@ -10781,7 +10911,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 674,
+    "line": 712,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/list/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/surface/list/{}",
@@ -10794,7 +10924,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 675,
+    "line": 713,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/applicationdict/application/${encodeURIComponent(appId)}/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/surface/applicationdict/application/{}/{}",
@@ -10807,7 +10937,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 676,
+    "line": 714,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/complex/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/surface/process/complex/{}",
@@ -10820,7 +10950,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 677,
+    "line": 715,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/list/application/filter/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/surface/process/list/application/filter/{}",
@@ -10833,7 +10963,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 693,
+    "line": 731,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/data/workcompleted/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/surface/data/workcompleted/{}",
@@ -10846,7 +10976,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 695,
+    "line": 733,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/form/application/${encodeURIComponent(appId)}/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/surface/form/application/{}/{}",
@@ -10859,7 +10989,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 696,
+    "line": 734,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/control/workorworkcompleted/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/surface/control/workorworkcompleted/{}",
@@ -10872,7 +11002,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 713,
+    "line": 751,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/item-access/path/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/designer/item-access/path/{}",
@@ -10885,7 +11015,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 714,
+    "line": 752,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/item-access/process/${encodeURIComponent(appId)}/path/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/designer/item-access/process/{}/path/{}",
@@ -10898,7 +11028,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 715,
+    "line": 753,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/output/select/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/designer/output/select/{}",
@@ -10911,7 +11041,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 716,
+    "line": 754,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/application/${encodeURIComponent(appId)}/edition/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/designer/process/application/{}/edition/{}",
@@ -10924,7 +11054,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 733,
+    "line": 771,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/route/${encodeURIComponent(id)}",
     "path": "/api/processplatform/assemble/surface/route/{}",
@@ -10937,7 +11067,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 734,
+    "line": 772,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/sign/${encodeURIComponent(id)}",
     "path": "/api/processplatform/assemble/surface/sign/{}",
@@ -10950,7 +11080,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 735,
+    "line": 773,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process/list/controllable/application/${encodeURIComponent(appId)}",
     "path": "/api/processplatform/assemble/surface/process/list/controllable/application/{}",
@@ -10963,7 +11093,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 757,
+    "line": 795,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/${encodeURIComponent(pid)}",
     "path": "/api/processplatform/assemble/designer/process/{}",
@@ -10976,7 +11106,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 758,
+    "line": 796,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/process/list/element/${encodeURIComponent(pid)}",
     "path": "/api/processplatform/assemble/designer/process/list/element/{}",
@@ -10989,7 +11119,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 759,
+    "line": 797,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/processversion/list/process/${encodeURIComponent(pid)}",
     "path": "/api/processplatform/assemble/designer/processversion/list/process/{}",
@@ -26759,7 +26889,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 122,
+    "line": 132,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/list/running",
     "path": "/api/processplatform/service/processing/list/running",
@@ -26774,7 +26904,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 133,
+    "line": 143,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/elementtool/form/orphan",
     "path": "/api/processplatform/assemble/designer/elementtool/form/orphan",
@@ -26787,7 +26917,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 134,
+    "line": 144,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/elementtool/process/orphan",
     "path": "/api/processplatform/assemble/designer/elementtool/process/orphan",
@@ -26800,7 +26930,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 135,
+    "line": 145,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/elementtool/script/orphan",
     "path": "/api/processplatform/assemble/designer/elementtool/script/orphan",
@@ -26813,7 +26943,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 161,
+    "line": 171,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/application/list/complex/manage/person",
     "path": "/api/processplatform/assemble/surface/application/list/complex/manage/person",
@@ -26826,7 +26956,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 180,
+    "line": 190,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process_manager/list",
     "path": "/api/processplatform/assemble/surface/process_manager/list",
@@ -26839,7 +26969,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 305,
+    "line": 315,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer",
     "path": "/api/processplatform/assemble/designer",
@@ -26852,7 +26982,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 368,
+    "line": 378,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/applicationdict",
     "path": "/api/processplatform/assemble/designer/applicationdict",
@@ -26865,7 +26995,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 369,
+    "line": 379,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/mapping",
     "path": "/api/processplatform/assemble/designer/mapping",
@@ -26878,7 +27008,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 370,
+    "line": 380,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/mergeitemplan",
     "path": "/api/processplatform/assemble/designer/mergeitemplan",
@@ -26891,7 +27021,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 371,
+    "line": 381,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/item-access",
     "path": "/api/processplatform/assemble/designer/item-access",
@@ -26904,7 +27034,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 372,
+    "line": 382,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/item-access/bach/save",
     "path": "/api/processplatform/assemble/designer/item-access/bach/save",
@@ -26917,7 +27047,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 431,
+    "line": 441,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/serialnumber",
     "path": "/api/processplatform/assemble/surface/serialnumber",
@@ -26930,7 +27060,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 448,
+    "line": 458,
     "method": "POST",
     "raw": "/api/processplatform/assemble/surface/handover",
     "path": "/api/processplatform/assemble/surface/handover",
@@ -26943,7 +27073,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 489,
+    "line": 499,
     "method": "PUT",
     "raw": "/api/processplatform/assemble/surface/draft",
     "path": "/api/processplatform/assemble/surface/draft",
@@ -26956,7 +27086,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 528,
+    "line": 566,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/elementtool/applicationdict/orphan",
     "path": "/api/processplatform/assemble/designer/elementtool/applicationdict/orphan",
@@ -26969,7 +27099,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 597,
+    "line": 635,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/mergeitemplan/list/application/${encodeURIComponent(appId)}/paging/1/size/20",
     "path": "/api/processplatform/assemble/designer/mergeitemplan/list/application/{}/paging/1/size/20",
@@ -26985,7 +27115,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 598,
+    "line": 636,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/mergeitemplan/list/paging/1/size/20",
     "path": "/api/processplatform/assemble/designer/mergeitemplan/list/paging/1/size/20",
@@ -27001,7 +27131,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 627,
+    "line": 665,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/mapping/list/${encodeURIComponent(mid)}/next/20",
     "path": "/api/processplatform/assemble/designer/mapping/list/{}/next/20",
@@ -27016,7 +27146,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 628,
+    "line": 666,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/mapping/list/${encodeURIComponent(mid)}/prev/20",
     "path": "/api/processplatform/assemble/designer/mapping/list/{}/prev/20",
@@ -27031,7 +27161,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 694,
+    "line": 732,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/draft/list/prev/${encodeURIComponent(appId)}/20",
     "path": "/api/processplatform/assemble/surface/draft/list/prev/{}/20",
