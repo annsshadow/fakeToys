@@ -410,6 +410,9 @@
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps17('readProcessing')">待阅处理(管理)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps17('readCompletedOpinion')">已阅意见(管理)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps17('taskCompletedOpinion')">已办意见(管理)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps18('workProcess')">按流程发起工作</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps18('wcProcess')">已办按流程</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps18('wcRollback')">已办回滚</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdProcessing')">任务处理(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdReplace')">任务替换(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdPress')">任务催办(位置态)</button>
@@ -1754,6 +1757,28 @@ async function surfaceOps17(op: string): Promise<void> {
     if (op === 'readProcessing') await api.post(`/api/processplatform/assemble/surface/read/processing/manage/${id}`, {})
     else if (op === 'readCompletedOpinion') await api.post(`/api/processplatform/assemble/surface/readcompleted/${id}/opinion/manage`, {})
     else await api.put(`/api/processplatform/assemble/surface/taskcompleted/${id}/opinion/manage`, {})
+    toast.success('流程表面操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev418：流程表面 按流程发起工作 work/process/{processFlag}[PP_C_WORK]·已办按流程 workcompleted/process/{processFlag}·已办回滚 workcompleted/{flag}/rollback[PP_C_WORKCOMPLETED] 真实路由（Path-only，O2OA 发起/回滚独立操作；用户输入真实 process/work id 触发）
+async function surfaceOps18(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    if (op === 'workProcess') {
+      const pf = encodeURIComponent(prompt('流程 Flag:', '') || '')
+      await api.post(`/api/processplatform/assemble/surface/work/process/${pf}`, {})
+    } else if (op === 'wcProcess') {
+      const pf = encodeURIComponent(prompt('流程 Flag:', '') || '')
+      await api.post(`/api/processplatform/assemble/surface/workcompleted/process/${pf}`, {})
+    } else {
+      const flag = encodeURIComponent(prompt('已办 ID:', '') || '')
+      await api.put(`/api/processplatform/assemble/surface/workcompleted/${flag}/rollback`, {})
+    }
     toast.success('流程表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
