@@ -33,6 +33,20 @@
         <button class="action-btn" @click="fileUpdate('attCbPut')">附件回调U</button>
         <button class="action-btn" @click="fileUpdate('attIdCbPost')">附件id回调</button>
         <button class="action-btn" @click="fileSaveConfig">存文件配置</button>
+        <button class="action-btn" @click="fileNetDisk('folderCreate')">建文件夹</button>
+        <button class="action-btn" @click="fileNetDisk('folderUpdate')">改文件夹</button>
+        <button class="action-btn" @click="fileNetDisk('folderRemove')">删文件夹</button>
+        <button class="action-btn" @click="fileNetDisk('permissionSet')">设权限</button>
+        <button class="action-btn" @click="fileNetDisk('u2FolderCreate')">建网盘夹</button>
+        <button class="action-btn" @click="fileNetDisk('u2FolderRename')">网盘夹改名</button>
+        <button class="action-btn" @click="fileNetDisk('u2FolderDelete')">删网盘夹</button>
+        <button class="action-btn" @click="fileNetDisk('shareCreate')">建分享</button>
+        <button class="action-btn" @click="fileNetDisk('shareDelete')">删分享</button>
+        <button class="action-btn" @click="fileNetDisk('recycleDelete')">回收站删除</button>
+        <button class="action-btn" @click="fileNetDisk('recycleResume')">回收站恢复</button>
+        <button class="action-btn" @click="fileNetDisk('entityFolderCreate')">建实体夹</button>
+        <button class="action-btn" @click="fileNetDisk('entityFileCreate')">建实体文件2</button>
+        <button class="action-btn" @click="fileNetDisk('entityFolderDelete')">删实体夹</button>
         <button class="action-btn" @click="toggleView">{{ viewType === 'grid' ? '☰ 列表' : '⊞ 网格' }}</button>
       </div>
     </div>
@@ -294,6 +308,65 @@ async function fileSaveConfig(): Promise<void> {
     toast.success('文件控制配置已保存')
   } catch (e: any) {
     toast.error('保存配置失败: ' + (e?.message ?? ''))
+  }
+}
+// rev331：网盘 文件夹/分享/回收站/实体文件/权限 真实写端点（用户触发，shape 已核 file crate handler；全字面量路径）
+async function fileNetDisk(op: string) {
+  try {
+    if (op === 'folderCreate') {
+      const name = prompt('文件夹名称:', '') || ''
+      await api.post('/api/file/folder/create', { name })
+    } else if (op === 'folderUpdate') {
+      const id = prompt('文件夹 ID:', '') || ''
+      const name = prompt('新名称:', '') || ''
+      await api.post('/api/file/folder/update', { id, name })
+    } else if (op === 'folderRemove') {
+      const id = prompt('要删除的文件夹 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该文件夹？'))) return
+      await api.post('/api/file/folder/remove', { id })
+    } else if (op === 'permissionSet') {
+      const id = prompt('文件/夹 ID:', '') || ''
+      await api.post('/api/file/permission/set', { id })
+    } else if (op === 'u2FolderCreate') {
+      const name = prompt('网盘文件夹名称:', '') || ''
+      await api.post('/api/folder', { name })
+    } else if (op === 'u2FolderRename') {
+      const id = prompt('网盘文件夹 ID:', '') || ''
+      const name = prompt('新名称:', '') || ''
+      await api.put(`/api/folder/${encodeURIComponent(id)}`, { name })
+    } else if (op === 'u2FolderDelete') {
+      const id = prompt('要删除的网盘文件夹 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该网盘文件夹？'))) return
+      await api.delete(`/api/folder/${encodeURIComponent(id)}`)
+    } else if (op === 'shareCreate') {
+      const fileId = prompt('要分享的文件 ID:', '') || ''
+      await api.post('/api/share', { fileId })
+    } else if (op === 'shareDelete') {
+      const id = prompt('要删除的分享 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该分享？'))) return
+      await api.delete(`/api/share/${encodeURIComponent(id)}`)
+    } else if (op === 'recycleDelete') {
+      const id = prompt('回收站条目 ID:', '') || ''
+      if (!(await confirmMsg('确定彻底删除该回收站条目？'))) return
+      await api.post(`/api/recycle/delete/${encodeURIComponent(id)}`, {})
+    } else if (op === 'recycleResume') {
+      const id = prompt('要恢复的回收站条目 ID:', '') || ''
+      await api.post(`/api/recycle/resume/${encodeURIComponent(id)}`, {})
+    } else if (op === 'entityFolderCreate') {
+      const name = prompt('实体文件夹名称:', '') || ''
+      await api.post('/api/file/core/entity/folder', { name })
+    } else if (op === 'entityFileCreate') {
+      const name = prompt('实体文件名称:', '') || ''
+      const person = prompt('归属人:', '') || ''
+      await api.post('/api/file/core/entity/file', { name, person, reference_type: 'attachment' })
+    } else {
+      const id = prompt('要删除的实体文件夹 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该实体文件夹？'))) return
+      await api.delete(`/api/file/core/entity/folder/${encodeURIComponent(id)}`)
+    }
+    toast.success('网盘操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
   }
 }
 async function loadAttachmentShares(): Promise<void> {
