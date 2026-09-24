@@ -895,6 +895,8 @@ async function loadBbsControl() {
       s(api.get('/api/bbs/assemble/control/user/info')),
       // rev440：BBS 随机 UUID（uuid_generate 无参无 pool 纯生成，字面量路由匹配）
       s(api.get('/api/bbs/assemble/control/uuid/random')),
+      // rev450：主题评级统计（u2_statgrade Path<(sectionName,subjectType)> 读 x_bbs 评分聚合）
+      s(api.get('/api/bbs/assemble/control/subject/statgrade/sectionName/default/subjectType/all')),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     const hasCfg = (config as any)?.data ? '有' : '无'
