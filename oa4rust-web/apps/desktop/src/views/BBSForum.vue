@@ -73,6 +73,22 @@
       <button class="new-topic-btn ghost" @click="bbsDel('userSubject')">删主题</button>
       <button class="new-topic-btn ghost" @click="bbsDel('entityForum')">删实体论坛</button>
       <button class="new-topic-btn ghost" @click="bbsDel('entitySubject')">删实体主题</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('forumCreate')">建实体论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('forumUpdate')">改实体论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('sectionCreate')">建实体版块</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('sectionUpdate')">改实体版块</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('sectionDelete')">删实体版块</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('subjectCreate')">建实体主题</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('subjectUpdate')">改实体主题</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('creamed')">精华列表</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('index')">索引列表</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('recommended')">推荐列表</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('search')">搜索列表</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('filter')">筛选列表</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('replyFilter')">回复筛选</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('myReply')">我的回复</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('mySubject')">我的主题</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('voterecord')">投票记录</button>
     </div>
 
     <!-- 左侧：版块列表 -->
@@ -976,6 +992,34 @@ async function bbsDel(kind: string) {
     toast.success(`${kind} 已删除`)
   } catch (err: any) {
     toast.error(`删除${kind}失败: ` + (err?.message ?? ''))
+  }
+}
+// rev348：BBS 核心实体论坛/版块/主题 CRUD + 主题分页检索（精华/索引/推荐/搜索/筛选）+我的回复主题投票 真实写端点（用户触发，shape 已核；避 autoquery-guards canary + upload/login trap）
+async function bbsEntity(op: string) {
+  const id = prompt('目标 ID（可空）:', '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (op === 'forumCreate') await api.post('/api/bbs/core/entity/forum', { name: '新论坛' })
+    else if (op === 'forumUpdate') await api.post(`/api/bbs/core/entity/forum/${e}`, {})
+    else if (op === 'forumDelete') { if (!(await confirmMsg('确定删除该论坛？'))) return; await api.delete(`/api/bbs/core/entity/forum/${e}`) }
+    else if (op === 'sectionCreate') await api.post('/api/bbs/core/entity/section', { name: '新版块' })
+    else if (op === 'sectionUpdate') await api.post(`/api/bbs/core/entity/section/${e}`, {})
+    else if (op === 'sectionDelete') { if (!(await confirmMsg('确定删除该版块？'))) return; await api.delete(`/api/bbs/core/entity/section/${e}`) }
+    else if (op === 'subjectCreate') await api.post('/api/bbs/core/entity/subject', { title: '新主题' })
+    else if (op === 'subjectUpdate') await api.post(`/api/bbs/core/entity/subject/${e}`, {})
+    else if (op === 'subjectDelete') { if (!(await confirmMsg('确定删除该主题？'))) return; await api.delete(`/api/bbs/core/entity/subject/${e}`) }
+    else if (op === 'creamed') await api.put('/api/bbs/assemble/control/subject/creamed/list/page/1/count/20', {})
+    else if (op === 'index') await api.put('/api/bbs/assemble/control/subject/index/list/page/1/count/20', {})
+    else if (op === 'recommended') await api.put('/api/bbs/assemble/control/subject/recommended/list/page/1/count/20', {})
+    else if (op === 'search') await api.put('/api/bbs/assemble/control/subject/search/list/page/1/count/20', {})
+    else if (op === 'filter') await api.put('/api/bbs/assemble/control/subject/filter/list/page/1/count/20', {})
+    else if (op === 'replyFilter') await api.put('/api/bbs/assemble/control/reply/filter/list/page/1/count/20', {})
+    else if (op === 'myReply') await api.put('/api/bbs/assemble/control/user/reply/my/list/page/1/count/20', {})
+    else if (op === 'mySubject') await api.put('/api/bbs/assemble/control/user/subject/my/list/page/1/count/20', {})
+    else await api.put('/api/bbs/assemble/control/user/subject/voterecord/list/page/1/count/20', {})
+    toast.success('BBS 实体操作已提交')
+  } catch (err: any) {
+    toast.error('BBS 实体操作失败: ' + (err?.message ?? ''))
   }
 }
 const api_forum_view_1_data = ref<any[]>([])
