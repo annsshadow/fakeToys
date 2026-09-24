@@ -132,6 +132,8 @@ class SearchRequest(BaseModel):
 
     `fields` 为 None 时搜索全部字段；`method` 支持
     exact / contains / ngram / fuzzy / regex。
+    `fuzzy_threshold` / `ngram_n` 分别是 fuzzy 与 ngram 的松紧旋钮，越界由 SDK
+    的判据拦下（`ValueError` → 400）。
     """
     input_file: str
     query: str
@@ -139,6 +141,8 @@ class SearchRequest(BaseModel):
     method: str = "contains"
     limit: int = 100
     offset: int = 0
+    fuzzy_threshold: float = 0.6
+    ngram_n: int = 2
 
 
 class CompareRequest(BaseModel):
@@ -430,6 +434,8 @@ async def dataset_search(request: SearchRequest):
             request.method,
             request.limit,
             request.offset,
+            fuzzy_threshold=request.fuzzy_threshold,
+            ngram_n=request.ngram_n,
         )
         return result.to_dict()
     except HTTPException:

@@ -349,6 +349,63 @@ class TestSearchCommand:
         assert "找到 0 条匹配结果" in count("contains")
         assert "找到 1 条匹配结果" in count("fuzzy")
 
+    def test_fuzzy_threshold_flag_changes_the_count(self, dataset_context):
+        """`--fuzzy-threshold` 得真的改变结果，而不是被 argparse 收下就丢掉
+
+        「租房」在默认 0.6 下 2 条；放到 0.5 就多出「如何退租押金？」（窗口「退租」
+        错 1/2 = 0.5，**正好压在阈值上**）和「租期最短多久？」（「租期」同为 0.5）
+        → 4 条。这个 0.5 与上一行的等号一起说明门槛是闭区间上界、开区间下界。
+        """
+        clean, _, _ = dataset_context
+
+        def count(extra):
+            out, err, code = run_cli(
+                ["cli", "search", "--input", str(clean), "--query", "租房",
+                 "--method", "fuzzy", *extra]
+            )
+            assert code is None, err
+            return out
+
+        assert "找到 2 条匹配结果" in count([])
+        assert "找到 4 条匹配结果" in count(["--fuzzy-threshold", "0.5"])
+
+    def test_ngram_n_flag_changes_the_count(self, dataset_context):
+        """`--ngram-n` 同样可调：1 是逐字覆盖，2 是二元，3 对 2 字查询无解"""
+        clean, _, _ = dataset_context
+
+        def count(n):
+            out, err, code = run_cli(
+                ["cli", "search", "--input", str(clean), "--query", "租房",
+                 "--method", "ngram", "--ngram-n", str(n)]
+            )
+            assert code is None, err
+            return out
+
+        assert "找到 2 条匹配结果" in count(2)
+        assert "找到 4 条匹配结果" in count(1)
+        assert "找到 0 条匹配结果" in count(3)
+
+    @pytest.mark.parametrize("extra, phrase", [
+        (["--fuzzy-threshold", "0"], "模糊阈值"),
+        (["--fuzzy-threshold", "1.5"], "模糊阈值"),
+        (["--ngram-n", "0"], "n-gram 长度"),
+        (["--ngram-n", "-2"], "n-gram 长度"),
+    ])
+    def test_out_of_range_knobs_fail_loudly(self, dataset_context, extra, phrase):
+        """越界的旋钮必须失败，不许交出「找到 0 条」
+
+        0 条在 CLI 里是完全正常的答案，用户读到的是「语料里没有」；而真相是参数写错了。
+        校验只挂在 SDK `search()` 那一处，经 `cli.main()` 的 `except Exception` 变成
+        `错误: …` + 退出码 1，所以这里同时钉住了「不在命令处理里重复校验」。
+        """
+        clean, _, _ = dataset_context
+        out, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "租房", *extra]
+        )
+        assert code == 1, f"{extra} 未被拒绝: code={code}, out={out!r}"
+        assert phrase in err, f"stderr 没指出越界的是哪个旋钮: {err!r}"
+        assert "找到" not in out, "报错的同时还打印了结果摘要"
+
     def test_saves_output(self, dataset_context):
         """--output 需写入可解析的结果 JSON"""
         clean, _, tmp = dataset_context

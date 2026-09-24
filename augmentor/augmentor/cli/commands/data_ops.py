@@ -108,6 +108,9 @@ def run_search(args, config):
 
     走 `search_enhanced.search_dataset`：支持 exact / contains / ngram /
     fuzzy / regex 五种方法，以及 `--offset` 分页与 `--output` 落盘完整结果。
+    `--fuzzy-threshold` / `--ngram-n` 是 fuzzy 与 ngram 的松紧旋钮（`search()` 的
+    `fuzzy_threshold` / `ngram_n`），默认 0.6 / 2；越界值由 SDK 那**一处**判据拦下，
+    经 `main()` 的 `except Exception` 变成 `错误: …` + 退出码 1，不在此重复校验。
 
     `ngram` 原先只存在于另一套实现（`indexer.DatasetIndexer`），已移植进
     `EnhancedSearcher`——所以这里不是「少了一个方法」，而是五种方法齐全。
@@ -127,6 +130,8 @@ def run_search(args, config):
         args.method,
         100 if args.limit is None else args.limit,
         args.offset,
+        fuzzy_threshold=args.fuzzy_threshold,
+        ngram_n=args.ngram_n,
     )
 
     print(f"找到 {result.total_matches} 条匹配结果，用时 {result.query_time_ms:.2f}ms")

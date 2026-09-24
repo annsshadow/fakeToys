@@ -14,6 +14,8 @@ from dataclasses import dataclass, field
 from collections import defaultdict
 import time
 
+from augmentor.exceptions import DataValidationError
+
 logger = logging.getLogger(__name__)
 
 
@@ -199,7 +201,8 @@ class EnhancedSearcher:
     
     def search(self, query: str, fields: List[str] = None, 
                method: str = "contains", filters: List[SearchFilter] = None,
-               limit: int = 100, offset: int = 0) -> SearchResult:
+               limit: int = 100, offset: int = 0,
+               fuzzy_threshold: float = 0.6, ngram_n: int = 2) -> SearchResult:
         """搜索数据
         
         Args:
@@ -209,10 +212,29 @@ class EnhancedSearcher:
             filters: 过滤器列表
             limit: 返回数量限制
             offset: 偏移量
-        
+            fuzzy_threshold: fuzzy 的相似度门槛，开区间下界、闭区间上界
+                `(0, 1]`；越大越严格，1.0 即要求整串出现
+            ngram_n: ngram 的 gram 长度，`>= 1`；越大越严格
+
         Returns:
             搜索结果
+
+        Raises:
+            DataValidationError: `fuzzy_threshold` 或 `ngram_n` 越界（它同时是
+                `ValueError`，所以 API 那边照旧映射成 400）。两个旋钮只对各自的方法
+                有意义，但**不判方法**——判据是值本身是否在文档域内，所以
+                `--method contains --fuzzy-threshold 0` 也会失败：那是在请求一个
+                任何方法都给不出结果的门槛，静默忽略等于骗人。
         """
+        if not 0 < fuzzy_threshold <= 1:
+            raise DataValidationError(
+                f"模糊阈值必须在 (0, 1] 区间内，当前是 {fuzzy_threshold}"
+            )
+        if not isinstance(ngram_n, int) or isinstance(ngram_n, bool) or ngram_n < 1:
+            raise DataValidationError(
+                f"n-gram 长度必须是大于 0 的整数，当前是 {ngram_n}"
+            )
+
         start_time = time.time()
         
         fields = fields or ["instruction", "output", "input"]
@@ -223,9 +245,9 @@ class EnhancedSearcher:
             if method == "exact":
                 matches = self._search_exact(field, query)
             elif method == "ngram":
-                matches = self._search_ngram(field, query)
+                matches = self._search_ngram(field, query, ngram_n)
             elif method == "fuzzy":
-                matches = self._search_fuzzy(field, query)
+                matches = self._search_fuzzy(field, query, fuzzy_threshold)
             elif method == "regex":
                 matches = self._search_regex(field, query)
             else:
@@ -506,7 +528,8 @@ class EnhancedSearcher:
 
 def search_dataset(items: List[Dict], query: str, fields: List[str] = None,
                    method: str = "contains", limit: int = 100,
-                   offset: int = 0) -> SearchResult:
+                   offset: int = 0, fuzzy_threshold: float = 0.6,
+                   ngram_n: int = 2) -> SearchResult:
     """搜索数据集
     
     Args:
@@ -516,12 +539,15 @@ def search_dataset(items: List[Dict], query: str, fields: List[str] = None,
         method: 搜索方法
         limit: 返回数量限制
         offset: 偏移量
-    
+        fuzzy_threshold: fuzzy 的相似度门槛 `(0, 1]`，见 `EnhancedSearcher.search`
+        ngram_n: ngram 的 gram 长度 `>= 1`，见 `EnhancedSearcher.search`
+
     Returns:
         搜索结果
     """
     searcher = EnhancedSearcher(items)
-    return searcher.search(query, fields, method, limit=limit, offset=offset)
+    return searcher.search(query, fields, method, limit=limit, offset=offset,
+                           fuzzy_threshold=fuzzy_threshold, ngram_n=ngram_n)
 
 
 def create_searcher(items: List[Dict] = None) -> EnhancedSearcher:
