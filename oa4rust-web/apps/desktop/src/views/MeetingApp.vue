@@ -29,6 +29,7 @@
       <button class="sb" @click="meetingWrite('mtgCreate')">建会议(根)</button>
       <button class="sb" @click="meetingWrite('mtgCtrlCreate')">建会议控制</button>
       <button class="sb" @click="meetingWrite('sysCfgManage')">系统配置(管理)</button>
+      <button class="sb" @click="meetingWrite('attFromPp')">流程附件入会议</button>
       <button class="sb" @click="meetingWrite('reject')">拒绝会议</button>
       <button class="sb" @click="meetingWrite('confirmAllow')">确认允许</button>
       <button class="sb" @click="meetingWrite('confirmDeny')">确认拒绝</button>
@@ -696,6 +697,10 @@ async function meetingWrite(op: string) {
       const configKey = prompt('配置项 key:', '') || ''
       const configValue = prompt('配置值:', '') || ''
       await api.post('/api/meeting/assemble/control/config/system/config/manage', { configKey, configValue })
+    } else if (op === 'attFromPp') {
+      const meetingId = prompt('会议 ID:', '') || ''
+      const fileName = prompt('附件文件名:', '') || ''
+      await api.post('/api/meeting/assemble/control/attachment/create/from/processplatform', { meetingId, fileName })
     } else await api.put(`/api/meeting/assemble/control/attachment/${e}/update`, {})
     toast.success('会议操作已提交')
   } catch (err: any) {
