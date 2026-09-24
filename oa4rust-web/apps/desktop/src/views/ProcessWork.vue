@@ -239,6 +239,30 @@
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest('wcRollback')">已办回滚</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest('taskPassExpired')">超时通过</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest('taskReplace')">任务替换</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('appendIdentity')">追加身份</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('addSplit')">分叉追加</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('v2AddSplit')">v2分叉</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('v2Matrix')">v2身份矩阵</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('v2Terminate')">v2终止</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('workByProcess')">按流程发起</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('wcByProcess')">已办按流程</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('snapDelete')">删快照</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('snapWcAbandon')">已办废弃快照</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('snapWcSnap')">已办快照</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('snapAbandoned')">废弃快照</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('snapSuspend')">挂起快照</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('attCopyWc')">已办复制附件</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('attDelWork')">工作删附件</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('attDelWc')">已办删附件</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('recordWorkProc')">记录工作处理</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('recordWorkTerm')">记录工作终止</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('readByWork')">待阅按工作</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('readByWc')">待阅按已办</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('docVersion')">文档版本</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('taskPassExpired')">任务超时通过</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('taskUrge')">任务催办</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('dataDelete')">删工作数据</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('touch')">触达服务</button>
           </div>
         </section>
 
@@ -1158,6 +1182,43 @@ async function engineRest(op: string): Promise<void> {
     else if (op === 'wcRollback') { const f = encodeURIComponent(prompt('已办 flag:', '') || ''); await api.get(`/api/processplatform/service/processing/workcompleted/rollback/${f}`) }
     else if (op === 'taskPassExpired') { const i = encodeURIComponent(prompt('任务 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/task/pass/expired/${i}`) }
     else { const i = encodeURIComponent(prompt('任务 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/task/replace/${i}`) }
+    toast.success('引擎操作已提交')
+  } catch (e: any) {
+    toast.error('引擎操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev374：流程引擎 工作追加身份/分叉/矩阵/终止/按流程发起 + 快照删/已办快照/挂起 + 附件已办复制/删 + 记录/待阅按工作 + 文档版本 + 任务超时/催办 + 数据删/触达 真实路由（全 {id}/{work} 参数，避已消费方法孪生与 literal-placeholder trap）
+async function engineRest2(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    const wid = () => encodeURIComponent(prompt('工作 ID:', workId(opened.value ?? {}) || '') || '')
+    if (op === 'appendIdentity') await api.put(`/api/processplatform/service/processing/work/${wid()}/manual/append/identity`, {})
+    else if (op === 'addSplit') await api.put(`/api/processplatform/service/processing/work/${wid()}/add/split`, {})
+    else if (op === 'v2AddSplit') await api.put(`/api/processplatform/service/processing/work/v2/${wid()}/add/split`, {})
+    else if (op === 'v2Matrix') await api.post(`/api/processplatform/service/processing/work/v2/${wid()}/add/manual/task/identity/matrix`, {})
+    else if (op === 'v2Terminate') await api.get(`/api/processplatform/service/processing/work/v2/${wid()}/terminate`)
+    else if (op === 'workByProcess') { const pid = encodeURIComponent(prompt('流程 ID:', '') || ''); await api.post(`/api/processplatform/service/processing/work/process/${pid}`, {}) }
+    else if (op === 'wcByProcess') { const pf = encodeURIComponent(prompt('流程 flag:', '') || ''); await api.post(`/api/processplatform/service/processing/workcompleted/process/${pf}`, {}) }
+    else if (op === 'snapDelete') { const id = encodeURIComponent(prompt('快照 ID:', '') || ''); if (!(await confirmMsg('确定删除该快照？'))) return; await api.delete(`/api/processplatform/service/processing/snap/${id}`) }
+    else if (op === 'snapWcAbandon') { const wc = encodeURIComponent(prompt('已办 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/snap/workcompleted/${wc}/type/abandonedworkcompleted`) }
+    else if (op === 'snapWcSnap') { const wc = encodeURIComponent(prompt('已办 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/snap/workcompleted/${wc}/type/snapworkcompleted`) }
+    else if (op === 'snapAbandoned') { const w = wid(); const wi = encodeURIComponent(prompt('workId:', '') || ''); const t = encodeURIComponent(prompt('类型:', 'normal') || 'normal'); await api.get(`/api/processplatform/service/processing/snap/abandoned/${w}/${wi}/${t}`) }
+    else if (op === 'snapSuspend') { const w = wid(); const wi = encodeURIComponent(prompt('workId:', '') || ''); const t = encodeURIComponent(prompt('类型:', 'normal') || 'normal'); await api.get(`/api/processplatform/service/processing/snap/suspend/${w}/${wi}/${t}`) }
+    else if (op === 'attCopyWc') { const wc = encodeURIComponent(prompt('已办 ID:', '') || ''); await api.post(`/api/processplatform/service/processing/attachment/copy/workcompleted/${wc}`, {}) }
+    else if (op === 'attDelWork') { const id = encodeURIComponent(prompt('附件 ID:', '') || ''); const wi = wid(); if (!(await confirmMsg('确定从工作删除该附件？'))) return; await api.delete(`/api/processplatform/service/processing/attachment/${id}/work/${wi}`) }
+    else if (op === 'attDelWc') { const id = encodeURIComponent(prompt('附件 ID:', '') || ''); const wc = encodeURIComponent(prompt('已办 ID:', '') || ''); if (!(await confirmMsg('确定从已办删除该附件？'))) return; await api.delete(`/api/processplatform/service/processing/attachment/${id}/workcompleted/${wc}`) }
+    else if (op === 'recordWorkProc') await api.post('/api/processplatform/service/processing/record/work/processing', {})
+    else if (op === 'recordWorkTerm') await api.post('/api/processplatform/service/processing/record/work/terminate', {})
+    else if (op === 'readByWork') { const wi = wid(); await api.post(`/api/processplatform/service/processing/read/work/${wi}`, {}) }
+    else if (op === 'readByWc') { const wc = encodeURIComponent(prompt('已办 ID:', '') || ''); await api.post(`/api/processplatform/service/processing/read/workcompleted/${wc}`, {}) }
+    else if (op === 'docVersion') { const w = wid(); await api.post(`/api/processplatform/service/processing/documentversion/work/${w}`, {}) }
+    else if (op === 'taskPassExpired') { const id = encodeURIComponent(prompt('任务 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/task/${id}/pass/expired`) }
+    else if (op === 'taskUrge') { const id = encodeURIComponent(prompt('任务 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/task/${id}/urge`) }
+    else if (op === 'dataDelete') { const w = wid(); const id = encodeURIComponent(prompt('数据 ID:', '') || ''); if (!(await confirmMsg('确定删除该数据？'))) return; await api.post(`/api/processplatform/service/processing/data/delete/${w}/${id}`, {}) }
+    else { const w = wid(); const id = encodeURIComponent(prompt('触达 ID:', '') || ''); await api.post(`/api/processplatform/service/processing/service/touch/${w}/${id}`, {}) }
     toast.success('引擎操作已提交')
   } catch (e: any) {
     toast.error('引擎操作失败: ' + (e?.message ?? ''))
