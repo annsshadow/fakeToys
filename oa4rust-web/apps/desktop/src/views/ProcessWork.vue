@@ -1186,6 +1186,8 @@ async function loadEngineRecords(id: string): Promise<void> {
     settle(api.get(`/api/processplatform/service/processing/work/${id}`)),
     settle(api.post(`/api/processplatform/service/processing/record/processing/${id}`)),
     settle(api.get(`/api/processplatform/service/processing/record/terminate/${id}`)),
+    // rev460：活动令牌处理信号读（work_id_series_activitytoken_processing_signal，pool+Path<(String,String,String)> arity 一致，字面尾段 signal 唯一）
+    settle(api.get(`/api/processplatform/service/processing/work/${id}/series/0/activitytoken/0/processing/signal`)),
   ])
   const wTitle = (work as any)?.data?.title ?? id
   const pN = Array.isArray((processing as any)?.data) ? (processing as any).data.length : 0
