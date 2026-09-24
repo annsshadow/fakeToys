@@ -23,6 +23,9 @@
         <button class="eb" @click="importLeave">📥 批量导入请假</button>
         <button class="eb" @click="importAttV2Records('rows')">📥 导入打卡记录</button>
         <button class="eb" @click="importAttV2Records('daily')">📥 按日导入打卡</button>
+        <button class="eb" @click="attAppealWrite('analyseRedo')">🔁 明细重算</button>
+        <button class="eb" @click="attAppealWrite('appealById')">📣 发起申诉</button>
+        <button class="eb" @click="attAppealWrite('sync')">🔄 同步申诉状态</button>
         <button class="eb" @click="reciveMobileDetail">📱 移动端接收考勤</button>
         <button class="eb" @click="myMobileDetail">📱 我的移动端明细</button>
         <button class="eb" @click="reciveDetailById">✅ 按id接收明细</button>
@@ -804,6 +807,28 @@ async function importAttV2Records(mode: string) {
     }
   } catch (e: any) {
     toast.error('导入失败: ' + (e?.message ?? ''))
+  }
+}
+// rev441：考勤申诉/明细写域 3 条真实路由（各仅 POST 单向接入，PUT 同 handler 方法孪生不重复接）——analyse/redo[analyse_redo require_admin+Json 重算]·workflow/appeal/{id}[Path<String> UPDATE x_attendance_appeal_info workflow_status='appealed']·workflow/sync[workflow_sync require_admin+Json appealId 同步]
+async function attAppealWrite(op: string) {
+  try {
+    if (op === 'analyseRedo') {
+      const personId = prompt('人员标识(留空为全体):', '') || ''
+      const r: any = await api.post('/api/attendance/assemble/control/attendancedetail/analyse/redo', { personId })
+      toast.success(`重新分析已提交：${(r as any)?.data?.count ?? (r as any)?.data ? '完成' : ''}`)
+    } else if (op === 'appealById') {
+      const id = prompt('申诉记录 ID:', '') || ''
+      if (!id.trim()) return
+      await api.post(`/api/attendance/assemble/control/attendanceappealInfo/workflow/appeal/${encodeURIComponent(id)}`, {})
+      toast.success('申诉流程已发起')
+    } else {
+      const appealId = prompt('申诉记录 ID:', '') || ''
+      if (!appealId.trim()) return
+      await api.post('/api/attendance/assemble/control/attendanceappealInfo/workflow/sync', { appealId })
+      toast.success('申诉流程状态已同步')
+    }
+  } catch (e: any) {
+    toast.error('申诉写操作失败: ' + (e?.message ?? ''))
   }
 }
 async function checkMyRestDate() {
