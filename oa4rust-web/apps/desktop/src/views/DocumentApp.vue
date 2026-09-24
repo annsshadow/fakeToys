@@ -44,6 +44,7 @@
               <button class="btn-act" @click="onViewCount(item)">阅读数</button>
               <button class="btn-act" @click="onPersons(item)">可见人</button>
               <button class="btn-act" @click="onNotify(item)">通知</button>
+              <button class="btn-act" @click="onViewRecord(item)">记录浏览</button>
               <button class="btn-act" @click="onDocLog(item)">日志</button>
               <button class="btn-act" @click="onCommendList(item)">点赞</button>
               <button class="btn-act" @click="onDetail(item)">详情</button>
@@ -282,6 +283,15 @@ async function onNotify(item: DocItem) {
     toast.success('已发送通知')
   } catch (e: any) {
     toast.error('通知失败: ' + (e?.message ?? ''))
+  }
+}
+// rev422：记录文档浏览 POST /api/document/cipher/{id}/persist/view/record（append x_cms_viewrecord，doc_id 取行、person 会话；用户点击触发的真实浏览留痕）
+async function onViewRecord(item: DocItem) {
+  try {
+    await api.post(`/api/document/cipher/${item.id}/persist/view/record`, { viewId: '', recordData: 'desktop-view' })
+    toast.success('已记录浏览')
+  } catch (e: any) {
+    toast.error('记录浏览失败: ' + (e?.message ?? ''))
   }
 }
 async function onDocLog(item: DocItem) {
