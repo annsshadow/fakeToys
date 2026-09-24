@@ -1343,19 +1343,160 @@ class TestUndeclaredConversationGuard:
 
         assert not out.exists()
 
-    def test_the_guard_stays_out_of_non_record_shapes(self):
-        """护栏只判断「像不像被误标的对话数据」，不接管别的脏输入
+    def test_the_two_guards_do_not_mix(self):
+        """形状不对的记录由 L22 的形状护栏接管，不得被误报成「疑似对话格式」
 
-        非列表的 `data`、列表里的非对象条目都直接放行，仍然由写边自己绊倒
-        （`AttributeError`，真实报错是 `'NoneType' object has no attribute 'get'`）。
-        这条路属 **A26**：护栏若顺手把它们也报了，就会把「误标源格式」这一条清晰的
-        建议混成泛泛的「数据不是对象」，L21 不混。这条用例钉的是边界没伸展过头。
+        L21 的判据是「取不到问答 + 躺着对话数组」；记录压根不是对象时读不到任何键，
+        建议去声明 `--input-format` 会把人引偏（它本来就不是数据集，是坏记录）。
+        这三条在 L21 之前会崩成 `AttributeError`（A26①、经 API 是 500）。
         """
         converter = DatasetConverter()
 
-        with pytest.raises(AttributeError, match="has no attribute 'get'"):
+        with pytest.raises(ValueError, match="记录列表") as exc:
             converter.convert({"instruction": "q"}, "json", "chatml")
-        with pytest.raises(AttributeError, match="has no attribute 'get'"):
+        assert "全空数据集" not in str(exc.value)
+
+        with pytest.raises(ValueError, match="第 1 条记录必须是 JSON 对象") as exc:
             converter.convert([None], "json", "chatml")
-        with pytest.raises(TypeError):
+        assert "--input-format" not in str(exc.value)
+
+        with pytest.raises(ValueError, match="记录列表"):
             converter.convert(42, "json", "chatml")
+
+
+class TestRecordShapeGuard:
+    """`json → 八类要取字段的目标`，记录不是对象时当场报 400，而不是崩在边里。
+
+    这是 A26①：`null` / 字符串 / 数字 / 嵌套数组混进记录列表，以前是
+    `AttributeError: 'NoneType' object has no attribute 'get'`（SDK 抛裸异常、
+    CLI 退出码 1 且文案是解释器内部措辞、API 直接 500）。写 `csv`/`tsv` 更坏：
+    `DictWriter` 会**先把半截文件落盘**再崩——字符串记录被按字符展开成表头
+    （实测产物 `j,u,s,t, ,a,r,i,n,g`），调用方拿到一份看起来存在的坏数据。
+
+    护栏只管源是通用 `json` 的写边。六个 schema 读边早就自带更准的措辞
+    （「第 1 条 alpaca 记录必须是 JSON 对象，当前是str」，L16 立的），
+    `json`/`jsonl` 目标则是把输入原样序列化，任何合法 JSON 值都该放行。
+    """
+
+    @pytest.mark.parametrize("target", ["alpaca", "sharegpt", "chatml",
+                                        "llama_factory", "vicuna", "belle",
+                                        "csv", "tsv"])
+    def test_every_field_consuming_target_is_guarded(self, target):
+        """八条写边一条不漏：判据挂在 `convert()` 分发口，不挂在各边里"""
+        with pytest.raises(ValueError, match="第 1 条记录必须是 JSON 对象"):
+            convert_dataset([None], target)
+
+    @pytest.mark.parametrize("bad,shown", [("str", "str"), (42, "int"),
+                                           ([{"a": 1}], "list")])
+    def test_the_message_names_the_actual_type(self, bad, shown):
+        """报错要说清「实际是什么」，否则调用方只能打开文件逐条看"""
+        with pytest.raises(ValueError, match=f"当前是{shown}") as exc:
+            convert_dataset([bad], "alpaca")
+
+        assert "第 1 条记录必须是 JSON 对象" in str(exc.value)
+
+    def test_the_index_points_at_the_offending_row(self):
+        """坏记录在第 4 条就报第 4 条：下标必须是 1 起的条目号"""
+        rows = [{"instruction": "q", "output": "a"}] * 3 + ["不是对象"]
+
+        with pytest.raises(ValueError, match="第 4 条记录必须是 JSON 对象"):
+            convert_dataset(rows, "chatml")
+
+    @pytest.mark.parametrize("not_a_list", [
+        {"instruction": "q"}, "字符串", 42, None])
+    def test_a_non_list_dataset_is_named_as_such(self, not_a_list):
+        """数据集不是列表：这是调用方式错了，文案要说「记录列表」而不是条目下标"""
+        with pytest.raises(ValueError, match="数据集必须是记录列表") as exc:
+            convert_dataset(not_a_list, "alpaca")
+
+        assert "当前是" in str(exc.value)
+
+    def test_passthrough_targets_accept_any_json_value(self):
+        """`json`/`jsonl` 是原样序列化：`null` 记录能落盘也能读回，不该被拦"""
+        assert convert_dataset([None], "json") == [None]
+        assert convert_dataset([None], "jsonl") == ["null"]
+
+    def test_schema_sources_keep_their_own_better_message(self):
+        """六个读边的措辞带格式名，分发口不得抢着替它们报错
+
+        `alpaca → json` 里一条字符串记录，应该听见「第 1 条 **alpaca** 记录必须是
+        JSON 对象」，而不是新护栏这种不带格式名的通用文案——前者直接告诉调用方
+        哪一份输入坏了。
+        """
+        converter = DatasetConverter()
+
+        with pytest.raises(ValueError, match="第 1 条 alpaca 记录必须是 JSON 对象"):
+            converter.convert(["不是对象"], "alpaca", "json")
+        with pytest.raises(ValueError, match="alpaca 数据集的顶层必须是 JSON 数组"):
+            converter.convert({"instruction": "q"}, "alpaca", "json")
+
+    def test_a_string_column_needing_jsonl_still_round_trips(self):
+        """`json → jsonl` 交出的是字符串列表，再喂给写边时源已不是 json，不该双查
+
+        这条钉住「不预检 jsonl 源」：内存里的 jsonl 就是行字符串，逐行 `loads` 是
+        它自己的职责（L20 已测）。若新护栏伸到 jsonl 源，这行就会红。
+        """
+        converter = DatasetConverter()
+        rows = [{"instruction": "q", "input": "", "output": "a"}]
+        jsonl = converter.convert(rows, "json", "jsonl")
+
+        assert converter.convert(jsonl, "jsonl", "alpaca") == rows
+
+    def test_csv_target_leaves_no_half_written_file(self, tmp_path):
+        """最坏的一条：以前 csv 会先落一个按字符展开的表头再崩
+
+        报错必须发生在 `_write_file` 之前，否则调用方看到的是一份存在的 `.csv`，
+        而里面一行数据都没有。
+        """
+        src = tmp_path / "in.json"
+        src.write_text(json.dumps(["just a string"]), encoding="utf-8")
+        out = tmp_path / "out.csv"
+
+        with pytest.raises(ValueError, match="第 1 条记录必须是 JSON 对象"):
+            convert_file(str(src), str(out), target_format="csv")
+
+        assert not out.exists()
+
+    def test_tsv_target_leaves_no_half_written_file(self, tmp_path):
+        """tsv 与 csv 同一口径：不得留下制表符展开的半截表头"""
+        src = tmp_path / "in.json"
+        src.write_text(json.dumps([None]), encoding="utf-8")
+        out = tmp_path / "out.tsv"
+
+        with pytest.raises(ValueError, match="第 1 条记录必须是 JSON 对象"):
+            convert_file(str(src), str(out), target_format="tsv")
+
+        assert not out.exists()
+
+    def test_clean_records_still_convert(self):
+        """正常数据集不受影响：护栏只加一次 `isinstance`，不改任何产物"""
+        rows = [{"instruction": "租房合同要写什么", "input": "", "output": "标的、租金、期限"}]
+
+        assert convert_dataset(rows, "alpaca") == rows
+
+    def test_the_guard_runs_once_per_conversion(self, monkeypatch):
+        """挂在分发口 = 一条链路最多一次；谁把它挪进各边、逐条重复，这条就红"""
+        calls = []
+        original = DatasetConverter._require_object_records
+
+        def spy(self, *args, **kwargs):
+            calls.append((args[1], args[2]))
+            return original(self, *args, **kwargs)
+
+        monkeypatch.setattr(DatasetConverter, "_require_object_records", spy)
+        rows = [{"instruction": "q", "output": "a"}]
+
+        convert_dataset(rows, "alpaca")
+        assert calls == [("json", "alpaca")]
+
+        calls.clear()
+        convert_dataset(rows, "jsonl")
+        assert calls == []
+
+        # 中转链路（sharegpt → json → chatml）只在 json 那一跳查一次，
+        # 源那一跳不查——读边自己有带格式名的措辞
+        calls.clear()
+        DatasetConverter().convert([{"conversations": [
+            {"from": "human", "value": "q"}, {"from": "gpt", "value": "a"}]}],
+            "sharegpt", "chatml")
+        assert calls == [("json", "chatml")]
