@@ -63,6 +63,11 @@
       <button class="cll-tab" @click="calWrite('calDelete')">删日历</button>
       <button class="cll-tab" @click="calWrite('settingCreate')">建设置</button>
       <button class="cll-tab" @click="calWrite('messageCreate')">建提醒</button>
+      <button class="cll-tab" @click="calMore('detail')">日历详情</button>
+      <button class="cll-tab" @click="calMore('followCancel')">取消关注</button>
+      <button class="cll-tab" @click="calMore('calFilter')">日历筛选</button>
+      <button class="cll-tab" @click="calMore('eventSample')">事件抽样</button>
+      <button class="cll-tab" @click="calMore('eventManager')">事件抽样(管理)</button>
       <span v-if="calSettingText" class="cll-note">{{ calSettingText }}</span>
       <span
         v-for="c in (calScope==='my'?myCals:pubCals)"
@@ -202,6 +207,27 @@ async function calWrite(op: string) {
     } else if (op === 'settingCreate') await api.post('/api/calendar_assemble_control/setting', { name: '日历设置' })
     else await api.post('/api/calendar_assemble_control/message', { content: '日历提醒' })
     toast.success('日历操作已提交')
+  } catch (err: any) {
+    toast.error('日历操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev362：日历 详情/取消关注 + 日历·事件 抽样过滤清单 真实读（distinct，非三轨镜像 CRUD；detail/follow-cancel/list-filter/event-sample-filter/manager）
+async function calMore(op: string) {
+  try {
+    if (op === 'detail') {
+      const id = prompt('日历 ID:', '') || ''
+      await api.get(`/api/calendar/assemble/control/calendar/detail/${encodeURIComponent(id)}`)
+    } else if (op === 'followCancel') {
+      const id = prompt('日历 ID:', '') || ''
+      await api.get(`/api/calendar_assemble_control/calendar/follow/${encodeURIComponent(id)}/cancel`)
+    } else if (op === 'calFilter') {
+      await api.put('/api/calendar_assemble_control/calendar/list/filter', {})
+    } else if (op === 'eventSample') {
+      await api.put('/api/calendar_assemble_control/event/list/filter/sample', {})
+    } else {
+      await api.post('/api/calendar_assemble_control/event/list/filter/sample/manager', {})
+    }
+    toast.success('日历读/操作已提交')
   } catch (err: any) {
     toast.error('日历操作失败: ' + (err?.message ?? ''))
   }
