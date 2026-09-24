@@ -292,6 +292,29 @@
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('handoverCancel')">取消交接</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('wcDeleteMgr')">删已办(管理)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceReads3">表面清单读</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('readIdProcessing')">表面阅办</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('readProcMgr')">表面阅办(管理)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('readResetMgr')">表面阅重置(管理)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('readManageDel')">删待阅(管理)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('readWork')">按工作记阅</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('readWorkCompleted')">按已办记阅</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('tcRefCtrl')">已办参考控制</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('workForce')">按流程强制</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('workV2TermMgr')">v2终止(管理)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('workV2Trigger')">v2触发处理</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('worklogSplit')">分叉日志追加</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('snapRestore')">表面恢复快照</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('snapAbandoned')">按工作废弃快照</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('snapSuspend')">按工作挂起快照</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('draftStart')">草稿启动</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('dataWorkDel')">删工作数据</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('attachDel')">删附件(按工作)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('tcListPrev')">已办前翻清单</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('wcRollback')">已办回滚</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('appFlagGet')">按应用查未完成</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('appFlagDel')">按应用清未完成</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('procFlagGet')">按流程查未完成</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('procFlagDel')">按流程清未完成</button>
           </div>
         </section>
 
@@ -1320,6 +1343,42 @@ async function surfaceReads3(): Promise<void> {
     toast.success(`流程表面清单读 ${rs.length} 条命中 ${hit}`)
   } catch (e: any) {
     toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+// rev380：流程表面 阅办管理态/已办参考控制/工作强制/快照按工作/草稿启动/数据与附件删/按应用退化清单 真实路由（全字面量，用户触发，Path-only 空体）
+async function surfaceOps4(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
+    if (op === 'readIdProcessing') await api.post(`/api/processplatform/assemble/surface/read/${id()}/processing`, {})
+    else if (op === 'readProcMgr') await api.put(`/api/processplatform/assemble/surface/read/${id()}/processing/manage`, {})
+    else if (op === 'readResetMgr') await api.put(`/api/processplatform/assemble/surface/read/${id()}/reset/manage`, {})
+    else if (op === 'readManageDel') { if (!(await confirmMsg('确定删除该待阅（管理）？'))) return; await api.delete(`/api/processplatform/assemble/surface/read/${id()}/manage`) }
+    else if (op === 'readWork') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); await api.post(`/api/processplatform/assemble/surface/read/work/${w}`, {}) }
+    else if (op === 'readWorkCompleted') { const w = encodeURIComponent(prompt('已完成工作 ID:', '') || ''); await api.post(`/api/processplatform/assemble/surface/read/workcompleted/${w}`, {}) }
+    else if (op === 'tcRefCtrl') await api.post(`/api/processplatform/assemble/surface/taskcompleted/reference/control/${id()}`, {})
+    else if (op === 'workForce') { const pf = encodeURIComponent(prompt('流程标识:', '') || ''); await api.get(`/api/processplatform/assemble/surface/work/process/force/${pf}`) }
+    else if (op === 'workV2TermMgr') await api.get(`/api/processplatform/assemble/surface/work/v2/terminate/manage/${id()}`)
+    else if (op === 'workV2Trigger') await api.post(`/api/processplatform/assemble/surface/work/v2/trigger/processing/${id()}`, {})
+    else if (op === 'worklogSplit') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); await api.post(`/api/processplatform/assemble/surface/worklog/list/add/split/work/${w}`, {}) }
+    else if (op === 'snapRestore') await api.get(`/api/processplatform/assemble/surface/snap/${id()}/restore`)
+    else if (op === 'snapAbandoned') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); await api.get(`/api/processplatform/assemble/surface/snap/work/${w}/type/abandoned`) }
+    else if (op === 'snapSuspend') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); await api.get(`/api/processplatform/assemble/surface/snap/work/${w}/type/suspend`) }
+    else if (op === 'draftStart') await api.get(`/api/processplatform/assemble/surface/draft/${id()}/start`)
+    else if (op === 'dataWorkDel') { if (!(await confirmMsg('确定删除该工作数据？'))) return; await api.delete(`/api/processplatform/assemble/surface/data/work/${id()}`) }
+    else if (op === 'attachDel') { const a = encodeURIComponent(prompt('附件 ID:', '') || ''); const w = encodeURIComponent(prompt('工作 ID:', '') || ''); if (!(await confirmMsg('确定删除该附件？'))) return; await api.delete(`/api/processplatform/assemble/surface/attachment/${a}/work/${w}`) }
+    else if (op === 'tcListPrev') { const cnt = 20; await api.get(`/api/processplatform/assemble/surface/taskcompleted/list/prev/${id()}/${cnt}`) }
+    else if (op === 'wcRollback') { const f = encodeURIComponent(prompt('工作标识:', '') || ''); await api.get(`/api/processplatform/assemble/surface/workcompleted/rollback/${f}`) }
+    else if (op === 'appFlagGet') { const orn = 'false'; await api.get(`/api/processplatform/assemble/surface/application/${id()}/${orn}`) }
+    else if (op === 'appFlagDel') { const orn = 'false'; if (!(await confirmMsg('确定按应用清理未完成工作？'))) return; await api.delete(`/api/processplatform/assemble/surface/application/${id()}/${orn}`) }
+    else if (op === 'procFlagGet') { const orn = 'false'; await api.get(`/api/processplatform/assemble/surface/process/${id()}/${orn}`) }
+    else { const orn = 'false'; if (!(await confirmMsg('确定按流程清理未完成工作？'))) return; await api.delete(`/api/processplatform/assemble/surface/process/${id()}/${orn}`) }
+    toast.success('流程表面操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
   }
 }
 async function engineReadAction(kind: string): Promise<void> {
