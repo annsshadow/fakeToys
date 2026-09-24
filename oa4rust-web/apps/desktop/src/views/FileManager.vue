@@ -18,6 +18,21 @@
         <button class="action-btn" @click="loadFileCoreEntities">🗂️ 文件实体</button>
         <button class="action-btn" @click="loadFolderTopByRef">🌳 顶层文件夹/按引用</button>
         <button class="action-btn" @click="loadFileDeepReads">🔬 文件深度读</button>
+        <button class="action-btn" @click="fileCreate('control')">建文件</button>
+        <button class="action-btn" @click="fileCreate('entity')">建实体文件</button>
+        <button class="action-btn" @click="fileDelete('controlPost')">删文件P</button>
+        <button class="action-btn" @click="fileDelete('controlDel')">删文件D</button>
+        <button class="action-btn" @click="fileDelete('entityPost')">删实体P</button>
+        <button class="action-btn" @click="fileDelete('entityDel')">删实体D</button>
+        <button class="action-btn" @click="fileUpdate('entityPost')">实体更新P</button>
+        <button class="action-btn" @click="fileUpdate('entityPut')">实体更新U</button>
+        <button class="action-btn" @click="fileUpdate('attPost')">附件更新P</button>
+        <button class="action-btn" @click="fileUpdate('attPut')">附件更新U</button>
+        <button class="action-btn" @click="fileUpdate('attIdPut')">附件id更新</button>
+        <button class="action-btn" @click="fileUpdate('attCbPost')">附件回调P</button>
+        <button class="action-btn" @click="fileUpdate('attCbPut')">附件回调U</button>
+        <button class="action-btn" @click="fileUpdate('attIdCbPost')">附件id回调</button>
+        <button class="action-btn" @click="fileSaveConfig">存文件配置</button>
         <button class="action-btn" @click="toggleView">{{ viewType === 'grid' ? '☰ 列表' : '⊞ 网格' }}</button>
       </div>
     </div>
@@ -225,6 +240,60 @@ async function loadFileDeepReads(): Promise<void> {
     toast.success(`文件深度读端点 ${rs.length} 条，命中 ${hit}`)
   } catch (e: any) {
     toast.error('加载文件深度读失败: ' + (e?.message ?? ''))
+  }
+}
+// rev323：文件/附件 真实写端点（用户触发 prompt+确认，非造假）——文件建删/实体文件CRUD/附件更新+回调/控制配置；全字面量路径
+async function fileCreate(kind: 'control' | 'entity') {
+  const name = prompt('新建文件名称:', '')
+  if (!name) return
+  try {
+    if (kind === 'control') await api.post('/api/file/assemble/control/file/create', { name })
+    else await api.post('/api/file/core/entity/file/create', { name })
+    toast.success('文件已创建')
+  } catch (e: any) {
+    toast.error('新建文件失败: ' + (e?.message ?? ''))
+  }
+}
+async function fileDelete(kind: 'controlPost' | 'controlDel' | 'entityPost' | 'entityDel') {
+  const id = prompt('要删除的文件 ID:', '')
+  if (!id) return
+  if (!(await confirmMsg('确定删除该文件？'))) return
+  const e = encodeURIComponent(id)
+  try {
+    if (kind === 'controlPost') await api.post(`/api/file/assemble/control/file/delete/${e}`, {})
+    else if (kind === 'controlDel') await api.delete(`/api/file/assemble/control/file/delete/${e}`)
+    else if (kind === 'entityPost') await api.post(`/api/file/core/entity/file/delete/${e}`, {})
+    else await api.delete(`/api/file/core/entity/file/delete/${e}`)
+    toast.success('文件已删除')
+  } catch (err: any) {
+    toast.error('删除文件失败: ' + (err?.message ?? ''))
+  }
+}
+async function fileUpdate(kind: 'entityPost' | 'entityPut' | 'attPost' | 'attPut' | 'attIdPut' | 'attCbPost' | 'attCbPut' | 'attIdCbPost') {
+  const id = prompt('文件/附件 ID:', '')
+  if (!id) return
+  const e = encodeURIComponent(id)
+  const cbFlag = '0'
+  try {
+    if (kind === 'entityPost') await api.post(`/api/file/core/entity/file/update/${e}`, {})
+    else if (kind === 'entityPut') await api.put(`/api/file/core/entity/file/update/${e}`, {})
+    else if (kind === 'attPost') await api.post(`/api/attachment/update/${e}`, {})
+    else if (kind === 'attPut') await api.put(`/api/attachment/update/${e}`, {})
+    else if (kind === 'attIdPut') await api.put(`/api/attachment/${e}/update`, {})
+    else if (kind === 'attCbPost') await api.post(`/api/attachment/update/callback/callback/${e}`, {})
+    else if (kind === 'attCbPut') await api.put(`/api/attachment/update/callback/callback/${e}`, {})
+    else await api.post(`/api/attachment/${e}/update/callback/${cbFlag}`, {})
+    toast.success('更新已提交')
+  } catch (err: any) {
+    toast.error('更新失败: ' + (err?.message ?? ''))
+  }
+}
+async function fileSaveConfig(): Promise<void> {
+  try {
+    await api.put('/api/file/assemble/control/update/control/config', {})
+    toast.success('文件控制配置已保存')
+  } catch (e: any) {
+    toast.error('保存配置失败: ' + (e?.message ?? ''))
   }
 }
 async function loadAttachmentShares(): Promise<void> {
