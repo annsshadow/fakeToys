@@ -49,6 +49,7 @@
       <button class="org-meta-btn" @click="orgCtlActions('personByGroup')">群组下人员</button>
       <button class="org-meta-btn" @click="orgCtlActions('exportAll')">导出全部</button>
       <button class="org-meta-btn" @click="orgCtlActions('personBatchDel')">批量删人员</button>
+      <button class="org-meta-btn" @click="orgExpressReads">快递平台状态/配置/同步</button>
       <button class="org-meta-btn" @click="orgCreate('person')">建人员</button>
       <button class="org-meta-btn" @click="orgCreate('unit')">建单位</button>
       <button class="org-meta-btn" @click="orgCreate('identity')">建身份</button>
@@ -449,6 +450,22 @@ async function orgCtlActions(op: string) {
     toast.success('组织控制操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev390：组织-快递 平台 数据同步/配置/状态/同步 真实只读（4 条均 Path-free GET，用户触发；对应 organization_assemble_express + organization_core_express 域）
+async function orgExpressReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/organization/core/express/status')),
+      s(api.get('/api/organization/core/express/config')),
+      s(api.get('/api/organization/core/express/sync')),
+      s(api.get('/api/organization/assemble/express/data/sync')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`组织快递平台读 ${rs.length} 条命中 ${hit}`)
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
   }
 }
 // rev322：组织控制 真实写端点（用户触发 prompt+确认，非造假）——人员/单位/身份/群组/角色/属性/权限设置/名片 建改删+成员+账号；全字面量路径
