@@ -446,6 +446,9 @@
             <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('deletedraft')">清理遗留草稿</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('touchdelay')">超时顺延登记</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('mergeitem')">附件合并去重</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('cleanevent')">清理过期事件</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('loglong')">登记长滞留</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('reviewCreate')">建工作待阅</button>
           </div>
         </section>
 
@@ -1913,6 +1916,21 @@ async function engineTouch(op: string): Promise<void> {
       if (!(await confirmMsg('确定合并去重重复附件？将删除同名同工作的冗余附件行。'))) return
       const r: any = await api.get('/api/processplatform/service/processing/touch/mergeitem')
       toast.success(`已去重附件：${(r as any)?.data?.deleted ?? (r as any)?.data?.merged ?? 0}`)
+    } else if (op === 'cleanevent') {
+      // rev444：清理过期事件记录（touch_clean_event 仅取 pool，DELETE x_record event 超 24h）
+      const r: any = await api.get('/api/processplatform/service/processing/touch/cleanevent')
+      toast.success(`已清理过期事件：${(r as any)?.data?.deleted ?? 0}`)
+    } else if (op === 'loglong') {
+      // rev444：登记长滞留工作（touch_log_long_detained 仅取 pool，扫 24h 未结工作登记记录）
+      const r: any = await api.get('/api/processplatform/service/processing/touch/loglongdetained')
+      const n = Array.isArray(r?.data) ? r.data.length : (r?.data?.count ?? 0)
+      toast.success(`长滞留登记：${n}`)
+    } else if (op === 'reviewCreate') {
+      // rev444：为工作创建待阅（review_create_work 取 Json workId→INSERT 待阅）
+      const workId = prompt('工作 ID:', '') || ''
+      if (!workId.trim()) return
+      await api.post('/api/processplatform/service/processing/review/create/work', { workId })
+      toast.success('待阅已创建')
     } else {
       const r: any = await api.get('/api/processplatform/service/processing/touch/handoverjob')
       const n = r?.data?.count ?? (Array.isArray(r?.data) ? r.data.length : 0)
