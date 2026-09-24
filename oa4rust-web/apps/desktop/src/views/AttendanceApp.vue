@@ -21,6 +21,8 @@
         <button class="eb" @click="loadStatisticShow">📈 统计展示筛选</button>
         <button class="eb" @click="checkMyRestDate">🏖️ 我的休息日校验</button>
         <button class="eb" @click="importLeave">📥 批量导入请假</button>
+        <button class="eb" @click="importAttV2Records('rows')">📥 导入打卡记录</button>
+        <button class="eb" @click="importAttV2Records('daily')">📥 按日导入打卡</button>
         <button class="eb" @click="reciveMobileDetail">📱 移动端接收考勤</button>
         <button class="eb" @click="myMobileDetail">📱 我的移动端明细</button>
         <button class="eb" @click="reciveDetailById">✅ 按id接收明细</button>
@@ -780,6 +782,26 @@ async function importLeave() {
   try {
     await api.post('/api/attendance/assemble/control/v2/leave/import', { list: [{ leaveType, person }] })
     toast.success('请假导入已提交')
+  } catch (e: any) {
+    toast.error('导入失败: ' + (e?.message ?? ''))
+  }
+}
+// rev440：考勤 v2 打卡记录导入（v2_record_import 取 Json rows[]，空 rows 拒绝无垃圾；每行需 userId+checkInType）·按日导入（v2_record_import_daily 取 Json date）真实写路由，均 Json 无 Path 字面量匹配；用户以真实数据触发
+async function importAttV2Records(mode: string) {
+  try {
+    if (mode === 'daily') {
+      const date = prompt('导入日期(YYYY-MM-DD):', new Date().toISOString().slice(0, 10)) || ''
+      if (!date.trim()) return
+      const r: any = await api.post('/api/attendance/assemble/control/v2/record/import/daily', { date })
+      toast.success(`按日导入：${(r as any)?.data?.inserted ?? 0} 条`)
+    } else {
+      const userId = prompt('人员标识(userId):', '') || ''
+      if (!userId.trim()) return
+      const checkInType = prompt('打卡类型(如 OnDuty/OffDuty):', 'OnDuty') || 'OnDuty'
+      const recordDateString = prompt('打卡日期(YYYY-MM-DD):', new Date().toISOString().slice(0, 10)) || ''
+      const r: any = await api.post('/api/attendance/assemble/control/v2/record/import', { rows: [{ userId, checkInType, recordDateString }] })
+      toast.success(`打卡导入：${(r as any)?.data?.inserted ?? 0} 条`)
+    }
   } catch (e: any) {
     toast.error('导入失败: ' + (e?.message ?? ''))
   }
