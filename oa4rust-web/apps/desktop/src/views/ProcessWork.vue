@@ -829,6 +829,13 @@ async function loadSurfaceReadB(): Promise<void> {
       s(api.post(`/api/processplatform/assemble/surface/task/list/${id}/prev/${count}/filter`, {})),
       s(api.post(`/api/processplatform/assemble/surface/work/list/${id}/next/${count}/creator/current/filter`, {})),
       s(api.post(`/api/processplatform/assemble/surface/work/list/${id}/prev/${count}/creator/current/filter`, {})),
+      // rev455：按应用过滤 在办/已完成 游标列表 6 条真实读（*_application_applicationFlag_filter Path<(id,i64,appFlag)>，终端 filter/manage/application 字面段避误配）
+      s(api.post(`/api/processplatform/assemble/surface/work/list/${id}/next/${count}/application/${applicationFlag}/filter`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/work/list/${id}/prev/${count}/application/${applicationFlag}/filter`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/workcompleted/list/${id}/next/${count}/application/${applicationFlag}/filter`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/workcompleted/list/${id}/prev/${count}/application/${applicationFlag}/filter`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/workcompleted/filter/list/${id}/prev/${count}/application/${applicationFlag}`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/work/list/${id}/next/${count}/application/${applicationFlag}/filter/manage`, {})),
       s(api.get(`/api/processplatform/assemble/surface/task/count/${credential}`)),
       s(api.get(`/api/processplatform/assemble/surface/task/list/date/date/hour/hour/exclude/draft/manage/${isExcludeDraft}`)),
       s(api.get(`/api/processplatform/assemble/surface/task/list/date/${date}/hour/${hour}/exclude/draft/${isExcludeDraft}/manage`)),
