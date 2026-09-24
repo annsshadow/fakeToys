@@ -75,6 +75,8 @@
         <button class="btn btn-outline" @click="qdWrite2('neuralDelete')">删模型</button>
         <button class="btn btn-outline" @click="qdWrite2('neuralReset')">重置模型</button>
         <button class="btn btn-outline" @click="qdReads2">表构建/统计/模型读</button>
+        <button class="btn btn-outline" @click="qdReads3">构建派发/神经态读</button>
+        <button class="btn btn-outline" @click="qdDeleteDesigner">删查询设计器</button>
       </div>
     </div>
 
@@ -633,6 +635,38 @@ async function qdReads2() {
     toast.success(`查询设计器读 ${rs.length} 条命中 ${hit}`)
   } catch (e: any) {
     toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+// rev385：查询设计器 neural 停止生成/学习·重置状态 + table 构建派发/构建查询/按 flag 派发·构建态·草稿态 读 + 设计器按 id 删 真实路由（全单参 Path<String>，用户触发；规避 {query}/{flag} 双参单-String arity trap 与 {id}/{count} 单-i64 arity trap）
+async function qdReads3() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const flag = encodeURIComponent(prompt('模型/表/查询 flag:', '') || '')
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/query/assemble/designer/neural/stop/generating/model/${flag}`)),
+      s(api.get(`/api/query/assemble/designer/neural/stop/learn/model/${flag}`)),
+      s(api.get(`/api/query/assemble/designer/neural/model/${flag}/reset/status`)),
+      s(api.get(`/api/query/assemble/designer/table/build/dispatch/${flag}`)),
+      s(api.get(`/api/query/assemble/designer/table/build/query/${flag}`)),
+      s(api.get(`/api/query/assemble/designer/table/${flag}/build/dispatch`)),
+      s(api.get(`/api/query/assemble/designer/table/${flag}/status/build`)),
+      s(api.get(`/api/query/assemble/designer/table/${flag}/status/draft`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`查询设计器构建/神经态读 ${rs.length} 条命中 ${hit}`)
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+async function qdDeleteDesigner() {
+  const id = encodeURIComponent(prompt('设计器 ID:', '') || '')
+  if (!id) return
+  if (!(await confirmMsg('确定删除该查询设计器？'))) return
+  try {
+    await api.post(`/api/query/assemble/designer/delete/${id}`, {})
+    toast.success('查询设计器已删除')
+  } catch (e: any) {
+    toast.error('删除失败: ' + (e?.message ?? ''))
   }
 }
 async function qdInput(op: 'compare' | 'cover' | 'create' | 'prepare/cover' | 'prepare/create') {
