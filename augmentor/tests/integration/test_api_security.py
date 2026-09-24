@@ -1061,6 +1061,7 @@ class TestWriteRouteAuthCoverage:
         ("POST", "/api/quality/clean"),
         ("POST", "/api/quality/dedup"),
         ("POST", "/api/quality/evaluate"),
+        ("POST", "/api/quality/health-gate"),
         ("POST", "/api/quality/outliers"),
         ("POST", "/api/quality/report"),
         ("POST", "/api/system/auto-test"),
