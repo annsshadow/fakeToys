@@ -24353,7 +24353,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 145,
+    "line": 151,
     "method": "GET",
     "raw": "/api/console/metric/${encodeURIComponent(metricName)}",
     "path": "/api/console/metric/{}",
@@ -24366,13 +24366,52 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 147,
+    "line": 153,
     "method": "GET",
     "raw": "/api/console/logs/${encodeURIComponent(logType)}",
     "path": "/api/console/logs/{}",
     "via": "literal",
     "ambiguous": false,
     "hit": "/api/console/logs/{type}",
+    "hit_crate": "console",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ServerApp.vue",
+    "line": 206,
+    "method": "POST",
+    "raw": "/api/console/cache/clear/${t}",
+    "path": "/api/console/cache/clear/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/console/cache/clear/{type}",
+    "hit_crate": "console",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ServerApp.vue",
+    "line": 209,
+    "method": "PUT",
+    "raw": "/api/server/deploy/save/${id}",
+    "path": "/api/server/deploy/save/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/server/deploy/save/{id}",
+    "hit_crate": "console",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ServerApp.vue",
+    "line": 210,
+    "method": "POST",
+    "raw": "/api/server/deploy/delete/${id}",
+    "path": "/api/server/deploy/delete/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/server/deploy/delete/{id}",
     "hit_crate": "console",
     "extra": null
    },
@@ -41181,7 +41220,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 70,
+    "line": 76,
     "method": "GET",
     "raw": "/api/echo",
     "path": "/api/echo",
@@ -41194,7 +41233,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 71,
+    "line": 77,
     "method": "GET",
     "raw": "/api/cache/detail",
     "path": "/api/cache/detail",
@@ -41207,7 +41246,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 72,
+    "line": 78,
     "method": "GET",
     "raw": "/api/openapi",
     "path": "/api/openapi",
@@ -41220,7 +41259,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 84,
+    "line": 90,
     "method": "GET",
     "raw": "/api/base/echo",
     "path": "/api/base/echo",
@@ -41233,7 +41272,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 85,
+    "line": 91,
     "method": "GET",
     "raw": "/api/base/cache/detail",
     "path": "/api/base/cache/detail",
@@ -41246,7 +41285,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 86,
+    "line": 92,
     "method": "GET",
     "raw": "/api/base/openapi/info",
     "path": "/api/base/openapi/info",
@@ -41259,7 +41298,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 98,
+    "line": 104,
     "method": "GET",
     "raw": "/api/general/assemble/control/securityclearance/object",
     "path": "/api/general/assemble/control/securityclearance/object",
@@ -41272,7 +41311,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 99,
+    "line": 105,
     "method": "GET",
     "raw": "/api/general/assemble/control/securityclearance/subject",
     "path": "/api/general/assemble/control/securityclearance/subject",
@@ -41285,7 +41324,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 100,
+    "line": 106,
     "method": "GET",
     "raw": "/api/general/assemble/control/ecnet/check",
     "path": "/api/general/assemble/control/ecnet/check",
@@ -41298,7 +41337,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 112,
+    "line": 118,
     "method": "GET",
     "raw": "/api/general/assemble/control/securityclearance/system",
     "path": "/api/general/assemble/control/securityclearance/system",
@@ -41311,7 +41350,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 113,
+    "line": 119,
     "method": "GET",
     "raw": "/api/general/assemble/control/attendscope/list",
     "path": "/api/general/assemble/control/attendscope/list",
@@ -41324,7 +41363,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 114,
+    "line": 120,
     "method": "GET",
     "raw": "/api/general/assemble/control/qrcode/list",
     "path": "/api/general/assemble/control/qrcode/list",
@@ -41337,7 +41376,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 126,
+    "line": 132,
     "method": "GET",
     "raw": "/api/general/assemble/control/status",
     "path": "/api/general/assemble/control/status",
@@ -41350,7 +41389,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 127,
+    "line": 133,
     "method": "GET",
     "raw": "/api/general/assemble/control/area/list",
     "path": "/api/general/assemble/control/area/list",
@@ -41363,7 +41402,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 128,
+    "line": 134,
     "method": "GET",
     "raw": "/api/general/assemble/control/worktime/minutesofworkday",
     "path": "/api/general/assemble/control/worktime/minutesofworkday",
@@ -41376,7 +41415,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 143,
+    "line": 149,
     "method": "GET",
     "raw": "/api/console/status",
     "path": "/api/console/status",
@@ -41389,7 +41428,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 144,
+    "line": 150,
     "method": "GET",
     "raw": "/api/console/system/info",
     "path": "/api/console/system/info",
@@ -41402,7 +41441,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 160,
+    "line": 166,
     "method": "GET",
     "raw": "/api/server/license",
     "path": "/api/server/license",
@@ -41415,7 +41454,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 176,
+    "line": 182,
     "method": "GET",
     "raw": "/api/server/execute?command=${encodeURIComponent(command.value)}",
     "path": "/api/server/execute",
@@ -41428,7 +41467,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 189,
+    "line": 195,
     "method": "GET",
     "raw": "/api/server/stop",
     "path": "/api/server/stop",
@@ -41436,6 +41475,45 @@
     "ambiguous": false,
     "hit": "/api/server/stop",
     "hit_crate": "program_init",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ServerApp.vue",
+    "line": 207,
+    "method": "POST",
+    "raw": "/api/console/command/execute",
+    "path": "/api/console/command/execute",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/console/command/execute",
+    "hit_crate": "console",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ServerApp.vue",
+    "line": 208,
+    "method": "POST",
+    "raw": "/api/console/send/message",
+    "path": "/api/console/send/message",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/console/send/message",
+    "hit_crate": "console",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ServerApp.vue",
+    "line": 211,
+    "method": "GET",
+    "raw": "/api/config/system/config",
+    "path": "/api/config/system/config",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/config/system/config",
+    "hit_crate": "file_assemble_control",
     "extra": []
    },
    {
