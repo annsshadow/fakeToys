@@ -12,6 +12,17 @@
       <button class="btn-ai-meta" @click="loadAiEntities">实体/聊天线索</button>
       <button class="btn-ai-meta" @click="loadAiIndexFiles">索引/文件/MCP</button>
       <button class="btn-ai-meta" @click="loadAiDeep">控制深度读</button>
+      <button class="btn-ai-meta" @click="aiWrite('configSave')">存配置</button>
+      <button class="btn-ai-meta" @click="aiWrite('modelCreate')">建模型</button>
+      <button class="btn-ai-meta" @click="aiWrite('modelUpdate')">改模型</button>
+      <button class="btn-ai-meta" @click="aiWrite('mcpCreate')">建MCP</button>
+      <button class="btn-ai-meta" @click="aiWrite('mcpUpdate')">改MCP</button>
+      <button class="btn-ai-meta" @click="aiWrite('mcpDelete')">删MCP</button>
+      <button class="btn-ai-meta" @click="aiWrite('annSave')">存公告</button>
+      <button class="btn-ai-meta" @click="aiWrite('annDelete')">删公告</button>
+      <button class="btn-ai-meta" @click="aiWrite('chatDelete')">删聊天线索</button>
+      <button class="btn-ai-meta" @click="aiWrite('chatExtra')">写补全额外</button>
+      <button class="btn-ai-meta" @click="aiWrite('fileCopy')">复制文件</button>
       <div v-if="aiMetaText" class="ai-meta-note">{{ aiMetaText }}</div>
     </div>
     <div class="split-layout">
@@ -223,6 +234,47 @@ async function loadAiDeep() {
     aiMetaText.value = `AI 控制深度读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
     toast.error('加载 AI 控制深度读失败: ' + (e?.message ?? ''))
+  }
+}
+// rev338：AI 配置/模型/MCP/公告/聊天线索 真实写端点（用户触发，shape 已核 ai_assemble_control handler；全字面量路径）
+async function aiWrite(op: string) {
+  try {
+    if (op === 'configSave') await api.post('/api/ai_assemble_control/config/save', {})
+    else if (op === 'modelCreate') {
+      const name = prompt('模型名称:', '') || ''
+      await api.post('/api/ai_assemble_control/config/create/model', { name })
+    } else if (op === 'modelUpdate') {
+      const flag = prompt('模型 flag:', '') || ''
+      await api.post(`/api/ai_assemble_control/config/update/model/${encodeURIComponent(flag)}`, {})
+    } else if (op === 'mcpCreate') {
+      const name = prompt('MCP 名称:', '') || ''
+      await api.post('/api/ai_assemble_control/config/create/mcp', { name })
+    } else if (op === 'mcpUpdate') {
+      const flag = prompt('MCP flag:', '') || ''
+      await api.post(`/api/ai_assemble_control/config/update/mcp/${encodeURIComponent(flag)}`, {})
+    } else if (op === 'mcpDelete') {
+      const flag = prompt('要删除的 MCP flag:', '') || ''
+      if (!(await confirmMsg('确定删除该 MCP 配置？'))) return
+      await api.delete(`/api/ai_assemble_control/config/delete/mcp/${encodeURIComponent(flag)}`)
+    } else if (op === 'annSave') {
+      const id = prompt('公告 ID:', '') || ''
+      await api.post(`/api/ai/assemble/control/ann/save/${encodeURIComponent(id)}`, { content: '' })
+    } else if (op === 'annDelete') {
+      const id = prompt('要删除的公告 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该公告？'))) return
+      await api.delete(`/api/ai/assemble/control/ann/delete/${encodeURIComponent(id)}`)
+    } else if (op === 'chatDelete') {
+      const clueId = prompt('聊天线索 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该聊天线索？'))) return
+      await api.delete(`/api/ai_assemble_control/chat/delete/${encodeURIComponent(clueId)}`)
+    } else if (op === 'chatExtra') {
+      await api.post('/api/ai_assemble_control/chat/write/completion/extra', {})
+    } else {
+      await api.post('/api/ai_assemble_control/file/copy/file', {})
+    }
+    toast.success('AI 操作已提交')
+  } catch (e: any) {
+    toast.error('AI 操作失败: ' + (e?.message ?? ''))
   }
 }
 async function loadAiConv() {
