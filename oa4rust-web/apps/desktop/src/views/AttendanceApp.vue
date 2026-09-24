@@ -45,6 +45,34 @@
         <button class="eb" @click="attCoreEntity('ruleCreate')">建考勤规则</button>
         <button class="eb" @click="attCoreEntity('ruleUpdate')">改考勤规则</button>
         <button class="eb" @click="attCoreEntity('ruleDelete')">删考勤规则</button>
+        <button class="eb" @click="attWrite3('adminCreate')">建管理员</button>
+        <button class="eb" @click="attWrite3('adminDelete')">删管理员</button>
+        <button class="eb" @click="attWrite3('empCreate')">建员工配置</button>
+        <button class="eb" @click="attWrite3('empDelete')">删员工配置</button>
+        <button class="eb" @click="attWrite3('schedCreate')">建排班设置</button>
+        <button class="eb" @click="attWrite3('schedDelete')">删排班设置</button>
+        <button class="eb" @click="attWrite3('workdayCreate')">建工作日配置</button>
+        <button class="eb" @click="attWrite3('workdayDelete')">删工作日配置</button>
+        <button class="eb" @click="attWrite3('workdayFilter')">工作日筛选</button>
+        <button class="eb" @click="attWrite3('reqlogCreate')">建统计日志</button>
+        <button class="eb" @click="attWrite3('reqlogDelete')">删统计日志</button>
+        <button class="eb" @click="attWrite3('cycleDelete')">删统计周期</button>
+        <button class="eb" @click="attWrite3('importDelete')">删导入文件</button>
+        <button class="eb" @click="attWrite3('appealAudit')">申诉审核</button>
+        <button class="eb" @click="attWrite3('appealCheck')">申诉校验</button>
+        <button class="eb" @click="attWrite3('appealDo')">申诉处理</button>
+        <button class="eb" @click="attWrite3('appealArchive')">申诉归档</button>
+        <button class="eb" @click="attWrite3('appealDelete')">删申诉</button>
+        <button class="eb" @click="attWrite3('detailAnalyse')">明细分析</button>
+        <button class="eb" @click="attWrite3('detailAnalyseId')">按ID分析</button>
+        <button class="eb" @click="attWrite3('detailArchive')">明细归档</button>
+        <button class="eb" @click="attWrite3('ruleToggle')">规则开关</button>
+        <button class="eb" @click="attWrite3('statDo')">执行统计</button>
+        <button class="eb" @click="attWrite3('v2Config')">v2配置</button>
+        <button class="eb" @click="attWrite3('v2ConfigPerson')">v2人员配置</button>
+        <button class="eb" @click="attWrite3('v2DetailList')">v2明细列表</button>
+        <button class="eb" @click="attWrite3('v2AppealMgr')">v2申诉管理</button>
+        <button class="eb" @click="attWrite3('uuid')">UUID</button>
         <span v-if="attStatText" class="app-meta">{{ attStatText }}</span>
       </div>
       <div v-if="attOverviewText" class="att-note">{{ attOverviewText }}</div>
@@ -558,6 +586,42 @@ async function attCoreEntity(op: string) {
       await api.get(`/api/attendance/core/entity/rule/${encodeURIComponent(id)}/delete`)
     }
     toast.success('考勤核心实体操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev368：考勤 管理员/员工/排班/工作日/统计要求日志/统计周期/导入文件 建删 + 申诉审核/校验/归档 + 明细分析/归档 + 规则开关/统计执行/v2配置 真实写读（避 POST/PUT 方法孪生择一；避 dingding/qywx 外部同步）
+async function attWrite3(op: string) {
+  try {
+    if (op === 'adminCreate') await api.post('/api/attendance/assemble/control/attendanceadmin', {})
+    else if (op === 'adminDelete') { const id = prompt('管理员 ID:', '') || ''; if (!(await confirmMsg('确定删除该考勤管理员？'))) return; await api.delete(`/api/attendance/assemble/control/attendanceadmin/${encodeURIComponent(id)}`) }
+    else if (op === 'empCreate') await api.post('/api/attendance/assemble/control/attendanceemployeeconfig', {})
+    else if (op === 'empDelete') { const id = prompt('员工配置 ID:', '') || ''; if (!(await confirmMsg('确定删除该员工配置？'))) return; await api.delete(`/api/attendance/assemble/control/attendanceemployeeconfig/${encodeURIComponent(id)}`) }
+    else if (op === 'schedCreate') await api.post('/api/attendance/assemble/control/attendanceschedulesetting', {})
+    else if (op === 'schedDelete') { const id = prompt('排班设置 ID:', '') || ''; if (!(await confirmMsg('确定删除该排班设置？'))) return; await api.delete(`/api/attendance/assemble/control/attendanceschedulesetting/${encodeURIComponent(id)}`) }
+    else if (op === 'workdayCreate') await api.post('/api/attendance/assemble/control/attendanceworkdayconfig', {})
+    else if (op === 'workdayDelete') { const id = prompt('工作日配置 ID:', '') || ''; if (!(await confirmMsg('确定删除该工作日配置？'))) return; await api.delete(`/api/attendance/assemble/control/attendanceworkdayconfig/${encodeURIComponent(id)}`) }
+    else if (op === 'workdayFilter') await api.post('/api/attendance/assemble/control/attendanceworkdayconfig/filter', {})
+    else if (op === 'reqlogCreate') await api.post('/api/attendance/assemble/control/attendancestatisticrequirelog', {})
+    else if (op === 'reqlogDelete') { const id = prompt('统计要求日志 ID:', '') || ''; if (!(await confirmMsg('确定删除该统计要求日志？'))) return; await api.delete(`/api/attendance/assemble/control/attendancestatisticrequirelog/${encodeURIComponent(id)}`) }
+    else if (op === 'cycleDelete') { const id = prompt('统计周期 ID:', '') || ''; if (!(await confirmMsg('确定删除该统计周期？'))) return; await api.delete(`/api/attendance/assemble/control/attendancestatisticalcycle/${encodeURIComponent(id)}`) }
+    else if (op === 'importDelete') { const id = prompt('导入文件 ID:', '') || ''; if (!(await confirmMsg('确定删除该导入文件？'))) return; await api.delete(`/api/attendance/assemble/control/attendanceimportfileinfo/${encodeURIComponent(id)}`) }
+    else if (op === 'appealAudit') await api.put('/api/attendance/assemble/control/attendanceappealInfo/audit', {})
+    else if (op === 'appealCheck') await api.put('/api/attendance/assemble/control/attendanceappealInfo/check', {})
+    else if (op === 'appealDo') { const id = prompt('申诉 ID:', '') || ''; await api.put(`/api/attendance/assemble/control/attendanceappealInfo/appeal/${encodeURIComponent(id)}`, {}) }
+    else if (op === 'appealArchive') { const id = prompt('申诉 ID:', '') || ''; await api.get(`/api/attendance/assemble/control/attendanceappealInfo/archive/${encodeURIComponent(id)}`) }
+    else if (op === 'appealDelete') { const id = prompt('申诉 ID:', '') || ''; if (!(await confirmMsg('确定删除该申诉？'))) return; await api.delete(`/api/attendance/assemble/control/attendanceappealInfo/${encodeURIComponent(id)}`) }
+    else if (op === 'detailAnalyse') await api.post('/api/attendance/assemble/control/attendancedetail/analyse', {})
+    else if (op === 'detailAnalyseId') { const id = prompt('明细 ID:', '') || ''; await api.get(`/api/attendance/assemble/control/attendancedetail/analyse/id/${encodeURIComponent(id)}`) }
+    else if (op === 'detailArchive') { const id = prompt('明细 ID:', '') || ''; await api.get(`/api/attendance/assemble/control/attendancedetail/archive/${encodeURIComponent(id)}`) }
+    else if (op === 'ruleToggle') { const id = prompt('规则 ID:', '') || ''; await api.post(`/api/attendance/assemble/control/rule/${encodeURIComponent(id)}/toggle`, {}) }
+    else if (op === 'statDo') await api.post('/api/attendance/assemble/control/statistic/do', {})
+    else if (op === 'v2Config') await api.post('/api/attendance/assemble/control/v2/config', {})
+    else if (op === 'v2ConfigPerson') await api.post('/api/attendance/assemble/control/v2/config/person', {})
+    else if (op === 'v2DetailList') await api.post('/api/attendance/assemble/control/v2/detail/list/1/size/20', {})
+    else if (op === 'v2AppealMgr') await api.post('/api/attendance/assemble/control/v2/appeal/list/manager/1/size/20', {})
+    else await api.get('/api/attendance/assemble/control/uuid/random')
+    toast.success('考勤操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
   }
