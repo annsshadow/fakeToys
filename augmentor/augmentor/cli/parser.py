@@ -62,6 +62,20 @@ CLEAN_RULES = [
     "remove_long_texts", "remove_short_texts", "normalize_punctuation",
 ]
 
+# `search --filter` 的 OP 位可选算子，与 `search_enhanced.FILTER_OPERATORS` 同集合同顺序。
+# 抄一份而不是 import：parser 是只依赖 argparse 的叶子，帮助路径不该为了一个字符串
+# 去加载检索模块。也不能用 argparse 的 `choices=`——它逐个校验 nargs 槽位，会把
+# FIELD / VALUE 一起当成算子来比（实测 `invalid choice: 'output'` + 退出码 2）。
+# 漂移由 `TestSearchCommand::test_the_help_lists_exactly_the_operators_the_throat_accepts` 钉住。
+SEARCH_FILTER_OPERATORS = [
+    "eq", "ne", "contains", "gt", "lt", "gte", "lte", "in", "not_in",
+]
+
+SEARCH_FILTER_HELP = (
+    "检索后再按字段收窄，可重复；OP 取 " + "/".join(SEARCH_FILTER_OPERATORS) +
+    "，VALUE 先按 JSON 解析（数字/列表这样写），解析不了就是字符串"
+)
+
 # `clean` 的默认规则集。顺序即执行顺序，噪声清除必须在空白归一化之前。
 # 这个集合刻意对齐合并前「基础实现」（`data.cleaner.DataCleaner`）的默认行为：
 # 去空 / 去重 / 去 URL / 去 HTML 标签 / 去控制字符 / 空白归一化 / 标点归一化 /
@@ -311,6 +325,9 @@ def build_parser() -> argparse.ArgumentParser:
                                help="fuzzy 的相似度门槛 (0, 1]，越大越严格；1.0 即要求整串出现")
     search_parser.add_argument("--ngram-n", type=int, default=2,
                                help="ngram 的 gram 长度（>=1），越大越严格")
+    search_parser.add_argument("--filter", type=str, nargs=3, action="append",
+                               metavar=("FIELD", "OP", "VALUE"),
+                               help=SEARCH_FILTER_HELP)
     search_parser.add_argument("--output", type=str, help="结果输出路径（.json）")
 
     # 配置验证命令

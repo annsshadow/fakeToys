@@ -9,9 +9,10 @@
 import re
 import logging
 import threading
-from typing import List, Dict, Optional, Any, Callable, Set
+from typing import List, Dict, Optional, Any, Callable, Set, Union
 from dataclasses import dataclass, field
 from collections import defaultdict
+from collections.abc import Mapping
 import time
 
 from augmentor.exceptions import DataValidationError
@@ -64,6 +65,89 @@ class SearchFilter:
             "operator": self.operator,
             "value": self.value
         }
+
+
+FILTER_OPERATORS = ("eq", "ne", "contains", "gt", "lt", "gte", "lte", "in", "not_in")
+
+# 每个算子对**过滤值形状**的要求：`None` 表示不挑形状（`eq` / `ne` 比的是任意值）。
+# 判据只看用户传进来的那个值，**不看文档字段里的值**——字段类型不合是数据事实，
+# 该算「不匹配」；过滤值形状不对是参数写错，必须报错。
+_FILTER_VALUE_KINDS = {
+    "contains": ((str,), "字符串"),
+    "gt": ((int, float), "数字"),
+    "lt": ((int, float), "数字"),
+    "gte": ((int, float), "数字"),
+    "lte": ((int, float), "数字"),
+    "in": ((list, tuple, set), "列表或集合"),
+    "not_in": ((list, tuple, set), "列表或集合"),
+}
+
+
+def normalize_filters(filters: Any) -> Optional[List[SearchFilter]]:
+    """把公开入口收到的过滤器清单整理成 `SearchFilter` 列表，顺手判一遍形状
+
+    元素可以是 `SearchFilter` 对象，也可以是 `{"field": ..., "operator": ..., "value": ...}`
+    字典（CLI 与 API 只能拿到后者），两者混着传也行。
+
+    形状不对**就地报错**，不返回空清单也不返回原样：未知算子在 `_evaluate_filter` 里
+    返回 `False`，于是整条过滤器把候选清零；`in` 拿到字符串同样全清，而 `not_in` 拿到
+    字符串却全留。用户读到的是「语料里没有」，真相是参数写错了——与 A27/A28④ 同一形状。
+
+    Args:
+        filters: `None` 或过滤器清单
+
+    Returns:
+        `SearchFilter` 列表；`filters` 为 `None` 时返回 `None`
+
+    Raises:
+        DataValidationError: 清单本身不是列表、元素形状不对、算子不存在、
+            字段名不是字符串，或过滤值的形状与该算子的要求不符
+    """
+    if filters is None:
+        return None
+    if isinstance(filters, (SearchFilter, str, bytes)) or not isinstance(filters, (list, tuple)):
+        raise DataValidationError(
+            "过滤器清单必须是列表（元素为 SearchFilter 或含 field / operator / value 的字典），"
+            f"当前是 {type(filters).__name__}"
+        )
+
+    normalized: List[SearchFilter] = []
+    for position, raw in enumerate(filters, start=1):
+        if isinstance(raw, SearchFilter):
+            field, operator, value = raw.field, raw.operator, raw.value
+        elif isinstance(raw, Mapping):
+            missing = [key for key in ("field", "operator", "value") if key not in raw]
+            if missing:
+                raise DataValidationError(
+                    f"第 {position} 个过滤器缺少键 {missing}（需要 field / operator / value）"
+                )
+            field, operator, value = raw["field"], raw["operator"], raw["value"]
+        else:
+            raise DataValidationError(
+                f"第 {position} 个过滤器既不是 SearchFilter 也不是字典，"
+                f"而是 {type(raw).__name__}"
+            )
+
+        if not isinstance(field, str):
+            raise DataValidationError(
+                f"第 {position} 个过滤器的字段名必须是字符串，当前是 {type(field).__name__}"
+            )
+        if operator not in FILTER_OPERATORS:
+            raise DataValidationError(
+                f"第 {position} 个过滤器的算子 {operator!r} 不存在"
+                f"（可选 {' / '.join(FILTER_OPERATORS)}）"
+            )
+        required = _FILTER_VALUE_KINDS.get(operator)
+        if required is not None:
+            kinds, label = required
+            if isinstance(value, bool) or not isinstance(value, kinds):
+                raise DataValidationError(
+                    f"第 {position} 个过滤器（{field} {operator}）的值必须是{label}，"
+                    f"当前是 {type(value).__name__}"
+                )
+
+        normalized.append(SearchFilter(field=field, operator=operator, value=value))
+    return normalized
 
 
 class EnhancedSearcher:
@@ -209,7 +293,8 @@ class EnhancedSearcher:
         return matches
     
     def search(self, query: str, fields: List[str] = None, 
-               method: str = "contains", filters: List[SearchFilter] = None,
+               method: str = "contains",
+               filters: List[Union[SearchFilter, Dict[str, Any]]] = None,
                limit: int = 100, offset: int = 0,
                fuzzy_threshold: float = 0.6, ngram_n: int = 2) -> SearchResult:
         """搜索数据
@@ -218,7 +303,8 @@ class EnhancedSearcher:
             query: 搜索查询
             fields: 搜索字段列表
             method: 搜索方法 (exact/contains/ngram/fuzzy/regex)
-            filters: 过滤器列表
+            filters: 过滤器列表，元素可以是 `SearchFilter` 或
+                `{"field", "operator", "value"}` 字典（见 `normalize_filters`）
             limit: 返回数量限制
             offset: 偏移量
             fuzzy_threshold: fuzzy 的相似度门槛，开区间下界、闭区间上界
@@ -235,6 +321,7 @@ class EnhancedSearcher:
                 有意义，但**不判方法**——判据是值本身是否在文档域内，所以
                 `--method contains --fuzzy-threshold 0` 也会失败：那是在请求一个
                 任何方法都给不出结果的门槛，静默忽略等于骗人。
+                同样在这里判的还有 `filters` 的形状（见 `normalize_filters`）。
         """
         if not 0 < fuzzy_threshold <= 1:
             raise DataValidationError(
@@ -244,6 +331,9 @@ class EnhancedSearcher:
             raise DataValidationError(
                 f"n-gram 长度必须是大于 0 的整数，当前是 {ngram_n}"
             )
+        # 只在这一处判；`_evaluate_filter` 里那些 `isinstance` 是文档侧的「不匹配」，
+        # 不是参数校验，两者不能混（见 `normalize_filters` 的说明）。
+        normalized_filters = normalize_filters(filters)
 
         start_time = time.time()
         
@@ -267,9 +357,9 @@ class EnhancedSearcher:
                 all_matches[idx] += score
         
         # 应用过滤器
-        if filters:
+        if normalized_filters:
             filtered_indices = set(all_matches.keys())
-            for filter_item in filters:
+            for filter_item in normalized_filters:
                 filtered_indices = self._apply_filter(filtered_indices, filter_item)
             all_matches = {idx: all_matches[idx] for idx in filtered_indices}
         
@@ -541,7 +631,8 @@ class EnhancedSearcher:
 def search_dataset(items: List[Dict], query: str, fields: List[str] = None,
                    method: str = "contains", limit: int = 100,
                    offset: int = 0, fuzzy_threshold: float = 0.6,
-                   ngram_n: int = 2) -> SearchResult:
+                   ngram_n: int = 2,
+                   filters: List[Union[SearchFilter, Dict[str, Any]]] = None) -> SearchResult:
     """搜索数据集
     
     Args:
@@ -553,13 +644,15 @@ def search_dataset(items: List[Dict], query: str, fields: List[str] = None,
         offset: 偏移量
         fuzzy_threshold: fuzzy 的相似度门槛 `(0, 1]`，见 `EnhancedSearcher.search`
         ngram_n: ngram 的 gram 长度 `>= 1`，见 `EnhancedSearcher.search`
+        filters: 检索后的元数据收窄条件，见 `normalize_filters`
 
     Returns:
         搜索结果
     """
     searcher = EnhancedSearcher(items)
-    return searcher.search(query, fields, method, limit=limit, offset=offset,
-                           fuzzy_threshold=fuzzy_threshold, ngram_n=ngram_n)
+    return searcher.search(query, fields, method, filters=filters, limit=limit,
+                           offset=offset, fuzzy_threshold=fuzzy_threshold,
+                           ngram_n=ngram_n)
 
 
 def create_searcher(items: List[Dict] = None) -> EnhancedSearcher:

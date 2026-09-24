@@ -496,6 +496,87 @@ class TestSearchCommand:
         assert parsed["fuzzy_threshold"] == 0.5
         assert parsed["ngram_n"] is None
 
+    def test_filter_flag_narrows_the_hits(self, dataset_context):
+        """`--filter FIELD OP VALUE` 真的走到检索之后再收窄：contains「租房」2 条 → 1 条
+
+        样本里 `instruction` 含「租房」的是「如何申请租房？」与「租房多少钱？」两条，
+        叠加 `output contains 登录` 后只剩第一条（它的 output 是「登录官网申请」）。
+        """
+        clean, _, _ = dataset_context
+        out, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "租房",
+             "--filter", "output", "contains", "登录"]
+        )
+        assert code is None, err
+        assert "找到 1 条匹配结果" in out
+
+    def test_the_filter_value_is_json_first_then_a_string(self, dataset_context):
+        """值先按 JSON 解，解不动才是字符串：`in` 拿到数组能用，拿到裸词就报错
+
+        `in` 要求集合，所以 `'["租房多少钱？"]'` 这一支要真被解成列表才可能命中 1 条；
+        同一位置写裸词（JSON 解不动 → 字符串）必须被咽喉判据拒绝，而不是静默 0 条
+        ——缺陷态 `_evaluate_filter` 对字符串走 `return False`，用户只会看到「没找到」。
+        """
+        clean, _, _ = dataset_context
+
+        def run(value):
+            return run_cli(
+                ["cli", "search", "--input", str(clean), "--query", "租房",
+                 "--filter", "instruction", "in", value]
+            )
+
+        out, err, code = run('["租房多少钱？"]')
+        assert code is None, err
+        assert "找到 1 条匹配结果" in out
+
+        out, err, code = run("租房多少钱？")
+        assert code == 1, f"字符串形态的 in 值没被拒绝: code={code}, out={out!r}"
+        assert "列表或集合" in err, err
+        assert "找到" not in out
+
+    def test_repeated_filters_intersect(self, dataset_context):
+        """`--filter` 可重复，多条是交集：一条留 2 条、两条一起 0 条"""
+        clean, _, _ = dataset_context
+        one, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "如何",
+             "--filter", "input", "eq", ""]
+        )
+        assert code is None, err
+        assert "找到 2 条匹配结果" in one, err
+
+        both, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "如何",
+             "--filter", "input", "eq", "", "--filter", "output", "contains", "月付"]
+        )
+        assert code is None, err
+        assert "找到 0 条匹配结果" in both
+
+    @pytest.mark.parametrize("operator, phrase", [
+        ("equals", "算子"),
+        ("EQ", "算子"),
+        ("gtt", "算子"),
+    ])
+    def test_a_bad_operator_fails_loudly(self, dataset_context, operator, phrase):
+        """算子拼错是退出码 1 + 指名算子，不许退化成「找到 0 条」"""
+        clean, _, _ = dataset_context
+        out, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "租房",
+             "--filter", "input", operator, ""]
+        )
+        assert code == 1, f"{operator} 未被拒绝: code={code}, out={out!r}"
+        assert phrase in err, err
+        assert "找到" not in out
+
+    def test_a_filter_element_missing_a_key_names_its_position(self, dataset_context):
+        """两个过滤器里坏掉的那个要被点名到序号（CLI 用户可以一次传多条）"""
+        clean, _, _ = dataset_context
+        out, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "租房",
+             "--filter", "input", "eq", "", "--filter", "output", "nope", "x"]
+        )
+        assert code == 1, f"坏算子未被拒绝: code={code}, out={out!r}"
+        assert "第 2 个过滤器" in err, err
+
     def test_saves_output(self, dataset_context):
         """--output 需写入可解析的结果 JSON"""
         clean, _, tmp = dataset_context
@@ -1003,3 +1084,65 @@ class TestExportFormatSurface:
         )
         assert code is None, err
         assert out_file.exists(), f"{fmt} 未落盘: {out!r}{err!r}"
+
+
+class TestSearchFilterSurface:
+    """CLI `--filter` 的算子清单必须等于后端真实支持的算子集合。
+
+    与 `TestExportFormatSurface` 同一族：`parser.py` 里是一份手写清单，
+    `search_enhanced.FILTER_OPERATORS` 才是唯一事实来源，两者跨模块、没有编译期约束。
+    这里不能用 argparse 的 `choices=` 把清单接上——它会逐个校验 nargs 槽位，
+    把 FIELD / VALUE 也当算子比（实测 `invalid choice: 'output'` + 退出码 2），
+    所以漂移只能靠断言拦。两个方向都要拦：清单多写一个，用户照抄之后照样吃退出码 1；
+    少写一个，后端已支持的能力永远没人知道。
+
+    两个 parser 名字**刻意不在文件顶部 import**：那样一来缺陷态是整份文件收集失败
+    （连带 104 条既有例一起变红），红因就从「断言不成立」退化成「符号不存在」，
+    注入对照也就失去意义了。
+    """
+
+    # 每个算子配一个**该算子接受的值形状**（数字档要数字、成员档要列表），
+    # 所以这张表不能从清单生成；它的覆盖面由上面那条断言钉住。
+    OP_CASES = [
+        ("eq", '"如何申请租房？"'),
+        ("ne", '"如何申请租房？"'),
+        ("contains", '"租房"'),
+        ("gt", "0"),
+        ("lt", "99"),
+        ("gte", "0"),
+        ("lte", "99"),
+        ("in", '["如何申请租房？"]'),
+        ("not_in", '["如何申请租房？"]'),
+    ]
+
+    def _operators_in_help(self):
+        from augmentor.cli.parser import SEARCH_FILTER_HELP
+
+        segment = SEARCH_FILTER_HELP.split("OP 取 ")[1].split("，")[0]
+        return tuple(segment.split("/"))
+
+    def test_cli_help_lists_exactly_the_backend_operators(self):
+        from augmentor.cli.parser import SEARCH_FILTER_OPERATORS
+        from augmentor.search_enhanced import FILTER_OPERATORS
+
+        listed = self._operators_in_help()
+        # 本类的逐算子用例也必须覆盖全量，否则「清单等于后端」只证了一半
+        assert set(op for op, _ in self.OP_CASES) == set(FILTER_OPERATORS)
+        assert set(listed) == set(FILTER_OPERATORS), (
+            f"帮助里有 {sorted(set(listed) - set(FILTER_OPERATORS))}，"
+            f"后端有 {sorted(set(FILTER_OPERATORS) - set(listed))}"
+        )
+        # 连顺序也钉住：帮助按后端的枚举顺序印，读起来才是同一份清单
+        assert listed == FILTER_OPERATORS
+        assert tuple(SEARCH_FILTER_OPERATORS) == FILTER_OPERATORS
+
+    @pytest.mark.parametrize("operator, value", OP_CASES)
+    def test_every_listed_operator_reaches_the_backend(self, dataset_context, operator, value):
+        """清单里每个算子都要真能跑通——防止照抄进帮助却后端不认"""
+        clean, _, _ = dataset_context
+        out, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "租房",
+             "--field", "instruction", "--filter", "instruction", operator, value]
+        )
+        assert code is None, err
+        assert "找到" in out, f"{operator} 没有跑出结果摘要: {out!r}{err!r}"
