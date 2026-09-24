@@ -24,6 +24,7 @@
 - [x] **L12** `perf(api)`: A20 服务配置文件路径的 `Path.resolve()` 收成缓存 —— 200 次查询 29.9 ms → 0.15 ms（安静态）
 - [x] **L12** `perf(statistics)`: A15 的算法侧 —— 三处重复扫描合成单趟 + token 分批入 `Counter`，真实 6902 条 `calculate()` **50.94 → 43.87 ms**、词汇统计峰值 **8.15 MB → 2.22 MB**，`to_dict()` 逐字节不变
 - [x] **L13** `perf(search)`: A7 的「重建」那一半 —— 倒排索引改成按需构建，真实 6902 条默认 contains 查询 **90.30 → 7.96 ms（11.34×）**、regex **19.41×**、单次查询峰值 **6.30 MB → 0.13 MB**
+- [x] **L14** `perf(quality)`: A10 —— 回退多样性的参照 n-gram 集合整批只切一次（与向量分支同构），真实 1500 条 `batch_score` **339.5 → 61.8 ms（5.49×，9/9 轮）**、`_ngram_similarity` **46500 → 1500 次**，五项分数逐条相同；**代价：峰值内存 +80 KB**
 
 ## Backlog A — 性能（含 file:line 与实测线索）
 
@@ -38,7 +39,7 @@
 | ~~A7~~ | ~~`augmentor/search_enhanced.py:448,82`~~ | ~~每次查询重建索引（n=3000 重建 8 ms vs 查询 2 ms），且 contains/fuzzy 不查索引~~ **前半已修（L13）**：`search_dataset()` 每次都新建搜索器，而构造即无条件建索引（真实 6902 条 64.5 ms + 6.17 MB），五种方法里只有 exact 读它 → 改成按需构建。**「不查索引」那一半另立 A21** | M |
 | ~~A8~~ | ~~`api/routes/data.py:146-164`~~ | ~~整文件解析 + 全量过滤后再切片，无早停~~ **L9 实测排除**：响应里的 `total` 按定义要求「过滤后的总数」，早停会把它算错；能省的只有物化切片，量级不值得 | M |
 | ~~A9~~ | ~~`augmentor/tracker.py:114` → `:87-99`~~ | ~~每个指标点整文件重写 → O(points²) 字节~~ **L9 实测排除**：`log_metric`/`start_experiment` 除测试外无调用者（`ExperimentTracker` 本身在 `pipeline.py:118` 有构造，别误判成死模块）。等 B7 把实验回路接上再优化才有意义 | S |
-| A10 | `augmentor/quality.py:175-179` | 多样性回退里参照文本 n-gram 集合反复重建 | S |
+| ~~A10~~ | ~~`augmentor/quality.py:175-179`~~ | ~~多样性回退里参照文本 n-gram 集合反复重建~~ **已修（L14）**：真实 1500 条 `batch_score` 同进程交替中位 **339.5 → 61.8 ms（5.49×，9/9 轮）**、`_ngram_similarity` **46500 → 1500 次**、集合分配约 **37200 → 9930 个**（N=300 单测），五项分数逐条相同；**峰值内存反向 +79.6 KB**（缓存常驻 30 个 frozenset），本轮只买 CPU | S |
 | A11 | `augmentor/indexer.py:117-123,345,352,372-399` | 每次 `DatasetView` 操作重建全部索引（filter 26 ms @ n=3000） | M |
 | A12 | `augmentor/validation.py:217-222`、`sampler.py:296-299` | **L13 实测拆成两半**：①`_validate_item` 里 `import re` + 每条每模式一次 `re.search` —— 真实 6902 条 strict 预设 29.2 ms vs basic 11.7 ms，`re.search` 调了 **27608 次 = 每条 4 次**，预编译 + 提到模块级预计省 ~5 ms（1.2×），量级小但确实是门口必经；②`sampler.generate_report()` 的 `items.index(seed)` **实测不是缺陷**：真实数据只推荐 4 个种子、反查 0.0 ms，而单趟 id 映射要 1.1 ms —— **改了反而更慢**，这一半作废（且它还会改变「值相等但不同对象」时的下标语义，真实数据里正好有 367 条重复 dict） | S |
 | ~~A13~~ | ~~`api/routes/dataset_tools.py:311,360,386,387,416,436,566,598` + `system_ops.py:320,348,514`~~ | ~~**A4 的同构族**：`read_items()`（同步版）在 11 个 `async def` 路由体里直接调用，同样占着事件循环；`dataset_tools.py:566` 还是「多个文件在循环里串行读」；`/api/dataset/stats` 连分析都留在循环上（43.4 ms）~~ 已修（L7） | M |
@@ -291,6 +292,40 @@
   **顺带实测排掉 A12 的一半**：`sampler.generate_report()` 的 `items.index(seed)` 看着像
   O(n²)，真实数据只推荐 4 个种子、反查 **0.0 ms**，单趟 id 映射反而要 1.1 ms；
   且真实数据里有 367 条「值相等但不同对象」的 dict，改语义会挪动下标。已写回 A12。
+- **L14** `perf(quality)` A10 —— 向量分支早就有「参照集整批算一次 + hash 失效」，
+  n-gram 回退分支却没有：`_ngram_similarity(text, ref)` 每对都重新切两侧集合，
+  并集还物化成第三个集合。改成模块级 `_char_ngrams` / `_jaccard`（并集走容斥
+  `|A|+|B|-|A∩B|`）+ `_existing_ngrams` 缓存，`reset_cache()` 一并清。
+  **同进程新旧交替 9 轮**（真实 1500 条 × 参照窗 100，`train_data.json` 只读）：
+  `batch_score` **339.5 → 61.8 ms（中位 5.49×，9/9 轮都更快，逐轮 4.94–5.91×）**，
+  `_ngram_similarity` 调用 **46500 → 1500 次**（剩下的 1500 次是相关性回退分支的
+  每条 1 次，本轮没碰），N=300 单独数集合分配 **约 37200 → 约 9930 个**
+  （旧：9300 次配对 × 4 个集合；新：930 个 frozenset + 9000 次交集临时集合，
+  并集不再物化）。外推到真实 6902 条约 **1.56 s → 0.28 s**（按候选数线性）。
+  语义/相关性/多样性/总分/是否通过**五项逐条相同**。
+  **两条必须写下的负面**：① 峰值内存**没有降反而升** —— 真实批次 tracemalloc
+  **414.86 KB → 494.46 KB（+79.6 KB）**，因为缓存要常驻最多 30 个 frozenset，
+  这轮买的是 CPU 不是内存；② 回退分支里 `_char_ngrams` 我第一版顺手加了 `.lower()`，
+  而 HEAD 切的是原文 —— 那会把所有英文数据集的多样性**凭空抬高**，已删掉并用
+  `"AB"` vs `"ab"` → 1.0 这条口径守卫钉住。
+  真实批次之所以能命中缓存：`existing` 在 `batch_score` 里逐条增长，但 hash 只覆盖
+  **被缓存的那一段** `existing[:diversity_sample_size]`，前 30 条一旦坐定就不再变
+  （300 条候选只切了 930 个集合），这正是早先那处 hash 口径修正的复利。
+  新增 7 例（`TestFallbackDiversityRefSets`），预言机是**调用次数**：`pair_calls`
+  数 `_ngram_similarity`（两版都有的名字）、`ngram_builds` 数 `_char_ngrams`，
+  再加分数不依赖缓存（与冷实例逐个对照）、手算 Jaccard、换窗失效、`reset_cache`、
+  两份缓存互不共用。
+  **红→绿**：整份退回 HEAD → `AssertionError: 多样性逐对比较了 3000 次，参照集没被复用`
+  （计数红，非符号缺失）+ 1 例 `_existing_ngrams_hash` AttributeError；
+  另 4 例因新符号不存在而 setup 报错，它们是**结构护栏不是缺陷证据**，写在这里防冒充；
+  5 个既有类 30 例全绿，`已还原=True`。**踩坑记录**：`pair_calls` 夹具第一版写成
+  `def spy(self, a, b, n=quality._NGRAM_SIZE)`，缺陷态于是只报 AttributeError ——
+  红得很但没有回答「有没有逐对比较」。改成 `*args, **kwargs` 转发后计数断言才真的响，
+  这是 L10「红必须为正确的理由红」的具体复现。
+  **同构扫描**：`augmentor/dedup.py` 里那份 `_ngram_similarity` 是同名复刻，但
+  **非测试调用者为 0**（`grep` 只命中定义与测试），改它不会改变任何用户可见耗时，
+  不立条目；`quality.py` 剩余的 `_ngram_similarity` 两条调用点（语义/相关性回退）
+  本身就是每条 1 次，无可摊。
 - 全量：L4 后 **3679 passed / 3 skipped**（89.2 s），L5 后 **3703 passed / 3 skipped**
   （90.2 s），L6 后 **3705 passed / 3 skipped**（91.1 s），L7 后 **3726 passed / 3 skipped**
   （95.1 s），L8 后 **3747 passed / 3 skipped**（98.0 s），L9 后 **3747 passed / 3 skipped**
@@ -298,7 +333,8 @@
   L10 后 **3750 passed / 3 skipped**（55.7 s，coverage.xml line-rate 0.9927），
   L11 后 **3780 passed / 3 skipped**（101.7 s，coverage.xml 总计 98.51%），
   L12 后 **3792 passed / 3 skipped**（64.3 s，coverage.xml 总计 98.51%），
-  L13 后 **3802 passed / 3 skipped**（65.8 s，总计 98.50%）。
+  L13 后 **3802 passed / 3 skipped**（65.8 s，总计 98.50%），
+  L14 后 **3809 passed / 3 skipped**（52.0 s，总计 98.51%）。
   **注意**：这些墙钟秒数**彼此不可比**——本工作树与并行 agent 共用一台机器，
   它跑全量时我会慢 40%+（L9 时 92 s、L10 时无竞争 55.7 s）。跨轮只比
   **同一进程内 back-to-back 的对照组**，绝对秒数只作当次快照。

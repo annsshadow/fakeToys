@@ -13,6 +13,32 @@ from .exceptions import QualityError
 
 logger = logging.getLogger(__name__)
 
+# 字符 n-gram 的阶数（多样性/相关性 fallback 共用的口径，改动会改变所有分数）
+_NGRAM_SIZE = 2
+
+
+def _char_ngrams(text: str, n: int = _NGRAM_SIZE) -> frozenset:
+    """字符 n-gram 集合（文本短于 n 时为空集）
+
+    口径与原实现一致：**不做大小写归一**，`How` 与 `how` 的 bigram 不视为相同。
+    """
+    if len(text) < n:
+        return frozenset()
+    return frozenset(text[i:i + n] for i in range(len(text) - n + 1))
+
+
+def _jaccard(a: frozenset, b: frozenset) -> float:
+    """Jaccard 相似度
+
+    并集用容斥（`|A| + |B| - |A∩B|`）而不是物化第三个集合：结果相同，
+    少一次全量插入。
+    """
+    if not a or not b:
+        return 0.0
+    intersection = len(a & b)
+    union = len(a) + len(b) - intersection
+    return intersection / union if union else 0.0
+
 
 @dataclass
 class QualityScore:
@@ -63,6 +89,11 @@ class QualityScorer:
         self._existing_embeddings = []  # 缓存已有文本的 embeddings
         self._existing_texts = []  # 缓存已有文本
         self._existing_texts_hash = None  # 缓存已有文本的 hash
+        # n-gram 侧的参照集缓存**独立于向量侧**：两份缓存装的是同一段文本的不同
+        # 表示，共用一个 hash 的话，`_model` 一旦变化（测试与降级路径都会）就会让
+        # 一边认定「缓存有效」而另一边根本没填。
+        self._existing_ngrams: List[frozenset] = []
+        self._existing_ngrams_hash: Optional[str] = None
     
     def _compute_texts_hash(self, texts: List[str]) -> str:
         """计算文本列表的 hash
@@ -92,31 +123,19 @@ class QualityScorer:
                 logger.warning("cross-encoder 未安装，使用简化评分")
                 self._cross_encoder = "fallback"
     
-    def _ngram_similarity(self, text1: str, text2: str, n: int = 2) -> float:
+    def _ngram_similarity(self, text1: str, text2: str, n: int = _NGRAM_SIZE) -> float:
         """基于 n-gram 的相似度计算（fallback 方法）
-        
+
         Args:
             text1: 文本 1
             text2: 文本 2
             n: n-gram 大小
-        
+
         Returns:
             相似度分数 (0-1)
         """
-        def get_ngrams(text: str) -> set:
-            return set(text[i:i+n] for i in range(len(text) - n + 1))
-        
-        ngrams1 = get_ngrams(text1)
-        ngrams2 = get_ngrams(text2)
-        
-        if not ngrams1 or not ngrams2:
-            return 0.0
-        
-        intersection = len(ngrams1 & ngrams2)
-        union = len(ngrams1 | ngrams2)
-        
-        return intersection / union if union > 0 else 0.0
-    
+        return _jaccard(_char_ngrams(text1, n), _char_ngrams(text2, n))
+
     def _calculate_semantic_similarity(self, text1: str, text2: str) -> float:
         """计算语义相似度
         
@@ -172,12 +191,27 @@ class QualityScorer:
         
         if self._model == "fallback":
             # fallback: 使用 n-gram 相似度
+            #
+            # 参照集的 n-gram 集合整批只算一次。原实现每条候选都把它比的那
+            # 30 条参照文本重新切成 bigram：真实 1500 条 × 参照窗 100 实测
+            # `_ngram_similarity` 调 46500 次（每条 31 次）、`get_ngrams` 建
+            # 93000 个集合（每条 62 个，其中参照侧 30 个是纯重复），
+            # 234 万次解释器迭代占了整条 `batch_score` 的 78%。
+            # 失效判据沿用向量分支那套「hash 只覆盖真正被缓存的那一段」
+            # （`existing_texts[:diversity_sample_size]`），但**用独立的属性**，
+            # 理由见 `__init__`。
+            sample_texts = existing_texts[:self.diversity_sample_size]
+            current_hash = self._compute_texts_hash(sample_texts)
+            if self._existing_ngrams_hash != current_hash:
+                self._existing_ngrams = [_char_ngrams(text) for text in sample_texts]
+                self._existing_ngrams_hash = current_hash
+            candidate = _char_ngrams(text)
             max_sim = 0.0
-            for existing in existing_texts[:self.diversity_sample_size]:
-                sim = self._ngram_similarity(text, existing)
+            for ref_ngrams in self._existing_ngrams:
+                sim = _jaccard(candidate, ref_ngrams)
                 max_sim = max(max_sim, sim)
             return float(max(0.0, 1.0 - max_sim))
-        
+
         # 编码当前文本（调用方已编码时直接复用）
         if text_embedding is None:
             text_embedding = self._model.encode([text])[0]
@@ -218,6 +252,8 @@ class QualityScorer:
         self._existing_embeddings = []
         self._existing_texts = []
         self._existing_texts_hash = None
+        self._existing_ngrams = []
+        self._existing_ngrams_hash = None
     
     def effective_weights(self, include_semantic: bool) -> List[float]:
         """计算实际生效的权重
