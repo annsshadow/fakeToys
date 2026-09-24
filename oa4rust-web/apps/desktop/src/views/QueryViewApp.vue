@@ -33,6 +33,29 @@
         <button class="btn-primary" @click="qvWrite('importExecute')">执行导入模型</button>
         <button class="btn-primary" @click="qvWrite('importRecordDelete')">删导入记录</button>
         <button class="btn-primary" @click="qvWrite('moreLikeThis')">相似检索</button>
+        <button class="btn-primary" @click="qvMore('viewAppExec')">视图按应用执行</button>
+        <button class="btn-primary" @click="qvMore('viewAppExecPage')">按应用分页执行</button>
+        <button class="btn-primary" @click="qvMore('viewBundle')">视图打包2</button>
+        <button class="btn-primary" @click="qvMore('viewExcel')">视图Excel2</button>
+        <button class="btn-primary" @click="qvMore('viewExec')">视图执行2</button>
+        <button class="btn-primary" @click="qvMore('viewExecV2')">视图v2执行</button>
+        <button class="btn-primary" @click="qvMore('viewBundleV2')">视图v2打包</button>
+        <button class="btn-primary" @click="qvMore('viewExecV2Id')">视图v2按ID执行</button>
+        <button class="btn-primary" @click="qvMore('statExec')">统计执行2</button>
+        <button class="btn-primary" @click="qvMore('bundlePost')">打包提交</button>
+        <button class="btn-primary" @click="qvMore('importRun')">跑导入模型</button>
+        <button class="btn-primary" @click="qvMore('importExecRecPost')">执行导入记录</button>
+        <button class="btn-primary" @click="qvMore('importExecRecGet')">读导入记录执行</button>
+        <button class="btn-primary" @click="qvMore('importListByQuery')">导入模型按查询</button>
+        <button class="btn-primary" @click="qvMore('importRecPaging')">导入记录分页</button>
+        <button class="btn-primary" @click="qvMore('importRecItemPaging')">导入记录项分页</button>
+        <button class="btn-primary" @click="qvMore('stmtExec')">语句执行</button>
+        <button class="btn-primary" @click="qvMore('stmtExecMode')">语句按模式执行</button>
+        <button class="btn-primary" @click="qvMore('tablePaging')">表分页</button>
+        <button class="btn-primary" @click="qvMore('tableRowPaging')">表行分页</button>
+        <button class="btn-primary" @click="qvMore('tableRow')">表行详情</button>
+        <button class="btn-primary" @click="qvMore('tableReload')">动态重载</button>
+        <button class="btn-primary" @click="qvMore('neuralCalc')">神经计算</button>
       </div>
       <div v-if="queryListText" class="qv-note">{{ queryListText }}</div>
       <div v-if="tableText" class="qv-note">{{ tableText }}</div>
@@ -401,6 +424,39 @@ async function qvWrite(op: string) {
       const kw = prompt('相似检索关键词:', '') || ''
       await api.post('/api/queryview/morelikethis', { keyword: kw })
     }
+    toast.success('queryview 操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev375：queryview 视图按应用执行/打包/Excel/v2执行 + 统计执行 + 导入模型执行/清单 + 语句执行 + 表分页/行/动态重载 + 神经计算 真实路由（全字面量含参占位；避 importmodel/record 守卫意图与 3+ 参 arity trap）
+async function qvMore(op: string) {
+  try {
+    const flag = () => encodeURIComponent(prompt('视图/表 flag:', '') || '')
+    const qf = () => encodeURIComponent(prompt('查询 flag:', '') || '')
+    if (op === 'viewAppExec') { const v = flag(); const a = encodeURIComponent(prompt('应用 flag:', '') || ''); await api.get(`/api/queryview/${v}/application/${a}/execute`) }
+    else if (op === 'viewAppExecPage') { const v = flag(); const a = encodeURIComponent(prompt('应用 flag:', '') || ''); await api.get(`/api/queryview/${v}/application/${a}/execute/page/1/size/20`) }
+    else if (op === 'viewBundle') await api.put(`/api/queryview/view/flag/${flag()}/query/${qf()}/bundle`, {})
+    else if (op === 'viewExcel') await api.put(`/api/queryview/view/flag/${flag()}/query/${qf()}/excel`, {})
+    else if (op === 'viewExec') await api.put(`/api/queryview/view/flag/${flag()}/query/${qf()}/execute`, {})
+    else if (op === 'viewExecV2') await api.post(`/api/queryview/view/flag/${flag()}/query/${qf()}/execute/v2/page/1/size/20`, {})
+    else if (op === 'viewBundleV2') { const id = flag(); await api.post(`/api/queryview/view/${id}/bundle/v2`, {}) }
+    else if (op === 'viewExecV2Id') { const id = flag(); await api.post(`/api/queryview/view/${id}/execute/v2/page/1/size/20`, {}) }
+    else if (op === 'statExec') await api.put(`/api/queryview/stat/flag/${flag()}/query/${qf()}/execute`, {})
+    else if (op === 'bundlePost') { const id = flag(); await api.post(`/api/queryview/bundle/v2/post/${id}`, {}) }
+    else if (op === 'importRun') { const id = flag(); await api.post(`/api/queryview/importmodel/${id}`, {}) }
+    else if (op === 'importExecRecPost') { const rid = encodeURIComponent(prompt('记录 ID:', '') || ''); await api.post(`/api/queryview/importmodel/execute/record/${rid}`, {}) }
+    else if (op === 'importExecRecGet') { const rid = encodeURIComponent(prompt('记录 ID:', '') || ''); await api.get(`/api/queryview/importmodel/execute/record/${rid}`) }
+    else if (op === 'importListByQuery') await api.post(`/api/queryview/importmodel/list/${qf()}/${qf()}`, {})
+    else if (op === 'importRecPaging') await api.post('/api/queryview/importmodel/list/record/paging/1/size/20', {})
+    else if (op === 'importRecItemPaging') await api.post('/api/queryview/importmodel/list/record/item/paging/1/size/20', {})
+    else if (op === 'stmtExec') await api.post(`/api/queryview/statement/execute/${flag()}/page/1/size/20`, {})
+    else if (op === 'stmtExecMode') { const f = flag(); const mode = encodeURIComponent(prompt('模式:', 'data') || 'data'); await api.post(`/api/queryview/statement/execute/${f}/mode/${mode}/page/1/size/20`, {}) }
+    else if (op === 'tablePaging') await api.post('/api/queryview/table/list/paging/1/size/20', {})
+    else if (op === 'tableRowPaging') { const tf = flag(); await api.post(`/api/queryview/table/list/table/${tf}/row/paging/1/size/20`, {}) }
+    else if (op === 'tableRow') { const tf = flag(); const id = encodeURIComponent(prompt('行 ID:', '') || ''); await api.get(`/api/queryview/table/row/${tf}/${id}`) }
+    else if (op === 'tableReload') await api.get('/api/queryview/table/reload/dynamic')
+    else { const mf = encodeURIComponent(prompt('模型 flag:', '') || ''); const w = encodeURIComponent(prompt('工作:', '') || ''); const wi = encodeURIComponent(prompt('workId:', '') || ''); await api.get(`/api/queryview/neural/list/calculate/model/${mf}/${w}/${wi}`) }
     toast.success('queryview 操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
