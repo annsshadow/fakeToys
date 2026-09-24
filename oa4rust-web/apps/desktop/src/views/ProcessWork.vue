@@ -810,6 +810,11 @@ async function loadSurfaceReadB(): Promise<void> {
       s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/count/application/${applicationFlag}/process`)),
       s(api.get(`/api/processplatform/assemble/surface/work/list/count/application/${applicationFlag}/process`)),
       s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/count/application/${applicationFlag}/process`)),
+      // rev452：待阅/已阅 v2 游标列表 4 条真实读（*_id_prev/next_count Path<(id,count)>，POST 空体，id='0' 起始游标）
+      s(api.post(`/api/processplatform/assemble/surface/read/v2/list/create/prev/${id}/${count}`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/readcompleted/v2/list/create/prev/${id}/${count}`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/readcompleted/v2/list/${id}/next/${count}`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/readcompleted/v2/list/${id}/prev/${count}`, {})),
       s(api.get(`/api/processplatform/assemble/surface/task/count/${credential}`)),
       s(api.get(`/api/processplatform/assemble/surface/task/list/date/date/hour/hour/exclude/draft/manage/${isExcludeDraft}`)),
       s(api.get(`/api/processplatform/assemble/surface/task/list/date/${date}/hour/${hour}/exclude/draft/${isExcludeDraft}/manage`)),
