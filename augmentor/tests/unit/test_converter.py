@@ -1300,15 +1300,19 @@ class TestUndeclaredConversationGuard:
             {"instruction": "可以月付吗", "input": "", "output": "支持月付"}]
 
     def test_a_string_column_named_messages_is_not_a_conversation(self):
-        """csv / tsv 读出来的 `messages` 是**字符串列**，不是对话数组 → 不在护栏里
+        """csv / tsv 读出来的 `messages` 是**字符串列**，不是对话数组 → 不在对话护栏里
 
-        `DictReader` 交出的每个值都是 str，所以护栏要求 `isinstance(list)`。这条
-        钉的是「护栏没有过度伸展」；这类记录转出来仍是空问答，属 A26 的范围。
+        `DictReader` 交出的每个值都是 str，所以对话护栏要求 `isinstance(list)`。
+        这类记录确实不是被误标的对话，所以报错里**不得**出现「声明 source_format」
+        的建议；但它整档一条问答都取不到，由 L23 的整档空问答护栏接管。
         """
         rows = [{"messages": "hello", "category": "租房"}]
 
-        assert convert_dataset(rows, "alpaca") == [
-            {"instruction": "", "input": "", "output": ""}]
+        with pytest.raises(ValueError, match="取不到任何问答") as exc:
+            convert_dataset(rows, "alpaca")
+
+        assert "--input-format" not in str(exc.value)
+        assert "source_format" not in str(exc.value)
 
     @pytest.mark.parametrize("target", ["json", "csv", "tsv"])
     def test_container_targets_are_not_guarded(self, target):
@@ -1500,3 +1504,145 @@ class TestRecordShapeGuard:
             {"from": "human", "value": "q"}, {"from": "gpt", "value": "a"}]}],
             "sharegpt", "chatml")
         assert calls == [("json", "chatml")]
+
+
+class TestAllEmptyQaRejected:
+    """整档取不到任何问答时当场失败，而不是交出一份结构合法的空数据集（A26②）
+
+    这是 A26 剩下的那个口子：字段名不认识的语料（`question`/`answer`、`text`、
+    `prompt`/`completion`……）走 `json → 六个训练格式`，以前每条都读到 `""`，
+    退出码 0、HTTP 200，产物是 N 条空问答 —— 下游会直接拿去训练，比崩溃更坏。
+    真实语料四份共 20706 条实测「可用问答为 0」的记录是 0 条，所以整档判定不会
+    误伤现有数据。
+
+    判定只看**整档**：缺问答的个别记录照常转（增强与清洗都会引入），只有「一条
+    可用素材都没有」才报。空数据集 `[]` 是既有合法行为，不在此列。
+    """
+
+    #: 六个 schema 目标都读不到字段名的一份语料
+    WRONG_FIELDS = [{"question": "可以月付吗", "answer": "支持月付"}]
+
+    @pytest.mark.parametrize("target", ["alpaca", "sharegpt", "chatml",
+                                        "llama_factory", "vicuna", "belle"])
+    def test_every_schema_target_rejects_fields_it_cannot_read(self, target):
+        """六条写边一条都不漏：判据挂在分发口，不挂在各边里"""
+        with pytest.raises(ValueError, match="取不到任何问答"):
+            convert_dataset(self.WRONG_FIELDS, target)
+
+    def test_the_message_names_the_rows_and_the_accepted_keys(self):
+        """报错要给出「多少条」和「认哪几个键」，否则调用方只能猜字段名"""
+        with pytest.raises(ValueError) as exc:
+            convert_dataset(self.WRONG_FIELDS * 3, "alpaca")
+
+        assert "3 条记录里取不到任何问答" in str(exc.value)
+        assert "`instruction` / `output`" in str(exc.value)
+        assert "question" in str(exc.value)
+
+    @pytest.mark.parametrize("target", ["alpaca", "llama_factory", "vicuna", "belle"])
+    def test_targets_that_ignore_history_do_not_count_it_as_qa(self, target):
+        """只有 `history` 的记录转这四条边仍然是空问答：键集合必须逐边算
+
+        `alpaca`/`llama_factory`/`vicuna`/`belle` 的写边根本不读 `history`，
+        放过去就又是一份 A26② 的空产物。
+        """
+        rows = [{"history": [{"role": "user", "content": "可以月付吗"},
+                             {"role": "assistant", "content": "支持月付"}]}]
+
+        with pytest.raises(ValueError, match="取不到任何问答"):
+            convert_dataset(rows, target)
+
+    @pytest.mark.parametrize("target", ["sharegpt", "chatml"])
+    def test_history_aware_targets_accept_history_only_rows(self, target):
+        """同一批记录转 sharegpt / chatml 有内容：这两条边会展开历史轮次"""
+        rows = [{"history": [{"role": "user", "content": "可以月付吗"},
+                             {"role": "assistant", "content": "支持月付"}]}]
+
+        out = convert_dataset(rows, target)
+
+        assert json.dumps(out, ensure_ascii=False).count("可以月付吗") == 1
+
+    def test_a_system_only_dataset_is_not_qa_material(self):
+        """只有系统提示词的记录不算问答：转出来 user/assistant 仍是空的"""
+        with pytest.raises(ValueError, match="取不到任何问答"):
+            convert_dataset([{"system": "你是一个租房助手"}], "chatml")
+
+    def test_one_usable_record_anywhere_saves_the_whole_file(self):
+        """逐条宽松：整档里只要有一条可用问答就照常转，缺的那几条转成空字段"""
+        rows = [{"question": "认不出的字段"},
+                {"instruction": "可以月付吗", "output": "支持月付"}]
+
+        assert convert_dataset(rows, "alpaca") == [
+            {"instruction": "", "input": "", "output": ""},
+            {"instruction": "可以月付吗", "input": "", "output": "支持月付"}]
+
+    def test_a_whitespace_only_field_counts_as_present(self):
+        """只按真值判断、不 strip：空白字段算「有内容」，那是清洗该管的事"""
+        assert convert_dataset([{"output": " "}], "alpaca") == [
+            {"instruction": "", "input": "", "output": " "}]
+
+    def test_an_empty_dataset_stays_legal(self):
+        """`[]` 转任何格式都是合法的 0 条产物（既有行为），护栏不得插手"""
+        for target in ["alpaca", "sharegpt", "chatml", "llama_factory",
+                       "vicuna", "belle"]:
+            assert convert_dataset([], target) == []
+
+    @pytest.mark.parametrize("target", ["json", "csv", "tsv"])
+    def test_container_targets_are_not_guarded(self, target):
+        """容器目标原样排版输入，不存在「凭空造空问答」，护栏不得插手"""
+        assert convert_dataset(self.WRONG_FIELDS, target) == self.WRONG_FIELDS
+
+    def test_jsonl_target_keeps_an_unreadable_row_verbatim(self):
+        """`json → jsonl` 一行一条原样序列化：认不出字段的记录也不该被吃掉"""
+        assert convert_dataset(self.WRONG_FIELDS, "jsonl") == [
+            json.dumps(row, ensure_ascii=False) for row in self.WRONG_FIELDS]
+
+    def test_a_mislabeled_conversation_still_gets_the_better_advice(self):
+        """两条护栏同时命中时，先报「声明 source_format」那条：它的建议更可执行"""
+        rows = [{"conversations": [{"from": "human", "value": "可以月付吗"},
+                                   {"from": "gpt", "value": "支持月付"}]}]
+
+        with pytest.raises(ValueError, match="全空数据集") as exc:
+            convert_dataset(rows, "alpaca")
+
+        assert "取不到任何问答" not in str(exc.value)
+
+    def test_no_partial_output_is_written(self, tmp_path):
+        """报错发生在写盘之前：字段名认不出时不得留下一份空问答文件"""
+        src = tmp_path / "in.json"
+        src.write_text(json.dumps(self.WRONG_FIELDS, ensure_ascii=False),
+                       encoding="utf-8")
+        out = tmp_path / "brand_new_out.json"
+
+        with pytest.raises(ValueError, match="取不到任何问答"):
+            convert_file(str(src), str(out), target_format="chatml")
+
+        assert not out.exists()
+
+    def test_the_guard_runs_once_per_conversion(self, monkeypatch):
+        """挂在分发口 = 一条链路最多一次；挪进各边逐条重复就把这条改红"""
+        calls = []
+        original = DatasetConverter._reject_all_empty_qa
+
+        def spy(self, data, target_format, **kwargs):
+            calls.append(target_format)
+            return original(self, data, target_format, **kwargs)
+
+        monkeypatch.setattr(DatasetConverter, "_reject_all_empty_qa", spy)
+        rows = [{"instruction": "q", "output": "a"}]
+
+        convert_dataset(rows, "alpaca")
+        assert calls == ["alpaca"]
+
+        calls.clear()
+        convert_dataset(self.WRONG_FIELDS, "jsonl")
+        assert calls == []
+
+    def test_it_stops_at_the_first_usable_record(self):
+        """干净语料上 O(1)：扫到第一条可用问答就返回，不整档重扫"""
+        class ScanPastFirst(list):
+            def __iter__(self):
+                yield self[0]
+                raise AssertionError("护栏扫过了第一条可用问答")
+
+        DatasetConverter()._reject_all_empty_qa(
+            ScanPastFirst([{"instruction": "q"}]), "alpaca")
