@@ -61,10 +61,12 @@ function segsPattern(p: string): string[] {
 }
 const segm = (a: string, b: string) => a === '*' || b === '*' || a === b
 
+// 预计算注册路由的分段模式，避免在每个桌面端点上重复切分（端点集增长后 O(paths×routes) 会超时）。
+const REGISTERED_PATTERNS = REGISTERED_BACKEND_ROUTES.map(segsPattern)
+
 function hitsRegistered(path: string, dyn: boolean): boolean {
   const c = segsUsed(path)
-  for (const p of REGISTERED_BACKEND_ROUTES) {
-    const r = segsPattern(p)
+  for (const r of REGISTERED_PATTERNS) {
     if (r.length === c.length && r.every((s, i) => segm(s, c[i]!))) return true
     if (dyn && r.length > c.length && r.slice(0, c.length).every((s, i) => segm(s, c[i]!))) return true
   }
