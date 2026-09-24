@@ -12,6 +12,7 @@ from typing import List, Dict, Iterator, Callable, Optional, Generator, Any
 from pathlib import Path
 from dataclasses import dataclass
 from .exceptions import StreamError, DataFormatError
+from .validation import require_count
 
 try:
     from .memory_monitor import MemoryMonitor
@@ -229,8 +230,10 @@ class StreamReader:
         
         Args:
             file_path: 文件路径
-            chunk_size: 每次读取的数据条数
+            chunk_size: 每次读取的数据条数，不小于 1 的整数
+                （步长没有「每块 0 条」的合法读法，判据见 `require_count`）
         """
+        require_count("chunk_size", chunk_size, minimum=1)
         self.file_path = Path(file_path)
         self.chunk_size = chunk_size
         self._total_count: Optional[int] = None

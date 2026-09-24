@@ -17,6 +17,7 @@ import numpy as np
 from .base import VectorDB, normalize_vectors
 from ..cache import MemoryCache
 from ..exceptions import VectorError
+from ..validation import require_count
 
 logger = logging.getLogger(__name__)
 
@@ -154,11 +155,14 @@ class FAISSDB(VectorDB):
 
         Args:
             query: 查询向量
-            top_k: 返回条数
+            top_k: 返回条数，不小于 0 的整数（判据见 `require_count`）
 
         Returns:
             结果列表，按相似度降序
         """
+        # 判参先于空库短路：`min(-1, n)` 之后 `[:k]` 连吃两次末位裁剪（实测 4 条 → 2 条）
+        require_count("top_k", top_k)
+
         if not self._ids:
             return []
 

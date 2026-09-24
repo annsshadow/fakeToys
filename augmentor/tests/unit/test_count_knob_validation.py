@@ -4,9 +4,11 @@
 """「取前 N 条」这类计数旋钮的同构判据
 
 这些旋钮（`limit` / `offset` / `top_k` / `preview_size` / `batch_size` / `size` /
-`n` / `diversity_sample_size` / `max_backups`）在实现里几乎都落到下标切片，而切片
-对越界值不报错、只换语义。本文件把 `search()` 早已对 `fuzzy_threshold` / `ngram_n`
-采用的判据推广到整个家族，判据本身只有 `augmentor.validation.require_count` 一处。
+`n` / `diversity_sample_size` / `max_backups` / `chunk_size` / `target_size` /
+`num_topics` / `topics_per_strategy` / `num_questions_per_topic`）在实现里几乎都落到
+下标切片或算术，而切片对越界值不报错、只换语义。本文件把 `search()` 早已对
+`fuzzy_threshold` / `ngram_n` 采用的判据推广到整个家族，判据本身只有
+`augmentor.validation.require_count` 一处。
 
 五条一起成立的主张：
 1. 负数报错。以前 `[:top_k]` 读成「丢掉末尾 |top_k| 个」，`[-limit:]` 读成
@@ -16,22 +18,27 @@
    `x[-0:]` 更是直接等于「全部」。
 3. 判参先于数据短路。空输入 + 坏参数必须仍然报参数错，否则坏参数会被
    空结果掩护掉。
-4. 判参先于副作用。构造备份管理器会 mkdir 并写 index.json，这类站点必须先判参
-   再实例化，否则一次坏参数调用就在磁盘上留下一个空目录。
+4. 判参先于副作用。构造备份管理器会 mkdir 并写 index.json，向模型发提示词会真花钱，
+   这类站点必须先判参再走副作用，否则一次坏参数调用就在磁盘上留下空目录、
+   或者把「生成 -1 个」这种自相矛盾的请求发出去。
 5. `0` 在不可逆语义下不放行。删备份的 `max_backups=0` 与手滑想打的 10 无从分辨，
-   而后果是删光全部备份，所以那类旋钮的下界是 1（见 `minimum=1`）。
+   而后果是删光全部备份，所以那类旋钮的下界是 1（见 `minimum=1`）。分块步长
+   `chunk_size` 同型：它没有「每块 0 条」这种合法读法。
 """
 
 import json
 
+import numpy as np
 import pytest
 
 from augmentor.active_learning import ActiveLearningLoop
+from augmentor.aggregator import DataAggregator
 from augmentor.analytics import analyze_dataset_fast
 from augmentor.backup import DatasetBackup, clean_old_backups
 from augmentor.cleaner import clean_batch_optimized, extract_keywords
 from augmentor.dedup import Deduplicator
 from augmentor.exceptions import DataValidationError
+from augmentor.expander import DomainExpander
 from augmentor.indexer import DatasetView
 from augmentor.preview import PreviewGenerator
 from augmentor.quality import QualityScorer
@@ -39,7 +46,9 @@ from augmentor.quality_monitor import QualityMonitor
 from augmentor.sampler import ActiveSampler
 from augmentor.search_enhanced import search_dataset
 from augmentor.dataset_ops import DatasetOperations, SampleConfig
+from augmentor.streaming import StreamReader, StreamAugmentor
 from augmentor.validation import require_count
+from augmentor.vector.faiss import FAISSDB
 from augmentor.versioning import VersionManager
 
 ITEMS = [{"instruction": f"如何租房{i}", "output": f"登录官网办理第{i}步"} for i in range(12)]
@@ -461,4 +470,210 @@ class TestBackupRetention:
         directory = self._sandbox(tmp_path)
         assert clean_old_backups(str(directory), 5) == 0
         assert len(list(directory.glob("bk*.json"))) == 5
+
+
+class StubTopicBackend:
+    """`DomainExpander` 只调用 `.generate(prompt)`：这里不联网，只记提示词，
+    并固定交回 20 条候选，好让 `[:num_topics]` 的末位裁剪看得出来。"""
+
+    def __init__(self):
+        self.prompts = []
+
+    def generate(self, prompt, **kwargs):
+        self.prompts.append(prompt)
+        return json.dumps([f"扩展主题{i}" for i in range(20)], ensure_ascii=False)
+
+
+EXPANDER_CORPUS = [{"instruction": "晨阳计划第1问"}, {"instruction": "租金相关第2问"},
+                   {"instruction": "押金相关第3问"}, {"instruction": "合同相关第4问"},
+                   {"instruction": "维修服务第5问"}]
+
+# 三个源、每源 10 条、内容互不相同（否则 `_key_of` 去重会让后两个源一条都进不来）。
+# 12 是 3 的整数倍，于是每源配额 4 条，不受取整损失影响。
+AGG_SOURCES = {f"s{i}": [{"instruction": f"第{i}号来源第{j}问租房流程",
+                          "output": f"答{i}-{j}"} for j in range(10)] for i in range(3)}
+
+
+class TestStreamChunkSize:
+    """`StreamReader` 的分块步长：`if len(chunk) >= size`"""
+
+    @pytest.fixture
+    def corpus(self, tmp_path):
+        path = tmp_path / "stream.jsonl"
+        path.write_text("".join(json.dumps(i, ensure_ascii=False) + "\n" for i in ITEMS),
+                        encoding="utf-8")
+        return path
+
+    def test_zero_step_is_rejected_because_it_is_a_step_not_a_count(self, corpus):
+        """承主张 5：步长没有「每块 0 条」的合法读法。实测真实 6902 条数据集，
+        HEAD 把 0 静默当成 1 —— 7 块变 6902 块，端到端 64.0 ms → 103.2 ms（+61%）"""
+        with pytest.raises(DataValidationError, match="chunk_size"):
+            StreamReader(str(corpus), 0)
+
+    @pytest.mark.parametrize("size", [-1, -8])
+    def test_negative_step_is_rejected(self, corpus, size):
+        """实测 HEAD：-1 与 0 的产物逐条相同（6902 块 / 6902 条），全程无信号"""
+        with pytest.raises(DataValidationError, match="chunk_size"):
+            StreamReader(str(corpus), size)
+
+    @pytest.mark.parametrize("size", ["2", 1.5, True])
+    def test_non_integer_step_is_rejected(self, corpus, size):
+        """`"2"` 在 HEAD 会走到 `len(chunk) >= "2"`，报裸 TypeError 而不是领域错误"""
+        with pytest.raises(DataValidationError, match="chunk_size"):
+            StreamReader(str(corpus), size)
+
+    def test_smallest_legal_step_is_one(self, corpus):
+        """反向护栏：下界 1 不得把「逐条切」一起拒掉"""
+        assert [len(c) for c in StreamReader(str(corpus), 1).read_chunks()] == [1] * len(ITEMS)
+
+    def test_valid_step_still_slices(self, corpus):
+        assert [len(c) for c in StreamReader(str(corpus), 2).read_chunks()] == [2] * 6
+
+    def test_the_error_arrives_at_construction_not_after_a_full_read(self, tmp_path, corpus):
+        """判参先于花钱的副作用：坏步长在 `__init__` 就报，不是读完一整份才报。
+        实测 HEAD 的 `StreamWriter.__init__` 并不落盘（`open()` 在 `__enter__`），
+        所以可证的是「构造期即拒 + 磁盘无产物」，reader/writer 的先后顺序不可测"""
+        out = tmp_path / "never-written.jsonl"
+        with pytest.raises(DataValidationError, match="chunk_size"):
+            StreamAugmentor(str(corpus), str(out), lambda items: items, chunk_size=0)
+        assert not out.exists()
+
+
+class TestAggregateTargetSize:
+    """`aggregate_weighted` 的 `target_size`：`int(target_size * 权重占比)`"""
+
+    def test_negative_target_is_rejected(self):
+        """实测 HEAD：-1 与 -50 都静默产出 0 条，`aggregated_count` 照报 0，
+        与「三源皆空」同形"""
+        with pytest.raises(DataValidationError, match="target_size"):
+            DataAggregator().aggregate_weighted(AGG_SOURCES, target_size=-1)
+
+    def test_zero_target_is_a_legal_request(self):
+        """0 条 = 「只要总数，不要条目」，`source_counts` 仍如实"""
+        result = DataAggregator().aggregate_weighted(AGG_SOURCES, target_size=0)
+        assert result.aggregated == []
+        assert result.source_counts == {"s0": 10, "s1": 10, "s2": 10}
+
+    @pytest.mark.parametrize("size", ["10", 1.5, True])
+    def test_non_integer_target_names_the_knob(self, size):
+        """HEAD 是裸 TypeError（`can't multiply sequence by non-int of type 'float'`），
+        绕开本模块的错误口径"""
+        with pytest.raises(DataValidationError, match="target_size"):
+            DataAggregator().aggregate_weighted(AGG_SOURCES, target_size=size)
+
+    def test_an_explicit_none_means_the_default(self):
+        """API 的 `AggregateRequest.target_size` 是 `Optional[int] = None`，路由把
+        「未提供」原样透传 → HEAD 在 `int(None * 占比)` 处炸裸 TypeError，
+        即 `POST /api/dataset/aggregate` 走 weighted 又省略这个可选字段就是 500"""
+        with_default = DataAggregator().aggregate_weighted(AGG_SOURCES)
+        via_dispatch = DataAggregator().aggregate(AGG_SOURCES, "weighted", target_size=None)
+        assert len(with_default.aggregated) == len(via_dispatch.aggregated) == 30
+
+    def test_valid_target_still_splits_by_weight(self):
+        """反向护栏：12 条按三等分 → 每源 4 条，判据不得顺手改掉配额算式"""
+        result = DataAggregator().aggregate_weighted(AGG_SOURCES, target_size=12)
+        assert len(result.aggregated) == 12
+
+
+class TestExpanderTopicKnobs:
+    """`DomainExpander` 的三个「生成 N 个」旋钮，全部落到 `candidates[:N]`"""
+
+    def test_negative_num_topics_is_rejected(self):
+        """实测桩后端 20 条候选：-1 → 19 项（`[:-1]` 丢掉末位候选）"""
+        with pytest.raises(DataValidationError, match="num_topics"):
+            DomainExpander(StubTopicBackend()).expand(EXPANDER_CORPUS, num_topics=-1)
+
+    def test_the_model_is_never_asked_for_a_negative_number(self):
+        """判参先于花钱的副作用：实测 HEAD 会把 `生成 -1 个相似的主题` 原样发进
+        提示词（桩后端确实收到 1 次调用）"""
+        backend = StubTopicBackend()
+        with pytest.raises(DataValidationError, match="num_topics"):
+            DomainExpander(backend).expand(EXPANDER_CORPUS, num_topics=-1)
+        assert backend.prompts == []
+
+    @pytest.mark.parametrize("strategy", ["similar", "related", "scenario"])
+    def test_all_three_strategies_share_the_throat(self, strategy):
+        """三条私有路径各写了一次 `[:num_topics]`，判据必须在公共入口收口"""
+        backend = StubTopicBackend()
+        with pytest.raises(DataValidationError, match="num_topics"):
+            DomainExpander(backend).expand(EXPANDER_CORPUS, strategy=strategy, num_topics=-2)
+        assert backend.prompts == []
+
+    def test_zero_topics_is_a_legal_request(self):
+        result = DomainExpander(StubTopicBackend()).expand(EXPANDER_CORPUS, num_topics=0)
+        assert result.expanded_topics == []
+
+    def test_valid_num_topics_still_truncates(self):
+        backend = StubTopicBackend()
+        result = DomainExpander(backend).expand(EXPANDER_CORPUS, num_topics=3)
+        assert len(result.expanded_topics) == 3
+        assert "生成 3 个" in backend.prompts[0]
+
+    def test_batch_expand_knob_is_rejected(self):
+        """实测 HEAD：`topics_per_strategy=-1` 在串行路径给 19 项"""
+        loop = DomainExpander(StubTopicBackend(), max_workers=1)
+        with pytest.raises(DataValidationError, match="topics_per_strategy"):
+            loop.batch_expand(EXPANDER_CORPUS, strategies=["similar"],
+                              topics_per_strategy=-1, use_parallel=False)
+
+    def test_parallel_batch_expand_fails_before_the_pool_opens(self):
+        """实测 HEAD：并行路径 3 个策略各 19 项 = 57 项，坏旋钮被线程池吞掉"""
+        loop = DomainExpander(StubTopicBackend(), max_workers=3)
+        with pytest.raises(DataValidationError, match="topics_per_strategy"):
+            loop.batch_expand(EXPANDER_CORPUS, topics_per_strategy=-1)
+
+    def test_seeds_per_topic_knob_is_rejected(self):
+        """同一个切片家族：`seeds[:num_questions]`，实测 HEAD -1 → 19 条种子"""
+        loop = DomainExpander(StubTopicBackend(), max_workers=1)
+        with pytest.raises(DataValidationError, match="num_questions_per_topic"):
+            loop.generate_seeds_from_topics([{"topic": "押金"}],
+                                           num_questions_per_topic=-1, use_parallel=False)
+
+    def test_seeds_knob_fails_before_the_model_is_called(self):
+        backend = StubTopicBackend()
+        loop = DomainExpander(backend, max_workers=2)
+        with pytest.raises(DataValidationError, match="num_questions_per_topic"):
+            loop.generate_seeds_from_topics(
+                [{"topic": "押金"}, {"topic": "合同"}], num_questions_per_topic=-1)
+        assert backend.prompts == []
+
+
+class TestVectorSearchTopK:
+    """`FAISSDB.search(top_k)`：`k = min(top_k, len(ids))` 后连吃两次末位裁剪"""
+
+    @staticmethod
+    def _four_vectors():
+        return ([np.eye(4, dtype=np.float32)[i] for i in range(4)],
+                [{"i": i} for i in range(4)], [f"id{i}" for i in range(4)])
+
+    @pytest.fixture
+    def db(self, tmp_path):
+        store = FAISSDB(dimension=4, storage_dir=str(tmp_path / "faiss"))
+        vectors, metadata, ids = self._four_vectors()
+        store.add_vectors(vectors, metadata, ids)
+        return store
+
+    def test_negative_top_k_is_rejected(self, db):
+        """实测 4 条向量：-1 → 2 条命中（`argsort(...)[:-1]` 再 `best_pairs[:-1]`），
+        -3 → 0 条。同一个旋钮，两种错法，都没有信号"""
+        with pytest.raises(DataValidationError, match="top_k"):
+            db.search(np.array([1, 0, 0, 0], dtype=np.float32), top_k=-1)
+
+    def test_bad_knob_fails_on_an_empty_database(self, tmp_path):
+        """判参先于 `if not self._ids: return []`，否则坏旋钮被空库掩护掉"""
+        empty = FAISSDB(dimension=4, storage_dir=str(tmp_path / "empty"))
+        with pytest.raises(DataValidationError, match="top_k"):
+            empty.search(np.array([1, 0, 0, 0], dtype=np.float32), top_k=-1)
+
+    @pytest.mark.parametrize("size", ["5", 2.5, True])
+    def test_non_integer_top_k_is_rejected(self, db, size):
+        """HEAD：字符串在 `min()` 处比大小 → 裸 TypeError"""
+        with pytest.raises(DataValidationError, match="top_k"):
+            db.search(np.array([1, 0, 0, 0], dtype=np.float32), top_k=size)
+
+    def test_zero_top_k_returns_no_rows(self, db):
+        assert db.search(np.array([1, 0, 0, 0], dtype=np.float32), top_k=0) == []
+
+    def test_valid_top_k_above_the_count_still_caps(self, db):
+        assert len(db.search(np.array([1, 0, 0, 0], dtype=np.float32), top_k=100)) == 4
 

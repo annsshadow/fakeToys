@@ -12,8 +12,13 @@ import random
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from .exceptions import DataValidationError
+from .validation import require_count
 
 logger = logging.getLogger(__name__)
+
+# 加权采样的默认目标量。只有这一处定义：`aggregate()` 透传 `None`，
+# 由 `aggregate_weighted` 统一兜住，「未提供」与「0 条」由此分得开。
+DEFAULT_TARGET_SIZE = 100
 
 
 @dataclass
@@ -135,17 +140,22 @@ class DataAggregator:
     def aggregate_weighted(self,
                            datasets: Dict[str, List[Dict]],
                            weights: Optional[Dict[str, float]] = None,
-                           target_size: int = 100) -> AggregationResult:
+                           target_size: int = DEFAULT_TARGET_SIZE) -> AggregationResult:
         """加权采样聚合：按权重比例从各源抽取数据
 
         Args:
             datasets: 源名 -> 数据列表
             weights: 源名 -> 权重（缺省各源等权）
-            target_size: 目标采样总量
+            target_size: 目标采样总量，不小于 0 的整数（判据见 `require_count`）。
+                `None` 是调用方「未提供」的表示法（API 的 `Optional[int]` 字段就
+                会原样传下来），按默认值读——它和 `0`（「一条都不要」）是两种状态。
 
         Returns:
             聚合结果（按源顺序拼接，内部已按 key 去重）
         """
+        target_size = require_count("target_size", target_size)
+        if target_size is None:
+            target_size = DEFAULT_TARGET_SIZE
         weights = weights or {}
         total_weight = sum(max(0.0, weights.get(name, 1.0))
                            for name in datasets)
@@ -250,7 +260,7 @@ class DataAggregator:
             return self.aggregate_weighted(
                 datasets,
                 weights=kwargs.get("weights"),
-                target_size=kwargs.get("target_size", 100),
+                target_size=kwargs.get("target_size"),
             )
         if strategy == "consistent":
             return self.aggregate_consistent(datasets)

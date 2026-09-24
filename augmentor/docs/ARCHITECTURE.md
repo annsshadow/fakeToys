@@ -572,26 +572,42 @@ RequestTraceMiddleware → RateLimitMiddleware → RequestLoggingMiddleware → 
 | 配置缺失 | 使用 dataclass 默认值；环境变量缺失替换为空字符串 |
 | 配置文件损坏 | 抛出异常，不吞掉 |
 | API 层 | 转换为 `HTTPException`，`404` / `400` / `500` 语义明确 |
-| 计数 / 分页 / 窗口 / 保留数旋钮越界 | 在 SDK 入参处一次判掉（`validation.require_count`），抛 `DataValidationError`；CLI 变退出码 1，API 变 400 |
+| 计数 / 分页 / 窗口 / 步长 / 配额 / 保留数旋钮越界 | 在 SDK 入参处一次判掉（`validation.require_count`），抛 `DataValidationError`；CLI 变退出码 1，API 变 400 |
 | 断点文件损坏 | 记录 ERROR 并返回 `None`，退化为从头开始 |
 
 「取前 N 条」这一类旋钮（`limit` / `offset` / `top_k` / `preview_size` / `batch_size`
-/ `size` / `n` / `diversity_sample_size` / `max_backups`）在实现里都落到下标切片或
-`range()` 步长，而切片对越界值不报错、只换语义：`[:top_k]` 在 `top_k` 为负时读成
-「丢掉末尾几个」，`[-limit:]` 在 `limit` 为 0 时读成「全要」。所以判据集中在
+/ `size` / `n` / `diversity_sample_size` / `max_backups` / `chunk_size` / `target_size`
+/ `num_topics` / `topics_per_strategy` / `num_questions_per_topic`）在实现里都落到下标
+切片或算术，而切片对越界值不报错、只换语义：`[:top_k]` 在 `top_k` 为负时读成「丢掉末尾
+几个」，`[-limit:]` 在 `limit` 为 0 时读成「全要」，`int(target_size * 占比)` 在
+`target_size` 为负时静默交出 0 条。所以判据集中在
 `augmentor/validation.py:require_count` 一处，各调用点不再各自校验（API 侧也因此不需要
 `ge=` 约束，见 `api/routes/dataset_tools.py` 的 `SearchRequest` 与 `SampleRequest`）。
-四条边界值得记住：
+五条边界值得记住：
 **0 是合法值**（「一条都不要」，与「没传参数」`None` 必须区分开，因此回落一律写
-`x if x is None else default`），**判参先于数据短路**（空输入配坏参数仍要报参数错，
-否则坏参数会被空结果掩护掉），**判参先于副作用**（`backup.clean_old_backups` 的守卫排在
-`DatasetBackup(backup_dir)` 之前，因为构造本身会 mkdir 并写一份 `index.json`），
+`x if x is None else default`；`aggregator.aggregate_weighted` 的 `None` 按默认
+`DEFAULT_TARGET_SIZE` 读，因为 API 的 `Optional[int]` 字段会把「没填」原样传成 `None`），
+**判参先于数据短路**（空输入配坏参数仍要报参数错，否则坏参数会被空结果掩护掉），
+**判参先于副作用**（`backup.clean_old_backups` 的守卫排在 `DatasetBackup(backup_dir)`
+之前，因为构造本身会 mkdir 并写一份 `index.json`；`streaming` 的守卫排在 `StreamReader`
+构造的第一行，所以坏步长在 `StreamAugmentor.__init__` 就报，不必等一份数据读完——
+注意实测 `StreamWriter.__init__` 并不落盘（`open()` 发生在 `__enter__`），
+「先建 reader 才不留空产物」不成立，可证的只有「构造期即拒且磁盘无产物」），
+**判参先于花钱的副作用**（`expander` 的守卫排在模型调用之前——否则 `num_topics=-1`
+会把「生成 -1 个」这种自相矛盾的提示词真发出去），
 **0 在不可逆语义下不放行**（`max_backups=0` 与手滑想打的 10 无从分辨，而后果是删光全部
-备份，所以那类旋钮的下界是 1）。取 `minimum=1` 的站点共四处，各自的理由都是「窗口没有
+备份，所以那类旋钮的下界是 1）。取 `minimum=1` 的站点共五处，各自的理由都是「窗口没有
 0 条这个合法读法」：`ActiveLearningLoop.batch_size`（每轮必须选出样本）、
 `cleaner.clean_batch_optimized.batch_size`（`range()` 的步长）、
 `quality.QualityScorer.diversity_sample_size`（空参照会被判成「完全多样」）、
-`backup.clean_old_backups.max_backups`。其余站点下界是 0。
+`backup.clean_old_backups.max_backups`、`streaming.StreamReader.chunk_size`（分块步长；
+实测 HEAD 把 `0` 与 `-1` 都静默读成 1，真实 6902 条从 7 块变 6902 块，端到端慢 61%）。
+其余站点下界是 0。
+
+向量检索的 `top_k` 是两个后端共享的旋钮，HEAD 却给出两种不同的错法：FAISS 兜底路径
+`min(-1, n)` 之后 `[:k]` 连吃两次末位裁剪（实测 4 条向量要 `-1` 拿到 2 条），真 chromadb
+对 `0` 与负数抛库内裸 `TypeError`。判据在两侧各自接线，且 chromadb 自己把 `0` 读成
+「0 条结果」而不是交给库去报错——同一个旋钮在两个后端必须同答。
 
 
 ## 7. 测试架构

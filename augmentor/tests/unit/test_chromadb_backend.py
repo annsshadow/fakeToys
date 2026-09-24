@@ -15,6 +15,7 @@ import types
 import numpy as np
 import pytest
 
+from augmentor.exceptions import DataValidationError
 from augmentor.vector.chromadb import ChromaDB, sanitize_metadata
 
 
@@ -25,6 +26,7 @@ class _FakeCollection:
         self.name = name
         self.metadata = metadata
         self.store = {}
+        self.query_calls = 0
 
     def count(self):
         return len(self.store)
@@ -41,6 +43,7 @@ class _FakeCollection:
             self.store.pop(vid, None)
 
     def query(self, query_embeddings, n_results, include):
+        self.query_calls += 1
         query = query_embeddings[0]
         scored = []
         for vid, (embedding, meta) in self.store.items():
@@ -232,6 +235,38 @@ class TestSearch:
         db = self._populated_db(tmp_path)
         results = db.search(np.array([[1.0, 0.0, 0.0, 0.0]]), top_k=1)
         assert results[0]["id"] == "a"
+
+    def test_negative_top_k_is_rejected(self, tmp_path, fake_chromadb):
+        """`top_k` 是计数旋钮：`min(top_k, count)` 之后交给 `[:n_results]`，
+        真 chromadb 对 -1 抛库内裸 TypeError（cannot be negative, or zero），
+        与 FAISS 后端「静默少给几条」是同一个旋钮的两种错法"""
+        db = self._populated_db(tmp_path)
+        with pytest.raises(DataValidationError, match="top_k"):
+            db.search(np.array([1.0, 0.0, 0.0, 0.0]), top_k=-1)
+
+    @pytest.mark.parametrize("size", ["2", 2.5, True])
+    def test_non_integer_top_k_is_rejected(self, tmp_path, fake_chromadb, size):
+        db = self._populated_db(tmp_path)
+        with pytest.raises(DataValidationError, match="top_k"):
+            db.search(np.array([1.0, 0.0, 0.0, 0.0]), top_k=size)
+
+    def test_bad_knob_fails_on_an_empty_collection(self, tmp_path, fake_chromadb):
+        """判参先于 `if count() == 0: return []`，否则空集合会把坏旋钮掩护成空结果"""
+        with pytest.raises(DataValidationError, match="top_k"):
+            make_db(tmp_path).search(np.array([1.0, 0.0, 0.0, 0.0]), top_k=-1)
+
+    def test_zero_top_k_never_reaches_the_library(self, tmp_path, fake_chromadb):
+        """0 条是合法请求，且必须与「没传参数」分得开：实测真 chromadb 对
+        `n_results=0` 抛裸 TypeError，所以 SDK 得自己把 0 读成 0 条"""
+        db = self._populated_db(tmp_path)
+        assert db.search(np.array([1.0, 0.0, 0.0, 0.0]), top_k=0) == []
+        assert db._collection.query_calls == 0
+
+    def test_valid_top_k_still_queries_once(self, tmp_path, fake_chromadb):
+        """反向护栏：判据不得顺手把正常路径的查询一起挡掉"""
+        db = self._populated_db(tmp_path)
+        assert len(db.search(np.array([1.0, 0.0, 0.0, 0.0]), top_k=2)) == 2
+        assert db._collection.query_calls == 1
 
 
 class TestDeleteAndClear:
