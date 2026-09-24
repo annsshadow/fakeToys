@@ -234,6 +234,7 @@
           <button class="btn-sm" @click="pcU14">政务钉钉/安装日志/重打包</button>
           <button class="btn-sm" @click="pcU15">安卓打包/发布/WeLink同步</button>
           <button class="btn-sm" @click="pcU16">注册应用/输出选择/调用器改</button>
+          <button class="btn-sm" @click="pcU17">部署资源/企微注册/Agent文件</button>
           <div v-if="pcU4Text" class="app-meta">{{ pcU4Text }}</div>
         </div>
         <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
@@ -1512,6 +1513,18 @@ async function pcU16() {
     const invFlag = prompt('调用器 flag（可空跳过）:', '') || ''
     if (invFlag.trim()) await api.put(`/api/program_center/invoke/${encodeURIComponent(invFlag)}/file`, { text: '控制台更新' })
     toast.success('注册/输出/调用器已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev433：程序中心 部署服务器资源(POST INSERT x_program_deploy_resource)·企业微信注册(POST INSERT x_program_callback_registration)·Agent按flag部署文件(PUT INSERT x_program_deploy_resource) 三条写端点，distinct 路由/动作
+async function pcU17() {
+  try {
+    await api.post('/api/program_center/deploy/server/resource', { resourceName: '控制台资源', resourceType: 'manual', path: '/deploy/manual' })
+    await api.post('/api/program_center/qiyeweixin', {})
+    const flag = prompt('Agent flag（可空跳过部署文件）:', '') || ''
+    if (flag.trim()) await api.put(`/api/program_center/agent/${encodeURIComponent(flag)}/file`, { resourceName: 'agent-file', resourceType: 'deploy', path: '/agent/file' })
+    toast.success('部署/注册已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
   }
