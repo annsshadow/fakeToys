@@ -21,6 +21,18 @@
         <button class="btn-primary" @click="loadQueryViewExtras">计数/导入/检索</button>
         <button class="btn-primary" @click="loadQueryViewCursors">表行游标/视图</button>
         <button class="btn-primary" @click="loadQueryViewDeep">深度读矩阵</button>
+        <button class="btn-primary" @click="qvWrite('rowInsert')">插入行</button>
+        <button class="btn-primary" @click="qvWrite('rowOneInsert')">插入单行</button>
+        <button class="btn-primary" @click="qvWrite('rowDelete')">删行</button>
+        <button class="btn-primary" @click="qvWrite('rowDeleteAll')">清空表</button>
+        <button class="btn-primary" @click="qvWrite('rowPartUpdate')">部分更新行</button>
+        <button class="btn-primary" @click="qvWrite('viewExecute')">执行视图</button>
+        <button class="btn-primary" @click="qvWrite('viewBundle')">视图打包</button>
+        <button class="btn-primary" @click="qvWrite('viewExcel')">视图导Excel</button>
+        <button class="btn-primary" @click="qvWrite('statExecute')">执行统计</button>
+        <button class="btn-primary" @click="qvWrite('importExecute')">执行导入模型</button>
+        <button class="btn-primary" @click="qvWrite('importRecordDelete')">删导入记录</button>
+        <button class="btn-primary" @click="qvWrite('moreLikeThis')">相似检索</button>
       </div>
       <div v-if="queryListText" class="qv-note">{{ queryListText }}</div>
       <div v-if="tableText" class="qv-note">{{ tableText }}</div>
@@ -74,8 +86,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { ref } from 'vue'
-import { toast } from '../utils/toast'
-
+import { confirmMsg, toast } from '../utils/toast'
 type ViewItem = { id?: string; flag?: string; name?: string; viewName?: string; title?: string }
 
 const keyword = ref('')
@@ -343,6 +354,56 @@ async function loadQueryViewDeep() {
     tableText.value = `queryview 深度读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
     toast.error('加载 queryview 深度读失败: ' + (e?.message ?? ''))
+  }
+}
+// rev332：queryview 表数据行/视图执行/统计/导入模型 真实写端点（用户触发，shape 已核 query crate handler；全字面量路径）
+async function qvWrite(op: string) {
+  try {
+    if (op === 'rowInsert') {
+      const tf = prompt('数据表 flag:', '') || ''
+      await api.post(`/api/queryview/table/row/insert/${encodeURIComponent(tf)}`, { data: {} })
+    } else if (op === 'rowOneInsert') {
+      const tf = prompt('数据表 flag:', '') || ''
+      await api.post(`/api/queryview/table/row/one/insert/${encodeURIComponent(tf)}`, { data: {} })
+    } else if (op === 'rowDelete') {
+      const tf = prompt('数据表 flag:', '') || ''
+      const rid = prompt('行 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该数据行？'))) return
+      await api.delete(`/api/queryview/table/row/delete/${encodeURIComponent(tf)}/${encodeURIComponent(rid)}`)
+    } else if (op === 'rowDeleteAll') {
+      const tf = prompt('数据表 flag:', '') || ''
+      if (!(await confirmMsg('确定清空该表全部数据行？'))) return
+      await api.post(`/api/queryview/table/row/delete/all/${encodeURIComponent(tf)}`, {})
+    } else if (op === 'rowPartUpdate') {
+      const tf = prompt('数据表 flag:', '') || ''
+      const rid = prompt('行 ID:', '') || ''
+      await api.post(`/api/queryview/table/row/part/update/${encodeURIComponent(tf)}/${encodeURIComponent(rid)}`, { data: {} })
+    } else if (op === 'viewExecute') {
+      const id = prompt('视图 ID:', '') || ''
+      await api.put(`/api/queryview/view/${encodeURIComponent(id)}/execute`, {})
+    } else if (op === 'viewBundle') {
+      const id = prompt('视图 ID:', '') || ''
+      await api.put(`/api/queryview/view/${encodeURIComponent(id)}/bundle`, {})
+    } else if (op === 'viewExcel') {
+      const id = prompt('视图 ID:', '') || ''
+      await api.put(`/api/queryview/view/${encodeURIComponent(id)}/excel`, {})
+    } else if (op === 'statExecute') {
+      const id = prompt('统计 ID:', '') || ''
+      await api.put(`/api/queryview/stat/${encodeURIComponent(id)}/execute`, {})
+    } else if (op === 'importExecute') {
+      const id = prompt('导入模型 ID:', '') || ''
+      await api.post(`/api/queryview/importmodel/${encodeURIComponent(id)}/execute`, {})
+    } else if (op === 'importRecordDelete') {
+      const rid = prompt('导入记录 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该导入记录？'))) return
+      await api.delete(`/api/queryview/importmodel/record/delete/${encodeURIComponent(rid)}`)
+    } else {
+      const kw = prompt('相似检索关键词:', '') || ''
+      await api.post('/api/queryview/morelikethis', { keyword: kw })
+    }
+    toast.success('queryview 操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
   }
 }
 async function loadViews() {
