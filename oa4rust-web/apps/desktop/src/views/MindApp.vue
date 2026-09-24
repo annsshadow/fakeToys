@@ -8,6 +8,14 @@
       <div class="header-actions">
         <button class="btn" :disabled="!currentFolder" @click="createMind">新建导图</button>
         <button class="btn secondary" @click="createMindRest">新建导图(REST)</button>
+        <button class="btn secondary" @click="mindWrite('config')">存配置</button>
+        <button class="btn secondary" @click="mindWrite('folderSave')">存文件夹</button>
+        <button class="btn secondary" @click="mindWrite('folderMove')">移动文件夹</button>
+        <button class="btn secondary" @click="mindWrite('folderForce')">强删文件夹</button>
+        <button class="btn secondary" @click="mindWrite('recycle')">移入回收站</button>
+        <button class="btn secondary" @click="mindWrite('destroyMind')">彻底删导图</button>
+        <button class="btn secondary" @click="mindWrite('destroyRecycle')">清回收站项</button>
+        <button class="btn secondary" @click="mindWrite('icon')">设图标</button>
         <button class="btn secondary" @click="createMindFolder">新建目录</button>
         <button class="btn secondary" :disabled="loadingFolder" @click="loadFolders">刷新目录</button>
         <button class="btn secondary" @click="loadAllMinds">全部导图</button>
@@ -99,7 +107,7 @@
 <script setup lang="ts">
 import { api, useSession } from '@oa4rust/sdk'
 import { computed, nextTick, ref } from 'vue'
-import { toast } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
 type Folder = { id: string; name?: string; title?: string; parentId?: string; children?: Folder[] }
 type MindItem = {
@@ -315,6 +323,36 @@ async function shareMindToggle(item: MindItem, share: boolean) {
     }
   } catch (e: any) {
     toast.error('分享操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev341：思维导图 配置/文件夹保存移动强删/回收站删/彻底删/图标 真实写端点（用户触发，shape 已核；避 3 轨镜像 CUD）
+async function mindWrite(op: string) {
+  const id = prompt('目标 ID（导图/文件夹）:', '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (op === 'config') await api.post('/api/mind/assemble/control/config/update', {})
+    else if (op === 'folderSave') {
+      const name = prompt('文件夹名称:', '') || ''
+      await api.post('/api/mind/assemble/control/folder/save', { name })
+    } else if (op === 'folderMove') await api.put(`/api/mind/assemble/control/folder/move/${e}`, {})
+    else if (op === 'folderForce') {
+      if (!(await confirmMsg('确定强制删除该文件夹？'))) return
+      await api.delete(`/api/mind/assemble/control/folder/${e}/force`)
+    } else if (op === 'recycle') {
+      if (!(await confirmMsg('确定移入回收站？'))) return
+      await api.delete(`/api/mind/assemble/control/mind/recycle/${e}`)
+    } else if (op === 'destroyMind') {
+      if (!(await confirmMsg('确定彻底删除该导图？'))) return
+      await api.delete(`/api/mind/assemble/control/mind/${e}/destorymind`)
+    } else if (op === 'destroyRecycle') {
+      if (!(await confirmMsg('确定清空回收站中该项？'))) return
+      await api.delete(`/api/mind/assemble/control/mind/${e}/destoryrecycle`)
+    } else {
+      await api.post(`/api/mind/assemble/control/mind/${e}/icon/size/200`, {})
+    }
+    toast.success('导图操作已提交')
+  } catch (err: any) {
+    toast.error('导图操作失败: ' + (err?.message ?? ''))
   }
 }
 
