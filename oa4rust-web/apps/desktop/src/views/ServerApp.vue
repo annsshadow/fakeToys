@@ -12,6 +12,12 @@
       <button class="srv-meta-btn" @click="loadGeneralMeta3">密级对象/主体/内网</button>
       <button class="srv-meta-btn" @click="loadBaseMeta">Echo/缓存详情/OpenAPI</button>
       <button class="srv-meta-btn" @click="loadBaseMeta2">根Echo/根缓存/根OpenAPI</button>
+      <button class="srv-meta-btn" @click="serverConsoleOps('cacheClear')">清理缓存(按类型)</button>
+      <button class="srv-meta-btn" @click="serverConsoleOps('cmdExecute')">控制台命令</button>
+      <button class="srv-meta-btn" @click="serverConsoleOps('sendMessage')">广播消息</button>
+      <button class="srv-meta-btn" @click="serverConsoleOps('deploySave')">保存部署</button>
+      <button class="srv-meta-btn" @click="serverConsoleOps('deployDelete')">删除部署</button>
+      <button class="srv-meta-btn" @click="serverConsoleOps('sysConfig')">系统配置读</button>
       <div v-if="sysStatusText" class="srv-meta-note">{{ sysStatusText }}</div>
     </div>
     <div class="content-panel glass-card">
@@ -194,6 +200,20 @@ async function stopServer() {
 }
 
 loadLicense()
+// rev389：控制台/服务器 缓存清理(按类型)/命令执行/发消息 + 部署保存/删除(按id) + 系统配置读 真实路由（clear_cache Path<String>、execute_command{command}、send_message{message}、server_deploy_save/delete 已核，用户触发；规避守卫禁的 cache/commonscript·config/flush）
+async function serverConsoleOps(op: string) {
+  try {
+    if (op === 'cacheClear') { const t = encodeURIComponent(prompt('缓存类型:', '') || ''); if (!(await confirmMsg('确定清理该类型缓存？'))) return; await api.post(`/api/console/cache/clear/${t}`, {}) }
+    else if (op === 'cmdExecute') { const c = prompt('命令:', '') || ''; if (!c) return; await api.post('/api/console/command/execute', { command: c }) }
+    else if (op === 'sendMessage') { const msg = prompt('广播消息:', '') || ''; if (!msg) return; await api.post('/api/console/send/message', { message: msg }) }
+    else if (op === 'deploySave') { const id = encodeURIComponent(prompt('部署 ID:', '') || ''); if (!id) return; await api.put(`/api/server/deploy/save/${id}`, {}) }
+    else if (op === 'deployDelete') { const id = encodeURIComponent(prompt('部署 ID:', '') || ''); if (!id) return; if (!(await confirmMsg('确定删除该部署？'))) return; await api.post(`/api/server/deploy/delete/${id}`, {}) }
+    else { const r: any = await api.get('/api/config/system/config'); execOutput.value = JSON.stringify(r?.data ?? {}, null, 2); return }
+    execOutput.value = '控制台操作已提交'
+  } catch (e: any) {
+    execError.value = '操作失败: ' + (e?.message ?? '')
+  }
+}
 
 const api_cache_co_205_data = ref<any[]>([])
 const api_cache_detail_data = ref<any[]>([])
