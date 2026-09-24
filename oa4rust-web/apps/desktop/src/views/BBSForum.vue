@@ -889,15 +889,18 @@ async function loadBbsControl() {
     const forumsRes = await s(api.get('/api/bbs/forum/view/all'))
     const forums = Array.isArray((forumsRes as any)?.data) ? (forumsRes as any).data : []
     const fid = forums[0] ? String(forums[0].id ?? '0') : '0'
-    const [byForum, config, userInfo] = await Promise.all([
+    const [byForum, config, userInfo, uuid] = await Promise.all([
       s(api.get(`/api/bbs/section/viewforum/${encodeURIComponent(fid)}`)),
       s(api.get('/api/bbs/assemble/control/config')),
       s(api.get('/api/bbs/assemble/control/user/info')),
+      // rev440：BBS 随机 UUID（uuid_generate 无参无 pool 纯生成，字面量路由匹配）
+      s(api.get('/api/bbs/assemble/control/uuid/random')),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     const hasCfg = (config as any)?.data ? '有' : '无'
     const hasUser = (userInfo as any)?.data ? '有' : '无'
-    bbsControlText.value = `版块下分区 ${n(byForum)} · 控制配置 ${hasCfg} · 用户信息 ${hasUser}`
+    const hasUuid = (uuid as any)?.data?.uuid ? '有' : '无'
+    bbsControlText.value = `版块下分区 ${n(byForum)} · 控制配置 ${hasCfg} · 用户信息 ${hasUser} · UUID ${hasUuid}`
   } catch (e: any) {
     toast.error('加载控制台/检索失败: ' + (e?.message ?? ''))
   }
