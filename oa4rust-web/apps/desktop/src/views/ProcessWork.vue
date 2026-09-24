@@ -815,6 +815,11 @@ async function loadSurfaceReadB(): Promise<void> {
       s(api.post(`/api/processplatform/assemble/surface/readcompleted/v2/list/create/prev/${id}/${count}`, {})),
       s(api.post(`/api/processplatform/assemble/surface/readcompleted/v2/list/${id}/next/${count}`, {})),
       s(api.post(`/api/processplatform/assemble/surface/readcompleted/v2/list/${id}/prev/${count}`, {})),
+      // rev453：待阅 v2 review 游标列表 4 条真实读（review_v2_list_* Path<(id,i64)> 查 PP_C_REVIEW，POST 空体）
+      s(api.post(`/api/processplatform/assemble/surface/review/v2/list/create/${id}/next/${count}`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/review/v2/list/create/${id}/prev/${count}`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/review/v2/list/${id}/next/${count}`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/review/v2/list/${id}/prev/${count}`, {})),
       s(api.get(`/api/processplatform/assemble/surface/task/count/${credential}`)),
       s(api.get(`/api/processplatform/assemble/surface/task/list/date/date/hour/hour/exclude/draft/manage/${isExcludeDraft}`)),
       s(api.get(`/api/processplatform/assemble/surface/task/list/date/${date}/hour/${hour}/exclude/draft/${isExcludeDraft}/manage`)),
