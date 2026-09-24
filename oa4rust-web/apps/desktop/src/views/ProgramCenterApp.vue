@@ -235,6 +235,7 @@
           <button class="btn-sm" @click="pcU15">安卓打包/发布/WeLink同步</button>
           <button class="btn-sm" @click="pcU16">注册应用/输出选择/调用器改</button>
           <button class="btn-sm" @click="pcU17">部署资源/企微注册/Agent文件</button>
+          <button class="btn-sm" @click="pcU18">触发调度/公众号菜单核对</button>
           <div v-if="pcU4Text" class="app-meta">{{ pcU4Text }}</div>
         </div>
         <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
@@ -1525,6 +1526,18 @@ async function pcU17() {
     const flag = prompt('Agent flag（可空跳过部署文件）:', '') || ''
     if (flag.trim()) await api.put(`/api/program_center/agent/${encodeURIComponent(flag)}/file`, { resourceName: 'agent-file', resourceType: 'deploy', path: '/agent/file' })
     toast.success('部署/注册已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev435：程序中心 触发调度(POST schedule/fire，读 x_program_schedule 后落 schedule_log)·公众号菜单核对(POST mpweixin/check，COUNT x_program_mpweixin_menu 本地无外部) 两条 POST 写/读端点，distinct（GET 版为不同 handler）
+async function pcU18() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const sid = prompt('调度 ID（可空=取最新）:', '') || ''
+    await api.post('/api/program_center/schedule/schedule/fire', sid.trim() ? { id: sid } : {})
+    const r: any = await s(api.post('/api/program_center/mpweixin/check', {}))
+    toast.success(`调度已触发 · 公众号菜单 ${(r as any)?.data?.menus ?? '—'}`)
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
   }

@@ -38,6 +38,7 @@
             <button class="btn-act2" @click.stop="showPerms(item)">权限</button>
             <button class="btn-act2" @click.stop="writePerms(item)">设权限</button>
             <button class="btn-act2" @click.stop="createFile(item)">建文件</button>
+            <button class="btn-act2" @click.stop="loadIcon(item)">图标</button>
             <button class="btn-del" @click.stop="deleteApp(item)">删除</button>
           </div>
         </div>
@@ -175,6 +176,15 @@ async function deleteApp(item: any) {
 }
 // rev422：设置应用权限 POST /api/appinfo/{id}/permission（u2_require_admin，写 x_cms_appinfo 权限位；管理员用真实成员标识提交，查不到应用优雅报错）
 // rev432：新建 CMS 文件 POST /api/file（body {appId,name}，INSERT x_cms_file；用真实应用 id+文件名触发）
+// rev435：按尺寸读应用图标 POST /api/appinfo/{id}/icon/size/{size}（读 x_cms_appinfo icon by id；用真实应用 id 触发）
+async function loadIcon(item: any) {
+  try {
+    const r: any = await api.post(`/api/appinfo/${encodeURIComponent(item.id)}/icon/size/64`, {})
+    toast.success(`图标：${(r as any)?.data?.icon ? '有' : '无'}`)
+  } catch (e: any) {
+    toast.error('读取图标失败: ' + (e?.message ?? ''))
+  }
+}
 async function createFile(item: any) {
   const name = prompt('文件名:', '') || ''
   if (!name.trim()) return
