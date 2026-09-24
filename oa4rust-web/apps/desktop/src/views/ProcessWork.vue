@@ -384,6 +384,12 @@
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('readV2Count')">待阅v2计数</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('attBatchDelete')">附件批量删</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('attBatchUpdate')">附件批量改</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps11('appListKey')">应用按key清单</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps11('appListTerminal')">应用按终端清单</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps11('routeList')">路由清单</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps11('readCompletedV2Count')">已阅v2计数</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps11('reviewCountApp')">摘要按应用计数</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps11('taskCompletedV2Count')">已办v2计数</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdProcessing')">任务处理(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdReplace')">任务替换(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdPress')">任务催办(位置态)</button>
@@ -1595,6 +1601,24 @@ async function surfaceOps10(op: string): Promise<void> {
     else if (op === 'readV2Count') await api.post('/api/processplatform/assemble/surface/read/v2/count', {})
     else if (op === 'attBatchDelete') { if (!(await confirmMsg('确定批量删除附件？'))) return; await api.post('/api/processplatform/assemble/surface/attachment/batch/delete/manage', {}) }
     else await api.post('/api/processplatform/assemble/surface/attachment/batch/update/manage', {})
+    toast.success('流程表面操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev408：流程表面 应用按key/终端清单(inline 硬编码 Path 无 trap)·路由清单(PUT pool-only WHERE1=1)·已阅/已办/摘要按应用 v2 计数(POST pool-only COUNT WHERE1=1) 真实路由（均 pool-only 或 inline 固定 Path，已核 handler 源码不取动态 Path，规避 job/v2/job/projection·review/v2/search GET 取 Path 但路由无参的 trap500；用户触发）
+async function surfaceOps11(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    if (op === 'appListKey') await api.get('/api/processplatform/assemble/surface/application/list/key/key')
+    else if (op === 'appListTerminal') await api.get('/api/processplatform/assemble/surface/application/list/terminal/terminal')
+    else if (op === 'routeList') await api.put('/api/processplatform/assemble/surface/route/list', {})
+    else if (op === 'readCompletedV2Count') await api.post('/api/processplatform/assemble/surface/readcompleted/v2/count', {})
+    else if (op === 'reviewCountApp') await api.post('/api/processplatform/assemble/surface/review/count/application', {})
+    else await api.post('/api/processplatform/assemble/surface/taskcompleted/v2/count', {})
     toast.success('流程表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
