@@ -8,6 +8,7 @@
 
 import re
 import logging
+import threading
 from typing import List, Dict, Optional, Any, Callable, Set
 from dataclasses import dataclass, field
 from collections import defaultdict
@@ -62,41 +63,69 @@ class EnhancedSearcher:
     
     def __init__(self, items: List[Dict] = None):
         """初始化搜索器
-        
+
         Args:
             items: 数据列表
         """
         self._items = items or []
         self._indexes: Dict[str, Dict[str, List[int]]] = {}
-        self._build_indexes()
-    
+        # 倒排索引**按需构建**：五种方法里只有 exact 读它，而建一份要扫一遍全文并
+        # 常驻 6 MB（真实 6902 条实测 64.5 ms）。`search_dataset()` 每次调用都新建
+        # 一个搜索器，于是默认的 contains 查询也要先付这 64.5 ms —— 实测端到端
+        # 80.85 ms 里只有 7.5 ms 是查询本身。
+        self._index_lock = threading.Lock()
+        self._index_ready = False
+
     def load(self, items: List[Dict]):
         """加载数据
-        
+
         Args:
             items: 数据列表
         """
         self._items = items
-        self._build_indexes()
-    
+        # 换数据 = 作废索引（缓存键必须覆盖「值会变的东西」，否则新数据会被旧索引
+        # 回答成「查无此项」）
+        with self._index_lock:
+            self._index_ready = False
+
+    def _ensure_indexes(self) -> None:
+        """需要索引时才构建，且**只构建一次**
+
+        锁内二次检查：多个线程同时发来第一条 exact 查询时，只有一个构建，其余等待
+        后直接复用。不加这层的话，先发布空字典再填内容的写法会让别的线程读到半成品
+        索引并把结果误报成「无匹配」。
+        """
+        if self._index_ready:
+            return
+        with self._index_lock:
+            if not self._index_ready:
+                self._build_indexes()
+
     def _build_indexes(self):
-        """构建索引"""
-        self._indexes.clear()
-        
+        """构建索引
+
+        建在局部字典上、最后整体发布，配合 `_index_ready` 才是上面那句「不会有人
+        读到半成品」成立的前提。
+        """
+        indexes: Dict[str, Dict[str, List[int]]] = {}
+
         for idx, item in enumerate(self._items):
             for field, value in item.items():
                 if isinstance(value, str):
-                    if field not in self._indexes:
-                        self._indexes[field] = defaultdict(list)
-                    
+                    if field not in indexes:
+                        indexes[field] = defaultdict(list)
+
                     # 精确值索引
-                    self._indexes[field][value.lower()].append(idx)
-                    
+                    indexes[field][value.lower()].append(idx)
+
                     # 分词索引
                     words = self._tokenize(value)
                     for word in words:
-                        self._indexes[field][word.lower()].append(idx)
-    
+                        indexes[field][word.lower()].append(idx)
+
+        self._indexes = indexes
+        self._index_ready = True
+
     def _tokenize(self, text: str) -> List[str]:
         """分词
         
@@ -237,7 +266,8 @@ class EnhancedSearcher:
             匹配结果 {索引: 分数}
         """
         matches = {}
-        
+        self._ensure_indexes()
+
         if field in self._indexes:
             # 精确匹配
             exact_matches = self._indexes[field].get(query.lower(), [])
@@ -419,6 +449,7 @@ class EnhancedSearcher:
         Returns:
             统计信息
         """
+        self._ensure_indexes()
         return {
             "total_items": len(self._items),
             "indexed_fields": list(self._indexes.keys()),

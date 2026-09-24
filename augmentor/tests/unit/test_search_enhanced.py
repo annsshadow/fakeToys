@@ -336,9 +336,14 @@ class TestSearchMethodsExtended:
         assert result.items[0]["category"] == "rent"
 
     def test_build_indexes_non_string(self):
-        """非字符串值不应被索引"""
+        """非字符串值不应被索引
+
+        `_ensure_indexes()` 是索引的按需入口（L13 前构造函数会无条件建好），
+        所以这里显式触发一次再断言——要验的始终是「哪些值进得了索引」。
+        """
         items = [{"count": 123, "name": "test"}]
         searcher = EnhancedSearcher(items)
+        searcher._ensure_indexes()
         
         assert "name" in searcher._indexes
         assert "count" not in searcher._indexes
@@ -358,3 +363,103 @@ class TestSearchMethodsExtended:
         
         searcher.load([{"instruction": "test"}])
         assert searcher.get_statistics()["total_items"] == 1
+
+
+class TestIndexBuiltOnDemand:
+    """倒排索引只在真需要时建 —— 五种方法里只有 exact 读它
+
+    实测：真实 6902 条数据建一份索引要 64.5 ms、常驻 6.17 MB，而 `search_dataset()`
+    （CLI 与 `/api/dataset/search` 的唯一入口）**每次调用都新建一个搜索器**，于是
+    默认的 contains 查询也要先付这 64.5 ms：端到端 80.85 ms 里查询本身只占 7.5 ms。
+    预言机用「构建次数」而不是计时——墙钟在这台机器上不可复现（L12 已坐实）。
+    """
+
+    @pytest.fixture
+    def build_counter(self, monkeypatch):
+        """返回「每次 `_build_indexes` 记录一条条目数」的列表（装在类上，构造期也计得到）"""
+        calls: list = []
+        real = EnhancedSearcher._build_indexes
+
+        def counting(self):
+            calls.append(len(self._items))
+            real(self)
+
+        monkeypatch.setattr(EnhancedSearcher, "_build_indexes", counting)
+        return calls
+
+    def test_construction_does_not_build(self, sample_dataset, build_counter):
+        """光构造搜索器不该动索引：缺陷态在这里就红（构造即建）"""
+        EnhancedSearcher(sample_dataset)
+
+        assert build_counter == []
+
+    @pytest.mark.parametrize("method", ["contains", "ngram", "fuzzy", "regex"])
+    def test_index_free_methods_never_build(self, sample_dataset, build_counter, method):
+        """不读索引的四种方法，一条查询都不该触发构建"""
+        searcher = EnhancedSearcher(sample_dataset)
+        result = searcher.search("租房", method=method, limit=3)
+
+        assert build_counter == [], f"{method} 查询白建了 {len(build_counter)} 次索引"
+        assert result.total_matches >= 0
+
+    def test_search_dataset_entry_point_skips_index_for_default_method(self, sample_dataset, build_counter):
+        """真实入口 `search_dataset()` 走默认 contains 时零构建
+
+        这条盯的是「每次调用新建搜索器」这个用法本身：只要构建回到构造函数，
+        每条 API 搜索请求就重新付一次全表扫描。
+        """
+        result = search_dataset(sample_dataset, "租房")
+
+        assert build_counter == []
+        assert result.method == "contains"
+        assert result.total_matches >= 2
+
+    def test_exact_builds_once_and_reuses_across_queries(self, sample_dataset, build_counter):
+        """exact 才建，且同实例连查三次只建一次"""
+        searcher = EnhancedSearcher(sample_dataset)
+        for _ in range(3):
+            searcher.search("如何申请租房？", method="exact")
+
+        assert build_counter == [5]
+
+    def test_exact_matches_a_naive_scan(self, sample_dataset):
+        """惰性/复用都不许改变结果：与独立写的全表扫描逐条对照
+
+        预言机是朴素 `lower()` 相等判断，不走被测库的索引，所以「索引建晚了、
+        建错了、复用了旧的」都会在这里露出来。
+        """
+        query = "如何申请租房？"
+        expected = [
+            i for i, it in enumerate(sample_dataset)
+            if it.get("instruction", "").lower() == query.lower()
+        ]
+
+        searcher = EnhancedSearcher(sample_dataset)
+        result = searcher.search(query, method="exact", fields=["instruction"])
+
+        assert result.total_matches == len(expected)
+        assert result.items == [sample_dataset[i] for i in expected]
+
+    def test_load_invalidates_a_reused_searcher(self, build_counter):
+        """换数据必须作废索引，否则新数据会被旧索引答成「查无此项」"""
+        searcher = EnhancedSearcher([{"instruction": "只有租房"}])
+        assert searcher.search("只有租房", method="exact", fields=["instruction"]).total_matches == 1
+
+        searcher.load([{"instruction": "只有买房"}])
+        assert searcher.search("只有租房", method="exact", fields=["instruction"]).total_matches == 0
+        assert searcher.search("只有买房", method="exact", fields=["instruction"]).total_matches == 1
+        assert build_counter == [1, 1]
+
+    def test_get_statistics_reports_the_same_index_as_before(self, build_counter):
+        """`get_statistics()` 是索引的第二个读者：统计口径不能因惰性而变空"""
+        searcher = EnhancedSearcher([
+            {"instruction": "how to rent", "output": "登录官网"},
+            {"instruction": "how to buy", "output": "咨询顾问"},
+        ])
+        stats = searcher.get_statistics()
+
+        # 手算：instruction 的键 = 两条整串 + 4 个去重词（how/to/rent/buy）；
+        # output 的中文串整段成词，与整串同键，所以各 1。
+        assert stats["indexed_fields"] == ["instruction", "output"]
+        assert stats["field_counts"] == {"instruction": 6, "output": 2}
+        assert build_counter == [2]
