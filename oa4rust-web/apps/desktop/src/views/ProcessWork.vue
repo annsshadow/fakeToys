@@ -823,6 +823,11 @@ async function loadSurfaceReadB(): Promise<void> {
       // rev461：任务处理态/神经处理态 2 条真实读（task_id_processing·_neural handler 体为 SELECT xid/xjob 纯读，pool+Path<String> arity 一致，POST 空体；字面尾段 processing/neural 唯一）
       s(api.post(`/api/processplatform/assemble/surface/task/${id}/processing`, {})),
       s(api.post(`/api/processplatform/assemble/surface/task/${id}/processing/neural`, {})),
+      // rev462：v2 已办游标列表 + 待办逆序游标 + 按应用/流程取工作 4 条真实读（全 pool-only 纯 SELECT，Path arity 一致；next/prev/process 字面段唯一避误配）
+      s(api.post(`/api/processplatform/assemble/surface/task/v2/list/${id}/prev/${count}`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/taskcompleted/v2/list/${id}/next/${count}`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/taskcompleted/v2/list/${id}/prev/${count}`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/work/application/${applicationFlag}/process/${flag}`, {})),
       // rev451：按应用统计 待办/已办/在办/已完成 数量 4 条真实读（*_list_count_application_applicationFlag_process Path<String>，路由 {applicationFlag} + 字面 process，arity 一致）
       s(api.get(`/api/processplatform/assemble/surface/task/list/count/application/${applicationFlag}/process`)),
       s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/count/application/${applicationFlag}/process`)),
