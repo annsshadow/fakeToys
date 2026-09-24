@@ -365,6 +365,13 @@
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('attTransfer')">附件转存下载</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('attPreviewPdfResult')">附件PDF预览结果</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('attPreviewImgResult')">附件图片预览结果</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps9('fileAppDownload')">按应用文件下载</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps9('attBatchZip')">附件批量ZIP</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps9('attInvoice')">发票下载</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps9('readV2Paging')">待阅v2分页</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps9('readcompletedV2Paging')">已阅v2分页</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps9('reviewV2Paging')">传阅v2分页</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps9('taskcompletedV2Paging')">已办v2分页</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdProcessing')">任务处理(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdReplace')">任务替换(位置态)</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdPress')">任务催办(位置态)</button>
@@ -1536,6 +1543,27 @@ async function surfaceOps8(op: string): Promise<void> {
     else if (op === 'attTransfer') { const f = encodeURIComponent(prompt('转存标识:', '') || ''); await api.get(`/api/processplatform/assemble/surface/attachment/download/transfer/flag/${f}`) }
     else if (op === 'attPreviewPdfResult') { const f = encodeURIComponent(prompt('附件标识:', '') || ''); await api.get(`/api/processplatform/assemble/surface/attachment/preview/pdf/${f}/result`) }
     else { const f = encodeURIComponent(prompt('附件标识:', '') || ''); await api.get(`/api/processplatform/assemble/surface/attachment/preview/image/${f}/result`) }
+    toast.success('流程表面操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev399：流程表面 按应用文件下载/附件批量ZIP下载/发票下载 + read·readcompleted·review·taskcompleted v2 创建分页 真实路由（Path arity 已核 2-tuple，分页 {page}/size/{size} 用变量占位、body 空；用户触发）
+async function surfaceOps9(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    const pg = 1
+    const sz = 20
+    if (op === 'fileAppDownload') { const f = encodeURIComponent(prompt('文件标识:', '') || ''); const af = encodeURIComponent(prompt('应用标识:', '') || ''); await api.get(`/api/processplatform/assemble/surface/file/application/download/${f}/${af}`) }
+    else if (op === 'attBatchZip') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); const site = encodeURIComponent(prompt('站点:', '') || ''); await api.get(`/api/processplatform/assemble/surface/attachment/batch/download/work/${w}/site/${site}`) }
+    else if (op === 'attInvoice') { const f = encodeURIComponent(prompt('发票标识:', '') || ''); const wowc = encodeURIComponent(prompt('工作或已办 ID:', '') || ''); await api.get(`/api/processplatform/assemble/surface/attachment/download/invoice/${f}/joborworkorworkcompleted/${wowc}`) }
+    else if (op === 'readV2Paging') await api.post(`/api/processplatform/assemble/surface/read/v2/list/create/paging/${pg}/size/${sz}`, {})
+    else if (op === 'readcompletedV2Paging') await api.post(`/api/processplatform/assemble/surface/readcompleted/v2/list/create/paging/${pg}/size/${sz}`, {})
+    else if (op === 'reviewV2Paging') await api.post(`/api/processplatform/assemble/surface/review/v2/list/create/paging/${pg}/size/${sz}`, {})
+    else await api.post(`/api/processplatform/assemble/surface/taskcompleted/v2/list/create/paging/${pg}/size/${sz}`, {})
     toast.success('流程表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
