@@ -22,6 +22,8 @@
         <button class="eb" @click="checkMyRestDate">🏖️ 我的休息日校验</button>
         <button class="eb" @click="importLeave">📥 批量导入请假</button>
         <button class="eb" @click="reciveMobileDetail">📱 移动端接收考勤</button>
+        <button class="eb" @click="reciveDetailById">✅ 按id接收明细</button>
+        <button class="eb" @click="createAttDetail">➕ 新建考勤明细</button>
         <button class="eb" @click="toggleAttType">🔧 启用/禁用考勤类型</button>
         <button class="eb" @click="loadAppealDetailFilters">🧾 申诉/明细游标</button>
         <button class="eb" @click="loadHolidaySettingDetails">🏖️ 假期/设置明细</button>
@@ -722,6 +724,29 @@ async function loadV2ConfigTpl() {
 // rev423：我的休息日校验 POST /api/attendance/assemble/control/v2/my/rest/date/check（body {date}，读 x_attendance_workday_config，缺 date 优雅 400；本人自助真实日期触发）
 // rev431：批量导入请假 POST /api/attendance/assemble/control/v2/leave/import（Json body 非 multipart，INSERT x_attendance_v2_leave；管理员用真实 leaveType/person 触发）
 // rev432：移动端接收考勤明细 POST attendancedetail/mobile/recive（body {personId,date}，UPDATE x_attendance_detail received=true；用户输入真实人员/日期触发）
+// rev434：考勤明细 按id接收(POST recive UPDATE received by id)·新建明细(POST attendancedetail INSERT x_attendance_detail) 真实写（reciveSingle 与 recive 同 SQL 属孪生已跳过）
+async function reciveDetailById() {
+  const id = prompt('考勤明细 ID:', '') || ''
+  if (!id.trim()) return
+  try {
+    await api.post('/api/attendance/assemble/control/attendancedetail/recive', { id })
+    toast.success('明细接收已提交')
+  } catch (e: any) {
+    toast.error('接收失败: ' + (e?.message ?? ''))
+  }
+}
+async function createAttDetail() {
+  const personId = prompt('人员标识:', '') || ''
+  if (!personId.trim()) return
+  const date = prompt('日期(YYYY-MM-DD):', new Date().toISOString().slice(0, 10)) || ''
+  const status = prompt('状态(如 normal/late):', 'normal') || 'normal'
+  try {
+    await api.post('/api/attendance/assemble/control/attendancedetail', { personId, date, status })
+    toast.success('考勤明细已创建')
+  } catch (e: any) {
+    toast.error('创建失败: ' + (e?.message ?? ''))
+  }
+}
 async function reciveMobileDetail() {
   const personId = prompt('人员标识:', '') || ''
   if (!personId.trim()) return
