@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from .models.base import ModelBackend
 from .exceptions import DataValidationError
+from .validation import require_count
 
 logger = logging.getLogger(__name__)
 
@@ -192,11 +193,14 @@ class DomainExpander:
         Args:
             items: 数据列表
             strategy: 扩展策略 (similar/related/scenario)
-            num_topics: 生成数量
+            num_topics: 生成数量，不小于 0 的整数（判据见 `require_count`）
         
         Returns:
             ExpansionResult 实例
         """
+        # 判参先于模型调用：负数会被原样写进提示词，再被 `[:-1]` 读成「除了末位」
+        require_count("num_topics", num_topics)
+
         # 提取原始主题
         original_topics = self._extract_topics(items)
         
@@ -240,12 +244,15 @@ class DomainExpander:
         Args:
             items: 数据列表
             strategies: 策略列表
-            topics_per_strategy: 每种策略生成的主题数
+            topics_per_strategy: 每种策略生成的主题数，不小于 0 的整数
+                （判据见 `require_count`）
             use_parallel: 是否使用并行处理
         
         Returns:
             扩展结果列表
         """
+        require_count("topics_per_strategy", topics_per_strategy)
+
         if strategies is None:
             strategies = ["similar", "related", "scenario"]
         
@@ -284,12 +291,15 @@ class DomainExpander:
         
         Args:
             topics: 扩展的主题列表
-            num_questions_per_topic: 每个主题生成的问题数
+            num_questions_per_topic: 每个主题生成的问题数，不小于 0 的整数
+                （判据见 `require_count`）
             use_parallel: 是否使用并行处理
         
         Returns:
             种子问答对列表
         """
+        require_count("num_questions_per_topic", num_questions_per_topic)
+
         if not use_parallel or len(topics) <= 1:
             # 串行处理
             all_seeds = []

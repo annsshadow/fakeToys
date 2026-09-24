@@ -609,3 +609,108 @@ class TestEmptyQaProductAtTheCli:
         )
         assert code is None, capsys.readouterr().err
         assert json.loads(out_file.read_text(encoding="utf-8"))[0]["messages"][1]["content"] == ""
+
+
+class TestStreamAndAggregateKnobs:
+    """`stream --chunk-size` / `aggregate --target-size`：同族第三轮的 CLI 面
+
+    两个旋钮都落到比较或算术，越界值不会自己喊停：`len(chunk) >= 0` 恒真
+    （于是逐条切块、白多花 61% 时间），`int(-1 * 占比)` 静默给 0 条
+    （于是「要 -1 条」答成「一条也没有」，与「三个源都是空的」同形）。
+    """
+
+    def test_stream_zero_chunk_size_is_a_param_error_and_writes_nothing(self, dataset, tmp_path):
+        """`--chunk-size 0` 退出 1 且不留产物（缺陷态：exit 0，逐条切块照跑完）"""
+        import io
+        import sys
+        from contextlib import redirect_stderr
+
+        out = tmp_path / "streamed.jsonl"
+        sys.argv = [
+            "cli", "stream", "--input", str(dataset),
+            "--output", str(out), "--operation", "export", "--chunk-size", "0",
+        ]
+        err = io.StringIO()
+        with redirect_stderr(err):
+            try:
+                main()
+            except SystemExit as exc:
+                code = exc.code
+            else:
+                code = None
+        assert code == 1
+        assert "chunk_size" in err.getvalue()
+        assert not out.exists()
+
+    def test_stream_negative_chunk_size_is_a_param_error(self, dataset, tmp_path):
+        """`--chunk-size -8` 与 0 同判：步长没有「0 条一块」的合法读法"""
+        out = tmp_path / "streamed_neg.jsonl"
+        _, _, code = run_cli(
+            [
+                "cli", "stream", "--input", str(dataset),
+                "--output", str(out), "--operation", "export", "--chunk-size", "-8",
+            ]
+        )
+        assert code == 1
+        assert not out.exists()
+
+    def test_stream_smallest_legal_chunk_size_still_copies_everything(self, dataset, tmp_path):
+        """反向护栏：`--chunk-size 1` 必须真的跑完 5 条，判据不能顺手拒掉下界"""
+        out = tmp_path / "streamed_one.jsonl"
+        _, parsed, code = run_cli(
+            [
+                "cli", "stream", "--input", str(dataset),
+                "--output", str(out), "--operation", "export", "--chunk-size", "1",
+            ]
+        )
+        assert code is None
+        assert parsed["total_output"] == len(SAMPLE_ITEMS)
+        assert len(out.read_text(encoding="utf-8").strip().splitlines()) == len(SAMPLE_ITEMS)
+
+    def test_aggregate_negative_target_size_is_a_param_error(self, dataset, tmp_path):
+        """`--target-size -1` 退出 1（缺陷态：exit 0 + 交出空产物文件）"""
+        import io
+        import sys
+        from contextlib import redirect_stderr
+
+        out = tmp_path / "agg_neg.json"
+        sys.argv = [
+            "cli", "aggregate", "--inputs", str(dataset),
+            "--output", str(out), "--strategy", "weighted", "--target-size", "-1",
+        ]
+        err = io.StringIO()
+        with redirect_stderr(err):
+            try:
+                main()
+            except SystemExit as exc:
+                code = exc.code
+            else:
+                code = None
+        assert code == 1
+        assert "target_size" in err.getvalue()
+        assert not out.exists()
+
+    def test_aggregate_zero_target_size_delivers_an_empty_file(self, dataset, tmp_path):
+        """0 条是合法请求：产物是空数组，`source_counts` 仍如实"""
+        out = tmp_path / "agg_zero.json"
+        _, parsed, code = run_cli(
+            [
+                "cli", "aggregate", "--inputs", str(dataset),
+                "--output", str(out), "--strategy", "weighted", "--target-size", "0",
+            ]
+        )
+        assert code is None
+        assert parsed["aggregated_count"] == 0
+        assert json.loads(out.read_text(encoding="utf-8")) == []
+
+    def test_aggregate_weighted_without_target_size_keeps_everything(self, dataset, tmp_path):
+        """不传 `--target-size` 走 argparse 默认 100：5 条都在（配额大于条数）"""
+        out = tmp_path / "agg_default.json"
+        _, parsed, code = run_cli(
+            [
+                "cli", "aggregate", "--inputs", str(dataset),
+                "--output", str(out), "--strategy", "weighted",
+            ]
+        )
+        assert code is None
+        assert parsed["aggregated_count"] == len(SAMPLE_ITEMS)
