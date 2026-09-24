@@ -41,6 +41,22 @@
         <button class="btn-sm" @click="surfaceList('handover')">交接分页</button>
         <button class="btn-sm" @click="surfaceList('serialnumber')">流水号分页</button>
         <button class="btn-sm" @click="surfaceList('snapMy')">我的快照</button>
+        <button class="btn-sm" @click="surfaceList2('taskV2Paging')">待办分页</button>
+        <button class="btn-sm" @click="surfaceList2('taskV2Next')">待办游标</button>
+        <button class="btn-sm" @click="surfaceList2('taskManage')">待办管理</button>
+        <button class="btn-sm" @click="surfaceList2('taskCompletedPaging')">已办分页</button>
+        <button class="btn-sm" @click="surfaceList2('taskCompletedManage')">已办管理</button>
+        <button class="btn-sm" @click="surfaceList2('readV2Paging')">待阅分页</button>
+        <button class="btn-sm" @click="surfaceList2('readManage')">待阅管理</button>
+        <button class="btn-sm" @click="surfaceList2('readCompletedPaging')">已阅分页</button>
+        <button class="btn-sm" @click="surfaceList2('readCompletedManage')">已阅管理</button>
+        <button class="btn-sm" @click="surfaceList2('reviewV2Paging')">评审分页</button>
+        <button class="btn-sm" @click="surfaceList2('reviewManage')">评审管理</button>
+        <button class="btn-sm" @click="surfaceList2('workV2Paging')">工作分页</button>
+        <button class="btn-sm" @click="surfaceList2('workManage')">工作管理</button>
+        <button class="btn-sm" @click="surfaceList2('workCompletedManage')">完成件管理</button>
+        <button class="btn-sm" @click="surfaceList2('snapManage')">快照管理</button>
+        <button class="btn-sm" @click="surfaceList2('taskCountFilter')">待办筛选计数</button>
         <button class="btn-sm primary" @click="openStart">发起流程</button>
       </div>
     </div>
@@ -1142,7 +1158,30 @@ async function surfaceList(op: string): Promise<void> {
     toast.error('数据查询失败: ' + (e?.message ?? ''))
   }
 }
-
+// rev351：流程表面 待办/已办/待阅/已阅/工作/评审 游标(next/prev)+管理(manage)+v2分页 数据查询（POST 真实读 distinct 游标方向，用户触发；全字面量路径）
+async function surfaceList2(op: string): Promise<void> {
+  try {
+    if (op === 'taskV2Paging') await api.post('/api/processplatform/assemble/surface/task/v2/list/paging/1/size/20', {})
+    else if (op === 'taskV2Next') await api.post('/api/processplatform/assemble/surface/task/v2/list/0/next/20', {})
+    else if (op === 'taskManage') await api.post('/api/processplatform/assemble/surface/task/list/filter/1/size/20/manage', {})
+    else if (op === 'taskCompletedPaging') await api.post('/api/processplatform/assemble/surface/taskcompleted/v2/list/paging/1/size/20', {})
+    else if (op === 'taskCompletedManage') await api.post('/api/processplatform/assemble/surface/taskcompleted/list/filter/1/size/20/manage', {})
+    else if (op === 'readV2Paging') await api.post('/api/processplatform/assemble/surface/read/v2/list/paging/1/size/20', {})
+    else if (op === 'readManage') await api.post('/api/processplatform/assemble/surface/read/list/filter/1/size/20/manage', {})
+    else if (op === 'readCompletedPaging') await api.post('/api/processplatform/assemble/surface/readcompleted/v2/list/paging/1/size/20', {})
+    else if (op === 'readCompletedManage') await api.post('/api/processplatform/assemble/surface/readcompleted/list/filter/1/size/20/manage', {})
+    else if (op === 'reviewV2Paging') await api.post('/api/processplatform/assemble/surface/review/v2/list/paging/1/size/20', {})
+    else if (op === 'reviewManage') await api.post('/api/processplatform/assemble/surface/review/v2/list/paging/1/size/20/manage', {})
+    else if (op === 'workV2Paging') await api.post('/api/processplatform/assemble/surface/work/v2/list/paging/1/size/20', {})
+    else if (op === 'workManage') await api.post('/api/processplatform/assemble/surface/work/list/filter/1/size/20/manage', {})
+    else if (op === 'workCompletedManage') await api.post('/api/processplatform/assemble/surface/workcompleted/list/filter/1/size/20/manage', {})
+    else if (op === 'snapManage') await api.post('/api/processplatform/assemble/surface/snap/list/filter/1/size/20/manage', {})
+    else await api.post('/api/processplatform/assemble/surface/task/count/filter', {})
+    toast.success('数据查询已提交')
+  } catch (e: any) {
+    toast.error('数据查询失败: ' + (e?.message ?? ''))
+  }
+}
 // ── 附件详情 / 待阅详情（rev110，均按 id 拉单条 distinct handler）────
 const attachDetailText = ref('')
 const readDetailText = ref('')
