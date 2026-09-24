@@ -443,6 +443,9 @@
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('jobDelete')">删 Job</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('urge')">催办超时任务</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('handover')">接管无主作业</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('deletedraft')">清理遗留草稿</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('touchdelay')">超时顺延登记</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('mergeitem')">附件合并去重</button>
           </div>
         </section>
 
@@ -1896,6 +1899,20 @@ async function engineTouch(op: string): Promise<void> {
       const r: any = await api.get('/api/processplatform/service/processing/touch/urge')
       const n = Array.isArray(r?.data) ? r.data.length : (r?.data?.count ?? 0)
       toast.success(`已催办超时任务：${n}`)
+    } else if (op === 'deletedraft') {
+      // rev438：清理已完成工作的遗留草稿（touch_delete_draft 仅取 pool，UPDATE x_draft deleted_at）
+      const r: any = await api.get('/api/processplatform/service/processing/touch/deletedraft')
+      toast.success(`已清理遗留草稿：${(r as any)?.data?.deleted ?? 0}`)
+    } else if (op === 'touchdelay') {
+      // rev438：超时任务顺延登记（touch_delay 仅取 pool，扫描 expired 任务登记 touch_delay 记录）
+      const r: any = await api.get('/api/processplatform/service/processing/touch/touchdelay')
+      const n = Array.isArray(r?.data) ? r.data.length : (r?.data?.count ?? 0)
+      toast.success(`超时顺延登记：${n}`)
+    } else if (op === 'mergeitem') {
+      // rev438：合并去重重复附件（touch_merge_item 仅取 pool，DELETE x_attachment 同名同工作重复项）
+      if (!(await confirmMsg('确定合并去重重复附件？将删除同名同工作的冗余附件行。'))) return
+      const r: any = await api.get('/api/processplatform/service/processing/touch/mergeitem')
+      toast.success(`已去重附件：${(r as any)?.data?.deleted ?? (r as any)?.data?.merged ?? 0}`)
     } else {
       const r: any = await api.get('/api/processplatform/service/processing/touch/handoverjob')
       const n = r?.data?.count ?? (Array.isArray(r?.data) ? r.data.length : 0)
