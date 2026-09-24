@@ -26,6 +26,8 @@ from typing import List, Dict, Optional, Any, Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .validation import require_count
+
 logger = logging.getLogger(__name__)
 
 # 噪声清除用的模式。与 `augmentor.data.cleaner` 保持一致，避免同一份数据
@@ -463,11 +465,14 @@ class TextNormalizer:
         
         Args:
             text: 输入文本
-            top_k: 返回数量
+            top_k: 返回数量，不小于 0 的整数；0 是「一个关键词都不要」，
+                与「没传参数」是两件事。越界值报错而不是落到 `[:top_k]` 上被
+                读成「丢掉末尾 |top_k| 个」（见 `augmentor.validation.require_count`）
         
         Returns:
             关键词列表
         """
+        require_count("top_k", top_k)
         # 简单的关键词提取
         # 使用TF-IDF思想，选择出现频率适中的词
         words = re.findall(r'[\u4e00-\u9fff]+|[a-zA-Z]+', text)

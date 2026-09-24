@@ -7,6 +7,7 @@ import logging
 from typing import List, Dict, Optional, Any, Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+from .validation import require_count
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -179,11 +180,17 @@ class QualityMonitor:
         return alerts
 
     def get_history(self, limit: int = 10) -> List[QualitySnapshot]:
-        return self._snapshots[-limit:]
+        require_count("limit", limit)
+        # 负数与 0 在 `[-limit:]` 上都是换语义而不是报错：0 等于「全部快照」、
+        # -3 等于「丢掉最前面 3 条」，两者与请求的条数正好相反。判据已经把值
+        # 收敛到非负整数，这里剩下的 `if limit` 只区分 0 与正数两种情况。
+        return self._snapshots[-limit:] if limit else []
 
     def get_trend(self, metric_name: str, limit: int = 10) -> List[Dict]:
+        require_count("limit", limit)
+        # 同上：`get_history` 的判据也覆盖这里（同一个 `[-limit:]` 形状）
         trend = []
-        for snapshot in self._snapshots[-limit:]:
+        for snapshot in (self._snapshots[-limit:] if limit else []):
             if metric_name in snapshot.metrics:
                 trend.append({
                     "timestamp": snapshot.timestamp,

@@ -390,6 +390,8 @@ class TestSearchCommand:
         (["--fuzzy-threshold", "1.5"], "模糊阈值"),
         (["--ngram-n", "0"], "n-gram 长度"),
         (["--ngram-n", "-2"], "n-gram 长度"),
+        (["--limit", "-1"], "limit"),
+        (["--offset", "-1"], "offset"),
     ])
     def test_out_of_range_knobs_fail_loudly(self, dataset_context, extra, phrase):
         """越界的旋钮必须失败，不许交出「找到 0 条」
@@ -397,6 +399,11 @@ class TestSearchCommand:
         0 条在 CLI 里是完全正常的答案，用户读到的是「语料里没有」；而真相是参数写错了。
         校验只挂在 SDK `search()` 那一处，经 `cli.main()` 的 `except Exception` 变成
         `错误: …` + 退出码 1，所以这里同时钉住了「不在命令处理里重复校验」。
+
+        `--limit` / `--offset` 以前不在拒绝名单里：它们是分页切片的两个端点，
+        负数被 Python 读成反向窗口。`--limit -1` 于是打印「找到 2 条匹配结果」
+        却把**除了最后一条之外**的全部条目吐进 JSON——摘要与正文自相矛盾，
+        而且正文比摘要声称的总数还多。
         """
         clean, _, _ = dataset_context
         out, err, code = run_cli(
@@ -405,6 +412,21 @@ class TestSearchCommand:
         assert code == 1, f"{extra} 未被拒绝: code={code}, out={out!r}"
         assert phrase in err, f"stderr 没指出越界的是哪个旋钮: {err!r}"
         assert "找到" not in out, "报错的同时还打印了结果摘要"
+
+    def test_limit_zero_is_a_real_answer_not_the_default(self, dataset_context):
+        """`--limit 0` 是合法请求：总数照报，条目为空
+
+        这条钉住的是判据的另一半——0 **不是**越界值，也不是「没传参数」。分页
+        以前写成 `limit or 100` 的话，「只要总数」就会静默变成「给我 100 条」，
+        所以 `require_count` 的下界是 0 而不是 1。
+        """
+        clean, _, _ = dataset_context
+        out, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "租房", "--limit", "0"]
+        )
+        assert code is None, err
+        assert "找到 2 条匹配结果" in out, out
+        assert out.strip().endswith("[]"), f"--limit 0 仍然吐出了条目: {out!r}"
 
     def run_search(self, dataset_context, *extra):
         """跑一次 `search` 并返回 stdout（摘要行 + JSON 列表）"""

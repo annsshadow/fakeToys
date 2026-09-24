@@ -3,7 +3,8 @@
 
 """数据集验证模块
 
-提供数据集格式验证、完整性检查等功能。
+提供数据集格式验证、完整性检查等功能，以及跨模块共用的标量入参判据
+（`require_count`）。
 """
 
 import json
@@ -14,7 +15,48 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from enum import Enum
 
+from augmentor.exceptions import DataValidationError
+
 logger = logging.getLogger(__name__)
+
+
+def require_count(name: str, value: Any, minimum: int = 0) -> Optional[int]:
+    """校验「取前 N 条 / 向后移 N 条」这类计数旋钮，返回原值。
+
+    口径：这类旋钮只有一种合法读法——**要多少条**。它们在实现里几乎都落到
+    下标切片，而 Python 的切片对越界值不是报错，是换语义：
+
+    - 负数：`seq[:-1]` 是「丢掉最后一条」，于是「要 1 条」变成「要 N-1 条」；
+      `seq[-limit:]` 在 `limit` 为负时又变成「从倒数第 |limit| 条往后全要」。
+    - 零：走 `value or default` 回落的调用点会把「要 0 条」当成「没传参数」，
+      静默给出默认条数。
+
+    两种都是**静默错答**：调用方拿到一个形状合法、内容却与请求相反的结果，
+    没有任何信号。所以在 SDK 的入参处一次判掉，而不是让每个调用点各自小心。
+
+    Args:
+        name: 参数名，直接出现在报错里（调用方看到的就是自己写的那个名字）
+        value: 传入的值
+        minimum: 允许的下界。默认 0——「一条都不要」是合法请求（只要计数、
+            只要格式信息），必须与「没传参数」区分开。需要强制正数的调用点
+            （如每轮必须选出样本的主动学习）显式传 1。
+
+    Returns:
+        校验通过后的原值。`None` 直接放行——「未提供」由各调用点自己决定
+        回落哪个默认值，这里不替它决定。
+
+    Raises:
+        DataValidationError: 值不是整数（`bool` 也不算），或小于 `minimum`
+    """
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise DataValidationError(
+            f"{name} 必须是整数，当前是 {value!r}（{type(value).__name__}）"
+        )
+    if value < minimum:
+        raise DataValidationError(f"{name} 必须是不小于 {minimum} 的整数，当前是 {value}")
+    return value
 
 
 class ValidationSeverity(Enum):
