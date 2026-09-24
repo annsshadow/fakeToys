@@ -85,6 +85,20 @@
             <button class="icon-btn" title="撤回消息" @click="imMsgAction('revoke')">↩</button>
             <button class="icon-btn" title="自定义消息" @click="imMsgAction('custom')">✉</button>
             <button class="icon-btn" title="群发" @click="imMsgAction('mass')">📢</button>
+            <button class="icon-btn" title="更新会话" @click="imMore('convUpdate')">🔄</button>
+            <button class="icon-btn" title="按人列会话" @click="imMore('convByPerson')">👥</button>
+            <button class="icon-btn" title="管理配置" @click="imMore('managerConfig')">⚙</button>
+            <button class="icon-btn" title="收藏分页" @click="imMore('collectionList')">📚</button>
+            <button class="icon-btn" title="下载消息" @click="imMore('msgDownload')">⬇</button>
+            <button class="icon-btn" title="缩略图" @click="imMore('msgThumb')">🖼</button>
+            <button class="icon-btn" title="消息对象列表" @click="imMore('msgListObj')">📋</button>
+            <button class="icon-btn" title="标记已读" @click="imMore('markRead')">☑</button>
+            <button class="icon-btn" title="消费消息" @click="imMore('consume')">🍽</button>
+            <button class="icon-btn" title="按类型消费" @click="imMore('consumeType')">🏷</button>
+            <button class="icon-btn" title="自定义消息2" @click="imMore('customCreate')">✚</button>
+            <button class="icon-btn" title="消息分页" @click="imMore('msgPaging')">📄</button>
+            <button class="icon-btn" title="群发类型" @click="imMore('massEnable')">📣</button>
+            <button class="icon-btn" title="删群发" @click="imMore('massDelete')">🗑</button>
             <button class="icon-btn" title="更多信息">⋯</button>
           </div>
         </div>
@@ -569,6 +583,28 @@ async function imMsgAction(kind: string): Promise<void> {
       })
       toast.success('群发已提交')
     }
+  } catch (err: any) {
+    toast.error('操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev367：IM 会话更新/按人列会话/管理配置 + 消息收藏分页/下载/缩略/列表 + 标记已读/消费/消费类型/自定义消息/分页/群发类型/删群发 真实路由（避已消费方法孪生，仅接 distinct 新端点）
+async function imMore(op: string) {
+  try {
+    if (op === 'convUpdate') await api.put('/api/message/assemble/communicate/im/conversation', {})
+    else if (op === 'convByPerson') await api.post('/api/message/assemble/communicate/im/conversation/list/with/person', {})
+    else if (op === 'managerConfig') await api.post('/api/message/assemble/communicate/im/manager/config', {})
+    else if (op === 'collectionList') await api.post('/api/message/assemble/communicate/im/msg/collection/list/1/size/20', {})
+    else if (op === 'msgDownload') { const id = prompt('消息 ID:', '') || ''; await api.get(`/api/message/assemble/communicate/im/msg/download/${encodeURIComponent(id)}`) }
+    else if (op === 'msgThumb') { const id = prompt('消息 ID:', '') || ''; await api.get(`/api/message/assemble/communicate/im/msg/download/${encodeURIComponent(id)}/image/width/120/height/120`) }
+    else if (op === 'msgListObj') await api.post('/api/message/assemble/communicate/im/msg/list/object', {})
+    else if (op === 'markRead') { const id = prompt('消息 ID:', '') || ''; await api.post(`/api/message/mark_read/${encodeURIComponent(id)}`, {}) }
+    else if (op === 'consume') { const id = prompt('消息 ID:', '') || ''; const t = prompt('消息类型:', 'all') || 'all'; await api.get(`/api/message/consume/${encodeURIComponent(id)}/type/${encodeURIComponent(t)}`) }
+    else if (op === 'consumeType') { const t = prompt('消息类型:', 'all') || 'all'; await api.put(`/api/message/assemble/communicate/consume/type/${encodeURIComponent(t)}`, {}) }
+    else if (op === 'customCreate') await api.post('/api/message/assemble/communicate/message/custom/create', {})
+    else if (op === 'msgPaging') await api.post('/api/message/assemble/communicate/message/list/paging/1/size/20', {})
+    else if (op === 'massEnable') await api.post('/api/message/assemble/communicate/mass/enable/type', {})
+    else { const id = prompt('要删除的群发 ID:', '') || ''; if (!(await confirmMsg('确定删除该群发？'))) return; await api.delete(`/api/message/assemble/communicate/mass/${encodeURIComponent(id)}`) }
+    toast.success('IM 操作已提交')
   } catch (err: any) {
     toast.error('操作失败: ' + (err?.message ?? ''))
   }
