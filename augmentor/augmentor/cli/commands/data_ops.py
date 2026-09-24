@@ -75,7 +75,8 @@ def run_convert(args, config):
     """`convert` 子命令"""
     from augmentor.converter import convert_file
 
-    result = convert_file(args.input, args.output, target_format=args.format)
+    result = convert_file(args.input, args.output, target_format=args.format,
+                          source_format=args.input_format)
     _print(result)
 
 

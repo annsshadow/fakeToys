@@ -287,6 +287,12 @@ def build_parser() -> argparse.ArgumentParser:
                                 choices=["json", "jsonl", "csv", "alpaca", "sharegpt", 
                                         "chatml", "llama_factory", "vicuna", "belle"],
                                 help="目标格式")
+    # 反向边（alpaca/sharegpt/chatml/... → json）：这些格式落盘也是 `.json`，
+    # 扩展名推不出来，只能显式声明；不给就按扩展名当 json 原样读。
+    convert_parser.add_argument("--input-format", type=str, default=None,
+                                choices=["json", "jsonl", "csv", "alpaca", "sharegpt",
+                                         "chatml", "llama_factory", "vicuna", "belle"],
+                                help="源格式（默认从输入文件扩展名推断）")
 
     # 数据集搜索命令
     # `--method` 取全部方法：exact / contains / ngram / fuzzy / regex。
