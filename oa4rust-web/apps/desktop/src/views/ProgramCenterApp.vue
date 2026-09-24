@@ -227,6 +227,7 @@
           <button class="btn-sm" @click="pcU7('jestClear')">Jest清缓存</button>
           <button class="btn-sm" @click="pcU8">命令/部署读</button>
           <button class="btn-sm" @click="pcU9">调用器/市场/钉钉只读</button>
+          <button class="btn-sm" @click="pcU10">集成同步/清缓存</button>
           <div v-if="pcU4Text" class="app-meta">{{ pcU4Text }}</div>
         </div>
         <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
@@ -1412,6 +1413,18 @@ async function pcU9() {
     toast.success(`程序中心只读 ${rs.length} 条命中 ${hit}`)
   } catch (e: any) {
     toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+// rev421：程序中心 集成同步触发 andfx/dingding 拉取同步 + jest 清缓存源（三者 pool-only 向 x_program_sync_log 落审计行，无外部 HTTP；管理员触发的独立后端集成能力）
+async function pcU10() {
+  if (!(await confirmMsg('确定触发集成同步/清缓存？'))) return
+  try {
+    await api.get('/api/program_center/andfx/pull/sync')
+    await api.get('/api/program_center/dingding/pull/sync')
+    await api.get('/api/program_center/jest/clear/cache/source')
+    toast.success('集成同步已触发')
+  } catch (e: any) {
+    toast.error('触发失败: ' + (e?.message ?? ''))
   }
 }
 async function loadMarketLogs() {
