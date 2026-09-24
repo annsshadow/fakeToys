@@ -73,6 +73,17 @@
         <button class="eb" @click="attWrite3('v2DetailList')">v2明细列表</button>
         <button class="eb" @click="attWrite3('v2AppealMgr')">v2申诉管理</button>
         <button class="eb" @click="attWrite3('uuid')">UUID</button>
+        <button class="eb" @click="attV2Ops('appealMgrStatus')">v2申诉管理态</button>
+        <button class="eb" @click="attV2Ops('appealResetStatus')">v2申诉重置态</button>
+        <button class="eb" @click="attV2Ops('detailRebuild')">v2按人重建明细</button>
+        <button class="eb" @click="attV2Ops('groupRebuild')">v2群组重建明细</button>
+        <button class="eb" @click="attV2Ops('groupRefresh')">v2群组刷新参与</button>
+        <button class="eb" @click="attV2Ops('recordDelete')">v2删记录(按人日)</button>
+        <button class="eb" @click="attV2Ops('analyse')">明细分析(日期)</button>
+        <button class="eb" @click="attV2Ops('checkCycle')">周期核对</button>
+        <button class="eb" @click="attV2Ops('filterNext')">明细过滤前翻</button>
+        <button class="eb" @click="attV2Ops('appealArchive')">申诉归档(工作流)</button>
+        <button class="eb" @click="attV2Ops('mobileDelete')">删移动明细</button>
         <span v-if="attStatText" class="app-meta">{{ attStatText }}</span>
       </div>
       <div v-if="attOverviewText" class="att-note">{{ attOverviewText }}</div>
@@ -626,7 +637,26 @@ async function attWrite3(op: string) {
     toast.error('操作失败: ' + (e?.message ?? ''))
   }
 }
-// + rule/list（list_schedule_rules x_attendance_rule）+ core/entity/record/list（SeaORM attendance_record）
+// rev383：考勤 v2 申诉管理/重置状态、明细/群组按人重建、群组刷新参与、按人删记录、明细分析(GET)/周期核对(GET)/过滤游标(GET)、申诉归档、规则开关、移动明细删 真实路由（Path-only 读 + 已核体写，用户触发）
+async function attV2Ops(op: string) {
+  try {
+    const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
+    if (op === 'appealMgrStatus') await api.get(`/api/attendance/assemble/control/v2/appeal/${id()}/manager/status`)
+    else if (op === 'appealResetStatus') await api.get(`/api/attendance/assemble/control/v2/appeal/${id()}/reset/status`)
+    else if (op === 'detailRebuild') { const p = encodeURIComponent(prompt('人员:', '') || ''); const d = encodeURIComponent(prompt('日期(YYYY-MM-DD):', '') || ''); await api.get(`/api/attendance/assemble/control/v2/detail/rebuild/person/${p}/date/${d}`) }
+    else if (op === 'groupRebuild') { const g = encodeURIComponent(prompt('群组 ID:', '') || ''); const d = encodeURIComponent(prompt('日期(YYYY-MM-DD):', '') || ''); await api.get(`/api/attendance/assemble/control/v2/group/rebuild/detail/group/${g}/date/${d}`) }
+    else if (op === 'groupRefresh') await api.get(`/api/attendance/assemble/control/v2/group/${id()}/refresh/participate`)
+    else if (op === 'recordDelete') { const p = encodeURIComponent(prompt('人员:', '') || ''); const d = encodeURIComponent(prompt('日期(YYYY-MM-DD):', '') || ''); if (!(await confirmMsg('确定删除该人当日记录？'))) return; await api.get(`/api/attendance/assemble/control/v2/record/delete/people/${p}/date/${d}`) }
+    else if (op === 'analyse') { const sd = encodeURIComponent(prompt('开始日期(YYYY-MM-DD):', '') || ''); const ed = encodeURIComponent(prompt('结束日期(YYYY-MM-DD):', '') || ''); await api.get(`/api/attendance/assemble/control/attendancedetail/analyse/${sd}/${ed}`) }
+    else if (op === 'checkCycle') { const y = encodeURIComponent(prompt('周期年:', '') || ''); const mo = encodeURIComponent(prompt('周期月:', '') || ''); await api.get(`/api/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/${y}/${mo}`) }
+    else if (op === 'filterNext') { const cnt = 20; await api.get(`/api/attendance/assemble/control/attendancedetail/filter/list/${id()}/next/${cnt}`) }
+    else if (op === 'appealArchive') { if (!(await confirmMsg('确定归档该申诉？'))) return; await api.post(`/api/attendance/appeal/archive/${id()}`, {}) }
+    else { if (!(await confirmMsg('确定删除该移动明细？'))) return; await api.delete(`/api/attendance/assemble/control/attendancedetail/mobile/${id()}`) }
+    toast.success('考勤操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
 // + core/entity/rule/list（SeaORM attendance_rule）。前二属 attendance crate、后二属 attendance_core_entity crate。
 async function loadCoreLists() {
   try {
