@@ -118,13 +118,39 @@ class DataSplitter:
     def _stratified_split(self, items: List[Dict], rng: "random.Random") -> SplitResult:
         """按 stratify_field 分层划分
 
-        每个特征值组内按 train/val/test 比例切分，再合并，
-        保证各子集分布与总体分布接近。
+        口径：三段的目标条数先在**全体**上算一次（`largest_remainder(len(items), ratios)`，
+        与 `_random_split` 同答），再逐组把「各段还欠多少条」当权重摊下去。逐组各自
+        `int(n * 比例)` 同时犯两种错：名义 10% 的验证集在 `n ≤ 9` 的组里恒取 0 条
+        （真实 6902 条按 `instruction` 分层时交出 train 371 / val **0** / test 6531），
+        而每组的余数整份堆给 test。
+
+        组的处理顺序是「组大小降序 + 同尺寸随机」，两个条件各挡一种坏形状（数字实测自
+        真实语料 `train_data.json`，6902 条 / 6531 组，12 与 40 个种子同值）：
+        - 大组先摊，零头只由小组吸收。小组的粒度只有 1 条，吸收零头的单元偏差上限 0.9；
+          去掉尺寸序（纯随机组序）实测把偏差推到 **3.0**，改成升序同样是 **3.0** ⇒ 起
+          作用的是「大组先」而不是「先随机一下」。按语料出现顺序这一档恰好也是 0.9，
+          但那是这份数据大组靠前的巧合，不是保证。
+        - 同尺寸必须随机。按出现顺序时「谁进验证集」沿组序成块：实测 690 条验证集里
+          有 460 条落在语料后 20% 区段（按分布应约 138 条），test 同样偏尾；本轮改后
+          同区段落到 132–162 条。
         """
         groups: Dict[str, List[Dict]] = {}
         for item in items:
             key = str(item.get(self.stratify_field, "")) or "empty"
             groups.setdefault(key, []).append(item)
+
+        ratios = (self.train_ratio, self.val_ratio, self.test_ratio)
+        targets = list(largest_remainder(len(items), ratios))
+        order = list(groups)
+        rng.shuffle(order)
+        # 稳定排序 ⇒ 同尺寸组之间保留上面那次 shuffle 的随机序
+        order.sort(key=lambda key: -len(groups[key]))
+
+        cells_by_key: Dict[str, List[int]] = {}
+        for key in order:
+            cells = largest_remainder(len(groups[key]), targets)
+            targets = [t - c for t, c in zip(targets, cells)]
+            cells_by_key[key] = cells
 
         train: List[Dict] = []
         val: List[Dict] = []
@@ -133,10 +159,7 @@ class DataSplitter:
 
         for key, group in groups.items():
             rng.shuffle(group)
-            n = len(group)
-            train_n = int(n * self.train_ratio)
-            val_n = int(n * self.val_ratio)
-            test_n = n - train_n - val_n
+            train_n, val_n, test_n = cells_by_key[key]
 
             g_train = group[:train_n]
             g_val = group[train_n:train_n + val_n]
