@@ -663,3 +663,322 @@ class TestCsvWriteSurface:
 
         assert rows == items, f"多行字段被换行拆解: {rows}"
         assert out.read_bytes().count(b"\r\r\n") == 0
+
+
+class TestReverseFlatEdges:
+    """字段映射类格式（alpaca / belle / llama_factory）→ 规范形。
+
+    转换图此前只有 `json → 训练格式` 的单向边，导出的数据集再也回不到规范形
+    （`convert(rows, "alpaca", "json")` 只会抛 `UnsupportedFormatError`），
+    「导出 → 换工具增强 → 再导回」这条回路断在第一步。下面每条断言的预言都是
+    **手写字面量**，不拿正向转换器当预言机。
+    """
+
+    def test_alpaca_keeps_every_source_key(self):
+        converter = DatasetConverter()
+        rows = [{"instruction": "如何租房", "input": "北京", "output": "登录官网",
+                 "category": "租房"}]
+        assert converter.convert(rows, "alpaca", "json") == rows
+
+    def test_record_without_input_does_not_gain_one(self):
+        """不补空 `input`：`validation` 里它是可选字段，凭空造键会让「源文件有没有
+        这一列」失去可辨性，下游稀疏字段检测因此漏报。"""
+        converter = DatasetConverter()
+        out = converter.convert([{"instruction": "如何租房", "output": "登录官网"}],
+                                "alpaca", "json")
+        assert out == [{"instruction": "如何租房", "output": "登录官网"}]
+        assert "input" not in out[0]
+
+    def test_result_is_a_copy_of_the_source_records(self):
+        converter = DatasetConverter()
+        rows = [{"instruction": "q", "output": "a"}]
+        out = converter.convert(rows, "alpaca", "json")
+        out[0]["output"] = "被改了"
+        assert rows[0]["output"] == "a", "结果与源记录共享对象，改结果会脏了输入"
+
+    @pytest.mark.parametrize("fmt", ["belle", "llama_factory"])
+    def test_other_flat_formats_follow_the_same_rules(self, fmt):
+        converter = DatasetConverter()
+        rows = [{"instruction": "q", "output": "a", "system": "你是助手"}]
+        assert converter.convert(rows, fmt, "json") == rows
+
+    def test_missing_required_field_names_row_and_field(self):
+        converter = DatasetConverter()
+        rows = [{"instruction": "q", "output": "a"}, {"instruction": "只有问题"}]
+        with pytest.raises(ValueError, match="第 2 条 belle 记录缺少字段: output"):
+            converter.convert(rows, "belle", "json")
+
+    def test_top_level_must_be_an_array(self):
+        converter = DatasetConverter()
+        with pytest.raises(ValueError, match="顶层必须是 JSON 数组，当前是dict"):
+            converter.convert({"instruction": "q"}, "alpaca", "json")
+
+    def test_record_must_be_an_object(self):
+        converter = DatasetConverter()
+        with pytest.raises(ValueError, match="第 1 条 alpaca 记录必须是 JSON 对象，当前是str"):
+            converter.convert(["不是对象"], "alpaca", "json")
+
+    def test_empty_dataset_still_yields_empty_list(self):
+        converter = DatasetConverter()
+        assert converter.convert([], "alpaca", "json") == []
+
+    def test_alpaca_to_csv_goes_through_the_json_middle(self):
+        """反向边顺带接通了中转链路：`alpaca → csv` 以前无路可走"""
+        converter = DatasetConverter()
+        rows = [{"instruction": "q", "input": "", "output": "a"}]
+        assert converter.convert(rows, "alpaca", "csv") == rows
+
+
+class TestReverseConversationEdges:
+    """对话类格式（sharegpt / vicuna / chatml）→ 规范形。
+
+    三家只差在**容器字段名**与**角色写法**，折叠规则（末两轮是当前问答、开头的
+    system 轮还原成字段、其余进 history）是共用的：所以形态各测一遍、边界集中测。
+    """
+
+    def test_sharegpt_single_pair(self):
+        converter = DatasetConverter()
+        rows = [{"conversations": [{"from": "human", "value": "你好"},
+                                   {"from": "gpt", "value": "你好呀"}]}]
+        assert converter.convert(rows, "sharegpt", "json") == [
+            {"instruction": "你好", "output": "你好呀"}
+        ]
+
+    def test_sharegpt_history_and_system_split_back_to_fields(self):
+        converter = DatasetConverter()
+        rows = [{"conversations": [
+            {"from": "system", "value": "你是租房顾问"},
+            {"from": "human", "value": "问题1"}, {"from": "gpt", "value": "回答1"},
+            {"from": "human", "value": "问题2"}, {"from": "gpt", "value": "回答2"}]}]
+        assert converter.convert(rows, "sharegpt", "json") == [{
+            "system": "你是租房顾问",
+            "history": [{"role": "user", "content": "问题1"},
+                        {"role": "assistant", "content": "回答1"}],
+            "instruction": "问题2",
+            "output": "回答2",
+        }]
+
+    def test_history_without_leading_system_is_still_history(self):
+        """首两轮不是 system 时不硬套 system 字段，一律按顺序进 history"""
+        converter = DatasetConverter()
+        rows = [{"messages": [
+            {"role": "user", "content": "问题1"}, {"role": "assistant", "content": "回答1"},
+            {"role": "user", "content": "问题2"}, {"role": "assistant", "content": "回答2"}]}]
+        assert converter.convert(rows, "chatml", "json") == [{
+            "history": [{"role": "user", "content": "问题1"},
+                        {"role": "assistant", "content": "回答1"}],
+            "instruction": "问题2",
+            "output": "回答2",
+        }]
+
+    def test_chatml_uses_messages_and_content(self):
+        converter = DatasetConverter()
+        rows = [{"messages": [{"role": "user", "content": "怎么退租"},
+                              {"role": "assistant", "content": "满一年后退还"}]}]
+        assert converter.convert(rows, "chatml", "json") == [
+            {"instruction": "怎么退租", "output": "满一年后退还"}
+        ]
+
+    def test_vicuna_keeps_keys_outside_the_container(self):
+        """`id` 这类容器外的键原样保留：它是 vicuna 数据的唯一标识，丢了就没法定位"""
+        converter = DatasetConverter()
+        rows = [{"id": "v-1", "conversations": [{"from": "user", "value": "q"},
+                                                {"from": "assistant", "value": "a"}]}]
+        assert converter.convert(rows, "vicuna", "json") == [
+            {"id": "v-1", "instruction": "q", "output": "a"}
+        ]
+
+    def test_role_spellings_are_unified_and_case_insensitive(self):
+        """human/user、gpt/assistant 两家写法都要认，大小写不敏感"""
+        converter = DatasetConverter()
+        rows = [{"conversations": [{"from": "HUMAN", "value": "q"},
+                                   {"from": "GPT", "value": "a"}]},
+                {"conversations": [{"from": "user", "value": "q2"},
+                                   {"from": "assistant", "value": "a2"}]}]
+        assert converter.convert(rows, "sharegpt", "json") == [
+            {"instruction": "q", "output": "a"},
+            {"instruction": "q2", "output": "a2"},
+        ]
+
+    def test_unknown_role_is_rejected_rather_than_guessed(self):
+        """不认识的角色（tool / planner / 函数调用）必须报错：猜成 user 会把
+        工具输出静默变成「用户说的话」，训练数据从此不可信。"""
+        converter = DatasetConverter()
+        rows = [{"conversations": [{"from": "tool", "value": "外部返回"},
+                                   {"from": "gpt", "value": "a"}]}]
+        with pytest.raises(ValueError, match="第 1 条 sharegpt 记录含未认识的角色: tool"):
+            converter.convert(rows, "sharegpt", "json")
+
+    def test_missing_container_array_is_named_by_key(self):
+        converter = DatasetConverter()
+        with pytest.raises(ValueError, match="第 1 条 chatml 记录缺少 `messages` 数组"):
+            converter.convert([{"instruction": "q", "output": "a"}], "chatml", "json")
+
+    def test_turn_missing_role_or_value_is_named(self):
+        converter = DatasetConverter()
+        rows = [{"messages": [{"role": "user"}, {"role": "assistant", "content": "a"}]}]
+        with pytest.raises(ValueError, match="某一轮缺少 `role` / `content`"):
+            converter.convert(rows, "chatml", "json")
+
+    def test_single_turn_cannot_restore_a_pair(self):
+        converter = DatasetConverter()
+        rows = [{"messages": [{"role": "user", "content": "只有问"}]}]
+        with pytest.raises(ValueError, match="第 1 条 chatml 对话少于两轮"):
+            converter.convert(rows, "chatml", "json")
+
+    def test_conversation_must_end_with_user_then_assistant(self):
+        """末尾不是「一问一答」时无法判定哪条是 output，报错比按位置硬切安全"""
+        converter = DatasetConverter()
+        rows = [{"conversations": [{"from": "human", "value": "q"},
+                                   {"from": "human", "value": "q2"}]}]
+        with pytest.raises(ValueError,
+                           match="对话必须以「user → assistant」结尾，实际是「user → user」"):
+            converter.convert(rows, "sharegpt", "json")
+
+    def test_record_must_be_an_object(self):
+        converter = DatasetConverter()
+        rows = [[{"from": "human", "value": "q"}]]
+        with pytest.raises(ValueError, match="第 1 条 vicuna 记录必须是 JSON 对象，当前是list"):
+            converter.convert(rows, "vicuna", "json")
+
+    def test_top_level_must_be_an_array(self):
+        converter = DatasetConverter()
+        with pytest.raises(ValueError, match="vicuna 数据集的顶层必须是 JSON 数组"):
+            converter.convert({"conversations": []}, "vicuna", "json")
+
+    def test_empty_dataset_still_yields_empty_list(self):
+        converter = DatasetConverter()
+        assert converter.convert([], "sharegpt", "json") == []
+
+    def test_sharegpt_to_chatml_goes_through_the_json_middle(self):
+        """`_to_json` 改为查表后，对话类之间的互转也要能经规范形中转"""
+        converter = DatasetConverter()
+        rows = [{"conversations": [{"from": "human", "value": "q"},
+                                   {"from": "gpt", "value": "a"}]}]
+        assert converter.convert(rows, "sharegpt", "chatml") == [
+            {"messages": [{"role": "system", "content": "You are a helpful assistant."},
+                          {"role": "user", "content": "q"},
+                          {"role": "assistant", "content": "a"}]}
+        ]
+
+
+class TestRoundTripLossiness:
+    """`json → 训练格式 → json` 的**已知信息损失**，逐家钉住。
+
+    反向边不是无损压缩：写侧本来就丢字段，回读自然没有。把损失写成用例是为了——
+    哪天有人给写侧补上这些字段，这里会红，从而逼他确认往返口径而不是悄悄改语义。
+    `RICH` 每条都带 input / system / history，正好把各家的丢弃面照出来。
+    """
+
+    RICH = {
+        "instruction": "怎么月付",
+        "input": "北京朝阳",
+        "output": "支持月付",
+        "system": "你是租房顾问",
+        "history": [{"role": "user", "content": "问题1"},
+                    {"role": "assistant", "content": "回答1"}],
+    }
+
+    def convert_back(self, fmt):
+        """正向导出 + 反向回读，返回 (导出产物, 回读结果)"""
+        converter = DatasetConverter()
+        exported = converter.convert([self.RICH], "json", fmt)
+        return exported, converter.convert(exported, fmt, "json")
+
+    @pytest.mark.parametrize("fmt", ["alpaca", "belle"])
+    def test_field_mapping_formats_drop_system_and_history(self, fmt):
+        exported, back = self.convert_back(fmt)
+        assert exported == [{"instruction": "怎么月付", "input": "北京朝阳", "output": "支持月付"}]
+        assert back == exported, f"{fmt} 的三个字段应原样回来"
+
+    def test_llama_factory_keeps_system_but_not_history(self):
+        exported, back = self.convert_back("llama_factory")
+        assert exported == [{"instruction": "怎么月付", "input": "北京朝阳",
+                             "output": "支持月付", "system": "你是租房顾问"}]
+        assert back == exported
+
+    def test_sharegpt_keeps_history_but_drops_input_and_system(self):
+        exported, back = self.convert_back("sharegpt")
+        assert exported == [{"conversations": [
+            {"from": "user", "value": "问题1"}, {"from": "assistant", "value": "回答1"},
+            {"from": "human", "value": "怎么月付"}, {"from": "gpt", "value": "支持月付"}]}]
+        assert back == [{
+            "history": [{"role": "user", "content": "问题1"},
+                        {"role": "assistant", "content": "回答1"}],
+            "instruction": "怎么月付", "output": "支持月付"}]
+
+    def test_vicuna_drops_history_system_and_input(self):
+        exported, back = self.convert_back("vicuna")
+        assert exported == [{"id": "", "conversations": [
+            {"from": "human", "value": "怎么月付"}, {"from": "gpt", "value": "支持月付"}]}]
+        assert back == [{"id": "", "instruction": "怎么月付", "output": "支持月付"}]
+
+    def test_chatml_keeps_system_and_history_but_drops_input(self):
+        exported, back = self.convert_back("chatml")
+        assert back == [{
+            "system": "你是租房顾问",
+            "history": [{"role": "user", "content": "问题1"},
+                        {"role": "assistant", "content": "回答1"}],
+            "instruction": "怎么月付", "output": "支持月付"}]
+
+
+class TestReverseEdgesOnFiles:
+    """文件层的源格式声明：容器格式落盘也是 `.json`，扩展名推不出来。"""
+
+    def write(self, tmp_path, name, payload):
+        path = tmp_path / name
+        path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        return path
+
+    def test_alpaca_file_to_chatml_file(self, tmp_path):
+        src = self.write(tmp_path, "in.json", [{"instruction": "q", "input": "i", "output": "a"}])
+        out = tmp_path / "out.json"
+
+        result = convert_file(str(src), str(out),
+                              target_format="chatml", source_format="alpaca")
+
+        assert result["source_format"] == "alpaca"
+        assert result["input_count"] == 1
+        assert result["output_count"] == 1
+        assert json.loads(out.read_text(encoding="utf-8")) == [
+            {"messages": [{"role": "system", "content": "You are a helpful assistant."},
+                          {"role": "user", "content": "q"},
+                          {"role": "assistant", "content": "a"}]}
+        ]
+
+    def test_sharegpt_file_without_declaration_keeps_the_old_behaviour(self, tmp_path):
+        """不声明 `source_format` 时仍按扩展名当 json 读：老调用的行为不变。
+
+        这条同时说明了为什么必须有 `--input_format` / `source_format`：
+        按 json 读走的 `json → chatml` 边只认 `instruction`/`history` 字段，
+        对话数组整个被忽略，产物是空问答——静默坏数据。
+        """
+        rows = [{"conversations": [{"from": "human", "value": "q"},
+                                   {"from": "gpt", "value": "a"}]}]
+        src = self.write(tmp_path, "in.json", rows)
+        out = tmp_path / "out.json"
+
+        convert_file(str(src), str(out), target_format="chatml")
+
+        assert json.loads(out.read_text(encoding="utf-8")) == [{
+            "messages": [{"role": "system", "content": "You are a helpful assistant."},
+                         {"role": "user", "content": ""},
+                         {"role": "assistant", "content": ""}]}]
+
+        declared = tmp_path / "out2.json"
+        convert_file(str(src), str(declared), target_format="chatml", source_format="sharegpt")
+        assert json.loads(declared.read_text(encoding="utf-8")) == [{
+            "messages": [{"role": "system", "content": "You are a helpful assistant."},
+                         {"role": "user", "content": "q"},
+                         {"role": "assistant", "content": "a"}]}]
+
+    def test_broken_container_error_mentions_the_row(self, tmp_path):
+        """文件里的坏记录，报错要带行号（条目下标），否则调用方只能整份手查"""
+        src = self.write(tmp_path, "in.json", [
+            {"instruction": "q", "output": "a"},
+            {"instruction": "只有问题"},
+        ])
+        out = tmp_path / "out.json"
+
+        with pytest.raises(ValueError, match="第 2 条 alpaca 记录缺少字段: output"):
+            convert_file(str(src), str(out), target_format="json", source_format="alpaca")

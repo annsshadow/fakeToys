@@ -287,3 +287,107 @@ class TestConvertFormatSurface:
         )
         assert code == 2, f"CLI 未拒绝 tsv: code={code}"
         assert not out_file.exists()
+
+
+class TestConvertInputFormat:
+    """`convert --input-format`：把「训练格式 → 规范形」的反向边接到命令行。
+
+    容器格式（sharegpt / vicuna / chatml）落盘也是 `.json`，**扩展名推不出源格式**，
+    只能由调用方显式声明。不声明时按 json 原样读，而 `json → chatml` 这条边只认
+    `instruction` / `history` 字段，`conversations` 整个被忽略 —— 产物是空问答且
+    退出码为 0，属于最坏的那类失败：静默坏数据。
+    """
+
+    def write(self, tmp_path, payload):
+        path = tmp_path / "in.json"
+        path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        return path
+
+    def test_sharegpt_file_converts_to_chatml(self, tmp_path):
+        """声明 `--input-format sharegpt` 后，跨格式转换（经规范形中转）能跑通"""
+        src = self.write(tmp_path, [{"conversations": [
+            {"from": "human", "value": "如何退租"}, {"from": "gpt", "value": "满一年后退还"}]}])
+        out_file = tmp_path / "out.json"
+
+        _, parsed, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--input-format", "sharegpt", "--format", "chatml"]
+        )
+        assert code is None
+        assert parsed["source_format"] == "sharegpt"
+        assert parsed["input_count"] == 1
+        assert json.loads(out_file.read_text(encoding="utf-8")) == [{
+            "messages": [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": "如何退租"},
+                {"role": "assistant", "content": "满一年后退还"},
+            ]}]
+
+    def test_alpaca_file_returns_to_canonical_fields(self, tmp_path):
+        """alpaca → json：源字段原样回来，不补 `input` 空列"""
+        src = self.write(tmp_path, [{"instruction": "可以月付吗", "output": "支持月付",
+                                     "category": "付款"}])
+        out_file = tmp_path / "out.json"
+
+        _, parsed, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--input-format", "alpaca", "--format", "json"]
+        )
+        assert code is None
+        assert json.loads(out_file.read_text(encoding="utf-8")) == [
+            {"instruction": "可以月付吗", "output": "支持月付", "category": "付款"}]
+
+    def test_omitting_the_flag_keeps_extension_inference(self, tmp_path):
+        """不给 `--input-format` 时行为与从前一致（按扩展名当 json 读）→ 空问答。
+
+        这条断言的是**坏结果**，因为它是新增选项存在的理由：不加声明就无法从
+        `.json` 里认出 sharegpt，而 CLI 不能凭猜测改老调用的语义。
+        """
+        src = self.write(tmp_path, [{"conversations": [
+            {"from": "human", "value": "如何退租"}, {"from": "gpt", "value": "满一年后退还"}]}])
+        out_file = tmp_path / "out.json"
+
+        _, _, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--format", "chatml"]
+        )
+        assert code is None
+        assert json.loads(out_file.read_text(encoding="utf-8")) == [{
+            "messages": [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": ""},
+                {"role": "assistant", "content": ""},
+            ]}]
+
+    def test_bad_container_row_fails_with_row_number(self, tmp_path, capsys):
+        """源文件里第 2 条缺 `output`：退出码非 0、报错带条目下标、且不留半截产物"""
+        src = self.write(tmp_path, [{"instruction": "q", "output": "a"},
+                                    {"instruction": "只有问题"}])
+        out_file = tmp_path / "out.json"
+
+        _, _, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--input-format", "alpaca", "--format", "json"]
+        )
+        assert code == 1, f"坏数据应当以非 0 退出: code={code}"
+        assert "第 2 条 alpaca 记录缺少字段: output" in capsys.readouterr().err
+        assert not out_file.exists()
+
+    def test_tsv_is_not_accepted_as_input_format(self, tmp_path, capsys):
+        """源格式清单与目标格式同源：转换图里没有 `tsv → json`，CLI 两侧都不收
+
+        断言的是 argparse 的「invalid choice」而不是任意非 0 退出码 —— 后者在
+        `--input-format` 根本不存在时也会出现（unrecognized arguments），那样这条
+        用例就测不出「清单里排除了 tsv」这个事实。
+        """
+        src = self.write(tmp_path, [{"instruction": "q", "output": "a"}])
+        out_file = tmp_path / "out.json"
+
+        _, _, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--input-format", "tsv", "--format", "json"]
+        )
+        err = capsys.readouterr().err
+        assert code == 2, f"CLI 未拒绝 tsv 源格式: code={code}"
+        assert "--input-format" in err and "invalid choice" in err, err
+        assert not out_file.exists()
