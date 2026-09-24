@@ -1245,3 +1245,404 @@ class TestOnlyOneProducerRuns:
         assert (got.removed_count, got.deduplicated_count) == \
                (want.removed_count, want.deduplicated_count)
         assert got.duplicate_groups, f"阈值 {threshold} 下一组重复都没分到，本用例是空跑"
+
+class TestSimilarPairsCoverEveryDocument:
+    """相似对必须在**全部**条目之间找，不许有隐形的「只看前 200 条」窗口
+
+    旧实现把候选限制在 `items[:200]`，第 201 条之后的重复**永远不会**出现在结果
+    里，而返回形状完全正常：真实 6902 条语料上 `instruction` 侧报出的最大索引只有
+    158、`output` 侧只有 53（全量口径下这两侧分别有 482 与 48,677 对达标）。
+    本组用例的语料是「互不相关的占位档 + 尾部若干条完全相同」，占位档两两正交
+    （TF 向量没有共同二元组 → 相似度精确为 0），所以达标对集合可以精确枚举。
+    """
+
+    #: 占位档数量刻意超过 200，让尾部那几条落在旧实现的窗口之外
+    FILLER_COUNT = 220
+
+    #: 尾部重复文档用的字符区间与占位档（0x4E00…0x4E00+659）不重叠
+    DUP_TEXT = "".join(chr(0x4E00 + 1000 + k) for k in range(8))
+
+    @classmethod
+    def fillers(cls, count):
+        """每篇 3 个互不相同的汉字，且任意两篇的字符集合不相交 → 相似度精确 0"""
+        return ["".join(chr(0x4E00 + 3 * t + r) for r in range(3)) for t in range(count)]
+
+    def texts(self, tail_duplicates):
+        return self.fillers(self.FILLER_COUNT) + [self.DUP_TEXT] * tail_duplicates
+
+    def dedup(self):
+        dedup = Deduplicator(threshold=0.9)
+        # 正交性来自 fallback 编码器的 TF 词表；真实语义模型会把无关句子也映得相近
+        dedup._model = "fallback"
+        return dedup
+
+    def test_placeholders_alone_qualify_no_pairs(self):
+        """前置自证：占位档之间必须真的一个达标对都没有
+
+        后面几条断言的是「结果恰好等于尾部那几对」，一旦占位档互相达标，那些断言
+        就会被噪声冲掉。先把「语料是干净的」单独钉住，红的时候才知道该修哪一层。
+        """
+        assert self.dedup().find_similar_pairs(
+            [{"instruction": t} for t in self.texts(0)], top_k=5) == []
+
+    def test_a_duplicate_pair_beyond_the_200th_item_is_found(self):
+        """唯一的达标对落在第 221/222 条时必须被找到（旧实现看不见它）"""
+        items = [{"instruction": t} for t in self.texts(2)]
+        pairs = self.dedup().find_similar_pairs(items, top_k=5)
+
+        assert [(i, j) for i, j, _ in pairs] == [(220, 221)], (
+            f"尾部那一对没有被找到，说明比较范围仍被截断: {pairs}"
+        )
+        assert abs(pairs[0][2] - 1.0) < 1e-5
+
+    def test_the_whole_tail_group_is_reported(self):
+        """尾部 4 条完全相同 → 恰好 C(4,2)=6 对，一对不落、一对不多"""
+        items = [{"instruction": t} for t in self.texts(4)]
+        pairs = self.dedup().find_similar_pairs(items, top_k=20)
+
+        expected = {(i, j) for i in range(220, 224) for j in range(i + 1, 224)}
+        assert {(i, j) for i, j, _ in pairs} == expected
+
+    @pytest.mark.parametrize("chunk_size", [1000, 25])
+    def test_pairs_survive_block_boundaries(self, chunk_size):
+        """达标对在最后一块里时也必须找到——钉「逐块扫完整档」而不是只扫首块
+
+        224 条按 25 行切块后有 9 块，那 6 对全在第 9 块（行 220–223、列同段）。
+        """
+        pairs = self.dedup()._find_similar_pairs_chunked(
+            self.texts(4), 20, chunk_size=chunk_size)
+
+        expected = {(i, j) for i in range(220, 224) for j in range(i + 1, 224)}
+        assert {(i, j) for i, j, _ in pairs} == expected, f"块大小 {chunk_size} 下候选集不同"
+
+    def test_only_the_upper_triangle_is_reported(self):
+        """每对只报一次且 `i < j`：对称块的两半不许都倒出来"""
+        items = [{"instruction": t} for t in self.texts(6)]
+        pairs = self.dedup().find_similar_pairs(items, top_k=100)
+
+        keys = [(i, j) for i, j, _ in pairs]
+        assert all(i < j for i, j in keys), f"出现了下三角或自配对: {keys}"
+        # top_k(100) 大于候选总数：有几对报几对，不补位也不截断
+        assert len(keys) == len(set(keys)) == 15, f"C(6,2)=15 对应全部报出且不重复: {keys}"
+
+    def test_missing_field_is_treated_as_empty_not_an_error(self):
+        """缺字段的条目按空文本参与比较，全零向量之间不构成达标对"""
+        dedup = self.dedup()
+        items = [{"output": "租房补贴怎样申请"} for _ in range(30)]
+
+        # 默认字段一个都没有 → 30 条空文本 → 零向量之间相似度 0
+        assert dedup.find_similar_pairs(items, top_k=5) == []
+
+        got = dedup.find_similar_pairs(items, text_key="output", top_k=5)
+        assert [i for i, _, _ in got] == [0] * 5
+        assert [j for _, j, _ in got] == [1, 2, 3, 4, 5]
+        for _, _, sim in got:
+            assert abs(sim - 1.0) < 1e-5
+
+
+class TestSimilarPairsMatchAnIndependentOracle:
+    """名次与数值要能对上第三条独立算出来的路
+
+    选路那一组用例钉的是「挑哪条生产者」，本组钉的是「挑完之后答案对不对」：
+    用 float64 重新做一遍归一化点积、独立排序，再与公开入口给出的结果比对。
+    TF 向量的相似度天然爱并列（重复文档恒等于 1.0、同一词表下常有成片的 0.8333），
+    而并列点上的先后**任何 float32 实现都无从裁定**（见 A36），所以断言分两档：
+    前 `top_k` 名彼此隔开 > 1e-4 时才比**序列**，否则只比**完整候选集合**。
+    两档都先做「门槛间隔」前置——判据落在并列带里的语料直接把用例顶红，
+    也不放一条假绿的过去。
+    """
+
+    BASE = "晨阳计划月租金折上96折押一付一半年内全城无责换房"
+
+    def ladder(self):
+        """一条基准句 + 逐位替换前缀：制造一串「接近但互不相等」的相似度"""
+        rows = [self.BASE]
+        for k in range(1, 9):
+            rows.append(self.BASE[:k] + "".join("甲乙丙丁"[m % 4] for m in range(k))
+                        + self.BASE[2 * k:])
+        return rows
+
+    def corpora(self):
+        return {
+            "倒排语料": TestNgramInvertedView.ROWS * 3,
+            "阶梯近重复": self.ladder(),
+            "尾部重复224": TestSimilarPairsCoverEveryDocument().texts(4),
+        }
+
+    @staticmethod
+    def oracle(texts, threshold):
+        """独立第三路：float64 归一化 + 全对排序，不走被测实现的任何中间产物"""
+        dedup = Deduplicator(threshold=threshold)
+        dedup._model = "fallback"
+        vectors = dedup._fallback_encode(texts).astype(np.float64)
+        norms = np.linalg.norm(vectors, axis=1)
+        unit = vectors / np.where(norms == 0.0, 1.0, norms)[:, None]
+        sims = unit @ unit.T
+
+        rows, cols = np.triu_indices(len(texts), 1)
+        return rows, cols, sims[rows, cols]
+
+    def qualified(self, name, threshold=0.9):
+        """返回 (rows, cols, values, keep, floor)：keep 是参考路上达标对的下标"""
+        rows, cols, values = self.oracle(self.corpora()[name], threshold)
+        floor = threshold * 0.8
+        margin = float(np.abs(values - floor).min())
+        assert margin > 1e-4, (
+            f"{name}: 最近的配对距门槛 {floor} 只有 {margin:.1e}，"
+            "落在 float32 判定带里，收不收它两说，不适合做等价断言"
+        )
+        return rows, cols, values, np.flatnonzero(values >= floor), floor
+
+    def test_the_decisive_prefix_matches_the_oracle_order(self):
+        """阶梯语料的前 3 名彼此隔开 1e-2 量级 → 序列可以逐条比"""
+        top_k = 3
+        rows, cols, values, keep, _ = self.qualified("阶梯近重复")
+        assert keep.size > top_k, f"达标对不足 {top_k} 对，截断没起作用，本用例是空跑"
+
+        head = np.sort(values[keep])[::-1]
+        separation = float(np.min(-np.diff(head[:top_k + 1])))
+        assert separation > 1e-4, f"前 {top_k + 1} 名里最小相邻差只有 {separation:.1e}，有并列"
+
+        order = np.lexsort((cols[keep], rows[keep], -values[keep]))[:top_k]
+        expected = [(int(rows[keep][o]), int(cols[keep][o]), float(values[keep][o]))
+                    for o in order]
+
+        dedup = Deduplicator(threshold=0.9)
+        dedup._model = "fallback"
+        got = dedup.find_similar_pairs(
+            [{"instruction": t} for t in self.corpora()["阶梯近重复"]], top_k=top_k)
+
+        assert [(i, j) for i, j, _ in got] == [(i, j) for i, j, _ in expected], (
+            f"序列不同\n实际 {got}\n参考 {expected}"
+        )
+        for (_, _, got_sim), (_, _, want_sim) in zip(got, expected):
+            assert abs(got_sim - want_sim) <= 2e-6
+
+    @pytest.mark.parametrize("name,top_k", [("倒排语料", 27), ("尾部重复224", 20)])
+    def test_the_full_candidate_set_matches_the_oracle(self, name, top_k):
+        """并列成片的语料只比集合：`top_k` 取到装得下全部达标对，截断点不参与裁定
+
+        倒排语料有 24 对完全相同的文档（相似度恒等于 1.0），尾部重复224 有 6 对；
+        名次在这些对上由 `(i, j)` 规则决定，那是
+        :class:`TestSimilarPairTiesBreakByIndex` 的职责，不在本用例里重复钉。
+        """
+        rows, cols, values, keep, _ = self.qualified(name)
+        assert top_k >= keep.size, (
+            f"{name}: top_k={top_k} 小于达标对数 {keep.size}，截断落在并列段里"
+        )
+
+        expected = {(int(rows[k]), int(cols[k])) for k in keep}
+        dedup = Deduplicator(threshold=0.9)
+        dedup._model = "fallback"
+        got = dedup.find_similar_pairs([{"instruction": t} for t in self.corpora()[name]],
+                                       top_k=top_k)
+
+        got_keys = {(i, j) for i, j, _ in got}
+        assert got_keys == expected, (
+            f"{name}: 候选集合不同，缺 {expected - got_keys}，多 {got_keys - expected}"
+        )
+        assert len(got) == keep.size
+        want = {(int(rows[k]), int(cols[k])): float(values[k]) for k in keep}
+        for i, j, sim in got:
+            assert abs(sim - want[(i, j)]) <= 2e-6
+
+    @pytest.mark.parametrize("name,top_k", [
+        ("倒排语料", 4),
+        ("阶梯近重复", 3),
+        ("尾部重复224", 20),
+    ])
+    def test_results_are_ranked_and_come_from_the_upper_triangle(self, name, top_k):
+        """结构不变量：相似度降序、`i < j`、无重复——与数值对不对是两件事"""
+        texts = self.corpora()[name]
+        dedup = Deduplicator(threshold=0.9)
+        dedup._model = "fallback"
+        got = dedup.find_similar_pairs([{"instruction": t} for t in texts], top_k=top_k)
+
+        assert got, f"{name}: 没有返回任何配对，本用例是空跑"
+        sims = [s for _, _, s in got]
+        assert sims == sorted(sims, reverse=True), f"相似度未按降序: {sims}"
+        keys = [(i, j) for i, j, _ in got]
+        assert all(i < j for i, j in keys)
+        assert len(set(keys)) == len(keys), f"同一对报了两次: {keys}"
+
+
+class TestSimilarPairTiesBreakByIndex:
+    """并列名次由 `(i, j)` 升序裁定，且与走哪条生产者无关
+
+    600 条全重复语料里每一对相似度都相等，截断点正落在并列段中间：这时候
+    名次规则就是唯一能让「同一份数据换个内部实现也不换 top_k」成立的东西。
+    这些文档又全部在第 200 条之后，所以旧实现（只看前 200 条）在这里报空。
+    """
+
+    TAIL_DUPLICATES = 30
+
+    def texts(self):
+        holder = TestSimilarPairsCoverEveryDocument()
+        return holder.fillers(holder.FILLER_COUNT) + [holder.DUP_TEXT] * self.TAIL_DUPLICATES
+
+    @pytest.mark.parametrize("win", [None, True, False])
+    def test_the_expected_prefix_of_the_tie_run_is_returned(self, monkeypatch, win):
+        """前 5 条必须是 `(220, 221) … (220, 225)`，而不是别的并列成员"""
+        if win is not None:
+            monkeypatch.setattr(Deduplicator, "_inverted_blocks_win",
+                                staticmethod(lambda *args: win))
+        dedup = Deduplicator(threshold=0.9)
+        dedup._model = "fallback"
+
+        pairs = dedup.find_similar_pairs([{"instruction": t} for t in self.texts()],
+                                         top_k=5)
+
+        start = TestSimilarPairsCoverEveryDocument.FILLER_COUNT
+        assert [(i, j) for i, j, _ in pairs] == [
+            (start, start + step) for step in range(1, 6)], f"win={win} 下并列段前缀不同: {pairs}"
+        assert len({s for _, _, s in pairs}) == 1, (
+            f"并列段的相似度应当逐位相同: {[s for _, _, s in pairs]}"
+        )
+
+
+class TestSimilarPairsWorkingSetStaysBounded:
+    """去掉窗口之后，候选保留集不许随「总达标对数」膨胀
+
+    全重复语料有 C(n,2) 对达标（600 条 → 179,700 对），「先把候选全收进一个表、
+    最后一次性排序」的写法实测峰值 13.41 MiB（numpy 三段拼接），n=1200 时 48.10 MiB；
+    用 Python 元组表收更贵（32.0 / 132.6 MiB）——都跟着对数平方走。实现按行消费块、
+    每行末尾把保留集裁回 top_k，所以峰值只到 `top_k + 单行达标数`（≤ top_k+n）。
+    这里用 `_pair_rank` 见到过的最大工作集把这件事钉成结构约束，比只测一次墙钟
+    峰值可靠（时间随机器负载变，见循环日志 L12/L25）。
+
+    两条用例都做过注入验证：把本方法换成「收完再排」的等价写法（结果逐条相同、
+    只有资源形状不同）之后，本类两条红、其余 115 条全绿。
+    """
+
+    def ranked_sizes(self, monkeypatch, texts, top_k):
+        """跑一次公开入口，记录 `_pair_rank` 每次见到的候选条数"""
+        sizes = []
+
+        def spy(original, *args):
+            def wrapper(*inner_args, **inner_kwargs):
+                sizes.append(len(inner_args[0]))
+                return original(*inner_args, **inner_kwargs)
+            return wrapper
+
+        monkeypatch.setattr(Deduplicator, "_pair_rank",
+                            staticmethod(spy(Deduplicator._pair_rank)))
+        dedup = Deduplicator(threshold=0.9)
+        dedup._model = "fallback"
+        pairs = dedup.find_similar_pairs([{"instruction": t} for t in texts], top_k=top_k)
+        return sizes, pairs
+
+    def test_the_working_set_never_grows_with_the_candidate_count(self, monkeypatch):
+        """工作集上界是 `top_k + n`，而候选总数是 n²/2——差两个数量级才算数"""
+        n, top_k = 600, 5
+        candidates = n * (n - 1) // 2
+
+        sizes, pairs = self.ranked_sizes(monkeypatch, ["完全相同的一句话"] * n, top_k)
+
+        assert sizes, "_pair_rank 一次都没被调用，探针没生效"
+        assert len(pairs) == top_k
+        assert max(sizes) <= top_k + n, f"保留集涨到 {max(sizes)}，说明候选在跨行累积"
+        assert candidates > 20 * max(sizes), (
+            f"候选 {candidates:,} 对相对工作集 {max(sizes)} 不够悬殊，本用例分不出两种写法"
+        )
+
+    def test_peak_stays_far_below_materializing_every_candidate(self):
+        """600 条全重复语料的峰值必须远低于「把 179,700 对都建出来」
+
+        实测（同一进程 back-to-back）：有界 1.44 MiB（占主导的是 600×600 的相似度
+        块），收完再排的等价写法 13.41 MiB（n=1200 时 4.70 对 48.10 MiB）。界取
+        6 MiB——留出覆盖率 trace 对纯 Python 循环的放大（见 L10 与本文件里的内存
+        用例），又不到朴素路径的量级。
+        """
+        import tracemalloc
+
+        items = [{"instruction": "完全相同的一句话"}] * 600
+        dedup = Deduplicator(threshold=0.9)
+        dedup._model = "fallback"
+
+        tracemalloc.start()
+        try:
+            pairs = dedup.find_similar_pairs(items, top_k=5)
+            peak = tracemalloc.get_traced_memory()[1] / 2 ** 20
+        finally:
+            tracemalloc.stop()
+
+        assert len(pairs) == 5, f"600 条全重复应有 5 对候选，实得 {pairs}"
+        assert peak < 6.0, f"峰值 {peak:.2f} MiB 超出预算（收完再排实测 13.41 MiB）"
+
+
+class TestSimilarPairsUseTheGroupingProducer:
+    """相似对与归组必须共用同一个相似度块生产者
+
+    L30（A17）做出块生产者之后，A35 记的是「`find_similar_pairs` 还在自己编码
+    整份 n×vocab 矩阵」（真实 6902 条：606 MiB 矩阵、624.2 MiB 峰值）。本轮把它
+    接到 :meth:`Deduplicator._similarity_blocks` 上，所以这里钉三件事：块生产者
+    恰好被叫一次；构造完整 n×n 的那两个入口一次都不叫；`_batch_encode` 的次数
+    与选路一致（判倒排赢时不许再编一份稠密矩阵）。
+    """
+
+    CORPUS = TestNgramInvertedView.ROWS * 3
+
+    #: 接缝里属于 staticmethod 的那几个，包装时必须保持 static，否则 self 会被
+    #: 当成第一个位置参数传进去
+    STATIC = {"_normalize"}
+
+    #: 被计数的接缝（模式同 :meth:`TestOnlyOneProducerRuns.armed`，只是清单不同）
+    SPIED = ("_similarity_blocks", "_normalize", "_compute_similarity_matrix_chunked",
+             "_batch_encode")
+
+    def armed(self, monkeypatch, win):
+        """钉住选路并给接缝装计数器，返回 (去重器, 调用次数)"""
+        if win is not None:
+            monkeypatch.setattr(Deduplicator, "_inverted_blocks_win",
+                                staticmethod(lambda *args: win))
+        calls = dict.fromkeys(self.SPIED, 0)
+        for name in self.SPIED:
+            original = getattr(Deduplicator, name)
+
+            def wrapper(*args, _orig=original, _key=name, **kwargs):
+                calls[_key] += 1
+                return _orig(*args, **kwargs)
+
+            monkeypatch.setattr(Deduplicator, name,
+                                staticmethod(wrapper) if name in self.STATIC else wrapper)
+
+        dedup = Deduplicator(threshold=0.6)
+        dedup._model = "fallback"
+        return dedup, calls
+
+    @pytest.mark.parametrize("win", [None, True, False])
+    def test_the_shared_producer_runs_and_the_whole_matrix_does_not(self, monkeypatch, win):
+        """三条生产者共用的块入口叫一次，n×n 那条路一步都不许走"""
+        dedup, calls = self.armed(monkeypatch, win)
+
+        pairs = dedup.find_similar_pairs([{"instruction": t} for t in self.CORPUS],
+                                         top_k=8)
+
+        assert pairs, f"win={win}: 这条语料应至少报出一对，否则本用例是空跑"
+        assert calls["_similarity_blocks"] == 1, f"块生产者被叫了 {calls} 次"
+        assert calls["_normalize"] == 0, f"又去复制整份归一化矩阵了: {calls}"
+        assert calls["_compute_similarity_matrix_chunked"] == 0, (
+            f"退回了构造 n×n 的老路: {calls}"
+        )
+
+    def test_the_inverted_choice_never_encodes_a_dense_matrix(self, monkeypatch):
+        """判倒排赢时，稠密编码入口一次都不被碰"""
+        dedup, calls = self.armed(monkeypatch, True)
+
+        dedup.find_similar_pairs([{"instruction": t} for t in self.CORPUS], top_k=8)
+
+        assert calls == {"_similarity_blocks": 1, "_normalize": 0,
+                         "_compute_similarity_matrix_chunked": 0, "_batch_encode": 0}, (
+            f"判倒排赢却编了稠密矩阵: {calls}"
+        )
+
+    def test_the_dense_choice_encodes_exactly_once(self, monkeypatch):
+        """判稠密时也只经块生产者一次、只编码一次——不是每块重编一遍"""
+        dedup, calls = self.armed(monkeypatch, False)
+
+        dedup.find_similar_pairs([{"instruction": t} for t in self.CORPUS], top_k=8)
+
+        assert calls == {"_similarity_blocks": 1, "_normalize": 0,
+                         "_compute_similarity_matrix_chunked": 0, "_batch_encode": 1}, (
+            f"稠密那条没有只编码一次，或根本没经块生产者: {calls}"
+        )
