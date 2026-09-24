@@ -233,6 +233,7 @@
           <button class="btn-sm" @click="pcU13">WeLink同步/异常日志上报</button>
           <button class="btn-sm" @click="pcU14">政务钉钉/安装日志/重打包</button>
           <button class="btn-sm" @click="pcU15">安卓打包/发布/WeLink同步</button>
+          <button class="btn-sm" @click="pcU16">注册应用/输出选择/调用器改</button>
           <div v-if="pcU4Text" class="app-meta">{{ pcU4Text }}</div>
         </div>
         <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
@@ -1498,6 +1499,19 @@ async function pcU15() {
     if (pubId.trim()) await api.post('/api/program_center/apppack/pack/info/file/publish', { id: pubId })
     await api.post('/api/program_center/welink/request/pull/sync', {})
     toast.success('打包/同步已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev430：程序中心 中心注册应用清单(PUT 读 x_applications 无参)·输出按flag选择(PUT UPDATE x_program_output by flag)·调用器按flag改文本(PUT UPDATE x_program_invoke text) 三条，distinct 表，无外部 HTTP
+async function pcU16() {
+  try {
+    await api.put('/api/program_center/center/regist/applications', {})
+    const outFlag = prompt('输出 flag（可空跳过）:', '') || ''
+    if (outFlag.trim()) await api.put(`/api/program_center/output/${encodeURIComponent(outFlag)}/select`, {})
+    const invFlag = prompt('调用器 flag（可空跳过）:', '') || ''
+    if (invFlag.trim()) await api.put(`/api/program_center/invoke/${encodeURIComponent(invFlag)}/file`, { text: '控制台更新' })
+    toast.success('注册/输出/调用器已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
   }
