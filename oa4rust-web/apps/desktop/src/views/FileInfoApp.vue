@@ -10,6 +10,7 @@
     <div class="content-panel glass-card">
       <div class="toolbar">
         <button class="btn-primary" @click="loadFiles">刷新</button>
+        <button class="btn-primary" @click="cleanUnusedFiles">清理无引用文件</button>
       </div>
       <div class="list-panel">
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 6" :key="i"></div></div>
@@ -30,6 +31,7 @@
             <span class="col-size">{{ formatSize(f.size || f.fileSize) }}</span>
             <span class="col-actions">
               <button class="btn-sm" @click="downloadFile(f)">下载</button>
+              <button class="btn-sm" @click="docMeta(f)">元数据</button>
             </span>
           </div>
         </div>
@@ -41,7 +43,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { ref } from 'vue'
-import { toast } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
 type FileInfo = {
   id: string
@@ -92,6 +94,27 @@ async function loadFiles() {
     files.value = []
   } finally {
     loading.value = false
+  }
+}
+// rev449：读某文件在指定文档下的元数据（fileinfo_id_document_documentId Path<(file_id,doc_id)> 查 x_cms_fileinfo）
+async function docMeta(f: FileInfo) {
+  const docId = f.documentId || f.docId || prompt('文档 ID:', '') || ''
+  if (!docId.trim()) return
+  try {
+    const r: any = await api.get(`/api/fileinfo/${encodeURIComponent(f.id)}/document/${encodeURIComponent(docId)}`)
+    toast.success(`元数据：${(r as any)?.data?.originalName ?? (r as any)?.data?.id ?? '无'}`)
+  } catch (e: any) {
+    toast.error('读取元数据失败: ' + (e?.message ?? ''))
+  }
+}
+// rev449：清理 cmsdocument_manage 无引用文件（file_clean_unused_referencetype_cmsdocument_manage pool-only，DELETE FILE_FILE by reference_type）
+async function cleanUnusedFiles() {
+  if (!(await confirmMsg('确定清理 cmsdocument_manage 引用类型的无用文件？'))) return
+  try {
+    const r: any = await api.get('/api/file/clean/unused/referencetype/cmsdocument/manage')
+    toast.success(`已清理无引用文件：${(r as any)?.data?.deleted ?? (r as any)?.data?.count ?? 0}`)
+  } catch (e: any) {
+    toast.error('清理失败: ' + (e?.message ?? ''))
   }
 }
 
