@@ -111,6 +111,10 @@
         <button class="btn-refresh" @click="pdDesigner2('fileDownload')">下载设计器文件</button>
         <button class="btn-refresh" @click="pdDesigner2('procVersion')">流程版本详情</button>
         <button class="btn-refresh" @click="pdDesigner2('procProjection')">流程投影执行</button>
+        <button class="btn-refresh" @click="pdDesigner3('mappingExec')">映射执行(位置态)</button>
+        <button class="btn-refresh" @click="pdDesigner3('processEnable')">启用流程(位置态)</button>
+        <button class="btn-refresh" @click="pdDesigner3('processDisable')">停用流程(位置态)</button>
+        <button class="btn-refresh" @click="pdDesigner3('editionDelete')">删流程版次</button>
         <button class="btn-refresh" @click="pdDesigner2('procDisable')">停用流程</button>
         <button class="btn-refresh" @click="pdDesigner2('procEnable')">启用流程</button>
         <button class="btn-refresh" @click="pdDesigner2('procUpgradeAll')">升级全部流程</button>
@@ -712,6 +716,18 @@ async function pdDesigner2(op: string) {
     else if (op === 'appEdition') { const id = prompt('应用 ID:', '') || ''; await api.post(`/api/processplatform/assemble/designer/process/application/edition/edition/${encodeURIComponent(id)}`, {}) }
     else if (op === 'itemAccessDel') { const pid = prompt('流程 ID:', '') || ''; if (!(await confirmMsg('确定删除该流程项权限？'))) return; await api.post(`/api/processplatform/assemble/designer/item/access/delete/process/path/path/${encodeURIComponent(pid)}`, {}) }
     else { const id = prompt('要删除的设计器对象 ID:', '') || ''; if (!(await confirmMsg('确定删除该设计器对象？'))) return; await api.post(`/api/processplatform/assemble/designer/delete/${encodeURIComponent(id)}`, {}) }
+    toast.success('流程设计器操作已提交')
+  } catch (err: any) {
+    toast.error('操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev404：流程设计器 映射执行(位置态)/流程启用·禁用(位置态)/流程版次删 真实路由（mapping/execute/{flag}·process/enable·disable/{id} 与既有 {flag}/execute·{id}/enable 位置不同为独立注册、process_edition_delete Path<2-tuple> 已核；规避 {id}/{onlyRemoveNotCompleted} 单-String handler arity trap；用户触发）
+async function pdDesigner3(op: string) {
+  try {
+    if (op === 'mappingExec') { const f = encodeURIComponent(prompt('映射标识:', '') || ''); await api.get(`/api/processplatform/assemble/designer/mapping/execute/${f}`) }
+    else if (op === 'processEnable') { const id = encodeURIComponent(prompt('流程 ID:', '') || ''); await api.get(`/api/processplatform/assemble/designer/process/enable/${id}`) }
+    else if (op === 'processDisable') { const id = encodeURIComponent(prompt('流程 ID:', '') || ''); await api.get(`/api/processplatform/assemble/designer/process/disable/${id}`) }
+    else { const id = encodeURIComponent(prompt('流程 ID:', '') || ''); const orn = 'false'; if (!(await confirmMsg('确定删除该流程版次？'))) return; await api.delete(`/api/processplatform/assemble/designer/process/${id}/${orn}/edition`) }
     toast.success('流程设计器操作已提交')
   } catch (err: any) {
     toast.error('操作失败: ' + (err?.message ?? ''))
