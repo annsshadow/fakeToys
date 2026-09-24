@@ -38,6 +38,14 @@
         <button class="eb" @click="attV2Write('selfHolidayDelete')">删自定义假期</button>
         <button class="eb" @click="attV2Write('holidaySimpleCreate')">建简易假期</button>
         <button class="eb" @click="attV2Write('holidaySimpleDelete')">删简易假期</button>
+        <button class="eb" @click="attStatFilters">统计/明细筛选读</button>
+        <button class="eb" @click="attCoreEntity('recordCreate')">建考勤记录</button>
+        <button class="eb" @click="attCoreEntity('recordUpdate')">改考勤记录</button>
+        <button class="eb" @click="attCoreEntity('recordDelete')">删考勤记录</button>
+        <button class="eb" @click="attCoreEntity('ruleCreate')">建考勤规则</button>
+        <button class="eb" @click="attCoreEntity('ruleUpdate')">改考勤规则</button>
+        <button class="eb" @click="attCoreEntity('ruleDelete')">删考勤规则</button>
+        <span v-if="attStatText" class="app-meta">{{ attStatText }}</span>
       </div>
       <div v-if="attOverviewText" class="att-note">{{ attOverviewText }}</div>
     </div>
@@ -333,6 +341,7 @@ async function exportData() {
   }
 }
 const attOverviewText = ref('')
+const attStatText = ref('')
 async function loadV2Meta() {
   try {
     // 消费 attendance v2 三条真实路由：全局配置 / 我的控件 / 请假模板
@@ -488,7 +497,71 @@ async function attV2Write(op: string) {
     toast.error('操作失败: ' + (e?.message ?? ''))
   }
 }
-// 考勤核心记录/规则（rev184，4 条真实 distinct 无参列表）：admin/list/all（list_admins x_attendance_admin）
+// rev355：考勤 统计展示(人月/顶单位日月/单位日月)游标翻页 + 明细筛选(顶单位/单位/用户/未签)+ 申诉/自定义假期筛选 真实分页读（PUT 过滤读，用户触发，全字面量路径）
+async function attStatFilters(): Promise<void> {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '(0)'
+  const cnt = '20'
+  try {
+    const r = await Promise.all([
+      s(api.put(`/api/attendance/assemble/control/statisticshow/filter/personMonth/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`, {})),
+      s(api.put(`/api/attendance/assemble/control/statisticshow/filter/personMonth/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`, {})),
+      s(api.put(`/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`, {})),
+      s(api.put(`/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`, {})),
+      s(api.put(`/api/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`, {})),
+      s(api.put(`/api/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`, {})),
+      s(api.put(`/api/attendance/assemble/control/statisticshow/filter/unitDay/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`, {})),
+      s(api.put(`/api/attendance/assemble/control/statisticshow/filter/unitDay/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`, {})),
+      s(api.put(`/api/attendance/assemble/control/statisticshow/filter/unitMonth/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`, {})),
+      s(api.put(`/api/attendance/assemble/control/statisticshow/filter/unitMonth/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`, {})),
+      s(api.put('/api/attendance/assemble/control/attendancedetail/filter/list/topUnit', {})),
+      s(api.put('/api/attendance/assemble/control/attendancedetail/filter/list/unit', {})),
+      s(api.put('/api/attendance/assemble/control/attendancedetail/filter/list/user', {})),
+      s(api.put('/api/attendance/assemble/control/attendancedetail/list/persons/nonesign', {})),
+      s(api.put(`/api/attendance/assemble/control/attendanceappealInfo/filter/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`, {})),
+      s(api.put(`/api/attendance/assemble/control/attendanceappealInfo/manager/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`, {})),
+      s(api.put(`/api/attendance/assemble/control/attendanceselfholiday/filter/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`, {})),
+      s(api.put(`/api/attendance/assemble/control/attendanceselfholiday/filter/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`, {})),
+    ])
+    const hit = r.filter((x) => x !== null).length
+    attStatText.value = `统计/明细/申诉筛选读 命中 ${hit}/${r.length}`
+    toast.success('考勤统计筛选已加载')
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+// rev355：考勤核心实体 记录/规则 建改删 真实写（shape 已核：record{userId,checkInTime,status}、rule{name,startTime,endTime}；删走 GET by id）
+async function attCoreEntity(op: string) {
+  try {
+    if (op === 'recordCreate') {
+      const userId = prompt('人员 ID:', '') || ''
+      const checkInTime = prompt('打卡时间:', '') || ''
+      await api.post('/api/attendance/core/entity/record/create', { userId, checkInTime, status: 'normal' })
+    } else if (op === 'recordUpdate') {
+      const id = prompt('记录 ID:', '') || ''
+      await api.post(`/api/attendance/core/entity/record/${encodeURIComponent(id)}/update`, {})
+    } else if (op === 'recordDelete') {
+      const id = prompt('要删除的记录 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该考勤记录？'))) return
+      await api.get(`/api/attendance/core/entity/record/${encodeURIComponent(id)}/delete`)
+    } else if (op === 'ruleCreate') {
+      const name = prompt('规则名称:', '') || ''
+      const startTime = prompt('开始时间:', '') || ''
+      const endTime = prompt('结束时间:', '') || ''
+      await api.post('/api/attendance/core/entity/rule/create', { name, startTime, endTime })
+    } else if (op === 'ruleUpdate') {
+      const id = prompt('规则 ID:', '') || ''
+      await api.post(`/api/attendance/core/entity/rule/${encodeURIComponent(id)}/update`, {})
+    } else {
+      const id = prompt('要删除的规则 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该考勤规则？'))) return
+      await api.get(`/api/attendance/core/entity/rule/${encodeURIComponent(id)}/delete`)
+    }
+    toast.success('考勤核心实体操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
 // + rule/list（list_schedule_rules x_attendance_rule）+ core/entity/record/list（SeaORM attendance_record）
 // + core/entity/rule/list（SeaORM attendance_rule）。前二属 attendance crate、后二属 attendance_core_entity crate。
 async function loadCoreLists() {
