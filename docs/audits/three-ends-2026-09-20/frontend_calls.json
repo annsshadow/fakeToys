@@ -8304,7 +8304,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 74,
+    "line": 80,
     "method": "GET",
     "raw": "/api/hotpic/list/hotpics",
     "path": "/api/hotpic/list/hotpics",
@@ -8314,7 +8314,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 75,
+    "line": 81,
     "method": "GET",
     "raw": "/api/hotpic/assemble/control/list/control/panels",
     "path": "/api/hotpic/assemble/control/list/control/panels",
@@ -8324,7 +8324,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 76,
+    "line": 82,
     "method": "GET",
     "raw": "/api/hotpic/assemble/control/list/control/applications",
     "path": "/api/hotpic/assemble/control/list/control/applications",
@@ -8334,7 +8334,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 94,
+    "line": 100,
     "method": "GET",
     "raw": "/api/hotpic/assemble/control/config",
     "path": "/api/hotpic/assemble/control/config",
@@ -8344,7 +8344,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 95,
+    "line": 101,
     "method": "GET",
     "raw": "/api/hotpic/assemble/control/user/hotpic/exists/check",
     "path": "/api/hotpic/assemble/control/user/hotpic/exists/check",
@@ -8354,7 +8354,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 96,
+    "line": 102,
     "method": "GET",
     "raw": "/api/hotpic_assemble_control/get/control/config",
     "path": "/api/hotpic_assemble_control/get/control/config",
@@ -8364,7 +8364,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 97,
+    "line": 103,
     "method": "GET",
     "raw": "/api/hotpic_assemble_control/user/hotpic/exists/check",
     "path": "/api/hotpic_assemble_control/user/hotpic/exists/check",
@@ -8374,7 +8374,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 98,
+    "line": 104,
     "method": "GET",
     "raw": "/api/hotpic/assemble/control/cipher/hotpic/bbs/${id}",
     "path": "/api/hotpic/assemble/control/cipher/hotpic/bbs/{}",
@@ -8384,7 +8384,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 99,
+    "line": 105,
     "method": "GET",
     "raw": "/api/hotpic/assemble/control/cipher/hotpic/cms/${id}",
     "path": "/api/hotpic/assemble/control/cipher/hotpic/cms/{}",
@@ -8394,7 +8394,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 100,
+    "line": 106,
     "method": "GET",
     "raw": "/api/hotpic_assemble_control/get/hotpic/${id}",
     "path": "/api/hotpic_assemble_control/get/hotpic/{}",
@@ -8404,7 +8404,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 101,
+    "line": 107,
     "method": "GET",
     "raw": "/api/hotpic/assemble/control/user/hotpic/filter/list/page/${page}/count/${count}",
     "path": "/api/hotpic/assemble/control/user/hotpic/filter/list/page/{}/count/{}",
@@ -8414,7 +8414,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 102,
+    "line": 108,
     "method": "GET",
     "raw": "/api/hotpic/user/hotpic/${application}/${infoId}",
     "path": "/api/hotpic/user/hotpic/{}/{}",
@@ -8424,7 +8424,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 115,
+    "line": 121,
     "method": "POST",
     "raw": "/api/hotpic/create/hotpic",
     "path": "/api/hotpic/create/hotpic",
@@ -8434,7 +8434,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 118,
+    "line": 124,
     "method": "POST",
     "raw": "/api/hotpic/assemble/control/user/hotpic/changeTitle",
     "path": "/api/hotpic/assemble/control/user/hotpic/changeTitle",
@@ -8444,7 +8444,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 120,
+    "line": 126,
     "method": "POST",
     "raw": "/api/hotpic/assemble/control/update/control/config",
     "path": "/api/hotpic/assemble/control/update/control/config",
@@ -8454,7 +8454,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 123,
+    "line": 129,
     "method": "POST",
     "raw": "/api/hotpic/assemble/control/user/hotpic",
     "path": "/api/hotpic/assemble/control/user/hotpic",
@@ -8464,7 +8464,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 127,
+    "line": 133,
     "method": "DELETE",
     "raw": "/api/hotpic/assemble/control/user/hotpic/${encodeURIComponent(id)}",
     "path": "/api/hotpic/assemble/control/user/hotpic/{}",
@@ -8474,7 +8474,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 131,
+    "line": 137,
     "method": "DELETE",
     "raw": "/api/hotpic/assemble/control/cipher/hotpic/bbs/${encodeURIComponent(id)}",
     "path": "/api/hotpic/assemble/control/cipher/hotpic/bbs/{}",
@@ -8484,7 +8484,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 135,
+    "line": 141,
     "method": "DELETE",
     "raw": "/api/hotpic/assemble/control/cipher/hotpic/cms/${encodeURIComponent(id)}",
     "path": "/api/hotpic/assemble/control/cipher/hotpic/cms/{}",
@@ -8494,7 +8494,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 138,
+    "line": 144,
     "method": "POST",
     "raw": "/api/hotpic/core/entity/create",
     "path": "/api/hotpic/core/entity/create",
@@ -8504,7 +8504,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 142,
+    "line": 148,
     "method": "DELETE",
     "raw": "/api/hotpic/core/entity/delete/${encodeURIComponent(id)}",
     "path": "/api/hotpic/core/entity/delete/{}",
@@ -8514,7 +8514,67 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 153,
+    "line": 159,
+    "method": "GET",
+    "raw": "/api/hotpic/user/hotpic/exists/check",
+    "path": "/api/hotpic/user/hotpic/exists/check",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/HotpicApp.vue",
+    "line": 162,
+    "method": "GET",
+    "raw": "/api/hotpic/assemble/control/user/hotpic/application/${encodeURIComponent(infoId)}",
+    "path": "/api/hotpic/assemble/control/user/hotpic/application/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/HotpicApp.vue",
+    "line": 165,
+    "method": "GET",
+    "raw": "/api/hotpic/assemble/control/user/hotpic/${encodeURIComponent(id)}",
+    "path": "/api/hotpic/assemble/control/user/hotpic/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/HotpicApp.vue",
+    "line": 167,
+    "method": "PUT",
+    "raw": "/api/hotpic/assemble/control/cipher/hotpic/filter/list/page/1/count/20",
+    "path": "/api/hotpic/assemble/control/cipher/hotpic/filter/list/page/1/count/20",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/HotpicApp.vue",
+    "line": 169,
+    "method": "PUT",
+    "raw": "/api/hotpic/assemble/control/user/hotpic/filter/list/page/1/count/20",
+    "path": "/api/hotpic/assemble/control/user/hotpic/filter/list/page/1/count/20",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/HotpicApp.vue",
+    "line": 174,
+    "method": "DELETE",
+    "raw": "/api/hotpic/assemble/control/user/hotpic/${encodeURIComponent(id)}/${encodeURIComponent(id2)}",
+    "path": "/api/hotpic/assemble/control/user/hotpic/{}/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/HotpicApp.vue",
+    "line": 185,
     "method": "GET",
     "raw": "/api/hotpic_assemble_control/list/hotpics",
     "path": "/api/hotpic_assemble_control/list/hotpics",
@@ -8524,7 +8584,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 154,
+    "line": 186,
     "method": "GET",
     "raw": "/api/hotpic_assemble_control/list/control/panels",
     "path": "/api/hotpic_assemble_control/list/control/panels",
@@ -8534,7 +8594,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 155,
+    "line": 187,
     "method": "GET",
     "raw": "/api/hotpic_assemble_control/list/control/applications",
     "path": "/api/hotpic_assemble_control/list/control/applications",
@@ -8544,7 +8604,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 167,
+    "line": 199,
     "method": "GET",
     "raw": "/api/hotpic/core/entity/list",
     "path": "/api/hotpic/core/entity/list",
@@ -8554,7 +8614,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/HotpicApp.vue",
-    "line": 179,
+    "line": 211,
     "method": "DELETE",
     "raw": "/api/hotpic/core/entity/delete/${item.id}",
     "path": "/api/hotpic/core/entity/delete/{}",
