@@ -201,6 +201,13 @@
           <button class="btn-sm" @click="pcU4Write('outputList')">输出列表</button>
           <button class="btn-sm" @click="pcU4Write('designerSearch')">设计器检索</button>
           <button class="btn-sm" @click="pcU4Read">读配置/日志</button>
+          <button class="btn-sm" @click="pcU5Read">错误日志游标</button>
+          <button class="btn-sm" @click="pcU5Write('appDelete')">删应用</button>
+          <button class="btn-sm" @click="pcU5Write('scriptPut')">改脚本</button>
+          <button class="btn-sm" @click="pcU5Write('dictData')">存字典数据</button>
+          <button class="btn-sm" @click="pcU5Write('cacheDispatch')">缓存调度</button>
+          <button class="btn-sm" @click="pcU5Write('scheduleReport')">调度上报</button>
+          <button class="btn-sm" @click="pcU5Write('moduleList')">模块列表</button>
           <div v-if="pcU4Text" class="app-meta">{{ pcU4Text }}</div>
         </div>
         <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
@@ -1284,6 +1291,43 @@ async function pcU4Read() {
     toast.success('程序中心配置/日志已加载')
   } catch (e: any) {
     toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+// rev370：程序中心 提示/异常错误日志 游标(next/prev + date/exceptionclass/loggername) 真实只读（同 rev353 已验证的 list/id/next/count 字面段模式，用户触发）
+async function pcU5Read() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/program_center/prompterrorlog/list/id/next/count/date/date')),
+      s(api.get('/api/program_center/prompterrorlog/list/id/next/count/exceptionclass/exceptionClass')),
+      s(api.get('/api/program_center/prompterrorlog/list/id/next/count/loggername/loggerName')),
+      s(api.get('/api/program_center/prompterrorlog/list/id/prev/count')),
+      s(api.get('/api/program_center/prompterrorlog/list/id/prev/count/date/date')),
+      s(api.get('/api/program_center/prompterrorlog/list/id/prev/count/exceptionclass/exceptionClass')),
+      s(api.get('/api/program_center/prompterrorlog/list/id/prev/count/loggername/loggerName')),
+      s(api.get('/api/program_center/unexpectederrorlog/list/id/next/count/date/date')),
+      s(api.get('/api/program_center/unexpectederrorlog/list/id/prev/count')),
+      s(api.get('/api/program_center/unexpectederrorlog/list/id/prev/count/date/date')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    pcU4Text.value = `错误日志游标读 ${rs.length} 条命中 ${hit}`
+    toast.success('错误日志游标已加载')
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+// rev370：程序中心 应用删/脚本改/字典数据存/缓存调度/调度上报/模块列表 真实写（各带 {param} 或无参 handler 已核 Path-less，避 module/output 无参 Path trap500）
+async function pcU5Write(op: string) {
+  try {
+    if (op === 'appDelete') { const id = prompt('要删除的应用 ID:', '') || ''; if (!(await confirmMsg('确定删除该应用？'))) return; await api.delete(`/api/program_center/application/delete/${encodeURIComponent(id)}`) }
+    else if (op === 'scriptPut') { const flag = prompt('脚本 flag:', '') || ''; await api.put(`/api/program_center/script/${encodeURIComponent(flag)}`, {}) }
+    else if (op === 'dictData') { const df = prompt('字典 flag:', '') || ''; const path = prompt('路径:', 'root') || 'root'; await api.post(`/api/program_center/dict/${encodeURIComponent(df)}/${encodeURIComponent(path)}/data`, {}) }
+    else if (op === 'cacheDispatch') await api.put('/api/program_center/cachedispatch', {})
+    else if (op === 'scheduleReport') await api.post('/api/program_center/schedule/report', {})
+    else await api.put('/api/program_center/module/list', {})
+    toast.success('程序中心写操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
   }
 }
 // rev292：程序中心 市场安装日志(按flag/字面flag)/市场分页(按分类) 真实读端点(X_PROGRAM_SCHEDULE_LOG)；均只读 arity 已核
