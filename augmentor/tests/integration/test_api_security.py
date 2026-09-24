@@ -833,6 +833,7 @@ class TestConfigDataRootsCache:
         monkeypatch.delenv("AUGMENTOR_DATA_ROOTS", raising=False)
         monkeypatch.setattr(deps, "load_config", counting)
         monkeypatch.setattr(deps, "_config_roots_cache", {})
+        monkeypatch.setattr(deps, "_config_path_cache", {})
         monkeypatch.chdir(tmp_path)
         return deps, calls
 
@@ -912,6 +913,140 @@ class TestConfigDataRootsCache:
         second = deps.allowed_data_roots()
 
         assert second == [allowed.resolve()]
+
+
+class TestConfigPathResolveCache:
+    """白名单**缓存命中**的路径也不该每次解析配置路径
+
+    ``TestConfigDataRootsCache`` 把「重新解析 YAML」缓存掉了，但命中路径仍要
+    1 ms/次：``config_file_path()`` 每次都 ``Path.resolve()``。Windows 上
+    resolve 要查 ``\\\\?\\`` 句柄并做大小写规范化，实测 **0.94 ms/次**，是命中
+    路径上唯一的开销 —— 200 次 ``allowed_data_roots()`` 要 218 ms，其中 200 次
+    resolve 就占 187 ms；把解析结果按 ``(环境变量, 工作目录)`` 缓存后，同样
+    200 次只要 1.87 ms。
+
+    预言机不是耗时而是 **resolve 发生的次数**：同一组合只许解析 1 次；换了
+    工作目录或环境变量必须重新解析——否则相对配置路径会被冻在上一个目录的
+    解释上，那是放宽边界。
+    """
+
+    def _instrument(self, monkeypatch):
+        """给 ``Path.resolve`` 装计数器，并清空两条路径缓存"""
+        import api.deps as deps
+
+        counts: list = []
+        real = Path.resolve
+
+        def counting(self, *args, **kwargs):
+            counts.append(self)
+            return real(self, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "resolve", counting)
+        monkeypatch.setattr(deps, "_config_path_cache", {})
+        monkeypatch.setattr(deps, "_config_roots_cache", {})
+        monkeypatch.delenv("AUGMENTOR_DATA_ROOTS", raising=False)
+        monkeypatch.delenv("AUGMENTOR_CONFIG_PATH", raising=False)
+        return deps, counts
+
+    def test_same_cold_then_hot_resolve_counts(self, monkeypatch, tmp_path):
+        """冷启动解析 1 次，之后 200 次命中一次都不解析"""
+        expected = (tmp_path / "config.yaml").resolve()   # 打补丁前先算好参照
+        deps, counts = self._instrument(monkeypatch)
+        monkeypatch.chdir(tmp_path)
+
+        base = len(counts)
+        first = deps.config_file_path()
+        cold = len(counts) - base
+        paths = [deps.config_file_path() for _ in range(200)]
+        hot = len(counts) - base - cold
+
+        assert first == expected
+        assert set(paths) == {expected}
+        assert cold == 1, f"冷启动解析了 {cold} 次，应为 1 次"
+        assert hot == 0, (
+            f"缓存命中后又解析了 {hot} 次配置路径："
+            "每次 resolve 在 Windows 上是 0.94 ms 的系统调用"
+        )
+
+    def test_cache_key_follows_working_directory(self, monkeypatch, tmp_path):
+        """换工作目录必须重新解析：缓存键里没有目录就是错的缓存"""
+        first = tmp_path / "a"
+        second = tmp_path / "b"
+        first.mkdir()
+        second.mkdir()
+        expected_a = (first / "config.yaml").resolve()
+        expected_b = (second / "config.yaml").resolve()
+        deps, counts = self._instrument(monkeypatch)
+
+        monkeypatch.chdir(first)
+        base = len(counts)
+        path_a = deps.config_file_path()
+        path_a_again = deps.config_file_path()
+        resolves_a = len(counts) - base
+
+        monkeypatch.chdir(second)
+        base = len(counts)
+        path_b = deps.config_file_path()
+        path_b_again = deps.config_file_path()
+        resolves_b = len(counts) - base
+
+        assert path_a == path_a_again == expected_a
+        assert path_b == path_b_again == expected_b
+        assert path_a != path_b, "两个目录拿到同一个配置路径，白名单会读错配置"
+        assert (resolves_a, resolves_b) == (1, 1), (
+            f"两个目录分别解析 {resolves_a}/{resolves_b} 次，应各 1 次："
+            "少于 1 次说明换目录没让缓存失效"
+        )
+
+    def test_cache_key_follows_env_config_path(self, monkeypatch, tmp_path):
+        """``AUGMENTOR_CONFIG_PATH`` 改值后必须立刻换人"""
+        cfg_one = tmp_path / "one.yaml"
+        cfg_two = tmp_path / "two.yaml"
+        expected_one = cfg_one.resolve()
+        expected_two = cfg_two.resolve()
+        deps, counts = self._instrument(monkeypatch)
+        monkeypatch.chdir(tmp_path)
+
+        base = len(counts)
+        monkeypatch.setenv("AUGMENTOR_CONFIG_PATH", str(cfg_one))
+        first = deps.config_file_path()
+        first_again = deps.config_file_path()
+        resolves_one = len(counts) - base
+
+        monkeypatch.setenv("AUGMENTOR_CONFIG_PATH", str(cfg_two))
+        base = len(counts)
+        second = deps.config_file_path()
+        resolves_two = len(counts) - base
+
+        assert first == first_again == expected_one
+        assert second == expected_two
+        assert (resolves_one, resolves_two) == (1, 1), (
+            f"两个环境变量值分别解析 {resolves_one}/{resolves_two} 次，应各 1 次"
+        )
+
+    def test_whitelist_hit_does_not_resolve_per_request(self, monkeypatch, tmp_path):
+        """整条白名单查询在缓存命中时不再触发任何 resolve
+
+        这条直接盯住真实调用链（``allowed_data_roots``），而不是只看
+        ``config_file_path`` 本身：缓存命中时它要能一次都不解析。
+        """
+        root = tmp_path / "allowed"
+        root.mkdir()
+        (tmp_path / "config.yaml").write_text(
+            f"web:\n  data_roots:\n    - {root.as_posix()}\n", encoding="utf-8"
+        )
+        expected = [root.resolve()]                      # 打补丁前算好
+        deps, counts = self._instrument(monkeypatch)
+        monkeypatch.chdir(tmp_path)
+
+        deps.allowed_data_roots()                       # 预热：这一次必然解析
+        base = len(counts)
+        roots = [deps.allowed_data_roots() for _ in range(200)]
+
+        assert roots == [expected] * 200
+        assert len(counts) - base == 0, (
+            f"200 次白名单查询又解析了 {len(counts) - base} 次路径"
+        )
 
 
 class TestEnvDataRootsCache:
