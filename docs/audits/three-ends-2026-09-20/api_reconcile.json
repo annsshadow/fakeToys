@@ -8519,7 +8519,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 262,
+    "line": 266,
     "method": "GET",
     "raw": "/api/mind/mind/${encodeURIComponent(mid)}",
     "path": "/api/mind/mind/{}",
@@ -8532,7 +8532,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 263,
+    "line": 267,
     "method": "GET",
     "raw": "/api/mind/mind/list/${encodeURIComponent(mid)}/version",
     "path": "/api/mind/mind/list/{}/version",
@@ -8545,7 +8545,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 264,
+    "line": 268,
     "method": "GET",
     "raw": "/api/mind/assemble/control/folder/${encodeURIComponent(mid)}",
     "path": "/api/mind/assemble/control/folder/{}",
@@ -8558,7 +8558,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 265,
+    "line": 269,
     "method": "GET",
     "raw": "/api/mind/assemble/control/mind/version/${encodeURIComponent(mid)}",
     "path": "/api/mind/assemble/control/mind/version/{}",
@@ -8571,7 +8571,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 266,
+    "line": 270,
     "method": "GET",
     "raw": "/api/mind/assemble/control/mind/${encodeURIComponent(mid)}/icon",
     "path": "/api/mind/assemble/control/mind/{}/icon",
@@ -8584,7 +8584,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 267,
+    "line": 271,
     "method": "GET",
     "raw": "/api/mind/core/entity/version/list/${encodeURIComponent(mid)}",
     "path": "/api/mind/core/entity/version/list/{}",
@@ -8597,7 +8597,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 293,
+    "line": 297,
     "method": "POST",
     "raw": "/api/mind/mind/${encodeURIComponent(item.id)}",
     "path": "/api/mind/mind/{}",
@@ -8610,7 +8610,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 304,
+    "line": 308,
     "method": "DELETE",
     "raw": "/api/mind/mind/${encodeURIComponent(item.id)}",
     "path": "/api/mind/mind/{}",
@@ -8623,7 +8623,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 327,
+    "line": 331,
     "method": "PUT",
     "raw": "/api/mind/assemble/control/mind/share/${encodeURIComponent(item.id)}",
     "path": "/api/mind/assemble/control/mind/share/{}",
@@ -8636,7 +8636,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 330,
+    "line": 334,
     "method": "PUT",
     "raw": "/api/mind/assemble/control/mind/share/${encodeURIComponent(item.id)}/cancel",
     "path": "/api/mind/assemble/control/mind/share/{}/cancel",
@@ -8649,7 +8649,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 346,
+    "line": 350,
     "method": "PUT",
     "raw": "/api/mind/assemble/control/folder/move/${e}",
     "path": "/api/mind/assemble/control/folder/move/{}",
@@ -8662,7 +8662,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 349,
+    "line": 353,
     "method": "DELETE",
     "raw": "/api/mind/assemble/control/folder/${e}/force",
     "path": "/api/mind/assemble/control/folder/{}/force",
@@ -8675,7 +8675,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 352,
+    "line": 356,
     "method": "DELETE",
     "raw": "/api/mind/assemble/control/mind/recycle/${e}",
     "path": "/api/mind/assemble/control/mind/recycle/{}",
@@ -8688,7 +8688,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 355,
+    "line": 359,
     "method": "DELETE",
     "raw": "/api/mind/assemble/control/mind/${e}/destorymind",
     "path": "/api/mind/assemble/control/mind/{}/destorymind",
@@ -8701,7 +8701,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 358,
+    "line": 362,
     "method": "DELETE",
     "raw": "/api/mind/assemble/control/mind/${e}/destoryrecycle",
     "path": "/api/mind/assemble/control/mind/{}/destoryrecycle",
@@ -8714,7 +8714,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 370,
+    "line": 374,
     "method": "GET",
     "raw": "/api/mind/assemble/control/mind/restore/${id}",
     "path": "/api/mind/assemble/control/mind/restore/{}",
@@ -8727,46 +8727,46 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 373,
-    "method": "POST",
-    "raw": "/api/mind/core/entity/mind/${id}",
-    "path": "/api/mind/core/entity/mind/{}",
-    "via": "literal",
-    "ambiguous": false,
-    "hit": "/api/mind/core/entity/mind/{id}",
-    "hit_crate": "mind_core_entity",
-    "extra": null
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 374,
-    "method": "DELETE",
-    "raw": "/api/mind/core/entity/mind/${id}",
-    "path": "/api/mind/core/entity/mind/{}",
-    "via": "literal",
-    "ambiguous": false,
-    "hit": "/api/mind/core/entity/mind/{id}",
-    "hit_crate": "mind_core_entity",
-    "extra": null
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 376,
-    "method": "POST",
-    "raw": "/api/mind/core/entity/folder/${id}",
-    "path": "/api/mind/core/entity/folder/{}",
-    "via": "literal",
-    "ambiguous": false,
-    "hit": "/api/mind/core/entity/folder/{id}",
-    "hit_crate": "mind_core_entity",
-    "extra": null
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/MindApp.vue",
     "line": 377,
+    "method": "POST",
+    "raw": "/api/mind/core/entity/mind/${id}",
+    "path": "/api/mind/core/entity/mind/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/mind/core/entity/mind/{id}",
+    "hit_crate": "mind_core_entity",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MindApp.vue",
+    "line": 378,
+    "method": "DELETE",
+    "raw": "/api/mind/core/entity/mind/${id}",
+    "path": "/api/mind/core/entity/mind/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/mind/core/entity/mind/{id}",
+    "hit_crate": "mind_core_entity",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MindApp.vue",
+    "line": 380,
+    "method": "POST",
+    "raw": "/api/mind/core/entity/folder/${id}",
+    "path": "/api/mind/core/entity/folder/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/mind/core/entity/folder/{id}",
+    "hit_crate": "mind_core_entity",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MindApp.vue",
+    "line": 381,
     "method": "DELETE",
     "raw": "/api/mind/core/entity/folder/${id}",
     "path": "/api/mind/core/entity/folder/{}",
@@ -8779,7 +8779,59 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 453,
+    "line": 393,
+    "method": "POST",
+    "raw": "/api/mind/assemble/control/folder/${id}/update",
+    "path": "/api/mind/assemble/control/folder/{}/update",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/mind/assemble/control/folder/{id}/update",
+    "hit_crate": "mind_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MindApp.vue",
+    "line": 394,
+    "method": "DELETE",
+    "raw": "/api/mind/assemble/control/folder/${id}",
+    "path": "/api/mind/assemble/control/folder/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/mind/assemble/control/folder/{id}",
+    "hit_crate": "mind_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MindApp.vue",
+    "line": 395,
+    "method": "POST",
+    "raw": "/api/mind/folder/${id}",
+    "path": "/api/mind/folder/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/mind/folder/{id}",
+    "hit_crate": "mind",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MindApp.vue",
+    "line": 396,
+    "method": "DELETE",
+    "raw": "/api/mind/folder/${id}",
+    "path": "/api/mind/folder/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/mind/folder/{id}",
+    "hit_crate": "mind",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MindApp.vue",
+    "line": 471,
     "method": "GET",
     "raw": "/api/mind/assemble/control/mind/${encodeURIComponent(item.id)}",
     "path": "/api/mind/assemble/control/mind/{}",
@@ -8792,7 +8844,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 479,
+    "line": 497,
     "method": "GET",
     "raw": "/api/mind/assemble/control/mind/list/${encodeURIComponent(id)}/version",
     "path": "/api/mind/assemble/control/mind/list/{}/version",
@@ -8805,7 +8857,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 480,
+    "line": 498,
     "method": "GET",
     "raw": "/api/mind/assemble/control/mind/list/${encodeURIComponent(id)}/shareRecords",
     "path": "/api/mind/assemble/control/mind/list/{}/shareRecords",
@@ -8818,7 +8870,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 481,
+    "line": 499,
     "method": "GET",
     "raw": "/api/mind/assemble/control/mind/view/${encodeURIComponent(id)}",
     "path": "/api/mind/assemble/control/mind/view/{}",
@@ -32050,7 +32102,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 216,
+    "line": 220,
     "method": "PUT",
     "raw": "/api/mind/assemble/control/mind/filter/recived/${encodeURIComponent(me)}/next/1",
     "path": "/api/mind/assemble/control/mind/filter/recived/{}/next/1",
@@ -32065,7 +32117,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 217,
+    "line": 221,
     "method": "PUT",
     "raw": "/api/mind/assemble/control/mind/filter/recycle/${encodeURIComponent(me)}/next/1",
     "path": "/api/mind/assemble/control/mind/filter/recycle/{}/next/1",
@@ -32080,7 +32132,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 218,
+    "line": 222,
     "method": "PUT",
     "raw": "/api/mind/assemble/control/mind/filter/shared/${encodeURIComponent(me)}/next/1",
     "path": "/api/mind/assemble/control/mind/filter/shared/{}/next/1",
@@ -32095,7 +32147,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 229,
+    "line": 233,
     "method": "GET",
     "raw": "/api/mind/assemble/control/config",
     "path": "/api/mind/assemble/control/config",
@@ -32108,7 +32160,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 230,
+    "line": 234,
     "method": "GET",
     "raw": "/api/mind/assemble/control/folder/tree/my",
     "path": "/api/mind/assemble/control/folder/tree/my",
@@ -32121,7 +32173,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 243,
+    "line": 247,
     "method": "GET",
     "raw": "/api/mind/core/entity/list",
     "path": "/api/mind/core/entity/list",
@@ -32134,7 +32186,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 244,
+    "line": 248,
     "method": "GET",
     "raw": "/api/mind/core/entity/folder/list",
     "path": "/api/mind/core/entity/folder/list",
@@ -32147,7 +32199,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 258,
+    "line": 262,
     "method": "GET",
     "raw": "/api/mind/core/entity/list",
     "path": "/api/mind/core/entity/list",
@@ -32160,7 +32212,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 281,
+    "line": 285,
     "method": "POST",
     "raw": "/api/mind/mind",
     "path": "/api/mind/mind",
@@ -32173,7 +32225,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 316,
+    "line": 320,
     "method": "POST",
     "raw": "/api/mind/folder",
     "path": "/api/mind/folder",
@@ -32186,7 +32238,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 342,
+    "line": 346,
     "method": "POST",
     "raw": "/api/mind/assemble/control/config/update",
     "path": "/api/mind/assemble/control/config/update",
@@ -32199,7 +32251,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 345,
+    "line": 349,
     "method": "POST",
     "raw": "/api/mind/assemble/control/folder/save",
     "path": "/api/mind/assemble/control/folder/save",
@@ -32212,7 +32264,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 360,
+    "line": 364,
     "method": "POST",
     "raw": "/api/mind/assemble/control/mind/${e}/icon/size/200",
     "path": "/api/mind/assemble/control/mind/{}/icon/size/200",
@@ -32227,7 +32279,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 371,
+    "line": 375,
     "method": "POST",
     "raw": "/api/mind/version",
     "path": "/api/mind/version",
@@ -32240,7 +32292,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 372,
+    "line": 376,
     "method": "POST",
     "raw": "/api/mind/core/entity/mind",
     "path": "/api/mind/core/entity/mind",
@@ -32253,7 +32305,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 375,
+    "line": 379,
     "method": "POST",
     "raw": "/api/mind/core/entity/folder",
     "path": "/api/mind/core/entity/folder",
@@ -32266,7 +32318,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 378,
+    "line": 382,
     "method": "POST",
     "raw": "/api/mind/core/entity/version",
     "path": "/api/mind/core/entity/version",
@@ -32279,7 +32331,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 389,
+    "line": 407,
     "method": "GET",
     "raw": "/api/mind/folder/tree/my",
     "path": "/api/mind/folder/tree/my",
@@ -32292,7 +32344,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 412,
+    "line": 430,
     "method": "PUT",
     "raw": "/api/mind/assemble/control/mind/filter/list/${encodeURIComponent(folderId)}/next/1",
     "path": "/api/mind/assemble/control/mind/filter/list/{}/next/1",
@@ -32307,7 +32359,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 643,
+    "line": 661,
     "method": "POST",
     "raw": "/api/mind/assemble/control/mind/save",
     "path": "/api/mind/assemble/control/mind/save",
