@@ -9,6 +9,7 @@ from dataclasses import dataclass
 import numpy as np
 from .model_manager import model_manager
 from .exceptions import QualityError
+from .validation import require_count
 
 logger = logging.getLogger(__name__)
 
@@ -71,8 +72,12 @@ class QualityScorer:
         Args:
             threshold: 质量阈值，低于此分数的样本被过滤
             weights: 评分权重 [语义相似度, 回答相关性, 多样性]
-            diversity_sample_size: 多样性计算时的采样数量
+            diversity_sample_size: 多样性参照集的采样条数，不小于 1 的整数
         """
+        # 窗口没有「0 条」这个合法读法：`existing[:0]` 是空参照，而空参照在回退路径上
+        # 被判成「完全多样」→ 候选与参照逐字相同也拿 diversity=1.0，总分 0.063 → 0.492
+        # （真实调用实测）；负数走尾部截断，症状随数据变。承 A41：判据与 L33 同一处。
+        require_count("diversity_sample_size", diversity_sample_size, minimum=1)
         self.threshold = threshold
         self.weights = weights or [0.3, 0.4, 0.3]
         self.diversity_sample_size = diversity_sample_size

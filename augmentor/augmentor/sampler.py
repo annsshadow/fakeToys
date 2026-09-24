@@ -8,6 +8,7 @@ from typing import List, Dict, Optional
 from dataclasses import dataclass
 from collections import Counter
 import re
+from .validation import require_count
 
 logger = logging.getLogger(__name__)
 
@@ -225,6 +226,11 @@ class ActiveSampler:
         Returns:
             SamplingResult 实例
         """
+        # 判参先于「空数据集」短路：`items=[]` 时 HEAD 会先返回一个看似正常的
+        # 空结果，把 top_k 的坏值一起藏掉。真实 6902 条上 top_k=-1 答 2 个种子、
+        # -3 答 0 个（自然上限是 4 个），同一个负数随数据给不同答案。
+        require_count("top_k", top_k)
+
         if not items:
             return SamplingResult(
                 recommended_seeds=[],

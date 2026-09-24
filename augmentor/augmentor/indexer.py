@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from enum import Enum
 from collections import defaultdict
+from .validation import require_count
 
 logger = logging.getLogger(__name__)
 
@@ -431,6 +432,7 @@ class DatasetView:
         Returns:
             新视图
         """
+        require_count("n", n)
         return DatasetView(self._items[:n], f"{self.name}_head")
     
     def tail(self, n: int = 10) -> 'DatasetView':
@@ -442,7 +444,9 @@ class DatasetView:
         Returns:
             新视图
         """
-        return DatasetView(self._items[-n:] if len(self._items) >= n else self._items, 
+        require_count("n", n)
+        # `n=0` 要的是空视图：`[-0:]` 就是 `[0:]`，旧口径下这里返回过全部条目（实测 100 条）
+        return DatasetView(self._items[-n:] if n else [],
                           f"{self.name}_tail")
     
     def sample(self, n: int = 10, seed: int = None) -> 'DatasetView':
@@ -457,6 +461,7 @@ class DatasetView:
         """
         import random
         # 局部 Random：不改动进程级 RNG 状态（seed=None 时仍取系统熵）
+        require_count("n", n)
         sampled = random.Random(seed).sample(self._items, min(n, len(self._items)))
         return DatasetView(sampled, f"{self.name}_sample")
     

@@ -14,6 +14,7 @@ from pathlib import Path
 from dataclasses import dataclass
 import hashlib
 from .exceptions import DataValidationError
+from .validation import require_count
 
 logger = logging.getLogger(__name__)
 
@@ -169,13 +170,22 @@ class DatasetOperations:
         """
         config = config or SampleConfig()
         
-        # 确定采样数量
-        if config.size:
+        # 先判参，再区分「没给 size」与「给的是 0」：`if config.size:` 把 0 读成前者，
+        # 于是「采 0 条」交付整份数据集（真实 6902 条实测 size=0 → 6902 条）。
+        require_count("size", config.size)
+        if config.size is not None:
             sample_size = min(config.size, len(items))
         elif config.ratio:
             sample_size = int(len(items) * config.ratio)
         else:
             sample_size = len(items)
+
+        # 三条路径都可能算出 0：size=0，或 ratio 小到 int() 归零。0 就是「一条都不要」，
+        # 必须在 method 分发之前短路 —— systematic 那支的 `len(items) // sample_size`
+        # 在 0 上是 ZeroDivisionError（实测 ratio=0.0001），random / stratified 那两支
+        # 各自抛 `Sample larger than population`：同一个 0，三种 method 三种后果。
+        if sample_size == 0:
+            return []
         
         # 局部 Random：`random.seed()` 会改写进程级 RNG 状态，污染同进程内
         # 其它调用方的随机性（`seed=None` 时等价于取系统熵，行为不变）。
@@ -378,8 +388,10 @@ class DatasetOperations:
             n: 数量
         
         Returns:
-            前N条数据
+            前N条数据。`n` 允许 0（=「一条都不要」），负数与非整数抛
+            `DataValidationError`；HEAD 里 `n=-1` 会静默交出除末条外的全部
         """
+        require_count("n", n)
         return items[:n]
     
     def tail(self, items: List[Dict], n: int = 10) -> List[Dict]:
@@ -390,9 +402,11 @@ class DatasetOperations:
             n: 数量
         
         Returns:
-            后N条数据
+            后N条数据。`n` 允许 0，负数与非整数抛 `DataValidationError`；HEAD 里
+            `n=0` 因 `[-0:] == [0:]` 返回**全部**，`n=-1` 返回除第 1 条外的全部
         """
-        return items[-n:] if len(items) >= n else items
+        require_count("n", n)
+        return items[-n:] if n else []
     
     def filter_by_length(self,
                         items: List[Dict],
