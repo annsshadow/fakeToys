@@ -620,9 +620,16 @@ class TestStreamingGrouping:
             assert rows * n <= 4_000_000
 
     def test_no_full_n_by_n_matrix_is_allocated(self, monkeypatch):
-        """结构性护栏：任何时刻都不允许出现 n×n 的相似度块"""
+        """结构性护栏：任何时刻都不允许出现 n×n 的相似度块，也不许算被丢弃的下三角
+
+        块的列宽必须是 `n - start`：`_greedy_group_from_row` 只消费 `row[i+1:]`，
+        而块内最小行号就是 `start`，所以列 < start 的结果按定义没有读者。列宽
+        等于 n 意味着白算整个下三角（实测全量 6902 条时相似度那一步要 30.0 s，
+        其中约一半 flops 落在那半块上）。
+        """
         n, dim = 6000, 4
         emb = np.random.default_rng(1).random((n, dim), dtype=np.float32)
+        from augmentor.dedup import _MAX_BLOCK_CELLS
 
         dedup = Deduplicator(threshold=0.99)
         monkeypatch.setattr(dedup, "_batch_encode", lambda texts: emb)
@@ -632,7 +639,7 @@ class TestStreamingGrouping:
 
         def spy(normalized, block_rows):
             for start, end, block in original(normalized, block_rows):
-                shapes.append(block.shape)
+                shapes.append((start, block.shape))
                 yield start, end, block
 
         monkeypatch.setattr(dedup, "_iter_similarity_row_blocks", spy)
@@ -640,10 +647,19 @@ class TestStreamingGrouping:
         dedup._find_duplicate_groups_chunked(["x"] * n)
 
         assert shapes, "应至少产出一个相似度块"
-        assert all(cols == n for _, cols in shapes), "每个块的列数必须等于 n"
-        max_cells = max(rows * cols for rows, cols in shapes)
-        assert max_cells <= 4_000_000, f"单块单元数 {max_cells} 超过上限 4M"
-        assert max_cells < n * n, "疑似仍在构造完整 n×n 相似度矩阵"
+        assert all(rows * cols <= _MAX_BLOCK_CELLS for _, (rows, cols) in shapes), (
+            f"存在超过上限 4M 单元的块: {shapes[0]}"
+        )
+        for start, (rows, cols) in shapes:
+            assert cols == n - start, (
+                f"第 {start} 行的块列数是 {cols}，应为 n - start = {n - start}"
+            )
+        total_cells = sum(rows * cols for _, (rows, cols) in shapes)
+        block_rows = max(rows for _, (rows, _) in shapes)
+        assert total_cells <= n * n // 2 + n * block_rows, (
+            f"产出 {total_cells} 个块单元，超过「只算上三角」应有的 "
+            f"{n * n // 2}+边界余量——疑似仍在算满宽块"
+        )
 
     def test_peak_memory_is_far_below_full_matrix(self, monkeypatch):
         """实测峰值内存：应约等于「一个块」，而不是完整 n×n 矩阵
