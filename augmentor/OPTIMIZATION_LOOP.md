@@ -110,7 +110,7 @@
   顺带**实测排掉**三处「看着像缺陷其实不是」：`check_dependencies()` 0.7 ms（用的是
   `find_spec` 不是 import）、首次 `get_pipeline()` 6.7 ms（无密钥时不加载权重）、
   `dataset_tools._dump` 的两个写盘点本就在线程内。
-- **L8** （提交后补）`feat(api)` B6 —— 把 SDK 里「有、路上没有」的两个能力接成只读端点：
+- **L8** `c0c3089f7` `feat(api)` B6 —— 把 SDK 里「有、路上没有」的两个能力接成只读端点：
   `POST /api/dataset/impact`（`ImpactEvaluator` 的四项增益 + `is_beneficial` 判定）与
   `POST /api/dataset/evaluate`（`ModelEvaluator.evaluate_batch` 的 BLEU / ROUGE-L / 相似度均值）。
   两条都在门口做了**静默降级**拦截，因为库的取文本方式是 `item.get(field, "")`：
@@ -142,3 +142,10 @@
 
 > **操作纪律**（L4 踩过）：验红用的是**定向反向 patch**，绝不用 `git checkout <file>` 撤注入 ——
 > 本轮 `api/deps.py` 有未提交工作，一次 `git checkout` 把整段缓存实现清掉了，只能重写。
+>
+> **工作树共享事故（L8 提交后）**：`c0c3089f7` 落地 10 秒后被同一工作树里的并行 agent
+> 以 `ce9b3c1ba` 整体 `git revert`（只撤我那 7 个 augmentor 路径），随后的历史整理又把那次
+> revert 从 `main` 上抹掉了，所以 L8 最终仍在。**但共享 `main` 上的互相撤销与历史重写不是
+> 我能控制的**，经用户确认，L9 起改到独立分支 `augmentor-opt100` 上继续（起点 `39e968d47`，
+> 含 L1–L8 全部成果）。同一工作树同一时刻只能检出一个分支：切到本分支后，并行 agent 若继续
+> 提交，会落在 `augmentor-opt100` 而不是 `main`。
