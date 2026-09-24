@@ -1013,3 +1013,103 @@ class TestTuningKnobsReachTheScoring:
         assert loose.total_matches == 1
         assert strict.total_matches == 0
         assert unigram.total_matches > bigram.total_matches
+
+
+class TestTheResultEchoesTheKnobsItUsed:
+    """结果必须回显**本次真正生效**的松紧旋钮（A29）
+
+    L26 把两个旋钮接到了三端，但 `SearchResult` 里只有 `query` / `method`，于是
+    「找到 0 条」依然有两种读不出区别的成因：语料里确实没有，和旋钮拧得太紧。
+    真实 6902 条上这个区别值 63 条——「公租屋」阈值 0.6 → 63 命中、0.7 → **0** 命中，
+    而两者的 `method` 都是 `fuzzy`。
+
+    口径取「未消费即为 `None`」而不是「一律回显」：contains 旁边印一个 0.6 会让人以为
+    阈值管得到它，那正是 A27/A28④ 那一类「用户以为参数起了作用」的静默。
+    """
+
+    ITEMS = TestTuningKnobsReachTheScoring.ITEMS
+    FIELDS = TestTuningKnobsReachTheScoring.FIELDS
+
+    def search(self, method, **kwargs):
+        return EnhancedSearcher(self.ITEMS).search(
+            "腿租押金" if method == "fuzzy" else "租房",
+            fields=self.FIELDS, method=method, limit=99, **kwargs)
+
+    def test_fuzzy_says_which_threshold_produced_it(self):
+        result = self.search("fuzzy", fuzzy_threshold=0.75)
+        assert result.fuzzy_threshold == 0.75
+
+    def test_ngram_says_which_gram_length_produced_it(self):
+        assert self.search("ngram", ngram_n=1).ngram_n == 1
+        assert self.search("ngram", ngram_n=3).ngram_n == 3
+
+    def test_the_echo_is_the_effective_value_including_defaults(self):
+        """不传旋钮时回显的是**当时生效的默认值**，不是 `None`
+
+        「回显生效值」如果只在显式传参时成立，用户拿到 0 条时仍看不出系统用了哪一档；
+        而 CLI/API 恰恰大量走默认路径。
+        """
+        assert self.search("fuzzy").fuzzy_threshold == 0.6
+        assert self.search("ngram").ngram_n == 2
+
+    @pytest.mark.parametrize("method", ["exact", "contains", "regex"])
+    def test_a_method_that_consumes_neither_knob_echoes_neither(self, method):
+        result = EnhancedSearcher(self.ITEMS).search(
+            "租房", fields=self.FIELDS, method=method, limit=99)
+        assert (result.fuzzy_threshold, result.ngram_n) == (None, None)
+
+    def test_each_knob_echoes_only_for_its_own_method(self):
+        """交叉两格：fuzzy 不冒充 ngram 的 `n`，ngram 也不冒充 fuzzy 的阈值"""
+        assert (self.search("fuzzy").ngram_n,
+                self.search("ngram").fuzzy_threshold) == (None, None)
+
+    def test_two_zero_hit_results_now_tell_apart_a_tight_knob(self):
+        """本轮的全部意义：两条 0 命中的结果**可分辨**
+
+        「腿租押金」阈值 0.8 是「拧太紧了」，contains「腿租押金」是「语料里真没有」
+        （整串不存在）。两者的条数相同、方法不同，缺陷态除此之外没有任何信息差。
+        """
+        tight = self.search("fuzzy", fuzzy_threshold=0.8)
+        absent = EnhancedSearcher(self.ITEMS).search(
+            "腿租押金", fields=self.FIELDS, method="contains", limit=99)
+
+        assert (tight.total_matches, absent.total_matches) == (0, 0)
+        assert tight.fuzzy_threshold == 0.8
+        assert absent.fuzzy_threshold is None
+
+    def test_to_dict_exports_both_knobs_without_losing_the_old_keys(self):
+        """落盘 / HTTP 响应都走 `to_dict()`，所以键集合本身就是契约
+
+        这条是 API 契约用例 `test_api_openapi_contract.py` 里 `/api/dataset/search`
+        那格的来源：FastAPI 按 `response_model` 过滤返回值，模型少写一键就会**静默**丢字段。
+        """
+        d = self.search("fuzzy", fuzzy_threshold=0.75).to_dict()
+
+        assert set(d) == {"items", "total_matches", "query_time_ms", "query",
+                          "method", "highlights", "fuzzy_threshold", "ngram_n"}
+        assert d["fuzzy_threshold"] == 0.75
+        assert d["ngram_n"] is None
+        assert d["method"] == "fuzzy"
+        assert d["total_matches"] == 1
+
+    def test_a_result_built_without_the_new_fields_still_works(self):
+        """`SearchResult` 是导出类型，外部按前 6 个字段构造必须照旧可用（新字段有默认值）"""
+        legacy = SearchResult(items=[], total_matches=0, query_time_ms=0.0,
+                              query="租房", method="fuzzy", highlights=[])
+
+        assert legacy.fuzzy_threshold is None
+        assert legacy.ngram_n is None
+
+    def test_the_shared_entry_point_echoes_both_knobs(self):
+        """公开入口的转发要一路到**结果**：`search_dataset()` 造的是同一个 `SearchResult`
+
+        只钉 `search()` 的话，`search_dataset()` 换成「自己拼一份字典返回」就查不出来了，
+        而 CLI 与 `/api/dataset/search` 走的全是这条路。
+        """
+        fuzzy = search_dataset(self.ITEMS, "腿租押金", fields=self.FIELDS,
+                               method="fuzzy", fuzzy_threshold=0.75)
+        ngram = search_dataset(self.ITEMS, "租房", fields=self.FIELDS,
+                               method="ngram", ngram_n=1)
+
+        assert (fuzzy.fuzzy_threshold, fuzzy.ngram_n) == (0.75, None)
+        assert (ngram.fuzzy_threshold, ngram.ngram_n) == (None, 1)
