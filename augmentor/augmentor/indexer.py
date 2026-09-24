@@ -26,7 +26,8 @@ class IndexType(Enum):
     NGRAM = "ngram"
 
 
-#: 构造索引器时「欠着」的默认倒排字段——按需构建的待建清单来自这份表
+#: 默认清单：只决定 `list_indexes()` / `get_statistics()` 该报出哪几份索引，
+#: **不限制能查哪些字段**——清单外的字段在第一次被查询时同样按需建索引。
 DEFAULT_INDEX_FIELDS: Tuple[str, ...] = ("instruction", "output", "input")
 #: 同上，默认 n-gram 索引的 `(字段, n)` 清单
 DEFAULT_NGRAM_INDEXES: Tuple[Tuple[str, int], ...] = (("instruction", 2),)
@@ -97,28 +98,31 @@ class DatasetIndexer:
             self._pending_ngrams = set(DEFAULT_NGRAM_INDEXES)
 
     def _ensure_field_index(self, field: str) -> None:
-        """`field` 属于默认清单且还没建时才建它
+        """要用到 `field` 的倒排索引时才建它
 
-        不在默认清单里的字段**不建**：旧实现只对那 3 个字段建过索引，
-        `search_exact("自定义字段", ...)` 一直是返回空列表，按需构建不能顺手
-        把这条查询的语义改掉（改成「能查到」是另一件事，见 OPTIMIZATION_LOOP A23）。
+        默认清单（`DEFAULT_INDEX_FIELDS`）只决定「报告里该有哪几份」，**不限制
+        能查哪些字段**：清单外的字段第一次被查询时同样按需建索引（L19 修 A23）。
+        判据是「要么欠着默认清单的账，要么手上真有数据可建」——后者让空数据集
+        不会凭空造出一份空索引，从而保住 `list_indexes()` 旧有的两种报告口径。
         """
-        if field not in DEFAULT_INDEX_FIELDS:
-            return
         with self._build_lock:
-            if field in self._pending_fields:
+            if field in self._field_indexes:
+                return
+            # 建完才销账：先销后建会让并发进来的第二个线程以为已就绪，
+            # 却读不到 `_field_indexes[field]` 而把结果误报成「无匹配」。
+            if field in self._pending_fields or self._items:
                 self._build_field_index(field)
-                # 建完才销账：先销后建会让并发进来的第二个线程以为已就绪，
-                # 却读不到 `_field_indexes[field]` 而把结果误报成「无匹配」。
                 self._pending_fields.discard(field)
 
     def _ensure_ngram_index(self, field: str, n: int) -> None:
-        """`(field, n)` 属于默认清单且还没建时才建它"""
+        """要用到 `(field, n)` 这份 n-gram 索引时才建它（同 `_ensure_field_index`，
+        字段与 `n` 都不限默认清单：L19 修 A23）"""
         spec = (field, n)
-        if spec not in DEFAULT_NGRAM_INDEXES:
-            return
+        key = f"{field}_{n}"
         with self._build_lock:
-            if spec in self._pending_ngrams:
+            if key in self._ngram_indexes:
+                return
+            if spec in self._pending_ngrams or self._items:
                 self._build_ngram_index(field, n)
                 self._pending_ngrams.discard(spec)
 
@@ -129,8 +133,6 @@ class DatasetIndexer:
         for field_name, n in DEFAULT_NGRAM_INDEXES:
             self._ensure_ngram_index(field_name, n)
 
-
-    
     def _build_field_index(self, field: str):
         """构建字段倒排索引
         
@@ -172,11 +174,13 @@ class DatasetIndexer:
     
     def search_exact(self, field: str, value: str) -> List[int]:
         """精确搜索
-        
+
         Args:
-            field: 字段名
+            field: 字段名，任意字段都可查（不局限于默认清单）。
+                该字段第一次被查询时才会为其建一份倒排索引，
+                也就是那一次调用要付一遍扫全表的代价，之后同字段查询直接吃索引。
             value: 搜索值
-        
+
         Returns:
             匹配的索引列表
         """
@@ -210,13 +214,14 @@ class DatasetIndexer:
     
     def search_ngram(self, field: str, query: str, n: int = 2, min_match: int = 1) -> List[int]:
         """n-gram搜索
-        
+
         Args:
-            field: 字段名
+            field: 字段名，任意字段都可查（不局限于默认清单）
             query: 查询字符串
-            n: n-gram大小
+            n: n-gram大小，任意值都可（每个 (字段, n) 组合各是一份独立索引，
+                第一次用到时才建，那一次调用付一遍扫全表的代价）
             min_match: 最小匹配数
-        
+
         Returns:
             匹配的索引列表
         """
