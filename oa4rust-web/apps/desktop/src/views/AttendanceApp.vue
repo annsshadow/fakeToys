@@ -19,6 +19,7 @@
         <button class="eb" @click="loadScheduleDetail">📅 排班设置明细</button>
         <button class="eb" @click="loadV2ConfigTpl">🧾 v2配置/模板/统计</button>
         <button class="eb" @click="loadStatisticShow">📈 统计展示筛选</button>
+        <button class="eb" @click="checkMyRestDate">🏖️ 我的休息日校验</button>
         <button class="eb" @click="toggleAttType">🔧 启用/禁用考勤类型</button>
         <button class="eb" @click="loadAppealDetailFilters">🧾 申诉/明细游标</button>
         <button class="eb" @click="loadHolidaySettingDetails">🏖️ 假期/设置明细</button>
@@ -716,6 +717,16 @@ async function loadV2ConfigTpl() {
 // personMonth/unitMonth/topUnitMonth/unitDay/topUnitDay 各 next(id>)+prev(id<) 共 10，+ unit/day/{name}/{date}
 // + unit/day/topUnit/{name}/{date}。注意：家族名（personMonth 等）是路由字面量段，必须写全 /api 字面量路径，
 // 不能用 ${f} 变量拼（会被提取器归一成 {} 与所有家族路由歧义合并，只计 1 条）。
+// rev423：我的休息日校验 POST /api/attendance/assemble/control/v2/my/rest/date/check（body {date}，读 x_attendance_workday_config，缺 date 优雅 400；本人自助真实日期触发）
+async function checkMyRestDate() {
+  const date = prompt('校验日期(YYYY-MM-DD):', new Date().toISOString().slice(0, 10)) || ''
+  try {
+    await api.post('/api/attendance/assemble/control/v2/my/rest/date/check', { date })
+    toast.success('休息日校验已提交')
+  } catch (e: any) {
+    toast.error('校验失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadStatisticShow() {
   const nx = '0'
   const pv = '999999999'

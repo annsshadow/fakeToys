@@ -438,6 +438,8 @@
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('recordJob')">记录 Job</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('serviceWorkTouch')">服务触达工作</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('snapIdRestore')">恢复快照(位置态)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('attCopy2')">附件复制(源→工作)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('snapUpload')">上传快照</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('jobDelete')">删 Job</button>
           </div>
         </section>
@@ -1853,6 +1855,8 @@ async function engineRest3(op: string): Promise<void> {
     else if (op === 'recordJob') { const j = encodeURIComponent(prompt('Job ID:', '') || ''); await api.post(`/api/processplatform/service/processing/record/job/${j}`, {}) }
     else if (op === 'serviceWorkTouch') await api.put(`/api/processplatform/service/processing/service/work/${id()}/touch`, {})
     else if (op === 'snapIdRestore') await api.get(`/api/processplatform/service/processing/snap/${id()}/restore`)
+    else if (op === 'attCopy2') { const src = encodeURIComponent(prompt('源附件 ID:', '') || ''); const w = encodeURIComponent(prompt('目标工作 ID:', '') || ''); await api.post(`/api/processplatform/service/processing/attachment/copy/${src}/${w}`, {}) }
+    else if (op === 'snapUpload') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); await api.post('/api/processplatform/service/processing/snap/upload', { workId: w, snapType: 'manual', snapData: {} }) }
     else { const j = encodeURIComponent(prompt('Job ID:', '') || ''); if (!(await confirmMsg('确定删除该 Job？'))) return; await api.delete(`/api/processplatform/service/processing/job/${j}`) }
     toast.success('引擎操作已提交')
   } catch (e: any) {
