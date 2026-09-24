@@ -27,6 +27,13 @@ class SearchResult:
     `fuzzy_threshold` / `ngram_n` 是**本次方法真正消费的**松紧旋钮：方法不是
     `fuzzy` / `ngram` 时为 `None`，而不是重复默认值。回显的意义在于「找到 0 条」
     有两种完全不同的成因（语料里确实没有 / 旋钮拧得太紧），只报 `method` 分不出这两者。
+
+    `applied_filters` / `matches_before_filters` 是同一族回显，管的是第三种成因：
+    **过滤器把候选筛掉了**。前者回显**规范化之后**的过滤器（`{field, operator, value}`
+    字典，不泄漏调用方传入的对象本身），后者回显过滤**之前**检索命中了多少条。
+    没有传过滤器时两者都是 `None`（而不是 `[]` / `0`）——「没过滤」与「过滤后剩 0 条」
+    必须是两个读得出来的状态。注意口径：`matches_before_filters` 与 `total_matches`
+    都是**分页之前**的全集条数，只有 `items` 受 `limit` / `offset` 影响。
     """
     items: List[Dict]
     total_matches: int
@@ -36,6 +43,8 @@ class SearchResult:
     highlights: List[Dict] = field(default_factory=list)
     fuzzy_threshold: Optional[float] = None
     ngram_n: Optional[int] = None
+    applied_filters: Optional[List[Dict[str, Any]]] = None
+    matches_before_filters: Optional[int] = None
     
     def to_dict(self) -> Dict:
         """转换为字典"""
@@ -47,7 +56,9 @@ class SearchResult:
             "method": self.method,
             "highlights": self.highlights,
             "fuzzy_threshold": self.fuzzy_threshold,
-            "ngram_n": self.ngram_n
+            "ngram_n": self.ngram_n,
+            "applied_filters": self.applied_filters,
+            "matches_before_filters": self.matches_before_filters
         }
 
 
@@ -97,7 +108,8 @@ def normalize_filters(filters: Any) -> Optional[List[SearchFilter]]:
         filters: `None` 或过滤器清单
 
     Returns:
-        `SearchFilter` 列表；`filters` 为 `None` 时返回 `None`
+        `SearchFilter` 列表；`filters` 为 `None` 时返回 `None`。成员档（`in` /
+        `not_in`）收到的集合会归一成列表，所以这个返回值是规范化产物的唯一形态。
 
     Raises:
         DataValidationError: 清单本身不是列表、元素形状不对、算子不存在、
@@ -145,6 +157,12 @@ def normalize_filters(filters: Any) -> Optional[List[SearchFilter]]:
                     f"第 {position} 个过滤器（{field} {operator}）的值必须是{label}，"
                     f"当前是 {type(value).__name__}"
                 )
+            if isinstance(value, set):
+                # 成员档收到集合时落成列表：`in` / `not_in` 的判定与集合等价，
+                # 但 `SearchResult.applied_filters` 要能进 JSON（集合不能），
+                # 而规范化产物是那份回显的唯一来源。不排序——混合类型排不了，
+                # 集合本来也无序。
+                value = list(value)
 
         normalized.append(SearchFilter(field=field, operator=operator, value=value))
     return normalized
@@ -313,7 +331,10 @@ class EnhancedSearcher:
 
         Returns:
             搜索结果。`fuzzy_threshold` / `ngram_n` 两键回显**本次方法真正生效**的档位，
-                方法没消费那个旋钮时是 `None`（见 `SearchResult`）。
+                方法没消费那个旋钮时是 `None`（见 `SearchResult`）。`applied_filters` /
+                `matches_before_filters` 两键回显**本次真的用上了哪些过滤器**、以及过滤
+                **之前**检索命中多少条，没传过滤器时同样是 `None`——「没过滤」和
+                「过滤后剩 0 条」必须是两个读得出来的状态。
 
         Raises:
             DataValidationError: `fuzzy_threshold` 或 `ngram_n` 越界（它同时是
@@ -357,7 +378,13 @@ class EnhancedSearcher:
                 all_matches[idx] += score
         
         # 应用过滤器
+        applied_filters: Optional[List[Dict[str, Any]]] = None
+        matches_before_filters: Optional[int] = None
         if normalized_filters:
+            # 先记下过滤**之前**的候选数：「找到 0 条」到这里才有三种成因的完整读法——
+            # 检索就没命中（before=0）、旋钮拧太紧（上面两键）、过滤器把候选筛光（before>0）
+            matches_before_filters = len(all_matches)
+            applied_filters = [filter_item.to_dict() for filter_item in normalized_filters]
             filtered_indices = set(all_matches.keys())
             for filter_item in normalized_filters:
                 filtered_indices = self._apply_filter(filtered_indices, filter_item)
@@ -387,6 +414,8 @@ class EnhancedSearcher:
             highlights=highlights,
             fuzzy_threshold=fuzzy_threshold if method == "fuzzy" else None,
             ngram_n=ngram_n if method == "ngram" else None,
+            applied_filters=applied_filters,
+            matches_before_filters=matches_before_filters,
         )
     
     def _search_exact(self, field: str, query: str) -> Dict[int, float]:

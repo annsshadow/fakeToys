@@ -279,8 +279,11 @@ class SearchResponse(BaseModel):
     """搜索结果（与 `SearchResult.to_dict()` 的键一一对应）
 
     `fuzzy_threshold` / `ngram_n` 只在**本次方法真的消费它**时非空：`method` 不是
-    `fuzzy` / `ngram` 时为 `null`。两个键都必须声明在这里——FastAPI 会按模型字段
-    过滤返回值，模型少写一键，该键就从响应里**静默消失**且不报错。
+    `fuzzy` / `ngram` 时为 `null`。`applied_filters` / `matches_before_filters`
+    同理，只在**本次真的过滤了**时非空，用来把「被过滤到 0 条」与「检索本来就没命中」
+    分开（前者 `matches_before_filters > 0` 而 `total_matches == 0`）。
+    四键都必须声明在这里——FastAPI 会按模型字段过滤返回值，模型少写一键，
+    该键就从响应里**静默消失**且不报错。
     """
     query: str
     method: str
@@ -290,6 +293,8 @@ class SearchResponse(BaseModel):
     highlights: List[Dict[str, Any]]
     fuzzy_threshold: Optional[float] = None
     ngram_n: Optional[int] = None
+    applied_filters: Optional[List[Dict[str, Any]]] = None
+    matches_before_filters: Optional[int] = None
 
 
 class CompareResponse(BaseModel):

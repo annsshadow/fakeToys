@@ -39,6 +39,7 @@
 - [x] **L26** `feat(search_enhanced)`: A28④ —— fuzzy 的阈值与 ngram 的 gram 长度从**私有方法的默认参数**提到三端公开入口（`search()` / `search_dataset()` 的 `fuzzy_threshold` / `ngram_n`、CLI `--fuzzy-threshold` / `--ngram-n`、API `SearchRequest` 同名字段）。**为什么值得做**（只能绕私有方法量的真实 6902 条）：同一句「租房合同」阈值 0.5 → **1272** 命中、0.6 → 159、0.8 → 38；「公租屋」0.6 → 63、**0.7 → 0**（错 1 字 / 3 字 = 0.667 正好掉出门槛）；ngram 同查询 n=1 → 4565、n=2 → 1271、n=3 → 42 —— 命中数**差到 33 倍**的旋钮，此前用户一个都摸不到，只能改库源码。**症状的另一半**：API 的 pydantic 对未知字段**默认吞掉**（注入态实测 HTTP **200** + 默认阈值的结果，而不是 422），所以「传了没生效」在 HTTP 层是完全静默的。校验只挂 `search()` **一处**（承 L21/L22 的共同咽喉），越界抛 `DataValidationError`（双继承 `ValueError` → API 照旧 400、CLI 照旧 `错误: …` + 退出码 1）；默认值 = 原行为，另用 5 例参数化钉「不传 ≡ 显式传 0.6/2」。计数预言机：坏参数时五种 `_search_*` 被调 **0 次**（校验发生在扫表之前），同一探针再以合法参数跑一遍证明探针是响的。**自家结构护栏抓了我一次**：第一版写 `raise ValueError`，全量红在 `test_no_bare_builtin_raises_left_in_package` → 改领域异常。新增 33 例（unit 122→144 / CLI 73→79 / API 207→212），注入 **33 红 / 406 绿**（红的恰是全部新例、绿的恰是全部既有例），全量 **4106 passed / 2 skipped**（98.98%），`search_enhanced.py` 211 语句 0 missed；另立 **A29**（生效的旋钮不回显）
 - [x] **L27** `feat(search_enhanced)`: A29 —— `SearchResult` 回显**本次真正生效**的松紧旋钮（新增 `fuzzy_threshold` / `ngram_n` 两字段，`to_dict()` 一并导出），口径取「**方法没消费它就是 `None`**」而不是一律回显默认值：`contains` 旁边印个 0.6 会让人以为阈值管得到它，那与 A27/A28④ 是同一类静默。落点：**两条「找到 0 条」终于可分辨**——「公租屋」阈值 0.667 → 0 条（最优窗口分数正好 0.667，差一点就过）vs contains 同查询 → 0 条（语料里真没有）。CLI 把生效值印在**第二行末尾**（`搜索方法: fuzzy (生效阈值 0.6)`）而不是新起一行，因为下游按 `out[out.index("["):]` 取条目，「两行摘要 + JSON」是既有契约；`--output` 落盘的字典自然带两键。API 侧必须**同时**在 `SearchResponse` 声明这两键——FastAPI 按 `response_model` 过滤返回值，模型少写一键就**静默**从响应里消失（本轮由既有的 `test_api_openapi_contract.py` 抓到，红信息直接写出「response_model 漏声明字段…会被静默裁掉」）。代价实测（同进程 back-to-back min-of-7，真实 6902 条）：默认路径四组比值 **0.9834 / 0.9994 / 0.9873 / 1.0000**（命中集合逐条相同 823/823/38/0），`to_dict()` 单次 0.00014 → 0.00017 ms（**+30 ns** 换两个键）。新增 26 例（unit 144→155 / CLI 79→87 / API 212→219）+ 更新 1 处既有契约用例（该用例在缺陷态驱动 **2** 条红），注入 **24 红 / 590 绿**（其中 4 绿是白名单：3 条钉「不消费旋钮的方法不许印数字」+ 1 条钉 stdout 形状，缺陷态必然绿），全量 **4132 passed / 2 skipped**（98.98%，4106 + 26 = 4132 精确对上）；另立 **A30**（`SearchFilter` 的九种算子只在 SDK 里摸得到）
 - [x] **L28** `feat(search_enhanced)`: A30 —— `filters` 从「只有 import 库类才用得到」接到三端（`search_dataset(filters=)` / CLI `--filter FIELD OP VALUE`（可重复）/ API `SearchRequest.filters`），并在 `search()` 的**同一处咽喉**新增公开 `normalize_filters()`，把四种旧行为里**静默或崩溃**的坏形状变成 `DataValidationError`：未知算子（旧：**0 命中**，与「语料里没有」同形）、`in`/`not_in` 配标量（旧：**0 命中** / **全留**，即「没过滤」被伪装成「过滤通过」）、值类型不符（旧：`TypeError` 冒到 API 成 **500**）。顺手修掉同族的第五条：`filters` 传**字典**在 HEAD 里是 `AttributeError: 'dict' object has no attribute 'field'`（实测，崩在扫描第 445 行深处），现在字典是与 `SearchFilter` 对象等价的合法形态。**一轮只改一类口径**：判据只看**用户给的参数**，文档字段类型不对仍是「不匹配」而不是报错（那是数据）；`_evaluate_filter` 的 11 条私有方法既有用例因此**一条都不必改写**。CLI 的算子清单与咽喉 `FILTER_OPERATORS` 是跨模块两份手写表（`--filter` 的 `nargs=3` 用不了 `choices=`，实测 argparse 会把 FIELD 也比成算子 → `invalid choice: 'output'` + 退出码 2），于是照 `EXPORT_FORMATS` 的先例由新用例 `TestSearchFilterSurface` 双向钉住（集合并**顺序**相等 + 九个算子逐个真跑通）。实测收益（真实 6902 条）：contains「租房」`instruction` **419 → 叠加 `instruction contains 申请` = 10 条**（收窄 42 倍）。代价（同进程 back-to-back min-of-7）：五组比值 **0.976 / 0.971 / 0.991 / 0.983 / 1.003**（不传 `filters` 的热路径零回归，`normalize_filters(None)` 立即返回），命中集合新旧逐条相同。新增 **59 例**（unit 155→188 / CLI 87→94→**104** / API 219→228），**既有例 0 改写**，注入 **58 红 / 615 绿**（1 绿是白名单 CONTROL：空 `filters` ≡ 不过滤，缺陷态必然绿，守的是「新校验没改动无过滤路径」），全量 **4191 passed / 2 skipped**（98.98%，4132 + 59 = 4191 精确对上），`search_enhanced.py` 213→**243** 语句 0 missed、`cli/parser.py` **199 语句 100%**；另立 **A31**（生效的过滤器不回显）、**A32**（`normalize_filters` / `FILTER_OPERATORS` 不在包级导出 + API 请求侧 schema 不表达算子域）
+- [x] **L29** `feat(search_enhanced)`: A31 —— 承 A29 的回显口径补齐第三种「找到 0 条」成因：`SearchResult` 新增 **`applied_filters`**（**规范化之后**的 `{field, operator, value}` 字典清单，不外泄调用方对象）与 **`matches_before_filters`**（过滤**之前**的候选数），三端各自落到能读的地方——CLI 第二行末尾追加「`(N 个过滤器: 检索 X → 保留 Y)`」（继续不另起一行，`out[out.index("["):]` 是既有契约）、`--output` 与 `/api/dataset/search` 各带两键（`SearchResponse` **同步声明**，否则 FastAPI 静默裁剪，L27 已实测过一次）。口径承 L27：没过滤是 `None` 而不是 `[]` / `0`，否则「没过滤」与「过滤后剩 0 条」重新同形；`matches_before_filters` 与 `total_matches` 都是**分页前**的全集口径。顺带一条规范化：成员档收到 `set` 时落成 `list`，因为回显取自规范化产物而集合进不了 JSON（`--output` / 响应都会 `TypeError`）。实测收益（真实 6902 条）：contains「租房」419 条候选 → `instruction contains 申请` 后 **10** 条，且「419 → 10」这句话现在三端都印得出来；「检索 2 → 保留 0」与「检索 0 → 保留 0」在 stdout 与 JSON 上首次可分辨。代价（同进程 back-to-back min-of-7，四组比值 **0.990 / 0.997 / 1.007 / 0.983**，绝对值 1.82/1.80 · 1.79/1.78 · 1.75/1.76 ms + fuzzy 17.47/17.16 ms）——回显在 `if normalized_filters` 分支内、逐条判定外，所以**真正的护栏是计数式**：`SearchFilter.to_dict` 每次查询调用数 == 过滤器条数（不是候选数），带 1 个过滤器时非 0 以自证探针是响的。新增 **38 例**（unit 188→207 / CLI 104→114 / API 228→237），**改写 2 处既有用例期望**（L27 的 `to_dict` 键集合 8→10、旧构造用例扩两字段）+ **1 处契约期望 8→10**（后者驱动 2 条红），注入 **40 红 / 667 绿**（2 绿在白名单：`test_unfiltered_search_prints_no_filter_section` 钉「没传参数不许印数字」、`test_stdout_shape_is_still_two_summary_lines_then_json` 钉下游形状，两者缺陷态必然绿），全量 **4229 passed / 2 skipped**（109.62 s，98.98%，4191 + 38 = 4229 精确对上），`search_enhanced.py` 243→**251** 语句 0 missed；另立 **A33**（多条过滤器只有合计数，说不出是哪一条把候选清零）、**A34**（集合值回显顺序跨进程不稳定，实测）
 
 ## Backlog A — 性能（含 file:line 与实测线索）
 
@@ -65,7 +66,9 @@
 | A30 | `augmentor/search_enhanced.py:202`（`search(filters=)`）× `:529`（`search_dataset`）**没有** `filters` 形参 × CLI `search_parser` × `SearchRequest` | **L27 新记（与 A28④ 同族：能力在库里，入口摸不到）**：`SearchFilter` 支持 9 种算子（`eq/ne/contains/gt/lt/gte/lte/in/not_in`，`_evaluate_filter`），`EnhancedSearcher.search()` 也接 `filters`，但**共享入口 `search_dataset()` 不收**，CLI 的 `search` 子命令与 `/api/dataset/search` 更没有任何过滤参数（`grep -n filter augmentor/cli/parser.py api/routes/dataset_tools.py` 零命中）。于是「先按字段检索、再按元数据收窄」这条路径只有直接 import 库类才用得到。真实 6902 条实测它确实会改变答案：contains「租房」单字段 `instruction` **419** 条，叠加 `instruction contains 申请` 过滤 → **10** 条（收窄 42 倍）。**做之前要先定的两件事**：①过滤与分页的先后次序**已经定了**——`search()` 里是「打分汇总 →
 逐条过滤器收窄候选集 → 排序 → 切页」（`:268-273`），所以接 CLI 时不许顺手改成「先切页再过滤」，
 那会让 `--offset` 的语义随过滤变化；②`input` 字段在真实语料里**整档为空**，所以 `input ne ""` 这类示范过滤会得到 **0 条**（实测），文档与用例不要拿它当正例。另需注意 `filters` 传进来的是对象而不是字典，CLI 只能接 JSON 字符串再构造 → 报错口径要走同一处咽喉（A27/A28④ 形状）。**已做（L28）**：两条约束都照办（顺序未动；示范过滤用 `instruction`，`input ne ""` 只在对照里出现并写明会得到 0 条）；额外发现并修掉「字典形态在 HEAD 里直接 `AttributeError`」，并把 CLI 帮助与咽喉算子表的漂移用 `TestSearchFilterSurface` 钉住（`choices=` 那条路实测走不通：argparse 逐槽校验，FIELD 也被当算子比） | M |
-| A31 | `augmentor/search_enhanced.py`（`SearchResult`）+ CLI 摘要 + `SearchResponse` | **L28 新记（A29 同族：回显不全）**：L28 之后 `filters` 能收窄结果，但 `SearchResult` 只回显两个松紧旋钮，**不回显本次真正应用了哪些过滤器**。于是「找到 0 条」新增第三种成因（检索没命中 / 旋钮太紧 / **过滤器把候选全筛掉了**）里最隐蔽的那种仍然读不出来——尤其 `not_in` 配错值形状时旧行为是「全留」，用户看到 419 条会以为过滤器没起作用，而新行为虽然改成报错，**成功路径上仍然没有「过滤器生效了、收窄到 10 条」的正向证据**。修法：`SearchResult.filters`（或 `applied_filters`）回显**规范化后**的过滤器列表（`{field, operator, value}` 字典，不回显原始对象，避免把调用方的可变对象泄进结果），CLI 摘要第二行跟着印 `过滤 N 条`，`SearchResponse` 必须**同步声明**否则 FastAPI 静默裁剪（L27 已实测过一次）。要先决定：空过滤器回显 `[]` 还是 `None`（L27 的口径是「方法没消费就不印」，这里对应「没过滤就是 `None`」） | S |
+| A31 | `augmentor/search_enhanced.py`（`SearchResult`）+ CLI 摘要 + `SearchResponse` | **L28 新记（A29 同族：回显不全）**：L28 之后 `filters` 能收窄结果，但 `SearchResult` 只回显两个松紧旋钮，**不回显本次真正应用了哪些过滤器**。于是「找到 0 条」新增第三种成因（检索没命中 / 旋钮太紧 / **过滤器把候选全筛掉了**）里最隐蔽的那种仍然读不出来——尤其 `not_in` 配错值形状时旧行为是「全留」，用户看到 419 条会以为过滤器没起作用，而新行为虽然改成报错，**成功路径上仍然没有「过滤器生效了、收窄到 10 条」的正向证据**。修法：`SearchResult.filters`（或 `applied_filters`）回显**规范化后**的过滤器列表（`{field, operator, value}` 字典，不回显原始对象，避免把调用方的可变对象泄进结果），CLI 摘要第二行跟着印 `过滤 N 条`，`SearchResponse` 必须**同步声明**否则 FastAPI 静默裁剪（L27 已实测过一次）。要先决定：空过滤器回显 `[]` 还是 `None`（L27 的口径是「方法没消费就不印」，这里对应「没过滤就是 `None`」）。**已做（L29）**：口径取「没过滤 = `None`」，CLI 印在第二行末尾「`(N 个过滤器: 检索 X → 保留 Y)`」，`SearchResponse` 与契约用例同步改到 10 键；额外踩到一条本行没预见的坑——成员档的 `set` 值进不了 JSON，所以在 `normalize_filters` 里归一成 `list`（其副作用另立 **A34**），逐条过滤器是谁筛光的仍没有（另立 **A33**） | ~~S~~ |
+| A33 | `augmentor/search_enhanced.py:385-391`（`search()` 的过滤分支）+ CLI 第二行 | **L29 新记（本轮产物自己的残留）**：多条 `--filter` 现在只回显**合计数**（「3 个过滤器: 检索 419 → 保留 10」），说不出**是哪一条**把候选清零的——而这正是三条以上时唯一真正想知道的事。修法是在逐条应用处记 `len(filtered_indices)` 快照并回显成 `filters_funnel: [419, 12, 10, 0]` 这类并列清单。要先定：①它进不进 `to_dict()`（进则 `SearchResponse` 必须同步声明，见 L27 那条静默裁剪）；②CLI 第二行已经很长，印不印逐条数还是只印「最后为 0 的那条」；③与 A31 同口径：没过滤时是 `None` 而不是 `[]` | S |
+| A34 | `augmentor/search_enhanced.py:160-166`（`normalize_filters` 的 set→list） | **L29 新记（实测，不是猜想）**：成员档收到 `set` 时归一成 `list`，而 `list({...})` 的顺序由字符串哈希决定 → 同一份代码三个进程里量到 `['alpha','beta','gamma']` / `['gamma','beta','alpha']` / `['alpha','beta','gamma']`（`PYTHONHASHSEED` 随机化）。于是 SDK 调用方传集合时 `to_dict()` 的回显**跨进程不是字节稳定**的（CLI 与 API 走 JSON 数组，不受影响）。修法两个方向：同质（全 str 或全数字）集合排序、或在 `SearchResult` 文档里明写「回显不保证顺序」并停止归一。选前先量排序对混合类型的 `TypeError` 面 | S |
 | A32 | `augmentor/__init__.py:60,220` × `api/routes/dataset_tools.py`（`SearchRequest.filters`） | **L28 新记（两处「同源但没接上」，都不算缺陷）**：①包级 `__init__` 导出了 `SearchFilter` / `SearchResult` / `search_dataset`，却没有导出 `normalize_filters` 与 `FILTER_OPERATORS`——想在自己代码里复用「算子白名单」或提前校验配置的调用方只能 `from augmentor.search_enhanced import ...`，绕过门面；要不要进来需要一并决定 `__all__` 的口径（`tests/unit/test_package_exports.py` 显示这份清单是**刻意策展**的，不是越全越好）。②API 的 `SearchRequest.filters` 是 `Optional[List[Dict[str, Any]]]`，OpenAPI schema 里**算子域与值形状完全不表达**，唯一的契约是咽喉那句 400 文案。修法是把 `filters` 声明成 pydantic 子模型（`Literal` 算子 + 自定义校验），但**代价要先算清**：pydantic 一旦判下来就是 **422**，会把本轮刻意做成 400 的那批语义（与 SDK/CLI 同一口径的领域错误）换掉，而且 `normalize_filters` 仍是 SDK 侧唯一的判据——两层校验谁是第一道要写明，不能靠「反正都会拒」 | S |
 | ~~A12~~ | ~~`augmentor/validation.py:217-222`~~、`sampler.py:296-299` | **L13 实测拆成两半**：①`_validate_item` 里 `import re` + 每条每模式一次 `re.search`；②`sampler.generate_report()` 的 `items.index(seed)` **实测不是缺陷**（真实数据只推荐 4 个种子、反查 0.0 ms，单趟 id 映射要 1.1 ms，改了反而更慢；且它还会改变「值相等但不同对象」时的下标语义，真实数据里正好有 367 条重复 dict）—— 这一半作废。**①已修（L17）**：真实 6902 条 strict **28.99 → 19.49 ms（1.49×）**，禁止模式段占整档 53–55%、该段自身 **1.69–1.88×**（L13 预估的「~5 ms / 1.2×」偏保守）；`re.search` 逐条调用 **27608 → 0**、`re.compile` 与条数无关恒为 2 | S |
 | ~~A13~~ | ~~`api/routes/dataset_tools.py:311,360,386,387,416,436,566,598` + `system_ops.py:320,348,514`~~ | ~~**A4 的同构族**：`read_items()`（同步版）在 11 个 `async def` 路由体里直接调用，同样占着事件循环；`dataset_tools.py:566` 还是「多个文件在循环里串行读」；`/api/dataset/stats` 连分析都留在循环上（43.4 ms）~~ 已修（L7） | M |
@@ -1004,6 +1007,65 @@
     「找到 0 条」成因读不出来）；A32 = `normalize_filters` / `FILTER_OPERATORS` 不在包级导出，
     且 API 的 `filters` 是裸 `List[Dict[str, Any]]`，OpenAPI schema 不表达算子域——
     改成 pydantic 子模型会把 400 换成 422，要先算清两层校验谁是第一道，故不当轮顺手做。
+- **L29** （哈希由下一轮提交补） `feat(search_enhanced)` A31 —— 让「被过滤器筛光」这条成因自己说话。
+  - **症状**（L28 产物自己的残留）：接上 `filters` 之后，「找到 0 条」在 CLI 上有三种成因、
+    两种读法。实测 HEAD：`--query 租房 --filter output contains 退租`（2 条候选被筛光）与
+    `--query 根本没有这个词 --filter input eq ""`（检索就没命中）两份 stdout **逐字相同**，
+    两份 `--output` JSON 也只剩 `total_matches: 0` 一个数；API 侧连这点差别都没有。
+    这不是理论需求：过滤器是本轮才接到三端的，用户第一次能在 CLI 上把 419 条筛成 10 条，
+    而「筛成 0 条」与「没有 419 条」读起来一样时，唯一 debug 手段是删掉 `--filter` 重跑。
+  - **口径（本轮唯一设计决定，全部承 L27）**：没过滤 → `None`，**不是** `[]` / `0`，
+    否则①「没过滤」与③「过滤后剩 0 条」重新同形，本轮就白做；`matches_before_filters` 与
+    `total_matches` 都是**分页前**的全集口径（`limit` / `offset` 只切 `items`）；
+    回显取**规范化之后**的字典清单（`SearchFilter.to_dict()`），不泄漏调用方传入的对象，
+    且是新建容器——两条用例分别钉「传 `SearchFilter` 对象时回显仍是 dict」与
+    「改回显不污染入参、也不影响下一次查询」。
+  - **连带踩到的一条**：成员档（`in` / `not_in`）允许集合，而 `SearchFilter.to_dict()`
+    原样带着集合值 → `--output` 与 API 响应的 JSON 序列化会 `TypeError`。落在
+    `normalize_filters()` 里把 `set` 归一成 `list`（判定与集合等价，语义不动），
+    用例 `test_a_set_filter_value_still_leaves_a_json_serializable_result` 同时钉
+    「回显可 `json.dumps`」与「命中集合不变」。副作用另立 **A34**：`list({...})` 的顺序
+    随 `PYTHONHASHSEED` 变，实测三个进程给出 `['alpha','beta','gamma']` /
+    `['gamma','beta','alpha']` / `['alpha','beta','gamma']`，即回显**跨进程不字节稳定**
+    （只有 SDK 调用方传集合会碰到，CLI 与 API 的值来自 JSON 数组）。
+  - **CLI 侧 `effective` 从赋值改成 `+=`**：旧写法两段互斥（`if/elif`），加了过滤器段之后
+    若不累计，`--method fuzzy --filter …` 会**互相覆盖**。整行等值断言钉住顺序：
+    `搜索方法: fuzzy (生效阈值 0.6) (1 个过滤器: 检索 2 → 保留 1)`。仍然印在第二行末尾，
+    不新起一行（下游按 `out[out.index("["):]` 取条目）。
+  - **代价实测（同进程 back-to-back min-of-7，真实 6902 条）**：contains 无过滤
+    **1.82 → 1.80 ms（0.990）**、1 条过滤 **1.79 → 1.78（0.997）**、3 条过滤
+    **1.75 → 1.76（1.007）**、fuzzy 无过滤 **17.47 → 17.16 ms（0.983）**；命中数两侧相同
+    （419 / 10 / 10 / 42），四个比值全在 ±1% 内 → 噪声。**本轮不把墙钟当证据**：
+    回显在 `if normalized_filters` 分支内、`for filter_item` 循环外，所以真正的护栏是**计数式**
+    （承 L12/L14）——`SearchFilter.to_dict` 每次查询的调用数 == 过滤器条数而不是候选条数，
+    同一用例先用「带 1 个过滤器时计数非 0」自证探针是响的，再断言无过滤路径调用数为 0。
+    （顺带把该调用点 grep 了一遍确认全库只有 `search_enhanced.py:387` 一处，否则计数无意义。）
+  - **改写既有例 2 处 + 契约期望 1 处**（承 L19「放宽判据会让上一轮护栏失效，必须挪进 NEW 侧」）：
+    L27 的 `TestTheResultEchoesTheKnobsItUsed` 里 `to_dict()` 键集合 8→10、
+    「不带新字段构造仍可用」那条扩两字段；`test_api_openapi_contract.py` 的 search 契约
+    `keys=` 8→10（这一处驱动 **2** 条红：`test_response_matches_domain_contract[route_key40]`
+    与 `test_openapi_advertises_domain_contract[route_key40]`）。**API 这次没被静默裁剪抓到**
+    是因为改结果对象与改 `response_model` 在同一轮，而那两条契约用例正是用来保证这件事的。
+  - 新增 **38 例**（unit 188 → **207**、CLI 104 → **114**、API 228 → **237**）。
+  - **注入对照（最后一次测试改动之后跑）**：3 份实现（`search_enhanced.py` /
+    `cli/commands/data_ops.py` / `api/routes/dataset_tools.py`）退回 HEAD →
+    **40 红 / 667 绿**（707 = 40 + 667，与恢复后同一批 4 文件的 707 全绿**精确一一对上**）。
+    红的构成：unit 21（新 19 + 更新 2）+ CLI 8 + API 9 + 契约 2。
+    **2 绿在白名单**，都是「护栏不该管的地方」：
+    ①`test_unfiltered_search_prints_no_filter_section`——没传过滤器时第二行不许出现括号，
+    缺陷态什么都不印所以必然绿，守的是下一轮把回显放宽成「一律印 0 个过滤器」；
+    ②`test_stdout_shape_is_still_two_summary_lines_then_json`——两行摘要 + JSON 的下游形状，
+    本轮刻意不变所以必然绿（承 L27 同一条）。
+  - 恢复后三份实现字节一致：`c52e40256f07`(696 CRLF) / `db2292677b3f`(186) / `2a393842b1cb`(869)，
+    纯 LF 均为 0；HEAD 态对应 `e0457184e038`(667) / `45b32e651dad`(179) / `d3659f6251d5`(864)。
+  - 全量：**4229 passed / 2 skipped**（109.62 s，总计 **98.98%**）。计数
+    **4191 + 38 = 4229 精确对上**，无外部漂移。`search_enhanced.py` **243 → 251 语句 0 missed**，
+    只余 `214->exit`（双重检查锁的 `with` 出口，先于本轮，即 L28 记的 `196->exit` 因新增
+    set→list 归一而换了行号）；`data_ops.py` 82 → **84 语句 0 missed**、只余 `61->68`（先于本轮）；
+    `api/routes/dataset_tools.py` 311 → 313 语句只缺 `617-618 / 689-690`（**另两条路由**的
+    `except Exception → to_http_error`，先于本轮）。
+  - **另立 A33 / A34**：A33 = 多条过滤器只有合计数，说不出**哪一条**把候选清零（本轮回显
+    自己的下一步）；A34 = 集合值回显跨进程顺序不稳（上面实测的三个排列）。
 - 全量：L4 后 **3679 passed / 3 skipped**（89.2 s），L5 后 **3703 passed / 3 skipped**
   （90.2 s），L6 后 **3705 passed / 3 skipped**（91.1 s），L7 后 **3726 passed / 3 skipped**
   （95.1 s），L8 后 **3747 passed / 3 skipped**（98.0 s），L9 后 **3747 passed / 3 skipped**
@@ -1031,7 +1093,10 @@
   L27 后 **4132 passed / 2 skipped**（113.31 s，总计 **98.98%**；**计数 4106 + 26 = 4132 精确对上**，
   本轮更新了 1 处既有契约用例（驱动 2 条红），注入 **24 红 / 590 绿**，4 绿全在白名单），
   L28 后 **4191 passed / 2 skipped**（133.96 s，总计 **98.98%**；**计数 4132 + 59 = 4191 精确对上**，
-  **0 处既有断言改写**，注入 **58 红 / 615 绿**，1 绿在白名单，恢复后四份实现字节一致）。
+  **0 处既有断言改写**，注入 **58 红 / 615 绿**，1 绿在白名单，恢复后四份实现字节一致），
+  L29 后 **4229 passed / 2 skipped**（109.62 s，总计 **98.98%**；**计数 4191 + 38 = 4229 精确对上**，
+  改写既有断言 2 处 + 契约期望 1 处（驱动 2 条红），注入 **40 红 / 667 绿**（707 与恢复后同批
+  4 文件的全绿数一一对上），2 绿在白名单，恢复后三份实现字节一致）。
   **注意**：这些墙钟秒数**彼此不可比**——本工作树与并行 agent 共用一台机器，
   它跑全量时我会慢 40%+（L9 时 92 s、L10 时无竞争 55.7 s）。跨轮只比
   **同一进程内 back-to-back 的对照组**，绝对秒数只作当次快照。
