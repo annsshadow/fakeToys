@@ -70,6 +70,21 @@
       <button class="org-meta-btn" @click="orgAccount('reserve')">保留删除</button>
       <button class="org-meta-btn" @click="orgAccount('tmSave')">存三员</button>
       <button class="org-meta-btn" @click="orgAccount('tmDelete')">删三员</button>
+      <button class="org-meta-btn" @click="orgEntity('groupCreate')">建群组(实体)</button>
+      <button class="org-meta-btn" @click="orgEntity('groupUpdate')">改群组(实体)</button>
+      <button class="org-meta-btn" @click="orgEntity('groupDelete')">删群组(实体)</button>
+      <button class="org-meta-btn" @click="orgEntity('identityCreate')">建身份(实体)</button>
+      <button class="org-meta-btn" @click="orgEntity('identityUpdate')">改身份(实体)</button>
+      <button class="org-meta-btn" @click="orgEntity('identityDelete')">删身份(实体)</button>
+      <button class="org-meta-btn" @click="orgRelQuery('personHasRole')">查人员含角色</button>
+      <button class="org-meta-btn" @click="orgRelQuery('identityList')">批查身份</button>
+      <button class="org-meta-btn" @click="orgRelQuery('groupList')">批查群组</button>
+      <button class="org-meta-btn" @click="orgRelQuery('roleList')">批查角色</button>
+      <button class="org-meta-btn" @click="orgRelQuery('unitIdentityLevel')">身份链单位(级别)</button>
+      <button class="org-meta-btn" @click="orgRelQuery('unitIdentityType')">身份链单位(类型)</button>
+      <button class="org-meta-btn" @click="orgRelQuery('unitCheckHasIdentity')">单位含身份校验</button>
+      <button class="org-meta-btn" @click="orgRelQuery('dutyNameIdentity')">职务名(按身份)</button>
+      <button class="org-meta-btn" @click="orgRelQuery('dutyIdentityUnitName')">职务(身份单位名)</button>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -392,6 +407,54 @@ async function orgAccount(op: 'lock' | 'ban' | 'unban' | 'password' | 'icon' | '
     toast.success('账号/三员操作已提交')
   } catch (err: any) {
     toast.error('账号操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev329：组织 SeaORM 群组/身份 CRUD + express 关系批查询 真实写端点（用户触发，shape 已核 handler）
+async function orgEntity(op: string) {
+  try {
+    if (op === 'groupCreate') {
+      const name = prompt('新群组名称:', '') || ''
+      await api.post('/api/organization/group', { name })
+    } else if (op === 'groupUpdate') {
+      const id = prompt('群组 ID:', '') || ''
+      const name = prompt('新名称:', '') || ''
+      await api.put(`/api/organization/group/${encodeURIComponent(id)}`, { name })
+    } else if (op === 'groupDelete') {
+      const id = prompt('要删除的群组 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该群组？'))) return
+      await api.delete(`/api/organization/group/${encodeURIComponent(id)}`)
+    } else if (op === 'identityCreate') {
+      const name = prompt('新身份名称:', '') || ''
+      await api.post('/api/organization/identity', { name })
+    } else if (op === 'identityUpdate') {
+      const id = prompt('身份 ID:', '') || ''
+      const name = prompt('新名称:', '') || ''
+      await api.put(`/api/organization/identity/${encodeURIComponent(id)}`, { name })
+    } else {
+      const id = prompt('要删除的身份 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该身份？'))) return
+      await api.delete(`/api/organization/identity/${encodeURIComponent(id)}`)
+    }
+    toast.success('组织实体操作已提交')
+  } catch (e: any) {
+    toast.error('操作失败: ' + (e?.message ?? ''))
+  }
+}
+async function orgRelQuery(op: string) {
+  const key = prompt('查询主体（人员/身份/群组/角色/单位 flag）:', '') || ''
+  try {
+    if (op === 'personHasRole') await api.post('/api/person/has/role', { personList: [key], roleList: [] })
+    else if (op === 'identityList') await api.post('/api/identity/list', { identityList: [key] })
+    else if (op === 'groupList') await api.post('/api/group/list', { groupList: [key] })
+    else if (op === 'roleList') await api.post('/api/role/list', { roleList: [key] })
+    else if (op === 'unitIdentityLevel') await api.post('/api/unit/identity/level', { identityList: [key] })
+    else if (op === 'unitIdentityType') await api.post('/api/unit/identity/type', { identityList: [key] })
+    else if (op === 'unitCheckHasIdentity') await api.post('/api/unit/check/unit/has/identity', { unit: key, identity: key })
+    else if (op === 'dutyNameIdentity') await api.post('/api/unitduty/list/name/identity', { identityList: [key] })
+    else await api.post('/api/unitduty/list/identity/unit/name', { identityList: [key] })
+    toast.success('关系查询已提交')
+  } catch (e: any) {
+    toast.error('查询失败: ' + (e?.message ?? ''))
   }
 }
 async function loadOrgMeta() {
