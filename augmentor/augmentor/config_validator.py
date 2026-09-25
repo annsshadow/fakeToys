@@ -19,11 +19,12 @@ from enum import Enum
 # 区间常量与运行时判据同一批来源（`config.py` 开头 + `retry.MAX_RETRY_AFTER`）。
 # 这里是 A77 的修法本体：此前两边各抄一遍数字，抄漏的一边就成了「校验器独有
 # 天花板」—— `max_retries: 10**6` 在这里报红、在 SDK 直构那边畅通无阻。
-from .config import (AUTO_SAVE_INTERVAL_MIN, MAX_RETRIES_RANGE,
-                     NUM_THREADS_RANGE, PORT_RANGE, RATE_LIMIT_MIN_REQUESTS,
-                     RATE_LIMIT_MIN_WINDOW_SECONDS, REQUEST_TIMEOUT_RANGE,
-                     RETRY_DELAY_RANGE,
-                     VARIANTS_PER_SEED_RANGE, AppConfig, ModelConfig)
+from .config import (AUTO_SAVE_INTERVAL_MIN, MAX_OUTPUT_TOKENS_MIN,
+                     MAX_RETRIES_RANGE, NUM_THREADS_RANGE, PORT_RANGE,
+                     RATE_LIMIT_MIN_REQUESTS, RATE_LIMIT_MIN_WINDOW_SECONDS,
+                     REQUEST_TIMEOUT_RANGE, RETRY_DELAY_RANGE,
+                     TEMPERATURE_RANGE, TOP_P_RANGE, VARIANTS_PER_SEED_RANGE,
+                     AppConfig, ModelConfig)
 from .logging_setup import LOGGING_LEVELS, build_formatter
 from .retry import MAX_RETRY_AFTER
 
@@ -147,9 +148,10 @@ class ConfigValidator:
         # `requests` 对 `timeout=0` 直接抛 `ValueError`，而那发生在第一次真实
         # 调用上，「校验绿、跑时炸」正是本仓逐轮封死的那道缝；上界 600 对齐
         # `docs/DEPLOYMENT.md` 的 nginx `proxy_read_timeout 600s`。
-        # 每模型的覆盖档 `models.<名字>.request_timeout` 不做规格校验：
-        # `KNOWN_FIELDS` 表达不了「任意键名下的一种子键」，其类型与区间由后端
-        # 构造入口的 `require_seconds` 兜（与 `temperature` 等既有模型键同一口径）。
+        # 每模型的覆盖档 `models.<名字>.request_timeout` 的规格住在下面那张
+        # `MODEL_ENTRY_FIELDS`（L72 补的，同一条界同一个常数）：本表表达不了
+        # 「任意键名下的一种子键」，所以按 `models.*.<键>` 归一后去那张表查。
+        # （L71 曾把这一档只留在运行时那一侧，实测留下过一条 A77 镜像缝，见下。）
         "augmentation.request_timeout": {
             "type": float, "min": REQUEST_TIMEOUT_RANGE[0],
             "max": REQUEST_TIMEOUT_RANGE[1]},
@@ -199,6 +201,30 @@ class ConfigValidator:
         "logging.level": {"type": str, "choices": LOGGING_LEVELS},
         "logging.file": {"type": str},
         "logging.format": {"type": str, "non_empty": True, "renderable": True},
+    }
+
+    # `models.<名字>.<键>` 的规格（L72 / A113，同时补掉 L71 记下的那个缺口）。
+    #
+    # 为什么单开一张表：`KNOWN_FIELDS` 的键是**固定路径**，表达不了「任意模型名下
+    # 的一种子键」—— 模型名由用户自己起，抄不完。L71 就是按这句话把每模型覆盖档
+    # 留在运行时那一侧的（原注释在本表 `augmentation.request_timeout` 上方），实测
+    # 后果是 A77 的**镜像症状**：`models.m.request_timeout: 0` 在 `validate-config`
+    # 上 0 错、在 `load_config` 里抛（取证 Temp `l72q/probe_before.json` 最后一例）。
+    # 折法是把路径 `models.<名字>.<键>` 归一成 `models.*.<键>` 再查本表（见
+    # `_spec_for`），界仍引 `config.py` 那批常数 ⇒ 一条界还是只住一个地方。
+    #
+    # `nullable` 是新加的一维，只给 `request_timeout`：它的 `None` 是「本模型不覆盖
+    # 全局档」这一档**本身**（`conf.get(key)` 不带默认值），运行时 `require_seconds`
+    # 放行 `None`，静态面也必须放行，否则两边又拆开了。采样三键**不进** `nullable`：
+    # 它们有默认值，「写了键没给值」在两侧都是坏写法（运行时由
+    # `_reject_null_fields(..., names=...)` 拒，静态面由类型判据拒）。
+    MODEL_ENTRY_FIELDS = {
+        "temperature": {"type": float, "min": TEMPERATURE_RANGE[0],
+                        "max": TEMPERATURE_RANGE[1]},
+        "top_p": {"type": float, "min": TOP_P_RANGE[0], "max": TOP_P_RANGE[1]},
+        "max_output_tokens": {"type": int, "min": MAX_OUTPUT_TOKENS_MIN},
+        "request_timeout": {"type": float, "min": REQUEST_TIMEOUT_RANGE[0],
+                            "max": REQUEST_TIMEOUT_RANGE[1], "nullable": True},
     }
     
     # 环境变量模式
@@ -291,9 +317,13 @@ class ConfigValidator:
 
         `models.<名字>` 的键集用户自己起，所以顶层不进判据；但它的**子项**形状是
         封闭的：`load_config` 对每个条目读 `type` / `api_key` / `secret_key` /
-        `base_url` / `model` / `temperature` / `top_p` / `max_output_tokens` 八个键，
-        实测与 `ModelConfig` 的字段集逐字相等（Temp `l52q/probe3.py` 第 1 节，差集
-        两侧都空）。方向守护见
+        `base_url` / `model` / `temperature` / `top_p` / `max_output_tokens` /
+        `request_timeout` 九个键，实测与 `ModelConfig` 的字段集逐字相等（差集两侧
+        都空；L52 记的是八个，L71 加 `request_timeout` 后本句跟着改数）。清单本身
+        是 `sorted(f.name for f in fields(ModelConfig))` 推导的，不是抄的 ⇒ 加字段
+        不需要记得改这里；反方向（规格表里有、字段集没有）由
+        `tests/unit/test_model_entry_ranges_l72.py::test_no_ghost_model_spec` 钉。
+        方向守护见
         `tests/unit/test_config_validator.py::TestUnreadKeyWarnings`。
         """
         known = sorted(f.name for f in fields(ModelConfig))
@@ -400,14 +430,38 @@ class ConfigValidator:
                 if current is None:
                     result.add_error(field_path, f"字段不能为null: {field_path}")
     
+    def _spec_for(self, field_path: str) -> Optional[Dict[str, Any]]:
+        """按路径取规格：固定路径查 `KNOWN_FIELDS`，模型条目折成 `models.*.<键>` 查
+        `MODEL_ENTRY_FIELDS`。
+
+        折叠只做一次、且只在「三段且首段是 `models`」这条路径上做，因为四段以上
+        在本仓不存在（`web.cors_origins[0]` 那种元素路径由 `items` 判据在同一次
+        命中里处理，不另开规格）。归一化把「用户起的模型名」从查找里摘掉，
+        于是新增一个模型条目不需要动规格表 —— 反过来也成立：**规格表里没有的
+        模型键就是一份「静态面没人管」的清单**，那条对账由
+        `tests/unit/test_model_entry_ranges_l72.py` 钉住。
+        """
+        spec = self.KNOWN_FIELDS.get(field_path)
+        if spec is not None:
+            return spec
+        parts = field_path.split(".")
+        if len(parts) == 3 and parts[0] == "models":
+            return self.MODEL_ENTRY_FIELDS.get(parts[2])
+        return None
+
     def _validate_known_fields(self, config: Dict, prefix: str, result: ValidationResult):
         """验证已知字段"""
         for key, value in config.items():
             field_path = f"{prefix}.{key}" if prefix else key
             
-            if field_path in self.KNOWN_FIELDS:
-                spec = self.KNOWN_FIELDS[field_path]
-                
+            spec = self._spec_for(field_path)
+            if spec is not None:
+                # `nullable`（L72）：这个键的 `None` 是一档**合法语义**（「不覆盖，
+                # 用上一层的默认」），与运行时 `require_*` 家族对 `None` 的短路同读法。
+                # 判在类型检查之前，否则 `models.m.request_timeout:`（写了键没给值）
+                # 会在这里报「期望 float, 实际 NoneType」，而那边照样放行 ⇒ 又拆两侧。
+                if spec.get("nullable") and value is None:
+                    continue
                 # 类型检查
                 expected_type = spec.get("type")
                 # `float` 字段同时接受 `int`：YAML 里 `retry_delay: 1` / `threshold: 1`
