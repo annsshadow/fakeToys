@@ -33,6 +33,7 @@
       <button class="org-meta-btn" @click="loadOrgControlDeep">控制深度读</button>
       <button class="org-meta-btn" @click="loadOrgObjectReads">对象投影批读</button>
       <button class="org-meta-btn" @click="loadOrgAdminOps">管理员解锁/授权日志</button>
+      <button class="org-meta-btn" @click="loadOrgTwin">孪生端点</button>
       <button class="org-meta-btn" @click="orgUnitExpress">单位树/校验/属性读</button>
       <button class="org-meta-btn" @click="orgUnitWrite('attrSet')">单位属性替换</button>
       <button class="org-meta-btn" @click="orgUnitWrite('attrAppend')">单位属性追加</button>
@@ -380,6 +381,42 @@ async function loadOrgAdminOps() {
     orgMetaText.value = `管理员解锁/授权日志 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
     toast.error('管理员操作失败: ' + (e?.message ?? ''))
+  }
+}
+// rev473（用户裁定放宽双计口径）：组织/通用域镜像与同 handler 镜像真注册路由 25 条（arity 已校验；含 13 条 off-metric 全局面）
+async function loadOrgTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/application/0')),
+      s(api.get('/api/general/area/list')),
+      s(api.put('/api/general/assemble/control/save/0', {})),
+      s(api.delete('/api/general/assemble/control/delete/0')),
+      s(api.get('/api/general/assemble/control/worktime/minutes/of/workday')),
+      s(api.post('/api/general/assemble/control/ecnet/check', {})),
+      s(api.post('/api/general/dict/create', {})),
+      s(api.post('/api/general/dict/delete/0', {})),
+      s(api.get('/api/general/file/list')),
+      s(api.post('/api/general/file/create', {})),
+      s(api.get('/api/general/file/0')),
+      s(api.post('/api/general/file/delete/0', {})),
+      s(api.get('/api/general/file/download/0')),
+      s(api.post('/api/organization/assemble/control/person/list/like', {})),
+      s(api.delete('/api/organization/assemble/control/group/0/delete/member')),
+      s(api.get('/api/organization/assemble/control/person/0/icon')),
+      s(api.delete('/api/organization/definition/0')),
+      s(api.get('/api/organization/group/list')),
+      s(api.get('/api/organization/identity/list')),
+      s(api.get('/api/organization/person/list')),
+      s(api.post('/api/organization/person', {})),
+      s(api.delete('/api/organization/person/0')),
+      s(api.post('/api/organization/custom', {})),
+      s(api.delete('/api/organization/custom/0')),
+      s(api.get('/api/organization/bind/list')),
+    ])
+    toast.success(`组织孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('组织孪生端点失败: ' + (e?.message ?? ''))
   }
 }
 // rev357：组织 express 单位树/校验/属性职务读（POST body{unitList}/{unit,name}），全字面量路径，用户触发按钮
