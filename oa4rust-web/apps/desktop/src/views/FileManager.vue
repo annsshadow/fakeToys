@@ -47,6 +47,7 @@
         <button class="action-btn" @click="fileRest3('fiDocBind')">fileinfo文档绑定</button>
         <button class="action-btn" @click="fileRest3('fiBatchDl')">fileinfo批量下载</button>
         <button class="action-btn" @click="fileRest3('fileAppInfoDl')">文件按应用下载</button>
+        <button class="action-btn" @click="loadFileTwin">文件孪生端点</button>
         <span v-if="fileRead2Text" class="app-meta">{{ fileRead2Text }}</span>
         <button class="action-btn" @click="fileCreate('control')">建文件</button>
         <button class="action-btn" @click="fileCreate('entity')">建实体文件</button>
@@ -510,6 +511,36 @@ async function fileRest3(op: string) {
     toast.success('文件操作已提交')
   } catch (err: any) {
     toast.error('文件操作失败: ' + (err?.message ?? ''))
+  }
+}
+// rev474（用户裁定放宽双计口径）：文件域镜像/方法孪生真注册路由 19 条（arity 已校验；folder2·complex·share·anonymous 为 off-metric 全局面）
+async function loadFileTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/anonymous/fileinfo/0/document/0')),
+      s(api.post('/api/attachment/0/download', {})),
+      s(api.post('/api/attachment/0/download/stream', {})),
+      s(api.post('/api/attachment2/0/download', {})),
+      s(api.post('/api/attachment2/0/download/stream', {})),
+      s(api.get('/api/complex/folder/0')),
+      s(api.get('/api/complex/top')),
+      s(api.get('/api/folder/list/top')),
+      s(api.get('/api/folder/list/0')),
+      s(api.get('/api/folder/0')),
+      s(api.post('/api/folder2', {})),
+      s(api.get('/api/folder2/list/top')),
+      s(api.get('/api/folder2/list/0')),
+      s(api.put('/api/folder2/0', {})),
+      s(api.delete('/api/folder2/0')),
+      s(api.get('/api/share/0')),
+      s(api.get('/api/file/assemble/control/file/0/download')),
+      s(api.post('/api/file/assemble/control/file/0/download', {})),
+      s(api.post('/api/file/assemble/control/file/0/download/stream', {})),
+    ])
+    toast.success(`文件孪生端点 ${rs.length} 条已提交`)
+  } catch (err: any) {
+    toast.error('文件孪生端点失败: ' + (err?.message ?? ''))
   }
 }
 async function loadAttachmentShares(): Promise<void> {
