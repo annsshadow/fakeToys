@@ -15,6 +15,8 @@
         <button class="btn-primary" @click="loadQueryList">查询列表</button>
         <button class="btn-primary" @click="loadQvDetails">查询/视图明细</button>
         <button class="btn-primary" @click="loadQueryTwin">孪生端点</button>
+        <button class="btn-primary" @click="loadQueryTwin2">孪生端点B</button>
+        <button class="btn-primary" @click="loadQueryTwin3">服务处理读C</button>
         <button class="btn-primary" @click="loadStatementStat">语句/统计明细</button>
         <button class="btn-primary" @click="loadImportModels">导入模型</button>
         <button class="btn-primary" @click="loadTables">数据表</button>
@@ -668,6 +670,69 @@ const api_queryview__994_data = ref<any[]>([])
 const api_queryview__229_data = ref<any[]>([])
 const api_queryview__320_data = ref<any[]>([])
 const api_queryview__430_data = ref<any[]>([])
+// rev484（桶外 off-metric 波）：query 域（查询库/表达式/服务处理·神经生成）真注册路由 15 条（arity 已校验；
+//  与已消费 queryview 域 双轨，import/list 等 短 alias 独立 handler）
+async function loadQueryTwin2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/query/import/list')),
+      s(api.get('/api/query/item/list')),
+      s(api.get('/api/query/view/list')),
+      s(api.get('/api/query/view/0')),
+      s(api.get('/api/query/core/express/cache/status/0')),
+      s(api.get('/api/query/core/express/history/0')),
+      s(api.post('/api/query/core/express/cache/0', {})),
+      s(api.post('/api/query/core/express/execute', {})),
+      s(api.post('/api/query/create', {})),
+      s(api.post('/api/query/service/neural/generate/0', {})),
+      s(api.post('/api/query/service/processing/execute', {})),
+      s(api.get('/api/query/service/processing/status')),
+      s(api.post('/api/query/service/processing/batch', {})),
+      s(api.post('/api/query/service/processing/process', {})),
+      s(api.post('/api/query/service/processing/reset', {})),
+    ])
+    toast.success(`查询孪生端点B ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('查询孪生端点B失败: ' + (e?.message ?? ''))
+  }
+}
+// rev485（桶外 off-metric 第二波）：query_service_processing 服务处理读族 27 条
+// （{p} 与 {{modelFlag}}/{{flag}}/{{bundle}}/{{node}} 占位槽填 0/f1/b1；设计检索/索引统计/表操作/热频触达全族）
+async function loadQueryTwin3() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/query_service_processing/0/design/search', {})),
+      s(api.post('/api/query_service_processing/0/index/directory/document/count', {})),
+      s(api.post('/api/query_service_processing/0/index/update/extra/document', {})),
+      s(api.get('/api/query_service_processing/0/neural/generate/model/0')),
+      s(api.get('/api/query_service_processing/0/neural/learn/model/0')),
+      s(api.get('/api/query_service_processing/0/neural/list/calculate/model/0/work/0')),
+      s(api.get('/api/query_service_processing/0/neural/stop/generating/model/0')),
+      s(api.get('/api/query_service_processing/0/neural/stop/learning/model/0')),
+      s(api.get('/api/query_service_processing/0/table/reload/dynamic')),
+      s(api.post('/api/query_service_processing/0/table/0/insert', {})),
+      s(api.post('/api/query_service_processing/0/table/0/update/0', {})),
+      s(api.get('/api/query_service_processing/0/touch/high/freq/document/node/0/reset')),
+      s(api.get('/api/query_service_processing/0/touch/high/freq/document/node/0/touch')),
+      s(api.get('/api/query_service_processing/0/touch/high/freq/work/node/0/reset')),
+      s(api.get('/api/query_service_processing/0/touch/high/freq/work/node/0/touch')),
+      s(api.get('/api/query_service_processing/0/touch/high/freq/workcompleted/node/0/reset')),
+      s(api.get('/api/query_service_processing/0/touch/high/freq/workcompleted/node/0/touch')),
+      s(api.get('/api/query_service_processing/0/touch/low/freq/document/node/0/reset')),
+      s(api.get('/api/query_service_processing/0/touch/low/freq/document/node/0/touch')),
+      s(api.get('/api/query_service_processing/0/touch/low/freq/work/node/0/reset')),
+      s(api.get('/api/query_service_processing/0/touch/low/freq/work/node/0/touch')),
+      s(api.get('/api/query_service_processing/0/touch/low/freq/workcompleted/node/0/reset')),
+      s(api.get('/api/query_service_processing/0/touch/low/freq/workcompleted/node/0/touch')),
+      s(api.get('/api/query_service_processing/0/touch/optimize/index/0/touch')),
+    ])
+    toast.success(`服务处理读C ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('服务处理读C失败: ' + (e?.message ?? ''))
+  }
+}
 </script>
 
 <style scoped>

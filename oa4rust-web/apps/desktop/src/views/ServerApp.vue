@@ -15,6 +15,8 @@
       <button class="srv-meta-btn" @click="serverConsoleOps('cacheClear')">清理缓存(按类型)</button>
       <button class="srv-meta-btn" @click="serverConsoleOps('cmdExecute')">控制台命令</button>
       <button class="srv-meta-btn" @click="loadServerTwin">孪生端点</button>
+      <button class="srv-meta-btn" @click="loadServerTwin2">孪生端点B</button>
+      <button class="srv-meta-btn" @click="loadServerTwin3">日志/调度/资源C</button>
       <button class="srv-meta-btn" @click="serverConsoleOps('sendMessage')">广播消息</button>
       <button class="srv-meta-btn" @click="serverConsoleOps('deploySave')">保存部署</button>
       <button class="srv-meta-btn" @click="serverConsoleOps('deployDelete')">删除部署</button>
@@ -269,6 +271,55 @@ async function loadServerTwin() {
     toast.success(`服务器孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
     toast.error('服务器孪生端点失败: ' + (e?.message ?? ''))
+  }
+}
+// rev484（桶外 off-metric 波）：服务器/根域真注册路由 14 条（h2·外部数据源·备份恢复·密钥检查·根 echo·根 OpenAPI；
+//  两条 cache 主轨 flush 因本视图 canary 禁位改接 CmsIndexApp；mcp POST 与已消费 GET 为方法孪生；arity 已校验）
+async function loadServerTwin2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/base/fireschedule/classname/0')),
+      s(api.get('/api/base/sysresource/filePath/0')),
+      s(api.post('/api/base/cache', {})),
+      s(api.post('/mcp', {})),
+      s(api.get('/api/externaldatasources/check')),
+      s(api.get('/api/externaldatasources/list')),
+      s(api.get('/api/externaldatasources/set/cancel')),
+      s(api.post('/api/externaldatasources/set', {})),
+      s(api.get('/api/h2/check')),
+      s(api.get('/api/restore/upload/cancel')),
+      s(api.post('/api/restore/upload', {})),
+      s(api.get('/api/secret/check')),
+      s(api.get('/hello/world')),
+      s(api.get('/openapi.json')),
+    ])
+    toast.success(`服务器孪生端点B ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('服务器孪生端点B失败: ' + (e?.message ?? ''))
+  }
+}
+// rev485（桶外 off-metric 第二波）：根缓存 POST/定时任务类名/系统资源路径/外部数据源校验/操作日志族
+// （arity 已校验；/api/cache base 主轨 POST 与 base_core_project 主轨 GET flush 双 crate 双注册逐条接）
+async function loadServerTwin3() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/cache', {})),
+      s(api.get('/api/fireschedule/classname/0')),
+      s(api.get('/api/sysresource/filePath/0')),
+      s(api.post('/api/externaldatasources/validate', {})),
+      s(api.get('/api/log/list/app/0')),
+      s(api.get('/api/log/list/category/0')),
+      s(api.get('/api/log/list/level/0')),
+      s(api.get('/api/log/0')),
+      s(api.post('/api/log/filter/list/0/prev/0', {})),
+      s(api.get('/api/base/cache/commonscript/flush')),
+      s(api.get('/api/base/cache/config/flush')),
+    ])
+    toast.success(`日志/调度/资源C ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('日志/调度/资源C失败: ' + (e?.message ?? ''))
   }
 }
 </script>

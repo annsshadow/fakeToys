@@ -48,6 +48,8 @@
         <button class="action-btn" @click="fileRest3('fiBatchDl')">fileinfo批量下载</button>
         <button class="action-btn" @click="fileRest3('fileAppInfoDl')">文件按应用下载</button>
         <button class="action-btn" @click="loadFileTwin">文件孪生端点</button>
+        <button class="action-btn" @click="loadFileTwin2">文件孪生端点B</button>
+        <button class="action-btn" @click="loadFileTwin3">文件桶外端点C</button>
         <span v-if="fileRead2Text" class="app-meta">{{ fileRead2Text }}</span>
         <button class="action-btn" @click="fileCreate('control')">建文件</button>
         <button class="action-btn" @click="fileCreate('entity')">建实体文件</button>
@@ -867,6 +869,69 @@ function uploadFile(file: File): void {
       clearInterval(interval)
       uploadProgress.value = 0
     })
+}
+// rev484（桶外 off-metric 波）：文件/分享/匿名/数据·文档 真注册路由 35 条（arity 已校验；param 位填 0 避影子；
+//  anonymous file POST download 双方法与 GET 为孪生）
+async function loadFileTwin2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.delete('/api/data/document/0')),
+      s(api.get('/api/anonymous/fileinfo/download/document/0')),
+      s(api.get('/api/anonymous/fileinfo/download/document/0/stream')),
+      s(api.get('/api/anonymous/form/v2/lookup/document/0')),
+      s(api.get('/api/anonymous/form/v2/lookup/document/0/mobile')),
+      s(api.get('/api/anonymous/form/v2/0')),
+      s(api.get('/api/anonymous/form/v2/0/mobile')),
+      s(api.get('/api/anonymous/form/0')),
+      s(api.get('/api/anonymous/surface/appdict/list/appInfo/0')),
+      s(api.get('/api/anonymous/surface/appdict/0/appInfo/0')),
+      s(api.get('/api/anonymous/surface/appdict/0/appInfo/0/data')),
+      s(api.get('/api/commend/0')),
+      s(api.get('/api/comment/0/commend')),
+      s(api.get('/api/comment/0/uncommend')),
+      s(api.get('/api/data/document/0/0')),
+      s(api.get('/api/surface/appdict/list/appInfo/0')),
+      s(api.get('/api/surface/appdict/0/appInfo/0')),
+      s(api.get('/api/surface/appdict/0/appInfo/0/data')),
+      s(api.post('/api/data/document/0', {})),
+      s(api.post('/api/data/document/0/array/data', {})),
+      s(api.post('/api/docpermission', {})),
+      s(api.post('/api/image/encode/base64', {})),
+      s(api.put('/api/data/document/0', {})),
+      s(api.put('/api/surface/appdict/0/appInfo/0', {})),
+      s(api.get('/api/anonymous/file/0/download')),
+      s(api.get('/api/anonymous/file/0/download/stream')),
+      s(api.get('/api/folder2/0')),
+      s(api.get('/api/share/download/share/0/file/0')),
+      s(api.get('/api/share/list/att/share/0/folder/0')),
+      s(api.get('/api/share/list/folder/share/0/folder/0')),
+      s(api.get('/api/share/list/my2/0/0')),
+      s(api.get('/api/share/list/to/me2/0')),
+      s(api.get('/api/share/shield/0')),
+      s(api.post('/api/anonymous/file/0/download', {})),
+      s(api.post('/api/anonymous/file/0/download/stream', {})),
+    ])
+    toast.success(`文件孪生端点B ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('文件孪生端点B失败: ' + (e?.message ?? ''))
+  }
+}
+// rev485（桶外 off-metric 第二波）：匿名 fileinfo 文档目录/文件夹批量与单件下载/分享再共享 真注册路由 4 条
+async function loadFileTwin3() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/anonymous/fileinfo/list/document/0')),
+      s(api.get('/api/folder2/batch/download')),
+      s(api.get('/api/folder2/0/download')),
+      s(api.post('/api/commend/list/paging/0/size/0', {})),
+      s(api.post('/api/share/share/0/file/0/folder/0', {})),
+    ])
+    toast.success(`文件桶外端点C ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('文件桶外端点C失败: ' + (e?.message ?? ''))
+  }
 }
 </script>
 

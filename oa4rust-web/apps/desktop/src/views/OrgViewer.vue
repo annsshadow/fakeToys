@@ -35,6 +35,9 @@
       <button class="org-meta-btn" @click="loadOrgAdminOps">管理员解锁/授权日志</button>
       <button class="org-meta-btn" @click="loadOrgTwin">孪生端点</button>
       <button class="org-meta-btn" @click="loadOrgObjectTwins">对象投影孪生</button>
+      <button class="org-meta-btn" @click="loadOrgTwin2">桶外端点A</button>
+      <button class="org-meta-btn" @click="loadOrgTwin3">桶外端点B</button>
+      <button class="org-meta-btn" @click="loadOrgTwin4">桶外端点C</button>
       <button class="org-meta-btn" @click="orgUnitExpress">单位树/校验/属性读</button>
       <button class="org-meta-btn" @click="orgUnitWrite('attrSet')">单位属性替换</button>
       <button class="org-meta-btn" @click="orgUnitWrite('attrAppend')">单位属性追加</button>
@@ -490,6 +493,164 @@ async function loadOrgObjectTwins() {
     toast.success(`对象投影孪生 ${rs.length} 条已提交`)
   } catch (e: any) {
     toast.error('对象投影孪生失败: ' + (e?.message ?? ''))
+  }
+}
+// rev484（桶外 off-metric 波）：权限刷新型 2 + 快递 express 族 12 + 通用 区域/考勤范围/Excel/通用文件 控制族
+// （arity 已校验；area/invoice 等 DELETE 主轨与同路径 POST/PUT 方法孪生逐条接；param 位填 0 避影子）
+async function loadOrgTwin2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/permission/management/refresh/all')),
+      s(api.get('/api/permission/management/refresh/category/0')),
+      s(api.get('/api/express/companies')),
+      s(api.get('/api/express/query')),
+      s(api.post('/api/express/group/list', {})),
+      s(api.post('/api/express/identity/list', {})),
+      s(api.post('/api/express/person/list', {})),
+      s(api.post('/api/express/person/with/identity', {})),
+      s(api.post('/api/express/person/with/unit', {})),
+      s(api.post('/api/express/role/list', {})),
+      s(api.post('/api/express/subscribe', {})),
+      s(api.post('/api/express/unit/list', {})),
+      s(api.get('/api/general/securityclearance/enable')),
+      s(api.get('/api/general/worktime/isworkday/0')),
+      s(api.delete('/api/general/assemble/control/area/delete/0')),
+      s(api.delete('/api/general/assemble/control/attendscope/delete/0')),
+      s(api.get('/api/general/assemble/control/area/list/province/0')),
+      s(api.get('/api/general/assemble/control/area/0')),
+      s(api.get('/api/general/assemble/control/attendscope/0')),
+      s(api.get('/api/general/assemble/control/excel/result/flag/0')),
+      s(api.get('/api/general/assemble/control/excel/0')),
+      s(api.get('/api/general/assemble/control/excel/0/sheetList')),
+      s(api.get('/api/general/assemble/control/generalfile/download/flag/0')),
+      s(api.get('/api/general/assemble/control/generalfile/flag/0')),
+      s(api.get('/api/general/assemble/control/generalfile/flag/0/binary/base64')),
+      s(api.post('/api/general/assemble/control/area/create', {})),
+      s(api.post('/api/general/assemble/control/area/delete/0', {})),
+      s(api.post('/api/general/assemble/control/area/update/0', {})),
+      s(api.post('/api/general/assemble/control/attendscope/create', {})),
+      s(api.post('/api/general/assemble/control/attendscope/delete/0', {})),
+      s(api.post('/api/general/assemble/control/attendscope/save/0', {})),
+      s(api.post('/api/general/assemble/control/excel/excelName/0', {})),
+      s(api.post('/api/general/assemble/control/excel/excelName/0/sheetList', {})),
+      s(api.post('/api/general/assemble/control/excel/upload', {})),
+      s(api.post('/api/general/assemble/control/excel/upload/with/url', {})),
+      s(api.post('/api/general/assemble/control/generalfile', {})),
+      s(api.put('/api/general/assemble/control/area/update/0', {})),
+      s(api.put('/api/general/assemble/control/attendscope/save/0', {})),
+    ])
+    toast.success(`桶外端点A ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('桶外端点A失败: ' + (e?.message ?? ''))
+  }
+}
+// rev484（桶外 off-metric 波）：通用 发票/Office 转 Word/权限/二维码/密级/状态 控制族 + 字典/发票/文件 族
+// （arity 已校验；upgrade 2021090901/02 为字面版本号路由；worktime 判定族逐条 distinct）
+async function loadOrgTwin3() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.delete('/api/general/assemble/control/invoice/delete/0')),
+      s(api.get('/api/general/assemble/control/invoice/delete/0')),
+      s(api.get('/api/general/assemble/control/invoice/download/flag/0')),
+      s(api.get('/api/general/assemble/control/invoice/get/0')),
+      s(api.get('/api/general/assemble/control/office/html/to/word/result/flag/0')),
+      s(api.get('/api/general/assemble/control/office/html/to/word/result/0')),
+      s(api.get('/api/general/assemble/control/permissions/0')),
+      s(api.get('/api/general/assemble/control/qrcode/0')),
+      s(api.get('/api/general/assemble/control/securityclearance')),
+      s(api.get('/api/general/assemble/control/securityclearance/0')),
+      s(api.get('/api/general/assemble/control/upgrade/2021090901')),
+      s(api.get('/api/general/assemble/control/upgrade/2021090902')),
+      s(api.get('/api/general/assemble/control/worktime/indefined/holiday/0')),
+      s(api.get('/api/general/assemble/control/worktime/indefined/workday/0')),
+      s(api.get('/api/general/assemble/control/worktime/indefinedholiday/0')),
+      s(api.get('/api/general/assemble/control/worktime/indefinedworkday/0')),
+      s(api.get('/api/general/assemble/control/worktime/is/holiday/0')),
+      s(api.get('/api/general/assemble/control/worktime/is/workday/0')),
+      s(api.get('/api/general/assemble/control/worktime/is/worktime/0')),
+      s(api.get('/api/general/assemble/control/worktime/isholiday/0')),
+      s(api.get('/api/general/assemble/control/worktime/isworkday/0')),
+      s(api.get('/api/general/assemble/control/worktime/isworktime/0')),
+      s(api.post('/api/general/assemble/control/invoice/create', {})),
+      s(api.post('/api/general/assemble/control/invoice/delete/0', {})),
+      s(api.post('/api/general/assemble/control/invoice/update/apply/status/0', {})),
+      s(api.post('/api/general/assemble/control/invoice/update/0', {})),
+      s(api.post('/api/general/assemble/control/invoice/upload', {})),
+      s(api.post('/api/general/assemble/control/invoice/upload/for/create', {})),
+      s(api.post('/api/general/assemble/control/invoice/upload/with/url', {})),
+      s(api.post('/api/general/assemble/control/office', {})),
+      s(api.post('/api/general/assemble/control/office/html/to/word', {})),
+      s(api.post('/api/general/assemble/control/qrcode', {})),
+      s(api.post('/api/general/assemble/control/qrcode/delete/0', {})),
+      s(api.post('/api/general/assemble/control/securityclearance/create', {})),
+      s(api.post('/api/general/assemble/control/securityclearance/delete/0', {})),
+      s(api.post('/api/general/assemble/control/securityclearance/enable', {})),
+      s(api.post('/api/general/assemble/control/securityclearance/update/0', {})),
+      s(api.post('/api/general/assemble/control/status/update', {})),
+      s(api.put('/api/general/assemble/control/invoice/update/apply/status/0', {})),
+      s(api.put('/api/general/assemble/control/invoice/update/0', {})),
+      s(api.put('/api/general/assemble/control/securityclearance/update/0', {})),
+      s(api.put('/api/general/assemble/control/status/update', {})),
+      s(api.get('/api/general/dict/item/list/0')),
+      s(api.get('/api/general/dict/item/0')),
+      s(api.get('/api/general/dict/0')),
+      s(api.get('/api/general/invoice/list')),
+      s(api.get('/api/general/invoice/0')),
+      s(api.post('/api/general/dict/item/create', {})),
+      s(api.post('/api/general/dict/item/delete/0', {})),
+      s(api.post('/api/general/dict/item/update/0', {})),
+      s(api.post('/api/general/dict/update/0', {})),
+      s(api.post('/api/general/file/update/0', {})),
+      s(api.post('/api/general/invoice/create', {})),
+      s(api.post('/api/general/invoice/delete/0', {})),
+      s(api.post('/api/general/invoice/update/0', {})),
+    ])
+    toast.success(`桶外端点B ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('桶外端点B失败: ' + (e?.message ?? ''))
+  }
+}
+// rev485（桶外 off-metric 第二波）：通用 城市两级·Excel 双参·发票分页·二维码尺寸·工时区间/前推族 20 条
+// + 权限 应用/类目 管理权·发布权·查看权 读改 11 条（arity 已校验；双参位全填 0；param 位填 0 避影子）
+async function loadOrgTwin4() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/general/assemble/control/area/list/province/0/city/0')),
+      s(api.get('/api/general/assemble/control/area/list/province/0/city/0/district/0')),
+      s(api.get('/api/general/assemble/control/excel/0/0')),
+      s(api.get('/api/general/assemble/control/excel/0/0/0')),
+      s(api.post('/api/general/assemble/control/invoice/list/paging/0/size/0', {})),
+      s(api.get('/api/general/assemble/control/invoice/list/paging/0/size/0')),
+      s(api.post('/api/general/assemble/control/qrcode/width/0/height/0/text/0', {})),
+      s(api.get('/api/general/assemble/control/qrcode/width/0/height/0/text/0')),
+      s(api.get('/api/general/assemble/control/worktime/between/holiday/count/start/0/end/0')),
+      s(api.get('/api/general/assemble/control/worktime/between/minutes/start/0/end/0')),
+      s(api.get('/api/general/assemble/control/worktime/betweenholidaycount/start/0/end/0')),
+      s(api.get('/api/general/assemble/control/worktime/betweenminutes/start/0/end/0')),
+      s(api.get('/api/general/assemble/control/worktime/forward/days/start/0/days/0')),
+      s(api.get('/api/general/assemble/control/worktime/forward/minutes/start/0/minutes/0')),
+      s(api.get('/api/general/assemble/control/worktime/forwarddays/start/0/days/0')),
+      s(api.get('/api/general/assemble/control/worktime/forwardminutes/start/0/minutes/0')),
+      s(api.delete('/api/general/assemble/control/qrcode/delete/0')),
+      s(api.delete('/api/general/assemble/control/securityclearance/delete/0')),
+      s(api.get('/api/permission/appInfo/0/manageable')),
+      s(api.get('/api/permission/category/0/managers')),
+      s(api.get('/api/permission/category/0/publishers')),
+      s(api.get('/api/permission/category/0/viewers')),
+      s(api.get('/api/permission/categoryInfo/0/manageable')),
+      s(api.post('/api/permission/manager/appInfo/0', {})),
+      s(api.post('/api/permission/manager/categoryInfo/0', {})),
+      s(api.post('/api/permission/publisher/appInfo/0', {})),
+      s(api.post('/api/permission/publisher/categoryInfo/0', {})),
+      s(api.post('/api/permission/viewer/appInfo/0', {})),
+      s(api.post('/api/permission/viewer/categoryInfo/0', {})),
+    ])
+    toast.success(`桶外端点C ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('桶外端点C失败: ' + (e?.message ?? ''))
   }
 }
 // rev357：组织 express 单位树/校验/属性职务读（POST body{unitList}/{unit,name}），全字面量路径，用户触发按钮

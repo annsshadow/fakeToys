@@ -23,6 +23,7 @@
         <button class="new-page-btn ghost" @click="loadPortalMobileFacets">移动/字典/角标</button>
         <button class="new-page-btn ghost" @click="loadPortalDeep">深度读矩阵</button>
         <button class="new-page-btn ghost" @click="loadPortalTwin">孪生端点</button>
+        <button class="new-page-btn ghost" @click="loadPortalTwin2">孪生端点B</button>
         <button class="new-page-btn ghost" @click="designerCreate('portal')">建门户</button>
         <button class="new-page-btn ghost" @click="designerUpdate('portal')">改门户</button>
         <button class="new-page-btn ghost" @click="designerDelete('portal')">删门户</button>
@@ -437,6 +438,26 @@ function publishPage(_page: PortalPage): void {}
 
 async function deletePage(id: string): void {
   if (await confirmMsg('确定删除此页面？')) deleteMutation.mutate(id)
+}
+// rev484（桶外 off-metric 波）：门户 design/surface 预览·发布·页面 CRUD 真注册路由 9 条（arity 已校验；param 位填 0 避影子）
+async function loadPortalTwin2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/portal/design/0')),
+      s(api.post('/api/portal/design/save', {})),
+      s(api.put('/api/portal/design/save', {})),
+      s(api.get('/api/portal/surface/0/preview')),
+      s(api.post('/api/portal/surface/publish', {})),
+      s(api.get('/api/portal/page/get/0')),
+      s(api.post('/api/portal/page/create', {})),
+      s(api.post('/api/portal/page/remove', {})),
+      s(api.post('/api/portal/page/update', {})),
+    ])
+    toast.success(`门户孪生端点B ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('门户孪生端点B失败: ' + (e?.message ?? ''))
+  }
 }
 </script>
 

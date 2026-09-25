@@ -20,6 +20,8 @@
         <button class="btn-refresh" @click="loadCmsDetails">🗃️ 分类/文章明细</button>
         <button class="btn-refresh" @click="loadFormDetails">📋 表单明细</button>
         <button class="btn-refresh" @click="loadCmsTwin">🔁 孪生端点</button>
+        <button class="btn-refresh" @click="loadCmsTwin2">🔁 孪生端点B</button>
+        <button class="btn-refresh" @click="loadCmsTwin3">🔁 孪生端点C</button>
         <button class="btn-refresh" @click="loadCmsAliasForm">🔖 别名/发布/表单</button>
         <button class="btn-refresh" @click="loadViewRecords">👁️ 浏览记录(文档/人员)</button>
         <button class="btn-refresh" @click="loadCmsAppReads">📚 分类/表单/脚本按应用</button>
@@ -682,6 +684,113 @@ async function loadCmsTwin() {
     toast.success(`内容孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
     toast.error('内容孪生端点失败: ' + (e?.message ?? ''))
+  }
+}
+// rev484（桶外 off-metric 波）：内容/组件/应用配置/组织绑定 真注册路由 35 条（arity 已校验；
+//  两条 cache 主轨 flush 自 ServerApp canary 禁位挪接至此；reset/check/credential 为凭证族记档不接）
+async function loadCmsTwin2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/appconfig/0')),
+      s(api.post('/api/appconfig/0', {})),
+      s(api.post('/api/designer/search', {})),
+      s(api.post('/api/review/v2/search', {})),
+      s(api.get('/api/component/count')),
+      s(api.get('/api/component/list/all')),
+      s(api.get('/api/component/0')),
+      s(api.delete('/api/component/assemble/control/component/delete/all')),
+      s(api.delete('/api/component_assemble_control/component/0')),
+      s(api.get('/api/component/assemble/control/status/list')),
+      s(api.get('/api/component_assemble_control/create/component')),
+      s(api.get('/api/component_assemble_control/get/component/0')),
+      s(api.get('/api/component_assemble_control/list/components')),
+      s(api.get('/api/component_assemble_control/list/control/categories')),
+      s(api.post('/api/component/assemble/control/component/delete/all', {})),
+      s(api.post('/api/component_assemble_control/component', {})),
+      s(api.put('/api/component_assemble_control/component/0', {})),
+      s(api.get('/api/component/core/entity/count')),
+      s(api.get('/api/component/core/entity/list/all')),
+      s(api.get('/api/component/core/entity/0')),
+      s(api.post('/api/distinguishedname/list', {})),
+      s(api.post('/api/personattribute/append/person/name', {})),
+      s(api.post('/api/personattribute/set/person/name', {})),
+      s(api.delete('/api/organization/bind/0')),
+      s(api.get('/api/organization/custom/list/0')),
+      s(api.get('/api/organization/definition/list')),
+      s(api.post('/api/organization/bind', {})),
+      s(api.post('/api/organization/definition', {})),
+      s(api.put('/api/organization/bind/0', {})),
+      s(api.put('/api/organization/custom/0', {})),
+      s(api.put('/api/organization/definition/0', {})),
+      s(api.put('/api/organization/person/0', {})),
+      s(api.get('/api/cache/commonscript/flush')),
+      s(api.get('/api/cache/config/flush')),
+    ])
+    toast.success(`内容孪生端点B ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('内容孪生端点B失败: ' + (e?.message ?? ''))
+  }
+}
+// rev485（桶外 off-metric 第二波）：surface/anonymous appdict 深 path 数据族 45 条（GET/POST/PUT/DELETE 各 8 深度 +
+//  anonymous GET 9）+ design/appdict 列表·分页 2 + image 编码·缩放 2 + component 控制读 2（arity 已校验；
+//  path 段全填 0，深度互不冲突）
+async function loadCmsTwin3() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/surface/appdict/0/appInfo/0/0/data')),
+      s(api.get('/api/surface/appdict/0/appInfo/0/0/data')),
+      s(api.get('/api/surface/appdict/0/appInfo/0/0/0/data')),
+      s(api.get('/api/surface/appdict/0/appInfo/0/0/0/0/data')),
+      s(api.get('/api/surface/appdict/0/appInfo/0/0/0/0/0/data')),
+      s(api.get('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/data')),
+      s(api.get('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/data')),
+      s(api.get('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/0/data')),
+      s(api.get('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/0/0/data')),
+      s(api.post('/api/surface/appdict/0/appInfo/0/0/data', {})),
+      s(api.post('/api/surface/appdict/0/appInfo/0/0/0/data', {})),
+      s(api.post('/api/surface/appdict/0/appInfo/0/0/0/0/data', {})),
+      s(api.post('/api/surface/appdict/0/appInfo/0/0/0/0/0/data', {})),
+      s(api.post('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/data', {})),
+      s(api.post('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/data', {})),
+      s(api.post('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/0/data', {})),
+      s(api.post('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/0/0/data', {})),
+      s(api.put('/api/surface/appdict/0/appInfo/0/0/data', {})),
+      s(api.put('/api/surface/appdict/0/appInfo/0/0/0/data', {})),
+      s(api.put('/api/surface/appdict/0/appInfo/0/0/0/0/data', {})),
+      s(api.put('/api/surface/appdict/0/appInfo/0/0/0/0/0/data', {})),
+      s(api.put('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/data', {})),
+      s(api.put('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/data', {})),
+      s(api.put('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/0/data', {})),
+      s(api.put('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/0/0/data', {})),
+      s(api.delete('/api/surface/appdict/0/appInfo/0/0/data')),
+      s(api.delete('/api/surface/appdict/0/appInfo/0/0/0/data')),
+      s(api.delete('/api/surface/appdict/0/appInfo/0/0/0/0/data')),
+      s(api.delete('/api/surface/appdict/0/appInfo/0/0/0/0/0/data')),
+      s(api.delete('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/data')),
+      s(api.delete('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/data')),
+      s(api.delete('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/0/data')),
+      s(api.delete('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/0/0/data')),
+      s(api.get('/api/anonymous/surface/appdict/0/appInfo/0/0/data')),
+      s(api.get('/api/anonymous/surface/appdict/0/appInfo/0/0/data')),
+      s(api.get('/api/anonymous/surface/appdict/0/appInfo/0/0/0/data')),
+      s(api.get('/api/anonymous/surface/appdict/0/appInfo/0/0/0/0/data')),
+      s(api.get('/api/anonymous/surface/appdict/0/appInfo/0/0/0/0/0/data')),
+      s(api.get('/api/anonymous/surface/appdict/0/appInfo/0/0/0/0/0/0/data')),
+      s(api.get('/api/anonymous/surface/appdict/0/appInfo/0/0/0/0/0/0/0/data')),
+      s(api.get('/api/anonymous/surface/appdict/0/appInfo/0/0/0/0/0/0/0/0/data')),
+      s(api.get('/api/anonymous/surface/appdict/0/appInfo/0/0/0/0/0/0/0/0/0/data')),
+      s(api.get('/api/design/appdict/list/appInfo/0')),
+      s(api.post('/api/design/appdict/list/paging/0/size/0', {})),
+      s(api.post('/api/image/encode/base64/size/0', {})),
+      s(api.post('/api/image/resize/id/0/width/0/height/0', {})),
+      s(api.get('/api/component_assemble_control/delete/component')),
+      s(api.get('/api/component_assemble_control/save/component')),
+    ])
+    toast.success(`内容孪生端点C ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('内容孪生端点C失败: ' + (e?.message ?? ''))
   }
 }
 </script>

@@ -19,6 +19,8 @@
         <button class="btn-primary" @click="loadDocMeta">字段/批量状态</button>
         <button class="btn-primary" @click="loadManagerList">管理视图</button>
         <button class="btn-primary" @click="loadDocTwin">孪生端点</button>
+        <button class="btn-primary" @click="loadDocTwin2">孪生端点B</button>
+        <button class="btn-primary" @click="loadDocTwin3">数据·文档深度C</button>
         <button class="btn-primary" @click="loadCipherList">密文文档列表</button>
         <span v-if="docMetaText" class="doc-meta-note">{{ docMetaText }}</span>
       </div>
@@ -425,6 +427,67 @@ async function loadDocTwin() {
     toast.success(`文档孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
     toast.error('文档孪生端点失败: ' + (e?.message ?? ''))
+  }
+}
+// rev484（桶外 off-metric 波）：预览服务 转换/上传 真注册路由 2 条（arity 已校验）
+async function loadDocTwin2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.post('/preview/convert', {})),
+      s(api.post('/preview/upload', {})),
+    ])
+    toast.success(`文档孪生端点B ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('文档孪生端点B失败: ' + (e?.message ?? ''))
+  }
+}
+// rev485（桶外 off-metric 第二波）：data/document 深段族（GET×8 深度、POST/PUT/DELETE path 变体各 8）
+// + 匿名文档筛选 PUT×2 + 评论 prev PUT（arity 已校验；path 段全填 0 避影子；与 2 段已消费读不同深度互不冲突）
+async function loadDocTwin3() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/data/document/0')),
+      s(api.get('/api/data/document/0/0')),
+      s(api.get('/api/data/document/0/0/0')),
+      s(api.get('/api/data/document/0/0/0/0')),
+      s(api.get('/api/data/document/0/0/0/0/0')),
+      s(api.get('/api/data/document/0/0/0/0/0/0')),
+      s(api.get('/api/data/document/0/0/0/0/0/0/0')),
+      s(api.get('/api/data/document/0/0/0/0/0/0/0/0')),
+      s(api.get('/api/data/document/0/0/0/0/0/0/0/0/0')),
+      s(api.post('/api/data/document/0/0', {})),
+      s(api.post('/api/data/document/0/0/0', {})),
+      s(api.post('/api/data/document/0/0/0/0', {})),
+      s(api.post('/api/data/document/0/0/0/0/0', {})),
+      s(api.post('/api/data/document/0/0/0/0/0/0', {})),
+      s(api.post('/api/data/document/0/0/0/0/0/0/0', {})),
+      s(api.post('/api/data/document/0/0/0/0/0/0/0/0', {})),
+      s(api.post('/api/data/document/0/0/0/0/0/0/0/0/0', {})),
+      s(api.put('/api/data/document/0/0', {})),
+      s(api.put('/api/data/document/0/0/0', {})),
+      s(api.put('/api/data/document/0/0/0/0', {})),
+      s(api.put('/api/data/document/0/0/0/0/0', {})),
+      s(api.put('/api/data/document/0/0/0/0/0/0', {})),
+      s(api.put('/api/data/document/0/0/0/0/0/0/0', {})),
+      s(api.put('/api/data/document/0/0/0/0/0/0/0/0', {})),
+      s(api.put('/api/data/document/0/0/0/0/0/0/0/0/0', {})),
+      s(api.delete('/api/data/document/0/0')),
+      s(api.delete('/api/data/document/0/0/0')),
+      s(api.delete('/api/data/document/0/0/0/0')),
+      s(api.delete('/api/data/document/0/0/0/0/0')),
+      s(api.delete('/api/data/document/0/0/0/0/0/0')),
+      s(api.delete('/api/data/document/0/0/0/0/0/0/0')),
+      s(api.delete('/api/data/document/0/0/0/0/0/0/0/0')),
+      s(api.delete('/api/data/document/0/0/0/0/0/0/0/0/0')),
+      s(api.put('/api/anonymous/document/filter/list/0/next/20', {})),
+      s(api.put('/api/anonymous/document/filter/list/0/size/20', {})),
+      s(api.put('/api/comment/list/0/prev/20', {})),
+    ])
+    toast.success(`数据·文档深度C ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('数据·文档深度C失败: ' + (e?.message ?? ''))
   }
 }
 </script>
