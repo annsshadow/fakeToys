@@ -13,7 +13,7 @@ from ..config import ModelConfig
 from ..cache import MemoryCache, DiskCache
 from ..exceptions import ModelGenerateError, ModelResponseError
 from ..retry import with_retries, classify_error
-from ..validation import require_count
+from ..validation import require_count, require_seconds
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +62,12 @@ class ModelBackend(ABC):
     # 单次重试等待上限（秒），防止退避时间无界增长
     _MAX_RETRY_DELAY = 30.0
 
+    # generate() 未显式传参时的默认档位：总尝试次数与首次退避基数。
+    # 二者都可由 `default_attempts` / `default_retry_delay` 覆盖（配置文件的
+    # `augmentation.max_retries` / `retry_delay` 经工厂透传到这里）。
+    _DEFAULT_ATTEMPTS = 3
+    _DEFAULT_RETRY_DELAY = 1.0
+
     # 磁盘响应缓存默认容量上限（256 MB）。磁盘缓存必须比内存缓存更保守：
     # 没有上限的磁盘缓存只是把内存泄漏换成了磁盘泄漏。
     DEFAULT_RESPONSE_CACHE_MAX_BYTES = 256 * 1024 * 1024
@@ -70,7 +76,9 @@ class ModelBackend(ABC):
                  config: ModelConfig,
                  response_cache_dir: Optional[str] = None,
                  response_cache_ttl: Optional[float] = None,
-                 response_cache_max_bytes: Optional[int] = None):
+                 response_cache_max_bytes: Optional[int] = None,
+                 default_attempts: Optional[int] = None,
+                 default_retry_delay: Optional[float] = None):
         """初始化模型后端
 
         Args:
@@ -81,12 +89,33 @@ class ModelBackend(ABC):
             response_cache_ttl: 磁盘缓存生存时间（秒），None 表示不按时间过期
             response_cache_max_bytes: 磁盘缓存容量上限（字节），
                 None 时用 DEFAULT_RESPONSE_CACHE_MAX_BYTES
+            default_attempts: 该后端的重试默认档位（**总尝试次数**，含首次调用），
+                `generate()` 未显式传 `max_retries` 时用它。None 时用 _DEFAULT_ATTEMPTS。
+                口径与 `generate(max_retries=…)` 完全一致：0 读作「只调用一次」
+            default_retry_delay: 该后端的退避基数默认值（秒），
+                `generate()` 未显式传 `retry_delay` 时用它。None 时用 _DEFAULT_RETRY_DELAY
+
+        Raises:
+            DataValidationError: default_attempts 不是不小于 0 的整数，
+                或 default_retry_delay 不是不小于 0 的有限数值
         """
+        # 判参必须排在 _build_response_cache 之前：DiskCache.__init__ 会 mkdir，
+        # 坏档位不该留下一个建好了却没人用的缓存目录。
+        require_count("default_attempts", default_attempts, minimum=0)
+        require_seconds("default_retry_delay", default_retry_delay, minimum=0.0)
+
         self.config = config
         self._request_count = 0
         self._error_count = 0
         self._lock = threading.Lock()
         self._session = None  # 连接池会话
+        self._default_attempts = (
+            default_attempts if default_attempts is not None else self._DEFAULT_ATTEMPTS
+        )
+        self._default_retry_delay = (
+            default_retry_delay if default_retry_delay is not None
+            else self._DEFAULT_RETRY_DELAY
+        )
         self._generation_cache = MemoryCache(max_size=self._GENERATION_CACHE_MAX)
         self._response_cache = self._build_response_cache(
             response_cache_dir, response_cache_ttl, response_cache_max_bytes
@@ -136,6 +165,11 @@ class ModelBackend(ABC):
                         session = requests.Session()
                         
                         # 配置连接池和重试
+                        # 注意：这副重试对**本仓库的所有模型调用都不生效**——5 个后端
+                        # 一律用 POST，而 urllib3 的 `Retry` 默认只重 idempotent 方法
+                        # （实测默认 allowed_methods 无 POST：同一台恒返回 503 的本地
+                        # 服务上，POST 收到 1 次请求、GET 收到 4 次）。真正的重试口径
+                        # 只有 `with_retries` + `classify_error` 这一层。
                         retry_strategy = Retry(
                             total=3,
                             backoff_factor=0.1,
@@ -219,9 +253,11 @@ class ModelBackend(ABC):
 
         Args:
             prompt: 输入提示
-            max_retries: **总尝试次数**（含首次调用），默认 3。必须是不小于 0 的
+            max_retries: **总尝试次数**（含首次调用），None 时用后端的
+                `default_attempts`（构造时未指定则为 3）。必须是不小于 0 的
                 整数；0 读作「不重试」（即只调用一次）。
-            retry_delay: 首次重试的基础等待（秒），默认 1.0
+            retry_delay: 首次重试的基础等待（秒），None 时用后端的
+                `default_retry_delay`（构造时未指定则为 1.0）
         
         Returns:
             模型生成的文本
@@ -229,12 +265,13 @@ class ModelBackend(ABC):
         Raises:
             ModelGenerateError: 重试次数用尽后仍失败，或遇到不可重试的错误
                 （如 401/403/404 —— 重试只会浪费配额）
-            DataValidationError: max_retries 为负数或非整数
+            DataValidationError: max_retries 为负数或非整数，或 retry_delay 非法
         """
         # max_retries 的既有语义是「总尝试次数」，不是「额外重试次数」
         require_count("max_retries", max_retries, minimum=0)
-        attempts = max(1, max_retries if max_retries is not None else 3)
-        delay = retry_delay if retry_delay is not None else 1.0
+        require_seconds("retry_delay", retry_delay, minimum=0.0)
+        attempts = max(1, max_retries if max_retries is not None else self._default_attempts)
+        delay = retry_delay if retry_delay is not None else self._default_retry_delay
 
         # 缓存复用优化：内存缓存 → 磁盘缓存 → 真正调用
         cache_key = self._cache_key(prompt)

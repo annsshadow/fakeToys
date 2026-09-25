@@ -394,9 +394,10 @@ class TestPipelineCacheWiring:
 
     def test_pipeline_forwards_cache_options(self, tmp_path, monkeypatch):
         captured = self._capture(monkeypatch)
+        config = self._config()
 
         AugmentorPipeline(
-            self._config(),
+            config,
             response_cache_dir=str(tmp_path / "resp"),
             response_cache_ttl=60,
             response_cache_max_bytes=2048,
@@ -406,6 +407,10 @@ class TestPipelineCacheWiring:
             "response_cache_dir": str(tmp_path / "resp"),
             "response_cache_ttl": 60,
             "response_cache_max_bytes": 2048,
+            # 自 L45 起管道还要翻译重试档位给工厂（A64 接线）。精确字典是故意的：
+            # 工厂契约每长一个键，这里就必须显式认领一次，不允许静默扩面。
+            "default_attempts": config.augmentation.max_retries,
+            "default_retry_delay": config.augmentation.retry_delay,
         }
 
     def test_pipeline_defaults_to_disabled(self, monkeypatch):

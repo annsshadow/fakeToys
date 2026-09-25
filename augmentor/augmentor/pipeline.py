@@ -16,6 +16,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from queue import Queue
 
 from .config import AppConfig, load_config, get_model_config
+from .validation import require_count, require_seconds
 from .models import create_model_backend
 from .quality import QualityScorer
 from .dedup import Deduplicator
@@ -62,6 +63,12 @@ class AugmentorPipeline:
     
     def _init_components(self):
         """初始化各组件"""
+        # 重试旋钮先判后建：下面那个 try/except 的既定语义是「模型没配好就降级」，
+        # 配置文件里写坏的 max_retries / retry_delay 若让它去抛，症状会被读成
+        # 「后端不可用」，而真实原因是参数越界——所以判据必须在 try 之外。
+        require_count("augmentation.max_retries", self.config.augmentation.max_retries)
+        require_seconds("augmentation.retry_delay", self.config.augmentation.retry_delay)
+
         # 模型后端（可选：未配置模型/密钥时降级，避免阻断断点续传等只读能力）
         try:
             model_config = get_model_config(self.config, self.config.default_model)
@@ -70,6 +77,8 @@ class AugmentorPipeline:
                 response_cache_dir=self._response_cache_dir,
                 response_cache_ttl=self._response_cache_ttl,
                 response_cache_max_bytes=self._response_cache_max_bytes,
+                default_attempts=self.config.augmentation.max_retries,
+                default_retry_delay=self.config.augmentation.retry_delay,
             )
         except Exception as exc:
             logger.warning("模型后端初始化失败，增强功能将不可用：%s", exc)

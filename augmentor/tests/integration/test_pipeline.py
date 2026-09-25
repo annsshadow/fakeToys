@@ -14,6 +14,7 @@ import pytest
 from augmentor import AugmentorPipeline, load_config
 from augmentor.checkpoint import CheckpointManager
 from augmentor.config import ModelConfig
+from augmentor.exceptions import DataValidationError
 from augmentor.models.base import ModelBackend
 from augmentor.versioning import VersionManager
 
@@ -407,6 +408,74 @@ class TestPipelineInitFailure:
         assert instance.model_backend is None
         assert instance.context_augmentor is None
         assert instance.expander is None
+
+
+class TestRetryKnobWiring:
+    """配置文件的重试旋钮 → 模型后端（A64 接线）
+
+    `augmentation.max_retries` / `retry_delay` 曾长期是死旋钮：字段在、默认值在、
+    配置文件里改得动，但没有任何消费者。这两个测试分别钉住「接上了」和
+    「接上的同时不越界」。
+    """
+
+    @staticmethod
+    def _capture_backend_factory(monkeypatch):
+        captured = {}
+
+        def fake_create(model_config, **kwargs):
+            captured.update(kwargs)
+            return None
+
+        monkeypatch.setattr("augmentor.pipeline.create_model_backend", fake_create)
+        return captured
+
+    def test_augmentation_retry_knobs_reach_the_factory(self, tmp_path, monkeypatch):
+        captured = self._capture_backend_factory(monkeypatch)
+        config = load_config(str(AI_DIR / "config.yaml"))
+        config.augmentation.max_retries = 7
+        config.augmentation.retry_delay = 3.5
+        config.versioning.storage_dir = str(tmp_path / "versions")
+
+        AugmentorPipeline(config)
+
+        assert captured["default_attempts"] == 7
+        assert captured["default_retry_delay"] == 3.5
+
+    def test_zero_knobs_are_forwarded_as_zero(self, tmp_path, monkeypatch):
+        """0 必须原样送到后端：它是「只调用一次」，不是「没配」"""
+        captured = self._capture_backend_factory(monkeypatch)
+        config = load_config(str(AI_DIR / "config.yaml"))
+        config.augmentation.max_retries = 0
+        config.augmentation.retry_delay = 0
+        config.versioning.storage_dir = str(tmp_path / "versions")
+
+        AugmentorPipeline(config)
+
+        assert captured["default_attempts"] == 0
+        assert captured["default_retry_delay"] == 0
+
+    @pytest.mark.parametrize("field,bad", [
+        ("max_retries", -1),
+        ("max_retries", 1.5),
+        ("retry_delay", -2.0),
+        ("retry_delay", float("nan")),
+        ("retry_delay", "1s"),
+    ])
+    def test_out_of_range_knobs_fail_loud_instead_of_disabling_the_backend(
+        self, tmp_path, field, bad
+    ):
+        """越界旋钮不能被「后端不可用」的降级掩盖：报错必须指名是哪个字段
+
+        `create_model_backend` 外面那层 try/except 的既定语义是「模型没配好就
+        降级」，判据若放在 try 里面，用户写坏的 `max_retries` 会表现为整个模型
+        能力凭空消失。
+        """
+        config = load_config(str(AI_DIR / "config.yaml"))
+        setattr(config.augmentation, field, bad)
+        config.versioning.storage_dir = str(tmp_path / "versions")
+
+        with pytest.raises(DataValidationError, match=f"augmentation.{field}"):
+            AugmentorPipeline(config)
 
 
 class TestGenerateVariantsException:
