@@ -13,6 +13,9 @@ app:
   debug: false
 
 # 模型配置
+# 每个模型条目里这几项的区间住在 augmentor/config.py 的常量里，加载时与
+# validate-config 两侧同判（L72）：temperature 0-2.0、top_p 0-1.0、
+# max_output_tokens 大于等于 1、request_timeout 1-600（不写即吃全局档）。
 models:
   # 默认使用的模型
   default: ernie
