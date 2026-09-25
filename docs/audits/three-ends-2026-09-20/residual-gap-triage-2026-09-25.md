@@ -1,8 +1,8 @@
-# G5 残余缺口分诊报告（2026-09-25，rev485 口径终版）
+# G5 残余缺口分诊报告（2026-09-25，rev486 口径终版）
 
 **目标**：「全面消费后端能力至 100%」。
-**终态（双口径）**：域（桶）口径消费 **3484/4072 = 85.6%**（`consumption_gap.py`，桶分母恒定 4072，33 域桶）；
-全局口径 **4030/4638 = 86.9%**（全仓去 mock 真注册路由 4638；桶外 off-metric 真注册 570 条，余 20 条凭证/SSO/企业微信/WeLink/重置/密钥族记档不接）。
+**终态（双口径）**：域（桶）口径消费 **3548/4072 = 87.1%**（`consumption_gap.py`，桶分母恒定 4072，33 域桶）；
+全局口径 **4094/4638 = 88.3%**（全仓去 mock 真注册路由 4638；桶外 off-metric 真注册 570 条，余 20 条凭证/SSO/企业微信/WeLink/重置/密钥族记档不接）。
 **口径变更（本会话裁定执行）**：目标 100% 在「同逻辑操作不双计」防造假口径下不可达（80.2% 诚实上限，见 §0），
 经口径裁定后放宽为「每注册路由各计一次」——镜像/方法孪生真注册路由逐条接线（+160，80.2%→84.1%），
 第二波放宽（/object 投影族 48 条 + 写残留可接余 11 条，rev481–482）→ **85.6%**。
@@ -10,18 +10,23 @@
 （process/correlation 短 alias、query_service_processing 全族、general 控制深族、surface/appdict 深 path 数据族、
 data/document 深段族、permission 管理权族、log/fireschedule/sysresource/externaldatasources、preview/signature 等，
 param 位填 0 避影子、POST/PUT 体 {} 或核字段；2 视图 canary 禁位换宿主：cache 主轨 flush→CmsIndexApp、
-jpush 禁位 3 条→ServerApp），全局口径 78.1%→**86.9%**。桶外余 20 条全为凭证/Sso/微信外部/密码占位/重置密钥族
+jpush 禁位 3 条→ServerApp），全局口径 78.1%→86.9%。桶外余 20 条全为凭证/Sso/微信外部/密码占位/重置密钥族
 （`/api/reset`、`/api/secret/*`、`/api/andfx/moa/sso/*`、`/api/welink/*`、`/api/mpweixin/*`、`/api/qiyeweixin/*`、
 `/api/zhengwudingding/*`、`/api/share/{id}/password/*`）——与用户既定「组织-认证凭证流不接」裁定一致，不虚构。
-**裁定待决记录（2026-09-25）**：85.6% 达成后两次向用户征询「接桩名义 100% vs 认可收官」均无回复；
+**第四波 arity 重审（rev486，commit 4daa33fec，+64）**：用源码级 handler Path 元组抽取（含多行签名
+`pub async fn name(\n pool,\n Path((a, b)))` 与 `dict_data_fns!` 宏调用点 arity 1–8）对 588 条残余全量重判，
+发现前几轮「可接空间耗尽」结论受 arity 抽取盲区影响——194 条带真实 `{param}` 的候选中 55 条 handler arity
+与 URL 槽位精确匹配（applicationdict 深 data 三方法×3 深度、data/work 深段 D/P/U、data/job·workcompleted 深段 PUT、
+引擎 dict 深 data 三方法×7 深度、pc collect CRUD、考勤 ding/qywx 游标 PUT 与明细清空、file 拷贝/序号读、
+with-url 远程拉取族），按放宽口径逐条接线（ProcessWork TwinG/H、AttendanceApp、FileManager、ProgramCenterApp）；
+同批剔除 3 条二进制（octet-stream/multipart，JSON 体=假集成）与 1 条注册残迹空格路径（404）。
+残余 524 条逐类终判：真 arity-trap（0<arity<slots 或 arity>slots，运行时 500）、281 条无参字面路由
+（handler 全取 Path 但 URL 0 槽位=500 族，零 a=0 可接）、凭证/SSO/注册/登出族、机器回调/外部同步族
+（dingding/qywx/zhengwudingding/mpweixin）、501 stub×6、multipart 二进制族、BBS canary 冲突 2、
+AI 桶既定不消费、GET+Json 体（SDK GET 不带 body）——全部分类存档，接线即造假/危险/守卫冲突。
+**裁定待决记录（2026-09-25）**：87.1% 达成后向用户征询「接桩名义 100% vs 认可收官」均无回复；
 接桩路径需修改 JPushApp.test.ts 禁串与 autoquery-guards canary（仓库自有守卫），属用户专属决定，助手不代决——
-在获明确授权前剩余 588 条桶内维持不接，85.6%（桶）/86.9%（全局）为当前守得住的终态。
-**剩余 588 条（桶内）**在放宽口径后仍不可接：arity-trap（运行时 500 假成功）122、凭证流 147、占位/EXT 41、
-alias 族残余 178（抽样 40 条中 39 条 arity 失败=占位字面段 500 族，如 `/api/file/attachment/id`、BBS 裸 list）、
-multipart 27、写残留 7（机器回调/GET+Json 体 1/畸形空格路径 2/bbs canary 冲突 1/501 1）、501×6、WS×3——接线即造假或守卫冲突。
-**第三波复核（rev482 后）**：候选再验 3 条（surface review/v2/search、review/filter/create/entry、calendar alias
-PUT event）全为「URL 0 参 handler 取 Path」arity 陷阱剔除；data/job 深度 4–7 为 axum 注册与 handler 参数数不一致的
-破损注册（500）；**85.6% 即放宽口径上界，无更多可诚实接线路由**。
+在获明确授权前剩余 524 条桶内维持不接，**87.1%（桶）/88.3%（全局）为当前守得住的诚实终态**。
 
 ## 0. 口径裁定记录
 
