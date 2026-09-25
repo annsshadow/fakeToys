@@ -241,6 +241,12 @@ class DatasetOperations:
         Returns:
             采样后的数据列表
         """
+        # 空键不得静默退化成随机采样：`item.get("", "")` 对每条都交出 ""，于是全部
+        # 落进同一个 "empty" 组，配额等于全量池子的一次 `rng.sample`（实测 4 类 × 5 条
+        # 取 8 条，正常键给 2/2/2/2，空键给 5/2/1）。判据与 `_stratified` 同一条。
+        if not key:
+            raise DataValidationError("分层采样需要非空的 stratify_key")
+
         # 按字段值分组
         groups = {}
         for item in items:

@@ -35,6 +35,31 @@ STRATIFIED_ITEMS = [
     for i in range(1, 6)
 ]
 
+# 分层分割输入：20 条，`instruction` 两类各 10（平衡），`category` 偏斜为 18 x + 2 y。
+# 两个字段故意错开（后两条 y 同时是「类别乙」）：换键必换 val 的类别形状，于是
+# 「`--stratify-key` 有没有真的传到分组那一侧」一条断言就能分辨。`output` 形如 o0..o19，
+# 每条唯一，用来检查段内顺序与成员集合。
+SPLIT_KNOB_ITEMS = [
+    {"instruction": "类别甲" if i < 10 else "类别乙",
+     "category": "y" if i >= 18 else "x",
+     "input": "", "output": f"o{i}"}
+    for i in range(20)
+]
+
+
+def _write_stratify_corpus(tmp_path):
+    """把分层分割语料写到临时目录
+
+    Args:
+        tmp_path: pytest 临时目录
+
+    Returns:
+        语料文件路径
+    """
+    path = tmp_path / "split_knobs.json"
+    path.write_text(json.dumps(SPLIT_KNOB_ITEMS, ensure_ascii=False), encoding="utf-8")
+    return path
+
 
 @pytest.fixture
 def dataset(tmp_path, monkeypatch):
@@ -100,6 +125,33 @@ def run_cli(argv):
     except json.JSONDecodeError:
         parsed = None
     return content, parsed, exit_code
+
+
+def run_cli_error(argv):
+    """跑一次期望失败的命令，返回 (exit_code, stderr 文本)
+
+    Args:
+        argv: 完整参数列表（含程序名）
+
+    Returns:
+        (SystemExit 码或 None, stderr 文本)
+    """
+    import io
+    import sys
+    from contextlib import redirect_stderr, redirect_stdout
+
+    old_argv = sys.argv
+    sys.argv = argv
+    err = io.StringIO()
+    code = None
+    try:
+        with redirect_stdout(io.StringIO()), redirect_stderr(err):
+            main()
+    except SystemExit as exc:
+        code = exc.code
+    finally:
+        sys.argv = old_argv
+    return code, err.getvalue()
 
 
 class TestSampleCommand:
@@ -197,6 +249,65 @@ class TestSampleCommand:
             counts[item["instruction"]] = counts.get(item["instruction"], 0) + 1
         assert sorted(counts.values()) == [1, 2, 2, 2]
 
+    @pytest.mark.parametrize("key,expected", [
+        ("instruction", {"类别甲": 2, "类别乙": 2, "类别丙": 2, "类别丁": 2}),
+        ("output", {"类别甲": 5, "类别乙": 3}),
+    ], ids=["by_class", "by_unique_field"])
+    def test_stratify_key_flag_selects_the_grouping(self, stratified_dataset,
+                                                    tmp_path, key, expected):
+        """`--stratify-key` 必须真的当分组字段：换字段就换形状
+
+        `--size 8 --seed 7`（Temp `l42e.py` 实测）。缺陷态：`run_sample` 没把这个参数
+        发给 `SampleConfig`，两行都会按出厂的 `instruction` 交出 2/2/2/2。
+        """
+        out = tmp_path / "strat_key.json"
+        _, parsed, code = run_cli(
+            [
+                "cli", "sample", "--input", str(stratified_dataset),
+                "--output", str(out), "--method", "stratified",
+                "--size", "8", "--seed", "7", "--stratify-key", key,
+            ]
+        )
+        assert code is None
+        assert parsed["output_count"] == 8
+        items = json.loads(out.read_text(encoding="utf-8"))
+        counts = {}
+        for item in items:
+            counts[item["instruction"]] = counts.get(item["instruction"], 0) + 1
+        assert counts == expected
+
+    def test_blank_stratify_key_exits_1_and_writes_nothing(self, stratified_dataset,
+                                                           tmp_path):
+        """`--stratify-key ""` 报错退出，不静默退化成随机挑条
+
+        退化形状实测过（Temp `l42b.py`）：空键时 4 类 × 5 条取 8 条交出 `5/2/1`，
+        而正常键恒为 `2/2/2/2` —— 用户拿到随机样本却以为是分层样本。
+        """
+        out = tmp_path / "blank_key.json"
+        code, err = run_cli_error(
+            [
+                "cli", "sample", "--input", str(stratified_dataset),
+                "--output", str(out), "--method", "stratified",
+                "--size", "8", "--stratify-key", "",
+            ]
+        )
+        assert code == 1
+        assert "分层采样需要非空" in err
+        assert not out.exists()
+
+    def test_blank_stratify_key_still_fine_for_random(self, stratified_dataset, tmp_path):
+        """对照组：判据只管分层支路，`random` 不读分组键"""
+        out = tmp_path / "random_blank_key.json"
+        _, parsed, code = run_cli(
+            [
+                "cli", "sample", "--input", str(stratified_dataset),
+                "--output", str(out), "--method", "random",
+                "--size", "8", "--seed", "7", "--stratify-key", "",
+            ]
+        )
+        assert code is None
+        assert parsed["output_count"] == 8
+
 
 class TestSplitCommand:
     def test_split_three_way(self, dataset, tmp_path):
@@ -240,6 +351,110 @@ class TestSplitCommand:
         counts = {name: meta["count"] for name, meta in parsed["splits"].items()}
         assert counts == {"train": 5, "val": 1, "test": 1}
         assert Path(parsed["splits"]["val"]["file"]).exists()
+
+    @pytest.mark.parametrize("key,expected_val", [
+        ("instruction", {"类别甲": 3, "类别乙": 2}),
+        ("category", {"类别甲": 4, "类别乙": 1}),
+    ], ids=["balanced_field", "skewed_field"])
+    def test_stratify_flags_select_the_grouping(self, tmp_path, monkeypatch,
+                                                key, expected_val):
+        """`--stratify` 与 `--stratify-key` 必须一路传到分割算法
+
+        20 条语料：`instruction` 10/10 平衡，`category` 18 x + 2 y（两条 y 恰好也是
+        「类别乙」）。0.5/0.25/0.25、seed 0（Temp `l42f.py` 实测）：按 `instruction`
+        分层 val 是 `甲3/乙2`，按 `category` 分层 val 全是 x，于是 `instruction` 形状
+        退回 `甲4/乙1`。缺陷态（CLI 没把字段发出去、或把键硬编码）各红一侧。
+        """
+        monkeypatch.chdir(AI_DIR)
+        src = _write_stratify_corpus(tmp_path)
+        out_dir = tmp_path / f"strat_{key}"
+        _, parsed, code = run_cli(
+            [
+                "cli", "split", "--input", str(src), "--output-dir", str(out_dir),
+                "--train-ratio", "0.5", "--val-ratio", "0.25", "--test-ratio", "0.25",
+                "--stratify", "--stratify-key", key, "--seed", "0",
+            ]
+        )
+        assert code is None
+        assert {n: m["count"] for n, m in parsed["splits"].items()} == \
+               {"train": 10, "val": 5, "test": 5}
+        rows = json.loads(Path(parsed["splits"]["val"]["file"]).read_text(encoding="utf-8"))
+        counts = {}
+        for row in rows:
+            counts[row["instruction"]] = counts.get(row["instruction"], 0) + 1
+        assert counts == expected_val
+
+    def test_stratify_flag_changes_the_answer(self, tmp_path, monkeypatch):
+        """开关本身不是死的：同一 seed 下分层与不分层的 val 类别配比不同
+
+        这就是 A54 的缺陷本体（`split()` 从不读 `stratify`），产品面以前根本拧不到。
+        段尺寸两边都是 10/5/5 —— 分层只改配比，不改尺寸。
+        """
+        monkeypatch.chdir(AI_DIR)
+        src = _write_stratify_corpus(tmp_path)
+        ratios = ["--train-ratio", "0.5", "--val-ratio", "0.25", "--test-ratio", "0.25"]
+
+        def val_counts(*extra):
+            out_dir = tmp_path / ("with" if extra else "without")
+            _, parsed, code = run_cli(
+                ["cli", "split", "--input", str(src), "--output-dir", str(out_dir),
+                 *ratios, "--seed", "0", *extra]
+            )
+            assert code is None
+            rows = json.loads(Path(parsed["splits"]["val"]["file"]).read_text(encoding="utf-8"))
+            counts = {}
+            for row in rows:
+                counts[row["instruction"]] = counts.get(row["instruction"], 0) + 1
+            return counts
+
+        assert val_counts() == {"类别甲": 4, "类别乙": 1}
+        assert val_counts("--stratify") == {"类别甲": 3, "类别乙": 2}
+
+    def test_no_shuffle_flag_restores_input_order(self, tmp_path, monkeypatch):
+        """`--no-shuffle` 在分层支路只回排段内顺序：成员与条数都不变
+
+        同 seed 两次请求（打乱 / 保序）三段尺寸一致、成员集合一致，只是保序那份按输入的
+        `o0..o19` 排好（Temp `l42g.py` 实测）。缺陷态：CLI 没把 `shuffle` 传出去，保序
+        那份仍是打乱序，`got == sorted(got)` 立刻红。
+        """
+        monkeypatch.chdir(AI_DIR)
+        src = _write_stratify_corpus(tmp_path)
+        results = {}
+        for sub, extra in (("shuf", []), ("ord", ["--no-shuffle"])):
+            out_dir = tmp_path / f"shuffle_{sub}"
+            _, parsed, code = run_cli(
+                [
+                    "cli", "split", "--input", str(src), "--output-dir", str(out_dir),
+                    "--train-ratio", "0.5", "--val-ratio", "0.25", "--test-ratio", "0.25",
+                    "--stratify", "--seed", "0", *extra,
+                ]
+            )
+            assert code is None
+            results[sub] = {
+                name: [row["output"] for row in
+                       json.loads(Path(meta["file"]).read_text(encoding="utf-8"))]
+                for name, meta in parsed["splits"].items()
+            }
+        for name in ("train", "val", "test"):
+            got, want = results["ord"][name], results["shuf"][name]
+            assert len(got) == len(want)
+            assert sorted(got) == sorted(want), f"{name} 的成员被保序旋钮改动了"
+            assert got == sorted(got, key=lambda o: int(o[1:]))
+            assert want != sorted(want, key=lambda o: int(o[1:]))
+
+    def test_blank_stratify_key_exits_1(self, tmp_path, monkeypatch):
+        """`--stratify --stratify-key ""`：报错退出，不静默按不分层跑"""
+        monkeypatch.chdir(AI_DIR)
+        src = _write_stratify_corpus(tmp_path)
+        code, err = run_cli_error(
+            [
+                "cli", "split", "--input", str(src),
+                "--output-dir", str(tmp_path / "blank"),
+                "--stratify", "--stratify-key", "", "--seed", "0",
+            ]
+        )
+        assert code == 1
+        assert "分层分割需要非空" in err
 
 
 class TestStatsCommand:

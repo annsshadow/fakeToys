@@ -29,7 +29,8 @@ def run_sample(args, config):
         method=args.method,
         size=args.size,
         ratio=args.ratio,
-        seed=args.seed
+        seed=args.seed,
+        stratify_key=args.stratify_key
     )
     ops = DatasetOperations()
     result = ops.sample_file(args.input, args.output, config_sample)
@@ -43,7 +44,10 @@ def run_split(args, config):
 
     config_split = SplitConfig(
         ratios=(args.train_ratio, args.val_ratio, args.test_ratio),
-        seed=args.seed
+        seed=args.seed,
+        shuffle=not args.no_shuffle,
+        stratify=args.stratify,
+        stratify_key=args.stratify_key
     )
     ops = DatasetOperations()
     result = ops.split_file(args.input, args.output_dir, config_split)
