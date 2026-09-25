@@ -4,7 +4,8 @@
 """retry 指数退避重试模块测试
 
 覆盖 compute_delay 指数/封顶/抖动、with_retries 成功/重试耗尽/
-不可重试异常、sleeper 注入与 on_retry 回调、RetryStats 统计。
+不可重试异常、sleeper 注入与 on_retry 回调、RetryStats 统计、
+重试计数旋钮（max_retries / attempt）的越界入参。
 """
 
 import random
@@ -12,6 +13,7 @@ import random
 import pytest
 
 from augmentor import RetryStats, compute_delay, should_retry, with_retries
+from augmentor.exceptions import DataValidationError
 
 
 class TestComputeDelay:
@@ -319,3 +321,57 @@ class TestWithRetriesClassify:
             with_retries(always_fail, max_retries=2, sleeper=lambda d: None)
 
         assert len(calls) == 3
+
+
+class TestRetryCountKnobs:
+    """重试计数旋钮（max_retries / attempt）的越界读法
+
+    这两个旋钮都只有一种合法读法，而越界值在原实现里不是报错就是换语义：
+    `max_retries=-1` 让 `range(0, 0)` 为空 → 一次都不调用 func，最后
+    `raise last_exc` 变成 `raise None`，抛出与参数错误毫无关系的 TypeError；
+    `compute_delay(attempt=0)` 把 `attempt - 1` 当指数算出 2 的负次幂，
+    于是「第 0 次重试」比第 1 次等得更短。两者都当场判掉。
+    """
+
+    def test_negative_max_retries_fails_before_calling_func(self):
+        """越界必须在调用 func 之前报出来，而不是让请求凭空消失"""
+        calls = []
+
+        def never_run():
+            calls.append(1)
+            return "ok"
+
+        with pytest.raises(DataValidationError, match="max_retries"):
+            with_retries(never_run, max_retries=-1, sleeper=lambda d: None)
+        assert calls == []
+
+    def test_zero_max_retries_is_a_legal_request(self):
+        """0 =「只调用一次，失败不再试」，必须与「没传参数」（默认 3 次）区分开"""
+        calls = []
+
+        def fail_once():
+            calls.append(1)
+            raise RuntimeError("boom")
+
+        with pytest.raises(RuntimeError):
+            with_retries(fail_once, max_retries=0, sleeper=lambda d: None)
+        assert calls == [1]
+
+    def test_non_integer_max_retries_rejected(self):
+        """bool 与数字字符串都不是次数：True 会被 range 静默读成「重试 1 次」"""
+        with pytest.raises(DataValidationError, match="max_retries"):
+            with_retries(lambda: "ok", max_retries=True, sleeper=lambda d: None)
+        with pytest.raises(DataValidationError, match="max_retries"):
+            with_retries(lambda: "ok", max_retries="2", sleeper=lambda d: None)
+
+    @pytest.mark.parametrize("attempt,expected", [(1, 1.0), (2, 2.0), (3, 4.0)])
+    def test_legal_attempts_keep_existing_backoff(self, attempt, expected):
+        """收紧入参不得改动合法档位的退避数值"""
+        assert compute_delay(attempt, 1.0, 2.0, 30.0) == expected
+
+    def test_attempt_below_one_is_rejected(self):
+        """attempt 是「已失败次数」，从 1 起算；0/负数没有对应的现实"""
+        with pytest.raises(DataValidationError, match="attempt"):
+            compute_delay(0, 1.0, 2.0, 30.0)
+        with pytest.raises(DataValidationError, match="attempt"):
+            compute_delay(-3, 1.0, 2.0, 30.0)

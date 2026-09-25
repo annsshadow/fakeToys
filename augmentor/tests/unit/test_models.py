@@ -9,6 +9,7 @@
 import pytest
 
 from augmentor.config import ModelConfig
+from augmentor.exceptions import DataValidationError
 from augmentor.models import (
     create_model_backend,
     extract_json_array,
@@ -187,6 +188,25 @@ class TestModelBaseExtended:
         backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
         assert backend._request_count == 0
         assert backend._error_count == 0
+
+
+class TestGenerateRetryKnobs:
+    """generate 的重试次数旋钮"""
+
+    def test_negative_attempts_rejected_at_entry(self):
+        """总尝试次数为负没有读法：静默夹成 1 次会让调用方以为重试生效了"""
+        backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
+        backend._call_api = lambda prompt: "ok"
+        with pytest.raises(DataValidationError, match="max_retries"):
+            backend.generate("p", max_retries=-1, retry_delay=0)
+        assert backend._request_count == 0
+
+    def test_zero_max_retries_still_calls_once(self):
+        """max_retries=0 的既有读法（只调用一次）不能被收紧顺手改掉"""
+        backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
+        backend._call_api = lambda prompt: "ok"
+        assert backend.generate("p", max_retries=0, retry_delay=0) == "ok"
+        assert backend._request_count == 1
 
 
 class TestJsonExtraction:
