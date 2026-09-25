@@ -132,6 +132,13 @@ class ModelBackend(ABC):
         self.config = config
         self._request_count = 0
         self._error_count = 0
+        # A66：重试的「实际发生次数」与「累计等待秒」。`_request_count` / `_error_count`
+        # 只记「调用几次 / 失败几次」，**不含等待时长**——一次 429 之后按 `Retry-After`
+        # 睡满 300 s，在两个计数器上和「一次都没重试」完全一样。这里按「与两个计数同族、
+        # 纯加法」补上出口：成功路与会耗尽失败路都累计（经 `with_retries` 的 `on_retry`，
+        # 见 `generate`）。
+        self._retry_count = 0
+        self._retry_wait_seconds = 0.0
         self._lock = threading.Lock()
         self._session = None  # 连接池会话
         self._default_attempts = (
@@ -334,6 +341,14 @@ class ModelBackend(ABC):
                     self._error_count += 1
                 raise
 
+        def _record_retry(_attempt_no: int, _exc: BaseException, wait: float) -> None:
+            # 每发生一次「等待后重发」就累计一次。走 `on_retry` 而不是 `with_retries`
+            # 返回的那份 `RetryStats`：耗尽/放弃那条路会 `raise`、拿不到 stats，可等待
+            # 其实已经付了——只记成功路会系统性低估最该被看见的一类（重试到弹尽才失败）。
+            with self._lock:
+                self._retry_count += 1
+                self._retry_wait_seconds += wait
+
         try:
             # 统一走 retry.py：退避有上限，且由 classify_error 区分
             # 「限流/网络抖动」（可重试）与「鉴权/参数错误」（立即放弃）。
@@ -347,6 +362,7 @@ class ModelBackend(ABC):
                 max_retry_wait=self._default_max_retry_wait,
                 jitter=self._default_retry_jitter,
                 classify=classify_error,
+                on_retry=_record_retry,
             )
         except Exception as e:
             raise ModelGenerateError(
@@ -371,12 +387,24 @@ class ModelBackend(ABC):
     def error_count(self) -> int:
         """错误次数"""
         return self._error_count
+
+    @property
+    def retry_count(self) -> int:
+        """累计发生的重试次数（每次「等待后重发」计 1，不含首次调用；A66）"""
+        return self._retry_count
+
+    @property
+    def retry_wait_seconds(self) -> float:
+        """累计因重试而等待的总秒数（退避与服务端 `Retry-After` 两支都算；A66）"""
+        return self._retry_wait_seconds
     
     def reset_stats(self):
         """重置统计信息"""
         with self._lock:
             self._request_count = 0
             self._error_count = 0
+            self._retry_count = 0
+            self._retry_wait_seconds = 0.0
     
     def close(self):
         """关闭连接
