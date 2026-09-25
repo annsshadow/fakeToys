@@ -681,6 +681,130 @@ class TestStratifiedSplitWiring:
         assert len(seen) == (0 if shuffle else 3)
 
 
+def _per_segment_scan(items, segments):
+    """HEAD 的保序口径：每段各自整份走查一遍语料（多集过滤）—— 本轮的等价 oracle
+
+    本轮是代价轮，不改行为，所以拿旧实现当参照：新实现必须与它逐条同答，**包括重复
+    引用**的语料。这个形状不是随手写的：「每段独立从语料头重数」正是旧实现的语义，
+    而任何「整份语料只走一次、每个出现只发一次」的替代实现都会在重复引用上给出不同
+    次序（实测：`l43h` 的纯落袋版快 46% 却在对抗语料上分歧）。
+
+    Args:
+        items: 语料
+        segments: 划分给出的三段（次序随意）
+
+    Returns:
+        每段按语料次序重排后的列表
+    """
+    out = []
+    for assigned in segments:
+        remaining = Counter(id(item) for item in assigned)
+        ordered = []
+        for item in items:
+            if remaining[id(item)]:
+                ordered.append(item)
+                remaining[id(item)] -= 1
+        out.append(ordered)
+    return out
+
+
+def _dup_corpus(seed, size=48, distinct=30):
+    """含重复引用的语料（同一对象被 `id()` 区分得出来的那种）
+
+    `json.load` 出来的真实语料永远没有重复引用，所以这条只能自己造：把 `distinct` 个
+    对象随机撒进 `size` 个位置，某些对象就会出现多次，分层时同一对象的不同出现还可能
+    落进不同段 —— 那正是唯一能把「第 k 次出现」与「首次位置」两把键分开的形状。
+    """
+    rng = random.Random(seed)
+    pool = [{"instruction": f"类{rng.randint(0, 3)}", "pos": i} for i in range(distinct)]
+    return [rng.choice(pool) for _ in range(size)]
+
+
+class TestOrderRestoreCost:
+    """A58：`shuffle=False` 的保序重排每段各整份走查一次语料（三段 = 三次 O(n)）"""
+
+    def test_repeated_reference_gets_its_own_corpus_slot(self):
+        """第 k 次出现必须取该对象的第 k 个位置，不许统统落到最前面
+
+        这条是「降法候选」的判据：账本 A58 原本记着「先建 `id → 原索引` 字典再段内
+        `sorted`」，在 `[A@{0,5}, B@{1}]` + 段 `[A, A, B]` 上它交出 `[A, A, B]`，
+        正确答案是 `[A, B, A]`（差分 120/120 全分歧）。写成用例是为了下次别再采纳它。
+        """
+        from augmentor import dataset_ops as dataset_ops_module
+
+        first, second = {"instruction": "A"}, {"instruction": "B"}
+        corpus = [first, second, first]
+        positions = dataset_ops_module._position_table(corpus)
+        got = dataset_ops_module._in_original_order(
+            positions, [first, first, second])
+        assert [id(item) for item in got] == [id(first), id(second), id(first)]
+
+    def test_member_not_in_corpus_fails_loud(self):
+        """段里有语料之外的对象：报错，不许整条静默消失
+
+        旧写法「数不到就跳过」，段少一条却无人报错 —— A47 那一族（成员整份消失）的
+        形状。新写法把它变成 `KeyError`，不是本轮刻意加的检查，而是位姿表天然的行为，
+        但既然行为变了就得钉住。
+
+        `member` 必须活着当局部变量：表里只有 `id()`，语料对象一旦被回收，它的地址就能
+        被 `ghost` 复用，查表会**假命中**而不报错（实测过），这正是位姿表口径的前提条件。
+        """
+        from augmentor import dataset_ops as dataset_ops_module
+
+        member = {"instruction": "A"}
+        ghost = {"instruction": "ghost"}
+        positions = dataset_ops_module._position_table([member])
+        with pytest.raises(KeyError):
+            dataset_ops_module._in_original_order(positions, [ghost, member])
+
+    @pytest.mark.parametrize("seed", [0, 1, 2, 3])
+    def test_duplicate_reference_corpus_keeps_head_semantics(self, seed):
+        """代价轮不许改答案：重复引用语料上新旧实现逐条同答
+
+        缺陷态同样绿（它就是要复刻的旧口径），所以这条是白名单护栏，不计入成效；
+        它的价值在日后 —— 任何「顺手把每次出现只发一次」的改法都会在这里红。
+        """
+        ops = DatasetOperations()
+        corpus = _dup_corpus(seed)
+        config = SplitConfig(ratios=RATIOS, seed=seed, shuffle=False, stratify=True,
+                             stratify_key="instruction")
+        got = ops.split(corpus, config)
+        result = DataSplitter(*RATIOS, seed=seed,
+                              stratify_field="instruction").split(corpus)
+        want = _per_segment_scan(corpus, (result.train, result.val, result.test))
+        assert [[id(item) for item in seg] for seg in got] == \
+            [[id(item) for item in seg] for seg in want]
+        assert [len(seg) for seg in got] == [len(seg) for seg in want]
+
+    @pytest.mark.parametrize("shuffle", [True, False], ids=["shuffled", "ordered"])
+    def test_corpus_walked_once_per_split(self, monkeypatch, shuffle):
+        """代价契约：一次保序分割只建一次位姿表，不是每段建一次
+
+        与 L41 那条「`_in_original_order` 恰好三次」配套：三段仍各排一次，但整份语料
+        只走查一遍。回到「每段各走一遍」的写法（哪怕换了实现语言）这里就红。
+        打乱档一次都不许建表（白付的 O(n)），那一侧缺陷态天然成立。
+        """
+        from augmentor import dataset_ops as dataset_ops_module
+
+        seen = []
+        real = getattr(dataset_ops_module, "_position_table", None)
+        if real is None:  # 缺陷态还没有这个符号：让它一旦被调用就崩，计数保持 0
+            def real(*args, **kwargs):  # noqa: ANN001
+                raise AssertionError("position table helper is missing")
+
+        def spy(*args, **kwargs):
+            seen.append(args)
+            return real(*args, **kwargs)
+
+        # 缺陷态模块里没有这个属性，`raising=False` 让「装桩」本身不报错，
+        # 于是红点落在调用次数上而不是夹具上。
+        monkeypatch.setattr(dataset_ops_module, "_position_table", spy, raising=False)
+        ops = DatasetOperations()
+        ops.split(CORPUS, SplitConfig(ratios=RATIOS, seed=5, shuffle=shuffle,
+                                      stratify=True, stratify_key="intent"))
+        assert len(seen) == (0 if shuffle else 1)
+
+
 def _sample_corpus():
     """4 类 × 5 条（共 20 条）的分层采样语料
 
