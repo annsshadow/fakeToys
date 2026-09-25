@@ -3,11 +3,10 @@
 
 """OpenAI 模型后端 - 优化版"""
 
-import json
 from typing import Optional
-from .base import ModelBackend
+from .base import ModelBackend, extract_json_array
 from ..config import ModelConfig
-from ..exceptions import ModelGenerateError, ModelNotConfiguredError, ModelResponseError
+from ..exceptions import ModelGenerateError, ModelNotConfiguredError
 
 
 class OpenAIBackend(ModelBackend):
@@ -86,28 +85,16 @@ class OpenAIBackend(ModelBackend):
     
     def extract_json_from_response(self, response: str) -> list:
         """从响应中提取 JSON 数组
-        
+
+        复用基类唯一的 robust 解析器（直接数组 / ```json 围栏 / 前置说明散文都能
+        取，且顶层是对象时抛错而非把 dict 当数组返回）。改前本方法手搓了一份，且
+        少了 `isinstance(result, list)` 守卫 ⇒ 纯 JSON 对象响应会违反 `-> list`
+        契约返回 dict（A111，与 L59 A108 / L60 A110 同族）。
+
         Args:
             response: 模型响应文本
-        
+
         Returns:
             JSON 数组
         """
-        # 尝试直接解析
-        try:
-            return json.loads(response)
-        except json.JSONDecodeError:
-            pass
-        
-        # 尝试从文本中提取
-        start = response.find('[')
-        end = response.rfind(']') + 1
-        
-        if start >= 0 and end > start:
-            json_str = response[start:end]
-            try:
-                return json.loads(json_str)
-            except json.JSONDecodeError as e:
-                raise ModelResponseError(f"响应片段无法解析为 JSON 数组: {e}") from e
-        
-        raise ModelResponseError("无法从响应中提取 JSON 数组")
+        return extract_json_array(response)

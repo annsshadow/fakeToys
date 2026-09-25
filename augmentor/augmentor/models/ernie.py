@@ -3,14 +3,13 @@
 
 """百度 ERNIE 模型后端 - 优化版"""
 
-import json
 import time
 import logging
 import threading
 from typing import Optional
-from .base import ModelBackend
+from .base import ModelBackend, extract_json_array
 from ..config import ModelConfig
-from ..exceptions import ModelGenerateError, ModelNotConfiguredError, ModelResponseError
+from ..exceptions import ModelGenerateError, ModelNotConfiguredError
 
 logger = logging.getLogger(__name__)
 
@@ -131,21 +130,15 @@ class ERNIEBackend(ModelBackend):
     
     def extract_json_from_response(self, response: str) -> list:
         """从响应中提取 JSON 数组
-        
+
+        复用基类唯一的 robust 解析器。改前本方法只做了括号切片那一半、漏了「先直接
+        解析」那一半（A111，同族第三份拷贝）；接上 `extract_json_array` 后与其余后端
+        口径一致。
+
         Args:
             response: 模型响应文本
-        
+
         Returns:
             JSON 数组
         """
-        start = response.find('[')
-        end = response.rfind(']') + 1
-        
-        if start >= 0 and end > start:
-            json_str = response[start:end]
-            try:
-                return json.loads(json_str)
-            except json.JSONDecodeError as e:
-                raise ModelResponseError(f"响应片段无法解析为 JSON 数组: {e}") from e
-        
-        raise ModelResponseError("无法从响应中提取 JSON 数组")
+        return extract_json_array(response)
