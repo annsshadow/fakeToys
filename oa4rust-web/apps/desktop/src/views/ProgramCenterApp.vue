@@ -44,7 +44,7 @@
       </div>
       <!-- Application tab -->
       <div v-if="tab==='application'" class="tab-content">
-        <div class="toolbar"><button class="btn-primary" @click="loadAllApplications">全部应用</button><button class="btn-primary" @click="loadCenterMeta">注册应用/版本/验证码</button><button class="btn-primary" @click="loadProgramDetails">明细抽样</button><button class="btn-primary" @click="loadErrorLogs">错误日志</button><button class="btn-primary" @click="loadPromptErrorFilters">提示错误筛选</button><button class="btn-primary" @click="loadPromptErrorPrev">提示错误(逆序筛选)</button><button class="btn-primary" @click="loadUnexpectedFilters">意外错误筛选</button><button class="btn-primary" @click="loadWarnFilters">警告筛选</button><button class="btn-primary" @click="loadScheduleHotpic">调度日志/热图</button><button class="btn-primary" @click="loadPcScriptOps">脚本按名保存/校验日志</button><button class="btn-primary" @click="loadPcDeployLogs">部署/安装日志分页</button><button class="btn-primary" @click="loadPcTwinA">孪生端点A</button><button class="btn-primary" @click="loadPcTwinB">孪生端点B</button><button class="btn-primary" @click="loadPcTwinC">孪生端点C</button><span v-if="appMetaText" class="app-meta">{{ appMetaText }}</span></div>
+        <div class="toolbar"><button class="btn-primary" @click="loadAllApplications">全部应用</button><button class="btn-primary" @click="loadCenterMeta">注册应用/版本/验证码</button><button class="btn-primary" @click="loadProgramDetails">明细抽样</button><button class="btn-primary" @click="loadErrorLogs">错误日志</button><button class="btn-primary" @click="loadPromptErrorFilters">提示错误筛选</button><button class="btn-primary" @click="loadPromptErrorPrev">提示错误(逆序筛选)</button><button class="btn-primary" @click="loadUnexpectedFilters">意外错误筛选</button><button class="btn-primary" @click="loadWarnFilters">警告筛选</button><button class="btn-primary" @click="loadScheduleHotpic">调度日志/热图</button><button class="btn-primary" @click="loadPcScriptOps">脚本按名保存/校验日志</button><button class="btn-primary" @click="loadPcDeployLogs">部署/安装日志分页</button><button class="btn-primary" @click="loadPcTwinA">孪生端点A</button><button class="btn-primary" @click="loadPcTwinB">孪生端点B</button><button class="btn-primary" @click="loadPcTwinC">孪生端点C</button><button class="btn-primary" @click="loadPcTwinD">孪生端点D</button><span v-if="appMetaText" class="app-meta">{{ appMetaText }}</span></div>
         <div v-if="loadingApp" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
         <div v-else-if="applications.length===0" class="empty"><div class="ei">📱</div><p>暂无Application</p></div>
         <div v-else class="item-grid">
@@ -581,6 +581,20 @@ async function loadPcTwinC() {
     toast.success(`孪生端点C ${rs.length} 条已提交`)
   } catch (e: any) {
     toast.error('孪生端点C失败: ' + (e?.message ?? ''))
+  }
+}
+// rev484（桶外 off-metric 波）：output 应用输出选择 真注册路由 1 条（arity 已校验；与 program_center 域 output 双轨）
+async function loadPcTwinD() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.put('/api/output/0/select', {})),
+      s(api.get('/api/export/appInfo/0')),
+      s(api.get('/api/import/appInfo/0')),
+    ])
+    toast.success(`孪生端点D ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('孪生端点D失败: ' + (e?.message ?? ''))
   }
 }
 // 错误日志族 3 条真实 distinct 路由（各读独立表游标）：警告日志 warnlog/list/{id}/next/{count}
