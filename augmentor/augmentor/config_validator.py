@@ -109,6 +109,13 @@ class ConfigValidator:
         # 远超任何合理的单次退避基数。
         "augmentation.max_retries": {"type": int, "min": 0, "max": 20},
         "augmentation.retry_delay": {"type": float, "min": 0.0, "max": 60.0},
+        # 等待预算两旋钮（L49 / A73 + A75）。上界与运行时判据**同源**，不是校验器
+        # 独有的天花板：`max_retry_wait` 本身就是那道封顶，放大它会作废
+        # 「服务端指令一支封顶 300 s」的承诺（retry.MAX_RETRY_AFTER）；
+        # `retry_jitter` 的 0-1 与 `validation.require_ratio` 的默认闭区间逐字一致。
+        "augmentation.max_retry_wait": {"type": float, "min": 0.0,
+                                        "max": 300.0},
+        "augmentation.retry_jitter": {"type": float, "min": 0.0, "max": 1.0},
         "quality": {"type": dict},
         "quality.enabled": {"type": bool},
         "quality.threshold": {"type": float, "min": 0.0, "max": 1.0},
@@ -225,7 +232,16 @@ class ConfigValidator:
                 # 时更严，就会把合法配置报成非法（实测：加本规则后 `retry_delay: 1`
                 # 曾得到「类型错误: 期望 float, 实际 int」）。
                 checked_type = (int, float) if expected_type is float else expected_type
-                if checked_type and not isinstance(value, checked_type):
+                # `bool` 不算数值。`isinstance(True, int)` 恒真，所以 YAML 里写
+                # `retry_jitter: true` 从前会被本校验器读成合法，而运行时四道判据
+                # （`require_count` / `require_seconds` / `require_positive` /
+                # `require_ratio`）**全部**显式拒 bool ⇒ `validate-config` 绿灯的配置
+                # 会在建管道时抛（L49 实测：7 个数值规格键 7/7 都有这个洞）。
+                # `type: bool` 的开关字段不受影响。
+                if checked_type and (
+                        (expected_type in (int, float) and isinstance(value, bool))
+                        or not isinstance(value, checked_type)
+                ):
                     result.add_error(field_path, 
                                    f"类型错误: 期望 {expected_type.__name__}, 实际 {type(value).__name__}")
                     continue

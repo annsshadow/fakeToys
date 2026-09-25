@@ -24,7 +24,9 @@ class ClaudeBackend(ModelBackend):
                  response_cache_ttl: Optional[float] = None,
                  response_cache_max_bytes: Optional[int] = None,
                  default_attempts: Optional[int] = None,
-                 default_retry_delay: Optional[float] = None):
+                 default_retry_delay: Optional[float] = None,
+                 default_max_retry_wait: Optional[float] = None,
+                 default_retry_jitter: Optional[float] = None):
         """初始化 Claude 后端
 
         Args:
@@ -34,6 +36,8 @@ class ClaudeBackend(ModelBackend):
             response_cache_max_bytes: 磁盘缓存容量上限（字节）
             default_attempts: 重试默认档位（总尝试次数），见基类说明
             default_retry_delay: 退避基数默认值（秒），见基类说明
+            default_max_retry_wait: 服务端指令一支的等待上限（秒），见基类说明
+            default_retry_jitter: 退避抖动比例（0-1），见基类说明
         """
         super().__init__(
             config,
@@ -42,6 +46,8 @@ class ClaudeBackend(ModelBackend):
             response_cache_max_bytes=response_cache_max_bytes,
             default_attempts=default_attempts,
             default_retry_delay=default_retry_delay,
+            default_max_retry_wait=default_max_retry_wait,
+            default_retry_jitter=default_retry_jitter,
         )
         if not config.api_key:
             raise ModelNotConfiguredError("Claude 后端需要 api_key")

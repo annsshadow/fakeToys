@@ -859,3 +859,33 @@ class TestVectorSearchTopK:
     def test_valid_top_k_above_the_count_still_caps(self, db):
         assert len(db.search(np.array([1, 0, 0, 0], dtype=np.float32), top_k=100)) == 4
 
+
+class TestRequireSecondsUpperBound:
+    """`require_seconds` 的第四参 `maximum`：只给「旋钮本身就是封顶」的那些参（L49 / A73）
+
+    为什么默认不判上界（族里另外三员也都不判）：`retry_delay` 这类值越界只是「等得久」，
+    实现里另有 `min(max_delay, …)` 兜着，而它的天花板（≤ 60）是**校验器独有**的口径
+    （L45 记过一笔）。`with_retries(max_retry_wait=…)` 是这一族的例外：这个参数自己
+    **就是**那道夹逼，它自己越界时无处可夹 —— 加判据前实测 `inf` 让 `Retry-After: 3000`
+    原样睡着 3000 s。所以对这一类参，上界是承诺本身，必须放在运行时入口。
+    """
+
+    @pytest.mark.parametrize("value", [301.0, 1e9, float("inf")])
+    def test_omitting_maximum_keeps_the_legacy_verdict(self, value):
+        """不传 `maximum` 时逐字同答：新判据不得改动既有全部调用点"""
+        assert require_seconds("retry_delay", value) == value
+
+    @pytest.mark.parametrize("value", [0, 0.0, 45, 45.0, 300.0, 300, None])
+    def test_in_range_values_pass(self, value):
+        """`int` 写法与边界值 300.0 都放行（默认档就贴在边界上）"""
+        assert require_seconds("max_retry_wait", value, maximum=300.0) == value
+
+    @pytest.mark.parametrize("value", [300.0000001, 301.0, 1e9, float("inf"),
+                                       -1.0, True, "300", float("nan")])
+    def test_out_of_range_values_rejected(self, value):
+        with pytest.raises(DataValidationError):
+            require_seconds("max_retry_wait", value, maximum=300.0)
+
+    def test_error_message_names_the_bound_and_the_value(self):
+        with pytest.raises(DataValidationError, match=r"max_retry_wait.*300\.0.*301"):
+            require_seconds("max_retry_wait", 301.0, maximum=300.0)

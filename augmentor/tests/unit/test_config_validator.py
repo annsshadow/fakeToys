@@ -777,3 +777,97 @@ class TestAugmentationRetryKnobs:
         except DataValidationError:
             rejected_by_runtime = True
         assert rejected_by_validator == rejected_by_runtime, value
+
+class TestWaitBudgetKnobSurface:
+    """`augmentation.max_retry_wait` / `retry_jitter` 的校验规格（L49 接线）
+
+    与 `TestAugmentationRetryKnobs` 成对，但口径**不同**：那两个旧旋钮的上界
+    （`retry_delay ≤ 60`、`max_retries ≤ 20`）是校验器独有的天花板，运行时收 999；
+    新旋钮的上界（`max_retry_wait ≤ 300`、`retry_jitter ≤ 1`）在运行时同样判 —— 对这
+    两个参数来说上界是承诺本身。所以本类的同口径断言能做到全区间一致，旧旋钮做不到。
+    """
+
+    @staticmethod
+    def _errors(augmentation):
+        config = {
+            "app": {"name": "test"},
+            "models": {"default": "ernie"},
+            "augmentation": augmentation,
+        }
+        return [(e.path, e.message) for e in validate_config(config).errors]
+
+    @pytest.mark.parametrize("field,value", [
+        ("max_retry_wait", 0), ("max_retry_wait", 0.0), ("max_retry_wait", 45),
+        ("max_retry_wait", 300.0),
+        ("retry_jitter", 0), ("retry_jitter", 0.0), ("retry_jitter", 0.5),
+        ("retry_jitter", 1), ("retry_jitter", 1.0),
+    ])
+    def test_legal_values_pass(self, field, value):
+        assert self._errors({field: value}) == []
+
+    @pytest.mark.parametrize("field,bad,expect", [
+        ("max_retry_wait", -1.0, "值过小"),
+        ("max_retry_wait", 301.0, "值过大"),
+        ("max_retry_wait", "300", "类型错误"),
+        ("max_retry_wait", float("nan"), "不是有效数值"),
+        ("retry_jitter", -0.1, "值过小"),
+        ("retry_jitter", 1.5, "值过大"),
+        ("retry_jitter", "0.5", "类型错误"),
+        ("retry_jitter", float("nan"), "不是有效数值"),
+    ])
+    def test_illegal_values_reported(self, field, bad, expect):
+        errors = self._errors({field: bad})
+        assert errors and errors[0][0] == f"augmentation.{field}"
+        assert expect in errors[0][1]
+
+    @pytest.mark.parametrize("value", [
+        -1.0, 0, 45, 300.0, 301.0, float("inf"), True, "300", float("nan"),
+    ])
+    def test_validator_and_runtime_agree_on_every_axis(self, value):
+        """新旋钮没有「校验器独有的天花板」：两侧口径必须逐个一致
+
+        两侧不一致时，`validate-config` 绿灯的配置会在建管道时抛
+        `DataValidationError`，或者反过来把合法配置拦在门外。
+        """
+        from augmentor import MAX_RETRY_AFTER
+        from augmentor.validation import require_seconds
+
+        rejected_by_validator = bool(self._errors({"max_retry_wait": value}))
+        try:
+            require_seconds("max_retry_wait", value, maximum=MAX_RETRY_AFTER)
+            rejected_by_runtime = False
+        except Exception:
+            rejected_by_runtime = True
+        assert rejected_by_validator == rejected_by_runtime, value
+
+    @staticmethod
+    def _errors_at(path):
+        """把 `section.field = True` 塞进一份最小合法配置，返回全部报错"""
+        section, _, field = path.partition(".")
+        config = {"app": {"name": "t"}, "models": {"default": "ernie"}}
+        config.setdefault(section, {})[field] = True
+        return [(e.path, e.message) for e in validate_config(config).errors]
+
+    def test_bool_is_rejected_for_every_numeric_spec(self):
+        """`isinstance(True, int)` 恒真 ⇒ 每个数值规格键都曾有同一个洞
+
+        L49 实测（Temp `l49_probe4.py`）：7 个数值规格键填 `true`，旧校验器 7/7 判
+        合法，而运行时四道判据（`require_count` / `require_seconds` /
+        `require_positive` / `require_ratio`）4/4 拒收。本条把「bool 不算数值」从
+        一次性修复升格为对全部数值键的常驻断言，以后新增字段自动被覆盖。
+        """
+        numeric = [p for p, s in ConfigValidator.KNOWN_FIELDS.items()
+                   if s.get("type") in (int, float)]
+        assert len(numeric) == 7, "新增数值规格键会自动进入本断言"
+        for path in numeric:
+            hits = [m for p_, m in self._errors_at(path) if p_ == path]
+            assert hits and "类型错误" in hits[0], (path, hits)
+
+    def test_declared_bool_fields_stay_acceptable(self):
+        """修 bool 洞不许顺手把 `type: bool` 的开关字段判成非法"""
+        paths = [p for p, s in ConfigValidator.KNOWN_FIELDS.items()
+                 if s.get("type") is bool]
+        assert len(paths) == 3, "规格表里应仍有布尔开关字段"
+        for path in paths:
+            hits = [m for p_, m in self._errors_at(path) if p_ == path]
+            assert hits == [], (path, hits)

@@ -22,6 +22,8 @@ def create_model_backend(
     response_cache_max_bytes: Optional[int] = None,
     default_attempts: Optional[int] = None,
     default_retry_delay: Optional[float] = None,
+    default_max_retry_wait: Optional[float] = None,
+    default_retry_jitter: Optional[float] = None,
 ) -> ModelBackend:
     """创建模型后端实例
 
@@ -37,13 +39,18 @@ def create_model_backend(
             对应配置文件 `augmentation.max_retries`
         default_retry_delay: 后端的退避基数默认值（秒），
             对应配置文件 `augmentation.retry_delay`
+        default_max_retry_wait: 后端「服务端 `Retry-After` 那一支」的等待上限（秒），
+            对应配置文件 `augmentation.max_retry_wait`；只能夹小不能放大
+        default_retry_jitter: 后端的退避抖动比例（0-1），
+            对应配置文件 `augmentation.retry_jitter`
 
     Returns:
         ModelBackend 实例
 
     Raises:
         ConfigError: 不支持的模型类型
-        DataValidationError: default_attempts / default_retry_delay 越界
+        DataValidationError: default_attempts / default_retry_delay /
+            default_max_retry_wait / default_retry_jitter 越界
     """
     model_type = model_type or config.type
 
@@ -54,6 +61,8 @@ def create_model_backend(
         "response_cache_max_bytes": response_cache_max_bytes,
         "default_attempts": default_attempts,
         "default_retry_delay": default_retry_delay,
+        "default_max_retry_wait": default_max_retry_wait,
+        "default_retry_jitter": default_retry_jitter,
     }
 
     if model_type == "baidu":

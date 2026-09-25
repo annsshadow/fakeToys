@@ -341,3 +341,106 @@ class TestSaveConfigRoundTrip:
         text = Path(path).read_text(encoding="utf-8")
         assert "SHOULD_NOT_APPEAR" not in text
         assert yaml.safe_load(text)["models"]["default"] == "ernie"
+
+class TestSectionDefaultsMatchTheMappingTable:
+    """`load_config` 里那份映射表必须与 dataclass 逐字段同值、同覆盖（L49 守护）
+
+    为什么值得单独钉：`load_config` 不直接用 dataclass 的默认值，而是把每个字段的默认
+    又抄了一遍（`config_sections`）。两处漂移有两种症状，都不报错：
+    值漂移（表里 0.6、类里 0.7 ⇒ 改 dataclass 的用户看不到变化）、覆盖漂移（类里新增
+    字段忘了进表 ⇒ 配置文件里写这个字段没人读）。L49 接 `max_retry_wait` /
+    `retry_jitter` 时实测值漂移 0（20 节 65 字段，Temp `l49_probe2.py`），但那一版探针
+    **只比了默认值、没有比字段覆盖**，补上覆盖方向后当场抓到两个漏字段（见
+    `KNOWN_UNMAPPED_FIELDS`）。本类把两个方向都变成常驻断言。
+    """
+
+    #: 映射表漏掉的字段 = 配置文件里写了也没人读的死旋钮。L49 实测：`api/main.py:119`
+    #: 真的在读 `_config.web.cors_origins` / `.cors_credentials`，而映射表没有这两项 ⇒
+    #: 无论 `config.yaml` 写什么，CORS 永远是 `allow_origins=["*"]` +
+    #: `allow_credentials=True`（同一份文件里 `port: 9999` 正常生效，故不是整节失效）。
+    #: 这是一处安全相关的缺陷，另立 A78 在下一轮修复，本清单随之清空。
+    KNOWN_UNMAPPED_FIELDS = {("web", "cors_origins"), ("web", "cors_credentials")}
+
+    @staticmethod
+    def _sections():
+        import dataclasses
+
+        from augmentor.config import AppConfig
+
+        return [f.name for f in dataclasses.fields(AppConfig)
+                if f.default_factory not in (None, dataclasses.MISSING)
+                and dataclasses.is_dataclass(f.default_factory())]
+
+    @staticmethod
+    def _write(tmp_path, sections):
+        import yaml
+
+        path = tmp_path / "empty.yaml"
+        with open(path, "w", encoding="utf-8") as handle:
+            yaml.safe_dump({name: {} for name in sections}, handle)
+        return str(path)
+
+    def test_there_are_twenty_dataclass_sections(self, tmp_path):
+        """新增配置节会立刻改变这里的计数，逼作者决定它进不进守护范围"""
+        assert len(self._sections()) == 20
+
+    def test_empty_sections_fall_back_to_dataclass_defaults(self, tmp_path):
+        """值漂移守护：只写节名不写字段时，读出来的必须与 dataclass 默认实例相等"""
+        from augmentor.config import AppConfig, load_config
+
+        sections = self._sections()
+        loaded = load_config(self._write(tmp_path, sections))
+        baseline = AppConfig()
+        drifted = []
+        for name in sections:
+            got, want = getattr(loaded, name), getattr(baseline, name)
+            if got != want:
+                drifted.append(
+                    (name, {k: (getattr(got, k), getattr(want, k))
+                            for k in vars(got)
+                            if getattr(got, k) != getattr(want, k)}))
+        assert drifted == []
+
+    def test_mapping_table_covers_every_field(self, tmp_path):
+        """覆盖漂移守护：表里漏一个字段，配置文件里写它就是「写了没人读」
+
+        本条是**棘轮**而不是豁免清单：`KNOWN_UNMAPPED_FIELDS` 必须与实测缺口逐字
+        相等，修好一项就得从清单里删一项，新出现漏字段也立刻变红。
+        """
+        import dataclasses
+
+        from augmentor import config as config_module
+        from augmentor.config import AppConfig
+
+        seen = {}
+        real = config_module._load_section
+        monkeypatch = pytest.MonkeyPatch()
+        monkeypatch.setattr(
+            config_module, "_load_section",
+            lambda raw, key, cls, defaults: (seen.__setitem__(key, set(defaults)),
+                                             real(raw, key, cls, defaults))[1])
+        try:
+            config_module.load_config(self._write(tmp_path, self._sections()))
+        finally:
+            monkeypatch.undo()
+
+        assert set(seen) == set(self._sections())
+        actual = set()
+        for key, names in seen.items():
+            fields = {f.name for f in dataclasses.fields(
+                type(getattr(AppConfig(), key)))}
+            assert names <= fields, (key, sorted(names - fields))
+            actual |= {(key, name) for name in fields - names}
+        assert actual == self.KNOWN_UNMAPPED_FIELDS, (
+            sorted(actual ^ self.KNOWN_UNMAPPED_FIELDS))
+
+    def test_the_new_wait_knobs_default_to_the_documented_pair(self, tmp_path):
+        """出厂默认就是文档承诺的那两个数：300 s / 不抖，且不许重抄数字"""
+        from augmentor import MAX_RETRY_AFTER
+        from augmentor.config import AugmentationConfig, load_config
+
+        loaded = load_config(self._write(tmp_path, ["augmentation"]))
+        assert (loaded.augmentation.max_retry_wait,
+                loaded.augmentation.retry_jitter) == (MAX_RETRY_AFTER, 0.0)
+        assert (AugmentationConfig().max_retry_wait,
+                AugmentationConfig().retry_jitter) == (MAX_RETRY_AFTER, 0.0)
