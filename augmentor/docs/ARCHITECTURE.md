@@ -1706,6 +1706,15 @@ L52 立 A89 时的读法是「`validate-config` 只 `print` 判决、从不返�
 把它们接上退出码等于新造一条「有发现即失败」的隐含契约，而审计报告的本分是**有问题时照样把报告出完** ——
 所以恒 0 是决定不是遗漏。
 
+**§3.30 的勘误（L55 实测，上面三行原文一字不改留着）**：上表「报告形（无判决位）」那一格把名字写错了
+对象。「handler 体内零判决词」这条只对**handler 印出去的那句话**成立；L55 把 SDK 返回值本身量了一遍
+（Temp `l55/verify.py`，NONCE-L55-VERIFY，P4 / P7 两段）⇒ `audit` 的 `report.ready`、`check-leakage` 的
+`report.is_clean`、`doctor` 的 `report.all_required_present` 三个字段都已经在 JSON 里，且都是判决语义
+（本机实测：`ready: false`、`is_clean: false`、`all_required_present: true`）。于是「无判决位」那一格与
+下一格的真实区别不是**有没有**判决位，而是**要不要把它翻译成退出码** —— L55 给前者的答案是「默认不译、
+`--gate` 才译」，与后者同批。「恒 0 是决定不是遗漏」这句仍然成立，成立的理由换了：不是「没有可判的东西」，
+而是「报告的本分是出完」。这一格的名字、以及它顺带给读者的因果，才是本轮真正修掉的东西。
+
 **但 `quality-report` 不在「无判决位」那一格里，这一条是本轮写完首稿之后复核才发现自己写错的**：
 `quality.py:76` 打的「总体状态: 通过 / 未通过」读的就是 `report.overall_passed`，且命令带 `--threshold`；
 `auto-test` 的 `get_test_report` 打「通过: N / 失败: M」（`auto_test.py:385-386`），`migrate` 打「失败: N 条」
@@ -1906,6 +1915,100 @@ L53 ⑥ → 本轮 ③。④ **一次破坏性 Edit 在本文档凭空造出一�
 它是**收尾自查那次 grep 抓的，不是写代码时抓的** —— 缺陷 ⑤ 与 A97 是同一根的第二面：A97 说的是「键被读进对象
 但没人用」，⑤ 说的是「常量被定义出来但只有测试用」，两者都不是白名单能看见的形状。
 
+### 3.30 L55：判决只走一个出口 —— 六条报告形命令长出 `--gate`，顺带修掉两起编码崩（关闭 A91，新立 A98–A100）
+
+A91 的症状写着「口径只活在文档里，零守卫」。本轮开工第一件事不是写守卫，而是把 L53 那张表**重测一遍**
+—— L53 自己就在同一张表上错过一次（首稿把四条有判决位的命令一并写成「无判决位」）。量到的三件事，
+每一件都改变了本轮要写的代码：
+
+**① §3.28 的「无判决位」那一格确实写错了对象**（已在原表下就地补勘误、原文一字未删）：
+「handler 体内零判决词」只对**handler 印出去的那句话**成立，而 SDK 返回值里的 `ready` / `is_clean` /
+`all_required_present` 三个字段一直就在 JSON 里，且都是判决语义。⇒ 那一格与下一格的真实区别不是
+**有没有**判决位，而是**要不要把它翻译成退出码**。
+
+**② 「报告形命令恒 0」不等于「不接退出码」，它缺的是一档开关**。L53 反对的是「用户没要求就判负」这条
+隐含契约（有发现即失败），不是反对判负本身。⇒ 接线做成显式一档：**默认恒 0 一字未改，`--gate` 才把
+判决位翻译成 1**。这样既关掉 A91 的边界 ①（「想让质量不达标时 CI 红的人只能自己 grep stdout」），
+又不推翻 §3.28 刚立的口径。
+
+| 命令 | 判决位（SDK 字段） | 默认 | 带 `--gate` | 接线位置 |
+|------|--------------------|------|-------------|----------|
+| `quality-report` | `report.overall_passed` | 0 | 未通过 ⇒ 1 | `cli/commands/quality.py:96` |
+| `audit` | `report.ready` | 0 | 未就绪 ⇒ 1 | `cli/commands/security.py:76` |
+| `check-leakage` | `report.is_clean` | 0 | 检出泄漏 ⇒ 1 | `cli/commands/security.py:52` |
+| `doctor` | `report.all_required_present` | 0 | 缺必需依赖 ⇒ 1 | `cli/commands/ops.py:31` |
+| `auto-test` | `suite.failed_tests == 0` | 0 | 有失败用例 ⇒ 1 | `cli/commands/ops.py:54` |
+| `migrate` | `result.failed_items == 0` | 0 | 有失败条目 ⇒ 1 | `cli/commands/ops.py:159` |
+| 已有四条改走同一出口 | `is_valid` / `issues` / `gate.passed` | — | 判负 ⇒ 1（无 `--gate`，恒判） | `data_ops.py:78` / `:114`、`ops.py:134`、`quality.py:210` |
+
+**唯一出口 = `augmentor/cli/verdict.py:verdict_exit(passed, enforce=True)`**。退出码从此只有三种形状，
+彼此不许互相顶替：`0` = 判决通过或这条命令压根不判负；`1` = 判决未通过（只由 `verdict_exit` 产生）**或**
+handler 抛异常被 `cli.py:main()` 翻译成 `错误: …` + `1` ⇒ 同样是 1，**靠 stderr 有无「错误:」分「判负」与
+「崩溃」**；`2` = argparse 用法错误。这个二义性本轮刻意没动（改异常档要动对外契约，记在 A100 旁边）。
+
+**③ 两起编码崩：一起是既有的、一起是本轮自己造的** —— 这是本轮真正想记下来的一段。
+
+- **既有**：GBK 管道（子进程 stdio 不带 `PYTHONIOENCODING` 时实测就是 `gbk`）下逐条跑 16 条命令 ⇒
+  **恰好 2 条崩**：`quality-report` 与 `auto-test`（Temp `l55/gbk.py`，NONCE-L55-GBK）。崩的形状是
+  `✅`（U+2705，不在 GBK）让 stdout 写到一半抛 `UnicodeEncodeError` ⇒ 改前 `quality-report` 只印得出
+  6 行（半张报告）且 `--output` 的报告文件**根本没写**、`auto-test` stdout **0 字节**，两条都是 **rc=1**。
+  ⇒ 「CI 读到判负」其实是「CI 读到了 emoji」：判决码被一个装饰符占掉。改成 `[通过] / [未通过]`（指标行）
+  与 `[通过] / [失败]`（auto-test 报告行）后：`quality-report` stdout 6 行变 **16 行**、报告文件 0 →
+  **1547 字节**；`auto-test` stdout 0 字节变 **24 行**。字节数只在同一份语料同一次运行内可比，
+  两解释器之间那 8 字节差来自报告里的时刻 ⇒ 不进任何断言。
+- **本轮自造**：我给 6 条命令写的 `--gate` help 文案里用了 `⇒`（U+21D2，同样不在 GBK）⇒
+  `python cli.py quality-report -h` 在 GBK 管道下 **rc=1、stdout 0 字符**（Temp `l55/helpgbk.py`，
+  NONCE-L55-HELPGBK）。抓到它的正是本轮给自己新写的那条守卫（AST 扫 parser 里全部 help 常量）——
+  **一小时前立的判据，第一次跑就命中我自己刚写的行**。文案改成「未通过时退出码 1」后复跑：五条
+  抽样 `-h` 全 **rc=0 且 stdout 有内容**。改后全仓 CLI 面向模块（10 个 handler 文件 + `parser.py` /
+  `io.py` / `verdict.py` / `auto_test.py` / 根 `cli.py`）的字符串常量非 GBK 计数为 **0**
+  （Temp `l55/gbkconst.py`，NONCE-L55-GBKCONST）。
+
+**守卫从推导、不抄清单**（A91 的修法原话）：`tests/integration/test_cli_verdict_wiring.py`（新，30 例，
+两解释器各 **30 passed**，6.04 s / 6.18 s）钉三条集合等式 ——
+S1「parser 里声明 `--gate` 的命令」== S2「handler 源码里出现 `enforce=args.gate` 的命令」（各 6 条）；
+S3「handler 源码里出现 `verdict_exit(`」== S4「子命令 help 里含『退出码』」（各 10 条）；
+S5「L53 那四条」⊆ S3。改前基线（Temp `l55/verify.py`，NONCE-L55-VERIFY）：S3 = 空集、S4 = 3 条、
+`dependency` 接了判决却不宣称 ⇒ **双向不等的两种形状各命中一处** ⇒ 这两条等式不是同义反复。
+另加 4 格参数化的 `verdict_exit` 单元、13 条行为用例（默认恒 0 / 带旗判负 / 通过档仍 0 /
+无判决位命令传 `--gate` ⇒ **2** 而非 1），以及 help 文本 GBK 可编码 + 子进程 GBK 管道实跑。
+
+**注入 7 模式**（Temp `l55/inj.py`，NONCE-L55-INJ，两解释器红集**逐字相同**、只有耗时差，
+还原后 `parser.py` / `quality.py` sha 前缀 `68e3ff6d8b5ca4e8` / `58cc1fe18c4c00e9` 与快照一致）：
+I1 摘掉 `quality-report` 的 `--gate` 声明 ⇒ **6 红**（两条集合等式 + 三条行为 + 一条 GBK 实跑）；
+I2 handler 忘传 `enforce`（默认档被改成恒判负）⇒ **3 红**；I3 摘掉整条接线 ⇒ **4 红**；
+I4 把 `✅/❌` 装回来 ⇒ **1 红**，且**只有**子进程那条红（进程内 `redirect_stdout` 不落编码 ⇒
+这条就是「必须真起子进程」的理由）；I5 help 不再宣称退出码 ⇒ **1 红**（S3≠S4）；
+I6 help 里塞回 `⇒` ⇒ **2 红**（AST 判据 + 子进程 `-h`）；I7 无害对照（只加一行注释）⇒ **30 passed 全绿**。
+红集互不相同 ⇒ 没有冗余守卫；I2 / I5 / I6 是**反向劣化**（改得「更严」或「更好看」）也有人报警。
+
+**破坏面**：`--gate` 是新增可选旗标 ⇒ 不传即旧行为（默认恒 0 一字未改，I2 就是「改掉默认档」的劣化，
+3 红）；被改的两个字符（`✅/❌` → `[通过]/[未通过]`、`[失败]`）实测 `tests/` 里 **0 处**断言引用；
+help 文案变化不进任何断言。**仓外脚本未量**（与 A89 同一条诚实账）。
+
+**性能不主张任何方向**：`verdict_exit` 是每条命令末尾的一次函数调用，落在进程启动与 IO 的噪音底下，
+本轮不做 A/B、也不引用任何 µs 数。唯一可量的变化在行为面：GBK 管道下两份报告从「没写出来」变成
+「写全了」—— 那是修缺陷的收益，不是代价。
+
+**覆盖表那两列的换算本轮纠正了两次**：aug 全量 TOTAL 的分支列从 L54 的 **3,564** 变成 **3,560**（−4），
+同一行的语句列是 +17。先用 AST 数 `if`：删 3 处 `if …: sys.exit(1)`、`verdict.py` 新增 1 处 ⇒ 净 **−2**，
+对不上；再用「弧总数的一半」算 ⇒ 得 **+7**，连方向都反了，而那只公式在**本轮没碰的文件上就已经错**
+（`pipeline.py` 数出 143 对，报告列写着 78）。第三次直接调 coverage 自己的 `PythonParser` 才对上：
+**Branch 列 = 源行有多个后继的弧条数**（双向各计一次，顺序弧不计入），在 `pipeline` / `preview` /
+`privacy` / `quality` 四个文件上与报告列逐位相同（78 / 24 / 22 / 62）。按这个换算重算本轮 7 个文件：
+`data_ops.py` **−4**、`quality.py` **−2**、`verdict.py` **+2**、其余四份 **0** ⇒ 合计 **−4**，与读数闭合；
+机制就是 `if` 换成 `verdict_exit(布尔实参)` —— 判决还在、分支点没了，这正是「唯一出口」要的形状，
+只是它在覆盖表上表现为**分支总数下降**。写下这段是为了下一轮：谁把 −4 读成「测试变弱了」都会读反。
+
+**新立三债**：**A98** —— 本轮只把**会崩的字符**换掉，没碰根因（CLI 的 stdout 仍按 locale 编码），
+数据集里只要有一条含 emoji 的样本，`quality-report` / `audit` 这类命令在 GBK 管道下仍会整条崩成 rc=1，
+与判决码同值；根治要把出口编码钉成 UTF-8，而那会改「中文输出重定向到文件的字节契约」（下游按 GBK
+读的脚本会花），是对外破坏性变更，得单独拍。**A99** —— `--gate` 是二值档，六条命令里只有
+`quality-report` 带阈值（`--threshold`），`check-leakage` 的 `leak_rate` 与 `audit` 的发现条数这两个
+**计数形判决位没有旋钮** ⇒ 「泄漏率超过 1% 才算失败」今天仍然只能人读 JSON。**A100** ——
+`doctor` / `auto-test` / `migrate` 三条的**判负**路径只由桩覆盖（真值随本机装了哪些包、语料内容与运行
+时刻而变，承 L52「断言里不写随环境而变的数」），真实端到端只钉到「不崩」与「默认恒 0」两档。
+
 ## 4. 核心数据流
 
 ### 4.1 数据增强主流程
@@ -2007,6 +2110,7 @@ L53 ⑥ → 本轮 ③。④ **一次破坏性 Edit 在本文档凭空造出一�
 | 静态校验面比运行时**更松**（bool / NaN 混进数值字段，L49 起） | `_validate_known_fields` 的内联类型判定原先按 `isinstance(value, (int, float))` 读，而 `isinstance(True, int)` 恒真 ⇒ 7 个数值规格键 7/7 把 YAML 里的 `true` 判成合法，四道运行时判据却全部拒 bool —— 症状是 `validate-config` 绿灯、建管道即 `DataValidationError`。修法：内联判定排 bool（`type: bool` 的开关字段不受影响）+ 补 NaN 判据。两条洞覆盖面不同：`true` 在旧形状下 **7/7 个数值键完全无报错**，NaN 只漏 **4 个 `type: float` 键**（3 个 int 键靠 `isinstance` 本来就拦得住）⇒ 各堵一片、不重复；注入分判也各成一档（摘 bool 排除 ⇒ 2 红，摘 NaN 判据 ⇒ 5 红）。根因是 A70 那套**只有测试在调用**的死助手：它们早就排了 bool 却没有 NaN 判据，两套口径各拿对半边、活的那套恰好是错的半边。同见 §3.24 |
 | **校验形 CLI 命令的「判决」**（`validate` / `validate-config` / `dependency --action validate`，L53 起） | 上面几行管的是**异常**怎么翻译（抛 `DataValidationError` ⇒ CLI exit 1 / API 400）；这一行管**判决**（命令正常跑完、但结论是「不合格」）怎么翻译。口径：**判负 ⇒ `sys.exit(1)`，通过 ⇒ 不抛 `SystemExit`**（沿用测试面 159 处 `assert code is None` 那套既有约定，本轮不新造形状）；**只有 WARNING 不判负**（与 L52 的「写了没人读」定级同轴，否则诊断通道出声即挡路）。**报告形命令（`audit` / `check-leakage` / `doctor`）刻意不接** —— 三条 handler 体内零判决词（37 个 `run_*` handler 普查，Temp NONCE-L53-CENSUS），接上等于新造一条「有发现即失败」的隐含契约。先例：`health-gate`（`cli/commands/quality.py:205`）。**另有三条 `quality-report` / `auto-test` / `migrate` 有判决语义却仍恒 0**（`overall_passed` / `failed_tests` / `failed_items`）——那是本轮拍定不动的欠账，要拍的是产品口径不是机制，记在 A91 边界 ①。同一批还把 `cli.py:46-53` 的 `load_config` 挪进 `try` ⇒ 配置加载期异常与 handler 异常同形（「`错误: …` + exit 1」），CLI 的失败从此只有一种形状。**已知空洞（A92）**：`is_valid = valid_count == len(items)` 让**空数据集空洞地判「有效」**（SDK / CLI / API 三层同形，实测 `exit 0` + 200 `{'is_valid': True, 'total_items': 0}`）⇒ 退出码 0 只代表「没有不合格的记录」，不代表「验过东西」。详见 §3.28 |
 | **配置加载期「写了没人读」的出声面**（`load_config`，L54 起） | 同一条判据有**两条通道**而不是一份文案两份实现：诊断面 `validate_config` 的 `warnings` 与产品面 `load_config` 的 `logging.warning` 由同一个 `_warn_unread_keys` 产生，两条通道的等式用常量 `UNREAD_MARKER = "没人读取"` 做机械锚（比对方式就是「这个词在不在文案里」，抄写的两份文案迟早漂移）。三条否决定下形状：**不写 stdout**（那是各命令的输出契约，`stats` 是 JSON）、**不进退出码**（承上一行的「只有 WARNING 不判负」）、**走 `logging` 而非 `print`**（API 进程 `basicConfig` 之后与它同一出口，未配置时由 `logging.lastResort` 落 stderr；**注意配置里的 `logging.level` 目前管不住它** ⇒ A97）。**只出「没人读」，不出「环境变量未设置」**（后者条数是本机 shell 的函数，见 §3.27 那条纪律）。出厂 `config.yaml` 零命中 ⇒ 默认档一次运行 **0 行**额外输出；代价实测 aug **+74.6 µs（1.09 %）** / py314 **+146.9 µs（2.17 %）**，同进程正反双序同号 ⇒ 可判定。同一轮把「0 字节 / 只含注释的配置文件」从裸 `TypeError` 改成与「路径不存在」同档（全默认 + `exit 0`，A94），但这留下一对**对立判决**：产品面「全默认、通过」对 诊断面「`is_valid=False` + 配置必须是字典类型」⇒ **A96**，要拍的是产品口径。详见 §3.29 |
+| **CLI 退出码的三种形状 + 判决的唯一出口**（`cli/verdict.py:verdict_exit`，L55 起） | `0` = 判决通过、或这条命令压根不判负；`1` = **判决未通过**（只由 `verdict_exit` 产生）**或** handler 抛异常被 `cli.py:main()` 翻译成「`错误: …` + 1」⇒ 同样是 1，**靠 stderr 有无「错误:」分「判负」与「崩溃」**，这条二义性本轮刻意没动（改异常档要动对外契约）；`2` = argparse 用法错误（无判决位的命令传 `--gate` 即落此档，实测 `stats --gate` ⇒ 2 且 stderr 含 `unrecognized arguments`，**不落 1**）。上一行那句「报告形命令刻意不接」自本轮起变成**默认不接、`--gate` 才接**：六条报告形命令（`quality-report` / `audit` / `check-leakage` / `doctor` / `auto-test` / `migrate`）各带一条旗标，默认档一字未改。守卫从推导不抄清单：`tests/integration/test_cli_verdict_wiring.py` 钉三条集合等式（parser 声明 `--gate` 的命令 == handler 里传 `enforce=args.gate` 的，6 条；handler 源码出现 `verdict_exit(` == 子命令 help 含「退出码」，10 条），改前基线是空集对 3 条 ⇒ 不是同义反复。另立一条**编码护栏**：CLI 面向文案里的字符必须能被 GBK 编码（`⇒` / `✅` / `❌` 都不行）—— 子进程 stdio 在本机默认 `gbk`，一个字符能让整条命令崩成 rc=1，即**判决码被一个装饰符占掉**（本轮实测两起，一起既有、一起本轮自造）。欠账：`--gate` 是二值档、计数形判决位没有阈值（A99），含 emoji 的用户数据仍会崩（A98），三条命令的判负路径只由桩覆盖（A100）。详见 §3.30 |
 | 断点文件损坏 | 记录 ERROR 并返回 `None`，退化为从头开始 |
 
 「取前 N 条」这一类旋钮（`limit` / `offset` / `top_k` / `preview_size` / `batch_size`

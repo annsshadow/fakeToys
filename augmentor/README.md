@@ -253,6 +253,8 @@ python cli.py export --input data.json --output sample.json --max-items 100 --sh
 
 # 质量报告
 python cli.py quality-report --input data.json --output quality_report.json
+# 想让它当 CI 门禁：加 --gate，「总体状态: 未通过」时退出码才变 1（不加则恒 0，报告照出）
+python cli.py quality-report --input data.json --threshold 0.8 --gate
 
 # 数据可视化（不传 --output 时生成图表；传 --output 时输出文本/JSON 报告）
 python cli.py visualize --input data.json --output-dir visualizations/
@@ -287,6 +289,18 @@ python cli.py version --action compare --version v1.0.0   # 缺省与当前版�
 python cli.py version --action load --version v1.0.0 --output loaded.json
 python cli.py version --action rollback --version v1.0.0
 ```
+
+> **CLI 退出码只有三种形状**（L55 起，`augmentor/cli/verdict.py` 是唯一出口）：
+> `0` = 判决通过，或这条命令压根不判负；`1` = 判决未通过，**或**命令抛异常被 `main()`
+> 翻译成 `错误: …` + `1` ⇒ 同样是 1，靠 **stderr 有没有「错误:」** 分「判负」与「崩溃」；
+> `2` = 参数用法错误（argparse）。校验形命令（`validate` / `validate-config` /
+> `dependency --action validate` / `health-gate`）判负即 `1`；报告形命令（`quality-report` /
+> `audit` / `check-leakage` / `doctor` / `auto-test` / `migrate`）**默认恒 0**，加 `--gate`
+> 才把各自的判决位（`overall_passed` / `ready` / `is_clean` / `all_required_present` /
+> 失败用例数 / 失败迁移条数）翻译成退出码。哪些命令接了这套口径由
+> `tests/integration/test_cli_verdict_wiring.py` 从 **parser 声明与 handler 源码双向推导**
+> 对账（声明 `--gate` 的命令 == handler 里真传 `enforce=args.gate` 的；源码出现
+> `verdict_exit(` == 子命令 help 里宣称「退出码」的），不抄清单。
 
 > **3.0 破坏性变更（命令面）**
 >
