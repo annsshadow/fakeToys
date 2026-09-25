@@ -13,6 +13,7 @@ from ..config import ModelConfig
 from ..cache import MemoryCache, DiskCache
 from ..exceptions import ModelGenerateError, ModelResponseError
 from ..retry import with_retries, classify_error
+from ..validation import require_count
 
 logger = logging.getLogger(__name__)
 
@@ -218,7 +219,8 @@ class ModelBackend(ABC):
 
         Args:
             prompt: 输入提示
-            max_retries: **总尝试次数**（含首次调用），默认 3
+            max_retries: **总尝试次数**（含首次调用），默认 3。必须是不小于 0 的
+                整数；0 读作「不重试」（即只调用一次）。
             retry_delay: 首次重试的基础等待（秒），默认 1.0
         
         Returns:
@@ -227,8 +229,10 @@ class ModelBackend(ABC):
         Raises:
             ModelGenerateError: 重试次数用尽后仍失败，或遇到不可重试的错误
                 （如 401/403/404 —— 重试只会浪费配额）
+            DataValidationError: max_retries 为负数或非整数
         """
         # max_retries 的既有语义是「总尝试次数」，不是「额外重试次数」
+        require_count("max_retries", max_retries, minimum=0)
         attempts = max(1, max_retries if max_retries is not None else 3)
         delay = retry_delay if retry_delay is not None else 1.0
 
