@@ -4,8 +4,12 @@
 """models 工厂与会话池测试
 
 覆盖 create_model_backend 类型映射、不支持类型报错、_get_session
-连接池复用、close 重置会话。
+连接池复用、close 重置会话、传输层重试口径唯一（A69/L46）、
+HTTPAdapter 不可用时的降级路径（A71/L46）。
 """
+
+import sys
+from types import ModuleType
 
 import pytest
 
@@ -117,6 +121,102 @@ class TestSessionPool:
         backend = create_model_backend(_cfg("openai"))
         backend.close()  # 从未创建会话
         assert backend._session is None
+
+
+class TestTransportRetrySingleSource:
+    """传输层不重试——重试口径唯一（A69 / L46）
+
+    业务层 `with_retries` + `classify_error` 是本仓库唯一的重试层。历史上
+    `_get_session` 还挂了第二层 urllib3 `Retry(total=3, status_forcelist=[429,...])`，
+    但它对**本仓库的 6 个调用点一个都不生效**（全部是 POST，而 urllib3 默认只重
+    idempotent 方法），只会让读代码的人误判「最坏请求数」。删除它的理由是契约诚实，
+    不是性能（实测差异在噪声内，见 docs/ARCHITECTURE.md §3.20）。
+
+    本组测试钉住三件事：
+    1. 传输层重试为 0 —— 若有人重新挂上 Retry，这里必须连同口径文档一起改；
+    2. 连接池参数没被顺手删掉 —— 那才是 `_get_session` 存在的意义；
+    3. urllib3 的默认幂等方法集不含 POST —— 这条是「删除等价于无操作」的前提，
+       若哪天上游改了默认值，本测试会红，提示重新审计而不是静默放大请求数。
+    """
+
+    @pytest.mark.parametrize(
+        "type_name", ["openai", "ollama", "claude", "gemini", "baidu"]
+    )
+    @pytest.mark.parametrize("url", ["http://api.example.com/v1", "https://api.example.com/v1"])
+    def test_transport_layer_retries_nothing(self, type_name, url):
+        """每个后端的 http/https 适配器都必须 0 次传输层重试
+
+        分两个 scheme 是必要的：真实 API 端点全是 https，只钉 http 会留下
+        「https 上偷偷挂着重试」的盲区。
+        """
+        adapter = create_model_backend(_cfg(type_name))._get_session().get_adapter(url)
+        assert adapter.max_retries.total == 0
+
+    @pytest.mark.parametrize("url", ["http://api.example.com/v1", "https://api.example.com/v1"])
+    def test_status_codes_are_not_adjudicated_by_transport(self, url):
+        """状态码是否可重试只能由 `classify_error` 判定，传输层不得持有 status_forcelist"""
+        adapter = create_model_backend(_cfg("openai"))._get_session().get_adapter(url)
+        assert not getattr(adapter.max_retries, "status_forcelist", None)
+
+    def test_connection_pool_survives_the_removal(self):
+        """删 Retry 不能把连接池一起删了——池才是复用会话的收益来源"""
+        adapter = (
+            create_model_backend(_cfg("openai"))._get_session().get_adapter("https://x/v1")
+        )
+        assert (adapter._pool_connections, adapter._pool_maxsize) == (10, 20)
+
+    def test_urllib3_does_not_retry_post_by_default(self):
+        """上游事实的变化会改变「删掉 Retry」的语义，因此把它钉成断言
+
+        这解释了为什么删除前后逐档请求数一致（恒 503 服务上：
+        max_retries=0/1/3/None → 服务端 1/1/3/3 次）。
+        """
+        from urllib3.util.retry import Retry
+
+        allowed = Retry(3).DEFAULT_ALLOWED_METHODS
+        assert "POST" not in allowed
+        assert {"GET", "HEAD", "OPTIONS", "PUT", "DELETE", "TRACE"} <= set(allowed)
+
+    def test_no_transport_retry_is_mounted_anywhere_in_the_session(self):
+        """逐个已挂载前缀检查，不看默认的两个键会不会漏掉 git+http:// 之类"""
+        session = create_model_backend(_cfg("openai"))._get_session()
+        prefixes = {"http://", "https://"}
+        assert prefixes <= set(session.adapters), "会话必须挂载 http/https 适配器"
+        assert all(a.max_retries.total == 0 for a in session.adapters.values())
+
+
+    def test_degraded_session_names_the_real_cause(self, monkeypatch, caplog):
+        """HTTPAdapter 导入失败时，日志必须指出少的是连接池而不是 requests 本体
+
+        A71：原文案「requests 未安装」在这种情况下必然为假——能走到这个
+        except 说明 `import requests` 刚刚成功；把排查方向带偏的日志等于没有日志。
+        """
+        import requests
+
+        # 一个没有 HTTPAdapter 属性的假 requests.adapters ⇒ 精确命中降级分支
+        monkeypatch.setitem(sys.modules, "requests.adapters", ModuleType("requests.adapters"))
+        with caplog.at_level("WARNING"):
+            session = create_model_backend(_cfg("openai"))._get_session()
+
+        assert isinstance(session, requests.Session)
+        assert "HTTPAdapter" in caplog.text
+        assert "requests 未安装" not in caplog.text
+        # 降级路径也不得留下第二层重试：requests 自带适配器同样是 0 次
+        assert session.get_adapter("https://api.example.com/v1").max_retries.total == 0
+
+    def test_missing_requests_raises_instead_of_faking_a_degradation(self, monkeypatch):
+        """requests 本体缺失必须原样抛 ImportError，而不是走降级分支
+
+        A71 的另一半：原写法在 `except ImportError` 里再 `import requests`，
+        等价于「把同一个 ImportError 原样再抛一次，但先打一条假告警」；
+        去掉那次冗余 import 后，若还留着裸 `requests.Session()`，症状会换成
+        一个与根因无关的 NameError。硬依赖缺失 = 直接崩，才是 fail loud。
+        """
+        monkeypatch.setitem(sys.modules, "requests", None)
+        backend = create_model_backend(_cfg("openai"))
+        with pytest.raises(ImportError):
+            backend._get_session()
+        assert backend._session is None, "失败后不得留下半初始化的会话"
 
 
 class TestCounters:

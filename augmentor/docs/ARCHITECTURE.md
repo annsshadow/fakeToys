@@ -949,6 +949,9 @@ config.augmentation.max_retries / retry_delay
 要不要把那副死适配器改成真生效（加 `allowed_methods`）是另一笔决策，风险是与 `with_retries` 叠乘
 （`attempts=3` 时最坏 3×4 次真实请求、两副退避各算各的），已单立账本 **A69** 待拍，本轮不动它。
 
+> **L46 就地更新本节**：上表是**传输层 `Retry` 还在时**的实测快照，其中 GET 那一档随 L46 的删除
+> 变成 1 次（POST 各档不变）；「本轮不动它」也已被 §3.21 的 A69 关闭取代。本节其余结论仍然成立。
+
 **新判据 `validation.require_seconds(name, value, minimum=0.0)`**：拒 `bool`、拒字符串、拒 NaN、
 拒负值，接受 int 与 `+inf`（`+inf` 由 `compute_delay` 尾部的 `min(max_delay, …)` 夹住，语义有界）。
 它必须存在的原因是实测：`compute_delay` 对坏值**不抛异常，只换档** —— `base_delay=NaN` → `30.0`
@@ -980,6 +983,83 @@ config.augmentation.max_retries / retry_delay
 全量 **4762 passed / 2 skipped**（**4701 + 61 精确对上**，总计 99.02%，门禁 80% 通过）。
 既有断言只改 1 处，且是**故意收紧**：`test_pipeline_forwards_cache_options` 的精确字典 pin 被工厂契约
 变宽打红，补两键显式认领而非放宽。16 文件 **+460 / −24**，逐文件行数差与 numstat 净值精确相等。
+
+### 3.21 L46：删掉从不起跑的传输层重试，顺手把降级分支说成真话（关闭 A69 / A71）
+
+§3.20 留下的那笔「死适配器去留」在本轮拍定，取 A69 的建议方向 ①：
+`_get_session` 里 `HTTPAdapter(max_retries=Retry(total=3, backoff_factor=0.1, status_forcelist=[429,500,502,503,504]), …)`
+的 `max_retries` 参数整个删掉，只留 `HTTPAdapter(pool_connections=10, pool_maxsize=20)`。
+删之前先做可达面普查（非测试代码 6 处请求点）：**6/6 全是 `session.post(...)`，零 GET/PUT/DELETE，
+`Session()` 构造点 2 处且都在这同一个函数里**，且全仓 `grep -r "urllib3"` 只命中这一处 ⇒ 那副 Retry
+唯一可能被读到的方法面（GET/HEAD/OPTIONS/PUT/TRACE/DELETE）在本仓不存在。方向 ②（加
+`allowed_methods={'POST'}` 让它真重）实测确认是叠乘风险而不是收益，不采。
+
+**行为不变的证据是同进程交错 A/B，不是「读了一遍代码」**（Temp `l46_ab2.py`，恒 503 / 恒 200 的本地
+回环 `ThreadingHTTPServer` 数服务端收到的请求，两档只换适配器、其余路径完全一致）：
+
+| 适配器 | `generate(max_retries=0/1/3/None)` 的服务端请求数 | 恒 200 时单次请求计数 |
+|--------|---------------------------------------------------|------------------------|
+| 挂 `Retry(total=3, status_forcelist=…)`（改前） | **1 / 1 / 3 / 3** | **1** |
+| 只留连接池（改后） | **1 / 1 / 3 / 3** | **1** |
+
+墙钟两档各测 4 组（正反序各两轮，min + 中位）：失败档绝对差在 **−28 ~ +40 µs** 之间跳、成功档在
+**−10 ~ −40 µs** 之间跳，**符号跨轮不稳**，量级 ≤ 一次回环往返（≈620–2,300 µs）的 4 %
+⇒ **本轮没有性能收益可主张**，删除的理由是契约诚实（少一层不存在的重试 ⇒ 少一个会被抄成数字的乘数，
+§3.20 那个「12 次」就是这么来的）。顺带得到一条新纪律：**A/B 至少正反序各一轮，符号不稳就不许写收益**。
+
+**连接池数字按原文核过**（requests 2.33.1 `HTTPAdapter.__init__` 源码与其 docstring）：
+`DEFAULT_POOLSIZE = 10`、`DEFAULT_RETRIES = 0`、`DEFAULT_POOLBLOCK = False` ⇒
+`pool_connections=10` 与上游默认同值（写了等于没写，但保留显式写法免得依赖上游不变），
+`pool_maxsize=20` 是本仓唯一偏离默认的项；`pool_connections` 语义是「缓存多少个 host 池」
+（每个后端实例一个 session、一个 host ⇒ 远未触顶），`pool_maxsize` 是单池连接上限。本仓各模块默认并发
+`max_workers ∈ {3, 4, 5}`（`expander.py:30` / `export.py:51` / `multilingual.py:43` / `context.py:21` /
+`pipeline.py:554`）⇒ 20 有 4 倍余量，且它是 per-host 上限，不构成跨后端瓶颈。原作者注释从未说明这两个数，
+本节只是把「实测得到的关系」补成可核对的话，不宣称这就是当初的理由。
+
+**A71：降级分支同时修三处说谎的地方。** 原形是
+`except ImportError: logger.warning("requests 未安装，使用基础连接"); import requests; self._session = requests.Session()`，
+三条 import 任一失败都进这里，而分支第一句就把已经成功的 `import requests` 再跑一次。本轮改成
+「`import requests` 在 `try` 外面先做、只有 `from requests.adapters import HTTPAdapter` 包在可降级的
+`try/except ImportError` 里」，于是三种情形各得其所：requests 本体缺失 ⇒ 原样抛 `ImportError`（硬依赖，
+fail loud，不再先打一条假告警再抛一个无关异常）；`HTTPAdapter` 缺失 ⇒ 降级为无连接池 session 且日志写明
+降级掉的是连接池；正常 ⇒ `logger.info("创建 HTTP 会话（带连接池）")`。同函数里那句
+`Returns: requests.Session 或 httpx.Client` 也一并更正 —— 全仓（含 `requirements*.txt`）
+`grep httpx` 只命中这一行 docstring，是个从未兑现过的幻影契约。
+**该分支不是死代码**：`tests/unit/test_micro_branches_l62.py::test_import_error_falls_back_to_plain_session`
+一直在测它（用一个缺 `HTTPAdapter` 属性的假 `requests.adapters` 命中），所以「产品不可达」与「无覆盖」是两件事，
+账本 A71 原句偏松，已就地校正。
+
+**新钉的测试**（`tests/unit/test_model_backend.py::TestTransportRetrySingleSource`，7 条定义 = **17 例**）：
+① 5 个后端 × http/https 两个 scheme 的适配器都必须 `max_retries.total == 0`（10 例；只钉 http 会留下
+「真实 API 全走 https」的盲区）；② 传输层不得持有 `status_forcelist`（状态码可否重试只能由
+`classify_error` 裁决，2 例）；③ 删重试不许把 `pool_connections/pool_maxsize` 一起删了；④ 一条**上游事实哨兵**
+—— `Retry(3).DEFAULT_ALLOWED_METHODS` 不含 POST，若哪天 urllib3 改了默认，这条会红，提示重新审计而不是
+静默放大请求数；⑤ 会话里**每个**已挂载前缀都要 0 重试（不看 `http://`/`https://` 之外的键就漏了）；
+⑥ 降级分支的两条断言（日志文案指对根因 + 降级后的 session 同样 0 次传输重试）；
+⑦ requests 本体缺失 = 抛 `ImportError` 且 `_session` 仍是 `None`（不留半初始化状态）。
+
+**交叉核对退避封顶时撞出来的新缺陷（账本 A72，本轮不修只记）**：`with_retries` 在服务端给出
+`Retry-After` 时走的是另一条分支（`delay = min(MAX_RETRY_AFTER, max(0, suggested))`），
+**`max_delay` 参不到场** ⇒ `generate()` 传进去的 `ModelBackend._MAX_RETRY_DELAY = 30.0` 对限流指令无效。
+实测（Temp `l46_retryafter.py`，注入 sleeper）：429 + `Retry-After: 45 / 300 / 3000` 的等待序列是
+`[45, 45] / [300, 300] / [300, 300]` ⇒ 那句「单次重试等待上限」在最坏情形差 10 倍，默认档一次
+`generate()` 可以睡 2 × 300 = 600 s 而不是 60 s，L45 给配置旋钮定的 `retry_delay ≤ 60 s` 同样被旁路。
+量这一条踩了两个探针坑，都值得记住：`with_retries` 的 `sleeper=time.sleep` 是**定义时绑定的默认参数**，
+事后 `mock.patch("augmentor.retry.time.sleep")` 拦不住（v1 因此量出「sleep 序列 = []」差点误报成产品没等）；
+`classify_error` 只在 `isinstance(status_code, int)` 时才认定状态码，用 `mock.Mock()` 充当 response 会静默
+退化成「无建议等待」（v1 那四条全 `[1.0, 2.0]` 就是这么来的）—— **探针量出「没有症状」时，先证明探针能看见症状。**
+
+**证据**：注入两轮。① 把 `Retry(total=3, status_forcelist=…)` 原样挂回去 ⇒ 定向 17 例中
+**13 红 / 4 绿**，那 4 条绿正是**不该红**的四条（连接池参数不受注入影响、上游事实哨兵、
+HTTPAdapter 降级路径、必需依赖缺失路径）。② 三条结构注入（Temp `l46_inject2.py`，定向 43 例子集）：
+把 `except ImportError` 改成 `raise`（取消降级）⇒ **2 红**（本轮新增的降级文案例 +
+`test_micro_branches_l62.py::test_import_error_falls_back_to_plain_session`，证明那条 L62 老例确实在守这条分支）；
+把 `import requests` 放回 `try` 内（复原改前形状）⇒ **1 红**（只有本轮新加的 `test_missing_requests_…` 红，
+L62 那条例看不见这个隐患 ⇒ 一条既有测试守住的分支不等于守住它的全部隐患形状）；日志文案退回
+「requests 未安装」⇒ **1 红**。两轮还原后均按原始字节核对一致，定向子集回到 43 例全绿。
+全量 **4779 passed / 2 skipped**（**4762 + 17 精确对上**，39.10 s，总计 99.02%，门禁 80% 通过，
+2 skip 仍是既有 chromadb 缺依赖）。`models/base.py` **+24 / −25**（净 −1 行：删掉的是重试装配与一次
+冗余 import，加上的是更清楚的控制流与三条诚实注释），测试 **+101 / −1**、本文档 **+82 / −1**（1,156 → 1,237 行）。
 
 ## 4. 核心数据流
 
@@ -1067,9 +1147,10 @@ config.augmentation.max_retries / retry_delay
 | 层次 | 策略 |
 |------|------|
 | 单条数据生成失败 | 记录 ERROR 日志，该条标记为 failed，不中断整体任务 |
-| 模型调用失败 | 指数退避重试，`generate(max_retries=…)` 传的是**总尝试次数**（不是额外次数）且下界 0，仍失败则抛出由上层捕获。**缺省档位自 L45 起来自配置 `augmentation.max_retries` / `retry_delay`**（经 `create_model_backend` 透传，见 §3.20）；重试口径唯一在 `retry.with_retries` 这一层，`models/base.py` 那副传输层 `Retry` 对 POST 不生效（§3.20 实测） |
+| 模型调用失败 | 指数退避重试，`generate(max_retries=…)` 传的是**总尝试次数**（不是额外次数）且下界 0，仍失败则抛出由上层捕获。**缺省档位自 L45 起来自配置 `augmentation.max_retries` / `retry_delay`**（经 `create_model_backend` 透传，见 §3.20）；重试口径唯一在 `retry.with_retries` 这一层 —— 传输层自 L46 起不配任何重试（`HTTPAdapter` 只留连接池，见 §3.21），因为对 POST 它本来一次都不会跑，留着只会让人误算出「两层叠乘的请求上界」。**注意封顶只封住退避计算那一支**：服务端给 `Retry-After` 时改由 `retry.MAX_RETRY_AFTER`（300 s）封顶、`_MAX_RETRY_DELAY`（30 s）参不到场，这一条口径尚未拍定（账本 A72，细节见 §3.21） |
 | 可选依赖缺失 | 降级并记录 WARNING，功能跳过而非崩溃 |
 | 必需依赖缺失 | 抛 `ImportError` 并给出安装命令，不静默 |
+| ↑ 的具体落点：`models/base.py:_get_session`（L46 起） | 上两行原本在这里**互相打架**：`requests`（必需）与 `requests.adapters.HTTPAdapter`（可降级）共用一个 `except ImportError`，于是必需依赖缺失也会先打一条「requests 未安装，使用基础连接」再抛。现拆为「`import requests` 在 `try` 外 ⇒ 必需缺失直接抛；只有 HTTPAdapter 包在可降级的 `try/except` 里 ⇒ 降级为无连接池裸 Session」，两条约定各归各位（详见 §3.21） |
 | 配置缺失 | 使用 dataclass 默认值；环境变量缺失替换为空字符串 |
 | 配置文件损坏 | 抛出异常，不吞掉 |
 | API 层 | 转换为 `HTTPException`，`404` / `400` / `500` 语义明确 |
