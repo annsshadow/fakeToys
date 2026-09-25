@@ -10,6 +10,8 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 from pathlib import Path
 from .exceptions import ConfigError, DataValidationError
+from .logging_setup import (apply_logging_config, assert_format_renderable,
+                            level_number)
 from .retry import MAX_RETRY_AFTER
 from .validation import (require_count, require_ratio, require_seconds,
                          require_string, require_string_list)
@@ -309,10 +311,43 @@ class WebConfig:
 
 @dataclass
 class LoggingConfig:
-    """日志配置"""
-    level: str = "INFO"
-    file: str = "app.log"
-    format: str = "%(asctime)s - %(levelname)s - %(message)s"
+    """日志配置（L57 / A97 起真的生效）
+
+    三档默认值不是「想要的样子」而是**今天实际发生的样子**：CLI 进程里 root logger
+    一个 handler 都没有，日志走 `logging.lastResort`，那是 WARNING 档 + `%(message)s`
+    裸消息落 stderr。实测（Temp `l57/probe1.txt` P0/P1）按这三档装上 handler 之后同一条
+    WARNING 的 stderr 逐字节不变 —— 所以「没写 `logging` 节」与「写了三档默认值」
+    在两个面上同形。
+
+    `file` 默认空串 = **不落文件**。相对路径按进程工作目录解释，父目录必须已存在。
+    """
+    level: str = "WARNING"
+    file: str = ""
+    format: str = "%(message)s"
+
+    def __post_init__(self):
+        """运行时判据：三键各有一个人话可执行的错法，且与校验器同一批判据
+
+        - `level: INFORMATION`（看着像拼错的 INFO）⇒ 数值化失败，出声拒收。允许集
+          只有 `logging_setup.LOGGING_LEVELS` 一份，`config_validator` 的 `choices`
+          规格引的就是它。
+        - `format: "%(nope)s"`（构造期合法、发一条才炸）⇒ 由
+          `logging_setup.assert_format_renderable` 对着真 record 试渲染一次挡掉；
+          同一个串在一个进程里只探一次（判据不省，省重复），理由见该函数 docstring。
+        - `file: 1` / `file: null` ⇒ 类型判据。空串是**合法值**（= 不落文件），
+          所以这里不能用拒空串的 `require_string`；`None` 由 `_reject_null_fields`
+          挡（写了键没给值）。
+        """
+        _reject_null_fields("logging", self)
+        require_string("logging.level", self.level)
+        level_number(self.level)
+        require_string("logging.format", self.format)
+        assert_format_renderable(self.format)
+        if isinstance(self.file, bool) or not isinstance(self.file, str):
+            raise DataValidationError(
+                f"logging.file 必须是字符串（空串 = 不落文件），当前是 "
+                f"{self.file!r}（{type(self.file).__name__}）"
+            )
 
 
 @dataclass
@@ -371,8 +406,22 @@ def _load_section(raw_config: Dict, key: str, config_class: type, defaults: Dict
     """
     if key not in raw_config:
         return config_class(**defaults)
-    
+
     conf = raw_config[key]
+    # 只写一个节名、下面什么都没有（`logging:`）时 YAML 给的是 `None`，与 A94 里
+    # 0 字节文件同形；`logging: app.log` 这种「把节当值写」给的是标量。两种过去都
+    # 在 `conf.get` 上抛 `AttributeError: 'NoneType' object has no attribute 'get'`
+    # / `'str' object has no attribute 'get'`（实测 Temp `l57/probe1.txt` P4/P5：
+    # **每一节**都同形，不止 logging），用户拿到的是无法行动的栈。语义与 A94 一致：
+    # 写了节名而什么都没写 = 该节全默认；写成标量则是摆错了形状，明说。
+    if conf is None:
+        return config_class(**defaults)
+    if not isinstance(conf, dict):
+        raise ConfigError(
+            f"{key} 必须是「键: 值」的映射，当前是 {conf!r}"
+            f"（{type(conf).__name__}）"
+        )
+
     kwargs = {}
     for param_name, default_value in defaults.items():
         kwargs[param_name] = conf.get(param_name, default_value)
@@ -517,13 +566,22 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
                 ],
             }),
             ('logging', LoggingConfig, {
-                'level': 'INFO', 'file': 'app.log',
-                'format': '%(asctime)s - %(levelname)s - %(message)s'
+                'level': 'WARNING', 'file': '',
+                'format': '%(message)s'
             }),
         ]
         
         for key, config_class, defaults in config_sections:
             setattr(config, key, _load_section(raw_config, key, config_class, defaults))
+        
+        # 装配日志排在「写了没人读」出声**之前**：`logging.level: ERROR` 从此真的
+        # 能静音那条 WARNING 通道（A97 与 A84 必须同屏读 —— 有反馈通道还得有旋钮）。
+        # 刻意只对「文件里真的出现的 `logging` 节」动手，且只对它写出的键动手，
+        # 理由见 `logging_setup` 模块 docstring；SDK 直构 `AppConfig()` 到这里一步
+        # 都不发生，所以不传路径 / 不写节 = 两个面一字不变。
+        raw_logging = raw_config.get('logging')
+        if isinstance(raw_logging, dict):
+            apply_logging_config(config.logging, written=set(raw_logging))
         
         _log_unread_keys(raw_config)
     
@@ -570,6 +628,15 @@ def save_config(config: AppConfig, config_path: str = "config.yaml") -> None:
         return obj
 
     data = _to_dict(config)
+
+    # `logging` 节由用户手写，工具不代笔（A97）。装配的生效条件是「文件里真的写了
+    # 这节」，而 `save_config` 一旦把三档默认值 dump 出去，下次加载就从「没写」变成
+    # 「写了」—— 一条用户没要求的隐藏激活路径：API 侧会把 `basicConfig` 的
+    # `%(name)s` 格式覆盖掉。下面保留既有段落的循环会原样带回文件里真有的这节，
+    # 所以这个 pop 只挡「无中生有」，不丢用户手写的配置。`POST /api/config` 也不能
+    # 改这节（它只认 augmentation/quality/dedup/export/vector/rag/multimodal 七节），
+    # 于是这里没有任何会丢的写入路径。
+    data.pop("logging", None)
 
     # 默认模型并入 models.default：这是 load_config 唯一认的键
     models = data.get("models") or {}

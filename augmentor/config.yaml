@@ -391,13 +391,25 @@ web:
     - /redoc
     - /openapi.json
 
-# 日志配置
-logging:
-  # 日志级别
-  level: INFO
-  
-  # 日志文件
-  file: app.log
-  
-  # 日志格式
-  format: "%(asctime)s - %(levelname)s - %(message)s"
+# 日志配置（L57 / A97 起真的生效，但**默认整节注释掉**）
+#
+# 生效条件是「这一节写在文件里」：整节不存在时 CLI 与 API 的日志一字不变（CLI 走
+# `logging` 模块自己的兜底 handler，API 走 `api/main.py` 的 `basicConfig`）。取消
+# 注释后，**只有你写出来的那几个键**会被装配，没写的键不动今天的形状。
+#
+# - `level`：CRITICAL / ERROR / WARNING / INFO / DEBUG / NOTSET 之一，必须大写。
+#   `WARNING` 就是今天的档；想看 `[OK]` 一类的 INFO 进度日志要写 `INFO`。
+#   它同时管住「配置里写了没人读的键」那条 WARNING —— 想静音就写 `ERROR`。
+# - `file`：日志文件路径，空串 = 不落文件（默认）。相对路径按**进程工作目录**解释，
+#   父目录必须已存在（不会替你建目录）。
+# - `format`：标准 `logging` 格式串，必须能真的渲染 —— `%(asctime)s` 这类合法，
+#   拼成 `%(messge)s` 会在加载时被拒，而不是让每条日志变成一坨 traceback。
+#
+# 想要「日志同时进一个文件、控制台保持原样」，最小写法是只写一行：
+#   logging:
+#     file: data/app.log
+#
+# logging:
+#   level: WARNING
+#   file: ""
+#   format: "%(message)s"

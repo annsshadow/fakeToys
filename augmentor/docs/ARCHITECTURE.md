@@ -1822,6 +1822,14 @@ stdout。**但「用户能不能用配置把它静音」这一问本轮答不了
 **零应用方** ⇒ 见 A97。出厂 `config.yaml` **零命中**（实测 `cli stats` 的
 stderr 为空）⇒ 正常一次运行**一行都不多**，只有拼错才出声。
 
+> **L57 勘误（上面那句「本轮答不了」已被 L57 答完，原文一字未删）**：A97 已结案，三键从
+> L57 起有消费方（`augmentor/logging_setup.py`，由 `load_config` 在**节真的写出**时调用）。
+> 那一轮留的两个不确定性各自有了实测答案：`api/main.py` 那次硬编码 `basicConfig` **一字未动**
+> （装配只 refine 已存在的 handler，且「没写出的键不动」，否则「只想加个日志文件」会顺手把
+> API 的全部 INFO 日志压回 WARNING）；`logging.lastResort` 兜底那条路也**没被改掉**，默认值就是
+> 按它的形状写的（WARNING + `%(message)s` + 无 handler），所以 14 条命令逐字节不变。
+> 静音旋钮从此存在：`logging: {level: ERROR}` ⇒ 107 B / 1 行 变 0 B / 0 行。详见 §3.32。
+
 **同源而不是抄写（A77 那一族的正解）**：新增 `config_validator.unread_key_messages(config)`，内部调的正是
 `validate_config` 用的同一个 `ConfigValidator._warn_unread_keys`；比对两条通道时不许各抄一份文案，于是把
 那句文案的共同词落成常量 `ConfigValidator.UNREAD_MARKER = "没人读取"`，用例用**同一个常量**过滤
@@ -2061,6 +2069,83 @@ help 文案变化不进任何断言。**仓外脚本未量**（与 A89 同一条
 **性能不主张任何方向**：`harden_stdio()` 是进程启动期两次属性判断加至多两次 `reconfigure`，落在
 解释器启动与 import 的噪音底下，本轮不做 A/B、也不引用任何 µs 数。
 
+### 3.32 L57：把 `logging` 那三个旋钮接上负载 —— 「写了才动手」+ 两侧同判（关闭 A97 / A101 / A105，新立 A102–A104 / A106）
+
+**选题由来是一行 `grep`**：`config.logging` / `LoggingConfig` 的命中自 L54 起**全在
+`config.py` 自己体内** ⇒ `level` / `file` / `format` 三键零应用方。旋钮存在、指针不接负载：
+改 `logging: {level: ERROR}` 静音不了 L54 那条 WARNING，`logging.file` 对应的「日志进文件」
+这件事也从来不存在。本轮补的就是那根指针（`augmentor/logging_setup.py`，新文件）。
+
+**口径一「写了才动手、只动写出的键」不是洁癖而是两个面的形状冲突**：`api/main.py:42-45`
+自己 `basicConfig(level=INFO, format="…%(name)s…")`，CLI 进程却是 root 无 handler、走
+`logging.lastResort`（WARNING + `%(message)s` 裸消息落 stderr）。同一个默认值不可能同时等于
+两个面，所以 `load_config` 只在配置文件里**真的出现 `logging` 节**时调
+`apply_logging_config(config.logging, written=set(raw_logging))`（`config.py:584`），
+`written` 里没出现的键一律不动（`logging_setup.py:132` 起）。默认三档按 CLI 今天的形状写
+（`WARNING` / 空串 / `%(message)s`），实测（Temp `l57/probe1.txt` P0/P1）装上同档 handler
+之后同一条 WARNING 的 stderr **逐字节不变**。
+
+**破坏面先量后写**（Temp `l57/ab.txt` NONCE-L57-AB，四臂真子进程逐字节比）：默认档
+**14 条命令的不等名单为空**，另 2 条（`monitor` / `benchmark`）同一入口连跑自身即变
+（快照 ID / 时间戳）⇒ 按 L52 那条纪律**不进任何主张**，不是「测过了」。
+写出非默认值（`level: INFO` + 带 `%(asctime)s` 的 format）之后 7 条命令 stderr 变多、
+`logging.file` 落盘 14 行而控制台**不少字** —— 都是「用户明确要求了」的那一侧。
+
+**口径二「判据两侧同一份」**：允许集 `LOGGING_LEVELS`（`logging_setup.py:42`）只有一处定义，
+`config_validator` 的 `choices` 规格与运行时 `level_number` 都引它；`format` 的可渲染性判据
+调同一个 `build_formatter`，理由是 `Formatter("%(nope)s")` 构造期合法、到发第一条日志才抛，
+而 `Handler.emit` 会把它变成**每条日志一行**的 `--- Logging error ---` + 31 行 traceback
+（实测 `l57/probe2.txt` P2/P3）。两侧同判冻成三条集合等式（`tests/unit/test_config_validator.py`
+的 `non_empty` / `choices` / `renderable` 各自等于运行时真判的那份），承 L51 的 A77 教训。
+
+**A105：本轮自己造出来的代价，同轮量出来、同轮修掉**。接上判据之后 `load_config` 在
+**配置里从没写 `logging` 节**的机器上慢 **+30~+37 µs、三轮同号**（Temp `l57/cost_prememo.txt`
+NONCE-L57-COST，head/工作树交替三轮）。根因不在判据而在它被挂了**两遍** —— 一次加载构造两次
+`LoggingConfig`（`AppConfig()` 的 default_factory、`_load_section` 各一次），`__post_init__`
+每次都要对着真 record 试渲染默认串。计数是**直接包装 `logging.LogRecord.__init__` 数出来的**
+（Temp `l57/rec.txt` / `rec_prememo.txt` NONCE-L57-REC）：修前 2 条/次加载、修后
+无节 0 条、写出 `format` 1 条（剩下的是装配真要用的那个 Formatter）。修法是缓存
+「已通过」的格式串（`assert_format_renderable`，`logging_setup.py:95`），**判据一条不省**：
+缓存只收 `build_formatter` 通过之后的串，坏串永远走真判据。修后同一读数是
+`−1.1 / +6.6 / +5.5 µs`、**不再同号** ⇒ 按口径不进主张；还站得住的只有
+`AppConfig()` 纯构造 **+0.4~+0.7 µs（同号）**。两条变异坐实这组用例不是摆设：删掉缓存短路
+⇒ 恰 3 红（正是那三条计数断言）；把缓存改成「含坏串一起收」⇒ 2 红（每次都出声那条 +
+SDK 直构拒收那条）。
+
+**两处仪器自身的坑，都记下来**（同一族的「解析器返回空 ≠ 没有热点」）：其一，
+`pstats.print_stats(22)` 会**截断**，于是 HEAD 臂里「看不见 `LogRecord.__init__`」与
+「它没被调用」在同一份报告里长得一样 —— 前 22 名之外才是真相，改成直接取未截断的
+`Stats.stats` 字典（键 = 文件/行号/函数，值元组形状**先实测**：本解释器长度 5，
+按文档印象取 `v[2]` 会把 `tottime` 取成 `primitive_calls`）。其二，比对脚本第一版把
+`magnitude` 按**秒**打印而把每轮差值按 µs 打印 ⇒ 整列显示 `+0.00 µs`，与本轮
+「预测侧 `blast.py` 用 `len(decoded_str)`（字符）、实测侧用字节」造成 5 条假不闭合
+是同一个错：**对账之前先统一单位，单位差不是行为差**。
+
+**A101（同轮撞出、同轮修）**：节名写了却没给值（`logging:`）或写成标量（`logging: app.log`）
+时，`_load_section` 在 `conf.get` 上抛 `AttributeError: 'NoneType' object has no attribute 'get'`，
+实测**每一节**同形（`l57/probe1.txt` P4/P5，`web` / `quality` / `dedup` 全中）⇒ 与 A94 是同一根因
+的第二层，修法同 A94：null = 该节全默认，标量 = 明说摆错了形状。
+
+**测试面**：`tests/unit/test_logging_wiring_a97.py` 82 例（含 root handler 按精确类型筛、
+`_empty_root()` 在**测试体内**清空 —— pytest 的 `LogCaptureHandler` 是 `StreamHandler` 子类
+且挂在 call 阶段之后，在夹具里清无效，实测两条断言因此假绿过）+
+`tests/integration/test_cli_logging_wiring.py` 17 例（真子进程、`--config` 必须排在子命令**之前**、
+判据词「键没人读取」与诊断面共用 `ConfigValidator.UNREAD_MARKER` 一个常量）。
+文档两处随轮改：`API.md` 的 L57 勘误（上一轮那句「目前没有把它静音的配置旋钮」已成假）、
+§3.29 末尾的勘误（「本轮答不了」已被本轮答完，原文一字未删）。
+
+**新立四条，都不在本轮动手**：A102 = `logging` 节在 API 面生效**没有行为面用例**
+（`apply_logging_config` 的非测试调用点只有 `config.py:584` 一处，`api/` 与 `cli.py` 各 0 命中；
+`tests/` 里 TestClient 与 logging 同屏的只有 `test_api_dataset_system_tools.py`）；
+A103 = `logging.file` 打不开时**整条配置被拒**（`rc=1`，集成用例 `file: nope_dir/x.log` 实测），
+「配错一个路径就连模型名都用不了」这一刀切口径未拍；A104 = `_open_file_handler`
+（`logging_setup.py:122-124`）用裸 `logging.FileHandler`，**无轮转、无大小上限** ⇒ 长跑进程
+日志无限增长；A106 = `apply_logging_config` 每次加载都先 `_detach_installed` 再重装 ⇒
+写出三键的加载 **+194~+204 µs**（`cost.txt`，三轮同号）且每次**关开一次日志文件**，
+并发调用 `load_config`（`/api/config` 每请求读盘）时还存在「handler 被摘掉」的空窗。
+性能主张只取上面「同号」那部分；§3.31 曾声明「本轮不做 A/B、不引用 µs」，本轮引用 µs
+是因为选题本身就是代价，仪器是 head/工作树**交替三轮** + 直接计数，不是单轮差值。
+
 ## 4. 核心数据流
 
 ### 4.1 数据增强主流程
@@ -2205,6 +2290,16 @@ help 文案变化不进任何断言。**仓外脚本未量**（与 A89 同一条
 `min(-1, n)` 之后 `[:k]` 连吃两次末位裁剪（实测 4 条向量要 `-1` 拿到 2 条），真 chromadb
 对 `0` 与负数抛库内裸 `TypeError`。判据在两侧各自接线，且 chromadb 自己把 `0` 读成
 「0 条结果」而不是交给库去报错——同一个旋钮在两个后端必须同答。
+
+**读数对账的两条口径（L57）**：① **预测与实测对账之前先统一单位**。本轮的破坏面预测把 16 条命令
+的 stderr 增量写成「+72 B / +273 B / …」，实测第一版按**字节**对账 ⇒ 5 条「不闭合」，而这 5 条
+正是含中文的那 5 条 —— 预测侧取的是 `len(decoded_str)`（字符），实测侧取的是字节 ⇒ 单位差被读成了
+行为差。改按同一单位（字符）对账后不闭合名单为空。**两个数不相等时先问它们是不是同一种数**，
+这条与 L55「引用计数器之前先验它的换算」同族。② **仪器返回空 ≠ 没有信号**。`pstats` 的
+`print_stats(22)` 会截断，于是 HEAD 臂里「看不见某个函数」与「它没被调用」在同一份报告里同形；
+换成直接取未截断的 `Stats.stats` 字典，并且**值元组的形状先实测再取索引**（本解释器长度 5，
+按文档印象取 `v[2]` 会把 `tottime` 取成 `primitive_calls`）。同一族的还有显示侧：一份表里
+`magnitude` 按秒打印、每轮差值按 µs 打印 ⇒ 整列 `+0.00 µs`。
 
 
 ## 7. 测试架构

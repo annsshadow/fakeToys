@@ -126,6 +126,29 @@ $ python cli.py validate-config --config typo_config.yaml
   > 一遍（同源性钉在 `tests/unit/test_config_unread_feedback.py`）。
   > 「环境变量未设置」那一路**不进**加载声：它的条数随本机 shell 变，接进来等于让同一份配置
   > 在不同机器上行数不同。
+- **L57 勘误（上面那句「目前没有把它静音的配置旋钮」已为假，原文一字未删）**：`logging`
+  节的三键从 L57 起真的接到了出口（新模块 `augmentor/logging_setup.py`，A97 结案）。
+  现在的口径是：
+  - `level: ERROR` 就能静音那两行「没人读取」—— 实测同一条命令的 stderr 从
+    107 B / 1 行变 0 B / 0 行，而 rc 与 stdout 一字不变（Temp `l57/ab.txt` 判据 4）。
+  - **只收大写级别名**（`WARNING` / `INFO` / `DEBUG` …）：`logging.setLevel` 对小写是
+    `ValueError: Unknown level`，实测两套解释器同形，所以校验器与运行时用**同一份**
+    允许集，谁也不比谁宽（Temp `l57/probe2.txt` P4）。
+  - `file` 非空时**同时**落文件，**控制台不少字**：root 一有了 handler，`logging.lastResort`
+    就不再兜底，不自己补一条 stderr handler 就等于把 CLI 的输出吃掉（16 条命令实测
+    「控制台被改动的命令: 无」，同文件判据 3）。相对路径按**当前工作目录**解释。
+  - `format` 必须在**加载期**渲染得开：`Formatter("%(nope)s")` 构造期不报错，到发第一条
+    日志才抛，代价是每条日志一行 `--- Logging error ---` + 31 行 traceback。
+  - **默认档一字未改**：14 条命令在「无 `logging` 节 / `logging:` / `logging: {}`」三臂下
+    rc 与两个 stdout/stderr 逐字节相同（`l57/ab.txt` 判据 1），出厂 `config.yaml` 里这一节
+    现在是一段**注释块**（写了才生效，没写就还是今天的形状）。
+  详见 `docs/ARCHITECTURE.md` §3.32、`tests/unit/test_logging_wiring_a97.py`（82 例）与
+  `tests/integration/test_cli_logging_wiring.py`（17 例，真子进程）。
+- **配置节写成 null 或标量（A101，L57）**：只写节名不给值（`logging:`）或写成标量
+  （`logging: app.log`）在改前抛 `AttributeError: 'NoneType' object has no attribute 'get'`，
+  而这不是 `logging` 一节的问题 —— 实测**每一节同形**（`web` / `quality` / `dedup` 全中，
+  Temp `l57/probe1.txt` P4/P5）。现在的口径与 A94 同一档：**null = 该节全默认**（「写了节名
+  没提任何要求」与「没写这节」同形），**标量 = 明确拒收**，报错文案给出该节应有的键集。
 - **0 字节或只含注释的配置文件按全默认处理（A94）**：以前会抛
   `TypeError: argument of type 'NoneType' is not iterable`（该文案随解释器版本而变），
   CLI 上表现为「错误: …」+ `exit 1`；现在它与「路径不存在」同档 —— 拿到出厂默认、`exit 0`。
