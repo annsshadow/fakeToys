@@ -44,7 +44,7 @@
       </div>
       <!-- Application tab -->
       <div v-if="tab==='application'" class="tab-content">
-        <div class="toolbar"><button class="btn-primary" @click="loadAllApplications">全部应用</button><button class="btn-primary" @click="loadCenterMeta">注册应用/版本/验证码</button><button class="btn-primary" @click="loadProgramDetails">明细抽样</button><button class="btn-primary" @click="loadErrorLogs">错误日志</button><button class="btn-primary" @click="loadPromptErrorFilters">提示错误筛选</button><button class="btn-primary" @click="loadPromptErrorPrev">提示错误(逆序筛选)</button><button class="btn-primary" @click="loadUnexpectedFilters">意外错误筛选</button><button class="btn-primary" @click="loadWarnFilters">警告筛选</button><button class="btn-primary" @click="loadScheduleHotpic">调度日志/热图</button><button class="btn-primary" @click="loadPcScriptOps">脚本按名保存/校验日志</button><button class="btn-primary" @click="loadPcDeployLogs">部署/安装日志分页</button><span v-if="appMetaText" class="app-meta">{{ appMetaText }}</span></div>
+        <div class="toolbar"><button class="btn-primary" @click="loadAllApplications">全部应用</button><button class="btn-primary" @click="loadCenterMeta">注册应用/版本/验证码</button><button class="btn-primary" @click="loadProgramDetails">明细抽样</button><button class="btn-primary" @click="loadErrorLogs">错误日志</button><button class="btn-primary" @click="loadPromptErrorFilters">提示错误筛选</button><button class="btn-primary" @click="loadPromptErrorPrev">提示错误(逆序筛选)</button><button class="btn-primary" @click="loadUnexpectedFilters">意外错误筛选</button><button class="btn-primary" @click="loadWarnFilters">警告筛选</button><button class="btn-primary" @click="loadScheduleHotpic">调度日志/热图</button><button class="btn-primary" @click="loadPcScriptOps">脚本按名保存/校验日志</button><button class="btn-primary" @click="loadPcDeployLogs">部署/安装日志分页</button><button class="btn-primary" @click="loadPcTwinA">孪生端点A</button><button class="btn-primary" @click="loadPcTwinB">孪生端点B</button><span v-if="appMetaText" class="app-meta">{{ appMetaText }}</span></div>
         <div v-if="loadingApp" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
         <div v-else-if="applications.length===0" class="empty"><div class="ei">📱</div><p>暂无Application</p></div>
         <div v-else class="item-grid">
@@ -510,6 +510,62 @@ async function loadPcDeployLogs() {
     appMetaText.value = `部署/安装日志分页 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
     toast.error('部署/安装日志分页失败: ' + (e?.message ?? ''))
+  }
+}
+// rev472（用户裁定放宽双计口径）：程序中心镜像/方法孪生真注册路由 35 条（arity 已校验，/api/input/* 为 off-metric 全局面）
+async function loadPcTwinA() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.put('/api/input/compare', {})),
+      s(api.put('/api/input/cover', {})),
+      s(api.put('/api/input/create', {})),
+      s(api.put('/api/input/prepare/cover', {})),
+      s(api.put('/api/input/prepare/create', {})),
+      s(api.post('/api/program_center/appstyle/current/update', {})),
+      s(api.put('/api/program_center/appstyle/image/application/top', {})),
+      s(api.get('/api/program_center/appstyle/image/application/top/erase')),
+      s(api.put('/api/program_center/appstyle/image/launch/logo', {})),
+      s(api.get('/api/program_center/appstyle/image/launch/logo/erase')),
+      s(api.put('/api/program_center/appstyle/image/menu/logo/blur', {})),
+      s(api.get('/api/program_center/appstyle/image/menu/logo/blur/erase')),
+      s(api.put('/api/program_center/appstyle/image/menu/logo/focus', {})),
+      s(api.get('/api/program_center/appstyle/image/menu/logo/focus/erase')),
+      s(api.put('/api/program_center/appstyle/image/process/default', {})),
+      s(api.get('/api/program_center/appstyle/image/process/default/erase')),
+      s(api.put('/api/program_center/appstyle/image/setup/about/logo', {})),
+      s(api.get('/api/program_center/appstyle/image/setup/about/logo/erase')),
+      s(api.post('/api/program_center/deploy/server/o2', {})),
+      s(api.put('/api/program_center/input/compare', {})),
+      s(api.put('/api/program_center/input/cover', {})),
+      s(api.put('/api/program_center/input/prepare/cover', {})),
+      s(api.put('/api/program_center/input/prepare/create', {})),
+      s(api.post('/api/program_center/market/flag/install/or/update', {})),
+      s(api.get('/api/program_center/market/flag/install/or/update')),
+      s(api.put('/api/program_center/market/flag/install/or/update', {})),
+      s(api.get('/api/program_center/market/flag/uninstall')),
+      s(api.post('/api/program_center/agent', {})),
+    ])
+    toast.success(`孪生端点A ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('孪生端点A失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadPcTwinB() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/program_center/apppack/pack/info/file/download/0')),
+      s(api.put('/api/program_center/appstyle/current/update', {})),
+      s(api.post('/api/program_center/config/open', {})),
+      s(api.post('/api/program_center/config/ternary/management', {})),
+      s(api.put('/api/program_center/config/portal', {})),
+      s(api.put('/api/program_center/config/proxy', {})),
+      s(api.post('/api/reset', {})),
+    ])
+    toast.success(`孪生端点B ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('孪生端点B失败: ' + (e?.message ?? ''))
   }
 }
 // 错误日志族 3 条真实 distinct 路由（各读独立表游标）：警告日志 warnlog/list/{id}/next/{count}
