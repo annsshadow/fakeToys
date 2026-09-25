@@ -2811,6 +2811,40 @@ class TestDatasetImpact:
         assert "instructionn" in detail, "要回显拼错的字段名"
         assert "instruction" in detail, "要给出该数据集实际有的字段"
 
+    def test_unexpected_compute_error_becomes_500_via_to_http_error(
+        self, tools_env, monkeypatch
+    ):
+        """计算层抛非 ValueError → 500，且把原文回出，而不是被降级成 400
+
+        `dataset_impact` 的 `except Exception as e: raise to_http_error(e)` 这一支在
+        HEAD 上是**未覆盖**的（A63）：正常数据走不到、上面几条 400 用例都在守卫里就
+        拦下了。这里逼 `ImpactEvaluator.evaluate` 抛 `RuntimeError`——它既不是
+        `FileNotFoundError` 也不是 `ValueError`，只可能落到 `to_http_error` 的最后一支
+        （500）。断言状态码 = 500 就是把「意外故障不被误报成客户端错误」钉住。
+        """
+        def boom(self, before, after):
+            raise RuntimeError("计算层内部炸了")
+
+        monkeypatch.setattr("augmentor.impact.ImpactEvaluator.evaluate", boom)
+        response = self._post(tools_env, self.BEFORE, self.AFTER)
+        assert response.status_code == 500, response.text
+        assert "计算层内部炸了" in response.json()["detail"]
+
+    def test_value_error_becomes_400_via_to_http_error(self, tools_env, monkeypatch):
+        """计算层抛 ValueError → 400（`to_http_error` 的「参数/数据不合法」那一支）
+
+        与上一条同族但落在**不同**分支：ValueError 在 `to_http_error` 里被映射成 400
+        并原样回传字符串。这条把「500 与 400 的分岔由异常类型决定」补全——只测 RuntimeError
+        会漏掉 ValueError 这一支照样未覆盖。
+        """
+        def bad(self, before, after):
+            raise ValueError("输入数据不合法")
+
+        monkeypatch.setattr("augmentor.impact.ImpactEvaluator.evaluate", bad)
+        response = self._post(tools_env, self.BEFORE, self.AFTER)
+        assert response.status_code == 400, response.text
+        assert response.json()["detail"] == "输入数据不合法"
+
 
 class TestDatasetEvaluate:
     """/api/dataset/evaluate —— 指标数值必须能被手算复核
@@ -2967,3 +3001,35 @@ class TestDatasetEvaluate:
         assert response.json()["metrics"] == pytest.approx(
             {"bleu": 0.5, "rouge_l": 11 / 12, "similarity": 6 / 7}
         )
+
+    def test_unexpected_compute_error_becomes_500_via_to_http_error(
+        self, tools_env, monkeypatch
+    ):
+        """指标计算层抛非 ValueError → 500
+
+        与 `TestDatasetImpact` 里那两条同构：`dataset_evaluate` 的
+        `except Exception as e: raise to_http_error(e)` 在 HEAD 上未覆盖（A63），
+        上面几条 400 用例全在守卫或 `_as_column` 里就返回了，从没走到 `run()`。
+        这里让 `ModelEvaluator.evaluate_batch` 抛 `RuntimeError`，逼出 500 那一支。
+        """
+        def boom(self, generated, references):
+            raise RuntimeError("指标计算炸了")
+
+        monkeypatch.setattr("augmentor.evaluation.ModelEvaluator.evaluate_batch", boom)
+        response = self._post(tools_env, self.GENERATED, self.REFERENCE)
+        assert response.status_code == 500, response.text
+        assert "指标计算炸了" in response.json()["detail"]
+
+    def test_value_error_becomes_400_via_to_http_error(self, tools_env, monkeypatch):
+        """指标计算层抛 ValueError → 400 且原样回传
+
+        补全分岔的另一侧：`to_http_error` 对 ValueError 判 400，对其它判 500，两条
+        用例各盯一支，缺任一条则那一支照样裸奔。
+        """
+        def bad(self, generated, references):
+            raise ValueError("评分输入不合法")
+
+        monkeypatch.setattr("augmentor.evaluation.ModelEvaluator.evaluate_batch", bad)
+        response = self._post(tools_env, self.GENERATED, self.REFERENCE)
+        assert response.status_code == 400, response.text
+        assert response.json()["detail"] == "评分输入不合法"
