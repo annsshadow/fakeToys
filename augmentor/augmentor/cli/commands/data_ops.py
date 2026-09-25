@@ -73,6 +73,10 @@ def run_validate(args, config):
     print(f"总数据: {result.total_items}, 有效: {result.valid_items}")
     print(f"错误: {result.error_count}, 警告: {result.warning_count}")
 
+    # 判决要能被脚本读到：只有 WARNING 时不判负，与 health-gate 同一口径
+    if not result.is_valid:
+        sys.exit(1)
+
 
 # ============ 数据集转换 ============
 def run_convert(args, config):
@@ -104,6 +108,11 @@ def run_validate_config(args, config):
         print("\n警告:")
         for w in result.warnings:
             print(f"  - {w.path}: {w.message}")
+
+    # A89：判决必须同时体现在退出码上，否则 CI 拿这个命令当门禁会永远绿。
+    # 只按 ERROR 判负（WARNING 含 L52 的「写了没人读」），通过时不抛 SystemExit。
+    if not result.is_valid:
+        sys.exit(1)
 
 
 # ============ 数据集搜索 ============
