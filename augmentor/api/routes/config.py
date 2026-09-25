@@ -8,7 +8,9 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from ..deps import config_file_path, get_pipeline, verify_api_key
+from augmentor.exceptions import DataValidationError
+
+from ..deps import config_file_path, get_pipeline, to_http_error, verify_api_key
 from ..schemas import MessageResponse
 
 router = APIRouter(tags=["config"])
@@ -108,7 +110,7 @@ async def update_config(
     try:
         import dataclasses
 
-        from augmentor.config import save_config
+        from augmentor.config import apply_section_update, save_config
         from augmentor.config_validator import ConfigValidator
 
         p = get_pipeline()
@@ -121,27 +123,34 @@ async def update_config(
         # 拼错/多余的键被静默跳过却仍回 success，用户看不出「写了没生效」，与读路径
         # 的 A76 同族。`ignored_keys` 是给程序消费的干净清单，`message` 附「是否想写
         # X」给人看；判定、状态码与既有 `success`/`message` 的语义都不变，只加一键。
+        #
+        # 写入一律经 `apply_section_update`（L73 / A117）而不是裸 `setattr`：判据住在
+        # 各节的 `__post_init__` 里，裸 `setattr` 不触发它 ⇒ 坏值能挂到运行中的对象上、
+        # 还能被下面的 `save_config` 落盘（当次 200、重启即抛）。该函数要么全落、
+        # 要么整批回滚，所以本端点不再存在「内存已改、文件未写」的中间态。
         ignored: List[str] = []
         notes: List[str] = []
         for section in ["augmentation", "quality", "dedup", "export", "vector", "rag", "multimodal"]:
             if section in updates:
                 section_config = getattr(p.config, section)
                 known = [f.name for f in dataclasses.fields(section_config)]
-                for key, value in updates[section].items():
-                    if hasattr(section_config, key):
-                        setattr(section_config, key, value)
-                    else:
-                        ignored.append(f"{section}.{key}")
-                        notes.append(
-                            f"{section}.{key}"
-                            + ConfigValidator._suggest(key, sorted(known))
-                        )
+                for key in apply_section_update(section_config, updates[section]):
+                    ignored.append(f"{section}.{key}")
+                    notes.append(
+                        f"{section}.{key}"
+                        + ConfigValidator._suggest(key, sorted(known))
+                    )
 
         message = "配置已保存，部分配置需要重启服务生效"
         if ignored:
             message += "（已忽略未知配置项：" + "、".join(notes) + "）"
         save_config(p.config, str(config_file_path()))
         return {"success": True, "message": message, "ignored_keys": ignored}
+    except DataValidationError as e:
+        # 越界的新值要的是 400（「你给的这个值不合法」），不是 500（「服务端坏了」）。
+        # `DataValidationError` 是 `ValueError` 子类，`to_http_error` 那一档正好译成
+        # 400 且回传原文案；必须排在下面的 `Exception` 分支之前，否则一律落 500。
+        raise to_http_error(e) from e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
