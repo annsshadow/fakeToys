@@ -59,6 +59,58 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 的 `config.yaml`）；显式传入时仍按数据白名单校验。`POST /api/config` 保存的也是同一个
 路径，二者不会各写一遍字面量。
 
+### 配置的「写了没人读」反馈（3.x）
+
+拼错的配置键**不会让服务起不来**：`load_config` 只按每节已知的字段取键，多出来的键被
+直接忽略。所以过去的症状是「我明明改了数，行为一点没变」，而 `validate-config` 全程
+沉默。现在这类反馈会进 `warnings`（CLI 的 `validate-config` 与
+`POST /api/system/validate-config` 共用同一份结果）。**仓库里不带示例配置文件**：拿出厂
+`config.yaml` 改两处即可逐字复现下面这份输出 —— 在 `augmentation` 节里加一行拼错的
+`variant_per_seed: 3`（真键 `variants_per_seed` 那行留着），再另加一节拼错的节名：
+
+```yaml
+augmenation:
+  max_retries: 3
+```
+
+```
+$ python cli.py validate-config --config typo_config.yaml
+配置验证结果: 通过
+错误: 0, 警告: 7, 信息: 0
+
+警告:
+  - augmentation.variant_per_seed: 键没人读取: augmentation.variant_per_seed（值不会生效）；是否想写 variants_per_seed？
+  - augmenation: 顶层段落没人读取: augmenation（写了不会生效）；是否想写 augmentation？
+  - models.ernie.api_key: 环境变量未设置: BAIDU_API_KEY
+  - models.ernie.secret_key: 环境变量未设置: BAIDU_SECRET_KEY
+  - models.openai.api_key: 环境变量未设置: OPENAI_API_KEY
+  - models.claude.api_key: 环境变量未设置: ANTHROPIC_API_KEY
+  - models.gemini.api_key: 环境变量未设置: GOOGLE_API_KEY
+```
+
+> 上面这份输出是本轮在两套解释器（venv 3.13.14 与 `C:\\Python314` 3.14.4）各跑一遍、**逐字节相同**的实跑结果
+> （Temp `l52q/doc_repro2_report.txt`，NONCE-45A0C1AB9510-DOC2）。两条读数顺带说明了判据的形状：
+> **错节只报节名那一条**（`augmenation` 里的子键不再逐个判，节都没人读，键更没人读），
+> 而**真节里的错键逐条报**（`augmentation.variant_per_seed`），两条都带「是否想写 X」。
+
+> 那 5 条「环境变量未设置」是既有告警，**条数随本机环境而变**（对应键已 export 就不出现），
+> 别把 `警告: 7` 当契约读；本轮新增的判据只是前两条。
+
+- **这类反馈一律是 WARNING，不改 `is_valid`**：`is_valid` 是本端点响应的判决位，
+  把多余的键判负会让「配置里夹了自己的段落」的用法凭空变红。
+- **别把 `validate-config` 的退出码当门禁**（实测，两解释器一致）：CLI 只把判决 `print` 成
+  「配置验证结果: 通过 / 失败」，**从不据此设退出码** —— 一份连报 2 条 ERROR 的配置照样 `exit 0`。
+  要在 CI 里判成败请解析 stdout，或改用 `POST /api/system/validate-config` 的 `is_valid`。
+  另一个方向也一样：配置坏到加载器拒收（如 `web.port: 99999`）时 CLI 抛裸 traceback 并 `exit 1`，
+  那一档里 `validate-config` 的摘要一行都不会打印。
+- 名单**从 `AppConfig` 的字段类型推导**，不是手抄的清单：它定义上就等于
+  `load_config` 实际读走的那份键集（`tests/unit/test_config_validator.py::TestUnreadKeyWarnings`
+  逐节钉住这个等式）。新增配置节、新增字段都会自动进入判据。
+- `app` 与 `models` 两节豁免：前者是不被任何代码读取的历史元信息，后者的键是**模型名**。
+  但 `models.<名字>` 的**子项**照判（`temperatur` 这类拼错一样出声）。
+- 顶层写 `default_model: xxx` 也会被报出来：默认模型的唯一来源是 `models.default`。
+- 想不到的名字不硬猜：只有存在高度相近项时才附「是否想写 X？」。
+
 ### 跨源（CORS）
 
 出厂默认**不放行任何跨源**：`web.cors_origins: []` + `web.cors_credentials: false`，
@@ -294,8 +346,13 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 返回服务状态。
 
 ```json
-{"status": "ok"}
+{"status": "ok", "version": "3.0.0"}
 ```
+
+响应模型是 `HealthResponse`，两个字段都在（实测 `TestClient` 读到
+`{'status': 'ok', 'version': '3.0.0'}`）。`version` 就是包的 `__version__`，会随发布
+变化，所以容器探针与前端启动检查只该依赖 `status`；本条示例在 3.0.0 之前少写了
+`version` 键（文档滞后于契约，见 `OPTIMIZATION_LOOP.md` 的 A81）。
 
 ---
 
