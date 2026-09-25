@@ -32,6 +32,7 @@
       <button class="org-meta-btn" @click="loadOrgControlReads">控制读取族</button>
       <button class="org-meta-btn" @click="loadOrgControlDeep">控制深度读</button>
       <button class="org-meta-btn" @click="loadOrgObjectReads">对象投影批读</button>
+      <button class="org-meta-btn" @click="loadOrgAdminOps">管理员解锁/授权日志</button>
       <button class="org-meta-btn" @click="orgUnitExpress">单位树/校验/属性读</button>
       <button class="org-meta-btn" @click="orgUnitWrite('attrSet')">单位属性替换</button>
       <button class="org-meta-btn" @click="orgUnitWrite('attrAppend')">单位属性追加</button>
@@ -358,6 +359,27 @@ async function loadOrgObjectReads() {
     orgMetaText.value = `对象投影批读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
     toast.error('加载对象投影批读失败: ' + (e?.message ?? ''))
+  }
+}
+// rev465：组织管理员人员解锁 + 授权日志 2 条真实路由
+//（GET organization/assemble/control/person/unlock/{flag} admin 门禁 UPDATE x_org_person status=active；
+//  POST /api/empowerlog body{application,process,fromIdentity,toIdentity,work} 必填校验后 INSERT x_org_empower_log——授权/签名桶最后 1 条缺口）
+async function loadOrgAdminOps() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const flag = prompt('人员 flag（解锁目标）:', '0') || '0'
+  const app = prompt('application:', '0') || '0'
+  const proc = prompt('process:', '0') || '0'
+  const fromId = prompt('fromIdentity:', '0') || '0'
+  const toId = prompt('toIdentity:', '0') || '0'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/organization/assemble/control/person/unlock/${encodeURIComponent(flag)}`)),
+      s(api.post('/api/empowerlog', { application: app, process: proc, fromIdentity: fromId, toIdentity: toId, work: '0' })),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    orgMetaText.value = `管理员解锁/授权日志 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('管理员操作失败: ' + (e?.message ?? ''))
   }
 }
 // rev357：组织 express 单位树/校验/属性职务读（POST body{unitList}/{unit,name}），全字面量路径，用户触发按钮
