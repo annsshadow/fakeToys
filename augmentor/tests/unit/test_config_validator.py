@@ -10,6 +10,8 @@ from augmentor.config_validator import (
     ConfigValidator, ValidationResult, Severity,
     validate_config_file, validate_config
 )
+from augmentor.exceptions import DataValidationError
+from augmentor.validation import require_seconds
 
 
 @pytest.fixture
@@ -711,3 +713,67 @@ class TestConfigValidatorExtended2:
         result = ConfigValidator().validate_config(config)
         assert result.is_valid is True
         assert result.errors == []
+
+
+class TestAugmentationRetryKnobs:
+    """`augmentation.max_retries` / `retry_delay` 的校验门槛（L45 接线后才有意义）
+
+    接线前这两个字段无人读取，校验它们只是校验空气；现在它们真的决定重试行为，
+    所以 `validate-config` 必须能拒掉坏值，且**不能比运行时更严**——校验器把合法
+    写法报成非法，用户就会去改一份本来没问题的配置。
+    """
+
+    @staticmethod
+    def _errors(augmentation):
+        config = {
+            "app": {"name": "test"},
+            "models": {"default": "ernie"},
+            "augmentation": augmentation,
+        }
+        result = validate_config(config)
+        return [(e.path, e.message) for e in result.errors]
+
+    @pytest.mark.parametrize("value", [0, 1, 1.0, 30.5, 60.0])
+    def test_legal_retry_delay_values_pass(self, value):
+        """int 写法必须放行：`retry_delay: 1` 是 YAML 里最自然的写法"""
+        assert self._errors({"retry_delay": value}) == []
+
+    @pytest.mark.parametrize("value,expect", [
+        (-1, "值过小"),
+        (61.0, "值过大"),
+        ("1s", "类型错误"),
+        (float("nan"), "不是有效数值"),
+    ])
+    def test_illegal_retry_delay_values_reported(self, value, expect):
+        errors = self._errors({"retry_delay": value})
+        assert errors and errors[0][0] == "augmentation.retry_delay"
+        assert expect in errors[0][1]
+
+    @pytest.mark.parametrize("value", [0, 3, 20])
+    def test_legal_max_retries_values_pass(self, value):
+        """0 是合法档位（只调用一次），下界不能收到 1"""
+        assert self._errors({"max_retries": value}) == []
+
+    @pytest.mark.parametrize("value,expect", [
+        (-1, "值过小"),
+        (21, "值过大"),
+        (1.5, "类型错误"),
+    ])
+    def test_illegal_max_retries_values_reported(self, value, expect):
+        errors = self._errors({"max_retries": value})
+        assert errors and expect in errors[0][1]
+
+    @pytest.mark.parametrize("value", [-1, "1s", float("nan"), 0, 1, 1.0, 30.5])
+    def test_validator_and_runtime_use_the_same_verdict(self, value):
+        """校验器与 `require_seconds` 必须同口径（上界除外，那是校验器独有的天花板）
+
+        两边不一致时，`validate-config` 绿灯的配置会在建管道时抛
+        `DataValidationError`，或者反过来把合法配置拦在门外。
+        """
+        rejected_by_validator = bool(self._errors({"retry_delay": value}))
+        try:
+            require_seconds("retry_delay", value)
+            rejected_by_runtime = False
+        except DataValidationError:
+            rejected_by_runtime = True
+        assert rejected_by_validator == rejected_by_runtime, value

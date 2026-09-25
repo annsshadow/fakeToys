@@ -4,11 +4,12 @@
 """数据集验证模块
 
 提供数据集格式验证、完整性检查等功能，以及跨模块共用的标量入参判据
-（`require_count`）。
+（`require_count` 计数旋钮 / `require_seconds` 时长旋钮）。
 """
 
 import json
 import logging
+import math
 import re
 from typing import List, Dict, Optional, Any, Set
 from dataclasses import dataclass, field
@@ -56,6 +57,44 @@ def require_count(name: str, value: Any, minimum: int = 0) -> Optional[int]:
         )
     if value < minimum:
         raise DataValidationError(f"{name} 必须是不小于 {minimum} 的整数，当前是 {value}")
+    return value
+
+
+def require_seconds(name: str, value: Any, minimum: float = 0.0) -> Optional[float]:
+    """校验「等待多少秒」这类时长旋钮，返回原值。
+
+    `require_count` 的浮点对应物。计数旋钮的越界症状是「换语义」，时长旋钮一样，
+    而且更隐蔽——`retry.compute_delay` 首尾各有一道夹逼（`min(max_delay, …)` 与
+    `max(0.0, …)`），实测下来它**不会**把坏值抛出来，而是悄悄换成另一档等待：
+
+    - `base_delay=-5.0` → `0.0`（尾部 `max()` 夹掉负号）：想要「等 5 秒」拿到「立刻重试」
+    - `base_delay=NaN` → `30.0`（`30.0 < nan` 为假，`min()` 交出第一个参数）：等到上限
+    - `max_delay=NaN` → `0.0`（尾部 `max()` 交出第一个参数）
+
+    三条都不报错，所以判据只能放在入参处。YAML 侧 `.nan` / `.inf` 是合法浮点字面量
+    （实测 `yaml.safe_load("a: .nan")` 给出 `float('nan')`），模板没填值就可能留下 NaN，
+    这不是纯理论输入。
+
+    正无穷不在拒绝之列：它被 `min(max_delay, …)` 夹住，行为有界且与「等很久」的意图一致。
+
+    Args:
+        name: 参数名，直接出现在报错里
+        value: 传入的值。`int` 也接受（YAML 的 `retry_delay: 1` 读进来是整数）
+        minimum: 允许的下界。默认 0——「不等，失败就立刻重试」是合法请求
+
+    Returns:
+        校验通过后的原值。`None` 直接放行——「未提供」由各调用点决定回落哪个默认值
+    """
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise DataValidationError(
+            f"{name} 必须是数值秒数，当前是 {value!r}（{type(value).__name__}）"
+        )
+    if math.isnan(value):
+        raise DataValidationError(f"{name} 不能是 NaN")
+    if value < minimum:
+        raise DataValidationError(f"{name} 必须是不小于 {minimum} 的秒数，当前是 {value}")
     return value
 
 
