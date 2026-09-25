@@ -18,7 +18,7 @@ from queue import Queue
 from .config import AppConfig, load_config, get_model_config
 from .validation import require_count, require_ratio, require_seconds
 from .retry import MAX_RETRY_AFTER
-from .models import create_model_backend
+from .models import create_model_backend, extract_json_array
 from .quality import QualityScorer
 from .dedup import Deduplicator
 from .export import Exporter, ExportFormat
@@ -169,27 +169,33 @@ class AugmentorPipeline:
         
         instruction = item.get("instruction", "")
         output = item.get("output", "")
-        
-        prompt = f"""作为AI领域数据增强专家，你的任务是把原JSON对象中的instruction字段内容在保持相同含义的情况下，扩充为{self.config.augmentation.variants_per_seed}种不同的提问方式，新JSON对象只需包含instruction字段，并将新JSON对象追加到JSON数组里面，注意最终结果只需要JSON数组，不需要任何说明文字，原JSON对象如下：[{{"instruction": "{instruction}"}}]"""
-        
+
+        # 原 JSON 用 json.dumps 生成而不是手拼字符串字面量：instruction 里带引号或
+        # 换行时，手拼的 `"instruction": "{instruction}"` 会把发给模型的 prompt 里的
+        # JSON 结构撑破（A109）。
+        seed_json = json.dumps([{"instruction": instruction}], ensure_ascii=False)
+        prompt = f"""作为AI领域数据增强专家，你的任务是把原JSON对象中的instruction字段内容在保持相同含义的情况下，扩充为{self.config.augmentation.variants_per_seed}种不同的提问方式，新JSON对象只需包含instruction字段，并将新JSON对象追加到JSON数组里面，注意最终结果只需要JSON数组，不需要任何说明文字，原JSON对象如下：{seed_json}"""
+
         try:
             response = self.model_backend.generate(prompt)
-            # 解析响应
-            if response.strip().startswith('['):
-                variants = json.loads(response.strip())
-                if isinstance(variants, list):
-                    result = []
-                    for v in variants[:self.config.augmentation.variants_per_seed]:
-                        if isinstance(v, dict) and "instruction" in v:
-                            result.append({
-                                "instruction": v["instruction"],
-                                "input": "",
-                                "output": output
-                            })
-                    return result
+            # 复用仓库里已带自测的 robust 提取器（直接解析 / 代码围栏 / 首个 '[' 到
+            # 末个 ']' 的括号切片），而不是「首个字符必须是 [」的手搓判据 —— 后者会让
+            # ```json 围栏或前置一句说明的正常响应静默变成 0 个变体（A108）。
+            # extract_json_array 是流水线唯一正确的解析器：这里的产物恒为 JSON 数组，
+            # 而它无法解析时抛 ModelResponseError，由下面的 except 收成一行 warning。
+            variants = extract_json_array(response)
+            result = []
+            for v in variants[:self.config.augmentation.variants_per_seed]:
+                if isinstance(v, dict) and "instruction" in v:
+                    result.append({
+                        "instruction": v["instruction"],
+                        "input": "",
+                        "output": output
+                    })
+            return result
         except Exception as e:
             logger.warning(f"生成变体失败: {e}")
-        
+
         return []
     
     def _process_single_item(self, 
