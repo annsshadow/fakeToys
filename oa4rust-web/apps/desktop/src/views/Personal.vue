@@ -306,14 +306,16 @@ async function loadAuthDetails() {
   const uid = String(user.value?.unique ?? user.value?.id ?? '0')
   const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
-    const [ident, icon, captcha, bindMeta] = await Promise.all([
+    const [ident, icon, captcha, bindMeta, who] = await Promise.all([
       s(api.get(`/api/organization/assemble/authentication/identity/${encodeURIComponent(uid)}`)),
       s(api.get(`/api/organization/assemble/authentication/person/${encodeURIComponent(uid)}/icon`)),
       s(api.get('/api/organization/assemble/authentication/authentication/captcha/width/120/height/40')),
       s(api.get('/api/organization/assemble/authentication/bind/meta/default')),
+      // rev469：会话自检 1 条真实读（GET /api/authentication whoami——校验当前会话返回用户映射，纯读无参；非凭证流，是登录态自省）
+      s(api.get('/api/authentication')),
     ])
     const has = (r: any) => ((r as any)?.data ? '有' : '无')
-    authDetailText.value = `身份详情 ${has(ident)} · 头像 ${has(icon)} · 验证码 ${has(captcha)} · 绑定元 ${has(bindMeta)}`
+    authDetailText.value = `身份详情 ${has(ident)} · 头像 ${has(icon)} · 验证码 ${has(captcha)} · 绑定元 ${has(bindMeta)} · 会话自检 ${has(who)}`
   } catch (e: any) {
     toast.error('加载认证明细失败: ' + (e?.message ?? ''))
   }
