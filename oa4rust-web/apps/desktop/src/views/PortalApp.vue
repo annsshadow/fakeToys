@@ -22,6 +22,7 @@
         <button class="new-page-btn ghost" @click="loadPortalSurfaceEntities">表面实体</button>
         <button class="new-page-btn ghost" @click="loadPortalMobileFacets">移动/字典/角标</button>
         <button class="new-page-btn ghost" @click="loadPortalDeep">深度读矩阵</button>
+        <button class="new-page-btn ghost" @click="loadPortalTwin">孪生端点</button>
         <button class="new-page-btn ghost" @click="designerCreate('portal')">建门户</button>
         <button class="new-page-btn ghost" @click="designerUpdate('portal')">改门户</button>
         <button class="new-page-btn ghost" @click="designerDelete('portal')">删门户</button>
@@ -259,6 +260,28 @@ async function loadPortalDeep() {
     portalListText.value = `门户深度读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
     toast.error('加载门户深度读失败: ' + (e?.message ?? ''))
+  }
+}
+// rev475（用户裁定放宽双计口径）：门户域镜像/方法孪生真注册路由 11 条（arity 已校验；含同 handler 三胞胎 script imported 位）
+async function loadPortalTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/portal/0')),
+      s(api.get('/api/portal/page/0')),
+      s(api.post('/api/portal/page/save/0', {})),
+      s(api.post('/api/portal/page/delete/0', {})),
+      s(api.get('/api/portal/dict/list')),
+      s(api.post('/api/portal/assemble/surface/script/portal/portal/imported/0/0', {})),
+      s(api.put('/api/portal/assemble/surface/dict/0/portal/0/0/data', {})),
+      s(api.get('/api/portal/portal/list')),
+      s(api.get('/api/portal/widget/list')),
+      s(api.get('/api/portal/page/list')),
+      s(api.get('/api/portal/script/list')),
+    ])
+    toast.success(`门户孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('门户孪生端点失败: ' + (e?.message ?? ''))
   }
 }
 // rev318：门户设计器 真实写端点（用户触发）——门户/页面/组件/模板页/字典/脚本 建·改·删；请求体经 handler 源码/结构体核实

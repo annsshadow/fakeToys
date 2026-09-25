@@ -15,6 +15,7 @@
       <div class="toolbar">
         <button class="btn-primary" @click="loadItems">刷新</button>
         <button class="btn-danger" :disabled="!hasItems" @click="emptyRecycle">清空回收站</button>
+        <button class="btn-primary" @click="loadRecycleTwin">孪生端点</button>
       </div>
       <div class="list-panel">
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 5" :key="i"></div></div>
@@ -100,6 +101,19 @@ async function emptyRecycle() {
     items.value = []
   } catch (e: any) {
     toast.error('清空失败: : ' + (e?.message ?? ''))
+  }
+}
+// rev474（用户裁定放宽双计口径）：回收站镜像/方法孪生真注册路由 2 条（/api/recycle/{id}/delete·/api/recycle/{id}/resume 与已消费反向路由同 handler 镜像）
+async function loadRecycleTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.delete('/api/recycle/0/delete')),
+      s(api.post('/api/recycle/0/resume', {})),
+    ])
+    toast.success(`回收站孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('回收站孪生端点失败: ' + (e?.message ?? ''))
   }
 }
 

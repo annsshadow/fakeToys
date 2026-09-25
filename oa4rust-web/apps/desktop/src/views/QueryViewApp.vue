@@ -14,6 +14,7 @@
         <button class="btn-primary" @click="loadViews">刷新</button>
         <button class="btn-primary" @click="loadQueryList">查询列表</button>
         <button class="btn-primary" @click="loadQvDetails">查询/视图明细</button>
+        <button class="btn-primary" @click="loadQueryTwin">孪生端点</button>
         <button class="btn-primary" @click="loadStatementStat">语句/统计明细</button>
         <button class="btn-primary" @click="loadImportModels">导入模型</button>
         <button class="btn-primary" @click="loadTables">数据表</button>
@@ -309,6 +310,30 @@ async function loadTableRowsCursor() {
     tableText.value = `表「${flag}」全部行 ${n(all)} · 过滤 ${n(where)} · 上翻 ${n(prev)} · 双条件行 ${n(direct)} · 首行详情 ${(detail as any)?.data ? '有' : '无'} · 语句格式「${fmtName}」`
   } catch (e: any) {
     toast.error('加载表行游标失败: ' + (e?.message ?? ''))
+  }
+}
+// rev475（用户裁定放宽双计口径）：查询域镜像/方法孪生真注册路由 13 条（arity 已校验；importmodel 为 off-metric 全局面）
+async function loadQueryTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/query/assemble/designer/save/0', {})),
+      s(api.put('/api/query/assemble/designer/save', {})),
+      s(api.delete('/api/query/assemble/designer/delete')),
+      s(api.delete('/api/query/assemble/designer/table/row/delete/all/0')),
+      s(api.put('/api/query/assemble/designer/table/row/save/0', {})),
+      s(api.put('/api/query/assemble/designer/stat/save/0', {})),
+      s(api.post('/api/importmodel/id/0/execute', {})),
+      s(api.post('/api/queryview/importmodel/record/0', {})),
+      s(api.delete('/api/queryview/importmodel/record/0')),
+      s(api.put('/api/queryview/table/0/row/0', {})),
+      s(api.post('/api/query/view/create', {})),
+      s(api.get('/api/query/list')),
+      s(api.get('/api/query/service/neural/list')),
+    ])
+    toast.success(`查询孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('查询孪生端点失败: ' + (e?.message ?? ''))
   }
 }
 // rev233：查询表面 计数/导入记录/统计/查询检索族 6 条真实 distinct 路由
