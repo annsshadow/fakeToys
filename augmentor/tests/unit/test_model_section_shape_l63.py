@@ -8,13 +8,16 @@ A101（L57）给 `_load_section` 补了「节写成标量/空」的判据，但�
 于是 `models: 随便一个标量`、或某个模型条目写成标量/列表/空 时，过去会当场崩在
 `model_conf.get` 的 `AttributeError`（而校验面对同份文件报的是 `is_valid=False`）——
 同族缺陷两侧不同判。本文件钉住：崩溃改成可行动的 `ConfigError`、口径与
-`_load_section` 逐字一致、空值退化为全默认、正常配置一字不动。
+`_load_section` 逐字一致、正常配置一字不动。
+
+**「空值退化为全默认」那一半自 A115（L74）作废**：`type` 有了封闭清单之后，
+`qwen:` 这种空条目落在清单外，加载即抛 —— 见下面那条用例的注释里写明的来龙去脉。
 """
 
 import pytest
 
 from augmentor.config import load_config
-from augmentor.exceptions import ConfigError
+from augmentor.exceptions import ConfigError, DataValidationError
 
 _MAP_PHRASE = "必须是「键: 值」的映射"
 
@@ -51,16 +54,18 @@ def test_models_none_degrades_to_no_entries(tmp_path):
     assert config.models == {}
 
 
-def test_model_entry_none_degrades_to_default_modelconfig(tmp_path):
-    """某个模型条目写成 `qwen:`（None）= 该模型全默认，不崩、不静默跳过"""
-    config = load_config(
-        _write(tmp_path, "models:\n  default: ernie\n  qwen:\n")
-    )
-    assert "qwen" in config.models
-    qwen = config.models["qwen"]
-    assert qwen.type == ""
-    assert qwen.temperature == 0.99 and qwen.top_p == 0.95
-    assert qwen.max_output_tokens == 2048
+def test_model_entry_none_is_rejected_by_the_closed_list(tmp_path):
+    """条目写成 `qwen:`（None）：A115 起当场拒，不再留一条「建不出后端」的空条目
+
+    本文件立项时测的是「不崩、不静默跳过」，当时它的落点是 `type == ""` 的全默认
+    `ModelConfig`。A115 给 `type` 上了封闭清单之后，那个空串**本身就是清单外的值**
+    ⇒ 「不崩」这一半改由「抛 `DataValidationError` + 文案列出全部合法取值」满足；
+    「退化为全默认」那一半则是本轮明确作废的旧契约 —— 一条没有 `type` 的条目本来
+    就建不出后端，留着只会让 `pipeline` 把它读成「后端不可用」（L74 取证）。
+    """
+    with pytest.raises(DataValidationError) as ei:
+        load_config(_write(tmp_path, "models:\n  default: ernie\n  qwen:\n"))
+    assert "支持的类型" in str(ei.value)
 
 
 def test_guard_phrasing_matches_load_section(tmp_path):

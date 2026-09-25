@@ -20,7 +20,8 @@ from enum import Enum
 # 这里是 A77 的修法本体：此前两边各抄一遍数字，抄漏的一边就成了「校验器独有
 # 天花板」—— `max_retries: 10**6` 在这里报红、在 SDK 直构那边畅通无阻。
 from .config import (AUTO_SAVE_INTERVAL_MIN, MAX_OUTPUT_TOKENS_MIN,
-                     MAX_RETRIES_RANGE, NUM_THREADS_RANGE, PORT_RANGE,
+                     MAX_RETRIES_RANGE, MODEL_TYPES, NUM_THREADS_RANGE,
+                     PORT_RANGE,
                      RATE_LIMIT_MIN_REQUESTS, RATE_LIMIT_MIN_WINDOW_SECONDS,
                      REQUEST_TIMEOUT_RANGE, RETRY_DELAY_RANGE,
                      TEMPERATURE_RANGE, TOP_P_RANGE, VARIANTS_PER_SEED_RANGE,
@@ -219,6 +220,10 @@ class ConfigValidator:
     # 它们有默认值，「写了键没给值」在两侧都是坏写法（运行时由
     # `_reject_null_fields(..., names=...)` 拒，静态面由类型判据拒）。
     MODEL_ENTRY_FIELDS = {
+        # `choices` 这一维 L57 就有了（`logging.level` 是第一位用户），
+        # `type` 是第二个：清单与运行时 `ModelConfig.__post_init__` 共引
+        # `MODEL_TYPES`，两边不可能各抄一份再漂（A77）。
+        "type": {"type": str, "choices": MODEL_TYPES},
         "temperature": {"type": float, "min": TEMPERATURE_RANGE[0],
                         "max": TEMPERATURE_RANGE[1]},
         "top_p": {"type": float, "min": TOP_P_RANGE[0], "max": TOP_P_RANGE[1]},

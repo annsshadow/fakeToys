@@ -32,7 +32,9 @@ AI_DIR = Path(__file__).resolve().parent.parent.parent
 
 class _FakeBackend(ModelBackend):
     def __init__(self, variants=1):
-        super().__init__(ModelConfig(type="fake"))
+                # `type` 自 A115 起是封闭清单（构造期就拒），替身因此要填一个真类型；
+        # 它覆写了 `_call_api`，填哪一个都不影响行为。
+        super().__init__(ModelConfig(type="ollama"))
         self._variants = variants
 
     def _call_api(self, prompt):

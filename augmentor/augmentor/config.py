@@ -65,6 +65,21 @@ TOP_P_RANGE = (0.0, 1.0)
 # 「越界 = 本地量级失控」不同类。下界 1 与整型两刀都要：实测 `0` / `-5` / `2048.5` /
 # `True` 改前全部原样进 HTTP body。
 MAX_OUTPUT_TOKENS_MIN = 1
+# `models.<名字>.type` 的封闭清单（A115 / L74）。三个消费者：本模块的
+# `ModelConfig.__post_init__`、`config_validator.MODEL_ENTRY_FIELDS` 的
+# `choices` 规格、`models/factory.py` 那句「支持的类型」文案。
+#
+# 为什么清单不住工厂而住这里：真正的权威是工厂那张「类型名 → 后端类」的
+# 分发表，但 `factory.py` 本身要 `from ..config import ModelConfig`，
+# 反过来 import 会成循环导入。于是这里与工厂各持一份、由
+# `tests/unit/test_model_type_choices_l74.py` 把「两集相等」钉成断言
+# （形状同 `MAX_RETRY_AFTER` / `LOGGING_LEVELS`：一处定义，两侧共引）。
+#
+# `ernie` **不是**合法取值：类叫 `ERNIEBackend`、出厂模板里那条也叫
+# `ernie`，但它的 `type` 写的是 `baidu`；`models.default: ernie` 那一行
+# 更不是 type，它是「默认用哪个条目名」的指针（`load_config` 里
+# `name == 'default'` 直接跳过）。这两个混淆是本条缺陷存在的原因。
+MODEL_TYPES = ("baidu", "openai", "ollama", "claude", "gemini")
 PORT_RANGE = (1, 65535)
 RATE_LIMIT_MIN_REQUESTS = 0
 RATE_LIMIT_MIN_WINDOW_SECONDS = 0.0
@@ -129,6 +144,18 @@ class ModelConfig:
         的 `None` 是「本模型不覆盖全局档」这一档本身，必须放行（`require_seconds`
         对 `None` 短路）。
         """
+        if self.type not in MODEL_TYPES:
+            # 封闭清单而不是区间：`type` 是模型条目里唯一一个「值有一张名单、
+            # 两侧都不判」的键。改前实测 `type: openaii` 构造成功，工厂抛
+            # `ConfigError` 之后被 `pipeline._init_components` 那个
+            # 「模型没配好就降级」的 `except Exception` 吞掉 ⇒
+            # `model_backend = None`，服务照起、日志只有一条 WARNING。
+            # 空串一并拒：它是 `load_config` 对「这条没写 type」的回落值
+            # （`config.py` 里 `conf.get('type', '')`），语义上就是没配。
+            raise DataValidationError(
+                f"models.<名字>.type 不支持: {self.type!r}。"
+                f"支持的类型: {', '.join(MODEL_TYPES)}"
+            )
         _reject_null_fields("models.<名字>", self,
                             ("temperature", "top_p", "max_output_tokens"))
         lo, hi = TEMPERATURE_RANGE
@@ -568,8 +595,12 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
         # 护住映射表那 20 节）。于是 `models:` 写成标量、或某个模型条目写成标量 /
         # 空 / 列表时，过去会当场崩在 `model_conf.get` 的 `AttributeError`，而校验
         # 面却报 `is_valid=False` —— 同族缺陷两侧不同判（A85，A101 的漏网）。这里补
-        # 回与 `_load_section` 逐字同口径的判据：只写名字没给内容（None）= 全默认；
-        # 写成非映射则抛可行动的 ConfigError。
+        # 回与 `_load_section` 逐字同口径的判据：写成非映射抛可行动的 ConfigError；
+        # 只写名字没给内容（None）先折成空条目 —— 而空条目自 A115 起落在 `type`
+        # 的封闭清单之外，构造时当场拒。旧口径那句「None = 全默认」是本轮明确
+        # 作废的契约：一条没有 `type` 的条目永远建不出后端，留着只会让 `pipeline`
+        # 把它读成「后端不可用」（来龙去脉见
+        # `tests/unit/test_model_section_shape_l63.py`）。
         def _as_mapping(value, where):
             if value is None:
                 return {}

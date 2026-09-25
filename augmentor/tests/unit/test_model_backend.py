@@ -55,7 +55,7 @@ class TestCreateModelBackend:
 
     def test_unsupported_type_raises(self):
         with pytest.raises(ValueError, match="不支持的模型类型"):
-            create_model_backend(_cfg("nope"))
+            create_model_backend(_cfg("baidu"), model_type="nope")
 
     def test_default_from_config_type(self):
         backend = create_model_backend(_cfg("gemini"))
