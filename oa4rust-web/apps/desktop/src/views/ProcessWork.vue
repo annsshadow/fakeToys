@@ -908,6 +908,16 @@ async function loadSurfaceReadB(): Promise<void> {
       s(api.put(`/api/processplatform/assemble/surface/work/${id}/processing`)),
       s(api.delete(`/api/processplatform/assemble/surface/work/${id}/single/manage`)),
       s(api.post(`/api/processplatform/assemble/surface/script/${flag}/application/${applicationFlag}`, {})),
+      // rev467：管理态/创建位/强制读 7 条真实读（handler 体全纯 SELECT PP_C_TASK/WORK/WORKCOMPLETED/E_FILE，mock 孪生才是写；
+      //  reset/manage·delete/manage·force·download 字面尾段唯一；taskcompleted/list/prev/0/20 数字字面避 manual/{flag} 影子误配；
+      //  taskcompleted v2 create 位 next/prev 同 SQL 退化重复只取 next）
+      s(api.put(`/api/processplatform/assemble/surface/task/${id}/reset/manage`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/work/process/${flag}/force`, {})),
+      s(api.delete(`/api/processplatform/assemble/surface/workcompleted/${id}/delete/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/file/${flag}/application/${applicationFlag}/download`)),
+      s(api.post(`/api/processplatform/assemble/surface/task/v2/list/create/paging/${page}/size/${size}`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/taskcompleted/v2/list/create/${id}/next/${count}`, {})),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/prev/0/20`)),
     ])
     const hit = rs.filter((r) => (r as any)?.data != null).length
     surfaceReadText.value = `表面深度读B ${rs.length} 条，命中 ${hit}`
