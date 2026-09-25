@@ -895,6 +895,14 @@ async function loadSurfaceReadB(): Promise<void> {
       s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/filter/manage/${page}/${size}/${size}`)),
       s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/paging/application/filter/manage/${page}/${size}/${size}/${applicationFlag}`)),
       s(api.get(`/api/processplatform/assemble/surface/workcompleted/${id}`)),
+      // rev464：manage 态详情读 7 条真实读（handler 体全纯 SELECT PP_C_REVIEW/TASK/WORK/E_APPLICATION，mock 孪生才是写、主路由只读；Path arity 与路由一致，终端 manage/processing 字面段唯一避 matcher 误配）
+      s(api.delete(`/api/processplatform/assemble/surface/review/${id}/application/${applicationFlag}/manage`)),
+      s(api.delete(`/api/processplatform/assemble/surface/task/${id}/manage`)),
+      s(api.put(`/api/processplatform/assemble/surface/task/${id}/processing/manage`)),
+      s(api.put(`/api/processplatform/assemble/surface/task/${id}/opinion/manage`)),
+      s(api.put(`/api/processplatform/assemble/surface/work/${id}/processing`)),
+      s(api.delete(`/api/processplatform/assemble/surface/work/${id}/single/manage`)),
+      s(api.post(`/api/processplatform/assemble/surface/script/${flag}/application/${applicationFlag}`, {})),
     ])
     const hit = rs.filter((r) => (r as any)?.data != null).length
     surfaceReadText.value = `表面深度读B ${rs.length} 条，命中 ${hit}`
