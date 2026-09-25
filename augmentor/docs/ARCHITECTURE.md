@@ -1038,7 +1038,7 @@ fail loud，不再先打一条假告警再抛一个无关异常）；`HTTPAdapte
 ⑥ 降级分支的两条断言（日志文案指对根因 + 降级后的 session 同样 0 次传输重试）；
 ⑦ requests 本体缺失 = 抛 `ImportError` 且 `_session` 仍是 `None`（不留半初始化状态）。
 
-**交叉核对退避封顶时撞出来的新缺陷（账本 A72，本轮不修只记）**：`with_retries` 在服务端给出
+**交叉核对退避封顶时撞出来的新缺陷（账本 A72；L46 只记不修，L47 的裁定与实测见 §3.22）**：`with_retries` 在服务端给出
 `Retry-After` 时走的是另一条分支（`delay = min(MAX_RETRY_AFTER, max(0, suggested))`），
 **`max_delay` 参不到场** ⇒ `generate()` 传进去的 `ModelBackend._MAX_RETRY_DELAY = 30.0` 对限流指令无效。
 实测（Temp `l46_retryafter.py`，注入 sleeper）：429 + `Retry-After: 45 / 300 / 3000` 的等待序列是
@@ -1060,6 +1060,83 @@ L62 那条例看不见这个隐患 ⇒ 一条既有测试守住的分支不等�
 全量 **4779 passed / 2 skipped**（**4762 + 17 精确对上**，39.10 s，总计 99.02%，门禁 80% 通过，
 2 skip 仍是既有 chromadb 缺依赖）。`models/base.py` **+24 / −25**（净 −1 行：删掉的是重试装配与一次
 冗余 import，加上的是更清楚的控制流与三条诚实注释），测试 **+101 / −1**、本文档 **+82 / −1**（1,156 → 1,237 行）。
+
+### 3.22 L47：两副等待封顶各管一支，浮点退避旋钮补上判据（关闭 A72 与 A67 的浮点残余）
+
+A72 的裁定取 **方向 ①（诚实化，0 行为变更）**，不取 ②（把 `max_delay` 的语义扩到也夹服务端建议）。
+理由不是「② 麻烦」而是 ② 会拿到一个更坏的行为：`Retry-After: 45` 被夹成 30 s，等于对刚说过
+「45 秒后再来」的服务端提前 15 s 敲门，而限流场景里这正是最不该做的事；这个方向与 §3.21 里
+A69 方向 ②（让传输层真的重 POST）同族——**拿到服务端的指示却不完全照办**。
+① 的工程量因此全在「把已经在生效的语义说清」：四处文案各修各处（`ModelBackend._MAX_RETRY_DELAY`
+的注释、`config.yaml` 里 `retry_delay` 的注释、`retry.MAX_RETRY_AFTER` 与 `with_retries` 的口径说明），
+外加一支测试把两副封顶的**互不越界**钉住。方向 ② 里真正有价值的那半件事——「让使用者能把
+最坏等待调小」——立为 **A73** 单独一轮做：它要动 `AugmentationConfig`（**不是** `ModelConfig`，本仓两个类名相近、
+L44 就把这两个字段的归属记错过一次）+ `config_validator` + 工厂透传 + 文档 + 测试五处，半接一条旋钮比不接更糟（A65 的教训）。
+
+**「最坏等待」现在是可以算的，两个数各归一支**：
+
+| 哪一支 | 触发条件 | 封顶 | 默认档（`attempts=3`）一次 `generate()` 最坏总等待 |
+|--------|----------|------|---------------------------------------------------|
+| 退避计算 | `classify` 没给建议（无 `Retry-After`，或根本没传 `classify`） | 调用方的 `max_delay`，模型后端传 `_MAX_RETRY_DELAY = 30.0` | 2 × 30 = **60 s**（实测第 1/2 档 = 1.0 / 2.0，远未触顶） |
+| 服务端指令 | `classify` 返回的建议非 `None` | `retry.MAX_RETRY_AFTER = 300.0` | 2 × 300 = **600 s** |
+
+第二支不是「不设限」：实测 `Retry-After: 3000` 与 `864000` 都拿到 `300.0`（`test_max_retry_after_clamps_it_instead`
+与 §3.21 就有的 `test_retry_after_is_capped` 各钉一头）。而 L46 之前它连个名字都没有，只被一句
+「单次重试等待上限」顺手概括掉——那句话在限流场景最多差 10 倍（45 s vs 30 s 实测）。
+
+**A67 的浮点残余一并补上判据**：`compute_delay` 与 `with_retries` 的 `base_delay` / `factor` / `max_delay`
+三参照 §6 既有口径在入参处一次判掉（`require_seconds` 两参 + 新判据 `require_positive` 判 `factor`）。
+`require_positive` 不复用 `require_seconds`：后者的文案是「必须是数值秒数」，拿来判一个无量纲倍率会把
+根因说错（§3.21 刚为「文案指错根因」记过一笔）；下界也不做成可配参数，因为这类值只有「每档乘多少」
+一种合法读法。修前的坏值形状全部实测过（Temp `l47_probe.py`）：`factor=0` → `[1.0, 0.0, 0.0]`、
+`factor=-2` → `[1.0, 0.0, 4.0]`、`factor=NaN` → `[1.0, 30.0, 30.0]`、`base_delay=True` → `[1.0, 2.0]`
+（布尔被安静读成 1.0）、`max_delay=-1` → 整条退避清零。而 `base_delay='1'` 最恶劣：第一次真实调用
+**照常打出去**，退避时才在幂运算处炸成 `TypeError: can't multiply sequence by non-int of type 'float'`，
+`raise last_exc` 那句根本轮不到执行，原始异常整个丢失 ⇒ 这就是「判参必须排在 `func` 之前」的实证理由，
+与 L45 给构造函数定的「判参先于 `mkdir`」同一条纪律。两处判据（`with_retries` 入口 / `compute_delay` 本体）
+**不是冗余**，注入分得开：只摘 `compute_delay` 那道 ⇒ 2 红且 9 条 `with_retries` 侧的照常绿；
+只摘 `with_retries` 入口那三行 ⇒ 9 红（全部红在「`calls == []`」这条顺序断言上）而 `compute_delay` 侧照常绿。
+`0 < factor < 1` 与 `+inf` 都放行：实测前者给 `[1.0, 0.5, 0.25]`（非负、单调、有界，没有需要拒的形状），
+后者第 2 档起就贴着 `max_delay`。
+
+**`parse_retry_after` 那条残余按实测判定为「不是缺陷」**，写在这里免得下一轮重查：过去的 HTTP-date →
+`0.0`、负数 → `0.0`（实测 `parse_retry_after("-3") == 0.0`，同一形状的 `classify` 建议也读成「等 0 s 立刻重发」），
+这与 RFC 对「时限已过」的读法一致，判成坏输入反而会替服务端把一个合法信号变成异常；远未来与荒谬大值
+（`'1e9'` → `1000000000.0`、日期 +10 天 → `863999.4`）由第二支的 `MAX_RETRY_AFTER` 夹住；非数值（`'soon'` /
+空串 / `None` / `["120"]`）→ `None` 即「没有建议」，回落到退避计算。这一组配了正对照（+120 s 的日期量出
+119.4 s）才敢说「探针没瞎」。
+
+**`jitter` 的区间判据刻意留给 A65**，不在本轮顺手做：产品里至今没有任何路径能传非默认 `jitter`，
+而实测 `jitter=50` 会让结果（61.09 s）越过 `max_delay=30` —— 判据与透传分两轮做，中间那一档就是
+「文档说 0-1、代码不判」的半保护状态，正是 A65 立条时点名要避免的形状。
+
+**代价（本轮不主张收益）**：`compute_delay` 单次调用从 0.1 µs 涨到 0.7 µs（同进程 A/B，Temp `l47_ab.py`，
+正反序各一轮、**符号跨序稳定**），走拒绝路径约 1.0 µs（异常构造占大头）。量级对照：一次回环 HTTP 往返
+按 §3.21 实测是 620 ~ 2,300 µs ⇒ 每档退避多出的 0.6 µs 不到一次请求的 0.1 %，而 `with_retries` 入口那三行
+每次 `generate()` 只跑一遍。诚实的说法是：**这是硬化的成本，不是优化的收益**。
+
+**测试**：37 例新增（`test_count_knob_validation.py::TestRequirePositive` 20、`test_retry.py::TestRetryFloatKnobs` 11、
+`test_retry.py::TestTwoDelayCeilings` 6），**另有 1 处既有测试改写**——L45 立的
+`test_compute_delay_hides_bad_values_which_is_why_the_guard_exists`（1 条 × 3 参）拆成
+`test_compute_delay_keeps_the_good_shape` + `test_compute_delay_rejects_what_it_used_to_hide`（1 + 1 × 2 参，
+净 0 例）。改写不是清理：那条例钉的正是本轮搬进函数内部的旧症状，判据进了 `compute_delay` 之后
+它**必须**失败，留着「静默换一档」的断言等于把修法倒过来。新增的 `test_both_ceilings_match_what_the_docs_promise`
+钉住 `(300.0, 30.0)` 这一对常数：改任一常数都会红，逼着改的人同步本节与 §6，而不是让文档漂走。
+
+**记账**（`git diff --numstat` 实测，不是先写后补）：`augmentor/validation.py` **+45 / −1**（543 → 587 行，新判据
++ 模块 docstring 一行）、`augmentor/retry.py` **+48 / −11**（296 → 333）、`augmentor/models/base.py` **+3 / −1**
+（368 → 370，全是注释）、`config.yaml` **+3 / −1**（345 → 347，全是注释）、`tests/unit/test_retry.py`
+**+126 / −1**（377 → 502）、`tests/unit/test_count_knob_validation.py` **+61 / −12**（744 → 793）、本文档
+~~**+71 / −3**（1,237 → 1,305）~~ **+81 / −3**（1,237 → 1,315 —— 初量的 +71 是 §6 那三行旋钮条目与本段两处改正写完之前的状态），`OPTIMIZATION_LOOP.md` 另计。七个文件的行数差与各自净值逐一相等。
+`config.yaml` 改完仍 `load_config` 出 3 / 1，`validate_config_file` 判 `is_valid=True`、5 条 warning
+与 HEAD 版逐条同名（都是未设的 API key）。全量 **4779 + 37 = 4816 passed / 2 skipped**，总计 99.02 %，
+门禁 80 % 通过。**本节初稿把六个 numstat 里的三个先写成了预测值**（`config.yaml` 写成 +4/−2、
+`test_retry.py` 写成 +124/−1、`test_count_knob_validation.py` 写成 +57/−11），落笔时并未跑过 diff
+—— 与 L46 那条「记账数字必须先测后写」是同一处漏洞，本轮又踩一次，说明这条纪律还没有真正长进
+肌肉里：本轮的做法是「写完再量、量完就地改正」，而正确做法是「先量、数字没到手之前那段不写」。
+**同一次还暴露了这条纪律的第二种破坏形状**：本文档自己那一行数**量过，却量的不是最终态** —— 量完之后
+又补写了 §6 的条目与本段的两处改正 ⇒ 「测过一次」不等于「测的是最终态」。六个源/测试文件的数字测完即定，
+唯独**文档本体与账本**的 numstat 只能在该文件**最后一次编辑之后**量；本轮照此复量，故上面那行是最终值。
 
 ## 4. 核心数据流
 
@@ -1147,7 +1224,7 @@ L62 那条例看不见这个隐患 ⇒ 一条既有测试守住的分支不等�
 | 层次 | 策略 |
 |------|------|
 | 单条数据生成失败 | 记录 ERROR 日志，该条标记为 failed，不中断整体任务 |
-| 模型调用失败 | 指数退避重试，`generate(max_retries=…)` 传的是**总尝试次数**（不是额外次数）且下界 0，仍失败则抛出由上层捕获。**缺省档位自 L45 起来自配置 `augmentation.max_retries` / `retry_delay`**（经 `create_model_backend` 透传，见 §3.20）；重试口径唯一在 `retry.with_retries` 这一层 —— 传输层自 L46 起不配任何重试（`HTTPAdapter` 只留连接池，见 §3.21），因为对 POST 它本来一次都不会跑，留着只会让人误算出「两层叠乘的请求上界」。**注意封顶只封住退避计算那一支**：服务端给 `Retry-After` 时改由 `retry.MAX_RETRY_AFTER`（300 s）封顶、`_MAX_RETRY_DELAY`（30 s）参不到场，这一条口径尚未拍定（账本 A72，细节见 §3.21） |
+| 模型调用失败 | 指数退避重试，`generate(max_retries=…)` 传的是**总尝试次数**（不是额外次数）且下界 0，仍失败则抛出由上层捕获。**缺省档位自 L45 起来自配置 `augmentation.max_retries` / `retry_delay`**（经 `create_model_backend` 透传，见 §3.20）；重试口径唯一在 `retry.with_retries` 这一层 —— 传输层自 L46 起不配任何重试（`HTTPAdapter` 只留连接池，见 §3.21），因为对 POST 它本来一次都不会跑，留着只会让人误算出「两层叠乘的请求上界」。**注意封顶分两支、互不相犯（L47 拍定，A72 关闭）**：退避计算那一支归调用方传的 `max_delay`（模型后端传 `_MAX_RETRY_DELAY = 30.0`）；服务端给 `Retry-After` 时走另一支，只归 `retry.MAX_RETRY_AFTER`（300 s）封顶，`max_delay` 参不到场 —— 这是刻意的，把「45 秒后再来」夹成 30 s 等于对刚说过别敲门的服务端提前敲门。默认档一次 `generate()` 的最坏总等待因此是 2 × 300 = 600 s 而不是 60 s，两行的算法见 §3.22 |
 | 可选依赖缺失 | 降级并记录 WARNING，功能跳过而非崩溃 |
 | 必需依赖缺失 | 抛 `ImportError` 并给出安装命令，不静默 |
 | ↑ 的具体落点：`models/base.py:_get_session`（L46 起） | 上两行原本在这里**互相打架**：`requests`（必需）与 `requests.adapters.HTTPAdapter`（可降级）共用一个 `except ImportError`，于是必需依赖缺失也会先打一条「requests 未安装，使用基础连接」再抛。现拆为「`import requests` 在 `try` 外 ⇒ 必需缺失直接抛；只有 HTTPAdapter 包在可降级的 `try/except` 里 ⇒ 降级为无连接池裸 Session」，两条约定各归各位（详见 §3.21） |
@@ -1155,7 +1232,8 @@ L62 那条例看不见这个隐患 ⇒ 一条既有测试守住的分支不等�
 | 配置文件损坏 | 抛出异常，不吞掉 |
 | API 层 | 转换为 `HTTPException`，`404` / `400` / `500` 语义明确 |
 | 计数 / 分页 / 窗口 / 步长 / 配额 / 保留数 / **重试次数 / 退避档位**旋钮越界 | 在 SDK 入参处一次判掉（`validation.require_count`），抛 `DataValidationError`；CLI 变退出码 1，API 变 400 |
-| **时长 / 秒数**旋钮越界（`retry_delay` / `default_retry_delay`，L45 起） | 同一条口径但换判据：`validation.require_seconds(name, value, minimum=0.0)` 拒 `bool` / 字符串 / NaN / 负值，接受 int 与 `+inf`。**不混进 `require_count`**（它按口径拒绝非整数）。配置文件侧由 `config_validator` 的 KNOWN_FIELDS 同判（0–60 s），两侧同判由 `test_validator_and_runtime_use_the_same_verdict` 钉住 —— 静态校验面与运行时判据不一致时，症状是「校验通过但一跑就炸」或反之，见 §3.20 |
+| **时长 / 秒数**旋钮越界（`retry_delay` / `default_retry_delay`，L45 起） | 同一条口径但换判据：`validation.require_seconds(name, value, minimum=0.0)` 拒 `bool` / 字符串 / NaN / 负值，接受 int 与 `+inf`。**不混进 `require_count`**（它按口径拒绝非整数）。配置文件侧由 `config_validator` 的 KNOWN_FIELDS 同判（0–60 s），两侧同判由 `test_validator_and_runtime_use_the_same_verdict` 钉住 —— 静态校验面与运行时判据不一致时，症状是「校验通过但一跑就炸」或反之，见 §3.20。**判据覆盖面自 L47 起不再只有配置那两处**：`retry.compute_delay` 与 `retry.with_retries` 的 `base_delay` / `max_delay` 也在各自入参处判（后者判在调用 `func` **之前**，否则坏值会先烧掉一次真实请求、再从循环里抛出与参数错误无关的 `TypeError`，原始异常丢失），见 §3.22 |
+| **无量纲倍率**旋钮越界（退避 `factor`，L47 起） | 第三条判据 `validation.require_positive(name, value)`：**严格大于 0**，拒 `bool` / 字符串 / NaN / 0 / 负数，接受 int 与 `+inf`。不复用 `require_seconds` 是因为它的文案会把「秒数」安到一个没有单位的倍率上（指错根因），也不做可配下界是因为这类值只有「每档乘多少」一种合法读法——实测 `factor=0` 的退避是 `[1.0, 0.0, 0.0]`（忙重试）、`-2` 是 `[1.0, 0.0, 4.0]`（隔档完全不等待的非单调序列）。**`0 < factor < 1` 放行**：实测 `[1.0, 0.5, 0.25]` 非负、单调、有界，没有该拒的形状。同见 §3.22 |
 | 断点文件损坏 | 记录 ERROR 并返回 `None`，退化为从头开始 |
 
 「取前 N 条」这一类旋钮（`limit` / `offset` / `top_k` / `preview_size` / `batch_size`

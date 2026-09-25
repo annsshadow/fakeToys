@@ -59,7 +59,9 @@ class ModelBackend(ABC):
     # 现在统一复用 cache.MemoryCache，容量与淘汰逻辑只维护一处。
     _GENERATION_CACHE_MAX = 512
 
-    # 单次重试等待上限（秒），防止退避时间无界增长
+    # 退避计算的等待上限（秒），防止指数退避无界增长。**只管退避计算那一支**：
+    # 服务端给出 `Retry-After` 时改由 `retry.MAX_RETRY_AFTER`（300 s）封顶，本常数
+    # 参不到场（两副封顶为何故意不相犯，见 docs/ARCHITECTURE.md §3.22）。
     _MAX_RETRY_DELAY = 30.0
 
     # generate() 未显式传参时的默认档位：总尝试次数与首次退避基数。
