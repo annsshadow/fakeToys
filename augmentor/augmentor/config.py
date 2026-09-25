@@ -473,20 +473,38 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
             return _resolve_env(value)
         
         # 加载模型配置
+        # `models` 走这条特判路径、绕开了 `_load_section` 的形状守卫（A101 当年只
+        # 护住映射表那 20 节）。于是 `models:` 写成标量、或某个模型条目写成标量 /
+        # 空 / 列表时，过去会当场崩在 `model_conf.get` 的 `AttributeError`，而校验
+        # 面却报 `is_valid=False` —— 同族缺陷两侧不同判（A85，A101 的漏网）。这里补
+        # 回与 `_load_section` 逐字同口径的判据：只写名字没给内容（None）= 全默认；
+        # 写成非映射则抛可行动的 ConfigError。
+        def _as_mapping(value, where):
+            if value is None:
+                return {}
+            if not isinstance(value, dict):
+                raise ConfigError(
+                    f"{where} 必须是「键: 值」的映射，当前是 {value!r}"
+                    f"（{type(value).__name__}）"
+                )
+            return value
+
         if 'models' in raw_config:
-            config.default_model = raw_config['models'].get('default', 'ernie')
-            for name, model_conf in raw_config['models'].items():
+            models_raw = _as_mapping(raw_config['models'], 'models')
+            config.default_model = models_raw.get('default', 'ernie')
+            for name, model_conf in models_raw.items():
                 if name == 'default':
                     continue
+                conf = _as_mapping(model_conf, f"models.{name}")
                 config.models[name] = ModelConfig(
-                    type=model_conf.get('type', ''),
-                    api_key=resolve_env(model_conf.get('api_key', '')),
-                    secret_key=resolve_env(model_conf.get('secret_key', '')),
-                    base_url=resolve_env(model_conf.get('base_url', '')),
-                    model=model_conf.get('model', ''),
-                    temperature=model_conf.get('temperature', 0.99),
-                    top_p=model_conf.get('top_p', 0.95),
-                    max_output_tokens=model_conf.get('max_output_tokens', 2048)
+                    type=conf.get('type', ''),
+                    api_key=resolve_env(conf.get('api_key', '')),
+                    secret_key=resolve_env(conf.get('secret_key', '')),
+                    base_url=resolve_env(conf.get('base_url', '')),
+                    model=conf.get('model', ''),
+                    temperature=conf.get('temperature', 0.99),
+                    top_p=conf.get('top_p', 0.95),
+                    max_output_tokens=conf.get('max_output_tokens', 2048)
                 )
         
         # 使用映射表加载其他配置（减少重复代码）
