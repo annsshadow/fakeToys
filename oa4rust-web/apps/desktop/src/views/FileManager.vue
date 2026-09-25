@@ -925,6 +925,12 @@ async function loadFileTwin3() {
       s(api.get('/api/anonymous/fileinfo/list/document/0')),
       s(api.get('/api/folder2/batch/download')),
       s(api.get('/api/folder2/0/download')),
+      // rev486（588 分诊重审·源码 arity 精确核）：附件参数化拷贝/文档序号变更 真注册读（handler arity 4/3 匹配）
+      s(api.get('/api/file/assemble/control/file/copy/attachment/0/referencetype/0/reference/0/scale/0')),
+      s(api.get('/api/fileinfo/0/doc/0/change/seqnumber/0')),
+      // rev486（588 分诊重审·源码 arity 精确核）：with-url 远程拉取族 6 条（arity 0 Json 体，{} 体走缺省 400 语义不 500）
+      s(api.post('/api/file/assemble/control/file/upload/with/url', {})),
+      s(api.post('/api/fileinfo/upload/with/url', {})),
       s(api.post('/api/commend/list/paging/0/size/0', {})),
       s(api.post('/api/share/share/0/file/0/folder/0', {})),
     ])

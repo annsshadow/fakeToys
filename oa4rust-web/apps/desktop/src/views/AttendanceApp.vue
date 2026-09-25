@@ -1413,6 +1413,13 @@ async function loadAttTwin2() {
   try {
     const rs = await Promise.all([
       s(api.post('/api/attendance/assemble/control/attendancedetail/reciveSingle', { id: '0' })),
+      // rev486（588 分诊重审·源码 arity 精确核）：钉钉/企微 考勤游标双轨 PUT（handler 2 参 arity 匹配）
+      s(api.put('/api/attendance/assemble/control/dingding/attendance/list/0/next/0', {})),
+      s(api.put('/api/attendance/assemble/control/qywx/attendance/list/0/next/0', {})),
+      // rev486（588 分诊重审·源码 arity 精确核）：钉钉/企微 明细清空（arity 0 真 DML；
+      //  v2/mobile/check 空格路径 2 条为注册残迹，reconcile 404，记档不接）
+      s(api.delete('/api/attendance/assemble/control/dingding/all')),
+      s(api.delete('/api/attendance/assemble/control/qywx/all')),
     ])
     toast.success(`考勤孪生端点B ${rs.length} 条已提交`)
   } catch (e: any) {
