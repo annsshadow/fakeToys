@@ -34,6 +34,7 @@
       <button class="org-meta-btn" @click="loadOrgObjectReads">对象投影批读</button>
       <button class="org-meta-btn" @click="loadOrgAdminOps">管理员解锁/授权日志</button>
       <button class="org-meta-btn" @click="loadOrgTwin">孪生端点</button>
+      <button class="org-meta-btn" @click="loadOrgObjectTwins">对象投影孪生</button>
       <button class="org-meta-btn" @click="orgUnitExpress">单位树/校验/属性读</button>
       <button class="org-meta-btn" @click="orgUnitWrite('attrSet')">单位属性替换</button>
       <button class="org-meta-btn" @click="orgUnitWrite('attrAppend')">单位属性追加</button>
@@ -417,6 +418,78 @@ async function loadOrgTwin() {
     toast.success(`组织孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
     toast.error('组织孪生端点失败: ' + (e?.message ?? ''))
+  }
+}
+// rev481（放宽双计口径·第二波）：/object 投影族 48 条真注册纯读路由（组织/身份/角色/群组/人员/职务投影，
+// organization_assemble_express 宏生成+委派 helper 全 SELECT x_org_*，0 DML；body 用各 Wi 资源 List 超集，
+// handler 各取所需字段，缺省即空结果不 500；纯字面路径 exact 命中无影子）
+async function loadOrgObjectTwins() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const ob = {
+    personList: ['0'],
+    unitList: ['0'],
+    identityList: ['0'],
+    groupList: ['0'],
+    roleList: ['0'],
+    levelList: ['0'],
+    typeList: ['0'],
+    name: '0',
+    attribute: '0',
+  }
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/person/list/all/object')),
+      s(api.post('/api/group/list/object', ob)),
+      s(api.post('/api/group/list/identity/object', ob)),
+      s(api.post('/api/group/list/person/object', ob)),
+      s(api.post('/api/group/list/group/sub/direct/object', ob)),
+      s(api.post('/api/group/list/group/sub/nested/object', ob)),
+      s(api.post('/api/group/list/group/sup/direct/object', ob)),
+      s(api.post('/api/group/list/group/sup/nested/object', ob)),
+      s(api.post('/api/identity/list/object', ob)),
+      s(api.post('/api/identity/list/group/object', ob)),
+      s(api.post('/api/identity/list/person/object', ob)),
+      s(api.post('/api/identity/list/major/person/object', ob)),
+      s(api.post('/api/identity/list/unit/person/object', ob)),
+      s(api.post('/api/identity/list/unit/sub/direct/object', ob)),
+      s(api.post('/api/identity/list/unit/sub/nested/object', ob)),
+      s(api.post('/api/person/list/object', ob)),
+      s(api.post('/api/person/list/group/object', ob)),
+      s(api.post('/api/person/list/identity/object', ob)),
+      s(api.post('/api/person/list/role/object', ob)),
+      s(api.post('/api/person/list/personattribute/object', ob)),
+      s(api.post('/api/person/list/login/after/object', ob)),
+      s(api.post('/api/person/list/login/recent/object', ob)),
+      s(api.post('/api/person/list/person/sub/direct/object', ob)),
+      s(api.post('/api/person/list/person/sub/nested/object', ob)),
+      s(api.post('/api/person/list/person/sup/direct/object', ob)),
+      s(api.post('/api/person/list/person/sup/nested/object', ob)),
+      s(api.post('/api/person/list/unit/sub/direct/object', ob)),
+      s(api.post('/api/person/list/unit/sub/nested/object', ob)),
+      s(api.post('/api/person/list/unit/sub/direct/like/object', ob)),
+      s(api.post('/api/person/list/unit/sub/nested/like/object', ob)),
+      s(api.post('/api/role/list/object', ob)),
+      s(api.post('/api/role/list/person/object', ob)),
+      s(api.post('/api/unit/list/object', ob)),
+      s(api.post('/api/unit/list/level/object', ob)),
+      s(api.post('/api/unit/list/types/object', ob)),
+      s(api.post('/api/unit/list/identity/object', ob)),
+      s(api.post('/api/unit/list/identity/sup/nested/object', ob)),
+      s(api.post('/api/unit/list/person/object', ob)),
+      s(api.post('/api/unit/list/person/sup/nested/object', ob)),
+      s(api.post('/api/unit/list/unitattribute/object', ob)),
+      s(api.post('/api/unit/list/unitduty/object', ob)),
+      s(api.post('/api/unit/list/unit/sub/direct/object', ob)),
+      s(api.post('/api/unit/list/unit/sub/nested/object', ob)),
+      s(api.post('/api/unit/list/unit/sup/direct/object', ob)),
+      s(api.post('/api/unit/list/unit/sup/nested/object', ob)),
+      s(api.post('/api/unit/identity/level/object', ob)),
+      s(api.post('/api/unit/identity/type/object', ob)),
+      s(api.post('/api/unitduty/list/identity/unit/name/object', ob)),
+    ])
+    toast.success(`对象投影孪生 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('对象投影孪生失败: ' + (e?.message ?? ''))
   }
 }
 // rev357：组织 express 单位树/校验/属性职务读（POST body{unitList}/{unit,name}），全字面量路径，用户触发按钮
