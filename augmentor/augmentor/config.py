@@ -3,6 +3,7 @@
 
 """配置管理模块"""
 
+import logging
 import os
 import yaml
 from dataclasses import dataclass, field
@@ -26,6 +27,8 @@ RETRY_DELAY_RANGE = (0.0, 60.0)
 PORT_RANGE = (1, 65535)
 RATE_LIMIT_MIN_REQUESTS = 0
 RATE_LIMIT_MIN_WINDOW_SECONDS = 0.0
+
+logger = logging.getLogger(__name__)
 
 
 def _reject_null_fields(section: str, obj: Any) -> None:
@@ -377,6 +380,25 @@ def _load_section(raw_config: Dict, key: str, config_class: type, defaults: Dict
     return config_class(**kwargs)
 
 
+def _log_unread_keys(raw_config: Dict) -> None:
+    """把「写了没人读」的键在**加载**这一步就说出来（A84）
+
+    诊断面（`validate_config`）早就报这条，产品面却一声不吭：拼错一个键名的
+    人拿到的是「配置生效了、值却没变」，只能靠读源码找回拼写。走
+    `logging.warning` 而不是 stdout —— 不碰任何命令的输出契约；不进退出码 ——
+    与 L53 定下的「WARNING 不判负」同一口径。出厂 `config.yaml` 零命中，
+    所以正常一次运行不多一行输出，拼错才出声。
+
+    Args:
+        raw_config: 已从 YAML 读出的原始配置字典
+    """
+    # 反向 import：`config_validator` 顶部要用本模块的区间常量，只有函数内取才不成环。
+    from .config_validator import unread_key_messages
+
+    for message in unread_key_messages(raw_config):
+        logger.warning("%s", message)
+
+
 def load_config(config_path: Optional[str] = None) -> AppConfig:
     """加载配置文件
     
@@ -390,7 +412,12 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
     
     if config_path and os.path.exists(config_path):
         with open(config_path, 'r', encoding='utf-8') as f:
-            raw_config = yaml.safe_load(f)
+            # 空文件或只含注释时 YAML 返回 `None`，而下面所有 `'x' in raw_config`
+            # 都会抛 `TypeError: argument of type 'NoneType' is not iterable`
+            # ——实测 CLI 拿到的是这行无法行动的栈信息（A94）。一份「什么都没写」的
+            # 配置语义上就是全默认，和本函数不传路径同解；`or {}` 的先例在本模块
+            # `save_config` 里已经有了。
+            raw_config = yaml.safe_load(f) or {}
         
         # 解析环境变量
         def resolve_env(value):
@@ -497,6 +524,8 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
         
         for key, config_class, defaults in config_sections:
             setattr(config, key, _load_section(raw_config, key, config_class, defaults))
+        
+        _log_unread_keys(raw_config)
     
     return config
 
