@@ -1116,7 +1116,7 @@ class TestRuntimeValidatorParity:
                 == RATE_LIMIT_MIN_WINDOW_SECONDS)
 
     def test_shape_flags_exist_only_where_runtime_judges(self):
-        """`items` / `non_empty` 只许出现在运行时真判的键上
+        """`items` / `non_empty` / `choices` / `renderable` 只许出现在运行时真判的键上
 
         反向不一致同样是缺陷：校验器比运行时严，合法配置会被 `validate-config` 拦在
         门外（`quality.threshold` 是数值键、运行时不判形状，规格就不许挂
@@ -1125,8 +1125,15 @@ class TestRuntimeValidatorParity:
         s = ConfigValidator.KNOWN_FIELDS
         assert {p for p, spec in s.items() if "items" in spec} == {
             "web.cors_origins", "web.data_roots", "web.rate_limit_exempt_paths"}
+        # `logging.format` 挂在 `non_empty` 上是 L57 的正当增长：运行时那一侧走的
+        # 正是 `require_string`（空串一并拒），不是校验器独有的口味。
         assert {p for p, spec in s.items() if spec.get("non_empty")} == {
-            "web.host", "web.static_dir"}
+            "web.host", "web.static_dir", "logging.format"}
+        # 后两把是本轮新挂的形状键，允许集/可渲染性各只有运行时的那一个判据
+        # （`level_number` / `build_formatter`），所以各只许命中一个键。
+        assert {p for p, spec in s.items() if "choices" in spec} == {"logging.level"}
+        assert {p for p, spec in s.items() if spec.get("renderable")} == {
+            "logging.format"}
 
 
 class TestUnreadKeyWarnings:
