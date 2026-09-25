@@ -27,6 +27,8 @@
 
 自 L45 起本文件还覆盖**时长旋钮**的浮点判据 `require_seconds`：主张 1/2/4 同样成立，
 只是坏值的症状从「换条数」变成「换一档等待」——见 `TestRequireSeconds`。
+L47 加了 `require_positive`（无量纲倍率），L48 加了 `require_ratio`（闭区间比例，
+如退避抖动 `jitter`）：比例坏值的症状是「上限从别处冒出来」，见 `TestRequireRatio`。
 """
 
 import json
@@ -55,7 +57,8 @@ from augmentor.sampler import ActiveSampler
 from augmentor.search_enhanced import search_dataset
 from augmentor.dataset_ops import DatasetOperations, SampleConfig
 from augmentor.streaming import StreamReader, StreamAugmentor
-from augmentor.validation import require_count, require_positive, require_seconds
+from augmentor.validation import (require_count, require_positive, require_ratio,
+                                  require_seconds)
 from augmentor.vector.faiss import FAISSDB
 from augmentor.versioning import VersionManager
 
@@ -202,6 +205,71 @@ class TestRequirePositive:
     def test_inf_is_bounded_by_the_ceiling_so_it_stays_legal(self):
         """与 `require_seconds` 同口径：`+inf` 一路上限是可预期行为（实测 30.0）"""
         assert compute_delay(2, 1.0, float("inf"), 30.0) == 30.0
+
+
+class TestRequireRatio:
+    """闭区间比例旋钮（退避抖动 `jitter`）的判据，判据族第四员
+
+    为什么要有第四员而不是复用 `require_seconds`：抖动的单位是「乘在自己那一档上
+    的比例」，不是秒；文案写「必须是数值秒数」会把根因说错（L46 为这件事记过一笔）。
+    为什么上界也要判（`require_seconds` / `require_positive` 都只管下界）：抖动是加在
+    `max_delay` 那道夹**之后**的，所以它一旦大到超出区间，调用方以为的等待上限就不再
+    是上限。实测同一贴顶档位（`base_delay=20`、`attempt=3` ⇒ `min(30, 80)` 正好夹在 30.0，
+    各抽 500 次，Temp `l48_probe2.py`）：
+    `jitter=0.5` → 30.02 ~ 44.94 s、`1.0` → 30.05 ~ 59.87 s、`2.0` → 30.09 ~ 89.74 s、
+    `50.0` → 32.27 ~ **1523.54 s**，四档越过 30 s 的比例都是 1.000。判在 0-1 之间可把
+    这一支最坏等待证死在 2 × `max_delay`。
+    下界的 `-1` 与 `NaN` 不判也行吗？不行：实测两者与「根本没传 `jitter`」**逐字同答**
+    （都交 ``[1.0, 2.0, 4.0]``，因为过不了 `if jitter > 0` 那道门）——「传了参数等于没传」
+    是 L33 禁掉的 `or` 回落同族的静默，照样判。
+    """
+
+    @pytest.mark.parametrize("value", [0, 0.0, 0.5, 1, 1.0, None])
+    def test_allows_in_range_numbers_and_none(self, value):
+        """`0`（不抖）与 `1`（最大抖动）都是合法档位，`None` 表示「没传」"""
+        assert require_ratio("jitter", value) == value
+
+    @pytest.mark.parametrize(
+        "value", [-0.1, -1.0, 1.0000001, 1.5, 2.0, 50.0, "0.5", True, [],
+                  float("nan")],
+    )
+    def test_rejects_out_of_range_non_numeric_and_nan(self, value):
+        with pytest.raises(DataValidationError):
+            require_ratio("jitter", value)
+
+    def test_error_message_names_the_parameter_and_the_interval(self):
+        with pytest.raises(DataValidationError, match=r"jitter.*0\.0 到 1\.0.*1\.5"):
+            require_ratio("jitter", 1.5)
+
+    def test_bool_is_max_jitter_not_one(self):
+        """`True` 在算术里读成 1.0，也就是「直接把抖动开到最大」——判据落地前实测它与
+        `1.0` 抽样逐字同答（同一种子五次：7.38 / 4.54 / 7.82 / 4.95 / 4.94），所以它不是
+        「大概是想要抖动吧」的善意笔误，而是把最坏档位悄悄拉满，必须单独判掉。
+        """
+        with pytest.raises(DataValidationError, match="jitter"):
+            require_ratio("jitter", True)
+
+    @pytest.mark.parametrize("value", [-5.0, float("nan")])
+    def test_bad_jitter_used_to_answer_exactly_like_no_jitter(self, value):
+        """本条钉住「静默」这个旧症状：判据落地前 `-5.0` 与 `NaN` 都交 ``[1.0, 2.0, 4.0]``，
+        与「根本没传 `jitter`」一字不差（过不了 `if jitter > 0` 那道门）。
+        """
+        with pytest.raises(DataValidationError, match="jitter"):
+            compute_delay(3, 1.0, 2.0, 30.0, jitter=value)
+
+    @pytest.mark.parametrize("bounds", [(1.0, 3.0), (0.0, 0.2)])
+    def test_interval_is_configurable_for_other_ratio_knobs(self, bounds):
+        """族里其它比例旋钮（如未来的比例阈值）可复用同一判据，不必再造文案"""
+        lo, hi = bounds
+        assert require_ratio("ratio", (lo + hi) / 2, lo, hi) == (lo + hi) / 2
+        with pytest.raises(DataValidationError, match=f"ratio.*{lo} 到 {hi}"):
+            require_ratio("ratio", lo - 1.0, lo, hi)
+
+    def test_none_means_not_passed_and_short_circuits_before_type_check(self):
+        """`None` 直接放行：调用方（`with_retries` 的默认值）绝大多数时候不传抖动，
+        这一支不构造异常也不做 isinstance，实测 59.7 ns vs 传值 235.3 ns。
+        """
+        assert require_ratio("jitter", None) is None
 
 
 class TestSearchPagination:

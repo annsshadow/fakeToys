@@ -14,7 +14,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional, Tuple, Type
 
-from .validation import require_count, require_positive, require_seconds
+from .validation import require_count, require_positive, require_ratio, require_seconds
 
 logger = logging.getLogger(__name__)
 
@@ -82,26 +82,34 @@ def compute_delay(attempt: int,
             走 `with_retries` 的另一支、封顶在 `MAX_RETRY_AFTER`（见该常数的注释）。
             判据 `require_seconds`：实测 `max_delay=-1` 会把整条退避清零（`min()` 交出
             它再被尾部夹 0），而 `max_delay=0` 是合法的「不等待」请求，故下界取 0。
-        jitter: 随机抖动比例（0-1），在指数值上叠加 [0, jitter*delay]。**尚无判据**
-            —— 产品里没有任何路径能把非默认 `jitter` 传进来（A65），而实测
-            `jitter=50` 会让结果（61.09 s）越过 `max_delay=30`，所以区间判据与透传
-            必须同一轮做，不留半保护的中间态。
-        rng: 随机数生成器（可注入以便测试）
+        jitter: 随机抖动比例（0-1），在指数值**之上**叠加 [0, jitter*delay]。判据
+            `require_ratio`：抖动加在 `max_delay` 那道夹**之后**，所以它一旦非 0 就
+            成了退避这一支真正的上限来源（实测同一贴顶档位 `jitter=1.0` 抽出
+            30.05 ~ 59.87 s、`50.0` 抽出 32.27 ~ 1523.54 s，且 100% 越过 `max_delay`）；
+            判在 1 以内可证地把这一支的最坏等待封在 2 × `max_delay`。负值与 NaN 过不了
+            `if jitter > 0` 那道门，会与「没传参数」逐字同答（实测 `-5.0` / `NaN` 都交
+            ``[1.0, 2.0, 4.0]``）—— 那也是一种静默，所以照样判。
+        rng: 随机数生成器（可注入以便测试）。只有 `None` 才新建一个；回落判据用
+            `is None` 而不是 `or` —— 实测一个 `__bool__` 为假的种子 rng（Mock 的常见
+            形状）会被 `rng or random.Random()` 静默换成全局随机源，同一个「固定种子」
+            对象连续三次调用抽出三个不同值，「可注入以便测试」当场失效。
 
     Returns:
         等待秒数（>= 0）
 
     Raises:
         DataValidationError: `attempt` 不是整数或小于 1；`base_delay` / `max_delay`
-            不是不小于 0 的秒数；`factor` 不是大于 0 的数值
+            不是不小于 0 的秒数；`factor` 不是大于 0 的数值；`jitter` 不在 0-1 之间
     """
     require_count("attempt", attempt, minimum=1)
     require_seconds("base_delay", base_delay, minimum=0.0)
     require_positive("factor", factor)
     require_seconds("max_delay", max_delay, minimum=0.0)
+    require_ratio("jitter", jitter)
     delay = min(max_delay, base_delay * (factor ** (attempt - 1)))
     if jitter > 0:
-        rng = rng or random.Random()
+        if rng is None:
+            rng = random.Random()
         delay += rng.uniform(0.0, jitter * delay)
     return max(0.0, delay)
 
@@ -112,6 +120,8 @@ def with_retries(func: Callable[..., Any],
                   base_delay: float = 1.0,
                   factor: float = 2.0,
                   max_delay: float = 30.0,
+                  jitter: float = 0.0,
+                  rng: Optional[random.Random] = None,
                   retry_on: Tuple[Type[BaseException], ...] = (Exception,),
                   sleeper: Callable[[float], None] = time.sleep,
                   on_retry: Optional[Callable[[int, BaseException, float], None]] = None,
@@ -133,6 +143,11 @@ def with_retries(func: Callable[..., Any],
             `compute_delay` 只在第一次失败之后才被走到，坏值会先白烧一次真实请求，
             再从循环里抛出与「参数写错」无关的 `TypeError`（实测 `base_delay='1'` 的
             症状），而那时原始异常已经彻底丢了。
+        jitter/rng: 随机抖动比例与其随机源，原样透传给 `compute_delay`（同名两参，
+            判据也两处一致：`require_ratio`）。默认 `jitter=0.0` ⇒ 既有档位数值
+            一字不变（实测五档仍是 ``[1.0, 2.0, 4.0, 8.0, 16.0]``）。
+            **只作用于退避这一支**：`classify` 给出建议等待（如 HTTP ``Retry-After``）时
+            原样采纳、不再叠加抖动 —— 与 A72 拍的「拿到服务端的指示就照办」同一条口径。
         retry_on: 触发重试的异常类型元组
         sleeper: 等待函数（测试可注入）
         on_retry: 每次重试前的回调 (attempt, exc, delay)
@@ -150,7 +165,7 @@ def with_retries(func: Callable[..., Any],
 
     Raises:
         DataValidationError: `max_retries` 不是不小于 0 的整数，或 `base_delay` /
-            `max_delay` / `factor` 非法（在调用 `func` **之前**判掉）
+            `max_delay` / `factor` / `jitter` 非法（在调用 `func` **之前**判掉）
         重试耗尽后抛出最后一次异常；被 classify 判定为不可重试时立即抛出
     """
     # 判参排在循环之前：`func` 可能是一次真实的付费 API 调用，坏档位不该先把它打出去
@@ -158,6 +173,7 @@ def with_retries(func: Callable[..., Any],
     require_seconds("base_delay", base_delay, minimum=0.0)
     require_positive("factor", factor)
     require_seconds("max_delay", max_delay, minimum=0.0)
+    require_ratio("jitter", jitter)
     stats = RetryStats()
     last_exc: Optional[BaseException] = None
 
@@ -189,7 +205,8 @@ def with_retries(func: Callable[..., Any],
             if suggested is not None:
                 delay = min(MAX_RETRY_AFTER, max(0.0, float(suggested)))
             else:
-                delay = compute_delay(attempt + 1, base_delay, factor, max_delay)
+                delay = compute_delay(attempt + 1, base_delay, factor, max_delay,
+                                      jitter=jitter, rng=rng)
 
             stats.delays.append(delay)
             logger.warning(

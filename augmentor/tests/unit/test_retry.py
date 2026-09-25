@@ -6,7 +6,9 @@
 覆盖 compute_delay 指数/封顶/抖动、with_retries 成功/重试耗尽/
 不可重试异常、sleeper 注入与 on_retry 回调、RetryStats 统计、
 重试计数旋钮（max_retries / attempt）与退避浮点旋钮（base_delay /
-factor / max_delay）的越界入参、两副等待封顶各管一支的口径（A72）。
+factor / max_delay / jitter）的越界入参、两副等待封顶各管一支的口径（A72）、
+`jitter` / `rng` 从 `with_retries` 到 `compute_delay` 的透传与「抖动只加在退避一支」
+的边界（A65）。
 """
 
 import random
@@ -500,3 +502,151 @@ class TestTwoDelayCeilings:
         from augmentor.models.base import ModelBackend
 
         assert (MAX_RETRY_AFTER, ModelBackend._MAX_RETRY_DELAY) == (300.0, 30.0)
+
+
+class TestJitterPassthrough:
+    """A65：`with_retries` 接上 `jitter` / `rng` 并原样透传给 `compute_delay`
+
+    抖动这一支在 `compute_delay` 里早就存在，但 `with_retries` 从来不透传（改前实测
+    函数体里 "jitter" / "rng" 各 0 命中），所以对唯一的产品调用点 `models/base.py`
+    而言它一直是死代码。把它接上的理由不是「多一个旋钮」，而是本仓有 5 处
+    `ThreadPoolExecutor`（`max_workers` 3/4/5）会并发打同一个后端：同一档退避会让
+    它们**同时醒来**再撞一次限流，抖一下才散得开。
+
+    两条边界：
+    1. 默认 `jitter=0.0` ⇒ 既有档位数值一字不变（下一条与 `TestComputeDelay` 共同钉住）。
+    2. 只作用于退避这一支；`classify` 给出建议等待时原样采纳、不叠加抖动 —— 与 §3.22
+       记录的「拿到服务端的指示就照办」（A72 方向 ①）同一条口径。
+    """
+
+    class _StubRng(random.Random):
+        """记录 `uniform` 入参、按固定值回报的随机源：让抖动这一支可断言而非可复现"""
+
+        def __init__(self, value=1.0):
+            super().__init__(0)
+            self.value = value
+            self.calls = []
+
+        def uniform(self, a, b):
+            self.calls.append((a, b))
+            return self.value
+
+    @staticmethod
+    def _failing(n):
+        """前 n 次失败、之后成功的目标函数"""
+        state = {"i": 0}
+
+        def func():
+            state["i"] += 1
+            if state["i"] <= n:
+                raise RuntimeError("boom")
+            return "ok"
+
+        return func
+
+    def test_default_jitter_leaves_the_ladder_untouched(self):
+        """零回归锚点：不传 `jitter` 时序列与接参前逐字相同"""
+        slept = []
+        with pytest.raises(RuntimeError):
+            with_retries(_always_fail, max_retries=3, sleeper=slept.append)
+        assert slept == [1.0, 2.0, 4.0]
+
+    def test_jitter_lands_on_the_backoff_branch(self):
+        """透传必须真的落到 `compute_delay` 的抖动项上：叠加在档位**之上**，
+        且询问区间是 `[0, jitter * 未抖动档位]`（实测比例 1.0403 那一类形状的来源）。
+        """
+        rng = self._StubRng(value=1.0)
+        _res, stats = with_retries(self._failing(3), max_retries=3, sleeper=lambda d: None,
+                                   jitter=0.5, rng=rng)
+        assert stats.delays == [2.0, 3.0, 5.0]
+        assert rng.calls == [(0.0, 0.5), (0.0, 1.0), (0.0, 2.0)]
+
+    def test_injected_rng_makes_the_shake_reproducible(self):
+        """同一种子两次跑出同一串等待，且它**确实抖过**（不等于不抖的档位）——
+        只断言「相等」是不够的：摘掉透传后两次都交出 ``[1.0, 2.0, 4.0]``，照样相等。
+        """
+        a = with_retries(self._failing(3), max_retries=3, sleeper=lambda d: None,
+                         jitter=1.0, rng=random.Random(42))[1].delays
+        b = with_retries(self._failing(3), max_retries=3, sleeper=lambda d: None,
+                         jitter=1.0, rng=random.Random(42))[1].delays
+        assert a == b != [1.0, 2.0, 4.0]
+        # 抖动加在档位之上、幅度 [0, 1×档位]，所以每档都落在 [base, 2×base]
+        assert all(base <= d <= 2 * base for base, d in zip([1.0, 2.0, 4.0], a))
+
+    def test_falsy_but_usable_rng_is_not_silently_replaced(self):
+        """判回落用 `is None` 而不是 `or`：实测一个 `__bool__` 为假的种子 rng 被
+        `rng or random.Random()` 静默换成全局随机源，同一个「固定种子」对象连续三次
+        抽出三个不同值（实测 6.54 / 7.25 / 5.62），测试里就是不可复现。
+        """
+        class FalsyRandom(random.Random):
+            def __bool__(self):
+                return False
+
+        first = with_retries(self._failing(3), max_retries=3, sleeper=lambda d: None,
+                             jitter=1.0, rng=FalsyRandom(42))[1].delays
+        second = with_retries(self._failing(3), max_retries=3, sleeper=lambda d: None,
+                              jitter=1.0, rng=FalsyRandom(42))[1].delays
+        assert first == second
+
+    def test_jitter_never_stretches_a_server_instruction(self):
+        """`Retry-After` 那一支不加抖动：桩随机源若被调用会加 99 s，实测它一次都没被调"""
+        rng = self._StubRng(value=99.0)
+        slept = []
+        with pytest.raises(RuntimeError):
+            with_retries(_always_fail, max_retries=2, max_delay=30.0, jitter=1.0, rng=rng,
+                         classify=lambda exc: (True, 45.0), sleeper=slept.append)
+        assert slept == [45.0, 45.0]
+        assert rng.calls == []
+
+    def test_max_jitter_bounds_the_worst_case_at_twice_the_ceiling(self):
+        """`jitter` 判在 0-1 之内换来的那条可证上界：贴顶档位最坏 2 × `max_delay`。
+        同时断言「确实越过 30 s」——抖动加在夹逼之后，这正是 30 s 那句口径要补条件的原因。
+        """
+        rng = random.Random(2026)
+        samples = [compute_delay(4, 20.0, 2.0, 30.0, jitter=1.0, rng=rng)
+                   for _ in range(2000)]
+        assert max(samples) <= 60.0
+        assert min(samples) >= 30.0
+        assert any(s > 30.0 for s in samples)
+
+    def test_missing_rng_still_shakes_within_the_bound(self):
+        """`if rng is None: rng = random.Random()` 这条回落支路的本来用途：不注入时
+        照抖，只是值不可预测 ⇒ 断范围而非断精确值（两条入口各走一遍，`with_retries`
+        那一支同时证明「透传过去时 rng 就是 None」）。
+        """
+        assert 4.0 <= compute_delay(3, 1.0, 2.0, 30.0, jitter=0.5) <= 6.0
+        delays = with_retries(self._failing(2), max_retries=2, sleeper=lambda d: None,
+                              jitter=0.5)[1].delays
+        assert [base <= d <= 2 * base for base, d in zip([1.0, 2.0], delays)] == [True, True]
+
+    @pytest.mark.parametrize("bad", [1.5, 2.0, 50.0, -0.1, -5.0, float("nan"), True, "0.5"])
+    def test_out_of_range_jitter_is_rejected_before_the_first_request(self, bad):
+        """入口判参不是重复劳动：摘掉 `with_retries` 那行 `require_ratio` 后，坏抖动会先
+        把 `func` 打出去（一次真实付费调用）再在第二档退避时抛错。
+        """
+        calls = []
+        with pytest.raises(DataValidationError, match="jitter"):
+            with_retries(lambda: calls.append(1), max_retries=2, sleeper=lambda d: None,
+                         jitter=bad)
+        assert calls == []
+
+
+class TestJitterConfigSurface:
+    """A65 的口径边界：抖动目前**不是**用户可配旋钮
+
+    `config.yaml` 里没有 `retry_jitter`，工厂也不传 —— 配置面暴露另立 A75 与 A73/A74
+    同批做，避免「半接一个旋钮」。本类钉住的是当前默认值，改它必须同步 A75。
+    """
+
+    def test_compute_delay_defaults_to_no_shake(self):
+        assert compute_delay(4, 20.0, 2.0, 30.0) == 30.0
+
+    def test_module_exports_the_pair_with_documented_defaults(self):
+        import inspect
+
+        sig = inspect.signature(compute_delay)
+        assert (sig.parameters["jitter"].default,
+                sig.parameters["rng"].default) == (0.0, None)
+        w_sig = inspect.signature(with_retries)
+        assert (w_sig.parameters["jitter"].default,
+                w_sig.parameters["rng"].default) == (0.0, None)

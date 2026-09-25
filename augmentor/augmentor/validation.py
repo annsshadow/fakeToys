@@ -5,7 +5,7 @@
 
 提供数据集格式验证、完整性检查等功能，以及跨模块共用的标量入参判据
 （`require_count` 计数旋钮 / `require_seconds` 时长旋钮 /
-`require_positive` 无量纲倍率旋钮）。
+`require_positive` 无量纲倍率旋钮 / `require_ratio` 0-1 比例旋钮）。
 """
 
 import json
@@ -139,6 +139,56 @@ def require_positive(name: str, value: Any) -> Optional[float]:
         raise DataValidationError(f"{name} 不能是 NaN")
     if value <= 0:
         raise DataValidationError(f"{name} 必须是大于 0 的数值，当前是 {value}")
+    return value
+
+
+def require_ratio(name: str, value: Any,
+                  minimum: float = 0.0,
+                  maximum: float = 1.0) -> Optional[float]:
+    """校验「随机抖动比例」这类**落在闭区间内的无量纲比例**旋钮，返回原值。
+
+    与 `require_positive` 同族，区别只有一句话：比例**有上界**，而实现里没有任何
+    一处会替调用方夹住它。以 `retry.compute_delay` 的 `jitter` 为例（实测，
+    `max_delay=30`；贴顶档取 `base_delay=20`、`factor=2`、`attempt=3` ⇒ 夹完正好 30.0）：
+
+    - 抖动是**加在夹好之后**的（``delay += rng.uniform(0, jitter * delay)``），所以
+      退避一旦贴到 `max_delay`，jitter 就成了那一支真正的上限来源：同一档位实测
+      `jitter=0.5` 抽出 30.02 ~ 44.94 s、`1.0` 抽出 30.05 ~ 59.87 s、
+      `2.0` 抽出 30.09 ~ 89.74 s、`50.0` 抽出 32.27 ~ **1523.54 s** —— 全部
+      100% 越过 `max_delay=30`。把比例判在 1 以内，那一支的最坏等待就可证地封在
+      2 × `max_delay`（60 s）；判在外面，等于交出一个上界随用户手滑线性放大的旋钮。
+    - **下界 0 不是多余的**：负数与 NaN 都过不了 `if jitter > 0` 这道门，于是
+      「传了一个参数」与「什么都没传」逐字同答（实测 `jitter=-5.0` / `NaN` 都交出
+      ``[1.0, 2.0, 4.0]``，与 `jitter=0` 完全相同）。这类静默不报错的读法正是
+      L33 禁止 `or` 回落时抱怨过的同一形状。
+    - `bool` 一并拒：`True` 会被当成 1.0 ⇒ 一个本想写「打开抖动」的参数打开的是
+      **最大档**抖动（实测 `jitter=True` 与 `jitter=1.0` 五次抽样逐字相同）。
+
+    Args:
+        name: 参数名，直接出现在报错里
+        value: 传入的值
+        minimum: 下界（含），默认 0.0
+        maximum: 上界（含），默认 1.0
+
+    Returns:
+        校验通过后的原值。`None` 视为「没传参数」，与 `require_count` /
+        `require_seconds` / `require_positive` 一致，由调用点自己决定回落哪个默认值。
+
+    Raises:
+        DataValidationError: 值不是数值（`bool` 也不算）、是 NaN，或不在闭区间内
+    """
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise DataValidationError(
+            f"{name} 必须是数值，当前是 {value!r}（{type(value).__name__}）"
+        )
+    if math.isnan(value):
+        raise DataValidationError(f"{name} 不能是 NaN")
+    if not minimum <= value <= maximum:
+        raise DataValidationError(
+            f"{name} 必须是 {minimum} 到 {maximum} 之间的比例，当前是 {value}"
+        )
     return value
 
 
