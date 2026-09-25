@@ -24,11 +24,13 @@ def largest_remainder(total: int,
         total: 要分配的条数
         weights: 每份的相对权重（负数按 0 读）
         caps: 每份的上限（例如「这一组只有 5 条数据」），装不下的名额让给其它份
-        minimum_each: 非 0 时，只要名额够，每份至少给这么多条
+        minimum_each: 非 0 时，只要「各份保底之和」（先被各自上限夹过）装得下 `total`，
+            每份至少给这么多条；装不下时保底整条不生效（退回纯按权重摊派），绝不超发
 
     Returns:
         各份配额。正常情况下和 == `total`；当 `caps` 之和不足时和 < `total`
-        （没有更多东西可分，这是唯一诚实的答案）
+        （没有更多东西可分，这是唯一诚实的答案）。任何情况下和都不大于 `total`——
+        保底只在装得下时生效，不是超发的理由
     """
     count = len(weights)
     if count == 0:
@@ -40,12 +42,19 @@ def largest_remainder(total: int,
         return _unit_cap_quota(total, weights, count)
 
     limits = list(caps) if caps is not None else [total] * count
-    if minimum_each and total >= count:
-        alloc = [minimum_each if limits[i] >= minimum_each else limits[i]
-                 for i in range(count)]
-        for i in range(count):
-            limits[i] -= alloc[i]
-        remaining = total - sum(alloc)
+    if minimum_each:
+        # 保底的准入读「保底之和装不装得下」，不读「名额盖不盖得住份数」：上限小于
+        # 保底的段吃不下 `minimum_each`，把它算进份数会既放过真正装不下的请求（超发），
+        # 又误拒真正装得下的请求（份数里有吃不下保底的段）。
+        floor = [minimum_each if lim >= minimum_each else lim for lim in limits]
+        floor_total = sum(floor)
+        if floor_total <= total:
+            alloc = floor
+            limits = [lim - given for lim, given in zip(limits, alloc)]
+            remaining = total - floor_total
+        else:
+            alloc = [0] * count
+            remaining = total
     else:
         alloc = [0] * count
         remaining = total
@@ -122,11 +131,10 @@ def _no_cap_quota(total: int, weights: Sequence[float], count: int) -> List[int]
     left = total - sum(alloc)
     if left:
         keys.sort()
-        for _, pos in keys:
-            if left == 0:
-                break
+        # 这里每份都还有余量（`left` 非负且小于 `count`，见上面的推导），所以「取前
+        # `left` 个键」与「逐段补到 `left` 归零才停」是同一批段 —— 不必在循环里再守一次
+        for _, pos in keys[:left]:
             alloc[pos] += 1
-            left -= 1
     return alloc
 
 
@@ -142,7 +150,8 @@ def _unit_cap_quota(total: int, weights: Sequence[float], count: int) -> List[in
     float 权重舍入成同一个 `exact`（相邻 double 的权重族就会撞，见用例
     `test_fast_path_compares_the_same_float_as_the_general_path`），那时一般路径按
     平局处理（先到先得），按权重排序却会挑后出现的那个。
-    `minimum_each` 在上限 1 下只能是「每份都给 1」或「无效」，已由 `total >= count` 一支盖住。
+    `minimum_each` 在上限 1 下不改变答案：保底之和 == `count` × 1（每份的上限就是 1），
+    于是「保底装得下」与下面的 `total >= count` 同判，快路不必读那个参数。
 
     等权重是「全体 `exact` 相同 ⇒ 全体平局 ⇒ 前 `total` 份」的特例，可以在排序前短路掉。
     真实分层采样正落在这条支路上：`weights` 与 `caps` 都是组大小，每份上限都是 1 就意味着
@@ -165,12 +174,12 @@ def _unit_cap_quota(total: int, weights: Sequence[float], count: int) -> List[in
     cut = sorted(exacts, reverse=True)[total - 1]
     quotas = [1 if e > cut else 0 for e in exacts]
     left = total - sum(quotas)
-    if left:
-        # 与阈值相等的那些是平局，按输入顺序补到刚好 `total` 份
-        for i, exact in enumerate(exacts):
-            if left == 0:
-                break
-            if exact == cut:
-                quotas[i] = 1
-                left -= 1
+    # 与阈值相等的那些是平局，按输入顺序补到刚好 `total` 份。不预判 `left` 是否非零：
+    # 下面的守卫第一步就 `break`，外层再套一层 `if left:` 是不可达的第二道同一判断
+    for i, exact in enumerate(exacts):
+        if left == 0:
+            break
+        if exact == cut:
+            quotas[i] = 1
+            left -= 1
     return quotas
