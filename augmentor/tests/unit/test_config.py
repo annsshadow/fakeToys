@@ -513,3 +513,115 @@ class TestWebCorsKeysReachTheConfig:
         assert a.web.data_roots is not b.web.data_roots
         a.web.data_roots.append("/tmp")
         assert b.web.data_roots == ["data"]
+
+
+class TestRuntimeSectionJudgements:
+    """`augmentation` / `web` 两节自带运行时判据（L51 / A77 + A80 + A82）
+
+    立项原因是「同一区间在校验器与运行时各抄一遍、还一边漏」：改前实测
+    （Temp `l51q/probe1.py` NONCE-A9C41E77）`AugmentationConfig(max_retries=10**6,
+    retry_delay=10**6, retry_jitter=50.0)` 无判据构造成功，`WebConfig` 的四个形状
+    缺陷同样全部放行。修法是把区间常量搬进 `config.py`、两节各带一个
+    `__post_init__`，校验器只能引用不能重打 —— 于是**不经 `validate-config` 的
+    写法也认这套契约**。逐值两侧一致由
+    `tests/unit/test_config_validator.py::TestRuntimeValidatorParity` 常驻断言，
+    本类只管「加载路径」与「SDK 直构」两件事。
+    """
+
+    @staticmethod
+    def _write(tmp_path, body, name="runtime.yaml"):
+        import yaml
+
+        path = tmp_path / name
+        with open(path, "w", encoding="utf-8") as handle:
+            yaml.safe_dump(body, handle, allow_unicode=True)
+        return str(path)
+
+    def test_defaults_satisfy_their_own_verdict(self):
+        """出厂默认必须过自己那道判据，否则 `load_config(None)` 直接起不来
+
+        `_load_section` 对缺失的节是「按默认字典整个构造」，所以默认值一旦落在
+        区间外，症状是没有配置文件的部署完全无法启动。
+        """
+        from augmentor.config import AugmentationConfig, WebConfig, load_config
+
+        assert AugmentationConfig().auto_save_interval == 10
+        assert WebConfig().cors_origins == []
+        loaded = load_config(None)
+        assert loaded.web.data_roots == ["data"]
+        assert loaded.augmentation.max_retries == 3
+
+    @pytest.mark.parametrize("body,expect", [
+        ({"web": {"data_roots": "data"}}, "web.data_roots"),
+        ({"web": {"cors_origins": "https://api.corp.example"}}, "web.cors_origins"),
+        ({"web": {"data_roots": [None]}}, "web.data_roots"),
+        ({"web": {"rate_limit_window_seconds": float("nan")}},
+         "web.rate_limit_window_seconds"),
+        ({"web": {"port": 0}}, "web.port"),
+        ({"web": {"port": None}}, "web.port"),
+        ({"augmentation": {"auto_save_interval": 0}},
+         "augmentation.auto_save_interval"),
+        ({"augmentation": {"max_retries": 10 ** 6}}, "augmentation.max_retries"),
+    ])
+    def test_load_config_refuses_a_bad_shape(self, tmp_path, body, expect):
+        """加载时就拒，而且报错指名是哪个键
+
+        改前这些写法全部静默通过：`data_roots: data` 拆成 `d/a/t/a` 四个根、
+        `cors_origins` 标量在 starlette 里退化成**子串**匹配（放行 `https://api`），
+        `data_roots=[None]` 造出一个名叫 `None` 的白名单根。
+        """
+        from augmentor.config import load_config
+        from augmentor.exceptions import DataValidationError
+
+        with pytest.raises(DataValidationError) as exc:
+            load_config(self._write(tmp_path, body))
+        assert expect in str(exc.value)
+
+    @pytest.mark.parametrize("kwargs", [
+        {"cors_origins": "https://api.corp.example"},
+        {"cors_origins": [None]},
+        {"data_roots": "data"},
+        {"port": 70000},
+        {"host": ""},
+        {"rate_limit_max_requests": -1},
+    ])
+    def test_sdk_construction_is_covered_too(self, kwargs):
+        """这是本轮的破坏性变更：SDK 直构 `WebConfig` 从此也要认区间
+
+        影响面（实测两解释器全量）：仓内构造点全部走默认值或合法值，无一处被新判据
+        拦下；对外是行为变更 —— 以前能构造成功的越界配置现在抛 `DataValidationError`
+        （`ValueError` 子类）。
+        """
+        from augmentor.config import WebConfig
+        from augmentor.exceptions import DataValidationError
+
+        with pytest.raises(DataValidationError):
+            WebConfig(**kwargs)
+
+    def test_mutation_after_construction_is_not_covered(self):
+        """诚实记下判据的边界：`__post_init__` 只在构造时跑一次
+
+        本条不是在夸这个行为，是在钉它：如果有人以为改字段也会被拦，就会写出依赖
+        这个假设的代码。运行时的第二道防线在消费点（`models/base.py` 与各调用点的
+        `require_*`），不在配置对象里。
+        """
+        from augmentor.config import WebConfig
+
+        cfg = WebConfig()
+        cfg.port = 70000
+        cfg.data_roots = "data"
+        assert cfg.port == 70000 and cfg.data_roots == "data"
+
+    def test_null_valued_key_is_rejected_with_its_own_message(self, tmp_path):
+        """`port: `（写了键没给值）走的是 null 判据，不是类型判据
+
+        两条报错的修法不同：前者要补值，后者要改写法。实测 YAML `port: ` 读回来
+        就是 `None`，改前被原样放进字段，下游 `Path(str(p))` 会把它变成名叫 `None`
+        的目录。
+        """
+        from augmentor.config import load_config
+        from augmentor.exceptions import DataValidationError
+
+        with pytest.raises(DataValidationError, match="不能是 null"):
+            load_config(self._write(tmp_path, {"web": {"port": None}}))
+
