@@ -25,13 +25,18 @@
 
 `load_config` 会被重复调用（API 的 `/api/config` 每次都读盘），所以本模块记住自己
 装过的 handler，下次先撤再装 —— 不撤就是每调一次多一个 handler，日志跟着翻倍。
+
+自 A106 起「先撤再装」是**条件性**的：写出的键 + 三值 + root 的 handler 拓扑与上次
+完整装配后一致时直接返回缓存摘要，不再撤装（省掉每请求关掉/重开一次日志文件，也消掉
+撤与装之间 root 无 handler 的丢日志窗口）；任一项变了、或有外部 handler 挂进/摘出 root，
+签名就打破、回到完整装配。`_detach_installed`（含测试收尾）会一并清掉这份缓存签名。
 """
 
 import logging
 import logging.handlers
 import os
 import sys
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from .exceptions import DataValidationError
 
@@ -48,6 +53,13 @@ LOGGING_KEYS = ("level", "file", "format")
 # 本模块装进 root logger 的 handler。撤装只撤自己装的那些，
 # 不碰 `api/main.py` 之类由应用自己装的 handler。
 _INSTALLED: List[logging.Handler] = []
+
+# 上一次「完整装配」的 (签名, 摘要)（A106）。签名命中就原样返回缓存摘要、
+# 不撤不装：`load_config` 在 API 的 `/api/config` 上是**每请求一次**，无条件重装配
+# 会让每个请求都关掉再重开一次日志文件（实测约 103 µs/请求，Temp `l65/out.txt`），
+# 且撤与装之间 root 短暂无 handler，并发请求可能正好落在那一瞬丢日志行。
+# 签名带 root.handlers 拓扑元组 ⇒ 任何外部 handler 增减都会打破命中、回到完整装配。
+_APPLIED: Optional[Tuple[Tuple[Any, ...], Dict[str, Any]]] = None
 
 
 def level_number(value: Any) -> int:
@@ -112,7 +124,11 @@ def _detach_installed(root: logging.Logger) -> None:
     """撤掉本模块上次装的 handler（并关闭文件 handler 放掉句柄）
 
     Windows 上不 `close()` 就锁着文件，测试里的 `tmp_path` 清理会当场失败。
+    撤装即「root 上不再挂着本模块的东西」，A106 的命中签名随之失效，一并清掉，
+    否则残留签名会让下一次相同配置的调用误命中一个已不存在的装配态。
     """
+    global _APPLIED
+    _APPLIED = None
     for handler in _INSTALLED:
         if handler in root.handlers:
             root.removeHandler(handler)
@@ -161,6 +177,21 @@ def apply_logging_config(settings: Any, written: Optional[Iterable[str]] = None)
     """
     keys = set(LOGGING_KEYS) if written is None else set(written)
     root = logging.getLogger()
+    global _APPLIED
+
+    # A106：写出的键 + 三值 + root.handlers 拓扑与上次完整装配后完全一致 ⇒ 什么都不做，
+    # 直接回缓存摘要。API 的 `/api/config` 每请求读盘 → 每请求一次本调用，配置不变时
+    # 这条快路省掉「关掉再重开日志文件」，也消掉撤/装之间 root 无 handler 的丢日志窗口。
+    signature = (
+        frozenset(keys),
+        settings.level,
+        settings.file,
+        settings.format,
+        tuple(root.handlers),
+    )
+    if _APPLIED is not None and _APPLIED[0] == signature:
+        return dict(_APPLIED[1])
+
     _detach_installed(root)
 
     level = None
@@ -192,8 +223,12 @@ def apply_logging_config(settings: Any, written: Optional[Iterable[str]] = None)
             _INSTALLED.append(file_handler)
             file_path = os.path.abspath(settings.file)
 
-    return {
+    summary = {
         "level": level,
         "handlers": len(root.handlers),
         "file": file_path,
     }
+    # 记的是「完整装配之后」的拓扑（`_detach_installed` 已把 `_APPLIED` 清 None）：
+    # 下一次调用进来时 root.handlers 正是这一份，相同配置即可命中。
+    _APPLIED = (signature[:4] + (tuple(root.handlers),), dict(summary))
+    return summary
