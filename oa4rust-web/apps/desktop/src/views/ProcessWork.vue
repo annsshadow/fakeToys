@@ -563,10 +563,14 @@ const query = useQuery({
   queryKey: ['process-work', activeTab],
   queryFn: async () => {
     // 「我发起的」work 列表在 o2server 契约为 POST（task/taskcompleted 为 GET），按 tab 分流
+    // rev488：字面路径逐 tab 显式化（原 endpoints[tab] 动态分发被 extractor 全值展开出 3 条幻影 405 组合，
+    // 显式化后每条调用与注册方法一一对应，reconcile 数据如实）
     const response: any =
       activeTab.value === 'started'
-        ? await api.post(endpoints[activeTab.value])
-        : await api.get(endpoints[activeTab.value])
+        ? await api.post('/api/processplatform/assemble/surface/work/list/my/paging/1/size/20')
+        : activeTab.value === 'completed'
+          ? await api.get('/api/processplatform/assemble/surface/taskcompleted/list/my/paging/1/size/20')
+          : await api.get('/api/processplatform/assemble/surface/task/list/my/paging/1/size/20')
     return (response?.data?.data ?? response?.data ?? []) as TaskItem[]
   },
   staleTime: 30_000,
