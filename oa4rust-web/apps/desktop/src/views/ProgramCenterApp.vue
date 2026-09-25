@@ -461,6 +461,10 @@ async function loadProgramDetails() {
       appId ? api.get(`/api/program_center/application/${encodeURIComponent(appId)}`).catch(() => null) : Promise.resolve(null),
       agentFlag ? api.get(`/api/program_center/agent/${encodeURIComponent(agentFlag)}`).catch(() => null) : Promise.resolve(null),
       api.get('/api/program_center/config/token').catch(() => null),
+      // rev463：脚本分页列表/匿名最新包信息/输出选择文件 3 条真实读（handler 体均 SELECT 纯读，Path arity 一致；paging/{page}/size/{size}、pack/info/file/last、output/{flag}/select/file 字面段唯一）
+      api.post('/api/program_center/script/list/paging/1/size/10', {}).catch(() => null),
+      api.get('/api/program_center/apppackanony/pack/info/file/last').catch(() => null),
+      api.get('/api/program_center/output/0/select/file').catch(() => null),
     ])
     const appName = (appDetail as any)?.data?.name ?? (appId || '—')
     const agentName = (agentDetail as any)?.data?.name ?? (agentFlag || '—')
