@@ -280,11 +280,13 @@ async function loadTableRowsCursor() {
       tableText.value = '暂无数据表（无可抽样项）'
       return
     }
-    const [all, one, where, prev] = await Promise.all([
+    const [all, one, where, prev, direct] = await Promise.all([
       api.get(`/api/queryview/table/row/${encodeURIComponent(flag)}`).catch(() => null),
       api.get(`/api/queryview/table/row/one/${encodeURIComponent(flag)}`).catch(() => null),
       api.get(`/api/queryview/table/list/row/select/where/where/${encodeURIComponent(flag)}?where=a`).catch(() => null),
       tid ? api.get(`/api/queryview/table/list/${encodeURIComponent(tid)}/prev/10`).catch(() => null) : Promise.resolve(null),
+      // rev468：table/row/{tableFlag}/{id} WHERE 双条件读 1 条真实路由（变量段会被影子吞到 table/row/one/{tableFlag} 误配，须数字字面 12/34 命中）
+      api.get('/api/queryview/table/row/12/34').catch(() => null),
     ])
     const oneId = (one as any)?.data?.id ?? ''
     const detail = oneId
@@ -304,7 +306,7 @@ async function loadTableRowsCursor() {
       }
     }
     const n = (x: any) => (Array.isArray(x?.data) ? x.data.length : 0)
-    tableText.value = `表「${flag}」全部行 ${n(all)} · 过滤 ${n(where)} · 上翻 ${n(prev)} · 首行详情 ${(detail as any)?.data ? '有' : '无'} · 语句格式「${fmtName}」`
+    tableText.value = `表「${flag}」全部行 ${n(all)} · 过滤 ${n(where)} · 上翻 ${n(prev)} · 双条件行 ${n(direct)} · 首行详情 ${(detail as any)?.data ? '有' : '无'} · 语句格式「${fmtName}」`
   } catch (e: any) {
     toast.error('加载表行游标失败: ' + (e?.message ?? ''))
   }

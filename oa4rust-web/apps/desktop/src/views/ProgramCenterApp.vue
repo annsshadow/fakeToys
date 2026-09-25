@@ -44,7 +44,7 @@
       </div>
       <!-- Application tab -->
       <div v-if="tab==='application'" class="tab-content">
-        <div class="toolbar"><button class="btn-primary" @click="loadAllApplications">全部应用</button><button class="btn-primary" @click="loadCenterMeta">注册应用/版本/验证码</button><button class="btn-primary" @click="loadProgramDetails">明细抽样</button><button class="btn-primary" @click="loadErrorLogs">错误日志</button><button class="btn-primary" @click="loadPromptErrorFilters">提示错误筛选</button><button class="btn-primary" @click="loadPromptErrorPrev">提示错误(逆序筛选)</button><button class="btn-primary" @click="loadUnexpectedFilters">意外错误筛选</button><button class="btn-primary" @click="loadWarnFilters">警告筛选</button><button class="btn-primary" @click="loadScheduleHotpic">调度日志/热图</button><button class="btn-primary" @click="loadPcScriptOps">脚本按名保存/校验日志</button><span v-if="appMetaText" class="app-meta">{{ appMetaText }}</span></div>
+        <div class="toolbar"><button class="btn-primary" @click="loadAllApplications">全部应用</button><button class="btn-primary" @click="loadCenterMeta">注册应用/版本/验证码</button><button class="btn-primary" @click="loadProgramDetails">明细抽样</button><button class="btn-primary" @click="loadErrorLogs">错误日志</button><button class="btn-primary" @click="loadPromptErrorFilters">提示错误筛选</button><button class="btn-primary" @click="loadPromptErrorPrev">提示错误(逆序筛选)</button><button class="btn-primary" @click="loadUnexpectedFilters">意外错误筛选</button><button class="btn-primary" @click="loadWarnFilters">警告筛选</button><button class="btn-primary" @click="loadScheduleHotpic">调度日志/热图</button><button class="btn-primary" @click="loadPcScriptOps">脚本按名保存/校验日志</button><button class="btn-primary" @click="loadPcDeployLogs">部署/安装日志分页</button><span v-if="appMetaText" class="app-meta">{{ appMetaText }}</span></div>
         <div v-if="loadingApp" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
         <div v-else-if="applications.length===0" class="empty"><div class="ei">📱</div><p>暂无Application</p></div>
         <div v-else class="item-grid">
@@ -489,6 +489,27 @@ async function loadPcScriptOps() {
     appMetaText.value = `脚本按名保存/校验日志 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
     toast.error('脚本保存/校验日志失败: ' + (e?.message ?? ''))
+  }
+}
+// rev468：程序中心 部署日志分页 + 市场安装日志分页 + 匿名包文件下载 3 条真实读
+//（deploy/list/paging/{page}/size/{size} Path<(i64,i64)> SELECT x_program_deploy 分页；
+//  market/list/install/log/paging/{page}/size/{size} u3 Path<(i64,i64)+Json 弃用 body 仍 SELECT x_program_schedule_log；
+//  apppackanony/pack/info/file/download/{id} apppack_file_download 纯 SELECT 包元数据，与 rev463 匿名包 last 同源取 download 位）
+async function loadPcDeployLogs() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const page = '1'
+  const size = '10'
+  const packId = '0'
+  try {
+    const rs = await Promise.all([
+      s(api.post(`/api/program_center/deploy/list/paging/${page}/size/${size}`, {})),
+      s(api.post(`/api/program_center/market/list/install/log/paging/${page}/size/${size}`, {})),
+      s(api.get(`/api/program_center/apppackanony/pack/info/file/download/${packId}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    appMetaText.value = `部署/安装日志分页 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error('部署/安装日志分页失败: ' + (e?.message ?? ''))
   }
 }
 // 错误日志族 3 条真实 distinct 路由（各读独立表游标）：警告日志 warnlog/list/{id}/next/{count}

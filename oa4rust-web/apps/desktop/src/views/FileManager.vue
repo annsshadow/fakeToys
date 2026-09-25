@@ -45,6 +45,8 @@
         <button class="action-btn" @click="fileRest3('att2Scale')">附件2缩放</button>
         <button class="action-btn" @click="fileRest3('att2WHB64')">附件2图片base64</button>
         <button class="action-btn" @click="fileRest3('fiDocBind')">fileinfo文档绑定</button>
+        <button class="action-btn" @click="fileRest3('fiBatchDl')">fileinfo批量下载</button>
+        <button class="action-btn" @click="fileRest3('fileAppInfoDl')">文件按应用下载</button>
         <span v-if="fileRead2Text" class="app-meta">{{ fileRead2Text }}</span>
         <button class="action-btn" @click="fileCreate('control')">建文件</button>
         <button class="action-btn" @click="fileCreate('entity')">建实体文件</button>
@@ -499,6 +501,11 @@ async function fileRest3(op: string) {
     //  GET fileinfo/{id}/document/{docId} 纯 SELECT x_cms_fileinfo——须数字字面 1/2 命中，变量段会被 matcher 影子吞到 fileinfo/list/document/{documentId} 误配）
     else if (op === 'att2WHB64') { const i = id(); await api.get(`/api/attachment2/${i}/image/width/120/height/120/binary/base64`) }
     else if (op === 'fiDocBind') { await api.get('/api/fileinfo/1/document/2') }
+    // rev468：fileinfo 按文档批量下载清单 + 文件按应用下载 2 条真实读
+    //（GET fileinfo/batch/download/doc/{docId}/site/{site} 纯 SELECT x_cms_fileinfo WHERE doc_id；
+    //  GET file/{flag}/appInfo/{appInfoFlag}/download u3 纯 SELECT x_cms_file WHERE id AND app_id）
+    else if (op === 'fiBatchDl') { const d = encodeURIComponent(prompt('文档 docId:', '') || ''); const site = encodeURIComponent(prompt('site:', '') || ''); await api.get(`/api/fileinfo/batch/download/doc/${d}/site/${site}`) }
+    else if (op === 'fileAppInfoDl') { const f = encodeURIComponent(prompt('文件 flag:', '') || ''); const af = encodeURIComponent(prompt('应用 appInfo flag:', '') || ''); await api.get(`/api/file/${f}/appInfo/${af}/download`) }
     else { const i = id(); await api.get(`/api/attachment2/${i}/image/scale/2/binary/base64`) }
     toast.success('文件操作已提交')
   } catch (err: any) {
