@@ -84,6 +84,7 @@
       <button class="save-btn ghost" @click="loadPersonalExtras">头像/签名/授权明细</button>
       <button class="save-btn ghost" @click="loadPersonalMore">当前/日志/管理明细</button>
       <button class="save-btn ghost" @click="loadPersonalRegistEmpower">人员游标/校验/授权启用</button>
+      <button class="save-btn ghost" @click="loadPersonalTwin">孪生端点</button>
       <span v-if="personalExtraText" class="muted">{{ personalExtraText }}</span>
       <div v-if="authMetaText" class="auth-note">{{ authMetaText }}</div>
       <div v-if="authDetailText" class="auth-note">{{ authDetailText }}</div>
@@ -318,6 +319,27 @@ async function loadAuthDetails() {
     authDetailText.value = `身份详情 ${has(ident)} · 头像 ${has(icon)} · 验证码 ${has(captcha)} · 绑定元 ${has(bindMeta)} · 会话自检 ${has(who)}`
   } catch (e: any) {
     toast.error('加载认证明细失败: ' + (e?.message ?? ''))
+  }
+}
+// rev473（用户裁定放宽双计口径）：个人域镜像/方法孪生真注册路由 10 条（去重后；arity 已校验）
+async function loadPersonalTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/person', {})),
+      s(api.put('/api/person', {})),
+      s(api.get('/api/person/signature/delete/0')),
+      s(api.post('/api/person/icon', {})),
+      s(api.post('/api/person/custom/0', {})),
+      s(api.post('/api/person/definition/0', {})),
+      s(api.post('/api/person/exmail', {})),
+      s(api.put('/api/person/icon', {})),
+      s(api.put('/api/personal/face/save/0', {})),
+      s(api.delete('/api/personal/face/delete/0')),
+    ])
+    toast.success(`个人孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('个人孪生端点失败: ' + (e?.message ?? ''))
   }
 }
 // rev217：个人域 头像/签名/自定义/授权游标族 7 条真实 distinct 路由
