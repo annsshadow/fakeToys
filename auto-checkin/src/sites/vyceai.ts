@@ -161,28 +161,36 @@ async function readBalanceAfterClaim(page: Page, before: number | null): Promise
 }
 
 async function getJson(page: Page, path: string): Promise<any> {
-  return page.evaluate(async (p) => {
+  return page.evaluate(async ({ p, timeoutMs }) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const r = await fetch(p, { credentials: "include" });
+      const r = await fetch(p, { credentials: "include", signal: controller.signal });
       const t = await r.text();
       return t.trim().startsWith("{") ? JSON.parse(t) : null;
     } catch {
       return null;
+    } finally {
+      clearTimeout(timer);
     }
-  }, path);
+  }, { p: path, timeoutMs: 15000 });
 }
 
 async function postJson(page: Page, path: string): Promise<any> {
-  return page.evaluate(async (p) => {
+  return page.evaluate(async ({ p, timeoutMs }) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const r = await fetch(p, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" } });
+      const r = await fetch(p, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, signal: controller.signal });
       const t = await r.text();
       // 非 JSON 响应体也保留前 120 字符，便于排查"返回 200 但未落账"类问题
       return t.trim().startsWith("{") ? JSON.parse(t) : { status: r.status, body: t.slice(0, 120) };
     } catch (e) {
       return { error: String(e) };
+    } finally {
+      clearTimeout(timer);
     }
-  }, path);
+  }, { p: path, timeoutMs: 15000 });
 }
 
 function fail(message: string, screenshot: string | null): AdapterOutcome {
