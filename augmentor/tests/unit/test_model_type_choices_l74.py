@@ -208,20 +208,31 @@ class TestLoadFaceCannotDegradeSilently:
             AugmentorPipeline(config_path=str(path))
 
     def test_missing_type_key_is_caught_by_the_load_face(self, tmp_path):
-        """`type` 整键没写：回落值是空串，加载面拒（清单只有运行时那一侧看得到）"""
+        """`type` 整键没写：加载面当场拒，而且消息**点得出条目名**（A119 + A120 / L75）
+
+        改前这里的读数是「回落成空串、由封闭清单拒」⇒ 消息是
+        `models.<名字>.type 不支持: ''`：既看不出是「没写」还是「写成空」，也看不出
+        是哪一条。L75 把存在性从回落值里提出来单独判，措辞与静态面同族。
+        """
         path = tmp_path / "c.yaml"
         path.write_text(_yaml(""), encoding="utf-8", newline="\n")
-        with pytest.raises(DataValidationError, match="type 不支持"):
+        with pytest.raises(DataValidationError,
+                           match="models\\.m\\.type 缺少必填字段"):
             load_config(str(path))
 
-    def test_missing_type_key_is_known_gap_on_the_static_face(self, tmp_path):
-        """把残留缝记成断言，而不是让它悄悄躺着（账本 A119）
+    def test_missing_type_key_is_red_on_both_faces(self, tmp_path):
+        """缺 `type` 现在两侧同判负（L75 关掉 A119；本条改前钉的是那条缝）
 
-        `_check_required_fields` 只走 `KNOWN_FIELDS` 的固定路径，折进
+        改前 `_check_required_fields` 只走 `KNOWN_FIELDS` 的固定路径，折进
         `MODEL_ENTRY_FIELDS` 的条目子键拿不到「必填」这一维 ⇒ 缺 `type` 在
-        `validate-config` 上仍是 0 反馈。运行时那一侧已经拦住了，所以本条是
-        「诊断面比产品面安静」而不是「三面全绿」。
+        `validate-config` 上是 0 反馈，只有 `load_config` 拦得住 —— 即「诊断面比产品面
+        安静」。本轮 `_required_paths()` 把两张表折成一份清单，`required` 那一维
+        第一次有了用户；措辞两边同族（静态面是 `缺少必填字段: <路径>`）。
         """
         result = ConfigValidator().validate_config(
             {"models": {"default": "m", "m": {"model": "x"}}, "augmentation": {}})
-        assert [e for e in result.errors if e.path == "models.m.type"] == []
+        errors = [e for e in result.errors if e.path == "models.m.type"]
+        assert errors, "缺 `type` 在静态面仍然 0 反馈"
+        assert errors[0].severity.value == "error"
+        assert "缺少必填字段" in errors[0].message
+        assert result.is_valid is False

@@ -219,11 +219,26 @@ class ConfigValidator:
     # 放行 `None`，静态面也必须放行，否则两边又拆开了。采样三键**不进** `nullable`：
     # 它们有默认值，「写了键没给值」在两侧都是坏写法（运行时由
     # `_reject_null_fields(..., names=...)` 拒，静态面由类型判据拒）。
+    #
+    # `required` 这一维本表第一次有用户（A119 / L75）：必填检查原先只遍历
+    # `KNOWN_FIELDS` 的**固定点分路径**，而本表按**键名**索引 —— 于是「键整个不在场」
+    # 这一维对模型条目完全失明：实测 `models.qwen` 不写 `type` 得到 `is_valid=True` /
+    # 0 error / 0 warning，只有 `load_config` 那侧抛（`Temp/l75q/before.json` 的
+    # `missing-type` 档）。`_required_paths` 把两张表折成一份清单，判决文案仍只有一条
+    # 来源。只有 `type` 带 `required`：它是唯一一个**没有** dataclass 默认值的字段，
+    # 其余七个键「不在场」是合法状态（由 `config.py` 的字段默认回答，A114）。
     MODEL_ENTRY_FIELDS = {
         # `choices` 这一维 L57 就有了（`logging.level` 是第一位用户），
         # `type` 是第二个：清单与运行时 `ModelConfig.__post_init__` 共引
         # `MODEL_TYPES`，两边不可能各抄一份再漂（A77）。
-        "type": {"type": str, "choices": MODEL_TYPES},
+        "type": {"type": str, "choices": MODEL_TYPES, "required": True},
+        # `model` 是本轮补上的第二个字符串键（A114）：改前本表没有它，运行时也没有
+        # 任何判据 ⇒ 实测 `model: ''` / `model:`（null）/ `model: 123` / `model: true`
+        # 四形状**两侧全绿**（同探针的 `model_shapes` 档），而那值是要直发后端的
+        # （`openai` / `claude` / `ollama` 的请求体、`gemini` 的 URL）。`non_empty`
+        # 与运行时 `require_string` 同判据（那一维 L51 就有，`logging.format` 是
+        # 第一位用户）。三条凭证键至今两侧都无判据，记在 A122。
+        "model": {"type": str, "non_empty": True},
         "temperature": {"type": float, "min": TEMPERATURE_RANGE[0],
                         "max": TEMPERATURE_RANGE[1]},
         "top_p": {"type": float, "min": TOP_P_RANGE[0], "max": TOP_P_RANGE[1]},
@@ -415,12 +430,35 @@ class ConfigValidator:
         
         return result
     
+    def _required_paths(self, config: Dict) -> list:
+        """必填检查要走的 `(路径, 规格)` 清单（A119 / L75）
+
+        `KNOWN_FIELDS` 的键是点分**固定**路径，模型条目却是 `models.<用户起的名字>.<键>`
+        ⇒ 那一条维只能按**键名**查 `MODEL_ENTRY_FIELDS`（L72 的折叠），于是「键整个
+        不在场」对模型条目改前完全失明。本函数把两张表折成一份清单交给
+        `_check_required_fields`，判决文案（「缺少必填字段」/「字段不能为null」）
+        仍然只住那一处 —— 不给同一个判据造第二个权威。
+
+        条目的 `default` 那一行不是模型条目（它是「默认用哪个条目名」的指针），
+        形状已经不对的条目（`qwen: abc`）留给形状那一层判，这里不重复报一条
+        「缺少 `type`」的噪声。
+        """
+        paths = [(field_path, spec)
+                 for field_path, spec in self.KNOWN_FIELDS.items()
+                 if spec.get("required")]
+        models = config.get("models")
+        if isinstance(models, dict):
+            for name, body in models.items():
+                if name == "default" or not isinstance(body, dict):
+                    continue
+                for key, spec in self.MODEL_ENTRY_FIELDS.items():
+                    if spec.get("required"):
+                        paths.append(("models.%s.%s" % (name, key), spec))
+        return paths
+
     def _check_required_fields(self, config: Dict, prefix: str, result: ValidationResult):
         """检查必填字段"""
-        for field_path, spec in self.KNOWN_FIELDS.items():
-            if not spec.get("required"):
-                continue
-            
+        for field_path, spec in self._required_paths(config):
             parts = field_path.split(".")
             current = config
             
