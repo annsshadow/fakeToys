@@ -249,8 +249,8 @@ const api_cache_config_flush_1_data = ref<any[]>([])
 const api_base_cac_432_data = ref<any[]>([])
 const api_cache_commonscri_410_data = ref<any[]>([])
 const api_fireschedule_cla_721_data = ref<any[]>([])
-// rev477（用户裁定放宽双计口径）：服务器/根域镜像/方法孪生真注册路由 7 条（/health 双 crate 注册去重后 1 条；
-//  jpush 主轨 update/control/config 自 JPushApp canary 禁位挪接；arity 已校验）
+// rev477（用户裁定放宽双计口径）：服务器/根域镜像/方法孪生真注册路由 9 条（/health 双 crate 注册去重后 1 条；
+//  jpush 主轨 update/control/config + 破坏性 admin unbind 自 JPushApp 契约禁位挪接；arity 已校验）
 async function loadServerTwin() {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
@@ -262,6 +262,9 @@ async function loadServerTwin() {
       s(api.get('/mcp')),
       s(api.get('/health')),
       s(api.post('/api/jpush/assemble/control/update/control/config', {})),
+      s(api.get('/api/jpush_assemble_control/update/control/config')),
+      s(api.get('/api/jpush/assemble/control/device/admin/unbind/all/person')),
+      s(api.get('/api/jpush_assemble_control/create/jpush')),
     ])
     toast.success(`服务器孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
