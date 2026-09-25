@@ -19,9 +19,10 @@ from enum import Enum
 # 区间常量与运行时判据同一批来源（`config.py` 开头 + `retry.MAX_RETRY_AFTER`）。
 # 这里是 A77 的修法本体：此前两边各抄一遍数字，抄漏的一边就成了「校验器独有
 # 天花板」—— `max_retries: 10**6` 在这里报红、在 SDK 直构那边畅通无阻。
-from .config import (AUTO_SAVE_INTERVAL_MIN, MAX_OUTPUT_TOKENS_MIN,
+from .config import (AUTO_SAVE_INTERVAL_MIN, DEDUP_THRESHOLD_RANGE,
+                     MAX_OUTPUT_TOKENS_MIN,
                      MAX_RETRIES_RANGE, MODEL_TYPES, NUM_THREADS_RANGE,
-                     PORT_RANGE,
+                     PORT_RANGE, QUALITY_THRESHOLD_RANGE,
                      RATE_LIMIT_MIN_REQUESTS, RATE_LIMIT_MIN_WINDOW_SECONDS,
                      REQUEST_TIMEOUT_RANGE, RETRY_DELAY_RANGE,
                      TEMPERATURE_RANGE, TOP_P_RANGE, VARIANTS_PER_SEED_RANGE,
@@ -156,11 +157,31 @@ class ConfigValidator:
         "augmentation.request_timeout": {
             "type": float, "min": REQUEST_TIMEOUT_RANGE[0],
             "max": REQUEST_TIMEOUT_RANGE[1]},
+        # `quality` / `dedup` 两节的规格自 L76 / A118 起与运行时判据同源：那两节
+        # 补上了 `__post_init__`，界就住在 `config.QUALITY_THRESHOLD_RANGE` /
+        # `config.DEDUP_THRESHOLD_RANGE`，这里只引常数。改前的不对称实测在两面上：
+        # - `quality.threshold` **有**规格，但 0.0/1.0 是裸数字（与运行时不同源）；
+        # - `dedup.threshold` **整条规格不存在** ⇒ 该键在静态面 **0 条反馈**。
+        #   档位读数见 `Temp/l76q/yaml_faces.json`：`1.7` / `5.0` / `-1.0` / `'x'` /
+        #   `'0.9'` 五档的静态反馈条数全是 0，而同样五档写在 `quality.threshold` 上
+        #   就有「值过大 / 值过小 / 类型错误」出声。基座用的是**出厂全量配置**而不是
+        #   半份配置 —— 后者会先报「缺少必填字段: models」，那条噪声会把「这个键到底
+        #   有没有反馈」糊成一片红。运行时那一侧偏要等到建 `Deduplicator` 才抛，
+        #   两半正好各缺一角。
+        # `quality.weights` 本轮**不补规格**：它的形状与「和为 1」判据的权威在
+        # `quality.QualityScorer`，配置侧目前只判 null（A77 的口径是「运行时拒的
+        # 这里才拒」，反过来造一道运行时没有的界就是本表已经封死过的错误）。剩下的
+        # 那一洞记在 A124，两侧同批补。
         "quality": {"type": dict},
         "quality.enabled": {"type": bool},
-        "quality.threshold": {"type": float, "min": 0.0, "max": 1.0},
+        "quality.threshold": {
+            "type": float, "min": QUALITY_THRESHOLD_RANGE[0],
+            "max": QUALITY_THRESHOLD_RANGE[1]},
         "dedup": {"type": dict},
         "dedup.enabled": {"type": bool},
+        "dedup.threshold": {
+            "type": float, "min": DEDUP_THRESHOLD_RANGE[0],
+            "max": DEDUP_THRESHOLD_RANGE[1]},
         # `output` / `output.export_dir` 两条规格在 L52 删掉了。它们是**规格表自己
         # 造的死旋钮**：`load_config` 里没有 `output` 节（真节后是 `export`，字段是
         # `default_format` / `formats`），实测 `output: {export_dir: out}` 得到
