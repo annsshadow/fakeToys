@@ -28,6 +28,12 @@ AI 桶既定不消费、GET+Json 体（SDK GET 不带 body）——全部分类�
 接桩路径需修改 JPushApp.test.ts 禁串与 autoquery-guards canary（仓库自有守卫），属用户专属决定，助手不代决——
 在获明确授权前剩余 523 条桶内维持不接，**87.2%（桶）/88.3%（全局）为当前守得住的诚实终态**（rev487 收尾补 market install-or-update 1 条，37 条 arity-OK 残余全属二进制/回调/凭证/验证码/外部同步 skip 类）。
 
+**终审补记（rev488，commit 3fed4bf6d，crate 级健壮 arity 图）**：
+① 281 条无参字面路由以最强抽取器（含单元素 `Path(x): Path<T>`、多 Path 提取器、crate 精确归属、`dict_data_fns!` 宏）重扫，**真 a=0 可接者 0 条**——全部实为 a>0 的 500 陷阱（URL 0 槽位而 handler 取 Path）或危险类；
+② NOMAP 47 条逐一源码核实：7 条已接线（pc collect×5、考勤 ding/qywx all×2）、`workcompleted/shift/time` 双轨 handler 取 `Path(id)` 而 URL 0 槽=500 不接、`html_to_pdf`/`html_to_image`/`section_syn`/`folder2_batch_download`/`config 保存`=501 stub、bbs shutup/topic create=BBS canary 禁位+动作写先例、update_ai_config=GET+Json 体（SDK GET 不带 body）、外部同步/机器回调/凭证/登出族维持不接；
+③ 反向幻影审计：ProcessWork `endpoints[tab]` 动态分发被 extractor 全值展开出的 3 条幻影方法组合已消除（queryFn 逐 tab 显式字面），余 3 条 UPLOAD 方法记号差异为 api.upload 多部件 POST（三条均注册 POST，运行时 200 非 405）。
+**可诚实接线空间经四轮 arity 重审+反向审计终审耗尽；523+20 条残缺口径 100% 唯一路径=接桩授权（改仓库守卫，用户专属裁定）。**
+
 ## 0. 口径裁定记录
 
 - 严格口径（rev463–470）：3265/4072 = 80.2%，807 条逐类分诊（handler-alias 221 / 方法孪生 199 / arity-trap 168 /
