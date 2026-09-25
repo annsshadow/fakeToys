@@ -20,6 +20,12 @@ class ERNIEBackend(ModelBackend):
     # API 端点模板
     TOKEN_URL = "https://aip.baidubce.com/oauth/2.0/token"
     CHAT_URL = "https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions"
+
+    # 换 access_token 那一支的超时（秒）。**故意不吃 `augmentation.request_timeout`
+    # 与模型条目那档**（A74 明确要求单独拍）：token 换取是一次普通的鉴权往返，
+    # 与「模型可能很慢」无关，跟着推理档走会把它从 10 s 放大到 120 s —— 于是凭据
+    # 错了也要干等两分钟才出声。推理请求的超时走 `self._request_timeout`。
+    TOKEN_REQUEST_TIMEOUT = 10.0
     
     def __init__(self,
                  config: ModelConfig,
@@ -29,7 +35,8 @@ class ERNIEBackend(ModelBackend):
                  default_attempts: Optional[int] = None,
                  default_retry_delay: Optional[float] = None,
                  default_max_retry_wait: Optional[float] = None,
-                 default_retry_jitter: Optional[float] = None):
+                 default_retry_jitter: Optional[float] = None,
+                 default_request_timeout: Optional[float] = None):
         """初始化 ERNIE 后端
 
         Args:
@@ -41,6 +48,7 @@ class ERNIEBackend(ModelBackend):
             default_retry_delay: 退避基数默认值（秒），见基类说明
             default_max_retry_wait: 服务端指令一支的等待上限（秒），见基类说明
             default_retry_jitter: 退避抖动比例（0-1），见基类说明
+            default_request_timeout: 单次请求超时（秒），见基类说明
         """
         super().__init__(
             config,
@@ -51,6 +59,7 @@ class ERNIEBackend(ModelBackend):
             default_retry_delay=default_retry_delay,
             default_max_retry_wait=default_max_retry_wait,
             default_retry_jitter=default_retry_jitter,
+            default_request_timeout=default_request_timeout,
         )
         if not config.api_key or not config.secret_key:
             raise ModelNotConfiguredError("ERNIE 后端需要 api_key 和 secret_key")
@@ -80,7 +89,8 @@ class ERNIEBackend(ModelBackend):
             }
             
             session = self._get_session()
-            response = session.post(self.TOKEN_URL, params=params, timeout=10)
+            response = session.post(self.TOKEN_URL, params=params,
+                                    timeout=self.TOKEN_REQUEST_TIMEOUT)
             response.raise_for_status()
             
             data = response.json()
@@ -118,7 +128,8 @@ class ERNIEBackend(ModelBackend):
         headers = {"Content-Type": "application/json"}
         
         session = self._get_session()
-        response = session.post(url, json=payload, headers=headers, timeout=60)
+        response = session.post(url, json=payload, headers=headers,
+                                timeout=self._request_timeout)
         response.raise_for_status()
         
         data = response.json()

@@ -21,7 +21,8 @@ from enum import Enum
 # 天花板」—— `max_retries: 10**6` 在这里报红、在 SDK 直构那边畅通无阻。
 from .config import (AUTO_SAVE_INTERVAL_MIN, MAX_RETRIES_RANGE,
                      NUM_THREADS_RANGE, PORT_RANGE, RATE_LIMIT_MIN_REQUESTS,
-                     RATE_LIMIT_MIN_WINDOW_SECONDS, RETRY_DELAY_RANGE,
+                     RATE_LIMIT_MIN_WINDOW_SECONDS, REQUEST_TIMEOUT_RANGE,
+                     RETRY_DELAY_RANGE,
                      VARIANTS_PER_SEED_RANGE, AppConfig, ModelConfig)
 from .logging_setup import LOGGING_LEVELS, build_formatter
 from .retry import MAX_RETRY_AFTER
@@ -141,6 +142,17 @@ class ConfigValidator:
         "augmentation.max_retry_wait": {"type": float, "min": 0.0,
                                         "max": MAX_RETRY_AFTER},
         "augmentation.retry_jitter": {"type": float, "min": 0.0, "max": 1.0},
+        # 单次请求超时的全局档（A74 / L71）。区间与运行时判据同一批常量
+        # （`config.REQUEST_TIMEOUT_RANGE`，A77 口径）：下界 1 是实测硬界 ——
+        # `requests` 对 `timeout=0` 直接抛 `ValueError`，而那发生在第一次真实
+        # 调用上，「校验绿、跑时炸」正是本仓逐轮封死的那道缝；上界 600 对齐
+        # `docs/DEPLOYMENT.md` 的 nginx `proxy_read_timeout 600s`。
+        # 每模型的覆盖档 `models.<名字>.request_timeout` 不做规格校验：
+        # `KNOWN_FIELDS` 表达不了「任意键名下的一种子键」，其类型与区间由后端
+        # 构造入口的 `require_seconds` 兜（与 `temperature` 等既有模型键同一口径）。
+        "augmentation.request_timeout": {
+            "type": float, "min": REQUEST_TIMEOUT_RANGE[0],
+            "max": REQUEST_TIMEOUT_RANGE[1]},
         "quality": {"type": dict},
         "quality.enabled": {"type": bool},
         "quality.threshold": {"type": float, "min": 0.0, "max": 1.0},
