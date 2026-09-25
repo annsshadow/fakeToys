@@ -48,6 +48,15 @@ class ConfigUpdateRequest(BaseModel):
     multimodal: dict | None = None
 
 
+class ConfigUpdateResponse(MessageResponse):
+    """更新配置的结果
+
+    继承 `MessageResponse` 的 `success`/`message` 两键（语义不变），只多一
+    `ignored_keys`：请求里被 `hasattr` 丢弃的未知子键清单（A86 写路径出声）。
+    """
+    ignored_keys: List[str] = []
+
+
 @router.get("/api/config", response_model=ConfigResponse, summary="获取配置")
 async def get_config():
     """获取配置"""
@@ -89,7 +98,7 @@ async def get_config():
 
 @router.post(
     "/api/config",
-    response_model=MessageResponse,
+    response_model=ConfigUpdateResponse,
     summary="更新配置",
 )
 async def update_config(
@@ -97,23 +106,42 @@ async def update_config(
 ):
     """更新配置并持久化到 config.yaml"""
     try:
+        import dataclasses
+
         from augmentor.config import save_config
-        
+        from augmentor.config_validator import ConfigValidator
+
         p = get_pipeline()
         updates = request.model_dump(exclude_none=True)
-        
+
         if "default_model" in updates:
             p.config.default_model = updates["default_model"]
-        
+
+        # `hasattr` 丢弃未知子键（不崩溃）是既有契约；本轮补的是「丢弃要出声」：
+        # 拼错/多余的键被静默跳过却仍回 success，用户看不出「写了没生效」，与读路径
+        # 的 A76 同族。`ignored_keys` 是给程序消费的干净清单，`message` 附「是否想写
+        # X」给人看；判定、状态码与既有 `success`/`message` 的语义都不变，只加一键。
+        ignored: List[str] = []
+        notes: List[str] = []
         for section in ["augmentation", "quality", "dedup", "export", "vector", "rag", "multimodal"]:
             if section in updates:
                 section_config = getattr(p.config, section)
+                known = [f.name for f in dataclasses.fields(section_config)]
                 for key, value in updates[section].items():
                     if hasattr(section_config, key):
                         setattr(section_config, key, value)
-        
+                    else:
+                        ignored.append(f"{section}.{key}")
+                        notes.append(
+                            f"{section}.{key}"
+                            + ConfigValidator._suggest(key, sorted(known))
+                        )
+
+        message = "配置已保存，部分配置需要重启服务生效"
+        if ignored:
+            message += "（已忽略未知配置项：" + "、".join(notes) + "）"
         save_config(p.config, str(config_file_path()))
-        return {"success": True, "message": "配置已保存，部分配置需要重启服务生效"}
+        return {"success": True, "message": message, "ignored_keys": ignored}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
