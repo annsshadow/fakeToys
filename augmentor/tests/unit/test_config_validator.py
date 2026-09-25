@@ -864,11 +864,12 @@ class TestWaitBudgetKnobSurface:
         `require_positive` / `require_ratio`）4/4 拒收。本条把「bool 不算数值」从
         一次性修复升格为对全部数值键的常驻断言，以后新增字段自动被覆盖。
         L51 起计数从 10 变 11：新增的那个是 `augmentation.auto_save_interval`
-        （A82 给它补的规格）。
+        （A82 给它补的规格）。L71 起 12：新增的是 `augmentation.request_timeout`
+        （A74 把六处硬编码的超时收敛成一档旋钮）。
         """
         numeric = [p for p, s in ConfigValidator.KNOWN_FIELDS.items()
                    if s.get("type") in (int, float)]
-        assert len(numeric) == 11, "新增数值规格键会自动进入本断言"
+        assert len(numeric) == 12, "新增数值规格键会自动进入本断言"
         for path in numeric:
             hits = [m for p_, m in self._errors_at(path) if p_ == path]
             assert hits and "类型错误" in hits[0], (path, hits)
@@ -1020,6 +1021,16 @@ class TestRuntimeValidatorParity:
         ("augmentation.retry_jitter", 0.0, False),
         ("augmentation.retry_jitter", 1.0, False),
         ("augmentation.retry_jitter", 1.001, True),
+        # 请求超时的全局档（L71 / A74）：两侧同判，且下界 1 不是口味 ——
+        # `requests` 自己拒 `timeout=0`，判在 1 以下就是「校验绿灯、第一次真实调用
+        # 当场抛 ValueError」。空值（`request_timeout:`）走 `_reject_null_fields` 那一支。
+        ("augmentation.request_timeout", 1.0, False),
+        ("augmentation.request_timeout", 600.0, False),
+        ("augmentation.request_timeout", 0.999, True),
+        ("augmentation.request_timeout", 600.1, True),
+        ("augmentation.request_timeout", 0, True),
+        ("augmentation.request_timeout", None, True),
+        ("augmentation.request_timeout", float("nan"), True),
         ("web.port", 1, False),
         ("web.port", 65535, False),
         ("web.port", 0, True),
@@ -1097,6 +1108,7 @@ class TestRuntimeValidatorParity:
                                       NUM_THREADS_RANGE, PORT_RANGE,
                                       RATE_LIMIT_MIN_REQUESTS,
                                       RATE_LIMIT_MIN_WINDOW_SECONDS,
+                                      REQUEST_TIMEOUT_RANGE,
                                       RETRY_DELAY_RANGE, VARIANTS_PER_SEED_RANGE)
 
         s = ConfigValidator.KNOWN_FIELDS
@@ -1106,6 +1118,7 @@ class TestRuntimeValidatorParity:
             "augmentation.max_retries": MAX_RETRIES_RANGE,
             "augmentation.retry_delay": RETRY_DELAY_RANGE,
             "augmentation.max_retry_wait": (0.0, MAX_RETRY_AFTER),
+            "augmentation.request_timeout": REQUEST_TIMEOUT_RANGE,
             "web.port": PORT_RANGE,
         }
         for path, (lo, hi) in bounds.items():
@@ -1233,6 +1246,8 @@ class TestUnreadKeyWarnings:
         实测（Temp `l52q/probe3.py` 第 1 节）`ModelConfig` 的 8 个字段与
         `load_config` 读走的 8 个键双向差集都为空；这里把「每个字段真的被读」钉成
         常驻断言：字段若多出一个没人读的，本类的判据就会把合法配置报成警告。
+        L71 起 8 变 9：新增的字段是 `request_timeout`（A74 的每模型覆盖档），
+        它同时是断言的样本值 ⇒ 「声明了却没被 `load_config` 读走」当场变红。
         """
         import dataclasses
 
@@ -1243,7 +1258,7 @@ class TestUnreadKeyWarnings:
         values = {"type": "openai", "api_key": "AK", "secret_key": "SK",
                   "base_url": "http://example.invalid", "model": "m-1",
                   "temperature": 0.42, "top_p": 0.43,
-                  "max_output_tokens": 42}
+                  "max_output_tokens": 42, "request_timeout": 44.0}
         declared = {f.name for f in dataclasses.fields(ModelConfig)}
         assert declared == set(values), sorted(declared ^ set(values))
 

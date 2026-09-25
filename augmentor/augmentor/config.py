@@ -26,6 +26,21 @@ NUM_THREADS_RANGE = (1, 100)
 AUTO_SAVE_INTERVAL_MIN = 1
 MAX_RETRIES_RANGE = (0, 20)
 RETRY_DELAY_RANGE = (0.0, 60.0)
+# 单次请求超时（秒）的区间（A74）。下界 1 不是防手滑，是实测出来的硬界：
+# `requests` 对 `timeout=0` 抛 `ValueError: Attempted to set connect timeout to 0,
+# but the timeout cannot be set to a value less than or equal to 0`（L71 实测，
+# py314 + 本机 requests），而它发生在**第一次生成调用**上，症状是「校验绿灯的
+# 配置在几小时后跑炸」。上界 600 与 `docs/DEPLOYMENT.md:226-227` 的 nginx
+# `proxy_read_timeout 600s` 对齐 —— 客户端等得比网关还久没有意义，只会把
+# 「网关已断」读成「模型很慢」。
+REQUEST_TIMEOUT_RANGE = (1.0, 600.0)
+# 单次请求超时的**唯一**默认档（A74）。取改前六个硬编码里的最大值（ollama 120，
+# claude / gemini / openai / ernie 推理都是 60），而不是取「最常见的那档」：三值
+# 口径要收敛成一值，方向只能朝「不新增任何一次超时截断」那侧 —— 被掐短是崩溃面，
+# 被放长只是失败路多等，代价不对称。
+# 这一档同时是 `AugmentationConfig` 的字段默认值与模型后端的类默认值：两边都
+# **引用**本常数而不各自重抄（A77 的教训：抄第二份就等于给「两处悄悄不同」留位置）。
+DEFAULT_REQUEST_TIMEOUT = 120.0
 PORT_RANGE = (1, 65535)
 RATE_LIMIT_MIN_REQUESTS = 0
 RATE_LIMIT_MIN_WINDOW_SECONDS = 0.0
@@ -59,6 +74,25 @@ class ModelConfig:
     temperature: float = 0.99
     top_p: float = 0.95
     max_output_tokens: int = 2048
+    # 该模型的单次请求超时（秒），覆盖 `augmentation.request_timeout` 的全局档。
+    # `None` 是合法值且**有意为之**：本节与 `api_key` 同族允许「未提供」，因为它
+    # 走的是 `conf.get(..., None)` 而非 `_load_section`，没有「写了键没给值」的
+    # 混淆面（那个判据在 `augmentation` 节由 `_reject_null_fields` 守）。
+    request_timeout: Optional[float] = None
+
+    def __post_init__(self):
+        """只判 `request_timeout` 这一档，其余字段一律不判（有意不对称）。
+
+        为什么单判它：模型节的 `api_key` / `temperature` 等键坏值的代价是「请求被
+        服务端拒」，而 `request_timeout` 的坏值是**客户端本地直接抛** —— 它最终落到
+        `requests` 的 `timeout=`，实测 `timeout=0` 抛 `ValueError`，`timeout=-1` 同样，
+        且都发生在第一次真实调用上（L71 / A74）。区间与 `augmentation.request_timeout`
+        同一批常数（`REQUEST_TIMEOUT_RANGE`），两侧同判的口径承 A77。
+        `None` 由 `require_seconds` 放行：它读作「本模型不覆盖全局档」，是合法状态。
+        """
+        lo, hi = REQUEST_TIMEOUT_RANGE
+        require_seconds("models.<名字>.request_timeout", self.request_timeout,
+                        minimum=lo, maximum=hi)
 
 
 @dataclass
@@ -75,6 +109,12 @@ class AugmentationConfig:
     # 退避的随机抖动比例（0-1，闭区间）。默认 0 ⇒ 各档等待与接参前逐字相同；
     # 非 0 会把退避一支的最坏等待上界放大为 max_delay × (1 + 本值)。
     retry_jitter: float = 0.0
+    # 单次请求超时（秒）的全局档（A74）。默认值与判据上界都引本模块常数，
+    # 后端类级默认值引同一个（`DEFAULT_REQUEST_TIMEOUT` 的注释解释了为什么是 120
+    # 而不是 60）。各模型可用 `models.<名字>.request_timeout` 单独覆盖；ernie 换
+    # token 那一支**不吃这两档**，它有自己的类常数 10 s —— token 换取本就该短，
+    # 与推理共用一个数会把它放大到 12 倍（A74 收口时明确拍下的独立参数）。
+    request_timeout: float = DEFAULT_REQUEST_TIMEOUT
 
     def __post_init__(self):
         """运行时判据（L51 / A77 + A82）：区间与校验器规格逐个同源。
@@ -104,6 +144,9 @@ class AugmentationConfig:
         require_seconds("augmentation.max_retry_wait", self.max_retry_wait,
                         minimum=0.0, maximum=MAX_RETRY_AFTER)
         require_ratio("augmentation.retry_jitter", self.retry_jitter)
+        lo, hi = REQUEST_TIMEOUT_RANGE
+        require_seconds("augmentation.request_timeout", self.request_timeout,
+                        minimum=lo, maximum=hi)
 
 
 @dataclass
@@ -504,7 +547,13 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
                     model=conf.get('model', ''),
                     temperature=conf.get('temperature', 0.99),
                     top_p=conf.get('top_p', 0.95),
-                    max_output_tokens=conf.get('max_output_tokens', 2048)
+                    max_output_tokens=conf.get('max_output_tokens', 2048),
+                    # 键写了没给值时 YAML 给 None，与「没写这个键」同义（= 不覆盖
+                    # 全局档），这是本节允许的读法。坏值**在下面构造 `ModelConfig`
+                    # 时当场判**（`__post_init__` 里的 `require_seconds`，L71 / A74），
+                    # 不等后端构造那条第二道防线 —— 这与 `temperature` / `top_p` 那些
+                    # 至今无人判的键**不是**同一口径，别照抄它们。
+                    request_timeout=conf.get('request_timeout')
                 )
         
         # 使用映射表加载其他配置（减少重复代码）
@@ -512,7 +561,8 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
             ('augmentation', AugmentationConfig, {
                 'variants_per_seed': 5, 'num_threads': 40, 'auto_save_interval': 10,
                 'max_retries': 3, 'retry_delay': 1.0,
-                'max_retry_wait': 300.0, 'retry_jitter': 0.0
+                'max_retry_wait': 300.0, 'retry_jitter': 0.0,
+                'request_timeout': 120.0
             }),
             ('quality', QualityConfig, {
                 'enabled': True, 'threshold': 0.6, 'weights': [0.3, 0.4, 0.3]
