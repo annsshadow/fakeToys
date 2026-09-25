@@ -260,6 +260,25 @@ class TestGenerateRetryKnobs:
         assert captured["max_retries"] == 4
         assert captured["base_delay"] == 2.5
 
+    def test_backend_does_not_shake_the_backoff_yet(self, monkeypatch):
+        """A65 把 `jitter` 接进了 `with_retries`，但后端**刻意不传**：抖动不是配置旋钮
+        （暴露面在 A75），而 `generate()` 的等待上限口径（§3.22 的「退避一支 30 s」）
+        正是以 `jitter=0` 为前提的 —— 一旦这里传了非 0 值，那一支的上限就变成
+        2 × `_MAX_RETRY_DELAY`，文档与 `_MAX_RETRY_DELAY` 的注释都得同步改。
+        """
+        captured = {}
+
+        def fake_with_retries(func, **kwargs):
+            captured.update(kwargs)
+            return "ok", None
+
+        monkeypatch.setattr("augmentor.models.base.with_retries", fake_with_retries)
+        backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
+        backend._call_api = lambda prompt: "ok"
+        assert backend.generate("p") == "ok"
+        assert "jitter" not in captured
+        assert captured["max_delay"] == backend._MAX_RETRY_DELAY
+
 
 class TestJsonExtraction:
     """JSON 提取"""

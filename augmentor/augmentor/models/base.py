@@ -62,6 +62,8 @@ class ModelBackend(ABC):
     # 退避计算的等待上限（秒），防止指数退避无界增长。**只管退避计算那一支**：
     # 服务端给出 `Retry-After` 时改由 `retry.MAX_RETRY_AFTER`（300 s）封顶，本常数
     # 参不到场（两副封顶为何故意不相犯，见 docs/ARCHITECTURE.md §3.22）。
+    # 这里不传 `jitter`（默认 0.0）⇒ 30 s 在本层是硬上限；`compute_delay` 的抖动加在
+    # 夹逼**之后**，直调方一旦传非 0 抖动，这一支的最坏等待就是 2 × 本常数。
     _MAX_RETRY_DELAY = 30.0
 
     # generate() 未显式传参时的默认档位：总尝试次数与首次退避基数。
