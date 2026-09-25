@@ -43,6 +43,7 @@ import contextlib
 import dataclasses
 import io
 import logging
+import logging.handlers
 import os
 import sys
 import uuid
@@ -102,7 +103,12 @@ def _console():
 
 
 def _files():
-    return [h for h in logging.getLogger().handlers if type(h) is logging.FileHandler]
+    """root 上的**文件** handler（按精确类型取）
+
+    与 `_console()` 同一口径：钉在具体类上，行为变更时当场红。L62 起本模块装的是
+    `RotatingFileHandler`（`logging.file` 有界轮转，A104），不再是裸 `FileHandler`。
+    """
+    return [h for h in logging.getLogger().handlers if type(h) is logging.handlers.RotatingFileHandler]
 
 
 @contextlib.contextmanager
