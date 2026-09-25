@@ -6,7 +6,7 @@
 import logging
 import os
 import yaml
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from typing import Any, Dict, Optional
 from pathlib import Path
 from .exceptions import ConfigError, DataValidationError
@@ -80,6 +80,14 @@ MAX_OUTPUT_TOKENS_MIN = 1
 # 更不是 type，它是「默认用哪个条目名」的指针（`load_config` 里
 # `name == 'default'` 直接跳过）。这两个混淆是本条缺陷存在的原因。
 MODEL_TYPES = ("baidu", "openai", "ollama", "claude", "gemini")
+# 模型条目的消息占位前缀（A120 / L75）。`ModelConfig.__post_init__` 不知道自己挂在
+# 哪个条目名下 —— 条目名是 `load_config` 那一层的局部变量，而 dataclass 手里只有
+# `self`。改前两面的不对称是：静态面按点分路径报错、天然带条目名，运行时那一律写死
+# `models.<名字>.xxx` ⇒ 一份有两个坏条目的配置里两次抛错的消息**逐字相同**（实测
+# `Temp/l75q/before.json`：`bad-temp-entryA` 与只有一条时同串）。症状不是判错而是
+# 「判对了但指不出位置」。修法只搬文案、不动判据：判据仍在 dataclass（唯一权威），
+# 加载层捕获后把这一串换成 `models.<真条目名>`。
+MODEL_ENTRY_PLACEHOLDER = "models.<名字>"
 PORT_RANGE = (1, 65535)
 RATE_LIMIT_MIN_REQUESTS = 0
 RATE_LIMIT_MIN_WINDOW_SECONDS = 0.0
@@ -128,7 +136,7 @@ class ModelConfig:
     request_timeout: Optional[float] = None
 
     def __post_init__(self):
-        """模型条目的四个数值键逐个判（L71 / A74 那一根 + L72 / A113 采样三键）。
+        """模型条目的取值判据（L71 / A74 + L72 / A113 + L74 / A115 + L75 / A114）。
 
         运行时这一侧的界全部引本模块常数（`TEMPERATURE_RANGE` / `TOP_P_RANGE` /
         `MAX_OUTPUT_TOKENS_MIN` / `REQUEST_TIMEOUT_RANGE`），静态那一侧的规格
@@ -143,6 +151,9 @@ class ModelConfig:
         写了键不给值是手滑，与 `augmentation` 节同一口径），而 `request_timeout`
         的 `None` 是「本模型不覆盖全局档」这一档本身，必须放行（`require_seconds`
         对 `None` 短路）。
+
+        消息里的 `models.<名字>` 一律是 `MODEL_ENTRY_PLACEHOLDER`（A120）：本方法拿不到
+        条目名，加载层在换名之后再往上抛。
         """
         if self.type not in MODEL_TYPES:
             # 封闭清单而不是区间：`type` 是模型条目里唯一一个「值有一张名单、
@@ -153,21 +164,31 @@ class ModelConfig:
             # 空串一并拒：它是 `load_config` 对「这条没写 type」的回落值
             # （`config.py` 里 `conf.get('type', '')`），语义上就是没配。
             raise DataValidationError(
-                f"models.<名字>.type 不支持: {self.type!r}。"
+                f"{MODEL_ENTRY_PLACEHOLDER}.type 不支持: {self.type!r}。"
                 f"支持的类型: {', '.join(MODEL_TYPES)}"
             )
-        _reject_null_fields("models.<名字>", self,
+        # `model` 是第二个「值没有任何判据」的键（A114 的 `model` 分支）。改前实测
+        # `model: ''` / `model:`（null）/ `model: 123` / `model: true` 四形状**两侧全绿**
+        # （`Temp/l75q/before.json` 的 `model_shapes` 档），而它是要直发后端的：
+        # openai / claude / ollama 的请求体带 `"model": ""`，gemini 更糟 —— 模型名在
+        # **URL 里**，实测得到 `.../v1beta/models/:generateContent`。症状与 A113 同族：
+        # 换回一条服务端 400，真看不见是配置。
+        # 只判「在场值」的形状，**不**判必填：条目不写 `model` 时由 dataclass 的默认档
+        # 兜住（`_model_entry`，A114 的单一权威），而把「必须有」判上去会凭空拒掉
+        # baidu 那一档 —— `ERNIEBackend` 从不读 `config.model`（端点写死，新记 A121）。
+        require_string(f"{MODEL_ENTRY_PLACEHOLDER}.model", self.model)
+        _reject_null_fields(MODEL_ENTRY_PLACEHOLDER, self,
                             ("temperature", "top_p", "max_output_tokens"))
         lo, hi = TEMPERATURE_RANGE
-        require_ratio("models.<名字>.temperature", self.temperature,
+        require_ratio(f"{MODEL_ENTRY_PLACEHOLDER}.temperature", self.temperature,
                       minimum=lo, maximum=hi)
         lo, hi = TOP_P_RANGE
-        require_ratio("models.<名字>.top_p", self.top_p, minimum=lo, maximum=hi)
-        require_count("models.<名字>.max_output_tokens", self.max_output_tokens,
-                      minimum=MAX_OUTPUT_TOKENS_MIN)
+        require_ratio(f"{MODEL_ENTRY_PLACEHOLDER}.top_p", self.top_p, minimum=lo, maximum=hi)
+        require_count(f"{MODEL_ENTRY_PLACEHOLDER}.max_output_tokens",
+                      self.max_output_tokens, minimum=MAX_OUTPUT_TOKENS_MIN)
         lo, hi = REQUEST_TIMEOUT_RANGE
-        require_seconds("models.<名字>.request_timeout", self.request_timeout,
-                        minimum=lo, maximum=hi)
+        require_seconds(f"{MODEL_ENTRY_PLACEHOLDER}.request_timeout",
+                        self.request_timeout, minimum=lo, maximum=hi)
 
 
 @dataclass
@@ -510,6 +531,77 @@ def _resolve_env(value: Any) -> Any:
     return value
 
 
+# 模型条目的键集，**从 dataclass 推导**（A114 / L75）。写死的清单正是本条缺陷的
+# 形状：改前 `load_config` 手抄了九个回落值，实测其中四个与 `ModelConfig` 的字段
+# 默认不一致（`Temp/l75q/before.json` 的 `a114_drift` 档）。同一套推导的先例是
+# `config_validator._warn_unread_model_keys`（它同样用 `fields(ModelConfig)` 而不是
+# 抄一份），所以给 `ModelConfig` 加字段时不需要记得改第二处 —— 反过来「条目里出现
+# 一个 dataclass 没有的键」由 A76 那一路「写了没人读」负责出声。
+MODEL_ENTRY_KEYS = frozenset(f.name for f in fields(ModelConfig))
+
+# 需要解析 `${ENV}` 占位符的三个键。这份清单是 A95 记下的现状（全仓只有模型条目
+# 这三处真的解析占位符），本轮只是把它从「三行调用」提成一个具名元组，好让
+# `_model_entry` 的循环不再点名。
+MODEL_CREDENTIAL_KEYS = ("api_key", "secret_key", "base_url")
+
+
+def _model_entry(name: str, conf: Dict) -> ModelConfig:
+    """把一条模型条目装配成 `ModelConfig`：回落值只有一个权威（A114），消息带条目名（A120）
+
+    三条口径，每条都对应一处实测：
+
+    1. **只传 YAML 里在场的键**，不在场的交给字段默认值 ⇒ 加载侧不再抄第二份默认。
+       改前漂移的四个键分两支：`api_key` / `secret_key` / `base_url` 从 `''` 变 `None`
+       —— 实测五个后端对两种假值**逐字同判**（`before.json` 的 `credential_shape`
+       十例：同一句 `ModelNotConfiguredError`）⇒ 本改对凭证消费方零影响，且 `''`
+       从来只是加载侧的私有伪装；`model` 从 `''` 变 `'default'` —— 那一支是真缺陷，
+       空串模型名会被原样直发（实测 gemini 的 URL 变成 `.../models/:generateContent`）。
+    2. **未知键丢弃**：出声归 `_warn_unread_keys`（A76 / A84），这里不重复判。
+    3. **`type` 的存在性判在这里、合法性仍归 `__post_init__`**：`type` 是唯一没有
+       默认值的字段，而 `__post_init__` 看不见「键不在场」（它手里只有已绑定的值）——
+       这正是 A119 在静态面上的同一个结构洞，两侧各补自己那一层，措辞与静态面的
+       `_check_required_fields` 两条判决对齐。
+
+    Args:
+        name: 条目名（用户起了什么就是什么），只用于报错文案
+        conf: 该条目的原始映射（已由 `_as_mapping` 护过形状）
+
+    Returns:
+        构造完成的 `ModelConfig`
+
+    Raises:
+        DataValidationError: 条目没写 `type`、`type` 是 null，或某个在场值越界
+            （消息里带真实条目名）
+    """
+    kwargs = {}
+    for key, value in conf.items():
+        if key not in MODEL_ENTRY_KEYS:
+            continue
+        if key in MODEL_CREDENTIAL_KEYS:
+            value = _resolve_env(value)
+        kwargs[key] = value
+
+    where = f"models.{name}"
+    if "type" not in kwargs:
+        raise DataValidationError(
+            f"{where}.type 缺少必填字段（支持的类型: {', '.join(MODEL_TYPES)}）"
+        )
+    if kwargs["type"] is None:
+        raise DataValidationError(
+            f"{where}.type 不能是 null（配置里写了这个键却没有给值）"
+        )
+
+    try:
+        return ModelConfig(**kwargs)
+    except DataValidationError as exc:
+        # 判据不动，只换文案：把 dataclass 那一层的占位符换成真实条目名。
+        # `from None` 而不是 `from exc`：两条消息除条目名外逐字相同，链两层等于让
+        # 用户在栈里读两遍同一句话，反而更难定位。
+        raise DataValidationError(
+            str(exc).replace(MODEL_ENTRY_PLACEHOLDER, where)
+        ) from None
+
+
 def _load_section(raw_config: Dict, key: str, config_class: type, defaults: Dict) -> Any:
     """加载配置节
     
@@ -586,21 +678,18 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
             # `save_config` 里已经有了。
             raw_config = yaml.safe_load(f) or {}
         
-        # 解析环境变量
-        def resolve_env(value):
-            return _resolve_env(value)
-        
         # 加载模型配置
         # `models` 走这条特判路径、绕开了 `_load_section` 的形状守卫（A101 当年只
         # 护住映射表那 20 节）。于是 `models:` 写成标量、或某个模型条目写成标量 /
         # 空 / 列表时，过去会当场崩在 `model_conf.get` 的 `AttributeError`，而校验
         # 面却报 `is_valid=False` —— 同族缺陷两侧不同判（A85，A101 的漏网）。这里补
         # 回与 `_load_section` 逐字同口径的判据：写成非映射抛可行动的 ConfigError；
-        # 只写名字没给内容（None）先折成空条目 —— 而空条目自 A115 起落在 `type`
-        # 的封闭清单之外，构造时当场拒。旧口径那句「None = 全默认」是本轮明确
-        # 作废的契约：一条没有 `type` 的条目永远建不出后端，留着只会让 `pipeline`
-        # 把它读成「后端不可用」（来龙去脉见
-        # `tests/unit/test_model_section_shape_l63.py`）。
+        # 只写名字没给内容（None）先折成空条目 —— 而空条目（`models.qwen:` 光一个名字）
+        # 自 A119 起在 `_model_entry` 的**存在性**判据上当场拒。改前它是折成空 dict、
+        # 再靠 `conf.get('type', '')` 回落成 `''`、最后被 `type` 的封闭清单拒掉：
+        # 两版都拒，但消息从「不支持: ''」变成「缺少必填字段」，指得更准 ——
+        # 一条没有 `type` 的条目永远建不出后端，留着只会让 `pipeline` 把它读成
+        # 「后端不可用」（来龙去脉见 `tests/unit/test_model_section_shape_l63.py`）。
         def _as_mapping(value, where):
             if value is None:
                 return {}
@@ -618,23 +707,11 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
                 if name == 'default':
                     continue
                 conf = _as_mapping(model_conf, f"models.{name}")
-                config.models[name] = ModelConfig(
-                    type=conf.get('type', ''),
-                    api_key=resolve_env(conf.get('api_key', '')),
-                    secret_key=resolve_env(conf.get('secret_key', '')),
-                    base_url=resolve_env(conf.get('base_url', '')),
-                    model=conf.get('model', ''),
-                    temperature=conf.get('temperature', 0.99),
-                    top_p=conf.get('top_p', 0.95),
-                    max_output_tokens=conf.get('max_output_tokens', 2048),
-                    # 键写了没给值时 YAML 给 None：对 `request_timeout` 这是合法读法
-                    # （= 不覆盖全局档），对采样三键则不是，所以 `temperature` /
-                    # `top_p` / `max_output_tokens` 三行**不**能照抄这一读法 —— 它们
-                    # 走的是带默认值的 `conf.get(key, 默认)`，写了键没给值时拿到的是
-                    # None 而不是默认值，坏值与 null 都在下面构造 `ModelConfig` 时
-                    # 当场判（`__post_init__`，L71 / A74 + L72 / A113）。
-                    request_timeout=conf.get('request_timeout')
-                )
+                # 回落值不再抄在这里（A114）：`_model_entry` 只把 YAML 里在场的键
+                # 交给 `ModelConfig`，缺哪个键就由该字段的默认值答哪个 —— 改前这
+                # 九行手抄默认里有四行与 dataclass 不一致。`${ENV}` 占位符也在那里
+                # 解析（只那三条凭证键，A95 记的现状）。
+                config.models[name] = _model_entry(name, conf)
         
         # 使用映射表加载其他配置（减少重复代码）
         config_sections = [

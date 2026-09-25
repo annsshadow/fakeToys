@@ -167,6 +167,12 @@ $ python cli.py validate-config --config typo_config.yaml
 - `app` 与 `models` 两节豁免：前者是不被任何代码读取的历史元信息，后者的键是**模型名**。
   但 `models.<名字>` 的**子项**照判（`temperatur` 这类拼错一样出声）。
 - 顶层写 `default_model: xxx` 也会被报出来：默认模型的唯一来源是 `models.default`。
+- **模型条目的「没写」与「写了没给值」自 L75 起两侧同判**：`type` 是条目里唯一必填键
+  （缺键 ⇒ `缺少必填字段: models.<名>.type`，写了留空 ⇒ `字段不能为null: ...`），其余八键
+  不写就是由 `ModelConfig` 的字段默认回答 —— 加载器不再持有第二份回落值。加载期报错现在
+  带**真实条目名**（如 `models.beta.temperature 必须是不大于 2.0 的比例，当前是 999`），
+  而 SDK 直接构造 `ModelConfig` 时仍是 `models.<名字>.…` 占位（那一层拿不到条目名）。
+  **一处旧形状作废**：`save_config` 以前会写出 `model: ''`，这样的文件现在加载即拒。
 - 想不到的名字不硬猜：只有存在高度相近项时才附「是否想写 X？」。
 - **CLI 的退出码只有三种形状**（L55 起，唯一出口是 `augmentor/cli/verdict.py:verdict_exit`）：
   `0` = 判决通过或这条命令压根不判负；`1` = 判决未通过，**或** handler 抛异常被 `main()`
