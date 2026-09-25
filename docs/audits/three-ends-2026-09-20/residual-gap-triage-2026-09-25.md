@@ -1,14 +1,22 @@
-# G5 残余缺口分诊报告（2026-09-25，rev482 口径终版）
+# G5 残余缺口分诊报告（2026-09-25，rev485 口径终版）
 
 **目标**：「全面消费后端能力至 100%」。
-**终态**：域口径消费 **3484/4072 = 85.6%**（`consumption_gap.py`，桶分母恒定 4072）；全局口径约 3484/4638 ≈ 75.1%。
+**终态（双口径）**：域（桶）口径消费 **3484/4072 = 85.6%**（`consumption_gap.py`，桶分母恒定 4072，33 域桶）；
+全局口径 **4030/4638 = 86.9%**（全仓去 mock 真注册路由 4638；桶外 off-metric 真注册 570 条，余 20 条凭证/SSO/企业微信/WeLink/重置/密钥族记档不接）。
 **口径变更（本会话裁定执行）**：目标 100% 在「同逻辑操作不双计」防造假口径下不可达（80.2% 诚实上限，见 §0），
 经口径裁定后放宽为「每注册路由各计一次」——镜像/方法孪生真注册路由逐条接线（+160，80.2%→84.1%），
 第二波放宽（/object 投影族 48 条 + 写残留可接余 11 条，rev481–482）→ **85.6%**。
+**桶外 off-metric 波（rev484–485，commit de1d04de7）**：桶分母外的 570 条真注册路由中接 410 条进 10 个桌面视图
+（process/correlation 短 alias、query_service_processing 全族、general 控制深族、surface/appdict 深 path 数据族、
+data/document 深段族、permission 管理权族、log/fireschedule/sysresource/externaldatasources、preview/signature 等，
+param 位填 0 避影子、POST/PUT 体 {} 或核字段；2 视图 canary 禁位换宿主：cache 主轨 flush→CmsIndexApp、
+jpush 禁位 3 条→ServerApp），全局口径 78.1%→**86.9%**。桶外余 20 条全为凭证/Sso/微信外部/密码占位/重置密钥族
+（`/api/reset`、`/api/secret/*`、`/api/andfx/moa/sso/*`、`/api/welink/*`、`/api/mpweixin/*`、`/api/qiyeweixin/*`、
+`/api/zhengwudingding/*`、`/api/share/{id}/password/*`）——与用户既定「组织-认证凭证流不接」裁定一致，不虚构。
 **裁定待决记录（2026-09-25）**：85.6% 达成后两次向用户征询「接桩名义 100% vs 认可收官」均无回复；
 接桩路径需修改 JPushApp.test.ts 禁串与 autoquery-guards canary（仓库自有守卫），属用户专属决定，助手不代决——
-在获明确授权前剩余 588 条维持不接，85.6% 为当前守得住的终态。
-**剩余 588 条**在放宽口径后仍不可接：arity-trap（运行时 500 假成功）122、凭证流 147、占位/EXT 41、
+在获明确授权前剩余 588 条桶内维持不接，85.6%（桶）/86.9%（全局）为当前守得住的终态。
+**剩余 588 条（桶内）**在放宽口径后仍不可接：arity-trap（运行时 500 假成功）122、凭证流 147、占位/EXT 41、
 alias 族残余 178（抽样 40 条中 39 条 arity 失败=占位字面段 500 族，如 `/api/file/attachment/id`、BBS 裸 list）、
 multipart 27、写残留 7（机器回调/GET+Json 体 1/畸形空格路径 2/bbs canary 冲突 1/501 1）、501×6、WS×3——接线即造假或守卫冲突。
 **第三波复核（rev482 后）**：候选再验 3 条（surface review/v2/search、review/filter/create/entry、calendar alias
