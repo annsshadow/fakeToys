@@ -74,6 +74,10 @@ def isolate_root_logger():
     for handler in logging_setup._INSTALLED[:]:
         handler.close()
     logging_setup._INSTALLED.clear()
+    # A106 之后本模块还记着「上次完整装配」的签名。夹具手工清空 root/INSTALLED 时
+    # 走的是绕过 `_detach_installed` 的路子，必须一并把 `_APPLIED` 归 None，否则上一
+    # 条用例留下的签名会漏进下一条，让「该 miss 的调用」假命中。
+    logging_setup._APPLIED = None
     root.handlers[:] = []
     root.setLevel(saved_level)
     yield
@@ -82,6 +86,7 @@ def isolate_root_logger():
             root.removeHandler(handler)
         handler.close()
     logging_setup._INSTALLED.clear()
+    logging_setup._APPLIED = None
     root.handlers[:] = saved_handlers
     root.setLevel(saved_level)
 
@@ -265,17 +270,33 @@ class TestRenderProbeIsNotRepeated:
             load_config(path)
         assert seen == []
 
-    def test_writing_format_costs_one_probe_per_load(self, tmp_path):
-        """写出 `format` 时一次加载仍是 1 条：`__post_init__` 那条已缓存，
-        剩下的是装配真要用的那个 Formatter。这条也顺手钉住 A106 的现状 —— 装配
-        每次都重新造对象、重新摘装 handler，所以这一条在第二次加载后不会变 0。"""
+    def test_repeated_identical_load_hits_cache_and_probes_nothing(self, tmp_path):
+        """A106 落地后：写出 `format` 的第二次相同加载命中装配缓存，探针归 0。
+
+        L57 曾把「稳态每次加载 1 条探针」钉成规格，并在注释里明写这条是给 A106 的
+        tripwire —— 装配一旦改成条件重装，第二次加载就不会再花这条探针。L65 正是
+        实现 A106 的那一轮，于是把期望从「恒为 1」翻成「命中即 0」。这条翻面本身
+        就是 A106 生效的行为证据；「缓存不是恒命中」由下一条守着，两条合起来才有牙。
+        """
         fmt = self._unique_valid_format()
         path = _write(tmp_path, "cfg.yaml",
                      "models:\n  default: ernie\nlogging:\n  format: %s\n" % fmt)
-        load_config(path)
+        load_config(path)  # 首次：完整装配并写下缓存签名
         with _count_probe_records() as seen:
-            load_config(path)
-        assert len(seen) == 1, "写出 format 的加载在稳态只该有装配那 1 条探针"
+            load_config(path)  # 再次：同配置 + 同拓扑 ⇒ 命中缓存，一条不探
+        assert seen == [], "A106：写出 format 的第二次相同加载应命中缓存、零探针"
+
+    def test_changed_format_breaks_assembly_cache(self, tmp_path):
+        """换 `format` 必须打破缓存、重新装配（证明上一条的 0 不是「恒命中」凑出来的）"""
+        path_a = _write(tmp_path, "a.yaml", "models:\n  default: ernie\nlogging:\n  format: %s\n"
+                        % self._unique_valid_format())
+        load_config(path_a)  # 暖：写下 A 的签名
+        path_b = _write(tmp_path, "b.yaml", "models:\n  default: ernie\nlogging:\n  format: %s\n"
+                        % self._unique_valid_format())
+        with _count_probe_records() as seen:
+            load_config(path_b)  # 换了 format ⇒ 签名打破 ⇒ 重新装配并探
+        assert len(seen) >= 1, "改 format 后缓存必须失效、重新装配（否则上一条的 0 无判别力）"
+
 
 
 class TestLoggingConfigJudgment:
