@@ -1119,11 +1119,321 @@ class TestRuntimeValidatorParity:
         """`items` / `non_empty` 只许出现在运行时真判的键上
 
         反向不一致同样是缺陷：校验器比运行时严，合法配置会被 `validate-config` 拦在
-        门外（`quality.threshold`、`output.export_dir` 这些键运行时不判空，规格就不许判）。
+        门外（`quality.threshold` 是数值键、运行时不判形状，规格就不许挂
+        `items`/`non_empty`）。
         """
         s = ConfigValidator.KNOWN_FIELDS
         assert {p for p, spec in s.items() if "items" in spec} == {
             "web.cors_origins", "web.data_roots", "web.rate_limit_exempt_paths"}
         assert {p for p, spec in s.items() if spec.get("non_empty")} == {
             "web.host", "web.static_dir"}
+
+
+class TestUnreadKeyWarnings:
+    """写了没人读的键必须出声（L52 / A76）
+
+    实测改前（Temp `l52q/probe1.py`、`probe2.py`、`probe3.py`，NONCE-45A0C1AB9510）：
+    节名拼错（`augmenation.variants_per_seed: 999`）与节内键名拼错
+    （`augmentation.variant_per_seed: 999`）两边都是 `is_valid=True` / 0 error /
+    0 warning，而 `load_config` 那侧读回默认值 5；把 20 个被消费的节各塞一个假键，
+    反馈同样是 0 / 0。用户看到的事实只有「我改了数，行为没变」，症状长得像后端坏了
+    —— 这一类缺陷无法自查，所以必须让工具出声。
+
+    判据的键集**从 `AppConfig` 的字段类型推导**，不抄第三份清单：`load_config` 只按
+    `_load_section(..., defaults)` 的键取字段，而 L49/L50 的棘轮已经把「defaults 的
+    键集 == dataclass 字段集」冻住（`KNOWN_UNMAPPED_FIELDS` 现为空集），所以
+    dataclass 就是权威。`test_the_derived_whitelist_equals_what_load_section_reads`
+    把这条锚住，以后加节、加字段、漏接表都会在这里现形。
+    """
+
+    SECTION_MARKER = "顶层段落没人读取"
+    KEY_MARKER = "键没人读取"
+
+    #: 仓库根：本类要读出厂 `config.yaml`，而 pytest 的工作目录不保证是仓库根
+    REPO = Path(__file__).resolve().parent.parent.parent
+
+    @staticmethod
+    def _config(**sections):
+        base = {"models": {"default": "ernie"}}
+        base.update(sections)
+        return base
+
+    def _unread(self, config):
+        """只取本轮新增的两类警告
+
+        既有的「环境变量未设置」警告与本轮无关（出厂 `config.yaml` 就带 5 条），
+        混进来会让断言随环境变量的设置状态漂移。
+        """
+        hits = []
+        for w in validate_config(config).warnings:
+            if self.SECTION_MARKER in w.message or self.KEY_MARKER in w.message:
+                hits.append((w.path, w.message))
+        return hits
+
+    # === 判据的来源：推导，不是清单 ===
+
+    def test_the_whitelist_is_derived_from_appconfig_fields(self):
+        """`AppConfig` 里除 `models` / `default_model` 之外没有第三种字段
+
+        这条是**防空转**：如果以后新增一个非 dataclass 的顶层字段（比如又一个
+        `dict`），本类推导会静默跳过它，判据面凭空少一节；那条字段必须显式地
+        出现在这里，作者才会被逼着做一次决定。
+        """
+        import dataclasses
+
+        from augmentor.config import AppConfig
+
+        declared = {f.name for f in dataclasses.fields(AppConfig)}
+        derived = set(ConfigValidator.consumed_section_keys())
+        assert declared - derived == {"models", "default_model"}, sorted(
+            declared ^ derived | (declared - derived))
+
+    def test_the_derived_whitelist_equals_what_load_section_reads(self, tmp_path):
+        """推导出的键集必须与 `load_config` 实际读的 defaults 表逐节逐键相等
+
+        这是本轮的结构本体：判据说「没人读」的那份名单，必须就是运行时读的那份，
+        一个字都不许多。手法沿用 L49 的拦截（`TestSectionDefaultsMatchTheMappingTable`），
+        只是把对照物从 dataclass 换成校验器。
+        """
+        import yaml
+
+        from augmentor import config as config_module
+
+        derived = ConfigValidator.consumed_section_keys()
+        path = tmp_path / "all_sections.yaml"
+        with open(path, "w", encoding="utf-8") as handle:
+            yaml.safe_dump({name: {} for name in derived}, handle)
+
+        seen = {}
+        real = config_module._load_section
+        monkeypatch = pytest.MonkeyPatch()
+        monkeypatch.setattr(
+            config_module, "_load_section",
+            lambda raw, key, cls, defaults: (seen.__setitem__(key, set(defaults)),
+                                             real(raw, key, cls, defaults))[1])
+        try:
+            config_module.load_config(str(path))
+        finally:
+            monkeypatch.undo()
+
+        assert set(seen) == set(derived), sorted(set(seen) ^ set(derived))
+        for name, read_keys in seen.items():
+            assert read_keys == derived[name], (name, sorted(read_keys ^ derived[name]))
+
+    def test_model_config_fields_are_all_read_by_load_config(self, tmp_path):
+        """`models.<名字>` 的子键判据同样不许比运行时宽
+
+        实测（Temp `l52q/probe3.py` 第 1 节）`ModelConfig` 的 8 个字段与
+        `load_config` 读走的 8 个键双向差集都为空；这里把「每个字段真的被读」钉成
+        常驻断言：字段若多出一个没人读的，本类的判据就会把合法配置报成警告。
+        """
+        import dataclasses
+
+        import yaml
+
+        from augmentor.config import ModelConfig, load_config
+
+        values = {"type": "openai", "api_key": "AK", "secret_key": "SK",
+                  "base_url": "http://example.invalid", "model": "m-1",
+                  "temperature": 0.42, "top_p": 0.43,
+                  "max_output_tokens": 42}
+        declared = {f.name for f in dataclasses.fields(ModelConfig)}
+        assert declared == set(values), sorted(declared ^ set(values))
+
+        path = tmp_path / "one_model.yaml"
+        with open(path, "w", encoding="utf-8") as handle:
+            yaml.safe_dump({"models": {"default": "probe", "probe": values}},
+                           handle, allow_unicode=True)
+
+        loaded = load_config(str(path)).models["probe"]
+        assert {f.name: getattr(loaded, f.name)
+                for f in dataclasses.fields(ModelConfig)} == values
+
+    # === 行为面：拼错就必须出声 ===
+
+    @pytest.mark.parametrize("config,expected_path", [
+        pytest.param({"models": {"default": "ernie"},
+                      "augmenation": {"variants_per_seed": 3}}, "augmenation",
+                     id="节名拼错-augmenation"),
+        pytest.param({"models": {"default": "ernie"},
+                      "augmentation": {"variant_per_seed": 3}},
+                     "augmentation.variant_per_seed", id="节内键名拼错-少个s"),
+        pytest.param({"models": {"default": "ernie"},
+                      "augmentation": {"auto_save_intervall": 5}},
+                     "augmentation.auto_save_intervall", id="节内键名拼错-双写l"),
+        pytest.param({"models": {"default": "ernie"},
+                      "web": {"ports": 8080}}, "web.ports", id="web节内键名拼错"),
+        pytest.param({"models": {"default": "ernie"},
+                      "web": {"cors_origin": ["https://only.example"]}},
+                     "web.cors_origin", id="web节内漏了复数s"),
+        pytest.param({"models": {"default": "ernie"},
+                      "logging": {"levl": "DEBUG"}}, "logging.levl",
+                     id="规格表零规格的logging节也照判"),
+        pytest.param({"models": {"default": "ernie"},
+                      "export": {"default_formt": "jsonl"}},
+                     "export.default_formt", id="export节内键名拼错"),
+        pytest.param({"models": {"default": "ernie"},
+                      "quality": {"threshhold": 0.9}}, "quality.threshhold",
+                     id="quality节内键名拼错"),
+        pytest.param({"models": {"default": "ernie"},
+                      "multimodal": {"image_extenshions": [".png"]}},
+                     "multimodal.image_extenshions", id="列表字段同样只看键名"),
+        pytest.param({"models": {"default": "ernie",
+                                 "ernie": {"temperatur": 0.7}}},
+                     "models.ernie.temperatur", id="模型条目子键拼错"),
+        pytest.param({"models": {"default": "ernie"},
+                      "output": {"export_dir": "out"}}, "output",
+                     id="幽灵节output现在出声"),
+        pytest.param({"models": {"default": "ernie"}, "default_model": "openai"},
+                     "default_model", id="顶层default_model是已知陷阱"),
+        pytest.param({"models": {"default": "ernie"}, "mycustom": {"a": 1}},
+                     "mycustom", id="用户自加的顶层段落也出声"),
+    ])
+    def test_typo_gets_exactly_one_warning(self, config, expected_path):
+        got = self._unread(config)
+        assert [p for p, _ in got] == [expected_path], got
+
+    @pytest.mark.parametrize("config,expected_path", [
+        pytest.param({"models": {"default": "ernie"},
+                      "augmenation": {"variants_per_seed": 3}}, "augmenation",
+                     id="节名拼错"),
+        pytest.param({"models": {"default": "ernie"},
+                      "augmentation": {"variant_per_seed": 3}},
+                     "augmentation.variant_per_seed", id="键名拼错"),
+    ])
+    def test_verdict_stays_valid_and_error_free(self, config, expected_path):
+        """本轮判据只许用 WARNING：多余的键不挡服务，`is_valid` 是 CLI 退出码"""
+        result = validate_config(config)
+        assert result.is_valid is True
+        assert result.errors == []
+        assert [w.severity.value for w in result.warnings] == ["warning"]
+
+    def test_suggestion_names_the_real_key(self):
+        """能确定相近项时要把真名说出来，不能只说「没人读」"""
+        messages = dict(self._unread(
+            self._config(augmenation={"variants_per_seed": 3},
+                         augmentation={"variant_per_seed": 3, "ports": 8080},
+                         web={"ports": 8080})))
+        assert "是否想写 augmentation？" in messages["augmenation"], messages
+        assert "是否想写 variants_per_seed？" in messages["augmentation.variant_per_seed"]
+        assert "是否想写 port？" in messages["web.ports"], messages
+
+    def test_no_suggestion_when_nothing_is_close(self):
+        """猜不出来就不许硬猜：把无关名写成建议比没有建议更坏"""
+        _, message = self._unread(self._config(mycustom={"a": 1}))[0]
+        assert "是否想写" not in message, message
+        _, message = self._unread(
+            self._config(augmentation={"zzz_not_a_field": 1}))[0]
+        assert "是否想写" not in message, message
+
+    def test_meta_sections_stay_exempt(self):
+        """豁免的两节要真的是那两节：`app` 是文档承认的遗留元信息，`models` 的键是模型名"""
+        assert self._unread({"app": {"name": "t", "whatever": 1},
+                             "models": {"default": "ernie",
+                                        "ernie": {"api_key": "K"}}}) == []
+
+    def test_shape_error_is_not_double_reported(self):
+        """节写成标量时规格走查已经判 ERROR，本类不重复报「没人读」"""
+        result = validate_config(self._config(augmentation="abc"))
+        assert [(e.path, "类型错误" in e.message) for e in result.errors] == [
+            ("augmentation", True)], result.errors
+        assert self._unread({"models": {"default": "ernie"}, "augmentation": "abc"}) == []
+
+    def test_full_field_sections_stay_silent(self):
+        """每个被消费的节写满它自己的字段集时必须零警告（判据不许比运行时窄）
+
+        这条是本类的反向守护：只要推导漏了某个字段、或者某节被静默跳过，写满字段
+        的配置立刻变红。值全是占位的 `1`，因为本条只看键名，类型错误由既有用例管。
+        """
+        config = self._config()
+        for name, keys in ConfigValidator.consumed_section_keys().items():
+            config[name] = {k: 1 for k in keys}
+        assert self._unread(config) == []
+
+    def test_shipped_config_has_no_unread_keys(self):
+        """出厂 `config.yaml` 一个「没人读」警告都不许多：判据不能制造疲劳
+
+        假阳性会把人训练成「忽略警告」，那比沉默更坏。
+        这里只按标记筛，**不写警告条数**：既有的「环境变量未设置」那几条是环境变量的
+        函数（同一份文件在本机 aug 下 5 条、在有 `BAIDU_API_KEY` 的会话里 2 条），
+        钉数字就是把断言绑死在进程环境上 —— 与 L51 那条「不许断言
+        `starlette.__version__ == \"1.6.0\"`」同罪。
+        """
+        result = validate_config_file(str(self.REPO / "config.yaml"))
+        assert result.errors == []
+        assert result.is_valid is True
+        unread, other = [], []
+        for w in result.warnings:
+            (unread if (self.SECTION_MARKER in w.message
+                        or self.KEY_MARKER in w.message) else other).append(w)
+        assert unread == [], unread
+        # 剩下的警告必须全是既有那一类，防止本轮判据悄悄把环境变量警告顶掉
+        assert all("环境变量未设置" in w.message for w in other), other
+
+    def test_the_shipped_file_actually_gets_walked(self):
+        """上一条只证明「出厂文件干净」，这一条才证明判据真的看了它
+
+        在出厂配置上原样加一个拼错的键，警告必须恰好那一条 —— 否则「零警告」可能
+        只是判据压根没跑。
+        """
+        raw = yaml.safe_load((self.REPO / "config.yaml").read_text(encoding="utf-8"))
+        raw["augmentation"]["variant_per_seed"] = 999
+        assert self._unread(raw) == [
+            ("augmentation.variant_per_seed",
+             "键没人读取: augmentation.variant_per_seed（值不会生效）；"
+             "是否想写 variants_per_seed？")]
+
+    def test_save_config_roundtrip_is_silent(self, tmp_path):
+        """「保存配置 → 校验配置」这条自家回路不许产生警告（否则判据与写入打架）"""
+        from augmentor.config import AppConfig, save_config
+
+        path = tmp_path / "saved.yaml"
+        save_config(AppConfig(), str(path))
+        result = validate_config_file(str(path))
+        unread = [(w.path, w.message) for w in result.warnings
+                  if (self.SECTION_MARKER in w.message or self.KEY_MARKER in w.message)]
+        assert unread == [], unread
+
+    def test_many_unread_keys_still_valid(self):
+        """一次写坏 20 个节也不判负：WARNING 是提醒不是判决"""
+        config = self._config()
+        for name in ConfigValidator.consumed_section_keys():
+            config[name] = {"zzz_not_a_field": 1}
+        result = validate_config(config)
+        assert result.is_valid is True
+        assert len(self._unread(config)) == len(ConfigValidator.consumed_section_keys())
+
+    # === 规格表自己要服从推导（A76 的反向棘轮）===
+
+    def test_every_spec_path_points_at_a_real_key(self):
+        """`KNOWN_FIELDS` 里每条路径都要指向真存在的路径，幽灵规格当场变红
+
+        `output` / `output.export_dir` 曾是这样一条规格：`load_config` 里没有 `output`
+        节（真节后是 `export`），实测 `output: {export_dir: out}` 得到绿灯，而
+        `hasattr(load_config(...), "output") == False`。表里留一条死规格等于教用户写
+        一个不生效的键 —— 那正是 A76 本尊，只不过这次是校验器自己造的。
+        """
+        sections = ConfigValidator.consumed_section_keys()
+        ghosts = []
+        for path in ConfigValidator.KNOWN_FIELDS:
+            parts = path.split(".")
+            if parts[0] in ConfigValidator.META_TOP_SECTIONS:
+                continue
+            if len(parts) == 1:
+                if parts[0] not in sections:
+                    ghosts.append(path)
+            elif parts[0] not in sections or parts[1] not in sections[parts[0]]:
+                ghosts.append(path)
+        assert ghosts == [], ghosts
+
+    def test_the_output_ghost_spec_is_gone(self):
+        """删除 `output.*` 规格这件事本身也要一条断言，否则会被顺手加回来"""
+        assert "output" not in ConfigValidator.KNOWN_FIELDS
+        assert "output.export_dir" not in ConfigValidator.KNOWN_FIELDS
+        assert [p for p, _ in self._unread(self._config(output={"export_dir": "out"}))] == [
+            "output"]
+
+    def test_exempt_list_is_exactly_the_two_meta_sections(self):
+        """豁免清单是显式的两个名字，多一项就等于承认又一处「配了不生效」"""
+        assert ConfigValidator.META_TOP_SECTIONS == {"app", "models"}
 

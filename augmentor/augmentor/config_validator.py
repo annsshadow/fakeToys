@@ -10,8 +10,9 @@ import os
 import re
 import yaml
 import logging
+import difflib
 from typing import Any, Dict, List, Optional, Set, Union
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields, is_dataclass
 from pathlib import Path
 from enum import Enum
 
@@ -21,7 +22,7 @@ from enum import Enum
 from .config import (AUTO_SAVE_INTERVAL_MIN, MAX_RETRIES_RANGE,
                      NUM_THREADS_RANGE, PORT_RANGE, RATE_LIMIT_MIN_REQUESTS,
                      RATE_LIMIT_MIN_WINDOW_SECONDS, RETRY_DELAY_RANGE,
-                     VARIANTS_PER_SEED_RANGE)
+                     VARIANTS_PER_SEED_RANGE, AppConfig, ModelConfig)
 from .retry import MAX_RETRY_AFTER
 
 logger = logging.getLogger(__name__)
@@ -144,8 +145,15 @@ class ConfigValidator:
         "quality.threshold": {"type": float, "min": 0.0, "max": 1.0},
         "dedup": {"type": dict},
         "dedup.enabled": {"type": bool},
-        "output": {"type": dict},
-        "output.export_dir": {"type": str},
+        # `output` / `output.export_dir` 两条规格在 L52 删掉了。它们是**规格表自己
+        # 造的死旋钮**：`load_config` 里没有 `output` 节（真节后是 `export`，字段是
+        # `default_format` / `formats`），实测 `output: {export_dir: out}` 得到
+        # `is_valid=True` / 0 error / 0 warning，而 `load_config` 之后
+        # `hasattr(config, "output") == False` —— 用户照表写就被静默丢弃。留着它，
+        # 本轮新加的「没人读」判据会与它当场矛盾（一边给绿灯、一边报没人读），
+        # 而 `consumed_section_keys()` 的方向守护（A76 的反向棘轮）正是要让这种
+        # 幽灵规格无法存在。导出目录从来不是配置项，它一直是 CLI/API 的 `--output`
+        # 参数（`docs/` 里也没有任何 `export_dir` 文档，删除不产生文档债）。
         # `web` 节的规格自 L50 起补齐（此前整节 9 个字段在 `validate-config` 上零反馈：
         # 实测把 port 写成字符串、data_roots 写成 YAML 标量、限流数写成负数与 NaN，
         # 一份配置里六个键全错仍判 is_valid=True / 0 error / 0 warning）。`data_roots`
@@ -171,7 +179,105 @@ class ConfigValidator:
     
     # 环境变量模式
     ENV_VAR_PATTERN = re.compile(r'\$\{(\w+)\}')
-    
+
+    # 顶层段落里不进「没人读取」判据的两节（A76）：`app` 是历史遗留元信息（见
+    # `KNOWN_FIELDS` 上方注释：`AppConfig` 没有对应字段、`load_config` 从不读它），
+    # `models` 的键是**模型名**而不是旋钮，其子项另按 `ModelConfig` 判。
+    META_TOP_SECTIONS = {"app", "models"}
+
+    # 推导缓存。`AppConfig()` 要构造 20 个节对象并跑各自的 `__post_init__` 判据，
+    # 这个钱一次进程只该付一遍，而不是每次 `validate_config` 付一遍。
+    _CONSUMED_SECTIONS: Optional[Dict[str, Set[str]]] = None
+
+    @classmethod
+    def consumed_section_keys(cls) -> Dict[str, Set[str]]:
+        """推出「被消费的节 → 有人读的键集」，权威只有一个：`AppConfig` 的字段类型
+
+        为什么可以放心推导（L52 的结构论据）：`load_config` 用
+        `_load_section(raw, key, cls, defaults)` 加载每一节，**只按 `defaults` 的键**
+        取字段，而 `tests/unit/test_config.py::TestSectionDefaultsMatchTheMappingTable`
+        （L49 立、L50 清空豁免清单）已经把「`defaults` 的键集 == 该 dataclass 的字段集」
+        冻成常驻断言。于是 dataclass 字段集与那张映射表在同一件事上同值，抄第三份
+        清单（像 A77 之前的两份区间数字那样）就是本仓已经付过代价的错误。
+
+        返回里不含 `models` / `default_model`：前者是模型名到 `ModelConfig` 的映射，
+        后者根本不是节。判据一侧对它们的处理见 `_warn_unread_keys`。
+        """
+        if cls._CONSUMED_SECTIONS is None:
+            sections: Dict[str, Set[str]] = {}
+            baseline = AppConfig()
+            for f in fields(AppConfig):
+                value = getattr(baseline, f.name)
+                # `models` 是 dict、`default_model` 是 str：不是节，跳过
+                if is_dataclass(value):
+                    sections[f.name] = {sf.name for sf in fields(value)}
+            cls._CONSUMED_SECTIONS = sections
+        return cls._CONSUMED_SECTIONS
+
+    @staticmethod
+    def _suggest(name: str, candidates: List[str]) -> str:
+        """把「是否想写 X」拼进警告文案；没有相近项就不拼（别把猜测写成结论）"""
+        match = difflib.get_close_matches(name, candidates, n=1, cutoff=0.7)
+        return "" if not match else "；是否想写 %s？" % match[0]
+
+    def _warn_unread_keys(self, config: Dict, result: ValidationResult) -> None:
+        """配置里「写了没人读」的键必须出声（A76）
+
+        改前实测（Temp `l52q/probe1.py` / `probe2.py` NONCE-45A0C1AB9510）：节名拼错
+        （`augmenation.variants_per_seed: 999`）与节内键名拼错（`augmentation
+        .variant_per_seed: 999`）两边都得到 `is_valid=True` / 0 error / 0 warning，
+        而 `load_config` 那侧读回默认值 5 —— 症状是「配置不起作用」而不是「配置写错
+        了」。把 20 个被消费的节各塞一个假键，今天的反馈同样是 0 / 0。
+
+        只用 WARNING，不用 ERROR：多余的键不会让服务起不来（`_load_section` 直接忽略
+        它们），而 `is_valid` 是 CLI 退出码与 `POST /api/system/validate-config` 的
+        判据 —— 判负会把「配置里夹了自己段落」的老用户凭空挡红。
+        """
+        sections = self.consumed_section_keys()
+
+        for key, value in config.items():
+            if key in self.META_TOP_SECTIONS:
+                if key == "models" and isinstance(value, dict):
+                    self._warn_unread_model_keys(value, result)
+                continue
+            if key not in sections:
+                result.add_warning(
+                    key, "顶层段落没人读取: %s（写了不会生效）%s" % (
+                        key, self._suggest(key, sorted(sections))))
+                continue
+            if not isinstance(value, dict):
+                # 形状问题（`augmentation: abc`）由 `KNOWN_FIELDS` 的 `type: dict`
+                # 判成 ERROR，这里不重复报同一件事
+                continue
+            known = sections[key]
+            for sub_key in value:
+                if sub_key not in known:
+                    result.add_warning(
+                        "%s.%s" % (key, sub_key),
+                        "键没人读取: %s.%s（值不会生效）%s" % (
+                            key, sub_key, self._suggest(sub_key, sorted(known))))
+
+    def _warn_unread_model_keys(self, models: Dict, result: ValidationResult) -> None:
+        """模型条目里的子键按 `ModelConfig` 的字段集判（同一套推导，第二个面）
+
+        `models.<名字>` 的键集用户自己起，所以顶层不进判据；但它的**子项**形状是
+        封闭的：`load_config` 对每个条目读 `type` / `api_key` / `secret_key` /
+        `base_url` / `model` / `temperature` / `top_p` / `max_output_tokens` 八个键，
+        实测与 `ModelConfig` 的字段集逐字相等（Temp `l52q/probe3.py` 第 1 节，差集
+        两侧都空）。方向守护见
+        `tests/unit/test_config_validator.py::TestUnreadKeyWarnings`。
+        """
+        known = sorted(f.name for f in fields(ModelConfig))
+        for name, body in models.items():
+            if name == "default" or not isinstance(body, dict):
+                continue
+            for key in body:
+                if key not in known:
+                    result.add_warning(
+                        "models.%s.%s" % (name, key),
+                        "键没人读取: models.%s.%s（值不会生效）%s" % (
+                            name, key, self._suggest(key, known)))
+
     def __init__(self):
         """初始化验证器"""
         self._validators = {
@@ -235,7 +341,11 @@ class ConfigValidator:
         
         # 验证已知字段
         self._validate_known_fields(config, "", result)
-        
+
+        # 「写了没人读」的键（A76）：独立一遍走，不塞进上面那个规格走查里，
+        # 因为它的权威来源是 `AppConfig` 的字段集而不是 `KNOWN_FIELDS`
+        self._warn_unread_keys(config, result)
+
         # 验证环境变量引用
         self._validate_env_refs(config, "", result)
         

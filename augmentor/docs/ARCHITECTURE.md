@@ -1556,6 +1556,126 @@ YAML 里写了键没给值就是 `None`，字段没有「没传」这种状态�
 全在既有 `_validate_env_refs`）、`validation.py` 218 语句缺 **0**（122 分支 5 条偏支为既有）；
 `C:\Python314` 侧同一批文件的语句数是 255 / 162 / 212，分母同样是环境的函数。
 
+### 3.27 L52：给「写了没人读」装反馈通道 —— 白名单从字段类型推导，不抄第二遍（关闭 A76 + A81，新立并同修 A84–A89）
+
+**A76 的根因与 L51 是同一个，但方向相反**。L51 消灭的是「同一区间两侧各抄一遍」，A76 是「`load_config`
+按 defaults 表逐键取，表外的键无声消失」。症状面（沙箱把 `config_validator.py` 换回 **HEAD 态**复现，
+Temp `l52q/post_check2.py` NONCE-45A0C1AB9510-POST —— 不再靠改前记忆下笔）：一份塞了 **8 处**错拼的配置
+（`augmenation` 错节名、`augmentation.variant_per_seed` / `web.ports` / `web.cors_origin` /
+`logging.levl` / `models.ernie.temperatur` 错键名、顶层 `output` / `default_model` 两个幻影段）在 HEAD 是
+`is_valid=True, errors=0, warnings=0`，`augmenation.variants_per_seed=999` 与
+`augmentation.variant_per_seed=999` 都读回默认 **5**；同一份配置在 L52 后是 `is_valid=True` +
+**8 条 unread 警告**，逐条带「是否想写 X？」。**定级 S 的理由一直是静默**：缺陷能级看的不是影响大小，
+而是有没有人被告知（A76 原文）。
+
+**白名单必须推导出来，不能抄出来**——这是本轮全部结构决策的落点。「哪些键有人读」这份清单如果手写，
+它就成了第三份副本，于是 A76 的修法本身会变成一个 A77 型缺陷（清单与代码漂移）。推导链是两跳，且两跳
+都已被既有机制钉住：`load_config` 读的键集 **恰好等于** `_load_section` 收到的 `defaults.keys()`
+（`test_the_derived_whitelist_equals_what_load_section_reads` 把 `_load_section` 打桩、逐节记录真实的
+`set(defaults)` 再与推导集比对），而 L49/L50 立的映射表棘轮（`TestSectionDefaultsMatchTheMappingTable` +
+`KNOWN_UNMAPPED_FIELDS == set()`）已经把 `defaults.keys()` 钉成 **dataclass 字段集**。所以
+`ConfigValidator.consumed_section_keys()`（`config_validator.py:193`）只做一件事：遍历
+`fields(AppConfig)`，取 `is_dataclass(默认值)` 的那 **20** 节、各取其字段的 **67** 个键名，结果缓存
+（`_CONSUMED_SECTIONS`）。⇒ 新增配置节或字段自动进入判据，没有任何地方需要「记得同步一份清单」。
+
+**一律 WARNING，绝不动 `is_valid`**。`is_valid` 是 `POST /api/system/validate-config` 响应的判决位
+（`api/routes/system_ops.py:147` 的 `is_valid: bool`，本轮那条端点用例就断在它上面），而多余的键不让服务起不来；
+把它判红等于把「配置文件里夹自己的段落」变成破坏性变更 —— `save_config`
+**刻意**保留非 `AppConfig` 的顶层段落，正是这条决定让 ERROR 不可选。豁免只有两节（`META_TOP_SECTIONS`，
+由 `test_exempt_list_is_exactly_the_two_meta_sections` 逐字钉死）：`app` 是谁都不读的历史元信息、
+`models` 的键是**模型名**；但 `models.<名字>` 的**子项**照 `ModelConfig` 的 8 个字段判（`temperatur` 出声），
+`models.default` 单独跳过。建议文案只在 `difflib` 有 ≥0.7 近邻时才附，且两个方向都有用例
+（`test_suggestion_names_the_real_key` / `test_no_suggestion_when_nothing_is_close`）—— 硬猜一个不存在的
+正确名字比不猜更坏。实跑输出与口径写在 `docs/API.md`「配置的「写了没人读」反馈（3.x）」，那里额外标了
+「警告条数随本机环境而变」（后 5 条是既有的环境变量告警）。
+
+**顺手拆掉校验器自己造的那个 A76 实例**：`KNOWN_FIELDS` 里躺着 `output` 与 `output.export_dir` 两条规格，
+指向一个 `load_config` 从不消费的节（`hasattr(config, 'output') == False`，真实节叫 `export`；导出目录从来
+不是配置项，它是 CLI/API 的 `--output` 参数）——即「反馈通道」的表自己就含没人读的键。删掉两条（全表
+31 → **29**），并立一条反向棘轮 `test_every_spec_path_points_at_a_real_key`：规格表每条路径必须落在
+推导出来的「真实键集」里，⇒ 幽灵规格从「可以存在」变成「一写出来就红」（注入 m6 把 `output` 加回去
+⇒ 恰 **2 红**，两条都红在棘轮本身）。
+
+**用例净 +31，两路独立闭合**：双解释器全量各跑 ——venv `aug`（3.13.14，无 pandas / 无 chromadb，
+starlette 1.6.0）**5137 passed / 3 skipped**（69.16 s，总覆盖 **98.65 %**，门禁 80 % 达成，TOTAL 12,895
+语句缺 88、3,558 分支缺 110）；`C:\Python314`（3.14.4，pandas 3.0.2 + chromadb 1.5.9，starlette 1.2.1）
+**5157 passed / 2 skipped**（46.28 s，**99.03 %**，TOTAL 12,269 缺 41 / 分支缺 104）⇒ 两边同为 **+31**
+（5106→5137 / 5126→5157），与 L51 立的「收集数差只按完整 node-id 多重集算」一致：两份被触碰测试文件
+HEAD 481 → 工作树 512，**新增 31、消失 0**（Temp `l52q/collect_diff.py`，NONCE-45A0C1AB9510-COLLECT）。
+skip 组成不变（aug 侧 3 条全 pandas，py314 侧 2 条 chromadb 反向用例）。**本轮新增语句全部落在已覆盖区**：
+`config_validator.py` 209 语句缺 **0**、116 分支仅 **3** 条偏支（`460->459` / `466->exit` / `471->exit`，
+三行都是既有 `_validate_env_refs` / `_validate_dict` / `_validate_list`，L51 已记过其中一条），新写的
+`_warn_unread_keys` / `_warn_unread_model_keys` / `_suggest` / `consumed_section_keys` 分支全覆盖。
+
+**注入 8 模式**（沙箱副本 `Temp/l52q/tree/`，NONCE-45A0C1AB9510-INJ）：基线与全还原后同为
+**880 passed / 0 failed**，红数 **21 / 21 / 15 / 3 / 1 / 2 / 26 / 2**，九份文件沙箱 ↔ 真身 sha 逐字节一致。
+m1 摘掉 `validate_config` 里那一遍走查（即回到 A76 改前态）⇒ **21 红**；m2 把 WARNING 升成 ERROR
+⇒ **21 红**，其中一条是既有例 `test_valid_full_config_passes` ⇒ 定级口径被既有测试一起守住；m3 把推导
+换成硬编码只含 `web` 一节（模拟「抄清单抄漏」）⇒ **15 红**；m4 去掉建议文案 ⇒ 3；m5 摘掉 `models` 子键
+判据 ⇒ 1；m6 幽灵规格加回 ⇒ 2；**m7 是对照档**：豁免清单少一项（`models` 被当成未知顶层段落）⇒ **26 红**
+—— 它比 m1 红得更多，正说明「豁免少一项」比「整遍摘掉」更毒，而它红的是既有那批「合法配置必须绿」的
+用例；m8 反向证牙：往出厂 `config.yaml` 塞一个真没人读的键 ⇒ **2 红**（`test_shipped_config_has_no_unread_keys`
++ `test_the_shipped_file_actually_gets_walked`），这条是防「走查逻辑写好了但出厂文件从没被走过查」的空转。
+
+**代价只报代价**（Temp `l52q/ab_cost.py`，NONCE-45A0C1AB9510-AB，同进程 A/B、正反双序、min-of-7，
+两解释器各一份报告落盘）：出厂 `config.yaml` 全量校验 aug 侧 66.390 → 78.026 µs（Δ **+11.636 µs** /
+1.18×，反序 +10.423 同号）、py314 侧 72.238 → 82.208 µs（Δ **+9.970 µs** / 1.14×，反序 +11.117 同号）；
+最小配置 `{models.default}` +1.731 / +2.288 µs。**这条路径不在任何热路径上**：`validate_config` 在生产代码里
+只有两个入口（`grep -rn` 坐实：`api/routes/system_ops.py:292` 与 `augmentor/cli/commands/data_ops.py:88`），
+都是「用户主动要诊断」，`load_config` 与生成/服务路径一次都不调它 ⇒ 十几微秒落在诊断命令上。
+推导若每次重跑会吃掉整次校验的 97 %（aug 首跑 75.7 µs / py314 104.5 µs）⇒ 缓存不是装饰，
+命中后 0.0714 / 0.1417 µs 一次。⇒ **本轮不主张任何性能收益。**
+
+**过程缺陷五处 + 一条边界披露（⑥）**：① 测试里钉了**环境相关的警告条数**（`assert len(result.warnings) == 5`）⇒ 在 pytest 环境
+（`BAIDU_API_KEY` / `OPENAI_API_KEY` 已 export）只剩 2 条而假红，与 L51 钉 `starlette.__version__ == "1.6.0"`
+同一类错，改成「按 marker 过滤后再判」并补一条防空转的 `test_the_shipped_file_actually_gets_walked`；
+② **注入脚本的快照会悄悄吃掉 CRLF**：`open(..., encoding="utf-8")` 不带 `newline=""` 把 `\r\n` 读成 `\n`，
+还原时按原样写出 ⇒ 沙箱那两份 CRLF 文件（`config_validator.py` / `config.yaml`）sha **假报不一致**，
+而其余 7 份纯 LF 文件全一致 —— 症状本身就是根因。修法是快照读 `newline=""` + 补丁锚点随行尾自适应，
+复跑后九份全一致；③ **`sed -i '...; e'` 清空了脚本正文**（`e` 命令把每一行当 shell 执行并打乱回写），
+一次性验证脚本被毁、须重写 ⇒ 新纪律：改文件一律用 Edit/Write，`sed` 只用于只读的 `grep`/`sed -n`。
+④ **本账 numstat 写成预测值，且被本行自己的三个加数否掉**：账本里先写下「7 路径 **+689 / −11**」，
+可同一句里当时那三个加数 116 + 140 + 340 相加是 **596**、删行 6 + 1 + 1 = **8**，689 / 11 两个数都对不上。
+L47 已为同一件事立过规矩（「文档本体与账本的 numstat 只能在该文件最后一次编辑之后量」）⇒ **第 2 次破**，
+且这次是**量过之后凭记忆重写**。更难看的是：我为了写这条缺陷又往本节加了 ④⑤⑥ 三段，于是「文档堆 140/1」
+在落笔改数字的这一刻再次作废 —— **本轮亲身把那条纪律的存在理由演了两遍**。修法：只报「除本账外 6 路径」
+这个能在账本最后一次编辑前锁死的集合（数字见循环日志 L52「数字核对」条），而本节自己的插行数、以及
+「本账写了本账自己的行数」这件事结构上不可能自洽（写对的那一刻它就变了），留给下一轮从 `git show` 量。
+新增纪律一句：**凡多个数相加等于第四个数的句子，落笔前把加法做一遍。**
+⑤ **一次破坏性 Edit 吃掉相邻一行**（「Edit 锚点吃掉相邻结构」这条链的第 5 次：L45 丢「；A63」→ L46 吞
+`## Backlog B` 标题 → L48 装饰器错挂 → L51 吞 `test_api_security` 一行 → 本轮给「累计」段插行时把
+「它跑全量时我会慢 40%+…跨轮只比」整行删掉），当场回读账本补回、未流入提交。成因始终一样：
+**把「定位锚点」和「替换范围」当成同一件事**，而插一行根本不需要替换整个锚点块。
+⑥ **沙箱副本少一份符号链接**：`cp -r` 进 `Temp/l52q/tree/` 时真身的 `data/versions/current -> v_20260921_234911_686071`
+在沙箱里不存在（两侧 `ls -la` 对读坐实），与 L51 同类。本轮 8 模式只跑 6 份测试文件、880 条基线无一条读它
+⇒ 对红数无影响，但它限定「九文件 sha 一致」这句话的射程：**沙箱 == 真身只在被注入的那 9 份文件上成立**，
+不能让一次逐字节核对替整棵树背书。
+另有一条纪律补强：A/B 与探针**必须落盘报告**（本轮 `ab_report_aug.txt` / `ab_report_py314.txt` /
+`post_check_report.txt`），因为 L49 已经为「引用另一次运行的数字」记过一次账。
+
+**新立 A84–A89，其中 A84 是本轮的天花板**：**A84** = 反馈只住在诊断面 —— `load_config` 与所有产品命令
+（`augment` / 服务启动）**零信号**，实测拼错节后 `variants_per_seed` 仍交出默认 5（Temp `post_check2.py` ③）
+⇒ 用户默认工作流里 A76 的症状原样存在，只是现在「问一句就答」。**A85** = 节写成标量（`augmentation: abc`）
+时校验面报 ERROR，运行时却抛 `AttributeError: 'str' object has no attribute 'get'`（④）—— 与 A83 同族而
+方向是崩不是静默。**A86** = `POST /api/config` 静默丢弃未知键仍回 `success: True`（probe4）。
+**A87** = 文档与契约漂移无守卫：A81 只是抽样命中，其余端点示例未普查。**A88** = 本轮只覆盖「写了没人读」
+这一根轴，类型 / 区间那一根仍有 **16 / 20** 个被消费的节零规格（`export` / `context` / `versioning` /
+`sampler` / `expander` / `tracker` / `visualization` / `multilingual` / `rag` / `evaluation` / `vector` /
+`multimodal` / `benchmark` / `active_learning` / `frameworks` / `logging`，全表 29 条规格只覆盖 6 节）。
+**A89 是收尾复验自己撞出来的**：我原打算在文档里写「`is_valid` 驱动 CLI 退出码」，复跑 CLI 时实测到
+**退出码与判决脱钩**（Temp `final_cli.py` / `final_cli_case3.py`，NONCE-45A0C1AB9510-FINAL，两解释器各一遍）——
+一份缺 `models` 必需字段的配置打 `错误: 2` 却 **exit 0**，脚本与 CI 拿 `validate-config` 当门禁会永远绿；
+机制在 `augmentor/cli/commands/data_ops.py:88` 的 `run_validate_config` 只 `print` 判决、从不返回码。
+同一次复跑还量到第二个形状：`cli.py:46` 的 `load_config(args.config)` 在 `try` **外面**，所以配置坏到运行时
+判据拒收（`web.port: 99999`）时是**裸 traceback + exit 1、stdout 全空**（`DataValidationError: web.port 必须是
+不大于 65535 的整数，当前是 99999`），而 handler 里的异常走 `cli.py:49-51` 才是「`错误: …` + exit 1」——
+同一个 CLI 两种失败形状，诊断命令在最需要它说话的那一档恰好不说话。**这句话本来会被写成一句错的**：
+本轮四份文档（§3.27 / 本账 / `docs/API.md`）原先都写着「`is_valid` 是 CLI 退出码 + 端点判决」，
+CLI 那一半被上面的实测否掉 ⇒ 就地改成只主张 HTTP 响应位，并立 A89。**这就是「收尾复验」存在的理由**，
+也是本轮第三次亲身验证「报症状也只能靠 diff / 靠跑」（L49 立）。
+**A81 同轮结案**：`GET /api/health` 示例补上 `version`（实跑 `{'status': 'ok', 'version': '3.0.0'}`，
+`test_api_openapi_contract.py` 早已把两键钉死 ⇒ 纯文档滞后）。
+
 ## 4. 核心数据流
 
 ### 4.1 数据增强主流程
