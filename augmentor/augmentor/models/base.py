@@ -152,45 +152,44 @@ class ModelBackend(ABC):
         """获取或创建 HTTP 会话（线程安全）
         
         Returns:
-            requests.Session 或 httpx.Client
+            requests.Session（HTTPAdapter 不可用时是无连接池的裸 Session）
         """
         if self._session is None:
             with self._lock:
                 if self._session is None:
+                    # requests 是硬依赖：真缺它就直接抛 ImportError（fail loud），
+                    # 不能落进下面的降级分支——那会在 `requests.Session()` 处变成
+                    # 一个与根因无关的 NameError。可降级的只有连接池那一层。
+                    import requests
+
+                    session = requests.Session()
+
                     try:
-                        import requests
                         from requests.adapters import HTTPAdapter
-                        from urllib3.util.retry import Retry
-                        
-                        session = requests.Session()
-                        
-                        # 配置连接池和重试
-                        # 注意：这副重试对**本仓库的所有模型调用都不生效**——5 个后端
-                        # 一律用 POST，而 urllib3 的 `Retry` 默认只重 idempotent 方法
-                        # （实测默认 allowed_methods 无 POST：同一台恒返回 503 的本地
-                        # 服务上，POST 收到 1 次请求、GET 收到 4 次）。真正的重试口径
-                        # 只有 `with_retries` + `classify_error` 这一层。
-                        retry_strategy = Retry(
-                            total=3,
-                            backoff_factor=0.1,
-                            status_forcelist=[429, 500, 502, 503, 504]
+                    except ImportError:
+                        # 原文案「requests 未安装」在这种情形下必然为假（能走到
+                        # 这里说明 import requests 刚成功），会把排查方向带偏。
+                        logger.warning(
+                            "HTTPAdapter 不可用，已降级为基础会话（无连接池）",
+                            exc_info=True,
                         )
-                        
+                    else:
+                        # 只配连接池，**不配传输层重试**。真正的重试口径只有
+                        # `with_retries` + `classify_error` 这一层（`generate()` 的
+                        # max_retries/retry_delay 旋钮）。urllib3 的 Retry 默认不重
+                        # POST，而本仓库 5 个后端一律用 POST，所以原先挂上去的那副
+                        # 从未生效过一次，只会让人误以为存在第二层重试；实测数字、
+                        # 以及 10/20 这两个数与 requests 默认值的关系，见
+                        # docs/ARCHITECTURE.md §3.21。
                         adapter = HTTPAdapter(
-                            max_retries=retry_strategy,
                             pool_connections=10,
                             pool_maxsize=20
                         )
-                        
                         session.mount("http://", adapter)
                         session.mount("https://", adapter)
-                        
-                        self._session = session
                         logger.info("创建 HTTP 会话（带连接池）")
-                    except ImportError:
-                        logger.warning("requests 未安装，使用基础连接")
-                        import requests
-                        self._session = requests.Session()
+
+                    self._session = session
         
         return self._session
     
