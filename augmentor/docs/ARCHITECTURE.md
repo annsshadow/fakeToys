@@ -1676,6 +1676,122 @@ CLI 那一半被上面的实测否掉 ⇒ 就地改成只主张 HTTP 响应位�
 **A81 同轮结案**：`GET /api/health` 示例补上 `version`（实跑 `{'status': 'ok', 'version': '3.0.0'}`，
 `test_api_openapi_contract.py` 早已把两键钉死 ⇒ 纯文档滞后）。
 
+**行号勘误（L53 关掉 A89 之后补，原文不删）**：上两段引的 `cli.py:46`（`load_config` 在 `try` **外**）
+与 `cli.py:49-51`（handler 异常的统一文案）在 L53 之后分别位移为 `cli.py:49`（已挪进 `try` **内**）与
+`cli.py:51-53` ⇒ 「同一个 CLI 两种失败形状」从此只剩一种。病历留着是对的，但读者按行号跳过去会对不上号
+—— 这一处对不上号正是 **A87**（文档与代码之间没有机械联动）的现场样本，本轮靠人工回读抓到，普查仍未做（§3.28）。
+
+### 3.28 L53：判决要能被脚本读到 —— 三条「校验形」CLI 命令接上退出码（关闭 A89，新立 A90–A92）
+
+L52 立 A89 时的读法是「`validate-config` 只 `print` 判决、从不返回码」。本轮把它接上，顺带把整张 CLI
+分发表按**同一根轴**过了一遍，量到的不是三个孤例而是一条口径缺失：仓里已经有 159 处 `assert code is None`
+（通过 ⇒ 不抛 `SystemExit`）与 53 处 `assert code == 1`（失败 ⇒ 退出码 1）两套既有约定，缺的从来不是机制，
+是**「判决」（verdict）和「异常」（exception）这两件事谁负责翻译成退出码**。
+
+**本轮立的口径：校验形命令判负即 exit 1，报告形命令只出报告。**
+
+| 形状 | 子命令 | L53 前 | L53 后 | 判据 |
+|------|--------|--------|--------|------|
+| 校验形 | `validate`（数据集） | 恒 0 | 判负 ⇒ 1 | `result.is_valid` |
+| 校验形 | `validate-config` | 恒 0 | 报 ERROR ⇒ 1 | 同上（只按 ERROR，L52 的 WARNING 不判负） |
+| 校验形 | `dependency --action validate` | 恒 0 | 有问题 ⇒ 1 | `issues` 非空 |
+| 报告形（无判决位） | `audit` / `check-leakage` / `doctor` | 恒 0 | **恒 0（刻意）** | handler 内零判决词（实测，见下） |
+| 报告形（**有**判决位，本轮仍未接） | `quality-report` / `auto-test` / `migrate` | 恒 0 | **恒 0（欠账 A91）** | `overall_passed` / `failed_tests` / `failed_items` 有判决语义，接不接是产品口径不是机制 |
+| 已有先例 | `health-gate` | 判负 ⇒ 1 | 不变 | `augmentor/cli/commands/quality.py:205`（本轮口径即沿用此处） |
+
+普查是脚本量的不是记忆的（Temp `l53/census.py`，NONCE-L53-CENSUS，落盘 `census_report.txt`）：
+`augmentor/cli/commands/*.py` 里 **37 个 `run_*` handler**，按「handler 体内是否出现判决词 × 是否有 `sys.exit(1)`」
+分格 ⇒ 带判决词且已接退出码的恰好是本轮那三条加 `health-gate`（共 4 条）；`audit` / `check-leakage` / `doctor`
+三个 handler 体内**零判决词**（`audit` 报发现数、`check-leakage` 报重叠率、`doctor` 报「可选依赖 N/M 可用」），
+把它们接上退出码等于新造一条「有发现即失败」的隐含契约，而审计报告的本分是**有问题时照样把报告出完** ——
+所以恒 0 是决定不是遗漏。
+
+**但 `quality-report` 不在「无判决位」那一格里，这一条是本轮写完首稿之后复核才发现自己写错的**：
+`quality.py:76` 打的「总体状态: 通过 / 未通过」读的就是 `report.overall_passed`，且命令带 `--threshold`；
+`auto-test` 的 `get_test_report` 打「通过: N / 失败: M」（`auto_test.py:385-386`），`migrate` 打「失败: N 条」
+（`result.failed_items`）。⇒ 三条同形状命令有判决语义却不落退出码，本轮仍**刻意不接**：要拍的不是机制而是口径
+（「`overall_score` 不达阈值算不算 CI 失败」是产品决定），且 `health-gate` 读的是 `quality` 的 `pass_rate`、
+**不是** `overall_score` ⇒ 两者不能互相顶替，想「质量不达标就让 CI 红」的人今天只能自己 grep stdout。
+这条欠账记在 **A91 的边界 ①**（该行原来只写了 `quality-report`，本轮按普查扩成三条）。
+校验形那一侧则相反 —— 它已经在 stdout 上打印「配置验证结果: 通过 / 失败」，只把这句话给人看、
+不把同一个判断给进程看，是同一件事被截了一半。
+
+**两处 `sys.exit(1)` 与一处 `try` 范围，同批不可拆**：`data_ops.py:76-78` / `:112-115` 与
+`ops.py:126-127` 各是一行判负；`cli.py:46-53` 把 `load_config(args.config)` 从 `try` 外挪进来。
+第二条不是顺手改的：A89 的两半如果只修退出码，那么 `web.port: 99999` 这一档（配置坏到运行时判据拒收）
+仍然是**裸 traceback + stdout 全空**，诊断命令恰好在最需要它说话的那一档沉默；只修 `try` 范围则判决照旧
+不落退出码。两半一起修才有「CLI 的失败只有一种形状」这句话可主张。实测形状（Temp `l53/probe.py`，
+NONCE-L53-A89PROBE，两解释器各一遍、报告落盘 `probe_report_aug.txt` / `probe_report_py314.txt`）：
+
+```
+A 仓库配置          exit 0  stdout: 配置验证结果: 通过 / 错误: 0, 警告: 5, 信息: 0
+B 只有拼错节         exit 0  stdout: 配置验证结果: 通过 / 错误: 0, 警告: 1     ← L52 的 WARNING 通道不判负
+C 报 ERROR 的配置    exit 1  stdout: 配置验证结果: 失败 / 错误: 1, 警告: 0
+D 加载器拒收         exit 1  stderr: 错误: web.port 必须是不大于 65535 的整数，当前是 99999（stdout 空、无 traceback）
+E 干净数据          exit 0  stdout: 验证结果: 通过 / 总数据: 2, 有效: 2
+F 脏数据            exit 1  stdout: 验证结果: 失败 / 总数据: 1, 有效: 0
+G 无关命令仍正常分发  exit 0（usage 正常打印，判负分支没有渗到别的子命令）
+```
+
+C 与 D 现在**同形**（都是 exit 1），区别只在信息落 stdout 还是 stderr —— 这正是本轮要的形状：
+退出码读判决，stderr 读原因。D 那档在 L52 是 traceback，本轮之前一直被当成「exit 1 所以没问题」，
+本轮量到的是「脚本能判负，但人读不到话」，两个维度都得对。
+
+**破坏面实测（先量后改）**：① 仓内 CI 零影响 —— `.github/workflows/ai-platform-ci.yml:60` 只有
+`python -m compileall -q augmentor api cli.py` 加 pytest，全仓 `*.yml` / `*.bat` / `*.sh` 里
+`validate-config` 的命中只在文档与本文件（`grep -rln` 排除 `node_modules`）⇒ 没有一处脚本把它当门禁用，
+本轮改动不会让任何既有流水线换颜色；② 测试面只有 **1 处**既有断言与本口径冲突
+（`test_cli_dataset_tools.py::TestValidateCommand::test_validate_reports_invalid_data` 钉的是
+「脏数据 ⇒ `code is None`」）⇒ 本轮唯一一次既有断言改写，方向是收紧不是放宽；③ 用户侧（仓外脚本）
+**未量**，诚实留账 —— 这也是 A89 当初被标成「M 级但带破坏性」的原因。
+
+**注入 5 模式（Temp `l53/inj.py`，NONCE-L53-INJ，沙箱副本 `l53/tree/`）**：基线 **99 passed / 0 failed**
+（3 份被触碰测试文件的定向选择）。I1 摘掉 `validate` 的退出码 ⇒ **1 红**、I2 摘 `validate-config` 的 ⇒ **1 红**、
+I3 摘 `dependency validate` 的 ⇒ **1 红**、I4 把 `load_config` 挪回 `try` 外 ⇒ **1 红**，
+**四个红集两两不相交** ⇒ 一行守卫各自都有人守，不存在「删掉任一行都还有别人兜着」的冗余；
+I5 是**反向劣化**（`validate-config` 有 WARNING 就判负）⇒ **3 红**，其中一条是既有例
+`TestValidateConfigCommand::test_repo_config_is_valid` ⇒ 「过度收紧」与「没收紧」同样有人报警，
+这条与 L52 的 m7（豁免少一项比整遍摘掉更红）是同一族判据的两次兑现。全部还原后复跑 99 passed，
+快照与真身逐字节一致。
+
+**用例净 +4（双解释器各自闭合）**：aug 5137 → **5141**（3 skipped，98.65 %，TOTAL 12,900 语句缺 88 /
+3,562 分支缺 110）、py314 5157 → **5161**（2 skipped，99.03 %，12,274 缺 41 / 3,562 缺 104）⇒ 两边同为 +4，
+skip 组成与 L51/L52 逐字相同。语句总数 +5、缺数与 L52 一字不差（88 / 41）⇒ 新增语句两边全绿；
+三份被改源文件单读：`cli.py` 22 语句缺 0、`cli/commands/data_ops.py` 88 缺 0、`cli/commands/ops.py` 102 缺 0。
+新增两处 `if` 的**两个方向**各有用例（判负 ⇒ 1 / 通过 ⇒ 不抛），并由 I1–I4 摘任一行即红、I5 反向即红背书。
+**性能不主张任何方向的收益**：`try` 范围从 1 行变 4 行，同进程正反双序 A/B 给 +1.7 ns / −1.2 ns（Temp
+`l53/ab_try.py`，NONCE-L53-AB）⇒ 两序变号，按 L49 的规矩判为不可判定、不引用。
+
+**新立 A90–A92，三条都是本轮做走查时被量出来的**：**A90** = 判负那条支在**纯 CLI 世界不可达** ——
+`dependency` 的四个 action 里没有任何一个能造依赖边（`add_dependency` 只在 `augmentor/dependency.py:186`
+与模块级 `:335`，`grep -rn` 坐实 `cli.py` / `augmentor/cli/` / `api/` **0 命中**）⇒ CLI 用户跑
+`dependency --action validate` 永远只会看到「没有注册的数据集」或全通过；本轮 I3 那条用例是**绕道 SDK**
+（`DependencyManager(...).add_dependency("src", "ghost", ...)`）才造出可判负的输入。
+**A91** = 本轮新立的「校验形 ⇒ exit 1」口径**本身没有守卫**：今天没有第 4 条校验形命令，明天加一条就会漏；
+守卫的正解是**从 `COMMANDS` 分发表推导**（列出全部子命令 × 各自是否判负），不是手抄一份清单 —— 抄清单正是
+L52 刚为配置面白名单消灭的那一族缺陷。**A92** = **空数据集恒判「有效」**（三层同形，实测：
+Temp `l53/empty_report.txt` 的 CLI `validate --preset basic/strict/chat` 全部 `exit 0` +
+「总数据: 0, 有效: 0」；SDK `validate([])` `is_valid=True`；`POST /api/dataset/validate` 空文件 →
+200 `{'is_valid': True, 'total_items': 0, ...}`，Temp `l53/api_empty2_report.txt`）。
+根因是 `validation.py:437-442` 的 `is_valid = valid_count == len(items)` —— `[] == []` 成立，
+于是 0 条数据**空洞地**通过。它本轮值得记是因为**新退出码把一个既有的空洞判据变成了可见的门禁风险**：
+一份被上游写空的文件以前是「静默通过」，现在仍然是「静默 exit 0」，脚本作者会以为 0 代表验过。
+
+**过程缺陷披露四处，其中一处是本轮自己的记账数字**：① 本账 A89 行原本写「测试面钉了 **165 处**
+`assert code is None`」—— 那是 `grep -rn "code is None" tests/` 不加 `--include` 的读数（混进 `*.pyc`
+与 prose 引用）。复测三种口径：真断言（行首缩进 + `assert code is None`）**159 处**、纯 `grep -F`
+命中 160 行（多的那 1 行是本轮新用例 docstring 里的字面引用）、`assert code == 1` 真断言 53 处。
+⇒ 文档与账本一律改用 159 / 53 并**连 grep 口径一起写**，这是 L51「名字维度差集会读偏」那一族的第三次命中：
+**凡引一个 grep 数，必须同时写下那条命令**。② 一份探针报告是 GBK 乱码（`l53/empty_report.txt` 用 shell
+`>` 重定向接 CLI 的控制台输出，而 Windows 控制台码页不是 UTF-8）⇒ 读数（`exit=0` / 「总数据: 0」）仍可用，
+但这条又应了 L52 立的「落盘要脚本自己按 UTF-8 写，不要靠重定向」。③ **Edit 工具会把工作树文件行尾归一**：
+`test_cli_stream_migrate_commands.py` 原本是 MIXED（3 行孤 LF 头 + 其余 CRLF），本轮插用例后那 3 行被
+写成 CRLF ⇒ 工作树变纯 CRLF。`git diff --numstat` 里**看不见**（`core.autocrlf=true`，入库统一成 LF），
+但磁盘上确实动了 3 行 ⇒ 不能写「0 处行尾归一化」，只能写「1 份工作树归一化、提交侧无差异」。
+④ 探针**猜 API 路径猜错两次**（`/api/validate`、`/api/validation` 都 405，`/api/dataset/validate` 少
+`input_file` 字段 422），第三版才用真实临时文件拿到 200 ⇒ 「凭形状猜请求」与「凭形状猜配置输入」
+（L52 的 ⑦）是同一个错的两次现形，A87 的普查欠账继续滚。
+
 ## 4. 核心数据流
 
 ### 4.1 数据增强主流程
@@ -1775,6 +1891,7 @@ CLI 那一半被上面的实测否掉 ⇒ 就地改成只主张 HTTP 响应位�
 | **闭区间比例**旋钮越界（退避抖动 `jitter`，L48 起） | 第四条判据 `validation.require_ratio(name, value, minimum=0.0, maximum=1.0)`：**判据族里唯一连上界一起判的成员**，因为比例旋钮越界的症状是「上限从别处冒出来」——`jitter` 加在 `min(max_delay, …)` **之后**，实测贴顶档位 `jitter=1.0` 抽出 30.05 ~ 59.87 s、`50.0` 抽出 32.27 ~ **1523.54 s**，越过 `max_delay` 的比例都是 1.000；判在 0-1 内可把那一支证死在 2 × `max_delay`。下界同样不多余：`-5.0` 与 `NaN` 过不了 `if jitter > 0`，与「没传参数」逐字同答；`True` 则被算术读成 1.0 = **最大档**抖动。`None` 放行（= 没传），实测 59.7 ns 短路 / 235.3 ns 全判。同见 §3.23 |
 | **等待预算**双旋钮越界（`augmentation.max_retry_wait` / `retry_jitter`，L49 起） | 第五条判据形状 = **给 `require_seconds` 加可选 `maximum` 参数**（不另立新判据：它判的还是「秒数」，文案根因不变；L47 另立 `require_positive` 是因为根因不同才分家）。`max_retry_wait` 判 0-300 闭区间且**上界硬编在 `MAX_RETRY_AFTER`** —— 「300 s 封顶」这句承诺本身就是判据，加判据前实测 `max_retry_wait=inf` 配 `Retry-After: 3000` 交出 `[3000.0, 3000.0]`（默认档合计 6000 s），判后同一入参在第一次请求**之前**抛 `DataValidationError`；`retry_jitter` 直接复用第四条 `require_ratio`。这两个旋钮是**本仓第一对「静态校验面与运行时判据全区间一致」**的配置项（`test_validator_and_runtime_agree_on_every_axis`；旧旋钮 `retry_delay ≤ 60` / `max_retries ≤ 20` 仍是校验器独有上界，记在 A77）。同见 §3.24 |
 | 静态校验面比运行时**更松**（bool / NaN 混进数值字段，L49 起） | `_validate_known_fields` 的内联类型判定原先按 `isinstance(value, (int, float))` 读，而 `isinstance(True, int)` 恒真 ⇒ 7 个数值规格键 7/7 把 YAML 里的 `true` 判成合法，四道运行时判据却全部拒 bool —— 症状是 `validate-config` 绿灯、建管道即 `DataValidationError`。修法：内联判定排 bool（`type: bool` 的开关字段不受影响）+ 补 NaN 判据。两条洞覆盖面不同：`true` 在旧形状下 **7/7 个数值键完全无报错**，NaN 只漏 **4 个 `type: float` 键**（3 个 int 键靠 `isinstance` 本来就拦得住）⇒ 各堵一片、不重复；注入分判也各成一档（摘 bool 排除 ⇒ 2 红，摘 NaN 判据 ⇒ 5 红）。根因是 A70 那套**只有测试在调用**的死助手：它们早就排了 bool 却没有 NaN 判据，两套口径各拿对半边、活的那套恰好是错的半边。同见 §3.24 |
+| **校验形 CLI 命令的「判决」**（`validate` / `validate-config` / `dependency --action validate`，L53 起） | 上面几行管的是**异常**怎么翻译（抛 `DataValidationError` ⇒ CLI exit 1 / API 400）；这一行管**判决**（命令正常跑完、但结论是「不合格」）怎么翻译。口径：**判负 ⇒ `sys.exit(1)`，通过 ⇒ 不抛 `SystemExit`**（沿用测试面 159 处 `assert code is None` 那套既有约定，本轮不新造形状）；**只有 WARNING 不判负**（与 L52 的「写了没人读」定级同轴，否则诊断通道出声即挡路）。**报告形命令（`audit` / `check-leakage` / `doctor`）刻意不接** —— 三条 handler 体内零判决词（37 个 `run_*` handler 普查，Temp NONCE-L53-CENSUS），接上等于新造一条「有发现即失败」的隐含契约。先例：`health-gate`（`cli/commands/quality.py:205`）。**另有三条 `quality-report` / `auto-test` / `migrate` 有判决语义却仍恒 0**（`overall_passed` / `failed_tests` / `failed_items`）——那是本轮拍定不动的欠账，要拍的是产品口径不是机制，记在 A91 边界 ①。同一批还把 `cli.py:46-53` 的 `load_config` 挪进 `try` ⇒ 配置加载期异常与 handler 异常同形（「`错误: …` + exit 1」），CLI 的失败从此只有一种形状。**已知空洞（A92）**：`is_valid = valid_count == len(items)` 让**空数据集空洞地判「有效」**（SDK / CLI / API 三层同形，实测 `exit 0` + 200 `{'is_valid': True, 'total_items': 0}`）⇒ 退出码 0 只代表「没有不合格的记录」，不代表「验过东西」。详见 §3.28 |
 | 断点文件损坏 | 记录 ERROR 并返回 `None`，退化为从头开始 |
 
 「取前 N 条」这一类旋钮（`limit` / `offset` / `top_k` / `preview_size` / `batch_size`

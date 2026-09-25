@@ -123,6 +123,8 @@ def run_dependency(args, config):
             print(f"发现 {len(issues)} 个问题:")
             for issue in issues:
                 print(f"  - {issue['message']}")
+            # 与 validate / validate-config 同一口径：报了问题就得让退出码跟着判负
+            sys.exit(1)
 
 
 # ============ 数据迁移 ============
