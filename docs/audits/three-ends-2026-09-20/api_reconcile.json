@@ -12276,7 +12276,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessDesigner.vue",
-    "line": 5739,
+    "line": 5740,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/get/${p.id}",
     "path": "/api/processplatform/assemble/designer/get/{}",
@@ -12289,7 +12289,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessDesigner.vue",
-    "line": 5807,
+    "line": 5808,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/save/${id}",
     "path": "/api/processplatform/assemble/designer/save/{}",
@@ -12302,7 +12302,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessDesigner.vue",
-    "line": 5819,
+    "line": 5820,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/save/${currentProcess.value.id}",
     "path": "/api/processplatform/assemble/designer/save/{}",
@@ -12315,7 +12315,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessDesigner.vue",
-    "line": 11863,
+    "line": 11876,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/get/${selectedProcess.value.id}",
     "path": "/api/processplatform/assemble/designer/get/{}",
@@ -39131,7 +39131,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessDesigner.vue",
-    "line": 5800,
+    "line": 5801,
     "method": "POST",
     "raw": "/api/processplatform/assemble/designer/create",
     "path": "/api/processplatform/assemble/designer/create",
@@ -39144,7 +39144,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessDesigner.vue",
-    "line": 5831,
+    "line": 5832,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/list/all?page=1&size=100",
     "path": "/api/processplatform/assemble/designer/list/all",
@@ -39154,6 +39154,22 @@
     "hit_crate": "processplatform_assemble_designer",
     "extra": [
      "category=all"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessDesigner.vue",
+    "line": 5845,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/file/0/application/0",
+    "path": "/api/processplatform/assemble/designer/file/0/application/0",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/designer/file/{flag}/application/{applicationFlag}",
+    "hit_crate": "processplatform_assemble_designer",
+    "extra": [
+     "flag=0",
+     "applicationFlag=0"
     ]
    },
    {
