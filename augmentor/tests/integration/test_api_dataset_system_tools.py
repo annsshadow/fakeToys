@@ -1729,6 +1729,35 @@ class TestSystemValidateConfig:
         )
         assert response.status_code == 404, response.text
 
+    def test_unread_keys_come_back_as_warnings_not_failure(self, tools_env):
+        """「写了没人读」的键必须从 HTTP 这一侧也看得见，但不改判决（A76 / L52）
+
+        改前实测（Temp `l52q/probe1.py` NONCE-45A0C1AB9510）：节名拼错与节内键名拼错
+        两边都是 0 error / 0 warning，`load_config` 那侧读回默认值 —— 本条同时钉住
+        「出声」与「只出声不判负」两件事，因为 `is_valid` 就是这里的判决字段。
+        """
+        cfg = tools_env.tmp / "typo.yaml"
+        cfg.write_text(
+            "models:\n  default: ernie\n"
+            "augmenation:\n  variants_per_seed: 3\n"
+            "augmentation:\n  variant_per_seed: 3\n"
+            "web:\n  ports: 8080\n",
+            encoding="utf-8",
+        )
+        response = tools_env.client.post(
+            "/api/system/validate-config", json={"path": str(cfg)}
+        )
+        assert response.status_code == 200, response.text
+        payload = response.json()
+        assert payload["is_valid"] is True
+        assert payload["errors"] == []
+        unread = {w["path"]: w["message"] for w in payload["warnings"]
+                  if "没人读取" in w["message"]}
+        assert sorted(unread) == ["augmenation", "augmentation.variant_per_seed",
+                                  "web.ports"], unread
+        assert unread["augmenation"].endswith("是否想写 augmentation？")
+        assert all(w["severity"] == "warning" for w in payload["warnings"])
+
 
 class TestSystemMonitor:
     """/api/system/monitor"""
