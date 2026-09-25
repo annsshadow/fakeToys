@@ -177,7 +177,8 @@ def test_create_model_backend_raises_config_error():
     from augmentor.models.factory import create_model_backend
 
     with pytest.raises(ConfigError) as info:
-        create_model_backend(ModelConfig(type="不存在的类型"))
+        create_model_backend(ModelConfig(type="baidu"),
+                             model_type="不存在的类型")
 
     assert isinstance(info.value, ValueError)
 

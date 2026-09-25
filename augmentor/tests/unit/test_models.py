@@ -52,7 +52,10 @@ class TestFactory:
     def test_unknown_type_raises_with_hint(self):
         """未知类型报错需列出支持的类型，便于排查配置错误"""
         with pytest.raises(ValueError) as excinfo:
-            create_model_backend(ModelConfig(type="unknown"))
+            # 坏值从 `model_type=` 进：`ModelConfig` 现在在构造期就拦，本例要测的
+            # 不是那一层。
+            create_model_backend(ModelConfig(type="baidu"),
+                                 model_type="unknown")
         assert "支持的类型" in str(excinfo.value)
 
 
@@ -363,7 +366,9 @@ class FakeBackend(ModelBackend):
         Args:
             failures: 前 N 次调用失败
         """
-        super().__init__(ModelConfig(type="fake"))
+                # `type` 自 A115 起是封闭清单（构造期就拒），替身因此要填一个真类型；
+        # 它覆写了 `_call_api`，填哪一个都不影响行为。
+        super().__init__(ModelConfig(type="ollama"))
         self.failures = failures
         self.calls = 0
 

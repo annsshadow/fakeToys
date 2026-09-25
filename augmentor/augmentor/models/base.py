@@ -280,16 +280,38 @@ class ModelBackend(ABC):
         2. **必须是跨进程稳定的摘要**。内置 `hash()` 对 str 带进程随机盐
            （PYTHONHASHSEED），拿它当磁盘键会让缓存跨进程永远不命中，
            表现为「磁盘缓存文件越来越多但命中率为 0」。
+
+        还有一条同重的：**同一份语义只能有一个键**（比例两键走 `_ratio_token`，
+        见那里的说明）。
         """
         payload = "\x00".join([
             str(self.config.type or ""),
             str(self.config.model or ""),
-            repr(self.config.temperature),
-            repr(self.config.top_p),
+            self._ratio_token(self.config.temperature),
+            self._ratio_token(self.config.top_p),
             repr(self.config.max_output_tokens),
             prompt,
         ])
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def _ratio_token(value) -> str:
+        """把比例类采样参数归一成一个数值的两种字面量
+
+        `require_ratio` 收 int 也收 float，所以 YAML 里 `temperature: 1` 与
+        `temperature: 1.0` 是**同一份配置**（`models.<名字>.temperature` 的界
+        0.0–2.0 两边都判得下）。直接 `repr()` 会劈成 `'1'` 与 `'1.0'` 两个键，
+        症状不是崩而是命中率被字面量写法切开，内存与磁盘两路都劈。
+
+        `max_output_tokens` 不在这里归一：`require_count` 拒非整数，`2048.0`
+        两侧同红，那一支劈不了键。
+
+        归一对 int 与 float 同做，但 `repr(float(0.7)) == repr(0.7)` ⇒ **float 写法的
+        键与改前逐字节相同**，既有磁盘缓存不会因这行改动整体失效；唯一换键的是本来
+        就该并档的 int 写法（它们留下的旧条目再也取不到，属于自然失效）。非数值原样
+        交给 `repr`（判据已在构造期把非数值挡在外面，这里不再判一遍）。
+        """
+        return repr(float(value)) if isinstance(value, (int, float)) else repr(value)
 
     @property
     def response_cache(self) -> Optional[DiskCache]:
