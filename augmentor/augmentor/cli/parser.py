@@ -351,11 +351,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     # 质量报告命令
-    quality_report_parser = subparsers.add_parser("quality-report", help="生成质量报告")
+    quality_report_parser = subparsers.add_parser(
+        "quality-report", help="生成质量报告（带 --gate 且不通过时退出码为 1）"
+    )
     quality_report_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
     quality_report_parser.add_argument("--output", type=str, help="输出报告路径")
     quality_report_parser.add_argument("--format", type=str, default="json", choices=["json", "markdown"], help="报告格式")
     quality_report_parser.add_argument("--threshold", type=float, default=0.7, help="质量阈值")
+    quality_report_parser.add_argument(
+        "--gate", action="store_true",
+        help="把报告变成门禁：总体状态未通过时退出码 1（默认只出报告，恒 0）",
+    )
 
     # 备份命令
     backup_parser = subparsers.add_parser("backup", help="数据备份")
@@ -375,30 +381,54 @@ def build_parser() -> argparse.ArgumentParser:
                                  help="启用额外模式（信用卡号/URL，误伤面较大）")
 
     # 泄漏检测命令
-    leak_parser = subparsers.add_parser("check-leakage", help="训练/测试集泄漏检测")
+    leak_parser = subparsers.add_parser(
+        "check-leakage", help="训练/测试集泄漏检测（带 --gate 且检出泄漏时退出码为 1）"
+    )
     leak_parser.add_argument("--train", type=str, required=True, help="训练集文件路径")
     leak_parser.add_argument("--test", type=str, required=True, help="测试集文件路径")
     leak_parser.add_argument("--fields", type=str, nargs="+", default=["instruction"], help="比较字段")
     leak_parser.add_argument("--fuzzy-threshold", type=float, default=0.8, help="近似匹配阈值")
     leak_parser.add_argument("--output", type=str, help="报告输出路径（.json）")
+    leak_parser.add_argument(
+        "--gate", action="store_true",
+        help="把报告变成门禁：检出泄漏时退出码 1（默认只出报告，恒 0）",
+    )
 
     # 数据集就绪审计命令
-    audit_parser = subparsers.add_parser("audit", help="数据集就绪审计")
+    audit_parser = subparsers.add_parser(
+        "audit", help="数据集就绪审计（带 --gate 且未就绪时退出码为 1）"
+    )
     audit_parser.add_argument("--input", type=str, required=True, help="数据集文件路径")
     audit_parser.add_argument("--reference", type=str, help="参考集（如测试集）路径")
     audit_parser.add_argument("--fields", type=str, nargs="+",
                               default=["instruction", "input", "output"], help="统计字段")
     audit_parser.add_argument("--output", type=str, help="报告输出路径（.json）")
+    audit_parser.add_argument(
+        "--gate", action="store_true",
+        help="把报告变成门禁：数据集未就绪时退出码 1（默认只出报告，恒 0）",
+    )
 
     # 依赖诊断命令
-    doctor_parser = subparsers.add_parser("doctor", help="运行时依赖诊断")
+    doctor_parser = subparsers.add_parser(
+        "doctor", help="运行时依赖诊断（带 --gate 且必需依赖缺失时退出码为 1）"
+    )
     doctor_parser.add_argument("--json", action="store_true", help="输出 JSON 报告")
+    doctor_parser.add_argument(
+        "--gate", action="store_true",
+        help="把报告变成门禁：必需依赖缺失时退出码 1（默认只出报告，恒 0）",
+    )
 
     # 自动化测试命令
-    auto_test_parser = subparsers.add_parser("auto-test", help="自动化测试")
+    auto_test_parser = subparsers.add_parser(
+        "auto-test", help="自动化测试（带 --gate 且有失败用例时退出码为 1）"
+    )
     auto_test_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
     auto_test_parser.add_argument("--output", type=str, help="输出报告路径")
     auto_test_parser.add_argument("--suite", type=str, help="测试套件名称")
+    auto_test_parser.add_argument(
+        "--gate", action="store_true",
+        help="把报告变成门禁：有失败用例时退出码 1（默认只出报告，恒 0）",
+    )
 
     # 质量监控命令
     monitor_parser = subparsers.add_parser("monitor", help="质量监控")
@@ -406,7 +436,9 @@ def build_parser() -> argparse.ArgumentParser:
     monitor_parser.add_argument("--output", type=str, help="输出报告路径")
 
     # 依赖管理命令
-    dependency_parser = subparsers.add_parser("dependency", help="依赖管理")
+    dependency_parser = subparsers.add_parser(
+        "dependency", help="依赖管理（--action validate 发现问题时退出码为 1）"
+    )
     dependency_parser.add_argument("--action", type=str, required=True, choices=["register", "list", "graph", "validate"], help="操作类型")
     dependency_parser.add_argument("--input", type=str, help="输入文件路径")
     dependency_parser.add_argument("--name", type=str, help="数据集名称")
@@ -414,10 +446,16 @@ def build_parser() -> argparse.ArgumentParser:
     dependency_parser.add_argument("--registry-path", type=str, default=".dependency_registry", help="注册表路径")
 
     # 迁移命令
-    migrate_parser = subparsers.add_parser("migrate", help="数据迁移")
+    migrate_parser = subparsers.add_parser(
+        "migrate", help="数据迁移（带 --gate 且有失败条目时退出码为 1）"
+    )
     migrate_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
     migrate_parser.add_argument("--output", type=str, required=True, help="输出文件路径")
     migrate_parser.add_argument("--rules", type=str, nargs="+", help="迁移规则")
+    migrate_parser.add_argument(
+        "--gate", action="store_true",
+        help="把报告变成门禁：有迁移失败条目时退出码 1（默认只出报告，恒 0）",
+    )
 
     # 数据画像命令
     profiling_parser = subparsers.add_parser("profile", help="生成数据集画像")
