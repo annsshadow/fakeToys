@@ -61,7 +61,8 @@ def require_count(name: str, value: Any, minimum: int = 0) -> Optional[int]:
     return value
 
 
-def require_seconds(name: str, value: Any, minimum: float = 0.0) -> Optional[float]:
+def require_seconds(name: str, value: Any, minimum: float = 0.0,
+                    maximum: Optional[float] = None) -> Optional[float]:
     """校验「等待多少秒」这类时长旋钮，返回原值。
 
     `require_count` 的浮点对应物。计数旋钮的越界症状是「换语义」，时长旋钮一样，
@@ -78,10 +79,20 @@ def require_seconds(name: str, value: Any, minimum: float = 0.0) -> Optional[flo
 
     正无穷不在拒绝之列：它被 `min(max_delay, …)` 夹住，行为有界且与「等很久」的意图一致。
 
+    `maximum` 是给**旋钮本身就是封顶**的那些参用的（默认 `None` ⇒ 与既有全部调用点
+    逐字同答）。上面那句「正无穷无所谓」的前提是"实现里另有一道夹逼兜住它"，而
+    `retry.with_retries` 的 `max_retry_wait` 恰恰**就是**那道夹逼（L49 / A73）：它自己
+    越界时无处可夹，加判据前实测 `max_retry_wait=inf` 让 `Retry-After: 3000` 原样睡着
+    3000 s，
+    把 `MAX_RETRY_AFTER` 对外承诺的「服务端指令一支封顶 300 s」直接作废。所以对这一类
+    参，上界不是"防手滑的天花板"（那是校验器对 `retry_delay ≤ 60` 的用法），而是
+    **承诺本身**，必须放在运行时入口。
+
     Args:
         name: 参数名，直接出现在报错里
         value: 传入的值。`int` 也接受（YAML 的 `retry_delay: 1` 读进来是整数）
         minimum: 允许的下界。默认 0——「不等，失败就立刻重试」是合法请求
+        maximum: 允许的上界（含），默认 `None` 表示不设上界
 
     Returns:
         校验通过后的原值。`None` 直接放行——「未提供」由各调用点决定回落哪个默认值
@@ -96,6 +107,10 @@ def require_seconds(name: str, value: Any, minimum: float = 0.0) -> Optional[flo
         raise DataValidationError(f"{name} 不能是 NaN")
     if value < minimum:
         raise DataValidationError(f"{name} 必须是不小于 {minimum} 的秒数，当前是 {value}")
+    if maximum is not None and value > maximum:
+        raise DataValidationError(
+            f"{name} 必须是不大于 {maximum} 的秒数，当前是 {value}"
+        )
     return value
 
 
@@ -148,7 +163,9 @@ def require_ratio(name: str, value: Any,
     """校验「随机抖动比例」这类**落在闭区间内的无量纲比例**旋钮，返回原值。
 
     与 `require_positive` 同族，区别只有一句话：比例**有上界**，而实现里没有任何
-    一处会替调用方夹住它。以 `retry.compute_delay` 的 `jitter` 为例（实测，
+    一处会替调用方夹住它（`require_seconds` 的 `maximum` 是 L49 才加的，且只给
+    「旋钮本身就是封顶」的那一类参用；比例两界都是内在属性，所以本员的界做成必填、
+    默认即 0-1）。以 `retry.compute_delay` 的 `jitter` 为例（实测，
     `max_delay=30`；贴顶档取 `base_delay=20`、`factor=2`、`attempt=3` ⇒ 夹完正好 30.0）：
 
     - 抖动是**加在夹好之后**的（``delay += rng.uniform(0, jitter * delay)``），所以

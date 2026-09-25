@@ -1078,7 +1078,7 @@ L44 就把这两个字段的归属记错过一次）+ `config_validator` + 工�
 | 哪一支 | 触发条件 | 封顶 | 默认档（`attempts=3`）一次 `generate()` 最坏总等待 |
 |--------|----------|------|---------------------------------------------------|
 | 退避计算 | `classify` 没给建议（无 `Retry-After`，或根本没传 `classify`） | 调用方的 `max_delay`，模型后端传 `_MAX_RETRY_DELAY = 30.0`。**前提是 `jitter=0`**：抖动加在这道夹**之后**，非 0 时这一支的真正上界是 2 × `max_delay`（L48 补的条件，见 §3.23） | 2 × 30 = **60 s**（实测第 1/2 档 = 1.0 / 2.0，远未触顶） |
-| 服务端指令 | `classify` 返回的建议非 `None` | `retry.MAX_RETRY_AFTER = 300.0` | 2 × 300 = **600 s** |
+| 服务端指令 | `classify` 返回的建议非 `None` | `retry.MAX_RETRY_AFTER = 300.0`（**自 L49 起是「上界的上界」**：`augmentation.max_retry_wait` 只能在 0-300 内把它调小，不能放大，见 §3.24） | 2 × 300 = **600 s** |
 
 第二支不是「不设限」：实测 `Retry-After: 3000` 与 `864000` 都拿到 `300.0`（`test_max_retry_after_clamps_it_instead`
 与 §3.21 就有的 `test_retry_after_is_capped` 各钉一头）。而 L46 之前它连个名字都没有，只被一句
@@ -1185,7 +1185,10 @@ L44 就把这两个字段的归属记错过一次）+ `config_validator` + 工�
 
 **后端仍然传 0**（`generate()` 不传 `jitter`，实测 `captured` 里根本没有这个键），因此 §3.22 的
 30 s 口径在产品路径上依然逐字成立；配置面暴露**另立 A75**，与 A73 / A74 同批 —— 上一轮刚为
-「半接一条旋钮比不接更糟」记过一笔，本轮不把 `jitter` 单独立成配置字段。
+「半接一条旋钮比不接更糟」记过一笔，本轮不把 `jitter` 单独立成配置字段。**（L49 状态更新：A75 已关闭，
+`augmentation.retry_jitter` 上线并接进 `generate()`，默认 0.0 ⇒ 本节那句 30 s 口径逐字不变，见 §3.24。
+本节那句「`captured` 里根本没有这个键」描述的是 L48 当时的形状，L49 起该断言已改成「键在且值为配置读出的
+`retry_jitter`」—— 见 `test_models.py::TestGenerateRetryKnobs`。）**
 
 **两处判据依然不冗余**（沿用 L47 的注入分判法）：只摘 `compute_delay` 那道 ⇒ **2 红**（全在
 `TestRequireRatio` 直调 `compute_delay` 的两条上）；只摘 `with_retries` 入口那道 ⇒ **8 红**（全在
@@ -1222,6 +1225,145 @@ L44 就把这两个字段的归属记错过一次）+ `config_validator` + 工�
 `validation.py` 193 语句缺 **0**（5 条偏支全在 `DataSanitizer` 旧码）。本轮新增语句一度**多出一条未触达**
 （`rng = random.Random()` 那行，因所有用例都注入了 rng）⇒ 补 `test_missing_rng_still_shakes_within_the_bound`
 把它走掉；A68 原来那六条一个没少，只是行号随本轮又位移了一次。
+
+### 3.24 L49：把两副等待封顶交到配置面，校验器与运行时第一次做到全区间同判（关闭 A73 + A75，新立 A76 / A77 / A78 / A79）
+
+A75 行末预告的「等待预算」一轮落地，做足 A73 + A75 两件事，**A74 刻意留下一轮**：那 6 处
+`session.post(..., timeout=…)` 是三个互不相同的常数（60 / 10 / 120 s），而「ernie 换 token 那 10 s 要不要
+共用同一根旋钮」是另一条轴上的决定 —— 塞进同一轮会把「等待预算」与「请求超时」两个口径混写成一格。
+
+**两个新旋钮**都进 `AugmentationConfig`（**不是** `ModelConfig`，A64 行记错过一次）：`max_retry_wait: float = 300.0`
+（`config.py:37`）与 `retry_jitter: float = 0.0`（`:40`），默认值就是 L47 / L48 定下的那两个常数 ⇒ 已发布配置
+的行为一字不变；`config.yaml:88` / `:94` 把两键写出显式值并各带注释。接线面八处，一处不落（避免 A54 型
+「契约面有旋钮、实现面不消费」）：`config.py` 字段 + `config_sections` 映射表（`:314`）→ `config_validator`
+的 KNOWN_FIELDS 规格（0-300 / 0-1）→ `pipeline._init_components` 两道判据（排在降级 `try/except` **之外**，
+L45 定的那条）+ 转发 → `models/factory.py` 签名 → 5 个后端构造透传 → `ModelBackend` 存 → `generate()` 把
+`max_retry_wait` / `jitter` 交给 `with_retries`。
+
+**口径（A73 行里预拍的那条，本轮照办）**：`max_retry_wait` **只能把 300 s 夹小、不能放大**。这不是保守而是
+承诺本身：判据写成 `require_seconds(..., maximum=MAX_RETRY_AFTER)`。加判据前实测（Temp `l49q/probe_budget.py`，
+注入 sleeper、不发真实请求，nonce `1b3af725db17`）—— 摘掉那道判据后 `max_retry_wait=inf` 配
+`Retry-After: 3000` 交出 `sleeper=[3000.0, 3000.0]`，默认档一次 `generate()` **合计 6000 s**（传 `3000.0`
+同形）；判据在场时同一个入参在**第一次请求之前**就抛 `DataValidationError`，而默认封顶下同一场景是
+`[300.0, 300.0]` = 600 s。`0.0` 是合法档，语义「不再尊重服务端指令、失败就立刻重发」，与 `max_delay=0`
+在退避一支的读法同一条口径。
+
+**为什么给 `require_seconds` 加一个 `maximum` 参数、而不是造第五判据**：它判的仍然是「秒数」，文案根因不变
+—— L47 之所以另立 `require_positive`，是因为把「数值秒数」安到一个无量纲倍率上会说错根因，这里没有这个
+错位。既有调用点不传 `maximum` 时判定逐字不变（实测 0.137 → 0.143 µs，见代价段）。
+
+**最坏总等待第一次可以用一行式子写完**（两支各一顶，抖动乘在退避那一支上）：
+
+`(attempts − 1) × max(_MAX_RETRY_DELAY × (1 + retry_jitter), max_retry_wait)`
+
+实测五档（同一探针，`attempts=3`，服务端统一给 45 s）：
+
+| `max_retry_wait` | `retry_jitter` | 服务端指令档 sleeper | 退避档 sleeper（无 `Retry-After`） | 式子给出的上界 |
+|---|---|---|---|---|
+| 300.0 | 0.0 | `[45.0, 45.0]` = 90 s | `[1.0, 2.0]` = 3.0 s | 600 s |
+| 45.0 | 0.0 | `[45.0, 45.0]` = 90 s | `[1.0, 2.0]` = 3.0 s | 90 s |
+| 45.0 | 0.5 | `[45.0, 45.0]` = 90 s | `[1.17, 2.25]` = 3.4 s | 90 s |
+| 0.0 | 1.0 | `[0.0, 0.0]` = 0 s | `[1.77, 2.40]` = 4.2 s | 120 s |
+| 300.0 | 1.0 | `[45.0, 45.0]` = 90 s | `[1.43, 3.47]` = 4.9 s | 600 s |
+
+第一、二行的对比里藏着一个必须写清的误读点：把封顶调到 45 s **不会**让一条 45 s 的建议变短（两行实测都是
+90 s），它压住的是**大于** 45 s 的建议 —— 这根旋钮买到的是上界，不是当前等待。第四行是「封顶归零 + 抖动拉满」：
+服务端指令那一支归零，等待全部落到退避一支，上界由 `2 × 30 × (1 + 1) = 120 s` 给出，而实测只落到 4.2 s
+（退避基数 1 s 时离封顶还很远，与前几轮「上界可证、实测未触顶」的口径一致）。
+
+**守护第一次跑就红，红出来的是真洞（A78）**：新写的映射表覆盖守护 `TestSectionDefaultsMatchTheMappingTable`
+首跑报出缺失 `('web', ['cors_credentials', 'cors_origins'])`。那不是测试写错：`WebConfig` 声明了这两个字段
+（`config.py:182-183`）、`api/main.py:119-120` 确实在读，而 `load_config` 的 `web` 默认表里没有 ⇒ `_load_section`
+按表取键，用户写了也不读。实测复现（写 `cors_origins: ["https://trusted.example"]` + `cors_credentials: false`
+读回 `['*']` 与 `True`，**同一文件里的 `web.port: 9999` 生效** ⇒ 不是整节失效，只有那两键被丢）。后果是 CORS
+出厂即「全源 + 带凭证」，而唯一的收紧路径恰好被这条洞堵住（`validate-config` 也不报错，因为这两个键在
+KNOWN_FIELDS 里是**已知**的 —— 已知于校验器、未知于读取器）。本轮不动它（修法与 A76 同源，要一起拍），
+做法是**把守护改成精确棘轮**：`KNOWN_UNMAPPED_FIELDS` 常量列出这两条豁免，断言「实际缺失集必须与之相等」⇒
+补一条就红（注入 m5 ⇒ 恰 1 红）、漏一条也红，不许悄悄扩面。
+
+**同构扫描挖出的 bool 洞（A79，本轮发现并同轮修掉）**：`isinstance(True, int)` 恒真，于是
+`_validate_known_fields` 里 7 个数值规格键**全部**把 YAML 里的 `retry_jitter: true` 读成合法，而运行时四道判据
+（`require_count` / `require_seconds` / `require_positive` / `require_ratio`）**全部**显式拒 bool ⇒ 症状正是
+「`validate-config` 绿灯、一进 `AugmentorPipeline` 就 `DataValidationError`」（参数错误被读成后端不可用那一族）。
+修法：内联判定里排 bool（`type: bool` 的开关字段不受影响，实测 3 个 bool 规格照常通过）。**NaN 那一半不在本轮的 diff 里** —— 它是 L45 就补下的守卫，本轮没有重复劳动，只是用注入 m8 把它摘掉 ⇒ **5 红**，坐实它至今仍在守这条契约。三条形状逐守卫实测（Temp `l49q/final_probe.py`，NONCE-9b00030107a0；同一支探针在 0ba6943e13a7 那次跑到守卫段也给出逐字相同的三行）：**现行 0/7 放行 bool、0/7 放行 NaN**；摘掉 bool 守卫 → bool **7/7** 放行而 NaN 仍 0/7；摘掉 NaN 守卫 → NaN **4/7** 放行而 bool 仍 0/7 ⇒ 两条守卫**覆盖面互不重叠**（「重复劳动」的判据在这里同样是「摘一处能不能把另一处分开来」），且 NaN 的实际覆盖面是**完整的** —— 3 个 `type: int` 规格靠 `isinstance(nan, int)` 为假天然拦住，不需要额外判据。
+两条洞的覆盖面不同，都量过（Temp `l49q/`，把克隆绑在覆盖 `_validate_known_fields` 的子类上重跑 7 个数值键）：
+`true` 在旧形状下 **7/7 个数值键完全无报错**（`isinstance(True, int)` 恒真），NaN 只漏 **4 个 `type: float`
+键**（3 个 `int` 键靠 `isinstance` 本来就拦得住）⇒ 排 bool 与 NaN 判据不是重复劳动，各堵一片。
+这个洞能活到今天的原因就写在 A70 那笔死账上：**只有测试在调用的那 6 个 `_validate_int` / `_validate_float` /
+`_validate_bool` 死助手早就排掉了 bool，却没有 NaN 判据**，而真正跑的内联路径两边都没有 —— 两套口径各拿对
+半边，活的那套恰好是错的半边。A70 由此第一次有了实测代价，已在该行补记。
+
+**A76 / A77 是同一次扫描顺手量出的既有债**（只记不修）：A76 = 配置里的未知 / 拼错键（如 `max_retry_wai`）
+零反馈，与 A78 同一个根（那张映射表本身就是白名单）；A77 = `retry_delay ≤ 60`、`max_retries ≤ 20` 是
+**校验器独有**的上界，运行时照收 999。本轮两个新旋钮特意做成两侧**全区间**一致
+（`test_validator_and_runtime_agree_on_every_axis`），而旧旋钮那处不对称留在原地：给 SDK 面补上界会让既有
+调用方的合法入参当场变非法，这是要单独拍的一次破坏性变更，不该搭在能力轮的车上。
+
+**代价（本轮不主张任何收益）**：同进程 A/B，正反序各一轮、min-of-7（Temp `l49q/ab2.py`，nonce
+`f090dff45108`）—— `with_retries` 一次成功调用 1.261 → 1.390 µs（+0.129 µs，+10.26 %，两序同号）；
+`require_seconds` 既有调用点（不传 `maximum`）0.137 → 0.143 µs（+4.18 %，两序同号）；两道新判据本身
+0.300 µs / 次构造；`_validate_known_fields` 走查 5 节 12 个规格 7.143 → 7.693 µs（+7.71 %），配套的
+**同形克隆自检行顺序翻转 ⇒ 不可判定**，即那 +0.551 µs 不是克隆本身带来的。绝对量级对照：判据多出的
+0.13 µs 落在其后 ≥ `base_delay`（默认 1 s）的 sleep 之前，是 1.3e-7 倍。
+
+**`load_config` 那一行被自己推翻了**（本轮最重要的一条方法学）：首跑报「前 6687.9 / 后 6507.1 µs，
+−2.70 %，两序同号」—— 一个加了两个键却变快 2.7 % 的结果。补测（Temp `l49q/ab3.py`，nonce
+`ffe5cae48c1c`）两档迭代数：60 次×9 报 **序1 +27.20 / 序2 −17.35 ⇒ 顺序翻转**，120 次×5 报 +1.489 %
+同号 ⇒ 三档互斥，那一行的「两序同号」骗过了 L43 定的符号判据。根因是载体成本：单跑一次
+`yaml.safe_load` = 6,859 µs，几乎等于 `load_config` 的全部耗时（6.4 ~ 6.7 ms），两键的净成本直接测是
+**0.088 µs**（占比 1.3e-5 %）⇒ 整函数 A/B 在这一档**没有判定力**。新纪律入「操作纪律」：**被测增量远小于
+载体成本时不许用整函数 A/B，必须直接测边际操作**，「两序同号」在这种形状下不构成放行条件。
+
+**注入 8 模式全部在 Temp 沙箱副本里跑**（`Temp/l49q/tree/`，4 MB 源码+测试副本，nonce `54ae1d9bf38b` /
+`cfbfe0089e19`）：
+基线 569 passed；m1 摘 `with_retries` 的 `max_retry_wait` 判据 ⇒ **7 红**；m2 后端不再传两封顶 ⇒ **3**；
+m3 流水线不再转发两键 ⇒ **3**；m4 校验器放回 bool 洞 ⇒ **2**；m5 坐实 A78（把 cors 两键补进映射表）⇒ **1**；
+m6 映射表默认值漂出 dataclass（300.0 → 30.0）⇒ **2**；m7 摘掉 `require_seconds` 的整条上界分支 ⇒ **14**；m8 摘掉 `_validate_known_fields` 的 NaN 判据 ⇒ **5**
+（3 条 L45 时代立的旧例 + 2 条本轮新例 ⇒ 这条旧判据同样不是无人守的）；
+全部还原 ⇒ **569 passed**，六个产品文件与真身逐字节 sha 一致。改在沙箱里做是本轮新加的机制：共享工作树里
+做注入有被并行 agent 的中途提交带走坏状态的风险。与上一段会话那轮在 6 文件 / 547 例子集上的记录相比，
+m3 由 2 → 3（第 3 条正是 `test_pipeline_forwards_cache_options` 那枚棘轮兑现的时刻）、m7 由 6 → 14
+（本轮摘的是 `validation.py` 里整条上界分支，旧记录摘的是 `retry.py` 的传参处），其余各档一致。
+
+**本轮第三次「探针接错口」**（方法学，比结论更值得留）：量 bool 洞覆盖面时第一版把克隆出来的方法当普通函数
+调用，而 `_validate_known_fields` 内部靠 `self._validate_known_fields(...)` **递归**下探节内字段 ⇒ 递归全部
+调回真身，两列（旧形状 / 本轮形状）打印出**逐字相同**的结果却看不出问题。改成「用子类覆盖该属性再实例化」
+才拿到 7/7 与 4/7 这两个真数。纪律：**克隆一个内部有 `self.` 分派的方法，必须把它绑在覆盖同名属性的类上**；
+而「两列完全一样」本身就是探针没接对口的症状，不是「修与没修等价」的证据。
+
+**三处既有测试的处置**（如实记账，含一处全量首跑才暴露的红）：① `test_models.py::test_backend_does_not_shake_the_backoff_yet`
+（L48 立，断 `"jitter" not in captured`）**被推翻重写**成「后端把两封顶原样交出」—— 它钉的前提随 A75 关闭
+一起消失，硬留着就是把「旋钮没接」伪装成契约；② 同文件 `TestJitterConfigSurface` 的类 docstring 里那句
+「抖动不是用户可配旋钮」同步改写（例数不变）；③ **全量首跑 1 红**：
+`test_model_cache_optimization.py::TestPipelineCacheWiring::test_pipeline_forwards_cache_options` —— 那条按
+**精确字典**断言工厂收到的全部键，注释明写「工厂契约每长一个键，这里就必须显式认领一次，不允许静默扩面」
+⇒ 本轮正是它要抓的情形，按规矩显式认领两个新键（净 0 例）。另 `test_retry.py` 的 import 行改成包级
+`from augmentor import (MAX_RETRY_AFTER, ...)`（1 行）。
+
+**测试**：新增 **28 条测试函数**、参数化展开后全量净 **+83 例** —— 四个新类的 collect 数
+`TestServerWaitCeilingKnob` 14、`TestWaitBudgetKnobSurface` 28、`TestRequireSecondsUpperBound` 19、
+`TestSectionDefaultsMatchTheMappingTable` 4（合计 65），`test_models.py` 4 条展开 10 例减去被替换的 1 条（净 9），
+`tests/integration/test_pipeline.py` 3 条展开 9 例。全量 **4857 + 83 = 4940 passed / 2 skipped**，
+总计 99.02 %，门禁 80 % 通过（49.17 s）；定向 7 文件 **569 passed**。
+
+**记账**（`git diff --numstat` 实测，产品与测试文件在本节写完后不再改动）：`augmentor/validation.py`
+**+19 / −2**（637 → 654）、`augmentor/retry.py` **+26 / −9**（350 → 367）、`augmentor/config.py`
+**+8 / −1**（467 → 474）、`augmentor/config_validator.py` **+17 / −1**（343 → 359）、`augmentor/pipeline.py`
+**+11 / −2**（617 → 626）、`augmentor/models/base.py` **+42 / −9**（372 → 405）、5 个后端各
+**+7 / −1**（claude 100→106、ernie 145→151、gemini 102→108、ollama 109→115、openai_model 107→113）、
+`models/factory.py` **+10 / −1**（73 → 82）、`config.yaml` **+15 / −2**（347 → 360）；测试
+`test_retry.py` **+89 / −4**（652 → 737）、`test_models.py` **+59 / −7**（504 → 556）、
+`test_count_knob_validation.py` **+30 / −0**（861 → 891）、`test_config.py` **+103 / −0**（343 → 446）、
+`test_config_validator.py` **+94 / −0**（779 → 873）、`tests/integration/test_pipeline.py` **+57 / −0**
+（787 → 844）、`test_model_cache_optimization.py` **+3 / −0**（423 → 426）。19 个文件的行数差与各自净值
+逐一相等；行尾逐文件按字节核对为纯色（LF 单一体：`retry.py` / `pipeline.py` / `models/` 全部 / 四个测试文件 /
+本文档；CRLF 单一体：`validation.py` / `config.py` / `config_validator.py` / `config.yaml` /
+`test_retry.py` / `test_models.py` / `tests/integration/test_pipeline.py`）。覆盖读数：`validation.py` 195 语句
+缺 **0**（5 条偏支全在 `DataSanitizer` 旧码）、`config_validator.py` 152 缺 **0**、`pipeline.py` 245 缺 **0**、
+`config.py` 215 缺 3（`449-450` / `452`，本轮 hunk 在 `35-40` 与 `314-315`，不相交）、`models/base.py` 157 缺 5
+（`272` / `279-280` / `404-405`，全在既有 `_cache_*` 与 `__del__` 兜底，本轮 10 个 hunk 无一命中）、
+`retry.py` 121 缺 6 ⇒ **本轮新增语句 0 条落入未触达**；A68 那六条依旧一个没少，行号随本轮 +17 位移成
+`304` / `327-328` / `363-367`（+ 偏支 `197->237`）。
 
 ## 4. 核心数据流
 
@@ -1309,7 +1451,7 @@ L44 就把这两个字段的归属记错过一次）+ `config_validator` + 工�
 | 层次 | 策略 |
 |------|------|
 | 单条数据生成失败 | 记录 ERROR 日志，该条标记为 failed，不中断整体任务 |
-| 模型调用失败 | 指数退避重试，`generate(max_retries=…)` 传的是**总尝试次数**（不是额外次数）且下界 0，仍失败则抛出由上层捕获。**缺省档位自 L45 起来自配置 `augmentation.max_retries` / `retry_delay`**（经 `create_model_backend` 透传，见 §3.20）；重试口径唯一在 `retry.with_retries` 这一层 —— 传输层自 L46 起不配任何重试（`HTTPAdapter` 只留连接池，见 §3.21），因为对 POST 它本来一次都不会跑，留着只会让人误算出「两层叠乘的请求上界」。**注意封顶分两支、互不相犯（L47 拍定，A72 关闭）**：退避计算那一支归调用方传的 `max_delay`（模型后端传 `_MAX_RETRY_DELAY = 30.0`）；服务端给 `Retry-After` 时走另一支，只归 `retry.MAX_RETRY_AFTER`（300 s）封顶，`max_delay` 参不到场 —— 这是刻意的，把「45 秒后再来」夹成 30 s 等于对刚说过别敲门的服务端提前敲门。默认档一次 `generate()` 的最坏总等待因此是 2 × 300 = 600 s 而不是 60 s，两行的算法见 §3.22 |
+| 模型调用失败 | 指数退避重试，`generate(max_retries=…)` 传的是**总尝试次数**（不是额外次数）且下界 0，仍失败则抛出由上层捕获。**缺省档位自 L45 起来自配置 `augmentation.max_retries` / `retry_delay`**（经 `create_model_backend` 透传，见 §3.20）；重试口径唯一在 `retry.with_retries` 这一层 —— 传输层自 L46 起不配任何重试（`HTTPAdapter` 只留连接池，见 §3.21），因为对 POST 它本来一次都不会跑，留着只会让人误算出「两层叠乘的请求上界」。**注意封顶分两支、互不相犯（L47 拍定，A72 关闭）**：退避计算那一支归调用方传的 `max_delay`（模型后端传 `_MAX_RETRY_DELAY = 30.0`）；服务端给 `Retry-After` 时走另一支，只归 `retry.MAX_RETRY_AFTER`（300 s）封顶，`max_delay` 参不到场 —— 这是刻意的，把「45 秒后再来」夹成 30 s 等于对刚说过别敲门的服务端提前敲门。默认档一次 `generate()` 的最坏总等待因此是 2 × 300 = 600 s 而不是 60 s，两行的算法见 §3.22。**自 L49 起两副封顶里的第二副交到配置面**：`augmentation.max_retry_wait`（默认 300.0，只能夹小不能放大）与 `augmentation.retry_jitter`（默认 0.0，0-1）⇒ 最坏总等待可用一行写完 `(attempts − 1) × max(_MAX_RETRY_DELAY × (1 + retry_jitter), max_retry_wait)`，五档实测见 §3.24 |
 | 可选依赖缺失 | 降级并记录 WARNING，功能跳过而非崩溃 |
 | 必需依赖缺失 | 抛 `ImportError` 并给出安装命令，不静默 |
 | ↑ 的具体落点：`models/base.py:_get_session`（L46 起） | 上两行原本在这里**互相打架**：`requests`（必需）与 `requests.adapters.HTTPAdapter`（可降级）共用一个 `except ImportError`，于是必需依赖缺失也会先打一条「requests 未安装，使用基础连接」再抛。现拆为「`import requests` 在 `try` 外 ⇒ 必需缺失直接抛；只有 HTTPAdapter 包在可降级的 `try/except` 里 ⇒ 降级为无连接池裸 Session」，两条约定各归各位（详见 §3.21） |
@@ -1320,6 +1462,8 @@ L44 就把这两个字段的归属记错过一次）+ `config_validator` + 工�
 | **时长 / 秒数**旋钮越界（`retry_delay` / `default_retry_delay`，L45 起） | 同一条口径但换判据：`validation.require_seconds(name, value, minimum=0.0)` 拒 `bool` / 字符串 / NaN / 负值，接受 int 与 `+inf`。**不混进 `require_count`**（它按口径拒绝非整数）。配置文件侧由 `config_validator` 的 KNOWN_FIELDS 同判（0–60 s），两侧同判由 `test_validator_and_runtime_use_the_same_verdict` 钉住 —— 静态校验面与运行时判据不一致时，症状是「校验通过但一跑就炸」或反之，见 §3.20。**判据覆盖面自 L47 起不再只有配置那两处**：`retry.compute_delay` 与 `retry.with_retries` 的 `base_delay` / `max_delay` 也在各自入参处判（后者判在调用 `func` **之前**，否则坏值会先烧掉一次真实请求、再从循环里抛出与参数错误无关的 `TypeError`，原始异常丢失），见 §3.22 |
 | **无量纲倍率**旋钮越界（退避 `factor`，L47 起） | 第三条判据 `validation.require_positive(name, value)`：**严格大于 0**，拒 `bool` / 字符串 / NaN / 0 / 负数，接受 int 与 `+inf`。不复用 `require_seconds` 是因为它的文案会把「秒数」安到一个没有单位的倍率上（指错根因），也不做可配下界是因为这类值只有「每档乘多少」一种合法读法——实测 `factor=0` 的退避是 `[1.0, 0.0, 0.0]`（忙重试）、`-2` 是 `[1.0, 0.0, 4.0]`（隔档完全不等待的非单调序列）。**`0 < factor < 1` 放行**：实测 `[1.0, 0.5, 0.25]` 非负、单调、有界，没有该拒的形状。同见 §3.22 |
 | **闭区间比例**旋钮越界（退避抖动 `jitter`，L48 起） | 第四条判据 `validation.require_ratio(name, value, minimum=0.0, maximum=1.0)`：**判据族里唯一连上界一起判的成员**，因为比例旋钮越界的症状是「上限从别处冒出来」——`jitter` 加在 `min(max_delay, …)` **之后**，实测贴顶档位 `jitter=1.0` 抽出 30.05 ~ 59.87 s、`50.0` 抽出 32.27 ~ **1523.54 s**，越过 `max_delay` 的比例都是 1.000；判在 0-1 内可把那一支证死在 2 × `max_delay`。下界同样不多余：`-5.0` 与 `NaN` 过不了 `if jitter > 0`，与「没传参数」逐字同答；`True` 则被算术读成 1.0 = **最大档**抖动。`None` 放行（= 没传），实测 59.7 ns 短路 / 235.3 ns 全判。同见 §3.23 |
+| **等待预算**双旋钮越界（`augmentation.max_retry_wait` / `retry_jitter`，L49 起） | 第五条判据形状 = **给 `require_seconds` 加可选 `maximum` 参数**（不另立新判据：它判的还是「秒数」，文案根因不变；L47 另立 `require_positive` 是因为根因不同才分家）。`max_retry_wait` 判 0-300 闭区间且**上界硬编在 `MAX_RETRY_AFTER`** —— 「300 s 封顶」这句承诺本身就是判据，加判据前实测 `max_retry_wait=inf` 配 `Retry-After: 3000` 交出 `[3000.0, 3000.0]`（默认档合计 6000 s），判后同一入参在第一次请求**之前**抛 `DataValidationError`；`retry_jitter` 直接复用第四条 `require_ratio`。这两个旋钮是**本仓第一对「静态校验面与运行时判据全区间一致」**的配置项（`test_validator_and_runtime_agree_on_every_axis`；旧旋钮 `retry_delay ≤ 60` / `max_retries ≤ 20` 仍是校验器独有上界，记在 A77）。同见 §3.24 |
+| 静态校验面比运行时**更松**（bool / NaN 混进数值字段，L49 起） | `_validate_known_fields` 的内联类型判定原先按 `isinstance(value, (int, float))` 读，而 `isinstance(True, int)` 恒真 ⇒ 7 个数值规格键 7/7 把 YAML 里的 `true` 判成合法，四道运行时判据却全部拒 bool —— 症状是 `validate-config` 绿灯、建管道即 `DataValidationError`。修法：内联判定排 bool（`type: bool` 的开关字段不受影响）+ 补 NaN 判据。两条洞覆盖面不同：`true` 在旧形状下 **7/7 个数值键完全无报错**，NaN 只漏 **4 个 `type: float` 键**（3 个 int 键靠 `isinstance` 本来就拦得住）⇒ 各堵一片、不重复；注入分判也各成一档（摘 bool 排除 ⇒ 2 红，摘 NaN 判据 ⇒ 5 红）。根因是 A70 那套**只有测试在调用**的死助手：它们早就排了 bool 却没有 NaN 判据，两套口径各拿对半边、活的那套恰好是错的半边。同见 §3.24 |
 | 断点文件损坏 | 记录 ERROR 并返回 `None`，退化为从头开始 |
 
 「取前 N 条」这一类旋钮（`limit` / `offset` / `top_k` / `preview_size` / `batch_size`

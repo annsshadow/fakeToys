@@ -478,6 +478,63 @@ class TestRetryKnobWiring:
             AugmentorPipeline(config)
 
 
+    def test_wait_budget_knobs_reach_the_factory(self, tmp_path, monkeypatch):
+        """A73 + A75：两副封顶的配置面必须一路送到后端
+
+        接线前实测（Temp `l49_probe.py`）：`retry.MAX_RETRY_AFTER` 是写死的常数，
+        429 + `Retry-After: 3000` 一律睡 300 s，配置里写了也不听；`jitter` 更是只有
+        `compute_delay` 的形参、没有任何调用方传它。
+        """
+        captured = self._capture_backend_factory(monkeypatch)
+        config = load_config(str(AI_DIR / "config.yaml"))
+        config.augmentation.max_retry_wait = 45.0
+        config.augmentation.retry_jitter = 0.5
+        config.versioning.storage_dir = str(tmp_path / "versions")
+
+        AugmentorPipeline(config)
+
+        assert captured["default_max_retry_wait"] == 45.0
+        assert captured["default_retry_jitter"] == 0.5
+
+    def test_untouched_config_keeps_the_promised_pair(self, tmp_path, monkeypatch):
+        """出厂 `config.yaml` 的档位 = 文档承诺：300 s / 不抖 ⇒ 老配置零行为变化"""
+        from augmentor import MAX_RETRY_AFTER
+
+        captured = self._capture_backend_factory(monkeypatch)
+        config = load_config(str(AI_DIR / "config.yaml"))
+        config.versioning.storage_dir = str(tmp_path / "versions")
+
+        AugmentorPipeline(config)
+
+        assert captured["default_max_retry_wait"] == MAX_RETRY_AFTER
+        assert captured["default_retry_jitter"] == 0.0
+
+    @pytest.mark.parametrize("field,bad", [
+        ("max_retry_wait", -1.0),
+        ("max_retry_wait", 301.0),
+        ("max_retry_wait", float("inf")),
+        ("max_retry_wait", True),
+        ("retry_jitter", 1.5),
+        ("retry_jitter", -0.1),
+        ("retry_jitter", "0.5"),
+    ])
+    def test_wait_budget_knobs_fail_at_construction_not_as_a_degradation(
+        self, tmp_path, field, bad
+    ):
+        """放大 300 s 承诺 / 坏抖动必须建管道时就响
+
+        与 `test_out_of_range_knobs_fail_loud_instead_of_disabling_the_backend` 同一条
+        理由：判据若在 `create_model_backend` 那层 try 里面，写坏的档位会表现为整个模型
+        能力凭空消失；这里要的是指名字段的报错。
+        """
+        config = load_config(str(AI_DIR / "config.yaml"))
+        setattr(config.augmentation, field, bad)
+        config.versioning.storage_dir = str(tmp_path / "versions")
+
+        with pytest.raises(DataValidationError, match=f"augmentation.{field}"):
+            AugmentorPipeline(config)
+
+
 class TestGenerateVariantsException:
     """_generate_variants 异常测试"""
 

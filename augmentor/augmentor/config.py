@@ -32,6 +32,12 @@ class AugmentationConfig:
     auto_save_interval: int = 10
     max_retries: int = 3
     retry_delay: float = 1.0
+    # 服务端 `Retry-After` 那一支的等待上限（秒）。只能夹小不能放大：
+    # retry.MAX_RETRY_AFTER（300 s）是对外承诺的天花板，判据两处一致。
+    max_retry_wait: float = 300.0
+    # 退避的随机抖动比例（0-1，闭区间）。默认 0 ⇒ 各档等待与接参前逐字相同；
+    # 非 0 会把退避一支的最坏等待上界放大为 max_delay × (1 + 本值)。
+    retry_jitter: float = 0.0
 
 
 @dataclass
@@ -305,7 +311,8 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
         config_sections = [
             ('augmentation', AugmentationConfig, {
                 'variants_per_seed': 5, 'num_threads': 40, 'auto_save_interval': 10,
-                'max_retries': 3, 'retry_delay': 1.0
+                'max_retries': 3, 'retry_delay': 1.0,
+                'max_retry_wait': 300.0, 'retry_jitter': 0.0
             }),
             ('quality', QualityConfig, {
                 'enabled': True, 'threshold': 0.6, 'weights': [0.3, 0.4, 0.3]

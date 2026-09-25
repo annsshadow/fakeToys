@@ -12,8 +12,8 @@ from typing import Optional
 from ..config import ModelConfig
 from ..cache import MemoryCache, DiskCache
 from ..exceptions import ModelGenerateError, ModelResponseError
-from ..retry import with_retries, classify_error
-from ..validation import require_count, require_seconds
+from ..retry import with_retries, classify_error, MAX_RETRY_AFTER
+from ..validation import require_count, require_ratio, require_seconds
 
 logger = logging.getLogger(__name__)
 
@@ -60,10 +60,12 @@ class ModelBackend(ABC):
     _GENERATION_CACHE_MAX = 512
 
     # 退避计算的等待上限（秒），防止指数退避无界增长。**只管退避计算那一支**：
-    # 服务端给出 `Retry-After` 时改由 `retry.MAX_RETRY_AFTER`（300 s）封顶，本常数
-    # 参不到场（两副封顶为何故意不相犯，见 docs/ARCHITECTURE.md §3.22）。
-    # 这里不传 `jitter`（默认 0.0）⇒ 30 s 在本层是硬上限；`compute_delay` 的抖动加在
-    # 夹逼**之后**，直调方一旦传非 0 抖动，这一支的最坏等待就是 2 × 本常数。
+    # 服务端给出 `Retry-After` 时改由 `with_retries` 的 `max_retry_wait` 封顶（默认
+    # `retry.MAX_RETRY_AFTER` = 300 s），本常数参不到场（两副封顶为何故意不相犯，
+    # 见 docs/ARCHITECTURE.md §3.22）。
+    # 抖动默认 0 ⇒ 30 s 在本层是硬上限；`compute_delay` 的抖动加在夹逼**之后**，
+    # 所以 `augmentation.retry_jitter` 一旦配了非 0 值，这一支的最坏等待就变成
+    # `本常数 × (1 + jitter)`（默认档 0.5 即 45 s）。
     _MAX_RETRY_DELAY = 30.0
 
     # generate() 未显式传参时的默认档位：总尝试次数与首次退避基数。
@@ -71,6 +73,12 @@ class ModelBackend(ABC):
     # `augmentation.max_retries` / `retry_delay` 经工厂透传到这里）。
     _DEFAULT_ATTEMPTS = 3
     _DEFAULT_RETRY_DELAY = 1.0
+
+    # 等待预算的两条默认值（同上，可经工厂被 `augmentation.max_retry_wait` /
+    # `retry_jitter` 覆盖）。上界默认直接取公开常数，**不重抄 300.0** —— 重抄一份
+    # 就等于给「两处数字悄悄不同」留位置。
+    _DEFAULT_MAX_RETRY_WAIT = MAX_RETRY_AFTER
+    _DEFAULT_RETRY_JITTER = 0.0
 
     # 磁盘响应缓存默认容量上限（256 MB）。磁盘缓存必须比内存缓存更保守：
     # 没有上限的磁盘缓存只是把内存泄漏换成了磁盘泄漏。
@@ -82,7 +90,9 @@ class ModelBackend(ABC):
                  response_cache_ttl: Optional[float] = None,
                  response_cache_max_bytes: Optional[int] = None,
                  default_attempts: Optional[int] = None,
-                 default_retry_delay: Optional[float] = None):
+                 default_retry_delay: Optional[float] = None,
+                 default_max_retry_wait: Optional[float] = None,
+                 default_retry_jitter: Optional[float] = None):
         """初始化模型后端
 
         Args:
@@ -98,15 +108,26 @@ class ModelBackend(ABC):
                 口径与 `generate(max_retries=…)` 完全一致：0 读作「只调用一次」
             default_retry_delay: 该后端的退避基数默认值（秒），
                 `generate()` 未显式传 `retry_delay` 时用它。None 时用 _DEFAULT_RETRY_DELAY
+            default_max_retry_wait: 服务端指令（HTTP `Retry-After`）那一支的等待上限
+                （秒），None 时用 _DEFAULT_MAX_RETRY_WAIT（= `retry.MAX_RETRY_AFTER`）。
+                **只能把上限夹小、不能放大**：300 s 是对外的承诺，判据
+                `require_seconds(..., maximum=MAX_RETRY_AFTER)` 守的就是这一句
+            default_retry_jitter: 退避的随机抖动比例（0-1 闭区间），None 时用
+                _DEFAULT_RETRY_JITTER（0.0 ⇒ 各档等待与接参前逐字相同）
 
         Raises:
             DataValidationError: default_attempts 不是不小于 0 的整数，
-                或 default_retry_delay 不是不小于 0 的有限数值
+                default_retry_delay 不是不小于 0 的有限数值，
+                default_max_retry_wait 不在 0-300 秒内，
+                或 default_retry_jitter 不在 0-1 之间
         """
         # 判参必须排在 _build_response_cache 之前：DiskCache.__init__ 会 mkdir，
         # 坏档位不该留下一个建好了却没人用的缓存目录。
         require_count("default_attempts", default_attempts, minimum=0)
         require_seconds("default_retry_delay", default_retry_delay, minimum=0.0)
+        require_seconds("default_max_retry_wait", default_max_retry_wait,
+                        minimum=0.0, maximum=MAX_RETRY_AFTER)
+        require_ratio("default_retry_jitter", default_retry_jitter)
 
         self.config = config
         self._request_count = 0
@@ -119,6 +140,14 @@ class ModelBackend(ABC):
         self._default_retry_delay = (
             default_retry_delay if default_retry_delay is not None
             else self._DEFAULT_RETRY_DELAY
+        )
+        self._default_max_retry_wait = (
+            default_max_retry_wait if default_max_retry_wait is not None
+            else self._DEFAULT_MAX_RETRY_WAIT
+        )
+        self._default_retry_jitter = (
+            default_retry_jitter if default_retry_jitter is not None
+            else self._DEFAULT_RETRY_JITTER
         )
         self._generation_cache = MemoryCache(max_size=self._GENERATION_CACHE_MAX)
         self._response_cache = self._build_response_cache(
@@ -307,12 +336,16 @@ class ModelBackend(ABC):
 
         try:
             # 统一走 retry.py：退避有上限，且由 classify_error 区分
-            # 「限流/网络抖动」（可重试）与「鉴权/参数错误」（立即放弃）
+            # 「限流/网络抖动」（可重试）与「鉴权/参数错误」（立即放弃）。
+            # 两副封顶各管一支：退避一支归 _MAX_RETRY_DELAY（再乘上配置的抖动），
+            # 服务端指令一支归 _default_max_retry_wait（`augmentation.max_retry_wait`）。
             result, _stats = with_retries(
                 _attempt,
                 max_retries=attempts - 1,
                 base_delay=delay,
                 max_delay=self._MAX_RETRY_DELAY,
+                max_retry_wait=self._default_max_retry_wait,
+                jitter=self._default_retry_jitter,
                 classify=classify_error,
             )
         except Exception as e:
