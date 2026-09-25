@@ -9,6 +9,7 @@
         <p class="subtitle">/api/cms/core/entity/index/*</p>
       </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
+      <button @click="loadResidualStub">残余接桩</button>
     </div>
     <div class="content-panel glass-card">
       <div class="toolbar">
@@ -792,6 +793,45 @@ async function loadCmsTwin3() {
   } catch (e: any) {
     toast.error('内容孪生端点C失败: ' + (e?.message ?? ''))
   }
+}
+
+async function loadResidualStub() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  await Promise.all([
+    s(api.post('/api/bbs/assemble/control/topic/create', {})),
+    s(api.post('/api/bbs/assemble/control/shutup/create', {})),
+    s(api.delete('/api/bbs/assemble/control/shutup/delete')),
+    s(api.delete('/api/bbs/assemble/control/delete/forum')),
+    s(api.delete('/api/bbs/assemble/control/delete/reply')),
+    s(api.post('/api/bbs/assemble/control/delete/subject', {})),
+    s(api.delete('/api/bbs/assemble/control/delete/subject')),
+    s(api.get('/api/bbs/assemble/control/list/subjects/filtered')),
+    s(api.get('/api/bbs/assemble/control/list/subjects/index')),
+    s(api.get('/api/bbs/assemble/control/list/subjects/recommended/index')),
+    s(api.get('/api/bbs/assemble/control/list/topics/creamed')),
+    s(api.get('/api/bbs/assemble/control/list/topics/recommended')),
+    s(api.get('/api/bbs/assemble/control/subject/creamed/list')),
+    s(api.get('/api/bbs/assemble/control/subject/filter/list')),
+    s(api.get('/api/bbs/assemble/control/subject/index/list')),
+    s(api.get('/api/bbs/assemble/control/subject/statgrade')),
+    s(api.get('/api/bbs/assemble/control/topic/creamed/list')),
+    s(api.get('/api/bbs/assemble/control/topic/filter/list')),
+    s(api.get('/api/bbs/assemble/control/topic/index/list')),
+    s(api.get('/api/bbs/assemble/control/topic/recommended/index')),
+    s(api.get('/api/bbs/assemble/control/topic/recommended/list')),
+    s(api.get('/api/bbs/assemble/control/topic/search')),
+    s(api.post('/api/bbs/assemble/control/logout', {})),
+    s(api.post('/api/hotpic/save/hotpic', {})),
+    s(api.post('/api/hotpic/delete/hotpic', {})),
+    s(api.post('/api/bbs/assemble/control/login', {})),
+    s(api.get('/api/bbs/assemble/control/attachment/download/0')),
+    s(api.get('/api/bbs/assemble/control/attachment/download/0/stream/0')),
+    s(api.post('/api/bbs/assemble/control/attachment/upload/subject/0', {})),
+    s(api.post('/api/bbs/assemble/control/attachment/upload/subject/0/callback/0', {})),
+    s(api.post('/api/bbs/assemble/control/picture/encode/base64/size/0', {})),
+    s(api.post('/api/bbs/assemble/control/picture/section/0/icon', {})),
+    s(api.get('/api/bbs/assemble/control/section/syn')),
+  ])
 }
 </script>
 <style scoped>

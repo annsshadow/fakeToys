@@ -7,6 +7,7 @@
       <h1>日历</h1>
       <div class="header-controls">
         <button class="nav-btn" @click="prevMonth">‹</button>
+        <button @click="loadResidualStub">残余接桩</button>
         <span class="month-label">{{ currentYear }}年{{ currentMonth }}月</span>
         <button class="nav-btn" @click="nextMonth">›</button>
         <button class="today-btn" @click="goToday">今天</button>
@@ -578,6 +579,14 @@ async function loadCalTwin() {
   } catch (e: any) {
     toast.error('日历孪生端点失败: ' + (e?.message ?? ''))
   }
+}
+
+async function loadResidualStub() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  await Promise.all([
+    s(api.put('/api/calendar_assemble_control/event', {})),
+    s(api.get('/api/calendar_assemble_control/test/1')),
+  ])
 }
 </script>
 
