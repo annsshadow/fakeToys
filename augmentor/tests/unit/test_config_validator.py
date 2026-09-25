@@ -858,7 +858,7 @@ class TestWaitBudgetKnobSurface:
         """
         numeric = [p for p, s in ConfigValidator.KNOWN_FIELDS.items()
                    if s.get("type") in (int, float)]
-        assert len(numeric) == 7, "新增数值规格键会自动进入本断言"
+        assert len(numeric) == 10, "新增数值规格键会自动进入本断言"
         for path in numeric:
             hits = [m for p_, m in self._errors_at(path) if p_ == path]
             assert hits and "类型错误" in hits[0], (path, hits)
@@ -867,7 +867,102 @@ class TestWaitBudgetKnobSurface:
         """修 bool 洞不许顺手把 `type: bool` 的开关字段判成非法"""
         paths = [p for p, s in ConfigValidator.KNOWN_FIELDS.items()
                  if s.get("type") is bool]
-        assert len(paths) == 3, "规格表里应仍有布尔开关字段"
+        assert len(paths) == 4, "规格表里应仍有布尔开关字段"
         for path in paths:
             hits = [m for p_, m in self._errors_at(path) if p_ == path]
             assert hits == [], (path, hits)
+
+
+class TestWebSectionKnobSurface:
+    """`web` 节九个字段全部要有规格（L50 补齐）
+
+    补之前实测（Temp `l50q/probe2.py` NONCE-bee0664903ff）：把整节写坏 ——
+    `port: eighty`、`data_roots: data`（YAML 标量而非列表）、`cors_origins` 写成字符串、
+    `cors_credentials: maybe`、`rate_limit_max_requests: -5`、`rate_limit_window_seconds:
+    NaN` —— `validate_config` 仍判 `is_valid=True` / 0 error / 0 warning，因为
+    `KNOWN_FIELDS` 里 `web.*` 一条都没有。后果不是「校验器不够严」而是「绿灯跑废」：
+    `data_roots: data` 会被 `api/deps._config_data_roots` 按字符拆成 `d/a/t/a` 四个根，
+    于是所有数据端点一律 403，症状长得像后端坏了。
+    """
+
+    @staticmethod
+    def _errors(web):
+        config = {
+            "app": {"name": "test"},
+            "models": {"default": "ernie"},
+            "web": web,
+        }
+        return [(e.path, e.message) for e in validate_config(config).errors]
+
+    #: 与 `WebConfig` 的字段集逐字对齐；新增字段会自动把本断言变红
+    FIELDS = ["port", "host", "static_dir", "cors_origins", "cors_credentials",
+              "data_roots", "rate_limit_max_requests", "rate_limit_window_seconds",
+              "rate_limit_exempt_paths"]
+
+    def test_every_web_field_has_a_spec(self):
+        import dataclasses
+
+        from augmentor.config import WebConfig
+
+        declared = {f.name for f in dataclasses.fields(WebConfig)}
+        specced = {p.split(".", 1)[1] for p in ConfigValidator.KNOWN_FIELDS
+                   if p.startswith("web.") and "." in p}
+        assert sorted(declared) == sorted(self.FIELDS), sorted(declared ^ set(self.FIELDS))
+        assert declared == specced, sorted(declared ^ specced)
+
+    @pytest.mark.parametrize("field,value", [
+        ("port", 8000), ("port", 1), ("port", 65535),
+        ("host", "0.0.0.0"), ("static_dir", "web/dist"),
+        ("cors_origins", []), ("cors_origins", ["https://only-me.example"]),
+        ("cors_credentials", True), ("cors_credentials", False),
+        ("data_roots", ["data"]), ("data_roots", []),
+        ("rate_limit_max_requests", 0), ("rate_limit_max_requests", 300),
+        ("rate_limit_window_seconds", 0.0), ("rate_limit_window_seconds", 60),
+        ("rate_limit_exempt_paths", ["/api/health"]),
+    ])
+    def test_legal_values_pass(self, field, value):
+        assert self._errors({field: value}) == []
+
+    @pytest.mark.parametrize("field,bad,expect", [
+        ("port", "eighty", "类型错误"),
+        ("port", 0, "值过小"),
+        ("port", 65536, "值过大"),
+        ("host", 8000, "类型错误"),
+        ("cors_origins", "https://only-me.example", "类型错误"),
+        ("data_roots", "data", "类型错误"),
+        ("rate_limit_exempt_paths", "/api/health", "类型错误"),
+        ("cors_credentials", "maybe", "类型错误"),
+        ("rate_limit_max_requests", -5, "值过小"),
+        ("rate_limit_window_seconds", -1.0, "值过小"),
+        ("rate_limit_window_seconds", float("nan"), "不是有效数值"),
+        ("rate_limit_window_seconds", "60", "类型错误"),
+    ])
+    def test_illegal_values_reported(self, field, bad, expect):
+        errors = self._errors({field: bad})
+        assert errors and errors[0][0] == f"web.{field}", (field, errors)
+        assert expect in errors[0][1]
+
+    def test_six_broken_keys_are_no_longer_silently_valid(self):
+        """本类的立项用例：六个键同时写坏，`validate-config` 曾全绿"""
+        errors = self._errors({
+            "port": "eighty",
+            "cors_origins": "https://only-me.example",
+            "cors_credentials": "maybe",
+            "data_roots": "data",
+            "rate_limit_max_requests": -5,
+            "rate_limit_window_seconds": float("nan"),
+        })
+        assert {p for p, _ in errors} == {
+            "web.port", "web.cors_origins", "web.cors_credentials",
+            "web.data_roots", "web.rate_limit_max_requests",
+            "web.rate_limit_window_seconds"}
+
+    def test_scalar_data_roots_is_the_dangerous_shape(self):
+        """`data_roots: data` 不报错才是它危险的地方：它会让白名单按字符拆开
+
+        运行时那一侧没有判据（A80），所以校验器是唯一的拦得住它的地方。
+        """
+        errors = self._errors({"data_roots": "data"})
+        assert errors and "类型错误" in errors[0][1]
+        # 阳性对照：同一份配置写成列表时校验器无异议
+        assert self._errors({"data_roots": ["data"]}) == []

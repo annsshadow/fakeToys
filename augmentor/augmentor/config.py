@@ -179,8 +179,15 @@ class WebConfig:
     port: int = 8000
     host: str = "0.0.0.0"
     static_dir: str = "web/dist"
-    cors_origins: list = field(default_factory=lambda: ["*"])
-    cors_credentials: bool = True
+    # 跨源默认**一个也不放行**：随包 UI 与后端同源（axios `baseURL: '/api'`、vite dev
+    # 用 proxy），所以 CORS 头只对第三方浏览器客户端有意义。实测 starlette 1.6.0 在
+    # `["*"] + credentials=True` 下会把请求方的 Origin **原样回显**并附
+    # `access-control-allow-credentials: true`（预检一并放行）⇒ 任意网站都能带凭据读这个
+    # API。需要跨源访问请显式列出白名单，见 config.yaml。
+    cors_origins: list = field(default_factory=list)
+    # 不带凭据：本仓 API 不用 cookie（`set_cookie` / `request.cookies` 全 0 命中），
+    # 鉴权走 `X-API-Key` 头 ⇒ `allow_credentials` 对合法用法零收益、纯风险。
+    cors_credentials: bool = False
     # REST API 允许访问的目录白名单。客户端传入的文件路径 resolve 后必须落在其中
     # 某个根目录内，否则返回 403。默认 `["data"]`，即只放行数据目录。
     # 相对路径的解析顺序：先在白名单各根目录内找已存在的文件（所以裸文件名可用），
@@ -375,6 +382,7 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
             }),
             ('web', WebConfig, {
                 'port': 8000, 'host': '0.0.0.0', 'static_dir': 'web/dist',
+                'cors_origins': [], 'cors_credentials': False,
                 'data_roots': ['data'],
                 'rate_limit_max_requests': 300,
                 'rate_limit_window_seconds': 60.0,

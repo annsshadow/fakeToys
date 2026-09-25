@@ -439,6 +439,138 @@ class TestShippedDataRootsDefault:
         assert exc.value.status_code == 403
 
 
+class TestShippedCorsDefault:
+    """跨源默认必须是「一个来源也不放行、且不带凭据」
+
+    与 `TestShippedDataRootsDefault` 同构：默认值有三处（`WebConfig` 字段、
+    `load_config` 的映射表、随仓库的 `config.yaml`），任何一处漏改都会让「有无配置
+    文件」变成两种安全边界，所以三处分别用字面量钉死，不拿 `WebConfig()` 当预言机。
+
+    为什么旧的 `["*"] + credentials=True` 必须收紧（实测形状见
+    `test_wildcard_with_credentials_echoes_any_origin`）：starlette 在这种组合下会把
+    **请求方的 Origin 原样回显**并附 `access-control-allow-credentials: true`，预检一样
+    放行 —— 于是任意网站都能带用户凭据读本 API。而本仓的合法消费方都不需要跨源：
+    随包 UI 与后端同源（axios `baseURL: '/api'`，vite 开发模式走 proxy），API 也不用
+    cookie（鉴权是 `X-API-Key` 头）。
+    """
+
+    def test_webconfig_field_defaults(self):
+        """SDK 配置类的字段默认值"""
+        from augmentor.config import WebConfig
+
+        assert WebConfig().cors_origins == []
+        assert WebConfig().cors_credentials is False
+
+    def test_defaults_apply_when_config_omits_web_section(self, tmp_path):
+        """配置文件存在但没有 cors 两键时，映射表兜底给出同样的收紧值"""
+        from augmentor.config import load_config
+
+        quiet = tmp_path / "no_cors.yaml"
+        quiet.write_text("models:\n  default: ernie\nweb:\n  port: 8000\n",
+                         encoding="utf-8")
+
+        web = load_config(str(quiet)).web
+        assert web.cors_origins == []
+        assert web.cors_credentials is False
+
+    def test_shipped_config_yaml(self):
+        """随仓库分发的 config.yaml 必须与出厂默认一致"""
+        import yaml
+
+        from augmentor.config import WebConfig
+
+        with open(AI_DIR / "config.yaml", encoding="utf-8") as handle:
+            raw = yaml.safe_load(handle)
+
+        shipped = raw["web"]
+        assert shipped["cors_origins"] == []
+        assert shipped["cors_credentials"] is False
+        assert shipped["cors_origins"] == WebConfig().cors_origins
+        assert shipped["cors_credentials"] == WebConfig().cors_credentials
+
+    def test_app_middleware_reads_the_config_not_a_hardcoded_pair(self):
+        """A78 的正向断言：中间件参数就是配置里那两个值
+
+        缺陷的形状是「`api/main.py` 真的在读 `_config.web.cors_origins`，但映射表没有
+        这一项」⇒ 只有把配置改成与默认不同、再看中间件是否跟着变，才测得到接线本身。
+        """
+        from augmentor.config import load_config
+        from api.deps import config_file_path
+        from api.main import app
+
+        cors = [m for m in app.user_middleware
+                if m.cls.__name__ == "CORSMiddleware"]
+        assert len(cors) == 1
+        web = load_config(str(config_file_path())).web
+        assert cors[0].kwargs["allow_origins"] == web.cors_origins
+        assert cors[0].kwargs["allow_credentials"] == web.cors_credentials
+
+    def test_cross_origin_read_gets_no_cors_headers(self, client):
+        """默认配置下，任意来源的跨源读请求拿不到许可头"""
+        resp = client.get("/api/health", headers={"origin": "https://evil.example"})
+
+        assert resp.status_code == 200
+        assert not [k for k in resp.headers if k.lower().startswith("access-control")]
+
+    def test_cross_origin_preflight_is_denied(self, client):
+        """预检被拒（400），且拒绝里也不带 `allow-origin`"""
+        resp = client.options("/api/health", headers={
+            "origin": "https://evil.example",
+            "access-control-request-method": "GET",
+        })
+
+        assert resp.status_code == 400
+        assert "access-control-allow-origin" not in {
+            k.lower() for k in resp.headers}
+
+    def test_same_origin_and_non_browser_clients_are_untouched(self, client):
+        """不发 Origin 的请求（同源 UI、curl、SDK）行为一个字都不变"""
+        resp = client.get("/api/health")
+
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
+        assert not [k for k in resp.headers if k.lower().startswith("access-control")]
+
+    def test_wildcard_with_credentials_echoes_any_origin(self):
+        """本条是**上游形状**的锁，不是本仓行为的锁
+
+        收紧默认的代价与理由都压在这一个事实上：`allow_origins=["*"]` 配
+        `allow_credentials=True` 时 starlette 会把请求方 Origin 原样回显并允许凭据
+        ——「通配」在这里不是「不开放」，恰恰是「对任意站点开放」。上游哪天改掉这个
+        组合的处理，本条会红。
+
+        版本只进断言消息、不做等式判据：本仓机器上有两套解释器（venv `aug` 的
+        starlette 1.6.0 与 `C:\\Python314` 的 1.2.1），同一组请求在**两个版本下形状
+        逐字节相同**（实测 Temp `l50q/probe3.py`，NONCE-74891e9630fb / -38dd3b833cfe），
+        所以钉死版本号只会把测试绑在解释器身份上 —— L50 一度这样钉过，换解释器即红。
+        """
+        import starlette
+        from starlette.applications import Starlette
+        from starlette.middleware.cors import CORSMiddleware
+        from starlette.responses import PlainTextResponse
+        from starlette.routing import Route
+
+        shape = f"starlette {starlette.__version__} @ {starlette.__file__}"
+
+        def _app(origins, credentials):
+            inner = Starlette(routes=[Route(
+                "/x", lambda request: PlainTextResponse("ok"))])
+            inner.add_middleware(
+                CORSMiddleware, allow_origins=origins,
+                allow_credentials=credentials,
+                allow_methods=["*"], allow_headers=["*"])
+            return TestClient(inner)
+
+        loose = _app(["*"], True).get("/x", headers={"origin": "https://evil.example"})
+        assert loose.headers.get("access-control-allow-origin") == "https://evil.example", shape
+        assert loose.headers.get("access-control-allow-credentials") == "true", shape
+
+        # 同一来源、同一请求，在出厂默认下什么都拿不到
+        strict = _app([], False).get("/x", headers={"origin": "https://evil.example"})
+        assert "access-control-allow-origin" not in strict.headers, shape
+        assert "access-control-allow-credentials" not in strict.headers, shape
+
+
 class TestDataListScansWhitelist:
     """"列表能给的，路由必须能读"
 

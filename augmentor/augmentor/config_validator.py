@@ -123,6 +123,22 @@ class ConfigValidator:
         "dedup.enabled": {"type": bool},
         "output": {"type": dict},
         "output.export_dir": {"type": str},
+        # `web` 节的规格自 L50 起补齐（此前整节 9 个字段在 `validate-config` 上零反馈：
+        # 实测把 port 写成字符串、data_roots 写成 YAML 标量、限流数写成负数与 NaN，
+        # 一份配置里六个键全错仍判 is_valid=True / 0 error / 0 warning）。`data_roots`
+        # 是这里最要紧的一条：`data_roots: data` 会被按字符拆成 d/a/t/a 四个根目录，
+        # 于是**所有**数据端点一律 403，症状长得像后端坏了。区间只在校验器这一侧
+        # （运行时对 `web` 节没有任何判据，SDK 直构 `WebConfig` 绕过校验器 —— 见 A80）。
+        "web": {"type": dict},
+        "web.port": {"type": int, "min": 1, "max": 65535},
+        "web.host": {"type": str},
+        "web.static_dir": {"type": str},
+        "web.cors_origins": {"type": list},
+        "web.cors_credentials": {"type": bool},
+        "web.data_roots": {"type": list},
+        "web.rate_limit_max_requests": {"type": int, "min": 0},
+        "web.rate_limit_window_seconds": {"type": float, "min": 0.0},
+        "web.rate_limit_exempt_paths": {"type": list},
     }
     
     # 环境变量模式
