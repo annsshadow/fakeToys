@@ -792,3 +792,58 @@ def save_config(config: AppConfig, config_path: str = "config.yaml") -> None:
 
     with open(config_path, "w", encoding="utf-8") as f:
         yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
+
+
+def apply_section_update(section: Any, updates: Dict[str, Any]) -> list:
+    """把一批子键写进某个配置节，并让该节**自己的**运行时判据立刻复查（L73 / A117）。
+
+    为什么必须有这个函数：L45–L72 七轮接上的判据一律住在各 dataclass 的
+    `__post_init__` 里，而 `setattr` **不会再次触发它** —— 于是「先构造、后改字段」
+    的写法整片绕过判据。全仓这样的写入点只有一处（`api/routes/config.py` 的
+    `POST /api/config`，`load_config` 那一处走 `_load_section` 构造、判据照跑），
+    它的链条实测三段都在（账本 L72 那条有完整复现口径）：
+    `max_retry_wait` 默认 300.0 → `setattr(..., 9999)` 接受 → `save_config` 把
+    `augmentation.max_retry_wait: 9999` 原样写进 YAML → 下次 `load_config` 抛
+    `DataValidationError`。症状是这一族里最难诊断的一种：**当次请求返回成功、
+    进程跑得好好的，服务重启后起不来**，而且那时已经没有一份「能改回来」的配置了。
+
+    三个设计选择：
+
+    1. **复查而不是另立判据**：跑的是该节 `__post_init__` 里那批 `require_*`，
+       界仍然只住 `config.py` 一处（A77）。这里不新增第二条口径，也不抄第二份区间。
+    2. **没有 `__post_init__` 的节照旧写入**：`quality` / `dedup` / `export` /
+       `vector` / `rag` / `multimodal` 六节至今没有运行时判据（只有校验器那一半），
+       本函数不假装判了 —— 那六节「运行时零判据」是另一笔账，不在本轮扩面。
+    3. **要么全落、要么全不落**：批次里任何一条被判负 ⇒ 已写的键逐个回滚到旧值再抛。
+       不做回滚就会留下「内存里前几条已生效、磁盘一条都没写」的分叉，而端点的
+       契约是 `success` 才代表保存过 —— 分叉正是本轮要修的那一类缺陷。
+
+    Args:
+        section: 配置节对象（`AugmentationConfig` / `QualityConfig` 这类 dataclass）
+        updates: 要写入的子键映射
+
+    Returns:
+        被丢弃的未知键清单（`hasattr` 判不出来的那些），顺序与 `updates` 一致；
+        出声与「是否想写 X」的建议仍归调用方，这里是纯判据 + 纯写入
+
+    Raises:
+        DataValidationError: 某个新值越界（来自该节的 `require_*`）；抛出时本节
+            已回滚到调用前的状态
+    """
+    post_init = getattr(type(section), "__post_init__", None)
+    applied = []
+    ignored = []
+    try:
+        for key, value in updates.items():
+            if not hasattr(section, key):
+                ignored.append(key)
+                continue
+            applied.append((key, getattr(section, key)))
+            setattr(section, key, value)
+            if post_init is not None:
+                post_init(section)
+    except Exception:
+        for key, old in reversed(applied):
+            setattr(section, key, old)
+        raise
+    return ignored
