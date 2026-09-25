@@ -31,7 +31,9 @@ class FakeModelBackend(ModelBackend):
             variants: 生成的变体数量
             raw_response: 直接指定响应文本（用于测试异常响应）
         """
-        super().__init__(ModelConfig(type="fake"))
+                # `type` 自 A115 起是封闭清单（构造期就拒），替身因此要填一个真类型；
+        # 它覆写了 `_call_api`，填哪一个都不影响行为。
+        super().__init__(ModelConfig(type="ollama"))
         self.variants = variants
         self.raw_response = raw_response
 

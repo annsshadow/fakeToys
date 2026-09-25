@@ -457,6 +457,13 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 {"models": ["ernie", "openai", "ollama", "claude", "gemini"], "default": "ernie"}
 ```
 
+> **这两个字段是「条目名」不是「`type`」** —— 值是配置里 `models:` 节的键名
+> （用户自己起的），`default` 是 `models.default` 那根指针指向的条目名。
+> 出厂 `config.yaml` 把条目名起成了后端名的样子，于是「两处同名不同物」：
+> `ernie` 这条的 `type` 其实是 `baidu`。`type` 的封闭清单只有
+> `baidu` / `openai` / `ollama` / `claude` / `gemini` 五个值，写别的
+> （包括把条目名当 `type` 写）在加载时就当场拒。
+
 ---
 
 ## 3. 数据管理

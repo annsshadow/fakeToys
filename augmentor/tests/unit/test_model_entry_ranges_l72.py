@@ -149,6 +149,24 @@ class TestBothFacesAccept:
         assert _static_errors(key, value) == []
 
 
+def _spec_kind(spec):
+    """条目规格的种类：`range`（有上下界）/ `choices`（封闭清单）/ `other`
+
+    种类从规格自己的维度推，不另立清单 —— 所以 L74 往表里加 `type` 时，本仓的
+    对账要么把它认成 `choices`，要么当场红在 `test_every_spec_declares_its_kind`。
+    """
+    if "choices" in spec:
+        return "choices"
+    if "min" in spec or "max" in spec:
+        return "range"
+    return "other"
+
+
+def _ranged_spec_names():
+    return sorted(k for k, s in ConfigValidator.MODEL_ENTRY_FIELDS.items()
+                  if _spec_kind(s) == "range")
+
+
 class TestTheRangesAreOneCopyOnly:
     """规格表里的界必须**就是** `config.py` 那批常数，不是抄来的第二份数
 
@@ -172,11 +190,23 @@ class TestTheRangesAreOneCopyOnly:
 
         改前正是「九个字段里只有 `request_timeout` 有判据」，而这条对账不存在，
         所以下一轮新加一根旋钮照样会漏。清单从字段注解推导。
+
+        L74 起对账对象是**区间类规格**那一半：条目表里现在还有 `choices` 那一类
+        （`type`，A115），它没有上下界，混进这条等式会把「加一类新规格」误报成
+        「漏了一个数值字段」。所以本条与 `test_every_spec_declares_its_kind`
+        合起来才等于改前那条等式：数值字段 ⇔ 区间规格，且每条规格都必须声明种类。
         """
         numeric = sorted(_numeric_field_names())
-        assert numeric == sorted(ConfigValidator.MODEL_ENTRY_FIELDS), \
-            "数值字段清单与规格表清单不吻合：%s vs %s" % (
-                numeric, sorted(ConfigValidator.MODEL_ENTRY_FIELDS))
+        ranged = _ranged_spec_names()
+        assert numeric == ranged, \
+            "数值字段清单与区间规格清单不吻合：%s vs %s" % (
+                numeric, ranged)
+
+    def test_every_spec_declares_its_kind(self):
+        """规格表里不许有「既无界也无清单」的第三种条目（上面那条对账的另一半）"""
+        other = [k for k, s in ConfigValidator.MODEL_ENTRY_FIELDS.items()
+                 if _spec_kind(s) == "other"]
+        assert not other, "未声明种类的规格：%s" % sorted(other)
 
     def test_no_ghost_model_spec(self):
         """规格表里不许躺着 `ModelConfig` 没有的键（A76 方向守护在模型条目那一侧的版本）"""
@@ -184,9 +214,13 @@ class TestTheRangesAreOneCopyOnly:
         ghost = set(ConfigValidator.MODEL_ENTRY_FIELDS) - names
         assert not ghost, "幽灵规格：%s" % sorted(ghost)
 
-    @pytest.mark.parametrize(
-        "key", sorted(ConfigValidator.MODEL_ENTRY_FIELDS))
+    @pytest.mark.parametrize("key", _ranged_spec_names())
     def test_one_step_outside_the_table_is_red_on_both_faces(self, key):
+        """「界外一步」两侧同红 —— 只对区间类规格成立
+
+        `choices` 那一类（`type`）没有「界外一步」可探，它的两侧同拒由
+        `tests/unit/test_model_type_choices_l74.py` 负责。
+        """
         spec = ConfigValidator.MODEL_ENTRY_FIELDS[key]
         assert spec.get("min") is not None, "%s 的规格没有下界" % key
         for probe in self._probe_outside(spec):
