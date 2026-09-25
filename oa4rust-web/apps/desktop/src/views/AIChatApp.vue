@@ -12,6 +12,7 @@
       <button class="btn-ai-meta" @click="loadAiEntities">实体/聊天线索</button>
       <button class="btn-ai-meta" @click="loadAiIndexFiles">索引/文件/MCP</button>
       <button class="btn-ai-meta" @click="loadAiTwin">孪生端点</button>
+      <button class="btn-ai-meta" @click="loadAiTwin2">孪生端点B</button>
       <button class="btn-ai-meta" @click="loadAiDeep">控制深度读</button>
       <button class="btn-ai-meta" @click="aiWrite('configSave')">存配置</button>
       <button class="btn-ai-meta" @click="aiWrite('modelCreate')">建模型</button>
@@ -550,6 +551,22 @@ async function loadAiTwin() {
     toast.success(`AI孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
     toast.error('AI孪生端点失败: ' + (e?.message ?? ''))
+  }
+}
+// rev482（放宽双计口径·第二波）：AI alias 轨余 4 条真路由（file download/scale 元数据读、file/index delete 位、
+// index sync 位 UPDATE x_ai_index synced；update/ai/control/config 为 GET+Json body 提取器——JSON 客户端无法满足故不接，记档）
+async function loadAiTwin2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/ai_assemble_control/file/0/download/scale')),
+      s(api.get('/api/ai_assemble_control/file/delete/0')),
+      s(api.get('/api/ai_assemble_control/index/delete/0')),
+      s(api.get('/api/ai_assemble_control/index/sync/to/knowledge')),
+    ])
+    toast.success(`AI孪生端点B ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('AI孪生端点B失败: ' + (e?.message ?? ''))
   }
 }
 </script>
