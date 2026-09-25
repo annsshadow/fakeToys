@@ -36,6 +36,7 @@
         <button class="btn btn-outline" @click="openDependencyGraph()" title="依赖图">🕸 依赖图</button>
         <button class="btn btn-outline" @click="openProcessMap()" title="流程总览图">🗺 总览</button>
         <button class="btn btn-outline" @click="loadProcesses">🔄 刷新</button>
+        <button class="btn btn-outline" @click="loadDesignerFileApp">📄 文件定义</button>
         <button class="btn btn-primary" @click="saveProcess" :disabled="!currentProcess">💾 保存</button>
       </div>
     </div>
@@ -5834,6 +5835,18 @@ async function loadProcesses() {
     procList.value = []
   } finally {
     plLoading.value = false
+  }
+}
+// rev466：designer 文件定义按应用读 1 条真实路由（GET designer/file/{flag}/application/{applicationFlag}，
+// file_flag_in_application 纯 SELECT pp_e_file WHERE xid=$1 AND xapplication=$2，Path<(String,String)> arity 与路由一致。
+// 两段须用数字字面 0/0：变量段会被 matcher 影子吞到同长的 file/list/application/{applicationFlag} 误配（exact 覆盖语义取遍历后者））
+async function loadDesignerFileApp() {
+  try {
+    const r: any = await api.get('/api/processplatform/assemble/designer/file/0/application/0')
+    const d = r?.data
+    toast.success(d?.name || d?.xid ? `文件定义「${d.name ?? d.xid}」@应用 0` : '未找到应用 0 下的文件定义 0')
+  } catch (e: any) {
+    toast.error('加载文件定义失败: ' + (e?.message ?? ''))
   }
 }
 // Connection rules state
