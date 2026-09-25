@@ -105,6 +105,8 @@ class SampleRequest(BaseModel):
     """采样请求
 
     `size` 与 `ratio` 二选一；都给时以 `size` 为准（`SampleConfig` 的既有语义）。
+    `stratify_key` 只在 `method="stratified"` 时生效，是分组字段名；空值由库层判据
+    拦下（400），不静默退化成随机采样。
     """
     input_file: str
     output_file: str
@@ -112,12 +114,19 @@ class SampleRequest(BaseModel):
     size: Optional[int] = None
     ratio: Optional[float] = None
     seed: Optional[int] = None
+    stratify_key: str = "instruction"
 
 
 class SplitRequest(BaseModel):
     """分割请求
 
     三个比例之和必须为 1，否则 `SplitConfig` 会拒绝。
+    `stratify=True` 时走分层支路（委托 `DataSplitter`），`stratify_key` 是分组字段，
+    空值报 400；此时比例校验改用被委托方的严口径（见 `docs/ARCHITECTURE.md` §3.16）。
+    `shuffle` 在两条支路上的口径**不同**（实测，20 条语料 0.5/0.25/0.25）：分层支路只把
+    每段成员按输入的原始相对顺序回排，成员与条数都不变，`seed` 仍决定谁进哪段；默认支路
+    是「先整份打乱再按位置切片」，所以 False 会连同成员一起改变，且三段恒为输入的前
+    50%/25%/25% —— 此时 `seed` 完全空转。可复现性一律交给 `seed`。
     """
     input_file: str
     output_dir: str
@@ -125,6 +134,9 @@ class SplitRequest(BaseModel):
     val_ratio: float = 0.1
     test_ratio: float = 0.1
     seed: Optional[int] = None
+    stratify: bool = False
+    stratify_key: str = "instruction"
+    shuffle: bool = True
 
 
 class SearchRequest(BaseModel):
@@ -744,7 +756,11 @@ async def dataset_merge(request: MergeRequest):
 @router.post("/api/dataset/sample", response_model=SampleResponse, summary="数据集采样",
              dependencies=[Depends(verify_api_key)])
 async def dataset_sample(request: SampleRequest):
-    """按数量或比例采样并落盘"""
+    """按数量或比例采样并落盘
+
+    `method="stratified"` 时按 `stratify_key` 分组配额抽样；响应只回「写到哪、写了多少」
+    （写盘变换类端点的成文约定，见 `docs/API.md` 的 dataset 分组说明）。
+    """
     try:
         from augmentor.dataset_ops import DatasetOperations, SampleConfig
 
@@ -761,6 +777,7 @@ async def dataset_sample(request: SampleRequest):
                     size=request.size,
                     ratio=request.ratio,
                     seed=request.seed,
+                    stratify_key=request.stratify_key,
                 ),
             )
 
@@ -774,7 +791,13 @@ async def dataset_sample(request: SampleRequest):
 @router.post("/api/dataset/split", response_model=SplitResponse, summary="分割数据集",
              dependencies=[Depends(verify_api_key)])
 async def dataset_split(request: SplitRequest):
-    """按比例把数据集切成 train / val / test 三份"""
+    """按比例把数据集切成 train / val / test 三份
+
+    `stratify=True` 走分层支路（`SplitConfig` 的这两个字段自 3.0 就在，L41 才接上算法）。
+    响应**不回传** `stratify_distribution`：真实语料（6,902 条）按 `instruction` 分层时它是
+    6,531 个键、紧凑 JSON 404,362 字节，是四计数响应的 5,119 倍，也违反本组「写盘变换类只回
+    写到哪、写了多少」的约定。要看分布请落盘后自行统计，或读 `DataSplitter` 的 SDK 返回值。
+    """
     try:
         from augmentor.dataset_ops import DatasetOperations, SplitConfig
 
@@ -789,6 +812,9 @@ async def dataset_split(request: SplitRequest):
                 SplitConfig(
                     ratios=(request.train_ratio, request.val_ratio, request.test_ratio),
                     seed=request.seed,
+                    shuffle=request.shuffle,
+                    stratify=request.stratify,
+                    stratify_key=request.stratify_key,
                 ),
             )
 

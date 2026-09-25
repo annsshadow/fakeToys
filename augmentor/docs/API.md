@@ -139,9 +139,9 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 | `POST` | `/api/dataset/impact` | 增强前后影响评估（四项增益） |
 | `POST` | `/api/dataset/merge` | 合并数据集 |
 | `POST` | `/api/dataset/rag` | 转换为 RAG 格式 |
-| `POST` | `/api/dataset/sample` | 数据集采样 |
+| `POST` | `/api/dataset/sample` | 数据集采样（`method="stratified"` 时按 `stratify_key` 分组） |
 | `POST` | `/api/dataset/search` | 数据集搜索 |
-| `POST` | `/api/dataset/split` | 分割数据集 |
+| `POST` | `/api/dataset/split` | 分割数据集（`stratify` 分层 / `stratify_key` 选字段 / `shuffle` 控段内次序） |
 | `POST` | `/api/dataset/stats` | 数据集统计 |
 | `POST` | `/api/dataset/validate` | 数据集验证 |
 
@@ -153,6 +153,15 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 > `impact` / `evaluate` 的口径细节（哪一侧空算 400、哪一侧空算结论，字段名拼错为什么
 > 必须报错而不是给一份「全空」统计）写在 `api/routes/dataset_tools.py` 对应函数的
 > 文档串里，并由 `tests/integration/test_api_dataset_system_tools.py` 逐条钉住。
+>
+> `sample` / `split` 的分层旋钮自 L42 起在请求体上可达：`split` 收 `stratify`（默认
+> `false`）、`stratify_key`（默认 `"instruction"`）、`shuffle`（默认 `true`），`sample` 收
+> `stratify_key`（默认 `"instruction"`，只在 `method="stratified"` 生效）。三个新字段全省略
+> 与 L42 之前的请求交出同一条三段产物，**响应形态一字未改** —— `stratify_distribution` 不回传：真实
+> 6,902 条按 `instruction` 分层时它有 6,531 个键、紧凑 JSON 404,362 字节，是四计数响应的
+> 5,119 倍，也违反上面那条约定。空 `stratify_key` 一律 400，不静默退化成随机或不分层。
+> `shuffle` 在两条支路上的口径**不同**（分层支路只回排段内顺序、默认支路连成员一起改且
+> `seed` 空转），细节见 `SplitRequest` 文档串与 `docs/ARCHITECTURE.md` §3.17。
 
 ### export（4）
 

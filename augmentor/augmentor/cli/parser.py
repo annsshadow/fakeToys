@@ -270,6 +270,8 @@ def build_parser() -> argparse.ArgumentParser:
     sample_parser.add_argument("--method", type=str, default="random",
                                choices=["random", "systematic", "stratified"], help="采样方法")
     sample_parser.add_argument("--seed", type=int, help="随机种子")
+    sample_parser.add_argument("--stratify-key", type=str, default="instruction",
+                               help="分层采样的分组字段（仅 --method stratified 生效；空值报错）")
 
     # 数据集分割命令
     split_parser = subparsers.add_parser("split", help="分割数据集")
@@ -279,6 +281,13 @@ def build_parser() -> argparse.ArgumentParser:
     split_parser.add_argument("--val-ratio", type=float, default=0.1, help="验证集比例")
     split_parser.add_argument("--test-ratio", type=float, default=0.1, help="测试集比例")
     split_parser.add_argument("--seed", type=int, help="随机种子")
+    split_parser.add_argument("--stratify", action="store_true",
+                              help="按字段分层分割（委托 DataSplitter，比例校验改用其严口径）")
+    split_parser.add_argument("--stratify-key", type=str, default="instruction",
+                              help="分层分割的分组字段（--stratify 时空值报错）")
+    split_parser.add_argument("--no-shuffle", action="store_true",
+                              help="关闭打乱：分层时只把段内成员按输入原序回排（成员不变）；"
+                                   "不分层时连成员一起改变，且 --seed 不再起作用")
 
     # 数据集统计命令
     stats_parser = subparsers.add_parser("stats", help="数据集统计信息")

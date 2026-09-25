@@ -64,6 +64,18 @@ STRATIFIED_ITEMS = [
     for i in range(1, 6)
 ]
 
+# 分层分割的输入：20 条，`instruction` 两类各 10 条（平衡），`category` 偏斜为 18 x + 2 y。
+# 两个字段故意互相错开（后两条 y 同时是「类别乙」）：按 `instruction` 分层时 val 必然
+# 两类都有，按 `category` 分层时 val 全是 x —— 「分层键有没有真的传到分组那一侧」
+# 一条断言就能分辨。`output` 每条唯一且形如 o0..o19，用来检查段内顺序。
+SPLIT_KNOB_ITEMS = [
+    {"instruction": "类别甲" if i < 10 else "类别乙",
+     "category": "y" if i >= 18 else "x",
+     "input": "", "output": f"o{i}"}
+    for i in range(20)
+]
+SPLIT_KNOB_RATIOS = {"train_ratio": 0.5, "val_ratio": 0.25, "test_ratio": 0.25}
+
 
 def _write_json(path: Path, items) -> Path:
     """写入 JSON 数据集文件
@@ -177,6 +189,22 @@ def _read_json(path: Path):
         解析结果
     """
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _count_by(items, field):
+    """按字段值计数（只保留出现过的值）
+
+    Args:
+        items: 数据列表
+        field: 字段名
+
+    Returns:
+        字段值 -> 条数
+    """
+    out = {}
+    for item in items:
+        out[item[field]] = out.get(item[field], 0) + 1
+    return out
 
 
 # ============================================================
@@ -1174,6 +1202,75 @@ class TestDatasetSample:
         # 每类都不缺席（≥1），余数也不堆到单一类（≤2）
         assert sorted(counts.values()) == [1, 2, 2, 2]
 
+    @pytest.mark.parametrize("key,expected", [
+        ("instruction", {"类别甲": 2, "类别乙": 2, "类别丙": 2, "类别丁": 2}),
+        ("output", {"类别甲": 5, "类别乙": 3}),
+    ], ids=["by_class", "by_unique_field"])
+    def test_stratify_key_reaches_the_grouping(self, tools_env, key, expected):
+        """`stratify_key` 必须是产品面能拧的旋钮：换键就换形状
+
+        L42 前请求模型没有这个字段，`method="stratified"` 只能按出厂的 `instruction`
+        分组，换字段这条能力在产品面上完全不可达。`size=8, seed=7`（Temp `l42e.py` 实测）：
+        按 `instruction` 是 4 类各 2 条，按 `output`（20 个唯一组、每组配额 1）只覆盖到
+        前两类。硬编码键的缺陷态在第二行必红。
+        """
+        src = _write_json(tools_env.tmp / "stratified.json", STRATIFIED_ITEMS)
+        response = tools_env.client.post(
+            "/api/dataset/sample",
+            json={
+                "input_file": str(src),
+                "output_file": str(tools_env.out),
+                "method": "stratified",
+                "size": 8,
+                "seed": 7,
+                "stratify_key": key,
+            },
+        )
+        assert response.status_code == 200, response.text
+        rows = _read_json(tools_env.out)
+        assert len(rows) == 8
+        assert _count_by(rows, "instruction") == expected
+
+    def test_blank_stratify_key_is_400(self, tools_env):
+        """分层采样不给键：400，不静默退化成随机样本
+
+        退化形状实测过（Temp `l42b.py`）：空键时 4 类 × 5 条取 8 条交出 `5/2/1`，
+        正常键恒为 `2/2/2/2` —— 调用方拿到随机样本却以为是分层样本。判据在库层
+        （`_stratified_sample`），这里只钉它接得上 HTTP。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/sample",
+            json={
+                "input_file": str(tools_env.data),
+                "output_file": str(tools_env.out),
+                "method": "stratified",
+                "size": 3,
+                "stratify_key": "",
+            },
+        )
+        assert response.status_code == 400, response.text
+        assert "分层采样需要非空" in response.json()["detail"]
+
+    @pytest.mark.parametrize("method", ["random", "systematic"],
+                             ids=["random", "systematic"])
+    def test_blank_stratify_key_ignored_by_other_methods(self, tools_env, method):
+        """对照组：另外两种方法不读分组键，空键照旧可用
+
+        判据只管分层支路。缺陷形状是把校验写在 `sample()` 入口 —— 那样这两行会红。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/sample",
+            json={
+                "input_file": str(tools_env.data),
+                "output_file": str(tools_env.out),
+                "method": method,
+                "size": 3,
+                "stratify_key": "",
+            },
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["output_count"] == 3
+
 
 class TestDatasetSplit:
     """/api/dataset/split"""
@@ -1236,6 +1333,134 @@ class TestDatasetSplit:
         counts = {name: part["count"] for name, part in splits.items()}
         assert counts == {"train": 5, "val": 1, "test": 1}
         assert Path(splits["val"]["file"]).is_file()
+
+
+class TestDatasetSplitContractKnobs:
+    """/api/dataset/split 的分层与保序旋钮（A56：L41 能力的产品面入口）
+
+    `SplitConfig` 的 `stratify` / `stratify_key` / `shuffle` 三个字段自 3.0 就在，分层算法
+    L41 才接上，而这个端点以前只发比例与种子 —— 于是 L41 修好的东西对 HTTP 调用方仍然
+    不可见（只有 SDK 构造 `SplitConfig` 才走得到）。本轮接旋钮，**响应形态一字不改**：
+    写盘变换类端点只回「写到哪、写了多少」（`docs/API.md` 的 dataset 分组约定），而实测
+    真实 6,902 条语料按 `instruction` 分层时 `stratify_distribution` 有 6,531 个键、
+    紧凑 JSON 404,362 字节，是四计数响应的 5,119 倍。
+
+    所有期望值来自探针（Temp `l42f.py` / `l42g.py`），语料是 `SPLIT_KNOB_ITEMS`。
+    """
+
+    @staticmethod
+    def _split(tools_env, sub, **extra):
+        """对 `SPLIT_KNOB_ITEMS` 跑一次分割请求
+
+        Args:
+            tools_env: 环境 fixture
+            sub: 本次请求的输出子目录名（同一次用例里不能复用，否则后一份盖掉前一份）
+            **extra: 追加的请求字段
+
+        Returns:
+            (响应 JSON, {段名: 落盘条目})
+        """
+        src = _write_json(tools_env.tmp / "knobs.json", SPLIT_KNOB_ITEMS)
+        out_dir = tools_env.tmp / sub
+        response = tools_env.client.post(
+            "/api/dataset/split",
+            json={"input_file": str(src), "output_dir": str(out_dir),
+                  **SPLIT_KNOB_RATIOS, **extra},
+        )
+        assert response.status_code == 200, response.text
+        payload = response.json()
+        segments = {name: _read_json(Path(payload["splits"][name]["file"]))
+                    for name in ("train", "val", "test")}
+        return payload, segments
+
+    def test_stratify_rebalances_classes_without_moving_segment_sizes(self, tools_env):
+        """分层改的是每段的类别配比，不改段尺寸
+
+        seed=0、0.5/0.25/0.25：不分层 val 是 `甲4/乙1`（输入明明 10/10 平衡），分层恒为
+        `甲3/乙2`，train 从 `甲4/乙6` 变成 `甲5/乙5`；两种口径的段尺寸都是 10/5/5。
+        缺陷态（旋钮没接上）里分层档会交出与不分层逐条同答的产物。
+        """
+        _, plain = self._split(tools_env, "plain", seed=0)
+        _, strat = self._split(tools_env, "strat", seed=0, stratify=True)
+        assert {k: len(v) for k, v in plain.items()} == \
+               {k: len(v) for k, v in strat.items()} == \
+               {"train": 10, "val": 5, "test": 5}
+        assert _count_by(plain["val"], "instruction") == {"类别甲": 4, "类别乙": 1}
+        assert _count_by(strat["val"], "instruction") == {"类别甲": 3, "类别乙": 2}
+        assert _count_by(strat["train"], "instruction") == {"类别甲": 5, "类别乙": 5}
+
+    @pytest.mark.parametrize("key,expected_val", [
+        ("instruction", {"类别甲": 3, "类别乙": 2}),
+        ("category", {"类别甲": 4, "类别乙": 1}),
+    ], ids=["balanced_field", "skewed_field"])
+    def test_stratify_key_selects_the_grouping(self, tools_env, key, expected_val):
+        """`stratify_key` 必须真的当分组字段用：换字段就换产物
+
+        语料里 `instruction` 是 10/10 平衡、`category` 是 18 x + 2 y（两条 y 恰好也是
+        「类别乙」）。按前者分层 val 两类都有；按后者分层 val 全是 x，于是 val 的
+        `instruction` 形状退回 `甲4/乙1`。把键硬编码成 `instruction` 的缺陷态在第二行必红。
+        """
+        _, strat = self._split(tools_env, f"key_{key}", seed=0,
+                               stratify=True, stratify_key=key)
+        assert _count_by(strat["val"], "instruction") == expected_val
+
+    def test_blank_stratify_key_is_400(self, tools_env):
+        """开了分层不给键：400，而不是静默按不分层跑"""
+        response = tools_env.client.post(
+            "/api/dataset/split",
+            json={
+                "input_file": str(tools_env.data),
+                "output_dir": str(tools_env.out_dir),
+                "stratify": True,
+                "stratify_key": "",
+            },
+        )
+        assert response.status_code == 400, response.text
+        assert "分层分割需要非空" in response.json()["detail"]
+
+    def test_shuffle_false_on_stratified_path_only_restores_order(self, tools_env):
+        """分层支路上 `shuffle=False` 只回排段内顺序：成员与条数都不动
+
+        同 seed 两次请求（True / False）三段尺寸一致、成员集合一致，只是 False 那份按
+        输入的 `o0..o19` 顺序排好，True 那份没排。`seed` 在这里仍然决定谁进哪段。
+        """
+        _, shuffled = self._split(tools_env, "shuf", seed=0, stratify=True)
+        _, ordered = self._split(tools_env, "ord", seed=0, stratify=True, shuffle=False)
+        for name in ("train", "val", "test"):
+            got = [row["output"] for row in ordered[name]]
+            want = [row["output"] for row in shuffled[name]]
+            assert len(got) == len(want)
+            assert sorted(got) == sorted(want), f"{name} 的成员被 shuffle 旋钮改动了"
+            assert got == sorted(got, key=lambda o: int(o[1:]))
+            assert want != sorted(want, key=lambda o: int(o[1:]))
+
+    def test_shuffle_false_on_default_path_freezes_the_seed(self, tools_env):
+        """默认支路上 `shuffle=False` 是另一套口径：成员整段换掉，且 seed 空转
+
+        这不是本轮引入的新行为，而是「先整份打乱再按位置切片」的既有形状 —— 接上旋钮就
+        必须把它钉成事实，免得日后被当成回归。两个不同 seed 的 `shuffle=False` 产物逐条
+        同答，三段就是输入的前 10 / 中 5 / 后 5 条。口径统一（另立 Backlog A60）。
+        """
+        _, first = self._split(tools_env, "d0", seed=0, shuffle=False)
+        _, second = self._split(tools_env, "d1", seed=99, shuffle=False)
+        assert first == second, "默认支路的 shuffle=False 仍随 seed 变，口径说明已失效"
+        assert [row["output"] for row in first["train"]] == [f"o{i}" for i in range(10)]
+        assert [row["output"] for row in first["val"]] == [f"o{i}" for i in range(10, 15)]
+        assert [row["output"] for row in first["test"]] == [f"o{i}" for i in range(15, 20)]
+
+    def test_new_knobs_default_to_pre_l42_behavior(self, tools_env):
+        """三个新字段全省略 == 显式默认值 == L42 之前的请求：逐字节同产物
+
+        契约只能是加法：老客户端不发新字段时，三段文件必须一个字节都不变。
+        """
+        legacy, legacy_segments = self._split(tools_env, "legacy", seed=7)
+        explicit, explicit_segments = self._split(
+            tools_env, "explicit", seed=7,
+            stratify=False, shuffle=True, stratify_key="instruction")
+        assert legacy_segments == explicit_segments
+        # 只比计数：`file` 里带着各自的输出目录名，两份产物本就写在不同子目录
+        assert {k: v["count"] for k, v in legacy["splits"].items()} == \
+               {k: v["count"] for k, v in explicit["splits"].items()}
 
 
 class TestDatasetAggregate:
