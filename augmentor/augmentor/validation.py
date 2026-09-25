@@ -5,7 +5,8 @@
 
 提供数据集格式验证、完整性检查等功能，以及跨模块共用的标量入参判据
 （`require_count` 计数旋钮 / `require_seconds` 时长旋钮 /
-`require_positive` 无量纲倍率旋钮 / `require_ratio` 0-1 比例旋钮）。
+`require_positive` 无量纲倍率旋钮 / `require_ratio` 0-1 比例旋钮 /
+`require_string` 非空字符串旋钮 / `require_string_list` 字符串列表旋钮）。
 """
 
 import json
@@ -22,7 +23,8 @@ from augmentor.exceptions import DataValidationError
 logger = logging.getLogger(__name__)
 
 
-def require_count(name: str, value: Any, minimum: int = 0) -> Optional[int]:
+def require_count(name: str, value: Any, minimum: int = 0,
+                  maximum: Optional[int] = None) -> Optional[int]:
     """校验「取前 N 条 / 向后移 N 条」这类计数旋钮，返回原值。
 
     口径：这类旋钮只有一种合法读法——**要多少条**。它们在实现里几乎都落到
@@ -42,13 +44,20 @@ def require_count(name: str, value: Any, minimum: int = 0) -> Optional[int]:
         minimum: 允许的下界。默认 0——「一条都不要」是合法请求（只要计数、
             只要格式信息），必须与「没传参数」区分开。需要强制正数的调用点
             （如每轮必须选出样本的主动学习）显式传 1。
+        maximum: 允许的上界（含），默认 `None` 表示不设上界。这一维是给**配置对象**
+            用的（L51 / A77）：计数旋钮越上界的代价不是「换语义」而是「量级失控」——
+            改前实测 `AugmentationConfig(max_retries=10**6)` 无任何判据地构造成功，
+            按 §3.24 的等待公式它就是 `999999 × 300 s ≈ 83,333 h` 的最坏等待预算，
+            而这条天花板此前只写在 `config_validator`（`max_retries ≤ 20`）里，
+            只有显式跑过 `validate-config` 的人才拿得到反馈。
 
     Returns:
         校验通过后的原值。`None` 直接放行——「未提供」由各调用点自己决定
         回落哪个默认值，这里不替它决定。
 
     Raises:
-        DataValidationError: 值不是整数（`bool` 也不算），或小于 `minimum`
+        DataValidationError: 值不是整数（`bool` 也不算），或小于 `minimum`，
+            或大于 `maximum`
     """
     if value is None:
         return None
@@ -58,6 +67,10 @@ def require_count(name: str, value: Any, minimum: int = 0) -> Optional[int]:
         )
     if value < minimum:
         raise DataValidationError(f"{name} 必须是不小于 {minimum} 的整数，当前是 {value}")
+    if maximum is not None and value > maximum:
+        raise DataValidationError(
+            f"{name} 必须是不大于 {maximum} 的整数，当前是 {value}"
+        )
     return value
 
 
@@ -206,6 +219,81 @@ def require_ratio(name: str, value: Any,
         raise DataValidationError(
             f"{name} 必须是 {minimum} 到 {maximum} 之间的比例，当前是 {value}"
         )
+    return value
+
+
+def require_string(name: str, value: Any) -> str:
+    """校验「主机名 / 目录名」这类**必须是非空字符串**的旋钮，返回原值。
+
+    与标量家族的其他成员有一处关键差别：**这里 `None` 不放行**。那一条是为
+    函数入参设计的（「没传参数」由各调用点回落默认值），而配置对象的字段没有
+    「没传」这种状态 —— YAML 里写了键却没给值，读进来就是 `None`，实测
+    `load_config` 会把它原样放进字段（`port=None`、`data_roots=None`）。这一
+    步判掉的正是「字段值是 `None` 却被下游按字符串用」：`api/deps.py` 里
+    `Path(str(p))` 会把 `None` 变成一个**名叫 `None` 的目录根**（实测改前
+    `data_roots=[None]` 得到 `<cwd>/None`），而这类根目录是白名单，静默可用
+    比静默不可用更坏。
+
+    空串一并拒：`host: ""` 与 `static_dir: ""` 都不是「未设置」而是「设置成了
+    无意义值」，留给下游去猜。
+
+    Returns:
+        校验通过后的原值（**不放行 `None`**，与同族其他判据不同，理由见上）
+
+    Raises:
+        DataValidationError: 值不是字符串（`bool` 也不算）或是空串
+    """
+    if isinstance(value, bool) or not isinstance(value, str):
+        raise DataValidationError(
+            f"{name} 必须是字符串，当前是 {value!r}（{type(value).__name__}）"
+        )
+    if not value:
+        raise DataValidationError(f"{name} 不能是空字符串")
+    return value
+
+
+def require_string_list(name: str, value: Any) -> list:
+    """校验「目录白名单 / 跨源白名单」这类**字符串列表**旋钮，返回原值。
+
+    同样不放行 `None`（见 `require_string` 的理由）。要判掉的是两类实测过的
+    「形状合法、语义完全不同」的写法：
+
+    - **写成标量**：`data_roots: data` 与 `cors_origins: "https://api.corp.example"`。
+      前者被逐字符迭代成 `d/a/t/a` 四个根（实测 4 个），数据端点全 403，症状长得
+      像后端坏了；后者的后果不是「不生效」而是**放宽** —— starlette 1.6.0 与
+      1.2.1 实测同形：`allow_origins` 是字符串时 `origin in allow_origins` 走的是
+      **子串**匹配，配置 `"https://api.corp.example"` 会放行 `https://api.corp` 与
+      `https://api` 两个完全不同的主机，而写成列表时两个都拒。访问控制项被写成
+      标量就静默变成前缀匹配，这是本判据存在的最硬理由。
+    - **列表里混进非字符串**：`[None]` / `[123]` —— 下游 `Path(str(p))` 把它们
+      变成名叫 `None` / `123` 的根目录，同样静默。
+
+    空列表放行：`cors_origins: []` 是 L50 的出厂默认（一个跨源也不放行），
+    `rate_limit_exempt_paths: []` 是「不豁免」，两者都是有意义的显式选择。
+
+    这里**不**判断元素内容（URL 是否合法、路径是否存在、豁免前缀以 `/` 开头
+    才可能命中请求路径）—— 那些是各消费点自己的语义，判在这里会把「配置形状」
+    与「业务语义」两件事焊死。
+
+    Returns:
+        校验通过后的原列表
+
+    Raises:
+        DataValidationError: 值不是 list、元素不是字符串、或元素是空串
+    """
+    if not isinstance(value, list):
+        raise DataValidationError(
+            f"{name} 必须是列表（YAML 里要用 `- 项` 写成序列，不能写成标量），"
+            f"当前是 {value!r}（{type(value).__name__}）"
+        )
+    for item in value:
+        if isinstance(item, bool) or not isinstance(item, str):
+            raise DataValidationError(
+                f"{name} 的每一项必须是字符串，当前含 {item!r}"
+                f"（{type(item).__name__}）"
+            )
+        if not item:
+            raise DataValidationError(f"{name} 的每一项不能是空字符串")
     return value
 
 
