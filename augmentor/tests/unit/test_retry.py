@@ -5,7 +5,8 @@
 
 覆盖 compute_delay 指数/封顶/抖动、with_retries 成功/重试耗尽/
 不可重试异常、sleeper 注入与 on_retry 回调、RetryStats 统计、
-重试计数旋钮（max_retries / attempt）的越界入参。
+重试计数旋钮（max_retries / attempt）与退避浮点旋钮（base_delay /
+factor / max_delay）的越界入参、两副等待封顶各管一支的口径（A72）。
 """
 
 import random
@@ -14,6 +15,11 @@ import pytest
 
 from augmentor import RetryStats, compute_delay, should_retry, with_retries
 from augmentor.exceptions import DataValidationError
+
+
+def _always_fail():
+    """恒定失败的目标：只关心「每次重试前睡了多久」"""
+    raise RuntimeError("boom")
 
 
 class TestComputeDelay:
@@ -375,3 +381,122 @@ class TestRetryCountKnobs:
             compute_delay(0, 1.0, 2.0, 30.0)
         with pytest.raises(DataValidationError, match="attempt"):
             compute_delay(-3, 1.0, 2.0, 30.0)
+
+
+class TestRetryFloatKnobs:
+    """退避浮点旋钮（base_delay / factor / max_delay）在 `with_retries` 处的判据
+
+    与 `TestRetryCountKnobs` 成对：那一条管「重试几次」，这一条管「每档等多久」。
+    修之前实测的三个症状（Temp `l47_probe.py`，`max_retries` 取 2 或 3）：
+    `base_delay='1'` → 第一次真实调用照常打出去，退避时才炸
+    `TypeError: can't multiply sequence by non-int of type 'float'`，原始异常丢失；
+    `base_delay=True` → 静默读成 1.0，sleeper 收到 `[1.0, 2.0]`；
+    `max_delay=-1` → 整条退避被 `min()` 加尾部 `max(0.0, …)` 收成 `[0.0, 0.0]`。
+    """
+
+    @pytest.mark.parametrize(
+        "kwargs,name",
+        [
+            ({"base_delay": "1"}, "base_delay"),
+            ({"base_delay": -5.0}, "base_delay"),
+            ({"base_delay": True}, "base_delay"),
+            ({"base_delay": float("nan")}, "base_delay"),
+            ({"factor": 0.0}, "factor"),
+            ({"factor": -2.0}, "factor"),
+            ({"factor": float("nan")}, "factor"),
+            ({"max_delay": -1.0}, "max_delay"),
+            ({"max_delay": float("nan")}, "max_delay"),
+        ],
+    )
+    def test_bad_knob_fails_before_the_first_request(self, kwargs, name):
+        """坏档位不该先换来一次真金白银的请求、再从循环里抛出无关的 TypeError"""
+        calls = []
+
+        def never_run():
+            calls.append(1)
+            return "ok"
+
+        with pytest.raises(DataValidationError, match=name):
+            with_retries(never_run, max_retries=2, sleeper=lambda d: None, **kwargs)
+        assert calls == []
+
+    def test_zero_and_infinite_delays_stay_legal(self):
+        """`base_delay=0` 是「不等待」，`max_delay=inf` 是「交给退避公式」，都合法"""
+        slept = []
+        with pytest.raises(RuntimeError):
+            with_retries(_always_fail, max_retries=1, base_delay=0.0,
+                         sleeper=slept.append)
+        assert slept == [0.0]
+
+        slept = []
+        with pytest.raises(RuntimeError):
+            with_retries(_always_fail, max_retries=1, base_delay=1.0,
+                         max_delay=float("inf"), sleeper=slept.append)
+        assert slept == [1.0]
+
+    def test_legal_knobs_still_produce_the_same_sequence(self):
+        """收紧入参不得改动合法档位的退避数值（与 `compute_delay` 逐档对齐）"""
+        slept = []
+        with pytest.raises(RuntimeError):
+            with_retries(_always_fail, max_retries=3, base_delay=0.5, factor=3.0,
+                         max_delay=10.0, sleeper=slept.append)
+        assert slept == [compute_delay(n, 0.5, 3.0, 10.0) for n in (1, 2, 3)]
+
+
+class TestTwoDelayCeilings:
+    """A72：两副封顶各管一支，且**故意**互不相犯
+
+    一支是退避计算（归调用方传的 `max_delay`），另一支是服务端 `Retry-After`
+    （归 `MAX_RETRY_AFTER`）。`models/base.py` 的 `_MAX_RETRY_DELAY` 曾被注释成
+    「单次重试等待上限」，而实测 429 + `Retry-After: 45` 时 sleeper 收到 45.0 ——
+    那句话说的是这一支管不到的事。口径见 docs/ARCHITECTURE.md §3.22。
+    """
+
+    @staticmethod
+    def _suggests(seconds):
+        return lambda exc: (True, seconds)
+
+    def test_max_delay_does_not_clamp_a_server_instruction(self):
+        """把「90 秒后再来」夹成 30 s = 对刚说过别敲门的服务端提前 3 倍敲门"""
+        slept = []
+        with pytest.raises(RuntimeError):
+            with_retries(_always_fail, max_retries=2, max_delay=30.0,
+                         classify=self._suggests(45.0), sleeper=slept.append)
+        assert slept == [45.0, 45.0]
+
+    def test_max_retry_after_clamps_it_instead(self):
+        """服务端要 10 天也只等 300 s：这一支并非不设限，只是上限在别处"""
+        from augmentor import MAX_RETRY_AFTER
+
+        slept = []
+        with pytest.raises(RuntimeError):
+            with_retries(_always_fail, max_retries=2, max_delay=30.0,
+                         classify=self._suggests(864_000.0), sleeper=slept.append)
+        assert slept == [MAX_RETRY_AFTER, MAX_RETRY_AFTER]
+
+    def test_max_delay_does_clamp_the_computed_branch(self):
+        """对照组：没有服务端建议时，`max_delay` 确实是那一支的上限"""
+        slept = []
+        with pytest.raises(RuntimeError):
+            with_retries(_always_fail, max_retries=2, base_delay=100.0,
+                         max_delay=30.0, sleeper=slept.append)
+        assert slept == [30.0, 30.0]
+
+    @pytest.mark.parametrize("suggested", [-3.0, 0.0])
+    def test_nonsense_suggestion_reads_as_immediate_not_error(self, suggested):
+        """负数是「时限早已过」的读法：等 0 s 重发，与 `parse_retry_after` 把过去
+        的 HTTP-date 收成 0.0 同一口径（实测 `parse_retry_after("-3") == 0.0`、
+        过去 2 小时的日期 → 0.0），所以这里刻意不判成坏输入。
+        """
+        slept = []
+        with pytest.raises(RuntimeError):
+            with_retries(_always_fail, max_retries=1,
+                         classify=self._suggests(suggested), sleeper=slept.append)
+        assert slept == [0.0]
+
+    def test_both_ceilings_match_what_the_docs_promise(self):
+        """改任一常数都得同步 §3.22 / §6 / `_MAX_RETRY_DELAY` 的注释，不能让文档漂走"""
+        from augmentor import MAX_RETRY_AFTER
+        from augmentor.models.base import ModelBackend
+
+        assert (MAX_RETRY_AFTER, ModelBackend._MAX_RETRY_DELAY) == (300.0, 30.0)

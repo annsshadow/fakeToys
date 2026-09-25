@@ -3,8 +3,9 @@
 
 """重试与指数退避模块
 
-为模型调用等易失败的外部操作提供统一的重试策略：
-指数退避 + 上限封顶 + 可选抖动，sleeper 可注入以便测试。
+为模型调用等易失败的外部操作提供统一的重试策略：指数退避 + 两副封顶
+（退避计算一支归 `max_delay`，服务端 `Retry-After` 一支归 `MAX_RETRY_AFTER`）
++ 可选抖动，sleeper 可注入以便测试。
 """
 
 import logging
@@ -13,7 +14,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional, Tuple, Type
 
-from .validation import require_count
+from .validation import require_count, require_positive, require_seconds
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,13 @@ except ImportError:  # pragma: no cover - requests 是核心依赖，缺失时�
 RETRYABLE_STATUS_CODES = frozenset({408, 425, 429, 500, 502, 503, 504})
 
 # 服务端 Retry-After 的采纳上限（秒）。避免异常大的值让流水线长时间挂起。
+#
+# 这是**第二副封顶**，与调用方传的 `max_delay`（退避计算那一支的上限）互不相犯：
+# 服务端明确说「90 秒后再来」时就等 90 s —— 它不被 `max_delay` 压低（夹成 30 s 等
+# 于对刚说过「别敲门」的服务端提前 3 倍敲门），但被本常数夹住（服务端要 10 天也只
+# 等 300 s）。一次 `generate()` 的最坏总等待因此是
+# `(总尝试次数 - 1) × 300`，而不是 `(总尝试次数 - 1) × max_delay`。
+# 口径的来龙去脉见 docs/ARCHITECTURE.md §3.22。
 MAX_RETRY_AFTER = 300.0
 
 
@@ -63,19 +71,34 @@ def compute_delay(attempt: int,
             是指数，传 0 或负数不会报「等太久」，而是静默把退避算成 2 的负次幂
             （实测 `attempt=0` → 基础的 0.5 倍、`-3` → 0.0625 倍），即「第 0 次重试
             比第 1 次等得更短」这种无对应现实的档位。
-        base_delay: 基础等待（秒）
-        factor: 指数因子
-        max_delay: 等待上限（秒）
-        jitter: 随机抖动比例（0-1），在指数值上叠加 [0, jitter*delay]
+        base_delay: 基础等待（秒）。判据 `require_seconds`：实测 `base_delay=-5` 时
+            首尾两道夹逼会把它静默收成 ``0.0``（想要「等 5 秒」拿到「立刻重试」），
+            `NaN` 收成 ``max_delay``，所以只能在入参处判。
+        factor: 指数因子。判据 `require_positive`（**必须大于 0**）：实测 `0` 给出
+            ``[1.0, 0.0, 0.0]``、`-2` 给出 ``[1.0, 0.0, 4.0]`` 这种隔档不等待的非
+            单调序列，`NaN` 给出 ``[1.0, 30.0, 30.0]``，字符串与 `None` 则在幂运算
+            处炸成与「参数写错」无关的 `TypeError`。
+        max_delay: 等待上限（秒），只封顶**退避计算**这一支；服务端 `Retry-After`
+            走 `with_retries` 的另一支、封顶在 `MAX_RETRY_AFTER`（见该常数的注释）。
+            判据 `require_seconds`：实测 `max_delay=-1` 会把整条退避清零（`min()` 交出
+            它再被尾部夹 0），而 `max_delay=0` 是合法的「不等待」请求，故下界取 0。
+        jitter: 随机抖动比例（0-1），在指数值上叠加 [0, jitter*delay]。**尚无判据**
+            —— 产品里没有任何路径能把非默认 `jitter` 传进来（A65），而实测
+            `jitter=50` 会让结果（61.09 s）越过 `max_delay=30`，所以区间判据与透传
+            必须同一轮做，不留半保护的中间态。
         rng: 随机数生成器（可注入以便测试）
 
     Returns:
         等待秒数（>= 0）
 
     Raises:
-        DataValidationError: `attempt` 不是整数或小于 1
+        DataValidationError: `attempt` 不是整数或小于 1；`base_delay` / `max_delay`
+            不是不小于 0 的秒数；`factor` 不是大于 0 的数值
     """
     require_count("attempt", attempt, minimum=1)
+    require_seconds("base_delay", base_delay, minimum=0.0)
+    require_positive("factor", factor)
+    require_seconds("max_delay", max_delay, minimum=0.0)
     delay = min(max_delay, base_delay * (factor ** (attempt - 1)))
     if jitter > 0:
         rng = rng or random.Random()
@@ -105,24 +128,36 @@ def with_retries(func: Callable[..., Any],
             `raise last_exc` 变成 `raise None` —— 实测症状是
             `TypeError: exceptions must derive from BaseException`，一个与
             「参数写错了」毫无关系的报错。
-        base_delay/factor/max_delay: 退避参数
+        base_delay/factor/max_delay: 退避参数，判据与 `compute_delay` 同名三参一致
+            （`require_seconds` / `require_positive`）。在这里判一遍**不是重复劳动**：
+            `compute_delay` 只在第一次失败之后才被走到，坏值会先白烧一次真实请求，
+            再从循环里抛出与「参数写错」无关的 `TypeError`（实测 `base_delay='1'` 的
+            症状），而那时原始异常已经彻底丢了。
         retry_on: 触发重试的异常类型元组
         sleeper: 等待函数（测试可注入）
         on_retry: 每次重试前的回调 (attempt, exc, delay)
         classify: 错误分类函数，返回 ``(是否可重试, 建议等待秒数)``。
             返回 ``(False, _)`` 时立即放弃重试并抛出原异常——用于区分
             「限流/网络抖动」（值得重试）与「鉴权失败/参数错误」（重试纯属浪费）。
-            建议等待秒数非 None 时优先于退避计算结果（如 HTTP ``Retry-After``）。
+            建议等待秒数非 None 时**替换**退避计算结果（如 HTTP ``Retry-After``），
+            并且只受 `MAX_RETRY_AFTER` 封顶 —— 上面那组 `base_delay/factor/max_delay`
+            在这一支全部参不到场，两副封顶互不相犯（细节见 `MAX_RETRY_AFTER` 的注释
+            与 docs/ARCHITECTURE.md §3.22）。
         **kwargs: 关键字参数
 
     Returns:
         (func 的返回值, RetryStats)
 
     Raises:
-        DataValidationError: `max_retries` 不是整数或为负
+        DataValidationError: `max_retries` 不是不小于 0 的整数，或 `base_delay` /
+            `max_delay` / `factor` 非法（在调用 `func` **之前**判掉）
         重试耗尽后抛出最后一次异常；被 classify 判定为不可重试时立即抛出
     """
+    # 判参排在循环之前：`func` 可能是一次真实的付费 API 调用，坏档位不该先把它打出去
     require_count("max_retries", max_retries, minimum=0)
+    require_seconds("base_delay", base_delay, minimum=0.0)
+    require_positive("factor", factor)
+    require_seconds("max_delay", max_delay, minimum=0.0)
     stats = RetryStats()
     last_exc: Optional[BaseException] = None
 
@@ -149,6 +184,8 @@ def with_retries(func: Callable[..., Any],
             if attempt >= max_retries:
                 break
 
+            # 两支的封顶不同，且这是刻意的：服务端指令一支只归 `MAX_RETRY_AFTER` 管，
+            # **不夹 `max_delay`** —— 把「90 秒后再来」夹成 30 s 等于提前 3 倍敲门。
             if suggested is not None:
                 delay = min(MAX_RETRY_AFTER, max(0.0, float(suggested)))
             else:
