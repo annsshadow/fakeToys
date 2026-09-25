@@ -7,6 +7,7 @@
       <h1>文件管理</h1>
       <div class="header-actions">
         <button class="action-btn primary" @click="handleUpload">📤 上传</button>
+        <button @click="loadResidualStub">残余接桩</button>
         <button class="action-btn" @click="loadTopAttachments">📎 顶层附件</button>
         <button class="action-btn" @click="loadFileMeta">🗄️ 附件2/编辑器</button>
         <button class="action-btn" @click="loadAttachmentSearch">🔎 附件检索</button>
@@ -938,6 +939,65 @@ async function loadFileTwin3() {
   } catch (e: any) {
     toast.error('文件桶外端点C失败: ' + (e?.message ?? ''))
   }
+}
+
+async function loadResidualStub() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  await Promise.all([
+    s(api.post('/api/fileinfo/upload/document/0', {})),
+    s(api.post('/api/file/0/upload', {})),
+    s(api.post('/api/fileinfo/upload/doc/0/save/as/0', {})),
+    s(api.post('/api/fileinfo/upload/document/0/callback/0', {})),
+    s(api.post('/api/file/upload', {})),
+    s(api.post('/api/file/assemble/control/file/upload', {})),
+    s(api.get('/api/file/anonymous/file/id/download')),
+    s(api.get('/api/file/attachment/id/binary/base64')),
+    s(api.get('/api/file/attachment/id/download')),
+    s(api.get('/api/file/attachment/id/image/scale/scale/binary/base64')),
+    s(api.get('/api/file/attachment/id/image/width/width/height/height/binary/base64')),
+    s(api.get('/api/file/attachment2/id/binary/base64')),
+    s(api.get('/api/file/attachment2/id/download')),
+    s(api.get('/api/file/attachment2/id/download/image/width/width/height/height')),
+    s(api.get('/api/file/attachment2/id/download/stream')),
+    s(api.get('/api/file/attachment2/id/image/scale/scale/binary/base64')),
+    s(api.get('/api/file/attachment2/id/image/width/width/height/height/binary/base64')),
+    s(api.get('/api/file/id/binary/base64')),
+    s(api.get('/api/file/id/download')),
+    s(api.get('/api/file/folder2/batch/download')),
+    s(api.get('/api/file/folder2/id/download')),
+    s(api.get('/api/file/share/download/share/shareId/file/fileId')),
+    s(api.post('/api/attachment2/upload/folder/0', {})),
+    s(api.post('/api/attachment/upload/folder/0', {})),
+    s(api.post('/api/attachment/upload/folder/callback/callback/0', {})),
+    s(api.post('/api/attachment/upload/folder/0/callback/0', {})),
+    s(api.post('/api/file/upload/referencetype/reference/reference/scale/scale/0', {})),
+    s(api.post('/api/file/upload/referencetype/reference/reference/scale/scale/callback/callback/0', {})),
+    s(api.post('/api/file/assemble/control/file/upload/referencetype/0/reference/0/scale/0', {})),
+    s(api.put('/api/file/assemble/control/file/upload/referencetype/0/reference/0/scale/0', {})),
+    s(api.post('/api/file/assemble/control/file/upload/referencetype/0/reference/0/scale/0/callback/0', {})),
+    s(api.get('/api/file/attachment/id')),
+    s(api.get('/api/file/attachment2/exist/file/fileMd5')),
+    s(api.get('/api/file/attachment2/list/type/page/size/size')),
+    s(api.get('/api/file/attachment2/id')),
+    s(api.get('/api/file/copy/attachment/attachmentId/referencetype/referenceType/reference/reference/scale/scale')),
+    s(api.get('/api/file/list/referencetype/referenceType/reference/reference')),
+    s(api.get('/api/file/list/id/next/count/referencetype/referenceType')),
+    s(api.get('/api/file/list/id/prev/count/all')),
+    s(api.get('/api/file/list/id/prev/count/referencetype/referenceType')),
+    s(api.get('/api/file/referencetype/referenceType/reference/reference')),
+    s(api.get('/api/file/id')),
+    s(api.get('/api/file/folder/id')),
+    s(api.get('/api/file/folder2/id')),
+    s(api.get('/api/file/recycle/id')),
+    s(api.get('/api/file/share/list/att/share/shareId/folder/folderId')),
+    s(api.get('/api/file/share/list/folder/share/shareId/folder/folderId')),
+    s(api.get('/api/file/share/share/shareId/file/fileId/folder/folderId')),
+    s(api.get('/api/file/share/shield/id')),
+    s(api.get('/api/file/share/id')),
+    s(api.post('/api/fileinfo/update/document/0/attachment/0/callback/0', {})),
+    s(api.get('/api/file/share/id/password/password')),
+    s(api.get('/api/share/0/password/0')),
+  ])
 }
 </script>
 

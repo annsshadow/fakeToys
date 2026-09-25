@@ -17,6 +17,7 @@
       <div class="list-toolbar">
         <input v-model="keyword" placeholder="搜索热帖..." class="search-input" @keyup.enter="doSearch" />
         <button class="btn-primary" @click="doSearch">搜索</button>
+        <button @click="loadResidualStub">残余接桩</button>
         <button class="btn-primary" @click="loadHotpicMeta">热图/面板</button>
         <button class="btn-primary" @click="loadHotpicMeta2">热图2/面板2/应用2</button>
         <button class="btn-primary" @click="loadHotpicDeep">深度读</button>
@@ -274,6 +275,21 @@ async function loadHotpicTwin() {
   } catch (e: any) {
     toast.error('热图孪生端点失败: ' + (e?.message ?? ''))
   }
+}
+
+async function loadResidualStub() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  await Promise.all([
+    s(api.get('/api/hotpic_assemble_control/save/hotpic')),
+    s(api.get('/api/hotpic_assemble_control/delete/hotpic')),
+    s(api.get('/api/hotpic_assemble_control/cipher/hotpic/bbs/id')),
+    s(api.get('/api/hotpic_assemble_control/cipher/hotpic/cms/id')),
+    s(api.get('/api/hotpic_assemble_control/cipher/hotpic/filter/list/page/page/count/count')),
+    s(api.get('/api/hotpic_assemble_control/cipher/hotpic/id')),
+    s(api.get('/api/hotpic_assemble_control/user/hotpic/filter/list/page/page/count/count')),
+    s(api.get('/api/hotpic_assemble_control/user/hotpic/application/infoId')),
+    s(api.get('/api/hotpic_assemble_control/user/hotpic/id')),
+  ])
 }
 </script>
 

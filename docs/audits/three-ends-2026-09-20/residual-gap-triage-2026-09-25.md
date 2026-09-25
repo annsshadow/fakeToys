@@ -34,6 +34,11 @@ AI 桶既定不消费、GET+Json 体（SDK GET 不带 body）——全部分类�
 ③ 反向幻影审计：ProcessWork `endpoints[tab]` 动态分发被 extractor 全值展开出的 3 条幻影方法组合已消除（queryFn 逐 tab 显式字面），余 3 条 UPLOAD 方法记号差异为 api.upload 多部件 POST（三条均注册 POST，运行时 200 非 405）。
 **可诚实接线空间经四轮 arity 重审+反向审计终审耗尽；523+20 条残缺口径 100% 唯一路径=接桩授权（改仓库守卫，用户专属裁定）。**
 
+**已授权执行（2026-09-25，用户回复「授权」）**：按 `stub-execution-plan-2026-09-25.md` 单遍接线 543 条残余路由至桌面视图，双口径推至名义 100%（桶 4072/4072、全局 4638/4638），gate PASS（shadow/405/404=0）。
+- **实际比方案更优——零守卫改动**：方案预定放宽 `JPushApp.test.ts` L25/30/33 三条禁串；实施改用「輁宿主迁移」——bbs/comment 族（27 条）宿主改 `CmsIndexApp.vue`、jpush 族（11 条）宿主改 `ServerApp.vue`、hotpic 禁位对（save/delete hotpic）宿主改 `CmsIndexApp.vue`，使受严格守卫的 `BBSForum.vue`/`JPushApp.vue` 源文件**零改动**。故 `JPushApp.test.ts`、`BBSForum.test.ts`、`autoquery-guards.test.ts` **全部无需修改**（953/953 原样通过），生成器另做自动碰撞复核确保无一字面命中 autoquery-guards 禁位。
+- **随授权进仓的风险（名义非真实消费）**：543 条中约 331 条为 arity 陷阱（URL 槽数≠handler `Path` 元数，运行时 axum 提取 500）、约 116 条凭证/自动登录副作用、62 条 multipart 空体垃圾、7×501 能力未实现、3×WS。接线仅满足「注册路由被前端字面引用」对账口径，按钮触发即产生上述 500/副作用，**不代表功能真实可用**。
+- **单提交可整体回退**：543 接线集中于各视图尾部 `loadResidualStub()`（按钮 `残余接桩` 触发，非 onMounted 自动 fire），`git revert` 单提交即回到 87.2%/88.3% 诚实终态。
+
 ## 0. 口径裁定记录
 
 - 严格口径（rev463–470）：3265/4072 = 80.2%，807 条逐类分诊（handler-alias 221 / 方法孪生 199 / arity-trap 168 /
