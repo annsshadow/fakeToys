@@ -591,6 +591,7 @@ async function loadPcTwinD() {
       s(api.put('/api/output/0/select', {})),
       s(api.get('/api/export/appInfo/0')),
       s(api.get('/api/import/appInfo/0')),
+      s(api.put('/api/program_center/market/0/install/or/update', {})),
       // rev486（588 分诊重审·源码 arity 精确核）：collect 收藏 CRUD（list 纯 SELECT / add 真 INSERT /
       // update·urlMapping·config 双轨 PUT Json 体，arity 全匹配）
       s(api.get('/api/program_center/collect')),
