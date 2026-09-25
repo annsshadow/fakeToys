@@ -382,6 +382,7 @@
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest6('workTouch')">在办touch</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest6('attCopyWcSoft')">附件软复制到已办</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest6('keyLock')">密钥锁</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest6('serialGen')">生成序列号</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('appListRange')">应用范围清单</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('modeList')">模式清单</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('processListIds')">按ids取流程</button>
@@ -918,6 +919,14 @@ async function loadSurfaceReadB(): Promise<void> {
       s(api.post(`/api/processplatform/assemble/surface/task/v2/list/create/paging/${page}/size/${size}`, {})),
       s(api.post(`/api/processplatform/assemble/surface/taskcompleted/v2/list/create/${id}/next/${count}`, {})),
       s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/prev/0/20`)),
+      // rev470：u2 双轨属性筛选选项读 5 条（u2_attribute_post_handler! 宏生成，session 门禁纯读：
+      // u2_build_attribute_wo→u2_attr_group/month_counts 全 SELECT PP_C_* COUNT 聚合，POST 无 body 提取器；
+      // review 位无 /filter 尾段，字面段唯一避误配。同路径 GET 主轨 URL 0 参而 handler 取 Path=id arity-trap 运行时 500 故不接）
+      s(api.post('/api/processplatform/assemble/surface/read/filter/attribute/filter', {})),
+      s(api.post('/api/processplatform/assemble/surface/readcompleted/filter/attribute/filter', {})),
+      s(api.post('/api/processplatform/assemble/surface/task/filter/attribute/filter', {})),
+      s(api.post('/api/processplatform/assemble/surface/taskcompleted/filter/attribute/filter', {})),
+      s(api.post('/api/processplatform/assemble/surface/review/filter/attribute', {})),
     ])
     const hit = rs.filter((r) => (r as any)?.data != null).length
     surfaceReadText.value = `表面深度读B ${rs.length} 条，命中 ${hit}`
@@ -2141,6 +2150,7 @@ async function engineRest6(op: string): Promise<void> {
     else if (op === 'attCopyParam') await api.post('/api/processplatform/service/processing/attachment/copy/9/w1', {})
     else if (op === 'workTouch') { const i = id(); await api.put(`/api/processplatform/assemble/surface/service/work/${i}/touch`, {}) }
     else if (op === 'attCopyWcSoft') { const wc = id(); await api.post(`/api/processplatform/assemble/surface/attachment/copy/workcompleted/${wc}/soft`, { ids: ['0'] }) }
+    else if (op === 'serialGen') { const p = encodeURIComponent(prompt('流程 processId:', '') || '0'); const n = encodeURIComponent(prompt('序列号名 name:', '') || '0'); await api.post(`/api/processplatform/assemble/surface/serialnumber/generate/process/${p}/name/${n}/serial`, {}) }
     else { await api.put('/api/processplatform/assemble/surface/keylock/lock', { key: 'g5k' }) }
     toast.success('引擎/表面操作已提交')
   } catch (e: any) {
