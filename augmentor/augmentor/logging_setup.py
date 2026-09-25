@@ -28,6 +28,7 @@
 """
 
 import logging
+import logging.handlers
 import os
 import sys
 from typing import Any, Dict, Iterable, List, Optional
@@ -119,9 +120,23 @@ def _detach_installed(root: logging.Logger) -> None:
     _INSTALLED.clear()
 
 
-def _open_file_handler(path: str) -> logging.FileHandler:
+# `logging.file` 的封顶档：单文件到 `_LOG_FILE_MAX_BYTES` 就滚到 `.1`、`.2`…，最多
+# 留 `_LOG_FILE_BACKUP_COUNT` 份备份（连主文件总量约 20 MiB）。改前这里用的是裸
+# `logging.FileHandler`——无上限、无轮转，`augmenter serve`/API 这类长驻进程把
+# INFO/DEBUG 落盘会一直写到耗尽磁盘（A104）。`mode` 仍是默认的 `a`（追加），所以
+# 「重启不清零」的既有语义一字未动，只是给它加了个界。
+_LOG_FILE_MAX_BYTES = 5 * 1024 * 1024
+_LOG_FILE_BACKUP_COUNT = 3
+
+
+def _open_file_handler(path: str) -> logging.handlers.RotatingFileHandler:
     try:
-        return logging.FileHandler(path, encoding="utf-8")
+        return logging.handlers.RotatingFileHandler(
+            path,
+            maxBytes=_LOG_FILE_MAX_BYTES,
+            backupCount=_LOG_FILE_BACKUP_COUNT,
+            encoding="utf-8",
+        )
     except OSError as exc:
         raise DataValidationError(
             f"logging.file 打不开 {path!r}：{exc}（相对路径按当前工作目录 "
