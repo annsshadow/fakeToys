@@ -185,6 +185,11 @@ class ConfigValidator:
     # `models` 的键是**模型名**而不是旋钮，其子项另按 `ModelConfig` 判。
     META_TOP_SECTIONS = {"app", "models"}
 
+    # 「写了没人读」这一路文案的共用词。诊断面（`validate_config`）与产品面
+    # （`load_config` 的出声，见 A84）比对的是同一批条目，比对方式就是这个词在不在
+    # 文案里 —— 所以它必须是常量，而不是两处各抄一份字符串。
+    UNREAD_MARKER = "没人读取"
+
     # 推导缓存。`AppConfig()` 要构造 20 个节对象并跑各自的 `__post_init__` 判据，
     # 这个钱一次进程只该付一遍，而不是每次 `validate_config` 付一遍。
     _CONSUMED_SECTIONS: Optional[Dict[str, Set[str]]] = None
@@ -242,8 +247,8 @@ class ConfigValidator:
                 continue
             if key not in sections:
                 result.add_warning(
-                    key, "顶层段落没人读取: %s（写了不会生效）%s" % (
-                        key, self._suggest(key, sorted(sections))))
+                    key, "顶层段落%s: %s（写了不会生效）%s" % (
+                        self.UNREAD_MARKER, key, self._suggest(key, sorted(sections))))
                 continue
             if not isinstance(value, dict):
                 # 形状问题（`augmentation: abc`）由 `KNOWN_FIELDS` 的 `type: dict`
@@ -254,8 +259,8 @@ class ConfigValidator:
                 if sub_key not in known:
                     result.add_warning(
                         "%s.%s" % (key, sub_key),
-                        "键没人读取: %s.%s（值不会生效）%s" % (
-                            key, sub_key, self._suggest(sub_key, sorted(known))))
+                        "键%s: %s.%s（值不会生效）%s" % (
+                            self.UNREAD_MARKER, key, sub_key, self._suggest(sub_key, sorted(known))))
 
     def _warn_unread_model_keys(self, models: Dict, result: ValidationResult) -> None:
         """模型条目里的子键按 `ModelConfig` 的字段集判（同一套推导，第二个面）
@@ -275,8 +280,8 @@ class ConfigValidator:
                 if key not in known:
                     result.add_warning(
                         "models.%s.%s" % (name, key),
-                        "键没人读取: models.%s.%s（值不会生效）%s" % (
-                            name, key, self._suggest(key, known)))
+                        "键%s: models.%s.%s（值不会生效）%s" % (
+                            self.UNREAD_MARKER, name, key, self._suggest(key, known)))
 
     def __init__(self):
         """初始化验证器"""
@@ -528,3 +533,17 @@ def validate_config(config: Dict) -> ValidationResult:
     """
     validator = ConfigValidator()
     return validator.validate_config(config)
+
+
+def unread_key_messages(config: Dict) -> List[str]:
+    """只跑「写了没人读」那一遍，返回给人看的条目（A84：给 `load_config` 在加载这一步出声）
+
+    与 `validate_config` 共用同一个 `_warn_unread_keys`，两条通道由构造同源而不是靠抄写
+    保持一致；刻意不跑 `KNOWN_FIELDS` 规格与环境变量引用那两遍 —— 每次加载都要出声的
+    只能是一件事「你写的键没人读」，环境变量的条数还随本机 shell 而变（L52 的纪律）。
+    同源性由用例守着：`tests/unit/test_config_unread_feedback.py`。
+    """
+    validator = ConfigValidator()
+    result = ValidationResult(is_valid=True)
+    validator._warn_unread_keys(config or {}, result)
+    return [item.message for item in result.warnings]

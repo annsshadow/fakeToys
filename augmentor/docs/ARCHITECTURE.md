@@ -1792,6 +1792,120 @@ Temp `l53/empty_report.txt` 的 CLI `validate --preset basic/strict/chat` 全部
 `input_file` 字段 422），第三版才用真实临时文件拿到 200 ⇒ 「凭形状猜请求」与「凭形状猜配置输入」
 （L52 的 ⑦）是同一个错的两次现形，A87 的普查欠账继续滚。
 
+### 3.29 L54：把「写了没人读」从诊断面接到产品面（`load_config` 出声）+ 空配置文件的档位（关闭 A84，自立并同修 A94，新立 A95–A97）
+
+**先量症状，再动代码**（Temp `l54/probe_a84.py`，NONCE-L54-A84PROBE，两套解释器各一遍）。同一份「拼错一
+节 + 拼错一键」的配置：诊断面 `validate_config` 报 **2 条 WARNING**（`键没人读取: augmentation.variant_per_seed…`
+与 `… models.ernie.temperatue …`），产品面 `load_config` 交出 `variants_per_seed=5`（写了 999）而
+`cli stats` **`exit=0`、stdout 正常、stderr 全空**，`cli validate` 同形 ⇒ L52 立的通道只住在诊断命令里，
+用户要主动问一句才答。探针顺手撞出 **A94**：0 字节或只含注释的 YAML 解析成 `None`，`load_config` 里第一处
+`'models' in raw_config` 直接抛 `TypeError: argument of type 'NoneType' is not iterable`（aug 3.13）/
+`… is not a container or iterable`（3.14.4）⇒ CLI 给出的是**这句无法行动的原文** + `exit 1`，而校验器对同一
+份文件干净地报 `is_valid=False, errors=1: 配置必须是字典类型`。
+
+**通道选择是三条否决而不是两条**：① **不写 stdout** —— 每个产品命令的 stdout 是它的输出契约（`stats` 是
+JSON、`validate` 是中文判决），夹一行自由文本等于把 L53 刚钉住的「一档 stdout 全空」那类断言全部作废；
+② **不进退出码** —— 承 L53 口径「**只有 WARNING 不判负**」，否则「配置里夹了自己的段落」的用法凭空变红
+（L52 的 m2/m7 注入就是为这条付过红数的）；③ **不选 `print` 而选 `logging.warning`** —— API 进程在 `api/main.py:42-45` 已 `basicConfig`，走 logging
+才与它同一条出口、同一种格式；纯 CLI 进程未配置 logging 时由 `logging.lastResort` 落 stderr，两条路都不碰
+stdout。**但「用户能不能用配置把它静音」这一问本轮答不了**：`api/main.py` 那次 `basicConfig` 的
+`level=logging.INFO` 与 `format=` 是**硬编码**，`logging` 节（`level` / `file` / `format`）三键在生产代码里
+**零应用方** ⇒ 见 A97。出厂 `config.yaml` **零命中**（实测 `cli stats` 的
+stderr 为空）⇒ 正常一次运行**一行都不多**，只有拼错才出声。
+
+**同源而不是抄写（A77 那一族的正解）**：新增 `config_validator.unread_key_messages(config)`，内部调的正是
+`validate_config` 用的同一个 `ConfigValidator._warn_unread_keys`；比对两条通道时不许各抄一份文案，于是把
+那句文案的共同词落成常量 `ConfigValidator.UNREAD_MARKER = "没人读取"`，用例用**同一个常量**过滤
+`validate_config(...).warnings` 并与 `unread_key_messages(...)` 逐条相等（`tests/unit/test_config_unread_feedback.py::TestTheTwoChannelsShareOneSource`
+⇒ 等式不成立即红）。`config_validator.py` 顶部已 `from .config import …`，所以 `config.py` 里那句
+`from .config_validator import unread_key_messages` **必须留在函数体内**，提到模块顶部就是循环 import。
+**刻意只出「没人读」这一件事**：环境变量引用那一路（`环境变量未设置: X`）不进加载声 —— 它的条数是本机 shell
+的函数（L52 纪律），接进来等于让同一份配置在不同机器上输出不同行数；这一条由
+`test_env_reference_findings_stay_out_of_the_load_noise` 反向钉住（对照组先断言诊断面**必须**有那条）。
+
+**A94 的修法是一行 `or {}`**，先例就在同模块 `save_config`；语义依据是「什么都没写」与「路径不存在」应当
+同档（后者一直是全默认）。用例**不断言那句 TypeError 原文** —— 两个解释器的原文不同（上面逐字抄了两种），
+断言它就是把测试绑死在解释器版本上（L50 立的「环境相关数字/文案不进断言」）。
+
+**代价量到 µs**：加载时多走一遍全树键名走查。同进程 A/B、正反双序各一遍（Temp `l54/verify.py` V7，
+NONCE-L54-VERIFY）：`load_config(出厂 config.yaml)` aug 跳过 6,755.2 / 6,913.7 → 含扫描 6,872.7 / 6,945.4 µs
+⇒ **+74.6 µs（1.09 %）**；py314 6,660.9 / 6,900.3 → 6,830.2 / 7,024.8 ⇒ **+146.9 µs（2.17 %）**。**两序同号、
+两解释器同号 ⇒ 本轮判为可判定**（与 L53 那对 +1.7 / −1.2 ns 的变号读数不同档），并如实写成代价而不是收益。
+API 侧不重复付：`deps._config_data_roots` 已按 `(路径, mtime_ns)` 缓存，每请求不再重解析 YAML。
+
+**注入 6 模式 = 3 / 3 / 1 / 4 / 4 / 0 红**（Temp `l54/inj.py`，NONCE-L54-INJ，定向选择新用例文件 13 例，
+两解释器**逐条同红集**，还原后 `sha256` 与快照一致）：I1 摘掉 `load_config` 里的调用 ⇒ **3 红**（三条
+「出声」用例，含那条子进程真验 stderr 的），I2 把出声改道 `print` ⇒ **同样 3 红**（说明「走 stdout」这条路
+已被契约用例守住，且守它的不只一条），I3 把整份校验结果（含环境变量那一路）塞进加载声 ⇒ **1 红且只有那 1 红**
+（最外科的一条，证明 env 用例不是顺带红的），I4 退回 A94（去掉 `or {}`）⇒ **4 红**（三条参数化 + 一条空文件
+静音），I5 让「有 unread 就 `sys.exit(1)`」⇒ **4 红**（既有例 `test_it_is_only_a_warning_loaded_values_stay_default`
+也在守这条口径），**I6 无害对照**（只加一行注释）⇒ **0 红 / 13 passed** ⇒ 前五档的红数全部归因于判据本身。
+
+**用例 +13 两边各自闭合**：aug 5,141 → **5,154**（3 skipped，66.39 s）、py314 5,161 → **5,174**
+（2 skipped，49.21 s），覆盖 TOTAL aug 12,900 → **12,913** 语句而缺数 **88** 一字不动、py314 12,274 → **12,287**
+而缺数 **41** 一字不动 ⇒ 本轮新增语句两边全绿。分支总数 3,562 → **3,564**（`_log_unread_keys` 那一条 `for`
+的两个方向；`or {}` 与函数内 import 不产生行级弧），分支偏支 **110 / 104** 同样一字不动。单读两份被改源文件：
+`config.py` 263 语句缺 **3**（`585-586` / `588` —— 就是 L49 起既有的那 3 条，因本轮在文件上方插了 29 行而整体
+位移，非本轮新增）、`config_validator.py` 215 语句缺 **0**，116 分支 3 条偏支且三行全是既有代码。6 条 warnings
+两边同数且全是第三方与既有收集告警（starlette testclient / anyio / `auto_test.py` 的 dataclass），本轮 **0 新增**。
+
+**新立三条，都是本轮读数直接给的**：**A95** = **`${ENV}` 占位符只有 `models` 节的三个字段真的解析**
+（`grep -rn --include=*.py "resolve_env" .`（排除 `Temp/`）命中 **6** 行 = `def _resolve_env` + 内层
+`def resolve_env` + `return _resolve_env` + 三处调用 `api_key` / `secret_key` / `base_url`），其余各节一律不解析
+⇒ 实测 `augmentation.variants_per_seed: ${NOT_A_REAL_ENV_VAR_L54}` 在产品面是
+`错误: augmentation.variants_per_seed 必须是整数，当前是 '${NOT_A_REAL_ENV_VAR_L54}'（str）` + `exit 1`
+（文案指向**字段类型**而不是「环境变量没设」，用户看不出根因），而诊断面 `_validate_env_refs` 是全树递归的
+（`config_validator.py:449-467`）⇒ 同一个占位符两面的**支持范围不一致**；另一半是同函数在环境变量未设置时
+**静默回落 `''`**（`:356` `os.environ.get(env_var, '')`）⇒ models 的 `${UNSET}` 变成空密钥，症状推迟到调用
+模型那一刻。`_resolve_env` 在 `tests/` 里 **0 命中**（同一条 grep 的 `tests/` 侧）⇒ 整条通路无守卫。
+**A96** = **本轮把 A94 修完之后，「空配置文件」在两面的判决第一次对立**：产品面 = 出厂默认 + `exit 0`，
+诊断面 = `is_valid=False` + 「配置必须是字典类型」（P1/P3 实测）⇒ 该统一成哪一边是**产品口径**（空配置是
+「合法的默认」还是「无效的配置文件」），不是机制，与 A92 同类 ⇒ 先记后问。
+**A97** = **`logging` 节三键（`level` / `file` / `format`）写了没人听**，且它正是本轮这条出声通道的静音旋钮：
+`grep -rn --include=*.py "config\.logging\|\.logging\.level\|\.logging\.file\|\.logging\.format\|LoggingConfig" augmentor/ api/ cli.py tests/`
+命中 **3** 行，全部住在 `augmentor/config.py` 自己体内（`:311` 类声明、`:342` 字段、`:519` 映射表条目），
+`api/` / `cli.py` / `tests/` **0 命中** ⇒ 没有任何一处把这三键应用出去；`api/main.py:42-45` 的
+`basicConfig(level=logging.INFO, format="…")` 是硬编码。于是 `logging: {level: ERROR}` 既不静音本轮的
+「键没人读取」，也不改 API 的实际级别，而 `logging.file` 对应的「写日志到文件」这件事从来不存在。
+**这条是 L52 那套白名单的天花板而不是它的漏网**：`_warn_unread_keys` 的权威是「`AppConfig` 的字段集 ==
+`load_config` 读走的键集」，而这三键**确实被读进了对象** ⇒ 判据在定义上看不见「读进对象之后没人用」。
+两档修法：① 把 `logging` 节真接上（`basicConfig` 读它，`file` 非空时挂 `FileHandler`）—— 会改默认档的日志
+形状，破坏面要先量（现有测试对 stderr 的断言全是内容式、无 `filterwarnings`，实测 0 处断空 stderr）；
+② 机制级：把「键有没有生效面」也纳入判据（对每个 `AppConfig` 字段查消费方，零消费方即出声），代价与假阳
+都要先普查再拍。定级 M：**本轮把出声通道建在了这块地上**，所以 A84 与 A97 必须同屏读 —— 「有通道」不等于
+「用户能管住它」。
+
+**过程缺陷披露五处**：① **注入脚本第一版 6 条锚点里 5 条脱靶**，只有不带换行的那条命中 —— 原因是
+`augmentor/config.py` 在工作树里是**纯 CRLF**（610 处 `\r\n`、0 处孤 LF），而我把锚点按 `\n` 拼 ⇒ 任何跨行
+锚点都对不上。更糟的是我**先用 `cat -A` 看过同一份文件、读到的是 `$` 而不是 `^M$`**，于是判定它是 LF 就动手
+⇒ 管道里的 `grep` 已经把 `\r` 吃掉，`cat -A` 不是行尾的可靠读数。新纪律：**判行尾只按字节计数，注入前先探
+`NL = "\r\n" if "\r\n" in original else "\n"` 并按文件自己的行尾拼锚点**（第二版 6/6 命中、还原 sha 一致）。
+顺带量齐四份主文档/源文件的行尾实况：`config.py` 610 CRLF、`config_validator.py` 549 CRLF、`docs/API.md`
+973 CRLF、`README.md` 389 CRLF、`docs/ARCHITECTURE.md` **纯 LF**（这一项**刻意不钉自己的行数**：本行正写在这份
+文档里，再改一次那句数就过期 —— L40 / A93 那族「自指计数会过期」的现场，终态行数交给收尾自查与
+`git diff --numstat` 各量一遍）、新用例文件 223 纯 LF（`tests/unit/`
+190 份里 150 MIXED / 23 LF / 17 CRLF ⇒ 新建文件两种都有先例）。② **V8 那一档的 `rc=1` 我第一版读成了
+「`load_config` 拒收未设置的环境变量」**，据此差点把 A95 写成「静默回落空串」这一条错误结论；复核那次跑的
+stderr 原文（`必须是整数，当前是 '${…}'（str）`）才发现根因是**占位符压根没被解析**，两回事 ⇒ 「同一个读数
+可以有两种机制」的第四次现形（L49 立、L52 ①、L53 ④、本轮 ①），修法是回到原文与 grep 计数，不是回到推断。
+③ **本轮第二次「回读自己刚写下的句子」才没把一句错话留在文档里**：③ 号否决那句我写的是「走 logging 才跟着
+**用户的 `logging.level`** 走」，写完复核这句时去 grep 那三键的消费方，才看见 `api/main.py:42-45` 的
+`basicConfig` 是硬编码、`logging` 节零应用方 ⇒ 那句「跟着用户的 level 走」当时就改成了「与那次 `basicConfig`
+同出口」，并把这块地登记成 **A97**。**如果我没有回头读自己写的那句，它会一直留在 §3.29 与 §6 口径表里**，
+而它是那种读起来完全合理的句子 —— 与 L53 的 ⑥（`quality-report` 那条口径写过头）同一族，链条：L52 ⑦ →
+L53 ⑥ → 本轮 ③。④ **一次破坏性 Edit 在本文档凭空造出一个标题**（`### 4.0 一句话`）：给 §3.29 定位插入点时
+把我要**新写**的内容前错当成了既有结构 ⇒ 当场回读发现、撤销，并复验文件回到改动前的行数与字节数才继续
+（「Edit 吃掉或造出相邻结构」链条的第 7 环，也是**凭空造出**而不是吃掉的第一次，同一只坏手的两个方向）。
+⑤ **`UNREAD_MARKER` 交付时产品侧读者为 0**：立它时注释写着「不是两处各抄一份字符串」，可三条文案模板全是
+字面量、只有测试读它（`grep -rn "UNREAD_MARKER" --include=*.py .` 只命中定义 + 测试两行）⇒ **本轮新立的 A97**
+（读进对象却没人消费）与 L45 的「只有测试在调用的死助手」在我自己刚写的代码上第二次现形，只是这次对象是一
+个常量而不是一个助手。改掉之后（`:251` / `:263` / `:284` 三条模板全部从常量取词）输出文案逐字节不变：定向两份
+测试文件两边同为 **263 passed**、注入 6 模式红集与改前**逐字相同**（3 / 3 / 1 / 4 / 4 / 0，两解释器各一遍）、
+`docs/API.md` 那段实跑转录件的 stderr sha 前缀两侧仍一致、双解释器全量各复跑一次仍是 **5154 / 5174**。
+新纪律：**新立常量或助手在交付前 grep 一次「产品侧读者数」，为 0 就当场接上或删掉**；本条与前四条的差别在于
+它是**收尾自查那次 grep 抓的，不是写代码时抓的** —— 缺陷 ⑤ 与 A97 是同一根的第二面：A97 说的是「键被读进对象
+但没人用」，⑤ 说的是「常量被定义出来但只有测试用」，两者都不是白名单能看见的形状。
+
 ## 4. 核心数据流
 
 ### 4.1 数据增强主流程
@@ -1892,6 +2006,7 @@ Temp `l53/empty_report.txt` 的 CLI `validate --preset basic/strict/chat` 全部
 | **等待预算**双旋钮越界（`augmentation.max_retry_wait` / `retry_jitter`，L49 起） | 第五条判据形状 = **给 `require_seconds` 加可选 `maximum` 参数**（不另立新判据：它判的还是「秒数」，文案根因不变；L47 另立 `require_positive` 是因为根因不同才分家）。`max_retry_wait` 判 0-300 闭区间且**上界硬编在 `MAX_RETRY_AFTER`** —— 「300 s 封顶」这句承诺本身就是判据，加判据前实测 `max_retry_wait=inf` 配 `Retry-After: 3000` 交出 `[3000.0, 3000.0]`（默认档合计 6000 s），判后同一入参在第一次请求**之前**抛 `DataValidationError`；`retry_jitter` 直接复用第四条 `require_ratio`。这两个旋钮是**本仓第一对「静态校验面与运行时判据全区间一致」**的配置项（`test_validator_and_runtime_agree_on_every_axis`；旧旋钮 `retry_delay ≤ 60` / `max_retries ≤ 20` 仍是校验器独有上界，记在 A77）。同见 §3.24 |
 | 静态校验面比运行时**更松**（bool / NaN 混进数值字段，L49 起） | `_validate_known_fields` 的内联类型判定原先按 `isinstance(value, (int, float))` 读，而 `isinstance(True, int)` 恒真 ⇒ 7 个数值规格键 7/7 把 YAML 里的 `true` 判成合法，四道运行时判据却全部拒 bool —— 症状是 `validate-config` 绿灯、建管道即 `DataValidationError`。修法：内联判定排 bool（`type: bool` 的开关字段不受影响）+ 补 NaN 判据。两条洞覆盖面不同：`true` 在旧形状下 **7/7 个数值键完全无报错**，NaN 只漏 **4 个 `type: float` 键**（3 个 int 键靠 `isinstance` 本来就拦得住）⇒ 各堵一片、不重复；注入分判也各成一档（摘 bool 排除 ⇒ 2 红，摘 NaN 判据 ⇒ 5 红）。根因是 A70 那套**只有测试在调用**的死助手：它们早就排了 bool 却没有 NaN 判据，两套口径各拿对半边、活的那套恰好是错的半边。同见 §3.24 |
 | **校验形 CLI 命令的「判决」**（`validate` / `validate-config` / `dependency --action validate`，L53 起） | 上面几行管的是**异常**怎么翻译（抛 `DataValidationError` ⇒ CLI exit 1 / API 400）；这一行管**判决**（命令正常跑完、但结论是「不合格」）怎么翻译。口径：**判负 ⇒ `sys.exit(1)`，通过 ⇒ 不抛 `SystemExit`**（沿用测试面 159 处 `assert code is None` 那套既有约定，本轮不新造形状）；**只有 WARNING 不判负**（与 L52 的「写了没人读」定级同轴，否则诊断通道出声即挡路）。**报告形命令（`audit` / `check-leakage` / `doctor`）刻意不接** —— 三条 handler 体内零判决词（37 个 `run_*` handler 普查，Temp NONCE-L53-CENSUS），接上等于新造一条「有发现即失败」的隐含契约。先例：`health-gate`（`cli/commands/quality.py:205`）。**另有三条 `quality-report` / `auto-test` / `migrate` 有判决语义却仍恒 0**（`overall_passed` / `failed_tests` / `failed_items`）——那是本轮拍定不动的欠账，要拍的是产品口径不是机制，记在 A91 边界 ①。同一批还把 `cli.py:46-53` 的 `load_config` 挪进 `try` ⇒ 配置加载期异常与 handler 异常同形（「`错误: …` + exit 1」），CLI 的失败从此只有一种形状。**已知空洞（A92）**：`is_valid = valid_count == len(items)` 让**空数据集空洞地判「有效」**（SDK / CLI / API 三层同形，实测 `exit 0` + 200 `{'is_valid': True, 'total_items': 0}`）⇒ 退出码 0 只代表「没有不合格的记录」，不代表「验过东西」。详见 §3.28 |
+| **配置加载期「写了没人读」的出声面**（`load_config`，L54 起） | 同一条判据有**两条通道**而不是一份文案两份实现：诊断面 `validate_config` 的 `warnings` 与产品面 `load_config` 的 `logging.warning` 由同一个 `_warn_unread_keys` 产生，两条通道的等式用常量 `UNREAD_MARKER = "没人读取"` 做机械锚（比对方式就是「这个词在不在文案里」，抄写的两份文案迟早漂移）。三条否决定下形状：**不写 stdout**（那是各命令的输出契约，`stats` 是 JSON）、**不进退出码**（承上一行的「只有 WARNING 不判负」）、**走 `logging` 而非 `print`**（API 进程 `basicConfig` 之后与它同一出口，未配置时由 `logging.lastResort` 落 stderr；**注意配置里的 `logging.level` 目前管不住它** ⇒ A97）。**只出「没人读」，不出「环境变量未设置」**（后者条数是本机 shell 的函数，见 §3.27 那条纪律）。出厂 `config.yaml` 零命中 ⇒ 默认档一次运行 **0 行**额外输出；代价实测 aug **+74.6 µs（1.09 %）** / py314 **+146.9 µs（2.17 %）**，同进程正反双序同号 ⇒ 可判定。同一轮把「0 字节 / 只含注释的配置文件」从裸 `TypeError` 改成与「路径不存在」同档（全默认 + `exit 0`，A94），但这留下一对**对立判决**：产品面「全默认、通过」对 诊断面「`is_valid=False` + 配置必须是字典类型」⇒ **A96**，要拍的是产品口径。详见 §3.29 |
 | 断点文件损坏 | 记录 ERROR 并返回 `None`，退化为从头开始 |
 
 「取前 N 条」这一类旋钮（`limit` / `offset` / `top_k` / `preview_size` / `batch_size`

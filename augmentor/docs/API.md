@@ -64,7 +64,9 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 拼错的配置键**不会让服务起不来**：`load_config` 只按每节已知的字段取键，多出来的键被
 直接忽略。所以过去的症状是「我明明改了数，行为一点没变」，而 `validate-config` 全程
 沉默。现在这类反馈会进 `warnings`（CLI 的 `validate-config` 与
-`POST /api/system/validate-config` 共用同一份结果）。**仓库里不带示例配置文件**：拿出厂
+`POST /api/system/validate-config` 共用同一份结果），**并且不用你先跑诊断命令**：
+`load_config` 在加载这一步会用 `logging.warning` 把同一批条目原样说出来（见下面「加载即出声」）。
+**仓库里不带示例配置文件**：拿出厂
 `config.yaml` 改两处即可逐字复现下面这份输出 —— 在 `augmentation` 节里加一行拼错的
 `variant_per_seed: 3`（真键 `variants_per_seed` 那行留着），再另加一节拼错的节名：
 
@@ -103,6 +105,30 @@ $ python cli.py validate-config --config typo_config.yaml
   只有 WARNING（含上面那两条「没人读」）⇒ 不判负、也不抛 `SystemExit`，与 `health-gate` 同口径。
   配置坏到加载器拒收（如 `web.port: 99999`）时也不再是裸 traceback：CLI 统一走
   stderr 的「错误: …」+ `exit 1`，那一档 stdout 全空。
+- **加载即出声（A84）**：同样这两条「没人读」由 `load_config` 用 `logging.warning` 在
+  **加载配置的那一步**发出，所以任何一条命令（不止 `validate-config`）、以及 API 进程启动
+  都会说，不用你先想到去跑诊断命令。落在 **stderr**，不写 stdout（那是各命令的输出契约），
+  不改退出码（与下面「只有 WARNING 不判负」同口径）。出厂 `config.yaml` 零命中 ⇒ 正常一次
+  运行**一行都不多**。目前**没有把它静音的配置旋钮**：`logging` 节的 `level` / `file` / `format`
+  三键尚未接到任何出口（**A97**），API 进程用的是 `api/main.py` 里那次硬编码的
+  `basicConfig(level=INFO)`，纯 CLI 进程则由 `logging` 的默认 handler 落 stderr。实跑（上面那份改过两处的 `typo_config.yaml`）：
+
+  ```
+  $ python cli.py --config typo_config.yaml doctor
+  键没人读取: augmentation.variant_per_seed（值不会生效）；是否想写 variants_per_seed？
+  顶层段落没人读取: augmenation（写了不会生效）；是否想写 augmentation？
+  ```
+
+  > 上面两行是 stderr 的全部内容，本轮在两套解释器（venv 3.13.14 与 `C:\\Python314` 3.14.4）
+  > 各跑一遍、**逐字节相同**（各 199 字节，Temp `l54/doc_repro_aug.txt` 与
+  > `l54/doc_repro_py314.txt`，NONCE-L54-DOCREPRO）；`doctor` 打到 stdout 的体检报告随
+  > 本机装了什么包而变，故不引。两条通道由**同一个** `_warn_unread_keys` 产生而不是各抄
+  > 一遍（同源性钉在 `tests/unit/test_config_unread_feedback.py`）。
+  > 「环境变量未设置」那一路**不进**加载声：它的条数随本机 shell 变，接进来等于让同一份配置
+  > 在不同机器上行数不同。
+- **0 字节或只含注释的配置文件按全默认处理（A94）**：以前会抛
+  `TypeError: argument of type 'NoneType' is not iterable`（该文案随解释器版本而变），
+  CLI 上表现为「错误: …」+ `exit 1`；现在它与「路径不存在」同档 —— 拿到出厂默认、`exit 0`。
 - 名单**从 `AppConfig` 的字段类型推导**，不是手抄的清单：它定义上就等于
   `load_config` 实际读走的那份键集（`tests/unit/test_config_validator.py::TestUnreadKeyWarnings`
   逐节钉住这个等式）。新增配置节、新增字段都会自动进入判据。
