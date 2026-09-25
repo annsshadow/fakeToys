@@ -52,6 +52,33 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 的 `config.yaml`）；显式传入时仍按数据白名单校验。`POST /api/config` 保存的也是同一个
 路径，二者不会各写一遍字面量。
 
+### 跨源（CORS）
+
+出厂默认**不放行任何跨源**：`web.cors_origins: []` + `web.cors_credentials: false`，
+即服务端不发任何 `access-control-*` 响应头。随包 Web UI 与后端同源（前端 axios 的
+`baseURL` 是相对路径 `/api`，vite 开发模式走 proxy），curl / Python SDK 等非浏览器客户端
+不受 CORS 约束，因此这两项默认对既有部署零影响。
+
+需要让**别的站点上的浏览器页面**调本 API 时，显式列出来源：
+
+```yaml
+web:
+  cors_origins: ["https://your-frontend.example"]
+  # 只有确实要带 cookie / Authorization 跨源时才打开，且 origins 必须是精确白名单
+  cors_credentials: true
+```
+
+两点实测（starlette 1.6.0 与 1.2.1 形状一致）：`cors_origins: ["*"]` 配
+`cors_credentials: true` **不是**「不开放」，上游会把请求方的 Origin 原样回显并附
+`access-control-allow-credentials: true`（预检一并 200）⇒ 任意网站都能带用户凭据读本
+API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也会出现
+`access-control-allow-credentials: true`（没有 `allow-origin`，因此仍读不到）。本仓 API
+不用 cookie，鉴权是 `X-API-Key` 头，所以带凭据这一项对合法用法没有收益。
+
+> 3.x 的**破坏性默认变更**：旧出厂默认是 `["*"]` + `true`。此前即使在 `config.yaml` 里
+> 写了收紧值也不生效（`load_config` 的映射表缺这两个键，见 `ARCHITECTURE.md` §3.25），
+> 升级到 3.x 后同样的写法会真的生效。
+
 ### 错误码
 
 | 状态码 | 含义 | 触发场景 |

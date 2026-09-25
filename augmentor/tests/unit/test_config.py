@@ -356,10 +356,11 @@ class TestSectionDefaultsMatchTheMappingTable:
 
     #: 映射表漏掉的字段 = 配置文件里写了也没人读的死旋钮。L49 实测：`api/main.py:119`
     #: 真的在读 `_config.web.cors_origins` / `.cors_credentials`，而映射表没有这两项 ⇒
-    #: 无论 `config.yaml` 写什么，CORS 永远是 `allow_origins=["*"]` +
-    #: `allow_credentials=True`（同一份文件里 `port: 9999` 正常生效，故不是整节失效）。
-    #: 这是一处安全相关的缺陷，另立 A78 在下一轮修复，本清单随之清空。
-    KNOWN_UNMAPPED_FIELDS = {("web", "cors_origins"), ("web", "cors_credentials")}
+    #: 无论 `config.yaml` 写什么，CORS 永远是出厂默认（同一份文件里 `port: 9999` 正常
+    #: 生效，故不是整节失效）。那是 A78，L50 已修 ⇒ 本清单**当前为空**，且必须为空：
+    #: 留一项就等于承认还有一处「配了不生效」。跨源默认值本身的口径见
+    #: `tests/integration/test_api_security.py::TestShippedCorsDefault`。
+    KNOWN_UNMAPPED_FIELDS: set = set()
 
     @staticmethod
     def _sections():
@@ -444,3 +445,71 @@ class TestSectionDefaultsMatchTheMappingTable:
                 loaded.augmentation.retry_jitter) == (MAX_RETRY_AFTER, 0.0)
         assert (AugmentationConfig().max_retry_wait,
                 AugmentationConfig().retry_jitter) == (MAX_RETRY_AFTER, 0.0)
+
+
+class TestWebCorsKeysReachTheConfig:
+    """A78 的结案用例：`web.cors_origins` / `cors_credentials` 写了就必须读到
+
+    L49 之前这两个键不在 `load_config` 的映射表里，`_load_section` 按表取键 ⇒
+    用户在 YAML 里收紧跨源，读回来永远是出厂值，而**同一份文件里的 `port` 正常生效**
+    （所以症状不是「配置文件没读到」，是「这一节只有这两个键没人读」）。L50 把两键
+    接进表里，本类钉住「接上了」这件事本身；默认值口径与中间件实际行为另见
+    `tests/integration/test_api_security.py::TestShippedCorsDefault`。
+    """
+
+    @staticmethod
+    def _write(tmp_path, web, name="cors.yaml"):
+        import yaml
+
+        path = tmp_path / name
+        with open(path, "w", encoding="utf-8") as handle:
+            yaml.safe_dump({"models": {"default": "ernie"}, "web": web},
+                           handle, allow_unicode=True)
+        return str(path)
+
+    def test_tightened_values_are_read_back(self, tmp_path):
+        from augmentor.config import load_config
+
+        loaded = load_config(self._write(
+            tmp_path, {"port": 9999,
+                       "cors_origins": ["https://only-me.example"],
+                       "cors_credentials": False}))
+        assert loaded.web.cors_origins == ["https://only-me.example"]
+        assert loaded.web.cors_credentials is False
+        # 同节邻居照旧生效（A78 的症状只在被漏掉的那几个键上）
+        assert loaded.web.port == 9999
+
+    def test_an_explicit_wildcard_still_has_to_be_written_out(self, tmp_path):
+        """`["*"]` 不再是默认值，想要它就得显式写 —— 这条是收紧的可见边界"""
+        from augmentor.config import load_config
+
+        loaded = load_config(self._write(
+            tmp_path, {"cors_origins": ["*"], "cors_credentials": True}))
+        assert (loaded.web.cors_origins, loaded.web.cors_credentials) == (["*"], True)
+
+    def test_one_key_does_not_disturb_the_other(self, tmp_path):
+        """只写 origins 时 credentials 取表里的默认，而不是被一起吞掉"""
+        from augmentor.config import load_config
+
+        loaded = load_config(self._write(
+            tmp_path, {"cors_origins": ["https://only-me.example"]}))
+        assert loaded.web.cors_origins == ["https://only-me.example"]
+        assert loaded.web.cors_credentials is False
+
+    def test_list_defaults_are_not_shared_between_loads(self, tmp_path):
+        """两份配置各拿自己的列表对象
+
+        映射表里的 `'cors_origins': []` / `'data_roots': ['data']` 现在是函数体内的
+        字面量（每次调用新建）。把 `config_sections` 提到模块级的那一刻，它们就会变成
+        跨配置实例共享的可变列表 —— 本条让那次提法当场变红，而不是留下一个要等用户
+        改坏一份配置才暴露的洞。
+        """
+        from augmentor.config import load_config
+
+        a = load_config(self._write(tmp_path, {}, name="a.yaml"))
+        b = load_config(self._write(tmp_path, {}, name="b.yaml"))
+        assert a.web.cors_origins == [] and b.web.cors_origins == []
+        assert a.web.cors_origins is not b.web.cors_origins
+        assert a.web.data_roots is not b.web.data_roots
+        a.web.data_roots.append("/tmp")
+        assert b.web.data_roots == ["data"]
