@@ -8,7 +8,7 @@ import logging
 from typing import List, Dict, Optional
 from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from .models.base import ModelBackend
+from .models.base import ModelBackend, extract_json_array
 from .exceptions import DataValidationError
 from .validation import require_count
 
@@ -67,6 +67,31 @@ class DomainExpander:
         
         return list(topics) if topics else ["通用问题"]
     
+    @staticmethod
+    def _parse_topic_list(response: str, num_topics: int) -> List[str]:
+        """把模型返回的主题响应解析成列表：先当 JSON 数组（含 ```json 围栏与前置
+        一句说明的散文形态），解析不出再按行分割并剥序号。
+
+        改前三处主题生成器都用手搓判据 `if topics_text.startswith('[')` ⇒ 模型把
+        数组包进代码围栏或先说一句「好的，结果如下：」时首字符不是 `[`，直接掉进
+        「按行分割」，把 "```json" / '["租房","公寓"]' 这类碎片当成主题塞进结果、
+        污染下游（A110，与 L59 的 A108 同构）。走 `extract_json_array`（仓库里各
+        adapter 早已在用）后：围栏/散文包裹的合法数组能正常出主题。
+
+        对「解析不出」的两类响应维持改前口径、不新增回归：文本以 `[` 开头却解析
+        失败 = 内容坏了 ⇒ 返回空（改前是 `json.loads` 抛异常被外层 except 收成空）；
+        不以 `[` 开头 = 提示词 eliciting 的纯文本列表 ⇒ 照旧按行剥序号。
+        """
+        text = response.strip()
+        try:
+            topics = extract_json_array(response)
+        except Exception:
+            if text.startswith('['):
+                return []
+            return [t.strip().strip('0123456789.-、 ')
+                    for t in text.split('\n') if t.strip()][:num_topics]
+        return topics[:num_topics]
+    
     def _generate_similar_topics(self, 
                                 topics: List[str],
                                 num_topics: int = 5) -> List[str]:
@@ -94,16 +119,7 @@ class DomainExpander:
         
         try:
             response = self.model_backend.generate(prompt)
-            # 解析响应
-            topics_text = response.strip()
-            # 尝试解析 JSON 格式
-            if topics_text.startswith('['):
-                expanded = json.loads(topics_text)
-                if isinstance(expanded, list):
-                    return expanded[:num_topics]
-            # 否则按行分割
-            expanded = [t.strip().strip('0123456789.-、 ') for t in topics_text.split('\n') if t.strip()]
-            return expanded[:num_topics]
+            return self._parse_topic_list(response, num_topics)
         except Exception as e:
             logger.warning(f"生成相似主题失败: {e}")
             return []
@@ -135,13 +151,7 @@ class DomainExpander:
         
         try:
             response = self.model_backend.generate(prompt)
-            topics_text = response.strip()
-            if topics_text.startswith('['):
-                expanded = json.loads(topics_text)
-                if isinstance(expanded, list):
-                    return expanded[:num_topics]
-            expanded = [t.strip().strip('0123456789.-、 ') for t in topics_text.split('\n') if t.strip()]
-            return expanded[:num_topics]
+            return self._parse_topic_list(response, num_topics)
         except Exception as e:
             logger.warning(f"生成相关主题失败: {e}")
             return []
@@ -173,13 +183,7 @@ class DomainExpander:
         
         try:
             response = self.model_backend.generate(prompt)
-            topics_text = response.strip()
-            if topics_text.startswith('['):
-                expanded = json.loads(topics_text)
-                if isinstance(expanded, list):
-                    return expanded[:num_topics]
-            expanded = [t.strip().strip('0123456789.-、 ') for t in topics_text.split('\n') if t.strip()]
-            return expanded[:num_topics]
+            return self._parse_topic_list(response, num_topics)
         except Exception as e:
             logger.warning(f"生成场景主题失败: {e}")
             return []
@@ -360,11 +364,13 @@ class DomainExpander:
         
         try:
             response = self.model_backend.generate(prompt)
-            # 解析响应
-            if response.strip().startswith('['):
-                seeds = json.loads(response.strip())
-                if isinstance(seeds, list):
-                    return seeds[:num_questions]
+            # 提示词明确要求「格式为 JSON 数组」⇒ 走仓库自带 robust 解析（直接数组 /
+            # ```json 围栏 / 前置一句说明的散文都能取到），而不是改前那句手搓判据
+            # `if response.startswith('[')` ⇒ 后者让围栏/散文包裹的合法数组静默返回
+            # 0 条种子、连 warning 都不发（A110，与 L59 的 A108 同构）。解析不出即抛
+            # ModelResponseError，由下面的 except 收成一行 warning。
+            seeds = extract_json_array(response)
+            return seeds[:num_questions]
         except Exception as e:
             logger.warning(f"从主题生成种子失败: {topic}, {e}")
         
