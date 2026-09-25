@@ -475,7 +475,7 @@ class TestVersioningHistoryEdges:
         # 破坏一个版本的 metadata
         broken_dir = manager.storage_dir / "v_broken"
         broken_dir.mkdir()
-        (broken_dir / "metadata.json").write_text("not-json")
+        (broken_dir / "metadata.json").write_text("not-json", encoding="utf-8")
         versions = manager.list_versions()
         assert [v.version_id for v in versions] == [v1.version_id]
 

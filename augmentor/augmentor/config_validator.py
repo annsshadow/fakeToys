@@ -23,6 +23,7 @@ from .config import (AUTO_SAVE_INTERVAL_MIN, MAX_RETRIES_RANGE,
                      NUM_THREADS_RANGE, PORT_RANGE, RATE_LIMIT_MIN_REQUESTS,
                      RATE_LIMIT_MIN_WINDOW_SECONDS, RETRY_DELAY_RANGE,
                      VARIANTS_PER_SEED_RANGE, AppConfig, ModelConfig)
+from .logging_setup import LOGGING_LEVELS, build_formatter
 from .retry import MAX_RETRY_AFTER
 
 logger = logging.getLogger(__name__)
@@ -175,6 +176,17 @@ class ConfigValidator:
         "web.rate_limit_window_seconds": {"type": float,
                                           "min": RATE_LIMIT_MIN_WINDOW_SECONDS},
         "web.rate_limit_exempt_paths": {"type": list, "items": str},
+        # `logging` 节自 L57 起真的被装配（`logging_setup.apply_logging_config`），
+        # 所以三键也进了规格表 —— 否则就是 A77 的镜像症状：`level: INFORMATION`
+        # 这种看着像拼错的写法在 `validate-config` 绿灯、在 `load_config` 抛。
+        # `choices` / `renderable` 两个形状键都是「运行时拒的这里才拒」（承 L51 的
+        # `items` / `non_empty`）：允许集只有一份（`LOGGING_LEVELS`），可渲染性判据
+        # 直接调运行时那同一个函数，两边不可能漂。
+        # `file` 不写 `non_empty`：空串是**合法值**，意思是「不落文件」，正是默认档。
+        "logging": {"type": dict},
+        "logging.level": {"type": str, "choices": LOGGING_LEVELS},
+        "logging.file": {"type": str},
+        "logging.format": {"type": str, "non_empty": True, "renderable": True},
     }
     
     # 环境变量模式
@@ -435,6 +447,22 @@ class ConfigValidator:
                             result.add_error(f"{field_path}[{i}]", "元素不能为空字符串")
                 elif spec.get("non_empty") and not value:
                     result.add_error(field_path, "值不能为空字符串")
+                # 允许集合（L57）：`logging.level` 那类「看着像拼错」的写法。集合来自
+                # 运行时判据同一个常量，不是校验器独有的天花板。
+                if "choices" in spec and value not in spec["choices"]:
+                    result.add_error(
+                        field_path,
+                        f"值不在允许集合内: {value!r}（可选: "
+                        f"{'/'.join(spec['choices'])}）"
+                    )
+                # 可渲染性（L57）：`Formatter("%(nope)s")` 构造期不报错，到发第一条
+                # 日志才抛，所以「类型对但值没用」必须在这里判，且判据就是运行时那
+                # 同一个函数。
+                if spec.get("renderable"):
+                    try:
+                        build_formatter(value)
+                    except ValueError as exc:
+                        result.add_error(field_path, str(exc))
             
             # 递归验证嵌套字典
             if isinstance(value, dict):

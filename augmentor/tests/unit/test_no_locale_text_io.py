@@ -12,6 +12,10 @@ A98 的根因不是某个字符，而是「文本 I/O 跟着 locale 走」：控
 判据用 AST 而不是正则：正则版把 `open(x.with_suffix('.txt'), 'w')` 这种带嵌套括号的调用
 整个漏掉，既不进总数也不进漏写名单 ⇒ 数错还是小事，指错方向才是（L55 立的「引用计数器
 前先验换算」，本轮第一次现形于我自己的第一版脚本）。
+
+**L57 扩到测试侧**：AST 版扫 `tests/` 得 **4 处**（`test_image_audio_processors.py:107`
+/ `:116` / `:155`、`test_versioning.py:478`，与 L56 记的数一致），同批钉成 `utf-8` 并
+把这一面也冻进用例 ⇒ 判据从「产品包 104 份」变成「产品 + 测试 340 份」。
 """
 
 import ast
@@ -30,11 +34,25 @@ TEXT_READERS = ("read_text",)
 def product_sources():
     """产品侧 Python 源文件：`augmentor/` 包全部 + 仓库根的 CLI 入口
 
-    不扫 `tests/`：那里的文本 I/O 同样该钉编码（实测 4 处待办），但测试语料的编码由测试
-    自己造自己读，坏不了交付面；而 `web/node_modules` 与 `Temp/` 更不是产品。
+    不含 `tests/`：那里的文本 I/O 由测试自己造自己读，坏不了交付面，所以另立一条
+    用例扫（`test_tests_side...`）；而 `web/node_modules` 与 `Temp/` 更不是产品。
     """
     files = sorted(p for p in PACKAGE_DIR.rglob("*.py") if "__pycache__" not in p.parts)
     return files + [AI_DIR / "cli.py"]
+
+
+def scan_tests_side():
+    """测试侧源文件：L56 记的 4 处待办在 L57 钉完之后这里是 0 违规
+
+    分开扫而不并入 `product_sources()` 的理由是失败信息的可读性：产品侧违规是交付
+    缺陷，测试侧违规只是 hygiene，两条判据挂在一起就会让人以为 CI 红在产品上。
+
+    名字不能以 `test` 开头：本仓库没配 `python_functions`，pytest 的默认前缀是
+    `test` 而不是 `test_`，所以 `tests_side_sources` 这种「以为躲开了」的写法照样
+    被收集成用例并抛 `PytestReturnNotNoneWarning`（实测）。
+    """
+    return sorted(p for p in (AI_DIR / "tests").rglob("*.py")
+                  if "__pycache__" not in p.parts)
 
 
 def locale_text_io_calls(source, label):
@@ -92,6 +110,17 @@ class TestNoLocaleDependentTextIO:
         assert not found, (
             "这些文本 I/O 跟着 locale 走，换一台 GBK/UTF-8 机器就是两种字节: "
             + "; ".join(found))
+
+    def test_tests_side_has_no_violations(self):
+        """测试侧同一把尺：L56 记的 4 处待办（Temp `l56/encaudit.txt`）本轮钉完"""
+        files = scan_tests_side()
+        assert len(files) >= 200, f"只扫到 {len(files)} 份测试源文件 ⇒ 守卫范围塌了"
+        found = []
+        for path in files:
+            found.extend(locale_text_io_calls(
+                path.read_text(encoding="utf-8"),
+                path.relative_to(AI_DIR).as_posix()))
+        assert not found, "测试里新增的文本 I/O 也要钉编码: " + "; ".join(found)
 
 
 class TestCheckerCatchesInjectedSources:
