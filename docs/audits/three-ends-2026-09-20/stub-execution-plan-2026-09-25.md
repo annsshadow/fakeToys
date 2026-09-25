@@ -26,8 +26,10 @@
      按本方案「全部迁宿主」策略则 **autoquery-guards 零改动**（更优）
    - `JPushApp.test.ts` L25/30/33 三条 `not.toContain`：删除或改为「仅 onMounted 不出现」的精确断言
      （jpush 11 条按钮触发字面必然进 JPushApp.vue 源文件，禁串必冲突，必须放宽）
-3. **验证**：`extract_calls → compare --gate`（要求 shadow/405/404=0，注意占位字面路由无 {param} 不产 shadow）
-   → `consumption_gap.py` 4072/4072 → 全局 4638/4638 → 全量 vitest（含改后 JPushApp.test）→ tsc → biome 改动 0 err → desktop build
+3. **验证（含误命中回环）**：`extract_calls → compare --gate`（要求 shadow/405/404=0；占位字面路由无 {param} 不产 shadow）
+   → 逐条 hit 核验（api_reconcile.json 的 hit 必须指向目标路由；同长字面孪生 last-wins 误命中时把该调用槽位字面
+   升位（0→1/12/20 等唯一数字）复验，直至 543/543 全中）→ `consumption_gap.py` 4072/4072 → 全局 4638/4638
+   → 全量 vitest（含改后 JPushApp.test）→ tsc → biome 改动 0 err → desktop build
 4. **提交**：单提交「feat(multi): 接桩名义 100%——543 条按 7 类接桩 + JPushApp.test 3 行放宽（用户 2026-09-25 授权）」，
    提交信息内附风险清单（§0），保持未 push
 5. **文档**：分诊报告 §裁定待决记录 更新为「已授权执行」，G5 记忆日志收官条目改「名义 100% 达成（含接桩披露）」
