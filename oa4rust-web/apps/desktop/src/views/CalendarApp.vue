@@ -53,6 +53,7 @@
       <button class="cll-tab" :class="{on:calScope==='public'}" @click="loadCalendars('public')">公共（{{ pubCals.length }}）</button>
       <button class="cll-tab" @click="loadCalSettings">⚙️ 设置/权限</button>
       <button class="cll-tab" @click="loadCalCoreEntities">🗓️ 实体日历</button>
+      <button class="cll-tab" @click="loadCalTwin">🔁 孪生端点</button>
       <button class="cll-tab" @click="calWrite('eventDelSingle')">删单次</button>
       <button class="cll-tab" @click="calWrite('eventDelAfter')">删此后</button>
       <button class="cll-tab" @click="calWrite('eventDelAll')">删全部</button>
@@ -561,6 +562,23 @@ const api_calendar_assembl_74_data = ref<any[]>([])
 const api_calendar_assembl_101_data = ref<any[]>([])
 const calendar_assemble_control_test_1_ref = ref<any[]>([])
 const api_calendar_a_291_data = ref<any[]>([])
+// rev476（用户裁定放宽双计口径）：日历域镜像/方法孪生真注册路由 5 条（三轨 create/update alias 位；
+//  core/entity/calendar/remove 在 canary 禁清单（CalendarApp.vue），移至 MeetingApp 孪生批；arity 已校验）
+async function loadCalTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/calendar/calendar/create', {})),
+      s(api.post('/api/calendar/calendar/update', {})),
+      s(api.get('/api/calendar_assemble_control/update/control/config')),
+      s(api.post('/api/calendar_assemble_control/calendar', {})),
+      s(api.post('/api/calendar_assemble_control/event', {})),
+    ])
+    toast.success(`日历孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('日历孪生端点失败: ' + (e?.message ?? ''))
+  }
+}
 </script>
 
 <style scoped>

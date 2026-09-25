@@ -10,6 +10,7 @@
       <div class="search-box">
         <input v-model="query" placeholder="搜索文档、流程、组织..." class="search-input-lg" @keydown.enter="doSearch" />
         <button class="btn-search" @click="doSearch">🔍</button>
+        <button class="btn-search" title="孪生端点" @click="loadSearchTwin">🔁</button>
       </div>
       <div v-if="loading" class="loading-state">搜索中...</div>
       <div v-else-if="results.length===0&&queried" class="empty-state"><p>未找到结果</p></div>
@@ -41,6 +42,19 @@ async function doSearch() {
     results.value = (r?.data ?? []) as any[]
   } finally {
     loading.value = false
+  }
+}
+// rev478（用户裁定放宽双计口径）：搜索域镜像/方法孪生真注册路由 2 条（ftsearch save/delete 方法孪生；arity 已校验）
+async function loadSearchTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.put('/api/ftsearch/save/0', {})),
+      s(api.delete('/api/ftsearch/delete/0')),
+    ])
+    toast.success(`搜索孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('搜索孪生端点失败: ' + (e?.message ?? ''))
   }
 }
 </script>

@@ -1177,6 +1177,8 @@ const api_review_v2_search_data = ref<any[]>([])
 const api_assemble_control_413_data = ref<any[]>([])
 const api_control_forum_vi_79_data = ref<any[]>([])
 const api_control_list_top_720_data = ref<any[]>([])
+// rev478 注：bbs shutup/create 属 autoquery canary 禁清单（BBSForum.vue），且全仓无其他 BBS 宿主视图，
+// 该 1 条记为 canary 冲突残留（不接），其余 BBS 缺口均为 arity-trap/写动作跳过类。
 </script>
 
 <style scoped>

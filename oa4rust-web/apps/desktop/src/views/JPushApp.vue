@@ -14,6 +14,7 @@
         <button @click="loadJpushEntities">实体明细</button>
         <button @click="jpushWrite('jpushCreate')">建推送</button>
         <button @click="jpushWrite('jpushSave')">存推送</button>
+        <button @click="loadJpushTwin">孪生端点</button>
         <button @click="jpushWrite('jpushDelete')">删推送</button>
         <button @click="jpushWrite('deviceCreate')">建设备</button>
         <button @click="jpushWrite('deviceBind')">绑设备</button>
@@ -231,7 +232,22 @@ async function delDevice(d: any) {
 }
 
 loadDevices()
-loadTemplates()</script>
+loadTemplates()// rev478（用户裁定放宽双计口径）：JPush 镜像/方法孪生真注册路由 3 条（alias 轨 2 + 主轨 device unbind；
+//  update/control/config 在 canary 禁清单（JPushApp.vue），移至 ServerApp 孪生批；arity 已校验）
+async function loadJpushTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/jpush_assemble_control/create/jpush')),
+      s(api.get('/api/jpush_assemble_control/update/control/config')),
+      s(api.get('/api/jpush/assemble/control/device/admin/unbind/all/person')),
+    ])
+    toast.success(`JPush孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('JPush孪生端点失败: ' + (e?.message ?? ''))
+  }
+}
+</script>
 
 <style scoped>
 .mod-view{display:flex;flex-direction:column;gap:16px;height:100%}
