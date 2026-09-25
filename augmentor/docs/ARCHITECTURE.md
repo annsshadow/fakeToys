@@ -861,6 +861,52 @@ A58 是 L41 接线时自带的一笔代价（`shuffle=False` 时每段各整份�
 **证据**：注入 9 项 = 8 红 / 1 等价绿（⑧「位置全体 +1」是可证等价变异体，0 红，如实记），预期红名单逐条命中 0 落空，还原后按原始字节核对 sha 一致；新增 4 个 `def test_` = 参数化后 8 行，全量 **4692 passed / 2 skipped**
 （**4684 + 8 精确对上**，总计 99.02%），0 处既有断言改写，`dataset_ops.py` 语句与分支 0 missed。
 
+### 3.19 L44：重试的计数旋钮并进 `require_count` 一族（`retry.py` 首次进账）
+
+`augmentor/retry.py` 是这条链路上唯一从没被这本账碰过的模块。本轮不改算法，只把它两个
+**整数计数旋钮**的越界读法统一成 §6 已经成文的那一条口径。
+
+**三个实测症状**（Temp 探针 `l44_probe.py`，全部在动手前复现）：
+
+1. `with_retries(max_retries=-1)` —— `range(0, 0)` 为空，**`func` 一次都没被调用**
+   （实测 `func_calls=0`），循环结束后 `raise last_exc` 就是 `raise None`，
+   抛 `TypeError: exceptions must derive from BaseException`。这条报文与真实原因
+   （参数写错）没有任何关系，而且请求从未发出。
+2. `compute_delay(attempt=0)` 给基础的 **0.5 倍**、`-1` 给 0.25、`-3` 给 0.0625 ——
+   `attempt - 1` 是指数，越界不报错而是**静默把退避算成 2 的负次幂**，于是存在
+   「第 0 次重试比第 1 次等得更短」这种没有对应现实的档位。
+3. 同一个名字在两层是两种口径：`generate()` 的 `max_retries` 是**总尝试次数**，
+   `with_retries()` 的是**额外重试次数**。这本身是有意保留的既有语义（改它属破坏性），
+   但 `generate` 用 `max(1, …)` 把负数**静默夹成 1 次**，等于用一层 clamp 掩护口径混淆。
+
+**边界由实测拍，不顺手收紧**：`max_retries` 下界取 **0** 而不是 1 —— 0 在两层的读法
+一致（只调用一次、不重试），且是一条真实请求，判掉它属过度收紧；`attempt` 下界取 **1**
+（「已失败次数」从 1 起算）。`bool` 与数字串一并拒绝（`True` 会被 `range` 静默读成
+「重试 1 次」）。**浮点等待时长（`base_delay` / `factor` / `max_delay` / `Retry-After`）
+是另一半口径，本轮不做**：实测 `base_delay=-5` 时 `sleeper` 收到 `[0.0, 0.0]`（
+`max(0.0, delay)` 把负退避整条清零）、`factor=-2` 时四档退避是 `[1.0, 0.0, 4.0, 0.0]`
+（隔一次完全不等待）—— 它需要一条 `require_seconds` 式的浮点判据，而不是把浮点塞进
+按口径拒绝非整数的 `require_count`。
+
+**代价（同进程 7 轮交错，min + 中位两口径同向）**：`require_count` 孤立 68.5 ns；
+`with_retries` 成功档 476.2 → **556.8 ns（×1.17）**、`compute_delay` 123.3 →
+**205.8 ns（×1.67）**。比值在这里没有决策意义 —— 前者每次 `generate()` 只付一次、
+包的是网络往返；后者每次重试只付一次、其后紧跟 ≥ `base_delay`（默认 1 s）的 sleep，
+**+82 ns 是那一秒的 8.2e-8 倍**。与 §3.18 的「形状更优不等于更快」是同一条纪律的两面：
+**不为纳秒级的绝对量牺牲入参校验**。
+
+**顺带挖出的三笔「契约面有旋钮、实现面不消费」**（与 §3.16 的 A54 同构，见账本 A64–A66）：
+`ModelConfig.max_retries` / `retry_delay` 全仓 0 个消费者，而 `models/base.py` 另有一副写死的
+`Retry(total=3)` 在传输层独立生效（⇒ 一次 `generate()` 最坏请求数上界 `attempts × (1+3)`，
+此数按代码推得、未实测）；`compute_delay` 的 `jitter` / `rng` 没有任何调用路径能传进去
+（`with_retries` 不接也不透传）⇒ 真实重试链上抖动恒为 0；`RetryStats` 回到 `generate`
+后被丢进 `_stats` ⇒「实际试了几次、总共等了多久」在产品面无出口。
+
+**证据**：注入 3 项（逐个摘掉三处判据）红数 **2 / 1 / 1**，三档越界各配一条
+「合法档一字不动」的对照用例 ⇒ 红数既不为 0 也不覆盖全集；还原后两份实现按原始字节
+核对 sha 一致。新增 9 条用例（含 1 条 ×3 参数化），全量 **4701 passed / 2 skipped**
+（**4692 + 9 精确对上**，总计 99.02%），**0 处既有断言改写**。
+
 ## 4. 核心数据流
 
 ### 4.1 数据增强主流程
@@ -947,13 +993,13 @@ A58 是 L41 接线时自带的一笔代价（`shuffle=False` 时每段各整份�
 | 层次 | 策略 |
 |------|------|
 | 单条数据生成失败 | 记录 ERROR 日志，该条标记为 failed，不中断整体任务 |
-| 模型调用失败 | 指数退避重试 `max_retries` 次，仍失败则抛出由上层捕获 |
+| 模型调用失败 | 指数退避重试，`generate(max_retries=…)` 传的是**总尝试次数**（不是额外次数）且下界 0，仍失败则抛出由上层捕获 |
 | 可选依赖缺失 | 降级并记录 WARNING，功能跳过而非崩溃 |
 | 必需依赖缺失 | 抛 `ImportError` 并给出安装命令，不静默 |
 | 配置缺失 | 使用 dataclass 默认值；环境变量缺失替换为空字符串 |
 | 配置文件损坏 | 抛出异常，不吞掉 |
 | API 层 | 转换为 `HTTPException`，`404` / `400` / `500` 语义明确 |
-| 计数 / 分页 / 窗口 / 步长 / 配额 / 保留数旋钮越界 | 在 SDK 入参处一次判掉（`validation.require_count`），抛 `DataValidationError`；CLI 变退出码 1，API 变 400 |
+| 计数 / 分页 / 窗口 / 步长 / 配额 / 保留数 / **重试次数 / 退避档位**旋钮越界 | 在 SDK 入参处一次判掉（`validation.require_count`），抛 `DataValidationError`；CLI 变退出码 1，API 变 400 |
 | 断点文件损坏 | 记录 ERROR 并返回 `None`，退化为从头开始 |
 
 「取前 N 条」这一类旋钮（`limit` / `offset` / `top_k` / `preview_size` / `batch_size`
@@ -961,7 +1007,13 @@ A58 是 L41 接线时自带的一笔代价（`shuffle=False` 时每段各整份�
 / `num_topics` / `topics_per_strategy` / `num_questions_per_topic`）在实现里都落到下标
 切片或算术，而切片对越界值不报错、只换语义：`[:top_k]` 在 `top_k` 为负时读成「丢掉末尾
 几个」，`[-limit:]` 在 `limit` 为 0 时读成「全要」，`int(target_size * 占比)` 在
-`target_size` 为负时静默交出 0 条。所以判据集中在
+`target_size` 为负时静默交出 0 条。L44 把同一判据扩到重试的两个计数旋钮
+（`max_retries` / `compute_delay` 的 `attempt`），它们是同族的**另一种形状**：不是换语义，
+而是**换症状类别** —— `range(0, max_retries + 1)` 在负数下直接为空，函数一次都不被调用、
+最后 `raise last_exc` 变成 `raise None`，抛出一条与「参数写错」毫无关系的
+`TypeError: exceptions must derive from BaseException`；而 `attempt - 1` 是指数，
+`attempt=0` 被算成 2 的负一次幂 ⇒ 静默交出**比第一档更短**的等待（实测 0.5 / 0.25 / 0.0625 倍）。
+所以判据集中在
 `augmentor/validation.py:require_count` 一处，各调用点不再各自校验（API 侧也因此不需要
 `ge=` 约束，见 `api/routes/dataset_tools.py` 的 `SearchRequest` 与 `SampleRequest`）。
 五条边界值得记住：

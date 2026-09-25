@@ -13,6 +13,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional, Tuple, Type
 
+from .validation import require_count
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -57,7 +59,10 @@ def compute_delay(attempt: int,
     """计算第 attempt 次重试前的等待时长
 
     Args:
-        attempt: 已失败次数（从 1 开始）
+        attempt: 已失败次数（从 1 开始）。必须是 **不小于 1 的整数**：`attempt - 1`
+            是指数，传 0 或负数不会报「等太久」，而是静默把退避算成 2 的负次幂
+            （实测 `attempt=0` → 基础的 0.5 倍、`-3` → 0.0625 倍），即「第 0 次重试
+            比第 1 次等得更短」这种无对应现实的档位。
         base_delay: 基础等待（秒）
         factor: 指数因子
         max_delay: 等待上限（秒）
@@ -66,7 +71,11 @@ def compute_delay(attempt: int,
 
     Returns:
         等待秒数（>= 0）
+
+    Raises:
+        DataValidationError: `attempt` 不是整数或小于 1
     """
+    require_count("attempt", attempt, minimum=1)
     delay = min(max_delay, base_delay * (factor ** (attempt - 1)))
     if jitter > 0:
         rng = rng or random.Random()
@@ -90,7 +99,12 @@ def with_retries(func: Callable[..., Any],
     Args:
         func: 目标可调用对象
         *args: 位置参数
-        max_retries: 最大重试次数（不含首次调用）
+        max_retries: 最大重试次数（不含首次调用）。必须是 **不小于 0 的整数**，
+            0 是合法请求（「只调用一次，失败就别再试」）。负数会让
+            `range(0, max_retries + 1)` 直接为空：一次都不调用 func，然后
+            `raise last_exc` 变成 `raise None` —— 实测症状是
+            `TypeError: exceptions must derive from BaseException`，一个与
+            「参数写错了」毫无关系的报错。
         base_delay/factor/max_delay: 退避参数
         retry_on: 触发重试的异常类型元组
         sleeper: 等待函数（测试可注入）
@@ -105,8 +119,10 @@ def with_retries(func: Callable[..., Any],
         (func 的返回值, RetryStats)
 
     Raises:
+        DataValidationError: `max_retries` 不是整数或为负
         重试耗尽后抛出最后一次异常；被 classify 判定为不可重试时立即抛出
     """
+    require_count("max_retries", max_retries, minimum=0)
     stats = RetryStats()
     last_exc: Optional[BaseException] = None
 
