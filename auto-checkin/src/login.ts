@@ -6,6 +6,7 @@ import { openSiteContext, closeContext } from "./browser.js";
 import { fetchSelf } from "./sites/newapi-client.js";
 import { getAdapter } from "./sites/index.js";
 import { createLogger } from "./logger.js";
+import { acquireRunLock, releaseRunLock, wasInterrupted } from "./lock.js";
 
 /**
  * 一次性手动登录引导：为 GitHub/LinuxDO OAuth 类站点建立持久化会话。
@@ -26,6 +27,13 @@ async function main(): Promise<void> {
   if (!adapter) {
     log.error(`未知站点：${siteId}`);
     process.exit(1);
+  }
+
+  const lock = acquireRunLock();
+  if (!lock.ok) {
+    log.error(`已有其他签到/登录进程在运行（PID=${lock.holderPid}），本次登录退出`);
+    process.exitCode = 1;
+    return;
   }
 
   const config = loadConfig();
@@ -95,7 +103,8 @@ async function main(): Promise<void> {
   if (!ok) log.warn("超时未检测到登录。请重试，或确认是在本工具弹出的窗口里登录的。");
   await new Promise((r) => setTimeout(r, 1500));
   await closeContext(context);
-  process.exit(ok ? 0 : 1);
+  releaseRunLock();
+  process.exit(ok && !wasInterrupted() ? 0 : 1);
 }
 
 function shortUrl(u: string): string {

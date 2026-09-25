@@ -34,28 +34,15 @@ export interface LoginOptions {
   waitTurnstile?: boolean;
 }
 
+const FETCH_TIMEOUT_MS = 15_000;
+
 /** 页面内 fetch 读取 JSON 接口（同源，自动带 Cookie） */
 async function pageFetch(page: Page, path: string): Promise<{ status: number; json: any }> {
-  return page.evaluate(async (p) => {
+  return page.evaluate(async ({ p, timeoutMs }) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const r = await fetch(p, { credentials: "include" });
-      let json: any = null;
-      try {
-        json = await r.clone().json();
-      } catch {
-        json = null;
-      }
-      return { status: r.status, json };
-    } catch (e) {
-      return { status: 0, json: null };
-    }
-  }, path);
-}
-
-async function pagePost(page: Page, path: string): Promise<{ status: number; json: any }> {
-  return page.evaluate(async (p) => {
-    try {
-      const r = await fetch(p, { method: "POST", credentials: "include" });
+      const r = await fetch(p, { credentials: "include", signal: controller.signal });
       let json: any = null;
       try {
         json = await r.clone().json();
@@ -65,8 +52,47 @@ async function pagePost(page: Page, path: string): Promise<{ status: number; jso
       return { status: r.status, json };
     } catch {
       return { status: 0, json: null };
+    } finally {
+      clearTimeout(timer);
     }
-  }, path);
+  }, { p: path, timeoutMs: FETCH_TIMEOUT_MS });
+}
+
+async function pagePost(page: Page, path: string): Promise<{ status: number; json: any }> {
+  return page.evaluate(async ({ p, timeoutMs }) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const r = await fetch(p, { method: "POST", credentials: "include", signal: controller.signal });
+      let json: any = null;
+      try {
+        json = await r.clone().json();
+      } catch {
+        json = null;
+      }
+      return { status: r.status, json };
+    } catch {
+      return { status: 0, json: null };
+    } finally {
+      clearTimeout(timer);
+    }
+  }, { p: path, timeoutMs: FETCH_TIMEOUT_MS });
+}
+
+/** SPA 偶尔会在显式 goto 期间抢先跳转；只对这种可恢复竞争重试一次。 */
+export async function gotoWithNavigationRetry(page: Page, url: string): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      await page.goto(url, { waitUntil: "domcontentloaded" });
+      return;
+    } catch (err) {
+      const message = (err as Error).message;
+      const recoverable = /interrupted by another navigation|net::ERR_ABORTED/i.test(message);
+      if (!recoverable || attempt >= 2) throw err;
+      await page.waitForLoadState("domcontentloaded").catch(() => {});
+      await page.waitForTimeout(500 * (attempt + 1));
+    }
+  }
 }
 
 /**
@@ -76,6 +102,19 @@ async function pagePost(page: Page, path: string): Promise<{ status: number; jso
 export async function fetchSelf(page: Page, baseUrl: string): Promise<NewApiUser | null> {
   // 注意：page.evaluate 回调内禁止具名嵌套函数（tsx/esbuild 会注入浏览器端不存在的 __name）
   const result = await page.evaluate(async () => {
+    const requestText = async (
+      input: string,
+      init: RequestInit = {},
+    ): Promise<{ status: number; text: string }> => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15000);
+      try {
+        const response = await fetch(input, { ...init, signal: controller.signal });
+        return { status: response.status, text: await response.text() };
+      } finally {
+        clearTimeout(timer);
+      }
+    };
     let token = "";
     let userId = "";
     try {
@@ -97,8 +136,8 @@ export async function fetchSelf(page: Page, baseUrl: string): Promise<NewApiUser
 
     // 优先接口（Cookie/token 会话）
     try {
-      const r = await fetch("/api/user/self", { credentials: "include", headers });
-      const t = await r.text();
+      const r = await requestText("/api/user/self", { credentials: "include", headers });
+      const t = r.text;
       if (t.trim().startsWith("{")) {
         const j = JSON.parse(t);
         if (j && j.success === true && j.data) {
@@ -112,17 +151,17 @@ export async function fetchSelf(page: Page, baseUrl: string): Promise<NewApiUser
 
     // token 刷新型分支（如 JustWoker）：先用 refresh cookie 换 access_token，再带头重试
     try {
-      const rr = await fetch("/api/user/auth/refresh", { method: "POST", credentials: "include" });
-      const rt = await rr.text();
+      const rr = await requestText("/api/user/auth/refresh", { method: "POST", credentials: "include" });
+      const rt = rr.text;
       if (rt.trim().startsWith("{")) {
         const rj = JSON.parse(rt);
         const at = rj?.data?.access_token;
         if (at) {
-          const r2 = await fetch("/api/user/self", {
+          const r2 = await requestText("/api/user/self", {
             credentials: "include",
             headers: { Authorization: "Bearer " + at },
           });
-          const t2 = await r2.text();
+          const t2 = r2.text;
           if (t2.trim().startsWith("{")) {
             const j2 = JSON.parse(t2);
             if (j2 && j2.success === true && j2.data) {
@@ -231,7 +270,7 @@ export async function domLogin(
 
   // 打开登录页
   const loginUrl = `${baseUrl}${opts.loginPath ?? "/login"}`;
-  await page.goto(loginUrl, { waitUntil: "domcontentloaded" });
+  await gotoWithNavigationRetry(page, loginUrl);
   await page.waitForTimeout(3000);
   await dismissModals(page);
 
@@ -416,7 +455,7 @@ export async function oauthLogin(
   }
 
   // 打开登录页，点第三方登录按钮
-  await page.goto(`${baseUrl}${loginPath}`, { waitUntil: "domcontentloaded" });
+  await gotoWithNavigationRetry(page, `${baseUrl}${loginPath}`);
   await page.waitForTimeout(2500);
   await dismissModals(page);
 

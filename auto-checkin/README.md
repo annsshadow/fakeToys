@@ -6,7 +6,7 @@
 
 | 站点 | 登录方式 | 领奖方式 | 反爬处理 |
 | --- | --- | --- | --- |
-| **VyceAI** (`vyceai.com`) | 邮箱密码（`.env`） | `POST /user/daily-reward` | 自定义 API + 工作量证明 PoW（真浏览器自动过） |
+| **VyceAI** (`vyceai.com`) | 邮箱密码（`.env`） | `POST /user/daily-reward/claim` | 自定义 API + 工作量证明 PoW（真浏览器自动过） |
 | **AgentRouter** (`agentrouter.org`) | **GitHub 授权**（一次性手动） | 退出→重新登录触发 | 阿里云 WAF（余额从 localStorage 读，绕开拦截） |
 | **JustWoker** (`api.justwoker.icu`) | **GitHub 授权**（一次性手动） | 访问 `/profile` 触发 | Cloudflare Turnstile（真浏览器自动过）+ token 鉴权 |
 
@@ -77,9 +77,14 @@ npm start                       # 常驻模式：启动面板 + 定时器（推�
 npm run run-once                # 只跑一次全部站点后退出（供系统定时任务调用）
 npm run run-site -- justwoker   # 只跑指定站点
 npm run login -- agentrouter    # 为 OAuth 站点建立/刷新 GitHub 登录会话
+npm test                         # 运行回归测试
 ```
 
 面板上也可以点「立即全部签到」或每张卡片的「单独签到」手动触发。
+
+Windows 计划任务应调用 `run-once.bat`。该脚本会先执行 `npm run setup:browser`，验证实际 headless 浏览器；只有明确发现 executable 缺失时才强制重装，再运行一次全部站点。包装层日志写入 `logs/task-wrapper.log`。浏览器安装/验证失败会写入 wrapper 日志并以非零退出；浏览器启动失败会按站点记录为失败，其他站点仍会继续。常驻面板使用独立 daemon 锁，实际签到、单站和手动登录共用 run 租约锁。已启用但缺少凭据的跳过也会使任务返回非零。
+
+当前主机任务仍以 `Administrator` 的 InteractiveToken 运行；若要求“用户未登录也能执行”，需要另行改用服务账户/S4U 并重新注册任务，不能只靠批处理脚本解决。
 
 ---
 
@@ -142,16 +147,22 @@ auto-checkin/
 │  ├─ index.ts          # 入口：解析参数，常驻/一次性/单站模式
 │  ├─ config.ts         # 加载 .env 与 config.json，读取凭据
 │  ├─ runner.ts         # 编排：逐站登录→领奖→读余额→落库
+│  ├─ run-status.ts     # 一次性入口的失败退出码判定
+│  ├─ verify-browser.ts # 计划任务启动前的浏览器可执行性验证
 │  ├─ scheduler.ts      # node-cron 定时
 │  ├─ server.ts         # Express 面板 API
 │  ├─ store.ts          # 记录持久化 + 统计计算
 │  ├─ browser.ts        # Playwright 持久化会话管理
+│  ├─ lock.ts           # daemon 锁 + run 租约锁
 │  ├─ logger.ts         # 控制台 + 按天落盘日志
+│  ├─ login.ts          # OAuth 手动登录入口
 │  ├─ sites/
 │  │  ├─ newapi-client.ts  # new-api 通用客户端（登录/读余额/退出/签到）
 │  │  ├─ vyceai.ts / agentrouter.ts / justwoker.ts
 │  │  └─ index.ts          # 适配器注册表
 │  └─ public/           # 面板前端（纯静态 HTML/CSS/JS）
+├─ test/                # Node 内置测试：退出码与导航竞态
+├─ run-once.bat         # Windows 计划任务入口（自动修复浏览器）
 ├─ .env.example         # 凭据模板（复制为 .env）
 ├─ config.example.json  # 配置模板（复制为 config.json）
 └─ .gitignore           # 已排除所有密钥/会话/数据
