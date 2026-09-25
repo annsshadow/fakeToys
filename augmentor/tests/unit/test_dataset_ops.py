@@ -679,3 +679,77 @@ class TestStratifiedSplitWiring:
         ops.split(CORPUS, SplitConfig(ratios=RATIOS, seed=5, shuffle=shuffle,
                                       stratify=True, stratify_key="intent"))
         assert len(seen) == (0 if shuffle else 3)
+
+
+def _sample_corpus():
+    """4 类 × 5 条（共 20 条）的分层采样语料
+
+    `instruction` 在同类内完全相同 —— 分组键取它的前 10 字（见 `_stratified_sample`），
+    类内加序号会把 20 条拆成 20 组，就测不出「类与类之间怎么分余数」。`output` 每条唯一，
+    于是按 `instruction` 分层与按 `output` 分层交出两种形状，`stratify_key` 有没有真的
+    传到分组那一侧，一条断言就能分辨。
+    """
+    return [{"instruction": f"类别{cat}", "output": f"{cat}答案{i}"}
+            for cat in ("甲", "乙", "丙", "丁") for i in range(1, 6)]
+
+
+SAMPLE_CORPUS = _sample_corpus()
+
+
+def _class_counts(sampled):
+    """按 `instruction` 类计数（只保留出现过的类）
+
+    Args:
+        sampled: 采样结果
+
+    Returns:
+        类名 -> 条数
+    """
+    return dict(Counter(item["instruction"] for item in sampled))
+
+
+class TestSampleStratifyKey:
+    """A56 同族站点：`SampleConfig.stratify_key` 的判据与真接线
+
+    L41 给分割支路定了「空 `stratify_key` 报错，不静默退化」的口径，但采样支路是另一份
+    分组代码：实测（Temp `l42b.py`）空键时 4 类 × 5 条取 8 条交出 `5/2/1` 的随机形状，
+    而正常键恒为 `2/2/2/2` —— 与 A54「旋钮不被读就等于没有」同形。本轮把两条口径对齐。
+    """
+
+    @pytest.mark.parametrize("key", ["", None], ids=["empty", "none"])
+    def test_blank_stratify_key_is_rejected(self, key):
+        """开了分层采样却没字段：报错，不静默退化成随机挑条
+
+        缺陷态里 `item.get("", "")` 对每条都交出 `""`，20 条全落进同一个 `empty` 组，
+        配额等于对整份语料做一次 `rng.sample` —— 用户拿到的是随机样本却以为是分层样本。
+        """
+        ops = DatasetOperations()
+        with pytest.raises(DataValidationError, match="分层采样需要非空"):
+            ops.sample(SAMPLE_CORPUS, SampleConfig(method="stratified", size=8,
+                                                   seed=7, stratify_key=key))
+
+    @pytest.mark.parametrize("method", ["random", "systematic"],
+                             ids=["random", "systematic"])
+    def test_blank_key_still_allowed_for_other_methods(self, method):
+        """判据只管分层支路：另外两种方法不读键，不许被顺手拦下"""
+        ops = DatasetOperations()
+        sampled = ops.sample(SAMPLE_CORPUS, SampleConfig(method=method, size=8,
+                                                         seed=7, stratify_key=""))
+        assert len(sampled) == 8
+
+    @pytest.mark.parametrize("key,expected", [
+        ("instruction", {"类别甲": 2, "类别乙": 2, "类别丙": 2, "类别丁": 2}),
+        ("output", {"类别甲": 5, "类别乙": 3}),
+    ], ids=["by_class", "by_unique_field"])
+    def test_stratify_key_selects_the_grouping(self, key, expected):
+        """键必须是分组字段：换字段就换形状
+
+        `size=8, seed=7`。按 `instruction` 分层是 4 类各 2 条（在 seed 0/1/7 上恒等）；
+        按 `output` 分层时 20 条各自成组、每组配额 1，于是整份样本只覆盖到前两类的
+        头 8 条 —— 形状完全不同。缺陷态（把键硬编码成 `instruction`）在第二行上必红。
+        """
+        ops = DatasetOperations()
+        sampled = ops.sample(SAMPLE_CORPUS, SampleConfig(method="stratified", size=8,
+                                                         seed=7, stratify_key=key))
+        assert len(sampled) == 8
+        assert _class_counts(sampled) == expected

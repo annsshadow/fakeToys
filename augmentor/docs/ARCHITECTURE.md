@@ -768,12 +768,61 @@ L39 blob」与模式 02「只退回旧判据」红**逐条同名同 12 条** ⇒
 
 **可达面**：SDK 构造 `SplitConfig(stratify=True, stratify_key=...)`，以及文件级便捷函数
 `split_dataset(input_path, output_dir, stratify=True, stratify_key=...)`（`**kwargs` 直通 `SplitConfig`）。
-HTTP `POST /api/dataset/split` 与 CLI `split` 仍传不到——入口本身没这两个字段，属契约变更，记 **A56**。
-另注意 `augmentor/__init__.py` 导出的 `split_dataset` 是 `data_splitter` 那个内存版，不是本节说的文件版（**A59**）。
+**L42 更新（本段末句已成假陈述，就地校正）**：HTTP `POST /api/dataset/split` 与 CLI `split` 现在
+也能传到了 —— 请求体加了 `stratify` / `stratify_key` / `shuffle`，CLI 加了 `--stratify` /
+`--stratify-key` / `--no-shuffle`，A56 已关闭，细节与代价见 §3.17。另注意 `augmentor/__init__.py`
+导出的 `split_dataset` 是 `data_splitter` 那个内存版，不是本节说的文件版（**A59**）。
 
 **证据**：注入 8 项劣化红数 20/20/4/2/11/10/2/5，红例并集 29 条 = 本轮新增 29 行参数化用例每行至少被一种劣化杀掉；
 「①整体回退」与「②只把开关改成恒假」的红逐条同名，据此判定接线之外的结构改动答案不变。
 `dataset_ops.py` 216 语句 0 missed、分支 60/60。
+
+### 3.17 L42：把分层分割与分层采样带到 HTTP / CLI 契约上（关闭 A56）
+
+L41 把 `stratify` / `stratify_key` 从死旋钮接成真实现，但只到 SDK 面为止：`SplitRequest`
+只有六个字段，路由构造 `SplitConfig` 时不传分层参数，CLI `split` 同样只传 `ratios` 与 `seed`
+⇒ 用户在产品面上仍然「传了也没用」。本轮把入口接上，并顺手补上采样侧的同族漏洞。
+
+**接法：只加请求字段，响应形态一字不改**。三条理由都在实测上：
+①本组「写盘变换类只回写到哪、写了多少」是成文约定（`docs/API.md` dataset 分组说明）；
+②真实 6,902 条按 `instruction` 分层时 `stratify_distribution` 有 **6,531 个键、紧凑 JSON
+404,362 字节**（缩进版 567,638 字节），是四计数响应（79 字节）的 **5,119 倍**、相当于整份语料
+序列化的 29%；按 `output` 分层是 916 键 / 135,752 字节 —— 回传它等于把一个可选诊断变成每次请求
+必付的响应体；
+③老客户端的兼容只能靠「新字段全部有默认值」，而默认值必须等于 L42 之前的行为，这条已由
+`test_new_knobs_default_to_pre_l42_behavior` 钉成「三段产物逐条同答」（比对解析后的条目与计数，不是文件字节）。
+
+**面**：HTTP `POST /api/dataset/split` 收 `stratify`（默认 `false`）/ `stratify_key`（默认
+`"instruction"`）/ `shuffle`（默认 `true`）；`POST /api/dataset/sample` 收 `stratify_key`（默认
+`"instruction"`，只在 `method="stratified"` 生效）。CLI 对应 `--stratify`、`--stratify-key`、
+`--no-shuffle`。
+
+**采样侧的同族缺陷（本轮一并修）**：`_stratified_sample` 不校验空键，`item.get("", "")` 对每条
+都交出 `""` ⇒ 20 条 4 类语料取 8 条，正常键恒为 `2/2/2/2`、空键交出 `5/2/1` 的随机形状（探针
+Temp `l42b.py`）—— 与 A54「旋钮不被读就等于没有」同形，且 L42 之前 `stratify_key` 在产品面不可达，
+所以这条只在 SDK 面暴露。判据与 §3.16 边界 ② 同一条：`DataValidationError("分层采样需要非空的 stratify_key")`，
+400 / CLI exit 1，且**中止在落盘之前**（实测：判据本身 0.0073 ms，整次请求只付一次读盘 10.72 ms vs
+成功档 19.307 ms，min-of-9 同进程）。判据只管分层支路，`random` / `systematic` 不读键、空键照旧可用。
+
+**`shuffle` 在两条支路上口径不同（新事实，记 A60）**：分层支路的 `shuffle=False` 只把每段成员按
+输入原始相对次序回排，成员与条数都不动、`seed` 仍决定谁进哪段；默认支路是「先整份打乱再按位置切片」，
+所以 `False` 会连同成员一起改变，且三段恒为输入的前 50%/25%/25% —— **此时 `seed` 完全空转**
+（两个不同 seed 的 `shuffle=False` 产物逐条同答，`test_shuffle_false_on_default_path_freezes_the_seed`
+钉住）。这不是本轮引入的行为，但接上旋钮就必须把它钉成事实，免得日后被当成回归；统一口径交 A60。
+
+**代价（同进程 back-to-back min-of-9，真实 6,902 条 × 1 种子 seed 7，比例 0.8/0.1/0.1）**：
+请求模型构造 `SplitRequest` 省略新字段 0.0011 ms → 显式默认值 0.0013 ms（**×1.1818**，绝对 +0.2 µs）、
+`SampleRequest` **×1.1111** ⇒ 字段本身是微秒级，可忽略。端到端 `split_file`：默认档 43.325 ms、
+显式默认值 44.331 ms（**×1.0232**，+1.006 ms，与 L41 同档的 ×1.006 一致，属噪声）、分层档 53.826 ms
+（**×1.2424**，+10.501 ms）、分层 + `shuffle=False` 55.292 ms（**×1.2762**，较分层档 +1.466 ms）。
+最后这一档是 **A58 那笔保序代价第一次由产品面触发** —— L41 时它只有 SDK 显式传参才付，现在
+CLI `--no-shuffle --stratify` 或请求体 `shuffle=false` 就会付。绝对值跨进程不可比（首轮探针曾读到
+分层 + 保序 55.851 ms / 成功档 34.689 ms，与同进程重测差一截，故结论只取比值）。
+
+**证据**：新增 19 个 `def test_`（unit 3 / CLI 7 / API 9）、参数化后 **27** 行；注入 5 项劣化红数
+**4/2/4/2/4**，逐条与预定 node-id 同名（每次注入只跑该劣化对应的节点，红数 == 名单长度），
+还原后 5 个文件 sha 逐字节一致。全量 **4684 passed / 2 skipped**（75.87 s，覆盖率 **99.02%**），
+计数 **4657 + 27 = 4684 精确对上**，0 处既有断言被改写（三个测试文件 `−0` 行）。
 
 ## 4. 核心数据流
 

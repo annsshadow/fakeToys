@@ -204,8 +204,16 @@ python cli.py merge --inputs data1.json data2.json --output merged.json
 # 采样数据集
 python cli.py sample --input data.json --output sampled.json --size 1000
 
+# 分层采样（按指定字段分组配额，字段留空会报错而不是退化成随机挑条）
+python cli.py sample --input data.json --output sampled.json --method stratified \
+    --size 1000 --stratify-key instruction
+
 # 分割数据集
 python cli.py split --input data.json --output-dir splits/
+
+# 分层分割（--stratify 委托 DataSplitter；--no-shuffle 只回排段内顺序）
+python cli.py split --input data.json --output-dir splits/ --stratify \
+    --stratify-key instruction --seed 7
 
 # 数据集统计
 python cli.py stats --input data.json
