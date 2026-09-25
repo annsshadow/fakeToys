@@ -260,12 +260,9 @@ class TestGenerateRetryKnobs:
         assert captured["max_retries"] == 4
         assert captured["base_delay"] == 2.5
 
-    def test_backend_does_not_shake_the_backoff_yet(self, monkeypatch):
-        """A65 把 `jitter` 接进了 `with_retries`，但后端**刻意不传**：抖动不是配置旋钮
-        （暴露面在 A75），而 `generate()` 的等待上限口径（§3.22 的「退避一支 30 s」）
-        正是以 `jitter=0` 为前提的 —— 一旦这里传了非 0 值，那一支的上限就变成
-        2 × `_MAX_RETRY_DELAY`，文档与 `_MAX_RETRY_DELAY` 的注释都得同步改。
-        """
+    @staticmethod
+    def _capture_with_retries(monkeypatch):
+        """截住 `generate()` 递给 `with_retries` 的实参"""
         captured = {}
 
         def fake_with_retries(func, **kwargs):
@@ -273,11 +270,66 @@ class TestGenerateRetryKnobs:
             return "ok", None
 
         monkeypatch.setattr("augmentor.models.base.with_retries", fake_with_retries)
+        return captured
+
+    def test_backend_forwards_both_ceilings_at_its_defaults(self, monkeypatch):
+        """默认档必须把 §3.22 承诺的两个数原样送到 `with_retries`
+
+        本条取代 L48 写的 `test_backend_does_not_shake_the_backoff_yet`。那条钉的是
+        「后端**刻意不传** `jitter`」（当时抖动没有配置面，暴露面记在 A75），而 A75 与
+        A73 已在 L49 同批接上 ⇒ 那条的前提没了，硬留着就是把「旋钮没接」这件事伪装成
+        契约。改写后的主张：两副封顶都由配置决定，且默认档（300 s / 不抖）下每一档
+        等待与接参前逐字相同。
+        """
+        captured = self._capture_with_retries(monkeypatch)
         backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
         backend._call_api = lambda prompt: "ok"
         assert backend.generate("p") == "ok"
-        assert "jitter" not in captured
         assert captured["max_delay"] == backend._MAX_RETRY_DELAY
+        assert captured["max_retry_wait"] == backend._DEFAULT_MAX_RETRY_WAIT
+        assert captured["jitter"] == backend._DEFAULT_RETRY_JITTER
+
+    def test_default_ceilings_match_the_documented_promises(self, monkeypatch):
+        """后端默认值不许重抄数字：封顶跟着 `retry.MAX_RETRY_AFTER` 走"""
+        from augmentor import MAX_RETRY_AFTER
+
+        captured = self._capture_with_retries(monkeypatch)
+        backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
+        backend._call_api = lambda prompt: "ok"
+        backend.generate("p")
+        assert (backend._DEFAULT_MAX_RETRY_WAIT, captured["max_retry_wait"]) == (
+            MAX_RETRY_AFTER, MAX_RETRY_AFTER)
+        assert captured["jitter"] == 0.0
+
+    def test_shrunk_ceiling_and_configured_jitter_reach_the_call(self, monkeypatch):
+        """旋钮真接进 `generate()`：45 s / 0.5 两档都要落到 `with_retries` 的实参上
+
+        接线前实测（Temp `l49_probe.py`）：`max_retry_wait` 无处可传，429 + `Retry-After`
+        一律睡 300 s；`jitter` 只有 `compute_delay` 的形参、无人调用。
+        """
+        captured = self._capture_with_retries(monkeypatch)
+        backend = OpenAIBackend(
+            ModelConfig(type="openai", api_key="k", model="m"),
+            default_max_retry_wait=45.0,
+            default_retry_jitter=0.5,
+        )
+        backend._call_api = lambda prompt: "ok"
+        backend.generate("p")
+        assert (captured["max_retry_wait"], captured["jitter"]) == (45.0, 0.5)
+
+    @pytest.mark.parametrize("kwargs,name", [
+        ({"default_max_retry_wait": 301.0}, "max_retry_wait"),
+        ({"default_max_retry_wait": float("inf")}, "max_retry_wait"),
+        ({"default_max_retry_wait": -1.0}, "max_retry_wait"),
+        ({"default_max_retry_wait": True}, "max_retry_wait"),
+        ({"default_retry_jitter": 1.5}, "jitter"),
+        ({"default_retry_jitter": -0.1}, "jitter"),
+        ({"default_retry_jitter": "0.5"}, "jitter"),
+    ])
+    def test_bad_wait_budget_defaults_rejected_at_construction(self, kwargs, name):
+        """坏档位该在建后端时指名，而不是等第一次限流才表现为睡过头 / 抖不停"""
+        with pytest.raises(DataValidationError, match=name):
+            OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"), **kwargs)
 
 
 class TestJsonExtraction:

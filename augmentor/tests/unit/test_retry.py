@@ -15,7 +15,8 @@ import random
 
 import pytest
 
-from augmentor import RetryStats, compute_delay, should_retry, with_retries
+from augmentor import (MAX_RETRY_AFTER, RetryStats, compute_delay,
+                       should_retry, with_retries)
 from augmentor.exceptions import DataValidationError
 
 
@@ -632,10 +633,13 @@ class TestJitterPassthrough:
 
 
 class TestJitterConfigSurface:
-    """A65 的口径边界：抖动目前**不是**用户可配旋钮
+    """抖动与两副封顶在库层的默认档位
 
-    `config.yaml` 里没有 `retry_jitter`，工厂也不传 —— 配置面暴露另立 A75 与 A73/A74
-    同批做，避免「半接一个旋钮」。本类钉住的是当前默认值，改它必须同步 A75。
+    本类原先钉的是「A65 只接到 `with_retries`，**没有**配置面」（A75 未做）。L49 把
+    `retry_jitter` / `max_retry_wait` 一并接进 `augmentation.*` 之后，那句前提已经
+    不成立，所以改写为本类的主张：库层默认值必须是「不抖 / 300 s」，配置面接上之后
+    不改默认档位 ⇒ 不写这两个键的既有配置行为逐字不变。配置面本身的下钻断言在
+    `tests/integration/test_pipeline.py::TestRetryKnobWiring`。
     """
 
     def test_compute_delay_defaults_to_no_shake(self):
@@ -650,3 +654,84 @@ class TestJitterConfigSurface:
         w_sig = inspect.signature(with_retries)
         assert (w_sig.parameters["jitter"].default,
                 w_sig.parameters["rng"].default) == (0.0, None)
+
+class TestServerWaitCeilingKnob:
+    """A73 关闭：服务端指令那一支的封顶成了旋钮，但**只能夹小不能放大**
+
+    与 `TestTwoDelayCeilings`（L47）成对：那一轮 300 s 还是写死的常数，本轮把它接成
+    `with_retries(max_retry_wait=…)`，默认值仍取 `MAX_RETRY_AFTER`。为什么上界要判在
+    运行时而不像 `retry_delay ≤ 60` 那样只判在校验器：这道封顶本身就是对外承诺，
+    放开它等于交给配置一个造无界等待的入口（加判据前实测 `inf` 让 `Retry-After:
+    3000` 原样睡着 3000 s）。
+    """
+
+    @staticmethod
+    def _suggests(seconds):
+        return lambda exc: (True, seconds)
+
+    def test_default_still_clamps_at_the_documented_ceiling(self):
+        """不传新参时与接参前逐字相同：A73 的零回归面"""
+        slept = []
+        with pytest.raises(RuntimeError):
+            with_retries(_always_fail, max_retries=2,
+                         classify=self._suggests(864_000.0), sleeper=slept.append)
+        assert slept == [MAX_RETRY_AFTER, MAX_RETRY_AFTER]
+
+    def test_shrinking_the_ceiling_reaches_the_branch(self):
+        """调小真的管用：45 s 档下服务端要 10 天也只等 45 s"""
+        slept = []
+        with pytest.raises(RuntimeError):
+            with_retries(_always_fail, max_retries=2, max_retry_wait=45.0,
+                         classify=self._suggests(864_000.0), sleeper=slept.append)
+        assert slept == [45.0, 45.0]
+
+    def test_a_suggestion_below_the_ceiling_is_adopted_verbatim(self):
+        """夹小不等于压低真实指令：90 s 在 120 s 档下照抄 90 s"""
+        slept = []
+        with pytest.raises(RuntimeError):
+            with_retries(_always_fail, max_retries=1, max_retry_wait=120.0,
+                         classify=self._suggests(90.0), sleeper=slept.append)
+        assert slept == [90.0]
+
+    def test_zero_means_stop_honouring_the_instruction(self):
+        """`max_retry_wait=0` 的读法与 `max_delay=0` 同一条口径：不等，立刻重发"""
+        slept = []
+        with pytest.raises(RuntimeError):
+            with_retries(_always_fail, max_retries=1, max_retry_wait=0.0,
+                         classify=self._suggests(45.0), sleeper=slept.append)
+        assert slept == [0.0]
+
+    def test_it_does_not_clamp_the_backoff_branch(self):
+        """两副封顶互不相犯（对照组）：`max_retry_wait` 管不到退避计算那一支"""
+        slept = []
+        with pytest.raises(RuntimeError):
+            with_retries(_always_fail, max_retries=2, base_delay=100.0,
+                         max_delay=30.0, max_retry_wait=1.0, sleeper=slept.append)
+        assert slept == [30.0, 30.0]
+
+    def test_the_ceiling_itself_is_an_inclusive_boundary(self):
+        """300.0 合法：默认值就贴在这个点上，判成严格小于会把自己的默认档拒掉"""
+        slept = []
+        with pytest.raises(RuntimeError):
+            with_retries(_always_fail, max_retries=1, max_retry_wait=300.0,
+                         classify=self._suggests(900.0), sleeper=slept.append)
+        assert slept == [300.0]
+
+    @pytest.mark.parametrize("bad", [301.0, 1e9, float("inf"), -1.0, True, "300",
+                                     float("nan")])
+    def test_enlarging_the_ceiling_fails_before_the_first_request(self, bad):
+        """放大上界 = 作废「300 s 封顶」这句承诺，所以判在入参处且不烧真实请求"""
+        calls = []
+        with pytest.raises(DataValidationError, match="max_retry_wait"):
+            with_retries(lambda: calls.append(1), max_retries=2,
+                         sleeper=lambda d: None, max_retry_wait=bad)
+        assert calls == []
+
+    def test_the_knob_is_declared_in_the_signature(self):
+        """接线形状：`max_retry_wait` 的默认值必须**引用常数**而不是重抄 300.0，
+        否则改常数时这一处会静默留在旧值上。
+        """
+        import inspect
+
+        param = inspect.signature(with_retries).parameters["max_retry_wait"]
+        assert param.default == MAX_RETRY_AFTER

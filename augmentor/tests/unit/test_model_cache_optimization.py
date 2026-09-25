@@ -409,8 +409,11 @@ class TestPipelineCacheWiring:
             "response_cache_max_bytes": 2048,
             # 自 L45 起管道还要翻译重试档位给工厂（A64 接线）。精确字典是故意的：
             # 工厂契约每长一个键，这里就必须显式认领一次，不允许静默扩面。
+            # L49 的等待预算双旋钮（A73 + A75）就是按这条规矩显式认领的。
             "default_attempts": config.augmentation.max_retries,
             "default_retry_delay": config.augmentation.retry_delay,
+            "default_max_retry_wait": config.augmentation.max_retry_wait,
+            "default_retry_jitter": config.augmentation.retry_jitter,
         }
 
     def test_pipeline_defaults_to_disabled(self, monkeypatch):

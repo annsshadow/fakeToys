@@ -4,8 +4,8 @@
 """重试与指数退避模块
 
 为模型调用等易失败的外部操作提供统一的重试策略：指数退避 + 两副封顶
-（退避计算一支归 `max_delay`，服务端 `Retry-After` 一支归 `MAX_RETRY_AFTER`）
-+ 可选抖动，sleeper 可注入以便测试。
+（退避计算一支归 `max_delay`，服务端 `Retry-After` 一支归 `max_retry_wait`，
+默认即 `MAX_RETRY_AFTER`）+ 可选抖动，sleeper 可注入以便测试。
 """
 
 import logging
@@ -34,6 +34,11 @@ RETRYABLE_STATUS_CODES = frozenset({408, 425, 429, 500, 502, 503, 504})
 # 等 300 s）。一次 `generate()` 的最坏总等待因此是
 # `(总尝试次数 - 1) × 300`，而不是 `(总尝试次数 - 1) × max_delay`。
 # 口径的来龙去脉见 docs/ARCHITECTURE.md §3.22。
+#
+# 自 L49 起本常数是 `with_retries(max_retry_wait=…)` 的**默认值**而不是唯一值：
+# 用户可以把它调小（`augmentation.max_retry_wait`），但**不能调大** —— 判据里那道
+# `maximum=MAX_RETRY_AFTER` 守的就是这句话，「300 s 封顶」是对外承诺，放开它等于
+# 交给配置一个造无界等待的入口。
 MAX_RETRY_AFTER = 300.0
 
 
@@ -79,7 +84,8 @@ def compute_delay(attempt: int,
             单调序列，`NaN` 给出 ``[1.0, 30.0, 30.0]``，字符串与 `None` 则在幂运算
             处炸成与「参数写错」无关的 `TypeError`。
         max_delay: 等待上限（秒），只封顶**退避计算**这一支；服务端 `Retry-After`
-            走 `with_retries` 的另一支、封顶在 `MAX_RETRY_AFTER`（见该常数的注释）。
+            走 `with_retries` 的另一支、封顶在它的 `max_retry_wait`（默认
+            `MAX_RETRY_AFTER`，见该常数的注释）。
             判据 `require_seconds`：实测 `max_delay=-1` 会把整条退避清零（`min()` 交出
             它再被尾部夹 0），而 `max_delay=0` 是合法的「不等待」请求，故下界取 0。
         jitter: 随机抖动比例（0-1），在指数值**之上**叠加 [0, jitter*delay]。判据
@@ -120,6 +126,7 @@ def with_retries(func: Callable[..., Any],
                   base_delay: float = 1.0,
                   factor: float = 2.0,
                   max_delay: float = 30.0,
+                  max_retry_wait: float = MAX_RETRY_AFTER,
                   jitter: float = 0.0,
                   rng: Optional[random.Random] = None,
                   retry_on: Tuple[Type[BaseException], ...] = (Exception,),
@@ -148,6 +155,13 @@ def with_retries(func: Callable[..., Any],
             一字不变（实测五档仍是 ``[1.0, 2.0, 4.0, 8.0, 16.0]``）。
             **只作用于退避这一支**：`classify` 给出建议等待（如 HTTP ``Retry-After``）时
             原样采纳、不再叠加抖动 —— 与 A72 拍的「拿到服务端的指示就照办」同一条口径。
+        max_retry_wait: **服务端指令那一支**的等待上限（秒），默认 `MAX_RETRY_AFTER`
+            （300 s）。判据 `require_seconds(..., maximum=MAX_RETRY_AFTER)` —— 上界不是
+            防手滑，而是「300 s 封顶」这句承诺本身，所以本参数**只能把封顶夹小、不能放大**
+            （加判据前实测：一旦允许放大，`Retry-After: 3000` 会原样睡着 3000 s）。与 `max_delay`
+            的关系保持不变：两副封顶各管一支，`max_retry_wait` 管不到退避计算，
+            `max_delay` 也管不到它。取 `0.0` 是合法档位，语义是「不再尊重服务端指令、
+            失败就立刻重发」，与 `max_delay=0` 在退避一支的读法同一条口径。
         retry_on: 触发重试的异常类型元组
         sleeper: 等待函数（测试可注入）
         on_retry: 每次重试前的回调 (attempt, exc, delay)
@@ -155,9 +169,9 @@ def with_retries(func: Callable[..., Any],
             返回 ``(False, _)`` 时立即放弃重试并抛出原异常——用于区分
             「限流/网络抖动」（值得重试）与「鉴权失败/参数错误」（重试纯属浪费）。
             建议等待秒数非 None 时**替换**退避计算结果（如 HTTP ``Retry-After``），
-            并且只受 `MAX_RETRY_AFTER` 封顶 —— 上面那组 `base_delay/factor/max_delay`
-            在这一支全部参不到场，两副封顶互不相犯（细节见 `MAX_RETRY_AFTER` 的注释
-            与 docs/ARCHITECTURE.md §3.22）。
+            并且只受 `max_retry_wait` 封顶（默认 `MAX_RETRY_AFTER`）—— 上面那组
+            `base_delay/factor/max_delay` 在这一支全部参不到场，两副封顶互不相犯
+            （细节见 `MAX_RETRY_AFTER` 的注释与 docs/ARCHITECTURE.md §3.22）。
         **kwargs: 关键字参数
 
     Returns:
@@ -165,7 +179,8 @@ def with_retries(func: Callable[..., Any],
 
     Raises:
         DataValidationError: `max_retries` 不是不小于 0 的整数，或 `base_delay` /
-            `max_delay` / `factor` / `jitter` 非法（在调用 `func` **之前**判掉）
+            `max_delay` / `factor` / `jitter` / `max_retry_wait` 非法（在调用 `func`
+            **之前**判掉）
         重试耗尽后抛出最后一次异常；被 classify 判定为不可重试时立即抛出
     """
     # 判参排在循环之前：`func` 可能是一次真实的付费 API 调用，坏档位不该先把它打出去
@@ -173,6 +188,8 @@ def with_retries(func: Callable[..., Any],
     require_seconds("base_delay", base_delay, minimum=0.0)
     require_positive("factor", factor)
     require_seconds("max_delay", max_delay, minimum=0.0)
+    require_seconds("max_retry_wait", max_retry_wait, minimum=0.0,
+                    maximum=MAX_RETRY_AFTER)
     require_ratio("jitter", jitter)
     stats = RetryStats()
     last_exc: Optional[BaseException] = None
@@ -200,10 +217,10 @@ def with_retries(func: Callable[..., Any],
             if attempt >= max_retries:
                 break
 
-            # 两支的封顶不同，且这是刻意的：服务端指令一支只归 `MAX_RETRY_AFTER` 管，
+            # 两支的封顶不同，且这是刻意的：服务端指令一支只归 `max_retry_wait` 管，
             # **不夹 `max_delay`** —— 把「90 秒后再来」夹成 30 s 等于提前 3 倍敲门。
             if suggested is not None:
-                delay = min(MAX_RETRY_AFTER, max(0.0, float(suggested)))
+                delay = min(max_retry_wait, max(0.0, float(suggested)))
             else:
                 delay = compute_delay(attempt + 1, base_delay, factor, max_delay,
                                       jitter=jitter, rng=rng)
