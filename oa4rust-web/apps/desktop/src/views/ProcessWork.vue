@@ -386,6 +386,7 @@
             <button class="btn-sm" @click="loadTwinA">孪生读A</button>
             <button class="btn-sm" @click="loadTwinB">孪生读B</button>
             <button class="btn-sm" @click="loadTwinC">孪生读C</button>
+            <button class="btn-sm" @click="loadTwinD">孪生读D</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('appListRange')">应用范围清单</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('modeList')">模式清单</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('processListIds')">按ids取流程</button>
@@ -2258,6 +2259,22 @@ async function loadTwinC() {
     toast.success(`孪生读C ${rs.length} 条已提交`)
   } catch (e: any) {
     toast.error('孪生读C失败: ' + (e?.message ?? ''))
+  }
+}
+// rev482（放宽双计口径·第二波）：表面退化/镜像位 3 条（taskcompleted v2 create 位 next/prev 同 SQL 退化重复 2 条——
+// 放宽口径逐注册路由计；attachment/edit/{id}/work/{workId}/text PUT 委托 attachment_u2b_update_content，
+// body{content|text|fileContent} UPDATE pp_c_attachment，owner 门禁）
+async function loadTwinD() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/processplatform/assemble/surface/taskcompleted/v2/list/create/prev/0/0', {})),
+      s(api.post('/api/processplatform/assemble/surface/taskcompleted/v2/list/create/0/prev/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/attachment/edit/0/work/0/text', { text: 'g5' })),
+    ])
+    toast.success(`孪生读D ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('孪生读D失败: ' + (e?.message ?? ''))
   }
 }
 async function engineReadAction(kind: string): Promise<void> {

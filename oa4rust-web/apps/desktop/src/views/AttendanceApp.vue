@@ -17,6 +17,7 @@
         <button class="eb" @click="loadAttBase">🗂️ 打卡/周期/员工</button>
         <button class="eb" @click="loadCoreLists">🧩 核心记录/规则</button>
         <button class="eb" @click="loadAttTwin">🔁 孪生端点</button>
+        <button class="eb" @click="loadAttTwin2">🔁 孪生端点B</button>
         <button class="eb" @click="loadScheduleDetail">📅 排班设置明细</button>
         <button class="eb" @click="loadV2ConfigTpl">🧾 v2配置/模板/统计</button>
         <button class="eb" @click="loadStatisticShow">📈 统计展示筛选</button>
@@ -1403,6 +1404,19 @@ async function loadAttTwin() {
     toast.success(`考勤孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
     toast.error('考勤孪生端点失败: ' + (e?.message ?? ''))
+  }
+}
+// rev482（放宽双计口径·第二波）：考勤 1 条真写路由（reciveSingle：body{id} UPDATE x_attendance_detail received=true，owner 语义，
+// 双轨 v2 mobile check 畸形路径（URL 含字面空格）2 条为注册残迹不接，记档）
+async function loadAttTwin2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/attendance/assemble/control/attendancedetail/reciveSingle', { id: '0' })),
+    ])
+    toast.success(`考勤孪生端点B ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('考勤孪生端点B失败: ' + (e?.message ?? ''))
   }
 }
 </script>
