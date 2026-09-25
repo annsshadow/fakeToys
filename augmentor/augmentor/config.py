@@ -8,7 +8,39 @@ import yaml
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 from pathlib import Path
-from .exceptions import ConfigError
+from .exceptions import ConfigError, DataValidationError
+from .retry import MAX_RETRY_AFTER
+from .validation import (require_count, require_ratio, require_seconds,
+                         require_string, require_string_list)
+
+# `augmentation` / `web` 两节的取值区间。**校验器与运行时判据共用这一批常量**：
+# A77 的根因就是同一个上界在两边各抄一遍（抄完还漏），一边改了另一边不知道，
+# 于是出现「校验器独有天花板」（`validate-config` 报红的配置其实跑得起来）与
+# 「运行时独有判据」（绿灯跑进流水线才炸）两种症状。区间留在这里而不是校验器里，
+# 因为它们是配置对象自己的契约 —— 不经 `validate-config` 的 SDK 直构同样要认。
+VARIANTS_PER_SEED_RANGE = (1, 100)
+NUM_THREADS_RANGE = (1, 100)
+AUTO_SAVE_INTERVAL_MIN = 1
+MAX_RETRIES_RANGE = (0, 20)
+RETRY_DELAY_RANGE = (0.0, 60.0)
+PORT_RANGE = (1, 65535)
+RATE_LIMIT_MIN_REQUESTS = 0
+RATE_LIMIT_MIN_WINDOW_SECONDS = 0.0
+
+
+def _reject_null_fields(section: str, obj: Any) -> None:
+    """配置对象的字段没有「未提供」这种状态：空值就是 `None`。
+
+    实测（L51 改前）YAML 写 `web: {port: }` 之后 `load_config` 把 `None` 原样放进
+    字段，而校验器对同一批空值逐个报「类型错误: 期望 int, 实际 NoneType」⇒ 不判
+    就是「校验器判红的配置照样能加载」，且下游 `Path(str(p))` 会把 `None` 变成一
+    个**名叫 `None` 的白名单根目录**。
+    """
+    for name in obj.__dataclass_fields__:
+        if getattr(obj, name) is None:
+            raise DataValidationError(
+                f"{section}.{name} 不能是 null（配置里写了这个键却没有给值）"
+            )
 
 
 @dataclass
@@ -38,6 +70,35 @@ class AugmentationConfig:
     # 退避的随机抖动比例（0-1，闭区间）。默认 0 ⇒ 各档等待与接参前逐字相同；
     # 非 0 会把退避一支的最坏等待上界放大为 max_delay × (1 + 本值)。
     retry_jitter: float = 0.0
+
+    def __post_init__(self):
+        """运行时判据（L51 / A77 + A82）：区间与校验器规格逐个同源。
+
+        改前这一节只有校验器那一半：实测 `AugmentationConfig(max_retries=10**6,
+        retry_delay=10**6, retry_jitter=50.0)` 无判据构造成功，而校验器对同一批值
+        报 6 条错 ⇒ 不经 `validate-config` 的写法拿到的是「报红的配置其实跑得
+        起来」，按 §3.24 的等待公式那是 999,999 × 300 s ≈ 83,333 h 的最坏预算。
+        `auto_save_interval` 是本轮新立的两侧同判（改前两侧**都**没有判据：实测
+        0 与 −1 都和 1 逐字同答，20 条样本各触发 20 次增量存盘，默认档 10 只 2 次）。
+        """
+        _reject_null_fields("augmentation", self)
+        lo, hi = VARIANTS_PER_SEED_RANGE
+        require_count("augmentation.variants_per_seed", self.variants_per_seed,
+                      minimum=lo, maximum=hi)
+        lo, hi = NUM_THREADS_RANGE
+        require_count("augmentation.num_threads", self.num_threads,
+                      minimum=lo, maximum=hi)
+        require_count("augmentation.auto_save_interval", self.auto_save_interval,
+                      minimum=AUTO_SAVE_INTERVAL_MIN)
+        lo, hi = MAX_RETRIES_RANGE
+        require_count("augmentation.max_retries", self.max_retries,
+                      minimum=lo, maximum=hi)
+        lo, hi = RETRY_DELAY_RANGE
+        require_seconds("augmentation.retry_delay", self.retry_delay,
+                        minimum=lo, maximum=hi)
+        require_seconds("augmentation.max_retry_wait", self.max_retry_wait,
+                        minimum=0.0, maximum=MAX_RETRY_AFTER)
+        require_ratio("augmentation.retry_jitter", self.retry_jitter)
 
 
 @dataclass
@@ -203,6 +264,44 @@ class WebConfig:
     rate_limit_exempt_paths: list = field(
         default_factory=lambda: ["/api/health", "/docs", "/redoc", "/openapi.json"]
     )
+
+    def __post_init__(self):
+        """运行时判据（L51 / A80）：`web` 节管的是访问边界，不能只在显式校验时才判。
+
+        L50 把这一节接上了校验器，但校验器只在跑 `validate-config` 时才动，于是
+        两侧都还空着的那一半就是症状本身（全部改前实测）：
+
+        - `data_roots: data`（写成标量）被逐字符拆成 `d/a/t/a` 四个根 ⇒ 数据端点
+          一律 403，看起来像后端坏了；
+        - `cors_origins: "https://api.corp.example"`（同样写成标量）交给 starlette
+          后走的是**子串**匹配（1.6.0 与 1.2.1 同形）⇒ `https://api.corp`、
+          `https://api` 这些**别的主机**被放行 —— 收紧意图拿到的是放宽结果；
+        - `data_roots=[None]` 经 `Path(str(p))` 变成一个名叫 `None` 的白名单根；
+        - `rate_limit_window_seconds=NaN` 让窗口永不滚动 ⇒ 超过阈值后**永久 429**，
+          且 `retry_after()` 抛 `ValueError: cannot convert float NaN to integer`；
+          写成负数则是限流静默关闭。
+
+        区间常量与校验器那一侧同一批（见模块开头），所以「配了不生效」和「两边
+        各判一套」这两件事同时被封住。
+        """
+        _reject_null_fields("web", self)
+        lo, hi = PORT_RANGE
+        require_count("web.port", self.port, minimum=lo, maximum=hi)
+        require_string("web.host", self.host)
+        require_string("web.static_dir", self.static_dir)
+        require_string_list("web.cors_origins", self.cors_origins)
+        if not isinstance(self.cors_credentials, bool):
+            raise DataValidationError(
+                f"web.cors_credentials 必须是布尔值，当前是 "
+                f"{self.cors_credentials!r}（{type(self.cors_credentials).__name__}）"
+            )
+        require_string_list("web.data_roots", self.data_roots)
+        require_count("web.rate_limit_max_requests", self.rate_limit_max_requests,
+                      minimum=RATE_LIMIT_MIN_REQUESTS)
+        require_seconds("web.rate_limit_window_seconds",
+                        self.rate_limit_window_seconds,
+                        minimum=RATE_LIMIT_MIN_WINDOW_SECONDS)
+        require_string_list("web.rate_limit_exempt_paths", self.rate_limit_exempt_paths)
 
 
 @dataclass

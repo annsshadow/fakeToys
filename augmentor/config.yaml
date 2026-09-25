@@ -60,29 +60,36 @@ models:
     max_output_tokens: 2048
 
 # 增强配置
+# 本节取值区间住在 `augmentor/config.py` 的常量里，`load_config` 加载时就逐个判
+# （L51 / A77）：写坏是抛 `DataValidationError`，不再出现「`validate-config` 报红却
+# 跑得起来」或反过来。下列注释里的边界与代码里的常量同一批。
 augmentation:
-  # 每条 seed 生成的变体数量
+  # 每条 seed 生成的变体数量（1-100）
   variants_per_seed: 5
   
-  # 并发线程数
+  # 并发线程数（1-100）
   num_threads: 40
   
-  # 自动保存间隔（每 N 条）
+  # 自动保存间隔（每 N 条，必须 ≥ 1）
+  # 0 与负数在这里不是「关闭自动保存」而是「每条都存」：实测 20 条样本触发 20 次
+  # 增量写盘，默认档 10 只 2 次 —— 10 倍静默写放大，所以要判掉（L51 / A82）
   auto_save_interval: 10
   
   # 模型调用的总尝试次数（含首次，不是「额外重试次数」）；0 = 只调用一次不重试
-  # 越界（负数 / 布尔 / 字符串 / >20）在流水线构造处判掉，不降级为无模型模式
+  # 越界（负数 / 布尔 / 字符串 / >20）此前只有 `validate-config` 判得到，L51 起
+  # 加载时同样判 —— 流水线构造处仍是第二道防线
   max_retries: 3
   
   # 退避基数（秒）：第 n 次等待 ≈ retry_delay × 2^(n-1)，退避计算那一支再被 30 s 夹住
-  # 0–60 之间，int 写法（如 1）与 float 写法（如 1.0）都合法
+  # 0–60 之间，int 写法（如 1）与 float 写法（如 1.0）都合法；上界 60 从前只有
+  # `validate-config` 判得到，L51 起加载时也判
   # 但限流时不等这个数：服务端回 `Retry-After` 就照它的秒数等，那一支 30 s 夹不住 ——
   # 它的上限是下面那个 `max_retry_wait`（默认 300 s）
   retry_delay: 1
 
   # 「服务端指令」那一支的等待上限（秒），0–300，int / float 写法都合法
   # **只能夹小不能放大**：300 s 是 `retry.MAX_RETRY_AFTER` 对外的承诺，
-  # 写 301 会在流水线构造处判掉（不降级为无模型模式）
+  # 写 301 在加载时即判掉（不降级为无模型模式），流水线构造处是第二道防线
   # 调小它是「我宁可早点放弃，也不要挂住 10 分钟」的开关；0 读作
   # 「不再尊重服务端指令、失败就立刻重发」，一般只该出现在测试里
   max_retry_wait: 300
@@ -313,14 +320,18 @@ frameworks:
     - llamaindex
 
 # Web UI 配置
+# 本节的形状与区间在 `load_config` 加载时就判（L51 / A80）：列表键必须写成 YAML 序列
+# （`- 项`），数值键必须在区间内。写坏的后果不再是被静默放行 —— 访问控制项被写成
+# 标量时静默放宽比静默失效更坏，见下面 `cors_origins` 与 `data_roots` 两条注释。
+# 服务启动时这份配置若判不过，进程直接不起（`api/main.py` 在 import 期加载它）。
 web:
-  # 服务端口
+  # 服务端口（1–65535）
   port: 8000
   
-  # 服务地址
+  # 服务地址（非空字符串）
   host: 0.0.0.0
   
-  # 静态文件目录
+  # 静态文件目录（非空字符串）
   static_dir: web/dist
   
   # 允许跨源调用本 API 的来源白名单（精确匹配 Origin 头）。
@@ -333,6 +344,9 @@ web:
   # 都能带用户凭据读本 API，故收紧。
   # 这是 3.x 的**破坏性默认变更**：确有跨源前端的话，改成
   # `cors_origins: ["https://your-frontend.example"]` 即可恢复。
+  # 必须写成序列：`cors_origins: https://api.corp.example`（标量）在 starlette 下走的
+  # 是**子串**匹配（1.6.0 与 1.2.1 实测同形），于是 `https://api.corp` 与 `https://api`
+  # 两个别的主机被放行 —— 收紧意图拿到放宽结果。现在这种写法加载即拒。
   cors_origins: []
   
   # 是否允许跨源请求携带凭据（cookie / Authorization）。本仓 API 不用 cookie，
@@ -348,6 +362,10 @@ web:
   # （配置、备份目录）对 API 不可见。放宽需谨慎：每多一个根目录，可读写的范围
   # 就多出整棵子树。
   # 环境变量 AUGMENTOR_DATA_ROOTS（os.pathsep 分隔）优先级高于此处。
+  # 必须写成序列：`data_roots: data`（标量）会被逐字符迭代成 d/a/t/a 四个根目录，
+  # 于是**所有**数据端点一律 403，症状长得像后端坏了；`- null` 这种元素则变成一个
+  # 名叫 `None` 的根。两种写法现在都在加载时判掉（服务在跑时改坏配置则回落出厂默认，
+  # 见 `api/deps.allowed_data_roots`）。
   data_roots:
     - "data"
   
@@ -355,7 +373,9 @@ web:
   # 超限返回 429 并带 Retry-After 头。
   rate_limit_max_requests: 300
   
-  # 限流窗口长度（秒）
+  # 限流窗口长度（秒），必须是非负数值。NaN 会让窗口永不滚动：超过阈值后永久 429，
+  # 且 `Retry-After` 计算直接抛（实测 `cannot convert float NaN to integer`）；负数则
+  # 等价于关闭限流 —— 两种都不是「写错单位」级别的可见症状，所以判在加载时。
   rate_limit_window_seconds: 60.0
   
   # 免限流路径（前缀匹配）。健康检查被容器探针高频调用，必须豁免。

@@ -374,6 +374,37 @@ class TestAllowedRootsResolution:
 
         assert deps.allowed_data_roots() == [(Path.cwd() / "data").resolve()]
 
+    def test_scalar_shaped_config_falls_back_instead_of_splitting(self, monkeypatch,
+                                                                 tmp_path):
+        """真配置里的标量形状走同一条降级（L51 / A80 的接地点）
+
+        上一条用的是假异常；本条是真实的 YAML 形状缺陷。改前实测（Temp
+        `l51q/probe1.py`）：`data_roots: data` 被逐字符拆成 `d/a/t/a` 四个相对根，
+        服务照旧启动、数据端点一律 403，症状长得像后端坏了。现在
+        `WebConfig.__post_init__` 在加载那一刻就拒，异常由 `allowed_data_roots`
+        兜住，可见范围退回出厂的 `data/`。
+        """
+        from api import deps
+
+        bad = tmp_path / "scalar-roots.yaml"
+        bad.write_text("web:\n  data_roots: data\n", encoding="utf-8")
+        monkeypatch.delenv("AUGMENTOR_DATA_ROOTS", raising=False)
+        monkeypatch.setenv("AUGMENTOR_CONFIG_PATH", str(bad))
+
+        assert deps.allowed_data_roots() == [(Path.cwd() / "data").resolve()]
+
+    def test_valid_list_shape_is_still_honoured(self, monkeypatch, tmp_path):
+        """阳性对照：降级不许变成「配置文件里的白名单一概不认」"""
+        from api import deps
+
+        good = tmp_path / "good-roots.yaml"
+        good.write_text("web:\n  data_roots: [\"%s\"]\n" % tmp_path.as_posix(),
+                        encoding="utf-8")
+        monkeypatch.delenv("AUGMENTOR_DATA_ROOTS", raising=False)
+        monkeypatch.setenv("AUGMENTOR_CONFIG_PATH", str(good))
+
+        assert deps.allowed_data_roots() == [tmp_path.resolve()]
+
     @pytest.mark.parametrize("bad", ["", "   "])
     def test_empty_path_rejected_with_400(self, bad):
         """空路径直接 400，不进入文件系统解析"""

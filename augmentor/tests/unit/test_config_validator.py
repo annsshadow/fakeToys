@@ -763,16 +763,23 @@ class TestAugmentationRetryKnobs:
         errors = self._errors({"max_retries": value})
         assert errors and expect in errors[0][1]
 
-    @pytest.mark.parametrize("value", [-1, "1s", float("nan"), 0, 1, 1.0, 30.5])
+    @pytest.mark.parametrize("value", [-1, "1s", float("nan"), 0, 1, 1.0, 30.5, 60.0, 60.1])
     def test_validator_and_runtime_use_the_same_verdict(self, value):
-        """校验器与 `require_seconds` 必须同口径（上界除外，那是校验器独有的天花板）
+        """校验器与运行时判据必须同口径，**含上界**
 
-        两边不一致时，`validate-config` 绿灯的配置会在建管道时抛
+        两侧不一致时，`validate-config` 绿灯的配置会在建管道时抛
         `DataValidationError`，或者反过来把合法配置拦在门外。
+
+        L51 之前这条只能写成「上界除外」：`retry_delay ≤ 60` 只在校验器那一侧
+        （A77），所以这里比的是不带 `maximum` 的 `require_seconds`。本轮把
+        `config.RETRY_DELAY_RANGE` 同时接进 `AugmentationConfig.__post_init__`，
+        于是本断言补上了 `maximum`，全区间一致。
         """
+        from augmentor.config import RETRY_DELAY_RANGE
+
         rejected_by_validator = bool(self._errors({"retry_delay": value}))
         try:
-            require_seconds("retry_delay", value)
+            require_seconds("retry_delay", value, maximum=RETRY_DELAY_RANGE[1])
             rejected_by_runtime = False
         except DataValidationError:
             rejected_by_runtime = True
@@ -781,10 +788,11 @@ class TestAugmentationRetryKnobs:
 class TestWaitBudgetKnobSurface:
     """`augmentation.max_retry_wait` / `retry_jitter` 的校验规格（L49 接线）
 
-    与 `TestAugmentationRetryKnobs` 成对，但口径**不同**：那两个旧旋钮的上界
+    与 `TestAugmentationRetryKnobs` 成对。L49 时两类的口径**不同**：旧两旋钮的上界
     （`retry_delay ≤ 60`、`max_retries ≤ 20`）是校验器独有的天花板，运行时收 999；
-    新旋钮的上界（`max_retry_wait ≤ 300`、`retry_jitter ≤ 1`）在运行时同样判 —— 对这
-    两个参数来说上界是承诺本身。所以本类的同口径断言能做到全区间一致，旧旋钮做不到。
+    新两旋钮的上界（`max_retry_wait ≤ 300`、`retry_jitter ≤ 1`）在运行时同样判。
+    L51 关闭 A77 后这个区别没了 —— 四个键的区间都住在 `config.py` 的常量里，两侧
+    同源，逐值一致由 `TestRuntimeValidatorParity` 统一常驻断言。
     """
 
     @staticmethod
@@ -855,10 +863,12 @@ class TestWaitBudgetKnobSurface:
         合法，而运行时四道判据（`require_count` / `require_seconds` /
         `require_positive` / `require_ratio`）4/4 拒收。本条把「bool 不算数值」从
         一次性修复升格为对全部数值键的常驻断言，以后新增字段自动被覆盖。
+        L51 起计数从 10 变 11：新增的那个是 `augmentation.auto_save_interval`
+        （A82 给它补的规格）。
         """
         numeric = [p for p, s in ConfigValidator.KNOWN_FIELDS.items()
                    if s.get("type") in (int, float)]
-        assert len(numeric) == 10, "新增数值规格键会自动进入本断言"
+        assert len(numeric) == 11, "新增数值规格键会自动进入本断言"
         for path in numeric:
             hits = [m for p_, m in self._errors_at(path) if p_ == path]
             assert hits and "类型错误" in hits[0], (path, hits)
@@ -960,9 +970,160 @@ class TestWebSectionKnobSurface:
     def test_scalar_data_roots_is_the_dangerous_shape(self):
         """`data_roots: data` 不报错才是它危险的地方：它会让白名单按字符拆开
 
-        运行时那一侧没有判据（A80），所以校验器是唯一的拦得住它的地方。
+        两侧现在都拦得住：校验器按规格判「期望 list」，运行时
+        `WebConfig.__post_init__` 走 `require_string_list`（A80 于 L51 关闭）。
         """
         errors = self._errors({"data_roots": "data"})
         assert errors and "类型错误" in errors[0][1]
         # 阳性对照：同一份配置写成列表时校验器无异议
         assert self._errors({"data_roots": ["data"]}) == []
+
+
+class TestRuntimeValidatorParity:
+    """配置面的最终判据：同一个值在两侧得到同一个答案（L51 / A77 + A80 + A83）
+
+    A77 的根因是同一个区间在两边各抄一遍，抄完还漏；L51 的修法是把区间常量搬进
+    `config.py` 并让两个配置类带上 `__post_init__`，于是本表能做到**逐个值**一致。
+    改前实测（Temp `l51q/probe1.py` NONCE-A9C41E77）这一整列全是「校验器红、运行时
+    绿」：`AugmentationConfig(max_retries=10**6, retry_delay=10**6, retry_jitter=50.0)`
+    无判据构造成功，而校验器对同一批值报 6 条错。
+
+    形状判据（A83）是本轮探针自己撞出来的镜像症状：`data_roots: [null]` 与
+    `host: ""` 在校验器绿灯、在 `load_config` 抛。两侧现在同源，所以本表必须连
+    形状一起判，否则「校验器绿 / 加载红」会重新长回来。
+    """
+
+    #: `(path, value, 是否应被判拒)`。边界值一律取自 `config.py` 的区间常量。
+    CASES = [
+        ("augmentation.variants_per_seed", 1, False),
+        ("augmentation.variants_per_seed", 100, False),
+        ("augmentation.variants_per_seed", 0, True),
+        ("augmentation.variants_per_seed", 101, True),
+        ("augmentation.variants_per_seed", True, True),
+        ("augmentation.variants_per_seed", None, True),
+        ("augmentation.num_threads", 40, False),
+        ("augmentation.num_threads", 0, True),
+        ("augmentation.num_threads", 101, True),
+        ("augmentation.auto_save_interval", 1, False),
+        ("augmentation.auto_save_interval", 0, True),
+        ("augmentation.auto_save_interval", -1, True),
+        ("augmentation.max_retries", 0, False),
+        ("augmentation.max_retries", 20, False),
+        ("augmentation.max_retries", -1, True),
+        ("augmentation.max_retries", 21, True),
+        ("augmentation.retry_delay", 0, False),
+        ("augmentation.retry_delay", 60.0, False),
+        ("augmentation.retry_delay", 60.1, True),
+        ("augmentation.retry_delay", float("nan"), True),
+        ("augmentation.max_retry_wait", 300.0, False),
+        ("augmentation.max_retry_wait", 301.0, True),
+        ("augmentation.retry_jitter", 0.0, False),
+        ("augmentation.retry_jitter", 1.0, False),
+        ("augmentation.retry_jitter", 1.001, True),
+        ("web.port", 1, False),
+        ("web.port", 65535, False),
+        ("web.port", 0, True),
+        ("web.port", 65536, True),
+        ("web.port", None, True),
+        ("web.host", "0.0.0.0", False),
+        ("web.host", "", True),
+        ("web.host", None, True),
+        ("web.static_dir", "web/dist", False),
+        ("web.static_dir", "", True),
+        ("web.cors_origins", [], False),
+        ("web.cors_origins", ["https://only-me.example"], False),
+        ("web.cors_origins", "https://only-me.example", True),
+        ("web.cors_origins", [None], True),
+        ("web.cors_origins", ["", "https://only-me.example"], True),
+        ("web.cors_origins", [True], True),
+        ("web.cors_credentials", True, False),
+        ("web.cors_credentials", False, False),
+        ("web.cors_credentials", 1, True),
+        ("web.cors_credentials", "maybe", True),
+        ("web.data_roots", ["data"], False),
+        ("web.data_roots", [], False),
+        ("web.data_roots", "data", True),
+        ("web.data_roots", [123], True),
+        ("web.rate_limit_max_requests", 0, False),
+        ("web.rate_limit_max_requests", -1, True),
+        ("web.rate_limit_window_seconds", 60.0, False),
+        ("web.rate_limit_window_seconds", -0.1, True),
+        ("web.rate_limit_window_seconds", float("nan"), True),
+        ("web.rate_limit_exempt_paths", ["/api/health"], False),
+        ("web.rate_limit_exempt_paths", [""], True),
+    ]
+
+    @staticmethod
+    def _validator_rejects(path, value):
+        section, _, field = path.partition(".")
+        config = {"app": {"name": "t"}, "models": {"default": "ernie"},
+                  section: {field: value}}
+        return any(e.path == path or e.path.startswith(path + "[")
+                   for e in validate_config(config).errors)
+
+    @staticmethod
+    def _runtime_rejects(path, value):
+        from augmentor.config import AugmentationConfig, WebConfig
+
+        section, _, field = path.partition(".")
+        cls = WebConfig if section == "web" else AugmentationConfig
+        try:
+            cls(**{field: value})
+            return False
+        except DataValidationError:
+            return True
+
+    @pytest.mark.parametrize("path,value,expected", CASES)
+    def test_both_sides_give_the_documented_verdict(self, path, value, expected):
+        assert self._validator_rejects(path, value) is expected, (path, value)
+        assert self._runtime_rejects(path, value) is expected, (path, value)
+
+    @pytest.mark.parametrize("path", sorted({p for p, _, _ in CASES}))
+    def test_each_field_has_both_a_rejected_and_an_accepted_case(self, path):
+        """防空表：本类若两侧同时「什么都不判」，逐值断言会全绿而缺陷没修
+
+        每条 path 至少要有一个被拒值和一个被放行值，否则它没有区分度。
+        """
+        verdicts = [v for p, _, v in self.CASES if p == path]
+        assert True in verdicts and False in verdicts, path
+
+    def test_numeric_bounds_are_read_from_the_config_constants(self):
+        """规格表里的数字必须是 `config.py` 那批常量本身，不是抄来的字面量
+
+        A77 要防的就是「抄一遍」：常量住在 `config.py`，校验器只能引用不能重打。
+        """
+        from augmentor import MAX_RETRY_AFTER
+        from augmentor.config import (AUTO_SAVE_INTERVAL_MIN, MAX_RETRIES_RANGE,
+                                      NUM_THREADS_RANGE, PORT_RANGE,
+                                      RATE_LIMIT_MIN_REQUESTS,
+                                      RATE_LIMIT_MIN_WINDOW_SECONDS,
+                                      RETRY_DELAY_RANGE, VARIANTS_PER_SEED_RANGE)
+
+        s = ConfigValidator.KNOWN_FIELDS
+        bounds = {
+            "augmentation.variants_per_seed": VARIANTS_PER_SEED_RANGE,
+            "augmentation.num_threads": NUM_THREADS_RANGE,
+            "augmentation.max_retries": MAX_RETRIES_RANGE,
+            "augmentation.retry_delay": RETRY_DELAY_RANGE,
+            "augmentation.max_retry_wait": (0.0, MAX_RETRY_AFTER),
+            "web.port": PORT_RANGE,
+        }
+        for path, (lo, hi) in bounds.items():
+            assert (s[path]["min"], s[path]["max"]) == (lo, hi), path
+        assert s["augmentation.auto_save_interval"]["min"] == AUTO_SAVE_INTERVAL_MIN
+        assert s["web.rate_limit_max_requests"]["min"] == RATE_LIMIT_MIN_REQUESTS
+        assert (s["web.rate_limit_window_seconds"]["min"]
+                == RATE_LIMIT_MIN_WINDOW_SECONDS)
+
+    def test_shape_flags_exist_only_where_runtime_judges(self):
+        """`items` / `non_empty` 只许出现在运行时真判的键上
+
+        反向不一致同样是缺陷：校验器比运行时严，合法配置会被 `validate-config` 拦在
+        门外（`quality.threshold`、`output.export_dir` 这些键运行时不判空，规格就不许判）。
+        """
+        s = ConfigValidator.KNOWN_FIELDS
+        assert {p for p, spec in s.items() if "items" in spec} == {
+            "web.cors_origins", "web.data_roots", "web.rate_limit_exempt_paths"}
+        assert {p for p, spec in s.items() if spec.get("non_empty")} == {
+            "web.host", "web.static_dir"}
+

@@ -1460,6 +1460,102 @@ health 示例缺 `version` 键（文档滞后，与本轮无关，只记不修�
 = L49 记录的 `449-450` / `452` 随本轮 +8 位移，本轮两个 hunk 在 `182-189` 与 `385`，不相交）⇒ **本轮
 新增语句 0 条落入未触达**。
 
+### 3.26 L51：判据住进配置对象自己 —— 区间搬家 + `web` 节长出 `__post_init__`（关闭 A77 + A80，新立并同修 A82 / A83）
+
+**这一轮修的不是两个洞，而是造出这两个洞的那个形状**。A77（`max_retries ≤ 20`、`retry_delay ≤ 60`
+只有校验器判）与 A80（`web` 节运行时零判据）方向相反，但根因是同一个：**区间住在 `config_validator.py`
+的规格表里，配置对象自己一条判据都没有**。于是「两边各抄一遍」是这套结构的必然产物而不是某次疏忽 ——
+L49 立 A77 时写的那句「刻意留的不对称」（给 SDK 加下界以外的上界属破坏性变更，要单独拍），到 L51 就是
+按用户口径（安全默认值偏松时直接收紧，但破坏与迁移代价必须一并实测）正式拍板的一轮。修完的形状：八个
+区间常量（`VARIANTS_PER_SEED_RANGE` / `NUM_THREADS_RANGE` / `AUTO_SAVE_INTERVAL_MIN` /
+`MAX_RETRIES_RANGE` / `RETRY_DELAY_RANGE` / `PORT_RANGE` / `RATE_LIMIT_MIN_REQUESTS` /
+`RATE_LIMIT_MIN_WINDOW_SECONDS`）住在 `config.py:21-28`，`AugmentationConfig.__post_init__` 与
+`WebConfig.__post_init__` 按它们逐个判，`config_validator.KNOWN_FIELDS` 的 **11 条**数值规格 import
+同一批常量 ⇒ A77 类分歧在结构上不可表达（改常量的那一刻，两侧同时改完）。
+
+**改前症状全部是量出来的**（Temp `l51q/probe1.py`–`probe5.py`，NONCE-A9C41E77 / B7E42C1D9F3A）：
+
+| 写法 | 改前实测 |
+|------|----------|
+| `AugmentationConfig(max_retries=10**6, retry_delay=10**6, retry_jitter=50.0)` | 构造成功、零信号；校验器对同一批值报 6 条错。按 §3.24 的等待公式那是 `999999 × 300 s ≈ 83,333 h` 的最坏预算 |
+| `data_roots: data`（YAML 标量而非序列） | 按字符拆成 `d/a/t/a` 四个根 ⇒ 数据端点一律 403，症状长得像后端坏了 |
+| `cors_origins: "https://api.corp.example"`（标量） | **收紧意图拿到放宽结果**：starlette 的 `origin in allow_origins` 在 `allow_origins` 是字符串时走**子串**匹配 ⇒ `https://api.corp`、`https://api` 两个别的主机被放行。starlette **1.6.0 与 1.2.1 各测一遍，形状相同** |
+| `data_roots: [null]` | `api/deps.py` 的 `Path(str(p))` 把它变成一个**名叫 `None` 的白名单根目录** —— 静默可用的坏白名单比静默不可用更坏 |
+| `rate_limit_window_seconds: NaN` | 窗口永不滚动 ⇒ 超阈值后**永久 429**，且 `retry_after()` 抛 `ValueError: cannot convert float NaN to integer`；写成负数则是限流静默关闭 |
+| `auto_save_interval: 0` / `-1` | 与 `1` 逐字同答（`interval <= 1` 那支）⇒ 20 条样本触发 **20 次**增量存盘，默认档 10 只 2 次。两侧**都**没有判据，也**没有**校验规格 |
+
+最后一行是本轮新立的 **A82**（不是 A77 的重复：A77 是「校验器有上界、运行时无」，A82 是「两边都没有」），
+同轮修掉。**A83** 更是本轮探针自己撞出来的**镜像**症状：校验器只判「是不是 list」，不判逐元素，于是
+`data_roots: [null]` 与 `host: ""` 在 `validate-config` 绿灯、在 `load_config` 抛 —— 与 A77 方向相反，
+同一轮一起封住。它的修法带一条**方向约束**：`items` / `non_empty` 两个形状旗标只写在运行时真判的键上
+（`web.host` / `static_dir` / `cors_origins` / `data_roots` / `rate_limit_exempt_paths` 五个），
+`test_shape_flags_exist_only_where_runtime_judges` 把这两个集合逐字钉死；多写一处就会造出反向缝隙
+「校验器红 / 运行时绿」，那正是本轮要消灭的东西。
+
+**新增两条判据族成员，其中一条故意不像同族**：`require_string` 与 `require_string_list` 都
+**不放行 `None`**，而 `require_count` / `require_seconds` / `require_positive` / `require_ratio`
+那一族放行 —— 因为「未提供」对函数入参是有意义的（各调用点自己回落默认值），对配置字段却没有意义：
+YAML 里写了键没给值就是 `None`，字段没有「没传」这种状态（`_reject_null_fields` 另判这一维，报错文案
+「不能是 null（配置里写了这个键却没有给值）」）。`require_string_list` 的报错直接把 YAML 写法教给用户
+（「必须是列表（YAML 里要用 `- 项` 写成序列，不能写成标量）」），因为这条判据的触发原因 100 % 是书写形状。
+**元素内容一律不判**（URL 合法性、路径存在性、豁免前缀是否以 `/` 开头）—— 那是各消费点的语义，
+判在这里会把「配置形状」与「业务语义」焊死，`test_content_semantics_stay_out` 是这条边界的反向护栏。
+
+**破坏性变更的命中面在落笔前量过**：① 出厂 `config.yaml` 在双解释器下 `load_config` **0 error**
+（校验器同份配置 0 错，两侧同判据后才敢这么说）；② 全仓产品代码里 `WebConfig(...)` /
+`AugmentationConfig(...)` 的直构点只有 **1 处**（`api/deps.py:192`，`grep -rn` 排除 `tests/` 与定义处后
+的唯一命中），而且是**无参** `WebConfig()` —— 走的正是出厂默认，新判据对默认值恒收（由
+`test_defaults_satisfy_their_own_verdict` 钉住）⇒ 本轮破坏面在仓内为 0 命中，风险只剩仓外调用方；③ 用例侧因
+新判据而**必须改写**的既有断言 **3 处**，且三处都是「把上界口径接进断言」的同口径收紧而非放宽
+（`TestAugmentationRetryKnobs` 的 `parametrize` 补 60.0/60.1 两值、`require_seconds("retry_delay", …)`
+补 `maximum=RETRY_DELAY_RANGE[1]`、数值规格计数棘轮 10 → 11 为新规格 `augmentation.auto_save_interval`
+让路）；④ 失败路径的形状说清楚：`api/main.py:116` 的 `load_config` 在 import 期 ⇒ `web` 节写坏是
+**进程起不来**，而 `api/deps.py:186` 那道 `except Exception` ⇒ **运行中**改坏配置是退回出厂白名单
+`["data"]` 并告警（不是 500、也不是处处 403），这条形状本轮起有两条 API 用例钉住。文案面同步三处：
+`config.yaml` 的 augmentation / web 两节抬头各加一句「加载时即判」，`docs/API.md` 增一行错误码口径
+「配置越界不走 HTTP」并补白名单回退段。
+
+**用例净 +143，两路独立闭合**：全量差（aug 4963 → 5106、`C:\Python314` 4983 → 5126，两边同为 +143）
+与四份被触碰文件的**完整 node-id 多重集差**（HEAD 440 → 工作树 583，新增 143、**消失 0**）逐位对上；
+构成 = 新定义 141 行（`TestRuntimeSectionJudgements` 17 + `TestRuntimeValidatorParity` 74 +
+`TestRequireCount` 上界 17 + `TestRequireString` 12 + `TestRequireStringList` 19 +
+`test_api_security` 2）+ 既有参数化扩列 2 行。`TestRuntimeValidatorParity` 是本轮的常驻对照表：
+56 行 `(path, value, 该不该拒)` 同时喂给校验器与运行时构造，**逐行要求同判**，另配一条反空转断言
+（表里必须既有拒也有收）与一条「数值区间的 min/max 必须来自 `config` 常量」的引用断言。
+
+**注入 8 模式（沙箱副本 `Temp/l51q/tree/`，NONCE-c8fcb3378570）**：基线 **583 passed / 0 failed**，
+八种降级红数 **32 / 4 / 9 / 14 / 5 / 2 / 6 / 2**，全还原后复跑同为 583，八个文件沙箱 ↔ 真身 sha
+逐字节一致。m1 摘 `WebConfig.__post_init__`（A80 改前态）⇒ 32 红；m2 让 `_reject_null_fields` 直接返回
+⇒ 4；m3 摘 `require_count` 的 `maximum` 一维 ⇒ 9；m4 摘 `require_string_list` 的「是不是列表」判据
+⇒ 14（含那条 API 白名单回退用例，标量又被逐字符吃下）；m5 摘校验器 `items` 块 ⇒ 5；m6 只摘
+`non_empty` 分支 ⇒ 2；**m7 是本轮最有价值的一档**：把校验器 `retry_delay` 的上界改回私有字面量 30.0
+（即人为恢复「两边各抄一遍」的旧结构）⇒ 6 红，红在常量引用断言 + 逐值同判表 ⇒ 「抄两遍」这件事现在
+一被抄出来就报警；m8 摘 `cors_credentials` 的布尔判据（`config.py:293-297`）⇒ 2。
+
+**代价只报代价**（Temp `l51q/ab_cost.py`，NONCE-C3F5D18B2，同进程 A/B、正反双序、min-of-5）：
+`AugmentationConfig()` 0.190 → 1.452 µs（Δ **+1.262 µs**，7.66×，反序 Δ +1.269 同号）、
+`WebConfig()` 0.383 → 1.720 µs（Δ **+1.337 µs**，4.49×，反序 +1.270 同号）。两节合计每次构造
++2.6 µs，而 `load_config` 一次进程只跑一回 ⇒ 相对 7.2 ms 的一次加载约 **0.036 %**。整函数那一档
+（`load_config` 7215 → 7316 µs）正反序给出 +100.8 / +76.0 µs，两序相差 25 µs 而效应只有 1 % ⇒
+按 L49 立的规矩**判为不可判定、不引用**。⇒ **本轮不主张任何性能收益。**
+
+**过程缺陷两条，第二条是计数机制本身的洞**：① A/B 脚本首版把「秒/次」按 ns 标注，三行全打成 0.0
+（只有比值可读），换单位重跑（NONCE C3F5D18B → C3F5D18B2）；② 我一度按**用例名 grep** 数新增行数，
+得 144 与 143 两种读数 —— 根因是 `test_omitting_maximum_keeps_the_legacy_verdict` 这个 def 名在同文件
+的 `TestRequireSeconds`（HEAD，3 行）与本轮新写的 `TestRequireCount`（6 行）里**各有一个**，名字维度的
+差集与 grep 都会把它读偏。新纪律：**收集数差只能按完整 node-id 的多重集算**（`--collect-only -q` →
+`Counter` 差），按用例名 grep 在重名 def 下必错，且这次是「两路都对不上」才发现的。
+
+**覆盖读数**（先测后记，双解释器）：venv `aug`（Python 3.13.14，无 pandas / 无 chromadb，starlette 1.6.0）
+**5106 passed / 3 skipped**（67.52 s，总覆盖 **98.64 %**，门禁 80 % 达成，TOTAL 12,852 语句缺 88、
+3,530 分支缺 110）；`C:\Python314`（Python 3.14.4，pandas 3.0.2 + chromadb 1.5.9，starlette 1.2.1）
+**5126 passed / 2 skipped**（46.26 s，**99.03 %**，TOTAL 12,226 缺 41 / 分支缺 104）。三份本轮源文件：
+`config.py` 256 语句缺 **3**（`556-557` / `559` = L50 记的 `457-458` / `460` 随 +99 行位移，本轮未触；
+**本轮新增 40 条语句 0 条落入未触达**，含 L51 首跑唯一漏掉的 `:294` 那条 `cors_credentials` 判据 ——
+它是被探针打红、被 parity 表补上的，见日志）、`config_validator.py` 166 语句缺 **0**（88 分支 3 条偏支
+全在既有 `_validate_env_refs`）、`validation.py` 218 语句缺 **0**（122 分支 5 条偏支为既有）；
+`C:\Python314` 侧同一批文件的语句数是 255 / 162 / 212，分母同样是环境的函数。
+
 ## 4. 核心数据流
 
 ### 4.1 数据增强主流程

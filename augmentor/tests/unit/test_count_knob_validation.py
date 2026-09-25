@@ -58,7 +58,8 @@ from augmentor.search_enhanced import search_dataset
 from augmentor.dataset_ops import DatasetOperations, SampleConfig
 from augmentor.streaming import StreamReader, StreamAugmentor
 from augmentor.validation import (require_count, require_positive, require_ratio,
-                                  require_seconds)
+                                  require_seconds, require_string,
+                                  require_string_list)
 from augmentor.vector.faiss import FAISSDB
 from augmentor.versioning import VersionManager
 
@@ -95,6 +96,30 @@ class TestRequireCount:
         """每轮必须选出样本的调用点用得到下界 1"""
         with pytest.raises(DataValidationError, match="batch_size"):
             require_count("batch_size", 0, minimum=1)
+
+    @pytest.mark.parametrize("value", [0, 1, 20, 21, 10 ** 6, None])
+    def test_omitting_maximum_keeps_the_legacy_verdict(self, value):
+        """不传 `maximum` 时逐字同答：第四参不得改动既有那八个调用点
+
+        L51 之前 `require_count` 根本没有上界，于是 `config.AugmentationConfig`
+        拿不到「`max_retries` 最大 20」这条 —— 校验器有、运行时无（A77）。
+        """
+        assert require_count("limit", value) == value
+
+    @pytest.mark.parametrize("value", [0, 1, 20, None])
+    def test_ceiling_passes_within_range(self, value):
+        """边界值 20 放行：默认档 `max_retries=3` 之外，贴着上界也是合法写法"""
+        assert require_count("max_retries", value, maximum=20) == value
+
+    @pytest.mark.parametrize("value", [21, 10 ** 6, -1, True, "20", 1.0])
+    def test_ceiling_rejects_outside_range(self, value):
+        with pytest.raises(DataValidationError, match="max_retries"):
+            require_count("max_retries", value, maximum=20)
+
+    def test_ceiling_error_message_names_the_bound_and_the_value(self):
+        with pytest.raises(DataValidationError,
+                           match=r"max_retries.*20.*1000000"):
+            require_count("max_retries", 10 ** 6, maximum=20)
 
     def test_is_a_value_error_too(self):
         """API 侧靠 `ValueError → 400` 映射，判据必须留在该继承链上"""
@@ -889,3 +914,72 @@ class TestRequireSecondsUpperBound:
     def test_error_message_names_the_bound_and_the_value(self):
         with pytest.raises(DataValidationError, match=r"max_retry_wait.*300\.0.*301"):
             require_seconds("max_retry_wait", 301.0, maximum=300.0)
+
+
+class TestRequireString:
+    """字符串旋钮（L51 / A80）：配置里的 `host` / `static_dir` 这类单值
+
+    与标量家族最关键的区别是**不放行 `None`**：函数入参有「没传」这一态，配置
+    字段没有 —— YAML 写了键却没给值，读进来就是 `None`，下游 `Path(str(p))`
+    会把它变成一个**名叫 `None`** 的目录。
+    """
+
+    @pytest.mark.parametrize("value", ["0.0.0.0", "web/dist", "/", "a"])
+    def test_non_empty_strings_pass(self, value):
+        assert require_string("host", value) == value
+
+    @pytest.mark.parametrize("value", [None, "", 8000, True, [], {}, 1.5])
+    def test_rejects_none_empty_and_non_string(self, value):
+        """`None` 与 `""` 都在这里判掉：前者是「写了键没给值」，后者是无意义值"""
+        with pytest.raises(DataValidationError):
+            require_string("host", value)
+
+    def test_error_message_distinguishes_empty_from_wrong_type(self):
+        """两种错法的修法不同（改类型 / 补值），报错不能同一句话"""
+        with pytest.raises(DataValidationError, match=r"host.*不能是空字符串"):
+            require_string("host", "")
+        with pytest.raises(DataValidationError, match=r"host.*必须是字符串.*NoneType"):
+            require_string("host", None)
+
+
+class TestRequireStringList:
+    """字符串列表旋钮（L51 / A80 + A83）：目录白名单与跨源白名单
+
+    立项用例是 `cors_origins` 写成标量。实测（Temp `l51q/probe2.py` 与
+    `out2b.txt`，starlette 1.6.0 与 1.2.1 同形）：`allow_origins` 是字符串时
+    `origin in allow_origins` 走**子串**匹配，配置 `"https://api.corp.example"`
+    会放行 `https://api.corp` 与 `https://api` 两个别的主机。访问控制项被写成标量
+    就静默变成前缀匹配 —— 收紧意图拿到放宽结果，这是本判据存在的最硬理由。
+    """
+
+    @pytest.mark.parametrize("value", [
+        [], ["data"], ["data", "data/sub"], ["/api/health", "/docs"],
+    ])
+    def test_lists_of_non_empty_strings_pass(self, value):
+        """空列表放行：`cors_origins: []` 是 L50 的出厂默认，是显式选择不是漏写"""
+        assert require_string_list("data_roots", value) == value
+
+    @pytest.mark.parametrize("value", [
+        "data", "", None, 8000, True, {"a": 1}, [None], [123], [True], [""],
+        ["data", ""], ["data", None],
+    ])
+    def test_rejects_scalar_and_bad_elements(self, value):
+        with pytest.raises(DataValidationError):
+            require_string_list("data_roots", value)
+
+    def test_scalar_message_tells_the_user_how_to_write_yaml(self):
+        """报错要给出修法：`data_roots: data` 的作者多半以为自己在写列表"""
+        with pytest.raises(DataValidationError,
+                           match=r"data_roots.*必须是列表.*序列.*str"):
+            require_string_list("data_roots", "data")
+
+    def test_element_error_names_the_offending_item(self):
+        with pytest.raises(DataValidationError,
+                           match=r"data_roots.*每一项必须是字符串.*None"):
+            require_string_list("data_roots", [None])
+
+    def test_content_semantics_stay_out(self):
+        """只判形状不判语义：非法 URL / 不存在的路径都由各消费点自己管"""
+        assert require_string_list("cors_origins", ["not a url", "/no/such/dir"]) == \
+            ["not a url", "/no/such/dir"]
+

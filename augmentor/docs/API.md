@@ -31,6 +31,13 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 优先级：环境变量 `AUGMENTOR_DATA_ROOTS`（`os.pathsep` 分隔）> `config.yaml` 的
 `web.data_roots` > 出厂默认 `["data"]`。
 
+**白名单本身写坏时落到出厂默认，不落到工作目录**。`web.data_roots` 必须是 YAML 序列，
+标量写法（`data_roots: data`）会被逐字符拆成 `d/a/t/a` 四个根、`- null` 会变成一个名
+叫 `None` 的根 —— 两种在 3.x 都在 `load_config` 处判掉（L51 / A80）。进程启动时配置不
+合法则服务不起（`api/main.py` 在 import 期加载配置）；**运行中**改坏配置文件则由
+`allowed_data_roots()` 兜住，记一条 warning 并回退出厂 `["data"]`，既不会 500、也不会
+因为白名单为空而把所有请求变成 403。
+
 | 输入 | 结果 |
 |------|------|
 | 空字符串 / 纯空白 | 400 |
@@ -63,6 +70,8 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 
 ```yaml
 web:
+  # 必须是序列：写成标量（`cors_origins: https://...`）在 starlette 下走子串匹配，
+  # 会放行同名前缀的其它主机，因此 3.x 在加载时直接拒（L51 / A80）
   cors_origins: ["https://your-frontend.example"]
   # 只有确实要带 cookie / Authorization 跨源时才打开，且 origins 必须是精确白名单
   cors_credentials: true
@@ -90,6 +99,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | 404 | 资源不存在 | 文件不存在、版本不存在 |
 | 422 | 请求体校验失败 | 缺少必填字段、字段类型错误（由 FastAPI 自动返回） |
 | 500 | 服务端错误 | 模型调用失败、依赖缺失、磁盘写入失败 |
+| — | **配置越界不走 HTTP** | `web` / `augmentation` 两节的取值越界在 `load_config` 即抛 `DataValidationError`：启动期表现为进程不起，运行期表现为「回退出厂默认 + warning」（见上「路径白名单」）—— 访问控制项宁可退回最小范围也不静默放宽 |
 
 错误响应格式统一为：
 

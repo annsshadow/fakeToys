@@ -15,6 +15,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from enum import Enum
 
+# 区间常量与运行时判据同一批来源（`config.py` 开头 + `retry.MAX_RETRY_AFTER`）。
+# 这里是 A77 的修法本体：此前两边各抄一遍数字，抄漏的一边就成了「校验器独有
+# 天花板」—— `max_retries: 10**6` 在这里报红、在 SDK 直构那边畅通无阻。
+from .config import (AUTO_SAVE_INTERVAL_MIN, MAX_RETRIES_RANGE,
+                     NUM_THREADS_RANGE, PORT_RANGE, RATE_LIMIT_MIN_REQUESTS,
+                     RATE_LIMIT_MIN_WINDOW_SECONDS, RETRY_DELAY_RANGE,
+                     VARIANTS_PER_SEED_RANGE)
+from .retry import MAX_RETRY_AFTER
+
 logger = logging.getLogger(__name__)
 
 
@@ -101,20 +110,34 @@ class ConfigValidator:
         "models": {"type": dict, "required": True},
         "models.default": {"type": str, "required": True},
         "augmentation": {"type": dict},
-        "augmentation.variants_per_seed": {"type": int, "min": 1, "max": 100},
-        "augmentation.num_threads": {"type": int, "min": 1, "max": 100},
+        "augmentation.variants_per_seed": {
+            "type": int, "min": VARIANTS_PER_SEED_RANGE[0],
+            "max": VARIANTS_PER_SEED_RANGE[1]},
+        "augmentation.num_threads": {
+            "type": int, "min": NUM_THREADS_RANGE[0],
+            "max": NUM_THREADS_RANGE[1]},
+        # 每 N 条自动存一次增量。下界 1 是 L51 补的：实测改前 0 与 −1 都和 1 逐字
+        # 同答（`processed - last >= interval` 恒真），20 条样本触发 20 次增量写盘，
+        # 默认档 10 只 2 次 —— 不是崩，是 10 倍静默写放大，而且两侧都没有判据。
+        "augmentation.auto_save_interval": {
+            "type": int, "min": AUTO_SAVE_INTERVAL_MIN},
         # 重试两旋钮自 L45 起真的被消费（经 create_model_backend 透传给模型后端），
         # 所以要在校验器里有对应门槛。上界不是形式主义：`max_retries: 1000000` 在最坏
         # 情况下是 10^6 × 30s 的等待，`retry_delay` 再大也会被退避上限夹住，但 60s 已经
-        # 远超任何合理的单次退避基数。
-        "augmentation.max_retries": {"type": int, "min": 0, "max": 20},
-        "augmentation.retry_delay": {"type": float, "min": 0.0, "max": 60.0},
+        # 远超任何合理的单次退避基数。**L51 起这两条不再只是校验器独有的天花板**：
+        # 同一批常量已经进了 `AugmentationConfig.__post_init__`（A77）。
+        "augmentation.max_retries": {
+            "type": int, "min": MAX_RETRIES_RANGE[0],
+            "max": MAX_RETRIES_RANGE[1]},
+        "augmentation.retry_delay": {
+            "type": float, "min": RETRY_DELAY_RANGE[0],
+            "max": RETRY_DELAY_RANGE[1]},
         # 等待预算两旋钮（L49 / A73 + A75）。上界与运行时判据**同源**，不是校验器
         # 独有的天花板：`max_retry_wait` 本身就是那道封顶，放大它会作废
         # 「服务端指令一支封顶 300 s」的承诺（retry.MAX_RETRY_AFTER）；
         # `retry_jitter` 的 0-1 与 `validation.require_ratio` 的默认闭区间逐字一致。
         "augmentation.max_retry_wait": {"type": float, "min": 0.0,
-                                        "max": 300.0},
+                                        "max": MAX_RETRY_AFTER},
         "augmentation.retry_jitter": {"type": float, "min": 0.0, "max": 1.0},
         "quality": {"type": dict},
         "quality.enabled": {"type": bool},
@@ -127,18 +150,23 @@ class ConfigValidator:
         # 实测把 port 写成字符串、data_roots 写成 YAML 标量、限流数写成负数与 NaN，
         # 一份配置里六个键全错仍判 is_valid=True / 0 error / 0 warning）。`data_roots`
         # 是这里最要紧的一条：`data_roots: data` 会被按字符拆成 d/a/t/a 四个根目录，
-        # 于是**所有**数据端点一律 403，症状长得像后端坏了。区间只在校验器这一侧
-        # （运行时对 `web` 节没有任何判据，SDK 直构 `WebConfig` 绕过校验器 —— 见 A80）。
+        # 于是**所有**数据端点一律 403，症状长得像后端坏了。区间与运行时判据同一批
+        # 常量（`config.PORT_RANGE` 等）：L51 已给 `WebConfig` 补上 `__post_init__`，
+        # SDK 直构也认这套区间，「校验器红 / 运行时绿」的缝隙就此封住（关闭 A80）。
+        # `items` / `non_empty` 两个形状键同样是 L51 补的，方向相反（新立 A83）：
+        # 改前 `data_roots: [null]` 与 `host: ""` 在校验器绿灯、在 `load_config` 抛。
         "web": {"type": dict},
-        "web.port": {"type": int, "min": 1, "max": 65535},
-        "web.host": {"type": str},
-        "web.static_dir": {"type": str},
-        "web.cors_origins": {"type": list},
+        "web.port": {"type": int, "min": PORT_RANGE[0], "max": PORT_RANGE[1]},
+        "web.host": {"type": str, "non_empty": True},
+        "web.static_dir": {"type": str, "non_empty": True},
+        "web.cors_origins": {"type": list, "items": str},
         "web.cors_credentials": {"type": bool},
-        "web.data_roots": {"type": list},
-        "web.rate_limit_max_requests": {"type": int, "min": 0},
-        "web.rate_limit_window_seconds": {"type": float, "min": 0.0},
-        "web.rate_limit_exempt_paths": {"type": list},
+        "web.data_roots": {"type": list, "items": str},
+        "web.rate_limit_max_requests": {"type": int,
+                                        "min": RATE_LIMIT_MIN_REQUESTS},
+        "web.rate_limit_window_seconds": {"type": float,
+                                          "min": RATE_LIMIT_MIN_WINDOW_SECONDS},
+        "web.rate_limit_exempt_paths": {"type": list, "items": str},
     }
     
     # 环境变量模式
@@ -275,6 +303,23 @@ class ConfigValidator:
                 if "max" in spec and value > spec["max"]:
                     result.add_error(field_path, 
                                    f"值过大: {value} > {spec['max']}")
+                # 形状判据（L51 / A83）：列表元素类型与非空。这两条以前只有运行时那一侧
+                # 有（`validation.require_string_list` / `require_string`），于是
+                # `data_roots: [null]` 与 `host: ""` 在 `validate-config` 上绿灯、在
+                # `load_config` 里抛 —— A77 的镜像症状，同一轮一起封住。运行时拒的这里
+                # 才拒（`items`/`non_empty` 只写在有运行时判据的键上），免得反向造出
+                # 「校验器红 / 运行时绿」。
+                if "items" in spec:
+                    for i, item in enumerate(value):
+                        if not isinstance(item, spec["items"]):
+                            result.add_error(
+                                f"{field_path}[{i}]",
+                                f"元素类型错误: 期望 {spec['items'].__name__}, "
+                                f"实际 {type(item).__name__}")
+                        elif not item:
+                            result.add_error(f"{field_path}[{i}]", "元素不能为空字符串")
+                elif spec.get("non_empty") and not value:
+                    result.add_error(field_path, "值不能为空字符串")
             
             # 递归验证嵌套字典
             if isinstance(value, dict):
