@@ -9,10 +9,9 @@
 import json
 import random
 import logging
-from typing import List, Dict, Optional, Tuple, Union
+from typing import Any, List, Dict, Optional, Tuple, Union
 from pathlib import Path
 from dataclasses import dataclass
-from collections import Counter
 import hashlib
 from .exceptions import DataValidationError
 from .validation import require_count
@@ -51,20 +50,75 @@ class SplitConfig:
     stratify_key: str = "instruction"  # 分层字段
 
 
-def _in_original_order(items: List[Dict], assigned: List[Dict]) -> List[Dict]:
-    """把 `assigned` 按它在 `items` 里的相对顺序重排（成员与条数都不变）
+def _position_table(items: List[Dict]) -> Dict[int, Any]:
+    """一次走查建「对象 → 它在语料里的位置」表
 
-    数 `id()` 而不是比值：划分只搬运引用，`items` 在这期间全程存活 ⇒ 同一个对象
-    出现两次也能各归其位；而值相等但不是同一对象的条目本就可互换，取靠前的位置是
-    稳定选择。
+    只出现一次的引用把位置存成整数，被引用多次的对象把位置升序存进列表 —— 后者要靠
+    `_in_original_order` 按「第 k 次出现取第 k 个位置」还原，见那里的实测反例。
+
+    Args:
+        items: 语料（划分只搬运引用，期间全程存活）
+
+    Returns:
+        `id(item) -> 下标 或 升序下标列表`
     """
-    remaining = Counter(id(item) for item in assigned)
-    ordered: List[Dict] = []
-    for item in items:
-        if remaining[id(item)]:
-            ordered.append(item)
-            remaining[id(item)] -= 1
-    return ordered
+    positions: Dict[int, Any] = {}
+    for index, item in enumerate(items):
+        pid = id(item)
+        got = positions.get(pid)
+        if got is None:
+            positions[pid] = index
+        elif isinstance(got, list):
+            got.append(index)
+        else:
+            positions[pid] = [got, index]
+    return positions
+
+
+def _in_original_order(positions: Dict[int, Any],
+                       assigned: List[Dict]) -> List[Dict]:
+    """把 `assigned` 按它在语料里的相对顺序重排（成员与条数都不变）
+
+    代价口径（A58）：整份语料只被 `_position_table` 走查一次，本函数只在段内排序，
+    不再「每段各整份走查一遍」（HEAD 是三段三次全量走查）。数 `id()` 而不是比值：
+    值相等但不是同一对象的条目本可互换，而同一对象被引用多次时必须各归其位 —— 第 k
+    次出现的引用要取该对象的第 k 个位置（实测反例：语料 `A@{0,5} + B@{1}`、段
+    `[A, A, B]` 必须交出 `[A, B, A]`，拿首次位置当键交出 `[A, A, B]`，差分 120/120
+    全部分歧）。
+
+    刻意只留这把键，不加「语料无重复引用 ⇒ 用无状态键」的快路：快路实测能把本阶段从
+    ×0.854 再压到 ×0.561（真实 6,902 条三段合计 2.739 → 1.801 ms，min 与中位同向），
+    但开工前立的采纳门槛是「比单路径快 ≥2 倍」，实测只有 1.52 倍 ⇒ 按门槛退回单路径，
+    差价留在 A61，不靠「都写到这儿了」把分支留下。
+
+    Args:
+        positions: `_position_table(items)` 的返回值
+        assigned: 某一段的成员（按划分结果的次序）
+
+    前提：语料必须活到重排结束（`_stratified` 里 `items` 是入参，天然满足）。表里存的
+    是 `id()`，对象一旦被回收，它的地址可能被别的对象复用而**假命中**这张表 —— 那时
+    既不报错也不排序到位。旧写法拿着 `items` 走查，顺带把这条前提钉住了，改成表以后
+    前提就只在调用方手里。
+
+    Returns:
+        同一些成员，按它们在语料里的位置升序
+
+    Raises:
+        KeyError: `assigned` 里有语料之外的对象 —— 旧写法会把它整条静默丢掉，
+            段少一条却无人报错，正是 A47 那一族的形状
+        IndexError / TypeError: 段里同一对象的副本数超过语料（划分不可能产生，
+            真产生了就是上游坏了；抛哪个取决于该对象在语料里的副本形状）
+    """
+    taken: Dict[int, int] = {}
+
+    def key(item: Dict) -> int:
+        pid = id(item)
+        nth = taken.get(pid, 0)
+        taken[pid] = nth + 1
+        slot = positions[pid]
+        return slot[nth] if isinstance(slot, list) else slot
+
+    return sorted(assigned, key=key)
 
 
 class DatasetOperations:
@@ -374,7 +428,8 @@ class DatasetOperations:
                               stratify_field=config.stratify_key).split(items)
         segments = (result.train, result.val, result.test)
         if not config.shuffle:
-            segments = tuple(_in_original_order(items, seg) for seg in segments)
+            positions = _position_table(items)
+            segments = tuple(_in_original_order(positions, seg) for seg in segments)
         return segments
     
     def split_file(self,
