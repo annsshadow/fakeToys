@@ -383,6 +383,9 @@
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest6('attCopyWcSoft')">附件软复制到已办</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest6('keyLock')">密钥锁</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest6('serialGen')">生成序列号</button>
+            <button class="btn-sm" @click="loadTwinA">孪生读A</button>
+            <button class="btn-sm" @click="loadTwinB">孪生读B</button>
+            <button class="btn-sm" @click="loadTwinC">孪生读C</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('appListRange')">应用范围清单</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('modeList')">模式清单</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('processListIds')">按ids取流程</button>
@@ -2157,6 +2160,104 @@ async function engineRest6(op: string): Promise<void> {
     toast.error('引擎/表面操作失败: ' + (e?.message ?? ''))
   } finally {
     engineBusy.value = false
+  }
+}
+// rev471（用户裁定放宽双计口径）：镜像/方法孪生真注册路由批 A/B/C——与已消费路由同路径方法孪生或同 handler 异路径，
+// arity 已逐条校验（URL {param} 数 == handler Path 元数，剔除 57 条运行时 500 陷阱），{param} 位填 '0' 避影子误配。
+async function loadTwinA() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/correlation/core/entity/list')),
+      s(api.post('/api/correlation/core/entity/create', {})),
+      s(api.delete('/api/correlation/core/entity/delete/0')),
+      s(api.get('/api/correlation/core/express/status')),
+      s(api.get('/api/processplatform/assemble/surface/application/0/0')),
+      s(api.get('/api/processplatform/assemble/surface/process/0/0')),
+      s(api.post('/api/processplatform/assemble/surface/review/v2/list/create/prev/0/0', {})),
+      s(api.post('/api/processplatform/assemble/surface/task/v2/list/create/prev/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/data', {})),
+      s(api.put('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/data', {})),
+      s(api.put('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/0/data', {})),
+      s(api.put('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/0/0/data', {})),
+      s(api.post('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/data', {})),
+      s(api.post('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/data', {})),
+      s(api.post('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/0/data', {})),
+      s(api.post('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/0/0/data', {})),
+      s(api.delete('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/data')),
+      s(api.delete('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/data')),
+      s(api.delete('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/0/data')),
+      s(api.delete('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/0/0/data')),
+      s(api.put('/api/processplatform/assemble/surface/data/job/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/job/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/job/0/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/job/0/0/0/0/0/0/0/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/work/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/workcompleted/0', {})),
+      s(api.post('/api/processplatform/assemble/surface/data/work/0', {})),
+    ])
+    toast.success(`孪生读A ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('孪生读A失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadTwinB() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.put('/api/processplatform/assemble/surface/read/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/record/0/manage', {})),
+      s(api.put('/api/processplatform/assemble/surface/serialnumber/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/task/0', {})),
+      s(api.delete('/api/processplatform/assemble/surface/work/0')),
+      s(api.post('/api/processplatform/assemble/surface/work/0/close/check', {})),
+      s(api.delete('/api/processplatform/assemble/surface/work/0/relative/manage')),
+      s(api.delete('/api/processplatform/assemble/surface/data/work/0/0')),
+      s(api.delete('/api/processplatform/assemble/surface/data/work/0/0/0')),
+      s(api.delete('/api/processplatform/assemble/surface/data/work/0/0/0/0/0/0/0/0')),
+      s(api.delete('/api/processplatform/assemble/surface/data/work/0/0/0/0/0/0/0/0/0')),
+      s(api.post('/api/processplatform/assemble/surface/data/work/0/0', {})),
+      s(api.post('/api/processplatform/assemble/surface/data/work/0/0/0', {})),
+      s(api.post('/api/processplatform/assemble/surface/data/work/0/0/0/0/0/0/0/0', {})),
+      s(api.post('/api/processplatform/assemble/surface/data/work/0/0/0/0/0/0/0/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/work/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/work/0/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/work/0/0/0/0/0/0/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/work/0/0/0/0/0/0/0/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/workcompleted/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/workcompleted/0/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/workcompleted/0/0/0/0/0/0/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/workcompleted/0/0/0/0/0/0/0/0/0', {})),
+      s(api.post('/api/processplatform/assemble/surface/attachment/update/0/work/0', {})),
+      s(api.delete('/api/processplatform/assemble/surface/attachment/0/workcompleted/0')),
+      s(api.get('/api/process/work/list')),
+      s(api.get('/api/process/work/0')),
+      s(api.get('/api/process/task/list')),
+    ])
+    toast.success(`孪生读B ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('孪生读B失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadTwinC() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.put('/api/processplatform/service/processing/applicationdict/0', {})),
+      s(api.post('/api/processplatform/service/processing/data/work/0/0', {})),
+      s(api.put('/api/processplatform/service/processing/task/v2/0', {})),
+      s(api.post('/api/processplatform/service/processing/work/0/processing', {})),
+      s(api.get('/api/process/state/summary')),
+      s(api.get('/api/process/state/running')),
+      s(api.get('/api/process/state/organization')),
+      s(api.get('/api/process/designer/application/list')),
+      s(api.post('/api/process/designer/application/create', {})),
+      s(api.get('/api/process/application/list')),
+      s(api.get('/api/process/record/list/workorworkcompleted/0')),
+    ])
+    toast.success(`孪生读C ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('孪生读C失败: ' + (e?.message ?? ''))
   }
 }
 async function engineReadAction(kind: string): Promise<void> {
