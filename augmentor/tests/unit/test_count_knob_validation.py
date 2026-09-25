@@ -55,7 +55,7 @@ from augmentor.sampler import ActiveSampler
 from augmentor.search_enhanced import search_dataset
 from augmentor.dataset_ops import DatasetOperations, SampleConfig
 from augmentor.streaming import StreamReader, StreamAugmentor
-from augmentor.validation import require_count, require_seconds
+from augmentor.validation import require_count, require_positive, require_seconds
 from augmentor.vector.faiss import FAISSDB
 from augmentor.versioning import VersionManager
 
@@ -125,19 +125,21 @@ class TestRequireSeconds:
         with pytest.raises(DataValidationError, match="NaN"):
             require_seconds("retry_delay", float("nan"))
 
-    @pytest.mark.parametrize(
-        "base_delay,expected",
-        [(float("nan"), 30.0), (-5.0, 0.0), (5.0, 5.0)],
-    )
-    def test_compute_delay_hides_bad_values_which_is_why_the_guard_exists(self,
-                                                                          base_delay,
-                                                                          expected):
-        """本判据存在的理由：退避计算首尾各有一道夹逼，坏值**不报错**而是换一档等待
+    def test_compute_delay_keeps_the_good_shape(self):
+        """判据搬进 `compute_delay` 之后，合法值必须照原样算出退避"""
+        assert compute_delay(1, 5.0, 2.0, 30.0) == 5.0
 
-        `min(max_delay, base * factor ** n)` 与尾部 `max(0.0, delay)` 把 NaN 和负数
-        都消化掉，症状从「报错」降级成「静默换语义」。既然深处不响，就只能在前台判。
+    @pytest.mark.parametrize("base_delay", [float("nan"), -5.0])
+    def test_compute_delay_rejects_what_it_used_to_hide(self, base_delay):
+        """L45 立这条时的理由是「深处不响」：退避公式首尾各有一道夹逼
+
+        `min(max_delay, base * factor ** n)` 与尾部 `max(0.0, delay)` 实测把 NaN 收
+        成 30.0、把 -5.0 收成 0.0 —— 症状从「报错」降级成「静默换一档等待」。既然
+        深处不响，就只能在前台判；L47 起判据搬到了 `compute_delay` 自己的入参处，
+        于是同一批坏值现在是抛 `DataValidationError`，不再有机会换形状。
         """
-        assert compute_delay(1, base_delay, 2.0, 30.0) == expected
+        with pytest.raises(DataValidationError, match="base_delay"):
+            compute_delay(1, base_delay, 2.0, 30.0)
 
     def test_generate_rejects_bad_delay_before_asking_the_model(self):
         """判参先于副作用：坏 retry_delay 不该换来一次真金白银的 API 调用"""
@@ -153,6 +155,53 @@ class TestRequireSeconds:
             with pytest.raises(DataValidationError):
                 OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"),
                               **kwargs)
+
+
+class TestRequirePositive:
+    """无量纲倍率旋钮（退避 `factor`）的判据，`require_seconds` 的同族
+
+    为什么不复用 `require_seconds`：它的文案是「必须是数值秒数 / 不小于 X 的秒数」，
+    拿去做一个没有单位的倍率会把根因说错（L46 刚为「文案指错根因」记过一笔）。
+    为什么下界固定成「严格大于 0」而不像两个同族那样可配：这类值只有「每档乘多少」
+    一种合法读法，0 与负数在幂运算里都不是「等得更久/更短」而是换形状。实测
+    （`retry.compute_delay`，`base_delay=1`、`max_delay=30`，取第 1/2/3 档）：
+    `factor=0` → ``[1.0, 0.0, 0.0]``、`-2` → ``[1.0, 0.0, 4.0]``、
+    `NaN` → ``[1.0, 30.0, 30.0]``，三条都不抛异常。
+    """
+
+    @pytest.mark.parametrize("value", [0.5, 1, 1.0, 2.0, float("inf"), None])
+    def test_allows_positive_numbers_and_none(self, value):
+        """`0 < factor < 1` 放行：实测退避 ``[1.0, 0.5, 0.25]``，非负、单调、有界"""
+        assert require_positive("factor", value) == value
+
+    @pytest.mark.parametrize(
+        "value", [0, 0.0, -0.0, -1, -2.0, "2", True, [], float("nan")],
+    )
+    def test_rejects_zero_negative_non_numeric_and_nan(self, value):
+        with pytest.raises(DataValidationError):
+            require_positive("factor", value)
+
+    def test_error_message_names_the_parameter(self):
+        with pytest.raises(DataValidationError, match=r"factor.*-2\.0"):
+            require_positive("factor", -2.0)
+
+    def test_bool_is_not_one(self):
+        """`True` 会被幂运算安静读成 1.0（倍率恰好等于「不指数增长」），必须拒"""
+        with pytest.raises(DataValidationError, match="factor"):
+            require_positive("factor", True)
+
+    def test_zero_factor_would_silently_become_busy_retry(self):
+        """判据接在 `compute_delay` 上：0 因子若不判，第 2 档起完全不等待"""
+        with pytest.raises(DataValidationError, match="factor"):
+            compute_delay(2, 1.0, 0.0, 30.0)
+
+    def test_negative_factor_would_break_monotonicity(self):
+        with pytest.raises(DataValidationError, match="factor"):
+            compute_delay(3, 1.0, -2.0, 30.0)
+
+    def test_inf_is_bounded_by_the_ceiling_so_it_stays_legal(self):
+        """与 `require_seconds` 同口径：`+inf` 一路上限是可预期行为（实测 30.0）"""
+        assert compute_delay(2, 1.0, float("inf"), 30.0) == 30.0
 
 
 class TestSearchPagination:

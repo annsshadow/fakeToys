@@ -4,7 +4,8 @@
 """数据集验证模块
 
 提供数据集格式验证、完整性检查等功能，以及跨模块共用的标量入参判据
-（`require_count` 计数旋钮 / `require_seconds` 时长旋钮）。
+（`require_count` 计数旋钮 / `require_seconds` 时长旋钮 /
+`require_positive` 无量纲倍率旋钮）。
 """
 
 import json
@@ -95,6 +96,49 @@ def require_seconds(name: str, value: Any, minimum: float = 0.0) -> Optional[flo
         raise DataValidationError(f"{name} 不能是 NaN")
     if value < minimum:
         raise DataValidationError(f"{name} 必须是不小于 {minimum} 的秒数，当前是 {value}")
+    return value
+
+
+def require_positive(name: str, value: Any) -> Optional[float]:
+    """校验「指数因子」这类**无量纲倍率**旋钮，返回原值。
+
+    与 `require_seconds` 同族，但下界固定为「严格大于 0」、没有 `minimum` 可配：
+    这类值只有「每档乘多少」一种合法读法，而实现里的幂运算对 0 与负数都不报错，
+    只是换形状。实测（`retry.compute_delay`，`base_delay=1`、`max_delay=30`，
+    退避取第 1/2/3 档）：
+
+    - `factor=0` → ``[1.0, 0.0, 0.0]``（``0 ** 0`` 是 1，之后每档都是 0 ⇒ 忙重试）
+    - `factor=-2` → ``[1.0, 0.0, 4.0]``（负幂次的小数被尾部 `max(0.0, …)` 与正负
+      交替搅在一起，得到一个非单调、隔档完全不等待的序列）
+    - `factor=NaN` → ``[1.0, 30.0, 30.0]``（首档照常，之后 `min()` 交出第一个参数）
+    - `factor='2'` / `None` → 不报「参数写错」，而是 ``TypeError: unsupported
+      operand type(s) for ** or pow()`` —— 且它发生在**第一次真实调用失败之后**
+      （见 `with_retries` 里 `raise last_exc` 根本轮不到执行），原始异常整个丢失。
+
+    `+inf` 与 `int` 照常接受：实测 `factor=inf` 给 ``[1.0, 30.0, 30.0]``，行为有界
+    且与「一路上限」的意图一致（与 `require_seconds` 同口径）。
+
+    Args:
+        name: 参数名，直接出现在报错里
+        value: 传入的值
+
+    Returns:
+        校验通过后的原值。`None` 视为「没传参数」，与 `require_count` /
+        `require_seconds` 一致，由各调用点自己决定回落哪个默认值。
+
+    Raises:
+        DataValidationError: 值不是数值（`bool` 也不算）、是 NaN，或不大于 0
+    """
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise DataValidationError(
+            f"{name} 必须是数值，当前是 {value!r}（{type(value).__name__}）"
+        )
+    if math.isnan(value):
+        raise DataValidationError(f"{name} 不能是 NaN")
+    if value <= 0:
+        raise DataValidationError(f"{name} 必须是大于 0 的数值，当前是 {value}")
     return value
 
 
