@@ -1281,6 +1281,21 @@ KNOWN_FIELDS 里是**已知**的 —— 已知于校验器、未知于读取器�
 做法是**把守护改成精确棘轮**：`KNOWN_UNMAPPED_FIELDS` 常量列出这两条豁免，断言「实际缺失集必须与之相等」⇒
 补一条就红（注入 m5 ⇒ 恰 1 红）、漏一条也红，不许悄悄扩面。
 
+> **（L50 校正）** 该段末尾「本轮不动它」是 L49 的处置，A78 已在 §3.25 关闭，`KNOWN_UNMAPPED_FIELDS`
+> 的豁免清单随之清空。同理，本节「测试」段的 **4940 passed / 2 skipped**（99.02 %）与同轮另一处的
+> 4920 / 3（98.64 %）也不是环境漂移，而是**两套解释器**：`C:\Python314`（pandas 3.0.2 + chromadb 1.5.9 +
+> starlette 1.2.1）与 venv `aug`（pandas、chromadb 皆无，starlette 1.6.0）。L50 的同一份工作树两跑 =
+> **4963 passed / 3 skipped**（aug，= 4920 + 43）与 **4983 / 2**（`C:\Python314`，= 4940 + 43），
+> 两套各自与本行历史数字严丝合缝 —— 差 **+20** 的构成（实测四份：`--collect-only` 清单 4,964 vs 4,985、
+> 两份全量日志，Temp `l50q/col_aug.txt` / `col_py314.txt` / `full_aug2.txt` / `full_py314.txt`）：
+> **+21** 两个 pandas 门控文件（`test_csv_excel_export.py` 9 例 + `test_csv_excel_import_real.py` 12 例）
+> 在 aug 下**根本不 collect**（模块级 `importorskip` ⇒ 只各留 1 条 skip 占位）、在 `C:\Python314` 下
+> collect 且 pass；**+1** `test_micro_branches_l61.py:99` 在 aug 下缺 pandas 而 skip、在 `C:\Python314`
+> 下实跑；**−2** `test_chromadb_backend.py:110` 与 `test_vector.py:56` 在 aug 下走「缺依赖」分支而
+> pass、在 `C:\Python314` 下 skip。21 + 1 − 2 = 20，Δskipped = 3 → 2 = −1，两式相加 = Δevents = +19
+> = 4,985 − 4,966 ✓。结论与纪律：**覆盖率分母同样是解释器的函数**（同一份代码 TOTAL 语句 12,785 vs
+> 12,159、覆盖 98.64 % vs 99.02 %），此后全量数字必须连解释器身份一起记。
+
 **同构扫描挖出的 bool 洞（A79，本轮发现并同轮修掉）**：`isinstance(True, int)` 恒真，于是
 `_validate_known_fields` 里 7 个数值规格键**全部**把 YAML 里的 `retry_jitter: true` 读成合法，而运行时四道判据
 （`require_count` / `require_seconds` / `require_positive` / `require_ratio`）**全部**显式拒 bool ⇒ 症状正是
@@ -1364,6 +1379,86 @@ m3 由 2 → 3（第 3 条正是 `test_pipeline_forwards_cache_options` 那枚�
 （`272` / `279-280` / `404-405`，全在既有 `_cache_*` 与 `__del__` 兜底，本轮 10 个 hunk 无一命中）、
 `retry.py` 121 缺 6 ⇒ **本轮新增语句 0 条落入未触达**；A68 那六条依旧一个没少，行号随本轮 +17 位移成
 `304` / `327-328` / `363-367`（+ 偏支 `197->237`）。
+
+### 3.25 L50：`web` 节第一次整体进配置面 —— CORS 两键接上、跨源默认收紧（关闭 A78，新立 A80 / A81）
+
+**一个缺陷牵出两个方向不同的洞**：L49 的映射表覆盖守护第一次跑红出 `('web', ['cors_credentials',
+'cors_origins'])`（A78）—— 症状不是「配置文件没读到」，而是「同一节里只有这两个键没人读」，因为
+`_load_section` 按默认表的键取字段（实测：写 `cors_origins: ["https://trusted.example"]` 读回 `['*']`，
+同一文件的 `web.port: 9999` 正常生效）。顺着同一条「表 = 白名单」的思路往旁边看，`web` 节另外七个键
+在 `ConfigValidator.KNOWN_FIELDS` 里也一条规格都没有。两份实测一起摆（Temp `l50q/probe2.py`，
+NONCE-bee0664903ff）：
+
+| 注入 | 结果 |
+|------|------|
+| `port: eighty`、`cors_origins: "https://…"`（字符串而非列表）、`cors_credentials: maybe`、`data_roots: data`（标量）、`rate_limit_max_requests: -5`、`rate_limit_window_seconds: NaN` —— **六个键同时写坏** | `is_valid=True`、0 error、0 warning |
+| 只把 `data_roots` 写成 YAML 标量 `data` | `api/deps._config_data_roots` 按字符 resolve 出 `d/a/t/a` 四个根 ⇒ 数据端点**全部** 403，`config.yaml` 自身也 403 |
+
+第二条才是这条债真正的分量：`validate-config` 绿灯的配置能把服务跑成「处处 403」，症状长得像后端坏了。
+
+**跨源默认为什么敢改（上游形状实测）**：收紧前出厂是 `["*"]` + `credentials=True`。这个组合在 starlette
+里**不是**「不开放」—— 实测（Temp `l50q/probe3.py`，NONCE-74891e9630fb / -38dd3b833cfe，同一支探针在
+starlette **1.6.0 与 1.2.1 下逐字节相同**）：
+
+| `allow_origins` / `allow_credentials` | 带 `Origin: https://evil.example` 的 GET | 同来源预检 OPTIONS |
+|------|------|------|
+| `["*"]` / `True`（旧默认） | 200，回显 `allow-origin: https://evil.example` + `allow-credentials: true` | **200**，两行都给 |
+| `[]` / `False`（本轮新默认） | 200，**零个** `access-control-*` 头 | **400**，无 `allow-origin`（但带 `allow-methods` 与 `max-age`） |
+| `["*"]` / `False` | 200，`allow-origin: *`、无凭据头 | 200 |
+| 精确白名单 / `True`（非名单来源） | 200，只有 `allow-credentials: true`，无 `allow-origin` | 400 |
+
+本仓合法消费方全都不需要跨源：随包 UI 与后端同源（前端 `baseURL` 是相对路径 `/api`、vite 开发模式走
+proxy），非浏览器客户端不受 CORS 约束，而 API 不用 cookie（`set_cookie` / `request.cookies` 在 `api/`
+下 0 命中，鉴权是 `X-API-Key` 头）⇒ `allow_credentials` 对合法用法零收益、纯风险。据此把默认改成
+`[]` / `False`，这是 **3.x 的一次破坏性默认变更**，迁移路径写在 `config.yaml` 与 `API.md`「跨源（CORS）」。
+
+**改了哪三处**：① `load_config` 的 `web` 默认表补 `'cors_origins': []` / `'cors_credentials': False`
+⇒ A78 关闭，`TestSectionDefaultsMatchTheMappingTable.KNOWN_UNMAPPED_FIELDS` 的豁免清单**清空**（留一项
+就等于承认还有一处「配了不生效」）；② `KNOWN_FIELDS` 一次性补 `web` 节 **10 条**规格（节本身 + 九个
+字段，含全表第一批 `type: list`）⇒ 六键全错那份配置从「绿灯」变成逐键报错；③ 出厂默认按上表收紧，
+`WebConfig` 字段 / 默认表 / `config.yaml` 三处各写一遍、三处各有一条用例用字面量钉死（沿用
+`TestShippedDataRootsDefault` 的形状，不拿 `WebConfig()` 当同源预言机）。
+
+**用例从 0 到 43**：本轮之前 `tests/` 里 CORS 断言是 **0 条**（既没测默认值也没测行为）。现在
+`TestWebCorsKeysReachTheConfig` 4 例（写了必须读到 + 列表默认不许跨配置共享）、
+`TestWebSectionKnobSurface` 31 例（字段/规格双向棘轮 + 16 合法 + 12 非法 + 六键结案 + 标量 `data_roots`
+形状）、`TestShippedCorsDefault` 8 例（三处默认一致、中间件参数确实来自配置、跨源读拿不到头、预检 400、
+同源与非浏览器客户端不受影响、上游形状锁）。参数化展开后全量净 **+43**。
+
+**注入 8 模式（沙箱副本，NONCE-5a0c6d049d00）**：基线 252 passed / 0 failed，还原后复跑同样 252，
+七个文件与真身逐字节 sha 一致。m1 映射表退回 A78（摘掉 cors 两键）⇒ **4 红**（含精确棘轮）；
+m2 字段默认漂回 `["*"]`/`True` ⇒ **3**；m3 只摘 `web.data_roots` 一条规格 ⇒ **4**；m4 摘掉 `web` 节
+全部 10 条规格 ⇒ **17**（其中 2 红来自 L49 立的数值/布尔计数棘轮 10→7、4→3 被打破 ⇒ 新字段自动进旧
+断言）；m5 `api/main.py` 硬编码 `allow_credentials=True`（origins 仍读配置）⇒ **2**；m6 两参数全硬编码
+⇒ **3**；m7 对照档：映射表 `data_roots` 默认漂成 `[]` ⇒ **3**（证明「三处一致」这套机制对同表另一个键
+同样有牙，不是只对 cors 有效）；m8 三处默认漏改一处（`config.yaml` 摘掉两键）⇒ **1**。
+
+**自纠两处，都比结论更值得留**：
+① **版本号等式把测试绑死在解释器上**。本节第一版写的是 `assert starlette.__version__ == "1.6.0"`，
+在 `C:\Python314`（starlette 1.2.1）上必红 —— 而 1.2.1 的 CORS 形状与 1.6.0 **逐字节相同**（上表两版
+各测一次）。判据应该盯行为，不该盯版本的身份证：改成四条行为断言各自把 `starlette.__version__` 与
+`starlette.__file__` 带进失败消息，红的时候自带版本信息，换解释器不再假报警。
+② **「环境漂移」是自己造的**。L48 / L49 记过「pandas 与 chromadb 忽然消失、全量数从 4940/2 变 4920/3」，
+本轮才定位到根因：这台机器有**两套 Python**（`C:\Python314` 与 venv `aug`），两段会话换了 `python` 而
+账本没记解释器。同一份工作树双跑实测：aug（4963 passed / 3 skipped，TOTAL 12,785 语句，98.64 %）与
+`C:\Python314`（4983 / 2，12,159 语句，99.02 %），Δpassed +20 = **+21**（两个 pandas 门控文件在 aug 下
+不 collect）+ **1**（`test_micro_branches_l61.py:99`）− **2**（两条 chromadb「缺依赖」用例转为 skip），
+Δcollect = 21 与两份 `--collect-only` 清单逐条相符。纪律：**全量数字必须连解释器身份一起记**，覆盖率
+分母同样是环境的函数。
+
+**代价（不主张任何收益）**：`validate_config` 的走查表从 20 条规格变 30 条（`web` 节 10 条），
+同进程 A/B、正反序各一轮、min-of-7（Temp `l50q/ab.py`，NONCE-47fc5c23a400）：现行 4.900 / 4.929 µs vs
+摘掉 web 3.331 / 3.161 µs ⇒ **Δ +1.570 / +1.768 µs，两序同号**；载体对照是整次 `validate_config(cfg)`
+= 10.5 µs ⇒ 本轮新增判据占一次校验的 ~15 %，但校验只在显式 `validate-config` 调用时发生，相对
+`load_config` 单次 6,859 µs 是 0.02 %。默认值改动本身的运行时代码路径 0 变化（`api/main.py` 那两个
+参数早就在读配置）。
+
+**新立两债**：A80 = `web` 节运行时零判据（SDK 直构 `WebConfig` 或绕过 `validate-config` 时，字符串
+`data_roots`、`None` origins 照样流到白名单与 starlette，本轮只补了校验器这一侧）；A81 = `docs/API.md`
+health 示例缺 `version` 键（文档滞后，与本轮无关，只记不修，见 `OPTIMIZATION_LOOP.md` Backlog A）。覆盖读数：`config_validator.py` 156 语句缺
+**0**（78 分支 3 条偏支全在既有 `_validate_env_refs` 一侧）、`config.py` 216 语句缺 3（`457-458` / `460`
+= L49 记录的 `449-450` / `452` 随本轮 +8 位移，本轮两个 hunk 在 `182-189` 与 `385`，不相交）⇒ **本轮
+新增语句 0 条落入未触达**。
 
 ## 4. 核心数据流
 

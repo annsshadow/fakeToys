@@ -323,6 +323,23 @@ web:
   # 静态文件目录
   static_dir: web/dist
   
+  # 允许跨源调用本 API 的来源白名单（精确匹配 Origin 头）。
+  # 出厂默认是**空列表 = 不发任何 CORS 头**：随包 Web UI 与后端同源（axios baseURL
+  # 是相对路径 `/api`，vite 开发模式走 proxy），因此它不需要 CORS；curl / Python SDK
+  # 等非浏览器客户端也不受 CORS 约束。只有「跑在别的站点上的浏览器页面要调本 API」
+  # 这种用法才需要在这里列出来源。
+  # 旧默认 `["*"]` 配 `cors_credentials: true` 在 starlette 下会把请求方 Origin 原样
+  # 回显并回 `access-control-allow-credentials: true`（预检一并放行）⇒ 等于任意网站
+  # 都能带用户凭据读本 API，故收紧。
+  # 这是 3.x 的**破坏性默认变更**：确有跨源前端的话，改成
+  # `cors_origins: ["https://your-frontend.example"]` 即可恢复。
+  cors_origins: []
+  
+  # 是否允许跨源请求携带凭据（cookie / Authorization）。本仓 API 不用 cookie，
+  # 鉴权走 `X-API-Key` 头，所以这一项对合法用法没有收益；仅在确实需要跨源带
+  # 凭据时显式打开，并且 `cors_origins` 必须是精确白名单（不能留空）。
+  cors_credentials: false
+  
   # REST API 允许访问的目录白名单。
   # 客户端传入的文件/目录路径 resolve 后必须落在其中某个根目录内，否则返回 403。
   # 相对路径先在白名单各根目录内查找已存在的文件（所以裸文件名能用），找不到才按
