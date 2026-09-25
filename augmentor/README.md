@@ -233,6 +233,7 @@ python cli.py search --input data.json --query "租房" --method contains
 
 # 验证配置文件（报 ERROR ⇒ 退出码 1；「写了没人读」的键只出声、不判负）
 python cli.py validate-config --config config.yaml
+# 同一批「没人读」不必先跑本命令：任何命令加载配置时就会打到 stderr（WARNING，不碰 stdout 也不改退出码）
 
 # 数据分析（JSON：洞察 + 质量/多样性/完整性分数 + 覆盖分析 + 去重报告）
 python cli.py analyze --input data.json
