@@ -41,6 +41,30 @@ REQUEST_TIMEOUT_RANGE = (1.0, 600.0)
 # 这一档同时是 `AugmentationConfig` 的字段默认值与模型后端的类默认值：两边都
 # **引用**本常数而不各自重抄（A77 的教训：抄第二份就等于给「两处悄悄不同」留位置）。
 DEFAULT_REQUEST_TIMEOUT = 120.0
+# 模型条目里三个采样键的取值区间（A113 / L72）。与上面那批同级：**校验器规格与
+# `ModelConfig.__post_init__` 共用这几个常数**，不在 `config_validator` 里重抄一遍
+# （A77 的根因就是同一条界抄两处，抄完还漏）。
+#
+# `temperature` 上界取 2.0 是「四家公开契约里最宽的那档」（OpenAI / Gemini 0-2、
+# Claude 0-1、ERNIE 0-1），它**不是崩溃界**：`base.py` 只把它 `repr()` 进缓存键、
+# 五个后端只把它塞进请求体，实测改前 `temperature: 999` 三面全绿（Temp
+# `l72q/probe_before.json`），代价是请求被服务端拒成 400、再被 `classify_error`
+# 读成「后端不可用」。判在 2 的**代价如实记**：ollama 一档（llama.cpp）本地不夹
+# 这个值，于是「今天跑得起来的 >2 写法」本轮起加载即拒 —— 与本仓既有口径同类，
+# `num_threads ≤ 100`、`variants_per_seed ≤ 100` 也不是崩溃界，而是「越界即无意义」
+# 的天花板；要写 >2 在本仓没有合法表达。
+TEMPERATURE_RANGE = (0.0, 2.0)
+# `top_p` 的界取闭区间 0-1：上界 1 是各家一致；下界**含 0** 是刻意的松弛 —— 「0 是否
+# 等价于关闭 nucleus 采样」五家说法不一致（有的直接拒），本地无从裁定，而 `< 0`
+# 才是无争议的坏值。判据族的 `require_ratio` 默认闭区间与此一致，不为其开特例。
+TOP_P_RANGE = (0.0, 1.0)
+# `max_output_tokens` 只判下界与「必须是整数」，**不设上界**（A113 行的口径决定）：
+# 五家的上限各不相同且随模型而变，任何本地天花板都是凭空造的第二个权威；实测它
+# 只进请求体与缓存键（`grep max_output_tokens augmentor/` 五后端各 1 处 + `base.py:289`），
+# 不参与任何分配或循环 ⇒ 越大的代价是「服务端拒」，与 `max_retries` 那种
+# 「越界 = 本地量级失控」不同类。下界 1 与整型两刀都要：实测 `0` / `-5` / `2048.5` /
+# `True` 改前全部原样进 HTTP body。
+MAX_OUTPUT_TOKENS_MIN = 1
 PORT_RANGE = (1, 65535)
 RATE_LIMIT_MIN_REQUESTS = 0
 RATE_LIMIT_MIN_WINDOW_SECONDS = 0.0
@@ -48,15 +72,23 @@ RATE_LIMIT_MIN_WINDOW_SECONDS = 0.0
 logger = logging.getLogger(__name__)
 
 
-def _reject_null_fields(section: str, obj: Any) -> None:
+def _reject_null_fields(section: str, obj: Any,
+                        names: Optional[tuple] = None) -> None:
     """配置对象的字段没有「未提供」这种状态：空值就是 `None`。
 
     实测（L51 改前）YAML 写 `web: {port: }` 之后 `load_config` 把 `None` 原样放进
     字段，而校验器对同一批空值逐个报「类型错误: 期望 int, 实际 NoneType」⇒ 不判
     就是「校验器判红的配置照样能加载」，且下游 `Path(str(p))` 会把 `None` 变成一
     个**名叫 `None` 的白名单根目录**。
+
+    `names` 是可选的白名单（L72 / A113 加）：只在这几个字段上判 null。它是给
+    `ModelConfig` 用的 —— 模型条目里 `api_key` / `secret_key` / `base_url` 的 `None`
+    与空串是**合法状态**（ollama 就没有 api_key，实测出厂模板给的是 `''`），
+    `request_timeout` 的 `None` 更是「不覆盖全局档」这一档本身，所以那一节不能
+    整节套用本判据，只能点名判采样三键。
     """
-    for name in obj.__dataclass_fields__:
+    field_names = obj.__dataclass_fields__ if names is None else names
+    for name in field_names:
         if getattr(obj, name) is None:
             raise DataValidationError(
                 f"{section}.{name} 不能是 null（配置里写了这个键却没有给值）"
@@ -81,15 +113,31 @@ class ModelConfig:
     request_timeout: Optional[float] = None
 
     def __post_init__(self):
-        """只判 `request_timeout` 这一档，其余字段一律不判（有意不对称）。
+        """模型条目的四个数值键逐个判（L71 / A74 那一根 + L72 / A113 采样三键）。
 
-        为什么单判它：模型节的 `api_key` / `temperature` 等键坏值的代价是「请求被
-        服务端拒」，而 `request_timeout` 的坏值是**客户端本地直接抛** —— 它最终落到
-        `requests` 的 `timeout=`，实测 `timeout=0` 抛 `ValueError`，`timeout=-1` 同样，
-        且都发生在第一次真实调用上（L71 / A74）。区间与 `augmentation.request_timeout`
-        同一批常数（`REQUEST_TIMEOUT_RANGE`），两侧同判的口径承 A77。
-        `None` 由 `require_seconds` 放行：它读作「本模型不覆盖全局档」，是合法状态。
+        运行时这一侧的界全部引本模块常数（`TEMPERATURE_RANGE` / `TOP_P_RANGE` /
+        `MAX_OUTPUT_TOKENS_MIN` / `REQUEST_TIMEOUT_RANGE`），静态那一侧的规格
+        （`config_validator.MODEL_ENTRY_FIELDS`）引的是同一批 —— A77 立的规矩：
+        一条界只住一个地方，两侧同批改，否则就会长出「校验器绿、加载时抛」或
+        反过来。为什么必须在**这里**判而不是等后端：实测五个后端只是把这三个值
+        塞进请求体（`temperature` / `top_p` / `max_output_tokens` 各 5 处），
+        坏值的症状是「服务端 400 → `classify_error` 读成后端不可用」，真因永远
+        看不见（L71 取证，Temp `l72q/probe_before.json` 十五例改前全绿）。
+
+        `None` 的读法**按键分档**，不是整节统一：采样三键的 `null` 拒（它们有默认值，
+        写了键不给值是手滑，与 `augmentation` 节同一口径），而 `request_timeout`
+        的 `None` 是「本模型不覆盖全局档」这一档本身，必须放行（`require_seconds`
+        对 `None` 短路）。
         """
+        _reject_null_fields("models.<名字>", self,
+                            ("temperature", "top_p", "max_output_tokens"))
+        lo, hi = TEMPERATURE_RANGE
+        require_ratio("models.<名字>.temperature", self.temperature,
+                      minimum=lo, maximum=hi)
+        lo, hi = TOP_P_RANGE
+        require_ratio("models.<名字>.top_p", self.top_p, minimum=lo, maximum=hi)
+        require_count("models.<名字>.max_output_tokens", self.max_output_tokens,
+                      minimum=MAX_OUTPUT_TOKENS_MIN)
         lo, hi = REQUEST_TIMEOUT_RANGE
         require_seconds("models.<名字>.request_timeout", self.request_timeout,
                         minimum=lo, maximum=hi)
@@ -548,11 +596,12 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
                     temperature=conf.get('temperature', 0.99),
                     top_p=conf.get('top_p', 0.95),
                     max_output_tokens=conf.get('max_output_tokens', 2048),
-                    # 键写了没给值时 YAML 给 None，与「没写这个键」同义（= 不覆盖
-                    # 全局档），这是本节允许的读法。坏值**在下面构造 `ModelConfig`
-                    # 时当场判**（`__post_init__` 里的 `require_seconds`，L71 / A74），
-                    # 不等后端构造那条第二道防线 —— 这与 `temperature` / `top_p` 那些
-                    # 至今无人判的键**不是**同一口径，别照抄它们。
+                    # 键写了没给值时 YAML 给 None：对 `request_timeout` 这是合法读法
+                    # （= 不覆盖全局档），对采样三键则不是，所以 `temperature` /
+                    # `top_p` / `max_output_tokens` 三行**不**能照抄这一读法 —— 它们
+                    # 走的是带默认值的 `conf.get(key, 默认)`，写了键没给值时拿到的是
+                    # None 而不是默认值，坏值与 null 都在下面构造 `ModelConfig` 时
+                    # 当场判（`__post_init__`，L71 / A74 + L72 / A113）。
                     request_timeout=conf.get('request_timeout')
                 )
         
