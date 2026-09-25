@@ -26,7 +26,8 @@ class ClaudeBackend(ModelBackend):
                  default_attempts: Optional[int] = None,
                  default_retry_delay: Optional[float] = None,
                  default_max_retry_wait: Optional[float] = None,
-                 default_retry_jitter: Optional[float] = None):
+                 default_retry_jitter: Optional[float] = None,
+                 default_request_timeout: Optional[float] = None):
         """初始化 Claude 后端
 
         Args:
@@ -38,6 +39,7 @@ class ClaudeBackend(ModelBackend):
             default_retry_delay: 退避基数默认值（秒），见基类说明
             default_max_retry_wait: 服务端指令一支的等待上限（秒），见基类说明
             default_retry_jitter: 退避抖动比例（0-1），见基类说明
+            default_request_timeout: 单次请求超时（秒），见基类说明
         """
         super().__init__(
             config,
@@ -48,6 +50,7 @@ class ClaudeBackend(ModelBackend):
             default_retry_delay=default_retry_delay,
             default_max_retry_wait=default_max_retry_wait,
             default_retry_jitter=default_retry_jitter,
+            default_request_timeout=default_request_timeout,
         )
         if not config.api_key:
             raise ModelNotConfiguredError("Claude 后端需要 api_key")
@@ -81,7 +84,8 @@ class ClaudeBackend(ModelBackend):
         }
 
         session = self._get_session()
-        response = session.post(self.api_url, json=payload, headers=headers, timeout=60)
+        response = session.post(self.api_url, json=payload, headers=headers,
+                                timeout=self._request_timeout)
         response.raise_for_status()
 
         data = response.json()

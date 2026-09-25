@@ -26,6 +26,8 @@ models:
     temperature: 0.99
     top_p: 0.95
     max_output_tokens: 2048
+    # 本条目可写 `request_timeout: 30` 只改这一个后端的单次请求超时（1–600 秒）；
+    # 不写即吃下面增强配置节的 `augmentation.request_timeout`
   
   # OpenAI 配置
   openai:
@@ -105,6 +107,22 @@ augmentation:
   # 同时醒来再撞一次 429，抖动把它们错开
   # 代价：退避一支的最坏单次等待从 30 s 变成 30 × (1 + retry_jitter) s（0.5 ⇒ 45 s）
   retry_jitter: 0
+
+  # 单次 HTTP 请求的超时（秒），1–600；默认 120（L71 / A74）
+  # 改前是六个互不相同的硬编码常数（claude / gemini / openai / ernie 推理各 60、
+  # ollama 120、ernie 换 token 10）；现在**推理那一支全部只读这一根旋钮**，各模型条目
+  # 可用 `models.<名字>.request_timeout` 单独覆盖（不写即吃本节值）。
+  # 默认取改前那组里的最大值 120 而不是 60，理由是对称的代价里选了较小的一边：
+  # 调小会让本来跑得完的长回答被中途掐断（新失败），调大只让「后端已经不响应」那条
+  # 路多等 60 s 才出声（旧失败晚一点）。⇒ 对 ollama 行为一字不变，其余四支只是失败
+  # 路径变慢，没有任何一支会被新掐断。
+  # 上界 600 与 docs/DEPLOYMENT.md 的 nginx `proxy_read_timeout 600s` 对齐 —— 再大就是
+  # 配了也不生效的假旋钮；下界 1 不是防手滑而是实测硬界：`requests` 对 `timeout=0` 抛
+  # `ValueError: ... the timeout cannot be set to a value less than or equal to 0`，
+  # 且崩在**第一次生成调用**上而不是加载时，不判掉就是「validate-config 绿灯、一跑就炸」。
+  # 唯一不吃本旋钮的是 ernie 换 access_token 那一支（独立常数 10 s）：凭据错时要的是
+  # 「立刻失败」，让它继承一个为长回答设的 120 s 会把一次登录失败拖成两分钟干等
+  request_timeout: 120
 
 # 质量评分配置
 quality:

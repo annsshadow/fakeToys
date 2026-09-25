@@ -15,7 +15,8 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from queue import Queue
 
-from .config import AppConfig, load_config, get_model_config
+from .config import (REQUEST_TIMEOUT_RANGE, AppConfig, load_config,
+                     get_model_config)
 from .validation import require_count, require_ratio, require_seconds
 from .retry import MAX_RETRY_AFTER
 from .models import create_model_backend, extract_json_array
@@ -64,9 +65,9 @@ class AugmentorPipeline:
     
     def _init_components(self):
         """初始化各组件"""
-        # 重试旋钮先判后建：下面那个 try/except 的既定语义是「模型没配好就降级」，
-        # 配置文件里写坏的 max_retries / retry_delay / max_retry_wait / retry_jitter
-        # 若让它去抛，症状会被读成
+        # 重试与超时旋钮先判后建：下面那个 try/except 的既定语义是「模型没配好就降级」，
+        # 配置文件里写坏的 max_retries / retry_delay / max_retry_wait / retry_jitter /
+        # request_timeout 若让它去抛，症状会被读成
         # 「后端不可用」，而真实原因是参数越界——所以判据必须在 try 之外。
         require_count("augmentation.max_retries", self.config.augmentation.max_retries)
         require_seconds("augmentation.retry_delay", self.config.augmentation.retry_delay)
@@ -75,6 +76,10 @@ class AugmentorPipeline:
                         minimum=0.0, maximum=MAX_RETRY_AFTER)
         require_ratio("augmentation.retry_jitter",
                       self.config.augmentation.retry_jitter)
+        lo, hi = REQUEST_TIMEOUT_RANGE
+        require_seconds("augmentation.request_timeout",
+                        self.config.augmentation.request_timeout,
+                        minimum=lo, maximum=hi)
 
         # 模型后端（可选：未配置模型/密钥时降级，避免阻断断点续传等只读能力）
         try:
@@ -88,6 +93,7 @@ class AugmentorPipeline:
                 default_retry_delay=self.config.augmentation.retry_delay,
                 default_max_retry_wait=self.config.augmentation.max_retry_wait,
                 default_retry_jitter=self.config.augmentation.retry_jitter,
+                default_request_timeout=self.config.augmentation.request_timeout,
             )
         except Exception as exc:
             logger.warning("模型后端初始化失败，增强功能将不可用：%s", exc)

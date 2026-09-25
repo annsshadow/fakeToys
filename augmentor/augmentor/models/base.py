@@ -9,7 +9,7 @@ import logging
 import threading
 from abc import ABC, abstractmethod
 from typing import Optional
-from ..config import ModelConfig
+from ..config import (DEFAULT_REQUEST_TIMEOUT, REQUEST_TIMEOUT_RANGE, ModelConfig)
 from ..cache import MemoryCache, DiskCache
 from ..exceptions import ModelGenerateError, ModelResponseError
 from ..retry import with_retries, classify_error, MAX_RETRY_AFTER
@@ -80,6 +80,13 @@ class ModelBackend(ABC):
     _DEFAULT_MAX_RETRY_WAIT = MAX_RETRY_AFTER
     _DEFAULT_RETRY_JITTER = 0.0
 
+    # 单次请求超时（秒）的类默认档（A74）。这里**引用**`config.DEFAULT_REQUEST_TIMEOUT`
+    # 而不是重抄 120.0：改前六个硬编码是 60 / 120 两种值互不相同，而「两处抄同一个
+    # 数」正是 A77 已经付过代价的错误，所以默认档只有一个权威定义点。
+    # 配置文件那一半走 `augmentation.request_timeout`（同常数默认）+ 模型条目的
+    # `models.<名字>.request_timeout`（优先），两者都经工厂透传到这里。
+    _DEFAULT_REQUEST_TIMEOUT = DEFAULT_REQUEST_TIMEOUT
+
     # 磁盘响应缓存默认容量上限（256 MB）。磁盘缓存必须比内存缓存更保守：
     # 没有上限的磁盘缓存只是把内存泄漏换成了磁盘泄漏。
     DEFAULT_RESPONSE_CACHE_MAX_BYTES = 256 * 1024 * 1024
@@ -92,7 +99,8 @@ class ModelBackend(ABC):
                  default_attempts: Optional[int] = None,
                  default_retry_delay: Optional[float] = None,
                  default_max_retry_wait: Optional[float] = None,
-                 default_retry_jitter: Optional[float] = None):
+                 default_retry_jitter: Optional[float] = None,
+                 default_request_timeout: Optional[float] = None):
         """初始化模型后端
 
         Args:
@@ -114,12 +122,21 @@ class ModelBackend(ABC):
                 `require_seconds(..., maximum=MAX_RETRY_AFTER)` 守的就是这一句
             default_retry_jitter: 退避的随机抖动比例（0-1 闭区间），None 时用
                 _DEFAULT_RETRY_JITTER（0.0 ⇒ 各档等待与接参前逐字相同）
+            default_request_timeout: 单次请求超时（秒），`_call_api` 里每次
+                `session.post` 用它；None 时用 _DEFAULT_REQUEST_TIMEOUT。
+                配置文件的 `augmentation.request_timeout` 与模型条目的
+                `models.<名字>.request_timeout`（后者优先）经工厂透传到这里。
+                下界 1 是 `requests` 的硬约束而不是口味：实测 `timeout=0` 抛
+                `ValueError: Attempted to set connect timeout to 0, but the timeout
+                cannot be set to a value less than or equal to 0`，且它发生在第一次
+                真实调用上（A74）
 
         Raises:
             DataValidationError: default_attempts 不是不小于 0 的整数，
                 default_retry_delay 不是不小于 0 的有限数值，
                 default_max_retry_wait 不在 0-300 秒内，
-                或 default_retry_jitter 不在 0-1 之间
+                default_retry_jitter 不在 0-1 之间，
+                或 default_request_timeout 不在配置区间内
         """
         # 判参必须排在 _build_response_cache 之前：DiskCache.__init__ 会 mkdir，
         # 坏档位不该留下一个建好了却没人用的缓存目录。
@@ -128,6 +145,9 @@ class ModelBackend(ABC):
         require_seconds("default_max_retry_wait", default_max_retry_wait,
                         minimum=0.0, maximum=MAX_RETRY_AFTER)
         require_ratio("default_retry_jitter", default_retry_jitter)
+        require_seconds("default_request_timeout", default_request_timeout,
+                        minimum=REQUEST_TIMEOUT_RANGE[0],
+                        maximum=REQUEST_TIMEOUT_RANGE[1])
 
         self.config = config
         self._request_count = 0
@@ -155,6 +175,10 @@ class ModelBackend(ABC):
         self._default_retry_jitter = (
             default_retry_jitter if default_retry_jitter is not None
             else self._DEFAULT_RETRY_JITTER
+        )
+        self._request_timeout = (
+            default_request_timeout if default_request_timeout is not None
+            else self._DEFAULT_REQUEST_TIMEOUT
         )
         self._generation_cache = MemoryCache(max_size=self._GENERATION_CACHE_MAX)
         self._response_cache = self._build_response_cache(
