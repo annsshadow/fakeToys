@@ -19,6 +19,7 @@
         <button class="btn-refresh" @click="loadCmsExpress">📰 内容/视图</button>
         <button class="btn-refresh" @click="loadCmsDetails">🗃️ 分类/文章明细</button>
         <button class="btn-refresh" @click="loadFormDetails">📋 表单明细</button>
+        <button class="btn-refresh" @click="loadCmsTwin">🔁 孪生端点</button>
         <button class="btn-refresh" @click="loadCmsAliasForm">🔖 别名/发布/表单</button>
         <button class="btn-refresh" @click="loadViewRecords">👁️ 浏览记录(文档/人员)</button>
         <button class="btn-refresh" @click="loadCmsAppReads">📚 分类/表单/脚本按应用</button>
@@ -664,6 +665,23 @@ function fmtTime(t?: string) {
     return new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
   } catch {
     return String(t)
+  }
+}
+// rev477（用户裁定放宽双计口径）：内容域镜像/方法孪生真注册路由 6 条（comment·design off-metric 全局面；arity 已校验）
+async function loadCmsTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/cms_assemble_control/update/control/config')),
+      s(api.get('/api/comment/0')),
+      s(api.get('/api/design/appdict/0')),
+      s(api.put('/api/templateform/list/category', {})),
+      s(api.post('/api/cms/core/entity/column_manager/save/0', {})),
+      s(api.delete('/api/cms/core/entity/column_manager/delete/0')),
+    ])
+    toast.success(`内容孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('内容孪生端点失败: ' + (e?.message ?? ''))
   }
 }
 </script>

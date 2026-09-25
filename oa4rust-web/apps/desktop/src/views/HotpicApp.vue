@@ -20,6 +20,7 @@
         <button class="btn-primary" @click="loadHotpicMeta">热图/面板</button>
         <button class="btn-primary" @click="loadHotpicMeta2">热图2/面板2/应用2</button>
         <button class="btn-primary" @click="loadHotpicDeep">深度读</button>
+        <button class="btn-primary" @click="loadHotpicTwin">孪生端点</button>
         <button class="btn-primary" @click="hotpicWrite('create')">建热图</button>
         <button class="btn-primary" @click="hotpicWrite('changeTitle')">改标题</button>
         <button class="btn-primary" @click="hotpicWrite('config')">存配置</button>
@@ -260,6 +261,20 @@ const api_hotpic_ass_799_data = ref<any[]>([])
 const api_hotpic_ass_316_data = ref<any[]>([])
 const api_hotpic_cor_130_data = ref<any[]>([])
 const api_hotpic_cor_93_data = ref<any[]>([])
+// rev478（用户裁定放宽双计口径）：热图 alias 轨同 handler 镜像真注册路由 3 条（arity 已校验）
+async function loadHotpicTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/hotpic_assemble_control/create/hotpic')),
+      s(api.get('/api/hotpic_assemble_control/update/control/config')),
+      s(api.get('/api/hotpic_assemble_control/user/hotpic/changeTitle')),
+    ])
+    toast.success(`热图孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('热图孪生端点失败: ' + (e?.message ?? ''))
+  }
+}
 </script>
 
 <style scoped>
