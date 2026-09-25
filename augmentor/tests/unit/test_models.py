@@ -406,6 +406,49 @@ class TestRetryMechanism:
         assert backend.request_count == 0
         assert backend.error_count == 0
 
+    def test_retry_count_zero_without_retry(self):
+        """A66：没重试时新出口停在 0（走满 `_request_count` 也不该虚增重试数）"""
+        backend = FakeBackend()
+        backend.generate("hi")
+        assert backend.retry_count == 0
+        assert backend.retry_wait_seconds == 0.0
+
+    def test_retry_count_tracks_transient_failures(self):
+        """A66：瞬时失败 2 次后成功 ⇒ 实际重试 2 回。`error_count` 只说「失败几次」，
+        说不出「其中发生了几回带重发的重试」，这条出口补的正是后者。"""
+        backend = FakeBackend(failures=2)
+        assert backend.generate("hi", max_retries=3, retry_delay=0) == "结果: hi"
+        assert backend.retry_count == 2
+        assert backend.error_count == 2  # 既有语义：每次失败照计
+
+    def test_retry_wait_seconds_accumulates_backoff_delays(self):
+        """A66：等待时长是这条出口存在的理由——`request_count`/`error_count` 对「总共睡了
+        多久」完全隐形。base=0.01、factor=2、无抖动 ⇒ 两回重试等 0.01 + 0.02。"""
+        backend = FakeBackend(failures=2)
+        backend.generate("hi", max_retries=3, retry_delay=0.01)
+        assert backend.retry_count == 2
+        assert backend.retry_wait_seconds == pytest.approx(0.03)
+
+    def test_retry_stats_survive_an_exhausted_call(self):
+        """A66 的关键判别：走 `on_retry` 而不是 `with_retries` 返回的 `RetryStats`——耗尽
+        那条路会 `raise`、拿不到 stats，可等待其实已经付了。失败到弹尽仍须记下已发生的重试。"""
+        backend = FakeBackend(failures=10)
+        with pytest.raises(ModelGenerateError):
+            backend.generate("hi", max_retries=3, retry_delay=0)
+        # attempts=3 ⇒ 首次 + 2 回重试，全失败后抛 ModelGenerateError
+        assert backend.retry_count == 2
+        assert backend.request_count == 3
+        assert backend.error_count == 3
+
+    def test_reset_stats_clears_retry_counters(self):
+        """A66：新计数纳入既有 `reset_stats` 家族，重置后一起归零"""
+        backend = FakeBackend(failures=2)
+        backend.generate("hi", max_retries=3, retry_delay=0.01)
+        assert backend.retry_count == 2 and backend.retry_wait_seconds > 0
+        backend.reset_stats()
+        assert backend.retry_count == 0
+        assert backend.retry_wait_seconds == 0.0
+
 
 class TestModelBackendExtended:
     """ModelBackend 扩展测试"""
