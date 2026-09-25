@@ -389,6 +389,8 @@
             <button class="btn-sm" @click="loadTwinD">孪生读D</button>
             <button class="btn-sm" @click="loadTwinE">孪生读E</button>
             <button class="btn-sm" @click="loadTwinF">孪生读F</button>
+            <button class="btn-sm" @click="loadTwinG">孪生读G</button>
+            <button class="btn-sm" @click="loadTwinH">孪生读H</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('appListRange')">应用范围清单</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('modeList')">模式清单</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('processListIds')">按ids取流程</button>
@@ -2353,6 +2355,81 @@ async function loadTwinF() {
     toast.success(`孪生读F ${rs.length} 条已提交`)
   } catch (e: any) {
     toast.error('孪生读F失败: ' + (e?.message ?? ''))
+  }
+}
+// rev486（588 分诊重审·源码 arity 精确核）：applicationdict 深 data×3 深度 D/P/U + data/work 深段 D/P/U
+// （handler 体核：mockdeletetoget=DELETE PP_C_WORK 真 DML、mockputtopost 同 arity 8/9/10 逐深度匹配，非 500）
+async function loadTwinG() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.delete('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/0/0/0/data')),
+      s(api.delete('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/0/0/0/0/data')),
+      s(api.delete('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/0/0/0/0/0/data')),
+      s(api.delete('/api/processplatform/assemble/surface/data/work/0/0/0/0')),
+      s(api.delete('/api/processplatform/assemble/surface/data/work/0/0/0/0/0')),
+      s(api.delete('/api/processplatform/assemble/surface/data/work/0/0/0/0/0/0')),
+      s(api.delete('/api/processplatform/assemble/surface/data/work/0/0/0/0/0/0/0')),
+      s(api.post('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/0/0/0/data', {})),
+      s(api.post('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/0/0/0/0/data', {})),
+      s(api.post('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/0/0/0/0/0/data', {})),
+      s(api.post('/api/processplatform/assemble/surface/data/work/0/0/0/0', {})),
+      s(api.post('/api/processplatform/assemble/surface/data/work/0/0/0/0/0', {})),
+      s(api.post('/api/processplatform/assemble/surface/data/work/0/0/0/0/0/0', {})),
+      s(api.post('/api/processplatform/assemble/surface/data/work/0/0/0/0/0/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/0/0/0/data', {})),
+      s(api.put('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/0/0/0/0/data', {})),
+      s(api.put('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/0/0/0/0/0/data', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/work/0/0/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/work/0/0/0/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/work/0/0/0/0/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/work/0/0/0/0/0/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/job/0/0/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/job/0/0/0/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/job/0/0/0/0/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/job/0/0/0/0/0/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/job/0/0/0/0/0/0/0/0', {})),
+    ])
+    toast.success(`孪生读G ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('孪生读G失败: ' + (e?.message ?? ''))
+  }
+}
+// rev486（588 分诊重审·源码 arity 精确核）：data/workcompleted 深段 PUT×4 + service/processing 引擎
+// applicationdict 深 data 族 D/P/U 各 7 深度（dict_data_fns! 宏 arity 逐深度核匹配，dict_set INSERT x_application_dict 真 DML）
+async function loadTwinH() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.put('/api/processplatform/assemble/surface/data/workcompleted/0/0/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/workcompleted/0/0/0/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/workcompleted/0/0/0/0/0/0', {})),
+      s(api.put('/api/processplatform/assemble/surface/data/workcompleted/0/0/0/0/0/0/0', {})),
+      s(api.delete('/api/processplatform/service/processing/applicationdict/0/0/0/data')),
+      s(api.delete('/api/processplatform/service/processing/applicationdict/0/0/0/0/data')),
+      s(api.delete('/api/processplatform/service/processing/applicationdict/0/0/0/0/0/data')),
+      s(api.delete('/api/processplatform/service/processing/applicationdict/0/0/0/0/0/0/data')),
+      s(api.delete('/api/processplatform/service/processing/applicationdict/0/0/0/0/0/0/0/data')),
+      s(api.delete('/api/processplatform/service/processing/applicationdict/0/0/0/0/0/0/0/0/data')),
+      s(api.delete('/api/processplatform/service/processing/applicationdict/0/0/0/0/0/0/0/0/0/data')),
+      s(api.post('/api/processplatform/service/processing/applicationdict/0/0/0/data', {})),
+      s(api.post('/api/processplatform/service/processing/applicationdict/0/0/0/0/data', {})),
+      s(api.post('/api/processplatform/service/processing/applicationdict/0/0/0/0/0/data', {})),
+      s(api.post('/api/processplatform/service/processing/applicationdict/0/0/0/0/0/0/data', {})),
+      s(api.post('/api/processplatform/service/processing/applicationdict/0/0/0/0/0/0/0/data', {})),
+      s(api.post('/api/processplatform/service/processing/applicationdict/0/0/0/0/0/0/0/0/data', {})),
+      s(api.post('/api/processplatform/service/processing/applicationdict/0/0/0/0/0/0/0/0/0/data', {})),
+      s(api.put('/api/processplatform/service/processing/applicationdict/0/0/0/data', {})),
+      s(api.put('/api/processplatform/service/processing/applicationdict/0/0/0/0/data', {})),
+      s(api.put('/api/processplatform/service/processing/applicationdict/0/0/0/0/0/data', {})),
+      s(api.put('/api/processplatform/service/processing/applicationdict/0/0/0/0/0/0/data', {})),
+      s(api.put('/api/processplatform/service/processing/applicationdict/0/0/0/0/0/0/0/data', {})),
+      s(api.put('/api/processplatform/service/processing/applicationdict/0/0/0/0/0/0/0/0/data', {})),
+      s(api.put('/api/processplatform/service/processing/applicationdict/0/0/0/0/0/0/0/0/0/data', {})),
+    ])
+    toast.success(`孪生读H ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('孪生读H失败: ' + (e?.message ?? ''))
   }
 }
 async function engineReadAction(kind: string): Promise<void> {
