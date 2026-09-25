@@ -4,6 +4,7 @@
 """CLI `ops` 组命令（由 cli.py 拆出，逻辑未改）"""
 
 from ..io import _load_items, _print
+from ..verdict import verdict_exit
 from pathlib import Path
 import json
 import sys
@@ -26,6 +27,9 @@ def run_doctor(args, config):
             for feature in report.degraded_features:
                 print(f"  - {feature}")
 
+    # 判决位是 `all_required_present`：缺可选依赖不判负，缺必需依赖才判，且要 `--gate`
+    verdict_exit(report.all_required_present, enforce=args.gate)
+
 
 # ============ 自动化测试 ============
 def run_auto_test(args, config):
@@ -45,6 +49,9 @@ def run_auto_test(args, config):
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(suite.to_dict(), f, ensure_ascii=False, indent=2)
         print(f"\n测试报告已保存到 {args.output}")
+
+    # 「失败: N」就是这条命令的判决位（N > 0 ⇒ 未通过）；默认仍恒 0，`--gate` 才判负
+    verdict_exit(suite.failed_tests == 0, enforce=args.gate)
 
 
 # ============ 质量监控 ============
@@ -123,8 +130,8 @@ def run_dependency(args, config):
             print(f"发现 {len(issues)} 个问题:")
             for issue in issues:
                 print(f"  - {issue['message']}")
-            # 与 validate / validate-config 同一口径：报了问题就得让退出码跟着判负
-            sys.exit(1)
+        # 与 validate / validate-config 同一口径：报了问题就得让退出码跟着判负
+        verdict_exit(not issues)
 
 
 # ============ 数据迁移 ============
@@ -147,3 +154,6 @@ def run_migrate(args, config):
         print(f"  错误详情:")
         for error in result.errors[:5]:
             print(f"    - 第 {error['index']} 条: {error['error']}")
+
+    # 「失败: N 条」就是判决位（N > 0 ⇒ 未通过）；错误详情只列前 5 条，不影响判决完整
+    verdict_exit(result.failed_items == 0, enforce=args.gate)

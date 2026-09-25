@@ -4,6 +4,7 @@
 """CLI `quality` 组命令（由 cli.py 拆出，逻辑未改）"""
 
 from ..io import _load_items, _print, _save_items
+from ..verdict import verdict_exit
 from pathlib import Path
 import json
 import sys
@@ -77,7 +78,9 @@ def run_quality_report(args, config):
 
     print("\n质量指标:")
     for metric in report.metrics:
-        status = "✅" if metric.passed else "❌"
+        # 不用 ✅/❌：stdout 按 locale 编码，GBK 管道下这个字符会让整条命令崩在
+        # rc=1（L55 实测），而 1 在这个 CLI 里是「判决未通过」的形状，不该由装饰符占
+        status = "[通过]" if metric.passed else "[未通过]"
         print(f"  {status} {metric.name}: {metric.value:.2f} ({metric.description})")
 
     if report.recommendations:
@@ -88,6 +91,9 @@ def run_quality_report(args, config):
     if args.output:
         save_quality_report(report, args.output, args.format)
         print(f"\n报告已保存到 {args.output}")
+
+    # 报告形命令默认恒 0（L53 的口径），`--gate` 才把「总体状态: 未通过」翻译成退出码
+    verdict_exit(report.overall_passed, enforce=args.gate)
 
 
 # ============ 数据清洗 ============
@@ -201,5 +207,4 @@ def run_health_gate(args, config):
     )
 
     _print(result)
-    if not result["gate"]["passed"]:
-        sys.exit(1)
+    verdict_exit(result["gate"]["passed"])

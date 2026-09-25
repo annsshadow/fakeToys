@@ -136,6 +136,16 @@ $ python cli.py validate-config --config typo_config.yaml
   但 `models.<名字>` 的**子项**照判（`temperatur` 这类拼错一样出声）。
 - 顶层写 `default_model: xxx` 也会被报出来：默认模型的唯一来源是 `models.default`。
 - 想不到的名字不硬猜：只有存在高度相近项时才附「是否想写 X？」。
+- **CLI 的退出码只有三种形状**（L55 起，唯一出口是 `augmentor/cli/verdict.py:verdict_exit`）：
+  `0` = 判决通过或这条命令压根不判负；`1` = 判决未通过，**或** handler 抛异常被 `main()`
+  翻译成 `错误: …` + `1`（⇒ 同样是 1，靠 stderr 有无「错误:」分「判负」与「崩溃」）；
+  `2` = argparse 用法错误。本端点响应的判决位（`is_valid` / `passed` / `overall_passed`）在
+  CLI 侧的对应物：校验形命令判负即 `1`，报告形命令（`quality-report` / `audit` /
+  `check-leakage` / `doctor` / `auto-test` / `migrate`）**默认恒 0**，加 `--gate` 才判负
+  ——「有问题时照样把报告出完」是 L53 定的口径，`--gate` 是把报告变成门禁的显式一档。
+  哪些命令接了这套口径由 `tests/integration/test_cli_verdict_wiring.py` 从 **parser 声明与
+  handler 源码双向推导**对账（声明 `--gate` 的命令 == handler 里真传 `enforce=args.gate` 的；
+  源码出现 `verdict_exit(` == 子命令 help 里宣称「退出码」的），不抄清单。
 
 ### 跨源（CORS）
 
