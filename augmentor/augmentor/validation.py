@@ -6,7 +6,8 @@
 提供数据集格式验证、完整性检查等功能，以及跨模块共用的标量入参判据
 （`require_count` 计数旋钮 / `require_seconds` 时长旋钮 /
 `require_positive` 无量纲倍率旋钮 / `require_ratio` 0-1 比例旋钮 /
-`require_string` 非空字符串旋钮 / `require_string_list` 字符串列表旋钮）。
+`require_bool` 开关旋钮 / `require_string` 非空字符串旋钮 /
+`require_string_list` 字符串列表旋钮）。
 """
 
 import json
@@ -218,6 +219,65 @@ def require_ratio(name: str, value: Any,
     if not minimum <= value <= maximum:
         raise DataValidationError(
             f"{name} 必须是 {minimum} 到 {maximum} 之间的比例，当前是 {value}"
+        )
+    return value
+
+
+def require_bool(name: str, value: Any) -> Optional[bool]:
+    """校验「打开 / 关掉某一节」这类**开关**旋钮，返回原值。
+
+    家族里其他成员判的是数值形状，本员判的是「你到底是不是个布尔」——因为开关
+    在下游一律落到 `if config.xxx.enabled:`，而 Python 的真值判断对**任何**非空
+    对象都答「是」。实测分两面，别把两面混着读：
+
+    **Python 字典面**（`Temp/l76q/before.json`，跑在提交态 b63648018：把
+    `{section: {field: 值}}` 直接喂给 `_load_section`）：
+
+    - `enabled: 'no'` ⇒ 加载放行，字段值是字符串 `'no'`，`bool('no')` 是 `True`
+      ⇒ 用户写的是「关掉」，拿到的是「质量闸门照样打开」，且**没有任何一处报错**。
+      同一条配置送进 `validate_config` 却是红的（`_validate_bool` 对非 bool 一律
+      报「期望布尔类型, 实际 str」）⇒ 校验红 / 加载绿，正是 A77 那一族缝隙的形状。
+    - `enabled: 0` ⇒ 加载放行，真值恰好是假 ⇒ 与 `false` 逐字同答。这一条**碰巧**
+      对上了用户意图，但「碰巧」不是判据：`0` / `'0'` / `'false'` / `[]` 都是
+      「看起来像关掉」的写法，实测真值依次是 **假 / 真 / 真 / 假**（`bool('0')`
+      与 `bool('false')` 都是 `True`，因为非空字符串恒真）⇒ 四种写法两种结果，
+      且其中两种与用户写的字面意思**相反**。
+
+    **YAML 面**（`Temp/l76q/pyyaml_bool_forms.json`，15 种拼法 × 解析结果，与产品
+    路径同用 `yaml.safe_load`）：上面那四种写法**只有加引号才成立**。
+    - 6 档是**真布尔**、本函数不拒：裸 `no` / `false` / `off` → `False`，
+      裸 `yes` / `true` / `on` → `True` ⇒ 「关掉」的正常写法都合法。
+    - 4 档落到 `str`、本函数拒：`'no'` / `'false'` / `'0'`（加引号即字符串）与
+      裸 `None`（注意它**不是** null，是四字母字符串 `'None'`，真值还是 `True`）。
+    - 3 档落到 `int` / `list`、本函数拒：`0` / `1` / `[]`。
+    - 2 档是 `None`（`~` 与「写了键没给值」）⇒ 由 `_reject_null_fields` 先拒，
+      轮不到本函数。
+    一句话口径：**拒的是「解析到 Python 还不是布尔」的值，不是某种 YAML 拼法**。
+
+    拒绝一切非布尔（含 `int`、`str`、`list`），而不是「夹一下」或「`bool(value)`」：
+    开关只有一真一假两种合法读法，把「像假」的值折成假就是把用户的笔误翻译成
+    一个他没写过的决定。报错文案点名 `true` / `false` 两种合法写法，让改的人
+    一步就能改对。
+
+    Args:
+        name: 参数名，直接出现在报错里
+        value: 传入的值
+
+    Returns:
+        校验通过后的原值。`None` 视为「没传参数」，与 `require_count` /
+        `require_seconds` / `require_ratio` / `require_positive` 一致，由调用点
+        自己决定回落哪个默认值 —— 但**配置对象不走这条短路**：那里的 `None` 是
+        「写了键没给值」，由各节的 `_reject_null_fields` 先拒掉。
+
+    Raises:
+        DataValidationError: 值不是 `True` 或 `False`
+    """
+    if value is None:
+        return None
+    if not isinstance(value, bool):
+        raise DataValidationError(
+            f"{name} 必须是布尔值 true 或 false，当前是 {value!r}"
+            f"（{type(value).__name__}）"
         )
     return value
 

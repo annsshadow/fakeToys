@@ -65,8 +65,13 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 现在每写一条就跑该节自己的判据（界仍然只住 `augmentor/config.py` 一处），任一条越界即
 整批退回原值并回 **400**（`detail` 点名是哪个键、当前值多少），内存与磁盘都停在改前状态。
 未知子键的既有契约不变：仍然 200，键名列在响应的 `ignored_keys` 里。
-至今**没有**运行时判据的节（`quality` / `dedup` / `export` / `vector` / `rag` / `multimodal`）
-照旧只写不判，见账本 A118。
+`quality` / `dedup` 两节自 L76 起**也有**判据了：`enabled` 走新增的
+`validation.require_bool`，`threshold` 走 `require_ratio`，且上界与静态规格共用
+`QUALITY_THRESHOLD_RANGE` / `DEDUP_THRESHOLD_RANGE` 两个常数（界只住 `config.py` 一处），
+所以这两节的坏值现在同样回 400。`enabled` 只认**真布尔**：YAML 里裸 `no` / `false` / `off`
+（以及 `yes` / `true` / `on`）会被解析成布尔值，是合法写法；**一旦加引号**就变成字符串，
+加载与 `POST /api/config` 两侧都拒（15 种拼法的实测分类见账本 L76）。至今**没有**运行时判据的节只剩
+`export` / `vector` / `rag` / `multimodal`，它们照旧只写不判，见账本 A118。
 
 ### 配置的「写了没人读」反馈（3.x）
 

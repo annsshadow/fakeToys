@@ -13,8 +13,8 @@ from .exceptions import ConfigError, DataValidationError
 from .logging_setup import (apply_logging_config, assert_format_renderable,
                             level_number)
 from .retry import MAX_RETRY_AFTER
-from .validation import (require_count, require_ratio, require_seconds,
-                         require_string, require_string_list)
+from .validation import (require_bool, require_count, require_ratio,
+                         require_seconds, require_string, require_string_list)
 
 # `augmentation` / `web` 两节的取值区间。**校验器与运行时判据共用这一批常量**：
 # A77 的根因就是同一个上界在两边各抄一遍（抄完还漏），一边改了另一边不知道，
@@ -88,6 +88,19 @@ MODEL_TYPES = ("baidu", "openai", "ollama", "claude", "gemini")
 # 「判对了但指不出位置」。修法只搬文案、不动判据：判据仍在 dataclass（唯一权威），
 # 加载层捕获后把这一串换成 `models.<真条目名>`。
 MODEL_ENTRY_PLACEHOLDER = "models.<名字>"
+# `quality` / `dedup` 两节评分阈值的闭区间（A118 / L76）。同一道界此刻住在三个地方，
+# 所以它必须只有一个产地：
+# - 校验器那一侧早就写了（`quality.threshold` 的规格历史上是**裸数字** `0.0/1.0`），
+#   本轮把它换成引这两个常数；`dedup.threshold` 此前**根本没有规格**，本轮补上。
+# - 运行时那一侧：`dedup.Deduplicator.__init__` 自己判 `< 0 or > 1` 并抛 `DedupError`
+#   （改前那是唯一一道界，但它发生在**建对象时**而不是**读配置时**，且对非数值直接
+#   `TypeError`）；`quality` 那一侧改前**两侧都没有**界，实测 `threshold=5.0` 让
+#   闸门对任何样本恒判不通过、`-1.0` 让闸门静默失效（`total >= -1.0` 永真）。
+# 取 0-1 闭区间是因为「总分是三档 0-1 指标按和为 1 的权重加权」⇒ 阈值落在 [0,1]
+# 之外没有任何可读语义。与 `dedup` 那一支的**既有**判据逐字同集合（含两端），
+# 所以对齐它不会改变任何一份今天能加载的配置。
+QUALITY_THRESHOLD_RANGE = (0.0, 1.0)
+DEDUP_THRESHOLD_RANGE = (0.0, 1.0)
 PORT_RANGE = (1, 65535)
 RATE_LIMIT_MIN_REQUESTS = 0
 RATE_LIMIT_MIN_WINDOW_SECONDS = 0.0
@@ -252,12 +265,64 @@ class QualityConfig:
     threshold: float = 0.6
     weights: list = field(default_factory=lambda: [0.3, 0.4, 0.3])
 
+    def __post_init__(self):
+        """运行时判据（A118 / L76）：开关与阈值两键两侧同判。
+
+        改前这一节是 A118 名单里最要紧的一处「契约面有旋钮、加载面零判据」：实测
+        （`Temp/l76q/before.json`，提交态 b63648018；**Python 字典面**读数 —— 值直接
+        喂给 `_load_section`，YAML 的拼法差异见 `validation.require_bool` 文案）
+
+        - `enabled: 'no'` 加载放行，字段值是字符串 `'no'` ⇒ 下游 `if config.quality.enabled:`
+          按真值走，用户想关掉的闸门**关不掉**，而 `validate_config` 对同一条报
+          「期望布尔类型, 实际 str」⇒ 校验红 / 加载绿。
+        - `threshold: 5.0` 加载放行，实测三档各 0.5 的样本总分 0.5 判 `passed=False`
+          ⇒ 闸门把所有数据判成不合格（与 A118 当初记的「放行全部低质数据」正好相反，
+          那一支是 `threshold: -1.0`：`0.5 >= -1.0` 永真 ⇒ 闸门静默失效）。两个方向
+          都是「配置写错一个数字，产物整体反掉」，且都不出声。
+        - `threshold: 'x'` / `threshold:`（null）不在加载面出声，而是晚到 `score()`
+          里抛 `TypeError: '>=' not supported between instances of 'float' and 'str'`
+          ——报错点离笔误隔了一整个流水线。
+
+        `weights` 只判 null：形状与「和为 1」那两条判据的权威住在 `quality.QualityScorer`
+        （`len != 3` / `abs(sum - 1) > 0.01` 抛 `QualityError`），在这里再抄一遍就是
+        A77 禁止的第二份权威；剩下的洞（`weights: 'abc'` 长度恰好 3、判不过的是
+        `sum()` 的 `TypeError`）记在 A124。
+        """
+        _reject_null_fields("quality", self)
+        require_bool("quality.enabled", self.enabled)
+        lo, hi = QUALITY_THRESHOLD_RANGE
+        require_ratio("quality.threshold", self.threshold, minimum=lo, maximum=hi)
+
 
 @dataclass
 class DedupConfig:
     """去重配置"""
     enabled: bool = True
     threshold: float = 0.9
+
+    def __post_init__(self):
+        """运行时判据（A118 / L76）：与 `Deduplicator` 的既有那道界同集合、出声更早。
+
+        这一节改前**有**判据，但只在建对象时：`dedup.threshold=1.7` 得到
+        `DedupError: 阈值必须在 0-1 之间`（消息可行动），而 `dedup.threshold='x'`
+        绕过它 —— `if threshold < 0 or threshold > 1` 在字符串上直接
+        `TypeError: '<' not supported between instances of 'str' and 'int'`，
+        同样是「报错点离笔误一整条流水线」。`enabled` 的非布尔写法今天靠真值判断：
+        `0` / `'0'` / `'false'` / `[]` 四种写法两种语义（假 / 真 / 真 / 假），其中
+        两种与用户写的字面意思相反；`0` 那一档只是**碰巧**对上意图（真值表与 YAML
+        拼法的差异由 `validation.require_bool` 的文案统一记录）。
+
+        判据取 `DEDUP_THRESHOLD_RANGE` 的闭区间，与 `Deduplicator.__init__` 的
+        `< 0 or > 1` 对**数值**恰好同集合（含两端），所以补这一步不会改变任何一份
+        今天能加载的配置；两边判决的等判由测试逐值钉住，不是这里的一句断言。
+        那一支判据对 `bool` 与 `NaN` 是漏的（`nan < 0` 与 `nan > 1` 都是 `False` ⇒
+        NaN 一路走到 `dist >= threshold` 上恒假，去重整条静默失效；实测
+        `Temp/l76q/parity.json`），本轮**只**在配置侧挡住，消费侧那一洞另立 A125。
+        """
+        _reject_null_fields("dedup", self)
+        require_bool("dedup.enabled", self.enabled)
+        lo, hi = DEDUP_THRESHOLD_RANGE
+        require_ratio("dedup.threshold", self.threshold, minimum=lo, maximum=hi)
 
 
 @dataclass
@@ -919,9 +984,12 @@ def apply_section_update(section: Any, updates: Dict[str, Any]) -> list:
 
     1. **复查而不是另立判据**：跑的是该节 `__post_init__` 里那批 `require_*`，
        界仍然只住 `config.py` 一处（A77）。这里不新增第二条口径，也不抄第二份区间。
-    2. **没有 `__post_init__` 的节照旧写入**：`quality` / `dedup` / `export` /
-       `vector` / `rag` / `multimodal` 六节至今没有运行时判据（只有校验器那一半），
-       本函数不假装判了 —— 那六节「运行时零判据」是另一笔账，不在本轮扩面。
+    2. **没有 `__post_init__` 的节照旧写入**：`export` / `vector` / `rag` /
+       `multimodal` 四节至今没有运行时判据（只有校验器那一半），本函数不假装判了
+       —— 那四节「运行时零判据」是 A118 余下的账，不在本轮扩面。（`quality` 与
+       `dedup` 两节原本也在这份名单里，L76 / A118 给它们接上了判据；名单由
+       `tests/integration/test_config_write_path_l73.py` 的精确集合棘轮钉住，
+       一节接上一节就会红一次，所以这里不靠记忆维护。）
     3. **要么全落、要么全不落**：批次里任何一条被判负 ⇒ 已写的键逐个回滚到旧值再抛。
        不做回滚就会留下「内存里前几条已生效、磁盘一条都没写」的分叉，而端点的
        契约是 `success` 才代表保存过 —— 分叉正是本轮要修的那一类缺陷。

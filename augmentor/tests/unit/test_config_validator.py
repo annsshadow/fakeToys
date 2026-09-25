@@ -865,11 +865,13 @@ class TestWaitBudgetKnobSurface:
         一次性修复升格为对全部数值键的常驻断言，以后新增字段自动被覆盖。
         L51 起计数从 10 变 11：新增的那个是 `augmentation.auto_save_interval`
         （A82 给它补的规格）。L71 起 12：新增的是 `augmentation.request_timeout`
-        （A74 把六处硬编码的超时收敛成一档旋钮）。
+        （A74 把六处硬编码的超时收敛成一档旋钮）。L76 起 13：新增的是
+        `dedup.threshold`（A118 补的那条**整条不存在的规格**）—— 本条当场为它红一次，
+        正是「以后新增字段自动被覆盖」这句承诺在兑现，不是这条断言写坏了。
         """
         numeric = [p for p, s in ConfigValidator.KNOWN_FIELDS.items()
                    if s.get("type") in (int, float)]
-        assert len(numeric) == 12, "新增数值规格键会自动进入本断言"
+        assert len(numeric) == 13, "新增数值规格键会自动进入本断言"
         for path in numeric:
             hits = [m for p_, m in self._errors_at(path) if p_ == path]
             assert hits and "类型错误" in hits[0], (path, hits)

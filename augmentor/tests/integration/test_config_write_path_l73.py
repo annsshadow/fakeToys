@@ -216,10 +216,15 @@ class TestApplySectionUpdateSdk:
         assert getattr(section, key) is value
 
     def test_ratchet_names_sections_without_runtime_gates(self):
-        """七节里至今只有 `augmentation` 有运行时判据；剩下六节是 A118 的账。
+        """七节里 `augmentation` + `quality` + `dedup` 三节已有运行时判据；剩下四节是 A118 的账。
 
         用精确集合而不是「至少有一条没判据」：六节里任何一节接上 `__post_init__`
         都会让本用例红，那时应同步缩小这个集合并把 A118 的量级改小。
+
+        **本条就是那次翻转**（L76 / A118 分节收口）：`quality` 与 `dedup` 两节接上
+        判据后集合从六节缩到四节。判据没有放宽 —— 变的只有名单，且 `dedup` 这一节
+        改前并非「有判据」而是「判据只住在消费方」，所以它落进本集合从来是准确的。
+        余下四节的账与两节各自的实测症状见 §6 A118 行。
         """
         from augmentor import load_config
 
@@ -229,7 +234,7 @@ class TestApplySectionUpdateSdk:
             if not hasattr(type(getattr(config, name)), "__post_init__")
         )
         assert ungated == [
-            "dedup", "export", "multimodal", "quality", "rag", "vector",
+            "export", "multimodal", "rag", "vector",
         ]
 
 
