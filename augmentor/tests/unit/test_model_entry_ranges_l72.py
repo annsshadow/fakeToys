@@ -150,15 +150,21 @@ class TestBothFacesAccept:
 
 
 def _spec_kind(spec):
-    """条目规格的种类：`range`（有上下界）/ `choices`（封闭清单）/ `other`
+    """条目规格的种类：`range`（有上下界）/ `choices`（封闭清单）/ `string`
+    （形状判据：类型 + 非空）/ `other`
 
     种类从规格自己的维度推，不另立清单 —— 所以 L74 往表里加 `type` 时，本仓的
     对账要么把它认成 `choices`，要么当场红在 `test_every_spec_declares_its_kind`。
+    L75 加 `model` 时正是后者先红了一次：那条 `{"type": str, "non_empty": True}`
+    既无界也无清单，于是本函数多认一类 `string`（判据住在运行时的
+    `require_string`，规格表只表达它的形状，不另立权威）。
     """
     if "choices" in spec:
         return "choices"
     if "min" in spec or "max" in spec:
         return "range"
+    if spec.get("type") is str:
+        return "string"
     return "other"
 
 
@@ -271,11 +277,16 @@ class TestShippedConfigAndDefaults:
     def test_loader_fallbacks_equal_the_dataclass_defaults(self, tmp_path):
         """「不写这个键」时加载器给的值必须等于 `ModelConfig` 的字段默认值
 
-        本轮这条棘轮**当场抓到了一份既有漂移**：同一份只写 `type` 的最小条目里，
+        本轮（L72）这条棘轮**当场抓到了一份既有漂移**：同一份只写 `type` 的最小条目里，
         `model` 拿到的是加载器字面量 `''`，而 `ModelConfig.model` 的默认值是
         `'default'`（`api_key` / `secret_key` / `base_url` 同族：那边 `None`、
-        这边 `resolve_env('')` = `''`）。那是字符串轴的事，与 A95 的 `${ENV}` 线
-        重叠，本轮不改判据、只把四个数值键的对账钉住，漂移本体记在 **A114**。
+        这边 `resolve_env('')` = `''`）。当时只钉了四个数值键，漂移本体记在 **A114**。
+
+        L75 关掉 A114：`config.py` 的 `_model_entry` 只把 YAML 里**在场**的键交给
+        构造函数，回落值从此由字段默认唯一决定 ⇒ 对账范围从「四个数值键」扩到
+        「除 `type` 之外的全部字段」，且清单再次从 `dataclasses.fields` 推导，
+        不写死。同轮改判的一句就是原来那句 `assert loaded.model == ''` ——
+        它钉的是缺陷取证，A114 修完必须翻成 `== 'default'`，由下面的循环自动覆盖。
         """
         path = tmp_path / "minimal.yaml"
         path.write_text(
@@ -283,10 +294,12 @@ class TestShippedConfigAndDefaults:
             encoding="utf-8")
         loaded = load_config(str(path)).models["m"]
         plain = ModelConfig(type="openai")
-        for key in ("temperature", "top_p", "max_output_tokens", "request_timeout"):
+        defaulted = [f.name for f in dataclasses.fields(ModelConfig)
+                     if f.default is not dataclasses.MISSING]
+        assert len(defaulted) == 8, "有字段没默认值？`type` 应该是唯一的一个"
+        for key in defaulted:
             assert getattr(loaded, key) == getattr(plain, key), \
                 "%s 的加载器回落与 dataclass 默认漂了" % key
-        assert loaded.model == '', "四个数值键之外的漂移也要有读数，A114 的取证锚点"
 
     def test_optional_identity_keys_are_not_caught_in_the_dragnet(self):
         """`api_key` / `secret_key` / `base_url` 的「没给值」仍然是合法状态
