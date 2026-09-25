@@ -43,6 +43,8 @@
         <button class="action-btn" @click="fileRest3('att2Stream')">附件2流</button>
         <button class="action-btn" @click="fileRest3('att2WH')">附件2宽高</button>
         <button class="action-btn" @click="fileRest3('att2Scale')">附件2缩放</button>
+        <button class="action-btn" @click="fileRest3('att2WHB64')">附件2图片base64</button>
+        <button class="action-btn" @click="fileRest3('fiDocBind')">fileinfo文档绑定</button>
         <span v-if="fileRead2Text" class="app-meta">{{ fileRead2Text }}</span>
         <button class="action-btn" @click="fileCreate('control')">建文件</button>
         <button class="action-btn" @click="fileCreate('entity')">建实体文件</button>
@@ -492,6 +494,11 @@ async function fileRest3(op: string) {
     else if (op === 'att2Download') { const i = id(); await api.get(`/api/attachment2/${i}/download`) }
     else if (op === 'att2Stream') { const i = id(); await api.get(`/api/attachment2/${i}/download/stream`) }
     else if (op === 'att2WH') { const i = id(); await api.get(`/api/attachment2/${i}/download/image/width/120/height/120`) }
+    // rev465：attachment2 图片宽高 base64 读 + fileinfo 文档绑定读 2 条真实路由
+    //（GET attachment2/{id}/image/width/{width}/height/{height}/binary/base64 委托 attachment2_id_binary_base64 纯读；
+    //  GET fileinfo/{id}/document/{docId} 纯 SELECT x_cms_fileinfo——须数字字面 1/2 命中，变量段会被 matcher 影子吞到 fileinfo/list/document/{documentId} 误配）
+    else if (op === 'att2WHB64') { const i = id(); await api.get(`/api/attachment2/${i}/image/width/120/height/120/binary/base64`) }
+    else if (op === 'fiDocBind') { await api.get('/api/fileinfo/1/document/2') }
     else { const i = id(); await api.get(`/api/attachment2/${i}/image/scale/2/binary/base64`) }
     toast.success('文件操作已提交')
   } catch (err: any) {

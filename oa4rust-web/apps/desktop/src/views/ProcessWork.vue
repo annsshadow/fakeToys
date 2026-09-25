@@ -377,6 +377,11 @@
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest5('dataJobPath')">按路径改Job数据</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest5('dataWcPath')">按路径改已办数据</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest5('attCopyWork')">附件复制到工作</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest6('wcShiftTime')">已办时间平移</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest6('attCopyParam')">附件复制(参数化)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest6('workTouch')">在办touch</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest6('attCopyWcSoft')">附件软复制到已办</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="engineRest6('keyLock')">密钥锁</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('appListRange')">应用范围清单</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('modeList')">模式清单</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('processListIds')">按ids取流程</button>
@@ -2109,6 +2114,27 @@ async function engineRest5(op: string): Promise<void> {
     toast.success('引擎操作已提交')
   } catch (e: any) {
     toast.error('引擎操作失败: ' + (e?.message ?? ''))
+  } finally {
+    engineBusy.value = false
+  }
+}
+// rev465：引擎已办时间平移/附件参数化复制 + 表面在办touch/附件软复制到已办/密钥锁 5 条真实路由
+//（wc_shift_time body{minutes 非零} UPDATE x_workcompleted；attachment/copy/{work}/{workId} 用字面 9/w1 命中参数化路由，
+//  字面 'work' 段会被 matcher 影子吞到字面变体故避用变量；surface service/work/{id}/touch UPDATE xupdateTime；
+//  attachment/copy/workcompleted/{id}/soft body{ids} owner 门禁；keylock/lock u2 body{key 非空}）
+async function engineRest6(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  try {
+    const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
+    if (op === 'wcShiftTime') await api.post('/api/processplatform/service/processing/workcompleted/shift/time', { minutes: 5 })
+    else if (op === 'attCopyParam') await api.post('/api/processplatform/service/processing/attachment/copy/9/w1', {})
+    else if (op === 'workTouch') { const i = id(); await api.put(`/api/processplatform/assemble/surface/service/work/${i}/touch`, {}) }
+    else if (op === 'attCopyWcSoft') { const wc = id(); await api.post(`/api/processplatform/assemble/surface/attachment/copy/workcompleted/${wc}/soft`, { ids: ['0'] }) }
+    else { await api.put('/api/processplatform/assemble/surface/keylock/lock', { key: 'g5k' }) }
+    toast.success('引擎/表面操作已提交')
+  } catch (e: any) {
+    toast.error('引擎/表面操作失败: ' + (e?.message ?? ''))
   } finally {
     engineBusy.value = false
   }
