@@ -17,7 +17,9 @@ class OllamaBackend(ModelBackend):
                  config: ModelConfig,
                  response_cache_dir: Optional[str] = None,
                  response_cache_ttl: Optional[float] = None,
-                 response_cache_max_bytes: Optional[int] = None):
+                 response_cache_max_bytes: Optional[int] = None,
+                 default_attempts: Optional[int] = None,
+                 default_retry_delay: Optional[float] = None):
         """初始化 Ollama 后端
 
         Args:
@@ -25,12 +27,16 @@ class OllamaBackend(ModelBackend):
             response_cache_dir: 磁盘响应缓存目录，None 即不启用（见基类说明）
             response_cache_ttl: 磁盘缓存生存时间（秒）
             response_cache_max_bytes: 磁盘缓存容量上限（字节）
+            default_attempts: 重试默认档位（总尝试次数），见基类说明
+            default_retry_delay: 退避基数默认值（秒），见基类说明
         """
         super().__init__(
             config,
             response_cache_dir=response_cache_dir,
             response_cache_ttl=response_cache_ttl,
             response_cache_max_bytes=response_cache_max_bytes,
+            default_attempts=default_attempts,
+            default_retry_delay=default_retry_delay,
         )
         if not config.base_url:
             raise ModelNotConfiguredError("Ollama 后端需要 base_url")

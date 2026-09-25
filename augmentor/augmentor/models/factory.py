@@ -20,6 +20,8 @@ def create_model_backend(
     response_cache_dir: Optional[str] = None,
     response_cache_ttl: Optional[float] = None,
     response_cache_max_bytes: Optional[int] = None,
+    default_attempts: Optional[int] = None,
+    default_retry_delay: Optional[float] = None,
 ) -> ModelBackend:
     """创建模型后端实例
 
@@ -31,32 +33,39 @@ def create_model_backend(
         response_cache_ttl: 磁盘缓存生存时间（秒），None 表示不按时间过期
         response_cache_max_bytes: 磁盘缓存容量上限（字节），
             None 时用 ModelBackend.DEFAULT_RESPONSE_CACHE_MAX_BYTES
+        default_attempts: 后端的重试默认档位（总尝试次数），
+            对应配置文件 `augmentation.max_retries`
+        default_retry_delay: 后端的退避基数默认值（秒），
+            对应配置文件 `augmentation.retry_delay`
 
     Returns:
         ModelBackend 实例
 
     Raises:
         ConfigError: 不支持的模型类型
+        DataValidationError: default_attempts / default_retry_delay 越界
     """
     model_type = model_type or config.type
 
-    # 三个缓存参数对所有后端语义一致，集中构造后透传，避免在 5 个分支里各写一遍
-    cache_kwargs = {
+    # 这些参数对所有后端语义一致，集中构造后透传，避免在 5 个分支里各写一遍
+    backend_kwargs = {
         "response_cache_dir": response_cache_dir,
         "response_cache_ttl": response_cache_ttl,
         "response_cache_max_bytes": response_cache_max_bytes,
+        "default_attempts": default_attempts,
+        "default_retry_delay": default_retry_delay,
     }
 
     if model_type == "baidu":
-        return ERNIEBackend(config, **cache_kwargs)
+        return ERNIEBackend(config, **backend_kwargs)
     elif model_type == "openai":
-        return OpenAIBackend(config, **cache_kwargs)
+        return OpenAIBackend(config, **backend_kwargs)
     elif model_type == "ollama":
-        return OllamaBackend(config, **cache_kwargs)
+        return OllamaBackend(config, **backend_kwargs)
     elif model_type == "claude":
-        return ClaudeBackend(config, **cache_kwargs)
+        return ClaudeBackend(config, **backend_kwargs)
     elif model_type == "gemini":
-        return GeminiBackend(config, **cache_kwargs)
+        return GeminiBackend(config, **backend_kwargs)
     else:
         raise ConfigError(
             f"不支持的模型类型: {model_type}。"

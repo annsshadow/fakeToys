@@ -103,6 +103,12 @@ class ConfigValidator:
         "augmentation": {"type": dict},
         "augmentation.variants_per_seed": {"type": int, "min": 1, "max": 100},
         "augmentation.num_threads": {"type": int, "min": 1, "max": 100},
+        # 重试两旋钮自 L45 起真的被消费（经 create_model_backend 透传给模型后端），
+        # 所以要在校验器里有对应门槛。上界不是形式主义：`max_retries: 1000000` 在最坏
+        # 情况下是 10^6 × 30s 的等待，`retry_delay` 再大也会被退避上限夹住，但 60s 已经
+        # 远超任何合理的单次退避基数。
+        "augmentation.max_retries": {"type": int, "min": 0, "max": 20},
+        "augmentation.retry_delay": {"type": float, "min": 0.0, "max": 60.0},
         "quality": {"type": dict},
         "quality.enabled": {"type": bool},
         "quality.threshold": {"type": float, "min": 0.0, "max": 1.0},
@@ -214,9 +220,20 @@ class ConfigValidator:
                 
                 # 类型检查
                 expected_type = spec.get("type")
-                if expected_type and not isinstance(value, expected_type):
+                # `float` 字段同时接受 `int`：YAML 里 `retry_delay: 1` / `threshold: 1`
+                # 是最自然的写法，运行时的 `require_seconds` 也收 int。校验器若比运行
+                # 时更严，就会把合法配置报成非法（实测：加本规则后 `retry_delay: 1`
+                # 曾得到「类型错误: 期望 float, 实际 int」）。
+                checked_type = (int, float) if expected_type is float else expected_type
+                if checked_type and not isinstance(value, checked_type):
                     result.add_error(field_path, 
                                    f"类型错误: 期望 {expected_type.__name__}, 实际 {type(value).__name__}")
+                    continue
+                # NaN 过不了任何比较（`nan < min` 与 `nan > max` 都是 False），于是
+                # 会绕过下面的范围检查被读成「合法」，而运行时那一层拒收它——两边口径
+                # 必须一致，否则 `validate-config` 绿灯的配置会在建管道时炸。
+                if expected_type is float and value != value:
+                    result.add_error(field_path, f"值不是有效数值: {value}")
                     continue
                 
                 # 范围检查

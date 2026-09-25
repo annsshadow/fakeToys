@@ -24,30 +24,38 @@
 5. `0` 在不可逆语义下不放行。删备份的 `max_backups=0` 与手滑想打的 10 无从分辨，
    而后果是删光全部备份，所以那类旋钮的下界是 1（见 `minimum=1`）。分块步长
    `chunk_size` 同型：它没有「每块 0 条」这种合法读法。
+
+自 L45 起本文件还覆盖**时长旋钮**的浮点判据 `require_seconds`：主张 1/2/4 同样成立，
+只是坏值的症状从「换条数」变成「换一档等待」——见 `TestRequireSeconds`。
 """
 
 import json
+import math
 
 import numpy as np
 import pytest
+import yaml
 
 from augmentor.active_learning import ActiveLearningLoop
 from augmentor.aggregator import DataAggregator
 from augmentor.analytics import analyze_dataset_fast
 from augmentor.backup import DatasetBackup, clean_old_backups
 from augmentor.cleaner import clean_batch_optimized, extract_keywords
+from augmentor.config import ModelConfig
 from augmentor.dedup import Deduplicator
 from augmentor.exceptions import DataValidationError
 from augmentor.expander import DomainExpander
 from augmentor.indexer import DatasetView
+from augmentor.models.openai_model import OpenAIBackend
 from augmentor.preview import PreviewGenerator
 from augmentor.quality import QualityScorer
 from augmentor.quality_monitor import QualityMonitor
+from augmentor.retry import compute_delay
 from augmentor.sampler import ActiveSampler
 from augmentor.search_enhanced import search_dataset
 from augmentor.dataset_ops import DatasetOperations, SampleConfig
 from augmentor.streaming import StreamReader, StreamAugmentor
-from augmentor.validation import require_count
+from augmentor.validation import require_count, require_seconds
 from augmentor.vector.faiss import FAISSDB
 from augmentor.versioning import VersionManager
 
@@ -88,6 +96,63 @@ class TestRequireCount:
     def test_is_a_value_error_too(self):
         """API 侧靠 `ValueError → 400` 映射，判据必须留在该继承链上"""
         assert issubclass(DataValidationError, ValueError)
+
+
+class TestRequireSeconds:
+    """时长旋钮的浮点判据（`require_count` 的对应物）
+
+    自 L45 起 `augmentation.retry_delay` 真的会流到退避计算，坏值路径从
+    「无人读取」变成「有人执行」，所以门槛必须同步建起来。
+    """
+
+    @pytest.mark.parametrize("value", [0, 0.0, 0.5, 1, 60.0, float("inf"), None])
+    def test_allows_non_negative_numbers_and_none(self, value):
+        """`int` 也放行：YAML 的 `retry_delay: 1` 读进来是整数而非浮点"""
+        assert require_seconds("retry_delay", value) == value
+
+    @pytest.mark.parametrize("value", [-0.1, -5, "1.0", True, [], {}, float("nan")])
+    def test_rejects_negative_non_numeric_and_nan(self, value):
+        with pytest.raises(DataValidationError):
+            require_seconds("retry_delay", value)
+
+    def test_error_message_names_the_parameter(self):
+        with pytest.raises(DataValidationError, match=r"retry_delay.*-2.5"):
+            require_seconds("retry_delay", -2.5)
+
+    def test_nan_is_rejected_even_though_yaml_produces_it(self):
+        """YAML 的 `.nan` 是合法浮点字面量，模板漏填值就会留下 NaN"""
+        assert math.isnan(yaml.safe_load("retry_delay: .nan")["retry_delay"])
+        with pytest.raises(DataValidationError, match="NaN"):
+            require_seconds("retry_delay", float("nan"))
+
+    @pytest.mark.parametrize(
+        "base_delay,expected",
+        [(float("nan"), 30.0), (-5.0, 0.0), (5.0, 5.0)],
+    )
+    def test_compute_delay_hides_bad_values_which_is_why_the_guard_exists(self,
+                                                                          base_delay,
+                                                                          expected):
+        """本判据存在的理由：退避计算首尾各有一道夹逼，坏值**不报错**而是换一档等待
+
+        `min(max_delay, base * factor ** n)` 与尾部 `max(0.0, delay)` 把 NaN 和负数
+        都消化掉，症状从「报错」降级成「静默换语义」。既然深处不响，就只能在前台判。
+        """
+        assert compute_delay(1, base_delay, 2.0, 30.0) == expected
+
+    def test_generate_rejects_bad_delay_before_asking_the_model(self):
+        """判参先于副作用：坏 retry_delay 不该换来一次真金白银的 API 调用"""
+        backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
+        backend._call_api = lambda prompt: "ok"
+        with pytest.raises(DataValidationError, match="retry_delay"):
+            backend.generate("p", retry_delay=-1.0)
+        assert backend._request_count == 0
+
+    def test_backend_constructor_rejects_bad_defaults(self):
+        for kwargs in ({"default_attempts": -1}, {"default_retry_delay": -1.0},
+                       {"default_retry_delay": float("nan")}):
+            with pytest.raises(DataValidationError):
+                OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"),
+                              **kwargs)
 
 
 class TestSearchPagination:

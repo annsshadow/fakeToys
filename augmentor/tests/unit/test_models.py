@@ -9,7 +9,7 @@
 import pytest
 
 from augmentor.config import ModelConfig
-from augmentor.exceptions import DataValidationError
+from augmentor.exceptions import DataValidationError, ModelGenerateError
 from augmentor.models import (
     create_model_backend,
     extract_json_array,
@@ -207,6 +207,58 @@ class TestGenerateRetryKnobs:
         backend._call_api = lambda prompt: "ok"
         assert backend.generate("p", max_retries=0, retry_delay=0) == "ok"
         assert backend._request_count == 1
+
+    @staticmethod
+    def _failing_backend(**kwargs):
+        """总是失败的 OpenAI 后端，返回它被调用的次数容器"""
+        backend = OpenAIBackend(
+            ModelConfig(type="openai", api_key="k", model="m"), **kwargs
+        )
+        calls = []
+
+        def boom(prompt):
+            calls.append(prompt)
+            raise RuntimeError("boom")
+
+        backend._call_api = boom
+        return backend, calls
+
+    def test_backend_default_attempts_decides_the_call_count(self):
+        """后端的默认档位必须真的决定调用次数
+
+        这是 A64 的全部意义：`augmentation.max_retries` 在接线前是死旋钮，
+        改它一次调用都不会变。
+        """
+        backend, calls = self._failing_backend(default_attempts=2, default_retry_delay=0)
+        with pytest.raises(ModelGenerateError, match="共尝试 2 次"):
+            backend.generate("p")
+        assert len(calls) == 2
+
+    def test_explicit_arg_beats_backend_default(self):
+        """单次调用的显式参数优先于配置档位，否则「这一次别重试」无从表达"""
+        backend, calls = self._failing_backend(default_attempts=5, default_retry_delay=0)
+        with pytest.raises(ModelGenerateError):
+            backend.generate("p", max_retries=1)
+        assert len(calls) == 1
+
+    def test_backend_defaults_reach_the_backoff_call(self, monkeypatch):
+        """默认档位要落到 with_retries 的实际参数上（含「总尝试 − 1 = 额外重试」换算）"""
+        captured = {}
+
+        def fake_with_retries(func, **kwargs):
+            captured.update(kwargs)
+            return "ok", None
+
+        monkeypatch.setattr("augmentor.models.base.with_retries", fake_with_retries)
+        backend = OpenAIBackend(
+            ModelConfig(type="openai", api_key="k", model="m"),
+            default_attempts=5,
+            default_retry_delay=2.5,
+        )
+        backend._call_api = lambda prompt: "ok"
+        assert backend.generate("p") == "ok"
+        assert captured["max_retries"] == 4
+        assert captured["base_delay"] == 2.5
 
 
 class TestJsonExtraction:

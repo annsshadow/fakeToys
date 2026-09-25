@@ -886,7 +886,8 @@ A58 是 L41 接线时自带的一笔代价（`shuffle=False` 时每段各整份�
 是另一半口径，本轮不做**：实测 `base_delay=-5` 时 `sleeper` 收到 `[0.0, 0.0]`（
 `max(0.0, delay)` 把负退避整条清零）、`factor=-2` 时四档退避是 `[1.0, 0.0, 4.0, 0.0]`
 （隔一次完全不等待）—— 它需要一条 `require_seconds` 式的浮点判据，而不是把浮点塞进
-按口径拒绝非整数的 `require_count`。
+按口径拒绝非整数的 `require_count`。（**L45 已补这条判据并接上模型后端，见 §3.20；`retry.py`
+内部三参与 `parse_retry_after` 仍未接，账本 A67 残余。**）
 
 **代价（同进程 7 轮交错，min + 中位两口径同向）**：`require_count` 孤立 68.5 ns；
 `with_retries` 成功档 476.2 → **556.8 ns（×1.17）**、`compute_delay` 123.3 →
@@ -896,9 +897,9 @@ A58 是 L41 接线时自带的一笔代价（`shuffle=False` 时每段各整份�
 **不为纳秒级的绝对量牺牲入参校验**。
 
 **顺带挖出的三笔「契约面有旋钮、实现面不消费」**（与 §3.16 的 A54 同构，见账本 A64–A66）：
-`ModelConfig.max_retries` / `retry_delay` 全仓 0 个消费者，而 `models/base.py` 另有一副写死的
-`Retry(total=3)` 在传输层独立生效（⇒ 一次 `generate()` 最坏请求数上界 `attempts × (1+3)`，
-此数按代码推得、未实测）；`compute_delay` 的 `jitter` / `rng` 没有任何调用路径能传进去
+~~`ModelConfig.max_retries` / `retry_delay`~~ **`AugmentationConfig.max_retries` / `retry_delay`**（L45 校正类名归属：`ModelConfig` 在 `config.py:15` 且没有重试字段，两个旋钮属于 `:28` 的 `AugmentationConfig`）全仓 0 个消费者，而 `models/base.py` 另有一副写死的
+`Retry(total=3)` 在~~传输层独立生效（⇒ 一次 `generate()` 最坏请求数上界 `attempts × (1+3)`，
+此数按代码推得、未实测）~~ **传输层从不生效（L45 实测校正，见 §3.20）**；`compute_delay` 的 `jitter` / `rng` 没有任何调用路径能传进去
 （`with_retries` 不接也不透传）⇒ 真实重试链上抖动恒为 0；`RetryStats` 回到 `generate`
 后被丢进 `_stats` ⇒「实际试了几次、总共等了多久」在产品面无出口。
 
@@ -906,6 +907,79 @@ A58 是 L41 接线时自带的一笔代价（`shuffle=False` 时每段各整份�
 「合法档一字不动」的对照用例 ⇒ 红数既不为 0 也不覆盖全集；还原后两份实现按原始字节
 核对 sha 一致。新增 9 条用例（含 1 条 ×3 参数化），全量 **4701 passed / 2 skipped**
 （**4692 + 9 精确对上**，总计 99.02%），**0 处既有断言改写**。
+
+### 3.20 L45：`augmentation.max_retries` / `retry_delay` 真正接上模型调用（关闭 A64）
+
+上一节的第三笔「契约面有旋钮、实现面不消费」在本轮清偿。两个旋钮声明在
+`config.py:28` 的 `class AugmentationConfig`（字段 `:33` / `:34`，默认值同时进 `:308`
+的默认配置字典），L44 之前**全仓非测试代码 0 个消费者** —— 改配置文件里的重试次数与
+间隔，行为一个字都不变。
+
+**接线是三层各加一段，没有新抽象**：
+
+```
+config.augmentation.max_retries / retry_delay
+  → AugmentorPipeline._init_components            （pipeline.py，产品面唯一调用点）
+  → create_model_backend(default_attempts=…, default_retry_delay=…)
+  → ModelBackend.__init__                          （5 个子类各自加两个形参并 super() 透传）
+  → generate() 的缺省档：attempts = max(1, max_retries if max_retries is not None else self._default_attempts)
+```
+
+优先级保持显式入参赢过后端默认（`test_explicit_arg_beats_backend_default`），类常量
+`_DEFAULT_ATTEMPTS = 3` / `_DEFAULT_RETRY_DELAY = 1.0` 取代原先散在 `generate()` 里的字面量。
+**已发布配置的数值行为不变**：`config.yaml` 解析出 3 / 1.0，与旧硬编码同值，只有设过非默认值的
+用户会看到变化 —— 而那正是缺陷的症状面。
+
+**重试口径由实测拍定，不是读代码拍的**（这条是本轮最要紧的更正）。L44 曾在账本与本文档写下
+「传输层那副 `Retry(total=3)` 独立生效 ⇒ 一次 `generate()` 最坏 HTTP 请求数上界
+`attempts × (1+3)` = 默认档 12」，本轮用本地回环上的真实 `HTTPServer` 数服务端收到的请求
+（requests 2.33.1 / urllib3 2.6.3）：
+
+| 形状 | 服务端收到的请求数 |
+|------|--------------------|
+| `generate(max_retries=3)` | **3** |
+| `generate(max_retries=0)` / `(1)` | **1** / **1** |
+| 同一 URL 换成 GET | **4**（1 + 传输层 3 次） |
+| `POST` + 显式 `Retry(allowed_methods={'POST'})` | **4** |
+
+根因：`Retry.DEFAULT_ALLOWED_METHODS` 是 `frozenset({'DELETE','GET','HEAD','OPTIONS','PUT','TRACE'})`，
+**不含 POST**，而 5 个后端的全部 6 处 `session.post(...)` 都是 POST ⇒ 那副适配器只带来了连接池，
+重试在产品路径上从未起跑过，最坏请求数就是 `attempts` 本身。**结论：全仓重试口径唯一 =
+`retry.with_retries` + `classify_error` 这一层**（`models/base.py:_get_session` 的注释里写死了这句话）。
+要不要把那副死适配器改成真生效（加 `allowed_methods`）是另一笔决策，风险是与 `with_retries` 叠乘
+（`attempts=3` 时最坏 3×4 次真实请求、两副退避各算各的），已单立账本 **A69** 待拍，本轮不动它。
+
+**新判据 `validation.require_seconds(name, value, minimum=0.0)`**：拒 `bool`、拒字符串、拒 NaN、
+拒负值，接受 int 与 `+inf`（`+inf` 由 `compute_delay` 尾部的 `min(max_delay, …)` 夹住，语义有界）。
+它必须存在的原因是实测：`compute_delay` 对坏值**不抛异常，只换档** —— `base_delay=NaN` → `30.0`
+（`30.0 < nan` 为假 ⇒ `min()` 交出第一个参数）、`max_delay=NaN` → `0.0`、`base_delay=-5.0` → `0.0`。
+这三档被写成一条参数化反向护栏用例，断言的正是「没有判据时会发生什么」，摘掉判据时红例自带病灶说明。
+`retry.py` 侧的 `with_retries(base_delay/factor/max_delay)` 与 `parse_retry_after` 仍未接判据（账本 A67 残余）。
+
+**两处位置纪律，与「判参先于副作用」同族**：① `ModelBackend.__init__` 的两道判据排在
+`_build_response_cache()` **之前** —— `DiskCache.__init__` 会 mkdir，坏档位不该留下建好了没人用的目录；
+② `pipeline._init_components` 的判据排在既有的降级 `try/except` **外面** —— 那个 `try` 的语义是
+「模型没配好就退化为无模型模式」，若让配置笔误从 `try` 内抛出，症状会被读成「后端不可用」而真因是参数越界。
+
+**旋钮可设 ⇒ 必带校验规格，而新规格必须先测误报率**。给 `config_validator` 的 KNOWN_FIELDS 加
+`augmentation.max_retries`（`int`，0–20）与 `augmentation.retry_delay`（`float`，0.0–60.0）之后，
+`validate-config` 立刻把**合法** YAML `retry_delay: 1` 判成「类型错误: 期望 float, 实际 int」。
+修法是把内联类型判定对齐本仓 `_validate_float` 已有的宽口径（`float` 规格接受 int），并补 NaN 拒绝，
+使**静态校验面与运行时判据同判** —— 这条同判由 `test_validator_and_runtime_use_the_same_verdict`
+用同一批值参数化永久钉住。上界不是形式主义：`max_retries: 1000000` 在最坏情形是 10⁶ × 30 s ≈ 347 天
+的单次 `generate()` 等待。顺带查出 `_validators` 表全仓 0 读取点（账本 **A70**）。
+
+**代价（只报绝对量，承 §3.19 那条「比值不得放大绝对值」）**：`require_seconds(name, None)` 27.3 ns、
+`require_seconds(name, 1.0)` 109.6 ns，对照 `generate()` 缓存命中档 1,711 ns/op（≈1.6 %）与本地回环
+一次 POST 往返 min 0.68 ms（约 4e-5 倍）⇒ 不为此写快路。本轮是能力轮，不做 before/after A/B
+（「以前不消耗这两个旋钮」与「现在消耗」之间没有可比的性能口径）。
+
+**证据**：注入 8 项（摘除式反向 patch）红数 **7 / 2 / 2 / 1 / 5 / 5 / 2 / 2**，无 0 红、无全集红；
+其中一项初版把 NaN 判据写成恒假，导致所有浮点全被拒（20 红）⇒ 红数异常大同样要分诊，重注后才精确命中。
+新增 **61** 条用例（`TestRequireSeconds` 21 + 后端默认档位 8 + 重试次数生效 3 + 流水线接线 7 + 配置校验 22），
+全量 **4762 passed / 2 skipped**（**4701 + 61 精确对上**，总计 99.02%，门禁 80% 通过）。
+既有断言只改 1 处，且是**故意收紧**：`test_pipeline_forwards_cache_options` 的精确字典 pin 被工厂契约
+变宽打红，补两键显式认领而非放宽。16 文件 **+460 / −24**，逐文件行数差与 numstat 净值精确相等。
 
 ## 4. 核心数据流
 
@@ -993,13 +1067,14 @@ A58 是 L41 接线时自带的一笔代价（`shuffle=False` 时每段各整份�
 | 层次 | 策略 |
 |------|------|
 | 单条数据生成失败 | 记录 ERROR 日志，该条标记为 failed，不中断整体任务 |
-| 模型调用失败 | 指数退避重试，`generate(max_retries=…)` 传的是**总尝试次数**（不是额外次数）且下界 0，仍失败则抛出由上层捕获 |
+| 模型调用失败 | 指数退避重试，`generate(max_retries=…)` 传的是**总尝试次数**（不是额外次数）且下界 0，仍失败则抛出由上层捕获。**缺省档位自 L45 起来自配置 `augmentation.max_retries` / `retry_delay`**（经 `create_model_backend` 透传，见 §3.20）；重试口径唯一在 `retry.with_retries` 这一层，`models/base.py` 那副传输层 `Retry` 对 POST 不生效（§3.20 实测） |
 | 可选依赖缺失 | 降级并记录 WARNING，功能跳过而非崩溃 |
 | 必需依赖缺失 | 抛 `ImportError` 并给出安装命令，不静默 |
 | 配置缺失 | 使用 dataclass 默认值；环境变量缺失替换为空字符串 |
 | 配置文件损坏 | 抛出异常，不吞掉 |
 | API 层 | 转换为 `HTTPException`，`404` / `400` / `500` 语义明确 |
 | 计数 / 分页 / 窗口 / 步长 / 配额 / 保留数 / **重试次数 / 退避档位**旋钮越界 | 在 SDK 入参处一次判掉（`validation.require_count`），抛 `DataValidationError`；CLI 变退出码 1，API 变 400 |
+| **时长 / 秒数**旋钮越界（`retry_delay` / `default_retry_delay`，L45 起） | 同一条口径但换判据：`validation.require_seconds(name, value, minimum=0.0)` 拒 `bool` / 字符串 / NaN / 负值，接受 int 与 `+inf`。**不混进 `require_count`**（它按口径拒绝非整数）。配置文件侧由 `config_validator` 的 KNOWN_FIELDS 同判（0–60 s），两侧同判由 `test_validator_and_runtime_use_the_same_verdict` 钉住 —— 静态校验面与运行时判据不一致时，症状是「校验通过但一跑就炸」或反之，见 §3.20 |
 | 断点文件损坏 | 记录 ERROR 并返回 `None`，退化为从头开始 |
 
 「取前 N 条」这一类旋钮（`limit` / `offset` / `top_k` / `preview_size` / `batch_size`

@@ -58,6 +58,44 @@ class TestCreateModelBackend:
         assert isinstance(backend, GeminiBackend)
 
 
+class TestRetryDefaultsPlumbing:
+    """配置文件的重试旋钮经工厂到后端的透传
+
+    `augmentation.max_retries` / `retry_delay` 在 3.x 时代是**死旋钮**：字段声明了、
+    进了默认配置字典，但没有任何消费者，用户改它们行为一个字都不变。这里钉住
+    「工厂 → 5 个后端 → 后端默认档位」这条链路，防止它再断一次。
+    """
+
+    @pytest.mark.parametrize(
+        "type_name", ["baidu", "openai", "ollama", "claude", "gemini"]
+    )
+    def test_factory_forwards_retry_defaults_to_every_backend(self, type_name):
+        backend = create_model_backend(
+            _cfg(type_name), default_attempts=5, default_retry_delay=2.5
+        )
+        assert backend._default_attempts == 5
+        assert backend._default_retry_delay == 2.5
+
+    def test_absent_defaults_fall_back_to_documented_values(self):
+        backend = create_model_backend(_cfg("openai"))
+        assert backend._default_attempts == 3
+        assert backend._default_retry_delay == 1.0
+
+    def test_zero_is_not_read_as_absent(self):
+        """0 是「只调用一次、失败立刻重试不等」，`or` 回落会把它悄悄换成 3"""
+        backend = create_model_backend(
+            _cfg("openai"), default_attempts=0, default_retry_delay=0.0
+        )
+        assert backend._default_attempts == 0
+        assert backend._default_retry_delay == 0.0
+
+    def test_out_of_range_defaults_rejected_by_factory(self):
+        with pytest.raises(ValueError, match="default_attempts"):
+            create_model_backend(_cfg("openai"), default_attempts=-1)
+        with pytest.raises(ValueError, match="default_retry_delay"):
+            create_model_backend(_cfg("openai"), default_retry_delay=-1.0)
+
+
 class TestSessionPool:
     def test_get_session_returns_pool_session(self):
         backend = create_model_backend(_cfg("openai"))
