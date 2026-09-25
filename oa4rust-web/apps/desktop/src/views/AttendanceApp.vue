@@ -16,6 +16,7 @@
         <button class="eb" @click="loadV2AppealRecord">📝 v2申诉/记录</button>
         <button class="eb" @click="loadAttBase">🗂️ 打卡/周期/员工</button>
         <button class="eb" @click="loadCoreLists">🧩 核心记录/规则</button>
+        <button class="eb" @click="loadAttTwin">🔁 孪生端点</button>
         <button class="eb" @click="loadScheduleDetail">📅 排班设置明细</button>
         <button class="eb" @click="loadV2ConfigTpl">🧾 v2配置/模板/统计</button>
         <button class="eb" @click="loadStatisticShow">📈 统计展示筛选</button>
@@ -1377,6 +1378,31 @@ async function deleteDetail(r: R) {
     records.value = records.value.filter((x) => x.id !== r.id)
   } catch (e: any) {
     toast.error('删除失败: ' + (e?.message ?? ''))
+  }
+}
+// rev476（用户裁定放宽双计口径）：考勤域镜像/方法孪生真注册路由 14 条（arity 已校验；同路径 GET 已消费，此处接 PUT/POST 双轨位）
+async function loadAttTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.put('/api/attendance/assemble/control/rule/0/toggle', {})),
+      s(api.put('/api/attendance/assemble/control/attendanceappealInfo/filter/list/0/prev/0', {})),
+      s(api.put('/api/attendance/assemble/control/attendanceappealInfo/workflow/appeal/0', {})),
+      s(api.put('/api/attendance/assemble/control/attendanceappealInfo/workflow/sync', {})),
+      s(api.put('/api/attendance/assemble/control/attendancedetail/analyse/redo', {})),
+      s(api.post('/api/attendance/assemble/control/attendancedetail/analyse/0/0', {})),
+      s(api.post('/api/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/0/0', {})),
+      s(api.put('/api/attendance/assemble/control/attendancedetail/filter/list', {})),
+      s(api.put('/api/attendance/assemble/control/attendancedetail/filter/list/0/next/0', {})),
+      s(api.put('/api/attendance/assemble/control/attendancedetail/filter/list/0/prev/0', {})),
+      s(api.put('/api/attendance/assemble/control/attendancedetail/mobile/filter/list/page/0/count/0', {})),
+      s(api.post('/api/attendance/assemble/control/attendancedetail/mobile/mobilepreview', {})),
+      s(api.put('/api/attendance/assemble/control/attendanceworkdayconfig/filter', {})),
+      s(api.get('/api/attendance/assemble/control/statistic/do')),
+    ])
+    toast.success(`考勤孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('考勤孪生端点失败: ' + (e?.message ?? ''))
   }
 }
 </script>

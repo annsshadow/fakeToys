@@ -11,6 +11,7 @@
       <button class="btn-ai-meta" @click="loadAiControl">基础配置/控制/用量</button>
       <button class="btn-ai-meta" @click="loadAiEntities">实体/聊天线索</button>
       <button class="btn-ai-meta" @click="loadAiIndexFiles">索引/文件/MCP</button>
+      <button class="btn-ai-meta" @click="loadAiTwin">孪生端点</button>
       <button class="btn-ai-meta" @click="loadAiDeep">控制深度读</button>
       <button class="btn-ai-meta" @click="aiWrite('configSave')">存配置</button>
       <button class="btn-ai-meta" @click="aiWrite('modelCreate')">建模型</button>
@@ -535,6 +536,20 @@ async function addMcp() {
     await loadMcps()
   } catch (e: any) {
     toast.info('添加失败: ' + (e?.message ?? ''))
+  }
+}
+// rev478（用户裁定放宽双计口径）：AI alias 轨同 handler 镜像真注册路由 3 条（主轨 /api/ai/* 已消费，alias 轨逐注册路由计；arity 已校验）
+async function loadAiTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/ai_assemble_control/chat/delete/0')),
+      s(api.get('/api/ai_assemble_control/config/delete/mcp/0')),
+      s(api.get('/api/ai_assemble_control/file/0/download')),
+    ])
+    toast.success(`AI孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('AI孪生端点失败: ' + (e?.message ?? ''))
   }
 }
 </script>

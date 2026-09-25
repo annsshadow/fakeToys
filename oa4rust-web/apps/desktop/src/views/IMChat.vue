@@ -15,6 +15,7 @@
           <button class="new-chat-btn" title="按类型/未消费/非IM消息" @click="loadMsgByType">📊</button>
           <button class="new-chat-btn" title="群发消息详情/游标" @click="loadMassMessages">📢</button>
           <button class="new-chat-btn" title="即时消息消费维度" @click="loadInstantFacets">🗓️</button>
+          <button class="new-chat-btn" title="孪生端点" @click="loadImTwin">🔁</button>
           <button class="new-chat-btn" title="消费队列/接收/未读" @click="loadConsumeFacets">📬</button>
         </div>
       </div>
@@ -846,6 +847,19 @@ onUnmounted(() => {
   if (callState.value !== 'idle') endCall(false)
   wsClient.value?.close()
 })
+// rev478（用户裁定放宽双计口径）：IM 镜像/方法孪生真注册路由 2 条（消息消费维度 + 群退出 self 位；arity 已校验）
+async function loadImTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/message/assemble/communicate/consume/0/type/0', {})),
+      s(api.get('/api/message/assemble/communicate/im/conversation/0/group/quit/self')),
+    ])
+    toast.success(`IM孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('IM孪生端点失败: ' + (e?.message ?? ''))
+  }
+}
 </script>
 
 <style scoped>

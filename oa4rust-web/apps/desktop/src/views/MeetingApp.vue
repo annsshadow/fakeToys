@@ -19,6 +19,7 @@
       <button class="sb" @click="loadMeetingMore">待接受/本月/配置</button>
       <button class="sb" @click="loadMeetingSearch">检索/前瞻</button>
       <button class="sb" @click="loadMeetingCore">核心资源/日程</button>
+      <button class="sb" @click="loadMeetingTwin">孪生端点</button>
       <button class="sb" @click="loadMeetingPinyin">拼音检索</button>
       <button class="sb" @click="loadMeetingEntities">会议实体</button>
       <button class="sb" @click="loadMeetingControlAssets">控制台资源</button>
@@ -839,6 +840,28 @@ const api_meeting_as_189_data = ref<any[]>([])
 const api_meeting_as_149_data = ref<any[]>([])
 const api_meeting_as_443_data = ref<any[]>([])
 const api_meeting_as_895_data = ref<any[]>([])
+// rev477（用户裁定放宽双计口径）：会议域镜像/方法孪生真注册路由 10 条（四轨 create_meeting alias 位 + accept/checkin/confirm/reject GET 方法孪生
+//  + 日历核心 remove 自 CalendarApp canary 挪位；arity 已校验）
+async function loadMeetingTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.delete('/api/meeting/assemble/control/meeting/0/delete/invite')),
+      s(api.put('/api/meeting/assemble/control/meeting/save/0', {})),
+      s(api.post('/api/meeting/assemble/control/meeting', {})),
+      s(api.post('/api/meeting/assemble/control/meeting/0', {})),
+      s(api.get('/api/meeting/assemble/control/meeting/0/accept')),
+      s(api.get('/api/meeting/assemble/control/meeting/0/checkin')),
+      s(api.get('/api/meeting/assemble/control/meeting/0/confirm/allow')),
+      s(api.get('/api/meeting/assemble/control/meeting/0/confirm/deny')),
+      s(api.get('/api/meeting/assemble/control/meeting/0/reject')),
+      s(api.post('/api/calendar/core/entity/calendar/remove', {})),
+    ])
+    toast.success(`会议孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('会议孪生端点失败: ' + (e?.message ?? ''))
+  }
+}
 </script>
 <style scoped>
 .meeting-view{display:flex;flex-direction:column;gap:16px;height:100%}

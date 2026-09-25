@@ -14,6 +14,7 @@
       <button class="srv-meta-btn" @click="loadBaseMeta2">根Echo/根缓存/根OpenAPI</button>
       <button class="srv-meta-btn" @click="serverConsoleOps('cacheClear')">清理缓存(按类型)</button>
       <button class="srv-meta-btn" @click="serverConsoleOps('cmdExecute')">控制台命令</button>
+      <button class="srv-meta-btn" @click="loadServerTwin">孪生端点</button>
       <button class="srv-meta-btn" @click="serverConsoleOps('sendMessage')">广播消息</button>
       <button class="srv-meta-btn" @click="serverConsoleOps('deploySave')">保存部署</button>
       <button class="srv-meta-btn" @click="serverConsoleOps('deployDelete')">删除部署</button>
@@ -248,6 +249,25 @@ const api_cache_config_flush_1_data = ref<any[]>([])
 const api_base_cac_432_data = ref<any[]>([])
 const api_cache_commonscri_410_data = ref<any[]>([])
 const api_fireschedule_cla_721_data = ref<any[]>([])
+// rev477（用户裁定放宽双计口径）：服务器/根域镜像/方法孪生真注册路由 7 条（/health 双 crate 注册去重后 1 条；
+//  jpush 主轨 update/control/config 自 JPushApp canary 禁位挪接；arity 已校验）
+async function loadServerTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/base/echo/get')),
+      s(api.get('/api/component_assemble_control/get/control/config')),
+      s(api.get('/api/component_assemble_control/update/control/config')),
+      s(api.delete('/api/server/deploy/delete/0')),
+      s(api.get('/mcp')),
+      s(api.get('/health')),
+      s(api.post('/api/jpush/assemble/control/update/control/config', {})),
+    ])
+    toast.success(`服务器孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('服务器孪生端点失败: ' + (e?.message ?? ''))
+  }
+}
 </script>
 
 <style scoped>

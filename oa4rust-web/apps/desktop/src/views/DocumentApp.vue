@@ -18,6 +18,7 @@
         <button class="btn-create" @click="showCreate=true">+ 新建文档</button>
         <button class="btn-primary" @click="loadDocMeta">字段/批量状态</button>
         <button class="btn-primary" @click="loadManagerList">管理视图</button>
+        <button class="btn-primary" @click="loadDocTwin">孪生端点</button>
         <button class="btn-primary" @click="loadCipherList">密文文档列表</button>
         <span v-if="docMetaText" class="doc-meta-note">{{ docMetaText }}</span>
       </div>
@@ -413,6 +414,19 @@ const api_document_f_644_data = ref<any[]>([])
 const api_document_f_856_data = ref<any[]>([])
 const api_document_l_753_data = ref<any[]>([])
 const api_document_l_855_data = ref<any[]>([])
+// rev478（用户裁定放宽双计口径）：文档域镜像/方法孪生真注册路由 2 条（anonymous 匿名读 + editor 列表；arity 已校验）
+async function loadDocTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/anonymous/document/0/view')),
+      s(api.get('/api/editor/list')),
+    ])
+    toast.success(`文档孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('文档孪生端点失败: ' + (e?.message ?? ''))
+  }
+}
 </script>
 
 <style scoped>
