@@ -5,8 +5,9 @@ import { loadConfig } from "./config.js";
 import { startServer } from "./server.js";
 import { startScheduler } from "./scheduler.js";
 import { runAll, runSite } from "./runner.js";
+import { shouldFailRun } from "./run-status.js";
 import { createLogger } from "./logger.js";
-import { acquireLock, releaseLock } from "./lock.js";
+import { acquireDaemonLock, wasInterrupted } from "./lock.js";
 
 const log = createLogger("main");
 
@@ -17,8 +18,9 @@ async function main(): Promise<void> {
   // 一次性模式：跑完即退出，供系统定时任务调用（不启动面板/定时器）
   if (args.includes("--once")) {
     log.info("一次性模式：运行全部站点后退出");
-    await runAll(config);
-    process.exit(0);
+    const results = await runAll(config);
+    if (!wasInterrupted()) process.exitCode = shouldFailRun(results) ? 1 : 0;
+    return;
   }
 
   // 单站模式：--site <id>
@@ -27,23 +29,22 @@ async function main(): Promise<void> {
     const siteId = args[siteIdx + 1];
     log.info(`单站模式：${siteId}`);
     const r = await runSite(siteId, config);
-    if (!r) log.error(`未知站点：${siteId}`);
-    process.exit(0);
+    if (!r) {
+      log.error(`未知站点：${siteId}`);
+      process.exitCode = 1;
+      return;
+    }
+    if (!wasInterrupted()) process.exitCode = shouldFailRun([r]) ? 1 : 0;
+    return;
   }
 
-  // 常驻模式：启动面板 + 定时器。先抢单实例锁，防止多个进程各跑一份 cron 重复触发
-  const lock = acquireLock();
+  // 常驻模式：只锁 daemon 本身；实际签到由 runner 获取 run 租约。
+  const lock = acquireDaemonLock();
   if (!lock.ok) {
-    log.error(`已有常驻进程在运行（PID=${lock.holderPid}），本次启动退出。若确认旧进程已死，删除 sessions/.daemon.lock 后重试`);
-    process.exit(1);
+    log.error(`已有常驻面板在运行（PID=${lock.holderPid}），本次启动退出。若确认旧进程已死，删除 sessions/.daemon.lock 后重试`);
+    process.exitCode = 1;
+    return;
   }
-  for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
-    process.on(sig, () => {
-      releaseLock();
-      process.exit(0);
-    });
-  }
-  process.on("exit", releaseLock);
 
   log.info("常驻模式启动");
   startServer(config);

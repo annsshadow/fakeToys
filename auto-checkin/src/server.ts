@@ -10,6 +10,7 @@ import { adapters } from "./sites/index.js";
 import { getCredentials } from "./config.js";
 import { computeSiteStats, computeTrend, getAllRecords, type StatsSummary } from "./store.js";
 import { runAll, runSite, isRunning } from "./runner.js";
+import { shouldFailRun } from "./run-status.js";
 import { createLogger } from "./logger.js";
 import { ROOT_DIR } from "./config.js";
 import { existsSync } from "node:fs";
@@ -103,7 +104,11 @@ export function startServer(config: AppConfig): void {
       return;
     }
     log.info("面板触发：全部签到");
-    runAll(config).catch((e) => log.error(String(e)));
+    runAll(config)
+      .then((results) => {
+        if (shouldFailRun(results)) log.error("面板触发的全部签到未完成或存在失败站点");
+      })
+      .catch((e) => log.error(String(e)));
     res.json({ ok: true, message: "已开始运行全部站点签到" });
   });
 
@@ -119,7 +124,11 @@ export function startServer(config: AppConfig): void {
       return;
     }
     log.info(`面板触发：${siteId}`);
-    runSite(siteId, config).catch((e) => log.error(String(e)));
+    runSite(siteId, config)
+      .then((result) => {
+        if (!result || shouldFailRun([result])) log.error(`面板触发的 ${siteId} 未完成或失败`);
+      })
+      .catch((e) => log.error(String(e)));
     res.json({ ok: true, message: `已开始运行 ${siteId}` });
   });
 
