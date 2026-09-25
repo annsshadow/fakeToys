@@ -7,6 +7,7 @@
       <h1>会议管理</h1>
       <p class="subtitle">/api/meeting/assemble/control/*</p>
       <button class="new-btn" @click="showCreate=true">+ 新建会议</button>
+      <button @click="loadResidualStub">残余接桩</button>
     </div>
     <div class="filter-bar glass-card">
       <input v-model="searchKey" placeholder="搜索会议室/楼栋..." class="si" />
@@ -861,6 +862,19 @@ async function loadMeetingTwin() {
   } catch (e: any) {
     toast.error('会议孪生端点失败: ' + (e?.message ?? ''))
   }
+}
+
+async function loadResidualStub() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  await Promise.all([
+    s(api.post('/api/meeting/assemble/control/attachment/meeting/0/upload/0', {})),
+    s(api.post('/api/meeting/assemble/control/attachment/meeting/0/upload/0/callback/0', {})),
+    s(api.post('/api/meeting/assemble/control/attachment/0/update/callback/0', {})),
+    s(api.post('/api/meeting/assemble/control/building/list/completed/completed/room/room/meeting/meeting/0/0', {})),
+    s(api.get('/api/meeting/assemble/control/meeting/list/0/0/0')),
+    s(api.post('/api/meeting/assemble/control/meeting/list/manage/0/0/0', {})),
+    s(api.get('/api/meeting/assemble/control/meeting/list/0/0/0/0/0/0/0')),
+  ])
 }
 </script>
 <style scoped>

@@ -9,6 +9,7 @@
         <h2>消息</h2>
         <div class="header-actions">
           <button class="new-chat-btn" title="在线/会话概览" @click="loadImMeta">✉</button>
+          <button @click="loadResidualStub">残余接桩</button>
           <button class="new-chat-btn" title="未读/在线数/IM配置" @click="loadImStats">🔔</button>
           <button class="new-chat-btn" title="即时消息/群发类型" @click="loadImInstant">📥</button>
           <button class="new-chat-btn" title="收藏/已消费/消息分页" @click="loadImArchive">🗂️</button>
@@ -859,6 +860,17 @@ async function loadImTwin() {
   } catch (e: any) {
     toast.error('IM孪生端点失败: ' + (e?.message ?? ''))
   }
+}
+
+async function loadResidualStub() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  await Promise.all([
+    s(api.post('/api/message/assemble/communicate/im/msg/upload/0/type/0', {})),
+    s(api.post('/api/message/assemble/communicate/im/msg/clear', {})),
+    s(api.get('/ws/realtime')),
+    s(api.get('/ws/realtime/room/0')),
+    s(api.get('/ws/realtime/room/0/stats')),
+  ])
 }
 </script>
 
