@@ -319,6 +319,32 @@ class TestGateBehavior:
         _, _, code = _run_cli(["cli", "doctor"])
         assert code is None
 
+    def test_doctor_gate_uses_real_dependency_probe_not_stub(self, monkeypatch):
+        """A100：`doctor --gate` 的非零判决要由真实 SDK 算出，不靠桩
+
+        `_stub_doctor` 直接给了 `all_required_present` 字段，等于把判决位钉死在桩上——
+        一旦真实 `DiagnosticsReport.all_required_present` 的属性实现或 `run_doctor` 的
+        接线退化，那两条桩用例仍然绿。这里把 `REQUIRED_DEPENDENCIES` 换成一个永不存在的
+        模块名，让真实的 `check_dependencies()` 自己算出 `False`（`installed.get(名, False)`
+        与本机装了什么无关，故确定性成立），再断言 CLI 落到退出码 1。
+
+        A100 原行写「真子进程用例」，但子进程无法在不新增覆盖旋钮（＝行为变更）的前提下
+        被强制判负，且 yaml 在不在本机随环境而变——违反「不靠本机装了什么」。确定性意图
+        （真实 SDK 给 False、非零，不靠桩）在进程内即可达成。
+        """
+        from augmentor.diagnostics import DiagnosticsReport, check_dependencies
+
+        monkeypatch.setattr("augmentor.diagnostics.REQUIRED_DEPENDENCIES",
+                            ["definitely_absent_module_for_l69"])
+        report = check_dependencies()
+        assert isinstance(report, DiagnosticsReport), "必须走真实诊断，不是 SimpleNamespace 桩"
+        assert report.all_required_present is False, (
+            "真实属性实现须自己算出 False——若这里为 True，说明判决位被别处短路了"
+        )
+
+        _, err, code = _run_cli(["cli", "doctor", "--gate"])
+        assert code == 1, f"真实诊断为负应得退出码 1，实得 {code}；stderr={err[:120]!r}"
+
     def _stub_migrate(self, monkeypatch, failed_items):
         """桩掉 migrate_file：造一份「迁移失败 N 条」的判决，不依赖迁移器多宽容
 
