@@ -482,7 +482,10 @@ class TestValidateCommand:
         assert result["total_items"] == 5
 
     def test_validate_reports_invalid_data(self, dataset, tmp_path):
-        """缺字段的脏数据需被 strict 预设判为无效"""
+        """缺字段的脏数据需被 strict 预设判为无效，并以退出码 1 表达
+
+        上一条用例（`code is None`）钉的是「有效数据不因判决而变红」，本条钉判决本身。
+        """
         bad = tmp_path / "bad.json"
         bad.write_text(json.dumps([{"instruction": ""}], ensure_ascii=False), encoding="utf-8")
         out_file = tmp_path / "bad_validation.json"
@@ -492,7 +495,7 @@ class TestValidateCommand:
                 "--preset", "strict", "--output", str(out_file),
             ]
         )
-        assert code is None
+        assert code == 1
         result = json.loads(out_file.read_text(encoding="utf-8"))
         assert result["is_valid"] is False
 

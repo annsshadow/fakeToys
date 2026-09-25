@@ -296,7 +296,9 @@ def build_parser() -> argparse.ArgumentParser:
     stats_parser.add_argument("--fields", type=str, nargs="+", help="统计字段（默认全部）")
 
     # 数据集验证命令
-    validate_parser = subparsers.add_parser("validate", help="验证数据集格式")
+    validate_parser = subparsers.add_parser(
+        "validate", help="验证数据集格式（判负时退出码为 1）"
+    )
     validate_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
     validate_parser.add_argument("--preset", type=str, default="basic",
                                  choices=["basic", "strict", "chat"], help="验证规则预设")
@@ -340,7 +342,9 @@ def build_parser() -> argparse.ArgumentParser:
     search_parser.add_argument("--output", type=str, help="结果输出路径（.json）")
 
     # 配置验证命令
-    validate_config_parser = subparsers.add_parser("validate-config", help="验证配置文件")
+    validate_config_parser = subparsers.add_parser(
+        "validate-config", help="验证配置文件（报 ERROR 时退出码为 1）"
+    )
     # SUPPRESS：仅当子命令后显式传 --config 才写入，避免默认 None 覆盖全局 --config 的值
     validate_config_parser.add_argument(
         "--config", type=str, default=argparse.SUPPRESS, help="配置文件路径"

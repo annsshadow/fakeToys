@@ -96,13 +96,13 @@ $ python cli.py validate-config --config typo_config.yaml
 > 那 5 条「环境变量未设置」是既有告警，**条数随本机环境而变**（对应键已 export 就不出现），
 > 别把 `警告: 7` 当契约读；本轮新增的判据只是前两条。
 
-- **这类反馈一律是 WARNING，不改 `is_valid`**：`is_valid` 是本端点响应的判决位，
-  把多余的键判负会让「配置里夹了自己的段落」的用法凭空变红。
-- **别把 `validate-config` 的退出码当门禁**（实测，两解释器一致）：CLI 只把判决 `print` 成
-  「配置验证结果: 通过 / 失败」，**从不据此设退出码** —— 一份连报 2 条 ERROR 的配置照样 `exit 0`。
-  要在 CI 里判成败请解析 stdout，或改用 `POST /api/system/validate-config` 的 `is_valid`。
-  另一个方向也一样：配置坏到加载器拒收（如 `web.port: 99999`）时 CLI 抛裸 traceback 并 `exit 1`，
-  那一档里 `validate-config` 的摘要一行都不会打印。
+- **这类反馈一律是 WARNING，不改 `is_valid`**：`is_valid` 同时是本端点响应的判决位和
+  `validate-config` 的退出码判据（L53 起 CLI 那一半才真的接上），把多余的键判负会让
+  「配置里夹了自己的段落」的用法凭空变红。
+- **`validate-config` 的退出码跟着判决走**（L53 起，实测两解释器一致）：报 ERROR ⇒ `exit 1`；
+  只有 WARNING（含上面那两条「没人读」）⇒ 不判负、也不抛 `SystemExit`，与 `health-gate` 同口径。
+  配置坏到加载器拒收（如 `web.port: 99999`）时也不再是裸 traceback：CLI 统一走
+  stderr 的「错误: …」+ `exit 1`，那一档 stdout 全空。
 - 名单**从 `AppConfig` 的字段类型推导**，不是手抄的清单：它定义上就等于
   `load_config` 实际读走的那份键集（`tests/unit/test_config_validator.py::TestUnreadKeyWarnings`
   逐节钉住这个等式）。新增配置节、新增字段都会自动进入判据。

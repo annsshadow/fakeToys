@@ -200,6 +200,23 @@ class TestDependencyCommand:
         assert code3 is None, err3
         assert "验证通过" in out3
 
+    def test_dependency_validate_broken_edge_exits_one(self, tmp_path):
+        """A89 同构：依赖边指向不存在的数据集时，判决要同时落在退出码上
+
+        上一条用例钉的是「无问题 ⇒ 不判负」，本条钉「有问题 ⇒ exit 1」。
+        边只能由 SDK 的 `add_dependency` 建立（`dependency` 的 4 个 action 里
+        没有建边入口），所以这里用 SDK 造现场、用 CLI 读判决。
+        """
+        from augmentor.dependency import DependencyManager
+
+        registry = tmp_path / "reg"
+        DependencyManager(str(registry)).add_dependency("src", "ghost", "derived_from")
+        out, err, code = run_cli(
+            ["cli", "dependency", "--action", "validate", "--registry-path", str(registry)]
+        )
+        assert "目标数据集不存在: ghost" in out
+        assert code == 1, f"报了问题却退出 {code!r}"
+
     def test_dependency_register_missing_args(self, stream_dataset):
         """register 缺 --name 需 exit 1"""
         data, tmp = stream_dataset

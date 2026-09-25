@@ -222,7 +222,7 @@ python cli.py stats --input data.json
 ### 验证和转换
 
 ```bash
-# 验证数据集格式
+# 验证数据集格式（判负 ⇒ 退出码 1；只有 warning 时不判负）
 python cli.py validate --input data.json --preset basic
 
 # 转换数据格式
@@ -231,7 +231,7 @@ python cli.py convert --input data.json --output data.jsonl --format jsonl
 # 搜索数据集
 python cli.py search --input data.json --query "租房" --method contains
 
-# 验证配置文件
+# 验证配置文件（报 ERROR ⇒ 退出码 1；「写了没人读」的键只出声、不判负）
 python cli.py validate-config --config config.yaml
 
 # 数据分析（JSON：洞察 + 质量/多样性/完整性分数 + 覆盖分析 + 去重报告）
