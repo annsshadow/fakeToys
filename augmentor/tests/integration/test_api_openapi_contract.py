@@ -275,7 +275,7 @@ CALLS = {
     ),
     ("POST", "/api/config"): _Case(
         request=lambda c: c.post("/api/config", json={}),
-        keys=_keys("success", "message"),
+        keys=_keys("success", "message", "ignored_keys"),
     ),
     ("GET", "/api/models"): _Case(
         request=lambda c: c.get("/api/models"),

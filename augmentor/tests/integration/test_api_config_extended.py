@@ -73,6 +73,49 @@ class TestUpdateConfig:
         assert response.status_code == 200
         assert pipeline.config.quality.threshold == 0.6
 
+    def test_unknown_section_key_named_in_message(self, pipeline, monkeypatch):
+        """丢弃未知子键时 message 与 ignored_keys 都要点名是哪个键（A86：写了没生效要出声）"""
+        client = _client(monkeypatch)
+        response = client.post("/api/config", json={"quality": {"no_such_key": 123}})
+        assert response.status_code == 200
+        assert response.json()["success"] is True
+        assert "quality.no_such_key" in response.json()["message"]
+        assert response.json()["ignored_keys"] == ["quality.no_such_key"]
+
+    def test_unknown_key_offers_close_match_suggestion(self, pipeline, monkeypatch):
+        """拼错键与真实字段相近时 message 带「是否想写 X」，但 ignored_keys 保持干净标识符"""
+        client = _client(monkeypatch)
+        response = client.post(
+            "/api/config", json={"augmentation": {"variant_per_seed": 5}}
+        )
+        assert response.status_code == 200
+        payload = response.json()
+        assert "augmentation.variant_per_seed" in payload["message"]
+        assert "variants_per_seed" in payload["message"]  # 建议指向真实字段
+        assert payload["ignored_keys"] == ["augmentation.variant_per_seed"]
+
+    def test_valid_update_has_no_ignored_notice(self, pipeline, monkeypatch):
+        """全是合法键时 ignored_keys 为空、message 不出现「已忽略」（钉住不误报噪声）"""
+        client = _client(monkeypatch)
+        response = client.post("/api/config", json={"quality": {"threshold": 0.7}})
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["ignored_keys"] == []
+        assert "已忽略" not in payload["message"]
+
+    def test_ignored_keys_across_sections_are_joined(self, pipeline, monkeypatch):
+        """多节多个未知键需全部列出（不能只报第一个），顺序按分区遍历序"""
+        client = _client(monkeypatch)
+        response = client.post(
+            "/api/config",
+            json={"quality": {"bad_a": 1}, "dedup": {"bad_b": 2}},
+        )
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["ignored_keys"] == ["quality.bad_a", "dedup.bad_b"]
+        assert "quality.bad_a" in payload["message"]
+        assert "dedup.bad_b" in payload["message"]
+
     def test_post_persists_to_cwd_config(self, pipeline, monkeypatch):
         """POST 成功后 CWD 的 config.yaml 需被实际写回，且能被重新加载
 
