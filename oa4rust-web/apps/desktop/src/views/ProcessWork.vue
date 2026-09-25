@@ -387,6 +387,8 @@
             <button class="btn-sm" @click="loadTwinB">孪生读B</button>
             <button class="btn-sm" @click="loadTwinC">孪生读C</button>
             <button class="btn-sm" @click="loadTwinD">孪生读D</button>
+            <button class="btn-sm" @click="loadTwinE">孪生读E</button>
+            <button class="btn-sm" @click="loadTwinF">孪生读F</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('appListRange')">应用范围清单</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('modeList')">模式清单</button>
             <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('processListIds')">按ids取流程</button>
@@ -2275,6 +2277,82 @@ async function loadTwinD() {
     toast.success(`孪生读D ${rs.length} 条已提交`)
   } catch (e: any) {
     toast.error('孪生读D失败: ' + (e?.message ?? ''))
+  }
+}
+// rev484（桶外 off-metric 波）：correlation 读族 17 条（doc/type/cms·processplatform/core 实体·service 处理读）
+// + processplatform 人维度 计数/处理·撤回/终止 6 条 + gateway join 1 条（arity 已校验；param 位填 0 避影子）
+async function loadTwinE() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/correlation/doc/0', {})),
+      s(api.post('/api/correlation/doc/0/delete', {})),
+      s(api.post('/api/correlation/update/doc/0', {})),
+      s(api.get('/api/correlation/type/cms/list')),
+      s(api.get('/api/correlation/type/cms/readable')),
+      s(api.get('/api/correlation/type/processplatform/list')),
+      s(api.get('/api/correlation/core/entity/list/by/0/0')),
+      s(api.get('/api/correlation/core/express/sync')),
+      s(api.get('/api/correlation/service/processing/correlation/list/type/cms/document/0')),
+      s(api.get('/api/correlation/service/processing/correlation/list/type/cms/document/0/site/0')),
+      s(api.get('/api/correlation/service/processing/correlation/list/type/processplatform/job/0')),
+      s(api.get('/api/correlation/service/processing/correlation/list/type/processplatform/job/0/site/0')),
+      s(api.get('/api/correlation/service/processing/correlation/type/cms/document/0')),
+      s(api.get('/api/correlation/service/processing/correlation/type/processplatform/job/0')),
+      s(api.get('/api/correlation/service/processing/link/0/0')),
+      s(api.get('/api/correlation/service/processing/list/0')),
+      s(api.get('/api/correlation/service/processing/0')),
+      s(api.get('/api/processplatform/task/count/with/person/0')),
+      s(api.get('/api/processplatform/task/processing/0')),
+      s(api.get('/api/processplatform/work/count/with/person/0')),
+      s(api.get('/api/processplatform/work/processing/0')),
+      s(api.get('/api/processplatform/work/retract/0')),
+      s(api.get('/api/processplatform/work/terminate/0')),
+      s(api.post('/api/gateway/0/0/join', {})),
+    ])
+    toast.success(`孪生读E ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('孪生读E失败: ' + (e?.message ?? ''))
+  }
+}
+// rev484（桶外 off-metric 波）：correlation 写族 12 条（delete/readable/update·create·save）
+// + process 短 alias 族 12 条（application 摘要/设计器 读改删/未读数/任务计数/票据/已办；arity 已校验）
+async function loadTwinF() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/correlation/service/processing/correlation/delete/type/cms/document/0', {})),
+      s(api.post('/api/correlation/service/processing/correlation/delete/type/processplatform/job/0', {})),
+      s(api.post('/api/correlation/service/processing/correlation/readable/type/cms', {})),
+      s(api.post('/api/correlation/service/processing/correlation/readable/type/processplatform', {})),
+      s(api.post('/api/correlation/service/processing/correlation/type/cms/document/0', {})),
+      s(api.post('/api/correlation/service/processing/correlation/type/processplatform/job/0', {})),
+      s(api.post('/api/correlation/service/processing/correlation/update/type/cms/document/0', {})),
+      s(api.post('/api/correlation/service/processing/correlation/update/type/processplatform/job/0', {})),
+      s(api.post('/api/correlation/service/processing/create', {})),
+      s(api.post('/api/correlation/service/processing/delete/0', {})),
+      s(api.post('/api/correlation/service/processing/link', {})),
+      s(api.post('/api/correlation/service/processing/save/0', {})),
+      s(api.get('/api/correlation/doc/0')),
+      s(api.get('/api/correlation/list/doc/0')),
+      s(api.get('/api/correlation/list/doc/0/site/0')),
+      s(api.post('/api/correlation/service/processing/unlink/0/0/0/0', {})),
+      s(api.get('/api/process/application/list/summary')),
+      s(api.get('/api/process/designer/application/0')),
+      s(api.get('/api/process/designer/route/0')),
+      s(api.post('/api/process/designer/application/remove', {})),
+      s(api.post('/api/process/designer/application/update', {})),
+      s(api.get('/api/process/read/count/0')),
+      s(api.get('/api/process/task/count/0')),
+      s(api.get('/api/process/list/ids')),
+      s(api.get('/api/process/0')),
+      s(api.get('/api/process/task/0')),
+      s(api.get('/api/process/ticket/list')),
+      s(api.get('/api/process/workcompleted/list')),
+    ])
+    toast.success(`孪生读F ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('孪生读F失败: ' + (e?.message ?? ''))
   }
 }
 async function engineReadAction(kind: string): Promise<void> {

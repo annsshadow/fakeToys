@@ -85,6 +85,7 @@
       <button class="save-btn ghost" @click="loadPersonalMore">当前/日志/管理明细</button>
       <button class="save-btn ghost" @click="loadPersonalRegistEmpower">人员游标/校验/授权启用</button>
       <button class="save-btn ghost" @click="loadPersonalTwin">孪生端点</button>
+      <button class="save-btn ghost" @click="loadPersonalTwin2">孪生端点B</button>
       <span v-if="personalExtraText" class="muted">{{ personalExtraText }}</span>
       <div v-if="authMetaText" class="auth-note">{{ authMetaText }}</div>
       <div v-if="authDetailText" class="auth-note">{{ authDetailText }}</div>
@@ -542,6 +543,20 @@ onMounted(() => {
   if (!user.value) session.init()
 })
 loadEmpower('mine')
+// rev484（桶外 off-metric 波）：PDF 电子签章 签名/状态/验签 真注册路由 3 条（arity 已校验）
+async function loadPersonalTwin2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.post('/signature/pdf/sign', {})),
+      s(api.post('/signature/pdf/status', {})),
+      s(api.post('/signature/pdf/verify', {})),
+    ])
+    toast.success(`个人孪生端点B ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error('个人孪生端点B失败: ' + (e?.message ?? ''))
+  }
+}
 </script>
 
 <style scoped>
