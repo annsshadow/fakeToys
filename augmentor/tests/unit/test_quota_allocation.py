@@ -20,6 +20,10 @@
    都不许改）。分层采样用 `instruction` 作组键时每组只有 1 条 ⇒ 份数 == 行数，
    逐段下取整 + 排序在 6902 段上是 6.8 ms；快路换成「按权重降序、平局按输入顺序取
    前 `total` 份」，所以这里钉的是换算法不换答案，而不只是换算法不换总数。
+8. **`caps=None` 且无保底的请求走单轮快路，且与多轮通用路径逐段同答**（L39 口径：
+   分层摊派的每组一次调用是 A53 的主要代价，快路把三段摊派从 3.632 µs 降到 1.804 µs）。
+   准入条件必须同时看两个参数：只看 `caps` 会吞掉 `minimum_each`，只看 `minimum_each`
+   会把让渡请求当成无上限。
 """
 import random
 
@@ -267,6 +271,118 @@ class TestUnitCapFastPath:
         """
         assert largest_remainder(6, [1, 1, 1, 5], caps=[1, 1, 1, 5]) == [1, 1, 1, 3]
         assert largest_remainder(17, [1, 1, 1, 1], caps=[1, 1, 1, 5]) == [1, 1, 1, 5]
+
+
+class TestNoCapFastPath:
+    """`caps=None` 且无保底时的单轮快路（L39 口径：还 A53 的账，一行答案都不许改）
+
+    依据：一般路径每轮的「取满并冻结」条件是 `floor >= limits[i]`，而 `caps=None` 把上限
+    读成 `total`，`exact = remaining * share / weight_sum <= remaining <= total` 永不撞线
+    ⇒ 循环必然一轮结束。快路因此只留下「下取整 + 按小数部分降序补 `left` 名」，实测三段
+    摊派 3.632 → 1.804 µs/次、2000 份 1166.8 → 593.9 µs/次。
+    """
+
+    @pytest.mark.parametrize("total,weights", [
+        (7, [1, 1, 1]), (7, [1, 1, 1, 1]), (1, [1, 1, 1]), (0, [3, 1, 2]),
+        (13, [0.8, 0.1, 0.1]), (5, [2, 2, 1]), (999, [1, 0, 0]), (3, [0, 0, 0]),
+        (4, [-1, 2, 3]), (2, [1e9, 1, 1]), (6, [0.5, 0.25, 0.25]), (11, [3, 3, 5]),
+    ])
+    def test_matches_the_multi_round_general_path(self, total, weights):
+        """oracle = 同一份权重配一份「大得撞不到」的上限，逼实现走多轮通用路径
+
+        `caps` 取 `max(total, 2)` ⇒ 任何一段的配额都不可能撞上它，所以通用路径的让渡与
+        冻结逻辑一步都不触发，答案必须与快路逐段相同。上限全为 1 的快路不会误抢这条
+        （`caps.count(1) != count`）。
+        """
+        room = max(total, 2)
+        assert largest_remainder(total, weights) == largest_remainder(
+            total, weights, caps=[room] * len(weights))
+
+    @pytest.mark.parametrize("seed", [21, 22, 23, 24])
+    def test_randomized_matrix_matches_the_general_path(self, seed):
+        """随机形状（掺浮点、零、负权重与 1–6 段）逐个与多轮通用路径对答案"""
+        rng = random.Random(seed)
+        for _ in range(120):
+            count = rng.randint(1, 6)
+            weights = [rng.choice([0, 1, 2, 5, 0.5, -3, 7.25, 0, 1])
+                       for _ in range(count)]
+            total = rng.choice([0, 1, 2, 5, 13, rng.randint(0, 400)])
+            room = max(total, 2)
+            assert largest_remainder(total, weights) == largest_remainder(
+                total, weights, caps=[room] * count), f"seed={seed} {total} {weights}"
+
+    @pytest.mark.parametrize("total,weights,expected", [
+        (5, [1, 1, 1], [2, 2, 1]),      # 平局 1.666/1.666/1.333 → 先补 0 段再补 1 段
+        (3, [1, 1], [2, 1]),            # 小数部分全相等 ⇒ 平局按段序，前一份赢
+        (1, [1, 1, 1], [1, 0, 0]),
+        (7, [4, 2, 1], [4, 2, 1]),      # 可整除的常规路径不得被顺手改掉
+        (7, [2, 1, 1], [3, 2, 2]),      # 小数部分 .5/.75/.75 ⇒ 补的是后两段，不是第一段
+        (10, [1, 1, 1], [4, 3, 3]),
+        (1, [0, 0, 0], [1, 0, 0]),      # 全零权重回落成「按份数均分」，即第一份
+    ])
+    def test_answers_are_the_textbook_largest_remainder(self, total, weights, expected):
+        """手算答案：快路换的是算法形状，不是数字"""
+        assert largest_remainder(total, weights) == expected
+
+    def test_non_positive_total_answers_zeros_like_the_general_path(self):
+        """`total` 非正时通用路径的 `while` 一步都不走 ⇒ 交出全 0，而不是负配额
+
+        快路若不显式收住这一形状，`int(负 exact)` 的下取整会交出负数配额（实测
+        `total=-5, weights=[1,1]` 落到 [-1,-1]），把一个静默的边角改成静默的错误。
+        """
+        for total in (0, -1, -50):
+            assert largest_remainder(total, [1, 2, 3]) == [0, 0, 0], f"total={total}"
+
+    @staticmethod
+    def _spy_fast_path(monkeypatch):
+        from augmentor import allocation as allocation_module
+        seen = []
+        real = getattr(allocation_module, "_no_cap_quota", None)
+        if real is None:  # 缺陷态（还没有快路）也要能被计数，红在「一次都没走」上
+            def real(*args, **kwargs):  # noqa: ANN001
+                raise AssertionError("fast path is missing")
+        def spy(*args, **kwargs):
+            seen.append(args)
+            return real(*args, **kwargs)
+        monkeypatch.setattr(allocation_module, "_no_cap_quota", spy)
+        return seen
+
+    def test_uncapped_request_uses_the_fast_path(self, monkeypatch):
+        """正向接线：`caps=None` 且无保底的请求必须真的走快路（一次）"""
+        seen = self._spy_fast_path(monkeypatch)
+        assert largest_remainder(7, [1, 1, 1]) == [3, 2, 2]
+        assert len(seen) == 1
+
+    @pytest.mark.parametrize("kwargs", [
+        {"caps": [1, 5, 5]},          # 有上限 ⇒ 让渡逻辑在场
+        {"caps": [5, 5, 5]},
+        {"minimum_each": 1},          # 有保底无上限 ⇒ 快路里没有「每份至少几条」的位置
+        {"caps": [5, 5, 5], "minimum_each": 1},
+    ])
+    def test_capped_or_minimum_each_requests_do_not_enter_the_fast_path(
+            self, monkeypatch, kwargs):
+        """反向接线：准入条件必须同时看 `caps` 与 `minimum_each`
+
+        只判 `caps is None` 会把 `minimum_each` 非 0 的请求送进单轮闭式；只判 `minimum_each`
+        则会把带上限的让渡请求当成无上限处理（少交条数）。两种写歪都在这里红。
+
+        这里刻意只用 `minimum_each=1`：`>= 2` 时一般路径的准入判据是 `total >= count`
+        而不是 `total >= count * minimum_each`，实测 `total=5, weights=[1,1,1],
+        minimum_each=2`（`caps` 为 `None` 或 `[5,5,5]` 同答）交出 `[2, 2, 2]`，
+        和 6 超发 1 条。那是本轮之前就在的缺陷，另立 A55，不在性能轮里顺手改答案。
+        """
+        seen = self._spy_fast_path(monkeypatch)
+        quotas = largest_remainder(5, [1, 1, 1], **kwargs)
+        assert len(seen) == 0, f"{kwargs} 走了快路"
+        assert sum(quotas) == 5
+
+    def test_split_and_random_paths_share_the_one_round_answer(self):
+        """两个划分器的三段大小必须仍与快路同答（L36 的跨路径契约不因快路失效）"""
+        for n in (7, 13, 91, 6902):
+            expected = largest_remainder(n, RATIOS)
+            items = [{"instruction": f"第{i}问", "output": f"答{i}"} for i in range(n)]
+            result = DataSplitter(seed=7).split(items)
+            assert (len(result.train), len(result.val), len(result.test)) == tuple(expected)
 
 
 class TestAggregateWeightedQuota:

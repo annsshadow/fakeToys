@@ -33,7 +33,10 @@ def largest_remainder(total: int,
     count = len(weights)
     if count == 0:
         return []
-    if caps is not None and caps.count(1) == count:
+    if caps is None:
+        if not minimum_each:
+            return _no_cap_quota(total, weights, count)
+    elif caps.count(1) == count:
         return _unit_cap_quota(total, weights, count)
 
     limits = list(caps) if caps is not None else [total] * count
@@ -85,6 +88,45 @@ def largest_remainder(total: int,
             limits[i] -= take[pos]
         remaining = left
 
+    return alloc
+
+
+def _no_cap_quota(total: int, weights: Sequence[float], count: int) -> List[int]:
+    """没有上限、没有保底时的配额：一般路径的答案，但只跑一轮、不建上限表
+
+    可这样推：通用路径里「本轮取满并冻结」的条件是 `floor >= limits[i]`，而 `caps=None`
+    把上限读成 `total`，于是 `exact = remaining * share / weight_sum <= remaining <= total`
+    —— 永不撞线，`while` 必然在一轮后结束。剩下的只有两件事：落下取整，再把
+    `left = remaining - sum(floor)` 个名额按小数部分从大到小发下去（平局按段序）。
+    补发时也不用查「这一份是否已取满」：`left > 0` 蕴含所有 `floor < total`
+    （若某份 `floor == total` 则 `sum(floor) >= total`，`left` 就非正），而
+    `left < count`（各份小数部分都小于 1 ⇒ `sum(floor) > total - count`），所以份数一定够发。
+    负权重按 0 读、全零权重均分，这两条与一般路径用的是同一条式子。`total` 非正时一般
+    路径的 `while` 一步都不走（交出全 0，而不是负配额），这里同答。
+    """
+    if total <= 0:
+        return [0] * count
+    shares = [w if w > 0 else 0.0 for w in weights]
+    weight_sum = sum(shares)
+    if weight_sum <= 0:
+        shares = [1.0] * count
+        weight_sum = float(count)
+    alloc = [0] * count
+    # (小数部分的相反数, 段序)：升序排即「小数部分降序、平局按段序」
+    keys = [(0.0, 0)] * count
+    for pos, share in enumerate(shares):
+        exact = total * share / weight_sum
+        floor = int(exact)
+        alloc[pos] = floor
+        keys[pos] = (floor - exact, pos)
+    left = total - sum(alloc)
+    if left:
+        keys.sort()
+        for _, pos in keys:
+            if left == 0:
+                break
+            alloc[pos] += 1
+            left -= 1
     return alloc
 
 
