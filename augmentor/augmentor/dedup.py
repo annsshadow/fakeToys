@@ -151,26 +151,38 @@ class Deduplicator:
         Returns:
             向量矩阵
         """
-        # 使用字符 n-gram 的 TF 向量
-        vocab = {}
-        for text in texts:
-            for i in range(len(text) - 1):
-                ngram = text[i:i+2]
-                if ngram not in vocab:
-                    vocab[ngram] = len(vocab)
-
+        # A19：过去是两遍 Python 双循环，第二遍每字符做 `if ngram in vocab` 再
+        # `vectors[i, c] += 1`。那个 `if` **恒为真**——`vocab` 正是同一份 `texts` 在
+        # 第一遍建出来的，任何出现的 n-gram 必在其中——于是每字符白付一次哈希查表 +
+        # 分支判定，且它是一条长期被覆盖率报告出来的死分支。
+        # 「合并成单趟」这条路实测**不能落地**：稠密矩阵的列宽 = 全量 vocab 大小，必须
+        # 先扫完全部文本才能分配，任何单趟写法都得把 O(总字符) 的出现序列缓存在矩阵旁边，
+        # 直接复用 `_ngram_entries` 散射就撞上 L10 的显存护栏
+        # `test_fallback_encode_peak_holds_only_one_matrix`（真实测得峰值 6.8× 一个矩阵）。
+        # 这里保留两遍、只做两件既不涨峰值又去掉浪费的事：① 删掉恒真的 `if`；
+        # ② 用**每篇临时**的计数字典把「逐字符 numpy 读改写 `+=`」换成「按该篇去重后的
+        # 词条数写一次 `=`」——字典随每篇迭代结束即释放，峰值仍是「一个矩阵 + vocab」。
         # dtype 必须是 float32：这是**稠密** n×vocab 矩阵，也是这条路径上最大的
         # 一笔分配（真实 6902 条数据的 vocab 有 23033 项 → float64 要 1.27 GB，
         # float32 只要 0.64 GB）。调用方写的 `np.asarray(..., dtype=np.float32)`
         # 在 dtype 不符时是整份再复制一遍，所以 float64 还额外多出 0.64 GB。
         # TF 值是「某二元组在该文档里出现几次」，个位数量级，float32 在 2^24
         # 以内精确表示整数，计数不会有任何损失。
+        vocab: Dict[str, int] = {}
+        for text in texts:
+            for i in range(len(text) - 1):
+                ngram = text[i:i + 2]
+                if ngram not in vocab:
+                    vocab[ngram] = len(vocab)
+
         vectors = np.zeros((len(texts), len(vocab)), dtype=np.float32)
         for i, text in enumerate(texts):
+            counts: Dict[str, int] = {}
             for j in range(len(text) - 1):
-                ngram = text[j:j+2]
-                if ngram in vocab:
-                    vectors[i, vocab[ngram]] += 1
+                ngram = text[j:j + 2]
+                counts[ngram] = counts.get(ngram, 0) + 1
+            for ngram, c in counts.items():
+                vectors[i, vocab[ngram]] = c
 
         # L2 归一化，全程原地：`np.linalg.norm` 内部要先算平方和并**另起一份
         # 同尺寸临时矩阵**，`vectors / norms` 又是一份——那两步在 0.64 GB 量级
