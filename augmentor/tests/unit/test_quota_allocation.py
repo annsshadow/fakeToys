@@ -3,7 +3,7 @@
 
 """「比例 → 条数」的配额分配测试（L36 口径：余数必须有确定归属）
 
-钉住七条主张：
+钉住九条主张：
 
 1. **分配之和 == 请求条数**。`int(total * 比例)` 逐份下取整会少交：等权 4 组要 7 条，
    实测 HEAD 逐组 `int(1.75)` → 只交回 **4** 条，报告照写「采样完成」。
@@ -24,6 +24,8 @@
    分层摊派的每组一次调用是 A53 的主要代价，快路把三段摊派从 3.632 µs 降到 1.804 µs）。
    准入条件必须同时看两个参数：只看 `caps` 会吞掉 `minimum_each`，只看 `minimum_each`
    会把让渡请求当成无上限。
+9. **`minimum_each` 的准入读「保底之和装不装得下」**（L40 口径：A49/A55）。旧判据读
+   「名额盖得住份数」，在 399,594 例契约合法穷举里超发 **24,889** 例、误拒 **261** 例。
 """
 import random
 
@@ -231,6 +233,36 @@ class TestUnitCapFastPath:
         assert quotas[:500] == [1] * 500
         assert 1 not in quotas[500:]
 
+    @staticmethod
+    def _spy_unit_path(monkeypatch):
+        from augmentor import allocation as allocation_module
+        seen = []
+        real = getattr(allocation_module, "_unit_cap_quota", None)
+        if real is None:  # 缺陷态（还没有快路）也要能被计数，红在「一次都没走」上
+            def real(*args, **kwargs):  # noqa: ANN001
+                raise AssertionError("unit-cap fast path is missing")
+        def spy(*args, **kwargs):
+            seen.append(args)
+            return real(*args, **kwargs)
+        monkeypatch.setattr(allocation_module, "_unit_cap_quota", spy)
+        return seen
+
+    def test_unit_cap_request_uses_the_fast_path_even_with_a_guarantee(self, monkeypatch):
+        """接线护栏：上限全 1 的请求必须走快路，`minimum_each` 不得把它赶出快路
+
+        分层采样的真实调用正是 `caps=组大小, minimum_each=1`（`dataset_ops.py:242`），
+        每组只有 1 条时 `caps` 全 1 ⇒ 落在这条快路上。L40 把保底的准入改成「保底之和
+        装不装得下」，而 `minimum_each` 在上限 1 之下被夹成 1、保底之和必然等于
+        `count` —— 快路里 `total >= count` 那一支已经把它判完了，所以准入**不该**多读
+        这个参数。多读一次（注入模式 12）答案不变、代价从一次比较变成一般路径的
+        按份数平方，所以这里钉的是接线而不是答案。
+        """
+        seen = self._spy_unit_path(monkeypatch)
+        sizes = [1] * 2000
+        assert largest_remainder(500, sizes, caps=sizes, minimum_each=1) == \
+            [1] * 500 + [0] * 1500
+        assert len(seen) == 1
+
     @pytest.mark.parametrize("total,weights,expected", [
         (2, [1] * 4, [1, 1, 0, 0]),
         (3, [7, 7, 7], [1, 1, 1]),
@@ -358,6 +390,10 @@ class TestNoCapFastPath:
         {"caps": [5, 5, 5]},
         {"minimum_each": 1},          # 有保底无上限 ⇒ 快路里没有「每份至少几条」的位置
         {"caps": [5, 5, 5], "minimum_each": 1},
+        {"minimum_each": 2},          # 保底装不下（3 × 2 > 5）⇒ 走一般路径去判准入
+        {"caps": [5, 5, 5], "minimum_each": 2},
+        {"caps": [2, 2, 2], "minimum_each": 2},   # 保底之和 6 > 5 ⇒ 整条退回按权重摊派
+        {"caps": [1, 2, 2], "minimum_each": 2},   # 保底之和恰等于 5 ⇒ 边界上准入
     ])
     def test_capped_or_minimum_each_requests_do_not_enter_the_fast_path(
             self, monkeypatch, kwargs):
@@ -366,10 +402,10 @@ class TestNoCapFastPath:
         只判 `caps is None` 会把 `minimum_each` 非 0 的请求送进单轮闭式；只判 `minimum_each`
         则会把带上限的让渡请求当成无上限处理（少交条数）。两种写歪都在这里红。
 
-        这里刻意只用 `minimum_each=1`：`>= 2` 时一般路径的准入判据是 `total >= count`
-        而不是 `total >= count * minimum_each`，实测 `total=5, weights=[1,1,1],
-        minimum_each=2`（`caps` 为 `None` 或 `[5,5,5]` 同答）交出 `[2, 2, 2]`，
-        和 6 超发 1 条。那是本轮之前就在的缺陷，另立 A55，不在性能轮里顺手改答案。
+        `minimum_each >= 2` 的几行是 L40 才加进来的：那时一般路径的准入判据还是
+        `total >= count`，`total=5, weights=[1,1,1], minimum_each=2` 会交出 `[2,2,2]`
+        （和 6，超发一条，即 A55），`sum(quotas) == 5` 这一条断言当场就红。判据改成
+        「保底之和装得下」之后同一请求交 `[2,2,1]`，本用例才只测它「不进快路」。
         """
         seen = self._spy_fast_path(monkeypatch)
         quotas = largest_remainder(5, [1, 1, 1], **kwargs)
@@ -383,6 +419,102 @@ class TestNoCapFastPath:
             items = [{"instruction": f"第{i}问", "output": f"答{i}"} for i in range(n)]
             result = DataSplitter(seed=7).split(items)
             assert (len(result.train), len(result.val), len(result.test)) == tuple(expected)
+
+
+class TestMinimumEachAdmission:
+    """主张 9：`minimum_each` 的准入读「保底之和装不装得下」，不是「名额盖不盖得住份数」
+
+    A49/A55（L37 立、L39 复记）：判据 `total >= count` 在两处同时错。
+    ①名额盖得住份数却盖不住「保底 × 份数」时**超发**（`sum(配额) > total`）——
+    契约合法域穷举 399,594 例（1..5 段 × 权重 1/2/3 × `caps` 取 None 或 0/1/2/5 ×
+    `total` 0..12 × `minimum_each` 0..5）里 **24,889 例**；
+    ②份数里有吃不下保底的段（上限为 0）时**误拒**真正装得下的请求 —— 同域 **261 例**
+    「保底其实装得下，却没给任何一份保底」。
+    修口 = 先按各自上限夹一遍保底、再求和判准入。
+
+    在库可达面不动：唯一的调用方 `dataset_ops._stratified_sample` 传 `minimum_each=1`
+    且 `caps` 是组大小（必然 >= 1），那时「保底之和」恰为 `count × 1`，新判据与旧判据
+    同一条式子。上面那 399,594 例里 `minimum_each <= 1` 的新旧分歧共 253 例，
+    **全部含上限为 0 的段**（不含零上限的 0 例）。
+    """
+
+    @pytest.mark.parametrize("total, weights, caps, minimum_each, expected", [
+        # ①超发族：保底 × 份数 > 名额 ⇒ 整条保底不生效，退回纯按权重摊派
+        (5, [1, 1, 1], None, 2, [2, 2, 1]),
+        (5, [1, 1, 1], [5, 5, 5], 2, [2, 2, 1]),
+        (2, [5, 5], [10, 10], 2, [1, 1]),
+        (7, [1] * 4, None, 2, [2, 2, 2, 1]),
+        (11, [5, 5, 5], None, 4, [4, 4, 3]),
+        (3, [1, 1], None, 5, [2, 1]),
+        # ②装得下族：答案与 L39 逐字相同，本轮不许动
+        (8, [1, 1, 1], None, 2, [3, 3, 2]),
+        (12, [5, 5, 5], None, 4, [4, 4, 4]),
+        (6, [100, 1, 1], [2, 2, 2], 2, [2, 2, 2]),
+        (7, [100, 1, 1], None, 1, [5, 1, 1]),
+        (3, [1] * 8, None, 1, [1, 1, 1, 0, 0, 0, 0, 0]),
+        # ③边界：保底之和恰好等于名额 ⇒ 「装得下」，必须逐份给满（`<=` 不是 `<`）
+        (4, [1, 2], None, 2, [2, 2]),
+        (9, [3, 3, 3], [3, 3, 3], 3, [3, 3, 3]),
+    ])
+    def test_answers(self, total, weights, caps, minimum_each, expected):
+        got = largest_remainder(total, weights, None if caps is None else list(caps),
+                                minimum_each)
+        assert got == expected
+
+    def test_a_guarantee_that_does_not_fit_is_dropped_whole_not_partially(self):
+        """装不下时是「整条退回按权重摊派」，不是「能塞几份塞几份」
+
+        `total=9, weights=[5,1,1], minimum_each=4`：保底之和 12 > 9 ⇒ 不生效 ⇒
+        交回 `[7, 1, 1]`（纯最大余数法）。若改成尽力塞，答案会是 `[4, 4, 1]` ——
+        那等于让保底反过来吞掉权重，`minimum_each` 就成了第二份权重而不是下界。
+        """
+        assert largest_remainder(9, [5, 1, 1], None, 4) == [7, 1, 1]
+
+    def test_segments_with_no_room_do_not_count_against_the_guarantee(self):
+        """份数里含「上限 0」的段时，旧判据会误拒一个真正装得下的请求
+
+        5 段里三段的上限是 0 ⇒ 吃得下保底的只有 2 段 ⇒ 保底之和是 2 而不是 5，
+        `total=4` 装得下。旧判据读份数（`4 >= 5` 为假）而拒掉，交回 `[0,0,0,1,3]`；
+        新判据先夹一遍上限再求和，交 `[0,0,0,2,2]`。`minimum_each` 取 1 或 2 同答：
+        上限 2 的那段在两种保底下都只吃得下 2 条。
+        """
+        caps = [0, 0, 0, 2, 5]
+        weights = [1, 1, 1, 1, 2]
+        for each in (1, 2):
+            assert largest_remainder(4, weights, list(caps), each) == [0, 0, 0, 2, 2], each
+
+    def test_the_guarantee_is_clipped_by_each_cap_before_it_is_summed(self):
+        """保底要按各自上限夹过再求和：`caps=[2,2,2] + minimum_each=5` 的保底之和是 6"""
+        assert largest_remainder(6, [1, 1, 1], [2, 2, 2], 5) == [2, 2, 2]
+        # 上限之和不足时短交是诚实答案（`caps` 之和 3 < 名额 5），但不是超发
+        assert largest_remainder(5, [1, 1, 1], [1, 1, 1], 2) == [1, 1, 1]
+        assert largest_remainder(4, [1, 1], [0, 0], 3) == [0, 0]
+
+    def test_no_legal_request_ever_gets_more_items_than_it_asked_for(self):
+        """不变量护栏：`sum(配额) <= total`，且逐段不越上限、装得下时保底必到
+
+        这条是 A49/A55 的直接护栏 —— 上面那些定点答案换任何一种判据都能凑出来，
+        而「全域不超发」只有准入判据写对才成立。域取契约合法形状（段数 1..5、
+        `caps` 为 None 或含 0 的上限、`total` 0..12、`minimum_each` 0..4），
+        展开 1,625 例。
+        """
+        for count in (1, 2, 3, 4, 5):
+            for total in range(0, 13):
+                for each in range(0, 5):
+                    cap_sets = [None, [1] * count, [total] * count,
+                                [0] * count, [i % 3 for i in range(count)]]
+                    for caps in cap_sets:
+                        limits = [total] * count if caps is None else list(caps)
+                        quotas = largest_remainder(total, [1] * count, caps, each)
+                        assert sum(quotas) <= total, (count, total, caps, each, quotas)
+                        assert all(q <= lim for q, lim in zip(quotas, limits)), \
+                            (count, total, caps, each, quotas)
+                        floor_total = sum(min(each, lim) for lim in limits)
+                        if each and floor_total <= total:
+                            assert all(q >= each for q, lim in zip(quotas, limits)
+                                       if lim >= each), (count, total, caps, each, quotas)
+                        else:
+                            assert sum(quotas) == min(total, sum(limits))
 
 
 class TestAggregateWeightedQuota:
