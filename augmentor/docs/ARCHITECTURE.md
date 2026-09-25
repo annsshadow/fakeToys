@@ -2003,11 +2003,63 @@ help 文案变化不进任何断言。**仓外脚本未量**（与 A89 同一条
 **新立三债**：**A98** —— 本轮只把**会崩的字符**换掉，没碰根因（CLI 的 stdout 仍按 locale 编码），
 数据集里只要有一条含 emoji 的样本，`quality-report` / `audit` 这类命令在 GBK 管道下仍会整条崩成 rc=1，
 与判决码同值；根治要把出口编码钉成 UTF-8，而那会改「中文输出重定向到文件的字节契约」（下游按 GBK
-读的脚本会花），是对外破坏性变更，得单独拍。**A99** —— `--gate` 是二值档，六条命令里只有
+读的脚本会花），是对外破坏性变更，得单独拍。**L56 更正并结案**：这句「得单独拍」的前提是「根治
+只有两档、两档都动对外契约」，而实测还有第三档 —— 只把错误处理器从 `strict` 换成 `replace`、
+不动编码 ⇒ 能被编码的字节一个都不变（A/B 实测见 §3.31），所以 A98 不必再等拍板。**A99** —— `--gate` 是二值档，六条命令里只有
 `quality-report` 带阈值（`--threshold`），`check-leakage` 的 `leak_rate` 与 `audit` 的发现条数这两个
 **计数形判决位没有旋钮** ⇒ 「泄漏率超过 1% 才算失败」今天仍然只能人读 JSON。**A100** ——
 `doctor` / `auto-test` / `migrate` 三条的**判负**路径只由桩覆盖（真值随本机装了哪些包、语料内容与运行
 时刻而变，承 L52「断言里不写随环境而变的数」），真实端到端只钉到「不崩」与「默认恒 0」两档。
+
+### 3.31 L56：把「每轮手跑的自查」冻成用例 —— 文档结构五判据 + 编码不再参与退出码（关闭 A93 / A98，无新立）
+
+本轮的选题不是新功能，而是**同一笔债连付三轮**：A93 从 L53 起每轮靠 `Temp/` 里的一次性脚本手跑
+（L53 立粗体维、L54 立表格维 + 「数竖线先剥行内码」、L55 立「每表第二行必须是分隔行」），而
+`Temp/` 不入库 ⇒ 判据随轮次流失，L55 因此给自己排了「L56 首选」。两件事一次做完。
+
+**其一：仓库 Markdown 的五条结构判据进测试**（`tests/unit/test_docs_markdown_structure.py`，53 例）。
+判据 = 行尾不混用 / 围栏闭合 / 粗体成对 / 剥行内码后列数一致 / 每表第二行必须是分隔行。
+**范围从 A93 立项写的「四份主文档」扩到「顶层 + `docs/` 平铺的全部 9 份」**，理由是先测后写：
+一次扫完 9 份（Temp `l56/probe.txt`）⇒ 五维全绿、0 份需要修 ⇒ 扩容零成本，且下一轮新增文档自动进守卫。
+不用递归扫：实测 `rglob("*.md")` 会拽进 `web/node_modules` 里 400+ 份第三方 README（全仓 `.md` 4,354 份），
+那不是本仓库的交付面。守卫配三条防空转（发现集非空、表格 / 围栏 / 粗体三维各自「确实看到了东西」）
+与六条变异例。**注入自证**（Temp `l56/inject.txt`）：把 9 份真实文档读进内存，逐维各注入一处缺陷
+（注入必须用各文档自己的行尾，否则给纯 LF 文档追加 `\n` 根本测不到「混用」那一维）⇒
+**45 处注入 45 处被抓、跨维串扰 0、基线 9 份全绿**；全程不写任何仓库文件。
+
+**其二：把编码从退出码的语义里摘出去**（A98 结案）。L55 说这一档「得单独拍」，是因为把根治想成了
+只有两档（钉 UTF-8 / 给崩溃另立一档码），而两档都改对外契约 —— **这个前提是错的**：还有第三档，
+**只换错误处理器、不换编码**（`augmentor/cli/io.py:harden_stdio()`，由 `cli.py:main()` 第一件事调用）。
+能被 locale 编码的字符走同一条编码路径 ⇒ 字节不变；只有今天**根本产不出来**（抛 `UnicodeEncodeError`）
+的那批字符改落一个 `?`。破坏面按 A98 的要求先量了：
+
+- **stdout 侧**（Temp `l56/gbkblast_pre.txt` / `_post.txt`，`PYTHONIOENCODING=gbk` + 含 emoji 语料
+  × 16 条命令）：改前 **4 条崩成 rc=1**（`check-leakage` / `stats` / `preview` / `search`，前三条
+  stdout 0 字节），其中 `check-leakage` 正是 L55 刚接上 `--gate` 的六条之一 ⇒ 「CI 门禁」在一台
+  GBK 机器上会被一条 emoji 样本变成「永远红」。改后 16 条全 rc=0、0 条编码崩。
+- **非破坏性 A/B**（Temp `l56/gbkbytes.txt`：A = `git show HEAD:augmentor/cli.py` 抄出的改前入口，
+  B = 工作树入口，同一语料逐条比 stdout 的 sha1）：**10 条逐字节相同**、4 条正是改前崩掉的那批、
+  2 条（`monitor` / `benchmark`）**同一入口连跑两次自身即变 ⇒ 不可判定**（Temp `l56/ctrl.txt`），
+  按 L52 那条纪律不进任何主张。`clean --output` 的落盘文件 sha A/B 相同。
+- **为什么是 `replace` 而不是 `backslashreplace`**：兜底字符必须留在 JSON 的合法字符集里，
+  `\U0001f342` 会把一份本来能 `json.loads` 的报告变成带非法转义的废文档 ⇒ 这条口径钉在
+  `tests/integration/test_cli_stdio_encoding.py`（12 例，含一条「GBK 管道今天仍然编不出 emoji」
+  的前提断言，防的是整批用例空过）。判据有效性同样用 A/B 自证：同一批命令换 HEAD 入口跑
+  ⇒ 4 条全红（Temp `l56/inj2.txt`）。
+- **落盘侧是同一根因**（Temp `l56/encaudit.txt`，AST 扫全仓已跟踪 `.py`）：文本档 `open()` 不带
+  `encoding` 的产品代码只剩 `versioning.py` 两处写（`:197` / `:372`），而读它的那处 `read_text()`
+  同样不带 ⇒ 本轮三处一起钉成 `utf-8`。**为什么这不算破坏**：那里只写 `_generate_version_id()`
+  产出的 `v_<数字时间戳>[_<数字>]`，纯 ASCII ⇒ UTF-8 与 GBK 逐字节相同，旧文件用新读法读得出。
+  判据冻成 `tests/unit/test_no_locale_text_io.py`（AST 扫产品包 104 份源文件，实测 0 违规 ⇒
+  守卫落地即绿，此后新增一处不带编码的文本读写当场红）。
+- **一处自造缺陷要记**：第一版审计用正则 `\bopen\(([^()]*)\)` 数，而 `open(x.with_suffix('.txt'), 'w')`
+  这种带嵌套括号的调用**整条匹配不上** ⇒ 它报「219 个 open / 6 处不带编码」，AST 版是「221 个 open /
+  5 处不带编码，其中 3 处是二进制档、2 处正是 `versioning.py` 那两个」。正则版不只是数错，它把
+  方向也指错了（两份名单里没有真缺陷）。这是 L55 那条「引用计数器之前先验它的换算」在本轮第一次
+  现形，且现形于我自己刚写的第一版脚本 ⇒ 新增纪律：**判据型脚本一律走 AST，不用正则数代码**。
+
+**性能不主张任何方向**：`harden_stdio()` 是进程启动期两次属性判断加至多两次 `reconfigure`，落在
+解释器启动与 import 的噪音底下，本轮不做 A/B、也不引用任何 µs 数。
 
 ## 4. 核心数据流
 
@@ -2110,7 +2162,8 @@ help 文案变化不进任何断言。**仓外脚本未量**（与 A89 同一条
 | 静态校验面比运行时**更松**（bool / NaN 混进数值字段，L49 起） | `_validate_known_fields` 的内联类型判定原先按 `isinstance(value, (int, float))` 读，而 `isinstance(True, int)` 恒真 ⇒ 7 个数值规格键 7/7 把 YAML 里的 `true` 判成合法，四道运行时判据却全部拒 bool —— 症状是 `validate-config` 绿灯、建管道即 `DataValidationError`。修法：内联判定排 bool（`type: bool` 的开关字段不受影响）+ 补 NaN 判据。两条洞覆盖面不同：`true` 在旧形状下 **7/7 个数值键完全无报错**，NaN 只漏 **4 个 `type: float` 键**（3 个 int 键靠 `isinstance` 本来就拦得住）⇒ 各堵一片、不重复；注入分判也各成一档（摘 bool 排除 ⇒ 2 红，摘 NaN 判据 ⇒ 5 红）。根因是 A70 那套**只有测试在调用**的死助手：它们早就排了 bool 却没有 NaN 判据，两套口径各拿对半边、活的那套恰好是错的半边。同见 §3.24 |
 | **校验形 CLI 命令的「判决」**（`validate` / `validate-config` / `dependency --action validate`，L53 起） | 上面几行管的是**异常**怎么翻译（抛 `DataValidationError` ⇒ CLI exit 1 / API 400）；这一行管**判决**（命令正常跑完、但结论是「不合格」）怎么翻译。口径：**判负 ⇒ `sys.exit(1)`，通过 ⇒ 不抛 `SystemExit`**（沿用测试面 159 处 `assert code is None` 那套既有约定，本轮不新造形状）；**只有 WARNING 不判负**（与 L52 的「写了没人读」定级同轴，否则诊断通道出声即挡路）。**报告形命令（`audit` / `check-leakage` / `doctor`）刻意不接** —— 三条 handler 体内零判决词（37 个 `run_*` handler 普查，Temp NONCE-L53-CENSUS），接上等于新造一条「有发现即失败」的隐含契约。先例：`health-gate`（`cli/commands/quality.py:205`）。**另有三条 `quality-report` / `auto-test` / `migrate` 有判决语义却仍恒 0**（`overall_passed` / `failed_tests` / `failed_items`）——那是本轮拍定不动的欠账，要拍的是产品口径不是机制，记在 A91 边界 ①。同一批还把 `cli.py:46-53` 的 `load_config` 挪进 `try` ⇒ 配置加载期异常与 handler 异常同形（「`错误: …` + exit 1」），CLI 的失败从此只有一种形状。**已知空洞（A92）**：`is_valid = valid_count == len(items)` 让**空数据集空洞地判「有效」**（SDK / CLI / API 三层同形，实测 `exit 0` + 200 `{'is_valid': True, 'total_items': 0}`）⇒ 退出码 0 只代表「没有不合格的记录」，不代表「验过东西」。详见 §3.28 |
 | **配置加载期「写了没人读」的出声面**（`load_config`，L54 起） | 同一条判据有**两条通道**而不是一份文案两份实现：诊断面 `validate_config` 的 `warnings` 与产品面 `load_config` 的 `logging.warning` 由同一个 `_warn_unread_keys` 产生，两条通道的等式用常量 `UNREAD_MARKER = "没人读取"` 做机械锚（比对方式就是「这个词在不在文案里」，抄写的两份文案迟早漂移）。三条否决定下形状：**不写 stdout**（那是各命令的输出契约，`stats` 是 JSON）、**不进退出码**（承上一行的「只有 WARNING 不判负」）、**走 `logging` 而非 `print`**（API 进程 `basicConfig` 之后与它同一出口，未配置时由 `logging.lastResort` 落 stderr；**注意配置里的 `logging.level` 目前管不住它** ⇒ A97）。**只出「没人读」，不出「环境变量未设置」**（后者条数是本机 shell 的函数，见 §3.27 那条纪律）。出厂 `config.yaml` 零命中 ⇒ 默认档一次运行 **0 行**额外输出；代价实测 aug **+74.6 µs（1.09 %）** / py314 **+146.9 µs（2.17 %）**，同进程正反双序同号 ⇒ 可判定。同一轮把「0 字节 / 只含注释的配置文件」从裸 `TypeError` 改成与「路径不存在」同档（全默认 + `exit 0`，A94），但这留下一对**对立判决**：产品面「全默认、通过」对 诊断面「`is_valid=False` + 配置必须是字典类型」⇒ **A96**，要拍的是产品口径。详见 §3.29 |
-| **CLI 退出码的三种形状 + 判决的唯一出口**（`cli/verdict.py:verdict_exit`，L55 起） | `0` = 判决通过、或这条命令压根不判负；`1` = **判决未通过**（只由 `verdict_exit` 产生）**或** handler 抛异常被 `cli.py:main()` 翻译成「`错误: …` + 1」⇒ 同样是 1，**靠 stderr 有无「错误:」分「判负」与「崩溃」**，这条二义性本轮刻意没动（改异常档要动对外契约）；`2` = argparse 用法错误（无判决位的命令传 `--gate` 即落此档，实测 `stats --gate` ⇒ 2 且 stderr 含 `unrecognized arguments`，**不落 1**）。上一行那句「报告形命令刻意不接」自本轮起变成**默认不接、`--gate` 才接**：六条报告形命令（`quality-report` / `audit` / `check-leakage` / `doctor` / `auto-test` / `migrate`）各带一条旗标，默认档一字未改。守卫从推导不抄清单：`tests/integration/test_cli_verdict_wiring.py` 钉三条集合等式（parser 声明 `--gate` 的命令 == handler 里传 `enforce=args.gate` 的，6 条；handler 源码出现 `verdict_exit(` == 子命令 help 含「退出码」，10 条），改前基线是空集对 3 条 ⇒ 不是同义反复。另立一条**编码护栏**：CLI 面向文案里的字符必须能被 GBK 编码（`⇒` / `✅` / `❌` 都不行）—— 子进程 stdio 在本机默认 `gbk`，一个字符能让整条命令崩成 rc=1，即**判决码被一个装饰符占掉**（本轮实测两起，一起既有、一起本轮自造）。欠账：`--gate` 是二值档、计数形判决位没有阈值（A99），含 emoji 的用户数据仍会崩（A98），三条命令的判负路径只由桩覆盖（A100）。详见 §3.30 |
+| **CLI 退出码的三种形状 + 判决的唯一出口**（`cli/verdict.py:verdict_exit`，L55 起） | `0` = 判决通过、或这条命令压根不判负；`1` = **判决未通过**（只由 `verdict_exit` 产生）**或** handler 抛异常被 `cli.py:main()` 翻译成「`错误: …` + 1」⇒ 同样是 1，**靠 stderr 有无「错误:」分「判负」与「崩溃」**，这条二义性本轮刻意没动（改异常档要动对外契约）；`2` = argparse 用法错误（无判决位的命令传 `--gate` 即落此档，实测 `stats --gate` ⇒ 2 且 stderr 含 `unrecognized arguments`，**不落 1**）。上一行那句「报告形命令刻意不接」自本轮起变成**默认不接、`--gate` 才接**：六条报告形命令（`quality-report` / `audit` / `check-leakage` / `doctor` / `auto-test` / `migrate`）各带一条旗标，默认档一字未改。守卫从推导不抄清单：`tests/integration/test_cli_verdict_wiring.py` 钉三条集合等式（parser 声明 `--gate` 的命令 == handler 里传 `enforce=args.gate` 的，6 条；handler 源码出现 `verdict_exit(` == 子命令 help 含「退出码」，10 条），改前基线是空集对 3 条 ⇒ 不是同义反复。另立一条**编码护栏**：CLI 面向文案里的字符必须能被 GBK 编码（`⇒` / `✅` / `❌` 都不行）—— 子进程 stdio 在本机默认 `gbk`，一个字符能让整条命令崩成 rc=1，即**判决码被一个装饰符占掉**（本轮实测两起，一起既有、一起本轮自造）。欠账：`--gate` 是二值档、计数形判决位没有阈值（A99），三条命令的判负路径只由桩覆盖（A100）；曾列的「含 emoji 的用户数据仍会崩（A98）」自 L56 起由 stdio 编码兜底按住 ⇒ 见下一行与 §3.31。详见 §3.30 |
+| **编码与文档结构这类「过程判据」改由用例守**（L56 起） | 两半同因：文本 I/O 跟着 locale 走。**stdout / stderr** 在 CLI 入口把错误处理器从 `strict` 换成 `replace`（`augmentor/cli/io.py:harden_stdio()`）⇒ **编码再也吃不掉退出码**，编不出的字符落一个 `?`、JSON 输出仍可 `json.loads`（选 `replace` 而不是 `backslashreplace` 的理由就是这条可解析性：`\U0001f342` 会把报告变成带非法转义的废文档）；**产品包内**文本读写必须显式带 `encoding=`，由 AST 扫 104 份源文件守着（`tests/unit/test_no_locale_text_io.py`，落地时 0 违规）。**能编码的字节一个都没变**（改前入口与改后入口 A/B 比 stdout sha1：10 条相同、4 条是改前崩掉的那批、2 条自身连跑即变因而不可判定 ⇒ 不进主张）。另一半：仓库 9 份交付面 Markdown 的五条结构判据（行尾不混用 / 围栏闭合 / 粗体成对 / 剥行内码后列数一致 / 每表第二行必须是分隔行）从「每轮手跑 `Temp/` 脚本」冻进 `tests/unit/test_docs_markdown_structure.py`，配 45 处内存注入自证。新增纪律：**判据型脚本一律走 AST，不用正则数代码**（正则第一版把带嵌套括号的 `open(...)` 调用整条漏掉 ⇒ 数错且把方向也指错）。详见 §3.31 |
 | 断点文件损坏 | 记录 ERROR 并返回 `None`，退化为从头开始 |
 
 「取前 N 条」这一类旋钮（`limit` / `offset` / `top_k` / `preview_size` / `batch_size`

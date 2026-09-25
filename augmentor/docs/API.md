@@ -146,6 +146,12 @@ $ python cli.py validate-config --config typo_config.yaml
   哪些命令接了这套口径由 `tests/integration/test_cli_verdict_wiring.py` 从 **parser 声明与
   handler 源码双向推导**对账（声明 `--gate` 的命令 == handler 里真传 `enforce=args.gate` 的；
   源码出现 `verdict_exit(` == 子命令 help 里宣称「退出码」的），不抄清单。
+- **编码不参与退出码**（L56 起）：CLI 入口把 stdout / stderr 的错误处理器从 `strict` 换成
+  `replace`，产品侧文本读写一律显式带 `encoding=` ⇒ 用户数据里含 emoji（或任何当前 locale
+  编不出的字符）时命令照样跑完，那个字符落成一个 `?`，JSON 输出仍可被 `json.loads` 解析。
+  上面「`1` = 崩溃」那一支从此只对应真异常，不再对应编码事故；能被编码的字符逐字节不变。
+  守卫：`tests/integration/test_cli_stdio_encoding.py`（真起子进程，`PYTHONIOENCODING=gbk`）
+  与 `tests/unit/test_no_locale_text_io.py`（AST 扫产品包，禁止新增不带编码的文本 I/O）。
 
 ### 跨源（CORS）
 

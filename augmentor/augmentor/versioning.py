@@ -194,7 +194,7 @@ class VersionManager:
             self._current_symlink.symlink_to(version_dir)
         except OSError:
             # Windows 无管理员权限时，创建 .txt 文件记录当前版本
-            with open(self._current_symlink.with_suffix('.txt'), 'w') as f:
+            with open(self._current_symlink.with_suffix('.txt'), 'w', encoding='utf-8') as f:
                 f.write(version_id)
         
         logger.info(f"创建版本: {version_id}, 数据条数: {len(items)}")
@@ -278,7 +278,7 @@ class VersionManager:
         # 尝试读取 .txt 文件
         txt_path = self._current_symlink.with_suffix('.txt')
         if txt_path.exists():
-            return txt_path.read_text().strip()
+            return txt_path.read_text(encoding='utf-8').strip()
         
         return None
     
@@ -369,7 +369,7 @@ class VersionManager:
         try:
             self._current_symlink.symlink_to(version_dir)
         except OSError:
-            with open(self._current_symlink.with_suffix('.txt'), 'w') as f:
+            with open(self._current_symlink.with_suffix('.txt'), 'w', encoding='utf-8') as f:
                 f.write(version_id)
         
         logger.info(f"回滚到版本: {version_id}")

@@ -301,6 +301,11 @@ python cli.py version --action rollback --version v1.0.0
 > `tests/integration/test_cli_verdict_wiring.py` 从 **parser 声明与 handler 源码双向推导**
 > 对账（声明 `--gate` 的命令 == handler 里真传 `enforce=args.gate` 的；源码出现
 > `verdict_exit(` == 子命令 help 里宣称「退出码」的），不抄清单。
+>
+> **编码不再参与退出码**（L56 起）：CLI 入口把 stdout / stderr 的错误处理器从 `strict` 换成
+> `replace`，产品侧文本读写显式带 `encoding=` ⇒ 用户数据里有 emoji（或任何当前 locale 编不出
+> 的字符）时命令照样跑完，那个字符落成一个 `?`、JSON 输出仍可 `json.loads`。上面那句
+> 「`1` = 崩溃」从此只对应真异常，不再对应编码事故；能编码的字符逐字节不变。
 
 > **3.0 破坏性变更（命令面）**
 >
