@@ -12,10 +12,12 @@ import logging
 from typing import List, Dict, Optional, Tuple, Union
 from pathlib import Path
 from dataclasses import dataclass
+from collections import Counter
 import hashlib
 from .exceptions import DataValidationError
 from .validation import require_count
 from .allocation import largest_remainder
+from .data_splitter import DataSplitter
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +49,22 @@ class SplitConfig:
     seed: Optional[int] = None  # 随机种子
     stratify: bool = False  # 是否分层分割
     stratify_key: str = "instruction"  # 分层字段
+
+
+def _in_original_order(items: List[Dict], assigned: List[Dict]) -> List[Dict]:
+    """把 `assigned` 按它在 `items` 里的相对顺序重排（成员与条数都不变）
+
+    数 `id()` 而不是比值：划分只搬运引用，`items` 在这期间全程存活 ⇒ 同一个对象
+    出现两次也能各归其位；而值相等但不是同一对象的条目本就可互换，取靠前的位置是
+    稳定选择。
+    """
+    remaining = Counter(id(item) for item in assigned)
+    ordered: List[Dict] = []
+    for item in items:
+        if remaining[id(item)]:
+            ordered.append(item)
+            remaining[id(item)] -= 1
+    return ordered
 
 
 class DatasetOperations:
@@ -292,7 +310,8 @@ class DatasetOperations:
         
         Args:
             items: 数据列表
-            config: 分割配置
+            config: 分割配置；`stratify=True` 时走 `_stratified` 的分层支路，
+                默认的 `stratify=False` 走「打乱后按最大余数法切三段」
         
         Returns:
             (训练集, 验证集, 测试集)
@@ -304,23 +323,53 @@ class DatasetOperations:
         if abs(total_ratio - 1.0) > 0.01:
             raise DataValidationError(f"分割比例之和必须为1.0，当前为 {total_ratio}")
         
-        # 打乱数据
-        data = items.copy()
-        if config.shuffle:
-            random.Random(config.seed).shuffle(data)
-        
-        # 计算各部分大小：余数不得整份偏给 test（实测 n=7 名义 10% 的测试集
-        # 实际拿到 28.6%，而 0.1 的验证集在 n ≤ 9 时交出 0 条）
-        n = len(data)
-        train_size, val_size, _ = largest_remainder(n, config.ratios)
-        
-        # 分割
-        train = data[:train_size]
-        val = data[train_size:train_size + val_size]
-        test = data[train_size + val_size:]
-        
+        if config.stratify:
+            # 分层的算法口径只有 `DataSplitter` 那一份，这里只接线（见 `_stratified`）
+            train, val, test = self._stratified(items, config)
+        else:
+            # 打乱数据
+            data = items.copy()
+            if config.shuffle:
+                random.Random(config.seed).shuffle(data)
+
+            # 计算各部分大小：余数不得整份偏给 test（实测 n=7 名义 10% 的测试集
+            # 实际拿到 28.6%，而 0.1 的验证集在 n ≤ 9 时交出 0 条）
+            n = len(data)
+            train_size, val_size, _ = largest_remainder(n, config.ratios)
+
+            # 分割
+            train = data[:train_size]
+            val = data[train_size:train_size + val_size]
+            test = data[train_size + val_size:]
+
         logger.info(f"分割完成: 训练集 {len(train)}, 验证集 {len(val)}, 测试集 {len(test)}")
         return train, val, test
+
+    def _stratified(self,
+                   items: List[Dict],
+                   config: SplitConfig) -> Tuple[List[Dict], List[Dict], List[Dict]]:
+        """分层分割支路：三段的目标与成员分配交给 `DataSplitter`
+
+        「哪几条进哪一段」只有 `DataSplitter._stratified_split` 一份实现（全体算一次
+        目标、逐组按「还欠多少条」摊派、组序按大小降序 + 同尺寸随机），本方法不复刻它，
+        只把 `SplitConfig` 的三个旋钮接上。分工要写清，三个旋钮各管一件事：
+
+        - `seed` 管**可复现**：分层时组序与组内成员选择都要消耗随机数，`seed=None`
+          时同一份输入两次跑出的成员分配不同（只有不分层且 `shuffle=False` 才全确定）。
+        - `shuffle` 管**三段内部的顺序**：True 沿用 `DataSplitter` 的打乱结果，False
+          把每段成员按 `items` 的原始相对顺序排回去（成员与条数都不变）。
+        - `stratify_key` 是分组字段；空值直接报错，不让「开了分层但没字段」静默退化成
+          不分层（那正是本方法以前对所有取值都在做的事）。
+        """
+        if not config.stratify_key:
+            raise DataValidationError("分层分割需要非空的 stratify_key")
+
+        result = DataSplitter(*config.ratios, seed=config.seed,
+                              stratify_field=config.stratify_key).split(items)
+        segments = (result.train, result.val, result.test)
+        if not config.shuffle:
+            segments = tuple(_in_original_order(items, seg) for seg in segments)
+        return segments
     
     def split_file(self,
                   input_path: str,
