@@ -4,8 +4,13 @@
 """数据集操作工具模块测试"""
 
 import json
+import random
+from collections import Counter
 import pytest
 from pathlib import Path
+from augmentor.allocation import largest_remainder
+from augmentor.data_splitter import DataSplitter
+from augmentor.exceptions import DataValidationError
 from augmentor.dataset_ops import (
     DatasetOperations, MergeConfig, SampleConfig, SplitConfig,
     merge_datasets, sample_dataset as sample_dataset_func, split_dataset
@@ -423,3 +428,254 @@ class TestDatasetOpsExtended:
         result = sample_dataset_func(str(src), out, size=2, seed=0)
         assert result["output_count"] == 2
         assert Path(out).exists()
+
+
+def _stratify_corpus():
+    """三类不等大小（6 / 10 / 14 条，共 30 条）的语料
+
+    故意让三类都吃不下整份比例：`ratios=(0.6, 0.2, 0.2)` 的名义值是 c0 `3.6/1.2/1.2`、
+    c1 `6/2/2`、c2 `8.4/2.8/2.8`，不分层的随机切在 8 个种子上最大单元偏差 1.0–2.0 条
+    （其中 seed 0、4 的验证集整类漏掉 c0 / c1），分层后恒为 0.4 条 —— 这个差值是语料
+    本身的性质，用例把它当作前置断言，免得「语料根本区分不出两种口径」时用例白拿绿。
+    """
+    items = []
+    for class_id in range(3):
+        for _ in range(6 + 4 * class_id):
+            items.append({"instruction": f"问题{len(items)}", "intent": f"c{class_id}",
+                          "pos": len(items)})
+    return items
+
+
+CORPUS = _stratify_corpus()
+RATIOS = (0.6, 0.2, 0.2)
+
+
+def _worst_cell_deviation(segments, corpus, ratios):
+    """`max |段内某类条数 - 该类总条数 × 比例|`，与 `test_data_splitter` 的口径同"""
+    sizes = Counter(item["intent"] for item in corpus)
+    worst = 0.0
+    for segment, ratio in zip(segments, ratios):
+        got = Counter(item["intent"] for item in segment)
+        for key, size in sizes.items():
+            worst = max(worst, abs(got.get(key, 0) - size * ratio))
+    return worst
+
+
+def _legacy_plain_split(items, config):
+    """L40 提交态的 `DatasetOperations.split`（无分层支路）复刻，只作同答 oracle
+
+    钉的是「默认路径（`stratify=False`）一个字都没动」，不参与本轮成效。
+    """
+    data = list(items)
+    if config.shuffle:
+        random.Random(config.seed).shuffle(data)
+    train_size, val_size, _ = largest_remainder(len(data), config.ratios)
+    return (data[:train_size], data[train_size:train_size + val_size],
+            data[train_size + val_size:])
+
+
+class TestStratifiedSplitWiring:
+    """A54：`SplitConfig.stratify` / `stratify_key` 必须真的参与分割
+
+    L38 修好的分层口径在 `DataSplitter` 里，而 `DatasetOperations.split`（CLI `split`、
+    API `/api/dataset/split`、便捷函数 `split_dataset` 都走它）自带一套三段切分，
+    以前**从不读**这两个字段 —— 传 `stratify=True` 与不传逐条同答（实测真实 6,902 条
+    语料三个种子、缩例八个种子都同答），所以那项能力在产品面上是静默空转的。
+    """
+
+    def test_stratify_switch_is_not_inert(self):
+        """开关必须改变答案：同一 `seed` 下 stratify=True 与 False 不得逐条同答
+
+        这就是本轮的缺陷本体 —— 旧实现里开关对所有取值都是死的。
+        """
+        ops = DatasetOperations()
+        for field in ("intent", "instruction"):
+            plain = ops.split(CORPUS, SplitConfig(ratios=RATIOS, seed=0))
+            strat = ops.split(CORPUS, SplitConfig(ratios=RATIOS, seed=0,
+                                                  stratify=True, stratify_key=field))
+            assert strat != plain, f"stratify_key={field} 时开关仍是死的"
+
+    def test_stratify_key_selects_the_grouping(self):
+        """`stratify_key` 必须是分组字段：换字段就换答案
+
+        `instruction` 在这份语料里逐行唯一（每组 1 条），`intent` 只有 3 组，
+        两种分组给出的成员分配不可能相同。
+        """
+        ops = DatasetOperations()
+        by_intent = ops.split(CORPUS, SplitConfig(ratios=RATIOS, seed=0, stratify=True,
+                                                  stratify_key="intent"))
+        by_instruction = ops.split(CORPUS, SplitConfig(ratios=RATIOS, seed=0, stratify=True,
+                                                      stratify_key="instruction"))
+        assert by_intent != by_instruction
+
+    def test_stratified_answer_matches_data_splitter(self):
+        """口径只有一份实现：分层支路必须与 `DataSplitter` 逐条同答
+
+        接线而不是复刻算法，所以这里拿 `DataSplitter` 当 oracle —— 一旦本轮在
+        `dataset_ops` 里另写一套摊派，成员顺序或组序纪律稍有不同就会红。
+        """
+        ops = DatasetOperations()
+        for seed in (0, 3, 17):
+            mine = ops.split(CORPUS, SplitConfig(ratios=RATIOS, seed=seed, stratify=True,
+                                                 stratify_key="intent"))
+            theirs = DataSplitter(*RATIOS, seed=seed, stratify_field="intent").split(CORPUS)
+            assert mine == (theirs.train, theirs.val, theirs.test)
+
+    @pytest.mark.parametrize("seed", [0, 1, 2, 3, 4, 5, 6, 7])
+    def test_stratify_moves_each_class_its_nominal_share(self, seed):
+        """分层的能力主张：每类在每段里的条数压到名义值 ±0.5 条以内
+
+        语料的三类是 6 / 10 / 14 条，名义值带小数（3.6 / 1.2 / 2.8 / 8.4），所以 0.5 是
+        「整数条数能做到的贴近程度」这一档；实测分层后恒为 0.400，不分层在 8 个种子上是
+        1.000–2.000。三段大小不因分层而变（分层只搬成员，不改配额）。
+        """
+        ops = DatasetOperations()
+        plain = ops.split(CORPUS, SplitConfig(ratios=RATIOS, seed=seed))
+        strat = ops.split(CORPUS, SplitConfig(ratios=RATIOS, seed=seed, stratify=True,
+                                              stratify_key="intent"))
+        assert _worst_cell_deviation(strat, CORPUS, RATIOS) < 0.5
+        assert _worst_cell_deviation(plain, CORPUS, RATIOS) >= 1.0
+        assert {it["intent"] for it in strat[1]} == {"c0", "c1", "c2"}
+        assert [len(s) for s in strat] == [len(s) for s in plain] == [18, 6, 6]
+
+    @pytest.mark.parametrize("seed", [0, 3, 17])
+    def test_shuffle_false_keeps_original_relative_order(self, seed):
+        """`shuffle` 在分层支路上也有活：False 时三段内部按原始相对顺序排
+
+        分工是「`seed` 管可复现，`shuffle` 管段内顺序」：成员集合与条数与 `shuffle=True`
+        相同，只有顺序不同。旧实现里分层支路不存在，`stratify=True, shuffle=False` 交出
+        的是「原序连续切三段」，成员与打乱档相同这一条就不成立。
+        """
+        ops = DatasetOperations()
+        shuffled = ops.split(CORPUS, SplitConfig(ratios=RATIOS, seed=seed, stratify=True,
+                                                 stratify_key="intent"))
+        ordered = ops.split(CORPUS, SplitConfig(ratios=RATIOS, seed=seed, shuffle=False,
+                                                stratify=True, stratify_key="intent"))
+        for seg_shuffled, seg_ordered in zip(shuffled, ordered):
+            assert Counter(id(item) for item in seg_ordered) == \
+                Counter(id(item) for item in seg_shuffled)
+            positions = [item["pos"] for item in seg_ordered]
+            assert positions == sorted(positions)
+        assert sum(len(s) for s in ordered) == len(CORPUS)
+
+    def test_stratified_with_same_seed_is_reproducible(self):
+        """同种子两次调用逐条同答（对照组：缺陷态也绿，钉的是「接线没引入新随机源」）"""
+        ops = DatasetOperations()
+        config = SplitConfig(ratios=RATIOS, seed=11, stratify=True, stratify_key="intent")
+        assert ops.split(CORPUS, config) == ops.split(CORPUS, config)
+
+    @pytest.mark.parametrize("key", ["", None])
+    def test_blank_stratify_key_is_rejected(self, key):
+        """开了分层却没字段：报错，不静默退化成不分层
+
+        静默退化正是本轮修掉的缺陷形状（旧实现对任何 `stratify_key` 都不响应）。
+        """
+        ops = DatasetOperations()
+        with pytest.raises(DataValidationError, match="分层分割需要非空"):
+            ops.split(CORPUS, SplitConfig(ratios=RATIOS, seed=1, stratify=True,
+                                          stratify_key=key))
+
+    @pytest.mark.parametrize("ratios", [
+        (1.5, -0.5, 0.0),
+        (0.8, 0.1, 0.105),
+    ], ids=["negative", "sum_within_loose_tolerance"])
+    def test_strict_ratio_rules_apply_on_the_stratified_path(self, ratios):
+        """分层支路沿用 `DataSplitter` 的严口径（±1e-6 且不许负数）
+
+        默认路径只要求比例和落在 ±0.01 内、也不查负数，所以同一份配置在两条支路上
+        的**可接受域**不同：这是接线方式带来的既有分歧（两处校验本就不一致，另立
+        Backlog 统一），本轮先把它钉成事实，免得日后有人当成新引入的回归。
+        """
+        ops = DatasetOperations()
+        plain = ops.split(CORPUS, SplitConfig(ratios=ratios, seed=1))
+        assert len(plain[0]) + len(plain[1]) + len(plain[2]) == len(CORPUS)
+        with pytest.raises(DataValidationError):
+            ops.split(CORPUS, SplitConfig(ratios=ratios, seed=1, stratify=True,
+                                          stratify_key="intent"))
+
+    @pytest.mark.parametrize("config", [
+        SplitConfig(ratios=(0.8, 0.1, 0.1), seed=7),
+        SplitConfig(ratios=(0.6, 0.2, 0.2), shuffle=False),
+        SplitConfig(ratios=(1.0, 0.0, 0.0), seed=3),
+        SplitConfig(ratios=(0.34, 0.33, 0.33), seed=5, stratify_key="intent"),
+    ], ids=["seeded", "ordered", "one_segment", "stratify_key_only"])
+    def test_unstratified_default_path_unchanged(self, config):
+        """对照组：`stratify=False` 的默认路径与 L40 提交态复刻逐条同答
+
+        钉「本轮没动默认路径」。缺陷态同样绿（那时所有请求都走这条），所以它是
+        白名单里的护栏，不计入成效。
+        """
+        ops = DatasetOperations()
+        assert ops.split(CORPUS, config) == _legacy_plain_split(CORPUS, config)
+
+    def test_split_dataset_helper_writes_stratified_files(self, tmp_path):
+        """端到端：便捷函数 `split_dataset(...)` 的分层参数要落到写盘产物上
+
+        缺陷态对任何 `stratify` 取值都走不分层那条路，实测 seed=0 的验证集只含 c1、c2
+        两类（c0 整类缺席）；接上分层后三段都覆盖三类。这条挂在文件级入口上，因为
+        CLI `split` 与 API `/api/dataset/split` 走的是同一个 `split_file`。
+        """
+        src = tmp_path / "src.json"
+        src.write_text(json.dumps(CORPUS, ensure_ascii=False), encoding="utf-8")
+        out_dir = tmp_path / "split"
+        result = split_dataset(str(src), str(out_dir), ratios=RATIOS, seed=0,
+                               stratify=True, stratify_key="intent")
+        assert [result["splits"][name]["count"] for name in ("train", "val", "test")] == \
+            [18, 6, 6]
+        classes = {}
+        for name in ("train", "val", "test"):
+            data = json.loads((out_dir / f"{name}.json").read_text(encoding="utf-8"))
+            classes[name] = {item["intent"] for item in data}
+        assert classes["val"] == {"c0", "c1", "c2"}
+        assert classes["train"] == classes["test"] == {"c0", "c1", "c2"}
+
+    @pytest.mark.parametrize("config", [
+        SplitConfig(ratios=(0.8, 0.1, 0.1), seed=7),
+        SplitConfig(ratios=(0.6, 0.2, 0.2), shuffle=False),
+        SplitConfig(ratios=(0.34, 0.33, 0.33), stratify_key="intent"),
+    ], ids=["seeded", "ordered", "key_only"])
+    def test_unstratified_path_never_constructs_data_splitter(self, monkeypatch, config):
+        """接线不许越界：`stratify=False` 时连 `DataSplitter` 都不该被构造
+
+        钉的是本轮的范围决定。两条支路的可复现性口径本就不同（`stratify=False` 且
+        `shuffle=False` 时全确定，分层时组序必随机、要靠 `seed` 才复现），哪天有人
+        「统一走一层」即便答案侥幸相同也算改口径 ⇒ 这条要红。
+        """
+        from augmentor import dataset_ops as dataset_ops_module
+
+        def boom(*args, **kwargs):
+            raise AssertionError("default path must not touch DataSplitter")
+
+        # 缺陷态（HEAD）的模块里根本没有这个属性，`raising=False` 让装上桩这一步不报错
+        monkeypatch.setattr(dataset_ops_module, "DataSplitter", boom, raising=False)
+        ops = DatasetOperations()
+        train, val, test = ops.split(CORPUS, config)
+        assert len(train) + len(val) + len(test) == len(CORPUS)
+
+    @pytest.mark.parametrize("shuffle", [True, False], ids=["shuffled", "ordered"])
+    def test_order_restore_runs_only_when_shuffle_is_off(self, monkeypatch, shuffle):
+        """代价护栏：保序重排只在 `shuffle=False` 时发生，且三段各一次
+
+        双向都要钉。打乱档一次都不许调用（那是纯白付的 O(n) 开销，实测真实 6,902 条
+        语料上要多花 3.2–3.9 ms）；保序档必须恰好三次 —— 少一次就说明某一段没排回去。
+        缺陷态里「打乱档 0 次」这侧天然成立（还没有分层支路），红在保序那侧。
+        """
+        from augmentor import dataset_ops as dataset_ops_module
+
+        seen = []
+        real = getattr(dataset_ops_module, "_in_original_order", None)
+        if real is None:  # 缺陷态还没有这个符号：让它一旦被调用就崩，计数保持 0
+            def real(*args, **kwargs):  # noqa: ANN001
+                raise AssertionError("restore helper is missing")
+
+        def spy(*args, **kwargs):
+            seen.append(args)
+            return real(*args, **kwargs)
+
+        # 缺陷态（HEAD）的模块里还没有这个符号，`raising=False` 让装上桩这一步不报错：
+        # 否则该用例红在「装不上桩」，而不是它真正要钉的调用次数上。
+        monkeypatch.setattr(dataset_ops_module, "_in_original_order", spy, raising=False)
+        ops = DatasetOperations()
+        ops.split(CORPUS, SplitConfig(ratios=RATIOS, seed=5, shuffle=shuffle,
+                                      stratify=True, stratify_key="intent"))
+        assert len(seen) == (0 if shuffle else 3)
