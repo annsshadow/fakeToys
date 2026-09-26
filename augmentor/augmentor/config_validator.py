@@ -20,15 +20,18 @@ from enum import Enum
 # 这里是 A77 的修法本体：此前两边各抄一遍数字，抄漏的一边就成了「校验器独有
 # 天花板」—— `max_retries: 10**6` 在这里报红、在 SDK 直构那边畅通无阻。
 from .config import (AUTO_SAVE_INTERVAL_MIN, DEDUP_THRESHOLD_RANGE,
-                     MAX_OUTPUT_TOKENS_MIN,
+                     EXPORT_FORMATS, MAX_OUTPUT_TOKENS_MIN,
                      MAX_RETRIES_RANGE, MODEL_TYPES, NUM_THREADS_RANGE,
-                     PORT_RANGE, QUALITY_THRESHOLD_RANGE,
+                     PORT_RANGE, QUALITY_THRESHOLD_RANGE, RAG_FORMATS,
                      RATE_LIMIT_MIN_REQUESTS, RATE_LIMIT_MIN_WINDOW_SECONDS,
                      REQUEST_TIMEOUT_RANGE, RETRY_DELAY_RANGE,
-                     TEMPERATURE_RANGE, TOP_P_RANGE, VARIANTS_PER_SEED_RANGE,
-                     AppConfig, MODEL_ENTRY_KEYS)
+                     TEMPERATURE_RANGE, TOP_P_RANGE, VECTOR_BACKENDS,
+                     VECTOR_DIMENSION_MIN, VARIANTS_PER_SEED_RANGE,
+                     AppConfig, MODEL_ENTRY_KEYS, RAGConfig)
+from .exceptions import DataValidationError
 from .logging_setup import LOGGING_LEVELS, build_formatter
 from .retry import MAX_RETRY_AFTER
+from .validation import require_chunk_window
 
 logger = logging.getLogger(__name__)
 
@@ -223,6 +226,40 @@ class ConfigValidator:
         "logging.level": {"type": str, "choices": LOGGING_LEVELS},
         "logging.file": {"type": str},
         "logging.format": {"type": str, "non_empty": True, "renderable": True},
+        # `export` / `vector` / `rag` / `multimodal` 四节 14 键的规格（A118 余四节 / L82）。
+        # 本节规格此前**一条都没有**：实测 20 档越界写法在 `validate-config` 上 0 反馈
+        # （`Temp/l82q/before.json`），四节里除 `quality.weights` 之外没有一个键有界。
+        # 三条清单（`EXPORT_FORMATS` / `VECTOR_BACKENDS` / `RAG_FORMATS`）与运行时
+        # `__post_init__` 共引 `config.py` 那三个**推导**出来的常数 —— 权威只有一处，
+        # 本表连重抄都没有（比 `MODEL_TYPES` 那一先例更紧一档：那里因循环导入只能
+        # 两边各持一份并由测试钉相等）。
+        #
+        # `chunk_size` / `chunk_overlap` 两行**故意不写 `min`**：那条界是三刀的
+        # （下界 1、下界 0、关系 `overlap < size`），它的唯一产地是
+        # `validation.require_chunk_window`，静态面在 `_validate_rag_window` 里直接
+        # 调那同一个函数（同 `renderable` 直调 `build_formatter` 的先例）。把 1 与 0
+        # 抄进本表就是给同一条界造第二个家 —— 那正是 A77 的成因。
+        "export": {"type": dict},
+        "export.default_format": {"type": str, "choices": EXPORT_FORMATS},
+        # `item_choices` 是本表第一位新用户（下面 `items` 那段判据）：清单型列表的
+        # 元素成员资格，与运行时 `ExportConfig.__post_init__` 那个逐项
+        # `require_choice` 同一判据。
+        "export.formats": {"type": list, "items": str, "item_choices": EXPORT_FORMATS},
+        "vector": {"type": dict},
+        "vector.enabled": {"type": bool},
+        "vector.backend": {"type": str, "choices": VECTOR_BACKENDS},
+        "vector.dimension": {"type": int, "min": VECTOR_DIMENSION_MIN},
+        "vector.storage_dir": {"type": str, "non_empty": True},
+        "vector.collection": {"type": str, "non_empty": True},
+        "rag": {"type": dict},
+        "rag.enabled": {"type": bool},
+        "rag.default_format": {"type": str, "choices": RAG_FORMATS},
+        "rag.chunk_size": {"type": int},
+        "rag.chunk_overlap": {"type": int},
+        "multimodal": {"type": dict},
+        "multimodal.enabled": {"type": bool},
+        "multimodal.image_extensions": {"type": list, "items": str},
+        "multimodal.audio_extensions": {"type": list, "items": str},
     }
 
     # `models.<名字>.<键>` 的规格（L72 / A113，同时补掉 L71 记下的那个缺口）。
@@ -284,6 +321,15 @@ class ConfigValidator:
     # 推导缓存。`AppConfig()` 要构造 20 个节对象并跑各自的 `__post_init__` 判据，
     # 这个钱一次进程只该付一遍，而不是每次 `validate_config` 付一遍。
     _CONSUMED_SECTIONS: Optional[Dict[str, Set[str]]] = None
+
+    # `rag` 两键的缺省档（L82 / A118）：静态面的跨键判据需要它，因为「只写
+    # `chunk_overlap`、`chunk_size` 走默认」也是一份合法配置，而那条界要看两侧。
+    # 值从 `RAGConfig` 的字段拿而不是抄数字 —— A123 之后 dataclass 就是默认值的唯一
+    # 权威，抄第二份就又造出一个会漂的地方。
+    _RAG_WINDOW_DEFAULTS = {
+        "chunk_size": RAGConfig().chunk_size,
+        "chunk_overlap": RAGConfig().chunk_overlap,
+    }
 
     @classmethod
     def consumed_section_keys(cls) -> Dict[str, Set[str]]:
@@ -364,6 +410,37 @@ class ConfigValidator:
                         "%s.%s" % (key, sub_key),
                         "键%s: %s.%s（值不会生效）%s" % (
                             self.UNREAD_MARKER, key, sub_key, self._suggest(sub_key, sorted(known))))
+
+    def _validate_rag_window(self, config: Dict, result: ValidationResult) -> None:
+        """`rag` 节的窗口三刀（L82 / A118）：本表唯一一条**跨键**判据
+
+        为什么要单开一遍而不是写进 `KNOWN_FIELDS`：那张表每条规格只看**一个**值，
+        而 `chunk_overlap < chunk_size` 是两个值的事。只判各自 `type: int` 的话，
+        `rag.chunk_overlap: 600`（不写 `chunk_size`，默认 512）在 `validate-config`
+        上绿灯、在 `load_config` 抛 ⇒ 又回到 A77 的镜像症状。本函数不重写判据，直接
+        把运行时那**同一个** `validation.require_chunk_window` 放一遍（先例是
+        `renderable` 直调 `build_formatter`），缺省档取 `_RAG_WINDOW_DEFAULTS` ⇒
+        「界」与「默认值」两侧都没有第二份。
+
+        报错路径用节名：这条判决的文案自己就带两个键名（`rag.chunk_size 必须是…` /
+        `rag.chunk_overlap 必须小于 rag.chunk_size，当前是 600 对 512`），位置指得出。
+        非整数的形状问题由 `type: int` 那一遍报，本函数遇到就**跳过**，免得同一件
+        手滑报两次。
+        """
+        body = config.get("rag")
+        if not isinstance(body, dict):
+            return
+        size = body.get("chunk_size", self._RAG_WINDOW_DEFAULTS["chunk_size"])
+        overlap = body.get("chunk_overlap",
+                           self._RAG_WINDOW_DEFAULTS["chunk_overlap"])
+        for value in (size, overlap):
+            if isinstance(value, bool) or not isinstance(value, int):
+                return
+        try:
+            require_chunk_window("rag.chunk_size", size,
+                                 "rag.chunk_overlap", overlap)
+        except DataValidationError as exc:
+            result.add_error("rag", str(exc))
 
     def _warn_unread_model_keys(self, models: Dict, result: ValidationResult) -> None:
         """模型条目里的子键按**加载侧那一份键集**判（A126 / L78 起不再自己推导）
@@ -458,6 +535,9 @@ class ConfigValidator:
         
         # 验证已知字段
         self._validate_known_fields(config, "", result)
+
+        # 跨键关系（L82 / A118）：规格表表达不了的那一类，单独一遍回放运行时判据
+        self._validate_rag_window(config, result)
 
         # 「写了没人读」的键（A76）：独立一遍走，不塞进上面那个规格走查里，
         # 因为它的权威来源是 `AppConfig` 的字段集而不是 `KNOWN_FIELDS`
@@ -592,6 +672,15 @@ class ConfigValidator:
                                 f"实际 {type(item).__name__}")
                         elif not item:
                             result.add_error(f"{field_path}[{i}]", "元素不能为空字符串")
+                        elif "item_choices" in spec and item not in spec["item_choices"]:
+                            # L82 / A118 的新维度：清单型列表（`export.formats`）的
+                            # 元素成员资格。与下面 `choices` 同一个来源的清单，只是
+                            # 判的对象是每一项。
+                            result.add_error(
+                                f"{field_path}[{i}]",
+                                f"元素不在允许集合内: {item!r}（可选: "
+                                f"{'/'.join(spec['item_choices'])}）"
+                            )
                 elif spec.get("non_empty") and not value:
                     result.add_error(field_path, "值不能为空字符串")
                 # 允许集合（L57）：`logging.level` 那类「看着像拼错」的写法。集合来自
