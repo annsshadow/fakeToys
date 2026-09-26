@@ -4277,7 +4277,7 @@ async fn u2_store_new(
     reference: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let key = u2_blob_key(id, filename)?;
-    let storage = shared::storage::storage_from_env();
+    let storage = shared::storage::storage_with_pool(pool.clone());
     u2_persist_verified(storage.as_ref(), &key, &bytes).await?;
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -4424,7 +4424,7 @@ pub async fn u2_attachment_update_content(
 
     let (filename, _mime, bytes) = u2_read_multipart_file(multipart).await?;
     let key = u2_blob_key(&id, &filename)?;
-    let storage = shared::storage::storage_from_env();
+    let storage = shared::storage::storage_with_pool((*pool).clone());
     u2_persist_verified(storage.as_ref(), &key, &bytes).await?;
 
     let ext = u2_ext_of(&filename);
