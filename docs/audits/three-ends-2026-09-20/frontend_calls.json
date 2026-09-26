@@ -23564,7 +23564,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessDesigner.vue",
-    "line": 5845,
+    "line": 5853,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/file/0/application/0",
     "path": "/api/processplatform/assemble/designer/file/0/application/0",
@@ -23574,7 +23574,47 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessDesigner.vue",
-    "line": 11876,
+    "line": 5855,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/item/access/path/${path}",
+    "path": "/api/processplatform/assemble/designer/item/access/path/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessDesigner.vue",
+    "line": 5856,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/${entity}/${cnt}",
+    "path": "/api/processplatform/assemble/designer/{}/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessDesigner.vue",
+    "line": 5857,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/designer/mergeitemplan/list/application/paging/${appId}/${page}/${size}/${size}",
+    "path": "/api/processplatform/assemble/designer/mergeitemplan/list/application/paging/{}/{}/{}/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessDesigner.vue",
+    "line": 5858,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/designer/mergeitemplan/list/paging/${page}/${size}/${size}",
+    "path": "/api/processplatform/assemble/designer/mergeitemplan/list/paging/{}/{}/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessDesigner.vue",
+    "line": 11890,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/get/${selectedProcess.value.id}",
     "path": "/api/processplatform/assemble/designer/get/{}",
