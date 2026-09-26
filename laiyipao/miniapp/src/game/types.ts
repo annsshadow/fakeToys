@@ -201,6 +201,16 @@ export type ReplayEventType =
   | 'overheat'
   | 'card'
   | 'terrain'
+  /**
+   * 「隔热护罩」免疫了一次过热。
+   *
+   * ⚠️ 必须与 'overheat' 分开成一个事件类型。
+   * 用同一个类型的话，重放时无法区分"真的过热了"与"被护盾扛过去了"，
+   * 而两者对战斗的影响完全不同（后者不进 overheated 状态）。
+   * 记进哈希也是必要的：护盾消耗是战果的一部分，
+   * 不记就等于"哈希记录了一个玩家看得见、却不影响判定的选择"。
+   */
+  | 'guard'
 
 export interface ReplayEvent {
   t: number

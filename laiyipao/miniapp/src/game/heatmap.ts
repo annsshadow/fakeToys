@@ -165,6 +165,27 @@ export class HeatSystem {
   }
 
   /**
+   * 被「隔热护罩」免疫一次过热：清空热量并退出过热状态。
+   *
+   * ⚠️ 这里**不能**用 `if (!this.overheated) return false` 做前置检查。
+   * 引擎有两条进入 enterOverheat 的路径：
+   *   1. 正常开火打满 cap 后 checkOverheat() → overheated 已是 true
+   *   2. 热量死区兜底（heatStuck）→ **过热还没开始**，overheated 仍是 false
+   * 而死区恰恰是护罩最该起作用的场景（热量卡住、动不了）。
+   * 带前置检查会让第 2 条路径下护盾完全无效。
+   *
+   * 另一个必须做的是**清空热量**：若只把 overheated 置 false，
+   * 下一 tick 的死区兜底会再次判定「放不出技能」并再次调用
+   * enterOverheat —— 变成「每 tick 白烧一层护盾」的空转，
+   * 直到护盾耗尽才真的过热。清空的语义也说得通：护罩替你泄压了。
+   */
+  absorbOverheat(): void {
+    this.overheated = false
+    this.overheatRemaining = 0
+    this.heat = 0n
+  }
+
+  /**
    * 当前是否已无法释放任何给定成本的技能。
    *
    * 供引擎做死区兜底判断。costs 为空时返回 false ——
