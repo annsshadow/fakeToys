@@ -390,29 +390,35 @@ class TestJsonlSerializedOnce:
         assert json.loads(back.read_text(encoding="utf-8")) == RECORDS
 
 
-# ==================== 写边边界：本轮明确不做 ====================
+# ==================== 写边边界：L80 立项、L84 关闭 ====================
 class TestWriteEdgeStillFallsBack:
-    """`_infer_format` 只管输出；`.xlsx` 输出**不**被当 Excel（写边留 A133）
+    """`_infer_format` 只管输出；`.xlsx` 从 L84 起是 Excel，`.xls` 仍回落 json
 
-    这条断言是故意的：它把「输出 xlsx 会静默写成 JSON 字节」这个已知缺口钉在原地，
-    等 A133 真的补上写边时，这条用例会以「期望 json、得到 excel」的形式要求改它。
+    这一族用例在 L80 是「已知缺口钉在原地」的形状（`.xlsx` 期望 `json`，注释里写明
+    等 A133 补上写边时它会以「期望 json、得到 excel」的形式要求改它）。L84 就是那一轮，
+    所以期望值改了、用例留着：回落口径本身（认不出的后缀仍是 json）没变，变的只有
+    `.xlsx` 这一格，而 `.xls` 恰好是它反面的证人。
     """
 
-    @pytest.mark.parametrize("name", ["out.xlsx", "out.xls", "out.dat", "out"])
+    @pytest.mark.parametrize("name", ["out.xls", "out.dat", "out"])
     def test_unrecognized_output_suffix_is_json(self, converter, name):
         assert converter._infer_format(Path(name)) == "json"
 
     @pytest.mark.parametrize(("name", "expected"),
                              [("out.json", "json"), ("out.jsonl", "jsonl"),
-                              ("out.csv", "csv"), ("out.tsv", "tsv")])
+                              ("out.csv", "csv"), ("out.tsv", "tsv"),
+                              ("out.xlsx", EXCEL_FORMAT)])
     def test_recognized_output_suffix(self, converter, name, expected):
         assert converter._infer_format(Path(name)) == expected
 
     def test_read_edge_and_write_edge_are_two_different_tables(self, converter):
-        """同一个 `.xlsx` 在读边是 Excel、在写边回落 json —— 两张表不许被合并成一张
+        """`.xlsx` 两边都是 Excel，但 `.xls` 只有读边认 —— 两张表不许被合并成一张
 
-        合并的代价是双向的：读边并进来会让未知后缀静默回落 json（本轮修掉的缺陷），
-        写边并进来会让 `--output x.xlsx` 自称写了 Excel、实际写下 JSON 字节。
+        合并的代价是单向新增的：把写边并进来会让 `.xls` 输出被「认下来」，于是
+        `--output x.xls` 自称写了 Excel、实际写下 JSON 或 zip 字节（A133 的原始症状）；
+        把读边并进来则会让未知后缀静默回落 json（L80 那一轮修掉的缺陷）。
         """
         assert converter._resolve_input_format(Path("o.xlsx")) == EXCEL_FORMAT
-        assert converter._infer_format(Path("o.xlsx")) == "json"
+        assert converter._resolve_input_format(Path("o.xls")) == EXCEL_FORMAT
+        assert converter._infer_format(Path("o.xlsx")) == EXCEL_FORMAT
+        assert converter._infer_format(Path("o.xls")) == "json"
