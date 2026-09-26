@@ -261,8 +261,22 @@ export class Terrain {
       case 'collapse_wall': {
         // 动能打进掩体。半径 100 与 blocksProjectile 对齐 ——
         // 弹丸要真的"打到墙上"才算，不该有擦边充能。
-        if (element === 'kinetic' && near(100)) {
-          this.charge += Number(damage / 100n)
+        //
+        // ⚠️ 任何元素都能充能，动能 ×3 —— 曾经是**只有动能能充能**。
+        //
+        // 「硬性克制」在这里等于「硬性死锁」：掩体会挡掉弹丸，
+        // 而如果它只能被动能打破，那么不带动能的构筑**永远打不开弹道**。
+        // 默认构筑（内容表前 4 个主动技能）恰好是 fire/fire/fire/ice，
+        // 一个动能都没有 —— 于是第 22/33/34 关对默认构筑是不可通关的。
+        //
+        // 改成「动能快 3 倍、其余也能砸」之后：
+        //   - 带动能：仍是明显更优解（3 倍充能速度），战术意图保留
+        //   - 不带动能：能砸开，只是慢，**关卡不会变成死局**
+        //
+        // 一般原则：地形机制可以有**偏好**，不能有**唯一解**。
+        if (near(100)) {
+          const mul = element === 'kinetic' ? 3 : 1
+          this.charge += Number(damage / 100n) * mul
           if (this.charge >= this.param) {
             this.state = 'collapsed'
             this.triggered = true
