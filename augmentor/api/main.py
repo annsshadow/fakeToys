@@ -10,6 +10,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware import Middleware
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -20,6 +21,7 @@ from api.middleware import (
     RateLimitMiddleware,
     RequestLoggingMiddleware,
     RequestTraceMiddleware,
+    UploadBodyGate,
 )
 from api.middleware.rate_limit import RateLimiter
 from api.routes import (
@@ -83,6 +85,10 @@ AI 训练数据增强平台的 HTTP 接口。
 
 - **限流**：单客户端在时间窗口内请求数超限返回 `429`（窗口与阈值见配置）。
 - **追踪**：响应带 `X-Request-ID`，请求携带时透传，否则自动生成。
+- **上传尺寸**：声明了 `Content-Length` 的 `multipart` 请求在**解析之前**判一次整包长度，
+  超过 `web.max_upload_bytes` 加 multipart 余量直接 `413`（文案含「未解析、未落盘」）；
+  未声明长度（chunked）时这一道看不见，由解析后按实际写入字节累加的 `UploadFile.size`
+  兜底，仍是 `413`。
 """
 
 _OPENAPI_TAGS = [
@@ -102,6 +108,13 @@ _OPENAPI_TAGS = [
 ]
 
 # 版本号单一来源：augmentor.__version__（不要在别处硬编码）
+#
+# 构造参数 `middleware=[...]` 被**追加到 `app.user_middleware` 末尾**（实测 1.2.1：`app.router`
+# 上并没有 middleware 属性），而下面的 `add_middleware` 插在列表头部 ⇒ 它比所有装饰式装的层都更靠内。
+# 上传尺寸闸必须待在那一侧：实测（L90，`Temp/l90q/spool_census2.py`）把它经
+# `add_middleware` 装到 CORS 之外时，它发回的 413 不带 `Access-Control-Allow-Origin`，
+# 浏览器里的前端读不到那句可行动的文案；挂在最内（CORS 之内）时头保留，
+# 而「在解析器拿到任何字节之前拒收」这件事不受位置影响（两种位置都是 form 0 / 字节 0）。
 app = FastAPI(
     title="AI 训练数据增强平台",
     summary="数据集增强 / 质量 / 版本 / 导出的 HTTP 接口",
@@ -110,6 +123,7 @@ app = FastAPI(
     openapi_tags=_OPENAPI_TAGS,
     contact={"name": "annsshadow"},
     license_info={"name": "AGPL-3.0-or-later"},
+    middleware=[Middleware(UploadBodyGate)],
 )
 
 # CORS 配置（从配置文件读取，生产环境请显式配置 origins）
