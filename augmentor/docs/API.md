@@ -62,7 +62,8 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 **`POST /api/config` 的越界值是 400，且整批不落**（3.x，L73 起）。改前该端点用裸
 `setattr` 写字段，而运行时判据住在各配置节的 `__post_init__` 里、`setattr` 不会再触发它
 ⇒ 坏值当次回 200、还能被原样写进 `config.yaml`，症状是「服务跑得好好的，重启后起不来」。
-现在每写一条就跑该节自己的判据（界仍然只住 `augmentor/config.py` 一处），任一条越界即
+现在整批写完跑一次该节判据（L73 起是「每写一条判一次」，**L82 改成批次终态判一次**，
+理由见下面 `rag` 那一跨键界；界仍然只住 `augmentor/config.py` 一处），任一条越界即
 整批退回原值并回 **400**（`detail` 点名是哪个键、当前值多少），内存与磁盘都停在改前状态。
 未知子键的既有契约不变：仍然 200，键名列在响应的 `ignored_keys` 里。
 `quality` / `dedup` 两节自 L76 起**也有**判据了：`enabled` 走新增的
@@ -70,8 +71,22 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 `QUALITY_THRESHOLD_RANGE` / `DEDUP_THRESHOLD_RANGE` 两个常数（界只住 `config.py` 一处），
 所以这两节的坏值现在同样回 400。`enabled` 只认**真布尔**：YAML 里裸 `no` / `false` / `off`
 （以及 `yes` / `true` / `on`）会被解析成布尔值，是合法写法；**一旦加引号**就变成字符串，
-加载与 `POST /api/config` 两侧都拒（15 种拼法的实测分类见账本 L76）。至今**没有**运行时判据的节只剩
-`export` / `vector` / `rag` / `multimodal`，它们照旧只写不判，见账本 A118。
+加载与 `POST /api/config` 两侧都拒（15 种拼法的实测分类见账本 L76）。
+**L82 起 A118 那六节的账全清**：`export`（2 键）/ `vector`（5 键）/ `rag`（4 键）/
+`multimodal`（3 键）四节共 14 键接上判据，于是 `POST /api/config` 可写的**七节全部有**
+运行时判据，四面（SDK 直构 / `load_config` / 本端点 / `validate-config`）同判。新增两条
+族员：`validation.require_choice`（管「从一张封闭清单里选一个」，清单**推导**自各权威模块
+—— `EXPORT_FORMATS` 取 `ExportFormat`、`RAG_FORMATS` 取 `rag.SUPPORTED_FORMATS`、
+`VECTOR_BACKENDS` 取 `vector.SUPPORTED_BACKENDS`）与 `validation.require_chunk_window`
+（管一对互相约束的键）。两条对用户的可见差别：
+- `vector.backend: milvus`、`export.default_format: xls` 这类从前要等到流水线跑到那一步
+  才炸（或者根本不炸），现在四面全部拒；`Exporter` 那句裸 `ValueError` 走 API 时是 500，
+  配置面先判 ⇒ 本端点回 400。
+- `rag.chunk_size` / `chunk_overlap` 是**跨键**界（`chunk_overlap < chunk_size`，且两侧
+  分别 `>= 1` / `>= 0`），所以「单看合法」的两个值配上现存的另一侧仍可能 400：出厂
+  overlap 是 64，只写 `{"rag": {"chunk_size": 1}}` 会被拒；把两半放在同一批里
+  （`{"chunk_size": 1, "chunk_overlap": 0}`）就 200。从前这类批次即使两半一起改也写不进去
+  —— 判据看的是每写一条之后的**中间态**。
 
 ### 配置的「写了没人读」反馈（3.x）
 
