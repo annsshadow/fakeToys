@@ -25,7 +25,6 @@ use crate::{
     attachment2_list_folder_folderId,
     attachment2_list_share_owner,
     attachment2_list_top,
-    attachment2_list_type_page_size_size,
     attachment2_user_capacity,
     attachment_id,
     attachment_id_binary_base64,
@@ -61,10 +60,8 @@ use crate::{
     file_list_id_prev_count,
     file_list_id_prev_count_all,
     file_list_id_prev_count_referencetype_referenceType,
-    file_list_referencetype,
     file_list_referencetype_referenceType_reference_reference,
     file_list_unused_referencetype_cmsdocument_manage,
-    file_referencetype_referenceType_reference_reference,
     file_upload_with_url,
     folder2_batch_download,
     folder2_id,
@@ -144,7 +141,6 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/file/attachment2/list/filter/{name}", get(attachment2_list_filter_name))
         .route("/api/file/attachment2/list/folder/{folderId}", get(attachment2_list_folder_folderId))
         .route("/api/file/attachment2/list/top", get(attachment2_list_top))
-        .route("/api/file/attachment2/list/type/page/size/size", get(attachment2_list_type_page_size_size))
         .route("/api/file/attachment2/{id}", get(attachment2_id))
         .route("/api/file/attachment2/{id}/binary/base64", get(attachment2_id_binary_base64))
         .route("/api/file/attachment2/{id}/download", get(attachment2_id_download))
@@ -157,14 +153,13 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/file/editor/list", get(editor_list))
         .route("/api/file/clean/unused/referencetype/cmsdocument/manage", get(file_clean_unused_referencetype_cmsdocument_manage))
         .route("/api/file/copy/attachment/{p0}/referencetype/{p1}/reference/{p2}/scale/{p3}", get(file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale))
-        .route("/api/file/list/referencetype", get(file_list_referencetype))
+        .route("/api/file/list/referencetype", get(u2_file_list_reference_types))
         .route("/api/file/list/referencetype/{p0}/reference/{p1}", get(file_list_referencetype_referenceType_reference_reference))
         .route("/api/file/list/unused/referencetype/cmsdocument/manage", get(file_list_unused_referencetype_cmsdocument_manage))
         .route("/api/file/list/{p0}/next/{p1}/all", get(file_list_id_next_count_all))
         .route("/api/file/list/{p0}/next/{p1}/referencetype/{p2}", get(file_list_id_next_count_referencetype_referenceType))
         .route("/api/file/list/{p0}/prev/{p1}/all", get(file_list_id_prev_count_all))
         .route("/api/file/list/{p0}/prev/{p1}/referencetype/{p2}", get(file_list_id_prev_count_referencetype_referenceType))
-        .route("/api/file/referencetype/referenceType/reference/reference", get(file_referencetype_referenceType_reference_reference))
         .route("/api/file/{p0}/binary/base64", get(file_id_binary_base64))
         .route("/api/file/folder/list/top", get(folder_list_top))
         .route("/api/file/folder/{id}", get(folder_id))

@@ -1,13 +1,8 @@
 DELETE /api/portal/assemble/surface/delete/layout
-GET /api/file/attachment2/list/type/page/size/size
-GET /api/file/list/referencetype
-GET /api/file/referencetype/referenceType/reference/reference
 GET /api/general/assemble/control/excel/1/1
 GET /api/general/assemble/control/excel/1/1/1
 GET /api/hotpic_assemble_control/delete/hotpic
 GET /api/hotpic_assemble_control/save/hotpic
-GET /api/jpush/assemble/control/device/config/push/type
-GET /api/jpush_assemble_control/device/config/push/type
 GET /api/portal/assemble/designer/list/portal/1/1
 GET /api/portal/assemble/designer/pageversion/list/1/1
 GET /api/portal/assemble/surface/dict/portal/path/data/1/1

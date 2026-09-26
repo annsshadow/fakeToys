@@ -450,18 +450,18 @@ pub async fn device_check_deviceName_deviceType_pushType(
 #[allow(non_snake_case)]
 pub async fn device_config_push_type(
     pool: Extension<Pool>,
-    Path(push_type): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_one(
-            "SELECT COUNT(*) as cnt FROM x_jpush WHERE target = $1 AND deleted_at IS NULL",
-            &[&push_type],
+            "SELECT COUNT(*) as cnt, MAX(target) as target FROM x_jpush WHERE deleted_at IS NULL",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
     let count: i64 = row.get("cnt");
+    let push_type: String = row.get::<_, Option<String>>("target").unwrap_or_default();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("pushType".to_string(), Value::String(push_type)),
