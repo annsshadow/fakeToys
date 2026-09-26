@@ -364,6 +364,15 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 > 5,119 倍，也违反上面那条约定。空 `stratify_key` 一律 400，不静默退化成随机或不分层。
 > `shuffle` 在两条支路上的口径**不同**（分层支路只回排段内顺序、默认支路连成员一起改且
 > `seed` 空转），细节见 `SplitRequest` 文档串与 `docs/ARCHITECTURE.md` §3.17。
+>
+> `convert` 的 `target_format` 自 L84 起合法值是 12 个：容器四形 `json` / `jsonl` / `csv` /
+> `tsv`、六个行内 schema，加上 Excel 写边的 `excel` / `xlsx`（同一份权威
+> `converter.OUTPUT_FORMAT_CHOICES`，CLI 的 `--format` 与它由 `TestConvertTargetFormatSurface`
+> 对账）。**写 Excel 只产 `.xlsx`**，需要可选依赖 pandas + openpyxl；缺依赖时回 **400** 并给出
+> 安装指令，不是 500 栈。三种「名字与声明互不点名」的写法一律 **400 且不留下文件**：输出名是
+> `.xls`（老格式要 `xlwt`，不在依赖表里）、名字是 `.xlsx` 而 `target_format` 不是 Excel（会写出
+> 一份 Excel 打不开的 JSON 文本）、`target_format` 是 Excel 而名字不是 `.xlsx`。`xls` 仍然只在
+> **读边**合法（`source_format`）—— 读写两张表刻意分开，差的恰好只有它。
 
 ### export（4）
 
