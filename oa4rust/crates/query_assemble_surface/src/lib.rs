@@ -400,10 +400,7 @@ pub fn query_assemble_surface_router() -> Router {
             "/api/queryview/table/list/row/select/{tableFlag}",
             get(crate::table_list_tableFlag_row_select),
         )
-        .route(
-            "/api/queryview/table/list/row/select/where/where/{tableFlag}",
-            get(crate::table_list_tableFlag_row_select_where_where),
-        )
+
         .route(
             "/api/queryview/table/list/table/row/paging/{tableFlag}/{page}/{size}/{size}",
             get(crate::table_list_table_tableFlag_row_paging_page_size_size_p4),

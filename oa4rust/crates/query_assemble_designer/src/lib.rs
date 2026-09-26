@@ -757,7 +757,7 @@ pub fn query_assemble_designer_router(pool: Option<Pool>) -> Router {
         .route("/api/query/assemble/designer/table/permission/{id}", get(crate::table_id_permission))
         .route("/api/query/assemble/designer/table/list/{query}/{flag}", get(crate::table_list_query_flag_p2))
         .route("/api/query/assemble/designer/table/list/row/{tableFlag}/{id}/{next}/{count}", get(crate::table_list_tableFlag_row_id_next_count_p4))
-        .route("/api/query/assemble/designer/table/list/row/select/where/where/{tableFlag}", get(crate::table_list_tableFlag_row_select_where_where))
+
         .route("/api/query/assemble/designer/table/build/dispatch/{query}", get(crate::table_query_build_dispatch))
         .route("/api/query/assemble/designer/table/row/{tableFlag}", get(crate::table_tableFlag_row))
         .route("/api/query/assemble/designer/table/row/where/where/{tableFlag}/{count}", get(crate::table_tableFlag_row_count_where_where))
