@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 
 # 词法切分（中文串 / 英文单词 / 数字串）。编译一次放在模块级：
 # `re.findall(字面模式, text)` 每次都要走一遍 `re._compile()` 的缓存查找，
-# 而 `_calculate_content_statistics` 对每条文本的每个字段各调一次
-# （真实 6902 条 × 3 字段 = 13804 次）。
+# 而 `_calculate_content_statistics` 对每条数据的每个非空字符串字段各调一次
+# （真实语料 6902 条 = 13804 条文本）。
 _TOKEN_PATTERN = re.compile(r'[\u4e00-\u9fff]+|[a-zA-Z]+|\d+')
 
 
