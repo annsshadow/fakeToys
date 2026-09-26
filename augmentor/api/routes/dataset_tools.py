@@ -88,6 +88,8 @@ class ConvertRequest(BaseModel):
     """格式转换请求"""
     input_file: str
     output_file: str
+    # 写 Excel 给 `excel` / `xlsx`，且 `output_file` 必须以 `.xlsx` 结尾；两者不匹配
+    # 是 400 而不是「落一份名字与内容不符的文件」（`converter._reject_unwritable_output`）。
     target_format: str = "jsonl"
     # alpaca/sharegpt/chatml 等容器格式落盘也是 `.json`，扩展名推不出来，
     # 只能由请求方显式声明；为 None 时沿用「按扩展名推断」。
