@@ -1,0 +1,601 @@
+package service
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"sort"
+	"time"
+
+	"github.com/laiyipao/server/internal/domain"
+)
+
+// ComputeRatingFor / ComputePowerFor 是给 HTTP 层用的导出包装。
+func (s *Service) ComputeRatingFor(userID int64, build map[string]any) domain.BuildRating {
+	return s.computeRating(s.ctxBackground(), userID, build)
+}
+
+func (s *Service) ComputePowerFor(userID int64, build map[string]any) int64 {
+	return s.computePower(s.ctxBackground(), userID, build)
+}
+
+func (s *Service) ctxBackground() context.Context { return context.Background() }
+
+// --- 专精点（I-3） ---
+
+// LoadMastery 返回玩家专精点状态。
+func (s *Service) LoadMastery(ctx context.Context, userID int64) (int, []int, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT node_id FROM user_mastery_nodes WHERE user_id = $1 ORDER BY node_id`, userID)
+	if err != nil {
+		return 0, nil, fmt.Errorf("load mastery: %w", err)
+	}
+	defer rows.Close()
+	var ids []int
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			return 0, nil, err
+		}
+		ids = append(ids, id)
+	}
+	if err := rows.Err(); err != nil {
+		return 0, nil, err
+	}
+
+	var points int
+	if err := s.pool.QueryRow(ctx,
+		`SELECT mastery_points FROM user_progress WHERE user_id = $1`, userID).Scan(&points); err != nil {
+		return 0, nil, fmt.Errorf("load mastery points: %w", err)
+	}
+	return points, ids, nil
+}
+
+// AllocateMastery 分配一个专精点。
+//
+// 校验全部交给 domain.EvaluateMastery —— HTTP 层不做"点一下就写入"，
+// 避免前端绕过每层 2 个的限制。
+func (s *Service) AllocateMastery(ctx context.Context, userID int64, nodeID int) error {
+	return s.DB.Tx(ctx, func(tx txType) error {
+		var points int
+		if err := tx.QueryRow(ctx,
+			`SELECT mastery_points FROM user_progress WHERE user_id = $1 FOR UPDATE`, userID).
+			Scan(&points); err != nil {
+			return fmt.Errorf("lock progress: %w", err)
+		}
+
+		selected, err := s.masterySelected(ctx, tx, userID)
+		if err != nil {
+			return err
+		}
+		if selected[nodeID] {
+			return fmt.Errorf("%w: 该节点已点亮（取消请走重置）", ErrForbidden)
+		}
+		next := map[int]bool{}
+		for k, v := range selected {
+			next[k] = v
+		}
+		next[nodeID] = true
+
+		var all []domain.MasteryNode
+		for _, f := range domain.AllMasteryFamilies() {
+			all = append(all, f.Nodes...)
+		}
+		if _, err := domain.EvaluateMastery(all, next, points); err != nil {
+			return fmt.Errorf("%w: %s", ErrBadInput, err.Error())
+		}
+		if _, err := tx.Exec(ctx,
+			`INSERT INTO user_mastery_nodes (user_id, node_id) VALUES ($1,$2)
+			 ON CONFLICT (user_id, node_id) DO NOTHING`, userID, nodeID); err != nil {
+			return fmt.Errorf("insert mastery node: %w", err)
+		}
+		return nil
+	})
+}
+
+func (s *Service) masterySelected(ctx context.Context, tx txType, userID int64) (map[int]bool, error) {
+	rows, err := tx.Query(ctx,
+		`SELECT node_id FROM user_mastery_nodes WHERE user_id = $1`, userID)
+	if err != nil {
+		return nil, fmt.Errorf("load selected: %w", err)
+	}
+	defer rows.Close()
+	out := map[int]bool{}
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out[id] = true
+	}
+	return out, rows.Err()
+}
+
+// --- 诊断（L-1） ---
+
+// Diagnose 分析玩家在某关的卡点。
+func (s *Service) Diagnose(ctx context.Context, userID int64, levelID, failedTimes int) (domain.Diagnose, error) {
+	if levelID < 1 || levelID > domain.TotalLevels {
+		return domain.Diagnose{}, fmt.Errorf("%w: 关卡 %d 不存在", ErrBadInput, levelID)
+	}
+	gl := domain.GenerateLevel(levelID)
+
+	// 取最近若干局该关的战报做样本
+	rows, err := s.pool.Query(ctx,
+		`SELECT kills, elements_used FROM battle_records
+		 WHERE user_id = $1 AND level_id = $2 ORDER BY created_at DESC LIMIT 10`, userID, levelID)
+	if err != nil {
+		return domain.Diagnose{}, fmt.Errorf("load recent battles: %w", err)
+	}
+	defer rows.Close()
+
+	in := domain.DiagnoseInput{
+		LevelID: levelID, FailedTimes: failedTimes,
+		TotalEnemies: gl.TotalEnemies(),
+		ElementsUsed: map[string]int{},
+	}
+	killsSum := 0
+	samples := 0
+	for rows.Next() {
+		var kills int
+		var elemRaw []byte
+		if err := rows.Scan(&kills, &elemRaw); err != nil {
+			return domain.Diagnose{}, err
+		}
+		elems := map[string]int{}
+		_ = json.Unmarshal(elemRaw, &elems)
+		for k, v := range elems {
+			in.ElementsUsed[k] += v
+		}
+		killsSum += kills
+		samples++
+	}
+	if err := rows.Err(); err != nil {
+		return domain.Diagnose{}, err
+	}
+	if samples > 0 {
+		in.Kills = killsSum / samples
+	}
+
+	// 取玩家当前技能携带的元素
+	_, elements, err := s.loadSkillsAndSlots(ctx, int64(userID))
+	if err != nil {
+		return domain.Diagnose{}, err
+	}
+	for _, e := range elements {
+		in.Loadout = append(in.Loadout, domain.Element(e))
+	}
+	sort.Slice(in.Loadout, func(i, j int) bool { return in.Loadout[i] < in.Loadout[j] })
+
+	return domain.DiagnoseFailure(in, gl), nil
+}
+
+// --- 防线（I-5） ---
+
+// DefenseView 是防线展示对象。
+type DefenseView struct {
+	ID               int64          `json:"id"`
+	OwnerID          int64          `json:"owner_id"`
+	OwnerName        string         `json:"owner_name"`
+	Name             string         `json:"name"`
+	Power            int64          `json:"power"`
+	ElementCoverage  int            `json:"element_coverage"`
+	MasteryDone      int            `json:"mastery_done"`
+	Wins             int            `json:"wins"`
+	Losses           int            `json:"losses"`
+	ShieldedUntil    *time.Time     `json:"shielded_until,omitempty"`
+	Snapshot         map[string]any `json:"snapshot,omitempty"`
+	SnapshotHash     string         `json:"snapshot_hash,omitempty"`
+	ChallengedToday  int            `json:"challenged_today"`
+	MyAttemptsToday  int            `json:"my_attempts_today"`
+	MyStolenToday    int            `json:"my_stolen_today"`
+	AttemptLimit     int            `json:"attempt_limit"`
+	CanChallenge     bool           `json:"can_challenge"`
+	ChallengeBlocked string         `json:"challenge_blocked,omitempty"`
+}
+
+// DefenseAttemptLimit 每日挑战次数上限。
+const DefenseAttemptLimit = 3
+
+// DefenseStolenLimit 每日被偷次数上限。
+const DefenseStolenLimit = 2
+
+// ListDefenses 返回候选防线（不含自己）与自己的防线。
+func (s *Service) ListDefenses(ctx context.Context, userID int64) (mine *DefenseView, candidates []DefenseView, err error) {
+	attempts, _, err := s.dailyChallengeCounters(ctx, userID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	rows, err := s.pool.Query(ctx, `
+		SELECT d.id, d.owner_id, u.nickname, d.name, d.power, d.element_coverage, d.mastery_done,
+		       d.wins, d.losses, d.shielded_until, d.snapshot, d.snapshot_hash
+		FROM defenses d JOIN users u ON u.id = d.owner_id
+		WHERE d.owner_id <> $1 AND u.status = 1
+		ORDER BY d.power DESC LIMIT 20`, userID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("list defenses: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var v DefenseView
+		if err := rows.Scan(&v.ID, &v.OwnerID, &v.OwnerName, &v.Name, &v.Power,
+			&v.ElementCoverage, &v.MasteryDone, &v.Wins, &v.Losses, &v.ShieldedUntil,
+			&v.Snapshot, &v.SnapshotHash); err != nil {
+			return nil, nil, err
+		}
+		v.CanChallenge = attempts < DefenseAttemptLimit
+		if v.CanChallenge {
+			v.ChallengeBlocked = ""
+		} else {
+			v.ChallengeBlocked = fmt.Sprintf("今日挑战次数已用尽（%d/%d）", attempts, DefenseAttemptLimit)
+		}
+		if v.ShieldedUntil != nil && v.ShieldedUntil.After(time.Now()) {
+			// 护盾期内不可挑战，必须同时关掉 can_challenge，
+			// 否则客户端只看 can_challenge 就会放行，服务端再拒绝 —— 体验割裂。
+			v.CanChallenge = false
+			v.ChallengeBlocked = "对方开启了 24 小时护盾"
+		}
+		candidates = append(candidates, v)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, nil, err
+	}
+
+	var own DefenseView
+	err = s.pool.QueryRow(ctx, `
+		SELECT d.id, d.owner_id, u.nickname, d.name, d.power, d.element_coverage, d.mastery_done,
+		       d.wins, d.losses, d.shielded_until, d.snapshot, d.snapshot_hash
+		FROM defenses d JOIN users u ON u.id = d.owner_id
+		WHERE d.owner_id = $1`, userID).
+		Scan(&own.ID, &own.OwnerID, &own.OwnerName, &own.Name, &own.Power,
+			&own.ElementCoverage, &own.MasteryDone, &own.Wins, &own.Losses,
+			&own.ShieldedUntil, &own.Snapshot, &own.SnapshotHash)
+	if err == nil {
+		// snapshot 落库是 jsonb，Scan 进 map 后即已解码，无需再 Unmarshal
+		mine = &own
+	}
+	return mine, candidates, nil
+}
+
+func (s *Service) dailyChallengeCounters(ctx context.Context, userID int64) (attempts, stolen int, err error) {
+	err = s.pool.QueryRow(ctx, `
+		INSERT INTO user_daily_challenges (user_id, challenge_date, attempts, stolen_times)
+		VALUES ($1, CURRENT_DATE, 0, 0)
+		ON CONFLICT (user_id, challenge_date) DO UPDATE SET challenge_date = CURRENT_DATE
+		RETURNING attempts, stolen_times`, userID).Scan(&attempts, &stolen)
+	return attempts, stolen, err
+}
+
+// SaveDefenseInput 是保存防线的请求。
+type SaveDefenseInput struct {
+	Name         string `json:"name"`
+	Skills       []int  `json:"skills"`
+	Equipment    []int  `json:"equipment"`
+	MasteryNodes []int  `json:"mastery_nodes"`
+	// Works 是三件防御工事的编码（slow_belt / block_wall / tesla_grid）
+	Works       []string `json:"works"`
+	ShieldHours int      `json:"shield_hours"`
+}
+
+// SaveDefense 保存/更新玩家防线快照。
+//
+// 快照是"我的构筑"的固化：挑战者在客户端用这套构筑本地模拟，
+// 服务端不跑战斗引擎（这是 I-5 能成立的关键）。
+// validDefenseWorks 是允许的工程装置白名单。
+//
+// ⚠️ 必须白名单而不是黑名单：装置直接折算成攻方属性加成
+// （见 miniapp/src/game/defense.ts 的 applyWorks），
+// 传一个未知 code 进来虽然会被忽略，但传已知 code 的**非法组合**
+// 就能凭空获得三份加成。
+var validDefenseWorks = map[string]bool{
+	"slow_belt":  true,
+	"block_wall": true,
+	"tesla_grid": true,
+}
+
+// validateDefenseOwnership 校验上报的构筑项确实属于该用户。
+//
+// ⚠️ 这是必需的，不是防御性编程：I-5 的设计是「挑战者用这份快照
+// 在本地模拟」，所以快照内容直接决定别人挑战你的基准。
+// 不校验的话玩家可以冻结一份从未拥有过的技能/装备/专精构成的防线，
+// 让所有挑战者的模拟结果失去意义。
+//
+// 参照实现是 SaveLoadout（loadout.go），它对技能做了同样的校验。
+func (s *Service) validateDefenseOwnership(ctx context.Context, userID int64, in SaveDefenseInput) error {
+	if len(in.Skills) > 12 {
+		return fmt.Errorf("%w: 技能数量 %d 过多", ErrBadInput, len(in.Skills))
+	}
+	for _, id := range in.Skills {
+		if id <= 0 {
+			continue
+		}
+		var n int
+		if err := s.pool.QueryRow(ctx,
+			`SELECT COUNT(*) FROM user_skills WHERE user_id = $1 AND skill_id = $2`,
+			userID, id).Scan(&n); err != nil {
+			return err
+		}
+		if n == 0 {
+			return fmt.Errorf("%w: 技能 %d 未解锁", ErrBadInput, id)
+		}
+	}
+	for _, id := range in.Equipment {
+		if id <= 0 {
+			continue
+		}
+		var n int
+		if err := s.pool.QueryRow(ctx,
+			`SELECT COUNT(*) FROM user_equipment WHERE user_id = $1 AND equipment_id = $2`,
+			userID, id).Scan(&n); err != nil {
+			return err
+		}
+		if n == 0 {
+			return fmt.Errorf("%w: 装备 %d 未拥有", ErrBadInput, id)
+		}
+	}
+	for _, node := range in.MasteryNodes {
+		if node <= 0 {
+			continue
+		}
+		var n int
+		if err := s.pool.QueryRow(ctx,
+			`SELECT COUNT(*) FROM user_mastery_nodes WHERE user_id = $1 AND node_id = $2`,
+			userID, node).Scan(&n); err != nil {
+			return err
+		}
+		if n == 0 {
+			return fmt.Errorf("%w: 专精节点 %d 未投入", ErrBadInput, node)
+		}
+	}
+	if len(in.Works) > 3 {
+		return fmt.Errorf("%w: 工程装置最多 3 个", ErrBadInput)
+	}
+	for _, w := range in.Works {
+		if !validDefenseWorks[w] {
+			return fmt.Errorf("%w: 未知工程装置 %q", ErrBadInput, w)
+		}
+	}
+	// 护盾时长必须收敛。传 9999999 等于永久护盾，
+	// 而重开护盾既无冷却也无成本 —— 等于免费获得无限免偷。
+	if in.ShieldHours < 0 || in.ShieldHours > MaxDefenseShieldHours {
+		return fmt.Errorf("%w: 护盾时长须在 0..%d 小时", ErrBadInput, MaxDefenseShieldHours)
+	}
+	return nil
+}
+
+// MaxDefenseShieldHours 护盾时长上限（小时）。
+const MaxDefenseShieldHours = 24
+
+// MaxDefenseNameLen 防线名长度上限。
+const MaxDefenseNameLen = 32
+
+func (s *Service) SaveDefense(ctx context.Context, userID int64, in SaveDefenseInput) (DefenseView, error) {
+	if in.Name == "" {
+		in.Name = "我的防线"
+	}
+	if len([]rune(in.Name)) > MaxDefenseNameLen {
+		return DefenseView{}, fmt.Errorf("%w: 防线名超过 %d 字", ErrBadInput, MaxDefenseNameLen)
+	}
+	if err := s.validateDefenseOwnership(ctx, userID, in); err != nil {
+		return DefenseView{}, err
+	}
+	build, err := s.LoadBuildSnapshot(ctx, userID)
+	if err != nil {
+		return DefenseView{}, err
+	}
+	elements := buildElements(build)
+	mastery, _ := build["mastery_nodes"].([]int)
+	rating := s.computeRating(ctx, userID, build)
+	power := s.computePower(ctx, userID, build)
+
+	snapshot := map[string]any{
+		"skills":        in.Skills,
+		"equipment":     in.Equipment,
+		"mastery_nodes": in.MasteryNodes,
+		"works":         in.Works,
+		"elements":      elements,
+		"mastery":       mastery,
+		"rating":        rating,
+	}
+	snapshotRaw, err := json.Marshal(snapshot)
+	if err != nil {
+		return DefenseView{}, err
+	}
+	hash := domain.SnapshotHash(snapshotRaw)
+
+	var shielded any
+	if in.ShieldHours > 0 {
+		shielded = time.Now().Add(time.Duration(in.ShieldHours) * time.Hour)
+	}
+
+	// ⚠️ upsert / DELETE / INSERT 三条语句必须在**同一事务**内。
+	// 之前逐条用 s.pool 执行：并发两次保存会交错成
+	// A DELETE → B DELETE → A INSERT slot0 → B INSERT slot0，
+	// 第二个撞上 idx_defense_works_slot 唯一索引 → 500，
+	// 且 defense_works 停留在部分写入状态（工事数少于快照里的）。
+	// 中途崩溃同样会让 works 被清空而 snapshot 已更新，两者永久不一致。
+	var id int64
+	err = s.DB.Tx(ctx, func(tx txType) error {
+		// 一个玩家一条防线，defenses.owner_id 建了唯一索引，用 upsert
+		if err := tx.QueryRow(ctx, `
+			INSERT INTO defenses (owner_id, name, power, element_coverage, mastery_done,
+			                      snapshot, snapshot_hash, shielded_until)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+			ON CONFLICT (owner_id) DO UPDATE SET
+			  name = EXCLUDED.name, power = EXCLUDED.power,
+			  element_coverage = EXCLUDED.element_coverage, mastery_done = EXCLUDED.mastery_done,
+			  snapshot = EXCLUDED.snapshot, snapshot_hash = EXCLUDED.snapshot_hash,
+			  shielded_until = EXCLUDED.shielded_until, updated_at = now()
+			RETURNING id`,
+			userID, in.Name, power, rating.ElementCoverage, rating.MasteryDone,
+			snapshotRaw, hash, shielded).Scan(&id); err != nil {
+			return fmt.Errorf("save defense: %w", err)
+		}
+
+		// 同步工程装置
+		if _, err := tx.Exec(ctx, `DELETE FROM defense_works WHERE user_id = $1`, userID); err != nil {
+			return err
+		}
+		for i, code := range in.Works {
+			if i >= 3 {
+				break
+			}
+			if _, err := tx.Exec(ctx,
+				`INSERT INTO defense_works (user_id, code, level, slot) VALUES ($1,$2,$3,$4)`,
+				userID, code, 1, i); err != nil {
+				return fmt.Errorf("save works: %w", err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return DefenseView{}, err
+	}
+	return DefenseView{
+		ID: id, OwnerID: userID, Name: in.Name, Power: power,
+		ElementCoverage: rating.ElementCoverage, MasteryDone: rating.MasteryDone,
+		Snapshot: snapshot, SnapshotHash: hash,
+	}, nil
+}
+
+// ChallengeInput 是挑战请求。
+type ChallengeInput struct {
+	Seed       int64  `json:"seed"`
+	Won        bool   `json:"won"`
+	DurationMs int    `json:"duration_ms"`
+	HPLeftPct  int    `json:"hp_left_pct"`
+	ReplayHash string `json:"replay_hash"`
+}
+
+// ChallengeResult 是挑战结算。
+type ChallengeResult struct {
+	Won              bool             `json:"won"`
+	Stolen           map[string]int64 `json:"stolen"`
+	Owner            string           `json:"owner_name"`
+	Power            int64            `json:"owner_power"`
+	MyAttempts       int              `json:"my_attempts_today"`
+	OwnerStolenToday int              `json:"owner_stolen_today"`
+}
+
+// ChallengeDefense 挑战他人防线。
+//
+// 防刷的三道闸：
+//  1. 每日挑战次数上限（3）
+//  2. 对方每日被偷次数上限（2）与 24h 护盾
+//  3. 窃取比例固定 10%，且受全局掉落封顶
+func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64, in ChallengeInput) (ChallengeResult, error) {
+	var res ChallengeResult
+	err := s.DB.Tx(ctx, func(tx txType) error {
+		var ownerID int64
+		var ownerName string
+		var power int64
+		var shielded *time.Time
+		if err := tx.QueryRow(ctx,
+			`SELECT owner_id, name, power, shielded_until FROM defenses WHERE id = $1`,
+			defenseID).Scan(&ownerID, &ownerName, &power, &shielded); err != nil {
+			return fmt.Errorf("%w: defense %d", ErrNotFound, defenseID)
+		}
+		if ownerID == userID {
+			return fmt.Errorf("%w: 不能挑战自己的防线", ErrForbidden)
+		}
+		if shielded != nil && shielded.After(time.Now()) {
+			return fmt.Errorf("%w: 对方开启了护盾", ErrForbidden)
+		}
+
+		attempts, _, err := s.dailyChallengeCountersTx(ctx, tx, userID)
+		if err != nil {
+			return err
+		}
+		if attempts >= DefenseAttemptLimit {
+			return fmt.Errorf("%w: 今日挑战次数已用尽（%d/%d）", ErrForbidden, attempts, DefenseAttemptLimit)
+		}
+
+		// 判定能否实际窃取
+		_, ownerStolen, err := s.dailyChallengeCountersTx(ctx, tx, ownerID)
+		if err != nil {
+			return err
+		}
+		stolen := map[string]int64{}
+		if in.Won && ownerStolen < DefenseStolenLimit {
+			// 窃取 10% 战力等价资源
+			loot := domain.ComputeLoot(GeneratedPowerLevel(power), 2, 10, 10, 0)
+			for k, v := range loot {
+				if v <= 0 {
+					continue
+				}
+				take := v / 10
+				if take > 0 {
+					stolen[k] = take
+					// 从对方扣除，扣不动就跳过（不强制负值）
+					if err := s.grantWallet(ctx, tx, ownerID, map[string]int64{k: -take},
+						"defense_stolen", defenseID); err != nil {
+						delete(stolen, k)
+					}
+				}
+			}
+			if _, err := tx.Exec(ctx,
+				`UPDATE defenses SET wins = wins + 1 WHERE id = $1`, defenseID); err != nil {
+				return err
+			}
+			// 记录被偷
+			if _, err := tx.Exec(ctx, `
+				UPDATE user_daily_challenges SET stolen_times = stolen_times + 1
+				 WHERE user_id = $1 AND challenge_date = CURRENT_DATE`, ownerID); err != nil {
+				return err
+			}
+		} else if !in.Won {
+			if _, err := tx.Exec(ctx,
+				`UPDATE defenses SET losses = losses + 1 WHERE id = $1`, defenseID); err != nil {
+				return err
+			}
+		}
+
+		if len(stolen) > 0 {
+			if err := s.grantWallet(ctx, tx, userID, stolen, "defense_reward", defenseID); err != nil {
+				return err
+			}
+		}
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO defense_challenges (defense_id, challenger_id, seed, won, duration_ms,
+			                                hp_left_pct, replay_hash, settled)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,TRUE)`,
+			defenseID, userID, in.Seed, in.Won, in.DurationMs, in.HPLeftPct, in.ReplayHash); err != nil {
+			return fmt.Errorf("record challenge: %w", err)
+		}
+		if _, err := tx.Exec(ctx, `
+			UPDATE user_daily_challenges SET attempts = attempts + 1
+			 WHERE user_id = $1 AND challenge_date = CURRENT_DATE`, userID); err != nil {
+			return err
+		}
+
+		res = ChallengeResult{
+			Won: in.Won, Stolen: stolen, Owner: ownerName, Power: power,
+			MyAttempts: attempts + 1, OwnerStolenToday: ownerStolen,
+		}
+		return nil
+	})
+	return res, err
+}
+
+func (s *Service) dailyChallengeCountersTx(ctx context.Context, tx txType, userID int64) (attempts, stolen int, err error) {
+	err = tx.QueryRow(ctx, `
+		INSERT INTO user_daily_challenges (user_id, challenge_date, attempts, stolen_times)
+		VALUES ($1, CURRENT_DATE, 0, 0)
+		ON CONFLICT (user_id, challenge_date) DO UPDATE SET challenge_date = CURRENT_DATE
+		RETURNING attempts, stolen_times`, userID).Scan(&attempts, &stolen)
+	return attempts, stolen, err
+}
+
+// GeneratedPowerLevel 由战力反推一个"等价关卡"用于计算窃取掉落。
+// 战力与关卡的映射是线性的：power 0 ≈ 第 1 关，power 20000 ≈ 第 100 关。
+func GeneratedPowerLevel(power int64) domain.GeneratedLevel {
+	id := int(power / 200)
+	if id < 1 {
+		id = 1
+	}
+	if id > domain.TotalLevels {
+		id = domain.TotalLevels
+	}
+	return domain.GenerateLevel(id)
+}
