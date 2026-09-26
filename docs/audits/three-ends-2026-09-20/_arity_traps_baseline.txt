@@ -27,8 +27,6 @@ GET /api/bbs/assemble/control/topic/recommended/index
 GET /api/bbs/assemble/control/topic/recommended/list
 GET /api/bbs/assemble/control/topic/search
 GET /api/bbs/assemble/control/user/info
-GET /api/component_assemble_control/delete/component
-GET /api/component_assemble_control/save/component
 GET /api/file/attachment2/list/type/page/size/size
 GET /api/file/list/referencetype
 GET /api/file/referencetype/referenceType/reference/reference
