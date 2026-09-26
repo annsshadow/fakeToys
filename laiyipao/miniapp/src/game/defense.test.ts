@@ -57,9 +57,14 @@ function level(): GeneratedLevel {
   return {
     id: 1, chapter: 1, name: '防线测试', seed: '1', base_hp: 800, wave_count: 1,
     difficulty: 1000, energy_cost: 6, element_cap: 3, armor_permille: 0,
-    max_reaction_tier: 2, is_boss: false, star_targets: [100, 200, 300],
+    max_reaction_tier: 2, is_boss: false,
+    star_targets: [12000, 17000, 19600],
+    // 理论满分：star_targets 由它按 StarTargetRatio = [600, 850, 980]‰ 导出，
+    // 结算裁剪的上界也锚定在它上面（不是 star_targets[2]）。
+    max_score: 20000,
     terrain: [],
-    // 8 只怪：弱攻方打不完，强攻方能全清 —— 3 只时任何攻方都能秒完，区分不出差异
+    // 8 只怪：
+    // 弱攻方打不完，强攻方能全清 —— 3 只时任何攻方都能秒完，区分不出差异
     waves: [{ wave_index: 0, spawns: [{ enemy_id: 1, count: 8, interval: 60, delay: 0 }] }],
   }
 }

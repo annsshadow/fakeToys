@@ -60,6 +60,9 @@ function mkLevel(overrides: Partial<GeneratedLevel> = {}): GeneratedLevel {
     max_reaction_tier: 3,
     is_boss: false,
     star_targets: [1000, 2000, 3000],
+    // 理论满分：star_targets 由它按 StarTargetRatio = [600, 850, 980]‰ 导出，
+    // 结算裁剪的上界也锚定在它上面（不是 star_targets[2]）。
+    max_score: 5000,
     terrain: [],
     waves: [
       {

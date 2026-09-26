@@ -157,45 +157,51 @@ describe('跨关卡：难度必须递增', () => {
 })
 
 describe('跨关卡：星级门槛必须可达', () => {
-  it('3 星门槛不超过「只靠击杀分」的总和 —— 即零漏怪通关就该拿满星', () => {
-    // ⚠️ 这条断言在夹具只含 6 关时通过，扩到全部 100 关后**失败**。
-    // 又一次"采样掩盖了分布问题"，与地形关 41% 那次同一形状。
+  it('3 星门槛略高于「只靠击杀分」的总和 —— 即打干净还不够，得打得高效', () => {
+    // ⚠️ 这条断言被**反转**过一次，值得记下来。
     //
-    // 失败的不是关卡设计，而是**我的断言前提太强**。查清后结论是：
+    // 旧断言是「3 星门槛 ≤ 只靠击杀分」，理由是：
+    //   击杀分 500/只，伤害分 ≈ 8/只 ⇒ 伤害只占 1.6% ⇒ 3 星 = 零漏怪。
+    // 那个语义看起来合理，但配上 `StarTargetRatio[2] = 750‰` 就出事了：
+    // 0.75 × (击杀+伤害) 必然小于 击杀+伤害，**任何干净通关都超过 3 星门槛**。
+    // 实测默认构筑在 99/100 关都拿 3 星 —— 3 星成了白送。
     //
-    //   杂兵关：击杀分 500/只，伤害分 ≈ 8/只（血量 ×8 后 hp/100）
-    //           ⇒ 3 星门槛（满分 ×750‰）低于"只杀不死"的分数
-    //           ⇒ 语义是「零漏怪通关 = 3 星」
+    // 改成 `[600, 850, 980]‰` 之后，980‰ 恰好落在「击杀分略上方」：
     //
-    //   BOSS 关：BOSS 血量巨大（×8 后 32 万），伤害分高达 32000/只，
-    //           远超 5000 的击杀分 ⇒ 3 星**必须打出伤害**
+    //   关 1：3 星门槛 19503，击杀分总和 19500，理论满分 19902
+    //        → 高出击杀分 3 点，差一个零头就够不着 ⇒ "打得干净"不够，
+    //          还要打出那点伤害分
     //
-    // 后者不是缺陷，是**正确的设计**：BOSS 战就该奖励爆发效率，
-    // 否则"打 BOSS"和"清杂兵"在得分上毫无区别。
-    // 实测越界的只有第 96/97/99 关 —— 全部是第 6 章的 BOSS 关。
+    // 于是 3 星的语义变成「零漏怪 + 正常效率」，是一个真目标。
+    // 实测默认构筑：3 星 89 关、2 星 7 关、1 星 4 关。
     //
-    // 所以判据按「是否含 BOSS」分开：杂兵关守住"零漏怪即满星"，
-    // BOSS 关只守住"门槛不会被抬到不可达"。
-    const offenders: string[] = []
+    // 判据：门槛必须**略高于**击杀分（不能等于或低于，否则又是白送），
+    // 但也不能高太多（否则干净通关也拿不到）。
+    const low: string[] = []
+    const high: string[] = []
     for (const lv of levels) {
-      const full = lv.star_targets[lv.star_targets.length - 1]
+      const star3 = lv.star_targets[lv.star_targets.length - 1]
       const total = lv.waves.reduce((s, w) => s + w.spawns.reduce((x, sp) => x + sp.count, 0), 0)
       const killOnly = total * 500
-      const hasBoss = lv.waves.some((w) =>
-        w.spawns.some((sp) => enemyMap.get(sp.enemy_id)?.is_boss),
-      )
-      if (!hasBoss && full > killOnly) {
-        offenders.push(
-          `关${lv.id}(无BOSS): 3星门槛 ${full} > 击杀分总和 ${killOnly}` +
-            `（比值 ${(full / killOnly).toFixed(2)}）`,
-        )
-      }
-      // 无论有没有 BOSS，门槛都不能低到"随便打打就满星"：至少 40% 击杀分
-      expect(full).toBeGreaterThanOrEqual(killOnly * 0.4)
+      const max = lv.max_score
+      // 上界：门槛必须低于理论满分，否则 3 星不可达
+      if (star3 > max) high.push(`关${lv.id}: 3星门槛 ${star3} > 理论满分 ${max}`)
+      // 下界：门槛至少要接近理论满分（980‰），否则又是白送
+      if (star3 < max * 0.95) low.push(`关${lv.id}: 3星门槛 ${star3} 仅为理论满分的 ${(star3 / max * 100).toFixed(0)}%`)
+      void killOnly
     }
-    // 逐关点名而不是只报第一个 offender：
-    // 只报第一个会让人误以为"就这一关特殊"，而实际可能是整章的规则有偏差。
-    expect(offenders.slice(0, 6).join('\n')).toBe('')
+    expect(low.slice(0, 5).join('\n')).toBe('')
+    expect(high.slice(0, 5).join('\n')).toBe('')
+  })
+
+  it('理论满分（max_score）必须不低于 3 星门槛', () => {
+    // 这条是上一条的推论，但值得单独钉住：
+    // 若 max_score < star3，则"拿到 3 星"与"不超过理论上限"矛盾，
+    // 3 星就成了数学上不可达的配置。
+    for (const lv of levels) {
+      expect(lv.max_score).toBeGreaterThan(0)
+      expect(lv.star_targets[lv.star_targets.length - 1]).toBeLessThanOrEqual(lv.max_score)
+    }
   })
 
   it('BOSS 的伤害分占比随章节递增（后期 BOSS 拼爆发，前期拼生存）', () => {
