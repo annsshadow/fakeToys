@@ -82,6 +82,29 @@ export const TICK_MS = 50
  */
 export const LeakDamageDivisor = 10n
 
+/**
+ * 出场进度：**整数千分比** 0..SPAWN_PROGRESS_FULL。
+ *
+ * ⚠️ 敌人曾经用 0..1 的浮点记录出场进度、每 tick 累加 0.08，
+ * 这直接违反项目的定点整数铁律（README 六个工程约束第 2 条）。
+ *
+ * 为什么它不只是"风格问题"：这个值决定敌人**何时开始移动、何时可被命中**，
+ * 所以它会改变后续每一个 tick 的事件序列，进而改变 replayHash。
+ * 而 IEEE 754 浮点加法的中间精度**没有跨实现保证** ——
+ * 不同 V8 版本、不同 CPU 架构（x86 的 SSE 路径与 ARM 的实现不同）可能差 1 ulp。
+ * 差 1 ulp 就可能让某个边界判定在两端落在不同一侧，
+ * 于是 I-6 把这类关卡的正常对局判成伪造。
+ *
+ * 取 FULL=1000 / STEP=80 是为了**逐位等价**于原来的行为：
+ * 80/1000 = 0.08，13 个 tick 达到满（12 个 tick 时 960 < 1000）。
+ * 换成别的数值会让"敌人何时可被击中"的时刻整体平移，
+ * 存量战报的哈希会失配。
+ */
+export const SPAWN_PROGRESS_FULL = 1000
+
+/** 每 tick 的出场进度增量（80‰，等价于原来的 0.08）。 */
+export const SPAWN_PROGRESS_STEP = 80
+
 /** TICK_MS 的 bigint 形式，供定点运算直接使用 */
 export const TICK_BIG = BigInt(TICK_MS)
 
@@ -466,8 +489,8 @@ export class BattleEngine {
    */
   stepEnemyMotion(e: Enemy, frozenAll: boolean): void {
     if (e.dead) return
-    if (e.spawnProgress < 1) {
-      e.spawnProgress = Math.min(1, e.spawnProgress + 0.08)
+    if (e.spawnProgress < SPAWN_PROGRESS_FULL) {
+      e.spawnProgress = Math.min(SPAWN_PROGRESS_FULL, e.spawnProgress + SPAWN_PROGRESS_STEP)
       return
     }
     if (e.hitFlashMs > 0) e.hitFlashMs -= TICK_MS
@@ -739,7 +762,7 @@ export class BattleEngine {
 
   /** 索敌优先级：BOSS/精英 > 最近目标；优先能命中的（溅射/穿透/高伤） */
   private pickTarget(s: EquippedSkill): Enemy | null {
-    const live = this.enemies.filter((e) => !e.dead && e.spawnProgress >= 1)
+    const live = this.enemies.filter((e) => !e.dead && e.spawnProgress >= SPAWN_PROGRESS_FULL)
     if (live.length === 0) return null
     // 飞行/钻地敌人只能被溅射或穿透命中，优先安排给对应技能
     const evasive = live.filter((e) => e.flyHeight > 0 || e.burrow)
@@ -816,7 +839,7 @@ export class BattleEngine {
 
   private checkProjectileHit(p: Projectile): void {
     for (const e of this.enemies) {
-      if (e.dead || e.spawnProgress < 1) continue
+      if (e.dead || e.spawnProgress < SPAWN_PROGRESS_FULL) continue
       if (p.hitSet.has(e.uid)) continue
       if (!this.hitEnemy(p, e)) continue
 
