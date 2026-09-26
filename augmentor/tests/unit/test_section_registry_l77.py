@@ -46,8 +46,10 @@ def isolate_root_logger():
     """把 root logger 的 handler 与级别隔离在单条用例内（口径照 `test_logging_wiring_a97.py`）
 
     本文件不是日志测试，但它**必须**动日志：矩阵里 `logging.level` / `logging.file`
-    两格走的是真 `load_config(path)`，而加载器在 `config.py:848` 会当场装配 root
-    logger（A97 定的产品行为）。不隔离就会污染后面那些模块 —— 实测未隔离时
+    两格走的是真 `load_config(path)`，而加载器在 `load_config` 里调 `apply_logging_config`
+    当场装配 root logger（A97 定的产品行为；这里只写名字不写行号 —— 本句原来写的是
+    `config.py:848`，L77 提交时就错了，L78 现量它是 `('context', ContextConfig)` 那一行）。
+    不隔离就会污染后面那些模块 —— 实测未隔离时
     `test_logging_wiring_a97.py` 红 4 条（A106 的命中签名漏进下一条用例，让该 miss
     的调用假命中），而症状看起来像「那个模块自己坏了」。
     """
