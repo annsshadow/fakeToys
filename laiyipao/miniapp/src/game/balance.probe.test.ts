@@ -424,6 +424,179 @@ describe('平衡基准', () => {
     )
   }, 300_000)
 
+  // I-4 地形在真实对局里的**实际触发率**。
+  //
+  // ⚠️ 上一轮把 5 类地形的机制全修好了（param 标定、删死路径、位置判定），
+  // 并给每一类补了单元测试。但单元测试证明的是"机制能工作"，
+  // **不是"它在真实对局里会被触发"**。
+  //
+  // 这两件事的差距在本项目已经吃过一次亏：掩体（collapse_wall）的
+  // `onHit` 单元测试全绿，但它的唯一充能源在真实对局里永远走不到，
+  // 于是第 22/33/34 关死锁 100% 的时间。
+  //
+  // 所以这里统计：全 100 关跑完，每类地形**真正触发**（collapsed / burning /
+  // 状态改变）多少次。触发数为 0 的类别说明它在真实对局里仍是死代码。
+  it('地形生效率（5 类 × 100 关，按真实效果度量）', () => {
+    const all = fixture.levels as unknown as GeneratedLevel[]
+    type Stat = {
+      placed: number
+      effective: number
+      levels: Set<number>
+      /** 未生效者的峰值充能：区分「从没靠近」与「靠近但不够」 */
+      maxCharge: number
+      placedButIdle: string[]
+    }
+    const stats = new Map<string, Stat>()
+    for (const kind of [
+      'oil_drum',
+      'tidal_gate',
+      'rotor_vane',
+      'collapse_wall',
+      'charge_tower',
+    ]) {
+      stats.set(kind, {
+        placed: 0,
+        effective: 0,
+        levels: new Set(),
+        maxCharge: 0,
+        placedButIdle: [],
+      })
+    }
+
+    // ⚠️ 度量口径换过两次，每次都是因为**度量本身错了**：
+    //
+    //  1) 第一版用 `t.triggered` 标志 → 得出「油桶/潮汐闸/风障 0%」
+    //     查代码才发现潮汐闸与风障**从不设 triggered**：
+    //     它们是**持续型**机制（一直挡 / 一直偏转），
+    //     用「一次性事件标志」度量持续型机制，必然得到假的 0%。
+    //
+    //  2) 第二版改成「状态动过就算」→ 潮汐闸/风障 100%，
+    //     但那是**假阳性**：状态动过只说明 update 跑了，
+    //     不说明它影响了任何东西。地形放在敌人走廊外时，
+    //     潮汐闸照样每 2 秒切一次状态，却一次弹丸都没挡到。
+    //
+    // 现在的口径是**可观测的实际效果**：
+    //     油桶   → 真的进入 burning（那意味着真的被火焰命中）
+    //     掩体   → 真的 collapsed（真的被打崩）
+    //     蓄能塔 → charge 真的涨过（真的有击杀喂给它）
+    //     潮汐闸 → **真的挡掉过一发弹丸**
+    //     风障   → **真的改过一发弹丸的速度**
+    //
+    // 挡与偏转通过包一层 updateProjectiles 观测 —— 它是地形影响弹丸的唯一入口。
+    const dead: string[] = []
+    for (const lv of all) {
+      if (lv.terrain.length === 0) continue
+      const cfg: BattleConfig = {
+        level: lv,
+        enemies: enemyMap,
+        skills: skillMap,
+        equipped: equip(ACTIVE_SLOTS),
+        attacker: defaultAttacker(),
+        seed: 12345,
+      }
+      const e = new BattleEngine(cfg)
+      type T = {
+        kind: string
+        state: string
+        charge: number
+        x: number
+        y: number
+        param: number
+      }
+      const terrains = (e as unknown as { terrains: T[] }).terrains
+      for (const t of terrains) stats.get(t.kind)!.placed++
+
+      // ⚠️ 观测方式换过两次，每次都是**观测本身错了**：
+      //
+      //  1) 包一层 `updateProjectiles` 数"被挡掉的弹丸"
+      //     → 潮汐闸误判为 0%：它挡的是**敌人**不是弹丸，
+      //       `blocksProjectile()` 只对 collapse_wall 返回 true
+      //  2) 包一层 `updateProjectiles` 比"速度变了"
+      //     → 风障误判为 0%：偏转发生在 `updateTerrain` 里，
+      //       而我在 `updateProjectiles` 前后取快照 ——
+      //       取到的**已经是被改过的速度**，差值恒为 0
+      //  3) 战斗**结束后**查"有没有敌人被拦在闸门右侧"
+      //     → 又一次误判：赢下战斗时敌人已全部死亡
+      //
+      // 三次都是同一个形状：**观测点选错了，于是观测不到东西，
+      // 而观测不到被读成"机制没生效"**。
+      //
+      // 现在的做法是逐 tick 观测引擎的公开状态，不碰任何私有方法：
+      //   - 弹丸：记住上一 tick 的速度，本 tick 比对（任何来源的改变都能发现）
+      //   - 敌人：只要"活着 && x >= 闸门 x && |y 差| < 60"就记为被拦
+      const lastVel = new Map<number, { vx: bigint; vy: bigint }>()
+      const deflected = new Set<string>()
+      const heldEnemy = new Set<string>()
+      type E = { dead: boolean; x: bigint; y: bigint }
+      type P = { uid: number; vx: bigint; vy: bigint }
+      const view = e as unknown as { enemies: E[]; projectiles: P[] }
+
+      e.start()
+      for (let t = 0; t < 20000; t++) {
+        if (e.phase === 'won' || e.phase === 'lost') break
+        if (e.phase === 'card_select') e.skipCards()
+        e.step()
+
+        // 1) 偏转：与**上一 tick** 的速度比对
+        for (const p of view.projectiles) {
+          const prev = lastVel.get(p.uid)
+          if (prev && (prev.vx !== p.vx || prev.vy !== p.vy)) deflected.add('rotor_vane')
+          lastVel.set(p.uid, { vx: p.vx, vy: p.vy })
+        }
+        // 2) 拦敌：敌人被钉在闸门右侧且与闸门同一条线
+        for (const t2 of terrains) {
+          if (t2.kind !== 'tidal_gate') continue
+          const gx = BigInt(t2.x * 1000)
+          const gy = BigInt(t2.y * 1000)
+          for (const en of view.enemies) {
+            if (en.dead || en.x < gx) continue
+            const dy = en.y - gy
+            if (dy > -60000n && dy < 60000n) heldEnemy.add('tidal_gate')
+          }
+        }
+      }
+
+      for (const t of terrains) {
+        let ok = false
+        if (t.kind === 'oil_drum') ok = t.state === 'burning'
+        else if (t.kind === 'collapse_wall') ok = t.state === 'collapsed'
+        else if (t.kind === 'charge_tower') ok = t.charge > 0
+        else if (t.kind === 'tidal_gate') ok = heldEnemy.has('tidal_gate')
+        else if (t.kind === 'rotor_vane') ok = deflected.has('rotor_vane')
+        const s = stats.get(t.kind)!
+        if (!ok) {
+          // 峰值充能：区分「从没靠近过」（充能 0）与
+          // 「靠近过但累积不够」（充能 > 0 但不到 param）——
+          // 这两种情况的修法完全不同。
+          s.maxCharge = Math.max(s.maxCharge, t.charge)
+          s.placedButIdle.push(`关${lv.id} charge=${t.charge}/${t.param} @y=${t.y}`)
+        }
+        if (ok) {
+          s.effective++
+          s.levels.add(lv.id)
+        }
+      }
+    }
+    const rows: string[] = []
+    for (const [kind, s] of stats) {
+      const rate = s.placed > 0 ? (s.effective / s.placed) * 100 : 0
+      rows.push(
+        `[bal-ter] ${kind.padEnd(14)} 放置 ${String(s.placed).padStart(3)} 生效 ` +
+          `${String(s.effective).padStart(3)} (${rate.toFixed(0).padStart(3)}%) ` +
+          `覆盖 ${s.levels.size} 关`,
+      )
+      if (s.placed > 0 && s.effective === 0) dead.push(kind)
+    }
+    for (const r of rows) console.log(r)
+    for (const [kind, s] of stats) {
+      if (s.effective === 0 && s.placed > 0) {
+        console.log('[bal-ter]   ' + kind + ' 未生效: ' + s.placedButIdle.join(' | '))
+      }
+    }
+    // 有放置但零效果 = 机制在真实对局里是死代码
+    expect(dead.join(',')).toBe('')
+  }, 600_000)
+
   // 血量厚度对成长维度的影响（参数实验）
   it('血量厚度对成长维度的影响（参数实验）', () => {
     for (const hpMul of [1, 2, 5, 10, 20]) {
