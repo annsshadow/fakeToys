@@ -32,7 +32,13 @@ import { ACTIVE_SLOTS } from './heatmap'
 
 // ---- 夹具装配 ----
 
-const level = fixture.level as unknown as GeneratedLevel
+/** 导出的关卡：第 1/10/25/50/75/100 关，覆盖 6 个章节起点与全程终点。 */
+const levels = (fixture.levels as unknown as GeneratedLevel[]).slice().sort(
+  (a, b) => a.id - b.id,
+)
+
+/** 冒烟测试的主体关卡：第 1 关。 */
+const level = levels[0]
 
 const enemyMap = new Map<number, EnemyDef>(
   (fixture.enemies as unknown as EnemyDef[]).map((e) => [e.id, e]),

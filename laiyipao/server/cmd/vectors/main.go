@@ -91,55 +91,52 @@ func mustIndent(v any) []byte {
 
 // smokeFixture 是引擎冒烟测试用的真实内容切片。
 //
-// 只包含第 1 关真正需要的东西，避免把 22 敌人 / 42 技能全导出去
-// （客户端已经在 /config 时拿到全量，这里要的是**离线可跑**的最小集）。
+// 导出**多个关卡**而不是只有第 1 关：难度是跨关卡的性质，
+// 单关数据看不出"第 50 关是否真的比第 1 关难"。
+// 客户端的「跨关卡难度递增」测试依赖这份数据 ——
+// 没有它的话，把所有关卡调成同一个难度也照样全绿。
 type smokeFixture struct {
-	Note      string                 `json:"note"`
-	Level     domain.GeneratedLevel  `json:"level"`
-	Enemies   []domain.SeedEnemy     `json:"enemies"`
-	Skills    []domain.SeedSkill     `json:"skills"`
-	Composite []domain.SeedSkill     `json:"composite_skills"`
-	Equip     []domain.SeedEquipment `json:"equipment"`
+	Note      string                  `json:"note"`
+	Levels    []domain.GeneratedLevel  `json:"levels"`
+	Enemies   []domain.SeedEnemy      `json:"enemies"`
+	Skills    []domain.SeedSkill      `json:"skills"`
+	Composite []domain.SeedSkill      `json:"composite_skills"`
+	Equip     []domain.SeedEquipment  `json:"equipment"`
 }
 
-const smokeLevelID = 1
+// smokeLevelIDs 是导出的关卡。取第 1/10/25/50/75/100 关，
+// 覆盖 6 个章节的起点与全程终点。
+var smokeLevelIDs = []int{1, 10, 25, 50, 75, 100}
 
 func buildSmoke() ([]byte, error) {
-	gl := domain.GenerateLevel(smokeLevelID)
-
-	// 收集该关实际用到的敌人/技能 id，只导这些。
-	usedEnemy := map[int]bool{}
-	usedSkill := map[int]bool{}
-	for _, w := range gl.Waves {
-		for _, sp := range w.Spawns {
-			usedEnemy[sp.EnemyID] = true
-		}
-	}
-
-	all := domain.ScaleAllEnemies()
 	fx := smokeFixture{
 		Note: "由 server/cmd/vectors 从 Go 真相源导出，供 miniapp 引擎冒烟测试使用。" +
 			"不要手工编辑：改内容表后重新执行 go run ./cmd/vectors。",
-		Level:   gl,
-		Enemies: []domain.SeedEnemy{},
-		Skills:  []domain.SeedSkill{},
+		Enemies:   []domain.SeedEnemy{},
+		Skills:    domain.ScaleAllSkills(),
+		Composite: domain.ScaleAllCompositeSkills(),
+		Equip:     domain.SeedEquipmentList,
+		Levels:    make([]domain.GeneratedLevel, 0, len(smokeLevelIDs)),
 	}
-	for _, e := range all {
-		if usedEnemy[e.ID] {
+
+	// 只导这些关卡真正用到的敌人
+	used := map[int]bool{}
+	for _, id := range smokeLevelIDs {
+		gl := domain.GenerateLevel(id)
+		fx.Levels = append(fx.Levels, gl)
+		for _, w := range gl.Waves {
+			for _, sp := range w.Spawns {
+				used[sp.EnemyID] = true
+			}
+		}
+	}
+	for _, e := range domain.ScaleAllEnemies() {
+		if used[e.ID] {
 			fx.Enemies = append(fx.Enemies, e)
 		}
 	}
-	for _, s := range domain.ScaleAllSkills() {
-		fx.Skills = append(fx.Skills, s)
-		usedSkill[s.ID] = true
-	}
-	for _, s := range domain.ScaleAllCompositeSkills() {
-		fx.Composite = append(fx.Composite, s)
-	}
-	fx.Equip = domain.SeedEquipmentList
-
 	if len(fx.Enemies) == 0 {
-		return nil, fmt.Errorf("第 %d 关没有用到任何敌人，夹具无意义", smokeLevelID)
+		return nil, fmt.Errorf("所选关卡没有用到任何敌人，夹具无意义")
 	}
 	return mustIndent(fx), nil
 }
