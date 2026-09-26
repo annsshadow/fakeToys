@@ -25541,7 +25541,7 @@ impl U2FilterSql {
             })
             .collect();
         self.clauses
-            .push(format!("{} IN ({})", col, placeholders.join(", ")));
+            .push(format!("\"{}\" IN ({})", col, placeholders.join(", ")));
     }
 
     /// 多列 OR ILIKE 匹配（同一转义后的 pattern 复用同一占位值）。
