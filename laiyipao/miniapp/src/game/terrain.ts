@@ -165,19 +165,22 @@ export class Terrain {
     return { blocked: false }
   }
 
-  /** 崩塌掩体：受动能伤害累计到阈值即崩塌 → 弹道永久改变 */
-  private updateCollapseWall(ctx: TerrainContext): TerrainEffect {
+  /**
+   * 崩塌掩体：受动能伤害累计到阈值即崩塌 → 弹道永久改变。
+   *
+   * ⚠️ 这里**不做任何充能**。曾经这里每 tick 扫一遍半径 110 内的动能弹丸
+   * `charge += 1`，但那条路径在几何上**永远走不到**：
+   *   - engine 的 blocksProjectile 判定半径是 **100**，
+   *     弹丸进入 110 的瞬间就已经在 100 内被标记 dead 并从 projectiles 里滤掉
+   *   - step() 里 updateProjectiles 先于 updateTerrain
+   * 所以 updateCollapseWall 永远看不到任何弹丸，
+   * 掩体的 charge 恒为 0，param 调到多大都没用。
+   *
+   * 唯一的充能来源是 onHit（按命中伤害累计），那条路径是通的。
+   * 留一个走不到的分支比没有分支更糟：它让人以为机制在工作。
+   */
+  private updateCollapseWall(_ctx: TerrainContext): TerrainEffect {
     if (this.state === 'collapsed') return { blocked: false }
-    for (const p of ctx.projectiles) {
-      if (p.element === 'kinetic' && ctx.within(this.x, this.y, 110, p.x, p.y)) {
-        this.charge += 1
-        if (this.charge >= this.param) {
-          this.state = 'collapsed'
-          this.triggered = true
-          ctx.onTerrainTrigger('collapse_wall', this)
-        }
-      }
-    }
     return { blocked: true }
   }
 
@@ -189,13 +192,35 @@ export class Terrain {
 
   /**
    * 由命中结算调用：把伤害与元素喂给地形。
-   * 返回 true 表示本次命中触发了地形效果。
+   *
+   * ⚠️ 必须带位置判定。engine 的调用点是
+   *   `for (const t of this.terrains) if (t.onHit(p.element, res.totalDamage))`
+   * —— **对所有地形都调一遍，不看弹丸与地形是否挨着**。
+   * 于是「站在 x=900 的油桶」会被「打到 x=200 的敌人」的火焰点燃，
+   * 机制语义整个错掉：玩家无法通过站位影响地形，只能靠无脑堆同元素。
+   *
+   * 加了位置判定之后，「先清掉挡在前面的怪、把火引到油桶」才成为可执行的策略 ——
+   * 这正是 I-4 想提供的「地形既是解法也是约束」。
    */
-  onHit(element: Element, damage: bigint): boolean {
+  onHit(element: Element, damage: bigint, hitX: bigint, hitY: bigint): boolean {
     if (this.state === 'collapsed') return false
+    // 判定半径比 blocksProjectile(100) 略大，保证"擦边命中"也算。
+    //
+    // ⚠️ this.x / this.y 是**逻辑单位**（number，来自关卡配置），
+    // 而 hitX / hitY 是**定点整数**（bigint，来自引擎内部坐标）。
+    // 两者直接相减会得到 NaN 之外的无意义结果 —— 而且是静默的。
+    // 坐标约定见文件头：配置用逻辑单位，内部实体用定点（×1000）。
+    const tx = toFixed(this.x)
+    const ty = toFixed(this.y)
+    const near = (r: number) => {
+      const rr = toFixed(r)
+      const dx = hitX - tx
+      const dy = hitY - ty
+      return dx * dx + dy * dy <= rr * rr
+    }
     switch (this.kind) {
       case 'oil_drum': {
-        if (element === 'fire' && this.state === 'idle') {
+        if (element === 'fire' && this.state === 'idle' && near(120)) {
           this.charge += Number(damage / 100n)
           if (this.charge >= this.param) {
             this.state = 'burning'
@@ -208,7 +233,9 @@ export class Terrain {
         return false
       }
       case 'collapse_wall': {
-        if (element === 'kinetic') {
+        // 动能打进掩体。半径 100 与 blocksProjectile 对齐 ——
+        // 弹丸要真的"打到墙上"才算，不该有擦边充能。
+        if (element === 'kinetic' && near(100)) {
           this.charge += Number(damage / 100n)
           if (this.charge >= this.param) {
             this.state = 'collapsed'
