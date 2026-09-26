@@ -53,6 +53,7 @@ async fn every_registered_route_has_matching_path_arity() {
     }
 
     let mut arity_traps: Vec<String> = Vec::new();
+    let mut unreachable: Vec<String> = Vec::new();
     // 一次装配、逐请求 clone（axum Router: Clone），避免 4600+ 次重建路由的开销。
     let app = mcp_server::tool_bridge::build_core_router(
         shared::testing::test_pool(),
@@ -72,43 +73,58 @@ async fn every_registered_route_has_matching_path_arity() {
             }
         };
         let resp = app.clone().oneshot(req).await.unwrap();
+        let status = resp.status();
         let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
         let body = String::from_utf8_lossy(&bytes);
         if body.contains("Wrong number of path arguments") {
             arity_traps.push(format!("{method} {path}"));
         }
+        // 已注册路由被自身注册路径命中却 404 = 不可达（路由树被字面段/同位异名参数遮蔽）。
+        // 405（方法不符）不计入——backend_routes.json 的 method 即注册 method，不应 405。
+        if status == axum::http::StatusCode::NOT_FOUND {
+            unreachable.push(format!("{method} {path}"));
+        }
     }
     eprintln!("probe 完成：跳过非法 URI {skipped_uri} 条");
 
-    // 棘轮基线：已登记在案的 arity 陷阱（逐 crate 修复中）。测试只在出现「基线之外的新
-    // 陷阱」时失败（防回归），并报告剩余进度。修复推进时同步收缩 _arity_traps_baseline.txt。
-    let baseline_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../docs/audits/three-ends-2026-09-20/_arity_traps_baseline.txt");
-    let known: std::collections::HashSet<String> = std::fs::read_to_string(&baseline_path)
-        .unwrap_or_default()
-        .lines()
-        .map(|l| l.trim().to_string())
-        .filter(|l| !l.is_empty())
-        .collect();
-    let current: std::collections::HashSet<String> = arity_traps.iter().cloned().collect();
-    let new_traps: Vec<&String> = current.difference(&known).collect();
-    let remaining = current.intersection(&known).count();
-    eprintln!(
-        "arity 陷阱：当前 {} 条（基线 {}，剩余待修 {}，新回归 {}）",
-        current.len(),
-        known.len(),
-        remaining,
-        new_traps.len()
-    );
-    if !new_traps.is_empty() {
-        eprintln!("== 基线之外的新 arity 回归 ==");
-        for t in &new_traps {
-            eprintln!("  {t}");
+    // 棘轮基线：两类「名义已注册、实际不可消费」缺陷各自一份基线，测试仅在出现基线之外的
+    // 新回归时失败（防回归），修复推进时同步收缩基线文件。
+    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../docs/audits/three-ends-2026-09-20");
+    let ratchet = |name: &str, found: &[String], label: &str| -> usize {
+        let base_path = dir.join(name);
+        let known: std::collections::HashSet<String> = std::fs::read_to_string(&base_path)
+            .unwrap_or_default()
+            .lines()
+            .map(|l| l.trim().to_string())
+            .filter(|l| !l.is_empty())
+            .collect();
+        let current: std::collections::HashSet<String> = found.iter().cloned().collect();
+        // 落盘当前全集，便于修复后同步收缩基线。
+        let mut sorted: Vec<&String> = current.iter().collect();
+        sorted.sort();
+        let _ = std::fs::write(
+            dir.join(format!("_current_{name}")),
+            sorted.iter().map(|s| s.as_str()).collect::<Vec<_>>().join("\n"),
+        );
+        let new: Vec<&String> = current.difference(&known).collect();
+        eprintln!(
+            "{label}：当前 {} 条（基线 {}，剩余 {}，新回归 {}）",
+            current.len(),
+            known.len(),
+            current.intersection(&known).count(),
+            new.len()
+        );
+        for t in &new {
+            eprintln!("  [新回归-{label}] {t}");
         }
-    }
-    assert!(
-        new_traps.is_empty(),
-        "{} 条基线之外的新 arity 陷阱（URL 槽数≠handler Path 元数的运行时 500），见上方明细",
-        new_traps.len()
+        new.len()
+    };
+    let new_arity = ratchet("_arity_traps_baseline.txt", &arity_traps, "arity-500");
+    let new_404 = ratchet("_arity_unreachable_baseline.txt", &unreachable, "unreachable-404");
+    assert_eq!(
+        new_arity + new_404,
+        0,
+        "出现基线之外的新缺陷：arity-500 新增 {new_arity} 条、unreachable-404 新增 {new_404} 条（见上方明细）"
     );
 }
