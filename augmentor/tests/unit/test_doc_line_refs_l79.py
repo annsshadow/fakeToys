@@ -52,7 +52,7 @@ DOCS = (ARCH, LEDGER)
 #: L79 就地清账后的基线。键是 `audit()` 的桶名；**只降不升**，见模块 docstring。
 #: 现量读数见 `Temp/l79q/lineref_buckets.json` 里 `runs` 的最后一条（命令
 #: `PYTHONIOENCODING=utf-8 C:/Python314/python.exe Temp/l79q/buckets.py <label>`）：
-#: 架构文档 = 0 / 0 / 0 / 0 / 18 / 29，账本 = 0 / 0 / 69 / 145 / 152 / 111。
+#: 架构文档 = 0 / 0 / 0 / 0 / 18 / 29，账本 = 0 / 0 / 69 / 145 / 151 / 111（L83 回填后）。
 #: **L82 回填（两桶同时降，且降下来的原因不是「清了旧账」）**：`bare` 架构文档 20 → **18**
 #: 的净 −2 = **删 3 加 1**（逐条命令现量：删 `` `:33` `` / `` `:34` `` / `` `:308` ``、加
 #: `` `:250` ``），全部发生在同一处 —— L82 复原 A 级位移时重写 `docs/ARCHITECTURE.md` 里
@@ -62,6 +62,15 @@ DOCS = (ARCH, LEDGER)
 #: 理由第一次用在自己身上）。同批把 A118 关闭后失效的 5 条 `dead_line` 清零，与本轮写新
 #: 日志块时**新长出的那 1 条 `dead_line`**（一句散文里顺手写了 `test_config_validator.py` 加
 #: 行号，而那个行号已被本轮自己的插行推成空行）互不相消 ⇒ 现场改散文、不动上限。
+#: **L83 回填（账本 `bare` 152 → 151，降幅全部来自 A141 那一族的就地还税）**：L83 只动了
+#: 三份产品码（`validation.py` +57/−8、`config_validator.py` +26/−4、`augmentor/config.py`
+#: +12/−3），可证失效当场 2 条（A92 的 `validation.py:442` 被顶成空行 ⇒ 改指现量 637；
+#: L47 日志块那条定位引用 + 它的裸行号 ⇒ 降散文，这一处正是 `bare` 那一桶净减 1 的唯一
+#: 来源）。**同轮我自己还写坏了 2 条 `ambiguous_file`（145 → 147）**：日志块里两处裸
+#: `` `config.py` `` 一名两指（仓里另有 `api/routes/config.py`，两个家），当场改成
+#: `` `augmentor/config.py` `` 才回 145 —— 上限没被我抬上去，但这是「新写坏 → 就地改回」
+#: 而不是清账，记在这里是为了
+#: 让下一轮看见：`ambiguous_file` 的 145 是**被本轮写坏过又修平的数**，不是稳态。
 #: `unresolved_source` = 「点名的路径第一段是仓内某个装 `.py` 的顶层目录（现量
 #: `api` / `archive` / `augmentor` / `scripts` / `tests`），可这个文件不存在」—— 它与
 #: 「指向不入仓的 Temp 草稿」必须分家：本轮 4 处**产品源码路径写错**原本被
@@ -70,7 +79,7 @@ CEILING = {
     ARCH: {"dead_line": 0, "unresolved_source": 0, "ambiguous_line": 0,
            "ambiguous_file": 0, "bare": 18, "scratch_missing": 29},
     LEDGER: {"dead_line": 0, "unresolved_source": 0, "ambiguous_line": 69,
-             "ambiguous_file": 145, "bare": 152, "scratch_missing": 111},
+             "ambiguous_file": 145, "bare": 151, "scratch_missing": 111},
 }
 
 #: 反空转下界：`line_refs` / `file_tokens` 是**两种语法各自的匹配总数**（不是桶的加和 ——
@@ -130,9 +139,23 @@ FLOOR = {
 #: 的口径，绕不开 ⇒ 结论修正为 **(h) 只能对「一份文档」成立，跨文档的互引（本文件引用另一文件的
 #: 计数）仍会过期，因为写指针句的动作本身就在增加 token**。无论哪一侧，代价都一样：`MEASURED`
 #: 自己不许出现在散文里当数（A129 的老边界，本轮在 §3.33 新写的那句指针里又复述了一次）。
+#:
+#: **L83 回填（三格位移，全部可对账到「本轮写了哪两段文档」，无一是代码变坏）**：架构文档
+#: `file_tokens` 217 → **219**（§6 错误处理表新增的那一行点名了 `validation.py` 与
+#: `config_validator.py`）、`code_but_no_name_match` 38 → **37**（净 −1；本轮**没有**为这一格
+#: 跑逐条归因探针，只验到「桶的净差 = −1 且 `dead_line` 双侧仍为 0」，具体是哪一条从漂移档搬
+#: 回名字命中档要 A141 候选 ③ 那种固定 refshift 才能说 —— 按纪律 (u) 不把没量过的因果写进
+#: 注释。可证的是：L82 说过「同一棵树上的 HEAD 态自己会漂」，被减数因此必须是本轮重跑的桶，
+#: 不是照抄 L82 常数）。账本
+#: `file_tokens` 1196 → **1218**（+22：A142 关闭段、L83 日志块十条子弹与进度行；本轮对引用的
+#: 唯一一次删改是 A141 口径下把 2 条失效引用**改成散文/改指新号**，净效果已含在这 +22 里）、
+#: `code_but_no_name_match` 171 → **170**（A92 那一格从 442 改指现量 637 之后不再命中空行）、
+#: `line_refs` 287 → **287 未动**（一进一出：新写的定位引用与降为散文的那条相互抵平 —— 这句
+#: 是对账后回写的，不是先写的：补「收尾实测」那一节之前量到 286、之后 287，纪律 (h) 在跨文档
+#: 互引上仍然只能对「一份文档」成立）。
 MEASURED = {
-    ARCH: {"line_refs": 48, "file_tokens": 217, "code_but_no_name_match": 38},
-    LEDGER: {"line_refs": 287, "file_tokens": 1196, "code_but_no_name_match": 171},
+    ARCH: {"line_refs": 48, "file_tokens": 219, "code_but_no_name_match": 37},
+    LEDGER: {"line_refs": 287, "file_tokens": 1218, "code_but_no_name_match": 170},
 }
 
 #: 日志块标题行上「下一轮才填得出自己哈希」的占位符。精确相等 = **只许有该填的那几条**。
