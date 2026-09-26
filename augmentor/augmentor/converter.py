@@ -8,6 +8,7 @@
 
 import json
 import csv
+import io
 import logging
 import math
 from typing import List, Dict, Optional, Any, Tuple
@@ -837,7 +838,25 @@ class DatasetConverter:
         return inferred
 
     def _read_excel(self, path: Path) -> List[Dict[str, Any]]:
+        """按路径读 Excel（判据与内存入口共用 `_read_excel_source`）"""
+        return self._read_excel_source(path, path.name)
+
+    @staticmethod
+    def _read_excel_source(source: Any, name: str) -> List[Dict[str, Any]]:
         """读 Excel：整张表、全部列，空格子按 csv 读边口径落成空串
+
+        `source` 可以是路径，也可以是 `BytesIO`，这是本方法与 `_read_excel` 的唯一区别。
+
+        拆成「吃文件对象」而不是只吃路径，是因为上传面拿到的是**内存里的字节**：
+        实测 `pd.read_excel(BytesIO(xlsx 字节))` 直接读通（pandas 按内容而不是文件名
+        选引擎，见 `Temp/l91q/error_shapes.py` 第 4 档），于是上传不必先落一份临时
+        文件再读回来（那是 `web.max_upload_bytes` 之外的又一处磁盘写）。
+
+        **下面那道 `except Exception` 翻译是必需的，不是装饰**：同一份探针量到损坏
+        xlsx 在 pandas 侧抛的是 `zipfile.BadZipFile` 与 `pandas.errors.OptionError`，
+        两者都**不是** `ValueError` 子类 ⇒ 经 API 就是 500，把「你上传的文件坏了」
+        说成「服务端故障」。`DataFormatError` 是 `ValueError` 子类，走 `to_http_error`
+        回 400，且文案带文件名。
 
         pandas 是**可选依赖**，import 推迟到真要读 xlsx 的时候 —— `import augmentor`
         在没有 pandas 的环境里必须继续可用（aug 侧解释器就是这种环境，L50 口径下每轮
@@ -851,9 +870,15 @@ class DatasetConverter:
         if not cei.HAS_PANDAS:
             raise DataLoadError(
                 f"读取 Excel 需要安装 pandas 与 openpyxl: "
-                f"pip install pandas openpyxl（{path.name}）"
+                f"pip install pandas openpyxl（{name}）"
             )
-        frame = cei.pd.read_excel(path)
+        try:
+            frame = cei.pd.read_excel(source)
+        except Exception as e:
+            raise DataFormatError(
+                f"{name} 读不出 Excel 工作表：文件可能损坏、其实不是 xlsx，"
+                f"或是老 .xls 格式而缺 xlrd（{type(e).__name__}）"
+            ) from e
         return [
             {key: excel_cell(value) for key, value in row.items()}
             for row in frame.to_dict(orient="records")
@@ -862,39 +887,49 @@ class DatasetConverter:
     def _read_file(self, path: Path, format: str) -> Any:
         """读取文件
 
-        `newline=""` 是 csv 模块的硬要求：不传时 Python 会先把 `\\r\\n` 归一成
-        `\\n`，被引号包裹的字段内换行因此错位（写侧同理）。
-
-        只有 `CONTAINER_FORMATS` 里那四个值决定「怎么解析这个文件」。声明成
-        alpaca/sharegpt/chatml/… 时它只是**行内 schema**，容器交给内容嗅探：整份能
-        解析成一个 JSON 数组（或单条对象）就按 JSON 读，否则按 JSONL 一行一条读。
-        旧实现把 schema 当容器用、一律 `json.load`，于是同一批 alpaca 记录写成
-        `.jsonl` 就抛 `JSONDecodeError: Extra data: line 2 column 1`——调用方已经
-        声明了正确的源格式，却绊在容器上。
-
         `excel` 必须在这句 `open()` **之前**分流：xlsx 是二进制，用文本模式打开它，
         报错会停在 `codecs` 的解码错上（`UnicodeDecodeError: 'utf-8' codec can't
         decode byte ...`），而不是「这份文件要交给 pandas」这件事本身。
+
+        文本那四路的判据住在 `_read_stream`（与内存上传共用一份），这里只负责开文件。
         """
         if format == EXCEL_FORMAT:
             return self._read_excel(path)
 
         with open(path, 'r', encoding='utf-8', newline='') as f:
-            if format == "jsonl":
-                return [json.loads(line) for line in f if line.strip()]
-            elif format == "csv":
-                reader = csv.DictReader(f)
-                return list(reader)
-            elif format == "tsv":
-                reader = csv.DictReader(f, delimiter="\t")
-                return list(reader)
-            elif format == "json":
-                return json.load(f)
-            return self._read_schema_container(f, path, format)
+            return self._read_stream(f, format, path.name)
+
+    @classmethod
+    def _read_stream(cls, f, format: str, name: str) -> Any:
+        """从**已打开的文本流**按声明格式读，是 `_read_file` 与内存上传共用的那一半
+
+        `newline=""` 是 csv 模块的硬要求：不传时 Python 会先把 `\\r\\n` 归一成
+        `\\n`，被引号包裹的字段内换行因此错位（写侧同理）。路径入口由 `_read_file`
+        带这个参数打开文件；内存入口给 `io.StringIO(text, newline="")` —— 两个方向
+        都必须显式，否则同一份字节在两条路上会读出不同的记录。
+
+        只有 `CONTAINER_FORMATS` 里那四个值决定「怎么解析」。声明成
+        alpaca/sharegpt/chatml/… 时它只是**行内 schema**，容器交给内容嗅探：整份能
+        解析成一个 JSON 数组（或单条对象）就按 JSON 读，否则按 JSONL 一行一条读。
+        旧实现把 schema 当容器用、一律 `json.load`，于是同一批 alpaca 记录写成
+        `.jsonl` 就抛 `JSONDecodeError: Extra data: line 2 column 1`——调用方已经
+        声明了正确的源格式，却绊在容器上。
+        """
+        if format == "jsonl":
+            return [json.loads(line) for line in f if line.strip()]
+        elif format == "csv":
+            reader = csv.DictReader(f)
+            return list(reader)
+        elif format == "tsv":
+            reader = csv.DictReader(f, delimiter="\t")
+            return list(reader)
+        elif format == "json":
+            return json.load(f)
+        return cls._read_schema_container(f, name, format)
 
     @staticmethod
-    def _read_schema_container(f, path: Path, format: str) -> Any:
-        """读「schema 已声明、容器未声明」的文件：先整份 JSON，再退到一行一条
+    def _read_schema_container(f, name: str, format: str) -> Any:
+        """读「schema 已声明、容器未声明」的流：先整份 JSON，再退到一行一条
 
         只接受「记录数组」与「单条记录对象」两种整份形态；顶层是裸标量（`null`、
         `42`）时不算读通，继续走逐行分支，让报错停在「这条记录不是对象」上，而不是
@@ -922,7 +957,7 @@ class DatasetConverter:
                 rows.append(json.loads(line))
             except json.JSONDecodeError as exc:
                 raise DataFormatError(
-                    f"{path.name} 声明为 {format}，但它既不是合法 JSON，"
+                    f"{name} 声明为 {format}，但它既不是合法 JSON，"
                     f"第 {lineno} 行也不是合法 JSON: {exc}"
                 ) from exc
         if not rows:
@@ -1051,6 +1086,59 @@ def convert_file(input_path: str,
     return converter.convert_file(input_path, output_path,
                                   source_format=source_format,
                                   target_format=target_format, **kwargs)
+
+
+def read_records(content: bytes, source_format: str,
+                 filename: str = "") -> List[Dict[str, Any]]:
+    """把**内存里的**一份字节读成规范记录列表（`_read_file` 的孪生入口）
+
+    **为什么要第二个入口**：上传端点拿到的是 multipart 部件的字节，不是路径。它此前
+    只会 `json.loads`，于是 `.csv` / `.tsv` / `.jsonl` / `.xlsx` 四种进料一律 400
+    （实测见 `Temp/l91q/upload_census.py`：表格三种回「数据文件不是合法 JSON」，
+    二进制两种回「上传内容不是合法的 UTF-8 文本」），而这份能力早就住在转换器的读边。
+    接到临时文件再 `convert_file` 也能做，但那要为一次拒收风险的字节再开一次磁盘写；
+    实测 pandas 按**内容**而不是文件名选引擎，`read_excel(BytesIO(...))` 直接读通。
+
+    与路径入口**共用同一套判据**（`_read_stream` / `_read_excel_source`），不另写一份
+    csv/jsonl 解析 —— 一份权威只住一处。落点选择、空结果判决、扩展名撒谎的交叉检查
+    属**产品面口径**，不在这里（这里只是格式工具）。
+
+    Args:
+        content: 原始字节
+        source_format: 源格式，取 `INPUT_FORMAT_CHOICES` 任一种（Excel 的三种拼法
+            `excel` / `xlsx` / `xls` 同义）
+        filename: 只用于报错文案；为空时文案里称「上传内容」
+
+    Returns:
+        规范记录列表。**`source_format` 是 `json` 时不做顶层判决**（原样返回
+        `json.loads` 的结果，可能是对象），形状判决归调用方（API 侧即
+        `api/deps.py:assert_dataset_shape`）—— 与 `_read_file` 的 json 分支同口径。
+
+    Raises:
+        UnsupportedFormatError: `source_format` 不在读边清单里
+        UnicodeDecodeError: 文本格式但字节不是 UTF-8（由调用方映射成 400）
+        DataFormatError: 解析失败，或 Excel 文件损坏 / 缺 xlrd
+        DataLoadError: 要读 Excel 但环境里没有 pandas
+    """
+    converter = DatasetConverter()
+    declared = source_format.lower()
+    if declared in EXCEL_SOURCE_NAMES:
+        declared = EXCEL_FORMAT
+    if declared != EXCEL_FORMAT and declared not in INPUT_FORMAT_CHOICES:
+        raise UnsupportedFormatError(
+            f"认不出的源格式: {source_format}（读边可选: "
+            f"{', '.join(INPUT_FORMAT_CHOICES)}）"
+        )
+    name = filename or "上传内容"
+
+    if declared == EXCEL_FORMAT:
+        return converter._read_excel_source(io.BytesIO(content), name)
+
+    data = converter._read_stream(
+        io.StringIO(content.decode("utf-8"), newline=""), declared, name)
+    if declared == "json":
+        return data
+    return converter.convert(data, declared, "json")
 
 
 def get_supported_formats() -> List[str]:

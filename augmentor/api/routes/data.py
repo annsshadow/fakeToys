@@ -6,11 +6,17 @@
 import asyncio
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, File
 from pydantic import BaseModel
 
+from augmentor.converter import (
+    EXCEL_FORMAT,
+    INPUT_EXTENSION_FORMATS,
+    INPUT_FORMAT_CHOICES,
+    read_records,
+)
 from ..deps import (
     allowed_data_roots,
     assert_dataset_shape,
@@ -231,6 +237,128 @@ async def delete_data_item(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def _upload_source_format(filename: str, declared: str) -> Optional[str]:
+    """这次上传该按哪个**源格式**解析：显式声明 > 扩展名；两者都认不出 ⇒ `None`
+
+    `None` 不等于「json」，而是「本函数对格式没有主张」，路由随后原样走那条
+    `json.loads` 的老路。为什么不能把「认不出」判成错误：无扩展名与 `.txt` 之类的
+    名字上传 JSON 一直是成功的（实测改前 `noext` / `data.txt` 与 `data.json` 同路），
+    判死等于把一批能用的客户端换掉。
+
+    权威表是 `augmentor/converter.py` 的 `INPUT_EXTENSION_FORMATS`（读边）与
+    `INPUT_FORMAT_CHOICES`（拼法清单），这里一个字都不另立 —— 加一种源格式仍然只改
+    转换器那一行（A77「一份权威只住一处」）。显式声明 `json` 也返回 `None`：那样
+    「声明了的 json」与「默认的 json」走的是同一条代码，不存在第二份 JSON 判据。
+    """
+    if declared:
+        key = declared.strip().lower()
+        if key == "json":
+            return None
+        if key not in INPUT_FORMAT_CHOICES:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"input_format 不是读边认得的格式: {declared}"
+                    f"（可选: {', '.join(INPUT_FORMAT_CHOICES)}；不传则按扩展名推断）"
+                ),
+            )
+        return key
+    inferred = INPUT_EXTENSION_FORMATS.get(Path(filename).suffix.lower())
+    return None if inferred in (None, "json") else inferred
+
+
+def _table_input_lies(content: bytes, source: str) -> bool:
+    """交叉检查：整份字节其实是一份完整 JSON，却被按表格格式解析
+
+    这一格不是假想敌，实测（`Temp/l91q/error_shapes.py` 第 2 档）拿一份缩进过的
+    JSON 数组当 `.csv` 上传：`DictReader` 读出 **251 条**键为 `'['` 的行记录，
+    顶层是数组、元素是对象 ⇒ `assert_dataset_shape` 全过 ⇒ 一份垃圾数据集静静落盘；
+    同一份内容写成单行 JSON 时读出来是 **0 条**，于是上传回 200、`count: 0`。
+    改前这两份输入都是 400「不是合法 JSON」⇒ 放行表格格式不能把「响亮地拒绝」换成
+    「静默地接受」。
+
+    `jsonl` 只判「整份能解析成数组」这一种：单条 JSON 对象既是一份合法的 JSONL，
+    也是一份合法的 JSON，按 JSONL 读出一条记录才是它声明的语义，不该被当成撒谎。
+    """
+    if source == EXCEL_FORMAT:
+        return False
+    try:
+        value = json.loads(content.decode("utf-8", "ignore"))
+    except (ValueError, UnicodeDecodeError):
+        return False
+    if source == "jsonl":
+        return isinstance(value, list)
+    return isinstance(value, (list, dict))
+
+
+def _upload_records(content: bytes, source: str, filename: str) -> Any:
+    """表格 / JSONL 进料的解析，附两道产品面判决
+
+    判据住在转换器（`read_records`，与 CLI 的 `convert_file` 同一套读边），这里只加
+    「上传」这一侧才需要的两条：格式与内容互相矛盾、解析完一条也没有。
+
+    Raises:
+        HTTPException: 400 内容其实是一份 JSON / 解析出 0 条
+        其余异常由调用方映射（`DataFormatError` 等都是 `ValueError` 子类 ⇒ 400）
+    """
+    if _table_input_lies(content, source):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"上传内容整份是一份合法 JSON，但按 {source} 解析：名字或 input_format "
+                f"与内容不符。JSON 请去掉扩展名或用 input_format=json，"
+                f"JSONL 请每行一条记录"
+            ),
+        )
+    records = read_records(content, source, filename)
+    if not records and content.strip():
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"按 {source} 解析 {filename or '上传内容'} 得到 0 条记录："
+                f"字节非空却一行也没读出来，通常是只有表头、整行注释或空行"
+            ),
+        )
+    return records
+
+
+def _upload_landing_path(filename: str, source: Optional[str]) -> Path:
+    """上传落点：裸文件名在「按工作目录解释会越界」时才补根前缀，表格产物一律 `.json`
+
+    **第一件事（A160）**：浏览器 `<input type=file>` 的 multipart 只给裸文件名
+    （Chromium/Firefox 会剥掉路径），而 `resolve_within_roots` 刻意「不替调用方凭空
+    挑一个写入目录」⇒ 改前从 UI 上传一份**新**文件必 403（实测 py314 默认配置：
+    `data.json` → 403「路径超出允许的数据目录范围」，`data/data.json` → 200）。
+    读侧那条口径是对的（猜目录会静默改掉读到的是哪份文件），上传是纯写侧动作，
+    唯一合理的落点就是白名单根目录本身。
+
+    补根前缀的时机因此是「**先按既有口径解释一次，只有解释成越界（403）才救**」，
+    而不是无条件把裸名搬到 `roots[0]`：白名单可以有多项，而第一项未必就是这次请求
+    该落的那一份 —— 直接取 `roots[0]` 会把一份本来能按工作目录解释的上传悄悄搬到
+    别处去（本轮第一版就是这么写的，`tests/unit/test_upload_ceiling_l87.py` 与
+    `tests/integration/test_api_data_extended.py` 三条用例当场把它判红了：文件不再
+    落在断言的那个目录里）。带目录的显式写法（L87 挣来的那一格）与 `..`（400）、
+    越界绝对路径（403）三支一字未动。
+
+    **第二件事**：源是表格时把落点名换成 `.json`。转换器写边为同一件事站了
+    `_reject_unwritable_output`：把 JSON 字节写进 `x.csv` 的名字就是一份假容器，
+    而上传的产物**本来就是** JSON 字节（`write_json_file`）。上传面不做名字游戏 ⇒
+    同一个数据集换扩展名再传一次不会覆盖它，也就不会把一份表格「转存」成同名的
+    另一份数据。
+    """
+    name = filename.strip()
+    try:
+        path = resolve_within_roots(name, "文件路径")
+    except HTTPException as e:
+        raw = Path(name)
+        if e.status_code != 403 or not name or raw.is_absolute() or raw.parent.parts:
+            raise
+        path = resolve_within_roots(str(allowed_data_roots()[0] / name), "文件路径")
+    if source is not None and path.suffix.lower() != ".json":
+        path = path.with_suffix(".json")
+    return path
+
+
 async def _read_upload_body(file: UploadFile, limit: int) -> bytes:
     """读上传体，但**先在 O(1) 的尺寸上判上限**；越界当场 413，且先于任何落盘动作
 
@@ -293,17 +421,37 @@ async def _read_upload_body(file: UploadFile, limit: int) -> bytes:
     summary="上传数据文件",
 )
 async def upload_data(
-    file: UploadFile = File(...), _auth: None = Depends(verify_api_key)
+    file: UploadFile = File(...),
+    input_format: str = Form(
+        "",
+        description=(
+            "源格式；留空则按文件名扩展名推断（" + " / ".join(INPUT_FORMAT_CHOICES) + "）。"
+            "表格与 JSONL 的产物一律落成 JSON，落点名的扩展名随之换成 .json"
+        ),
+    ),
+    _auth: None = Depends(verify_api_key),
 ):
     """上传数据文件
+
+    支持的进料（L91 起）：**JSON 数组（原有）+ `.csv` / `.tsv` / `.jsonl` / `.xlsx`
+    / `.xls`**，后四种由转换器读边归一成规范记录再落 JSON。改前实测（`Temp/l91q/
+    upload_census.py`）：表格三种回 400「数据文件不是合法 JSON」、二进制两种回 400
+    「上传内容不是合法的 UTF-8 文本」，即四种进料全无路（A132 ③）。
 
     落点：`file.filename` 按**白名单内的相对路径**用，不再剥成裸文件名。改前剥的
     那一刀把 `resolve_within_roots` 对外承诺的写法（「要写入请显式传 `data/xxx.json`」）
     在这条路由上变成了拿不到的出口——客户端唯一能成功的姿势是先知道目标已存在。
     `..` 仍是 400，越界的绝对路径仍是 403，白名单闸一字未松。
+    **但裸文件名现在落进白名单根目录**（A160）：浏览器的文件控件只给裸名，改前从 UI
+    上传新文件必 403，那条「不替调用方挑写入目录」的读侧口径在这里成了产品的死路。
+    源是表格时落点名换成 `.json`，因为产物本来就是 JSON 字节 —— 写进 `x.csv` 的名字
+    就是转换器写边专门拒收的那类假容器。
 
     读体上限见 `_read_upload_body`；形态判据与读侧共用 `assert_dataset_shape`，
-    所以「上传成功但那份文件读端点自己拒绝」已经不可能发生。
+    所以「上传成功但那份文件读端点自己拒绝」已经不可能发生。表格进料另有两道
+    上传侧才需要的判决（`_upload_records`）：整份内容其实是 JSON 却按表格解析、
+    以及解析完 0 条 —— 缺了它们，一份缩进的 JSON 数组改名 `.csv` 会被静静吃成
+    251 条垃圾记录。
 
     **下面那句 `json.loads` 刻意留在事件循环里**（L87 尺子，`Temp/l87q/stall_parse_l87.py`）：
     AST 普查把它记成「async 处理器里的阻塞调用」，本仓对这一类的既有处置是
@@ -313,12 +461,30 @@ async def upload_data(
     C 扫描器整个 `loads()` 期间持锁，线程池治的是**让出 GIL 的等待**（磁盘 I/O、
     `sleep`），治不了解放锁的纯 CPU 工作。尺子的正负对照同批实测（`time.sleep(0.20)`：
     循环里 215.9 ms vs 线程里 20.0 ms ≈ 地板 19.0 ms），所以这两组差是真读数不是瞎读。
+    **表格那一侧相反，走 `run_in_thread`**：xlsx 读边是 pandas + openpyxl 的纯 Python
+    解析（zip 解压、XML 逐节点），与 `json.loads` 那种「一整段持锁的 C 扫描」不同形，
+    按既有约定搬进线程池。
     真正的封顶是上面那条字节上限：停顿与 body 尺寸同阶，把尺寸交给配置就同时把
     最坏停顿交给了配置。
+
+    Args:
+        file: multipart 的文件部件
+        input_format: 源格式，留空按扩展名推断；认不出的一律走既有 JSON 那条路
+        _auth: 写操作鉴权
+
+    Returns:
+        `success` / `path`（实际落点名，表格输入已换成 `.json`）/ `count`
     """
+    name = file.filename or ""
+    source = _upload_source_format(name, input_format)
+    content = await _read_upload_body(file, max_upload_bytes())
+    save_path = _upload_landing_path(name, source)
+
     try:
-        content = await _read_upload_body(file, max_upload_bytes())
-        items = json.loads(content.decode("utf-8"))
+        if source is None:
+            items = json.loads(content.decode("utf-8"))
+        else:
+            items = await run_in_thread(_upload_records, content, source, name)
     except HTTPException:
         raise
     except UnicodeDecodeError as e:
@@ -329,7 +495,6 @@ async def upload_data(
     assert_dataset_shape(items, "上传内容")
 
     try:
-        save_path = _safe_data_path(file.filename)
         await write_json_file(save_path, items)
     except HTTPException:
         raise
