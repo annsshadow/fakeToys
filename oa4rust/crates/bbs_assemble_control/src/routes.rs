@@ -120,11 +120,11 @@ pub fn router(pool: Pool) -> Router {
         .route(&fmt("attachment/{id}"), delete(u2::u2_attachment_delete))
         .route(
             &fmt("attachment/download/{id}"),
-            get(u2::attachment_download_501),
+            get(u2::u2_attachment_download),
         )
         .route(
             &fmt("attachment/download/{id}/stream/{stream}"),
-            get(u2::attachment_download_stream_501),
+            get(u2::u2_attachment_download_stream),
         )
         .route(
             &fmt("attachment/list/subject/{subjectId}"),
@@ -132,11 +132,11 @@ pub fn router(pool: Pool) -> Router {
         )
         .route(
             &fmt("attachment/upload/subject/{subjectId}"),
-            post(u2::attachment_upload_501),
+            post(u2::u2_attachment_upload),
         )
         .route(
             &fmt("attachment/upload/subject/{subjectId}/callback/{callback}"),
-            post(u2::attachment_upload_callback_501),
+            post(u2::u2_attachment_upload_callback),
         )
         // ── forum（ForumInfoAction，2 条）──
         .route(&fmt("forum/{id}"), get(get_forum))
