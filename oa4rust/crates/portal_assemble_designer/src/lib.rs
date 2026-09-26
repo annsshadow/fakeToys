@@ -528,7 +528,7 @@ pub fn portal_assemble_designer_router() -> Router {
         )
         .route(
             "/api/portal/assemble/designer/list/portal/{page}/{portalId}",
-            get(crate::page_list_portal_portalId),
+            get(crate::page_list_portal_page_portalId),
         )
         .route(
             "/api/portal/assemble/designer/pageversion/{id}",
@@ -536,7 +536,7 @@ pub fn portal_assemble_designer_router() -> Router {
         )
         .route(
             "/api/portal/assemble/designer/pageversion/list/{page}/{pageId}",
-            get(crate::pageversion_list_page_pageId),
+            get(crate::pageversion_list_page_page_pageId),
         )
         .route(
             "/api/portal/assemble/designer/portal/{id}",
@@ -1904,6 +1904,24 @@ pub async fn pageversion_list_page_pageId(
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
+}
+
+/// 2 段变体：前端 PortalDesigner 调 list/portal/{page}/{portalId}、
+/// pageversion/list/{page}/{pageId}（首段为分页页码），委派到 1 段实现按 id 取全量。
+#[allow(non_snake_case)]
+pub async fn page_list_portal_page_portalId(
+    pool: Extension<Pool>,
+    Path((_page, portal_id)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    page_list_portal_portalId(pool, Path(portal_id)).await
+}
+
+#[allow(non_snake_case)]
+pub async fn pageversion_list_page_page_pageId(
+    pool: Extension<Pool>,
+    Path((_page, page_id)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    pageversion_list_page_pageId(pool, Path(page_id)).await
 }
 
 #[allow(non_snake_case)]
