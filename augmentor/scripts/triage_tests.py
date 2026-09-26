@@ -178,9 +178,11 @@ def _collect_consts(func: ast.AST) -> dict:
     3. 没有被 `nonlocal` / `global` 声明；
     4. 没有作为可变方法的接收者（`x.append(...)` 等）；
     5. **没有作为参数传给任何调用**——被调用方可能原地修改它（包括传出
-       绑定方法 `x.append` 这种"交出修改权"的写法）。
+       绑定方法 `x.append` 这种"交出修改权"的写法）；
+    6. 没有被**下标写入或删除**过（`d[k] = v`、`del d[k]`、`lst[i] += 1`）——
+       名字没重绑，内容却变了。
 
-    条件 3~5 是保守的过度排除。早期版本只做"出现过 `name = <字面量>` 就当常量"，
+    条件 3~6 是保守的过度排除。早期版本只做"出现过 `name = <字面量>` 就当常量"，
     把 `call_count = 0`（后续被闭包 `+=`）、`missing = []`（后续被 `append`）误判为常量，
     进而把 `assert call_count == 1` 这类**有效断言**误报成空洞。宁可漏判不可误判。
 
@@ -208,6 +210,18 @@ def _collect_consts(func: ast.AST) -> dict:
             store_count[node.id] = store_count.get(node.id, 0) + 1
         if isinstance(node, ast.AugAssign) and isinstance(node.target, ast.Name):
             tainted.add(node.target.id)
+        # `d[k] = v` / `del d[k]`：**名字只绑定一次，内容却变了**。`_MUTATORS` 那份清单
+        # 管的是方法调用，而没人会写 `d.__setitem__(k, v)` —— 于是 L79 的守卫用例
+        # （`bad = {}` → 循环里 `bad[doc] = dead` → `assert bad == {}`）被当成恒真。
+        if isinstance(node, (ast.Assign, ast.AugAssign)):
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            for target in targets:
+                if isinstance(target, ast.Subscript) and isinstance(target.value, ast.Name):
+                    tainted.add(target.value.id)
+        if isinstance(node, ast.Delete):
+            for target in node.targets:
+                if isinstance(target, ast.Subscript) and isinstance(target.value, ast.Name):
+                    tainted.add(target.value.id)
         if isinstance(node, ast.For) and isinstance(node.target, ast.Name):
             tainted.add(node.target.id)
         if isinstance(node, ast.NamedExpr) and isinstance(node.target, ast.Name):
