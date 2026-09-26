@@ -785,8 +785,7 @@ async function loadCmsTwin3() {
       s(api.post('/api/design/appdict/list/paging/0/size/0', {})),
       s(api.post('/api/image/encode/base64/size/0', {})),
       s(api.post('/api/image/resize/id/0/width/0/height/0', {})),
-      s(api.get('/api/component_assemble_control/delete/component')),
-      s(api.get('/api/component_assemble_control/save/component')),
+      s(api.get('/api/component/assemble/control/status/list')),
     ])
     toast.success(`内容孪生端点C ${rs.length} 条已提交`)
   } catch (e: any) {

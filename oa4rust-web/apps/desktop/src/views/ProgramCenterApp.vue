@@ -1438,6 +1438,11 @@ async function pcU4Write(op: string) {
 // rev353：程序中心 中心服务/许可/人员/门户/代理/开放 配置读 + 部署·脚本·字典分页 + 提示/异常错误日志 真实只读（用户触发按钮，全字面量，非 onMounted）
 async function pcU4Read() {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  // rev374：paging 为 POST（deploy/script/dict）；游标日志 {id}/{count} 用真实变量填槽（避字面段 shadow/405）
+  const pg = '1'
+  const sz = '20'
+  const lid = '0'
+  const cnt = '20'
   try {
     const [center, license, person, portal, proxy, open, dep, scr, dictP, promptLog, unexLog] = await Promise.all([
       s(api.get('/api/program_center/config/centerserver')),
@@ -1446,11 +1451,11 @@ async function pcU4Read() {
       s(api.get('/api/program_center/config/portal')),
       s(api.get('/api/program_center/config/proxy')),
       s(api.get('/api/program_center/config/open')),
-      s(api.get('/api/program_center/deploy/list/paging/page/size/size')),
-      s(api.get('/api/program_center/script/list/paging/page/size/size')),
-      s(api.get('/api/program_center/dict/list/paging/page/size/size')),
-      s(api.get('/api/program_center/prompterrorlog/list/id/next/count')),
-      s(api.get('/api/program_center/unexpectederrorlog/list/id/next/count')),
+      s(api.post(`/api/program_center/deploy/list/paging/${pg}/size/${sz}`, {})),
+      s(api.post(`/api/program_center/script/list/paging/${pg}/size/${sz}`, {})),
+      s(api.post(`/api/program_center/dict/list/paging/${pg}/size/${sz}`, {})),
+      s(api.get(`/api/program_center/prompterrorlog/list/${lid}/next/${cnt}`)),
+      s(api.get(`/api/program_center/unexpectederrorlog/list/${lid}/next/${cnt}`)),
     ])
     const ok = (r: any) => (r ? '✓' : '—')
     pcU4Text.value = `中心${ok(center)} 许可${ok(license)} 人员${ok(person)} 门户${ok(portal)} 代理${ok(proxy)} 开放${ok(open)} | 部署${ok(dep)} 脚本${ok(scr)} 字典${ok(dictP)} 提示日志${ok(promptLog)} 异常日志${ok(unexLog)}`
@@ -1462,18 +1467,23 @@ async function pcU4Read() {
 // rev370：程序中心 提示/异常错误日志 游标(next/prev + date/exceptionclass/loggername) 真实只读（同 rev353 已验证的 list/id/next/count 字面段模式，用户触发）
 async function pcU5Read() {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const lid = '0'
+  const cnt = '20'
+  const dt = '2026-01-01'
+  const ec = 'java.lang.Exception'
+  const lg = 'root'
   try {
     const rs = await Promise.all([
-      s(api.get('/api/program_center/prompterrorlog/list/id/next/count/date/date')),
-      s(api.get('/api/program_center/prompterrorlog/list/id/next/count/exceptionclass/exceptionClass')),
-      s(api.get('/api/program_center/prompterrorlog/list/id/next/count/loggername/loggerName')),
-      s(api.get('/api/program_center/prompterrorlog/list/id/prev/count')),
-      s(api.get('/api/program_center/prompterrorlog/list/id/prev/count/date/date')),
-      s(api.get('/api/program_center/prompterrorlog/list/id/prev/count/exceptionclass/exceptionClass')),
-      s(api.get('/api/program_center/prompterrorlog/list/id/prev/count/loggername/loggerName')),
-      s(api.get('/api/program_center/unexpectederrorlog/list/id/next/count/date/date')),
-      s(api.get('/api/program_center/unexpectederrorlog/list/id/prev/count')),
-      s(api.get('/api/program_center/unexpectederrorlog/list/id/prev/count/date/date')),
+      s(api.get(`/api/program_center/prompterrorlog/list/${lid}/next/${cnt}/date/${dt}`)),
+      s(api.get(`/api/program_center/prompterrorlog/list/${lid}/next/${cnt}/exceptionclass/${ec}`)),
+      s(api.get(`/api/program_center/prompterrorlog/list/${lid}/next/${cnt}/loggername/${lg}`)),
+      s(api.get(`/api/program_center/prompterrorlog/list/${lid}/prev/${cnt}`)),
+      s(api.get(`/api/program_center/prompterrorlog/list/${lid}/prev/${cnt}/date/${dt}`)),
+      s(api.get(`/api/program_center/prompterrorlog/list/${lid}/prev/${cnt}/exceptionclass/${ec}`)),
+      s(api.get(`/api/program_center/prompterrorlog/list/${lid}/prev/${cnt}/loggername/${lg}`)),
+      s(api.get(`/api/program_center/unexpectederrorlog/list/${lid}/next/${cnt}/date/${dt}`)),
+      s(api.get(`/api/program_center/unexpectederrorlog/list/${lid}/prev/${cnt}`)),
+      s(api.get(`/api/program_center/unexpectederrorlog/list/${lid}/prev/${cnt}/date/${dt}`)),
     ])
     const hit = rs.filter((r) => (r as any)?.data != null).length
     pcU4Text.value = `错误日志游标读 ${rs.length} 条命中 ${hit}`

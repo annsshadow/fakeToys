@@ -620,8 +620,8 @@ async function loadOrgTwin4() {
     const rs = await Promise.all([
       s(api.get('/api/general/assemble/control/area/list/province/0/city/0')),
       s(api.get('/api/general/assemble/control/area/list/province/0/city/0/district/0')),
-      s(api.get('/api/general/assemble/control/excel/0/0')),
-      s(api.get('/api/general/assemble/control/excel/0/0/0')),
+      s(api.get('/api/general/assemble/control/excel/report')),
+      s(api.get('/api/general/assemble/control/excel/report/sheetList')),
       s(api.post('/api/general/assemble/control/invoice/list/paging/0/size/0', {})),
       s(api.get('/api/general/assemble/control/invoice/list/paging/0/size/0')),
       s(api.post('/api/general/assemble/control/qrcode/width/0/height/0/text/0', {})),
