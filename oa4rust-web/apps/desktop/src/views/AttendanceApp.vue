@@ -9,7 +9,6 @@
       <div class="hr">
         <input v-model="month" type="month" class="mi" @change="loadData" />
         <button class="eb" :disabled="exporting" @click="exportData">{{ exporting ? '导出中…' : '📤 导出' }}</button>
-        <button @click="loadResidualStub">残余接桩</button>
         <button class="eb" @click="loadAttOverview">📊 汇总</button>
         <button class="eb" @click="loadAttOrg">🏢 按单位/同步</button>
         <button class="eb" @click="loadV2Meta">⚙️ v2配置/控件/请假模板</button>
@@ -1426,16 +1425,6 @@ async function loadAttTwin2() {
   } catch (e: any) {
     toast.error('考勤孪生端点B失败: ' + (e?.message ?? ''))
   }
-}
-
-async function loadResidualStub() {
-  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
-  await Promise.all([
-    s(api.post('/api/attendance/assemble/control/v2/mobile/check/ from/out', {})),
-    s(api.post('/api/attendance/assemble/control/v2/mobile/check/%20from/out', {})),
-    s(api.get('/api/attendance/assemble/control/dingding/sync/from/0/to/0/start')),
-    s(api.get('/api/attendance/assemble/control/qywx/sync/from/0/to/0/start')),
-  ])
 }
 </script>
 <style scoped>

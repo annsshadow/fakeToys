@@ -11,7 +11,6 @@
       <div class="toolbar">
         <input v-model="keyword" placeholder="搜索视图..." class="search-input" @keyup.enter="doSearch" />
         <button class="btn-primary" @click="doSearch">搜索</button>
-        <button @click="loadResidualStub">残余接桩</button>
         <button class="btn-primary" @click="loadViews">刷新</button>
         <button class="btn-primary" @click="loadQueryList">查询列表</button>
         <button class="btn-primary" @click="loadQvDetails">查询/视图明细</button>
@@ -733,27 +732,6 @@ async function loadQueryTwin3() {
   } catch (e: any) {
     toast.error('服务处理读C失败: ' + (e?.message ?? ''))
   }
-}
-
-async function loadResidualStub() {
-  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
-  await Promise.all([
-    s(api.get('/api/query/assemble/designer/0/0')),
-    s(api.post('/api/query/assemble/designer/importmodel/list/0/0', {})),
-    s(api.get('/api/query/assemble/designer/stat/list/0/0/0')),
-    s(api.get('/api/query/assemble/designer/stat/list/0/0')),
-    s(api.get('/api/query/assemble/designer/table/export/0/0/0')),
-    s(api.get('/api/query/assemble/designer/table/list/0/0')),
-    s(api.get('/api/query/assemble/designer/table/list/row/0/0/0/0')),
-    s(api.post('/api/queryview/importmodel/0/0/0/0', {})),
-    s(api.post('/api/queryview/importmodel/list/record/item/paging/0/0/0', {})),
-    s(api.post('/api/queryview/importmodel/list/record/paging/0/0/0', {})),
-    s(api.post('/api/queryview/importmodel/record/0/0', {})),
-    s(api.get('/api/queryview/neural/list/calculate/model/0/0/0')),
-    s(api.get('/api/queryview/table/list/0/0/0')),
-    s(api.get('/api/queryview/table/list/row/0/0/0/0')),
-    s(api.get('/api/queryview/0/0/0/0/0')),
-  ])
 }
 </script>
 

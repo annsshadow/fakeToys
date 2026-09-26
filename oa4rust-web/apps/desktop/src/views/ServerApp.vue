@@ -7,7 +7,6 @@
       <h1>服务器管理</h1>
       <p class="subtitle">/api/server/* — 命令执行与授权管理</p>
       <button class="srv-meta-btn" @click="loadSysStatus">系统状态/信息</button>
-      <button @click="loadResidualStub">残余接桩</button>
       <button class="srv-meta-btn" @click="loadGeneralMeta">通用/区域/工时</button>
       <button class="srv-meta-btn" @click="loadGeneralMeta2">密级/考勤范围/二维码</button>
       <button class="srv-meta-btn" @click="loadGeneralMeta3">密级对象/主体/内网</button>
@@ -322,43 +321,6 @@ async function loadServerTwin3() {
   } catch (e: any) {
     toast.error('日志/调度/资源C失败: ' + (e?.message ?? ''))
   }
-}
-
-async function loadResidualStub() {
-  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
-  await Promise.all([
-    s(api.get('/api/zhengwudingding/info')),
-    s(api.post('/api/config', {})),
-    s(api.get('/api/jpush_assemble_control/save/jpush')),
-    s(api.get('/api/jpush_assemble_control/delete/jpush')),
-    s(api.get('/api/jpush_assemble_control/device/check/deviceName/deviceType/pushType')),
-    s(api.get('/api/jpush_assemble_control/device/config/push/type')),
-    s(api.get('/api/jpush_assemble_control/device/unbind/new/deviceName/deviceType/pushType')),
-    s(api.get('/api/jpush_assemble_control/device/unbind/deviceName/deviceType')),
-    s(api.get('/api/jpush_assemble_control/message/test/send')),
-    s(api.get('/api/jpush/assemble/control/device/check/deviceName/deviceType/pushType')),
-    s(api.post('/api/jpush/assemble/control/device/unbind/new/deviceName/deviceType/pushType', {})),
-    s(api.post('/api/jpush/assemble/control/device/unbind/deviceName/deviceType', {})),
-    s(api.get('/api/jpush/assemble/control/message/test/send')),
-    s(api.post('/api/mpweixin/menu/test/send/to/0', {})),
-    s(api.get('/api/qiyeweixin/update/person/detail/0')),
-    s(api.post('/api/secret/captcha/verify', {})),
-    s(api.get('/api/andfx/moa/sso/token/0/enter/0')),
-    s(api.get('/api/mpweixin/login/code/0')),
-    s(api.get('/api/mpweixin/bind/code/0')),
-    s(api.get('/api/mpweixin/bind/openid/0')),
-    s(api.get('/api/qiyeweixin/code/0')),
-    s(api.post('/api/qiyeweixin/jssdk/sign/info', {})),
-    s(api.get('/api/welink/code/0')),
-    s(api.get('/api/zhengwudingding/code/0')),
-    s(api.get('/api/reset/check/credential/0')),
-    s(api.get('/api/reset/check/password/0')),
-    s(api.get('/api/reset/code/credential/0')),
-    s(api.put('/api/reset', {})),
-    s(api.post('/api/reset/password/anonymous', {})),
-    s(api.post('/api/secret/set', {})),
-    s(api.get('/api/secret/set/cancel')),
-  ])
 }
 </script>
 

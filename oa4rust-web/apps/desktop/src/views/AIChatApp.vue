@@ -7,7 +7,6 @@
       <h1>AI 助手</h1>
       <p class="subtitle">/api/ai_assemble_control/* — 智能对话与配置</p>
       <button class="btn-ai-meta" @click="loadAiMeta">模型/应用</button>
-      <button @click="loadResidualStub">残余接桩</button>
       <button class="btn-ai-meta" @click="loadAiConv">会话/配置</button>
       <button class="btn-ai-meta" @click="loadAiControl">基础配置/控制/用量</button>
       <button class="btn-ai-meta" @click="loadAiEntities">实体/聊天线索</button>
@@ -569,15 +568,6 @@ async function loadAiTwin2() {
   } catch (e: any) {
     toast.error('AI孪生端点B失败: ' + (e?.message ?? ''))
   }
-}
-
-async function loadResidualStub() {
-  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
-  await Promise.all([
-    s(api.post('/api/ai_assemble_control/chat/completion/stream', {})),
-    s(api.post('/api/ai_assemble_control/file/upload', {})),
-    s(api.get('/api/ai_assemble_control/update/ai/control/config')),
-  ])
 }
 </script>
 
