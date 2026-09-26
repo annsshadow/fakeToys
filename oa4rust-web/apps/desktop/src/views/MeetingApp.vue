@@ -425,6 +425,9 @@ async function loadMeetingDateLists() {
       s(api.get('/api/meeting/assemble/control/building/list/start/1970-01-01/completed/2099-12-31')),
       // rev374：楼栋按时间范围(含全部会议) GET building/list/start/{start}/completed/{completed}/allmeeting
       s(api.get('/api/meeting/assemble/control/building/list/start/1970-01-01/completed/2099-12-31/allmeeting')),
+      // rev382：会议 游标清单(全变量填 {id}/{next}/{count}) + 管理分页 POST 真实读补消费（x_meeting 真 SELECT）
+      s(api.get(`/api/meeting/assemble/control/meeting/list/${mid}/${mo}/${sz}`)),
+      s(api.post(`/api/meeting/assemble/control/meeting/list/manage/1/${sz}/${sz}`, {})),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     appliedText.value = `楼栋(时间范围) ${n(building)} · 即将3月 ${n(coming)} · 本年月 ${n(byMonth)} · 本年月日 ${n(byDay)} · 全量会议 ${n(allList)} · 系统配置 ${(sysCfg as any)?.data ? '有' : '无'} · 未来6月 ${n(forward)}`
