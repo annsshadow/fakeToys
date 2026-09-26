@@ -299,7 +299,7 @@ class TestValidationExtended:
         assert "\x02" not in result[0]["output"]
 
 
-class TestValidationExtended:
+class TestValidationAndSanitizeEdges:
     """DatasetValidator 扩展测试"""
 
     def test_validate_empty_dataset(self):
@@ -407,7 +407,7 @@ class TestValidationHistoryFormat:
         assert result.error_count > 0
 
 
-class TestValidationExtended:
+class TestValidationRuleViolations:
     """DatasetValidator 第二轮扩展测试（覆盖剩余分支）"""
 
     def test_unknown_preset_falls_back_to_basic(self):

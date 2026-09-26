@@ -251,7 +251,7 @@ class TestMigrationExtended:
         assert result.failed_items == 1
 
 
-class TestMigrationExtended:
+class TestMigrationRulesAndFiles:
     """DatasetMigrator 扩展测试（覆盖剩余分支）"""
 
     def test_builtin_rules_exist(self):

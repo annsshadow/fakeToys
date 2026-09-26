@@ -153,9 +153,29 @@ FLOOR = {
 #: `line_refs` 287 → **287 未动**（一进一出：新写的定位引用与降为散文的那条相互抵平 —— 这句
 #: 是对账后回写的，不是先写的：补「收尾实测」那一节之前量到 286、之后 287，纪律 (h) 在跨文档
 #: 互引上仍然只能对「一份文档」成立）。
+#:
+#: **L84 回填（本轮全部是「新增引用恰好都带了名字锚点」，无一是代码变坏，也无一处删改）**：
+#: 架构文档 `file_tokens` 219 → **221**、`file_unique` 175 → 177（§6 新增那一格点名两份产品
+#: 文件），`line_refs` 48 与 `code_but_no_name_match` 37 **未动**。账本 `line_refs` 287 →
+#: **292**（+5 全部来自 A143 那一行，且**五条全落 `name_hit`**：`api/routes/export.py:153` /
+#: `augmentor/cli/parser.py:50` / `augmentor/export.py:235` / `augmentor/export_enhanced.py:27` /
+#: `tests/integration/test_cli_merged_commands.py:1081`）、`file_tokens` 1218 → **1236**（+18：
+#: 进度行、L84 日志块、A143 与 B2 两处注解；其中 5 个是 `Temp/l84q/` 探针名，落 `scratch_artifact`
+#: 而不进缺陷档）、`code_but_no_name_match` 170 → **170**。**这一格本轮是被判据抓过一次才对的**：
+#: A143 初稿写了两条「真代码行但没有名字锚点」的引用（`api/routes/export.py:158` 与
+#: `parser.py:141`），按 token 多重集对 HEAD 求差时它们是**新增 2 / 删除 0**，即漂移档要涨到 172 ——
+#: 改指 `list_export_formats` 那一行与那份常数本身之后回到 170（同一把差集探针第二次兑现，
+#: 第一次是 L81 终态）。纯增 ⇒ 不需要逐块减法即闭合。
+#:
+#: **L84 终态复跑回填（第 25 次 census，`buckets.py "L84 终态复跑后"`）**：`file_tokens` 1236 →
+#: **1239**（+3 = 「终态复跑」那一小节点名了 `config.yaml` / `augmentor/config.yaml` 与两份
+#: `Temp/l84q/full_*_terminal.txt` 工件；其余反引号串是 `--cov` / `--collect-only` 这类开关，
+#: 不是文件名形状）；`line_refs` **292**、`code_but_no_name_match` **170**、架构文档整格
+#: （48 / 221 / 37）**逐位未动** —— 终态复跑只往账本加了散文，没加任何行号引用，所以漂移档
+#: 不涨是**预期**而不是运气；如果哪一轮的「只补数字」让小节写出了新的裸行号，这里会当场红。
 MEASURED = {
-    ARCH: {"line_refs": 48, "file_tokens": 219, "code_but_no_name_match": 37},
-    LEDGER: {"line_refs": 287, "file_tokens": 1218, "code_but_no_name_match": 170},
+    ARCH: {"line_refs": 48, "file_tokens": 221, "code_but_no_name_match": 37},
+    LEDGER: {"line_refs": 292, "file_tokens": 1239, "code_but_no_name_match": 170},
 }
 
 #: 日志块标题行上「下一轮才填得出自己哈希」的占位符。精确相等 = **只许有该填的那几条**。
@@ -662,8 +682,10 @@ BACKLOG_HEADS = ("| # | 位置 | 问题 | 量级 |", "|---|------|------|------|
 #: 2 行表头 + 136 条数据行，号集 = 1..137 减 `{52}`（A52 从未存在，是本仓唯一一次跳号）。
 #: **L82 回填**：**143 条竖线行** = 2 表头 + 141 条数据行，号集 = 1..142 减 `{52}` —— 新增的
 #: 5 条数据行就是本轮新立的 A138–A142（跳号集合未变 ⇒ 本轮没有吞行、也没有补回 A52）。
-BACKLOG_A_LINES = 143
-BACKLOG_A_MAX = 142
+#: **L84 回填**：**144 条竖线行** = 2 表头 + 142 条数据行，号集 = 1..143 减 `{52}` —— 只增
+#: A143 一行（关闭 A133 时按「本行不假装做完」那句立的），跳号集合仍未变。
+BACKLOG_A_LINES = 144
+BACKLOG_A_MAX = 143
 BACKLOG_A_MISSING = {52}
 #: Backlog B 现量：11 条竖线行 = 2 表头 + 7 条可编号 + 2 条带角标（B3① / ~~B3②~~）。
 BACKLOG_B_LINES = 11
