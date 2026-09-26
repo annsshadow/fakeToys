@@ -9,8 +9,8 @@ use axum::{
 
 use crate::{
     cipher_hotpic_bbs_id, cipher_hotpic_cms_id, cipher_hotpic_filter_list_page_page_count_count,
-    cipher_hotpic_id, create_hotpic, delete_hotpic, get_control_config, get_hotpic,
-    list_control_applications, list_control_panels, list_hotpics, save_hotpic,
+    cipher_hotpic_id, create_hotpic, get_control_config, get_hotpic,
+    list_control_applications, list_control_panels, list_hotpics,
     update_control_config, user_hotpic_application_infoId, user_hotpic_changeTitle,
     user_hotpic_delete_by_ids, user_hotpic_exists_check,
     user_hotpic_filter_list_page_page_count_count, user_hotpic_id,
@@ -29,11 +29,6 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         .route(
             "/api/hotpic_assemble_control/create/hotpic",
             get(create_hotpic),
-        )
-        .route("/api/hotpic_assemble_control/save/hotpic", get(save_hotpic))
-        .route(
-            "/api/hotpic_assemble_control/delete/hotpic",
-            get(delete_hotpic),
         )
         .route(
             "/api/hotpic_assemble_control/get/control/config",
@@ -78,8 +73,6 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         .route("/api/hotpic/list/hotpics", get(list_hotpics))
         .route("/api/hotpic/get/hotpic/{id}", get(get_hotpic))
         .route("/api/hotpic/create/hotpic", post(create_hotpic))
-        .route("/api/hotpic/save/hotpic", post(save_hotpic))
-        .route("/api/hotpic/delete/hotpic", post(delete_hotpic))
         .route(
             "/api/hotpic/assemble/control/config",
             get(get_control_config),

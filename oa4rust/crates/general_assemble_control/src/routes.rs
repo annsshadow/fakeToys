@@ -77,8 +77,6 @@ pub fn general_assemble_control_routes(pool: Pool) -> Router {
         .route("/api/general/assemble/control/worktime/is/workday/{date}", get(crate::worktime_isworkday_date))
         .route("/api/general/assemble/control/worktime/is/worktime/{date}", get(crate::worktime_isworktime_date))
         .route("/api/general/assemble/control/worktime/minutes/of/workday", get(crate::worktime_minutesofworkday))
-        .route("/api/general/assemble/control/excel/{excelName}/{excelName}", get(crate::excel_excelName_excelName))
-        .route("/api/general/assemble/control/excel/{excelName}/{excelName}/{sheetList}", get(crate::excel_excelName_excelName_sheetList))
         .route("/api/general/assemble/control/area/delete/{id}", delete(crate::area_delete))
         .route("/api/general/assemble/control/area/update/{id}", put(crate::area_update))
         .route("/api/general/assemble/control/attendscope/delete/{id}", delete(crate::attendscope_delete))
