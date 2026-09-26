@@ -63,13 +63,21 @@ class CheckpointManager:
         return self.checkpoint_dir / f"{task_id}_checkpoint.json"
     
     def _get_delta_path(self, task_id: str) -> Path:
-        """获取增量文件路径
-        
+        """获取增量文件路径（append-only JSONL，一行为一批）
+
         Args:
             task_id: 任务 ID
-        
+
         Returns:
             增量文件路径
+        """
+        return self.checkpoint_dir / f"{task_id}_delta.jsonl"
+
+    def _get_legacy_delta_path(self, task_id: str) -> Path:
+        """旧格式增量文件路径：整份是**一个** JSON 文档的 `_delta.json`
+
+        写侧不再产出它（A144：每次自动保存整读整写 ⇒ 总代价 O(N²/interval)），
+        但读侧必须继续认，否则升级会把用户已有任务的中途进度判成不存在。
         """
         return self.checkpoint_dir / f"{task_id}_delta.json"
     
@@ -132,10 +140,15 @@ class CheckpointManager:
                 int(k): v for k, v in data.get('quality_scores', {}).items()
             }
             
-            # 尝试加载增量
-            delta_path = self._get_delta_path(task_id)
-            if delta_path.exists():
-                delta = self._read_delta(delta_path)
+            # 尝试加载增量（新旧两种格式一并合并）
+            delta_files = self._delta_files(task_id)
+            if delta_files:
+                delta = {'completed': [], 'failed': [], 'quality_scores': {}}
+                for delta_path in delta_files:
+                    part = self._read_delta(delta_path)
+                    delta['completed'].extend(part['completed'])
+                    delta['failed'].extend(part['failed'])
+                    delta['quality_scores'].update(part['quality_scores'])
                 
                 # 合并增量
                 data['completed_indices'].extend(delta['completed'])
@@ -153,7 +166,7 @@ class CheckpointManager:
             self._pending_completed = set()
             self._pending_failed = set()
             
-            if delta_path.exists():
+            if delta_files:
                 # 合并结果立即落盘并清除增量，避免下次恢复重复累加
                 self._save_checkpoint(checkpoint)
                 self._remove_delta(task_id)
@@ -182,10 +195,14 @@ class CheckpointManager:
             logger.error(f"保存断点失败: {e}")
     
     def _save_delta(self):
-        """保存增量到临时文件
+        """追加一批增量（A144：写侧 O(1)，不再整读整写）
 
-        增量文件是累加写入的：每次自动保存都会把新完成的索引并入已有增量，
-        而不是覆盖，否则进程崩溃后只能恢复最后一批进度。
+        每次自动保存只把**新完成的那一批**写成一行，因此第 k 次保存的代价与已保存
+        条数无关。以前是把已有增量整个读进内存、extend、再把全量序列化写回，
+        于是总代价 O(N²/interval)，长任务里断点保存自己变成主要耗时。
+
+        崩溃安全由读侧负责：一行写完一次 `write`，尾行若被截断只丢那一批，
+        `_read_delta` 会跳过坏行而不是把整份增量作废。
         """
         if self._current_checkpoint is None:
             return
@@ -195,18 +212,19 @@ class CheckpointManager:
         
         delta_path = self._get_delta_path(self._current_checkpoint.task_id)
         
-        try:
-            delta = self._read_delta(delta_path)
-            delta['completed'].extend(sorted(self._pending_completed))
-            delta['failed'].extend(sorted(self._pending_failed))
-            delta['quality_scores'].update({
+        record = {
+            'completed': sorted(self._pending_completed),
+            'failed': sorted(self._pending_failed),
+            'quality_scores': {
                 str(k): self._current_checkpoint.quality_scores[k]
                 for k in self._pending_completed
                 if k in self._current_checkpoint.quality_scores
-            })
-            
-            with open(delta_path, 'w', encoding='utf-8') as f:
-                json.dump(delta, f, ensure_ascii=False, separators=(',', ':'))
+            },
+        }
+        
+        try:
+            with open(delta_path, 'a', encoding='utf-8') as f:
+                f.write(json.dumps(record, ensure_ascii=False, separators=(',', ':')) + "\n")
             
             # 清空待保存集合
             self._pending_completed.clear()
@@ -216,39 +234,75 @@ class CheckpointManager:
             logger.error(f"保存增量失败: {e}")
     
     def _read_delta(self, delta_path: Path) -> Dict:
-        """读取已有增量文件
-        
+        """读取增量文件（JSONL 逐行合并；旧格式的单个 JSON 文档同样认）
+
         Args:
             delta_path: 增量文件路径
-        
+
         Returns:
-            增量字典，文件不存在或损坏时返回空增量
+            增量字典，文件不存在或读不出时返回空增量
         """
+        empty = {'completed': [], 'failed': [], 'quality_scores': {}}
         if not delta_path.exists():
-            return {'completed': [], 'failed': [], 'quality_scores': {}}
+            return empty
         
         try:
-            with open(delta_path, 'r', encoding='utf-8') as f:
-                delta = json.load(f)
+            text = delta_path.read_text(encoding='utf-8')
         except Exception as e:
-            logger.warning(f"增量文件损坏，将重建: {delta_path}, {e}")
-            return {'completed': [], 'failed': [], 'quality_scores': {}}
+            logger.warning(f"增量文件读不出，将重建: {delta_path}, {e}")
+            return empty
         
-        return {
-            'completed': list(delta.get('completed', [])),
-            'failed': list(delta.get('failed', [])),
-            'quality_scores': dict(delta.get('quality_scores', {}))
-        }
+        records: List[Dict] = []
+        try:
+            whole = json.loads(text)
+        except Exception:
+            whole = None
+        if isinstance(whole, dict):
+            # 旧格式（或只写了一行的新格式）：整份就是一个批次记录，形状与新格式逐键相同
+            records.append(whole)
+        else:
+            for line in text.splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    record = json.loads(line)
+                except Exception as e:
+                    # 崩溃时最可能截断的就是尾行：跳它，不跳整份
+                    logger.warning(f"跳过增量坏行: {delta_path}, {e}")
+                    continue
+                if isinstance(record, dict):
+                    records.append(record)
+                else:
+                    logger.warning(f"跳过增量坏行（不是 JSON 对象）: {delta_path}")
+        
+        delta = {'completed': [], 'failed': [], 'quality_scores': {}}
+        for record in records:
+            delta['completed'].extend(record.get('completed', []))
+            delta['failed'].extend(record.get('failed', []))
+            delta['quality_scores'].update(record.get('quality_scores', {}))
+        if not records and text.strip():
+            logger.warning(f"增量文件无可用记录: {delta_path}")
+        return delta
+    
+    def _delta_files(self, task_id: str) -> List[Path]:
+        """本次恢复要合并的增量文件，按时间顺序（旧格式在前，新格式在后）"""
+        return [
+            path for path in (self._get_legacy_delta_path(task_id),
+                              self._get_delta_path(task_id))
+            if path.exists()
+        ]
     
     def _remove_delta(self, task_id: str):
-        """删除增量文件（增量已并入主文件时调用）
+        """删除增量文件（增量已并入主文件时调用，新旧两种格式一并清掉）
         
         Args:
             task_id: 任务 ID
         """
-        delta_path = self._get_delta_path(task_id)
-        if delta_path.exists():
-            delta_path.unlink()
+        for delta_path in (self._get_delta_path(task_id),
+                           self._get_legacy_delta_path(task_id)):
+            if delta_path.exists():
+                delta_path.unlink()
     
     def update_progress(self,
                        index: int,
