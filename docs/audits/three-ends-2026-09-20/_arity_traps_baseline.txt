@@ -161,7 +161,6 @@ GET /api/processplatform/service/processing/data/workcompleted/path/1
 GET /api/processplatform/service/processing/review/init/review
 GET /api/processplatform/service/processing/workcompleted/process/1
 GET /api/processplatform/service/processing/workcompleted/shift/time
-GET /api/program_center/agent/flag
 GET /api/program_center/agent/flag/disable
 GET /api/program_center/agent/flag/enable
 GET /api/program_center/agent/flag/execute
@@ -232,7 +231,6 @@ GET /api/program_center/qiyeweixin/request/pull/sync
 GET /api/program_center/schedule/list/schedulelog/application/application
 GET /api/program_center/schedule/schedule/fire
 GET /api/program_center/script/flag
-GET /api/program_center/script/id
 GET /api/program_center/script/list/paging/page/size/size
 GET /api/program_center/script/name/name
 GET /api/program_center/script/name/name/imported
