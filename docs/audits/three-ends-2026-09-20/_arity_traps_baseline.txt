@@ -71,17 +71,10 @@ GET /api/program_center/collect/validate/codeanswer
 GET /api/program_center/collect/validate/direct
 GET /api/program_center/collect/validate/password
 GET /api/program_center/config-open/get/disable/export/enable
-GET /api/program_center/config/centerserver
 GET /api/program_center/config/change/password
-GET /api/program_center/config/collect
 GET /api/program_center/config/get
-GET /api/program_center/config/license
-GET /api/program_center/config/open
 GET /api/program_center/config/open/get/disable/export/enable
 GET /api/program_center/config/open/run/time/config
-GET /api/program_center/config/person
-GET /api/program_center/config/portal
-GET /api/program_center/config/proxy
 GET /api/program_center/invoke/flag/client/client/token/token/execute
 GET /api/program_center/invoke/flag/execute
 GET /api/program_center/mpweixin/check
