@@ -420,10 +420,12 @@ class TestAllowedRootsResolution:
 class TestShippedDataRootsDefault:
     """出厂默认 ``web.data_roots`` 必须是 ``["data"]``
 
-    默认值在三个地方各写了一遍：``WebConfig`` 的字段、``load_config`` 的
-    ``config_sections`` 兜底字典、仓库根的 ``config.yaml``。任何一处漏改都会
-    让「有配置文件」和「没有配置文件」两种部署的可见范围不一致，因此这里
-    分别用字面量钉死——不能拿 ``WebConfig()`` 去校验另外两处，那是同源预言机。
+    这个数从前在三个地方各写了一遍：``WebConfig`` 的字段、``load_config`` 的
+    ``config_sections`` 兜底字典、仓库根的 ``config.yaml``。A123 删掉了中间那一份
+    ⇒ 现在只剩两处，「漏改一处」这种漂移在加载链路上已经没有可漂的地方，但**磁盘上
+    的出厂 YAML 与类字段**仍是两个权威，任何一处漏改都会让「有配置文件」和「没有配置
+    文件」两种部署的可见范围不一致，因此这里分别用字面量钉死——不能拿 ``WebConfig()``
+    去校验另一处，那是同源预言机。
     """
 
     def test_webconfig_field_default(self):
@@ -433,7 +435,7 @@ class TestShippedDataRootsDefault:
         assert WebConfig().data_roots == ["data"]
 
     def test_defaults_apply_when_config_omits_web_section(self, tmp_path):
-        """配置文件存在但缺 web 段时，兜底字典同样给出 data"""
+        """配置文件存在但缺 web 段时，加载路径给出的就是字段默认那份数"""
         from augmentor.config import load_config
 
         quiet = tmp_path / "no_web.yaml"
@@ -452,7 +454,7 @@ class TestShippedDataRootsDefault:
 
         shipped = raw["web"]["data_roots"]
         assert shipped == ["data"]
-        # 三处默认值必须一致，否则有无配置文件是两种安全边界
+        # 两处默认值必须一致，否则有无配置文件是两种安全边界
         assert shipped == WebConfig().data_roots
 
     def test_workdir_is_not_a_default_root(self, monkeypatch, tmp_path):
@@ -473,9 +475,10 @@ class TestShippedDataRootsDefault:
 class TestShippedCorsDefault:
     """跨源默认必须是「一个来源也不放行、且不带凭据」
 
-    与 `TestShippedDataRootsDefault` 同构：默认值有三处（`WebConfig` 字段、
-    `load_config` 的映射表、随仓库的 `config.yaml`），任何一处漏改都会让「有无配置
-    文件」变成两种安全边界，所以三处分别用字面量钉死，不拿 `WebConfig()` 当预言机。
+    与 `TestShippedDataRootsDefault` 同构：默认值有两处（`WebConfig` 字段、随仓库的
+    `config.yaml`；A123 删掉了 `load_config` 里那张映射表，第三个权威从此不存在），
+    任何一处漏改都会让「有无配置文件」变成两种安全边界，所以两处分别用字面量钉死，
+    不拿 `WebConfig()` 当预言机。
 
     为什么旧的 `["*"] + credentials=True` 必须收紧（实测形状见
     `test_wildcard_with_credentials_echoes_any_origin`）：starlette 在这种组合下会把
@@ -493,7 +496,11 @@ class TestShippedCorsDefault:
         assert WebConfig().cors_credentials is False
 
     def test_defaults_apply_when_config_omits_web_section(self, tmp_path):
-        """配置文件存在但没有 cors 两键时，映射表兜底给出同样的收紧值"""
+        """配置文件存在但没有 cors 两键时，读回来的仍是字段默认那对收紧值
+
+        A123 之后这一档走的是加载器的正路：`web` 节在场、`cors_*` 两键不在场 ⇒
+        构造器只收到 `port`，两键由 `WebConfig` 的字段默认回答。
+        """
         from augmentor.config import load_config
 
         quiet = tmp_path / "no_cors.yaml"

@@ -1161,11 +1161,13 @@ class TestUnreadKeyWarnings:
     反馈同样是 0 / 0。用户看到的事实只有「我改了数，行为没变」，症状长得像后端坏了
     —— 这一类缺陷无法自查，所以必须让工具出声。
 
-    判据的键集**从 `AppConfig` 的字段类型推导**，不抄第三份清单：`load_config` 只按
-    `_load_section(..., defaults)` 的键取字段，而 L49/L50 的棘轮已经把「defaults 的
-    键集 == dataclass 字段集」冻住（`KNOWN_UNMAPPED_FIELDS` 现为空集），所以
-    dataclass 就是权威。`test_the_derived_whitelist_equals_what_load_section_reads`
-    把这条锚住，以后加节、加字段、漏接表都会在这里现形。
+    判据的键集**从 `AppConfig` 的字段类型推导**，不抄第三份清单：A123 之后
+    `_load_section` 直接按 `dataclasses.fields(config_class)` 取键，加载器手里那张
+    默认值表已经删除，于是「谁被消费」这件事在代码里只剩一个来源 = 节的字段类型。
+    本类推导与它同式，所以两边可以相等；相等不是同义反复，因为清单（哪一节、用哪个
+    类）在 `load_config` 里是**手写**的，而白名单是推导出来的。
+    `test_the_derived_whitelist_equals_what_load_section_reads` 把这条锚住，以后加节、
+    加字段、清单写漏都会在这里现形。
     """
 
     SECTION_MARKER = "顶层段落没人读取"
@@ -1211,15 +1213,20 @@ class TestUnreadKeyWarnings:
             declared ^ derived | (declared - derived))
 
     def test_the_derived_whitelist_equals_what_load_section_reads(self, tmp_path):
-        """推导出的键集必须与 `load_config` 实际读的 defaults 表逐节逐键相等
+        """推导出的节清单必须与 `load_config` 实际喂给加载器的 `(节名, 类)` 逐节相等
 
-        这是本轮的结构本体：判据说「没人读」的那份名单，必须就是运行时读的那份，
-        一个字都不许多。手法沿用 L49 的拦截（`TestSectionDefaultsMatchTheMappingTable`），
+        这是本轮的结构本体：判据说「没人读」的那份名单，必须就是运行时读的那份。
+        A123 之前这里拦的是第四参数 `defaults`（一张手抄默认值表），现在表没了 ⇒
+        能比的东西换成「加载器拿到的类」。两半都必需：只比节名的话，清单里把 `web`
+        配成 `WebConfig` 之外的类也照样绿，而症状是判据按一套字段报警告、运行时按
+        另一套字段取值。手法沿用 L49 的拦截（`TestSectionRegistryMatchesAppConfigFields`），
         只是把对照物从 dataclass 换成校验器。
         """
+        import dataclasses
         import yaml
 
         from augmentor import config as config_module
+        from augmentor.config import AppConfig
 
         derived = ConfigValidator.consumed_section_keys()
         path = tmp_path / "all_sections.yaml"
@@ -1231,16 +1238,26 @@ class TestUnreadKeyWarnings:
         monkeypatch = pytest.MonkeyPatch()
         monkeypatch.setattr(
             config_module, "_load_section",
-            lambda raw, key, cls, defaults: (seen.__setitem__(key, set(defaults)),
-                                             real(raw, key, cls, defaults))[1])
+            lambda raw, key, cls: (seen.__setitem__(key, cls),
+                                   real(raw, key, cls))[1])
         try:
             config_module.load_config(str(path))
         finally:
             monkeypatch.undo()
 
         assert set(seen) == set(derived), sorted(set(seen) ^ set(derived))
-        for name, read_keys in seen.items():
-            assert read_keys == derived[name], (name, sorted(read_keys ^ derived[name]))
+        for name, cls in seen.items():
+            assert cls is type(getattr(AppConfig(), name)), (
+                name, getattr(cls, "__name__", cls))
+            # 推导侧的键集 = 「加载器真正会读的键集」，两侧同式（A77 的键集版）。
+            # `if f.init` 不是本方法自己加的偏好：`_load_section` 取键时就看了
+            # `names[k].init`（否则 `save_config` 写出的非 init 键会在下一趟加载里
+            # 把构造器打死），所以「只有 init 字段算有人读」才是运行时的事实。
+            # 这条等式**不看运行时**，因此两侧同时改坏时它会跟着坏 —— 兜住那一维的
+            # 是行为面用例 `test_a_non_init_key_is_dropped_instead_of_crashing_the_loader`
+            # 与注入档 m7 / m10。
+            assert derived[name] == {f.name for f in dataclasses.fields(cls)
+                                     if f.init}, name
 
     def test_model_config_fields_are_all_read_by_load_config(self, tmp_path):
         """`models.<名字>` 的子键判据同样不许比运行时宽

@@ -1253,7 +1253,8 @@ A75 行末预告的「等待预算」一轮落地，做足 A73 + A75 两件事�
 **两个新旋钮**都进 `AugmentationConfig`（**不是** `ModelConfig`，A64 行记错过一次）：`max_retry_wait: float = 300.0`
 （`config.py:37`）与 `retry_jitter: float = 0.0`（`:40`），默认值就是 L47 / L48 定下的那两个常数 ⇒ 已发布配置
 的行为一字不变；`config.yaml:88` / `:94` 把两键写出显式值并各带注释。接线面八处，一处不落（避免 A54 型
-「契约面有旋钮、实现面不消费」）：`config.py` 字段 + `config_sections` 映射表（`:314`）→ `config_validator`
+「契约面有旋钮、实现面不消费」）：`config.py` 字段 + `config_sections` 映射表（`:314`；**该表已于 L77 删掉**，
+现在那张清单只剩「节名 → 类」两元组，默认值的唯一权威是 dataclass 字段本身，见账本 L77 / A123）→ `config_validator`
 的 KNOWN_FIELDS 规格（0-300 / 0-1）→ `pipeline._init_components` 两道判据（排在降级 `try/except` **之外**，
 L45 定的那条）+ 转发 → `models/factory.py` 签名 → 5 个后端构造透传 → `ModelBackend` 存 → `generate()` 把
 `max_retry_wait` / `jitter` 交给 `with_retries`。
@@ -1595,6 +1596,13 @@ Temp `l52q/post_check2.py` NONCE-45A0C1AB9510-POST —— 不再靠改前记忆�
 `ConfigValidator.consumed_section_keys()`（`config_validator.py:193`）只做一件事：遍历
 `fields(AppConfig)`，取 `is_dataclass(默认值)` 的那 **20** 节、各取其字段的 **67** 个键名，结果缓存
 （`_CONSUMED_SECTIONS`）。⇒ 新增配置节或字段自动进入判据，没有任何地方需要「记得同步一份清单」。
+
+> **L77 更新（读这一段时必须知道的两处已变）**：上面那条「两跳」推导链现在是**一跳** —— `_load_section`
+> 不再收 `defaults` 参数（A123 删掉了那张手抄表），所以上面记的打桩用例现在记录的是 `(key, config_class)`
+> 而不是 `set(defaults)`，而 `TestSectionDefaultsMatchTheMappingTable` / `KNOWN_UNMAPPED_FIELDS` 两者随表
+> 一起退役，替它的是 `tests/unit/test_section_registry_l77.py`（节清单形状 + 68 字段逐键落地矩阵）。
+> 键数从 L52 记的 67 变为现在的 **68**：按类逐一对账（`git show 63f39ebd5` ↔ 现量），那 20 节里 L52 之后
+> 只新增过一个字段 —— `AugmentationConfig.request_timeout`（L71 / A74），没有删除过字段。
 
 **一律 WARNING，绝不动 `is_valid`**。`is_valid` 是 `POST /api/system/validate-config` 响应的判决位
 （`api/routes/system_ops.py:147` 的 `is_valid: bool`，本轮那条端点用例就断在它上面），而多余的键不让服务起不来；

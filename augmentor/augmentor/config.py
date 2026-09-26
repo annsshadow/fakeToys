@@ -667,20 +667,48 @@ def _model_entry(name: str, conf: Dict) -> ModelConfig:
         ) from None
 
 
-def _load_section(raw_config: Dict, key: str, config_class: type, defaults: Dict) -> Any:
-    """加载配置节
-    
+def _load_section(raw_config: Dict, key: str, config_class: type) -> Any:
+    """加载配置节：**缺哪个键由那个字段的默认值答**（A123）
+
+    改前这里有第四个参数 `defaults`：`load_config` 里那张 20 行映射表把每一节的
+    默认值又抄了一遍（68 个键），于是同一个回落值有两个权威 —— 与 L75 刚收掉的
+    `conf.get(key, 默认)` 九行是**同族第二格**（A114）。本函数按 `_model_entry`
+    已经定下的口径改：只把 YAML 里**在场、且那个字段可传入**（`init`）的键交给构造器，
+    其余一律不传。
+
+    为什么这一步现在是安全的（`Temp/l77q/a123_census.json`，**Python 字典面**；
+    这份取证在改前跑过一遍（提交态 edb26ddbe），改后又跑一遍 —— 改前那一侧不再是
+    内存里的真身，而是从 `git show HEAD` 逐字复刻的旧函数，复刻与 HEAD 源码由 AST
+    同式判据守着，不一致脚本当场自杀）：
+
+    - **键集双向差 = 0**：表里的 68 个键与 20 节 dataclass 的 init 字段**恰好相等**
+      （`only_in_table` 与 `only_in_fields` 两侧都空，`AppConfig` 的 20 个节字段
+      也全部被表覆盖）⇒ 没有「表里有而字段没有」的假键，也没有「字段有而表漏了」
+      的静默回落。
+    - **值 / 类型漂移 = 0**：68 个共有键逐键比 `==` 与 `type()`，两档都无差异；
+      另有 15 个键的表默认是 list/dict 字面量、字段侧用 `default_factory` —— 值相等
+      （所以不算漂移），但改后由工厂答 ⇒ 少一份「每次调用新建字面量」的隐式约定
+      （`test_config.py:503` 钉过的那一维：把字面量提到模块级就会变成跨实例共享对象，
+      删掉表之后这个风险面直接不存在）。
+    - **行为等价 120/120**：20 节 × 六档输入（整节不在 / 节写成 `null` / 空映射 /
+      一个键在场 / 一个键在场且给 `null` / 带一个不认识的键），改前的复刻函数与本函数
+      各跑一遍 ⇒ 落值全等；「键在场且给 `null`」那一档里有 5 节走到运行时判据，两侧
+      抛出**逐字相同**的 `DataValidationError: <节>.<键> 不能是 null（配置里写了这个
+      键却没有给值）`（比较的是「异常类型 + 消息」拼成的字符串，不是只比类型）。
+
     Args:
         raw_config: 原始配置字典
         key: 配置节名称
-        config_class: 配置类
-        defaults: 默认值字典
-    
+        config_class: 该节对应的 dataclass 类型（默认值的唯一权威）
+
     Returns:
         配置实例
+
+    Raises:
+        ConfigError: 该节写成了标量 / 列表等「键: 值」以外的形状
     """
     if key not in raw_config:
-        return config_class(**defaults)
+        return config_class()
 
     conf = raw_config[key]
     # 只写一个节名、下面什么都没有（`logging:`）时 YAML 给的是 `None`，与 A94 里
@@ -690,18 +718,41 @@ def _load_section(raw_config: Dict, key: str, config_class: type, defaults: Dict
     # **每一节**都同形，不止 logging），用户拿到的是无法行动的栈。语义与 A94 一致：
     # 写了节名而什么都没写 = 该节全默认；写成标量则是摆错了形状，明说。
     if conf is None:
-        return config_class(**defaults)
+        return config_class()
     if not isinstance(conf, dict):
         raise ConfigError(
             f"{key} 必须是「键: 值」的映射，当前是 {conf!r}"
             f"（{type(conf).__name__}）"
         )
 
-    kwargs = {}
-    for param_name, default_value in defaults.items():
-        kwargs[param_name] = conf.get(param_name, default_value)
-    
-    return config_class(**kwargs)
+    # 取键用 `__dataclass_fields__` 而不是 `fields(cls)` 再套一层 frozenset：这不是
+    # 风格偏好，是同进程 A/B 量出来的差额（`Temp/l77q/perf_ab_l77.py` → `perf_ab.json`
+    # 的 `runs` 键存着**连续两跑的逐字读数**；20 节 × 三档输入 × 7 轮交替 × 400 次，
+    # 三侧产物逐字相同才计入，否则脚本自杀）—— 「空映射」那一档表版 18.81 / 18.39 µs、
+    # `fields`+frozenset 版 29.05 / 28.29 µs（**比改前慢 +54.45 % / +53.84 %**，因为每次
+    # 调用都新建一个集合）、本写法 12.69 / 12.22 µs（比改前 **−32.53 % / −33.56 %**，
+    # 两跑的 20/20 节都是「每轮更快」）。只在「节不在场」那一档两种新写法打平
+    # （7.83 对 7.86、8.01 对 8.00 µs，两者都比表版快三成），因为那一支根本不取键；
+    # 「只带一个拼错的键」那一档与本写法同形状（表版 18.97 / 18.58 µs，中间版
+    # +56.57 % / +55.86 %，本写法 −29.27 % / −30.25 %）。
+    # 本模块的既有口径也一致：热点上的 `_reject_null_fields`（`:126`）读的就是这个
+    # 属性，而只在导入期跑一次的 `MODEL_ENTRY_KEYS`（`:605`）用 `fields()`。
+    #
+    # `and names[k].init` 不是防御性冗余，是**「保存 → 重新加载」这一趟的行为面**：
+    # `save_config` 用 `dataclasses.asdict()`（见它内部的 `_to_dict`），而 asdict
+    # **不看 `init`**，
+    # 于是任何一节的 `init=False` 字段都会写进 YAML；加载侧若把它喂回构造器，实测
+    # （`Temp/l77q/inject_l77.json` 的 m7 档，改前实现）当场
+    # `TypeError: AugmentationConfig.__init__() got an unexpected keyword argument
+    # 'l77_probe'` —— 即「产品自己写出的配置文件把自己打崩」。HEAD 那张表只含 init
+    # 键，所以旧实现是把该键无声丢掉（另一笔账，见 `test_no_section_has_a_non_init_field`
+    # 的棘轮理由）。判据一侧同步：`consumed_section_keys()` 也只认 init 字段，
+    # 否则那个键会既没人读、又不在「写了没人读」名单里。
+    names = config_class.__dataclass_fields__
+    # 未知键在这里丢弃但**不出声**：出声归 `_warn_unread_keys`（A76 / A84），
+    # 与 `_model_entry` 的第 2 条口径同式。
+    return config_class(**{k: v for k, v in conf.items()
+                           if k in names and names[k].init})
 
 
 def _log_unread_keys(raw_config: Dict) -> None:
@@ -745,7 +796,7 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
         
         # 加载模型配置
         # `models` 走这条特判路径、绕开了 `_load_section` 的形状守卫（A101 当年只
-        # 护住映射表那 20 节）。于是 `models:` 写成标量、或某个模型条目写成标量 /
+        # 护住走 `_load_section` 的那 20 节）。于是 `models:` 写成标量、或某个模型条目写成标量 /
         # 空 / 列表时，过去会当场崩在 `model_conf.get` 的 `AttributeError`，而校验
         # 面却报 `is_valid=False` —— 同族缺陷两侧不同判（A85，A101 的漏网）。这里补
         # 回与 `_load_section` 逐字同口径的判据：写成非映射抛可行动的 ConfigError；
@@ -767,7 +818,13 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
 
         if 'models' in raw_config:
             models_raw = _as_mapping(raw_config['models'], 'models')
-            config.default_model = models_raw.get('default', 'ernie')
+            # 同一族的第三格（A123）：改前这里写的是 `models_raw.get('default', 'ernie')`，
+            # 把 `AppConfig.default_model` 的默认值又抄了一遍。实测两侧同值
+            # （`AppConfig().default_model` 与字面量 `'ernie'` 逐字相同，
+            # `Temp/l77q/default_model.json`）⇒ 改成「键在场才覆盖」与改前等价，
+            # 但回落值从此只有字段默认一个权威。
+            if 'default' in models_raw:
+                config.default_model = models_raw['default']
             for name, model_conf in models_raw.items():
                 if name == 'default':
                     continue
@@ -778,91 +835,36 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
                 # 解析（只那三条凭证键，A95 记的现状）。
                 config.models[name] = _model_entry(name, conf)
         
-        # 使用映射表加载其他配置（减少重复代码）
+        # 节 → 类的清单。这里**只列名字与类型，不再抄默认值**（A123）：回落值由每节
+        # dataclass 的字段默认唯一决定，与 `_model_entry` 同式（A114 定的口径）。
+        # 「有哪些节」仍需要这份显式清单，因为 `models` / `default_model` 走上面那条
+        # 特判路径、不吃 `_load_section`；清单与 `AppConfig` 的字段是否两集相等由
+        # `tests/unit/test_config.py::TestSectionRegistryMatchesAppConfigFields` 对账。
         config_sections = [
-            ('augmentation', AugmentationConfig, {
-                'variants_per_seed': 5, 'num_threads': 40, 'auto_save_interval': 10,
-                'max_retries': 3, 'retry_delay': 1.0,
-                'max_retry_wait': 300.0, 'retry_jitter': 0.0,
-                'request_timeout': 120.0
-            }),
-            ('quality', QualityConfig, {
-                'enabled': True, 'threshold': 0.6, 'weights': [0.3, 0.4, 0.3]
-            }),
-            ('dedup', DedupConfig, {'enabled': True, 'threshold': 0.9}),
-            ('export', ExportConfig, {
-                'default_format': 'jsonl',
-                'formats': ['jsonl', 'llama_factory', 'alpaca', 'sharegpt', 'chatml']
-            }),
-            ('context', ContextConfig, {'enabled': False, 'num_turns': 3}),
-            ('versioning', VersioningConfig, {
-                'enabled': True, 'storage_dir': 'data/versions', 'auto_snapshot': True
-            }),
-            ('sampler', SamplerConfig, {
-                'enabled': False,
-                'dimensions': ['topic', 'question_type', 'length', 'complexity']
-            }),
-            ('expander', ExpanderConfig, {
-                'enabled': False, 'strategies': ['similar', 'related', 'scenario']
-            }),
-            ('tracker', TrackerConfig, {
-                'enabled': False,
-                'metrics': ['train_loss', 'eval_accuracy', 'perplexity']
-            }),
-            ('visualization', VisualizationConfig, {
-                'enabled': True,
-                'types': ['wordcloud', 'length_distribution', 'topic_cluster', 'timeline', 'quality_distribution']
-            }),
-            ('multilingual', MultilingualConfig, {
-                'enabled': False, 'default_target_lang': 'en',
-                'supported_langs': ['zh', 'en'], 'translate_batch_size': 10
-            }),
-            ('rag', RAGConfig, {
-                'enabled': False, 'default_format': 'llamaindex',
-                'chunk_size': 512, 'chunk_overlap': 64
-            }),
-            ('evaluation', EvaluationConfig, {
-                'enabled': False, 'metrics': ['bleu', 'rouge_l', 'similarity'],
-                'reference_field': 'output'
-            }),
-            ('vector', VectorConfig, {
-                'enabled': False, 'backend': 'faiss', 'dimension': 384,
-                'storage_dir': 'data/vectors', 'collection': 'default'
-            }),
-            ('multimodal', MultimodalConfig, {
-                'enabled': False,
-                'image_extensions': ['.jpg', '.jpeg', '.png', '.bmp', '.webp'],
-                'audio_extensions': ['.wav', '.mp3', '.flac', '.ogg', '.m4a']
-            }),
-            ('benchmark', BenchmarkConfig, {
-                'enabled': False, 'baseline_file': 'data/benchmark_baseline.json',
-                'metrics': ['pass_rate', 'avg_total_score', 'diversity', 'duplication_rate']
-            }),
-            ('active_learning', ActiveLearningConfig, {
-                'enabled': False, 'strategy': 'uncertainty',
-                'batch_size': 50, 'max_iterations': 10
-            }),
-            ('frameworks', FrameworkConfig, {
-                'enabled': False, 'frameworks': ['langchain', 'llamaindex']
-            }),
-            ('web', WebConfig, {
-                'port': 8000, 'host': '0.0.0.0', 'static_dir': 'web/dist',
-                'cors_origins': [], 'cors_credentials': False,
-                'data_roots': ['data'],
-                'rate_limit_max_requests': 300,
-                'rate_limit_window_seconds': 60.0,
-                'rate_limit_exempt_paths': [
-                    '/api/health', '/docs', '/redoc', '/openapi.json'
-                ],
-            }),
-            ('logging', LoggingConfig, {
-                'level': 'WARNING', 'file': '',
-                'format': '%(message)s'
-            }),
+            ('augmentation', AugmentationConfig),
+            ('quality', QualityConfig),
+            ('dedup', DedupConfig),
+            ('export', ExportConfig),
+            ('context', ContextConfig),
+            ('versioning', VersioningConfig),
+            ('sampler', SamplerConfig),
+            ('expander', ExpanderConfig),
+            ('tracker', TrackerConfig),
+            ('visualization', VisualizationConfig),
+            ('multilingual', MultilingualConfig),
+            ('rag', RAGConfig),
+            ('evaluation', EvaluationConfig),
+            ('vector', VectorConfig),
+            ('multimodal', MultimodalConfig),
+            ('benchmark', BenchmarkConfig),
+            ('active_learning', ActiveLearningConfig),
+            ('frameworks', FrameworkConfig),
+            ('web', WebConfig),
+            ('logging', LoggingConfig),
         ]
         
-        for key, config_class, defaults in config_sections:
-            setattr(config, key, _load_section(raw_config, key, config_class, defaults))
+        for key, config_class in config_sections:
+            setattr(config, key, _load_section(raw_config, key, config_class))
         
         # 装配日志排在「写了没人读」出声**之前**：`logging.level: ERROR` 从此真的
         # 能静音那条 WARNING 通道（A97 与 A84 必须同屏读 —— 有反馈通道还得有旋钮）。
