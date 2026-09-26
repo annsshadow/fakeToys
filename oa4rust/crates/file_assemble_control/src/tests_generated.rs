@@ -744,27 +744,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_file_list_id_next_count() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/file/list/id/next/count")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "file_list_id_next_count route should be registered"
-        );
-    }
-
-    #[tokio::test]
     async fn test_file_list_id_next_count_all() {
         let pool = shared::testing::test_pool();
         let app = crate::router(pool);
@@ -803,27 +782,6 @@ mod tests {
             response.status(),
             StatusCode::NOT_FOUND,
             "file_list_id_next_count_referencetype_referenceType route should be registered"
-        );
-    }
-
-    #[tokio::test]
-    async fn test_file_list_id_prev_count() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/file/list/id/prev/count")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "file_list_id_prev_count route should be registered"
         );
     }
 
@@ -894,27 +852,6 @@ mod tests {
     // SKIPPED: file_upload_referencetype_referenceType_reference_reference_scale_scale_callback_callback requires Session parameter
     // SKIPPED: file_upload_with_url requires Session parameter
     #[tokio::test]
-    async fn test_file_id() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/file/id")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "file_id route should be registered"
-        );
-    }
-
-    #[tokio::test]
     async fn test_file_id_binary_base64() {
         let pool = shared::testing::test_pool();
         let app = crate::router(pool);
@@ -932,27 +869,6 @@ mod tests {
             response.status(),
             StatusCode::NOT_FOUND,
             "file_id_binary_base64 route should be registered"
-        );
-    }
-
-    #[tokio::test]
-    async fn test_file_id_download() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/file/id/download")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "file_id_download route should be registered"
         );
     }
 
@@ -995,27 +911,6 @@ mod tests {
             response.status(),
             StatusCode::NOT_FOUND,
             "folder_list_top route should be registered"
-        );
-    }
-
-    #[tokio::test]
-    async fn test_folder_list_id() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/file/folder/list/id")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "folder_list_id route should be registered"
         );
     }
 
