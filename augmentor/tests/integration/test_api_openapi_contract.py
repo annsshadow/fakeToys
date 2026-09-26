@@ -102,9 +102,17 @@ def _validate_written_config(client):
     校验的必须是「服务自己写出的配置」，而不是仓库里那份手写的——后者在测试
     的临时 CWD 里并不存在。这也正是这条用例的价值：它把「保存」与「校验」
     串成闭环，任何一侧与另一侧不一致都会失败。
+
+    载荷必须是**真键**：A152① 之后一次没写成任何东西的 `POST /api/config` 不落盘，
+    从前那句 `json={}` 全靠「无条件整份重写」把文件凭空造出来，现在只会让下面的
+    校验对着一个不存在的文件跑。这里选的 `variants_per_seed=5` 就是出厂默认值，
+    所以既真落盘，又不改动这个（可能共享的）client 的任何配置语义。
     """
-    written = client.post("/api/config", json={})
+    written = client.post("/api/config", json={"augmentation": {"variants_per_seed": 5}})
     assert written.status_code == 200, written.text
+    payload = written.json()
+    assert payload["ignored_keys"] == [], "载荷没被写进配置，闭环就断了"
+    assert "配置已保存" in payload["message"]
     return client.post("/api/system/validate-config", json={"path": "config.yaml"})
 
 
