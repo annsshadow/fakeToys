@@ -640,7 +640,7 @@ async function pdEngine(op: string) {
     else if (op === 'instanceCancel') await api.post(`/api/processplatform/service/processing/cancel/${e}`, {})
     else if (op === 'gatewayFork') await api.post(`/api/processplatform/service/processing/gateway/fork/${e}`, {})
     else if (op === 'timerStart') await api.post('/api/processplatform/service/processing/timer/start', {})
-    else if (op === 'touchMerge') await api.post('/api/processplatform/service/processing/touch/merge', {})
+    else if (op === 'touchMerge') await api.get('/api/processplatform/service/processing/touch/merge')
     else if (op === 'recordEdit') await api.put(`/api/processplatform/service/processing/record/${e}`, {})
     else if (op === 'recordDelete') {
       if (!(await confirmMsg('确定删除该记录？'))) return
