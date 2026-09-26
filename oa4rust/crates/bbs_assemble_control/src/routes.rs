@@ -71,27 +71,27 @@ pub fn router(pool: Pool) -> Router {
         )
         .route(
             "/api/bbs/assemble/control/delete/forum",
-            post(crate::delete_forum),
+            post(crate::delete_forum_body),
         )
         .route(
             "/api/bbs/assemble/control/delete/forum",
-            delete(crate::delete_forum),
+            delete(crate::delete_forum_body),
         )
         .route(
             "/api/bbs/assemble/control/delete/reply",
-            post(crate::delete_reply),
+            post(crate::delete_reply_body),
         )
         .route(
             "/api/bbs/assemble/control/delete/reply",
-            delete(crate::delete_reply),
+            delete(crate::delete_reply_body),
         )
         .route(
             "/api/bbs/assemble/control/delete/subject",
-            post(crate::delete_subject),
+            post(crate::delete_subject_body),
         )
         .route(
             "/api/bbs/assemble/control/delete/subject",
-            delete(crate::delete_subject),
+            delete(crate::delete_subject_body),
         )
         .route(
             "/api/bbs/assemble/control/list/reply/filter",
