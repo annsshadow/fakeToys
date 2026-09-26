@@ -73,8 +73,6 @@ GET /api/jpush_assemble_control/save/jpush
 GET /api/portal/assemble/designer/list/portal/1/1
 GET /api/portal/assemble/designer/pageversion/list/1/1
 GET /api/portal/assemble/surface/dict/portal/path/data/1/1
-GET /api/portal/assemble/surface/get/layout
-GET /api/portal/assemble/surface/list/layouts
 GET /api/processplatform/assemble/designer/item/access/path/path
 GET /api/processplatform/assemble/surface/applicationdict/application/path0/data/1/1
 GET /api/processplatform/assemble/surface/applicationdict/application/path0/path1/data/1/1

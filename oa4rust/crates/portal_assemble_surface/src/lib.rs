@@ -468,8 +468,6 @@ pub fn portal_assemble_surface_router() -> Router {
         .route("/api/portal/assemble/surface/file/portal/content/{flag}/{portalFlag}", get(crate::file_flag_portal_portalFlag_content))
         .route("/api/portal/assemble/surface/file/portal/download/{flag}/{portalFlag}", get(crate::file_flag_portal_portalFlag_download))
         .route("/api/portal/assemble/surface/file/list/portal/{portalFlag}", get(crate::file_list_portal_portalFlag))
-        .route("/api/portal/assemble/surface/get/layout", get(crate::get_layout))
-        .route("/api/portal/assemble/surface/list/layouts", get(crate::list_layouts))
         .route("/api/portal/assemble/surface/portal/{page}/{flag}/{portalFlag}", get(crate::page_flag_portal_portalFlag_p3))
         .route("/api/portal/assemble/surface/portal/mobile/{page}/{flag}/{portalFlag}", get(crate::page_flag_portal_portalFlag_mobile_p3))
         .route("/api/portal/assemble/surface/{page}/{id}", get(crate::page_id))
