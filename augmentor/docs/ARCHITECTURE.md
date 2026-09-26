@@ -908,7 +908,7 @@ A58 是 L41 接线时自带的一笔代价（`shuffle=False` 时每段各整份�
 **不为纳秒级的绝对量牺牲入参校验**。
 
 **顺带挖出的三笔「契约面有旋钮、实现面不消费」**（与 §3.16 的 A54 同构，见账本 A64–A66）：
-~~`ModelConfig.max_retries` / `retry_delay`~~ **`AugmentationConfig.max_retries` / `retry_delay`**（L45 校正类名归属：`ModelConfig` 在 `config.py:15` 且没有重试字段，两个旋钮属于 `:28` 的 `AugmentationConfig`）全仓 0 个消费者，而 `models/base.py` 另有一副写死的
+~~`ModelConfig.max_retries` / `retry_delay`~~ **`AugmentationConfig.max_retries` / `retry_delay`**（L45 校正类名归属：`ModelConfig` 在 `augmentor/config.py:15` 且没有重试字段，两个旋钮属于 `:28` 的 `AugmentationConfig`）全仓 0 个消费者，而 `models/base.py` 另有一副写死的
 `Retry(total=3)` 在~~传输层独立生效（⇒ 一次 `generate()` 最坏请求数上界 `attempts × (1+3)`，
 此数按代码推得、未实测）~~ **传输层从不生效（L45 实测校正，见 §3.20）**；`compute_delay` 的 `jitter` / `rng` 没有任何调用路径能传进去
 （`with_retries` 不接也不透传）⇒ 真实重试链上抖动恒为 0；`RetryStats` 回到 `generate`
@@ -922,7 +922,7 @@ A58 是 L41 接线时自带的一笔代价（`shuffle=False` 时每段各整份�
 ### 3.20 L45：`augmentation.max_retries` / `retry_delay` 真正接上模型调用（关闭 A64）
 
 上一节的第三笔「契约面有旋钮、实现面不消费」在本轮清偿。两个旋钮声明在
-`config.py:28` 的 `class AugmentationConfig`（字段 `:33` / `:34`，默认值同时进 `:308`
+`augmentor/config.py:28` 的 `class AugmentationConfig`（字段 `:33` / `:34`，默认值同时进 `:308`
 的默认配置字典），L44 之前**全仓非测试代码 0 个消费者** —— 改配置文件里的重试次数与
 间隔，行为一个字都不变。
 
@@ -1023,8 +1023,8 @@ config.augmentation.max_retries / retry_delay
 `pool_connections=10` 与上游默认同值（写了等于没写，但保留显式写法免得依赖上游不变），
 `pool_maxsize=20` 是本仓唯一偏离默认的项；`pool_connections` 语义是「缓存多少个 host 池」
 （每个后端实例一个 session、一个 host ⇒ 远未触顶），`pool_maxsize` 是单池连接上限。本仓各模块默认并发
-`max_workers ∈ {3, 4, 5}`（`expander.py:30` / `export.py:51` / `multilingual.py:43` / `context.py:21` /
-`pipeline.py:554`）⇒ 20 有 4 倍余量，且它是 per-host 上限，不构成跨后端瓶颈。原作者注释从未说明这两个数，
+`max_workers ∈ {3, 4, 5}`（`expander.py:30` / `augmentor/export.py:51` / `multilingual.py:43` / `context.py:21` /
+`augmentor/pipeline.py` 的 `max_workers=4` 形参）⇒ 20 有 4 倍余量，且它是 per-host 上限，不构成跨后端瓶颈。原作者注释从未说明这两个数，
 本节只是把「实测得到的关系」补成可核对的话，不宣称这就是当初的理由。
 
 **A71：降级分支同时修三处说谎的地方。** 原形是
@@ -1155,7 +1155,7 @@ L44 就把这两个字段的归属记错过一次）+ `config_validator` + 工�
 `compute_delay` 的抖动分支**从建库起就在**，但 `with_retries` 从来不透传它（改前实测函数体里
 `jitter` / `rng` 各 0 命中），而全仓产品路径只有 **1 个** `with_retries` 调用点（`models/base.py:309`）
 ⇒ 那一支对真实调用方是死的。接它的理由不是「多一个旋钮」：本仓有 5 处 `ThreadPoolExecutor`
-（`context.py` 5 / `expander.py` 3 / `export.py` 4 / `multilingual.py` 4 / `pipeline.py` `max_workers=4`
+（`context.py` 5 / `expander.py` 3 / `augmentor/export.py` 4 / `multilingual.py` 4 / `augmentor/pipeline.py` `max_workers=4`
 与 `num_threads` 一处）会并发打同一个后端，同一档退避让它们**同时醒来**再撞一次 429，
 抖开才有意义 —— 这是「立条时假定的前提」第一次被逐处量出来。
 
@@ -1251,9 +1251,9 @@ A75 行末预告的「等待预算」一轮落地，做足 A73 + A75 两件事�
 > 写在 `:125`），而「本文档与账本按 L47 的规矩在最后一次编辑之后量」那条纪律没变。
 
 **两个新旋钮**都进 `AugmentationConfig`（**不是** `ModelConfig`，A64 行记错过一次）：`max_retry_wait: float = 300.0`
-（`config.py:37`）与 `retry_jitter: float = 0.0`（`:40`），默认值就是 L47 / L48 定下的那两个常数 ⇒ 已发布配置
+（`augmentor/config.py` 的 `AugmentationConfig.max_retry_wait`）与 `retry_jitter: float = 0.0`（同节的 `retry_jitter`），默认值就是 L47 / L48 定下的那两个常数 ⇒ 已发布配置
 的行为一字不变；`config.yaml:88` / `:94` 把两键写出显式值并各带注释。接线面八处，一处不落（避免 A54 型
-「契约面有旋钮、实现面不消费」）：`config.py` 字段 + `config_sections` 映射表（`:314`；**该表已于 L77 删掉**，
+「契约面有旋钮、实现面不消费」）：`augmentor/config.py` 字段 + `config_sections` 映射表（`:314`；**该表已于 L77 删掉**，
 现在那张清单只剩「节名 → 类」两元组，默认值的唯一权威是 dataclass 字段本身，见账本 L77 / A123）→ `config_validator`
 的 KNOWN_FIELDS 规格（0-300 / 0-1）→ `pipeline._init_components` 两道判据（排在降级 `try/except` **之外**，
 L45 定的那条）+ 转发 → `models/factory.py` 签名 → 5 个后端构造透传 → `ModelBackend` 存 → `generate()` 把
@@ -1292,7 +1292,7 @@ L45 定的那条）+ 转发 → `models/factory.py` 签名 → 5 个后端构造
 
 **守护第一次跑就红，红出来的是真洞（A78）**：新写的映射表覆盖守护 `TestSectionDefaultsMatchTheMappingTable`
 首跑报出缺失 `('web', ['cors_credentials', 'cors_origins'])`。那不是测试写错：`WebConfig` 声明了这两个字段
-（`config.py:182-183`）、`api/main.py:119-120` 确实在读，而 `load_config` 的 `web` 默认表里没有 ⇒ `_load_section`
+（`augmentor/config.py:182-183`）、`api/main.py:119-120` 确实在读，而 `load_config` 的 `web` 默认表里没有 ⇒ `_load_section`
 按表取键，用户写了也不读。实测复现（写 `cors_origins: ["https://trusted.example"]` + `cors_credentials: false`
 读回 `['*']` 与 `True`，**同一文件里的 `web.port: 9999` 生效** ⇒ 不是整节失效，只有那两键被丢）。后果是 CORS
 出厂即「全源 + 带凭证」，而唯一的收紧路径恰好被这条洞堵住（`validate-config` 也不报错，因为这两个键在
@@ -1390,11 +1390,11 @@ m3 由 2 → 3（第 3 条正是 `test_pipeline_forwards_cache_options` 那枚�
 `test_count_knob_validation.py` **+30 / −0**（861 → 891）、`test_config.py` **+103 / −0**（343 → 446）、
 `test_config_validator.py` **+94 / −0**（779 → 873）、`tests/integration/test_pipeline.py` **+57 / −0**
 （787 → 844）、`test_model_cache_optimization.py` **+3 / −0**（423 → 426）。19 个文件的行数差与各自净值
-逐一相等；行尾逐文件按字节核对为纯色（LF 单一体：`retry.py` / `pipeline.py` / `models/` 全部 / 四个测试文件 /
-本文档；CRLF 单一体：`validation.py` / `config.py` / `config_validator.py` / `config.yaml` /
+逐一相等；行尾逐文件按字节核对为纯色（LF 单一体：`retry.py` / `augmentor/pipeline.py` / `models/` 全部 / 四个测试文件 /
+本文档；CRLF 单一体：`validation.py` / `augmentor/config.py` / `config_validator.py` / `config.yaml` /
 `test_retry.py` / `test_models.py` / `tests/integration/test_pipeline.py`）。覆盖读数：`validation.py` 195 语句
-缺 **0**（5 条偏支全在 `DataSanitizer` 旧码）、`config_validator.py` 152 缺 **0**、`pipeline.py` 245 缺 **0**、
-`config.py` 215 缺 3（`449-450` / `452`，本轮 hunk 在 `35-40` 与 `314-315`，不相交）、`models/base.py` 157 缺 5
+缺 **0**（5 条偏支全在 `DataSanitizer` 旧码）、`config_validator.py` 152 缺 **0**、`augmentor/pipeline.py` 245 缺 **0**、
+`augmentor/config.py` 215 缺 3（`449-450` / `452`，本轮 hunk 在 `35-40` 与 `314-315`，不相交）、`models/base.py` 157 缺 5
 （`272` / `279-280` / `404-405`，全在既有 `_cache_*` 与 `__del__` 兜底，本轮 10 个 hunk 无一命中）、
 `retry.py` 121 缺 6 ⇒ **本轮新增语句 0 条落入未触达**；A68 那六条依旧一个没少，行号随本轮 +17 位移成
 `304` / `327-328` / `363-367`（+ 偏支 `197->237`）。
@@ -1475,7 +1475,7 @@ m2 字段默认漂回 `["*"]`/`True` ⇒ **3**；m3 只摘 `web.data_roots` 一�
 **新立两债**：A80 = `web` 节运行时零判据（SDK 直构 `WebConfig` 或绕过 `validate-config` 时，字符串
 `data_roots`、`None` origins 照样流到白名单与 starlette，本轮只补了校验器这一侧）；A81 = `docs/API.md`
 health 示例缺 `version` 键（文档滞后，与本轮无关，只记不修，见 `OPTIMIZATION_LOOP.md` Backlog A）。覆盖读数：`config_validator.py` 156 语句缺
-**0**（78 分支 3 条偏支全在既有 `_validate_env_refs` 一侧）、`config.py` 216 语句缺 3（`457-458` / `460`
+**0**（78 分支 3 条偏支全在既有 `_validate_env_refs` 一侧）、`augmentor/config.py` 216 语句缺 3（`457-458` / `460`
 = L49 记录的 `449-450` / `452` 随本轮 +8 位移，本轮两个 hunk 在 `182-189` 与 `385`，不相交）⇒ **本轮
 新增语句 0 条落入未触达**。
 
@@ -1488,7 +1488,7 @@ L49 立 A77 时写的那句「刻意留的不对称」（给 SDK 加下界以外
 按用户口径（安全默认值偏松时直接收紧，但破坏与迁移代价必须一并实测）正式拍板的一轮。修完的形状：八个
 区间常量（`VARIANTS_PER_SEED_RANGE` / `NUM_THREADS_RANGE` / `AUTO_SAVE_INTERVAL_MIN` /
 `MAX_RETRIES_RANGE` / `RETRY_DELAY_RANGE` / `PORT_RANGE` / `RATE_LIMIT_MIN_REQUESTS` /
-`RATE_LIMIT_MIN_WINDOW_SECONDS`）住在 `config.py:21-28`，`AugmentationConfig.__post_init__` 与
+`RATE_LIMIT_MIN_WINDOW_SECONDS`）住在 `augmentor/config.py:21-28`，`AugmentationConfig.__post_init__` 与
 `WebConfig.__post_init__` 按它们逐个判，`config_validator.KNOWN_FIELDS` 的 **11 条**数值规格 import
 同一批常量 ⇒ A77 类分歧在结构上不可表达（改常量的那一刻，两侧同时改完）。
 
@@ -1549,7 +1549,7 @@ YAML 里写了键没给值就是 `None`，字段没有「没传」这种状态�
 ⇒ 14（含那条 API 白名单回退用例，标量又被逐字符吃下）；m5 摘校验器 `items` 块 ⇒ 5；m6 只摘
 `non_empty` 分支 ⇒ 2；**m7 是本轮最有价值的一档**：把校验器 `retry_delay` 的上界改回私有字面量 30.0
 （即人为恢复「两边各抄一遍」的旧结构）⇒ 6 红，红在常量引用断言 + 逐值同判表 ⇒ 「抄两遍」这件事现在
-一被抄出来就报警；m8 摘 `cors_credentials` 的布尔判据（`config.py:293-297`）⇒ 2。
+一被抄出来就报警；m8 摘 `cors_credentials` 的布尔判据（`augmentor/config.py:293-297`）⇒ 2。
 
 **代价只报代价**（Temp `l51q/ab_cost.py`，NONCE-C3F5D18B2，同进程 A/B、正反双序、min-of-5）：
 `AugmentationConfig()` 0.190 → 1.452 µs（Δ **+1.262 µs**，7.66×，反序 Δ +1.269 同号）、
@@ -1569,7 +1569,7 @@ YAML 里写了键没给值就是 `None`，字段没有「没传」这种状态�
 **5106 passed / 3 skipped**（67.52 s，总覆盖 **98.64 %**，门禁 80 % 达成，TOTAL 12,852 语句缺 88、
 3,530 分支缺 110）；`C:\Python314`（Python 3.14.4，pandas 3.0.2 + chromadb 1.5.9，starlette 1.2.1）
 **5126 passed / 2 skipped**（46.26 s，**99.03 %**，TOTAL 12,226 缺 41 / 分支缺 104）。三份本轮源文件：
-`config.py` 256 语句缺 **3**（`556-557` / `559` = L50 记的 `457-458` / `460` 随 +99 行位移，本轮未触；
+`augmentor/config.py` 256 语句缺 **3**（`556-557` / `559` = L50 记的 `457-458` / `460` 随 +99 行位移，本轮未触；
 **本轮新增 40 条语句 0 条落入未触达**，含 L51 首跑唯一漏掉的 `:294` 那条 `cors_credentials` 判据 ——
 它是被探针打红、被 parity 表补上的，见日志）、`config_validator.py` 166 语句缺 **0**（88 分支 3 条偏支
 全在既有 `_validate_env_refs`）、`validation.py` 218 语句缺 **0**（122 分支 5 条偏支为既有）；
@@ -1593,7 +1593,7 @@ Temp `l52q/post_check2.py` NONCE-45A0C1AB9510-POST —— 不再靠改前记忆�
 （`test_the_derived_whitelist_equals_what_load_section_reads` 把 `_load_section` 打桩、逐节记录真实的
 `set(defaults)` 再与推导集比对），而 L49/L50 立的映射表棘轮（`TestSectionDefaultsMatchTheMappingTable` +
 `KNOWN_UNMAPPED_FIELDS == set()`）已经把 `defaults.keys()` 钉成 **dataclass 字段集**。所以
-`ConfigValidator.consumed_section_keys()`（`config_validator.py:193`）只做一件事：遍历
+`ConfigValidator.consumed_section_keys()`（`augmentor/config_validator.py` 的 `consumed_section_keys`）只做一件事：遍历
 `fields(AppConfig)`，取 `is_dataclass(默认值)` 的那 **20** 节、各取其字段的 **67** 个键名，结果缓存
 （`_CONSUMED_SECTIONS`）。⇒ 新增配置节或字段自动进入判据，没有任何地方需要「记得同步一份清单」。
 
@@ -1612,7 +1612,7 @@ Temp `l52q/post_check2.py` NONCE-45A0C1AB9510-POST —— 不再靠改前记忆�
 `models` 的键是**模型名**；但 `models.<名字>` 的**子项**照 `ModelConfig` 的 9 个字段判（`temperatur` 出声），
 `models.default` 单独跳过。自 L72 起，这 9 个子项里 **4 个数值键**（`temperature` / `top_p` /
 `max_output_tokens` 与 L71 补上的 `request_timeout`）的**值**也两侧同判：静态面由按**键名**索引的
-`MODEL_ENTRY_FIELDS` 判，运行时由 `ModelConfig.__post_init__` 判，界只抄 `config.py` 的常数一遍（A77）。建议文案只在 `difflib` 有 ≥0.7 近邻时才附，且两个方向都有用例
+`MODEL_ENTRY_FIELDS` 判，运行时由 `ModelConfig.__post_init__` 判，界只抄 `augmentor/config.py` 的常数一遍（A77）。建议文案只在 `difflib` 有 ≥0.7 近邻时才附，且两个方向都有用例
 （`test_suggestion_names_the_real_key` / `test_no_suggestion_when_nothing_is_close`）—— 硬猜一个不存在的
 正确名字比不猜更坏。实跑输出与口径写在 `docs/API.md`「配置的「写了没人读」反馈（3.x）」，那里额外标了
 「警告条数随本机环境而变」（后 5 条是既有的环境变量告警）。
@@ -1694,9 +1694,9 @@ L47 已为同一件事立过规矩（「文档本体与账本的 numstat 只能�
 **退出码与判决脱钩**（Temp `final_cli.py` / `final_cli_case3.py`，NONCE-45A0C1AB9510-FINAL，两解释器各一遍）——
 一份缺 `models` 必需字段的配置打 `错误: 2` 却 **exit 0**，脚本与 CI 拿 `validate-config` 当门禁会永远绿；
 机制在 `augmentor/cli/commands/data_ops.py:88` 的 `run_validate_config` 只 `print` 判决、从不返回码。
-同一次复跑还量到第二个形状：`cli.py:46` 的 `load_config(args.config)` 在 `try` **外面**，所以配置坏到运行时
+同一次复跑还量到第二个形状：`cli.py` 当时第 46 行的 `load_config(args.config)` 在 `try` **外面**，所以配置坏到运行时
 判据拒收（`web.port: 99999`）时是**裸 traceback + exit 1、stdout 全空**（`DataValidationError: web.port 必须是
-不大于 65535 的整数，当前是 99999`），而 handler 里的异常走 `cli.py:49-51` 才是「`错误: …` + exit 1」——
+不大于 65535 的整数，当前是 99999`），而 handler 里的异常走 `cli.py` 中 `main()` 的 `except Exception` 分支才是「`错误: …` + exit 1」——
 同一个 CLI 两种失败形状，诊断命令在最需要它说话的那一档恰好不说话。**这句话本来会被写成一句错的**：
 本轮四份文档（§3.27 / 本账 / `docs/API.md`）原先都写着「`is_valid` 是 CLI 退出码 + 端点判决」，
 CLI 那一半被上面的实测否掉 ⇒ 就地改成只主张 HTTP 响应位，并立 A89。**这就是「收尾复验」存在的理由**，
@@ -1704,10 +1704,17 @@ CLI 那一半被上面的实测否掉 ⇒ 就地改成只主张 HTTP 响应位�
 **A81 同轮结案**：`GET /api/health` 示例补上 `version`（实跑 `{'status': 'ok', 'version': '3.0.0'}`，
 `test_api_openapi_contract.py` 早已把两键钉死 ⇒ 纯文档滞后）。
 
-**行号勘误（L53 关掉 A89 之后补，原文不删）**：上两段引的 `cli.py:46`（`load_config` 在 `try` **外**）
-与 `cli.py:49-51`（handler 异常的统一文案）在 L53 之后分别位移为 `cli.py:49`（已挪进 `try` **内**）与
-`cli.py:51-53` ⇒ 「同一个 CLI 两种失败形状」从此只剩一种。病历留着是对的，但读者按行号跳过去会对不上号
-—— 这一处对不上号正是 **A87**（文档与代码之间没有机械联动）的现场样本，本轮靠人工回读抓到，普查仍未做（§3.28）。
+**行号勘误（L53 关掉 A89 之后补，原文不删）**：上两段引的 `cli.py` 当时第 46 行（`load_config` 在
+`try` **外**）与第 49-51 行（handler 异常的统一文案）在 L53 之后分别位移为第 49 行（已挪进 `try` **内**）
+与第 51-53 行 ⇒ 「同一个 CLI 两种失败形状」从此只剩一种。病历留着是对的，但读者按行号跳过去会对不上号
+—— 这一处对不上号正是 **A87**（文档与代码之间没有机械联动）的现场样本，本轮靠人工回读抓到，普查仍未做
+（§3.28）。**L79 补**：上面四个数字改成了不带反引号的散文 —— 「文件名.py 冒号 行号」这个形状在本仓两份
+活文档里一律算**定位引用**（`tests/unit/test_doc_line_refs_l79.py` 按它抓死引用），而本段要留的是
+**历史读数**，两者不该共用一个语法。今天的落点是 `cli.py` 的 `main()`：`load_config(args.config)` 那次
+调用在 `try` 内，handler 异常的统一文案在同一个函数的 `except Exception` 分支。
+**但这两个「位移为第 N 行」自己也是历史读数**：本轮重读 `cli.py` 时 `load_config` 那次调用
+已经不在第 49 行上（`try` 之前被加过两行注释）⇒ 散文里的数字同样守不住，而**没有任何机械
+通道会为此出声**（守卫只认反引号），这就是 A129，口径与边界见 §3.33。
 
 ### 3.28 L53：判决要能被脚本读到 —— 三条「校验形」CLI 命令接上退出码（关闭 A89，新立 A90–A92）
 
@@ -1744,7 +1751,7 @@ L52 立 A89 时的读法是「`validate-config` 只 `print` 判决、从不返�
 而是「报告的本分是出完」。这一格的名字、以及它顺带给读者的因果，才是本轮真正修掉的东西。
 
 **但 `quality-report` 不在「无判决位」那一格里，这一条是本轮写完首稿之后复核才发现自己写错的**：
-`quality.py:76` 打的「总体状态: 通过 / 未通过」读的就是 `report.overall_passed`，且命令带 `--threshold`；
+`augmentor/cli/commands/quality.py:76` 打的「总体状态: 通过 / 未通过」读的就是 `report.overall_passed`，且命令带 `--threshold`；
 `auto-test` 的 `get_test_report` 打「通过: N / 失败: M」（`auto_test.py:385-386`），`migrate` 打「失败: N 条」
 （`result.failed_items`）。⇒ 三条同形状命令有判决语义却不落退出码，本轮仍**刻意不接**：要拍的不是机制而是口径
 （「`overall_score` 不达阈值算不算 CI 失败」是产品决定），且 `health-gate` 读的是 `quality` 的 `pass_rate`、
@@ -1753,8 +1760,8 @@ L52 立 A89 时的读法是「`validate-config` 只 `print` 判决、从不返�
 校验形那一侧则相反 —— 它已经在 stdout 上打印「配置验证结果: 通过 / 失败」，只把这句话给人看、
 不把同一个判断给进程看，是同一件事被截了一半。
 
-**两处 `sys.exit(1)` 与一处 `try` 范围，同批不可拆**：`data_ops.py:76-78` / `:112-115` 与
-`ops.py:126-127` 各是一行判负；`cli.py:46-53` 把 `load_config(args.config)` 从 `try` 外挪进来。
+**两处 `sys.exit(1)` 与一处 `try` 范围，同批不可拆**：`augmentor/cli/commands/data_ops.py` 的 `run_validate` 与 `run_validate_config` 各自末尾那行 `verdict_exit`，与
+`augmentor/cli/commands/ops.py` 的 `run_dependency` 同一形状；`cli.py` 的 `main()` 里那次 `load_config(args.config)` 被从 `try` 外挪进了 `try`。
 第二条不是顺手改的：A89 的两半如果只修退出码，那么 `web.port: 99999` 这一档（配置坏到运行时判据拒收）
 仍然是**裸 traceback + stdout 全空**，诊断命令恰好在最需要它说话的那一档沉默；只修 `try` 范围则判决照旧
 不落退出码。两半一起修才有「CLI 的失败只有一种形状」这句话可主张。实测形状（Temp `l53/probe.py`，
@@ -1862,7 +1869,7 @@ stderr 为空）⇒ 正常一次运行**一行都不多**，只有拼错才出�
 `validate_config` 用的同一个 `ConfigValidator._warn_unread_keys`；比对两条通道时不许各抄一份文案，于是把
 那句文案的共同词落成常量 `ConfigValidator.UNREAD_MARKER = "没人读取"`，用例用**同一个常量**过滤
 `validate_config(...).warnings` 并与 `unread_key_messages(...)` 逐条相等（`tests/unit/test_config_unread_feedback.py::TestTheTwoChannelsShareOneSource`
-⇒ 等式不成立即红）。`config_validator.py` 顶部已 `from .config import …`，所以 `config.py` 里那句
+⇒ 等式不成立即红）。`config_validator.py` 顶部已 `from .config import …`，所以 `augmentor/config.py` 里那句
 `from .config_validator import unread_key_messages` **必须留在函数体内**，提到模块顶部就是循环 import。
 **刻意只出「没人读」这一件事**：环境变量引用那一路（`环境变量未设置: X`）不进加载声 —— 它的条数是本机 shell
 的函数（L52 纪律），接进来等于让同一份配置在不同机器上输出不同行数；这一条由
@@ -1890,7 +1897,7 @@ API 侧不重复付：`deps._config_data_roots` 已按 `(路径, mtime_ns)` 缓�
 （2 skipped，49.21 s），覆盖 TOTAL aug 12,900 → **12,913** 语句而缺数 **88** 一字不动、py314 12,274 → **12,287**
 而缺数 **41** 一字不动 ⇒ 本轮新增语句两边全绿。分支总数 3,562 → **3,564**（`_log_unread_keys` 那一条 `for`
 的两个方向；`or {}` 与函数内 import 不产生行级弧），分支偏支 **110 / 104** 同样一字不动。单读两份被改源文件：
-`config.py` 263 语句缺 **3**（`585-586` / `588` —— 就是 L49 起既有的那 3 条，因本轮在文件上方插了 29 行而整体
+`augmentor/config.py` 263 语句缺 **3**（`585-586` / `588` —— 就是 L49 起既有的那 3 条，因本轮在文件上方插了 29 行而整体
 位移，非本轮新增）、`config_validator.py` 215 语句缺 **0**，116 分支 3 条偏支且三行全是既有代码。6 条 warnings
 两边同数且全是第三方与既有收集告警（starlette testclient / anyio / `auto_test.py` 的 dataclass），本轮 **0 新增**。
 
@@ -1925,7 +1932,7 @@ API 侧不重复付：`deps._config_data_roots` 已按 `(路径, mtime_ns)` 缓�
 锚点都对不上。更糟的是我**先用 `cat -A` 看过同一份文件、读到的是 `$` 而不是 `^M$`**，于是判定它是 LF 就动手
 ⇒ 管道里的 `grep` 已经把 `\r` 吃掉，`cat -A` 不是行尾的可靠读数。新纪律：**判行尾只按字节计数，注入前先探
 `NL = "\r\n" if "\r\n" in original else "\n"` 并按文件自己的行尾拼锚点**（第二版 6/6 命中、还原 sha 一致）。
-顺带量齐四份主文档/源文件的行尾实况：`config.py` 610 CRLF、`config_validator.py` 549 CRLF、`docs/API.md`
+顺带量齐四份主文档/源文件的行尾实况：`augmentor/config.py` 610 CRLF、`config_validator.py` 549 CRLF、`docs/API.md`
 973 CRLF、`README.md` 389 CRLF、`docs/ARCHITECTURE.md` **纯 LF**（这一项**刻意不钉自己的行数**：本行正写在这份
 文档里，再改一次那句数就过期 —— L40 / A93 那族「自指计数会过期」的现场，终态行数交给收尾自查与
 `git diff --numstat` 各量一遍）、新用例文件 223 纯 LF（`tests/unit/`
@@ -1975,7 +1982,7 @@ A91 的症状写着「口径只活在文档里，零守卫」。本轮开工第�
 | `doctor` | `report.all_required_present` | 0 | 缺必需依赖 ⇒ 1 | `cli/commands/ops.py:31` |
 | `auto-test` | `suite.failed_tests == 0` | 0 | 有失败用例 ⇒ 1 | `cli/commands/ops.py:54` |
 | `migrate` | `result.failed_items == 0` | 0 | 有失败条目 ⇒ 1 | `cli/commands/ops.py:159` |
-| 已有四条改走同一出口 | `is_valid` / `issues` / `gate.passed` | — | 判负 ⇒ 1（无 `--gate`，恒判） | `data_ops.py:78` / `:114`、`ops.py:134`、`quality.py:210` |
+| 已有四条改走同一出口 | `is_valid` / `issues` / `gate.passed` | — | 判负 ⇒ 1（无 `--gate`，恒判） | `data_ops.py:78` / `:114`、`ops.py:134`、`augmentor/cli/commands/quality.py:210` |
 
 **唯一出口 = `augmentor/cli/verdict.py:verdict_exit(passed, enforce=True)`**。退出码从此只有三种形状，
 彼此不许互相顶替：`0` = 判决通过或这条命令压根不判负；`1` = 判决未通过（只由 `verdict_exit` 产生）**或**
@@ -2010,7 +2017,7 @@ S5「L53 那四条」⊆ S3。改前基线（Temp `l55/verify.py`，NONCE-L55-VE
 无判决位命令传 `--gate` ⇒ **2** 而非 1），以及 help 文本 GBK 可编码 + 子进程 GBK 管道实跑。
 
 **注入 7 模式**（Temp `l55/inj.py`，NONCE-L55-INJ，两解释器红集**逐字相同**、只有耗时差，
-还原后 `parser.py` / `quality.py` sha 前缀 `68e3ff6d8b5ca4e8` / `58cc1fe18c4c00e9` 与快照一致）：
+还原后 `parser.py` / `augmentor/cli/commands/quality.py` sha 前缀 `68e3ff6d8b5ca4e8` / `58cc1fe18c4c00e9` 与快照一致）：
 I1 摘掉 `quality-report` 的 `--gate` 声明 ⇒ **6 红**（两条集合等式 + 三条行为 + 一条 GBK 实跑）；
 I2 handler 忘传 `enforce`（默认档被改成恒判负）⇒ **3 红**；I3 摘掉整条接线 ⇒ **4 红**；
 I4 把 `✅/❌` 装回来 ⇒ **1 红**，且**只有**子进程那条红（进程内 `redirect_stdout` 不落编码 ⇒
@@ -2029,10 +2036,10 @@ help 文案变化不进任何断言。**仓外脚本未量**（与 A89 同一条
 **覆盖表那两列的换算本轮纠正了两次**：aug 全量 TOTAL 的分支列从 L54 的 **3,564** 变成 **3,560**（−4），
 同一行的语句列是 +17。先用 AST 数 `if`：删 3 处 `if …: sys.exit(1)`、`verdict.py` 新增 1 处 ⇒ 净 **−2**，
 对不上；再用「弧总数的一半」算 ⇒ 得 **+7**，连方向都反了，而那只公式在**本轮没碰的文件上就已经错**
-（`pipeline.py` 数出 143 对，报告列写着 78）。第三次直接调 coverage 自己的 `PythonParser` 才对上：
+（`augmentor/pipeline.py` 数出 143 对，报告列写着 78）。第三次直接调 coverage 自己的 `PythonParser` 才对上：
 **Branch 列 = 源行有多个后继的弧条数**（双向各计一次，顺序弧不计入），在 `pipeline` / `preview` /
 `privacy` / `quality` 四个文件上与报告列逐位相同（78 / 24 / 22 / 62）。按这个换算重算本轮 7 个文件：
-`data_ops.py` **−4**、`quality.py` **−2**、`verdict.py` **+2**、其余四份 **0** ⇒ 合计 **−4**，与读数闭合；
+`data_ops.py` **−4**、`augmentor/cli/commands/quality.py` **−2**、`verdict.py` **+2**、其余四份 **0** ⇒ 合计 **−4**，与读数闭合；
 机制就是 `if` 换成 `verdict_exit(布尔实参)` —— 判决还在、分支点没了，这正是「唯一出口」要的形状，
 只是它在覆盖表上表现为**分支总数下降**。写下这段是为了下一轮：谁把 −4 读成「测试变弱了」都会读反。
 
@@ -2100,7 +2107,7 @@ help 文案变化不进任何断言。**仓外脚本未量**（与 A89 同一条
 ### 3.32 L57：把 `logging` 那三个旋钮接上负载 —— 「写了才动手」+ 两侧同判（关闭 A97 / A101 / A105，新立 A102–A104 / A106）
 
 **选题由来是一行 `grep`**：`config.logging` / `LoggingConfig` 的命中自 L54 起**全在
-`config.py` 自己体内** ⇒ `level` / `file` / `format` 三键零应用方。旋钮存在、指针不接负载：
+`augmentor/config.py` 自己体内** ⇒ `level` / `file` / `format` 三键零应用方。旋钮存在、指针不接负载：
 改 `logging: {level: ERROR}` 静音不了 L54 那条 WARNING，`logging.file` 对应的「日志进文件」
 这件事也从来不存在。本轮补的就是那根指针（`augmentor/logging_setup.py`，新文件）。
 
@@ -2108,7 +2115,7 @@ help 文案变化不进任何断言。**仓外脚本未量**（与 A89 同一条
 自己 `basicConfig(level=INFO, format="…%(name)s…")`，CLI 进程却是 root 无 handler、走
 `logging.lastResort`（WARNING + `%(message)s` 裸消息落 stderr）。同一个默认值不可能同时等于
 两个面，所以 `load_config` 只在配置文件里**真的出现 `logging` 节**时调
-`apply_logging_config(config.logging, written=set(raw_logging))`（`config.py:584`），
+`apply_logging_config(config.logging, written=set(raw_logging))`（`augmentor/config.py:584`），
 `written` 里没出现的键一律不动（`logging_setup.py:132` 起）。默认三档按 CLI 今天的形状写
 （`WARNING` / 空串 / `%(message)s`），实测（Temp `l57/probe1.txt` P0/P1）装上同档 handler
 之后同一条 WARNING 的 stderr **逐字节不变**。
@@ -2119,7 +2126,7 @@ help 文案变化不进任何断言。**仓外脚本未量**（与 A89 同一条
 写出非默认值（`level: INFO` + 带 `%(asctime)s` 的 format）之后 7 条命令 stderr 变多、
 `logging.file` 落盘 14 行而控制台**不少字** —— 都是「用户明确要求了」的那一侧。
 
-**口径二「判据两侧同一份」**：允许集 `LOGGING_LEVELS`（`logging_setup.py:42`）只有一处定义，
+**口径二「判据两侧同一份」**：允许集 `LOGGING_LEVELS`（`augmentor/logging_setup.py`）只有一处定义，
 `config_validator` 的 `choices` 规格与运行时 `level_number` 都引它；`format` 的可渲染性判据
 调同一个 `build_formatter`，理由是 `Formatter("%(nope)s")` 构造期合法、到发第一条日志才抛，
 而 `Handler.emit` 会把它变成**每条日志一行**的 `--- Logging error ---` + 31 行 traceback
@@ -2163,16 +2170,78 @@ SDK 直构拒收那条）。
 §3.29 末尾的勘误（「本轮答不了」已被本轮答完，原文一字未删）。
 
 **新立四条，都不在本轮动手**：A102 = `logging` 节在 API 面生效**没有行为面用例**
-（`apply_logging_config` 的非测试调用点只有 `config.py:584` 一处，`api/` 与 `cli.py` 各 0 命中；
+（`apply_logging_config` 的非测试调用点只有 `augmentor/config.py:584` 一处，`api/` 与 `cli.py` 各 0 命中；
 `tests/` 里 TestClient 与 logging 同屏的只有 `test_api_dataset_system_tools.py`）；
 A103 = `logging.file` 打不开时**整条配置被拒**（`rc=1`，集成用例 `file: nope_dir/x.log` 实测），
-「配错一个路径就连模型名都用不了」这一刀切口径未拍；A104 = `_open_file_handler`
-（`logging_setup.py:122-124`）用裸 `logging.FileHandler`，**无轮转、无大小上限** ⇒ 长跑进程
+「配错一个路径就连模型名都用不了」这一刀切口径未拍；A104 = `_open_file_handler`（`augmentor/logging_setup.py`）用裸 `logging.FileHandler`，**无轮转、无大小上限** ⇒ 长跑进程
 日志无限增长；A106 = `apply_logging_config` 每次加载都先 `_detach_installed` 再重装 ⇒
 写出三键的加载 **+194~+204 µs**（`cost.txt`，三轮同号）且每次**关开一次日志文件**，
 并发调用 `load_config`（`/api/config` 每请求读盘）时还存在「handler 被摘掉」的空窗。
 性能主张只取上面「同号」那部分；§3.31 曾声明「本轮不做 A/B、不引用 µs」，本轮引用 µs
 是因为选题本身就是代价，仪器是 head/工作树**交替三轮** + 直接计数，不是单轮差值。
+
+### 3.33 L79：文档里的行号只当「定位引用」，历史读数一律写散文（关闭 A127 前半，新立 A128 / A129 / A130 / A131）
+
+**选题由来是两次人工回读**：L77 与 L78 各撞上「账本里写的文件加行号指向别处」，两次都不是
+被机器抓到的（A87 的现场样本）。本轮先量再写：`Temp/l79q/lineref_audit.py` 把两份活文档的每一处
+反引号引用按「能不能解析、解析到几个、指向的那几行是不是代码」分类，计数与明细落
+`Temp/l79q/lineref_audit.json`（追加式工件，每跑 append 一条）。
+
+**口径（本轮拍定，冻成用例）**：反引号里的「文件名 + 冒号 + 行号」= **定位引用**，读者会照着跳，
+所以必须 ① 文件在仓里解析得到、② 不一名多指、③ 指向的是代码行而不是空行或注释。
+要留**历史读数**（「当时在第 46 行」）就写成不带反引号的散文或名字锚点 —— 两种语法不许混用，
+混用的代价就是本轮那段勘误：它一边主张「按行号跳过去会对不上号」，一边自己用行号语法写。
+
+**本轮清账的数**：架构文档 30 处补目录前缀（config.py 一名两指 —— `augmentor/config.py` 与
+`api/routes/config.py` —— 加上 export.py / quality.py / pipeline.py 的同形歧义）、
+11 处锚点改写（8 处上一批 + 本轮 cli.py 那 3 处历史读数）；账本 22 处（19 处指向空行、注释或越界
++ 1 处指向根本不存在的 api/vector/chromadb.py + 2 处裸冒号行号）。清完之后两份的
+`dead_line` 与 `unresolved_source` **都是 0**。现量命令：
+`PYTHONIOENCODING=utf-8 C:/Python314/python.exe Temp/l79q/buckets.py <label>` ⇒ 计数与明细按 label
+追加进 `Temp/l79q/lineref_buckets.json` 的 `runs`（**每个计数句都要挂得住一条命令**，L78 立的纪律）。
+
+**每条锚点改写前都先对代码复验**，不照抄旧账：pipeline.py 那条 554 行实测不在 `max_workers` 上
+⇒ 改成指形参的名；quality.py 的第 76 与 210 行属于 `augmentor/cli/commands/quality.py`
+而不是根 cli.py；`augmentor/config.py` 里那个 `ModelConfig` 根本没有重试字段（A64 行曾记错类名归属）。
+**这就是「先读全文件再改」在文档面上的等价物**：引用也是一种代码，改它也要复验。
+
+**清到一半撞出更大一事：判据太粗会把真失效读成欠账。** 分桶第一版只有一档收「解析不到的文件名」，
+实测账本原先记成 114 条「草稿名」的里面**有 3 条根本不是草稿名，而是写错了的产品源码路径**：
+A121 行把 ERNIE 后端写成 augmentor/models/baidu.py（仓里从来没有这个文件，`augmentor/models/ernie.py` 才是），
+两条「订正 A86 文件引用」的记录各自把错的 api/routes/config_ops.py 留在反引号里；第 4 条更隐蔽 ——
+A56 行写 augmentor/api/routes/dataset_tools.py:117-127，产品树里没有 augmentor/api/，可 Temp
+下的 HEAD 快照副本恰好同尾，于是「先查工件」的旧顺序把它判成「指向不入仓工件」，**永远不可能红**。
+修法是按顺序分两档：引用第一段落在真实源码顶层目录（现量 5 个：api / archive / augmentor / scripts /
+tests）而该文件不存在 ⇒ `unresolved_source`，**硬门禁 0**；否则才是欠账档 `scratch_missing`（棘轮）。
+四条全部就地订正并按 L31 在原地写明「L79 订正」，两处历史订正记录里的错引**降为散文**（去掉反引号，
+句子一字未删）⇒ 升一条纪律：**「一个桶不许混两类」**，尤其当那一桶是「只降不升的棘轮」时，混进去的
+真 bug 会被读成正常欠账；而新档必须带**两个方向**的注入用例（错引要红、草稿名不该红），否则分桶只是
+把判据变严，却没人证明它严得对。
+
+**守卫**：`tests/unit/test_doc_line_refs_l79.py` 422 行 / 4 类 / 16 例（`--collect-only -q` 现量：硬门禁 2 + 行为面 3 + 棘轮精确相等 2 + 反空转与可失败 9）。硬门禁 = 两份文档的 `dead_line` 与
+`unresolved_source` 全为 0，架构文档的 `ambiguous_line` / `ambiguous_file` 为 0；其余残余按**精确相等**
+记账（账本：歧义 69 + 145、裸行号 153、草稿名欠账 111；本文件：裸行号 20、欠账 29）—— 棘轮只降不升，
+改进也得改常数并在账本留一句，承 L76 / L77。判据可失败性有**六档注入**：指向空行 ⇒ 报死；越界 ⇒ 报死；
+**区间起点歪一行但段内有代码 ⇒ 不报死**（反向用例，口径两边都钉）；写错的产品路径 ⇒ 硬失效；
+顶层目录压根不存在 ⇒ **只**算草稿名欠账（反向，防「一律判死」把 111 条正常引用撑成永红）；
+Temp 快照同尾 ⇒ **不**洗白错引。除引用面外另钉两件事：哈希占位符按**形状**数（正则 15 条 vs 宽松
+`count("哈希待")` 26 次 —— 多出的 11 次是散文在**谈论**这件事）与反空转下界（现量本文件 47 / 213，
+账本 281 / 1089 条匹配；`FLOOR` 常数分别留成 40 / 200 与 270 / 1050）。**下界为什么留余量**：反空转那一档起初按「等于现量」写，于是「删掉一条坏引用」这种**改进**反而会踩红自己的下界 ⇒ 口径：`CEILING` 只放缺陷档（精确相等、只降不升），`FLOOR` 只放规模档（证明普查不空转，必须留余量）。
+
+**行尾这一坑必须记**：两份活文档行尾不同（本文件纯 CRLF，`OPTIMIZATION_LOOP.md` 纯 LF）。
+第一版批量改写器带着「本仓文件都是 CRLF」的印象去写账本，命中自己写的断言而**没写盘** ——
+那条断言是动手前写的，它挡住的是整文件变色（两千多行全改 = 一次无法审查的 diff）。
+此后批量改写一律「检测该文件自身行尾 + 写回后行数与行尾计数不变」。
+
+**残余项，都不在本轮动手**：A127 后半 = 漂移档 `code_but_no_name_match`（本文件 37 处 / 账本 165 处，
+指在代码行但被点名的标识符不在那一行声明；要逐条读原句才知道那句话指的是哪件事）；
+A128 = 「按引用去找取证工件」这件事从来没成立过 —— 分档后准确规模是账本 111 条 + 本文件 29 条
+草稿名**已不在仓里**（另有 90 + 12 处指向的工件**此刻还在盘上**，`scratch_artifact` 那一档守卫不锁 —— 它随记账正文自己新增的 Temp 引用而涨；可 `Temp/` 从不进版本库，对克隆了仓的读者仍是空的）；A129 = 散文里的行号没有机械通道，本轮实测的例子是上面那段勘误自己
+写的那两个读数（根 cli.py 的 `main()` 里那次 `load_config` 调用在 L53 之后被记成第 49 行，
+本轮重读时它前面又多了两行注释）。**A129 是这条守卫的边界声明**：它把「反引号」变成可信的，
+代价是把「散文数字」明确留在不可信的那一侧。A130 = 账本日志块标题行上挂着 15 条
+「哈希待下一轮回填」占位符（L58..L71 那 14 条从未回填 + 上一轮那条），本轮**只把它钉成精确相等
+棘轮**（谁再忘回填就当场红），补那 14 条历史正文要不要做待用户拍。**A131 是从 A128 的取证命令里撞出来的**：起草时顺手写了「`.gitignore:127` 起 `Temp/` 就不入仓」——**事实为真、解释为假**，现量 `git check-ignore -v augmentor/Temp/l79q/buckets.py` 返回 rc=1，根 `.gitignore` 全文 129 行里 0 条 Temp 条目 ⇒ `Temp/` 不进仓靠的是「从没人 `git add` 它」这条惯例，没有任何规则兜底。后果不是难看而是风险：一次裸 `git add -A` 就能把这几 MB 的**当时工作树快照**整体写进历史，而那些快照正是 A128 里「重跑不等于原读数」的源头。改法一行（补 `/augmentor/Temp/`），但 `.gitignore` 在仓库根、被并行工作树共享 ⇒ **本轮只记名**，要不要补由用户拍。
 
 ## 4. 核心数据流
 
@@ -2275,12 +2344,12 @@ A103 = `logging.file` 打不开时**整条配置被拒**（`rc=1`，集成用例
 | 静态校验面比运行时**更松**（bool / NaN 混进数值字段，L49 起） | `_validate_known_fields` 的内联类型判定原先按 `isinstance(value, (int, float))` 读，而 `isinstance(True, int)` 恒真 ⇒ 7 个数值规格键 7/7 把 YAML 里的 `true` 判成合法，四道运行时判据却全部拒 bool —— 症状是 `validate-config` 绿灯、建管道即 `DataValidationError`。修法：内联判定排 bool（`type: bool` 的开关字段不受影响）+ 补 NaN 判据。两条洞覆盖面不同：`true` 在旧形状下 **7/7 个数值键完全无报错**，NaN 只漏 **4 个 `type: float` 键**（3 个 int 键靠 `isinstance` 本来就拦得住）⇒ 各堵一片、不重复；注入分判也各成一档（摘 bool 排除 ⇒ 2 红，摘 NaN 判据 ⇒ 5 红）。根因是 A70 那套**只有测试在调用**的死助手：它们早就排了 bool 却没有 NaN 判据，两套口径各拿对半边、活的那套恰好是错的半边。同见 §3.24 |
 | **单次请求超时**旋钮（`augmentation.request_timeout` / `models.<名字>.request_timeout`，L71 起） | 上面几行管「等多久再重发」，这一行管「一次请求本身允许挂多久」—— 改前它不是旋钮，是六个互不相同的硬编码常数（claude / gemini / openai / ernie 推理各 60 s、ollama 120 s、ernie 换 token 10 s）。判据**复用** `require_seconds(..., minimum=1.0, maximum=600.0)` 而不另立第六条：它判的还是秒数，文案根因不变。**下界 1 是实测出来的硬界**：`requests` 对 `timeout=0` 抛 `ValueError: Attempted to set connect timeout to 0, but the timeout cannot be set to a value less than or equal to 0`，而它发生在**第一次生成调用**上（配置加载与 `validate-config` 都看不见）⇒ 不判掉正是「校验绿灯、一跑就炸」这一族的新实例（`test_zero_would_break_requests_at_call_time` 直接调真库把这条物证钉住）。上界 600 与 `docs/DEPLOYMENT.md` 的 nginx `proxy_read_timeout 600s` 对齐，再大就是配了也不生效的假旋钮。回落三档 = 模型条目 > 全局档 > `ModelBackend` 类默认，**每一档都用 `is not None` 判**（`or` 会把用户显式写的 0 读成「没写」，L33 的禁令）。唯一不吃旋钮的是 ernie 换 token 那一支：它住在本类常数 `TOKEN_REQUEST_TIMEOUT = 10.0` 上，因为凭据错时要的是「立刻失败」。默认 120 而非改前主流的 60，理由是对称代价里选较小一边：调小会中途掐断本来跑得完的长回答（**新失败**），调大只让已不响应的后端晚 60 s 出声（旧失败晚一点）⇒ ollama 行为一字不变，其余四支只变慢失败路径。同见 §3.24 与账本 L71 |
 | **采样与输出长度**三键越界（`models.<名字>.temperature` / `top_p` / `max_output_tokens`，L72 起） | 上一行管「一次请求挂多久」，这一行管「模型怎么抽字、抽多少字」——`temperature` 判 `TEMPERATURE_RANGE`（0.0 ~ 2.0）、`top_p` 判 `TOP_P_RANGE`（0.0 ~ 1.0）、`max_output_tokens` 判 `MAX_OUTPUT_TOKENS_MIN`（**只设下界**：上界因后端而异，编一个死上界只会把合法配置报成非法）。判据**全部复用既有四条**（前两个走 `require_ratio` 的闭区间形状、第三个走 `require_count`），不新立第六条：根因还是「数值旋钮越界」。**静态面原先看不见模型子项**：`KNOWN_FIELDS` 按「点分路径」查表，而 `models` 下的键名是**用户的模型名**（`ernie` / `gpt` / 任意），穷举不了 ⇒ 新增按**键名**索引的 `MODEL_ENTRY_FIELDS`，配 `_spec_for()`：三段且首段为 `models` 的路径折叠成 `models.*.<键>` 再查表。规格新增一维 `nullable`（**只有 `request_timeout` 带**：YAML 里「写了键没给值」= `None` = 「不覆盖全局档」，是本节允许的读法）。运行时那一侧靠 `_reject_null_fields(..., ("temperature", "top_p", "max_output_tokens"))` 的白名单判 `None`，**不**把 `api_key` / `base_url` 那种「`None` 或空串都合法」一起卷进来。同一轮实测并关掉 L71 自己的欠账：静态面对 `models.<名>.request_timeout` 是**单侧盲**（15 例探针里唯一「运行时红 / 静态绿」那一行）。缺陷形状不是崩而是**悄悄改行为**：`temperature=-1` 照样发给后端、`max_output_tokens=0` 让长度上限从别处冒出来。实测：改前两侧全绿 15/15 例（含 999、-1、`'0.5'`、`true`、NaN、`top_p=2.5`、-5、2048.5），改后同 15/15 例两侧同红；出厂 `config.yaml` 五条目 0.99 / 0.95 / 2048 全在界内、`validate-config` 仍 0 错误 ⇒ 破坏面为零。详见账本 L72 |
-| **配置写入面绕开全部运行时判据**（`POST /api/config`，L73 起） | 上面几行管「值能不能进来」，这一行管「**改**一个已构造的对象时判据还在不在」。L45–L72 七轮接上的判据一律住在各 dataclass 的 `__post_init__` 里，而 `setattr` **不会再次触发它** ⇒ 「先构造、后改字段」这条写法整片绕过判据。全仓这样的写入点只有一处：`api/routes/config.py` 的 `POST /api/config`（`load_config` 那一处走 `_load_section` **构造**，判据照跑）。链条三段实测都在（L72 取证 `Temp/l72q/probe_setattr_bypass.json`）：坏值挂上运行中的对象 → `save_config` 原样写进 YAML → 下次 `load_config` 抛。症状是这一族里最难诊断的一种：**当次请求 200、进程跑得好好的、服务重启后起不来**，而且那时已经没有一份「能改回来」的配置了。修法是新函数 `apply_section_update(section, updates)`（`augmentor/config.py`），三条设计选择：① **复查而不是另立判据** —— 每写一条就跑该节自己的 `__post_init__`，界仍然只住 `config.py` 一处（A77 同源），这里不抄第二份区间；② **要么全落、要么全不落** —— 任一条判负就把已写的键**逆序**退回旧值再抛，不回滚就是「内存里前几条已生效、磁盘一条没写」的新分叉，而端点契约是 `success` 才代表保存过；③ **没有 `__post_init__` 的节照旧只写不判** —— L73 当时是 `quality` / `dedup` / `export` / `vector` / `rag` / `multimodal` 六节，本函数不假装判了，那笔账记 A118；**L76 已把前两节接上**（见下面 L76 那一行），名单现为四节，那把棘轮当场咬红并要求改这里（以及 `docs/API.md` 那句「没有判据的节」）。越界值经 `to_http_error` 回 **400**（与既有 400 口径同族），该 `except` 分支必须排在兜底 `Exception` 之前，否则一律落 500 —— 这条顺序、「路由里不许再有裸 `setattr`」、「可写节清单与守卫一一对应」三判由 `TestRouteStructure` 用 **AST** 钉住（L56 立的规矩：判据型脚本匹配结构而不是文本）。注入分判九模式全红（`Temp/l73q/injection_out.txt`，基线 783 条先断言为绿）：写后不复查 15、不回滚 9、只回滚最后一条 2、未知键也照写 6、丢弃清单不上报 5、摘掉 400 分支 6、路由退回裸 `setattr` 7、可写节清单漏 `augmentation` 10、给 `quality` 加一副空判据 1（棘轮，逼着改文档而不是静默漂移）。**「只回滚最后一条」第一次只红 1 条**：单键批次下 `applied[-1:] == applied`，坏值在首的批次里回滚尾部等于什么都不做 ⇒ 补了「坏值夹在批次中间（前缀 ≥2 条）」的用例，第二次同档红 2 条。破坏面为零：既有配置面 783 条全绿、出厂 `config.yaml` 各值全在界内、`models` 节本就不在该端点的可写清单里 ⇒ L72 的收紧不可能经写路径触发。详见账本 L73 |
+| **配置写入面绕开全部运行时判据**（`POST /api/config`，L73 起） | 上面几行管「值能不能进来」，这一行管「**改**一个已构造的对象时判据还在不在」。L45–L72 七轮接上的判据一律住在各 dataclass 的 `__post_init__` 里，而 `setattr` **不会再次触发它** ⇒ 「先构造、后改字段」这条写法整片绕过判据。全仓这样的写入点只有一处：`api/routes/config.py` 的 `POST /api/config`（`load_config` 那一处走 `_load_section` **构造**，判据照跑）。链条三段实测都在（L72 取证 `Temp/l72q/probe_setattr_bypass.json`）：坏值挂上运行中的对象 → `save_config` 原样写进 YAML → 下次 `load_config` 抛。症状是这一族里最难诊断的一种：**当次请求 200、进程跑得好好的、服务重启后起不来**，而且那时已经没有一份「能改回来」的配置了。修法是新函数 `apply_section_update(section, updates)`（`augmentor/config.py`），三条设计选择：① **复查而不是另立判据** —— 每写一条就跑该节自己的 `__post_init__`，界仍然只住 `augmentor/config.py` 一处（A77 同源），这里不抄第二份区间；② **要么全落、要么全不落** —— 任一条判负就把已写的键**逆序**退回旧值再抛，不回滚就是「内存里前几条已生效、磁盘一条没写」的新分叉，而端点契约是 `success` 才代表保存过；③ **没有 `__post_init__` 的节照旧只写不判** —— L73 当时是 `quality` / `dedup` / `export` / `vector` / `rag` / `multimodal` 六节，本函数不假装判了，那笔账记 A118；**L76 已把前两节接上**（见下面 L76 那一行），名单现为四节，那把棘轮当场咬红并要求改这里（以及 `docs/API.md` 那句「没有判据的节」）。越界值经 `to_http_error` 回 **400**（与既有 400 口径同族），该 `except` 分支必须排在兜底 `Exception` 之前，否则一律落 500 —— 这条顺序、「路由里不许再有裸 `setattr`」、「可写节清单与守卫一一对应」三判由 `TestRouteStructure` 用 **AST** 钉住（L56 立的规矩：判据型脚本匹配结构而不是文本）。注入分判九模式全红（`Temp/l73q/injection_out.txt`，基线 783 条先断言为绿）：写后不复查 15、不回滚 9、只回滚最后一条 2、未知键也照写 6、丢弃清单不上报 5、摘掉 400 分支 6、路由退回裸 `setattr` 7、可写节清单漏 `augmentation` 10、给 `quality` 加一副空判据 1（棘轮，逼着改文档而不是静默漂移）。**「只回滚最后一条」第一次只红 1 条**：单键批次下 `applied[-1:] == applied`，坏值在首的批次里回滚尾部等于什么都不做 ⇒ 补了「坏值夹在批次中间（前缀 ≥2 条）」的用例，第二次同档红 2 条。破坏面为零：既有配置面 783 条全绿、出厂 `config.yaml` 各值全在界内、`models` 节本就不在该端点的可写清单里 ⇒ L72 的收紧不可能经写路径触发。详见账本 L73 |
 | **枚举形取值越界**（`models.<名字>.type`，L74 起） | 上面几行判的都是「数值得落在区间里」，这一行判本仓第一个**枚举形**旋钮：`type` 有一张名单，而改前**两侧都不判**。链条实测（`Temp/l74q/faces_before.json`，对 HEAD `ed27cc4cc` 的沙箱，四种坏写法 × 三个面）：构造面 ok、静态面 0 错、`load_config` 成功，于是一路走到 `pipeline._init_components` 那个「模型没配好就降级」的 `except Exception` ⇒ 用户看到的症状是「后端不可用」+ 一条 WARNING，真因（类型名写错）从不出口。修法是把清单只住一处（`config.MODEL_TYPES`）再让三方**共引**：构造期判据、静态规格 `MODEL_ENTRY_FIELDS["type"]["choices"]`（`choices` 这一维 L57 就建好了，本条是第二位用户）、工厂那句「支持的类型」文案。工厂那五支 `if/elif` 同时换成 `MODEL_BACKENDS` 查表 —— 清单与表**两集相等**只能靠用例对账（`factory.py` 反向 import `config` 会成循环导入）。判在**加载那一步**是本条的全部收益：`load_config` 抛 ⇒ 降级分支对这个键不可达，实测 `AugmentorPipeline(config_path=坏配置)` 现在抛 `DataValidationError` 而不是交出 `model_backend=None`。顺手修掉同族一条：工厂原先 `model_type or config.type` 会把调用方显式写的 `''` / `0` 读成「没传」而**静默换成配置里那个类型**去建后端，现按 `is not None` 判（与本文件 `request_timeout` 那一档同口径、L33 的同一条禁令）。**要记住的两处同名不同物**：`ERNIEBackend` 的 `type` 取值不是类名，出厂模板里的条目名也不是 `type`。残留：条目**缺** `type` 整键时静态面仍 0 反馈（`_check_required_fields` 只走 `KNOWN_FIELDS` 的固定路径，折进 `MODEL_ENTRY_FIELDS` 的子键拿不到「必填」这一维）⇒ 运行时那一侧按空串拒，这笔账记 **A119**。注入分判六模式全红（`Temp/l74q/inject_l74.json`，沙箱基线 175 条先断言为绿、六次还原后与真树逐字节相同）：摘构造期判据 **21**、把静态规格与清单断开 **6**、工厂回落到 `or` **4**、分发表少一个类型 **3**、缓存键不做字面量归一 **7**、清单多收一个 `ernie` **7**。破坏面：`type` 收紧会让「以前能加载的坏配置」变成加载失败 —— 这正是本条要的改变；6 处测试夹具（3 个 `type="fake"` 替身 + 3 处工厂坏值）同批改完，出厂 `config.yaml` 与 `validate-config` 实测 0 遗留。详见账本 L74 |
 | **模型条目的回落值 / 必填维 / 报错点名**（`models.<名字>.*`，L75 起） | 上一行把 `type` 的**值域**收进清单，这一行收同一条轴上剩下的三格。① **回落值有第二个权威**（A114）：`load_config` 原先手写 `conf.get(key, 默认)`，实测 9 个字段 3 个漂移（`model` 加载侧 `''` 对 dataclass `'default'`，`api_key` / `secret_key` / `base_url` 加载侧 `''` 对 `None`）。症状不是崩而是**悄悄改行为**：「没写模型名」被读成**空串模型名**，直发后端换一条 400，gemini 那支连 URL 都长成 `.../v1beta/models/:generateContent`（`Temp/l75q/before.json` 的 `payload_model` 档，五后端 × 三写法 = 15 读数）。修法是把回落权整个交还字段默认：新增装配口 `_model_entry(name, conf)`，键集 `MODEL_ENTRY_KEYS` 由 `dataclasses.fields(ModelConfig)` 里 **`init` 为真**的那些字段**推导**（不抄第二份清单 = A77；`if f.init` 是 L78 / A126 补的，理由见 `augmentor/config.py` 里该常量上方的注释），凭据三键仍在装配处 `_resolve_env`。凭据 `''` → `None` 这一档**行为等价**有实测：五后端各比 `''` 与 `None` 两种写法，判决逐字相同（10 读数，`credential_shape` 档）。`model` 那一支新接 `require_string` ⇒ 模型条目上第一次有**字符串形状**判据，静态面复用既有 `non_empty` 维（不新增维度）。② **静态面无法要求条目键必填**（A119）：规格表按**键名**索引，只能判在场的值 ⇒ 新增 `required` 维，并把 `_check_required_fields` 的遍历改成 `_required_paths()`（`KNOWN_FIELDS` 的固定路径 + `models.<名>.<键>` 的折叠路径），两条既有判决文案（`缺少必填字段: X` / `字段不能为null: X`）一字未改。`type` 是条目里唯一必填键，其余八键「不在场」合法（由字段默认回答）—— 这条口径**反向也钉**：谁给 `temperature` 补 `required`，出厂模板与守卫用例同时红。③ **运行时消息指不出条目**（A120）：`ModelConfig.__post_init__` 不知道自己挂在哪个条目名下，五族消息原先一律写占位符 `models.<名字>` ⇒ 两个坏条目的报错逐字相同。修法只换文案、**判据不移动**：占位前缀提成常数 `MODEL_ENTRY_PLACEHOLDER`，`_model_entry` 捕获 `DataValidationError` 后把占位符换成 `models.<真实条目名>`，`from None`（两条消息除条目名外逐字相同，链两层等于让用户在栈里读两遍同一句话）。**破坏面一处、写在账上而不是藏起来**：以前由 `save_config` 写出的 `model: ''` 配置改后会被加载拒（`require_string` 判空串），这是本轮唯一被接受的旧文件回归，已由 `test_a_saved_empty_model_name_is_now_rejected` 钉住；出厂 `config.yaml` 与 `validate-config` 实测 0 变化。注入九模式（沙箱 `Temp/l75q/tree/`，基线 563 条先断言为绿，九档还原后与真树**逐字节相同**且回绿）：摘加载层 `type` 存在性判据 **2** / 静态规格不再声明必填 **5** / 必填清单不折叠条目 **4** / 摘 `model` 形状判据 **8** / 静态面退回「没有 `model` 规格」 **6** / 摘条目名替换 **8** / 装配口塞回手抄回落 **17** / 键集从推导退回手抄（漏 `request_timeout`）**5** / 给 `temperature` 也标必填 **2**。残余两笔：`api_key` / `secret_key` / `base_url` 两侧都无形状判据 ⇒ **A122**；`ERNIEBackend` 不读 `config.model`（URL 硬编 `chat/completions`）⇒ **A121**。**注入锚点口径记一笔**：本轮源文件 worktree 是**纯 CRLF**、新测试文件是**纯 LF**，脚本改成按每个文件自身换行折叠 / 展开 ⇒ 锚点不再赌某一种（沿用 L74 手写的 `\r\n` 锚点这一轮会 9/9 全 miss，而那会被读成「判据失效」）。详见账本 L75 |
 | **`models` 面的三份键集收成一份权威**（`MODEL_ENTRY_KEYS`，L78 起） | 上一行把回落权交还字段默认，这一行收的是**同一份键集被推导两遍、而且都不看 `init`**。三处实测（`Temp/l78q/a126_census.json`）：加载侧 `MODEL_ENTRY_KEYS`、反馈侧 `_warn_unread_model_keys` 里那句自己写的 `sorted(f.name for f in fields(ModelConfig))`、判据侧 `_reject_null_fields` 的整节推导——前两处同源两份推导，第三处按全字段判。第 3 处的症状是**指向不存在的用户笔误**：一个 `init=False` 且值为 `None` 的字段会换来一句「配置里写了这个键却没有给值」。修法三句：`MODEL_ENTRY_KEYS` 加 `if f.init`（导入期算，运行零成本）；反馈侧**直引那个常量**（权威从两份变一份，顺带本函数实测快 −40.29 % / −40.02 %，改后连两跑各 9/9 块更快）；判据的 `init` 过滤写在「值确实是 `None`」之后 —— 写在循环开头那两种写法实测让 `AppConfig()` 慢 +15.98 % / +16.18 % 与 +6.23 % / +6.65 %，本写法打平（−2.14 % / −0.38 %）。今天 22 个配置类非 init 字段 **0 个** ⇒ 本轮是结构收口，所以守卫全是结构式 + 探针式：`tests/unit/test_model_entry_keys_l78.py` 13 例，行为面那条钉「`save_config` 写出的每个键都必须落在 `MODEL_ENTRY_KEYS` 里」（`asdict` 不看 `init`，加一个非 init 字段就会被写进 YAML）。 |
 | **质量与去重两节的开关 / 阈值**（`quality.enabled` / `quality.threshold` / `dedup.enabled` / `dedup.threshold`，L76 起） | A118 那笔「六节零判据」的**分节收口第一刀**（六 → 四）。**判据族添第六员 `validation.require_bool(name, value)`** —— 它是族里第一个**非数值**成员，立它的理由全部来自实测：改前 `enabled: 'no'` 与 `enabled: 0` 在加载面**全部放行**（字段留着字符串 / 整数；**这组读数是 Python 字典面** —— 值直接喂 `_load_section`。YAML 面另量 15 种拼法：裸 `no` / `false` / `off` 经 `yaml.safe_load` 就是真布尔 `False`、属合法写法，只有**加引号**才落到 `str`，`Temp/l76q/pyyaml_bool_forms.json`），下游 `if config.quality.enabled:` 按真值走 ⇒ **用户想关掉的闸门关不掉**，而同一份配置交给 `validate_config` 早已报「期望布尔类型, 实际 str」⇒ **校验红 / 加载绿**，两半同判不同文案（静态面住 `_validate_bool`，本轮只是把另一侧补齐）。`None` 放行 = 「没写开关」= 字段默认，与数值族同口径。**阈值一格不新造**：两支都走 L48 的 `require_ratio`，界提为常数 `QUALITY_THRESHOLD_RANGE` / `DEDUP_THRESHOLD_RANGE`，运行时与静态规格 `KNOWN_FIELDS` **共引同一批**（A77）。静态面并补上原本**根本没有规格行**的 `dedup.threshold` —— 这不是"补严"，是 A118 记的原始症状之一。**三面一次到位**：SDK 直构（`QualityConfig(threshold=2)` 抛）、`load_config`（YAML 里坏值加载即拒、消息点名 `section.key` 与实际值）、`POST /api/config`（走 L73 的 `apply_section_update`，**该端点本轮一字未改就自动吃到** —— L73 那句「判据落点统一到一处」的下注首次兑现）。**顺带纠掉两处旧账**：A118 的键数原写「21 子键 / 18 两侧全盲」，按 `dataclasses.fields` 现量是 **19 / 16**；原写「`quality.threshold=5.0` 放行全部低质数据」**方向反了** —— `passed = total_score >= threshold` 而三支 0-1 分量按 `[0.3, 0.4, 0.3]` 加权、总分上界 1.0，实测 `5.0` 连满分也不过（症状 = 过滤后为空），「全放行」是 `0.0` / `-1.0` 那一侧。**与既有 SDK 判据对账时撞出两笔新账**：`QualityScorer.__init__` 对 `threshold` **七档全放行**（含 `None` / `'x'` / NaN），而 `Deduplicator` 只判数值越界、**漏 `True` 与 `NaN`**（实测 `NaN` ⇒ `deduplicate()` 零动作，`False` ⇒ 误删 2 条互不相同的数据）⇒ 本轮只把**配置层**两侧对齐、组件层保持原样并入账（A125），`quality.weights` 的形状判据住组件不住配置同理另立（A124）。**棘轮两次按设计开火**（改名单 / 改常数，判据一律不放宽）：无判据节名单六 → 四、`test_bool_is_rejected_for_every_numeric_spec` 的数值规格数 12 → 13（新规格行的新用户）。破坏面实测为零：出厂 `config.yaml` 现量 0 错误 / 5 条既有 `${ENV}` 警告、两节**全仓无非测试构造点**、`api/routes/quality.py` 的阈值取自请求体不经配置节。代价（跨进程 A/B × 5 跑）：`AppConfig()` **+0.98 µs**（逐跑差 5/5 正号），`load_config` 6.75 ms 上**符号不一致** ⇒ 增量在其噪声带（±1.7 %）之下，只许说「产品入口无可见回归」。详见账本 L76 |
-| **校验形 CLI 命令的「判决」**（`validate` / `validate-config` / `dependency --action validate`，L53 起） | 上面几行管的是**异常**怎么翻译（抛 `DataValidationError` ⇒ CLI exit 1 / API 400）；这一行管**判决**（命令正常跑完、但结论是「不合格」）怎么翻译。口径：**判负 ⇒ `sys.exit(1)`，通过 ⇒ 不抛 `SystemExit`**（沿用测试面 159 处 `assert code is None` 那套既有约定，本轮不新造形状）；**只有 WARNING 不判负**（与 L52 的「写了没人读」定级同轴，否则诊断通道出声即挡路）。**报告形命令（`audit` / `check-leakage` / `doctor`）刻意不接** —— 三条 handler 体内零判决词（37 个 `run_*` handler 普查，Temp NONCE-L53-CENSUS），接上等于新造一条「有发现即失败」的隐含契约。先例：`health-gate`（`cli/commands/quality.py:205`）。**另有三条 `quality-report` / `auto-test` / `migrate` 有判决语义却仍恒 0**（`overall_passed` / `failed_tests` / `failed_items`）——那是本轮拍定不动的欠账，要拍的是产品口径不是机制，记在 A91 边界 ①。同一批还把 `cli.py:46-53` 的 `load_config` 挪进 `try` ⇒ 配置加载期异常与 handler 异常同形（「`错误: …` + exit 1」），CLI 的失败从此只有一种形状。**已知空洞（A92）**：`is_valid = valid_count == len(items)` 让**空数据集空洞地判「有效」**（SDK / CLI / API 三层同形，实测 `exit 0` + 200 `{'is_valid': True, 'total_items': 0}`）⇒ 退出码 0 只代表「没有不合格的记录」，不代表「验过东西」。详见 §3.28 |
+| **校验形 CLI 命令的「判决」**（`validate` / `validate-config` / `dependency --action validate`，L53 起） | 上面几行管的是**异常**怎么翻译（抛 `DataValidationError` ⇒ CLI exit 1 / API 400）；这一行管**判决**（命令正常跑完、但结论是「不合格」）怎么翻译。口径：**判负 ⇒ `sys.exit(1)`，通过 ⇒ 不抛 `SystemExit`**（沿用测试面 159 处 `assert code is None` 那套既有约定，本轮不新造形状）；**只有 WARNING 不判负**（与 L52 的「写了没人读」定级同轴，否则诊断通道出声即挡路）。**报告形命令（`audit` / `check-leakage` / `doctor`）刻意不接** —— 三条 handler 体内零判决词（37 个 `run_*` handler 普查，Temp NONCE-L53-CENSUS），接上等于新造一条「有发现即失败」的隐含契约。先例：`health-gate`（`cli/commands/quality.py:205`）。**另有三条 `quality-report` / `auto-test` / `migrate` 有判决语义却仍恒 0**（`overall_passed` / `failed_tests` / `failed_items`）——那是本轮拍定不动的欠账，要拍的是产品口径不是机制，记在 A91 边界 ①。同一批还把 `cli.py` 的 `main()` 里那次 `load_config` 挪进 `try` ⇒ 配置加载期异常与 handler 异常同形（「`错误: …` + exit 1」），CLI 的失败从此只有一种形状。**已知空洞（A92）**：`is_valid = valid_count == len(items)` 让**空数据集空洞地判「有效」**（SDK / CLI / API 三层同形，实测 `exit 0` + 200 `{'is_valid': True, 'total_items': 0}`）⇒ 退出码 0 只代表「没有不合格的记录」，不代表「验过东西」。详见 §3.28 |
 | **配置加载期「写了没人读」的出声面**（`load_config`，L54 起） | 同一条判据有**两条通道**而不是一份文案两份实现：诊断面 `validate_config` 的 `warnings` 与产品面 `load_config` 的 `logging.warning` 由同一个 `_warn_unread_keys` 产生，两条通道的等式用常量 `UNREAD_MARKER = "没人读取"` 做机械锚（比对方式就是「这个词在不在文案里」，抄写的两份文案迟早漂移）。三条否决定下形状：**不写 stdout**（那是各命令的输出契约，`stats` 是 JSON）、**不进退出码**（承上一行的「只有 WARNING 不判负」）、**走 `logging` 而非 `print`**（API 进程 `basicConfig` 之后与它同一出口，未配置时由 `logging.lastResort` 落 stderr；**注意配置里的 `logging.level` 目前管不住它** ⇒ A97）。**只出「没人读」，不出「环境变量未设置」**（后者条数是本机 shell 的函数，见 §3.27 那条纪律）。出厂 `config.yaml` 零命中 ⇒ 默认档一次运行 **0 行**额外输出；代价实测 aug **+74.6 µs（1.09 %）** / py314 **+146.9 µs（2.17 %）**，同进程正反双序同号 ⇒ 可判定。同一轮把「0 字节 / 只含注释的配置文件」从裸 `TypeError` 改成与「路径不存在」同档（全默认 + `exit 0`，A94），但这留下一对**对立判决**：产品面「全默认、通过」对 诊断面「`is_valid=False` + 配置必须是字典类型」⇒ **A96**，要拍的是产品口径。详见 §3.29 |
 | **CLI 退出码的三种形状 + 判决的唯一出口**（`cli/verdict.py:verdict_exit`，L55 起） | `0` = 判决通过、或这条命令压根不判负；`1` = **判决未通过**（只由 `verdict_exit` 产生）**或** handler 抛异常被 `cli.py:main()` 翻译成「`错误: …` + 1」⇒ 同样是 1，**靠 stderr 有无「错误:」分「判负」与「崩溃」**，这条二义性本轮刻意没动（改异常档要动对外契约）；`2` = argparse 用法错误（无判决位的命令传 `--gate` 即落此档，实测 `stats --gate` ⇒ 2 且 stderr 含 `unrecognized arguments`，**不落 1**）。上一行那句「报告形命令刻意不接」自本轮起变成**默认不接、`--gate` 才接**：六条报告形命令（`quality-report` / `audit` / `check-leakage` / `doctor` / `auto-test` / `migrate`）各带一条旗标，默认档一字未改。守卫从推导不抄清单：`tests/integration/test_cli_verdict_wiring.py` 钉三条集合等式（parser 声明 `--gate` 的命令 == handler 里传 `enforce=args.gate` 的，6 条；handler 源码出现 `verdict_exit(` == 子命令 help 含「退出码」，10 条），改前基线是空集对 3 条 ⇒ 不是同义反复。另立一条**编码护栏**：CLI 面向文案里的字符必须能被 GBK 编码（`⇒` / `✅` / `❌` 都不行）—— 子进程 stdio 在本机默认 `gbk`，一个字符能让整条命令崩成 rc=1，即**判决码被一个装饰符占掉**（本轮实测两起，一起既有、一起本轮自造）。欠账：`--gate` 是二值档、计数形判决位没有阈值（A99），三条命令的判负路径只由桩覆盖（A100）；曾列的「含 emoji 的用户数据仍会崩（A98）」自 L56 起由 stdio 编码兜底按住 ⇒ 见下一行与 §3.31。详见 §3.30 |
 | **编码与文档结构这类「过程判据」改由用例守**（L56 起） | 两半同因：文本 I/O 跟着 locale 走。**stdout / stderr** 在 CLI 入口把错误处理器从 `strict` 换成 `replace`（`augmentor/cli/io.py:harden_stdio()`）⇒ **编码再也吃不掉退出码**，编不出的字符落一个 `?`、JSON 输出仍可 `json.loads`（选 `replace` 而不是 `backslashreplace` 的理由就是这条可解析性：`\U0001f342` 会把报告变成带非法转义的废文档）；**产品包内**文本读写必须显式带 `encoding=`，由 AST 扫 104 份源文件守着（`tests/unit/test_no_locale_text_io.py`，落地时 0 违规）。**能编码的字节一个都没变**（改前入口与改后入口 A/B 比 stdout sha1：10 条相同、4 条是改前崩掉的那批、2 条自身连跑即变因而不可判定 ⇒ 不进主张）。另一半：仓库 9 份交付面 Markdown 的五条结构判据（行尾不混用 / 围栏闭合 / 粗体成对 / 剥行内码后列数一致 / 每表第二行必须是分隔行）从「每轮手跑 `Temp/` 脚本」冻进 `tests/unit/test_docs_markdown_structure.py`，配 45 处内存注入自证。新增纪律：**判据型脚本一律走 AST，不用正则数代码**（正则第一版把带嵌套括号的 `open(...)` 调用整条漏掉 ⇒ 数错且把方向也指错）。详见 §3.31 |
