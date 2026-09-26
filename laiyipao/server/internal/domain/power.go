@@ -169,17 +169,35 @@ func EvaluateMastery(allNodes []MasteryNode, selectedIDs map[int]bool, points in
 // BuildRating 是构筑评分（I-7）。取代"战力 9999"作为主指标，
 // 引导玩家思考搭配而不是堆数值。
 type BuildRating struct {
-	ElementCoverage  int      `json:"element_coverage"`  // 0..5
-	ReactionCoverage int      `json:"reaction_coverage"` // 0..7
-	MasteryDone      int      `json:"mastery_done"`      // 0..8 已投入专精的系数
-	MasteryPicked    int      `json:"mastery_picked"`    // 已选节点数
-	EquipmentSynergy int      `json:"equipment_synergy"` // 0..18 装备契合件数
-	MechanicDepth    int      `json:"mechanic_depth"`    // 0..8
-	Total            int      `json:"total"`
-	Weaknesses       []string `json:"weaknesses"` // 可读短板提示
+	ElementCoverage  int `json:"element_coverage"`  // 0..5
+	ReactionCoverage int `json:"reaction_coverage"` // 0..7
+	MasteryDone      int `json:"mastery_done"`      // 0..8 已投入专精的系数
+	MasteryPicked    int `json:"mastery_picked"`    // 本次选择的节点数
+	EquipmentSynergy int `json:"equipment_synergy"` // 0..18 装备与技能同系的数量
+	MechanicDepth    int `json:"mechanic_depth"`    // 0..8
+	Total            int `json:"total"`
+
+	// 以下是**实际生效的战斗乘区**（千分比），不是评分维度。
+	//
+	// ⚠️ 之前它们只存在于 RatingInput、算完即丢，于是 computeAttacker
+	// 只能硬编码常量 —— 专精树的 reaction_mult / crit 节点成了
+	// "只写不读"的空节点，玩家投入后看不到任何效果。
+	//
+	// 放进 BuildRating 还顺带解决了一个体验问题：玩家在构筑页能看到
+	// 「反应倍率 +400‰」这类真实数值，而不是一个与战斗无关的总分。
+	ReactionMultBonus int64 `json:"reaction_mult_bonus"` // 千分比
+	CritBonus         int64 `json:"crit_bonus"`          // 千分比
+	ElementCapBonus   int64 `json:"element_cap_bonus"`   // 层数
+	ArmorBonus        int64 `json:"armor_bonus"`         // 千分比
+	// 由 ReactionMultBonus 反推的节点数（用于决定反应阶）
+	ReactionMultNodes int `json:"reaction_mult_nodes"`
+
+	Weaknesses []string `json:"weaknesses"` // 给玩家的提示
 }
 
-// RatingWeights 评分权重，与 GAME_DESIGN I-7 一致。
+// MasteryReactionMultPerNode 是每个 reaction_mult 专精节点提供的倍率（千分比）。
+// 由 ReactionMultBonus 反推节点数时用它：nodes = bonus / perNode。
+const MasteryReactionMultPerNode = 200
 // RatingWeights 评分权重，见 GAME_DESIGN I-7。
 //
 // ⚠️ 这组 json tag 不是可有可无的装饰。
@@ -216,6 +234,16 @@ type RatingInput struct {
 	MasteryPicked     int       // 已选专精节点总数
 	EquipmentElements []Element // 已穿装备的契合标签
 	PassiveCount      int       // 已解锁的机制型被动数量
+	// 专精节点实际提供的战斗乘区（来自 EvaluateMastery 的 MasteryEffect）。
+	//
+	// ⚠️ 加这四个字段的原因：这些 bonus 之前只存在于 MasteryEffect 里、
+	// 算完就丢，于是 service.computeAttacker 只能硬编码常量 ——
+	// 专精树的 reaction_mult / crit / element_cap / armor 节点
+	// 全部变成「只写不读」的空节点，玩家投入后看不到任何效果。
+	ReactionMultBonus int64 // 千分比
+	CritBonus         int64 // 千分比
+	ElementCapBonus   int64 // 层数
+	ArmorBonus        int64 // 千分比
 }
 
 // ComputeBuildRating 计算构筑评分并给出短板提示。
@@ -260,6 +288,21 @@ func ComputeBuildRating(in RatingInput, w RatingWeights) BuildRating {
 		MasteryPicked:    in.MasteryPicked,
 		EquipmentSynergy: synergy,
 		MechanicDepth:    int(minInt64(int64(in.PassiveCount), 8)),
+		// 把实际生效的乘区透出给 service 层。
+		//
+		// ⚠️ 之前这些 bonus 只存在于 RatingInput 里、算完就丢，
+		// 于是 computeAttacker 只能硬编码常量 —— 专精树的
+		// reaction_mult / crit 节点变成"只写不读"的空节点。
+		//
+		// 放进 BuildRating 还有第二个作用：build_rating 会下发给客户端，
+		// 玩家能在构筑页看到「元素系数 +240‰ / 反应倍率 +400‰」这类实际生效值，
+		// 而不是一个与战斗无关的总分。
+		ReactionMultBonus: in.ReactionMultBonus,
+		CritBonus:         in.CritBonus,
+		ElementCapBonus:   in.ElementCapBonus,
+		ArmorBonus:        in.ArmorBonus,
+		// 每 3 个 reaction_mult 节点提升 1 阶（封顶由 service 层处理）
+		ReactionMultNodes: int(in.ReactionMultBonus / MasteryReactionMultPerNode),
 	}
 	r.Total = len(elemSet)*w.ElementCoverage +
 		reactions*w.ReactionCoverage +

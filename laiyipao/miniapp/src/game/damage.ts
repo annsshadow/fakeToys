@@ -169,10 +169,36 @@ export function resolveReaction(def: Defender, input: HitInput): ReactionKey | n
   return lookupReaction(dominant, input.skillElement)
 }
 
-/** 结构性保证：攻击力侧的上限 = w/(1-w) × 元素侧 */
-function reactionAttackCap(w: bigint, elemPortion: bigint): bigint {
+/**
+ * 结构性反通胀保证：攻击力侧在反应伤害里的上限。
+ *
+ * 不变式（I-1 的核心）：反应伤害中攻击力贡献的占比 ≤ w。
+ *
+ *   A·M / (E + A·M) ≤ w   ⟺   A·M ≤ wE/(1-w)   ⟺   A ≤ wE/((1-w)·M)
+ *
+ * 三个参数：
+ *   w            反应的攻击力权重（千分比，≤ MAX_REACTION_ATTACK_WEIGHT=300）
+ *   elemPortion  元素侧的绝对伤害（与养成完全无关）
+ *   multPermille 反应倍率（千分比，1000 = 无加成）
+ *
+ * ⚠️ multPermille 必须参与上限计算。少了它，倍率就成了绕过反通胀保证的后门：
+ * 专精树的 reaction_mult 节点、装备契合度、防线装置「特斯拉栅格」全部只写不读，
+ * 正是因为读不到地方 —— 而一旦读进来又不管上限，玩家堆一个节点就能让
+ * 反应伤害里的攻击力占比突破 30%，整套设计的根基被破坏。
+ *
+ * multPermille = 1000（无加成）时本函数与旧式 `wE/(1-w)` 逐位相同，
+ * 所以默认配置下既有契约向量与平衡数据都不受影响。
+ */
+function reactionAttackCap(
+  w: bigint,
+  elemPortion: bigint,
+  multPermille: bigint,
+): bigint {
   if (w >= PERMILLE) return elemPortion * PERMILLE
-  return mulDiv(w, elemPortion, PERMILLE - w)
+  // multPermille <= 0 时不加成，等价于零倍率（攻击侧完全无效）
+  if (multPermille <= 0n) return 0n
+  const base = mulDiv(w, elemPortion, PERMILLE - w)
+  return mulDiv(base, PERMILLE, multPermille)
 }
 
 /**
@@ -233,11 +259,29 @@ export function resolveHit(att: Attacker, def: Defender, input: HitInput): HitRe
     res.reactionElemPortion = elemSide
 
     // 攻击力侧：吃养成，但有结构性上限
+    //
+    // ⚠️ 上限要**除以 reactionMultPermille**，这不是随手加的除法。
+    //
+    // I-1 的反通胀不变式是：反应伤害中攻击力贡献的占比 ≤ w。
+    //   占比 = A / (E + A) ≤ w   ⟺   A(1-w) ≤ wE   ⟺   A ≤ wE/(1-w)
+    // 原来 A = attackPortion（未乘 M），所以 cap = wE/(1-w) 成立。
+    //
+    // 现在攻击侧要乘上 M（reactionMultPermille/1000，专精树/装备/特斯拉栅格
+    // 给的加成），于是要约束的是 **A·M**：
+    //   A·M/(E + A·M) ≤ w   ⟺   A·M ≤ wE/(1-w)   ⟺   **A ≤ wE/((1-w)·M)**
+    //
+    // 直接把 M 乘进伤害而不收紧 cap，会让占比随 M 上升而突破 30% ——
+    // 那等于"堆一个专精节点就绕过了反通胀保证"，是整套设计的根基被破坏。
+    //
+    // M = 1000‰（无加成）时 cap 与原式**逐位相同**：
+    //   mulDiv(mulDiv(w,E,1000-w), 1000, 1000) = wE/(1000-w) ✓
+    // 所以默认配置下所有既有契约向量与平衡数据都不受影响。
+    const cap = reactionAttackCap(w, elemSide, att.reactionMultPermille)
     let attackRaw = mulDiv(d, k, PERMILLE)
     attackRaw = elemDiv(attackRaw, t)
-    const cap = reactionAttackCap(w, elemSide)
     if (attackRaw > cap) attackRaw = cap
-    attackPortion = attackRaw
+    // 收紧后的上限再乘 M —— 上限约束的是「乘完 M 之后的攻击力贡献」
+    attackPortion = mulDiv(attackRaw, att.reactionMultPermille, PERMILLE)
   }
 
   // 5) 抗性只作用于反应伤害
