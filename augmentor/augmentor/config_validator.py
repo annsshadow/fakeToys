@@ -289,12 +289,21 @@ class ConfigValidator:
     def consumed_section_keys(cls) -> Dict[str, Set[str]]:
         """推出「被消费的节 → 有人读的键集」，权威只有一个：`AppConfig` 的字段类型
 
-        为什么可以放心推导（L52 的结构论据）：`load_config` 用
-        `_load_section(raw, key, cls, defaults)` 加载每一节，**只按 `defaults` 的键**
-        取字段，而 `tests/unit/test_config.py::TestSectionDefaultsMatchTheMappingTable`
-        （L49 立、L50 清空豁免清单）已经把「`defaults` 的键集 == 该 dataclass 的字段集」
-        冻成常驻断言。于是 dataclass 字段集与那张映射表在同一件事上同值，抄第三份
-        清单（像 A77 之前的两份区间数字那样）就是本仓已经付过代价的错误。
+        为什么可以放心推导：`load_config` 用 `_load_section(raw, key, cls)` 加载每一节，
+        而它取键的依据就是那个类自己的 dataclass 字段集（`cls.__dataclass_fields__`），
+        并且**只算 `init` 字段** —— 非 init 字段写了也进不了构造器，本方法必须同样不认
+        它，否则那个键既不会生效、又不在「写了没人读」名单里（A76 的静默形状）。
+        A123 / L77 之前这里还多一个 `defaults` 参数，推导要借那张手抄表当中间人、靠
+        L49/L50 的棘轮才敢等价；表删掉之后**加载器与本方法是同一个来源**，中间人不
+        存在了。抄第三份清单（像 A77 之前的两份区间数字那样）就是本仓已经付过代价的
+        错误。
+
+        「推导」与「手写清单」还剩一处对账：`load_config` 里那份 20 行的
+        「节名 → 类」清单是手写的，本类只推导字段类型，不知道哪些节真的会被加载。
+        两边相等由
+        `tests/unit/test_config_validator.py::TestUnreadKeyWarnings::test_the_derived_whitelist_equals_what_load_section_reads`
+        与 `tests/unit/test_section_registry_l77.py::TestSectionRegistryShape` 钉住 ——
+        清单漏一节时，判据会把那节的合法键报成「写了没人读」。
 
         返回里不含 `models` / `default_model`：前者是模型名到 `ModelConfig` 的映射，
         后者根本不是节。判据一侧对它们的处理见 `_warn_unread_keys`。
@@ -306,7 +315,10 @@ class ConfigValidator:
                 value = getattr(baseline, f.name)
                 # `models` 是 dict、`default_model` 是 str：不是节，跳过
                 if is_dataclass(value):
-                    sections[f.name] = {sf.name for sf in fields(value)}
+                    # 只认 **init** 字段：加载器一侧（`_load_section`）现在按
+                    # `names[k].init` 取键，非 init 字段写了也不会生效 ⇒ 它必须出现在
+                    # 「写了没人读」名单里，两侧同源同判（A77 的键集版）。
+                    sections[f.name] = {sf.name for sf in fields(value) if sf.init}
             cls._CONSUMED_SECTIONS = sections
         return cls._CONSUMED_SECTIONS
 

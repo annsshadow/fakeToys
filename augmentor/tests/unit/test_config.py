@@ -342,25 +342,24 @@ class TestSaveConfigRoundTrip:
         assert "SHOULD_NOT_APPEAR" not in text
         assert yaml.safe_load(text)["models"]["default"] == "ernie"
 
-class TestSectionDefaultsMatchTheMappingTable:
-    """`load_config` 里那份映射表必须与 dataclass 逐字段同值、同覆盖（L49 守护）
+class TestSectionRegistryMatchesAppConfigFields:
+    """`load_config` 的「节 → 类」清单必须与 `AppConfig` 的节字段两集相等（A123 改形）
 
-    为什么值得单独钉：`load_config` 不直接用 dataclass 的默认值，而是把每个字段的默认
-    又抄了一遍（`config_sections`）。两处漂移有两种症状，都不报错：
-    值漂移（表里 0.6、类里 0.7 ⇒ 改 dataclass 的用户看不到变化）、覆盖漂移（类里新增
-    字段忘了进表 ⇒ 配置文件里写这个字段没人读）。L49 接 `max_retry_wait` /
-    `retry_jitter` 时实测值漂移 0（20 节 65 字段，Temp `l49_probe2.py`），但那一版探针
-    **只比了默认值、没有比字段覆盖**，补上覆盖方向后当场抓到两个漏字段（见
-    `KNOWN_UNMAPPED_FIELDS`）。本类把两个方向都变成常驻断言。
+    本类的前身叫 `TestSectionDefaultsMatchTheMappingTable`，钉的是「手抄的那张默认值表
+    与 dataclass 逐字段同值、同覆盖」。**A123 把表删了**（`_load_section` 现在按那个类
+    自己的 dataclass 字段集取键，回落值只有字段默认一个权威），于是：
+
+    - **值漂移**结构上不存在：没有第二处可以抄；
+    - **覆盖漂移**结构上不存在：字段有而表漏 ⇒ 现在等价于「字段有就一定读」；
+      所以 `KNOWN_UNMAPPED_FIELDS` 那张棘轮清单随本条一起退役，留一项就是留一份
+      已经不存在的表。
+
+    还剩的手写物只有**节清单**本身（20 个 `(节名, 类)` 二元组），它的两种漏法都还有
+    真实症状：清单少一节 ⇒ 该节配置永远不加载（回 200 但读回出厂值）；清单多一节名 ⇒
+    `setattr` 往 `AppConfig` 上挂一个字段之外的属性，`dataclasses.asdict` 那一路看不到
+    它。两个方向由本类逐节对账，「写了的键必须落地」那一维见
+    `tests/unit/test_section_registry_l77.py`。
     """
-
-    #: 映射表漏掉的字段 = 配置文件里写了也没人读的死旋钮。L49 实测：`api/main.py:119`
-    #: 真的在读 `_config.web.cors_origins` / `.cors_credentials`，而映射表没有这两项 ⇒
-    #: 无论 `config.yaml` 写什么，CORS 永远是出厂默认（同一份文件里 `port: 9999` 正常
-    #: 生效，故不是整节失效）。那是 A78，L50 已修 ⇒ 本清单**当前为空**，且必须为空：
-    #: 留一项就等于承认还有一处「配了不生效」。跨源默认值本身的口径见
-    #: `tests/integration/test_api_security.py::TestShippedCorsDefault`。
-    KNOWN_UNMAPPED_FIELDS: set = set()
 
     @staticmethod
     def _sections():
@@ -386,7 +385,7 @@ class TestSectionDefaultsMatchTheMappingTable:
         assert len(self._sections()) == 20
 
     def test_empty_sections_fall_back_to_dataclass_defaults(self, tmp_path):
-        """值漂移守护：只写节名不写字段时，读出来的必须与 dataclass 默认实例相等"""
+        """只写节名不写字段时，读出来的必须与 dataclass 默认实例逐节相等"""
         from augmentor.config import AppConfig, load_config
 
         sections = self._sections()
@@ -402,11 +401,13 @@ class TestSectionDefaultsMatchTheMappingTable:
                             if getattr(got, k) != getattr(want, k)}))
         assert drifted == []
 
-    def test_mapping_table_covers_every_field(self, tmp_path):
-        """覆盖漂移守护：表里漏一个字段，配置文件里写它就是「写了没人读」
+    def test_registry_names_and_classes_match_appconfig(self, tmp_path):
+        """清单与 `AppConfig` 双向对账：节名集合相等，且每节传的就是那个字段的类型
 
-        本条是**棘轮**而不是豁免清单：`KNOWN_UNMAPPED_FIELDS` 必须与实测缺口逐字
-        相等，修好一项就得从清单里删一项，新出现漏字段也立刻变红。
+        拦截 `_load_section` 记录 `(节名, 类)` 两件事。类这一半不是同义反复：校验器那侧
+        的白名单是从 `AppConfig` 的字段类型**推导**的（`consumed_section_keys`），而清单
+        是手写的，两边可以各指一个不同的类 —— 症状是「运行时按 A 类的字段读、判据按
+        B 类的字段报警告」，于是合法键被报成「写了没人读」。
         """
         import dataclasses
 
@@ -418,22 +419,25 @@ class TestSectionDefaultsMatchTheMappingTable:
         monkeypatch = pytest.MonkeyPatch()
         monkeypatch.setattr(
             config_module, "_load_section",
-            lambda raw, key, cls, defaults: (seen.__setitem__(key, set(defaults)),
-                                             real(raw, key, cls, defaults))[1])
+            lambda raw, key, cls: (seen.__setitem__(key, cls),
+                                   real(raw, key, cls))[1])
         try:
             config_module.load_config(self._write(tmp_path, self._sections()))
         finally:
             monkeypatch.undo()
 
-        assert set(seen) == set(self._sections())
-        actual = set()
-        for key, names in seen.items():
-            fields = {f.name for f in dataclasses.fields(
-                type(getattr(AppConfig(), key)))}
-            assert names <= fields, (key, sorted(names - fields))
-            actual |= {(key, name) for name in fields - names}
-        assert actual == self.KNOWN_UNMAPPED_FIELDS, (
-            sorted(actual ^ self.KNOWN_UNMAPPED_FIELDS))
+        assert set(seen) == set(self._sections()), sorted(
+            set(seen) ^ set(self._sections()))
+        wrong = []
+        for key, cls in seen.items():
+            declared = type(getattr(AppConfig(), key))
+            if cls is not declared:
+                wrong.append((key, cls.__name__, declared.__name()))
+            missing = {f.name for f in dataclasses.fields(cls)
+                       if f.init and f.default is dataclasses.MISSING
+                       and f.default_factory is dataclasses.MISSING}
+            assert not missing, (key, sorted(missing))
+        assert wrong == []
 
     def test_the_new_wait_knobs_default_to_the_documented_pair(self, tmp_path):
         """出厂默认就是文档承诺的那两个数：300 s / 不抖，且不许重抄数字"""
@@ -453,8 +457,9 @@ class TestWebCorsKeysReachTheConfig:
     L49 之前这两个键不在 `load_config` 的映射表里，`_load_section` 按表取键 ⇒
     用户在 YAML 里收紧跨源，读回来永远是出厂值，而**同一份文件里的 `port` 正常生效**
     （所以症状不是「配置文件没读到」，是「这一节只有这两个键没人读」）。L50 把两键
-    接进表里，本类钉住「接上了」这件事本身；默认值口径与中间件实际行为另见
-    `tests/integration/test_api_security.py::TestShippedCorsDefault`。
+    接进表里，本类钉住「接上了」这件事本身；A123 又把整张表删了 ⇒ 加载器改按
+    `dataclasses.fields()` 取键，「漏一两个键」这种写法在结构上不复存在。默认值口径
+    与中间件实际行为另见 `tests/integration/test_api_security.py::TestShippedCorsDefault`。
     """
 
     @staticmethod
@@ -499,10 +504,14 @@ class TestWebCorsKeysReachTheConfig:
     def test_list_defaults_are_not_shared_between_loads(self, tmp_path):
         """两份配置各拿自己的列表对象
 
-        映射表里的 `'cors_origins': []` / `'data_roots': ['data']` 现在是函数体内的
-        字面量（每次调用新建）。把 `config_sections` 提到模块级的那一刻，它们就会变成
-        跨配置实例共享的可变列表 —— 本条让那次提法当场变红，而不是留下一个要等用户
-        改坏一份配置才暴露的洞。
+        这条守的是「可变默认值被共享」那一类，而它的来源已经换过一次：改前的映射表里
+        `'cors_origins': []` / `'data_roots': ['data']` 是函数体内的字面量（提到模块级
+        就会变成跨配置实例共享的列表）；A123 删表之后回落值只剩该节 dataclass 的
+        `default_factory` 一个来源。工厂造出共享列表的通路只有一条（实测
+        `Temp/l77q/probe_dataclass_mutable_default.py`，**Python 语言面**：
+        `field(default=[])` 在类定义期就 `ValueError: mutable default …`，而
+        `default_factory=lambda: 模块级列表` 会让两份实例共享同一个对象）⇒ 本条盯的就是
+        后一种写法，让它当场变红，而不是留下一个要等用户改坏一份配置才暴露的洞。
         """
         from augmentor.config import load_config
 
@@ -540,8 +549,8 @@ class TestRuntimeSectionJudgements:
     def test_defaults_satisfy_their_own_verdict(self):
         """出厂默认必须过自己那道判据，否则 `load_config(None)` 直接起不来
 
-        `_load_section` 对缺失的节是「按默认字典整个构造」，所以默认值一旦落在
-        区间外，症状是没有配置文件的部署完全无法启动。
+        `_load_section` 对整节不在场的输入是直接 `config_class()`（A123 之后没有第二份
+        默认值可绕），所以默认值一旦落在区间外，症状是没有配置文件的部署完全无法启动。
         """
         from augmentor.config import AugmentationConfig, WebConfig, load_config
 

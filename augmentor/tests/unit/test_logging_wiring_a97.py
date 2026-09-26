@@ -529,7 +529,7 @@ class TestSectionShapes:
                     and dataclasses.is_dataclass(f.default_factory)]
         assert len(sections) >= 20, f"只推导出 {len(sections)} 个节 ⇒ 名单塌了"
         for name, cls in sections:
-            obj = _load_section({name: None}, name, cls, {})
+            obj = _load_section({name: None}, name, cls)
             assert obj == cls(), f"{name} 节写成 null 时不是全默认"
             with pytest.raises(ConfigError):
                 load_config(_write(tmp_path, f"{name}.yaml", f"{name}: 8080\n"))
@@ -544,7 +544,7 @@ class TestSectionShapes:
         """`logging:`（下面什么都没有）在 YAML 里是 `None` ⇒ 与 A94 的 0 字节文件
         同解：该节全默认。实测改前四节**全部**抛 `AttributeError`（Temp
         `l57/probe1.txt` P4/P5），所以这条按节名参数化，防止修了一处漏三处。"""
-        obj = _load_section({section: None}, section, cls, {})
+        obj = _load_section({section: None}, section, cls)
         assert isinstance(obj, cls)
         assert obj == cls()
 
