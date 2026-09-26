@@ -286,7 +286,20 @@ export function resolveHit(att: Attacker, def: Defender, input: HitInput): HitRe
 
   // 5) 抗性只作用于反应伤害
   if (reactionKey) {
-    const resElement = input.reactionElement ?? def.dominantElement()
+    // ⚠️ 这里用「falsy 即未指定」而不是 `??`。
+    //
+    // Go 侧的写法是 `if resElement == "" { resElement = dominantElement(def) }`，
+    // 也就是**空串会回退到守方主元素**。而 `??` 只对 null/undefined 回退，
+    // 传 `''` 时会得到 `resistOf('')` = 0（视为无抗性）。
+    //
+    // 两端对**同一个空值**给出不同抗性 → 反应伤害不同 → replayHash 不同
+    // → I-6 把正常对局判成伪造。
+    //
+    // 字段类型是 `Element | undefined`，所以 `''` 按类型不该出现；
+    // 但"不该出现"和"出现时两端行为一致"是两件事：契约向量经 JSON 往返、
+    // DB 里的关卡行被手改、灰度中的新客户端，都可能送来一个类型上
+    // "不可能"的值。README 约束 4 说的正是这一类「同名不同义」隐患。
+    const resElement = input.reactionElement || def.dominantElement()
     const resist = resElement ? def.resistOf(resElement) : 0n
     res.reaction = reactionKey
     res.resistAppliedPermille = PERMILLE - resist

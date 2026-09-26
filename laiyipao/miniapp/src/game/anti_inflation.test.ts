@@ -19,7 +19,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import { resolveHit, Defender, defaultAttacker, reactionAttackRatio, type Attacker } from './damage'
-import { REACTIONS, REACTION_ORDER } from './elements'
+import { REACTIONS, REACTION_ORDER, type Element } from './elements'
 import { MAX_REACTION_ATTACK_WEIGHT, PERMILLE, ELEMENT_PER_STACK_BASE } from './fixed'
 
 /** 造一个带满元素层数、零抗性的守方。 */
@@ -71,6 +71,71 @@ function assertInvariant(mult: bigint, label: string): void {
     }
   }
 }
+
+describe('跨端语义：reactionElement 的空值处理两端必须一致', () => {
+  // ⚠️ 这条守的是 README 约束 4「同名不同义」那一类隐患。
+  //
+  // `reactionElement` 这个字段两端同名，但曾经对**同一个空值**给出不同抗性：
+  //
+  //   TS:  input.reactionElement ??  def.dominantElement()
+  //        `??` 只对 null/undefined 回退 → 传 '' 时 resistOf('') = 0（无抗性）
+  //   Go:  if resElement == "" { resElement = dominantElement(def) }
+  //        空串**会**回退到守方主元素 → 用真实抗性
+  //
+  // 后果是反应伤害不同 → replayHash 不同 → I-6 把正常对局判成伪造。
+  //
+  // 为什么契约向量抓不到：向量里 `reaction_element` **从未出现过**
+  // （实测确认）。一致性测试只在"两端传了同一个合法值"时才比对结果，
+  // 而分歧发生在"传了非法值"的时候 —— 也就是说，
+  // **两端的分歧恰好落在向量覆盖不到的地方**。
+  //
+  // 所以这里两端各写一条**语义相同**的用例：
+  // Go 侧见 damage_test.go 的 TestReactionElementEmptyFallsBackToDominant。
+  // 任一端回退改动，变异那一端的用例立刻红。
+
+  function resistApplied(reactionElement: Element | undefined | ''): bigint {
+    const def = new Defender(1_000_000n, 0n, 0n)
+    def.applyElement('ice', 2n, 3n)
+    def.resist.set('ice', 500n) // 守方对冰有 +500‰ 抗性，回退后必然体现
+    const res = resolveHit(defaultAttacker(), def, {
+      skillDamage: 1000n,
+      skillElement: 'fire',
+      forceReaction: 'flash_freeze',
+      // 故意绕过类型：模拟"来自网络/DB 的类型上不可能的值"
+      reactionElement: reactionElement as Element | undefined,
+      roll: 500,
+    })
+    return res.resistAppliedPermille
+  }
+
+  it('空串与 undefined 必须产生完全相同的抗性', () => {
+    // 这是本用例的全部要点：**两个空值等价**。
+    // 若某一端把 '' 当成"无抗性"，500‰ 抗性就不会被应用。
+    expect(resistApplied('')).toBe(resistApplied(undefined))
+  })
+
+  it('空串会回退到守方主元素（而不是变成无抗性）', () => {
+    // 守方对冰 +500‰ 抗性，回退正确时应体现为 500‰
+    expect(resistApplied('')).toBe(500n)
+    expect(resistApplied(undefined)).toBe(500n)
+  })
+
+  it('显式传入元素时用该元素的抗性（不回落）', () => {
+    // 守方对冰 +500‰、对焰 0‰。显式传 'fire' 应得到 1000‰（无抗性）。
+    const def = new Defender(1_000_000n, 0n, 0n)
+    def.applyElement('ice', 2n, 3n)
+    def.resist.set('ice', 500n)
+    def.resist.set('fire', 0n)
+    const res = resolveHit(defaultAttacker(), def, {
+      skillDamage: 1000n,
+      skillElement: 'fire',
+      forceReaction: 'flash_freeze',
+      reactionElement: 'fire',
+      roll: 500,
+    })
+    expect(res.resistAppliedPermille).toBe(1000n)
+  })
+})
 
 describe('反通胀不变式：任意反应倍率下都成立', () => {
   const cases: Array<[bigint, string]> = [
