@@ -241,6 +241,10 @@ class StreamReader:
     def _count_items(self) -> int:
         """统计文件中的数据条数（流式，不整体载入内存）
 
+        这是「条数」这条规则的**唯一权威**：`read_chunks` 边读边数时用的是同一套分支
+        （数组数元素、单个 JSON 值计 0、其余数非空行），两条路径的读数由
+        `tests/unit/test_stream_single_pass_l86.py` 逐形状对账。
+
         Returns:
             数据条数
         """
@@ -273,6 +277,10 @@ class StreamReader:
         原实现先 `f.read()` 整个文件再 `json.loads`，最后才切片——名为流式，
         实际峰值内存等于整个数据集。现在数组走增量解析，JSONL 走逐行读取。
 
+        这一趟**同时**按 `_count_items` 的同一套规则把条数记进 `_total_count`，
+        所以完整读完之后 `total_count` 零 I/O 可取（A145：以前为拿这个整数要把整份
+        输入多解析一遍）。中途弃读则不写缓存，下次取数仍回落到 `_count_items`。
+
         Yields:
             数据块列表
         """
@@ -281,16 +289,32 @@ class StreamReader:
             f.seek(0)
 
             if first == "[":
-                # JSON 数组格式：增量解析，逐块产出
-                yield from _chunked(_iter_json_array_items(f), self.chunk_size)
+                # JSON 数组格式：增量解析，逐块产出；条数 = 产出的元素数，
+                # 与 `_count_items` 的 `sum(1 for _ in _iter_json_array_items(f))` 同源
+                count = 0
+                for chunk in _chunked(_iter_json_array_items(f), self.chunk_size):
+                    count += len(chunk)
+                    yield chunk
+                self._total_count = count
                 return
+
+            if first is not None and _is_single_json_value(f):
+                # 整个文件是单个 JSON 值：计 0 条（与 `_count_items` 同一条语义）。
+                # 下面的逐行读不改，所以单行合法对象仍会被产出一条——那是既有的
+                # 「计数面 0、处理面 1」分叉，本轮只搬 I/O，不动它（另立 A147 记下）。
+                self._total_count = 0
+            else:
+                self._total_count = None
+            f.seek(0)
 
             # JSONL 格式：逐行流式读取，跳过无效行
             chunk: List[Dict] = []
+            raw_lines = 0
             for line in f:
                 line = line.strip()
                 if not line:
                     continue
+                raw_lines += 1
                 try:
                     item = json.loads(line)
                 except json.JSONDecodeError:
@@ -303,6 +327,9 @@ class StreamReader:
 
             if chunk:
                 yield chunk
+
+            if self._total_count is None:
+                self._total_count = raw_lines
     
     def read_all(self) -> List[Dict]:
         """读取全部数据（仅适用于小数据集）
@@ -340,7 +367,9 @@ class StreamProcessor:
         self.processor = processor
         self.writer = writer
         self._processed_count = 0
-        self._total_count = reader.total_count
+        # 以前这里在构造期就取 `reader.total_count`，而那个整数只服务于进度日志与报告，
+        # 代价是把整份输入多解析一遍（A145）。条数改由 `process()` 这一趟顺路产出。
+        self._total_count: Optional[int] = None
     
     def process(self) -> Dict:
         """执行流式处理
@@ -370,7 +399,13 @@ class StreamProcessor:
                 memory_monitor.take_snapshot()
             
             self._processed_count += len(chunk)
-            logger.info(f"已处理 {self._processed_count}/{self._total_count}")
+            logger.info(f"已处理 {self._processed_count} 条")
+
+        # 完整读完这一趟之后条数已在读取器的缓存里，取用零 I/O（A145）。
+        # 进度日志因此改为「边跑边报已处理数、跑完再报总数」：以前那条
+        # 「已处理 x/总数」的分母是构造期多付一整趟解析换来的。
+        self._total_count = self.reader.total_count
+        logger.info(f"流式处理完成：输入 {self._total_count} 条，已处理 {self._processed_count} 条")
         
         # 最终内存状态记录
         if memory_monitor is not None:
