@@ -5841,8 +5841,22 @@ async function loadProcesses() {
 // file_flag_in_application 纯 SELECT pp_e_file WHERE xid=$1 AND xapplication=$2，Path<(String,String)> arity 与路由一致。
 // 两段须用数字字面 0/0：变量段会被 matcher 影子吞到同长的 file/list/application/{applicationFlag} 误配（exact 覆盖语义取遍历后者））
 async function loadDesignerFileApp() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  // rev381：设计器 文件定义 + 非破坏性真实读补消费（item access 路径、实体计数、合并项计划分页；均真 SELECT）
+  const path = '0'
+  const entity = 'application'
+  const cnt = '20'
+  const appId = '0'
+  const page = '1'
+  const size = '20'
   try {
     const r: any = await api.get('/api/processplatform/assemble/designer/file/0/application/0')
+    await Promise.all([
+      s(api.get(`/api/processplatform/assemble/designer/item/access/path/${path}`)),
+      s(api.get(`/api/processplatform/assemble/designer/${entity}/${cnt}`)),
+      s(api.post(`/api/processplatform/assemble/designer/mergeitemplan/list/application/paging/${appId}/${page}/${size}/${size}`, {})),
+      s(api.post(`/api/processplatform/assemble/designer/mergeitemplan/list/paging/${page}/${size}/${size}`, {})),
+    ])
     const d = r?.data
     toast.success(d?.name || d?.xid ? `文件定义「${d.name ?? d.xid}」@应用 0` : '未找到应用 0 下的文件定义 0')
   } catch (e: any) {
