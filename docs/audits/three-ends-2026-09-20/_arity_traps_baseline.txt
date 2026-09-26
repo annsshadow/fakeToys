@@ -5,10 +5,6 @@ GET /api/bbs/assemble/control/list/subjects/index
 GET /api/bbs/assemble/control/list/subjects/recommended/index
 GET /api/bbs/assemble/control/list/topics/creamed
 GET /api/bbs/assemble/control/list/topics/recommended
-GET /api/bbs/assemble/control/subject/creamed/list
-GET /api/bbs/assemble/control/subject/filter/list
-GET /api/bbs/assemble/control/subject/index/list
-GET /api/bbs/assemble/control/subject/search
 GET /api/bbs/assemble/control/topic/creamed/list
 GET /api/bbs/assemble/control/topic/filter/list
 GET /api/bbs/assemble/control/topic/index/list
