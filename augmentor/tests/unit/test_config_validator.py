@@ -1142,7 +1142,7 @@ class TestRuntimeValidatorParity:
                 == RATE_LIMIT_MIN_WINDOW_SECONDS)
 
     def test_shape_flags_exist_only_where_runtime_judges(self):
-        """`items` / `non_empty` / `choices` / `renderable` 只许出现在运行时真判的键上
+        """`items` / `non_empty` / `non_blank` / `choices` / `renderable` 只许出现在运行时真判的键上
 
         反向不一致同样是缺陷：校验器比运行时严，合法配置会被 `validate-config` 拦在
         门外（`quality.threshold` 是数值键、运行时不判形状，规格就不许挂
@@ -1180,6 +1180,12 @@ class TestRuntimeValidatorParity:
             "rag.default_format"}
         assert {p for p, spec in s.items() if spec.get("renderable")} == {
             "logging.format"}
+        # L83 / A142 的新维度：`non_blank` = 「空串合法、纯空白不合法」，与 `non_empty`
+        # 差一格，正是为了保住 `logging.file: ''` 那一档设计。两侧共引同一个
+        # `validation.is_blank_string`（`is` 身份的守卫在
+        # `tests/unit/test_blank_string_l83.py::TestThePredicateIsOneCopyOnly`）。
+        assert {p for p, spec in s.items() if spec.get("non_blank")} == {
+            "logging.file"}
 
 
 class TestUnreadKeyWarnings:
