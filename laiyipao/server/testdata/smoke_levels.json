@@ -11,9 +11,9 @@
       "difficulty": 1000,
       "energy_cost": 6,
       "star_targets": [
-        6839,
-        10748,
-        14656
+        11941,
+        16916,
+        19503
       ],
       "terrain": [
         {
@@ -107,7 +107,8 @@
       ],
       "element_cap": 2,
       "armor_permille": 0,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 19902
     },
     {
       "id": 2,
@@ -119,9 +120,9 @@
       "difficulty": 1032,
       "energy_cost": 6,
       "star_targets": [
-        6658,
-        10463,
-        14268
+        11557,
+        16372,
+        18876
       ],
       "terrain": [
         {
@@ -215,7 +216,8 @@
       ],
       "element_cap": 2,
       "armor_permille": 0,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 19262
     },
     {
       "id": 3,
@@ -227,9 +229,9 @@
       "difficulty": 1064,
       "energy_cost": 6,
       "star_targets": [
-        5613,
-        8820,
-        12028
+        9823,
+        13917,
+        16045
       ],
       "terrain": [
         {
@@ -329,7 +331,8 @@
       ],
       "element_cap": 2,
       "armor_permille": 0,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 16373
     },
     {
       "id": 4,
@@ -341,9 +344,9 @@
       "difficulty": 1096,
       "energy_cost": 6,
       "star_targets": [
-        7362,
-        11569,
-        15777
+        12833,
+        18180,
+        20961
       ],
       "terrain": [],
       "is_boss": false,
@@ -430,7 +433,8 @@
       ],
       "element_cap": 2,
       "armor_permille": 0,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 21389
     },
     {
       "id": 5,
@@ -442,9 +446,9 @@
       "difficulty": 1129,
       "energy_cost": 6,
       "star_targets": [
-        6308,
-        9912,
-        13517
+        10970,
+        15541,
+        17918
       ],
       "terrain": [],
       "is_boss": false,
@@ -531,7 +535,8 @@
       ],
       "element_cap": 2,
       "armor_permille": 0,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 18284
     },
     {
       "id": 6,
@@ -543,9 +548,9 @@
       "difficulty": 1161,
       "energy_cost": 6,
       "star_targets": [
-        6665,
-        10474,
-        14283
+        11652,
+        16507,
+        19031
       ],
       "terrain": [],
       "is_boss": false,
@@ -632,7 +637,8 @@
       ],
       "element_cap": 2,
       "armor_permille": 0,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 19420
     },
     {
       "id": 7,
@@ -644,9 +650,9 @@
       "difficulty": 1193,
       "energy_cost": 6,
       "star_targets": [
-        6485,
-        10190,
-        13896
+        11293,
+        15999,
+        18446
       ],
       "terrain": [],
       "is_boss": false,
@@ -733,7 +739,8 @@
       ],
       "element_cap": 2,
       "armor_permille": 0,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 18823
     },
     {
       "id": 8,
@@ -745,9 +752,9 @@
       "difficulty": 1226,
       "energy_cost": 6,
       "star_targets": [
-        6660,
-        10466,
-        14272
+        11604,
+        16439,
+        18953
       ],
       "terrain": [],
       "is_boss": false,
@@ -845,7 +852,8 @@
       ],
       "element_cap": 2,
       "armor_permille": 0,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 19340
     },
     {
       "id": 9,
@@ -857,9 +865,9 @@
       "difficulty": 1258,
       "energy_cost": 6,
       "star_targets": [
-        6836,
-        10743,
-        14649
+        11929,
+        16900,
+        19485
       ],
       "terrain": [],
       "is_boss": false,
@@ -957,7 +965,8 @@
       ],
       "element_cap": 2,
       "armor_permille": 0,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 19883
     },
     {
       "id": 10,
@@ -969,9 +978,9 @@
       "difficulty": 1290,
       "energy_cost": 6,
       "star_targets": [
-        7709,
-        12114,
-        16520
+        13407,
+        18993,
+        21898
       ],
       "terrain": [],
       "is_boss": false,
@@ -1069,7 +1078,8 @@
       ],
       "element_cap": 2,
       "armor_permille": 0,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 22345
     },
     {
       "id": 11,
@@ -1081,9 +1091,9 @@
       "difficulty": 1323,
       "energy_cost": 6,
       "star_targets": [
-        6837,
-        10744,
-        14652
+        11912,
+        16875,
+        19456
       ],
       "terrain": [],
       "is_boss": false,
@@ -1181,7 +1191,8 @@
       ],
       "element_cap": 2,
       "armor_permille": 0,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 19854
     },
     {
       "id": 12,
@@ -1193,9 +1204,9 @@
       "difficulty": 1355,
       "energy_cost": 6,
       "star_targets": [
-        6660,
-        10466,
-        14272
+        11607,
+        16443,
+        18958
       ],
       "terrain": [],
       "is_boss": false,
@@ -1293,7 +1304,8 @@
       ],
       "element_cap": 2,
       "armor_permille": 0,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 19345
     },
     {
       "id": 13,
@@ -1305,9 +1317,9 @@
       "difficulty": 1387,
       "energy_cost": 6,
       "star_targets": [
-        6660,
-        10467,
-        14273
+        11620,
+        16461,
+        18979
       ],
       "terrain": [],
       "is_boss": false,
@@ -1405,7 +1417,8 @@
       ],
       "element_cap": 2,
       "armor_permille": 0,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 19367
     },
     {
       "id": 14,
@@ -1417,9 +1430,9 @@
       "difficulty": 1420,
       "energy_cost": 6,
       "star_targets": [
-        7362,
-        11569,
-        15776
+        12853,
+        18208,
+        20993
       ],
       "terrain": [],
       "is_boss": false,
@@ -1517,7 +1530,8 @@
       ],
       "element_cap": 2,
       "armor_permille": 0,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 21422
     },
     {
       "id": 15,
@@ -1529,9 +1543,9 @@
       "difficulty": 1452,
       "energy_cost": 6,
       "star_targets": [
-        7889,
-        12398,
-        16906
+        13786,
+        19530,
+        22517
       ],
       "terrain": [
         {
@@ -1659,7 +1673,8 @@
       ],
       "element_cap": 2,
       "armor_permille": 0,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 22977
     },
     {
       "id": 16,
@@ -1671,9 +1686,9 @@
       "difficulty": 1484,
       "energy_cost": 6,
       "star_targets": [
-        7711,
-        12118,
-        16524
+        13405,
+        18991,
+        21896
       ],
       "terrain": [],
       "is_boss": false,
@@ -1788,7 +1803,8 @@
       ],
       "element_cap": 2,
       "armor_permille": 0,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 22343
     },
     {
       "id": 17,
@@ -1800,9 +1816,9 @@
       "difficulty": 1517,
       "energy_cost": 6,
       "star_targets": [
-        7714,
-        12122,
-        16530
+        13440,
+        19040,
+        21952
       ],
       "terrain": [],
       "is_boss": false,
@@ -1917,7 +1933,8 @@
       ],
       "element_cap": 2,
       "armor_permille": 0,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 22400
     },
     {
       "id": 18,
@@ -1929,9 +1946,9 @@
       "difficulty": 1549,
       "energy_cost": 6,
       "star_targets": [
-        8233,
-        12937,
-        17642
+        14318,
+        20284,
+        23386
       ],
       "terrain": [],
       "is_boss": false,
@@ -2046,7 +2063,8 @@
       ],
       "element_cap": 2,
       "armor_permille": 0,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 23864
     },
     {
       "id": 19,
@@ -2058,9 +2076,9 @@
       "difficulty": 1581,
       "energy_cost": 6,
       "star_targets": [
-        8591,
-        13501,
-        18411
+        15019,
+        21278,
+        24532
       ],
       "terrain": [],
       "is_boss": false,
@@ -2175,7 +2193,8 @@
       ],
       "element_cap": 2,
       "armor_permille": 0,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 25033
     },
     {
       "id": 20,
@@ -2187,9 +2206,9 @@
       "difficulty": 1614,
       "energy_cost": 6,
       "star_targets": [
-        8942,
-        14053,
-        19163
+        15642,
+        22159,
+        25548
       ],
       "terrain": [],
       "is_boss": false,
@@ -2304,7 +2323,8 @@
       ],
       "element_cap": 2,
       "armor_permille": 0,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 26070
     },
     {
       "id": 21,
@@ -2316,9 +2336,9 @@
       "difficulty": 1646,
       "energy_cost": 7,
       "star_targets": [
-        6842,
-        10753,
-        14663
+        11973,
+        16962,
+        19556
       ],
       "terrain": [
         {
@@ -2423,7 +2443,8 @@
       ],
       "element_cap": 3,
       "armor_permille": 50,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 19956
     },
     {
       "id": 22,
@@ -2435,9 +2456,9 @@
       "difficulty": 1678,
       "energy_cost": 7,
       "star_targets": [
-        7553,
-        11869,
-        16185
+        13303,
+        18846,
+        21728
       ],
       "terrain": [
         {
@@ -2554,7 +2575,8 @@
       ],
       "element_cap": 3,
       "armor_permille": 50,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 22172
     },
     {
       "id": 23,
@@ -2566,9 +2588,9 @@
       "difficulty": 1711,
       "energy_cost": 7,
       "star_targets": [
-        7550,
-        11864,
-        16179
+        13278,
+        18810,
+        21687
       ],
       "terrain": [
         {
@@ -2673,7 +2695,8 @@
       ],
       "element_cap": 3,
       "armor_permille": 50,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 22130
     },
     {
       "id": 24,
@@ -2685,9 +2708,9 @@
       "difficulty": 1743,
       "energy_cost": 7,
       "star_targets": [
-        7208,
-        11327,
-        15446
+        12786,
+        18114,
+        20884
       ],
       "terrain": [],
       "is_boss": false,
@@ -2785,7 +2808,8 @@
       ],
       "element_cap": 3,
       "armor_permille": 50,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 21311
     },
     {
       "id": 25,
@@ -2797,9 +2821,9 @@
       "difficulty": 1775,
       "energy_cost": 7,
       "star_targets": [
-        7025,
-        11040,
-        15055
+        12395,
+        17560,
+        20245
       ],
       "terrain": [],
       "is_boss": false,
@@ -2897,7 +2921,8 @@
       ],
       "element_cap": 3,
       "armor_permille": 50,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 20659
     },
     {
       "id": 26,
@@ -2909,9 +2934,9 @@
       "difficulty": 1808,
       "energy_cost": 7,
       "star_targets": [
-        6674,
-        10489,
-        14303
+        11805,
+        16723,
+        19281
       ],
       "terrain": [],
       "is_boss": false,
@@ -3009,7 +3034,8 @@
       ],
       "element_cap": 3,
       "armor_permille": 50,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 19675
     },
     {
       "id": 27,
@@ -3021,9 +3047,9 @@
       "difficulty": 1840,
       "energy_cost": 7,
       "star_targets": [
-        6836,
-        10743,
-        14650
+        11925,
+        16893,
+        19477
       ],
       "terrain": [],
       "is_boss": false,
@@ -3121,7 +3147,8 @@
       ],
       "element_cap": 3,
       "armor_permille": 50,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 19875
     },
     {
       "id": 28,
@@ -3133,9 +3160,9 @@
       "difficulty": 1872,
       "energy_cost": 7,
       "star_targets": [
-        8419,
-        13231,
-        18042
+        14751,
+        20898,
+        24094
       ],
       "terrain": [],
       "is_boss": false,
@@ -3250,7 +3277,8 @@
       ],
       "element_cap": 3,
       "armor_permille": 50,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 24586
     },
     {
       "id": 29,
@@ -3262,9 +3290,9 @@
       "difficulty": 1905,
       "energy_cost": 7,
       "star_targets": [
-        7559,
-        11878,
-        16198
+        13407,
+        18994,
+        21899
       ],
       "terrain": [],
       "is_boss": false,
@@ -3379,7 +3407,8 @@
       ],
       "element_cap": 3,
       "armor_permille": 50,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 22346
     },
     {
       "id": 30,
@@ -3391,9 +3420,9 @@
       "difficulty": 1937,
       "energy_cost": 7,
       "star_targets": [
-        8791,
-        13814,
-        18838
+        15598,
+        22098,
+        25478
       ],
       "terrain": [],
       "is_boss": false,
@@ -3508,7 +3537,8 @@
       ],
       "element_cap": 3,
       "armor_permille": 50,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 25998
     },
     {
       "id": 31,
@@ -3520,9 +3550,9 @@
       "difficulty": 1969,
       "energy_cost": 7,
       "star_targets": [
-        8775,
-        13790,
-        18805
+        15434,
+        21865,
+        25209
       ],
       "terrain": [],
       "is_boss": false,
@@ -3637,7 +3667,8 @@
       ],
       "element_cap": 3,
       "armor_permille": 50,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 25724
     },
     {
       "id": 32,
@@ -3649,9 +3680,9 @@
       "difficulty": 2002,
       "energy_cost": 7,
       "star_targets": [
-        8433,
-        13252,
-        18072
+        14914,
+        21129,
+        24360
       ],
       "terrain": [],
       "is_boss": false,
@@ -3766,7 +3797,8 @@
       ],
       "element_cap": 3,
       "armor_permille": 50,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 24858
     },
     {
       "id": 33,
@@ -3778,9 +3810,9 @@
       "difficulty": 2034,
       "energy_cost": 7,
       "star_targets": [
-        8266,
-        12990,
-        17714
+        14704,
+        20830,
+        24016
       ],
       "terrain": [
         {
@@ -3902,7 +3934,8 @@
       ],
       "element_cap": 3,
       "armor_permille": 50,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 24507
     },
     {
       "id": 34,
@@ -3914,9 +3947,9 @@
       "difficulty": 2066,
       "energy_cost": 7,
       "star_targets": [
-        8600,
-        13514,
-        18429
+        15119,
+        21419,
+        24695
       ],
       "terrain": [
         {
@@ -4050,7 +4083,8 @@
       ],
       "element_cap": 3,
       "armor_permille": 50,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 25199
     },
     {
       "id": 35,
@@ -4062,9 +4096,9 @@
       "difficulty": 2098,
       "energy_cost": 7,
       "star_targets": [
-        9303,
-        14620,
-        19936
+        16374,
+        23196,
+        26744
       ],
       "terrain": [],
       "is_boss": false,
@@ -4190,7 +4224,8 @@
       ],
       "element_cap": 3,
       "armor_permille": 50,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 27290
     },
     {
       "id": 36,
@@ -4202,9 +4237,9 @@
       "difficulty": 2131,
       "energy_cost": 7,
       "star_targets": [
-        9298,
-        14612,
-        19926
+        16296,
+        23086,
+        26617
       ],
       "terrain": [],
       "is_boss": false,
@@ -4330,7 +4365,8 @@
       ],
       "element_cap": 3,
       "armor_permille": 50,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 27161
     },
     {
       "id": 37,
@@ -4342,9 +4378,9 @@
       "difficulty": 2163,
       "energy_cost": 7,
       "star_targets": [
-        8779,
-        13796,
-        18813
+        15440,
+        21873,
+        25219
       ],
       "terrain": [],
       "is_boss": false,
@@ -4470,7 +4506,8 @@
       ],
       "element_cap": 3,
       "armor_permille": 50,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 25734
     },
     {
       "id": 38,
@@ -4482,9 +4519,9 @@
       "difficulty": 2195,
       "energy_cost": 7,
       "star_targets": [
-        9655,
-        15173,
-        20691
+        16969,
+        24040,
+        27717
       ],
       "terrain": [],
       "is_boss": false,
@@ -4610,7 +4647,8 @@
       ],
       "element_cap": 3,
       "armor_permille": 50,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 28283
     },
     {
       "id": 39,
@@ -4622,9 +4660,9 @@
       "difficulty": 2228,
       "energy_cost": 7,
       "star_targets": [
-        8441,
-        13265,
-        18089
+        15008,
+        21261,
+        24513
       ],
       "terrain": [],
       "is_boss": false,
@@ -4750,7 +4788,8 @@
       ],
       "element_cap": 3,
       "armor_permille": 50,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 25014
     },
     {
       "id": 40,
@@ -4762,9 +4801,9 @@
       "difficulty": 2260,
       "energy_cost": 7,
       "star_targets": [
-        9126,
-        14342,
-        19557
+        16059,
+        22750,
+        26229
       ],
       "terrain": [],
       "is_boss": false,
@@ -4890,7 +4929,8 @@
       ],
       "element_cap": 3,
       "armor_permille": 50,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 26765
     },
     {
       "id": 41,
@@ -4902,9 +4942,9 @@
       "difficulty": 2292,
       "energy_cost": 8,
       "star_targets": [
-        8439,
-        13261,
-        18084
+        14985,
+        21229,
+        24476
       ],
       "terrain": [
         {
@@ -5026,7 +5066,8 @@
       ],
       "element_cap": 4,
       "armor_permille": 100,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 24976
     },
     {
       "id": 42,
@@ -5038,9 +5079,9 @@
       "difficulty": 2325,
       "energy_cost": 8,
       "star_targets": [
-        7903,
-        12419,
-        16935
+        13947,
+        19758,
+        22780
       ],
       "terrain": [
         {
@@ -5168,7 +5209,8 @@
       ],
       "element_cap": 4,
       "armor_permille": 100,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 23245
     },
     {
       "id": 43,
@@ -5180,9 +5222,9 @@
       "difficulty": 2357,
       "energy_cost": 8,
       "star_targets": [
-        8432,
-        13251,
-        18069
+        14925,
+        21143,
+        24377
       ],
       "terrain": [
         {
@@ -5304,7 +5346,8 @@
       ],
       "element_cap": 4,
       "armor_permille": 100,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 24875
     },
     {
       "id": 44,
@@ -5316,9 +5359,9 @@
       "difficulty": 2389,
       "energy_cost": 8,
       "star_targets": [
-        8780,
-        13797,
-        18815
+        15477,
+        21926,
+        25280
       ],
       "terrain": [],
       "is_boss": false,
@@ -5433,7 +5476,8 @@
       ],
       "element_cap": 4,
       "armor_permille": 100,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 25796
     },
     {
       "id": 45,
@@ -5445,9 +5489,9 @@
       "difficulty": 2422,
       "energy_cost": 8,
       "star_targets": [
-        8428,
-        13245,
-        18061
+        14860,
+        21051,
+        24271
       ],
       "terrain": [],
       "is_boss": false,
@@ -5562,7 +5606,8 @@
       ],
       "element_cap": 4,
       "armor_permille": 100,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 24767
     },
     {
       "id": 46,
@@ -5574,9 +5619,9 @@
       "difficulty": 2454,
       "energy_cost": 8,
       "star_targets": [
-        8082,
-        12700,
-        17319
+        14302,
+        20261,
+        23360
       ],
       "terrain": [],
       "is_boss": false,
@@ -5691,7 +5736,8 @@
       ],
       "element_cap": 4,
       "armor_permille": 100,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 23837
     },
     {
       "id": 47,
@@ -5703,9 +5749,9 @@
       "difficulty": 2486,
       "energy_cost": 8,
       "star_targets": [
-        8776,
-        13792,
-        18807
+        15449,
+        21886,
+        25234
       ],
       "terrain": [],
       "is_boss": false,
@@ -5820,7 +5866,8 @@
       ],
       "element_cap": 4,
       "armor_permille": 100,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 25749
     },
     {
       "id": 48,
@@ -5832,9 +5879,9 @@
       "difficulty": 2519,
       "energy_cost": 8,
       "star_targets": [
-        9481,
-        14898,
-        20316
+        16715,
+        23680,
+        27301
       ],
       "terrain": [],
       "is_boss": false,
@@ -5960,7 +6007,8 @@
       ],
       "element_cap": 4,
       "armor_permille": 100,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 27859
     },
     {
       "id": 49,
@@ -5972,9 +6020,9 @@
       "difficulty": 2551,
       "energy_cost": 8,
       "star_targets": [
-        8953,
-        14070,
-        19186
+        15769,
+        22339,
+        25756
       ],
       "terrain": [],
       "is_boss": false,
@@ -6100,7 +6148,8 @@
       ],
       "element_cap": 4,
       "armor_permille": 100,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 26282
     },
     {
       "id": 50,
@@ -6112,9 +6161,9 @@
       "difficulty": 2583,
       "energy_cost": 8,
       "star_targets": [
-        8608,
-        13527,
-        18446
+        15208,
+        21545,
+        24841
       ],
       "terrain": [],
       "is_boss": false,
@@ -6240,7 +6289,8 @@
       ],
       "element_cap": 4,
       "armor_permille": 100,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 25348
     },
     {
       "id": 51,
@@ -6252,9 +6302,9 @@
       "difficulty": 2616,
       "energy_cost": 8,
       "star_targets": [
-        9307,
-        14626,
-        19945
+        16420,
+        23261,
+        26819
       ],
       "terrain": [],
       "is_boss": false,
@@ -6380,7 +6430,8 @@
       ],
       "element_cap": 4,
       "armor_permille": 100,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 27367
     },
     {
       "id": 52,
@@ -6392,9 +6443,9 @@
       "difficulty": 2648,
       "energy_cost": 8,
       "star_targets": [
-        8253,
-        12970,
-        17686
+        14568,
+        20638,
+        23794
       ],
       "terrain": [],
       "is_boss": false,
@@ -6520,7 +6571,8 @@
       ],
       "element_cap": 4,
       "armor_permille": 100,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 24280
     },
     {
       "id": 53,
@@ -6532,9 +6584,9 @@
       "difficulty": 2680,
       "energy_cost": 8,
       "star_targets": [
-        9137,
-        14359,
-        19581
+        16182,
+        22924,
+        26430
       ],
       "terrain": [
         {
@@ -6673,7 +6725,8 @@
       ],
       "element_cap": 4,
       "armor_permille": 100,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 26970
     },
     {
       "id": 54,
@@ -6685,9 +6738,9 @@
       "difficulty": 2713,
       "energy_cost": 8,
       "star_targets": [
-        8960,
-        14080,
-        19200
+        15799,
+        22383,
+        25806
       ],
       "terrain": [],
       "is_boss": false,
@@ -6813,7 +6866,8 @@
       ],
       "element_cap": 4,
       "armor_permille": 100,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 26333
     },
     {
       "id": 55,
@@ -6825,9 +6879,9 @@
       "difficulty": 2745,
       "energy_cost": 8,
       "star_targets": [
-        11583,
-        18203,
-        24822
+        20382,
+        28874,
+        33290
       ],
       "terrain": [],
       "is_boss": false,
@@ -6970,7 +7024,8 @@
       ],
       "element_cap": 4,
       "armor_permille": 100,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 33970
     },
     {
       "id": 56,
@@ -6982,9 +7037,9 @@
       "difficulty": 2777,
       "energy_cost": 8,
       "star_targets": [
-        13531,
-        21264,
-        28996
+        23956,
+        33937,
+        39128
       ],
       "terrain": [],
       "is_boss": true,
@@ -7133,7 +7188,8 @@
       ],
       "element_cap": 4,
       "armor_permille": 100,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 39927
     },
     {
       "id": 57,
@@ -7145,9 +7201,9 @@
       "difficulty": 2810,
       "energy_cost": 8,
       "star_targets": [
-        10888,
-        17110,
-        23332
+        19213,
+        27218,
+        31381
       ],
       "terrain": [
         {
@@ -7297,7 +7353,8 @@
       ],
       "element_cap": 4,
       "armor_permille": 100,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 32022
     },
     {
       "id": 58,
@@ -7309,9 +7366,9 @@
       "difficulty": 2842,
       "energy_cost": 8,
       "star_targets": [
-        10715,
-        16838,
-        22961
+        18934,
+        26824,
+        30926
       ],
       "terrain": [],
       "is_boss": false,
@@ -7454,7 +7511,8 @@
       ],
       "element_cap": 4,
       "armor_permille": 100,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 31558
     },
     {
       "id": 59,
@@ -7466,9 +7524,9 @@
       "difficulty": 2874,
       "energy_cost": 8,
       "star_targets": [
-        10374,
-        16303,
-        22231
+        18420,
+        26095,
+        30086
       ],
       "terrain": [
         {
@@ -7630,7 +7688,8 @@
       ],
       "element_cap": 4,
       "armor_permille": 100,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 30701
     },
     {
       "id": 60,
@@ -7642,9 +7701,9 @@
       "difficulty": 2907,
       "energy_cost": 8,
       "star_targets": [
-        12825,
-        20154,
-        27483
+        22651,
+        32090,
+        36997
       ],
       "terrain": [],
       "is_boss": true,
@@ -7793,7 +7852,8 @@
       ],
       "element_cap": 4,
       "armor_permille": 100,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 37753
     },
     {
       "id": 61,
@@ -7805,9 +7865,9 @@
       "difficulty": 2939,
       "energy_cost": 9,
       "star_targets": [
-        8781,
-        13800,
-        18818
+        15498,
+        21955,
+        25313
       ],
       "terrain": [
         {
@@ -7952,7 +8012,8 @@
       ],
       "element_cap": 5,
       "armor_permille": 150,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 25830
     },
     {
       "id": 62,
@@ -7964,9 +8025,9 @@
       "difficulty": 2971,
       "energy_cost": 9,
       "star_targets": [
-        8612,
-        13533,
-        18454
+        15261,
+        21619,
+        24926
       ],
       "terrain": [
         {
@@ -8105,7 +8166,8 @@
       ],
       "element_cap": 5,
       "armor_permille": 150,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 25435
     },
     {
       "id": 63,
@@ -8117,9 +8179,9 @@
       "difficulty": 3004,
       "energy_cost": 9,
       "star_targets": [
-        8953,
-        14069,
-        19185
+        15774,
+        22346,
+        25764
       ],
       "terrain": [
         {
@@ -8264,7 +8326,8 @@
       ],
       "element_cap": 5,
       "armor_permille": 150,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 26290
     },
     {
       "id": 64,
@@ -8276,9 +8339,9 @@
       "difficulty": 3036,
       "energy_cost": 9,
       "star_targets": [
-        9322,
-        14649,
-        19976
+        16598,
+        23514,
+        27110
       ],
       "terrain": [],
       "is_boss": false,
@@ -8404,7 +8467,8 @@
       ],
       "element_cap": 5,
       "armor_permille": 150,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 27664
     },
     {
       "id": 65,
@@ -8416,9 +8480,9 @@
       "difficulty": 3068,
       "energy_cost": 9,
       "star_targets": [
-        9319,
-        14645,
-        19971
+        16573,
+        23479,
+        27070
       ],
       "terrain": [],
       "is_boss": false,
@@ -8544,7 +8608,8 @@
       ],
       "element_cap": 5,
       "armor_permille": 150,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 27623
     },
     {
       "id": 66,
@@ -8556,9 +8621,9 @@
       "difficulty": 3101,
       "energy_cost": 9,
       "star_targets": [
-        9136,
-        14357,
-        19578
+        16126,
+        22845,
+        26339
       ],
       "terrain": [],
       "is_boss": false,
@@ -8684,7 +8749,8 @@
       ],
       "element_cap": 5,
       "armor_permille": 150,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 26877
     },
     {
       "id": 67,
@@ -8696,9 +8762,9 @@
       "difficulty": 3133,
       "energy_cost": 9,
       "star_targets": [
-        9494,
-        14920,
-        20346
+        16863,
+        23889,
+        27542
       ],
       "terrain": [],
       "is_boss": false,
@@ -8824,7 +8890,8 @@
       ],
       "element_cap": 5,
       "armor_permille": 150,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 28105
     },
     {
       "id": 68,
@@ -8836,9 +8903,9 @@
       "difficulty": 3165,
       "energy_cost": 9,
       "star_targets": [
-        10362,
-        16283,
-        22204
+        18315,
+        25946,
+        29914
       ],
       "terrain": [
         {
@@ -8994,7 +9061,8 @@
       ],
       "element_cap": 5,
       "armor_permille": 150,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 30525
     },
     {
       "id": 69,
@@ -9006,9 +9074,9 @@
       "difficulty": 3197,
       "energy_cost": 9,
       "star_targets": [
-        11245,
-        17671,
-        24097
+        19893,
+        28182,
+        32492
       ],
       "terrain": [],
       "is_boss": false,
@@ -9151,7 +9219,8 @@
       ],
       "element_cap": 5,
       "armor_permille": 150,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 33156
     },
     {
       "id": 70,
@@ -9163,9 +9232,9 @@
       "difficulty": 3230,
       "energy_cost": 9,
       "star_targets": [
-        10203,
-        16033,
-        21864
+        18174,
+        25746,
+        29684
       ],
       "terrain": [],
       "is_boss": false,
@@ -9308,7 +9377,8 @@
       ],
       "element_cap": 5,
       "armor_permille": 150,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 30290
     },
     {
       "id": 71,
@@ -9320,9 +9390,9 @@
       "difficulty": 3262,
       "energy_cost": 9,
       "star_targets": [
-        10718,
-        16843,
-        22968
+        18948,
+        26843,
+        30948
       ],
       "terrain": [],
       "is_boss": false,
@@ -9465,7 +9535,8 @@
       ],
       "element_cap": 5,
       "armor_permille": 150,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 31580
     },
     {
       "id": 72,
@@ -9477,9 +9548,9 @@
       "difficulty": 3294,
       "energy_cost": 9,
       "star_targets": [
-        9672,
-        15200,
-        20727
+        17178,
+        24335,
+        28057
       ],
       "terrain": [],
       "is_boss": false,
@@ -9622,7 +9693,8 @@
       ],
       "element_cap": 5,
       "armor_permille": 150,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 28630
     },
     {
       "id": 73,
@@ -9634,9 +9706,9 @@
       "difficulty": 3327,
       "energy_cost": 9,
       "star_targets": [
-        10555,
-        16586,
-        22618
+        18813,
+        26652,
+        30728
       ],
       "terrain": [],
       "is_boss": false,
@@ -9779,7 +9851,8 @@
       ],
       "element_cap": 5,
       "armor_permille": 150,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 31356
     },
     {
       "id": 74,
@@ -9791,9 +9864,9 @@
       "difficulty": 3359,
       "energy_cost": 9,
       "star_targets": [
-        10890,
-        17113,
-        23337
+        19276,
+        27308,
+        31485
       ],
       "terrain": [],
       "is_boss": false,
@@ -9936,7 +10009,8 @@
       ],
       "element_cap": 5,
       "armor_permille": 150,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 32128
     },
     {
       "id": 75,
@@ -9948,9 +10022,9 @@
       "difficulty": 3391,
       "energy_cost": 9,
       "star_targets": [
-        10717,
-        16841,
-        22965
+        18904,
+        26781,
+        30877
       ],
       "terrain": [],
       "is_boss": false,
@@ -10104,7 +10178,8 @@
       ],
       "element_cap": 5,
       "armor_permille": 150,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 31508
     },
     {
       "id": 76,
@@ -10116,9 +10191,9 @@
       "difficulty": 3424,
       "energy_cost": 9,
       "star_targets": [
-        11414,
-        17937,
-        24459
+        20133,
+        28522,
+        32884
       ],
       "terrain": [],
       "is_boss": false,
@@ -10272,7 +10347,8 @@
       ],
       "element_cap": 5,
       "armor_permille": 150,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 33556
     },
     {
       "id": 77,
@@ -10284,9 +10360,9 @@
       "difficulty": 3456,
       "energy_cost": 9,
       "star_targets": [
-        11071,
-        17398,
-        23724
+        19578,
+        27736,
+        31978
       ],
       "terrain": [],
       "is_boss": false,
@@ -10440,7 +10516,8 @@
       ],
       "element_cap": 5,
       "armor_permille": 150,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 32631
     },
     {
       "id": 78,
@@ -10452,9 +10529,9 @@
       "difficulty": 3488,
       "energy_cost": 9,
       "star_targets": [
-        11233,
-        17653,
-        24072
+        19726,
+        27945,
+        32219
       ],
       "terrain": [],
       "is_boss": false,
@@ -10608,7 +10685,8 @@
       ],
       "element_cap": 5,
       "armor_permille": 150,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 32877
     },
     {
       "id": 79,
@@ -10620,9 +10698,9 @@
       "difficulty": 3521,
       "energy_cost": 9,
       "star_targets": [
-        11437,
-        17972,
-        24508
+        20400,
+        28900,
+        33320
       ],
       "terrain": [],
       "is_boss": false,
@@ -10776,7 +10854,8 @@
       ],
       "element_cap": 5,
       "armor_permille": 150,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 34000
     },
     {
       "id": 80,
@@ -10788,9 +10867,9 @@
       "difficulty": 3553,
       "energy_cost": 9,
       "star_targets": [
-        9681,
-        15214,
-        20746
+        17317,
+        24533,
+        28285
       ],
       "terrain": [],
       "is_boss": false,
@@ -10944,7 +11023,8 @@
       ],
       "element_cap": 5,
       "armor_permille": 150,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 28863
     },
     {
       "id": 81,
@@ -10956,9 +11036,9 @@
       "difficulty": 3585,
       "energy_cost": 10,
       "star_targets": [
-        10722,
-        16849,
-        22976
+        18983,
+        26893,
+        31006
       ],
       "terrain": [
         {
@@ -11108,7 +11188,8 @@
       ],
       "element_cap": 6,
       "armor_permille": 200,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 31639
     },
     {
       "id": 82,
@@ -11120,9 +11201,9 @@
       "difficulty": 3618,
       "energy_cost": 10,
       "star_targets": [
-        11572,
-        18185,
-        24798
+        22261,
+        31536,
+        36359
       ],
       "terrain": [
         {
@@ -11284,7 +11365,8 @@
       ],
       "element_cap": 6,
       "armor_permille": 200,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 37102
     },
     {
       "id": 83,
@@ -11296,9 +11378,9 @@
       "difficulty": 3650,
       "energy_cost": 10,
       "star_targets": [
-        10364,
-        16286,
-        22209
+        18297,
+        25920,
+        29885
       ],
       "terrain": [
         {
@@ -11454,7 +11536,8 @@
       ],
       "element_cap": 6,
       "armor_permille": 200,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 30495
     },
     {
       "id": 84,
@@ -11466,9 +11549,9 @@
       "difficulty": 3682,
       "energy_cost": 10,
       "star_targets": [
-        10538,
-        16561,
-        22583
+        18575,
+        26315,
+        30339
       ],
       "terrain": [],
       "is_boss": false,
@@ -11611,7 +11694,8 @@
       ],
       "element_cap": 6,
       "armor_permille": 200,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 30959
     },
     {
       "id": 85,
@@ -11623,9 +11707,9 @@
       "difficulty": 3715,
       "energy_cost": 10,
       "star_targets": [
-        10710,
-        16831,
-        22951
+        18850,
+        26704,
+        30788
       ],
       "terrain": [],
       "is_boss": false,
@@ -11768,7 +11852,8 @@
       ],
       "element_cap": 6,
       "armor_permille": 200,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 31417
     },
     {
       "id": 86,
@@ -11780,9 +11865,9 @@
       "difficulty": 3747,
       "energy_cost": 10,
       "star_targets": [
-        11434,
-        17967,
-        24501
+        20364,
+        28849,
+        33262
       ],
       "terrain": [],
       "is_boss": false,
@@ -11936,7 +12021,8 @@
       ],
       "element_cap": 6,
       "armor_permille": 200,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 33941
     },
     {
       "id": 87,
@@ -11948,9 +12034,9 @@
       "difficulty": 3779,
       "energy_cost": 10,
       "star_targets": [
-        10703,
-        16820,
-        22936
+        18789,
+        26618,
+        30689
       ],
       "terrain": [],
       "is_boss": false,
@@ -12104,7 +12190,8 @@
       ],
       "element_cap": 6,
       "armor_permille": 200,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 31316
     },
     {
       "id": 88,
@@ -12116,9 +12203,9 @@
       "difficulty": 3812,
       "energy_cost": 10,
       "star_targets": [
-        10709,
-        16828,
-        22948
+        18836,
+        26684,
+        30766
       ],
       "terrain": [],
       "is_boss": false,
@@ -12272,7 +12359,8 @@
       ],
       "element_cap": 6,
       "armor_permille": 200,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 31394
     },
     {
       "id": 89,
@@ -12284,9 +12372,9 @@
       "difficulty": 3844,
       "energy_cost": 10,
       "star_targets": [
-        10886,
-        17107,
-        23328
+        19159,
+        27143,
+        31294
       ],
       "terrain": [],
       "is_boss": false,
@@ -12440,7 +12528,8 @@
       ],
       "element_cap": 6,
       "armor_permille": 200,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 31933
     },
     {
       "id": 90,
@@ -12452,9 +12541,9 @@
       "difficulty": 3876,
       "energy_cost": 10,
       "star_targets": [
-        11599,
-        18227,
-        24855
+        20535,
+        29091,
+        33540
       ],
       "terrain": [],
       "is_boss": false,
@@ -12608,7 +12697,8 @@
       ],
       "element_cap": 6,
       "armor_permille": 200,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 34225
     },
     {
       "id": 91,
@@ -12620,9 +12710,9 @@
       "difficulty": 3909,
       "energy_cost": 10,
       "star_targets": [
-        13751,
-        21609,
-        29467
+        24876,
+        35241,
+        40631
       ],
       "terrain": [],
       "is_boss": true,
@@ -12799,7 +12889,8 @@
       ],
       "element_cap": 6,
       "armor_permille": 200,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 41461
     },
     {
       "id": 92,
@@ -12811,9 +12902,9 @@
       "difficulty": 3941,
       "energy_cost": 10,
       "star_targets": [
-        12295,
-        19320,
-        26346
+        21716,
+        30764,
+        35470
       ],
       "terrain": [],
       "is_boss": false,
@@ -12984,7 +13075,8 @@
       ],
       "element_cap": 6,
       "armor_permille": 200,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 36194
     },
     {
       "id": 93,
@@ -12996,9 +13088,9 @@
       "difficulty": 3973,
       "energy_cost": 10,
       "star_targets": [
-        12644,
-        19870,
-        27096
+        22284,
+        31569,
+        36397
       ],
       "terrain": [],
       "is_boss": false,
@@ -13169,7 +13261,8 @@
       ],
       "element_cap": 6,
       "armor_permille": 200,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 37140
     },
     {
       "id": 94,
@@ -13181,9 +13274,9 @@
       "difficulty": 4006,
       "energy_cost": 10,
       "star_targets": [
-        12989,
-        20411,
-        27834
+        22836,
+        32351,
+        37298
       ],
       "terrain": [],
       "is_boss": false,
@@ -13354,7 +13447,8 @@
       ],
       "element_cap": 6,
       "armor_permille": 200,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 38060
     },
     {
       "id": 95,
@@ -13366,9 +13460,9 @@
       "difficulty": 4038,
       "energy_cost": 10,
       "star_targets": [
-        13225,
-        20782,
-        28340
+        23947,
+        33925,
+        39113
       ],
       "terrain": [],
       "is_boss": true,
@@ -13545,7 +13639,8 @@
       ],
       "element_cap": 6,
       "armor_permille": 200,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 39912
     },
     {
       "id": 96,
@@ -13557,9 +13652,9 @@
       "difficulty": 4070,
       "energy_cost": 11,
       "star_targets": [
-        18048,
-        28361,
-        38674
+        35481,
+        50265,
+        57953
       ],
       "terrain": [
         {
@@ -13732,7 +13827,8 @@
       ],
       "element_cap": 8,
       "armor_permille": 250,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 59136
     },
     {
       "id": 97,
@@ -13744,9 +13840,9 @@
       "difficulty": 4103,
       "energy_cost": 11,
       "star_targets": [
-        20305,
-        31908,
-        43512
+        39132,
+        55437,
+        63915
       ],
       "terrain": [
         {
@@ -13913,7 +14009,8 @@
       ],
       "element_cap": 8,
       "armor_permille": 250,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 65220
     },
     {
       "id": 98,
@@ -13925,9 +14022,9 @@
       "difficulty": 4135,
       "energy_cost": 11,
       "star_targets": [
-        11420,
-        17946,
-        24472
+        20187,
+        28599,
+        32973
       ],
       "terrain": [
         {
@@ -14105,7 +14202,8 @@
       ],
       "element_cap": 8,
       "armor_permille": 250,
-      "max_reaction_tier": 1
+      "max_reaction_tier": 1,
+      "max_score": 33646
     },
     {
       "id": 99,
@@ -14117,9 +14215,9 @@
       "difficulty": 4167,
       "energy_cost": 11,
       "star_targets": [
-        25469,
-        40024,
-        54578
+        49124,
+        69592,
+        80236
       ],
       "terrain": [],
       "is_boss": false,
@@ -14290,7 +14388,8 @@
       ],
       "element_cap": 8,
       "armor_permille": 250,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 81874
     },
     {
       "id": 100,
@@ -14302,9 +14401,9 @@
       "difficulty": 4200,
       "energy_cost": 11,
       "star_targets": [
-        16525,
-        25968,
-        35412
+        31386,
+        44464,
+        51264
       ],
       "terrain": [],
       "is_boss": true,
@@ -14504,7 +14603,8 @@
       ],
       "element_cap": 8,
       "armor_permille": 250,
-      "max_reaction_tier": 2
+      "max_reaction_tier": 2,
+      "max_score": 52311
     }
   ],
   "enemies": [

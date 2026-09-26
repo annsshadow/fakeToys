@@ -94,6 +94,15 @@ export interface GeneratedLevel {
   element_cap: number
   armor_permille: number
   max_reaction_tier: number
+  /**
+   * 理论满分（1000‰）。star_targets 是它按 [600, 850, 980]‰ 取的三个档。
+   *
+   * ⚠️ 必须与 star_targets 分开下发：服务端结算裁剪的上界锚定在**这个值**上，
+   * 而���是 star_targets[2]。早期版本拿 3 星门槛当裁剪上限（= 理论满分的 75%），
+   * 于是每一次干净通关的分数都被裁掉（实测关 1：本地 19842 → 结算 14656），
+   * 而且 Clamped 在几乎每次正常胜利上都为真，把这个本该用于发现伪造的信号变成了噪声。
+   */
+  max_score: number
   is_boss: boolean
   star_targets: number[]
   terrain: TerrainPlacement[]

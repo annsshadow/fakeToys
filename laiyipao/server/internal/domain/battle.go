@@ -189,12 +189,46 @@ const ScoreFullAtSec = 60
 
 // scoreCapFor 返回给定秒数下的得分上界。
 //
-// 规则：线性插值到理论满分，满分需 ScoreFullAtSec 秒。
-// full <= 0（关卡缺 star_targets）时返回 0 —— 宁可不给分，
-// 也不能因为数据缺失而放开。
+// 规则：线性插值到**理论满分**，满分需 ScoreFullAtSec 秒。
+//
+// ⚠️ 锚点必须是 MaxScore（理论满分，1000‰），不是 3 星门槛。
+//
+// 曾经用的是 fullStarTarget(gl) = StarTargets[2] = 理论满分 × 750‰，
+// 于是裁剪上限只有理论满分的 75%，而实测默认构筑的正常分数
+// 是理论满分的 130% 以上 —— **每一次干净通关都被裁剪**：
+//
+//	关 1   实测 19842 → 被裁到 14656
+//	关 50  实测 25300 → 被裁到 18446
+//	关 100 实测 46085 → 被裁到 35412
+//
+// 两层后果，第二层更严重：
+//  1. 打得好的玩家被砍分，而客户端本地显示未裁剪值 ——
+//     玩家看到 19842、结算后拿到 14656，且没有任何提示
+//  2. `Clamped` 在几乎每一次正常胜利上都为 true，
+//     于是这个本该用于发现伪造的信号变成噪声：
+//     监控里 90% 的结算都"异常"，真正的伪造反而淹没在里面
+//
+// 裁剪的职责是"挡住不可能的分数"，不是"压住优秀玩家的分数"。
 func scoreCapFor(gl GeneratedLevel, sec int64) int64 {
-	full := fullStarTarget(gl)
+	full := gl.MaxScore
+	if full <= 0 {
+		// 老数据（加 MaxScore 之前写进 DB 的关卡行）没有这个字段。
+		//
+		// ⚠️ 这里**不能**回落到 fullStarTarget(gl)（= 3 星门槛）：
+		// 那等于把刚修好的 bug 原样保留 —— 上限只有理论满分的 98%，
+		// 于是恰好卡在边缘的诚实分数又会被裁。
+		//
+		// 也不能返回 0：上限为 0 会把所有分数清零，
+		// 那是一个可被利用的拒绝服务（正常玩家直接loss奖励）。
+		//
+		// 正确做法是**反推**：3 星门槛 = 理论满分 × StarTargetRatio[2]，
+		// 所以从 star3 乘回去就得到等价的上界。
+		if star3 := fullStarTarget(gl); star3 > 0 {
+			full = star3 * permille / StarTargetRatio[2]
+		}
+	}
 	if full <= 0 || sec <= 0 {
+		// 两个来源都缺 = 完全没有依据，fail closed。
 		return 0
 	}
 	if sec >= ScoreFullAtSec {

@@ -191,15 +191,27 @@ func TestScoreClampIsAlwaysApplied(t *testing.T) {
 func TestScoreCapNeverAllowsInstantFull(t *testing.T) {
 	for id := 1; id <= 100; id++ {
 		gl := GenerateLevel(id)
-		full := fullStarTarget(gl)
+		// ⚠️ 锚点是 MaxScore（理论满分），不是 3 星门槛。
+		//
+		// 曾经用 fullStarTarget(gl) = StarTargets[2] = MaxScore × 750‰，
+		// 于是"满分"被定义成 3 星门槛本身，断言就变成
+		// 「额度不得超过 3 星门槛」——
+		// 而实测正常通关的分数是 MaxScore 的 99.7%，比 3 星门槛高，
+		// 于是每一次干净通关都被裁剪（见 scoreCapFor 的注释）。
+		full := gl.MaxScore
 		if full <= 0 {
-			t.Fatalf("第 %d 关没有满分基准", id)
+			t.Fatalf("第 %d 关没有 MaxScore", id)
+		}
+		// MaxScore 必须**不低于** 3 星门槛，
+		// 否则"拿到 3 星"与"拿到满分"就矛盾了（星级门槛会不可达）
+		if star3 := fullStarTarget(gl); star3 > full {
+			t.Errorf("第 %d 关 3 星门槛 %d 高于理论满分 %d —— 3 星不可达", id, star3, full)
 		}
 		// 任何短于满分所需时间的时长，都拿不到满分
 		for _, sec := range []int64{1, 5, 10, 30, ScoreFullAtSec - 1} {
 			cap := scoreCapFor(gl, sec)
 			if cap >= full {
-				t.Errorf("第 %d 关 %ds 的额度 %d 已达满分 %d —— 可秒通拿三星",
+				t.Errorf("第 %d 关 %ds 的额度 %d 已达满分 %d —— 可秒通拿满分",
 					id, sec, cap, full)
 			}
 		}
@@ -223,19 +235,56 @@ func TestScoreCapNeverAllowsInstantFull(t *testing.T) {
 	}
 }
 
-// TestScoreCapZeroWhenNoStarTargets 确认缺数据时选择「不给分」。
+// TestScoreCapZeroWhenNoMaxScore 确认缺数据时选择「不给分」。
 //
-// 关卡数据来自网络，star_targets 缺失时若返回一个大额度，
+// 关卡数据来自网络，MaxScore 缺失时若返回一个大额度，
 // 相当于「数据缺失 = 放开限制」，方向完全错。
-func TestScoreCapZeroWhenNoStarTargets(t *testing.T) {
+//
+// ⚠️ 判据从 star_targets 改成 MaxScore，因为裁剪上限的输入就是 MaxScore。
+// star_targets 是**星级**用的字段，与裁剪无关 —— 早期版本把两者混在一起，
+// 于是"3 星门槛"同时充当了"裁剪上限"，造成每一次干净通关都被裁剪。
+// TestScoreCapZeroWhenNoMaxScore 确认缺数据时的行为。
+//
+// ⚠️ 这里分两种情况，方向相反：
+//
+//	只有 star_targets（老数据）→ **反推** MaxScore，仍给一个有界上限
+//	两者都缺                      → 0，fail closed
+//
+// 「有 star_targets 就返回 0」是错的：上限为 0 会把所有分数清零，
+// 那是一个可被利用的拒绝服务（正常玩家直接 loss 奖励）。
+//
+// 但「有 star_targets 就回落到 3 星门槛」也是错的 ——
+// 那等于把刚修好的裁剪 bug 原样保留（上限只有理论满分的 98%）。
+// 正确做法是按 StarTargetRatio[2] 反推。
+func TestScoreCapZeroWhenNoMaxScore(t *testing.T) {
 	gl := testLevel()
+	want := gl.MaxScore
+	star3 := fullStarTarget(gl)
+	gl.MaxScore = 0
+
+	// 老数据：从 3 星门槛反推，误差应在 1% 内
+	got := scoreCapFor(gl, permille)
+	reconstructed := star3 * permille / StarTargetRatio[2]
+	if got != reconstructed {
+		t.Errorf("缺 MaxScore 时应从 3 星门槛反推得到 %d，实际 %d", reconstructed, got)
+	}
+	if diff := got - want; diff > want/100 || diff < -want/100 {
+		t.Errorf("反推值 %d 与真实 MaxScore %d 偏差超过 1%%", got, want)
+	}
+	// 反推值必须高于 3 星门槛本身，否则老数据又会把诚实分数裁掉
+	if got <= star3 {
+		t.Errorf("反推上限 %d 必须高于 3 星门槛 %d，否则老数据仍会裁剪诚实分数", got, star3)
+	}
+
+	// 两者都缺：fail closed
 	gl.StarTargets = nil
 	if cap := scoreCapFor(gl, 100); cap != 0 {
-		t.Errorf("缺 star_targets 时额度应为 0，实际 %d", cap)
+		t.Errorf("MaxScore 与 star_targets 都缺时额度应为 0，实际 %d", cap)
 	}
+	gl.MaxScore = 0
 	gl.StarTargets = []int64{}
 	if cap := scoreCapFor(gl, 100); cap != 0 {
-		t.Errorf("空 star_targets 时额度应为 0，实际 %d", cap)
+		t.Errorf("MaxScore 为 0 且 star_targets 为空时额度应为 0，实际 %d", cap)
 	}
 	if got := fullStarTarget(gl); got != 0 {
 		t.Errorf("fullStarTarget 缺档时应返回 0，实际 %d", got)
@@ -633,7 +682,8 @@ func TestTokenLevelMismatchRejected(t *testing.T) {
 // 常量与关卡满分脱钩后，min() 永远取满分那一侧。
 func TestSettleLimitsAreConservative(t *testing.T) {
 	gl := testLevel()
-	full := fullStarTarget(gl)
+	// 锚点是 MaxScore（理论满分），不是 3 星门槛 —— 见 scoreCapFor 的注释
+	full := gl.MaxScore
 	for _, sec := range []int64{1, 5, 30, 60, 120, 300} {
 		in := baseInput(gl)
 		in.DurationMs = int(sec) * 1000

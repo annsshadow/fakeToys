@@ -41,6 +41,8 @@ function level(): GeneratedLevel {
     id: 1, chapter: 1, name: '重放测试', seed: '1', base_hp: 800, wave_count: 2,
     difficulty: 1000, energy_cost: 6, element_cap: 3, armor_permille: 0,
     max_reaction_tier: 2, is_boss: false, star_targets: [100, 200, 300],
+    // 理论满分：结算裁剪的上界锚定在它上面（不是 star_targets[2]）
+    max_score: 500,
     terrain: [],
     waves: [
       { wave_index: 0, spawns: [{ enemy_id: 1, count: 2, interval: 60, delay: 0 }] },

@@ -103,6 +103,8 @@ function mkLevel(over: Partial<GeneratedLevel> = {}): GeneratedLevel {
     id: 1, chapter: 1, name: '渲染测试', seed: '1', base_hp: 1000, wave_count: 1,
     difficulty: 1000, energy_cost: 6, element_cap: 3, armor_permille: 0,
     max_reaction_tier: 2, is_boss: false, star_targets: [100, 200, 300],
+    // 理论满分：结算裁剪的上界锚定在它上面（不是 star_targets[2]）
+    max_score: 500,
     terrain: [{ kind: 'oil_drum', x: 600, y: 600, param: 50 }],
     waves: [{ wave_index: 0, spawns: [{ enemy_id: 1, count: 3, interval: 50, delay: 0 }] }],
     ...over,

@@ -109,9 +109,21 @@ func TestEnemyScoreUpperBoundUsesTable(t *testing.T) {
 		if e.IsBoss {
 			want = scoreOnKillBoss
 		}
-		want += (e.HP + e.ShieldHP) / scorePerDamageUnit
+		// ⚠️ 期望值必须用**缩放后**的血量。
+		//
+		// 引擎（engine.ts）里 `this.score += Number(res.totalDamage / 100n)`
+		// 累加的是**实际造成的伤害**，而实际伤害对应缩放后的血量（×8）。
+		// 估算用基准血量就与实际差 8 倍的伤害分 ——
+		// 这条测试曾经也用基准血量，于是「实现与测试同时用同一个错的口径」，
+		// 13 个公式一致性向量也照样全绿。
+		//
+		// 这与 README 里「跨端一致 ≠ 两端都对」是同一类：
+		// 一致性锁住了「没漂移」，但没锁住「对不对」。
+		scaled := ScaleEnemy(e)
+		want += (scaled.HP + scaled.ShieldHP) / scorePerDamageUnit
 		if got != want {
-			t.Errorf("敌人 %d: 得分上界 %d，期望 %d", e.ID, got, want)
+			t.Errorf("敌人 %d: 得分上界 %d，期望 %d（缩放后血量 %d）",
+				e.ID, got, want, scaled.HP)
 		}
 	}
 	if len(seen) != len(SeedEnemies) {
