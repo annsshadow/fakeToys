@@ -98,26 +98,6 @@ pub fn router(pool: Pool) -> Router {
             get(crate::list_reply_filter),
         )
         .route(
-            "/api/bbs/assemble/control/list/subjects/filtered",
-            get(crate::list_subjects_filtered),
-        )
-        .route(
-            "/api/bbs/assemble/control/list/subjects/index",
-            get(crate::list_subjects_index),
-        )
-        .route(
-            "/api/bbs/assemble/control/list/subjects/recommended/index",
-            get(crate::list_subjects_recommended_index),
-        )
-        .route(
-            "/api/bbs/assemble/control/list/topics/creamed",
-            get(crate::list_topics_creamed),
-        )
-        .route(
-            "/api/bbs/assemble/control/list/topics/recommended",
-            get(crate::list_topics_recommended),
-        )
-        .route(
             "/api/bbs/assemble/control/picture/list/{subjectId}",
             get(crate::picture_list),
         )
@@ -130,32 +110,8 @@ pub fn router(pool: Pool) -> Router {
             get(subject_statgrade),
         )
         .route(
-            "/api/bbs/assemble/control/topic/creamed/list",
-            get(crate::topic_creamed_list),
-        )
-        .route(
-            "/api/bbs/assemble/control/topic/filter/list",
-            get(crate::topic_filter_list),
-        )
-        .route(
             "/api/bbs/assemble/control/topic/filter/listsubjectinfo",
             post(crate::topic_filter_listsubjectinfo),
-        )
-        .route(
-            "/api/bbs/assemble/control/topic/index/list",
-            get(crate::topic_index_list),
-        )
-        .route(
-            "/api/bbs/assemble/control/topic/recommended/index",
-            get(crate::topic_recommended_index),
-        )
-        .route(
-            "/api/bbs/assemble/control/topic/recommended/list",
-            get(crate::topic_recommended_list),
-        )
-        .route(
-            "/api/bbs/assemble/control/topic/search",
-            get(crate::topic_search),
         )
         .route("/api/bbs/assemble/control/user/info", get(user_info))
         // ════════ o2server 全集对齐（106 条；U2 冲刺 100%）════════
