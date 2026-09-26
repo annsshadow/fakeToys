@@ -1343,11 +1343,18 @@ pub async fn shutup_create(
 #[allow(non_snake_case)]
 pub async fn shutup_delete(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
+    // 前端 BBSForum.vue: api.post('.../shutup/delete', { person }) —— 无路径参数，从体读 person，
+    // 解除该 person 的禁言（此前误声明 Path(id) 致 0 槽路由恒 arity-500）。
+    axum::Json(body): axum::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let person = body
+        .get("person")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows_affected = client
-        .execute("DELETE FROM x_bbs_shutup WHERE id = $1", &[&id])
+        .execute("DELETE FROM x_bbs_shutup WHERE person = $1", &[&person])
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
