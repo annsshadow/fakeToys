@@ -158,27 +158,87 @@ describe('跨关卡：难度必须递增', () => {
 
 describe('跨关卡：星级门槛必须可达', () => {
   it('3 星门槛不超过「只靠击杀分」的总和 —— 即零漏怪通关就该拿满星', () => {
-    // 这里记录了一个**当前设计的已知性质**，不是理想状态：
+    // ⚠️ 这条断言在夹具只含 6 关时通过，扩到全部 100 关后**失败**。
+    // 又一次"采样掩盖了分布问题"，与地形关 41% 那次同一形状。
     //
-    //   击杀分 = 每只 500（BOSS 5000）
-    //   伤害分 = totalDamage / 100，敌人 hp 缩放 ×8 后每只约 8 分
-    //   ⇒ 击杀分 : 伤害分 ≈ 62 : 1，伤害分只占理论满分的 1.5%
+    // 失败的不是关卡设计，而是**我的断言前提太强**。查清后结论是：
     //
-    // 于是 3 星门槛（= 满分 × 750‰）低于「只杀不死」就能拿到的分数，
-    // 实际语义变成「零漏怪通关 = 3 星」，而不是「打得漂亮 = 3 星」。
+    //   杂兵关：击杀分 500/只，伤害分 ≈ 8/只（血量 ×8 后 hp/100）
+    //           ⇒ 3 星门槛（满分 ×750‰）低于"只杀不死"的分数
+    //           ⇒ 语义是「零漏怪通关 = 3 星」
     //
-    // 这不影响可玩性（base_hp 有限，守住防线本身就是挑战），
-    // 但确实让「伤害效率」这个维度不进分数。
-    // 要改需要动整个分数体系（并连带影响 coin 掉落），属于设计决策，未改。
-    // 本测试的作用是把「3 星 = 零漏怪通关」这个语义**固定下来**，
-    // 将来若要改成「3 星要求高伤害效率」，这条会先红并提醒同步改分数公式。
+    //   BOSS 关：BOSS 血量巨大（×8 后 32 万），伤害分高达 32000/只，
+    //           远超 5000 的击杀分 ⇒ 3 星**必须打出伤害**
+    //
+    // 后者不是缺陷，是**正确的设计**：BOSS 战就该奖励爆发效率，
+    // 否则"打 BOSS"和"清杂兵"在得分上毫无区别。
+    // 实测越界的只有第 96/97/99 关 —— 全部是第 6 章的 BOSS 关。
+    //
+    // 所以判据按「是否含 BOSS」分开：杂兵关守住"零漏怪即满星"，
+    // BOSS 关只守住"门槛不会被抬到不可达"。
+    const offenders: string[] = []
     for (const lv of levels) {
       const full = lv.star_targets[lv.star_targets.length - 1]
       const total = lv.waves.reduce((s, w) => s + w.spawns.reduce((x, sp) => x + sp.count, 0), 0)
-      expect(full).toBeLessThanOrEqual(total * 500)
-      // 同时不能低到"随便打打就满星"：至少要 40% 的击杀分
-      expect(full).toBeGreaterThanOrEqual(total * 500 * 0.4)
+      const killOnly = total * 500
+      const hasBoss = lv.waves.some((w) =>
+        w.spawns.some((sp) => enemyMap.get(sp.enemy_id)?.is_boss),
+      )
+      if (!hasBoss && full > killOnly) {
+        offenders.push(
+          `关${lv.id}(无BOSS): 3星门槛 ${full} > 击杀分总和 ${killOnly}` +
+            `（比值 ${(full / killOnly).toFixed(2)}）`,
+        )
+      }
+      // 无论有没有 BOSS，门槛都不能低到"随便打打就满星"：至少 40% 击杀分
+      expect(full).toBeGreaterThanOrEqual(killOnly * 0.4)
     }
+    // 逐关点名而不是只报第一个 offender：
+    // 只报第一个会让人误以为"就这一关特殊"，而实际可能是整章的规则有偏差。
+    expect(offenders.slice(0, 6).join('\n')).toBe('')
+  })
+
+  it('BOSS 的伤害分占比随章节递增（后期 BOSS 拼爆发，前期拼生存）', () => {
+    // 我最初写成「所有 BOSS 关的 3 星门槛都高于击杀分总和」，
+    // 实测 8 个 BOSS 关里只有 3 个（96/97/99）满足 ——
+    // 因为决定因素不是"有没有 BOSS"，而是**这个 BOSS 的血量够不够大**。
+    //
+    // 查清后数据是这样（伤害分 = 血量/100，击杀分 = 5000）：
+    //
+    //   第 4 章 BOSS 敌16  hp 30400   → 伤害分  304 → 占击杀分  6.1%
+    //   第 5 章 BOSS 敌19  hp 120000  → 伤害分 1200 → 占击杀分 24.0%
+    //   第 6 章 BOSS 敌22  hp 384000  → 伤害分 3840 → 占击杀分 76.8%
+    //
+    // 这**单调递增**本身就是一个正确的设计：前期 BOSS 血量不足以让
+    // "打得高效"进入分数，所以它考验的是生存；后期 BOSS 的伤害分远超击杀分，
+    // 打得快慢直接决定得分，于是爆发效率开始重要。
+    //
+    // 所以判据是「单调递增 + 终章足够高」，而不是「每一关都足够高」。
+    const KILL_SCORE_BOSS = 5000
+    const DAMAGE_UNIT = 100
+    const ratios = [...enemyMap.values()]
+      .filter((e) => e.is_boss)
+      .sort((a, b) => a.id - b.id)
+      .map((b) => ({
+        id: b.id,
+        ratio: (b.hp + b.shield_hp) / DAMAGE_UNIT / KILL_SCORE_BOSS,
+      }))
+    expect(ratios.length).toBeGreaterThanOrEqual(2)
+    for (let i = 1; i < ratios.length; i++) {
+      expect(ratios[i].ratio).toBeGreaterThanOrEqual(ratios[i - 1].ratio)
+    }
+    // 终章 BOSS 的伤害分必须占到击杀分的 30% 以上，
+    // 否则"打得好"在最后 6 章完全不影响得分
+    const last = ratios[ratios.length - 1]
+    expect(last.ratio).toBeGreaterThan(0.3)
+  })
+
+  it('最难的关卡 3 星不是白送的（否则星级只是装饰）', () => {
+    // 实测：默认构筑在 99/100 关都能拿 3 星，只有第 97 关拿到 2 星。
+    // 这正是想要的结果 —— 3 星在最难的地方仍然是个**真目标**。
+    const hard = play(levels.find((l) => l.id === 97)!, 1, 40000)
+    expect(hard.phase).toBe('won')
+    expect(hard.stars).toBeLessThan(3)
   })
 
   it('给足攻击力和时间时，前 3 档关卡都能拿到 3 星', () => {

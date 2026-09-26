@@ -120,10 +120,45 @@ describe('地形：油桶', () => {
 })
 
 describe('地形：崩塌掩体', () => {
+  // ⚠️ 动能 ×3 是**防死锁**的设计，不是数值偏好。
+  // 曾经只有动能能充能，于是「不带动能的构筑永远打不开弹道」——
+  // 而默认构筑恰好是 fire/fire/fire/ice，第 22/33/34 关对它是不可通关的。
+  it('动能充能速度是其它元素的 3 倍', () => {
+    const kinetic = place('collapse_wall', 9999)
+    const fire = place('collapse_wall', 9999)
+    const dmg = 500n // /100 = 5
+    kinetic.onHit('kinetic', dmg, toFixed(500), toFixed(500))
+    fire.onHit('fire', dmg, toFixed(500), toFixed(500))
+    expect(kinetic.charge).toBe(15) // 5 × 3
+    expect(fire.charge).toBe(5)
+    expect(kinetic.charge).toBe(fire.charge * 3)
+  })
+
+  it('**任何**元素都能充能（不构成硬性门槛）', () => {
+    // 这条是"关卡不会变成死局"的直接守卫。
+    // 若有人把 onHit 改回 `element === 'kinetic' &&`，
+    // 默认构筑（无动能）就再也打不开掩体，第 22/33/34 关重新变成不可通关。
+    for (const el of ['fire', 'ice', 'lightning', 'corrosion', 'kinetic'] as const) {
+      const t = place('collapse_wall', 9999)
+      t.onHit(el, 500n, toFixed(500), toFixed(500))
+      expect(t.charge).toBeGreaterThan(0n)
+    }
+  })
+
+  it('非动能也能砸开掩体（只是更慢）', () => {
+    const t = place('collapse_wall', 20)
+    let fired = false
+    for (let i = 0; i < 20 && !fired; i++) {
+      fired = t.onHit('fire', 500n, toFixed(500), toFixed(500)) // 每次 +5
+    }
+    expect(fired).toBe(true)
+    expect(t.state).toBe('collapsed')
+  })
+
   it('近距离动能命中累积充能', () => {
-    const t = place('collapse_wall', 30)
+    const t = place('collapse_wall', 60)
     t.onHit('kinetic', 500n, toFixed(500), toFixed(500))
-    expect(t.charge).toBe(5)
+    expect(t.charge).toBe(15) // ×3 生效
   })
 
   it('充能达阈值即崩塌', () => {
