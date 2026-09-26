@@ -110,7 +110,7 @@ var smokeLevelIDs = []int{1, 10, 25, 50, 75, 100}
 
 func buildSmoke() ([]byte, error) {
 	fx := smokeFixture{
-		Note: "由 server/cmd/vectors 从 Go 真相源导出，供 miniapp 引擎冒烟测试使用。" +
+		Note: "由 server/cmd/vectors 从 Go 真相源导出，供 miniapp 引擎冒烟与难度梯度测试使用。" +
 			"不要手工编辑：改内容表后重新执行 go run ./cmd/vectors。",
 		Enemies:   []domain.SeedEnemy{},
 		Skills:    domain.ScaleAllSkills(),
@@ -155,7 +155,7 @@ func main() {
 		{filepath.Join("testdata", "reaction_specs.json"),
 			buildReactions,
 			fmt.Sprintf("%d 条反应", len(domain.AllReactionSpecs()))},
-		{filepath.Join("testdata", "smoke_level1.json"), buildSmoke, "第 1 关真实夹具"},
+		{filepath.Join("testdata", "smoke_levels.json"), buildSmoke, "6 关跨难度夹具"},
 		{filepath.Join("testdata", "level_seeds.json"), buildLevelSeeds, "100 关种子表"},
 	}
 
