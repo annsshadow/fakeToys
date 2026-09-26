@@ -8300,8 +8300,15 @@ pub async fn schedule_report(pool: Extension<Pool>) -> Result<Json<ActionResult<
 #[allow(non_snake_case)]
 pub async fn schedule_schedule_fire(
     pool: Extension<Pool>,
-    Path(schedule_id): Path<String>,
+    // 前端 ProgramCenterApp.vue: api.post('.../schedule/schedule/fire', { id } | {}) —— 无路径参数，
+    // 从体读 id（此前误声明 Path 致 0 槽路由恒 arity-500）。
+    axum::Json(body): axum::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let schedule_id = body
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client

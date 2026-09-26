@@ -83,7 +83,6 @@ GET /api/program_center/mpweixin/message/template/send
 GET /api/program_center/qiyeweixin
 GET /api/program_center/qiyeweixin/get/callback/aes
 GET /api/program_center/qiyeweixin/request/pull/sync
-GET /api/program_center/schedule/schedule/fire
 GET /api/program_center/script/name/name
 POST /api/hotpic/delete/hotpic
 POST /api/hotpic/save/hotpic
