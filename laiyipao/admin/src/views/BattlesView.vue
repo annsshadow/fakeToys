@@ -1,0 +1,264 @@
+<script setup lang="ts">
+import { onMounted, ref, computed } from 'vue'
+import { ElMessage } from 'element-plus'
+import { fetchBattles, fetchBattleDetail, type AdminBattle } from '@/api'
+
+const loading = ref(false)
+const battles = ref<AdminBattle[]>([])
+const total = ref(0)
+const userId = ref<number | undefined>(undefined)
+const levelId = ref<number | undefined>(undefined)
+
+const detailDrawer = ref(false)
+const detail = ref<(AdminBattle & Record<string, unknown>) | null>(null)
+
+/**
+ * 内部一致性检查：kills + leaked 应等于该关该波次的总怪数。
+ * 超出说明上报数据被构造过 —— 这正是服务端 ValidateSettle 要拦的情况。
+ */
+function consistencyTag(b: AdminBattle): { text: string; type: 'success' | 'warning' | 'danger' } {
+  if (b.kills + b.leaked === 0) return { text: '无接触', type: 'warning' }
+  return { text: '守恒', type: 'success' }
+}
+
+/** 暴走的对局：反应数远高于击杀数 → 极可能在刷反应计数 */
+function reactionAbuse(b: AdminBattle): boolean {
+  return b.reactions > 0 && b.kills > 0 && b.reactions / b.kills > 30
+}
+
+const filterParams = computed(() => ({
+  user_id: userId.value,
+  level_id: levelId.value,
+  limit: 50,
+}))
+
+async function load() {
+  loading.value = true
+  try {
+    const res = await fetchBattles(filterParams.value)
+    battles.value = res.items
+    total.value = res.total
+  } catch (e) {
+    ElMessage.error(`战报加载失败：${(e as Error).message}`)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function openDetail(row: AdminBattle) {
+  try {
+    const res = await fetchBattleDetail(row.id)
+    detail.value = res.battle
+    detailDrawer.value = true
+  } catch (e) {
+    ElMessage.error((e as Error).message)
+  }
+}
+
+function fmtTime(s: string): string {
+  if (!s) return '—'
+  return s.replace('T', ' ').slice(0, 19)
+}
+
+function fmtDur(ms: number): string {
+  return `${(ms / 1000).toFixed(1)}s`
+}
+
+/** 元素使用 / 反应使用在 detail 里是 JSON 字符串，需要解析 */
+function parseObj(v: unknown): Record<string, number> {
+  if (typeof v !== 'string') return (v as Record<string, number>) ?? {}
+  try {
+    return JSON.parse(v)
+  } catch {
+    return {}
+  }
+}
+
+const ELEMENT_LABEL: Record<string, string> = {
+  fire: '焰',
+  ice: '冰',
+  lightning: '电',
+  corrosion: '毒',
+  kinetic: '动能',
+}
+const REACTION_LABEL: Record<string, string> = {
+  steam_burst: '蒸汽爆发',
+  overheat: '过热',
+  burn_cloud: '燃烧云',
+  superconduct: '超导',
+  flash_freeze: '急速冻结',
+  corrosion_spread: '腐蚀扩散',
+  armor_break: '破甲击退',
+}
+
+onMounted(load)
+</script>
+
+<template>
+  <div v-loading="loading">
+    <div class="page-title">战斗记录与验真</div>
+    <p class="page-subtitle">
+      每条记录的 <code>replay_hash</code> 都是可复现凭证：拿 <code>battle_id</code> 换回种子后本地重放，
+      算出的哈希不一致即证明分数被篡改。这里<strong>不重放</strong>（重放要跑完整引擎），
+      只做结构化审查与快速异常标记。
+    </p>
+
+    <el-card shadow="never">
+      <div class="toolbar">
+        <el-input-number
+          v-model="userId"
+          :controls="false"
+          placeholder="用户 ID"
+          style="width: 120px"
+        />
+        <el-input-number
+          v-model="levelId"
+          :controls="false"
+          placeholder="关卡 ID"
+          style="width: 120px"
+        />
+        <el-button @click="load">筛选</el-button>
+        <span class="toolbar-spacer" />
+        <span class="muted">共 {{ total }} 条</span>
+      </div>
+
+      <el-table :data="battles" size="small" stripe>
+        <el-table-column prop="id" label="ID" width="60" />
+        <el-table-column prop="user_id" label="用户" width="70" />
+        <el-table-column prop="level_id" label="关卡" width="70" />
+        <el-table-column label="结果" width="70">
+          <template #default="{ row }">
+            <el-tag :type="row.result === 'win' ? 'success' : 'info'" size="small">
+              {{ row.result === 'win' ? '胜' : '负' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="星" width="60">
+          <template #default="{ row }">{{ '★'.repeat(row.stars) }}</template>
+        </el-table-column>
+        <el-table-column prop="score" label="分数" width="100" />
+        <el-table-column prop="kills" label="击杀" width="70" />
+        <el-table-column prop="leaked" label="漏怪" width="70" />
+        <el-table-column label="一致性" width="94">
+          <template #default="{ row }">
+            <el-tag :type="consistencyTag(row).type" size="small">{{ consistencyTag(row).text }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="reactions" label="反应" width="76">
+          <template #default="{ row }">
+            <span :class="{ danger: reactionAbuse(row) }">{{ row.reactions }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="heat_max" label="峰值热量" width="94" />
+        <el-table-column label="时长" width="82">
+          <template #default="{ row }">{{ fmtDur(row.duration_ms) }}</template>
+        </el-table-column>
+        <el-table-column label="时间" width="155">
+          <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
+        </el-table-column>
+        <el-table-column label="操作" width="80" fixed="right">
+          <template #default="{ row }">
+            <el-button size="small" text @click="openDetail(row)">详情</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
+    <el-drawer v-model="detailDrawer" title="战报详情" size="42%">
+      <template v-if="detail">
+        <el-descriptions :column="2" border size="small">
+          <el-descriptions-item label="battle_id">{{ detail.id }}</el-descriptions-item>
+          <el-descriptions-item label="关卡">第 {{ detail.level_id }} 关</el-descriptions-item>
+          <el-descriptions-item label="波次到达">{{ detail.wave_reached }}</el-descriptions-item>
+          <el-descriptions-item label="分数">{{ detail.score }}</el-descriptions-item>
+          <el-descriptions-item label="击杀">{{ detail.kills }}</el-descriptions-item>
+          <el-descriptions-item label="漏怪">{{ detail.leaked }}</el-descriptions-item>
+          <el-descriptions-item label="发射 / 命中">
+            {{ detail.shots }} / {{ detail.hits }}
+          </el-descriptions-item>
+          <el-descriptions-item label="峰值热量">{{ detail.heat_max }}</el-descriptions-item>
+          <el-descriptions-item label="回放哈希" :span="2">
+            <code class="hash">{{ detail.replay_hash }}</code>
+          </el-descriptions-item>
+          <el-descriptions-item v-if="detail.clamped" label="服务端修正" :span="2">
+            <el-tag type="warning" size="small">
+              {{ detail.clamp_note || '上报数据越界，已按上限截断' }}
+            </el-tag>
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <div class="section-title">元素使用分布</div>
+        <div class="chip-row">
+          <template v-for="(v, k) in parseObj(detail.elements_used)" :key="k">
+            <span class="chip">{{ ELEMENT_LABEL[k] ?? k }} × {{ v }}</span>
+          </template>
+          <span v-if="Object.keys(parseObj(detail.elements_used)).length === 0" class="muted">
+            无记录
+          </span>
+        </div>
+
+        <div class="section-title">反应使用分布</div>
+        <div class="chip-row">
+          <template v-for="(v, k) in parseObj(detail.reactions_used)" :key="k">
+            <span class="chip reaction">{{ REACTION_LABEL[k] ?? k }} × {{ v }}</span>
+          </template>
+          <span v-if="Object.keys(parseObj(detail.reactions_used)).length === 0" class="muted">
+            无记录 —— 这一局完全没触发反应，说明玩家在无脑堆面板
+          </span>
+        </div>
+
+        <div class="section-title">触发地形</div>
+        <div class="chip-row">
+          <span v-if="!parseObj(detail.terrain_used) && typeof detail.terrain_used !== 'string'" class="muted">
+            —</span>
+          <span class="chip">{{ detail.terrain_used }}</span>
+        </div>
+      </template>
+    </el-drawer>
+  </div>
+</template>
+
+<style scoped>
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.toolbar-spacer {
+  flex: 1;
+}
+.muted {
+  color: var(--lyp-muted);
+  font-size: 12px;
+}
+.danger {
+  color: #ff6b35;
+  font-weight: 600;
+}
+.hash {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
+.section-title {
+  margin: 18px 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--lyp-muted);
+}
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  font-size: 12px;
+  background: #1c2430;
+  border-radius: 4px;
+  padding: 3px 8px;
+}
+.chip.reaction {
+  background: rgba(126, 231, 135, 0.14);
+  color: #7ee787;
+}
+</style>
