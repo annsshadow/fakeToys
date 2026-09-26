@@ -233,6 +233,10 @@ FLOOR = {
 #: **同一棵树**上各跑一次 `audit()`，再按 token 多重集求差）——
 #: 架构文档 42 / 229 / 37 → **42 / 230 / 37**：净 +1 且**删 0**，那 1 个 token 就是新写那段
 #: 失效边界里点名的 `test_cache_invalidation_l88.py`（`file_unique` 184 → 185 同向闭合）。
+#: **L89 回填（1367 → 1383，+16）**：本轮进度行 + 日志块 + A152 / A157 两行状态里的反引号文件记号。
+#: 三格读数的移动方向本身就是口径：**`line_refs` 与 `code_but_no_name_match` 一格未动**（本轮刻意全部用
+#: 名字锚点、不写行号），涨的只有 `file_tokens`；四个棘轮桶（68 / 145 / 149 / 111）与 `dead_line` 两侧
+#: 硬 0 全部停在原读数 ⇒ 新增的 16 格记号**逐条指向真实存在的文件**（`scratch_artifact` 一桶同步吸收）。
 #: 账本 297 / 1360 / 165 → **296 / 1367 / 168**，其中 **+7 纯增**（`api/routes/config.py`、
 #: `api/deps.py`、`augmentor/config.py`、两份 `Temp/l88q/` 探针 ×2 与 `test_upload_ceiling_l87.py`，
 #: 删 0 ⇒ 纯增可加，不需要逐块减法即闭合）、**−1 条 `line_refs`** 是本轮把 A138 那格的
@@ -244,8 +248,8 @@ FLOOR = {
 #: **四个棘轮桶本轮一格未抬**：账本 `ambiguous_line` 68、`ambiguous_file` 145、`bare` 149、
 #: `scratch_missing` 111 全部等于上限，`dead_line` 与 `unresolved_source` 两侧仍为 0。
 MEASURED = {
-    ARCH: {"line_refs": 42, "file_tokens": 230, "code_but_no_name_match": 37},
-    LEDGER: {"line_refs": 296, "file_tokens": 1367, "code_but_no_name_match": 168},
+    ARCH: {"line_refs": 42, "file_tokens": 231, "code_but_no_name_match": 37},
+    LEDGER: {"line_refs": 296, "file_tokens": 1383, "code_but_no_name_match": 168},
 }
 
 #: 日志块标题行上「下一轮才填得出自己哈希」的占位符。精确相等 = **只许有该填的那几条**。
@@ -258,6 +262,7 @@ MEASURED = {
 #: 占位符被填掉 ⇒ 现量只剩 14 条历史欠账。本轮写 L86 日志块标题时会重新加回 1 条 ⇒ 那时要改回
 #: 15。**L86 兑现了那半句**：日志块与进度行落笔时把常数改回 **15**，L87 填掉 L86 哈希时再改回 14。**为什么不留 14..15 的区间**：区间判据会让「忘了回填上一轮」和「忘了给自己留占位」两种
 #: 相反的失误互相抵消（都落在区间内），而精确相等时两者各红一次 —— 这正是它每轮必须动两次的原因。
+#: **L89 回填侧（15 → 14）**：填掉 L88 的三批哈希后只剩 14 条历史欠账；本轮写 L89 块标题时改回 15。
 HASH_PLACEHOLDER = re.compile(r"^- \*\*L\d+\*\* `哈希待 L\d+ 回填`", re.MULTILINE)
 PLACEHOLDER_CEILING = 15
 
