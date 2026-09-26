@@ -110,7 +110,16 @@ describe('跨端契约：平衡意图仍然成立', () => {
   const total = (n: string) => BigInt(byName(n).expect.total_damage)
 
   it('低养成+正确搭配 > 高养成+无反应（以弱胜强）', () => {
-    if (!vectors.balance_invariants.low_correct_beats_high_no_reaction) return
+    // ⚠️ 原来这里写的是：
+    //   if (!vectors.balance_invariants.low_correct_beats_high_no_reaction) return
+    // 也就是把这条断言的开关**放在契约文件里**。
+    // 后果：把 formula_vectors.json 里那个 flag 改成 false，
+    // 这条「以弱胜强」平衡红线就静默消失，测试全绿。
+    // 一个可以被数据文件关掉的测试，等于没有这个测试。
+    //
+    // 现在 flag 本身先被断言为 true，再无条件执行断言 ——
+    // 想关掉它必须改代码，而改代码会留下 diff。
+    expect(vectors.balance_invariants.low_correct_beats_high_no_reaction).toBe(true)
     expect(total('low_invest_correct_element')).toBeGreaterThan(total('high_invest_no_reaction'))
   })
 

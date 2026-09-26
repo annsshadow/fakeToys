@@ -159,23 +159,105 @@ func TestScoreClampIsAlwaysApplied(t *testing.T) {
 	in.Reactions = legalReactions(gl, in.Shots)
 	res := settleOK(t, gl, in)
 
-	full := gl.StarTargets[len(gl.StarTargets)-1]
+	full := fullStarTarget(gl)
 	if res.Score > full {
 		t.Fatalf("分数未被裁剪到星门槛上限：%d > %d", res.Score, full)
 	}
 	if !res.Clamped {
 		t.Fatal("应标记为已裁剪")
 	}
-	// 1 秒的额度 = MaxScorePerSec（50000），它落在第 1 档星门槛之下，
-	// 所以星级应为 0 —— 这正是"速率上限真的在生效"的证据：
+	// 1 秒的额度 = full/60（第 1 关 14656/60 = 244），落在第 1 档门槛之下，
+	// 所以星级应为 0 —— 这正是「额度裁剪真的在生效」的证据：
 	// 若裁剪失效，分数会是 1e9，星级 3。
+	want := scoreCapFor(gl, 1)
+	if res.Score != want {
+		t.Fatalf("应被裁剪到 1 秒额度 %d，实际 %d", want, res.Score)
+	}
 	if res.StarsRecomputed != 0 {
-		t.Fatalf("1 秒内只够到第一档门槛之下，星级应为 0，实际 %d（分数 %d）", res.StarsRecomputed, res.Score)
+		t.Fatalf("1 秒内只够到第一档门槛之下，星级应为 0，实际 %d（分数 %d）",
+			res.StarsRecomputed, res.Score)
 	}
-	// 额度取 min(1秒 * MaxScorePerSec, 星门槛上限)
-	if want := antiCheatLimits().MaxScorePerSec; int64(want) < int64(full) && res.Score != int64(want) {
-		t.Fatalf("应被裁剪到每秒上限 %d，实际 %d", want, res.Score)
+}
+
+// TestScoreCapNeverAllowsInstantFull 是星级门槛修复的连带回归守卫。
+//
+// MaxScorePerSec 曾是硬编码 50000，而第 1 关满分只有 19539 ——
+// min(sec*50000, full) 永远取 full 那一侧，于是「速率裁剪」彻底失效：
+// 上报 duration_ms=1000 + 任意大分数，就能合法裁到满分、拿 3 星。
+//
+// 这类回归的特征是「改完当时全绿」：门槛从 78000 降到 14656 之后，
+// 50000 就再也碰不到了，裁剪代码还在跑、只是永远走不到那个分支。
+// 所以要有一条直接断言「短时长拿不到满分」的用例。
+func TestScoreCapNeverAllowsInstantFull(t *testing.T) {
+	for id := 1; id <= 100; id++ {
+		gl := GenerateLevel(id)
+		full := fullStarTarget(gl)
+		if full <= 0 {
+			t.Fatalf("第 %d 关没有满分基准", id)
+		}
+		// 任何短于满分所需时间的时长，都拿不到满分
+		for _, sec := range []int64{1, 5, 10, 30, ScoreFullAtSec - 1} {
+			cap := scoreCapFor(gl, sec)
+			if cap >= full {
+				t.Errorf("第 %d 关 %ds 的额度 %d 已达满分 %d —— 可秒通拿三星",
+					id, sec, cap, full)
+			}
+		}
+		// 达到 ScoreFullAtSec 秒才允许满分
+		if cap := scoreCapFor(gl, ScoreFullAtSec); cap != full {
+			t.Errorf("第 %d 关 %ds 的额度应为满分 %d，实际 %d",
+				id, ScoreFullAtSec, full, cap)
+		}
+		// 额度必须单调不减（时长越久额度越大）
+		prev := int64(0)
+		for sec := int64(1); sec <= 300; sec += 7 {
+			cap := scoreCapFor(gl, sec)
+			if cap < prev {
+				t.Fatalf("第 %d 关 %ds 的额度 %d 小于更小时的 %d", id, sec, cap, prev)
+			}
+			if cap > full {
+				t.Fatalf("第 %d 关 %ds 的额度 %d 超过满分 %d", id, sec, cap, full)
+			}
+			prev = cap
+		}
 	}
+}
+
+// TestScoreCapZeroWhenNoStarTargets 确认缺数据时选择「不给分」。
+//
+// 关卡数据来自网络，star_targets 缺失时若返回一个大额度，
+// 相当于「数据缺失 = 放开限制」，方向完全错。
+func TestScoreCapZeroWhenNoStarTargets(t *testing.T) {
+	gl := testLevel()
+	gl.StarTargets = nil
+	if cap := scoreCapFor(gl, 100); cap != 0 {
+		t.Errorf("缺 star_targets 时额度应为 0，实际 %d", cap)
+	}
+	gl.StarTargets = []int64{}
+	if cap := scoreCapFor(gl, 100); cap != 0 {
+		t.Errorf("空 star_targets 时额度应为 0，实际 %d", cap)
+	}
+	if got := fullStarTarget(gl); got != 0 {
+		t.Errorf("fullStarTarget 缺档时应返回 0，实际 %d", got)
+	}
+}
+
+// TestFullStarTargetOnEmptyDoesNotPanic 是 F19 的回归守卫。
+//
+// 原先是 gl.StarTargets[len(gl.StarTargets)-1] 裸索引，
+// 空切片上 panic —— recoverPanic 会把请求转成 500「服务内部错误」，
+// 攻击者用一个畸形关卡就能稳定触发。
+func TestFullStarTargetOnEmptyDoesNotPanic(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Fatalf("fullStarTarget 在空 StarTargets 上 panic：%v", r)
+		}
+	}()
+	gl := testLevel()
+	gl.StarTargets = nil
+	_ = fullStarTarget(gl)
+	gl.StarTargets = []int64{}
+	_ = fullStarTarget(gl)
 }
 
 // TestSettleRejectsAbsurdReactions 覆盖 C2（Critical）。
@@ -544,26 +626,29 @@ func TestTokenLevelMismatchRejected(t *testing.T) {
 	}
 }
 
-// TestSettleLimitsAreConservative 逐档确认裁剪上限随时长线性增长，
-// 防止有人把 MaxScorePerSec 改成硬编码常量。
+// TestSettleLimitsAreConservative 逐档确认裁剪上限随时长单调增长，
+// 且锚定「满分需 ScoreFullAtSec 秒」。
+//
+// 防止有人把它改回 `sec * 某个硬编码常量` —— 那正是速率裁剪失效的原因：
+// 常量与关卡满分脱钩后，min() 永远取满分那一侧。
 func TestSettleLimitsAreConservative(t *testing.T) {
 	gl := testLevel()
-	lim := antiCheatLimits()
-	for _, sec := range []int{1, 5, 30, 120} {
+	full := fullStarTarget(gl)
+	for _, sec := range []int64{1, 5, 30, 60, 120, 300} {
 		in := baseInput(gl)
-		in.DurationMs = sec * 1000
+		in.DurationMs = int(sec) * 1000
 		in.Shots = legalShots(gl, in.DurationMs)
 		in.Hits = in.Shots / 2
 		in.Reactions = legalReactions(gl, in.Shots)
-		in.Score = int64(sec) * lim.MaxScorePerSec * 2 // 故意超一倍
+		in.Score = full * 10 // 远超任何额度
 		res := settleOK(t, gl, in)
-		want := int64(sec) * lim.MaxScorePerSec
-		full := int64(gl.StarTargets[len(gl.StarTargets)-1])
-		if want > full {
-			want = full
-		}
+
+		want := scoreCapFor(gl, sec)
 		if res.Score != want {
 			t.Fatalf("sec=%d 期望裁剪到 %d，实际 %d", sec, want, res.Score)
+		}
+		if res.Score > full {
+			t.Fatalf("sec=%d 裁剪后仍超过满分 %d：%d", sec, full, res.Score)
 		}
 	}
 }
