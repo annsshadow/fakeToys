@@ -10,6 +10,7 @@
  */
 
 import { BattleRng, fnv1a64, hex16 } from './lcg'
+import { DEFAULT_SCORE_RULES, damageScore, killScore, type ScoreRules } from './score'
 import {
   PERMILLE,
   ELEMENT_PER_STACK_BASE,
@@ -152,6 +153,14 @@ export interface BattleConfig {
   equipped: EquippedSkill[]
   attacker: Attacker
   seed: number | bigint
+  /**
+   * 分数规则。缺省用 DEFAULT_SCORE_RULES。
+   *
+   * ⚠️ 真实对局应当**从服务端 /config 的 score_rules 下发**，
+   * 而不是用这里的默认值 —— 因为 star_targets 是服务端算的，
+   * 客户端用自己的一份就会与门槛算法漂移（见 score.ts 的注释）。
+   */
+  scoreRules?: ScoreRules
 }
 
 /** 引擎向外抛的事件 */
@@ -268,6 +277,9 @@ export class BattleEngine {
    */
   readonly totalEnemies: number
 
+  /** 分数规则。缺省 DEFAULT_SCORE_RULES，实际对局应从服务端下发。 */
+  readonly scoreRules: ScoreRules
+
   /**
    * 无攻击力敌人漏进防线时的推进伤害。
    *
@@ -298,6 +310,7 @@ export class BattleEngine {
       for (const sp of w.spawns) total += sp.count
     }
     this.totalEnemies = total
+    this.scoreRules = cfg.scoreRules ?? DEFAULT_SCORE_RULES
 
     for (const t of cfg.level.terrain ?? []) {
       this.terrains.push(new Terrain(t))
@@ -978,16 +991,16 @@ export class BattleEngine {
       if (react === 'overheat') e.stunnedMs = spec.statusDurationMs
     }
 
-    this.score += Number(res.totalDamage / 100n)
+    this.score += Number(damageScore(this.scoreRules, res.totalDamage))
     this.pushFloat(
       e.x,
       e.y,
-      String(Number(res.totalDamage / 100n)),
+      String(Number(damageScore(this.scoreRules, res.totalDamage))),
       res.crit ? '#ffd33d' : '#e6edf3',
       res.crit ? 20 : 16,
     )
     this.emit({ type: 'hit', x: p.x, y: p.y, damage: res.totalDamage, crit: res.crit })
-    this.record(this.tick, 'hit', e.uid, Number(res.totalDamage / 100n), res.crit ? 1 : 0)
+    this.record(this.tick, 'hit', e.uid, Number(damageScore(this.scoreRules, res.totalDamage)), res.crit ? 1 : 0)
 
     // 元素使用统计
     if (p.element) {
@@ -1032,7 +1045,7 @@ export class BattleEngine {
     if (res.killed) {
       e.dead = true
       this.kills++
-      this.score += e.isBoss ? 5000 : 500
+      this.score += Number(killScore(this.scoreRules, e.isBoss))
       this.emit({ type: 'kill', x: e.x, y: e.y, boss: e.isBoss })
       this.record(this.tick, 'kill', e.uid, e.isBoss ? 1 : 0)
       // 蓄能塔充能：满则给全场敌人上该敌人身上的主元素
@@ -1105,7 +1118,7 @@ export class BattleEngine {
         // 同样一只怪差 500 分（BOSS 差 5000）—— 分数不再只取决于战果，
         // 还取决于敌人怎么死，直接影响上报的 score 与星级判定。
         this.kills++
-        this.score += e.isBoss ? 5000 : 500
+        this.score += Number(killScore(this.scoreRules, e.isBoss))
         this.emit({ type: 'kill', x: e.x, y: e.y, boss: e.isBoss })
         this.record(this.tick, 'kill', e.uid, e.isBoss ? 1 : 0)
       },

@@ -131,6 +131,49 @@ type GeneratedLevel struct {
 	MaxScore int64 `json:"max_score"`
 }
 
+// ScoreRules 是分数规则。**两端共用同一份数值。**
+//
+// ⚠️ 这些常量曾经只有 Go 这一份定义，而客户端引擎把同样的数字
+// **硬编码了 5 处**（engine.ts 的加分、记事件、地形充能），
+// 测试里还��� 2 处。漂移的后果很隐蔽：
+//
+//	Go 侧用 scorePerDamageUnit 算 star_targets
+//	TS 侧用自己那份 /100 累加实际得分
+//	两者一旦不一致 → 玩家拿到的星级与实际表现不符
+//	而**没有任何测试会发现**，因为两端各自都"自洽"。
+//
+// 这与 README 工程约束 4（同名不同义）同类：
+// 契约不是靠约定维持的，是靠**一个可下发的结构**维持的。
+//
+// 客户端从 /config 的 score_rules 读这份数据，
+// 测试则从夹具 smoke_levels.json 读（由 cmd/vectors 导出）。
+type ScoreRules struct {
+	// PerDamageUnit 是「每多少伤害算 1 分」。
+	PerDamageUnit int64 `json:"per_damage_unit"`
+	// OnKillNormal / OnKillBoss 是击杀分。
+	OnKillNormal int64 `json:"on_kill_normal"`
+	OnKillBoss   int64 `json:"on_kill_boss"`
+	// StarTargetRatio 是一/二/三星相对理论满分的占比（千分比）。
+	StarTargetRatio [3]int64 `json:"star_target_ratio"`
+	// ScoreFullAtSec 是「打满理论满分所需的最短秒数」，速率裁剪的锚点。
+	ScoreFullAtSec int64 `json:"score_full_at_sec"`
+}
+
+// DefaultScoreRules 返回当前生效的分数规则。
+//
+// 这里是**唯一定义处**。levelgen 的估算、结算的裁剪、
+// cmd/vectors 的契约导出、/config 的下发全部走它，
+// 任何人想改数值都必须先改这里。
+func DefaultScoreRules() ScoreRules {
+	return ScoreRules{
+		PerDamageUnit:   scorePerDamageUnit,
+		OnKillNormal:    scoreOnKillNormal,
+		OnKillBoss:      scoreOnKillBoss,
+		StarTargetRatio: StarTargetRatio,
+		ScoreFullAtSec:  ScoreFullAtSec,
+	}
+}
+
 // StarTarget 三档星星门槛：[达到波次, 达到分数]
 // StarTargetRatio 是一星/二星/三星相对「理论满分」的占比（千分比）。
 //

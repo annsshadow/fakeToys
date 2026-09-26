@@ -16132,5 +16132,16 @@
       "base_bonus_pct": 220,
       "unlock_level": 60
     }
-  ]
+  ],
+  "score_rules": {
+    "per_damage_unit": 100,
+    "on_kill_normal": 500,
+    "on_kill_boss": 5000,
+    "star_target_ratio": [
+      600,
+      850,
+      980
+    ],
+    "score_full_at_sec": 60
+  }
 }

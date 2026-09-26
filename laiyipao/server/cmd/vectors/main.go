@@ -104,6 +104,13 @@ type smokeFixture struct {
 	Skills    []domain.SeedSkill      `json:"skills"`
 	Composite []domain.SeedSkill      `json:"composite_skills"`
 	Equip     []domain.SeedEquipment  `json:"equipment"`
+	// ScoreRules 是分数规则（击杀分/伤害分单位/星级比例/满分秒数）。
+	//
+	// 必须进夹具：客户端引擎曾经把同样的数字硬编码了 5 处，
+	// 与 Go 侧的定义各自"自洽"。一旦漂移，
+	// Go 算出的 star_targets 会与 TS 算出的实际得分对不上，
+	// 而**没有任何测试会发现** —— 因为两端各自都自洽。
+	ScoreRules domain.ScoreRules `json:"score_rules"`
 }
 
 // smokeLevelIDs 是导出的关卡：**全部 100 关**。
@@ -137,6 +144,9 @@ func buildSmoke() ([]byte, error) {
 		Composite: domain.ScaleAllCompositeSkills(),
 		Equip:     domain.SeedEquipmentList,
 		Levels:    make([]domain.GeneratedLevel, 0, len(smokeLevelIDs)),
+		// 分数规则也进夹具：客户端测试据此断言自己的默认值与服务端一致。
+		// 漂移了没有任何其他手段能发现（两端各自都自洽）。
+		ScoreRules: domain.DefaultScoreRules(),
 	}
 
 	// 只导这些关卡真正用到的敌人

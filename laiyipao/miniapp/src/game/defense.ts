@@ -17,6 +17,7 @@
  */
 
 import { BattleEngine } from './engine'
+import type { ScoreRules } from './score'
 import { type Attacker } from './damage'
 import type { EquippedSkill } from './heatmap'
 import type { Element } from './elements'
@@ -68,6 +69,14 @@ export interface ChallengeDeps {
   level: GeneratedLevel
   enemies: Map<number, EnemyDef>
   skills: Map<number, SkillDef>
+  /**
+   * 分数规则，从服务端 /config 的 `score_rules` 转来（`scoreRulesFromServer`）。
+   * 缺省时引擎用 `DEFAULT_SCORE_RULES`。
+   *
+   * ⚠️ 防线挑战的分数必须与结算**同口径**，否则玩家看到的
+   * 「我打赢了防线」与服务端算出来的对不上。
+   */
+  scoreRules?: ScoreRules
   /**
    * 种子覆盖（可选）。
    *
@@ -203,6 +212,9 @@ export function runChallenge(view: DefenseView, deps: ChallengeDeps): ChallengeO
     equipped: deps.myEquipped,
     attacker,
     seed: seedBig,
+    // 分数规则从服务端配置来，而不是用客户端默认值 ——
+    // 防线挑战的分数要和结算同口径（见 score.ts 的注释）。
+    scoreRules: deps.scoreRules,
   })
   engine.start()
   runToEnd(engine, MAX_TICKS)

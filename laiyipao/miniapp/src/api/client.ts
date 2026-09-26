@@ -50,6 +50,22 @@ export interface GameConfig {
     equipment_synergy: number
     mechanic_depth: number
   }
+  /**
+   * score_rules 是分数规则，**必须由服务端下发**。
+   *
+   * ⚠️ 客户端不得自己写死 500/5000/100 或星级比例：
+   * `star_targets` 是服务端用这份规则算出来的，
+   * 客户端用自己的一份就可能与门槛算法漂移，
+   * 而两端各自都"自洽"，没有任何行为测试会发现。
+   * 转成 ScoreRules 用 `scoreRulesFromServer()`。
+   */
+  score_rules: {
+    per_damage_unit: number
+    on_kill_normal: number
+    on_kill_boss: number
+    star_target_ratio: number[]
+    score_full_at_sec: number
+  }
   server_time: string
 }
 
