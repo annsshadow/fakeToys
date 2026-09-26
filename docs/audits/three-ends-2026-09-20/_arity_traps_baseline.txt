@@ -1,8 +1,4 @@
 DELETE /api/portal/assemble/surface/delete/layout
-GET /api/general/assemble/control/excel/1/1
-GET /api/general/assemble/control/excel/1/1/1
-GET /api/hotpic_assemble_control/delete/hotpic
-GET /api/hotpic_assemble_control/save/hotpic
 GET /api/portal/assemble/designer/list/portal/1/1
 GET /api/portal/assemble/designer/pageversion/list/1/1
 GET /api/portal/assemble/surface/dict/portal/path/data/1/1
@@ -25,9 +21,6 @@ GET /api/processplatform/service/processing/data/workcompleted/path/1
 GET /api/processplatform/service/processing/review/init/review
 GET /api/processplatform/service/processing/workcompleted/process/1
 GET /api/processplatform/service/processing/workcompleted/shift/time
-POST /api/hotpic/delete/hotpic
-POST /api/hotpic/save/hotpic
-POST /api/message/assemble/communicate/im/msg/clear
 POST /api/portal/assemble/surface/delete/layout
 POST /api/portal/assemble/surface/save/layout
 POST /api/processplatform/assemble/surface/mode/save

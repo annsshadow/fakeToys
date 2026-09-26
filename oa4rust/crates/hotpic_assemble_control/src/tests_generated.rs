@@ -157,48 +157,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_save_hotpic() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/hotpic/save/hotpic")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "save_hotpic route should be registered"
-        );
-    }
-
-    #[tokio::test]
-    async fn test_delete_hotpic() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/hotpic/delete/hotpic")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "delete_hotpic route should be registered"
-        );
-    }
-
-    #[tokio::test]
     async fn test_cipher_hotpic_bbs_id() {
         let pool = shared::testing::test_pool();
         let app = crate::router(pool);

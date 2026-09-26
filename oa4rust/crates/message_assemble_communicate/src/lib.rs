@@ -1243,9 +1243,16 @@ pub async fn im_msg(
 #[allow(non_snake_case)]
 pub async fn im_msg_clear(
     pool: Extension<Pool>,
-    axum::extract::Path(conversation_id): axum::extract::Path<String>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let conversation_id = req
+        .get("conversationId")
+        .or_else(|| req.get("conversation_id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
 
     let result = client
         .execute(
