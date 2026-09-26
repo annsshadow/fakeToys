@@ -730,33 +730,33 @@ pub fn query_assemble_designer_router(pool: Option<Pool>) -> Router {
         .route("/api/query/assemble/designer/{id}/{count}", get(crate::id_count))
         .route("/api/query/assemble/designer/importmodel/{id}", post(crate::importmodel_id))
         .route("/api/query/assemble/designer/importmodel/permission/{id}", post(crate::importmodel_id_permission))
-        .route("/api/query/assemble/designer/importmodel/list/{query}/{flag}", post(crate::importmodel_list_query_flag))
+        .route("/api/query/assemble/designer/importmodel/list/{query}/{flag}", post(crate::importmodel_list_query_flag_p2))
         .route("/api/query/assemble/designer/neural/generate/model/{modelFlag}", get(crate::neural_generate_model_modelFlag))
         .route("/api/query/assemble/designer/neural/learn/model/{modelFlag}", get(crate::neural_learn_model_modelFlag))
         .route("/api/query/assemble/designer/neural/model/{modelFlag}", get(crate::neural_model_modelFlag))
-        .route("/api/query/assemble/designer/neural/model/reset/{modelFlag}/{status}", post(crate::neural_model_modelFlag_reset_status))
+        .route("/api/query/assemble/designer/neural/model/reset/{modelFlag}/{status}", post(crate::neural_model_modelFlag_reset_status_p2))
         .route("/api/query/assemble/designer/neural/stop/generating/model/{modelFlag}", get(crate::neural_stop_generating_model_modelFlag))
         .route("/api/query/assemble/designer/neural/stop/learn/model/{modelFlag}", get(crate::neural_stop_learn_model_modelFlag))
         .route("/api/query/assemble/designer/output/select/file/{flag}", get(crate::output_flag_select_file))
         .route("/api/query/assemble/designer/output/select/{queryFlag}", get(crate::output_queryFlag_select))
-        .route("/api/query/assemble/designer/entity/entity/properties/{query}/{category}/{entityCategory}", get(crate::query_entity_entity_category_entityCategory_properties))
+        .route("/api/query/assemble/designer/entity/entity/properties/{query}/{category}/{entityCategory}", get(crate::query_entity_entity_category_entityCategory_properties_p3))
         .route("/api/query/assemble/designer/icon/{query}/{flag}", get(crate::query_flag_icon))
         .route("/api/query/assemble/designer/permission/{query}/{id}", get(crate::query_id_permission))
-        .route("/api/query/assemble/designer/list/querycategory/{query}/{queryCategory}", get(crate::query_list_querycategory_queryCategory))
-        .route("/api/query/assemble/designer/list/summary/querycategory/{query}/{queryCategory}", get(crate::query_list_summary_querycategory_queryCategory))
+        .route("/api/query/assemble/designer/list/querycategory/{query}/{queryCategory}", get(crate::query_list_querycategory_queryCategory_p2))
+        .route("/api/query/assemble/designer/list/summary/querycategory/{query}/{queryCategory}", get(crate::query_list_summary_querycategory_queryCategory_p2))
         .route("/api/query/assemble/designer/stat/{id}", get(crate::stat_id))
         .route("/api/query/assemble/designer/stat/permission/{id}", get(crate::stat_id_permission))
         .route("/api/query/assemble/designer/stat/simulate/{id}", get(crate::stat_id_simulate))
-        .route("/api/query/assemble/designer/stat/list/{id}/{next}/{count}", get(crate::stat_list_id_next_count))
-        .route("/api/query/assemble/designer/stat/list/{query}/{flag}", get(crate::stat_list_query_flag))
-        .route("/api/query/assemble/designer/table/export/{tableFlag}/{count}/{count}", get(crate::table_export_tableFlag_count_count))
+        .route("/api/query/assemble/designer/stat/list/{id}/{next}/{count}", get(crate::stat_list_id_next_count_p3))
+        .route("/api/query/assemble/designer/stat/list/{query}/{flag}", get(crate::stat_list_query_flag_p2))
+        .route("/api/query/assemble/designer/table/export/{tableFlag}/{count}/{count}", get(crate::table_export_tableFlag_count_count_p3))
         .route("/api/query/assemble/designer/table/{flag}", get(crate::table_flag))
         .route("/api/query/assemble/designer/table/execute/{flag}", post(crate::table_flag_execute))
-        .route("/api/query/assemble/designer/table/build/{flag}/{status}", get(crate::table_flag_status_build))
-        .route("/api/query/assemble/designer/table/draft/{flag}/{status}", get(crate::table_flag_status_draft))
+        .route("/api/query/assemble/designer/table/build/{flag}/{status}", get(crate::table_flag_status_build_p2))
+        .route("/api/query/assemble/designer/table/draft/{flag}/{status}", get(crate::table_flag_status_draft_p2))
         .route("/api/query/assemble/designer/table/permission/{id}", get(crate::table_id_permission))
-        .route("/api/query/assemble/designer/table/list/{query}/{flag}", get(crate::table_list_query_flag))
-        .route("/api/query/assemble/designer/table/list/row/{tableFlag}/{id}/{next}/{count}", get(crate::table_list_tableFlag_row_id_next_count))
+        .route("/api/query/assemble/designer/table/list/{query}/{flag}", get(crate::table_list_query_flag_p2))
+        .route("/api/query/assemble/designer/table/list/row/{tableFlag}/{id}/{next}/{count}", get(crate::table_list_tableFlag_row_id_next_count_p4))
         .route("/api/query/assemble/designer/table/list/row/select/where/where/{tableFlag}", get(crate::table_list_tableFlag_row_select_where_where))
         .route("/api/query/assemble/designer/table/build/dispatch/{query}", get(crate::table_query_build_dispatch))
         .route("/api/query/assemble/designer/table/row/{tableFlag}", get(crate::table_tableFlag_row))
@@ -766,8 +766,8 @@ pub fn query_assemble_designer_router(pool: Option<Pool>) -> Router {
         .route("/api/query/assemble/designer/table/row/save/{tableFlag}", post(crate::table_tableFlag_row_save))
         .route("/api/query/assemble/designer/bundle/{view}/{id}", get(crate::view_id_bundle))
         .route("/api/query/assemble/designer/simulate/{view}/{id}", get(crate::view_id_simulate))
-        .route("/api/query/assemble/designer/list/{view}/{id}/{next}/{count}", get(crate::view_list_id_next_count))
-        .route("/api/query/assemble/designer/list/{view}/{query}/{flag}", get(crate::view_list_query_flag))
+        .route("/api/query/assemble/designer/list/{view}/{id}/{next}/{count}", get(crate::view_list_id_next_count_p4))
+        .route("/api/query/assemble/designer/list/{view}/{query}/{flag}", get(crate::view_list_query_flag_p3))
         .route("/api/query/assemble/designer/delete/{id}", delete(delete_designer))
         .route("/api/query/assemble/designer/save/{id}", put(save_designer))
         .route("/api/query/assemble/designer/table/row/delete/all/{tableFlag}", delete(table_tableFlag_row_delete_all))
@@ -990,10 +990,7 @@ pub async fn id_count(
 }
 
 #[allow(non_snake_case)]
-pub async fn importmodel_list_query_flag(
-    pool: Extension<Pool>,
-    Path(query_flag): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn importmodel_list_query_flag_core(pool: Extension<Pool>, query_flag: String) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -1051,6 +1048,16 @@ pub async fn importmodel_list_query_flag(
         count,
         0,
     )))
+}
+
+#[allow(non_snake_case)]
+pub async fn importmodel_list_query_flag(pool: Extension<Pool>, axum::extract::Path(query_flag): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    importmodel_list_query_flag_core(pool, query_flag).await
+}
+
+#[allow(non_snake_case)]
+pub async fn importmodel_list_query_flag_p2(pool: Extension<Pool>, axum::extract::Path((_s0, query_flag)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+    importmodel_list_query_flag_core(pool, query_flag).await
 }
 
 #[allow(non_snake_case)]
@@ -1538,10 +1545,7 @@ pub async fn neural_model_modelFlag(
 }
 
 #[allow(non_snake_case)]
-pub async fn neural_model_modelFlag_reset_status(
-    pool: Extension<Pool>,
-    Path(model_flag): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn neural_model_modelFlag_reset_status_core(pool: Extension<Pool>, model_flag: String) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -1565,6 +1569,16 @@ pub async fn neural_model_modelFlag_reset_status(
             ),
         ]),
     ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn neural_model_modelFlag_reset_status(pool: Extension<Pool>, axum::extract::Path(model_flag): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    neural_model_modelFlag_reset_status_core(pool, model_flag).await
+}
+
+#[allow(non_snake_case)]
+pub async fn neural_model_modelFlag_reset_status_p2(pool: Extension<Pool>, axum::extract::Path((model_flag, _s1)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+    neural_model_modelFlag_reset_status_core(pool, model_flag).await
 }
 
 #[allow(non_snake_case)]
@@ -1787,10 +1801,7 @@ pub async fn output_queryFlag_select(
 }
 
 #[allow(non_snake_case)]
-pub async fn query_entity_entity_category_entityCategory_properties(
-    pool: Extension<Pool>,
-    Path((entity, entity_category)): Path<(String, String)>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn query_entity_entity_category_entityCategory_properties_core(pool: Extension<Pool>, entity: String, entity_category: String) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -1833,6 +1844,16 @@ pub async fn query_entity_entity_category_entityCategory_properties(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("properties".to_string(), Value::Array(data))]),
     ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn query_entity_entity_category_entityCategory_properties(pool: Extension<Pool>, axum::extract::Path((entity, entity_category)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+    query_entity_entity_category_entityCategory_properties_core(pool, entity, entity_category).await
+}
+
+#[allow(non_snake_case)]
+pub async fn query_entity_entity_category_entityCategory_properties_p3(pool: Extension<Pool>, axum::extract::Path((_s0, entity, entity_category)): axum::extract::Path<(String, String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+    query_entity_entity_category_entityCategory_properties_core(pool, entity, entity_category).await
 }
 
 #[allow(non_snake_case)]
@@ -1887,10 +1908,7 @@ pub async fn query_list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<V
 }
 
 #[allow(non_snake_case)]
-pub async fn query_list_querycategory_queryCategory(
-    pool: Extension<Pool>,
-    Path(query_category): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn query_list_querycategory_queryCategory_core(pool: Extension<Pool>, query_category: String) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -1941,6 +1959,16 @@ pub async fn query_list_querycategory_queryCategory(
 }
 
 #[allow(non_snake_case)]
+pub async fn query_list_querycategory_queryCategory(pool: Extension<Pool>, axum::extract::Path(query_category): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    query_list_querycategory_queryCategory_core(pool, query_category).await
+}
+
+#[allow(non_snake_case)]
+pub async fn query_list_querycategory_queryCategory_p2(pool: Extension<Pool>, axum::extract::Path((_s0, query_category)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+    query_list_querycategory_queryCategory_core(pool, query_category).await
+}
+
+#[allow(non_snake_case)]
 pub async fn query_list_summary(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1983,10 +2011,7 @@ pub async fn query_list_summary(
 }
 
 #[allow(non_snake_case)]
-pub async fn query_list_summary_querycategory_queryCategory(
-    pool: Extension<Pool>,
-    Path(query_category): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn query_list_summary_querycategory_queryCategory_core(pool: Extension<Pool>, query_category: String) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -2023,6 +2048,16 @@ pub async fn query_list_summary_querycategory_queryCategory(
         count,
         0,
     )))
+}
+
+#[allow(non_snake_case)]
+pub async fn query_list_summary_querycategory_queryCategory(pool: Extension<Pool>, axum::extract::Path(query_category): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    query_list_summary_querycategory_queryCategory_core(pool, query_category).await
+}
+
+#[allow(non_snake_case)]
+pub async fn query_list_summary_querycategory_queryCategory_p2(pool: Extension<Pool>, axum::extract::Path((_s0, query_category)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+    query_list_summary_querycategory_queryCategory_core(pool, query_category).await
 }
 
 #[allow(non_snake_case)]
@@ -2180,10 +2215,7 @@ pub async fn query_id_permission(
 }
 
 #[allow(non_snake_case)]
-pub async fn stat_list_query_flag(
-    pool: Extension<Pool>,
-    Path(query_flag): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn stat_list_query_flag_core(pool: Extension<Pool>, query_flag: String) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -2244,10 +2276,17 @@ pub async fn stat_list_query_flag(
 }
 
 #[allow(non_snake_case)]
-pub async fn stat_list_id_next_count(
-    pool: Extension<Pool>,
-    Path((id, count)): Path<(String, i64)>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn stat_list_query_flag(pool: Extension<Pool>, axum::extract::Path(query_flag): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    stat_list_query_flag_core(pool, query_flag).await
+}
+
+#[allow(non_snake_case)]
+pub async fn stat_list_query_flag_p2(pool: Extension<Pool>, axum::extract::Path((_s0, query_flag)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+    stat_list_query_flag_core(pool, query_flag).await
+}
+
+#[allow(non_snake_case)]
+async fn stat_list_id_next_count_core(pool: Extension<Pool>, id: String, count: i64) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -2294,6 +2333,16 @@ pub async fn stat_list_id_next_count(
         count,
         0,
     )))
+}
+
+#[allow(non_snake_case)]
+pub async fn stat_list_id_next_count(pool: Extension<Pool>, axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+    stat_list_id_next_count_core(pool, id, count).await
+}
+
+#[allow(non_snake_case)]
+pub async fn stat_list_id_next_count_p3(pool: Extension<Pool>, axum::extract::Path((id, _s1, count)): axum::extract::Path<(String, String, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+    stat_list_id_next_count_core(pool, id, count).await
 }
 
 #[allow(non_snake_case)]
@@ -2484,10 +2533,7 @@ pub async fn stat_id_simulate(
 }
 
 #[allow(non_snake_case)]
-pub async fn table_export_tableFlag_count_count(
-    pool: Extension<Pool>,
-    Path((table_flag, count)): Path<(String, i64)>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn table_export_tableFlag_count_count_core(pool: Extension<Pool>, table_flag: String, count: i64) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -2527,6 +2573,16 @@ pub async fn table_export_tableFlag_count_count(
         count,
         0,
     )))
+}
+
+#[allow(non_snake_case)]
+pub async fn table_export_tableFlag_count_count(pool: Extension<Pool>, axum::extract::Path((table_flag, count)): axum::extract::Path<(String, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+    table_export_tableFlag_count_count_core(pool, table_flag, count).await
+}
+
+#[allow(non_snake_case)]
+pub async fn table_export_tableFlag_count_count_p3(pool: Extension<Pool>, axum::extract::Path((table_flag, count, _s2)): axum::extract::Path<(String, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+    table_export_tableFlag_count_count_core(pool, table_flag, count).await
 }
 
 #[allow(non_snake_case)]
@@ -2611,10 +2667,7 @@ pub async fn table_list_manage(
 }
 
 #[allow(non_snake_case)]
-pub async fn table_list_query_flag(
-    pool: Extension<Pool>,
-    Path(query_flag): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn table_list_query_flag_core(pool: Extension<Pool>, query_flag: String) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -2675,6 +2728,16 @@ pub async fn table_list_query_flag(
 }
 
 #[allow(non_snake_case)]
+pub async fn table_list_query_flag(pool: Extension<Pool>, axum::extract::Path(query_flag): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    table_list_query_flag_core(pool, query_flag).await
+}
+
+#[allow(non_snake_case)]
+pub async fn table_list_query_flag_p2(pool: Extension<Pool>, axum::extract::Path((_s0, query_flag)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+    table_list_query_flag_core(pool, query_flag).await
+}
+
+#[allow(non_snake_case)]
 pub async fn table_list_tableFlag_row_select_where_where(
     pool: Extension<Pool>,
     Path((table_flag, _where)): Path<(String, String)>,
@@ -2721,10 +2784,7 @@ pub async fn table_list_tableFlag_row_select_where_where(
 }
 
 #[allow(non_snake_case)]
-pub async fn table_list_tableFlag_row_id_next_count(
-    pool: Extension<Pool>,
-    Path((table_flag, id, count)): Path<(String, String, i64)>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn table_list_tableFlag_row_id_next_count_core(pool: Extension<Pool>, table_flag: String, id: String, count: i64) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -2764,6 +2824,16 @@ pub async fn table_list_tableFlag_row_id_next_count(
         count,
         0,
     )))
+}
+
+#[allow(non_snake_case)]
+pub async fn table_list_tableFlag_row_id_next_count(pool: Extension<Pool>, axum::extract::Path((table_flag, id, count)): axum::extract::Path<(String, String, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+    table_list_tableFlag_row_id_next_count_core(pool, table_flag, id, count).await
+}
+
+#[allow(non_snake_case)]
+pub async fn table_list_tableFlag_row_id_next_count_p4(pool: Extension<Pool>, axum::extract::Path((table_flag, id, _s2, count)): axum::extract::Path<(String, String, String, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+    table_list_tableFlag_row_id_next_count_core(pool, table_flag, id, count).await
 }
 
 #[allow(non_snake_case)]
@@ -2971,10 +3041,7 @@ pub async fn table_flag_execute(
 }
 
 #[allow(non_snake_case)]
-pub async fn table_flag_status_build(
-    pool: Extension<Pool>,
-    Path(flag): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn table_flag_status_build_core(pool: Extension<Pool>, flag: String) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -2998,10 +3065,17 @@ pub async fn table_flag_status_build(
 }
 
 #[allow(non_snake_case)]
-pub async fn table_flag_status_draft(
-    pool: Extension<Pool>,
-    Path(flag): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn table_flag_status_build(pool: Extension<Pool>, axum::extract::Path(flag): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    table_flag_status_build_core(pool, flag).await
+}
+
+#[allow(non_snake_case)]
+pub async fn table_flag_status_build_p2(pool: Extension<Pool>, axum::extract::Path((flag, _s1)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+    table_flag_status_build_core(pool, flag).await
+}
+
+#[allow(non_snake_case)]
+async fn table_flag_status_draft_core(pool: Extension<Pool>, flag: String) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -3022,6 +3096,16 @@ pub async fn table_flag_status_draft(
             ("status".to_string(), Value::String("draft".to_string())),
         ]),
     ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn table_flag_status_draft(pool: Extension<Pool>, axum::extract::Path(flag): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    table_flag_status_draft_core(pool, flag).await
+}
+
+#[allow(non_snake_case)]
+pub async fn table_flag_status_draft_p2(pool: Extension<Pool>, axum::extract::Path((flag, _s1)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+    table_flag_status_draft_core(pool, flag).await
 }
 
 #[allow(non_snake_case)]
@@ -3261,10 +3345,7 @@ pub async fn table_tableFlag_row_id(
 }
 
 #[allow(non_snake_case)]
-pub async fn view_list_query_flag(
-    pool: Extension<Pool>,
-    Path(query_flag): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn view_list_query_flag_core(pool: Extension<Pool>, query_flag: String) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -3316,10 +3397,17 @@ pub async fn view_list_query_flag(
 }
 
 #[allow(non_snake_case)]
-pub async fn view_list_id_next_count(
-    pool: Extension<Pool>,
-    Path((id, count)): Path<(String, i64)>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn view_list_query_flag(pool: Extension<Pool>, axum::extract::Path(query_flag): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    view_list_query_flag_core(pool, query_flag).await
+}
+
+#[allow(non_snake_case)]
+pub async fn view_list_query_flag_p3(pool: Extension<Pool>, axum::extract::Path((_s0, _s1, query_flag)): axum::extract::Path<(String, String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+    view_list_query_flag_core(pool, query_flag).await
+}
+
+#[allow(non_snake_case)]
+async fn view_list_id_next_count_core(pool: Extension<Pool>, id: String, count: i64) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -3361,6 +3449,16 @@ pub async fn view_list_id_next_count(
         count,
         0,
     )))
+}
+
+#[allow(non_snake_case)]
+pub async fn view_list_id_next_count(pool: Extension<Pool>, axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+    view_list_id_next_count_core(pool, id, count).await
+}
+
+#[allow(non_snake_case)]
+pub async fn view_list_id_next_count_p4(pool: Extension<Pool>, axum::extract::Path((_s0, id, _s2, count)): axum::extract::Path<(String, String, String, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+    view_list_id_next_count_core(pool, id, count).await
 }
 
 #[allow(non_snake_case)]
