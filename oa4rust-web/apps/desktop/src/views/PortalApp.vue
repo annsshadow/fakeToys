@@ -8,7 +8,6 @@
       <p class="subtitle">接入 /api/portal/* — 页面设计与发布</p>
       <span class="hdr-actions">
         <button class="new-page-btn ghost" @click="loadPortalList">门户列表</button>
-        <button @click="loadResidualStub">残余接桩</button>
         <button class="new-page-btn ghost" @click="loadPortalSurface">表面/移动</button>
         <button class="new-page-btn ghost" @click="loadPortalResources">门户资源</button>
         <button class="new-page-btn ghost" @click="loadPortalDetail">门户明细</button>
@@ -459,22 +458,6 @@ async function loadPortalTwin2() {
   } catch (e: any) {
     toast.error('门户孪生端点B失败: ' + (e?.message ?? ''))
   }
-}
-
-async function loadResidualStub() {
-  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
-  await Promise.all([
-    s(api.post('/api/portal/assemble/designer/file/upload/0', {})),
-    s(api.post('/api/portal/assemble/surface/delete/layout', {})),
-    s(api.get('/api/portal/assemble/surface/get/layout')),
-    s(api.get('/api/portal/assemble/surface/list/layouts')),
-    s(api.post('/api/portal/assemble/surface/save/layout', {})),
-    s(api.get('/api/portal/assemble/surface/script/list/portal/portal')),
-    s(api.delete('/api/portal/assemble/surface/delete/layout')),
-    s(api.put('/api/portal/assemble/surface/save/layout', {})),
-    s(api.get('/api/portal/assemble/designer/file/list/0/0/0')),
-    s(api.get('/api/portal/assemble/designer/0/0')),
-  ])
 }
 </script>
 
