@@ -79,6 +79,7 @@
       <button class="save-btn ghost" @click="loadAuthMeta">查看</button>
       <button class="save-btn ghost" @click="loadOauthConfig">OAuth 配置</button>
       <button class="save-btn ghost" @click="loadAuthOAuthServer">OAuth/认证诊断</button>
+      <button class="save-btn ghost" @click="loadAuthShortDiag">短前缀认证诊断</button>
       <button class="save-btn ghost" @click="loadMailMeta">内部邮件/注册方式</button>
       <button class="save-btn ghost" @click="loadAuthScopes">我的单位/角色/群组</button>
       <button class="save-btn ghost" @click="loadAuthDetails">认证明细/绑定</button>
@@ -324,6 +325,39 @@ async function loadAuthOAuthServer() {
     authOAuthText.value = `OAuth/认证服务器端点 ${rs.length} 条，返回 ${hit}`
   } catch (e: any) {
     toast.error('加载 OAuth/认证诊断失败: ' + (e?.message ?? ''))
+  }
+}
+// rev382：短前缀 /api/authentication（auth crate）非破坏性真实读补消费（用户触发；oauth 配置/清单、验证码、
+// 凭据码、账户绑定、SSO 校验/加密 + check/token/code 均真实 handler）。排除会话破坏性（DELETE authentication、
+// safe/logout、two_factor、POST authentication 登录、POST sso 登录）与外部依赖（oauth/login、oidc、sms、oauth/bind 回跳）。
+async function loadAuthShortDiag() {
+  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const nm = 'default'
+  const cred = 'diagnostic'
+  const meta = 'default'
+  const w = '120'
+  const h = '40'
+  const client = 'oa'
+  const tok = 'probe-token'
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/authentication/oauth/list')),
+      s(api.get('/api/authentication/oauth/qywx/config')),
+      s(api.get('/api/authentication/oauth/dingding/config')),
+      s(api.get(`/api/authentication/oauth/name/${nm}`)),
+      s(api.get(`/api/authentication/captcha/width/${w}/height/${h}`)),
+      s(api.get(`/api/authentication/code/credential/${cred}`)),
+      s(api.get('/api/authentication/bind')),
+      s(api.get(`/api/authentication/bind/meta/${meta}`)),
+      s(api.get(`/api/authentication/sso/client/${client}/token/${tok}`)),
+      s(api.post('/api/authentication/check/token', { token: tok })),
+      s(api.post('/api/authentication/code', {})),
+      s(api.post('/api/authentication/sso/encrypt', { client, credential: cred })),
+    ])
+    const hit = rs.filter((r) => (r as any) != null).length
+    authOAuthText.value = `短前缀认证端点 ${rs.length} 条，返回 ${hit}`
+  } catch (e: any) {
+    toast.error('加载短前缀认证诊断失败: ' + (e?.message ?? ''))
   }
 }
 async function loadAuthMeta() {  try {
