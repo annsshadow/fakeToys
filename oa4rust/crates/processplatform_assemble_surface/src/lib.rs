@@ -19376,7 +19376,7 @@ pub async fn work_count_credential(
 #[allow(non_snake_case)]
 pub async fn work_count_credential_application_appId(
     pool: Extension<Pool>,
-    axum::extract::Path(credential): axum::extract::Path<String>,
+    axum::extract::Path((_s0, credential, _s2)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let count: i64 = client

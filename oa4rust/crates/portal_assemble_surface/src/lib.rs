@@ -1581,7 +1581,7 @@ pub async fn page_flag_portal_portalFlag_mobile(
 #[allow(non_snake_case)]
 pub async fn page_id(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
+    Path((_s0, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 

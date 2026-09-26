@@ -2423,7 +2423,7 @@ pub async fn view_flag_flag_query_queryFlag(
 #[allow(non_snake_case)]
 pub async fn view_flag_flag_query_queryFlag_bundle(
     pool: Extension<Pool>,
-    Path((flag, query_flag)): Path<(String, String)>,
+    Path((_s0, flag, _s2, _s3, query_flag)): Path<(String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2496,7 +2496,7 @@ pub async fn view_flag_flag_query_queryFlag_bundle_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn view_flag_flag_query_queryFlag_excel(
     pool: Extension<Pool>,
-    Path((flag, query_flag)): Path<(String, String)>,
+    Path((_s0, flag, _s2, _s3, query_flag)): Path<(String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2828,7 +2828,7 @@ pub async fn view_id(
 #[allow(non_snake_case)]
 pub async fn view_id_bundle(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
+    Path((_s0, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2900,7 +2900,7 @@ pub async fn view_id_bundle_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn view_id_bundle_v2(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
+    Path((_s0, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2939,7 +2939,7 @@ pub async fn view_id_bundle_v2(
 #[allow(non_snake_case)]
 pub async fn view_id_excel(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
+    Path((_s0, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3014,7 +3014,7 @@ pub async fn view_id_excel_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn view_id_execute(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
+    Path((_s0, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3115,7 +3115,7 @@ pub async fn view_id_execute_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn view_id_execute_v2_page_page_size_size(
     pool: Extension<Pool>,
-    Path((id, page, size)): Path<(String, i64, i64)>,
+    Path((_s0, id, page, size)): Path<(String, String, i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
