@@ -123,6 +123,83 @@ impl BlobStorage for FsBlobStorage {
     }
 }
 
+/// PostgreSQL 后端：字节存于 `x_blob_storage(storage_key PK, content BYTEA)`（迁移 099 建表）。
+/// 取代 `DbBlobStorage` 占位——put 幂等 upsert 真实落盘，get 缺失返回 Err，delete 幂等。
+/// 相较 FILE_FILE.content 行内 base64，本表以原始字节独立存储，供 BlobStorage 抽象统一存取。
+#[derive(Clone)]
+pub struct PgBlobStorage {
+    pool: deadpool_postgres::Pool,
+}
+
+impl PgBlobStorage {
+    pub fn new(pool: deadpool_postgres::Pool) -> Self {
+        Self { pool }
+    }
+}
+
+#[async_trait]
+impl BlobStorage for PgBlobStorage {
+    async fn put(&self, key: &str, bytes: &[u8]) -> Result<(), String> {
+        if key.is_empty() {
+            return Err("empty blob key".to_string());
+        }
+        let client = self.pool.get().await.map_err(|e| format!("pool: {e}"))?;
+        client
+            .execute(
+                "INSERT INTO x_blob_storage (storage_key, content, create_time) \
+                 VALUES ($1, $2, NOW()) \
+                 ON CONFLICT (storage_key) DO UPDATE SET content = EXCLUDED.content",
+                &[&key, &bytes],
+            )
+            .await
+            .map_err(|e| format!("put blob {key:?}: {e}"))?;
+        Ok(())
+    }
+
+    async fn get(&self, key: &str) -> Result<Vec<u8>, String> {
+        let client = self.pool.get().await.map_err(|e| format!("pool: {e}"))?;
+        let row = client
+            .query_opt(
+                "SELECT content FROM x_blob_storage WHERE storage_key = $1",
+                &[&key],
+            )
+            .await
+            .map_err(|e| format!("get blob {key:?}: {e}"))?;
+        match row {
+            Some(r) => Ok(r.get::<_, Vec<u8>>("content")),
+            None => Err(format!("blob not found: {key:?}")),
+        }
+    }
+
+    async fn delete(&self, key: &str) -> Result<(), String> {
+        let client = self.pool.get().await.map_err(|e| format!("pool: {e}"))?;
+        client
+            .execute(
+                "DELETE FROM x_blob_storage WHERE storage_key = $1",
+                &[&key],
+            )
+            .await
+            .map_err(|e| format!("delete blob {key:?}: {e}"))?;
+        Ok(())
+    }
+}
+
+/// 池感知工厂：`STORAGE_BACKEND=fs` → `FsBlobStorage`（需 `STORAGE_ROOT`）；
+/// 否则（默认 / db / 未知值）→ `PgBlobStorage`（真实 DB 落盘，取代 `DbBlobStorage` 占位）。
+pub fn storage_with_pool(pool: deadpool_postgres::Pool) -> Arc<dyn BlobStorage> {
+    let backend = std::env::var("STORAGE_BACKEND").unwrap_or_default();
+    match backend.trim().to_ascii_lowercase().as_str() {
+        "fs" => {
+            let root = std::env::var("STORAGE_ROOT").ok();
+            match root.as_deref().map(str::trim).filter(|r| !r.is_empty()) {
+                Some(r) => Arc::new(FsBlobStorage::new(r)),
+                None => panic!("STORAGE_BACKEND=fs requires STORAGE_ROOT to be set"),
+            }
+        }
+        _ => Arc::new(PgBlobStorage::new(pool)),
+    }
+}
+
 fn storage_from(backend: &str, storage_root: Option<&str>) -> Arc<dyn BlobStorage> {
     match backend.trim().to_ascii_lowercase().as_str() {
         "fs" => {
@@ -226,5 +303,35 @@ mod tests {
     #[should_panic(expected = "STORAGE_BACKEND=fs requires STORAGE_ROOT")]
     fn factory_fs_without_root_panics() {
         let _ = storage_from("fs", None);
+    }
+
+    /// PgBlobStorage 真实落盘 put/get/delete 往返——仅在有可达 PG 时运行（否则跳过）。
+    #[tokio::test]
+    async fn pg_blob_put_get_delete_roundtrip_when_db_available() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("skip: no reachable PG");
+            return;
+        }
+        let pool = crate::testing::test_pool();
+        {
+            let client = pool.get().await.unwrap();
+            client
+                .execute(
+                    "CREATE TABLE IF NOT EXISTS x_blob_storage (storage_key TEXT PRIMARY KEY, \
+                     content BYTEA NOT NULL, create_time TIMESTAMP DEFAULT NOW())",
+                    &[],
+                )
+                .await
+                .unwrap();
+        }
+        let store = PgBlobStorage::new(pool);
+        let key = format!("test/{}/blob.bin", uuid::Uuid::new_v4());
+        store.put(&key, &[9, 8, 7, 6]).await.unwrap();
+        assert_eq!(store.get(&key).await.unwrap(), vec![9, 8, 7, 6]);
+        // upsert 覆盖
+        store.put(&key, b"xyz").await.unwrap();
+        assert_eq!(store.get(&key).await.unwrap(), b"xyz".to_vec());
+        store.delete(&key).await.unwrap();
+        assert!(store.get(&key).await.is_err());
     }
 }
