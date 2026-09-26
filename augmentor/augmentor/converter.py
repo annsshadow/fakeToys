@@ -979,31 +979,33 @@ class DatasetConverter:
     def _write_excel(self, path: Path, data: Any) -> None:
         """写 Excel：整张表、全部列，与 csv 写边同一条列序口径
 
-        本方法是 `csv_excel_import.export_to_excel` 在本仓库的**唯一产品调用点**
-        （A133：那份实现早就有，从来没有调用者）。列序显式传 `csv_fieldnames(data)`
-        而不是让它自己推：异构记录（某一路数据多了 `category` 列）下两个写边必须给
-        出同一张表头，否则 `csv → xlsx` 与 `csv → csv` 会产出列序不同的两份东西。
+        本方法是 Excel 写边在本仓库的**唯一产品落点**（A133：`export_to_excel` 那份
+        实现早就有，从来没有调用者）。列序显式传 `csv_fieldnames(data)` 而不是让它
+        自己推：异构记录（某一路数据多了 `category` 列）下两个写边必须给出同一张表头，
+        否则 `csv → xlsx` 与 `csv → csv` 会产出列序不同的两份东西。
 
-        pandas 是**可选依赖**，import 与判据都推迟到真要写 xlsx 的时候 —— 与
-        `_read_excel` 同一条理由（`import augmentor` 在没有 pandas 的环境里必须可用，
-        aug 侧解释器就是那种环境）。
+        pandas 是**读边**的可选依赖，写边从 L85 起不是了：实现搬进
+        `augmentor/excel_write.py`（只 import openpyxl），所以这里那条
+        `from . import excel_write` 不会把 pandas 拉进进程。理由与读数见 `excel_write`
+        模块 docstring —— 关键是 `csv_excel_import` 在 import 期就 `import pandas`，
+        实现住在那里等于让每次写 xlsx 付一次 371.8 ms 的导入税。
 
         非对象记录在这里会被 `_require_object_records` 拦下（一张表的一行就是一条
         对象记录，标量没有列可放）；嵌套值（`history` 那种列表）**不**拦 —— openpyxl
         把它 `str()` 化进单元格，实测与 csv 写边对同样输入给的字面量一致。
 
-        **那一刀判在 pandas 门之前**，顺序本身是契约：数据里有标量行这件事跟本机装没装
-        pandas 无关，先报「装依赖」会把一个改数据就能修好的错误说成改依赖才能修好（aug
-        侧解释器就是那种环境，本轮第一次跑两侧时正是这一格红）。
+        **那一刀判在依赖门之前**，顺序本身是契约：数据里有标量行这件事跟本机装没装
+        openpyxl 无关，先报「装依赖」会把一个改数据就能修好的错误说成改依赖才能修好（aug
+        侧解释器就是那种环境，L84 第一次跑两侧时正是这一格红）。
         """
         self._require_object_records(data, "json", EXCEL_FORMAT)
-        from . import csv_excel_import as cei
-        if not cei.HAS_PANDAS:
+        from . import excel_write
+        if not excel_write.HAS_OPENPYXL:
             raise DataLoadError(
-                f"写入 Excel 需要安装 pandas 与 openpyxl: "
-                f"pip install pandas openpyxl（{path.name}）"
+                f"写入 Excel 需要安装 openpyxl: "
+                f"pip install openpyxl（{path.name}）"
             )
-        cei.export_to_excel(data, path, columns=csv_fieldnames(data))
+        excel_write.export_table_to_excel(data, path, columns=csv_fieldnames(data))
 
 
 def convert_dataset(data: List[Dict], 
