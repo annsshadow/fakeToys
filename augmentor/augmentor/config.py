@@ -21,9 +21,9 @@ from .retry import MAX_RETRY_AFTER
 from .export_enhanced import ExportFormat
 from .rag import SUPPORTED_FORMATS
 from .vector import SUPPORTED_BACKENDS
-from .validation import (require_bool, require_choice, require_chunk_window,
-                         require_count, require_ratio, require_seconds,
-                         require_string, require_string_list)
+from .validation import (is_blank_string, require_bool, require_choice,
+                         require_chunk_window, require_count, require_ratio,
+                         require_seconds, require_string, require_string_list)
 
 # `augmentation` / `web` 两节的取值区间。**校验器与运行时判据共用这一批常量**：
 # A77 的根因就是同一个上界在两边各抄一遍（抄完还漏），一边改了另一边不知道，
@@ -666,6 +666,10 @@ class LoggingConfig:
         - `file: 1` / `file: null` ⇒ 类型判据。空串是**合法值**（= 不落文件），
           所以这里不能用拒空串的 `require_string`；`None` 由 `_reject_null_fields`
           挡（写了键没给值）。
+        - `file: "   "` ⇒ 拒（A142 / L83）。这一档与上一条同处一个 `if` 链但方向相反：
+          空串是「有意不落文件」，三个空格是「手滑」，而它落到 `RotatingFileHandler`
+          上会**真创建一个名叫空格的文件**（L62 起那条边有轮转、有上限，但没有名字判据）。
+          静态面共引同一个 `is_blank_string`，规格键是 `non_blank`。
         """
         _reject_null_fields("logging", self)
         require_string("logging.level", self.level)
@@ -676,6 +680,11 @@ class LoggingConfig:
             raise DataValidationError(
                 f"logging.file 必须是字符串（空串 = 不落文件），当前是 "
                 f"{self.file!r}（{type(self.file).__name__}）"
+            )
+        if is_blank_string(self.file):
+            raise DataValidationError(
+                f"logging.file 不能是纯空白字符串（空串 = 不落文件），当前是 "
+                f"{self.file!r}"
             )
 
 

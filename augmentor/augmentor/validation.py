@@ -7,7 +7,8 @@
 （`require_count` 计数旋钮 / `require_seconds` 时长旋钮 /
 `require_positive` 无量纲倍率旋钮 / `require_ratio` 0-1 比例旋钮 /
 `require_bool` 开关旋钮 / `require_string` 非空字符串旋钮 /
-`require_string_list` 字符串列表旋钮）。
+`require_string_list` 字符串列表旋钮 / `require_choice` 封闭清单旋钮）。字符串
+那一族的「整串是空白」这一刀只有一个产地 `is_blank_string`，静态校验器共引它。
 """
 
 import json
@@ -287,6 +288,42 @@ def require_bool(name: str, value: Any) -> Optional[bool]:
     return value
 
 
+def is_blank_string(value: str) -> bool:
+    """「看起来有值、其实一个字符也没有」的唯一判据（A142 / L83）。
+
+    家族里所有字符串形状判据的**第二刀**都从这里出：`require_string`、
+    `require_string_list` 的每一项、以及 `config_validator` 的 `non_empty` 与
+    `items` 两格（共引同一个函数对象，由 `is` 身份的守卫钉住，承 A77）。
+
+    存在理由不是「空格也算错」这种口味，而是一族实测过的静默症状：`''` 谁都拒，
+    于是所有人都以为「非空」判完了，但 `'   '` 在过去**四面全绿**（L82 现量
+    `Temp/l83q/blank_census_before.json`：10 个键拒 `''` 而放行纯空白）。落到下游
+    各不一样，且没有一种会出声 —— `data_roots: ["  "]` 得到一个**名叫空格的目录根**
+    （`api/deps.py` 的 `Path(str(p))`，与 A118 里那个 `None` 变成 `None` 目录同形，
+    只是这次连 `None` 都没写）；`model: '   '` 直发后端，症状换回一条服务端 400；
+    `logging.file: '   '` 会创建一个名叫三个空格的文件（空串倒是合法的 = 不落文件）。
+
+    判「整串都是空白」，**不**裁剪值也不拒「含空格的值」：`static_dir: "my docs"`
+    照旧合法，`"  0.0.0.0  "` 也照原样通过 —— 静默 `.strip()` 等于替客户改配置，
+    与本仓「判据不改变值」的口径一致（L51 起）。空白档按 `str.isspace()`，所以
+    NBSP（`\\xa0`，从网页或文档里复制 YAML 时最常见的隐形字符）也在内。
+
+    **空串返回 `False`**，这一点本轮踩过一次（写完全族第一个跑的就是它）：本函数判
+    的是「有字符，但字符全是空白」，而 `''` 是「一个字符也没有」。两种错的修法不同，
+    报错文案也不同（「不能是空字符串」对「不能是纯空白」），更要紧的是有一格配置
+    **只能区分它们** —— `logging.file: ''` 是「不落文件」这一档设计，纯空白却是一个
+    名叫空格的文件；如果把空串也算成空白，`AppConfig()` 连默认值都构造不出来。
+    调用点因此一律写成「先判空串、再判空白」两刀，`logging.file` 只挂第二刀。
+
+    Args:
+        value: 已知是字符串的值（类型那一刀由调用点先判）
+
+    Returns:
+        `True` = 非空且整串是空白
+    """
+    return value != "" and not value.strip()
+
+
 def require_string(name: str, value: Any) -> str:
     """校验「主机名 / 目录名」这类**必须是非空字符串**的旋钮，返回原值。
 
@@ -300,13 +337,15 @@ def require_string(name: str, value: Any) -> str:
     比静默不可用更坏。
 
     空串一并拒：`host: ""` 与 `static_dir: ""` 都不是「未设置」而是「设置成了
-    无意义值」，留给下游去猜。
+    无意义值」，留给下游去猜。纯空白同样拒（A142 / L83）：`host: "   "` 与
+    `host: ""` 是同一件事，只是它**看起来**有值，于是过去四面全绿。
 
     Returns:
-        校验通过后的原值（**不放行 `None`**，与同族其他判据不同，理由见上）
+        校验通过后的原值（**不放行 `None`**，与同族其他判据不同，理由见上；
+        也**不裁剪**空白，见 `is_blank_string`）
 
     Raises:
-        DataValidationError: 值不是字符串（`bool` 也不算）或是空串
+        DataValidationError: 值不是字符串（`bool` 也不算）、是空串，或整串是空白
     """
     if isinstance(value, bool) or not isinstance(value, str):
         raise DataValidationError(
@@ -314,6 +353,8 @@ def require_string(name: str, value: Any) -> str:
         )
     if not value:
         raise DataValidationError(f"{name} 不能是空字符串")
+    if is_blank_string(value):
+        raise DataValidationError(f"{name} 不能是纯空白字符串，当前是 {value!r}")
     return value
 
 
@@ -335,6 +376,9 @@ def require_string_list(name: str, value: Any) -> list:
 
     空列表放行：`cors_origins: []` 是 L50 的出厂默认（一个跨源也不放行），
     `rate_limit_exempt_paths: []` 是「不豁免」，两者都是有意义的显式选择。
+    但**纯空白的项**不放行（A142 / L83）：`data_roots: ["  "]` 是一个名叫空格的
+    目录根，与上面那两类「形状合法、语义完全不同」的写法同形，而且它比 `''` 更阴 ——
+    空串至少谁都看得出来是漏填。
 
     这里**不**判断元素内容（URL 是否合法、路径是否存在、豁免前缀以 `/` 开头
     才可能命中请求路径）—— 那些是各消费点自己的语义，判在这里会把「配置形状」
@@ -344,7 +388,7 @@ def require_string_list(name: str, value: Any) -> list:
         校验通过后的原列表
 
     Raises:
-        DataValidationError: 值不是 list、元素不是字符串、或元素是空串
+        DataValidationError: 值不是 list、元素不是字符串、元素是空串，或元素是纯空白
     """
     if not isinstance(value, list):
         raise DataValidationError(
@@ -359,6 +403,10 @@ def require_string_list(name: str, value: Any) -> list:
             )
         if not item:
             raise DataValidationError(f"{name} 的每一项不能是空字符串")
+        if is_blank_string(item):
+            raise DataValidationError(
+                f"{name} 的每一项不能是纯空白字符串，当前含 {item!r}"
+            )
     return value
 
 
@@ -378,9 +426,10 @@ def require_choice(name: str, value: Any, choices) -> Optional[str]:
       它连「晚一天炸」都没有，是一份纯静默。
 
     所以本员**不新造任何清单**：清单一律由调用点传进来，且那个清单在仓内必须有
-    权威产地（A77）。类型与非空两刀先由 `require_string` 判掉，于是
-    `backend: ''`、`backend: 5`、`backend: ['faiss']` 三档都在 membership 之前先出
-    更准确的形状错。
+    权威产地（A77）。类型、空串、纯空白三刀先由 `require_string` 判掉，于是
+    `backend: ''`、`backend: '   '`、`backend: 5`、`backend: ['faiss']` 四档都在
+    membership 之前先出更准确的形状错（最后那一档正是 L82 注入 m8 撞出来的
+    「名字写着先报形状、其实挂在 membership 上」，A142 本轮收口）。
 
     Args:
         name: 参数名，直接出现在报错里
