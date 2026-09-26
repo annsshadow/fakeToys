@@ -104,6 +104,21 @@ describe('数据管理', () => {
     expect(body).toBeInstanceOf(FormData)
     // 后端按字段名 'file' 取值，改名字就会 422
     expect((body as FormData).get('file')).toBe(file)
+    // 不声明格式时传空串：后端 `Form("")` 的默认值就是空串，两种写法同一条代码路径
+    expect((body as FormData).get('input_format')).toBe('')
+  })
+
+  it('uploadData 把显式声明的源格式放进 input_format', async () => {
+    // 这一格钉的是「UI 能选到的那档真的发得出去」：后端「显式声明 > 扩展名」，
+    // 而 `<input type=file>` 只能给裸文件名，无扩展名/扩展名与内容不符的进料
+    // 全靠这个字段救（A132 ③ 的产品面）。字段名拼错 = 后端默默按扩展名走 = 静默失效。
+    respondWith({ ok: true })
+    const file = new File(['a,b\n1,2'], 'mystery.dat', { type: 'application/octet-stream' })
+
+    await api.uploadData(file, 'csv')
+
+    const body = instance.post.mock.calls[0][1] as FormData
+    expect(body.get('input_format')).toBe('csv')
   })
 
   it('exportData 透传 input_file / output_dir / formats', async () => {
@@ -492,5 +507,71 @@ describe('离群点与画像', () => {
     expect(instance.post).toHaveBeenCalledWith('/quality/profiling', {
       input_file: 'a.json',
     })
+  })
+})
+
+/**
+ * `apiErrorDetail`：把后端的判决文案取回给用户
+ *
+ * 这一层是唯一有分支的服务层函数，所以它的用例不是「覆盖行」而是**形状对账**：
+ * FastAPI 的失败体有两种 detail（4xx 字符串、422 数组），而「取不到就走 fallback」
+ * 那一支必须也在内 —— 页面里所有 `catch` 现在都过这个函数，它编出一个
+ * `undefined` 或 `[object Object]` 会比原来那句固定文案更糟。
+ */
+describe('apiErrorDetail', () => {
+  /** 造一份 axios 风格的错误：只填 `response.data`，其余一概不需要 */
+  const httpError = (data: unknown) => ({ response: { data } })
+
+  it('4xx 的字符串 detail 原样返回，一个字都不改', () => {
+    const detail =
+      '上传内容整份是一份合法 JSON，但按 csv 解析：名字或 input_format 与内容不符'
+
+    expect(api.apiErrorDetail(httpError({ detail }), '上传失败')).toBe(detail)
+  })
+
+  it('422 的 loc/msg 数组取每条 msg 并接起来', () => {
+    const err = httpError({
+      detail: [
+        { type: 'missing', loc: ['body', 'file'], msg: 'Field required' },
+        { type: 'extra', loc: ['body', 'oops'], msg: 'Extra inputs' },
+      ],
+    })
+
+    expect(api.apiErrorDetail(err, '上传失败')).toBe('Field required；Extra inputs')
+  })
+
+  it('空字符串 detail 走 fallback（后端回 400 但没文案时不说出空气泡）', () => {
+    expect(api.apiErrorDetail(httpError({ detail: '' }), '加载数据失败')).toBe(
+      '加载数据失败'
+    )
+  })
+
+  it('detail 是非字符串非数组（对象、数字）时走 fallback', () => {
+    expect(api.apiErrorDetail(httpError({ detail: { code: 7 } }), '保存失败')).toBe(
+      '保存失败'
+    )
+    expect(api.apiErrorDetail(httpError({ detail: 42 }), '删除失败')).toBe('删除失败')
+  })
+
+  it('数组里混着没有 msg 的条目：只取字符串 msg，全都没有就 fallback', () => {
+    expect(
+      api.apiErrorDetail(httpError({ detail: [{ loc: ['body'] }, { msg: '坏字段' }] }), '失败')
+    ).toBe('坏字段')
+    expect(api.apiErrorDetail(httpError({ detail: [{ loc: ['body'] }] }), '失败')).toBe('失败')
+    expect(api.apiErrorDetail(httpError({ detail: [] }), '失败')).toBe('失败')
+  })
+
+  it('没有 response 的错误（网络断开、超时、原生 Error）走 fallback', () => {
+    expect(api.apiErrorDetail(new Error('timeout of 30000ms exceeded'), '上传失败')).toBe(
+      '上传失败'
+    )
+    expect(api.apiErrorDetail(undefined, '上传失败')).toBe('上传失败')
+    expect(api.apiErrorDetail('字符串也能接住', '上传失败')).toBe('上传失败')
+  })
+
+  it('响应体是字符串（代理返回的 HTML/纯文本）不会崩', () => {
+    expect(
+      api.apiErrorDetail(httpError('<html>502 Bad Gateway</html>'), '导出失败')
+    ).toBe('导出失败')
   })
 })
