@@ -1377,48 +1377,25 @@ static ROUTE_DEFS: &[RouteDef] = &[
 // 合并静态路由与自动生成路由
 include!("generated_routes.rs");
 
-fn all_route_defs() -> Vec<RouteDef> {
-    let mut all = ROUTE_DEFS.to_vec();
-    all.extend_from_slice(GENERATED_ROUTE_DEFS);
-    all
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// ToolBridge: owns the internal axum app and dispatches tool calls.
-// ──────────────────────────────────────────────────────────────────────────────
-
-pub struct ToolBridge {
-    app: Router,
-    route_map: HashMap<String, RouteDef>,
-}
-
-impl ToolBridge {
-    /// Build a new ToolBridge from a database pool and session manager.
-    /// The internal router carries the same middleware chain as the main app
-    /// minus auth (the MCP layer injects sessions directly).
-    pub async fn new(pool: Pool, session_manager: SessionManager) -> Self {
-        let security_state = SecurityState {
-            session_manager,
-            rate_limiter: shared::rate_limit::RateLimiter::new(),
-            pool: pool.clone(),
-        };
-
-        let app = Router::new()
+/// Assemble the full application router (all crate sub-routers + minimal middleware).
+/// Extracted so integration tests can exercise every registered route.
+pub async fn build_core_router(pool: Pool, session_manager: SessionManager) -> Router {
+    Router::new()
             .merge(shared::router::router())
             .merge(auth::router(
                 pool.clone(),
                 shared::rate_limit::RateLimiter::new(),
-                security_state.session_manager.clone(),
+                session_manager.clone(),
             ))
             .merge(personal::router(
                 pool.clone(),
-                security_state.session_manager.clone(),
+                session_manager.clone(),
             ))
             .merge(cms_control::cms_control_router(pool.clone()))
             .merge(control::control_router(pool.clone()))
             .merge(personal_extend::personal_extend_router(
                 pool.clone(),
-                security_state.session_manager.clone(),
+                session_manager.clone(),
             ))
             .merge(program_init::program_init_router(pool.clone()))
             .merge(express::router(pool.clone()))
@@ -1501,7 +1478,36 @@ impl ToolBridge {
             .layer(axum::middleware::from_fn(security_headers_middleware))
             .layer(axum::middleware::from_fn(trace_middleware))
             .layer(axum::Extension(pool))
-            .layer(axum::Extension(security_state.session_manager));
+            .layer(axum::Extension(session_manager))
+}
+
+fn all_route_defs() -> Vec<RouteDef> {
+    let mut all = ROUTE_DEFS.to_vec();
+    all.extend_from_slice(GENERATED_ROUTE_DEFS);
+    all
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// ToolBridge: owns the internal axum app and dispatches tool calls.
+// ──────────────────────────────────────────────────────────────────────────────
+
+pub struct ToolBridge {
+    app: Router,
+    route_map: HashMap<String, RouteDef>,
+}
+
+impl ToolBridge {
+    /// Build a new ToolBridge from a database pool and session manager.
+    /// The internal router carries the same middleware chain as the main app
+    /// minus auth (the MCP layer injects sessions directly).
+    pub async fn new(pool: Pool, session_manager: SessionManager) -> Self {
+        let security_state = SecurityState {
+            session_manager,
+            rate_limiter: shared::rate_limit::RateLimiter::new(),
+            pool: pool.clone(),
+        };
+
+        let app = build_core_router(pool.clone(), security_state.session_manager.clone()).await;
 
         let all_defs = all_route_defs();
         let route_map: HashMap<String, RouteDef> = all_defs
