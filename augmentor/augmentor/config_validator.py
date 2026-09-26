@@ -31,7 +31,7 @@ from .config import (AUTO_SAVE_INTERVAL_MIN, DEDUP_THRESHOLD_RANGE,
 from .exceptions import DataValidationError
 from .logging_setup import LOGGING_LEVELS, build_formatter
 from .retry import MAX_RETRY_AFTER
-from .validation import require_chunk_window
+from .validation import is_blank_string, require_chunk_window
 
 logger = logging.getLogger(__name__)
 
@@ -222,9 +222,13 @@ class ConfigValidator:
         # `items` / `non_empty`）：允许集只有一份（`LOGGING_LEVELS`），可渲染性判据
         # 直接调运行时那同一个函数，两边不可能漂。
         # `file` 不写 `non_empty`：空串是**合法值**，意思是「不落文件」，正是默认档。
+        # 但它写 `non_blank`（A142 / L83 新维度）：纯空白不是「不落文件」而是手滑，
+        # 运行时那一侧由 `config.py` 的 `LoggingConfig.__post_init__` 共引同一个
+        # `validation.is_blank_string` 拒掉 —— 两把钥匙差一格，正是为了不把
+        # 「空串合法」这一档设计抹平。
         "logging": {"type": dict},
         "logging.level": {"type": str, "choices": LOGGING_LEVELS},
-        "logging.file": {"type": str},
+        "logging.file": {"type": str, "non_blank": True},
         "logging.format": {"type": str, "non_empty": True, "renderable": True},
         # `export` / `vector` / `rag` / `multimodal` 四节 14 键的规格（A118 余四节 / L82）。
         # 本节规格此前**一条都没有**：实测 20 档越界写法在 `validate-config` 上 0 反馈
@@ -672,6 +676,13 @@ class ConfigValidator:
                                 f"实际 {type(item).__name__}")
                         elif not item:
                             result.add_error(f"{field_path}[{i}]", "元素不能为空字符串")
+                        elif is_blank_string(item):
+                            # A142 / L83：与运行时 `require_string_list` 的第三刀同判据，
+                            # 判的对象是「整串空白」而不是「长度为 0」——`data_roots: ["  "]`
+                            # 在改前两面全绿，落盘得到一个名叫空格的目录根。
+                            result.add_error(
+                                f"{field_path}[{i}]",
+                                f"元素不能是纯空白字符串: {item!r}")
                         elif "item_choices" in spec and item not in spec["item_choices"]:
                             # L82 / A118 的新维度：清单型列表（`export.formats`）的
                             # 元素成员资格。与下面 `choices` 同一个来源的清单，只是
@@ -681,8 +692,19 @@ class ConfigValidator:
                                 f"元素不在允许集合内: {item!r}（可选: "
                                 f"{'/'.join(spec['item_choices'])}）"
                             )
-                elif spec.get("non_empty") and not value:
-                    result.add_error(field_path, "值不能为空字符串")
+                elif spec.get("non_empty"):
+                    if not value:
+                        result.add_error(field_path, "值不能为空字符串")
+                    elif is_blank_string(value):
+                        # 同上：`web.host: "   "` 改前 `validate-config` 绿灯、
+                        # `load_config` 也绿灯（两面都只判 `not value`），本轮两面同改。
+                        result.add_error(
+                            field_path, f"值不能是纯空白字符串: {value!r}")
+                # `non_blank` 是「空串合法、纯空白不合法」那一格（L83 / A142），目前只有
+                # `logging.file` 用得上：空串 = 不落文件，`'   '` = 一个名叫空格的文件。
+                if spec.get("non_blank") and is_blank_string(value):
+                    result.add_error(
+                        field_path, f"值不能是纯空白字符串: {value!r}")
                 # 允许集合（L57）：`logging.level` 那类「看着像拼错」的写法。集合来自
                 # 运行时判据同一个常量，不是校验器独有的天花板。
                 if "choices" in spec and value not in spec["choices"]:
