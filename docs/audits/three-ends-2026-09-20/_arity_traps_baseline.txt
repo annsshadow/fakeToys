@@ -13,7 +13,4 @@ GET /api/processplatform/assemble/surface/taskcompleted/filter/attribute
 GET /api/processplatform/assemble/surface/taskcompleted/filter/attribute/filter
 GET /api/processplatform/assemble/surface/work/v3/retract
 GET /api/processplatform/assemble/surface/workcompleted/shift/time
-POST /api/processplatform/assemble/surface/mode/save
-POST /api/processplatform/assemble/surface/review/create/work
-POST /api/processplatform/assemble/surface/review/create/workcompleted
 POST /api/processplatform/assemble/surface/review/filter/create/entry
