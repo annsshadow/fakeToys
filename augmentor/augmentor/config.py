@@ -13,8 +13,17 @@ from .exceptions import ConfigError, DataValidationError
 from .logging_setup import (apply_logging_config, assert_format_renderable,
                             level_number)
 from .retry import MAX_RETRY_AFTER
-from .validation import (require_bool, require_count, require_ratio,
-                         require_seconds, require_string, require_string_list)
+# 三张封闭清单的**权威所在模块**（L82 / A118 余四节）。为什么这里能直接 import
+# 而不走 `MODEL_TYPES` 那套「本地抄一份 + 测试钉两集相等」的先例：那一先例是被
+# 循环导入逼出来的（`models/factory.py` 要 `from ..config import ModelConfig`），
+# 而 `export_enhanced` / `rag` / `vector` 三个模块都不 import 本模块（两解释器实测），
+# 于是清单可以只有一份。把清单抄进本模块 = 亲手造出 A77 要封的那个洞。
+from .export_enhanced import ExportFormat
+from .rag import SUPPORTED_FORMATS
+from .vector import SUPPORTED_BACKENDS
+from .validation import (require_bool, require_choice, require_chunk_window,
+                         require_count, require_ratio, require_seconds,
+                         require_string, require_string_list)
 
 # `augmentation` / `web` 两节的取值区间。**校验器与运行时判据共用这一批常量**：
 # A77 的根因就是同一个上界在两边各抄一遍（抄完还漏），一边改了另一边不知道，
@@ -101,6 +110,20 @@ MODEL_ENTRY_PLACEHOLDER = "models.<名字>"
 # 所以对齐它不会改变任何一份今天能加载的配置。
 QUALITY_THRESHOLD_RANGE = (0.0, 1.0)
 DEDUP_THRESHOLD_RANGE = (0.0, 1.0)
+# `export` / `vector` / `rag` 三节里「值有一张封闭名单」的四键（`export.default_format`、
+# `export.formats` 的元素、`vector.backend`、`rag.default_format`）的清单（A118 / L82）。
+# 三条都是**推导**而不是重抄：产物与权威同在一个对象上（枚举成员 / 两个模块级清单），
+# 所以本模块与 `config_validator` 之间没有「两集相等」需要测试来钉 —— 它们本来就是同一个
+# `tuple`。这与 `MODEL_TYPES` 那一先例的差别只在「有没有循环导入」，不在口味。
+EXPORT_FORMATS = tuple(fmt.value for fmt in ExportFormat)
+RAG_FORMATS = tuple(SUPPORTED_FORMATS)
+VECTOR_BACKENDS = tuple(SUPPORTED_BACKENDS)
+# `vector.dimension` 的下界（A118 / L82）。与 `MAX_OUTPUT_TOKENS_MIN` 同一形状：
+# 只判下界不判上界，且两侧（`VectorConfig.__post_init__` 与
+# `config_validator.KNOWN_FIELDS`）共引本常数。**下界是 1 而不是 0** 的实证来自消费方：
+# `create_vector_db('faiss', dimension=0)` 改前就抛 `VectorError: 向量维度必须为正整数`
+# —— 界本来就有，只是站在建库那一天，本轮把它搬到读配置时并给静态面同一条。
+VECTOR_DIMENSION_MIN = 1
 PORT_RANGE = (1, 65535)
 RATE_LIMIT_MIN_REQUESTS = 0
 RATE_LIMIT_MIN_WINDOW_SECONDS = 0.0
@@ -344,6 +367,30 @@ class ExportConfig:
     default_format: str = "jsonl"
     formats: list = field(default_factory=lambda: ["jsonl", "llama_factory", "alpaca", "sharegpt", "chatml"])
 
+    def __post_init__(self):
+        """导出节的取值判据（A118 余四节 / L82）。
+
+        改前三面向（SDK 直构 / `load_config` / `POST /api/config`）对两键**全盲**，
+        实测 20 档里本节三档全部静默通过（`Temp/l82q/before.json`：
+        `default_format='xls'`、`formats='jsonl'`（标量）、`formats=['jsonl', 5]`）。
+        代价不对称的地方是 `default_format`：它有一个真实消费方
+        （`pipeline.py:115`），而坏值的症状不是「配置被拒」而是
+        `Exporter(default_format='xls')` 抛 `ValueError: 'xls' is not a valid
+        ExportFormat` —— 那**不是**领域异常，走 API 时会被兜底 `except Exception`
+        读成 500 而不是 400。`formats` 今天无人读（A138），判它是把它从「将来接上
+        就炸」换成「写的时候就报」，两键同一条界同一个清单。
+
+        清单引 `EXPORT_FORMATS`（由 `export_enhanced.ExportFormat` 推导），本方法
+        不写任何格式名 —— 一处定义，两侧共引（A77）。
+        """
+        _reject_null_fields("export", self)
+        require_choice("export.default_format", self.default_format, EXPORT_FORMATS)
+        require_string_list("export.formats", self.formats)
+        for index, fmt in enumerate(self.formats):
+            # 带下标的名字与静态面 `export.formats[i]` 同一指法（A120 的「判对了还要
+            # 指得出位置」）：一份五项清单里写坏一项时，报错要说的是那一项。
+            require_choice(f"export.formats[{index}]", fmt, EXPORT_FORMATS)
+
 
 @dataclass
 class ContextConfig:
@@ -405,6 +452,27 @@ class RAGConfig:
     chunk_size: int = 512
     chunk_overlap: int = 64
 
+    def __post_init__(self):
+        """RAG 节的取值判据（A118 余四节 / L82）。
+
+        `chunk_size` / `chunk_overlap` 是本轮**唯一一条两侧都已有一半**的界：
+        `rag.RAGFormatter.__init__` 早就判了 `overlap >= size`，但它只判关系不判
+        正负，实测 `-1` 配 `-5` 构造成功、`chunk_text()` 对 200 字符产出 1 块 199
+        字符（分块整件静默失效，见 `Temp/l82q/before.json` 的 `consumers` 档）。
+        现在那一判据搬进 `validation.require_chunk_window`（三刀：下界 1、下界 0、
+        再比关系），本节与 `RAGFormatter` 调的是同一个函数，所以「配置绿、建对象时
+        抛」的缝与「两处界各自漂」同时封掉。
+
+        `default_format` 的清单引 `RAG_FORMATS`（= `rag.SUPPORTED_FORMATS`）。本节
+        该键今天无消费方（A138），而 `RAGFormatter.format(..., fmt)` 对未知格式是
+        抛领域异常的，所以这条界只买「写时就报」这一件事，不买崩溃。
+        """
+        _reject_null_fields("rag", self)
+        require_bool("rag.enabled", self.enabled)
+        require_choice("rag.default_format", self.default_format, RAG_FORMATS)
+        require_chunk_window("rag.chunk_size", self.chunk_size,
+                             "rag.chunk_overlap", self.chunk_overlap)
+
 
 @dataclass
 class EvaluationConfig:
@@ -423,6 +491,33 @@ class VectorConfig:
     storage_dir: str = "data/vectors"
     collection: str = "default"
 
+    def __post_init__(self):
+        """向量节的取值判据（A118 余四节 / L82）。
+
+        本节是四节里「界已经存在、只是站错了地方」最明显的一个：两个消费点都在
+        **用到它的那一天**才判 ——
+        - `create_vector_db('nonsense')` ⇒ `VectorError: 不支持的向量数据库后端`
+        - `create_vector_db('faiss', dimension=0)` ⇒ `VectorError: 向量维度必须为正整数`
+
+        而实测 `vector.backend: nonsense` / `dimension: 0` / `dimension: -384` /
+        `dimension: '384'` 四档在三面上**全部静默通过**（`Temp/l82q/before.json`），
+        端点照样回 200 ⇒ 症状从「配置写错」变成「流水线跑到建库那一步才炸」，
+        中间隔着一次完整的数据增强。本轮把两条界搬到读配置时，清单与下界一律
+        **引**既有权威（`VECTOR_BACKENDS` 推导自 `vector.SUPPORTED_BACKENDS`，
+        `dimension` 的下界是本模块的 `VECTOR_DIMENSION_MIN`，静态规格也引它），
+        不新造数值。
+
+        `dimension` **不设上界**：与 `MAX_OUTPUT_TOKENS_MIN` 同一条理由 —— 真正的
+        天花板由所选嵌入模型决定，本地造第二个权威只会拒掉合法的高维模型。
+        """
+        _reject_null_fields("vector", self)
+        require_bool("vector.enabled", self.enabled)
+        require_choice("vector.backend", self.backend, VECTOR_BACKENDS)
+        require_count("vector.dimension", self.dimension,
+                      minimum=VECTOR_DIMENSION_MIN)
+        require_string("vector.storage_dir", self.storage_dir)
+        require_string("vector.collection", self.collection)
+
 
 @dataclass
 class MultimodalConfig:
@@ -430,6 +525,23 @@ class MultimodalConfig:
     enabled: bool = False
     image_extensions: list = field(default_factory=lambda: [".jpg", ".jpeg", ".png", ".bmp", ".webp"])
     audio_extensions: list = field(default_factory=lambda: [".wav", ".mp3", ".flac", ".ogg", ".m4a"])
+
+    def __post_init__(self):
+        """多模态节的取值判据（A118 余四节 / L82）。
+
+        本节只判**形状**，不判元素语义，这是与上面两节刻意不同的一档。改前实测
+        `image_extensions='.jpg'`（写成标量）与 `audio_extensions=[None]` 两档
+        三面全盲；前者会按字符拆成 `.` `j` `p` `g` 四个「扩展名」，与 `data_roots`
+        拆成四个根目录同形（`require_string_list` 的立身案例），所以两键都套用
+        列表形状判据。但「扩展名必须以 `.` 开头」这一刀**不在这里判**：它是
+        消费方的匹配语义（`Path.suffix` 带的就是点），本仓今天还没有读这两键的
+        产品消费者（A138），在没有判决的地方先造一条界，就是校验器当年那些
+        「独有的天花板」（A77 的反面）—— 那一洞连着清单一起等接线时同批改。
+        """
+        _reject_null_fields("multimodal", self)
+        require_bool("multimodal.enabled", self.enabled)
+        require_string_list("multimodal.image_extensions", self.image_extensions)
+        require_string_list("multimodal.audio_extensions", self.audio_extensions)
 
 
 @dataclass
@@ -1008,17 +1120,19 @@ def apply_section_update(section: Any, updates: Dict[str, Any]) -> list:
     `DataValidationError`。症状是这一族里最难诊断的一种：**当次请求返回成功、
     进程跑得好好的，服务重启后起不来**，而且那时已经没有一份「能改回来」的配置了。
 
-    三个设计选择：
+    四个设计选择：
 
     1. **复查而不是另立判据**：跑的是该节 `__post_init__` 里那批 `require_*`，
        界仍然只住 `config.py` 一处（A77）。这里不新增第二条口径，也不抄第二份区间。
-    2. **没有 `__post_init__` 的节照旧写入**：`export` / `vector` / `rag` /
-       `multimodal` 四节至今没有运行时判据（只有校验器那一半），本函数不假装判了
-       —— 那四节「运行时零判据」是 A118 余下的账，不在本轮扩面。（`quality` 与
-       `dedup` 两节原本也在这份名单里，L76 / A118 给它们接上了判据；名单由
+    2. **判据跑在整批写完之后**，不是每写一条跑一次（L82 的同批实测改的）。见下面
+       循环体里那段注释：对单键界两种排法等价，对**跨键界**只有这一种是对的。
+    3. **没有 `__post_init__` 的节照旧写入**：`export` / `vector` / `rag` /
+       `multimodal` 四节的判据本轮（L82 / A118 余四节）才接上，此前那四个名字
+       在名单里只是「不假装判了」的说明。全 20 节的现量由
        `tests/integration/test_config_write_path_l73.py` 的精确集合棘轮钉住，
-       一节接上一节就会红一次，所以这里不靠记忆维护。）
-    3. **要么全落、要么全不落**：批次里任何一条被判负 ⇒ 已写的键逐个回滚到旧值再抛。
+       一节接上一节就会红一次，所以这里不靠记忆维护。（`quality` 与 `dedup`
+       两节是 L76 接上的；`POST /api/config` 可写的七节现已全部有判据。）
+    4. **要么全落、要么全不落**：批次里任何一条被判负 ⇒ 已写的键逐个回滚到旧值再抛。
        不做回滚就会留下「内存里前几条已生效、磁盘一条都没写」的分叉，而端点的
        契约是 `success` 才代表保存过 —— 分叉正是本轮要修的那一类缺陷。
 
@@ -1044,8 +1158,14 @@ def apply_section_update(section: Any, updates: Dict[str, Any]) -> list:
                 continue
             applied.append((key, getattr(section, key)))
             setattr(section, key, value)
-            if post_init is not None:
-                post_init(section)
+        # 整批写完再判一次。从前是循环体内每写一条判一次，对单键界两种排法等价，
+        # 对**跨键界**却不等价：`rag` 那一对（`chunk_overlap < chunk_size`）看的是
+        # 「这一批落完之后」的那一对值。实测（L82，本轮写测试时当场撞到）—— 从出厂
+        # (512, 64) 一次请求改到 (1, 0)：两端都合法，中间态 (1, 64) 非法 ⇒ 端点回
+        # 400，用户拿到的是「一份合法配置写不进去」，而错误文案指向的还是那对值。
+        # 判负时整批回滚（设计选择 4），所以这里合并成一次判断不放宽任何东西。
+        if post_init is not None:
+            post_init(section)
     except Exception:
         for key, old in reversed(applied):
             setattr(section, key, old)

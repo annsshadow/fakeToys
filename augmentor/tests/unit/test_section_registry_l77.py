@@ -104,6 +104,15 @@ def _auto_value(current):
 #: `augmentation.max_retry_wait` 的 `+0.25` 越过 300.0 上界、`dedup.threshold` 越过
 #: 1.0 上界、`logging.level` 撞封闭清单（`必须是 CRITICAL/ERROR/WARNING/INFO/DEBUG/
 #: NOTSET 之一`），`quality.weights` 的 `+["zz"]` 不是数字。
+#: **L82 起再加四档**，成因与 `logging.level` 完全同形：那四键的本节判据是**封闭
+#: 清单**（`require_choice`），而 `_auto_value` 对字符串的写法是「默认 + `_x`」，
+#: 后缀必然不在清单里 ⇒ `export.default_format` / `rag.default_format` /
+#: `vector.backend` 三档撞 `EXPORT_FORMATS` / `RAG_FORMATS` / `VECTOR_BACKENDS`，
+#: `export.formats` 的 `+["zz"]` 撞的是逐项 `require_choice`。
+#: 反面对照（本轮实测，别把这一族读成「所有新判据都会咬这张表」）：`vector.dimension`
+#: 的 `+1`、`rag.chunk_size`/`chunk_overlap` 的 `+1`、`vector.storage_dir`/`collection`
+#: 的 `+_x`、`multimodal.*_extensions` 的 `+["zz"]` 六档**全部照旧自动通过** ——
+#: 下界只判「正」、`require_string` 只判非空、`require_string_list` 只判形状。
 #: 这份表只该装「必须手写」的项：本探针的第一版在这里凭印象抄了九个字符串字段，
 #: 实测九个取值**全部与出厂默认逐字相等**，于是「写了就落地」被我自己的判据误判成
 #: 失败 —— 教训是进表之前先读默认。
@@ -112,6 +121,10 @@ _OVERRIDES = {
     ("dedup", "threshold"): 0.42,
     ("logging", "level"): "ERROR",
     ("quality", "weights"): [0.2, 0.5, 0.3],
+    ("export", "default_format"): "csv",
+    ("export", "formats"): ["jsonl", "csv"],
+    ("rag", "default_format"): "langchain",
+    ("vector", "backend"): "chromadb",
 }
 
 
