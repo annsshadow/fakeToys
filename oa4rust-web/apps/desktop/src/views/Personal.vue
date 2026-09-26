@@ -78,6 +78,7 @@
       <h3>登录方式 / 账户绑定</h3>
       <button class="save-btn ghost" @click="loadAuthMeta">查看</button>
       <button class="save-btn ghost" @click="loadOauthConfig">OAuth 配置</button>
+      <button class="save-btn ghost" @click="loadAuthOAuthServer">OAuth/认证诊断</button>
       <button class="save-btn ghost" @click="loadMailMeta">内部邮件/注册方式</button>
       <button class="save-btn ghost" @click="loadAuthScopes">我的单位/角色/群组</button>
       <button class="save-btn ghost" @click="loadAuthDetails">认证明细/绑定</button>
@@ -88,6 +89,7 @@
       <button class="save-btn ghost" @click="loadPersonalTwin2">孪生端点B</button>
       <span v-if="personalExtraText" class="muted">{{ personalExtraText }}</span>
       <div v-if="authMetaText" class="auth-note">{{ authMetaText }}</div>
+      <div v-if="authOAuthText" class="auth-note">{{ authOAuthText }}</div>
       <div v-if="authDetailText" class="auth-note">{{ authDetailText }}</div>
     </div>
 
@@ -285,8 +287,46 @@ async function loadOauthConfig() {
     toast.error('加载 OAuth 配置失败: ' + (e?.message ?? ''))
   }
 }
-async function loadAuthMeta() {
+const authOAuthText = ref('')
+// rev375：认证/OAuth 授权服务器族 真实只读/幂等消费（用户触发；OAuth 授权码/令牌/info/jira +
+// 验证码/凭据码/check-token + SSO 校验/加密）。刻意排除会话破坏性端点（safe/logout、switchuser、
+// DELETE authentication、POST sso 登录、two/factory/login），避免误登出或改写当前会话。
+async function loadAuthOAuthServer() {
+  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const nm = 'default'
+  const cred = 'diagnostic'
+  const key = 'k'
+  const tok = 'probe-token'
+  const meta = 'default'
   try {
+    const rs = await Promise.all([
+      s(api.get('/api/organization/assemble/authentication/oauth/auth?client_id=oa')),
+      s(api.post('/api/organization/assemble/authentication/oauth/generate/code', { clientId: 'oa' })),
+      s(api.get('/api/organization/assemble/authentication/oauth/info?clientId=oa')),
+      s(api.post('/api/organization/assemble/authentication/oauth/info', { clientId: 'oa' })),
+      s(api.get('/api/organization/assemble/authentication/oauth/token?clientId=oa')),
+      s(api.post('/api/organization/assemble/authentication/oauth/token', { clientId: 'oa' })),
+      s(api.get('/api/organization/assemble/authentication/oauth/info/jira?clientId=oa')),
+      s(api.post('/api/organization/assemble/authentication/oauth/info/jira', { clientId: 'oa' })),
+      s(api.post('/api/organization/assemble/authentication/oauth/token/jira', { clientId: 'oa' })),
+      s(api.get(`/api/organization/assemble/authentication/authentication/oauth/name/${nm}`)),
+      s(api.get(`/api/organization/assemble/authentication/authentication/code/credential/${cred}`)),
+      s(api.post('/api/organization/assemble/authentication/authentication/captcha', {})),
+      s(api.post('/api/organization/assemble/authentication/authentication/code', {})),
+      s(api.post('/api/organization/assemble/authentication/authentication/check/token', { token: tok })),
+      s(api.get('/api/organization/assemble/authentication/authentication/bind')),
+      s(api.get(`/api/organization/assemble/authentication/authentication/bind/meta/${meta}`)),
+      s(api.get(`/api/organization/assemble/authentication/sso/client/oa/token/${tok}`)),
+      s(api.get(`/api/organization/assemble/authentication/sso/encrypt/client/oa/key/${key}/credential/${cred}`)),
+      s(api.post('/api/organization/assemble/authentication/sso/encrypt', { client: 'oa', key, credential: cred })),
+    ])
+    const hit = rs.filter((r) => (r as any) != null).length
+    authOAuthText.value = `OAuth/认证服务器端点 ${rs.length} 条，返回 ${hit}`
+  } catch (e: any) {
+    toast.error('加载 OAuth/认证诊断失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadAuthMeta() {  try {
     // GET org/assemble/authentication mode + bind/list + oauth/list —— 登录方式/账户绑定/OAuth
     const [mode, binds, oauth] = await Promise.all([
       api.get('/api/organization/assemble/authentication/authentication/mode'),
