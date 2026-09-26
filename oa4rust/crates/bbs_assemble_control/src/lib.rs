@@ -867,6 +867,73 @@ pub async fn delete_subject(
     ))))
 }
 
+// —— assemble/control 侧 delete/{forum,reply,subject}：前端 BBSForum.vue 以
+// `api.post(url, { id })` 携 JSON 体调用（无路径参数），故这些路由须从体读 id，
+// 而非 Path（0 槽路由 + Path handler 恒 arity-500）。Path 版保留给 core/entity/{id}。
+fn body_id(body: &Value) -> String {
+    body.get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string()
+}
+
+#[allow(non_snake_case)]
+pub async fn delete_forum_body(
+    pool: Extension<Pool>,
+    axum::Json(body): axum::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = body_id(&body);
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows_affected = client
+        .execute(
+            "UPDATE x_bbs_forum SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(rows_affected > 0))]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn delete_reply_body(
+    pool: Extension<Pool>,
+    axum::Json(body): axum::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = body_id(&body);
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows_affected = client
+        .execute(
+            "UPDATE x_bbs_reply SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(rows_affected > 0))]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn delete_subject_body(
+    pool: Extension<Pool>,
+    axum::Json(body): axum::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = body_id(&body);
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows_affected = client
+        .execute(
+            "UPDATE x_bbs_topic SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(rows_affected > 0))]),
+    ))))
+}
+
 #[allow(non_snake_case)]
 pub async fn list_reply_filter(
     pool: Extension<Pool>,
