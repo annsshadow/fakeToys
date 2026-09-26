@@ -291,3 +291,59 @@ func TestReactionDamageScalesWithElementStacks(t *testing.T) {
 		prev = got
 	}
 }
+
+// TestReactionElementEmptyFallsBackToDominant 守跨端语义一致性。
+//
+// ⚠️ `ReactionElement` 两端同名，但曾经对**同一个空值**给出不同抗性：
+//
+//	TS:  input.reactionElement ??  def.dominantElement()
+//	    `??` 只对 null/undefined 回退 → 传 "" 时 resistOf("") = 0（无抗性）
+//	Go:  if resElement == "" { resElement = dominantElement(def) }
+//	    空串**会**回退到守方主元素 → 用真实抗性
+//
+// 后果是反应伤害不同 → replayHash 不同 → I-6 把正常对局判成伪造。
+//
+// 为什么契约向量抓不到：向量里 reaction_element **从未出现过**（实测确认）。
+// 一致性测试只在"两端传了同一个合法值"时比对结果，
+// 而分歧恰好发生在"传了非法值"的时候 —— 两端的分歧落在向量覆盖不到的地方。
+//
+// 配对用例：miniapp/src/game/anti_inflation.test.go 的
+// 「跨端语义：reactionElement 的空值处理两端必须一致」。
+// 任一端改动回退逻辑，变异那一端的用例立刻红。
+func TestReactionElementEmptyFallsBackToDominant(t *testing.T) {
+	// 守方：主元素冰（2 层），对冰 +500‰ 抗性，对焰 0‰
+	newDef := func() Defender {
+		d := NewDefender(1_000_000, 0, 0)
+		d.ResistPermille = map[Element]int64{
+			ElementIce: 500,
+			ElementFire: 0,
+		}
+		d.ApplyElement(ElementIce, 2, 3)
+		return d
+	}
+	run := func(reactionElement Element) int64 {
+		def := newDef()
+		res := ResolveHit(DefaultAttacker(), &def, HitInput{
+			SkillDamage:     1000,
+			SkillElement:    ElementFire,
+			ForceReaction:   "flash_freeze",
+			ReactionElement: reactionElement,
+			Roll:            500,
+		})
+		return res.ResistAppliedPermille
+	}
+
+	empty := run("")
+	undef := run(Element(""))
+	if empty != undef {
+		t.Fatalf("空串(%d) 与未指定(%d) 的抗性应完全相同", empty, undef)
+	}
+	// 回退到守方主元素（冰，+500‰ 抗性）→ 施加后为 500‰
+	if empty != 500 {
+		t.Errorf("空串应回退到守方主元素并施加其抗性 500‰，实际 %d‰", empty)
+	}
+	// 显式传焰（0‰ 抗性）→ 1000‰，不回落
+	if got := run(ElementFire); got != 1000 {
+		t.Errorf("显式传入焰元素时抗性应为 1000‰（0‰ 抗性），实际 %d‰", got)
+	}
+}
