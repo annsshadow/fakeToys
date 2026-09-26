@@ -81,9 +81,13 @@ FLOOR = {
 #: **这一份每轮都要重量**（L79 收尾现场兑现）：账本日志块写完之后，正文自己引用的 7 个仓内文件
 #: 与 7 个 Temp 草稿名把 `file_tokens` 从 1075 顶到 1089 —— 与 `CEILING` 里那些「随代码变坏而涨」
 #: 的缺陷档不同，这里是**对账位**：它红说的是「文档里的数靠了回忆」，不是「代码变坏了」。
+#:
+#: **L80 回填（两条都是文档面，不是代码变坏）**：`line_refs` 281 → 280 是把 Backlog B 的 B3①
+#: 那一格从定位引用改成散文行号（漂移档那条由产品码插行造成的新增同时消掉，仍 165）；
+#: `file_tokens` 1089 → 1123 来自「收尾实测」小句与 A136 行点名的 6 份仓内文件。
 MEASURED = {
     ARCH: {"line_refs": 47, "file_tokens": 213, "code_but_no_name_match": 37},
-    LEDGER: {"line_refs": 281, "file_tokens": 1089, "code_but_no_name_match": 165},
+    LEDGER: {"line_refs": 280, "file_tokens": 1123, "code_but_no_name_match": 165},
 }
 
 #: 日志块标题行上「下一轮才填得出自己哈希」的占位符。精确相等 = **只许有该填的那几条**。
@@ -94,6 +98,32 @@ MEASURED = {
 #: 补那 14 处历史正文要不要做属 A130（待用户拍）。
 HASH_PLACEHOLDER = re.compile(r"^- \*\*L\d+\*\* `哈希待 L\d+ 回填`", re.MULTILINE)
 PLACEHOLDER_CEILING = 15
+
+#: 账本的章节骨架，**逐字且按序**（L80 现量）。判据是「提取出的标题行序列 == 这份元组」，
+#: 所以标题被吃掉、被改名、被挪序、被多插一节都会红。
+#:
+#: **这一档为什么必须存在**：`## Backlog A — 性能（含 file:line 与实测线索）` 在
+#: `9ba59b493`（L78）之后就不在文件里了 —— `git show 0101470c5:./OPTIMIZATION_LOOP.md` 里
+#: 那行还在，`git show 9ba59b493` 里它已被删（`git log -S"## Backlog A"` 只点名这两个提交）。
+#: 根因是本账已用散文记过三次的同一形状：拿**紧跟表格行的节标题**当 Edit 锚点，
+#: 新字符串里忘了把锚点带回去。散文不是判据 ⇒ 第二次吃掉时没有任何东西会红。
+#:
+#: **为什么 L79 的普查抓不到它**：那台机器只看反引号引用，A 表的 130+ 行一条没少，
+#: 少的是它头上那行字。发现过程本身就是证据：L80 想往「已完成」列表尾部插进度行，
+#: 拿 `## Backlog A — 缺陷清单…` 当锚点，Edit 报 0 occurrences，回读才看见整节标题不存在。
+LEDGER_SECTIONS = (
+    "# augmentor 优化循环进度追踪（2026-09-23 启动，目标 100 轮）",
+    "## 已完成",
+    "## Backlog A — 性能（含 file:line 与实测线索）",
+    "## Backlog B — 功能增强（价值 ÷ 工作量）",
+    "## 循环日志",
+)
+HEADING = re.compile(r"^#{1,2} \S.*$", re.MULTILINE)
+
+
+def headings(text):
+    """账本里的一二级标题行，按出现顺序 —— 骨架判据的唯一提取口"""
+    return HEADING.findall(text)
 
 
 @functools.lru_cache(maxsize=1)
@@ -420,3 +450,115 @@ class TestTheAuditIsNotSpinning:
         assert rows.get("dead_line", []) == [], rows
         assert rows["code_but_no_name_match"] == [
             f"`augmentor/logging_setup.py:{blank + 1}-{blank + 2}`"], rows
+
+
+class TestLedgerSectionSkeleton:
+    """账本的章节骨架是**逐字按序**的：标题被吃掉 / 改名 / 挪序 / 多插一节都当场红
+
+    这一档补的是本账用散文记过三次、却始终没有机械通道的那个形状（L45 丢「；A63」、
+    L46 丢 `## Backlog B` 标题、L78 丢 `## Backlog A` 标题）。前两次靠回读相邻行才发现，
+    第三次一直躺到 L80 —— 因为「插一条进度行」的锚点换成 `0 occurrences` 才把它暴露出来。
+
+    **为什么引用普查看不见它**：`audit()` 判的是反引号引用，A 表的 130+ 行一条没少，
+    少的是它头上那一行 —— 一条标题既不是引用也不是表格，粗判据全绿。
+    """
+
+    def test_the_ledger_headings_are_the_frozen_five_in_order(self):
+        text = (ROOT / LEDGER).read_text(encoding="utf-8")
+        assert headings(text) == list(LEDGER_SECTIONS), headings(text)
+
+    def test_the_eaten_backlog_a_heading_is_back(self):
+        """L78 那次提交吃掉的具体一行，逐字钉回原位（不是「有个标题就行」）"""
+        text = (ROOT / LEDGER).read_text(encoding="utf-8")
+        assert "## Backlog A — 性能（含 file:line 与实测线索）" in text
+        # 恢复后的形状：标题之后先是表格头，中间不插别的段落。
+        # **锚点必须取整行标题**：账本里 `## Backlog A` 这个短串另有散文提及（L80 的进度行），
+        # 按短串切会切到散文那一处，测出来的就不是章节正文。
+        body = text.split("## Backlog A — 性能（含 file:line 与实测线索）", 1)[1]
+        assert body.startswith("\n\n| # | 位置 | 问题 | 量级 |"), repr(body[:60])
+
+    def test_the_skeleton_guard_fires_when_a_heading_is_eaten_or_added(self):
+        """判据可失败性的两个方向（承 L79 纪律 (f)）：少一行要红，多一行也要红
+
+        只钉「少标题会红」等于把判据写成「标题集合的子集检查」，下一轮谁插一节
+        `## 附录` 把它撑歪，这条守卫照样绿。
+        """
+        text = (ROOT / LEDGER).read_text(encoding="utf-8")
+        assert headings(text) == list(LEDGER_SECTIONS)
+
+        dropped = text.replace("## Backlog A — 性能（含 file:line 与实测线索）\n", "")
+        assert headings(dropped) != list(LEDGER_SECTIONS)
+        assert "## Backlog A — 性能（含 file:line 与实测线索）" not in headings(dropped)
+
+        added = text + "\n## 附录 — 临时\n"
+        assert headings(added) != list(LEDGER_SECTIONS)
+        assert len(headings(added)) == len(LEDGER_SECTIONS) + 1
+
+    def test_a_third_level_heading_is_not_part_of_the_skeleton(self):
+        """提取口的边界：`###` 属正文，不参与骨架判据（架构文档那种层级不该把这里撑红）"""
+        sample = "## 已完成\n\n### 小节\n\n#### 更小的节\n"
+        assert headings(sample) == ["## 已完成"], headings(sample)
+
+
+#: 「已完成」里的进度行与文末的日志块标题（L80 现量）。两侧都按**行首形状**提取，
+#: 所以正文里谈论它们的散文不算数（与 `HASH_PLACEHOLDER` 同一条教训）。
+PROGRESS_LINE = re.compile(r"^- \[[ x]\] \*\*L(\d+)\*\*", re.MULTILINE)
+LOG_BLOCK = re.compile(r"^- \*\*L(\d+)\*\* ", re.MULTILINE)
+
+
+class TestProgressLineAndLogBlockArePeeled:
+    """A135 的机械答案：**每轮写两遍自己**（「已完成」一行 + 文末一块日志），那就两侧对账
+
+    **为什么立这一条**（L80 现量）：L79 只写了文末日志块、漏了「已完成」的进度行，而这件事
+    当时没有任何机械通道能发现 —— 块标题那一侧早有 `PLACEHOLDER_CEILING` 数着（15 条精确相等），
+    进度行那一侧**一个数都没有**。补写 L79 那行时才发现：两副名单是同一条纪律的两半。
+
+    **口径**：判据是**号集合的包含**而不是行数相等 —— 一轮可以分批提交（实测 L12 在「已完成」
+    里有两条：`perf(api)` 与 `perf(statistics)`），按行数比会把这条合法形状判成缺陷。
+    反向那一维由 `test_a_second_batch_in_one_round_is_legal` 钉住。
+    """
+
+    def _both(self):
+        text = (ROOT / LEDGER).read_text(encoding="utf-8")
+        return PROGRESS_LINE.findall(text), LOG_BLOCK.findall(text)
+
+    def test_every_log_block_has_a_progress_line(self):
+        """硬门禁（A135 的病理本体）：文末有块、「已完成」没行 ⇒ 当场红"""
+        prog, log = self._both()
+        assert sorted(set(log) - set(prog), key=int) == [], (
+            "这些轮次写了文末日志块却没有「已完成」进度行："
+            f"{sorted(set(log) - set(prog), key=int)}")
+
+    def test_the_progress_only_rounds_are_the_measured_three(self):
+        """反向残额精确相等：L1 / L2 / **L12** 只有进度行、没有文末日志块
+
+        L1/L2 是因为 `## 循环日志` 从 L3 起；**L12 是 A135 的另一种形状** —— 那一轮在「已完成」
+        里写了两条（分批提交），却整轮没写日志块，本守卫建立之前这件事无声。
+        写成 `{1, 2, 12}` 而不是「≤」：下一轮谁给 L12 补了日志块，这里同样红 ⇒ 逼他在账上留一句。
+        """
+        prog, log = self._both()
+        assert set(prog) - set(log) == {"1", "2", "12"}, sorted(
+            set(prog) - set(log), key=int)
+
+    def test_the_guard_fires_in_both_directions(self):
+        """判据可失败性（承 L79 纪律 (f)）：摘掉进度行要红，摘掉日志块也要红"""
+        text = (ROOT / LEDGER).read_text(encoding="utf-8")
+        head = text.split("- [x] **L80**", 1)
+        assert len(head) == 2, "本轮进度行不在场，这一档就没有取证对象"
+        without_line = head[0] + head[1].split("\n\n", 1)[1]
+        prog, log = PROGRESS_LINE.findall(without_line), LOG_BLOCK.findall(text)
+        assert "80" not in prog and "80" in log          # 摘进度行 ⇒ 硬门禁那一侧红
+
+        without_block = text.replace("- **L79** `d01722c9e`", "- **L79x** `d01722c9e`", 1)
+        prog, log = PROGRESS_LINE.findall(text), LOG_BLOCK.findall(without_block)
+        assert "79" in prog and "79" not in log          # 摘日志块 ⇒ 反向那一侧看到差集
+
+    def test_a_second_batch_in_one_round_is_legal(self):
+        """反向钉住形状：**重复的进度行不是缺陷**（一轮分批提交是本仓常态）
+
+        这一档防的是「下一轮有人把集合比较改成行数比较」：改完之后 L12 那两条
+        （`perf(api)` + `perf(statistics)`）会当场红，而那是一次正当的交付。
+        """
+        prog, _ = self._both()
+        dupes = sorted({n for n in prog if prog.count(n) > 1}, key=int)
+        assert dupes == ["12"], dupes

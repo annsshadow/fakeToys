@@ -52,6 +52,18 @@ EXPORT_FORMATS = [
     "llama_factory", "vicuna", "belle", "openai", "huggingface", "raw",
 ]
 
+# `convert --input-format` 可选的源格式（反向边 alpaca/sharegpt/chatml/… → json
+# 落盘也是 `.json`，扩展名推不出来，只能显式声明）。权威表在
+# `converter.INPUT_FORMAT_CHOICES` —— 那里同时生成「无法从扩展名推断输入格式」的
+# 报错文案；这里显式列出（而不是 import 它）与本模块的既有口径一致：`parser.py`
+# 不 import 任何 augmentor 业务模块，`EXPORT_FORMATS` 同理。两侧的一致性由
+# `tests/integration/test_excel_convert_cli_api_l80.py::TestConvertInputFormatSurface`
+# 钉（它既比两份常量，也比 `add_argument` 上真正生效的 `choices`）。
+INPUT_FORMATS = [
+    "json", "jsonl", "csv", "tsv", "alpaca", "sharegpt", "chatml",
+    "llama_factory", "vicuna", "belle", "excel", "xlsx", "xls",
+]
+
 # `clean --rules` 可选的规则名，与 `cleaner.DatasetCleaner._default_rules` 的键
 # 一一对应。在这里显式列出（而不是留空）是为了让拼错的规则名由 argparse 拒绝，
 # 而不是被 `cleaner.clean` 静默忽略——后者会让人以为清洗跑过了。
@@ -314,10 +326,12 @@ def build_parser() -> argparse.ArgumentParser:
                                 help="目标格式")
     # 反向边（alpaca/sharegpt/chatml/... → json）：这些格式落盘也是 `.json`，
     # 扩展名推不出来，只能显式声明；不给就按扩展名当 json 原样读。
+    # excel/xlsx/xls 也在这里：`convert --input x.xlsx` 能靠扩展名自己认出来，但
+    # 无扩展名或扩展名骗人（`.txt` 里装 xlsx）时得让调用方显式声明。
     convert_parser.add_argument("--input-format", type=str, default=None,
-                                choices=["json", "jsonl", "csv", "tsv", "alpaca", "sharegpt",
-                                         "chatml", "llama_factory", "vicuna", "belle"],
-                                help="源格式（默认从输入文件扩展名推断）")
+                                choices=INPUT_FORMATS,
+                                help="源格式（默认从输入文件扩展名推断；"
+                                     "excel/xlsx/xls 任拼一种都读同一张表的全部列）")
 
     # 数据集搜索命令
     # `--method` 取全部方法：exact / contains / ngram / fuzzy / regex。
