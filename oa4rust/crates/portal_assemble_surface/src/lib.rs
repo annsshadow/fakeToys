@@ -25,6 +25,7 @@ pub struct CreateSurfaceRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct CreateLayoutRequest {
+    pub id: Option<String>,
     pub name: Option<String>,
     pub category: Option<String>,
     pub content: Option<String>,
@@ -459,7 +460,7 @@ pub fn portal_assemble_surface_router() -> Router {
         .route("/api/portal/assemble/surface/delete/layout", post(crate::delete_layout))
         .route("/api/portal/assemble/surface/dict/portal/{dictFlag}/{portalFlag}", get(crate::dict_dictFlag_portal_portalFlag))
         .route("/api/portal/assemble/surface/dict/portal/data/{dictFlag}/{portalFlag}", get(crate::dict_dictFlag_portal_portalFlag_data))
-        .route("/api/portal/assemble/surface/dict/portal/path/data/{dictFlag}/{portalFlag}", get(crate::dict_dictFlag_portal_portalFlag_path_data))
+        .route("/api/portal/assemble/surface/dict/portal/path/data/{dictFlag}/{portalFlag}", get(crate::dict_dictFlag_portal_portalFlag_path_data_short))
         .route("/api/portal/assemble/surface/dict/portal/path/data/mockdeletetoget/{dictFlag}/{portalFlag}", post(crate::dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget))
         .route("/api/portal/assemble/surface/dict/portal/path/data/mockputtopost/{dictFlag}/{portalFlag}", post(crate::dict_dictFlag_portal_portalFlag_path_data_mockputtopost))
         .route("/api/portal/assemble/surface/dict/list/portal/{portalFlag}", get(crate::dict_list_portal_portalFlag))
@@ -667,7 +668,6 @@ pub async fn create_layout(
 #[allow(non_snake_case)]
 pub async fn save_layout(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(req): Json<CreateLayoutRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -675,8 +675,12 @@ pub async fn save_layout(
     let name = req.name.unwrap_or_default();
     let category = req.category.unwrap_or_default();
     let content = req.content.unwrap_or_default();
+    let id = req
+        .id
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
 
-    let result = client
+    let updated = client
         .execute(
             "UPDATE x_portal_layout SET name = $1, category = $2, content = $3, update_time = NOW() \
              WHERE id = $4",
@@ -685,8 +689,15 @@ pub async fn save_layout(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if result == 0 {
-        return Ok(Json(ActionResult::error("layout not found")));
+    if updated == 0 {
+        client
+            .execute(
+                "INSERT INTO x_portal_layout (id, name, category, content, creator, create_time, update_time) \
+                 VALUES ($1, $2, $3, $4, 'system', NOW(), NOW())",
+                &[&id, &name, &category, &content],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
     }
 
     let row = client
@@ -717,9 +728,15 @@ pub async fn save_layout(
 #[allow(non_snake_case)]
 pub async fn delete_layout(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let id = req
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
 
     let result = client
         .execute("DELETE FROM x_portal_layout WHERE id = $1", &[&id])
@@ -926,6 +943,17 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data(
         }
         None => Ok(Json(ActionResult::error("dict not found"))),
     }
+}
+
+/// 2 段变体：前端 PortalApp 调 dict/portal/path/data/{dictFlag}/{portalFlag}（无 path 段），
+/// 委派到 3 段实现，path 传空。
+#[allow(non_snake_case)]
+pub async fn dict_dictFlag_portal_portalFlag_path_data_short(
+    pool: Extension<Pool>,
+    Path((dict_flag, portal_flag)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    dict_dictFlag_portal_portalFlag_path_data(pool, Path((dict_flag, portal_flag, String::new())))
+        .await
 }
 
 #[allow(non_snake_case)]
