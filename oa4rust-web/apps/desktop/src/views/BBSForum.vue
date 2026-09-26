@@ -899,6 +899,9 @@ async function loadBbsControl() {
       s(api.get('/api/bbs/assemble/control/uuid/random')),
       // rev450：主题评级统计（u2_statgrade Path<(sectionName,subjectType)> 读 x_bbs 评分聚合）
       s(api.get('/api/bbs/assemble/control/subject/statgrade/sectionName/default/subjectType/all')),
+      // rev409：主题精华/推荐/置顶全站计数（subject_statgrade 无参，COUNT x_bbs_topic 真读）——
+      // 0 参数字面量路由，与上面 2 参数 statgrade 段数不同、归一唯一独立计入
+      s(api.get('/api/bbs/assemble/control/subject/statgrade')),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     const hasCfg = (config as any)?.data ? '有' : '无'
