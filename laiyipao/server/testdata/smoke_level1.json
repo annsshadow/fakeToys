@@ -121,13 +121,13 @@
           "kind": "oil_drum",
           "x": 890,
           "y": 454,
-          "param": 164
+          "param": 64
         },
         {
           "kind": "oil_drum",
           "x": 713,
           "y": 396,
-          "param": 155
+          "param": 25
         }
       ],
       "is_boss": false,

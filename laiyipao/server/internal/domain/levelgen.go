@@ -299,16 +299,29 @@ func generateTerrain(rng *LCG, kind string, levelID int) []TerrainPlacement {
 			x = 250 + rng.Intn(650)
 		}
 		usedX[x] = true
+		// param 的单位必须与「充能的增量」同量级，否则地形永远不触发。
+		//
+		// ⚠️ 这里曾经差 2~3 个数量级：
+		//   油桶 param = 100~180，而每次火焰命中的增量是 totalDamage/100。
+		//   血量缩放前单次总伤害约 50（增量 0，因为整除 100 后为 0），
+		//   缩放后约 254（增量 2）。于是 100 的阈值要 50 次同元素命中 ——
+		//   实测 12 个油桶关卡里 0 个被点燃。
+		//   掩体 param = 2000~5000，要 1000~2500 次动能命中，永远不可能。
+		//
+		// 现在按「一场战斗里合理能打出的次数」标定：
+		// 实测第 1 关 270 发 / 约 220 次命中，按元素五分约为每种 44 次，
+		// 每次增量 2 → 满打约 88 点。所以阈值取 20~70（4~35 次命中），
+		// 留出"必须持续关注某个元素"的空间，又不至于打不出来。
 		param := 0
 		switch kind {
 		case "oil_drum":
-			param = 100 + rng.Intn(80) // 引爆所需火焰元素层数
+			param = 20 + rng.Intn(50) // 引爆所需充能（约 10~35 次火焰命中）
 		case "tidal_gate":
 			param = 8000 + rng.Intn(4000) // 周期毫秒
 		case "rotor_vane":
 			param = 30 + rng.Intn(60) // 角速度（度/秒）
 		case "collapse_wall":
-			param = 2000 + rng.Intn(3000) // 崩塌所需动能累计
+			param = 30 + rng.Intn(40) // 崩塌所需动能充能（约 15~35 次动能命中）
 		case "charge_tower":
 			param = 30 + rng.Intn(20) // 蓄满所需击杀数
 		}

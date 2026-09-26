@@ -911,7 +911,9 @@ export class BattleEngine {
     // 地形联动。地形自身负责判定弹丸是否经过它（updateXxx 内部已做空间判定），
     // 因此这里只需传入元素与伤害，不需要坐标。
     for (const t of this.terrains) {
-      if (t.onHit(p.element, res.totalDamage)) {
+      // 传入命中位置：地形要判断"这一发是否真的打在地形上"，
+      // 否则站在远处的油桶会被任意位置的火焰点燃（见 Terrain.onHit 注释）。
+      if (t.onHit(p.element, res.totalDamage, p.x, p.y)) {
         this.terrainUsed.push(t.kind)
         this.emit({ type: 'terrain', kind: t.kind, x: t.x, y: t.y })
         this.record(this.tick, 'terrain', terrainIndex(t.kind), t.x, t.y)
