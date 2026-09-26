@@ -226,8 +226,7 @@ use crate::{
     work_v2_id_rollback_mockputtopost, work_v2_id_terminate, work_v2_id_terminate_manage,
     work_v2_id_trigger_processing, work_v2_list_id_activity_goback, work_v2_list_id_next_count,
     work_v2_list_id_prev_count, work_v2_list_paging_page_size_size,
-    work_v2_workorworkcompleted_workOrWorkCompleted, work_v3_retract,
-    work_v3_retract_stage_job_job, work_v3_workorworkcompleted_workOrWorkCompleted_permission,
+    work_v2_workorworkcompleted_workOrWorkCompleted, work_v3_retract_stage_job_job, work_v3_workorworkcompleted_workOrWorkCompleted_permission,
     work_workorworkcompleted_workOrWorkCompleted,
     workcompleted_filter_attribute_application_applicationFlag,
     workcompleted_filter_attribute_application_applicationFlag_manage,
@@ -701,7 +700,6 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/work/v2/list/prev/{id}/{count}", get(work_v2_list_id_prev_count))
         .route("/api/processplatform/assemble/surface/work/v2/list/paging/{page}/{size}/{size}", get(crate::work_v2_list_paging_page_size_size_p3))
         .route("/api/processplatform/assemble/surface/work/v2/workorworkcompleted/{workOrWorkCompleted}", get(work_v2_workorworkcompleted_workOrWorkCompleted))
-        .route("/api/processplatform/assemble/surface/work/v3/retract", get(work_v3_retract))
         .route("/api/processplatform/assemble/surface/work/v3/workorworkcompleted/permission/{workOrWorkCompleted}", get(work_v3_workorworkcompleted_workOrWorkCompleted_permission))
         .route("/api/processplatform/assemble/surface/work/workorworkcompleted/{workOrWorkCompleted}", get(work_workorworkcompleted_workOrWorkCompleted))
         .route("/api/processplatform/assemble/surface/workcompleted/filter/attribute/application/{applicationFlag}", get(workcompleted_filter_attribute_application_applicationFlag))

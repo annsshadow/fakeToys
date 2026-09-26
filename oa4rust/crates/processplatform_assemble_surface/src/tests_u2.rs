@@ -1075,7 +1075,6 @@ mod u2c_tests {
         let cases: Vec<(&str, &str)> = vec![
             ("PUT", "/keylock/lock"),
             ("POST", "/keylock/lock/mockputtopost"),
-            ("GET", "/work/v3/retract"),
             ("POST", "/work/v3/retract"),
             ("GET", "/review/filter/attribute"),
             ("POST", "/review/filter/attribute"),
