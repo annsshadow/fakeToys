@@ -72,8 +72,8 @@ class TestCheckpointDeltaGuard:
         assert manager._current_checkpoint is None
         manager._pending_completed.add(1)
         manager._save_delta()
-        # 没有进行中的 checkpoint 时，不应产生增量文件
-        assert not any((tmp_path / "ck").glob("*_delta.json"))
+        # 没有进行中的 checkpoint 时，不应产生增量文件（新旧两种扩展名一并挡住）
+        assert not any((tmp_path / "ck").glob("*_delta.*"))
 
 
 class TestCleanerCustomRule:
