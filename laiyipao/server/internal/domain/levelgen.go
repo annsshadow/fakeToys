@@ -513,7 +513,18 @@ func generateTerrain(rng *LCG, kind string, levelID int) []TerrainPlacement {
 		param := 0
 		switch kind {
 		case "oil_drum":
-			param = 20 + rng.Intn(50) // 引爆所需充能（约 10~35 次火焰命中）
+			// 实测（balance.probe 的「地形生效率」，按真实效果度量）：
+			// 6 个油桶的充能峰值是 11~32，而 param 是 22~68 ——
+			// **够得着了但累积不够**，没有一个达到阈值。
+			//
+			// 这是把地形 y 范围从 [380,660] 改到 [600,900]
+			// （对齐敌人走廊 [600,940]）之后的结果：改之前充能恒为 0，
+			// 改之后能到 param 的 25%~47%。
+			//
+			// 阈值取 8~23。实测峰值充能 11~32，取这个区间让
+			// 「对着油桶集中火力」能点燃而「随手打」不易点燃 ——
+			// 保留战术意图，同时保证机制**可用**而不是完全看不到。
+			param = 8 + rng.Intn(15)
 		case "tidal_gate":
 			param = 8000 + rng.Intn(4000) // 周期毫秒
 		case "rotor_vane":
@@ -524,9 +535,24 @@ func generateTerrain(rng *LCG, kind string, levelID int) []TerrainPlacement {
 			param = 30 + rng.Intn(20) // 蓄满所需击杀数
 		}
 		out = append(out, TerrainPlacement{
-			Kind:  kind,
-			X:     x,
-			Y:     380 + rng.Intn(280),
+			Kind: kind,
+			X:    x,
+			// ⚠️ y 必须落在**敌人行走走廊**里，否则地形是死代码。
+			//
+			// 曾经是 `380 + rng.Intn(280)` → y ∈ [380, 660]，
+			// 而敌人出生在 `600 + rng.Intn(340)` → y ∈ [600, 940]（engine.ts）。
+			// 两个区间只在 [600, 660] 重叠 —— 约 16%。
+			//
+			// 后果实测：6 个油桶**一个都没被点燃过**（0%）。
+			// 因为火焰弹丸是瞄着**敌人**飞的，敌人�� y≈800 时弹道在 y 800~880，
+			// 而油桶在 y≈500，距离 300+ 远超 120 的充能半径。
+			// 掩体也受影响（放置 9 个只生效 5 个）——
+			// 弹道不经过掩体，自然既不会被挡也不会被打。
+			//
+			// 改成 600 + rng.Intn(300) → y ∈ [600, 900]，
+			// 完整落在敌人走廊内，且留出 100 的下边距（FIELD_H = 1000）。
+			// 走廊宽度 300 / 走廊全宽 340 = 88% 覆盖。
+			Y:     600 + rng.Intn(300),
 			Param: param,
 		})
 	}

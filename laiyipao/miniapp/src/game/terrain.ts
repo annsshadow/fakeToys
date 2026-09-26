@@ -182,8 +182,20 @@ export class Terrain {
     const mag = BigInt(this.param) * 4n / 10n
     const deflectX = (ux * mag * 2n) / 1000n
     const deflectY = (uy * mag * 2n) / 1000n
+    // ⚠️ 作用半径 140 → 260。
+    //
+    // 实测（balance.probe 的「地形生效率」）：6 个风障的作用范围内
+    // **一次弹丸都没进过**（偏转计数恒为 0）。
+    //
+    // 原因是弹道很"窄"：弹丸从 (60,880) 直线飞向敌人，
+    // 在风障所在的 x 处，弹丸的 y 只在 [623, 935] 之间的一个窄带里。
+    // 而风障被随机放在 y ∈ [600,900]，与那条窄带错开的概率很高。
+    // 半径 140 时只要错开 140 就完全无效。
+    //
+    // 260 让风障真正成为"覆盖一片区域的偏转场"，
+    // 与它作为「风障」的视觉体量相称。
     for (const p of ctx.projectiles) {
-      if (ctx.within(this.x, this.y, 140, p.x, p.y)) {
+      if (ctx.within(this.x, this.y, 260, p.x, p.y)) {
         p.vx += deflectX
         p.vy += deflectY
       }
