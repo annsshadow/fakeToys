@@ -393,10 +393,10 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/program_center/bar/select3/field/field/value/value/count/count", get(bar_select3_field_field_value_value_count_count))
         .route("/api/program_center/bar/select4/field/field/value/value/count/count", get(bar_select4_field_field_value_value_count_count))
         .route("/api/program_center/captcha/list", get(captcha_list))
-        .route("/api/program_center/captcha/v2/create/width/width/height/height", post(captcha_v2_create_width_width_height_height))
+
         .route("/api/program_center/center/applications", get(center_applications))
         .route("/api/program_center/center/version", get(center_version))
-        .route("/api/program_center/code/create/mobile/mobile", post(code_create_mobile_mobile))
+
         .route("/api/program_center/code/list", get(code_list))
         .route("/api/program_center/code/list/paging/page/size/size", get(code_list_paging_page_size_size))
         .route("/api/program_center/collect/connect", get(collect_connect))
@@ -444,15 +444,15 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/program_center/datastructure/fileds/all", get(datastructure_fileds_all))
         .route("/api/program_center/datastructure/modules/all", get(datastructure_modules_all))
         .route("/api/program_center/datastructure/tables/all", get(datastructure_tables_all))
-        .route("/api/program_center/deploy/list/paging/page/size/size", get(deploy_list_paging_page_size_size))
+
         .route("/api/program_center/deploy/server/o2", get(deploy_server_o2))
         .route("/api/program_center/deploy/server/o2", post(deploy_server_o2))
         .route("/api/program_center/deploy/server/resource", get(deploy_server_resource))
-        .route("/api/program_center/deploy/web/resource/as/new/asNew", get(deploy_web_resource_as_new_asNew))
+
         .route("/api/program_center/designer/search", get(designer_search))
         .route("/api/program_center/designer/search", post(designer_search))
         .route("/api/program_center/dict/list", get(dict_list))
-        .route("/api/program_center/dict/list/paging/page/size/size", get(dict_list_paging_page_size_size))
+
         .route("/api/program_center/dict/{dictFlag}/data", post(dict_dictFlag_data_post))
         .route("/api/program_center/dict/dictFlag/path/data/mockdeletetoget", delete(dict_dictFlag_path_data_mockdeletetoget))
         .route("/api/program_center/dict/dictFlag/path/data/mockputtopost", post(dict_dictFlag_path_data_mockputtopost))
@@ -522,10 +522,10 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/program_center/module/output", put(u3_module_output_put))
         .route("/api/program_center/module/output/structure", post(module_output_structure))
         .route("/api/program_center/module/output/structure", get(u3_module_output_structure_latest))
-        .route("/api/program_center/module/output/flag/file", post(module_output_flag_file))
-        .route("/api/program_center/module/remove/structure/id", get(module_remove_structure_id))
-        .route("/api/program_center/module/write/flag", get(module_write_flag))
-        .route("/api/program_center/module/write/flag", put(module_write_flag))
+
+
+
+
         .route("/api/program_center/mpweixin/check", get(mpweixin_check))
         .route("/api/program_center/mpweixin/check", post(u3_mpweixin_check_post))
         .route("/api/program_center/mpweixin/media/add/forever", post(mpweixin_media_add_forever))
@@ -536,8 +536,8 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/program_center/mpweixin/message/template/send", post(u3_mpweixin_template_send_post))
         .route("/api/program_center/output/list", post(output_list))
         .route("/api/program_center/output/list", get(output_list))
-        .route("/api/program_center/output/appInfoFlag/select", post(output_appInfoFlag_select))
-        .route("/api/program_center/output/flag/select/file", post(output_flag_select_file))
+
+
         .route("/api/program_center/prompterrorlog/count/exceptionclass", get(prompterrorlog_count_exceptionclass))
         .route("/api/program_center/prompterrorlog/count/loggername", get(prompterrorlog_count_loggername))
         .route("/api/program_center/qiyeweixin/get/callback/aes", get(qiyeweixin_get_callback_aes))
@@ -551,7 +551,7 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/program_center/schedule/report", post(schedule_report))
         .route("/api/program_center/schedule/schedule/fire", get(schedule_schedule_fire))
         .route("/api/program_center/script/list", get(script_list))
-        .route("/api/program_center/script/list/paging/page/size/size", get(script_list_paging_page_size_size))
+
         .route("/api/program_center/script/name/name", get(script_name_name))
         .route("/api/program_center/test/test1", get(test_test1))
         .route("/api/program_center/test/test2", get(test_test2))
@@ -607,7 +607,7 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/program_center/collect/remove", delete(collect_remove))
         .route("/api/program_center/collect/updateUnit", put(collect_updateUnit))
         .route("/api/program_center/config/save", put(config_save))
-        .route("/api/program_center/mpweixin/menu/update/id", put(mpweixin_menu_update_id))
+
         .route("/api/program_center/tokenthreshold/update", put(tokenthreshold_update))
         // ─── plan002 U2 终扫闭合（U3 批次）：参数化路由与动词补齐 ───
         .route("/api/program_center/agent/{flag}/disable", get(u3_agent_flag_disable))
