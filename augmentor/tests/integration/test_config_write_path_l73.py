@@ -216,15 +216,18 @@ class TestApplySectionUpdateSdk:
         assert getattr(section, key) is value
 
     def test_ratchet_names_sections_without_runtime_gates(self):
-        """七节里 `augmentation` + `quality` + `dedup` 三节已有运行时判据；剩下四节是 A118 的账。
+        """七节**全部**接上运行时判据 ⇒ 本函数的守卫对每一节都真的在做事
 
-        用精确集合而不是「至少有一条没判据」：六节里任何一节接上 `__post_init__`
-        都会让本用例红，那时应同步缩小这个集合并把 A118 的量级改小。
+        用精确集合而不是「至少有一条没判据」：任何一节接上或拆掉 `__post_init__`
+        都会让本用例红，那时应同步改这个集合并说明理由。
 
-        **本条就是那次翻转**（L76 / A118 分节收口）：`quality` 与 `dedup` 两节接上
-        判据后集合从六节缩到四节。判据没有放宽 —— 变的只有名单，且 `dedup` 这一节
-        改前并非「有判据」而是「判据只住在消费方」，所以它落进本集合从来是准确的。
-        余下四节的账与两节各自的实测症状见 §6 A118 行。
+        **本条是第二次翻转**（L82 / A118 余四节）：`export` / `rag` / `vector` /
+        `multimodal` 四节接上判据后，集合从四节缩到**空**。L73 写下这条时它守的是
+        「四节的 `apply_section_update` 是空转」，L76 收了 quality/dedup，本轮收完
+        最后四节 —— 于是断言的形状也从「等于那四节」换成「与七节交集为空」的硬条件，
+        加上全 20 节现量名单一条（计数来自 `Temp/l82q/section_gates.json`，不靠回忆）：
+        还有 11 节没有判据，但它们**不在** `POST /api/config` 的可写清单里，所以本节
+        的守卫不欠它们账。
         """
         from augmentor import load_config
 
@@ -233,9 +236,53 @@ class TestApplySectionUpdateSdk:
             name for name in WRITABLE_SECTIONS
             if not hasattr(type(getattr(config, name)), "__post_init__")
         )
-        assert ungated == [
-            "export", "multimodal", "rag", "vector",
-        ]
+        assert ungated == [], "七节里有节的运行时判据被拆掉了：%s" % ungated
+
+        all_sections = sorted(
+            f.name for f in dataclasses.fields(config)
+            if dataclasses.is_dataclass(getattr(config, f.name))
+            and not hasattr(type(getattr(config, f.name)), "__post_init__")
+        )
+        assert all_sections == [
+            "active_learning", "benchmark", "context", "evaluation", "expander",
+            "frameworks", "multilingual", "sampler", "tracker", "versioning",
+            "visualization",
+        ], "A118 现量变了：按本轮同款推导重测再改这里，别照抄"
+
+    def test_sections_without_runtime_gates_still_write_through(self):
+        """设计选择 3 的行为面：没有 `__post_init__` 的节照旧写入，不抛也不吞键
+
+        为什么本轮补它：覆盖报表里 `config.py` 的 `if post_init is not None` 是本轮
+        唯一新增的偏支 —— 七节全部接上判据后，假臂只余上面那 11 节会走，而它们全在
+        `POST /api/config` 的可写清单之外，只有 SDK 直构能到这里。没有这条用例，下一轮
+        把它当死代码删掉就是一次对外行为变更（A140 接节时这一支还要继续走）。
+        """
+        from augmentor import load_config
+        from augmentor.config import apply_section_update
+
+        config = load_config(str(AI_DIR / "config.yaml"))
+        all_sections = sorted(
+            f.name for f in dataclasses.fields(config)
+            if dataclasses.is_dataclass(getattr(config, f.name))
+            and not hasattr(type(getattr(config, f.name)), "__post_init__")
+        )
+        assert all_sections, "全 20 节都接上了判据 ⇒ 假臂无来源，本用例连同设计选择 3 一起退役"
+        flipped = 0
+        for name in all_sections:
+            section = getattr(config, name)
+            assert not hasattr(type(section), "__post_init__"), \
+                "%s 节接上了判据，本用例的靶子消失，改走七节那条路" % name
+            old = getattr(section, dataclasses.fields(section)[0].name)
+            # 首字段是 bool ⇒ 写一个**不同**的值，断言才不是自等
+            new = (not old) if isinstance(old, bool) else old
+            flipped += isinstance(old, bool)
+            ignored = apply_section_update(
+                section, {dataclasses.fields(section)[0].name: new, "no_such_knob": 1}
+            )
+            assert ignored == ["no_such_knob"], name
+            assert getattr(section, dataclasses.fields(section)[0].name) == new, name
+        assert flipped == len(all_sections), \
+            "有节的首字段不再是 bool ⇒ 那一节的写入断言退化成自等，换字段选择再改这里"
 
 
 class TestApiRejectsOutOfRange:
