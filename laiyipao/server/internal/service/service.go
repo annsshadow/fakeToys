@@ -377,21 +377,25 @@ func (s *Service) LoadWallet(ctx context.Context, userID int64) (Wallet, error) 
 
 // GameConfig 是客户端一次拉取所需的全部内容。
 type GameConfig struct {
-	Version    int                     `json:"version"`
-	Levels     []domain.GeneratedLevel `json:"levels"`
-	Enemies    []domain.SeedEnemy      `json:"enemies"`
-	Skills     []domain.SeedSkill      `json:"skills"`
-	Composite  []domain.SeedSkill      `json:"composite_skills"`
-	Recipes    []domain.SeedRecipe     `json:"recipes"`
-	Equipment  []domain.SeedEquipment  `json:"equipment"`
-	Gems       []domain.SeedGem        `json:"gems"`
-	Qualities  []QualityInfo           `json:"gem_qualities"`
-	Skins      []domain.SeedSkin       `json:"skins"`
-	Mastery    []domain.MasteryFamily  `json:"mastery_families"`
-	Reactions  []domain.ReactionSpec   `json:"reactions"`
-	Chapters   []ChapterInfo           `json:"chapters"`
-	RatingW    domain.RatingWeights    `json:"rating_weights"`
-	ServerTime time.Time               `json:"server_time"`
+	Version   int                     `json:"version"`
+	Levels    []domain.GeneratedLevel `json:"levels"`
+	Enemies   []domain.SeedEnemy      `json:"enemies"`
+	Skills    []domain.SeedSkill      `json:"skills"`
+	Composite []domain.SeedSkill      `json:"composite_skills"`
+	Recipes   []domain.SeedRecipe     `json:"recipes"`
+	Equipment []domain.SeedEquipment  `json:"equipment"`
+	Gems      []domain.SeedGem        `json:"gems"`
+	Qualities []QualityInfo           `json:"gem_qualities"`
+	Skins     []domain.SeedSkin       `json:"skins"`
+	Mastery   []domain.MasteryFamily  `json:"mastery_families"`
+	Reactions []domain.ReactionSpec   `json:"reactions"`
+	Chapters  []ChapterInfo           `json:"chapters"`
+	RatingW   domain.RatingWeights    `json:"rating_weights"`
+	// ScoreRules 是分数规则。客户端引擎的加分逻辑必须用这一份，
+	// 不能自己硬编码 500/5000/100 —— 漂移了星级就会与实际表现不符，
+	// 而两端各自都「自洽」，没有任何测试会发现。
+	ScoreRules domain.ScoreRules `json:"score_rules"`
+	ServerTime time.Time         `json:"server_time"`
 }
 
 // QualityInfo 是宝石品质信息。
@@ -418,6 +422,8 @@ type ChapterInfo struct {
 func (s *Service) LoadGameConfig(ctx context.Context) (GameConfig, error) {
 	cfg := GameConfig{
 		Levels: domain.GenerateAllLevels(),
+		// ⚠️ 分数规则必须下发，不能让客户端自己写死
+		ScoreRules: domain.DefaultScoreRules(),
 		// 平衡缩放在这里统一应用（见 content.go 的 EnemyHpScale /
 		// SkillProjectileScale）。客户端引擎读到的就是缩放后的数值，
 		// 而 content.go 的数据表保留可读的基准值。
