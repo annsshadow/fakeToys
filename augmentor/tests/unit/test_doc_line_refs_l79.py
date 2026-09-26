@@ -273,9 +273,17 @@ FLOOR = {
 #: 区别是 L90 用它**确认**了一格代码归因、本轮用它**排除**了文档归因并把 −4 一次做满。
 #: 四个棘轮桶本轮照旧一格未抬（`ambiguous_line` 68 / `ambiguous_file` 145 / `bare` 149 /
 #: `scratch_missing` 111），`dead_line` 与 `unresolved_source` 两侧仍为 0。
+#: **L92 回填（两格 +9 / +1，`Temp/l92q/token_diff.py` 逐 token 归因，零「减数在现树上重量」的
+#: 需求）**：本轮**产品 Python 码一字未改** ⇒ `code_but_no_name_match` 两侧照旧（37 / 161）、
+#: `line_refs` 照旧（42 / 290），涨的全是文档新写的句子。账本 1420 → **1429** 那 +9 逐个指得到：
+#: `Temp/l92q/mutate_l92.py` ×2、`sweep_toasts.py`、`mutate_l92_vitest.py`（探针，落
+#: `scratch_artifact`）、新产品测试 `tests/unit/test_upload_declared_format_l92.py`、
+#: 既有产品名 `api/deps.py` / `api/routes/data.py` / `augmentor/converter.py` /
+#: `test_upload_table_formats_l91.py` 各多出现一次；架构文档 239 → **240** 那 +1 是同一条新产品
+#: 测试路径。四个棘轮桶与两侧 `dead_line` / `unresolved_source` 一格未抬、仍为 0。
 MEASURED = {
-    ARCH: {"line_refs": 42, "file_tokens": 239, "code_but_no_name_match": 37},
-    LEDGER: {"line_refs": 290, "file_tokens": 1420, "code_but_no_name_match": 161},
+    ARCH: {"line_refs": 42, "file_tokens": 240, "code_but_no_name_match": 37},
+    LEDGER: {"line_refs": 290, "file_tokens": 1429, "code_but_no_name_match": 161},
 }
 
 #: 日志块标题行上「下一轮才填得出自己哈希」的占位符。精确相等 = **只许有该填的那几条**。
@@ -291,6 +299,8 @@ MEASURED = {
 #: **L89 回填侧（15 → 14）**：填掉 L88 的三批哈希后只剩 14 条历史欠账；本轮写 L89 块标题时改回 15。
 #: **L91 回填侧（15 → 14）**：填掉 L90 的三批哈希（`8e6b478a4` + `9fe7ba89e` + `0a9c210c5`）后同样
 #: 只剩 14 条历史欠账；本轮（L91）写自己的日志块标题时按同一纪律改回 **15**。
+#: **L92 两次都动了**：填掉 L91 的三批哈希（`56c4565ff` + `a266f62f7` + `4d155cfc4`）⇒ 14；
+#: L92 落自己的日志块标题 ⇒ 15。
 HASH_PLACEHOLDER = re.compile(r"^- \*\*L\d+\*\* `哈希待 L\d+ 回填`", re.MULTILINE)
 PLACEHOLDER_CEILING = 15
 
@@ -818,8 +828,12 @@ BACKLOG_HEADS = ("| # | 位置 | 问题 | 量级 |", "|---|------|------|------|
 #: 陈旧窗口无界）与 A159（`save_config` 的双趟 YAML 解析，判负不动手）两行由
 #: `Temp/l88q/ledger_fill_1.py` 按**整行锚点 + 行数断言**插入，本轮三条骨架判据一次未因形状
 #: 破损而红（红的是「常数尚未回填」那一类，与本档无关）。跳号集合第七次未变。
-BACKLOG_A_LINES = 165
-BACKLOG_A_MAX = 164
+#: **L92 回填（+3 行，A162 结案不算加行）**：A165（案文会顶替代码通过扫描型判据，本轮变异
+#: 自抓）、A166（变异读数的第三态：收集期错误不是「绿」）、A167（30 s 客户端 timeout 对
+#: 上传一视同仁，**先量再修**）三行由 `Temp/l92q/add_ledger.py` 按**整行锚点 + 行数断言**
+#: 插入，同一脚本还改了 A162 那一行的行尾（结案注记，行数不变）。号集合仍只缺 52。
+BACKLOG_A_LINES = 168
+BACKLOG_A_MAX = 167
 BACKLOG_A_MISSING = {52}
 #: Backlog B 现量：11 条竖线行 = 2 表头 + 7 条可编号 + 2 条带角标（B3① / ~~B3②~~）。
 BACKLOG_B_LINES = 11
