@@ -647,8 +647,7 @@ pub async fn area_list_province_province(
 #[allow(non_snake_case)]
 pub async fn area_list_province_province_city_city(
     pool: Extension<Pool>,
-    axum::extract::Path((province, _)): axum::extract::Path<(String, String)>,
-    axum::extract::Path(city): axum::extract::Path<String>,
+    axum::extract::Path((province, city)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -721,9 +720,7 @@ pub async fn area_list_province_province_city_city(
 #[allow(non_snake_case)]
 pub async fn area_list_province_province_city_city_district_district(
     pool: Extension<Pool>,
-    axum::extract::Path((province, _, _)): axum::extract::Path<(String, String, String)>,
-    axum::extract::Path(city): axum::extract::Path<String>,
-    axum::extract::Path(district): axum::extract::Path<String>,
+    axum::extract::Path((province, city, district)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1625,8 +1622,7 @@ pub async fn invoice_get_id(
 #[allow(non_snake_case)]
 pub async fn invoice_list_paging_page_size_size(
     pool: Extension<Pool>,
-    axum::extract::Path((page, _)): axum::extract::Path<(i32, String)>,
-    axum::extract::Path(size): axum::extract::Path<i32>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i32, i32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1962,9 +1958,7 @@ pub async fn office_html_to_word_result_flag(
 #[allow(non_snake_case)]
 pub async fn qrcode_width_width_height_height_text_text(
     pool: Extension<Pool>,
-    axum::extract::Path((width, _, _)): axum::extract::Path<(u32, String, String)>,
-    axum::extract::Path(height): axum::extract::Path<u32>,
-    axum::extract::Path(text): axum::extract::Path<String>,
+    axum::extract::Path((width, height, text)): axum::extract::Path<(u32, u32, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2514,8 +2508,7 @@ pub async fn upgrade_2021090902(
 #[allow(non_snake_case)]
 pub async fn worktime_betweenholidaycount_start_startDate_end_endDate(
     pool: Extension<Pool>,
-    axum::extract::Path((start_date, _)): axum::extract::Path<(String, String)>,
-    axum::extract::Path(end_date): axum::extract::Path<String>,
+    axum::extract::Path((start_date, end_date)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2543,8 +2536,7 @@ pub async fn worktime_betweenholidaycount_start_startDate_end_endDate(
 #[allow(non_snake_case)]
 pub async fn worktime_betweenminutes_start_start_end_end(
     pool: Extension<Pool>,
-    axum::extract::Path((start, _)): axum::extract::Path<(String, String)>,
-    axum::extract::Path(end): axum::extract::Path<String>,
+    axum::extract::Path((start, end)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2575,8 +2567,7 @@ pub async fn worktime_betweenminutes_start_start_end_end(
 #[allow(non_snake_case)]
 pub async fn worktime_forwarddays_start_start_days_days(
     pool: Extension<Pool>,
-    axum::extract::Path((start, _)): axum::extract::Path<(String, String)>,
-    axum::extract::Path(days): axum::extract::Path<u32>,
+    axum::extract::Path((start, days)): axum::extract::Path<(String, u32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2644,8 +2635,7 @@ pub async fn worktime_forwarddays_start_start_days_days(
 #[allow(non_snake_case)]
 pub async fn worktime_forwardminutes_start_start_minutes_minutes(
     pool: Extension<Pool>,
-    axum::extract::Path((start, _)): axum::extract::Path<(String, String)>,
-    axum::extract::Path(minutes): axum::extract::Path<i64>,
+    axum::extract::Path((start, minutes)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
