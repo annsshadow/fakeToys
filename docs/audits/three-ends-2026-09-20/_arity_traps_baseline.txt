@@ -40,14 +40,11 @@ GET /api/portal/assemble/designer/list/portal/1/1
 GET /api/portal/assemble/designer/pageversion/list/1/1
 GET /api/portal/assemble/surface/dict/portal/path/data/1/1
 GET /api/processplatform/assemble/designer/item/access/path/path
-GET /api/processplatform/assemble/surface/correlation/job/job
-GET /api/processplatform/assemble/surface/data/fetch/job/job
 GET /api/processplatform/assemble/surface/keylock/lock
 GET /api/processplatform/assemble/surface/read/filter/attribute
 GET /api/processplatform/assemble/surface/read/filter/attribute/filter
 GET /api/processplatform/assemble/surface/readcompleted/filter/attribute
 GET /api/processplatform/assemble/surface/readcompleted/filter/attribute/filter
-GET /api/processplatform/assemble/surface/record/job/job/manage
 GET /api/processplatform/assemble/surface/review/filter/attribute
 GET /api/processplatform/assemble/surface/review/filter/entry
 GET /api/processplatform/assemble/surface/review/v2/search
@@ -112,7 +109,6 @@ POST /api/processplatform/assemble/surface/mode/save
 POST /api/processplatform/assemble/surface/review/create/work
 POST /api/processplatform/assemble/surface/review/create/workcompleted
 POST /api/processplatform/assemble/surface/review/filter/create/entry
-POST /api/processplatform/assemble/surface/taskcompleted/press/work/work
 POST /api/processplatform/service/processing/attachment/copy/workcompleted/1
 POST /api/processplatform/service/processing/record/task/processing
 POST /api/processplatform/service/processing/touch/deletedraft

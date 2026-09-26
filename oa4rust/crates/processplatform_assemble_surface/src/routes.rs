@@ -408,8 +408,8 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/applicationdict/application/data/{applicationDictFlag}/{applicationFlag}", get(applicationdict_applicationDictFlag_application_applicationFlag_data))
         .route("/api/processplatform/assemble/surface/applicationdict/list/application/{applicationFlag}", get(applicationdict_list_application_applicationFlag))
         .route("/api/processplatform/assemble/surface/control/workorworkcompleted/{workOrWorkCompleted}", get(control_workorworkcompleted_workOrWorkCompleted))
-        .route("/api/processplatform/assemble/surface/correlation/job/job", get(correlation_job_job))
-        .route("/api/processplatform/assemble/surface/data/fetch/job/job", get(data_fetch_job_job))
+
+
         .route("/api/processplatform/assemble/surface/data/job/job/mockputtopost", get(data_job_job_mockputtopost))
         .route("/api/processplatform/assemble/surface/data/job/job/path0/mockputtopost", get(data_job_job_path0_mockputtopost))
         .route("/api/processplatform/assemble/surface/data/job/job/path0/path1/mockputtopost", get(data_job_job_path0_path1_mockputtopost))
@@ -535,7 +535,7 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/record/manage/{id}", get(record_id_manage))
         .route("/api/processplatform/assemble/surface/record/manage/mockdeletetoget/{id}", post(record_id_manage_mockdeletetoget))
         .route("/api/processplatform/assemble/surface/record/manage/mockputtopost/{id}", get(record_id_manage_mockputtopost))
-        .route("/api/processplatform/assemble/surface/record/job/job/manage", get(record_job_job_manage))
+
         .route("/api/processplatform/assemble/surface/record/list/job/job/paging/{page}/{size}/{size}", get(record_list_job_job_paging_page_size_size))
         .route("/api/processplatform/assemble/surface/record/list/workorworkcompleted/{workOrWorkCompleted}", get(record_list_workorworkcompleted_workOrWorkCompleted))
         .route("/api/processplatform/assemble/surface/record/list/workorworkcompleted/paging/{workOrWorkCompleted}/{page}/{size}/{size}", get(crate::record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size_p4))
@@ -649,7 +649,7 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/taskcompleted/list/my/paging/{page}/{size}/{size}", get(crate::taskcompleted_list_my_paging_page_size_size_p3))
         .route("/api/processplatform/assemble/surface/taskcompleted/list/prev/manual/{flag}", get(taskcompleted_list_prev_manual_flag))
         .route("/api/processplatform/assemble/surface/taskcompleted/list/workorworkcompleted/{workOrWorkCompleted}", get(taskcompleted_list_workorworkcompleted_workOrWorkCompleted))
-        .route("/api/processplatform/assemble/surface/taskcompleted/press/work/work", post(taskcompleted_press_work_work))
+
         .route("/api/processplatform/assemble/surface/taskcompleted/v2/list/create/next/{id}/{count}", post(taskcompleted_v2_list_create_id_next_count))
         .route("/api/processplatform/assemble/surface/taskcompleted/v2/list/create/prev/{id}/{count}", post(taskcompleted_v2_list_create_id_prev_count))
         .route("/api/processplatform/assemble/surface/taskcompleted/v2/list/create/paging/{page}/{size}/{size}", post(crate::taskcompleted_v2_list_create_paging_page_size_size_p3))
