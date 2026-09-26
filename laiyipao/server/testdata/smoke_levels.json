@@ -19,8 +19,8 @@
         {
           "kind": "oil_drum",
           "x": 881,
-          "y": 471,
-          "param": 47
+          "y": 771,
+          "param": 10
         }
       ],
       "is_boss": false,
@@ -128,8 +128,8 @@
         {
           "kind": "oil_drum",
           "x": 407,
-          "y": 381,
-          "param": 60
+          "y": 821,
+          "param": 13
         }
       ],
       "is_boss": false,
@@ -237,14 +237,14 @@
         {
           "kind": "oil_drum",
           "x": 680,
-          "y": 380,
-          "param": 45
+          "y": 680,
+          "param": 8
         },
         {
           "kind": "oil_drum",
           "x": 443,
-          "y": 597,
-          "param": 62
+          "y": 617,
+          "param": 20
         }
       ],
       "is_boss": false,
@@ -1551,14 +1551,14 @@
         {
           "kind": "oil_drum",
           "x": 515,
-          "y": 492,
-          "param": 68
+          "y": 872,
+          "param": 11
         },
         {
           "kind": "oil_drum",
           "x": 425,
-          "y": 654,
-          "param": 22
+          "y": 754,
+          "param": 20
         }
       ],
       "is_boss": false,
@@ -2344,7 +2344,7 @@
         {
           "kind": "collapse_wall",
           "x": 466,
-          "y": 504,
+          "y": 664,
           "param": 48
         }
       ],
@@ -2464,19 +2464,19 @@
         {
           "kind": "collapse_wall",
           "x": 277,
-          "y": 538,
+          "y": 878,
           "param": 62
         },
         {
           "kind": "collapse_wall",
           "x": 514,
-          "y": 654,
+          "y": 674,
           "param": 50
         },
         {
           "kind": "collapse_wall",
           "x": 884,
-          "y": 632,
+          "y": 852,
           "param": 31
         }
       ],
@@ -2596,7 +2596,7 @@
         {
           "kind": "collapse_wall",
           "x": 514,
-          "y": 551,
+          "y": 611,
           "param": 31
         }
       ],
@@ -3818,7 +3818,7 @@
         {
           "kind": "collapse_wall",
           "x": 514,
-          "y": 597,
+          "y": 817,
           "param": 51
         }
       ],
@@ -3955,19 +3955,19 @@
         {
           "kind": "collapse_wall",
           "x": 346,
-          "y": 636,
+          "y": 796,
           "param": 44
         },
         {
           "kind": "collapse_wall",
           "x": 654,
-          "y": 624,
+          "y": 684,
           "param": 30
         },
         {
           "kind": "collapse_wall",
           "x": 540,
-          "y": 447,
+          "y": 827,
           "param": 60
         }
       ],
@@ -4950,7 +4950,7 @@
         {
           "kind": "charge_tower",
           "x": 587,
-          "y": 430,
+          "y": 670,
           "param": 47
         }
       ],
@@ -5087,13 +5087,13 @@
         {
           "kind": "charge_tower",
           "x": 822,
-          "y": 650,
+          "y": 750,
           "param": 38
         },
         {
           "kind": "charge_tower",
           "x": 381,
-          "y": 567,
+          "y": 607,
           "param": 42
         }
       ],
@@ -5230,7 +5230,7 @@
         {
           "kind": "charge_tower",
           "x": 777,
-          "y": 509,
+          "y": 869,
           "param": 46
         }
       ],
@@ -6592,13 +6592,13 @@
         {
           "kind": "charge_tower",
           "x": 650,
-          "y": 562,
+          "y": 642,
           "param": 42
         },
         {
           "kind": "charge_tower",
           "x": 469,
-          "y": 419,
+          "y": 899,
           "param": 39
         }
       ],
@@ -7209,7 +7209,7 @@
         {
           "kind": "charge_tower",
           "x": 479,
-          "y": 435,
+          "y": 795,
           "param": 46
         }
       ],
@@ -7538,13 +7538,13 @@
         {
           "kind": "charge_tower",
           "x": 528,
-          "y": 514,
+          "y": 894,
           "param": 46
         },
         {
           "kind": "charge_tower",
           "x": 693,
-          "y": 537,
+          "y": 837,
           "param": 31
         }
       ],
@@ -7873,19 +7873,19 @@
         {
           "kind": "tidal_gate",
           "x": 838,
-          "y": 514,
+          "y": 814,
           "param": 9276
         },
         {
           "kind": "tidal_gate",
           "x": 549,
-          "y": 414,
+          "y": 674,
           "param": 9403
         },
         {
           "kind": "tidal_gate",
           "x": 691,
-          "y": 517,
+          "y": 737,
           "param": 10855
         }
       ],
@@ -8033,13 +8033,13 @@
         {
           "kind": "tidal_gate",
           "x": 280,
-          "y": 630,
+          "y": 870,
           "param": 9444
         },
         {
           "kind": "tidal_gate",
           "x": 883,
-          "y": 531,
+          "y": 791,
           "param": 9588
         }
       ],
@@ -8187,19 +8187,19 @@
         {
           "kind": "tidal_gate",
           "x": 507,
-          "y": 652,
+          "y": 872,
           "param": 8871
         },
         {
           "kind": "tidal_gate",
           "x": 628,
-          "y": 510,
+          "y": 830,
           "param": 8428
         },
         {
           "kind": "tidal_gate",
           "x": 478,
-          "y": 622,
+          "y": 602,
           "param": 11603
         }
       ],
@@ -8911,13 +8911,13 @@
         {
           "kind": "tidal_gate",
           "x": 373,
-          "y": 514,
+          "y": 874,
           "param": 10213
         },
         {
           "kind": "tidal_gate",
           "x": 893,
-          "y": 381,
+          "y": 861,
           "param": 9225
         }
       ],
@@ -11044,7 +11044,7 @@
         {
           "kind": "rotor_vane",
           "x": 625,
-          "y": 512,
+          "y": 832,
           "param": 88
         }
       ],
@@ -11209,19 +11209,19 @@
         {
           "kind": "rotor_vane",
           "x": 616,
-          "y": 497,
+          "y": 877,
           "param": 71
         },
         {
           "kind": "rotor_vane",
           "x": 835,
-          "y": 493,
+          "y": 813,
           "param": 34
         },
         {
           "kind": "rotor_vane",
           "x": 809,
-          "y": 553,
+          "y": 893,
           "param": 67
         }
       ],
@@ -11386,13 +11386,13 @@
         {
           "kind": "rotor_vane",
           "x": 381,
-          "y": 645,
+          "y": 745,
           "param": 52
         },
         {
           "kind": "rotor_vane",
           "x": 438,
-          "y": 465,
+          "y": 665,
           "param": 49
         }
       ],
@@ -13660,13 +13660,13 @@
         {
           "kind": "charge_tower",
           "x": 804,
-          "y": 536,
+          "y": 896,
           "param": 34
         },
         {
           "kind": "charge_tower",
           "x": 269,
-          "y": 606,
+          "y": 846,
           "param": 37
         }
       ],
@@ -13848,13 +13848,13 @@
         {
           "kind": "charge_tower",
           "x": 413,
-          "y": 417,
+          "y": 617,
           "param": 32
         },
         {
           "kind": "charge_tower",
           "x": 716,
-          "y": 386,
+          "y": 826,
           "param": 41
         }
       ],
@@ -14030,7 +14030,7 @@
         {
           "kind": "charge_tower",
           "x": 875,
-          "y": 502,
+          "y": 882,
           "param": 31
         }
       ],
