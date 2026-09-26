@@ -64,6 +64,18 @@ INPUT_FORMATS = [
     "llama_factory", "vicuna", "belle", "excel", "xlsx", "xls",
 ]
 
+# `convert --format` 可选的目标格式。权威表在 `converter.OUTPUT_FORMAT_CHOICES`
+# （那份常量还生成写侧报错文案里的清单）；这里按本模块口径显式列出，两侧一致性由
+# `tests/integration/test_excel_write_cli_api_l84.py::TestConvertTargetFormatSurface` 钉。
+#
+# 它与 `INPUT_FORMATS` **不互为镜像**，差的恰好只有 Excel 那一族里的 `xls`：读边认它
+# （openpyxl 读得了 BIFF 老格式），写边写不出（要 xlwt，不在依赖表里）。放行 `xls`
+# 就是让命令行收下「必然写出假容器」的参数 —— 那正是 A133 要终结的症状。
+CONVERT_TARGET_FORMATS = [
+    "json", "jsonl", "csv", "tsv", "alpaca", "sharegpt", "chatml",
+    "llama_factory", "vicuna", "belle", "excel", "xlsx",
+]
+
 # `clean --rules` 可选的规则名，与 `cleaner.DatasetCleaner._default_rules` 的键
 # 一一对应。在这里显式列出（而不是留空）是为了让拼错的规则名由 argparse 拒绝，
 # 而不是被 `cleaner.clean` 静默忽略——后者会让人以为清洗跑过了。
@@ -321,9 +333,9 @@ def build_parser() -> argparse.ArgumentParser:
     convert_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
     convert_parser.add_argument("--output", type=str, required=True, help="输出文件路径")
     convert_parser.add_argument("--format", type=str, required=True,
-                                choices=["json", "jsonl", "csv", "tsv", "alpaca", "sharegpt",
-                                        "chatml", "llama_factory", "vicuna", "belle"],
-                                help="目标格式")
+                                choices=CONVERT_TARGET_FORMATS,
+                                help="目标格式（excel / xlsx 写 .xlsx 二进制表格，"
+                                     "输出名必须是 .xlsx；老 .xls 只读不写）")
     # 反向边（alpaca/sharegpt/chatml/... → json）：这些格式落盘也是 `.json`，
     # 扩展名推不出来，只能显式声明；不给就按扩展名当 json 原样读。
     # excel/xlsx/xls 也在这里：`convert --input x.xlsx` 能靠扩展名自己认出来，但

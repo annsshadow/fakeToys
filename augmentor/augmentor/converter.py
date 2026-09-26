@@ -49,6 +49,26 @@ CONTAINER_FORMATS = ("json", "jsonl", "csv", "tsv")
 EXCEL_FORMAT = "excel"
 EXCEL_SOURCE_NAMES = ("excel", "xlsx", "xls")
 
+#: Excel **写边**认的两种拼法。`xls` 刻意不在内：写真正的 `.xls`（BIFF 老格式）要 xlwt，
+#: 本仓库依赖表里没有它，装上 pandas + openpyxl 也只会得到一份「扩展名是 xls、字节是
+#: zip」的假容器 —— 那正是 A133 要终结的症状，所以宁可不收。
+EXCEL_TARGET_NAMES = ("excel", "xlsx")
+
+#: 写侧必须**点名拒收**的输出扩展名（读侧认它，见 `INPUT_EXTENSION_FORMATS`）。
+EXCEL_REJECTED_OUTPUT_SUFFIXES = (".xls",)
+
+#: **写边**的「输出扩展名 → 落成哪种布局」权威表。它与 `INPUT_EXTENSION_FORMATS` 是
+#: 两张表而不是同一张的两个视图：读边认 `.xls`（openpyxl 读得了老格式），写边不认。
+#: 合并成一张表就等于把 `.xls` 输出重新放回去（继续写假容器），分开才能各自达标。
+OUTPUT_EXTENSION_FORMATS = {
+    ".json": "json",
+    ".jsonl": "jsonl",
+    ".csv": "csv",
+    ".tsv": "tsv",
+    ".xlsx": EXCEL_FORMAT,
+}
+
+
 #: **读边**的「扩展名 → 源格式」权威表。与 `_infer_format` 的区别是方向而不是大小写：
 #: 那张表管「输出扩展名落成哪个容器」，认不出回落 json 无害（写的仍是 JSON 字节）；
 #: 这张表管「这份文件该交给哪个解析器」，认不出**必须报错**——回落 json 会让一份
@@ -71,6 +91,13 @@ INPUT_FORMAT_CHOICES = [
     "json", "jsonl", "csv", "tsv", "alpaca", "sharegpt", "chatml",
     "llama_factory", "vicuna", "belle",
 ] + list(EXCEL_SOURCE_NAMES)
+
+#: `--format` / `target_format` 的全部合法拼法 = 转换图里的目标 + Excel 写边那两种。
+#: 从 `INPUT_FORMAT_CHOICES` 减掉只属读边的 Excel 拼法再换上去 ⇒ 十个 schema 名仍只有
+#: 一份字面（A77），加一个 schema 格式依旧只改 `INPUT_FORMAT_CHOICES` 那一行。
+OUTPUT_FORMAT_CHOICES = [
+    name for name in INPUT_FORMAT_CHOICES if name not in EXCEL_SOURCE_NAMES
+] + list(EXCEL_TARGET_NAMES)
 
 
 #: 「原样序列化」的目标格式：把输入当作任意 JSON 值落盘，因此**不要求**记录是对象。
@@ -668,7 +695,9 @@ class DatasetConverter:
             input_path: 输入文件路径
             output_path: 输出文件路径
             source_format: 源格式（为 None 时从扩展名推断）
-            target_format: 目标格式（为 None 时从扩展名推断）
+            target_format: 目标格式（为 None 时从扩展名推断）。Excel 拼法在这里
+                归一成内部名 `excel`，返回值里的 `target_format` 给的是归一后的值
+                （与读边归一 `source_format` 同一条口径）
         
         Returns:
             转换结果
@@ -683,6 +712,17 @@ class DatasetConverter:
             source_format = EXCEL_FORMAT
         if target_format is None:
             target_format = self._infer_format(output_path)
+        elif target_format.lower() in EXCEL_TARGET_NAMES:
+            target_format = EXCEL_FORMAT
+        elif target_format.lower() in EXCEL_SOURCE_NAMES:
+            raise UnsupportedFormatError(
+                f"不支持的目标格式: {target_format}（xls 是老 BIFF 格式，写不出来；"
+                f"Excel 写边只认 excel / xlsx，全部可选目标: "
+                f"{', '.join(OUTPUT_FORMAT_CHOICES)}）"
+            )
+        # 目标格式与输出扩展名是否互相点名，判在 `_write_file` 的门上（那里是字节
+        # 的唯一产地）：放在这里就只能判「走 `convert_file`」这条路，直接调用写边
+        # 的调用方仍然能把 JSON 字节装进 `.xlsx` 名字。
         
         # 读取输入
         data = self._read_file(input_path, source_format)
@@ -701,7 +741,10 @@ class DatasetConverter:
         # 修法与「容器布局归写边管」的既有口径一致（见 `_write_file` 的 docstring）：
         # 图只走到规范形，一份记录一行的布局交给写边，序列化只做一次。
         # 返回值里的 `target_format` 仍是调用方声明的 `jsonl`。
-        graph_target = "json" if target_format == "jsonl" else target_format
+        # `excel` 走的是同一条口径，而且更必然：转换图里根本没有 excel 节点（它不是
+        # `DataFormat` 成员），图只能走到「记录列表」这份规范形，zip 布局全交给写边。
+        graph_target = ("json" if target_format in ("jsonl", EXCEL_FORMAT)
+                        else target_format)
         converted = self.convert(data, graph_source, graph_target, **kwargs)
         
         # 写入输出
@@ -724,17 +767,57 @@ class DatasetConverter:
         文件可能是二进制 xlsx，回落 json 会崩在解码器里（见
         `_resolve_input_format`）。
 
-        `.xlsx` / `.xls` 在这里故意**不**当作 Excel：写边还没有 Excel 输出器
-        （A133），把它们收进这张表等于让 `convert_file` 自称写成了 xlsx、实际写下
-        JSON 字节。
+        `.xlsx` 从 L84 起**认**（A133 关闭：写边接上了 `csv_excel_import.export_to_excel`）。
+        `.xls` 不在表里，所以它在这里仍然回落 `json` —— 但那份「回落」走不到磁盘：
+        `_write_file` 会拒收（见 `_reject_unwritable_output`），因为这一族里只有它是
+        二进制容器，写错不会「只是名字不准」，是「Excel 打不开」。
         """
-        ext_map = {
-            ".json": "json",
-            ".jsonl": "jsonl",
-            ".csv": "csv",
-            ".tsv": "tsv",
-        }
-        return ext_map.get(path.suffix.lower(), "json")
+        return OUTPUT_EXTENSION_FORMATS.get(path.suffix.lower(), "json")
+
+    @staticmethod
+    def _reject_unwritable_output(path: Path, format: str) -> None:
+        """写边「输出扩展名 ↔ 落盘布局」冲突的唯一产地（判在字节之前）
+
+        `excel` 是写边唯一的**二进制容器**（其余四个是文本），所以只有它要求扩展名与
+        声明**互相点名**，三个方向都要判：
+
+        * 输出名是 `.xls` ⇒ 当场拒。读边认它（openpyxl 读得了 BIFF），写边写不出
+          （要 xlwt，不在依赖表里）；放行等于继续制造假容器，而 `--format json
+          --output out.xls` 这条路恰好绕过 `_infer_format`（显式声明时根本不推扩展名）。
+        * 扩展名是 `.xlsx` 而目标不是 excel ⇒ 会写出「zip 名字下的一份 JSON 文本」，
+          Excel 打不开。这就是 A133 的原始症状，而 `--format` 在 CLI 上是**必填**参数，
+          走命令行绕不过这条声明。
+        * 目标是 excel 而扩展名不是 `.xlsx` ⇒ 会把 zip 字节写进一个按扩展名说是文本
+          容器的名字里（`--format excel --output out.json`）。
+
+        文本那一族**不设**这条界：`--format alpaca --output out.jsonl` 是既有口径
+        （schema 与容器分家，容器由扩展名说了算，见 `_write_file` docstring）。
+        """
+        suffix = path.suffix.lower()
+        if suffix in EXCEL_REJECTED_OUTPUT_SUFFIXES:
+            raise UnsupportedFormatError(
+                f"无法写出 {path.name}：写 Excel 只产 .xlsx（需要 pandas 与 openpyxl），"
+                f"老 .xls 格式要另装 xlwt。把输出名改成 .xlsx，"
+                f"或用 --format 显式声明目标格式（可选: "
+                f"{', '.join(OUTPUT_FORMAT_CHOICES)}）"
+            )
+        extension_wants_excel = OUTPUT_EXTENSION_FORMATS.get(suffix) == EXCEL_FORMAT
+        target_wants_excel = format == EXCEL_FORMAT
+        if extension_wants_excel == target_wants_excel:
+            return
+        if extension_wants_excel:
+            raise UnsupportedFormatError(
+                f"输出文件 {path.name} 的扩展名要求 Excel，但 target_format 是 "
+                f"{format!r}：那样会写出一份内容是 {format} 的 .xlsx（Excel 打不开）。"
+                f"改目标格式为 excel / xlsx，或换输出扩展名。"
+            )
+        raise UnsupportedFormatError(
+            f"target_format 是 excel，但输出文件 {path.name} 的扩展名不是 .xlsx："
+            f"那样会把 xlsx 的 zip 字节写进一个按扩展名说是 "
+            f"{OUTPUT_EXTENSION_FORMATS.get(suffix, 'json')} 容器的名字里。"
+            f"把输出名改成 .xlsx，或换目标格式（可选: "
+            f"{', '.join(OUTPUT_FORMAT_CHOICES)}）。"
+        )
 
     def _resolve_input_format(self, path: Path) -> str:
         """从**输入**文件的扩展名推断源格式，认不出就报错而不是回落
@@ -861,8 +944,16 @@ class DatasetConverter:
         写出来的真是一份 `.jsonl`，下一次能被 `_read_file` 原样读回。旧实现把
         任何非 jsonl/csv 的目标一律 `json.dump` 成一个数组，写进 `.jsonl` 之后
         自己那一侧就读不回来了。
+
+        `excel` 是唯一走 `pandas` 的分支，也是唯一**不接受**「扩展名与声明不符」的
+        分支：文本容器写错名字仍是可读的文本，zip 写错名字则什么都打不开，所以门口
+        站了 `_reject_unwritable_output`（判在 `mkdir` 之前 —— 拒绝一次不该留下目录）。
         """
+        self._reject_unwritable_output(path, format)
         path.parent.mkdir(parents=True, exist_ok=True)
+        if format == EXCEL_FORMAT:
+            self._write_excel(path, data)
+            return
         if format not in CONTAINER_FORMATS:
             container = self._infer_format(path)
             format = container if container in CONTAINER_FORMATS else "json"
@@ -884,6 +975,35 @@ class DatasetConverter:
                     writer.writerows(data)
             else:
                 json.dump(data, f, ensure_ascii=False, indent=2)
+
+    def _write_excel(self, path: Path, data: Any) -> None:
+        """写 Excel：整张表、全部列，与 csv 写边同一条列序口径
+
+        本方法是 `csv_excel_import.export_to_excel` 在本仓库的**唯一产品调用点**
+        （A133：那份实现早就有，从来没有调用者）。列序显式传 `csv_fieldnames(data)`
+        而不是让它自己推：异构记录（某一路数据多了 `category` 列）下两个写边必须给
+        出同一张表头，否则 `csv → xlsx` 与 `csv → csv` 会产出列序不同的两份东西。
+
+        pandas 是**可选依赖**，import 与判据都推迟到真要写 xlsx 的时候 —— 与
+        `_read_excel` 同一条理由（`import augmentor` 在没有 pandas 的环境里必须可用，
+        aug 侧解释器就是那种环境）。
+
+        非对象记录在这里会被 `_require_object_records` 拦下（一张表的一行就是一条
+        对象记录，标量没有列可放）；嵌套值（`history` 那种列表）**不**拦 —— openpyxl
+        把它 `str()` 化进单元格，实测与 csv 写边对同样输入给的字面量一致。
+
+        **那一刀判在 pandas 门之前**，顺序本身是契约：数据里有标量行这件事跟本机装没装
+        pandas 无关，先报「装依赖」会把一个改数据就能修好的错误说成改依赖才能修好（aug
+        侧解释器就是那种环境，本轮第一次跑两侧时正是这一格红）。
+        """
+        self._require_object_records(data, "json", EXCEL_FORMAT)
+        from . import csv_excel_import as cei
+        if not cei.HAS_PANDAS:
+            raise DataLoadError(
+                f"写入 Excel 需要安装 pandas 与 openpyxl: "
+                f"pip install pandas openpyxl（{path.name}）"
+            )
+        cei.export_to_excel(data, path, columns=csv_fieldnames(data))
 
 
 def convert_dataset(data: List[Dict], 
@@ -912,7 +1032,9 @@ def convert_file(input_path: str,
     Args:
         input_path: 输入文件路径
         output_path: 输出文件路径
-        target_format: 目标格式
+        target_format: 目标格式（为 None 时从扩展名推断）。写 Excel 写 `excel` / `xlsx`
+            任一种，输出名必须是 `.xlsx`；老 `.xls` 写不出来（要 xlwt），两种方向都
+            会报 `UnsupportedFormatError` 而不是落一份假容器。
         source_format: 源格式（为 None 时从扩展名推断）。alpaca/sharegpt/chatml 这类
             只是**行内 schema**，扩展名推不出来，只能显式给；给了之后文件本身是
             `.json` 还是 `.jsonl` 由内容嗅探，不用再声明第三个参数。
