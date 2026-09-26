@@ -11,8 +11,21 @@ import {
   type TableColumnsType,
 } from 'antd'
 import { DownloadOutlined, DeleteOutlined, EditOutlined, UploadOutlined, PlayCircleOutlined } from '@ant-design/icons'
-import { getDataFiles, loadData, updateDataItem, deleteDataItem, exportData, uploadData, getDemoData } from '../services/api'
+import { apiErrorDetail, getDataFiles, loadData, updateDataItem, deleteDataItem, exportData, uploadData, getDemoData } from '../services/api'
 import type { DataFileInfo, DataItem } from '../types/api'
+
+/**
+ * 上传时可显式声明的源格式
+ *
+ * 这份字面量与 `augmentor/converter.py` 的 `INPUT_FORMAT_CHOICES` 必须**逐项相等**，
+ * 由 `tests/unit/test_upload_declared_format_l92.py` 双向守卫（每轮 pytest 全量都跑得到）。
+ * 放在页面而不是 api.ts：它是「用户在 UI 上能选什么」，不是服务层契约。
+ * 空串那档（「自动」）不在这里，由 `<option value="">` 单独给。
+ */
+const UPLOAD_FORMAT_CHOICES = [
+  'json', 'jsonl', 'csv', 'tsv', 'alpaca', 'sharegpt', 'chatml',
+  'llama_factory', 'vicuna', 'belle', 'excel', 'xlsx', 'xls',
+]
 
 export default function DataManagement() {
   const [files, setFiles] = useState<DataFileInfo[]>([])
@@ -24,6 +37,7 @@ export default function DataManagement() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadFormat, setUploadFormat] = useState('')
   const [editModalVisible, setEditModalVisible] = useState(false)
   const [editingItem, setEditingItem] = useState<DataItem | null>(null)
   const [editingIndex, setEditingIndex] = useState(-1)
@@ -35,8 +49,8 @@ export default function DataManagement() {
       if (result.files.length > 0) {
         setSelectedFile(result.files[0].name)
       }
-    } catch {
-      message.error('加载文件列表失败')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '加载文件列表失败'))
     }
   }, [])
 
@@ -46,8 +60,8 @@ export default function DataManagement() {
       const result = await loadData(selectedFile, page, pageSize, search)
       setData(result.items)
       setTotal(result.total)
-    } catch {
-      message.error('加载数据失败')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '加载数据失败'))
     } finally {
       setLoading(false)
     }
@@ -71,19 +85,29 @@ export default function DataManagement() {
     try {
       await exportData(selectedFile, './exports', [format])
       message.success(`导出为 ${format} 格式成功`)
-    } catch {
-      message.error('导出失败')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '导出失败'))
     }
   }
 
-  const handleUpload = async (file: File) => {
+  /**
+   * `format` 默认取页面上的声明值，演示数据那一条会显式传 `json`
+   *
+   * 两条口径在这里交汇，都得留着：
+   * - 声明值来自 `uploadFormat`，因为后端「显式声明 > 扩展名」，而 `<input type=file>`
+   *   给不了内容类型之外的信息（无扩展名、扩展名与内容不符都要靠这一格救）；
+   * - 调用它的地方必须是 `beforeUpload={(file) => handleUpload(file)}`，不能直接
+   *   `beforeUpload={handleUpload}`：antd 把 `fileList` 作为**第二个**实参传给
+   *   `beforeUpload`，直传会把这个数组当成格式声明发出去。
+   */
+  const handleUpload = async (file: File, format = uploadFormat) => {
     setUploading(true)
     try {
-      await uploadData(file)
+      await uploadData(file, format)
       message.success('上传成功')
       loadFiles()
-    } catch {
-      message.error('上传失败')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '上传失败'))
     } finally {
       setUploading(false)
     }
@@ -104,9 +128,12 @@ export default function DataManagement() {
       const file = new File([JSON.stringify(items, null, 2)], 'demo_data.json', {
         type: 'application/json'
       })
-      await handleUpload(file)
-    } catch {
-      message.error('加载演示数据失败')
+      // 显式传 `json` 而不是用页面上的声明值：这份内容是我们自己序列化的，格式没有
+      // 未知数；若跟着用户的下拉框走，选了 `csv` 的人一点「加载演示数据」就会收到
+      // 一句「内容整份是 JSON，但按 csv 解析」——那是判据在替用户撒谎。
+      await handleUpload(file, 'json')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '加载演示数据失败'))
     } finally {
       setLoading(false)
     }
@@ -125,8 +152,8 @@ export default function DataManagement() {
         message.success('保存成功')
         setEditModalVisible(false)
         loadDataList()
-      } catch {
-        message.error('保存失败')
+      } catch (err) {
+        message.error(apiErrorDetail(err, '保存失败'))
       }
     }
   }
@@ -140,8 +167,8 @@ export default function DataManagement() {
           await deleteDataItem(selectedFile, index)
           message.success('删除成功')
           loadDataList()
-        } catch {
-          message.error('删除失败')
+        } catch (err) {
+          message.error(apiErrorDetail(err, '删除失败'))
         }
       }
     })
@@ -208,10 +235,22 @@ export default function DataManagement() {
           />
         </Space>
         <Space>
+          <select
+            value={uploadFormat}
+            onChange={(e) => setUploadFormat(e.target.value)}
+            style={{ padding: '4px 8px', borderRadius: 4 }}
+            aria-label="上传源格式"
+            title="显式声明源格式；选「自动」则按文件扩展名推断"
+          >
+            <option value="">自动（按扩展名）</option>
+            {UPLOAD_FORMAT_CHOICES.map((fmt) => (
+              <option key={fmt} value={fmt}>{fmt}</option>
+            ))}
+          </select>
           <Upload
             accept=".json,.jsonl,.csv,.tsv,.xlsx,.xls"
             showUploadList={false}
-            beforeUpload={handleUpload}
+            beforeUpload={(file) => handleUpload(file)}
             disabled={uploading}
           >
             <Button icon={<UploadOutlined />} loading={uploading}>上传数据</Button>

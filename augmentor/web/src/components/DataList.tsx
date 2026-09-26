@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Card, Select, Table, Input, Space, Tag, message } from 'antd'
-import { getDataFiles, loadData } from '../services/api'
+import { apiErrorDetail, getDataFiles, loadData } from '../services/api'
 import type { DataItem } from '../types/api'
 
 interface DataListProps {
@@ -34,7 +34,7 @@ export default function DataList({
   useEffect(() => {
     getDataFiles()
       .then(result => setFiles(result.files.map(f => f.name)))
-      .catch(() => message.error('加载数据文件列表失败'))
+      .catch((err) => message.error(apiErrorDetail(err, '加载数据文件列表失败')))
   }, [])
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export default function DataList({
         setItems(result.items || [])
         setTotal(result.total || 0)
       })
-      .catch(() => message.error('加载数据预览失败'))
+      .catch((err) => message.error(apiErrorDetail(err, '加载数据预览失败')))
       .finally(() => setLoading(false))
   }, [value, search, previewSize, showPreview])
 

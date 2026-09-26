@@ -12,7 +12,7 @@ import {
   Tag,
   type TableColumnsType
 } from 'antd'
-import { previewExport, batchExport } from '../services/api'
+import { apiErrorDetail, previewExport, batchExport } from '../services/api'
 import type { ExportPreviewResponse } from '../types/api'
 
 interface ExportDialogProps {
@@ -54,8 +54,8 @@ export default function ExportDialog({ inputFile, open, onClose }: ExportDialogP
     try {
       const result = await previewExport(inputFile, values.format)
       setPreview(result)
-    } catch {
-      message.error('预览失败，请检查数据集与格式')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '预览失败，请检查数据集与格式'))
     } finally {
       setLoading(false)
     }
@@ -73,8 +73,8 @@ export default function ExportDialog({ inputFile, open, onClose }: ExportDialogP
       await batchExport({ dataset: inputFile }, values.outputDir, [values.format])
       message.success('导出完成')
       onClose()
-    } catch {
-      message.error('导出失败')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '导出失败'))
     } finally {
       setLoading(false)
     }
