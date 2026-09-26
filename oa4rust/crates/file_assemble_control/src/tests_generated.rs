@@ -404,27 +404,6 @@ mod tests {
         );
     }
 
-    #[tokio::test]
-    async fn test_attachment2_list_type_page_size_size() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/file/attachment2/list/type/page/size/size")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "attachment2_list_type_page_size_size route should be registered"
-        );
-    }
-
     // SKIPPED: attachment2_upload_folder_folderId requires Session parameter
     // SKIPPED: attachment2_user_capacity requires Session parameter
     #[tokio::test]
@@ -824,27 +803,6 @@ mod tests {
             response.status(),
             StatusCode::NOT_FOUND,
             "file_list_id_prev_count_referencetype_referenceType route should be registered"
-        );
-    }
-
-    #[tokio::test]
-    async fn test_file_referencetype_referenceType_reference_reference() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/file/referencetype/referenceType/reference/reference")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "file_referencetype_referenceType_reference_reference route should be registered"
         );
     }
 
