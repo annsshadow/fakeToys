@@ -406,9 +406,12 @@ web:
   # `0` / `-1` / `true` 三种写法都判在加载时——第一种有两种人话读法（不限 / 全拒），
   # 第二种让每个上传都被拒，第三种被 `bool ⊂ int` 当成 1 字节收下。
   # 管不到的那一半如实记下：multipart 解析在进入本判据之前就把文件部分写进临时文件
-  # （starlette 的 `SpooledTemporaryFile`，它的 1 MiB `max_part_size` 只管非文件字段），
-  # 所以这条封的是内存与「要不要落盘」，不封「客户端能不能把大 body 灌到磁盘临时
-  # 文件上」——那一层在 ASGI / 反代的 `client_max_body_size`，不在本仓代码里。
+  # （starlette 的 `SpooledTemporaryFile`，它的 1 MiB `max_part_size` 只管非文件字段）。
+  # L90 起这一格补了**解析之前**的那一道：`api/middleware/upload_gate.py` 只看请求头，
+  # 声明了 `Content-Length` 且整包超过「本键 + 1 MiB multipart 余量」的 multipart 请求，
+  # 在解析器拿到任何字节之前回 413（文案「未解析、未落盘」）。仍管不到不声明长度的
+  # chunked 上传，那一档继续由本判据兜底；要在全网络层封住仍得配反向代理的
+  # `client_max_body_size`。本判据是权威（服务端自己累加的字节数），闸用的是客户端自报值。
   max_upload_bytes: 268435456  # 256 MiB
   
   # 滑动窗口限流：窗口内单客户端（按 IP）最大请求数，0 表示关闭限流。

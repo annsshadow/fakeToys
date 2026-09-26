@@ -247,9 +247,13 @@ async def _read_upload_body(file: UploadFile, limit: int) -> bytes:
     **如实记下管不到的那一半**：Starlette 的 multipart 解析在进入本函数之前就把文件
     部分写进 `SpooledTemporaryFile(max_size=1 MiB)`，超过就溢到临时目录；它那 1 MiB 的
     `max_part_size` 只判**非文件**表单字段（`_current_part.file is None` 那一支），
-    文件部分直接绕开。所以这条上限管的是「服务端为一次上传分配多少内存、要不要把
-    内容写进数据目录」，**不管**「客户端能不能把大 body 灌到磁盘临时文件上」——
-    那一层在 ASGI/反代的 `client_max_body_size`，不在本仓代码里（另立一笔）。
+    文件部分直接绕开。L90 起，`api/middleware/upload_gate.py:UploadBodyGate` 在解析之前
+    按 `Content-Length` 先拒一次「声明了长度且明显越界的整包」，于是这一半代价对**声明长度
+    的客户端**不再发生；chunked（不声明长度）那一档闸看不见尺寸，仍然先写一次临时文件，
+    再由本函数的第二道判据回话。要在全网络层封住，仍得配 ASGI/反代的 `client_max_body_size`。
+
+    本函数是**权威判据**：闸用的是客户端自报的 `Content-Length`，这里用的是服务端自己
+    累加出来的 `file.size`，两者不互换。
 
     Args:
         file: 上传的文件部分
