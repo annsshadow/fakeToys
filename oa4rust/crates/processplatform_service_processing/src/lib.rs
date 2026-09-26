@@ -2786,16 +2786,7 @@ pub async fn applicationdict_id_path0_path1_path2_path3_path4_path5_data(
 #[allow(non_snake_case)]
 pub async fn applicationdict_id_path0_path1_path2_path3_path4_path5_path6_data(
     pool: Extension<Pool>,
-    axum::extract::Path((id, _p1, _p2, _p3, _p4, _p5, _p6, _p7)): axum::extract::Path<(
-        String,
-        String,
-        String,
-        String,
-        String,
-        String,
-        String,
-        String,
-    )>,
+    axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client

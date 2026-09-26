@@ -22,7 +22,6 @@ GET /api/bbs/assemble/control/subject/creamed/list
 GET /api/bbs/assemble/control/subject/filter/list
 GET /api/bbs/assemble/control/subject/index/list
 GET /api/bbs/assemble/control/subject/search
-GET /api/bbs/assemble/control/subject/statgrade
 GET /api/bbs/assemble/control/topic/creamed/list
 GET /api/bbs/assemble/control/topic/filter/list
 GET /api/bbs/assemble/control/topic/index/list
@@ -118,7 +117,6 @@ GET /api/processplatform/service/processing/applicationdict/path0/path1/path2/da
 GET /api/processplatform/service/processing/applicationdict/path0/path1/path2/path3/data/1
 GET /api/processplatform/service/processing/applicationdict/path0/path1/path2/path3/path4/data/1
 GET /api/processplatform/service/processing/applicationdict/path0/path1/path2/path3/path4/path5/data/1
-GET /api/processplatform/service/processing/applicationdict/path0/path1/path2/path3/path4/path5/path6/data/1
 GET /api/processplatform/service/processing/applicationdict/path0/path1/path2/path3/path4/path5/path6/path7/data/1
 GET /api/processplatform/service/processing/data/workcompleted/path/1
 GET /api/processplatform/service/processing/review/init/review
