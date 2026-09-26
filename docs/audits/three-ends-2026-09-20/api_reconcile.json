@@ -6101,7 +6101,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 247,
+    "line": 250,
     "method": "GET",
     "raw": "/api/file/assemble/control/file/list/referencetype/${encodeURIComponent(refType)}/reference/${encodeURIComponent(refId)}",
     "path": "/api/file/assemble/control/file/list/referencetype/{}/reference/{}",
@@ -6114,7 +6114,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 258,
+    "line": 261,
     "method": "GET",
     "raw": "/api/attachment2/list/editor/${encodeURIComponent(refId)}",
     "path": "/api/attachment2/list/editor/{}",
@@ -6127,7 +6127,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 282,
+    "line": 285,
     "method": "GET",
     "raw": "/api/attachment/${id}",
     "path": "/api/attachment/{}",
@@ -6140,7 +6140,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 283,
+    "line": 286,
     "method": "GET",
     "raw": "/api/attachment/${id}/binary/base64",
     "path": "/api/attachment/{}/binary/base64",
@@ -6153,7 +6153,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 284,
+    "line": 287,
     "method": "GET",
     "raw": "/api/attachment2/${id}",
     "path": "/api/attachment2/{}",
@@ -6166,7 +6166,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 285,
+    "line": 288,
     "method": "GET",
     "raw": "/api/attachment2/${id}/binary/base64",
     "path": "/api/attachment2/{}/binary/base64",
@@ -6179,7 +6179,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 286,
+    "line": 289,
     "method": "GET",
     "raw": "/api/file/folder/list/${id}",
     "path": "/api/file/folder/list/{}",
@@ -6192,7 +6192,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 287,
+    "line": 290,
     "method": "GET",
     "raw": "/api/file/${id}",
     "path": "/api/file/{}",
@@ -6205,7 +6205,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 288,
+    "line": 291,
     "method": "GET",
     "raw": "/api/file/${id}/content",
     "path": "/api/file/{}/content",
@@ -6218,7 +6218,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 289,
+    "line": 292,
     "method": "GET",
     "raw": "/api/attachment2/${id}/office/preview/type/${type}",
     "path": "/api/attachment2/{}/office/preview/type/{}",
@@ -6231,7 +6231,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 290,
+    "line": 293,
     "method": "GET",
     "raw": "/api/file/assemble/control/attachment2/${id}/office/preview/type/${type}",
     "path": "/api/file/assemble/control/attachment2/{}/office/preview/type/{}",
@@ -6244,7 +6244,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 291,
+    "line": 294,
     "method": "GET",
     "raw": "/api/file/${flag}/appInfo/${appInfoFlag}/content",
     "path": "/api/file/{}/appInfo/{}/content",
@@ -6257,7 +6257,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 292,
+    "line": 295,
     "method": "GET",
     "raw": "/api/fileinfo/${id}/binary/base64/${size}",
     "path": "/api/fileinfo/{}/binary/base64/{}",
@@ -6270,7 +6270,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 293,
+    "line": 296,
     "method": "GET",
     "raw": "/api/fileinfo/${id}/document/${docId}",
     "path": "/api/fileinfo/{}/document/{}",
@@ -6283,7 +6283,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 294,
+    "line": 297,
     "method": "GET",
     "raw": "/api/file/assemble/control/file/list/${id}/next/${count}/referencetype/${referenceType}",
     "path": "/api/file/assemble/control/file/list/{}/next/{}/referencetype/{}",
@@ -6296,7 +6296,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 295,
+    "line": 298,
     "method": "GET",
     "raw": "/api/file/assemble/control/file/list/${id}/prev/${count}/referencetype/${referenceType}",
     "path": "/api/file/assemble/control/file/list/{}/prev/{}/referencetype/{}",
@@ -6309,47 +6309,34 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 321,
-    "method": "POST",
-    "raw": "/api/file/assemble/control/file/delete/${e}",
-    "path": "/api/file/assemble/control/file/delete/{}",
-    "via": "literal",
-    "ambiguous": false,
-    "hit": "/api/file/assemble/control/file/delete/{id}",
-    "hit_crate": "file_assemble_control",
-    "extra": null
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 322,
-    "method": "DELETE",
-    "raw": "/api/file/assemble/control/file/delete/${e}",
-    "path": "/api/file/assemble/control/file/delete/{}",
-    "via": "literal",
-    "ambiguous": false,
-    "hit": "/api/file/assemble/control/file/delete/{id}",
-    "hit_crate": "file_assemble_control",
-    "extra": null
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 323,
-    "method": "POST",
-    "raw": "/api/file/core/entity/file/delete/${e}",
-    "path": "/api/file/core/entity/file/delete/{}",
-    "via": "literal",
-    "ambiguous": false,
-    "hit": "/api/file/core/entity/file/delete/{id}",
-    "hit_crate": "file_assemble_control",
-    "extra": null
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/FileManager.vue",
     "line": 324,
+    "method": "POST",
+    "raw": "/api/file/assemble/control/file/delete/${e}",
+    "path": "/api/file/assemble/control/file/delete/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/assemble/control/file/delete/{id}",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 325,
     "method": "DELETE",
+    "raw": "/api/file/assemble/control/file/delete/${e}",
+    "path": "/api/file/assemble/control/file/delete/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/assemble/control/file/delete/{id}",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 326,
+    "method": "POST",
     "raw": "/api/file/core/entity/file/delete/${e}",
     "path": "/api/file/core/entity/file/delete/{}",
     "via": "literal",
@@ -6361,39 +6348,13 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 336,
-    "method": "POST",
-    "raw": "/api/file/core/entity/file/update/${e}",
-    "path": "/api/file/core/entity/file/update/{}",
+    "line": 327,
+    "method": "DELETE",
+    "raw": "/api/file/core/entity/file/delete/${e}",
+    "path": "/api/file/core/entity/file/delete/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/file/core/entity/file/update/{id}",
-    "hit_crate": "file_assemble_control",
-    "extra": null
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 337,
-    "method": "PUT",
-    "raw": "/api/file/core/entity/file/update/${e}",
-    "path": "/api/file/core/entity/file/update/{}",
-    "via": "literal",
-    "ambiguous": false,
-    "hit": "/api/file/core/entity/file/update/{id}",
-    "hit_crate": "file_assemble_control",
-    "extra": null
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 338,
-    "method": "POST",
-    "raw": "/api/attachment/update/${e}",
-    "path": "/api/attachment/update/{}",
-    "via": "literal",
-    "ambiguous": false,
-    "hit": "/api/attachment/update/{id}",
+    "hit": "/api/file/core/entity/file/delete/{id}",
     "hit_crate": "file_assemble_control",
     "extra": null
    },
@@ -6401,6 +6362,45 @@
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
     "line": 339,
+    "method": "POST",
+    "raw": "/api/file/core/entity/file/update/${e}",
+    "path": "/api/file/core/entity/file/update/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/core/entity/file/update/{id}",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 340,
+    "method": "PUT",
+    "raw": "/api/file/core/entity/file/update/${e}",
+    "path": "/api/file/core/entity/file/update/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/core/entity/file/update/{id}",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 341,
+    "method": "POST",
+    "raw": "/api/attachment/update/${e}",
+    "path": "/api/attachment/update/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/attachment/update/{id}",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 342,
     "method": "PUT",
     "raw": "/api/attachment/update/${e}",
     "path": "/api/attachment/update/{}",
@@ -6413,7 +6413,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 340,
+    "line": 343,
     "method": "PUT",
     "raw": "/api/attachment/${e}/update",
     "path": "/api/attachment/{}/update",
@@ -6426,7 +6426,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 341,
+    "line": 344,
     "method": "POST",
     "raw": "/api/attachment/update/callback/callback/${e}",
     "path": "/api/attachment/update/callback/callback/{}",
@@ -6439,7 +6439,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 342,
+    "line": 345,
     "method": "PUT",
     "raw": "/api/attachment/update/callback/callback/${e}",
     "path": "/api/attachment/update/callback/callback/{}",
@@ -6452,7 +6452,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 343,
+    "line": 346,
     "method": "POST",
     "raw": "/api/attachment/${e}/update/callback/${cbFlag}",
     "path": "/api/attachment/{}/update/callback/{}",
@@ -6465,7 +6465,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 380,
+    "line": 383,
     "method": "PUT",
     "raw": "/api/folder/${encodeURIComponent(id)}",
     "path": "/api/folder/{}",
@@ -6478,7 +6478,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 384,
+    "line": 387,
     "method": "DELETE",
     "raw": "/api/folder/${encodeURIComponent(id)}",
     "path": "/api/folder/{}",
@@ -6491,7 +6491,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 391,
+    "line": 394,
     "method": "DELETE",
     "raw": "/api/share/${encodeURIComponent(id)}",
     "path": "/api/share/{}",
@@ -6504,7 +6504,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 395,
+    "line": 398,
     "method": "POST",
     "raw": "/api/recycle/delete/${encodeURIComponent(id)}",
     "path": "/api/recycle/delete/{}",
@@ -6517,7 +6517,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 398,
+    "line": 401,
     "method": "POST",
     "raw": "/api/recycle/resume/${encodeURIComponent(id)}",
     "path": "/api/recycle/resume/{}",
@@ -6530,7 +6530,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 409,
+    "line": 412,
     "method": "DELETE",
     "raw": "/api/file/core/entity/folder/${encodeURIComponent(id)}",
     "path": "/api/file/core/entity/folder/{}",
@@ -6543,7 +6543,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 421,
+    "line": 424,
     "method": "PUT",
     "raw": "/api/attachment/${e}",
     "path": "/api/attachment/{}",
@@ -6556,7 +6556,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 424,
+    "line": 427,
     "method": "DELETE",
     "raw": "/api/attachment/${e}",
     "path": "/api/attachment/{}",
@@ -6569,7 +6569,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 425,
+    "line": 428,
     "method": "PUT",
     "raw": "/api/attachment/${e}/update",
     "path": "/api/attachment/{}/update",
@@ -6582,7 +6582,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 426,
+    "line": 429,
     "method": "PUT",
     "raw": "/api/attachment2/${e}",
     "path": "/api/attachment2/{}",
@@ -6595,7 +6595,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 429,
+    "line": 432,
     "method": "DELETE",
     "raw": "/api/attachment2/${e}",
     "path": "/api/attachment2/{}",
@@ -6608,7 +6608,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 434,
+    "line": 437,
     "method": "DELETE",
     "raw": "/api/file/assemble/control/file/${e}",
     "path": "/api/file/assemble/control/file/{}",
@@ -6621,7 +6621,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 442,
+    "line": 445,
     "method": "DELETE",
     "raw": "/api/file/assemble/control/file/referencetype/${encodeURIComponent(rt)}/reference/${encodeURIComponent(r)}",
     "path": "/api/file/assemble/control/file/referencetype/{}/reference/{}",
@@ -6634,7 +6634,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 445,
+    "line": 448,
     "method": "DELETE",
     "raw": "/api/file/core/entity/folder/${e}",
     "path": "/api/file/core/entity/folder/{}",
@@ -6647,7 +6647,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 461,
+    "line": 464,
     "method": "GET",
     "raw": "/api/file/attachment2/list/folder/${fid}",
     "path": "/api/file/attachment2/list/folder/{}",
@@ -6660,7 +6660,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 462,
+    "line": 465,
     "method": "GET",
     "raw": "/api/file/attachment2/list/filter/${nm}",
     "path": "/api/file/attachment2/list/filter/{}",
@@ -6673,7 +6673,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 463,
+    "line": 466,
     "method": "GET",
     "raw": "/api/file/attachment/list/folder/${fid}",
     "path": "/api/file/attachment/list/folder/{}",
@@ -6686,7 +6686,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 465,
+    "line": 468,
     "method": "GET",
     "raw": "/api/file/list/${fid}/next/${cnt}",
     "path": "/api/file/list/{}/next/{}",
@@ -6699,7 +6699,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 466,
+    "line": 469,
     "method": "GET",
     "raw": "/api/file/list/${fid}/prev/${cnt}",
     "path": "/api/file/list/{}/prev/{}",
@@ -6712,7 +6712,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 467,
+    "line": 470,
     "method": "GET",
     "raw": "/api/file/list/${fid}/next/${cnt}/all",
     "path": "/api/file/list/{}/next/{}/all",
@@ -6725,7 +6725,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 468,
+    "line": 471,
     "method": "GET",
     "raw": "/api/file/folder/list/${fid}",
     "path": "/api/file/folder/list/{}",
@@ -6738,7 +6738,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 469,
+    "line": 472,
     "method": "GET",
     "raw": "/api/file/folder2/list/${fid}",
     "path": "/api/file/folder2/list/{}",
@@ -6751,7 +6751,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 470,
+    "line": 473,
     "method": "GET",
     "raw": "/api/file/complex/folder/${fid}",
     "path": "/api/file/complex/folder/{}",
@@ -6764,7 +6764,371 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 483,
+    "line": 501,
+    "method": "GET",
+    "raw": "/api/file/anonymous/file/${id}/download",
+    "path": "/api/file/anonymous/file/{}/download",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/anonymous/file/{id}/download",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 502,
+    "method": "GET",
+    "raw": "/api/file/attachment/${id}",
+    "path": "/api/file/attachment/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/attachment/{id}",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 503,
+    "method": "GET",
+    "raw": "/api/file/attachment/${id}/binary/base64",
+    "path": "/api/file/attachment/{}/binary/base64",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/attachment/{id}/binary/base64",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 504,
+    "method": "GET",
+    "raw": "/api/file/attachment/${id}/download",
+    "path": "/api/file/attachment/{}/download",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/attachment/{id}/download",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 505,
+    "method": "GET",
+    "raw": "/api/file/attachment/${id}/image/scale/${scale}/binary/base64",
+    "path": "/api/file/attachment/{}/image/scale/{}/binary/base64",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/attachment/{id}/image/scale/{scale}/binary/base64",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 506,
+    "method": "GET",
+    "raw": "/api/file/attachment/${id}/image/width/${w}/height/${h}/binary/base64",
+    "path": "/api/file/attachment/{}/image/width/{}/height/{}/binary/base64",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/attachment/{id}/image/width/{width}/height/{height}/binary/base64",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 507,
+    "method": "GET",
+    "raw": "/api/file/attachment2/exist/file/${md5}",
+    "path": "/api/file/attachment2/exist/file/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/attachment2/exist/file/{fileMd5}",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 508,
+    "method": "GET",
+    "raw": "/api/file/attachment2/${id}",
+    "path": "/api/file/attachment2/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/attachment2/{id}",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 509,
+    "method": "GET",
+    "raw": "/api/file/attachment2/${id}/binary/base64",
+    "path": "/api/file/attachment2/{}/binary/base64",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/attachment2/{id}/binary/base64",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 510,
+    "method": "GET",
+    "raw": "/api/file/attachment2/${id}/download",
+    "path": "/api/file/attachment2/{}/download",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/attachment2/{id}/download",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 511,
+    "method": "GET",
+    "raw": "/api/file/attachment2/${id}/download/image/width/${w}/height/${h}",
+    "path": "/api/file/attachment2/{}/download/image/width/{}/height/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/attachment2/{id}/download/image/width/{width}/height/{height}",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 512,
+    "method": "GET",
+    "raw": "/api/file/attachment2/${id}/download/stream",
+    "path": "/api/file/attachment2/{}/download/stream",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/attachment2/{id}/download/stream",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 513,
+    "method": "GET",
+    "raw": "/api/file/attachment2/${id}/image/scale/${scale}/binary/base64",
+    "path": "/api/file/attachment2/{}/image/scale/{}/binary/base64",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/attachment2/{id}/image/scale/{scale}/binary/base64",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 514,
+    "method": "GET",
+    "raw": "/api/file/attachment2/${id}/image/width/${w}/height/${h}/binary/base64",
+    "path": "/api/file/attachment2/{}/image/width/{}/height/{}/binary/base64",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/attachment2/{id}/image/width/{width}/height/{height}/binary/base64",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 515,
+    "method": "GET",
+    "raw": "/api/file/folder/${id}",
+    "path": "/api/file/folder/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/folder/{id}",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 516,
+    "method": "GET",
+    "raw": "/api/file/folder2/${id}",
+    "path": "/api/file/folder2/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/folder2/{id}",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 517,
+    "method": "GET",
+    "raw": "/api/file/folder2/${id}/download",
+    "path": "/api/file/folder2/{}/download",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/folder2/{id}/download",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 519,
+    "method": "GET",
+    "raw": "/api/file/list/referencetype/${rt}/reference/${ref}",
+    "path": "/api/file/list/referencetype/{}/reference/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/list/referencetype/{p0}/reference/{p1}",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 520,
+    "method": "GET",
+    "raw": "/api/file/list/${id}/next/${cnt}/referencetype/${rt}",
+    "path": "/api/file/list/{}/next/{}/referencetype/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/list/{p0}/next/{p1}/referencetype/{p2}",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 521,
+    "method": "GET",
+    "raw": "/api/file/list/${id}/prev/${cnt}/all",
+    "path": "/api/file/list/{}/prev/{}/all",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/list/{p0}/prev/{p1}/all",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 522,
+    "method": "GET",
+    "raw": "/api/file/list/${id}/prev/${cnt}/referencetype/${rt}",
+    "path": "/api/file/list/{}/prev/{}/referencetype/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/list/{p0}/prev/{p1}/referencetype/{p2}",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 523,
+    "method": "GET",
+    "raw": "/api/file/recycle/${id}",
+    "path": "/api/file/recycle/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/recycle/{id}",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 524,
+    "method": "GET",
+    "raw": "/api/file/share/download/share/${shareId}/file/${fileId}",
+    "path": "/api/file/share/download/share/{}/file/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/share/download/share/{shareId}/file/{fileId}",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 525,
+    "method": "GET",
+    "raw": "/api/file/share/list/att/share/${shareId}/folder/${folderId}",
+    "path": "/api/file/share/list/att/share/{}/folder/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/share/list/att/share/{shareId}/folder/{folderId}",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 526,
+    "method": "GET",
+    "raw": "/api/file/share/list/folder/share/${shareId}/folder/${folderId}",
+    "path": "/api/file/share/list/folder/share/{}/folder/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/share/list/folder/share/{shareId}/folder/{folderId}",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 529,
+    "method": "GET",
+    "raw": "/api/file/share/${id}",
+    "path": "/api/file/share/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/share/{id}",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 530,
+    "method": "GET",
+    "raw": "/api/file/share/${id}/password/${pwd}",
+    "path": "/api/file/share/{}/password/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/share/{id}/password/{password}",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 531,
+    "method": "GET",
+    "raw": "/api/file/${id}/binary/base64",
+    "path": "/api/file/{}/binary/base64",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/{p0}/binary/base64",
+    "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 544,
     "method": "GET",
     "raw": "/api/fileinfo/${i}/document/${d}",
     "path": "/api/fileinfo/{}/document/{}",
@@ -6777,7 +7141,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 484,
+    "line": 545,
     "method": "DELETE",
     "raw": "/api/fileinfo/${i}",
     "path": "/api/fileinfo/{}",
@@ -6790,7 +7154,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 486,
+    "line": 547,
     "method": "POST",
     "raw": "/api/fileinfo/copy/to/doc/${d}",
     "path": "/api/fileinfo/copy/to/doc/{}",
@@ -6803,7 +7167,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 487,
+    "line": 548,
     "method": "POST",
     "raw": "/api/fileinfo/replace/to/doc/${d}",
     "path": "/api/fileinfo/replace/to/doc/{}",
@@ -6816,7 +7180,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 488,
+    "line": 549,
     "method": "GET",
     "raw": "/api/fileinfo/download/document/${i}/stream",
     "path": "/api/fileinfo/download/document/{}/stream",
@@ -6829,7 +7193,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 489,
+    "line": 550,
     "method": "GET",
     "raw": "/api/fileinfo/download/transfer/flag/${f}",
     "path": "/api/fileinfo/download/transfer/flag/{}",
@@ -6842,7 +7206,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 490,
+    "line": 551,
     "method": "PUT",
     "raw": "/api/fileinfo/edit/${i}/doc/${d}",
     "path": "/api/fileinfo/edit/{}/doc/{}",
@@ -6855,7 +7219,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 491,
+    "line": 552,
     "method": "POST",
     "raw": "/api/fileinfo/update/${i}/content",
     "path": "/api/fileinfo/update/{}/content",
@@ -6868,7 +7232,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 492,
+    "line": 553,
     "method": "POST",
     "raw": "/api/fileinfo/update/document/${d}/attachment/${i}",
     "path": "/api/fileinfo/update/document/{}/attachment/{}",
@@ -6881,7 +7245,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 493,
+    "line": 554,
     "method": "DELETE",
     "raw": "/api/file/${i}",
     "path": "/api/file/{}",
@@ -6894,7 +7258,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 494,
+    "line": 555,
     "method": "PUT",
     "raw": "/api/file/${i}",
     "path": "/api/file/{}",
@@ -6907,7 +7271,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 495,
+    "line": 556,
     "method": "GET",
     "raw": "/api/file/${i}/download",
     "path": "/api/file/{}/download",
@@ -6920,7 +7284,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 496,
+    "line": 557,
     "method": "GET",
     "raw": "/api/file/${f}/appInfo/${af}",
     "path": "/api/file/{}/appInfo/{}",
@@ -6933,7 +7297,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 497,
+    "line": 558,
     "method": "GET",
     "raw": "/api/file/${i}/download/stream",
     "path": "/api/file/{}/download/stream",
@@ -6946,7 +7310,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 498,
+    "line": 559,
     "method": "GET",
     "raw": "/api/file/download/${i}",
     "path": "/api/file/download/{}",
@@ -6959,7 +7323,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 499,
+    "line": 560,
     "method": "GET",
     "raw": "/api/attachment/${i}/download",
     "path": "/api/attachment/{}/download",
@@ -6972,7 +7336,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 500,
+    "line": 561,
     "method": "GET",
     "raw": "/api/attachment/${i}/download/stream",
     "path": "/api/attachment/{}/download/stream",
@@ -6985,7 +7349,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 503,
+    "line": 564,
     "method": "GET",
     "raw": "/api/attachment2/${i}/download",
     "path": "/api/attachment2/{}/download",
@@ -6998,7 +7362,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 504,
+    "line": 565,
     "method": "GET",
     "raw": "/api/attachment2/${i}/download/stream",
     "path": "/api/attachment2/{}/download/stream",
@@ -7011,7 +7375,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 514,
+    "line": 575,
     "method": "GET",
     "raw": "/api/fileinfo/batch/download/doc/${d}/site/${site}",
     "path": "/api/fileinfo/batch/download/doc/{}/site/{}",
@@ -7024,7 +7388,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 515,
+    "line": 576,
     "method": "GET",
     "raw": "/api/file/${f}/appInfo/${af}/download",
     "path": "/api/file/{}/appInfo/{}/download",
@@ -7037,7 +7401,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 559,
+    "line": 620,
     "method": "GET",
     "raw": "/api/attachment/list/share/${encodeURIComponent(owner)}",
     "path": "/api/attachment/list/share/{}",
@@ -7050,7 +7414,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 560,
+    "line": 621,
     "method": "GET",
     "raw": "/api/attachment2/list/folder/${encodeURIComponent(folderId)}",
     "path": "/api/attachment2/list/folder/{}",
@@ -7063,7 +7427,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 561,
+    "line": 622,
     "method": "GET",
     "raw": "/api/attachment2/list/share/${encodeURIComponent(owner)}",
     "path": "/api/attachment2/list/share/{}",
@@ -7076,7 +7440,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 562,
+    "line": 623,
     "method": "GET",
     "raw": "/api/attachment2/exist/file/${encodeURIComponent(md5)}",
     "path": "/api/attachment2/exist/file/{}",
@@ -7089,7 +7453,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 581,
+    "line": 642,
     "method": "GET",
     "raw": "/api/attachment/list/folder/${encodeURIComponent(folderId)}",
     "path": "/api/attachment/list/folder/{}",
@@ -7102,7 +7466,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 582,
+    "line": 643,
     "method": "GET",
     "raw": "/api/attachment2/list/filter/${encodeURIComponent('文')}",
     "path": "/api/attachment2/list/filter/{}",
@@ -7115,7 +7479,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 634,
+    "line": 695,
     "method": "GET",
     "raw": "/api/file/assemble/control/file/list/${folderId || ''}",
     "path": "/api/file/assemble/control/file/list/{}",
@@ -7128,7 +7492,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 722,
+    "line": 783,
     "method": "DELETE",
     "raw": "/api/file/assemble/control/file/${id}",
     "path": "/api/file/assemble/control/file/{}",
@@ -7141,7 +7505,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 777,
+    "line": 838,
     "method": "GET",
     "raw": "/api/fileinfo/${encodeURIComponent(id)}",
     "path": "/api/fileinfo/{}",
@@ -7154,7 +7518,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 778,
+    "line": 839,
     "method": "GET",
     "raw": "/api/fileinfo/${encodeURIComponent(id)}/online/info",
     "path": "/api/fileinfo/{}/online/info",
@@ -7167,7 +7531,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 779,
+    "line": 840,
     "method": "GET",
     "raw": "/api/fileinfo/${encodeURIComponent(id)}/preview/pdf",
     "path": "/api/fileinfo/{}/preview/pdf",
@@ -7180,7 +7544,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 798,
+    "line": 859,
     "method": "GET",
     "raw": "/api/file/core/entity/folder/list/${encodeURIComponent(fid)}",
     "path": "/api/file/core/entity/folder/list/{}",
@@ -7193,7 +7557,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 820,
+    "line": 881,
     "method": "GET",
     "raw": "/api/file/assemble/control/file/${f.id}",
     "path": "/api/file/assemble/control/file/{}",
@@ -7206,7 +7570,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 822,
+    "line": 883,
     "method": "GET",
     "raw": "/api/file/assemble/control/file/${f.id}/binary/base64",
     "path": "/api/file/assemble/control/file/{}/binary/base64",
@@ -35785,7 +36149,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 228,
+    "line": 231,
     "method": "GET",
     "raw": "/api/file/attachment2/list/top",
     "path": "/api/file/attachment2/list/top",
@@ -35798,7 +36162,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 229,
+    "line": 232,
     "method": "GET",
     "raw": "/api/file/editor/list",
     "path": "/api/file/editor/list",
@@ -35811,7 +36175,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 246,
+    "line": 249,
     "method": "GET",
     "raw": "/api/file/complex/top",
     "path": "/api/file/complex/top",
@@ -35824,7 +36188,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 249,
+    "line": 252,
     "method": "GET",
     "raw": "/api/attachment/list/top",
     "path": "/api/attachment/list/top",
@@ -35837,7 +36201,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 251,
+    "line": 254,
     "method": "GET",
     "raw": "/api/file/list/0/next/20",
     "path": "/api/file/list/0/next/20",
@@ -35853,7 +36217,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 252,
+    "line": 255,
     "method": "GET",
     "raw": "/api/file/list/0/prev/20",
     "path": "/api/file/list/0/prev/20",
@@ -35869,7 +36233,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 253,
+    "line": 256,
     "method": "GET",
     "raw": "/api/file/assemble/control/file/list/0/next/20/all",
     "path": "/api/file/assemble/control/file/list/0/next/20/all",
@@ -35885,7 +36249,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 254,
+    "line": 257,
     "method": "GET",
     "raw": "/api/file/assemble/control/file/list/0/prev/20/all",
     "path": "/api/file/assemble/control/file/list/0/prev/20/all",
@@ -35901,7 +36265,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 256,
+    "line": 259,
     "method": "GET",
     "raw": "/api/attachment2/list/top",
     "path": "/api/attachment2/list/top",
@@ -35914,7 +36278,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 260,
+    "line": 263,
     "method": "GET",
     "raw": "/api/config/is/file/manager",
     "path": "/api/config/is/file/manager",
@@ -35927,7 +36291,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 261,
+    "line": 264,
     "method": "GET",
     "raw": "/api/file/assemble/control/file/list/unused/referencetype/cmsdocument/manage",
     "path": "/api/file/assemble/control/file/list/unused/referencetype/cmsdocument/manage",
@@ -35940,7 +36304,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 308,
+    "line": 311,
     "method": "POST",
     "raw": "/api/file/assemble/control/file/create",
     "path": "/api/file/assemble/control/file/create",
@@ -35953,7 +36317,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 309,
+    "line": 312,
     "method": "POST",
     "raw": "/api/file/core/entity/file/create",
     "path": "/api/file/core/entity/file/create",
@@ -35966,7 +36330,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 351,
+    "line": 354,
     "method": "PUT",
     "raw": "/api/file/assemble/control/update/control/config",
     "path": "/api/file/assemble/control/update/control/config",
@@ -35979,7 +36343,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 362,
+    "line": 365,
     "method": "POST",
     "raw": "/api/file/folder/create",
     "path": "/api/file/folder/create",
@@ -35992,7 +36356,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 366,
+    "line": 369,
     "method": "POST",
     "raw": "/api/file/folder/update",
     "path": "/api/file/folder/update",
@@ -36005,7 +36369,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 370,
+    "line": 373,
     "method": "POST",
     "raw": "/api/file/folder/remove",
     "path": "/api/file/folder/remove",
@@ -36018,7 +36382,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 373,
+    "line": 376,
     "method": "POST",
     "raw": "/api/file/permission/set",
     "path": "/api/file/permission/set",
@@ -36031,7 +36395,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 376,
+    "line": 379,
     "method": "POST",
     "raw": "/api/folder",
     "path": "/api/folder",
@@ -36044,7 +36408,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 387,
+    "line": 390,
     "method": "POST",
     "raw": "/api/share",
     "path": "/api/share",
@@ -36057,7 +36421,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 401,
+    "line": 404,
     "method": "POST",
     "raw": "/api/file/core/entity/folder",
     "path": "/api/file/core/entity/folder",
@@ -36070,7 +36434,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 405,
+    "line": 408,
     "method": "POST",
     "raw": "/api/file/core/entity/file",
     "path": "/api/file/core/entity/file",
@@ -36083,7 +36447,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 431,
+    "line": 434,
     "method": "POST",
     "raw": "/api/attachment2/list/type/1/size/20",
     "path": "/api/attachment2/list/type/1/size/20",
@@ -36099,7 +36463,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 437,
+    "line": 440,
     "method": "DELETE",
     "raw": "/api/file/assemble/control/file/clean/unused/referencetype/cmsdocument/manage",
     "path": "/api/file/assemble/control/file/clean/unused/referencetype/cmsdocument/manage",
@@ -36112,7 +36476,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 464,
+    "line": 467,
     "method": "GET",
     "raw": "/api/file/list/referencetype",
     "path": "/api/file/list/referencetype",
@@ -36125,7 +36489,46 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 485,
+    "line": 518,
+    "method": "GET",
+    "raw": "/api/file/folder2/batch/download",
+    "path": "/api/file/folder2/batch/download",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/folder2/batch/download",
+    "hit_crate": "file_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 527,
+    "method": "GET",
+    "raw": "/api/file/share/share/shareId/file/fileId/folder/folderId",
+    "path": "/api/file/share/share/shareId/file/fileId/folder/folderId",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/share/share/shareId/file/fileId/folder/folderId",
+    "hit_crate": "file_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 528,
+    "method": "GET",
+    "raw": "/api/file/share/shield/id",
+    "path": "/api/file/share/shield/id",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/file/share/shield/id",
+    "hit_crate": "file_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 546,
     "method": "POST",
     "raw": "/api/fileinfo/list/filter",
     "path": "/api/fileinfo/list/filter",
@@ -36138,7 +36541,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 501,
+    "line": 562,
     "method": "GET",
     "raw": "/api/attachment/${i}/image/scale/2/binary/base64",
     "path": "/api/attachment/{}/image/scale/2/binary/base64",
@@ -36153,7 +36556,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 502,
+    "line": 563,
     "method": "GET",
     "raw": "/api/attachment/${i}/image/width/120/height/120/binary/base64",
     "path": "/api/attachment/{}/image/width/120/height/120/binary/base64",
@@ -36169,7 +36572,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 505,
+    "line": 566,
     "method": "GET",
     "raw": "/api/attachment2/${i}/download/image/width/120/height/120",
     "path": "/api/attachment2/{}/download/image/width/120/height/120",
@@ -36185,7 +36588,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 509,
+    "line": 570,
     "method": "GET",
     "raw": "/api/attachment2/${i}/image/width/120/height/120/binary/base64",
     "path": "/api/attachment2/{}/image/width/120/height/120/binary/base64",
@@ -36201,7 +36604,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 510,
+    "line": 571,
     "method": "GET",
     "raw": "/api/fileinfo/1/document/2",
     "path": "/api/fileinfo/1/document/2",
@@ -36217,7 +36620,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 516,
+    "line": 577,
     "method": "GET",
     "raw": "/api/attachment2/${i}/image/scale/2/binary/base64",
     "path": "/api/attachment2/{}/image/scale/2/binary/base64",
@@ -36232,7 +36635,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 527,
+    "line": 588,
     "method": "GET",
     "raw": "/api/anonymous/fileinfo/0/document/0",
     "path": "/api/anonymous/fileinfo/0/document/0",
@@ -36248,7 +36651,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 528,
+    "line": 589,
     "method": "POST",
     "raw": "/api/attachment/0/download",
     "path": "/api/attachment/0/download",
@@ -36263,7 +36666,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 529,
+    "line": 590,
     "method": "POST",
     "raw": "/api/attachment/0/download/stream",
     "path": "/api/attachment/0/download/stream",
@@ -36278,7 +36681,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 530,
+    "line": 591,
     "method": "POST",
     "raw": "/api/attachment2/0/download",
     "path": "/api/attachment2/0/download",
@@ -36293,7 +36696,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 531,
+    "line": 592,
     "method": "POST",
     "raw": "/api/attachment2/0/download/stream",
     "path": "/api/attachment2/0/download/stream",
@@ -36308,7 +36711,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 532,
+    "line": 593,
     "method": "GET",
     "raw": "/api/complex/folder/0",
     "path": "/api/complex/folder/0",
@@ -36323,7 +36726,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 533,
+    "line": 594,
     "method": "GET",
     "raw": "/api/complex/top",
     "path": "/api/complex/top",
@@ -36336,7 +36739,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 534,
+    "line": 595,
     "method": "GET",
     "raw": "/api/folder/list/top",
     "path": "/api/folder/list/top",
@@ -36349,7 +36752,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 535,
+    "line": 596,
     "method": "GET",
     "raw": "/api/folder/list/0",
     "path": "/api/folder/list/0",
@@ -36364,7 +36767,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 536,
+    "line": 597,
     "method": "GET",
     "raw": "/api/folder/0",
     "path": "/api/folder/0",
@@ -36379,7 +36782,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 537,
+    "line": 598,
     "method": "POST",
     "raw": "/api/folder2",
     "path": "/api/folder2",
@@ -36392,7 +36795,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 538,
+    "line": 599,
     "method": "GET",
     "raw": "/api/folder2/list/top",
     "path": "/api/folder2/list/top",
@@ -36405,7 +36808,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 539,
+    "line": 600,
     "method": "GET",
     "raw": "/api/folder2/list/0",
     "path": "/api/folder2/list/0",
@@ -36420,7 +36823,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 540,
+    "line": 601,
     "method": "PUT",
     "raw": "/api/folder2/0",
     "path": "/api/folder2/0",
@@ -36435,7 +36838,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 541,
+    "line": 602,
     "method": "DELETE",
     "raw": "/api/folder2/0",
     "path": "/api/folder2/0",
@@ -36450,7 +36853,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 542,
+    "line": 603,
     "method": "GET",
     "raw": "/api/share/0",
     "path": "/api/share/0",
@@ -36465,7 +36868,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 543,
+    "line": 604,
     "method": "GET",
     "raw": "/api/file/assemble/control/file/0/download",
     "path": "/api/file/assemble/control/file/0/download",
@@ -36480,7 +36883,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 544,
+    "line": 605,
     "method": "POST",
     "raw": "/api/file/assemble/control/file/0/download",
     "path": "/api/file/assemble/control/file/0/download",
@@ -36495,7 +36898,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 545,
+    "line": 606,
     "method": "POST",
     "raw": "/api/file/assemble/control/file/0/download/stream",
     "path": "/api/file/assemble/control/file/0/download/stream",
@@ -36510,7 +36913,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 563,
+    "line": 624,
     "method": "GET",
     "raw": "/api/file/assemble/control/file/list/${encodeURIComponent(md5)}/next/20",
     "path": "/api/file/assemble/control/file/list/{}/next/20",
@@ -36525,7 +36928,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 564,
+    "line": 625,
     "method": "GET",
     "raw": "/api/file/assemble/control/file/list/${encodeURIComponent(md5)}/prev/20",
     "path": "/api/file/assemble/control/file/list/{}/prev/20",
@@ -36540,7 +36943,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 577,
+    "line": 638,
     "method": "GET",
     "raw": "/api/file/folder/list/top",
     "path": "/api/file/folder/list/top",
@@ -36553,7 +36956,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 583,
+    "line": 644,
     "method": "GET",
     "raw": "/api/file/list/unused/referencetype/cmsdocument/manage",
     "path": "/api/file/list/unused/referencetype/cmsdocument/manage",
@@ -36566,7 +36969,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 595,
+    "line": 656,
     "method": "GET",
     "raw": "/api/file/folder2/list/top",
     "path": "/api/file/folder2/list/top",
@@ -36579,7 +36982,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 596,
+    "line": 657,
     "method": "GET",
     "raw": "/api/share/list/my",
     "path": "/api/share/list/my",
@@ -36592,7 +36995,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 597,
+    "line": 658,
     "method": "GET",
     "raw": "/api/share/list/to/me",
     "path": "/api/share/list/to/me",
@@ -36605,7 +37008,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 609,
+    "line": 670,
     "method": "GET",
     "raw": "/api/file/folder/list/top",
     "path": "/api/file/folder/list/top",
@@ -36618,7 +37021,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 610,
+    "line": 671,
     "method": "GET",
     "raw": "/api/share/list",
     "path": "/api/share/list",
@@ -36631,7 +37034,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 611,
+    "line": 672,
     "method": "GET",
     "raw": "/api/attachment2/user/capacity",
     "path": "/api/attachment2/user/capacity",
@@ -36644,7 +37047,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 624,
+    "line": 685,
     "method": "GET",
     "raw": "/api/file/attachment/list/top",
     "path": "/api/file/attachment/list/top",
@@ -36657,7 +37060,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 754,
+    "line": 815,
     "method": "GET",
     "raw": "/api/file/assemble/control/file/list/referencetype",
     "path": "/api/file/assemble/control/file/list/referencetype",
@@ -36670,7 +37073,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 768,
+    "line": 829,
     "method": "GET",
     "raw": "/api/fileinfo/list/document/default",
     "path": "/api/fileinfo/list/document/default",
@@ -36685,7 +37088,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 794,
+    "line": 855,
     "method": "GET",
     "raw": "/api/file/core/entity/folder/list/top",
     "path": "/api/file/core/entity/folder/list/top",
@@ -36698,7 +37101,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 799,
+    "line": 860,
     "method": "GET",
     "raw": "/api/file/core/entity/file/list",
     "path": "/api/file/core/entity/file/list",
@@ -36711,7 +37114,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 800,
+    "line": 861,
     "method": "GET",
     "raw": "/api/file/core/entity/complex/top",
     "path": "/api/file/core/entity/complex/top",
@@ -36724,7 +37127,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 861,
+    "line": 922,
     "method": "UPLOAD",
     "raw": "/api/file/assemble/control/file/upload",
     "path": "/api/file/assemble/control/file/upload",
@@ -36737,7 +37140,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 883,
+    "line": 944,
     "method": "DELETE",
     "raw": "/api/data/document/0",
     "path": "/api/data/document/0",
@@ -36752,7 +37155,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 884,
+    "line": 945,
     "method": "GET",
     "raw": "/api/anonymous/fileinfo/download/document/0",
     "path": "/api/anonymous/fileinfo/download/document/0",
@@ -36767,7 +37170,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 885,
+    "line": 946,
     "method": "GET",
     "raw": "/api/anonymous/fileinfo/download/document/0/stream",
     "path": "/api/anonymous/fileinfo/download/document/0/stream",
@@ -36782,7 +37185,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 886,
+    "line": 947,
     "method": "GET",
     "raw": "/api/anonymous/form/v2/lookup/document/0",
     "path": "/api/anonymous/form/v2/lookup/document/0",
@@ -36797,7 +37200,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 887,
+    "line": 948,
     "method": "GET",
     "raw": "/api/anonymous/form/v2/lookup/document/0/mobile",
     "path": "/api/anonymous/form/v2/lookup/document/0/mobile",
@@ -36812,7 +37215,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 888,
+    "line": 949,
     "method": "GET",
     "raw": "/api/anonymous/form/v2/0",
     "path": "/api/anonymous/form/v2/0",
@@ -36827,7 +37230,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 889,
+    "line": 950,
     "method": "GET",
     "raw": "/api/anonymous/form/v2/0/mobile",
     "path": "/api/anonymous/form/v2/0/mobile",
@@ -36842,7 +37245,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 890,
+    "line": 951,
     "method": "GET",
     "raw": "/api/anonymous/form/0",
     "path": "/api/anonymous/form/0",
@@ -36857,7 +37260,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 891,
+    "line": 952,
     "method": "GET",
     "raw": "/api/anonymous/surface/appdict/list/appInfo/0",
     "path": "/api/anonymous/surface/appdict/list/appInfo/0",
@@ -36872,7 +37275,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 892,
+    "line": 953,
     "method": "GET",
     "raw": "/api/anonymous/surface/appdict/0/appInfo/0",
     "path": "/api/anonymous/surface/appdict/0/appInfo/0",
@@ -36888,7 +37291,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 893,
+    "line": 954,
     "method": "GET",
     "raw": "/api/anonymous/surface/appdict/0/appInfo/0/data",
     "path": "/api/anonymous/surface/appdict/0/appInfo/0/data",
@@ -36904,7 +37307,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 894,
+    "line": 955,
     "method": "GET",
     "raw": "/api/commend/0",
     "path": "/api/commend/0",
@@ -36919,7 +37322,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 895,
+    "line": 956,
     "method": "GET",
     "raw": "/api/comment/0/commend",
     "path": "/api/comment/0/commend",
@@ -36934,7 +37337,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 896,
+    "line": 957,
     "method": "GET",
     "raw": "/api/comment/0/uncommend",
     "path": "/api/comment/0/uncommend",
@@ -36949,7 +37352,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 897,
+    "line": 958,
     "method": "GET",
     "raw": "/api/data/document/0/0",
     "path": "/api/data/document/0/0",
@@ -36965,7 +37368,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 898,
+    "line": 959,
     "method": "GET",
     "raw": "/api/surface/appdict/list/appInfo/0",
     "path": "/api/surface/appdict/list/appInfo/0",
@@ -36980,7 +37383,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 899,
+    "line": 960,
     "method": "GET",
     "raw": "/api/surface/appdict/0/appInfo/0",
     "path": "/api/surface/appdict/0/appInfo/0",
@@ -36996,7 +37399,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 900,
+    "line": 961,
     "method": "GET",
     "raw": "/api/surface/appdict/0/appInfo/0/data",
     "path": "/api/surface/appdict/0/appInfo/0/data",
@@ -37012,7 +37415,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 901,
+    "line": 962,
     "method": "POST",
     "raw": "/api/data/document/0",
     "path": "/api/data/document/0",
@@ -37027,7 +37430,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 902,
+    "line": 963,
     "method": "POST",
     "raw": "/api/data/document/0/array/data",
     "path": "/api/data/document/0/array/data",
@@ -37042,7 +37445,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 903,
+    "line": 964,
     "method": "POST",
     "raw": "/api/docpermission",
     "path": "/api/docpermission",
@@ -37055,7 +37458,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 904,
+    "line": 965,
     "method": "POST",
     "raw": "/api/image/encode/base64",
     "path": "/api/image/encode/base64",
@@ -37068,7 +37471,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 905,
+    "line": 966,
     "method": "PUT",
     "raw": "/api/data/document/0",
     "path": "/api/data/document/0",
@@ -37083,7 +37486,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 906,
+    "line": 967,
     "method": "PUT",
     "raw": "/api/surface/appdict/0/appInfo/0",
     "path": "/api/surface/appdict/0/appInfo/0",
@@ -37099,7 +37502,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 907,
+    "line": 968,
     "method": "GET",
     "raw": "/api/anonymous/file/0/download",
     "path": "/api/anonymous/file/0/download",
@@ -37114,7 +37517,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 908,
+    "line": 969,
     "method": "GET",
     "raw": "/api/anonymous/file/0/download/stream",
     "path": "/api/anonymous/file/0/download/stream",
@@ -37129,7 +37532,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 909,
+    "line": 970,
     "method": "GET",
     "raw": "/api/folder2/0",
     "path": "/api/folder2/0",
@@ -37144,7 +37547,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 910,
+    "line": 971,
     "method": "GET",
     "raw": "/api/share/download/share/0/file/0",
     "path": "/api/share/download/share/0/file/0",
@@ -37160,7 +37563,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 911,
+    "line": 972,
     "method": "GET",
     "raw": "/api/share/list/att/share/0/folder/0",
     "path": "/api/share/list/att/share/0/folder/0",
@@ -37176,7 +37579,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 912,
+    "line": 973,
     "method": "GET",
     "raw": "/api/share/list/folder/share/0/folder/0",
     "path": "/api/share/list/folder/share/0/folder/0",
@@ -37192,7 +37595,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 913,
+    "line": 974,
     "method": "GET",
     "raw": "/api/share/list/my2/0/0",
     "path": "/api/share/list/my2/0/0",
@@ -37208,7 +37611,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 914,
+    "line": 975,
     "method": "GET",
     "raw": "/api/share/list/to/me2/0",
     "path": "/api/share/list/to/me2/0",
@@ -37223,7 +37626,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 915,
+    "line": 976,
     "method": "GET",
     "raw": "/api/share/shield/0",
     "path": "/api/share/shield/0",
@@ -37238,7 +37641,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 916,
+    "line": 977,
     "method": "POST",
     "raw": "/api/anonymous/file/0/download",
     "path": "/api/anonymous/file/0/download",
@@ -37253,7 +37656,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 917,
+    "line": 978,
     "method": "POST",
     "raw": "/api/anonymous/file/0/download/stream",
     "path": "/api/anonymous/file/0/download/stream",
@@ -37268,7 +37671,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 929,
+    "line": 990,
     "method": "GET",
     "raw": "/api/anonymous/fileinfo/list/document/0",
     "path": "/api/anonymous/fileinfo/list/document/0",
@@ -37283,7 +37686,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 930,
+    "line": 991,
     "method": "GET",
     "raw": "/api/folder2/batch/download",
     "path": "/api/folder2/batch/download",
@@ -37296,7 +37699,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 931,
+    "line": 992,
     "method": "GET",
     "raw": "/api/folder2/0/download",
     "path": "/api/folder2/0/download",
@@ -37311,7 +37714,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 933,
+    "line": 994,
     "method": "GET",
     "raw": "/api/file/assemble/control/file/copy/attachment/0/referencetype/0/reference/0/scale/0",
     "path": "/api/file/assemble/control/file/copy/attachment/0/referencetype/0/reference/0/scale/0",
@@ -37329,7 +37732,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 934,
+    "line": 995,
     "method": "GET",
     "raw": "/api/fileinfo/0/doc/0/change/seqnumber/0",
     "path": "/api/fileinfo/0/doc/0/change/seqnumber/0",
@@ -37346,7 +37749,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 936,
+    "line": 997,
     "method": "POST",
     "raw": "/api/file/assemble/control/file/upload/with/url",
     "path": "/api/file/assemble/control/file/upload/with/url",
@@ -37359,7 +37762,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 937,
+    "line": 998,
     "method": "POST",
     "raw": "/api/fileinfo/upload/with/url",
     "path": "/api/fileinfo/upload/with/url",
@@ -37372,7 +37775,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 938,
+    "line": 999,
     "method": "POST",
     "raw": "/api/commend/list/paging/0/size/0",
     "path": "/api/commend/list/paging/0/size/0",
@@ -37388,7 +37791,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/FileManager.vue",
-    "line": 939,
+    "line": 1000,
     "method": "POST",
     "raw": "/api/share/share/0/file/0/folder/0",
     "path": "/api/share/share/0/file/0/folder/0",

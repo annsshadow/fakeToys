@@ -19,6 +19,7 @@
         <button class="action-btn" @click="loadFolderTopByRef">🌳 顶层文件夹/按引用</button>
         <button class="action-btn" @click="loadFileDeepReads">🔬 文件深度读</button>
         <button class="action-btn" @click="fileRead2">📋 文件清单/翻页</button>
+        <button class="action-btn" @click="fileRead3">🗂️ 附件/共享只读补消费</button>
         <button class="action-btn" @click="fileRest3('fiDocGet')">fileinfo文档</button>
         <button class="action-btn" @click="fileRest3('fiDelete')">删fileinfo</button>
         <button class="action-btn" @click="fileRest3('fiListFilter')">fileinfo筛选</button>
@@ -51,6 +52,7 @@
         <button class="action-btn" @click="loadFileTwin2">文件孪生端点B</button>
         <button class="action-btn" @click="loadFileTwin3">文件桶外端点C</button>
         <span v-if="fileRead2Text" class="app-meta">{{ fileRead2Text }}</span>
+        <span v-if="fileRead3Text" class="app-meta">{{ fileRead3Text }}</span>
         <button class="action-btn" @click="fileCreate('control')">建文件</button>
         <button class="action-btn" @click="fileCreate('entity')">建实体文件</button>
         <button class="action-btn" @click="fileDelete('controlPost')">删文件P</button>
@@ -212,6 +214,7 @@ interface FileItem {
 
 const currentFolder = ref<string>('')
 const fileRead2Text = ref('')
+const fileRead3Text = ref('')
 const breadcrumbs = ref<string[]>(['根目录'])
 const viewType = ref<'grid' | 'list'>('list')
 const loading = ref(false)
@@ -474,6 +477,64 @@ async function fileRead2(): Promise<void> {
     toast.success('文件清单已加载')
   } catch (err: any) {
     toast.error('文件清单加载失败: ' + (err?.message ?? ''))
+  }
+}
+// rev376：文件/附件 非破坏性真实读补消费（用户触发）——attachment/attachment2 元数据/二进制base64/缩放、
+// folder/folder2、按引用类型/游标清单、回收站、共享(下载/清单/密码/字面路由)、匿名下载、file/{id}/binary。
+// 全字面量路径 + 真实参数插值（dummy id → SELECT 未命中返 JSON error，非破坏）。排除 copy/attachment 写与所有 upload 多部件。
+async function fileRead3(): Promise<void> {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const md5 = 'd41d8cd98f00b204e9800998ecf8427e'
+  const scale = '200'
+  const w = '120'
+  const h = '40'
+  const ref = 'default'
+  const rt = 'default'
+  const cnt = '20'
+  const shareId = '0'
+  const fileId = '0'
+  const folderId = '0'
+  const pwd = 'x'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/file/anonymous/file/${id}/download`)),
+      s(api.get(`/api/file/attachment/${id}`)),
+      s(api.get(`/api/file/attachment/${id}/binary/base64`)),
+      s(api.get(`/api/file/attachment/${id}/download`)),
+      s(api.get(`/api/file/attachment/${id}/image/scale/${scale}/binary/base64`)),
+      s(api.get(`/api/file/attachment/${id}/image/width/${w}/height/${h}/binary/base64`)),
+      s(api.get(`/api/file/attachment2/exist/file/${md5}`)),
+      s(api.get(`/api/file/attachment2/${id}`)),
+      s(api.get(`/api/file/attachment2/${id}/binary/base64`)),
+      s(api.get(`/api/file/attachment2/${id}/download`)),
+      s(api.get(`/api/file/attachment2/${id}/download/image/width/${w}/height/${h}`)),
+      s(api.get(`/api/file/attachment2/${id}/download/stream`)),
+      s(api.get(`/api/file/attachment2/${id}/image/scale/${scale}/binary/base64`)),
+      s(api.get(`/api/file/attachment2/${id}/image/width/${w}/height/${h}/binary/base64`)),
+      s(api.get(`/api/file/folder/${id}`)),
+      s(api.get(`/api/file/folder2/${id}`)),
+      s(api.get(`/api/file/folder2/${id}/download`)),
+      s(api.get('/api/file/folder2/batch/download')),
+      s(api.get(`/api/file/list/referencetype/${rt}/reference/${ref}`)),
+      s(api.get(`/api/file/list/${id}/next/${cnt}/referencetype/${rt}`)),
+      s(api.get(`/api/file/list/${id}/prev/${cnt}/all`)),
+      s(api.get(`/api/file/list/${id}/prev/${cnt}/referencetype/${rt}`)),
+      s(api.get(`/api/file/recycle/${id}`)),
+      s(api.get(`/api/file/share/download/share/${shareId}/file/${fileId}`)),
+      s(api.get(`/api/file/share/list/att/share/${shareId}/folder/${folderId}`)),
+      s(api.get(`/api/file/share/list/folder/share/${shareId}/folder/${folderId}`)),
+      s(api.get('/api/file/share/share/shareId/file/fileId/folder/folderId')),
+      s(api.get('/api/file/share/shield/id')),
+      s(api.get(`/api/file/share/${id}`)),
+      s(api.get(`/api/file/share/${id}/password/${pwd}`)),
+      s(api.get(`/api/file/${id}/binary/base64`)),
+    ])
+    const hit = rs.filter((r) => (r as any) != null).length
+    fileRead3Text.value = `文件/附件只读端点 ${rs.length} 条，返回 ${hit}`
+    toast.success('文件/附件只读端点已加载')
+  } catch (err: any) {
+    toast.error('文件/附件只读加载失败: ' + (err?.message ?? ''))
   }
 }
 // rev373：fileinfo 文档附件族 + file/attachment/attachment2 REST（真实 {id}/{docId}/{flag} 参数）读改删下载 真实路由（避 /id/ 字面段 trap500 与 upload 多部件）
