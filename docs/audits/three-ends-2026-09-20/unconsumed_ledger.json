@@ -1,0 +1,1751 @@
+{
+ "total_unconsumed": 216,
+ "by_category": {
+  "TWIN_ALIAS": 13,
+  "EXTERNAL_IDP": 84,
+  "MALFORMED": 2,
+  "SESSION_DESTRUCTIVE": 18,
+  "CREDENTIAL_ANON": 4,
+  "TEST_GARBAGE": 8,
+  "EXTERNAL_MSG": 5,
+  "DESTRUCTIVE_WRITE": 73,
+  "SENSITIVE": 4,
+  "ENGINE": 2,
+  "WEBSOCKET": 3
+ },
+ "by_verdict": {
+  "结构不可计入": 27,
+  "仅运行时可验证": 116,
+  "仅运行时(真实用户动作)": 73
+ },
+ "routes": [
+  {
+   "method": "GET",
+   "path": "/api/person/regist/captcha/width/{width}/height/{height}",
+   "crate": "personal",
+   "category": "CREDENTIAL_ANON",
+   "verdict": "仅运行时可验证",
+   "reason": "凭证/匿名 token/验证码类，需真实运行时令牌流程"
+  },
+  {
+   "method": "GET",
+   "path": "/api/reset/check/credential/{credential}",
+   "crate": "personal",
+   "category": "CREDENTIAL_ANON",
+   "verdict": "仅运行时可验证",
+   "reason": "凭证/匿名 token/验证码类，需真实运行时令牌流程"
+  },
+  {
+   "method": "POST",
+   "path": "/api/reset/password/anonymous",
+   "crate": "personal",
+   "category": "CREDENTIAL_ANON",
+   "verdict": "仅运行时可验证",
+   "reason": "凭证/匿名 token/验证码类，需真实运行时令牌流程"
+  },
+  {
+   "method": "POST",
+   "path": "/api/secret/captcha/verify",
+   "crate": "auth",
+   "category": "CREDENTIAL_ANON",
+   "verdict": "仅运行时可验证",
+   "reason": "凭证/匿名 token/验证码类，需真实运行时令牌流程"
+  },
+  {
+   "method": "POST",
+   "path": "/api/attachment/upload/folder/callback/callback/{folderId}",
+   "crate": "file_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/attachment/upload/folder/{folderId}/callback/{callback}",
+   "crate": "file_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/attachment2/upload/folder/{folderId}",
+   "crate": "file_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "DELETE",
+   "path": "/api/bbs/assemble/control/delete/forum",
+   "crate": "bbs_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "DELETE",
+   "path": "/api/bbs/assemble/control/delete/reply",
+   "crate": "bbs_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/bbs/assemble/control/delete/subject",
+   "crate": "bbs_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "DELETE",
+   "path": "/api/bbs/assemble/control/delete/subject",
+   "crate": "bbs_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/bbs/assemble/control/picture/encode/base64/size/{size}",
+   "crate": "bbs_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/bbs/assemble/control/picture/section/{id}/icon",
+   "crate": "bbs_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "GET",
+   "path": "/api/bbs/assemble/control/section/syn",
+   "crate": "bbs_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/bbs/assemble/control/shutup/create",
+   "crate": "bbs_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "DELETE",
+   "path": "/api/bbs/assemble/control/shutup/delete",
+   "crate": "bbs_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/bbs/assemble/control/topic/create",
+   "crate": "bbs_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/cms/view/unpublish/{id}",
+   "crate": "cms_express",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/config",
+   "crate": "file_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/file/assemble/control/file/upload/referencetype/{referenceType}/reference/{reference}/scale/{scale}",
+   "crate": "file_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "PUT",
+   "path": "/api/file/assemble/control/file/upload/referencetype/{referenceType}/reference/{reference}/scale/{scale}",
+   "crate": "file_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/file/assemble/control/file/upload/referencetype/{referenceType}/reference/{reference}/scale/{scale}/callback/{callback}",
+   "crate": "file_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/file/upload",
+   "crate": "file",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/file/upload/referencetype/reference/reference/scale/scale/callback/callback/{referenceType}",
+   "crate": "file_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/file/upload/referencetype/reference/reference/scale/scale/{referenceType}",
+   "crate": "file_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/file/{id}/upload",
+   "crate": "cms_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/fileinfo/update/document/{docId}/attachment/{id}/callback/{callback}",
+   "crate": "cms_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/fileinfo/upload/doc/{docId}/save/as/{flag}",
+   "crate": "cms_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/fileinfo/upload/document/{docId}/callback/{callback}",
+   "crate": "cms_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/fileinfo/upload/document/{id}",
+   "crate": "cms_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/meeting/assemble/control/attachment/meeting/{meetingId}/upload/{summary}",
+   "crate": "meeting_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/meeting/assemble/control/attachment/meeting/{meetingId}/upload/{summary}/callback/{callback}",
+   "crate": "meeting_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/meeting/assemble/control/attachment/{id}/update/callback/{ballback}",
+   "crate": "meeting_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/message/assemble/communicate/im/msg/clear",
+   "crate": "message_assemble_communicate",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/message/assemble/communicate/im/msg/upload/{conversationId}/type/{type}",
+   "crate": "message_assemble_communicate",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/control/person/{flag}/reset/password",
+   "crate": "organization_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/control/person/{flag}/set/password/expired/time/{date}",
+   "crate": "organization_assemble_control",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/person/regist",
+   "crate": "personal",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/person/signature/upload",
+   "crate": "personal",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/portal/assemble/designer/file/upload/{id}",
+   "crate": "portal_assemble_designer",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/portal/assemble/surface/delete/layout",
+   "crate": "portal_assemble_surface",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "DELETE",
+   "path": "/api/portal/assemble/surface/delete/layout",
+   "crate": "portal_assemble_surface",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/portal/assemble/surface/save/layout",
+   "crate": "portal_assemble_surface",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "PUT",
+   "path": "/api/portal/assemble/surface/save/layout",
+   "crate": "portal_assemble_surface",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/processplatform/assemble/designer/application/{id}/{onlyRemoveNotCompleted}",
+   "crate": "processplatform_assemble_designer",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/processplatform/assemble/designer/file/upload/{id}",
+   "crate": "processplatform_assemble_designer",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/processplatform/assemble/designer/process/edition/{id}/{onlyRemoveNotCompleted}",
+   "crate": "processplatform_assemble_designer",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/processplatform/assemble/designer/process/{id}/{onlyRemoveNotCompleted}",
+   "crate": "processplatform_assemble_designer",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/processplatform/assemble/surface/attachment/batch/upload/manage",
+   "crate": "processplatform_assemble_surface",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/processplatform/assemble/surface/attachment/update/{id}/work/{workId}/callback/{callbackId}",
+   "crate": "processplatform_assemble_surface",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/processplatform/assemble/surface/attachment/upload/with/url",
+   "crate": "processplatform_assemble_surface",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/processplatform/assemble/surface/attachment/upload/work/{workId}",
+   "crate": "processplatform_assemble_surface",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/processplatform/assemble/surface/attachment/upload/work/{workId}/callback/{callbackId}",
+   "crate": "processplatform_assemble_surface",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "PUT",
+   "path": "/api/processplatform/assemble/surface/attachment/upload/work/{workId}/save/as/{saveAs}",
+   "crate": "processplatform_assemble_surface",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/processplatform/assemble/surface/attachment/upload/workcompleted/{workCompletedId}",
+   "crate": "processplatform_assemble_surface",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/processplatform/assemble/surface/attachment/v2/upload/workorworkcompleted/{flag}",
+   "crate": "processplatform_assemble_surface",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/processplatform/assemble/surface/attachment/v2/upload/workorworkcompleted/{flag}/base64",
+   "crate": "processplatform_assemble_surface",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/processplatform/assemble/surface/mode/save",
+   "crate": "processplatform_assemble_surface",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/processplatform/assemble/surface/review/create/work",
+   "crate": "processplatform_assemble_surface",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/processplatform/assemble/surface/review/create/workcompleted",
+   "crate": "processplatform_assemble_surface",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/processplatform/assemble/surface/snap/upload",
+   "crate": "processplatform_assemble_surface",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/processplatform/service/processing/attachment/copy/work/{workId}",
+   "crate": "processplatform_service_processing",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/processplatform/service/processing/series/series/activitytoken/processing/signal/{work}/{id}/{activityToken}",
+   "crate": "processplatform_service_processing",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/processplatform/service/processing/taskcompleted/press/{id}/{work}/{work}",
+   "crate": "processplatform_service_processing",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/program_center/config/change/password",
+   "crate": "program_center",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "PUT",
+   "path": "/api/program_center/config/token",
+   "crate": "program_center",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/invoke/flag/execute",
+   "crate": "program_center",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/program_center/invoke/token",
+   "crate": "program_center",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/program_center/invoke/{flag}/client/{client}/token/{token}/execute",
+   "crate": "program_center",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/program_center/module/compare/upload",
+   "crate": "program_center",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "PUT",
+   "path": "/api/program_center/module/compare/upload",
+   "crate": "program_center",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/schedule/schedule/fire",
+   "crate": "program_center",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "PUT",
+   "path": "/api/program_center/tokenthreshold/update",
+   "crate": "program_center",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "GET",
+   "path": "/api/query/assemble/designer/importmodel/{id}",
+   "crate": "query_assemble_designer",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "PUT",
+   "path": "/api/reset",
+   "crate": "personal",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/secret/set",
+   "crate": "program_init",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "GET",
+   "path": "/api/secret/set/cancel",
+   "crate": "program_init",
+   "category": "DESTRUCTIVE_WRITE",
+   "verdict": "仅运行时(真实用户动作)",
+   "reason": "破坏性/写端点，接前端仅为凑指标即造假；只能由真实用户动作在运行时触发"
+  },
+  {
+   "method": "POST",
+   "path": "/api/processplatform/assemble/surface/attachment/html/to/image",
+   "crate": "processplatform_assemble_surface",
+   "category": "ENGINE",
+   "verdict": "仅运行时可验证",
+   "reason": "依赖 HTML→PDF/图片 渲染引擎的转换端点，需引擎与真实文档"
+  },
+  {
+   "method": "POST",
+   "path": "/api/processplatform/assemble/surface/attachment/html/to/pdf",
+   "crate": "processplatform_assemble_surface",
+   "category": "ENGINE",
+   "verdict": "仅运行时可验证",
+   "reason": "依赖 HTML→PDF/图片 渲染引擎的转换端点，需引擎与真实文档"
+  },
+  {
+   "method": "GET",
+   "path": "/api/andfx/moa/sso/token/{token}/enter/{enterId}",
+   "crate": "auth",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/attendance/assemble/control/dingding/sync/from/{from}/to/{to}/start",
+   "crate": "attendance_assemble_control",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/attendance/assemble/control/qywx/sync/from/{from}/to/{to}/start",
+   "crate": "attendance_assemble_control",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}",
+   "crate": "auth",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/authentication/oauth/login/dingding/code/{code}",
+   "crate": "auth",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}",
+   "crate": "auth",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/authentication/oauth/login/qywx/code/{code}",
+   "crate": "auth",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/authentication/oidc/authorize",
+   "crate": "auth",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/authentication/oidc/callback",
+   "crate": "auth",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "POST",
+   "path": "/api/authentication/sso",
+   "crate": "auth",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/mpweixin/bind/code/{code}",
+   "crate": "auth",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/mpweixin/bind/openid/{openid}",
+   "crate": "auth",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/mpweixin/login/code/{code}",
+   "crate": "auth",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/authentication/andfx/moa/sso/token/{token}/enter/{enterId}",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/authentication/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/authentication/authentication/oauth/login/dingding/code/{code}",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/authentication/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/authentication/authentication/oauth/login/qywx/code/{code}",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/authentication/dingding/bind/{meta}/callback/{code}",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "POST",
+   "path": "/api/organization/assemble/authentication/dingding/bind/{meta}/confirm",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/authentication/dingding/code/{code}",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "POST",
+   "path": "/api/organization/assemble/authentication/dingding/info",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/authentication/dingding/login/{code}",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/authentication/mpweixin/bind/code/{code}",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/authentication/mpweixin/bind/openid/{openid}",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/authentication/mpweixin/login/code/{code}",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/authentication/qiyeweixin/bind/{meta}/callback/{code}",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "POST",
+   "path": "/api/organization/assemble/authentication/qiyeweixin/bind/{meta}/confirm",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/authentication/qiyeweixin/code/{code}",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "POST",
+   "path": "/api/organization/assemble/authentication/qiyeweixin/info/sign",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/authentication/qiyeweixin/login/{code}",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/authentication/qiyeweixin/update/person/detail/{code}",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "POST",
+   "path": "/api/organization/assemble/authentication/sso",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/authentication/welink/code/{code}",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/authentication/zhengwudingding/bind/{meta}/callback/{code}",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "POST",
+   "path": "/api/organization/assemble/authentication/zhengwudingding/bind/{meta}/confirm",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/authentication/zhengwudingding/code/{code}",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "POST",
+   "path": "/api/organization/assemble/authentication/zhengwudingding/info",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/authentication/zhengwudingding/login/{code}",
+   "crate": "organization_assemble_authentication",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/control/export/zhengwudingding/person",
+   "crate": "organization_assemble_control",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/collect/connect",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/collect/controllebbs",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/collect/disconnect",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/collect/login",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/collect/mobile/check/connect",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "DELETE",
+   "path": "/api/program_center/collect/name/{name}/mobile/{mobile}/code/{code}",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/collect/person",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/collect/resetpassword",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "PUT",
+   "path": "/api/program_center/collect/resetpassword",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/collect/sync/area",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "POST",
+   "path": "/api/program_center/collect/updateUnit",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "PUT",
+   "path": "/api/program_center/collect/updateUnit",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/collect/urlMapping",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/collect/validate",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/collect/validate/codeanswer",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "PUT",
+   "path": "/api/program_center/collect/validate/codeanswer",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/collect/validate/direct",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "PUT",
+   "path": "/api/program_center/collect/validate/direct",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/collect/validate/password",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "PUT",
+   "path": "/api/program_center/collect/validate/password",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/dingding/request/pull/sync",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "POST",
+   "path": "/api/program_center/dingding/request/pull/sync",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/dingding/sync/organization/callback",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "POST",
+   "path": "/api/program_center/dingding/sync/organization/callback",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/dingding/sync/organization/register/callback/{enable}",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "POST",
+   "path": "/api/program_center/mpweixin/media/add/forever",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "POST",
+   "path": "/api/program_center/mpweixin/menu/add",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "POST",
+   "path": "/api/program_center/mpweixin/menu/create/to/weixin",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/mpweixin/menu/subscribe",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/mpweixin/message/template/send",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "POST",
+   "path": "/api/program_center/mpweixin/message/template/send",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/qiyeweixin",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/qiyeweixin/get/callback/aes",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "POST",
+   "path": "/api/program_center/qiyeweixin/request/pull/sync",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/qiyeweixin/send/getprivateinfo/message",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "POST",
+   "path": "/api/program_center/qiyeweixin/send/getprivateinfo/message",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/zhengwudingding/sync/organization/callback",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "POST",
+   "path": "/api/program_center/zhengwudingding/sync/organization/callback",
+   "crate": "program_center",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/qiyeweixin/code/{code}",
+   "crate": "auth",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "POST",
+   "path": "/api/qiyeweixin/jssdk/sign/info",
+   "crate": "auth",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/qiyeweixin/update/person/detail/{code}",
+   "crate": "auth",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/welink/code/{code}",
+   "crate": "auth",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/zhengwudingding/code/{code}",
+   "crate": "auth",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "GET",
+   "path": "/api/zhengwudingding/info",
+   "crate": "auth",
+   "category": "EXTERNAL_IDP",
+   "verdict": "仅运行时可验证",
+   "reason": "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP"
+  },
+  {
+   "method": "POST",
+   "path": "/api/authentication/sms/send",
+   "crate": "auth",
+   "category": "EXTERNAL_MSG",
+   "verdict": "仅运行时可验证",
+   "reason": "外部短信/LLM/推送测试端点，需真实第三方服务"
+  },
+  {
+   "method": "POST",
+   "path": "/api/authentication/sms/verify",
+   "crate": "auth",
+   "category": "EXTERNAL_MSG",
+   "verdict": "仅运行时可验证",
+   "reason": "外部短信/LLM/推送测试端点，需真实第三方服务"
+  },
+  {
+   "method": "POST",
+   "path": "/api/person/regist/code",
+   "crate": "personal",
+   "category": "EXTERNAL_MSG",
+   "verdict": "仅运行时可验证",
+   "reason": "外部短信/LLM/推送测试端点，需真实第三方服务"
+  },
+  {
+   "method": "GET",
+   "path": "/api/person/regist/code/mobile/{mobile}",
+   "crate": "personal",
+   "category": "EXTERNAL_MSG",
+   "verdict": "仅运行时可验证",
+   "reason": "外部短信/LLM/推送测试端点，需真实第三方服务"
+  },
+  {
+   "method": "GET",
+   "path": "/api/reset/code/credential/{credential}",
+   "crate": "personal",
+   "category": "EXTERNAL_MSG",
+   "verdict": "仅运行时可验证",
+   "reason": "外部短信/LLM/推送测试端点，需真实第三方服务"
+  },
+  {
+   "method": "POST",
+   "path": "/api/attendance/assemble/control/v2/mobile/check/ from/out",
+   "crate": "attendance_assemble_control",
+   "category": "MALFORMED",
+   "verdict": "结构不可计入",
+   "reason": "路由字面量含双花括号/空格/%20 等畸形注册，非真实可调用形状"
+  },
+  {
+   "method": "POST",
+   "path": "/api/attendance/assemble/control/v2/mobile/check/%20from/out",
+   "crate": "attendance_assemble_control",
+   "category": "MALFORMED",
+   "verdict": "结构不可计入",
+   "reason": "路由字面量含双花括号/空格/%20 等畸形注册，非真实可调用形状"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/control/person/check/password/{password}",
+   "crate": "organization_assemble_control",
+   "category": "SENSITIVE",
+   "verdict": "结构不可计入",
+   "reason": "口令入 URL 的校验端点，安全上不应由前端明文调用"
+  },
+  {
+   "method": "GET",
+   "path": "/api/person/regist/check/password/{password}",
+   "crate": "personal",
+   "category": "SENSITIVE",
+   "verdict": "结构不可计入",
+   "reason": "口令入 URL 的校验端点，安全上不应由前端明文调用"
+  },
+  {
+   "method": "GET",
+   "path": "/api/reset/check/password/{password}",
+   "crate": "personal",
+   "category": "SENSITIVE",
+   "verdict": "结构不可计入",
+   "reason": "口令入 URL 的校验端点，安全上不应由前端明文调用"
+  },
+  {
+   "method": "GET",
+   "path": "/api/share/{id}/password/{password}",
+   "crate": "file_assemble_control",
+   "category": "SENSITIVE",
+   "verdict": "结构不可计入",
+   "reason": "口令入 URL 的校验端点，安全上不应由前端明文调用"
+  },
+  {
+   "method": "POST",
+   "path": "/api/authentication",
+   "crate": "auth",
+   "category": "SESSION_DESTRUCTIVE",
+   "verdict": "仅运行时可验证",
+   "reason": "会话销毁/登录类（登出/切换用户/登录），接入将破坏或依赖会话状态"
+  },
+  {
+   "method": "DELETE",
+   "path": "/api/authentication",
+   "crate": "auth",
+   "category": "SESSION_DESTRUCTIVE",
+   "verdict": "仅运行时可验证",
+   "reason": "会话销毁/登录类（登出/切换用户/登录），接入将破坏或依赖会话状态"
+  },
+  {
+   "method": "POST",
+   "path": "/api/authentication/bind/meta/{meta}",
+   "crate": "auth",
+   "category": "SESSION_DESTRUCTIVE",
+   "verdict": "仅运行时可验证",
+   "reason": "会话销毁/登录类（登出/切换用户/登录），接入将破坏或依赖会话状态"
+  },
+  {
+   "method": "POST",
+   "path": "/api/authentication/safe/logout",
+   "crate": "auth",
+   "category": "SESSION_DESTRUCTIVE",
+   "verdict": "仅运行时可验证",
+   "reason": "会话销毁/登录类（登出/切换用户/登录），接入将破坏或依赖会话状态"
+  },
+  {
+   "method": "POST",
+   "path": "/api/authentication/two_factor",
+   "crate": "auth",
+   "category": "SESSION_DESTRUCTIVE",
+   "verdict": "仅运行时可验证",
+   "reason": "会话销毁/登录类（登出/切换用户/登录），接入将破坏或依赖会话状态"
+  },
+  {
+   "method": "POST",
+   "path": "/api/bbs/assemble/control/login",
+   "crate": "bbs_assemble_control",
+   "category": "SESSION_DESTRUCTIVE",
+   "verdict": "仅运行时可验证",
+   "reason": "会话销毁/登录类（登出/切换用户/登录），接入将破坏或依赖会话状态"
+  },
+  {
+   "method": "POST",
+   "path": "/api/bbs/assemble/control/logout",
+   "crate": "bbs_assemble_control",
+   "category": "SESSION_DESTRUCTIVE",
+   "verdict": "仅运行时可验证",
+   "reason": "会话销毁/登录类（登出/切换用户/登录），接入将破坏或依赖会话状态"
+  },
+  {
+   "method": "POST",
+   "path": "/api/organization/assemble/authentication/authentication",
+   "crate": "organization_assemble_authentication",
+   "category": "SESSION_DESTRUCTIVE",
+   "verdict": "仅运行时可验证",
+   "reason": "会话销毁/登录类（登出/切换用户/登录），接入将破坏或依赖会话状态"
+  },
+  {
+   "method": "DELETE",
+   "path": "/api/organization/assemble/authentication/authentication",
+   "crate": "organization_assemble_authentication",
+   "category": "SESSION_DESTRUCTIVE",
+   "verdict": "仅运行时可验证",
+   "reason": "会话销毁/登录类（登出/切换用户/登录），接入将破坏或依赖会话状态"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/authentication/authentication",
+   "crate": "organization_assemble_authentication",
+   "category": "SESSION_DESTRUCTIVE",
+   "verdict": "仅运行时可验证",
+   "reason": "会话销毁/登录类（登出/切换用户/登录），接入将破坏或依赖会话状态"
+  },
+  {
+   "method": "POST",
+   "path": "/api/organization/assemble/authentication/authentication/bind/meta/{meta}",
+   "crate": "organization_assemble_authentication",
+   "category": "SESSION_DESTRUCTIVE",
+   "verdict": "仅运行时可验证",
+   "reason": "会话销毁/登录类（登出/切换用户/登录），接入将破坏或依赖会话状态"
+  },
+  {
+   "method": "GET",
+   "path": "/api/organization/assemble/authentication/authentication/safe/logout",
+   "crate": "organization_assemble_authentication",
+   "category": "SESSION_DESTRUCTIVE",
+   "verdict": "仅运行时可验证",
+   "reason": "会话销毁/登录类（登出/切换用户/登录），接入将破坏或依赖会话状态"
+  },
+  {
+   "method": "PUT",
+   "path": "/api/organization/assemble/authentication/authentication/switchuser",
+   "crate": "organization_assemble_authentication",
+   "category": "SESSION_DESTRUCTIVE",
+   "verdict": "仅运行时可验证",
+   "reason": "会话销毁/登录类（登出/切换用户/登录），接入将破坏或依赖会话状态"
+  },
+  {
+   "method": "POST",
+   "path": "/api/organization/assemble/authentication/authentication/two/factory/login",
+   "crate": "organization_assemble_authentication",
+   "category": "SESSION_DESTRUCTIVE",
+   "verdict": "仅运行时可验证",
+   "reason": "会话销毁/登录类（登出/切换用户/登录），接入将破坏或依赖会话状态"
+  },
+  {
+   "method": "POST",
+   "path": "/api/organization/assemble/authentication/bind/meta/{meta}",
+   "crate": "organization_assemble_authentication",
+   "category": "SESSION_DESTRUCTIVE",
+   "verdict": "仅运行时可验证",
+   "reason": "会话销毁/登录类（登出/切换用户/登录），接入将破坏或依赖会话状态"
+  },
+  {
+   "method": "DELETE",
+   "path": "/api/program_center/adminlogin",
+   "crate": "program_center",
+   "category": "SESSION_DESTRUCTIVE",
+   "verdict": "仅运行时可验证",
+   "reason": "会话销毁/登录类（登出/切换用户/登录），接入将破坏或依赖会话状态"
+  },
+  {
+   "method": "PUT",
+   "path": "/api/program_center/appstyle/image/login/avatar",
+   "crate": "program_center",
+   "category": "SESSION_DESTRUCTIVE",
+   "verdict": "仅运行时可验证",
+   "reason": "会话销毁/登录类（登出/切换用户/登录），接入将破坏或依赖会话状态"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/appstyle/image/login/avatar/erase",
+   "crate": "program_center",
+   "category": "SESSION_DESTRUCTIVE",
+   "verdict": "仅运行时可验证",
+   "reason": "会话销毁/登录类（登出/切换用户/登录），接入将破坏或依赖会话状态"
+  },
+  {
+   "method": "GET",
+   "path": "/api/jpush/assemble/control/message/test/send",
+   "crate": "jpush_assemble_control",
+   "category": "TEST_GARBAGE",
+   "verdict": "结构不可计入",
+   "reason": "test/foo/bar 脚手架垃圾路由，非真实用户能力"
+  },
+  {
+   "method": "POST",
+   "path": "/api/mpweixin/menu/test/send/to/{person}",
+   "crate": "auth",
+   "category": "TEST_GARBAGE",
+   "verdict": "结构不可计入",
+   "reason": "test/foo/bar 脚手架垃圾路由，非真实用户能力"
+  },
+  {
+   "method": "POST",
+   "path": "/api/organization/assemble/authentication/mpweixin/menu/test/send/to/{person}",
+   "crate": "organization_assemble_authentication",
+   "category": "TEST_GARBAGE",
+   "verdict": "结构不可计入",
+   "reason": "test/foo/bar 脚手架垃圾路由，非真实用户能力"
+  },
+  {
+   "method": "POST",
+   "path": "/api/program_center/bar/create/mass/from/count",
+   "crate": "program_center",
+   "category": "TEST_GARBAGE",
+   "verdict": "结构不可计入",
+   "reason": "test/foo/bar 脚手架垃圾路由，非真实用户能力"
+  },
+  {
+   "method": "POST",
+   "path": "/api/program_center/foo/create/mass/from/count",
+   "crate": "program_center",
+   "category": "TEST_GARBAGE",
+   "verdict": "结构不可计入",
+   "reason": "test/foo/bar 脚手架垃圾路由，非真实用户能力"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/foo/create/mass/{from}/{count}",
+   "crate": "program_center",
+   "category": "TEST_GARBAGE",
+   "verdict": "结构不可计入",
+   "reason": "test/foo/bar 脚手架垃圾路由，非真实用户能力"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/test/test1",
+   "crate": "program_center",
+   "category": "TEST_GARBAGE",
+   "verdict": "结构不可计入",
+   "reason": "test/foo/bar 脚手架垃圾路由，非真实用户能力"
+  },
+  {
+   "method": "GET",
+   "path": "/api/program_center/test/test2",
+   "crate": "program_center",
+   "category": "TEST_GARBAGE",
+   "verdict": "结构不可计入",
+   "reason": "test/foo/bar 脚手架垃圾路由，非真实用户能力"
+  },
+  {
+   "method": "POST",
+   "path": "/api/ai_assemble_control/chat/completion/stream",
+   "crate": "ai_assemble_control",
+   "category": "TWIN_ALIAS",
+   "verdict": "结构不可计入",
+   "reason": "下划线模块寻址别名，与已消费的 slash 形（/assemble/control/）同一 handler，前端只用一种寻址，另一种为别名孪生"
+  },
+  {
+   "method": "POST",
+   "path": "/api/ai_assemble_control/file/upload",
+   "crate": "ai_assemble_control",
+   "category": "TWIN_ALIAS",
+   "verdict": "结构不可计入",
+   "reason": "下划线模块寻址别名，与已消费的 slash 形（/assemble/control/）同一 handler，前端只用一种寻址，另一种为别名孪生"
+  },
+  {
+   "method": "GET",
+   "path": "/api/ai_assemble_control/update/ai/control/config",
+   "crate": "ai_assemble_control",
+   "category": "TWIN_ALIAS",
+   "verdict": "结构不可计入",
+   "reason": "下划线模块寻址别名，与已消费的 slash 形（/assemble/control/）同一 handler，前端只用一种寻址，另一种为别名孪生"
+  },
+  {
+   "method": "PUT",
+   "path": "/api/calendar_assemble_control/event",
+   "crate": "calendar_assemble_control",
+   "category": "TWIN_ALIAS",
+   "verdict": "结构不可计入",
+   "reason": "下划线模块寻址别名，与已消费的 slash 形（/assemble/control/）同一 handler，前端只用一种寻址，另一种为别名孪生"
+  },
+  {
+   "method": "GET",
+   "path": "/api/calendar_assemble_control/test/1",
+   "crate": "calendar_assemble_control",
+   "category": "TWIN_ALIAS",
+   "verdict": "结构不可计入",
+   "reason": "下划线模块寻址别名，与已消费的 slash 形（/assemble/control/）同一 handler，前端只用一种寻址，另一种为别名孪生"
+  },
+  {
+   "method": "GET",
+   "path": "/api/file/copy/attachment/{p0}/referencetype/{p1}/reference/{p2}/scale/{p3}",
+   "crate": "file_assemble_control",
+   "category": "TWIN_ALIAS",
+   "verdict": "结构不可计入",
+   "reason": "泛化 {pN} 参数名路由，是命名参数版路由的重复注册孪生，归一形状相同不可用不同调用区分"
+  },
+  {
+   "method": "GET",
+   "path": "/api/hotpic_assemble_control/cipher/hotpic/{id}",
+   "crate": "hotpic_assemble_control",
+   "category": "TWIN_ALIAS",
+   "verdict": "结构不可计入",
+   "reason": "下划线模块寻址别名，与已消费的 slash 形（/assemble/control/）同一 handler，前端只用一种寻址，另一种为别名孪生"
+  },
+  {
+   "method": "GET",
+   "path": "/api/hotpic_assemble_control/user/hotpic/{application}/{infoId}",
+   "crate": "hotpic_assemble_control",
+   "category": "TWIN_ALIAS",
+   "verdict": "结构不可计入",
+   "reason": "下划线模块寻址别名，与已消费的 slash 形（/assemble/control/）同一 handler，前端只用一种寻址，另一种为别名孪生"
+  },
+  {
+   "method": "GET",
+   "path": "/api/hotpic_assemble_control/user/hotpic/{id}",
+   "crate": "hotpic_assemble_control",
+   "category": "TWIN_ALIAS",
+   "verdict": "结构不可计入",
+   "reason": "下划线模块寻址别名，与已消费的 slash 形（/assemble/control/）同一 handler，前端只用一种寻址，另一种为别名孪生"
+  },
+  {
+   "method": "GET",
+   "path": "/api/jpush/assemble/control/device/check/{p0}/{p1}/{p2}",
+   "crate": "jpush_assemble_control",
+   "category": "TWIN_ALIAS",
+   "verdict": "结构不可计入",
+   "reason": "泛化 {pN} 参数名路由，是命名参数版路由的重复注册孪生，归一形状相同不可用不同调用区分"
+  },
+  {
+   "method": "GET",
+   "path": "/api/jpush_assemble_control/device/config/push/type",
+   "crate": "jpush_assemble_control",
+   "category": "TWIN_ALIAS",
+   "verdict": "结构不可计入",
+   "reason": "下划线模块寻址别名，与已消费的 slash 形（/assemble/control/）同一 handler，前端只用一种寻址，另一种为别名孪生"
+  },
+  {
+   "method": "GET",
+   "path": "/api/jpush_assemble_control/message/test/send",
+   "crate": "jpush_assemble_control",
+   "category": "TWIN_ALIAS",
+   "verdict": "结构不可计入",
+   "reason": "下划线模块寻址别名，与已消费的 slash 形（/assemble/control/）同一 handler，前端只用一种寻址，另一种为别名孪生"
+  },
+  {
+   "method": "GET",
+   "path": "/api/processplatform/assemble/surface/mode/clear/person/person/{p0}",
+   "crate": "processplatform_assemble_surface",
+   "category": "TWIN_ALIAS",
+   "verdict": "结构不可计入",
+   "reason": "泛化 {pN} 参数名路由，是命名参数版路由的重复注册孪生，归一形状相同不可用不同调用区分"
+  },
+  {
+   "method": "GET",
+   "path": "/ws/realtime",
+   "crate": "realtime",
+   "category": "WEBSOCKET",
+   "verdict": "仅运行时可验证",
+   "reason": "WebSocket 端点，非前端 api.get；需真实 WS 客户端握手触发"
+  },
+  {
+   "method": "GET",
+   "path": "/ws/realtime/room/{room_id}",
+   "crate": "realtime",
+   "category": "WEBSOCKET",
+   "verdict": "仅运行时可验证",
+   "reason": "WebSocket 端点，非前端 api.get；需真实 WS 客户端握手触发"
+  },
+  {
+   "method": "GET",
+   "path": "/ws/realtime/room/{room_id}/stats",
+   "crate": "realtime",
+   "category": "WEBSOCKET",
+   "verdict": "仅运行时可验证",
+   "reason": "WebSocket 端点，非前端 api.get；需真实 WS 客户端握手触发"
+  }
+ ]
+}
