@@ -153,7 +153,15 @@ type HitInput struct {
 	ForceReaction ReactionKey
 	// ReactionElement 反应归属元素，用于查抗性；为空则取守方已附着元素
 	ReactionElement Element
-	// Roll 0..9999 的确定性随机数，用于暴击判定（由 PRNG 产生，禁止用 Math.random）
+	// Roll 暴击判定用的确定性随机数。
+	//
+	// ⚠️ 量纲是**千分比**（0..999），与 CritPermille 同量纲。
+	// 曾经是万分比（0..9999）而判定阈值 `roll >= 1000 - critPermille`
+	// 是千分比，两个量纲混用导致 critPermille=50（标称 5%）实际
+	// 产生 90.5% 暴击率，10 倍偏差，且把所有取值压进 90%+ 的区间
+	// 使该成长维度的边际收益消失。
+	// 客户端 BattleRng.roll() 已同步为 intn(1000)；
+	// 由 TestCritRateDistribution（Go 与 TS 各一份）守住。
 	Roll int64
 }
 

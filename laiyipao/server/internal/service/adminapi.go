@@ -168,7 +168,7 @@ func (s *Service) AdminEquipment(ctx context.Context) (map[string]any, error) {
 		"gems":           domain.SeedGems,
 		"qualities":      domain.GemQualities,
 		"skins":          domain.SeedSkins,
-		"enemies":        domain.SeedEnemies,
+		"enemies":        domain.ScaleAllEnemies(),
 		"reactions":      domain.AllReactionSpecs(),
 		"mastery":        domain.AllMasteryFamilies(),
 		"rating_weights": domain.DefaultRatingWeights(),
