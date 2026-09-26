@@ -2111,7 +2111,7 @@ pub async fn data_workcompleted_id(
 #[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path(
     pool: Extension<Pool>,
-    axum::extract::Path((id, _path)): axum::extract::Path<(String, String)>,
+    axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -2121,42 +2121,7 @@ pub async fn data_workcompleted_id_path(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let work_id: String = row.get("work_id");
-    match _path.as_str() {
-        "records" => {
-            let rows = client
-                .query(
-                    "SELECT id, work_id, task_id, record_type, content, creator, create_time FROM x_record WHERE work_id = $1",
-                    &[&work_id],
-                )
-                .await
-                .map_err(|_| AppError::Internal)?;
-            let list: Vec<Value> = rows.iter().map(row_to_json).collect();
-            let total_list = list.len();
-            Ok(Json(ActionResult::legacy_success(
-                Value::Array(list),
-                total_list as i64,
-                0,
-            )))
-        }
-        "snapshots" => {
-            let rows = client
-                .query(
-                    "SELECT id, work_id, snap_type, snap_data, create_time FROM x_snap WHERE work_id = $1",
-                    &[&work_id],
-                )
-                .await
-                .map_err(|_| AppError::Internal)?;
-            let list: Vec<Value> = rows.iter().map(row_to_json).collect();
-            let total_list = list.len();
-            Ok(Json(ActionResult::legacy_success(
-                Value::Array(list),
-                total_list as i64,
-                0,
-            )))
-        }
-        _ => Ok(Json(ActionResult::success(row_to_json(&row)))),
-    }
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 #[allow(non_snake_case)]
@@ -2357,9 +2322,15 @@ pub async fn record_job_job(
 #[allow(non_snake_case)]
 pub async fn record_task_processing(
     pool: Extension<Pool>,
-    axum::extract::Path(task_id): axum::extract::Path<String>,
+    axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let task_id = body
+        .get("taskId")
+        .or_else(|| body.get("id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let rows = client
         .query(
             "SELECT id, work_id, task_id, record_type, content, creator, create_time FROM x_record WHERE task_id = $1 AND record_type = $2 ORDER BY create_time DESC",
@@ -2501,16 +2472,27 @@ pub async fn attachment_copy_work_workId(
 #[allow(non_snake_case)]
 pub async fn attachment_copy_workcompleted_workCompletedId(
     pool: Extension<Pool>,
-    axum::extract::Path((source_id, work_completed_id)): axum::extract::Path<(String, String)>,
+    axum::extract::Path(work_completed_id): axum::extract::Path<String>,
+    axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let source_id = body
+        .get("id")
+        .or_else(|| body.get("attachmentId"))
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, name, content, creator FROM x_attachment WHERE id = $1",
             &[&source_id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    let row = match row {
+        Some(r) => r,
+        None => return Ok(Json(ActionResult::error("source attachment not found"))),
+    };
     let new_id = Uuid::new_v4().to_string();
     let name: String = row.get::<_, Option<String>>("name").unwrap_or_default();
     let content: String = row.get::<_, Option<String>>("content").unwrap_or_default();
@@ -2834,13 +2816,13 @@ pub async fn applicationdict_id_path0_path1_path2_path3_path4_path5_path6_path7_
 #[allow(non_snake_case)]
 pub async fn workcompleted_process_processFlag(
     pool: Extension<Pool>,
-    axum::extract::Path((process_id, flag)): axum::extract::Path<(String, String)>,
+    axum::extract::Path(process_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT wc.id, wc.work_id, wc.completed_time, wc.creator, w.title, w.process FROM x_workcompleted wc JOIN x_work w ON wc.work_id = w.id WHERE w.process = $1 AND wc.creator = $2 ORDER BY wc.completed_time DESC",
-            &[&process_id, &flag],
+            "SELECT wc.id, wc.work_id, wc.completed_time, wc.creator, w.title, w.process FROM x_workcompleted wc JOIN x_work w ON wc.work_id = w.id WHERE w.process = $1 ORDER BY wc.completed_time DESC",
+            &[&process_id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -2879,16 +2861,30 @@ pub async fn workcompleted_shift_time(
 #[allow(non_snake_case)]
 pub async fn workcompleted_flag_merge(
     pool: Extension<Pool>,
-    axum::extract::Path((id1, id2)): axum::extract::Path<(String, String)>,
+    axum::extract::Path(id1): axum::extract::Path<String>,
+    axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row1 = client
-        .query_one(
+    let id2 = body
+        .get("targetId")
+        .or_else(|| body.get("id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let row1 = match client
+        .query_opt(
             "SELECT id, work_id, completed_time, creator FROM x_workcompleted WHERE id = $1",
             &[&id1],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+    {
+        Some(r) => r,
+        None => return Ok(Json(ActionResult::error("workcompleted not found"))),
+    };
+    if id2.is_empty() {
+        return Ok(Json(ActionResult::error("target workcompleted id required")));
+    }
     client
         .execute(
             "UPDATE x_workcompleted SET work_id = $1 WHERE id = $2",
