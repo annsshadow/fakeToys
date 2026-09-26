@@ -209,7 +209,7 @@ export default function DataManagement() {
         </Space>
         <Space>
           <Upload
-            accept=".json"
+            accept=".json,.jsonl,.csv,.tsv,.xlsx,.xls"
             showUploadList={false}
             beforeUpload={handleUpload}
             disabled={uploading}
