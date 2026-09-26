@@ -13,7 +13,8 @@
   只钉「`xls` 不在目标清单」的话，有人把它从源清单删掉也照样达标。
 * 三条失败路径在 CLI 与 API 上都必须**响亮**（rc 1 / 400）且**一个字节都不落**。
 
-真 xlsx 的用例逐类 `skipif`；拒收与缺依赖降级两族不需要 pandas，两侧解释器都真跑。
+真 xlsx 的用例逐类 `skipif`；拒收与缺依赖降级两族不需要真依赖，两侧解释器都真跑。
+写边（L85 起）只依赖 openpyxl，读回与造样本仍用 pandas，所以两份门禁不能合并成一个。
 """
 
 import io
@@ -30,7 +31,7 @@ from fastapi.testclient import TestClient
 
 from cli import main
 
-from augmentor import csv_excel_import as cei
+from augmentor import excel_write
 from augmentor.cli.parser import CONVERT_TARGET_FORMATS, INPUT_FORMATS, build_parser
 from augmentor.converter import EXCEL_FORMAT, OUTPUT_FORMAT_CHOICES
 
@@ -158,7 +159,7 @@ class TestConvertTargetFormatSurface:
         assert "invalid choice" in err, err
 
 
-# ==================== 不需要 pandas 的失败路径（两侧解释器都跑） ====================
+# ==================== 不需要真依赖的失败路径（两侧解释器都跑） ====================
 
 class TestFalseContainerEndToEnd:
     """名字与内容不符的输出：CLI 退出码 1 + 可行动文案；API 400 + 同一句文案"""
@@ -190,28 +191,33 @@ class TestFalseContainerEndToEnd:
         assert not out.exists()
 
 
-class TestMissingPandasWriteEndToEnd:
-    """缺 pandas 时写 Excel 的降级路径要在两侧解释器上都被真跑到"""
+class TestMissingOpenpyxlWriteEndToEnd:
+    """缺写边依赖时的降级路径要在两侧解释器上都被真跑到
+
+    L85 把写边从 pandas 换成只依赖 openpyxl 的 `excel_write`，所以这一族判的是
+    `HAS_OPENPYXL` 而不是 `HAS_PANDAS`：**打桩错名字会让用例变成永真的假绿** ——
+    打 `cei.HAS_PANDAS` 时写边根本不看那个标志位，降级分支一次也没进过。
+    """
 
     def test_cli_degrades_to_an_actionable_error(self, env, monkeypatch):
-        monkeypatch.setattr(cei, "HAS_PANDAS", False)
-        out = env.tmp / "pandas_less.xlsx"
+        monkeypatch.setattr(excel_write, "HAS_OPENPYXL", False)
+        out = env.tmp / "openpyxl_less.xlsx"
         _, code, err = run_cli(
             ["cli", "convert", "--input", str(env.source), "--output", str(out),
              "--format", "excel"]
         )
         assert code == 1, f"缺依赖应当以非 0 退出: code={code}, err={err}"
-        assert "pip install pandas openpyxl" in err, err
+        assert "pip install openpyxl" in err, err
         assert not out.exists()
 
     def test_api_returns_400_not_a_500_traceback(self, env, monkeypatch):
-        monkeypatch.setattr(cei, "HAS_PANDAS", False)
-        out = env.tmp / "api_pandas_less.xlsx"
+        monkeypatch.setattr(excel_write, "HAS_OPENPYXL", False)
+        out = env.tmp / "api_openpyxl_less.xlsx"
         response = post_convert(env.client, {
             "input_file": str(env.source), "output_file": str(out),
             "target_format": "xlsx"})
         assert response.status_code == 400, response.text
-        assert "pip install pandas openpyxl" in response.json()["detail"]
+        assert "pip install openpyxl" in response.json()["detail"]
         assert not out.exists()
 
 
