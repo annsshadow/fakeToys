@@ -18,6 +18,14 @@ import re
 
 logger = logging.getLogger(__name__)
 
+# 中文词串切分。编译一次放在模块级：`re.findall(字面模式, text)`
+# 每次都要走一遍 `re._compile()` 的缓存查找，而 `generate_statistics` 的逐条
+# 循环对每条记录各调一次（真实语料 6902 条实测 6902 次）。
+# 本模式是 `\u4e00-\u9fa5`，与 `statistics` / `analytics` 的 `\u4e00-\u9fff`
+# 不是同一串，合并会改变词频口径（`龥` 与 `鿿` 之间的
+# 字归属不同），故各留一份常量，不共用。
+_CJK_WORD_PATTERN = re.compile(r'[\u4e00-\u9fa5]+')
+
 
 class DataVisualizer:
     """数据可视化器"""
@@ -343,7 +351,7 @@ def generate_statistics(items: List[Dict], text_key: str = "instruction") -> Dic
     # 词频统计
     all_words = []
     for text in texts:
-        words = re.findall(r'[\u4e00-\u9fa5]+', text)
+        words = _CJK_WORD_PATTERN.findall(text)
         all_words.extend(words)
 
     word_freq = Counter(all_words)
