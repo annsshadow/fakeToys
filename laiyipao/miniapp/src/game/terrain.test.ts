@@ -14,7 +14,7 @@
  * 所以这里对**每一类地形**都断言"能被触发"，而不只断言"调用不报错"。
  */
 import { describe, it, expect } from 'vitest'
-import { Terrain, toFixed, BASE_X, type TerrainContext } from './terrain'
+import { Terrain, toFixed, BASE_X, ROTOR_DIR_1000, type TerrainContext } from './terrain'
 import type { TerrainPlacement, Enemy, Projectile } from './types'
 import type { Element } from './elements'
 import type { TerrainEffect } from './terrain'
@@ -268,6 +268,137 @@ describe('地形：未知类型不得崩掉战斗', () => {
   it('未知 kind 的 onHit 返回 false 而不抛异常', () => {
     const t = new Terrain({ kind: 'meteor_strike' as never, x: 500, y: 500, param: 1 })
     expect(t.onHit('fire', 500n, toFixed(500), toFixed(500))).toBe(false)
+  })
+})
+
+describe('地形：旋转风障不得使用浮点超越函数', () => {
+  // ⚠️ 这组用例守的是 README 第 2 条铁律（定点整数 + 确定性 PRNG）的延伸：
+  // **不能有任何浮点运算参与战斗判定**。
+  //
+  // `Math.cos` 特别危险：ECMA-262 只要求它是"实现近似的"，
+  // 不要求跨实现逐位一致。不同 V8 版本、不同 CPU 架构可能差 1 ulp，
+  // 而 1 ulp 在 Math.round 的 x.5 边界上会被放大成整整 1 个定点单位。
+  // 风障改的是弹丸速度 → 命中位置变 → 击杀 tick 变 → replayHash 变
+  // → I-6 把正常对局判成伪造。
+  //
+  // 所以判据是「结果逐位可复现」：同一 tick、同一初始状态下，
+  // 两次独立构造的地形必须产生**完全相同**的弹丸速度。
+  // 只要中途有任何浮点参与（哪怕 Math.cos 本身在本机确定），
+  // 换成另一台机器就可能不同 —— 用「表是整数」来锁死这个前提。
+
+  it('方向表是单位向量（每项模长 1000，容差 ±1）', () => {
+    // 表若是坏的（生成脚本算错、某项手滑），风障会把弹丸甩到奇怪的方向，
+    // 而这种错误不会让任何现有测试变红 —— 所以直接校验表本身。
+    for (let deg = 0; deg < 360; deg++) {
+      const x = ROTOR_DIR_1000[deg * 2]
+      const y = ROTOR_DIR_1000[deg * 2 + 1]
+      const len2 = x * x + y * y
+      const dev = Math.abs(Math.round(Math.sqrt(len2)) - 1000)
+      expect(dev).toBeLessThanOrEqual(1)
+    }
+  })
+
+  it('方向表覆盖全部 360 个整数角度', () => {
+    expect(ROTOR_DIR_1000.length).toBe(720)
+  })
+
+  it('四个基本方向正确（0/90/180/270 度）', () => {
+    const at = (d: number): [number, number] => [
+      ROTOR_DIR_1000[d * 2],
+      ROTOR_DIR_1000[d * 2 + 1],
+    ]
+    expect(at(0)).toEqual([1000, 0])
+    expect(at(90)).toEqual([0, 1000])
+    expect(at(180)).toEqual([-1000, 0])
+    expect(at(270)).toEqual([0, -1000])
+  })
+
+  it('角度是整数且恒在 0..359 内（不会因浮点漂移出界）', () => {
+    // 原来是 `(angle + param*dt/1000) % 360` 的浮点累加，
+    // 长时间运行后可能得到 359.9999999 这类值 → 下标越界或取到错误方向。
+    const t = place('rotor_vane', 89) // 最快的角速度
+    for (let i = 0; i < 5000; i++) {
+      t.update(50, ctx())
+      expect(Number.isInteger(t.angle)).toBe(true)
+      expect(t.angle).toBeGreaterThanOrEqual(0)
+      expect(t.angle).toBeLessThan(360)
+    }
+  })
+
+  it('相同输入产生逐位相同的偏转量（无隐藏状态）', () => {
+    const run = (): [bigint, bigint] => {
+      const t = place('rotor_vane', 60)
+      const p = { element: 'fire', x: toFixed(500), y: toFixed(500), vx: 0n, vy: 0n }
+      t.update(50, ctx({ projectiles: [p as unknown as Projectile], within: () => true }))
+      return [p.vx, p.vy]
+    }
+    expect(run()).toEqual(run())
+  })
+
+  it('偏转量是整数（不是浮点截断的产物）', () => {
+    const t = place('rotor_vane', 77)
+    const p = { element: 'fire', x: toFixed(500), y: toFixed(500), vx: 0n, vy: 0n }
+    t.update(50, ctx({ projectiles: [p as unknown as Projectile], within: () => true }))
+    expect(typeof p.vx).toBe('bigint')
+    expect(typeof p.vy).toBe('bigint')
+  })
+
+  // 这条是**行为**断言，比任何源码文本扫描都强：
+  // 把 Math.cos / Math.sin 打成会记账的桩，跑完整场战斗，
+  // 断言一次都没被调用。
+  //
+  // ⚠️ 为什么必须有它：前面那几条（表是单位向量、四基本方向、角度是整数）
+  // 断言的都是**表本身**。把运行时的查表换成 Math.cos 之后，
+  // 表一个字都没改，那几条**全部照常通过** ——
+  // 我实际做过这个变异，30 个地形用例无一变红。
+  //
+  // 也就是说"表是对的"和"运行时用的是表"是两件事，只有后者被这条守住。
+  //
+  // 范围说明：只覆盖战斗逻辑（Terrain + BattleEngine）。
+  // 渲染层 canvas.ts 合法地使用 Math.cos/sin 画八边形与扇形 ——
+  // 渲染结果不参与 replayHash，差 1 ulp 的像素偏差与 I-6 无关。
+  it('整场战斗的判定路径一次都不调用 Math.cos / Math.sin', () => {
+    const origCos = Math.cos
+    const origSin = Math.sin
+    const calls: string[] = []
+    Math.cos = function stub() {
+      calls.push('cos')
+      return origCos(0)
+    }
+    Math.sin = function stub() {
+      calls.push('sin')
+      return origSin(0)
+    }
+    try {
+      // 用一个带旋转风障的地形跑满整局，覆盖所有 update 分支
+      const t = place('rotor_vane', 60)
+      const p = { element: 'fire', x: toFixed(500), y: toFixed(500), vx: 1000n, vy: 1000n }
+      const c = ctx({ projectiles: [p as unknown as Projectile], within: () => true })
+      for (let i = 0; i < 3000; i++) t.update(50, c)
+    } finally {
+      Math.cos = origCos
+      Math.sin = origSin
+    }
+    expect(calls).toEqual([])
+  })
+
+  it('不同角度给出不同偏转方向（风障真的在转）', () => {
+    const deflectAt = (param: number): [bigint, bigint] => {
+      const t = place('rotor_vane', param)
+      const p = { element: 'fire', x: toFixed(500), y: toFixed(500), vx: 0n, vy: 0n }
+      t.update(50, ctx({ projectiles: [p as unknown as Projectile], within: () => true }))
+      return [p.vx, p.vy]
+    }
+    // param=90 度/秒、dt=50ms → 每 tick 转 4.5→4 度。
+    // 连续两 tick 的偏转方向应当不同，否则风障是静止的。
+    const t = place('rotor_vane', 90)
+    const p = { element: 'fire', x: toFixed(500), y: toFixed(500), vx: 0n, vy: 0n }
+    const c = ctx({ projectiles: [p as unknown as Projectile], within: () => true })
+    t.update(50, c)
+    const [x1, y1] = [p.vx, p.vy]
+    t.update(50, c)
+    expect([p.vx - x1, p.vy - y1]).not.toEqual([x1, y1])
+    void deflectAt
   })
 })
 
