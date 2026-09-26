@@ -12,7 +12,7 @@ import {
   type TableColumnsType,
 } from 'antd'
 import { PlusOutlined, RollbackOutlined, DeleteOutlined, DiffOutlined } from '@ant-design/icons'
-import { getVersions, createVersion, deleteVersion, rollbackVersion, diffVersions, getDataFiles } from '../services/api'
+import { apiErrorDetail, getVersions, createVersion, deleteVersion, rollbackVersion, diffVersions, getDataFiles } from '../services/api'
 import type { VersionDiffResponse, VersionInfo } from '../types/api'
 
 export default function Versions() {
@@ -36,8 +36,8 @@ export default function Versions() {
     try {
       const result = await getVersions()
       setVersions(result.versions)
-    } catch {
-      message.error('加载版本列表失败')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '加载版本列表失败'))
     }
   }
 
@@ -45,8 +45,8 @@ export default function Versions() {
     try {
       const result = await getDataFiles()
       setFiles(result.files.map(f => f.name))
-    } catch {
-      message.error('加载文件列表失败')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '加载文件列表失败'))
     }
   }
 
@@ -63,8 +63,8 @@ export default function Versions() {
       setNewVersionLabel('')
       setNewVersionDesc('')
       loadVersions()
-    } catch {
-      message.error('创建版本失败')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '创建版本失败'))
     }
   }
 
@@ -73,8 +73,8 @@ export default function Versions() {
       await rollbackVersion(versionId)
       message.success('回滚成功')
       loadVersions()
-    } catch {
-      message.error('回滚失败')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '回滚失败'))
     }
   }
 
@@ -83,8 +83,8 @@ export default function Versions() {
       await deleteVersion(versionId)
       message.success('删除成功')
       loadVersions()
-    } catch {
-      message.error('删除失败')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '删除失败'))
     }
   }
 
@@ -97,8 +97,8 @@ export default function Versions() {
     try {
       const result = await diffVersions(diffVersion1, diffVersion2)
       setDiffResult(result)
-    } catch {
-      message.error('对比失败')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '对比失败'))
     }
   }
 

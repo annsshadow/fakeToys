@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Alert, Button, Card, Col, Row, Space, Statistic, Table, Tag, message } from 'antd'
-import { getServiceStatus } from '../services/api'
+import { apiErrorDetail, getServiceStatus } from '../services/api'
 import type { StatusResponse } from '../types/api'
 
 /**
@@ -18,8 +18,8 @@ export default function System() {
     setLoading(true)
     try {
       setStatus(await getServiceStatus())
-    } catch {
-      message.error('获取服务状态失败，请确认后端已启动')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '获取服务状态失败，请确认后端已启动'))
     } finally {
       setLoading(false)
     }

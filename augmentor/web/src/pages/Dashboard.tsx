@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Row, Col, Card, Statistic, Tag, Space, message } from 'antd'
 import AugmentForm from '../components/AugmentForm'
 import VersionTimeline from '../components/VersionTimeline'
-import { getConfig, getModels, getVersions, healthCheck } from '../services/api'
+import { apiErrorDetail, getConfig, getModels, getVersions, healthCheck } from '../services/api'
 import type { AppConfig, HealthResponse, ModelsResponse, VersionInfo } from '../types/api'
 
 /**
@@ -25,13 +25,13 @@ export default function Dashboard() {
         setVersions(list)
         setCurrentVersion(list.length ? list[0].version_id : null)
       })
-      .catch(() => message.error('加载版本列表失败'))
+      .catch((err) => message.error(apiErrorDetail(err, '加载版本列表失败')))
   }
 
   useEffect(() => {
-    healthCheck().then(setHealth).catch(() => message.error('服务健康检查失败'))
-    getConfig().then(setConfig).catch(() => message.error('加载配置失败'))
-    getModels().then(setModels).catch(() => message.error('加载模型列表失败'))
+    healthCheck().then(setHealth).catch((err) => message.error(apiErrorDetail(err, '服务健康检查失败')))
+    getConfig().then(setConfig).catch((err) => message.error(apiErrorDetail(err, '加载配置失败')))
+    getModels().then(setModels).catch((err) => message.error(apiErrorDetail(err, '加载模型列表失败')))
     loadVersions()
   }, [])
 

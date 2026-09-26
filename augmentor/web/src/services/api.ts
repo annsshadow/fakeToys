@@ -48,6 +48,35 @@ const api = axios.create({
   timeout: 30000,
 })
 
+/**
+ * 从请求错误里取后端写的那句 `detail`，取不到才回 `fallback`
+ *
+ * FastAPI 的失败体是 `{ "detail": ... }`，而 4xx 的 detail 是**可 actions 的判决**
+ * （例如「上传内容整份是一份合法 JSON，但按 csv 解析：名字或 input_format 与内容不符」）。
+ * 页面原先一律 `catch { message.error('上传失败') }`，等于把后端专门攒起来的那批诊断
+ * 吞成一句没有信息量的「失败」⇒ 这一层负责把它取回来。
+ *
+ * 两种形状都要处理：400/403/413 的 detail 是字符串，422（校验失败）是
+ * `[{ loc, msg, type }]` 数组。`error` 收成 `unknown` 而不是 `any`：本层不解释错误对象
+ * 的来历（axios 错误、原生 Error、甚至字符串都可能是），逐层可选访问，取不到就走 fallback。
+ */
+export const apiErrorDetail = (error: unknown, fallback: string): string => {
+  const detail = (error as { response?: { data?: { detail?: unknown } } })?.response?.data
+    ?.detail
+  if (typeof detail === 'string') {
+    return detail || fallback
+  }
+  if (Array.isArray(detail)) {
+    const msgs = detail
+      .map((item) => (item as { msg?: unknown })?.msg)
+      .filter((msg): msg is string => typeof msg === 'string' && msg.length > 0)
+    if (msgs.length > 0) {
+      return msgs.join('；')
+    }
+  }
+  return fallback
+}
+
 // 数据管理
 export const getDataFiles = async (): Promise<DataFileListResponse> => {
   const response = await api.get('/data/list')
@@ -95,9 +124,22 @@ export const deleteDataItem = async (
   return response.data
 }
 
-export const uploadData = async (file: File): Promise<UploadResponse> => {
+/**
+ * 上传数据
+ *
+ * `inputFormat` 是**源格式**的显式声明，对应后端的 `input_format` 表单字段；空串等价于
+ * 「不传」，由后端按扩展名推断（权威表 `converter.INPUT_FORMAT_CHOICES` /
+ * `INPUT_EXTENSION_FORMATS`，漂移守卫在 `tests/unit/test_upload_declared_format_l92.py`）。
+ * 无条件 append 而不是「有值才加」：后端默认值就是 `""`，两种写法同一条代码路径，
+ * 前端少一条要测的分支。
+ */
+export const uploadData = async (
+  file: File,
+  inputFormat = ''
+): Promise<UploadResponse> => {
   const formData = new FormData()
   formData.append('file', file)
+  formData.append('input_format', inputFormat)
   const response = await api.post('/data/upload', formData)
   return response.data
 }

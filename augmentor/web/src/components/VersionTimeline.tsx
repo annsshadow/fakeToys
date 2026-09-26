@@ -1,5 +1,5 @@
 import { Card, Timeline, Tag, Empty, Button, message } from 'antd'
-import { rollbackVersion } from '../services/api'
+import { apiErrorDetail, rollbackVersion } from '../services/api'
 import type { VersionInfo } from '../types/api'
 
 interface VersionTimelineProps {
@@ -34,8 +34,8 @@ export default function VersionTimeline({
       await rollbackVersion(versionId)
       message.success(`已回滚到 ${versionId}`)
       onRollback?.()
-    } catch {
-      message.error('回滚失败')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '回滚失败'))
     }
   }
 

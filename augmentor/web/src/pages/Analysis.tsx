@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Card, Select, Row, Col, Statistic, Table, Tag, Button, Space, message } from 'antd'
 import ReactECharts from 'echarts-for-react'
-import { getDataFiles, analyzeData, cleanData, runBenchmark } from '../services/api'
+import { apiErrorDetail, getDataFiles, analyzeData, cleanData, runBenchmark } from '../services/api'
 import type { AnalyzeResponse, BenchmarkResponse, CleanResponse } from '../types/api'
 
 export default function Analysis() {
@@ -49,8 +49,8 @@ export default function Analysis() {
     setLoading(true)
     try {
       setCleaning(await cleanData(selectedFile))
-    } catch {
-      message.error('数据清洗失败')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '数据清洗失败'))
     } finally {
       setLoading(false)
     }
@@ -64,8 +64,8 @@ export default function Analysis() {
     setLoading(true)
     try {
       setBenchmark(await runBenchmark(selectedFile))
-    } catch {
-      message.error('基准测试失败')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '基准测试失败'))
     } finally {
       setLoading(false)
     }
