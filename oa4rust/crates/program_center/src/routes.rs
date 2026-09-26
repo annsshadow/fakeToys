@@ -82,9 +82,7 @@ use crate::{
     collect_login,
     collect_mobile_check_connect,
     collect_name_name_exist,
-    collect_name_name_mobile_mobile_code_code,
     collect_person,
-    collect_remove,
     collect_resetpassword,
     collect_save,
     collect_sync_area,
@@ -99,7 +97,6 @@ use crate::{
     config_centerserver,
     config_change_password,
     config_collect,
-    config_get,
     config_license,
     config_list,
     config_list_application,
@@ -153,7 +150,6 @@ use crate::{
     invoke_create,
     invoke_delete,
     invoke_flag,
-    invoke_flag_client_client_token_token_execute,
     invoke_flag_execute,
     invoke_flag_execute_get,
     invoke_flag_file,
@@ -216,7 +212,6 @@ use crate::{
     prompterrorlog_list_id_prev_count_loggername_loggerName,
     qiyeweixin_get_callback_aes,
     qiyeweixin_pull_sync,
-    qiyeweixin_request_pull_sync,
     qiyeweixin_send_getprivateinfo_message,
     schedule_list_schedule,
     schedule_list_schedulelocal,
@@ -229,7 +224,6 @@ use crate::{
     script_id,
     script_list,
     script_list_paging_page_size_size,
-    script_name_name,
     script_name_name_imported,
     script_save_flag,
     script_update_id,
@@ -347,13 +341,11 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/program_center/agent/save/{id}", post(agent_save))
                 .route("/api/program_center/collect/list", get(collect_list))
         .route("/api/program_center/collect/add", post(collect_add))
-        .route("/api/program_center/collect/remove", get(collect_remove))
         .route("/api/program_center/collect/create", post(collect_create))
         .route("/api/program_center/collect/save/{id}", put(collect_save))
         .route("/api/program_center/collect/save/{id}", post(collect_save))
         .route("/api/program_center/collect/delete/{id}", delete(collect_delete))
         .route("/api/program_center/collect/delete/{id}", post(collect_delete))
-        .route("/api/program_center/config/get", get(config_get))
         .route("/api/program_center/agent/flag/file", get(agent_flag_file))
         .route("/api/program_center/andfx/pull/sync", get(andfx_pull_sync))
         .route("/api/program_center/appstyle/current/style", get(appstyle_current_style))
@@ -404,7 +396,6 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/program_center/collect/disconnect", get(collect_disconnect))
         .route("/api/program_center/collect/login", get(collect_login))
         .route("/api/program_center/collect/mobile/check/connect", get(collect_mobile_check_connect))
-        .route("/api/program_center/collect/name/name/mobile/mobile/code/code", get(collect_name_name_mobile_mobile_code_code))
         .route("/api/program_center/collect/person", get(collect_person))
         .route("/api/program_center/collect/resetpassword", get(collect_resetpassword))
         .route("/api/program_center/collect/sync/area", get(collect_sync_area))
@@ -420,7 +411,6 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/program_center/command/execute", get(command_execute))
         .route("/api/program_center/command/execute", post(command_execute))
         .route("/api/program_center/command/list/node", get(command_list_node))
-        .route("/api/program_center/config/open/get/disable/export/enable", get(config_open_get_disable_export_enable))
         .route("/api/program_center/config/centerserver", get(config_centerserver))
         .route("/api/program_center/config/centerserver", put(crate::u2_config_centerserver_put))
         .route("/api/program_center/config/change/password", get(config_change_password))
@@ -480,7 +470,6 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/program_center/invoke/token", get(invoke_token))
         .route("/api/program_center/invoke/token", post(invoke_token))
         .route("/api/program_center/invoke/flag", get(invoke_flag))
-        .route("/api/program_center/invoke/flag/client/client/token/token/execute", get(invoke_flag_client_client_token_token_execute))
         .route("/api/program_center/invoke/flag/execute", get(invoke_flag_execute))
         .route("/api/program_center/invoke/flag/file", get(invoke_flag_file))
         // plan002 U2 残余：invoke CRUD（o2server v9 原生路径）
@@ -542,7 +531,6 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/program_center/prompterrorlog/count/loggername", get(prompterrorlog_count_loggername))
         .route("/api/program_center/qiyeweixin/get/callback/aes", get(qiyeweixin_get_callback_aes))
         .route("/api/program_center/qiyeweixin/pull/sync", get(qiyeweixin_pull_sync))
-        .route("/api/program_center/qiyeweixin/request/pull/sync", get(qiyeweixin_request_pull_sync))
         .route("/api/program_center/qiyeweixin/send/getprivateinfo/message", get(qiyeweixin_send_getprivateinfo_message))
         .route("/api/program_center/qiyeweixin/send/getprivateinfo/message", post(qiyeweixin_send_getprivateinfo_message))
         .route("/api/program_center/schedule/list/schedule", get(schedule_list_schedule))
@@ -552,7 +540,6 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/program_center/schedule/schedule/fire", get(schedule_schedule_fire))
         .route("/api/program_center/script/list", get(script_list))
 
-        .route("/api/program_center/script/name/name", get(script_name_name))
         .route("/api/program_center/test/test1", get(test_test1))
         .route("/api/program_center/test/test2", get(test_test2))
         .route("/api/program_center/tokenthreshold/update", post(tokenthreshold_update))
@@ -604,7 +591,6 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/program_center/application/save/{id}", put(application_save))
         .route("/api/program_center/appstyle/current/update", put(appstyle_current_update))
         .route("/api/program_center/appstyle/current/update", get(u3_appstyle_current_update_get))
-        .route("/api/program_center/collect/remove", delete(collect_remove))
         .route("/api/program_center/collect/updateUnit", put(collect_updateUnit))
         .route("/api/program_center/config/save", put(config_save))
 

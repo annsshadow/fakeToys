@@ -2908,13 +2908,13 @@ pub async fn command_list_node(
 #[allow(non_snake_case)]
 pub async fn config_open_get_disable_export_enable(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config \
+             WHERE category = 'open' AND deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;

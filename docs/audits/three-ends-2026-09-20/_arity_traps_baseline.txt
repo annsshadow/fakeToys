@@ -1,5 +1,4 @@
 DELETE /api/portal/assemble/surface/delete/layout
-DELETE /api/program_center/collect/remove
 GET /api/file/attachment2/list/type/page/size/size
 GET /api/file/list/referencetype
 GET /api/file/referencetype/referenceType/reference/reference
@@ -31,14 +30,6 @@ GET /api/processplatform/service/processing/data/workcompleted/path/1
 GET /api/processplatform/service/processing/review/init/review
 GET /api/processplatform/service/processing/workcompleted/process/1
 GET /api/processplatform/service/processing/workcompleted/shift/time
-GET /api/program_center/collect/name/name/mobile/mobile/code/code
-GET /api/program_center/collect/remove
-GET /api/program_center/config-open/get/disable/export/enable
-GET /api/program_center/config/get
-GET /api/program_center/config/open/get/disable/export/enable
-GET /api/program_center/invoke/flag/client/client/token/token/execute
-GET /api/program_center/qiyeweixin/request/pull/sync
-GET /api/program_center/script/name/name
 POST /api/hotpic/delete/hotpic
 POST /api/hotpic/save/hotpic
 POST /api/message/assemble/communicate/im/msg/clear
