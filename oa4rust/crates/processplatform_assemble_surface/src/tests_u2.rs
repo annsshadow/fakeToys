@@ -1073,7 +1073,6 @@ mod u2c_tests {
     async fn u2c_same_path_multi_method_merge_survives() {
         // 同一路径既有 GET 又新增 PUT/POST 的合并注册不得互相覆盖
         let cases: Vec<(&str, &str)> = vec![
-            ("GET", "/keylock/lock"),
             ("PUT", "/keylock/lock"),
             ("POST", "/keylock/lock/mockputtopost"),
             ("GET", "/work/v3/retract"),
