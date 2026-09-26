@@ -75,11 +75,17 @@ DOCS = (ARCH, LEDGER)
 #: `api` / `archive` / `augmentor` / `scripts` / `tests`），可这个文件不存在」—— 它与
 #: 「指向不入仓的 Temp 草稿」必须分家：本轮 4 处**产品源码路径写错**原本被
 #: `scratch_missing` 或 Temp 快照副本吞掉（判据太粗 ⇒ 把真失效藏起来），分家后当场可见。
+#: **L87 回填（两格同时下降，且原因不是「清了旧账」）**：`ambiguous_line` 69 → **68**、
+#: `bare` 151 → **149**、`ambiguous_file` 仍 **145**。降下来的两格全部来自本轮把 A153
+#: 那一行里的数字引用改成名字锚点或占位形（`.py:NNN`）—— 也就是说**这两格是被「删掉引用」
+#: 降的，不是被「消歧」降的**，把它读成「账本变干净了」是误读。`ambiguous_file` 那一格
+#: 本轮涨过一次又回到 145，涨的原因与 L83 注释里那次**同族**（裸文件名一名两指），
+#: 细节与教训记在账本 L87 日志块的「文档面与本轮还的税」条里。
 CEILING = {
     ARCH: {"dead_line": 0, "unresolved_source": 0, "ambiguous_line": 0,
            "ambiguous_file": 0, "bare": 18, "scratch_missing": 29},
-    LEDGER: {"dead_line": 0, "unresolved_source": 0, "ambiguous_line": 69,
-             "ambiguous_file": 145, "bare": 151, "scratch_missing": 111},
+    LEDGER: {"dead_line": 0, "unresolved_source": 0, "ambiguous_line": 68,
+             "ambiguous_file": 145, "bare": 149, "scratch_missing": 111},
 }
 
 #: 反空转下界：`line_refs` / `file_tokens` 是**两种语法各自的匹配总数**（不是桶的加和 ——
@@ -212,9 +218,19 @@ FLOOR = {
 #: 新写的 9 条 `line_refs` **全部带名字锚点**（`name_hit` 61 → 70，+9 与 +9 闭合），
 #: **四个棘轮桶本轮一格未抬**：`ambiguous_line` 69 = 上限、`ambiguous_file` 145 = 上限、
 #: `bare` 151 = 上限、`scratch_missing` 111 = 上限 ⇒ L86 日志块没有引入一条歧义/裸/失效引用。
+#: **L87 回填（三格两降一升，升的那格与降的两格是同一个动作开的）**：本轮为 A149 在
+#: `api/deps.py` 与 `augmentor/config.py` 插了码 ⇒ 两份文档里指向它们的数字引用先成片失效
+#: （`dead_line` 一度 5 格），我按 A127 口径逐格改成**函数名锚点**之后 `line_refs` 与
+#: `code_but_no_name_match` 同时下降；**而 A153 那一行（它就是来记这个盲区的）在描述失效
+#: 引用时把被描述的那两条原样抄进了账本，于是记账行自己变成两条新的 `dead_line`，被硬 0
+#: 档当场拦下** —— 这是本程序第一次「立案的那一行当场触发被立案的缺陷」。改成占位形后
+#: 收敛读数（`Temp/l79q/lineref_buckets.json` 的 run `L87 记账 c5`）：架构文档 46 → **42**
+#: / 223 → **229** / 35 → **37**，账本 308 → **297** / 1321 → **1360** / 169 → **165**。
+#: **架构文档那两格反向移动（`line_refs` 降 4 而漂移档升 2）本轮未做逐块归因**，
+#: 只报差不编因；要还这笔先跑 L81 那类带闭合断言的 attr 探针。
 MEASURED = {
-    ARCH: {"line_refs": 46, "file_tokens": 223, "code_but_no_name_match": 35},
-    LEDGER: {"line_refs": 308, "file_tokens": 1321, "code_but_no_name_match": 169},
+    ARCH: {"line_refs": 42, "file_tokens": 229, "code_but_no_name_match": 37},
+    LEDGER: {"line_refs": 297, "file_tokens": 1360, "code_but_no_name_match": 165},
 }
 
 #: 日志块标题行上「下一轮才填得出自己哈希」的占位符。精确相等 = **只许有该填的那几条**。
@@ -734,8 +750,24 @@ BACKLOG_HEADS = ("| # | 位置 | 问题 | 量级 |", "|---|------|------|------|
 #: —— 增两行：A147（单条 JSON 值形状 `total_input=0` 而 `processed=1` 的既有分叉，本轮只立案
 #: 不动手）与 A148（「已关闭行的历史定位引用必随代码腐坏」这一族，见 `MEASURED` 上方那段），
 #: 跳号集合第五次未变。
-BACKLOG_A_LINES = 149
-BACKLOG_A_MAX = 148
+#: **L87 轮内（未回填）**：**158 条竖线行** = 2 表头 + 156 条数据行，号集 = 1..157 减 `{52}`
+#: —— 新增九行 A149–A157（上传体字节闸、starlette spool 的管不到那一层、写面节级漏网、
+#: `save_config` 吃注释、`dead_line` 桶的盲区、默认线程池形状、500 档回显服务器状态、
+#: (路径, mtime_ns) 缓存的一 tick 失效窗口、一条绝对墙钟预算在并发负载下假红），
+#: 跳号集合第六次未变。**本轮这两条判据各红过一次，都是排版级自伤**：插 A149–A153 时把一条
+#: 空行留在了 A148 与 A149 之间 ⇒ GFM 表格被劈成两张，`test_tables_have_header_separator`
+#: 与这里三条（行数 / 号集 / 掉前缀）同时报；另一条是写完文末日志块才想起「已完成」进度行
+#: 还没写 ⇒ `test_every_log_block_has_a_progress_line` 红，那正是 A135 的病理本体。
+#: **第三次自伤是本轮最新的一种形状，也是本文件第一次被「行内前缀锚点」伤到**：往 A155 之后
+#: 插两行时，我的 `old_string` 只取到 A155 那一行的**前缀**（按字面截断在 120 字符处），于是
+#: Edit 把行头换成两整行、A155 的行身被粘到新写的 A157 末尾 ⇒ 表里少一行、多一条畸形行，
+#: 而 Edit 只报「1 replacement」。**发现方式不是门禁**：是我打印行首行尾时看见 A157 的尾巴读起来
+#: 不像 A157。修法是带闭合断言的脚本切片（按唯一分界串拆开、复原行头、断言行数 +1、断言三个
+#: 行号各出现一次），不是再来一次手写 Edit。**升为口径候选**：插入型 Edit 的 `old_string`
+#: **必须以整行为单位**（含行首 `| A\d+ |` 与行尾 `| 定级 |`），截断到半行的锚点在竖线表格里
+#: 一定吃掉行头 —— 这是 (w) 那一族「工具不报错的损害」里最安静的一种。
+BACKLOG_A_LINES = 158
+BACKLOG_A_MAX = 157
 BACKLOG_A_MISSING = {52}
 #: Backlog B 现量：11 条竖线行 = 2 表头 + 7 条可编号 + 2 条带角标（B3① / ~~B3②~~）。
 BACKLOG_B_LINES = 11

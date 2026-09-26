@@ -162,12 +162,20 @@ class TestUpload:
         saved = Path.cwd() / "uploaded.json"
         assert saved.exists()
 
-    def test_upload_invalid_json_500(self, client):
+    def test_upload_invalid_json_400(self, client):
+        """L87 改判：这一档改前是 500
+
+        非 JSON 的 body 是客户端输入，不是服务端故障；改前它掉进路由的兜底
+        `except Exception`，把 `json` 的内部措辞（`Expecting value: line 1 column 1`）
+        原样回给客户端。现在 400，且数据目录里没有半成品。
+        """
         response = client.post(
             "/api/data/upload",
             files={"file": ("bad.json", b"not json", "application/json")},
         )
-        assert response.status_code == 500
+        assert response.status_code == 400
+        assert "Traceback" not in response.text
+        assert not (Path.cwd() / "bad.json").exists()
 
 
 class TestAnalyzeVisualize:

@@ -452,7 +452,13 @@ class TestRouteStructure:
         assert "apply_section_update" in calls
 
     def test_every_writable_section_reaches_the_helper(self):
-        """路由的可写节清单与本文件的清单一致：加节必须同时加守卫"""
+        """路由的可写节清单与本文件的清单一致：加节必须同时加守卫
+
+        L87 起路由把清单挪到模块常数 `WRITABLE_SECTIONS`（A151 的节级出声要复用同一
+        份名单），所以这里除了行内字面量，还认「循环体迭代的是一个模块级 list 名字」
+        这一种形状 —— 两种都要求与本文件的清单逐字同序。
+        """
+        tree = ast.parse(ROUTE_FILE.read_text(encoding="utf-8"))
         sections = None
         for node in ast.walk(self._update_config_node()):
             if isinstance(node, ast.For) and isinstance(node.target, ast.Name) \
@@ -462,5 +468,13 @@ class TestRouteStructure:
                     sections = [
                         elt.value for elt in value.elts if isinstance(elt, ast.Constant)
                     ]
+                elif isinstance(value, ast.Name):
+                    for top in tree.body:
+                        if isinstance(top, ast.Assign) and any(
+                                isinstance(t, ast.Name) and t.id == value.id
+                                for t in top.targets) \
+                                and isinstance(top.value, (ast.List, ast.Tuple)):
+                            sections = [elt.value for elt in top.value.elts
+                                        if isinstance(elt, ast.Constant)]
                 break
         assert sections == WRITABLE_SECTIONS
