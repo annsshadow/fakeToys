@@ -32,6 +32,7 @@
         <button class="btn-refresh" @click="loadReadCompletedFullCursors">📘 已阅全量游标/详情</button>
         <button class="btn-refresh" @click="loadWorkCompletedFullCursors">🏁 完成件全量游标/详情</button>
         <button class="btn-refresh" @click="loadSurfaceMoreReads">🧩 表面只读补消费</button>
+        <button class="btn-refresh" @click="loadProcessingEngineReads">🔩 引擎只读补消费</button>
       </div>
       <div v-if="countsText" class="wk-chips"><span class="wk-chip">{{ countsText }}</span></div>
       <div v-if="workDetailText" class="wk-chips"><span class="wk-chip">{{ workDetailText }}</span></div>
@@ -153,6 +154,28 @@ async function loadSurfaceMoreReads() {
     surfaceMoreText.value = `流程-表面只读端点 ${rs.length} 条，返回 ${hit}`
   } catch (e: any) {
     toast.error('加载流程-表面只读端点失败: ' + (e?.message ?? ''))
+  }
+}
+// rev378：流程-引擎 service/processing 非破坏性真实读补消费（用户触发；attachment/data/job/record 均真 SELECT，
+// record/task/processing POST 在 Rust 实为按 body 查记录的读）。排除 signal（触发流程信号）与 press（催办）写副作用端点。
+async function loadProcessingEngineReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const wk = '0'
+  const wid = '0'
+  const job = '0'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/processplatform/service/processing/attachment/${id}/${wk}/${wid}`)),
+      s(api.get(`/api/processplatform/service/processing/data/${job}/${job}`)),
+      s(api.get(`/api/processplatform/service/processing/${job}/${job}`)),
+      s(api.get(`/api/processplatform/service/processing/record/${job}/${job}`)),
+      s(api.post('/api/processplatform/service/processing/record/task/processing', {})),
+    ])
+    const hit = rs.filter((r) => (r as any) != null).length
+    surfaceMoreText.value = `流程-引擎只读端点 ${rs.length} 条，返回 ${hit}`
+  } catch (e: any) {
+    toast.error('加载流程-引擎只读端点失败: ' + (e?.message ?? ''))
   }
 }
 // rev287：完成件 PP_C_WORKCOMPLETED 全量真实读端点（双向游标 application/filter/manage + 属性筛选 + 详情 manage/assignment + 数据快照 data/from）；均只读 arity 已核
