@@ -362,14 +362,38 @@ func ReactionAttackRatio(r HitResult) int64 {
 
 // --- 内部工具 ---
 
+// applyArmor 按千分比护甲削减伤害。
+//
+// ⚠️ 不能写成 mulDiv(dmg, permille-armorPermille, permille)：
+// 那是 dmg * kept，dmg 超过 MaxInt64/kept 时 int64 静默回绕成**负数**。
+// 实测 applyArmor(math.MaxInt64/4, 250) 返回 -4611686018427387904 ——
+// 护甲越高伤害越负，比没有护甲更糟。
+//
+// 当前内容表的伤害量级（敌人血量上限 4 万）远达不到溢出，
+// 但 damage.go 里的值来自 int64 报文的乘积，且客户端的 resolveHit
+// 走 bigint（无溢出）—— 两端在同一输入上会给出不同结果。
+//
+// 下面的除法分解与 dmg*kept/permille **精确等价**（都是向零截断的整数除法），
+// 但中间值不溢出：q 一定 <= MaxInt64/permille，所以 q*kept <= MaxInt64。
 func applyArmor(dmg, armorPermille int64) int64 {
+	if dmg <= 0 {
+		// 负伤害原样返回：负数在结算里表示"反伤/异常"，不该被护甲改写。
+		return dmg
+	}
 	if armorPermille <= 0 {
 		return dmg
 	}
 	if armorPermille > MaxArmorPermille {
 		armorPermille = MaxArmorPermille
 	}
-	return mulDiv(dmg, permille-armorPermille, permille)
+	kept := permille - armorPermille
+	if kept <= 0 {
+		return 0
+	}
+	// dmg = q*permille + r  =>  dmg*kept/permille = q*kept + r*kept/permille
+	q := dmg / permille
+	r := dmg % permille
+	return q*kept + r*kept/permille
 }
 
 // totalElementStacks 统计守方身上的元素层数总和。

@@ -190,6 +190,19 @@ export class BattleEngine {
   private uidSeq = 1
   private spawnQueue: Array<{ enemyId: number; atTick: number; uid: number }> = []
 
+  /**
+   * 本关总怪数（开波前即可确定，与随机无关）。
+   *
+   * 存在的原因：胜负判定必须与服务端口径一致。
+   * 服务端 battle.go 的 `res.Win = result=="win" && kills >= MaxKillsFor(level)`，
+   * 而引擎原先的「spawnQueue 空 && enemies 空」判定会把**漏掉的敌人**
+   * 也算成清空（漏怪时 e.dead=true，随后被 filter 出 enemies 数组）。
+   * 于是玩家撑住防线并清空全部波次、但过程中漏了 1 只怪时：
+   * 客户端播通关动画、报 result='win'，服务端回 res.Win=false。
+   * 体验上是「我明明打完了，为什么结算说没赢」。
+   */
+  readonly totalEnemies: number
+
   constructor(cfg: BattleConfig) {
     this.cfg = cfg
     this.rng = new BattleRng(cfg.seed)
@@ -198,6 +211,12 @@ export class BattleEngine {
     this.baseHp = BigInt(cfg.level.base_hp)
     this.baseHpMax = BigInt(cfg.level.base_hp)
     this.baseArmorPermille = BigInt(cfg.level.armor_permille || 0)
+
+    let total = 0
+    for (const w of cfg.level.waves ?? []) {
+      for (const sp of w.spawns) total += sp.count
+    }
+    this.totalEnemies = total
 
     for (const t of cfg.level.terrain ?? []) {
       this.terrains.push(new Terrain(t))
@@ -312,7 +331,13 @@ export class BattleEngine {
 
     const wave = this.cfg.level.waves[index]
     if (!wave) {
-      this.finish(true)
+      // ⚠️ 空关卡不是胜利。
+      // 原先这里是 finish(true)：waves=[] 的关卡 start() 立刻判胜，
+      // 而服务端 MaxKillsFor(gl)=0 让 `kills(0) >= 0` 成立，照样发掉落。
+      // 畸形关卡因此变成"秒胜 + 发钱"。
+      // 当前 levelgen 必填 >=5 波，所以不可达；但 level 是网络数据，
+      // 缺失字段时这个分支正是入口。
+      this.finish(false)
       return
     }
     this.spawnQueue = []
@@ -909,7 +934,12 @@ export class BattleEngine {
         return this.enemies.filter((e) => !e.dead && dist2(toFixed(x), toFixed(y), e.x, e.y) <= rr * rr)
       },
       onKill: (e: Enemy) => {
+        // ⚠️ 击杀分必须在这里记，与 hitEnemy 里的那条口径一致。
+        // 原先只 kills++ 不加分，于是「用油桶火区烧死」与「用弹丸打死」
+        // 同样一只怪差 500 分（BOSS 差 5000）—— 分数不再只取决于战果，
+        // 还取决于敌人怎么死，直接影响上报的 score 与星级判定。
         this.kills++
+        this.score += e.isBoss ? 5000 : 500
         this.emit({ type: 'kill', x: e.x, y: e.y, boss: e.isBoss })
         this.record(this.tick, 'kill', e.uid, e.isBoss ? 1 : 0)
       },
@@ -956,7 +986,21 @@ export class BattleEngine {
 
     const next = this.waveIndex + 1
     if (next >= this.cfg.level.waves.length) {
-      this.finish(true)
+      // 通关语义：**清空全部波次且防线未破**。
+      //
+      // 这里曾经是 finish(true)，后来一度改成 kills >= totalEnemies
+      // 以对齐服务端 —— 但那个口径是错的：
+      // 漏怪的敌人已经扣了 base_hp（那就是「漏怪容忍度」的设计载体，
+      // 见 stepEnemy / 抵达防线分支），若血还够却因为「漏过」而直接判负，
+      // 等于同一件事惩罚两次且第二次更严。实测第 1 关默认构筑
+      // kills=32 / leaked=7，于是永远无法通关。
+      //
+      // 现在两端统一为「清空即胜」：
+      //   引擎：波次队列空 + 场上无敌人 + 防线未破
+      //   服务端：kills + leaked >= 总怪数（两者都表示"这只怪已不再构成威胁"）
+      //
+      // totalEnemies > 0 是为了排除空关卡秒胜（见 beginWave 里的说明）。
+      this.finish(this.totalEnemies > 0)
       return
     }
     this.phase = 'card_select'

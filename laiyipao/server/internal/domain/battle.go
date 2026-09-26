@@ -76,6 +76,23 @@ const TickMs = 50
 // 真实值不会超过 HEAT_MAX(100) + 卡牌加成；留 10 倍余量后仍是硬上界。
 const MaxReportedHeat = 1000
 
+// fullStarTarget 返回最高一档星级门槛，缺档时返回 0。
+//
+// ⚠️ 取代原来的 `gl.StarTargets[len(gl.StarTargets)-1]`。
+// 那个裸索引在空切片上会 panic（index out of range），而 recoverPanic
+// 会把整场请求转成 500「服务内部错误」—— 攻击者用一个畸形关卡就能
+// 稳定触发，且日志里只有一句"panic"。
+//
+// 当前不可达：StartBattle/SettleBattle 都走 domain.GenerateLevel() 现算，
+// 生成器必定填 3 档。但关卡是网络数据、且 stats.go 提供了后台改关卡的入口，
+// 所以这里必须有保护。
+func fullStarTarget(gl GeneratedLevel) int64 {
+	if len(gl.StarTargets) == 0 {
+		return 0
+	}
+	return gl.StarTargets[len(gl.StarTargets)-1]
+}
+
 // maxShotsFor 返回给定时长下的物理发射数上界。
 //
 // ⚠️ 必须对 int64 溢出保持 fail-closed。
@@ -143,8 +160,49 @@ type SettleInput struct {
 
 // SettleLimits 是校验阈值。
 type SettleLimits struct {
-	MinDurationMs  int64
+	// MinDurationMs 是「清完全部敌人」的最短合理时长。
+	MinDurationMs int64
+	// MaxScorePerSec 已废弃，不参与判定。
+	//
+	// 它曾直接计算时长额度（sec * MaxScorePerSec），但值是硬编码的 50000，
+	// 而第 1 关满分只有 19539 —— min() 永远取满分那一侧，
+	// 速率限制实际失效：上报 duration_ms=1000 就能合法拿满分、3 星。
+	// 这是星级门槛修复的连带回归（门槛从 78000 降到 14656 之后，
+	// 50000/秒 再也碰不到了）。
+	//
+	// 现在额度由 scoreCapFor 按「满分需 ScoreFullAtSec 秒」动态计算，
+	// 与关卡自动匹配，不需要为 100 关逐个标定速率。
+	// 字段保留只为不破坏 service 层的构造调用点。
 	MaxScorePerSec int64
+}
+
+// ScoreFullAtSec 是「理论上最快多少秒能拿到满分」。
+//
+// 取 60 秒的依据：第 1 关实测 6806 tick（340 秒）拿 16048 分，
+// 速率约 47 分/秒、满分需约 415 秒。60 秒作为「绝对最快」下界，
+// 既拦住「1 秒速通拿满分」，又不会误伤正常对局 ——
+// 玩家再怎么快，实测也是 5~6 分钟。
+//
+// ⚠️ 若将来把关卡调到 60 秒以内可通关，这个值要跟着调；
+// TestScoreCapNeverAllowsInstantFull 会在调整前提醒。
+const ScoreFullAtSec = 60
+
+// scoreCapFor 返回给定秒数下的得分上界。
+//
+// 规则：线性插值到理论满分，满分需 ScoreFullAtSec 秒。
+// full <= 0（关卡缺 star_targets）时返回 0 —— 宁可不给分，
+// 也不能因为数据缺失而放开。
+func scoreCapFor(gl GeneratedLevel, sec int64) int64 {
+	full := fullStarTarget(gl)
+	if full <= 0 || sec <= 0 {
+		return 0
+	}
+	if sec >= ScoreFullAtSec {
+		return full
+	}
+	// 先乘后除不会溢出（full 与 sec 都是小整数），
+	// 且 sec < ScoreFullAtSec 保证结果 < full。
+	return full * sec / ScoreFullAtSec
 }
 
 // SettleResult 是服务端裁剪后的最终结果。
@@ -283,55 +341,60 @@ func ValidateSettle(
 	// 这里只保留胜负判定所需的 win 标记。
 	win := in.Result == "win"
 
-	// 7) 得分速率上限
+	// 7) 得分上限：时长额度与理论满分取小
 	res := SettleResult{}
 	if in.Score < 0 {
 		in.Score = 0
 	}
-	if in.DurationMs > 0 {
-		sec := int64(in.DurationMs) / 1000
-		if sec < 1 {
-			sec = 1
-		}
-		maxScore := sec * limits.MaxScorePerSec
-		// 星门槛的第三档是理论满分，超出部分无意义，直接裁剪
-		full := gl.StarTargets[len(gl.StarTargets)-1]
-		if maxScore > full {
-			maxScore = full
-		}
-		if in.Score > maxScore {
-			res.Score = maxScore
-			res.Clamped = true
-			res.ClampReason = fmt.Sprintf("得分速率超限：%d → %d", in.Score, maxScore)
-		}
+	sec := int64(in.DurationMs) / 1000
+	if sec < 1 {
+		sec = 1
 	}
-	if res.Score == 0 && in.Score > 0 {
-		// 只在"客户端报了正数分数但裁剪未生效"时回落，且把回落值再钳一次。
-		//
-		// ⚠️ 这里曾经是 `if res.Score == 0 { res.Score = in.Score }`，
-		// 与上方 `if in.DurationMs > 0` 组合成完整绕过：
-		// 上报 DurationMs=0 → 裁剪整段跳过 → 兜底把未裁剪的原始分数写回
-		// → 分数任意大 → 星级恒 3 → 单局掉落触顶。
-		// 时长 0 的请求已在第 4 步被拒，这里再钳一次作为纵深防御。
-		fallback := in.Score
-		secFallback := int64(in.DurationMs) / 1000
-		if secFallback < 1 {
-			secFallback = 1
-		}
-		capFallback := secFallback * limits.MaxScorePerSec
-		if full := gl.StarTargets[len(gl.StarTargets)-1]; capFallback > full {
-			capFallback = full
-		}
-		if fallback > capFallback {
-			fallback = capFallback
-			res.Clamped = true
-			res.ClampReason = fmt.Sprintf("得分速率超限（兜底路径）：%d → %d", in.Score, capFallback)
-		}
-		res.Score = fallback
+	// ⚠️ 额度必须锚定「理论满分」，不能是硬编码的每秒分值。
+	// MaxScorePerSec 曾是 50000，而第 1 关满分只有 19539 ——
+	// 于是 min() 永远取满分那一侧，**速率裁剪彻底失效**：
+	// 上报 duration_ms=1000 就能合法拿到满分、3 星。
+	// 这是星级门槛修复的连带回归：门槛从 78000 降到 14656 之后，
+	// 50000/秒 这个数再也碰不到了。
+	//
+	// 现在的规则是「至少要花 ScoreFullAtSec 秒才可能拿到满分」。
+	// 裁剪与关卡自动匹配，不需要为 100 关逐个标定速率。
+	maxScore := scoreCapFor(gl, sec)
+	if in.Score > maxScore {
+		res.Score = maxScore
+		res.Clamped = true
+		res.ClampReason = fmt.Sprintf("得分超时长额度：%d → %d（%ds 内上限，满分需 %ds）",
+			in.Score, maxScore, sec, ScoreFullAtSec)
+	} else {
+		res.Score = in.Score
 	}
+	// 曾经这里有一段「res.Score == 0 时回落到 in.Score」的兜底，
+	// 与上方「if in.DurationMs > 0 才裁剪」组合成完整绕过：
+	// 上报 DurationMs=0 → 裁剪整段跳过 → 兜底把未裁剪的原始分数写回
+	// → 分数任意大 → 星级恒 3 → 单局掉落触顶。
+	//
+	// 现在裁剪是无条件执行的、且 res.Score 走 if/else 显式赋值，
+	// 这段兜底已成为死代码。更重要的是它**有可观测性危害**：
+	// 「Score == 0 时回落」让"裁剪没执行"和"客户端确实报 0 分"无法区分，
+	// 正是那种静默失效得以长期存在的形状。所以删掉，不保留。
 
-	// 8) 胜利判定：必须清完全部敌人
-	res.Win = win && in.Kills >= maxKills
+	// 8) 胜利判定
+	//
+	// 语义是「清空全部波次且防线未破」，即每一只怪都已被解决 ——
+	// 被击杀（kills）或漏进防线（leaked）都算解决。
+	//
+	// ⚠️ 曾经是 `in.Kills >= maxKills`，那个口径是错的：
+	// 漏怪已经扣了 base_hp（那是"漏怪容忍度"的设计载体），
+	// 血还够却因为漏过而直接判负，等于同一件事惩罚两次且第二次更严。
+	// 实测第 1 关默认构筑 kills=32 / leaked=7，于是永远无法通关。
+	//
+	// 引擎侧口径同步为「波次队列空 + 场上无敌人 + 防线未破」，
+	// 两端必须一致，否则客户端播通关动画而服务端回失败。
+	//
+	// 之所以仍要服务端裁决而不是纯信客户端：kills + leaked 的守恒
+	// 由上面的 upper bound 校验保证（两者各自 <= maxKills 且都非负），
+	// 上报不实的部分会在第 2/7 步被拒。
+	res.Win = win && int64(in.Kills)+int64(in.Leaked) >= int64(maxKills)
 
 	// 9) 星级由服务端按门槛重算，不信任客户端上报
 	res.StarsRecomputed = computeStars(res.Score, gl.StarTargets)
