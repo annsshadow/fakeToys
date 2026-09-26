@@ -1,4 +1,3 @@
-DELETE /api/bbs/assemble/control/shutup/delete
 DELETE /api/portal/assemble/surface/delete/layout
 DELETE /api/program_center/appstyle/image/application/top/erase
 DELETE /api/program_center/appstyle/image/launch/logo/erase
@@ -93,7 +92,6 @@ GET /api/program_center/qiyeweixin/get/callback/aes
 GET /api/program_center/qiyeweixin/request/pull/sync
 GET /api/program_center/schedule/schedule/fire
 GET /api/program_center/script/name/name
-POST /api/bbs/assemble/control/shutup/delete
 POST /api/hotpic/delete/hotpic
 POST /api/hotpic/save/hotpic
 POST /api/message/assemble/communicate/im/msg/clear
