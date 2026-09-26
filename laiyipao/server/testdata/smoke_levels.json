@@ -15,7 +15,14 @@
         10748,
         14656
       ],
-      "terrain": [],
+      "terrain": [
+        {
+          "kind": "oil_drum",
+          "x": 881,
+          "y": 471,
+          "param": 47
+        }
+      ],
       "is_boss": false,
       "waves": [
         {
@@ -116,20 +123,7 @@
         12114,
         16520
       ],
-      "terrain": [
-        {
-          "kind": "oil_drum",
-          "x": 890,
-          "y": 454,
-          "param": 64
-        },
-        {
-          "kind": "oil_drum",
-          "x": 713,
-          "y": 396,
-          "param": 25
-        }
-      ],
+      "terrain": [],
       "is_boss": false,
       "waves": [
         {
@@ -353,14 +347,7 @@
         13527,
         18446
       ],
-      "terrain": [
-        {
-          "kind": "charge_tower",
-          "x": 870,
-          "y": 546,
-          "param": 31
-        }
-      ],
+      "terrain": [],
       "is_boss": false,
       "waves": [
         {

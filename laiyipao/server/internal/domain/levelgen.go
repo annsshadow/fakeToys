@@ -141,23 +141,131 @@ type GeneratedLevel struct {
 // 对一个体力有限、热量需要规划的关卡，这是「认真打」与「打干净」的分界。
 var StarTargetRatio = [3]int64{350, 550, 750}
 
+// TerrainFloorPerChapter 是每章**必定**是地形关的关数（GAME_DESIGN I-4）。
+const TerrainFloorPerChapter = 3
+
 // chapterTerrainFor 返回该关是否使用地形，以及地形种类。
-// 约 25% 的关卡是地形关，每章至少 3 关（GAME_DESIGN I-4）。
-func chapterTerrainFor(ch Chapter, levelSeed int64) (string, bool) {
-	// 用关卡 seed 的低 8 位决定，保证确定性
-	switch int(levelSeed&0xFF) % 4 {
-	case 0:
+//
+// 两部分，缺一不可：
+//  1. **保底**：每章前 3 关必定是地形关。
+//  2. **概率**：其余关卡里约 1/8 也是地形关。
+//
+// ⚠️ 原规格「约 25% + 每章保底 3 关」是**自相矛盾**的：
+// 6 章 × 3 关的保底本身就占 18%，而 18% + 82%×25% = 38.5%，不是 25%。
+// 现在按"保底 18% + 概率 12.5%"调和到约 28%，
+// 并把 GAME_DESIGN 的表述同步为这个自洽的数字。
+//
+// ⚠️ 保底曾经写成"概率"，因此根本不是保底：
+//
+//	switch int(seed&0xFF) % 4 {
+//	case 0: return 地形          // 25% 基础分布
+//	case 1: if offset < 3 {...}   // 「保底 3 关」
+//	}
+//
+// 保底只在**恰好 1/4 的关卡**里生效，再乘以"本章前 3 关"的条件，
+// 期望值是 `3/章长 × 1/4`，对 20 关的章约 0.15 关。
+// 第 6 章只有 5 关，期望 0.375 关 —— **数学上就不可能保底 3 关**。
+// 实测第 6 章只有 2 关有地形，低于声称的保底。
+//
+// 而函数名、注释和 GAME_DESIGN 都写着「每章至少 3 关」——
+// 一个不成立的承诺比没有承诺更糟：设计文档会被当成已实现的规格。
+//
+// 现在保底是**结构性的**：前 3 关无条件返回地形关，与散列无关。
+func chapterTerrainFor(ch Chapter, levelID int, levelSeed int64) (string, bool) {
+	span := ch.EndLevel - ch.StartLevel + 1
+	// 1) 保底：每章前 3 关（章长不足 3 则全章）
+	offset := int64(levelID - ch.StartLevel)
+	if offset < TerrainFloorPerChapter {
 		return ch.TerrainKind, true
-	case 1:
-		// 每章保底 3 关地形关：取本关在本章内的偏移
-		offset := (levelSeed >> 8) % int64(ch.EndLevel-ch.StartLevel+1)
-		if offset < 3 {
-			return ch.TerrainKind, true
-		}
-		return "", false
-	default:
+	}
+	if offset < 0 || offset >= int64(span) {
+		// 越界说明 levelID 与 ch 不匹配（调用方的 bug）。
+		// 这里保守返回无地形，而不是让越界 offset 走进下面的判定。
 		return "", false
 	}
+	// 2) 概率：其余关卡里约 1/8
+	if uint32(terrainRoll(levelID))%8 != 0 {
+		return "", false
+	}
+	return ch.TerrainKind, true
+}
+
+// terrainRoll 是「这一关要不要地形」的稳定散列。
+//
+// ⚠️ 这里**必须自己散列 levelID**，不能直接取关卡 seed 的某几位。
+//
+// 原实现用 `int(seed&0xFF) % 4`（最低 8 位）与 `(seed>>8) % 4`，
+// 两者都在**乘法型哈希的弱位**上。实测章内分布（判据是"每章内部"
+// 的均匀度，因为地形比例是按章体验的，不是全局体验的）：
+//
+//	>>0  章内最大偏离 = 1   ch5(4/4/3/4)     尚可
+//	>>8  章内最大偏离 = 8   ch4(0/7/13/0)   ← 灾难
+//	>>16 章内最大偏离 = 1   ch3(6/5/4/5)     可用
+//	>>32 章内最大偏离 = 1   ch1(5/6/5/4)     可用
+//
+// `>>8` 那一行是关键：第 4 章 20 关的取值是 0/7/13/0，
+// 意味着 `>>8 % 4` 在**整章内是同一个值**（只在章边界附近才变）。
+// 后果不是"比例偏差 8%"，而是**整章要么全是地形关、要么一个都没有**：
+//
+//	第 5 章：86~95 关的 (seed>>8)%4 全是 0 → 13/15 关都有地形（87%）
+//	第 1 章：整章都是 3     → 除了保底 3 关，其余 17 关一个都没有
+//
+// 这就是"每章地形关数量忽多忽少"的真正原因 —— 不是概率不够均匀，
+// 而是**在用的那几个比特位根本不随关卡号变化**。
+//
+// 现在改成对 levelID 做一次完整的雪崩（murmur3 的 fmix32 收尾）。
+// 取 levelID 而不是 seed 还有第二个好处：这个判定与种子生成方式解耦，
+// 将来换 PRNG 不会悄悄改掉 100 关的地形分布。
+//
+// ⚠️ 诚实说明雪崩步的**实际作用范围**：
+// 我试过把雪崩全部去掉（只留 `levelID * 0x9E3779B1`），
+// `TestTerrainRollIsUniformWithinChapter` **依然全绿** ——
+// 因为「连续整数 × 奇数 再 mod 8」本来就有良好分布
+// （奇数与 8 互质，levelID 的低位本就循环覆盖 0..7）。
+//
+// 所以雪崩**不是**当前 mod-8 判定的关键，它是防御性的：
+//  - 若将来模数从 8 改成 10/100（非 2 的幂），弱位就会暴露
+//  - 若入参从 levelID 换成稀疏的 levelID（比如 ×7 后的关卡号），
+//    只有完整雪崩能保证打散
+// 保留它的成本是 4 行，收益是"换参数时不会静默退化"。
+func terrainRoll(levelID int) uint32 {
+	h := uint32(uint64(uint32(levelID)) * 0x9E3779B1)
+	h ^= h >> 16
+	h *= 0x85EBCA6B
+	h ^= h >> 13
+	h *= 0xC2B2AE35
+	h ^= h >> 16
+	return h
+}
+
+// chapterOffset 返回关卡在本章内的偏移，值域 [0, span)。
+//
+// ⚠️ 这里**必须用无符号右移**。
+//
+// 曾经的写法是 `(levelSeed >> 8) % span`，看起来是标准的"哈希取模"，
+// 但 Go 的 `>>` 对有符号整数是**算术右移**（保留符号位），不是逻辑右移：
+//
+//	seed = -7046029255919282421
+//	seed >> 8  →  仍是负数
+//	% span     →  **负余数**（Go 的 % 向零截断，-5 % 4 = -1）
+//
+// 而当时的判据是 `offset < 3`（保底 3 关）——
+// **任何负数都满足这个判据**，于是负种子那一半的关卡
+// 100% 变成地形关，而不是预期的 3/章长。
+//
+// 100 关的种子里**恰好 50 个是负数**（PHI 混合哈希均匀分布在 int64 全域），
+// 所以实测 100 关里 41 关带地形（41%），而设计意图约 30%。
+//
+// 之所以能活这么久：没有任何测试断言"100 关里有几关带地形"，
+// 而冒烟测试只覆盖 6 关、其中只有 2 关恰好有地形。
+//
+// `uint64(seed) >> 8` 是逻辑右移，结果必然落在 [0, 2^56)，
+// 再 `% span` 必然落在 [0, span)。由 TestChapterOffsetIsUnsigned 守住。
+func chapterOffset(levelSeed int64, span int64) int64 {
+	if span <= 0 {
+		return 0
+	}
+	return int64(uint64(levelSeed)>>8) % span
 }
 
 // GenerateLevel 生成单关配置。纯函数：同输入必同输出。
@@ -230,7 +338,7 @@ func GenerateLevel(levelID int) GeneratedLevel {
 	// 地形。必须始终是空数组而非 nil ——
 	// json.Marshal(nil slice) 会产出 JSON null，客户端遍历时会炸。
 	gl.Terrain = []TerrainPlacement{}
-	if kind, ok := chapterTerrainFor(ch, levelSeed); ok {
+	if kind, ok := chapterTerrainFor(ch, levelID, levelSeed); ok {
 		gl.Terrain = generateTerrain(rng, kind, levelID)
 	}
 
