@@ -1,0 +1,32 @@
+# 行尾策略：仓库内一律 LF，检出时按平台转换。
+#
+# 为什么需要：Windows 上 git 的 core.autocrlf 默认会把 LF 转成 CRLF 写回工作区。
+# 对本项目的影响不只是"diff 脏"：
+#   - shell 脚本（scripts/e2e.ps1）与 Makefile 里的行尾参与解析
+#   - TS 契约文件（server/testdata/*.json）若被加上 BOM + CRLF，
+#     Go 的 encoding/json 与 Vite 的 JSON 插件行为会不一致
+#   - 迁移 SQL 在不同平台上重跑可能产生看不见的差异
+# 所以明确：**text = auto eol = lf**，即仓库内 LF，工作区检出为 LF，
+# 需要 Windows 工具时由工具自己处理。
+
+* text=auto eol=lf
+
+# 二进制：明确排除 text 转换，否则会被破坏
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.mp3 binary
+*.mp4 binary
+
+# 锁文件：pnpm 会严格校验，保持原样
+pnpm-lock.yaml -text
