@@ -262,9 +262,20 @@ FLOOR = {
 #: 42 / **234** / 37 —— `line_refs` 与漂移档**一格未动**（本轮 §3.12.4 全部用名字锚点），
 #: 涨的 3 个 token 由归因房逐条给出：1 个新产品文件 + 2 个 `Temp/l90q/` 探针名（落
 #: `file_unique` / `scratch_artifact` 两档，不是缺陷档）。
+#: **L91 回填（六格现量 + 一笔「减数在现树上重量」的归因第一次用于排除文档侧）**：架构文档
+#: 42 / **239** / 37 —— `line_refs` 与漂移档仍**一格未动**（§3.12.4 那块全部用名字锚点），
+#: 涨的 5 个 token 由归因房逐条给出：新产品测试文件 1 + `Temp/l91q/` 探针 2 + `data.py` 这类
+#: 短名重复出现的次数增量。账本 `file_tokens` 1399 → **1420**（+21：A132 行内收口、A160–A164
+#: 五行、L91 进度行与日志块），`line_refs` **290 未动**（本轮没有新增任何 `path:line`）；
+#: `code_but_no_name_match` 165 → **161** 这 −4 **全部归因到产品码位移**：归因房把 HEAD 那份
+#: 账本在**现树**（`api/routes/data.py` +172 / `converter.py` +114 行）上重跑，这一格同样是
+#: 161 ⇒ 文档文本对它的净贡献是 0。这与 L90 那 −1 是同一条口径（「被减数必须在现树上重量」），
+#: 区别是 L90 用它**确认**了一格代码归因、本轮用它**排除**了文档归因并把 −4 一次做满。
+#: 四个棘轮桶本轮照旧一格未抬（`ambiguous_line` 68 / `ambiguous_file` 145 / `bare` 149 /
+#: `scratch_missing` 111），`dead_line` 与 `unresolved_source` 两侧仍为 0。
 MEASURED = {
-    ARCH: {"line_refs": 42, "file_tokens": 234, "code_but_no_name_match": 37},
-    LEDGER: {"line_refs": 290, "file_tokens": 1399, "code_but_no_name_match": 165},
+    ARCH: {"line_refs": 42, "file_tokens": 239, "code_but_no_name_match": 37},
+    LEDGER: {"line_refs": 290, "file_tokens": 1420, "code_but_no_name_match": 161},
 }
 
 #: 日志块标题行上「下一轮才填得出自己哈希」的占位符。精确相等 = **只许有该填的那几条**。
@@ -278,6 +289,8 @@ MEASURED = {
 #: 15。**L86 兑现了那半句**：日志块与进度行落笔时把常数改回 **15**，L87 填掉 L86 哈希时再改回 14。**为什么不留 14..15 的区间**：区间判据会让「忘了回填上一轮」和「忘了给自己留占位」两种
 #: 相反的失误互相抵消（都落在区间内），而精确相等时两者各红一次 —— 这正是它每轮必须动两次的原因。
 #: **L89 回填侧（15 → 14）**：填掉 L88 的三批哈希后只剩 14 条历史欠账；本轮写 L89 块标题时改回 15。
+#: **L91 回填侧（15 → 14）**：填掉 L90 的三批哈希（`8e6b478a4` + `9fe7ba89e` + `0a9c210c5`）后同样
+#: 只剩 14 条历史欠账；本轮（L91）写自己的日志块标题时按同一纪律改回 **15**。
 HASH_PLACEHOLDER = re.compile(r"^- \*\*L\d+\*\* `哈希待 L\d+ 回填`", re.MULTILINE)
 PLACEHOLDER_CEILING = 15
 
@@ -805,8 +818,8 @@ BACKLOG_HEADS = ("| # | 位置 | 问题 | 量级 |", "|---|------|------|------|
 #: 陈旧窗口无界）与 A159（`save_config` 的双趟 YAML 解析，判负不动手）两行由
 #: `Temp/l88q/ledger_fill_1.py` 按**整行锚点 + 行数断言**插入，本轮三条骨架判据一次未因形状
 #: 破损而红（红的是「常数尚未回填」那一类，与本档无关）。跳号集合第七次未变。
-BACKLOG_A_LINES = 160
-BACKLOG_A_MAX = 159
+BACKLOG_A_LINES = 165
+BACKLOG_A_MAX = 164
 BACKLOG_A_MISSING = {52}
 #: Backlog B 现量：11 条竖线行 = 2 表头 + 7 条可编号 + 2 条带角标（B3① / ~~B3②~~）。
 BACKLOG_B_LINES = 11

@@ -574,17 +574,32 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 
 ### `POST /api/data/upload`
 
-上传 JSON 文件（`multipart/form-data`）。
+上传数据文件（`multipart/form-data`）。产物**恒为 JSON 数据集**：JSON 原样收下，表格与
+JSONL 进料交给转换器的读边解析成规范记录（`instruction` / `input` / `output` 那一套）再落盘。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `file` | file | JSON 文件，须为 UTF-8 编码的 JSON 数组 |
+| `file` | file | 必填。按扩展名认 `.json` / `.jsonl` / `.csv` / `.tsv` / `.xlsx` / `.xls`；扩展名认不出（`.txt`、无扩展名等）时按 JSON 处理，与既有客户端同路 |
+| `input_format` | form 字段 | 可选，**优先于扩展名**。合法值：`json`、`jsonl`、`csv`、`tsv`、`alpaca`、`sharegpt`、`chatml`、`llama_factory`、`vicuna`、`belle` 与 Excel 的三种拼法（`excel` / `xlsx` / `xls`）；不合法直接 `400` 并列出全表 |
 
-文件以 `file.filename` 为名保存到服务端当前目录。
+落点由配置 `web.data_roots`（出厂默认 `data/`）圈住，**不写服务端当前目录**：`file.filename`
+当**白名单内的相对路径**用（`data/sub/x.json` 就落到那里），裸文件名落进白名单根目录，含
+`..` 的路径 `400`，越界的绝对路径 `403`。源是表格时落名一律换成 `.json`（不把 JSON 字节
+写进 `.csv` 这种假容器）。
+
+| 状态码 | 触发条件 |
+|--------|----------|
+| `200` | 成功，`count` 为落盘条数 |
+| `400` | 非 UTF-8 文本；不是合法 JSON；顶层不是数组或元素不是对象；按表格解析出 0 条；内容整份其实是 JSON 却按表格格式进料；`input_format` 不合法；路径含 `..` |
+| `403` | 目标路径在白名单之外 |
+| `413` | 超过 `web.max_upload_bytes`（默认 256 MiB）；文案注明「未读取、未落盘」 |
 
 ```json
-{"success": true, "path": "train_data_uploaded.json", "count": 120}
+{"success": true, "path": "/srv/augmentor/data/train_data_uploaded.json", "count": 120}
 ```
+
+`path` 是落盘后的绝对路径。Excel 那一档需要服务端装 `pandas` 与 `openpyxl`，缺依赖时回
+`400` 并说明装什么（不是 `500`）。
 
 ---
 
@@ -1055,6 +1070,12 @@ curl -X POST http://localhost:8000/api/quality/evaluate \
 # 上传文件
 curl -X POST http://localhost:8000/api/data/upload \
   -F "file=@train_data_new.json"
+
+# 上传表格 / JSONL（服务端解析成规范记录后落成 .json；扩展名认不出时用 input_format 声明）
+curl -X POST http://localhost:8000/api/data/upload \
+  -F "file=@seeds.csv"
+curl -X POST http://localhost:8000/api/data/upload \
+  -F "file=@dump.dat" -F "input_format=jsonl"
 ```
 
 Python：

@@ -570,6 +570,67 @@ Starlette 的 `MultiPartParser` 对**文件部件**用 `SpooledTemporaryFile`（
 「我没被吞掉多少」；`UnicodeDecodeError` 单独译成 `400`「上传内容不是合法的 UTF-8 文本」，
 不回显任何内容字节。
 
+##### 源格式归一（L91 / 承 A132 ③）：闸只管拒收，这一格管「认得出」
+
+四道闸之外，上传改前还有一格是**能力缺口**而不是安全缺口：整条路由只有 `json.loads` 一份
+数组，于是 `.csv` / `.tsv` / `.jsonl` / `.xlsx` 这些「转换器读边早就认得」的进料在 API 面
+一律 400。实测（`Temp/l91q/upload_census.py`，默认 `web.data_roots=["data"]`）改前后：
+
+| 进料 | 改前 | 改后 |
+|------|------|------|
+| `data.csv`（真表格） | 400「数据文件不是合法 JSON（第 1 行第 1 列）」 | 200，落成 `data/data.json`，2 条 |
+| `data.tsv` / `data.jsonl` | 同上 400 | 200 |
+| `data.xlsx` | 400「上传内容不是合法的 UTF-8 文本」 | 200（整张表、全部列） |
+| `data.json` / `data.txt` / `noext`（裸文件名） | **403「路径超出允许的数据目录范围」** | 200，落进白名单根目录 |
+
+机制是**复用而不是另写**：转换器新增 `read_records(content, source_format, filename)`，把
+`_read_file` 那套解析搬到一个吃 `BytesIO` / `StringIO` 的入口上（`_read_excel_source` 与
+`_read_stream` 两侧共用），所以 csv/tsv 的分隔符口径、Excel 的空格子落空串、schema 变体的
+规范化都仍是**一份实现**（A77）。上传侧只加三条自己才需要的判决：
+
+1. **格式判决**（`_upload_source_format`）：显式 `input_format` > 扩展名，权威表直接引用
+   转换器的 `INPUT_EXTENSION_FORMATS` / `INPUT_FORMAT_CHOICES`；两者都认不出返回 `None`，
+   即「本函数对格式没有主张」，原样走那条 `json.loads` 的老路 —— 认不出**不判死**，因为
+   无扩展名与 `.txt` 上传 JSON 一直是成功的（实测三档同路）。声明 `json` 也返回 `None`，
+   于是「声明了的 json」与「默认的 json」是同一份代码，不存在第二套 JSON 判据。
+2. **撒谎进料交叉检查**（`_table_input_lies`）：缩进过的 JSON 数组改名 `.csv` 会被
+   `DictReader` 吃成 **251 条**键为 `'['` 的记录，顶层是数组、元素是对象 ⇒ 形态闸全过 ⇒
+   一份垃圾数据集静静落盘；同一份内容写成单行 JSON 时读出 **0 条**，于是回 200 且
+   `count: 0`。放行表格不能把「响亮地拒绝」换成「静默地接受」，所以这两种都在**落盘之前**
+   判 400，磁盘不留半成品。`jsonl` 只判「整份能解析成数组」那一种：单条 JSON 对象既是一份
+   合法的 JSONL，按 JSONL 读出一条才是它声明的语义。
+3. **假容器改名**：源是表格时落点名一律换成 `.json`。上传的产物本来就是 JSON 字节
+   （`write_json_file`），把 JSON 写进 `x.csv` 这个名字正是转换器写边
+   `_reject_unwritable_output` 点名拒收的形状。
+
+**A160（本轮自抓的回归，也是本仓 UI 的一次真失效）**：L87 把落点改成「按白名单内的相对
+路径用」之后，`resolve_within_roots` 对**尚不存在**的目标刻意「不替调用方凭空挑一个写入
+目录」，而 Chromium/Firefox 的 `<input type=file>` 只给裸文件名 ⇒ 从自带 UI 上传一份**新**
+文件必 403，客户端唯一能成功的姿势是先知道目标已存在。修法按「解释一次，只有解释成越界
+（403）才救」写，而不是无条件取白名单首根加前缀：后者会把本来能按工作目录解释的上传悄悄
+搬到别处去，本轮第一版就是这么写的，`tests/unit/test_upload_ceiling_l87.py` 与
+`tests/integration/test_api_data_extended.py` 三条既有用例当场把它判红了。带目录的显式写法
+（L87 挣来的那一格）、`..` 的 400、越界绝对路径的 403 三支一字未动。
+
+产品面还差一步：端点认 `.csv` 而页面 `accept=".json"`，浏览器直接把表格文件灰掉，能力对
+用户不存在。页面的 `accept` 已扩到读边那六个扩展名，并由 `TestUploadAcceptFace` 做**双向**
+漂移守卫（读边有而 accept 没有 ⇒ 选不到；accept 有而读边没有 ⇒ 选了必 400）。权威在 Python
+侧是直接 import 的常数，不在 TS 里正则抠 Python —— 本仓 web 的 `@types` 里没有 node，
+跨语言守卫在 vitest 侧要先动依赖表，搬到 Python 侧既免依赖又每轮全量都跑得到。
+
+**A161（Excel 的错误形状）**：损坏 xlsx 在 pandas 侧抛 `zipfile.BadZipFile` 与
+`pandas.errors.OptionError`，两者都**不是** `ValueError` 子类 ⇒ 不翻译就经 `to_http_error`
+之外的路径回 **500**，把「你上传的文件坏了」说成「服务端故障」。`_read_excel_source` 用一道
+`except Exception` 把它译成 `DataFormatError`（`ValueError` 子类 ⇒ 400，文案带文件名）。
+pandas 缺失的环境（本仓第二个解释器就没有）走的是另一档：先报 `DataLoadError`「装什么」，
+**同为 400**、同样不落半成品，只是诊断不如装了 pandas 时精确；守卫因此按面拆开 —— 翻译本身
+用替身档两侧都跑，真字节的实测档标 `@needs_pandas`。
+
+表格进料的解析**是**要搬进线程池的那一类（`deps.run_in_thread`）：pandas/openpyxl 的解析是
+纯 Python，会周期性放 GIL，与 `json.loads` 那个「整个调用持锁、搬过去净收益 −0.8 ms」的形状
+相反（L87 的尺子）。守卫 `tests/unit/test_upload_table_formats_l91.py`（58 例 / 6 类，另含
+`Temp/l91q/mutate_l91.py` 的 8 档变异取证）。
+
 #### 3.12.5 `POST /api/config` 的「没写进去」必须出声
 
 请求模型 `ConfigUpdateRequest` 用 `extra="allow"`。这不是为了「什么都能写」，是为了**报得出来**：
