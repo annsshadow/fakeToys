@@ -264,14 +264,25 @@ func ResolveHit(att Attacker, def *Defender, in HitInput) HitResult {
 		reactionElemPortion = mulDiv(reactionElemPortion, t, 1)
 		reactionElemPortion = mulDiv(reactionElemPortion, att.ElementCoefPermille, permille)
 
-		// 攻击力侧：吃养成，但有结构性上限 w/(1-w) × 元素侧
+		// 攻击力侧：吃养成，但有结构性上限
+		//
+		// ⚠️ 上限要**除以 ReactionMultPermille**，且乘完倍率之后仍要满足
+		// I-1 的不变式「反应伤害中攻击力占比 ≤ w」：
+		//
+		//   A·M/(E + A·M) ≤ w  ⟺  A·M ≤ wE/(1-w)  ⟺  A ≤ wE/((1-w)·M)
+		//
+		// 详见 miniapp/src/game/damage.ts 的 reactionAttackCap 注释
+		// （两端必须逐位一致，否则 I-6 回放哈希必然失配）。
+		//
+		// ReactionMultPermille = 1000（无加成）时上限与旧式 wE/(1-w)
+		// 逐位相同，所以既有契约向量不受影响。
 		attackRaw := mulDiv(d, k, permille)
 		attackRaw = mulDiv(attackRaw, t, 1)
-		cap := reactionAttackCap(w, reactionElemPortion)
+		cap := reactionAttackCap(w, reactionElemPortion, att.ReactionMultPermille)
 		if attackRaw > cap {
 			attackRaw = cap
 		}
-		reactionAttackPortion = attackRaw
+		reactionAttackPortion = mulDiv(attackRaw, att.ReactionMultPermille, permille)
 	}
 
 	// 5) 抗性只作用于反应伤害（I-1 的设计意图：抗性决定"搭配是否正确"，
@@ -339,14 +350,36 @@ func ResolveHit(att Attacker, def *Defender, in HitInput) HitResult {
 
 // reactionAttackCap 返回"攻击力侧"的结构性上限。
 //
-// 目标：保证 attack/(elem+attack) ≤ w，等价于 attack ≤ w/(1-w) × elem。
-// 分母 (1000-w) 在 w ≤ 300 时恒为正，不会除零。
-func reactionAttackCap(w, elemPortion int64) int64 {
+// 不变式（I-1 的核心）：反应伤害中攻击力贡献的占比 ≤ w。
+//
+//	A·M/(E + A·M) ≤ w  ⟺  A·M ≤ wE/(1-w)  ⟺  A ≤ wE/((1-w)·M)
+//
+// 三个参数：
+//
+//	w            反应的攻击力权重（千分比，≤ MaxReactionAttackWeightPermille=300）
+//	elemPortion  元素侧的绝对伤害（与养成完全无关）
+//	multPermille 反应倍率（千分比，1000 = 无加成）
+//
+// ⚠️ multPermille 必须参与上限计算。少了它，倍率就成了绕过反通胀保证的后门：
+// 专精树的 reaction_mult 节点、装备契合度、防线装置「特斯拉栅格」全部只写不读，
+// 正是因为读不到地方 —— 而一旦读进来又不管上限，玩家堆一个节点就能让
+// 反应伤害里的攻击力占比突破 30%，整套设计的根基被破坏。
+//
+// multPermille = 1000 时本函数与旧式 wE/(1-w) 逐位相同，
+// 所以既有契约向量与平衡数据都不受影响。
+//
+// 分母 (permille-w) 在 w ≤ 300 时恒为正，不会除零。
+func reactionAttackCap(w, elemPortion, multPermille int64) int64 {
 	if w >= permille {
 		// 防御性分支：设计上不会出现，这里让上限无穷大而不是除零 panic
-		return elemPortion * 1000
+		return elemPortion * permille
 	}
-	return mulDiv(w, elemPortion, permille-w)
+	if multPermille <= 0 {
+		// 倍率为 0 等价于"攻击侧完全无效"
+		return 0
+	}
+	base := mulDiv(w, elemPortion, permille-w)
+	return mulDiv(base, permille, multPermille)
 }
 
 // ApplyElementStacks 在命中结算后施加元素层数。
