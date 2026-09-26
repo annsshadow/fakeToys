@@ -2969,17 +2969,16 @@ fn u2_attachment_blob_key(id: &str, filename: &str) -> Result<String, AppError> 
 
 /// put + 回读校验。DB 占位后端 get 必然 Err —— 在此显式失败，
 /// 避免产生“上传成功但内容丢失”的假成功响应。
-async fn u2_persist_blob_verified(key: &str, bytes: &[u8]) -> Result<(), AppError> {
-    let storage = shared::storage::storage_from_env();
+async fn u2_persist_blob_verified(pool: &Pool, key: &str, bytes: &[u8]) -> Result<(), AppError> {
+    let storage = shared::storage::storage_with_pool(pool.clone());
     storage.put(key, bytes).await.map_err(|e| {
         tracing::warn!(key, error = %e, "blob put failed");
         AppError::Internal
     })?;
     if let Err(e) = storage.get(key).await {
         tracing::warn!(key, error = %e,
-            "blob backend did not persist upload (STORAGE_BACKEND=db placeholder); \
-             set STORAGE_BACKEND=fs to enable binary uploads");
-        return Err(AppError::NotImplemented);
+            "blob backend did not persist upload; check STORAGE_BACKEND / DB connectivity");
+        return Err(AppError::Internal);
     }
     Ok(())
 }
@@ -3091,7 +3090,7 @@ async fn u2_attachment_store_new(
 
     let id = uuid::Uuid::new_v4().to_string();
     let key = u2_attachment_blob_key(&id, filename)?;
-    u2_persist_blob_verified(&key, &bytes).await?;
+    u2_persist_blob_verified(&pool, &key, &bytes).await?;
 
     let ext = filename.rsplit('.').next().unwrap_or("bin").to_string();
     let length = bytes.len() as i64;
@@ -3295,7 +3294,7 @@ async fn u2_attachment_update_inner(
             .map(|r| r.get::<_, Option<String>>("file_name").unwrap_or_default())
             .unwrap_or_default();
         let key = u2_attachment_blob_key(&id, file_name.unwrap_or(&current_name))?;
-        u2_persist_blob_verified(&key, &bytes).await?;
+        u2_persist_blob_verified(&pool, &key, &bytes).await?;
         Some(bytes.len() as i64)
     } else {
         None
@@ -3516,7 +3515,10 @@ pub async fn u2_attachment_delete(
     }
     if let Some(row) = key_row {
         if let Some(key) = row.get::<_, Option<String>>("storage_key") {
-            if let Err(e) = shared::storage::storage_from_env().delete(&key).await {
+            if let Err(e) = shared::storage::storage_with_pool((*pool).clone())
+                .delete(&key)
+                .await
+            {
                 tracing::warn!(key, error = %e, "blob delete failed after attachment delete");
             }
         }

@@ -24635,7 +24635,7 @@ async fn u2_att_store_new(
     ref_value: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let key = u2_att_blob_key(id, filename)?;
-    let storage = shared::storage::storage_from_env();
+    let storage = shared::storage::storage_with_pool(pool.clone());
     u2_att_persist_verified(storage.as_ref(), &key, &bytes).await?;
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -24701,6 +24701,7 @@ async fn u2_att_load_blob_row(
 
 /// 下载统一出口：行缺失 → crate 惯例的业务错误 JSON；blob key 缺失或 get 失败 → 501+warn。
 async fn u2_att_download_response(
+    pool: &Pool,
     row: Option<U2AttBlobRow>,
     id: &str,
 ) -> Result<axum::response::Response, AppError> {
@@ -24714,7 +24715,7 @@ async fn u2_att_download_response(
             "attachment has no blob key; content lives outside BlobStorage (db-row mode)");
         return Err(AppError::NotImplemented);
     };
-    let storage = shared::storage::storage_from_env();
+    let storage = shared::storage::storage_with_pool(pool.clone());
     match storage.get(&key).await {
         Ok(bytes) => {
             let raw = r.name.unwrap_or_else(|| "attachment.bin".to_string());
@@ -24755,7 +24756,7 @@ pub async fn attachment_u2b_download_id(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<axum::response::Response, AppError> {
     let row = u2_att_load_blob_row(&pool, "id = $1", &id, None).await?;
-    u2_att_download_response(row, &id).await
+    u2_att_download_response(&pool, row, &id).await
 }
 
 #[allow(non_snake_case)]
@@ -24774,7 +24775,7 @@ pub async fn attachment_u2b_download_manage(
 ) -> Result<axum::response::Response, AppError> {
     u2_require_admin(&pool, &session).await?;
     let row = u2_att_load_blob_row(&pool, "id = $1", &id, None).await?;
-    u2_att_download_response(row, &id).await
+    u2_att_download_response(&pool, row, &id).await
 }
 
 #[allow(non_snake_case)]
@@ -24792,7 +24793,7 @@ pub async fn attachment_u2b_download_by_work(
     axum::extract::Path((id, work)): axum::extract::Path<(String, String)>,
 ) -> Result<axum::response::Response, AppError> {
     let row = u2_att_load_blob_row(&pool, "id = $1 AND \"xwork\" = $2", &id, Some(&work)).await?;
-    u2_att_download_response(row, &id).await
+    u2_att_download_response(&pool, row, &id).await
 }
 
 #[allow(non_snake_case)]
@@ -24810,7 +24811,7 @@ pub async fn attachment_u2b_download_by_workcompleted(
 ) -> Result<axum::response::Response, AppError> {
     let row =
         u2_att_load_blob_row(&pool, "id = $1 AND \"xworkCompleted\" = $2", &id, Some(&wc)).await?;
-    u2_att_download_response(row, &id).await
+    u2_att_download_response(&pool, row, &id).await
 }
 
 #[allow(non_snake_case)]
@@ -24827,7 +24828,7 @@ pub async fn attachment_u2b_download_work_att(
     axum::extract::Path((work, att)): axum::extract::Path<(String, String)>,
 ) -> Result<axum::response::Response, AppError> {
     let row = u2_att_load_blob_row(&pool, "id = $2 AND \"xwork\" = $1", &work, Some(&att)).await?;
-    u2_att_download_response(row, &att).await
+    u2_att_download_response(&pool, row, &att).await
 }
 
 #[allow(non_snake_case)]
@@ -24848,7 +24849,7 @@ pub async fn attachment_u2b_download_transfer(
             .await?
         }
     };
-    u2_att_download_response(row, &flag).await
+    u2_att_download_response(&pool, row, &flag).await
 }
 
 // ── 上传族（multipart / base64 → BlobStorage + 元数据行，session 门禁） ─────
@@ -25186,7 +25187,7 @@ pub async fn attachment_u2b_invoice_download(
                 name: r.get::<_, Option<String>>("xname"),
                 key: r.get::<_, Option<String>>("xstorage"),
             });
-            u2_att_download_response(blob, &flag).await
+            u2_att_download_response(&pool, blob, &flag).await
         }
     }
 }
@@ -27026,7 +27027,7 @@ async fn u2_attachment_ext_download(
     }
     // filename 段（形如 report.pdf）仅用于命名合法性校验；实际文件名取自元数据 xname
     let _ = filename.trim();
-    u2_att_download_response(row, id).await
+    u2_att_download_response(pool, row, id).await
 }
 
 macro_rules! u2_att_ext_download_handler {
