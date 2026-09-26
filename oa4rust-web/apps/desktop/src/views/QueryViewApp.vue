@@ -24,6 +24,7 @@
         <button class="btn-primary" @click="loadQueryViewExtras">计数/导入/检索</button>
         <button class="btn-primary" @click="loadQueryViewCursors">表行游标/视图</button>
         <button class="btn-primary" @click="loadQueryViewDeep">深度读矩阵</button>
+        <button class="btn-primary" @click="loadQueryViewMore">导入模型只读补消费</button>
         <button class="btn-primary" @click="qvWrite('rowInsert')">插入行</button>
         <button class="btn-primary" @click="qvWrite('rowOneInsert')">插入单行</button>
         <button class="btn-primary" @click="qvWrite('rowDelete')">删行</button>
@@ -427,6 +428,41 @@ async function loadQueryViewDeep() {
     tableText.value = `queryview 深度读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
     toast.error('加载 queryview 深度读失败: ' + (e?.message ?? ''))
+  }
+}
+// rev377：queryview 导入模型记录分页/状态/执行 + neural/表清单 非破坏性真实读补消费（用户触发；均 x_query_* 真 SELECT，含 POST importmodel 系列在 Rust 实为 SELECT 读）
+async function loadQueryViewMore() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const pg = '1'
+  const sz = '20'
+  const rid = '0'
+  const st = 'done'
+  const flag = 'default'
+  const query = 'default'
+  const qf = 'default'
+  const tf = '0'
+  const id = '0'
+  const nx = '0'
+  const cnt = '20'
+  const mf = '0'
+  const wk = '0'
+  const wid = '0'
+  const vw = 'default'
+  try {
+    const rs = await Promise.all([
+      s(api.post(`/api/queryview/importmodel/list/record/item/paging/${pg}/${sz}/${sz}`, {})),
+      s(api.post(`/api/queryview/importmodel/list/record/paging/${pg}/${sz}/${sz}`, {})),
+      s(api.post(`/api/queryview/importmodel/record/${rid}/${st}`, {})),
+      s(api.post(`/api/queryview/importmodel/${flag}/${flag}/${query}/${qf}`, {})),
+      s(api.get(`/api/queryview/table/list/row/${tf}/${id}/${nx}/${cnt}`)),
+      s(api.get(`/api/queryview/table/list/${id}/${nx}/${cnt}`)),
+      s(api.get(`/api/queryview/neural/list/calculate/model/${mf}/${wk}/${wid}`)),
+      s(api.get(`/api/queryview/${vw}/${flag}/${flag}/${query}/${qf}`)),
+    ])
+    const hit = rs.filter((r) => (r as any) != null).length
+    tableText.value = `queryview 导入模型/清单只读端点 ${rs.length} 条，返回 ${hit}`
+  } catch (e: any) {
+    toast.error('加载 queryview 导入模型只读端点失败: ' + (e?.message ?? ''))
   }
 }
 // rev332：queryview 表数据行/视图执行/统计/导入模型 真实写端点（用户触发，shape 已核 query crate handler；全字面量路径）

@@ -48,6 +48,7 @@
             <button class="btn-edit" @click="loadTableRows">📊 表数据/统计</button>
             <button class="btn-edit" @click="loadTableCursors">🔀 表游标</button>
             <button class="btn-edit" @click="loadDesignerViewStat">📐 视图/统计游标</button>
+            <button class="btn-edit" @click="loadQueryDesignerMore">🧾 设计器只读补消费</button>
             <button class="btn-edit" @click="loadDesignerOutputBundle">📦 输出/包/属性</button>
             <button class="btn-del" @click="deleteQuery(selected)">🗑</button>
           </div>
@@ -467,6 +468,31 @@ async function loadDesignerViewStat() {
     tableRowText.value = `视图权限 ${(viewPerm as any)?.data ? '有' : '无'} · 视图上翻 ${n(viewPrev)}·下翻 ${n(viewNext)} · 分类查询 ${n(byCat)} · 统计按查询 ${n(statByQuery)}·下翻 ${n(statNext)}`
   } catch (e: any) {
     toast.error('加载视图/统计游标失败: ' + (e?.message ?? ''))
+  }
+}
+// rev377：设计器 统计/表清单/导出/导入模型清单 非破坏性真实读补消费（用户触发；均 x_query_* 真 SELECT）
+async function loadQueryDesignerMore() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const nx = '0'
+  const cnt = '20'
+  const tf = '0'
+  const q = 'default'
+  const flag = 'default'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/query/assemble/designer/stat/list/${id}/${nx}/${cnt}`)),
+      s(api.get(`/api/query/assemble/designer/stat/list/${q}/${flag}`)),
+      s(api.get(`/api/query/assemble/designer/table/export/${tf}/${cnt}/${cnt}`)),
+      s(api.get(`/api/query/assemble/designer/table/list/row/${tf}/${id}/${nx}/${cnt}`)),
+      s(api.get(`/api/query/assemble/designer/table/list/${q}/${flag}`)),
+      s(api.get(`/api/query/assemble/designer/${id}/${cnt}`)),
+      s(api.post(`/api/query/assemble/designer/importmodel/list/${q}/${flag}`, {})),
+    ])
+    const hit = rs.filter((r) => (r as any) != null).length
+    tableRowText.value = `设计器只读端点 ${rs.length} 条，返回 ${hit}`
+  } catch (e: any) {
+    toast.error('加载设计器只读端点失败: ' + (e?.message ?? ''))
   }
 }
 // rev241：查询设计器 输出/包/实体属性/分类/统计/表行 7 条真实 distinct 读路由（arity 已核；跳 icon/{query}/{flag}=Path<String>与2参URL不符 500、row/count/where=row/select/where 投影孪生、list/summary/querycategory/{query}/{queryCategory}=同 handler 双注册）
