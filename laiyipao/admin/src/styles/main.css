@@ -1,0 +1,51 @@
+:root {
+  --lyp-bg: #0d1117;
+  --lyp-panel: #161b22;
+  --lyp-border: #30363d;
+  --lyp-text: #e6edf3;
+  --lyp-muted: #8b949e;
+  /* 元素主题色 —— 与小程序端保持一致 */
+  --el-fire: #ff6b35;
+  --el-ice: #58a6ff;
+  --el-lightning: #ffd33d;
+  --el-corrosion: #7ee787;
+  --el-kinetic: #c9a7ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--lyp-bg);
+  color: var(--lyp-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.page-subtitle {
+  font-size: 13px;
+  color: var(--lyp-muted);
+  margin: 0 0 16px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
