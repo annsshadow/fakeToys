@@ -373,7 +373,11 @@ class TestEveryWrittenFieldLands:
         total = sum(len([f for f in dataclasses.fields(cls) if f.init])
                     for cls in SECTION_CLASSES.values())
         assert len(WRITTEN) == total, (len(WRITTEN), total)
-        assert total == 68, total
+        # 68 → 69：L87 的 `web.max_upload_bytes`（上传体字节闸）。**本矩阵从 `fields()`
+        # 推，所以新字段的落地档是自动长出来的并已判绿**（`test_written_field_lands` 里
+        # `web.max_upload_bytes` 那一条真写了 YAML、真落进节对象、且值与出厂默认不同），
+        # 红的只有这个必须精确相等的计数 —— 它是「新增字段」的常驻门铃，不是缺陷。
+        assert total == 69, total
         unknown = [(s, f) for s, f, _ in WRITTEN if (s, f) not in {
             (sec, fld.name) for sec, cls in SECTION_CLASSES.items()
             for fld in dataclasses.fields(cls) if fld.init}]

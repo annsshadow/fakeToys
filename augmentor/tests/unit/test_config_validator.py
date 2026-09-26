@@ -873,10 +873,14 @@ class TestWaitBudgetKnobSurface:
         三条新规格改前根本不在表里，所以本条对它们从没判过；改后运行时那一侧
         （`require_count` / `require_chunk_window` 都走 `_require_number`，那里的
         `isinstance(value, bool)` 先于类型判断）与静态面同判，故两侧一致。
+        L87 起 17：新增的是 `web.max_upload_bytes`（上传体字节闸）。同一个理由再说一遍：
+        本条对它的期待**不是**「静态面也判了这个坏值」——写面 `POST /api/config` 根本不
+        写 `web` 节，那一半的行为由 `test_upload_ceiling_l87.py` 单独钉（点名漏网，
+        A151）。本条在这里只判一件事：这条规格不许对 `true` 网开一面。
         """
         numeric = [p for p, s in ConfigValidator.KNOWN_FIELDS.items()
                    if s.get("type") in (int, float)]
-        assert len(numeric) == 16, "新增数值规格键会自动进入本断言"
+        assert len(numeric) == 17, "新增数值规格键会自动进入本断言"
         for path in numeric:
             hits = [m for p_, m in self._errors_at(path) if p_ == path]
             assert hits and "类型错误" in hits[0], (path, hits)
@@ -898,7 +902,7 @@ class TestWaitBudgetKnobSurface:
 
 
 class TestWebSectionKnobSurface:
-    """`web` 节九个字段全部要有规格（L50 补齐）
+    """`web` 节十个字段全部要有规格（L50 补齐，L87 加到十个）
 
     补之前实测（Temp `l50q/probe2.py` NONCE-bee0664903ff）：把整节写坏 ——
     `port: eighty`、`data_roots: data`（YAML 标量而非列表）、`cors_origins` 写成字符串、
@@ -919,9 +923,10 @@ class TestWebSectionKnobSurface:
         return [(e.path, e.message) for e in validate_config(config).errors]
 
     #: 与 `WebConfig` 的字段集逐字对齐；新增字段会自动把本断言变红
+    #: `max_upload_bytes` 是 L87 的上传体字节闸，它进场时本条确实红过一次
     FIELDS = ["port", "host", "static_dir", "cors_origins", "cors_credentials",
               "data_roots", "rate_limit_max_requests", "rate_limit_window_seconds",
-              "rate_limit_exempt_paths"]
+              "rate_limit_exempt_paths", "max_upload_bytes"]
 
     def test_every_web_field_has_a_spec(self):
         import dataclasses
@@ -943,6 +948,9 @@ class TestWebSectionKnobSurface:
         ("rate_limit_max_requests", 0), ("rate_limit_max_requests", 300),
         ("rate_limit_window_seconds", 0.0), ("rate_limit_window_seconds", 60),
         ("rate_limit_exempt_paths", ["/api/health"]),
+        # L87：判据是**只设下界 1**、不设天花板。上界由部署的内存决定，本地编一个
+        # 死上界只会把合法配置报成非法（同 `MAX_OUTPUT_TOKENS_MIN` 的理由）
+        ("max_upload_bytes", 1), ("max_upload_bytes", 268435456),
     ])
     def test_legal_values_pass(self, field, value):
         assert self._errors({field: value}) == []
@@ -960,6 +968,9 @@ class TestWebSectionKnobSurface:
         ("rate_limit_window_seconds", -1.0, "值过小"),
         ("rate_limit_window_seconds", float("nan"), "不是有效数值"),
         ("rate_limit_window_seconds", "60", "类型错误"),
+        ("max_upload_bytes", "256", "类型错误"),
+        ("max_upload_bytes", 0, "值过小"),
+        ("max_upload_bytes", True, "类型错误"),
     ])
     def test_illegal_values_reported(self, field, bad, expect):
         errors = self._errors({field: bad})
