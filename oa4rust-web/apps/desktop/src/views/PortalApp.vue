@@ -256,6 +256,10 @@ async function loadPortalDeep() {
       s(api.get(`/api/portal/assemble/surface/v2/portal/mobile/${page}/${flag}/${portalFlag}`)),
       s(api.get(`/api/portal/assemble/surface/v2/portal/${page}/${flag}/${portalFlag}`)),
       s(api.get(`/api/portal/assemble/surface/dict/${dictFlag}/portal/${portalFlag}/${path}/data`)),
+      // rev379：门户 非破坏性真实读补消费（surface 脚本清单 + designer 文件游标/计数，均真 SELECT）
+      s(api.get(`/api/portal/assemble/surface/script/list/portal/${portal}`)),
+      s(api.get(`/api/portal/assemble/designer/file/list/${id}/${page}/${flag}`)),
+      s(api.get(`/api/portal/assemble/designer/${id}/${flag}`)),
     ])
     const hit = rs.filter((r) => (r as any)?.data != null).length
     portalListText.value = `门户深度读端点 ${rs.length} 条，命中 ${hit}`
