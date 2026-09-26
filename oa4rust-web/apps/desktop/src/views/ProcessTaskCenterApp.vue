@@ -31,6 +31,7 @@
         <button class="btn-refresh" @click="loadReadFullCursors">📗 待阅全量游标/详情</button>
         <button class="btn-refresh" @click="loadReadCompletedFullCursors">📘 已阅全量游标/详情</button>
         <button class="btn-refresh" @click="loadWorkCompletedFullCursors">🏁 完成件全量游标/详情</button>
+        <button class="btn-refresh" @click="loadSurfaceMoreReads">🧩 表面只读补消费</button>
       </div>
       <div v-if="countsText" class="wk-chips"><span class="wk-chip">{{ countsText }}</span></div>
       <div v-if="workDetailText" class="wk-chips"><span class="wk-chip">{{ workDetailText }}</span></div>
@@ -41,6 +42,7 @@
       <div v-if="readCursorText" class="wk-chips"><span class="wk-chip">{{ readCursorText }}</span></div>
       <div v-if="readCompCursorText" class="wk-chips"><span class="wk-chip">{{ readCompCursorText }}</span></div>
       <div v-if="wcCursorText" class="wk-chips"><span class="wk-chip">{{ wcCursorText }}</span></div>
+      <div v-if="surfaceMoreText" class="wk-chips"><span class="wk-chip">{{ surfaceMoreText }}</span></div>
       <div v-if="snapText" class="wk-chips"><span class="wk-chip">{{ snapText }}</span></div>
       <div v-if="workItems.length" class="wk-chips">
         <span v-for="w in workItems" :key="w.id || w.title" class="wk-chip">{{ w.title || w.id }}</span>
@@ -95,6 +97,64 @@ const taskCompCursorText = ref('')
 const readCursorText = ref('')
 const readCompCursorText = ref('')
 const wcCursorText = ref('')
+const surfaceMoreText = ref('')
+// rev376：流程-表面 非破坏性真实读补消费（用户触发）——凭证游标计数(read/task/work/readcompleted/taskcompleted +
+// anonymous)、filter/attribute DISTINCT 维度聚合(read/readcompleted/review/task/taskcompleted + review/filter/entry)、
+// my paging 列表、documentversion、v2 list create paging(POST 真读)、附件二进制下载(dummy id→JSON 未找到)。
+// 排除破坏性/引擎/外部：mode/save·clear、review/create/*、attachment upload/*、html/to/image·pdf、upload/with/url、snap/upload。
+async function loadSurfaceMoreReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const cnt = '20'
+  const pg = '1'
+  const sz = '20'
+  const cred = 'diagnostic'
+  const cat = 'all'
+  const woc = '0'
+  const attid = '0'
+  const wk = '0'
+  const wcid = '0'
+  const fn = 'doc.txt'
+  const job = '0'
+  const site = '0'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/surface/anonymous/read/${cnt}/${cred}`)),
+      s(api.get(`/api/processplatform/assemble/surface/anonymous/task/${cnt}/${cred}`)),
+      s(api.get(`/api/processplatform/assemble/surface/read/${cnt}/${cred}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/${cnt}/${cred}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/${cnt}/${cred}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/${cnt}/${cred}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/${cnt}/${cred}`)),
+      s(api.get('/api/processplatform/assemble/surface/read/filter/attribute')),
+      s(api.get('/api/processplatform/assemble/surface/readcompleted/filter/attribute')),
+      s(api.get('/api/processplatform/assemble/surface/review/filter/attribute')),
+      s(api.get('/api/processplatform/assemble/surface/task/filter/attribute')),
+      s(api.get('/api/processplatform/assemble/surface/taskcompleted/filter/attribute')),
+      s(api.get('/api/processplatform/assemble/surface/review/filter/entry')),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/my/paging/${pg}/${sz}/${sz}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/my/paging/${pg}/${sz}/${sz}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/my/paging/${pg}/${sz}/${sz}`)),
+      s(api.get(`/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/${woc}/${cat}/${cat}`)),
+      s(api.post(`/api/processplatform/assemble/surface/read/v2/list/create/paging/${pg}/${sz}/${sz}`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/readcompleted/v2/list/create/paging/${pg}/${sz}/${sz}`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/review/v2/list/create/paging/${pg}/${sz}/${sz}`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/task/v2/list/create/paging/${pg}/${sz}/${sz}`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/taskcompleted/v2/list/create/paging/${pg}/${sz}/${sz}`, {})),
+      s(api.get(`/api/processplatform/assemble/surface/attachment/download/${attid}/work/${wk}/stream`)),
+      s(api.get(`/api/processplatform/assemble/surface/attachment/download/${attid}/work/${wk}/stream/${fn}`)),
+      s(api.get(`/api/processplatform/assemble/surface/attachment/download/${attid}/work/${wk}/${fn}`)),
+      s(api.get(`/api/processplatform/assemble/surface/attachment/download/${attid}/workcompleted/${wcid}/stream`)),
+      s(api.get(`/api/processplatform/assemble/surface/attachment/download/${attid}/workcompleted/${wcid}/stream/${fn}`)),
+      s(api.get(`/api/processplatform/assemble/surface/attachment/download/${attid}/workcompleted/${wcid}/${fn}`)),
+      s(api.get(`/api/processplatform/assemble/surface/attachment/batch/download/job/${job}/site/${site}`)),
+      s(api.get(`/api/processplatform/assemble/surface/attachment/batch/download/work/${wk}/site/${site}/stream`)),
+    ])
+    const hit = rs.filter((r) => (r as any) != null).length
+    surfaceMoreText.value = `流程-表面只读端点 ${rs.length} 条，返回 ${hit}`
+  } catch (e: any) {
+    toast.error('加载流程-表面只读端点失败: ' + (e?.message ?? ''))
+  }
+}
 // rev287：完成件 PP_C_WORKCOMPLETED 全量真实读端点（双向游标 application/filter/manage + 属性筛选 + 详情 manage/assignment + 数据快照 data/from）；均只读 arity 已核
 async function loadWorkCompletedFullCursors() {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
