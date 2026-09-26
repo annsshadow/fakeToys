@@ -103,14 +103,13 @@ use crate::{
     form_v2_lookup_workorworkcompleted_workOrWorkCompleted_mobile, get_surface, handover_id,
     handover_id_cancel, handover_id_process, handover_list_paging_page_size_size,
     job_job_allow_visit_person_person, job_job_find_work_workcompleted,
-    job_latest_work_workcompleted_serial_serial, job_v2_job_projection, keylock_lock,
-    keylock_lock_mockputtopost, list_surfaces, mode_clear_person_person_manager, mode_id_delete,
+    job_latest_work_workcompleted_serial_serial, job_v2_job_projection, keylock_lock_mockputtopost, list_surfaces, mode_clear_person_person_manager, mode_id_delete,
     mode_save, preview_surface, process_activity_activity_activityType_activityType, process_flag,
     process_flag_allowrerouteto, process_flag_application_applicationFlag, process_flag_complex,
     process_flag_onlyRemoveNotCompleted, process_list_application_applicationFlag,
     process_list_application_applicationFlag_filter, process_list_available_identity_process_flag,
     process_list_controllable_application_applicationFlag, publish_surface, read_count_credential,
-    read_filter_attribute, read_filter_attribute_filter, read_id, read_id_manage,
+    read_filter_attribute, read_id, read_id_manage,
     read_id_manage_mockdeletetoget, read_id_mockputtopost, read_id_opinion_manage,
     read_id_opinion_manage_mockputtopost, read_id_processing, read_id_processing_manage,
     read_id_processing_manage_mockputtopost, read_id_reference, read_id_reset_manage,
@@ -126,7 +125,7 @@ use crate::{
     read_v2_list_create_id_prev_count, read_v2_list_create_paging_page_size_size,
     read_v2_list_id_next_count, read_v2_list_id_prev_count, read_v2_list_paging_page_size_size,
     read_work_workId, read_workcompleted_workCompletedId, readcompleted_count_credential,
-    readcompleted_filter_attribute, readcompleted_filter_attribute_filter, readcompleted_id,
+    readcompleted_filter_attribute, readcompleted_id,
     readcompleted_id_manage, readcompleted_id_manage_mockdeletetoget,
     readcompleted_id_opinion_manage, readcompleted_id_reference,
     readcompleted_list_count_application_applicationFlag_process,
@@ -147,14 +146,13 @@ use crate::{
     record_list_workorworkcompleted_workOrWorkCompleted,
     record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size,
     review_count_person_credential, review_create_work, review_create_workcompleted,
-    review_filter_attribute, review_filter_create_entry, review_filter_entry, review_id,
+    review_filter_attribute, review_filter_entry, review_id,
     review_id_application_applicationFlag_manage,
     review_id_application_applicationFlag_manage_mockdeletetoget, review_list_job_job,
     review_v2_list_create_id_next_count, review_v2_list_create_id_prev_count,
     review_v2_list_create_paging_page_size_size, review_v2_list_id_next_count,
     review_v2_list_id_prev_count, review_v2_list_paging_page_size_size,
-    review_v2_list_paging_page_size_size_manage, review_v2_search,
-    review_workorworkcompleted_workOrWorkCompleted, route_id, route_id_selectconfig,
+    review_v2_list_paging_page_size_size_manage, review_workorworkcompleted_workOrWorkCompleted, route_id, route_id_selectconfig,
     route_list_mockputtopost, save_surface, script_flag_application_applicationFlag,
     script_flag_application_applicationFlag_imported,
     serialnumber_generate_process_processId_name_name_serial, serialnumber_id,
@@ -163,7 +161,7 @@ use crate::{
     service_work_id_touch, service_work_id_touch_mockputtopost, sign_download_scrawlId, sign_id,
     sign_id_mockdeletetoget, sign_list_job_job, sign_save_task_taskId, sign_task_taskId,
     sign_task_taskId_mockdeletetoget, task_count_credential, task_filter_attribute,
-    task_filter_attribute_filter, task_id, task_id_manage, task_id_manage_mockdeletetoget,
+    task_id, task_id_manage, task_id_manage_mockdeletetoget,
     task_id_mockputtopost, task_id_opinion_manage, task_id_opinion_manage_mockputtopost,
     task_id_press_manage, task_id_processing, task_id_processing_manage,
     task_id_processing_manage_mockputtopost, task_id_processing_neural, task_id_reference,
@@ -184,7 +182,7 @@ use crate::{
     task_v2_list_create_id_prev_count, task_v2_list_create_paging_page_size_size,
     task_v2_list_id_next_count, task_v2_list_id_prev_count, task_v2_list_paging_page_size_size,
     task_v3_id_add, task_v3_id_pin, taskcompleted_count_credential, taskcompleted_filter_attribute,
-    taskcompleted_filter_attribute_filter, taskcompleted_id, taskcompleted_id_manage,
+    taskcompleted_id, taskcompleted_id_manage,
     taskcompleted_id_manage_mockdeletetoget, taskcompleted_id_opinion_manage,
     taskcompleted_id_opinion_manage_mockputtopost, taskcompleted_id_reference,
     taskcompleted_id_reference_control,
@@ -248,8 +246,7 @@ use crate::{
     workcompleted_list_id_prev_count_application_applicationFlag_filter,
     workcompleted_list_id_prev_count_application_applicationFlag_manage,
     workcompleted_list_paging_page_size_size_application_applicationFlag_filter_manage,
-    workcompleted_process_processFlag, workcompleted_shift_time,
-    worklog_list_add_split_work_workId, worklog_list_job_job,
+    workcompleted_process_processFlag, worklog_list_add_split_work_workId, worklog_list_job_job,
     worklog_list_rollback_workorworkcompleted_workOrWorkCompleted,
     worklog_list_workorworkcompleted_workOrWorkCompleted,
 };
@@ -453,7 +450,6 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/handover/cancel/{id}", get(handover_id_cancel))
         .route("/api/processplatform/assemble/surface/handover/process/{id}", get(handover_id_process))
         .route("/api/processplatform/assemble/surface/handover/list/paging/{page}/{size}/{size}", get(crate::handover_list_paging_page_size_size_p3))
-        .route("/api/processplatform/assemble/surface/keylock/lock", get(keylock_lock))
         .route("/api/processplatform/assemble/surface/keylock/lock/mockputtopost", get(keylock_lock_mockputtopost))
         .route("/api/processplatform/assemble/surface/mode/clear/person/person/{p0}", get(mode_clear_person_person_manager))
         .route("/api/processplatform/assemble/surface/mode/delete/{id}", post(mode_id_delete))
@@ -470,7 +466,6 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/process/list/controllable/application/{applicationFlag}", get(process_list_controllable_application_applicationFlag))
         .route("/api/processplatform/assemble/surface/read/{count}/{credential}", get(crate::read_count_credential_p2))
         .route("/api/processplatform/assemble/surface/read/filter/attribute", get(read_filter_attribute))
-        .route("/api/processplatform/assemble/surface/read/filter/attribute/filter", get(read_filter_attribute_filter))
         .route("/api/processplatform/assemble/surface/read/{id}", get(read_id))
         .route("/api/processplatform/assemble/surface/read/manage/{id}", get(read_id_manage))
         .route("/api/processplatform/assemble/surface/read/manage/mockdeletetoget/{id}", post(read_id_manage_mockdeletetoget))
@@ -506,7 +501,6 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/read/workcompleted/{workCompletedId}", get(read_workcompleted_workCompletedId))
         .route("/api/processplatform/assemble/surface/readcompleted/{count}/{credential}", get(crate::readcompleted_count_credential_p2))
         .route("/api/processplatform/assemble/surface/readcompleted/filter/attribute", get(readcompleted_filter_attribute))
-        .route("/api/processplatform/assemble/surface/readcompleted/filter/attribute/filter", get(readcompleted_filter_attribute_filter))
         .route("/api/processplatform/assemble/surface/readcompleted/{id}", get(readcompleted_id))
         .route("/api/processplatform/assemble/surface/readcompleted/manage/{id}", get(readcompleted_id_manage))
         .route("/api/processplatform/assemble/surface/readcompleted/manage/mockdeletetoget/{id}", post(readcompleted_id_manage_mockdeletetoget))
@@ -543,7 +537,6 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/review/create/work", post(review_create_work))
         .route("/api/processplatform/assemble/surface/review/create/workcompleted", post(review_create_workcompleted))
         .route("/api/processplatform/assemble/surface/review/filter/attribute", get(review_filter_attribute))
-        .route("/api/processplatform/assemble/surface/review/filter/create/entry", post(review_filter_create_entry))
         .route("/api/processplatform/assemble/surface/review/filter/entry", get(review_filter_entry))
         .route("/api/processplatform/assemble/surface/review/{id}", get(review_id))
         .route("/api/processplatform/assemble/surface/review/application/manage/{id}/{applicationFlag}", get(review_id_application_applicationFlag_manage))
@@ -555,7 +548,6 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/review/v2/list/prev/{id}/{count}", get(review_v2_list_id_prev_count))
         .route("/api/processplatform/assemble/surface/review/v2/list/paging/{page}/{size}/{size}", get(crate::review_v2_list_paging_page_size_size_p3))
         .route("/api/processplatform/assemble/surface/review/v2/list/paging/manage/{page}/{size}/{size}", get(crate::review_v2_list_paging_page_size_size_manage_p3))
-        .route("/api/processplatform/assemble/surface/review/v2/search", get(review_v2_search))
         .route("/api/processplatform/assemble/surface/review/workorworkcompleted/{workOrWorkCompleted}", get(review_workorworkcompleted_workOrWorkCompleted))
         .route("/api/processplatform/assemble/surface/route/{id}", get(route_id))
         .route("/api/processplatform/assemble/surface/route/selectconfig/{id}", get(route_id_selectconfig))
@@ -578,7 +570,6 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/sign/task/mockdeletetoget/{taskId}", post(sign_task_taskId_mockdeletetoget))
         .route("/api/processplatform/assemble/surface/task/{count}/{credential}", get(crate::task_count_credential_p2))
         .route("/api/processplatform/assemble/surface/task/filter/attribute", get(task_filter_attribute))
-        .route("/api/processplatform/assemble/surface/task/filter/attribute/filter", get(task_filter_attribute_filter))
         .route("/api/processplatform/assemble/surface/task/{id}", get(task_id))
         .route("/api/processplatform/assemble/surface/task/manage/{id}", get(task_id_manage))
         .route("/api/processplatform/assemble/surface/task/manage/mockdeletetoget/{id}", post(task_id_manage_mockdeletetoget))
@@ -627,7 +618,6 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/task/v3/pin/{id}", get(task_v3_id_pin))
         .route("/api/processplatform/assemble/surface/taskcompleted/{count}/{credential}", get(crate::taskcompleted_count_credential_p2))
         .route("/api/processplatform/assemble/surface/taskcompleted/filter/attribute", get(taskcompleted_filter_attribute))
-        .route("/api/processplatform/assemble/surface/taskcompleted/filter/attribute/filter", get(taskcompleted_filter_attribute_filter))
         .route("/api/processplatform/assemble/surface/taskcompleted/{id}", get(taskcompleted_id))
         .route("/api/processplatform/assemble/surface/taskcompleted/manage/{id}", get(taskcompleted_id_manage))
         .route("/api/processplatform/assemble/surface/taskcompleted/manage/mockdeletetoget/{id}", post(taskcompleted_id_manage_mockdeletetoget))
@@ -736,7 +726,6 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/workcompleted/list/prev/application/manage/{id}/{count}/{applicationFlag}", get(workcompleted_list_id_prev_count_application_applicationFlag_manage))
         .route("/api/processplatform/assemble/surface/workcompleted/list/paging/application/filter/manage/{page}/{size}/{size}/{applicationFlag}", get(crate::workcompleted_list_paging_page_size_size_application_applicationFlag_filter_manage_p4))
         .route("/api/processplatform/assemble/surface/workcompleted/process/{processFlag}", get(workcompleted_process_processFlag))
-        .route("/api/processplatform/assemble/surface/workcompleted/shift/time", get(workcompleted_shift_time))
         .route("/api/processplatform/assemble/surface/worklog/list/add/split/work/{workId}", post(worklog_list_add_split_work_workId))
         .route("/api/processplatform/assemble/surface/worklog/list/rollback/workorworkcompleted/{workOrWorkCompleted}", get(worklog_list_rollback_workorworkcompleted_workOrWorkCompleted))
         .route("/api/processplatform/assemble/surface/worklog/list/workorworkcompleted/{workOrWorkCompleted}", get(worklog_list_workorworkcompleted_workOrWorkCompleted))

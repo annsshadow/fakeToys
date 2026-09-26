@@ -1,15 +1,7 @@
-GET /api/processplatform/assemble/surface/keylock/lock
 GET /api/processplatform/assemble/surface/read/filter/attribute
-GET /api/processplatform/assemble/surface/read/filter/attribute/filter
 GET /api/processplatform/assemble/surface/readcompleted/filter/attribute
-GET /api/processplatform/assemble/surface/readcompleted/filter/attribute/filter
 GET /api/processplatform/assemble/surface/review/filter/attribute
 GET /api/processplatform/assemble/surface/review/filter/entry
-GET /api/processplatform/assemble/surface/review/v2/search
 GET /api/processplatform/assemble/surface/task/filter/attribute
-GET /api/processplatform/assemble/surface/task/filter/attribute/filter
 GET /api/processplatform/assemble/surface/taskcompleted/filter/attribute
-GET /api/processplatform/assemble/surface/taskcompleted/filter/attribute/filter
 GET /api/processplatform/assemble/surface/work/v3/retract
-GET /api/processplatform/assemble/surface/workcompleted/shift/time
-POST /api/processplatform/assemble/surface/review/filter/create/entry
