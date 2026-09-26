@@ -1,17 +1,5 @@
 DELETE /api/portal/assemble/surface/delete/layout
 DELETE /api/program_center/collect/remove
-GET /api/bbs/assemble/control/list/subjects/filtered
-GET /api/bbs/assemble/control/list/subjects/index
-GET /api/bbs/assemble/control/list/subjects/recommended/index
-GET /api/bbs/assemble/control/list/topics/creamed
-GET /api/bbs/assemble/control/list/topics/recommended
-GET /api/bbs/assemble/control/topic/creamed/list
-GET /api/bbs/assemble/control/topic/filter/list
-GET /api/bbs/assemble/control/topic/index/list
-GET /api/bbs/assemble/control/topic/recommended/index
-GET /api/bbs/assemble/control/topic/recommended/list
-GET /api/bbs/assemble/control/topic/search
-GET /api/bbs/assemble/control/user/info
 GET /api/file/attachment2/list/type/page/size/size
 GET /api/file/list/referencetype
 GET /api/file/referencetype/referenceType/reference/reference

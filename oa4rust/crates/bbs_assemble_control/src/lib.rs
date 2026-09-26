@@ -1762,14 +1762,14 @@ pub async fn user_forum_list(pool: Extension<Pool>) -> Result<Json<ActionResult<
 #[allow(non_snake_case)]
 pub async fn user_info(
     pool: Extension<Pool>,
-    Path(person): Path<String>,
+    session: Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             "SELECT id, unique_id, name, mobile, email, icon, job, department, unit, position \
-             FROM auth_person WHERE id = $1 AND deleted_at IS NULL",
-            &[&person],
+             FROM auth_person WHERE unique_id = $1 AND deleted_at IS NULL",
+            &[&session.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
