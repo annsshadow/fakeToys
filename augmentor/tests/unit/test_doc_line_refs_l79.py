@@ -85,9 +85,24 @@ FLOOR = {
 #: **L80 回填（两条都是文档面，不是代码变坏）**：`line_refs` 281 → 280 是把 Backlog B 的 B3①
 #: 那一格从定位引用改成散文行号（漂移档那条由产品码插行造成的新增同时消掉，仍 165）；
 #: `file_tokens` 1089 → 1123 来自「收尾实测」小句与 A136 行点名的 6 份仓内文件。
+#:
+#: **L81 回填（同样是文档面，且第一次写的归因是错的）**：`line_refs` 280 → **285** 的 +5 **全部**
+#: 来自新立的 A137 行（那一格点名了 5 处窄/宽档 CJK 分叉的源码位置），L81 日志块 / 进度行 /
+#: A136 补字三处的定位引用增量都是 **0**；`file_tokens` 1123 → **1149** 的 +26 =
+#: 「日志块 21 + A136 补字 2 + A137 行 1 + 进度行 1 + 回看 ⑪ 的探针名 1」五笔。**上一版注释把 +5
+#: 写成「日志块 +7、A137 +5」**，因为第一版探针 `Temp/l81q/attr.py` 用 `^- **L\d+** ` 当块尾锚点，
+#: 而本账最后一节（`- 全量：L4 后 …` 那条散文清单）不是日志块标题 ⇒ 正则一路吞到文件末尾，把
+#: 51,249 字符的整个文件尾部当成 11,639 字符的 L81 块删掉。修法 `Temp/l81q/attr2.py` 改成按
+#: 「块标题 → 下一条非块行」切，并**要求逐块减法之后残余为 0**（`residual = 现量(还原后) − 现量(HEAD)`
+#: 必须三桶全 0，否则归因不成立）—— 归因探针必须自带闭合断言 ⇒ 本轮升为纪律 **(s)**。
+#: **终态那一次改用更强的闭合口径**：按 token 多重集对 HEAD 求差 ⇒ 新增 20 个不同文件名合计 +26、
+#: **删除 0** ⇒ 纯增可加，不需要逐块减法就能闭合（逐块减法只在「同一轮里既有增又有删」时才是必需的）。
+#: `code_but_no_name_match` 165 = 165 未动（本轮 0 处新增「指向不存在的名字」）。
+#: **`file_tokens` 在本轮内被重估四次**（1146 → 1148 → 1149 → 本常数，每次给日志块补回看就多一两个反引号
+#: 文件名）⇒ 纪律 **(h)**（文档里的计数句最后写）本轮第四次兑现。
 MEASURED = {
     ARCH: {"line_refs": 47, "file_tokens": 213, "code_but_no_name_match": 37},
-    LEDGER: {"line_refs": 280, "file_tokens": 1123, "code_but_no_name_match": 165},
+    LEDGER: {"line_refs": 285, "file_tokens": 1149, "code_but_no_name_match": 165},
 }
 
 #: 日志块标题行上「下一轮才填得出自己哈希」的占位符。精确相等 = **只许有该填的那几条**。
@@ -541,17 +556,27 @@ class TestProgressLineAndLogBlockArePeeled:
             set(prog) - set(log), key=int)
 
     def test_the_guard_fires_in_both_directions(self):
-        """判据可失败性（承 L79 纪律 (f)）：摘掉进度行要红，摘掉日志块也要红"""
+        """判据可失败性（承 L79 纪律 (f)）：摘掉进度行要红，摘掉日志块也要红
+
+        **本轮号从现量取，不手抄**（L81 改）：上一版把 `- [x] **L80**` 写死在断言里，
+        于是下一轮它测的是**别人那一轮** —— 与 `PLACEHOLDER_CEILING` 每轮必改同族，但那
+        个常数改漏会当场红，这个改漏只会悄悄测错对象（真事实配假因果，纪律 (k)）。
+        """
         text = (ROOT / LEDGER).read_text(encoding="utf-8")
-        head = text.split("- [x] **L80**", 1)
-        assert len(head) == 2, "本轮进度行不在场，这一档就没有取证对象"
+        last = max(PROGRESS_LINE.findall(text), key=int)
+        prev = str(int(last) - 1)
+        head = text.split(f"- [x] **L{last}**", 1)
+        assert len(head) == 2, f"L{last} 进度行不在场，这一档就没有取证对象"
         without_line = head[0] + head[1].split("\n\n", 1)[1]
         prog, log = PROGRESS_LINE.findall(without_line), LOG_BLOCK.findall(text)
-        assert "80" not in prog and "80" in log          # 摘进度行 ⇒ 硬门禁那一侧红
+        assert last not in prog and last in log           # 摘进度行 ⇒ 硬门禁那一侧红
 
-        without_block = text.replace("- **L79** `d01722c9e`", "- **L79x** `d01722c9e`", 1)
+        block = f"- **L{prev}** "
+        marked = [ln for ln in text.splitlines() if ln.startswith(block)]
+        assert len(marked) == 1, marked
+        without_block = text.replace(marked[0], f"- **L{prev}x** ", 1)
         prog, log = PROGRESS_LINE.findall(text), LOG_BLOCK.findall(without_block)
-        assert "79" in prog and "79" not in log          # 摘日志块 ⇒ 反向那一侧看到差集
+        assert prev in prog and prev not in log           # 摘日志块 ⇒ 反向那一侧看到差集
 
     def test_a_second_batch_in_one_round_is_legal(self):
         """反向钉住形状：**重复的进度行不是缺陷**（一轮分批提交是本仓常态）
@@ -562,3 +587,131 @@ class TestProgressLineAndLogBlockArePeeled:
         prog, _ = self._both()
         dupes = sorted({n for n in prog if prog.count(n) > 1}, key=int)
         assert dupes == ["12"], dupes
+
+
+#: ---- L81：账本的「表行形状」与「轮次顺序」两副骨架 ------------------------------
+#:
+#: **为什么这一族值得机械化**：L80 一轮里同一形状犯了两次（吃掉 A124 行的行首、把 L80 块
+#: 插进 L79 块肚子里），两次都不是靠回读发现的 —— 第一次靠 Edit 报 `0 occurrences`，第二次
+#: 靠 `grep -n` 顺手撞破。散文纪律「不许拿邻行前缀当锚点」拦不住下一次，而这两次的后果
+#: **都能被行首形状抓到**：被吃掉行首的表行不再匹配竖线行的号形状，插错位置的块让轮号
+#: 序列不再递增。
+#:
+#: **为什么不做成「对 HEAD 比删除数」**（L80 回看 ① 的原提法）：那种判据要看 git 历史 ——
+#: 提交之后它永久成立、未提交时又会把同分支**其他 agent 的提交**算进来 ⇒ 一个只在「我刚
+#: 写完」那一刻有意义的断言不是守卫（不可复现）。替代档 = 现量常数 + 两条注入档，见
+#: `test_a_dropped_row_prefix_is_caught`；本轮那笔删除数对账改由收尾时的 `git diff --numstat`
+#: 现量并在账上留字（一次性的取证，不伪装成常驻守卫）。
+BACKLOG_ROW = re.compile(r"^\| (?:~~)?([AB]\d+)(?:~~)? \|")
+BACKLOG_HEADS = ("| # | 位置 | 问题 | 量级 |", "|---|------|------|------|",
+                 "| # | 内容 | 证据 | 量级 |", "|---|------|------|------|")
+#: Backlog A 现量（`Temp/l81q/skeleton2.py` + L81 新立 A137 之后）：138 条竖线行 =
+#: 2 行表头 + 136 条数据行，号集 = 1..137 减 `{52}`（A52 从未存在，是本仓唯一一次跳号）。
+BACKLOG_A_LINES = 138
+BACKLOG_A_MAX = 137
+BACKLOG_A_MISSING = {52}
+#: Backlog B 现量：11 条竖线行 = 2 表头 + 7 条可编号 + 2 条带角标（B3① / ~~B3②~~）。
+BACKLOG_B_LINES = 11
+BACKLOG_B_SUBSCRIPT = ("B3①", "B3②")
+#: `## 循环日志` 从 L3 起（L1/L2 只有进度行），L12 也只有进度行 ⇒ 块号 3..本轮 减 `{12}`。
+LOG_BLOCK_FIRST = 3
+LOG_BLOCK_HOLES = {12}
+
+
+def section_body(text, title):
+    """按**行首**取某节正文。
+
+    用 `str.index` 取会拿到错的区间：账本里 `## Backlog A` 这个短串另有散文提及
+    （L80 进度行、A 节标题自身），第一版探针就是这么把 B 表读成了 A 表。
+    """
+    marks = [(m.start(), m.group(0)) for m in re.finditer(r"^## \S.*$", text, re.MULTILINE)]
+    i = next(k for k, (_, t) in enumerate(marks) if t.startswith(title))
+    return text[marks[i][0]:(marks[i + 1][0] if i + 1 < len(marks) else len(text))]
+
+
+class TestBacklogAndRoundSkeleton:
+    """A135 的孪生：**同一轮里第二次「吃掉邻行行首」之后，这一族不再靠人眼**"""
+
+    def test_every_pipe_line_in_backlog_a_is_a_numbered_row(self):
+        """硬 0：A 表里除两行表头外，每一条竖线行都必须带 `A<号>`（行首被吃 ⇒ 当场红）"""
+        body = section_body((ROOT / LEDGER).read_text(encoding="utf-8"), "## Backlog A")
+        rows = [ln for ln in body.splitlines() if ln.startswith("|")]
+        assert len(rows) == BACKLOG_A_LINES, len(rows)
+        unparsed = [ln[:70] for ln in rows
+                    if ln not in BACKLOG_HEADS and not BACKLOG_ROW.match(ln)]
+        assert unparsed == [], unparsed
+
+    def test_backlog_a_ids_are_the_measured_set_without_dupes(self):
+        """号集合精确相等：跳号、重号、被吃掉一整行都到这里就红"""
+        body = section_body((ROOT / LEDGER).read_text(encoding="utf-8"), "## Backlog A")
+        ids = [int(m.group(1)[1:]) for m in map(BACKLOG_ROW.match, body.splitlines()) if m]
+        assert len(ids) == len(set(ids)), sorted({n for n in ids if ids.count(n) > 1})
+        assert set(ids) == set(range(1, BACKLOG_A_MAX + 1)) - BACKLOG_A_MISSING, \
+            sorted(set(range(1, BACKLOG_A_MAX + 1)) - set(ids))
+
+    def test_backlog_b_keeps_its_numbered_rows_and_the_two_subscripted_ones(self):
+        """B 表两档分开数：可编号的 7 行 + 带角标的 2 行（角标行**不该**被号判据吞掉）
+
+        这一档顺手钉住「`B3①`/`B3②` 是两行而不是一行」：把它们合并成一行会同时改掉两个
+        交付口径（反向转换边 vs tsv 双边），本守卫会因两条形状同时消失而红。
+        """
+        body = section_body((ROOT / LEDGER).read_text(encoding="utf-8"), "## Backlog B")
+        rows = [ln for ln in body.splitlines() if ln.startswith("|")]
+        assert len(rows) == BACKLOG_B_LINES, len(rows)
+        ids = [m.group(1) for m in map(BACKLOG_ROW.match, rows) if m]
+        assert ids == ["B1", "B2", "B4", "B5", "B6", "B7", "B8"], ids
+        others = [ln for ln in rows if ln not in BACKLOG_HEADS
+                  and not BACKLOG_ROW.match(ln)]
+        assert len(others) == 2, others
+        assert [s for s in BACKLOG_B_SUBSCRIPT
+                if not any(s in ln for ln in others)] == [], others
+
+    def test_round_numbers_increase_by_one_with_the_measured_hole(self):
+        """轮次顺序：块号必须 3..本轮 **逐号递增且缺号只有 L12**（插错位置 ⇒ 红）
+
+        L80 那次「L80 块插进 L79 块肚子里」如果被这条抓到，靠的是**同一轮号出现两次**
+        或**号序逆排**；两种形状都在这里，不需要读散文。
+        """
+        text = (ROOT / LEDGER).read_text(encoding="utf-8")
+        nums = [int(n) for n in LOG_BLOCK.findall(text)]
+        assert nums == sorted(nums), [
+            (a, b) for a, b in zip(nums, nums[1:]) if b <= a]
+        assert len(nums) == len(set(nums)), sorted(
+            {n for n in nums if nums.count(n) > 1})
+        assert nums[0] == LOG_BLOCK_FIRST
+        assert set(range(LOG_BLOCK_FIRST, nums[-1] + 1)) - set(nums) == LOG_BLOCK_HOLES
+
+    def test_a_dropped_row_prefix_is_caught(self):
+        """判据可失败性（承 L79 纪律 (f)）：把某条表行的行首吃掉，判据必须红
+
+        注入的是 L80 现场那一次的形状：`| A136 | …` 变成 `A136 | …`（前缀被上一行的插入
+        吞掉）。另一维（块插错位置）由 `test_the_guard_fires_when_a_block_moves_ahead` 钉。
+        """
+        text = (ROOT / LEDGER).read_text(encoding="utf-8")
+        mangled = text.replace("\n| A136 | ", "\nA136 | ", 1)
+        assert mangled != text, "A136 行不在预期形状，注入无效 ⇒ 这一档没有取证对象"
+        rows = [ln for ln in section_body(mangled, "## Backlog A").splitlines()
+                if ln.startswith("|")]
+        assert len(rows) == BACKLOG_A_LINES - 1        # 少一条竖线行：它已不成行
+        survivor = [ln for ln in rows if "A136" in ln[:12]]
+        assert survivor == []                          # 且没有任何行还带着那个号
+
+    def test_the_guard_fires_when_a_block_moves_ahead(self):
+        """反向注入：把 L79 的块标题挪到 L80 之后 ⇒ 递增那一档必须抓到逆排
+
+        L80 现场的第二犯就是这个形状（新块插进了上一轮的块肚子里，事后靠 `grep -n` 撞破）。
+        这里只搬**标题行**而不搬整块 —— 判据读的就是标题行上的号，搬标题足够复现病理。
+        """
+        text = (ROOT / LEDGER).read_text(encoding="utf-8")
+        base = [int(n) for n in LOG_BLOCK.findall(text)]
+        assert base == sorted(base), "现量本身就不递增 ⇒ 这一档没有对照"
+
+        cut = re.sub(r"^- \*\*L79\*\* .*$\n", "", text, count=1, flags=re.MULTILINE)
+        assert len(LOG_BLOCK.findall(cut)) == len(base) - 1
+        blocks = list(re.finditer(r"^- \*\*L\d+\*\* .*$", cut, re.MULTILINE))
+        tail = blocks[-1]
+        after = [int(n) for n in LOG_BLOCK.findall(
+            cut[:tail.end()] + "\n\n- **L79** （被挪到最后一块之后）" + cut[tail.end():])]
+        assert len(after) == len(base), (len(after), len(base))  # 号没丢，只是序变了
+        assert after != sorted(after), after
+        assert [a for a, b in zip(after, after[1:]) if b <= a] == [base[-1]]
