@@ -2979,13 +2979,12 @@ pub async fn config_open_get_disable_export_enable(
 #[allow(non_snake_case)]
 pub async fn config_centerserver(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE category = $1 AND deleted_at IS NULL",
+            &[&"centerserver"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -3077,13 +3076,12 @@ pub async fn config_change_password(
 #[allow(non_snake_case)]
 pub async fn config_collect(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE category = $1 AND deleted_at IS NULL",
+            &[&"collect"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -3126,13 +3124,12 @@ pub async fn config_collect(
 #[allow(non_snake_case)]
 pub async fn config_license(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE category = $1 AND deleted_at IS NULL",
+            &[&"license"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -3443,13 +3440,12 @@ pub async fn config_list_entity(
 #[allow(non_snake_case)]
 pub async fn config_open(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE category = $1 AND deleted_at IS NULL",
+            &[&"open"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -3541,13 +3537,12 @@ pub async fn config_open_run_time_config(
 #[allow(non_snake_case)]
 pub async fn config_person(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE category = $1 AND deleted_at IS NULL",
+            &[&"person"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -3590,13 +3585,12 @@ pub async fn config_person(
 #[allow(non_snake_case)]
 pub async fn config_portal(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE category = $1 AND deleted_at IS NULL",
+            &[&"portal"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -3639,13 +3633,12 @@ pub async fn config_portal(
 #[allow(non_snake_case)]
 pub async fn config_proxy(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE category = $1 AND deleted_at IS NULL",
+            &[&"proxy"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
