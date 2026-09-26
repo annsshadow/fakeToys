@@ -1,1 +1,0 @@
-GET /api/processplatform/assemble/surface/work/v3/retract
