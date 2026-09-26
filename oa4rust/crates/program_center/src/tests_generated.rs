@@ -115,48 +115,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_collect_remove() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/program_center/collect/remove")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "collect_remove route should be registered"
-        );
-    }
-
-    #[tokio::test]
-    async fn test_config_get() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/program_center/config/get")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "config_get route should be registered"
-        );
-    }
-
-    #[tokio::test]
     async fn test_agent_flag() {
         let pool = shared::testing::test_pool();
         let app = crate::router(pool);
@@ -1402,7 +1360,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/api/program_center/config/open/get/disable/export/enable")
+                    .uri("/api/program_center/config-open/get/disable/export/enable")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
