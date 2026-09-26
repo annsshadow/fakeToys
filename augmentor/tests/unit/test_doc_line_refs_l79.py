@@ -247,9 +247,24 @@ FLOOR = {
 #: attr 探针」在本轮兑现**（还的是「同树 HEAD 态」这一半；跨文档那一半仍未还）。
 #: **四个棘轮桶本轮一格未抬**：账本 `ambiguous_line` 68、`ambiguous_file` 145、`bare` 149、
 #: `scratch_missing` 111 全部等于上限，`dead_line` 与 `unresolved_source` 两侧仍为 0。
+#: **L90 回填（六格删引用 + 三格代码位移；四个棘轮桶一格未抬）**：本轮给 `api/main.py`
+#: 插了 7 行装配注释与 `middleware=[...]` 一个参数，于是账本里**两批**指向它的数字引用当场成
+#: `dead_line` —— 第一批三格 `api/main.py:116`（硬 0 档在文档守卫里报出 3），第二批三格
+#: `api/main.py:190`（**是本轮修第一批的那次注释编辑把 189 顶成 190 的**：修上一笔还税的动作
+#: 自己制造了下一笔，A148 那一族第一次在同一轮里连响两次）。两批都按 A141 口径降成文件锚点 +
+#: 名字锚点 ⇒ 账本 `line_refs` 296 → **290**（−6 全部来自这六格，归因房 `Temp/l85q/attr_l85.py`
+#: 对第一批闭合：dead_line 3 → 0、明细删 3 / 加 0），`code_but_no_name_match` 168 → **165**
+#: （其中 −1 由代码位移解释：归因房量到「HEAD 版账本在现树上重跑」这一格就已经是 167，与本轮
+#: 任何文档文本无关；余下 −2 的逐 token 归因**未做**，因为那把探针按去重明细集合求差而桶按
+#: 出现次数计数，同一 token 重复出现时它的闭合断言必然假报 ⇒ 按纪律 (u) 只报差不编因）。
+#: `file_tokens` 1383 → **1399**（+16：新增文件记号 `api/middleware/upload_gate.py`、
+#: `tests/unit/test_upload_gate_l90.py` 与 L90 日志块、进度行、A150 行内注解）；架构文档
+#: 42 / **234** / 37 —— `line_refs` 与漂移档**一格未动**（本轮 §3.12.4 全部用名字锚点），
+#: 涨的 3 个 token 由归因房逐条给出：1 个新产品文件 + 2 个 `Temp/l90q/` 探针名（落
+#: `file_unique` / `scratch_artifact` 两档，不是缺陷档）。
 MEASURED = {
-    ARCH: {"line_refs": 42, "file_tokens": 231, "code_but_no_name_match": 37},
-    LEDGER: {"line_refs": 296, "file_tokens": 1383, "code_but_no_name_match": 168},
+    ARCH: {"line_refs": 42, "file_tokens": 234, "code_but_no_name_match": 37},
+    LEDGER: {"line_refs": 290, "file_tokens": 1399, "code_but_no_name_match": 165},
 }
 
 #: 日志块标题行上「下一轮才填得出自己哈希」的占位符。精确相等 = **只许有该填的那几条**。
