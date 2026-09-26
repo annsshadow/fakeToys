@@ -65,7 +65,9 @@ func buildReactions() ([]byte, error) {
 // levelSeeds 是 100 关的种子表。
 //
 // 存在的理由：客户端曾用
-//   expect(levelSeed(1)).toBe(levelSeed(1))
+//
+//	expect(levelSeed(1)).toBe(levelSeed(1))
+//
 // 来"验证与 Go 侧一致" —— 那是恒等式，且 PHI 常量在测试里本地复制了一份，
 // 所以改 Go 侧的实现完全不影响它。实测把 Go 侧的
 // 0x9E3779B97F4A7C15 改掉，这条名叫「与 Go 侧一致」的用例照样绿。
@@ -97,7 +99,7 @@ func mustIndent(v any) []byte {
 // 没有它的话，把所有关卡调成同一个难度也照样全绿。
 type smokeFixture struct {
 	Note      string                  `json:"note"`
-	Levels    []domain.GeneratedLevel  `json:"levels"`
+	Levels    []domain.GeneratedLevel `json:"levels"`
 	Enemies   []domain.SeedEnemy      `json:"enemies"`
 	Skills    []domain.SeedSkill      `json:"skills"`
 	Composite []domain.SeedSkill      `json:"composite_skills"`

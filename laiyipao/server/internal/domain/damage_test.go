@@ -315,7 +315,7 @@ func TestReactionElementEmptyFallsBackToDominant(t *testing.T) {
 	newDef := func() Defender {
 		d := NewDefender(1_000_000, 0, 0)
 		d.ResistPermille = map[Element]int64{
-			ElementIce: 500,
+			ElementIce:  500,
 			ElementFire: 0,
 		}
 		d.ApplyElement(ElementIce, 2, 3)

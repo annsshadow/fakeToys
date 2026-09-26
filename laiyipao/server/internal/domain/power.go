@@ -198,6 +198,7 @@ type BuildRating struct {
 // MasteryReactionMultPerNode 是每个 reaction_mult 专精节点提供的倍率（千分比）。
 // 由 ReactionMultBonus 反推节点数时用它：nodes = bonus / perNode。
 const MasteryReactionMultPerNode = 200
+
 // RatingWeights 评分权重，见 GAME_DESIGN I-7。
 //
 // ⚠️ 这组 json tag 不是可有可无的装饰。

@@ -417,7 +417,7 @@ type ChapterInfo struct {
 // 一次请求比七次增量更简单也更快，且关卡数据变化不频繁。
 func (s *Service) LoadGameConfig(ctx context.Context) (GameConfig, error) {
 	cfg := GameConfig{
-		Levels:     domain.GenerateAllLevels(),
+		Levels: domain.GenerateAllLevels(),
 		// 平衡缩放在这里统一应用（见 content.go 的 EnemyHpScale /
 		// SkillProjectileScale）。客户端引擎读到的就是缩放后的数值，
 		// 而 content.go 的数据表保留可读的基准值。

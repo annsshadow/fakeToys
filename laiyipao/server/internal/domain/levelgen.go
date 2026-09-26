@@ -224,9 +224,10 @@ func chapterTerrainFor(ch Chapter, levelID int, levelSeed int64) (string, bool) 
 // （奇数与 8 互质，levelID 的低位本就循环覆盖 0..7）。
 //
 // 所以雪崩**不是**当前 mod-8 判定的关键，它是防御性的：
-//  - 若将来模数从 8 改成 10/100（非 2 的幂），弱位就会暴露
-//  - 若入参从 levelID 换成稀疏的 levelID（比如 ×7 后的关卡号），
-//    只有完整雪崩能保证打散
+//   - 若将来模数从 8 改成 10/100（非 2 的幂），弱位就会暴露
+//   - 若入参从 levelID 换成稀疏的 levelID（比如 ×7 后的关卡号），
+//     只有完整雪崩能保证打散
+//
 // 保留它的成本是 4 行，收益是"换参数时不会静默退化"。
 func terrainRoll(levelID int) uint32 {
 	h := uint32(uint64(uint32(levelID)) * 0x9E3779B1)
