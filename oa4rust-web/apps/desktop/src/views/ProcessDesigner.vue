@@ -5856,6 +5856,9 @@ async function loadDesignerFileApp() {
       s(api.get(`/api/processplatform/assemble/designer/${entity}/${cnt}`)),
       s(api.post(`/api/processplatform/assemble/designer/mergeitemplan/list/application/paging/${appId}/${page}/${size}/${size}`, {})),
       s(api.post(`/api/processplatform/assemble/designer/mergeitemplan/list/paging/${page}/${size}/${size}`, {})),
+      // rev408：模板表单按 id 读（PP_E_TEMPLATEFORM 真 SELECT）——字面段 templateform 保证归一唯一，
+      // 与 designer/{id}/{count} 双参数孪生区分，纠正 hit 归属后独立计入消费
+      s(api.get(`/api/processplatform/assemble/designer/templateform/${appId}`)),
     ])
     const d = r?.data
     toast.success(d?.name || d?.xid ? `文件定义「${d.name ?? d.xid}」@应用 0` : '未找到应用 0 下的文件定义 0')
