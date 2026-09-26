@@ -68,6 +68,20 @@ export const TICK_HZ = 20
  */
 export const TICK_MS = 50
 
+/**
+ * 漏怪推进伤害的分母：漏怪伤害 = base_hp / LeakDamageDivisor。
+ *
+ * ⚠️ 曾经的实现是拿**敌人自己的血量**当漏怪伤害
+ * （pplyArmor(e.maxHp, ...)），于是血量调到 8 倍时漏一只就打死满血防线
+ * （base_hp=1000、漏怪伤害 560~2080）。这让平衡空间被压成一条窄缝：
+ * 血量低时全清、成长收益为 0；血量高时"漏一只即败"、同样没有成长空间。
+ *
+ * 取 10 的依据：base_hp=1000 时漏 10 只才归零，
+ * 配合"漏怪会扣分"（击杀分拿不到）已经形成足够压力，
+ * 不需要让单次失误直接终结战局。
+ */
+export const LeakDamageDivisor = 10n
+
 /** TICK_MS 的 bigint 形式，供定点运算直接使用 */
 export const TICK_BIG = BigInt(TICK_MS)
 
@@ -202,6 +216,22 @@ export class BattleEngine {
    * 体验上是「我明明打完了，为什么结算说没赢」。
    */
   readonly totalEnemies: number
+
+  /**
+   * 无攻击力敌人漏进防线时的推进伤害。
+   *
+   * 取 base_hp 的 1/LeakDamageDivisor。Divisor 越大越宽容 ——
+   * base_hp=1000、Divisor=10 时漏 10 只才归零，
+   * 给玩家「失误几次还能救」的空间，而不是「漏一只就结束」。
+   *
+   * ⚠️ 它必须**只与关卡血量挂钩、��敌人血量无关**，
+   * 否则调敌人血量会连带把生存难度也改了，
+   * 两个变量纠缠在一起就没法单独调平衡。
+   */
+  private get breachDamage(): bigint {
+    const d = BigInt(LeakDamageDivisor)
+    return this.baseHpMax > 0n ? this.baseHpMax / d : 100n
+  }
 
   constructor(cfg: BattleConfig) {
     this.cfg = cfg
@@ -541,7 +571,7 @@ export class BattleEngine {
       // 抵达防线
       if (e.x <= toFixed(BASE_X)) {
         e.dead = true
-        const dmg = e.attack > 0n ? e.attack : applyArmor(e.maxHp, this.defenseArmorPermille())
+        const dmg = this.leakDamage(e)
         this.baseHp -= dmg
         this.leaked++
         this.emit({ type: 'leak', damage: dmg })
@@ -613,6 +643,31 @@ export class BattleEngine {
         break // 一次性触发，避免同帧多个技能重复发事件
       }
     }
+  }
+
+  /**
+   * 漏进防线一只敌人造成的伤害。
+   *
+   * ⚠️ 这里曾经是 `e.attack > 0 ? e.attack : applyArmor(e.maxHp, ...)`，
+   * 也就是**拿敌人的血量当漏怪伤害**。后果不是"数值偏大"，而是：
+   *
+   *   血量 ×8  →  漏怪伤害 560~2080  →  base_hp(1000) 漏一只就归零
+   *   血量 ×16 →  漏一只必死
+   *
+   * 于是平衡空间被压成一条极窄的缝：血量低到玩家能全清时，
+   * 分数被击杀分锁死、所有成长维度收益为 0；血量一高就变成
+   * "漏一只即败"，成长维度同样没有空间（只剩"从失败到成功"的跳变）。
+   * 实测 (弹速, 血量) 网格里 18 个组合没有一个落在健康区间。
+   *
+   * 正确的语义：漏怪的代价由**推进本身**决定，而不是由这只怪有多硬决定。
+   * 有攻击力的敌人按攻击力算；无攻击力的杂兵给一个固定的推进伤害 ——
+   * 大致是"漏掉它相当于丢掉 base_hp 的一个固定比例"，
+   * 于是「漏得多」是渐进惩罚（可调优的难度曲线），
+   * 而不是「血量一改就变成一击必杀」的悬崖。
+   */
+  private leakDamage(e: Enemy): bigint {
+    if (e.attack > 0n) return applyArmor(e.attack, this.defenseArmorPermille())
+    return applyArmor(this.breachDamage, this.defenseArmorPermille())
   }
 
   /**

@@ -79,8 +79,28 @@ export class BattleRng {
   }
 
   /** 暴击判定用的 0..9999 滚点 */
+  /**
+   * 暴击判定用的滚点。**量纲是千分比（0..999）**。
+   *
+   * ⚠️ 曾经是 `intn(10000)`（万分比 0..9999），而判定阈值
+   * `roll >= 1000 - critPermille` 是千分比 —— 两个量纲混用，
+   * 于是 P(crit) = (10000 - (1000 - critPermille)) / 10000，
+   * 即 critPermille=50（标称 5%）实际产生 **90.5%** 暴击率，
+   * 10 倍偏差。
+   *
+   * 危害不只是数字错：所有 critPermille 取值都落在 90%+ 的区间，
+   * 于是「提高暴击率」这个成长维度**边际收益被压平** ——
+   * 实测 critPermille 从 0 提到 1000（满暴），第 1 关分数只从
+   * 15542 变到 15545（+0.02%）。专精树的 crit 节点与 gem_crit 全是空节点。
+   *
+   * 统一到千分比而不是改判定公式：BattleRng 里已经有
+   * `intn(1000) < permille` 的正确用法（第 88 行），
+   * 让 roll 与所有其他千分比参数同量纲，从根上消除这类混淆。
+   * 契约向量里的 crit_permille 恒为 0，暴击路径不参与那些向量，
+   * 所以本改动不影响既有期望值；分布由 TestCritRateDistribution 守住。
+   */
   roll(): number {
-    return this.lcg.intn(10000)
+    return this.lcg.intn(1000)
   }
 
   /** 0..1 */

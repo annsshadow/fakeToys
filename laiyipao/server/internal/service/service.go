@@ -418,9 +418,13 @@ type ChapterInfo struct {
 func (s *Service) LoadGameConfig(ctx context.Context) (GameConfig, error) {
 	cfg := GameConfig{
 		Levels:     domain.GenerateAllLevels(),
-		Enemies:    domain.SeedEnemies,
-		Skills:     domain.SeedSkills,
-		Composite:  domain.SeedCompositeSkills,
+		// 平衡缩放在这里统一应用（见 content.go 的 EnemyHpScale /
+		// SkillProjectileScale）。客户端引擎读到的就是缩放后的数值，
+		// 而 content.go 的数据表保留可读的基准值。
+		// ⚠️ 任何新的下发路径都必须用 Scale* 而不是直接引用 Seed*。
+		Enemies:    domain.ScaleAllEnemies(),
+		Skills:     domain.ScaleAllSkills(),
+		Composite:  domain.ScaleAllCompositeSkills(),
 		Recipes:    domain.SeedRecipes,
 		Equipment:  domain.SeedEquipmentList,
 		Gems:       domain.SeedGems,

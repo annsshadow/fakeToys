@@ -109,6 +109,99 @@ type SeedSkin struct {
 // --- 敌人 ---
 
 // SeedEnemies 全部敌人定义。ID 1..22，与 levelgen 的引用一致。
+// --- 内容表平衡缩放 ---
+//
+// 为什么不直接改 SeedEnemies 里的数值：
+// 数据表里 22 个敌人 / 42 个技能的数值是**可读的基准值**，
+// 而"该缩放多少倍"是一个会随实测反复调整的参数。
+// 两者混在一起时，每次调平衡都要改几十个数字，
+// 而且看不出某个数字是"设计值"还是"被缩放过的值"。
+// 所以：表里存基准，缩放集中在这里，导出时统一应用。
+//
+// ⚠️ 缩放必须在**导出到客户端之前**应用，且只此一处。
+// Go 端不跑战斗引擎（引擎在 miniapp），所以只要保证
+// /config 与 testdata/* 导出的是缩放后的值即可。
+// 若将来 Go 端也开始模拟战斗（I-5 防线值守），
+// 这里的调用点必须同步补上，否则两端会用不同数值。
+
+// EnemyHpScale 是敌人血量倍率。
+//
+// 取 8 的依据（`miniapp/src/game/balance.probe.test.ts` 的定档扫描，
+// 漏怪伤害修复之后，弹丸速度 ×4 的前提下）：
+//
+//	hp×4  194s  全清零漏  hp 100%  atk +0.0%  crit +0.2%   ← 太软，成长维度无梯度
+//	hp×8  194s  全清零漏  hp 100%  atk +0.0%  crit +0.2%
+//	hp×20 283s  杀34漏5   hp  50%  atk +3.0%  crit +11.9%  ← 有压力
+//	hp×24 304s  杀31漏8   hp  20%  atk +13.0% crit +24.1%
+//	hp×28 306s  失败
+//
+// 没取 ×20 是因为它是**第 1 关**的合适值，而第 1 关（5 波 39 怪）
+// 是全 100 关里最简单的 —— 难度梯度还要靠波次数（5→10）与
+// base_hp（1000→10000）继续往上走。×8 保守，留出后期调整空间；
+// 跨关卡的难度递增由 TestLevelDifficultyRisesAcrossChapters 守住。
+//
+// ⚠️ 原始倍率下玩家**打不动**：单次命中 254 伤害 vs 敌人 hp 70~260，
+// 一击就超过敌人血量，于是"多打一发"没有意义 ——
+// 攻击力 ×200 之后完全饱和、暴击率 0→1000‰ 只差 0.02%、
+// 元素反应随攻击力单调归零。整套养成维度被压平，I-1/I-2 感受不到。
+const EnemyHpScale = 8
+
+// SkillProjectileScale 是弹丸速度倍率。
+//
+// 取 4 的依据：内容表 projectile_speed 是 45~80 逻辑单位/秒，
+// 跨越 900 单位宽的场地要 10~20 秒，而弹丸瞄的是**发射瞬间**的敌人位置。
+// 敌人 15 秒走 400~1100 单位，弹丸几乎必然落在目标身后。
+// 实测命中率只有 15% —— 85% 的输出被浪费。
+//
+//	×1  命中 15%  338s  失败
+//	×2  命中 30%  193s  通关
+//	×4  命中 76%  194s  通关   ← 选定
+//	×8  命中 99%   77s  通关   ← 过于轻松，战斗失去张力
+//
+// 命中率 ×4 后是 76%，仍有约 1/4 的弹丸落空：
+// 移动目标上"打不中"本身是玩法的一部分，全自动命中反而无趣。
+const SkillProjectileScale = 4
+
+// ScaleEnemy 返回应用了血量缩放的敌人定义。
+func ScaleEnemy(e SeedEnemy) SeedEnemy {
+	e.HP *= EnemyHpScale
+	e.ShieldHP *= EnemyHpScale
+	return e
+}
+
+// ScaleSkill 返回应用了弹丸速度缩放的技能定义。
+func ScaleSkill(s SeedSkill) SeedSkill {
+	s.ProjectileSpeed *= SkillProjectileScale
+	return s
+}
+
+// ScaleAllEnemies 返回缩放后的全部敌人。
+func ScaleAllEnemies() []SeedEnemy {
+	out := make([]SeedEnemy, 0, len(SeedEnemies))
+	for _, e := range SeedEnemies {
+		out = append(out, ScaleEnemy(e))
+	}
+	return out
+}
+
+// ScaleAllSkills 返回缩放后的全部基础技能。
+func ScaleAllSkills() []SeedSkill {
+	out := make([]SeedSkill, 0, len(SeedSkills))
+	for _, s := range SeedSkills {
+		out = append(out, ScaleSkill(s))
+	}
+	return out
+}
+
+// ScaleAllCompositeSkills 返回缩放后的全部合成技能。
+func ScaleAllCompositeSkills() []SeedSkill {
+	out := make([]SeedSkill, 0, len(SeedCompositeSkills))
+	for _, s := range SeedCompositeSkills {
+		out = append(out, ScaleSkill(s))
+	}
+	return out
+}
+
 var SeedEnemies = []SeedEnemy{
 	// 普通 8
 	{ID: 1, Code: "wanderer", Name: "游荡者", Category: "normal", HP: 100, Speed: 40000, Descr: "最常见的感染者，移动缓慢但数量多。",

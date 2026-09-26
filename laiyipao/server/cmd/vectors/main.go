@@ -116,7 +116,7 @@ func buildSmoke() ([]byte, error) {
 		}
 	}
 
-	all := domain.SeedEnemies
+	all := domain.ScaleAllEnemies()
 	fx := smokeFixture{
 		Note: "由 server/cmd/vectors 从 Go 真相源导出，供 miniapp 引擎冒烟测试使用。" +
 			"不要手工编辑：改内容表后重新执行 go run ./cmd/vectors。",
@@ -129,11 +129,11 @@ func buildSmoke() ([]byte, error) {
 			fx.Enemies = append(fx.Enemies, e)
 		}
 	}
-	for _, s := range domain.SeedSkills {
+	for _, s := range domain.ScaleAllSkills() {
 		fx.Skills = append(fx.Skills, s)
 		usedSkill[s.ID] = true
 	}
-	for _, s := range domain.SeedCompositeSkills {
+	for _, s := range domain.ScaleAllCompositeSkills() {
 		fx.Composite = append(fx.Composite, s)
 	}
 	fx.Equip = domain.SeedEquipmentList
