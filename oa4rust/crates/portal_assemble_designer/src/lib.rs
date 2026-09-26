@@ -850,7 +850,7 @@ pub async fn designer_search(pool: Extension<Pool>) -> Result<Json<ActionResult<
 #[allow(non_snake_case)]
 pub async fn dict_list_paging_page_size_size(
     pool: Extension<Pool>,
-    Path((_page, _size)): Path<(i64, i64)>,
+    Path((_page, _size, _s2)): Path<(i64, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1072,7 +1072,7 @@ pub async fn file_list_application_applicationFlag(
 #[allow(non_snake_case)]
 pub async fn file_list_id_next_count(
     pool: Extension<Pool>,
-    Path((id, count)): Path<(String, i64)>,
+    Path((id, _s1, count)): Path<(String, String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1392,7 +1392,7 @@ pub async fn file_id_upload(
 #[allow(non_snake_case)]
 pub async fn id_count(
     pool: Extension<Pool>,
-    Path(count): Path<i64>,
+    Path((_s0, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2422,7 +2422,7 @@ pub async fn script_list_manager(
 #[allow(non_snake_case)]
 pub async fn script_list_paging_page_size_size(
     pool: Extension<Pool>,
-    Path((page, size)): Path<(i64, i64)>,
+    Path((page, size, _s2)): Path<(i64, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 

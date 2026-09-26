@@ -1472,7 +1472,7 @@ pub async fn formversion_id(
 #[allow(non_snake_case)]
 pub async fn id_count(
     pool: Extension<Pool>,
-    axum::extract::Path(entity): axum::extract::Path<String>,
+    axum::extract::Path((entity, _s1)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let table = match entity.as_str() {

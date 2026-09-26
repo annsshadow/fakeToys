@@ -961,7 +961,7 @@ pub async fn designer_search(pool: Extension<Pool>) -> Result<Json<ActionResult<
 #[allow(non_snake_case)]
 pub async fn id_count(
     pool: Extension<Pool>,
-    Path(count): Path<i64>,
+    Path((_s0, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2115,7 +2115,7 @@ pub async fn query_flag(
 #[allow(non_snake_case)]
 pub async fn query_flag_icon(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
+    Path((_s0, flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2147,7 +2147,7 @@ pub async fn query_flag_icon(
 #[allow(non_snake_case)]
 pub async fn query_id_permission(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
+    Path((_s0, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3467,7 +3467,7 @@ pub async fn view_id(
 #[allow(non_snake_case)]
 pub async fn view_id_bundle(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
+    Path((_s0, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3538,7 +3538,7 @@ pub async fn view_id_permission(
 #[allow(non_snake_case)]
 pub async fn view_id_simulate(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
+    Path((_s0, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
