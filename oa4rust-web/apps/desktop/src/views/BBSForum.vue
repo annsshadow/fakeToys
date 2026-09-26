@@ -46,6 +46,8 @@
       <button class="new-topic-btn ghost" @click="bbsPost('userSubject')">建主题</button>
       <button class="new-topic-btn ghost" @click="bbsPost('config')">建配置</button>
       <button class="new-topic-btn ghost" @click="bbsPost('reply')">核心回复</button>
+      <button class="new-topic-btn ghost" @click="bbsUpload(false)">传附件</button>
+      <button class="new-topic-btn ghost" @click="bbsUpload(true)">传附件(回调)</button>
       <button class="new-topic-btn ghost" @click="bbsPut('sectionSave')">存版块</button>
       <button class="new-topic-btn ghost" @click="bbsPut('config')">改配置</button>
       <button class="new-topic-btn ghost" @click="bbsPut('replyAccept')">采纳回复</button>
@@ -908,8 +910,8 @@ async function loadBbsControl() {
   }
 }
 const bbsDeepText = ref('')
-// rev310：BBS 主题检索/话题/回复筛选/附件/视图/权限/设置/禁言/推荐/置顶/用户角色设置 深度读 22 条真实路由
-// （handler 体经跨 crate 核实纯 SELECT；base64 附件为查询后编码字符串，非二进制流）
+// rev310：BBS 主题检索/话题/回复筛选/附件/视图/权限/设置/禁言/推荐/置顶/用户角色设置 深度读 24 条真实路由
+// （handler 体经跨 crate 核实纯 SELECT；attachment/download 与 subjectattach base64 均为查询后编码字符串，非二进制流）
 async function loadBbsDeepReads() {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const forumId = '0'
@@ -934,6 +936,8 @@ async function loadBbsDeepReads() {
       s(api.get(`/api/bbs/assemble/control/subjectattach/${id}`)),
       s(api.get(`/api/bbs/assemble/control/subjectattach/${id}/binary/base64/${size}`)),
       s(api.get(`/api/bbs/assemble/control/subjectattach/list/subject/${id}`)),
+      s(api.get(`/api/bbs/assemble/control/attachment/download/${id}`)),
+      s(api.get(`/api/bbs/assemble/control/attachment/download/${id}/stream/${count}`)),
       s(api.get(`/api/bbs/assemble/control/user/forum/all`)),
       s(api.get(`/api/bbs/assemble/control/user/role/${id}`)),
       s(api.get(`/api/bbs/assemble/control/user/role/all`)),
@@ -967,6 +971,32 @@ async function bbsPost(kind: string) {
   } catch (e: any) {
     toast.error(`${kind} 失败: ` + (e?.message ?? ''))
   }
+}
+// rev349：BBS 主题附件上传 真实用户触发（文件选择 → multipart → x_bbs_attachment.content 落盘）
+// withCallback=true 走 upload/subject/{subjectId}/callback/{callback} 变体；否则裸 upload/subject/{subjectId}
+async function bbsUpload(withCallback: boolean) {
+  const subjectId = prompt('上传附件到主题 ID:', '') || ''
+  if (!subjectId) return
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    const form = new FormData()
+    form.append('file', file, file.name)
+    const sid = encodeURIComponent(subjectId)
+    try {
+      if (withCallback) {
+        await api.upload(`/api/bbs/assemble/control/attachment/upload/subject/${sid}/callback/done`, form)
+      } else {
+        await api.upload(`/api/bbs/assemble/control/attachment/upload/subject/${sid}`, form)
+      }
+      toast.success('附件已上传')
+    } catch (e: any) {
+      toast.error('附件上传失败: ' + (e?.message ?? ''))
+    }
+  }
+  input.click()
 }
 async function bbsPut(kind: string) {
   const id = prompt(`${kind} 目标 ID/flag（可空）:`, '') || ''
