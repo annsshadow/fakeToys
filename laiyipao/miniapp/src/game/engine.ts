@@ -124,6 +124,8 @@ export type BattleEvent =
   | { type: 'wave_start'; index: number }
   | { type: 'wave_clear'; index: number }
   | { type: 'overheat' }
+  /** 「隔热护罩」免疫了一次过热（与真正的 overheat 区分开） */
+  | { type: 'card_heated' }
   | { type: 'card_offer'; cards: Card[] }
   | { type: 'card_taken'; card: Card }
   | { type: 'card_discarded'; card: Card }
@@ -614,9 +616,7 @@ export class BattleEngine {
     // 注意必须在 `pickTarget` 之前：无目标的空场里推进热量到死区
     // 同样需要能被过热解救，否则玩家在等刷怪时也会卡死。
     if (this.heatStuck()) {
-      this.heat.forceOverheat()
-      this.emit({ type: 'overheat' })
-      this.record(this.tick, 'overheat', -1)
+      this.enterOverheat()
       return
     }
 
@@ -638,11 +638,42 @@ export class BattleEngine {
       // 这个调用一旦漏掉，热量会永久卡在上限、再也放不出技能（衰减虽在，
       // 但不会触发过热状态），战斗直接停摆 —— 属于静默失效。
       if (this.heat.checkOverheat()) {
-        this.emit({ type: 'overheat' })
-        this.record(this.tick, 'overheat', this.skillIndexOf(s))
+        this.enterOverheat(this.skillIndexOf(s))
         break // 一次性触发，避免同帧多个技能重复发事件
       }
     }
+  }
+
+  /**
+   * 进入过热状态。
+   *
+   * 这里是「隔热护罩」（overheat_guard 机制卡）的**唯一**消费点。
+   *
+   * ⚠️ 该卡此前只写不读：`buffs.overheatGuard += m.value` 之后再无任何读取点，
+   * 所以玩家拿到一张写着「过热时免疫一次过热」的卡，
+   * 观察不到任何变化 —— 但它会通过 mechanicIndex 参与 replayHash，
+   * 也就是说**哈希记录了一个不产生任何效果的选择**。
+   *
+   * 5 张机制卡里 pierce_bonus / chain_bonus / aoe_bonus / free_discard
+   * 都有真实消费点，只有这一张是空转。
+   *
+   * 触发时：消耗一层护盾、**不进入过热**、且不弹 overheat 事件
+   * （没真的过热，弹事件会让 UI 显示"过热"而实际没过热）。
+   */
+  private enterOverheat(skillIndex = -1): void {
+    if (this.buffs.overheatGuard > 0) {
+      this.buffs.overheatGuard--
+      // 护盾生效：清空热量当作"扛过去了"，但不进入过热状态。
+      // 清空是必须的 —— 否则热量仍停在死区里，下一 tick 又会触发兜底，
+      // 形成"每 tick 消耗一层护盾"的空转。
+      this.heat.absorbOverheat()
+      this.emit({ type: 'card_heated' })
+      this.record(this.tick, 'guard', 0)
+      return
+    }
+    this.heat.forceOverheat()
+    this.emit({ type: 'overheat' })
+    this.record(this.tick, 'overheat', skillIndex)
   }
 
   /**
@@ -1181,11 +1212,16 @@ export class BattleEngine {
       this.applyAttribute(card.effect)
     } else if (card.kind === 'mechanic' && card.mechanic) {
       this.applyMechanic(card.mechanic)
-    } else if (card.kind === 'skill' && card.skillId) {
-      // 技能卡：若已在槽内则升格，否则装入空槽
+    } else if (card.kind === 'skill' && card.skillId !== undefined) {
+      // ⚠️ 判据用 `!== undefined` 而不是真值判断：
+      // skillId === 0 曾经落进最后的隐式 else，卡被 consume 掉、
+      // emit 了 card_taken，但什么也没发生 —— 玩家看到"获得技能卡"却没反应。
+      // 内容表当前 id 从 1 开始所以不触发，但 id 空间没有"必须非 0"的保证。
+      //
+      // 技能卡：若已在槽内则升格，否则装入**空槽**
       const existing = this.skills.find((s) => s.skillId === card.skillId)
       if (existing) {
-        // 升格：更高反应倍率 + 更高层数
+        // 升格：更高伤害 + 更高层数 + 更高穿透
         this.skills = this.skills.map((s) =>
           s.skillId === card.skillId
             ? {
@@ -1198,29 +1234,76 @@ export class BattleEngine {
         )
       } else {
         const def = this.cfg.skills.get(card.skillId)
-        const emptySlot = this.skills.findIndex((s) => s.slot < ACTIVE_SLOTS && s.slot >= 0)
-        const slot = emptySlot >= 0 ? this.skills[emptySlot].slot : this.skills.length
-        if (def && emptySlot >= 0) {
-          this.skills = this.skills.map((s) =>
-            s.slot === slot
-              ? {
-                  ...s,
-                  skillId: def.id,
-                  name: def.name,
-                  element: def.element,
-                  kind: def.kind,
-                  heatCost: BigInt(def.heat_cost),
-                  cooldownMs: def.cooldown_ms,
-                  pierce: def.pierce,
-                  aoeRadius: def.aoe_radius,
-                  baseDamage: BigInt(def.base_damage),
-                  applyElement: (def.apply_element || def.element) as Element | '',
-                  applyStacks: BigInt(def.apply_stacks),
-                  projectileSpeed: def.projectile_speed,
-                  chain: def.chain,
-                }
-              : s,
+        if (def) {
+          // 找**真正空着**的主动槽。
+          //
+          // ⚠️ 原来是 `findIndex(s => s.slot < ACTIVE_SLOTS && s.slot >= 0)`，
+          // 而 skills 数组里每个元素就代表一个已占用的槽 ——
+          // 于是这个表达式命中的永远是**第一个已占用**的槽，
+          // 随后 `s.slot === slot ? {...新技能} : s` 直接把它替换掉。
+          //
+          // 后果：抽到任何**新**技能都会顶掉槽 0 的老技能，
+          // 槽位数永远不增加。实测已装 [1,2] 时抽到技能 9：
+          //   before = [1,2] slots=[0,1] → after = [9,2] slots=[0,1]
+          // 技能 1 被销毁，而玩家的三选一白白消耗了一次机会。
+          // （只有抽到**已装备**技能的卡才会"升格"，所以前期是净损失。）
+          const activeSlots = new Set(
+            this.skills.filter((s) => s.slot < ACTIVE_SLOTS).map((s) => s.slot),
           )
+          let free = -1
+          for (let i = 0; i < ACTIVE_SLOTS; i++) {
+            if (!activeSlots.has(i)) {
+              free = i
+              break
+            }
+          }
+          if (free < 0) {
+            // 主动槽已满：升格一个伤害最高的技能（不消耗玩家的选牌机会）
+            //
+            // 槽满时最合理的处理不是"顶掉随机一个"，
+            // 而是明确地告诉玩家"没位置了"—— 所以这里做的是
+            // 「强化已有技能里伤害最高的那一个」，
+            // 至少不会让玩家的构筑凭空少一个技能。
+            const best = this.skills
+              .filter((s) => s.slot < ACTIVE_SLOTS)
+              .reduce<(typeof this.skills)[number] | null>(
+                (acc, s) => (acc === null || s.baseDamage > acc.baseDamage ? s : acc),
+                null,
+              )
+            if (best) {
+              this.skills = this.skills.map((s) =>
+                s.slot === best.slot
+                  ? {
+                      ...s,
+                      baseDamage: s.baseDamage + s.baseDamage / 5n,
+                      applyStacks: s.applyStacks + 1n,
+                      pierce: s.pierce + 1,
+                    }
+                  : s,
+              )
+            }
+            return
+          }
+          this.skills = [
+            ...this.skills,
+            {
+              skillId: def.id,
+              name: def.name,
+              element: def.element as Element,
+              kind: def.kind,
+              heatCost: BigInt(def.heat_cost),
+              cooldownMs: def.cooldown_ms,
+              pierce: def.pierce,
+              aoeRadius: def.aoe_radius,
+              baseDamage: BigInt(def.base_damage),
+              applyElement: (def.apply_element || def.element) as Element | '',
+              applyStacks: BigInt(def.apply_stacks),
+              projectileSpeed: def.projectile_speed,
+              chain: def.chain,
+              slot: free,
+              cooldownRemaining: 0,
+            },
+          ]
         }
       }
     }
