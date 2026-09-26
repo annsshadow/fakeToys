@@ -21,7 +21,8 @@ import type { Element } from './elements'
 import { ACTIVE_SLOTS } from './heatmap'
 import { resolveHit, Defender, defaultAttacker } from './damage'
 
-const level = fixture.level as unknown as GeneratedLevel
+/** 探针只跑第 1 关（它要的是可控的对照实验，不是难度梯度）。 */
+const level = (fixture.levels as unknown as GeneratedLevel[]).find((l) => l.id === 1)!
 const enemyMap = new Map<number, EnemyDef>(
   (fixture.enemies as unknown as EnemyDef[]).map((e) => [e.id, e]),
 )

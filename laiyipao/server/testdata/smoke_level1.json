@@ -1,106 +1,874 @@
 {
   "note": "由 server/cmd/vectors 从 Go 真相源导出，供 miniapp 引擎冒烟测试使用。不要手工编辑：改内容表后重新执行 go run ./cmd/vectors。",
-  "level": {
-    "id": 1,
-    "chapter": 1,
-    "name": "边境哨站 · 1",
-    "seed": -7046029255919282421,
-    "base_hp": 1000,
-    "wave_count": 5,
-    "difficulty": 1000,
-    "energy_cost": 6,
-    "star_targets": [
-      6839,
-      10748,
-      14656
-    ],
-    "terrain": [],
-    "is_boss": false,
-    "waves": [
-      {
-        "wave_index": 0,
-        "spawns": [
-          {
-            "enemy_id": 1,
-            "count": 3,
-            "interval": 900,
-            "delay": 1012
-          }
-        ]
-      },
-      {
-        "wave_index": 1,
-        "spawns": [
-          {
-            "enemy_id": 1,
-            "count": 4,
-            "interval": 775,
-            "delay": 264
-          }
-        ]
-      },
-      {
-        "wave_index": 2,
-        "spawns": [
-          {
-            "enemy_id": 1,
-            "count": 6,
-            "interval": 650,
-            "delay": 267
-          },
-          {
-            "enemy_id": 1,
-            "count": 3,
-            "interval": 650,
-            "delay": 123
-          }
-        ]
-      },
-      {
-        "wave_index": 3,
-        "spawns": [
-          {
-            "enemy_id": 3,
-            "count": 5,
-            "interval": 525,
-            "delay": 1290
-          },
-          {
-            "enemy_id": 2,
-            "count": 2,
-            "interval": 525,
-            "delay": 900
-          }
-        ]
-      },
-      {
-        "wave_index": 4,
-        "spawns": [
-          {
-            "enemy_id": 1,
-            "count": 8,
-            "interval": 400,
-            "delay": 46
-          },
-          {
-            "enemy_id": 2,
-            "count": 4,
-            "interval": 400,
-            "delay": 864
-          },
-          {
-            "enemy_id": 3,
-            "count": 4,
-            "interval": 400,
-            "delay": 1132
-          }
-        ]
-      }
-    ],
-    "element_cap": 2,
-    "armor_permille": 0,
-    "max_reaction_tier": 1
-  },
+  "levels": [
+    {
+      "id": 1,
+      "chapter": 1,
+      "name": "边境哨站 · 1",
+      "seed": -7046029255919282421,
+      "base_hp": 1000,
+      "wave_count": 5,
+      "difficulty": 1000,
+      "energy_cost": 6,
+      "star_targets": [
+        6839,
+        10748,
+        14656
+      ],
+      "terrain": [],
+      "is_boss": false,
+      "waves": [
+        {
+          "wave_index": 0,
+          "spawns": [
+            {
+              "enemy_id": 1,
+              "count": 3,
+              "interval": 900,
+              "delay": 1012
+            }
+          ]
+        },
+        {
+          "wave_index": 1,
+          "spawns": [
+            {
+              "enemy_id": 1,
+              "count": 4,
+              "interval": 775,
+              "delay": 264
+            }
+          ]
+        },
+        {
+          "wave_index": 2,
+          "spawns": [
+            {
+              "enemy_id": 1,
+              "count": 6,
+              "interval": 650,
+              "delay": 267
+            },
+            {
+              "enemy_id": 1,
+              "count": 3,
+              "interval": 650,
+              "delay": 123
+            }
+          ]
+        },
+        {
+          "wave_index": 3,
+          "spawns": [
+            {
+              "enemy_id": 3,
+              "count": 5,
+              "interval": 525,
+              "delay": 1290
+            },
+            {
+              "enemy_id": 2,
+              "count": 2,
+              "interval": 525,
+              "delay": 900
+            }
+          ]
+        },
+        {
+          "wave_index": 4,
+          "spawns": [
+            {
+              "enemy_id": 1,
+              "count": 8,
+              "interval": 400,
+              "delay": 46
+            },
+            {
+              "enemy_id": 2,
+              "count": 4,
+              "interval": 400,
+              "delay": 864
+            },
+            {
+              "enemy_id": 3,
+              "count": 4,
+              "interval": 400,
+              "delay": 1132
+            }
+          ]
+        }
+      ],
+      "element_cap": 2,
+      "armor_permille": 0,
+      "max_reaction_tier": 1
+    },
+    {
+      "id": 10,
+      "chapter": 1,
+      "name": "边境哨站 · 10",
+      "seed": 3326683749554942924,
+      "base_hp": 1225,
+      "wave_count": 6,
+      "difficulty": 1290,
+      "energy_cost": 6,
+      "star_targets": [
+        7709,
+        12114,
+        16520
+      ],
+      "terrain": [
+        {
+          "kind": "oil_drum",
+          "x": 890,
+          "y": 454,
+          "param": 164
+        },
+        {
+          "kind": "oil_drum",
+          "x": 713,
+          "y": 396,
+          "param": 155
+        }
+      ],
+      "is_boss": false,
+      "waves": [
+        {
+          "wave_index": 0,
+          "spawns": [
+            {
+              "enemy_id": 1,
+              "count": 3,
+              "interval": 900,
+              "delay": 1406
+            }
+          ]
+        },
+        {
+          "wave_index": 1,
+          "spawns": [
+            {
+              "enemy_id": 1,
+              "count": 3,
+              "interval": 800,
+              "delay": 390
+            }
+          ]
+        },
+        {
+          "wave_index": 2,
+          "spawns": [
+            {
+              "enemy_id": 1,
+              "count": 5,
+              "interval": 700,
+              "delay": 280
+            }
+          ]
+        },
+        {
+          "wave_index": 3,
+          "spawns": [
+            {
+              "enemy_id": 2,
+              "count": 6,
+              "interval": 600,
+              "delay": 911
+            },
+            {
+              "enemy_id": 2,
+              "count": 3,
+              "interval": 600,
+              "delay": 971
+            }
+          ]
+        },
+        {
+          "wave_index": 4,
+          "spawns": [
+            {
+              "enemy_id": 1,
+              "count": 6,
+              "interval": 500,
+              "delay": 939
+            },
+            {
+              "enemy_id": 1,
+              "count": 2,
+              "interval": 500,
+              "delay": 659
+            }
+          ]
+        },
+        {
+          "wave_index": 5,
+          "spawns": [
+            {
+              "enemy_id": 2,
+              "count": 8,
+              "interval": 400,
+              "delay": 591
+            },
+            {
+              "enemy_id": 4,
+              "count": 4,
+              "interval": 400,
+              "delay": 1458
+            },
+            {
+              "enemy_id": 3,
+              "count": 4,
+              "interval": 400,
+              "delay": 466
+            }
+          ]
+        }
+      ],
+      "element_cap": 2,
+      "armor_permille": 0,
+      "max_reaction_tier": 1
+    },
+    {
+      "id": 25,
+      "chapter": 2,
+      "name": "工业废墟 · 25",
+      "seed": 8316709376440644883,
+      "base_hp": 1760,
+      "wave_count": 6,
+      "difficulty": 1775,
+      "energy_cost": 7,
+      "star_targets": [
+        7025,
+        11040,
+        15055
+      ],
+      "terrain": [],
+      "is_boss": false,
+      "waves": [
+        {
+          "wave_index": 0,
+          "spawns": [
+            {
+              "enemy_id": 1,
+              "count": 2,
+              "interval": 900,
+              "delay": 1496
+            }
+          ]
+        },
+        {
+          "wave_index": 1,
+          "spawns": [
+            {
+              "enemy_id": 2,
+              "count": 3,
+              "interval": 800,
+              "delay": 309
+            }
+          ]
+        },
+        {
+          "wave_index": 2,
+          "spawns": [
+            {
+              "enemy_id": 1,
+              "count": 5,
+              "interval": 700,
+              "delay": 1088
+            }
+          ]
+        },
+        {
+          "wave_index": 3,
+          "spawns": [
+            {
+              "enemy_id": 5,
+              "count": 6,
+              "interval": 600,
+              "delay": 498
+            },
+            {
+              "enemy_id": 2,
+              "count": 2,
+              "interval": 600,
+              "delay": 988
+            }
+          ]
+        },
+        {
+          "wave_index": 4,
+          "spawns": [
+            {
+              "enemy_id": 7,
+              "count": 7,
+              "interval": 500,
+              "delay": 105
+            },
+            {
+              "enemy_id": 6,
+              "count": 2,
+              "interval": 500,
+              "delay": 14
+            }
+          ]
+        },
+        {
+          "wave_index": 5,
+          "spawns": [
+            {
+              "enemy_id": 10,
+              "count": 7,
+              "interval": 400,
+              "delay": 388
+            },
+            {
+              "enemy_id": 2,
+              "count": 3,
+              "interval": 400,
+              "delay": 601
+            },
+            {
+              "enemy_id": 3,
+              "count": 3,
+              "interval": 400,
+              "delay": 501
+            }
+          ]
+        }
+      ],
+      "element_cap": 3,
+      "armor_permille": 50,
+      "max_reaction_tier": 1
+    },
+    {
+      "id": 50,
+      "chapter": 3,
+      "name": "冻原 · 50",
+      "seed": -1813325320385882364,
+      "base_hp": 3185,
+      "wave_count": 8,
+      "difficulty": 2583,
+      "energy_cost": 8,
+      "star_targets": [
+        8608,
+        13527,
+        18446
+      ],
+      "terrain": [
+        {
+          "kind": "charge_tower",
+          "x": 870,
+          "y": 546,
+          "param": 31
+        }
+      ],
+      "is_boss": false,
+      "waves": [
+        {
+          "wave_index": 0,
+          "spawns": [
+            {
+              "enemy_id": 1,
+              "count": 4,
+              "interval": 900,
+              "delay": 305
+            }
+          ]
+        },
+        {
+          "wave_index": 1,
+          "spawns": [
+            {
+              "enemy_id": 1,
+              "count": 3,
+              "interval": 829,
+              "delay": 797
+            }
+          ]
+        },
+        {
+          "wave_index": 2,
+          "spawns": [
+            {
+              "enemy_id": 5,
+              "count": 4,
+              "interval": 758,
+              "delay": 312
+            }
+          ]
+        },
+        {
+          "wave_index": 3,
+          "spawns": [
+            {
+              "enemy_id": 6,
+              "count": 4,
+              "interval": 686,
+              "delay": 184
+            }
+          ]
+        },
+        {
+          "wave_index": 4,
+          "spawns": [
+            {
+              "enemy_id": 8,
+              "count": 4,
+              "interval": 615,
+              "delay": 787
+            },
+            {
+              "enemy_id": 9,
+              "count": 2,
+              "interval": 615,
+              "delay": 1003
+            }
+          ]
+        },
+        {
+          "wave_index": 5,
+          "spawns": [
+            {
+              "enemy_id": 11,
+              "count": 5,
+              "interval": 543,
+              "delay": 835
+            },
+            {
+              "enemy_id": 6,
+              "count": 2,
+              "interval": 543,
+              "delay": 1190
+            }
+          ]
+        },
+        {
+          "wave_index": 6,
+          "spawns": [
+            {
+              "enemy_id": 12,
+              "count": 6,
+              "interval": 472,
+              "delay": 310
+            },
+            {
+              "enemy_id": 5,
+              "count": 2,
+              "interval": 472,
+              "delay": 341
+            }
+          ]
+        },
+        {
+          "wave_index": 7,
+          "spawns": [
+            {
+              "enemy_id": 9,
+              "count": 6,
+              "interval": 400,
+              "delay": 1276
+            },
+            {
+              "enemy_id": 1,
+              "count": 3,
+              "interval": 400,
+              "delay": 882
+            },
+            {
+              "enemy_id": 6,
+              "count": 4,
+              "interval": 400,
+              "delay": 1274
+            }
+          ]
+        }
+      ],
+      "element_cap": 4,
+      "armor_permille": 100,
+      "max_reaction_tier": 1
+    },
+    {
+      "id": 75,
+      "chapter": 4,
+      "name": "感染矿井 · 75",
+      "seed": 6503384057721909561,
+      "base_hp": 5670,
+      "wave_count": 10,
+      "difficulty": 3391,
+      "energy_cost": 9,
+      "star_targets": [
+        10717,
+        16841,
+        22965
+      ],
+      "terrain": [],
+      "is_boss": false,
+      "waves": [
+        {
+          "wave_index": 0,
+          "spawns": [
+            {
+              "enemy_id": 1,
+              "count": 4,
+              "interval": 900,
+              "delay": 482
+            }
+          ]
+        },
+        {
+          "wave_index": 1,
+          "spawns": [
+            {
+              "enemy_id": 2,
+              "count": 4,
+              "interval": 845,
+              "delay": 440
+            }
+          ]
+        },
+        {
+          "wave_index": 2,
+          "spawns": [
+            {
+              "enemy_id": 1,
+              "count": 3,
+              "interval": 789,
+              "delay": 435
+            }
+          ]
+        },
+        {
+          "wave_index": 3,
+          "spawns": [
+            {
+              "enemy_id": 5,
+              "count": 4,
+              "interval": 734,
+              "delay": 1414
+            }
+          ]
+        },
+        {
+          "wave_index": 4,
+          "spawns": [
+            {
+              "enemy_id": 8,
+              "count": 3,
+              "interval": 678,
+              "delay": 247
+            }
+          ]
+        },
+        {
+          "wave_index": 5,
+          "spawns": [
+            {
+              "enemy_id": 1,
+              "count": 5,
+              "interval": 623,
+              "delay": 1473
+            },
+            {
+              "enemy_id": 5,
+              "count": 3,
+              "interval": 623,
+              "delay": 779
+            }
+          ]
+        },
+        {
+          "wave_index": 6,
+          "spawns": [
+            {
+              "enemy_id": 5,
+              "count": 5,
+              "interval": 567,
+              "delay": 771
+            },
+            {
+              "enemy_id": 1,
+              "count": 2,
+              "interval": 567,
+              "delay": 836
+            }
+          ]
+        },
+        {
+          "wave_index": 7,
+          "spawns": [
+            {
+              "enemy_id": 9,
+              "count": 5,
+              "interval": 512,
+              "delay": 794
+            },
+            {
+              "enemy_id": 5,
+              "count": 3,
+              "interval": 512,
+              "delay": 211
+            }
+          ]
+        },
+        {
+          "wave_index": 8,
+          "spawns": [
+            {
+              "enemy_id": 7,
+              "count": 5,
+              "interval": 456,
+              "delay": 118
+            },
+            {
+              "enemy_id": 9,
+              "count": 2,
+              "interval": 456,
+              "delay": 1379
+            }
+          ]
+        },
+        {
+          "wave_index": 9,
+          "spawns": [
+            {
+              "enemy_id": 14,
+              "count": 7,
+              "interval": 400,
+              "delay": 1218
+            },
+            {
+              "enemy_id": 13,
+              "count": 3,
+              "interval": 400,
+              "delay": 1470
+            },
+            {
+              "enemy_id": 12,
+              "count": 3,
+              "interval": 400,
+              "delay": 1240
+            }
+          ]
+        }
+      ],
+      "element_cap": 5,
+      "armor_permille": 150,
+      "max_reaction_tier": 2
+    },
+    {
+      "id": 100,
+      "chapter": 6,
+      "name": "母巢核心 · 100",
+      "seed": -3626650636923579606,
+      "base_hp": 14000,
+      "wave_count": 12,
+      "difficulty": 4200,
+      "energy_cost": 11,
+      "star_targets": [
+        16525,
+        25968,
+        35412
+      ],
+      "terrain": [],
+      "is_boss": true,
+      "waves": [
+        {
+          "wave_index": 0,
+          "spawns": [
+            {
+              "enemy_id": 1,
+              "count": 4,
+              "interval": 900,
+              "delay": 44
+            }
+          ]
+        },
+        {
+          "wave_index": 1,
+          "spawns": [
+            {
+              "enemy_id": 2,
+              "count": 4,
+              "interval": 855,
+              "delay": 317
+            }
+          ]
+        },
+        {
+          "wave_index": 2,
+          "spawns": [
+            {
+              "enemy_id": 5,
+              "count": 4,
+              "interval": 810,
+              "delay": 1199
+            }
+          ]
+        },
+        {
+          "wave_index": 3,
+          "spawns": [
+            {
+              "enemy_id": 1,
+              "count": 5,
+              "interval": 764,
+              "delay": 1261
+            }
+          ]
+        },
+        {
+          "wave_index": 4,
+          "spawns": [
+            {
+              "enemy_id": 5,
+              "count": 5,
+              "interval": 719,
+              "delay": 1194
+            }
+          ]
+        },
+        {
+          "wave_index": 5,
+          "spawns": [
+            {
+              "enemy_id": 10,
+              "count": 4,
+              "interval": 673,
+              "delay": 787
+            },
+            {
+              "enemy_id": 3,
+              "count": 1,
+              "interval": 673,
+              "delay": 161
+            }
+          ]
+        },
+        {
+          "wave_index": 6,
+          "spawns": [
+            {
+              "enemy_id": 5,
+              "count": 5,
+              "interval": 628,
+              "delay": 1438
+            },
+            {
+              "enemy_id": 6,
+              "count": 3,
+              "interval": 628,
+              "delay": 654
+            }
+          ]
+        },
+        {
+          "wave_index": 7,
+          "spawns": [
+            {
+              "enemy_id": 7,
+              "count": 4,
+              "interval": 582,
+              "delay": 1357
+            },
+            {
+              "enemy_id": 3,
+              "count": 2,
+              "interval": 582,
+              "delay": 346
+            }
+          ]
+        },
+        {
+          "wave_index": 8,
+          "spawns": [
+            {
+              "enemy_id": 13,
+              "count": 6,
+              "interval": 537,
+              "delay": 1287
+            },
+            {
+              "enemy_id": 15,
+              "count": 3,
+              "interval": 537,
+              "delay": 1079
+            }
+          ]
+        },
+        {
+          "wave_index": 9,
+          "spawns": [
+            {
+              "enemy_id": 14,
+              "count": 6,
+              "interval": 491,
+              "delay": 541
+            },
+            {
+              "enemy_id": 11,
+              "count": 2,
+              "interval": 491,
+              "delay": 1191
+            }
+          ]
+        },
+        {
+          "wave_index": 10,
+          "spawns": [
+            {
+              "enemy_id": 18,
+              "count": 7,
+              "interval": 446,
+              "delay": 21
+            },
+            {
+              "enemy_id": 8,
+              "count": 3,
+              "interval": 446,
+              "delay": 624
+            },
+            {
+              "enemy_id": 3,
+              "count": 2,
+              "interval": 446,
+              "delay": 1396
+            }
+          ]
+        },
+        {
+          "wave_index": 11,
+          "spawns": [
+            {
+              "enemy_id": 7,
+              "count": 6,
+              "interval": 400,
+              "delay": 217
+            },
+            {
+              "enemy_id": 5,
+              "count": 4,
+              "interval": 400,
+              "delay": 844
+            },
+            {
+              "enemy_id": 9,
+              "count": 3,
+              "interval": 400,
+              "delay": 239
+            },
+            {
+              "enemy_id": 22,
+              "count": 1,
+              "interval": 0,
+              "delay": 0
+            }
+          ]
+        }
+      ],
+      "element_cap": 8,
+      "armor_permille": 250,
+      "max_reaction_tier": 2
+    }
+  ],
   "enemies": [
     {
       "id": 1,
@@ -173,6 +941,342 @@
         "lightning": 0
       },
       "descr": "皮糙肉厚，需要破甲。"
+    },
+    {
+      "id": 4,
+      "code": "rottweiler",
+      "name": "腐化犬",
+      "category": "normal",
+      "hp": 720,
+      "speed": 60000,
+      "armor": 0,
+      "shield_hp": 0,
+      "attack": 0,
+      "attack_range": 0,
+      "attack_interval": 0,
+      "fly_height": 0,
+      "burrow": false,
+      "is_boss": false,
+      "resist": {
+        "corrosion": -200,
+        "fire": 200,
+        "ice": 0,
+        "kinetic": 0,
+        "lightning": 0
+      },
+      "descr": "成群扑向防线，咬合力惊人。"
+    },
+    {
+      "id": 5,
+      "code": "stoneskin",
+      "name": "石肤兽",
+      "category": "normal",
+      "hp": 3200,
+      "speed": 22000,
+      "armor": 150,
+      "shield_hp": 0,
+      "attack": 0,
+      "attack_range": 0,
+      "attack_interval": 0,
+      "fly_height": 0,
+      "burrow": false,
+      "is_boss": false,
+      "resist": {
+        "corrosion": 0,
+        "fire": 300,
+        "ice": 0,
+        "kinetic": -300,
+        "lightning": 300
+      },
+      "descr": "外骨骼覆盖，常规伤害难以奏效。"
+    },
+    {
+      "id": 6,
+      "code": "voltfin",
+      "name": "电鳍兽",
+      "category": "normal",
+      "hp": 1280,
+      "speed": 45000,
+      "armor": 0,
+      "shield_hp": 0,
+      "attack": 8,
+      "attack_range": 150,
+      "attack_interval": 2000,
+      "fly_height": 0,
+      "burrow": false,
+      "is_boss": false,
+      "resist": {
+        "corrosion": 0,
+        "fire": 0,
+        "ice": 0,
+        "kinetic": 0,
+        "lightning": 500
+      },
+      "descr": "会放电反击近身单位。"
+    },
+    {
+      "id": 7,
+      "code": "frostbit",
+      "name": "霜蚀者",
+      "category": "normal",
+      "hp": 1600,
+      "speed": 35000,
+      "armor": 0,
+      "shield_hp": 0,
+      "attack": 0,
+      "attack_range": 0,
+      "attack_interval": 0,
+      "fly_height": 0,
+      "burrow": false,
+      "is_boss": false,
+      "resist": {
+        "corrosion": 0,
+        "fire": -300,
+        "ice": 500,
+        "kinetic": 0,
+        "lightning": 0
+      },
+      "descr": "自身体表覆霜，冰系打它收益极低。"
+    },
+    {
+      "id": 8,
+      "code": "boneeater",
+      "name": "蚀骨者",
+      "category": "normal",
+      "hp": 2560,
+      "speed": 28000,
+      "armor": 80,
+      "shield_hp": 0,
+      "attack": 0,
+      "attack_range": 0,
+      "attack_interval": 0,
+      "fly_height": 0,
+      "burrow": false,
+      "is_boss": false,
+      "resist": {
+        "corrosion": -400,
+        "fire": 100,
+        "ice": 100,
+        "kinetic": 0,
+        "lightning": 100
+      },
+      "descr": "专吃有元素层数的目标。"
+    },
+    {
+      "id": 9,
+      "code": "pitcher",
+      "name": "投手",
+      "category": "ranged",
+      "hp": 960,
+      "speed": 25000,
+      "armor": 0,
+      "shield_hp": 0,
+      "attack": 10,
+      "attack_range": 400,
+      "attack_interval": 2500,
+      "fly_height": 0,
+      "burrow": false,
+      "is_boss": false,
+      "resist": {
+        "corrosion": 0,
+        "fire": 0,
+        "ice": 200,
+        "kinetic": 0,
+        "lightning": 0
+      },
+      "descr": "远程投掷减速弹，会拖慢防线节奏。"
+    },
+    {
+      "id": 10,
+      "code": "cannon",
+      "name": "铁罐炮",
+      "category": "ranged",
+      "hp": 2080,
+      "speed": 18000,
+      "armor": 0,
+      "shield_hp": 480,
+      "attack": 28,
+      "attack_range": 500,
+      "attack_interval": 3200,
+      "fly_height": 0,
+      "burrow": false,
+      "is_boss": false,
+      "resist": {
+        "corrosion": 0,
+        "fire": 0,
+        "ice": 0,
+        "kinetic": -200,
+        "lightning": 200
+      },
+      "descr": "直线重炮，射程远且带小护盾。"
+    },
+    {
+      "id": 11,
+      "code": "hivemother",
+      "name": "蜂巢母",
+      "category": "ranged",
+      "hp": 4000,
+      "speed": 12000,
+      "armor": 0,
+      "shield_hp": 0,
+      "attack": 6,
+      "attack_range": 350,
+      "attack_interval": 1800,
+      "fly_height": 0,
+      "burrow": false,
+      "is_boss": false,
+      "resist": {
+        "corrosion": -200,
+        "fire": 200,
+        "ice": 0,
+        "kinetic": 0,
+        "lightning": 0
+      },
+      "descr": "持续召唤小型单位。"
+    },
+    {
+      "id": 12,
+      "code": "seeker",
+      "name": "索敌眼",
+      "category": "ranged",
+      "hp": 1440,
+      "speed": 20000,
+      "armor": 0,
+      "shield_hp": 0,
+      "attack": 0,
+      "attack_range": 600,
+      "attack_interval": 4000,
+      "fly_height": 0,
+      "burrow": false,
+      "is_boss": false,
+      "resist": {
+        "corrosion": 0,
+        "fire": 0,
+        "ice": 0,
+        "kinetic": 300,
+        "lightning": 0
+      },
+      "descr": "标记目标，使其受到的伤害提高。"
+    },
+    {
+      "id": 13,
+      "code": "floater",
+      "name": "浮空囊",
+      "category": "flying",
+      "hp": 880,
+      "speed": 50000,
+      "armor": 0,
+      "shield_hp": 0,
+      "attack": 0,
+      "attack_range": 0,
+      "attack_interval": 0,
+      "fly_height": 180,
+      "burrow": false,
+      "is_boss": false,
+      "resist": {
+        "corrosion": 100,
+        "fire": 0,
+        "ice": 0,
+        "kinetic": -300,
+        "lightning": 0
+      },
+      "descr": "悬浮前进，躲过直线弹道。"
+    },
+    {
+      "id": 14,
+      "code": "winged",
+      "name": "翼化体",
+      "category": "flying",
+      "hp": 1600,
+      "speed": 85000,
+      "armor": 0,
+      "shield_hp": 0,
+      "attack": 0,
+      "attack_range": 0,
+      "attack_interval": 0,
+      "fly_height": 220,
+      "burrow": false,
+      "is_boss": false,
+      "resist": {
+        "corrosion": 0,
+        "fire": 0,
+        "ice": 200,
+        "kinetic": -200,
+        "lightning": 0
+      },
+      "descr": "高速俯冲，最难处理的一类。"
+    },
+    {
+      "id": 15,
+      "code": "scoutdrone",
+      "name": "侦察机",
+      "category": "flying",
+      "hp": 720,
+      "speed": 60000,
+      "armor": 0,
+      "shield_hp": 0,
+      "attack": 12,
+      "attack_range": 450,
+      "attack_interval": 2000,
+      "fly_height": 300,
+      "burrow": false,
+      "is_boss": false,
+      "resist": {
+        "corrosion": 0,
+        "fire": 200,
+        "ice": 0,
+        "kinetic": 0,
+        "lightning": -300
+      },
+      "descr": "高空侦察并回传情报，会强化周围敌人。"
+    },
+    {
+      "id": 18,
+      "code": "shieldbearer",
+      "name": "护盾卫",
+      "category": "special",
+      "hp": 3200,
+      "speed": 26000,
+      "armor": 100,
+      "shield_hp": 4800,
+      "attack": 0,
+      "attack_range": 0,
+      "attack_interval": 0,
+      "fly_height": 0,
+      "burrow": false,
+      "is_boss": false,
+      "resist": {
+        "corrosion": 200,
+        "fire": 0,
+        "ice": 200,
+        "kinetic": 0,
+        "lightning": 200
+      },
+      "descr": "护盾极厚，只有蒸汽爆发能驱散。"
+    },
+    {
+      "id": 22,
+      "code": "chalkqueen",
+      "name": "白垩母皇",
+      "category": "boss",
+      "hp": 320000,
+      "speed": 10000,
+      "armor": 350,
+      "shield_hp": 64000,
+      "attack": 60,
+      "attack_range": 500,
+      "attack_interval": 2000,
+      "fly_height": 0,
+      "burrow": false,
+      "is_boss": true,
+      "resist": {
+        "corrosion": -500,
+        "fire": 200,
+        "ice": 500,
+        "kinetic": -500,
+        "lightning": 500
+      },
+      "descr": "最终首领。对冰与电几乎免疫，但惧怕腐蚀与动能。"
     }
   ],
   "skills": [
