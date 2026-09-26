@@ -18,7 +18,8 @@
   （字节唯一产地），文本那一族不设这条界。
 
 真 xlsx 的用例逐类 `skipif`（aug 侧解释器无 pandas），拒收与缺依赖降级那两族**不需要**
-pandas，所以在两侧解释器上都是真跑。
+真依赖，所以在两侧解释器上都是真跑。L85 起写边只依赖 openpyxl，两份降级门因此分开：
+打桩必须打在 `excel_write.HAS_OPENPYXL` 上，打错名字会让降级分支从不被走到（假绿）。
 """
 
 import ast
@@ -28,7 +29,7 @@ from pathlib import Path
 
 import pytest
 
-from augmentor import csv_excel_import as cei
+from augmentor import excel_write
 from augmentor.converter import (
     EXCEL_FORMAT,
     EXCEL_REJECTED_OUTPUT_SUFFIXES,
@@ -73,20 +74,41 @@ def product_files():
                     yield path
 
 
+def _product_trees():
+    """产品码里每个 `.py` 的 AST（解析失败的文件静默跳过：本守卫只问能不能解析到调用）"""
+    for path in product_files():
+        try:
+            yield path, ast.parse(path.read_text(encoding="utf-8"))
+        except (SyntaxError, UnicodeDecodeError):
+            continue
+
+
+def definition_sites(function_name: str):
+    """产品码里 `def function_name` 落在哪几个文件 —— 多于一个就是「两份实现」"""
+    return [
+        path.relative_to(REPO).as_posix()
+        for path, tree in _product_trees()
+        if any(isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+               and node.name == function_name for node in ast.walk(tree))
+    ]
+
+
 def product_call_sites(function_name: str):
     """按**解析后的调用点**数产品码里谁调了 `function_name`（不是按引用字符串筛）
 
     散文与 docstring 里也会写 `export_to_excel`，用 grep 数会把这些算进去（纪律 (n)
     的同族坑）；AST 只认真正的 call 节点。返回值刻意**不含行号** —— 这份守卫钉的是
     「有哪几处」，带上行号就会因为无关插行而红。
+
+    **定义处按解析结果排除，不写死文件名**：L84 那版排除的是 `csv_excel_import.py`
+    （当时 Excel 写边的实现就住在那儿），L85 把实现搬进 `excel_write.py` 之后，那份
+    硬编码会把剩下的**转接口**一起抹掉 —— 而「实现有没有长出第二份」恰恰要靠这个
+    普查回答。所以先找 `def` 所在文件再排除它，并把「定义处恰好一个」另立一条断言。
     """
+    excluded = set(definition_sites(function_name))
     hits = []
-    for path in product_files():
-        if path.name == "csv_excel_import.py":  # 定义处本身
-            continue
-        try:
-            tree = ast.parse(path.read_text(encoding="utf-8"))
-        except (SyntaxError, UnicodeDecodeError):
+    for path, tree in _product_trees():
+        if path.relative_to(REPO).as_posix() in excluded:
             continue
         for node in ast.walk(tree):
             func = node.func if isinstance(node, ast.Call) else None
@@ -159,13 +181,25 @@ class TestWriteEdgeShape:
             OUTPUT_FORMAT_CHOICES[:len(graph)]
 
     def test_export_to_excel_now_has_a_product_caller(self):
-        """A133 的原始症状反面：`export_to_excel` 从「零调用者」变成恰好一处
+        """A133 的原始症状反面：写边从「零调用者」变成**两处调用点、一个产地**
 
-        钉「== 1」而不是「>= 1」：再加调用点要先问该不该复用同一条写边（两处就是两份
-        Excel 落盘口径，正是 L80 立项时批评的那种「实现有、入口散」）。
+        钉精确相等而不是「>= 1」：L85 之后写边的实现住在 `augmentor/excel_write.py`
+        （函数名 `export_table_to_excel`），落盘的调用点只有 `converter._write_excel`
+        一处，另一处是 `csv_excel_import.export_to_excel` 那个**兼容转接口** —— 它不
+        自己落盘，只把公开老名字接过去。所以本格真正钉的是「实现只有一个 + 没有第三处
+        各写一份 xlsx 落盘口径」，而不是「字面上只有一个调用者」；再加调用点要先问
+        该不该复用同一条写边（两处落盘就是两份 Excel 口径，正是 L80 立项时批评的形状）。
         """
-        assert product_call_sites("export_to_excel") == ["augmentor/converter.py"], \
+        assert product_call_sites("export_table_to_excel") == [
+            "augmentor/converter.py", "augmentor/csv_excel_import.py"], \
             "Excel 写边的调用点变了：先确认新调用点该不该复用 `_write_excel`"
+        # 「一个产地」的另一半：`def` 恰好一处，两份实现会在这里红
+        assert definition_sites("export_table_to_excel") == ["augmentor/excel_write.py"], \
+            "Excel 写边长出了第二份实现"
+        # 转接口必须**没有**第二份实现：它自己不许再出现 `to_excel(` 或 `Workbook(`
+        shim = (REPO / "augmentor/csv_excel_import.py").read_text(encoding="utf-8")
+        assert "df.to_excel(" not in shim, "兼容转接口里长出了第二份写边"
+        assert "Workbook(" not in shim
 
 
 # ==================== `_infer_format` 逐档 ====================
@@ -334,31 +368,31 @@ class TestFalseContainerRefused:
             converter.convert_file(source_json, out)
         assert not out.parent.exists(), "拒收前就 mkdir 了"
 
-    def test_missing_pandas_degrades_to_data_load_error(
+    def test_missing_openpyxl_degrades_to_data_load_error(
             self, converter, source_json, tmp_path, monkeypatch):
-        """缺依赖的报错停在「装依赖」，且不需要本机真没装 pandas 也能验
+        """缺依赖的报错停在「装依赖」，且不需要本机真没装 openpyxl 也能验
 
-        `monkeypatch` 让两侧解释器跑的是同一条断言（aug 侧本来就没 pandas，标记为
+        `monkeypatch` 让两侧解释器跑的是同一条断言（aug 侧本来就没 openpyxl，标记为
         跳过反而会让这条能力面在它那里从不被验证）。
         """
-        monkeypatch.setattr(cei, "HAS_PANDAS", False)
+        monkeypatch.setattr(excel_write, "HAS_OPENPYXL", False)
         out = tmp_path / "d.xlsx"
         with pytest.raises(DataLoadError) as exc:
             converter.convert_file(source_json, out, target_format="excel")
-        assert "pip install pandas openpyxl" in str(exc.value)
+        assert "pip install openpyxl" in str(exc.value)
         assert not out.exists()
 
     def test_non_object_records_are_refused_before_the_dependency_gate(
             self, converter, tmp_path, monkeypatch):
         """数据错要先报数据，不能被「装依赖」抢话
 
-        aug 侧解释器（无 pandas）第一次跑两侧时就是这一格红的：它拿到的是
+        aug 侧解释器（无 openpyxl）第一次跑两侧时就是这一格红的：它拿到的是
         `DataLoadError`「pip install pandas openpyxl」，而装完依赖那条标量行照样写不进
-        表头。判据顺序因此是契约，不是实现细节 ⇒ 用 `monkeypatch` 把 pandas 门关掉，
-        让两侧解释器跑同一条断言（与 `test_missing_pandas_degrades_to_data_load_error`
-        同一手法，也顺手钉住「先判内容、后判依赖」那个顺序）。
+        表头。判据顺序因此是契约，不是实现细节 ⇒ 用 `monkeypatch` 把依赖门关掉，
+        让两侧解释器跑同一条断言（与 `test_missing_openpyxl_degrades_to_data_load_error`
+        同一手法、同一标志位，也顺手钉住「先判内容、后判依赖」那个顺序）。
         """
-        monkeypatch.setattr(cei, "HAS_PANDAS", False)
+        monkeypatch.setattr(excel_write, "HAS_OPENPYXL", False)
         bad = tmp_path / "bad.json"
         bad.write_text(json.dumps([{"instruction": "q"}, ["not", "a", "dict"]]),
                        encoding="utf-8")
