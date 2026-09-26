@@ -286,7 +286,7 @@ async function loadTableRowsCursor() {
     const [all, one, where, prev, direct] = await Promise.all([
       api.get(`/api/queryview/table/row/${encodeURIComponent(flag)}`).catch(() => null),
       api.get(`/api/queryview/table/row/one/${encodeURIComponent(flag)}`).catch(() => null),
-      api.get(`/api/queryview/table/list/row/select/where/where/${encodeURIComponent(flag)}?where=a`).catch(() => null),
+      api.get(`/api/queryview/table/list/row/select/${encodeURIComponent(flag)}?where=a`).catch(() => null),
       tid ? api.get(`/api/queryview/table/list/${encodeURIComponent(tid)}/prev/10`).catch(() => null) : Promise.resolve(null),
       // rev468：table/row/{tableFlag}/{id} WHERE 双条件读 1 条真实路由（变量段会被影子吞到 table/row/one/{tableFlag} 误配，须数字字面 12/34 命中）
       api.get('/api/queryview/table/row/12/34').catch(() => null),

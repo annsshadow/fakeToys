@@ -505,7 +505,7 @@ export const searchApi = {
   bbsSubject: (keyword: string) =>
     list(
       mapi.get<Record<string, unknown>[]>(
-        `/api/bbs/assemble/control/subject/search?keyword=${encodeURIComponent(keyword)}`,
+        `/api/bbs/subject/search?keyword=${encodeURIComponent(keyword)}`,
       ),
     ),
 }
