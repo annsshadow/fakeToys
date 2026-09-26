@@ -134,14 +134,8 @@ GET /api/portal/assemble/surface/v2/portal/mobile/1/1/1
 GET /api/portal/assemble/surface/widget/list/portal/portal
 GET /api/processplatform/assemble/designer/1/1
 GET /api/processplatform/assemble/designer/applicationdict/list/paging/1/1/1
-GET /api/processplatform/assemble/designer/file/application/1/1
-GET /api/processplatform/assemble/designer/file/list/1/1/1
-GET /api/processplatform/assemble/designer/form/list/1/1/1
 GET /api/processplatform/assemble/designer/item/access/path/path
-GET /api/processplatform/assemble/designer/mapping/list/1/1/1
-GET /api/processplatform/assemble/designer/process/activity/1/1/1
 GET /api/processplatform/assemble/designer/script/application/1/1/1
-GET /api/processplatform/assemble/designer/script/list/1/1/1
 GET /api/processplatform/assemble/designer/script/list/paging/1/1/1
 GET /api/processplatform/assemble/surface/anonymous/read/1/1
 GET /api/processplatform/assemble/surface/anonymous/task/1/1
@@ -432,11 +426,8 @@ POST /api/meeting/assemble/control/meeting/list/manage/1/1/1
 POST /api/message/assemble/communicate/im/msg/clear
 POST /api/portal/assemble/surface/delete/layout
 POST /api/portal/assemble/surface/save/layout
-POST /api/processplatform/assemble/designer/application/1/1
 POST /api/processplatform/assemble/designer/mergeitemplan/list/application/paging/1/1/1/1
 POST /api/processplatform/assemble/designer/mergeitemplan/list/paging/1/1/1
-POST /api/processplatform/assemble/designer/process/1/1
-POST /api/processplatform/assemble/designer/process/edition/1/1
 POST /api/processplatform/assemble/surface/correlation/job/job/delete
 POST /api/processplatform/assemble/surface/correlation/update/job/job
 POST /api/processplatform/assemble/surface/mode/save

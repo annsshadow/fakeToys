@@ -671,7 +671,7 @@ pub async fn application_id_permission(
 #[allow(non_snake_case)]
 pub async fn application_id_onlyRemoveNotCompleted(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -752,7 +752,7 @@ pub async fn applicationdict_list_application_applicationId(
 #[allow(non_snake_case)]
 pub async fn applicationdict_list_paging_page_size_size(
     pool: Extension<Pool>,
-    axum::extract::Path(size): axum::extract::Path<i64>,
+    axum::extract::Path((_, size, _)): axum::extract::Path<(String, i64, String)>,
     axum::extract::Path(page): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -967,7 +967,7 @@ pub async fn file_list_application_applicationFlag(
 #[allow(non_snake_case)]
 pub async fn file_list_id_next_count(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _, _)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let count: i64 = client
@@ -1042,7 +1042,7 @@ pub async fn file_flag(
 #[allow(non_snake_case)]
 pub async fn file_flag_application_applicationFlag(
     pool: Extension<Pool>,
-    axum::extract::Path(flag): axum::extract::Path<String>,
+    axum::extract::Path((flag, _)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1295,7 +1295,7 @@ pub async fn form_list_id_formfield(
 #[allow(non_snake_case)]
 pub async fn form_list_id_next_count(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _, _)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let count: i64 = client
@@ -1869,7 +1869,7 @@ pub async fn mapping_list_application_applicationFlag(
 #[allow(non_snake_case)]
 pub async fn mapping_list_id_next_count(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _, _)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let count: i64 = client
@@ -2023,7 +2023,7 @@ pub async fn mergeitemplan_estimate(
 #[allow(non_snake_case)]
 pub async fn mergeitemplan_list_application_applicationId_paging_page_size_size(
     pool: Extension<Pool>,
-    axum::extract::Path(applicationId): axum::extract::Path<String>,
+    axum::extract::Path((applicationId, _, _, _)): axum::extract::Path<(String, String, String, String)>,
     axum::extract::Path(size): axum::extract::Path<i64>,
     axum::extract::Path(page): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2062,7 +2062,7 @@ pub async fn mergeitemplan_list_application_applicationId_paging_page_size_size(
 #[allow(non_snake_case)]
 pub async fn mergeitemplan_list_paging_page_size_size(
     pool: Extension<Pool>,
-    axum::extract::Path(size): axum::extract::Path<i64>,
+    axum::extract::Path((_, size, _)): axum::extract::Path<(String, i64, String)>,
     axum::extract::Path(page): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2231,7 +2231,7 @@ pub async fn output_applicationFlag_select(
 #[allow(non_snake_case)]
 pub async fn process_activity_flag_activityType_activityType(
     pool: Extension<Pool>,
-    axum::extract::Path(activityType): axum::extract::Path<String>,
+    axum::extract::Path((_, activityType, _)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -2802,7 +2802,7 @@ pub async fn process_id_upgrade(
 #[allow(non_snake_case)]
 pub async fn process_id_onlyRemoveNotCompleted(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -2822,7 +2822,7 @@ pub async fn process_id_onlyRemoveNotCompleted(
 #[allow(non_snake_case)]
 pub async fn process_id_onlyRemoveNotCompleted_edition(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -3008,7 +3008,7 @@ pub async fn script_application_applicationId(
 #[allow(non_snake_case)]
 pub async fn script_application_applicationId_name_name(
     pool: Extension<Pool>,
-    axum::extract::Path(applicationId): axum::extract::Path<String>,
+    axum::extract::Path((applicationId, _, _)): axum::extract::Path<(String, String, String)>,
     axum::extract::Path(name): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -3062,7 +3062,7 @@ pub async fn script_list_manager(
 #[allow(non_snake_case)]
 pub async fn script_list_paging_page_size_size(
     pool: Extension<Pool>,
-    axum::extract::Path(size): axum::extract::Path<i64>,
+    axum::extract::Path((_, size, _)): axum::extract::Path<(String, i64, String)>,
     axum::extract::Path(page): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -3100,7 +3100,7 @@ pub async fn script_list_paging_page_size_size(
 #[allow(non_snake_case)]
 pub async fn script_list_id_next_count(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _, _)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let count: i64 = client
