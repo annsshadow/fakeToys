@@ -1,7 +1,1 @@
-GET /api/processplatform/assemble/surface/read/filter/attribute
-GET /api/processplatform/assemble/surface/readcompleted/filter/attribute
-GET /api/processplatform/assemble/surface/review/filter/attribute
-GET /api/processplatform/assemble/surface/review/filter/entry
-GET /api/processplatform/assemble/surface/task/filter/attribute
-GET /api/processplatform/assemble/surface/taskcompleted/filter/attribute
 GET /api/processplatform/assemble/surface/work/v3/retract

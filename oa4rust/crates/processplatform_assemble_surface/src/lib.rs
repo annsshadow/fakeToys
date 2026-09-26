@@ -9227,45 +9227,58 @@ pub async fn read_count_credential_p2(pool: Extension<Pool>, axum::extract::Path
 }
 
 #[allow(non_snake_case)]
+/// o2 filterAttribute：对指定表某维度列做 DISTINCT 聚合，返回 [{value,name,count}] 可筛选选项集。
+/// table/列名均为代码内常量（非用户输入），故 format! 拼接无注入风险。
+async fn filter_attr_options(
+    client: &deadpool_postgres::Client,
+    table: &str,
+    value_col: &str,
+    name_col: &str,
+) -> Result<Value, AppError> {
+    let sql = format!(
+        "SELECT {value_col} AS v, MAX({name_col}) AS n, COUNT(*) AS c FROM {table} \
+         WHERE {value_col} IS NOT NULL AND {value_col} <> '' \
+         GROUP BY {value_col} ORDER BY c DESC, v ASC"
+    );
+    let rows = client.query(&sql, &[]).await.map_err(|_| AppError::Internal)?;
+    Ok(Value::Array(
+        rows.iter()
+            .map(|r| {
+                let v: String = r.get::<_, Option<String>>("v").unwrap_or_default();
+                let n: String = r.get::<_, Option<String>>("n").unwrap_or_default();
+                let c: i64 = r.get("c");
+                Value::Object(serde_json::Map::from_iter([
+                    ("value".to_string(), Value::String(v.clone())),
+                    (
+                        "name".to_string(),
+                        Value::String(if n.is_empty() { v } else { n }),
+                    ),
+                    ("count".to_string(), Value::Number(serde_json::Number::from(c))),
+                ]))
+            })
+            .collect(),
+    ))
+}
+
 pub async fn read_filter_attribute(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT xid, xjob, xwork, \"xworkCompleted\", xread, xtitle, xapplication, \"xapplicationName\", \"xapplicationAlias\", xprocess, \"xprocessName\", xserial, xperson, xidentity, xunit, \"xcreateTime\", \"xupdateTime\" FROM PP_C_READ WHERE xid = $1",
-            &[&id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    match row {
-        Some(row) => {
-            let data = Value::Object(serde_json::Map::from_iter([
-                (
-                    "id".to_string(),
-                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("xcreateTime")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "updateTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("xupdateTime")
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(data)))
-        }
-        None => Ok(Json(ActionResult::error("read not found"))),
-    }
+    let data = Value::Object(serde_json::Map::from_iter([
+        (
+            "applicationList".to_string(),
+            filter_attr_options(&client, "PP_C_READ", "xapplication", "\"xapplicationName\"").await?,
+        ),
+        (
+            "processList".to_string(),
+            filter_attr_options(&client, "PP_C_READ", "xprocess", "\"xprocessName\"").await?,
+        ),
+        (
+            "personList".to_string(),
+            filter_attr_options(&client, "PP_C_READ", "xperson", "xperson").await?,
+        ),
+    ]));
+    Ok(Json(ActionResult::success(data)))
 }
 
 #[allow(non_snake_case)]
@@ -11249,43 +11262,23 @@ pub async fn readcompleted_count_credential_p2(pool: Extension<Pool>, axum::extr
 #[allow(non_snake_case)]
 pub async fn readcompleted_filter_attribute(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT xid, xjob, xwork, \"xworkCompleted\", xcompleted, xtitle, \"xstartTime\", \"xviewTime\", xapplication, \"xapplicationName\", \"xapplicationAlias\", xprocess, \"xprocessName\", xserial, xperson, xidentity, xunit, xopinion, \"xopinionLob\", \"xcreateTime\", \"xupdateTime\" FROM PP_C_READCOMPLETED WHERE xid = $1",
-            &[&id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    match row {
-        Some(row) => {
-            let data = Value::Object(serde_json::Map::from_iter([
-                (
-                    "id".to_string(),
-                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("xcreateTime")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "updateTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("xupdateTime")
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(data)))
-        }
-        None => Ok(Json(ActionResult::error("readcompleted not found"))),
-    }
+    let data = Value::Object(serde_json::Map::from_iter([
+        (
+            "applicationList".to_string(),
+            filter_attr_options(&client, "PP_C_READCOMPLETED", "xapplication", "\"xapplicationName\"").await?,
+        ),
+        (
+            "processList".to_string(),
+            filter_attr_options(&client, "PP_C_READCOMPLETED", "xprocess", "\"xprocessName\"").await?,
+        ),
+        (
+            "personList".to_string(),
+            filter_attr_options(&client, "PP_C_READCOMPLETED", "xperson", "xperson").await?,
+        ),
+    ]));
+    Ok(Json(ActionResult::success(data)))
 }
 
 #[allow(non_snake_case)]
@@ -13423,43 +13416,23 @@ pub async fn review_create_workcompleted(
 #[allow(non_snake_case)]
 pub async fn review_filter_attribute(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT xid, xjob, xwork, \"xworkCompleted\", xcompleted, xtitle, xserial, \"xstartTime\", \"xcompletedTime\", xapplication, \"xapplicationName\", \"xapplicationAlias\", xprocess, \"xprocessName\", xperson, \"xactivityUnique\", \"xcreatorPerson\", \"xcreatorIdentity\", \"xcreatorUnit\", xopinion, \"xopinionLob\", \"xcreateTime\", \"xupdateTime\" FROM PP_C_REVIEW WHERE xid = $1",
-            &[&id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    match row {
-        Some(row) => {
-            let data = Value::Object(serde_json::Map::from_iter([
-                (
-                    "id".to_string(),
-                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("xcreateTime")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "updateTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("xupdateTime")
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(data)))
-        }
-        None => Ok(Json(ActionResult::error("review not found"))),
-    }
+    let data = Value::Object(serde_json::Map::from_iter([
+        (
+            "applicationList".to_string(),
+            filter_attr_options(&client, "PP_C_REVIEW", "xapplication", "\"xapplicationName\"").await?,
+        ),
+        (
+            "processList".to_string(),
+            filter_attr_options(&client, "PP_C_REVIEW", "xprocess", "\"xprocessName\"").await?,
+        ),
+        (
+            "creatorPersonList".to_string(),
+            filter_attr_options(&client, "PP_C_REVIEW", "\"xcreatorPerson\"", "\"xcreatorPerson\"").await?,
+        ),
+    ]));
+    Ok(Json(ActionResult::success(data)))
 }
 
 #[allow(non_snake_case)]
@@ -13507,43 +13480,23 @@ pub async fn review_filter_create_entry(
 #[allow(non_snake_case)]
 pub async fn review_filter_entry(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT xid, xjob, xwork, \"xworkCompleted\", xcompleted, xtitle, xserial, \"xstartTime\", \"xcompletedTime\", xapplication, \"xapplicationName\", \"xapplicationAlias\", xprocess, \"xprocessName\", xperson, \"xactivityUnique\", \"xcreatorPerson\", \"xcreatorIdentity\", \"xcreatorUnit\", xopinion, \"xopinionLob\", \"xcreateTime\", \"xupdateTime\" FROM PP_C_REVIEW WHERE xid = $1",
-            &[&id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    match row {
-        Some(row) => {
-            let data = Value::Object(serde_json::Map::from_iter([
-                (
-                    "id".to_string(),
-                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("xcreateTime")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "updateTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("xupdateTime")
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(data)))
-        }
-        None => Ok(Json(ActionResult::error("review not found"))),
-    }
+    let data = Value::Object(serde_json::Map::from_iter([
+        (
+            "applicationList".to_string(),
+            filter_attr_options(&client, "PP_C_REVIEW", "xapplication", "\"xapplicationName\"").await?,
+        ),
+        (
+            "processList".to_string(),
+            filter_attr_options(&client, "PP_C_REVIEW", "xprocess", "\"xprocessName\"").await?,
+        ),
+        (
+            "creatorPersonList".to_string(),
+            filter_attr_options(&client, "PP_C_REVIEW", "\"xcreatorPerson\"", "\"xcreatorPerson\"").await?,
+        ),
+    ]));
+    Ok(Json(ActionResult::success(data)))
 }
 
 #[allow(non_snake_case)]
@@ -15319,43 +15272,27 @@ pub async fn task_count_credential_p2(pool: Extension<Pool>, axum::extract::Path
 #[allow(non_snake_case)]
 pub async fn task_filter_attribute(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT xid, xjob, xtitle, \"xstartTime\", xwork, xapplication, \"xapplicationName\", \"xapplicationAlias\", xprocess, \"xprocessName\", xactivity, \"xactivityName\", \"xactivityType\", \"xactivityToken\", xperson, xidentity, xunit, \"xcreatorPerson\", \"xcreatorIdentity\", \"xcreatorUnit\", \"xexpireTime\", \"xcreateTime\", \"xupdateTime\" FROM PP_C_TASK WHERE xid = $1",
-            &[&id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    match row {
-        Some(row) => {
-            let data = Value::Object(serde_json::Map::from_iter([
-                (
-                    "id".to_string(),
-                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("xcreateTime")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "updateTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("xupdateTime")
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(data)))
-        }
-        None => Ok(Json(ActionResult::error("task not found"))),
-    }
+    let data = Value::Object(serde_json::Map::from_iter([
+        (
+            "applicationList".to_string(),
+            filter_attr_options(&client, "PP_C_TASK", "xapplication", "\"xapplicationName\"").await?,
+        ),
+        (
+            "processList".to_string(),
+            filter_attr_options(&client, "PP_C_TASK", "xprocess", "\"xprocessName\"").await?,
+        ),
+        (
+            "activityNameList".to_string(),
+            filter_attr_options(&client, "PP_C_TASK", "xactivity", "\"xactivityName\"").await?,
+        ),
+        (
+            "personList".to_string(),
+            filter_attr_options(&client, "PP_C_TASK", "xperson", "xperson").await?,
+        ),
+    ]));
+    Ok(Json(ActionResult::success(data)))
 }
 
 #[allow(non_snake_case)]
@@ -17833,43 +17770,27 @@ pub async fn taskcompleted_count_credential_p2(pool: Extension<Pool>, axum::extr
 #[allow(non_snake_case)]
 pub async fn taskcompleted_filter_attribute(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT xid, xjob, xtitle, \"xstartTime\", \"xcompletedTime\", \"xcreatorPerson\", \"xcreatorIdentity\", \"xcreatorUnit\", xapplication, \"xapplicationName\", \"xapplicationAlias\", xprocess, \"xprocessName\", xserial, xperson, \"xactivityUnique\", \"xcreateTime\", \"xupdateTime\" FROM PP_C_TASKCOMPLETED WHERE xid = $1",
-            &[&id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    match row {
-        Some(row) => {
-            let data = Value::Object(serde_json::Map::from_iter([
-                (
-                    "id".to_string(),
-                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("xcreateTime")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "updateTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("xupdateTime")
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(data)))
-        }
-        None => Ok(Json(ActionResult::error("taskcompleted not found"))),
-    }
+    let data = Value::Object(serde_json::Map::from_iter([
+        (
+            "applicationList".to_string(),
+            filter_attr_options(&client, "PP_C_TASKCOMPLETED", "xapplication", "\"xapplicationName\"").await?,
+        ),
+        (
+            "processList".to_string(),
+            filter_attr_options(&client, "PP_C_TASKCOMPLETED", "xprocess", "\"xprocessName\"").await?,
+        ),
+        (
+            "creatorPersonList".to_string(),
+            filter_attr_options(&client, "PP_C_TASKCOMPLETED", "\"xcreatorPerson\"", "\"xcreatorPerson\"").await?,
+        ),
+        (
+            "personList".to_string(),
+            filter_attr_options(&client, "PP_C_TASKCOMPLETED", "xperson", "xperson").await?,
+        ),
+    ]));
+    Ok(Json(ActionResult::success(data)))
 }
 
 #[allow(non_snake_case)]
