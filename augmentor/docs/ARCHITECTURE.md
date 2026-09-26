@@ -512,13 +512,14 @@ RequestTraceMiddleware → RateLimitMiddleware → RequestLoggingMiddleware → 
 「越界路径 403 / `..` 400」「限流已装配且 429 生效」「密钥开启后写操作 401、读操作仍匿名」，
 共 18 例。
 
-#### 3.12.4 上传体的三道闸
+#### 3.12.4 上传体的四道闸
 
-`POST /api/data/upload` 是唯一的「把外部字节写进磁盘」的入口，所以在落盘前后各设一道判据，
-顺序是有意的：
+`POST /api/data/upload` 是唯一的「把外部字节写进磁盘」的入口，所以在**解析之前**、
+**读取之前**、**读取之后**三段各设判据，顺序是有意的：
 
 | 判据 | 位置 | 语义 |
 |------|------|------|
+| 整包长度（解析之前，L90 / 承 A150） | `api/middleware/upload_gate.py:UploadBodyGate` | 只看请求头：`Content-Type` 是 multipart 且 `Content-Length` 超过 `web.max_upload_bytes` 加 1 MiB multipart 余量时，在解析器拿到任何一个字节之前回 `413`（文案「未解析、未落盘」）|
 | 字节上限（O(1) 前置） | `api/routes/data.py:_read_upload_body` | `file.size` 由 Starlette 在写入时逐块累加，是**服务端权威值**；超过 `web.max_upload_bytes` 直接 `413`，一次 `read()` 都不发起 |
 | 字节上限（读后复核） | 同上 | `file.size` 可能为 `None`（非 multipart 的测试替身、上游没给出长度），此时只能用读回来的 `len(content)` 兜底，仍回 `413` |
 | 数据集形态 | `api/deps.py:assert_dataset_shape` | 顶层必须是数组、元素必须是对象，否则 `400`；读侧 `read_items` 与上传侧共用同一份实现 |
@@ -532,10 +533,38 @@ RequestTraceMiddleware → RateLimitMiddleware → RequestLoggingMiddleware → 
 +64.0 MiB 峰值内存、耗时 ×5.9，因为分块读要把每一块再拼回一整块。`file.size` 已经够用，就把它
 用在唯一能用它的地方：一次比较、零次读取。
 
-**诚实边界**：这道闸管的是「本端点额外分配多少内存」，管不到「请求体到过磁盘」。Starlette 的
-`MultiPartParser` 对**文件部件**用 `SpooledTemporaryFile`（超过 `spool_max_size` = 1 MiB 即落盘临时
-文件），所以超限请求在被拒绝前，字节已经写过一次临时磁盘；`max_part_size` 只保护**非文件**部件。
-要在网络层就拦住，得配反向代理的 `client_max_body_size`（见 A150）。
+**诚实边界**：中间那道 `file.size` 闸管的是「本端点额外分配多少内存」，管不到「请求体到过磁盘」。
+Starlette 的 `MultiPartParser` 对**文件部件**用 `SpooledTemporaryFile`（超过 `spool_max_size` = 1 MiB
+即落盘临时文件），所以超限请求在被拒绝前，字节已经写过一次临时磁盘；`max_part_size` 只保护
+**非文件**部件。
+
+**这一格 L90 补了一半，另一半按形状划清**（探针 `Temp/l90q/spool_census2.py`，两把尺子是
+`Request.form` 被调几次与交给部件文件的字节数）：
+
+| 形状 | 越界 4 MiB 上传的读数 |
+|------|----------------------|
+| 现状（只有中间那道闸） | 解析 1 次 / 部件 4 194 304 字节 |
+| FastAPI 依赖（`include_router(dependencies=...)`） | 解析 1 次 / 4 194 304 字节 ⇒ **管不到**，body 先被读 |
+| 纯 ASGI 闸（`UploadBodyGate` 这一形状） | 解析 0 次 / 字节 0 |
+| `BaseHTTPMiddleware` 闸 | 解析 0 次 / 字节 0，但每请求 3.72 倍开销 |
+| 纯 ASGI / BaseHTTP 闸 + 客户端不声明长度（chunked） | 解析 1 次 / 4 194 304 字节 ⇒ **管不到**，头部没有尺寸可判 |
+
+所以「解析之前拒收」对**声明了 `Content-Length` 的客户端**成立，对 chunked 不成立；后者继续
+由 `file.size` 那道权威判据兜底，要在网络层全封仍得配反向代理的 `client_max_body_size`（见 A150
+与 `docs/DEPLOYMENT.md` 的 nginx 模板）。声明值是客户端自报的，因此本闸只是**提前拒掉明显越界的
+整包**，不是新的权威判据。
+
+**为什么是纯 ASGI 而不是本仓既有的 `BaseHTTPMiddleware`**（规则 7：两条约定冲突时选一条并说明）：
+`api/middleware/` 里三件都继承 `BaseHTTPMiddleware`，但它们的活都要读或改请求/响应体，而本闸只看
+头部。实测同一最小 app 上每请求开销：无额外层 30.71 µs、纯 ASGI 闸 31.36 µs（1.02 倍）、
+`BaseHTTPMiddleware` 闸 114.26 µs（**3.72 倍**，`Temp/l90q/middleware_cost.py`，3 000 请求 × 5 轮
+中位数）。同轮还量到 `BaseHTTPMiddleware.dispatch` 里 `raise HTTPException` 在生产侧变成 **500**
+（`raise_server_exceptions=False` 实测），所以本闸按既有另一条约定 `return JSONResponse` 写
+（`RateLimitMiddleware` 的 429 就是 return）。「装在哪」也被量了：经 `add_middleware` 落到 CORS
+之外时那份 413 **不带** `Access-Control-Allow-Origin`，浏览器读不到文案；经
+`FastAPI(middleware=[...])` 装（starlette 1.2.1 把它放在 `user_middleware` 最内侧，即 CORS 之内）
+时头保留。回归守卫 `tests/unit/test_upload_gate_l90.py`（34 例 / 5 类），判据走真实中间件链的
+顺序而不是属性名，这样两个 starlette 版本（1.2.1 / 1.6.0）都认。
 
 `_read_upload_body` 的两条 `413` 文案都写明「未读取、未落盘」/「未落盘」，是为了让调用方分辨
 「我没被吞掉多少」；`UnicodeDecodeError` 单独译成 `400`「上传内容不是合法的 UTF-8 文本」，
