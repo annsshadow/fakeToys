@@ -377,6 +377,49 @@ class TestApiRejectsOutOfRange:
         assert reloaded.augmentation.retry_delay != GOOD_VALUE
 
 
+class TestApiRejectsBlankStrings:
+    """写入面的第四档：值**看起来**有，其实全是空白（L83 / A142）
+
+    上面那一族判的是数值越界，本族判的是字符串形状，两族走的是同一个出口
+    （`apply_section_update` → 该节 `__post_init__` → `validation.require_string`），
+    所以这里真正要钉的不是「又测了一次 400」，而是三件只有端点上才成立的事：
+
+    1. 空白值不会先落内存再回滚（改前它连回滚都不需要 —— 当次 200，直接落盘）；
+    2. 列表里的空白项也算空白（`export.formats: ["json", "   "]` 改前是合法批次）；
+    3. **含**空格的值照旧收，且不裁剪（`"my collection"` 存回原样）。少了这一条，
+       收紧判据就成了替客户改配置，那是比静默放行更坏的行为。
+    """
+
+    def test_400_for_blank_string(self, pipeline, monkeypatch):
+        client = _client()
+        response = client.post("/api/config", json={"vector": {"storage_dir": "   "}})
+        assert response.status_code == 400
+        assert "纯空白" in response.json()["detail"]
+
+    def test_400_for_blank_list_item(self, pipeline, monkeypatch):
+        client = _client()
+        response = client.post(
+            "/api/config", json={"export": {"formats": ["json", "   "]}}
+        )
+        assert response.status_code == 400
+
+    def test_blank_write_reaches_neither_memory_nor_disk(self, pipeline, monkeypatch):
+        original = _seed_cwd_config()
+        before = pipeline.config.vector.collection
+        client = _client()
+        response = client.post("/api/config", json={"vector": {"collection": "\u00a0"}})
+        assert response.status_code == 400
+        assert pipeline.config.vector.collection == before
+        assert (Path.cwd() / "config.yaml").read_bytes() == original
+
+    def test_whitespace_inside_a_legal_value_is_kept_verbatim(self, pipeline, monkeypatch):
+        """反向用例：判据管的是「整串空白」，不是「值里不许有空格」"""
+        client = _client()
+        response = client.post("/api/config", json={"vector": {"collection": "my docs"}})
+        assert response.status_code == 200
+        assert pipeline.config.vector.collection == "my docs"
+
+
 class TestRouteStructure:
     """判据型守卫走 AST（L56 立的规矩：正则匹配的是文本，不是结构）"""
 
