@@ -62,11 +62,5 @@ POST /api/processplatform/assemble/surface/review/create/workcompleted
 POST /api/processplatform/assemble/surface/review/filter/create/entry
 POST /api/processplatform/service/processing/attachment/copy/workcompleted/1
 POST /api/processplatform/service/processing/record/task/processing
-POST /api/processplatform/service/processing/touch/deletedraft
-POST /api/processplatform/service/processing/touch/handoverjob
-POST /api/processplatform/service/processing/touch/merge
-POST /api/processplatform/service/processing/touch/mergeitem
-POST /api/processplatform/service/processing/touch/touchdelay
-POST /api/processplatform/service/processing/touch/urge
 POST /api/processplatform/service/processing/workcompleted/merge/1
 PUT /api/portal/assemble/surface/save/layout
