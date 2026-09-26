@@ -1310,8 +1310,8 @@ KNOWN_FIELDS 里是**已知**的 —— 已知于校验器、未知于读取器�
 > 两份全量日志，Temp `l50q/col_aug.txt` / `col_py314.txt` / `full_aug2.txt` / `full_py314.txt`）：
 > **+21** 两个 pandas 门控文件（`test_csv_excel_export.py` 9 例 + `test_csv_excel_import_real.py` 12 例）
 > 在 aug 下**根本不 collect**（模块级 `importorskip` ⇒ 只各留 1 条 skip 占位）、在 `C:\Python314` 下
-> collect 且 pass；**+1** `test_micro_branches_l61.py:99` 在 aug 下缺 pandas 而 skip、在 `C:\Python314`
-> 下实跑；**−2** `test_chromadb_backend.py:110` 与 `test_vector.py:56` 在 aug 下走「缺依赖」分支而
+> collect 且 pass；**+1** `test_micro_branches_l61.py` 在 aug 下缺 pandas 而 skip、在 `C:\Python314`
+> 下实跑（该门控自 L85 起已去掉，那一格现在两侧都真跑）；**−2** `test_chromadb_backend.py:110` 与 `test_vector.py:56` 在 aug 下走「缺依赖」分支而
 > pass、在 `C:\Python314` 下 skip。21 + 1 − 2 = 20，Δskipped = 3 → 2 = −1，两式相加 = Δevents = +19
 > = 4,985 − 4,966 ✓。结论与纪律：**覆盖率分母同样是解释器的函数**（同一份代码 TOTAL 语句 12,785 vs
 > 12,159、覆盖 98.64 % vs 99.02 %），此后全量数字必须连解释器身份一起记。
@@ -1462,7 +1462,7 @@ m2 字段默认漂回 `["*"]`/`True` ⇒ **3**；m3 只摘 `web.data_roots` 一�
 本轮才定位到根因：这台机器有**两套 Python**（`C:\Python314` 与 venv `aug`），两段会话换了 `python` 而
 账本没记解释器。同一份工作树双跑实测：aug（4963 passed / 3 skipped，TOTAL 12,785 语句，98.64 %）与
 `C:\Python314`（4983 / 2，12,159 语句，99.02 %），Δpassed +20 = **+21**（两个 pandas 门控文件在 aug 下
-不 collect）+ **1**（`test_micro_branches_l61.py:99`）− **2**（两条 chromadb「缺依赖」用例转为 skip），
+不 collect）+ **1**（`test_micro_branches_l61.py`）− **2**（两条 chromadb「缺依赖」用例转为 skip），
 Δcollect = 21 与两份 `--collect-only` 清单逐条相符。纪律：**全量数字必须连解释器身份一起记**，覆盖率
 分母同样是环境的函数。
 
