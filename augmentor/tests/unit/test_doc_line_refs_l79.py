@@ -228,9 +228,24 @@ FLOOR = {
 #: / 223 → **229** / 35 → **37**，账本 308 → **297** / 1321 → **1360** / 169 → **165**。
 #: **架构文档那两格反向移动（`line_refs` 降 4 而漂移档升 2）本轮未做逐块归因**，
 #: 只报差不编因；要还这笔先跑 L81 那类带闭合断言的 attr 探针。
+#: **L88 回填（三格全是文档面，且第一次把 L87 欠的那笔归因还掉）**：探针
+#: `Temp/l88q/bucket_attr.py` 按 L82 终态那次的**更强闭合口径**跑（HEAD 文本与现文本在
+#: **同一棵树**上各跑一次 `audit()`，再按 token 多重集求差）——
+#: 架构文档 42 / 229 / 37 → **42 / 230 / 37**：净 +1 且**删 0**，那 1 个 token 就是新写那段
+#: 失效边界里点名的 `test_cache_invalidation_l88.py`（`file_unique` 184 → 185 同向闭合）。
+#: 账本 297 / 1360 / 165 → **296 / 1367 / 168**，其中 **+7 纯增**（`api/routes/config.py`、
+#: `api/deps.py`、`augmentor/config.py`、两份 `Temp/l88q/` 探针 ×2 与 `test_upload_ceiling_l87.py`，
+#: 删 0 ⇒ 纯增可加，不需要逐块减法即闭合）、**−1 条 `line_refs`** 是本轮把 A138 那格的
+#: 「文件:行号」降成名字锚点（同一动作让 `dead_line` 1 → 0，硬 0 档当场抓住的那一条就是它）。
+#: **`code_but_no_name_match` 那 +3 与本轮文本无关**：HEAD 版账本在**现树**上重跑就是 168
+#: （`dead_line` 也同态给出 1，正是 A153 预言的形状），所以漂移全部由本轮给 `api/deps.py`
+#: 插码 + 路由 import 摊成六行这两处**源码位移**解释 ⇒ **L87 那句「要还这笔先跑带闭合断言的
+#: attr 探针」在本轮兑现**（还的是「同树 HEAD 态」这一半；跨文档那一半仍未还）。
+#: **四个棘轮桶本轮一格未抬**：账本 `ambiguous_line` 68、`ambiguous_file` 145、`bare` 149、
+#: `scratch_missing` 111 全部等于上限，`dead_line` 与 `unresolved_source` 两侧仍为 0。
 MEASURED = {
-    ARCH: {"line_refs": 42, "file_tokens": 229, "code_but_no_name_match": 37},
-    LEDGER: {"line_refs": 297, "file_tokens": 1360, "code_but_no_name_match": 165},
+    ARCH: {"line_refs": 42, "file_tokens": 230, "code_but_no_name_match": 37},
+    LEDGER: {"line_refs": 296, "file_tokens": 1367, "code_but_no_name_match": 168},
 }
 
 #: 日志块标题行上「下一轮才填得出自己哈希」的占位符。精确相等 = **只许有该填的那几条**。
@@ -766,8 +781,12 @@ BACKLOG_HEADS = ("| # | 位置 | 问题 | 量级 |", "|---|------|------|------|
 #: 行号各出现一次），不是再来一次手写 Edit。**升为口径候选**：插入型 Edit 的 `old_string`
 #: **必须以整行为单位**（含行首 `| A\d+ |` 与行尾 `| 定级 |`），截断到半行的锚点在竖线表格里
 #: 一定吃掉行头 —— 这是 (w) 那一族「工具不报错的损害」里最安静的一种。
-BACKLOG_A_LINES = 158
-BACKLOG_A_MAX = 157
+#: **L88 回填（+2 行，(w) 口径第一次落在脚本里而不是 Edit 里）**：A158（保住 mtime 的写方让
+#: 陈旧窗口无界）与 A159（`save_config` 的双趟 YAML 解析，判负不动手）两行由
+#: `Temp/l88q/ledger_fill_1.py` 按**整行锚点 + 行数断言**插入，本轮三条骨架判据一次未因形状
+#: 破损而红（红的是「常数尚未回填」那一类，与本档无关）。跳号集合第七次未变。
+BACKLOG_A_LINES = 160
+BACKLOG_A_MAX = 159
 BACKLOG_A_MISSING = {52}
 #: Backlog B 现量：11 条竖线行 = 2 表头 + 7 条可编号 + 2 条带角标（B3① / ~~B3②~~）。
 BACKLOG_B_LINES = 11
