@@ -69,7 +69,6 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/service/processing/record/processing/{work}", post(crate::record_work_processing))
         .route("/api/processplatform/service/processing/record/terminate/{work}", get(crate::record_work_terminate))
         .route("/api/processplatform/service/processing/review/{id}", get(crate::review_id))
-        .route("/api/processplatform/service/processing/review/init/review", get(crate::review_init_review))
         .route("/api/processplatform/service/processing/service/touch/{work}/{id}", post(crate::service_work_id_touch_p2))
         .route("/api/processplatform/service/processing/snap/{id}", get(crate::snap_id))
         .route("/api/processplatform/service/processing/snap/restore/{id}", get(crate::snap_id_restore))
@@ -110,7 +109,6 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/service/processing/workcompleted/merge/{flag}", post(crate::workcompleted_flag_merge))
         .route("/api/processplatform/service/processing/workcompleted/rollback/{flag}", get(crate::workcompleted_flag_rollback))
         .route("/api/processplatform/service/processing/workcompleted/process/{processFlag}", get(crate::workcompleted_process_processFlag))
-        .route("/api/processplatform/service/processing/workcompleted/shift/time", get(crate::workcompleted_shift_time))
         // ── plan002 U2：o2server o2server 契约端点（u2 模块，121 端点闭合）────────
         .route("/api/processplatform/service/processing/applicationdict/{id}", put(u2::dict_edit))
         .route("/api/processplatform/service/processing/applicationdict/{id}/{p0}/data", put(u2::dict_set_1).post(u2::dict_set_1).delete(u2::dict_del_1))
