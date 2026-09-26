@@ -647,7 +647,7 @@ pub async fn area_list_province_province(
 #[allow(non_snake_case)]
 pub async fn area_list_province_province_city_city(
     pool: Extension<Pool>,
-    axum::extract::Path(province): axum::extract::Path<String>,
+    axum::extract::Path((province, _)): axum::extract::Path<(String, String)>,
     axum::extract::Path(city): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -721,7 +721,7 @@ pub async fn area_list_province_province_city_city(
 #[allow(non_snake_case)]
 pub async fn area_list_province_province_city_city_district_district(
     pool: Extension<Pool>,
-    axum::extract::Path(province): axum::extract::Path<String>,
+    axum::extract::Path((province, _, _)): axum::extract::Path<(String, String, String)>,
     axum::extract::Path(city): axum::extract::Path<String>,
     axum::extract::Path(district): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1625,7 +1625,7 @@ pub async fn invoice_get_id(
 #[allow(non_snake_case)]
 pub async fn invoice_list_paging_page_size_size(
     pool: Extension<Pool>,
-    axum::extract::Path(page): axum::extract::Path<i32>,
+    axum::extract::Path((page, _)): axum::extract::Path<(i32, String)>,
     axum::extract::Path(size): axum::extract::Path<i32>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1962,7 +1962,7 @@ pub async fn office_html_to_word_result_flag(
 #[allow(non_snake_case)]
 pub async fn qrcode_width_width_height_height_text_text(
     pool: Extension<Pool>,
-    axum::extract::Path(width): axum::extract::Path<u32>,
+    axum::extract::Path((width, _, _)): axum::extract::Path<(u32, String, String)>,
     axum::extract::Path(height): axum::extract::Path<u32>,
     axum::extract::Path(text): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2514,7 +2514,7 @@ pub async fn upgrade_2021090902(
 #[allow(non_snake_case)]
 pub async fn worktime_betweenholidaycount_start_startDate_end_endDate(
     pool: Extension<Pool>,
-    axum::extract::Path(start_date): axum::extract::Path<String>,
+    axum::extract::Path((start_date, _)): axum::extract::Path<(String, String)>,
     axum::extract::Path(end_date): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2543,7 +2543,7 @@ pub async fn worktime_betweenholidaycount_start_startDate_end_endDate(
 #[allow(non_snake_case)]
 pub async fn worktime_betweenminutes_start_start_end_end(
     pool: Extension<Pool>,
-    axum::extract::Path(start): axum::extract::Path<String>,
+    axum::extract::Path((start, _)): axum::extract::Path<(String, String)>,
     axum::extract::Path(end): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2575,7 +2575,7 @@ pub async fn worktime_betweenminutes_start_start_end_end(
 #[allow(non_snake_case)]
 pub async fn worktime_forwarddays_start_start_days_days(
     pool: Extension<Pool>,
-    axum::extract::Path(start): axum::extract::Path<String>,
+    axum::extract::Path((start, _)): axum::extract::Path<(String, String)>,
     axum::extract::Path(days): axum::extract::Path<u32>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2644,7 +2644,7 @@ pub async fn worktime_forwarddays_start_start_days_days(
 #[allow(non_snake_case)]
 pub async fn worktime_forwardminutes_start_start_minutes_minutes(
     pool: Extension<Pool>,
-    axum::extract::Path(start): axum::extract::Path<String>,
+    axum::extract::Path((start, _)): axum::extract::Path<(String, String)>,
     axum::extract::Path(minutes): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
