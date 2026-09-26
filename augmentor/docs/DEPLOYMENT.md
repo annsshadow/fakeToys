@@ -218,6 +218,9 @@ server {
     # **整个 multipart body**（还要加 boundary 与各部件头部），一份刚好 256 MiB 的上传
     # 在应用侧合法、在 nginx 侧会被 413 掐掉，而且那条 413 由 nginx 发出、没有应用侧
     # 「（未读取、未落盘）」那句可行动的文案。改大 `web.max_upload_bytes` 时这里要一起改。
+    # L90 起应用侧也多了一道**解析之前**的整包闸（`UploadBodyGate`：只看 `Content-Length`，
+    # 超过 `web.max_upload_bytes` 加 1 MiB multipart 余量直接 413「（未解析、未落盘）」），
+    # 但它管不到不声明长度的 chunked 上传 —— 那一档仍然只有网络层拦得住。
     client_max_body_size 300m;
 
     location / {
