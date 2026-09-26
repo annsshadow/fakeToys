@@ -122,13 +122,26 @@ def _reject_null_fields(section: str, obj: Any,
     与空串是**合法状态**（ollama 就没有 api_key，实测出厂模板给的是 `''`），
     `request_timeout` 的 `None` 更是「不覆盖全局档」这一档本身，所以那一节不能
     整节套用本判据，只能点名判采样三键。
+
+    整节推导那一支**只看 `init` 字段**（A126 / L78）：非 init 字段的值是算出来的，
+    用户既写不出它、也就没有「写了键却没给值」这一档。改前它照判，实测（本地探针类，
+    见 `Temp/l78q/perf_a126.json` 每跑 `verdicts` 里的 `non-init-None` 档）抛的是
+    `probe.derived 不能是 null（配置里写了这个键却没有给值）` —— 一句**指向不存在的
+    用户笔误**的报错。过滤写在「值确实是 `None`」之后而不是循环开头，是同进程 A/B 的
+    结果：开头那两种写法（每次新建名单 / 每字段查表）让 `AppConfig()` 分别慢
+    +15.98 % / +16.18 % 与 +6.23 % / +6.65 %（改后连两跑），本写法与改前打平（同两跑
+    −2.14 % / −0.38 %，9 个交替块里 2~3 块略慢 ⇒ 只敢说打平，不说「每轮更快」）。
+    逐字读数只住 `Temp/l78q/perf_a126.json` 的 `runs` 键（注释里的差额以最后两跑为准）。
     """
-    field_names = obj.__dataclass_fields__ if names is None else names
-    for name in field_names:
-        if getattr(obj, name) is None:
-            raise DataValidationError(
-                f"{section}.{name} 不能是 null（配置里写了这个键却没有给值）"
-            )
+    fields_map = obj.__dataclass_fields__
+    for name in (fields_map if names is None else names):
+        if getattr(obj, name) is not None:
+            continue
+        if names is None and not fields_map[name].init:
+            continue
+        raise DataValidationError(
+            f"{section}.{name} 不能是 null（配置里写了这个键却没有给值）"
+        )
 
 
 @dataclass
@@ -599,10 +612,22 @@ def _resolve_env(value: Any) -> Any:
 # 模型条目的键集，**从 dataclass 推导**（A114 / L75）。写死的清单正是本条缺陷的
 # 形状：改前 `load_config` 手抄了九个回落值，实测其中四个与 `ModelConfig` 的字段
 # 默认不一致（`Temp/l75q/before.json` 的 `a114_drift` 档）。同一套推导的先例是
-# `config_validator._warn_unread_model_keys`（它同样用 `fields(ModelConfig)` 而不是
-# 抄一份），所以给 `ModelConfig` 加字段时不需要记得改第二处 —— 反过来「条目里出现
-# 一个 dataclass 没有的键」由 A76 那一路「写了没人读」负责出声。
-MODEL_ENTRY_KEYS = frozenset(f.name for f in fields(ModelConfig))
+# `config_validator._warn_unread_model_keys`（L78 起它直接引本常量，不再自己调
+# `fields()`，所以「加载侧认为有人读」与「反馈侧认为有人读」不可能再分开漂）。
+#
+# `if f.init` 是 A126 / L78：`save_config` 用 `dataclasses.asdict()` 序列化，而 asdict
+# **不看 `init`** ⇒ 一旦 `ModelConfig` 出现非 init 字段，它会被写进 YAML，下一趟加载
+# 把它喂回构造器就当场 `TypeError`（沙箱注入实测：`Temp/l78q/inject_l78.json` 的 m7b 档
+# 造出该形状并撤掉过滤器，真往返 `save_config` → `load_config` 抛
+# `ModelConfig.__init__() got an unexpected keyword argument 'l78_probe'`；同一形状的
+# m7 档留着本过滤器则 `PROBE_OK`，但 `asdict` 照样把那个键写进文件 ⇒ 走 A76/A84 的
+# 「写了没人读」出声面。症状与 L77 在节面上撞到的那条逐字同形：产品自己写出的配置
+# 文件把自己打崩）。
+# 反过来「条目里出现一个 dataclass 没有的键」仍由 A76 那一路「写了没人读」负责出声，
+# 本函数不重复判。过滤放在导入期，所以运行时取键**没有新增任何成本**；今天
+# `ModelConfig` 的 9 个字段全是 init（`Temp/l78q/a126_census.json` 的
+# `non_init_fields` 实测为空 ⇒ 本轮不是活故障，是结构收口）。
+MODEL_ENTRY_KEYS = frozenset(f.name for f in fields(ModelConfig) if f.init)
 
 # 需要解析 `${ENV}` 占位符的三个键。这份清单是 A95 记下的现状（全仓只有模型条目
 # 这三处真的解析占位符），本轮只是把它从「三行调用」提成一个具名元组，好让
@@ -735,8 +760,9 @@ def _load_section(raw_config: Dict, key: str, config_class: type) -> Any:
     # （7.83 对 7.86、8.01 对 8.00 µs，两者都比表版快三成），因为那一支根本不取键；
     # 「只带一个拼错的键」那一档与本写法同形状（表版 18.97 / 18.58 µs，中间版
     # +56.57 % / +55.86 %，本写法 −29.27 % / −30.25 %）。
-    # 本模块的既有口径也一致：热点上的 `_reject_null_fields`（`:126`）读的就是这个
-    # 属性，而只在导入期跑一次的 `MODEL_ENTRY_KEYS`（`:605`）用 `fields()`。
+    # 本模块的既有口径也一致：热点上的 `_reject_null_fields` 读的就是这个属性，而只在
+    # 导入期跑一次的 `MODEL_ENTRY_KEYS` 用 `fields()`。（这两处只写名字不写行号：本轮
+    # 在本常量上方加了八行注释，行号锚点当场就漂了 —— 实测过的 A127 形状。）
     #
     # `and names[k].init` 不是防御性冗余，是**「保存 → 重新加载」这一趟的行为面**：
     # `save_config` 用 `dataclasses.asdict()`（见它内部的 `_to_dict`），而 asdict

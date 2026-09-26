@@ -26,7 +26,7 @@ from .config import (AUTO_SAVE_INTERVAL_MIN, DEDUP_THRESHOLD_RANGE,
                      RATE_LIMIT_MIN_REQUESTS, RATE_LIMIT_MIN_WINDOW_SECONDS,
                      REQUEST_TIMEOUT_RANGE, RETRY_DELAY_RANGE,
                      TEMPERATURE_RANGE, TOP_P_RANGE, VARIANTS_PER_SEED_RANGE,
-                     AppConfig, ModelConfig)
+                     AppConfig, MODEL_ENTRY_KEYS)
 from .logging_setup import LOGGING_LEVELS, build_formatter
 from .retry import MAX_RETRY_AFTER
 
@@ -366,20 +366,25 @@ class ConfigValidator:
                             self.UNREAD_MARKER, key, sub_key, self._suggest(sub_key, sorted(known))))
 
     def _warn_unread_model_keys(self, models: Dict, result: ValidationResult) -> None:
-        """模型条目里的子键按 `ModelConfig` 的字段集判（同一套推导，第二个面）
+        """模型条目里的子键按**加载侧那一份键集**判（A126 / L78 起不再自己推导）
 
         `models.<名字>` 的键集用户自己起，所以顶层不进判据；但它的**子项**形状是
-        封闭的：`load_config` 对每个条目读 `type` / `api_key` / `secret_key` /
-        `base_url` / `model` / `temperature` / `top_p` / `max_output_tokens` /
-        `request_timeout` 九个键，实测与 `ModelConfig` 的字段集逐字相等（差集两侧
-        都空；L52 记的是八个，L71 加 `request_timeout` 后本句跟着改数）。清单本身
-        是 `sorted(f.name for f in fields(ModelConfig))` 推导的，不是抄的 ⇒ 加字段
-        不需要记得改这里；反方向（规格表里有、字段集没有）由
+        封闭的，就是 `ModelConfig` 那些可传入的字段（今天九个：`type` / `api_key` /
+        `secret_key` / `base_url` / `model` / `temperature` / `top_p` /
+        `max_output_tokens` / `request_timeout`；L52 记的是八个，L71 加了
+        `request_timeout` 之后本句跟着改数）。
+
+        改前这里自己写一遍 `sorted(f.name for f in fields(ModelConfig))`，与加载侧的
+        `MODEL_ENTRY_KEYS` 属于「同一个来源、两份推导」—— `init` 判据要各写一遍、
+        也就各漂一次，正是 L77 在节面上刚收掉的那个形状。本行现在直引那个常量，
+        于是「加载侧认为没人读的键，反馈侧一定报得出」是**结构上**成立，而不是靠
+        用例钉着。顺带把每次调用新建字段元组变成排一份导入期算好的集合，实测本函数
+        快 −40.29 % / −40.02 %（改后连两跑，各 9/9 交替块更快；逐字读数只住
+        `Temp/l78q/perf_validator_face.json` 的 `runs` 键）。反方向（规格表里有、字段集没有）由
         `tests/unit/test_model_entry_ranges_l72.py::test_no_ghost_model_spec` 钉。
-        方向守护见
-        `tests/unit/test_config_validator.py::TestUnreadKeyWarnings`。
+        方向守护见 `tests/unit/test_config_validator.py::TestUnreadKeyWarnings`。
         """
-        known = sorted(f.name for f in fields(ModelConfig))
+        known = sorted(MODEL_ENTRY_KEYS)
         for name, body in models.items():
             if name == "default" or not isinstance(body, dict):
                 continue
