@@ -45,13 +45,10 @@ GET /api/hotpic_assemble_control/cipher/hotpic/filter/list/page/page/count/count
 GET /api/hotpic_assemble_control/delete/hotpic
 GET /api/hotpic_assemble_control/save/hotpic
 GET /api/hotpic_assemble_control/user/hotpic/filter/list/page/page/count/count
-GET /api/jpush/assemble/control/device/check/deviceName/deviceType/pushType
 GET /api/jpush/assemble/control/device/config/push/type
 GET /api/jpush_assemble_control/delete/jpush
-GET /api/jpush_assemble_control/device/check/deviceName/deviceType/pushType
 GET /api/jpush_assemble_control/device/config/push/type
 GET /api/jpush_assemble_control/device/unbind/deviceName/deviceType
-GET /api/jpush_assemble_control/device/unbind/new/deviceName/deviceType/pushType
 GET /api/jpush_assemble_control/save/jpush
 GET /api/portal/assemble/designer/list/portal/1/1
 GET /api/portal/assemble/designer/pageversion/list/1/1

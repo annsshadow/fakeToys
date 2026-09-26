@@ -46,20 +46,12 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         )
         .route("/api/jpush_assemble_control/device/bind", post(device_bind))
         .route(
-            "/api/jpush_assemble_control/device/check/deviceName/deviceType/pushType",
-            get(device_check_deviceName_deviceType_pushType),
-        )
-        .route(
             "/api/jpush_assemble_control/device/config/push/type",
             get(device_config_push_type),
         )
         .route(
             "/api/jpush_assemble_control/device/list/{pushType}",
             get(device_list_pushType),
-        )
-        .route(
-            "/api/jpush_assemble_control/device/unbind/new/deviceName/deviceType/pushType",
-            get(device_unbind_new_deviceName_deviceType_pushType),
         )
         .route(
             "/api/jpush_assemble_control/device/unbind/deviceName/deviceType",
@@ -92,7 +84,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         )
         .route("/api/jpush/assemble/control/device/bind", post(device_bind))
         .route(
-            "/api/jpush/assemble/control/device/check/deviceName/deviceType/pushType",
+            "/api/jpush/assemble/control/device/check/{p0}/{p1}/{p2}",
             get(device_check_deviceName_deviceType_pushType),
         )
         .route(
