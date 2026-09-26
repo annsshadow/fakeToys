@@ -399,6 +399,23 @@ AUGMENTOR_DATA_ROOTS（os.pathsep 分隔）
 > 被冻住。由 `TestConfigDataRootsCache` / `TestEnvDataRootsCache` 分别钉住
 > 「200 次查询只解析 1 次配置」「改 mtime 立刻换根」「改相对值后换 cwd 立刻换根」。
 
+> **`mtime_ns` 键的失效边界与写面的显式作废**
+>
+> 「改过配置文件立刻生效」这句话，在 `(路径, mtime_ns)` 这一档里其实是由**操作系统
+> 时钟**决定的：本机 mtime tick 实测只有 0.5 ms（跳距 0.4999 / 0.5029 / 1.0022 ms），
+> 一次改写若落在缓存上次 stat 的同一个 tick 内，缓存就看不见那次改写（A156）。更糟的
+> 是**保住 mtime 的写方**（`cp -p` / `rsync -t` / 配置管理工具）——它让陈旧不是「不到一
+> 毫秒」而是无界（A158）。因此 `deps.invalidate_config_caches()` 把「内容类」两张缓存
+> （`_config_roots_cache`、`_config_upload_limit_cache`）显式作废，`POST /api/config`
+> 在 `save_config` **成功之后**调用它：写配置这一步从此与操作系统时钟脱钩。作废的粒度
+> 只覆盖内容两张，路径与环境变量那两张按环境变量+cwd 建键、内容与它们无关，连清是白清
+> （还会让每次写配置退化成「白名单缓存等于没有」）。代价实测：`invalidate_config_caches()`
+> 本体 0.0001 ms，它换来的那次重解析 7.34–8.13 ms——而这条写面本来就要付（`save_config`
+> 单次 12.0–22.5 ms，是本机 tick 的 24–45 倍，连续两次落同一 tick 概率 0/300）。由
+> `test_cache_invalidation_l88.py` 钉住「本进程写完立刻见新值」「作废只清内容两张」
+> 「`save_config` 失败不作废」「按 mtime 建键的缓存集合 == 被作废集合」（同构守卫，防第四张
+> 缓存照抄 `_config_data_roots` 却漏进作废名单）。
+
 > **收紧到 `["data"]` 的兼容性代价**
 >
 > 读一侧的写法没变：`/api/data/load/train_data.json` 这类裸文件名会在白名单根目录内
