@@ -2596,13 +2596,12 @@ pub async fn collect_sync_area(
 #[allow(non_snake_case)]
 pub async fn collect_updateUnit(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -2648,13 +2647,12 @@ pub async fn collect_updateUnit(
 #[allow(non_snake_case)]
 pub async fn collect_urlMapping(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -6382,13 +6380,12 @@ pub async fn module_list_category(
 #[allow(non_snake_case)]
 pub async fn module_output(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -6661,13 +6658,12 @@ pub async fn module_id_compare(
 #[allow(non_snake_case)]
 pub async fn mpweixin_check(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, create_time FROM x_program_mpweixin_menu WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, create_time FROM x_program_mpweixin_menu WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -7661,13 +7657,12 @@ pub async fn prompterrorlog_id(
 #[allow(non_snake_case)]
 pub async fn qiyeweixin_get_callback_aes(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, source, action, create_time FROM x_program_sync_log WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, source, action, create_time FROM x_program_sync_log WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;

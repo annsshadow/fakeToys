@@ -65,7 +65,6 @@ GET /api/program_center/collect/person
 GET /api/program_center/collect/remove
 GET /api/program_center/collect/resetpassword
 GET /api/program_center/collect/sync/area
-GET /api/program_center/collect/urlMapping
 GET /api/program_center/collect/validate
 GET /api/program_center/collect/validate/codeanswer
 GET /api/program_center/collect/validate/direct
@@ -77,11 +76,8 @@ GET /api/program_center/config/open/get/disable/export/enable
 GET /api/program_center/config/open/run/time/config
 GET /api/program_center/invoke/flag/client/client/token/token/execute
 GET /api/program_center/invoke/flag/execute
-GET /api/program_center/mpweixin/check
 GET /api/program_center/mpweixin/menu/subscribe
 GET /api/program_center/mpweixin/message/template/send
-GET /api/program_center/qiyeweixin
-GET /api/program_center/qiyeweixin/get/callback/aes
 GET /api/program_center/qiyeweixin/request/pull/sync
 GET /api/program_center/script/name/name
 POST /api/hotpic/delete/hotpic
@@ -102,15 +98,12 @@ POST /api/processplatform/service/processing/touch/mergeitem
 POST /api/processplatform/service/processing/touch/touchdelay
 POST /api/processplatform/service/processing/touch/urge
 POST /api/processplatform/service/processing/workcompleted/merge/1
-POST /api/program_center/collect/updateUnit
 POST /api/program_center/module/compare/upload
-POST /api/program_center/module/output
 POST /api/program_center/module/output/structure
 POST /api/program_center/mpweixin/media/add/forever
 POST /api/program_center/mpweixin/menu/add
 POST /api/program_center/mpweixin/menu/create/to/weixin
 PUT /api/portal/assemble/surface/save/layout
-PUT /api/program_center/collect/updateUnit
 PUT /api/program_center/collect/validate/codeanswer
 PUT /api/program_center/collect/validate/direct
 PUT /api/program_center/collect/validate/password
