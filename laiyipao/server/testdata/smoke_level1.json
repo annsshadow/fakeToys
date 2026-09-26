@@ -107,7 +107,7 @@
       "code": "wanderer",
       "name": "游荡者",
       "category": "normal",
-      "hp": 100,
+      "hp": 800,
       "speed": 40000,
       "armor": 0,
       "shield_hp": 0,
@@ -131,7 +131,7 @@
       "code": "sprinter",
       "name": "疾行者",
       "category": "normal",
-      "hp": 70,
+      "hp": 560,
       "speed": 75000,
       "armor": 0,
       "shield_hp": 0,
@@ -155,7 +155,7 @@
       "code": "brute",
       "name": "壮硕体",
       "category": "normal",
-      "hp": 260,
+      "hp": 2080,
       "speed": 30000,
       "armor": 50,
       "shield_hp": 0,
@@ -191,7 +191,7 @@
       "aoe_radius": 60,
       "apply_element": "fire",
       "apply_stacks": 1,
-      "projectile_speed": 60000,
+      "projectile_speed": 240000,
       "chain": 0,
       "unlock_level": 1
     },
@@ -210,7 +210,7 @@
       "aoe_radius": 140,
       "apply_element": "fire",
       "apply_stacks": 2,
-      "projectile_speed": 50000,
+      "projectile_speed": 200000,
       "chain": 0,
       "unlock_level": 8
     },
@@ -229,7 +229,7 @@
       "aoe_radius": 180,
       "apply_element": "fire",
       "apply_stacks": 2,
-      "projectile_speed": 55000,
+      "projectile_speed": 220000,
       "chain": 1,
       "unlock_level": 20
     },
@@ -248,7 +248,7 @@
       "aoe_radius": 0,
       "apply_element": "ice",
       "apply_stacks": 1,
-      "projectile_speed": 65000,
+      "projectile_speed": 260000,
       "chain": 0,
       "unlock_level": 3
     },
@@ -267,7 +267,7 @@
       "aoe_radius": 160,
       "apply_element": "ice",
       "apply_stacks": 2,
-      "projectile_speed": 45000,
+      "projectile_speed": 180000,
       "chain": 0,
       "unlock_level": 12
     },
@@ -286,7 +286,7 @@
       "aoe_radius": 0,
       "apply_element": "ice",
       "apply_stacks": 3,
-      "projectile_speed": 80000,
+      "projectile_speed": 320000,
       "chain": 0,
       "unlock_level": 26
     },
@@ -305,7 +305,7 @@
       "aoe_radius": 0,
       "apply_element": "lightning",
       "apply_stacks": 1,
-      "projectile_speed": 70000,
+      "projectile_speed": 280000,
       "chain": 2,
       "unlock_level": 6
     },
@@ -324,7 +324,7 @@
       "aoe_radius": 0,
       "apply_element": "lightning",
       "apply_stacks": 2,
-      "projectile_speed": 90000,
+      "projectile_speed": 360000,
       "chain": 1,
       "unlock_level": 16
     },
@@ -362,7 +362,7 @@
       "aoe_radius": 80,
       "apply_element": "kinetic",
       "apply_stacks": 1,
-      "projectile_speed": 40000,
+      "projectile_speed": 160000,
       "chain": 0,
       "unlock_level": 2
     },
@@ -381,7 +381,7 @@
       "aoe_radius": 200,
       "apply_element": "kinetic",
       "apply_stacks": 2,
-      "projectile_speed": 50000,
+      "projectile_speed": 200000,
       "chain": 0,
       "unlock_level": 18
     },
@@ -400,7 +400,7 @@
       "aoe_radius": 0,
       "apply_element": "kinetic",
       "apply_stacks": 3,
-      "projectile_speed": 35000,
+      "projectile_speed": 140000,
       "chain": 0,
       "unlock_level": 34
     },
@@ -457,7 +457,7 @@
       "aoe_radius": 120,
       "apply_element": "fire",
       "apply_stacks": 2,
-      "projectile_speed": 75000,
+      "projectile_speed": 300000,
       "chain": 3,
       "unlock_level": 38
     },
@@ -476,7 +476,7 @@
       "aoe_radius": 0,
       "apply_element": "corrosion",
       "apply_stacks": 2,
-      "projectile_speed": 60000,
+      "projectile_speed": 240000,
       "chain": 0,
       "unlock_level": 4
     },
@@ -649,7 +649,7 @@
       "aoe_radius": 190,
       "apply_element": "fire",
       "apply_stacks": 3,
-      "projectile_speed": 52000,
+      "projectile_speed": 208000,
       "chain": 1,
       "unlock_level": 30
     },
@@ -668,7 +668,7 @@
       "aoe_radius": 240,
       "apply_element": "fire",
       "apply_stacks": 3,
-      "projectile_speed": 48000,
+      "projectile_speed": 192000,
       "chain": 0,
       "unlock_level": 42
     },
@@ -687,7 +687,7 @@
       "aoe_radius": 280,
       "apply_element": "fire",
       "apply_stacks": 4,
-      "projectile_speed": 46000,
+      "projectile_speed": 184000,
       "chain": 2,
       "unlock_level": 60
     },
@@ -706,7 +706,7 @@
       "aoe_radius": 190,
       "apply_element": "ice",
       "apply_stacks": 3,
-      "projectile_speed": 48000,
+      "projectile_speed": 192000,
       "chain": 0,
       "unlock_level": 30
     },
@@ -725,7 +725,7 @@
       "aoe_radius": 260,
       "apply_element": "ice",
       "apply_stacks": 4,
-      "projectile_speed": 62000,
+      "projectile_speed": 248000,
       "chain": 0,
       "unlock_level": 56
     },
@@ -744,7 +744,7 @@
       "aoe_radius": 0,
       "apply_element": "ice",
       "apply_stacks": 3,
-      "projectile_speed": 78000,
+      "projectile_speed": 312000,
       "chain": 2,
       "unlock_level": 44
     },
@@ -763,7 +763,7 @@
       "aoe_radius": 0,
       "apply_element": "lightning",
       "apply_stacks": 3,
-      "projectile_speed": 86000,
+      "projectile_speed": 344000,
       "chain": 3,
       "unlock_level": 34
     },
@@ -801,7 +801,7 @@
       "aoe_radius": 240,
       "apply_element": "kinetic",
       "apply_stacks": 3,
-      "projectile_speed": 42000,
+      "projectile_speed": 168000,
       "chain": 0,
       "unlock_level": 32
     },
@@ -820,7 +820,7 @@
       "aoe_radius": 0,
       "apply_element": "kinetic",
       "apply_stacks": 4,
-      "projectile_speed": 38000,
+      "projectile_speed": 152000,
       "chain": 0,
       "unlock_level": 58
     },
@@ -839,7 +839,7 @@
       "aoe_radius": 0,
       "apply_element": "kinetic",
       "apply_stacks": 2,
-      "projectile_speed": 88000,
+      "projectile_speed": 352000,
       "chain": 0,
       "unlock_level": 36
     },
@@ -915,7 +915,7 @@
       "aoe_radius": 0,
       "apply_element": "corrosion",
       "apply_stacks": 3,
-      "projectile_speed": 72000,
+      "projectile_speed": 288000,
       "chain": 4,
       "unlock_level": 40
     },
@@ -972,7 +972,7 @@
       "aoe_radius": 300,
       "apply_element": "fire",
       "apply_stacks": 4,
-      "projectile_speed": 60000,
+      "projectile_speed": 240000,
       "chain": 5,
       "unlock_level": 70
     }
