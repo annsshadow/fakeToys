@@ -257,24 +257,133 @@ macro_rules! unimplemented_endpoint {
     };
 }
 
-// o2server AttachmentAction.downloadWithSubject：附件二进制流下载，
-// 依赖 shared::storage 接线（见 lib.rs U6b 注释），当前显式 501。
-unimplemented_endpoint!(
-    attachment_download_501,
-    "binary download pending shared::storage wiring (plan002 U6b)"
-);
-unimplemented_endpoint!(
-    attachment_download_stream_501,
-    "binary streaming pending shared::storage wiring (plan002 U6b)"
-);
-unimplemented_endpoint!(
-    attachment_upload_501,
-    "multipart upload pending shared::storage wiring (plan002 U6b)"
-);
-unimplemented_endpoint!(
-    attachment_upload_callback_501,
-    "multipart upload pending shared::storage wiring (plan002 U6b)"
-);
+// o2server AttachmentAction.downloadWithSubject：附件二进制流下载。
+// 读 x_bbs_attachment.content BYTEA 转 base64（镜像 u2_subjectattach_base64）。
+pub async fn u2_attachment_download(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
+    attachment_download_base64(&pool, &id).await
+}
+
+pub async fn u2_attachment_download_stream(
+    pool: Extension<Pool>,
+    Path((id, _stream)): Path<(String, String)>,
+) -> ApiResult {
+    attachment_download_base64(&pool, &id).await
+}
+
+async fn attachment_download_base64(pool: &Pool, id: &str) -> ApiResult {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT name, extension, content FROM x_bbs_attachment \
+             WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(r) => {
+            let content: Option<Vec<u8>> = r.get("content");
+            match content {
+                Some(bytes) => Ok(Json(ActionResult::success(Value::Object(
+                    serde_json::Map::from_iter([
+                        ("id".to_string(), Value::String(id.to_string())),
+                        (
+                            "name".to_string(),
+                            row_opt_json::<String>(&r, "name").unwrap_or(Value::Null),
+                        ),
+                        (
+                            "extension".to_string(),
+                            row_opt_json::<String>(&r, "extension").unwrap_or(Value::Null),
+                        ),
+                        ("base64".to_string(), Value::String(base64_encode(&bytes))),
+                    ]),
+                )))),
+                None => Ok(Json(ActionResult::error("attachment has no binary content"))),
+            }
+        }
+        None => Ok(Json(ActionResult::error("attachment not found"))),
+    }
+}
+
+// o2server AttachmentAction.upload：multipart 上传，字节存 x_bbs_attachment.content BYTEA。
+#[allow(non_snake_case)]
+pub async fn u2_attachment_upload(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(subjectId): Path<String>,
+    multipart: axum::extract::Multipart,
+) -> ApiResult {
+    attachment_upload_store(&pool, &session.person_unique, &subjectId, multipart).await
+}
+
+#[allow(non_snake_case)]
+pub async fn u2_attachment_upload_callback(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path((subjectId, _callback)): Path<(String, String)>,
+    multipart: axum::extract::Multipart,
+) -> ApiResult {
+    attachment_upload_store(&pool, &session.person_unique, &subjectId, multipart).await
+}
+
+async fn attachment_upload_store(
+    pool: &Pool,
+    creator: &str,
+    subject_id: &str,
+    mut multipart: axum::extract::Multipart,
+) -> ApiResult {
+    let mut filename = String::from("upload.bin");
+    let mut bytes: Vec<u8> = Vec::new();
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|_| AppError::BadRequest("malformed multipart".to_string()))?
+    {
+        if let Some(fname) = field.file_name() {
+            if !fname.is_empty() {
+                filename = fname.to_string();
+            }
+        }
+        let data = field
+            .bytes()
+            .await
+            .map_err(|_| AppError::BadRequest("unreadable upload field".to_string()))?;
+        if !data.is_empty() {
+            bytes = data.to_vec();
+            break;
+        }
+    }
+    if bytes.is_empty() {
+        return Err(AppError::BadRequest("no file content provided".to_string()));
+    }
+    let id = Uuid::new_v4().to_string();
+    let extension = filename
+        .rsplit_once('.')
+        .map(|(_, e)| e.to_string())
+        .unwrap_or_default();
+    let length = bytes.len() as i64;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    client
+        .execute(
+            "INSERT INTO x_bbs_attachment \
+             (id, subject_id, name, extension, content, length, creator, create_time) \
+             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
+            &[&id, &subject_id, &filename, &extension, &bytes, &length, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(filename)),
+            (
+                "length".to_string(),
+                Value::Number(serde_json::Number::from(length)),
+            ),
+            ("uploaded".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
 // o2server PictureAction.pictureEncode：图片解码缩放后转 base64，需要图像引擎。
 unimplemented_endpoint!(
     picture_encode_501,
