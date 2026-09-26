@@ -75,7 +75,7 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/designer/item-access/{id}", get(crate::item_access_id))
         // ── item access 兼容旧注册（下划线形态）───────────────────────────────
         .route("/api/processplatform/assemble/designer/item/access/delete/process/path/path/{processId}", post(crate::item_access_delete_process_processId_path_path))
-        .route("/api/processplatform/assemble/designer/item/access/path/path", get(crate::item_access_path_path))
+        .route("/api/processplatform/assemble/designer/item/access/path/{path}", get(crate::item_access_path_path))
         .route("/api/processplatform/assemble/designer/item/access/process/path/path/{processId}", get(crate::item_access_process_processId_path_path))
         // ── mapping 族 ────────────────────────────────────────────────────────
         .route("/api/processplatform/assemble/designer/mapping", post(crate::mapping_create))

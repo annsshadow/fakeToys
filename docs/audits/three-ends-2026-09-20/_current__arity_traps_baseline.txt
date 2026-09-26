@@ -1,4 +1,3 @@
-GET /api/processplatform/assemble/designer/item/access/path/path
 GET /api/processplatform/assemble/surface/keylock/lock
 GET /api/processplatform/assemble/surface/read/filter/attribute
 GET /api/processplatform/assemble/surface/read/filter/attribute/filter
