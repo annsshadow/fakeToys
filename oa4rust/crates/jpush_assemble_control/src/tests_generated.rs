@@ -289,8 +289,8 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/api/jpush/assemble/control/device/unbind/new/deviceName/deviceType/pushType")
-                    .method("POST")
+                    .uri("/api/jpush_assemble_control/device/unbind/new/dn/dt/pt")
+                    .method("GET")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -310,8 +310,8 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/api/jpush/assemble/control/device/unbind/deviceName/deviceType")
-                    .method("POST")
+                    .uri("/api/jpush_assemble_control/device/unbind/dn/dt")
+                    .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
             )

@@ -35,10 +35,7 @@ GET /api/general/assemble/control/excel/1/1/1
 GET /api/hotpic_assemble_control/delete/hotpic
 GET /api/hotpic_assemble_control/save/hotpic
 GET /api/jpush/assemble/control/device/config/push/type
-GET /api/jpush_assemble_control/delete/jpush
 GET /api/jpush_assemble_control/device/config/push/type
-GET /api/jpush_assemble_control/device/unbind/deviceName/deviceType
-GET /api/jpush_assemble_control/save/jpush
 GET /api/portal/assemble/designer/list/portal/1/1
 GET /api/portal/assemble/designer/pageversion/list/1/1
 GET /api/portal/assemble/surface/dict/portal/path/data/1/1
@@ -108,8 +105,6 @@ POST /api/bbs/assemble/control/delete/subject
 POST /api/bbs/assemble/control/shutup/delete
 POST /api/hotpic/delete/hotpic
 POST /api/hotpic/save/hotpic
-POST /api/jpush/assemble/control/device/unbind/deviceName/deviceType
-POST /api/jpush/assemble/control/device/unbind/new/deviceName/deviceType/pushType
 POST /api/message/assemble/communicate/im/msg/clear
 POST /api/portal/assemble/surface/delete/layout
 POST /api/portal/assemble/surface/save/layout
