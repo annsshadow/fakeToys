@@ -114,8 +114,6 @@ GET /api/program_center/qiyeweixin/request/pull/sync
 GET /api/program_center/schedule/schedule/fire
 GET /api/program_center/script/list/paging/page/size/size
 GET /api/program_center/script/name/name
-GET /api/query/assemble/designer/table/list/row/select/where/where/1
-GET /api/queryview/table/list/row/select/where/where/1
 POST /api/bbs/assemble/control/delete/forum
 POST /api/bbs/assemble/control/delete/reply
 POST /api/bbs/assemble/control/delete/subject
