@@ -14,7 +14,7 @@
  * 输出会以 [bal] 开头打印到控制��。
  */
 import { describe, it } from 'vitest'
-import fixture from '@vectors/smoke_level1.json'
+import fixture from '@vectors/smoke_levels.json'
 import { BattleEngine, TICK_MS, type BattleConfig } from './engine'
 import type { EnemyDef, GeneratedLevel, SkillDef } from './types'
 import type { Element } from './elements'
