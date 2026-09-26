@@ -228,6 +228,14 @@ python cli.py validate --input data.json --preset basic
 # 转换数据格式
 python cli.py convert --input data.json --output data.jsonl --format jsonl
 
+# 写成真正的 Excel 工作簿（可选依赖 pandas + openpyxl；输出名必须是 .xlsx）
+python cli.py convert --input data.json --output data.xlsx --format excel
+
+# 读回 Excel：读边认 .xlsx 与 .xls，全部列原样成行记录
+python cli.py convert --input data.xlsx --output back.json --format json
+# 老 .xls 只读不写：`--format xls` 由 argparse 直接拒，输出名写成 .xls 也在落盘前拒收
+# （写老格式要 xlwt，不在依赖表里；名字下装 JSON 文本比拒绝更坏）
+
 # 搜索数据集
 python cli.py search --input data.json --query "租房" --method contains
 
