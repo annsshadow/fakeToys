@@ -74,6 +74,11 @@ class ConfigUpdateResponse(MessageResponse):
     `ignored_keys`：请求里**没有写进配置**的键清单（A86 写路径出声，A151 扩到节级）。
     形状两种：`section.key`（节内未知子键）与 `section`（整节不在写入清单里，
     或节名拼错），程序侧按「有没有点」就能分开消费。
+
+    `message` 有两种主干（A152①）：写过东西是「配置已保存…」，一个键都没写成是
+    「本次请求未写入任何配置项，config.yaml 保持不变」。**`success` 两边都是
+    `True`** —— 它表示「请求被正常处理」，落没落盘看 `ignored_keys` 与文案主干，
+    本端点不借 `success` 表达「你的键我一个字都没写进去」。
     """
     ignored_keys: List[str] = []
 
@@ -136,7 +141,7 @@ async def get_config():
 async def update_config(
     request: ConfigUpdateRequest, _auth: None = Depends(verify_api_key)
 ):
-    """更新配置并持久化到 config.yaml"""
+    """更新配置；只有真的写进了配置对象才持久化到 config.yaml（A152①）"""
     try:
         import dataclasses
 
@@ -146,8 +151,15 @@ async def update_config(
         p = get_pipeline()
         updates = request.model_dump(exclude_none=True)
 
+        # `applied` = 这一次请求是否真的往配置对象里写了东西（A152①）。它决定
+        # 要不要落盘，所以口径必须是「写没写」而不是「有没有报错」：`default_model`
+        # 是直接赋值（`apply_section_update` 管不到它），节内键则要扣掉被 `hasattr`
+        # 丢回去的那些 —— 只提交未知键的请求（`{"augmentation": {"variants_per_item":
+        # 3}}`，L88 自己的写面用例就是这个形状）算「没写」。
+        applied = False
         if "default_model" in updates:
             p.config.default_model = updates["default_model"]
+            applied = True
 
         # `hasattr` 丢弃未知子键（不崩溃）是既有契约；本轮补的是「丢弃要出声」：
         # 拼错/多余的键被静默跳过却仍回 success，用户看不出「写了没生效」，与读路径
@@ -164,12 +176,17 @@ async def update_config(
             if section in updates:
                 section_config = getattr(p.config, section)
                 known = [f.name for f in dataclasses.fields(section_config)]
-                for key in apply_section_update(section_config, updates[section]):
+                dropped = apply_section_update(section_config, updates[section])
+                for key in dropped:
                     ignored.append(f"{section}.{key}")
                     notes.append(
                         f"{section}.{key}"
                         + ConfigValidator._suggest(key, sorted(known))
                     )
+                # 「一个键都没落」的节不算写入：`apply_section_update` 只把 `hasattr`
+                # 判败的键退回来，所以「提交数 > 退回数」就是「至少 setattr 过一次」。
+                if len(updates[section]) > len(dropped):
+                    applied = True
 
         # A151：节级漏网。`extra="allow"` 把不认识的顶层节留在 `model_extra` 里，
         # 于是这里能分清两种「没写进去」：配置里**有**这一节但本端点不写（`web` /
@@ -188,19 +205,28 @@ async def update_config(
                         key, sorted(known_sections | set(ConfigUpdateRequest.model_fields)))
                 )
 
-        message = "配置已保存，部分配置需要重启服务生效"
+        # A152①：只有「真的写了东西」才落盘。`save_config` 是「读现有文件 → 合并 →
+        # 整份重写」，而 `yaml.safe_dump` 不回写注释 ⇒ 一次什么都没写成的请求从前也会
+        # 把磁盘上那份 `config.yaml` 的注释与排版一起抹掉。那 202 行注释里住的不是文档，
+        # 是判据本身：自动保存档「10 倍静默写放大」的实测、`request_timeout` 取 120 而
+        # 不是 60 的两侧代价、`max_upload_bytes` 默认 256 MiB 的定标依据。⇒ 空写入连
+        # 文件都不碰：字节、mtime、内容缓存三者一律不动，`message` 也不再谎称已保存。
+        if applied:
+            save_config(p.config, str(config_file_path()))
+            # 写盘成功即作废内容类缓存：`save_config` 是整份重序列化，`web` 那两键
+            # （数据白名单、上传上限）也一起被重写了一遍，而读它们的缓存按
+            # `(路径, mtime_ns)` 建键 ⇒ 「改过配置文件，下一次读必然看见新值」这句话
+            # 本来是由操作系统时钟是否跨过一格决定的（本机 tick 实测 0.5 ms）。缓存的
+            # 写入方就在本进程，所以这一格只有显式失效能封死；跨进程与「保住 mtime」
+            # 的写方管不到，那两格记在 A156 / A158。
+            invalidate_config_caches()
+            message = "配置已保存，部分配置需要重启服务生效"
+        else:
+            message = "本次请求未写入任何配置项，config.yaml 保持不变"
         if ignored:
             # 措辞从「未知配置项」改成「未写入的配置项」：A151 之后这份清单里
             # 也可能是**存在但本端点不写**的节（`web`），叫它「未知」是假话。
             message += "（已忽略未写入的配置项：" + "、".join(notes) + "）"
-        save_config(p.config, str(config_file_path()))
-        # 写盘成功即作废内容类缓存：`save_config` 是整份重序列化，`web` 那两键
-        # （数据白名单、上传上限）也一起被重写了一遍，而读它们的缓存按
-        # `(路径, mtime_ns)` 建键 ⇒ 「改过配置文件，下一次读必然看见新值」这句话
-        # 本来是由操作系统时钟是否跨过一格决定的（本机 tick 实测 0.5 ms）。缓存的
-        # 写入方就在本进程，所以这一格只有显式失效能封死；跨进程与「保住 mtime」
-        # 的写方管不到，那两格记在 A156 / A158。
-        invalidate_config_caches()
         return {"success": True, "message": message, "ignored_keys": ignored}
     except DataValidationError as e:
         # 越界的新值要的是 400（「你给的这个值不合法」），不是 500（「服务端坏了」）。
