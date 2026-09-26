@@ -9,10 +9,11 @@
 import json
 import csv
 import logging
+import math
 from typing import List, Dict, Optional, Any, Tuple
 from pathlib import Path
 from enum import Enum
-from .exceptions import DataFormatError, UnsupportedFormatError
+from .exceptions import DataFormatError, DataLoadError, UnsupportedFormatError
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,37 @@ def csv_fieldnames(items: List[Dict]) -> List[str]:
 #: 也可以落成一行一条的 JSONL。
 CONTAINER_FORMATS = ("json", "jsonl", "csv", "tsv")
 
+#: Excel 读边的内部格式名，以及调用方可以写的三种拼法（`--input-format` /
+#: `source_format`）。它**不是** `DataFormat` 成员，也不进 `_converters` 转换图：
+#: Excel 读出来就是一张「列 → 值」的行记录表，与 `csv.DictReader` 交出的形状相同，
+#: 所以读完之后按 `csv` 那一族边走（见 `convert_file` 里的 `graph_source`）。
+EXCEL_FORMAT = "excel"
+EXCEL_SOURCE_NAMES = ("excel", "xlsx", "xls")
+
+#: **读边**的「扩展名 → 源格式」权威表。与 `_infer_format` 的区别是方向而不是大小写：
+#: 那张表管「输出扩展名落成哪个容器」，认不出回落 json 无害（写的仍是 JSON 字节）；
+#: 这张表管「这份文件该交给哪个解析器」，认不出**必须报错**——回落 json 会让一份
+#: 二进制 xlsx 崩在 `codecs` 里（实测 `UnicodeDecodeError: 'utf-8' codec can't
+#: decode byte 0xc7 in position 15`），CLI 只能把那句解码错转给用户，与真实原因
+#: （没认出格式）毫无关系。
+INPUT_EXTENSION_FORMATS = {
+    ".json": "json",
+    ".jsonl": "jsonl",
+    ".csv": "csv",
+    ".tsv": "tsv",
+    ".xlsx": EXCEL_FORMAT,
+    ".xls": EXCEL_FORMAT,
+}
+
+#: `--input-format` / `source_format` 的全部合法拼法。CLI 的 `choices` 直接引用这份
+#: 常量（A77「一份权威只住一处」，照 `parser.EXPORT_FORMATS` 的先例），报错文案也
+#: 从它生成 ⇒ 加一个源格式只需要改这一行。
+INPUT_FORMAT_CHOICES = [
+    "json", "jsonl", "csv", "tsv", "alpaca", "sharegpt", "chatml",
+    "llama_factory", "vicuna", "belle",
+] + list(EXCEL_SOURCE_NAMES)
+
+
 #: 「原样序列化」的目标格式：把输入当作任意 JSON 值落盘，因此**不要求**记录是对象。
 #: 其余八个目标都必须逐条读字段——六个行内 schema 取 `instruction`/`output` 之类的键，
 #: `csv`/`tsv` 用 `DictWriter` 按列名写盘——记录是标量时以前会崩在边里
@@ -48,6 +80,34 @@ CONTAINER_FORMATS = ("json", "jsonl", "csv", "tsv")
 #: 且 csv/tsv 会留下半截文件）。只作用于「源是通用 json」的写边，见
 #: `_require_object_records`。
 PASSTHROUGH_TARGETS = ("json", "jsonl")
+
+
+def excel_cell(value: Any) -> Any:
+    """Excel 单元格 → JSON 可安全落盘的值
+
+    `DataFrame.to_dict()` 交出的空格子是 `NaN`/`NaT`，日期是 `Timestamp`：三者都不能
+    直接进 `json.dump`（前二者会写出**非法 JSON** 的 `NaN` 字面量，后者当场
+    `TypeError: Object of type Timestamp is not JSON serializable`）。口径与 csv 读边
+    对齐 —— **空单元格就是空串**（`DictReader` 对空列给的也是 `""`），其余非标量
+    （日期、时间之类）取 `str()` 而不是丢列。
+
+    先判 Python 原生标量再判「自不等」：`NaN != NaN` 与 `NaT != NaT` 都是 True，所以
+    「不等于自身」是缺失标记的共同形状。pandas 的 `NA` 不走这条 —— `pd.NA != pd.NA`
+    返回的是 `NA` 本身，对它做真值判断当场 `TypeError: boolean value of NA is
+    ambiguous`（实测），因此那句比较要包在 `try` 里，把 TypeError 也当缺失。
+    """
+    if value is None:
+        return ""
+    if isinstance(value, float) and math.isnan(value):
+        return ""
+    if isinstance(value, (bool, int, float, str)):
+        return value
+    try:
+        if value != value:  # NaN / NaT 及任何「不等于自身」的缺失标记
+            return ""
+    except TypeError:  # pd.NA：比较结果不可真值化，同样是缺失
+        return ""
+    return str(value)
 
 
 class DataFormat(Enum):
@@ -618,15 +678,31 @@ class DatasetConverter:
         
         # 推断格式
         if source_format is None:
-            source_format = self._infer_format(input_path)
+            source_format = self._resolve_input_format(input_path)
+        elif source_format.lower() in EXCEL_SOURCE_NAMES:
+            source_format = EXCEL_FORMAT
         if target_format is None:
             target_format = self._infer_format(output_path)
         
         # 读取输入
         data = self._read_file(input_path, source_format)
         
-        # 转换
-        converted = self.convert(data, source_format, target_format, **kwargs)
+        # 转换。Excel 读出来是一张全列行记录表，与 `csv` 读边（`csv.DictReader`）
+        # **同形**，所以进转换图时按 csv 那一族边走 —— 图里不需要知道 pandas 存在，
+        # `DataFormat` 也不因为这个就多一个成员。返回值里的 `source_format` 仍是
+        # 真实读到的那份（`excel`），否则调用方会以为自己做了一次 csv 转换。
+        graph_source = "csv" if source_format == EXCEL_FORMAT else source_format
+
+        # `jsonl` 是图里唯一一条**已经序列化过**的边（`_json_to_jsonl` 交出字符串行），
+        # 而 `_write_file` 的 jsonl 分支会对每条记录再 `json.dumps` 一次 ⇒ 落盘的每一行
+        # 是一个 JSON **字符串**而不是对象（`"{\"instruction\": ...}"`）。自家读边恰好
+        # 能双重解包读回来（`_jsonl_to_json` 对 str/非 str 都容忍），所以这个缺陷一直只
+        # 在跨工具互操作时暴露：按标准 JSONL 读的外部程序拿到的全是字符串。
+        # 修法与「容器布局归写边管」的既有口径一致（见 `_write_file` 的 docstring）：
+        # 图只走到规范形，一份记录一行的布局交给写边，序列化只做一次。
+        # 返回值里的 `target_format` 仍是调用方声明的 `jsonl`。
+        graph_target = "json" if target_format == "jsonl" else target_format
+        converted = self.convert(data, graph_source, graph_target, **kwargs)
         
         # 写入输出
         self._write_file(output_path, converted, target_format)
@@ -641,7 +717,17 @@ class DatasetConverter:
         }
     
     def _infer_format(self, path: Path) -> str:
-        """从文件扩展名推断格式"""
+        """从**输出**文件的扩展名推断目标格式
+
+        认不出就回落 `json`，这是刻意的：写侧回落产出的仍是合法 JSON 字节，调用方
+        只是拿到一个「扩展名与内容不符」的文件。**读边不能复用这张表**，因为那份
+        文件可能是二进制 xlsx，回落 json 会崩在解码器里（见
+        `_resolve_input_format`）。
+
+        `.xlsx` / `.xls` 在这里故意**不**当作 Excel：写边还没有 Excel 输出器
+        （A133），把它们收进这张表等于让 `convert_file` 自称写成了 xlsx、实际写下
+        JSON 字节。
+        """
         ext_map = {
             ".json": "json",
             ".jsonl": "jsonl",
@@ -649,6 +735,46 @@ class DatasetConverter:
             ".tsv": "tsv",
         }
         return ext_map.get(path.suffix.lower(), "json")
+
+    def _resolve_input_format(self, path: Path) -> str:
+        """从**输入**文件的扩展名推断源格式，认不出就报错而不是回落
+
+        `INPUT_EXTENSION_FORMATS` 是唯一权威，报错文案里的两份清单（扩展名、可显式
+        声明的源格式）都从常量生成 ⇒ 加一个源格式不会让文案漂移。文案点出
+        `--input-format`，因为那正是调用方跳过推断的那条路。
+        """
+        inferred = INPUT_EXTENSION_FORMATS.get(path.suffix.lower())
+        if inferred is None:
+            raise UnsupportedFormatError(
+                f"无法从扩展名推断输入格式: {path.name}"
+                f"（认得的扩展名: {', '.join(sorted(INPUT_EXTENSION_FORMATS))}；"
+                f"或用 --input-format 显式声明: "
+                f"{', '.join(INPUT_FORMAT_CHOICES)}）"
+            )
+        return inferred
+
+    def _read_excel(self, path: Path) -> List[Dict[str, Any]]:
+        """读 Excel：整张表、全部列，空格子按 csv 读边口径落成空串
+
+        pandas 是**可选依赖**，import 推迟到真要读 xlsx 的时候 —— `import augmentor`
+        在没有 pandas 的环境里必须继续可用（aug 侧解释器就是这种环境，L50 口径下每轮
+        都要在它上面跑全量）。
+
+        不复用 `csv_excel_import.import_from_excel`：它按 `text_column`/`output_column`
+        只留两列并把值一律 `str()` 化，那是「导入为训练数据」的收敛口径；`convert_file`
+        是格式转换器，剥列会丢数据。
+        """
+        from . import csv_excel_import as cei
+        if not cei.HAS_PANDAS:
+            raise DataLoadError(
+                f"读取 Excel 需要安装 pandas 与 openpyxl: "
+                f"pip install pandas openpyxl（{path.name}）"
+            )
+        frame = cei.pd.read_excel(path)
+        return [
+            {key: excel_cell(value) for key, value in row.items()}
+            for row in frame.to_dict(orient="records")
+        ]
     
     def _read_file(self, path: Path, format: str) -> Any:
         """读取文件
@@ -662,7 +788,14 @@ class DatasetConverter:
         旧实现把 schema 当容器用、一律 `json.load`，于是同一批 alpaca 记录写成
         `.jsonl` 就抛 `JSONDecodeError: Extra data: line 2 column 1`——调用方已经
         声明了正确的源格式，却绊在容器上。
+
+        `excel` 必须在这句 `open()` **之前**分流：xlsx 是二进制，用文本模式打开它，
+        报错会停在 `codecs` 的解码错上（`UnicodeDecodeError: 'utf-8' codec can't
+        decode byte ...`），而不是「这份文件要交给 pandas」这件事本身。
         """
+        if format == EXCEL_FORMAT:
+            return self._read_excel(path)
+
         with open(path, 'r', encoding='utf-8', newline='') as f:
             if format == "jsonl":
                 return [json.loads(line) for line in f if line.strip()]
@@ -783,6 +916,9 @@ def convert_file(input_path: str,
         source_format: 源格式（为 None 时从扩展名推断）。alpaca/sharegpt/chatml 这类
             只是**行内 schema**，扩展名推不出来，只能显式给；给了之后文件本身是
             `.json` 还是 `.jsonl` 由内容嗅探，不用再声明第三个参数。
+            Excel 写 `excel` / `xlsx` / `xls` 任一种都一样，`.xlsx` / `.xls` 后缀也能
+            直接认出来；读出来是「整张表、全部列」的行记录表（缺 pandas 时报
+            `DataLoadError`，不是 `ImportError`  traceback）。
 
     Returns:
         转换结果
