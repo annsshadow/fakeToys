@@ -30,11 +30,6 @@ GET /api/bbs/assemble/control/user/info
 GET /api/component_assemble_control/delete/component
 GET /api/component_assemble_control/save/component
 GET /api/file/attachment2/list/type/page/size/size
-GET /api/file/folder/list/id
-GET /api/file/id
-GET /api/file/id/download
-GET /api/file/list/id/next/count
-GET /api/file/list/id/prev/count
 GET /api/file/list/referencetype
 GET /api/file/referencetype/referenceType/reference/reference
 GET /api/general/assemble/control/excel/1/1
