@@ -111,6 +111,7 @@ def reset_pipeline():
 
 _config_path_cache: Dict[Tuple[Optional[str], str], Path] = {}
 _config_roots_cache: Dict[Tuple[str, Optional[int]], List[Path]] = {}
+_config_upload_limit_cache: Dict[Tuple[str, Optional[int]], int] = {}
 _env_roots_cache: Dict[Tuple[str, str], List[Path]] = {}
 
 
@@ -192,6 +193,47 @@ def allowed_data_roots() -> List[Path]:
         candidates = [Path(str(p)).resolve() for p in WebConfig().data_roots]
 
     return list(candidates)
+
+
+def _config_upload_limit(config_path: Path) -> int:
+    """从配置文件读 ``web.max_upload_bytes``，按 ``(路径, mtime_ns)`` 缓存
+
+    与 ``_config_data_roots`` 同一套读法、同一个降级方向：配置损坏时记 warning 并回
+    **出厂默认**（256 MiB），而不是回「无上限」——读不到配置就放开边界，等于把
+    判据装在故障路径上。缓存只记成功的那次，降级结果不冻进缓存里。
+    """
+    try:
+        key: Tuple[str, Optional[int]] = (str(config_path), config_path.stat().st_mtime_ns)
+    except OSError:
+        key = (str(config_path), None)
+
+    cached = _config_upload_limit_cache.get(key)
+    if cached is not None:
+        return cached
+
+    try:
+        limit = load_config(str(config_path)).web.max_upload_bytes
+    except Exception:  # 配置损坏不该让上传请求 500
+        logger.warning("读取 web.max_upload_bytes 失败，回退到出厂默认", exc_info=True)
+        return WebConfig().max_upload_bytes
+
+    if key[1] is not None:
+        _config_upload_limit_cache.clear()
+        _config_upload_limit_cache[key] = limit
+    return limit
+
+
+def max_upload_bytes() -> int:
+    """单次上传允许的最大字节数（``POST /api/data/upload`` 的读体上限）
+
+    来源两级：``config.yaml`` 的 ``web.max_upload_bytes`` → 出厂默认
+    ``WebConfig.max_upload_bytes``。这条键没有环境变量覆盖口（与白名单不同）：
+    它管的是本机资源，不是「同一镜像要服务多个挂载点」那种部署期差异。
+
+    Returns:
+        正整数字节数（``>= config.MAX_UPLOAD_BYTES_MIN``）
+    """
+    return _config_upload_limit(config_file_path())
 
 
 def _assert_within_roots(path: Path, roots: List[Path]) -> Path:
@@ -417,6 +459,43 @@ def _json_kind(value) -> str:
     return _JSON_KIND_NAMES.get(type(value), type(value).__name__)
 
 
+def assert_dataset_shape(data: Any, subject: str = "数据文件") -> list:
+    """数据集形态判据：顶层必须是数组、元素必须是对象，返回原值
+
+    抽成函数是因为**两条进料路径都要判而此前只有读侧判**。`read_items` 的
+    docstring 写明了为什么必须判（下游一律按 `item.get(...)` 取字段，形态不对会
+    深入到 `augmentor/` 内部才炸成 500），而上传侧改前根本不判：实测
+    `json.dumps("hello")` 上传 **200**、落盘 7 字节的 `"hello"`、响应还报
+    `count: 5`（把字符数当条数）——上传端点写出一份读端点自己会拒绝的文件。
+
+    Args:
+        data: 已解析好的 JSON 值
+        subject: 文案里的主体名。读侧用默认的「数据文件」（逐字保持既有文案），
+            上传侧传「上传内容」
+
+    Returns:
+        原值（已确认是 `list`）
+
+    Raises:
+        HTTPException: 400 顶层不是数组，或某个元素不是对象
+    """
+    if not isinstance(data, list):
+        raise HTTPException(
+            status_code=400,
+            detail=f"{subject}的顶层必须是 JSON 数组，当前是{_json_kind(data)}",
+        )
+    for index, item in enumerate(data):
+        if not isinstance(item, dict):
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"{subject}的第 {index + 1} 个数据项必须是 JSON 对象，"
+                    f"当前是{_json_kind(item)}"
+                ),
+            )
+    return data
+
+
 def read_items(file_path: Path) -> list:
     """同步读取**已 resolve** 的 JSON 数据集文件
 
@@ -433,7 +512,8 @@ def read_items(file_path: Path) -> list:
     Raises:
         HTTPException: 400 文件不是合法 JSON；或顶层不是数组 / 数组元素不是对象
 
-    形态校验放在这里而不是各调用点，是因为下游一律按 `item.get(...)` 取字段：
+    形态校验在 `assert_dataset_shape`（本函数与 `POST /api/data/upload` 共用同一份）
+    而不是各调用点，是因为下游一律按 `item.get(...)` 取字段：
     顶层是对象时拿到的是键（字符串），元素是标量时拿到标量，都会深入到
     `augmentor/` 内部才炸出 `'str' object has no attribute 'keys'` 这类
     AttributeError，变成 500 并把 Python 内部措辞回给客户端。
@@ -446,21 +526,7 @@ def read_items(file_path: Path) -> list:
     except json.JSONDecodeError as e:
         raise to_http_error(e) from e
 
-    if not isinstance(data, list):
-        raise HTTPException(
-            status_code=400,
-            detail=f"数据文件的顶层必须是 JSON 数组，当前是{_json_kind(data)}",
-        )
-    for index, item in enumerate(data):
-        if not isinstance(item, dict):
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    f"数据文件的第 {index + 1} 个数据项必须是 JSON 对象，"
-                    f"当前是{_json_kind(item)}"
-                ),
-            )
-    return data
+    return assert_dataset_shape(data)
 
 
 async def read_json_file(file_path: Path) -> list:

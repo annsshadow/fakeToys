@@ -21,7 +21,8 @@ from enum import Enum
 # 天花板」—— `max_retries: 10**6` 在这里报红、在 SDK 直构那边畅通无阻。
 from .config import (AUTO_SAVE_INTERVAL_MIN, DEDUP_THRESHOLD_RANGE,
                      EXPORT_FORMATS, MAX_OUTPUT_TOKENS_MIN,
-                     MAX_RETRIES_RANGE, MODEL_TYPES, NUM_THREADS_RANGE,
+                     MAX_RETRIES_RANGE, MAX_UPLOAD_BYTES_MIN,
+                     MODEL_TYPES, NUM_THREADS_RANGE,
                      PORT_RANGE, QUALITY_THRESHOLD_RANGE, RAG_FORMATS,
                      RATE_LIMIT_MIN_REQUESTS, RATE_LIMIT_MIN_WINDOW_SECONDS,
                      REQUEST_TIMEOUT_RANGE, RETRY_DELAY_RANGE,
@@ -210,6 +211,7 @@ class ConfigValidator:
         "web.cors_origins": {"type": list, "items": str},
         "web.cors_credentials": {"type": bool},
         "web.data_roots": {"type": list, "items": str},
+        "web.max_upload_bytes": {"type": int, "min": MAX_UPLOAD_BYTES_MIN},
         "web.rate_limit_max_requests": {"type": int,
                                         "min": RATE_LIMIT_MIN_REQUESTS},
         "web.rate_limit_window_seconds": {"type": float,
