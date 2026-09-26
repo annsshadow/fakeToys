@@ -202,6 +202,7 @@
           <button class="btn-sm" @click="pcU4Write('designerSearch')">设计器检索</button>
           <button class="btn-sm" @click="pcU4Read">读配置/日志</button>
           <button class="btn-sm" @click="pcU5Read">错误日志游标</button>
+          <button class="btn-sm" @click="pcU6Read">只读端点补消费</button>
           <button class="btn-sm" @click="pcU5Write('appDelete')">删应用</button>
           <button class="btn-sm" @click="pcU5Write('scriptPut')">改脚本</button>
           <button class="btn-sm" @click="pcU5Write('dictData')">存字典数据</button>
@@ -1488,6 +1489,51 @@ async function pcU5Read() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     pcU4Text.value = `错误日志游标读 ${rs.length} 条命中 ${hit}`
     toast.success('错误日志游标已加载')
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+// rev375：程序中心 非破坏性真实 DB 读端点补消费（用户触发；agent/config/captcha/code/bar/module/mpweixin-check
+// 均为 x_program_* 真实 SELECT 或幂等 INSERT）。刻意排除破坏性/外部依赖端点（DELETE adminlogin/collect、
+// PUT config/token·tokenthreshold·appstyle、POST config/change/password 写、collect/* 外部协作服务、
+// dingding/qiyeweixin/zhengwudingding sync 回调、mpweixin menu/media 写、invoke agent 执行、schedule/fire、test/foo 空壳）。
+async function pcU6Read() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const w = '120'
+  const h = '40'
+  const cid = 'c1'
+  const ans = '0000'
+  const mob = '13800000000'
+  const fld = 'status'
+  const val = 'on'
+  const cnt = '20'
+  const pg = '1'
+  const sz = '20'
+  const frm = '0'
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/program_center/agent/flag/file')),
+      s(api.get('/api/program_center/authentication')),
+      s(api.get(`/api/program_center/captcha/v2/create/width/${w}/height/${h}`)),
+      s(api.get(`/api/program_center/captcha/${cid}/validate/answer/${ans}`)),
+      s(api.get(`/api/program_center/code/create/mobile/${mob}`)),
+      s(api.get(`/api/program_center/code/validate/mobile/${mob}/answer/${ans}`)),
+      s(api.get(`/api/program_center/code/validate/mobile/${mob}/answer/${ans}/cascade`)),
+      s(api.get('/api/program_center/config/collect')),
+      s(api.get('/api/program_center/config/open/run/time/config')),
+      s(api.get('/api/program_center/config-open/get/disable/export/enable')),
+      s(api.get('/api/program_center/config/change/password')),
+      s(api.get('/api/program_center/mpweixin/check')),
+      s(api.get(`/api/program_center/bar/select3/field/${fld}/value/${val}/count/${cnt}`)),
+      s(api.get(`/api/program_center/bar/select4/field/${fld}/value/${val}/count/${cnt}`)),
+      s(api.get(`/api/program_center/bar/create/mass/${frm}/${cnt}`)),
+      s(api.post(`/api/program_center/code/list/paging/${pg}/size/${sz}`, {})),
+      s(api.post('/api/program_center/module/output', {})),
+      s(api.post('/api/program_center/module/output/structure', {})),
+    ])
+    const hit = rs.filter((r) => (r as any) != null).length
+    pcU4Text.value = `程序中心只读端点 ${rs.length} 条，返回 ${hit}`
+    toast.success('程序中心只读端点已加载')
   } catch (e: any) {
     toast.error('加载失败: ' + (e?.message ?? ''))
   }
