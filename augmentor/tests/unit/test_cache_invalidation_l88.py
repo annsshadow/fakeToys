@@ -18,6 +18,13 @@
   61–65%」量的是测试里连续的 `write_text`（单次几微秒），不是产品写配置的
   `save_config`。生产这条路上那个概率实测是 0，剩下的窗口来自「写得很快的别人」
   和「不改 mtime 的别人」（另立 A158），不是来自这里。
+
+**L89 改的是本文件自己的载荷**：下面四条写面用例从前 POST 的是 `variants_per_item`
+——**`AugmentationConfig` 没有这个字段**（真名 `variants_per_seed`），于是它们测的其实是
+「一次什么都没写成的 POST」。它们当时能全绿，靠的正是 A152① 那一格：路由末尾无条件
+`save_config`。A152① 落地之后这四条立刻变红，而红得对 —— 一条声称「写成功后要作废」
+的用例必须先真的写成功。⇒ 与 L88 那两条变异探针同一族：**用例能失败还不够，还要问它
+失败的是不是自己主张的那件事**。
 """
 
 import inspect
@@ -169,7 +176,7 @@ class TestTheWriteFaceCallsIt:
         assert deps.allowed_data_roots() and deps.max_upload_bytes()
         assert deps._config_roots_cache and deps._config_upload_limit_cache
 
-        response = http.post("/api/config", json={"augmentation": {"variants_per_item": 3}})
+        response = http.post("/api/config", json={"augmentation": {"variants_per_seed": 3}})
         assert response.status_code == 200
         assert deps._config_roots_cache == {}
         assert deps._config_upload_limit_cache == {}
@@ -195,7 +202,7 @@ class TestTheWriteFaceCallsIt:
         deps._config_roots_cache[(str(path), path.stat().st_mtime_ns)] = [ghost]
         assert deps.allowed_data_roots() == [ghost], "缓存命中，磁盘说了不算"
 
-        response = http.post("/api/config", json={"augmentation": {"variants_per_item": 3}})
+        response = http.post("/api/config", json={"augmentation": {"variants_per_seed": 3}})
         assert response.status_code == 200
         assert path.stat().st_mtime_ns not in {k[1] for k in deps._config_roots_cache}, \
             "mtime 一字未动，唯一能让旧键消失的是那句显式失效"
@@ -224,7 +231,7 @@ class TestTheWriteFaceCallsIt:
         primed = deps.allowed_data_roots()
         assert calls == [], "读白名单不该触发 save_config"
 
-        response = http.post("/api/config", json={"augmentation": {"variants_per_item": 3}})
+        response = http.post("/api/config", json={"augmentation": {"variants_per_seed": 3}})
         assert response.status_code == 500
         assert calls == [1]
         assert deps._config_roots_cache and deps.allowed_data_roots() == primed
@@ -282,7 +289,7 @@ class TestTheWriteFaceCallsIt:
 
         monkeypatch.setattr(cfgmod, "save_config", save)
         monkeypatch.setattr(route, "invalidate_config_caches", invalidate)
-        response = http.post("/api/config", json={"augmentation": {"variants_per_item": 3}})
+        response = http.post("/api/config", json={"augmentation": {"variants_per_seed": 3}})
         assert response.status_code == 200
         assert events == ["save", "invalidate"]
 
