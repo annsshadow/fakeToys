@@ -52,9 +52,7 @@ GET /api/program_center/collect/remove
 GET /api/program_center/config-open/get/disable/export/enable
 GET /api/program_center/config/get
 GET /api/program_center/config/open/get/disable/export/enable
-GET /api/program_center/config/open/run/time/config
 GET /api/program_center/invoke/flag/client/client/token/token/execute
-GET /api/program_center/mpweixin/message/template/send
 GET /api/program_center/qiyeweixin/request/pull/sync
 GET /api/program_center/script/name/name
 POST /api/hotpic/delete/hotpic
@@ -75,8 +73,4 @@ POST /api/processplatform/service/processing/touch/mergeitem
 POST /api/processplatform/service/processing/touch/touchdelay
 POST /api/processplatform/service/processing/touch/urge
 POST /api/processplatform/service/processing/workcompleted/merge/1
-POST /api/program_center/module/compare/upload
-POST /api/program_center/mpweixin/media/add/forever
-POST /api/program_center/mpweixin/menu/add
-POST /api/program_center/mpweixin/menu/create/to/weixin
 PUT /api/portal/assemble/surface/save/layout
