@@ -362,6 +362,87 @@ def require_string_list(name: str, value: Any) -> list:
     return value
 
 
+def require_choice(name: str, value: Any, choices) -> Optional[str]:
+    """校验「从一张**封闭清单**里选一个」这类旋钮，返回原值（A118 / L82）。
+
+    家族里其他成员判数值与布尔的形状，本员判的是「选中的那一项存不存在」。它的
+    存在理由是：这类旋钮在消费方**往往已经有一道同样的判决**，但那一发生在
+    「用到它的那一天」，实测三档改前症状（`Temp/l82q/before.json`）——
+
+    - `create_vector_db('nonsense')` ⇒ `VectorError: 不支持的向量数据库后端`，
+      而配置里写 `vector.backend: nonsense` 时三面向（SDK 直构 / `load_config` /
+      `POST /api/config`）全部放行，端点还回 200。
+    - `Exporter('xls')` ⇒ 抛的是 `ValueError: 'xls' is not a valid ExportFormat`，
+      **不是**领域异常 ⇒ 走 API 时它是 500 而不是 400。
+    - `rag.default_format: pinecone` 今天无人读（`rag.py` 只判自己入参），所以
+      它连「晚一天炸」都没有，是一份纯静默。
+
+    所以本员**不新造任何清单**：清单一律由调用点传进来，且那个清单在仓内必须有
+    权威产地（A77）。类型与非空两刀先由 `require_string` 判掉，于是
+    `backend: ''`、`backend: 5`、`backend: ['faiss']` 三档都在 membership 之前先出
+    更准确的形状错。
+
+    Args:
+        name: 参数名，直接出现在报错里
+        value: 传入的值
+        choices: 封闭清单（tuple / list / set 皆可，报错时按迭代序列出）
+
+    Returns:
+        校验通过后的原值。`None` 放行（同家族口径：「没传」由调用点回落默认值；
+        配置对象那一侧的 `None` 由各节 `_reject_null_fields` 先拒）
+
+    Raises:
+        DataValidationError: 值不是非空字符串，或不在清单里
+    """
+    if value is None:
+        return None
+    require_string(name, value)
+    if value not in choices:
+        raise DataValidationError(
+            f"{name} 必须是 {' / '.join(str(choice) for choice in choices)} 之一，"
+            f"当前是 {value!r}"
+        )
+    return value
+
+
+def require_chunk_window(size_name: str, size: Any,
+                         overlap_name: str, overlap: Any) -> None:
+    """成对校验「窗口大小 / 窗口重叠」两个互相约束的旋钮（A118 / L82）。
+
+    为什么需要一个判两个值的成员：这条界**不可拆**。`rag.RAGFormatter` 改前只判
+    `overlap >= size` 而不判正负，实测 `chunk_size=-1` 配 `chunk_overlap=-5` 构造
+    成功，随后 `chunk_text()` 对 200 字符的输入产出 **1 块 199 字符** —— 分块整件
+    失效，而症状长得像「这篇文档就是一个块」。单值判据（`require_count`）各自都
+    拦得住这一档，但拦的顺序不对就先漏：`-1` 与 `-5` 相比是「小的那个」，
+    只比大小关系永远看不出两个都是负数。
+
+    三刀顺序：`size` 必须是不小于 1 的整数、`overlap` 必须是不小于 0 的整数、
+    然后才比 `overlap < size`。前两刀复用 `require_count`，所以「`chunk_size` 写成
+    `'512'`」这种类型错与全仓其他计数旋钮同一句文案。
+
+    Args:
+        size_name: 窗口大小的名字
+        size: 窗口大小的值
+        overlap_name: 窗口重叠的名字
+        overlap: 窗口重叠的值
+
+    Raises:
+        DataValidationError: 任一值形状不对，或重叠不小于窗口大小
+    """
+    require_count(size_name, size, minimum=1)
+    require_count(overlap_name, overlap, minimum=0)
+    # 两值都必须到场：这条界是一次比较，缺任何一侧都比不了。改前 `RAGFormatter(
+    # chunk_size=None)` 在 `64 >= None` 上抛 `TypeError`（响亮），若沿用家族的
+    # 「None 放行」口径就会变成静默构造成功 —— 那是把响亮换成静默，不是对齐。
+    if size is None:
+        raise DataValidationError(f"{size_name} 必须是整数，当前是 None")
+    if overlap is None:
+        raise DataValidationError(f"{overlap_name} 必须是整数，当前是 None")
+    if overlap >= size:
+        raise DataValidationError(
+            f"{overlap_name} 必须小于 {size_name}，当前是 {overlap} 对 {size}")
+
+
 class ValidationSeverity(Enum):
     """验证严重程度"""
     ERROR = "error"
