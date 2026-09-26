@@ -1,0 +1,144 @@
+{
+  "_comment": "双端公式一致性契约向量。Go 侧 internal/domain/consistency_test.go 与 TS 侧 src/game/consistency.test.ts 必须同时通过。这里的数字由 Go 实际产出后回填，TS 侧若算出不同值即为两端漂移。修改任一公式必须重新回填。",
+  "version": 2,
+  "lcg": {
+    "_comment": "PCG-XSH-RR 变体，Go uint64 与 TS BigInt 必须逐位相同。64 位值必须用字符串承载：JSON number 超过 2^53 后 JS 解析即失精，断言会变成假通过。",
+    "seed": 12345,
+    "expected": ["6917529027818027904", "1269031133", "9223372037807892195"]
+  },
+  "fnv1a64": {
+    "_comment": "Go hash/fnv 与 TS 手写实现必须一致（回放哈希的基础）",
+    "vectors": [
+      { "input": "", "expected": "cbf29ce484222325" },
+      { "input": "a", "expected": "af63dc4c8601ec8c" },
+      { "input": "foobar", "expected": "85944171f73967e8" }
+    ]
+  },
+  "damage": {
+    "_comment": "伤害结算向量。intent 字段说明该向量验证的设计意图，改公式时必须重新推导并核对 intent 是否仍成立。",
+    "cases": [
+      {
+        "name": "low_invest_correct_element",
+        "intent": "低养成(2000)+高元素系数(3000)+冰负抗方向 → 反应伤害占主导，是'以弱胜强'的数值基础",
+        "attacker": {
+          "attack": 2000,
+          "reaction_tier": 3,
+          "element_coef_permille": 3000,
+          "element_cap": 64
+        },
+        "defender": {
+          "hp": 1000000000,
+          "armor_permille": 0,
+          "stacks_per_element": 4,
+          "resist": { "fire": 500, "ice": -300, "lightning": 500, "corrosion": -300 }
+        },
+        "hit": {
+          "skill_damage": 1000,
+          "skill_element": "corrosion",
+          "force_reaction": "flash_freeze",
+          "reaction_element": "ice",
+          "roll": 9999
+        },
+        "expect": {
+          "reaction_attack_portion": 526,
+          "reaction_elem_portion": 9720,
+          "reaction_damage": 13162,
+          "direct_damage": 3540,
+          "element_damage": 2340,
+          "total_damage": 16702,
+          "crit": false,
+          "killed": false
+        }
+      },
+      {
+        "name": "low_invest_wrong_element",
+        "intent": "同样养成但打在高抗(火+500)方向 → 抗性必须让伤害明显下降，否则抗性矩阵形同虚设",
+        "attacker": {
+          "attack": 2000,
+          "reaction_tier": 3,
+          "element_coef_permille": 3000,
+          "element_cap": 64
+        },
+        "defender": {
+          "hp": 1000000000,
+          "armor_permille": 0,
+          "stacks_per_element": 4,
+          "resist": { "fire": 500, "ice": -300, "lightning": 500, "corrosion": -300 }
+        },
+        "hit": {
+          "skill_damage": 1000,
+          "skill_element": "corrosion",
+          "force_reaction": "overheat",
+          "reaction_element": "fire",
+          "roll": 9999
+        },
+        "expect": {
+          "reaction_attack_portion": 247,
+          "reaction_elem_portion": 11880,
+          "reaction_damage": 6187,
+          "direct_damage": 3540,
+          "element_damage": 2340,
+          "total_damage": 9727,
+          "crit": false,
+          "killed": false
+        }
+      },
+      {
+        "name": "high_invest_no_reaction",
+        "intent": "高养成(20000)但元素同色不触发反应 → 只能吃单段伤害。低于上面两种的组合伤害，这就是'堆数值不如拼搭配'的证明",
+        "attacker": {
+          "attack": 20000,
+          "reaction_tier": 1,
+          "element_coef_permille": 1000,
+          "element_cap": 64
+        },
+        "defender": {
+          "hp": 1000000000,
+          "armor_permille": 0,
+          "stacks_per_element": 4,
+          "resist": { "fire": 500, "ice": -300, "lightning": 500, "corrosion": -300 }
+        },
+        "hit": {
+          "skill_damage": 1000,
+          "skill_element": "fire",
+          "roll": 9999
+        },
+        "expect": {
+          "reaction_attack_portion": 0,
+          "reaction_elem_portion": 0,
+          "reaction_damage": 0,
+          "direct_damage": 8700,
+          "element_damage": 300,
+          "total_damage": 8700,
+          "crit": false,
+          "killed": false
+        }
+      }
+    ]
+  },
+  "balance_invariants": {
+    "_comment": "反通胀与以弱胜强的不变量，两端都必须成立",
+    "max_reaction_attack_weight_permille": 300,
+    "low_correct_beats_high_no_reaction": true,
+    "correct_direction_ratio_min": 1.5
+  },
+  "levelgen": {
+    "_comment": "关卡生成必须确定性。两端同 seed 必须产出完全相同的关卡。",
+    "levels": 100,
+    "terrain_level_min": 20
+  },
+  "constants": {
+    "_comment": "跨端共享的设计常量，任一端改动都会导致结算分歧",
+    "element_per_stack_base": 1200,
+    "element_tick_divisor": 40,
+    "direct_weight_permille": 400,
+    "permille": 1000,
+    "max_resist_permille": 500,
+    "max_armor_permille": 750,
+    "loot_caps": {
+      "max_coin_per_battle": 60000,
+      "max_keys_per_battle": 3,
+      "max_energy_per_battle": 15
+    }
+  }
+}
