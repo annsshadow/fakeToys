@@ -105,6 +105,30 @@ export const SPAWN_PROGRESS_FULL = 1000
 /** 每 tick 的出场进度增量（80‰，等价于原来的 0.08）。 */
 export const SPAWN_PROGRESS_STEP = 80
 
+/**
+ * MAX_BATTLE_TICKS 是战斗的绝对 tick 上限（30000 tick = 1500s = 25 分钟）。
+ *
+ * 到达即强制判负并结束，防止引擎因任何死锁而**永久挂死**。
+ *
+ * ⚠️ 实测踩过：第 22/33/34 关因「掩体挡弹丸 → 弹丸打不到敌人 →
+ * 掩体永远打不破」的循环依赖，引擎永久停在 wave 阶段 ——
+ * 12000 tick 只杀 2~17 只怪，命中率 1%，战斗不会自然结束。
+ * 真机上那就是玩家盯着一个永远不结算的画面，体力也拿不回来。
+ *
+ * 那个具体缺陷已修，但**这类缺陷（循环依赖 / 几何互斥）无法靠读代码杜绝** ——
+ * 本项目已经栽过三次（掩体充能路径几何互斥、刷怪毫秒当 tick、
+ * 热量死区导致战斗停摆）。所以留一道兜底。
+ *
+ * 预算依据：实测最慢的合法关卡是第 100 关 594s = 11880 tick，
+ * 30000 是它的 2.5 倍余量 —— 合法对局**不可能**触碰这个上限，
+ * 因此它只会在真正死锁时触发。
+ *
+ * 与服务端的一致性：服务端对 duration_ms 的上界是 1800s（54000 tick），
+ * 比这里宽 1.8 倍。宁可服务端更宽松 —— 否则会出现
+ * "客户端因停滞结束了、服务端却认为时长非法"的不一致。
+ */
+export const MAX_BATTLE_TICKS = 30000
+
 /** TICK_MS 的 bigint 形式，供定点运算直接使用 */
 export const TICK_BIG = BigInt(TICK_MS)
 
@@ -149,6 +173,8 @@ export type BattleEvent =
   | { type: 'overheat' }
   /** 「隔热护罩」免疫了一次过热（与真正的 overheat 区分开） */
   | { type: 'card_heated' }
+  /** 战斗到达绝对 tick 上限被强制结束（引擎停滞兜底） */
+  | { type: 'stalemate' }
   | { type: 'card_offer'; cards: Card[] }
   | { type: 'card_taken'; card: Card }
   | { type: 'card_discarded'; card: Card }
@@ -530,6 +556,11 @@ export class BattleEngine {
     this.tick++
     this.elapsedMs += TICK_MS
 
+    // 停滞兜底：放在 tick++ 之后、任何战斗逻辑之前。
+    // 位置很关键 —— 必须在 phase 检查之后（本函数开头已 return 掉终局），
+    // 且必须在移动/开火之前，这样"到上限"这件事本身是这次 tick 的第一个事实。
+    if (this.checkStalemate()) return this.drainEvents()
+
     this.heat.update(TICK_MS)
     this.heat.tickCooldown(TICK_MS, this.skills)
 
@@ -821,9 +852,33 @@ export class BattleEngine {
           p.dead = true
           break
         }
-        // 被崩塌前的掩体阻挡
+        // 被崩塌前的掩体阻挡。
+        //
+        // ⚠️ 这里**必须把弹丸的伤害喂给掩体**，否则掩体永远打不破。
+        //
+        // 曾经的写法只是 `p.dead = true; break`，于是：
+        //
+        //   掩体挡住弹丸 → 弹丸销毁 → 走不到 checkProjectileHit
+        //   → 掩体唯一的充能源（onHit，只在弹丸命中**敌人**时调用）永不触发
+        //   → 掩体永不崩塌 → 弹丸继续被挡          ← 循环依赖
+        //
+        // 实测后果：第 22/33/34 关**永远打不完**。弹丸轨迹实测显示，
+        // 从 (60,880) 射向 (884,638) 的弹丸在 (497,752) 消失，
+        // 而那里距掩体 (514,654) 恰好 99.5 < 100 —— 被挡。
+        // 命中率掉到 1%，12000 tick 只杀 3 只怪，引擎永久停在 wave 阶段。
+        //
+        // 而 `onHit` 的元素门槛又让情况更糟：掩体只吃动能，
+        // 默认构筑是 fire/fire/fire/ice，**一个动能都没有**。
+        //
+        // 现在弹丸打在掩体上等同于打在敌人身上（有伤害、有元素），
+        // 于是"用动能砸开掩体、打开弹道"这个原本的设计意图才真正成立。
         for (const t of this.terrains) {
           if (t.blocksProjectile() && this.withinTerrain(t.x, t.y, 100, p.x, p.y)) {
+            if (t.onHit(p.element, p.damage, p.x, p.y)) {
+              this.terrainUsed.push(t.kind)
+              this.emit({ type: 'terrain', kind: t.kind, x: t.x, y: t.y })
+              this.record(this.tick, 'terrain', terrainIndex(t.kind), t.x, t.y)
+            }
             p.dead = true
             break
           }
@@ -1377,7 +1432,7 @@ export class BattleEngine {
     }
   }
 
-  private finish(win: boolean): void {
+  private finish(win: boolean, stalemate = false): void {
     this.phase = win ? 'won' : 'lost'
     const stars = this.calcStars()
     if (win) {
@@ -1385,6 +1440,44 @@ export class BattleEngine {
     } else {
       this.emit({ type: 'lost', score: this.score })
     }
+    // 停滞必须**记进回放**：它是一个真实发生过的终局状态，
+    // 而重放方要能复现"这局是被上限截断的"而不是"这局还在跑"。
+    // 不记就等于哈希不覆盖这个结局 —— 同一场战斗，
+    // 一次跑到上限结束、一次靠玩家操作结束，哈希会不同。
+    if (stalemate) {
+      this.record(this.tick, 'stalemate', this.tick)
+    }
+  }
+
+  /**
+   * 停滞检测：到达绝对 tick 上限就强制结束。
+   *
+   * ⚠️ 这不是"防玩家卡住"的兜底，而是**防引擎挂死**的兜底。
+   *
+   * 实测踩过：第 22/33/34 关因为「掩体挡弹丸 → 弹丸打不到敌人 →
+   * 掩体永远打不破」的循环依赖，引擎**永久停在 wave 阶段** ——
+   * 12000 tick 只杀 2~17 只怪，命中率掉到 1%，战斗不会自然结束。
+   * 在真机上那意味着玩家盯着一个永远不结算的画面。
+   *
+   * 那个具体缺陷已修（见 updateProjectiles 里的注释），但：
+   *   - 循环依赖/互斥这类缺陷很难靠"读代码看出��"杜绝
+   *   - 任何未来的内容改动都可能再造一个
+   *   - 挂死的代价（玩家永久卡在一局、无法退出、体力不返还）远高于误判
+   *
+   * 所以这里加一道**兜底**：超过预算就判负结束。
+   *
+   * 预算取 30000 tick = 1500s = 25 分钟：
+   *   实测最慢的合法关卡是第 100 关 594s（11880 tick），
+   *   30000 是它的 2.5 倍余量 —— 合法对局**不可能**触碰。
+   *   而服务端对 duration_ms 的上界（1800s）比它更宽，
+   *   避免出现"客户端结束了、服务端却认为时长非法"的不一致。
+   */
+  private checkStalemate(): boolean {
+    if (this.phase === 'won' || this.phase === 'lost') return false
+    if (this.tick < MAX_BATTLE_TICKS) return false
+    this.emit({ type: 'stalemate' })
+    this.finish(false, true)
+    return true
   }
 
   /** 星级由客户端算一遍供即时反馈；服务端会重算校验（I-6 的分工） */

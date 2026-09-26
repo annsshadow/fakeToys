@@ -71,6 +71,7 @@ interface Metrics {
   hpPct: number
   reactions: number
   maxHeat: bigint
+  total: number
 }
 
 function measure(
@@ -86,6 +87,8 @@ function measure(
     speedMul?: number
     /** 弹丸速度倍率。当前内容表 45~80 单位/秒，跨 900 单位要 18 秒。 */
     projMul?: number
+    /** 跑哪一关。缺省为第 1 关（它要的是可控的对照实验）。 */
+    level?: GeneratedLevel
   } = {},
 ): Metrics {
   const hpMul = opts.hpMul ?? 1
@@ -105,7 +108,7 @@ function measure(
     skills.set(id, { ...s, projectile_speed: Math.round(s.projectile_speed * projMul) })
   }
   const cfg: BattleConfig = {
-    level,
+    level: opts.level ?? level,
     enemies,
     skills,
     equipped: equip(opts.nSkills ?? ACTIVE_SLOTS, projMul),
@@ -138,6 +141,7 @@ function measure(
     hpPct: +(Number(e.baseHp) * 100 / Number(e.baseHpMax)).toFixed(1),
     reactions: e.reactionsCount,
     maxHeat: e.heat.maxHeatThisBattle,
+    total: e.totalEnemies,
   }
 }
 
@@ -381,6 +385,44 @@ describe('平衡基准', () => {
       }
     }
   })
+
+  // 全 100 关的难度曲线。
+  //
+  // ⚠️ 夹具曾经只导出第 1/10/25/50/75/100 关，于是**第 25~75 关从未被
+  // 任何东西跑过** —— 50 关是黑盒。平衡一旦在那段出问题（敌人血量跳档、
+  // 关卡从"全清"直接跳到"打不过"），不会有任何测试变红。
+  //
+  // 代价：跑 100 场完整战斗。逐位守恒，没有近似。
+  // 采样 100 关全跑太慢时按 step 抽样，但**每章至少取 3 关**，
+  // 否则会漏掉章内的跳变。
+  it('全 100 关难度曲线', () => {
+    const all = fixture.levels as unknown as GeneratedLevel[]
+    const rows: string[] = []
+    let lastWon = true
+    let regressions = 0
+    for (const lv of all.slice().sort((a, b) => a.id - b.id)) {
+      const m = measure({ level: lv })
+      rows.push(
+        `[bal-curve] 关${String(lv.id).padStart(3)} ` +
+          `${m.phase.padEnd(4)} ${String(m.sec).padStart(6)}s ` +
+          `| 怪${String(m.total).padStart(3)} 杀${String(m.kills).padStart(3)}` +
+          `漏${String(m.leaked).padStart(3)} hp${String(m.hpPct).padStart(5)}% ` +
+          `| 命${(m.hitRate * 100).toFixed(0).padStart(3)}% ` +
+          `react${String(m.reactions).padStart(3)} ` +
+          `heat${String(m.maxHeat).padStart(3)} ` +
+          `score=${String(m.score).padStart(6)} star=${m.stars}`,
+      )
+      // 回归：上一关能过、这一关过不了，且不是首次
+      if (lastWon && m.phase === 'lost' && lv.id > 1) regressions++
+      lastWon = m.phase === 'won'
+    }
+    for (const r of rows) console.log(r)
+    // 只报告，不在这里断言 —— 断言放在 difficulty.test.ts（单元测试要快且确定）
+    console.log(
+      `[bal-curve] 汇总：失败 ${rows.filter((r) => r.includes(' lost ')).length} 关，` +
+        `难度回归点 ${regressions} 处`,
+    )
+  }, 300_000)
 
   // 血量厚度对成长维度的影响（参数实验）
   it('血量厚度对成长维度的影响（参数实验）', () => {

@@ -211,6 +211,14 @@ export type ReplayEventType =
    * 不记就等于"哈希记录了一个玩家看得见、却不影响判定的选择"。
    */
   | 'guard'
+  /**
+   * 战斗到达绝对 tick 上限被强制结束（引擎停滞兜底）。
+   *
+   * ⚠️ 必须与 'overheat' 一样**记进回放**：它是一个真实发生过的终局，
+   * 而「这局被上限截断」与「这局自然结束」对重放方是两种不同的历史。
+   * 不记就等于哈希不覆盖这个结局。
+   */
+  | 'stalemate'
 
 export interface ReplayEvent {
   t: number

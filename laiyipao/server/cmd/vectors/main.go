@@ -106,9 +106,27 @@ type smokeFixture struct {
 	Equip     []domain.SeedEquipment  `json:"equipment"`
 }
 
-// smokeLevelIDs 是导出的关卡。取第 1/10/25/50/75/100 关，
-// 覆盖 6 个章节的起点与全程终点。
-var smokeLevelIDs = []int{1, 10, 25, 50, 75, 100}
+// smokeLevelIDs 是导出的关卡：**全部 100 关**。
+//
+// ⚠️ 曾经只导出第 1/10/25/50/75/100 关，理由是"覆盖 6 个章节起点与终点"。
+// 但那留下一个真实的盲区：**第 25~75 关从未被任何测试或探针跑过**，
+// 而我自己在 README 的「已知边界」里写了"章节内的细分曲线没有人工标定"。
+//
+// 也就是说：难度梯度只有两个端点有数据，中间 50 关是黑盒。
+// 平衡一旦出问题（比如某一段敌人血量突然跳档、或关卡从"全清"直接跳到"打不过"），
+// 没有任何东西会红 —— 因为根本没人跑那些关卡。
+//
+// 成本可接受：单关配置约 0.89 KB，全 100 关约 89 KB。
+// 消费方按需取用：
+//   - difficulty.test.ts 采样 6 关（单元测试要快）
+//   - balance.probe.test.ts 跑全量（测量工具要全）
+var smokeLevelIDs = func() []int {
+	ids := make([]int, 0, domain.TotalLevels)
+	for id := 1; id <= domain.TotalLevels; id++ {
+		ids = append(ids, id)
+	}
+	return ids
+}()
 
 func buildSmoke() ([]byte, error) {
 	fx := smokeFixture{
