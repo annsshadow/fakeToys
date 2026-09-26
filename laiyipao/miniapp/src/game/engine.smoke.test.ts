@@ -23,7 +23,7 @@
  * 不用「大概等于」也不只看比值 —— 比值对「整体失效」是盲的。
  */
 import { describe, it, expect } from 'vitest'
-import fixture from '@vectors/smoke_level1.json'
+import fixture from '@vectors/smoke_levels.json'
 import { BattleEngine, TICK_MS, type BattleConfig } from './engine'
 import { defaultAttacker, type Attacker } from './damage'
 import type { EnemyDef, GeneratedLevel, SkillDef } from './types'

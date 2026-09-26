@@ -19,7 +19,7 @@
  * 夹具由 `go run ./cmd/vectors` 导出第 1/10/25/50/75/100 关。
  */
 import { describe, it, expect } from 'vitest'
-import fixture from '@vectors/smoke_level1.json'
+import fixture from '@vectors/smoke_levels.json'
 import { BattleEngine, TICK_MS, type BattleConfig } from './engine'
 import { defaultAttacker } from './damage'
 import type { EnemyDef, GeneratedLevel, SkillDef } from './types'

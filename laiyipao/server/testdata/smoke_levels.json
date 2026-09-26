@@ -1,5 +1,5 @@
 {
-  "note": "由 server/cmd/vectors 从 Go 真相源导出，供 miniapp 引擎冒烟测试使用。不要手工编辑：改内容表后重新执行 go run ./cmd/vectors。",
+  "note": "由 server/cmd/vectors 从 Go 真相源导出，供 miniapp 引擎冒烟与难度梯度测试使用。不要手工编辑：改内容表后重新执行 go run ./cmd/vectors。",
   "levels": [
     {
       "id": 1,

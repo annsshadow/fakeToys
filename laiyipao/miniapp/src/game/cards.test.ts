@@ -18,7 +18,7 @@
  * 所以这里对每一类卡都断言「施加后状态确实变了」。
  */
 import { describe, it, expect } from 'vitest'
-import fixture from '@vectors/smoke_level1.json'
+import fixture from '@vectors/smoke_levels.json'
 import { BattleEngine, type BattleConfig } from './engine'
 import { defaultAttacker } from './damage'
 import { ACTIVE_SLOTS } from './heatmap'
