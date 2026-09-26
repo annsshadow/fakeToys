@@ -868,19 +868,30 @@ class TestWaitBudgetKnobSurface:
         （A74 把六处硬编码的超时收敛成一档旋钮）。L76 起 13：新增的是
         `dedup.threshold`（A118 补的那条**整条不存在的规格**）—— 本条当场为它红一次，
         正是「以后新增字段自动被覆盖」这句承诺在兑现，不是这条断言写坏了。
+        L82 起 16：新增的三条是 `vector.dimension`、`rag.chunk_size`、
+        `rag.chunk_overlap`（A118 余四节收口）。**这一档的红是承诺兑现而不是断言写坏**：
+        三条新规格改前根本不在表里，所以本条对它们从没判过；改后运行时那一侧
+        （`require_count` / `require_chunk_window` 都走 `_require_number`，那里的
+        `isinstance(value, bool)` 先于类型判断）与静态面同判，故两侧一致。
         """
         numeric = [p for p, s in ConfigValidator.KNOWN_FIELDS.items()
                    if s.get("type") in (int, float)]
-        assert len(numeric) == 13, "新增数值规格键会自动进入本断言"
+        assert len(numeric) == 16, "新增数值规格键会自动进入本断言"
         for path in numeric:
             hits = [m for p_, m in self._errors_at(path) if p_ == path]
             assert hits and "类型错误" in hits[0], (path, hits)
 
     def test_declared_bool_fields_stay_acceptable(self):
-        """修 bool 洞不许顺手把 `type: bool` 的开关字段判成非法"""
+        """修 bool 洞不许顺手把 `type: bool` 的开关字段判成非法
+
+        L82 起 4 → 7：新增的是 `vector.enabled` / `rag.enabled` /
+        `multimodal.enabled`。本条在 A118 收口里是**反向档**（不许收紧过头），
+        与上一条同批改，因为同一个 `__post_init__` 里 `require_bool` 与
+        `require_choice` 挨着写，写错一侧就一侧红。
+        """
         paths = [p for p, s in ConfigValidator.KNOWN_FIELDS.items()
                  if s.get("type") is bool]
-        assert len(paths) == 4, "规格表里应仍有布尔开关字段"
+        assert len(paths) == 7, "规格表里应仍有布尔开关字段"
         for path in paths:
             hits = [m for p_, m in self._errors_at(path) if p_ == path]
             assert hits == [], (path, hits)
@@ -1136,17 +1147,37 @@ class TestRuntimeValidatorParity:
         反向不一致同样是缺陷：校验器比运行时严，合法配置会被 `validate-config` 拦在
         门外（`quality.threshold` 是数值键、运行时不判形状，规格就不许挂
         `items`/`non_empty`）。
+
+        L82 起三把钥匙的允许集同时变宽（A118 余四节收口，静态面与 `__post_init__`
+        同批）：`items` 加 `export.formats` / `multimodal.image_extensions` /
+        `multimodal.audio_extensions`（运行时 `require_string_list`）、`non_empty` 加
+        `vector.storage_dir` / `vector.collection`（`require_string`）、`choices` 加
+        `export.default_format` / `vector.backend` / `rag.default_format`
+        （`require_choice`）。
+        **`export.formats` 的清单挂在 `item_choices` 而不是 `choices` 上**，本条用
+        字典键成员判断，两种写法不会混进同一桶 —— 那一档的运行时判据是逐项
+        `require_choice`，与整键取值是两件事。
         """
         s = ConfigValidator.KNOWN_FIELDS
         assert {p for p, spec in s.items() if "items" in spec} == {
-            "web.cors_origins", "web.data_roots", "web.rate_limit_exempt_paths"}
+            "web.cors_origins", "web.data_roots", "web.rate_limit_exempt_paths",
+            "export.formats", "multimodal.image_extensions",
+            "multimodal.audio_extensions"}
         # `logging.format` 挂在 `non_empty` 上是 L57 的正当增长：运行时那一侧走的
-        # 正是 `require_string`（空串一并拒），不是校验器独有的口味。
+        # 正是 `require_string`（空串一并拒），不是校验器独有的口味。L82 的
+        # `vector.storage_dir` / `vector.collection` 与它同式。
         assert {p for p, spec in s.items() if spec.get("non_empty")} == {
-            "web.host", "web.static_dir", "logging.format"}
-        # 后两把是本轮新挂的形状键，允许集/可渲染性各只有运行时的那一个判据
-        # （`level_number` / `build_formatter`），所以各只许命中一个键。
-        assert {p for p, spec in s.items() if "choices" in spec} == {"logging.level"}
+            "web.host", "web.static_dir", "logging.format",
+            "vector.storage_dir", "vector.collection"}
+        # 封闭清单键的每一条都必须有运行时判据兜着：L57 时只有 `logging.level` 一个，
+        # L82 之后是三份**推导**清单（`EXPORT_FORMATS` / `RAG_FORMATS` /
+        # `VECTOR_BACKENDS`），两侧共引同一个对象，所以这一桶新增三项不可能与运行时
+        # 漂 —— 漂了要红的是 `tests/unit/test_config_gates_l82.py` 里的
+        # `TestTheRangesAreOneCopyOnly`（共引结构守卫）与
+        # `TestTheRagWindowIsSharedAcrossThreeCallsites`，不是这里。
+        assert {p for p, spec in s.items() if "choices" in spec} == {
+            "logging.level", "export.default_format", "vector.backend",
+            "rag.default_format"}
         assert {p for p, spec in s.items() if spec.get("renderable")} == {
             "logging.format"}
 
