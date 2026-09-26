@@ -174,19 +174,13 @@ mod u2_tests {
         std::fs::remove_dir_all(dir).unwrap();
     }
 
-    /// 红线：默认（db 占位）环境下，走 BlobStorage 的新上传端点返回精确 501，
-    /// 不写元数据行、不假装成功。（若环境显式配置 STORAGE_BACKEND=fs，则继续走到
-    /// DB 写入阶段，在无 PG 的单测环境中表现为 500。）
+    /// 红线：上传端点不得「假成功」。迁移到 PgBlobStorage 后，默认（db）后端走真实
+    /// DB 落盘（x_blob_storage），fs 后端走磁盘落盘后再写 FILE_FILE 元数据行——两者
+    /// 在无 PG 的单测环境中都到不了成功，表现为 500（fail loud），绝不返回内容必丢的假 200。
+    /// （真实 PG 环境下：db 后端上传真实持久化并回读校验通过，返回 200。）
     #[tokio::test]
-    async fn u2_upload_db_placeholder_fails_loud_not_fake_success() {
-        let fs_env = std::env::var("STORAGE_BACKEND")
-            .map(|v| v.eq_ignore_ascii_case("fs"))
-            .unwrap_or(false);
-        let expected = if fs_env {
-            StatusCode::INTERNAL_SERVER_ERROR
-        } else {
-            StatusCode::NOT_IMPLEMENTED
-        };
+    async fn u2_upload_fails_loud_not_fake_success_without_pg() {
+        let expected = StatusCode::INTERNAL_SERVER_ERROR;
         let base =
             "/api/file/assemble/control/file/upload/referencetype/taskReport/reference/w-9/scale/1";
         for (method, headers, body) in [
@@ -196,7 +190,7 @@ mod u2_tests {
             let (status, json) = respond_auth(method, base, headers, body).await;
             assert_eq!(
                 status, expected,
-                "upload must fail loud ({expected}), body={json}"
+                "upload must fail loud ({expected}) without PG, body={json}"
             );
             assert_eq!(json["type"], "error", "must not fake success: {json}");
         }
