@@ -127,6 +127,10 @@ VECTOR_DIMENSION_MIN = 1
 PORT_RANGE = (1, 65535)
 RATE_LIMIT_MIN_REQUESTS = 0
 RATE_LIMIT_MIN_WINDOW_SECONDS = 0.0
+# `web.max_upload_bytes` 的下界（L87 / A149）。**下界是 1 而不是 0**：0 有两种人话
+# 读法（「一条都不收」/「不设上限」），而这一格管的是内存与磁盘的边界，不能靠读法
+# 决定后果 —— 想放宽就写个大数，想收紧就写个小数，`0` 与负数当场拒。
+MAX_UPLOAD_BYTES_MIN = 1
 
 logger = logging.getLogger(__name__)
 
@@ -590,6 +594,14 @@ class WebConfig:
     # 写入必须显式给出白名单内的路径，例如 `data/xxx.json`。
     # 环境变量 AUGMENTOR_DATA_ROOTS（os.pathsep 分隔）优先级更高。
     data_roots: list = field(default_factory=lambda: ["data"])
+    # 单次上传允许的最大字节数（`POST /api/data/upload` 的 multipart 文件部分）。
+    # 默认 256 MiB 的定标依据（L87 现量）：仓内最大的数据集文件
+    # `train_data_final.json` 是 3 596 159 B（≈3.4 MiB），默认档给它约 70 倍余量，
+    # 因此**不会拦掉今天任何能成功的上传**。放大系数也实测过：8.4 MiB 的上传让
+    # 进程峰值 RSS 比同尺寸的控制档高 34.8 MiB（约 4.1 倍），所以不设上限时
+    # 一个客户端就能把服务端内存推到「它想给多少是多少」。上界只判下界不判：
+    # 写一个天文数字是操作者自己的选择，与 `vector.dimension` 同形。
+    max_upload_bytes: int = 256 * 1024 * 1024
     # 滑动窗口限流：窗口内单客户端最大请求数。0 表示关闭限流。
     rate_limit_max_requests: int = 300
     # 限流窗口长度（秒）
@@ -630,6 +642,13 @@ class WebConfig:
                 f"{self.cors_credentials!r}（{type(self.cors_credentials).__name__}）"
             )
         require_string_list("web.data_roots", self.data_roots)
+        # `max_upload_bytes` 是本轮新键，判据不是补历史欠账而是防三种「配了等于没配」
+        # 的现在式写法：`0`（两种读法里挑一种就会静默放开上限或静默拒绝一切）、
+        # `-1`（负数比较恒成立 ⇒ 每个上传都被拒）、`true`（`bool` 是 `int` 的子类，
+        # 不显式判就当 1 字节收下了）。`require_count` 三条都判，且与校验器共用
+        # 同一个 `MAX_UPLOAD_BYTES_MIN`。
+        require_count("web.max_upload_bytes", self.max_upload_bytes,
+                      minimum=MAX_UPLOAD_BYTES_MIN)
         require_count("web.rate_limit_max_requests", self.rate_limit_max_requests,
                       minimum=RATE_LIMIT_MIN_REQUESTS)
         require_seconds("web.rate_limit_window_seconds",

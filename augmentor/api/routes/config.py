@@ -6,7 +6,7 @@
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from augmentor.exceptions import DataValidationError
 
@@ -39,7 +39,18 @@ class ModelsResponse(BaseModel):
 
 
 class ConfigUpdateRequest(BaseModel):
-    """配置更新请求"""
+    """配置更新请求
+
+    `extra="allow"` 不是为了「什么都能写」，是为了**报得出来**（A151，与 A86 同构的
+    另一半）。A86 修的是节内未知子键被 `hasattr` 静默丢弃，而**节级**一直漏网：
+    pydantic 默认 `extra="ignore"` 先把不认识的顶层键吃掉，路由再只遍历那七节，于是
+    `{"web": {"max_upload_bytes": 0}}` 实测回 **200 +「配置已保存」+ `ignored_keys: []`**，
+    而内存对象与磁盘文件一字未改 —— 比节内拼错更安静，因为连那份干净清单都是空的。
+    写入清单本身不变（改 `web` 节牵动端口/白名单/CORS 的生效时机，属于「要不要给这节
+    开重启语义」的独立决定），本轮只把静默改成出声。
+    """
+    model_config = ConfigDict(extra="allow")
+
     default_model: str | None = None
     augmentation: dict | None = None
     quality: dict | None = None
@@ -54,9 +65,22 @@ class ConfigUpdateResponse(MessageResponse):
     """更新配置的结果
 
     继承 `MessageResponse` 的 `success`/`message` 两键（语义不变），只多一
-    `ignored_keys`：请求里被 `hasattr` 丢弃的未知子键清单（A86 写路径出声）。
+    `ignored_keys`：请求里**没有写进配置**的键清单（A86 写路径出声，A151 扩到节级）。
+    形状两种：`section.key`（节内未知子键）与 `section`（整节不在写入清单里，
+    或节名拼错），程序侧按「有没有点」就能分开消费。
     """
     ignored_keys: List[str] = []
+
+
+# `POST /api/config` 的写入清单。配置里 22 个节名（`ConfigValidator.consumed_section_keys()`
+# 的 20 节 + `app` / `models` 两个元节）里只有这 7 节能写；名单之外的 15 节
+# （`web` / `logging` / `versioning` …）改了要重启、或牵动生效时机（端口、白名单、
+# CORS 装配），本端点不碰；A151 起它们会出现在 `ignored_keys` 里而不是静默消失。
+# 这份名单与 `ConfigUpdateRequest` 的七个 dict 字段一一对应，由
+# `tests/unit/test_upload_ceiling_l87.py::test_writable_list_matches_the_request_schema`
+# 钉住。
+WRITABLE_SECTIONS = ["augmentation", "quality", "dedup", "export",
+                     "vector", "rag", "multimodal"]
 
 
 @router.get("/api/config", response_model=ConfigResponse, summary="获取配置")
@@ -130,7 +154,7 @@ async def update_config(
         # 要么整批回滚，所以本端点不再存在「内存已改、文件未写」的中间态。
         ignored: List[str] = []
         notes: List[str] = []
-        for section in ["augmentation", "quality", "dedup", "export", "vector", "rag", "multimodal"]:
+        for section in WRITABLE_SECTIONS:
             if section in updates:
                 section_config = getattr(p.config, section)
                 known = [f.name for f in dataclasses.fields(section_config)]
@@ -141,9 +165,28 @@ async def update_config(
                         + ConfigValidator._suggest(key, sorted(known))
                     )
 
+        # A151：节级漏网。`extra="allow"` 把不认识的顶层节留在 `model_extra` 里，
+        # 于是这里能分清两种「没写进去」：配置里**有**这一节但本端点不写（`web` /
+        # `logging` 那 15 节，改了要重启或牵动生效时机），以及节名压根拼错。
+        # 从前前者被 pydantic 直接吃掉、连 `ignored_keys` 都是空的，实测
+        # `{"web": {"max_upload_bytes": 0}}` 回 200「配置已保存」而 live 与磁盘未动。
+        known_sections = (set(ConfigValidator.consumed_section_keys())
+                          | ConfigValidator.META_TOP_SECTIONS)
+        for key in sorted(request.model_extra or {}):
+            ignored.append(key)
+            if key in known_sections:
+                notes.append(f"{key}（本端点不修改该节，请编辑 config.yaml 后重启服务）")
+            else:
+                notes.append(
+                    key + ConfigValidator._suggest(
+                        key, sorted(known_sections | set(ConfigUpdateRequest.model_fields)))
+                )
+
         message = "配置已保存，部分配置需要重启服务生效"
         if ignored:
-            message += "（已忽略未知配置项：" + "、".join(notes) + "）"
+            # 措辞从「未知配置项」改成「未写入的配置项」：A151 之后这份清单里
+            # 也可能是**存在但本端点不写**的节（`web`），叫它「未知」是假话。
+            message += "（已忽略未写入的配置项：" + "、".join(notes) + "）"
         save_config(p.config, str(config_file_path()))
         return {"success": True, "message": message, "ignored_keys": ignored}
     except DataValidationError as e:

@@ -13,10 +13,13 @@ from pydantic import BaseModel
 
 from ..deps import (
     allowed_data_roots,
+    assert_dataset_shape,
     get_pipeline,
+    max_upload_bytes,
     read_json_file,
     resolve_within_roots,
     run_in_thread,
+    to_http_error,
     verify_api_key,
     write_json_file,
 )
@@ -228,6 +231,58 @@ async def delete_data_item(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+async def _read_upload_body(file: UploadFile, limit: int) -> bytes:
+    """读上传体，但**先在 O(1) 的尺寸上判上限**；越界当场 413，且先于任何落盘动作
+
+    为什么先判尺寸而不是分块攒：分块攒那份 `bytearray` 在**没越界**时要付实打实的
+    代价（实测同一个 64.1 MiB 上传，攒块比一次 `read()` 多 64.0 MiB 峰值、慢 5.9 倍，
+    因为 bytearray 扩容要留旧缓冲区）。而 Starlette 1.2.1 的 `UploadFile.write()`
+    里就有 `self.size += len(data)`，解析完的 `size` 是**服务端自己按实际写入字节
+    累加出来的**（不是客户端报的 Content-Length），于是「上限」可以在读之前一次判掉：
+    越界的一个字节都不搬进内存，未越界的照旧一次读完。
+
+    两道判据不是重复：`declared` 那道负责内存，事后那道负责形状（`size` 为 `None`
+    的构造方 —— 不走解析器的直接构造 —— 只能读完了才知道有多大）。
+
+    **如实记下管不到的那一半**：Starlette 的 multipart 解析在进入本函数之前就把文件
+    部分写进 `SpooledTemporaryFile(max_size=1 MiB)`，超过就溢到临时目录；它那 1 MiB 的
+    `max_part_size` 只判**非文件**表单字段（`_current_part.file is None` 那一支），
+    文件部分直接绕开。所以这条上限管的是「服务端为一次上传分配多少内存、要不要把
+    内容写进数据目录」，**不管**「客户端能不能把大 body 灌到磁盘临时文件上」——
+    那一层在 ASGI/反代的 `client_max_body_size`，不在本仓代码里（另立一笔）。
+
+    Args:
+        file: 上传的文件部分
+        limit: 允许的最大字节数（来自 `deps.max_upload_bytes()`）
+
+    Returns:
+        不超过 `limit` 的完整字节
+
+    Raises:
+        HTTPException: 413 越界（文案含上限与实际/申报字节数，不回显内容）
+    """
+    declared = getattr(file, "size", None)
+    if declared is not None and declared > limit:
+        raise HTTPException(
+            status_code=413,
+            detail=(
+                f"上传内容 {declared} 字节，超过 web.max_upload_bytes={limit}"
+                "（未读取、未落盘）"
+            ),
+        )
+
+    content = await file.read()
+    if len(content) > limit:
+        raise HTTPException(
+            status_code=413,
+            detail=(
+                f"上传内容 {len(content)} 字节，超过 web.max_upload_bytes={limit}"
+                "（未落盘）"
+            ),
+        )
+    return content
+
+
 @router.post(
     "/api/data/upload",
     response_model=DataUploadResponse,
@@ -236,20 +291,48 @@ async def delete_data_item(
 async def upload_data(
     file: UploadFile = File(...), _auth: None = Depends(verify_api_key)
 ):
-    """上传数据文件"""
+    """上传数据文件
+
+    落点：`file.filename` 按**白名单内的相对路径**用，不再剥成裸文件名。改前剥的
+    那一刀把 `resolve_within_roots` 对外承诺的写法（「要写入请显式传 `data/xxx.json`」）
+    在这条路由上变成了拿不到的出口——客户端唯一能成功的姿势是先知道目标已存在。
+    `..` 仍是 400，越界的绝对路径仍是 403，白名单闸一字未松。
+
+    读体上限见 `_read_upload_body`；形态判据与读侧共用 `assert_dataset_shape`，
+    所以「上传成功但那份文件读端点自己拒绝」已经不可能发生。
+
+    **下面那句 `json.loads` 刻意留在事件循环里**（L87 尺子，`Temp/l87q/stall_parse_l87.py`）：
+    AST 普查把它记成「async 处理器里的阻塞调用」，本仓对这一类的既有处置是
+    `deps.run_in_thread`，但实测搬过去省的不到一成 —— 11.6 MiB 档最差跳距
+    `inline` 比噪声地板高 11.0 ms、`executor` 高 11.8 ms（净收益 **−0.8 ms**）；
+    64.1 MiB 档分别是 +88.1 ms 与 +78.1 ms（净收益 10.0 ms）。原因在 GIL：`json` 的
+    C 扫描器整个 `loads()` 期间持锁，线程池治的是**让出 GIL 的等待**（磁盘 I/O、
+    `sleep`），治不了解放锁的纯 CPU 工作。尺子的正负对照同批实测（`time.sleep(0.20)`：
+    循环里 215.9 ms vs 线程里 20.0 ms ≈ 地板 19.0 ms），所以这两组差是真读数不是瞎读。
+    真正的封顶是上面那条字节上限：停顿与 body 尺寸同阶，把尺寸交给配置就同时把
+    最坏停顿交给了配置。
+    """
     try:
-        content = await file.read()
-        items = json.loads(content.decode('utf-8'))
+        content = await _read_upload_body(file, max_upload_bytes())
+        items = json.loads(content.decode("utf-8"))
+    except HTTPException:
+        raise
+    except UnicodeDecodeError as e:
+        raise HTTPException(status_code=400, detail="上传内容不是合法的 UTF-8 文本") from e
+    except Exception as e:
+        raise to_http_error(e) from e
 
-        safe_name = Path(file.filename).name
-        save_path = _safe_data_path(safe_name)
+    assert_dataset_shape(items, "上传内容")
+
+    try:
+        save_path = _safe_data_path(file.filename)
         await write_json_file(save_path, items)
-
-        return {"success": True, "path": str(save_path), "count": len(items)}
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise to_http_error(e) from e
+
+    return {"success": True, "path": str(save_path), "count": len(items)}
 
 
 # ============ 数据分析 ============
