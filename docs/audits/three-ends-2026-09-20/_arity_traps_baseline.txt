@@ -124,7 +124,6 @@ POST /api/hotpic/delete/hotpic
 POST /api/hotpic/save/hotpic
 POST /api/jpush/assemble/control/device/unbind/deviceName/deviceType
 POST /api/jpush/assemble/control/device/unbind/new/deviceName/deviceType/pushType
-POST /api/meeting/assemble/control/building/list/completed/completed/room/room/meeting/meeting/1/1
 POST /api/message/assemble/communicate/im/msg/clear
 POST /api/portal/assemble/surface/delete/layout
 POST /api/portal/assemble/surface/save/layout
