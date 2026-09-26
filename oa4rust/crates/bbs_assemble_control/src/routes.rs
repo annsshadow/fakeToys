@@ -121,22 +121,10 @@ pub fn router(pool: Pool) -> Router {
             "/api/bbs/assemble/control/picture/list/{subjectId}",
             get(crate::picture_list),
         )
-        .route(
-            "/api/bbs/assemble/control/subject/creamed/list",
-            get(subject_creamed_list),
-        )
-        .route(
-            "/api/bbs/assemble/control/subject/filter/list",
-            get(subject_filter_list),
-        )
-        .route(
-            "/api/bbs/assemble/control/subject/index/list",
-            get(subject_index_list),
-        )
-        .route(
-            "/api/bbs/assemble/control/subject/search",
-            get(crate::subject_search),
-        )
+
+
+
+
         .route(
             "/api/bbs/assemble/control/subject/statgrade",
             get(subject_statgrade),
