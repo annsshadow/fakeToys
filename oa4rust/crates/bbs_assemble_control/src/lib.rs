@@ -1471,7 +1471,6 @@ pub async fn subject_search(
 #[allow(non_snake_case)]
 pub async fn subject_statgrade(
     pool: Extension<Pool>,
-    Path((_section_name, _subject_type)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let total_row = client
