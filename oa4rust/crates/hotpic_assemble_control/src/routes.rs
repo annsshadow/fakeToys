@@ -64,7 +64,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
             get(cipher_hotpic_filter_list_page_page_count_count),
         )
         .route(
-            "/api/hotpic_assemble_control/cipher/hotpic/id",
+            "/api/hotpic_assemble_control/cipher/hotpic/{id}",
             get(cipher_hotpic_id),
         )
         .route(
@@ -80,11 +80,11 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
             get(user_hotpic_filter_list_page_page_count_count),
         )
         .route(
-            "/api/hotpic_assemble_control/user/hotpic/application/infoId",
+            "/api/hotpic_assemble_control/user/hotpic/{application}/{infoId}",
             get(user_hotpic_application_infoId),
         )
         .route(
-            "/api/hotpic_assemble_control/user/hotpic/id",
+            "/api/hotpic_assemble_control/user/hotpic/{id}",
             get(user_hotpic_id),
         )
         .route("/api/hotpic/list/hotpics", get(list_hotpics))
@@ -137,7 +137,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
             get(user_hotpic_filter_list_page_page_count_count),
         )
         .route(
-            "/api/hotpic/assemble/control/user/hotpic/application/{infoId}",
+            "/api/hotpic/assemble/control/user/hotpic/{application}/{{infoId}}",
             get(user_hotpic_application_infoId),
         )
         .route(
