@@ -722,10 +722,7 @@ pub async fn anonymous_file_id_download(
                 .body(axum::body::Body::from(bytes))
                 .unwrap())
         }
-        None => Ok(axum::response::Response::builder()
-            .status(axum::http::StatusCode::NOT_FOUND)
-            .body(axum::body::Body::empty())
-            .unwrap()),
+        None => Err(AppError::NotFound),
     }
 }
 
@@ -1252,10 +1249,7 @@ pub async fn attachment_id_download(
                 .body(axum::body::Body::from(bytes))
                 .unwrap())
         }
-        None => Ok(axum::response::Response::builder()
-            .status(axum::http::StatusCode::NOT_FOUND)
-            .body(axum::body::Body::empty())
-            .unwrap()),
+        None => Err(AppError::NotFound),
     }
 }
 
@@ -2037,10 +2031,7 @@ pub async fn attachment2_id_download(
                 .body(axum::body::Body::from(bytes))
                 .unwrap())
         }
-        None => Ok(axum::response::Response::builder()
-            .status(axum::http::StatusCode::NOT_FOUND)
-            .body(axum::body::Body::empty())
-            .unwrap()),
+        None => Err(AppError::NotFound),
     }
 }
 
@@ -3399,10 +3390,7 @@ pub async fn file_id_download(
                 .body(axum::body::Body::from(bytes))
                 .unwrap())
         }
-        None => Ok(axum::response::Response::builder()
-            .status(axum::http::StatusCode::NOT_FOUND)
-            .body(axum::body::Body::empty())
-            .unwrap()),
+        None => Err(AppError::NotFound),
     }
 }
 
@@ -3841,10 +3829,7 @@ pub async fn share_download_share_shareId_file_fileId(
                 .body(axum::body::Body::from(bytes))
                 .unwrap())
         }
-        None => Ok(axum::response::Response::builder()
-            .status(axum::http::StatusCode::NOT_FOUND)
-            .body(axum::body::Body::empty())
-            .unwrap()),
+        None => Err(AppError::NotFound),
     }
 }
 

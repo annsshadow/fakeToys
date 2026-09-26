@@ -32,11 +32,6 @@ GET /api/bbs/assemble/control/topic/search
 GET /api/bbs/assemble/control/user/info
 GET /api/component_assemble_control/delete/component
 GET /api/component_assemble_control/save/component
-GET /api/file/anonymous/file/id/download
-GET /api/file/attachment/id/download
-GET /api/file/attachment2/id/download
-GET /api/file/attachment2/id/download/image/width/width/height/height
-GET /api/file/attachment2/id/download/stream
 GET /api/file/attachment2/list/type/page/size/size
 GET /api/file/copy/attachment/attachmentId/referencetype/referenceType/reference/reference/scale/scale
 GET /api/file/folder/list/id
@@ -52,7 +47,6 @@ GET /api/file/list/id/prev/count/referencetype/referenceType
 GET /api/file/list/referencetype
 GET /api/file/list/referencetype/referenceType/reference/reference
 GET /api/file/referencetype/referenceType/reference/reference
-GET /api/file/share/download/share/shareId/file/fileId
 GET /api/general/assemble/control/excel/1/1
 GET /api/general/assemble/control/excel/1/1/1
 GET /api/hotpic/user/hotpic/exists/check
