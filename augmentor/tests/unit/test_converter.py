@@ -599,6 +599,27 @@ class TestConverterExtended2:
         assert len(result) == 1
         assert result[0]["messages"] or "messages" in result[0]
 
+    def test_chatml_empty_system_is_an_instruction_to_omit_the_message(self):
+        """A136：`system` 传空串 = 「这条样本不要系统轮」，不能退回默认文案
+
+        默认文案只在**键缺席**时兜底；显式空串走 `if system:` 的假臂。两侧必须在同一轮里
+        成对钉住 —— 只测一侧时，「把 `if system:` 删掉」和「把兜底改成空串」两种改法都能绿。
+        凭空多出的系统轮次是内容污染而不是格式差异：训练时模型会学到「任何提问都先用那句
+        自我介绍回答一遍」。
+        """
+        converter = DatasetConverter()
+        result = converter.convert(
+            [{"instruction": "q", "output": "a", "system": ""}], "json", "chatml")
+        assert [m["role"] for m in result[0]["messages"]] == ["user", "assistant"]
+
+    def test_chatml_default_system_text_applies_only_when_the_key_is_absent(self):
+        """假臂的另一侧：没写 `system` 键才拿到那句默认助手文案"""
+        converter = DatasetConverter()
+        result = converter.convert(
+            [{"instruction": "q", "output": "a"}], "json", "chatml")
+        assert result[0]["messages"][0] == {
+            "role": "system", "content": "You are a helpful assistant."}
+
     def test_convert_via_json_intermediate(self, sample_dataset):
         """jsonl -> alpaca 应经 JSON 中间格式完成"""
         converter = DatasetConverter()
