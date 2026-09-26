@@ -434,7 +434,7 @@ async function loadTableCursors() {
     const rows = Array.isArray((rowsRes as any)?.data) ? (rowsRes as any).data : []
     const rowId = rows[0] ? String(rows[0].id ?? '0') : '0'
     const [filtered, cnt, next, prev, one] = await Promise.all([
-      settle(api.get(`/api/query/assemble/designer/table/list/row/select/where/where/${encodeURIComponent(tableFlag)}?where=a`)),
+      settle(api.get(`/api/query/assemble/designer/table/list/${encodeURIComponent(tableFlag)}/row/select/where/${encodeURIComponent('a')}`)),
       settle(api.get(`/api/query/assemble/designer/table/row/where/where/${encodeURIComponent(tableFlag)}/10?where=a`)),
       settle(api.get(`/api/query/assemble/designer/table/list/${encodeURIComponent(tableFlag)}/row/${encodeURIComponent(rowId)}/next/10`)),
       settle(api.get(`/api/query/assemble/designer/table/list/${encodeURIComponent(tableFlag)}/row/${encodeURIComponent(rowId)}/prev/10`)),

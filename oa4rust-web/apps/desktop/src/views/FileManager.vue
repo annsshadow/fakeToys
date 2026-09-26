@@ -452,18 +452,22 @@ async function fileAtt(op: string) {
 // rev354：文件/附件 附件2·附件 文件夹清单 + 引用类型清单 + 游标翻页(next/prev/all) + 文件夹/复合文件夹 真实只读（用户触发按钮，全字面量路径，非 onMounted）
 async function fileRead2(): Promise<void> {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  // rev374：游标/清单读端点用真实参数变量填 {id}/{count}/{name} 槽（避字面段 shadow）
+  const fid = '0'
+  const cnt = '20'
+  const nm = 'doc'
   try {
     const [a2Folder, a2Filter, aFolder, refList, listNext, listPrev, listAll, folderList, folder2List, complexFolder] = await Promise.all([
-      s(api.get('/api/file/attachment2/list/folder/folderId')),
-      s(api.get('/api/file/attachment2/list/filter/name')),
-      s(api.get('/api/file/attachment/list/folder/folderId')),
+      s(api.get(`/api/file/attachment2/list/folder/${fid}`)),
+      s(api.get(`/api/file/attachment2/list/filter/${nm}`)),
+      s(api.get(`/api/file/attachment/list/folder/${fid}`)),
       s(api.get('/api/file/list/referencetype')),
-      s(api.get('/api/file/list/id/next/count')),
-      s(api.get('/api/file/list/id/prev/count')),
-      s(api.get('/api/file/list/id/next/count/all')),
-      s(api.get('/api/file/folder/list/id')),
-      s(api.get('/api/file/folder2/list/id')),
-      s(api.get('/api/file/complex/folder/id')),
+      s(api.get(`/api/file/list/${fid}/next/${cnt}`)),
+      s(api.get(`/api/file/list/${fid}/prev/${cnt}`)),
+      s(api.get(`/api/file/list/${fid}/next/${cnt}/all`)),
+      s(api.get(`/api/file/folder/list/${fid}`)),
+      s(api.get(`/api/file/folder2/list/${fid}`)),
+      s(api.get(`/api/file/complex/folder/${fid}`)),
     ])
     const ok = (r: any) => (r ? '✓' : '—')
     fileRead2Text.value = `附件2夹${ok(a2Folder)} 附件2筛${ok(a2Filter)} 附件夹${ok(aFolder)} 引用类型${ok(refList)} | 后翻${ok(listNext)} 前翻${ok(listPrev)} 全部${ok(listAll)} 文件夹清单${ok(folderList)} 文件夹2清单${ok(folder2List)} 复合夹${ok(complexFolder)}`
