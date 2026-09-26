@@ -59,11 +59,30 @@ func failErr(c *fiber.Ctx, err error) error {
 	return fail(c, fiber.StatusInternalServerError, "internal_error", "服务内部错误")
 }
 
+// isSettleRejection 判断错误是否属于「结算被拒」类。
+//
+// ⚠️ 这份清单必须与 domain 包的结算错误**同步**，否则新错误会掉进 500。
+// 后果有两处，都很糟：
+//  1. 客户端收到「服务内部错误」，无法区分"你作弊了"和"我们坏了"；
+//  2. 服务端日志被大量假 500 刷满，真正的故障被淹没。
+//
+// 已经漂移过一次：给 reactions / shots / leaked / heat 上界时新增了四个
+// domain 错误，都没进这个清单，于是这些**用户输入不合理**的请求
+// 全部返回 500。
+//
+// 新增 domain 结算错误时记得同步这里 —— TestSettleRejectionsAllMapTo422
+// 会把两边的差集直接打出来。
 func isSettleRejection(err error) bool {
 	for _, target := range []error{
+		// 凭证类
 		domain.ErrTokenNotFound, domain.ErrTokenUsed, domain.ErrTokenExpired,
-		domain.ErrLevelMismatch, domain.ErrTooManyKills, domain.ErrTooShort,
-		domain.ErrScoreRateExceeded, domain.ErrInvalidHitRate, domain.ErrWaveExceeded,
+		domain.ErrLevelMismatch,
+		// 数值越界类
+		domain.ErrTooManyKills, domain.ErrTooShort, domain.ErrScoreRateExceeded,
+		domain.ErrInvalidHitRate, domain.ErrWaveExceeded,
+		// 上界校验类（2026-09-26 补齐，此前全部误返回 500）
+		domain.ErrTooManyReactions, domain.ErrTooManyShots,
+		domain.ErrTooManyLeaked, domain.ErrInvalidField,
 	} {
 		if errors.Is(err, target) {
 			return true

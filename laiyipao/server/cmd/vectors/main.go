@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/laiyipao/server/internal/domain"
 )
@@ -59,6 +60,23 @@ func buildReactions() ([]byte, error) {
 		})
 	}
 	return mustIndent(rows), nil
+}
+
+// levelSeeds 是 100 关的种子表。
+//
+// 存在的理由：客户端曾用
+//   expect(levelSeed(1)).toBe(levelSeed(1))
+// 来"验证与 Go 侧一致" —— 那是恒等式，且 PHI 常量在测试里本地复制了一份，
+// 所以改 Go 侧的实现完全不影响它。实测把 Go 侧的
+// 0x9E3779B97F4A7C15 改掉，这条名叫「与 Go 侧一致」的用例照样绿。
+//
+// 这里导出真值，客户端对字面量断言，才构成真正的跨端锁。
+func buildLevelSeeds() ([]byte, error) {
+	seeds := make([]string, 0, 100)
+	for id := 1; id <= 100; id++ {
+		seeds = append(seeds, strconv.FormatInt(domain.GenerateLevel(id).Seed, 10))
+	}
+	return mustIndent(seeds), nil
 }
 
 func mustIndent(v any) []byte {
@@ -141,6 +159,7 @@ func main() {
 			buildReactions,
 			fmt.Sprintf("%d 条反应", len(domain.AllReactionSpecs()))},
 		{filepath.Join("testdata", "smoke_level1.json"), buildSmoke, "第 1 关真实夹具"},
+		{filepath.Join("testdata", "level_seeds.json"), buildLevelSeeds, "100 关种子表"},
 	}
 
 	bad := 0
