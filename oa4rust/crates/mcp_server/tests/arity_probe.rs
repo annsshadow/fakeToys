@@ -80,8 +80,10 @@ async fn every_registered_route_has_matching_path_arity() {
             arity_traps.push(format!("{method} {path}"));
         }
         // 已注册路由被自身注册路径命中却 404 = 不可达（路由树被字面段/同位异名参数遮蔽）。
-        // 405（方法不符）不计入——backend_routes.json 的 method 即注册 method，不应 405。
-        if status == axum::http::StatusCode::NOT_FOUND {
+        // 仅当响应体为空时才计入：axum 路由兜底 404 恒为空体；handler 主动返回的 404
+        // （AppError::NotFound——占位 id「1」在测试库查无实体）带 JSON 错误体，是「路由可达、
+        // 业务正常」，绝不能误判为路由不可达。405（方法不符）同样不计入。
+        if status == axum::http::StatusCode::NOT_FOUND && bytes.is_empty() {
             unreachable.push(format!("{method} {path}"));
         }
     }
