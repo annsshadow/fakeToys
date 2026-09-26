@@ -71,7 +71,7 @@ pub fn meeting_assemble_control_routes(pool: Pool) -> Router {
         .route("/api/meeting/assemble/control/building/list/completed/completed/{start}/{start}", post(crate::building_list_start_start_completed_completed))
         .route("/api/meeting/assemble/control/building/list/completed/completed/allmeeting/{start}/{start}", post(crate::building_list_start_start_completed_completed_allmeeting))
         .route("/api/meeting/assemble/control/building/list/completed/completed/room/room/meeting/meeting/{start}/{start}", post(crate::building_list_start_start_completed_completed_room_room_meeting_meeting))
-        .route("/api/meeting/assemble/control/list/meeting/controls", get(crate::list_meeting_controls))
+        .route("/api/meeting/assemble/control/list/meeting/{controls}", get(crate::list_meeting_controls))
         .route("/api/meeting/assemble/control/meeting/checkin/code/{id}", post(crate::meeting_id_checkin_code))
         .route("/api/meeting/assemble/control/meeting/list/coming/{month}/{count}", get(crate::meeting_list_coming_month_count_p2))
         .route("/api/meeting/assemble/control/meeting/list/forward/monthcount/{monthCount}", get(crate::meeting_list_forward_monthcount_monthCount))
