@@ -254,7 +254,7 @@ class TestCleaningResult:
         assert d["cleaned_count"] == 0
 
 
-class TestCleanerExtended:
+class TestCleanerEmptyInputEdges:
     """数据清洗扩展测试"""
 
     def test_text_normalizer_empty_string(self):

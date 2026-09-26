@@ -293,7 +293,7 @@ class TestVersioningExtended:
         assert len(report["versions"]) == 0
 
 
-class TestVersioningExtended:
+class TestVersioningLifecycleEdges:
     """VersionManager 扩展测试"""
 
     def test_create_empty_dataset(self, tmp_path):
