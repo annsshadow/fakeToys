@@ -33,10 +33,10 @@ func critAt(roll int64, critPermille int64) bool {
 		ReactionTier:           1,
 		ElementCoefPermille:    1000,
 	}, def, HitInput{
-		SkillDamage:  100,
-		SkillElement: ElementFire,
+		SkillDamage:   100,
+		SkillElement:  ElementFire,
 		ForceReaction: "",
-		Roll:         roll,
+		Roll:          roll,
 	})
 	return res.Crit
 }
