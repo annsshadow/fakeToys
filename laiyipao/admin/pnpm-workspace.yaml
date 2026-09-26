@@ -1,0 +1,3 @@
+# pnpm 11 起 onlyBuiltDependencies 从 package.json 的 pnpm 字段迁移到本文件。
+onlyBuiltDependencies:
+  - esbuild
