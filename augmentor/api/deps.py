@@ -115,6 +115,35 @@ _config_upload_limit_cache: Dict[Tuple[str, Optional[int]], int] = {}
 _env_roots_cache: Dict[Tuple[str, str], List[Path]] = {}
 
 
+def invalidate_config_caches() -> None:
+    """丢弃**内容类**配置缓存，让下一次读取必然重新解析磁盘上的那份配置
+
+    为什么 mtime 进键还不够：`_config_roots_cache` 与 `_config_upload_limit_cache`
+    的键是 `(路径, st_mtime_ns)`，而这块磁盘的 mtime tick 实测只有 0.5 ms
+    （跳距 0.4999 / 0.5029 / 1.0022 ms）⇒ 「改过配置文件立刻生效」这句话在一个
+    tick 的窗口里是由操作系统时钟决定，不由代码决定；而**保住 mtime 的写方**
+    （`cp -p` / `rsync -t` / 配置管理工具）会让这个窗口不是「不到一毫秒」而是
+    **无界**（A158）。缓存的写入方就在本进程（`POST /api/config` 末尾的
+    `save_config`），它知道自己重写过这份文件，于是可以让缓存一起作废 —— 这是
+    唯一把「本进程刚写过」那一格与操作系统时钟脱钩的做法。
+
+    代价实测（两解释器各 200 轮中位数）：本函数 **0.0001 ms**（两次 `dict.clear()`），
+    它换来的那次重解析 7.34–8.13 ms，而缓存命中只要 0.005 ms。**在这条写面上
+    这次重解析本来也要付**：`save_config` 单次 12.0–22.5 ms，是本机 tick 的 24–45 倍，
+    连续两次 `save_config` 的 mtime 落同一 tick 的概率 0/300 —— 也就是说作废动作
+    不额外多付一次解析，只是把「下一次读必然重解析」从交给时钟改成由代码定。
+    （上一轮 A156 里那句「连续两次写入落同一 tick 的概率 61–65%」量的是测试里
+    连续的 `write_text`，不是这条产品路径，本轮已按实测更正那条口径。）
+
+    只清内容这两张：`_config_path_cache` 与 `_env_roots_cache` 的键是环境变量与
+    工作目录，配置文件的**内容**变了不影响它们的解释，清它们是白清 ——
+    而 `_config_path_cache` 命中路径上那次 `Path.resolve()` 实测 0.94 ms，
+    把它连带作废会让每次写配置都退化成「白名单缓存等于没有」。
+    """
+    _config_roots_cache.clear()
+    _config_upload_limit_cache.clear()
+
+
 def _env_data_roots(raw: str) -> List[Path]:
     """解析 ``AUGMENTOR_DATA_ROOTS``，按 ``(原值, 工作目录)`` 缓存
 
@@ -141,8 +170,11 @@ def _config_data_roots(config_path: Path) -> List[Path]:
     每个带路径参数的请求都要过一次白名单，而未设置
     ``AUGMENTOR_DATA_ROOTS`` 时白名单来自 ``config.yaml`` —— 不缓存就是
     **每个请求重解析一遍 YAML、再重新 resolve 一遍根目录**（实测 7.06 ms/次）。
-    缓存值直接存已 resolve 的 ``Path``；mtime 进缓存键，所以改过配置文件立刻生效；
-    文件不存在（stat 不了）时不缓存，免得把降级路径一起冻住。
+    缓存值直接存已 resolve 的 ``Path``；mtime 进缓存键，所以改过配置文件最迟在
+    下一次 mtime 跳变后就生效（同 tick 内的两次写分不出来，见
+    `invalidate_config_caches` 那一段）；本进程写配置时会显式作废这张缓存，
+    因为它是 ``web.data_roots`` **安全白名单**，「收紧边界」那一次改写被延迟
+    放行才是危险方向。文件不存在（stat 不了）时不缓存，免得把降级路径一起冻住。
 
     Args:
         config_path: 服务自身的配置文件路径
