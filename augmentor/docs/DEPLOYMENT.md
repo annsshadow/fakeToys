@@ -213,7 +213,12 @@ server {
     listen 80;
     server_name your-domain.com;
 
-    client_max_body_size 200m;
+    # 必须**高于**应用侧的 `web.max_upload_bytes`（出厂 256 MiB = 268435456 字节）。
+    # 两边相等是个陷阱：判据的口径不同 —— 应用判的是**文件部件**的字节数，而 nginx 判的是
+    # **整个 multipart body**（还要加 boundary 与各部件头部），一份刚好 256 MiB 的上传
+    # 在应用侧合法、在 nginx 侧会被 413 掐掉，而且那条 413 由 nginx 发出、没有应用侧
+    # 「（未读取、未落盘）」那句可行动的文案。改大 `web.max_upload_bytes` 时这里要一起改。
+    client_max_body_size 300m;
 
     location / {
         proxy_pass http://127.0.0.1:8000;
