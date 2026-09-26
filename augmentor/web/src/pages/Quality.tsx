@@ -17,6 +17,7 @@ import {
 import DataList from '../components/DataList'
 import QualityChart from '../components/QualityChart'
 import {
+  apiErrorDetail,
   evaluateQuality,
   dedupData,
   qualityReport,
@@ -87,8 +88,8 @@ export default function Quality() {
     setLoading(true)
     try {
       onDone(await task())
-    } catch {
-      message.error(failText)
+    } catch (err) {
+      message.error(apiErrorDetail(err, failText))
     } finally {
       setLoading(false)
     }

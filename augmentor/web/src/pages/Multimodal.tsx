@@ -15,6 +15,7 @@ import {
   type TableColumnsType
 } from 'antd'
 import {
+  apiErrorDetail,
   getMultimodalFormats,
   processMultimodal,
   scanMultimodal
@@ -52,7 +53,7 @@ export default function Multimodal() {
   useEffect(() => {
     getMultimodalFormats()
       .then(setFormats)
-      .catch(() => message.error('加载多模态格式失败'))
+      .catch((err) => message.error(apiErrorDetail(err, '加载多模态格式失败')))
   }, [])
 
   const handleProcess = async (values: ProcessFormValues) => {
@@ -61,8 +62,8 @@ export default function Multimodal() {
       setSingleResult(
         await processMultimodal(values.text, values.image, values.audio)
       )
-    } catch {
-      message.error('多模态处理失败')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '多模态处理失败'))
     } finally {
       setLoading(false)
     }
@@ -72,8 +73,8 @@ export default function Multimodal() {
     setLoading(true)
     try {
       setScanResult(await scanMultimodal(values.directory))
-    } catch {
-      message.error('目录扫描失败，请确认目录存在')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '目录扫描失败，请确认目录存在'))
     } finally {
       setLoading(false)
     }
