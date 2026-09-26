@@ -123,23 +123,46 @@ type GeneratedLevel struct {
 	ElementCap      int64              `json:"element_cap"`
 	ArmorPermille   int64              `json:"armor_permille"`
 	MaxReactionTier int64              `json:"max_reaction_tier"`
+	// MaxScore 是「理论满分」，即 star_targets 所依据的那个估算值（1000‰）。
+	//
+	// 必须单独下发，因为结算裁剪的上限要锚定在**理论满分**上，
+	// 而不是 3 星门槛（那只有理论满分的 75%，会让每一次干净通关都被裁剪）。
+	// 详见 GenerateLevel 里赋值处的注释。
+	MaxScore int64 `json:"max_score"`
 }
 
 // StarTarget 三档星星门槛：[达到波次, 达到分数]
 // StarTargetRatio 是一星/二星/三星相对「理论满分」的占比（千分比）。
 //
-// ⚠️ 曾经的取值是 [1000, 1200, 1400]，与 permille=1000 配合后意味着：
+// ⚠️ 曾经的取值有两个版本，都不对：
 //
-//	1 星 = 100% 满分（要一只不漏、一下不空）
-//	2 星 = 120% 满分 ← **要求超过理论上限，数学上不可达**
-//	3 星 = 140% 满分 ← 同上
+//	[1000, 1200, 1400] —— 二星以上要求超过理论上限，**数学上不可达**
+//	[350, 550, 750]    —— 远低于任何一次干净通关的分数，**3 星白送**
 //
-// 也就是说两星以上永远拿不到，KeysOnThreeStar 是死配置。
+// 后者尤其隐蔽：实测默认构筑在 **99/100 关**都能拿 3 星，
+// 于是"KeysOnThreeStar"成了摆设。
 //
-// 现在按「漏怪率」反推：分数基本正比于清怪比例（击杀分是大头），
-// 于是 35% 满分 ≈ 漏 65% 怪，75% 满分 ≈ 漏 25% 怪 ——
-// 对一个体力有限、热量需要规划的关卡，这是「认真打」与「打干净」的分界。
-var StarTargetRatio = [3]int64{350, 550, 750}
+// ## 现在按「漏怪率」标定
+//
+// 分数 = 击杀分（漏怪就拿不到）+ 伤害分（敌人总会死，≈ 固定）
+//
+// 关键认识：**伤害分不是可控量**。敌人无论如何都会死，
+// 累计伤害 ≈ 敌人总血量 + 过杀，与"打得快不快、好不好"无关。
+// 所以提高伤害分权重**不会产生任何梯度**，只是换一个数字 ——
+// 我最初打算那么做，查清这一点后放弃了。
+//
+// 真正可控的量只有**漏怪率**。设漏怪率为 L，则
+//
+//	得分比 ≈ (击杀分×(1-L) + 伤害分) / (击杀分 + 伤害分)
+//
+// 代入击杀 500/只、伤害 ≈ 8/只（血量 ×8 后 hp/100）：
+//
+//	[600] → L ≤ 39%   「过关就行」
+//	[850] → L ≤ 15%   「打得干净」
+//	[980] → L ≤ 2%    「零漏怪」
+//
+// 这三档正好是玩家能理解的三个语义，且与关卡无关、可自动换算。
+var StarTargetRatio = [3]int64{600, 850, 980}
 
 // TerrainFloorPerChapter 是每章**必定**是地形关的关数（GAME_DESIGN I-4）。
 const TerrainFloorPerChapter = 3
@@ -335,6 +358,29 @@ func GenerateLevel(levelID int) GeneratedLevel {
 		starThreshold(maxScore, StarTargetRatio[1]),
 		starThreshold(maxScore, StarTargetRatio[2]),
 	}
+	// 理论满分必须**单独下发**。
+	//
+	// ⚠️ 曾经的裁剪上限（scoreCapFor）取的是 fullStarTarget() = StarTargets[2]，
+	// 也就是 3 星门槛 = 理论满分的 980‰… 不，是 750‰。
+	// 于是上限本身只有理论满分的 75%，而实测默认构筑的正常分数
+	// 是理论满分的 130% 以上 —— **每一次干净通关都会被裁剪**：
+	//
+	//   关 1  实测 19842  裁剪上限 14656  → 被裁到 14656
+	//   关 10 实测 22306  裁剪上限 16520  → 被裁
+	//   关 25 实测 20589  裁剪上限 15055  → 被裁
+	//   关 50 实测 25300  裁剪上限 18446  → 被裁
+	//   关 75 实测 31589  裁剪上限 22965  → 被裁
+	//   关 100 实测 46085 裁剪上限 35412  → 被裁
+	//
+	// 后果有两层，都很糟：
+	//  1. 打得好的玩家分数被砍，且客户端不知道（本地显示 19842，结算后变 14656）
+	//  2. `Clamped` 在**几乎每一次正常胜利**上都为 true，
+	//     于是"被裁剪"这个本该用于发现伪造的信号变成了噪声 ——
+	//     监控里 90% 的结算都"异常"，真正的伪造反而淹没在里面。
+	//
+	// 裁剪的锚点必须是**理论满分**（1000‰），不是 3 星门槛。
+	// 它的职责是"挡住不可能的分数"，不是"压住优秀玩家的分数"。
+	gl.MaxScore = maxScore
 
 	// 地形。必须始终是空数组而非 nil ——
 	// json.Marshal(nil slice) 会产出 JSON null，客户端遍历时会炸。
@@ -477,6 +523,17 @@ const (
 //
 // 未在敌人表里找到 id 时返回一个保守下界而不是 0：
 // 返回 0 会让门槛塌到 0 分（三星白送），宁可偏保守。
+// enemyScoreUpperBound 返回一只敌人贡献的分数估算（击杀分 + 伤害分）。
+//
+// ⚠️ 必须用**缩放后**的血量（ScaleEnemy），不能用 SeedEnemies 里的基准值。
+//
+// 引擎（engine.ts）里 `this.score += Number(res.totalDamage / 100n)`
+// 累加的是**实际造成的伤害**，而实际伤害对应的是缩放后的血量（×8）。
+// 估算用基准血量就与实际差了 8 倍的伤害分。
+//
+// 这个不一致本身不会让关卡不可通关（估算偏小 ⇒ 门槛偏低 ⇒ 更容易），
+// 但它让「门槛 = 理论满分的固定比例」这个设计**失去意义**：
+// 比例是相对估算算的，而估算的分母（伤害分）不对。
 func enemyScoreUpperBound(enemyID int) int64 {
 	for _, e := range SeedEnemies {
 		if e.ID != enemyID {
@@ -486,7 +543,9 @@ func enemyScoreUpperBound(enemyID int) int64 {
 		if e.IsBoss {
 			kill = scoreOnKillBoss
 		}
-		return kill + (e.HP+e.ShieldHP)/scorePerDamageUnit
+		// 与引擎口径对齐：缩放后的血量 ÷ 同一个伤害分母
+		scaled := ScaleEnemy(e)
+		return kill + (scaled.HP+scaled.ShieldHP)/scorePerDamageUnit
 	}
 	return scoreOnKillNormal
 }

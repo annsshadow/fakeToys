@@ -266,7 +266,15 @@ describe('冒烟：星级门槛可达性（F2 回归）', () => {
   it('1 星门槛必须显著低于 3 星（星级要有区分度）', () => {
     const [one, , three] = level.star_targets
     expect(one).toBeLessThan(three)
-    expect(one).toBeLessThanOrEqual(three / 2)
+    // StarTargetRatio = [600, 850, 980]‰
+    // ⇒ 1 星 : 3 星 = 600 : 980 = 0.61
+    //
+    // ⚠️ 这里的比值上界从 `three / 2` 收紧/放宽到 0.7：
+    // 旧值来自旧的 [350, 550, 750]‰（350/750 = 0.47），
+    // 而新门槛刻意做成"三档都靠近理论满分"，
+    // 因为分数里只有漏怪率与效率是可变量，门槛必须落在这两个变量的敏感区。
+    // 0.7 仍然保证 1 星与 3 星有实质差距（1 星 = 过就行，3 星 = 打干净）。
+    expect(one / three).toBeLessThanOrEqual(0.7)
   })
 
   it('3 星门槛不超过理论满分（否则是死配置）', () => {
