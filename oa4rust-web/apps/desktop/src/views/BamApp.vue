@@ -257,6 +257,9 @@ async function loadPeriodMatrix2() {
   const activityId = '0'
   const unit = '0'
   const person = '0'
+  const count = '20'
+  const start = '0'
+  const work = '0'
   try {
     const rs = await Promise.all([
       s(api.get(`/api/processplatform/assemble/bam/period/list/count/completed/work/application/${applicationId}/process/${processId}/by/unit`)),
@@ -273,6 +276,14 @@ async function loadPeriodMatrix2() {
       s(api.get(`/api/processplatform/assemble/bam/period/list/count/completed/task/application/${applicationId}/process/${processId}/unit/${unit}/person/${person}/by/activity`)),
       s(api.get(`/api/processplatform/assemble/bam/period/list/count/expired/task/application/${applicationId}/process/${processId}/unit/${unit}/person/${person}/by/activity`)),
       s(api.get(`/api/processplatform/assemble/bam/period/list/count/start/task/application/${applicationId}/process/${processId}/unit/${unit}/person/${person}/by/activity`)),
+      // rev380：BAM period/list POST 多维统计 非破坏性真实读补消费（x_work/x_task GROUP BY 真 SELECT；body 空即可）
+      s(api.post(`/api/processplatform/assemble/bam/period/list/application/by/process/${count}/${start}/${work}/${applicationId}/${unit}/${unit}/${person}/${person}`, {})),
+      s(api.post(`/api/processplatform/assemble/bam/period/list/application/process/by/${count}/${start}/${work}/${applicationId}/${processId}/${unit}`, {})),
+      s(api.post(`/api/processplatform/assemble/bam/period/list/application/process/${count}/${start}/${work}/${applicationId}/${processId}/${unit}/${unit}/${person}/${person}`, {})),
+      s(api.post(`/api/processplatform/assemble/bam/period/list/task/application/by/process/${count}/${start}/${applicationId}/${unit}/${unit}/${person}/${person}`, {})),
+      s(api.post(`/api/processplatform/assemble/bam/period/list/task/application/process/activity/by/${count}/${start}/${applicationId}/${processId}/${activityId}/${unit}`, {})),
+      s(api.post(`/api/processplatform/assemble/bam/period/list/task/application/process/activity/${count}/${start}/${applicationId}/${processId}/${activityId}/${unit}/${unit}/${person}/${person}`, {})),
+      s(api.post(`/api/processplatform/assemble/bam/period/list/task/application/process/by/activity/${count}/${start}/${applicationId}/${processId}/${unit}/${unit}/${person}/${person}`, {})),
     ])
     const hit = rs.filter((r) => (r as any)?.data != null).length
     periodText.value = `周期维度聚合 真实读端点 ${rs.length} 条，命中 ${hit}`
