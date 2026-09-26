@@ -4846,7 +4846,7 @@
     "path": "/api/cms/view/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/cms/view/unpublish/{id}",
+    "hit": "/api/cms/view/publish/{id}",
     "hit_crate": "cms_express",
     "extra": null
    },
@@ -6185,7 +6185,7 @@
     "path": "/api/fileinfo/{}/document/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/fileinfo/list/document/{documentId}",
+    "hit": "/api/fileinfo/{id}/document/{docId}",
     "hit_crate": "cms_assemble_control",
     "extra": null
    },
@@ -6367,7 +6367,7 @@
     "path": "/api/fileinfo/{}/document/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/fileinfo/list/document/{documentId}",
+    "hit": "/api/fileinfo/{id}/document/{docId}",
     "hit_crate": "cms_assemble_control",
     "extra": null
    },
@@ -7225,7 +7225,7 @@
     "path": "/api/fileinfo/{}/document/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/fileinfo/list/document/{documentId}",
+    "hit": "/api/fileinfo/{id}/document/{docId}",
     "hit_crate": "cms_assemble_control",
     "extra": null
    },
@@ -8772,7 +8772,7 @@
     "path": "/api/meeting/assemble/control/meeting/list/{}/{}/{}/{}/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/meeting/assemble/control/meeting/list/year/{year}/month/{month}/day/{day}/{roomId}",
+    "hit": "/api/meeting/assemble/control/meeting/list/{year}/{year}/{month}/{month}/{day}/{day}/{roomId}",
     "hit_crate": "meeting_assemble_control",
     "extra": null
    },
@@ -8785,7 +8785,7 @@
     "path": "/api/meeting/assemble/control/meeting/list/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/meeting/assemble/control/meeting/list/coming/month/{count}",
+    "hit": "/api/meeting/assemble/control/meeting/list/{id}/{next}/{count}",
     "hit_crate": "meeting_assemble_control",
     "extra": null
    },
@@ -11749,7 +11749,7 @@
     "path": "/api/portal/assemble/designer/pageversion/list/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/portal/assemble/designer/pageversion/list/page/{pageId}",
+    "hit": "/api/portal/assemble/designer/pageversion/list/{page}/{pageId}",
     "hit_crate": "portal_assemble_designer",
     "extra": null
    },
@@ -11762,7 +11762,7 @@
     "path": "/api/portal/assemble/designer/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/portal/assemble/designer/widget/{id}",
+    "hit": "/api/portal/assemble/designer/{id}/{count}",
     "hit_crate": "portal_assemble_designer",
     "extra": null
    },
@@ -11814,7 +11814,7 @@
     "path": "/api/portal/assemble/surface/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/portal/assemble/surface/widget/{id}",
+    "hit": "/api/portal/assemble/surface/{page}/{id}",
     "hit_crate": "portal_assemble_surface",
     "extra": null
    },
@@ -11996,7 +11996,7 @@
     "path": "/api/portal/assemble/designer/file/list/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/portal/assemble/designer/file/list/{id}/prev/{count}",
+    "hit": "/api/portal/assemble/designer/file/list/{id}/{next}/{count}",
     "hit_crate": "portal_assemble_designer",
     "extra": null
    },
@@ -12022,7 +12022,7 @@
     "path": "/api/portal/assemble/surface/portal/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/portal/assemble/surface/portal/{id}/icon/base64",
+    "hit": "/api/portal/assemble/surface/portal/{page}/{flag}/{portalFlag}",
     "hit_crate": "portal_assemble_surface",
     "extra": null
    },
@@ -12087,7 +12087,7 @@
     "path": "/api/portal/assemble/designer/file/list/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/portal/assemble/designer/file/list/{id}/prev/{count}",
+    "hit": "/api/portal/assemble/designer/file/list/{id}/{next}/{count}",
     "hit_crate": "portal_assemble_designer",
     "extra": null
    },
@@ -12100,7 +12100,7 @@
     "path": "/api/portal/assemble/designer/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/portal/assemble/designer/widget/{id}",
+    "hit": "/api/portal/assemble/designer/{id}/{count}",
     "hit_crate": "portal_assemble_designer",
     "extra": null
    },
@@ -12568,7 +12568,7 @@
     "path": "/api/portal/assemble/designer/pageversion/list/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/portal/assemble/designer/pageversion/list/page/{pageId}",
+    "hit": "/api/portal/assemble/designer/pageversion/list/{page}/{pageId}",
     "hit_crate": "portal_assemble_designer",
     "extra": null
    },
@@ -12620,7 +12620,7 @@
     "path": "/api/portal/assemble/designer/pageversion/list/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/portal/assemble/designer/pageversion/list/page/{pageId}",
+    "hit": "/api/portal/assemble/designer/pageversion/list/{page}/{pageId}",
     "hit_crate": "portal_assemble_designer",
     "extra": null
    },
@@ -12815,7 +12815,7 @@
     "path": "/api/portal/assemble/designer/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/portal/assemble/designer/widget/{id}",
+    "hit": "/api/portal/assemble/designer/{id}/{count}",
     "hit_crate": "portal_assemble_designer",
     "extra": null
    },
@@ -13114,7 +13114,7 @@
     "path": "/api/processplatform/assemble/designer/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/designer/templateform/{id}",
+    "hit": "/api/processplatform/assemble/designer/{id}/{count}",
     "hit_crate": "processplatform_assemble_designer",
     "extra": null
    },
@@ -13147,7 +13147,20 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessDesigner.vue",
-    "line": 11890,
+    "line": 5861,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/templateform/${appId}",
+    "path": "/api/processplatform/assemble/designer/templateform/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/designer/templateform/{id}",
+    "hit_crate": "processplatform_assemble_designer",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessDesigner.vue",
+    "line": 11893,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/get/${selectedProcess.value.id}",
     "path": "/api/processplatform/assemble/designer/get/{}",
@@ -13790,7 +13803,7 @@
     "path": "/api/processplatform/assemble/designer/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/designer/templateform/{id}",
+    "hit": "/api/processplatform/assemble/designer/{id}/{count}",
     "hit_crate": "processplatform_assemble_designer",
     "extra": null
    },
@@ -13894,7 +13907,7 @@
     "path": "/api/processplatform/assemble/designer/file/{}/application/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/designer/file/list/application/{applicationFlag}",
+    "hit": "/api/processplatform/assemble/designer/file/{flag}/application/{applicationFlag}",
     "hit_crate": "processplatform_assemble_designer",
     "extra": null
    },
@@ -13946,7 +13959,7 @@
     "path": "/api/processplatform/service/processing/data/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/service/processing/data/workcompleted/{id}",
+    "hit": "/api/processplatform/service/processing/data/{job}/{job}",
     "hit_crate": "processplatform_service_processing",
     "extra": null
    },
@@ -13972,7 +13985,7 @@
     "path": "/api/processplatform/service/processing/record/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/service/processing/record/terminate/{work}",
+    "hit": "/api/processplatform/service/processing/record/{job}/{job}",
     "hit_crate": "processplatform_service_processing",
     "extra": null
    },
@@ -13998,7 +14011,7 @@
     "path": "/api/processplatform/service/processing/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/service/processing/work/{id}",
+    "hit": "/api/processplatform/service/processing/{job}/{job}",
     "hit_crate": "processplatform_service_processing",
     "extra": null
    },
@@ -14011,7 +14024,7 @@
     "path": "/api/processplatform/service/processing/attachment/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/service/processing/attachment/workcompleted/{id}/{workCompletedId}",
+    "hit": "/api/processplatform/service/processing/attachment/{id}/{work}/{workId}",
     "hit_crate": "processplatform_service_processing",
     "extra": null
    },
@@ -14869,7 +14882,7 @@
     "path": "/api/processplatform/assemble/designer/file/{}/application/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/designer/file/list/application/{applicationFlag}",
+    "hit": "/api/processplatform/assemble/designer/file/{flag}/application/{applicationFlag}",
     "hit_crate": "processplatform_assemble_designer",
     "extra": null
    },
@@ -15935,7 +15948,7 @@
     "path": "/api/processplatform/assemble/designer/file/{}/application/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/designer/file/list/application/{applicationFlag}",
+    "hit": "/api/processplatform/assemble/designer/file/{flag}/application/{applicationFlag}",
     "hit_crate": "processplatform_assemble_designer",
     "extra": null
    },
@@ -16000,7 +16013,7 @@
     "path": "/api/processplatform/assemble/surface/anonymous/read/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/anonymous/read/count/{credential}",
+    "hit": "/api/processplatform/assemble/surface/anonymous/read/{count}/{credential}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -16013,7 +16026,7 @@
     "path": "/api/processplatform/assemble/surface/anonymous/task/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/anonymous/task/count/{credential}",
+    "hit": "/api/processplatform/assemble/surface/anonymous/task/{count}/{credential}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -16026,7 +16039,7 @@
     "path": "/api/processplatform/assemble/surface/read/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/read/{id}/reference",
+    "hit": "/api/processplatform/assemble/surface/read/{count}/{credential}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -16039,7 +16052,7 @@
     "path": "/api/processplatform/assemble/surface/task/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/task/{id}/reference",
+    "hit": "/api/processplatform/assemble/surface/task/{count}/{credential}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -16052,7 +16065,7 @@
     "path": "/api/processplatform/assemble/surface/work/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/work/{id}/manage",
+    "hit": "/api/processplatform/assemble/surface/work/{count}/{credential}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -16065,7 +16078,7 @@
     "path": "/api/processplatform/assemble/surface/readcompleted/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/readcompleted/{id}/reference",
+    "hit": "/api/processplatform/assemble/surface/readcompleted/{count}/{credential}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -16078,7 +16091,7 @@
     "path": "/api/processplatform/assemble/surface/taskcompleted/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/taskcompleted/count/{credential}",
+    "hit": "/api/processplatform/assemble/surface/taskcompleted/{count}/{credential}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -16091,7 +16104,7 @@
     "path": "/api/processplatform/assemble/surface/readcompleted/list/my/paging/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/readcompleted/list/my/paging/{page}/size/{size}",
+    "hit": "/api/processplatform/assemble/surface/readcompleted/list/my/paging/{page}/{size}/{size}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -16104,7 +16117,7 @@
     "path": "/api/processplatform/assemble/surface/task/list/my/paging/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/task/list/my/paging/{page}/size/{size}",
+    "hit": "/api/processplatform/assemble/surface/task/list/my/paging/{page}/{size}/{size}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -16117,7 +16130,7 @@
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/my/paging/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/taskcompleted/list/my/paging/{page}/size/{size}",
+    "hit": "/api/processplatform/assemble/surface/taskcompleted/list/my/paging/{page}/{size}/{size}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -16130,7 +16143,7 @@
     "path": "/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/{workOrWorkCompleted}/category/{category}",
+    "hit": "/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/{workOrWorkCompleted}/{category}/{category}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -16143,7 +16156,7 @@
     "path": "/api/processplatform/assemble/surface/read/v2/list/create/paging/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/read/v2/list/create/paging/{page}/size/{size}",
+    "hit": "/api/processplatform/assemble/surface/read/v2/list/create/paging/{page}/{size}/{size}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -16156,7 +16169,7 @@
     "path": "/api/processplatform/assemble/surface/readcompleted/v2/list/create/paging/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/readcompleted/v2/list/create/paging/{page}/size/{size}",
+    "hit": "/api/processplatform/assemble/surface/readcompleted/v2/list/create/paging/{page}/{size}/{size}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -16169,7 +16182,7 @@
     "path": "/api/processplatform/assemble/surface/review/v2/list/create/paging/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/review/v2/list/create/paging/{page}/size/{size}",
+    "hit": "/api/processplatform/assemble/surface/review/v2/list/create/paging/{page}/{size}/{size}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -16182,7 +16195,7 @@
     "path": "/api/processplatform/assemble/surface/task/v2/list/create/paging/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/task/v2/list/create/paging/{page}/size/{size}",
+    "hit": "/api/processplatform/assemble/surface/task/v2/list/create/paging/{page}/{size}/{size}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -16195,7 +16208,7 @@
     "path": "/api/processplatform/assemble/surface/taskcompleted/v2/list/create/paging/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/taskcompleted/v2/list/create/paging/{page}/size/{size}",
+    "hit": "/api/processplatform/assemble/surface/taskcompleted/v2/list/create/paging/{page}/{size}/{size}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -16312,7 +16325,7 @@
     "path": "/api/processplatform/service/processing/attachment/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/service/processing/attachment/workcompleted/{id}/{workCompletedId}",
+    "hit": "/api/processplatform/service/processing/attachment/{id}/{work}/{workId}",
     "hit_crate": "processplatform_service_processing",
     "extra": null
    },
@@ -16325,7 +16338,7 @@
     "path": "/api/processplatform/service/processing/data/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/service/processing/data/workcompleted/{id}",
+    "hit": "/api/processplatform/service/processing/data/{job}/{job}",
     "hit_crate": "processplatform_service_processing",
     "extra": null
    },
@@ -16338,7 +16351,7 @@
     "path": "/api/processplatform/service/processing/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/service/processing/work/{id}",
+    "hit": "/api/processplatform/service/processing/{job}/{job}",
     "hit_crate": "processplatform_service_processing",
     "extra": null
    },
@@ -16351,7 +16364,7 @@
     "path": "/api/processplatform/service/processing/record/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/service/processing/record/terminate/{work}",
+    "hit": "/api/processplatform/service/processing/record/{job}/{job}",
     "hit_crate": "processplatform_service_processing",
     "extra": null
    },
@@ -17170,7 +17183,7 @@
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/prev/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/taskcompleted/list/prev/manual/{flag}",
+    "hit": "/api/processplatform/assemble/surface/taskcompleted/list/prev/{id}/{count}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -18613,7 +18626,7 @@
     "path": "/api/processplatform/assemble/surface/application/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/application/{flag}/icon",
+    "hit": "/api/processplatform/assemble/surface/application/{flag}/{onlyRemoveNotCompleted}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -19094,7 +19107,7 @@
     "path": "/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/{workOrWorkCompleted}/category/{category}",
+    "hit": "/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/{workOrWorkCompleted}/{category}/{category}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -19237,7 +19250,7 @@
     "path": "/api/processplatform/assemble/surface/process/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/process/{flag}/allowrerouteto",
+    "hit": "/api/processplatform/assemble/surface/process/{flag}/{onlyRemoveNotCompleted}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -19276,7 +19289,7 @@
     "path": "/api/processplatform/assemble/surface/read/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/read/{id}/reference",
+    "hit": "/api/processplatform/assemble/surface/read/{count}/{credential}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -19328,7 +19341,7 @@
     "path": "/api/processplatform/assemble/surface/readcompleted/list/my/paging/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/readcompleted/list/my/paging/{page}/size/{size}",
+    "hit": "/api/processplatform/assemble/surface/readcompleted/list/my/paging/{page}/{size}/{size}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -19341,7 +19354,7 @@
     "path": "/api/processplatform/assemble/surface/readcompleted/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/readcompleted/{id}/reference",
+    "hit": "/api/processplatform/assemble/surface/readcompleted/{count}/{credential}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -19822,7 +19835,7 @@
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/prev/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/taskcompleted/list/prev/manual/{flag}",
+    "hit": "/api/processplatform/assemble/surface/taskcompleted/list/prev/{id}/{count}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -20147,7 +20160,7 @@
     "path": "/api/processplatform/assemble/surface/task/list/my/paging/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/task/list/my/paging/{page}/size/{size}",
+    "hit": "/api/processplatform/assemble/surface/task/list/my/paging/{page}/{size}/{size}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -20173,7 +20186,7 @@
     "path": "/api/processplatform/assemble/surface/task/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/task/{id}/reference",
+    "hit": "/api/processplatform/assemble/surface/task/{count}/{credential}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -20238,7 +20251,7 @@
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/my/paging/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/taskcompleted/list/my/paging/{page}/size/{size}",
+    "hit": "/api/processplatform/assemble/surface/taskcompleted/list/my/paging/{page}/{size}/{size}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -20251,7 +20264,7 @@
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/prev/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/taskcompleted/list/prev/manual/{flag}",
+    "hit": "/api/processplatform/assemble/surface/taskcompleted/list/prev/{id}/{count}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -20264,7 +20277,7 @@
     "path": "/api/processplatform/assemble/surface/taskcompleted/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/taskcompleted/count/{credential}",
+    "hit": "/api/processplatform/assemble/surface/taskcompleted/{count}/{credential}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -20355,7 +20368,7 @@
     "path": "/api/processplatform/assemble/surface/work/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/work/{id}/manage",
+    "hit": "/api/processplatform/assemble/surface/work/{count}/{credential}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -21421,7 +21434,7 @@
     "path": "/api/processplatform/service/processing/attachment/copy/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/service/processing/attachment/copy/work/{workId}",
+    "hit": "/api/processplatform/service/processing/attachment/copy/{work}/{workId}",
     "hit_crate": "processplatform_service_processing",
     "extra": null
    },
@@ -22487,7 +22500,7 @@
     "path": "/api/processplatform/assemble/surface/taskcompleted/list/prev/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/taskcompleted/list/prev/manual/{flag}",
+    "hit": "/api/processplatform/assemble/surface/taskcompleted/list/prev/{id}/{count}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -22513,7 +22526,7 @@
     "path": "/api/processplatform/assemble/surface/application/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/application/{flag}/icon",
+    "hit": "/api/processplatform/assemble/surface/application/{flag}/{onlyRemoveNotCompleted}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -22539,7 +22552,7 @@
     "path": "/api/processplatform/assemble/surface/process/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/assemble/surface/process/{flag}/allowrerouteto",
+    "hit": "/api/processplatform/assemble/surface/process/{flag}/{onlyRemoveNotCompleted}",
     "hit_crate": "processplatform_assemble_surface",
     "extra": null
    },
@@ -23774,7 +23787,7 @@
     "path": "/api/processplatform/service/processing/attachment/copy/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/service/processing/attachment/copy/work/{workId}",
+    "hit": "/api/processplatform/service/processing/attachment/copy/{work}/{workId}",
     "hit_crate": "processplatform_service_processing",
     "extra": null
    },
@@ -23930,7 +23943,7 @@
     "path": "/api/processplatform/service/processing/data/work/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/service/processing/data/work/{id}/delete",
+    "hit": "/api/processplatform/service/processing/data/work/{id}/{path}",
     "hit_crate": "processplatform_service_processing",
     "extra": null
    },
@@ -23982,7 +23995,7 @@
     "path": "/api/processplatform/service/processing/attachment/copy/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/processplatform/service/processing/attachment/copy/work/{workId}",
+    "hit": "/api/processplatform/service/processing/attachment/copy/{work}/{workId}",
     "hit_crate": "processplatform_service_processing",
     "extra": null
    },
@@ -24645,7 +24658,7 @@
     "path": "/api/program_center/agent/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/program_center/agent/{flag}/execute",
+    "hit": "/api/program_center/agent/{flag}/disable",
     "hit_crate": "program_center",
     "extra": null
    },
@@ -25958,7 +25971,7 @@
     "path": "/api/query/assemble/designer/stat/list/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/query/assemble/designer/stat/list/query/{queryFlag}",
+    "hit": "/api/query/assemble/designer/stat/list/{query}/{flag}",
     "hit_crate": "query_assemble_designer",
     "extra": null
    },
@@ -26049,7 +26062,7 @@
     "path": "/api/query/assemble/designer/stat/list/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/query/assemble/designer/stat/list/query/{queryFlag}",
+    "hit": "/api/query/assemble/designer/stat/list/{query}/{flag}",
     "hit_crate": "query_assemble_designer",
     "extra": null
    },
@@ -26062,7 +26075,7 @@
     "path": "/api/query/assemble/designer/stat/list/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/query/assemble/designer/stat/list/{id}/next/{count}",
+    "hit": "/api/query/assemble/designer/stat/list/{id}/{next}/{count}",
     "hit_crate": "query_assemble_designer",
     "extra": null
    },
@@ -26075,7 +26088,7 @@
     "path": "/api/query/assemble/designer/stat/list/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/query/assemble/designer/stat/list/query/{queryFlag}",
+    "hit": "/api/query/assemble/designer/stat/list/{query}/{flag}",
     "hit_crate": "query_assemble_designer",
     "extra": null
    },
@@ -26088,7 +26101,7 @@
     "path": "/api/query/assemble/designer/table/export/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/query/assemble/designer/table/export/{tableFlag}/count/{count}",
+    "hit": "/api/query/assemble/designer/table/export/{tableFlag}/{count}/{count}",
     "hit_crate": "query_assemble_designer",
     "extra": null
    },
@@ -26101,7 +26114,7 @@
     "path": "/api/query/assemble/designer/table/list/row/{}/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/query/assemble/designer/table/list/row/{tableFlag}/{id}/prev/{count}",
+    "hit": "/api/query/assemble/designer/table/list/row/{tableFlag}/{id}/{next}/{count}",
     "hit_crate": "query_assemble_designer",
     "extra": null
    },
@@ -26114,7 +26127,7 @@
     "path": "/api/query/assemble/designer/table/list/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/query/assemble/designer/table/list/query/{flag}",
+    "hit": "/api/query/assemble/designer/table/list/{query}/{flag}",
     "hit_crate": "query_assemble_designer",
     "extra": null
    },
@@ -26127,7 +26140,7 @@
     "path": "/api/query/assemble/designer/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/query/assemble/designer/importmodel/{id}",
+    "hit": "/api/query/assemble/designer/{id}/{count}",
     "hit_crate": "query_assemble_designer",
     "extra": null
    },
@@ -26374,7 +26387,7 @@
     "path": "/api/query/assemble/designer/stat/list/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/query/assemble/designer/stat/list/query/{queryFlag}",
+    "hit": "/api/query/assemble/designer/stat/list/{query}/{flag}",
     "hit_crate": "query_assemble_designer",
     "extra": null
    },
@@ -26387,7 +26400,7 @@
     "path": "/api/query/assemble/designer/table/list/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/query/assemble/designer/table/list/query/{flag}",
+    "hit": "/api/query/assemble/designer/table/list/{query}/{flag}",
     "hit_crate": "query_assemble_designer",
     "extra": null
    },
@@ -26400,7 +26413,7 @@
     "path": "/api/query/assemble/designer/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/query/assemble/designer/importmodel/{id}",
+    "hit": "/api/query/assemble/designer/{id}/{count}",
     "hit_crate": "query_assemble_designer",
     "extra": null
    },
@@ -26452,7 +26465,7 @@
     "path": "/api/query/assemble/designer/stat/list/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/query/assemble/designer/stat/list/{id}/next/{count}",
+    "hit": "/api/query/assemble/designer/stat/list/{id}/{next}/{count}",
     "hit_crate": "query_assemble_designer",
     "extra": null
    },
@@ -26465,7 +26478,7 @@
     "path": "/api/query/assemble/designer/table/export/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/query/assemble/designer/table/export/{tableFlag}/count/{count}",
+    "hit": "/api/query/assemble/designer/table/export/{tableFlag}/{count}/{count}",
     "hit_crate": "query_assemble_designer",
     "extra": null
    },
@@ -26491,7 +26504,7 @@
     "path": "/api/query/assemble/designer/table/list/row/{}/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/query/assemble/designer/table/list/row/{tableFlag}/{id}/prev/{count}",
+    "hit": "/api/query/assemble/designer/table/list/row/{tableFlag}/{id}/{next}/{count}",
     "hit_crate": "query_assemble_designer",
     "extra": null
    },
@@ -27011,7 +27024,7 @@
     "path": "/api/query/assemble/designer/table/list/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/query/assemble/designer/table/list/query/{flag}",
+    "hit": "/api/query/assemble/designer/table/list/{query}/{flag}",
     "hit_crate": "query_assemble_designer",
     "extra": null
    },
@@ -27024,7 +27037,7 @@
     "path": "/api/query/assemble/designer/stat/list/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/query/assemble/designer/stat/list/query/{queryFlag}",
+    "hit": "/api/query/assemble/designer/stat/list/{query}/{flag}",
     "hit_crate": "query_assemble_designer",
     "extra": null
    },
@@ -27661,7 +27674,7 @@
     "path": "/api/queryview/table/row/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/queryview/table/row/one/{tableFlag}",
+    "hit": "/api/queryview/table/row/{tableFlag}/{id}",
     "hit_crate": "query_assemble_surface",
     "extra": null
    },
@@ -27791,7 +27804,7 @@
     "path": "/api/queryview/table/row/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/queryview/table/row/one/{tableFlag}",
+    "hit": "/api/queryview/table/row/{tableFlag}/{id}",
     "hit_crate": "query_assemble_surface",
     "extra": null
    },
@@ -27817,7 +27830,7 @@
     "path": "/api/queryview/table/list/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/queryview/table/list/{id}/next/{count}",
+    "hit": "/api/queryview/table/list/{id}/{next}/{count}",
     "hit_crate": "query_assemble_surface",
     "extra": null
    },
@@ -27843,7 +27856,7 @@
     "path": "/api/queryview/table/list/row/{}/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/queryview/table/list/row/{tableFlag}/{id}/prev/{count}",
+    "hit": "/api/queryview/table/list/row/{tableFlag}/{id}/{next}/{count}",
     "hit_crate": "query_assemble_surface",
     "extra": null
    },
@@ -27921,7 +27934,7 @@
     "path": "/api/queryview/neural/list/calculate/model/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/queryview/neural/list/calculate/model/{modelFlag}/work/{workId}",
+    "hit": "/api/queryview/neural/list/calculate/model/{modelFlag}/{work}/{workId}",
     "hit_crate": "query_assemble_surface",
     "extra": null
    },
@@ -27947,7 +27960,7 @@
     "path": "/api/queryview/{}/{}/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/queryview/view/flag/{flag}/query/{queryFlag}",
+    "hit": "/api/queryview/{view}/{flag}/{flag}/{query}/{queryFlag}",
     "hit_crate": "query_assemble_surface",
     "extra": null
    },
@@ -27999,7 +28012,7 @@
     "path": "/api/queryview/importmodel/list/record/item/paging/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/queryview/importmodel/list/record/item/paging/{page}/size/{size}",
+    "hit": "/api/queryview/importmodel/list/record/item/paging/{page}/{size}/{size}",
     "hit_crate": "query_assemble_surface",
     "extra": null
    },
@@ -28012,7 +28025,7 @@
     "path": "/api/queryview/importmodel/list/record/paging/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/queryview/importmodel/list/record/paging/{page}/size/{size}",
+    "hit": "/api/queryview/importmodel/list/record/paging/{page}/{size}/{size}",
     "hit_crate": "query_assemble_surface",
     "extra": null
    },
@@ -28051,7 +28064,7 @@
     "path": "/api/queryview/table/list/row/{}/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/queryview/table/list/row/{tableFlag}/{id}/prev/{count}",
+    "hit": "/api/queryview/table/list/row/{tableFlag}/{id}/{next}/{count}",
     "hit_crate": "query_assemble_surface",
     "extra": null
    },
@@ -28064,7 +28077,7 @@
     "path": "/api/queryview/table/list/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/queryview/table/list/{id}/next/{count}",
+    "hit": "/api/queryview/table/list/{id}/{next}/{count}",
     "hit_crate": "query_assemble_surface",
     "extra": null
    },
@@ -28077,7 +28090,7 @@
     "path": "/api/queryview/neural/list/calculate/model/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/queryview/neural/list/calculate/model/{modelFlag}/work/{workId}",
+    "hit": "/api/queryview/neural/list/calculate/model/{modelFlag}/{work}/{workId}",
     "hit_crate": "query_assemble_surface",
     "extra": null
    },
@@ -28090,7 +28103,7 @@
     "path": "/api/queryview/{}/{}/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/queryview/view/flag/{flag}/query/{queryFlag}",
+    "hit": "/api/queryview/{view}/{flag}/{flag}/{query}/{queryFlag}",
     "hit_crate": "query_assemble_surface",
     "extra": null
    },
@@ -28402,7 +28415,7 @@
     "path": "/api/queryview/table/row/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/queryview/table/row/one/{tableFlag}",
+    "hit": "/api/queryview/table/row/{tableFlag}/{id}",
     "hit_crate": "query_assemble_surface",
     "extra": null
    },
@@ -28415,7 +28428,7 @@
     "path": "/api/queryview/neural/list/calculate/model/{}/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/queryview/neural/list/calculate/model/{modelFlag}/work/{workId}",
+    "hit": "/api/queryview/neural/list/calculate/model/{modelFlag}/{work}/{workId}",
     "hit_crate": "query_assemble_surface",
     "extra": null
    },
@@ -28428,7 +28441,7 @@
     "path": "/api/queryview/table/row/{}/{}",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/queryview/table/row/one/{tableFlag}",
+    "hit": "/api/queryview/table/row/{tableFlag}/{id}",
     "hit_crate": "query_assemble_surface",
     "extra": null
    },

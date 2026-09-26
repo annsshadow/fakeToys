@@ -23754,7 +23754,17 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessDesigner.vue",
-    "line": 11890,
+    "line": 5861,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/templateform/${appId}",
+    "path": "/api/processplatform/assemble/designer/templateform/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessDesigner.vue",
+    "line": 11893,
     "method": "GET",
     "raw": "/api/processplatform/assemble/designer/get/${selectedProcess.value.id}",
     "path": "/api/processplatform/assemble/designer/get/{}",

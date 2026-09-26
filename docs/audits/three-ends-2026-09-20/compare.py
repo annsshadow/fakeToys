@@ -45,13 +45,19 @@ def param_name(seg):
 
 
 def match_one(front_segs, back_segs):
-    """返回 (matched, used) ；used = [(后端参数名 or None, 被吞掉的前端字面量)]"""
+    """返回 (matched, used, swallowed)。
+    used = [(后端参数名 or None, 被吞掉的前端字面量)]
+    swallowed = 被前端 {} 变量位吞掉的后端「字面量」段列表 —— 运行时 axum 只有当变量
+    实际取值等于该字面量才会路由到此路由，因此这类匹配弱于「全参数位对齐」的结构精确匹配；
+    用于纠正同一归一形状下 `.../{page}/size/{size}`（字面 size）与 `.../{page}/{size}/{size}`
+    （双参数）孪生路由的 hit 归属，避免把双参数调用误记到字面量路由上。"""
     used = []
+    swallowed = []
     i = j = 0
     while i < len(front_segs) and j < len(back_segs):
         b = back_segs[j]
         if b.startswith("{*"):
-            return True, used
+            return True, used, swallowed
         if is_param(b):
             used.append((param_name(b), None if front_segs[i] == "{}" else front_segs[i]))
             i += 1
@@ -62,11 +68,12 @@ def match_one(front_segs, back_segs):
             j += 1
             continue
         if front_segs[i] == "{}":
+            swallowed.append(b)
             i += 1
             j += 1
             continue
-        return False, used
-    return i == len(front_segs) and j == len(back_segs), used
+        return False, used, swallowed
+    return i == len(front_segs) and j == len(back_segs), used, swallowed
 
 
 METHOD_ALIAS = {"UPLOAD": "POST", "DOWNLOAD": "GET"}
@@ -78,12 +85,12 @@ def classify(call, backend):
         methods = {"GET", "POST", "PUT", "DELETE"}
     else:
         methods = set(METHOD_ALIAS.get(call["method"], call["method"]).split("|"))
-    exact, param_only = None, []
+    exact, exact_shadow, param_only = None, None, []
     path_cands, method_cands = [], []
     for crate, routes in backend.items():
         for r in routes:
             bs = segs(r["path"])
-            ok, used = match_one(fs, bs)
+            ok, used, swallowed = match_one(fs, bs)
             if not ok:
                 continue
             path_cands.append((crate, r))
@@ -91,12 +98,20 @@ def classify(call, backend):
             if methods & set(rm.split("|")):
                 method_cands.append((crate, r))
                 if used and all(u[1] is None for u in used):
-                    exact = (crate, r)
+                    # 全参数位命中：无字面量被吞才是结构精确匹配；吞了后端字面量的
+                    # 仅作退路 hit（弱于双参数孪生），据此纠正 hit 归属。
+                    if swallowed:
+                        if exact_shadow is None:
+                            exact_shadow = (crate, r)
+                    else:
+                        exact = (crate, r)
                 else:
                     param_only.append((crate, r, used))
     if method_cands:
         if exact:
             return "exact", exact, None
+        if exact_shadow:
+            return "exact", exact_shadow, None
         param_only.sort(key=lambda t: len([u for u in t[2] if u[1] is not None]))
         crate, r, used = param_only[0]
         lits = [u for u in used if u[1] is not None]
