@@ -469,6 +469,36 @@ func (s *Service) computeRating(ctx context.Context, userID int64, build map[str
 		for f := range fams {
 			in.MasteryFamilies = append(in.MasteryFamilies, f)
 		}
+		// 把专精节点实际提供的战斗乘区填进 RatingInput。
+		//
+		// ⚠️ 这一段是 reaction_mult / crit / element_cap / armor 四类节点
+		// 从「只写不读」变成真正生效的关键。少了它，computeAttacker 只能
+		// 硬编码常量，玩家投入这些节点后战斗数值完全不变。
+		//
+		// EvaluateMastery 需要「全部节点定义 + 已投入的 id 集合 + 剩余点数」，
+		// 前两样可以从 build 拿到，点数需要读 user_progress。
+		// 评估失败时按"无加成"处理 —— 不能因为读不到点数就让整次结算失败。
+		selected := make(map[int]bool, len(nodes))
+		for _, n := range nodes {
+			selected[n] = true
+		}
+		points := 0
+		if err := s.pool.QueryRow(ctx,
+			`SELECT mastery_points FROM user_progress WHERE user_id = $1`, userID).Scan(&points); err != nil {
+			points = 0
+		}
+		// EvaluateMastery 需要「全部节点定义 + 已投入的 id 集合 + 剩余点数」。
+		// 全部节点从 AllMasteryFamilies() 展平（它是 8 系 × 3 层 × 4 选 2 的来源）。
+		allNodes := make([]domain.MasteryNode, 0, 96)
+		for _, f := range domain.AllMasteryFamilies() {
+			allNodes = append(allNodes, f.Nodes...)
+		}
+		if eff, err := domain.EvaluateMastery(allNodes, selected, points); err == nil {
+			in.ReactionMultBonus = eff.ReactionMultBonus
+			in.CritBonus = eff.CritBonus
+			in.ElementCapBonus = eff.ElementCapBonus
+			in.ArmorBonus = eff.ArmorBonus
+		}
 	}
 	return domain.ComputeBuildRating(in, domain.DefaultRatingWeights())
 }

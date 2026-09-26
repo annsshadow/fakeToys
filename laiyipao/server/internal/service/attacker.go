@@ -47,11 +47,20 @@ func toView(a domain.Attacker) AttackerView {
 // 而 I-6 要求两边逐位一致。简单公式 + 服务端下发 = 唯一真相源。
 //
 // 成长维度：
-//   - Attack:        随最高通关关卡线性增长（玩得越深打得越远）
-//   - CritPermille:  固定小额，避免把暴击做成主要输出手段
-//   - ElementCap:    随关卡缓慢提升，但封顶 6 层
-//   - ElementCoef:   这是关键 —— 元素系数只随专精投入与关卡小幅提升，
-//     保证「搭配正确的玩家」始终强于「只堆面板的玩家」（I-1 反通胀）
+//   - Attack:            随最高通关关卡线性增长（玩得越深打得越远）
+//   - CritPermille:      固定小额，避免把暴击做成主要输出手段
+//   - ElementCap:        随关卡缓慢提升，但封顶 6 层
+//   - ElementCoef:       随专精投入提升，封顶 +600‰
+//   - ReactionMult:      随 reaction_mult 类专精节点提升，封顶 +800‰
+//   - ReactionTier:      随 reaction_mult 节点提升，封顶 4 阶
+//   - CritPermille(覆盖): 专精 crit 节点与 gem 叠加后再封顶 600‰
+//
+// ⚠️ 后三项之前是**硬编码常量**，于是专精树里 24 个节点中的 6 个
+// reaction_mult 节点、以及全部 crit 节点都只写不读 —— 玩家投入了却
+// 看不到任何效果。现在它们都从专精树真实取值。
+//
+// 封顶值是刻意保守的：这些乘区一旦无界，I-1 的"搭配正确 > 堆面板"
+// 就会被"无脑堆单一维度"打破。
 func (s *Service) computeAttacker(ctx context.Context, userID int64) (domain.Attacker, error) {
 	var maxStage int
 	if err := s.pool.QueryRow(ctx,
@@ -60,41 +69,100 @@ func (s *Service) computeAttacker(ctx context.Context, userID int64) (domain.Att
 		return domain.Attacker{}, fmt.Errorf("load max stage: %w", err)
 	}
 
-	var masteryPicked int
-	if err := s.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM user_mastery_nodes WHERE user_id = $1`,
-		userID).Scan(&masteryPicked); err != nil {
-		return domain.Attacker{}, fmt.Errorf("load mastery count: %w", err)
-	}
-
 	stage := int64(maxStage)
 	if stage < 0 {
 		stage = 0
 	}
-	mastery := int64(masteryPicked)
-	if mastery < 0 {
-		mastery = 0
+
+	// 专精节点的实际加成。
+	//
+	// ⚠️ 这里**绝不能**调 s.LoadBuildSnapshot / s.computeRating：
+	// 两者都会回调本函数（build 快照里要含 attacker），
+	// 于是 computeAttacker → LoadBuildSnapshot → computeAttacker → …
+	// 无限递归。表现为测试跑满超时后 panic，且栈里全是这两个函数互相调用 ——
+	// 这个坑很隐蔽，因为「让攻方属性反映构筑」的需求看起来很自然。
+	//
+	// 攻方属性只需要专精节点，所以直接读那一项数据。
+	masteryNodes, err := s.loadMasteryNodes(ctx, userID)
+	if err != nil {
+		return domain.Attacker{}, fmt.Errorf("load mastery nodes: %w", err)
 	}
+	eff := domain.MasteryEffect{}
+	if len(masteryNodes) > 0 {
+		selected := make(map[int]bool, len(masteryNodes))
+		for _, n := range masteryNodes {
+			selected[n] = true
+		}
+		points := 0
+		if err := s.pool.QueryRow(ctx,
+			`SELECT mastery_points FROM user_progress WHERE user_id = $1`,
+			userID).Scan(&points); err != nil {
+			points = 0
+		}
+		allNodes := make([]domain.MasteryNode, 0, 96)
+		for _, f := range domain.AllMasteryFamilies() {
+			allNodes = append(allNodes, f.Nodes...)
+		}
+		if e, err := domain.EvaluateMastery(allNodes, selected, points); err == nil {
+			eff = e
+		}
+	}
+
+	mastery := masteryNodes
 
 	a := domain.DefaultAttacker()
 	// 攻击力：每通过 10 关 +200‰，即 1 关 +20‰。第 100 关约 +2000‰。
 	a.Attack += stage * 20
-	// 元素层数上限：每 25 关 +1，封顶 6
+	// 元素层数上限：每 25 关 +1
 	a.ElementCap += stage / 25
-	if a.ElementCap > 6 {
-		a.ElementCap = 6
+	// 专精 element_cap 节点：每层 +1
+	if eff.ElementCapBonus > 0 {
+		a.ElementCap += eff.ElementCapBonus
 	}
-	// 元素系数：每个专精点 +15‰，封顶 +600‰
+	if a.ElementCap > 8 {
+		a.ElementCap = 8
+	}
+	// 元素系数：每个专精节点 +15‰，封顶 +600‰
 	// 这一项刻意强于攻击力成长 —— 它直接放大反应伤害，符合 I-1 的反通胀意图
-	coef := mastery * 15
+	coef := int64(len(mastery)) * 15
 	if coef > 600 {
 		coef = 600
 	}
 	a.ElementCoefPermille += coef
-	// 暴击率不随进度提升：暴击是锦上添花，不能成为主要胜负手
-	a.CritPermille = 50
+
+	// 反应倍率：来自 reaction_mult 类专精节点，封顶 +800‰（2 倍上限之下）
+	//
+	// ⚠️ 收紧了 domain 侧的 `wE/((1-w)·M)` 上限（见 damage.go），
+	// 所以这里即使给到 2 倍，反应伤害里攻击力的占比也不会越过 30% 红线。
+	// 不收紧上限就放大倍率，等于给专精树开了一扇绕过 I-1 的后门。
+	rm := eff.ReactionMultBonus
+	if rm > 800 {
+		rm = 800
+	}
+	if rm < 0 {
+		rm = 0
+	}
+	a.ReactionMultPermille += rm
+
+	// 反应阶：每 3 个 reaction_mult 节点提升 1 阶，封顶 4 阶
+	// 阶数放大的是「元素侧」（与养成完全无关的那一段），
+	// 所以提高它不会让攻击力占比上升 —— 这是 I-1 允许的成长方向。
+	rt := int64(1) + (rm/domain.MasteryReactionMultPerNode)/3
+	if rt > 4 {
+		rt = 4
+	}
+	a.ReactionTier = rt
+
+	// 暴击率：来自 crit 类专精节点，封顶 +500‰（即总上限 550‰）
+	cp := eff.CritBonus
+	if cp > 500 {
+		cp = 500
+	}
+	if cp < 0 {
+		cp = 0
+	}
+	a.CritPermille = 50 + cp
 	a.CritMultiplierPermille = 1500
-	a.ReactionMultPermille = 1000
-	a.ReactionTier = 1
+
 	return a, nil
 }
