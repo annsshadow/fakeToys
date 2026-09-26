@@ -10,7 +10,13 @@ from pydantic import BaseModel, ConfigDict
 
 from augmentor.exceptions import DataValidationError
 
-from ..deps import config_file_path, get_pipeline, to_http_error, verify_api_key
+from ..deps import (
+    config_file_path,
+    get_pipeline,
+    invalidate_config_caches,
+    to_http_error,
+    verify_api_key,
+)
 from ..schemas import MessageResponse
 
 router = APIRouter(tags=["config"])
@@ -188,6 +194,13 @@ async def update_config(
             # 也可能是**存在但本端点不写**的节（`web`），叫它「未知」是假话。
             message += "（已忽略未写入的配置项：" + "、".join(notes) + "）"
         save_config(p.config, str(config_file_path()))
+        # 写盘成功即作废内容类缓存：`save_config` 是整份重序列化，`web` 那两键
+        # （数据白名单、上传上限）也一起被重写了一遍，而读它们的缓存按
+        # `(路径, mtime_ns)` 建键 ⇒ 「改过配置文件，下一次读必然看见新值」这句话
+        # 本来是由操作系统时钟是否跨过一格决定的（本机 tick 实测 0.5 ms）。缓存的
+        # 写入方就在本进程，所以这一格只有显式失效能封死；跨进程与「保住 mtime」
+        # 的写方管不到，那两格记在 A156 / A158。
+        invalidate_config_caches()
         return {"success": True, "message": message, "ignored_keys": ignored}
     except DataValidationError as e:
         # 越界的新值要的是 400（「你给的这个值不合法」），不是 500（「服务端坏了」）。
