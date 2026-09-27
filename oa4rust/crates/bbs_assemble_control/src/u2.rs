@@ -298,7 +298,9 @@ async fn attachment_download_base64(pool: &Pool, id: &str) -> ApiResult {
                         ("base64".to_string(), Value::String(base64_encode(&bytes))),
                     ]),
                 )))),
-                None => Ok(Json(ActionResult::error("attachment has no binary content"))),
+                None => Ok(Json(ActionResult::error(
+                    "attachment has no binary content",
+                ))),
             }
         }
         None => Ok(Json(ActionResult::error("attachment not found"))),
@@ -368,7 +370,15 @@ async fn attachment_upload_store(
             "INSERT INTO x_bbs_attachment \
              (id, subject_id, name, extension, content, length, creator, create_time) \
              VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
-            &[&id, &subject_id, &filename, &extension, &bytes, &length, &creator],
+            &[
+                &id,
+                &subject_id,
+                &filename,
+                &extension,
+                &bytes,
+                &length,
+                &creator,
+            ],
         )
         .await
         .map_err(|_| AppError::Internal)?;

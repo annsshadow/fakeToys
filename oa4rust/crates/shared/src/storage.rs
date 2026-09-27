@@ -174,10 +174,7 @@ impl BlobStorage for PgBlobStorage {
     async fn delete(&self, key: &str) -> Result<(), String> {
         let client = self.pool.get().await.map_err(|e| format!("pool: {e}"))?;
         client
-            .execute(
-                "DELETE FROM x_blob_storage WHERE storage_key = $1",
-                &[&key],
-            )
+            .execute("DELETE FROM x_blob_storage WHERE storage_key = $1", &[&key])
             .await
             .map_err(|e| format!("delete blob {key:?}: {e}"))?;
         Ok(())
