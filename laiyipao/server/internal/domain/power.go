@@ -101,6 +101,14 @@ type MasteryEffect struct {
 	SkillDamageBonus  int64 // 千分比
 	CritBonus         int64 // 千分比
 	ArmorBonus        int64 // 千分比
+	// MechanicBonus 机制卡强度加成（千分比），来自第 3 层槽 1 的「机制改造」节点。
+	//
+	// ⚠️ 这个 kind 曾经在 EvaluateMastery 的 switch 里**完全没有 case** ——
+	// 而它是 8 系 × 1 个节点 = 8 个真实节点，玩家花点数点出来却毫无效果。
+	// 惰性的成因很朴素：switch 的 case 列表是从前几层抄的，
+	// 第 3 层新增的 mechanic 没跟着补，而**没有任何测试检查"每个 kind 都有 case"**。
+	// 这类遗漏与本项目已修的多个缺陷同形：接线存在，但没有"全覆盖"守卫。
+	MechanicBonus int64 // 千分比
 }
 
 // EvaluateMastery 根据已选节点集合计算合计效果。
@@ -161,6 +169,8 @@ func EvaluateMastery(allNodes []MasteryNode, selectedIDs map[int]bool, points in
 			effect.CritBonus += v
 		case "armor":
 			effect.ArmorBonus += v
+		case "mechanic":
+			effect.MechanicBonus += v
 		}
 	}
 	return effect, nil

@@ -68,6 +68,9 @@ function build(over: Partial<BuildSnapshot> = {}): BuildSnapshot {
       element_cap: 3,
       reaction_tier: 2,
       element_coef_permille: 1200,
+    heat_cap_permille: 150,
+    armor_permille: 200,
+    mechanic_permille: 100,
     },
     ...over,
   }
@@ -130,6 +133,9 @@ describe('重放：篡改必然被发现（I-6 的核心保证）', () => {
             attack: 9999, crit_permille: 50, crit_multiplier_permille: 1500,
             reaction_mult_permille: 1000, element_cap: 3, reaction_tier: 2,
             element_coef_permille: 1200,
+    heat_cap_permille: 150,
+    armor_permille: 200,
+    mechanic_permille: 100,
           },
         }),
       }),
@@ -181,6 +187,13 @@ describe('重放：选牌决策复现（I-6 闭环的最后一环）', () => {
         elementCap: BigInt(ri.build.attacker!.element_cap),
         reactionTier: BigInt(ri.build.attacker!.reaction_tier),
         elementCoefPermille: BigInt(ri.build.attacker!.element_coef_permille),
+        // 三项本轮新增。夹具里给了非零值（heat 150 / armor 200 / mechanic 100），
+        // 于是这些用例同时覆盖"重放时新字段也必须逐位还原"——
+        // 漏掉任何一项，重放算出的 heat.capBonus / 防线护甲 / 卡面数值就不同，
+        // 哈希随之失配。
+        heatCapPermille: BigInt(ri.build.attacker!.heat_cap_permille ?? 0),
+        armorPermille: BigInt(ri.build.attacker!.armor_permille ?? 0),
+        mechanicPermille: BigInt(ri.build.attacker!.mechanic_permille ?? 0),
       },
       seed: BigInt(seed),
     })

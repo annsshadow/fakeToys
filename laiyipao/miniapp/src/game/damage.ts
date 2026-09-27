@@ -51,6 +51,24 @@ export interface Attacker {
   reactionTier: bigint
   /** 元素层数系数（千分比） */
   elementCoefPermille: bigint
+  /**
+   * 热量上限加成（千分比）。
+   *
+   * ⚠️ 这三个字段是本轮补上的**遗漏成长维度**。
+   * 在它们存在之前，专精树的「热量上限」「护甲」「机制改造」节点，
+   * 以及**全部 18 件装备与 8 种宝石**，对战斗数值零影响 ——
+   * 它们只出现在 `/config` 与 I-7 构筑评分里，玩家看得见数值、
+   * 战斗里却什么都不变。
+   *
+   * 真实对局必须由服务端 `/battle/token` 的 `build.attacker` 下发
+   * （与其它七项同一要求）：I-6 要求重放哈希逐位一致，
+   * 客户端自己算就会与原局不同。
+   */
+  heatCapPermille: bigint
+  /** 玩家护甲（千分比），减免漏怪伤害。上限 domain.MaxArmorPermille = 750‰ */
+  armorPermille: bigint
+  /** 机制卡强度加成（千分比），作用在卡面数值上 */
+  mechanicPermille: bigint
 }
 
 /** 新号默认属性，与 Go 的 DefaultAttacker 一致 */
@@ -63,6 +81,13 @@ export function defaultAttacker(): Attacker {
     elementCap: 3n,
     reactionTier: 1n,
     elementCoefPermille: 1000n,
+    // ⚠️ 三项新字段的缺省值都是 0（无加成）。
+    //
+    // 新号没有装备/宝石/专精，此时必须与"这些字段存在之前"的行为**逐位一致** ——
+    // 填任何非 0 值都会让全新账号的第一场战斗与历史战报哈希不符。
+    heatCapPermille: 0n,
+    armorPermille: 0n,
+    mechanicPermille: 0n,
   }
 }
 

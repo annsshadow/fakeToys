@@ -57,6 +57,17 @@ function toAttacker(a: Record<string, number>): Attacker {
     elementCap: BigInt(a.element_cap),
     reactionTier: BigInt(a.reaction_tier),
     elementCoefPermille: BigInt(a.element_coef_permille),
+    // 三项本轮新增的攻方字段（专精 heat_cap/armor/mechanic + 装备与宝石）。
+    //
+    // ⚠️ 必须与 `store/game.ts` 的转换保持**逐字段一致** ——
+    // 这两处是同一份转换的两个副本，漏一个字段就会让 e2e 重放
+    // 与页面实际跑的战斗算出的哈希不同，而 I-6 会把正常对局判成伪造。
+    //
+    // 本文件已由 `i6.e2e.test.ts` 自身验证：它拿服务端真实响应重放，
+    // 哈希不一致会直接红。所以"两处转换漂移"在这里是**可观测**的。
+    heatCapPermille: BigInt(a.heat_cap_permille ?? 0),
+    armorPermille: BigInt(a.armor_permille ?? 0),
+    mechanicPermille: BigInt(a.mechanic_permille ?? 0),
   }
 }
 
