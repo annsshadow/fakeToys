@@ -165,6 +165,7 @@ pub mod routes;
 pub use routes::component_router;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

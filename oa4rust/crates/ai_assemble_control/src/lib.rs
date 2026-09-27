@@ -19,6 +19,7 @@ pub const API_BASE: &str = "/api/ai_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

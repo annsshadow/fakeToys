@@ -26,6 +26,7 @@ pub mod routes;
 pub mod u2;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
@@ -251,11 +252,10 @@ pub async fn section_create(
         Value::Object(o) => o,
         _ => serde_json::Map::new(),
     };
-    if !obj
+    if obj
         .get("creator")
         .and_then(|v| v.as_str())
-        .map(str::trim)
-        .is_some_and(|s| !s.is_empty())
+        .map(str::trim).is_none_or(|s| s.is_empty())
     {
         obj.insert(
             "creator".to_string(),

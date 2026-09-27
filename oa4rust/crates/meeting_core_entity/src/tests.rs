@@ -229,8 +229,8 @@ mod tests {
             title: "项目评审会".to_string(),
             content: None,
             room_id: Some("room-001".to_string()),
-            start_time: chrono::NaiveDateTime::from_timestamp_opt(1704067200, 0).unwrap(),
-            end_time: chrono::NaiveDateTime::from_timestamp_opt(1704070800, 0).unwrap(),
+            start_time: chrono::DateTime::from_timestamp(1704067200, 0).unwrap().naive_utc(),
+            end_time: chrono::DateTime::from_timestamp(1704070800, 0).unwrap().naive_utc(),
             creator: Some("user-001".to_string()),
             create_time: None,
         };

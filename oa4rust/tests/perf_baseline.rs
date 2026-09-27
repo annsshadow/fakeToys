@@ -146,6 +146,7 @@ fn perf_baseline() {
 }
 
 /// 计算并打印一组样本（毫秒）的 avg / p50 / p99。
+#[allow(dead_code)]
 fn summarize(name: &str, samples: &[f64]) {
     if samples.is_empty() {
         return;

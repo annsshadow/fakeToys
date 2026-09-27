@@ -3,9 +3,10 @@
 
 //! W7：portal 脚本设计器写路径（u2 闭合）。
 //!
-//! 存储：x_portal_script（084 迁移补 content/portal_id/deleted_at 列）
-//! + x_portal_script_version（092 迁移补 content 列）。
-//! 每次 create/update 落一行版本快照（含 content），版本历史面板经既有
+//! 存储两张表：x_portal_script（084 迁移补 content/portal_id/deleted_at 列）与
+//! x_portal_script_version（092 迁移补 content 列）。
+//!
+//! 每次 create/update 落一行版本快照（含 content）。版本历史面板经既有
 //! GET scriptversion/list/script/{scriptId} 读取。
 
 use axum::{extract::Extension, Json};

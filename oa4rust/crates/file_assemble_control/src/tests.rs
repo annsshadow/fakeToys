@@ -20,6 +20,8 @@ mod tests {
 
     // ---- Mock types ----
 
+    // Mock 全形状枚举：Rows/Error 变体供未来用例扩展，未构造处显式豁免
+    #[allow(dead_code)]
     enum MockQueryResult {
         Row(Vec<(&'static str, Value)>),
         Rows(Vec<Vec<(&'static str, Value)>>),
@@ -41,6 +43,7 @@ mod tests {
             Arc::new(Mutex::new(vec![MockQueryResult::Row(values)]))
         }
 
+        #[allow(dead_code)]
         fn rows(values: Vec<Vec<(&'static str, Value)>>) -> Arc<Mutex<Vec<MockQueryResult>>> {
             Arc::new(Mutex::new(vec![MockQueryResult::Rows(values)]))
         }

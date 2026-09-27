@@ -15,6 +15,7 @@ pub const API_BASE: &str = "/api/attendance_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
@@ -188,7 +189,6 @@ pub async fn list_statistics(pool: Extension<Pool>) -> Result<Json<ActionResult<
 }
 
 #[axum::debug_handler]
-#[allow(non_snake_case)]
 /// DELETE /api/attendance/assemble/control/rule/{id} — 删除考勤规则
 #[allow(non_snake_case)]
 pub async fn delete_control_rule(

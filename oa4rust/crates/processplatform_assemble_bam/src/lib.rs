@@ -1,6 +1,9 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+// 深段 codegen handler 的 Path 元组签名天然超长，属生成风格非设计问题
+#![allow(clippy::type_complexity)]
+
 use axum::{extract::Extension, routing::delete, routing::get, routing::post, Json, Router};
 use deadpool_postgres::Pool;
 use serde::Deserialize;
@@ -300,6 +303,7 @@ pub fn processplatform_assemble_bam_router() -> Router {
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

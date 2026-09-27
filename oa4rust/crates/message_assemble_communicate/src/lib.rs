@@ -165,6 +165,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
@@ -1368,7 +1369,7 @@ pub const MAX_IM_FILE_SIZE: usize = 50 * 1024 * 1024;
 
 /// W10：清洗上传文件名——剥离任意路径分量，防目录穿越/路径注入。
 pub fn sanitize_filename(name: &str) -> String {
-    name.rsplit(|c| c == '/' || c == '\\')
+    name.rsplit(['/', '\\'])
         .next()
         .unwrap_or_default()
         .to_string()

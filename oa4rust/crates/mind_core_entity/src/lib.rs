@@ -525,6 +525,7 @@ pub fn mind_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

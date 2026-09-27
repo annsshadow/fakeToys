@@ -188,6 +188,7 @@ pub fn verify(id: &str, answer: &str) -> VerifyResult {
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests {
     use super::*;
 

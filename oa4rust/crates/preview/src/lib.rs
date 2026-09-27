@@ -444,6 +444,7 @@ pub fn preview_route<S: PreviewService + 'static>(service: S) -> Router {
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests {
     use super::*;
     use axum::body::Body;

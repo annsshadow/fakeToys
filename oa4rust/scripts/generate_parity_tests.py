@@ -351,8 +351,6 @@ def build_header(total_crates: int, total_routes: int, total_tests: int) -> str:
 // Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 // Crates: {total_crates}   Routes: {total_routes}   Tests: {total_tests}
 
-#[allow(unreachable_code, unused_variables, non_snake_case)]
-
 use axum::body::Body;
 use axum::http::{{Request, Method, StatusCode}};
 use tower::util::ServiceExt;

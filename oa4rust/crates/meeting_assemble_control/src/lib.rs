@@ -13,6 +13,7 @@ pub const API_BASE: &str = "/api/meeting_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
@@ -3030,7 +3031,7 @@ async fn u2_attachment_store_new(
 
     let id = uuid::Uuid::new_v4().to_string();
     let key = u2_attachment_blob_key(&id, filename)?;
-    u2_persist_blob_verified(&pool, &key, &bytes).await?;
+    u2_persist_blob_verified(pool, &key, &bytes).await?;
 
     let ext = filename.rsplit('.').next().unwrap_or("bin").to_string();
     let length = bytes.len() as i64;
