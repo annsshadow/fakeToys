@@ -391,6 +391,7 @@ pub async fn config_get(
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
@@ -4480,7 +4481,6 @@ pub async fn dict_dictFlag_path_data_mockdeletetoget(
     ))))
 }
 
-#[allow(non_snake_case)]
 /// POST /api/program_center/dict/{dictFlag}/data — 字典数据写入（无 path 段）。
 /// 与 `dict_dictFlag_path_data_mockputtopost` 同义：handler 本就忽略 path 段，
 /// 此处显式提供前端实际调用的无 path 形态。

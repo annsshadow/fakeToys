@@ -806,6 +806,7 @@ pub fn signature_route<S: SignatureService + 'static>(service: S) -> Router {
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests {
     use super::*;
     use axum::body::Body;

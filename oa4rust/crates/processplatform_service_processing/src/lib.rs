@@ -3716,6 +3716,7 @@ pub async fn cancel_timer(
 
 #[cfg(test)]
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

@@ -152,6 +152,7 @@ pub async fn application_list(pool: Extension<Pool>) -> Json<ActionResult<Value>
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

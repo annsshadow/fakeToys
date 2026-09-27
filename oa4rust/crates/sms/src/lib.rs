@@ -259,6 +259,7 @@ pub fn mock_sms_gateway() -> &'static MockSmsGateway {
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests {
     use super::*;
 

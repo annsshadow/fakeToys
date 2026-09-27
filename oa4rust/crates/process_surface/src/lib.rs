@@ -172,6 +172,7 @@ pub async fn record_list(
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

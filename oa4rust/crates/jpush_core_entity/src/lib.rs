@@ -229,6 +229,7 @@ pub async fn device_delete(
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

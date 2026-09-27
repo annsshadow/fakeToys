@@ -775,6 +775,7 @@ pub async fn permission_set(
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

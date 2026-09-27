@@ -151,6 +151,7 @@ pub async fn search_messages(
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests {
     use crate::{search_documents, search_messages, search_subjects, Document, Message, Subject};
     use deadpool_postgres::{Manager, Pool};
