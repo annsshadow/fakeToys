@@ -4,7 +4,7 @@
 use axum::{extract::Extension, routing::get, Router};
 use deadpool_postgres::Pool;
 
-use crate::{exists_check, get_by_id, list_by_application_and_info_id};
+use crate::{get_by_id, list_by_application_and_info_id};
 
 pub fn hotpic_router(pool: Pool) -> Router {
     Router::new()
