@@ -419,7 +419,16 @@ FLOOR = {
 #: 新事实，不能只有新字数。摘掉后复量回 **113**。
 MEASURED = {
     ARCH: {"line_refs": 42, "file_tokens": 244, "code_but_no_name_match": 37},
-    LEDGER: {"line_refs": 299, "file_tokens": 1626, "code_but_no_name_match": 166},
+    #: **L100 批②（产品码插行 ⇒ 账本 A144 那一行被顶红，三格同时动）**：批② 给 `augmentor/checkpoint.py`
+    #: 的 `__init__` 与两处 docstring 插了行，账本里 A144 行那两组历史落点集体搬家，其中
+    #: `` `augmentor/checkpoint.py:218` ``（L85 落点，早已是历史）落到一个空行上 ⇒ `dead_line` 0 → 1，
+    #: 被硬 0 档当场抓住。处置按 A127 既有口径：**行号引用降成名字锚点**（历史行号不是对今天文件的断言，
+    #: 不该用断言语法写它），只留 L100 现量落点。读数闭合：`line_refs` 299 → **296**（删 3 条历史引用；
+    #: 现量那 3 条只换号不增不减）、`file_tokens` 1626 → **1629**（同那 3 条改以 `` `x.py` `` 形状重写 ⇒
+    #: 从 LINE_REF 语法搬进 FILE_TOKEN 语法：**总数 +3 而引用总规模 −3**，两种语法互斥的直接读数）、
+    #: 漂移 166 → **161**（历史 2 条消失 + 现量 3 条因为换到真 `def` 行而搬回 `name_hit`）。
+    #: 四档棘轮与两格硬 0 未动。
+    LEDGER: {"line_refs": 296, "file_tokens": 1629, "code_but_no_name_match": 161},
 }
 
 #: 日志块标题行上「下一轮才填得出自己哈希」的占位符。精确相等 = **只许有该填的那几条**。
