@@ -193,10 +193,14 @@ async function loadCmsOverview() {
 async function loadCmsExpress() {
   try {
     const listResp: any = await api.get('/api/cms/core/express/content/list')
-    const rows = (Array.isArray(listResp?.data) ? listResp.data : (listResp?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const rows = (Array.isArray(listResp?.data) ? listResp.data : (listResp?.data?.data ?? [])) as Array<
+      Record<string, unknown>
+    >
     const cid = rows[0] ? String(rows[0].id ?? '') : ''
     const [detail, views] = await Promise.all([
-      cid ? api.get(`/api/cms/core/express/content/detail/${encodeURIComponent(cid)}`).catch(() => null) : Promise.resolve(null),
+      cid
+        ? api.get(`/api/cms/core/express/content/detail/${encodeURIComponent(cid)}`).catch(() => null)
+        : Promise.resolve(null),
       api.get('/api/cms/view/list/all').catch(() => null),
     ])
     const title = (detail as any)?.data?.title ?? (cid || '—')
@@ -244,14 +248,18 @@ async function loadFormDetails() {
       api.get('/api/form/list/all').catch(() => null),
       api.get('/api/cms/article/list').catch(() => null),
     ])
-    const forms = (Array.isArray((formList as any)?.data) ? (formList as any).data : ((formList as any)?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const forms = (
+      Array.isArray((formList as any)?.data) ? (formList as any).data : ((formList as any)?.data?.data ?? [])
+    ) as Array<Record<string, unknown>>
     const formId = forms[0] ? String(forms[0].id ?? '') : ''
     const appId = forms[0] ? String(forms[0].appId ?? forms[0].app_id ?? '') : ''
     const docId = firstId(artList)
     const [formDetail, appForms, docForm] = await Promise.all([
       formId ? api.get(`/api/form/v2/${encodeURIComponent(formId)}`).catch(() => null) : Promise.resolve(null),
       appId ? api.get(`/api/form/list/app/${encodeURIComponent(appId)}`).catch(() => null) : Promise.resolve(null),
-      docId ? api.get(`/api/form/v2/lookup/document/${encodeURIComponent(docId)}`).catch(() => null) : Promise.resolve(null),
+      docId
+        ? api.get(`/api/form/v2/lookup/document/${encodeURIComponent(docId)}`).catch(() => null)
+        : Promise.resolve(null),
     ])
     const fName = (formDetail as any)?.data?.name ?? (formId || '—')
     const aN = Array.isArray((appForms as any)?.data) ? (appForms as any).data.length : 0
@@ -439,25 +447,41 @@ async function cmsRoot(op: string) {
   const e = encodeURIComponent(id)
   try {
     if (op === 'formUpdate') await api.put(`/api/form/${e}`, {})
-    else if (op === 'formDelete') { if (!(await confirmMsg('确定删除该表单？'))) return; await api.delete(`/api/form/${e}`) }
-    else if (op === 'viewCreate') await api.post('/api/view', { name: '新视图' })
+    else if (op === 'formDelete') {
+      if (!(await confirmMsg('确定删除该表单？'))) return
+      await api.delete(`/api/form/${e}`)
+    } else if (op === 'viewCreate') await api.post('/api/view', { name: '新视图' })
     else if (op === 'viewUpdate') await api.put(`/api/view/${e}`, {})
-    else if (op === 'viewDelete') { if (!(await confirmMsg('确定删除该视图？'))) return; await api.delete(`/api/view/${e}`) }
-    else if (op === 'scriptUpdate') await api.put(`/api/script/${e}`, {})
-    else if (op === 'scriptDelete') { if (!(await confirmMsg('确定删除该脚本？'))) return; await api.delete(`/api/script/${e}`) }
-    else if (op === 'tplCreate') await api.post('/api/templateform', { name: '新模板表单' })
-    else if (op === 'tplDelete') { if (!(await confirmMsg('确定删除该模板表单？'))) return; await api.delete(`/api/templateform/${e}`) }
-    else if (op === 'viewCatCreate') await api.post('/api/viewcategory', { name: '新分类' })
-    else if (op === 'viewCatDelete') { if (!(await confirmMsg('确定删除该视图分类？'))) return; await api.delete(`/api/viewcategory/${e}`) }
-    else if (op === 'viewFieldCreate') await api.post('/api/viewfieldconfig', {})
+    else if (op === 'viewDelete') {
+      if (!(await confirmMsg('确定删除该视图？'))) return
+      await api.delete(`/api/view/${e}`)
+    } else if (op === 'scriptUpdate') await api.put(`/api/script/${e}`, {})
+    else if (op === 'scriptDelete') {
+      if (!(await confirmMsg('确定删除该脚本？'))) return
+      await api.delete(`/api/script/${e}`)
+    } else if (op === 'tplCreate') await api.post('/api/templateform', { name: '新模板表单' })
+    else if (op === 'tplDelete') {
+      if (!(await confirmMsg('确定删除该模板表单？'))) return
+      await api.delete(`/api/templateform/${e}`)
+    } else if (op === 'viewCatCreate') await api.post('/api/viewcategory', { name: '新分类' })
+    else if (op === 'viewCatDelete') {
+      if (!(await confirmMsg('确定删除该视图分类？'))) return
+      await api.delete(`/api/viewcategory/${e}`)
+    } else if (op === 'viewFieldCreate') await api.post('/api/viewfieldconfig', {})
     else if (op === 'viewFieldUpdate') await api.put(`/api/viewfieldconfig/${e}`, {})
-    else if (op === 'viewFieldDelete') { if (!(await confirmMsg('确定删除该视图字段？'))) return; await api.delete(`/api/viewfieldconfig/${e}`) }
-    else if (op === 'commentCreate') await api.post('/api/comment', { content: '' })
-    else if (op === 'commentDelete') { if (!(await confirmMsg('确定删除该评论？'))) return; await api.delete(`/api/comment/${e}`) }
-    else if (op === 'appdictCreate') await api.post('/api/design/appdict', { name: '新应用字典' })
+    else if (op === 'viewFieldDelete') {
+      if (!(await confirmMsg('确定删除该视图字段？'))) return
+      await api.delete(`/api/viewfieldconfig/${e}`)
+    } else if (op === 'commentCreate') await api.post('/api/comment', { content: '' })
+    else if (op === 'commentDelete') {
+      if (!(await confirmMsg('确定删除该评论？'))) return
+      await api.delete(`/api/comment/${e}`)
+    } else if (op === 'appdictCreate') await api.post('/api/design/appdict', { name: '新应用字典' })
     else if (op === 'appdictUpdate') await api.put(`/api/design/appdict/${e}`, {})
-    else if (op === 'appdictDelete') { if (!(await confirmMsg('确定删除该设计字典？'))) return; await api.delete(`/api/design/appdict/${e}`) }
-    else if (op === 'entColumnSave') await api.post(`/api/cms/core/entity/column/save/${e}`, {})
+    else if (op === 'appdictDelete') {
+      if (!(await confirmMsg('确定删除该设计字典？'))) return
+      await api.delete(`/api/design/appdict/${e}`)
+    } else if (op === 'entColumnSave') await api.post(`/api/cms/core/entity/column/save/${e}`, {})
     else if (op === 'entModuleSave') await api.post(`/api/cms/core/entity/module/save/${e}`, {})
     else if (op === 'entIndexSave') await api.post(`/api/cms/core/entity/index/save/${e}`, {})
     else await api.post(`/api/cms/core/entity/note/save/${e}`, {})
@@ -497,10 +521,16 @@ async function cmsQuery3(op: string) {
     else if (op === 'appPrev') await api.put('/api/appinfo/filter/list/0/prev/20', {})
     else if (op === 'scriptPaging') await api.post('/api/script/list/paging/1/size/20', {})
     else if (op === 'viewRecordLog') await api.post('/api/viewrecord/list/install/log/paging/1/size/20', {})
-    else if (op === 'viewCat') { const id = prompt('视图分类 ID:', '') || ''; await api.get(`/api/viewcategory/${encodeURIComponent(id)}`) }
-    else if (op === 'viewField') { const id = prompt('视图字段配置 ID:', '') || ''; await api.get(`/api/viewfieldconfig/${encodeURIComponent(id)}`) }
-    else if (op === 'docArchive') { const id = prompt('文档 ID:', '') || ''; await api.get(`/api/document/achive/${encodeURIComponent(id)}`) }
-    else if (op === 'uuid') await api.get('/api/cms/uuid/random')
+    else if (op === 'viewCat') {
+      const id = prompt('视图分类 ID:', '') || ''
+      await api.get(`/api/viewcategory/${encodeURIComponent(id)}`)
+    } else if (op === 'viewField') {
+      const id = prompt('视图字段配置 ID:', '') || ''
+      await api.get(`/api/viewfieldconfig/${encodeURIComponent(id)}`)
+    } else if (op === 'docArchive') {
+      const id = prompt('文档 ID:', '') || ''
+      await api.get(`/api/document/achive/${encodeURIComponent(id)}`)
+    } else if (op === 'uuid') await api.get('/api/cms/uuid/random')
     else await api.put('/api/viewrecord/unread', {})
     toast.success('CMS 查询已提交')
   } catch (e: any) {
@@ -511,17 +541,45 @@ async function cmsQuery3(op: string) {
 async function cmsWrite2(op: string) {
   try {
     if (op === 'docCatChange') await api.put('/api/document/category/change', {})
-    else if (op === 'catBindView') { const id = prompt('分类 ID:', '') || ''; await api.put(`/api/categoryinfo/bind/${encodeURIComponent(id)}/view`, {}) }
-    else if (op === 'appErase') { const id = prompt('要擦除的应用 ID:', '') || ''; if (!(await confirmMsg('确定擦除该应用？'))) return; await api.delete(`/api/appinfo/erase/app/${encodeURIComponent(id)}`) }
-    else if (op === 'catErase') { const id = prompt('要擦除的分类 ID:', '') || ''; if (!(await confirmMsg('确定擦除该分类？'))) return; await api.delete(`/api/categoryinfo/erase/category/${encodeURIComponent(id)}`) }
-    else if (op === 'docBatchModify') await api.put('/api/document/batch/data/modify', {})
-    else if (op === 'docBatchDelete') { const id = prompt('批次 ID:', '') || ''; if (!(await confirmMsg('确定批量删除该文档？'))) return; await api.delete(`/api/document/batch/${encodeURIComponent(id)}`) }
-    else if (op === 'docPublishHtml') { const id = prompt('文档 ID:', '') || ''; await api.post(`/api/document/${encodeURIComponent(id)}/publish/html`, {}) }
-    else if (op === 'viewPublish') { const id = prompt('视图 ID:', '') || ''; await api.post(`/api/cms/view/publish/${encodeURIComponent(id)}`, {}) }
-    else if (op === 'colDelete') { const id = prompt('栏目 ID:', '') || ''; if (!(await confirmMsg('确定删除该栏目？'))) return; await api.delete(`/api/cms/core/entity/column/delete/${encodeURIComponent(id)}`) }
-    else if (op === 'moduleDelete') { const id = prompt('模块 ID:', '') || ''; if (!(await confirmMsg('确定删除该模块？'))) return; await api.delete(`/api/cms/core/entity/module/delete/${encodeURIComponent(id)}`) }
-    else if (op === 'indexDelete') { const id = prompt('索引 ID:', '') || ''; if (!(await confirmMsg('确定删除该索引？'))) return; await api.delete(`/api/cms/core/entity/index/delete/${encodeURIComponent(id)}`) }
-    else { const id = prompt('笔记 ID:', '') || ''; if (!(await confirmMsg('确定删除该笔记？'))) return; await api.delete(`/api/cms/core/entity/note/delete/${encodeURIComponent(id)}`) }
+    else if (op === 'catBindView') {
+      const id = prompt('分类 ID:', '') || ''
+      await api.put(`/api/categoryinfo/bind/${encodeURIComponent(id)}/view`, {})
+    } else if (op === 'appErase') {
+      const id = prompt('要擦除的应用 ID:', '') || ''
+      if (!(await confirmMsg('确定擦除该应用？'))) return
+      await api.delete(`/api/appinfo/erase/app/${encodeURIComponent(id)}`)
+    } else if (op === 'catErase') {
+      const id = prompt('要擦除的分类 ID:', '') || ''
+      if (!(await confirmMsg('确定擦除该分类？'))) return
+      await api.delete(`/api/categoryinfo/erase/category/${encodeURIComponent(id)}`)
+    } else if (op === 'docBatchModify') await api.put('/api/document/batch/data/modify', {})
+    else if (op === 'docBatchDelete') {
+      const id = prompt('批次 ID:', '') || ''
+      if (!(await confirmMsg('确定批量删除该文档？'))) return
+      await api.delete(`/api/document/batch/${encodeURIComponent(id)}`)
+    } else if (op === 'docPublishHtml') {
+      const id = prompt('文档 ID:', '') || ''
+      await api.post(`/api/document/${encodeURIComponent(id)}/publish/html`, {})
+    } else if (op === 'viewPublish') {
+      const id = prompt('视图 ID:', '') || ''
+      await api.post(`/api/cms/view/publish/${encodeURIComponent(id)}`, {})
+    } else if (op === 'colDelete') {
+      const id = prompt('栏目 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该栏目？'))) return
+      await api.delete(`/api/cms/core/entity/column/delete/${encodeURIComponent(id)}`)
+    } else if (op === 'moduleDelete') {
+      const id = prompt('模块 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该模块？'))) return
+      await api.delete(`/api/cms/core/entity/module/delete/${encodeURIComponent(id)}`)
+    } else if (op === 'indexDelete') {
+      const id = prompt('索引 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该索引？'))) return
+      await api.delete(`/api/cms/core/entity/index/delete/${encodeURIComponent(id)}`)
+    } else {
+      const id = prompt('笔记 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该笔记？'))) return
+      await api.delete(`/api/cms/core/entity/note/delete/${encodeURIComponent(id)}`)
+    }
     toast.success('CMS 写操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
@@ -530,12 +588,20 @@ async function cmsWrite2(op: string) {
 // rev403：CMS 分类信息 权限/扩展内容存/对象清单/投影执行 + 文档密文发布内容 + 脚本按应用运行 真实路由（categoryinfo/document/script handler 已核 Path+Json，projection Path-only；用户触发）
 async function cmsWrite3(op: string) {
   try {
-    if (op === 'catPermission') { const id = encodeURIComponent(prompt('分类 ID:', '') || ''); await api.post(`/api/categoryinfo/${id}/permission`, {}) }
-    else if (op === 'catExtContent') await api.post('/api/categoryinfo/extContent', {})
+    if (op === 'catPermission') {
+      const id = encodeURIComponent(prompt('分类 ID:', '') || '')
+      await api.post(`/api/categoryinfo/${id}/permission`, {})
+    } else if (op === 'catExtContent') await api.post('/api/categoryinfo/extContent', {})
     else if (op === 'catListObjects') await api.post('/api/categoryinfo/list/objects', {})
-    else if (op === 'catProjection') { const id = encodeURIComponent(prompt('分类 ID:', '') || ''); await api.post(`/api/categoryinfo/${id}/execute/projection`, {}) }
-    else if (op === 'docPublishContent') await api.put('/api/document/publish/content', {})
-    else { const un = encodeURIComponent(prompt('脚本唯一名:', '') || ''); const flag = encodeURIComponent(prompt('应用标识:', '') || ''); await api.post(`/api/script/${un}/app/${flag}`, {}) }
+    else if (op === 'catProjection') {
+      const id = encodeURIComponent(prompt('分类 ID:', '') || '')
+      await api.post(`/api/categoryinfo/${id}/execute/projection`, {})
+    } else if (op === 'docPublishContent') await api.put('/api/document/publish/content', {})
+    else {
+      const un = encodeURIComponent(prompt('脚本唯一名:', '') || '')
+      const flag = encodeURIComponent(prompt('应用标识:', '') || '')
+      await api.post(`/api/script/${un}/app/${flag}`, {})
+    }
     toast.success('CMS 操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))

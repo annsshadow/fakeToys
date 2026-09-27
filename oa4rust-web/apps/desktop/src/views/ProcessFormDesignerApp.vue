@@ -175,9 +175,19 @@ async function loadFormDetails() {
   const appId = String(first.application ?? '')
   try {
     const [detail, versions, appForms] = await Promise.all([
-      fid ? api.get(`/api/processplatform/assemble/designer/form/${encodeURIComponent(fid)}`).catch(() => null) : Promise.resolve(null),
-      fid ? api.get(`/api/processplatform/assemble/designer/formversion/list/form/${encodeURIComponent(fid)}`).catch(() => null) : Promise.resolve(null),
-      appId ? api.get(`/api/processplatform/assemble/designer/form/list/application/${encodeURIComponent(appId)}`).catch(() => null) : Promise.resolve(null),
+      fid
+        ? api.get(`/api/processplatform/assemble/designer/form/${encodeURIComponent(fid)}`).catch(() => null)
+        : Promise.resolve(null),
+      fid
+        ? api
+            .get(`/api/processplatform/assemble/designer/formversion/list/form/${encodeURIComponent(fid)}`)
+            .catch(() => null)
+        : Promise.resolve(null),
+      appId
+        ? api
+            .get(`/api/processplatform/assemble/designer/form/list/application/${encodeURIComponent(appId)}`)
+            .catch(() => null)
+        : Promise.resolve(null),
     ])
     const fName = (detail as any)?.data?.name ?? (fid || '—')
     const vN = Array.isArray((versions as any)?.data) ? (versions as any).data.length : 0
@@ -198,7 +208,9 @@ async function loadFormCursors() {
   const appId = String(first?.application ?? '0')
   try {
     const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
-    const verList = await s(api.get(`/api/processplatform/assemble/designer/formversion/list/form/${encodeURIComponent(fid)}`))
+    const verList = await s(
+      api.get(`/api/processplatform/assemble/designer/formversion/list/form/${encodeURIComponent(fid)}`),
+    )
     const verRows = Array.isArray((verList as any)?.data) ? (verList as any).data : []
     const vid = verRows[0] ? String(verRows[0].id ?? '0') : '0'
     const [next, prev, fieldsById, fieldsByApp, verDetail] = await Promise.all([

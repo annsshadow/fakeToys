@@ -149,7 +149,7 @@ async function loadDesignerAssets() {
     toast.error('请先打开一个门户设计')
     return
   }
-  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
     const [wlist, slist, dlist] = await Promise.all([
       s(api.get<any>(`/api/portal/assemble/designer/widget/list/portal/${encodeURIComponent(id)}`)),
@@ -161,8 +161,11 @@ async function loadDesignerAssets() {
     const sid = pick(slist)
     const did = pick(dlist)
     const tid = '0'
-    const svList = await s(api.get<any>(`/api/portal/assemble/designer/scriptversion/list/script/${encodeURIComponent(sid)}`))
-    const svId = Array.isArray((svList as any)?.data) && (svList as any).data[0] ? String((svList as any).data[0].id ?? '0') : '0'
+    const svList = await s(
+      api.get<any>(`/api/portal/assemble/designer/scriptversion/list/script/${encodeURIComponent(sid)}`),
+    )
+    const svId =
+      Array.isArray((svList as any)?.data) && (svList as any).data[0] ? String((svList as any).data[0].id ?? '0') : '0'
     const [widget, script, svDetail, templatepage, dict] = await Promise.all([
       s(api.get<any>(`/api/portal/assemble/designer/widget/${encodeURIComponent(wid)}`)),
       s(api.get<any>(`/api/portal/assemble/designer/script/${encodeURIComponent(sid)}`)),
@@ -185,7 +188,7 @@ async function loadDesignerCategories() {
     toast.error('请先打开一个门户设计')
     return
   }
-  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
     const portalResp = await s(api.get<any>(`/api/portal/assemble/designer/portal/${encodeURIComponent(id)}`))
     const cat = String((portalResp as any)?.data?.category ?? 'default')
@@ -193,10 +196,18 @@ async function loadDesignerCategories() {
     const pageNo = String((portalResp as any)?.data?.pageIndex ?? '1')
     const [byCat, byPortal, icon, files, versions, catFull] = await Promise.all([
       s(api.get<any>(`/api/portal/assemble/designer/page/list/${encodeURIComponent(cat)}`)),
-      s(api.get<any>(`/api/portal/assemble/designer/list/portal/${encodeURIComponent(pageNo)}/${encodeURIComponent(id)}`)),
+      s(
+        api.get<any>(
+          `/api/portal/assemble/designer/list/portal/${encodeURIComponent(pageNo)}/${encodeURIComponent(id)}`,
+        ),
+      ),
       s(api.get<any>(`/api/portal/assemble/designer/portal/icon/${encodeURIComponent(id)}`)),
       s(api.get<any>(`/api/portal/assemble/designer/file/list/application/${encodeURIComponent(appFlag)}`)),
-      s(api.get<any>(`/api/portal/assemble/designer/pageversion/list/${encodeURIComponent(pageNo)}/${encodeURIComponent(id)}`)),
+      s(
+        api.get<any>(
+          `/api/portal/assemble/designer/pageversion/list/${encodeURIComponent(pageNo)}/${encodeURIComponent(id)}`,
+        ),
+      ),
       s(api.get<any>(`/api/portal/assemble/designer/portal/list/portalcategory/${encodeURIComponent(cat)}`)),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
@@ -214,7 +225,7 @@ async function loadDesignerPaging() {
     toast.error('请先打开一个门户设计')
     return
   }
-  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
     const portalResp = await s(api.get<any>(`/api/portal/assemble/designer/portal/${encodeURIComponent(id)}`))
     const cat = String((portalResp as any)?.data?.category ?? 'default')
@@ -222,7 +233,11 @@ async function loadDesignerPaging() {
     const [dicts, file, versions, summary, scripts] = await Promise.all([
       s(api.get<any>('/api/portal/assemble/designer/dict/list/paging/1/20/20')),
       s(api.get<any>(`/api/portal/assemble/designer/file/${encodeURIComponent(id)}`)),
-      s(api.get<any>(`/api/portal/assemble/designer/pageversion/list/${encodeURIComponent(pageNum)}/${encodeURIComponent(id)}`)),
+      s(
+        api.get<any>(
+          `/api/portal/assemble/designer/pageversion/list/${encodeURIComponent(pageNum)}/${encodeURIComponent(id)}`,
+        ),
+      ),
       s(api.get<any>(`/api/portal/assemble/designer/portal/list/summary/portalcategory/${encodeURIComponent(cat)}`)),
       s(api.get<any>('/api/portal/assemble/designer/script/list/paging/1/20/20')),
     ])
@@ -236,7 +251,7 @@ async function loadDesignerPaging() {
 // x_portal_output WHERE flag / portal_flag · x_portal_file WHERE id< 游标；arity 已核
 async function loadDesignerOutputs() {
   const id = String(activeId.value ?? '0')
-  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
     const [outFile, outPortal, filePrev] = await Promise.all([
       s(api.get<any>(`/api/portal/assemble/designer/output/select/file/${encodeURIComponent(id)}`)),
@@ -279,7 +294,7 @@ async function openDesign(id: string) {
     widgets.value = parsePortalContent(response.data).widgets
     selectedId.value = ''
     // 附带消费门户设计详情/权限/组件列表 3 条真实 distinct 路由（x_portal / x_portal_widget）
-    const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [portal, perm, wlist] = await Promise.all([
       settle(api.get<any>(`/api/portal/assemble/designer/portal/${encodeURIComponent(id)}`)),
       settle(api.get<any>(`/api/portal/assemble/designer/portal/permission/${encodeURIComponent(id)}`)),
@@ -352,12 +367,26 @@ async function saveDesign() {
 // rev377：门户设计器 保存/页版本清单/页删/模板页分类/组件删/设计器详情 真实路由（全字面量含参占位；避 file/upload 多部件与 file/list/{id}/{next}/{count} 3参 arity）
 async function pdDesignerOps(op: string) {
   try {
-    if (op === 'saveById') { const id = encodeURIComponent(prompt('设计 ID:', activeId.value || '') || ''); await api.post(`/api/portal/assemble/designer/save/${id}`, {}) }
-    else if (op === 'pageVersions') { const pid = encodeURIComponent(prompt('页面 ID:', '') || ''); await api.get(`/api/portal/assemble/designer/pageversion/list/1/${pid}`) }
-    else if (op === 'pageDelete') { const id = encodeURIComponent(prompt('要删除的页面 ID:', '') || ''); if (!(await confirmMsg('确定删除该页面？'))) return; await api.delete(`/api/portal/assemble/designer/page/delete/${id}`) }
-    else if (op === 'tplCategory') await api.put('/api/portal/assemble/designer/templatepage/list/category', {})
-    else if (op === 'widgetDelete') { const id = encodeURIComponent(prompt('要删除的组件 ID:', '') || ''); if (!(await confirmMsg('确定删除该组件？'))) return; await api.delete(`/api/portal/assemble/designer/widget/delete/${id}`) }
-    else { const id = encodeURIComponent(prompt('设计器对象 ID:', '') || ''); const cnt = encodeURIComponent(prompt('数量:', '10') || '10'); await api.get(`/api/portal/assemble/designer/${id}/${cnt}`) }
+    if (op === 'saveById') {
+      const id = encodeURIComponent(prompt('设计 ID:', activeId.value || '') || '')
+      await api.post(`/api/portal/assemble/designer/save/${id}`, {})
+    } else if (op === 'pageVersions') {
+      const pid = encodeURIComponent(prompt('页面 ID:', '') || '')
+      await api.get(`/api/portal/assemble/designer/pageversion/list/1/${pid}`)
+    } else if (op === 'pageDelete') {
+      const id = encodeURIComponent(prompt('要删除的页面 ID:', '') || '')
+      if (!(await confirmMsg('确定删除该页面？'))) return
+      await api.delete(`/api/portal/assemble/designer/page/delete/${id}`)
+    } else if (op === 'tplCategory') await api.put('/api/portal/assemble/designer/templatepage/list/category', {})
+    else if (op === 'widgetDelete') {
+      const id = encodeURIComponent(prompt('要删除的组件 ID:', '') || '')
+      if (!(await confirmMsg('确定删除该组件？'))) return
+      await api.delete(`/api/portal/assemble/designer/widget/delete/${id}`)
+    } else {
+      const id = encodeURIComponent(prompt('设计器对象 ID:', '') || '')
+      const cnt = encodeURIComponent(prompt('数量:', '10') || '10')
+      await api.get(`/api/portal/assemble/designer/${id}/${cnt}`)
+    }
     toast.success('门户设计器操作已提交')
   } catch (error: any) {
     toast.error(`操作失败: ${error?.message ?? '未知错误'}`)

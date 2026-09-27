@@ -108,10 +108,7 @@ async function loadPortalSurface() {
 async function loadPortalList() {
   try {
     // GET /api/portal/list + /api/portalcategory/list —— 门户与门户分类列表
-    const [portals, cats] = await Promise.all([
-      api.get('/api/portal/list'),
-      api.get('/api/portalcategory/list'),
-    ])
+    const [portals, cats] = await Promise.all([api.get('/api/portal/list'), api.get('/api/portalcategory/list')])
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     portalListText.value = `门户 ${n(portals)} 个 / 分类 ${n(cats)} 个`
   } catch (e: any) {
@@ -195,10 +192,18 @@ async function loadPortalMobileFacets() {
   try {
     const flag = '0'
     const [dictData, corner, widgetMobile, widgetByFlag] = await Promise.all([
-      s(api.get(`/api/portal/assemble/surface/dict/portal/data/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}`)),
+      s(
+        api.get(
+          `/api/portal/assemble/surface/dict/portal/data/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}`,
+        ),
+      ),
       s(api.get(`/api/portal/assemble/surface/portal/${encodeURIComponent(flag)}/corner/mark`)),
       s(api.get(`/api/portal/assemble/surface/widget/${encodeURIComponent(flag)}/mobile`)),
-      s(api.get(`/api/portal/assemble/surface/widget/portal/mobile/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}`)),
+      s(
+        api.get(
+          `/api/portal/assemble/surface/widget/portal/mobile/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}`,
+        ),
+      ),
     ])
     const hit = (r: any) => ((r as any)?.data ? '命中' : '未命中')
     portalListText.value = `字典数据 ${hit(dictData)} · 角标 ${hit(corner)} · 组件移动(按id) ${hit(widgetMobile)} · 组件移动(按flag) ${hit(widgetByFlag)}`
@@ -296,7 +301,8 @@ async function designerCreate(kind: 'portal' | 'page' | 'widget' | 'templatepage
   if (!name) return
   try {
     if (kind === 'portal') await api.post(`/api/portal/assemble/designer/portal`, { name, description: '' })
-    else if (kind === 'page') await api.post(`/api/portal/assemble/designer/page`, { name, category: 'default', content: {} })
+    else if (kind === 'page')
+      await api.post(`/api/portal/assemble/designer/page`, { name, category: 'default', content: {} })
     else if (kind === 'widget') await api.post(`/api/portal/assemble/designer/widget`, { name })
     else if (kind === 'templatepage') await api.post(`/api/portal/assemble/designer/templatepage`, { name })
     else await api.post(`/api/portal/assemble/designer/script`, { name })
@@ -309,10 +315,17 @@ async function designerUpdate(kind: 'portal' | 'page' | 'widget' | 'dict' | 'scr
   const id = prompt(`要更新的${kind} ID:`, '')
   if (!id) return
   try {
-    if (kind === 'portal') await api.put(`/api/portal/assemble/designer/portal/${encodeURIComponent(id)}`, { name: '更新门户', description: '' })
-    else if (kind === 'page') await api.put(`/api/portal/assemble/designer/page/${encodeURIComponent(id)}`, { content: {} })
-    else if (kind === 'widget') await api.put(`/api/portal/assemble/designer/widget/${encodeURIComponent(id)}`, { name: '更新组件' })
-    else if (kind === 'dict') await api.put(`/api/portal/assemble/designer/dict/save/${encodeURIComponent(id)}`, { data: {} })
+    if (kind === 'portal')
+      await api.put(`/api/portal/assemble/designer/portal/${encodeURIComponent(id)}`, {
+        name: '更新门户',
+        description: '',
+      })
+    else if (kind === 'page')
+      await api.put(`/api/portal/assemble/designer/page/${encodeURIComponent(id)}`, { content: {} })
+    else if (kind === 'widget')
+      await api.put(`/api/portal/assemble/designer/widget/${encodeURIComponent(id)}`, { name: '更新组件' })
+    else if (kind === 'dict')
+      await api.put(`/api/portal/assemble/designer/dict/save/${encodeURIComponent(id)}`, { data: {} })
     else await api.put(`/api/portal/assemble/designer/script/${encodeURIComponent(id)}`, { text: '' })
     toast.success(`${kind} 已更新`)
   } catch (e: any) {
@@ -327,7 +340,8 @@ async function designerDelete(kind: 'portal' | 'page' | 'widget' | 'templatepage
     if (kind === 'portal') await api.delete(`/api/portal/assemble/designer/portal/${encodeURIComponent(id)}`)
     else if (kind === 'page') await api.delete(`/api/portal/assemble/designer/page/${encodeURIComponent(id)}`)
     else if (kind === 'widget') await api.delete(`/api/portal/assemble/designer/widget/${encodeURIComponent(id)}`)
-    else if (kind === 'templatepage') await api.delete(`/api/portal/assemble/designer/templatepage/${encodeURIComponent(id)}`)
+    else if (kind === 'templatepage')
+      await api.delete(`/api/portal/assemble/designer/templatepage/${encodeURIComponent(id)}`)
     else if (kind === 'dict') await api.delete(`/api/portal/assemble/designer/dict/delete/${encodeURIComponent(id)}`)
     else await api.delete(`/api/portal/assemble/designer/script/${encodeURIComponent(id)}`)
     toast.success(`${kind} 已删除`)
@@ -390,22 +404,32 @@ async function surfaceOps(op: string) {
     } else if (op === 'dictData') {
       const df = prompt('字典 flag:', '') || ''
       const pf = prompt('门户 flag:', 'default') || 'default'
-      await api.get(`/api/portal/assemble/surface/dict/portal/path/data/${encodeURIComponent(df)}/${encodeURIComponent(pf)}`)
+      await api.get(
+        `/api/portal/assemble/surface/dict/portal/path/data/${encodeURIComponent(df)}/${encodeURIComponent(pf)}`,
+      )
     } else if (op === 'dictSet') {
       const df = prompt('字典 flag:', '') || ''
       const pf = prompt('门户 flag:', 'default') || 'default'
       const path = prompt('路径:', 'root') || 'root'
-      await api.post(`/api/portal/assemble/surface/dict/${encodeURIComponent(df)}/portal/${encodeURIComponent(pf)}/${encodeURIComponent(path)}/data`, {})
+      await api.post(
+        `/api/portal/assemble/surface/dict/${encodeURIComponent(df)}/portal/${encodeURIComponent(pf)}/${encodeURIComponent(path)}/data`,
+        {},
+      )
     } else if (op === 'dictDel') {
       const df = prompt('字典 flag:', '') || ''
       const pf = prompt('门户 flag:', 'default') || 'default'
       const path = prompt('路径:', 'root') || 'root'
       if (!(await confirmMsg('确定删除该门户字典数据？'))) return
-      await api.delete(`/api/portal/assemble/surface/dict/${encodeURIComponent(df)}/portal/${encodeURIComponent(pf)}/${encodeURIComponent(path)}/data`)
+      await api.delete(
+        `/api/portal/assemble/surface/dict/${encodeURIComponent(df)}/portal/${encodeURIComponent(pf)}/${encodeURIComponent(path)}/data`,
+      )
     } else {
       const portal = prompt('门户 flag:', 'default') || 'default'
       const name = prompt('脚本名:', '') || ''
-      await api.post(`/api/portal/assemble/surface/script/portal/${encodeURIComponent(portal)}/name/${encodeURIComponent(name)}`, {})
+      await api.post(
+        `/api/portal/assemble/surface/script/portal/${encodeURIComponent(portal)}/name/${encodeURIComponent(name)}`,
+        {},
+      )
     }
     toast.success('门户表面操作已提交')
   } catch (e: any) {

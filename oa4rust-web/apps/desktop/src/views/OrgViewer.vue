@@ -218,9 +218,9 @@
 </template>
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
-import { confirmMsg, toast } from '../utils/toast'
 import { useQuery } from '@tanstack/vue-query'
 import { ref } from 'vue'
+import { confirmMsg, toast } from '../utils/toast'
 
 interface N {
   id: string
@@ -301,7 +301,11 @@ async function loadOrgControlReads() {
   try {
     const flag = '0'
     const [idByDuty, vcf, subDirectType, byIdLevel, byIdType, importResult, cardPaging] = await Promise.all([
-      s(api.get(`/api/organization/assemble/control/identity/list/${flag}/unitduty/name/${encodeURIComponent('管理员')}`)),
+      s(
+        api.get(
+          `/api/organization/assemble/control/identity/list/${flag}/unitduty/name/${encodeURIComponent('管理员')}`,
+        ),
+      ),
       s(api.get(`/api/organization/assemble/control/personcard/listVCf/${flag}`)),
       s(api.get(`/api/organization/assemble/control/unit/list/${flag}/sub/direct/type/${flag}`)),
       s(api.get(`/api/organization/assemble/control/unit/identity/${flag}/level/1`)),
@@ -309,7 +313,7 @@ async function loadOrgControlReads() {
       s(api.get(`/api/organization/assemble/control/inputperson/result/flag/${flag}`)),
       s(api.get(`/api/organization/assemble/control/personcard/listpagingwithgroup/page/1/size/20`)),
     ])
-    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : (r as any)?.data ? 1 : 0)
     orgMetaText.value = `按职务名身份 ${n(idByDuty)} / 名片vCard ${n(vcf)} / 子直属按类型 ${n(subDirectType)} / 按身份层级单位 ${n(byIdLevel)} / 按身份类型单位 ${n(byIdType)} / 导入结果 ${n(importResult)} / 名片分页 ${n(cardPaging)}`
   } catch (e: any) {
     toast.error('加载组织控制读取失败: ' + (e?.message ?? ''))
@@ -379,7 +383,15 @@ async function loadOrgAdminOps() {
   try {
     const rs = await Promise.all([
       s(api.get(`/api/organization/assemble/control/person/unlock/${encodeURIComponent(flag)}`)),
-      s(api.post('/api/empowerlog', { application: app, process: proc, fromIdentity: fromId, toIdentity: toId, work: '0' })),
+      s(
+        api.post('/api/empowerlog', {
+          application: app,
+          process: proc,
+          fromIdentity: fromId,
+          toIdentity: toId,
+          work: '0',
+        }),
+      ),
     ])
     const hit = rs.filter((r) => (r as any)?.data != null).length
     orgMetaText.value = `管理员解锁/授权日志 ${rs.length} 条，命中 ${hit}`
@@ -686,7 +698,10 @@ async function orgUnitWrite(op: string) {
       if (!unit) return
       const name = prompt('属性名:', '') || ''
       const val = prompt('属性值（逗号分隔）:', '') || ''
-      const attributeList = val.split(',').map((x) => x.trim()).filter(Boolean)
+      const attributeList = val
+        .split(',')
+        .map((x) => x.trim())
+        .filter(Boolean)
       if (op === 'attrSet') await api.post('/api/unitattribute/set/unit/name', { unit, name, attributeList })
       else await api.post('/api/unitattribute/append/unit/name', { unit, name, attributeList })
     } else if (op === 'groupCreate') {
@@ -754,14 +769,36 @@ async function orgLikeReads() {
 // rev369：组织控制 群组成员增删/身份排序/名片二维码/单位下级按类型/群组下人员/批量删除 真实动作（GET/POST，用户触发确认；避 password/unlock/icon 凭证类）
 async function orgCtlActions(op: string) {
   try {
-    if (op === 'memberAdd') { const flag = prompt('群组 flag:', '') || ''; await api.get(`/api/organization/assemble/control/group/${encodeURIComponent(flag)}/add/member`) }
-    else if (op === 'memberDel') { const flag = prompt('群组 flag:', '') || ''; if (!(await confirmMsg('确定移除群组成员？'))) return; await api.get(`/api/organization/assemble/control/group/${encodeURIComponent(flag)}/delete/member`) }
-    else if (op === 'identityOrder') { const flag = prompt('身份 flag:', '') || ''; const follow = prompt('置于此身份之前 flag:', '') || ''; await api.get(`/api/organization/assemble/control/identity/${encodeURIComponent(flag)}/order/before/${encodeURIComponent(follow)}`) }
-    else if (op === 'cardQr') { const id = prompt('名片 cardId:', '') || ''; await api.get(`/api/organization/assemble/control/personcard/createCode/${encodeURIComponent(id)}`) }
-    else if (op === 'unitSupType') { const flag = prompt('单位 flag:', '') || ''; const type = prompt('类型:', '') || ''; await api.get(`/api/organization/assemble/control/unit/list/${encodeURIComponent(flag)}/sup/nested/type/${encodeURIComponent(type)}`) }
-    else if (op === 'personByGroup') { const flag = prompt('群组 flag:', '') || ''; await api.get(`/api/organization/assemble/control/person/list/group/${encodeURIComponent(flag)}/sub/nested`) }
-    else if (op === 'exportAll') await api.get('/api/organization/assemble/control/export/export/all')
-    else { if (!(await confirmMsg('确定批量删除人员？'))) return; await api.post('/api/organization/assemble/control/person/list/delete/1/size/20', {}) }
+    if (op === 'memberAdd') {
+      const flag = prompt('群组 flag:', '') || ''
+      await api.get(`/api/organization/assemble/control/group/${encodeURIComponent(flag)}/add/member`)
+    } else if (op === 'memberDel') {
+      const flag = prompt('群组 flag:', '') || ''
+      if (!(await confirmMsg('确定移除群组成员？'))) return
+      await api.get(`/api/organization/assemble/control/group/${encodeURIComponent(flag)}/delete/member`)
+    } else if (op === 'identityOrder') {
+      const flag = prompt('身份 flag:', '') || ''
+      const follow = prompt('置于此身份之前 flag:', '') || ''
+      await api.get(
+        `/api/organization/assemble/control/identity/${encodeURIComponent(flag)}/order/before/${encodeURIComponent(follow)}`,
+      )
+    } else if (op === 'cardQr') {
+      const id = prompt('名片 cardId:', '') || ''
+      await api.get(`/api/organization/assemble/control/personcard/createCode/${encodeURIComponent(id)}`)
+    } else if (op === 'unitSupType') {
+      const flag = prompt('单位 flag:', '') || ''
+      const type = prompt('类型:', '') || ''
+      await api.get(
+        `/api/organization/assemble/control/unit/list/${encodeURIComponent(flag)}/sup/nested/type/${encodeURIComponent(type)}`,
+      )
+    } else if (op === 'personByGroup') {
+      const flag = prompt('群组 flag:', '') || ''
+      await api.get(`/api/organization/assemble/control/person/list/group/${encodeURIComponent(flag)}/sub/nested`)
+    } else if (op === 'exportAll') await api.get('/api/organization/assemble/control/export/export/all')
+    else {
+      if (!(await confirmMsg('确定批量删除人员？'))) return
+      await api.post('/api/organization/assemble/control/person/list/delete/1/size/20', {})
+    }
     toast.success('组织控制操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
@@ -784,7 +821,18 @@ async function orgExpressReads() {
   }
 }
 // rev322：组织控制 真实写端点（用户触发 prompt+确认，非造假）——人员/单位/身份/群组/角色/属性/权限设置/名片 建改删+成员+账号；全字面量路径
-async function orgCreate(kind: 'person' | 'unit' | 'identity' | 'group' | 'role' | 'personattribute' | 'permissionsetting' | 'personcard' | 'inputperson') {
+async function orgCreate(
+  kind:
+    | 'person'
+    | 'unit'
+    | 'identity'
+    | 'group'
+    | 'role'
+    | 'personattribute'
+    | 'permissionsetting'
+    | 'personcard'
+    | 'inputperson',
+) {
   const name = prompt(`新建${kind}（名称/标识）:`, '')
   if (!name) return
   try {
@@ -794,7 +842,8 @@ async function orgCreate(kind: 'person' | 'unit' | 'identity' | 'group' | 'role'
     else if (kind === 'group') await api.post('/api/organization/assemble/control/group', { name })
     else if (kind === 'role') await api.post('/api/organization/assemble/control/role', { name })
     else if (kind === 'personattribute') await api.post('/api/organization/assemble/control/personattribute', { name })
-    else if (kind === 'permissionsetting') await api.post('/api/organization/assemble/control/permissionsetting', { name })
+    else if (kind === 'permissionsetting')
+      await api.post('/api/organization/assemble/control/permissionsetting', { name })
     else if (kind === 'personcard') await api.post('/api/organization/assemble/control/personcard', { name })
     else await api.post('/api/organization/assemble/control/inputperson', { name })
     toast.success(`${kind} 已创建`)
@@ -802,7 +851,19 @@ async function orgCreate(kind: 'person' | 'unit' | 'identity' | 'group' | 'role'
     toast.error(`新建${kind}失败: ` + (e?.message ?? ''))
   }
 }
-async function orgUpdate(kind: 'person' | 'unit' | 'identity' | 'group' | 'role' | 'unitduty' | 'unitattribute' | 'personattribute' | 'permissionsetting' | 'personcard') {
+async function orgUpdate(
+  kind:
+    | 'person'
+    | 'unit'
+    | 'identity'
+    | 'group'
+    | 'role'
+    | 'unitduty'
+    | 'unitattribute'
+    | 'personattribute'
+    | 'permissionsetting'
+    | 'personcard',
+) {
   const flag = prompt(`要更新的${kind} flag:`, '')
   if (!flag) return
   const e = encodeURIComponent(flag)
@@ -813,16 +874,21 @@ async function orgUpdate(kind: 'person' | 'unit' | 'identity' | 'group' | 'role'
     else if (kind === 'group') await api.put(`/api/organization/assemble/control/group/${e}`, { name: '更新' })
     else if (kind === 'role') await api.put(`/api/organization/assemble/control/role/${e}`, { name: '更新' })
     else if (kind === 'unitduty') await api.put(`/api/organization/assemble/control/unitduty/${e}`, { name: '更新' })
-    else if (kind === 'unitattribute') await api.put(`/api/organization/assemble/control/unitattribute/${e}`, { name: '更新' })
-    else if (kind === 'personattribute') await api.put(`/api/organization/assemble/control/personattribute/${e}`, { name: '更新' })
-    else if (kind === 'permissionsetting') await api.put(`/api/organization/assemble/control/permissionsetting/${e}`, { name: '更新' })
+    else if (kind === 'unitattribute')
+      await api.put(`/api/organization/assemble/control/unitattribute/${e}`, { name: '更新' })
+    else if (kind === 'personattribute')
+      await api.put(`/api/organization/assemble/control/personattribute/${e}`, { name: '更新' })
+    else if (kind === 'permissionsetting')
+      await api.put(`/api/organization/assemble/control/permissionsetting/${e}`, { name: '更新' })
     else await api.put(`/api/organization/assemble/control/personcard/${e}`, { name: '更新' })
     toast.success(`${kind} 已更新`)
   } catch (err: any) {
     toast.error(`更新${kind}失败: ` + (err?.message ?? ''))
   }
 }
-async function orgDelete(kind: 'person' | 'unit' | 'identity' | 'group' | 'role' | 'personattribute' | 'permissionsetting' | 'personcard') {
+async function orgDelete(
+  kind: 'person' | 'unit' | 'identity' | 'group' | 'role' | 'personattribute' | 'permissionsetting' | 'personcard',
+) {
   const flag = prompt(`要删除的${kind} flag:`, '')
   if (!flag) return
   if (!window.confirm(`确定删除该${kind}？`)) return
@@ -847,8 +913,10 @@ async function orgMember(op: 'groupAdd' | 'groupDel' | 'dutyPost' | 'dutyPut') {
   const e = encodeURIComponent(flag)
   try {
     if (op === 'groupAdd') await api.put(`/api/organization/assemble/control/group/${e}/add/member`, { member: '' })
-    else if (op === 'groupDel') await api.put(`/api/organization/assemble/control/group/${e}/delete/member`, { member: '' })
-    else if (op === 'dutyPost') await api.post('/api/organization/assemble/control/unitduty/update/member', { member: '' })
+    else if (op === 'groupDel')
+      await api.put(`/api/organization/assemble/control/group/${e}/delete/member`, { member: '' })
+    else if (op === 'dutyPost')
+      await api.post('/api/organization/assemble/control/unitduty/update/member', { member: '' })
     else await api.put('/api/organization/assemble/control/unitduty/update/member', { member: '' })
     toast.success('成员操作已提交')
   } catch (err: any) {
@@ -863,7 +931,8 @@ async function orgAccount(op: 'lock' | 'ban' | 'unban' | 'password' | 'icon' | '
     if (op === 'lock') await api.post(`/api/organization/assemble/control/person/lock/${e}`, {})
     else if (op === 'ban') await api.post(`/api/organization/assemble/control/person/ban/${e}`, {})
     else if (op === 'unban') await api.post(`/api/organization/assemble/control/person/unban/${e}`, {})
-    else if (op === 'password') await api.put(`/api/organization/assemble/control/person/${e}/set/password`, { password: '' })
+    else if (op === 'password')
+      await api.put(`/api/organization/assemble/control/person/${e}/set/password`, { password: '' })
     else if (op === 'icon') await api.put(`/api/organization/assemble/control/person/${e}/icon`, { icon: '' })
     else if (op === 'reserve') await api.delete(`/api/organization/assemble/control/person/${e}/reserve`)
     else if (op === 'tmSave') await api.put(`/api/organization/assemble/control/threemember/save/${e}`, {})
@@ -913,7 +982,8 @@ async function orgRelQuery(op: string) {
     else if (op === 'roleList') await api.post('/api/role/list', { roleList: [key] })
     else if (op === 'unitIdentityLevel') await api.post('/api/unit/identity/level', { identityList: [key] })
     else if (op === 'unitIdentityType') await api.post('/api/unit/identity/type', { identityList: [key] })
-    else if (op === 'unitCheckHasIdentity') await api.post('/api/unit/check/unit/has/identity', { unit: key, identity: key })
+    else if (op === 'unitCheckHasIdentity')
+      await api.post('/api/unit/check/unit/has/identity', { unit: key, identity: key })
     else if (op === 'dutyNameIdentity') await api.post('/api/unitduty/list/name/identity', { identityList: [key] })
     else await api.post('/api/unitduty/list/identity/unit/name', { identityList: [key] })
     toast.success('关系查询已提交')
@@ -942,7 +1012,7 @@ async function loadExpressMeta() {
       api.get('/api/organization/assemble/express/units/list'),
       api.get('/api/organization/assemble/express/status/get'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     orgMetaText.value = `同步配置 ${n(config)} / 单位 ${n(units)} / 状态 ${n(status)}`
   } catch (e: any) {
     toast.error('加载同步元数据失败: ' + (e?.message ?? ''))
@@ -952,7 +1022,9 @@ async function loadExpressMeta() {
 async function loadPersonCards() {
   try {
     const listResp: any = await api.get('/api/organization/assemble/control/personcard/listpaging/page/1/size/20')
-    const rows = (Array.isArray(listResp?.data) ? listResp.data : (listResp?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const rows = (Array.isArray(listResp?.data) ? listResp.data : (listResp?.data?.data ?? [])) as Array<
+      Record<string, unknown>
+    >
     const id = rows[0] ? String(rows[0].id ?? '') : ''
     if (!id) {
       orgMetaText.value = `名片 ${rows.length} 张（无可抽样项）`
@@ -991,9 +1063,17 @@ async function loadOrgDetails() {
     const roleId = digId(roleIdx)
     const identId = digId(identIdx)
     const [role, ident, duties] = await Promise.all([
-      roleId ? api.get(`/api/organization/assemble/control/role/${encodeURIComponent(roleId)}`).catch(() => null) : Promise.resolve(null),
-      identId ? api.get(`/api/organization/assemble/control/identity/${encodeURIComponent(identId)}`).catch(() => null) : Promise.resolve(null),
-      identId ? api.get(`/api/organization/assemble/control/unitduty/list/identity/${encodeURIComponent(identId)}`).catch(() => null) : Promise.resolve(null),
+      roleId
+        ? api.get(`/api/organization/assemble/control/role/${encodeURIComponent(roleId)}`).catch(() => null)
+        : Promise.resolve(null),
+      identId
+        ? api.get(`/api/organization/assemble/control/identity/${encodeURIComponent(identId)}`).catch(() => null)
+        : Promise.resolve(null),
+      identId
+        ? api
+            .get(`/api/organization/assemble/control/unitduty/list/identity/${encodeURIComponent(identId)}`)
+            .catch(() => null)
+        : Promise.resolve(null),
     ])
     const rName = (role as any)?.data?.name ?? (roleId || '—')
     const iName = (ident as any)?.data?.name ?? (identId || '—')
@@ -1019,7 +1099,7 @@ async function loadUnitDetails() {
       api.get(`/api/organization/assemble/control/unit/list/${encodeURIComponent(uid)}/sub/direct`).catch(() => null),
     ])
     const name = (detail as any)?.data?.name ?? uid
-    const supN = Array.isArray((sup as any)?.data) ? (sup as any).data.length : ((sup as any)?.data ? 1 : 0)
+    const supN = Array.isArray((sup as any)?.data) ? (sup as any).data.length : (sup as any)?.data ? 1 : 0
     const subN = Array.isArray((sub as any)?.data) ? (sub as any).data.length : 0
     orgMetaText.value = `单位「${name}」· 直接上级 ${supN} · 直接下级 ${subN}`
   } catch (e: any) {
@@ -1068,9 +1148,19 @@ async function loadDutyDetails() {
     const dutyName = duties[0] ? String(duties[0].name ?? '') : ''
     const key = dutyName ? dutyName.slice(0, 2) : '主'
     const [identities, sameName, distinctName] = await Promise.all([
-      dutyName ? api.get(`/api/organization/assemble/control/identity/list/unitduty/name/${encodeURIComponent(dutyName)}`).catch(() => null) : Promise.resolve(null),
-      dutyName ? api.get(`/api/organization/assemble/control/unitduty/list/name/${encodeURIComponent(dutyName)}`).catch(() => null) : Promise.resolve(null),
-      api.get(`/api/organization/assemble/control/unitduty/distinct/name/like/${encodeURIComponent(key)}`).catch(() => null),
+      dutyName
+        ? api
+            .get(`/api/organization/assemble/control/identity/list/unitduty/name/${encodeURIComponent(dutyName)}`)
+            .catch(() => null)
+        : Promise.resolve(null),
+      dutyName
+        ? api
+            .get(`/api/organization/assemble/control/unitduty/list/name/${encodeURIComponent(dutyName)}`)
+            .catch(() => null)
+        : Promise.resolve(null),
+      api
+        .get(`/api/organization/assemble/control/unitduty/distinct/name/like/${encodeURIComponent(key)}`)
+        .catch(() => null),
     ])
     const idN = Array.isArray((identities as any)?.data) ? (identities as any).data.length : 0
     const snN = Array.isArray((sameName as any)?.data) ? (sameName as any).data.length : 0
@@ -1094,8 +1184,12 @@ async function loadAttrDetails() {
     const uId = firstId(uList)
     const pId = firstId(pList)
     const [uDetail, pDetail] = await Promise.all([
-      uId ? api.get(`/api/organization/assemble/control/unitattribute/${encodeURIComponent(uId)}`).catch(() => null) : Promise.resolve(null),
-      pId ? api.get(`/api/organization/assemble/control/personattribute/${encodeURIComponent(pId)}`).catch(() => null) : Promise.resolve(null),
+      uId
+        ? api.get(`/api/organization/assemble/control/unitattribute/${encodeURIComponent(uId)}`).catch(() => null)
+        : Promise.resolve(null),
+      pId
+        ? api.get(`/api/organization/assemble/control/personattribute/${encodeURIComponent(pId)}`).catch(() => null)
+        : Promise.resolve(null),
     ])
     const uKey = (uDetail as any)?.data?.attribute_key ?? (uId || '—')
     const pKey = (pDetail as any)?.data?.attribute_key ?? (pId || '—')
@@ -1116,7 +1210,11 @@ async function loadGroupDetails() {
     const headFlag = '0'
     const cnt = '10'
     const [byRole, next, prev] = await Promise.all([
-      roleFlag ? api.get(`/api/organization/assemble/control/group/list/role/${encodeURIComponent(roleFlag)}`).catch(() => null) : Promise.resolve(null),
+      roleFlag
+        ? api
+            .get(`/api/organization/assemble/control/group/list/role/${encodeURIComponent(roleFlag)}`)
+            .catch(() => null)
+        : Promise.resolve(null),
       api.get(`/api/organization/assemble/control/group/list/${headFlag}/next/${cnt}`).catch(() => null),
       api.get(`/api/organization/assemble/control/group/list/${headFlag}/prev/${cnt}`).catch(() => null),
     ])
@@ -1271,8 +1369,12 @@ async function loadDutyBatch() {
     const names = Array.isArray(namesResp?.data) ? namesResp.data : []
     const dutyName = names[0] ? String(names[0].name ?? names[0]) : ''
     const [byName, found] = await Promise.all([
-      dutyName ? api.post('/api/unitduty/list/name', { nameList: [dutyName] }).catch(() => null) : Promise.resolve(null),
-      dutyName && unit ? api.post('/api/unitduty/find/by/unit/name', { name: dutyName, unit }).catch(() => null) : Promise.resolve(null),
+      dutyName
+        ? api.post('/api/unitduty/list/name', { nameList: [dutyName] }).catch(() => null)
+        : Promise.resolve(null),
+      dutyName && unit
+        ? api.post('/api/unitduty/find/by/unit/name', { name: dutyName, unit }).catch(() => null)
+        : Promise.resolve(null),
     ])
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     const fN = (found as any)?.data ? '命中' : '未命中'
@@ -1290,7 +1392,7 @@ async function loadGroupTree() {
     const groups = Array.isArray(gResp?.data) ? gResp.data : []
     const g = groups[0] ? String(groups[0].id ?? groups[0].name ?? '0') : '0'
     const body = { groupList: [g] }
-    const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [subD, subN, supD, supN, tree, ident] = await Promise.all([
       s(api.post('/api/group/list/group/sub/direct', body)),
       s(api.post('/api/group/list/group/sub/nested', body)),
@@ -1312,7 +1414,7 @@ async function loadUnitRelations() {
     const uResp: any = await api.get('/api/organization/assemble/control/unit/list/top').catch(() => null)
     const units = Array.isArray(uResp?.data) ? uResp.data : []
     const u = units[0] ? String(units[0].name ?? units[0].id ?? '0') : '0'
-    const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [all, byIdent, byPerson] = await Promise.all([
       s(api.post('/api/unit/list', { unitList: [u] })),
       s(api.post('/api/unit/list/identity/sup/nested', { identityList: [u] })),
@@ -1331,7 +1433,7 @@ async function loadIdentityUnitTree() {
     const uResp: any = await api.get('/api/organization/assemble/control/unit/list/top').catch(() => null)
     const units = Array.isArray(uResp?.data) ? uResp.data : []
     const u = units[0] ? String(units[0].name ?? units[0].id ?? '0') : '0'
-    const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [byPerson, subD, subN] = await Promise.all([
       s(api.post('/api/identity/list/person', { personList: [u] })),
       s(api.post('/api/identity/list/unit/sub/direct', { unitList: [u] })),
@@ -1348,10 +1450,12 @@ async function loadIdentityUnitTree() {
 // （body{identityList}，身份-人员配对 identityPersonPairList）。均非 /object 孪生。
 async function loadPersonLogins() {
   try {
-    const cardResp: any = await api.get('/api/organization/assemble/control/personcard/listpaging/page/1/size/20').catch(() => null)
+    const cardResp: any = await api
+      .get('/api/organization/assemble/control/personcard/listpaging/page/1/size/20')
+      .catch(() => null)
     const cards = Array.isArray(cardResp?.data) ? cardResp.data : []
     const idv = cards[0] ? String(cards[0].id ?? cards[0].name ?? '0') : '0'
-    const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [all, after, recent, pair] = await Promise.all([
       s(api.get('/api/person/list/all')),
       s(api.post('/api/person/list/login/after', { personList: [idv] })),
@@ -1408,7 +1512,7 @@ async function selectNode(n: N) {
   personGroupsNested.value = []
   personAttrs.value = []
   if (n.type === 'group') {
-    const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     try {
       // group/{flag}（详情，确保命中真实端点）+ group/list/{flag}/sub/direct（直接子群组）
       await api.get('/api/organization/assemble/control/group/' + n.id)
@@ -1428,7 +1532,7 @@ async function selectNode(n: N) {
     supNested.value = ((nested as any)?.data ?? []) as N[]
   } else {
     // 人员节点：所属群组（直接/嵌套）+ 个人属性 + 认证信息/昵称/手机——六条 distinct 真实路由
-    const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [dir, nested, attrs, auth, nick, mobile, ident, grp, role, subD, subN, supN] = await Promise.all([
       settle(api.get(`/api/organization/assemble/control/group/list/person/${n.id}/sup/direct`)),
       settle(api.get(`/api/organization/assemble/control/group/list/person/${n.id}/sup/nested`)),
@@ -1448,10 +1552,15 @@ async function selectNode(n: N) {
     personGroups.value = ((dir as any)?.data ?? []) as N[]
     personGroupsNested.value = ((nested as any)?.data ?? []) as N[]
     personAttrs.value = ((attrs as any)?.data ?? []) as Array<Record<string, unknown>>
-    const identN = Array.isArray((auth as any)?.data?.identityList) ? (auth as any).data.identityList.length : (Array.isArray((auth as any)?.data) ? (auth as any).data.length : 0)
+    const identN = Array.isArray((auth as any)?.data?.identityList)
+      ? (auth as any).data.identityList.length
+      : Array.isArray((auth as any)?.data)
+        ? (auth as any).data.length
+        : 0
     const nickRow = Array.isArray((nick as any)?.data) ? (nick as any).data[0] : (nick as any)?.data
     const mobRow = Array.isArray((mobile as any)?.data) ? (mobile as any).data[0] : (mobile as any)?.data
-    const relLen = (r: any, key: string) => (Array.isArray(r?.data?.[key]) ? r.data[key].length : (Array.isArray(r?.data) ? r.data.length : 0))
+    const relLen = (r: any, key: string) =>
+      Array.isArray(r?.data?.[key]) ? r.data[key].length : Array.isArray(r?.data) ? r.data.length : 0
     personContact.value = `身份 ${identN} · 昵称 ${nickRow?.name ?? '—'} · 手机 ${mobRow?.mobile ?? '—'} · 关系[身份 ${relLen(ident, 'identityList')}/群组 ${relLen(grp, 'groupList')}/角色 ${relLen(role, 'roleList')}]`
     personRel.value = `人员树[直接下级 ${relLen(subD, 'personList')}/嵌套下级 ${relLen(subN, 'personList')}/嵌套上级 ${relLen(supN, 'personList')}]`
   }

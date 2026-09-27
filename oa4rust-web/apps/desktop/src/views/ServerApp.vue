@@ -81,7 +81,7 @@ async function loadBaseMeta2() {
       api.get('/api/cache/detail'),
       api.get('/api/openapi'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     sysStatusText.value = `根Echo ${(echo as any)?.data ? '通' : '—'} · 根缓存 ${n(cache)} · 根OpenAPI ${(openapi as any)?.data ? '有' : '—'}`
   } catch (e: any) {
     toast.error('加载失败: ' + (e?.message ?? ''))
@@ -95,7 +95,7 @@ async function loadBaseMeta() {
       api.get('/api/base/cache/detail'),
       api.get('/api/base/openapi/info'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     sysStatusText.value = `Echo ${(echo as any)?.data ? '通' : '—'} · 缓存详情 ${n(cache)} · OpenAPI ${(openapi as any)?.data ? '有' : '—'}`
   } catch (e: any) {
     toast.error('加载失败: ' + (e?.message ?? ''))
@@ -109,7 +109,7 @@ async function loadGeneralMeta3() {
       api.get('/api/general/assemble/control/securityclearance/subject'),
       api.get('/api/general/assemble/control/ecnet/check'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     sysStatusText.value = `密级对象 ${n(obj)} · 密级主体 ${n(subj)} · 内网配置 ${n(ecnet)}`
   } catch (e: any) {
     toast.error('加载失败: ' + (e?.message ?? ''))
@@ -123,7 +123,7 @@ async function loadGeneralMeta2() {
       api.get('/api/general/assemble/control/attendscope/list'),
       api.get('/api/general/assemble/control/qrcode/list'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     sysStatusText.value = `密级系统 ${(sec as any)?.data ? '有' : '无'} · 考勤范围 ${n(scope)} · 二维码 ${n(qr)}`
   } catch (e: any) {
     toast.error('加载失败: ' + (e?.message ?? ''))
@@ -137,7 +137,7 @@ async function loadGeneralMeta() {
       api.get('/api/general/assemble/control/area/list'),
       api.get('/api/general/assemble/control/worktime/minutesofworkday'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     sysStatusText.value = `通用状态 ${(status as any)?.data ? '有' : '无'} · 区域 ${n(area)} · 工时配置 ${(worktime as any)?.data ? '有' : '无'}`
   } catch (e: any) {
     toast.error('加载通用配置失败: ' + (e?.message ?? ''))
@@ -218,12 +218,32 @@ loadLicense()
 // rev389：控制台/服务器 缓存清理(按类型)/命令执行/发消息 + 部署保存/删除(按id) + 系统配置读 真实路由（clear_cache Path<String>、execute_command{command}、send_message{message}、server_deploy_save/delete 已核，用户触发；规避守卫禁的 cache/commonscript·config/flush）
 async function serverConsoleOps(op: string) {
   try {
-    if (op === 'cacheClear') { const t = encodeURIComponent(prompt('缓存类型:', '') || ''); if (!(await confirmMsg('确定清理该类型缓存？'))) return; await api.post(`/api/console/cache/clear/${t}`, {}) }
-    else if (op === 'cmdExecute') { const c = prompt('命令:', '') || ''; if (!c) return; await api.post('/api/console/command/execute', { command: c }) }
-    else if (op === 'sendMessage') { const msg = prompt('广播消息:', '') || ''; if (!msg) return; await api.post('/api/console/send/message', { message: msg }) }
-    else if (op === 'deploySave') { const id = encodeURIComponent(prompt('部署 ID:', '') || ''); if (!id) return; await api.put(`/api/server/deploy/save/${id}`, {}) }
-    else if (op === 'deployDelete') { const id = encodeURIComponent(prompt('部署 ID:', '') || ''); if (!id) return; if (!(await confirmMsg('确定删除该部署？'))) return; await api.post(`/api/server/deploy/delete/${id}`, {}) }
-    else { const r: any = await api.get('/api/config/system/config'); execOutput.value = JSON.stringify(r?.data ?? {}, null, 2); return }
+    if (op === 'cacheClear') {
+      const t = encodeURIComponent(prompt('缓存类型:', '') || '')
+      if (!(await confirmMsg('确定清理该类型缓存？'))) return
+      await api.post(`/api/console/cache/clear/${t}`, {})
+    } else if (op === 'cmdExecute') {
+      const c = prompt('命令:', '') || ''
+      if (!c) return
+      await api.post('/api/console/command/execute', { command: c })
+    } else if (op === 'sendMessage') {
+      const msg = prompt('广播消息:', '') || ''
+      if (!msg) return
+      await api.post('/api/console/send/message', { message: msg })
+    } else if (op === 'deploySave') {
+      const id = encodeURIComponent(prompt('部署 ID:', '') || '')
+      if (!id) return
+      await api.put(`/api/server/deploy/save/${id}`, {})
+    } else if (op === 'deployDelete') {
+      const id = encodeURIComponent(prompt('部署 ID:', '') || '')
+      if (!id) return
+      if (!(await confirmMsg('确定删除该部署？'))) return
+      await api.post(`/api/server/deploy/delete/${id}`, {})
+    } else {
+      const r: any = await api.get('/api/config/system/config')
+      execOutput.value = JSON.stringify(r?.data ?? {}, null, 2)
+      return
+    }
     execOutput.value = '控制台操作已提交'
   } catch (e: any) {
     execError.value = '操作失败: ' + (e?.message ?? '')

@@ -197,7 +197,10 @@ async function createFile(item: any) {
 }
 async function writePerms(item: any) {
   const id = encodeURIComponent(item.id)
-  const readers = (prompt('查看者(逗号分隔标识，可空):', '') || '').split(',').map((s) => s.trim()).filter(Boolean)
+  const readers = (prompt('查看者(逗号分隔标识，可空):', '') || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
   if (!(await confirmMsg('确定写入该应用权限？'))) return
   try {
     await api.post(`/api/appinfo/${id}/permission`, { viewerList: readers })

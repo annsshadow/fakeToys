@@ -1,2 +1,17 @@
 # Shell 脚本必须在 Linux 上可直接执行：强制 LF 检出
 *.sh text eol=lf
+# 前端与配置类文本一律 LF 检出（biome/rustfmt 均按 LF 格式化，autocrlf 污染会假红门禁）
+*.ts text eol=lf
+*.tsx text eol=lf
+*.vue text eol=lf
+*.json text eol=lf
+*.mjs text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.rs text eol=lf
+*.toml text eol=lf
+*.md text eol=lf
+*.py text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sql text eol=lf

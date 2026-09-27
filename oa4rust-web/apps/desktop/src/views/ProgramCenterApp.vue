@@ -455,12 +455,18 @@ async function loadProgramDetails() {
       api.get('/api/program_center/agent').catch(() => null),
     ])
     const apps = (Array.isArray((appList as any)?.data) ? (appList as any).data : []) as Array<Record<string, unknown>>
-    const agents = (Array.isArray((agentList as any)?.data) ? (agentList as any).data : []) as Array<Record<string, unknown>>
+    const agents = (Array.isArray((agentList as any)?.data) ? (agentList as any).data : []) as Array<
+      Record<string, unknown>
+    >
     const appId = apps[0] ? String(apps[0].id ?? '') : ''
     const agentFlag = agents[0] ? String(agents[0].flag ?? agents[0].id ?? '') : ''
     const [appDetail, agentDetail, token] = await Promise.all([
-      appId ? api.get(`/api/program_center/application/${encodeURIComponent(appId)}`).catch(() => null) : Promise.resolve(null),
-      agentFlag ? api.get(`/api/program_center/agent/${encodeURIComponent(agentFlag)}`).catch(() => null) : Promise.resolve(null),
+      appId
+        ? api.get(`/api/program_center/application/${encodeURIComponent(appId)}`).catch(() => null)
+        : Promise.resolve(null),
+      agentFlag
+        ? api.get(`/api/program_center/agent/${encodeURIComponent(agentFlag)}`).catch(() => null)
+        : Promise.resolve(null),
       api.get('/api/program_center/config/token').catch(() => null),
       // rev463：脚本分页列表/匿名最新包信息/输出选择文件 3 条真实读（handler 体均 SELECT 纯读，Path arity 一致；paging/{page}/size/{size}、pack/info/file/last、output/{flag}/select/file 字面段唯一）
       api.post('/api/program_center/script/list/paging/1/size/10', {}).catch(() => null),
@@ -635,9 +641,19 @@ async function loadPromptErrorFilters() {
   try {
     const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [byDate, byExcls, byLogger] = await Promise.all([
-      settle(api.get(`/api/program_center/prompterrorlog/list/${headFlag}/next/${cnt}/date/${encodeURIComponent(today)}`)),
-      settle(api.get(`/api/program_center/prompterrorlog/list/${headFlag}/next/${cnt}/exceptionclass/${encodeURIComponent(excls)}`)),
-      settle(api.get(`/api/program_center/prompterrorlog/list/${headFlag}/next/${cnt}/loggername/${encodeURIComponent(logger)}`)),
+      settle(
+        api.get(`/api/program_center/prompterrorlog/list/${headFlag}/next/${cnt}/date/${encodeURIComponent(today)}`),
+      ),
+      settle(
+        api.get(
+          `/api/program_center/prompterrorlog/list/${headFlag}/next/${cnt}/exceptionclass/${encodeURIComponent(excls)}`,
+        ),
+      ),
+      settle(
+        api.get(
+          `/api/program_center/prompterrorlog/list/${headFlag}/next/${cnt}/loggername/${encodeURIComponent(logger)}`,
+        ),
+      ),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     appMetaText.value = `提示错误：按日期 ${n(byDate)} · 按异常类 ${n(byExcls)} · 按日志器 ${n(byLogger)}`
@@ -657,9 +673,19 @@ async function loadPromptErrorPrev() {
     const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [prev, byDate, byExcls, byLogger] = await Promise.all([
       settle(api.get(`/api/program_center/prompterrorlog/list/${headFlag}/prev/${cnt}`)),
-      settle(api.get(`/api/program_center/prompterrorlog/list/${headFlag}/prev/${cnt}/date/${encodeURIComponent(today)}`)),
-      settle(api.get(`/api/program_center/prompterrorlog/list/${headFlag}/prev/${cnt}/exceptionclass/${encodeURIComponent(excls)}`)),
-      settle(api.get(`/api/program_center/prompterrorlog/list/${headFlag}/prev/${cnt}/loggername/${encodeURIComponent(logger)}`)),
+      settle(
+        api.get(`/api/program_center/prompterrorlog/list/${headFlag}/prev/${cnt}/date/${encodeURIComponent(today)}`),
+      ),
+      settle(
+        api.get(
+          `/api/program_center/prompterrorlog/list/${headFlag}/prev/${cnt}/exceptionclass/${encodeURIComponent(excls)}`,
+        ),
+      ),
+      settle(
+        api.get(
+          `/api/program_center/prompterrorlog/list/${headFlag}/prev/${cnt}/loggername/${encodeURIComponent(logger)}`,
+        ),
+      ),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     appMetaText.value = `提示错误(逆序)：全部 ${n(prev)} · 按日期 ${n(byDate)} · 按异常类 ${n(byExcls)} · 按日志器 ${n(byLogger)}`
@@ -677,9 +703,17 @@ async function loadUnexpectedFilters() {
   try {
     const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [nextDate, prev, prevDate] = await Promise.all([
-      settle(api.get(`/api/program_center/unexpectederrorlog/list/${headFlag}/next/${cnt}/date/${encodeURIComponent(today)}`)),
+      settle(
+        api.get(
+          `/api/program_center/unexpectederrorlog/list/${headFlag}/next/${cnt}/date/${encodeURIComponent(today)}`,
+        ),
+      ),
       settle(api.get(`/api/program_center/unexpectederrorlog/list/${prevFlag}/prev/${cnt}`)),
-      settle(api.get(`/api/program_center/unexpectederrorlog/list/${prevFlag}/prev/${cnt}/date/${encodeURIComponent(today)}`)),
+      settle(
+        api.get(
+          `/api/program_center/unexpectederrorlog/list/${prevFlag}/prev/${cnt}/date/${encodeURIComponent(today)}`,
+        ),
+      ),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     appMetaText.value = `意外错误：按日期(正序) ${n(nextDate)} · 逆序 ${n(prev)} · 逆序按日期 ${n(prevDate)}`
@@ -733,7 +767,8 @@ async function loadAllApplications() {
   try {
     // GET program_center/applications + center/applications —— 全部应用/中心应用
     const [apps, center] = await Promise.all([
-      api.get('/api/program_center/applications'),      api.get('/api/program_center/center/applications'),
+      api.get('/api/program_center/applications'),
+      api.get('/api/program_center/center/applications'),
     ])
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     appMetaText.value = `全部应用 ${n(apps)} / 中心应用 ${n(center)}`
@@ -1233,10 +1268,18 @@ async function loadProgramExtraReads() {
       s(api.get(`/api/program_center/market/${flag}/installed/version`)),
       s(api.get(`/api/program_center/apppack/pack/info`)),
       s(api.get(`/api/program_center/apppack/pack/info/file/last`)),
-      s(api.get(`/api/program_center/bar/select1/field/${encodeURIComponent(field)}/value/${encodeURIComponent(value)}/count/20`)),
+      s(
+        api.get(
+          `/api/program_center/bar/select1/field/${encodeURIComponent(field)}/value/${encodeURIComponent(value)}/count/20`,
+        ),
+      ),
       s(api.get(`/api/program_center/bar/select2/count/20`)),
       s(api.get(`/api/program_center/collect/code/mobile/${encodeURIComponent(id)}`)),
-      s(api.get(`/api/program_center/collect/controllermobile/name/${encodeURIComponent(name)}/mobile/${encodeURIComponent(mobile)}`)),
+      s(
+        api.get(
+          `/api/program_center/collect/controllermobile/name/${encodeURIComponent(name)}/mobile/${encodeURIComponent(mobile)}`,
+        ),
+      ),
       // rev302：distribute webserver 源(X_PROGRAM_INVOKE，webserver 变体区别 rev263) 补齐
       s(api.get(`/api/program_center/distribute/webserver/assemble/source/${flag}`)),
       // rev305：market/flag/installed/version 字面量版(x_program_deploy，区别于 rev299 参数版) 补齐
@@ -1345,7 +1388,11 @@ async function pcInvokeDeleteById() {
 async function pcConfigSave(kind: string) {
   const val = prompt(`${kind} 配置 JSON（可空）:`, '') || ''
   let body: any = {}
-  try { if (val) body = JSON.parse(val) } catch { body = { value: val } }
+  try {
+    if (val) body = JSON.parse(val)
+  } catch {
+    body = { value: val }
+  }
   try {
     if (kind === 'centerserver') await api.put('/api/program_center/config/centerserver', body)
     else await api.put('/api/program_center/config/person', body)
@@ -1541,10 +1588,18 @@ async function pcU6Read() {
 // rev370：程序中心 应用删/脚本改/字典数据存/缓存调度/调度上报/模块列表 真实写（各带 {param} 或无参 handler 已核 Path-less，避 module/output 无参 Path trap500）
 async function pcU5Write(op: string) {
   try {
-    if (op === 'appDelete') { const id = prompt('要删除的应用 ID:', '') || ''; if (!(await confirmMsg('确定删除该应用？'))) return; await api.delete(`/api/program_center/application/delete/${encodeURIComponent(id)}`) }
-    else if (op === 'scriptPut') { const flag = prompt('脚本 flag:', '') || ''; await api.put(`/api/program_center/script/${encodeURIComponent(flag)}`, {}) }
-    else if (op === 'dictData') { const df = prompt('字典 flag:', '') || ''; const path = prompt('路径:', 'root') || 'root'; await api.post(`/api/program_center/dict/${encodeURIComponent(df)}/${encodeURIComponent(path)}/data`, {}) }
-    else if (op === 'cacheDispatch') await api.put('/api/program_center/cachedispatch', {})
+    if (op === 'appDelete') {
+      const id = prompt('要删除的应用 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该应用？'))) return
+      await api.delete(`/api/program_center/application/delete/${encodeURIComponent(id)}`)
+    } else if (op === 'scriptPut') {
+      const flag = prompt('脚本 flag:', '') || ''
+      await api.put(`/api/program_center/script/${encodeURIComponent(flag)}`, {})
+    } else if (op === 'dictData') {
+      const df = prompt('字典 flag:', '') || ''
+      const path = prompt('路径:', 'root') || 'root'
+      await api.post(`/api/program_center/dict/${encodeURIComponent(df)}/${encodeURIComponent(path)}/data`, {})
+    } else if (op === 'cacheDispatch') await api.put('/api/program_center/cachedispatch', {})
     else if (op === 'scheduleReport') await api.post('/api/program_center/schedule/report', {})
     else await api.put('/api/program_center/module/list', {})
     toast.success('程序中心写操作已提交')
@@ -1555,17 +1610,52 @@ async function pcU5Write(op: string) {
 // rev382：程序中心 agent 代理禁用/启用/保存、invoke 调用器读/删/执行读取/更新、module 输出文件/删结构/写、application 保存 真实路由（Path-only + 已核 struct 字段体，用户触发）
 async function pcU6(op: string) {
   try {
-    if (op === 'agentDisable') { const f = encodeURIComponent(prompt('代理 flag:', '') || ''); await api.get(`/api/program_center/agent/${f}/disable`) }
-    else if (op === 'agentEnable') { const f = encodeURIComponent(prompt('代理 flag:', '') || ''); await api.get(`/api/program_center/agent/${f}/enable`) }
-    else if (op === 'agentSave') { const id = encodeURIComponent(prompt('代理 ID:', '') || ''); const name = prompt('代理名称:', '') || ''; await api.put(`/api/program_center/agent/save/${id}`, { name }) }
-    else if (op === 'invokeGet') { const f = encodeURIComponent(prompt('调用器 flag:', '') || ''); await api.get(`/api/program_center/invoke/${f}`) }
-    else if (op === 'invokeUpdate') { const f = encodeURIComponent(prompt('调用器 flag:', '') || ''); const name = prompt('调用器名称:', '') || ''; await api.put(`/api/program_center/invoke/${f}`, { name, alias: '', category: '', description: '', enable: true, enableToken: false }) }
-    else if (op === 'invokeDelete') { const f = encodeURIComponent(prompt('调用器 flag:', '') || ''); if (!(await confirmMsg('确定删除该调用器？'))) return; await api.delete(`/api/program_center/invoke/${f}`) }
-    else if (op === 'invokeExecGet') { const f = encodeURIComponent(prompt('调用器 flag:', '') || ''); await api.get(`/api/program_center/invoke/${f}/execute/get`) }
-    else if (op === 'moduleOutputFile') { const id = encodeURIComponent(prompt('模块 ID:', '') || ''); await api.get(`/api/program_center/module/output/${id}/file`) }
-    else if (op === 'moduleWrite') { const id = encodeURIComponent(prompt('模块 ID:', '') || ''); await api.put(`/api/program_center/module/write/${id}`, {}) }
-    else if (op === 'moduleRemoveStruct') { const id = encodeURIComponent(prompt('模块 ID:', '') || ''); if (!(await confirmMsg('确定删除该模块结构？'))) return; await api.delete(`/api/program_center/module/remove/structure/${id}`) }
-    else { const id = encodeURIComponent(prompt('应用 ID:', '') || ''); const name = prompt('应用名称:', '') || ''; await api.put(`/api/program_center/application/save/${id}`, { name }) }
+    if (op === 'agentDisable') {
+      const f = encodeURIComponent(prompt('代理 flag:', '') || '')
+      await api.get(`/api/program_center/agent/${f}/disable`)
+    } else if (op === 'agentEnable') {
+      const f = encodeURIComponent(prompt('代理 flag:', '') || '')
+      await api.get(`/api/program_center/agent/${f}/enable`)
+    } else if (op === 'agentSave') {
+      const id = encodeURIComponent(prompt('代理 ID:', '') || '')
+      const name = prompt('代理名称:', '') || ''
+      await api.put(`/api/program_center/agent/save/${id}`, { name })
+    } else if (op === 'invokeGet') {
+      const f = encodeURIComponent(prompt('调用器 flag:', '') || '')
+      await api.get(`/api/program_center/invoke/${f}`)
+    } else if (op === 'invokeUpdate') {
+      const f = encodeURIComponent(prompt('调用器 flag:', '') || '')
+      const name = prompt('调用器名称:', '') || ''
+      await api.put(`/api/program_center/invoke/${f}`, {
+        name,
+        alias: '',
+        category: '',
+        description: '',
+        enable: true,
+        enableToken: false,
+      })
+    } else if (op === 'invokeDelete') {
+      const f = encodeURIComponent(prompt('调用器 flag:', '') || '')
+      if (!(await confirmMsg('确定删除该调用器？'))) return
+      await api.delete(`/api/program_center/invoke/${f}`)
+    } else if (op === 'invokeExecGet') {
+      const f = encodeURIComponent(prompt('调用器 flag:', '') || '')
+      await api.get(`/api/program_center/invoke/${f}/execute/get`)
+    } else if (op === 'moduleOutputFile') {
+      const id = encodeURIComponent(prompt('模块 ID:', '') || '')
+      await api.get(`/api/program_center/module/output/${id}/file`)
+    } else if (op === 'moduleWrite') {
+      const id = encodeURIComponent(prompt('模块 ID:', '') || '')
+      await api.put(`/api/program_center/module/write/${id}`, {})
+    } else if (op === 'moduleRemoveStruct') {
+      const id = encodeURIComponent(prompt('模块 ID:', '') || '')
+      if (!(await confirmMsg('确定删除该模块结构？'))) return
+      await api.delete(`/api/program_center/module/remove/structure/${id}`)
+    } else {
+      const id = encodeURIComponent(prompt('应用 ID:', '') || '')
+      const name = prompt('应用名称:', '') || ''
+      await api.put(`/api/program_center/application/save/${id}`, { name })
+    }
     toast.success('程序中心操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
@@ -1579,7 +1669,10 @@ async function pcU7(op: string) {
     else if (op === 'inputCreate') await api.put('/api/program_center/input/create', {})
     else if (op === 'inputPrepareCover') await api.post('/api/program_center/input/prepare/cover', {})
     else if (op === 'inputPrepareCreate') await api.post('/api/program_center/input/prepare/create', {})
-    else { const src = encodeURIComponent(prompt('缓存源:', '') || ''); await api.get(`/api/program_center/jest/clear/cache/${src}`) }
+    else {
+      const src = encodeURIComponent(prompt('缓存源:', '') || '')
+      await api.get(`/api/program_center/jest/clear/cache/${src}`)
+    }
     toast.success('程序中心操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
@@ -1663,8 +1756,16 @@ async function pcU12() {
 async function pcU13() {
   try {
     await api.get('/api/program_center/welink/pull/sync')
-    await api.post('/api/program_center/prompterrorlog', { exceptionClass: 'ClientPromptError', loggerName: 'ProgramCenterApp', message: '控制台手动上报提示异常' })
-    await api.post('/api/program_center/unexpectederrorlog', { errorType: 'ClientUnexpected', message: '控制台手动上报未预期异常', stackTrace: '' })
+    await api.post('/api/program_center/prompterrorlog', {
+      exceptionClass: 'ClientPromptError',
+      loggerName: 'ProgramCenterApp',
+      message: '控制台手动上报提示异常',
+    })
+    await api.post('/api/program_center/unexpectederrorlog', {
+      errorType: 'ClientUnexpected',
+      message: '控制台手动上报未预期异常',
+      stackTrace: '',
+    })
     toast.success('同步/异常日志已上报')
   } catch (e: any) {
     toast.error('上报失败: ' + (e?.message ?? ''))
@@ -1706,7 +1807,8 @@ async function pcU16() {
     const outFlag = prompt('输出 flag（可空跳过）:', '') || ''
     if (outFlag.trim()) await api.put(`/api/program_center/output/${encodeURIComponent(outFlag)}/select`, {})
     const invFlag = prompt('调用器 flag（可空跳过）:', '') || ''
-    if (invFlag.trim()) await api.put(`/api/program_center/invoke/${encodeURIComponent(invFlag)}/file`, { text: '控制台更新' })
+    if (invFlag.trim())
+      await api.put(`/api/program_center/invoke/${encodeURIComponent(invFlag)}/file`, { text: '控制台更新' })
     toast.success('注册/输出/调用器已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
@@ -1715,10 +1817,19 @@ async function pcU16() {
 // rev433：程序中心 部署服务器资源(POST INSERT x_program_deploy_resource)·企业微信注册(POST INSERT x_program_callback_registration)·Agent按flag部署文件(PUT INSERT x_program_deploy_resource) 三条写端点，distinct 路由/动作
 async function pcU17() {
   try {
-    await api.post('/api/program_center/deploy/server/resource', { resourceName: '控制台资源', resourceType: 'manual', path: '/deploy/manual' })
+    await api.post('/api/program_center/deploy/server/resource', {
+      resourceName: '控制台资源',
+      resourceType: 'manual',
+      path: '/deploy/manual',
+    })
     await api.post('/api/program_center/qiyeweixin', {})
     const flag = prompt('Agent flag（可空跳过部署文件）:', '') || ''
-    if (flag.trim()) await api.put(`/api/program_center/agent/${encodeURIComponent(flag)}/file`, { resourceName: 'agent-file', resourceType: 'deploy', path: '/agent/file' })
+    if (flag.trim())
+      await api.put(`/api/program_center/agent/${encodeURIComponent(flag)}/file`, {
+        resourceName: 'agent-file',
+        resourceType: 'deploy',
+        path: '/agent/file',
+      })
     toast.success('部署/注册已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
@@ -1742,13 +1853,23 @@ async function pcU19(op: string) {
     if (op === 'appstyle') {
       const raw = prompt('appstyle 配置(JSON):', '{}') || '{}'
       let data: any
-      try { data = JSON.parse(raw) } catch { toast.error('JSON 解析失败'); return }
+      try {
+        data = JSON.parse(raw)
+      } catch {
+        toast.error('JSON 解析失败')
+        return
+      }
       await api.put('/api/program_center/appstyle', data)
       toast.success('应用样式配置已保存')
     } else if (op === 'runtime') {
       const raw = prompt('运行时配置(JSON):', '{}') || '{}'
       let data: any
-      try { data = JSON.parse(raw) } catch { toast.error('JSON 解析失败'); return }
+      try {
+        data = JSON.parse(raw)
+      } catch {
+        toast.error('JSON 解析失败')
+        return
+      }
       await api.post('/api/program_center/config/open/run/time/config', data)
       toast.success('运行时配置已保存')
     } else {
@@ -1837,7 +1958,7 @@ async function loadDesignerJest() {
       api.get('/api/program_center/jest/center/list'),
       api.get('/api/program_center/validation/scripting/benchmark'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     dsText.value = `设计器搜索 ${n(designer)} / 中心测试 ${n(jestCenter)} / 脚本基准 ${n(bench)}`
   } catch (e: any) {
     toast.error('加载设计器/测试失败: ' + (e?.message ?? ''))
@@ -1851,7 +1972,7 @@ async function loadProgramAlias() {
       api.get('/api/program/appstyle/current/style'),
       api.get('/api/program/datastructure/modules/all'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     dsText.value = `应用 ${n(apps)} / 当前样式 ${n(style)} / 数据结构 ${n(modules)}`
   } catch (e: any) {
     toast.error('加载应用别名失败: ' + (e?.message ?? ''))
@@ -1865,7 +1986,7 @@ async function loadWeixinMeta() {
       api.get('/api/program_center/validation/meta'),
       api.get('/api/program_center/module/output/structure'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     dsText.value = `微信菜单 ${n(menu)} / 校验元 ${n(meta)} / 输出结构 ${n(struct)}`
   } catch (e: any) {
     toast.error('加载微信/校验失败: ' + (e?.message ?? ''))
@@ -1879,7 +2000,7 @@ async function loadErrorLogStats() {
       api.get('/api/program_center/prompterrorlog/count/loggername'),
       api.get('/api/program_center/config/list/dump/data/current/node'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     dsText.value = `按异常类 ${n(byExc)} / 按Logger ${n(byLogger)} / 当前节点 ${n(curNode)}`
   } catch (e: any) {
     toast.error('加载错误日志统计失败: ' + (e?.message ?? ''))
@@ -1893,7 +2014,7 @@ async function loadOutputMeta() {
       api.get('/api/program_center/module/list/category'),
       api.get('/api/program_center/storagemappings'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     dsText.value = `输出 ${n(output)} / 模块分类 ${n(modCat)} / 存储映射 ${n(storage)}`
   } catch (e: any) {
     toast.error('加载输出/存储失败: ' + (e?.message ?? ''))
@@ -1907,7 +2028,7 @@ async function loadSchedule() {
       api.get('/api/program_center/schedule/list/schedulelocal'),
       api.get('/api/program_center/schedule/report'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     dsText.value = `调度 ${n(sched)} / 本地调度 ${n(local)} / 报告 ${n(report)}`
   } catch (e: any) {
     toast.error('加载调度失败: ' + (e?.message ?? ''))
@@ -1921,7 +2042,7 @@ async function loadJestModule() {
       api.get('/api/program_center/jest/version'),
       api.get('/api/program_center/module/list'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     const ver = (version as any)?.data?.version ?? ((version as any)?.data ? '有' : '—')
     dsText.value = `测试 ${n(jest)} / 版本 ${ver} / 模块 ${n(modules)}`
   } catch (e: any) {
@@ -1936,7 +2057,7 @@ async function loadConfigDump() {
       api.get('/api/program_center/config/list/dump/data'),
       api.get('/api/program_center/config/ternary/management'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     dsText.value = `配置转储 ${n(dump)} / 转储数据 ${n(dumpData)} / 三元管理 ${n(ternary)}`
   } catch (e: any) {
     toast.error('加载配置转储失败: ' + (e?.message ?? ''))

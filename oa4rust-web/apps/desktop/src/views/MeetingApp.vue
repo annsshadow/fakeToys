@@ -231,10 +231,30 @@ function createMeeting() {
   cm.mutate()
 }
 // 会议详情：GET meeting/{id}（x_meeting 主体）+ list/{meetingId}（控制项 x_meeting_assemble_control）
-const detail = ref({ open: false, loading: false, title: '', startTime: '', endTime: '', creator: '', content: '', controlCount: 0, extra: '' })
+const detail = ref({
+  open: false,
+  loading: false,
+  title: '',
+  startTime: '',
+  endTime: '',
+  creator: '',
+  content: '',
+  controlCount: 0,
+  extra: '',
+})
 async function viewMeeting(m: M) {
-  detail.value = { open: true, loading: true, title: m.title || m.name || '', startTime: '', endTime: '', creator: '', content: '', controlCount: 0, extra: '' }
-  const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  detail.value = {
+    open: true,
+    loading: true,
+    title: m.title || m.name || '',
+    startTime: '',
+    endTime: '',
+    creator: '',
+    content: '',
+    controlCount: 0,
+    extra: '',
+  }
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const [main, ctrl, atts, next, prev] = await Promise.all([
     settle(api.get(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}`)),
     settle(api.get(`/api/meeting/assemble/control/list/${encodeURIComponent(m.id)}`)),
@@ -754,10 +774,19 @@ async function meetingMore2(op: string) {
   const id = encodeURIComponent(prompt('目标 ID:', '') || '')
   if (!id) return
   try {
-    if (op === 'ctrlDelete') { if (!(await confirmMsg('确定删除该会议（控制级）？'))) return; await api.delete(`/api/meeting/assemble/control/delete/${id}`) }
-    else if (op === 'meetingDelete') { if (!(await confirmMsg('确定删除该会议？'))) return; await api.post(`/api/meeting/assemble/control/meeting/delete/${id}`, {}) }
-    else if (op === 'roomDelete') { if (!(await confirmMsg('确定删除该会议室？'))) return; await api.post(`/api/meeting/core/entity/room/delete/${id}`, {}) }
-    else { const stream = encodeURIComponent(prompt('流标识(如 false):', 'false') || 'false'); await api.get(`/api/meeting/assemble/control/attachment/${id}/download/${stream}`) }
+    if (op === 'ctrlDelete') {
+      if (!(await confirmMsg('确定删除该会议（控制级）？'))) return
+      await api.delete(`/api/meeting/assemble/control/delete/${id}`)
+    } else if (op === 'meetingDelete') {
+      if (!(await confirmMsg('确定删除该会议？'))) return
+      await api.post(`/api/meeting/assemble/control/meeting/delete/${id}`, {})
+    } else if (op === 'roomDelete') {
+      if (!(await confirmMsg('确定删除该会议室？'))) return
+      await api.post(`/api/meeting/core/entity/room/delete/${id}`, {})
+    } else {
+      const stream = encodeURIComponent(prompt('流标识(如 false):', 'false') || 'false')
+      await api.get(`/api/meeting/assemble/control/attachment/${id}/download/${stream}`)
+    }
     toast.success('会议操作已提交')
   } catch (err: any) {
     toast.error('会议操作失败: ' + (err?.message ?? ''))

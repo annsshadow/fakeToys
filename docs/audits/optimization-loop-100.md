@@ -33,3 +33,13 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | 17 | console 残留 | grep | CLEAN | 3 处均为 PWA 提示/设计器字面量，有用途 |
 | 18 | XSS 面 | v-html/innerHTML 扫描 | CLEAN | 零命中 |
 | 19 | localStorage 敏感 | token/password 模式 | CLEAN | 零命中 |
+| 20 | biome 门禁 | `pnpm lint` | FIX | **根除 autocrlf 门禁炸弹**：.gitattributes 强制 15 类文本 LF + 166 文件本地转 LF + biome format/check --write 全仓（48 文件格式化）+ mobile meeting.vue implicit any 1 处类型修复；234 文件 0 error |
+| 21 | npm advisory | `pnpm audit --prod` | SKIP(documented) | file-type GHSA-5v7r-6r5c-r473 moderate = 既有 TD-2（ESM 不兼容无法升级，已记档） |
+| 22 | tsc | `pnpm typecheck` | CLEAN | desktop+mobile 0 错误 |
+| 23 | vitest desktop | `pnpm test` | CLEAN | 953/953 |
+| 24 | vitest mobile | `pnpm test:mobile` | CLEAN | 101/101 |
+| 25 | desktop build | `pnpm build` | CLEAN | 3026 modules, 3.31s |
+| 26 | bundle 体积 | assets 总量 | CLEAN | 2.16MB / 96 分片（与基线持平） |
+| 27 | reconcile gate | `compare.py --gate` | CLEAN | shadow/405/404 = 0 PASS |
+| 28 | 契约守卫 | contracts + autoquery vitest | CLEAN | 20/20 |
+| 29 | 仓库垃圾 | untracked 盘点 | CLEAN | oa4rust 范围内无残留（augmentor/laiyipao 未跟踪文件属并行工作线，不越界处置） |

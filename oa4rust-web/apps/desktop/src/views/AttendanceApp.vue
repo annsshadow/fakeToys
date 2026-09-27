@@ -266,7 +266,9 @@ const { data } = useQuery({
   queryFn: () =>
     // 裸 attendancedetail 仅注册 POST；列表真实端点为 attendancedetail/filter/list。
     api
-      .get(`/api/attendance/assemble/control/attendancedetail/filter/list?month=${month.value}&page=${page.value}&size=20`)
+      .get(
+        `/api/attendance/assemble/control/attendancedetail/filter/list?month=${month.value}&page=${page.value}&size=20`,
+      )
       .then((r: any) => {
         records.value = r.data?.list ?? []
         totalPages.value = Math.ceil((r.data?.total ?? 1) / 20)
@@ -332,7 +334,9 @@ async function checkAppeal(a: A) {
 async function updateAppealStatus(a: A, status: string) {
   try {
     // POST attendanceappealInfo/appeal/{id} → UPDATE {status}
-    await api.post(`/api/attendance/assemble/control/attendanceappealInfo/appeal/${encodeURIComponent(a.id)}`, { status })
+    await api.post(`/api/attendance/assemble/control/attendanceappealInfo/appeal/${encodeURIComponent(a.id)}`, {
+      status,
+    })
     toast.success('已更新申诉状态')
   } catch (e: any) {
     toast.error('更新申诉状态失败: ' + (e?.message ?? ''))
@@ -342,7 +346,9 @@ async function archiveAppeal(a: A) {
   if (!(await confirmMsg('确定归档该申诉？'))) return
   try {
     // POST attendanceappealInfo/archive/{id} → UPDATE 归档 {id}
-    await api.post(`/api/attendance/assemble/control/attendanceappealInfo/archive/${encodeURIComponent(a.id)}`, { id: a.id })
+    await api.post(`/api/attendance/assemble/control/attendanceappealInfo/archive/${encodeURIComponent(a.id)}`, {
+      id: a.id,
+    })
     toast.success('已归档申诉')
   } catch (e: any) {
     toast.error('归档申诉失败: ' + (e?.message ?? ''))
@@ -402,7 +408,7 @@ async function loadV2Meta() {
       api.get('/api/attendance/assemble/control/v2/my/controls'),
       api.get('/api/attendance/assemble/control/v2/leave/template'),
     ])
-    const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     attOverviewText.value = `v2配置 ${cnt(config)} / 我的控件 ${cnt(controls)} / 请假模板 ${cnt(leave)}`
   } catch (e: any) {
     toast.error('加载 v2 配置失败: ' + (e?.message ?? ''))
@@ -412,16 +418,36 @@ async function loadV2Meta() {
 // + 群组月排班 groupschedule/list/group/{groupId}/month/{month}（x_attendance_v2_group_schedule）+ 按人日期查群组 group/person/{person}/date/{date}（x_attendance_v2_group）
 async function loadV2Schedule() {
   try {
-    const groupResp: any = await api.post('/api/attendance/assemble/control/v2/group/list/1/size/50', {}).catch(() => null)
-    const groups = (Array.isArray(groupResp?.data) ? groupResp.data : (groupResp?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const groupResp: any = await api
+      .post('/api/attendance/assemble/control/v2/group/list/1/size/50', {})
+      .catch(() => null)
+    const groups = (Array.isArray(groupResp?.data) ? groupResp.data : (groupResp?.data?.data ?? [])) as Array<
+      Record<string, unknown>
+    >
     const gid = groups[0] ? String(groups[0].id ?? '') : ''
     const person = session.state.user?.unique ?? ''
     const monthStr = month.value
     const today = new Date().toISOString().slice(0, 10)
     const [cfg, list, byPerson] = await Promise.all([
-      gid ? api.get(`/api/attendance/assemble/control/v2/groupschedule/config/group/${encodeURIComponent(gid)}`).catch(() => null) : Promise.resolve(null),
-      gid ? api.get(`/api/attendance/assemble/control/v2/groupschedule/list/group/${encodeURIComponent(gid)}/month/${encodeURIComponent(monthStr)}`).catch(() => null) : Promise.resolve(null),
-      person ? api.get(`/api/attendance/assemble/control/v2/group/person/${encodeURIComponent(person)}/date/${encodeURIComponent(today)}`).catch(() => null) : Promise.resolve(null),
+      gid
+        ? api
+            .get(`/api/attendance/assemble/control/v2/groupschedule/config/group/${encodeURIComponent(gid)}`)
+            .catch(() => null)
+        : Promise.resolve(null),
+      gid
+        ? api
+            .get(
+              `/api/attendance/assemble/control/v2/groupschedule/list/group/${encodeURIComponent(gid)}/month/${encodeURIComponent(monthStr)}`,
+            )
+            .catch(() => null)
+        : Promise.resolve(null),
+      person
+        ? api
+            .get(
+              `/api/attendance/assemble/control/v2/group/person/${encodeURIComponent(person)}/date/${encodeURIComponent(today)}`,
+            )
+            .catch(() => null)
+        : Promise.resolve(null),
     ])
     const hasCfg = (cfg as any)?.data ? '有' : '无'
     const lN = Array.isArray((list as any)?.data) ? (list as any).data.length : 0
@@ -441,13 +467,21 @@ async function loadV2AppealRecord() {
       api.post(`/api/attendance/assemble/control/v2/record/list/${page}/size/${size}`).catch(() => null),
       api.post(`/api/attendance/assemble/control/v2/appeal/list/${page}/size/${size}`).catch(() => null),
     ])
-    const recs = (Array.isArray(recList?.data) ? recList.data : (recList?.data?.data ?? [])) as Array<Record<string, unknown>>
-    const appeals2 = (Array.isArray(appealList?.data) ? appealList.data : (appealList?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const recs = (Array.isArray(recList?.data) ? recList.data : (recList?.data?.data ?? [])) as Array<
+      Record<string, unknown>
+    >
+    const appeals2 = (Array.isArray(appealList?.data) ? appealList.data : (appealList?.data?.data ?? [])) as Array<
+      Record<string, unknown>
+    >
     const rid = recs[0] ? String(recs[0].id ?? '') : ''
     const aid = appeals2[0] ? String(appeals2[0].id ?? '') : ''
     const [recDetail, appealDetail] = await Promise.all([
-      rid ? api.get(`/api/attendance/assemble/control/v2/record/${encodeURIComponent(rid)}`).catch(() => null) : Promise.resolve(null),
-      aid ? api.get(`/api/attendance/assemble/control/v2/appeal/${encodeURIComponent(aid)}`).catch(() => null) : Promise.resolve(null),
+      rid
+        ? api.get(`/api/attendance/assemble/control/v2/record/${encodeURIComponent(rid)}`).catch(() => null)
+        : Promise.resolve(null),
+      aid
+        ? api.get(`/api/attendance/assemble/control/v2/appeal/${encodeURIComponent(aid)}`).catch(() => null)
+        : Promise.resolve(null),
     ])
     const rStatus = (recDetail as any)?.data?.status ?? (rid || '—')
     const aStatus = (appealDetail as any)?.data?.status ?? (aid || '—')
@@ -512,7 +546,10 @@ async function attV2Write(op: string) {
       if (!(await confirmMsg('确定删除该打卡点？'))) return
       await api.delete(`/api/attendance/assemble/control/v2/workplace/${encodeURIComponent(id)}`)
     } else if (op === 'workplaceListIds') {
-      const ids = (prompt('打卡点 ID（逗号分隔）:', '') || '').split(',').map((s) => s.trim()).filter(Boolean)
+      const ids = (prompt('打卡点 ID（逗号分隔）:', '') || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
       await api.post('/api/attendance/assemble/control/v2/workplace/list/ids', { ids })
     } else if (op === 'scheduleCreate') {
       const name = prompt('排班名称:', '') || ''
@@ -558,24 +595,94 @@ async function attStatFilters(): Promise<void> {
   const cnt = '20'
   try {
     const r = await Promise.all([
-      s(api.put(`/api/attendance/assemble/control/statisticshow/filter/personMonth/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`, {})),
-      s(api.put(`/api/attendance/assemble/control/statisticshow/filter/personMonth/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`, {})),
-      s(api.put(`/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`, {})),
-      s(api.put(`/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`, {})),
-      s(api.put(`/api/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`, {})),
-      s(api.put(`/api/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`, {})),
-      s(api.put(`/api/attendance/assemble/control/statisticshow/filter/unitDay/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`, {})),
-      s(api.put(`/api/attendance/assemble/control/statisticshow/filter/unitDay/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`, {})),
-      s(api.put(`/api/attendance/assemble/control/statisticshow/filter/unitMonth/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`, {})),
-      s(api.put(`/api/attendance/assemble/control/statisticshow/filter/unitMonth/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`, {})),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/statisticshow/filter/personMonth/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/statisticshow/filter/personMonth/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/statisticshow/filter/unitDay/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/statisticshow/filter/unitDay/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/statisticshow/filter/unitMonth/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/statisticshow/filter/unitMonth/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
       s(api.put('/api/attendance/assemble/control/attendancedetail/filter/list/topUnit', {})),
       s(api.put('/api/attendance/assemble/control/attendancedetail/filter/list/unit', {})),
       s(api.put('/api/attendance/assemble/control/attendancedetail/filter/list/user', {})),
       s(api.put('/api/attendance/assemble/control/attendancedetail/list/persons/nonesign', {})),
-      s(api.put(`/api/attendance/assemble/control/attendanceappealInfo/filter/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`, {})),
-      s(api.put(`/api/attendance/assemble/control/attendanceappealInfo/manager/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`, {})),
-      s(api.put(`/api/attendance/assemble/control/attendanceselfholiday/filter/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`, {})),
-      s(api.put(`/api/attendance/assemble/control/attendanceselfholiday/filter/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`, {})),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/attendanceappealInfo/filter/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/attendanceappealInfo/manager/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/attendanceselfholiday/filter/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/attendanceselfholiday/filter/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
     ])
     const hit = r.filter((x) => x !== null).length
     attStatText.value = `统计/明细/申诉筛选读 命中 ${hit}/${r.length}`
@@ -620,32 +727,68 @@ async function attCoreEntity(op: string) {
 async function attWrite3(op: string) {
   try {
     if (op === 'adminCreate') await api.post('/api/attendance/assemble/control/attendanceadmin', {})
-    else if (op === 'adminDelete') { const id = prompt('管理员 ID:', '') || ''; if (!(await confirmMsg('确定删除该考勤管理员？'))) return; await api.delete(`/api/attendance/assemble/control/attendanceadmin/${encodeURIComponent(id)}`) }
-    else if (op === 'empCreate') await api.post('/api/attendance/assemble/control/attendanceemployeeconfig', {})
-    else if (op === 'empDelete') { const id = prompt('员工配置 ID:', '') || ''; if (!(await confirmMsg('确定删除该员工配置？'))) return; await api.delete(`/api/attendance/assemble/control/attendanceemployeeconfig/${encodeURIComponent(id)}`) }
-    else if (op === 'schedCreate') await api.post('/api/attendance/assemble/control/attendanceschedulesetting', {})
-    else if (op === 'schedDelete') { const id = prompt('排班设置 ID:', '') || ''; if (!(await confirmMsg('确定删除该排班设置？'))) return; await api.delete(`/api/attendance/assemble/control/attendanceschedulesetting/${encodeURIComponent(id)}`) }
-    else if (op === 'workdayCreate') await api.post('/api/attendance/assemble/control/attendanceworkdayconfig', {})
-    else if (op === 'workdayDelete') { const id = prompt('工作日配置 ID:', '') || ''; if (!(await confirmMsg('确定删除该工作日配置？'))) return; await api.delete(`/api/attendance/assemble/control/attendanceworkdayconfig/${encodeURIComponent(id)}`) }
-    else if (op === 'workdayFilter') await api.post('/api/attendance/assemble/control/attendanceworkdayconfig/filter', {})
+    else if (op === 'adminDelete') {
+      const id = prompt('管理员 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该考勤管理员？'))) return
+      await api.delete(`/api/attendance/assemble/control/attendanceadmin/${encodeURIComponent(id)}`)
+    } else if (op === 'empCreate') await api.post('/api/attendance/assemble/control/attendanceemployeeconfig', {})
+    else if (op === 'empDelete') {
+      const id = prompt('员工配置 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该员工配置？'))) return
+      await api.delete(`/api/attendance/assemble/control/attendanceemployeeconfig/${encodeURIComponent(id)}`)
+    } else if (op === 'schedCreate') await api.post('/api/attendance/assemble/control/attendanceschedulesetting', {})
+    else if (op === 'schedDelete') {
+      const id = prompt('排班设置 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该排班设置？'))) return
+      await api.delete(`/api/attendance/assemble/control/attendanceschedulesetting/${encodeURIComponent(id)}`)
+    } else if (op === 'workdayCreate') await api.post('/api/attendance/assemble/control/attendanceworkdayconfig', {})
+    else if (op === 'workdayDelete') {
+      const id = prompt('工作日配置 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该工作日配置？'))) return
+      await api.delete(`/api/attendance/assemble/control/attendanceworkdayconfig/${encodeURIComponent(id)}`)
+    } else if (op === 'workdayFilter')
+      await api.post('/api/attendance/assemble/control/attendanceworkdayconfig/filter', {})
     else if (op === 'reqlogCreate') await api.post('/api/attendance/assemble/control/attendancestatisticrequirelog', {})
-    else if (op === 'reqlogDelete') { const id = prompt('统计要求日志 ID:', '') || ''; if (!(await confirmMsg('确定删除该统计要求日志？'))) return; await api.delete(`/api/attendance/assemble/control/attendancestatisticrequirelog/${encodeURIComponent(id)}`) }
-    else if (op === 'cycleDelete') { const id = prompt('统计周期 ID:', '') || ''; if (!(await confirmMsg('确定删除该统计周期？'))) return; await api.delete(`/api/attendance/assemble/control/attendancestatisticalcycle/${encodeURIComponent(id)}`) }
-    else if (op === 'importDelete') { const id = prompt('导入文件 ID:', '') || ''; if (!(await confirmMsg('确定删除该导入文件？'))) return; await api.delete(`/api/attendance/assemble/control/attendanceimportfileinfo/${encodeURIComponent(id)}`) }
-    else if (op === 'appealAudit') await api.put('/api/attendance/assemble/control/attendanceappealInfo/audit', {})
+    else if (op === 'reqlogDelete') {
+      const id = prompt('统计要求日志 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该统计要求日志？'))) return
+      await api.delete(`/api/attendance/assemble/control/attendancestatisticrequirelog/${encodeURIComponent(id)}`)
+    } else if (op === 'cycleDelete') {
+      const id = prompt('统计周期 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该统计周期？'))) return
+      await api.delete(`/api/attendance/assemble/control/attendancestatisticalcycle/${encodeURIComponent(id)}`)
+    } else if (op === 'importDelete') {
+      const id = prompt('导入文件 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该导入文件？'))) return
+      await api.delete(`/api/attendance/assemble/control/attendanceimportfileinfo/${encodeURIComponent(id)}`)
+    } else if (op === 'appealAudit') await api.put('/api/attendance/assemble/control/attendanceappealInfo/audit', {})
     else if (op === 'appealCheck') await api.put('/api/attendance/assemble/control/attendanceappealInfo/check', {})
-    else if (op === 'appealDo') { const id = prompt('申诉 ID:', '') || ''; await api.put(`/api/attendance/assemble/control/attendanceappealInfo/appeal/${encodeURIComponent(id)}`, {}) }
-    else if (op === 'appealArchive') { const id = prompt('申诉 ID:', '') || ''; await api.get(`/api/attendance/assemble/control/attendanceappealInfo/archive/${encodeURIComponent(id)}`) }
-    else if (op === 'appealDelete') { const id = prompt('申诉 ID:', '') || ''; if (!(await confirmMsg('确定删除该申诉？'))) return; await api.delete(`/api/attendance/assemble/control/attendanceappealInfo/${encodeURIComponent(id)}`) }
-    else if (op === 'detailAnalyse') await api.post('/api/attendance/assemble/control/attendancedetail/analyse', {})
-    else if (op === 'detailAnalyseId') { const id = prompt('明细 ID:', '') || ''; await api.get(`/api/attendance/assemble/control/attendancedetail/analyse/id/${encodeURIComponent(id)}`) }
-    else if (op === 'detailArchive') { const id = prompt('明细 ID:', '') || ''; await api.get(`/api/attendance/assemble/control/attendancedetail/archive/${encodeURIComponent(id)}`) }
-    else if (op === 'ruleToggle') { const id = prompt('规则 ID:', '') || ''; await api.post(`/api/attendance/assemble/control/rule/${encodeURIComponent(id)}/toggle`, {}) }
-    else if (op === 'statDo') await api.post('/api/attendance/assemble/control/statistic/do', {})
+    else if (op === 'appealDo') {
+      const id = prompt('申诉 ID:', '') || ''
+      await api.put(`/api/attendance/assemble/control/attendanceappealInfo/appeal/${encodeURIComponent(id)}`, {})
+    } else if (op === 'appealArchive') {
+      const id = prompt('申诉 ID:', '') || ''
+      await api.get(`/api/attendance/assemble/control/attendanceappealInfo/archive/${encodeURIComponent(id)}`)
+    } else if (op === 'appealDelete') {
+      const id = prompt('申诉 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该申诉？'))) return
+      await api.delete(`/api/attendance/assemble/control/attendanceappealInfo/${encodeURIComponent(id)}`)
+    } else if (op === 'detailAnalyse') await api.post('/api/attendance/assemble/control/attendancedetail/analyse', {})
+    else if (op === 'detailAnalyseId') {
+      const id = prompt('明细 ID:', '') || ''
+      await api.get(`/api/attendance/assemble/control/attendancedetail/analyse/id/${encodeURIComponent(id)}`)
+    } else if (op === 'detailArchive') {
+      const id = prompt('明细 ID:', '') || ''
+      await api.get(`/api/attendance/assemble/control/attendancedetail/archive/${encodeURIComponent(id)}`)
+    } else if (op === 'ruleToggle') {
+      const id = prompt('规则 ID:', '') || ''
+      await api.post(`/api/attendance/assemble/control/rule/${encodeURIComponent(id)}/toggle`, {})
+    } else if (op === 'statDo') await api.post('/api/attendance/assemble/control/statistic/do', {})
     else if (op === 'v2Config') await api.post('/api/attendance/assemble/control/v2/config', {})
     else if (op === 'v2ConfigPerson') await api.post('/api/attendance/assemble/control/v2/config/person', {})
     else if (op === 'v2DetailList') await api.post('/api/attendance/assemble/control/v2/detail/list/1/size/20', {})
-    else if (op === 'v2AppealMgr') await api.post('/api/attendance/assemble/control/v2/appeal/list/manager/1/size/20', {})
+    else if (op === 'v2AppealMgr')
+      await api.post('/api/attendance/assemble/control/v2/appeal/list/manager/1/size/20', {})
     else await api.get('/api/attendance/assemble/control/uuid/random')
     toast.success('考勤操作已提交')
   } catch (e: any) {
@@ -657,16 +800,41 @@ async function attV2Ops(op: string) {
   try {
     const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
     if (op === 'appealMgrStatus') await api.get(`/api/attendance/assemble/control/v2/appeal/${id()}/manager/status`)
-    else if (op === 'appealResetStatus') await api.get(`/api/attendance/assemble/control/v2/appeal/${id()}/reset/status`)
-    else if (op === 'detailRebuild') { const p = encodeURIComponent(prompt('人员:', '') || ''); const d = encodeURIComponent(prompt('日期(YYYY-MM-DD):', '') || ''); await api.get(`/api/attendance/assemble/control/v2/detail/rebuild/person/${p}/date/${d}`) }
-    else if (op === 'groupRebuild') { const g = encodeURIComponent(prompt('群组 ID:', '') || ''); const d = encodeURIComponent(prompt('日期(YYYY-MM-DD):', '') || ''); await api.get(`/api/attendance/assemble/control/v2/group/rebuild/detail/group/${g}/date/${d}`) }
-    else if (op === 'groupRefresh') await api.get(`/api/attendance/assemble/control/v2/group/${id()}/refresh/participate`)
-    else if (op === 'recordDelete') { const p = encodeURIComponent(prompt('人员:', '') || ''); const d = encodeURIComponent(prompt('日期(YYYY-MM-DD):', '') || ''); if (!(await confirmMsg('确定删除该人当日记录？'))) return; await api.get(`/api/attendance/assemble/control/v2/record/delete/people/${p}/date/${d}`) }
-    else if (op === 'analyse') { const sd = encodeURIComponent(prompt('开始日期(YYYY-MM-DD):', '') || ''); const ed = encodeURIComponent(prompt('结束日期(YYYY-MM-DD):', '') || ''); await api.get(`/api/attendance/assemble/control/attendancedetail/analyse/${sd}/${ed}`) }
-    else if (op === 'checkCycle') { const y = encodeURIComponent(prompt('周期年:', '') || ''); const mo = encodeURIComponent(prompt('周期月:', '') || ''); await api.get(`/api/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/${y}/${mo}`) }
-    else if (op === 'filterNext') { const cnt = 20; await api.get(`/api/attendance/assemble/control/attendancedetail/filter/list/${id()}/next/${cnt}`) }
-    else if (op === 'appealArchive') { if (!(await confirmMsg('确定归档该申诉？'))) return; await api.post(`/api/attendance/appeal/archive/${id()}`, {}) }
-    else { if (!(await confirmMsg('确定删除该移动明细？'))) return; await api.delete(`/api/attendance/assemble/control/attendancedetail/mobile/${id()}`) }
+    else if (op === 'appealResetStatus')
+      await api.get(`/api/attendance/assemble/control/v2/appeal/${id()}/reset/status`)
+    else if (op === 'detailRebuild') {
+      const p = encodeURIComponent(prompt('人员:', '') || '')
+      const d = encodeURIComponent(prompt('日期(YYYY-MM-DD):', '') || '')
+      await api.get(`/api/attendance/assemble/control/v2/detail/rebuild/person/${p}/date/${d}`)
+    } else if (op === 'groupRebuild') {
+      const g = encodeURIComponent(prompt('群组 ID:', '') || '')
+      const d = encodeURIComponent(prompt('日期(YYYY-MM-DD):', '') || '')
+      await api.get(`/api/attendance/assemble/control/v2/group/rebuild/detail/group/${g}/date/${d}`)
+    } else if (op === 'groupRefresh')
+      await api.get(`/api/attendance/assemble/control/v2/group/${id()}/refresh/participate`)
+    else if (op === 'recordDelete') {
+      const p = encodeURIComponent(prompt('人员:', '') || '')
+      const d = encodeURIComponent(prompt('日期(YYYY-MM-DD):', '') || '')
+      if (!(await confirmMsg('确定删除该人当日记录？'))) return
+      await api.get(`/api/attendance/assemble/control/v2/record/delete/people/${p}/date/${d}`)
+    } else if (op === 'analyse') {
+      const sd = encodeURIComponent(prompt('开始日期(YYYY-MM-DD):', '') || '')
+      const ed = encodeURIComponent(prompt('结束日期(YYYY-MM-DD):', '') || '')
+      await api.get(`/api/attendance/assemble/control/attendancedetail/analyse/${sd}/${ed}`)
+    } else if (op === 'checkCycle') {
+      const y = encodeURIComponent(prompt('周期年:', '') || '')
+      const mo = encodeURIComponent(prompt('周期月:', '') || '')
+      await api.get(`/api/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/${y}/${mo}`)
+    } else if (op === 'filterNext') {
+      const cnt = 20
+      await api.get(`/api/attendance/assemble/control/attendancedetail/filter/list/${id()}/next/${cnt}`)
+    } else if (op === 'appealArchive') {
+      if (!(await confirmMsg('确定归档该申诉？'))) return
+      await api.post(`/api/attendance/appeal/archive/${id()}`, {})
+    } else {
+      if (!(await confirmMsg('确定删除该移动明细？'))) return
+      await api.delete(`/api/attendance/assemble/control/attendancedetail/mobile/${id()}`)
+    }
     toast.success('考勤操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
@@ -691,7 +859,9 @@ async function loadCoreLists() {
 // → attendanceschedulesetting/{id}（WHERE id）+ list/unit/{name}（WHERE unit_id=$1）+ list/topUnit/{name}（WHERE unit_id IS NULL）。
 async function loadScheduleDetail() {
   try {
-    const listRes: any = await api.get('/api/attendance/assemble/control/attendanceschedulesetting/list/all').catch(() => null)
+    const listRes: any = await api
+      .get('/api/attendance/assemble/control/attendanceschedulesetting/list/all')
+      .catch(() => null)
     const rows = Array.isArray(listRes?.data) ? listRes.data : []
     const first = rows[0] ?? null
     const sid = String(first?.id ?? '0')
@@ -700,7 +870,9 @@ async function loadScheduleDetail() {
     const [detail, byUnit, byTop] = await Promise.all([
       settle(api.get(`/api/attendance/assemble/control/attendanceschedulesetting/${sid}`)),
       settle(api.get(`/api/attendance/assemble/control/attendanceschedulesetting/list/unit/${encodeURIComponent(nm)}`)),
-      settle(api.get(`/api/attendance/assemble/control/attendanceschedulesetting/list/topUnit/${encodeURIComponent(nm)}`)),
+      settle(
+        api.get(`/api/attendance/assemble/control/attendanceschedulesetting/list/topUnit/${encodeURIComponent(nm)}`),
+      ),
     ])
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     const dName = (detail as any)?.data?.name ?? (rows.length ? sid : '—')
@@ -774,7 +946,7 @@ async function myMobileDetail() {
   if (!personId.trim()) return
   try {
     const r: any = await api.post('/api/attendance/assemble/control/attendancedetail/mobile/my', { personId })
-    const n = Array.isArray(r?.data) ? r.data.length : (Array.isArray(r?.data?.data) ? r.data.data.length : 0)
+    const n = Array.isArray(r?.data) ? r.data.length : Array.isArray(r?.data?.data) ? r.data.data.length : 0
     toast.success(`我的考勤明细：${n} 条`)
   } catch (e: any) {
     toast.error('读取失败: ' + (e?.message ?? ''))
@@ -804,7 +976,9 @@ async function importAttV2Records(mode: string) {
       if (!userId.trim()) return
       const checkInType = prompt('打卡类型(如 OnDuty/OffDuty):', 'OnDuty') || 'OnDuty'
       const recordDateString = prompt('打卡日期(YYYY-MM-DD):', new Date().toISOString().slice(0, 10)) || ''
-      const r: any = await api.post('/api/attendance/assemble/control/v2/record/import', { rows: [{ userId, checkInType, recordDateString }] })
+      const r: any = await api.post('/api/attendance/assemble/control/v2/record/import', {
+        rows: [{ userId, checkInType, recordDateString }],
+      })
       toast.success(`打卡导入：${(r as any)?.data?.inserted ?? 0} 条`)
     }
   } catch (e: any) {
@@ -817,11 +991,14 @@ async function attAppealWrite(op: string) {
     if (op === 'analyseRedo') {
       const personId = prompt('人员标识(留空为全体):', '') || ''
       const r: any = await api.post('/api/attendance/assemble/control/attendancedetail/analyse/redo', { personId })
-      toast.success(`重新分析已提交：${(r as any)?.data?.count ?? (r as any)?.data ? '完成' : ''}`)
+      toast.success(`重新分析已提交：${((r as any)?.data?.count ?? (r as any)?.data) ? '完成' : ''}`)
     } else if (op === 'appealById') {
       const id = prompt('申诉记录 ID:', '') || ''
       if (!id.trim()) return
-      await api.post(`/api/attendance/assemble/control/attendanceappealInfo/workflow/appeal/${encodeURIComponent(id)}`, {})
+      await api.post(
+        `/api/attendance/assemble/control/attendanceappealInfo/workflow/appeal/${encodeURIComponent(id)}`,
+        {},
+      )
       toast.success('申诉流程已发起')
     } else {
       const appealId = prompt('申诉记录 ID:', '') || ''
@@ -863,16 +1040,36 @@ async function loadStatisticShow() {
       s(api.get(`/api/attendance/assemble/control/statisticshow/filter/unitDay/list/${pv}/prev/${c}`)),
       s(api.get(`/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/${nx}/next/${c}`)),
       s(api.get(`/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/${pv}/prev/${c}`)),
-      s(api.get(`/api/attendance/assemble/control/statisticshow/unit/day/${encodeURIComponent(nm)}/${encodeURIComponent(dt)}`)),
-      s(api.get(`/api/attendance/assemble/control/statisticshow/unit/day/topUnit/${encodeURIComponent(nm)}/${encodeURIComponent(dt)}`)),
+      s(
+        api.get(
+          `/api/attendance/assemble/control/statisticshow/unit/day/${encodeURIComponent(nm)}/${encodeURIComponent(dt)}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/attendance/assemble/control/statisticshow/unit/day/topUnit/${encodeURIComponent(nm)}/${encodeURIComponent(dt)}`,
+        ),
+      ),
       // rev278：statisticshow/unit/topUnit/{name}/{year}/{month} → x_attendance_statisticshow WHERE unit_id+year+month（按年月，区别于游标/按日；同 WHERE 的 persons/subnested 排序孪生取此一条）
       s(api.get(`/api/attendance/assemble/control/statisticshow/unit/topUnit/${encodeURIComponent(nm)}/${yr}/${mo}`)),
       // rev293：statisticshow persons/unit/subnested、unit/subnested（同表不同分组）+ 钉钉/企微 单位·个人月度统计（X_ATTENDANCE_STATISTIC_* 各表）
-      s(api.get(`/api/attendance/assemble/control/statisticshow/persons/unit/subnested/${encodeURIComponent(nm)}/${yr}/${mo}`)),
+      s(
+        api.get(
+          `/api/attendance/assemble/control/statisticshow/persons/unit/subnested/${encodeURIComponent(nm)}/${yr}/${mo}`,
+        ),
+      ),
       s(api.get(`/api/attendance/assemble/control/statisticshow/unit/subnested/${encodeURIComponent(nm)}/${yr}/${mo}`)),
-      s(api.get(`/api/attendance/assemble/control/dingding/statistic/unit/year/${yr}/month/${mo}/day/${encodeURIComponent(nm)}`)),
+      s(
+        api.get(
+          `/api/attendance/assemble/control/dingding/statistic/unit/year/${yr}/month/${mo}/day/${encodeURIComponent(nm)}`,
+        ),
+      ),
       s(api.get(`/api/attendance/assemble/control/qywx/statistic/person/year/${yr}/month/${mo}`)),
-      s(api.get(`/api/attendance/assemble/control/qywx/statistic/unit/year/${yr}/month/${mo}/day/${encodeURIComponent(nm)}`)),
+      s(
+        api.get(
+          `/api/attendance/assemble/control/qywx/statistic/unit/year/${yr}/month/${mo}/day/${encodeURIComponent(nm)}`,
+        ),
+      ),
       // rev313：v2申诉起始检查/请假导入结果/工位/统计展示(topUnit·unit 按年月，区别于 unit/topUnit 组合) 5 条纯 SELECT
       s(api.get(`/api/attendance/assemble/control/v2/appeal/${nm}/start/check`)),
       s(api.get(`/api/attendance/assemble/control/v2/leave/import/result/flag/${nm}`)),
@@ -894,7 +1091,9 @@ async function loadAppealDetailFilters() {
   const c = '20'
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
-    const nextRes = await s(api.get(`/api/attendance/assemble/control/attendanceappealInfo/filter/list/${nx}/next/${c}`))
+    const nextRes = await s(
+      api.get(`/api/attendance/assemble/control/attendanceappealInfo/filter/list/${nx}/next/${c}`),
+    )
     const rows = Array.isArray((nextRes as any)?.data) ? (nextRes as any).data : []
     const aid = rows[0] ? String(rows[0].id ?? '0') : '0'
     const [prev, mgr, detail, dNext, dPrev] = await Promise.all([
@@ -919,7 +1118,9 @@ async function loadHolidaySettingDetails() {
   const c = '20'
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
-    const shNext = await s(api.get(`/api/attendance/assemble/control/attendanceselfholiday/filter/list/${nx}/next/${c}`))
+    const shNext = await s(
+      api.get(`/api/attendance/assemble/control/attendanceselfholiday/filter/list/${nx}/next/${c}`),
+    )
     const shRows = Array.isArray((shNext as any)?.data) ? (shNext as any).data : []
     const shId = shRows[0] ? String(shRows[0].id ?? '0') : '0'
     const setId = settings.value[0] ? String(settings.value[0].id ?? '0') : '0'
@@ -978,7 +1179,7 @@ async function loadStatisticAggregates() {
       s(api.get(`/api/attendance/assemble/control/dingdingstatistic/unit/${name}/${y}/${mo}`)),
       s(api.get(`/api/attendance/assemble/control/qywxstatistic/unit/${name}/${y}/${mo}`)),
     ])
-    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : (r as any)?.data ? 1 : 0)
     attOverviewText.value = `个人 ${n(person)} · 单位人员 ${n(personsUnit)} · 顶层日 ${n(topDay)} · 单位日 ${n(unitDay)} · 单位汇总 ${n(unitSum)} · 钉钉单位 ${n(ddUnit)} · 企微单位 ${n(qywxUnit)}`
   } catch (e: any) {
     toast.error('加载统计聚合失败: ' + (e?.message ?? ''))
@@ -999,7 +1200,7 @@ async function loadPersonMonthStats() {
       s(api.get(`/api/attendance/assemble/control/qywxstatistic/person/unit/${id}/${y}/${mo}`)),
       s(api.get(`/api/attendance/assemble/control/selfholidaysimple/docId/${id}`)),
     ])
-    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : (r as any)?.data ? 1 : 0)
     attOverviewText.value = `钉钉个人 ${n(ddPerson)} · 钉钉部门 ${n(ddPersonUnit)} · 企微个人 ${n(qyPerson)} · 企微部门 ${n(qyPersonUnit)} · 自助假 ${n(selfHoliday)}`
   } catch (e: any) {
     toast.error('加载人员月统计失败: ' + (e?.message ?? ''))
@@ -1281,10 +1482,7 @@ async function viewMore(it: MoreItem) {
       r = await api.get(`/api/attendance/assemble/control/v2/shift/${it.id}`)
     }
     const d = r.data ?? {}
-    toast.success(
-      '详情: ' +
-        (d.groupName || d.shiftName || d.personId || d.workDate || it.name || it.id),
-    )
+    toast.success('详情: ' + (d.groupName || d.shiftName || d.personId || d.workDate || it.name || it.id))
   } catch (e: any) {
     toast.error('加载详情失败: ' + (e?.message ?? ''))
   }

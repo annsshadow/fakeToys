@@ -122,9 +122,7 @@ export const processApi = {
     mapi.get<Record<string, unknown>>(`/api/processplatform/assemble/surface/data/work/${workId}`),
   /** 工作详情：附件清单（PP_C_ATTACHMENT，按 work id）。 */
   attachments: (workId: string) =>
-    list(
-      mapi.get<Record<string, unknown>[]>(`/api/processplatform/assemble/surface/attachment/list/work/${workId}`),
-    ),
+    list(mapi.get<Record<string, unknown>[]>(`/api/processplatform/assemble/surface/attachment/list/work/${workId}`)),
   /** 工作详情：流转记录（PP_C_RECORD，按 workOrWorkCompleted）。 */
   records: (workId: string) =>
     list(
@@ -264,7 +262,11 @@ export const attendanceApi = {
     }),
   /** 出勤统计（按日聚合，工作台今日概览用）。 */
   statistics: () =>
-    list(mapi.get<Array<{ date?: string; records?: number; status?: string }>>('/api/attendance/assemble/control/statistics/list')),
+    list(
+      mapi.get<Array<{ date?: string; records?: number; status?: string }>>(
+        '/api/attendance/assemble/control/statistics/list',
+      ),
+    ),
   /** v2 我的月度统计（本人，body 可传 year/month，缺省当前月）。 */
   myStatistic: (payload: Record<string, unknown> = {}) =>
     mapi.post<Record<string, unknown>>('/api/attendance/assemble/control/v2/my/statistic', payload),
@@ -428,17 +430,14 @@ export const calendarApi = {
   /** 日历控制配置。 */
   controlConfig: () => mapi.get<Record<string, unknown>>('/api/calendar_assemble_control/get/control/config'),
   /** 我可见的日历清单（控制面）。 */
-  controlCalendars: () =>
-    list(mapi.get<CalendarRow[]>('/api/calendar_assemble_control/list/control/calendars')),
+  controlCalendars: () => list(mapi.get<CalendarRow[]>('/api/calendar_assemble_control/list/control/calendars')),
   /** 按日历取事件（core calendar 事件族）。 */
-  coreEventList: (calendarId: string) =>
-    list(mapi.get<CalendarEventRow[]>(`/api/calendar/event/list/${calendarId}`)),
+  coreEventList: (calendarId: string) => list(mapi.get<CalendarEventRow[]>(`/api/calendar/event/list/${calendarId}`)),
   /** 新建事件（core calendar，body: calendarId/title/startTime/endTime/location）。 */
   coreEventCreate: (payload: Record<string, unknown>) =>
     mapi.post<CalendarEventRow>('/api/calendar/event/create', payload),
   /** 删除事件（core calendar，body: id）。 */
-  coreEventRemove: (id: string) =>
-    mapi.post<CalendarEventRow>('/api/calendar/event/remove', { id }),
+  coreEventRemove: (id: string) => mapi.post<CalendarEventRow>('/api/calendar/event/remove', { id }),
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -460,8 +459,7 @@ export const queryviewApi = {
   viewList: (queryFlag: string) =>
     list(mapi.get<Record<string, unknown>[]>(`/api/queryview/view/list/query/${queryFlag}`)),
   /** 执行视图（handler 只读 id，view 段为语义占位）。 */
-  execute: (view: string, id: string) =>
-    mapi.get<Record<string, unknown>>(`/api/queryview/execute/${view}/${id}`),
+  execute: (view: string, id: string) => mapi.get<Record<string, unknown>>(`/api/queryview/execute/${view}/${id}`),
   /** 分页执行。 */
   executeV2: (view: string, id: string, page: number, size: number) =>
     mapi.get<Record<string, unknown>>(`/api/queryview/execute/v2/${view}/${id}/${page}/${size}`),
@@ -476,8 +474,7 @@ export const cmsApi = {
   /** CMS 栏目清单。 */
   columnList: () => list(mapi.get<Record<string, unknown>[]>('/api/cms/core/entity/column/list')),
   /** 栏目管理清单（含未发布）。 */
-  columnManagerList: () =>
-    list(mapi.get<Record<string, unknown>[]>('/api/cms/core/entity/column_manager/list')),
+  columnManagerList: () => list(mapi.get<Record<string, unknown>[]>('/api/cms/core/entity/column_manager/list')),
   /** 文档全文检索（后端 GET，条件走 query：q 关键字 + limit）。 */
   documentSearch: (q: string, limit = 20) =>
     list(
@@ -503,11 +500,7 @@ export const searchApi = {
   global: (keyword: string) => list(mapi.post<Record<string, unknown>[]>('/api/queryview/search', { key: keyword })),
   /** 论坛主题检索。 */
   bbsSubject: (keyword: string) =>
-    list(
-      mapi.get<Record<string, unknown>[]>(
-        `/api/bbs/subject/search?keyword=${encodeURIComponent(keyword)}`,
-      ),
-    ),
+    list(mapi.get<Record<string, unknown>[]>(`/api/bbs/subject/search?keyword=${encodeURIComponent(keyword)}`)),
 }
 
 export const statisticsApi = {
@@ -534,8 +527,7 @@ export const pushApi = {
   deviceList: (pushType: string) =>
     list(mapi.get<Record<string, unknown>[]>(`/api/jpush/assemble/control/device/list/${pushType}`)),
   /** 推送类型配置。 */
-  pushTypeConfig: () =>
-    mapi.get<Record<string, unknown>>('/api/jpush/assemble/control/device/config/push/type'),
+  pushTypeConfig: () => mapi.get<Record<string, unknown>>('/api/jpush/assemble/control/device/config/push/type'),
   /** 推送应用清单。 */
   apps: () => list(mapi.get<Record<string, unknown>[]>('/api/jpush/assemble/control/list/control/apps')),
 }

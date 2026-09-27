@@ -166,9 +166,9 @@
 
 <script setup lang="ts">
 import { api, type O2WebSocketClient, useSession, useWebSocket } from '@oa4rust/sdk'
-import { confirmMsg, toast } from '../utils/toast'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { confirmMsg, toast } from '../utils/toast'
 
 interface Conversation {
   id: string
@@ -547,7 +547,8 @@ async function imConvAction(kind: string): Promise<void> {
   try {
     if (kind === 'read') await api.post(`/api/message/assemble/communicate/im/conversation/${e}/read`, {})
     else if (kind === 'topSet') await api.post(`/api/message/assemble/communicate/im/conversation/${e}/top/set`, {})
-    else if (kind === 'topCancel') await api.post(`/api/message/assemble/communicate/im/conversation/${e}/top/cancel`, {})
+    else if (kind === 'topCancel')
+      await api.post(`/api/message/assemble/communicate/im/conversation/${e}/top/cancel`, {})
     else if (kind === 'quitGroup') {
       if (!(await confirmMsg('确定退出该群聊？'))) return
       await api.post(`/api/message/assemble/communicate/im/conversation/${e}/group/quit/self`, {})
@@ -590,7 +591,10 @@ async function imMsgAction(kind: string): Promise<void> {
       const body = prompt('群发内容:', '') || ''
       const person = prompt('接收人（逗号分隔）:', '') || ''
       await api.post('/api/message/assemble/communicate/mass', {
-        personList: person.split(',').map((s) => s.trim()).filter(Boolean),
+        personList: person
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
         body,
         title: '群发通知',
       })
@@ -604,19 +608,38 @@ async function imMsgAction(kind: string): Promise<void> {
 async function imMore(op: string) {
   try {
     if (op === 'convUpdate') await api.put('/api/message/assemble/communicate/im/conversation', {})
-    else if (op === 'convByPerson') await api.post('/api/message/assemble/communicate/im/conversation/list/with/person', {})
+    else if (op === 'convByPerson')
+      await api.post('/api/message/assemble/communicate/im/conversation/list/with/person', {})
     else if (op === 'managerConfig') await api.post('/api/message/assemble/communicate/im/manager/config', {})
-    else if (op === 'collectionList') await api.post('/api/message/assemble/communicate/im/msg/collection/list/1/size/20', {})
-    else if (op === 'msgDownload') { const id = prompt('消息 ID:', '') || ''; await api.get(`/api/message/assemble/communicate/im/msg/download/${encodeURIComponent(id)}`) }
-    else if (op === 'msgThumb') { const id = prompt('消息 ID:', '') || ''; await api.get(`/api/message/assemble/communicate/im/msg/download/${encodeURIComponent(id)}/image/width/120/height/120`) }
-    else if (op === 'msgListObj') await api.post('/api/message/assemble/communicate/im/msg/list/object', {})
-    else if (op === 'markRead') { const id = prompt('消息 ID:', '') || ''; await api.post(`/api/message/mark_read/${encodeURIComponent(id)}`, {}) }
-    else if (op === 'consume') { const id = prompt('消息 ID:', '') || ''; const t = prompt('消息类型:', 'all') || 'all'; await api.get(`/api/message/consume/${encodeURIComponent(id)}/type/${encodeURIComponent(t)}`) }
-    else if (op === 'consumeType') { const t = prompt('消息类型:', 'all') || 'all'; await api.put(`/api/message/assemble/communicate/consume/type/${encodeURIComponent(t)}`, {}) }
-    else if (op === 'customCreate') await api.post('/api/message/assemble/communicate/message/custom/create', {})
+    else if (op === 'collectionList')
+      await api.post('/api/message/assemble/communicate/im/msg/collection/list/1/size/20', {})
+    else if (op === 'msgDownload') {
+      const id = prompt('消息 ID:', '') || ''
+      await api.get(`/api/message/assemble/communicate/im/msg/download/${encodeURIComponent(id)}`)
+    } else if (op === 'msgThumb') {
+      const id = prompt('消息 ID:', '') || ''
+      await api.get(
+        `/api/message/assemble/communicate/im/msg/download/${encodeURIComponent(id)}/image/width/120/height/120`,
+      )
+    } else if (op === 'msgListObj') await api.post('/api/message/assemble/communicate/im/msg/list/object', {})
+    else if (op === 'markRead') {
+      const id = prompt('消息 ID:', '') || ''
+      await api.post(`/api/message/mark_read/${encodeURIComponent(id)}`, {})
+    } else if (op === 'consume') {
+      const id = prompt('消息 ID:', '') || ''
+      const t = prompt('消息类型:', 'all') || 'all'
+      await api.get(`/api/message/consume/${encodeURIComponent(id)}/type/${encodeURIComponent(t)}`)
+    } else if (op === 'consumeType') {
+      const t = prompt('消息类型:', 'all') || 'all'
+      await api.put(`/api/message/assemble/communicate/consume/type/${encodeURIComponent(t)}`, {})
+    } else if (op === 'customCreate') await api.post('/api/message/assemble/communicate/message/custom/create', {})
     else if (op === 'msgPaging') await api.post('/api/message/assemble/communicate/message/list/paging/1/size/20', {})
     else if (op === 'massEnable') await api.post('/api/message/assemble/communicate/mass/enable/type', {})
-    else { const id = prompt('要删除的群发 ID:', '') || ''; if (!(await confirmMsg('确定删除该群发？'))) return; await api.delete(`/api/message/assemble/communicate/mass/${encodeURIComponent(id)}`) }
+    else {
+      const id = prompt('要删除的群发 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该群发？'))) return
+      await api.delete(`/api/message/assemble/communicate/mass/${encodeURIComponent(id)}`)
+    }
     toast.success('IM 操作已提交')
   } catch (err: any) {
     toast.error('操作失败: ' + (err?.message ?? ''))
@@ -625,13 +648,27 @@ async function imMore(op: string) {
 // rev387：IM assemble/communicate 会话置顶/取消置顶/标记已读/退群、消息撤回、按类型消费、当前人已消费读 真实路由（均 Path-only 已核，各方法孪生择一；规避 im/msg/clear 裸路由 trap500）
 async function imMore2(op: string) {
   try {
-    if (op === 'topSet') { const id = encodeURIComponent(prompt('会话 ID:', '') || ''); await api.put(`/api/message/assemble/communicate/im/conversation/${id}/top/set`, {}) }
-    else if (op === 'topCancel') { const id = encodeURIComponent(prompt('会话 ID:', '') || ''); await api.put(`/api/message/assemble/communicate/im/conversation/${id}/top/cancel`, {}) }
-    else if (op === 'convRead') { const id = encodeURIComponent(prompt('会话 ID:', '') || ''); await api.put(`/api/message/assemble/communicate/im/conversation/${id}/read`, {}) }
-    else if (op === 'groupQuit') { const id = encodeURIComponent(prompt('群会话 ID:', '') || ''); if (!(await confirmMsg('确定退出该群会话？'))) return; await api.post(`/api/message/assemble/communicate/im/conversation/${id}/group/quit/self`, {}) }
-    else if (op === 'msgRevoke') { const id = encodeURIComponent(prompt('消息 ID:', '') || ''); await api.get(`/api/message/assemble/communicate/im/msg/revoke/${id}`) }
-    else if (op === 'consumeType') { const id = encodeURIComponent(prompt('消息 ID:', '') || ''); const t = encodeURIComponent(prompt('消息类型:', '') || ''); await api.get(`/api/message/assemble/communicate/consume/${id}/type/${t}`) }
-    else await api.get('/api/message/assemble/communicate/instant/currentperson/consumed')
+    if (op === 'topSet') {
+      const id = encodeURIComponent(prompt('会话 ID:', '') || '')
+      await api.put(`/api/message/assemble/communicate/im/conversation/${id}/top/set`, {})
+    } else if (op === 'topCancel') {
+      const id = encodeURIComponent(prompt('会话 ID:', '') || '')
+      await api.put(`/api/message/assemble/communicate/im/conversation/${id}/top/cancel`, {})
+    } else if (op === 'convRead') {
+      const id = encodeURIComponent(prompt('会话 ID:', '') || '')
+      await api.put(`/api/message/assemble/communicate/im/conversation/${id}/read`, {})
+    } else if (op === 'groupQuit') {
+      const id = encodeURIComponent(prompt('群会话 ID:', '') || '')
+      if (!(await confirmMsg('确定退出该群会话？'))) return
+      await api.post(`/api/message/assemble/communicate/im/conversation/${id}/group/quit/self`, {})
+    } else if (op === 'msgRevoke') {
+      const id = encodeURIComponent(prompt('消息 ID:', '') || '')
+      await api.get(`/api/message/assemble/communicate/im/msg/revoke/${id}`)
+    } else if (op === 'consumeType') {
+      const id = encodeURIComponent(prompt('消息 ID:', '') || '')
+      const t = encodeURIComponent(prompt('消息类型:', '') || '')
+      await api.get(`/api/message/assemble/communicate/consume/${id}/type/${t}`)
+    } else await api.get('/api/message/assemble/communicate/instant/currentperson/consumed')
     toast.success('IM 操作已提交')
   } catch (err: any) {
     toast.error('操作失败: ' + (err?.message ?? ''))
@@ -658,15 +695,28 @@ async function imMore4(op: string) {
     if (op === 'sendMsg') {
       const content = prompt('消息内容:', '') || ''
       if (!content.trim()) return
-      await api.post('/api/message/assemble/communicate/send', { conversationId: selectedChat.value?.id ?? '', content, type: 'text' })
+      await api.post('/api/message/assemble/communicate/send', {
+        conversationId: selectedChat.value?.id ?? '',
+        content,
+        type: 'text',
+      })
     } else if (op === 'connectorCreate') {
       const title = prompt('即时消息标题:', '') || ''
       if (!title.trim()) return
-      await api.post('/api/message/assemble/communicate/connector', { type: 'text', person: session.user?.unique ?? '', title, body: title })
+      await api.post('/api/message/assemble/communicate/connector', {
+        type: 'text',
+        person: session.user?.unique ?? '',
+        title,
+        body: title,
+      })
     } else {
       const content = prompt('ws 消费内容:', '') || ''
       if (!content.trim()) return
-      await api.post('/api/message/assemble/communicate/ws', { person: session.user?.unique ?? '', sender: session.user?.unique ?? '', body: content })
+      await api.post('/api/message/assemble/communicate/ws', {
+        person: session.user?.unique ?? '',
+        sender: session.user?.unique ?? '',
+        body: content,
+      })
     }
     toast.success('IM 消息已提交')
   } catch (err: any) {
@@ -702,9 +752,11 @@ async function loadImStats() {
     ])
     const num = (r: any) => {
       const d = (r as any)?.data
-      return typeof d === 'number' ? d : (Array.isArray(d) ? d.length : (d?.count ?? 0))
+      return typeof d === 'number' ? d : Array.isArray(d) ? d.length : (d?.count ?? 0)
     }
-    toast.success(`未读 ${num(unread)} / 在线 ${num(online)} / IM配置 ${(cfg as any)?.data ? '有' : '无'} / 在线清单 ${num(wsList)}`)
+    toast.success(
+      `未读 ${num(unread)} / 在线 ${num(online)} / IM配置 ${(cfg as any)?.data ? '有' : '无'} / 在线清单 ${num(wsList)}`,
+    )
   } catch (e: any) {
     toast.error('加载 IM 统计失败: ' + (e?.message ?? ''))
   }
@@ -732,9 +784,11 @@ async function loadImInstant() {
     ])
     const n = (r: any) => {
       const d = (r as any)?.data
-      return Array.isArray(d) ? d.length : (typeof d === 'number' ? d : (d?.count ?? (d ? 1 : 0)))
+      return Array.isArray(d) ? d.length : typeof d === 'number' ? d : (d?.count ?? (d ? 1 : 0))
     }
-    toast.success(`已消费 ${n(consumed)} / 近期消息 ${n(listDesc)} / 群发类型 ${(massType as any)?.data ? '已启用' : '未启用'}`)
+    toast.success(
+      `已消费 ${n(consumed)} / 近期消息 ${n(listDesc)} / 群发类型 ${(massType as any)?.data ? '已启用' : '未启用'}`,
+    )
   } catch (e: any) {
     toast.error('加载即时消息失败: ' + (e?.message ?? ''))
   }
@@ -762,7 +816,9 @@ async function loadMsgByType() {
   try {
     const [byType, notConsumed, noim, objList] = await Promise.all([
       api.get(`/api/message/assemble/communicate/consume/type/${msgType}`).catch(() => null),
-      api.get('/api/message/assemble/communicate/instant/list/currentperson/not/consumed/count/20/desc').catch(() => null),
+      api
+        .get('/api/message/assemble/communicate/instant/list/currentperson/not/consumed/count/20/desc')
+        .catch(() => null),
       api.get('/api/message/assemble/communicate/instant/list/currentperson/noim/count/20/desc').catch(() => null),
       // rev277：im/msg/list/object → x_message WHERE type != 'text'（非文本消息清单，arity0）
       api.get('/api/message/assemble/communicate/im/msg/list/object').catch(() => null),
@@ -810,7 +866,9 @@ async function loadInstantFacets() {
       s(api.get('/api/message/assemble/communicate/instant/list/999999999/prev/20')),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
-    toast.success(`已消费 升 ${n(consAsc)}/降 ${n(consDesc)} · 全部升 ${n(allAsc)} · 未消费升 ${n(notCons)} · 游标 next ${n(next)}/prev ${n(prev)}`)
+    toast.success(
+      `已消费 升 ${n(consAsc)}/降 ${n(consDesc)} · 全部升 ${n(allAsc)} · 未消费升 ${n(notCons)} · 游标 next ${n(next)}/prev ${n(prev)}`,
+    )
   } catch (e: any) {
     toast.error('加载即时消息维度失败: ' + (e?.message ?? ''))
   }
@@ -828,14 +886,22 @@ async function loadConsumeFacets() {
     const [receive, listCount, curPerson, byPerson, coreList, unread] = await Promise.all([
       s(api.get(`/api/message/assemble/communicate/receive/${encodeURIComponent(consume)}`)),
       s(api.get(`/api/message/assemble/communicate/consume/list/${encodeURIComponent(consume)}/count/20`)),
-      s(api.get(`/api/message/assemble/communicate/consume/list/${encodeURIComponent(consume)}/currentperson/count/20`)),
-      s(api.get(`/api/message/assemble/communicate/consume/list/${encodeURIComponent(consume)}/person/${encodeURIComponent(person)}/count/20`)),
+      s(
+        api.get(`/api/message/assemble/communicate/consume/list/${encodeURIComponent(consume)}/currentperson/count/20`),
+      ),
+      s(
+        api.get(
+          `/api/message/assemble/communicate/consume/list/${encodeURIComponent(consume)}/person/${encodeURIComponent(person)}/count/20`,
+        ),
+      ),
       s(api.get(`/api/message/core/entity/list/by/${encodeURIComponent(consume)}`)),
       s(api.get(`/api/message/core/entity/unread/count/${encodeURIComponent(consume)}`)),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
-    const cnt = (r: any) => ((r as any)?.data?.count ?? (r as any)?.data ?? 0)
-    toast.success(`接收 ${n(receive)} · 队列 ${n(listCount)} · 当前人 ${n(curPerson)} · 指定人 ${n(byPerson)} · 实体 ${n(coreList)} · 未读 ${cnt(unread)}`)
+    const cnt = (r: any) => (r as any)?.data?.count ?? (r as any)?.data ?? 0
+    toast.success(
+      `接收 ${n(receive)} · 队列 ${n(listCount)} · 当前人 ${n(curPerson)} · 指定人 ${n(byPerson)} · 实体 ${n(coreList)} · 未读 ${cnt(unread)}`,
+    )
   } catch (e: any) {
     toast.error('加载消费队列失败: ' + (e?.message ?? ''))
   }

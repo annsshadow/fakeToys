@@ -371,15 +371,27 @@ async function mindWrite(op: string) {
 // rev378：思维导图 恢复/版本 + core entity 导图/文件夹/版本 建改删 真实路由（core/entity 为独立 SeaORM crate 首次消费；短/assemble 轨 folder CRUD 属镜像已跳过）
 async function mindMore(op: string) {
   try {
-    if (op === 'restore') { const id = encodeURIComponent(prompt('要恢复的导图 ID:', '') || ''); await api.get(`/api/mind/assemble/control/mind/restore/${id}`) }
-    else if (op === 'version') await api.post('/api/mind/version', {})
+    if (op === 'restore') {
+      const id = encodeURIComponent(prompt('要恢复的导图 ID:', '') || '')
+      await api.get(`/api/mind/assemble/control/mind/restore/${id}`)
+    } else if (op === 'version') await api.post('/api/mind/version', {})
     else if (op === 'coreMindCreate') await api.post('/api/mind/core/entity/mind', {})
-    else if (op === 'coreMindUpdate') { const id = encodeURIComponent(prompt('导图 ID:', '') || ''); await api.post(`/api/mind/core/entity/mind/${id}`, {}) }
-    else if (op === 'coreMindDelete') { const id = encodeURIComponent(prompt('要删除的导图 ID:', '') || ''); if (!(await confirmMsg('确定删除该导图？'))) return; await api.delete(`/api/mind/core/entity/mind/${id}`) }
-    else if (op === 'coreFolderCreate') await api.post('/api/mind/core/entity/folder', {})
-    else if (op === 'coreFolderUpdate') { const id = encodeURIComponent(prompt('文件夹 ID:', '') || ''); await api.post(`/api/mind/core/entity/folder/${id}`, {}) }
-    else if (op === 'coreFolderDelete') { const id = encodeURIComponent(prompt('要删除的文件夹 ID:', '') || ''); if (!(await confirmMsg('确定删除该文件夹？'))) return; await api.delete(`/api/mind/core/entity/folder/${id}`) }
-    else await api.post('/api/mind/core/entity/version', {})
+    else if (op === 'coreMindUpdate') {
+      const id = encodeURIComponent(prompt('导图 ID:', '') || '')
+      await api.post(`/api/mind/core/entity/mind/${id}`, {})
+    } else if (op === 'coreMindDelete') {
+      const id = encodeURIComponent(prompt('要删除的导图 ID:', '') || '')
+      if (!(await confirmMsg('确定删除该导图？'))) return
+      await api.delete(`/api/mind/core/entity/mind/${id}`)
+    } else if (op === 'coreFolderCreate') await api.post('/api/mind/core/entity/folder', {})
+    else if (op === 'coreFolderUpdate') {
+      const id = encodeURIComponent(prompt('文件夹 ID:', '') || '')
+      await api.post(`/api/mind/core/entity/folder/${id}`, {})
+    } else if (op === 'coreFolderDelete') {
+      const id = encodeURIComponent(prompt('要删除的文件夹 ID:', '') || '')
+      if (!(await confirmMsg('确定删除该文件夹？'))) return
+      await api.delete(`/api/mind/core/entity/folder/${id}`)
+    } else await api.post('/api/mind/core/entity/version', {})
     toast.success('导图操作已提交')
   } catch (err: any) {
     toast.error('导图操作失败: ' + (err?.message ?? ''))
@@ -391,9 +403,14 @@ async function mindFolderOps(op: string) {
   if (!id) return
   try {
     if (op === 'ctrlUpdate') await api.post(`/api/mind/assemble/control/folder/${id}/update`, {})
-    else if (op === 'ctrlDelete') { if (!(await confirmMsg('确定删除该控制层文件夹？'))) return; await api.delete(`/api/mind/assemble/control/folder/${id}`) }
-    else if (op === 'topUpdate') await api.post(`/api/mind/folder/${id}`, {})
-    else { if (!(await confirmMsg('确定删除该文件夹？'))) return; await api.delete(`/api/mind/folder/${id}`) }
+    else if (op === 'ctrlDelete') {
+      if (!(await confirmMsg('确定删除该控制层文件夹？'))) return
+      await api.delete(`/api/mind/assemble/control/folder/${id}`)
+    } else if (op === 'topUpdate') await api.post(`/api/mind/folder/${id}`, {})
+    else {
+      if (!(await confirmMsg('确定删除该文件夹？'))) return
+      await api.delete(`/api/mind/folder/${id}`)
+    }
     toast.success('导图文件夹操作已提交')
   } catch (err: any) {
     toast.error('导图操作失败: ' + (err?.message ?? ''))
@@ -492,7 +509,7 @@ const mindMetaText = ref('')
 async function loadMindMeta(id: string) {
   mindMetaText.value = ''
   if (!id) return
-  const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const [ver, share, view] = await Promise.all([
     settle(api.get(`/api/mind/assemble/control/mind/list/${encodeURIComponent(id)}/version`)),
     settle(api.get(`/api/mind/assemble/control/mind/list/${encodeURIComponent(id)}/shareRecords`)),
@@ -500,7 +517,13 @@ async function loadMindMeta(id: string) {
   ])
   const n = (r: unknown): number => {
     const d = (r as { data?: unknown } | null)?.data
-    return Array.isArray(d) ? d.length : Array.isArray((d as { data?: unknown })?.data) ? (d as { data: unknown[] }).data.length : d ? 1 : 0
+    return Array.isArray(d)
+      ? d.length
+      : Array.isArray((d as { data?: unknown })?.data)
+        ? (d as { data: unknown[] }).data.length
+        : d
+          ? 1
+          : 0
   }
   mindMetaText.value = `版本 ${n(ver)} · 分享 ${n(share)}${view ? ' · 已浏览' : ''}`
 }

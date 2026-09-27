@@ -231,7 +231,7 @@ async function delDevice(d: any) {
 }
 
 loadDevices()
-loadTemplates()// rev478 注：jpush alias 轨 3 条（create/jpush·update/control/config + 主轨 admin unbind）均在 JPushApp.test.ts
+loadTemplates() // rev478 注：jpush alias 轨 3 条（create/jpush·update/control/config + 主轨 admin unbind）均在 JPushApp.test.ts
 // 视图契约禁串（写 handler/destructive 不得在 JPushApp 出现字面量），全部移至 ServerApp 孪生批接。
 </script>
 

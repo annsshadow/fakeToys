@@ -244,10 +244,14 @@ async function loadFolderTopByRef(): Promise<void> {
   try {
     const refType = 'attachment'
     const refId = currentFolder.value || 'root'
-    const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [top, byRef, attTop, cmsNext, cmsPrev, fNext, fPrev] = await Promise.all([
       s(api.get(`/api/file/complex/top`)),
-      s(api.get(`/api/file/assemble/control/file/list/referencetype/${encodeURIComponent(refType)}/reference/${encodeURIComponent(refId)}`)),
+      s(
+        api.get(
+          `/api/file/assemble/control/file/list/referencetype/${encodeURIComponent(refType)}/reference/${encodeURIComponent(refId)}`,
+        ),
+      ),
       // rev271：attachment/list/top → FILE_FILE(deleted_at IS NULL 顶层附件，arity0)，区别于 FILE_FOLDER complex/top
       s(api.get(`/api/attachment/list/top`)),
       // rev291：CMS 文件双向游标 file/list/{id}/next|prev/{count}(X_CMS_FILE) + FILE_FILE 全量游标 /all
@@ -264,14 +268,16 @@ async function loadFolderTopByRef(): Promise<void> {
       s(api.get(`/api/file/assemble/control/file/list/unused/referencetype/cmsdocument/manage`)),
     ])
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
-    toast.success(`顶层文件夹 ${n(top)} / 按引用类型文件 ${n(byRef)} / 顶层附件 ${n(attTop)} / CMS文件游标 ${n(cmsNext)}·${n(cmsPrev)} / 全量游标 ${n(fNext)}·${n(fPrev)}`)
+    toast.success(
+      `顶层文件夹 ${n(top)} / 按引用类型文件 ${n(byRef)} / 顶层附件 ${n(attTop)} / CMS文件游标 ${n(cmsNext)}·${n(cmsPrev)} / 全量游标 ${n(fNext)}·${n(fPrev)}`,
+    )
   } catch (e: any) {
     toast.error('加载顶层文件夹/引用文件失败: ' + (e?.message ?? ''))
   }
 }
 // rev312：文件/附件 深度读 14 条（附件详情/base64/附件2/office预览/文件内容/appInfo内容/fileinfo文档/引用类型游标）；handler 体经核实纯 SELECT
 async function loadFileDeepReads(): Promise<void> {
-  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const id = '0'
   const type = 'pdf'
   const flag = '0'
@@ -330,7 +336,9 @@ async function fileDelete(kind: 'controlPost' | 'controlDel' | 'entityPost' | 'e
     toast.error('删除文件失败: ' + (err?.message ?? ''))
   }
 }
-async function fileUpdate(kind: 'entityPost' | 'entityPut' | 'attPost' | 'attPut' | 'attIdPut' | 'attCbPost' | 'attCbPut' | 'attIdCbPost') {
+async function fileUpdate(
+  kind: 'entityPost' | 'entityPut' | 'attPost' | 'attPut' | 'attIdPut' | 'attCbPost' | 'attCbPut' | 'attIdCbPost',
+) {
   const id = prompt('文件/附件 ID:', '')
   if (!id) return
   const e = encodeURIComponent(id)
@@ -442,7 +450,9 @@ async function fileAtt(op: string) {
       const rt = prompt('reference_type:', '') || ''
       const r = prompt('reference:', '') || ''
       if (!(await confirmMsg('确定按引用删除文件？'))) return
-      await api.delete(`/api/file/assemble/control/file/referencetype/${encodeURIComponent(rt)}/reference/${encodeURIComponent(r)}`)
+      await api.delete(
+        `/api/file/assemble/control/file/referencetype/${encodeURIComponent(rt)}/reference/${encodeURIComponent(r)}`,
+      )
     } else {
       if (!(await confirmMsg('确定删除该实体文件夹？'))) return
       await api.delete(`/api/file/core/entity/folder/${e}`)
@@ -460,18 +470,19 @@ async function fileRead2(): Promise<void> {
   const cnt = '20'
   const nm = 'doc'
   try {
-    const [a2Folder, a2Filter, aFolder, refList, listNext, listPrev, listAll, folderList, folder2List, complexFolder] = await Promise.all([
-      s(api.get(`/api/file/attachment2/list/folder/${fid}`)),
-      s(api.get(`/api/file/attachment2/list/filter/${nm}`)),
-      s(api.get(`/api/file/attachment/list/folder/${fid}`)),
-      s(api.get('/api/file/list/referencetype')),
-      s(api.get(`/api/file/list/${fid}/next/${cnt}`)),
-      s(api.get(`/api/file/list/${fid}/prev/${cnt}`)),
-      s(api.get(`/api/file/list/${fid}/next/${cnt}/all`)),
-      s(api.get(`/api/file/folder/list/${fid}`)),
-      s(api.get(`/api/file/folder2/list/${fid}`)),
-      s(api.get(`/api/file/complex/folder/${fid}`)),
-    ])
+    const [a2Folder, a2Filter, aFolder, refList, listNext, listPrev, listAll, folderList, folder2List, complexFolder] =
+      await Promise.all([
+        s(api.get(`/api/file/attachment2/list/folder/${fid}`)),
+        s(api.get(`/api/file/attachment2/list/filter/${nm}`)),
+        s(api.get(`/api/file/attachment/list/folder/${fid}`)),
+        s(api.get('/api/file/list/referencetype')),
+        s(api.get(`/api/file/list/${fid}/next/${cnt}`)),
+        s(api.get(`/api/file/list/${fid}/prev/${cnt}`)),
+        s(api.get(`/api/file/list/${fid}/next/${cnt}/all`)),
+        s(api.get(`/api/file/folder/list/${fid}`)),
+        s(api.get(`/api/file/folder2/list/${fid}`)),
+        s(api.get(`/api/file/complex/folder/${fid}`)),
+      ])
     const ok = (r: any) => (r ? '✓' : '—')
     fileRead2Text.value = `附件2夹${ok(a2Folder)} 附件2筛${ok(a2Filter)} 附件夹${ok(aFolder)} 引用类型${ok(refList)} | 后翻${ok(listNext)} 前翻${ok(listPrev)} 全部${ok(listAll)} 文件夹清单${ok(folderList)} 文件夹2清单${ok(folder2List)} 复合夹${ok(complexFolder)}`
     toast.success('文件清单已加载')
@@ -541,40 +552,104 @@ async function fileRead3(): Promise<void> {
 async function fileRest3(op: string) {
   try {
     const id = () => encodeURIComponent(prompt('文件/附件 ID:', '') || '')
-    if (op === 'fiDocGet') { const i = id(); const d = encodeURIComponent(prompt('文档 docId:', '') || ''); await api.get(`/api/fileinfo/${i}/document/${d}`) }
-    else if (op === 'fiDelete') { const i = id(); if (!(await confirmMsg('确定删除该 fileinfo？'))) return; await api.delete(`/api/fileinfo/${i}`) }
-    else if (op === 'fiListFilter') await api.post('/api/fileinfo/list/filter', {})
-    else if (op === 'fiCopyDoc') { const d = encodeURIComponent(prompt('目标文档 docId:', '') || ''); await api.post(`/api/fileinfo/copy/to/doc/${d}`, {}) }
-    else if (op === 'fiReplaceDoc') { const d = encodeURIComponent(prompt('目标文档 docId:', '') || ''); await api.post(`/api/fileinfo/replace/to/doc/${d}`, {}) }
-    else if (op === 'fiDocStream') { const i = id(); await api.get(`/api/fileinfo/download/document/${i}/stream`) }
-    else if (op === 'fiTransfer') { const f = encodeURIComponent(prompt('传输 flag:', '') || ''); await api.get(`/api/fileinfo/download/transfer/flag/${f}`) }
-    else if (op === 'fiEditDoc') { const i = id(); const d = encodeURIComponent(prompt('文档 docId:', '') || ''); await api.put(`/api/fileinfo/edit/${i}/doc/${d}`, {}) }
-    else if (op === 'fiContent') { const i = id(); await api.post(`/api/fileinfo/update/${i}/content`, {}) }
-    else if (op === 'fiUpdateAtt') { const d = encodeURIComponent(prompt('文档 docId:', '') || ''); const i = id(); await api.post(`/api/fileinfo/update/document/${d}/attachment/${i}`, {}) }
-    else if (op === 'fileDelete') { const i = id(); if (!(await confirmMsg('确定删除该文件？'))) return; await api.delete(`/api/file/${i}`) }
-    else if (op === 'filePut') { const i = id(); await api.put(`/api/file/${i}`, {}) }
-    else if (op === 'fileDownload') { const i = id(); await api.get(`/api/file/${i}/download`) }
-    else if (op === 'fileAppInfo') { const f = encodeURIComponent(prompt('文件 flag:', '') || ''); const af = encodeURIComponent(prompt('应用 flag:', '') || ''); await api.get(`/api/file/${f}/appInfo/${af}`) }
-    else if (op === 'fileStream') { const i = id(); await api.get(`/api/file/${i}/download/stream`) }
-    else if (op === 'fileDownloadById') { const i = id(); await api.get(`/api/file/download/${i}`) }
-    else if (op === 'attDownload') { const i = id(); await api.get(`/api/attachment/${i}/download`) }
-    else if (op === 'attStream') { const i = id(); await api.get(`/api/attachment/${i}/download/stream`) }
-    else if (op === 'attScale') { const i = id(); await api.get(`/api/attachment/${i}/image/scale/2/binary/base64`) }
-    else if (op === 'attWH') { const i = id(); await api.get(`/api/attachment/${i}/image/width/120/height/120/binary/base64`) }
-    else if (op === 'att2Download') { const i = id(); await api.get(`/api/attachment2/${i}/download`) }
-    else if (op === 'att2Stream') { const i = id(); await api.get(`/api/attachment2/${i}/download/stream`) }
-    else if (op === 'att2WH') { const i = id(); await api.get(`/api/attachment2/${i}/download/image/width/120/height/120`) }
+    if (op === 'fiDocGet') {
+      const i = id()
+      const d = encodeURIComponent(prompt('文档 docId:', '') || '')
+      await api.get(`/api/fileinfo/${i}/document/${d}`)
+    } else if (op === 'fiDelete') {
+      const i = id()
+      if (!(await confirmMsg('确定删除该 fileinfo？'))) return
+      await api.delete(`/api/fileinfo/${i}`)
+    } else if (op === 'fiListFilter') await api.post('/api/fileinfo/list/filter', {})
+    else if (op === 'fiCopyDoc') {
+      const d = encodeURIComponent(prompt('目标文档 docId:', '') || '')
+      await api.post(`/api/fileinfo/copy/to/doc/${d}`, {})
+    } else if (op === 'fiReplaceDoc') {
+      const d = encodeURIComponent(prompt('目标文档 docId:', '') || '')
+      await api.post(`/api/fileinfo/replace/to/doc/${d}`, {})
+    } else if (op === 'fiDocStream') {
+      const i = id()
+      await api.get(`/api/fileinfo/download/document/${i}/stream`)
+    } else if (op === 'fiTransfer') {
+      const f = encodeURIComponent(prompt('传输 flag:', '') || '')
+      await api.get(`/api/fileinfo/download/transfer/flag/${f}`)
+    } else if (op === 'fiEditDoc') {
+      const i = id()
+      const d = encodeURIComponent(prompt('文档 docId:', '') || '')
+      await api.put(`/api/fileinfo/edit/${i}/doc/${d}`, {})
+    } else if (op === 'fiContent') {
+      const i = id()
+      await api.post(`/api/fileinfo/update/${i}/content`, {})
+    } else if (op === 'fiUpdateAtt') {
+      const d = encodeURIComponent(prompt('文档 docId:', '') || '')
+      const i = id()
+      await api.post(`/api/fileinfo/update/document/${d}/attachment/${i}`, {})
+    } else if (op === 'fileDelete') {
+      const i = id()
+      if (!(await confirmMsg('确定删除该文件？'))) return
+      await api.delete(`/api/file/${i}`)
+    } else if (op === 'filePut') {
+      const i = id()
+      await api.put(`/api/file/${i}`, {})
+    } else if (op === 'fileDownload') {
+      const i = id()
+      await api.get(`/api/file/${i}/download`)
+    } else if (op === 'fileAppInfo') {
+      const f = encodeURIComponent(prompt('文件 flag:', '') || '')
+      const af = encodeURIComponent(prompt('应用 flag:', '') || '')
+      await api.get(`/api/file/${f}/appInfo/${af}`)
+    } else if (op === 'fileStream') {
+      const i = id()
+      await api.get(`/api/file/${i}/download/stream`)
+    } else if (op === 'fileDownloadById') {
+      const i = id()
+      await api.get(`/api/file/download/${i}`)
+    } else if (op === 'attDownload') {
+      const i = id()
+      await api.get(`/api/attachment/${i}/download`)
+    } else if (op === 'attStream') {
+      const i = id()
+      await api.get(`/api/attachment/${i}/download/stream`)
+    } else if (op === 'attScale') {
+      const i = id()
+      await api.get(`/api/attachment/${i}/image/scale/2/binary/base64`)
+    } else if (op === 'attWH') {
+      const i = id()
+      await api.get(`/api/attachment/${i}/image/width/120/height/120/binary/base64`)
+    } else if (op === 'att2Download') {
+      const i = id()
+      await api.get(`/api/attachment2/${i}/download`)
+    } else if (op === 'att2Stream') {
+      const i = id()
+      await api.get(`/api/attachment2/${i}/download/stream`)
+    } else if (op === 'att2WH') {
+      const i = id()
+      await api.get(`/api/attachment2/${i}/download/image/width/120/height/120`)
+    }
     // rev465：attachment2 图片宽高 base64 读 + fileinfo 文档绑定读 2 条真实路由
     //（GET attachment2/{id}/image/width/{width}/height/{height}/binary/base64 委托 attachment2_id_binary_base64 纯读；
     //  GET fileinfo/{id}/document/{docId} 纯 SELECT x_cms_fileinfo——须数字字面 1/2 命中，变量段会被 matcher 影子吞到 fileinfo/list/document/{documentId} 误配）
-    else if (op === 'att2WHB64') { const i = id(); await api.get(`/api/attachment2/${i}/image/width/120/height/120/binary/base64`) }
-    else if (op === 'fiDocBind') { await api.get('/api/fileinfo/1/document/2') }
+    else if (op === 'att2WHB64') {
+      const i = id()
+      await api.get(`/api/attachment2/${i}/image/width/120/height/120/binary/base64`)
+    } else if (op === 'fiDocBind') {
+      await api.get('/api/fileinfo/1/document/2')
+    }
     // rev468：fileinfo 按文档批量下载清单 + 文件按应用下载 2 条真实读
     //（GET fileinfo/batch/download/doc/{docId}/site/{site} 纯 SELECT x_cms_fileinfo WHERE doc_id；
     //  GET file/{flag}/appInfo/{appInfoFlag}/download u3 纯 SELECT x_cms_file WHERE id AND app_id）
-    else if (op === 'fiBatchDl') { const d = encodeURIComponent(prompt('文档 docId:', '') || ''); const site = encodeURIComponent(prompt('site:', '') || ''); await api.get(`/api/fileinfo/batch/download/doc/${d}/site/${site}`) }
-    else if (op === 'fileAppInfoDl') { const f = encodeURIComponent(prompt('文件 flag:', '') || ''); const af = encodeURIComponent(prompt('应用 appInfo flag:', '') || ''); await api.get(`/api/file/${f}/appInfo/${af}/download`) }
-    else { const i = id(); await api.get(`/api/attachment2/${i}/image/scale/2/binary/base64`) }
+    else if (op === 'fiBatchDl') {
+      const d = encodeURIComponent(prompt('文档 docId:', '') || '')
+      const site = encodeURIComponent(prompt('site:', '') || '')
+      await api.get(`/api/fileinfo/batch/download/doc/${d}/site/${site}`)
+    } else if (op === 'fileAppInfoDl') {
+      const f = encodeURIComponent(prompt('文件 flag:', '') || '')
+      const af = encodeURIComponent(prompt('应用 appInfo flag:', '') || '')
+      await api.get(`/api/file/${f}/appInfo/${af}/download`)
+    } else {
+      const i = id()
+      await api.get(`/api/attachment2/${i}/image/scale/2/binary/base64`)
+    }
     toast.success('文件操作已提交')
   } catch (err: any) {
     toast.error('文件操作失败: ' + (err?.message ?? ''))
@@ -615,7 +690,7 @@ async function loadAttachmentShares(): Promise<void> {
     const owner = 'anonymous'
     const md5 = '0'
     const folderId = currentFolder.value || 'root'
-    const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [attShare, att2Folder, att2Share, att2Exist, next, prev] = await Promise.all([
       s(api.get(`/api/attachment/list/share/${encodeURIComponent(owner)}`)),
       s(api.get(`/api/attachment2/list/folder/${encodeURIComponent(folderId)}`)),
@@ -626,7 +701,9 @@ async function loadAttachmentShares(): Promise<void> {
     ])
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     const has = (r: any) => ((r as any)?.data != null ? '有' : '无')
-    toast.success(`附件分享 ${n(attShare)} / 附件2文件夹 ${n(att2Folder)} / 附件2分享 ${n(att2Share)} / MD5存在 ${has(att2Exist)} / 后翻 ${n(next)} / 前翻 ${n(prev)}`)
+    toast.success(
+      `附件分享 ${n(attShare)} / 附件2文件夹 ${n(att2Folder)} / 附件2分享 ${n(att2Share)} / MD5存在 ${has(att2Exist)} / 后翻 ${n(next)} / 前翻 ${n(prev)}`,
+    )
   } catch (e: any) {
     toast.error('加载附件分享失败: ' + (e?.message ?? ''))
   }
@@ -639,7 +716,9 @@ async function loadAttachmentSearch(): Promise<void> {
     const folders = (Array.isArray(folderResp?.data) ? folderResp.data : []) as Array<Record<string, unknown>>
     const folderId = currentFolder.value || (folders[0] ? String(folders[0].id ?? '') : '')
     const [inFolder, byName, unused] = await Promise.all([
-      folderId ? api.get(`/api/attachment/list/folder/${encodeURIComponent(folderId)}`).catch(() => null) : Promise.resolve(null),
+      folderId
+        ? api.get(`/api/attachment/list/folder/${encodeURIComponent(folderId)}`).catch(() => null)
+        : Promise.resolve(null),
       api.get(`/api/attachment2/list/filter/${encodeURIComponent('文')}`).catch(() => null),
       api.get('/api/file/list/unused/referencetype/cmsdocument/manage').catch(() => null),
     ])
@@ -827,13 +906,15 @@ async function loadRefTypes(): Promise<void> {
 async function loadDocFileInfo(): Promise<void> {
   try {
     const listResp: any = await api.get('/api/fileinfo/list/document/default')
-    const rows = (Array.isArray(listResp?.data) ? listResp.data : (listResp?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const rows = (Array.isArray(listResp?.data) ? listResp.data : (listResp?.data?.data ?? [])) as Array<
+      Record<string, unknown>
+    >
     const id = rows[0] ? String(rows[0].id ?? rows[0].fileinfo_id ?? '') : ''
     if (!id) {
       toast.success(`文档文件 ${rows.length} 条（暂无可预览项）`)
       return
     }
-    const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [info, online, pdf] = await Promise.all([
       settle(api.get(`/api/fileinfo/${encodeURIComponent(id)}`)),
       settle(api.get(`/api/fileinfo/${encodeURIComponent(id)}/online/info`)),
@@ -850,7 +931,7 @@ async function loadDocFileInfo(): Promise<void> {
 // rev231：文件核心实体族 4 条真实 distinct 路由（SeaORM file_folder/file_file）
 // core/entity/folder/list/top（Superior IS NULL 顶层）· folder/list/{id}（按 superior 子目录）· file/list（DeletedAt null 全部文件）· complex/top（顶层文件夹+文件复合）
 async function loadFileCoreEntities(): Promise<void> {
-  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
     const topResp = await s(api.get('/api/file/core/entity/folder/list/top'))
     const folders = Array.isArray((topResp as any)?.data) ? (topResp as any).data : []
@@ -867,7 +948,8 @@ async function loadFileCoreEntities(): Promise<void> {
   }
 }
 
-const detail = ref<{ open: boolean; loading: boolean; name: string; size?: number; preview: string }>({  open: false,
+const detail = ref<{ open: boolean; loading: boolean; name: string; size?: number; preview: string }>({
+  open: false,
   loading: false,
   name: '',
   size: undefined,
@@ -875,7 +957,7 @@ const detail = ref<{ open: boolean; loading: boolean; name: string; size?: numbe
 })
 async function openDetail(f: FileItem): Promise<void> {
   detail.value = { open: true, loading: true, name: f.name, size: f.size, preview: '' }
-  const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const [meta, b64] = await Promise.all([
     // GET file/{id} —— 单文件元数据
     settle(api.get(`/api/file/assemble/control/file/${f.id}`)),

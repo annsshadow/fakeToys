@@ -48,10 +48,7 @@ async function doSearch() {
 async function loadSearchTwin() {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
-    const rs = await Promise.all([
-      s(api.put('/api/ftsearch/save/0', {})),
-      s(api.delete('/api/ftsearch/delete/0')),
-    ])
+    const rs = await Promise.all([s(api.put('/api/ftsearch/save/0', {})), s(api.delete('/api/ftsearch/delete/0'))])
     toast.success(`搜索孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
     toast.error('搜索孪生端点失败: ' + (e?.message ?? ''))

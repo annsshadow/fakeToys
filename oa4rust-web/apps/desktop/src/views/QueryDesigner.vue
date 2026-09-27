@@ -377,7 +377,11 @@ async function loadQueryPerms() {
     const tableId = tables[0] ? String(tables[0].id ?? '0') : '0'
     const [perm, byCat, tablePerm] = await Promise.all([
       settle(api.get(`/api/query/assemble/designer/permission/${encodeURIComponent(flag)}/${encodeURIComponent(qid)}`)),
-      settle(api.get(`/api/query/assemble/designer/list/querycategory/${encodeURIComponent(flag)}/${encodeURIComponent(cat)}`)),
+      settle(
+        api.get(
+          `/api/query/assemble/designer/list/querycategory/${encodeURIComponent(flag)}/${encodeURIComponent(cat)}`,
+        ),
+      ),
       settle(api.get(`/api/query/assemble/designer/table/permission/${encodeURIComponent(tableId)}`)),
     ])
     const hasPerm = (perm as any)?.data?.id ? '有' : '无'
@@ -407,7 +411,9 @@ async function loadTableRows() {
     const rows = Array.isArray((rowsRes as any)?.data) ? (rowsRes as any).data : []
     const rowId = rows[0] ? String(rows[0].id ?? '0') : '0'
     const [oneRow, stats] = await Promise.all([
-      settle(api.get(`/api/query/assemble/designer/table/row/${encodeURIComponent(tableFlag)}/${encodeURIComponent(rowId)}`)),
+      settle(
+        api.get(`/api/query/assemble/designer/table/row/${encodeURIComponent(tableFlag)}/${encodeURIComponent(rowId)}`),
+      ),
       settle(api.get(`/api/query/assemble/designer/stat/list/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}`)),
     ])
     const hasRow = (oneRow as any)?.data?.id ? '命中' : '未命中'
@@ -435,11 +441,25 @@ async function loadTableCursors() {
     const rows = Array.isArray((rowsRes as any)?.data) ? (rowsRes as any).data : []
     const rowId = rows[0] ? String(rows[0].id ?? '0') : '0'
     const [filtered, cnt, next, prev, one] = await Promise.all([
-      settle(api.get(`/api/query/assemble/designer/table/list/${encodeURIComponent(tableFlag)}/row/select/where/${encodeURIComponent('a')}`)),
+      settle(
+        api.get(
+          `/api/query/assemble/designer/table/list/${encodeURIComponent(tableFlag)}/row/select/where/${encodeURIComponent('a')}`,
+        ),
+      ),
       settle(api.get(`/api/query/assemble/designer/table/row/where/where/${encodeURIComponent(tableFlag)}/10?where=a`)),
-      settle(api.get(`/api/query/assemble/designer/table/list/${encodeURIComponent(tableFlag)}/row/${encodeURIComponent(rowId)}/next/10`)),
-      settle(api.get(`/api/query/assemble/designer/table/list/${encodeURIComponent(tableFlag)}/row/${encodeURIComponent(rowId)}/prev/10`)),
-      settle(api.get(`/api/query/assemble/designer/table/${encodeURIComponent(tableFlag)}/row/${encodeURIComponent(rowId)}`)),
+      settle(
+        api.get(
+          `/api/query/assemble/designer/table/list/${encodeURIComponent(tableFlag)}/row/${encodeURIComponent(rowId)}/next/10`,
+        ),
+      ),
+      settle(
+        api.get(
+          `/api/query/assemble/designer/table/list/${encodeURIComponent(tableFlag)}/row/${encodeURIComponent(rowId)}/prev/10`,
+        ),
+      ),
+      settle(
+        api.get(`/api/query/assemble/designer/table/${encodeURIComponent(tableFlag)}/row/${encodeURIComponent(rowId)}`),
+      ),
     ])
     const n = (x: any) => (Array.isArray((x as any)?.data) ? (x as any).data.length : 0)
     const cntV = (cnt as any)?.data?.count ?? (cnt as any)?.data ?? 0
@@ -501,16 +521,25 @@ async function loadDesignerOutputBundle() {
   const cat = String((selected.value as any)?.category ?? '0')
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
-    const [outFile, outSelect, bundle, entityProps, catSummary, statByQuery, tableRows, tableRowsPrev] = await Promise.all([
-      s(api.get(`/api/query/assemble/designer/output/select/file/${encodeURIComponent(flag)}`)),
-      s(api.get(`/api/query/assemble/designer/output/select/${encodeURIComponent(flag)}`)),
-      s(api.get(`/api/query/assemble/designer/bundle/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}`)),
-      s(api.get(`/api/query/assemble/designer/query/entity/${encodeURIComponent(flag)}/category/${encodeURIComponent(cat)}/properties`)),
-      s(api.get(`/api/query/assemble/designer/query/list/summary/querycategory/${encodeURIComponent(cat)}`)),
-      s(api.get(`/api/query/assemble/designer/stat/list/query/${encodeURIComponent(flag)}`)),
-      s(api.get(`/api/query/assemble/designer/table/list/${encodeURIComponent(flag)}/row/select/where/a`)),
-      s(api.get(`/api/query/assemble/designer/table/list/row/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}/prev/20`)),
-    ])
+    const [outFile, outSelect, bundle, entityProps, catSummary, statByQuery, tableRows, tableRowsPrev] =
+      await Promise.all([
+        s(api.get(`/api/query/assemble/designer/output/select/file/${encodeURIComponent(flag)}`)),
+        s(api.get(`/api/query/assemble/designer/output/select/${encodeURIComponent(flag)}`)),
+        s(api.get(`/api/query/assemble/designer/bundle/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}`)),
+        s(
+          api.get(
+            `/api/query/assemble/designer/query/entity/${encodeURIComponent(flag)}/category/${encodeURIComponent(cat)}/properties`,
+          ),
+        ),
+        s(api.get(`/api/query/assemble/designer/query/list/summary/querycategory/${encodeURIComponent(cat)}`)),
+        s(api.get(`/api/query/assemble/designer/stat/list/query/${encodeURIComponent(flag)}`)),
+        s(api.get(`/api/query/assemble/designer/table/list/${encodeURIComponent(flag)}/row/select/where/a`)),
+        s(
+          api.get(
+            `/api/query/assemble/designer/table/list/row/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}/prev/20`,
+          ),
+        ),
+      ])
     const n = (x: any) => (Array.isArray((x as any)?.data) ? (x as any).data.length : 0)
     tableRowText.value = `输出文件 ${(outFile as any)?.data ? '有' : '无'} · 输出选择 ${n(outSelect)} · 视图包 ${(bundle as any)?.data ? '有' : '无'} · 实体属性 ${n(entityProps)} · 分类摘要 ${n(catSummary)} · 统计按查询 ${n(statByQuery)} · 表行过滤 ${n(tableRows)} · 表行前翻 ${n(tableRowsPrev)}`
   } catch (e: any) {
