@@ -246,8 +246,7 @@ impl RateLimiter {
     pub async fn record_failure(&self, key: &str) {
         if let Some(ref redis_pool) = self.get_redis_pool() {
             let redis_key = format!("{}{}", RATE_LIMIT_KEY_PREFIX, key);
-            let mut guard = redis_pool.0.manager.lock().await;
-            let conn = match guard.as_mut() {
+            let mut conn = match redis_pool.0.manager.lock().await.as_ref().map(|m| m.clone()) {
                 Some(c) => c,
                 None => return,
             };
@@ -265,8 +264,7 @@ impl RateLimiter {
     pub async fn reset(&self, key: &str) {
         if let Some(ref redis_pool) = self.get_redis_pool() {
             let redis_key = format!("{}{}", RATE_LIMIT_KEY_PREFIX, key);
-            let mut guard = redis_pool.0.manager.lock().await;
-            if let Some(conn) = guard.as_mut() {
+            if let Some(mut conn) = redis_pool.0.manager.lock().await.as_ref().map(|m| m.clone()) {
                 let _ = conn.del::<_, ()>(&redis_key).await;
             }
         }
