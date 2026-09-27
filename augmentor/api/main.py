@@ -199,12 +199,28 @@ if not _api_key_required():
 
 
 # ============ 静态资源（构建产物存在时才挂载） ============
-
-_static_dir = Path(__file__).parent.parent / "web" / "dist"
+#
+# 目录由 `web.static_dir` 决定。相对值按**本仓根**解析，与改动前那条硬编码
+# `Path(__file__).parent.parent / "web" / "dist"` 同一锚点 ⇒ 出厂默认 `web/dist`
+# 逐字指向今天同一个目录；绝对值原样用。锚在仓库根而不是工作目录是刻意的：
+# 这条路径跟着代码走，换 cwd 启动后端不该让随包 UI 消失。
+_project_root = Path(__file__).parent.parent
+_static_dir = Path(_config.web.static_dir)
+if not _static_dir.is_absolute():
+    _static_dir = _project_root / _static_dir
 if _static_dir.is_dir():
     app.mount("/", StaticFiles(directory=str(_static_dir), html=True), name="static")
+else:
+    # 不挂载本身是既有行为（没构建就不该 500），但「配了目录却不存在」以前
+    # 与「压根没配」在日志里一模一样都是白屏，这里补一条点名路径的告警。
+    logging.getLogger(__name__).warning(
+        "web.static_dir 指向的目录不存在，未挂载前端静态界面：%s", _static_dir
+    )
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+    # 监听地址与端口取自配置。改动前是 `host="0.0.0.0", port=8000` 两个字面量，
+    # 于是 `web.host: 127.0.0.1` 这种「只想绑回环」的收紧意图无声失效。
+    uvicorn.run(app, host=_config.web.host, port=_config.web.port)
