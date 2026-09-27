@@ -20,22 +20,9 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	db, err := store.Open(ctx, cfg)
+	res, err := run(ctx, cfg)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "FATAL 连接数据库失败:", err)
-		os.Exit(1)
-	}
-	defer db.Close()
-
-	if err := db.Migrate(ctx); err != nil {
-		fmt.Fprintln(os.Stderr, "FATAL 迁移失败:", err)
-		os.Exit(1)
-	}
-	fmt.Println("迁移已是最新，开始写入游戏内容...")
-
-	res, err := seeder.Run(ctx, db.Pool)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "FATAL 种子写入失败:", err)
+		fmt.Fprintln(os.Stderr, "FATAL:", err)
 		os.Exit(1)
 	}
 
@@ -46,4 +33,26 @@ func main() {
 	fmt.Printf("  专精树节点 %d\n", res.Mastery)
 	fmt.Printf("  关卡 %d / 波次 %d\n", res.Levels, res.Waves)
 	fmt.Printf("  签到 %d 天 / 任务 %d / 商城 %d 项\n", res.SignInDays, res.Tasks, res.ShopItems)
+}
+
+// run 迁移并写入种子，从 main 抽出以便测试（main 只负责打印与退出码）。
+func run(ctx context.Context, cfg config.Config) (seeder.SeedResult, error) {
+	var res seeder.SeedResult
+
+	db, err := store.Open(ctx, cfg)
+	if err != nil {
+		return res, fmt.Errorf("连接数据库失败: %w", err)
+	}
+	defer db.Close()
+
+	if err := db.Migrate(ctx); err != nil {
+		return res, fmt.Errorf("迁移失败: %w", err)
+	}
+	fmt.Println("迁移已是最新，开始写入游戏内容...")
+
+	res, err = seeder.Run(ctx, db.Pool)
+	if err != nil {
+		return res, fmt.Errorf("种子写入失败: %w", err)
+	}
+	return res, nil
 }
