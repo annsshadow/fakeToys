@@ -60,11 +60,12 @@ BATCH_DECLARED = re.compile(r"([一二三四五六])批按显式路径提交")
 CN_NUM = {"一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6}
 ROUND_TOKEN = re.compile(r"(?<!\d)L\d+(?!\d)")
 
-#: 现量（L98 批③ 量于两侧订正之后，脚本见账本本块里点名的探针）。这些是**读数**不是预算：
+#: 现量（L98 批④ 重量于「回填 L97 四笔 + 落下 L98 自己的占位」之后：进度行多一行带槽、
+#: 日志块多两行带槽（L97 由只块变两侧、L98 新行），唯一哈希 +4）。这些是**读数**不是预算：
 #: 下一轮写了新块就会动，动了就要重量 —— 与下面那几档精确相等断言是同一条纪律。
-MEASURED_SLOT_ROWS = {"prog": 12, "log": 21}
-MEASURED_BOTH_SIDES = 12
-MEASURED_UNIQUE_HASHES = 53
+MEASURED_SLOT_ROWS = {"prog": 13, "log": 22}
+MEASURED_BOTH_SIDES = 13
+MEASURED_UNIQUE_HASHES = 57
 MEASURED_LOG_ONLY_ROUNDS = frozenset(
     {"L45", "L57", "L79", "L80", "L81", "L82", "L83", "L84", "L85"})
 MEASURED_PROGRESS_PLACEHOLDERS = 1
