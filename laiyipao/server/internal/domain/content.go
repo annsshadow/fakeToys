@@ -449,29 +449,29 @@ var equipmentSlots = []string{"weapon", "helmet", "armor", "gloves", "boots", "c
 
 var SeedEquipmentList = []SeedEquipment{
 	// 武器
-	{ID: 1, Code: "w_p1", Name: "制式炮管", Slot: "weapon", Tier: 1, Element: ElementKinetic, Descr: "军方量产的基础炮管。", BaseArmor: 0, BaseBonusPct: 50, UnlockLevel: 1},
-	{ID: 2, Code: "w_p2", Name: "高压膛线", Slot: "weapon", Tier: 2, Element: ElementFire, Descr: "膛线内刻高温纹路。", BaseArmor: 0, BaseBonusPct: 120, UnlockLevel: 15},
-	{ID: 3, Code: "w_p3", Name: "相位炮芯", Slot: "weapon", Tier: 3, Element: ElementLightning, Descr: "让弹丸短暂进入相位态，直接附加元素。", BaseArmor: 0, BaseBonusPct: 250, UnlockLevel: 40},
+	{ID: 1, Code: "w_p1", Name: "制式炮管", Slot: "weapon", Tier: 1, Element: ElementKinetic, Descr: "军方量产的基础炮管。攻击力 +50‰。", BaseArmor: 0, BaseBonusPct: 50, UnlockLevel: 1},
+	{ID: 2, Code: "w_p2", Name: "高压膛线", Slot: "weapon", Tier: 2, Element: ElementFire, Descr: "膛线内刻高温纹路。攻击力 +120‰。", BaseArmor: 0, BaseBonusPct: 120, UnlockLevel: 15},
+	{ID: 3, Code: "w_p3", Name: "相位炮芯", Slot: "weapon", Tier: 3, Element: ElementLightning, Descr: "让弹丸短暂进入相位态。攻击力 +250‰。", BaseArmor: 0, BaseBonusPct: 250, UnlockLevel: 40},
 	// 头盔
-	{ID: 4, Code: "h_p1", Name: "防砸盔", Slot: "helmet", Tier: 1, Element: ElementKinetic, Descr: "提升防线护甲。", BaseArmor: 20, BaseBonusPct: 30, UnlockLevel: 4},
-	{ID: 5, Code: "h_p2", Name: "滤毒面罩", Slot: "helmet", Tier: 2, Element: ElementCorrosion, Descr: "抵御腐蚀侵袭。", BaseArmor: 45, BaseBonusPct: 80, UnlockLevel: 18},
-	{ID: 6, Code: "h_p3", Name: "观测灵镜", Slot: "helmet", Tier: 3, Element: ElementLightning, Descr: "看清敌人身上的元素层数。", BaseArmor: 60, BaseBonusPct: 140, UnlockLevel: 44},
+	{ID: 4, Code: "h_p1", Name: "防砸盔", Slot: "helmet", Tier: 1, Element: ElementKinetic, Descr: "提升防线护甲。护甲 +20‰，攻击力 +30‰。", BaseArmor: 20, BaseBonusPct: 30, UnlockLevel: 4},
+	{ID: 5, Code: "h_p2", Name: "滤毒面罩", Slot: "helmet", Tier: 2, Element: ElementCorrosion, Descr: "抵御腐蚀侵袭的风蚀面罩。护甲 +45‰，攻击力 +80‰。", BaseArmor: 45, BaseBonusPct: 80, UnlockLevel: 18},
+	{ID: 6, Code: "h_p3", Name: "观测灵镜", Slot: "helmet", Tier: 3, Element: ElementLightning, Descr: "看清敌人身上的元素层数。护甲 +60‰，攻击力 +140‰。", BaseArmor: 60, BaseBonusPct: 140, UnlockLevel: 44},
 	// 护甲
-	{ID: 7, Code: "a_p1", Name: "拼接胸甲", Slot: "armor", Tier: 1, Element: ElementKinetic, Descr: "用废旧钢板拼成，聊胜于无。", BaseArmor: 35, BaseBonusPct: 25, UnlockLevel: 6},
-	{ID: 8, Code: "a_p2", Name: "液氮夹层", Slot: "armor", Tier: 2, Element: ElementIce, Descr: "夹层液氮，被击中时急速降温。", BaseArmor: 70, BaseBonusPct: 70, UnlockLevel: 22},
-	{ID: 9, Code: "a_p3", Name: "反应装甲", Slot: "armor", Tier: 3, Element: ElementFire, Descr: "受击时反射元素攻击。", BaseArmor: 110, BaseBonusPct: 120, UnlockLevel: 50},
+	{ID: 7, Code: "a_p1", Name: "拼接胸甲", Slot: "armor", Tier: 1, Element: ElementKinetic, Descr: "用废旧钢板拼成，聊胜于无。护甲 +35‰，攻击力 +25‰。", BaseArmor: 35, BaseBonusPct: 25, UnlockLevel: 6},
+	{ID: 8, Code: "a_p2", Name: "液氮夹层", Slot: "armor", Tier: 2, Element: ElementIce, Descr: "夹层液氮的复合装甲。护甲 +70‰，攻击力 +70‰。", BaseArmor: 70, BaseBonusPct: 70, UnlockLevel: 22},
+	{ID: 9, Code: "a_p3", Name: "反应装甲", Slot: "armor", Tier: 3, Element: ElementFire, Descr: "受热变形的重型装甲。护甲 +110‰，攻击力 +120‰。", BaseArmor: 110, BaseBonusPct: 120, UnlockLevel: 50},
 	// 手套
-	{ID: 10, Code: "g_p1", Name: "劳保手套", Slot: "gloves", Tier: 1, Element: ElementKinetic, Descr: "装填更快。", BaseArmor: 5, BaseBonusPct: 40, UnlockLevel: 2},
-	{ID: 11, Code: "g_p2", Name: "磁力手套", Slot: "gloves", Tier: 2, Element: ElementLightning, Descr: "引导弹丸轨迹。", BaseArmor: 10, BaseBonusPct: 100, UnlockLevel: 14},
-	{ID: 12, Code: "g_p3", Name: "元素编织手套", Slot: "gloves", Tier: 3, Element: ElementCorrosion, Descr: "徒手强化元素层数。", BaseArmor: 15, BaseBonusPct: 200, UnlockLevel: 42},
+	{ID: 10, Code: "g_p1", Name: "劳保手套", Slot: "gloves", Tier: 1, Element: ElementKinetic, Descr: "装填机构打磨过。护甲 +5‰，攻击力 +40‰。", BaseArmor: 5, BaseBonusPct: 40, UnlockLevel: 2},
+	{ID: 11, Code: "g_p2", Name: "磁力手套", Slot: "gloves", Tier: 2, Element: ElementLightning, Descr: "引导弹丸轨迹的稳定器。护甲 +10‰，攻击力 +100‰。", BaseArmor: 10, BaseBonusPct: 100, UnlockLevel: 14},
+	{ID: 12, Code: "g_p3", Name: "元素编织手套", Slot: "gloves", Tier: 3, Element: ElementCorrosion, Descr: "徒手强化元素层数的指套。护甲 +15‰，攻击力 +200‰。", BaseArmor: 15, BaseBonusPct: 200, UnlockLevel: 42},
 	// 靴子
-	{ID: 13, Code: "b_p1", Name: "作战靴", Slot: "boots", Tier: 1, Element: ElementKinetic, Descr: "基础机动。", BaseArmor: 10, BaseBonusPct: 35, UnlockLevel: 3},
-	{ID: 14, Code: "b_p2", Name: "减震靴", Slot: "boots", Tier: 2, Element: ElementKinetic, Descr: "减少过热时长。", BaseArmor: 20, BaseBonusPct: 75, UnlockLevel: 20},
-	{ID: 15, Code: "b_p3", Name: "相位靴", Slot: "boots", Tier: 3, Element: ElementIce, Descr: "过热时仍可释放一次技能。", BaseArmor: 30, BaseBonusPct: 150, UnlockLevel: 48},
+	{ID: 13, Code: "b_p1", Name: "作战靴", Slot: "boots", Tier: 1, Element: ElementKinetic, Descr: "基础机动。护甲 +10‰，攻击力 +35‰。", BaseArmor: 10, BaseBonusPct: 35, UnlockLevel: 3},
+	{ID: 14, Code: "b_p2", Name: "减震靴", Slot: "boots", Tier: 2, Element: ElementKinetic, Descr: "鞋底的缓冲结构。护甲 +20‰，攻击力 +75‰。", BaseArmor: 20, BaseBonusPct: 75, UnlockLevel: 20},
+	{ID: 15, Code: "b_p3", Name: "相位靴", Slot: "boots", Tier: 3, Element: ElementIce, Descr: "相位护踝。护甲 +30‰，攻击力 +150‰。", BaseArmor: 30, BaseBonusPct: 150, UnlockLevel: 48},
 	// 挂件
-	{ID: 16, Code: "c_p1", Name: "旧军牌", Slot: "charm", Tier: 1, Element: ElementFire, Descr: "略微提升反应伤害。", BaseArmor: 0, BaseBonusPct: 60, UnlockLevel: 5},
-	{ID: 17, Code: "c_p2", Name: "元素棱镜", Slot: "charm", Tier: 2, Element: ElementLightning, Descr: "反应链更容易被触发。", BaseArmor: 0, BaseBonusPct: 110, UnlockLevel: 26},
-	{ID: 18, Code: "c_p3", Name: "母核碎片", Slot: "charm", Tier: 3, Element: ElementCorrosion, Descr: "从母巢抢出的碎片，仍在搏动。", BaseArmor: 0, BaseBonusPct: 220, UnlockLevel: 60},
+	{ID: 16, Code: "c_p1", Name: "旧军牌", Slot: "charm", Tier: 1, Element: ElementFire, Descr: "略微放大元素反应。攻击力 +60‰。", BaseArmor: 0, BaseBonusPct: 60, UnlockLevel: 5},
+	{ID: 17, Code: "c_p2", Name: "元素棱镜", Slot: "charm", Tier: 2, Element: ElementLightning, Descr: "棱镜切分光路。攻击力 +110‰。", BaseArmor: 0, BaseBonusPct: 110, UnlockLevel: 26},
+	{ID: 18, Code: "c_p3", Name: "母核碎片", Slot: "charm", Tier: 3, Element: ElementCorrosion, Descr: "从母巢抢出的碎片，仍在搏动。攻击力 +220‰。", BaseArmor: 0, BaseBonusPct: 220, UnlockLevel: 60},
 }
 
 // EquipmentByID 按 id 查装备。
