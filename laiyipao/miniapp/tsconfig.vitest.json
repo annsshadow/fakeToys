@@ -1,10 +1,17 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "lib": ["ES2022"],
-    "types": ["node"],
+    // DOM：src/render/** 用 CanvasRenderingContext2D / requestAnimationFrame，
+    // 运行时环境是 node（vitest.config.ts），但**类型面**必须有 DOM 才谈得上去。
+    "lib": ["ES2022", "DOM"],
+    // vitest/globals：本文件覆盖了 tsconfig.json 的 types，漏掉它就等于
+    // 把 `expect` / `it` 这些全局名删掉了（`globals: true` 在 vitest.config.ts 里）。
+    "types": ["node", "vitest/globals"],
     "module": "ESNext",
-    "moduleResolution": "Bundler",
+    // 本仓库的 typescript 是 4.9.5，不认识 "Bundler"（TS 5.0+ 才有）。
+    // 写成 Bundler 时 tsc 报 TS6046 + TS5070 两条配置错就退出，
+    // 于是 `npm run type-check:test` 从来没有类型检查过任何一个测试文件。
+    "moduleResolution": "Node",
     "noEmit": true,
     "isolatedModules": true,
     "allowSyntheticDefaultImports": true,
@@ -12,6 +19,9 @@
   },
   "include": [
     "vitest.config.ts",
+    // src/env.d.ts 里是 `/// <reference types="vite/client" />`，
+    // 不把它纳入 program，`await import('./lcg?raw')` 这类 Vite 专用导入就无从解析。
+    "src/**/*.d.ts",
     "src/game/**/*.test.ts",
     "src/**/*.test.ts"
   ]
