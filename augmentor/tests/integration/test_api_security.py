@@ -728,11 +728,34 @@ class TestBareNameResolvesInsideRoots:
 
         assert candidates == [(cwd / "train_data_ui.json").resolve()]
 
-    def test_new_file_is_not_guessed_into_a_root(self, monkeypatch, tmp_path):
-        """写入不存在的路径时**不**替调用方挑目录
+    def test_new_relative_name_lands_in_the_first_root(self, monkeypatch, tmp_path):
+        """一个候选都不存在时（写新文件）落**首个根解释**，而不是 403
 
-        猜测会把产物静默挪进某个根目录；这里宁可 403，让调用方显式写
-        ``data/xxx.json``。
+        改前的口径是「宁可 403，也不替调用方挑目录」，实测代价写在 A163 里：出厂
+        默认下工作目录是根的**父目录**，所以「不挑目录」等于「新文件一个也写不进
+        去」——UI 的默认输出名 `augmented_output.json` 从 `/api/augment/start` 必
+        403。这里锁的是新口径的两半：① 落点仍在白名单内（首个根，与读侧「第一个
+        存在」用的同一条优先级，不是另造一个猜测）；② 工作目录解释**在闸内时**
+        照旧优先尊重它，那一格由
+        `tests/unit/test_upload_ceiling_l87.py::TestUploadPathIsHonoured` 钉住。
+        """
+        from api.deps import resolve_data_path
+
+        root = tmp_path / "data"
+        root.mkdir()
+        monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(root))
+
+        path = resolve_data_path("brand_new_output.json", for_write=True)
+
+        assert path == (root / "brand_new_output.json").resolve()
+        assert path.parent == root.resolve()
+
+    def test_missing_read_is_404_not_403(self, monkeypatch, tmp_path):
+        """同一条兜底把「读不到的文件」从假 403 变回真 404
+
+        改前 `resolve_data_path("nope.json")` 在工作目录不在闸内时回 403「路径超出
+        允许的数据目录范围」，而真相是「文件不存在」——对客户端是两种完全不同的
+        处置（改路径 vs 改文件名）。
         """
         from fastapi import HTTPException
 
@@ -743,10 +766,9 @@ class TestBareNameResolvesInsideRoots:
         monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(root))
 
         with pytest.raises(HTTPException) as exc:
-            resolve_data_path("brand_new_output.json", for_write=True)
+            resolve_data_path("brand_new_input.json")
 
-        assert exc.value.status_code == 403
-        assert not (root / "brand_new_output.json").exists()
+        assert exc.value.status_code == 404
 
     def test_explicit_root_relative_spelling_works(self, monkeypatch, tmp_path):
         """显式 ``sub/xxx.json`` 这种写法照旧可用"""

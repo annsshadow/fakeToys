@@ -268,6 +268,25 @@ def max_upload_bytes() -> int:
     return _config_upload_limit(config_file_path())
 
 
+def _is_within_roots(path: Path, roots: List[Path]) -> bool:
+    """路径是否落在任一根目录内（``_assert_within_roots`` 的无异常那一半）
+
+    Args:
+        path: 已 resolve 的绝对路径
+        roots: 已 resolve 的根目录列表
+
+    Returns:
+        落在任一根目录内为 True
+    """
+    for root in roots:
+        try:
+            path.relative_to(root)
+            return True
+        except ValueError:
+            continue
+    return False
+
+
 def _assert_within_roots(path: Path, roots: List[Path]) -> Path:
     """校验路径落在白名单根目录内
 
@@ -281,13 +300,9 @@ def _assert_within_roots(path: Path, roots: List[Path]) -> Path:
     Raises:
         HTTPException: 403 路径越界
     """
-    for root in roots:
-        try:
-            path.relative_to(root)
-            return path
-        except ValueError:
-            continue
-    raise HTTPException(status_code=403, detail="路径超出允许的数据目录范围")
+    if not _is_within_roots(path, roots):
+        raise HTTPException(status_code=403, detail="路径超出允许的数据目录范围")
+    return path
 
 
 def _relative_candidates(raw: Path, roots: List[Path]) -> List[Path]:
@@ -361,9 +376,16 @@ def resolve_within_roots(name: str, label: str) -> Path:
     """把客户端传入的路径规范化为白名单内的绝对路径
 
     相对路径按 ``_relative_candidates`` 的顺序取**第一个存在**的解释，白名单
-    根目录优先于工作目录。一个都不存在时（典型是写入新文件）落回工作目录解释，
-    由后续的存在性检查 404 或白名单闸 403 ——**不**替调用方凭空挑一个写入目录，
-    那种猜测会静默改掉产物落点。要写入请显式传 ``data/xxx.json``。
+    根目录优先于工作目录。**一个候选都不存在时**（典型是写入新文件）改前落的是
+    **末项 = 工作目录解释**，而出厂默认下工作目录恰恰不在闸内（根是 ``data``，
+    进程跑在它的父目录）⇒ 「不替调用方凭空挑写入目录」这条口径在纯写侧变成
+    「新文件一个也写不进去」：实测出厂布局下 ``resolve_data_path(
+    "augmented_output.json", for_write=True)`` 403，而 UI 的默认输出名就是它
+    （A163；读侧同一条字符串因为是「第一个存在」所以一直是对的，于是
+    「选得到、写不进」）。现在的兜底：**工作目录解释若在闸内就照旧用它**
+    （这一格锁着 L87 的「客户端说的落点要真落在那儿」，不能动），否则用
+    **首个根解释**——后者不放宽可达范围（恒在白名单内），而 ``_assert_within_roots``
+    照旧过一遍，符号链接逃逸仍然 403。要显式指定落点仍然传 ``data/xxx.json``。
 
     ``..`` 组件直接拒绝。``Path.resolve()`` 会展开符号链接，因此指向根目录
     之外的软链接同样被拦下。
@@ -391,7 +413,10 @@ def resolve_within_roots(name: str, label: str) -> Path:
         return _assert_within_roots(raw.resolve(), roots)
 
     candidates = _relative_candidates(raw, roots)
-    chosen = next((c for c in candidates if c.exists()), candidates[-1])
+    chosen = next((c for c in candidates if c.exists()), None)
+    if chosen is None:
+        fallback = candidates[-1]
+        chosen = fallback if _is_within_roots(fallback, roots) else candidates[0]
     return _assert_within_roots(chosen, roots)
 
 
