@@ -58,6 +58,32 @@ def allow_temp_data_roots(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def fail_on_repo_residue(request):
+    """A168：用例若在仓库根 / `data/` / `.backups/` 顶层留下新产物就当场判红
+
+    `allow_temp_data_roots` 把 `os.getcwd()` 整个放进了路径白名单，于是测试有权往仓库根
+    写文件。这权利用得过界时留下的是**磁盘历史**：L93 实测过一格，三条上传用例先把
+    `l87_ok.json` 等写进了 `augmentor/`，还原产品码后它们仍然红——因为落点判据是
+    「候选里第一个存在的」，残留单独就能把判决翻掉。清扫住在变异探针里救不了
+    「跑完整套忘了看」那种形状，所以这里做成逐用例的全局判据。
+
+    判据范围与代价见 `tests/residue_watch.py`：L94 用同形状探针跑全套量到
+    `RESIDUE_COUNT 0`，因此这条守卫不需要白名单。
+
+    Args:
+        request: pytest 内置 fixture，用于把残留点名到具体用例
+    """
+    from tests.residue_watch import find_residue, snapshot
+
+    root = str(AI_DIR)
+    before = snapshot(root)
+    yield
+    message = find_residue(root, before, request.node.nodeid)
+    if message:
+        pytest.fail(message)
+
+
+@pytest.fixture(autouse=True)
 def reset_rate_limiter():
     """逐用例重置限流计数
 
