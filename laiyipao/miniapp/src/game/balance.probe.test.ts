@@ -597,6 +597,114 @@ describe('平衡基准', () => {
     expect(dead.join(',')).toBe('')
   }, 600_000)
 
+  // 卡牌 / 装备的加成在真实对局里**有没有被触发过**。
+  //
+  // ⚠️ 与 I-4 地形同源的怀疑：`applyAttribute` 与 `applyMechanic`
+  // 都实现了 6 / 5 个 kind，代码看起来完整。但——
+  //   - 内容表的卡到底带不带 attribute / mechanic？
+  //   - `applyCard` 到底走不走这两个分支？
+  //   - 装备的加成到底有没有进战斗？
+  // 这三件事单元测试都不回答（它们直接调 `applyMechanic`，
+  // 绕过了"卡是否真的带效果"与"是否真的被取用"）。
+  //
+  // 判据：跑真实关卡、真实抽卡，然后看 10 个 buff 字段里
+  // 哪些**真的从零变过**。全零 = 那些加成是纯装饰。
+  it('卡牌/装备加成的实际触发率', () => {
+    const lv = (fixture.levels as unknown as GeneratedLevel[]).find((l) => l.id === 50)!
+    const peak = new Map<string, number>()
+    const cardKinds = new Map<string, number>()
+    let cardsTaken = 0
+    let heatCapPeak = 0n
+
+    for (const seed of [12345, 777, 20250101, 42, 99999]) {
+      const e = new BattleEngine({
+        level: lv,
+        enemies: enemyMap,
+        skills: skillMap,
+        equipped: equip(ACTIVE_SLOTS),
+        attacker: defaultAttacker(),
+        seed,
+      })
+      e.start()
+      const eng = e as unknown as {
+        buffs: Record<string, bigint | number>
+        heat: { capBonus: bigint }
+        deck: { hand: { id: string; kind: string; mechanic?: { kind: string }; effect?: { kind: string } }[] }
+        takeCard(id: string): unknown
+      }
+      for (let t = 0; t < 20000; t++) {
+        if (e.phase === 'won' || e.phase === 'lost') break
+        if (e.phase === 'card_select') {
+          // 真实取牌：走 takeCard（含 applyCard → applyAttribute/applyMechanic）
+          const hand = eng.deck.hand
+          if (hand.length > 0) {
+            const c = hand[Math.floor((t % 7) / 3) % hand.length]
+            const k = c.mechanic?.kind
+              ? `mechanic:${c.mechanic.kind}`
+              : c.effect
+                ? `attr:${c.effect.kind}`
+                : `${c.kind}:none`
+            cardKinds.set(k, (cardKinds.get(k) || 0) + 1)
+            eng.takeCard(c.id)
+            cardsTaken++
+          } else {
+            e.skipCards()
+          }
+        }
+        e.step()
+        // ⚠️ 必须**逐 tick 记录峰值**，不能只看战斗结束时的值。
+        //
+        // 我第一版在战斗结束后采样，得到「overheatGuard 从未被触发」——
+        // 而实际上那张卡被取了 4 次。原因是 overheatGuard **触发后即被消耗**
+        // （Round 7 修的「隔热护罩」语义就是用掉一层），
+        // 于是结束时它已经回到 0。
+        //
+        // 消耗型资源用"结束值"度量，必然得到假的 0。
+        // 这与地形度量踩的是同一类坑：**度量点选错 → 观测不到 → 误判为没生效。**
+        for (const [k, v] of Object.entries(eng.buffs)) {
+          const cur = Number(v)
+          if (cur > (peak.get(k) ?? 0)) peak.set(k, cur)
+        }
+        // 热量上限**不住在 Buffs 里** —— 它在 HeatMeter 上
+        // （`get cap() { return HEAT_MAX + this.capBonus }`）。
+        // Buffs 里曾经有一份只写不读的镜像，已删；所以这里必须单独采样，
+        // 否则删掉镜像之后这个加成就会"从统计里消失"，
+        // 而它其实是生效的。
+        const hc = eng.heat.capBonus
+        if (hc > heatCapPeak) heatCapPeak = hc
+      }
+    }
+    const seen = new Set([...peak.entries()].filter(([, v]) => v !== 0).map(([k]) => k))
+    if (heatCapPeak > 0n) seen.add('heatCapBonus')
+    console.log(
+      `[bal-buff] 取牌 ${cardsTaken} 次，卡面效果分布: ` +
+        [...cardKinds.entries()].map(([k, v]) => `${k}x${v}`).join(' '),
+    )
+    console.log(`[bal-buff] 实际被改变的 buff: ${[...seen].sort().join(', ') || '（全部为 0）'}`)
+
+    // 期望：pierce/chain/aoe/free_discard/overheatGuard（机制卡）
+    //      + attack/elementCoef/crit/heatCap/elementCap/armor（属性卡）
+    //
+    // heatCapBonus 住在 HeatMeter 而不是 Buffs（Buffs 里那份只写不读的
+    // 镜像已删），上面单独采样后并进 seen，所以它仍在这个名单里。
+    const expected = [
+      'pierceBonus',
+      'chainBonus',
+      'aoeBonus',
+      'freeDiscard',
+      'overheatGuard',
+      'attackPermille',
+      'elementCoefPermille',
+      'critPermille',
+      'heatCapBonus',
+      'elementCapBonus',
+      'armorPermille',
+    ]
+    const dead = expected.filter((x) => !seen.has(x))
+    console.log(`[bal-buff] 从未被触发的加成: ${dead.join(', ') || '（无）'}`)
+    expect(dead.join(',')).toBe('')
+  }, 300_000)
+
   // 血量厚度对成长维度的影响（参数实验）
   it('血量厚度对成长维度的影响（参数实验）', () => {
     for (const hpMul of [1, 2, 5, 10, 20]) {
