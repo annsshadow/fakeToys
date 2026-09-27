@@ -818,7 +818,7 @@ pub async fn attachment_list_folder_folderId(
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
-             FROM FILE_FILE WHERE folder_id = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
+             FROM FILE_FILE WHERE superior = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&folder_id],
         )
         .await
@@ -1520,7 +1520,7 @@ pub async fn attachment2_list_folder_folderId(
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
-             FROM FILE_FILE WHERE folder_id = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
+             FROM FILE_FILE WHERE superior = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&folder_id],
         )
         .await.map_err(|_| AppError::Internal)?;
@@ -3520,10 +3520,31 @@ pub async fn folder_id(
 #[allow(non_snake_case)]
 pub async fn folder2_batch_download(
     pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool;
-    // o2server 语义：按文件夹批量打包下载 —— 无打包引擎，显式 501 + warn。
-    Err(u2_capability_unavailable("zip-batch-download"))
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<axum::response::Response, AppError> {
+    // o2server 语义：批量打包下载 —— 无参 GET 版按当前用户全部未删文件打包。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT name, content FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY name",
+            &[&session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let entries: Vec<(String, Vec<u8>)> = rows
+        .iter()
+        .map(|row| {
+            (
+                row.get::<_, Option<String>>("name").unwrap_or_default(),
+                decode_file_content(row.get("content")),
+            )
+        })
+        .collect();
+    let zip_bytes = build_zip_archive(entries)?;
+    zip_download_response(zip_bytes, "batch-download.zip")
 }
 
 #[axum::debug_handler]
@@ -3588,10 +3609,38 @@ pub async fn folder2_id(
 pub async fn folder2_id_download(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = (pool, id);
-    // o2server 语义：文件夹打包下载 —— 无打包引擎，显式 501 + warn。
-    Err(u2_capability_unavailable("zip-folder-download"))
+) -> Result<axum::response::Response, AppError> {
+    // o2server 语义：文件夹打包下载 —— 把该文件夹内全部文件打包为 zip。
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let folder = client
+        .query_opt(
+            "SELECT name FROM FILE_FOLDER WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let folder_name: String = match folder {
+        Some(row) => row.get("name"),
+        None => return Err(AppError::NotFound),
+    };
+    let rows = client
+        .query(
+            "SELECT name, content FROM FILE_FILE WHERE superior = $1 AND deleted_at IS NULL ORDER BY name",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let entries: Vec<(String, Vec<u8>)> = rows
+        .iter()
+        .map(|row| {
+            (
+                row.get::<_, Option<String>>("name").unwrap_or_default(),
+                decode_file_content(row.get("content")),
+            )
+        })
+        .collect();
+    let zip_bytes = build_zip_archive(entries)?;
+    zip_download_response(zip_bytes, &format!("{}.zip", folder_name))
 }
 
 #[axum::debug_handler]
@@ -3908,7 +3957,7 @@ pub async fn share_list_att_share_shareId_folder_folderId(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE folder_id = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
+            "SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE superior = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&folder_id],
         )
         .await.map_err(|_| AppError::Internal)?;
@@ -4186,6 +4235,67 @@ fn u2_capability_unavailable(capability: &'static str) -> AppError {
         "endpoint requires an unavailable engine; returning 501"
     );
     AppError::NotImplemented
+}
+
+// ── zip 打包下载（folder2 batch / folder2 {id} download）─────────────────────
+
+/// FILE_FILE.content 是 base64 TEXT；解码失败按空字节处理（与 file_id_download 一致）。
+fn decode_file_content(content: Option<String>) -> Vec<u8> {
+    content
+        .as_deref()
+        .and_then(|c| base64::engine::general_purpose::STANDARD.decode(c).ok())
+        .unwrap_or_default()
+}
+
+/// 把 (文件名, 字节) 序列打包为 zip 内存档；重名文件追加序号避免 entry 冲突。
+fn build_zip_archive(entries: Vec<(String, Vec<u8>)>) -> Result<Vec<u8>, AppError> {
+    use std::io::{Cursor, Write as _};
+    use zip::write::SimpleFileOptions;
+
+    let mut writer = zip::ZipWriter::new(Cursor::new(Vec::new()));
+    let mut used_names = std::collections::HashSet::new();
+    for (index, (name, bytes)) in entries.into_iter().enumerate() {
+        let base = if name.is_empty() {
+            format!("file-{}", index + 1)
+        } else {
+            name
+        };
+        let mut entry = base.clone();
+        let mut seq = 1u32;
+        while !used_names.insert(entry.clone()) {
+            seq += 1;
+            let stem_ext: Option<(String, String)> = base
+                .rsplit_once('.')
+                .filter(|(_, ext)| !ext.is_empty() && !base.starts_with('.'))
+                .map(|(stem, ext)| (stem.to_string(), ext.to_string()));
+            entry = match stem_ext {
+                Some((stem, ext)) => format!("{}-{}.{}", stem, seq, ext),
+                None => format!("{}-{}", base, seq),
+            };
+        }
+        writer
+            .start_file(entry.as_str(), SimpleFileOptions::default())
+            .map_err(|_| AppError::Internal)?;
+        writer
+            .write_all(&bytes)
+            .map_err(|_| AppError::Internal)?;
+    }
+    Ok(writer
+        .finish()
+        .map_err(|_| AppError::Internal)?
+        .into_inner())
+}
+
+fn zip_download_response(bytes: Vec<u8>, filename: &str) -> Result<axum::response::Response, AppError> {
+    Ok(axum::response::Response::builder()
+        .status(axum::http::StatusCode::OK)
+        .header("Content-Type", "application/zip")
+        .header(
+            "Content-Disposition",
+            format!("attachment; filename=\"{}\"", filename.replace('"', "")),
+        )
+        .body(axum::body::Body::from(bytes))
+        .unwrap())
 }
 
 async fn u2_require_admin(pool: &Pool, session: &shared::session::Session) -> Result<(), AppError> {

@@ -89,8 +89,6 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_engine_less_endpoints_return_exact_501() {
         for (method, path) in [
-            ("GET", "/api/folder2/batch/download"),
-            ("GET", "/api/folder2/f-1/download"),
             ("POST", "/api/config"),
             ("GET", "/api/config/system/config"),
         ] {
@@ -101,6 +99,105 @@ mod u2_tests {
                 "engine-less endpoint must answer exact 501: {method} {path}"
             );
         }
+    }
+
+    // zip 打包已真实现（承 folder2_batch_download / folder2_id_download）：
+    // 批量版无会话时必须 fail loud 401；文件夹版对不存在的文件夹 404。
+    #[tokio::test]
+    async fn u2_zip_download_batch_requires_session() {
+        let (status, _) = respond("GET", "/api/folder2/batch/download", &[], Body::empty()).await;
+        assert_eq!(status, StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn u2_zip_download_folder_missing_is_404() {
+        if !shared::testing::is_db_available().await {
+            // 需要 live DB 区分「handler 404 信封」与「mock_pool 500」。
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let response = crate::router(pool)
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/folder2/f-1/download")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap_or_default();
+        assert_eq!(json["type"], "error", "handler 404 must carry error envelope");
+    }
+
+    // ── zip 打包真实现：happy path 必须产出可解压的有效 zip ─────────────────
+
+    #[tokio::test]
+    async fn u2_zip_folder_download_packs_files_into_valid_zip() {
+        if !shared::testing::is_db_available().await {
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let client = pool.get().await.unwrap();
+        let folder_id = format!("u2zipfolder-{}", uuid::Uuid::new_v4());
+        let file_id = format!("u2zipfile-{}", uuid::Uuid::new_v4());
+        let folder_name = "打包夹";
+        let person = "tester";
+        let file_name = "hello.txt";
+        use base64::Engine as _;
+        let b64 = base64::engine::general_purpose::STANDARD.encode(b"hello zip");
+        client
+            .execute(
+                "INSERT INTO FILE_FOLDER (id, name, person) VALUES ($1, $2, $3)",
+                &[&folder_id, &folder_name, &person],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "INSERT INTO FILE_FILE (id, name, person, superior, content) VALUES ($1, $2, $3, $4, $5)",
+                &[&file_id, &file_name, &person, &folder_id, &b64],
+            )
+            .await
+            .unwrap();
+
+        let response = crate::router(pool.clone())
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri(format!("/api/folder2/{folder_id}/download"))
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "application/zip"
+        );
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let mut archive = zip::ZipArchive::new(std::io::Cursor::new(bytes.to_vec())).unwrap();
+        assert_eq!(archive.len(), 1, "folder contains exactly one packed file");
+        let mut entry = archive.by_name("hello.txt").unwrap();
+        let mut unpacked = Vec::new();
+        std::io::Read::read_to_end(&mut entry, &mut unpacked).unwrap();
+        assert_eq!(unpacked, b"hello zip", "zip payload must round-trip");
+
+        client
+            .execute("DELETE FROM FILE_FILE WHERE id = $1", &[&file_id])
+            .await
+            .unwrap();
+        client
+            .execute("DELETE FROM FILE_FOLDER WHERE id = $1", &[&folder_id])
+            .await
+            .unwrap();
     }
 
     #[tokio::test]
