@@ -1,4 +1,4 @@
-﻿[package]
+[package]
 publish.workspace = true
 name = "processplatform_assemble_surface"
 version.workspace = true
@@ -23,3 +23,6 @@ md5.workspace = true
 urlencoding.workspace = true
 tower.workspace = true
 zip = "2"
+cfb = "0.15.0"
+image = { version = "0.23.12", default-features = false, features = ["gif", "jpeg", "ico", "png", "pnm", "tga", "tiff", "webp", "bmp", "hdr", "dds", "farbfeld", "jpeg_rayon", "tiff"] }
+genpdf = { version = "0.2.0", features = ["images"] }

@@ -629,15 +629,10 @@ mod u2b_tests {
     #[tokio::test]
     async fn u2b_engineless_endpoints_return_exact_501() {
         let b = "/api/processplatform/assemble/surface/attachment";
+        // 渲染族已分级真实现（docToWord/htmlToPdf/previewPdf/previewImage），
+        // 仅 html->image 保留 501（o2 该路径亦依赖 O2 云，纯 Rust 无 HTML 光栅化）
         let cases: Vec<(&str, String)> = vec![
-            ("POST", format!("{b}/doc/to/word/work/w-1")),
-            ("POST", format!("{b}/doc/to/word/workorworkcompleted/w-1")),
-            ("POST", format!("{b}/html/to/pdf")),
             ("POST", format!("{b}/html/to/image")),
-            ("GET", format!("{b}/att-1/preview/pdf")),
-            ("GET", format!("{b}/att-1/preview/image/page/2")),
-            ("GET", format!("{b}/preview/pdf/f-1/result")),
-            ("GET", format!("{b}/preview/image/f-1/result")),
         ];
         for (method, path) in cases {
             assert_eq!(
@@ -673,11 +668,42 @@ mod u2b_tests {
         }
     }
 
+    // docToWord 已真实现（CFB 包 HTML → 附件落盘）：缺参数 fail loud 400
+    #[tokio::test]
+    async fn u2b_doc_to_word_requires_params() {
+        let response = router(mock_pool())
+            .oneshot(
+                Request::builder()
+                    .uri("/api/processplatform/assemble/surface/attachment/doc/to/word/work/w-1")
+                    .method("POST")
+                    .header("content-type", "application/json")
+                    .extension(test_session())
+                    .body(Body::from("{}"))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    // preview pdf：无 DB 时 handler 内查询失败 500，但绝不退回 404（可达性）
+    #[tokio::test]
+    async fn u2b_preview_pdf_is_real_route_not_stub() {
+        let (status, _) = respond(
+            "GET",
+            "/api/processplatform/assemble/surface/attachment/att-1/preview/pdf",
+            &[],
+            Body::empty(),
+        )
+        .await;
+        assert_ne!(status, StatusCode::NOT_FOUND);
+    }
+
     #[tokio::test]
     async fn u2b_501_response_body_is_action_result_error_shape() {
         let (status, json) = respond(
             "POST",
-            "/api/processplatform/assemble/surface/attachment/html/to/pdf",
+            "/api/processplatform/assemble/surface/attachment/html/to/image",
             &[],
             Body::empty(),
         )
