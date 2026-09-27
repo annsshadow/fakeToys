@@ -39,11 +39,23 @@ describe('热量：上限与释放', () => {
     expect(h.overheated).toBe(false)
   })
 
-  it('cap = HEAT_MAX + 加成', () => {
+  it('cap = HEAT_MAX × (1000 + 加成‰) / 1000', () => {
+    // ⚠️ 加成是**千分比**，不是绝对值。
+    //
+    // 曾经写成 `HEAT_MAX + capBonus` —— 那是把千分比当绝对值加，
+    // 于是 heatCapPermille=1000‰ 让上限变成 1100 而不是 200。
+    // 而热量衰减率是固定的，于是玩家长期卡在死区：
+    // 100 关实测漏怪 486 → 1168（2.4 倍）、分数 -13.8%。
+    //
+    // 「提高热量上限」是**有利属性**，出现反向曲线只能是单位错了。
     const h = newHeat()
     expect(h.cap).toBe(HEAT_MAX)
-    h.capBonus = 50n
-    expect(h.cap).toBe(HEAT_MAX + 50n)
+    h.capBonus = 50n // +5%
+    expect(h.cap).toBe((HEAT_MAX * 1050n) / 1000n)
+    h.capBonus = 1000n // +100%
+    expect(h.cap).toBe(HEAT_MAX * 2n)
+    // 反向断言：旧写法会得到 HEAT_MAX + 1000
+    expect(h.cap).not.toBe(HEAT_MAX + 1000n)
   })
 
   it('释放扣热量并记录本局峰值', () => {

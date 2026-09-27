@@ -14,6 +14,7 @@
 
 import type { Element } from './elements'
 import type { BattleRng } from './lcg'
+import { PERMILLE } from './fixed'
 
 export const ACTIVE_SLOTS = 4
 export const PASSIVE_SLOT = 4
@@ -110,8 +111,28 @@ export class HeatSystem {
    */
   private decayRemainder: bigint = 0n
 
+  /**
+   * 当前热量上限。
+   *
+   * ⚠️ `capBonus` 是**千分比**，所以上限是 `HEAT_MAX × (1000 + capBonus) / 1000`。
+   *
+   * 曾经写成 `HEAT_MAX + this.capBonus`，把千分比**当成绝对值**相加 ——
+   * 后果实测（100 关全量扫描）：
+   *
+   *   capBonus=0‰    → cap=100    过热 9028 次  漏 486
+   *   capBonus=200‰  → cap=300    过热 3511 次  漏 476
+   *   capBonus=1000‰ → cap=1100   过热 1174 次  漏 1168
+   *   capBonus=2000‰ → cap=2100   过热  638 次  漏 1484
+   *
+   * 上限涨到 11 倍时，过热几乎不再发生（冻结全��敌人的时间大幅减少），
+   * 而**热量衰减率是固定的** —— 于是玩家长期停在"热量很高但放不出技能"的
+   * 死区里，漏怪翻 2~3 倍、分数掉 13.8%。
+   *
+   * 「提高热量上限」是**有利属性**，出现这种曲线说明单位错了，不是平衡问题。
+   */
   get cap(): bigint {
-    return HEAT_MAX + this.capBonus
+    if (this.capBonus <= 0n) return HEAT_MAX
+    return (HEAT_MAX * (PERMILLE + this.capBonus)) / PERMILLE
   }
 
   /**
