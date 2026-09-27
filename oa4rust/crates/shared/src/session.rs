@@ -70,7 +70,7 @@ impl SessionManager {
             redis_pool: Arc::new(std::sync::Mutex::new(None)),
             message_bus: None,
         };
-        manager.start_threshold_scanner()
+        manager.start_threshold_scanner().start_session_sweeper()
     }
 
     pub fn with_pool(pool: Pool) -> Self {
@@ -93,7 +93,22 @@ impl SessionManager {
             redis_pool: Arc::new(std::sync::Mutex::new(None)),
             message_bus: None,
         };
-        manager.start_threshold_scanner()
+        manager.start_threshold_scanner().start_session_sweeper()
+    }
+
+    /// 周期性清理内存中已过期、且不会再被访问到的会话条目。
+    /// validate_session 只在会话被再次访问时惰性清除；不活跃的过期条目
+    /// 若无人清扫会随运行时长无限累积（内存泄漏）。
+    fn start_session_sweeper(self) -> Self {
+        let sweeper = self.clone();
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(std::time::Duration::from_secs(300));
+            loop {
+                interval.tick().await;
+                sweeper.cleanup_expired_sessions().await;
+            }
+        });
+        self
     }
 
     fn start_threshold_scanner(self) -> Self {
@@ -647,11 +662,11 @@ impl SessionManager {
             self.sessions.write().await.remove(token);
         }
         if let Some(ref pool) = self.get_redis_pool() {
-            let prefix = "oa4rust:session:";
             let mut guard = pool.0.manager.lock().await;
             if let Some(conn) = guard.as_mut() {
                 for token in &expired {
-                    let key = format!("{}{}", prefix, token);
+                    // 与 create/validate/remove 一致：Redis key 存的是签名后的 token。
+                    let key = format!("{}{}", SESSION_KEY_PREFIX, self.sign_token(token));
                     let _: Result<(), _> = conn.del::<_, ()>(&key).await;
                 }
             }
