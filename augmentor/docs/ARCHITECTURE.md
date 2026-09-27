@@ -2676,8 +2676,13 @@ tests/
 │   ├── AI_DIR 注入 sys.path
 │   ├── 假环境变量（避免模型后端构造时校验失败）
 │   ├── autouse fixture：强制 model_manager 走 fallback（禁止测试期下载模型）
+│   ├── autouse fixture：把系统临时目录并入 API 路径白名单（`AUGMENTOR_DATA_ROOTS`）
+│   ├── autouse fixture：逐用例重置限流计数（TestClient 的 host 恒为 testclient）
+│   ├── autouse fixture：用例在仓库根 / `data/` / `.backups/` 顶层留下新产物就判红（L94）
 │   ├── sample_items：5 条中文客服问答（含 1 组近似重复）
 │   └── tmp_data_file
+│
+├── residue_watch.py     残留守卫的判定与措辞（被 conftest 与用例共用）
 │
 ├── unit/          按模块一文件，覆盖正常/边界/错误路径
 │   └── test_visualizer.py 通过向 sys.modules 注入假 matplotlib / wordcloud，
@@ -2692,6 +2697,26 @@ tests/
 ```
 
 覆盖率门禁：`pytest.ini` 中 `--cov-fail-under=80`，低于 80% 时进程退出码非 0。
+
+### 7.1 关于测试本身的判据（L94 / A171 + A168）
+
+两把尺子量的不是产品行为，而是「这套测试有没有在说谎」，所以它们住在仓库里而不是各轮的
+临时脚本里。立项理由都是实测过的失效形状，不是叙事：
+
+- **量读数的尺子必须先自证**（`tests/unit/test_measurement_rulers_l94.py`）。每把尺子
+  （页脚计数、收集名册、AST 调用点、逐文件覆盖）都在**函数体内**先读一份已知答案的样本，
+  读错抛 `RulerNotProven`、数不到抛 `NoMatch`、同名歧义抛 `AmbiguousName` —— 尺子读不出东西时
+  返回的是**合法形状的 0**，判据不红而账本会把它当成读数。反面实例：按 `passed … skipped … failed`
+  顺序写的页脚正则，而 pytest 在真有失败时写的是 `5 failed, 7032 passed, …`，于是那道
+  「有失败就不许填数」的闸从写下那天起恒为 0。另有 `TestTheRulersAreUsedNotDecorated` 用 AST
+  检查每个尺子函数确实做了那次比对，防止「入库但没人用」。
+- **用例不许在仓库根留下产物**（`tests/conftest.py` 的 `fail_on_repo_residue`，判定住在
+  `tests/residue_watch.py`）。逐用例快照仓库根 / `data/` / `.backups/` 的顶层子项，只认
+  「开始前没有、结束后有」，命中就 `pytest.fail` 点名到 node-id。病理：`allow_temp_data_roots`
+  把 `os.getcwd()` 整个放进路径白名单，一次过宽实验把三件产物真写进了仓库根，还原产品码之后
+  那三条用例**仍然红** —— 落点判据读的是磁盘历史。入库前用同形状探针量过全套 = `RESIDUE_COUNT 0`，
+  所以这条守卫没有白名单；「不归它管」的四种形状（建了又删 / 改已有文件内容 / 删掉原有产物 /
+  往更深一层写）各有用例钉住，防止把「没报」读成「没漏」。
 
 ## 8. 已知限制
 
