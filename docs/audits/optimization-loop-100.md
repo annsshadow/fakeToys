@@ -67,6 +67,14 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | 64/65 | join/长持连接 | 抽查 | CLEAN | 未发现滥用 |
 | 66-69 | 文档面 | README/docs/solutions/runbook 核对 | CLEAN | 结构与现状一致 |
 | 70 | 中型门禁③ | shared 全测 | CLEAN | 141/141（含 netguard/session/storage） |
+| 71 | live 冒烟 | 编译二进制起 :3000 | CLEAN | health 200、migrations 幂等应用 |
+| 72 | 鉴权门控 | consumed 端点打点 | CLEAN | statgrade/htmlToPdf 未授权均 401（路由真实注册+鉴权在位） |
+| 73-75 | 渲染族 live | htmlToPdf 等新端点 | CLEAN(note) | 200 路径由 u2_render 单测覆盖（真实 %PDF/PNG+CFB 往返），live 层验 401 门控（admin 口令为占位假值不可登录，诚实纪律） |
+| 76 | openapi 服务 | /openapi.json | CLEAN | 200（SPDX 重建后正常） |
+| 77 | API 404 语义 | /api/未知路径 | CLEAN | 404 不被 SPA 回退吞 |
+| 78 | xid 索引 live 实证 | EXPLAIN | IMPROVE | Index **Only** Scan（覆盖索引，优于预期 Index Scan） |
+| 79 | 运行稳定性 | live 日志 | CLEAN | 0 panic |
+| 80 | 服务收尾 | taskkill | CLEAN | 进程干净终止 |
 | 51/52 | 路由-视图对齐 | main.ts 动态导入 vs views 全集 | CLEAN | 83/83 全注册，零死组件 |
 | 53 | apis 包死导出 | 导出 vs 引用计数 | IMPROVE(deferred) | 独立 *Api 命名导出由 oa4rustApis 聚合覆盖，对外契约保留 |
 | 54 | 全局错误兜底 | errorHandler 扫描 | FIX | main.ts 补 app.config.errorHandler（未捕获渲染/Promise 错误 fail-loud） |
