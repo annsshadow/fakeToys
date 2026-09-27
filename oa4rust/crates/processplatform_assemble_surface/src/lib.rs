@@ -26204,16 +26204,6 @@ pub async fn attachment_u2b_upload_with_url(
 }
 
 #[allow(non_snake_case)]
-pub async fn attachment_u2b_batch_download_zip(
-    // "job"/"work" 是静态路径段（非参数），动态段仅 {…}/{site} 两个
-    axum::extract::Path((_id, _site)): axum::extract::Path<(String, String)>,
-) -> Result<axum::response::Response, AppError> {
-    // 两条路由（job 前缀 / work 前缀）共用本 handler 时无法区分按 xjob 还是 xwork
-    // 过滤——拆分为 *_by_job / *_by_work 两个真实现后本条不再被任何路由引用。
-    Err(u2_capability_unavailable("multi-file archive packaging"))
-}
-
-#[allow(non_snake_case)]
 pub async fn attachment_u2b_batch_download_zip_by_job(
     pool: Extension<Pool>,
     axum::extract::Path((job, site)): axum::extract::Path<(String, String)>,

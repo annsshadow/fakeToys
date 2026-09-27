@@ -21,11 +21,13 @@
     "@dcloudio/uni-app-plus": "3.0.0-alpha-5020620260914001",
     "@dcloudio/uni-components": "3.0.0-alpha-5020620260914001",
     "@dcloudio/uni-h5": "3.0.0-alpha-5020620260914001",
-    "@dcloudio/uni-mp-weixin": "3.0.0-alpha-5020620260914001",
     "@dcloudio/uni-i18n": "3.0.0-alpha-5020620260914001",
+    "@dcloudio/uni-mp-weixin": "3.0.0-alpha-5020620260914001",
     "@dcloudio/uni-stat": "3.0.0-alpha-5020620260914001",
+    "@vue/devtools-api": "^8.2.1",
     "pinia": "^2.3.1",
-    "vue": "3.4.21"
+    "vue": "3.4.21",
+    "vue-demi": "^0.14.10"
   },
   "devDependencies": {
     "@dcloudio/types": "^3.4.32",

@@ -19,6 +19,15 @@ const uni = (
 // H5 目标经本地 dev server 代理 /api、/ws 到 oa4rust 后端（默认 :3000）。
 // 原生 App / 小程序目标通过 setApiBase 指向后端绝对地址（见 src/main.ts）。
 export default defineConfig({
+  resolve: {
+    // pinia 2.3 的 devtools 运行时链（devtools-api→devtools-kit）在 rolldown
+
+    // 严格解析下缺传递依赖；生产 H5 无需 devtools，统一 stub。
+    alias: {
+      '@vue/devtools-api': new URL('./src/devtools-stub.ts', import.meta.url).pathname,
+      '@vue/devtools-kit': new URL('./src/devtools-stub.ts', import.meta.url).pathname,
+    },
+  },
   plugins: uni(),
   server: {
     port: 5174,

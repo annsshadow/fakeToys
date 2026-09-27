@@ -550,13 +550,21 @@ async fn provider_login(
         QYWX_NAME => qywx_user_id(&config, code).await?,
         DINGDING_NAME => dingding_user_id(&config, code).await?,
         // 上游 provider_config 已过滤非法 name；防御未来新增 provider 漏改分支
-        _ => return Err(AppError::BadRequest(format!("unknown oauth provider: {name}"))),
+        _ => {
+            return Err(AppError::BadRequest(format!(
+                "unknown oauth provider: {name}"
+            )))
+        }
     };
     let prefix = match name {
         QYWX_NAME => QYWX_UNIQUE_PREFIX,
         DINGDING_NAME => DINGDING_UNIQUE_PREFIX,
         // 上游 provider_config 已过滤非法 name；防御未来新增 provider 漏改分支
-        _ => return Err(AppError::BadRequest(format!("unknown oauth provider: {name}"))),
+        _ => {
+            return Err(AppError::BadRequest(format!(
+                "unknown oauth provider: {name}"
+            )))
+        }
     };
     login_or_create_user(&pool, &session_manager, format!("{prefix}{user_id}")).await
 }

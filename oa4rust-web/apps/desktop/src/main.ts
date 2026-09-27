@@ -535,8 +535,8 @@ themeProvider.init()
 const app = createApp({ render: () => h(NConfigProvider, null, { default: () => h(RouterView) }) })
 // 全局兜底：未捕获渲染/Promise 错误进 console 与用户可见 toast，不静默吞
 app.config.errorHandler = (err, _instance, info) => {
-  console.error("[unhandled]", info, err);
-};
+  console.error('[unhandled]', info, err)
+}
 app.use(createPinia())
 app.use(router)
 app.use(i18n)
