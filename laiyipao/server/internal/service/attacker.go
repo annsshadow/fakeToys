@@ -78,6 +78,65 @@ func toView(a domain.Attacker) AttackerView {
 //
 // 封顶值是刻意保守的：这些乘区一旦无界，I-1 的"搭配正确 > 堆面板"
 // 就会被"无脑堆单一维度"打破。
+// loadMasteryEffect 读专精树并算出合计效果。
+//
+// ⚠️ 这里**绝不能**调 s.LoadBuildSnapshot / s.computeRating：
+// 两者都会回调 computeAttacker（build 快照里要含 attacker），
+// 于是 computeAttacker → LoadBuildSnapshot → computeAttacker → …
+// 无限递归。表现为测试跑满超时后 panic，且栈里全是这两个函数互相调用 ——
+// 这个坑很隐蔽，因为「让攻方属性反映构筑」的需求看起来很自然。
+//
+// 抽出独立函数是为了让 `ExtraSlots`（额外插槽）与 `computeAttacker`
+// 共用同一份读取逻辑：两处各自实现一遍的话，改一处忘另一处就会
+// 让「槽位数」与「攻方加成」对不上，且没有任何测试会发现。
+func (s *Service) loadMasteryEffect(ctx context.Context, userID int64) (domain.MasteryEffect, []int, error) {
+	nodes, err := s.loadMasteryNodes(ctx, userID)
+	if err != nil {
+		return domain.MasteryEffect{}, nil, err
+	}
+	eff := domain.MasteryEffect{}
+	if len(nodes) == 0 {
+		return eff, nodes, nil
+	}
+	selected := make(map[int]bool, len(nodes))
+	for _, n := range nodes {
+		selected[n] = true
+	}
+	points := 0
+	if err := s.pool.QueryRow(ctx,
+		`SELECT mastery_points FROM user_progress WHERE user_id = $1`,
+		userID).Scan(&points); err != nil {
+		points = 0
+	}
+	allNodes := make([]domain.MasteryNode, 0, 96)
+	for _, f := range domain.AllMasteryFamilies() {
+		allNodes = append(allNodes, f.Nodes...)
+	}
+	// ⚠️ EvaluateMastery 出错时**保留零值**而不是返回错误 ——
+	// 专精点数/前置不合法属于玩家侧状态问题，不该让整局战斗打不开。
+	// 零值 = 「无加成」，是最保守也最容易解释的降级。
+	if e, err := domain.EvaluateMastery(allNodes, selected, points); err == nil {
+		eff = e
+	}
+	return eff, nodes, nil
+}
+
+// ExtraSlots 返回专精「额外插槽」提供的额外槽位数。
+//
+// 专精树第 3 层槽 0 共 8 个节点此前**完全惰性**：
+// 客户端用编译期常量 ACTIVE_SLOTS = 4，根本不读服务端下发的 base_slots，
+// 所以玩家点出来的槽位在战斗里不存在。
+func (s *Service) ExtraSlots(ctx context.Context, userID int64) (int64, error) {
+	eff, _, err := s.loadMasteryEffect(ctx, userID)
+	if err != nil {
+		return 0, fmt.Errorf("load mastery: %w", err)
+	}
+	if eff.ExtraSlots < 0 {
+		return 0, nil
+	}
+	return eff.ExtraSlots, nil
+}
+
 func (s *Service) computeAttacker(ctx context.Context, userID int64) (domain.Attacker, error) {
 	var maxStage int
 	if err := s.pool.QueryRow(ctx,
@@ -92,37 +151,9 @@ func (s *Service) computeAttacker(ctx context.Context, userID int64) (domain.Att
 	}
 
 	// 专精节点的实际加成。
-	//
-	// ⚠️ 这里**绝不能**调 s.LoadBuildSnapshot / s.computeRating：
-	// 两者都会回调本函数（build 快照里要含 attacker），
-	// 于是 computeAttacker → LoadBuildSnapshot → computeAttacker → …
-	// 无限递归。表现为测试跑满超时后 panic，且栈里全是这两个函数互相调用 ——
-	// 这个坑很隐蔽，因为「让攻方属性反映构筑」的需求看起来很自然。
-	//
-	// 攻方属性只需要专精节点，所以直接读那一项数据。
-	masteryNodes, err := s.loadMasteryNodes(ctx, userID)
+	eff, masteryNodes, err := s.loadMasteryEffect(ctx, userID)
 	if err != nil {
-		return domain.Attacker{}, fmt.Errorf("load mastery nodes: %w", err)
-	}
-	eff := domain.MasteryEffect{}
-	if len(masteryNodes) > 0 {
-		selected := make(map[int]bool, len(masteryNodes))
-		for _, n := range masteryNodes {
-			selected[n] = true
-		}
-		points := 0
-		if err := s.pool.QueryRow(ctx,
-			`SELECT mastery_points FROM user_progress WHERE user_id = $1`,
-			userID).Scan(&points); err != nil {
-			points = 0
-		}
-		allNodes := make([]domain.MasteryNode, 0, 96)
-		for _, f := range domain.AllMasteryFamilies() {
-			allNodes = append(allNodes, f.Nodes...)
-		}
-		if e, err := domain.EvaluateMastery(allNodes, selected, points); err == nil {
-			eff = e
-		}
+		return domain.Attacker{}, fmt.Errorf("load mastery: %w", err)
 	}
 
 	mastery := masteryNodes

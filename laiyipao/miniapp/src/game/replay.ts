@@ -102,6 +102,17 @@ export interface BuildSnapshot {
   elements?: string[]
   /** @deprecated 误命名，实际是元素名数组。保留仅为兼容历史战报。 */
   skill_ids?: string[]
+  /**
+   * 可用的主动技能槽位数（基础 4 + 专精「额外插槽」）。
+   *
+   * ⚠️ **可选**，因为老战报的 build_snapshot 里没有它。
+   * 缺失时引擎取缺省 `ACTIVE_SLOTS = 4` —— 那是绝大多数战报的形态，
+   * 所以「缺失 == 4 槽」正好让老战报照常重放。
+   *
+   * 标成必填会让「读老战报」变成类型错误；标成必填但读处不兜默认值，
+   * 则重放时槽位变成 0 或 undefined 混用 —— 两种都更糟。
+   */
+  active_slots?: number
   equipment: unknown
   mastery_nodes: unknown
   /**
@@ -286,6 +297,10 @@ export function replay(info: ReplayInfo, deps: ReplayDeps): ReplayOutcome {
     equipped,
     attacker: att,
     seed,
+    // 槽位数同样必须与原局同口径 ——
+    // 玩家点了「额外插槽」的局槽位不是 4，重放算出的战斗会完全不同。
+    // 老战报没有这个字段，undefined 会落到引擎缺省 ACTIVE_SLOTS = 4。
+    activeSlots: info.build?.active_slots,
   })
   // 注入选牌脚本：原局玩家点了哪张，重放就点哪张。
   // 缺脚本（空或 undefined）时不注入，引擎走交互模式，

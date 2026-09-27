@@ -154,6 +154,18 @@ export interface BattleConfig {
   attacker: Attacker
   seed: number | bigint
   /**
+   * 可用的主动技能槽位数。
+   *
+   * ⚠️ 缺省必须等于 `ACTIVE_SLOTS`（4），**不得改变**。
+   *
+   * 缺省值决定重放哈希：绝大多数战报是 4 槽的，
+   * 缺省一旦不是 4，历史战报全部重放不出原哈希。
+   *
+   * 只有玩家在专精树点了「额外插槽」（`MasteryEffect.ExtraSlots`）时
+   * 才会 > 4，而那由服务端 `/mastery` 的 `total_slots` 下发。
+   */
+  activeSlots?: number
+  /**
    * 分数规则。缺省用 DEFAULT_SCORE_RULES。
    *
    * ⚠️ 真实对局应当**从服务端 /config 的 score_rules 下发**，
@@ -275,6 +287,9 @@ export class BattleEngine {
    */
   readonly totalEnemies: number
 
+  /** 当前可用的主动槽位数。见 BattleConfig.activeSlots 的缺省约定。 */
+  readonly activeSlots: number
+
   /** 分数规则。缺省 DEFAULT_SCORE_RULES，实际对局应从服务端下发。 */
   readonly scoreRules: ScoreRules
 
@@ -308,6 +323,12 @@ export class BattleEngine {
       for (const sp of w.spawns) total += sp.count
     }
     this.totalEnemies = total
+    // ⚠️ 缺省必须是 ACTIVE_SLOTS —— 改这个默认值会让所有 4 槽战报的
+    // 重放哈希失配（绝大多数战报都是 4 槽的）。
+    //
+    // 只有玩家在专精树点了「额外插槽」（MasteryEffect.ExtraSlots）时才会 > 4，
+    // 那个值由服务端 `/mastery` 的 `total_slots` 下发。
+    this.activeSlots = cfg.activeSlots ?? ACTIVE_SLOTS
     this.scoreRules = cfg.scoreRules ?? DEFAULT_SCORE_RULES
 
     // 热量上限加成（专精 heat_cap + 宝石 gem_heat）。
@@ -695,7 +716,7 @@ export class BattleEngine {
     }
 
     for (const s of this.skills) {
-      if (s.slot >= ACTIVE_SLOTS) continue // 被动槽不主动释放
+      if (s.slot >= this.activeSlots) continue // 被动槽不主动释放
       if (s.cooldownRemaining > 0) continue
       if (this.heat.heat + s.heatCost > this.heat.cap) continue
 
@@ -804,7 +825,7 @@ export class BattleEngine {
   private heatStuck(): boolean {
     const costs: bigint[] = []
     for (const s of this.skills) {
-      if (s.slot >= ACTIVE_SLOTS) continue // 被动槽不消耗热量，不参与判据
+      if (s.slot >= this.activeSlots) continue // 被动槽不消耗热量，不参与判据
       costs.push(s.heatCost)
     }
     return this.heat.isStuckFor(costs)
@@ -1361,10 +1382,10 @@ export class BattleEngine {
           // 技能 1 被销毁，而玩家的三选一白白消耗了一次机会。
           // （只有抽到**已装备**技能的卡才会"升格"，所以前期是净损失。）
           const activeSlots = new Set(
-            this.skills.filter((s) => s.slot < ACTIVE_SLOTS).map((s) => s.slot),
+            this.skills.filter((s) => s.slot < this.activeSlots).map((s) => s.slot),
           )
           let free = -1
-          for (let i = 0; i < ACTIVE_SLOTS; i++) {
+          for (let i = 0; i < this.activeSlots; i++) {
             if (!activeSlots.has(i)) {
               free = i
               break
@@ -1378,7 +1399,7 @@ export class BattleEngine {
             // 「强化已有技能里伤害最高的那一个」，
             // 至少不会让玩家的构筑凭空少一个技能。
             const best = this.skills
-              .filter((s) => s.slot < ACTIVE_SLOTS)
+              .filter((s) => s.slot < this.activeSlots)
               .reduce<(typeof this.skills)[number] | null>(
                 (acc, s) => (acc === null || s.baseDamage > acc.baseDamage ? s : acc),
                 null,
