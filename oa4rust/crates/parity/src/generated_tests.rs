@@ -7,8 +7,8 @@
 // is registered on the crate's Router.  A NOT_FOUND (404) response means the
 // route is missing from the Rust implementation — a parity gap.
 //
-// Generated: 2026-09-17 12:05:50
-// Crates: 55   Routes: 4283   Tests: 4283
+// Generated: 2026-09-27 11:11:00
+// Crates: 55   Routes: 4044   Tests: 4044
 
 #[allow(unreachable_code, unused_variables, non_snake_case)]
 
@@ -1561,7 +1561,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
 
-    // ── x_attendance_assemble_control → attendance_assemble_control (230 routes) ──
+    // ── x_attendance_assemble_control → attendance_assemble_control (231 routes) ──
     #[tokio::test]
     async fn parity__attendance_assemble_control__crate() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
@@ -4362,6 +4362,28 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
+                    .uri("/api/attendance/assemble/control/rule/test-id")
+                    .method(axum::http::Method::DELETE)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on attendance_assemble_control: /api/attendance/assemble/control/rule/{{id}} (DELETE)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__attendance_assemble_control__crate_128() {
+        let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
                     .uri("/api/attendance/assemble/control/rule/test-id/toggle")
                     .method(axum::http::Method::POST)
                     .body(axum::body::Body::empty())
@@ -4379,7 +4401,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_128() {
+    async fn parity__attendance_assemble_control__crate_129() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4401,7 +4423,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_129() {
+    async fn parity__attendance_assemble_control__crate_130() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4423,7 +4445,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_130() {
+    async fn parity__attendance_assemble_control__crate_131() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4445,7 +4467,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_131() {
+    async fn parity__attendance_assemble_control__crate_132() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4467,7 +4489,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_132() {
+    async fn parity__attendance_assemble_control__crate_133() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4489,7 +4511,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_133() {
+    async fn parity__attendance_assemble_control__crate_134() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4511,7 +4533,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_134() {
+    async fn parity__attendance_assemble_control__crate_135() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4533,7 +4555,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_135() {
+    async fn parity__attendance_assemble_control__crate_136() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4555,7 +4577,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_136() {
+    async fn parity__attendance_assemble_control__crate_137() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4577,7 +4599,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_137() {
+    async fn parity__attendance_assemble_control__crate_138() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4599,7 +4621,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_138() {
+    async fn parity__attendance_assemble_control__crate_139() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4621,7 +4643,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_139() {
+    async fn parity__attendance_assemble_control__crate_140() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4643,7 +4665,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_140() {
+    async fn parity__attendance_assemble_control__crate_141() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4665,7 +4687,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_141() {
+    async fn parity__attendance_assemble_control__crate_142() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4687,7 +4709,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_142() {
+    async fn parity__attendance_assemble_control__crate_143() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4709,7 +4731,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_143() {
+    async fn parity__attendance_assemble_control__crate_144() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4731,7 +4753,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_144() {
+    async fn parity__attendance_assemble_control__crate_145() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4753,7 +4775,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_145() {
+    async fn parity__attendance_assemble_control__crate_146() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4775,7 +4797,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_146() {
+    async fn parity__attendance_assemble_control__crate_147() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4797,7 +4819,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_147() {
+    async fn parity__attendance_assemble_control__crate_148() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4819,7 +4841,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_148() {
+    async fn parity__attendance_assemble_control__crate_149() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4841,7 +4863,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_149() {
+    async fn parity__attendance_assemble_control__crate_150() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4863,7 +4885,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_150() {
+    async fn parity__attendance_assemble_control__crate_151() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4885,7 +4907,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_151() {
+    async fn parity__attendance_assemble_control__crate_152() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4907,7 +4929,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_152() {
+    async fn parity__attendance_assemble_control__crate_153() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4929,7 +4951,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_153() {
+    async fn parity__attendance_assemble_control__crate_154() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4951,7 +4973,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_154() {
+    async fn parity__attendance_assemble_control__crate_155() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4973,7 +4995,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_155() {
+    async fn parity__attendance_assemble_control__crate_156() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -4995,7 +5017,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_156() {
+    async fn parity__attendance_assemble_control__crate_157() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5017,7 +5039,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_157() {
+    async fn parity__attendance_assemble_control__crate_158() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5039,7 +5061,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_158() {
+    async fn parity__attendance_assemble_control__crate_159() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5061,7 +5083,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_159() {
+    async fn parity__attendance_assemble_control__crate_160() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5083,7 +5105,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_160() {
+    async fn parity__attendance_assemble_control__crate_161() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5105,7 +5127,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_161() {
+    async fn parity__attendance_assemble_control__crate_162() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5127,7 +5149,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_162() {
+    async fn parity__attendance_assemble_control__crate_163() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5149,7 +5171,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_163() {
+    async fn parity__attendance_assemble_control__crate_164() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5171,7 +5193,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_164() {
+    async fn parity__attendance_assemble_control__crate_165() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5193,7 +5215,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_165() {
+    async fn parity__attendance_assemble_control__crate_166() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5215,7 +5237,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_166() {
+    async fn parity__attendance_assemble_control__crate_167() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5237,7 +5259,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_167() {
+    async fn parity__attendance_assemble_control__crate_168() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5259,7 +5281,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_168() {
+    async fn parity__attendance_assemble_control__crate_169() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5281,7 +5303,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_169() {
+    async fn parity__attendance_assemble_control__crate_170() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5303,7 +5325,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_170() {
+    async fn parity__attendance_assemble_control__crate_171() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5325,7 +5347,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_171() {
+    async fn parity__attendance_assemble_control__crate_172() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5347,7 +5369,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_172() {
+    async fn parity__attendance_assemble_control__crate_173() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5369,7 +5391,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_173() {
+    async fn parity__attendance_assemble_control__crate_174() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5391,7 +5413,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_174() {
+    async fn parity__attendance_assemble_control__crate_175() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5413,7 +5435,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_175() {
+    async fn parity__attendance_assemble_control__crate_176() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5435,7 +5457,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_176() {
+    async fn parity__attendance_assemble_control__crate_177() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5457,7 +5479,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_177() {
+    async fn parity__attendance_assemble_control__crate_178() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5479,7 +5501,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_178() {
+    async fn parity__attendance_assemble_control__crate_179() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5501,7 +5523,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_179() {
+    async fn parity__attendance_assemble_control__crate_180() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5523,7 +5545,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_180() {
+    async fn parity__attendance_assemble_control__crate_181() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5545,7 +5567,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_181() {
+    async fn parity__attendance_assemble_control__crate_182() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5567,7 +5589,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_182() {
+    async fn parity__attendance_assemble_control__crate_183() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5589,7 +5611,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_183() {
+    async fn parity__attendance_assemble_control__crate_184() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5611,7 +5633,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_184() {
+    async fn parity__attendance_assemble_control__crate_185() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5633,7 +5655,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_185() {
+    async fn parity__attendance_assemble_control__crate_186() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5655,7 +5677,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_186() {
+    async fn parity__attendance_assemble_control__crate_187() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5677,7 +5699,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_187() {
+    async fn parity__attendance_assemble_control__crate_188() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5699,7 +5721,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_188() {
+    async fn parity__attendance_assemble_control__crate_189() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5721,7 +5743,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_189() {
+    async fn parity__attendance_assemble_control__crate_190() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5743,7 +5765,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_190() {
+    async fn parity__attendance_assemble_control__crate_191() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5765,7 +5787,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_191() {
+    async fn parity__attendance_assemble_control__crate_192() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5787,7 +5809,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_192() {
+    async fn parity__attendance_assemble_control__crate_193() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5809,7 +5831,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_193() {
+    async fn parity__attendance_assemble_control__crate_194() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5831,7 +5853,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_194() {
+    async fn parity__attendance_assemble_control__crate_195() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5853,7 +5875,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_195() {
+    async fn parity__attendance_assemble_control__crate_196() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5875,7 +5897,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_196() {
+    async fn parity__attendance_assemble_control__crate_197() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5897,7 +5919,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_197() {
+    async fn parity__attendance_assemble_control__crate_198() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5919,7 +5941,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_198() {
+    async fn parity__attendance_assemble_control__crate_199() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5941,7 +5963,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_199() {
+    async fn parity__attendance_assemble_control__crate_200() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5963,7 +5985,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_200() {
+    async fn parity__attendance_assemble_control__crate_201() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -5985,7 +6007,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_201() {
+    async fn parity__attendance_assemble_control__crate_202() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6007,7 +6029,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_202() {
+    async fn parity__attendance_assemble_control__crate_203() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6031,7 +6053,7 @@ use shared::testing::{test_pool, is_db_available};
     // skipped: request path not representable as a URI (o2server parity quirk): /api/attendance/assemble/control/v2/mobile/check/ from/out (POST)
 
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_204() {
+    async fn parity__attendance_assemble_control__crate_205() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6053,7 +6075,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_205() {
+    async fn parity__attendance_assemble_control__crate_206() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6075,7 +6097,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_206() {
+    async fn parity__attendance_assemble_control__crate_207() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6097,7 +6119,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_207() {
+    async fn parity__attendance_assemble_control__crate_208() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6119,7 +6141,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_208() {
+    async fn parity__attendance_assemble_control__crate_209() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6141,7 +6163,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_209() {
+    async fn parity__attendance_assemble_control__crate_210() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6163,7 +6185,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_210() {
+    async fn parity__attendance_assemble_control__crate_211() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6185,7 +6207,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_211() {
+    async fn parity__attendance_assemble_control__crate_212() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6207,7 +6229,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_212() {
+    async fn parity__attendance_assemble_control__crate_213() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6229,7 +6251,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_213() {
+    async fn parity__attendance_assemble_control__crate_214() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6251,7 +6273,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_214() {
+    async fn parity__attendance_assemble_control__crate_215() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6273,7 +6295,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_215() {
+    async fn parity__attendance_assemble_control__crate_216() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6295,7 +6317,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_216() {
+    async fn parity__attendance_assemble_control__crate_217() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6317,7 +6339,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_217() {
+    async fn parity__attendance_assemble_control__crate_218() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6339,7 +6361,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_218() {
+    async fn parity__attendance_assemble_control__crate_219() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6361,7 +6383,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_219() {
+    async fn parity__attendance_assemble_control__crate_220() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6383,7 +6405,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_220() {
+    async fn parity__attendance_assemble_control__crate_221() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6405,7 +6427,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_221() {
+    async fn parity__attendance_assemble_control__crate_222() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6427,7 +6449,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_222() {
+    async fn parity__attendance_assemble_control__crate_223() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6449,7 +6471,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_223() {
+    async fn parity__attendance_assemble_control__crate_224() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6471,7 +6493,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_224() {
+    async fn parity__attendance_assemble_control__crate_225() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6493,7 +6515,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_225() {
+    async fn parity__attendance_assemble_control__crate_226() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6515,7 +6537,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_226() {
+    async fn parity__attendance_assemble_control__crate_227() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6537,7 +6559,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_227() {
+    async fn parity__attendance_assemble_control__crate_228() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6559,7 +6581,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_228() {
+    async fn parity__attendance_assemble_control__crate_229() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -6581,7 +6603,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__attendance_assemble_control__crate_229() {
+    async fn parity__attendance_assemble_control__crate_230() {
         let router = oa4rust::attendance_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -7003,7 +7025,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
 
-    // ── x_bbs_assemble_control → bbs_assemble_control (41 routes) ──
+    // ── x_bbs_assemble_control → bbs_assemble_control (26 routes) ──
     #[tokio::test]
     async fn parity__bbs_assemble_control__get_control_config() {
         let router = oa4rust::bbs_assemble_control::router(shared::testing::test_pool());
@@ -7208,116 +7230,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/bbs/assemble/control/list/subjects/filtered")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on bbs_assemble_control: /api/bbs/assemble/control/list/subjects/filtered (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__bbs_assemble_control__crate_8() {
-        let router = oa4rust::bbs_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/bbs/assemble/control/list/subjects/index")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on bbs_assemble_control: /api/bbs/assemble/control/list/subjects/index (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__bbs_assemble_control__crate_9() {
-        let router = oa4rust::bbs_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/bbs/assemble/control/list/subjects/recommended/index")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on bbs_assemble_control: /api/bbs/assemble/control/list/subjects/recommended/index (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__bbs_assemble_control__crate_10() {
-        let router = oa4rust::bbs_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/bbs/assemble/control/list/topics/creamed")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on bbs_assemble_control: /api/bbs/assemble/control/list/topics/creamed (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__bbs_assemble_control__crate_11() {
-        let router = oa4rust::bbs_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/bbs/assemble/control/list/topics/recommended")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on bbs_assemble_control: /api/bbs/assemble/control/list/topics/recommended (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__bbs_assemble_control__crate_12() {
-        let router = oa4rust::bbs_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/bbs/assemble/control/picture/list/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
@@ -7511,94 +7423,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__bbs_assemble_control__subject_creamed_list() {
-        let router = oa4rust::bbs_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/bbs/assemble/control/subject/creamed/list")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on bbs_assemble_control: /api/bbs/assemble/control/subject/creamed/list (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__bbs_assemble_control__subject_filter_list() {
-        let router = oa4rust::bbs_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/bbs/assemble/control/subject/filter/list")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on bbs_assemble_control: /api/bbs/assemble/control/subject/filter/list (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__bbs_assemble_control__subject_index_list() {
-        let router = oa4rust::bbs_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/bbs/assemble/control/subject/index/list")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on bbs_assemble_control: /api/bbs/assemble/control/subject/index/list (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__bbs_assemble_control__crate_13() {
-        let router = oa4rust::bbs_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/bbs/assemble/control/subject/search")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on bbs_assemble_control: /api/bbs/assemble/control/subject/search (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__bbs_assemble_control__subject_statgrade() {
         let router = oa4rust::bbs_assemble_control::router(shared::testing::test_pool());
         let response = router
@@ -7618,28 +7442,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on bbs_assemble_control: /api/bbs/assemble/control/subject/statgrade (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__bbs_assemble_control__crate_14() {
-        let router = oa4rust::bbs_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/bbs/assemble/control/topic/creamed/list")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on bbs_assemble_control: /api/bbs/assemble/control/topic/creamed/list (GET)"
         );
     }
     #[tokio::test]
@@ -7665,29 +7467,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__bbs_assemble_control__crate_15() {
-        let router = oa4rust::bbs_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/bbs/assemble/control/topic/filter/list")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on bbs_assemble_control: /api/bbs/assemble/control/topic/filter/list (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__bbs_assemble_control__crate_16() {
+    async fn parity__bbs_assemble_control__crate_8() {
         let router = oa4rust::bbs_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -7709,29 +7489,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__bbs_assemble_control__crate_17() {
-        let router = oa4rust::bbs_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/bbs/assemble/control/topic/index/list")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on bbs_assemble_control: /api/bbs/assemble/control/topic/index/list (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__bbs_assemble_control__crate_18() {
+    async fn parity__bbs_assemble_control__crate_9() {
         let router = oa4rust::bbs_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -7750,72 +7508,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on bbs_assemble_control: /api/bbs/assemble/control/topic/list/forum/{{forumId}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__bbs_assemble_control__crate_19() {
-        let router = oa4rust::bbs_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/bbs/assemble/control/topic/recommended/index")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on bbs_assemble_control: /api/bbs/assemble/control/topic/recommended/index (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__bbs_assemble_control__crate_20() {
-        let router = oa4rust::bbs_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/bbs/assemble/control/topic/recommended/list")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on bbs_assemble_control: /api/bbs/assemble/control/topic/recommended/list (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__bbs_assemble_control__crate_21() {
-        let router = oa4rust::bbs_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/bbs/assemble/control/topic/search")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on bbs_assemble_control: /api/bbs/assemble/control/topic/search (GET)"
         );
     }
     #[tokio::test]
@@ -20503,7 +20195,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
 
-    // ── x_component_assemble_control → component_assemble_control (14 routes) ──
+    // ── x_component_assemble_control → component_assemble_control (12 routes) ──
     #[tokio::test]
     async fn parity__component_assemble_control__component_delete_all() {
         let router = oa4rust::component_assemble_control::router(shared::testing::test_pool());
@@ -20659,28 +20351,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__component_assemble_control__delete_component_1() {
-        let router = oa4rust::component_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/component_assemble_control/delete/component")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on component_assemble_control: /api/component_assemble_control/delete/component (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__component_assemble_control__get_component() {
         let router = oa4rust::component_assemble_control::router(shared::testing::test_pool());
         let response = router
@@ -20766,28 +20436,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on component_assemble_control: /api/component_assemble_control/list/control/categories (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__component_assemble_control__save_component_1() {
-        let router = oa4rust::component_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/component_assemble_control/save/component")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on component_assemble_control: /api/component_assemble_control/save/component (GET)"
         );
     }
     #[tokio::test]
@@ -20881,7 +20529,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
 
-    // ── x_console → console (14 routes) ──
+    // ── x_console → console (16 routes) ──
     #[tokio::test]
     async fn parity__console__config_create() {
         let router = oa4rust::console::router(shared::testing::test_pool());
@@ -20902,6 +20550,50 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on console: /api/config/create (POST)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__console__config_delete() {
+        let router = oa4rust::console::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/config/delete/test-id")
+                    .method(axum::http::Method::DELETE)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on console: /api/config/delete/{{id}} (DELETE)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__console__config_update() {
+        let router = oa4rust::console::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/config/update/test-id")
+                    .method(axum::http::Method::PUT)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on console: /api/config/update/{{id}} (PUT)"
         );
     }
     #[tokio::test]
@@ -21747,7 +21439,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
 
-    // ── x_file_assemble_control → file_assemble_control (166 routes) ──
+    // ── x_file_assemble_control → file_assemble_control (159 routes) ──
     #[tokio::test]
     async fn parity__file_assemble_control__anonymous_file_id_download() {
         let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
@@ -22766,7 +22458,7 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/file/anonymous/file/id/download")
+                    .uri("/api/file/anonymous/file/test-id/download")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -22779,7 +22471,7 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/anonymous/file/id/download (GET)"
+            "parity: route missing on file_assemble_control: /api/file/anonymous/file/{{id}}/download (GET)"
         );
     }
     #[tokio::test]
@@ -23377,122 +23069,12 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__file_assemble_control__attachment_id_1() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/attachment/id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/attachment/id (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__attachment_id_binary_base64_1() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/attachment/id/binary/base64")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/attachment/id/binary/base64 (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__attachment_id_download_1() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/attachment/id/download")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/attachment/id/download (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__attachment_id_image_scale_scale_binary_base64_1() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/attachment/id/image/scale/scale/binary/base64")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/attachment/id/image/scale/scale/binary/base64 (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__attachment_id_image_width_width_height_height_binary_base64_1() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/attachment/id/image/width/width/height/height/binary/base64")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/attachment/id/image/width/width/height/height/binary/base64 (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__file_assemble_control__attachment_list_folder_folderId_1() {
         let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/file/attachment/list/folder/folderId")
+                    .uri("/api/file/attachment/list/folder/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -23505,7 +23087,7 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/attachment/list/folder/folderId (GET)"
+            "parity: route missing on file_assemble_control: /api/file/attachment/list/folder/{{folderId}} (GET)"
         );
     }
     #[tokio::test]
@@ -23531,12 +23113,122 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
+    async fn parity__file_assemble_control__attachment_id_1() {
+        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/file/attachment/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on file_assemble_control: /api/file/attachment/{{id}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__file_assemble_control__attachment_id_binary_base64_1() {
+        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/file/attachment/test-id/binary/base64")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on file_assemble_control: /api/file/attachment/{{id}}/binary/base64 (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__file_assemble_control__attachment_id_download_1() {
+        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/file/attachment/test-id/download")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on file_assemble_control: /api/file/attachment/{{id}}/download (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__file_assemble_control__attachment_id_image_scale_scale_binary_base64_1() {
+        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/file/attachment/test-id/image/scale/test-id/binary/base64")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on file_assemble_control: /api/file/attachment/{{id}}/image/scale/{{scale}}/binary/base64 (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__file_assemble_control__attachment_id_image_width_width_height_height_binary_base64_1() {
+        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/file/attachment/test-id/image/width/test-id/height/test-id/binary/base64")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on file_assemble_control: /api/file/attachment/{{id}}/image/width/{{width}}/height/{{height}}/binary/base64 (GET)"
+        );
+    }
+    #[tokio::test]
     async fn parity__file_assemble_control__attachment2_exist_file_fileMd5_1() {
         let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/file/attachment2/exist/file/fileMd5")
+                    .uri("/api/file/attachment2/exist/file/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -23549,161 +23241,7 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/attachment2/exist/file/fileMd5 (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__attachment2_id_1() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/attachment2/id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/attachment2/id (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__attachment2_id_binary_base64_1() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/attachment2/id/binary/base64")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/attachment2/id/binary/base64 (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__attachment2_id_download_1() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/attachment2/id/download")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/attachment2/id/download (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__attachment2_id_download_image_width_width_height_height_1() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/attachment2/id/download/image/width/width/height/height")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/attachment2/id/download/image/width/width/height/height (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__attachment2_id_download_stream_1() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/attachment2/id/download/stream")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/attachment2/id/download/stream (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__attachment2_id_image_scale_scale_binary_base64_1() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/attachment2/id/image/scale/scale/binary/base64")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/attachment2/id/image/scale/scale/binary/base64 (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__attachment2_id_image_width_width_height_height_binary_base64_1() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/attachment2/id/image/width/width/height/height/binary/base64")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/attachment2/id/image/width/width/height/height/binary/base64 (GET)"
+            "parity: route missing on file_assemble_control: /api/file/attachment2/exist/file/{{fileMd5}} (GET)"
         );
     }
     #[tokio::test]
@@ -23712,7 +23250,7 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/file/attachment2/list/filter/name")
+                    .uri("/api/file/attachment2/list/filter/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -23725,7 +23263,7 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/attachment2/list/filter/name (GET)"
+            "parity: route missing on file_assemble_control: /api/file/attachment2/list/filter/{{name}} (GET)"
         );
     }
     #[tokio::test]
@@ -23734,7 +23272,7 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/file/attachment2/list/folder/folderId")
+                    .uri("/api/file/attachment2/list/folder/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -23747,7 +23285,7 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/attachment2/list/folder/folderId (GET)"
+            "parity: route missing on file_assemble_control: /api/file/attachment2/list/folder/{{folderId}} (GET)"
         );
     }
     #[tokio::test]
@@ -23773,12 +23311,12 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__file_assemble_control__attachment2_list_type_page_size_size() {
+    async fn parity__file_assemble_control__attachment2_id_1() {
         let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/file/attachment2/list/type/page/size/size")
+                    .uri("/api/file/attachment2/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -23791,7 +23329,139 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/attachment2/list/type/page/size/size (GET)"
+            "parity: route missing on file_assemble_control: /api/file/attachment2/{{id}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__file_assemble_control__attachment2_id_binary_base64_1() {
+        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/file/attachment2/test-id/binary/base64")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on file_assemble_control: /api/file/attachment2/{{id}}/binary/base64 (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__file_assemble_control__attachment2_id_download_1() {
+        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/file/attachment2/test-id/download")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on file_assemble_control: /api/file/attachment2/{{id}}/download (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__file_assemble_control__attachment2_id_download_image_width_width_height_height_1() {
+        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/file/attachment2/test-id/download/image/width/test-id/height/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on file_assemble_control: /api/file/attachment2/{{id}}/download/image/width/{{width}}/height/{{height}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__file_assemble_control__attachment2_id_download_stream_1() {
+        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/file/attachment2/test-id/download/stream")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on file_assemble_control: /api/file/attachment2/{{id}}/download/stream (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__file_assemble_control__attachment2_id_image_scale_scale_binary_base64_1() {
+        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/file/attachment2/test-id/image/scale/test-id/binary/base64")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on file_assemble_control: /api/file/attachment2/{{id}}/image/scale/{{scale}}/binary/base64 (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__file_assemble_control__attachment2_id_image_width_width_height_height_binary_base64_1() {
+        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/file/attachment2/test-id/image/width/test-id/height/test-id/binary/base64")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on file_assemble_control: /api/file/attachment2/{{id}}/image/width/{{width}}/height/{{height}}/binary/base64 (GET)"
         );
     }
     #[tokio::test]
@@ -23822,7 +23492,7 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/file/complex/folder/id")
+                    .uri("/api/file/complex/folder/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -23835,7 +23505,7 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/complex/folder/id (GET)"
+            "parity: route missing on file_assemble_control: /api/file/complex/folder/{{id}} (GET)"
         );
     }
     #[tokio::test]
@@ -23866,7 +23536,7 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/file/copy/attachment/attachmentId/referencetype/referenceType/reference/reference/scale/scale")
+                    .uri("/api/file/copy/attachment/test-id/referencetype/test-id/reference/test-id/scale/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -23879,7 +23549,7 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/copy/attachment/attachmentId/referencetype/referenceType/reference/reference/scale/scale (GET)"
+            "parity: route missing on file_assemble_control: /api/file/copy/attachment/{{p0}}/referencetype/{{p1}}/reference/{{p2}}/scale/{{p3}} (GET)"
         );
     }
     #[tokio::test]
@@ -24015,50 +23685,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__file_assemble_control__folder_id() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/folder/id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/folder/id (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__folder_list_id() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/folder/list/id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/folder/list/id (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__file_assemble_control__folder_list_top() {
         let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
         let response = router
@@ -24078,6 +23704,28 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on file_assemble_control: /api/file/folder/list/top (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__file_assemble_control__folder_id() {
+        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/file/folder/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on file_assemble_control: /api/file/folder/{{id}} (GET)"
         );
     }
     #[tokio::test]
@@ -24103,72 +23751,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__file_assemble_control__folder2_id() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/folder2/id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/folder2/id (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__folder2_id_download() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/folder2/id/download")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/folder2/id/download (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__folder2_list_id() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/folder2/list/id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/folder2/list/id (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__file_assemble_control__folder2_list_top() {
         let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
         let response = router
@@ -24191,12 +23773,12 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__file_assemble_control__file_id() {
+    async fn parity__file_assemble_control__folder2_list_id() {
         let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/file/id")
+                    .uri("/api/file/folder2/list/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -24209,16 +23791,16 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/id (GET)"
+            "parity: route missing on file_assemble_control: /api/file/folder2/list/{{id}} (GET)"
         );
     }
     #[tokio::test]
-    async fn parity__file_assemble_control__file_id_binary_base64_1() {
+    async fn parity__file_assemble_control__folder2_id() {
         let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/file/id/binary/base64")
+                    .uri("/api/file/folder2/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -24231,16 +23813,16 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/id/binary/base64 (GET)"
+            "parity: route missing on file_assemble_control: /api/file/folder2/{{id}} (GET)"
         );
     }
     #[tokio::test]
-    async fn parity__file_assemble_control__file_id_download_1() {
+    async fn parity__file_assemble_control__folder2_id_download() {
         let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/file/id/download")
+                    .uri("/api/file/folder2/test-id/download")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -24253,143 +23835,11 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/id/download (GET)"
+            "parity: route missing on file_assemble_control: /api/file/folder2/{{id}}/download (GET)"
         );
     }
     #[tokio::test]
-    async fn parity__file_assemble_control__file_list_id_next_count_1() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/list/id/next/count")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/list/id/next/count (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__file_list_id_next_count_all_1() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/list/id/next/count/all")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/list/id/next/count/all (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__file_list_id_next_count_referencetype_referenceType_1() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/list/id/next/count/referencetype/referenceType")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/list/id/next/count/referencetype/referenceType (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__file_list_id_prev_count_1() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/list/id/prev/count")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/list/id/prev/count (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__file_list_id_prev_count_all_1() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/list/id/prev/count/all")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/list/id/prev/count/all (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__file_list_id_prev_count_referencetype_referenceType_1() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/list/id/prev/count/referencetype/referenceType")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/list/id/prev/count/referencetype/referenceType (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__file_list_referencetype() {
+    async fn parity__file_assemble_control__u2_file_list_reference_types_1() {
         let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -24416,7 +23866,7 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/file/list/referencetype/referenceType/reference/reference")
+                    .uri("/api/file/list/referencetype/test-id/reference/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -24429,7 +23879,7 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/list/referencetype/referenceType/reference/reference (GET)"
+            "parity: route missing on file_assemble_control: /api/file/list/referencetype/{{p0}}/reference/{{p1}} (GET)"
         );
     }
     #[tokio::test]
@@ -24455,12 +23905,100 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
+    async fn parity__file_assemble_control__file_list_id_next_count_all_1() {
+        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/file/list/test-id/next/test-id/all")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on file_assemble_control: /api/file/list/{{p0}}/next/{{p1}}/all (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__file_assemble_control__file_list_id_next_count_referencetype_referenceType_1() {
+        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/file/list/test-id/next/test-id/referencetype/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on file_assemble_control: /api/file/list/{{p0}}/next/{{p1}}/referencetype/{{p2}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__file_assemble_control__file_list_id_prev_count_all_1() {
+        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/file/list/test-id/prev/test-id/all")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on file_assemble_control: /api/file/list/{{p0}}/prev/{{p1}}/all (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__file_assemble_control__file_list_id_prev_count_referencetype_referenceType_1() {
+        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/file/list/test-id/prev/test-id/referencetype/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on file_assemble_control: /api/file/list/{{p0}}/prev/{{p1}}/referencetype/{{p2}} (GET)"
+        );
+    }
+    #[tokio::test]
     async fn parity__file_assemble_control__recycle_id() {
         let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/file/recycle/id")
+                    .uri("/api/file/recycle/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -24473,29 +24011,7 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/recycle/id (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__file_referencetype_referenceType_reference_reference() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/referencetype/referenceType/reference/reference")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/referencetype/referenceType/reference/reference (GET)"
+            "parity: route missing on file_assemble_control: /api/file/recycle/{{id}} (GET)"
         );
     }
     #[tokio::test]
@@ -24504,7 +24020,7 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/file/share/download/share/shareId/file/fileId")
+                    .uri("/api/file/share/download/share/test-id/file/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -24517,51 +24033,7 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/share/download/share/shareId/file/fileId (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__share_id() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/share/id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/share/id (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__file_assemble_control__share_id_password_password() {
-        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/file/share/id/password/password")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/share/id/password/password (GET)"
+            "parity: route missing on file_assemble_control: /api/file/share/download/share/{{shareId}}/file/{{fileId}} (GET)"
         );
     }
     #[tokio::test]
@@ -24570,7 +24042,7 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/file/share/list/att/share/shareId/folder/folderId")
+                    .uri("/api/file/share/list/att/share/test-id/folder/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -24583,7 +24055,7 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/share/list/att/share/shareId/folder/folderId (GET)"
+            "parity: route missing on file_assemble_control: /api/file/share/list/att/share/{{shareId}}/folder/{{folderId}} (GET)"
         );
     }
     #[tokio::test]
@@ -24592,7 +24064,7 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/file/share/list/folder/share/shareId/folder/folderId")
+                    .uri("/api/file/share/list/folder/share/test-id/folder/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -24605,7 +24077,7 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on file_assemble_control: /api/file/share/list/folder/share/shareId/folder/folderId (GET)"
+            "parity: route missing on file_assemble_control: /api/file/share/list/folder/share/{{shareId}}/folder/{{folderId}} (GET)"
         );
     }
     #[tokio::test]
@@ -24650,6 +24122,50 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on file_assemble_control: /api/file/share/shield/id (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__file_assemble_control__share_id() {
+        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/file/share/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on file_assemble_control: /api/file/share/{{id}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__file_assemble_control__share_id_password_password() {
+        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/file/share/test-id/password/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on file_assemble_control: /api/file/share/{{id}}/password/{{password}} (GET)"
         );
     }
     #[tokio::test]
@@ -24719,6 +24235,28 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
+    async fn parity__file_assemble_control__file_id_binary_base64_1() {
+        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/file/test-id/binary/base64")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on file_assemble_control: /api/file/{{p0}}/binary/base64 (GET)"
+        );
+    }
+    #[tokio::test]
     async fn parity__file_assemble_control__u2_folder_create() {
         let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
         let response = router
@@ -24763,7 +24301,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__file_assemble_control__folder_list_id_1() {
+    async fn parity__file_assemble_control__folder_list_id() {
         let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -25557,7 +25095,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
 
-    // ── x_general_assemble_control → general_assemble_control (101 routes) ──
+    // ── x_general_assemble_control → general_assemble_control (99 routes) ──
     #[tokio::test]
     async fn parity__general_assemble_control__crate() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
@@ -26171,7 +25709,7 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on general_assemble_control: /api/general/assemble/control/excel/{{\\\"excelName\\\"}} (GET)"
+            "parity: route missing on general_assemble_control: /api/general/assemble/control/excel/{{excelName}} (GET)"
         );
     }
     #[tokio::test]
@@ -26193,55 +25731,11 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on general_assemble_control: /api/general/assemble/control/excel/{{\\\"excelName\\\"}}/sheetList (GET)"
+            "parity: route missing on general_assemble_control: /api/general/assemble/control/excel/{{excelName}}/sheetList (GET)"
         );
     }
     #[tokio::test]
     async fn parity__general_assemble_control__crate_29() {
-        let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/general/assemble/control/excel/test-id/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on general_assemble_control: /api/general/assemble/control/excel/{{excelName}}/{{excelName}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__general_assemble_control__crate_30() {
-        let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/general/assemble/control/excel/test-id/test-id/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on general_assemble_control: /api/general/assemble/control/excel/{{excelName}}/{{excelName}}/{{sheetList}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__general_assemble_control__crate_31() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26263,7 +25757,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_32() {
+    async fn parity__general_assemble_control__crate_30() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26285,7 +25779,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_33() {
+    async fn parity__general_assemble_control__crate_31() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26307,7 +25801,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_34() {
+    async fn parity__general_assemble_control__crate_32() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26329,7 +25823,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_35() {
+    async fn parity__general_assemble_control__crate_33() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26351,7 +25845,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_36() {
+    async fn parity__general_assemble_control__crate_34() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26373,7 +25867,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_37() {
+    async fn parity__general_assemble_control__crate_35() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26395,7 +25889,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_38() {
+    async fn parity__general_assemble_control__crate_36() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26417,7 +25911,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_39() {
+    async fn parity__general_assemble_control__crate_37() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26439,7 +25933,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_40() {
+    async fn parity__general_assemble_control__crate_38() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26461,7 +25955,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_41() {
+    async fn parity__general_assemble_control__crate_39() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26483,7 +25977,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_42() {
+    async fn parity__general_assemble_control__crate_40() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26505,7 +25999,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_43() {
+    async fn parity__general_assemble_control__crate_41() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26527,7 +26021,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_44() {
+    async fn parity__general_assemble_control__crate_42() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26549,7 +26043,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_45() {
+    async fn parity__general_assemble_control__crate_43() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26571,7 +26065,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_46() {
+    async fn parity__general_assemble_control__crate_44() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26593,7 +26087,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_47() {
+    async fn parity__general_assemble_control__crate_45() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26615,7 +26109,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_48() {
+    async fn parity__general_assemble_control__crate_46() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26637,7 +26131,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_49() {
+    async fn parity__general_assemble_control__crate_47() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26659,7 +26153,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_50() {
+    async fn parity__general_assemble_control__crate_48() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26681,7 +26175,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_51() {
+    async fn parity__general_assemble_control__crate_49() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26703,7 +26197,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_52() {
+    async fn parity__general_assemble_control__crate_50() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26725,7 +26219,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_53() {
+    async fn parity__general_assemble_control__crate_51() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26747,7 +26241,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_54() {
+    async fn parity__general_assemble_control__crate_52() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26769,7 +26263,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_55() {
+    async fn parity__general_assemble_control__crate_53() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26791,7 +26285,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_56() {
+    async fn parity__general_assemble_control__crate_54() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26813,7 +26307,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_57() {
+    async fn parity__general_assemble_control__crate_55() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26835,7 +26329,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_58() {
+    async fn parity__general_assemble_control__crate_56() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26857,7 +26351,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_59() {
+    async fn parity__general_assemble_control__crate_57() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26879,7 +26373,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_60() {
+    async fn parity__general_assemble_control__crate_58() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26901,7 +26395,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_61() {
+    async fn parity__general_assemble_control__crate_59() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26923,7 +26417,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_62() {
+    async fn parity__general_assemble_control__crate_60() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26945,7 +26439,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_63() {
+    async fn parity__general_assemble_control__crate_61() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26967,7 +26461,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_64() {
+    async fn parity__general_assemble_control__crate_62() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -26989,7 +26483,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_65() {
+    async fn parity__general_assemble_control__crate_63() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27011,7 +26505,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_66() {
+    async fn parity__general_assemble_control__crate_64() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27033,7 +26527,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_67() {
+    async fn parity__general_assemble_control__crate_65() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27055,7 +26549,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_68() {
+    async fn parity__general_assemble_control__crate_66() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27077,7 +26571,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_69() {
+    async fn parity__general_assemble_control__crate_67() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27099,7 +26593,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_70() {
+    async fn parity__general_assemble_control__crate_68() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27121,7 +26615,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_71() {
+    async fn parity__general_assemble_control__crate_69() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27143,7 +26637,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_72() {
+    async fn parity__general_assemble_control__crate_70() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27165,7 +26659,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_73() {
+    async fn parity__general_assemble_control__crate_71() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27187,7 +26681,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_74() {
+    async fn parity__general_assemble_control__crate_72() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27209,7 +26703,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_75() {
+    async fn parity__general_assemble_control__crate_73() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27231,7 +26725,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_76() {
+    async fn parity__general_assemble_control__crate_74() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27253,7 +26747,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_77() {
+    async fn parity__general_assemble_control__crate_75() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27275,7 +26769,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_78() {
+    async fn parity__general_assemble_control__crate_76() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27297,7 +26791,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_79() {
+    async fn parity__general_assemble_control__crate_77() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27319,7 +26813,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_80() {
+    async fn parity__general_assemble_control__crate_78() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27341,7 +26835,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_81() {
+    async fn parity__general_assemble_control__crate_79() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27363,7 +26857,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_82() {
+    async fn parity__general_assemble_control__crate_80() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27385,7 +26879,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_83() {
+    async fn parity__general_assemble_control__crate_81() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27407,7 +26901,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_84() {
+    async fn parity__general_assemble_control__crate_82() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27429,7 +26923,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_85() {
+    async fn parity__general_assemble_control__crate_83() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27451,7 +26945,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_86() {
+    async fn parity__general_assemble_control__crate_84() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27473,7 +26967,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_87() {
+    async fn parity__general_assemble_control__crate_85() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27495,7 +26989,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_88() {
+    async fn parity__general_assemble_control__crate_86() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27517,7 +27011,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_89() {
+    async fn parity__general_assemble_control__crate_87() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27539,7 +27033,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_90() {
+    async fn parity__general_assemble_control__crate_88() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27561,7 +27055,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_91() {
+    async fn parity__general_assemble_control__crate_89() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27583,7 +27077,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_92() {
+    async fn parity__general_assemble_control__crate_90() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27605,7 +27099,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_93() {
+    async fn parity__general_assemble_control__crate_91() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27627,7 +27121,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_94() {
+    async fn parity__general_assemble_control__crate_92() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27649,7 +27143,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_95() {
+    async fn parity__general_assemble_control__crate_93() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27671,7 +27165,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_96() {
+    async fn parity__general_assemble_control__crate_94() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27693,7 +27187,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_97() {
+    async fn parity__general_assemble_control__crate_95() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27715,7 +27209,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_98() {
+    async fn parity__general_assemble_control__crate_96() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27737,7 +27231,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_99() {
+    async fn parity__general_assemble_control__crate_97() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27759,7 +27253,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__general_assemble_control__crate_100() {
+    async fn parity__general_assemble_control__crate_98() {
         let router = oa4rust::general_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -27781,7 +27275,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
 
-    // ── x_hotpic_assemble_control → hotpic_assemble_control (43 routes) ──
+    // ── x_hotpic_assemble_control → hotpic_assemble_control (35 routes) ──
     #[tokio::test]
     async fn parity__hotpic_assemble_control__cipher_hotpic_bbs_id() {
         let router = oa4rust::hotpic_assemble_control::router(shared::testing::test_pool());
@@ -28047,28 +27541,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__hotpic_assemble_control__user_hotpic_application_infoId() {
-        let router = oa4rust::hotpic_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/hotpic/assemble/control/user/hotpic/application/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on hotpic_assemble_control: /api/hotpic/assemble/control/user/hotpic/application/{{infoId}} (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__hotpic_assemble_control__user_hotpic_changeTitle() {
         let router = oa4rust::hotpic_assemble_control::router(shared::testing::test_pool());
         let response = router
@@ -28154,6 +27626,28 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on hotpic_assemble_control: /api/hotpic/assemble/control/user/hotpic/filter/list/page/{{page}}/count/{{count}} (PUT)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__hotpic_assemble_control__user_hotpic_application_infoId() {
+        let router = oa4rust::hotpic_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/hotpic/assemble/control/user/hotpic/test-id/test-id}")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on hotpic_assemble_control: /api/hotpic/assemble/control/user/hotpic/{{application}}/{{{{infoId}}}} (GET)"
         );
     }
     #[tokio::test]
@@ -28245,28 +27739,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__hotpic_assemble_control__delete_hotpic() {
-        let router = oa4rust::hotpic_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/hotpic/delete/hotpic")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on hotpic_assemble_control: /api/hotpic/delete/hotpic (POST)"
-        );
-    }
-    #[tokio::test]
     async fn parity__hotpic_assemble_control__get_hotpic() {
         let router = oa4rust::hotpic_assemble_control::router(shared::testing::test_pool());
         let response = router
@@ -28311,100 +27783,12 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__hotpic_assemble_control__save_hotpic() {
-        let router = oa4rust::hotpic_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/hotpic/save/hotpic")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on hotpic_assemble_control: /api/hotpic/save/hotpic (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__hotpic_assemble_control__cipher_hotpic_bbs_id_2() {
-        let router = oa4rust::hotpic_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/hotpic_assemble_control/cipher/hotpic/bbs/id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on hotpic_assemble_control: /api/hotpic_assemble_control/cipher/hotpic/bbs/id (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__hotpic_assemble_control__cipher_hotpic_cms_id_2() {
-        let router = oa4rust::hotpic_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/hotpic_assemble_control/cipher/hotpic/cms/id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on hotpic_assemble_control: /api/hotpic_assemble_control/cipher/hotpic/cms/id (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__hotpic_assemble_control__cipher_hotpic_filter_list_page_page_count_count_2() {
-        let router = oa4rust::hotpic_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/hotpic_assemble_control/cipher/hotpic/filter/list/page/page/count/count")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on hotpic_assemble_control: /api/hotpic_assemble_control/cipher/hotpic/filter/list/page/page/count/count (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__hotpic_assemble_control__cipher_hotpic_id_1() {
         let router = oa4rust::hotpic_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/hotpic_assemble_control/cipher/hotpic/id")
+                    .uri("/api/hotpic_assemble_control/cipher/hotpic/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -28417,7 +27801,7 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on hotpic_assemble_control: /api/hotpic_assemble_control/cipher/hotpic/id (GET)"
+            "parity: route missing on hotpic_assemble_control: /api/hotpic_assemble_control/cipher/hotpic/{{id}} (GET)"
         );
     }
     #[tokio::test]
@@ -28440,28 +27824,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on hotpic_assemble_control: /api/hotpic_assemble_control/create/hotpic (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__hotpic_assemble_control__delete_hotpic_1() {
-        let router = oa4rust::hotpic_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/hotpic_assemble_control/delete/hotpic")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on hotpic_assemble_control: /api/hotpic_assemble_control/delete/hotpic (GET)"
         );
     }
     #[tokio::test]
@@ -28575,28 +27937,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__hotpic_assemble_control__save_hotpic_1() {
-        let router = oa4rust::hotpic_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/hotpic_assemble_control/save/hotpic")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on hotpic_assemble_control: /api/hotpic_assemble_control/save/hotpic (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__hotpic_assemble_control__update_control_config_1() {
         let router = oa4rust::hotpic_assemble_control::router(shared::testing::test_pool());
         let response = router
@@ -28616,28 +27956,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on hotpic_assemble_control: /api/hotpic_assemble_control/update/control/config (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__hotpic_assemble_control__user_hotpic_application_infoId_1() {
-        let router = oa4rust::hotpic_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/hotpic_assemble_control/user/hotpic/application/infoId")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on hotpic_assemble_control: /api/hotpic_assemble_control/user/hotpic/application/infoId (GET)"
         );
     }
     #[tokio::test]
@@ -28685,12 +28003,12 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__hotpic_assemble_control__user_hotpic_filter_list_page_page_count_count_2() {
+    async fn parity__hotpic_assemble_control__user_hotpic_application_infoId_1() {
         let router = oa4rust::hotpic_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/hotpic_assemble_control/user/hotpic/filter/list/page/page/count/count")
+                    .uri("/api/hotpic_assemble_control/user/hotpic/test-id/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -28703,7 +28021,7 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on hotpic_assemble_control: /api/hotpic_assemble_control/user/hotpic/filter/list/page/page/count/count (GET)"
+            "parity: route missing on hotpic_assemble_control: /api/hotpic_assemble_control/user/hotpic/{{application}}/{{infoId}} (GET)"
         );
     }
     #[tokio::test]
@@ -28712,7 +28030,7 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/hotpic_assemble_control/user/hotpic/id")
+                    .uri("/api/hotpic_assemble_control/user/hotpic/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -28725,33 +28043,11 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on hotpic_assemble_control: /api/hotpic_assemble_control/user/hotpic/id (GET)"
+            "parity: route missing on hotpic_assemble_control: /api/hotpic_assemble_control/user/hotpic/{{id}} (GET)"
         );
     }
 
-    // ── x_hotpic_core_entity → hotpic (3 routes) ──
-    #[tokio::test]
-    async fn parity__hotpic__exists_check() {
-        let router = oa4rust::hotpic::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/hotpic/user/hotpic/exists/check")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on hotpic: /api/hotpic/user/hotpic/exists/check (GET)"
-        );
-    }
+    // ── x_hotpic_core_entity → hotpic (2 routes) ──
     #[tokio::test]
     async fn parity__hotpic__list_by_application_and_info_id() {
         let router = oa4rust::hotpic::router(shared::testing::test_pool());
@@ -28797,7 +28093,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
 
-    // ── x_jpush_assemble_control → jpush_assemble_control (37 routes) ──
+    // ── x_jpush_assemble_control → jpush_assemble_control (30 routes) ──
     #[tokio::test]
     async fn parity__jpush_assemble_control__get_control_config() {
         let router = oa4rust::jpush_assemble_control::router(shared::testing::test_pool());
@@ -28870,7 +28166,7 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/jpush/assemble/control/device/check/deviceName/deviceType/pushType")
+                    .uri("/api/jpush/assemble/control/device/check/test-id/test-id/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -28883,7 +28179,7 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on jpush_assemble_control: /api/jpush/assemble/control/device/check/deviceName/deviceType/pushType (GET)"
+            "parity: route missing on jpush_assemble_control: /api/jpush/assemble/control/device/check/{{p0}}/{{p1}}/{{p2}} (GET)"
         );
     }
     #[tokio::test]
@@ -28928,50 +28224,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on jpush_assemble_control: /api/jpush/assemble/control/device/list/{{pushType}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__jpush_assemble_control__device_unbind_deviceName_deviceType() {
-        let router = oa4rust::jpush_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/jpush/assemble/control/device/unbind/deviceName/deviceType")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on jpush_assemble_control: /api/jpush/assemble/control/device/unbind/deviceName/deviceType (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__jpush_assemble_control__device_unbind_new_deviceName_deviceType_pushType() {
-        let router = oa4rust::jpush_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/jpush/assemble/control/device/unbind/new/deviceName/deviceType/pushType")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on jpush_assemble_control: /api/jpush/assemble/control/device/unbind/new/deviceName/deviceType/pushType (POST)"
         );
     }
     #[tokio::test]
@@ -29173,28 +28425,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__jpush_assemble_control__delete_jpush_1() {
-        let router = oa4rust::jpush_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/jpush_assemble_control/delete/jpush")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on jpush_assemble_control: /api/jpush_assemble_control/delete/jpush (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__jpush_assemble_control__device_admin_unbind_all_person_1() {
         let router = oa4rust::jpush_assemble_control::router(shared::testing::test_pool());
         let response = router
@@ -29240,28 +28470,6 @@ use shared::testing::{test_pool, is_db_available};
     }
     #[tokio::test]
     async fn parity__jpush_assemble_control__device_check_deviceName_deviceType_pushType_1() {
-        let router = oa4rust::jpush_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/jpush_assemble_control/device/check/deviceName/deviceType/pushType")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on jpush_assemble_control: /api/jpush_assemble_control/device/check/deviceName/deviceType/pushType (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__jpush_assemble_control__device_check_deviceName_deviceType_pushType_2() {
         let router = oa4rust::jpush_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -29327,51 +28535,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__jpush_assemble_control__device_unbind_deviceName_deviceType_1() {
-        let router = oa4rust::jpush_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/jpush_assemble_control/device/unbind/deviceName/deviceType")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on jpush_assemble_control: /api/jpush_assemble_control/device/unbind/deviceName/deviceType (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__jpush_assemble_control__device_unbind_new_deviceName_deviceType_pushType_1() {
-        let router = oa4rust::jpush_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/jpush_assemble_control/device/unbind/new/deviceName/deviceType/pushType")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on jpush_assemble_control: /api/jpush_assemble_control/device/unbind/new/deviceName/deviceType/pushType (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__jpush_assemble_control__device_unbind_new_deviceName_deviceType_pushType_2() {
+    async fn parity__jpush_assemble_control__device_unbind_new_deviceName_deviceType_pushType() {
         let router = oa4rust::jpush_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -29393,7 +28557,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__jpush_assemble_control__device_unbind_deviceName_deviceType_2() {
+    async fn parity__jpush_assemble_control__device_unbind_deviceName_deviceType() {
         let router = oa4rust::jpush_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -29569,28 +28733,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__jpush_assemble_control__save_jpush_1() {
-        let router = oa4rust::jpush_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/jpush_assemble_control/save/jpush")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on jpush_assemble_control: /api/jpush_assemble_control/save/jpush (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__jpush_assemble_control__update_control_config_1() {
         let router = oa4rust::jpush_assemble_control::router(shared::testing::test_pool());
         let response = router
@@ -29747,7 +28889,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
 
-    // ── x_meeting_assemble_control → meeting_assemble_control (104 routes) ──
+    // ── x_meeting_assemble_control → meeting_assemble_control (101 routes) ──
     #[tokio::test]
     async fn parity__meeting_assemble_control__crate() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
@@ -30013,72 +29155,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_11() {
-        let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/meeting/assemble/control/building/list/completed/completed/allmeeting/test-id/test-id")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on meeting_assemble_control: /api/meeting/assemble/control/building/list/completed/completed/allmeeting/{{start}}/{{start}} (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_12() {
-        let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/meeting/assemble/control/building/list/completed/completed/room/room/meeting/meeting/test-id/test-id")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on meeting_assemble_control: /api/meeting/assemble/control/building/list/completed/completed/room/room/meeting/meeting/{{start}}/{{start}} (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_13() {
-        let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/meeting/assemble/control/building/list/completed/completed/test-id/test-id")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on meeting_assemble_control: /api/meeting/assemble/control/building/list/completed/completed/{{start}}/{{start}} (POST)"
-        );
-    }
-    #[tokio::test]
     async fn parity__meeting_assemble_control__building_list_like_pinyin_key() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
@@ -30145,7 +29221,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_14() {
+    async fn parity__meeting_assemble_control__crate_11() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -30167,7 +29243,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_15() {
+    async fn parity__meeting_assemble_control__crate_12() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -30189,7 +29265,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_16() {
+    async fn parity__meeting_assemble_control__crate_13() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -30233,7 +29309,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_17() {
+    async fn parity__meeting_assemble_control__crate_14() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -30255,7 +29331,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_18() {
+    async fn parity__meeting_assemble_control__crate_15() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -30299,7 +29375,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_19() {
+    async fn parity__meeting_assemble_control__crate_16() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -30387,12 +29463,12 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_20() {
+    async fn parity__meeting_assemble_control__crate_17() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/meeting/assemble/control/list/meeting/controls")
+                    .uri("/api/meeting/assemble/control/list/meeting/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -30405,7 +29481,7 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on meeting_assemble_control: /api/meeting/assemble/control/list/meeting/controls (GET)"
+            "parity: route missing on meeting_assemble_control: /api/meeting/assemble/control/list/meeting/{{controls}} (GET)"
         );
     }
     #[tokio::test]
@@ -30427,7 +29503,7 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on meeting_assemble_control: /api/meeting/assemble/control/list/{{\\\"meetingId\\\"}} (GET)"
+            "parity: route missing on meeting_assemble_control: /api/meeting/assemble/control/list/{{meetingId}} (GET)"
         );
     }
     #[tokio::test]
@@ -30453,7 +29529,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_21() {
+    async fn parity__meeting_assemble_control__crate_18() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -30629,7 +29705,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_22() {
+    async fn parity__meeting_assemble_control__crate_19() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -30673,7 +29749,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_23() {
+    async fn parity__meeting_assemble_control__crate_20() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -30695,7 +29771,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_24() {
+    async fn parity__meeting_assemble_control__crate_21() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -30717,7 +29793,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_25() {
+    async fn parity__meeting_assemble_control__crate_22() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -30739,7 +29815,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_26() {
+    async fn parity__meeting_assemble_control__crate_23() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -30761,7 +29837,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_27() {
+    async fn parity__meeting_assemble_control__crate_24() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -30783,7 +29859,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_28() {
+    async fn parity__meeting_assemble_control__crate_25() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -30805,7 +29881,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_29() {
+    async fn parity__meeting_assemble_control__crate_26() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -30915,7 +29991,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_30() {
+    async fn parity__meeting_assemble_control__crate_27() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -31069,7 +30145,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_31() {
+    async fn parity__meeting_assemble_control__crate_28() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -31091,7 +30167,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_32() {
+    async fn parity__meeting_assemble_control__crate_29() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -31113,7 +30189,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_33() {
+    async fn parity__meeting_assemble_control__crate_30() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -31135,7 +30211,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_34() {
+    async fn parity__meeting_assemble_control__crate_31() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -31157,7 +30233,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_35() {
+    async fn parity__meeting_assemble_control__crate_32() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -31179,7 +30255,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_36() {
+    async fn parity__meeting_assemble_control__crate_33() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -31201,7 +30277,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_37() {
+    async fn parity__meeting_assemble_control__crate_34() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -31267,7 +30343,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_38() {
+    async fn parity__meeting_assemble_control__crate_35() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -31399,7 +30475,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_39() {
+    async fn parity__meeting_assemble_control__crate_36() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -31443,7 +30519,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_40() {
+    async fn parity__meeting_assemble_control__crate_37() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -31795,7 +30871,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_41() {
+    async fn parity__meeting_assemble_control__crate_38() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -31839,7 +30915,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_42() {
+    async fn parity__meeting_assemble_control__crate_39() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -31883,7 +30959,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_43() {
+    async fn parity__meeting_assemble_control__crate_40() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -31905,7 +30981,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_44() {
+    async fn parity__meeting_assemble_control__crate_41() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -31927,7 +31003,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_45() {
+    async fn parity__meeting_assemble_control__crate_42() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -31949,7 +31025,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_46() {
+    async fn parity__meeting_assemble_control__crate_43() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -31993,7 +31069,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_47() {
+    async fn parity__meeting_assemble_control__crate_44() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -32015,7 +31091,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__meeting_assemble_control__crate_48() {
+    async fn parity__meeting_assemble_control__crate_45() {
         let router = oa4rust::meeting_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -32171,6 +31247,28 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
+    async fn parity__meeting__get_meeting() {
+        let router = oa4rust::meeting::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/meeting/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on meeting: /api/meeting/{{id}} (GET)"
+        );
+    }
+    #[tokio::test]
     async fn parity__meeting__add_participant() {
         let router = oa4rust::meeting::router(shared::testing::test_pool());
         let response = router
@@ -32189,7 +31287,7 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on meeting: /api/meeting/{{\\\"meetingId\\\"}}/participant/add (POST)"
+            "parity: route missing on meeting: /api/meeting/{{meetingId}}/participant/add (POST)"
         );
     }
     #[tokio::test]
@@ -32211,29 +31309,7 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on meeting: /api/meeting/{{\\\"meetingId\\\"}}/participant/list (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__meeting__get_meeting() {
-        let router = oa4rust::meeting::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/meeting/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on meeting: /api/meeting/{{id}} (GET)"
+            "parity: route missing on meeting: /api/meeting/{{meetingId}}/participant/list (GET)"
         );
     }
 
@@ -36737,7 +35813,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
 
-    // ── x_organization_assemble_express → organization_assemble_express (135 routes) ──
+    // ── x_organization_assemble_express → organization_assemble_express (136 routes) ──
     #[tokio::test]
     async fn parity__organization_assemble_express__distinguishedname_list() {
         let router = oa4rust::organization_assemble_express::router(shared::testing::test_pool());
@@ -38672,6 +37748,28 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on organization_assemble_express: /api/unit/check/unit/has/unit (POST)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__organization_assemble_express__unit_check_id() {
+        let router = oa4rust::organization_assemble_express::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/unit/check/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on organization_assemble_express: /api/unit/check/{{id}} (GET)"
         );
     }
     #[tokio::test]
@@ -43501,7 +42599,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
 
-    // ── x_portal_assemble_surface → portal_assemble_surface (75 routes) ──
+    // ── x_portal_assemble_surface → portal_assemble_surface (74 routes) ──
     #[tokio::test]
     async fn parity__portal_assemble_surface__create_surface() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
@@ -44053,28 +43151,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_22() {
-        let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/portal/assemble/surface/get/layout")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on portal_assemble_surface: /api/portal/assemble/surface/get/layout (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__portal_assemble_surface__get_surface() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
@@ -44097,29 +43173,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_23() {
-        let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/portal/assemble/surface/list/layouts")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on portal_assemble_surface: /api/portal/assemble/surface/list/layouts (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_24() {
+    async fn parity__portal_assemble_surface__crate_22() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44163,7 +43217,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_25() {
+    async fn parity__portal_assemble_surface__crate_23() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44185,7 +43239,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_26() {
+    async fn parity__portal_assemble_surface__crate_24() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44207,7 +43261,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_27() {
+    async fn parity__portal_assemble_surface__crate_25() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44229,7 +43283,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_28() {
+    async fn parity__portal_assemble_surface__crate_26() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44251,7 +43305,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_29() {
+    async fn parity__portal_assemble_surface__crate_27() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44273,7 +43327,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_30() {
+    async fn parity__portal_assemble_surface__crate_28() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44295,7 +43349,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_31() {
+    async fn parity__portal_assemble_surface__crate_29() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44317,7 +43371,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_32() {
+    async fn parity__portal_assemble_surface__crate_30() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44339,7 +43393,29 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_33() {
+    async fn parity__portal_assemble_surface__crate_31() {
+        let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/portal/assemble/surface/page/test-id")
+                    .method(axum::http::Method::DELETE)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on portal_assemble_surface: /api/portal/assemble/surface/page/{{id}} (DELETE)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__portal_assemble_surface__crate_32() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44361,7 +43437,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_34() {
+    async fn parity__portal_assemble_surface__crate_33() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44383,7 +43459,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_35() {
+    async fn parity__portal_assemble_surface__crate_34() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44405,7 +43481,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_36() {
+    async fn parity__portal_assemble_surface__crate_35() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44427,7 +43503,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_37() {
+    async fn parity__portal_assemble_surface__crate_36() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44449,7 +43525,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_38() {
+    async fn parity__portal_assemble_surface__crate_37() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44471,7 +43547,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_39() {
+    async fn parity__portal_assemble_surface__crate_38() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44493,7 +43569,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_40() {
+    async fn parity__portal_assemble_surface__crate_39() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44515,7 +43591,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_41() {
+    async fn parity__portal_assemble_surface__crate_40() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44537,7 +43613,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_42() {
+    async fn parity__portal_assemble_surface__crate_41() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44559,7 +43635,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_43() {
+    async fn parity__portal_assemble_surface__crate_42() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44625,7 +43701,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_44() {
+    async fn parity__portal_assemble_surface__crate_43() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44669,12 +43745,12 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_45() {
+    async fn parity__portal_assemble_surface__crate_44() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/portal/assemble/surface/script/list/portal/portal")
+                    .uri("/api/portal/assemble/surface/script/list/portal/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -44687,11 +43763,11 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on portal_assemble_surface: /api/portal/assemble/surface/script/list/portal/portal (GET)"
+            "parity: route missing on portal_assemble_surface: /api/portal/assemble/surface/script/list/portal/{{portal}} (GET)"
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_46() {
+    async fn parity__portal_assemble_surface__crate_45() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44713,7 +43789,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_47() {
+    async fn parity__portal_assemble_surface__crate_46() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44735,7 +43811,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_48() {
+    async fn parity__portal_assemble_surface__crate_47() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44757,7 +43833,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_49() {
+    async fn parity__portal_assemble_surface__crate_48() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44779,7 +43855,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_50() {
+    async fn parity__portal_assemble_surface__crate_49() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44801,7 +43877,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_51() {
+    async fn parity__portal_assemble_surface__crate_50() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44823,7 +43899,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_52() {
+    async fn parity__portal_assemble_surface__crate_51() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44845,7 +43921,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_53() {
+    async fn parity__portal_assemble_surface__crate_52() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44867,7 +43943,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_54() {
+    async fn parity__portal_assemble_surface__crate_53() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44889,12 +43965,12 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_55() {
+    async fn parity__portal_assemble_surface__crate_54() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/portal/assemble/surface/widget/list/portal/portal")
+                    .uri("/api/portal/assemble/surface/widget/list/portal/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -44907,11 +43983,11 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on portal_assemble_surface: /api/portal/assemble/surface/widget/list/portal/portal (GET)"
+            "parity: route missing on portal_assemble_surface: /api/portal/assemble/surface/widget/list/portal/{{portal}} (GET)"
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_56() {
+    async fn parity__portal_assemble_surface__crate_55() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44933,7 +44009,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_57() {
+    async fn parity__portal_assemble_surface__crate_56() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44955,7 +44031,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_58() {
+    async fn parity__portal_assemble_surface__crate_57() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44977,7 +44053,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_59() {
+    async fn parity__portal_assemble_surface__crate_58() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -44999,7 +44075,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_60() {
+    async fn parity__portal_assemble_surface__crate_59() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -45021,7 +44097,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_61() {
+    async fn parity__portal_assemble_surface__crate_60() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -45043,7 +44119,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_62() {
+    async fn parity__portal_assemble_surface__crate_61() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -45065,7 +44141,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__portal_assemble_surface__crate_63() {
+    async fn parity__portal_assemble_surface__crate_62() {
         let router = oa4rust::portal_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -48618,7 +47694,7 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/designer/item/access/path/path")
+                    .uri("/api/processplatform/assemble/designer/item/access/path/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -48631,7 +47707,7 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_designer: /api/processplatform/assemble/designer/item/access/path/path (GET)"
+            "parity: route missing on processplatform_assemble_designer: /api/processplatform/assemble/designer/item/access/path/{{path}} (GET)"
         );
     }
     #[tokio::test]
@@ -50263,7 +49339,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
 
-    // ── x_processplatform_assemble_surface → processplatform_assemble_surface (1064 routes) ──
+    // ── x_processplatform_assemble_surface → processplatform_assemble_surface (945 routes) ──
     #[tokio::test]
     async fn parity__processplatform_assemble_surface__anonymous_read_count_credential() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
@@ -50287,7 +49363,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__anonymous_read_count_credential_1() {
+    async fn parity__processplatform_assemble_surface__crate() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -50331,7 +49407,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__anonymous_task_count_credential_1() {
+    async fn parity__processplatform_assemble_surface__crate_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -50661,534 +49737,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_data_mockd() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/data/mockdeletetoget/test-id/test-id")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/data/mockdeletetoget/{{applicationDictFlag}}/{{applicationFlag}} (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_data_mockp() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/data/mockputtopost/test-id/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/data/mockputtopost/{{applicationDictFlag}}/{{applicationFlag}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_data() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/data/test-id/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/data/{{applicationDictFlag}}/{{applicationFlag}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/data/mockdeletetoget/test-id/test-id")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/path1/data/mockdeletetoget/{{applicationDictFlag}}/{{applicationFlag}} (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_1() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/data/mockputtopost/test-id/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/path1/data/mockputtopost/{{applicationDictFlag}}/{{applicationFlag}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_2() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/data/test-id/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/path1/data/{{applicationDictFlag}}/{{applicationFlag}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/data/mockdeletetoget/test-id/test-id")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/data/mockdeletetoget/{{applicationDictFlag}}/{{applicationFlag}} (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_1() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/data/mockputtopost/test-id/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/data/mockputtopost/{{applicationDictFlag}}/{{applicationFlag}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_2() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/data/test-id/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/data/{{applicationDictFlag}}/{{applicationFlag}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_3() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/data/mockdeletetoget/test-id/test-id")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/data/mockdeletetoget/{{applicationDictFlag}}/{{applicationFlag}} (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_4() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/data/mockputtopost/test-id/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/data/mockputtopost/{{applicationDictFlag}}/{{applicationFlag}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_5() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/data/test-id/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/data/{{applicationDictFlag}}/{{applicationFlag}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_6() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/data/mockdeletetoget/test-id/test-id")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/data/mockdeletetoget/{{applicationDictFlag}}/{{applicationFlag}} (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_7() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/data/mockputtopost/test-id/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/data/mockputtopost/{{applicationDictFlag}}/{{applicationFlag}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_8() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/data/test-id/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/data/{{applicationDictFlag}}/{{applicationFlag}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_9() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/data/mockdeletetoget/test-id/test-id")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/data/mockdeletetoget/{{applicationDictFlag}}/{{applicationFlag}} (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_10() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/data/mockputtopost/test-id/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/data/mockputtopost/{{applicationDictFlag}}/{{applicationFlag}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_11() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/data/test-id/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/data/{{applicationDictFlag}}/{{applicationFlag}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_12() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/data/mockdeletetoget/test-id/test-id")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/data/mockdeletetoget/{{applicationDictFlag}}/{{applicationFlag}} (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_13() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/data/mockputtopost/test-id/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/data/mockputtopost/{{applicationDictFlag}}/{{applicationFlag}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_14() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/data/test-id/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/data/{{applicationDictFlag}}/{{applicationFlag}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_15() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/path7/data/mockdeletetoget/test-id/test-id")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/path7/data/mockdeletetoget/{{applicationDictFlag}}/{{applicationFlag}} (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_16() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/path7/data/mockputtopost/test-id/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/path7/data/mockputtopost/{{applicationDictFlag}}/{{applicationFlag}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_17() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/path7/data/test-id/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/path7/data/{{applicationDictFlag}}/{{applicationFlag}} (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
@@ -51277,7 +49825,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_data_1() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_data() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51299,7 +49847,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_data_2() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_data_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51321,7 +49869,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_data_3() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_data_2() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51343,7 +49891,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_data_4() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_data_3() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51365,7 +49913,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_data_mockd_1() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_data_mockd() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51387,7 +49935,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_data_mockp_1() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_data_mockp() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51409,7 +49957,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_3() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51431,7 +49979,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_4() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51453,7 +50001,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_5() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_2() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51475,7 +50023,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_6() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_3() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51497,7 +50045,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_7() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_4() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51519,7 +50067,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_8() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_5() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51541,7 +50089,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_18() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51563,7 +50111,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_19() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51585,7 +50133,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_20() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_2() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51607,7 +50155,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_21() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_3() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51629,7 +50177,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_22() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_4() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51651,7 +50199,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_23() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_5() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51673,7 +50221,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_24() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_6() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51695,7 +50243,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_25() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_7() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51717,7 +50265,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_26() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_8() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51739,7 +50287,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_27() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_9() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51761,7 +50309,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_28() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_10() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51783,7 +50331,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_29() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_11() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51805,7 +50353,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_30() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_12() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51827,7 +50375,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_31() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_13() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51849,7 +50397,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_32() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_14() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51871,7 +50419,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_33() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_15() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51893,7 +50441,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_34() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_16() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51915,7 +50463,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_35() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_17() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51937,7 +50485,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_36() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_18() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51959,7 +50507,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_37() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_19() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -51981,7 +50529,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_38() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_20() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -52003,7 +50551,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_39() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_21() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -52025,7 +50573,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_40() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_22() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -52047,7 +50595,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_41() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_23() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -52069,7 +50617,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_42() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_24() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -52091,7 +50639,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_43() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_25() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -52113,7 +50661,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_44() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_26() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -52135,7 +50683,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_45() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_27() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -52157,7 +50705,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_46() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_28() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -52179,7 +50727,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_47() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_29() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -52201,7 +50749,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_48() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_30() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -52223,7 +50771,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_49() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_31() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -52245,7 +50793,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_50() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_32() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -52267,7 +50815,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_51() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_33() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -52289,7 +50837,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_52() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_34() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -52311,7 +50859,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_53() {
+    async fn parity__processplatform_assemble_surface__applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path_35() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -53900,50 +52448,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/correlation/job/job")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/correlation/job/job (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__correlation_job_job_delete() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/correlation/job/job/delete")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/correlation/job/job/delete (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__correlation_job_job_1() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/processplatform/assemble/surface/correlation/job/test-id")
                     .method(axum::http::Method::POST)
                     .body(axum::body::Body::empty())
@@ -53961,7 +52465,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__correlation_job_job_delete_1() {
+    async fn parity__processplatform_assemble_surface__correlation_job_job_delete() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -53988,50 +52492,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/correlation/list/job/job")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/correlation/list/job/job (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__correlation_list_job_job_site_site() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/correlation/list/job/job/site/site")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/correlation/list/job/job/site/site (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__correlation_list_job_job_1() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/processplatform/assemble/surface/correlation/list/job/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
@@ -54049,7 +52509,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__correlation_list_job_job_site_site_1() {
+    async fn parity__processplatform_assemble_surface__correlation_list_job_job_site_site() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -54072,28 +52532,6 @@ use shared::testing::{test_pool, is_db_available};
     }
     #[tokio::test]
     async fn parity__processplatform_assemble_surface__correlation_update_job_job() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/correlation/update/job/job")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/correlation/update/job/job (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__correlation_update_job_job_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -54142,28 +52580,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/fetch/job/job")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/fetch/job/job (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_fetch_job_job_1() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/processplatform/assemble/surface/data/fetch/job/test-id")
                     .method(axum::http::Method::POST)
                     .body(axum::body::Body::empty())
@@ -54178,50 +52594,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/fetch/job/{{job}} (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/job/job")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/job/job (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_array_data() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/job/job/array/data")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/job/job/array/data (GET)"
         );
     }
     #[tokio::test]
@@ -54247,28 +52619,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/job/job/path0")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/job/job/path0 (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__processplatform_assemble_surface__data_job_job_path0_mockputtopost() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
@@ -54288,28 +52638,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/job/job/path0/mockputtopost (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/job/job/path0/path1")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/job/job/path0/path1 (GET)"
         );
     }
     #[tokio::test]
@@ -54335,28 +52663,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/job/job/path0/path1/path2")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/job/job/path0/path1/path2 (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_mockputtopost() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
@@ -54376,28 +52682,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/job/job/path0/path1/path2/mockputtopost (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3 (GET)"
         );
     }
     #[tokio::test]
@@ -54423,28 +52707,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_path4() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4 (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_path4_mockputtopost() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
@@ -54464,28 +52726,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/mockputtopost (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_path4_path5() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5 (GET)"
         );
     }
     #[tokio::test]
@@ -54511,28 +52751,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_path4_path5_path6() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6 (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_path4_path5_path6_mockputtopost() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
@@ -54552,28 +52770,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/mockputtopost (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_path4_path5_path6_path7() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/path7")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/path7 (GET)"
         );
     }
     #[tokio::test]
@@ -54599,7 +52795,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_1() {
+    async fn parity__processplatform_assemble_surface__data_job_job() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -54621,7 +52817,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_2() {
+    async fn parity__processplatform_assemble_surface__data_job_job_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -54643,7 +52839,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_array_data_1() {
+    async fn parity__processplatform_assemble_surface__data_job_job_array_data() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -54687,7 +52883,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_1() {
+    async fn parity__processplatform_assemble_surface__data_job_job_path0() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -54709,7 +52905,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_2() {
+    async fn parity__processplatform_assemble_surface__data_job_job_path0_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -54753,7 +52949,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_1() {
+    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -54775,7 +52971,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_2() {
+    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -54819,7 +53015,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_1() {
+    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -54841,7 +53037,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_2() {
+    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -54885,7 +53081,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_1() {
+    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -54907,7 +53103,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_2() {
+    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -54951,7 +53147,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_path4_1() {
+    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_path4() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -54973,7 +53169,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_path4_2() {
+    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_path4_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -55017,7 +53213,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_path4_path5_1() {
+    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_path4_path5() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -55039,7 +53235,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_path4_path5_2() {
+    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_path4_path5_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -55083,7 +53279,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_path4_path5_path6_1() {
+    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_path4_path5_path6() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -55105,7 +53301,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_path4_path5_path6_2() {
+    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_path4_path5_path6_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -55149,7 +53345,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_path4_path5_path6_path7_1() {
+    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_path4_path5_path6_path7() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -55171,7 +53367,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_path4_path5_path6_path7_2() {
+    async fn parity__processplatform_assemble_surface__data_job_job_path0_path1_path2_path3_path4_path5_path6_path7_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -55256,534 +53452,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/mockputtopost/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_mockdeletetoget() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/mockdeletetoget/test-id")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/mockdeletetoget/{{id}} (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_mockputtopost() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/mockputtopost/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/mockputtopost/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_mockdeletetoget() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/path1/mockdeletetoget/test-id")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/path1/mockdeletetoget/{{id}} (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_mockputtopost() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/path1/mockputtopost/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/path1/mockputtopost/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_mockdeletetoget() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/path1/path2/mockdeletetoget/test-id")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/path1/path2/mockdeletetoget/{{id}} (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_mockputtopost() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/path1/path2/mockputtopost/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/path1/path2/mockputtopost/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_mockdeletetoget() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/mockdeletetoget/test-id")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/mockdeletetoget/{{id}} (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_mockputtopost() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/mockputtopost/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/mockputtopost/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_mockdeletetoget() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/mockdeletetoget/test-id")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/mockdeletetoget/{{id}} (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_mockputtopost() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/mockputtopost/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/mockputtopost/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_mockdeletetoget() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/mockdeletetoget/test-id")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/mockdeletetoget/{{id}} (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/mockputtopost/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/mockputtopost/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeletetoget() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/mockdeletetoget/test-id")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/mockdeletetoget/{{id}} (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/mockputtopost/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/mockputtopost/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockdeletetoget() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/path7/mockdeletetoget/test-id")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/path7/mockdeletetoget/{{id}} (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/path7/mockputtopost/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/path7/mockputtopost/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_path7() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/path7/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/path7/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/path1/path2/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/path1/path2/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/path1/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/path1/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/work/path0/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/work/path0/{{id}} (GET)"
         );
     }
     #[tokio::test]
@@ -55919,7 +53587,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_mockdeletetoget_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_mockdeletetoget() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -55941,7 +53609,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -55963,7 +53631,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_mockputtopost_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_mockputtopost() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -55985,7 +53653,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_mockputtopost_2() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_mockputtopost_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56007,7 +53675,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_mockdeletetoget_2() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_mockdeletetoget_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56029,7 +53697,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_mockputtopost_3() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_mockputtopost_2() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56051,7 +53719,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_mockdeletetoget_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_mockdeletetoget() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56073,7 +53741,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56095,7 +53763,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_mockputtopost_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_mockputtopost() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56117,7 +53785,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_mockputtopost_2() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_mockputtopost_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56139,7 +53807,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_mockdeletetoget_2() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_mockdeletetoget_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56161,7 +53829,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_mockputtopost_3() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_mockputtopost_2() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56183,7 +53851,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_mockputtopost_4() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_mockputtopost_3() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56205,7 +53873,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_mockdeletetoget_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_mockdeletetoget() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56227,7 +53895,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56249,7 +53917,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_mockputtopost_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_mockputtopost() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56271,7 +53939,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_mockputtopost_2() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_mockputtopost_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56293,7 +53961,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_mockdeletetoget_2() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_mockdeletetoget_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56315,7 +53983,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_mockputtopost_3() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_mockputtopost_2() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56337,7 +54005,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_mockdeletetoget_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_mockdeletetoget() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56359,7 +54027,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56381,7 +54049,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_mockputtopost_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_mockputtopost() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56403,7 +54071,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_mockputtopost_2() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_mockputtopost_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56425,7 +54093,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_mockdeletetoget_2() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_mockdeletetoget_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56447,7 +54115,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_mockputtopost_3() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_mockputtopost_2() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56469,7 +54137,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_mockdeletetoget_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_mockdeletetoget() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56491,7 +54159,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56513,7 +54181,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_mockputtopost_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_mockputtopost() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56535,7 +54203,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_mockputtopost_2() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_mockputtopost_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56557,7 +54225,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_mockdeletetoget_2() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_mockdeletetoget_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56579,7 +54247,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_mockputtopost_3() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_mockputtopost_2() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56601,7 +54269,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_mockdeletetoget_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_mockdeletetoget() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56623,7 +54291,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56645,7 +54313,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56667,7 +54335,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost_2() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56689,7 +54357,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_mockdeletetoget_2() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_mockdeletetoget_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56711,7 +54379,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost_3() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost_2() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56733,7 +54401,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeletetoget_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeletetoget() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56755,7 +54423,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56777,7 +54445,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56799,7 +54467,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost_2() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56821,7 +54489,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeletetoget_2() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeletetoget_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56843,7 +54511,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost_3() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost_2() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56865,7 +54533,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockdeletetoget_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockdeletetoget() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56887,7 +54555,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_path7() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56909,7 +54577,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost_1() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56931,7 +54599,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost_2() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56953,7 +54621,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockdeletetoget_2() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockdeletetoget_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -56975,7 +54643,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost_3() {
+    async fn parity__processplatform_assemble_surface__data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost_2() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -57060,358 +54728,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/workcompleted/mockputtopost/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_mockputtopost() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/workcompleted/path0/mockputtopost/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/workcompleted/path0/mockputtopost/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_mockputtopost() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/mockputtopost/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/workcompleted/path0/path1/mockputtopost/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_mockputtopost() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/mockputtopost/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/mockputtopost/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_mockputtopost() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/mockputtopost/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/mockputtopost/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/mockputtopost/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/mockputtopost/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputtopost() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/mockputtopost/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/mockputtopost/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/path6/mockputtopost/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/path6/mockputtopost/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtop() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/path6/path7/mockputtopost/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/path6/path7/mockputtopost/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/path6/path7/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/path6/path7/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/path6/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/path6/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/workcompleted/path0/path1/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/data/workcompleted/path0/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/data/workcompleted/path0/{{id}} (GET)"
         );
     }
     #[tokio::test]
@@ -57525,7 +54841,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_1() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -57547,7 +54863,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_mockputtopost_1() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_mockputtopost() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -57569,7 +54885,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_mockputtopost_2() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_mockputtopost_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -57591,7 +54907,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_1() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -57613,7 +54929,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_mockputtopost_1() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_mockputtopost() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -57635,7 +54951,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_mockputtopost_2() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_mockputtopost_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -57657,7 +54973,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_1() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -57679,7 +54995,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_mockputtopost_1() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_mockputtopost() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -57701,7 +55017,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_mockputtopost_2() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_mockputtopost_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -57723,7 +55039,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_1() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -57745,7 +55061,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_mockputtopost_1() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_mockputtopost() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -57767,7 +55083,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_mockputtopost_2() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_mockputtopost_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -57789,7 +55105,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_1() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -57811,7 +55127,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost_1() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -57833,7 +55149,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost_2() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -57855,7 +55171,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5_1() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -57877,7 +55193,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputtopost_1() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputtopost() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -57899,7 +55215,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputtopost_2() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputtopost_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -57921,7 +55237,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_1() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -57943,7 +55259,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost_1() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -57965,7 +55281,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost_2() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -57987,7 +55303,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7_1() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -58009,7 +55325,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtop_1() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtop() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -58031,7 +55347,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtop_2() {
+    async fn parity__processplatform_assemble_surface__data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtop_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -58058,28 +55374,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/datarecord/get/job/job/path/path")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/datarecord/get/job/job/path/path (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__datarecord_get_job_job_path_path_1() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/processplatform/assemble/surface/datarecord/get/job/test-id/path/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
@@ -58098,28 +55392,6 @@ use shared::testing::{test_pool, is_db_available};
     }
     #[tokio::test]
     async fn parity__processplatform_assemble_surface__datarecord_list_job_job() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/datarecord/list/job/job")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/datarecord/list/job/job (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__datarecord_list_job_job_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -58163,28 +55435,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__documentversion_list_job_job() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/documentversion/list/job/job")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/documentversion/list/job/job (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__processplatform_assemble_surface__documentversion_list_job_job_category_category() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
@@ -58207,7 +55457,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__documentversion_list_job_job_1() {
+    async fn parity__processplatform_assemble_surface__documentversion_list_job_job() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -58295,7 +55545,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__documentversion_list_workorworkcompleted_workOrWorkCompleted_category_category_1() {
+    async fn parity__processplatform_assemble_surface__crate_2() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -58318,28 +55568,6 @@ use shared::testing::{test_pool, is_db_available};
     }
     #[tokio::test]
     async fn parity__processplatform_assemble_surface__documentversion_work_work() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/documentversion/work/work")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/documentversion/work/work (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__documentversion_work_work_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -58427,7 +55655,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__draft_list_my_paging_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_3() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -58938,50 +56166,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/form/v2/lookup/taskcompleted/taskcompleted")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/form/v2/lookup/taskcompleted/taskcompleted (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__form_v2_lookup_taskcompleted_taskcompleted_mobile() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/form/v2/lookup/taskcompleted/taskcompleted/mobile")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/form/v2/lookup/taskcompleted/taskcompleted/mobile (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__form_v2_lookup_taskcompleted_taskcompleted_1() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/processplatform/assemble/surface/form/v2/lookup/taskcompleted/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
@@ -58999,7 +56183,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__form_v2_lookup_taskcompleted_taskcompleted_mobile_1() {
+    async fn parity__processplatform_assemble_surface__form_v2_lookup_taskcompleted_taskcompleted_mobile() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -59329,7 +56513,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__handover_list_paging_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_4() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -59439,73 +56623,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__job_job_allow_visit_person_person() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/job/job/allow/visit/person/person")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/job/job/allow/visit/person/person (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__job_job_find_work_workcompleted() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/job/job/find/work/workcompleted")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/job/job/find/work/workcompleted (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__processplatform_assemble_surface__job_latest_work_workcompleted_serial_serial() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/job/latest/work/workcompleted/serial/serial")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/job/latest/work/workcompleted/serial/serial (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__job_latest_work_workcompleted_serial_serial_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -59532,28 +56650,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/job/v2/job/projection")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/job/v2/job/projection (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__job_v2_job_projection_1() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/processplatform/assemble/surface/job/v2/test-id/projection")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
@@ -59571,7 +56667,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__job_job_allow_visit_person_person_1() {
+    async fn parity__processplatform_assemble_surface__job_job_allow_visit_person_person() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -59593,7 +56689,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__job_job_find_work_workcompleted_1() {
+    async fn parity__processplatform_assemble_surface__job_job_find_work_workcompleted() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -59612,28 +56708,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/job/{{job}}/find/work/workcompleted (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__keylock_lock() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/keylock/lock")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/keylock/lock (GET)"
         );
     }
     #[tokio::test]
@@ -59730,7 +56804,7 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/mode/clear/person/person/manager")
+                    .uri("/api/processplatform/assemble/surface/mode/clear/person/person/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
@@ -59743,7 +56817,7 @@ use shared::testing::{test_pool, is_db_available};
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/mode/clear/person/person/manager (GET)"
+            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/mode/clear/person/person/{{p0}} (GET)"
         );
     }
     #[tokio::test]
@@ -60385,28 +57459,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__read_filter_attribute_filter() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/read/filter/attribute/filter")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/read/filter/attribute/filter (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__processplatform_assemble_surface__read_u2_filter_attribute_post() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
@@ -60429,7 +57481,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__read_list_count_application_applicationFlag_process() {
+    async fn parity__processplatform_assemble_surface__crate_5() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -60473,7 +57525,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__read_list_count_application_applicationFlag_process_1() {
+    async fn parity__processplatform_assemble_surface__read_list_count_application_applicationFlag_process() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -60500,28 +57552,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/read/list/date/date/manage")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/read/list/date/date/manage (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__read_list_date_date_manage_1() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/processplatform/assemble/surface/read/list/date/test-id/manage")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
@@ -60539,7 +57569,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__read_list_filter_page_size_size_manage() {
+    async fn parity__processplatform_assemble_surface__crate_6() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -60561,7 +57591,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__read_list_filter_page_size_size_manage_1() {
+    async fn parity__processplatform_assemble_surface__read_list_filter_page_size_size_manage() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -60584,28 +57614,6 @@ use shared::testing::{test_pool, is_db_available};
     }
     #[tokio::test]
     async fn parity__processplatform_assemble_surface__read_list_job_job() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/read/list/job/job")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/read/list/job/job (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__read_list_job_job_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -60649,7 +57657,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__read_list_my_filter_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_7() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -60693,7 +57701,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__read_list_my_paging_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_8() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -60808,28 +57816,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/read/list/person/person/manage")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/read/list/person/person/manage (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__read_list_person_person_manage_1() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/processplatform/assemble/surface/read/list/person/test-id/manage")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
@@ -60936,28 +57922,6 @@ use shared::testing::{test_pool, is_db_available};
     }
     #[tokio::test]
     async fn parity__processplatform_assemble_surface__read_list_work_work() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/read/list/work/work")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/read/list/work/work (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__read_list_work_work_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -61507,7 +58471,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__read_v2_list_create_paging_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_9() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -61639,7 +58603,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__read_v2_list_paging_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_10() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -61815,7 +58779,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__read_count_credential_1() {
+    async fn parity__processplatform_assemble_surface__crate_11() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -62167,28 +59131,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__readcompleted_filter_attribute_filter() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/readcompleted/filter/attribute/filter")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/readcompleted/filter/attribute/filter (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__processplatform_assemble_surface__readcompleted_u2_filter_attribute_post() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
@@ -62211,7 +59153,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__readcompleted_list_count_application_applicationFlag_process() {
+    async fn parity__processplatform_assemble_surface__crate_12() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -62255,7 +59197,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__readcompleted_list_count_application_applicationFlag_process_1() {
+    async fn parity__processplatform_assemble_surface__readcompleted_list_count_application_applicationFlag_process() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -62282,28 +59224,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/readcompleted/list/date/date/manage")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/readcompleted/list/date/date/manage (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__readcompleted_list_date_date_manage_1() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/processplatform/assemble/surface/readcompleted/list/date/test-id/manage")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
@@ -62321,7 +59241,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__readcompleted_list_filter_page_size_size_manage() {
+    async fn parity__processplatform_assemble_surface__crate_13() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -62343,7 +59263,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__readcompleted_list_filter_page_size_size_manage_1() {
+    async fn parity__processplatform_assemble_surface__readcompleted_list_filter_page_size_size_manage() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -62366,28 +59286,6 @@ use shared::testing::{test_pool, is_db_available};
     }
     #[tokio::test]
     async fn parity__processplatform_assemble_surface__readcompleted_list_job_job() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/readcompleted/list/job/job")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/readcompleted/list/job/job (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__readcompleted_list_job_job_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -62431,7 +59329,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__readcompleted_list_my_filter_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_14() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -62475,7 +59373,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__readcompleted_list_my_paging_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_15() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -62674,28 +59572,6 @@ use shared::testing::{test_pool, is_db_available};
     }
     #[tokio::test]
     async fn parity__processplatform_assemble_surface__readcompleted_list_work_work() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/readcompleted/list/work/work")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/readcompleted/list/work/work (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__readcompleted_list_work_work_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -63091,7 +59967,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__readcompleted_v2_list_create_paging_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_16() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -63223,7 +60099,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__readcompleted_v2_list_paging_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_17() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -63311,7 +60187,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__readcompleted_count_credential_1() {
+    async fn parity__processplatform_assemble_surface__crate_18() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -63448,28 +60324,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/readrecord/list/job/job")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/readrecord/list/job/job (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__readrecord_list_job_job_1() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/processplatform/assemble/surface/readrecord/list/job/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
@@ -63514,28 +60368,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/record/job/job/manage")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/record/job/job/manage (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__record_job_job_manage_1() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/processplatform/assemble/surface/record/job/test-id/manage")
                     .method(axum::http::Method::POST)
                     .body(axum::body::Body::empty())
@@ -63550,28 +60382,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/record/job/{{job}}/manage (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__record_list_job_job() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/record/list/job/job")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/record/list/job/job (GET)"
         );
     }
     #[tokio::test]
@@ -63597,7 +60407,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__record_list_job_job_1() {
+    async fn parity__processplatform_assemble_surface__record_list_job_job() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -63641,7 +60451,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size() {
+    async fn parity__processplatform_assemble_surface__crate_19() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -63685,7 +60495,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -64059,28 +60869,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__review_filter_create_entry() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/review/filter/create/entry")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/review/filter/create/entry (POST)"
-        );
-    }
-    #[tokio::test]
     async fn parity__processplatform_assemble_surface__review_filter_entry() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
@@ -64108,28 +60896,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/review/list/job/job")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/review/list/job/job (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__review_list_job_job_1() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/processplatform/assemble/surface/review/list/job/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
@@ -64147,7 +60913,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__review_count_person_credential_1() {
+    async fn parity__processplatform_assemble_surface__crate_20() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -64257,7 +61023,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__review_v2_list_create_paging_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_21() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -64367,7 +61133,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__review_v2_list_paging_page_size_size_manage() {
+    async fn parity__processplatform_assemble_surface__crate_22() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -64411,7 +61177,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__review_v2_list_paging_page_size_size_manage_1() {
+    async fn parity__processplatform_assemble_surface__review_v2_list_paging_page_size_size_manage() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -64433,7 +61199,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__review_v2_list_paging_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_23() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -64518,28 +61284,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/review/v2/list/{{id}}/prev/{{count}} (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__review_v2_search() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/review/v2/search")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/review/v2/search (GET)"
         );
     }
     #[tokio::test]
@@ -65005,7 +61749,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__serialnumber_list_paging_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_24() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -65292,28 +62036,6 @@ use shared::testing::{test_pool, is_db_available};
     }
     #[tokio::test]
     async fn parity__processplatform_assemble_surface__sign_list_job_job() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/sign/list/job/job")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/sign/list/job/job (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__sign_list_job_job_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -66149,28 +62871,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__task_filter_attribute_filter() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/task/filter/attribute/filter")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/task/filter/attribute/filter (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__processplatform_assemble_surface__task_u2_filter_attribute_post() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
@@ -66193,7 +62893,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__task_list_count_application_applicationFlag_process() {
+    async fn parity__processplatform_assemble_surface__crate_25() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -66237,7 +62937,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__task_list_count_application_applicationFlag_process_1() {
+    async fn parity__processplatform_assemble_surface__task_list_count_application_applicationFlag_process() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -66303,7 +63003,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__task_list_filter_page_size_size_manage() {
+    async fn parity__processplatform_assemble_surface__crate_26() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -66325,7 +63025,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__task_list_filter_page_size_size_manage_1() {
+    async fn parity__processplatform_assemble_surface__task_list_filter_page_size_size_manage() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -66348,28 +63048,6 @@ use shared::testing::{test_pool, is_db_available};
     }
     #[tokio::test]
     async fn parity__processplatform_assemble_surface__task_list_job_job() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/task/list/job/job")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/task/list/job/job (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__task_list_job_job_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -66413,7 +63091,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__task_list_my_filter_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_27() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -66457,7 +63135,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__task_list_my_paging_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_28() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -66788,28 +63466,6 @@ use shared::testing::{test_pool, is_db_available};
     }
     #[tokio::test]
     async fn parity__processplatform_assemble_surface__task_list_work_work() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/task/list/work/work")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/task/list/work/work (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__task_list_work_work_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -67469,7 +64125,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__task_v2_list_create_paging_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_29() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -67601,7 +64257,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__task_v2_list_paging_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_30() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -68019,7 +64675,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__task_count_credential_1() {
+    async fn parity__processplatform_assemble_surface__crate_31() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -68437,28 +65093,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__taskcompleted_filter_attribute_filter() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/taskcompleted/filter/attribute/filter")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/taskcompleted/filter/attribute/filter (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__processplatform_assemble_surface__taskcompleted_u2_filter_attribute_post() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
@@ -68481,7 +65115,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__taskcompleted_list_count_application_applicationFlag_process() {
+    async fn parity__processplatform_assemble_surface__crate_32() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -68525,7 +65159,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__taskcompleted_list_count_application_applicationFlag_process_1() {
+    async fn parity__processplatform_assemble_surface__taskcompleted_list_count_application_applicationFlag_process() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -68552,28 +65186,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/taskcompleted/list/date/date/hour/hour/manage")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/taskcompleted/list/date/date/hour/hour/manage (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__taskcompleted_list_date_date_hour_hour_manage_1() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/processplatform/assemble/surface/taskcompleted/list/date/test-id/hour/test-id/manage")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
@@ -68591,7 +65203,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__taskcompleted_list_filter_page_size_size_manage() {
+    async fn parity__processplatform_assemble_surface__crate_33() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -68613,7 +65225,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__taskcompleted_list_filter_page_size_size_manage_1() {
+    async fn parity__processplatform_assemble_surface__taskcompleted_list_filter_page_size_size_manage() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -68636,28 +65248,6 @@ use shared::testing::{test_pool, is_db_available};
     }
     #[tokio::test]
     async fn parity__processplatform_assemble_surface__taskcompleted_list_job_job() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/taskcompleted/list/job/job")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/taskcompleted/list/job/job (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__taskcompleted_list_job_job_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -68701,7 +65291,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__taskcompleted_list_my_filter_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_34() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -68745,7 +65335,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__taskcompleted_list_my_paging_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_35() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -68966,28 +65556,6 @@ use shared::testing::{test_pool, is_db_available};
     }
     #[tokio::test]
     async fn parity__processplatform_assemble_surface__taskcompleted_list_work_work() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/taskcompleted/list/work/work")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/taskcompleted/list/work/work (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__taskcompleted_list_work_work_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -69300,28 +65868,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/taskcompleted/press/work/work")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/taskcompleted/press/work/work (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__taskcompleted_press_work_work_1() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/processplatform/assemble/surface/taskcompleted/press/work/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
@@ -69471,7 +66017,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__taskcompleted_v2_list_create_paging_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_36() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -69603,7 +66149,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__taskcompleted_v2_list_paging_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_37() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -69691,7 +66237,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__taskcompleted_count_credential_1() {
+    async fn parity__processplatform_assemble_surface__crate_38() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -70153,7 +66699,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__work_list_count_application_applicationFlag_process_manage() {
+    async fn parity__processplatform_assemble_surface__crate_39() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -70175,7 +66721,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__work_list_count_application_applicationFlag_process() {
+    async fn parity__processplatform_assemble_surface__crate_40() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -70219,7 +66765,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__work_list_count_application_applicationFlag_process_1() {
+    async fn parity__processplatform_assemble_surface__work_list_count_application_applicationFlag_process() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -70241,7 +66787,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__work_list_count_application_applicationFlag_process_manage_1() {
+    async fn parity__processplatform_assemble_surface__work_list_count_application_applicationFlag_process_manage() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -70263,7 +66809,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__work_list_filter_page_size_size_manage() {
+    async fn parity__processplatform_assemble_surface__crate_41() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -70285,7 +66831,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__work_list_filter_page_size_size_manage_1() {
+    async fn parity__processplatform_assemble_surface__work_list_filter_page_size_size_manage() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -70329,7 +66875,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__work_list_my_paging_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_42() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -70505,7 +67051,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__work_list_paging_page_size_size_application_applicationFlag_filter_manage() {
+    async fn parity__processplatform_assemble_surface__crate_43() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -70527,7 +67073,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__work_list_paging_page_size_size_application_applicationFlag_filter_manage_1() {
+    async fn parity__processplatform_assemble_surface__work_list_paging_page_size_size_application_applicationFlag_filter_manage() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -71451,7 +67997,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__work_v2_list_paging_page_size_size_1() {
+    async fn parity__processplatform_assemble_surface__crate_44() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -72023,28 +68569,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__work_v3_retract() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/work/v3/retract")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/work/v3/retract (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__processplatform_assemble_surface__work_u2_v3_retract() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
@@ -72068,28 +68592,6 @@ use shared::testing::{test_pool, is_db_available};
     }
     #[tokio::test]
     async fn parity__processplatform_assemble_surface__work_v3_retract_stage_job_job() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/work/v3/retract/stage/job/job")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/work/v3/retract/stage/job/job (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__work_v3_retract_stage_job_job_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -72177,7 +68679,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__work_count_credential_1() {
+    async fn parity__processplatform_assemble_surface__crate_45() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -72727,7 +69229,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__workcompleted_list_count_application_applicationFlag_process_manage() {
+    async fn parity__processplatform_assemble_surface__crate_46() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -72749,7 +69251,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__workcompleted_list_count_application_applicationFlag_process() {
+    async fn parity__processplatform_assemble_surface__crate_47() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -72793,7 +69295,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__workcompleted_list_count_application_applicationFlag_process_1() {
+    async fn parity__processplatform_assemble_surface__workcompleted_list_count_application_applicationFlag_process() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -72815,7 +69317,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__workcompleted_list_count_application_applicationFlag_process_manage_1() {
+    async fn parity__processplatform_assemble_surface__workcompleted_list_count_application_applicationFlag_process_manage() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -72837,7 +69339,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__workcompleted_list_filter_page_size_size_manage() {
+    async fn parity__processplatform_assemble_surface__crate_48() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -72859,7 +69361,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__workcompleted_list_filter_page_size_size_manage_1() {
+    async fn parity__processplatform_assemble_surface__workcompleted_list_filter_page_size_size_manage() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -72969,7 +69471,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__workcompleted_list_paging_page_size_size_application_applicationFlag_filter_mana() {
+    async fn parity__processplatform_assemble_surface__crate_49() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -72991,7 +69493,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__workcompleted_list_paging_page_size_size_application_applicationFlag_filter_mana_1() {
+    async fn parity__processplatform_assemble_surface__workcompleted_list_paging_page_size_size_application_applicationFlag_filter_mana() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -73343,28 +69845,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__workcompleted_shift_time() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/workcompleted/shift/time")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/workcompleted/shift/time (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__processplatform_assemble_surface__workcompleted_u2_shift_time() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
@@ -73586,28 +70066,6 @@ use shared::testing::{test_pool, is_db_available};
     }
     #[tokio::test]
     async fn parity__processplatform_assemble_surface__worklog_list_job_job() {
-        let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/assemble/surface/worklog/list/job/job")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_assemble_surface: /api/processplatform/assemble/surface/worklog/list/job/job (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_assemble_surface__worklog_list_job_job_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -73941,7 +70399,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
 
-    // ── x_processplatform_service_processing → processplatform_service_processing (200 routes) ──
+    // ── x_processplatform_service_processing → processplatform_service_processing (184 routes) ──
     #[tokio::test]
     async fn parity__processplatform_service_processing__gateway_join() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
@@ -73966,182 +70424,6 @@ use shared::testing::{test_pool, is_db_available};
     }
     #[tokio::test]
     async fn parity__processplatform_service_processing__crate() {
-        let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/service/processing/applicationdict/path0/data/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/applicationdict/path0/data/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_1() {
-        let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/service/processing/applicationdict/path0/path1/data/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/applicationdict/path0/path1/data/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_2() {
-        let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/service/processing/applicationdict/path0/path1/path2/data/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/applicationdict/path0/path1/path2/data/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_3() {
-        let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/service/processing/applicationdict/path0/path1/path2/path3/data/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/applicationdict/path0/path1/path2/path3/data/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_4() {
-        let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/service/processing/applicationdict/path0/path1/path2/path3/path4/data/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/applicationdict/path0/path1/path2/path3/path4/data/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_5() {
-        let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/service/processing/applicationdict/path0/path1/path2/path3/path4/path5/data/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/applicationdict/path0/path1/path2/path3/path4/path5/data/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_6() {
-        let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/service/processing/applicationdict/path0/path1/path2/path3/path4/path5/path6/data/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/applicationdict/path0/path1/path2/path3/path4/path5/path6/data/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_7() {
-        let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/service/processing/applicationdict/path0/path1/path2/path3/path4/path5/path6/path7/data/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/applicationdict/path0/path1/path2/path3/path4/path5/path6/path7/data/{{id}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_8() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -74383,7 +70665,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_9() {
+    async fn parity__processplatform_service_processing__crate_1() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -74405,7 +70687,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_10() {
+    async fn parity__processplatform_service_processing__crate_2() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -74427,7 +70709,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_11() {
+    async fn parity__processplatform_service_processing__crate_3() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -74471,7 +70753,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_12() {
+    async fn parity__processplatform_service_processing__crate_4() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -74515,7 +70797,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_13() {
+    async fn parity__processplatform_service_processing__crate_5() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -74581,7 +70863,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_14() {
+    async fn parity__processplatform_service_processing__crate_6() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -74647,7 +70929,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_15() {
+    async fn parity__processplatform_service_processing__crate_7() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -74713,7 +70995,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_16() {
+    async fn parity__processplatform_service_processing__crate_8() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -74735,7 +71017,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_17() {
+    async fn parity__processplatform_service_processing__crate_9() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -74845,7 +71127,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_18() {
+    async fn parity__processplatform_service_processing__crate_10() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -74867,7 +71149,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_19() {
+    async fn parity__processplatform_service_processing__crate_11() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -74933,7 +71215,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_20() {
+    async fn parity__processplatform_service_processing__crate_12() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -74977,7 +71259,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_21() {
+    async fn parity__processplatform_service_processing__crate_13() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -74999,7 +71281,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_22() {
+    async fn parity__processplatform_service_processing__crate_14() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -75021,7 +71303,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_23() {
+    async fn parity__processplatform_service_processing__crate_15() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -75065,7 +71347,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_24() {
+    async fn parity__processplatform_service_processing__crate_16() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -75175,7 +71457,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_25() {
+    async fn parity__processplatform_service_processing__crate_17() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -75241,7 +71523,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_26() {
+    async fn parity__processplatform_service_processing__crate_18() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -75263,7 +71545,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_27() {
+    async fn parity__processplatform_service_processing__crate_19() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -75307,7 +71589,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_28() {
+    async fn parity__processplatform_service_processing__crate_20() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -75329,7 +71611,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_29() {
+    async fn parity__processplatform_service_processing__crate_21() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -75351,7 +71633,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_30() {
+    async fn parity__processplatform_service_processing__crate_22() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -75527,7 +71809,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_31() {
+    async fn parity__processplatform_service_processing__crate_23() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -75571,7 +71853,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_32() {
+    async fn parity__processplatform_service_processing__crate_24() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -75593,7 +71875,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_33() {
+    async fn parity__processplatform_service_processing__crate_25() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -75615,7 +71897,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_34() {
+    async fn parity__processplatform_service_processing__crate_26() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -75681,7 +71963,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_35() {
+    async fn parity__processplatform_service_processing__crate_27() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -75725,7 +72007,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_36() {
+    async fn parity__processplatform_service_processing__crate_28() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -75791,28 +72073,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_37() {
-        let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/service/processing/review/init/review")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/review/init/review (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__processplatform_service_processing__u2_38() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
@@ -75857,7 +72117,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_38() {
+    async fn parity__processplatform_service_processing__crate_29() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -75879,7 +72139,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_39() {
+    async fn parity__processplatform_service_processing__crate_30() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -75901,7 +72161,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_40() {
+    async fn parity__processplatform_service_processing__crate_31() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -75923,7 +72183,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_41() {
+    async fn parity__processplatform_service_processing__crate_32() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -75945,7 +72205,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_42() {
+    async fn parity__processplatform_service_processing__crate_33() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -75967,7 +72227,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_43() {
+    async fn parity__processplatform_service_processing__crate_34() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -75989,7 +72249,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_44() {
+    async fn parity__processplatform_service_processing__crate_35() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76011,7 +72271,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_45() {
+    async fn parity__processplatform_service_processing__crate_36() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76033,7 +72293,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_46() {
+    async fn parity__processplatform_service_processing__crate_37() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76121,7 +72381,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_47() {
+    async fn parity__processplatform_service_processing__crate_38() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76143,7 +72403,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_48() {
+    async fn parity__processplatform_service_processing__crate_39() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76231,7 +72491,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_49() {
+    async fn parity__processplatform_service_processing__crate_40() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76253,7 +72513,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_50() {
+    async fn parity__processplatform_service_processing__crate_41() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76275,7 +72535,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_51() {
+    async fn parity__processplatform_service_processing__crate_42() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76297,7 +72557,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_52() {
+    async fn parity__processplatform_service_processing__crate_43() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76319,7 +72579,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_53() {
+    async fn parity__processplatform_service_processing__crate_44() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76341,7 +72601,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_54() {
+    async fn parity__processplatform_service_processing__crate_45() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76363,7 +72623,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_55() {
+    async fn parity__processplatform_service_processing__crate_46() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76385,7 +72645,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_56() {
+    async fn parity__processplatform_service_processing__crate_47() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76407,7 +72667,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_57() {
+    async fn parity__processplatform_service_processing__crate_48() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76429,7 +72689,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_58() {
+    async fn parity__processplatform_service_processing__crate_49() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76451,7 +72711,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_59() {
+    async fn parity__processplatform_service_processing__crate_50() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76473,7 +72733,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_60() {
+    async fn parity__processplatform_service_processing__crate_51() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76495,7 +72755,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_61() {
+    async fn parity__processplatform_service_processing__crate_52() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76517,7 +72777,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_62() {
+    async fn parity__processplatform_service_processing__crate_53() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76539,7 +72799,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_63() {
+    async fn parity__processplatform_service_processing__crate_54() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76561,7 +72821,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_64() {
+    async fn parity__processplatform_service_processing__crate_55() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76583,7 +72843,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_65() {
+    async fn parity__processplatform_service_processing__crate_56() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76605,7 +72865,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_66() {
+    async fn parity__processplatform_service_processing__crate_57() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76627,7 +72887,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_67() {
+    async fn parity__processplatform_service_processing__crate_58() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76649,7 +72909,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_68() {
+    async fn parity__processplatform_service_processing__crate_59() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76693,7 +72953,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_69() {
+    async fn parity__processplatform_service_processing__crate_60() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76715,7 +72975,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_70() {
+    async fn parity__processplatform_service_processing__crate_61() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76737,7 +72997,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_71() {
+    async fn parity__processplatform_service_processing__crate_62() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76759,7 +73019,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_72() {
+    async fn parity__processplatform_service_processing__crate_63() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76781,7 +73041,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_73() {
+    async fn parity__processplatform_service_processing__crate_64() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76803,7 +73063,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_74() {
+    async fn parity__processplatform_service_processing__crate_65() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76825,7 +73085,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_75() {
+    async fn parity__processplatform_service_processing__crate_66() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76847,7 +73107,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_76() {
+    async fn parity__processplatform_service_processing__crate_67() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76891,7 +73151,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_77() {
+    async fn parity__processplatform_service_processing__crate_68() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76913,7 +73173,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_78() {
+    async fn parity__processplatform_service_processing__crate_69() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -76957,7 +73217,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_79() {
+    async fn parity__processplatform_service_processing__crate_70() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -77089,28 +73349,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_80() {
-        let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/service/processing/touch/deletedraft")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/deletedraft (POST)"
-        );
-    }
-    #[tokio::test]
     async fn parity__processplatform_service_processing__u2_52() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
@@ -77130,28 +73368,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/handoverjob (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_81() {
-        let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/service/processing/touch/handoverjob")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/handoverjob (POST)"
         );
     }
     #[tokio::test]
@@ -77199,28 +73415,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_82() {
-        let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/service/processing/touch/merge")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/merge (POST)"
-        );
-    }
-    #[tokio::test]
     async fn parity__processplatform_service_processing__u2_55() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
@@ -77240,28 +73434,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/mergeitem (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_83() {
-        let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/service/processing/touch/mergeitem")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/mergeitem (POST)"
         );
     }
     #[tokio::test]
@@ -77287,28 +73459,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_84() {
-        let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/service/processing/touch/touchdelay")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/touchdelay (POST)"
-        );
-    }
-    #[tokio::test]
     async fn parity__processplatform_service_processing__u2_57() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
@@ -77331,29 +73481,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_85() {
-        let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/service/processing/touch/urge")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/urge (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_86() {
+    async fn parity__processplatform_service_processing__crate_71() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -77375,7 +73503,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_87() {
+    async fn parity__processplatform_service_processing__crate_72() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -77397,7 +73525,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_88() {
+    async fn parity__processplatform_service_processing__crate_73() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -77419,7 +73547,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_89() {
+    async fn parity__processplatform_service_processing__crate_74() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -77441,7 +73569,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_90() {
+    async fn parity__processplatform_service_processing__crate_75() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -77463,7 +73591,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_91() {
+    async fn parity__processplatform_service_processing__crate_76() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -77485,7 +73613,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_92() {
+    async fn parity__processplatform_service_processing__crate_77() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -77639,7 +73767,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_93() {
+    async fn parity__processplatform_service_processing__crate_78() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -77661,7 +73789,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_94() {
+    async fn parity__processplatform_service_processing__crate_79() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -77683,7 +73811,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_95() {
+    async fn parity__processplatform_service_processing__crate_80() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -77705,7 +73833,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_96() {
+    async fn parity__processplatform_service_processing__crate_81() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -77727,7 +73855,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_97() {
+    async fn parity__processplatform_service_processing__crate_82() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -77749,7 +73877,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_98() {
+    async fn parity__processplatform_service_processing__crate_83() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -77815,7 +73943,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_99() {
+    async fn parity__processplatform_service_processing__crate_84() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -77859,7 +73987,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_100() {
+    async fn parity__processplatform_service_processing__crate_85() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -77881,7 +74009,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_101() {
+    async fn parity__processplatform_service_processing__crate_86() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -77903,7 +74031,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_102() {
+    async fn parity__processplatform_service_processing__crate_87() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -77947,7 +74075,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_103() {
+    async fn parity__processplatform_service_processing__crate_88() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -77969,7 +74097,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_104() {
+    async fn parity__processplatform_service_processing__crate_89() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -78013,7 +74141,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_105() {
+    async fn parity__processplatform_service_processing__crate_90() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -78032,28 +74160,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/workcompleted/rollback/{{flag}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_106() {
-        let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/processplatform/service/processing/workcompleted/shift/time")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/workcompleted/shift/time (GET)"
         );
     }
     #[tokio::test]
@@ -78123,7 +74229,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_service_processing__crate_107() {
+    async fn parity__processplatform_service_processing__crate_91() {
         let router = oa4rust::processplatform_service_processing::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -78343,7 +74449,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
 
-    // ── x_program_center → program_center (408 routes) ──
+    // ── x_program_center → program_center (348 routes) ──
     #[tokio::test]
     async fn parity__program_center__applications() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
@@ -78496,94 +74602,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on program_center: /api/program_center/agent/create (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__agent_flag() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/agent/flag")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/agent/flag (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__agent_flag_disable() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/agent/flag/disable")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/agent/flag/disable (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__agent_flag_enable() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/agent/flag/enable")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/agent/flag/enable (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__agent_flag_execute() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/agent/flag/execute")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/agent/flag/execute (GET)"
         );
     }
     #[tokio::test]
@@ -80215,28 +76233,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__captcha_id_validate_answer_answer() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/captcha/id/validate/answer/answer")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/captcha/id/validate/answer/answer (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__program_center__captcha_list() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
@@ -80264,28 +76260,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/program_center/captcha/v2/create/width/width/height/height")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/captcha/v2/create/width/width/height/height (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__captcha_v2_create_width_width_height_height_1() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/program_center/captcha/v2/create/width/test-id/height/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
@@ -80303,7 +76277,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__captcha_id_validate_answer_answer_1() {
+    async fn parity__program_center__captcha_id_validate_answer_answer() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -80418,28 +76392,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/program_center/code/create/mobile/mobile")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/code/create/mobile/mobile (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__code_create_mobile_mobile_1() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/program_center/code/create/mobile/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
@@ -80528,50 +76480,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/program_center/code/validate/mobile/mobile/answer/answer")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/code/validate/mobile/mobile/answer/answer (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__code_validate_mobile_mobile_answer_answer_cascade() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/code/validate/mobile/mobile/answer/answer/cascade")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/code/validate/mobile/mobile/answer/answer/cascade (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__code_validate_mobile_mobile_answer_answer_1() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/program_center/code/validate/mobile/test-id/answer/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
@@ -80589,7 +76497,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__code_validate_mobile_mobile_answer_answer_cascade_1() {
+    async fn parity__program_center__code_validate_mobile_mobile_answer_answer_cascade() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -80704,28 +76612,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/program_center/collect/code/mobile/mobile")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/collect/code/mobile/mobile (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__collect_code_mobile_mobile_1() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/program_center/collect/code/mobile/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
@@ -80784,28 +76670,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on program_center: /api/program_center/collect/controllebbs (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__collect_controllermobile_name_name_mobile_mobile() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/collect/controllermobile/name/name/mobile/mobile")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/collect/controllermobile/name/name/mobile/mobile (GET)"
         );
     }
     #[tokio::test]
@@ -80990,50 +76854,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/program_center/collect/name/name/exist")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/collect/name/name/exist (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__collect_name_name_mobile_mobile_code_code() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/collect/name/name/mobile/mobile/code/code")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/collect/name/name/mobile/mobile/code/code (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__collect_name_name_exist_1() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/program_center/collect/name/test-id/exist")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
@@ -81092,50 +76912,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on program_center: /api/program_center/collect/person (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__collect_remove() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/collect/remove")
-                    .method(axum::http::Method::DELETE)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/collect/remove (DELETE)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__collect_remove_1() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/collect/remove")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/collect/remove (GET)"
         );
     }
     #[tokio::test]
@@ -81733,28 +77509,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__config_get() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/config/get")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/config/get (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__program_center__config_license() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
@@ -81928,28 +77682,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on program_center: /api/program_center/config/open (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__config_open_get_disable_export_enable_1() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/config/open/get/disable/export/enable")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/config/open/get/disable/export/enable (GET)"
         );
     }
     #[tokio::test]
@@ -82327,51 +78059,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__deploy_id() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/deploy/id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/deploy/id (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__program_center__deploy_list_paging_page_size_size() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/deploy/list/paging/page/size/size")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/deploy/list/paging/page/size/size (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__deploy_list_paging_page_size_size_1() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -82486,28 +78174,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/program_center/deploy/web/resource/as/new/asNew")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/deploy/web/resource/as/new/asNew (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__deploy_web_resource_as_new_asNew_1() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/program_center/deploy/web/resource/as/new/test-id")
                     .method(axum::http::Method::POST)
                     .body(axum::body::Body::empty())
@@ -82525,7 +78191,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__deploy_id_1() {
+    async fn parity__program_center__deploy_id() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -82613,50 +78279,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__dict_dictFlag_data() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/dict/dictFlag/data")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/dict/dictFlag/data (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__dict_dictFlag_path_data() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/dict/dictFlag/path/data")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/dict/dictFlag/path/data (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__program_center__dict_dictFlag_path_data_mockdeletetoget() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
@@ -82701,28 +78323,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__dict_id() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/dict/id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/dict/id (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__program_center__dict_list() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
@@ -82750,28 +78350,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/program_center/dict/list/paging/page/size/size")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/dict/list/paging/page/size/size (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__dict_list_paging_page_size_size_1() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/program_center/dict/list/paging/test-id/size/test-id")
                     .method(axum::http::Method::POST)
                     .body(axum::body::Body::empty())
@@ -82789,7 +78367,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__dict_dictFlag_data_1() {
+    async fn parity__program_center__dict_dictFlag_data() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -82808,6 +78386,28 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on program_center: /api/program_center/dict/{{dictFlag}}/data (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__program_center__dict_dictFlag_data_post() {
+        let router = oa4rust::program_center::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/program_center/dict/test-id/data")
+                    .method(axum::http::Method::POST)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on program_center: /api/program_center/dict/{{dictFlag}}/data (POST)"
         );
     }
     #[tokio::test]
@@ -83032,28 +78632,6 @@ use shared::testing::{test_pool, is_db_available};
     }
     #[tokio::test]
     async fn parity__program_center__dingding_sync_organization_register_callback_enable() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/dingding/sync/organization/register/callback/enable")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/dingding/sync/organization/register/callback/enable (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__dingding_sync_organization_register_callback_enable_1() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -83559,28 +79137,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__invoke_flag_client_client_token_token_execute() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/invoke/flag/client/client/token/token/execute")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/invoke/flag/client/client/token/token/execute (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__program_center__invoke_flag_execute() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
@@ -83600,28 +79156,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on program_center: /api/program_center/invoke/flag/execute (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__invoke_flag_execute_get() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/invoke/flag/execute/get")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/invoke/flag/execute/get (GET)"
         );
     }
     #[tokio::test]
@@ -83889,7 +79423,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__invoke_flag_execute_get_1() {
+    async fn parity__program_center__invoke_flag_execute_get() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -84241,28 +79775,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__market_id_download() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/market/id/download")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/market/id/download (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__program_center__market_install_offline() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
@@ -84527,7 +80039,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__market_id_download_1() {
+    async fn parity__program_center__market_id_download() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -84681,28 +80193,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__module_id_compare() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/module/id/compare")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/module/id/compare (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__program_center__module_list() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
@@ -84813,28 +80303,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__module_output_flag_file() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/module/output/flag/file")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/module/output/flag/file (POST)"
-        );
-    }
-    #[tokio::test]
     async fn parity__program_center__module_output_list_structure() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
@@ -84901,7 +80369,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__module_output_flag_file_1() {
+    async fn parity__program_center__module_output_flag_file() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -84928,50 +80396,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/program_center/module/remove/structure/id")
-                    .method(axum::http::Method::DELETE)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/module/remove/structure/id (DELETE)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__module_remove_structure_id_1() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/module/remove/structure/id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/module/remove/structure/id (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__module_remove_structure_id_2() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/program_center/module/remove/structure/test-id")
                     .method(axum::http::Method::DELETE)
                     .body(axum::body::Body::empty())
@@ -84994,50 +80418,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/program_center/module/write/flag")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/module/write/flag (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__module_write_flag_1() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/module/write/flag")
-                    .method(axum::http::Method::PUT)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/module/write/flag (PUT)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__module_write_flag_2() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/program_center/module/write/test-id")
                     .method(axum::http::Method::PUT)
                     .body(axum::body::Body::empty())
@@ -85055,7 +80435,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__module_id_compare_1() {
+    async fn parity__program_center__module_id_compare() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -85214,28 +80594,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/program_center/mpweixin/menu/delete/id")
-                    .method(axum::http::Method::DELETE)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/mpweixin/menu/delete/id (DELETE)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__mpweixin_menu_delete_id_1() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/program_center/mpweixin/menu/delete/test-id")
                     .method(axum::http::Method::DELETE)
                     .body(axum::body::Body::empty())
@@ -85302,50 +80660,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/program_center/mpweixin/menu/update/id")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/mpweixin/menu/update/id (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__mpweixin_menu_update_id_1() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/mpweixin/menu/update/id")
-                    .method(axum::http::Method::PUT)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/mpweixin/menu/update/id (PUT)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__mpweixin_menu_update_id_2() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/program_center/mpweixin/menu/update/test-id")
                     .method(axum::http::Method::POST)
                     .body(axum::body::Body::empty())
@@ -85404,50 +80718,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on program_center: /api/program_center/mpweixin/message/template/send (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__output_appInfoFlag_select() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/output/appInfoFlag/select")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/output/appInfoFlag/select (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__output_flag_select_file() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/output/flag/select/file")
-                    .method(axum::http::Method::POST)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/output/flag/select/file (POST)"
         );
     }
     #[tokio::test]
@@ -85517,7 +80787,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__output_flag_select_file_1() {
+    async fn parity__program_center__output_flag_select_file() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -85605,205 +80875,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__prompterrorlog_id() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/prompterrorlog/id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/prompterrorlog/id (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__program_center__prompterrorlog_list_id_next_count() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/prompterrorlog/list/id/next/count")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/prompterrorlog/list/id/next/count (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__prompterrorlog_list_id_next_count_date_date() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/prompterrorlog/list/id/next/count/date/date")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/prompterrorlog/list/id/next/count/date/date (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__prompterrorlog_list_id_next_count_exceptionclass_exceptionClass() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/prompterrorlog/list/id/next/count/exceptionclass/exceptionClass")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/prompterrorlog/list/id/next/count/exceptionclass/exceptionClass (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__prompterrorlog_list_id_next_count_loggername_loggerName() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/prompterrorlog/list/id/next/count/loggername/loggerName")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/prompterrorlog/list/id/next/count/loggername/loggerName (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__prompterrorlog_list_id_prev_count() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/prompterrorlog/list/id/prev/count")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/prompterrorlog/list/id/prev/count (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__prompterrorlog_list_id_prev_count_date_date() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/prompterrorlog/list/id/prev/count/date/date")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/prompterrorlog/list/id/prev/count/date/date (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/prompterrorlog/list/id/prev/count/exceptionclass/exceptionClass")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/prompterrorlog/list/id/prev/count/exceptionclass/exceptionClass (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__prompterrorlog_list_id_prev_count_loggername_loggerName() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/prompterrorlog/list/id/prev/count/loggername/loggerName")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/prompterrorlog/list/id/prev/count/loggername/loggerName (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__prompterrorlog_list_id_next_count_1() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -85825,7 +80897,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__prompterrorlog_list_id_next_count_date_date_1() {
+    async fn parity__program_center__prompterrorlog_list_id_next_count_date_date() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -85847,7 +80919,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__prompterrorlog_list_id_next_count_exceptionclass_exceptionClass_1() {
+    async fn parity__program_center__prompterrorlog_list_id_next_count_exceptionclass_exceptionClass() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -85869,7 +80941,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__prompterrorlog_list_id_next_count_loggername_loggerName_1() {
+    async fn parity__program_center__prompterrorlog_list_id_next_count_loggername_loggerName() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -85891,7 +80963,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__prompterrorlog_list_id_prev_count_1() {
+    async fn parity__program_center__prompterrorlog_list_id_prev_count() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -85913,7 +80985,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__prompterrorlog_list_id_prev_count_date_date_1() {
+    async fn parity__program_center__prompterrorlog_list_id_prev_count_date_date() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -85935,7 +81007,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass_1() {
+    async fn parity__program_center__prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -85957,7 +81029,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__prompterrorlog_list_id_prev_count_loggername_loggerName_1() {
+    async fn parity__program_center__prompterrorlog_list_id_prev_count_loggername_loggerName() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -85979,7 +81051,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__prompterrorlog_id_1() {
+    async fn parity__program_center__prompterrorlog_id() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -86086,28 +81158,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on program_center: /api/program_center/qiyeweixin/pull/sync (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__qiyeweixin_request_pull_sync() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/qiyeweixin/request/pull/sync")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/qiyeweixin/request/pull/sync (GET)"
         );
     }
     #[tokio::test]
@@ -86222,28 +81272,6 @@ use shared::testing::{test_pool, is_db_available};
     }
     #[tokio::test]
     async fn parity__program_center__schedule_list_schedulelog_application_application() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/schedule/list/schedulelog/application/application")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/schedule/list/schedulelog/application/application (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__schedule_list_schedulelog_application_application_1() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -86375,50 +81403,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__script_flag() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/script/flag")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/script/flag (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__script_id() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/script/id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/script/id (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__program_center__script_list() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
@@ -86446,28 +81430,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/program_center/script/list/paging/page/size/size")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/script/list/paging/page/size/size (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__script_list_paging_page_size_size_1() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/program_center/script/list/paging/test-id/size/test-id")
                     .method(axum::http::Method::POST)
                     .body(axum::body::Body::empty())
@@ -86482,50 +81444,6 @@ use shared::testing::{test_pool, is_db_available};
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on program_center: /api/program_center/script/list/paging/{{page}}/size/{{size}} (POST)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__script_name_name() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/script/name/name")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/script/name/name (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__script_name_name_imported() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/script/name/name/imported")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/script/name/name/imported (GET)"
         );
     }
     #[tokio::test]
@@ -86727,117 +81645,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__unexpectederrorlog_id() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/unexpectederrorlog/id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/unexpectederrorlog/id (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__program_center__unexpectederrorlog_list_id_next_count() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/unexpectederrorlog/list/id/next/count")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/unexpectederrorlog/list/id/next/count (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__unexpectederrorlog_list_id_next_count_date_date() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/unexpectederrorlog/list/id/next/count/date/date")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/unexpectederrorlog/list/id/next/count/date/date (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__unexpectederrorlog_list_id_prev_count() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/unexpectederrorlog/list/id/prev/count")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/unexpectederrorlog/list/id/prev/count (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__unexpectederrorlog_list_id_prev_count_date_date() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/unexpectederrorlog/list/id/prev/count/date/date")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/unexpectederrorlog/list/id/prev/count/date/date (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__unexpectederrorlog_list_id_next_count_1() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -86859,7 +81667,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__unexpectederrorlog_list_id_next_count_date_date_1() {
+    async fn parity__program_center__unexpectederrorlog_list_id_next_count_date_date() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -86881,7 +81689,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__unexpectederrorlog_list_id_prev_count_1() {
+    async fn parity__program_center__unexpectederrorlog_list_id_prev_count() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -86903,7 +81711,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__unexpectederrorlog_list_id_prev_count_date_date_1() {
+    async fn parity__program_center__unexpectederrorlog_list_id_prev_count_date_date() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -86925,7 +81733,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__program_center__unexpectederrorlog_id_1() {
+    async fn parity__program_center__unexpectederrorlog_id() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -86992,28 +81800,6 @@ use shared::testing::{test_pool, is_db_available};
     }
     #[tokio::test]
     async fn parity__program_center__validation_timeout_timeout() {
-        let router = oa4rust::program_center::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/program_center/validation/timeout/timeout")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/validation/timeout/timeout (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__program_center__validation_timeout_timeout_1() {
         let router = oa4rust::program_center::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -87653,7 +82439,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
 
-    // ── x_query_assemble_designer → query_assemble_designer (164 routes) ──
+    // ── x_query_assemble_designer → query_assemble_designer (163 routes) ──
     #[tokio::test]
     async fn parity__query_assemble_designer__crate() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
@@ -90273,28 +85059,6 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_43() {
-        let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/query/assemble/designer/table/list/row/select/where/where/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on query_assemble_designer: /api/query/assemble/designer/table/list/row/select/where/where/{{tableFlag}} (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__query_assemble_designer__table_list_tableFlag_row_id_prev_count() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
@@ -90317,7 +85081,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_44() {
+    async fn parity__query_assemble_designer__crate_43() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -90339,7 +85103,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_45() {
+    async fn parity__query_assemble_designer__crate_44() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -90361,7 +85125,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_46() {
+    async fn parity__query_assemble_designer__crate_45() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -90383,7 +85147,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_47() {
+    async fn parity__query_assemble_designer__crate_46() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -90405,7 +85169,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_48() {
+    async fn parity__query_assemble_designer__crate_47() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -90427,7 +85191,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_49() {
+    async fn parity__query_assemble_designer__crate_48() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -90449,7 +85213,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_50() {
+    async fn parity__query_assemble_designer__crate_49() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -90515,7 +85279,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_51() {
+    async fn parity__query_assemble_designer__crate_50() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -90581,7 +85345,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_52() {
+    async fn parity__query_assemble_designer__crate_51() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -90647,7 +85411,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_53() {
+    async fn parity__query_assemble_designer__crate_52() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -90669,7 +85433,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_54() {
+    async fn parity__query_assemble_designer__crate_53() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -90691,7 +85455,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_55() {
+    async fn parity__query_assemble_designer__crate_54() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -90713,7 +85477,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_56() {
+    async fn parity__query_assemble_designer__crate_55() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -90845,7 +85609,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_57() {
+    async fn parity__query_assemble_designer__crate_56() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -90867,7 +85631,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_58() {
+    async fn parity__query_assemble_designer__crate_57() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -90889,7 +85653,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_59() {
+    async fn parity__query_assemble_designer__crate_58() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -90911,7 +85675,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_60() {
+    async fn parity__query_assemble_designer__crate_59() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -90933,7 +85697,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_61() {
+    async fn parity__query_assemble_designer__crate_60() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -90955,7 +85719,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_62() {
+    async fn parity__query_assemble_designer__crate_61() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -91043,7 +85807,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_63() {
+    async fn parity__query_assemble_designer__crate_62() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -91065,7 +85829,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_64() {
+    async fn parity__query_assemble_designer__crate_63() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -91241,7 +86005,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_designer__crate_65() {
+    async fn parity__query_assemble_designer__crate_64() {
         let router = oa4rust::query_assemble_designer::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -91263,7 +86027,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
 
-    // ── x_query_assemble_surface → query_assemble_surface (130 routes) ──
+    // ── x_query_assemble_surface → query_assemble_surface (129 routes) ──
     #[tokio::test]
     async fn parity__query_assemble_surface__importmodel_id_execute() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
@@ -92832,28 +87596,6 @@ use shared::testing::{test_pool, is_db_available};
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/queryview/table/list/row/select/where/where/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on query_assemble_surface: /api/queryview/table/list/row/select/where/where/{{tableFlag}} (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__query_assemble_surface__crate_40() {
-        let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
                     .uri("/api/queryview/table/list/row/select/test-id")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
@@ -92893,7 +87635,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_41() {
+    async fn parity__query_assemble_surface__crate_40() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -92915,7 +87657,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_42() {
+    async fn parity__query_assemble_surface__crate_41() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -92937,7 +87679,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_43() {
+    async fn parity__query_assemble_surface__crate_42() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -92959,7 +87701,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_44() {
+    async fn parity__query_assemble_surface__crate_43() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93025,7 +87767,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_45() {
+    async fn parity__query_assemble_surface__crate_44() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93047,7 +87789,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_46() {
+    async fn parity__query_assemble_surface__crate_45() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93069,7 +87811,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_47() {
+    async fn parity__query_assemble_surface__crate_46() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93091,7 +87833,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_48() {
+    async fn parity__query_assemble_surface__crate_47() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93135,7 +87877,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_49() {
+    async fn parity__query_assemble_surface__crate_48() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93157,7 +87899,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_50() {
+    async fn parity__query_assemble_surface__crate_49() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93223,7 +87965,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_51() {
+    async fn parity__query_assemble_surface__crate_50() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93245,7 +87987,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_52() {
+    async fn parity__query_assemble_surface__crate_51() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93289,7 +88031,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_53() {
+    async fn parity__query_assemble_surface__crate_52() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93311,7 +88053,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_54() {
+    async fn parity__query_assemble_surface__crate_53() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93333,7 +88075,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_55() {
+    async fn parity__query_assemble_surface__crate_54() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93355,7 +88097,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_56() {
+    async fn parity__query_assemble_surface__crate_55() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93377,7 +88119,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_57() {
+    async fn parity__query_assemble_surface__crate_56() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93399,7 +88141,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_58() {
+    async fn parity__query_assemble_surface__crate_57() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93443,7 +88185,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_59() {
+    async fn parity__query_assemble_surface__crate_58() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93465,7 +88207,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_60() {
+    async fn parity__query_assemble_surface__crate_59() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93487,7 +88229,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_61() {
+    async fn parity__query_assemble_surface__crate_60() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93531,7 +88273,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_62() {
+    async fn parity__query_assemble_surface__crate_61() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93553,7 +88295,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_63() {
+    async fn parity__query_assemble_surface__crate_62() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93575,7 +88317,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_64() {
+    async fn parity__query_assemble_surface__crate_63() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93597,7 +88339,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_65() {
+    async fn parity__query_assemble_surface__crate_64() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93619,7 +88361,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_66() {
+    async fn parity__query_assemble_surface__crate_65() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93641,7 +88383,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_67() {
+    async fn parity__query_assemble_surface__crate_66() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93949,7 +88691,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_68() {
+    async fn parity__query_assemble_surface__crate_67() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -93993,7 +88735,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_69() {
+    async fn parity__query_assemble_surface__crate_68() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -94037,7 +88779,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_70() {
+    async fn parity__query_assemble_surface__crate_69() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -94103,7 +88845,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__query_assemble_surface__crate_71() {
+    async fn parity__query_assemble_surface__crate_70() {
         let router = oa4rust::query_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -94332,5 +89074,5 @@ use shared::testing::{test_pool, is_db_available};
 // ──────────────────────────────────────────────────────────────────────────────
 #[test]
 fn parity_generated_test_count() {
-    assert!(4283 > 0, "no parity tests generated — check the Python script output");
+    assert!(4044 > 0, "no parity tests generated — check the Python script output");
 }

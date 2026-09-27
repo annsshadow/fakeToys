@@ -772,9 +772,9 @@ parity_test!(
 parity_test!(
     crate: hotpic_assemble_control,
     router_fn: router,
-    route: "/api/hotpic_assemble_control/cipher/hotpic/filter/list/page/page/count/count",
+    route: "/api/hotpic/assemble/control/cipher/hotpic/filter/list/page/1/count/10",
     method: GET,
-    handler: cipher_hotpic_filter_list_page_page_count_count_1,
+    handler: cipher_hotpic_filter_list_page_page_count_count,
     test_name: parity_behavior__hotpic_assemble_control__cipher_hotpic_filter_list_page_page_count_count_1,
     behavior: "route_exists",
     router_args: (shared::testing::test_pool()),
