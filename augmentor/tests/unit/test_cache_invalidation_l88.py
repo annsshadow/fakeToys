@@ -141,7 +141,10 @@ class TestThisProcessSeesItsOwnWrite:
     def test_tightening_the_whitelist_reaches_the_gate(self, cfg):
         """不是「列表等于什么」，而是「闸放不放行」：危险方向是收紧被延迟放行
 
-        作废之前，`broad/x.json` 仍被旧白名单放行；作废之后同一次调用 403。
+        作废之前，`broad/x.json` 仍被旧白名单放行；作废之后同一次调用**再也到不了
+        broad**。改前那一格回的是 403（候选全不存在 ⇒ 兜底到闸外的 cwd 解释），
+        L93 起兜底改成首个根解释，于是收紧后的落点是 `narrow/x.json` —— 读它仍然
+        404，白名单收紧照样生效，只是不再用一个说谎的状态码来表达。
         """
         deps, path, write, broad, narrow = cfg
         assert deps.resolve_within_roots("x.json", "文件路径") == broad / "x.json"
@@ -150,9 +153,12 @@ class TestThisProcessSeesItsOwnWrite:
         os.utime(path, ns=(path.stat().st_atime_ns, first))
         assert deps.resolve_within_roots("x.json", "文件路径") == broad / "x.json"
         deps.invalidate_config_caches()
+        resolved = deps.resolve_within_roots("x.json", "文件路径")
+        assert resolved == narrow / "x.json"
+        assert not str(resolved).startswith(str(broad)), "收紧后被旧根放行"
         with pytest.raises(deps.HTTPException) as excinfo:
-            deps.resolve_within_roots("x.json", "文件路径")
-        assert excinfo.value.status_code == 403
+            deps.resolve_data_path("x.json")
+        assert excinfo.value.status_code == 404
 
     def test_limit_shares_the_same_key_shape_and_the_same_fix(self, cfg):
         """同构那一格：`max_upload_bytes` 用完全一样的键，也必须一起被作废覆盖"""
