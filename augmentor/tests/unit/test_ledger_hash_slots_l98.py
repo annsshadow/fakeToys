@@ -68,9 +68,13 @@ ROUND_TOKEN = re.compile(r"(?<!\d)L\d+(?!\d)")
 #: 之所以让 log 多长得快，是因为它把原本「只有块」的 L97 补成了两侧）。唯一哈希 57 → **61** = 正好是
 #: 回填进去的 L98 那四笔；本轮自己的三笔（批①～批③）此刻仍以占位符形状住在槽里，要等 L100 回填才进档
 #: —— 这一格与 `PLACEHOLDER_CEILING` 的「15 → 14 → 15」是同一件事的两个读数。
-MEASURED_SLOT_ROWS = {"prog": 14, "log": 23}
-MEASURED_BOTH_SIDES = 14
-MEASURED_UNIQUE_HASHES = 61
+#: **L100 批① 重量（回填 L99 五笔 + 落下末轮自己的两侧槽）**：prog 14 → **15**、log 23 → **24**、
+#: 两侧一致 14 → **15**（新轮两遍都写槽，与 prog 同增）、唯一哈希 61 → **66** = 正好是回填进去的
+#: L99 那五笔。本轮自己的四笔此刻仍以占位形状住在槽里，要等末轮尾批才进档 —— 也就是说
+#: `MEASURED_UNIQUE_HASHES` 在 L100 收口时**还会再动一次**，动了就重量，别信「已经填完了」。
+MEASURED_SLOT_ROWS = {"prog": 15, "log": 24}
+MEASURED_BOTH_SIDES = 15
+MEASURED_UNIQUE_HASHES = 66
 MEASURED_LOG_ONLY_ROUNDS = frozenset(
     {"L45", "L57", "L79", "L80", "L81", "L82", "L83", "L84", "L85"})
 MEASURED_PROGRESS_PLACEHOLDERS = 1
