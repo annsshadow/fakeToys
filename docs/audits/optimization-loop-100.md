@@ -43,3 +43,21 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | 27 | reconcile gate | `compare.py --gate` | CLEAN | shadow/405/404 = 0 PASS |
 | 28 | 契约守卫 | contracts + autoquery vitest | CLEAN | 20/20 |
 | 29 | 仓库垃圾 | untracked 盘点 | CLEAN | oa4rust 范围内无残留（augmentor/laiyipao 未跟踪文件属并行工作线，不越界处置） |
+| 30-34 | 错误一致性/CORS/限流/会话配置 | 前轮安全加固已覆盖（HttpOnly+CSRF+限流+会话双轨），本轮复核配置未漂移 | CLEAN | 与 oa4rust-hardening 批次一致 |
+| 35 | 迁移幂等性 | CREATE TABLE 缺 IF NOT EXISTS 扫描 | CLEAN | 0 |
+| 36 | live schema 一致性 | pg_indexes/information_schema 对撞 | CLEAN | xid 索引 63、view_count 已应用 |
+| 37 | parity 抽样 | live DB oneshot | CLEAN | 4145 基线（轮 50 全量复验） |
+| 38 | mcp 工具面对齐 | gen_mcp_tools 重新生成 | CLEAN | 4574 tools 与路由同步 |
+| 39 | 文档漂移抽查 | REAL_CONSUMPTION_CLOSURE 复读 | CLEAN | 口径与现状一致 |
+| 40 | 日志敏感泄漏 | tracing 字段扫描 | CLEAN | person_unique 为内部标识非凭证，合理 |
+| 41 | deploy 脚本 | 可执行位/EXTERNAL 标记 | CLEAN | 维持 S4 终态记档 |
+| 44 | Cargo.lock 同步 | cargo metadata --offline | CLEAN | lock 一致 |
+| 31 | GET 写端点 | 138 条 GET-with-writes | CLEAN(note) | 全部为 o2server 既有契约形状（mockdeletetoget 族/touch/market/sync），改方法即破坏 o2web 兼容与 parity——契约对齐设计 |
+| 42 | docker-compose 一致性 | 凭据/库名与 DATABASE_URL 默认值对撞 | CLEAN | o2server/oa4rust 三处一致 |
+| 43 | 安全响应头 | security_headers 中间件挂载点 | CLEAN | main.rs 全局层 |
+| 45 | SDK 类型漂移 | packages/sdk 结构抽查 | CLEAN | api/app 模块与后端对齐（reconcile 已覆盖） |
+| 46 | e2e 对齐 | e2e specs /api 直引扫描 | CLEAN | e2e 全 UI 交互，无直连端点漂移面 |
+| 47 | pnpm-lock 同步 | install --frozen-lockfile --dry-run | CLEAN | up to date |
+| 48 | workspace 依赖复用 | 绕过 workspace 的版本号 | IMPROVE(deferred) | 41 处叶子依赖（zip/image 等）无缺陷，统一声明属后续合理化 |
+| 49 | 大段注释死代码 | 25+ 行连续注释块 | CLEAN | 15 块集中在 tests_generated 的 SKIPPED 说明与模块文档，有存档价值 |
+| 50 | **完整门禁①** | clippy + workspace lib + parity + biome + tsc + vitest + build + reconcile | FIX×3 | clippy 0 / lib 0 failed / parity 4145/4145 / lint 234×0 / vitest 953+101 / build ✓ / gate PASS；clippy 捕获本批引入 3 处（preview 残留 use、tests_u2 死变量、parity 生成器多余 use——含 f-string 花括号陷阱）全修 |

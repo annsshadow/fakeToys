@@ -630,7 +630,6 @@ mod u2b_tests {
 
     #[tokio::test]
     async fn u2b_engineless_endpoints_return_exact_501() {
-        let b = "/api/processplatform/assemble/surface/attachment";
         // 渲染族已全部真实现（docToWord/htmlToPdf/previewPdf/previewImage/
         // htmlToImage-ab_glyph 光栅化），无 engine-less 501 残留；保留用例骨架
         // 断言空列表恒过，作为「501 面清零」的显式契约。
