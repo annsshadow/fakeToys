@@ -106,9 +106,28 @@ func validateReportCollections(gl GeneratedLevel, in SettleInput) error {
 		}
 		total += v
 	}
-	// 引擎里 elements_used 在 applyHit 内每命中一次 +1
-	if total > in.Hits {
-		return fmt.Errorf("%w：元素使用合计 %d 超过命中数 %d", ErrInvalidField, total, in.Hits)
+	// 引擎里 elements_used 在 `hitEnemy` 内每命中一次 +1
+	//
+	// ⚠️ 上界**不能**取 `in.Hits`。第一版就是这么写的，
+	// 而 parity 测试（miniapp/src/game/settle_bounds_parity.test.ts）
+	// 实测抓到：真实引擎上报的元素合计**超过**命中数
+	// —— 第 1 关 139 > 134，全 100 关 max 比值 = **1.214**。
+	//
+	// 根因：`this.hits++` 只在 `checkProjectileHit`（直接命中）里自增，
+	// 而 `elementsUsed` 在 `hitEnemy` 里 —— **AoE 与链式也走 `hitEnemy`，
+	// 它们不计入 `hits`**。于是「每命中一次 elements +1、每命中一次 hits +1」
+	// 这个前提对 AoE/链式不成立。
+	//
+	// 上界取 `shots × 该关怪数`：弹丸的 `hitSet` 保证对同一只敌人只命中一次，
+	// 所以每发弹丸最多贡献 `总怪数` 次元素计数。实测 max 比值 0.0316
+	// （约 30 倍余量），而这条界是**推导出来的**，不是拍出来的魔数。
+	//
+	// 它的保护力确实弱（余量大），但集合类字段的主要防线是
+	// 「键白名单（5 个元素）」与「map 大小上限」——
+	// 那两条才是拦住 4096 个伪造键的地方。
+	if cap := int64(in.Shots) * int64(MaxKillsFor(gl)); int64(total) > cap {
+		return fmt.Errorf("%w：元素使用合计 %d 超过上界 %d（发射数 %d × 该关总怪数 %d）",
+			ErrInvalidField, total, cap, in.Shots, MaxKillsFor(gl))
 	}
 
 	// ── reactions_used ──
