@@ -50,6 +50,12 @@ func (s *Server) Register(app *fiber.App) {
 	// 放在前端存的话重放方拿不到同一份槽位，I-6 直接失效。
 	me.Get("/loadout", s.getLoadout)
 	me.Put("/loadout", s.saveLoadout)
+	// 技能升级：消耗金币把一个已拥有技能升一级。
+	//
+	// ⚠️ 挂在 /me 组下（带 requireUser），因为它要花**玩家自己的**钱。
+	// 若挂在 v1 根下，任何人都能替别人花钱/给别人升级 ——
+	// 鉴权不是这个端点的细节，是它的全部意义。
+	me.Post("/skills/:id/upgrade", s.upgradeSkill)
 
 	wallet := v1.Group("/wallet", requireUser(s.Svc))
 	wallet.Get("/", s.wallet)
@@ -211,6 +217,28 @@ func (s *Server) saveLoadout(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	return c.JSON(fiber.Map{"skill_ids": ids})
+}
+
+// upgradeSkill 把 :id 对应的技能升一级，返回新等级。
+//
+// 失败一律走 `failErr`，由它把 service 的哨兵错误翻成合适的 HTTP 码
+// （余额不足 / 未拥有 / 已满级 → 400，不泄漏「该技能存在但你没拥有」）。
+func (s *Server) upgradeSkill(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil || id <= 0 {
+		return fail(c, fiber.StatusBadRequest, "bad_id", "技能 id 必须是正整数")
+	}
+	level, err := s.Svc.UpgradeSkill(c.Context(), userIDFrom(c), int64(id))
+	if err != nil {
+		return failErr(c, err)
+	}
+	// 余额一并回给客户端：升级必然花钱，让前端再发一次 /wallet 才能刷新余额
+	// 是个可避免的竞态（玩家连点两次会看到中间态）。
+	w, err := s.Svc.LoadWallet(c.Context(), userIDFrom(c))
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"skill_id": id, "level": level, "wallet": w})
 }
 
 func (s *Server) wallet(c *fiber.Ctx) error {
