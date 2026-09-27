@@ -311,11 +311,25 @@ func (s *Server) getMastery(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
+	// ⚠️ `total_slots` 必须下发，而不只是 `base_slots`。
+	//
+	// 专精树第 3 层槽 0 是「额外插槽」，每点一个 +1 槽（`MasteryEffect.ExtraSlots`）。
+	// 那 8 个节点此前**完全惰性** —— 客户端根本不读 `base_slots`，
+	// 而是用编译期常量 `ACTIVE_SLOTS = 4`，
+	// 于是玩家花点数点出来的槽位在战斗里不存在。
+	//
+	// 同时这里补上服务端侧的**槽位校验入口**（loadSkillsAndSlots 用它）：
+	// 「客户端能装几个技能」必须由服务端说了算。
+	extra, err := s.Svc.ExtraSlots(c.Context(), userIDFrom(c))
+	if err != nil {
+		return failErr(c, err)
+	}
 	return c.JSON(fiber.Map{
 		"points":      pts,
 		"nodes":       nodes,
 		"layer_limit": domain.PerLayerPickLimit,
 		"base_slots":  domain.BaseSkillSlots,
+		"total_slots": domain.BaseSkillSlots + extra,
 		"families":    domain.AllMasteryFamilies(),
 	})
 }

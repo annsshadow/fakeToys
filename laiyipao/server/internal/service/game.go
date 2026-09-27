@@ -14,6 +14,15 @@ import (
 	"github.com/laiyipao/server/internal/domain"
 )
 
+// ErrSlotBudgetExceeded 装备的技能槽位数超过预算。
+//
+// 预算是「基础 5 槽 + 专精额外插槽」。此前**完全没有这个校验** ——
+// 客户端可以把任意多个技能写进 user_skill_slots，服务端照单全收。
+// 引擎会忽略 slot >= activeSlots 的技能，所以这不是刷分漏洞，
+// 但它意味着「玩家有几个槽位」完全由客户端说了算，
+// 而槽位正是专精树花点数换来的东西。
+var ErrSlotBudgetExceeded = errors.New("装备槽位数超过预算")
+
 // --- 战斗 ---
 
 // BattleTokenResp 是开局凭证下发内容。
@@ -354,6 +363,14 @@ func (s *Service) LoadBuildSnapshot(ctx context.Context, userID int64) (map[stri
 	// 这里同时下发两个 key：elements 是正确名，skill_ids 作为 deprecated
 	// 别名保留，因为历史战报的 build_snapshot（存在 battle_records 里）
 	// 只有旧名，改名会让那些战报无法重放。读取方一律走 buildElements()。
+	// ⚠️ `active_slots` 与 `attacker` 放在一起下发，而不是让客户端另外查
+	// `/mastery` —— 两者都是「服务端权威的战斗输入」，
+	// 客户端绝不能自己算（I-6 的前提：两端各算一套哈希必然对不上）。
+	// 放在同一个响应里也避免了战斗路径上多一次往返。
+	extra, err := s.ExtraSlots(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
 	return map[string]any{
 		"snapshot_keys_version": 2,
 		"skills":                slots,
@@ -362,6 +379,7 @@ func (s *Service) LoadBuildSnapshot(ctx context.Context, userID int64) (map[stri
 		"equipment":             equip,
 		"mastery_nodes":         masteryNodes,
 		"attacker":              toView(att),
+		"active_slots":          int(domain.BaseSkillSlots + extra),
 	}, nil
 }
 
@@ -375,6 +393,28 @@ func buildElements(build map[string]any) []string {
 	}
 	if v, ok := build["skill_ids"].([]string); ok {
 		return v
+	}
+	return nil
+}
+
+// checkSlotBudget 校验「已装备的槽位数」不超过预算。
+//
+// 预算 = domain.BaseSkillSlots（4 主动 + 1 被动）+ 专精「额外插槽」。
+//
+// ⚠️ 判定用**去重后的槽位个数**，不用技能条数：
+// 多个不同 skill 写进同一 slot 仍然只占一个槽，
+// 而按条数判会把「数据写错」误报成「超预算」。
+func (s *Service) checkSlotBudget(ctx context.Context, userID int64, occupied map[int]bool) error {
+	extra, err := s.ExtraSlots(ctx, userID)
+	if err != nil {
+		return err
+	}
+	budget := int(domain.BaseSkillSlots + extra)
+	if n := len(occupied); n > budget {
+		return fmt.Errorf(
+			"%w：已装备 %d 个槽位，预算 %d 个（基础 %d + 专精额外 %d）",
+			ErrSlotBudgetExceeded, n, budget, domain.BaseSkillSlots, extra,
+		)
 	}
 	return nil
 }
@@ -394,11 +434,17 @@ func (s *Service) loadSkillsAndSlots(ctx context.Context, userID int64) (map[str
 
 	skills := map[string]any{}
 	elements := map[string]bool{}
+	// occupied 收集**去重后**被占用的槽位。
+	// slot = -1 表示"已拥有但未装备"，不占槽位。
+	occupied := map[int]bool{}
 	for rows.Next() {
 		var id, level, slot int
 		var name, family, element, kind string
 		if err := rows.Scan(&id, &name, &family, &element, &kind, &level, &slot); err != nil {
 			return nil, nil, err
+		}
+		if slot >= 0 {
+			occupied[slot] = true
 		}
 		skills[fmt.Sprintf("%d", id)] = map[string]any{
 			"id": id, "name": name, "family": family, "element": element,
@@ -410,7 +456,25 @@ func (s *Service) loadSkillsAndSlots(ctx context.Context, userID int64) (map[str
 	for e := range elements {
 		list = append(list, e)
 	}
-	return skills, list, rows.Err()
+
+	// 槽位校验：装备的技能数不得超过「基础槽位 + 专精额外插槽」。
+	//
+	// ⚠️ 此前**完全没有这个校验** —— 客户端可以把任意多个技能写进
+	// `user_skill_slots`，服务端照单全收。
+	// 引擎会忽略 `slot >= activeSlots` 的技能，所以这不是刷分漏洞，
+	// 但它意味着**「玩家有几个槽位」完全由客户端说了算**，
+	// 而槽位正是专精树第 3 层花点数换来的东西。
+	//
+	// 判据用**去重后的槽位数**而不是技能条数：同一槽位重复写
+	// （`user_skill_slots` 有 (user_id, skill_id) 主键，重复的是不同 skill_id
+	// 写进同一 slot）不该被算成两个槽。
+	if err := rows.Err(); err != nil {
+		return nil, nil, err
+	}
+	if err := s.checkSlotBudget(ctx, userID, occupied); err != nil {
+		return nil, nil, err
+	}
+	return skills, list, nil
 }
 
 func (s *Service) loadEquipment(ctx context.Context, userID int64) ([]int, error) {
