@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // AUTO-GENERATED behavior contract tests — DO NOT EDIT by script.
 // Hand-written Top 100 high-frequency routes with behavior contracts.
 // Generated from: docs/audits/o2server-parity-report.json
