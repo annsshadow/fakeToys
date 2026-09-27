@@ -85,6 +85,18 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | 97 | 契约守卫 | contracts + autoquery | CLEAN | 20/20 |
 | 98 | 路由对齐复扫 | main.ts vs views | CLEAN | 83/83 |
 | 99 | 敏感/垃圾复扫 | 硬编码/untracked | CLEAN | 零新增 |
+| 100 | **完整门禁②（收官）** | fmt/clippy/lib/parity/reconcile/lint/tsc/vitest×2/build×2 | 全绿 | fmt 0、clippy 0、lib 0 failed、parity 4145/4145（live DB）、reconcile PASS、biome 235×0、tsc 0、vitest 953+101、mobile build DONE、desktop build 3.00s |
+
+## 收官陈述（轮 100/100）
+
+- **总计 100 轮**：FIX 14（SQL 注入 ×2、autocrlf 门禁炸弹、mobile build 预存破损、
+  Redis 串行瓶颈、preview 阻塞 IO、oauth 防御、errorHandler、SPDX 覆盖、fmt/biome
+  标准化、死壳清理）、IMPROVE 3（xid Index Only Scan 实证、workspace 复用、
+  apis 契约保留）、SKIP 3（deny/audit 网络受限、file-type 既有 TD-2）、
+  其余 CLEAN（含 12 维度全新扫描与全部增量复扫）。
+- **新增真实现**：html→image（ab_glyph 光栅化）——501 桩全仓清零。
+- **门禁终态（轮 100）**：全部 8 项绿。
+- 回滚基准：起点 `b1546fdcf`，逐提交可回退。
 | 51/52 | 路由-视图对齐 | main.ts 动态导入 vs views 全集 | CLEAN | 83/83 全注册，零死组件 |
 | 53 | apis 包死导出 | 导出 vs 引用计数 | IMPROVE(deferred) | 独立 *Api 命名导出由 oa4rustApis 聚合覆盖，对外契约保留 |
 | 54 | 全局错误兜底 | errorHandler 扫描 | FIX | main.ts 补 app.config.errorHandler（未捕获渲染/Promise 错误 fail-loud） |
