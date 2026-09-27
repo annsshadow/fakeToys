@@ -4493,6 +4493,7 @@ pub async fn dict_dictFlag_data_post(
     dict_dictFlag_path_data_mockputtopost(pool, Path((dict_flag, String::new())), Json(body)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_dictFlag_path_data_mockputtopost(
     pool: Extension<Pool>,
     Path((dict_flag, _path)): Path<(String, String)>,

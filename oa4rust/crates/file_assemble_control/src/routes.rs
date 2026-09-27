@@ -50,7 +50,6 @@ use crate::{
     editor_list,
     file_clean_unused_referencetype_cmsdocument_manage,
     file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale,
-    file_id,
     file_id_binary_base64,
     file_id_download,
     file_id_download_stream,

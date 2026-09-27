@@ -991,10 +991,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "folder2_id_download route should be registered"
+        // handler 已真实现：路由在（非空 body），对不存在的文件夹有意返回 404 错误信封。
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        assert!(
+            !bytes.is_empty(),
+            "folder2_id_download route should be registered and answer with an envelope"
         );
     }
 
