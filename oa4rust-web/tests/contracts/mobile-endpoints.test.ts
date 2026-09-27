@@ -117,7 +117,7 @@ const REGISTERED_BACKEND_ROUTES: string[] = [
   '/api/recycle/delete/{id}',
   '/api/recycle/empty',
   '/api/queryview/search',
-  '/api/bbs/assemble/control/subject/search',
+  '/api/bbs/subject/search',
   '/api/attendance/assemble/control/statistics/list',
   '/api/attendance/assemble/control/attendancestatisticalcycle/list/all',
   '/api/attendance/assemble/control/attendancestatisticalcycle/cycleDetail/{year}/{month}',
