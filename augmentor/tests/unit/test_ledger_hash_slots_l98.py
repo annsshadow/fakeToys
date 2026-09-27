@@ -72,12 +72,20 @@ ROUND_TOKEN = re.compile(r"(?<!\d)L\d+(?!\d)")
 #: 两侧一致 14 → **15**（新轮两遍都写槽，与 prog 同增）、唯一哈希 61 → **66** = 正好是回填进去的
 #: L99 那五笔。本轮自己的四笔此刻仍以占位形状住在槽里，要等末轮尾批才进档 —— 也就是说
 #: `MEASURED_UNIQUE_HASHES` 在 L100 收口时**还会再动一次**，动了就重量，别信「已经填完了」。
+#: **L100 批④ 兑现了那半句（唯一哈希 66 → 69，进度行占位 1 → 0）**：本轮自己的三笔第一次进档。
+#: 为什么是 **3** 而不是 4：尾批的哈希按构造不可得（写它就得先有它），所以那一笔压根不住在槽里，
+#: 它只存在于提交之后的 git 与最终汇报里 —— 槽旁那句「第四批就是本批」就是这笔差额的明写。
+#: prog/log 两侧带槽行数与「两侧一致」这一档**不动**（15/24/15）：收口不再落新轮，所以只有
+#: 槽**内容**变了形状（占位 → 三笔哈希），行数一格没多。
 MEASURED_SLOT_ROWS = {"prog": 15, "log": 24}
 MEASURED_BOTH_SIDES = 15
-MEASURED_UNIQUE_HASHES = 66
+MEASURED_UNIQUE_HASHES = 69
 MEASURED_LOG_ONLY_ROUNDS = frozenset(
     {"L45", "L57", "L79", "L80", "L81", "L82", "L83", "L84", "L85"})
-MEASURED_PROGRESS_PLACEHOLDERS = 1
+#: **L100 批④：1 → 0**（本程序收口，进度行那一侧再没有一处欠账）。这一档归零不意味着下面那支
+#: 用例失效：它意味着那支用例的**第二段断言**（「唯一一处占位正是带槽最大轮号」）在零占位时结构上
+#: 必红，于是必须按占位数分两形 —— 见 `test_progress_side_has_exactly_one_open_slot_and_it_is_the_newest`。
+MEASURED_PROGRESS_PLACEHOLDERS = 0
 
 #: R6 的白名单：**账本没错、commit 主题自己写错或压根没写轮号**的四格。
 #: 逐格理由（都按 `git log --first-parent` 的位置与该行声明的批数核过）：
@@ -271,6 +279,30 @@ def open_placeholders(slots: Dict[str, Tuple[List[str], List[str]]]) -> Dict[str
     return {rnd: v[1] for rnd, v in slots.items() if v[1]}
 
 
+def open_slot_breach(slots: Dict[str, Tuple[List[str], List[str]]],
+                     expected_open: int) -> tuple:
+    """进度行占位档的判据本体（纯函数）—— `None` 表示形状对得上，否则返回点名元组
+
+    为什么从用例里搬出来做成函数：账本在 L100 批④ 之后只剩**一形**（零占位），如果两形的分支
+    写死在用例体内，另一形就变成**结构上不可达**的那一支 —— 正是 A185 刚关掉的那族缺陷（一个
+    永远红不了的偏支挂着覆盖率）。搬成纯函数后两形都能由合成输入喂到，用例只负责拿账本真值调它。
+
+    两形的语义：
+      `expected_open > 0`（每一轮的常态）：占位数恰好等于它，且**唯一那处**正是带槽最大轮号
+        ⇒「填了上一轮却忘了给自己留占位」与「忘了填上一轮」两种漏法各落一次红；
+      `expected_open == 0`（收口）：数量档本身就是终态判据，红点从「欠账的位置」挪到「欠账
+        该存在而不存在」，两种漏法仍然各红一次。
+    """
+    open_ = open_placeholders(slots)
+    if len(open_) != expected_open:
+        return ("count", expected_open, open_)
+    if expected_open:
+        newest = max((r for r, v in slots.items() if v[0] or v[1]), key=round_of)
+        if list(open_) != [newest]:
+            return ("position", newest, open_)
+    return None
+
+
 # --------------------------------------------------------------------------- 尺子自证
 
 #: 已知答案的合成样本。三档形状各有专门用途：`L1` 只有占位，`L2` 两笔真哈希（**批① 在前**
@@ -442,14 +474,32 @@ class TestProseMatchesNumbers:
     def test_progress_side_has_exactly_one_open_slot_and_it_is_the_newest(self, slots):
         """进度行那一侧此前**没有任何**占位判据（`PLACEHOLDER_CEILING` 只数块标题那一侧）
 
-        钉成「唯一一处占位，且它正是带槽最大轮号；它等待的那一轮 = 本仓最新一轮」，
-        这样「填了上一轮却忘了给自己留占位」与「忘了填上一轮」两种漏法都落在同一断言上。
+        当前读数是**终态**（`MEASURED_PROGRESS_PLACEHOLDERS = 0`）：全侧零欠账。收口那一形不再
+        附加「最新一轮必须全是哈希」这一格 —— 零欠账时那一格在形状上恒真（一行进了名单就要么有
+        哈希要么有占位，而占位已被数量档拦成零），把它写进判据就是 A185 那族「永远红不了的偏支」
+        的自我复现；它真正被守着的地方是规模档（带槽行 15 行精确相等）+ R1（每笔可解析）+ 两侧一致。
         """
-        open_ = open_placeholders(slots["prog"])
-        assert len(open_) == MEASURED_PROGRESS_PLACEHOLDERS, open_
-        newest_with_slot = max((r for r, v in slots["prog"].items() if v[0] or v[1]),
-                               key=round_of)
-        assert list(open_) == [newest_with_slot], (open_, newest_with_slot)
+        assert open_slot_breach(slots["prog"], MEASURED_PROGRESS_PLACEHOLDERS) is None
+
+    def test_the_open_slot_gauge_goes_red_on_both_shapes(self):
+        """能红性：非终态那一形在账本里已经没有住户了，所以它只能由合成输入证明它还会红
+
+        六格已知答案，按两支分支各喂一次：`expected_open=1` 的形状对（None）/ 多一处欠账
+        （count）/ 欠账落错轮（position），`expected_open=0` 的形状对（None）/ 冒出一处欠账
+        （count）。少了任何一格，`open_slot_breach` 里就会有一支分支在测试面上不可达
+        ⇒ 这一档同时是这支判据自己的覆盖证据（A185 刚关掉的那族，不留第二具尸体）。
+        """
+        open_on_newest = {"L1": (["a" * 9], []), "L2": ([], ["L3"])}
+        assert open_slot_breach(open_on_newest, 1) is None
+        # 多留一处欠账 ⇒ 红在数量档（位置档看不见「有几处」）
+        two_open = {"L1": (["a" * 9], ["L2"]), "L2": (["b" * 9], ["L3"])}
+        assert open_slot_breach(two_open, 1)[0] == "count"
+        # 欠账挂在 L1，而带槽最大轮号是 L2 ⇒「填了上一轮却忘了给自己留占位」红在位置档
+        stale = {"L1": ([], ["L2"]), "L2": (["b" * 9], [])}
+        assert open_slot_breach(stale, 1)[0] == "position"
+        # 终态：零欠账为真；此时多冒一处欠账必须红在数量档，而不是被位置档悄悄咽下
+        assert open_slot_breach({"L9": (["a" * 9], [])}, 0) is None
+        assert open_slot_breach({"L9": ([], ["L10"])}, 0)[0] == "count"
 
     def test_block_side_placeholder_count_is_the_l79_ceiling(self, text):
         """同一格不重复计数：块标题那一侧沿用 `test_doc_line_refs_l79` 的常量与提取口"""
