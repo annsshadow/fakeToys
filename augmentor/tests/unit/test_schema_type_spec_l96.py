@@ -142,7 +142,13 @@ class TestTupleAndUnionRulesGetVerdict:
 
 
 class TestLabelRendering:
-    """文案层的形状：元组与联合一律 `int/str`，单类型一律本名"""
+    """文案层的形状：元组与联合一律 `int/str`，单类型一律本名
+
+    id 必须显式给：pytest 默认按参数对象造 id，而 3.14 的 `int | str` 与
+    `typing.Union[int, str]` 渲染成同一个 `Union-int/str`、3.13 不会 —— 于是同一份
+    用例在两侧解释器上长出不同节点名，跨解释器 roster 对账当场分叉（A173 那一族
+    换了个层出现，本轮实测坐实）。
+    """
 
     @pytest.mark.parametrize("value,label", [
         (int, "int"),
@@ -155,7 +161,8 @@ class TestLabelRendering:
         # （`resolve_type` 早一步把这种规格拒了），但 `type_label` 是模块级函数，
         # 这一档要么覆盖要么删，不许留成缺数行（本轮实测：留下就是那一格 +1 缺数）。
         (42, "42"),
-    ])
+    ], ids=["int", "tuple2", "tuple-nested", "union-pep604", "union-typing",
+            "none", "fallback"])
     def test_label(self, value, label):
         assert type_label(value) == label
 
