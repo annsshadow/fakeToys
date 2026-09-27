@@ -18,6 +18,7 @@
 //!
 //! 产出统一落 GeneralFile 表（content=base64，flag 与 id 同值），返回 `{id}`。
 
+use ab_glyph::{Font as _, ScaleFont as _};
 use base64::Engine as _;
 use std::io::{Cursor, Write as _};
 
@@ -288,6 +289,95 @@ pub fn image_to_png(bytes: &[u8]) -> Result<Option<Vec<u8>>, AppError> {
     Ok(Some(out))
 }
 
+/// 简化排版 HTML → PNG：块级结构 + ab_glyph 文本光栅化（白底黑字，标题字号大）。
+/// 与 html_to_pdf_bytes 同构的「简化排版真实现」——内容完整、非浏览器级保真。
+/// 无可用 CJK 字体时返回 None（调用方 501，不产出丢字图）。
+pub fn html_to_image_bytes(html: &str) -> Result<Option<Vec<u8>>, AppError> {
+    let Some(font_bytes) = probe_cjk_font() else {
+        return Ok(None);
+    };
+    // ttc 集合取第 0 面；ttf 直取
+    let font = match ab_glyph::FontRef::try_from_slice(&font_bytes) {
+        Ok(f) => f,
+        Err(_) => ab_glyph::FontRef::try_from_slice_and_index(&font_bytes, 0)
+            .map_err(|e| {
+                tracing::warn!(error = %e, "font parse failed");
+                AppError::Internal
+            })?,
+    };
+    const WIDTH: u32 = 1240; // A4@150dpi
+    let blocks = html_blocks(html);
+    if blocks.is_empty() {
+        return Ok(None);
+    }
+    // 先排版算行高，再开画布
+    struct Line { size: f32, text: String }
+    let mut lines: Vec<Line> = Vec::new();
+    for (style, text) in &blocks {
+        let size = match style {
+            1 => 48.0,
+            2 => 40.0,
+            3 => 34.0,
+            4 => 30.0,
+            5 => 26.0,
+            6 => 24.0,
+            _ => 22.0,
+        };
+        // 按宽度硬折行（CJK 逐字；ASCII 词保持完整切分粒度足够简化排版）
+        let scaled = font.as_scaled(size);
+        let mut line = String::new();
+        let mut width_px = 0.0f32;
+        for ch in text.chars() {
+            let advance = scaled.h_advance(scaled.glyph_id(ch));
+            if width_px + advance > (WIDTH - 80) as f32 && !line.is_empty() {
+                lines.push(Line { size, text: std::mem::take(&mut line) });
+                width_px = 0.0;
+            }
+            line.push(ch);
+            width_px += advance;
+        }
+        if !line.is_empty() {
+            lines.push(Line { size, text: line });
+        }
+    }
+    let line_height_total: f32 = lines.iter().map(|l| l.size * 1.5).sum();
+    let height = (line_height_total as u32 + 80).max(200);
+    let mut canvas = image::RgbaImage::from_pixel(WIDTH, height, image::Rgba([255, 255, 255, 255]));
+    let mut y = 40.0f32;
+    for line in &lines {
+        let scaled = font.as_scaled(line.size);
+        let mut x = 40.0f32;
+        for ch in line.text.chars() {
+            let mut glyph = scaled.scaled_glyph(ch);
+            glyph.position = ab_glyph::point(x, y + line.size); // baseline
+            if let Some(outlined) = scaled.outline_glyph(glyph) {
+                outlined.draw(|px, py, coverage| {
+                    let (px, py) = (px as i64, py as i64);
+                    if px < 0 || py < 0 || px >= WIDTH as i64 || py >= height as i64 {
+                        return;
+                    }
+                    let a = (coverage * 255.0) as u8;
+                    if a == 0 {
+                        return;
+                    }
+                    // 黑字 alpha 合成
+                    let pixel = canvas.get_pixel_mut(px as u32, py as u32);
+                    let inv = 255 - a;
+                    let blend = |c: u8| ((c as u16 * inv as u16) / 255) as u8;
+                    *pixel = image::Rgba([blend(255), blend(255), blend(255), 255]);
+                });
+            }
+            x += scaled.h_advance(scaled.glyph_id(ch));
+        }
+        y += line.size * 1.5;
+    }
+    let mut out = Vec::new();
+    image::DynamicImage::ImageRgba8(canvas)
+        .write_to(&mut Cursor::new(&mut out), image::ImageFormat::Png)
+        .map_err(|_| AppError::Internal)?;
+    Ok(Some(out))
+}
+
 /// 图片嵌入单页 PDF（A4，按宽适配）。
 pub fn image_to_pdf_bytes(bytes: &[u8]) -> Result<Option<Vec<u8>>, AppError> {
     let Some(font_bytes) = probe_cjk_font() else {
@@ -333,6 +423,7 @@ pub fn image_to_pdf_bytes(bytes: &[u8]) -> Result<Option<Vec<u8>>, AppError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use image::GenericImageView;
 
     #[test]
     fn cfb_container_round_trips() {
@@ -369,6 +460,20 @@ mod tests {
         assert!(matches!(classify_attachment("a.png", &fake), AttKind::Other));
         let pdf = b"%PDF-1.7 fake".to_vec();
         assert!(matches!(classify_attachment("a.txt", &pdf), AttKind::Pdf));
+    }
+
+    #[tokio::test]
+    async fn html_to_image_renders_real_png() {
+        match html_to_image_bytes("<h1>标题</h1><p>正文内容 body</p>") {
+            Ok(Some(bytes)) => {
+                assert_eq!(&bytes[1..4], b"PNG", "真实 PNG 签名");
+                let decoded = image::load_from_memory(&bytes).unwrap();
+                assert!(decoded.dimensions().0 >= 1240, "A4@150dpi 画布宽");
+            }
+            // 无字体环境（CI）诚实降级
+            Ok(None) => {}
+            Err(e) => panic!("unexpected error: {e}"),
+        }
     }
 
     #[tokio::test]
