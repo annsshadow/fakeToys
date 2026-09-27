@@ -9,22 +9,89 @@
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union, get_args
+
+from .exceptions import DataValidationError
 
 logger = logging.getLogger(__name__)
+
+#: 规格里允许以**名字**写下来的类型（JSON / YAML 写规格时最自然的形状）
+TYPE_NAMES: Dict[str, type] = {
+    "str": str,
+    "int": int,
+    "float": float,
+    "bool": bool,
+    "list": list,
+    "dict": dict,
+}
+
+
+def _isinstance_target(value: Any) -> bool:
+    """`value` 是否是 `isinstance()` 真能吃的形状（类型、类型元组、类型联合）"""
+    try:
+        isinstance(None, value)
+    except TypeError:
+        return False
+    return True
+
+
+def resolve_type(value: Any, name: Optional[str] = None) -> Any:
+    """把规格里的 `type` 归一成 `isinstance` 能吃的形状，归一不了就当场出声
+
+    接受：`None`（不做类型判据）、Python 类型、类型元组/联合、类型名字符串、
+    以及由以上混排组成的列表（列表归一成元组）。
+    """
+    where = f"字段 {name} 的 " if name else ""
+    if value is None or _isinstance_target(value):
+        return value
+    if isinstance(value, str):
+        if value in TYPE_NAMES:
+            return TYPE_NAMES[value]
+        raise DataValidationError(
+            f"{where}type 是未知类型名 {value!r}，可用名字：{sorted(TYPE_NAMES)}"
+        )
+    if isinstance(value, (tuple, list)):
+        parts = tuple(resolve_type(part, name) for part in value)
+        if any(part is None for part in parts):
+            raise DataValidationError(f"{where}type 列表里出现 None，无法作为类型")
+        return parts
+    raise DataValidationError(
+        f"{where}type 必须是 Python 类型、类型元组或类型名之一，"
+        f"实得 {type(value).__name__}"
+    )
+
+
+def type_label(value: Union[type, tuple, Any]) -> str:
+    """报错文案里的类型名：元组与联合统一写成 `int/str`，单类型写成本名
+
+    不借 `str(value)` 或 `value.__name__` 渲染联合：3.14 给 `int | str` 挂了
+    `__name__` 等于 `Union`、3.13 没有，`str(typing.Union[int, str])` 两侧也不同形
+    —— 文案若跟着解释器变，同一条脏数据在两边会得到不同判决文本，跨解释器对账就成了猜。
+    """
+    if isinstance(value, tuple):
+        return "/".join(type_label(part) for part in value)
+    args = get_args(value)
+    if args:
+        return "/".join(type_label(part) for part in args)
+    if isinstance(value, type):
+        return value.__name__
+    return str(value)
 
 
 @dataclass
 class FieldRule:
     """单字段校验规则"""
 
-    type: Any = None            # 期望 Python 类型（或类型元组）
+    type: Any = None            # 期望类型：Python 类型 / 类型元组 / 类型名字符串（构造时归一）
     required: bool = True
     enum: Optional[List[Any]] = None
     min_length: Optional[int] = None   # 字符串/列表最小长度
     max_length: Optional[int] = None
     min_value: Optional[float] = None
     max_value: Optional[float] = None
+
+    def __post_init__(self) -> None:
+        self.type = resolve_type(self.type)
 
 
 @dataclass
@@ -68,15 +135,19 @@ class DatasetSchema:
         """从字典规格构造 schema
 
         Args:
-            spec: 字段名 -> {type/required/enum/min_length/...}
+            spec: 字段名 -> {type/required/enum/min_length/...}，其中 `type` 可以是
+                Python 类型、类型元组、类型名列表，或类型名字符串（见 `TYPE_NAMES`）
             extra_fields_allowed: 是否允许未知字段
 
         Returns:
             DatasetSchema 实例
+
+        Raises:
+            DataValidationError: 某个字段的 `type` 写不成类型（未知类型名、非类型对象）
         """
         rules = {
             name: FieldRule(
-                type=cfg.get("type"),
+                type=resolve_type(cfg.get("type"), name),
                 required=cfg.get("required", True),
                 enum=cfg.get("enum"),
                 min_length=cfg.get("min_length"),
@@ -118,10 +189,13 @@ class DatasetSchema:
             if rule.type is not None:
                 # bool 是 int 子类，排除 bool 误判数值类型
                 if rule.type in (int, float) and isinstance(value, bool):
-                    errors.append(f"字段 {name} 类型应为 {rule.type.__name__}")
+                    errors.append(
+                        f"字段 {name} 类型应为 {type_label(rule.type)}，"
+                        f"实际 {type(value).__name__}"
+                    )
                 elif not isinstance(value, rule.type):
                     errors.append(
-                        f"字段 {name} 类型应为 {rule.type.__name__}，"
+                        f"字段 {name} 类型应为 {type_label(rule.type)}，"
                         f"实际 {type(value).__name__}"
                     )
 
