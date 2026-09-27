@@ -1,0 +1,330 @@
+{
+ "AIChatApp": [
+  [
+   "s(api.get('/api/ai_assemble_control/chat/delete/0'))",
+   "s(api.get('/api/ai_assemble_control/config/delete/mcp/0'))",
+   "s(api.get('/api/ai_assemble_control/file/0/download'))"
+  ]
+ ],
+ "AttendanceApp": [
+  [
+   "s(api.put('/api/attendance/assemble/control/rule/0/toggle', {}))",
+   "s(api.put('/api/attendance/assemble/control/attendanceappealInfo/filter/list/0/prev/0', {}))",
+   "s(api.put('/api/attendance/assemble/control/attendanceappealInfo/workflow/appeal/0', {}))",
+   "s(api.put('/api/attendance/assemble/control/attendanceappealInfo/workflow/sync', {}))",
+   "s(api.put('/api/attendance/assemble/control/attendancedetail/analyse/redo', {}))",
+   "s(api.post('/api/attendance/assemble/control/attendancedetail/analyse/0/0', {}))",
+   "s(api.post('/api/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/0/0', {}))",
+   "s(api.put('/api/attendance/assemble/control/attendancedetail/filter/list', {}))",
+   "s(api.put('/api/attendance/assemble/control/attendancedetail/filter/list/0/next/0', {}))",
+   "s(api.put('/api/attendance/assemble/control/attendancedetail/filter/list/0/prev/0', {}))",
+   "s(api.put('/api/attendance/assemble/control/attendancedetail/mobile/filter/list/page/0/count/0', {}))",
+   "s(api.post('/api/attendance/assemble/control/attendancedetail/mobile/mobilepreview', {}))",
+   "s(api.put('/api/attendance/assemble/control/attendanceworkdayconfig/filter', {}))",
+   "s(api.get('/api/attendance/assemble/control/statistic/do'))"
+  ]
+ ],
+ "ServerApp": [
+  [
+   "s(api.get('/api/base/echo/get'))",
+   "s(api.get('/api/component_assemble_control/get/control/config'))",
+   "s(api.get('/api/component_assemble_control/update/control/config'))",
+   "s(api.delete('/api/server/deploy/delete/0'))",
+   "s(api.get('/mcp'))",
+   "s(api.get('/health'))",
+   "s(api.get('/health'))"
+  ]
+ ],
+ "BBSForum": [
+  [
+   "s(api.post('/api/bbs/assemble/control/shutup/create', {}))"
+  ]
+ ],
+ "CalendarApp": [
+  [
+   "s(api.post('/api/calendar/calendar/create', {}))",
+   "s(api.post('/api/calendar/calendar/update', {}))",
+   "s(api.get('/api/calendar_assemble_control/update/control/config'))",
+   "s(api.post('/api/calendar_assemble_control/calendar', {}))",
+   "s(api.post('/api/calendar_assemble_control/event', {}))",
+   "s(api.post('/api/calendar/core/entity/calendar/remove', {}))"
+  ]
+ ],
+ "CmsIndexApp": [
+  [
+   "s(api.get('/api/cms_assemble_control/update/control/config'))",
+   "s(api.get('/api/comment/0'))",
+   "s(api.get('/api/design/appdict/0'))",
+   "s(api.put('/api/templateform/list/category', {}))",
+   "s(api.post('/api/cms/core/entity/column_manager/save/0', {}))",
+   "s(api.delete('/api/cms/core/entity/column_manager/delete/0'))"
+  ]
+ ],
+ "OrgViewer": [
+  [
+   "s(api.get('/api/application/0'))",
+   "s(api.get('/api/general/area/list'))",
+   "s(api.put('/api/general/assemble/control/save/0', {}))",
+   "s(api.delete('/api/general/assemble/control/delete/0'))",
+   "s(api.get('/api/general/assemble/control/worktime/minutes/of/workday'))",
+   "s(api.post('/api/general/assemble/control/ecnet/check', {}))",
+   "s(api.post('/api/general/dict/create', {}))",
+   "s(api.post('/api/general/dict/delete/0', {}))",
+   "s(api.get('/api/general/file/list'))",
+   "s(api.post('/api/general/file/create', {}))",
+   "s(api.get('/api/general/file/0'))",
+   "s(api.post('/api/general/file/delete/0', {}))",
+   "s(api.get('/api/general/file/download/0'))",
+   "s(api.post('/api/organization/assemble/control/person/list/like', {}))",
+   "s(api.delete('/api/organization/assemble/control/group/0/delete/member'))",
+   "s(api.get('/api/organization/assemble/control/person/0/icon'))",
+   "s(api.delete('/api/organization/definition/0'))",
+   "s(api.get('/api/organization/group/list'))",
+   "s(api.get('/api/organization/identity/list'))",
+   "s(api.get('/api/organization/person/list'))",
+   "s(api.post('/api/organization/person', {}))",
+   "s(api.delete('/api/organization/person/0'))",
+   "s(api.post('/api/organization/custom', {}))",
+   "s(api.delete('/api/organization/custom/0'))",
+   "s(api.get('/api/organization/bind/list'))"
+  ]
+ ],
+ "DocumentApp": [
+  [
+   "s(api.get('/api/anonymous/document/0/view'))",
+   "s(api.get('/api/editor/list'))"
+  ]
+ ],
+ "ProgramCenterApp": [
+  [
+   "s(api.put('/api/input/compare', {}))",
+   "s(api.put('/api/input/cover', {}))",
+   "s(api.put('/api/input/create', {}))",
+   "s(api.put('/api/input/prepare/cover', {}))",
+   "s(api.put('/api/input/prepare/create', {}))",
+   "s(api.post('/api/program_center/appstyle/current/update', {}))",
+   "s(api.put('/api/program_center/appstyle/image/application/top', {}))",
+   "s(api.get('/api/program_center/appstyle/image/application/top/erase'))",
+   "s(api.put('/api/program_center/appstyle/image/launch/logo', {}))",
+   "s(api.get('/api/program_center/appstyle/image/launch/logo/erase'))",
+   "s(api.put('/api/program_center/appstyle/image/menu/logo/blur', {}))",
+   "s(api.get('/api/program_center/appstyle/image/menu/logo/blur/erase'))",
+   "s(api.put('/api/program_center/appstyle/image/menu/logo/focus', {}))",
+   "s(api.get('/api/program_center/appstyle/image/menu/logo/focus/erase'))",
+   "s(api.put('/api/program_center/appstyle/image/process/default', {}))",
+   "s(api.get('/api/program_center/appstyle/image/process/default/erase'))",
+   "s(api.put('/api/program_center/appstyle/image/setup/about/logo', {}))",
+   "s(api.get('/api/program_center/appstyle/image/setup/about/logo/erase'))",
+   "s(api.post('/api/program_center/deploy/server/o2', {}))",
+   "s(api.put('/api/program_center/input/compare', {}))",
+   "s(api.put('/api/program_center/input/cover', {}))",
+   "s(api.put('/api/program_center/input/prepare/cover', {}))",
+   "s(api.put('/api/program_center/input/prepare/create', {}))",
+   "s(api.post('/api/program_center/market/flag/install/or/update', {}))",
+   "s(api.get('/api/program_center/market/flag/install/or/update'))",
+   "s(api.put('/api/program_center/market/flag/install/or/update', {}))",
+   "s(api.get('/api/program_center/market/flag/uninstall'))",
+   "s(api.post('/api/program_center/agent', {}))"
+  ],
+  [
+   "s(api.get('/api/program_center/apppack/pack/info/file/download/0'))",
+   "s(api.put('/api/program_center/appstyle/current/update', {}))",
+   "s(api.post('/api/program_center/config/open', {}))",
+   "s(api.post('/api/program_center/config/ternary/management', {}))",
+   "s(api.put('/api/program_center/config/portal', {}))",
+   "s(api.put('/api/program_center/config/proxy', {}))",
+   "s(api.post('/api/reset', {}))"
+  ]
+ ],
+ "FileManager": [
+  [
+   "s(api.get('/api/anonymous/fileinfo/0/document/0'))",
+   "s(api.post('/api/attachment/0/download', {}))",
+   "s(api.post('/api/attachment/0/download/stream', {}))",
+   "s(api.post('/api/attachment2/0/download', {}))",
+   "s(api.post('/api/attachment2/0/download/stream', {}))",
+   "s(api.get('/api/complex/folder/0'))",
+   "s(api.get('/api/complex/top'))",
+   "s(api.get('/api/folder/list/top'))",
+   "s(api.get('/api/folder/list/0'))",
+   "s(api.get('/api/folder/0'))",
+   "s(api.post('/api/folder2', {}))",
+   "s(api.get('/api/folder2/list/top'))",
+   "s(api.get('/api/folder2/list/0'))",
+   "s(api.put('/api/folder2/0', {}))",
+   "s(api.delete('/api/folder2/0'))",
+   "s(api.get('/api/share/0'))",
+   "s(api.get('/api/file/assemble/control/file/0/download'))",
+   "s(api.post('/api/file/assemble/control/file/0/download', {}))",
+   "s(api.post('/api/file/assemble/control/file/0/download/stream', {}))"
+  ]
+ ],
+ "Personal": [
+  [
+   "s(api.post('/api/person', {}))",
+   "s(api.put('/api/person', {}))",
+   "s(api.get('/api/person/signature/delete/0'))",
+   "s(api.post('/api/person/icon', {}))",
+   "s(api.post('/api/person/custom/0', {}))",
+   "s(api.post('/api/person/definition/0', {}))",
+   "s(api.post('/api/person/exmail', {}))",
+   "s(api.put('/api/person/icon', {}))",
+   "s(api.put('/api/personal/face/save/0', {}))",
+   "s(api.delete('/api/personal/face/delete/0'))",
+   "s(api.post('/api/person', {}))"
+  ]
+ ],
+ "ProcessWork": [
+  [
+   "s(api.get('/api/correlation/core/entity/list'))",
+   "s(api.post('/api/correlation/core/entity/create', {}))",
+   "s(api.delete('/api/correlation/core/entity/delete/0'))",
+   "s(api.get('/api/correlation/core/express/status'))",
+   "s(api.get('/api/processplatform/assemble/surface/application/0/0'))",
+   "s(api.get('/api/processplatform/assemble/surface/process/0/0'))",
+   "s(api.post('/api/processplatform/assemble/surface/review/v2/list/create/prev/0/0', {}))",
+   "s(api.post('/api/processplatform/assemble/surface/task/v2/list/create/prev/0/0', {}))",
+   "s(api.put('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/data', {}))",
+   "s(api.put('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/data', {}))",
+   "s(api.put('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/0/data', {}))",
+   "s(api.put('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/0/0/data', {}))",
+   "s(api.post('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/data', {}))",
+   "s(api.post('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/data', {}))",
+   "s(api.post('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/0/data', {}))",
+   "s(api.post('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/0/0/data', {}))",
+   "s(api.delete('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/data'))",
+   "s(api.delete('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/data'))",
+   "s(api.delete('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/0/data'))",
+   "s(api.delete('/api/processplatform/assemble/surface/applicationdict/0/application/0/0/0/0/0/0/data'))",
+   "s(api.put('/api/processplatform/assemble/surface/data/job/0', {}))",
+   "s(api.put('/api/processplatform/assemble/surface/data/job/0/0', {}))",
+   "s(api.put('/api/processplatform/assemble/surface/data/job/0/0/0', {}))",
+   "s(api.put('/api/processplatform/assemble/surface/data/job/0/0/0/0/0/0/0/0', {}))",
+   "s(api.put('/api/processplatform/assemble/surface/data/job/0/0/0/0/0/0/0/0/0', {}))",
+   "s(api.put('/api/processplatform/assemble/surface/data/work/0', {}))",
+   "s(api.put('/api/processplatform/assemble/surface/data/workcompleted/0', {}))",
+   "s(api.post('/api/processplatform/assemble/surface/data/work/0', {}))"
+  ],
+  [
+   "s(api.put('/api/processplatform/assemble/surface/read/0', {}))",
+   "s(api.put('/api/processplatform/assemble/surface/record/0/manage', {}))",
+   "s(api.put('/api/processplatform/assemble/surface/serialnumber/0', {}))",
+   "s(api.put('/api/processplatform/assemble/surface/task/0', {}))",
+   "s(api.delete('/api/processplatform/assemble/surface/work/0'))",
+   "s(api.post('/api/processplatform/assemble/surface/work/0/close/check', {}))",
+   "s(api.delete('/api/processplatform/assemble/surface/work/0/relative/manage'))",
+   "s(api.delete('/api/processplatform/assemble/surface/data/work/0/0'))",
+   "s(api.delete('/api/processplatform/assemble/surface/data/work/0/0/0'))",
+   "s(api.delete('/api/processplatform/assemble/surface/data/work/0/0/0/0/0/0/0/0'))",
+   "s(api.delete('/api/processplatform/assemble/surface/data/work/0/0/0/0/0/0/0/0/0'))",
+   "s(api.post('/api/processplatform/assemble/surface/data/work/0/0', {}))",
+   "s(api.post('/api/processplatform/assemble/surface/data/work/0/0/0', {}))",
+   "s(api.post('/api/processplatform/assemble/surface/data/work/0/0/0/0/0/0/0/0', {}))",
+   "s(api.post('/api/processplatform/assemble/surface/data/work/0/0/0/0/0/0/0/0/0', {}))",
+   "s(api.put('/api/processplatform/assemble/surface/data/work/0/0', {}))",
+   "s(api.put('/api/processplatform/assemble/surface/data/work/0/0/0', {}))",
+   "s(api.put('/api/processplatform/assemble/surface/data/work/0/0/0/0/0/0/0/0', {}))",
+   "s(api.put('/api/processplatform/assemble/surface/data/work/0/0/0/0/0/0/0/0/0', {}))",
+   "s(api.put('/api/processplatform/assemble/surface/data/workcompleted/0/0', {}))",
+   "s(api.put('/api/processplatform/assemble/surface/data/workcompleted/0/0/0', {}))",
+   "s(api.put('/api/processplatform/assemble/surface/data/workcompleted/0/0/0/0/0/0/0/0', {}))",
+   "s(api.put('/api/processplatform/assemble/surface/data/workcompleted/0/0/0/0/0/0/0/0/0', {}))",
+   "s(api.post('/api/processplatform/assemble/surface/attachment/update/0/work/0', {}))",
+   "s(api.delete('/api/processplatform/assemble/surface/attachment/0/workcompleted/0'))",
+   "s(api.get('/api/process/work/list'))",
+   "s(api.get('/api/process/work/0'))",
+   "s(api.get('/api/process/task/list'))"
+  ],
+  [
+   "s(api.put('/api/processplatform/service/processing/applicationdict/0', {}))",
+   "s(api.post('/api/processplatform/service/processing/data/work/0/0', {}))",
+   "s(api.put('/api/processplatform/service/processing/task/v2/0', {}))",
+   "s(api.post('/api/processplatform/service/processing/work/0/processing', {}))",
+   "s(api.get('/api/process/state/summary'))",
+   "s(api.get('/api/process/state/running'))",
+   "s(api.get('/api/process/state/organization'))",
+   "s(api.get('/api/process/designer/application/list'))",
+   "s(api.post('/api/process/designer/application/create', {}))",
+   "s(api.get('/api/process/application/list'))",
+   "s(api.get('/api/process/record/list/workorworkcompleted/0'))"
+  ]
+ ],
+ "RecycleApp": [
+  [
+   "s(api.delete('/api/recycle/0/delete'))",
+   "s(api.post('/api/recycle/0/resume', {}))"
+  ]
+ ],
+ "StatsApp": [
+  [
+   "s(api.get('/api/hotpic_assemble_control/create/hotpic'))",
+   "s(api.get('/api/hotpic_assemble_control/update/control/config'))",
+   "s(api.get('/api/hotpic_assemble_control/user/hotpic/changeTitle'))"
+  ]
+ ],
+ "NotifyApp": [
+  [
+   "s(api.get('/api/jpush_assemble_control/create/jpush'))",
+   "s(api.get('/api/jpush_assemble_control/update/control/config'))",
+   "s(api.post('/api/jpush/assemble/control/update/control/config', {}))",
+   "s(api.get('/api/jpush/assemble/control/device/admin/unbind/all/person'))"
+  ]
+ ],
+ "MeetingApp": [
+  [
+   "s(api.delete('/api/meeting/assemble/control/meeting/0/delete/invite'))",
+   "s(api.put('/api/meeting/assemble/control/meeting/save/0', {}))",
+   "s(api.post('/api/meeting/assemble/control/meeting', {}))",
+   "s(api.post('/api/meeting/assemble/control/meeting/0', {}))",
+   "s(api.get('/api/meeting/assemble/control/meeting/0/accept'))",
+   "s(api.get('/api/meeting/assemble/control/meeting/0/checkin'))",
+   "s(api.get('/api/meeting/assemble/control/meeting/0/confirm/allow'))",
+   "s(api.get('/api/meeting/assemble/control/meeting/0/confirm/deny'))",
+   "s(api.get('/api/meeting/assemble/control/meeting/0/reject'))"
+  ]
+ ],
+ "IMChatApp": [
+  [
+   "s(api.post('/api/message/assemble/communicate/consume/0/type/0', {}))",
+   "s(api.get('/api/message/assemble/communicate/im/conversation/0/group/quit/self'))"
+  ]
+ ],
+ "PortalApp": [
+  [
+   "s(api.get('/api/portal/0'))",
+   "s(api.get('/api/portal/page/0'))",
+   "s(api.post('/api/portal/page/save/0', {}))",
+   "s(api.post('/api/portal/page/delete/0', {}))",
+   "s(api.get('/api/portal/dict/list'))",
+   "s(api.post('/api/portal/assemble/surface/script/portal/portal/imported/0/0', {}))",
+   "s(api.put('/api/portal/assemble/surface/dict/0/portal/0/0/data', {}))",
+   "s(api.get('/api/portal/portal/list'))",
+   "s(api.get('/api/portal/widget/list'))",
+   "s(api.get('/api/portal/page/list'))",
+   "s(api.get('/api/portal/script/list'))"
+  ]
+ ],
+ "QueryViewApp": [
+  [
+   "s(api.post('/api/query/assemble/designer/save/0', {}))",
+   "s(api.put('/api/query/assemble/designer/save', {}))",
+   "s(api.delete('/api/query/assemble/designer/delete'))",
+   "s(api.delete('/api/query/assemble/designer/table/row/delete/all/0'))",
+   "s(api.put('/api/query/assemble/designer/table/row/save/0', {}))",
+   "s(api.put('/api/query/assemble/designer/stat/save/0', {}))",
+   "s(api.post('/api/importmodel/id/0/execute', {}))",
+   "s(api.post('/api/queryview/importmodel/record/0', {}))",
+   "s(api.delete('/api/queryview/importmodel/record/0'))",
+   "s(api.put('/api/queryview/table/0/row/0', {}))",
+   "s(api.post('/api/query/view/create', {}))",
+   "s(api.get('/api/query/list'))",
+   "s(api.get('/api/query/service/neural/list'))"
+  ]
+ ],
+ "SearchApp": [
+  [
+   "s(api.put('/api/ftsearch/save/0', {}))",
+   "s(api.delete('/api/ftsearch/delete/0'))"
+  ]
+ ]
+}
