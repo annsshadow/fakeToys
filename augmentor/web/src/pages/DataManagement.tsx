@@ -11,7 +11,7 @@ import {
   type TableColumnsType,
 } from 'antd'
 import { DownloadOutlined, DeleteOutlined, EditOutlined, UploadOutlined, PlayCircleOutlined } from '@ant-design/icons'
-import { apiErrorDetail, getDataFiles, loadData, updateDataItem, deleteDataItem, exportData, uploadData, getDemoData } from '../services/api'
+import { apiErrorDetail, bulkErrorDetail, isTimeoutError, getDataFiles, loadData, updateDataItem, deleteDataItem, exportData, uploadData, getDemoData } from '../services/api'
 import type { DataFileInfo, DataItem } from '../types/api'
 
 /**
@@ -86,7 +86,7 @@ export default function DataManagement() {
       await exportData(selectedFile, './exports', [format])
       message.success(`导出为 ${format} 格式成功`)
     } catch (err) {
-      message.error(apiErrorDetail(err, '导出失败'))
+      message.error(bulkErrorDetail(err, '导出失败'))
     }
   }
 
@@ -107,7 +107,11 @@ export default function DataManagement() {
       message.success('上传成功')
       loadFiles()
     } catch (err) {
-      message.error(apiErrorDetail(err, '上传失败'))
+      message.error(bulkErrorDetail(err, '上传失败'))
+      // 超时这一支要主动刷一次列表：客户端停止等待不等于服务端失败，实测服务端
+      // 在客户端放弃之后照样把整份文件落完了。不刷的话，用户看到的是一句「失败」
+      // 加一份已经在盘上的数据，而重试会把同一份再落一次。
+      if (isTimeoutError(err)) loadFiles()
     } finally {
       setUploading(false)
     }
