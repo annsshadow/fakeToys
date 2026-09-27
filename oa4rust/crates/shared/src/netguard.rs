@@ -50,7 +50,7 @@ fn v4_denied(o: [u8; 4]) -> bool {
         || (o[0] == 198 && (o[1] & 0xFE) == 18)      // 198.18.0.0/15 基准测试
         || (o[0] == 198 && o[1] == 51 && o[2] == 100) // 198.51.100.0/24 TEST-NET-2
         || (o[0] == 203 && o[1] == 0 && o[2] == 113) // 203.0.113.0/24 TEST-NET-3
-        || o[0] >= 224                               // 224/4 组播 + 240/4 保留 + 广播
+        || o[0] >= 224 // 224/4 组播 + 240/4 保留 + 广播
 }
 
 /// IPv6 目标段黑名单（含 v4 映射地址的递归判定）。
@@ -93,7 +93,11 @@ pub async fn validate_target(url: &reqwest::Url) -> Result<(), FetchError> {
     };
     let port = url.port_or_known_default().unwrap_or(80);
     // 字面量 IP 直接判定；hostname 解析后逐个判定。
-    if let Ok(ip) = host.trim_start_matches('[').trim_end_matches(']').parse::<IpAddr>() {
+    if let Ok(ip) = host
+        .trim_start_matches('[')
+        .trim_end_matches(']')
+        .parse::<IpAddr>()
+    {
         return if ip_allowed_for_fetch(ip) {
             Ok(())
         } else {
@@ -118,7 +122,10 @@ pub async fn validate_target(url: &reqwest::Url) -> Result<(), FetchError> {
 
 /// 带防护的远程抓取：手动跟随重定向（每跳完整校验），流式累计体积上限。
 /// 返回 (最终 URL, 字节)。
-pub async fn fetch_limited(client: &reqwest::Client, url: &str) -> Result<(String, Vec<u8>), FetchError> {
+pub async fn fetch_limited(
+    client: &reqwest::Client,
+    url: &str,
+) -> Result<(String, Vec<u8>), FetchError> {
     let mut current = reqwest::Url::parse(url).map_err(|_| FetchError::InvalidHost)?;
     for _ in 0..=MAX_REDIRECTS {
         validate_target(&current).await?;
@@ -201,10 +208,23 @@ mod tests {
     #[test]
     fn v4_private_ranges_denied() {
         for ip in [
-            "0.1.2.3", "10.0.0.1", "100.64.0.1", "100.127.255.254", "127.0.0.1",
-            "169.254.169.254", "172.16.0.1", "172.31.255.254", "192.168.1.1",
-            "192.0.2.1", "198.18.0.1", "198.19.255.254", "198.51.100.7",
-            "203.0.113.9", "224.0.0.1", "240.0.0.1", "255.255.255.255",
+            "0.1.2.3",
+            "10.0.0.1",
+            "100.64.0.1",
+            "100.127.255.254",
+            "127.0.0.1",
+            "169.254.169.254",
+            "172.16.0.1",
+            "172.31.255.254",
+            "192.168.1.1",
+            "192.0.2.1",
+            "198.18.0.1",
+            "198.19.255.254",
+            "198.51.100.7",
+            "203.0.113.9",
+            "224.0.0.1",
+            "240.0.0.1",
+            "255.255.255.255",
         ] {
             let ip: std::net::Ipv4Addr = ip.parse().unwrap();
             assert!(!ip_allowed_for_fetch(IpAddr::V4(ip)), "{ip} must be denied");
@@ -213,7 +233,14 @@ mod tests {
 
     #[test]
     fn v4_global_ranges_allowed() {
-        for ip in ["8.8.8.8", "1.1.1.1", "172.32.0.1", "100.128.0.1", "11.0.0.1", "198.20.0.1"] {
+        for ip in [
+            "8.8.8.8",
+            "1.1.1.1",
+            "172.32.0.1",
+            "100.128.0.1",
+            "11.0.0.1",
+            "198.20.0.1",
+        ] {
             let ip: std::net::Ipv4Addr = ip.parse().unwrap();
             assert!(ip_allowed_for_fetch(IpAddr::V4(ip)), "{ip} must be allowed");
         }
@@ -221,7 +248,15 @@ mod tests {
 
     #[test]
     fn v6_private_ranges_denied() {
-        for ip in ["::", "::1", "fc00::1", "fd12:3456::1", "fe80::1", "ff02::1", "2001:db8::1"] {
+        for ip in [
+            "::",
+            "::1",
+            "fc00::1",
+            "fd12:3456::1",
+            "fe80::1",
+            "ff02::1",
+            "2001:db8::1",
+        ] {
             let ip: std::net::Ipv6Addr = ip.parse().unwrap();
             assert!(!ip_allowed_for_fetch(IpAddr::V6(ip)), "{ip} must be denied");
         }

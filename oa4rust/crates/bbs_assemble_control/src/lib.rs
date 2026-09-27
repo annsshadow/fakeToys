@@ -255,7 +255,8 @@ pub async fn section_create(
     if obj
         .get("creator")
         .and_then(|v| v.as_str())
-        .map(str::trim).is_none_or(|s| s.is_empty())
+        .map(str::trim)
+        .is_none_or(|s| s.is_empty())
     {
         obj.insert(
             "creator".to_string(),

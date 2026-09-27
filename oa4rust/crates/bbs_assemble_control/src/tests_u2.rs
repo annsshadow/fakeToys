@@ -353,7 +353,11 @@ async fn test_unlandable_endpoints_return_explicit_501() {
 async fn test_attachment_binary_endpoints_not_501() {
     let st = status(Method::GET, &format!("{}/attachment/download/att-1", BASE)).await;
     assert_ne!(st, StatusCode::NOT_FOUND, "下载路由应已注册");
-    assert_ne!(st, StatusCode::NOT_IMPLEMENTED, "下载已接真实 handler，非 501");
+    assert_ne!(
+        st,
+        StatusCode::NOT_IMPLEMENTED,
+        "下载已接真实 handler，非 501"
+    );
 
     let st2 = status(
         Method::GET,

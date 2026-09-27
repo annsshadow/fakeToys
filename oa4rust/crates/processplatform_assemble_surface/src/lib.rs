@@ -504,7 +504,10 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 }
 
 #[allow(non_snake_case)]
-async fn anonymous_read_count_credential_core(pool: Extension<Pool>, credential: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn anonymous_read_count_credential_core(
+    pool: Extension<Pool>,
+    credential: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let count: i64 = client
         .query_one(
@@ -524,17 +527,26 @@ async fn anonymous_read_count_credential_core(pool: Extension<Pool>, credential:
 }
 
 #[allow(non_snake_case)]
-pub async fn anonymous_read_count_credential(pool: Extension<Pool>, axum::extract::Path(credential): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn anonymous_read_count_credential(
+    pool: Extension<Pool>,
+    axum::extract::Path(credential): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     anonymous_read_count_credential_core(pool, credential).await
 }
 
 #[allow(non_snake_case)]
-pub async fn anonymous_read_count_credential_p2(pool: Extension<Pool>, axum::extract::Path((_s0, credential)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn anonymous_read_count_credential_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, credential)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     anonymous_read_count_credential_core(pool, credential).await
 }
 
 #[allow(non_snake_case)]
-async fn anonymous_task_count_credential_core(pool: Extension<Pool>, credential: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn anonymous_task_count_credential_core(
+    pool: Extension<Pool>,
+    credential: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let count: i64 = client
         .query_one(
@@ -554,12 +566,18 @@ async fn anonymous_task_count_credential_core(pool: Extension<Pool>, credential:
 }
 
 #[allow(non_snake_case)]
-pub async fn anonymous_task_count_credential(pool: Extension<Pool>, axum::extract::Path(credential): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn anonymous_task_count_credential(
+    pool: Extension<Pool>,
+    axum::extract::Path(credential): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     anonymous_task_count_credential_core(pool, credential).await
 }
 
 #[allow(non_snake_case)]
-pub async fn anonymous_task_count_credential_p2(pool: Extension<Pool>, axum::extract::Path((_s0, credential)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn anonymous_task_count_credential_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, credential)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     anonymous_task_count_credential_core(pool, credential).await
 }
 
@@ -6869,7 +6887,11 @@ pub async fn documentversion_list_workorworkcompleted_workOrWorkCompleted(
 }
 
 #[allow(non_snake_case)]
-async fn documentversion_list_workorworkcompleted_workOrWorkCompleted_category_category_core(pool: Extension<Pool>, workOrWorkCompleted: String, category: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn documentversion_list_workorworkcompleted_workOrWorkCompleted_category_category_core(
+    pool: Extension<Pool>,
+    workOrWorkCompleted: String,
+    category: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -6916,13 +6938,33 @@ async fn documentversion_list_workorworkcompleted_workOrWorkCompleted_category_c
 }
 
 #[allow(non_snake_case)]
-pub async fn documentversion_list_workorworkcompleted_workOrWorkCompleted_category_category(pool: Extension<Pool>, axum::extract::Path((workOrWorkCompleted, category)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
-    documentversion_list_workorworkcompleted_workOrWorkCompleted_category_category_core(pool, workOrWorkCompleted, category).await
+pub async fn documentversion_list_workorworkcompleted_workOrWorkCompleted_category_category(
+    pool: Extension<Pool>,
+    axum::extract::Path((workOrWorkCompleted, category)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    documentversion_list_workorworkcompleted_workOrWorkCompleted_category_category_core(
+        pool,
+        workOrWorkCompleted,
+        category,
+    )
+    .await
 }
 
 #[allow(non_snake_case)]
-pub async fn documentversion_list_workorworkcompleted_workOrWorkCompleted_category_category_p3(pool: Extension<Pool>, axum::extract::Path((workOrWorkCompleted, category, _s2)): axum::extract::Path<(String, String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
-    documentversion_list_workorworkcompleted_workOrWorkCompleted_category_category_core(pool, workOrWorkCompleted, category).await
+pub async fn documentversion_list_workorworkcompleted_workOrWorkCompleted_category_category_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((workOrWorkCompleted, category, _s2)): axum::extract::Path<(
+        String,
+        String,
+        String,
+    )>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    documentversion_list_workorworkcompleted_workOrWorkCompleted_category_category_core(
+        pool,
+        workOrWorkCompleted,
+        category,
+    )
+    .await
 }
 
 #[allow(non_snake_case)]
@@ -7010,7 +7052,11 @@ pub async fn documentversion_id(
 }
 
 #[allow(non_snake_case)]
-async fn draft_list_my_paging_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn draft_list_my_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -7057,12 +7103,18 @@ async fn draft_list_my_paging_page_size_size_core(pool: Extension<Pool>, page: i
 }
 
 #[allow(non_snake_case)]
-pub async fn draft_list_my_paging_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn draft_list_my_paging_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     draft_list_my_paging_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn draft_list_my_paging_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn draft_list_my_paging_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     draft_list_my_paging_page_size_size_core(pool, page, size).await
 }
 
@@ -8028,7 +8080,11 @@ pub async fn form_flag_mobile(
 }
 
 #[allow(non_snake_case)]
-async fn handover_list_paging_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn handover_list_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -8075,12 +8131,18 @@ async fn handover_list_paging_page_size_size_core(pool: Extension<Pool>, page: i
 }
 
 #[allow(non_snake_case)]
-pub async fn handover_list_paging_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn handover_list_paging_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     handover_list_paging_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn handover_list_paging_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn handover_list_paging_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     handover_list_paging_page_size_size_core(pool, page, size).await
 }
 
@@ -9198,7 +9260,10 @@ pub async fn read_count_filter(
 }
 
 #[allow(non_snake_case)]
-async fn read_count_credential_core(pool: Extension<Pool>, credential: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn read_count_credential_core(
+    pool: Extension<Pool>,
+    credential: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let count: i64 = client
         .query_one(
@@ -9218,12 +9283,18 @@ async fn read_count_credential_core(pool: Extension<Pool>, credential: String) -
 }
 
 #[allow(non_snake_case)]
-pub async fn read_count_credential(pool: Extension<Pool>, axum::extract::Path(credential): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn read_count_credential(
+    pool: Extension<Pool>,
+    axum::extract::Path(credential): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     read_count_credential_core(pool, credential).await
 }
 
 #[allow(non_snake_case)]
-pub async fn read_count_credential_p2(pool: Extension<Pool>, axum::extract::Path((_s0, credential)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn read_count_credential_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, credential)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     read_count_credential_core(pool, credential).await
 }
 
@@ -9241,7 +9312,10 @@ async fn filter_attr_options(
          WHERE {value_col} IS NOT NULL AND {value_col} <> '' \
          GROUP BY {value_col} ORDER BY c DESC, v ASC"
     );
-    let rows = client.query(&sql, &[]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(&sql, &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
     Ok(Value::Array(
         rows.iter()
             .map(|r| {
@@ -9254,7 +9328,10 @@ async fn filter_attr_options(
                         "name".to_string(),
                         Value::String(if n.is_empty() { v } else { n }),
                     ),
-                    ("count".to_string(), Value::Number(serde_json::Number::from(c))),
+                    (
+                        "count".to_string(),
+                        Value::Number(serde_json::Number::from(c)),
+                    ),
                 ]))
             })
             .collect(),
@@ -9268,7 +9345,8 @@ pub async fn read_filter_attribute(
     let data = Value::Object(serde_json::Map::from_iter([
         (
             "applicationList".to_string(),
-            filter_attr_options(&client, "PP_C_READ", "xapplication", "\"xapplicationName\"").await?,
+            filter_attr_options(&client, "PP_C_READ", "xapplication", "\"xapplicationName\"")
+                .await?,
         ),
         (
             "processList".to_string(),
@@ -9343,7 +9421,10 @@ pub async fn read_list_count_application(
 }
 
 #[allow(non_snake_case)]
-async fn read_list_count_application_applicationFlag_process_core(pool: Extension<Pool>, applicationFlag: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn read_list_count_application_applicationFlag_process_core(
+    pool: Extension<Pool>,
+    applicationFlag: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -9394,12 +9475,18 @@ async fn read_list_count_application_applicationFlag_process_core(pool: Extensio
 }
 
 #[allow(non_snake_case)]
-pub async fn read_list_count_application_applicationFlag_process(pool: Extension<Pool>, axum::extract::Path(applicationFlag): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn read_list_count_application_applicationFlag_process(
+    pool: Extension<Pool>,
+    axum::extract::Path(applicationFlag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     read_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
 #[allow(non_snake_case)]
-pub async fn read_list_count_application_applicationFlag_process_p2(pool: Extension<Pool>, axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn read_list_count_application_applicationFlag_process_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     read_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
@@ -9446,7 +9533,11 @@ pub async fn read_list_date_date_manage(
 }
 
 #[allow(non_snake_case)]
-async fn read_list_filter_page_size_size_manage_core(pool: Extension<Pool>, page: i64, _size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn read_list_filter_page_size_size_manage_core(
+    pool: Extension<Pool>,
+    page: i64,
+    _size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -9485,12 +9576,18 @@ async fn read_list_filter_page_size_size_manage_core(pool: Extension<Pool>, page
 }
 
 #[allow(non_snake_case)]
-pub async fn read_list_filter_page_size_size_manage(pool: Extension<Pool>, axum::extract::Path((page, _size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn read_list_filter_page_size_size_manage(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, _size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     read_list_filter_page_size_size_manage_core(pool, page, _size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn read_list_filter_page_size_size_manage_p3(pool: Extension<Pool>, axum::extract::Path((page, _size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn read_list_filter_page_size_size_manage_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, _size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     read_list_filter_page_size_size_manage_core(pool, page, _size).await
 }
 
@@ -9545,7 +9642,11 @@ pub async fn read_list_job_job(
 }
 
 #[allow(non_snake_case)]
-async fn read_list_my_filter_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn read_list_my_filter_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -9592,17 +9693,27 @@ async fn read_list_my_filter_page_size_size_core(pool: Extension<Pool>, page: i6
 }
 
 #[allow(non_snake_case)]
-pub async fn read_list_my_filter_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn read_list_my_filter_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     read_list_my_filter_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn read_list_my_filter_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn read_list_my_filter_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     read_list_my_filter_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-async fn read_list_my_paging_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn read_list_my_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -9649,12 +9760,18 @@ async fn read_list_my_paging_page_size_size_core(pool: Extension<Pool>, page: i6
 }
 
 #[allow(non_snake_case)]
-pub async fn read_list_my_paging_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn read_list_my_paging_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     read_list_my_paging_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn read_list_my_paging_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn read_list_my_paging_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     read_list_my_paging_page_size_size_core(pool, page, size).await
 }
 
@@ -10263,7 +10380,11 @@ pub async fn read_v2_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 }
 
 #[allow(non_snake_case)]
-async fn read_v2_list_create_paging_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn read_v2_list_create_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -10310,12 +10431,18 @@ async fn read_v2_list_create_paging_page_size_size_core(pool: Extension<Pool>, p
 }
 
 #[allow(non_snake_case)]
-pub async fn read_v2_list_create_paging_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn read_v2_list_create_paging_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     read_v2_list_create_paging_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn read_v2_list_create_paging_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn read_v2_list_create_paging_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     read_v2_list_create_paging_page_size_size_core(pool, page, size).await
 }
 
@@ -10420,7 +10547,11 @@ pub async fn read_v2_list_create_id_prev_count(
 }
 
 #[allow(non_snake_case)]
-async fn read_v2_list_paging_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn read_v2_list_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -10467,12 +10598,18 @@ async fn read_v2_list_paging_page_size_size_core(pool: Extension<Pool>, page: i6
 }
 
 #[allow(non_snake_case)]
-pub async fn read_v2_list_paging_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn read_v2_list_paging_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     read_v2_list_paging_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn read_v2_list_paging_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn read_v2_list_paging_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     read_v2_list_paging_page_size_size_core(pool, page, size).await
 }
 
@@ -11231,7 +11368,10 @@ pub async fn read_id_reset_manage_mockputtopost(
 }
 
 #[allow(non_snake_case)]
-async fn readcompleted_count_credential_core(pool: Extension<Pool>, credential: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn readcompleted_count_credential_core(
+    pool: Extension<Pool>,
+    credential: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let count: i64 = client
         .query_one(
@@ -11251,12 +11391,18 @@ async fn readcompleted_count_credential_core(pool: Extension<Pool>, credential: 
 }
 
 #[allow(non_snake_case)]
-pub async fn readcompleted_count_credential(pool: Extension<Pool>, axum::extract::Path(credential): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn readcompleted_count_credential(
+    pool: Extension<Pool>,
+    axum::extract::Path(credential): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     readcompleted_count_credential_core(pool, credential).await
 }
 
 #[allow(non_snake_case)]
-pub async fn readcompleted_count_credential_p2(pool: Extension<Pool>, axum::extract::Path((_s0, credential)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn readcompleted_count_credential_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, credential)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     readcompleted_count_credential_core(pool, credential).await
 }
 
@@ -11268,11 +11414,23 @@ pub async fn readcompleted_filter_attribute(
     let data = Value::Object(serde_json::Map::from_iter([
         (
             "applicationList".to_string(),
-            filter_attr_options(&client, "PP_C_READCOMPLETED", "xapplication", "\"xapplicationName\"").await?,
+            filter_attr_options(
+                &client,
+                "PP_C_READCOMPLETED",
+                "xapplication",
+                "\"xapplicationName\"",
+            )
+            .await?,
         ),
         (
             "processList".to_string(),
-            filter_attr_options(&client, "PP_C_READCOMPLETED", "xprocess", "\"xprocessName\"").await?,
+            filter_attr_options(
+                &client,
+                "PP_C_READCOMPLETED",
+                "xprocess",
+                "\"xprocessName\"",
+            )
+            .await?,
         ),
         (
             "personList".to_string(),
@@ -11343,7 +11501,10 @@ pub async fn readcompleted_list_count_application(
 }
 
 #[allow(non_snake_case)]
-async fn readcompleted_list_count_application_applicationFlag_process_core(pool: Extension<Pool>, applicationFlag: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn readcompleted_list_count_application_applicationFlag_process_core(
+    pool: Extension<Pool>,
+    applicationFlag: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -11394,12 +11555,18 @@ async fn readcompleted_list_count_application_applicationFlag_process_core(pool:
 }
 
 #[allow(non_snake_case)]
-pub async fn readcompleted_list_count_application_applicationFlag_process(pool: Extension<Pool>, axum::extract::Path(applicationFlag): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn readcompleted_list_count_application_applicationFlag_process(
+    pool: Extension<Pool>,
+    axum::extract::Path(applicationFlag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     readcompleted_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
 #[allow(non_snake_case)]
-pub async fn readcompleted_list_count_application_applicationFlag_process_p2(pool: Extension<Pool>, axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn readcompleted_list_count_application_applicationFlag_process_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     readcompleted_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
@@ -11446,7 +11613,11 @@ pub async fn readcompleted_list_date_date_manage(
 }
 
 #[allow(non_snake_case)]
-async fn readcompleted_list_filter_page_size_size_manage_core(pool: Extension<Pool>, page: i64, _size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn readcompleted_list_filter_page_size_size_manage_core(
+    pool: Extension<Pool>,
+    page: i64,
+    _size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -11485,12 +11656,18 @@ async fn readcompleted_list_filter_page_size_size_manage_core(pool: Extension<Po
 }
 
 #[allow(non_snake_case)]
-pub async fn readcompleted_list_filter_page_size_size_manage(pool: Extension<Pool>, axum::extract::Path((page, _size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn readcompleted_list_filter_page_size_size_manage(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, _size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     readcompleted_list_filter_page_size_size_manage_core(pool, page, _size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn readcompleted_list_filter_page_size_size_manage_p3(pool: Extension<Pool>, axum::extract::Path((page, _size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn readcompleted_list_filter_page_size_size_manage_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, _size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     readcompleted_list_filter_page_size_size_manage_core(pool, page, _size).await
 }
 
@@ -11545,7 +11722,11 @@ pub async fn readcompleted_list_job_job(
 }
 
 #[allow(non_snake_case)]
-async fn readcompleted_list_my_filter_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn readcompleted_list_my_filter_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -11592,17 +11773,27 @@ async fn readcompleted_list_my_filter_page_size_size_core(pool: Extension<Pool>,
 }
 
 #[allow(non_snake_case)]
-pub async fn readcompleted_list_my_filter_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn readcompleted_list_my_filter_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     readcompleted_list_my_filter_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn readcompleted_list_my_filter_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn readcompleted_list_my_filter_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     readcompleted_list_my_filter_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-async fn readcompleted_list_my_paging_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn readcompleted_list_my_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -11649,12 +11840,18 @@ async fn readcompleted_list_my_paging_page_size_size_core(pool: Extension<Pool>,
 }
 
 #[allow(non_snake_case)]
-pub async fn readcompleted_list_my_paging_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn readcompleted_list_my_paging_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     readcompleted_list_my_paging_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn readcompleted_list_my_paging_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn readcompleted_list_my_paging_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     readcompleted_list_my_paging_page_size_size_core(pool, page, size).await
 }
 
@@ -12225,7 +12422,11 @@ pub async fn readcompleted_v2_list(
 }
 
 #[allow(non_snake_case)]
-async fn readcompleted_v2_list_create_paging_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn readcompleted_v2_list_create_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -12272,12 +12473,18 @@ async fn readcompleted_v2_list_create_paging_page_size_size_core(pool: Extension
 }
 
 #[allow(non_snake_case)]
-pub async fn readcompleted_v2_list_create_paging_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn readcompleted_v2_list_create_paging_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     readcompleted_v2_list_create_paging_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn readcompleted_v2_list_create_paging_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn readcompleted_v2_list_create_paging_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     readcompleted_v2_list_create_paging_page_size_size_core(pool, page, size).await
 }
 
@@ -12382,7 +12589,11 @@ pub async fn readcompleted_v2_list_create_id_prev_count(
 }
 
 #[allow(non_snake_case)]
-async fn readcompleted_v2_list_paging_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn readcompleted_v2_list_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -12429,12 +12640,18 @@ async fn readcompleted_v2_list_paging_page_size_size_core(pool: Extension<Pool>,
 }
 
 #[allow(non_snake_case)]
-pub async fn readcompleted_v2_list_paging_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn readcompleted_v2_list_paging_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     readcompleted_v2_list_paging_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn readcompleted_v2_list_paging_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn readcompleted_v2_list_paging_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     readcompleted_v2_list_paging_page_size_size_core(pool, page, size).await
 }
 
@@ -13059,7 +13276,12 @@ pub async fn record_list_workorworkcompleted_workOrWorkCompleted(
 }
 
 #[allow(non_snake_case)]
-async fn record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size_core(pool: Extension<Pool>, workOrWorkCompleted: String, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    workOrWorkCompleted: String,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -13106,13 +13328,36 @@ async fn record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_si
 }
 
 #[allow(non_snake_case)]
-pub async fn record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size(pool: Extension<Pool>, axum::extract::Path((workOrWorkCompleted, page, size)): axum::extract::Path<(String, i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
-    record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size_core(pool, workOrWorkCompleted, page, size).await
+pub async fn record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((workOrWorkCompleted, page, size)): axum::extract::Path<(String, i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size_core(
+        pool,
+        workOrWorkCompleted,
+        page,
+        size,
+    )
+    .await
 }
 
 #[allow(non_snake_case)]
-pub async fn record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size_p4(pool: Extension<Pool>, axum::extract::Path((workOrWorkCompleted, page, size, _s3)): axum::extract::Path<(String, i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
-    record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size_core(pool, workOrWorkCompleted, page, size).await
+pub async fn record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size_p4(
+    pool: Extension<Pool>,
+    axum::extract::Path((workOrWorkCompleted, page, size, _s3)): axum::extract::Path<(
+        String,
+        i64,
+        i64,
+        String,
+    )>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size_core(
+        pool,
+        workOrWorkCompleted,
+        page,
+        size,
+    )
+    .await
 }
 
 #[allow(non_snake_case)]
@@ -13291,7 +13536,10 @@ pub async fn review_count_application(
 }
 
 #[allow(non_snake_case)]
-async fn review_count_person_credential_core(pool: Extension<Pool>, credential: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn review_count_person_credential_core(
+    pool: Extension<Pool>,
+    credential: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let count: i64 = client
         .query_one(
@@ -13311,12 +13559,18 @@ async fn review_count_person_credential_core(pool: Extension<Pool>, credential: 
 }
 
 #[allow(non_snake_case)]
-pub async fn review_count_person_credential(pool: Extension<Pool>, axum::extract::Path(credential): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn review_count_person_credential(
+    pool: Extension<Pool>,
+    axum::extract::Path(credential): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     review_count_person_credential_core(pool, credential).await
 }
 
 #[allow(non_snake_case)]
-pub async fn review_count_person_credential_p2(pool: Extension<Pool>, axum::extract::Path((_s0, credential)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn review_count_person_credential_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, credential)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     review_count_person_credential_core(pool, credential).await
 }
 
@@ -13422,7 +13676,13 @@ pub async fn review_filter_attribute(
     let data = Value::Object(serde_json::Map::from_iter([
         (
             "applicationList".to_string(),
-            filter_attr_options(&client, "PP_C_REVIEW", "xapplication", "\"xapplicationName\"").await?,
+            filter_attr_options(
+                &client,
+                "PP_C_REVIEW",
+                "xapplication",
+                "\"xapplicationName\"",
+            )
+            .await?,
         ),
         (
             "processList".to_string(),
@@ -13430,7 +13690,13 @@ pub async fn review_filter_attribute(
         ),
         (
             "creatorPersonList".to_string(),
-            filter_attr_options(&client, "PP_C_REVIEW", "\"xcreatorPerson\"", "\"xcreatorPerson\"").await?,
+            filter_attr_options(
+                &client,
+                "PP_C_REVIEW",
+                "\"xcreatorPerson\"",
+                "\"xcreatorPerson\"",
+            )
+            .await?,
         ),
     ]));
     Ok(Json(ActionResult::success(data)))
@@ -13486,7 +13752,13 @@ pub async fn review_filter_entry(
     let data = Value::Object(serde_json::Map::from_iter([
         (
             "applicationList".to_string(),
-            filter_attr_options(&client, "PP_C_REVIEW", "xapplication", "\"xapplicationName\"").await?,
+            filter_attr_options(
+                &client,
+                "PP_C_REVIEW",
+                "xapplication",
+                "\"xapplicationName\"",
+            )
+            .await?,
         ),
         (
             "processList".to_string(),
@@ -13494,7 +13766,13 @@ pub async fn review_filter_entry(
         ),
         (
             "creatorPersonList".to_string(),
-            filter_attr_options(&client, "PP_C_REVIEW", "\"xcreatorPerson\"", "\"xcreatorPerson\"").await?,
+            filter_attr_options(
+                &client,
+                "PP_C_REVIEW",
+                "\"xcreatorPerson\"",
+                "\"xcreatorPerson\"",
+            )
+            .await?,
         ),
     ]));
     Ok(Json(ActionResult::success(data)))
@@ -13613,7 +13891,11 @@ pub async fn review_v2_list(pool: Extension<Pool>) -> Result<Json<ActionResult<V
 }
 
 #[allow(non_snake_case)]
-async fn review_v2_list_create_paging_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn review_v2_list_create_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -13660,12 +13942,18 @@ async fn review_v2_list_create_paging_page_size_size_core(pool: Extension<Pool>,
 }
 
 #[allow(non_snake_case)]
-pub async fn review_v2_list_create_paging_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn review_v2_list_create_paging_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     review_v2_list_create_paging_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn review_v2_list_create_paging_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn review_v2_list_create_paging_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     review_v2_list_create_paging_page_size_size_core(pool, page, size).await
 }
 
@@ -13770,7 +14058,11 @@ pub async fn review_v2_list_create_id_prev_count(
 }
 
 #[allow(non_snake_case)]
-async fn review_v2_list_paging_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn review_v2_list_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -13817,17 +14109,27 @@ async fn review_v2_list_paging_page_size_size_core(pool: Extension<Pool>, page: 
 }
 
 #[allow(non_snake_case)]
-pub async fn review_v2_list_paging_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn review_v2_list_paging_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     review_v2_list_paging_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn review_v2_list_paging_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn review_v2_list_paging_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     review_v2_list_paging_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-async fn review_v2_list_paging_page_size_size_manage_core(pool: Extension<Pool>, page: i64, _size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn review_v2_list_paging_page_size_size_manage_core(
+    pool: Extension<Pool>,
+    page: i64,
+    _size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -13866,12 +14168,18 @@ async fn review_v2_list_paging_page_size_size_manage_core(pool: Extension<Pool>,
 }
 
 #[allow(non_snake_case)]
-pub async fn review_v2_list_paging_page_size_size_manage(pool: Extension<Pool>, axum::extract::Path((page, _size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn review_v2_list_paging_page_size_size_manage(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, _size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     review_v2_list_paging_page_size_size_manage_core(pool, page, _size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn review_v2_list_paging_page_size_size_manage_p3(pool: Extension<Pool>, axum::extract::Path((page, _size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn review_v2_list_paging_page_size_size_manage_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, _size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     review_v2_list_paging_page_size_size_manage_core(pool, page, _size).await
 }
 
@@ -14563,7 +14871,11 @@ pub async fn serialnumber_list_application_applicationFlag(
 }
 
 #[allow(non_snake_case)]
-async fn serialnumber_list_paging_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn serialnumber_list_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -14610,12 +14922,18 @@ async fn serialnumber_list_paging_page_size_size_core(pool: Extension<Pool>, pag
 }
 
 #[allow(non_snake_case)]
-pub async fn serialnumber_list_paging_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn serialnumber_list_paging_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     serialnumber_list_paging_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn serialnumber_list_paging_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn serialnumber_list_paging_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     serialnumber_list_paging_page_size_size_core(pool, page, size).await
 }
 
@@ -15241,7 +15559,10 @@ pub async fn task_count_filter(
 }
 
 #[allow(non_snake_case)]
-async fn task_count_credential_core(pool: Extension<Pool>, credential: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn task_count_credential_core(
+    pool: Extension<Pool>,
+    credential: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let count: i64 = client
         .query_one(
@@ -15261,12 +15582,18 @@ async fn task_count_credential_core(pool: Extension<Pool>, credential: String) -
 }
 
 #[allow(non_snake_case)]
-pub async fn task_count_credential(pool: Extension<Pool>, axum::extract::Path(credential): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn task_count_credential(
+    pool: Extension<Pool>,
+    axum::extract::Path(credential): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     task_count_credential_core(pool, credential).await
 }
 
 #[allow(non_snake_case)]
-pub async fn task_count_credential_p2(pool: Extension<Pool>, axum::extract::Path((_s0, credential)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn task_count_credential_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, credential)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     task_count_credential_core(pool, credential).await
 }
 
@@ -15278,7 +15605,8 @@ pub async fn task_filter_attribute(
     let data = Value::Object(serde_json::Map::from_iter([
         (
             "applicationList".to_string(),
-            filter_attr_options(&client, "PP_C_TASK", "xapplication", "\"xapplicationName\"").await?,
+            filter_attr_options(&client, "PP_C_TASK", "xapplication", "\"xapplicationName\"")
+                .await?,
         ),
         (
             "processList".to_string(),
@@ -15357,7 +15685,10 @@ pub async fn task_list_count_application(
 }
 
 #[allow(non_snake_case)]
-async fn task_list_count_application_applicationFlag_process_core(pool: Extension<Pool>, applicationFlag: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn task_list_count_application_applicationFlag_process_core(
+    pool: Extension<Pool>,
+    applicationFlag: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -15408,12 +15739,18 @@ async fn task_list_count_application_applicationFlag_process_core(pool: Extensio
 }
 
 #[allow(non_snake_case)]
-pub async fn task_list_count_application_applicationFlag_process(pool: Extension<Pool>, axum::extract::Path(applicationFlag): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn task_list_count_application_applicationFlag_process(
+    pool: Extension<Pool>,
+    axum::extract::Path(applicationFlag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     task_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
 #[allow(non_snake_case)]
-pub async fn task_list_count_application_applicationFlag_process_p2(pool: Extension<Pool>, axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn task_list_count_application_applicationFlag_process_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     task_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
@@ -15460,7 +15797,11 @@ pub async fn task_list_date_date_hour_hour_exclude_draft_isExcludeDraft_manage(
 }
 
 #[allow(non_snake_case)]
-async fn task_list_filter_page_size_size_manage_core(pool: Extension<Pool>, page: i64, _size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn task_list_filter_page_size_size_manage_core(
+    pool: Extension<Pool>,
+    page: i64,
+    _size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -15499,12 +15840,18 @@ async fn task_list_filter_page_size_size_manage_core(pool: Extension<Pool>, page
 }
 
 #[allow(non_snake_case)]
-pub async fn task_list_filter_page_size_size_manage(pool: Extension<Pool>, axum::extract::Path((page, _size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn task_list_filter_page_size_size_manage(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, _size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     task_list_filter_page_size_size_manage_core(pool, page, _size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn task_list_filter_page_size_size_manage_p3(pool: Extension<Pool>, axum::extract::Path((page, _size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn task_list_filter_page_size_size_manage_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, _size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     task_list_filter_page_size_size_manage_core(pool, page, _size).await
 }
 
@@ -15559,7 +15906,11 @@ pub async fn task_list_job_job(
 }
 
 #[allow(non_snake_case)]
-async fn task_list_my_filter_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn task_list_my_filter_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -15606,17 +15957,27 @@ async fn task_list_my_filter_page_size_size_core(pool: Extension<Pool>, page: i6
 }
 
 #[allow(non_snake_case)]
-pub async fn task_list_my_filter_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn task_list_my_filter_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     task_list_my_filter_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn task_list_my_filter_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn task_list_my_filter_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     task_list_my_filter_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-async fn task_list_my_paging_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn task_list_my_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     // 新栈契约优先：发起 work 写入 x_task，「待我处理」列表读 x_task（含 work 关联与
     // 未完成状态过滤），时间戳以 to_char 转文本避免按 String 反序列化 panic。分页 offset=(page-1)*size。
@@ -15679,12 +16040,18 @@ async fn task_list_my_paging_page_size_size_core(pool: Extension<Pool>, page: i6
 }
 
 #[allow(non_snake_case)]
-pub async fn task_list_my_paging_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn task_list_my_paging_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     task_list_my_paging_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn task_list_my_paging_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn task_list_my_paging_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     task_list_my_paging_page_size_size_core(pool, page, size).await
 }
 
@@ -16411,7 +16778,11 @@ pub async fn task_v2_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 }
 
 #[allow(non_snake_case)]
-async fn task_v2_list_create_paging_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn task_v2_list_create_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -16458,12 +16829,18 @@ async fn task_v2_list_create_paging_page_size_size_core(pool: Extension<Pool>, p
 }
 
 #[allow(non_snake_case)]
-pub async fn task_v2_list_create_paging_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn task_v2_list_create_paging_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     task_v2_list_create_paging_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn task_v2_list_create_paging_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn task_v2_list_create_paging_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     task_v2_list_create_paging_page_size_size_core(pool, page, size).await
 }
 
@@ -16568,7 +16945,11 @@ pub async fn task_v2_list_create_id_prev_count(
 }
 
 #[allow(non_snake_case)]
-async fn task_v2_list_paging_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn task_v2_list_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -16615,12 +16996,18 @@ async fn task_v2_list_paging_page_size_size_core(pool: Extension<Pool>, page: i6
 }
 
 #[allow(non_snake_case)]
-pub async fn task_v2_list_paging_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn task_v2_list_paging_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     task_v2_list_paging_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn task_v2_list_paging_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn task_v2_list_paging_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     task_v2_list_paging_page_size_size_core(pool, page, size).await
 }
 
@@ -17739,7 +18126,10 @@ pub async fn task_id_will(
 }
 
 #[allow(non_snake_case)]
-async fn taskcompleted_count_credential_core(pool: Extension<Pool>, credential: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn taskcompleted_count_credential_core(
+    pool: Extension<Pool>,
+    credential: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let count: i64 = client
         .query_one(
@@ -17759,12 +18149,18 @@ async fn taskcompleted_count_credential_core(pool: Extension<Pool>, credential: 
 }
 
 #[allow(non_snake_case)]
-pub async fn taskcompleted_count_credential(pool: Extension<Pool>, axum::extract::Path(credential): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn taskcompleted_count_credential(
+    pool: Extension<Pool>,
+    axum::extract::Path(credential): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     taskcompleted_count_credential_core(pool, credential).await
 }
 
 #[allow(non_snake_case)]
-pub async fn taskcompleted_count_credential_p2(pool: Extension<Pool>, axum::extract::Path((_s0, credential)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn taskcompleted_count_credential_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, credential)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     taskcompleted_count_credential_core(pool, credential).await
 }
 
@@ -17776,15 +18172,33 @@ pub async fn taskcompleted_filter_attribute(
     let data = Value::Object(serde_json::Map::from_iter([
         (
             "applicationList".to_string(),
-            filter_attr_options(&client, "PP_C_TASKCOMPLETED", "xapplication", "\"xapplicationName\"").await?,
+            filter_attr_options(
+                &client,
+                "PP_C_TASKCOMPLETED",
+                "xapplication",
+                "\"xapplicationName\"",
+            )
+            .await?,
         ),
         (
             "processList".to_string(),
-            filter_attr_options(&client, "PP_C_TASKCOMPLETED", "xprocess", "\"xprocessName\"").await?,
+            filter_attr_options(
+                &client,
+                "PP_C_TASKCOMPLETED",
+                "xprocess",
+                "\"xprocessName\"",
+            )
+            .await?,
         ),
         (
             "creatorPersonList".to_string(),
-            filter_attr_options(&client, "PP_C_TASKCOMPLETED", "\"xcreatorPerson\"", "\"xcreatorPerson\"").await?,
+            filter_attr_options(
+                &client,
+                "PP_C_TASKCOMPLETED",
+                "\"xcreatorPerson\"",
+                "\"xcreatorPerson\"",
+            )
+            .await?,
         ),
         (
             "personList".to_string(),
@@ -17855,7 +18269,10 @@ pub async fn taskcompleted_list_count_application(
 }
 
 #[allow(non_snake_case)]
-async fn taskcompleted_list_count_application_applicationFlag_process_core(pool: Extension<Pool>, applicationFlag: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn taskcompleted_list_count_application_applicationFlag_process_core(
+    pool: Extension<Pool>,
+    applicationFlag: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -17906,12 +18323,18 @@ async fn taskcompleted_list_count_application_applicationFlag_process_core(pool:
 }
 
 #[allow(non_snake_case)]
-pub async fn taskcompleted_list_count_application_applicationFlag_process(pool: Extension<Pool>, axum::extract::Path(applicationFlag): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn taskcompleted_list_count_application_applicationFlag_process(
+    pool: Extension<Pool>,
+    axum::extract::Path(applicationFlag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     taskcompleted_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
 #[allow(non_snake_case)]
-pub async fn taskcompleted_list_count_application_applicationFlag_process_p2(pool: Extension<Pool>, axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn taskcompleted_list_count_application_applicationFlag_process_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     taskcompleted_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
@@ -17958,7 +18381,11 @@ pub async fn taskcompleted_list_date_date_hour_hour_manage(
 }
 
 #[allow(non_snake_case)]
-async fn taskcompleted_list_filter_page_size_size_manage_core(pool: Extension<Pool>, page: i64, _size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn taskcompleted_list_filter_page_size_size_manage_core(
+    pool: Extension<Pool>,
+    page: i64,
+    _size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -17997,12 +18424,18 @@ async fn taskcompleted_list_filter_page_size_size_manage_core(pool: Extension<Po
 }
 
 #[allow(non_snake_case)]
-pub async fn taskcompleted_list_filter_page_size_size_manage(pool: Extension<Pool>, axum::extract::Path((page, _size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn taskcompleted_list_filter_page_size_size_manage(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, _size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     taskcompleted_list_filter_page_size_size_manage_core(pool, page, _size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn taskcompleted_list_filter_page_size_size_manage_p3(pool: Extension<Pool>, axum::extract::Path((page, _size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn taskcompleted_list_filter_page_size_size_manage_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, _size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     taskcompleted_list_filter_page_size_size_manage_core(pool, page, _size).await
 }
 
@@ -18057,7 +18490,11 @@ pub async fn taskcompleted_list_job_job(
 }
 
 #[allow(non_snake_case)]
-async fn taskcompleted_list_my_filter_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn taskcompleted_list_my_filter_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -18104,17 +18541,27 @@ async fn taskcompleted_list_my_filter_page_size_size_core(pool: Extension<Pool>,
 }
 
 #[allow(non_snake_case)]
-pub async fn taskcompleted_list_my_filter_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn taskcompleted_list_my_filter_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     taskcompleted_list_my_filter_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn taskcompleted_list_my_filter_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn taskcompleted_list_my_filter_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     taskcompleted_list_my_filter_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-async fn taskcompleted_list_my_paging_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn taskcompleted_list_my_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -18161,12 +18608,18 @@ async fn taskcompleted_list_my_paging_page_size_size_core(pool: Extension<Pool>,
 }
 
 #[allow(non_snake_case)]
-pub async fn taskcompleted_list_my_paging_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn taskcompleted_list_my_paging_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     taskcompleted_list_my_paging_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn taskcompleted_list_my_paging_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn taskcompleted_list_my_paging_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     taskcompleted_list_my_paging_page_size_size_core(pool, page, size).await
 }
 
@@ -18829,7 +19282,11 @@ pub async fn taskcompleted_v2_list(
 }
 
 #[allow(non_snake_case)]
-async fn taskcompleted_v2_list_create_paging_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn taskcompleted_v2_list_create_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -18876,12 +19333,18 @@ async fn taskcompleted_v2_list_create_paging_page_size_size_core(pool: Extension
 }
 
 #[allow(non_snake_case)]
-pub async fn taskcompleted_v2_list_create_paging_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn taskcompleted_v2_list_create_paging_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     taskcompleted_v2_list_create_paging_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn taskcompleted_v2_list_create_paging_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn taskcompleted_v2_list_create_paging_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     taskcompleted_v2_list_create_paging_page_size_size_core(pool, page, size).await
 }
 
@@ -18986,7 +19449,11 @@ pub async fn taskcompleted_v2_list_create_id_prev_count(
 }
 
 #[allow(non_snake_case)]
-async fn taskcompleted_v2_list_paging_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn taskcompleted_v2_list_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -19033,12 +19500,18 @@ async fn taskcompleted_v2_list_paging_page_size_size_core(pool: Extension<Pool>,
 }
 
 #[allow(non_snake_case)]
-pub async fn taskcompleted_v2_list_paging_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn taskcompleted_v2_list_paging_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     taskcompleted_v2_list_paging_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn taskcompleted_v2_list_paging_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn taskcompleted_v2_list_paging_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     taskcompleted_v2_list_paging_page_size_size_core(pool, page, size).await
 }
 
@@ -19561,7 +20034,10 @@ pub async fn work_application_applicationFlag_process_processFlag(
 }
 
 #[allow(non_snake_case)]
-async fn work_count_credential_core(pool: Extension<Pool>, credential: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn work_count_credential_core(
+    pool: Extension<Pool>,
+    credential: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let count: i64 = client
         .query_one(
@@ -19581,12 +20057,18 @@ async fn work_count_credential_core(pool: Extension<Pool>, credential: String) -
 }
 
 #[allow(non_snake_case)]
-pub async fn work_count_credential(pool: Extension<Pool>, axum::extract::Path(credential): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_count_credential(
+    pool: Extension<Pool>,
+    axum::extract::Path(credential): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_count_credential_core(pool, credential).await
 }
 
 #[allow(non_snake_case)]
-pub async fn work_count_credential_p2(pool: Extension<Pool>, axum::extract::Path((_s0, credential)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_count_credential_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, credential)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_count_credential_core(pool, credential).await
 }
 
@@ -19739,7 +20221,10 @@ pub async fn work_list_count_application(
 }
 
 #[allow(non_snake_case)]
-async fn work_list_count_application_applicationFlag_process_core(pool: Extension<Pool>, applicationFlag: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn work_list_count_application_applicationFlag_process_core(
+    pool: Extension<Pool>,
+    applicationFlag: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -19790,17 +20275,26 @@ async fn work_list_count_application_applicationFlag_process_core(pool: Extensio
 }
 
 #[allow(non_snake_case)]
-pub async fn work_list_count_application_applicationFlag_process(pool: Extension<Pool>, axum::extract::Path(applicationFlag): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_list_count_application_applicationFlag_process(
+    pool: Extension<Pool>,
+    axum::extract::Path(applicationFlag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
 #[allow(non_snake_case)]
-pub async fn work_list_count_application_applicationFlag_process_p2(pool: Extension<Pool>, axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_list_count_application_applicationFlag_process_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
 #[allow(non_snake_case)]
-async fn work_list_count_application_applicationFlag_process_manage_core(pool: Extension<Pool>, applicationFlag: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn work_list_count_application_applicationFlag_process_manage_core(
+    pool: Extension<Pool>,
+    applicationFlag: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -19839,17 +20333,27 @@ async fn work_list_count_application_applicationFlag_process_manage_core(pool: E
 }
 
 #[allow(non_snake_case)]
-pub async fn work_list_count_application_applicationFlag_process_manage(pool: Extension<Pool>, axum::extract::Path(applicationFlag): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_list_count_application_applicationFlag_process_manage(
+    pool: Extension<Pool>,
+    axum::extract::Path(applicationFlag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_list_count_application_applicationFlag_process_manage_core(pool, applicationFlag).await
 }
 
 #[allow(non_snake_case)]
-pub async fn work_list_count_application_applicationFlag_process_manage_p2(pool: Extension<Pool>, axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_list_count_application_applicationFlag_process_manage_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_list_count_application_applicationFlag_process_manage_core(pool, applicationFlag).await
 }
 
 #[allow(non_snake_case)]
-async fn work_list_filter_page_size_size_manage_core(pool: Extension<Pool>, page: i64, _size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn work_list_filter_page_size_size_manage_core(
+    pool: Extension<Pool>,
+    page: i64,
+    _size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -19888,17 +20392,27 @@ async fn work_list_filter_page_size_size_manage_core(pool: Extension<Pool>, page
 }
 
 #[allow(non_snake_case)]
-pub async fn work_list_filter_page_size_size_manage(pool: Extension<Pool>, axum::extract::Path((page, _size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_list_filter_page_size_size_manage(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, _size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_list_filter_page_size_size_manage_core(pool, page, _size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn work_list_filter_page_size_size_manage_p3(pool: Extension<Pool>, axum::extract::Path((page, _size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_list_filter_page_size_size_manage_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, _size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_list_filter_page_size_size_manage_core(pool, page, _size).await
 }
 
 #[allow(non_snake_case)]
-async fn work_list_my_paging_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn work_list_my_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     // 发起 work 写入 x_work（新栈），故「我发起的」列表读 x_work 并回带 title；
     // 时间戳列以 to_char 转文本，避免按 String 反序列化 panic。分页 offset=(page-1)*size。
@@ -19956,17 +20470,28 @@ async fn work_list_my_paging_page_size_size_core(pool: Extension<Pool>, page: i6
 }
 
 #[allow(non_snake_case)]
-pub async fn work_list_my_paging_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_list_my_paging_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_list_my_paging_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn work_list_my_paging_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_list_my_paging_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_list_my_paging_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-async fn work_list_paging_page_size_size_application_applicationFlag_filter_manage_core(pool: Extension<Pool>, page: i64, _size: i64, _applicationFlag: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn work_list_paging_page_size_size_application_applicationFlag_filter_manage_core(
+    pool: Extension<Pool>,
+    page: i64,
+    _size: i64,
+    _applicationFlag: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -20005,13 +20530,36 @@ async fn work_list_paging_page_size_size_application_applicationFlag_filter_mana
 }
 
 #[allow(non_snake_case)]
-pub async fn work_list_paging_page_size_size_application_applicationFlag_filter_manage(pool: Extension<Pool>, axum::extract::Path((page, _size, _applicationFlag)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
-    work_list_paging_page_size_size_application_applicationFlag_filter_manage_core(pool, page, _size, _applicationFlag).await
+pub async fn work_list_paging_page_size_size_application_applicationFlag_filter_manage(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, _size, _applicationFlag)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    work_list_paging_page_size_size_application_applicationFlag_filter_manage_core(
+        pool,
+        page,
+        _size,
+        _applicationFlag,
+    )
+    .await
 }
 
 #[allow(non_snake_case)]
-pub async fn work_list_paging_page_size_size_application_applicationFlag_filter_manage_p4(pool: Extension<Pool>, axum::extract::Path((page, _size, _s2, _applicationFlag)): axum::extract::Path<(i64, i64, String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
-    work_list_paging_page_size_size_application_applicationFlag_filter_manage_core(pool, page, _size, _applicationFlag).await
+pub async fn work_list_paging_page_size_size_application_applicationFlag_filter_manage_p4(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, _size, _s2, _applicationFlag)): axum::extract::Path<(
+        i64,
+        i64,
+        String,
+        String,
+    )>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    work_list_paging_page_size_size_application_applicationFlag_filter_manage_core(
+        pool,
+        page,
+        _size,
+        _applicationFlag,
+    )
+    .await
 }
 
 #[allow(non_snake_case)]
@@ -20812,7 +21360,11 @@ pub async fn work_v2_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 }
 
 #[allow(non_snake_case)]
-async fn work_v2_list_paging_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn work_v2_list_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -20859,12 +21411,18 @@ async fn work_v2_list_paging_page_size_size_core(pool: Extension<Pool>, page: i6
 }
 
 #[allow(non_snake_case)]
-pub async fn work_v2_list_paging_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_v2_list_paging_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_v2_list_paging_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn work_v2_list_paging_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_v2_list_paging_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_v2_list_paging_page_size_size_core(pool, page, size).await
 }
 
@@ -22503,7 +23061,10 @@ pub async fn workcompleted_list_count_application(
 }
 
 #[allow(non_snake_case)]
-async fn workcompleted_list_count_application_applicationFlag_process_core(pool: Extension<Pool>, applicationFlag: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn workcompleted_list_count_application_applicationFlag_process_core(
+    pool: Extension<Pool>,
+    applicationFlag: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -22554,17 +23115,26 @@ async fn workcompleted_list_count_application_applicationFlag_process_core(pool:
 }
 
 #[allow(non_snake_case)]
-pub async fn workcompleted_list_count_application_applicationFlag_process(pool: Extension<Pool>, axum::extract::Path(applicationFlag): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn workcompleted_list_count_application_applicationFlag_process(
+    pool: Extension<Pool>,
+    axum::extract::Path(applicationFlag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     workcompleted_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
 #[allow(non_snake_case)]
-pub async fn workcompleted_list_count_application_applicationFlag_process_p2(pool: Extension<Pool>, axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn workcompleted_list_count_application_applicationFlag_process_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     workcompleted_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
 #[allow(non_snake_case)]
-async fn workcompleted_list_count_application_applicationFlag_process_manage_core(pool: Extension<Pool>, applicationFlag: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn workcompleted_list_count_application_applicationFlag_process_manage_core(
+    pool: Extension<Pool>,
+    applicationFlag: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -22603,17 +23173,29 @@ async fn workcompleted_list_count_application_applicationFlag_process_manage_cor
 }
 
 #[allow(non_snake_case)]
-pub async fn workcompleted_list_count_application_applicationFlag_process_manage(pool: Extension<Pool>, axum::extract::Path(applicationFlag): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
-    workcompleted_list_count_application_applicationFlag_process_manage_core(pool, applicationFlag).await
+pub async fn workcompleted_list_count_application_applicationFlag_process_manage(
+    pool: Extension<Pool>,
+    axum::extract::Path(applicationFlag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    workcompleted_list_count_application_applicationFlag_process_manage_core(pool, applicationFlag)
+        .await
 }
 
 #[allow(non_snake_case)]
-pub async fn workcompleted_list_count_application_applicationFlag_process_manage_p2(pool: Extension<Pool>, axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
-    workcompleted_list_count_application_applicationFlag_process_manage_core(pool, applicationFlag).await
+pub async fn workcompleted_list_count_application_applicationFlag_process_manage_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    workcompleted_list_count_application_applicationFlag_process_manage_core(pool, applicationFlag)
+        .await
 }
 
 #[allow(non_snake_case)]
-async fn workcompleted_list_filter_page_size_size_manage_core(pool: Extension<Pool>, page: i64, _size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn workcompleted_list_filter_page_size_size_manage_core(
+    pool: Extension<Pool>,
+    page: i64,
+    _size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -22652,17 +23234,28 @@ async fn workcompleted_list_filter_page_size_size_manage_core(pool: Extension<Po
 }
 
 #[allow(non_snake_case)]
-pub async fn workcompleted_list_filter_page_size_size_manage(pool: Extension<Pool>, axum::extract::Path((page, _size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn workcompleted_list_filter_page_size_size_manage(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, _size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     workcompleted_list_filter_page_size_size_manage_core(pool, page, _size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn workcompleted_list_filter_page_size_size_manage_p3(pool: Extension<Pool>, axum::extract::Path((page, _size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn workcompleted_list_filter_page_size_size_manage_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, _size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     workcompleted_list_filter_page_size_size_manage_core(pool, page, _size).await
 }
 
 #[allow(non_snake_case)]
-async fn workcompleted_list_paging_page_size_size_application_applicationFlag_filter_manage_core(pool: Extension<Pool>, page: i64, _size: i64, _applicationFlag: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn workcompleted_list_paging_page_size_size_application_applicationFlag_filter_manage_core(
+    pool: Extension<Pool>,
+    page: i64,
+    _size: i64,
+    _applicationFlag: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -22701,13 +23294,36 @@ async fn workcompleted_list_paging_page_size_size_application_applicationFlag_fi
 }
 
 #[allow(non_snake_case)]
-pub async fn workcompleted_list_paging_page_size_size_application_applicationFlag_filter_manage(pool: Extension<Pool>, axum::extract::Path((page, _size, _applicationFlag)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
-    workcompleted_list_paging_page_size_size_application_applicationFlag_filter_manage_core(pool, page, _size, _applicationFlag).await
+pub async fn workcompleted_list_paging_page_size_size_application_applicationFlag_filter_manage(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, _size, _applicationFlag)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    workcompleted_list_paging_page_size_size_application_applicationFlag_filter_manage_core(
+        pool,
+        page,
+        _size,
+        _applicationFlag,
+    )
+    .await
 }
 
 #[allow(non_snake_case)]
-pub async fn workcompleted_list_paging_page_size_size_application_applicationFlag_filter_manage_p4(pool: Extension<Pool>, axum::extract::Path((page, _size, _s2, _applicationFlag)): axum::extract::Path<(i64, i64, String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
-    workcompleted_list_paging_page_size_size_application_applicationFlag_filter_manage_core(pool, page, _size, _applicationFlag).await
+pub async fn workcompleted_list_paging_page_size_size_application_applicationFlag_filter_manage_p4(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, _size, _s2, _applicationFlag)): axum::extract::Path<(
+        i64,
+        i64,
+        String,
+        String,
+    )>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    workcompleted_list_paging_page_size_size_application_applicationFlag_filter_manage_core(
+        pool,
+        page,
+        _size,
+        _applicationFlag,
+    )
+    .await
 }
 
 #[allow(non_snake_case)]
@@ -25054,11 +25670,24 @@ pub async fn attachment_u2b_doc_to_word_wowc(
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // workOrWorkCompleted：先查 work，缺失再查 workcompleted（o2 双表语义）
-    match doc_to_word_for_job(&pool, &session.person_unique, &flag, "pp_c_work", body.clone()).await
+    match doc_to_word_for_job(
+        &pool,
+        &session.person_unique,
+        &flag,
+        "pp_c_work",
+        body.clone(),
+    )
+    .await
     {
         Err(AppError::NotFound) => {
-            doc_to_word_for_job(&pool, &session.person_unique, &flag, "pp_c_workcompleted", body)
-                .await
+            doc_to_word_for_job(
+                &pool,
+                &session.person_unique,
+                &flag,
+                "pp_c_workcompleted",
+                body,
+            )
+            .await
         }
         other => other,
     }
@@ -25246,11 +25875,17 @@ pub async fn attachment_u2b_html_to_image(
         .filter(|s| !s.trim().is_empty())
         .map(|s| format!("{}.png", s.trim()))
         .unwrap_or_else(|| {
-            format!("{}-{}.png", session.person_unique, chrono::Utc::now().format("%Y%m%d%H%M%S"))
+            format!(
+                "{}-{}.png",
+                session.person_unique,
+                chrono::Utc::now().format("%Y%m%d%H%M%S")
+            )
         });
     let bytes = u2_render::html_to_image_bytes(work_html)?;
     let Some(bytes) = bytes else {
-        return Err(u2_capability_unavailable("image typography (no CJK font found)"));
+        return Err(u2_capability_unavailable(
+            "image typography (no CJK font found)",
+        ));
     };
     u2_render::general_file_store(&pool, &session.person_unique, &title, &bytes).await
 }
@@ -25413,8 +26048,6 @@ async fn read_attachment_blob(
     Ok((name, bytes))
 }
 
-
-
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_invoice_info(
     pool: Extension<Pool>,
@@ -25549,16 +26182,26 @@ pub async fn attachment_u2b_upload_with_url(
         .to_string();
 
     let client = shared::netguard::fetch_client().map_err(|_| AppError::Internal)?;
-    let (final_url, bytes) = shared::netguard::fetch_limited(&client, &url).await.map_err(|e| {
-        tracing::warn!(url = %url, error = %e, "remote url fetch rejected or failed");
-        AppError::BadRequest(format!("remote fetch failed: {e}"))
-    })?;
+    let (final_url, bytes) = shared::netguard::fetch_limited(&client, &url)
+        .await
+        .map_err(|e| {
+            tracing::warn!(url = %url, error = %e, "remote url fetch rejected or failed");
+            AppError::BadRequest(format!("remote fetch failed: {e}"))
+        })?;
 
     let name = shared::netguard::filename_from_url(&url, &final_url);
     let id = uuid::Uuid::new_v4().to_string();
-    u2_att_store_new(&pool, &session.person_unique, &id, &name, bytes, "xsite", &site).await
+    u2_att_store_new(
+        &pool,
+        &session.person_unique,
+        &id,
+        &name,
+        bytes,
+        "xsite",
+        &site,
+    )
+    .await
 }
-
 
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_batch_download_zip(

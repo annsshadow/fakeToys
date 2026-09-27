@@ -420,10 +420,7 @@ pub async fn building_list_start_start_completed_completed(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
-        .iter()
-        .map(meeting_row_json)
-        .collect();
+    let data: Vec<Value> = rows.iter().map(meeting_row_json).collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::legacy_success(
@@ -448,10 +445,7 @@ pub async fn building_list_start_start_completed_completed_allmeeting(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
-        .iter()
-        .map(meeting_row_json)
-        .collect();
+    let data: Vec<Value> = rows.iter().map(meeting_row_json).collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::legacy_success(
@@ -481,10 +475,7 @@ pub async fn building_list_start_start_completed_completed_room_room_meeting_mee
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
-        .iter()
-        .map(meeting_row_json)
-        .collect();
+    let data: Vec<Value> = rows.iter().map(meeting_row_json).collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::legacy_success(
@@ -511,7 +502,10 @@ fn meeting_row_json(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
         ),
         (
             "startTime".to_string(),
-            Value::String(row.get::<_, Option<String>>("start_time").unwrap_or_default()),
+            Value::String(
+                row.get::<_, Option<String>>("start_time")
+                    .unwrap_or_default(),
+            ),
         ),
         (
             "completedTime".to_string(),
@@ -521,7 +515,10 @@ fn meeting_row_json(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
             "creator".to_string(),
             Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
         ),
-        ("createTime".to_string(), Value::String(row.get("create_time"))),
+        (
+            "createTime".to_string(),
+            Value::String(row.get("create_time")),
+        ),
     ]))
 }
 
@@ -954,7 +951,10 @@ pub async fn meeting_list_coming_day_count(
 }
 
 #[allow(non_snake_case)]
-async fn meeting_list_coming_month_count_core(pool: Extension<Pool>, count: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn meeting_list_coming_month_count_core(
+    pool: Extension<Pool>,
+    count: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -1001,12 +1001,18 @@ async fn meeting_list_coming_month_count_core(pool: Extension<Pool>, count: i64)
 }
 
 #[allow(non_snake_case)]
-pub async fn meeting_list_coming_month_count(pool: Extension<Pool>, axum::extract::Path(count): axum::extract::Path<i64>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn meeting_list_coming_month_count(
+    pool: Extension<Pool>,
+    axum::extract::Path(count): axum::extract::Path<i64>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     meeting_list_coming_month_count_core(pool, count).await
 }
 
 #[allow(non_snake_case)]
-pub async fn meeting_list_coming_month_count_p2(pool: Extension<Pool>, axum::extract::Path((_s0, count)): axum::extract::Path<(String, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn meeting_list_coming_month_count_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, count)): axum::extract::Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     meeting_list_coming_month_count_core(pool, count).await
 }
 
@@ -1111,7 +1117,11 @@ pub async fn meeting_list_forward_monthcount_monthCount_all(
 }
 
 #[allow(non_snake_case)]
-async fn meeting_list_invite_page_size_size_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn meeting_list_invite_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
@@ -1161,12 +1171,18 @@ async fn meeting_list_invite_page_size_size_core(pool: Extension<Pool>, page: i6
 }
 
 #[allow(non_snake_case)]
-pub async fn meeting_list_invite_page_size_size(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn meeting_list_invite_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     meeting_list_invite_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn meeting_list_invite_page_size_size_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn meeting_list_invite_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     meeting_list_invite_page_size_size_core(pool, page, size).await
 }
 
@@ -1685,7 +1701,13 @@ pub async fn meeting_list_year_year_month_month_day_day_all(
 }
 
 #[allow(non_snake_case)]
-async fn meeting_list_year_year_month_month_day_day_roomId_core(pool: Extension<Pool>, year: i32, month: i32, day: i32, room_id: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn meeting_list_year_year_month_month_day_day_roomId_core(
+    pool: Extension<Pool>,
+    year: i32,
+    month: i32,
+    day: i32,
+    room_id: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let start_date = format!("{}-{:02}-{:02} 00:00:00", year, month, day);
@@ -1735,17 +1757,35 @@ async fn meeting_list_year_year_month_month_day_day_roomId_core(pool: Extension<
 }
 
 #[allow(non_snake_case)]
-pub async fn meeting_list_year_year_month_month_day_day_roomId(pool: Extension<Pool>, axum::extract::Path((year, month, day, room_id)): axum::extract::Path<(i32, i32, i32, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn meeting_list_year_year_month_month_day_day_roomId(
+    pool: Extension<Pool>,
+    axum::extract::Path((year, month, day, room_id)): axum::extract::Path<(i32, i32, i32, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     meeting_list_year_year_month_month_day_day_roomId_core(pool, year, month, day, room_id).await
 }
 
 #[allow(non_snake_case)]
-pub async fn meeting_list_year_year_month_month_day_day_roomId_p7(pool: Extension<Pool>, axum::extract::Path((year, _s1, month, _s3, day, _s5, room_id)): axum::extract::Path<(i32, String, i32, String, i32, String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn meeting_list_year_year_month_month_day_day_roomId_p7(
+    pool: Extension<Pool>,
+    axum::extract::Path((year, _s1, month, _s3, day, _s5, room_id)): axum::extract::Path<(
+        i32,
+        String,
+        i32,
+        String,
+        i32,
+        String,
+        String,
+    )>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     meeting_list_year_year_month_month_day_day_roomId_core(pool, year, month, day, room_id).await
 }
 
 #[allow(non_snake_case)]
-async fn meeting_list_id_next_count_core(pool: Extension<Pool>, flag: String, count: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn meeting_list_id_next_count_core(
+    pool: Extension<Pool>,
+    flag: String,
+    count: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let count = count.max(1);
@@ -1804,12 +1844,18 @@ async fn meeting_list_id_next_count_core(pool: Extension<Pool>, flag: String, co
 }
 
 #[allow(non_snake_case)]
-pub async fn meeting_list_id_next_count(pool: Extension<Pool>, axum::extract::Path((flag, count)): axum::extract::Path<(String, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn meeting_list_id_next_count(
+    pool: Extension<Pool>,
+    axum::extract::Path((flag, count)): axum::extract::Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     meeting_list_id_next_count_core(pool, flag, count).await
 }
 
 #[allow(non_snake_case)]
-pub async fn meeting_list_id_next_count_p3(pool: Extension<Pool>, axum::extract::Path((_s0, flag, count)): axum::extract::Path<(String, String, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn meeting_list_id_next_count_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, flag, count)): axum::extract::Path<(String, String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     meeting_list_id_next_count_core(pool, flag, count).await
 }
 
@@ -1919,7 +1965,11 @@ pub async fn meeting_list_page_size_size(
 }
 
 #[allow(non_snake_case)]
-async fn meeting_list_page_size_size_manage_core(pool: Extension<Pool>, page: i64, size: i64) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn meeting_list_page_size_size_manage_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
@@ -1969,12 +2019,18 @@ async fn meeting_list_page_size_size_manage_core(pool: Extension<Pool>, page: i6
 }
 
 #[allow(non_snake_case)]
-pub async fn meeting_list_page_size_size_manage(pool: Extension<Pool>, axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn meeting_list_page_size_size_manage(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     meeting_list_page_size_size_manage_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
-pub async fn meeting_list_page_size_size_manage_p3(pool: Extension<Pool>, axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn meeting_list_page_size_size_manage_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     meeting_list_page_size_size_manage_core(pool, page, size).await
 }
 

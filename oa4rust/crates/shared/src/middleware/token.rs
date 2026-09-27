@@ -142,9 +142,9 @@ pub async fn auth_middleware(
     if is_auth_exempt(&path)
         && (!SECRET_INIT_PATHS.iter().any(|p| path_matches(&path, p))
             || system_uninitialized(&state.pool).await)
-        {
-            return next.run(request).await;
-        }
+    {
+        return next.run(request).await;
+    }
 
     let Some(authentication) = extract_authentication(request.headers()) else {
         return AppError::Unauthorized.into_response();

@@ -465,7 +465,10 @@ pub async fn work_v2_id_retract(
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
-async fn work_v2_id_goback_core(pool: Extension<Pool>, id: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn work_v2_id_goback_core(
+    pool: Extension<Pool>,
+    id: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     tx.execute(
@@ -499,16 +502,25 @@ async fn work_v2_id_goback_core(pool: Extension<Pool>, id: String) -> Result<Jso
 }
 
 #[allow(non_snake_case)]
-pub async fn work_v2_id_goback(pool: Extension<Pool>, axum::extract::Path(id): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_v2_id_goback(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_v2_id_goback_core(pool, id).await
 }
 
 #[allow(non_snake_case)]
-pub async fn work_v2_id_goback_p2(pool: Extension<Pool>, axum::extract::Path((_work, id)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_v2_id_goback_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_work, id)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_v2_id_goback_core(pool, id).await
 }
 
-async fn work_v2_id_rollback_core(pool: Extension<Pool>, id: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn work_v2_id_rollback_core(
+    pool: Extension<Pool>,
+    id: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let snap_row = client
         .query_opt(
@@ -541,16 +553,25 @@ async fn work_v2_id_rollback_core(pool: Extension<Pool>, id: String) -> Result<J
 }
 
 #[allow(non_snake_case)]
-pub async fn work_v2_id_rollback(pool: Extension<Pool>, axum::extract::Path(id): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_v2_id_rollback(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_v2_id_rollback_core(pool, id).await
 }
 
 #[allow(non_snake_case)]
-pub async fn work_v2_id_rollback_p2(pool: Extension<Pool>, axum::extract::Path((_work, id)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_v2_id_rollback_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_work, id)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_v2_id_rollback_core(pool, id).await
 }
 
-async fn work_v2_id_add_split_core(pool: Extension<Pool>, id: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn work_v2_id_add_split_core(
+    pool: Extension<Pool>,
+    id: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
@@ -584,16 +605,25 @@ async fn work_v2_id_add_split_core(pool: Extension<Pool>, id: String) -> Result<
 }
 
 #[allow(non_snake_case)]
-pub async fn work_v2_id_add_split(pool: Extension<Pool>, axum::extract::Path(id): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_v2_id_add_split(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_v2_id_add_split_core(pool, id).await
 }
 
 #[allow(non_snake_case)]
-pub async fn work_v2_id_add_split_p2(pool: Extension<Pool>, axum::extract::Path((_work, id)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_v2_id_add_split_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_work, id)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_v2_id_add_split_core(pool, id).await
 }
 
-async fn work_v2_id_reroute_core(pool: Extension<Pool>, id: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn work_v2_id_reroute_core(
+    pool: Extension<Pool>,
+    id: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     tx.execute(
@@ -620,12 +650,18 @@ async fn work_v2_id_reroute_core(pool: Extension<Pool>, id: String) -> Result<Js
 }
 
 #[allow(non_snake_case)]
-pub async fn work_v2_id_reroute(pool: Extension<Pool>, axum::extract::Path(id): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_v2_id_reroute(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_v2_id_reroute_core(pool, id).await
 }
 
 #[allow(non_snake_case)]
-pub async fn work_v2_id_reroute_p2(pool: Extension<Pool>, axum::extract::Path((_work, id)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_v2_id_reroute_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_work, id)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_v2_id_reroute_core(pool, id).await
 }
 
@@ -648,7 +684,10 @@ pub async fn work_id_draft(
     }
 }
 
-async fn work_id_manual_append_identity_core(pool: Extension<Pool>, id: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn work_id_manual_append_identity_core(
+    pool: Extension<Pool>,
+    id: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_one(
@@ -661,16 +700,25 @@ async fn work_id_manual_append_identity_core(pool: Extension<Pool>, id: String) 
 }
 
 #[allow(non_snake_case)]
-pub async fn work_id_manual_append_identity(pool: Extension<Pool>, axum::extract::Path(id): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_id_manual_append_identity(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_id_manual_append_identity_core(pool, id).await
 }
 
 #[allow(non_snake_case)]
-pub async fn work_id_manual_append_identity_p2(pool: Extension<Pool>, axum::extract::Path((_work, id)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_id_manual_append_identity_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_work, id)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_id_manual_append_identity_core(pool, id).await
 }
 
-async fn work_id_projection_core(pool: Extension<Pool>, id: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn work_id_projection_core(
+    pool: Extension<Pool>,
+    id: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -689,19 +737,29 @@ async fn work_id_projection_core(pool: Extension<Pool>, id: String) -> Result<Js
 }
 
 #[allow(non_snake_case)]
-pub async fn work_id_projection(pool: Extension<Pool>, axum::extract::Path(id): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_id_projection(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_id_projection_core(pool, id).await
 }
 
 #[allow(non_snake_case)]
-pub async fn work_id_projection_p2(pool: Extension<Pool>, axum::extract::Path((_work, id)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn work_id_projection_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_work, id)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     work_id_projection_core(pool, id).await
 }
 
 #[allow(non_snake_case)]
 pub async fn work_id_series_series_activitytoken_activityToken_processing_signal(
     pool: Extension<Pool>,
-    axum::extract::Path((_s0, series, activity_token)): axum::extract::Path<(String, String, String)>,
+    axum::extract::Path((_s0, series, activity_token)): axum::extract::Path<(
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -739,7 +797,13 @@ pub async fn work_process_processId(
 #[allow(non_snake_case)]
 pub async fn work_process_processId_name_name_serial(
     pool: Extension<Pool>,
-    axum::extract::Path((_s0, process_id, _name, _s3, _s4)): axum::extract::Path<(String, String, String, String, String)>,
+    axum::extract::Path((_s0, process_id, _name, _s3, _s4)): axum::extract::Path<(
+        String,
+        String,
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let max_val = client
@@ -1206,7 +1270,11 @@ pub async fn taskcompleted_id(
 #[allow(non_snake_case)]
 pub async fn taskcompleted_id_press_work_work(
     pool: Extension<Pool>,
-    axum::extract::Path((completed_id, work_id, _s2)): axum::extract::Path<(String, String, String)>,
+    axum::extract::Path((completed_id, work_id, _s2)): axum::extract::Path<(
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
@@ -2210,7 +2278,13 @@ pub async fn form_suitable_activity_activityId(
 #[allow(non_snake_case)]
 pub async fn job_v2_job_person_person_view(
     pool: Extension<Pool>,
-    axum::extract::Path((job_id, _s1, person, _s3, _s4)): axum::extract::Path<(String, String, String, String, String)>,
+    axum::extract::Path((job_id, _s1, person, _s3, _s4)): axum::extract::Path<(
+        String,
+        String,
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -2223,7 +2297,10 @@ pub async fn job_v2_job_person_person_view(
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
-async fn job_v2_job_projection_core(pool: Extension<Pool>, job_id: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn job_v2_job_projection_core(
+    pool: Extension<Pool>,
+    job_id: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_one(
@@ -2250,12 +2327,18 @@ async fn job_v2_job_projection_core(pool: Extension<Pool>, job_id: String) -> Re
 }
 
 #[allow(non_snake_case)]
-pub async fn job_v2_job_projection(pool: Extension<Pool>, axum::extract::Path(job_id): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn job_v2_job_projection(
+    pool: Extension<Pool>,
+    axum::extract::Path(job_id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     job_v2_job_projection_core(pool, job_id).await
 }
 
 #[allow(non_snake_case)]
-pub async fn job_v2_job_projection_p2(pool: Extension<Pool>, axum::extract::Path((_job, job_id)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn job_v2_job_projection_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_job, job_id)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     job_v2_job_projection_core(pool, job_id).await
 }
 
@@ -2407,7 +2490,10 @@ pub async fn record_id(
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
-async fn service_work_id_touch_core(pool: Extension<Pool>, id: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn service_work_id_touch_core(
+    pool: Extension<Pool>,
+    id: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_one(
@@ -2428,12 +2514,18 @@ async fn service_work_id_touch_core(pool: Extension<Pool>, id: String) -> Result
 }
 
 #[allow(non_snake_case)]
-pub async fn service_work_id_touch(pool: Extension<Pool>, axum::extract::Path(id): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn service_work_id_touch(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     service_work_id_touch_core(pool, id).await
 }
 
 #[allow(non_snake_case)]
-pub async fn service_work_id_touch_p2(pool: Extension<Pool>, axum::extract::Path((_work, id)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn service_work_id_touch_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_work, id)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     service_work_id_touch_core(pool, id).await
 }
 
@@ -2883,7 +2975,9 @@ pub async fn workcompleted_flag_merge(
         None => return Ok(Json(ActionResult::error("workcompleted not found"))),
     };
     if id2.is_empty() {
-        return Ok(Json(ActionResult::error("target workcompleted id required")));
+        return Ok(Json(ActionResult::error(
+            "target workcompleted id required",
+        )));
     }
     client
         .execute(
