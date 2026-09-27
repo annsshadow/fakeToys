@@ -15,7 +15,7 @@ import {
 } from 'antd'
 import DataList from '../components/DataList'
 import ExportDialog from '../components/ExportDialog'
-import { apiErrorDetail, getExportFormats, previewExport, batchExport } from '../services/api'
+import { apiErrorDetail, bulkErrorDetail, getExportFormats, previewExport, batchExport } from '../services/api'
 import type { ExportPreviewResponse } from '../types/api'
 
 /** 批量导出表单的字段，与各 `Form.Item` 的 `name` 一一对应 */
@@ -79,7 +79,7 @@ export default function Export() {
       setBatchResult(result.results)
       message.success('批量导出完成')
     } catch (err) {
-      message.error(apiErrorDetail(err, '批量导出失败'))
+      message.error(bulkErrorDetail(err, '批量导出失败'))
     } finally {
       setLoading(false)
     }

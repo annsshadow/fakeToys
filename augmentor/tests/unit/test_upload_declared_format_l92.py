@@ -64,6 +64,17 @@ CHOICES_RE = re.compile(r"const UPLOAD_FORMAT_CHOICES = \[(.*?)\]", re.S)
 QUOTED_RE = re.compile(r"'([^']+)'")
 BEFORE_UPLOAD_RE = re.compile(r"beforeUpload=\{([^}]*)\}")
 
+# 「把后端判决端给用户」这一族的包装器。A167 新增了 `bulkErrorDetail`（只给超时那一支
+# 换文案，其余仍委托 `apiErrorDetail`），所以下面两条扫描认的是**这一族**而不是一个名字；
+# 认了就必须坐实它确实还在委托 —— 见 `test_bulk_wrapper_delegates_to_detail_helper`。
+DETAIL_WRAPPERS = ("apiErrorDetail", "bulkErrorDetail")
+_WRAPPED_RE = re.compile(
+    r"message\.error\((?:%s)\(err," % "|".join(DETAIL_WRAPPERS)
+)
+_NAKED_RE = re.compile(
+    r"message\.error\(\s*(?!(?:%s))" % "|".join(DETAIL_WRAPPERS)
+)
+
 
 def strip_comments(source: str) -> str:
     """剥掉块注释与 `//` 行注释，只留代码
@@ -190,13 +201,14 @@ class TestUploadFaceWiring:
         """A162 ②：这个页面里**没有**一处 `message.error('字面量')`
 
         判据写成「两头的数量相等」而不是「至少 N 处」，所以新加的 `catch` 忘了包
-        `apiErrorDetail` 会当场变红；非空转由 `>= 6` 那条兜住（本页面有七处 catch）。
+        判决包装器会当场变红；非空转由 `>= 6` 那条兜住（本页面有七处 catch）。
+        认的是 `DETAIL_WRAPPERS` 这一族（A167 起有 `bulkErrorDetail`）。
         """
         page = self._page()
         total = len(re.findall(r"message\.error\(", page))
-        wrapped = len(re.findall(r"message\.error\(apiErrorDetail\(err,", page))
+        wrapped = len(_WRAPPED_RE.findall(page))
         assert total >= 6, f"只扫到 {total} 处 message.error，扫描可能已空转"
-        assert wrapped == total, f"{total - wrapped} 处错误提示没走 apiErrorDetail"
+        assert wrapped == total, f"{total - wrapped} 处错误提示没走判决包装器"
 
     def test_no_error_toast_anywhere_swallows_the_server_detail(self):
         """A162 ② 的**同构面**：全仓 `pages/` + `components/` 一处不剩
@@ -205,18 +217,31 @@ class TestUploadFaceWiring:
         不做「本页面」而做「所有 UI 源文件」。本轮清扫的实测规模：14 个文件 / 35 处
         （24 处 `} catch {` 块 + 11 处 `.catch(() => …)` 箭头），清扫后未包装数 = 0。
         非空转由「至少扫到 35 处」兜住：扫不到就说明形状换了，本条要先跟着换。
+        豁免名单只有 `DETAIL_WRAPPERS`，而它每一员都必须自己落到 `apiErrorDetail`
+        （下一条守卫盯这个），否则「加一个壳」就成了绕过本判据的后门。
         """
         files = [p for p in sorted((SRC / "pages").glob("*.tsx"))
                  + sorted((SRC / "components").glob("*.tsx")) if ".test." not in p.name]
         sources = {p.name: strip_comments(p.read_text(encoding="utf-8")) for p in files}
         total = sum(len(re.findall(r"message\.error\(", text)) for text in sources.values())
         naked = {
-            name: len(re.findall(r"message\.error\(\s*(?!apiErrorDetail)", text))
-            for name, text in sources.items()
+            name: len(_NAKED_RE.findall(text)) for name, text in sources.items()
         }
         assert total >= 35, f"全仓只扫到 {total} 处 message.error，扫描可能已空转"
         bad = {name: n for name, n in naked.items() if n}
-        assert not bad, f"这些文件里的错误提示没走 apiErrorDetail: {bad}"
+        assert not bad, f"这些文件里的错误提示没走判决包装器: {bad}"
+
+    def test_bulk_wrapper_delegates_to_detail_helper(self):
+        """A167 那层壳不许变成新的吞判决口子
+
+        上面两条扫描认了 `bulkErrorDetail`，前提是它在「非超时」那一支仍然落到
+        `apiErrorDetail`。哪天有人把那句委托删了，4xx 的判决就又只剩一句字面量。
+        """
+        src = API_TS.read_text(encoding="utf-8")
+        _, _, body = src.partition("export const bulkErrorDetail")
+        assert body, "api.ts 里的 bulkErrorDetail 没了 ⇒ 上面两条扫描的豁免名单要跟着收口"
+        assert "apiErrorDetail(error, fallback)" in body[:400], \
+            "bulkErrorDetail 不再委托 apiErrorDetail ⇒ 它成了吞掉后端判决的新壳"
 
     def test_the_service_layer_exports_the_detail_helper(self):
         assert "export const apiErrorDetail" in API_TS.read_text(encoding="utf-8")

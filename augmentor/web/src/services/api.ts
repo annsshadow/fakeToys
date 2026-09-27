@@ -49,6 +49,24 @@ const api = axios.create({
 })
 
 /**
+ * 大块数据请求的**每请求**超时（毫秒），刻意不动实例默认的 30 s
+ *
+ * 30 s 对这一类请求是错的，依据是实测而非感觉（A167，取证脚本 `Temp/l99q/timing_l99.py`）：
+ * 上传的端到端耗时随字节数近线性，8 MiB 用 7.60 s、32 MiB 30.40 s、64 MiB 60.80 s、
+ * 128 MiB 121.60 s ⇒ 约 **0.95 s/MiB**，也就是默认档在 ~31 MiB 就把请求掐断，
+ * 而后端的字节闸是 256 MiB —— 前端允许选的比服务端允许的先用不上。表格进料更慢
+ * （240 000 行 xlsx 在服务端处理 7.44 s，约 3.7～5.2 s/MiB）。
+ *
+ * 取 30 分钟 = 闸顶 256 MiB × 实测最慢的 5.2 s/MiB ≈ 22 分钟再留余量。
+ * 只挂在具体请求上，是因为 `api.test.ts` 里那条实例契约（`timeout: 30000`）钉的是
+ * 「其余短请求不许被顺手放宽」：列表、状态、进度这类请求 30 s 拿不到就是坏了。
+ *
+ * 导出那一档要如实分开说：**没有**复现出慢（64 MiB 导出实测 1.29 s）。给它同一档
+ * 只是「工作量由数据规模决定、没有上界」这一类的便宜保险，不是测出来的缺陷。
+ */
+export const BULK_REQUEST_TIMEOUT_MS = 30 * 60 * 1000
+
+/**
  * 从请求错误里取后端写的那句 `detail`，取不到才回 `fallback`
  *
  * FastAPI 的失败体是 `{ "detail": ... }`，而 4xx 的 detail 是**可 actions 的判决**
@@ -75,6 +93,46 @@ export const apiErrorDetail = (error: unknown, fallback: string): string => {
     }
   }
   return fallback
+}
+
+/**
+ * 是不是「客户端等不及了」—— 而不是「服务端答错了」
+ *
+ * 三种适配器给的是两种 code：`fetch` 档报 `ETIMEDOUT`（`composeSignals.js`），
+ * `xhr` / `http` 档在 `transitional.clarifyTimeoutError`（默认关）下报 `ECONNABORTED`
+ * （`lib/adapters/xhr.js`）。只看 code 不够：`ECONNABORTED` 同时也被用来报
+ * 「请求被主动中止」，把用户取消说成超时会指错方向。三条路径的 message 都是
+ * `timeout of <n>ms exceeded`，所以用「精确 ETIMEDOUT ∥ ECONNABORTED + 这句 message」
+ * 两条并列判别，宁可漏判也不误判。
+ */
+export const isTimeoutError = (error: unknown): boolean => {
+  const e = error as { code?: unknown; message?: unknown } | undefined | null
+  if (!e || typeof e !== 'object') return false
+  if (e.code === 'ETIMEDOUT') return true
+  // `timeout exceeded`（不带秒数）是同一处只在 `config.timeout` 为假值时才走的分支，
+  // 本仓的三种请求都带秒数；留在判别式里是因为它同样只可能出自那句 ontimeout。
+  return (
+    e.code === 'ECONNABORTED' &&
+    /^(timeout of \d+ms exceeded|timeout exceeded)$/.test(String(e.message ?? ''))
+  )
+}
+
+/**
+ * 大块请求失败时给用户看的那句
+ *
+ * 超时单独走一条文案，因为「超时」这件事在这条代码路径上是**已实测的假警报**：
+ * 客户端在 0.60 s 放弃之后，服务端照样把那份 45 840 001 B 的文件写完了
+ * （`Temp/l99q/fin_after_drain_l99.py`）。所以说「失败」是在骗用户重试，
+ * 而重试会把同一份数据再落一次。
+ */
+export const bulkErrorDetail = (error: unknown, fallback: string): string => {
+  if (isTimeoutError(error)) {
+    return (
+      `${fallback}：客户端已停止等待，` +
+      '但服务端可能仍在处理并已把结果落盘，请先确认结果再重试，避免重复落一份'
+    )
+  }
+  return apiErrorDetail(error, fallback)
 }
 
 // 数据管理
@@ -140,7 +198,9 @@ export const uploadData = async (
   const formData = new FormData()
   formData.append('file', file)
   formData.append('input_format', inputFormat)
-  const response = await api.post('/data/upload', formData)
+  const response = await api.post('/data/upload', formData, {
+    timeout: BULK_REQUEST_TIMEOUT_MS,
+  })
   return response.data
 }
 
@@ -149,11 +209,15 @@ export const exportData = async (
   outputDir: string,
   formats?: string[]
 ): Promise<DatasetExportResponse> => {
-  const response = await api.post('/data/export', {
-    input_file: inputFile,
-    output_dir: outputDir,
-    formats,
-  })
+  const response = await api.post(
+    '/data/export',
+    {
+      input_file: inputFile,
+      output_dir: outputDir,
+      formats,
+    },
+    { timeout: BULK_REQUEST_TIMEOUT_MS }
+  )
   return response.data
 }
 
@@ -331,11 +395,15 @@ export const batchExport = async (
   outputDir: string,
   formats: string[]
 ): Promise<BatchExportResponse> => {
-  const response = await api.post('/export/batch', {
-    datasets,
-    output_dir: outputDir,
-    formats,
-  })
+  const response = await api.post(
+    '/export/batch',
+    {
+      datasets,
+      output_dir: outputDir,
+      formats,
+    },
+    { timeout: BULK_REQUEST_TIMEOUT_MS }
+  )
   return response.data
 }
 
