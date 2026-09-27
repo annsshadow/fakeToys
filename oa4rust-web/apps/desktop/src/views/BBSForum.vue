@@ -486,10 +486,26 @@ async function deleteSection(sec: Section): Promise<void> {
 
 // 版块详情：并发消费 section/{id}（主体）+ section/viewsub/{sectionId}（子版块）
 // + permission/section/{sectionId}（发帖权限判定）——均 distinct handler，事件触发（非 mounted useQuery）。
-const sectionInfo = ref({ open: false, loading: false, id: '', name: '', description: '', subCount: 0, canPublish: '—' })
+const sectionInfo = ref({
+  open: false,
+  loading: false,
+  id: '',
+  name: '',
+  description: '',
+  subCount: 0,
+  canPublish: '—',
+})
 async function openSectionInfo(sec: Section): Promise<void> {
-  sectionInfo.value = { open: true, loading: true, id: sec.id, name: sec.name, description: '', subCount: 0, canPublish: '—' }
-  const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  sectionInfo.value = {
+    open: true,
+    loading: true,
+    id: sec.id,
+    name: sec.name,
+    description: '',
+    subCount: 0,
+    canPublish: '—',
+  }
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const [main, subs, perm] = await Promise.all([
     settle(api.get(`/api/bbs/assemble/control/section/${sec.id}`)),
     settle(api.get(`/api/bbs/assemble/control/section/viewsub/${sec.id}`)),
@@ -504,10 +520,14 @@ async function openSectionInfo(sec: Section): Promise<void> {
   sectionInfo.value.subCount = Array.isArray(sd)
     ? sd.length
     : Array.isArray((sd as { data?: unknown })?.data)
-      ? ((sd as { data: unknown[] }).data).length
+      ? (sd as { data: unknown[] }).data.length
       : 0
   const pd = (perm as { data?: unknown } | null)?.data
-  sectionInfo.value.canPublish = perm ? (pd === true || (pd as { publishable?: boolean })?.publishable ? '允许' : '不允许') : '查询失败'
+  sectionInfo.value.canPublish = perm
+    ? pd === true || (pd as { publishable?: boolean })?.publishable
+      ? '允许'
+      : '不允许'
+    : '查询失败'
   sectionInfo.value.loading = false
 }
 
@@ -722,7 +742,7 @@ async function loadTopicExtras(subjectId: string): Promise<void> {
   topicPics.value = []
   replyGate.value = ''
   topicMeta.value = ''
-  const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const [pics, gate, view, atts, perm, replyList] = await Promise.all([
     // GET picture/list/{subjectId} —— 从正文抽取的图片 URL 列表
     settle(api.get(`/api/bbs/assemble/control/picture/list/${subjectId}`)),
@@ -738,20 +758,33 @@ async function loadTopicExtras(subjectId: string): Promise<void> {
     settle(api.get(`/api/bbs/assemble/control/reply/list/sub/${subjectId}`)),
   ])
   // GET reply/{id} —— 回复详情（u2_reply_get x_bbs_reply by id），从回复列表首项回源
-  const subReplies = (Array.isArray((replyList as { data?: unknown } | null)?.data) ? (replyList as { data: unknown[] }).data : []) as Array<Record<string, unknown>>
+  const subReplies = (
+    Array.isArray((replyList as { data?: unknown } | null)?.data) ? (replyList as { data: unknown[] }).data : []
+  ) as Array<Record<string, unknown>>
   const rid = subReplies[0] ? String(subReplies[0].id ?? '') : ''
   if (rid) {
     await settle(api.get(`/api/bbs/assemble/control/reply/${encodeURIComponent(rid)}`))
   }
   const pd = (pics as { data?: unknown } | null)?.data
-  topicPics.value = (Array.isArray(pd) ? pd : Array.isArray((pd as { data?: unknown })?.data) ? (pd as { data: unknown[] }).data : []).map(String)
+  topicPics.value = (
+    Array.isArray(pd) ? pd : Array.isArray((pd as { data?: unknown })?.data) ? (pd as { data: unknown[] }).data : []
+  ).map(String)
   const gd = (gate as { data?: unknown } | null)?.data
   replyGate.value = gate
-    ? (gd === true || (gd as { replyPublishable?: boolean })?.replyPublishable ? '允许' : '不允许')
+    ? gd === true || (gd as { replyPublishable?: boolean })?.replyPublishable
+      ? '允许'
+      : '不允许'
     : '查询失败'
   const attData = (atts as { data?: unknown } | null)?.data
-  const attN = Array.isArray(attData) ? attData.length : Array.isArray((attData as { data?: unknown[] })?.data) ? (attData as { data: unknown[] }).data.length : 0
-  const canManage = Boolean((perm as { data?: { admin?: boolean; manage?: boolean } } | null)?.data?.admin || (perm as { data?: { manage?: boolean } } | null)?.data?.manage)
+  const attN = Array.isArray(attData)
+    ? attData.length
+    : Array.isArray((attData as { data?: unknown[] })?.data)
+      ? (attData as { data: unknown[] }).data.length
+      : 0
+  const canManage = Boolean(
+    (perm as { data?: { admin?: boolean; manage?: boolean } } | null)?.data?.admin ||
+      (perm as { data?: { manage?: boolean } } | null)?.data?.manage,
+  )
   topicMeta.value = `${view ? '视图已载 · ' : ''}附件 ${attN} · ${canManage ? '可管理' : '只读'}`
 }
 
@@ -1054,16 +1087,23 @@ async function bbsEntity(op: string) {
   try {
     if (op === 'forumCreate') await api.post('/api/bbs/core/entity/forum', { name: '新论坛' })
     else if (op === 'forumUpdate') await api.post(`/api/bbs/core/entity/forum/${e}`, {})
-    else if (op === 'forumDelete') { if (!(await confirmMsg('确定删除该论坛？'))) return; await api.delete(`/api/bbs/core/entity/forum/${e}`) }
-    else if (op === 'sectionCreate') await api.post('/api/bbs/core/entity/section', { name: '新版块' })
+    else if (op === 'forumDelete') {
+      if (!(await confirmMsg('确定删除该论坛？'))) return
+      await api.delete(`/api/bbs/core/entity/forum/${e}`)
+    } else if (op === 'sectionCreate') await api.post('/api/bbs/core/entity/section', { name: '新版块' })
     else if (op === 'sectionUpdate') await api.post(`/api/bbs/core/entity/section/${e}`, {})
-    else if (op === 'sectionDelete') { if (!(await confirmMsg('确定删除该版块？'))) return; await api.delete(`/api/bbs/core/entity/section/${e}`) }
-    else if (op === 'subjectCreate') await api.post('/api/bbs/core/entity/subject', { title: '新主题' })
+    else if (op === 'sectionDelete') {
+      if (!(await confirmMsg('确定删除该版块？'))) return
+      await api.delete(`/api/bbs/core/entity/section/${e}`)
+    } else if (op === 'subjectCreate') await api.post('/api/bbs/core/entity/subject', { title: '新主题' })
     else if (op === 'subjectUpdate') await api.post(`/api/bbs/core/entity/subject/${e}`, {})
-    else if (op === 'subjectDelete') { if (!(await confirmMsg('确定删除该主题？'))) return; await api.delete(`/api/bbs/core/entity/subject/${e}`) }
-    else if (op === 'creamed') await api.put('/api/bbs/assemble/control/subject/creamed/list/page/1/count/20', {})
+    else if (op === 'subjectDelete') {
+      if (!(await confirmMsg('确定删除该主题？'))) return
+      await api.delete(`/api/bbs/core/entity/subject/${e}`)
+    } else if (op === 'creamed') await api.put('/api/bbs/assemble/control/subject/creamed/list/page/1/count/20', {})
     else if (op === 'index') await api.put('/api/bbs/assemble/control/subject/index/list/page/1/count/20', {})
-    else if (op === 'recommended') await api.put('/api/bbs/assemble/control/subject/recommended/list/page/1/count/20', {})
+    else if (op === 'recommended')
+      await api.put('/api/bbs/assemble/control/subject/recommended/list/page/1/count/20', {})
     else if (op === 'search') await api.put('/api/bbs/assemble/control/subject/search/list/page/1/count/20', {})
     else if (op === 'filter') await api.put('/api/bbs/assemble/control/subject/filter/list/page/1/count/20', {})
     else if (op === 'replyFilter') await api.put('/api/bbs/assemble/control/reply/filter/list/page/1/count/20', {})

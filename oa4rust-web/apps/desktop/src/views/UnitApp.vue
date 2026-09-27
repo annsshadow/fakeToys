@@ -117,7 +117,7 @@ async function loadUnitRoot() {
       api.get('/api/organization/assemble/control/unit/list/control/top'),
       api.get('/api/organization/assemble/control/personcard/mylist'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : r?.data ? 1 : 0)
     unitTypes.value = [`根单位 ${n(root)} · 可控顶级 ${n(ctrlTop)} · 我的名片 ${n(myCard)}`]
   } catch (e: any) {
     toast.error('加载失败: ' + (e?.message ?? ''))
@@ -150,9 +150,7 @@ async function loadUnitTypes() {
 function doSearch() {
   // /api/unit/list 无关键字参数，按已加载列表做本地名称过滤
   const kw = keyword.value.trim().toLowerCase()
-  units.value = kw
-    ? allUnits.filter((u) => (u.name || u.title || '').toLowerCase().includes(kw))
-    : allUnits
+  units.value = kw ? allUnits.filter((u) => (u.name || u.title || '').toLowerCase().includes(kw)) : allUnits
 }
 
 async function checkUnit(u: UnitItem) {
@@ -203,9 +201,7 @@ async function loadIdentities() {
   if (!selectedUnit.value) return
   try {
     // GET organization/assemble/control/identity/list/unit/{unitFlag} —— 单位下身份
-    const r: any = await api.get(
-      '/api/organization/assemble/control/identity/list/unit/' + unitKey(selectedUnit.value),
-    )
+    const r: any = await api.get('/api/organization/assemble/control/identity/list/unit/' + unitKey(selectedUnit.value))
     identities.value = (r.data ?? []) as Array<{ id: string; name?: string; personName?: string; unitName?: string }>
   } catch {
     identities.value = []
@@ -251,9 +247,7 @@ async function removeAttr(a: Attr) {
 async function loadDuties() {
   if (!selectedUnit.value) return
   try {
-    const r: any = await api.get(
-      '/api/organization/assemble/control/unitduty/list/unit/' + unitKey(selectedUnit.value),
-    )
+    const r: any = await api.get('/api/organization/assemble/control/unitduty/list/unit/' + unitKey(selectedUnit.value))
     duties.value = (r.data ?? []) as Duty[]
   } catch {
     duties.value = []

@@ -242,7 +242,11 @@ function saveSignature(): void {
     .catch(() => toast.error('保存失败'))
 }
 
-interface SigMgr { id: string; name?: string; personName?: string }
+interface SigMgr {
+  id: string
+  name?: string
+  personName?: string
+}
 const authMetaText = ref('')
 async function loadAuthScopes() {
   try {
@@ -293,7 +297,7 @@ const authOAuthText = ref('')
 // 验证码/凭据码/check-token + SSO 校验/加密）。刻意排除会话破坏性端点（safe/logout、switchuser、
 // DELETE authentication、POST sso 登录、two/factory/login），避免误登出或改写当前会话。
 async function loadAuthOAuthServer() {
-  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const nm = 'default'
   const cred = 'diagnostic'
   const key = 'k'
@@ -331,7 +335,7 @@ async function loadAuthOAuthServer() {
 // 凭据码、账户绑定、SSO 校验/加密 + check/token/code 均真实 handler）。排除会话破坏性（DELETE authentication、
 // safe/logout、two_factor、POST authentication 登录、POST sso 登录）与外部依赖（oauth/login、oidc、sms、oauth/bind 回跳）。
 async function loadAuthShortDiag() {
-  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const nm = 'default'
   const cred = 'diagnostic'
   const meta = 'default'
@@ -360,7 +364,8 @@ async function loadAuthShortDiag() {
     toast.error('加载短前缀认证诊断失败: ' + (e?.message ?? ''))
   }
 }
-async function loadAuthMeta() {  try {
+async function loadAuthMeta() {
+  try {
     // GET org/assemble/authentication mode + bind/list + oauth/list —— 登录方式/账户绑定/OAuth
     const [mode, binds, oauth] = await Promise.all([
       api.get('/api/organization/assemble/authentication/authentication/mode'),
@@ -380,7 +385,7 @@ async function loadAuthMeta() {  try {
 const authDetailText = ref('')
 async function loadAuthDetails() {
   const uid = String(user.value?.unique ?? user.value?.id ?? '0')
-  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
     const [ident, icon, captcha, bindMeta, who] = await Promise.all([
       s(api.get(`/api/organization/assemble/authentication/identity/${encodeURIComponent(uid)}`)),
@@ -423,7 +428,7 @@ async function loadPersonalTwin() {
 const personalExtraText = ref('')
 async function loadPersonalExtras() {
   const uid = String(user.value?.unique ?? user.value?.id ?? '0')
-  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const empId = empMine.value[0] ? String(empMine.value[0].id ?? '0') : '0'
   try {
     const [icon, sigs, def, custom, empNext, empPrev, empByPerson, curIcon] = await Promise.all([
@@ -448,7 +453,7 @@ async function loadPersonalExtras() {
 // · personal/info（auth_person WHERE unique_id via token）· personal/detail/{id}（by id）· icon/{person}（头像）
 async function loadPersonalMore() {
   const uid = String(user.value?.unique ?? user.value?.id ?? '0')
-  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const cfgName = String((user.value as any)?.customName ?? uid)
   try {
     const [person, custMgr, logNext, logPrev, info, detail, icon] = await Promise.all([
@@ -470,7 +475,7 @@ async function loadPersonalMore() {
 // rev243：人员游标/注册校验/授权启用 7 条真实 distinct 读路由（arity 已核；full-literal）
 // person/list/{flag}/next/{count}·prev（control x_org_person 游标）· regist/check name(unique_id)/mobile/email（auth_person 各 WHERE）· empower to/enable(to_person)·currentperson/enable(from_person)
 async function loadPersonalRegistEmpower() {
-  const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const flag = '0'
   try {
     const [pNext, pPrev, ckName, ckMobile, ckEmail, empTo, empCur] = await Promise.all([
@@ -482,7 +487,7 @@ async function loadPersonalRegistEmpower() {
       s(api.get('/api/person/empower/list/to/enable')),
       s(api.get('/api/person/empower/list/currentperson/enable')),
     ])
-    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : ((r as any)?.data != null ? 1 : 0))
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : (r as any)?.data != null ? 1 : 0)
     personalExtraText.value = `人员后翻 ${n(pNext)} · 前翻 ${n(pPrev)} · 名校验 ${n(ckName)} · 手机校验 ${n(ckMobile)} · 邮箱校验 ${n(ckEmail)} · 授权给我(启用) ${n(empTo)} · 我发出(启用) ${n(empCur)}`
   } catch (e: any) {
     toast.error('加载注册/授权启用失败: ' + (e?.message ?? ''))
@@ -499,7 +504,12 @@ async function loadSignatureManagers() {
     toast.error('查询失败（需管理员）: ' + (e?.message ?? ''))
   }
 }
-interface Emp { id: string; toName?: string; fromName?: string; enabled?: boolean }
+interface Emp {
+  id: string
+  toName?: string
+  fromName?: string
+  enabled?: boolean
+}
 const empScope = ref<'mine' | 'to'>('mine')
 const empMine = ref<Emp[]>([])
 const empTo = ref<Emp[]>([])
@@ -573,27 +583,56 @@ async function empManage(op: string) {
 // rev376：人员 详情/改/删 + 管理授权改删 + 人员清单/过滤/详情/属性/关系(sup·unit sub/nested/like) + 个人设置/自定义/定义/资料更新 真实路由（body{personList}/{unitList}；custom·definition PUT/POST 孪生择一）
 async function personMore(op: string) {
   try {
-    if (op === 'personGet') { const f = encodeURIComponent(prompt('人员 flag:', '') || ''); await api.get(`/api/person/${f}`) }
-    else if (op === 'personPut') { const f = encodeURIComponent(prompt('人员 flag:', '') || ''); await api.put(`/api/person/${f}`, {}) }
-    else if (op === 'personDelete') { const f = encodeURIComponent(prompt('要删除的人员 flag:', '') || ''); if (!(await confirmMsg('确定删除该人员？'))) return; await api.delete(`/api/person/${f}`) }
-    else if (op === 'mgrEmpPut') { const id = encodeURIComponent(prompt('管理授权 ID:', '') || ''); await api.put(`/api/person/empower/manager/${id}`, {}) }
-    else if (op === 'mgrEmpDel') { const id = encodeURIComponent(prompt('管理授权 ID:', '') || ''); if (!(await confirmMsg('确定删除该管理授权？'))) return; await api.delete(`/api/person/empower/manager/${id}`) }
-    else if (op === 'personList') await api.post('/api/person/list', {})
+    if (op === 'personGet') {
+      const f = encodeURIComponent(prompt('人员 flag:', '') || '')
+      await api.get(`/api/person/${f}`)
+    } else if (op === 'personPut') {
+      const f = encodeURIComponent(prompt('人员 flag:', '') || '')
+      await api.put(`/api/person/${f}`, {})
+    } else if (op === 'personDelete') {
+      const f = encodeURIComponent(prompt('要删除的人员 flag:', '') || '')
+      if (!(await confirmMsg('确定删除该人员？'))) return
+      await api.delete(`/api/person/${f}`)
+    } else if (op === 'mgrEmpPut') {
+      const id = encodeURIComponent(prompt('管理授权 ID:', '') || '')
+      await api.put(`/api/person/empower/manager/${id}`, {})
+    } else if (op === 'mgrEmpDel') {
+      const id = encodeURIComponent(prompt('管理授权 ID:', '') || '')
+      if (!(await confirmMsg('确定删除该管理授权？'))) return
+      await api.delete(`/api/person/empower/manager/${id}`)
+    } else if (op === 'personList') await api.post('/api/person/list', {})
     else if (op === 'personFilter') await api.post('/api/person/list/filter/1/size/20', {})
-    else if (op === 'personDetail') { const f = encodeURIComponent(prompt('人员 flag:', '') || ''); await api.post(`/api/person/detail/${f}`, {}) }
-    else if (op === 'personAttr') await api.post('/api/person/list/personattribute', {})
+    else if (op === 'personDetail') {
+      const f = encodeURIComponent(prompt('人员 flag:', '') || '')
+      await api.post(`/api/person/detail/${f}`, {})
+    } else if (op === 'personAttr') await api.post('/api/person/list/personattribute', {})
     else if (op === 'personSupDirect') await api.post('/api/person/list/person/sup/direct', {})
     else if (op === 'unitSubDirect') await api.post('/api/person/list/unit/sub/direct', {})
     else if (op === 'unitSubNested') await api.post('/api/person/list/unit/sub/nested', {})
     else if (op === 'unitSubDirectLike') await api.post('/api/person/list/unit/sub/direct/like', {})
     else if (op === 'unitSubNestedLike') await api.post('/api/person/list/unit/sub/nested/like', {})
-    else if (op === 'personalSetting') { const id = encodeURIComponent(prompt('人员 ID:', '') || ''); await api.get(`/api/organization/assemble/personal/${id}/setting`) }
-    else if (op === 'customPut') { const name = encodeURIComponent(prompt('自定义名:', '') || ''); await api.put(`/api/person/custom/${name}`, {}) }
-    else if (op === 'customDel') { const name = encodeURIComponent(prompt('要删除的自定义名:', '') || ''); if (!(await confirmMsg('确定删除该自定义？'))) return; await api.delete(`/api/person/custom/${name}`) }
-    else if (op === 'customMgr') { const person = encodeURIComponent(prompt('人员:', '') || ''); const name = encodeURIComponent(prompt('自定义名:', '') || ''); await api.put(`/api/person/custom/manager/person/${person}/name/${name}`, {}) }
-    else if (op === 'defPut') { const name = encodeURIComponent(prompt('定义名:', '') || ''); await api.put(`/api/person/definition/${name}`, {}) }
-    else if (op === 'defDel') { const name = encodeURIComponent(prompt('要删除的定义名:', '') || ''); if (!(await confirmMsg('确定删除该定义？'))) return; await api.delete(`/api/person/definition/${name}`) }
-    else await api.put('/api/personal/update', {})
+    else if (op === 'personalSetting') {
+      const id = encodeURIComponent(prompt('人员 ID:', '') || '')
+      await api.get(`/api/organization/assemble/personal/${id}/setting`)
+    } else if (op === 'customPut') {
+      const name = encodeURIComponent(prompt('自定义名:', '') || '')
+      await api.put(`/api/person/custom/${name}`, {})
+    } else if (op === 'customDel') {
+      const name = encodeURIComponent(prompt('要删除的自定义名:', '') || '')
+      if (!(await confirmMsg('确定删除该自定义？'))) return
+      await api.delete(`/api/person/custom/${name}`)
+    } else if (op === 'customMgr') {
+      const person = encodeURIComponent(prompt('人员:', '') || '')
+      const name = encodeURIComponent(prompt('自定义名:', '') || '')
+      await api.put(`/api/person/custom/manager/person/${person}/name/${name}`, {})
+    } else if (op === 'defPut') {
+      const name = encodeURIComponent(prompt('定义名:', '') || '')
+      await api.put(`/api/person/definition/${name}`, {})
+    } else if (op === 'defDel') {
+      const name = encodeURIComponent(prompt('要删除的定义名:', '') || '')
+      if (!(await confirmMsg('确定删除该定义？'))) return
+      await api.delete(`/api/person/definition/${name}`)
+    } else await api.put('/api/personal/update', {})
     toast.success('人员操作已提交')
   } catch (err: any) {
     toast.error('操作失败: ' + (err?.message ?? ''))
@@ -602,9 +641,13 @@ async function personMore(op: string) {
 // rev398：组织-个人 授权 启用/禁用(按id) + 企业邮箱 回调/SSO/被动新邮件计数 真实路由（empower enable/disable Path-only、exmail 读 Path-free/Query；用户触发）
 async function personExtra(op: string) {
   try {
-    if (op === 'empEnable') { const id = encodeURIComponent(prompt('授权 ID:', '') || ''); await api.post(`/api/person/empower/${id}/enable`, {}) }
-    else if (op === 'empDisable') { const id = encodeURIComponent(prompt('授权 ID:', '') || ''); await api.post(`/api/person/empower/${id}/disable`, {}) }
-    else if (op === 'exmail') await api.get('/api/person/exmail')
+    if (op === 'empEnable') {
+      const id = encodeURIComponent(prompt('授权 ID:', '') || '')
+      await api.post(`/api/person/empower/${id}/enable`, {})
+    } else if (op === 'empDisable') {
+      const id = encodeURIComponent(prompt('授权 ID:', '') || '')
+      await api.post(`/api/person/empower/${id}/disable`, {})
+    } else if (op === 'exmail') await api.get('/api/person/exmail')
     else if (op === 'exmailSso') await api.get('/api/person/exmail/sso')
     else await api.get('/api/person/exmail/new/count/passive')
     toast.success('个人操作已提交')

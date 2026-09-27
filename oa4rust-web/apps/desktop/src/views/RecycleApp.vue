@@ -107,10 +107,7 @@ async function emptyRecycle() {
 async function loadRecycleTwin() {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
-    const rs = await Promise.all([
-      s(api.delete('/api/recycle/0/delete')),
-      s(api.post('/api/recycle/0/resume', {})),
-    ])
+    const rs = await Promise.all([s(api.delete('/api/recycle/0/delete')), s(api.post('/api/recycle/0/resume', {}))])
     toast.success(`回收站孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
     toast.error('回收站孪生端点失败: ' + (e?.message ?? ''))

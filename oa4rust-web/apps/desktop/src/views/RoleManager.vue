@@ -74,9 +74,7 @@ async function showRoleMembers(r: Role) {
   if (!flag) return
   try {
     // GET organization/assemble/control/person/list/role/{roleFlag} —— 角色下人员
-    const resp: any = await api.get(
-      '/api/organization/assemble/control/person/list/role/' + encodeURIComponent(flag),
-    )
+    const resp: any = await api.get('/api/organization/assemble/control/person/list/role/' + encodeURIComponent(flag))
     const n = Array.isArray(resp.data) ? resp.data.length : 0
     toast.success('角色成员：' + n + ' 人')
   } catch (e: any) {

@@ -141,9 +141,9 @@
 
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
-import { confirmMsg, toast } from '../utils/toast'
 import { useQuery } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+import { confirmMsg, toast } from '../utils/toast'
 
 interface CalendarEvent {
   id: string
@@ -159,7 +159,12 @@ const currentYear = ref(today.getFullYear())
 const currentMonth = ref(today.getMonth() + 1)
 const selectedDate = ref<{ year: number; month: number; day: number } | null>(null)
 
-interface CalItem { id: string; name?: string; color?: string; isPublic?: boolean }
+interface CalItem {
+  id: string
+  name?: string
+  color?: string
+  isPublic?: boolean
+}
 const calScope = ref<'my' | 'public'>('my')
 const myCals = ref<CalItem[]>([])
 const pubCals = ref<CalItem[]>([])
@@ -171,7 +176,9 @@ async function loadCalSettings() {
       api.get('/api/calendar_assemble_control/setting/list/all'),
       api.get('/api/calendar_assemble_control/calendar/ismanager'),
     ])
-    const rows = (Array.isArray((settings as any)?.data) ? (settings as any).data : []) as Array<Record<string, unknown>>
+    const rows = (Array.isArray((settings as any)?.data) ? (settings as any).data : []) as Array<
+      Record<string, unknown>
+    >
     const n = rows.length
     const isMgr = (mgr as any)?.data === true || (mgr as any)?.data?.isManager === true
     // 设置明细族 3 条真实 distinct 路由（cal_setting）：按 id setting/{id}（setting_get）+ 按 code setting/code/{code}（setting_get_by_code）
@@ -179,8 +186,12 @@ async function loadCalSettings() {
     const sid = rows[0] ? String(rows[0].id ?? '') : ''
     const scode = rows[0] ? String(rows[0].code ?? '') : ''
     const [byId, byCode, setMgr] = await Promise.all([
-      sid ? api.get(`/api/calendar_assemble_control/setting/${encodeURIComponent(sid)}`).catch(() => null) : Promise.resolve(null),
-      scode ? api.get(`/api/calendar_assemble_control/setting/code/${encodeURIComponent(scode)}`).catch(() => null) : Promise.resolve(null),
+      sid
+        ? api.get(`/api/calendar_assemble_control/setting/${encodeURIComponent(sid)}`).catch(() => null)
+        : Promise.resolve(null),
+      scode
+        ? api.get(`/api/calendar_assemble_control/setting/code/${encodeURIComponent(scode)}`).catch(() => null)
+        : Promise.resolve(null),
       api.get('/api/calendar_assemble_control/setting/ismanager').catch(() => null),
     ])
     const sName = (byId as any)?.data?.name ?? (byCode as any)?.data?.name ?? (sid || '—')
@@ -242,12 +253,36 @@ async function calMore(op: string) {
 // rev388：日历 core/entity 日历建/改 + 事件建/改/删 + 日历删(calendar/calendar/remove 轨) 真实写路由（3 轨镜像择一轨接线，字段已核 CreateCalendarRequest/CreateEventRequest 等；规避守卫禁的 core/entity/calendar/remove，删日历改走 /calendar/calendar/remove）
 async function calWriteCE(op: string) {
   try {
-    if (op === 'calCreate') { const name = prompt('日历名称:', '') || ''; if (!name) return; await api.post('/api/calendar/core/entity/calendar/create', { name, type: 'person' }) }
-    else if (op === 'calUpdate') { const id = prompt('日历 ID:', '') || ''; if (!id) return; const name = prompt('新名称:', '') || ''; await api.post('/api/calendar/core/entity/calendar/update', { id, name }) }
-    else if (op === 'calRemove') { const id = prompt('日历 ID:', '') || ''; if (!id) return; if (!(await confirmMsg('确定删除该日历？'))) return; await api.post('/api/calendar/calendar/remove', { id }) }
-    else if (op === 'eventCreate') { const calendarId = prompt('所属日历 ID:', '') || ''; const title = prompt('事件标题:', '') || ''; if (!title) return; await api.post('/api/calendar/core/entity/event/create', { calendar_id: calendarId, title }) }
-    else if (op === 'eventUpdate') { const id = prompt('事件 ID:', '') || ''; if (!id) return; const title = prompt('新标题:', '') || ''; await api.post('/api/calendar/core/entity/event/update', { id, title }) }
-    else { const id = prompt('事件 ID:', '') || ''; if (!id) return; if (!(await confirmMsg('确定删除该事件？'))) return; await api.post('/api/calendar/core/entity/event/remove', { id }) }
+    if (op === 'calCreate') {
+      const name = prompt('日历名称:', '') || ''
+      if (!name) return
+      await api.post('/api/calendar/core/entity/calendar/create', { name, type: 'person' })
+    } else if (op === 'calUpdate') {
+      const id = prompt('日历 ID:', '') || ''
+      if (!id) return
+      const name = prompt('新名称:', '') || ''
+      await api.post('/api/calendar/core/entity/calendar/update', { id, name })
+    } else if (op === 'calRemove') {
+      const id = prompt('日历 ID:', '') || ''
+      if (!id) return
+      if (!(await confirmMsg('确定删除该日历？'))) return
+      await api.post('/api/calendar/calendar/remove', { id })
+    } else if (op === 'eventCreate') {
+      const calendarId = prompt('所属日历 ID:', '') || ''
+      const title = prompt('事件标题:', '') || ''
+      if (!title) return
+      await api.post('/api/calendar/core/entity/event/create', { calendar_id: calendarId, title })
+    } else if (op === 'eventUpdate') {
+      const id = prompt('事件 ID:', '') || ''
+      if (!id) return
+      const title = prompt('新标题:', '') || ''
+      await api.post('/api/calendar/core/entity/event/update', { id, title })
+    } else {
+      const id = prompt('事件 ID:', '') || ''
+      if (!id) return
+      if (!(await confirmMsg('确定删除该事件？'))) return
+      await api.post('/api/calendar/core/entity/event/remove', { id })
+    }
     toast.success('日历写操作已提交')
   } catch (err: any) {
     toast.error('日历操作失败: ' + (err?.message ?? ''))
@@ -291,7 +326,12 @@ async function loadCalendars(scope: 'my' | 'public') {
 loadCalendars('my')
 
 // ── 选中日历 → 事件管理（消费 core calendar 事件族真实路由）──────────
-interface CalDetail { id: string; name?: string; calendarType?: string; createor?: string }
+interface CalDetail {
+  id: string
+  name?: string
+  calendarType?: string
+  createor?: string
+}
 const activeCal = ref<CalItem | null>(null)
 const activeCalDetail = ref<CalDetail | null>(null)
 const calMeta = ref('')
@@ -317,7 +357,9 @@ async function loadCalMeta(id: string): Promise<void> {
     const [follow, mgr, mgrList] = await Promise.all([
       api.get(`/api/calendar_assemble_control/calendar/follow/${encodeURIComponent(id)}`).catch(() => null),
       api.get(`/api/calendar_assemble_control/calendar/ismanager/calendar/${encodeURIComponent(id)}`).catch(() => null),
-      api.get(`/api/calendar_assemble_control/calendar/manager/list/with/person/${encodeURIComponent(id)}`).catch(() => null),
+      api
+        .get(`/api/calendar_assemble_control/calendar/manager/list/with/person/${encodeURIComponent(id)}`)
+        .catch(() => null),
     ])
     const boolVal = (r: any) => r?.data?.value === true
     const listLen = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
@@ -326,7 +368,6 @@ async function loadCalMeta(id: string): Promise<void> {
     calMeta.value = ''
   }
 }
-
 
 function closeCalendar(): void {
   activeCal.value = null

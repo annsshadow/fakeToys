@@ -199,13 +199,23 @@ async function loadDesignerApp() {
     const cats = (Array.isArray(catResp?.data) ? catResp.data : []) as Array<Record<string, unknown>>
     const cat = cats[0] ? String(cats[0].id ?? cats[0].name ?? '') : ''
     const appResp: any = cat
-      ? await api.get(`/api/processplatform/assemble/designer/application/list/applicationcategory/${encodeURIComponent(cat)}`).catch(() => null)
+      ? await api
+          .get(`/api/processplatform/assemble/designer/application/list/applicationcategory/${encodeURIComponent(cat)}`)
+          .catch(() => null)
       : null
-    const apps = (Array.isArray(appResp?.data?.data) ? appResp.data.data : (appResp?.data ?? [])) as Array<Record<string, unknown>>
+    const apps = (Array.isArray(appResp?.data?.data) ? appResp.data.data : (appResp?.data ?? [])) as Array<
+      Record<string, unknown>
+    >
     const appId = apps[0] ? String(apps[0].id ?? '') : ''
     const [detail, perm] = await Promise.all([
-      appId ? api.get(`/api/processplatform/assemble/designer/application/${encodeURIComponent(appId)}`).catch(() => null) : Promise.resolve(null),
-      appId ? api.get(`/api/processplatform/assemble/designer/application/permission/${encodeURIComponent(appId)}`).catch(() => null) : Promise.resolve(null),
+      appId
+        ? api.get(`/api/processplatform/assemble/designer/application/${encodeURIComponent(appId)}`).catch(() => null)
+        : Promise.resolve(null),
+      appId
+        ? api
+            .get(`/api/processplatform/assemble/designer/application/permission/${encodeURIComponent(appId)}`)
+            .catch(() => null)
+        : Promise.resolve(null),
     ])
     const dName = (detail as any)?.data?.name ?? (appId || '—')
     const pKeys = perm && (perm as any).data?.permissions ? Object.keys((perm as any).data.permissions).length : 0
@@ -224,18 +234,26 @@ async function loadSurfaceApp() {
     const cats = (Array.isArray(catResp?.data) ? catResp.data : []) as Array<Record<string, unknown>>
     const cat = cats[0] ? String(cats[0].id ?? cats[0].name ?? '') : ''
     const appResp: any = cat
-      ? await api.get(`/api/processplatform/assemble/designer/application/list/applicationcategory/${encodeURIComponent(cat)}`).catch(() => null)
+      ? await api
+          .get(`/api/processplatform/assemble/designer/application/list/applicationcategory/${encodeURIComponent(cat)}`)
+          .catch(() => null)
       : null
-    const apps = (Array.isArray(appResp?.data?.data) ? appResp.data.data : (appResp?.data ?? [])) as Array<Record<string, unknown>>
+    const apps = (Array.isArray(appResp?.data?.data) ? appResp.data.data : (appResp?.data ?? [])) as Array<
+      Record<string, unknown>
+    >
     const appId = apps[0] ? String(apps[0].id ?? '') : ''
     if (!appId) {
       surfaceText.value = '暂无流程应用可查表面信息'
       return
     }
     const [mgr, icon, dict] = await Promise.all([
-      api.get(`/api/processplatform/assemble/surface/application/${encodeURIComponent(appId)}/is/manager`).catch(() => null),
+      api
+        .get(`/api/processplatform/assemble/surface/application/${encodeURIComponent(appId)}/is/manager`)
+        .catch(() => null),
       api.get(`/api/processplatform/assemble/surface/application/${encodeURIComponent(appId)}/icon`).catch(() => null),
-      api.get(`/api/processplatform/assemble/surface/applicationdict/list/application/${encodeURIComponent(appId)}`).catch(() => null),
+      api
+        .get(`/api/processplatform/assemble/surface/applicationdict/list/application/${encodeURIComponent(appId)}`)
+        .catch(() => null),
     ])
     const isMgr = (mgr as any)?.data?.id ? '有权' : '未命中'
     const hasIcon = (icon as any)?.data?.id ? '有' : '无'

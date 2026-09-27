@@ -524,15 +524,19 @@ async function qdEdit(kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 
     else if (kind === 'stat') await api.put(`/api/query/assemble/designer/stat/${eid}`, { name: '更新统计' })
     else if (kind === 'view') await api.put(`/api/query/assemble/designer/view/edit/${eid}`, { name: '更新视图' })
     else if (kind === 'table') await api.put(`/api/query/assemble/designer/table/edit/${eid}`, { name: '更新表' })
-    else if (kind === 'importmodel') await api.put(`/api/query/assemble/designer/importmodel/${eid}`, { name: '更新导入模型' })
-    else if (kind === 'neural') await api.put(`/api/query/assemble/designer/neural/model/${eid}`, { name: '更新神经模型' })
+    else if (kind === 'importmodel')
+      await api.put(`/api/query/assemble/designer/importmodel/${eid}`, { name: '更新导入模型' })
+    else if (kind === 'neural')
+      await api.put(`/api/query/assemble/designer/neural/model/${eid}`, { name: '更新神经模型' })
     else await api.put(`/api/query/assemble/designer/importer/save/${eid}`, { name: '保存导入器' })
     toast.success(`${kind} 已更新`)
   } catch (e: any) {
     toast.error(`更新${kind}失败: ` + (e?.message ?? ''))
   }
 }
-async function qdDelete(kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 'importmodel' | 'neural' | 'importer') {
+async function qdDelete(
+  kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 'importmodel' | 'neural' | 'importer',
+) {
   const id = prompt(`要删除的${kind} ID/flag:`, '')
   if (!id) return
   if (!confirmMsg(`确定删除该${kind}？`)) return
@@ -599,18 +603,48 @@ async function qdMisc(op: string) {
 // rev361：查询设计器 统计/导入模型/视图/表/语句/神经网络模型 建改删执行 真实写（各 Path 参数 + Json body；均为 distinct 逻辑 op，不接双注册孪生）
 async function qdWrite2(op: string) {
   try {
-    if (op === 'statEdit') { const id = prompt('统计 ID:', '') || ''; await api.put(`/api/query/assemble/designer/stat/edit/${encodeURIComponent(id)}`, {}) }
-    else if (op === 'statDelete') { const id = prompt('要删除的统计 ID:', '') || ''; if (!(await confirmMsg('确定删除该统计？'))) return; await api.delete(`/api/query/assemble/designer/stat/delete/${encodeURIComponent(id)}`) }
-    else if (op === 'importRun') { const id = prompt('导入模型 ID:', '') || ''; await api.post(`/api/query/assemble/designer/importmodel/${encodeURIComponent(id)}`, {}) }
-    else if (op === 'importEdit') { const id = prompt('导入模型 ID:', '') || ''; await api.put(`/api/query/assemble/designer/importmodel/edit/${encodeURIComponent(id)}`, {}) }
-    else if (op === 'importDelete') { const id = prompt('要删除的导入模型 ID:', '') || ''; if (!(await confirmMsg('确定删除该导入模型？'))) return; await api.delete(`/api/query/assemble/designer/importmodel/delete/${encodeURIComponent(id)}`) }
-    else if (op === 'viewDelete') { const id = prompt('要删除的视图 ID:', '') || ''; if (!(await confirmMsg('确定删除该视图？'))) return; await api.delete(`/api/query/assemble/designer/view/delete/${encodeURIComponent(id)}`) }
-    else if (op === 'tableDelete') { const flag = prompt('要删除的数据表 flag:', '') || ''; if (!(await confirmMsg('确定删除该数据表？'))) return; await api.delete(`/api/query/assemble/designer/table/delete/${encodeURIComponent(flag)}`) }
-    else if (op === 'stmtPermission') { const id = prompt('语句 ID:', '') || ''; await api.post(`/api/query/assemble/designer/statement/permission/${encodeURIComponent(id)}`, {}) }
-    else if (op === 'stmtExecute') { const flag = prompt('语句 flag:', '') || ''; await api.post(`/api/query/assemble/designer/statement/execute/${encodeURIComponent(flag)}/page/1/size/20`, {}) }
-    else if (op === 'neuralUpdate') { const f = prompt('模型 flag:', '') || ''; await api.put(`/api/query/assemble/designer/neural/update/model/${encodeURIComponent(f)}`, {}) }
-    else if (op === 'neuralDelete') { const f = prompt('要删除的模型 flag:', '') || ''; if (!(await confirmMsg('确定删除该神经网络模型？'))) return; await api.delete(`/api/query/assemble/designer/neural/delete/model/${encodeURIComponent(f)}`) }
-    else { const f = prompt('模型 flag:', '') || ''; await api.post(`/api/query/assemble/designer/neural/model/reset/${encodeURIComponent(f)}/init`, {}) }
+    if (op === 'statEdit') {
+      const id = prompt('统计 ID:', '') || ''
+      await api.put(`/api/query/assemble/designer/stat/edit/${encodeURIComponent(id)}`, {})
+    } else if (op === 'statDelete') {
+      const id = prompt('要删除的统计 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该统计？'))) return
+      await api.delete(`/api/query/assemble/designer/stat/delete/${encodeURIComponent(id)}`)
+    } else if (op === 'importRun') {
+      const id = prompt('导入模型 ID:', '') || ''
+      await api.post(`/api/query/assemble/designer/importmodel/${encodeURIComponent(id)}`, {})
+    } else if (op === 'importEdit') {
+      const id = prompt('导入模型 ID:', '') || ''
+      await api.put(`/api/query/assemble/designer/importmodel/edit/${encodeURIComponent(id)}`, {})
+    } else if (op === 'importDelete') {
+      const id = prompt('要删除的导入模型 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该导入模型？'))) return
+      await api.delete(`/api/query/assemble/designer/importmodel/delete/${encodeURIComponent(id)}`)
+    } else if (op === 'viewDelete') {
+      const id = prompt('要删除的视图 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该视图？'))) return
+      await api.delete(`/api/query/assemble/designer/view/delete/${encodeURIComponent(id)}`)
+    } else if (op === 'tableDelete') {
+      const flag = prompt('要删除的数据表 flag:', '') || ''
+      if (!(await confirmMsg('确定删除该数据表？'))) return
+      await api.delete(`/api/query/assemble/designer/table/delete/${encodeURIComponent(flag)}`)
+    } else if (op === 'stmtPermission') {
+      const id = prompt('语句 ID:', '') || ''
+      await api.post(`/api/query/assemble/designer/statement/permission/${encodeURIComponent(id)}`, {})
+    } else if (op === 'stmtExecute') {
+      const flag = prompt('语句 flag:', '') || ''
+      await api.post(`/api/query/assemble/designer/statement/execute/${encodeURIComponent(flag)}/page/1/size/20`, {})
+    } else if (op === 'neuralUpdate') {
+      const f = prompt('模型 flag:', '') || ''
+      await api.put(`/api/query/assemble/designer/neural/update/model/${encodeURIComponent(f)}`, {})
+    } else if (op === 'neuralDelete') {
+      const f = prompt('要删除的模型 flag:', '') || ''
+      if (!(await confirmMsg('确定删除该神经网络模型？'))) return
+      await api.delete(`/api/query/assemble/designer/neural/delete/model/${encodeURIComponent(f)}`)
+    } else {
+      const f = prompt('模型 flag:', '') || ''
+      await api.post(`/api/query/assemble/designer/neural/model/reset/${encodeURIComponent(f)}/init`, {})
+    }
     toast.success('查询设计器写操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
