@@ -25203,7 +25203,104 @@ pub async fn attachment_u2b_batch_download_zip(
     // "job"/"work" 是静态路径段（非参数），动态段仅 {…}/{site} 两个
     axum::extract::Path((_id, _site)): axum::extract::Path<(String, String)>,
 ) -> Result<axum::response::Response, AppError> {
+    // 两条路由（job 前缀 / work 前缀）共用本 handler 时无法区分按 xjob 还是 xwork
+    // 过滤——拆分为 *_by_job / *_by_work 两个真实现后本条不再被任何路由引用。
     Err(u2_capability_unavailable("multi-file archive packaging"))
+}
+
+#[allow(non_snake_case)]
+pub async fn attachment_u2b_batch_download_zip_by_job(
+    pool: Extension<Pool>,
+    axum::extract::Path((job, site)): axum::extract::Path<(String, String)>,
+) -> Result<axum::response::Response, AppError> {
+    u2_att_batch_zip(&pool, "xjob", &job, &site).await
+}
+
+#[allow(non_snake_case)]
+pub async fn attachment_u2b_batch_download_zip_by_work(
+    pool: Extension<Pool>,
+    axum::extract::Path((work, site)): axum::extract::Path<(String, String)>,
+) -> Result<axum::response::Response, AppError> {
+    u2_att_batch_zip(&pool, "xwork", &work, &site).await
+}
+
+/// 按 xjob/xwork + xsite 取全部附件 blob，打包为 zip（多文件归档）。
+async fn u2_att_batch_zip(
+    pool: &Pool,
+    filter_col: &str,
+    id: &str,
+    site: &str,
+) -> Result<axum::response::Response, AppError> {
+    use axum::http::header::{CONTENT_DISPOSITION, CONTENT_TYPE};
+    // filter_col 只来自两个调用点的字面量（"xjob"/"xwork"），非用户输入。
+    let sql = format!(
+        "SELECT \"xname\", \"xstorage\" FROM \"pp_c_attachment\" WHERE {filter_col} = $1 AND xsite = $2 ORDER BY \"xcreateTime\""
+    );
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(&sql, &[&id, &site])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let storage = shared::storage::storage_with_pool(pool.clone());
+    let mut entries: Vec<(String, Vec<u8>)> = Vec::with_capacity(rows.len());
+    for row in rows {
+        let name: String = row.get::<_, Option<String>>("xname").unwrap_or_default();
+        let Some(key) = row
+            .get::<_, Option<String>>("xstorage")
+            .filter(|k| !k.is_empty())
+        else {
+            continue; // db-row 模式（内容不在 BlobStorage）的附件跳过，不为凑数造假
+        };
+        if let Ok(bytes) = storage.get(&key).await {
+            entries.push((name, bytes));
+        }
+    }
+    let zip_bytes = u2_build_zip_archive(entries)?;
+    let safe_name = format!("attachment-{}.zip", urlencoding::encode(id));
+    Ok(axum::response::Response::builder()
+        .status(axum::http::StatusCode::OK)
+        .header(CONTENT_TYPE, "application/zip")
+        .header(
+            CONTENT_DISPOSITION,
+            format!("attachment; filename=\"{safe_name}\""),
+        )
+        .body(axum::body::Body::from(zip_bytes))
+        .unwrap())
+}
+
+/// (文件名, 字节) 序列打包 zip；重名 entry 加序号。与 file_assemble_control 同款。
+fn u2_build_zip_archive(entries: Vec<(String, Vec<u8>)>) -> Result<Vec<u8>, AppError> {
+    use std::io::{Cursor, Write as _};
+    use zip::write::SimpleFileOptions;
+
+    let mut writer = zip::ZipWriter::new(Cursor::new(Vec::new()));
+    let mut used_names = std::collections::HashSet::new();
+    for (index, (name, bytes)) in entries.into_iter().enumerate() {
+        let base = if name.is_empty() {
+            format!("attachment-{}", index + 1)
+        } else {
+            name
+        };
+        let mut entry = base.clone();
+        let mut seq = 1u32;
+        while !used_names.insert(entry.clone()) {
+            seq += 1;
+            entry = match base.rsplit_once('.') {
+                Some((stem, ext)) if !ext.is_empty() && !base.starts_with('.') => {
+                    format!("{stem}-{seq}.{ext}")
+                }
+                _ => format!("{base}-{seq}"),
+            };
+        }
+        writer
+            .start_file(entry.as_str(), SimpleFileOptions::default())
+            .map_err(|_| AppError::Internal)?;
+        writer.write_all(&bytes).map_err(|_| AppError::Internal)?;
+    }
+    Ok(writer
+        .finish()
+        .map_err(|_| AppError::Internal)?
+        .into_inner())
 }
 
 // ── 元数据管理族（真实 SQL + IDOR 门禁） ────────────────────────────────────

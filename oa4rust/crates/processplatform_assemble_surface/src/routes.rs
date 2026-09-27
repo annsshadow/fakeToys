@@ -343,7 +343,8 @@ use crate::{
 };
 
 use crate::{
-    attachment_u2b_batch_delete_manage, attachment_u2b_batch_download_zip,
+    attachment_u2b_batch_delete_manage,
+    attachment_u2b_batch_download_zip_by_job, attachment_u2b_batch_download_zip_by_work,
     attachment_u2b_batch_update_manage, attachment_u2b_batch_upload_manage,
     attachment_u2b_change_order_number, attachment_u2b_change_site, attachment_u2b_copy_to_work,
     attachment_u2b_copy_to_work_soft, attachment_u2b_copy_to_workcompleted,
@@ -1283,9 +1284,9 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/attachment/invoice/{flag}/joborworkorworkcompleted/{workOrWorkCompleted}", get(attachment_u2b_invoice_info))
         .route("/api/processplatform/assemble/surface/attachment/download/invoice/{flag}/joborworkorworkcompleted/{workOrWorkCompleted}", get(attachment_u2b_invoice_download))
         .route("/api/processplatform/assemble/surface/attachment/upload/with/url", post(attachment_u2b_upload_with_url))
-        .route("/api/processplatform/assemble/surface/attachment/batch/download/job/{job}/site/{site}", get(attachment_u2b_batch_download_zip))
-        .route("/api/processplatform/assemble/surface/attachment/batch/download/work/{work}/site/{site}", get(attachment_u2b_batch_download_zip))
-        .route("/api/processplatform/assemble/surface/attachment/batch/download/work/{work}/site/{site}/stream", get(attachment_u2b_batch_download_zip))
+        .route("/api/processplatform/assemble/surface/attachment/batch/download/job/{job}/site/{site}", get(attachment_u2b_batch_download_zip_by_job))
+        .route("/api/processplatform/assemble/surface/attachment/batch/download/work/{work}/site/{site}", get(attachment_u2b_batch_download_zip_by_work))
+        .route("/api/processplatform/assemble/surface/attachment/batch/download/work/{work}/site/{site}/stream", get(attachment_u2b_batch_download_zip_by_work))
         .route("/api/processplatform/assemble/surface/attachment/update/{id}/work/{workId}", put(attachment_u2b_update_by_work))
         .route("/api/processplatform/assemble/surface/attachment/update/{id}/work/{workId}", post(attachment_u2b_update_post))
         .route("/api/processplatform/assemble/surface/attachment/update/{id}/work/{workId}/callback/{callbackId}", post(attachment_u2b_update_callback))
