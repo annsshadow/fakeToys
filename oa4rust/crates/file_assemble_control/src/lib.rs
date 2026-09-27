@@ -19,6 +19,7 @@ pub const API_BASE: &str = "/api/file_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
@@ -3198,7 +3199,15 @@ pub async fn file_upload_with_url(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let url = body
+        .get("url")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .trim()
+        .to_string();
+    if url.is_empty() {
+        return Err(AppError::BadRequest("url is required".to_string()));
+    }
 
     let name = body
         .get("name")
@@ -3215,26 +3224,36 @@ pub async fn file_upload_with_url(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
-    let size: i64 = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let url = body
-        .get("url")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default()
-        .to_string();
     let mime_type = body
         .get("mimeType")
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
+    // 真拉取远程内容（SSRF 防护见 shared::netguard）。此前这里把 URL 字符串本身
+    // base64 当文件内容入库——假实现且污染数据。
+    let fetcher = shared::netguard::fetch_client().map_err(|_| AppError::Internal)?;
+    let (final_url, bytes) = shared::netguard::fetch_limited(&fetcher, &url).await.map_err(|e| {
+        tracing::warn!(url = %url, error = %e, "remote url fetch rejected or failed");
+        AppError::BadRequest(format!("remote fetch failed: {e}"))
+    })?;
+
+    let name = if name.is_empty() {
+        shared::netguard::filename_from_url(&url, &final_url)
+    } else {
+        name
+    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let creator = session.person_unique.clone();
-    let content_b64 = base64::engine::general_purpose::STANDARD.encode(&url);
-    let ext = if let Some(ref fname) = name.split('.').next_back() {
-        fname
-    } else {
-        "bin"
-    };
+    let content_b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+    let size = bytes.len() as i64;
+    let ext = name
+        .rsplit('.')
+        .next()
+        .filter(|e| !e.is_empty() && *e != name)
+        .unwrap_or("bin")
+        .to_string();
 
     client
         .execute(
