@@ -14,10 +14,10 @@
             class="slot"
             :class="{ empty: !selected[i - 1] }"
           >
-            <text v-if="selected[i - 1]" class="tag" :class="'tag-' + skillOf(i)?.element">
-              {{ elementName(skillOf(i)!.element) }}
+            <text v-if="selected[i - 1]" class="tag" :class="'tag-' + skillOf(i - 1)?.element">
+              {{ elementName(skillOf(i - 1)!.element) }}
             </text>
-            <text v-if="selected[i - 1]" class="slot-name">{{ skillOf(i)!.name }}</text>
+            <text v-if="selected[i - 1]" class="slot-name">{{ skillOf(i - 1)!.name }}</text>
             <text v-else class="dim">空槽</text>
             <text
               v-if="selected[i - 1]"
