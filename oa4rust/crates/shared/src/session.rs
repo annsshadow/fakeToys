@@ -293,13 +293,7 @@ impl SessionManager {
                     return Ok(session);
                 }
             };
-            let mut conn = pool
-                .0
-                .manager
-                .lock()
-                .await
-                .as_ref()
-                .map(|m| m.clone());
+            let mut conn = pool.0.manager.lock().await.as_ref().map(|m| m.clone());
             if let Some(conn) = conn.as_mut() {
                 let _ = conn
                     .set_ex::<_, _, ()>(key, session_json, self.auth_config.session_ttl_seconds)
@@ -420,13 +414,7 @@ impl SessionManager {
                     let key = format!("{}{}", SESSION_KEY_PREFIX, signed_token);
                     let result: Option<String> = {
                         // 锁仅瞬时 clone（ConnectionManager 可 Clone+自动重连），命令执行不持锁
-                        let mut conn = pool
-                            .0
-                            .manager
-                            .lock()
-                            .await
-                            .as_ref()
-                            .map(|m| m.clone());
+                        let mut conn = pool.0.manager.lock().await.as_ref().map(|m| m.clone());
                         match conn.as_mut() {
                             Some(conn) => conn
                                 .get::<_, Option<String>>(key.clone())
@@ -447,13 +435,8 @@ impl SessionManager {
                                 return Some(session);
                             } else {
                                 let _ = {
-                                    let mut conn = pool
-                                        .0
-                                        .manager
-                                        .lock()
-                                        .await
-                                        .as_ref()
-                                        .map(|m| m.clone());
+                                    let mut conn =
+                                        pool.0.manager.lock().await.as_ref().map(|m| m.clone());
                                     if let Some(conn) = conn.as_mut() {
                                         conn.del::<_, ()>(key).await.ok()
                                     } else {
@@ -512,13 +495,7 @@ impl SessionManager {
         if let Some(ref pool) = self.get_redis_pool() {
             let signed_token = self.sign_token(token);
             let key = format!("{}{}", SESSION_KEY_PREFIX, signed_token);
-            let mut conn = pool
-                .0
-                .manager
-                .lock()
-                .await
-                .as_ref()
-                .map(|m| m.clone());
+            let mut conn = pool.0.manager.lock().await.as_ref().map(|m| m.clone());
             if let Some(conn) = conn.as_mut() {
                 let _ = conn.del::<_, ()>(key).await;
             }
@@ -687,13 +664,7 @@ impl SessionManager {
             self.sessions.write().await.remove(token);
         }
         if let Some(ref pool) = self.get_redis_pool() {
-            let mut conn = pool
-                .0
-                .manager
-                .lock()
-                .await
-                .as_ref()
-                .map(|m| m.clone());
+            let mut conn = pool.0.manager.lock().await.as_ref().map(|m| m.clone());
             if let Some(conn) = conn.as_mut() {
                 for token in &expired {
                     // 与 create/validate/remove 一致：Redis key 存的是签名后的 token。

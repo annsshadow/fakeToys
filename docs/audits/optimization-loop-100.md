@@ -75,6 +75,16 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | 78 | xid 索引 live 实证 | EXPLAIN | IMPROVE | Index **Only** Scan（覆盖索引，优于预期 Index Scan） |
 | 79 | 运行稳定性 | live 日志 | CLEAN | 0 panic |
 | 80 | 服务收尾 | taskkill | CLEAN | 进程干净终止 |
+| 81 | fmt 增量复扫 | cargo fmt --check | FIX | oauth 防御改动引入漂移 → 格式化归零 |
+| 82 | 无 WHERE 复扫 | 快扫 | CLEAN | 6 条均为既判语义 |
+| 83 | 501 桩终态 | capability_unavailable 明细 | FIX | 删不再被路由引用的 batch_download_zip 旧兼容壳；剩余 8 处 = file-system-config ×2（结构性）+ preview 分级分支（类型性 501，预期） |
+| 84 | TODO 基线 | grep | CLEAN | 0 |
+| 85-90 | 前端全链回归 | lint/typecheck/vitest/build | FIX | main.ts errorHandler 引入的引号风格 → biome 修；**mobile H5 build 预存破损修复**：pinia 2.3 的 devtools-api→devtools-kit 传递依赖在 rolldown 严格解析下缺失（与本轮改动无关，依赖升级期引入），建 stub + vite alias 根治 |
+| 91-95 | 后端回归 | surface 601 + shared 141 | CLEAN | 全绿 |
+| 96 | reconcile gate | compare --gate | CLEAN | PASS |
+| 97 | 契约守卫 | contracts + autoquery | CLEAN | 20/20 |
+| 98 | 路由对齐复扫 | main.ts vs views | CLEAN | 83/83 |
+| 99 | 敏感/垃圾复扫 | 硬编码/untracked | CLEAN | 零新增 |
 | 51/52 | 路由-视图对齐 | main.ts 动态导入 vs views 全集 | CLEAN | 83/83 全注册，零死组件 |
 | 53 | apis 包死导出 | 导出 vs 引用计数 | IMPROVE(deferred) | 独立 *Api 命名导出由 oa4rustApis 聚合覆盖，对外契约保留 |
 | 54 | 全局错误兜底 | errorHandler 扫描 | FIX | main.ts 补 app.config.errorHandler（未捕获渲染/Promise 错误 fail-loud） |
