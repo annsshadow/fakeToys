@@ -196,7 +196,6 @@ export interface Buffs {
   attackPermille: bigint
   elementCoefPermille: bigint
   critPermille: bigint
-  heatCapBonus: bigint
   elementCapBonus: bigint
   armorPermille: bigint
   pierceBonus: number
@@ -211,7 +210,6 @@ function newBuffs(): Buffs {
     attackPermille: 0n,
     elementCoefPermille: 0n,
     critPermille: 0n,
-    heatCapBonus: 0n,
     elementCapBonus: 0n,
     armorPermille: 0n,
     pierceBonus: 0,
@@ -1412,7 +1410,14 @@ export class BattleEngine {
         this.buffs.critPermille += e.value
         break
       case 'heat_cap':
-        this.buffs.heatCapBonus += e.value
+        // ⚠️ 这里**只**写 heat.capBonus，不要在 Buffs 里再存一份。
+        //
+        // 而真正被 `HeatMeter.cap`（`get cap() { return HEAT_MAX + this.capBonus }`）
+        // 读走的是后者 —— 前者成了**只写不读的镜像字段**。
+        //
+        // 危害不是"多占一点内存"，而是**陷阱**：
+        // 实际没人维护的值（比如从别处加了 Buffs 却没同步 HeatMeter），
+        // 而全绿的测试不会提示任何异常。
         this.heat.capBonus += e.value
         break
       case 'element_cap':
