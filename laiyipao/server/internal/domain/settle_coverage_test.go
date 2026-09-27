@@ -200,11 +200,14 @@ var fieldBounds = map[string]boundCase{
 		// 只测一个就等于宣称「它被守住了」。
 		Mutate: func(in *SettleInput, _ GeneratedLevel) { in.ElementsUsed = map[string]int{"not_an_element": 1} },
 		Why:    "未知元素键",
-		Mutate2: func(in *SettleInput, _ GeneratedLevel) {
-			// 键完全合法，但计数超过命中数
-			in.ElementsUsed = map[string]int{"fire": in.Hits + 1000}
+		Mutate2: func(in *SettleInput, gl GeneratedLevel) {
+			// 键完全合法，但计数超过上界（shots × 该关怪数）
+			//
+			// ⚠️ 上界不是 `hits` —— 实测真实引擎的元素合计 / hits 最大 1.214，
+			// 取 hits 会拒掉正常对局。详见 battle_collections.go 的注释。
+			in.ElementsUsed = map[string]int{"fire": in.Shots*MaxKillsFor(gl) + 1000}
 		},
-		Why2: "元素计数合计超过命中数（键合法，只有数值越界）",
+		Why2: "元素计数合计超过 shots×怪数（键合法，只有数值越界）",
 	},
 	"ReactionsUsed": {
 		Mutate: func(in *SettleInput, _ GeneratedLevel) {

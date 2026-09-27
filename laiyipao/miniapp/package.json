@@ -35,11 +35,12 @@
   },
   "devDependencies": {
     "@dcloudio/types": "^3.4.8",
-    "@types/node": "^20.19.9",
     "@dcloudio/uni-automator": "3.0.0-5020420260813003",
     "@dcloudio/uni-cli-shared": "3.0.0-5020420260813003",
     "@dcloudio/uni-stacktracey": "3.0.0-5020420260813003",
     "@dcloudio/vite-plugin-uni": "3.0.0-5020420260813003",
+    "@types/node": "^20.19.9",
+    "@vitest/coverage-v8": "2.1.9",
     "@vue/runtime-core": "^3.4.21",
     "@vue/tsconfig": "^0.1.3",
     "typescript": "^4.9.4",
