@@ -66,6 +66,20 @@ export interface GameConfig {
     star_target_ratio: number[]
     score_full_at_sec: number
   }
+  /**
+   * skill_rules 是**技能升级规则**（等级上限 / 每级伤害系数 / 费用基数）。
+   *
+   * 唯一定义在 Go 侧 `domain.DefaultSkillRules()`，本字段是它的下发副本。
+   * 客户端的 `DEFAULT_SKILL_RULES` 只是离线兜底，
+   * 由 `skill.test.ts` 的 TestSkillRulesMatchServerContract 断言不漂移。
+   *
+   * 转换见 SkillRules 的 `skillRulesFromServer()`。
+   */
+  skill_rules: {
+    max_level: number
+    coef_permille: number
+    base_cost: number
+  }
   server_time: string
 }
 
@@ -330,6 +344,26 @@ export function saveLoadout(skillIds: number[]) {
     method: 'PUT',
     body: { skill_ids: skillIds },
   })
+}
+
+/**
+ * 把一个已拥有的技能升一级。
+ *
+ * 费用与上限由服务端裁定（`service.UpgradeSkill` 在事务里读等级、
+ * 条件扣费、升一级），客户端**不预判**能不能升 ——
+ * 余额、满级、并发推满都由服务端说了算。
+ * 客户端只负责把「点了升级」这个意图发出去。
+ *
+ * 响应里带 `wallet` 是刻意的：升级必然花钱，
+ * 让前端再发一次 `/wallet` 才能刷新余额是个可避免的竞态
+ * （玩家连点两次会看到中间态余额）。
+ */
+export function upgradeSkill(skillId: number) {
+  return request<{
+    skill_id: number
+    level: number
+    wallet: { coin: number; gem: number; energy: number; keys: number }
+  }>(`/me/skills/${skillId}/upgrade`, { method: 'POST' })
 }
 
 /** 开局凭证。seed 是字符串 —— 服务端刻意不用 number，避免 JS 精度损失。 */

@@ -15923,7 +15923,7 @@
       "slot": "weapon",
       "tier": 1,
       "element": "kinetic",
-      "descr": "军方量产的基础炮管。",
+      "descr": "军方量产的基础炮管。攻击力 +50‰。",
       "base_armor": 0,
       "base_bonus_pct": 50,
       "unlock_level": 1
@@ -15935,7 +15935,7 @@
       "slot": "weapon",
       "tier": 2,
       "element": "fire",
-      "descr": "膛线内刻高温纹路。",
+      "descr": "膛线内刻高温纹路。攻击力 +120‰。",
       "base_armor": 0,
       "base_bonus_pct": 120,
       "unlock_level": 15
@@ -15947,7 +15947,7 @@
       "slot": "weapon",
       "tier": 3,
       "element": "lightning",
-      "descr": "让弹丸短暂进入相位态，直接附加元素。",
+      "descr": "让弹丸短暂进入相位态。攻击力 +250‰。",
       "base_armor": 0,
       "base_bonus_pct": 250,
       "unlock_level": 40
@@ -15959,7 +15959,7 @@
       "slot": "helmet",
       "tier": 1,
       "element": "kinetic",
-      "descr": "提升防线护甲。",
+      "descr": "提升防线护甲。护甲 +20‰，攻击力 +30‰。",
       "base_armor": 20,
       "base_bonus_pct": 30,
       "unlock_level": 4
@@ -15971,7 +15971,7 @@
       "slot": "helmet",
       "tier": 2,
       "element": "corrosion",
-      "descr": "抵御腐蚀侵袭。",
+      "descr": "抵御腐蚀侵袭的风蚀面罩。护甲 +45‰，攻击力 +80‰。",
       "base_armor": 45,
       "base_bonus_pct": 80,
       "unlock_level": 18
@@ -15983,7 +15983,7 @@
       "slot": "helmet",
       "tier": 3,
       "element": "lightning",
-      "descr": "看清敌人身上的元素层数。",
+      "descr": "看清敌人身上的元素层数。护甲 +60‰，攻击力 +140‰。",
       "base_armor": 60,
       "base_bonus_pct": 140,
       "unlock_level": 44
@@ -15995,7 +15995,7 @@
       "slot": "armor",
       "tier": 1,
       "element": "kinetic",
-      "descr": "用废旧钢板拼成，聊胜于无。",
+      "descr": "用废旧钢板拼成，聊胜于无。护甲 +35‰，攻击力 +25‰。",
       "base_armor": 35,
       "base_bonus_pct": 25,
       "unlock_level": 6
@@ -16007,7 +16007,7 @@
       "slot": "armor",
       "tier": 2,
       "element": "ice",
-      "descr": "夹层液氮，被击中时急速降温。",
+      "descr": "夹层液氮的复合装甲。护甲 +70‰，攻击力 +70‰。",
       "base_armor": 70,
       "base_bonus_pct": 70,
       "unlock_level": 22
@@ -16019,7 +16019,7 @@
       "slot": "armor",
       "tier": 3,
       "element": "fire",
-      "descr": "受击时反射元素攻击。",
+      "descr": "受热变形的重型装甲。护甲 +110‰，攻击力 +120‰。",
       "base_armor": 110,
       "base_bonus_pct": 120,
       "unlock_level": 50
@@ -16031,7 +16031,7 @@
       "slot": "gloves",
       "tier": 1,
       "element": "kinetic",
-      "descr": "装填更快。",
+      "descr": "装填机构打磨过。护甲 +5‰，攻击力 +40‰。",
       "base_armor": 5,
       "base_bonus_pct": 40,
       "unlock_level": 2
@@ -16043,7 +16043,7 @@
       "slot": "gloves",
       "tier": 2,
       "element": "lightning",
-      "descr": "引导弹丸轨迹。",
+      "descr": "引导弹丸轨迹的稳定器。护甲 +10‰，攻击力 +100‰。",
       "base_armor": 10,
       "base_bonus_pct": 100,
       "unlock_level": 14
@@ -16055,7 +16055,7 @@
       "slot": "gloves",
       "tier": 3,
       "element": "corrosion",
-      "descr": "徒手强化元素层数。",
+      "descr": "徒手强化元素层数的指套。护甲 +15‰，攻击力 +200‰。",
       "base_armor": 15,
       "base_bonus_pct": 200,
       "unlock_level": 42
@@ -16067,7 +16067,7 @@
       "slot": "boots",
       "tier": 1,
       "element": "kinetic",
-      "descr": "基础机动。",
+      "descr": "基础机动。护甲 +10‰，攻击力 +35‰。",
       "base_armor": 10,
       "base_bonus_pct": 35,
       "unlock_level": 3
@@ -16079,7 +16079,7 @@
       "slot": "boots",
       "tier": 2,
       "element": "kinetic",
-      "descr": "减少过热时长。",
+      "descr": "鞋底的缓冲结构。护甲 +20‰，攻击力 +75‰。",
       "base_armor": 20,
       "base_bonus_pct": 75,
       "unlock_level": 20
@@ -16091,7 +16091,7 @@
       "slot": "boots",
       "tier": 3,
       "element": "ice",
-      "descr": "过热时仍可释放一次技能。",
+      "descr": "相位护踝。护甲 +30‰，攻击力 +150‰。",
       "base_armor": 30,
       "base_bonus_pct": 150,
       "unlock_level": 48
@@ -16103,7 +16103,7 @@
       "slot": "charm",
       "tier": 1,
       "element": "fire",
-      "descr": "略微提升反应伤害。",
+      "descr": "略微放大元素反应。攻击力 +60‰。",
       "base_armor": 0,
       "base_bonus_pct": 60,
       "unlock_level": 5
@@ -16115,7 +16115,7 @@
       "slot": "charm",
       "tier": 2,
       "element": "lightning",
-      "descr": "反应链更容易被触发。",
+      "descr": "棱镜切分光路。攻击力 +110‰。",
       "base_armor": 0,
       "base_bonus_pct": 110,
       "unlock_level": 26
@@ -16127,7 +16127,7 @@
       "slot": "charm",
       "tier": 3,
       "element": "corrosion",
-      "descr": "从母巢抢出的碎片，仍在搏动。",
+      "descr": "从母巢抢出的碎片，仍在搏动。攻击力 +220‰。",
       "base_armor": 0,
       "base_bonus_pct": 220,
       "unlock_level": 60
@@ -16143,5 +16143,10 @@
       980
     ],
     "score_full_at_sec": 60
+  },
+  "skill_rules": {
+    "max_level": 10,
+    "coef_permille": 50,
+    "base_cost": 100
   }
 }

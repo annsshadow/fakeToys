@@ -103,6 +103,7 @@ import { onLoad, onUnload } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
 import { BattleEngine, TICK_MS } from '@/game/engine'
+import { equippedFromSnapshot } from '@/game/replay'
 import { BattleRenderer } from '@/render/canvas'
 import { ELEMENT_NAME, type Element } from '@/game/elements'
 import type { Card, EquippedSkill } from '@/game/heatmap'
@@ -222,35 +223,20 @@ async function setup() {
      * 技能槽位**必须用服务端下发的 slot**，不能用本地数组下标。
      *
      * 槽位顺序参与回放哈希：技能 id 相同但装在 0 号位还是 2 号位，
-     * 引擎的事件序列就不同，哈希也不同。所以这里完全以
+     * 引擎的事件序列就不同，哈希也不同。所以完全以
      * build.skills[].slot 为准 —— 服务端说什么就是什么。
+     *
+     * ⚠️ 这里**必须**调 `equippedFromSnapshot`，不能自己再拼一遍。
+     *
+     * 本文件此前持有该函数的**逐行复制**版本（实战开局拼一次、
+     * 重放时 replay.ts 再拼一次）。两份都自洽，但：
+     *  - 改一处忘另一处 → 实战伤害与重放伤害不同 → 哈希永远失配，
+     *    而症状会把排查方向引向「I-6 验真坏了」，
+     *    真因却是「构造逻辑有两份」
+     *  - 技能等级系数只在一个地方烘进 baseDamage（见 skill.ts），
+     *    两份拼法必然有一份漏掉等级
      */
-    const snapshotSkills = Object.values((bt.build?.skills ?? {}) as Record<string, any>)
-      .filter((s) => s && typeof s.id === 'number' && s.slot >= 0)
-      .sort((a: any, b: any) => a.slot - b.slot || a.id - b.id)
-
-    const equipped: EquippedSkill[] = []
-    for (const s of snapshotSkills) {
-      const def = skills.get(s.id)
-      if (!def) continue
-      equipped.push({
-        skillId: def.id,
-        name: def.name,
-        element: def.element,
-        kind: def.kind,
-        heatCost: BigInt(def.heat_cost),
-        cooldownMs: def.cooldown_ms,
-        pierce: def.pierce,
-        aoeRadius: def.aoe_radius,
-        baseDamage: BigInt(def.base_damage),
-        applyElement: (def.apply_element || def.element) as Element | '',
-        applyStacks: BigInt(def.apply_stacks),
-        projectileSpeed: def.projectile_speed,
-        chain: def.chain,
-        slot: s.slot,
-        cooldownRemaining: 0,
-      })
-    }
+    const equipped: EquippedSkill[] = equippedFromSnapshot(bt.build, skills)
     if (equipped.length === 0) {
       startError.value = '未装备任何技能，请先到「背包」页配置出战技能'
       return

@@ -443,6 +443,19 @@ func (s *Service) loadSkillsAndSlots(ctx context.Context, userID int64) (map[str
 		if err := rows.Scan(&id, &name, &family, &element, &kind, &level, &slot); err != nil {
 			return nil, nil, err
 		}
+		// ⚠️ 等级必须夹紧才能下发。
+		//
+		// `COALESCE(us.level, 1)` 只挡 NULL，挡不住越界值。
+		// 客户端拿这个 level 直接缩放技能伤害（系数 = 1000 + (level-1)*coef_permille），
+		// 所以库里一行 `level = 99` 会变成 **4900‰** 的伤害加成 ——
+		// 而服务端的攻击封顶（1000‰）完全不知道这件事。
+		//
+		// 这不是「假设脏数据不会发生」，是**读路径必须必然产出合法值**：
+		// 迁移事故、手工改库、未来某个端点忘了带上限，任何一个都能写进 99。
+		//
+		// 更要紧的是 I-6：等级进了重放哈希，而哈希是「这局确实是这样打的」的凭证。
+		// 一个能被随手改成 4900‰ 的因子进入哈希，那这个哈希证明不了任何事。
+		level = skillRules.ClampLevel(level)
 		if slot >= 0 {
 			occupied[slot] = true
 		}

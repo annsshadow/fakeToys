@@ -395,6 +395,13 @@ type GameConfig struct {
 	// 不能自己硬编码 500/5000/100 —— 漂移了星级就会与实际表现不符，
 	// 而两端各自都「自洽」，没有任何测试会发现。
 	ScoreRules domain.ScoreRules `json:"score_rules"`
+	// SkillRules 是技能升级规则（等级上限 / 每级伤害系数 / 费用基数）。
+	//
+	// 客户端的升级按钮要显示费用与「已满级」，战斗要按等级缩放伤害，
+	// 所以这三个数**必须**下发而不是各端硬编码。
+	// 照 ScoreRules 的先例：Go 侧是唯一定义点，客户端 `DEFAULT_SKILL_RULES`
+	// 只是离线兜底，由 TestSkillRulesMatchServerContract 守卫两者不漂移。
+	SkillRules domain.SkillRules `json:"skill_rules"`
 	ServerTime time.Time         `json:"server_time"`
 }
 
@@ -438,6 +445,7 @@ func (s *Service) LoadGameConfig(ctx context.Context) (GameConfig, error) {
 		Mastery:    domain.AllMasteryFamilies(),
 		Reactions:  domain.AllReactionSpecs(),
 		RatingW:    domain.DefaultRatingWeights(),
+		SkillRules: domain.DefaultSkillRules(),
 		ServerTime: time.Now(),
 	}
 	for _, q := range domain.GemQualities {
