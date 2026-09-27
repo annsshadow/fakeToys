@@ -354,9 +354,32 @@ FLOOR = {
 #: 四档棘轮上限（68 / 145 / 149 / 111）与 `dead_line` / `unresolved_source` 照旧，架构文档三档
 #: （42 / 244 / 37）一字未动 —— 本轮没往 §6 / §7 写新名。中间那次「bash 把反引号当命令替换」的事故
 #: 由 `Temp/l96q/ledger_before_batch3.md` 逐字节还原后重跑插入脚本，所以账本与脚本自证的是一份东西。
+#: **L97 批④（回填 L96 三批哈希 + 落下 L97 进度行与日志块 + 关闭 A177 + 新立 A178 / A179）**：
+#: 账本总行数照旧**不写进本注释**（L96 批③ 立的口径：没有判据管它，写死就是下一轮的腐坏读数）。
+#: 账本 `line_refs` **299 一字未动** —— 本轮正文与两行新表**一个 `path:line` 都没写**，全部用名字锚点；
+#: `code_but_no_name_match` 因此也停在 **164**。
+#: `file_tokens` 1500 → **1531**（+31 次出现 / 18 个名字，`Temp/l97q/add_ledger_l97.py` 落笔前后各量一次、
+#: 逐名点名）：`api/main.py` 4、`Temp/l97q/mutate_l97.py` 3，`Temp/l97q/dead_ast.py` / `dead_bare.py` /
+#: `dead_keys.py` / `api/routes/config.py` / `augmentor/config.py` / `augmentor/validation.py` /
+#: `tests/unit/test_parametrize_ids_l97.py` / `tests/unit/test_serve_config_wiring_l97.py` 各 2，其余九支各 1。
+#: **本轮有一格值得单独记**：A178 位置列初稿把判据两面写成裸名 `config.py`，落笔后第一次量就把
+#: `ambiguous_file` 顶到 **146**（该档上限 145，仓里另有 `api/routes/config.py`）⇒ 处置是把它改成
+#: `augmentor/config.py` 并复量回 145，**没有抬上限**。同一批里其余四个裸名（`config_validator.py` /
+#: `main.py` / `dead_bare.py` / `mutate_l97.py` / `test_schema_type_spec_l96.py`）按名字解析唯一，
+#: 所以它们进的是 `file_unique` 而不是歧义档 —— 区别只在量过没量过。
+#: 四档棘轮上限（68 / 145 / 149 / 111）与 `dead_line` / `unresolved_source` 两档硬 0 全部照旧，
+#: 架构文档三档（42 / 244 / 37）一字未动 —— 本轮没往 §6 / §7 写新名。
+#: **L97 批④ 填数之后的第二次量（1531 → 1536，+5）**：把五格读数写进正文时又带了五个反引号
+#: 文件名 —— `api/main.py` +3（覆盖债账那一格两处、语句总数那一格一处）、`api/__init__.py` +1、
+#: `augmentor/__init__.py` +1（都是覆盖 XML 合并面点名的那两支）。逐名点名见
+#: `Temp/l97q/token_diff_l97.py`，它同时把四档棘轮与两档硬 0 在 HEAD / 工作树两侧各量一遍：
+#: 145 / 68 / 149 / 111 **一格没动**，`dead_line` / `unresolved_source` 两侧都不出现在 counts 里
+#: （= 硬 0）。**同批摘掉两处反引号**：正文里裸名 `__init__.py` 带反引号会把 `ambiguous_file`
+#: 顶到 147（仓里 7 支同名文件），摘掉后守卫不再管它、歧义档仍 145 —— 这是 L96 那格
+#: 「A178 初稿写裸名 `config.py` 顶到 146」的**同族第二次**，区别是这次在落笔同一批里量到并改了。
 MEASURED = {
     ARCH: {"line_refs": 42, "file_tokens": 244, "code_but_no_name_match": 37},
-    LEDGER: {"line_refs": 299, "file_tokens": 1500, "code_but_no_name_match": 164},
+    LEDGER: {"line_refs": 299, "file_tokens": 1536, "code_but_no_name_match": 164},
 }
 
 #: 日志块标题行上「下一轮才填得出自己哈希」的占位符。精确相等 = **只许有该填的那几条**。
@@ -386,6 +409,9 @@ MEASURED = {
 #: `Temp/l96q/add_ledger_l96.py` 在两步之间断言中间态恰等于本常数减一、终态再断言等于本常数，所以
 #: 「忘了回填上一轮」红在中间态、「忘了给自己留占位」红在终态，两侧各一次。L92 那一格同样在一批里动两次，
 #: 但当时靠的是人眼分两次改；**这是本常数第一次由脚本自己守住这两次动**，也是它下一次遇到同形状时的正解。
+#: **L97 两次都动了，动在同一批里（净读数不变，第二次由脚本守住）**：填掉 L96 那三批哈希
+#: （`e79538569` + `980cd313b` + `7da7190d8`）⇒ 15 → 14，落下 L97 自己的日志块标题 ⇒ 14 → 15；
+#: `Temp/l97q/add_ledger_l97.py` 与 L96 那一版同设计（中间态断言恰等于本常数减一、终态断言等于本常数）。
 HASH_PLACEHOLDER = re.compile(r"^- \*\*L\d+\*\* `哈希待 L\d+ 回填`", re.MULTILINE)
 PLACEHOLDER_CEILING = 15
 
@@ -958,8 +984,16 @@ BACKLOG_HEADS = ("| # | 位置 | 问题 | 量级 |", "|---|------|------|------|
 #: 这两档恒相差 1（178 对最大号 177）：编号行 = 最大号 − 跳号数（176 = 177 − 1），
 #: 行数 = 编号行 + 2 ⇒ 行数 = 最大号 + 1。跳号只有 52 一个时这个等式才成立，
 #: 别把「行数 +1」当成「最大号 +1」来填 —— 「只关闭一行」两档都不动，「新立一行」两档各 +1。
-BACKLOG_A_LINES = 178
-BACKLOG_A_MAX = 177
+#: **L97 批④ 回填（+2 行，同时关掉一行）**：A178（启动面把 `web` 节三键写成字面量，判据齐全而
+#: 无人消费，其中 host 那一格是安全相关的收紧意图无声失效）与 A179（`enabled` 族 15 格零读点 +
+#: 回显面把五格端给客户 + `require_bool` 案文替不存在的闸门背书 + 三把消费者普查尺子一致地判错
+#: `logging.*` 同一格）两行由 `Temp/l97q/add_ledger_l97.py` 按整行锚点插入，同一脚本把 A177
+#: 原地换成关闭版 ⇒ 行数 +2、最大号 +2（177 → 179）。**A178 是本表第一行「立案即关闭」**：
+#: 它落笔时行首就是 `| ~~A178~~ |`，因为修法与取证在同一条批里已经做完 —— 关闭行按现量
+#: `re.findall` 从 **81** 涨到 **83**（不是从上一轮那句「81」推出来的，且这一格没有任何判据管它）。
+#: 缺号现量仍 `{52}`。
+BACKLOG_A_LINES = 180
+BACKLOG_A_MAX = 179
 BACKLOG_A_MISSING = {52}
 #: Backlog B 现量：11 条竖线行 = 2 表头 + 7 条可编号 + 2 条带角标（B3① / ~~B3②~~）。
 BACKLOG_B_LINES = 11
