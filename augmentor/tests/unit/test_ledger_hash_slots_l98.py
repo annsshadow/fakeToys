@@ -63,9 +63,14 @@ ROUND_TOKEN = re.compile(r"(?<!\d)L\d+(?!\d)")
 #: 现量（L98 批④ 重量于「回填 L97 四笔 + 落下 L98 自己的占位」之后：进度行多一行带槽、
 #: 日志块多两行带槽（L97 由只块变两侧、L98 新行），唯一哈希 +4）。这些是**读数**不是预算：
 #: 下一轮写了新块就会动，动了就要重量 —— 与下面那几档精确相等断言是同一条纪律。
-MEASURED_SLOT_ROWS = {"prog": 13, "log": 22}
-MEASURED_BOTH_SIDES = 13
-MEASURED_UNIQUE_HASHES = 57
+#: **L99 批④ 重量（回填 L98 四笔 + 落下 L99 的进度行与日志块）**：prog 13 → **14**、log 22 → **23**、
+#: 两侧一致 13 → **14**（新轮 L99 两遍都写槽，所以「两侧一致」这一档与 prog 同步 +1；L97 那一轮
+#: 之所以让 log 多长得快，是因为它把原本「只有块」的 L97 补成了两侧）。唯一哈希 57 → **61** = 正好是
+#: 回填进去的 L98 那四笔；本轮自己的三笔（批①～批③）此刻仍以占位符形状住在槽里，要等 L100 回填才进档
+#: —— 这一格与 `PLACEHOLDER_CEILING` 的「15 → 14 → 15」是同一件事的两个读数。
+MEASURED_SLOT_ROWS = {"prog": 14, "log": 23}
+MEASURED_BOTH_SIDES = 14
+MEASURED_UNIQUE_HASHES = 61
 MEASURED_LOG_ONLY_ROUNDS = frozenset(
     {"L45", "L57", "L79", "L80", "L81", "L82", "L83", "L84", "L85"})
 MEASURED_PROGRESS_PLACEHOLDERS = 1
