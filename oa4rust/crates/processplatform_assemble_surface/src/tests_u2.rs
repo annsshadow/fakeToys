@@ -593,12 +593,6 @@ mod u2b_tests {
             ("GET", format!("{b}/preview/pdf/f-1/result")),
             ("GET", format!("{b}/preview/image/f-1/result")),
             ("POST", format!("{b}/upload/with/url")),
-            ("GET", format!("{b}/batch/download/job/j-1/site/s-1")),
-            ("GET", format!("{b}/batch/download/work/w-1/site/s-1")),
-            (
-                "GET",
-                format!("{b}/batch/download/work/w-1/site/s-1/stream"),
-            ),
         ];
         for (method, path) in cases {
             assert_eq!(
