@@ -124,12 +124,16 @@ func NewGuestToken() (string, error) {
 }
 
 // NewAdminToken 生成管理员会话令牌。
+// 摘要必须对**带前缀的完整明文**计算（与 service.NewAdminSession 一致）：
+// 落库与校验都按收到的完整明文复算，若这里只对裸随机串算哈希，
+// 两个入口签发的令牌会有一方永远验证失败。
 func NewAdminToken() (string, string, error) {
-	plain, hash, err := NewRefreshToken()
+	plain, _, err := NewRefreshToken()
 	if err != nil {
 		return "", "", err
 	}
-	return "a_" + plain, hash, nil
+	token := "a_" + plain
+	return token, HashRefreshToken(token), nil
 }
 
 // FormatInt64 把 int64 转为字符串（token 落库用）。

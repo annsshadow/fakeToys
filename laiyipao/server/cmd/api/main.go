@@ -59,23 +59,7 @@ func run() error {
 			cfg.BootstrapAdminUser)
 	}
 
-	app := fiber.New(fiber.Config{
-		AppName:               "来一炮 server",
-		DisableStartupMessage: true,
-		ReadTimeout:           15 * time.Second,
-		WriteTimeout:          20 * time.Second,
-		// 结算上报体积较小，但仍给足余量
-		BodyLimit: 1 << 20,
-		ErrorHandler: func(c *fiber.Ctx, err error) error {
-			if fe, ok := err.(*fiber.Error); ok {
-				return c.Status(fe.Code).JSON(httpapi.APIError{
-					Error: httpapi.ErrorBody{Code: "http_error", Message: fe.Message},
-				})
-			}
-			return err
-		},
-	})
-	httpapi.New(svc).Register(app)
+	app := buildApp(svc)
 
 	// 优雅退出：收到 SIGINT/SIGTERM 后给在途请求 10 秒收尾
 	stop := make(chan os.Signal, 1)
@@ -95,4 +79,27 @@ func run() error {
 		return fmt.Errorf("监听 %s: %w", cfg.Addr, err)
 	}
 	return nil
+}
+
+// buildApp 组装 fiber 实例并挂载全部路由。
+// 从 run 抽出：路由、超时与统一错误处理是纯配置，可在无端口环境下测试。
+func buildApp(svc *service.Service) *fiber.App {
+	app := fiber.New(fiber.Config{
+		AppName:               "来一炮 server",
+		DisableStartupMessage: true,
+		ReadTimeout:           15 * time.Second,
+		WriteTimeout:          20 * time.Second,
+		// 结算上报体积较小，但仍给足余量
+		BodyLimit: 1 << 20,
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			if fe, ok := err.(*fiber.Error); ok {
+				return c.Status(fe.Code).JSON(httpapi.APIError{
+					Error: httpapi.ErrorBody{Code: "http_error", Message: fe.Message},
+				})
+			}
+			return err
+		},
+	})
+	httpapi.New(svc).Register(app)
+	return app
 }
