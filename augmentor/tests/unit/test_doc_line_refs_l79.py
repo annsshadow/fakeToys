@@ -281,9 +281,21 @@ FLOOR = {
 #: 既有产品名 `api/deps.py` / `api/routes/data.py` / `augmentor/converter.py` /
 #: `test_upload_table_formats_l91.py` 各多出现一次；架构文档 239 → **240** 那 +1 是同一条新产品
 #: 测试路径。四个棘轮桶与两侧 `dead_line` / `unresolved_source` 一格未抬、仍为 0。
+#: **L93（本轮产品码动了，但两格的涨幅仍全部归因到文档句子）**：账本 `file_tokens` 1429 →
+#: **1457**（+28，`Temp/l92q/token_diff.py` 逐 token 点名，零删除：五份 Temp 探针 9 处、
+#: `api/deps.py` 与裸 `deps.py` 各 4 处、`api/routes/data.py` 4 处、其余是本轮新写的四个测试
+#: 文件与既有产品名），`line_refs` **290 未动**（本轮不写任何 `path:line`，写的是符号名）；
+#: 架构文档 240 → **241** 那 +1 是「口径改写要留正向证据」那一格改成点名两条**现存**用例
+#: （`tests/integration/test_api_security.py`）—— 顺带说：那一格原先引的是被本轮拆掉的
+#: `test_new_file_is_not_guessed_into_a_root`，活文档引一个不存在的测试名是本轮守卫**没报**、
+#: 靠人对账才发现的一格（A153 那一族的余量：测试名不在符号索引里 ⇒ 名字锚点对它不设防）。
+#: **棘轮桶本轮被写坏过一次又改平**：新写的 A163 归因句里裸 `quality.py` 一名两指
+#: （索引里有 `api/routes/quality.py` / `augmentor/quality.py` / `augmentor/cli/commands/quality.py`
+#: 三家）⇒ `ambiguous_file` 145 → 146，处置按 L83/L87 的同一口径：**改散文补目录前缀，不抬上限**。
+#: 同一条规则不抓 `deps.py` 是因为索引里它只有 `api/deps.py` 一家 —— 涨不涨由索引说，不由我以为。
 MEASURED = {
-    ARCH: {"line_refs": 42, "file_tokens": 240, "code_but_no_name_match": 37},
-    LEDGER: {"line_refs": 290, "file_tokens": 1429, "code_but_no_name_match": 161},
+    ARCH: {"line_refs": 42, "file_tokens": 241, "code_but_no_name_match": 37},
+    LEDGER: {"line_refs": 290, "file_tokens": 1457, "code_but_no_name_match": 161},
 }
 
 #: 日志块标题行上「下一轮才填得出自己哈希」的占位符。精确相等 = **只许有该填的那几条**。
@@ -301,6 +313,9 @@ MEASURED = {
 #: 只剩 14 条历史欠账；本轮（L91）写自己的日志块标题时按同一纪律改回 **15**。
 #: **L92 两次都动了**：填掉 L91 的三批哈希（`56c4565ff` + `a266f62f7` + `4d155cfc4`）⇒ 14；
 #: L92 落自己的日志块标题 ⇒ 15。
+#: **L93 两次都动了（现量 15）**：填掉 L92 的三批哈希（`15c340e80` + `462dd405f` + `d11053a30`）
+#: ⇒ 14；L93 落自己的日志块标题与进度行 ⇒ 15。**下一轮的读法**：填掉 L93 这三批时这里改回 14，
+#: 写 L94 块标题时再改回 15 —— 两个方向各红一次，不许用区间把它们对消。
 HASH_PLACEHOLDER = re.compile(r"^- \*\*L\d+\*\* `哈希待 L\d+ 回填`", re.MULTILINE)
 PLACEHOLDER_CEILING = 15
 
@@ -832,8 +847,14 @@ BACKLOG_HEADS = ("| # | 位置 | 问题 | 量级 |", "|---|------|------|------|
 #: 自抓）、A166（变异读数的第三态：收集期错误不是「绿」）、A167（30 s 客户端 timeout 对
 #: 上传一视同仁，**先量再修**）三行由 `Temp/l92q/add_ledger.py` 按**整行锚点 + 行数断言**
 #: 插入，同一脚本还改了 A162 那一行的行尾（结案注记，行数不变）。号集合仍只缺 52。
-BACKLOG_A_LINES = 168
-BACKLOG_A_MAX = 167
+#: **L93 回填（+4 行，A163 结案那一行不算加行）**：A168（探针产物残留在仓库根，A164 的活体
+#: 复现）、A169（A160 那条裸名救援在 A163 之后只剩一种活路，**同轮补正向用例关掉**）、
+#: A170（`data/x.json` 的双重解释，待用户拍口径）三行由 `Temp/l93q/add_ledger.py` 插入，
+#: A171（**填数与计数机器自己的恒真判据**：页脚 `failed` 恒读 0、AST 取错字段把几十处调用点
+#: 数成 0、`deps_row` 读不到走 fallback 而不是当场红）由 `Temp/l93q/add_a171.py` 追加。
+#: 四行都是整行锚点 + 行数断言，形状判据一次未红；跳号集合继续未变（缺号仍只有 52）。
+BACKLOG_A_LINES = 172
+BACKLOG_A_MAX = 171
 BACKLOG_A_MISSING = {52}
 #: Backlog B 现量：11 条竖线行 = 2 表头 + 7 条可编号 + 2 条带角标（B3① / ~~B3②~~）。
 BACKLOG_B_LINES = 11
