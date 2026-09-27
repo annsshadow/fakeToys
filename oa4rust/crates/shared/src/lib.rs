@@ -22,6 +22,7 @@ pub mod input_validation;
 pub mod messaging;
 pub mod middleware;
 pub mod migrate;
+pub mod netguard;
 pub mod mock_client;
 pub mod rate_limit;
 pub mod redis;
@@ -45,6 +46,7 @@ pub use messaging::{
 use std::ops::Deref;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
