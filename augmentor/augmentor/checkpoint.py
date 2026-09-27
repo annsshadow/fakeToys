@@ -12,6 +12,8 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from datetime import datetime
 
+from augmentor.atomic_write import atomic_write_json
+
 logger = logging.getLogger(__name__)
 
 
@@ -167,9 +169,10 @@ class CheckpointManager:
             self._pending_failed = set()
             
             if delta_files:
-                # 合并结果立即落盘并清除增量，避免下次恢复重复累加
-                self._save_checkpoint(checkpoint)
-                self._remove_delta(task_id)
+                # 合并结果立即落盘并清除增量，避免下次恢复重复累加。
+                # 顺序不能反、也不能不看判决：主文件没写成功时删增量＝把新进度删没了。
+                if self._save_checkpoint(checkpoint):
+                    self._remove_delta(task_id)
             
             logger.info(f"加载断点: {task_id}, 已处理: {checkpoint.processed_items}/{checkpoint.total_items}")
             return checkpoint
@@ -177,11 +180,24 @@ class CheckpointManager:
             logger.error(f"加载断点失败: {e}")
             return None
     
-    def _save_checkpoint(self, checkpoint: CheckpointData):
-        """保存断点（紧凑格式）
-        
+    def _save_checkpoint(self, checkpoint: CheckpointData) -> bool:
+        """保存断点（紧凑格式，原子替换）
+
+        返回判决而不是静默吞掉：调用方在写完之后会**删除增量文件**（`_remove_delta`），
+        那是不可逆的一步。旧写法 `except: logger.error(...)` 之后照样往下删，于是「主文件
+        没写成功」+「增量已删」＝ 那一批进度在盘上彻底消失，而且全程只有一行 error。
+        现在两处删除都以本函数的返回值为条件，写失败时增量留在盘上，下次恢复照样合并。
+
+        原子替换（`augmentor/atomic_write.py`）治的是另一半：旧写法 `open(path,'w')` 的
+        写窗口里盘上是一份截断 JSON，而本模块的读侧 `load_checkpoint()` 把它连同其它异常
+        一并 `except Exception → return None`，于是「一次坏读取」被翻译成「这个任务没有
+        断点」—— 已完成的整段工作凭空消失。
+
         Args:
             checkpoint: 断点数据
+
+        Returns:
+            True 表示新内容已经落盘；False 表示写失败、目标文件仍是旧内容
         """
         checkpoint_path = self._get_checkpoint_path(checkpoint.task_id)
         checkpoint.last_update_time = time.time()
@@ -189,10 +205,11 @@ class CheckpointManager:
         try:
             # 使用紧凑 JSON（无缩进）
             data = asdict(checkpoint)
-            with open(checkpoint_path, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
+            atomic_write_json(checkpoint_path, data)
+            return True
         except Exception as e:
             logger.error(f"保存断点失败: {e}")
+            return False
     
     def _save_delta(self):
         """追加一批增量（A144：写侧 O(1)，不再整读整写）
@@ -343,10 +360,10 @@ class CheckpointManager:
         with self._lock:
             if self._current_checkpoint:
                 self._save_delta()
-                self._save_checkpoint(self._current_checkpoint)
-                # 增量已并入主文件，删除以免下次恢复时重复累加
-                self._remove_delta(self._current_checkpoint.task_id)
-                logger.info(f"手动保存断点: {self._current_checkpoint.task_id}")
+                if self._save_checkpoint(self._current_checkpoint):
+                    # 增量已并入主文件，删除以免下次恢复时重复累加；主文件没写成就不删
+                    self._remove_delta(self._current_checkpoint.task_id)
+                    logger.info(f"手动保存断点: {self._current_checkpoint.task_id}")
     
     def get_progress(self) -> Dict:
         """获取进度信息
