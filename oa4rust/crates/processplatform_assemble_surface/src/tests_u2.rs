@@ -535,6 +535,7 @@ mod u2b_tests {
     use axum::http::{Request, StatusCode};
 
     use shared::storage::{BlobStorage, DbBlobStorage, FsBlobStorage};
+    use shared::testing::mock_pool;
     use tower::ServiceExt;
 
     async fn respond(
@@ -578,6 +579,51 @@ mod u2b_tests {
     const MP: &[(&str, &str)] = &[("content-type", "multipart/form-data; boundary=xboundary")];
     const JSON: &[(&str, &str)] = &[("content-type", "application/json")];
 
+    fn test_session() -> shared::session::Session {
+        shared::session::Session {
+            token: "u2b-test-token".to_string(),
+            person_unique: "tester@u2b@P".to_string(),
+            created_at: chrono::Utc::now().naive_utc(),
+            expires_at: (chrono::Utc::now() + chrono::Duration::hours(1)).naive_utc(),
+        }
+    }
+
+    // upload/with/url 已由 501 桩升级为真实现（shared::netguard SSRF 防护 +
+    // u2_att_store_new 落盘）。契约：缺 url 400；私网/环回目标在发起请求前被拒 400。
+    #[tokio::test]
+    async fn u2b_upload_with_url_requires_url() {
+        let response = router(mock_pool())
+            .oneshot(
+                Request::builder()
+                    .uri("/api/processplatform/assemble/surface/attachment/upload/with/url")
+                    .method("POST")
+                    .header("content-type", "application/json")
+                    .extension(test_session())
+                    .body(Body::from("{}"))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn u2b_upload_with_url_rejects_private_target() {
+        let response = router(mock_pool())
+            .oneshot(
+                Request::builder()
+                    .uri("/api/processplatform/assemble/surface/attachment/upload/with/url")
+                    .method("POST")
+                    .header("content-type", "application/json")
+                    .extension(test_session())
+                    .body(Body::from(r#"{"url":"http://169.254.169.254/latest/meta-data"}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
     // 鈹€鈹€ 杞崲/棰勮/鍙戠エ/URL/鎵撳寘鏃忥細鏃犲紩鎿?鈫?绮剧‘ 501锛堜笉瑙︾ DB 鍗冲彲鏂█锛?鈹€鈹€
 
     #[tokio::test]
@@ -592,7 +638,6 @@ mod u2b_tests {
             ("GET", format!("{b}/att-1/preview/image/page/2")),
             ("GET", format!("{b}/preview/pdf/f-1/result")),
             ("GET", format!("{b}/preview/image/f-1/result")),
-            ("POST", format!("{b}/upload/with/url")),
         ];
         for (method, path) in cases {
             assert_eq!(

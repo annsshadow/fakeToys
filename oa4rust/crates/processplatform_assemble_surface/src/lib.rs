@@ -25193,10 +25193,41 @@ pub async fn attachment_u2b_invoice_download(
 }
 
 #[allow(non_snake_case)]
-pub async fn attachment_u2b_upload_with_url() -> Result<Json<ActionResult<Value>>, AppError> {
-    // 远程 URL 拉取存在 SSRF 面，未引入抓取引擎前显式 501
-    Err(u2_capability_unavailable("remote url fetch"))
+pub async fn attachment_u2b_upload_with_url(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Json(body): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // o2server 语义：按 URL 拉取远程文件存为流程附件。
+    // SSRF 防护见 shared::netguard（scheme 白名单 + 全局地址校验 + 手动重定向逐跳
+    // 复检 + 体积/超时上限）；落盘复用 batch_upload_manage 的 u2_att_store_new。
+    let url = body
+        .get("url")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .trim()
+        .to_string();
+    if url.is_empty() {
+        return Err(AppError::BadRequest("url is required".to_string()));
+    }
+    let site = body
+        .get("site")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .unwrap_or("url-upload")
+        .to_string();
+
+    let client = shared::netguard::fetch_client().map_err(|_| AppError::Internal)?;
+    let (final_url, bytes) = shared::netguard::fetch_limited(&client, &url).await.map_err(|e| {
+        tracing::warn!(url = %url, error = %e, "remote url fetch rejected or failed");
+        AppError::BadRequest(format!("remote fetch failed: {e}"))
+    })?;
+
+    let name = shared::netguard::filename_from_url(&url, &final_url);
+    let id = uuid::Uuid::new_v4().to_string();
+    u2_att_store_new(&pool, &session.person_unique, &id, &name, bytes, "xsite", &site).await
 }
+
 
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_batch_download_zip(

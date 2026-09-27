@@ -1773,6 +1773,7 @@ dependencies = [
  "base64 0.22.1",
  "chrono",
  "deadpool-postgres",
+ "reqwest",
  "serde",
  "serde_json",
  "shared",
@@ -4594,6 +4595,7 @@ dependencies = [
  "tracing",
  "urlencoding",
  "uuid",
+ "zip 2.4.2",
 ]
 
 [[package]]
@@ -5696,6 +5698,7 @@ dependencies = [
  "futures-util",
  "hmac 0.12.1",
  "redis",
+ "reqwest",
  "sea-orm",
  "serde",
  "serde_json",
@@ -5710,6 +5713,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "url",
+ "urlencoding",
  "uuid",
 ]
 
