@@ -61,6 +61,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | 48 | workspace 依赖复用 | 绕过 workspace 的版本号 | IMPROVE(deferred) | 41 处叶子依赖（zip/image 等）无缺陷，统一声明属后续合理化 |
 | 49 | 大段注释死代码 | 25+ 行连续注释块 | CLEAN | 15 块集中在 tests_generated 的 SKIPPED 说明与模块文档，有存档价值 |
 | 50 | **完整门禁①** | clippy + workspace lib + parity + biome + tsc + vitest + build + reconcile | FIX×3 | clippy 0 / lib 0 failed / parity 4145/4145 / lint 234×0 / vitest 953+101 / build ✓ / gate PASS；clippy 捕获本批引入 3 处（preview 残留 use、tests_u2 死变量、parity 生成器多余 use——含 f-string 花括号陷阱）全修 |
+| 61 | 事务边界 | blob+DB 双写顺序审计 | CLEAN(note) | storage 写失败即中止 DB 写；DB 失败 blob 孤儿有 warn 日志，与 O2 StorageMapping 行为一致 |
+| 62 | **Redis 串行瓶颈** | Mutex<Option<ConnectionManager>> 审计 | FIX | ConnectionManager 可 Clone+自动重连，9 处调用点（session×5/rate_limit×2/messaging/rate_limit_distributed）改为瞬时 clone 后并行执行，命令期不再持单锁 |
+| 63 | spawn panic 吞噬 | tokio::spawn 内 unwrap 扫描 | CLEAN | 零命中 |
+| 64/65 | join/长持连接 | 抽查 | CLEAN | 未发现滥用 |
+| 66-69 | 文档面 | README/docs/solutions/runbook 核对 | CLEAN | 结构与现状一致 |
+| 70 | 中型门禁③ | shared 全测 | CLEAN | 141/141（含 netguard/session/storage） |
 | 51/52 | 路由-视图对齐 | main.ts 动态导入 vs views 全集 | CLEAN | 83/83 全注册，零死组件 |
 | 53 | apis 包死导出 | 导出 vs 引用计数 | IMPROVE(deferred) | 独立 *Api 命名导出由 oa4rustApis 聚合覆盖，对外契约保留 |
 | 54 | 全局错误兜底 | errorHandler 扫描 | FIX | main.ts 补 app.config.errorHandler（未捕获渲染/Promise 错误 fail-loud） |

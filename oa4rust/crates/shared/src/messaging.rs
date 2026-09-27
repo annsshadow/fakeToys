@@ -195,10 +195,16 @@ impl<M: Serialize + Send + Sync + Clone + for<'de> Deserialize<'de> + 'static> M
         let serialized = serde_json::to_string(&envelope)
             .map_err(|e| MessagingError::SerializationError(e.to_string()))?;
 
-        let mut guard = pool.0.manager.lock().await;
-        let conn = guard.as_mut().ok_or_else(|| {
-            MessagingError::RedisError("Redis connection manager not initialized".into())
-        })?;
+        let mut conn = pool
+            .0
+            .manager
+            .lock()
+            .await
+            .as_ref()
+            .map(|m| m.clone())
+            .ok_or_else(|| {
+                MessagingError::RedisError("Redis connection manager not initialized".into())
+            })?;
 
         use redis::AsyncCommands;
         conn.publish::<_, _, ()>(&topic, serialized)
