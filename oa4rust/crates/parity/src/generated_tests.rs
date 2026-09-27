@@ -10,13 +10,11 @@
 // is registered on the crate's Router.  A NOT_FOUND (404) response means the
 // route is missing from the Rust implementation — a parity gap.
 //
-// Generated: 2026-09-27 22:12:23
+// Generated: 2026-09-27 22:55:15
 // Crates: 55   Routes: 4044   Tests: 4044
 
-use axum::body::Body;
-use axum::http::{Request, Method, StatusCode};
+use axum::http::StatusCode;
 use tower::util::ServiceExt;
-use shared::testing::{test_pool, is_db_available};
 
     // ── x_ai_assemble_control → ai_assemble_control (49 routes) ──
     #[tokio::test]

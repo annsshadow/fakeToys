@@ -354,10 +354,8 @@ def build_header(total_crates: int, total_routes: int, total_tests: int) -> str:
 // Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 // Crates: {total_crates}   Routes: {total_routes}   Tests: {total_tests}
 
-use axum::body::Body;
-use axum::http::{{Request, Method, StatusCode}};
+use axum::http::StatusCode;
 use tower::util::ServiceExt;
-use shared::testing::{{test_pool, is_db_available}};
 
 """
 
