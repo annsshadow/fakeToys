@@ -74,6 +74,8 @@
       <view v-if="settleResult.clamped" class="clamp-note">
         服务端已修正本次结算：{{ settleResult.clamp_note }}
       </view>
+      <!-- 结算接口失败时的兜底提示：否则用户只能看到本地统计，无从得知上报失败 -->
+      <text v-if="settleResult.error" class="clamp-note">{{ settleResult.error }}</text>
       <view class="reward-row">
         <text v-for="(v, k) in settleResult.loot" :key="k" class="reward">
           {{ currencyName(String(k)) }} +{{ v }}
@@ -98,7 +100,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, getCurrentInstance } from 'vue'
+import { ref, computed, getCurrentInstance, triggerRef } from 'vue'
 import { onLoad, onUnload } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
@@ -275,6 +277,10 @@ async function setup() {
       renderMode.value = 'raf'
       r.start(() => {
         const events = eng.step()
+        // ⚠️ 引擎在 step() 内部以原始对象身份改写 phase/baseHp 等字段，
+        // 这些写入不经过 engine ref 的响应式代理，模板里的 computed
+        // （HP/波次/选牌界面）感知不到 —— 必须手动触发一次 ref。
+        triggerRef(engine)
         r.handleEvents(events)
         if (eng.phase === 'card_select') {
           hand.value = [...eng.deck.hand]
@@ -289,6 +295,8 @@ async function setup() {
       // 拿不到 canvas 时用定时器推进，保证逻辑仍可运行（便于自动化测试与无 canvas 环境）
       timerId = setInterval(() => {
         const events = eng.step()
+        // 同上：step() 的内部写不走响应式代理，需手动触发
+        triggerRef(engine)
         if (renderer.value) renderer.value.handleEvents(events)
         if (eng.phase === 'card_select') hand.value = [...eng.deck.hand]
         if (eng.phase === 'won' || eng.phase === 'lost') {
