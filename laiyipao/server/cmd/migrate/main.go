@@ -23,25 +23,32 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
+	if err := run(ctx, cfg, *down); err != nil {
+		fmt.Fprintln(os.Stderr, "FATAL:", err)
+		os.Exit(1)
+	}
+}
+
+// run 执行迁移主体，从 main 抽出以便测试（main 只负责 flag 解析与退出码）。
+// 迁移成功/失败完全由数据库侧状态裁决，行为与原先的 main 内联版本一致。
+func run(ctx context.Context, cfg config.Config, down bool) error {
 	db, err := store.Open(ctx, cfg)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "FATAL 连接数据库失败:", err)
-		os.Exit(1)
+		return fmt.Errorf("连接数据库失败: %w", err)
 	}
 	defer db.Close()
 
-	if *down {
+	if down {
 		if err := db.MigrateDown(ctx); err != nil {
-			fmt.Fprintln(os.Stderr, "FATAL 回滚失败:", err)
-			os.Exit(1)
+			return fmt.Errorf("回滚失败: %w", err)
 		}
 		fmt.Println("已回滚一步")
-		return
+		return nil
 	}
 
 	if err := db.Migrate(ctx); err != nil {
-		fmt.Fprintln(os.Stderr, "FATAL 迁移失败:", err)
-		os.Exit(1)
+		return fmt.Errorf("迁移失败: %w", err)
 	}
 	fmt.Println("迁移完成")
+	return nil
 }

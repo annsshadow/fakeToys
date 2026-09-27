@@ -95,16 +95,19 @@ func (s *Service) SaveLoadout(ctx context.Context, userID int64, in SaveLoadoutI
 		}
 
 		// 4) 审计：槽位变更必须可追溯（它直接影响回放哈希的可复现性）。
-		// admin_id = 0 表示玩家自助操作，不是管理员操作。
+		// ⚠️ admin_id 必须写 NULL 而不是 0：该列有指向 admin_users(id) 的外键，
+		// 写 0 触发 23503。列可空，NULL 即「玩家自助操作，非管理员」。
+		// ⚠️ detail 列是 JSONB：历史上这里写的是 "slots=1,2,3" 裸字符串 +
+		// admin_id=0，两个错误叠加，PUT /me/loadout 此前必然 500。
 		ids := make([]string, 0, len(in.SkillIDs))
 		for _, id := range in.SkillIDs {
 			ids = append(ids, fmt.Sprintf("%d", id))
 		}
 		if _, err := tx.Exec(ctx,
 			`INSERT INTO admin_audit_logs (admin_id, username, action, target, detail)
-			 VALUES (0, $1, $2, $3, $4)`,
+			 VALUES (NULL, $1, $2, $3, $4)`,
 			fmt.Sprintf("user#%d", userID), "update_loadout",
-			fmt.Sprintf("user#%d", userID), "slots="+strings.Join(ids, ",")); err != nil {
+			fmt.Sprintf("user#%d", userID), fmt.Sprintf("{\"slots\":[%s]}", strings.Join(ids, ","))); err != nil {
 			return fmt.Errorf("audit log: %w", err)
 		}
 		return nil
