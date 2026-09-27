@@ -240,15 +240,46 @@ class TestLandingPath:
     def test_a_name_with_a_directory_component_is_not_treated_as_bare(self, api_env):
         """带目录的写法**不**走本轮那条补根前缀的路：仍由 `resolve_within_roots` 解释
 
-        这间取证房里白名单只有 `tmp/ds`、工作目录是 `tmp`，所以 `sub/x.json` 按既有
-        口径落到 `tmp/sub/x.json` ⇒ 403。断言的是「本轮没有改动那一支」，不是「子目录
-        写法坏了」：默认部署（`web.data_roots=["data"]`、cwd 在项目根）下
-        `data/sub/x.json` 仍然成功，L87 挣来的那一格由
-        `tests/unit/test_upload_ceiling_l87.py::TestUploadPathIsHonoured` 继续钉住。
+        这间取证房里白名单只有 `tmp/ds`、工作目录是 `tmp`。改前 `sub/x.json` 在这里
+        403（工作目录解释不在闸内），L93 起兜底改成首个根解释 ⇒ 落 `ds/sub/x.json`。
+        本格要锁的从来是「目录段没被剥掉、也没走裸名补前缀那一支」，这一点改前改后
+        一致：结果带 `sub/`，且不等于把名字塞回根下的裸名。默认部署
+        （`web.data_roots=["data"]`、cwd 在项目根）下 `data/sub/x.json` 仍然成功，
+        L87 挣来的那一格由 `tests/unit/test_upload_ceiling_l87.py::
+        TestUploadPathIsHonoured` 继续钉住。
         """
-        with pytest.raises(HTTPException) as got:
-            _upload_landing_path("sub/x.json", None)
-        assert got.value.status_code == 403
+        _, root, _cwd = api_env
+        path = _upload_landing_path("sub/x.json", None)
+        assert path == (root / "sub" / "x.json").resolve()
+
+    def test_the_rescue_only_runs_when_the_working_directory_already_has_that_name(
+            self, api_env):
+        """A169（本轮即关）：A163 之后，「先解释、越界才救」那一支只剩这一种活路
+
+        取证房里白名单是 `tmp/ds`、工作目录是 `tmp`，而 `tmp/l91ghost.json` **已经存在**
+        且根内没有 ⇒ `resolve_within_roots` 的「第一个存在」命中的是闸外那一份，仍然
+        403，这时必须把它送回根内，并且**不许覆盖**工作目录那一份。
+
+        为什么这一格在 L93 之前没人守也过得去：当时**任何**新建的裸名都会走进那个
+        `except`（覆盖面宽到把「救援」和「兜底」混成一件事），所以它缺的从来不是行数
+        而是**判据**。A163 把兜底改成首个根解释之后，新建那一支归解析器管，这一支
+        只剩「cwd 有、根内没有」一种形状会走到 —— 实测证据是 L92→L93 的逐文件对账：
+        `api/routes/data.py` 从 `(185, 0, 48, 0)` 掉到 `(185, 1, 48, 1)`，缺的那一行
+        正是那句补根前缀的调用（`359`）⇒ 「分支被别的用例顺路走过」与「有一条用例
+        钉着它」是两件事，覆盖率把前者当已覆盖时就是在假绿。
+        """
+        http, root, cwd = api_env
+        ghost = cwd / "l91ghost.json"
+        sentinel = "SENTINEL-must-not-be-overwritten"
+        ghost.write_text(sentinel, encoding="utf-8")
+        response = post_upload(
+            http, "l91ghost.json",
+            json.dumps([{"instruction": "问", "output": "答"}],
+                       ensure_ascii=False).encode("utf-8"))
+        assert response.status_code == 200, response.json()
+        assert response.json()["path"].replace("\\", "/").endswith("ds/l91ghost.json")
+        assert (root / "l91ghost.json").exists()
+        assert ghost.read_text(encoding="utf-8") == sentinel
 
     @pytest.mark.parametrize("filename,source,want", [
         ("t.xlsx", "excel", "t.json"), ("t.csv", "csv", "t.json"),
