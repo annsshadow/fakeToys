@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use std::path::PathBuf;
-use std::process::Command;
 use std::sync::Arc;
 
 use async_trait::async_trait;
