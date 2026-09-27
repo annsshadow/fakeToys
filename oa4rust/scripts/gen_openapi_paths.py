@@ -201,6 +201,8 @@ def path_to_func_name(crate: str, path: str, method: str, handler: str) -> str:
     func_parts.append(handler)
     func_parts.append(method.lower())
     name = "_".join(func_parts)
+    # 清洗非法 Rust 标识符字符（路径段可能带 '-' 等，如 config-open）
+    name = re.sub(r'[^A-Za-z0-9_]', '_', name)
     # Truncate long names with hash
     if len(name) > 100:
         short = hashlib.md5(f"{path}_{method}".encode()).hexdigest()[:6]
@@ -268,10 +270,17 @@ def main():
     tags = set()
     funcs = []
     func_names = []
+    used_func_names = {}
     for r in sorted(unique, key=lambda x: (x["crate"], x["method"], x["path"])):
         tag = TAG_MAP.get(r["crate"], r["crate"])
         tags.add(tag)
         func_name = path_to_func_name(r["crate"], r["path"], r["method"], r["handler"])
+        # 不同路径段蛇形转换后可能撞名（如 market/flag/uninstall vs market_flag/uninstall）
+        if func_name in used_func_names:
+            used_func_names[func_name] += 1
+            func_name = f"{func_name}_{used_func_names[func_name]}"
+        else:
+            used_func_names[func_name] = 1
         func_names.append(func_name)
         http_method = r["method"].lower()
         path_params = re.findall(r"\{(.+?)\}", r["path"])
@@ -288,6 +297,8 @@ def main():
     lines.append(f"// Generated at: {__import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     lines.append("")
     lines.append("#![allow(dead_code)]")
+    # 路径段的驼峰（如 tableFlag）转蛇形后仍留大写尾巴，统一放行 snake_case 告警
+    lines.append("#![allow(non_snake_case)]")
     lines.append("")
     lines.append("use utoipa::OpenApi;")
     lines.append("")
