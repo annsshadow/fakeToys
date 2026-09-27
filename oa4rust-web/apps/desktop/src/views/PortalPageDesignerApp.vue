@@ -186,7 +186,7 @@ function editItem(item: Item) {
 // 消费 page/{id} 详情 + pageversion 版本族 3 条真实 distinct 路由（x_portal_page / x_portal_page_version）
 async function loadPageMeta(id: string) {
   pageMeta.value = ''
-  const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const [detail, versions] = await Promise.all([
     settle(api.get(`/api/portal/assemble/designer/page/${encodeURIComponent(id)}`)),
     settle(api.get(`/api/portal/assemble/designer/pageversion/list/page/${encodeURIComponent(id)}`)),
@@ -195,7 +195,9 @@ async function loadPageMeta(id: string) {
   let latest = ''
   const vid = vrows[0] ? String(vrows[0].id ?? '') : ''
   if (vid) {
-    const vd: any = await api.get(`/api/portal/assemble/designer/pageversion/${encodeURIComponent(vid)}`).catch(() => null)
+    const vd: any = await api
+      .get(`/api/portal/assemble/designer/pageversion/${encodeURIComponent(vid)}`)
+      .catch(() => null)
     latest = vd?.data?.version ? ` · 最新版本 v${vd.data.version}` : ''
   }
   const cat = (detail as any)?.data?.category ?? '—'

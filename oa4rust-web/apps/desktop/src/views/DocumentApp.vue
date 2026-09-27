@@ -121,7 +121,7 @@ async function loadDocMeta() {
       api.get('/api/document/batch/status'),
       api.get('/api/uuid/random'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     docMetaText.value = `字段 ${n(fields)} / 批量状态 ${n(status)} / uuid ${(uuid as any)?.data ? '有' : '—'}`
   } catch (e: any) {
     toast.error('加载文档元数据失败: ' + (e?.message ?? ''))
@@ -133,7 +133,7 @@ async function loadCipherList() {
     const page = 1
     const size = 20
     const r: any = await api.put(`/api/document/cipher/filter/list/${page}/size/${size}`, {})
-    const n = Array.isArray(r?.data) ? r.data.length : (Array.isArray(r?.data?.data) ? r.data.data.length : 0)
+    const n = Array.isArray(r?.data) ? r.data.length : Array.isArray(r?.data?.data) ? r.data.data.length : 0
     docMetaText.value = `密文文档：${n} 条`
   } catch (e: any) {
     toast.error('加载密文列表失败: ' + (e?.message ?? ''))
@@ -357,8 +357,17 @@ const detail = ref({
   fieldCount: 0,
 })
 async function onDetail(item: DocItem) {
-  detail.value = { open: true, loading: true, title: '', creator: '', status: '', canRead: '—', viewOk: '—', fieldCount: 0 }
-  const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  detail.value = {
+    open: true,
+    loading: true,
+    title: '',
+    creator: '',
+    status: '',
+    canRead: '—',
+    viewOk: '—',
+    fieldCount: 0,
+  }
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const [main, data, control, perm, view] = await Promise.all([
     settle(api.get(`/api/document/${item.id}`)),
     settle(api.get(`/api/document/${item.id}/document/data`)),
@@ -374,7 +383,7 @@ async function onDetail(item: DocItem) {
   const fields = (data as any)?.data
   detail.value.fieldCount = Array.isArray(fields) ? fields.length : Object.keys(fields ?? {}).length
   const p: any = (perm as any)?.data
-  detail.value.canRead = perm ? (p?.canRead ?? p?.permission ?? p === true ? '是' : '否') : '查询失败'
+  detail.value.canRead = perm ? ((p?.canRead ?? p?.permission ?? p === true) ? '是' : '否') : '查询失败'
   detail.value.viewOk = view ? '已登记' : '失败'
   detail.value.loading = false
 }
@@ -420,10 +429,7 @@ const api_document_l_855_data = ref<any[]>([])
 async function loadDocTwin() {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
-    const rs = await Promise.all([
-      s(api.get('/api/anonymous/document/0/view')),
-      s(api.get('/api/editor/list')),
-    ])
+    const rs = await Promise.all([s(api.get('/api/anonymous/document/0/view')), s(api.get('/api/editor/list'))])
     toast.success(`文档孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
     toast.error('文档孪生端点失败: ' + (e?.message ?? ''))
@@ -433,10 +439,7 @@ async function loadDocTwin() {
 async function loadDocTwin2() {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
-    const rs = await Promise.all([
-      s(api.post('/preview/convert', {})),
-      s(api.post('/preview/upload', {})),
-    ])
+    const rs = await Promise.all([s(api.post('/preview/convert', {})), s(api.post('/preview/upload', {}))])
     toast.success(`文档孪生端点B ${rs.length} 条已提交`)
   } catch (e: any) {
     toast.error('文档孪生端点B失败: ' + (e?.message ?? ''))

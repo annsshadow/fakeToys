@@ -163,6 +163,7 @@ import { api } from '@oa4rust/sdk'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+
 interface Item {
   id: string
   name?: string
@@ -274,13 +275,21 @@ async function loadMappingAccess() {
   const app = String(first.application ?? first.category ?? '')
   try {
     const accessResp: any = pid
-      ? await api.get(`/api/processplatform/assemble/designer/item-access/process/${encodeURIComponent(pid)}`).catch(() => null)
+      ? await api
+          .get(`/api/processplatform/assemble/designer/item-access/process/${encodeURIComponent(pid)}`)
+          .catch(() => null)
       : null
     const accessRows = (Array.isArray(accessResp?.data) ? accessResp.data : []) as Array<Record<string, unknown>>
     const accId = accessRows[0] ? String(accessRows[0].id ?? accessRows[0].xid ?? '') : ''
     const [accDetail, mappings] = await Promise.all([
-      accId ? api.get(`/api/processplatform/assemble/designer/item-access/${encodeURIComponent(accId)}`).catch(() => null) : Promise.resolve(null),
-      app ? api.get(`/api/processplatform/assemble/designer/mapping/list/application/${encodeURIComponent(app)}`).catch(() => null) : Promise.resolve(null),
+      accId
+        ? api.get(`/api/processplatform/assemble/designer/item-access/${encodeURIComponent(accId)}`).catch(() => null)
+        : Promise.resolve(null),
+      app
+        ? api
+            .get(`/api/processplatform/assemble/designer/mapping/list/application/${encodeURIComponent(app)}`)
+            .catch(() => null)
+        : Promise.resolve(null),
     ])
     const accName = (accDetail as any)?.data?.name ?? (accId || '—')
     const mN = Array.isArray((mappings as any)?.data) ? (mappings as any).data.length : 0
@@ -436,16 +445,23 @@ async function pdCreate(kind: 'applicationdict' | 'mapping' | 'mergeitemplan' | 
     toast.error(`新建${kind}失败: ` + (e?.message ?? ''))
   }
 }
-async function pdEdit(kind: 'application' | 'appicon' | 'mapping' | 'mergeitemplan' | 'process' | 'dict' | 'form' | 'xform') {
+async function pdEdit(
+  kind: 'application' | 'appicon' | 'mapping' | 'mergeitemplan' | 'process' | 'dict' | 'form' | 'xform',
+) {
   const id = prompt(`要编辑的${kind} ID/flag:`, '')
   if (!id) return
   const e = encodeURIComponent(id)
   try {
-    if (kind === 'application') await api.put(`/api/processplatform/assemble/designer/application/${e}`, { name: '更新应用' })
-    else if (kind === 'appicon') await api.put(`/api/processplatform/assemble/designer/application/${e}/icon`, { icon: '' })
-    else if (kind === 'mapping') await api.put(`/api/processplatform/assemble/designer/mapping/${e}`, { name: '更新映射' })
-    else if (kind === 'mergeitemplan') await api.put(`/api/processplatform/assemble/designer/mergeitemplan/${e}`, { name: '更新合并项计划' })
-    else if (kind === 'process') await api.put(`/api/processplatform/assemble/designer/process/${e}`, { name: '更新流程' })
+    if (kind === 'application')
+      await api.put(`/api/processplatform/assemble/designer/application/${e}`, { name: '更新应用' })
+    else if (kind === 'appicon')
+      await api.put(`/api/processplatform/assemble/designer/application/${e}/icon`, { icon: '' })
+    else if (kind === 'mapping')
+      await api.put(`/api/processplatform/assemble/designer/mapping/${e}`, { name: '更新映射' })
+    else if (kind === 'mergeitemplan')
+      await api.put(`/api/processplatform/assemble/designer/mergeitemplan/${e}`, { name: '更新合并项计划' })
+    else if (kind === 'process')
+      await api.put(`/api/processplatform/assemble/designer/process/${e}`, { name: '更新流程' })
     else if (kind === 'dict') await api.put(`/api/processplatform/assemble/designer/dict/save/${e}`, { data: {} })
     else if (kind === 'form') await api.put(`/api/processplatform/assemble/designer/form/save/${e}`, { data: {} })
     else await api.put(`/api/processplatform/assemble/designer/xform/save/${e}`, { data: {} })
@@ -582,13 +598,17 @@ async function psCompleted(op: string) {
   const id = prompt('目标 ID:', '') || ''
   const e = encodeURIComponent(id)
   try {
-    if (op === 'taskOpinion') await api.post(`/api/processplatform/assemble/surface/taskcompleted/opinion/manage/${e}`, {})
-    else if (op === 'taskReference') await api.post(`/api/processplatform/assemble/surface/taskcompleted/reference/${e}`, {})
+    if (op === 'taskOpinion')
+      await api.post(`/api/processplatform/assemble/surface/taskcompleted/opinion/manage/${e}`, {})
+    else if (op === 'taskReference')
+      await api.post(`/api/processplatform/assemble/surface/taskcompleted/reference/${e}`, {})
     else if (op === 'taskDelete') {
       if (!(await confirmMsg('确定删除该已办？'))) return
       await api.delete(`/api/processplatform/assemble/surface/taskcompleted/${e}/manage`)
-    } else if (op === 'readOpinion') await api.post(`/api/processplatform/assemble/surface/readcompleted/opinion/manage/${e}`, {})
-    else if (op === 'readReference') await api.post(`/api/processplatform/assemble/surface/readcompleted/reference/${e}`, {})
+    } else if (op === 'readOpinion')
+      await api.post(`/api/processplatform/assemble/surface/readcompleted/opinion/manage/${e}`, {})
+    else if (op === 'readReference')
+      await api.post(`/api/processplatform/assemble/surface/readcompleted/reference/${e}`, {})
     else if (op === 'readDelete') {
       if (!(await confirmMsg('确定删除该已阅？'))) return
       await api.delete(`/api/processplatform/assemble/surface/readcompleted/${e}/manage`)
@@ -610,20 +630,26 @@ async function pdMisc(op: string) {
   const id = prompt('目标 ID/flag:', '') || ''
   const e = encodeURIComponent(id)
   try {
-    if (op === 'projection') await api.post(`/api/processplatform/assemble/designer/process/${e}/execute/projection`, {})
-    else if (op === 'listElement') await api.post(`/api/processplatform/assemble/designer/process/${e}/list/element`, {})
+    if (op === 'projection')
+      await api.post(`/api/processplatform/assemble/designer/process/${e}/execute/projection`, {})
+    else if (op === 'listElement')
+      await api.post(`/api/processplatform/assemble/designer/process/${e}/list/element`, {})
     else if (op === 'upgrade') {
       if (!(await confirmMsg('确定升级该流程？'))) return
       await api.post(`/api/processplatform/assemble/designer/process/${e}/upgrade`, {})
-    } else if (op === 'mergeEstimate') await api.post('/api/processplatform/assemble/designer/mergeitemplan/estimate', {})
+    } else if (op === 'mergeEstimate')
+      await api.post('/api/processplatform/assemble/designer/mergeitemplan/estimate', {})
     else if (op === 'itemAccessDel') {
       const path = prompt('项权限路径:', '') || ''
       if (!(await confirmMsg('确定删除该项权限？'))) return
-      await api.delete(`/api/processplatform/assemble/designer/item-access/delete/process/${e}/path/${encodeURIComponent(path)}`)
+      await api.delete(
+        `/api/processplatform/assemble/designer/item-access/delete/process/${e}/path/${encodeURIComponent(path)}`,
+      )
     } else if (op === 'appDictDel') {
       if (!(await confirmMsg('确定删除该应用字典？'))) return
       await api.delete(`/api/processplatform/assemble/designer/applicationdict/${e}`)
-    } else if (op === 'mergeDataApp') await api.post(`/api/processplatform/assemble/designer/workcompleted/application/merge/data/${e}`, {})
+    } else if (op === 'mergeDataApp')
+      await api.post(`/api/processplatform/assemble/designer/workcompleted/application/merge/data/${e}`, {})
     else await api.post(`/api/processplatform/assemble/designer/workcompleted/process/merge/data/${e}`, {})
     toast.success('设计器操作已提交')
   } catch (err: any) {
@@ -676,19 +702,24 @@ async function dataWrite(op: string) {
     else if (op === 'workDataDelete') {
       if (!(await confirmMsg('确定删除该工作数据？'))) return
       await api.post(`/api/processplatform/service/processing/data/work/${e}/delete`, {})
-    } else if (op === 'wcDataUpdate') await api.put(`/api/processplatform/service/processing/data/workcompleted/${e}`, {})
+    } else if (op === 'wcDataUpdate')
+      await api.put(`/api/processplatform/service/processing/data/workcompleted/${e}`, {})
     else {
       const af = prompt('应用 flag:', '') || ''
       const p0 = prompt('字典键路径:', 'field') || 'field'
       const af2 = encodeURIComponent(af)
       const p0e = encodeURIComponent(p0)
-      if (op === 'dictSurfaceSet') await api.post(`/api/processplatform/assemble/surface/applicationdict/${e}/application/${af2}/${p0e}/data`, {})
-      else if (op === 'dictSurfacePut') await api.put(`/api/processplatform/assemble/surface/applicationdict/${e}/application/${af2}/${p0e}/data`, {})
+      if (op === 'dictSurfaceSet')
+        await api.post(`/api/processplatform/assemble/surface/applicationdict/${e}/application/${af2}/${p0e}/data`, {})
+      else if (op === 'dictSurfacePut')
+        await api.put(`/api/processplatform/assemble/surface/applicationdict/${e}/application/${af2}/${p0e}/data`, {})
       else if (op === 'dictSurfaceDel') {
         if (!(await confirmMsg('确定删除该字典数据？'))) return
         await api.delete(`/api/processplatform/assemble/surface/applicationdict/${e}/application/${af2}/${p0e}/data`)
-      } else if (op === 'dictEngineSet') await api.post(`/api/processplatform/service/processing/applicationdict/${e}/${p0e}/data`, {})
-      else if (op === 'dictEnginePut') await api.put(`/api/processplatform/service/processing/applicationdict/${e}/${p0e}/data`, {})
+      } else if (op === 'dictEngineSet')
+        await api.post(`/api/processplatform/service/processing/applicationdict/${e}/${p0e}/data`, {})
+      else if (op === 'dictEnginePut')
+        await api.put(`/api/processplatform/service/processing/applicationdict/${e}/${p0e}/data`, {})
       else {
         if (!(await confirmMsg('确定删除该字典数据？'))) return
         await api.delete(`/api/processplatform/service/processing/applicationdict/${e}/${p0e}/data`)
@@ -702,21 +733,63 @@ async function dataWrite(op: string) {
 // rev371：流程设计器 应用字典分页/文件/版本/投影读 + 流程启停/升级/合并计划/版次/项权限删/设计器删 真实路由（避 mergeitemplan 三参 arity trap；enable/disable 择 {id}/... 一式）
 async function pdDesigner2(op: string) {
   try {
-    if (op === 'appdictPaging') await api.post('/api/processplatform/assemble/designer/applicationdict/list/paging/1/size/20', {})
-    else if (op === 'fileByApp') { const f = prompt('文件 flag:', '') || ''; const af = prompt('应用 flag:', '') || ''; await api.get(`/api/processplatform/assemble/designer/file/${encodeURIComponent(f)}/application/${encodeURIComponent(af)}`) }
-    else if (op === 'fileDownload') { const id = prompt('文件 ID:', '') || ''; await api.get(`/api/processplatform/assemble/designer/file/download/${encodeURIComponent(id)}`) }
-    else if (op === 'procVersion') { const id = prompt('流程版本 ID:', '') || ''; await api.get(`/api/processplatform/assemble/designer/processversion/${encodeURIComponent(id)}`) }
-    else if (op === 'procProjection') { const id = prompt('流程 ID:', '') || ''; await api.get(`/api/processplatform/assemble/designer/process/execute/projection/${encodeURIComponent(id)}`) }
-    else if (op === 'procDisable') { const id = prompt('流程 ID:', '') || ''; await api.get(`/api/processplatform/assemble/designer/process/${encodeURIComponent(id)}/disable`) }
-    else if (op === 'procEnable') { const id = prompt('流程 ID:', '') || ''; await api.get(`/api/processplatform/assemble/designer/process/${encodeURIComponent(id)}/enable`) }
-    else if (op === 'procUpgradeAll') await api.get('/api/processplatform/assemble/designer/process/upgrade/all')
-    else if (op === 'procUpgrade') { const id = prompt('流程 ID:', '') || ''; await api.get(`/api/processplatform/assemble/designer/process/upgrade/${encodeURIComponent(id)}`) }
-    else if (op === 'mappingExecute') { const flag = prompt('映射 flag:', '') || ''; await api.get(`/api/processplatform/assemble/designer/mapping/${encodeURIComponent(flag)}/execute`) }
-    else if (op === 'mergePlan') { const id = prompt('合并计划 ID:', '') || ''; await api.post(`/api/processplatform/assemble/designer/mergeitemplan/${encodeURIComponent(id)}`, {}) }
-    else if (op === 'appEditionDisable') { const id = prompt('应用 ID:', '') || ''; await api.post(`/api/processplatform/assemble/designer/process/application/disable/edition/${encodeURIComponent(id)}`, {}) }
-    else if (op === 'appEdition') { const id = prompt('应用 ID:', '') || ''; await api.post(`/api/processplatform/assemble/designer/process/application/edition/edition/${encodeURIComponent(id)}`, {}) }
-    else if (op === 'itemAccessDel') { const pid = prompt('流程 ID:', '') || ''; if (!(await confirmMsg('确定删除该流程项权限？'))) return; await api.post(`/api/processplatform/assemble/designer/item/access/delete/process/path/path/${encodeURIComponent(pid)}`, {}) }
-    else { const id = prompt('要删除的设计器对象 ID:', '') || ''; if (!(await confirmMsg('确定删除该设计器对象？'))) return; await api.post(`/api/processplatform/assemble/designer/delete/${encodeURIComponent(id)}`, {}) }
+    if (op === 'appdictPaging')
+      await api.post('/api/processplatform/assemble/designer/applicationdict/list/paging/1/size/20', {})
+    else if (op === 'fileByApp') {
+      const f = prompt('文件 flag:', '') || ''
+      const af = prompt('应用 flag:', '') || ''
+      await api.get(
+        `/api/processplatform/assemble/designer/file/${encodeURIComponent(f)}/application/${encodeURIComponent(af)}`,
+      )
+    } else if (op === 'fileDownload') {
+      const id = prompt('文件 ID:', '') || ''
+      await api.get(`/api/processplatform/assemble/designer/file/download/${encodeURIComponent(id)}`)
+    } else if (op === 'procVersion') {
+      const id = prompt('流程版本 ID:', '') || ''
+      await api.get(`/api/processplatform/assemble/designer/processversion/${encodeURIComponent(id)}`)
+    } else if (op === 'procProjection') {
+      const id = prompt('流程 ID:', '') || ''
+      await api.get(`/api/processplatform/assemble/designer/process/execute/projection/${encodeURIComponent(id)}`)
+    } else if (op === 'procDisable') {
+      const id = prompt('流程 ID:', '') || ''
+      await api.get(`/api/processplatform/assemble/designer/process/${encodeURIComponent(id)}/disable`)
+    } else if (op === 'procEnable') {
+      const id = prompt('流程 ID:', '') || ''
+      await api.get(`/api/processplatform/assemble/designer/process/${encodeURIComponent(id)}/enable`)
+    } else if (op === 'procUpgradeAll') await api.get('/api/processplatform/assemble/designer/process/upgrade/all')
+    else if (op === 'procUpgrade') {
+      const id = prompt('流程 ID:', '') || ''
+      await api.get(`/api/processplatform/assemble/designer/process/upgrade/${encodeURIComponent(id)}`)
+    } else if (op === 'mappingExecute') {
+      const flag = prompt('映射 flag:', '') || ''
+      await api.get(`/api/processplatform/assemble/designer/mapping/${encodeURIComponent(flag)}/execute`)
+    } else if (op === 'mergePlan') {
+      const id = prompt('合并计划 ID:', '') || ''
+      await api.post(`/api/processplatform/assemble/designer/mergeitemplan/${encodeURIComponent(id)}`, {})
+    } else if (op === 'appEditionDisable') {
+      const id = prompt('应用 ID:', '') || ''
+      await api.post(
+        `/api/processplatform/assemble/designer/process/application/disable/edition/${encodeURIComponent(id)}`,
+        {},
+      )
+    } else if (op === 'appEdition') {
+      const id = prompt('应用 ID:', '') || ''
+      await api.post(
+        `/api/processplatform/assemble/designer/process/application/edition/edition/${encodeURIComponent(id)}`,
+        {},
+      )
+    } else if (op === 'itemAccessDel') {
+      const pid = prompt('流程 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该流程项权限？'))) return
+      await api.post(
+        `/api/processplatform/assemble/designer/item/access/delete/process/path/path/${encodeURIComponent(pid)}`,
+        {},
+      )
+    } else {
+      const id = prompt('要删除的设计器对象 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该设计器对象？'))) return
+      await api.post(`/api/processplatform/assemble/designer/delete/${encodeURIComponent(id)}`, {})
+    }
     toast.success('流程设计器操作已提交')
   } catch (err: any) {
     toast.error('操作失败: ' + (err?.message ?? ''))
@@ -725,10 +798,21 @@ async function pdDesigner2(op: string) {
 // rev404：流程设计器 映射执行(位置态)/流程启用·禁用(位置态)/流程版次删 真实路由（mapping/execute/{flag}·process/enable·disable/{id} 与既有 {flag}/execute·{id}/enable 位置不同为独立注册、process_edition_delete Path<2-tuple> 已核；规避 {id}/{onlyRemoveNotCompleted} 单-String handler arity trap；用户触发）
 async function pdDesigner3(op: string) {
   try {
-    if (op === 'mappingExec') { const f = encodeURIComponent(prompt('映射标识:', '') || ''); await api.get(`/api/processplatform/assemble/designer/mapping/execute/${f}`) }
-    else if (op === 'processEnable') { const id = encodeURIComponent(prompt('流程 ID:', '') || ''); await api.get(`/api/processplatform/assemble/designer/process/enable/${id}`) }
-    else if (op === 'processDisable') { const id = encodeURIComponent(prompt('流程 ID:', '') || ''); await api.get(`/api/processplatform/assemble/designer/process/disable/${id}`) }
-    else { const id = encodeURIComponent(prompt('流程 ID:', '') || ''); const orn = 'false'; if (!(await confirmMsg('确定删除该流程版次？'))) return; await api.delete(`/api/processplatform/assemble/designer/process/${id}/${orn}/edition`) }
+    if (op === 'mappingExec') {
+      const f = encodeURIComponent(prompt('映射标识:', '') || '')
+      await api.get(`/api/processplatform/assemble/designer/mapping/execute/${f}`)
+    } else if (op === 'processEnable') {
+      const id = encodeURIComponent(prompt('流程 ID:', '') || '')
+      await api.get(`/api/processplatform/assemble/designer/process/enable/${id}`)
+    } else if (op === 'processDisable') {
+      const id = encodeURIComponent(prompt('流程 ID:', '') || '')
+      await api.get(`/api/processplatform/assemble/designer/process/disable/${id}`)
+    } else {
+      const id = encodeURIComponent(prompt('流程 ID:', '') || '')
+      const orn = 'false'
+      if (!(await confirmMsg('确定删除该流程版次？'))) return
+      await api.delete(`/api/processplatform/assemble/designer/process/${id}/${orn}/edition`)
+    }
     toast.success('流程设计器操作已提交')
   } catch (err: any) {
     toast.error('操作失败: ' + (err?.message ?? ''))
@@ -742,14 +826,22 @@ async function loadDesignerProcessReads() {
   const pid = String(first.id ?? '0')
   try {
     const rs = await Promise.all([
-      s(api.get(`/api/processplatform/assemble/designer/application/list/summary/applicationcategory/${encodeURIComponent(cat)}`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/designer/application/list/summary/applicationcategory/${encodeURIComponent(cat)}`,
+        ),
+      ),
       s(api.get(`/api/processplatform/assemble/designer/elementtool/applicationdict/orphan`)),
       s(api.get(`/api/processplatform/assemble/designer/process/${encodeURIComponent(pid)}/lead/out`)),
       s(api.get(`/api/processplatform/assemble/designer/process/lead/out/${encodeURIComponent(pid)}`)),
       s(api.get(`/api/processplatform/assemble/designer/process/enabled/${encodeURIComponent(pid)}`)),
       s(api.get(`/api/processplatform/assemble/designer/process/permission/${encodeURIComponent(pid)}`)),
       // rev304：设计器 停用版次清单 process/application/{applicationId}/disable/edition → pp_e_processversion（只读 arity1）
-      s(api.get(`/api/processplatform/assemble/designer/process/application/${encodeURIComponent(cat)}/disable/edition`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/designer/process/application/${encodeURIComponent(cat)}/disable/edition`,
+        ),
+      ),
     ])
     const hit = rs.filter((r) => (r as any)?.data != null).length
     designerProcText.value = `设计器流程真实读端点 ${rs.length} 条，命中 ${hit}`
@@ -812,11 +904,19 @@ async function loadMergeitemEnabled() {
   const pid = String(first.id ?? '0')
   try {
     const [byApp, all, enabled, wcByApp, wcByProc] = await Promise.all([
-      s(api.get(`/api/processplatform/assemble/designer/mergeitemplan/list/application/${encodeURIComponent(appId)}/paging/1/size/20`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/designer/mergeitemplan/list/application/${encodeURIComponent(appId)}/paging/1/size/20`,
+        ),
+      ),
       s(api.get(`/api/processplatform/assemble/designer/mergeitemplan/list/paging/1/size/20`)),
       s(api.get(`/api/processplatform/assemble/designer/process/${encodeURIComponent(pid)}/enabled`)),
       // rev281：workcompleted merge/data 按应用(WHERE p.xapplication)/按流程(WHERE p.xid)→PP_E_WORKCOMPLETED JOIN PP_E_PROCESS，distinct 读 arity1
-      s(api.get(`/api/processplatform/assemble/designer/workcompleted/application/${encodeURIComponent(appId)}/merge/data`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/designer/workcompleted/application/${encodeURIComponent(appId)}/merge/data`,
+        ),
+      ),
       s(api.get(`/api/processplatform/assemble/designer/workcompleted/process/${encodeURIComponent(pid)}/merge/data`)),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
@@ -863,16 +963,24 @@ async function loadDesignerFileScript() {
   const first: any = items.value[0] ?? {}
   const appId = String(first.application ?? first.applicationFlag ?? first.id ?? '0')
   try {
-    const fileList = await s(api.get(`/api/processplatform/assemble/designer/file/list/application/${encodeURIComponent(appId)}`))
+    const fileList = await s(
+      api.get(`/api/processplatform/assemble/designer/file/list/application/${encodeURIComponent(appId)}`),
+    )
     const fRows = Array.isArray((fileList as any)?.data) ? (fileList as any).data : []
     const fFlag = fRows[0] ? String(fRows[0].id ?? '0') : '0'
-    const scriptList = await s(api.get(`/api/processplatform/assemble/designer/script/application/${encodeURIComponent(appId)}`))
+    const scriptList = await s(
+      api.get(`/api/processplatform/assemble/designer/script/application/${encodeURIComponent(appId)}`),
+    )
     const sRows = Array.isArray((scriptList as any)?.data) ? (scriptList as any).data : []
     const sName = sRows[0] ? String(sRows[0].name ?? sRows[0].xname ?? 'default') : 'default'
     const [fileOne, mergeOne, scriptByName, icon] = await Promise.all([
       s(api.get(`/api/processplatform/assemble/designer/file/${encodeURIComponent(fFlag)}`)),
       s(api.get(`/api/processplatform/assemble/designer/mergeitemplan/${encodeURIComponent(fFlag)}`)),
-      s(api.get(`/api/processplatform/assemble/designer/script/application/${encodeURIComponent(appId)}/name/${encodeURIComponent(sName)}`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/designer/script/application/${encodeURIComponent(appId)}/name/${encodeURIComponent(sName)}`,
+        ),
+      ),
       s(api.get(`/api/processplatform/assemble/designer/application/icon/${encodeURIComponent(appId)}`)),
     ])
     const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
@@ -890,7 +998,11 @@ async function loadSurfaceProcessReads() {
     const [surfaceGet, surfaceList, appdict, complex, byApp] = await Promise.all([
       s(api.get(`/api/processplatform/assemble/surface/get/${encodeURIComponent(appId)}`)),
       s(api.get(`/api/processplatform/assemble/surface/list/${encodeURIComponent(appId)}`)),
-      s(api.get(`/api/processplatform/assemble/surface/applicationdict/application/${encodeURIComponent(appId)}/${encodeURIComponent(appId)}`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/applicationdict/application/${encodeURIComponent(appId)}/${encodeURIComponent(appId)}`,
+        ),
+      ),
       s(api.get(`/api/processplatform/assemble/surface/process/complex/${encodeURIComponent(appId)}`)),
       s(api.get(`/api/processplatform/assemble/surface/process/list/application/filter/${encodeURIComponent(appId)}`)),
     ])
@@ -910,7 +1022,11 @@ async function loadSurfaceDataForms() {
     const [wc, draft, form, keylock] = await Promise.all([
       s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/${encodeURIComponent(appId)}`)),
       s(api.get(`/api/processplatform/assemble/surface/draft/list/prev/${encodeURIComponent(appId)}/20`)),
-      s(api.get(`/api/processplatform/assemble/surface/form/application/${encodeURIComponent(appId)}/${encodeURIComponent(appId)}`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/form/application/${encodeURIComponent(appId)}/${encodeURIComponent(appId)}`,
+        ),
+      ),
       s(api.get(`/api/processplatform/assemble/surface/control/workorworkcompleted/${encodeURIComponent(appId)}`)),
     ])
     const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
@@ -929,9 +1045,17 @@ async function loadDesignerItemAccess() {
   try {
     const [byPath, byProcess, output, edition] = await Promise.all([
       s(api.get(`/api/processplatform/assemble/designer/item-access/path/${encodeURIComponent(appId)}`)),
-      s(api.get(`/api/processplatform/assemble/designer/item-access/process/${encodeURIComponent(appId)}/path/${encodeURIComponent(appId)}`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/designer/item-access/process/${encodeURIComponent(appId)}/path/${encodeURIComponent(appId)}`,
+        ),
+      ),
       s(api.get(`/api/processplatform/assemble/designer/output/select/${encodeURIComponent(appId)}`)),
-      s(api.get(`/api/processplatform/assemble/designer/process/application/${encodeURIComponent(appId)}/edition/${encodeURIComponent(appId)}`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/designer/process/application/${encodeURIComponent(appId)}/edition/${encodeURIComponent(appId)}`,
+        ),
+      ),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     designerExtraText.value = `项访问 按路径${n(byPath)}/按流程${n(byProcess)} | 输出(按应用) ${n(output)} | 流程(按应用+版次) ${n(edition)}`
@@ -950,7 +1074,11 @@ async function loadSurfaceRouteSign() {
     const [route, sign, controllable] = await Promise.all([
       s(api.get(`/api/processplatform/assemble/surface/route/${encodeURIComponent(id)}`)),
       s(api.get(`/api/processplatform/assemble/surface/sign/${encodeURIComponent(id)}`)),
-      s(api.get(`/api/processplatform/assemble/surface/process/list/controllable/application/${encodeURIComponent(appId)}`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/process/list/controllable/application/${encodeURIComponent(appId)}`,
+        ),
+      ),
     ])
     const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
@@ -973,8 +1101,12 @@ async function loadProcessDetails() {
   try {
     const [detail, elements, versions] = await Promise.all([
       api.get(`/api/processplatform/assemble/designer/process/${encodeURIComponent(pid)}`).catch(() => null),
-      api.get(`/api/processplatform/assemble/designer/process/list/element/${encodeURIComponent(pid)}`).catch(() => null),
-      api.get(`/api/processplatform/assemble/designer/processversion/list/process/${encodeURIComponent(pid)}`).catch(() => null),
+      api
+        .get(`/api/processplatform/assemble/designer/process/list/element/${encodeURIComponent(pid)}`)
+        .catch(() => null),
+      api
+        .get(`/api/processplatform/assemble/designer/processversion/list/process/${encodeURIComponent(pid)}`)
+        .catch(() => null),
     ])
     const pName = (detail as any)?.data?.name ?? (pid || '—')
     const eN = Array.isArray((elements as any)?.data) ? (elements as any).data.length : 0
@@ -989,9 +1121,14 @@ async function loadDesignerFile() {
   const first = items.value[0]
   const appFlag = String((first as any)?.application ?? (first as any)?.category ?? '')
   const flag = prompt('设计器文件 flag:', '') || ''
-  if (!flag.trim() || !appFlag) { toast.success('需要文件 flag 与应用（先刷新列表）'); return }
+  if (!flag.trim() || !appFlag) {
+    toast.success('需要文件 flag 与应用（先刷新列表）')
+    return
+  }
   try {
-    const r: any = await api.get(`/api/processplatform/assemble/designer/file/${encodeURIComponent(flag)}/application/${encodeURIComponent(appFlag)}`)
+    const r: any = await api.get(
+      `/api/processplatform/assemble/designer/file/${encodeURIComponent(flag)}/application/${encodeURIComponent(appFlag)}`,
+    )
     toast.success(`设计器文件：${(r as any)?.data?.name ?? '—'}`)
   } catch (e: any) {
     toast.error('读取设计器文件失败: ' + (e?.message ?? ''))

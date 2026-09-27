@@ -72,11 +72,17 @@ const periodText = ref('')
 async function loadBamConfigs() {
   try {
     const listResp: any = await api.get('/api/processplatform/assemble/bam/list/default')
-    const rows = (Array.isArray(listResp?.data) ? listResp.data : (listResp?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const rows = (Array.isArray(listResp?.data) ? listResp.data : (listResp?.data?.data ?? [])) as Array<
+      Record<string, unknown>
+    >
     const id = rows[0] ? String(rows[0].id ?? '') : ''
     const [config, status] = await Promise.all([
-      id ? api.get(`/api/processplatform/assemble/bam/get/${encodeURIComponent(id)}`).catch(() => null) : Promise.resolve(null),
-      id ? api.get(`/api/processplatform/assemble/bam/status/${encodeURIComponent(id)}`).catch(() => null) : Promise.resolve(null),
+      id
+        ? api.get(`/api/processplatform/assemble/bam/get/${encodeURIComponent(id)}`).catch(() => null)
+        : Promise.resolve(null),
+      id
+        ? api.get(`/api/processplatform/assemble/bam/status/${encodeURIComponent(id)}`).catch(() => null)
+        : Promise.resolve(null),
     ])
     const name = (config as any)?.data?.name ?? (id || '—')
     const st = (status as any)?.data?.status ?? ((status as any)?.data ? '有状态' : '无状态')
@@ -94,13 +100,21 @@ async function loadDimensionStats() {
       api.get('/api/processplatform/assemble/bam/list/default').catch(() => null),
     ])
     const units = (Array.isArray(unitResp?.data) ? unitResp.data : []) as Array<Record<string, unknown>>
-    const bams = (Array.isArray(bamResp?.data) ? bamResp.data : (bamResp?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const bams = (Array.isArray(bamResp?.data) ? bamResp.data : (bamResp?.data?.data ?? [])) as Array<
+      Record<string, unknown>
+    >
     const unit = units[0] ? String(units[0].id ?? '') : '0'
     const application = bams[0] ? String(bams[0].application ?? bams[0].id ?? 'default') : 'default'
     const [doneTask, doneWork, expiredTask] = await Promise.all([
-      api.get(`/api/processplatform/assemble/bam/period/list/completed/task/${encodeURIComponent(unit)}`).catch(() => null),
-      api.get(`/api/processplatform/assemble/bam/period/list/completed/application/${encodeURIComponent(application)}`).catch(() => null),
-      api.get(`/api/processplatform/assemble/bam/period/list/expired/task/${encodeURIComponent(unit)}`).catch(() => null),
+      api
+        .get(`/api/processplatform/assemble/bam/period/list/completed/task/${encodeURIComponent(unit)}`)
+        .catch(() => null),
+      api
+        .get(`/api/processplatform/assemble/bam/period/list/completed/application/${encodeURIComponent(application)}`)
+        .catch(() => null),
+      api
+        .get(`/api/processplatform/assemble/bam/period/list/expired/task/${encodeURIComponent(unit)}`)
+        .catch(() => null),
     ])
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     periodText.value = `单位已办任务 ${n(doneTask)} · 应用已办工作 ${n(doneWork)} · 单位超期任务 ${n(expiredTask)}`
@@ -119,13 +133,41 @@ async function loadCountStats() {
     const person = '0'
     const app = 'default'
     const [ctA, cwA, ctP, etA, ewA, stA, swA] = await Promise.all([
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/completed/task/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/completed/work/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/completed/task/application/${encodeURIComponent(app)}/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/process`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/expired/task/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/expired/work/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/start/task/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/start/work/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/completed/task/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/completed/work/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/completed/task/application/${encodeURIComponent(app)}/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/process`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/expired/task/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/expired/work/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/start/task/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/start/work/unit/${encodeURIComponent(unit)}/person/${encodeURIComponent(person)}/by/application`,
+        ),
+      ),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     periodText.value = `已办任务/应用 ${n(ctA)} · 已办工作/应用 ${n(cwA)} · 已办任务/流程 ${n(ctP)} · 超期任务/应用 ${n(etA)} · 超期工作/应用 ${n(ewA)} · 起始任务/应用 ${n(stA)} · 起始工作/应用 ${n(swA)}`
@@ -215,33 +257,129 @@ async function loadPeriodMatrix() {
   const cnt = '20'
   try {
     const rs = await Promise.all([
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/completed/work/application/${app}/process/${proc}/unit/${unit}/person/${person}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/expired/work/application/${app}/process/${proc}/unit/${unit}/person/${person}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/start/work/application/${app}/process/${proc}/unit/${unit}/person/${person}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/completed/task/application/${app}/process/${proc}/activity/${act}/unit/${unit}/person/${person}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/expired/task/application/${app}/process/${proc}/activity/${act}/unit/${unit}/person/${person}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/start/task/application/${app}/process/${proc}/activity/${act}/unit/${unit}/person/${person}`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/completed/work/application/${app}/process/${proc}/unit/${unit}/person/${person}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/expired/work/application/${app}/process/${proc}/unit/${unit}/person/${person}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/start/work/application/${app}/process/${proc}/unit/${unit}/person/${person}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/completed/task/application/${app}/process/${proc}/activity/${act}/unit/${unit}/person/${person}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/expired/task/application/${app}/process/${proc}/activity/${act}/unit/${unit}/person/${person}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/start/task/application/${app}/process/${proc}/activity/${act}/unit/${unit}/person/${person}`,
+        ),
+      ),
       s(api.get(`/api/processplatform/assemble/bam/period/list/expired/application/${work}`)),
       s(api.get(`/api/processplatform/assemble/bam/period/list/completed/${work}/${unit}`)),
       s(api.get(`/api/processplatform/assemble/bam/period/list/expired/${work}/${unit}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/expired/task/by/application/${cnt}/${unit}/${unit}/${person}/${person}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/completed/by/application/${cnt}/${work}/${unit}/${unit}/${person}/${person}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/expired/by/application/${cnt}/${work}/${unit}/${unit}/${person}/${person}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/expired/task/application/process/activity/${cnt}/${app}/${proc}/${act}/${unit}/${unit}/${person}/${person}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/completed/application/process/by/${cnt}/${work}/${app}/${proc}/${unit}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/completed/task/by/application/${cnt}/${unit}/${unit}/${person}/${person}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/expired/application/process/by/${cnt}/${work}/${app}/${proc}/${unit}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/expired/task/application/by/process/${cnt}/${app}/${unit}/${unit}/${person}/${person}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/completed/application/by/process/${cnt}/${work}/${app}/${unit}/${unit}/${person}/${person}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/expired/application/by/process/${cnt}/${work}/${app}/${unit}/${unit}/${person}/${person}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/completed/task/application/process/activity/by/${cnt}/${app}/${proc}/${act}/${unit}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/expired/task/application/process/activity/by/${cnt}/${app}/${proc}/${act}/${unit}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/completed/task/application/by/process/${cnt}/${app}/${unit}/${unit}/${person}/${person}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/expired/task/application/process/by/activity/${cnt}/${app}/${proc}/${unit}/${unit}/${person}/${person}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/completed/application/process/${cnt}/${work}/${app}/${proc}/${unit}/${unit}/${person}/${person}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/expired/application/process/${cnt}/${work}/${app}/${proc}/${unit}/${unit}/${person}/${person}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/completed/task/application/process/by/activity/${cnt}/${app}/${proc}/${unit}/${unit}/${person}/${person}`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/completed/task/application/process/activity/${cnt}/${app}/${proc}/${act}/${unit}/${unit}/${person}/${person}`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/expired/task/by/application/${cnt}/${unit}/${unit}/${person}/${person}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/completed/by/application/${cnt}/${work}/${unit}/${unit}/${person}/${person}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/expired/by/application/${cnt}/${work}/${unit}/${unit}/${person}/${person}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/expired/task/application/process/activity/${cnt}/${app}/${proc}/${act}/${unit}/${unit}/${person}/${person}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/completed/application/process/by/${cnt}/${work}/${app}/${proc}/${unit}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/completed/task/by/application/${cnt}/${unit}/${unit}/${person}/${person}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/expired/application/process/by/${cnt}/${work}/${app}/${proc}/${unit}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/expired/task/application/by/process/${cnt}/${app}/${unit}/${unit}/${person}/${person}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/completed/application/by/process/${cnt}/${work}/${app}/${unit}/${unit}/${person}/${person}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/expired/application/by/process/${cnt}/${work}/${app}/${unit}/${unit}/${person}/${person}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/completed/task/application/process/activity/by/${cnt}/${app}/${proc}/${act}/${unit}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/expired/task/application/process/activity/by/${cnt}/${app}/${proc}/${act}/${unit}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/completed/task/application/by/process/${cnt}/${app}/${unit}/${unit}/${person}/${person}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/expired/task/application/process/by/activity/${cnt}/${app}/${proc}/${unit}/${unit}/${person}/${person}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/completed/application/process/${cnt}/${work}/${app}/${proc}/${unit}/${unit}/${person}/${person}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/expired/application/process/${cnt}/${work}/${app}/${proc}/${unit}/${unit}/${person}/${person}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/completed/task/application/process/by/activity/${cnt}/${app}/${proc}/${unit}/${unit}/${person}/${person}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/completed/task/application/process/activity/${cnt}/${app}/${proc}/${act}/${unit}/${unit}/${person}/${person}`,
+        ),
+      ),
     ])
     const hit = rs.filter((r) => (r as any)?.data != null).length
     periodText.value = `周期多维统计 真实读端点 ${rs.length} 条，命中 ${hit}`
@@ -262,28 +400,119 @@ async function loadPeriodMatrix2() {
   const work = '0'
   try {
     const rs = await Promise.all([
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/completed/work/application/${applicationId}/process/${processId}/by/unit`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/expired/work/application/${applicationId}/process/${processId}/by/unit`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/start/work/application/${applicationId}/process/${processId}/by/unit`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/completed/task/application/${applicationId}/process/${processId}/activity/${activityId}/by/unit`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/completed/work/application/${applicationId}/unit/${unit}/person/${person}/by/process`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/expired/task/application/${applicationId}/process/${processId}/activity/${activityId}/by/unit`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/expired/task/application/${applicationId}/unit/${unit}/person/${person}/by/process`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/expired/work/application/${applicationId}/unit/${unit}/person/${person}/by/process`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/start/task/application/${applicationId}/process/${processId}/activity/${activityId}/by/unit`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/start/task/application/${applicationId}/unit/${unit}/person/${person}/by/process`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/start/work/application/${applicationId}/unit/${unit}/person/${person}/by/process`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/completed/task/application/${applicationId}/process/${processId}/unit/${unit}/person/${person}/by/activity`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/expired/task/application/${applicationId}/process/${processId}/unit/${unit}/person/${person}/by/activity`)),
-      s(api.get(`/api/processplatform/assemble/bam/period/list/count/start/task/application/${applicationId}/process/${processId}/unit/${unit}/person/${person}/by/activity`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/completed/work/application/${applicationId}/process/${processId}/by/unit`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/expired/work/application/${applicationId}/process/${processId}/by/unit`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/start/work/application/${applicationId}/process/${processId}/by/unit`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/completed/task/application/${applicationId}/process/${processId}/activity/${activityId}/by/unit`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/completed/work/application/${applicationId}/unit/${unit}/person/${person}/by/process`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/expired/task/application/${applicationId}/process/${processId}/activity/${activityId}/by/unit`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/expired/task/application/${applicationId}/unit/${unit}/person/${person}/by/process`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/expired/work/application/${applicationId}/unit/${unit}/person/${person}/by/process`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/start/task/application/${applicationId}/process/${processId}/activity/${activityId}/by/unit`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/start/task/application/${applicationId}/unit/${unit}/person/${person}/by/process`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/start/work/application/${applicationId}/unit/${unit}/person/${person}/by/process`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/completed/task/application/${applicationId}/process/${processId}/unit/${unit}/person/${person}/by/activity`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/expired/task/application/${applicationId}/process/${processId}/unit/${unit}/person/${person}/by/activity`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/bam/period/list/count/start/task/application/${applicationId}/process/${processId}/unit/${unit}/person/${person}/by/activity`,
+        ),
+      ),
       // rev380：BAM period/list POST 多维统计 非破坏性真实读补消费（x_work/x_task GROUP BY 真 SELECT；body 空即可）
-      s(api.post(`/api/processplatform/assemble/bam/period/list/application/by/process/${count}/${start}/${work}/${applicationId}/${unit}/${unit}/${person}/${person}`, {})),
-      s(api.post(`/api/processplatform/assemble/bam/period/list/application/process/by/${count}/${start}/${work}/${applicationId}/${processId}/${unit}`, {})),
-      s(api.post(`/api/processplatform/assemble/bam/period/list/application/process/${count}/${start}/${work}/${applicationId}/${processId}/${unit}/${unit}/${person}/${person}`, {})),
-      s(api.post(`/api/processplatform/assemble/bam/period/list/task/application/by/process/${count}/${start}/${applicationId}/${unit}/${unit}/${person}/${person}`, {})),
-      s(api.post(`/api/processplatform/assemble/bam/period/list/task/application/process/activity/by/${count}/${start}/${applicationId}/${processId}/${activityId}/${unit}`, {})),
-      s(api.post(`/api/processplatform/assemble/bam/period/list/task/application/process/activity/${count}/${start}/${applicationId}/${processId}/${activityId}/${unit}/${unit}/${person}/${person}`, {})),
-      s(api.post(`/api/processplatform/assemble/bam/period/list/task/application/process/by/activity/${count}/${start}/${applicationId}/${processId}/${unit}/${unit}/${person}/${person}`, {})),
+      s(
+        api.post(
+          `/api/processplatform/assemble/bam/period/list/application/by/process/${count}/${start}/${work}/${applicationId}/${unit}/${unit}/${person}/${person}`,
+          {},
+        ),
+      ),
+      s(
+        api.post(
+          `/api/processplatform/assemble/bam/period/list/application/process/by/${count}/${start}/${work}/${applicationId}/${processId}/${unit}`,
+          {},
+        ),
+      ),
+      s(
+        api.post(
+          `/api/processplatform/assemble/bam/period/list/application/process/${count}/${start}/${work}/${applicationId}/${processId}/${unit}/${unit}/${person}/${person}`,
+          {},
+        ),
+      ),
+      s(
+        api.post(
+          `/api/processplatform/assemble/bam/period/list/task/application/by/process/${count}/${start}/${applicationId}/${unit}/${unit}/${person}/${person}`,
+          {},
+        ),
+      ),
+      s(
+        api.post(
+          `/api/processplatform/assemble/bam/period/list/task/application/process/activity/by/${count}/${start}/${applicationId}/${processId}/${activityId}/${unit}`,
+          {},
+        ),
+      ),
+      s(
+        api.post(
+          `/api/processplatform/assemble/bam/period/list/task/application/process/activity/${count}/${start}/${applicationId}/${processId}/${activityId}/${unit}/${unit}/${person}/${person}`,
+          {},
+        ),
+      ),
+      s(
+        api.post(
+          `/api/processplatform/assemble/bam/period/list/task/application/process/by/activity/${count}/${start}/${applicationId}/${processId}/${unit}/${unit}/${person}/${person}`,
+          {},
+        ),
+      ),
     ])
     const hit = rs.filter((r) => (r as any)?.data != null).length
     periodText.value = `周期维度聚合 真实读端点 ${rs.length} 条，命中 ${hit}`
@@ -321,9 +550,14 @@ async function bamWrite(op: string) {
 // rev372：BAM 定义删 + 完成任务/超时工作/开始工作 单位存根 + 应用/分类状态触发 + 周期任务/工作 多维统计 真实路由（清 GET 无参 + 多参统计用户填值）
 async function bamMore(op: string) {
   try {
-    if (op === 'delete') { const id = prompt('BAM 定义 ID:', '') || ''; if (!(await confirmMsg('确定删除该 BAM 定义？'))) return; await api.post(`/api/processplatform/assemble/bam/delete/${encodeURIComponent(id)}`, {}) }
-    else if (op === 'completedStubs') await api.get('/api/processplatform/assemble/bam/period/list/completed/task/unitstubs')
-    else if (op === 'expiredStubs') await api.get('/api/processplatform/assemble/bam/period/list/expired/work/unitstubs')
+    if (op === 'delete') {
+      const id = prompt('BAM 定义 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该 BAM 定义？'))) return
+      await api.post(`/api/processplatform/assemble/bam/delete/${encodeURIComponent(id)}`, {})
+    } else if (op === 'completedStubs')
+      await api.get('/api/processplatform/assemble/bam/period/list/completed/task/unitstubs')
+    else if (op === 'expiredStubs')
+      await api.get('/api/processplatform/assemble/bam/period/list/expired/work/unitstubs')
     else if (op === 'startStubs') await api.get('/api/processplatform/assemble/bam/period/list/start/work/unitstubs')
     else if (op === 'appTrigger') await api.get('/api/processplatform/assemble/bam/state/applicationtstubs/trigger')
     else if (op === 'catTrigger') await api.get('/api/processplatform/assemble/bam/state/category/trigger')

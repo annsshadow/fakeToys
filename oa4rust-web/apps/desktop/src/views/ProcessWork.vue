@@ -586,10 +586,29 @@ const opinion = ref('')
 const submitting = ref(false)
 const handleTaskId = ref('')
 
-interface AttachmentItem { id: string; name?: string; extension?: string; length?: number }
-interface RecordItem { id: string; title?: string; createTime?: string }
-interface WorklogItem { id: string; title?: string; activityName?: string; person?: string; createTime?: string }
-interface ReadItem { id: string; person?: string; createTime?: string }
+interface AttachmentItem {
+  id: string
+  name?: string
+  extension?: string
+  length?: number
+}
+interface RecordItem {
+  id: string
+  title?: string
+  createTime?: string
+}
+interface WorklogItem {
+  id: string
+  title?: string
+  activityName?: string
+  person?: string
+  createTime?: string
+}
+interface ReadItem {
+  id: string
+  person?: string
+  createTime?: string
+}
 const attachments = ref<AttachmentItem[]>([])
 const records = ref<RecordItem[]>([])
 const worklogs = ref<WorklogItem[]>([])
@@ -696,8 +715,16 @@ async function loadWorkFullCursors(): Promise<void> {
       s(api.get(`/api/processplatform/assemble/surface/work/assignment/manage/${encodeURIComponent(wid)}`)),
       s(api.get(`/api/processplatform/assemble/surface/work/${encodeURIComponent(wid)}/assignment/manage`)),
       s(api.get(`/api/processplatform/assemble/surface/work/workorworkcompleted/${encodeURIComponent(wid)}`)),
-      s(api.get(`/api/processplatform/assemble/surface/work/v3/workorworkcompleted/permission/${encodeURIComponent(wid)}`)),
-      s(api.get(`/api/processplatform/assemble/surface/work/v3/workorworkcompleted/${encodeURIComponent(wid)}/permission`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/work/v3/workorworkcompleted/permission/${encodeURIComponent(wid)}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/work/v3/workorworkcompleted/${encodeURIComponent(wid)}/permission`,
+        ),
+      ),
     ])
     const hit = rs.filter((r) => (r as any)?.data != null).length
     workFullText.value = `工作真实读端点 ${rs.length} 条，命中 ${hit}`
@@ -732,25 +759,81 @@ async function loadSurfaceReadA(): Promise<void> {
       s(api.get(`/api/processplatform/assemble/surface/application/icon/${flag}`)),
       s(api.get(`/api/processplatform/assemble/surface/application/${flag}`)),
       s(api.get(`/api/processplatform/assemble/surface/application/${flag}/${onlyRemoveNotCompleted}`)),
-      s(api.get(`/api/processplatform/assemble/surface/applicationdict/application/data/${applicationDictFlag}/${applicationFlag}`)),
-      s(api.get(`/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}`)),
-      s(api.get(`/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/data`)),
-      s(api.get(`/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/data`)),
-      s(api.get(`/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/data`)),
-      s(api.get(`/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/data`)),
-      s(api.get(`/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/${path3}/data`)),
-      s(api.get(`/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/${path3}/${path4}/data`)),
-      s(api.get(`/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/data`)),
-      s(api.get(`/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}/data`)),
-      s(api.get(`/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}/${path7}/data`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/applicationdict/application/data/${applicationDictFlag}/${applicationFlag}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/data`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/data`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/data`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/data`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/${path3}/data`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/${path3}/${path4}/data`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/data`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}/data`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/applicationdict/${applicationDictFlag}/application/${applicationFlag}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}/${path7}/data`,
+        ),
+      ),
       s(api.get(`/api/processplatform/assemble/surface/data/job/${job}/${path0}`)),
       s(api.get(`/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}`)),
       s(api.get(`/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}/${path2}`)),
       s(api.get(`/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}/${path2}/${path3}`)),
       s(api.get(`/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}/${path2}/${path3}/${path4}`)),
-      s(api.get(`/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}`)),
-      s(api.get(`/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}`)),
-      s(api.get(`/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}/${path7}`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/data/job/${job}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}/${path7}`,
+        ),
+      ),
       // __SURFACE_A_PLACEHOLDER__
       s(api.get(`/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/${id}`)),
       s(api.get(`/api/processplatform/assemble/surface/data/work/${id}/${path0}`)),
@@ -758,20 +841,52 @@ async function loadSurfaceReadA(): Promise<void> {
       s(api.get(`/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}/${path2}`)),
       s(api.get(`/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}/${path2}/${path3}`)),
       s(api.get(`/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}/${path2}/${path3}/${path4}`)),
-      s(api.get(`/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}`)),
-      s(api.get(`/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}`)),
-      s(api.get(`/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}/${path7}`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/data/work/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}/${path7}`,
+        ),
+      ),
       s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/${id}`)),
       s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}`)),
       s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}`)),
       s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}/${path2}`)),
       s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}/${path2}/${path3}`)),
-      s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}/${path2}/${path3}/${path4}`)),
-      s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}`)),
-      s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}`)),
-      s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}/${path7}`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}/${path2}/${path3}/${path4}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/data/workcompleted/${id}/${path0}/${path1}/${path2}/${path3}/${path4}/${path5}/${path6}/${path7}`,
+        ),
+      ),
       s(api.get(`/api/processplatform/assemble/surface/documentversion/list/job/job/${category}/${category}`)),
-      s(api.get(`/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/${workOrWorkCompleted}/${category}/${category}`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/${workOrWorkCompleted}/${category}/${category}`,
+        ),
+      ),
       s(api.get(`/api/processplatform/assemble/surface/documentversion/${id}`)),
       s(api.get(`/api/processplatform/assemble/surface/file/application/content/${flag}/${applicationFlag}`)),
       s(api.get(`/api/processplatform/assemble/surface/file/${flag}/application/${applicationFlag}/content`)),
@@ -819,7 +934,11 @@ async function loadSurfaceReadB(): Promise<void> {
       s(api.get(`/api/processplatform/assemble/surface/readcompleted/${count}/${credential}`)),
       s(api.get(`/api/processplatform/assemble/surface/readcompleted/${id}`)),
       s(api.get(`/api/processplatform/assemble/surface/record/list/job/job/paging/${page}/${size}/${size}`)),
-      s(api.get(`/api/processplatform/assemble/surface/record/list/workorworkcompleted/paging/${workOrWorkCompleted}/${page}/${size}/${size}`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/record/list/workorworkcompleted/paging/${workOrWorkCompleted}/${page}/${size}/${size}`,
+        ),
+      ),
       s(api.get(`/api/processplatform/assemble/surface/review/person/${count}/${credential}`)),
       s(api.get(`/api/processplatform/assemble/surface/review/v2/list/paging/manage/${page}/${size}/${size}`)),
       s(api.get(`/api/processplatform/assemble/surface/script/application/imported/${flag}/${applicationFlag}`)),
@@ -848,9 +967,17 @@ async function loadSurfaceReadB(): Promise<void> {
       s(api.post(`/api/processplatform/assemble/surface/work/application/${applicationFlag}/process/${flag}`, {})),
       // rev451：按应用统计 待办/已办/在办/已完成 数量 4 条真实读（*_list_count_application_applicationFlag_process Path<String>，路由 {applicationFlag} + 字面 process，arity 一致）
       s(api.get(`/api/processplatform/assemble/surface/task/list/count/application/${applicationFlag}/process`)),
-      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/count/application/${applicationFlag}/process`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/taskcompleted/list/count/application/${applicationFlag}/process`,
+        ),
+      ),
       s(api.get(`/api/processplatform/assemble/surface/work/list/count/application/${applicationFlag}/process`)),
-      s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/count/application/${applicationFlag}/process`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/workcompleted/list/count/application/${applicationFlag}/process`,
+        ),
+      ),
       // rev452：待阅/已阅 v2 游标列表 4 条真实读（*_id_prev/next_count Path<(id,count)>，POST 空体，id='0' 起始游标）
       s(api.post(`/api/processplatform/assemble/surface/read/v2/list/create/prev/${id}/${count}`, {})),
       s(api.post(`/api/processplatform/assemble/surface/readcompleted/v2/list/create/prev/${id}/${count}`, {})),
@@ -869,30 +996,95 @@ async function loadSurfaceReadB(): Promise<void> {
       s(api.post(`/api/processplatform/assemble/surface/work/list/${id}/next/${count}/creator/current/filter`, {})),
       s(api.post(`/api/processplatform/assemble/surface/work/list/${id}/prev/${count}/creator/current/filter`, {})),
       // rev455：按应用过滤 在办/已完成 游标列表 6 条真实读（*_application_applicationFlag_filter Path<(id,i64,appFlag)>，终端 filter/manage/application 字面段避误配）
-      s(api.post(`/api/processplatform/assemble/surface/work/list/${id}/next/${count}/application/${applicationFlag}/filter`, {})),
-      s(api.post(`/api/processplatform/assemble/surface/work/list/${id}/prev/${count}/application/${applicationFlag}/filter`, {})),
-      s(api.post(`/api/processplatform/assemble/surface/workcompleted/list/${id}/next/${count}/application/${applicationFlag}/filter`, {})),
-      s(api.post(`/api/processplatform/assemble/surface/workcompleted/list/${id}/prev/${count}/application/${applicationFlag}/filter`, {})),
-      s(api.post(`/api/processplatform/assemble/surface/workcompleted/filter/list/${id}/prev/${count}/application/${applicationFlag}`, {})),
-      s(api.post(`/api/processplatform/assemble/surface/work/list/${id}/next/${count}/application/${applicationFlag}/filter/manage`, {})),
+      s(
+        api.post(
+          `/api/processplatform/assemble/surface/work/list/${id}/next/${count}/application/${applicationFlag}/filter`,
+          {},
+        ),
+      ),
+      s(
+        api.post(
+          `/api/processplatform/assemble/surface/work/list/${id}/prev/${count}/application/${applicationFlag}/filter`,
+          {},
+        ),
+      ),
+      s(
+        api.post(
+          `/api/processplatform/assemble/surface/workcompleted/list/${id}/next/${count}/application/${applicationFlag}/filter`,
+          {},
+        ),
+      ),
+      s(
+        api.post(
+          `/api/processplatform/assemble/surface/workcompleted/list/${id}/prev/${count}/application/${applicationFlag}/filter`,
+          {},
+        ),
+      ),
+      s(
+        api.post(
+          `/api/processplatform/assemble/surface/workcompleted/filter/list/${id}/prev/${count}/application/${applicationFlag}`,
+          {},
+        ),
+      ),
+      s(
+        api.post(
+          `/api/processplatform/assemble/surface/work/list/${id}/next/${count}/application/${applicationFlag}/filter/manage`,
+          {},
+        ),
+      ),
       // rev456：管理态过滤游标读 6 条（task/work/workcompleted/snap filter/manage，Path 2~3 参与路由一致，终端 filter/manage 字面段稳定计数）
       s(api.post(`/api/processplatform/assemble/surface/task/list/${id}/next/${count}/filter/manage`, {})),
       s(api.post(`/api/processplatform/assemble/surface/task/list/${id}/prev/${count}/filter/manage`, {})),
-      s(api.post(`/api/processplatform/assemble/surface/work/list/${id}/prev/${count}/application/${applicationFlag}/filter/manage`, {})),
-      s(api.post(`/api/processplatform/assemble/surface/workcompleted/list/${id}/next/${count}/application/${applicationFlag}/filter/manage`, {})),
+      s(
+        api.post(
+          `/api/processplatform/assemble/surface/work/list/${id}/prev/${count}/application/${applicationFlag}/filter/manage`,
+          {},
+        ),
+      ),
+      s(
+        api.post(
+          `/api/processplatform/assemble/surface/workcompleted/list/${id}/next/${count}/application/${applicationFlag}/filter/manage`,
+          {},
+        ),
+      ),
       s(api.post(`/api/processplatform/assemble/surface/snap/list/${id}/next/${count}/filter/manage`, {})),
       s(api.post(`/api/processplatform/assemble/surface/snap/list/${id}/prev/${count}/filter/manage`, {})),
       // rev457：管理态分页过滤列表 3 条（*_list_paging_page_size_size_application_applicationFlag_filter_manage Path<(i64,i64,appFlag)>）
-      s(api.post(`/api/processplatform/assemble/surface/work/list/paging/${page}/size/${size}/application/${applicationFlag}/filter/manage`, {})),
-      s(api.post(`/api/processplatform/assemble/surface/workcompleted/list/paging/${page}/size/${size}/application/${applicationFlag}/filter/manage`, {})),
-      s(api.post(`/api/processplatform/assemble/surface/snap/list/paging/${page}/size/${size}/application/${applicationFlag}/filter/manage`, {})),
+      s(
+        api.post(
+          `/api/processplatform/assemble/surface/work/list/paging/${page}/size/${size}/application/${applicationFlag}/filter/manage`,
+          {},
+        ),
+      ),
+      s(
+        api.post(
+          `/api/processplatform/assemble/surface/workcompleted/list/paging/${page}/size/${size}/application/${applicationFlag}/filter/manage`,
+          {},
+        ),
+      ),
+      s(
+        api.post(
+          `/api/processplatform/assemble/surface/snap/list/paging/${page}/size/${size}/application/${applicationFlag}/filter/manage`,
+          {},
+        ),
+      ),
       s(api.get(`/api/processplatform/assemble/surface/task/count/${credential}`)),
-      s(api.get(`/api/processplatform/assemble/surface/task/list/date/date/hour/hour/exclude/draft/manage/${isExcludeDraft}`)),
-      s(api.get(`/api/processplatform/assemble/surface/task/list/date/${date}/hour/${hour}/exclude/draft/${isExcludeDraft}/manage`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/task/list/date/date/hour/hour/exclude/draft/manage/${isExcludeDraft}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/task/list/date/${date}/hour/${hour}/exclude/draft/${isExcludeDraft}/manage`,
+        ),
+      ),
       s(api.get(`/api/processplatform/assemble/surface/task/list/filter/manage/${page}/${size}/${size}`)),
       s(api.get(`/api/processplatform/assemble/surface/task/list/my/filter/${page}/${size}/${size}`)),
       s(api.get(`/api/processplatform/assemble/surface/task/list/my/paging/${page}/${size}/${size}`)),
-      s(api.get(`/api/processplatform/assemble/surface/task/list/person/person/exclude/draft/manage/${isExcludeDraft}`)),
+      s(
+        api.get(`/api/processplatform/assemble/surface/task/list/person/person/exclude/draft/manage/${isExcludeDraft}`),
+      ),
       s(api.get(`/api/processplatform/assemble/surface/task/${count}/${credential}`)),
       s(api.get(`/api/processplatform/assemble/surface/task/${id}`)),
       s(api.get(`/api/processplatform/assemble/surface/taskcompleted/count/${credential}`)),
@@ -906,12 +1098,20 @@ async function loadSurfaceReadB(): Promise<void> {
       s(api.get(`/api/processplatform/assemble/surface/work/count/${credential}/application/${appId}`)),
       s(api.get(`/api/processplatform/assemble/surface/work/list/filter/manage/${page}/${size}/${size}`)),
       s(api.get(`/api/processplatform/assemble/surface/work/list/my/paging/${page}/${size}/${size}`)),
-      s(api.get(`/api/processplatform/assemble/surface/work/list/paging/application/filter/manage/${page}/${size}/${size}/${applicationFlag}`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/work/list/paging/application/filter/manage/${page}/${size}/${size}/${applicationFlag}`,
+        ),
+      ),
       s(api.get(`/api/processplatform/assemble/surface/work/${count}/${credential}`)),
       s(api.get(`/api/processplatform/assemble/surface/work/${id}`)),
       s(api.get(`/api/processplatform/assemble/surface/work/${id}/manage`)),
       s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/filter/manage/${page}/${size}/${size}`)),
-      s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/paging/application/filter/manage/${page}/${size}/${size}/${applicationFlag}`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/workcompleted/list/paging/application/filter/manage/${page}/${size}/${size}/${applicationFlag}`,
+        ),
+      ),
       s(api.get(`/api/processplatform/assemble/surface/workcompleted/${id}`)),
       // rev464：manage 态详情读 7 条真实读（handler 体全纯 SELECT PP_C_REVIEW/TASK/WORK/E_APPLICATION，mock 孪生才是写、主路由只读；Path arity 与路由一致，终端 manage/processing 字面段唯一避 matcher 误配）
       s(api.delete(`/api/processplatform/assemble/surface/review/${id}/application/${applicationFlag}/manage`)),
@@ -952,7 +1152,9 @@ async function loadDocReadPaging(): Promise<void> {
   const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const [dvJob, dvWork, readWork, readMy, readcMy] = await Promise.all([
     settle(api.get(`/api/processplatform/assemble/surface/documentversion/list/job/${id}/category/${id}`)),
-    settle(api.get(`/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/${id}/category/${id}`)),
+    settle(
+      api.get(`/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/${id}/category/${id}`),
+    ),
     settle(api.get(`/api/processplatform/assemble/surface/read/list/work/${id}`)),
     settle(api.get(`/api/processplatform/assemble/surface/read/list/my/paging/1/size/20`)),
     settle(api.get(`/api/processplatform/assemble/surface/readcompleted/list/my/paging/1/size/20`)),
@@ -1058,7 +1260,11 @@ async function loadSerials(): Promise<void> {
     const [detail, byApp] = await Promise.all([
       settle(api.get(`/api/processplatform/assemble/surface/serialnumber/${firstId}`)),
       appFlag
-        ? settle(api.get(`/api/processplatform/assemble/surface/serialnumber/list/application/${encodeURIComponent(appFlag)}`))
+        ? settle(
+            api.get(
+              `/api/processplatform/assemble/surface/serialnumber/list/application/${encodeURIComponent(appFlag)}`,
+            ),
+          )
         : Promise.resolve(null),
     ])
     const dName = (detail as any)?.data?.name ?? firstId
@@ -1106,7 +1312,9 @@ async function loadReadLists(): Promise<void> {
   const rcId = readcRows[0] ? String(readcRows[0].id ?? '') : ''
   const [readNext, readcNext] = await Promise.all([
     rId ? settle(api.get(`/api/processplatform/assemble/surface/read/v2/list/next/${rId}/20`)) : Promise.resolve(null),
-    rcId ? settle(api.get(`/api/processplatform/assemble/surface/readcompleted/v2/list/next/${rcId}/20`)) : Promise.resolve(null),
+    rcId
+      ? settle(api.get(`/api/processplatform/assemble/surface/readcompleted/v2/list/next/${rcId}/20`))
+      : Promise.resolve(null),
   ])
   readListText.value = `待阅 ${readRows.length}(后续 ${asRows(readNext).length}) · 已阅 ${readcRows.length}(后续 ${asRows(readcNext).length})`
 }
@@ -1127,16 +1335,16 @@ async function loadTaskLists(): Promise<void> {
   const tcId = taskcRows[0] ? String(taskcRows[0].id ?? '') : ''
   const [taskNext, taskcNext] = await Promise.all([
     tId ? settle(api.get(`/api/processplatform/assemble/surface/task/v2/list/next/${tId}/20`)) : Promise.resolve(null),
-    tcId ? settle(api.get(`/api/processplatform/assemble/surface/taskcompleted/v2/list/next/${tcId}/20`)) : Promise.resolve(null),
+    tcId
+      ? settle(api.get(`/api/processplatform/assemble/surface/taskcompleted/v2/list/next/${tcId}/20`))
+      : Promise.resolve(null),
   ])
   taskListText.value = `待办 ${taskRows.length}(后续 ${asRows(taskNext).length}) · 已办 ${taskcRows.length}(后续 ${asRows(taskcNext).length})`
 }
 
 function asRows(response: unknown): Record<string, unknown>[] {
   const payload = (response as { data?: unknown })?.data
-  const rows = Array.isArray(payload)
-    ? payload
-    : ((payload as { data?: unknown })?.data ?? [])
+  const rows = Array.isArray(payload) ? payload : ((payload as { data?: unknown })?.data ?? [])
   return Array.isArray(rows) ? (rows as Record<string, unknown>[]) : []
 }
 
@@ -1372,10 +1580,9 @@ async function loadTaskInfo(taskId: string): Promise<void> {
     // GET service/processing/task/expire/{id} —— 超时信息
     settle(api.get(`/api/processplatform/service/processing/task/expire/${taskId}`)),
   ])
-  taskInfo.value = ((info as { data?: Record<string, unknown> } | null)?.data ?? null)
+  taskInfo.value = (info as { data?: Record<string, unknown> } | null)?.data ?? null
   const ed = (expire as { data?: unknown } | null)?.data
-  taskExpireText.value =
-    ed && typeof ed === 'object' ? JSON.stringify(ed).slice(0, 80) : ed != null ? String(ed) : ''
+  taskExpireText.value = ed && typeof ed === 'object' ? JSON.stringify(ed).slice(0, 80) : ed != null ? String(ed) : ''
 }
 async function pressTask(): Promise<void> {
   const taskId = effectiveTaskId.value
@@ -1464,25 +1671,63 @@ async function engineRest(op: string): Promise<void> {
     const wid = () => encodeURIComponent(prompt('工作 ID:', workId(opened.value ?? {}) || '') || '')
     const tid = () => encodeURIComponent(prompt('任务 ID:', effectiveTaskId.value || '') || '')
     if (op === 'workProcessing') await api.put(`/api/work/${wid()}/processing`, {})
-    else if (op === 'workTerminate') { if (!(await confirmMsg('确定终止该工作？'))) return; await api.post(`/api/work/${wid()}/terminate`, {}) }
-    else if (op === 'workRetract') { if (!(await confirmMsg('确定撤回该工作？'))) return; await api.post(`/api/work/${wid()}/retract`, {}) }
-    else if (op === 'workStart') await api.post(`/api/work/${wid()}/start`, {})
+    else if (op === 'workTerminate') {
+      if (!(await confirmMsg('确定终止该工作？'))) return
+      await api.post(`/api/work/${wid()}/terminate`, {})
+    } else if (op === 'workRetract') {
+      if (!(await confirmMsg('确定撤回该工作？'))) return
+      await api.post(`/api/work/${wid()}/retract`, {})
+    } else if (op === 'workStart') await api.post(`/api/work/${wid()}/start`, {})
     else if (op === 'workComplete') await api.post(`/api/work/${wid()}/complete`, {})
     else if (op === 'taskClaim') await api.post(`/api/task/${tid()}/claim`, {})
-    else if (op === 'taskTransfer') { const p = encodeURIComponent(prompt('转交给（人员）:', '') || ''); await api.post(`/api/task/${tid()}/transfer/${p}`, {}) }
-    else if (op === 'timerCancel') { const j = encodeURIComponent(prompt('定时器 job:', '') || ''); await api.post(`/api/processplatform/service/processing/timer/${j}/cancel`, {}) }
-    else if (op === 'attCopy') { const w = wid(); const wi = encodeURIComponent(prompt('目标 workId:', '') || ''); await api.post(`/api/processplatform/service/processing/attachment/copy/${w}/${wi}`, {}) }
-    else if (op === 'attEditText') { const i = encodeURIComponent(prompt('附件 ID:', '') || ''); await api.post(`/api/processplatform/service/processing/attachment/edit/text/${i}`, {}) }
-    else if (op === 'snapRestore') { const i = encodeURIComponent(prompt('快照 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/snap/restore/${i}`) }
-    else if (op === 'v2Goback') { const w = wid(); const i = encodeURIComponent(prompt('活动 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/v2/goback/${w}/${i}`) }
-    else if (op === 'v2Reroute') { const w = wid(); const i = encodeURIComponent(prompt('活动 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/v2/reroute/${w}/${i}`) }
-    else if (op === 'v2Rollback') { const w = wid(); const i = encodeURIComponent(prompt('活动 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/v2/rollback/${w}/${i}`) }
-    else if (op === 'v2AddSplit') { const w = wid(); const i = encodeURIComponent(prompt('活动 ID:', '') || ''); await api.post(`/api/processplatform/service/processing/v2/add/split/${w}/${i}`, {}) }
-    else if (op === 'v3Retract') { const w = wid(); await api.get(`/api/processplatform/service/processing/v3/retract/${w}`) }
-    else if (op === 'wcMerge') { const f = encodeURIComponent(prompt('已办 flag:', '') || ''); await api.post(`/api/processplatform/service/processing/workcompleted/merge/${f}`, {}) }
-    else if (op === 'wcRollback') { const f = encodeURIComponent(prompt('已办 flag:', '') || ''); await api.get(`/api/processplatform/service/processing/workcompleted/rollback/${f}`) }
-    else if (op === 'taskPassExpired') { const i = encodeURIComponent(prompt('任务 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/task/pass/expired/${i}`) }
-    else { const i = encodeURIComponent(prompt('任务 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/task/replace/${i}`) }
+    else if (op === 'taskTransfer') {
+      const p = encodeURIComponent(prompt('转交给（人员）:', '') || '')
+      await api.post(`/api/task/${tid()}/transfer/${p}`, {})
+    } else if (op === 'timerCancel') {
+      const j = encodeURIComponent(prompt('定时器 job:', '') || '')
+      await api.post(`/api/processplatform/service/processing/timer/${j}/cancel`, {})
+    } else if (op === 'attCopy') {
+      const w = wid()
+      const wi = encodeURIComponent(prompt('目标 workId:', '') || '')
+      await api.post(`/api/processplatform/service/processing/attachment/copy/${w}/${wi}`, {})
+    } else if (op === 'attEditText') {
+      const i = encodeURIComponent(prompt('附件 ID:', '') || '')
+      await api.post(`/api/processplatform/service/processing/attachment/edit/text/${i}`, {})
+    } else if (op === 'snapRestore') {
+      const i = encodeURIComponent(prompt('快照 ID:', '') || '')
+      await api.get(`/api/processplatform/service/processing/snap/restore/${i}`)
+    } else if (op === 'v2Goback') {
+      const w = wid()
+      const i = encodeURIComponent(prompt('活动 ID:', '') || '')
+      await api.get(`/api/processplatform/service/processing/v2/goback/${w}/${i}`)
+    } else if (op === 'v2Reroute') {
+      const w = wid()
+      const i = encodeURIComponent(prompt('活动 ID:', '') || '')
+      await api.get(`/api/processplatform/service/processing/v2/reroute/${w}/${i}`)
+    } else if (op === 'v2Rollback') {
+      const w = wid()
+      const i = encodeURIComponent(prompt('活动 ID:', '') || '')
+      await api.get(`/api/processplatform/service/processing/v2/rollback/${w}/${i}`)
+    } else if (op === 'v2AddSplit') {
+      const w = wid()
+      const i = encodeURIComponent(prompt('活动 ID:', '') || '')
+      await api.post(`/api/processplatform/service/processing/v2/add/split/${w}/${i}`, {})
+    } else if (op === 'v3Retract') {
+      const w = wid()
+      await api.get(`/api/processplatform/service/processing/v3/retract/${w}`)
+    } else if (op === 'wcMerge') {
+      const f = encodeURIComponent(prompt('已办 flag:', '') || '')
+      await api.post(`/api/processplatform/service/processing/workcompleted/merge/${f}`, {})
+    } else if (op === 'wcRollback') {
+      const f = encodeURIComponent(prompt('已办 flag:', '') || '')
+      await api.get(`/api/processplatform/service/processing/workcompleted/rollback/${f}`)
+    } else if (op === 'taskPassExpired') {
+      const i = encodeURIComponent(prompt('任务 ID:', '') || '')
+      await api.get(`/api/processplatform/service/processing/task/pass/expired/${i}`)
+    } else {
+      const i = encodeURIComponent(prompt('任务 ID:', '') || '')
+      await api.get(`/api/processplatform/service/processing/task/replace/${i}`)
+    }
     toast.success('引擎操作已提交')
   } catch (e: any) {
     toast.error('引擎操作失败: ' + (e?.message ?? ''))
@@ -1496,30 +1741,82 @@ async function engineRest2(op: string): Promise<void> {
   engineBusy.value = true
   try {
     const wid = () => encodeURIComponent(prompt('工作 ID:', workId(opened.value ?? {}) || '') || '')
-    if (op === 'appendIdentity') await api.put(`/api/processplatform/service/processing/work/${wid()}/manual/append/identity`, {})
+    if (op === 'appendIdentity')
+      await api.put(`/api/processplatform/service/processing/work/${wid()}/manual/append/identity`, {})
     else if (op === 'addSplit') await api.put(`/api/processplatform/service/processing/work/${wid()}/add/split`, {})
-    else if (op === 'v2AddSplit') await api.put(`/api/processplatform/service/processing/work/v2/${wid()}/add/split`, {})
-    else if (op === 'v2Matrix') await api.post(`/api/processplatform/service/processing/work/v2/${wid()}/add/manual/task/identity/matrix`, {})
+    else if (op === 'v2AddSplit')
+      await api.put(`/api/processplatform/service/processing/work/v2/${wid()}/add/split`, {})
+    else if (op === 'v2Matrix')
+      await api.post(`/api/processplatform/service/processing/work/v2/${wid()}/add/manual/task/identity/matrix`, {})
     else if (op === 'v2Terminate') await api.get(`/api/processplatform/service/processing/work/v2/${wid()}/terminate`)
-    else if (op === 'workByProcess') { const pid = encodeURIComponent(prompt('流程 ID:', '') || ''); await api.post(`/api/processplatform/service/processing/work/process/${pid}`, {}) }
-    else if (op === 'wcByProcess') { const pf = encodeURIComponent(prompt('流程 flag:', '') || ''); await api.post(`/api/processplatform/service/processing/workcompleted/process/${pf}`, {}) }
-    else if (op === 'snapDelete') { const id = encodeURIComponent(prompt('快照 ID:', '') || ''); if (!(await confirmMsg('确定删除该快照？'))) return; await api.delete(`/api/processplatform/service/processing/snap/${id}`) }
-    else if (op === 'snapWcAbandon') { const wc = encodeURIComponent(prompt('已办 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/snap/workcompleted/${wc}/type/abandonedworkcompleted`) }
-    else if (op === 'snapWcSnap') { const wc = encodeURIComponent(prompt('已办 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/snap/workcompleted/${wc}/type/snapworkcompleted`) }
-    else if (op === 'snapAbandoned') { const w = wid(); const wi = encodeURIComponent(prompt('workId:', '') || ''); const t = encodeURIComponent(prompt('类型:', 'normal') || 'normal'); await api.get(`/api/processplatform/service/processing/snap/abandoned/${w}/${wi}/${t}`) }
-    else if (op === 'snapSuspend') { const w = wid(); const wi = encodeURIComponent(prompt('workId:', '') || ''); const t = encodeURIComponent(prompt('类型:', 'normal') || 'normal'); await api.get(`/api/processplatform/service/processing/snap/suspend/${w}/${wi}/${t}`) }
-    else if (op === 'attCopyWc') { const wc = encodeURIComponent(prompt('已办 ID:', '') || ''); await api.post(`/api/processplatform/service/processing/attachment/copy/workcompleted/${wc}`, {}) }
-    else if (op === 'attDelWork') { const id = encodeURIComponent(prompt('附件 ID:', '') || ''); const wi = wid(); if (!(await confirmMsg('确定从工作删除该附件？'))) return; await api.delete(`/api/processplatform/service/processing/attachment/${id}/work/${wi}`) }
-    else if (op === 'attDelWc') { const id = encodeURIComponent(prompt('附件 ID:', '') || ''); const wc = encodeURIComponent(prompt('已办 ID:', '') || ''); if (!(await confirmMsg('确定从已办删除该附件？'))) return; await api.delete(`/api/processplatform/service/processing/attachment/${id}/workcompleted/${wc}`) }
-    else if (op === 'recordWorkProc') await api.post('/api/processplatform/service/processing/record/work/processing', {})
-    else if (op === 'recordWorkTerm') await api.post('/api/processplatform/service/processing/record/work/terminate', {})
-    else if (op === 'readByWork') { const wi = wid(); await api.post(`/api/processplatform/service/processing/read/work/${wi}`, {}) }
-    else if (op === 'readByWc') { const wc = encodeURIComponent(prompt('已办 ID:', '') || ''); await api.post(`/api/processplatform/service/processing/read/workcompleted/${wc}`, {}) }
-    else if (op === 'docVersion') { const w = wid(); await api.post(`/api/processplatform/service/processing/documentversion/work/${w}`, {}) }
-    else if (op === 'taskPassExpired') { const id = encodeURIComponent(prompt('任务 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/task/${id}/pass/expired`) }
-    else if (op === 'taskUrge') { const id = encodeURIComponent(prompt('任务 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/task/${id}/urge`) }
-    else if (op === 'dataDelete') { const w = wid(); const id = encodeURIComponent(prompt('数据 ID:', '') || ''); if (!(await confirmMsg('确定删除该数据？'))) return; await api.post(`/api/processplatform/service/processing/data/delete/${w}/${id}`, {}) }
-    else { const w = wid(); const id = encodeURIComponent(prompt('触达 ID:', '') || ''); await api.post(`/api/processplatform/service/processing/service/touch/${w}/${id}`, {}) }
+    else if (op === 'workByProcess') {
+      const pid = encodeURIComponent(prompt('流程 ID:', '') || '')
+      await api.post(`/api/processplatform/service/processing/work/process/${pid}`, {})
+    } else if (op === 'wcByProcess') {
+      const pf = encodeURIComponent(prompt('流程 flag:', '') || '')
+      await api.post(`/api/processplatform/service/processing/workcompleted/process/${pf}`, {})
+    } else if (op === 'snapDelete') {
+      const id = encodeURIComponent(prompt('快照 ID:', '') || '')
+      if (!(await confirmMsg('确定删除该快照？'))) return
+      await api.delete(`/api/processplatform/service/processing/snap/${id}`)
+    } else if (op === 'snapWcAbandon') {
+      const wc = encodeURIComponent(prompt('已办 ID:', '') || '')
+      await api.get(`/api/processplatform/service/processing/snap/workcompleted/${wc}/type/abandonedworkcompleted`)
+    } else if (op === 'snapWcSnap') {
+      const wc = encodeURIComponent(prompt('已办 ID:', '') || '')
+      await api.get(`/api/processplatform/service/processing/snap/workcompleted/${wc}/type/snapworkcompleted`)
+    } else if (op === 'snapAbandoned') {
+      const w = wid()
+      const wi = encodeURIComponent(prompt('workId:', '') || '')
+      const t = encodeURIComponent(prompt('类型:', 'normal') || 'normal')
+      await api.get(`/api/processplatform/service/processing/snap/abandoned/${w}/${wi}/${t}`)
+    } else if (op === 'snapSuspend') {
+      const w = wid()
+      const wi = encodeURIComponent(prompt('workId:', '') || '')
+      const t = encodeURIComponent(prompt('类型:', 'normal') || 'normal')
+      await api.get(`/api/processplatform/service/processing/snap/suspend/${w}/${wi}/${t}`)
+    } else if (op === 'attCopyWc') {
+      const wc = encodeURIComponent(prompt('已办 ID:', '') || '')
+      await api.post(`/api/processplatform/service/processing/attachment/copy/workcompleted/${wc}`, {})
+    } else if (op === 'attDelWork') {
+      const id = encodeURIComponent(prompt('附件 ID:', '') || '')
+      const wi = wid()
+      if (!(await confirmMsg('确定从工作删除该附件？'))) return
+      await api.delete(`/api/processplatform/service/processing/attachment/${id}/work/${wi}`)
+    } else if (op === 'attDelWc') {
+      const id = encodeURIComponent(prompt('附件 ID:', '') || '')
+      const wc = encodeURIComponent(prompt('已办 ID:', '') || '')
+      if (!(await confirmMsg('确定从已办删除该附件？'))) return
+      await api.delete(`/api/processplatform/service/processing/attachment/${id}/workcompleted/${wc}`)
+    } else if (op === 'recordWorkProc')
+      await api.post('/api/processplatform/service/processing/record/work/processing', {})
+    else if (op === 'recordWorkTerm')
+      await api.post('/api/processplatform/service/processing/record/work/terminate', {})
+    else if (op === 'readByWork') {
+      const wi = wid()
+      await api.post(`/api/processplatform/service/processing/read/work/${wi}`, {})
+    } else if (op === 'readByWc') {
+      const wc = encodeURIComponent(prompt('已办 ID:', '') || '')
+      await api.post(`/api/processplatform/service/processing/read/workcompleted/${wc}`, {})
+    } else if (op === 'docVersion') {
+      const w = wid()
+      await api.post(`/api/processplatform/service/processing/documentversion/work/${w}`, {})
+    } else if (op === 'taskPassExpired') {
+      const id = encodeURIComponent(prompt('任务 ID:', '') || '')
+      await api.get(`/api/processplatform/service/processing/task/${id}/pass/expired`)
+    } else if (op === 'taskUrge') {
+      const id = encodeURIComponent(prompt('任务 ID:', '') || '')
+      await api.get(`/api/processplatform/service/processing/task/${id}/urge`)
+    } else if (op === 'dataDelete') {
+      const w = wid()
+      const id = encodeURIComponent(prompt('数据 ID:', '') || '')
+      if (!(await confirmMsg('确定删除该数据？'))) return
+      await api.post(`/api/processplatform/service/processing/data/delete/${w}/${id}`, {})
+    } else {
+      const w = wid()
+      const id = encodeURIComponent(prompt('触达 ID:', '') || '')
+      await api.post(`/api/processplatform/service/processing/service/touch/${w}/${id}`, {})
+    }
     toast.success('引擎操作已提交')
   } catch (e: any) {
     toast.error('引擎操作失败: ' + (e?.message ?? ''))
@@ -1535,33 +1832,45 @@ async function surfaceOps3(op: string): Promise<void> {
     const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
     if (op === 'taskOpinion') await api.post(`/api/processplatform/assemble/surface/task/opinion/manage/${id()}`, {})
     else if (op === 'taskPress') await api.post(`/api/processplatform/assemble/surface/task/press/manage/${id()}`, {})
-    else if (op === 'taskProcessing') await api.post(`/api/processplatform/assemble/surface/task/processing/${id()}`, {})
-    else if (op === 'taskProcMgr') await api.post(`/api/processplatform/assemble/surface/task/processing/manage/${id()}`, {})
-    else if (op === 'taskNeural') await api.post(`/api/processplatform/assemble/surface/task/processing/neural/${id()}`, {})
+    else if (op === 'taskProcessing')
+      await api.post(`/api/processplatform/assemble/surface/task/processing/${id()}`, {})
+    else if (op === 'taskProcMgr')
+      await api.post(`/api/processplatform/assemble/surface/task/processing/manage/${id()}`, {})
+    else if (op === 'taskNeural')
+      await api.post(`/api/processplatform/assemble/surface/task/processing/neural/${id()}`, {})
     else if (op === 'taskReference') await api.post(`/api/processplatform/assemble/surface/task/reference/${id()}`, {})
-    else if (op === 'taskResetMgr') await api.post(`/api/processplatform/assemble/surface/task/reset/manage/${id()}`, {})
+    else if (op === 'taskResetMgr')
+      await api.post(`/api/processplatform/assemble/surface/task/reset/manage/${id()}`, {})
     else if (op === 'taskWill') await api.post(`/api/processplatform/assemble/surface/task/will/${id()}`, {})
     else if (op === 'taskV2Pause') await api.get(`/api/processplatform/assemble/surface/task/v2/pause/${id()}`)
     else if (op === 'taskV2Reset') await api.post(`/api/processplatform/assemble/surface/task/v2/reset/${id()}`, {})
     else if (op === 'taskV2Resume') await api.post(`/api/processplatform/assemble/surface/task/v2/resume/${id()}`, {})
-    else if (op === 'taskV2Trigger') await api.post(`/api/processplatform/assemble/surface/task/v2/trigger/processing/${id()}`, {})
+    else if (op === 'taskV2Trigger')
+      await api.post(`/api/processplatform/assemble/surface/task/v2/trigger/processing/${id()}`, {})
     else if (op === 'taskV3Add') await api.post(`/api/processplatform/assemble/surface/task/v3/add/${id()}`, {})
     else if (op === 'taskV3Pin') await api.get(`/api/processplatform/assemble/surface/task/v3/pin/${id()}`)
-    else if (op === 'readOpinion') await api.post(`/api/processplatform/assemble/surface/read/opinion/manage/${id()}`, {})
-    else if (op === 'readProcessing') await api.post(`/api/processplatform/assemble/surface/read/processing/${id()}`, {})
+    else if (op === 'readOpinion')
+      await api.post(`/api/processplatform/assemble/surface/read/opinion/manage/${id()}`, {})
+    else if (op === 'readProcessing')
+      await api.post(`/api/processplatform/assemble/surface/read/processing/${id()}`, {})
     else if (op === 'readReference') await api.post(`/api/processplatform/assemble/surface/read/reference/${id()}`, {})
-    else if (op === 'readResetMgr') await api.post(`/api/processplatform/assemble/surface/read/reset/manage/${id()}`, {})
+    else if (op === 'readResetMgr')
+      await api.post(`/api/processplatform/assemble/surface/read/reset/manage/${id()}`, {})
     else if (op === 'workCloseCheck') await api.get(`/api/processplatform/assemble/surface/work/close/check/${id()}`)
-    else if (op === 'workProcessing') await api.post(`/api/processplatform/assemble/surface/work/processing/${id()}`, {})
+    else if (op === 'workProcessing')
+      await api.post(`/api/processplatform/assemble/surface/work/processing/${id()}`, {})
     else if (op === 'workV2Split') await api.post(`/api/processplatform/assemble/surface/work/v2/add/split/${id()}`, {})
     else if (op === 'workV2Reroute') await api.get(`/api/processplatform/assemble/surface/work/v2/reroute/${id()}`)
     else if (op === 'workV2Retract') await api.get(`/api/processplatform/assemble/surface/work/v2/retract/${id()}`)
     else if (op === 'workV2Rollback') await api.get(`/api/processplatform/assemble/surface/work/v2/rollback/${id()}`)
     else if (op === 'workV2Terminate') await api.get(`/api/processplatform/assemble/surface/work/v2/terminate/${id()}`)
-    else if (op === 'workV2Goback') await api.get(`/api/processplatform/assemble/surface/work/v2/list/activity/goback/${id()}`)
+    else if (op === 'workV2Goback')
+      await api.get(`/api/processplatform/assemble/surface/work/v2/list/activity/goback/${id()}`)
     else if (op === 'handoverCancel') await api.get(`/api/processplatform/assemble/surface/handover/cancel/${id()}`)
-    else if (op === 'wcDeleteMgr') { if (!(await confirmMsg('确定删除该已办？'))) return; await api.post(`/api/processplatform/assemble/surface/workcompleted/delete/manage/${id()}`, {}) }
-    else if (op === 'save') await api.post(`/api/processplatform/assemble/surface/save/${id()}`, {})
+    else if (op === 'wcDeleteMgr') {
+      if (!(await confirmMsg('确定删除该已办？'))) return
+      await api.post(`/api/processplatform/assemble/surface/workcompleted/delete/manage/${id()}`, {})
+    } else if (op === 'save') await api.post(`/api/processplatform/assemble/surface/save/${id()}`, {})
     else if (op === 'publish') await api.post(`/api/processplatform/assemble/surface/publish/${id()}`, {})
     else await api.post(`/api/processplatform/assemble/surface/delete/${id()}`, {})
     toast.success('流程表面操作已提交')
@@ -1601,28 +1910,67 @@ async function surfaceOps4(op: string): Promise<void> {
   try {
     const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
     if (op === 'readIdProcessing') await api.post(`/api/processplatform/assemble/surface/read/${id()}/processing`, {})
-    else if (op === 'readProcMgr') await api.put(`/api/processplatform/assemble/surface/read/${id()}/processing/manage`, {})
+    else if (op === 'readProcMgr')
+      await api.put(`/api/processplatform/assemble/surface/read/${id()}/processing/manage`, {})
     else if (op === 'readResetMgr') await api.put(`/api/processplatform/assemble/surface/read/${id()}/reset/manage`, {})
-    else if (op === 'readManageDel') { if (!(await confirmMsg('确定删除该待阅（管理）？'))) return; await api.delete(`/api/processplatform/assemble/surface/read/${id()}/manage`) }
-    else if (op === 'readWork') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); await api.post(`/api/processplatform/assemble/surface/read/work/${w}`, {}) }
-    else if (op === 'readWorkCompleted') { const w = encodeURIComponent(prompt('已完成工作 ID:', '') || ''); await api.post(`/api/processplatform/assemble/surface/read/workcompleted/${w}`, {}) }
-    else if (op === 'tcRefCtrl') await api.post(`/api/processplatform/assemble/surface/taskcompleted/reference/control/${id()}`, {})
-    else if (op === 'workForce') { const pf = encodeURIComponent(prompt('流程标识:', '') || ''); await api.get(`/api/processplatform/assemble/surface/work/process/force/${pf}`) }
-    else if (op === 'workV2TermMgr') await api.get(`/api/processplatform/assemble/surface/work/v2/terminate/manage/${id()}`)
-    else if (op === 'workV2Trigger') await api.post(`/api/processplatform/assemble/surface/work/v2/trigger/processing/${id()}`, {})
-    else if (op === 'worklogSplit') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); await api.post(`/api/processplatform/assemble/surface/worklog/list/add/split/work/${w}`, {}) }
-    else if (op === 'snapRestore') await api.get(`/api/processplatform/assemble/surface/snap/${id()}/restore`)
-    else if (op === 'snapAbandoned') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); await api.get(`/api/processplatform/assemble/surface/snap/work/${w}/type/abandoned`) }
-    else if (op === 'snapSuspend') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); await api.get(`/api/processplatform/assemble/surface/snap/work/${w}/type/suspend`) }
-    else if (op === 'draftStart') await api.get(`/api/processplatform/assemble/surface/draft/${id()}/start`)
-    else if (op === 'dataWorkDel') { if (!(await confirmMsg('确定删除该工作数据？'))) return; await api.delete(`/api/processplatform/assemble/surface/data/work/${id()}`) }
-    else if (op === 'attachDel') { const a = encodeURIComponent(prompt('附件 ID:', '') || ''); const w = encodeURIComponent(prompt('工作 ID:', '') || ''); if (!(await confirmMsg('确定删除该附件？'))) return; await api.delete(`/api/processplatform/assemble/surface/attachment/${a}/work/${w}`) }
-    else if (op === 'tcListPrev') { const cnt = 20; await api.get(`/api/processplatform/assemble/surface/taskcompleted/list/prev/${id()}/${cnt}`) }
-    else if (op === 'wcRollback') { const f = encodeURIComponent(prompt('工作标识:', '') || ''); await api.get(`/api/processplatform/assemble/surface/workcompleted/rollback/${f}`) }
-    else if (op === 'appFlagGet') { const orn = 'false'; await api.get(`/api/processplatform/assemble/surface/application/${id()}/${orn}`) }
-    else if (op === 'appFlagDel') { const orn = 'false'; if (!(await confirmMsg('确定按应用清理未完成工作？'))) return; await api.delete(`/api/processplatform/assemble/surface/application/${id()}/${orn}`) }
-    else if (op === 'procFlagGet') { const orn = 'false'; await api.get(`/api/processplatform/assemble/surface/process/${id()}/${orn}`) }
-    else { const orn = 'false'; if (!(await confirmMsg('确定按流程清理未完成工作？'))) return; await api.delete(`/api/processplatform/assemble/surface/process/${id()}/${orn}`) }
+    else if (op === 'readManageDel') {
+      if (!(await confirmMsg('确定删除该待阅（管理）？'))) return
+      await api.delete(`/api/processplatform/assemble/surface/read/${id()}/manage`)
+    } else if (op === 'readWork') {
+      const w = encodeURIComponent(prompt('工作 ID:', '') || '')
+      await api.post(`/api/processplatform/assemble/surface/read/work/${w}`, {})
+    } else if (op === 'readWorkCompleted') {
+      const w = encodeURIComponent(prompt('已完成工作 ID:', '') || '')
+      await api.post(`/api/processplatform/assemble/surface/read/workcompleted/${w}`, {})
+    } else if (op === 'tcRefCtrl')
+      await api.post(`/api/processplatform/assemble/surface/taskcompleted/reference/control/${id()}`, {})
+    else if (op === 'workForce') {
+      const pf = encodeURIComponent(prompt('流程标识:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/work/process/force/${pf}`)
+    } else if (op === 'workV2TermMgr')
+      await api.get(`/api/processplatform/assemble/surface/work/v2/terminate/manage/${id()}`)
+    else if (op === 'workV2Trigger')
+      await api.post(`/api/processplatform/assemble/surface/work/v2/trigger/processing/${id()}`, {})
+    else if (op === 'worklogSplit') {
+      const w = encodeURIComponent(prompt('工作 ID:', '') || '')
+      await api.post(`/api/processplatform/assemble/surface/worklog/list/add/split/work/${w}`, {})
+    } else if (op === 'snapRestore') await api.get(`/api/processplatform/assemble/surface/snap/${id()}/restore`)
+    else if (op === 'snapAbandoned') {
+      const w = encodeURIComponent(prompt('工作 ID:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/snap/work/${w}/type/abandoned`)
+    } else if (op === 'snapSuspend') {
+      const w = encodeURIComponent(prompt('工作 ID:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/snap/work/${w}/type/suspend`)
+    } else if (op === 'draftStart') await api.get(`/api/processplatform/assemble/surface/draft/${id()}/start`)
+    else if (op === 'dataWorkDel') {
+      if (!(await confirmMsg('确定删除该工作数据？'))) return
+      await api.delete(`/api/processplatform/assemble/surface/data/work/${id()}`)
+    } else if (op === 'attachDel') {
+      const a = encodeURIComponent(prompt('附件 ID:', '') || '')
+      const w = encodeURIComponent(prompt('工作 ID:', '') || '')
+      if (!(await confirmMsg('确定删除该附件？'))) return
+      await api.delete(`/api/processplatform/assemble/surface/attachment/${a}/work/${w}`)
+    } else if (op === 'tcListPrev') {
+      const cnt = 20
+      await api.get(`/api/processplatform/assemble/surface/taskcompleted/list/prev/${id()}/${cnt}`)
+    } else if (op === 'wcRollback') {
+      const f = encodeURIComponent(prompt('工作标识:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/workcompleted/rollback/${f}`)
+    } else if (op === 'appFlagGet') {
+      const orn = 'false'
+      await api.get(`/api/processplatform/assemble/surface/application/${id()}/${orn}`)
+    } else if (op === 'appFlagDel') {
+      const orn = 'false'
+      if (!(await confirmMsg('确定按应用清理未完成工作？'))) return
+      await api.delete(`/api/processplatform/assemble/surface/application/${id()}/${orn}`)
+    } else if (op === 'procFlagGet') {
+      const orn = 'false'
+      await api.get(`/api/processplatform/assemble/surface/process/${id()}/${orn}`)
+    } else {
+      const orn = 'false'
+      if (!(await confirmMsg('确定按流程清理未完成工作？'))) return
+      await api.delete(`/api/processplatform/assemble/surface/process/${id()}/${orn}`)
+    }
     toast.success('流程表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
@@ -1636,21 +1984,48 @@ async function surfaceOps5(op: string): Promise<void> {
   engineBusy.value = true
   try {
     const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
-    if (op === 'readCountApp') { const af = encodeURIComponent(prompt('应用标识:', '') || ''); await api.get(`/api/processplatform/assemble/surface/read/list/count/application/${af}/process`) }
-    else if (op === 'readcompletedCountApp') { const af = encodeURIComponent(prompt('应用标识:', '') || ''); await api.get(`/api/processplatform/assemble/surface/readcompleted/list/count/application/${af}/process`) }
-    else if (op === 'attDownload') await api.get(`/api/processplatform/assemble/surface/attachment/download/${id()}`)
-    else if (op === 'attDownloadStream') await api.get(`/api/processplatform/assemble/surface/attachment/download/${id()}/stream`)
-    else if (op === 'attPreviewPdf') await api.get(`/api/processplatform/assemble/surface/attachment/${id()}/preview/pdf`)
-    else if (op === 'readV2Next') { const c = 20; await api.post(`/api/processplatform/assemble/surface/read/v2/list/create/${id()}/next/${c}`, {}) }
-    else if (op === 'readV2Prev') { const c = 20; await api.post(`/api/processplatform/assemble/surface/read/v2/list/create/${id()}/prev/${c}`, {}) }
-    else if (op === 'readcompletedV2Next') { const c = 20; await api.post(`/api/processplatform/assemble/surface/readcompleted/v2/list/create/${id()}/next/${c}`, {}) }
-    else if (op === 'readcompletedV2Prev') { const c = 20; await api.post(`/api/processplatform/assemble/surface/readcompleted/v2/list/create/${id()}/prev/${c}`, {}) }
-    else if (op === 'correlationJob') { const j = encodeURIComponent(prompt('Job ID:', '') || ''); await api.post(`/api/processplatform/assemble/surface/correlation/job/${j}`, {}) }
-    else if (op === 'correlationUpdate') { const j = encodeURIComponent(prompt('Job ID:', '') || ''); await api.post(`/api/processplatform/assemble/surface/correlation/update/job/${j}`, {}) }
-    else if (op === 'correlationDelete') { const j = encodeURIComponent(prompt('Job ID:', '') || ''); if (!(await confirmMsg('确定删除该关联？'))) return; await api.post(`/api/processplatform/assemble/surface/correlation/job/${j}/delete`, {}) }
-    else if (op === 'readOpinionMgr') await api.put(`/api/processplatform/assemble/surface/read/${id()}/opinion/manage`, {})
-    else if (op === 'attDelete') { if (!(await confirmMsg('确定删除该附件？'))) return; await api.delete(`/api/processplatform/assemble/surface/attachment/${id()}`) }
-    else { if (!(await confirmMsg('确定删除该模式？'))) return; await api.get(`/api/processplatform/assemble/surface/mode/${id()}/delete`) }
+    if (op === 'readCountApp') {
+      const af = encodeURIComponent(prompt('应用标识:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/read/list/count/application/${af}/process`)
+    } else if (op === 'readcompletedCountApp') {
+      const af = encodeURIComponent(prompt('应用标识:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/readcompleted/list/count/application/${af}/process`)
+    } else if (op === 'attDownload') await api.get(`/api/processplatform/assemble/surface/attachment/download/${id()}`)
+    else if (op === 'attDownloadStream')
+      await api.get(`/api/processplatform/assemble/surface/attachment/download/${id()}/stream`)
+    else if (op === 'attPreviewPdf')
+      await api.get(`/api/processplatform/assemble/surface/attachment/${id()}/preview/pdf`)
+    else if (op === 'readV2Next') {
+      const c = 20
+      await api.post(`/api/processplatform/assemble/surface/read/v2/list/create/${id()}/next/${c}`, {})
+    } else if (op === 'readV2Prev') {
+      const c = 20
+      await api.post(`/api/processplatform/assemble/surface/read/v2/list/create/${id()}/prev/${c}`, {})
+    } else if (op === 'readcompletedV2Next') {
+      const c = 20
+      await api.post(`/api/processplatform/assemble/surface/readcompleted/v2/list/create/${id()}/next/${c}`, {})
+    } else if (op === 'readcompletedV2Prev') {
+      const c = 20
+      await api.post(`/api/processplatform/assemble/surface/readcompleted/v2/list/create/${id()}/prev/${c}`, {})
+    } else if (op === 'correlationJob') {
+      const j = encodeURIComponent(prompt('Job ID:', '') || '')
+      await api.post(`/api/processplatform/assemble/surface/correlation/job/${j}`, {})
+    } else if (op === 'correlationUpdate') {
+      const j = encodeURIComponent(prompt('Job ID:', '') || '')
+      await api.post(`/api/processplatform/assemble/surface/correlation/update/job/${j}`, {})
+    } else if (op === 'correlationDelete') {
+      const j = encodeURIComponent(prompt('Job ID:', '') || '')
+      if (!(await confirmMsg('确定删除该关联？'))) return
+      await api.post(`/api/processplatform/assemble/surface/correlation/job/${j}/delete`, {})
+    } else if (op === 'readOpinionMgr')
+      await api.put(`/api/processplatform/assemble/surface/read/${id()}/opinion/manage`, {})
+    else if (op === 'attDelete') {
+      if (!(await confirmMsg('确定删除该附件？'))) return
+      await api.delete(`/api/processplatform/assemble/surface/attachment/${id()}`)
+    } else {
+      if (!(await confirmMsg('确定删除该模式？'))) return
+      await api.get(`/api/processplatform/assemble/surface/mode/${id()}/delete`)
+    }
     toast.success('流程表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
@@ -1664,15 +2039,34 @@ async function surfaceOps6(op: string): Promise<void> {
   engineBusy.value = true
   try {
     const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
-    if (op === 'attDownloadManage') await api.get(`/api/processplatform/assemble/surface/attachment/download/${id()}/manage`)
-    else if (op === 'attDownloadByWork') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); await api.get(`/api/processplatform/assemble/surface/attachment/download/${id()}/work/${w}`) }
-    else if (op === 'attDownloadByWc') { const wc = encodeURIComponent(prompt('已办 ID:', '') || ''); await api.get(`/api/processplatform/assemble/surface/attachment/download/${id()}/workcompleted/${wc}`) }
-    else if (op === 'attDownloadWorkAtt') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); const a = encodeURIComponent(prompt('附件 ID:', '') || ''); await api.get(`/api/processplatform/assemble/surface/attachment/download/work/${w}/att/${a}`) }
-    else if (op === 'attPreviewImgPage') { const pg = 1; await api.get(`/api/processplatform/assemble/surface/attachment/${id()}/preview/image/page/${pg}`) }
-    else if (op === 'readListFilter') { const c = 20; await api.post(`/api/processplatform/assemble/surface/read/list/${id()}/next/${c}/filter`, {}) }
-    else if (op === 'readcompletedListFilter') { const c = 20; await api.post(`/api/processplatform/assemble/surface/readcompleted/list/${id()}/next/${c}/filter`, {}) }
-    else if (op === 'processListFilter') { const af = encodeURIComponent(prompt('应用标识:', '') || ''); await api.post(`/api/processplatform/assemble/surface/process/list/application/${af}/filter`, {}) }
-    else { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); await api.post(`/api/processplatform/assemble/surface/documentversion/work/${w}`, {}) }
+    if (op === 'attDownloadManage')
+      await api.get(`/api/processplatform/assemble/surface/attachment/download/${id()}/manage`)
+    else if (op === 'attDownloadByWork') {
+      const w = encodeURIComponent(prompt('工作 ID:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/attachment/download/${id()}/work/${w}`)
+    } else if (op === 'attDownloadByWc') {
+      const wc = encodeURIComponent(prompt('已办 ID:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/attachment/download/${id()}/workcompleted/${wc}`)
+    } else if (op === 'attDownloadWorkAtt') {
+      const w = encodeURIComponent(prompt('工作 ID:', '') || '')
+      const a = encodeURIComponent(prompt('附件 ID:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/attachment/download/work/${w}/att/${a}`)
+    } else if (op === 'attPreviewImgPage') {
+      const pg = 1
+      await api.get(`/api/processplatform/assemble/surface/attachment/${id()}/preview/image/page/${pg}`)
+    } else if (op === 'readListFilter') {
+      const c = 20
+      await api.post(`/api/processplatform/assemble/surface/read/list/${id()}/next/${c}/filter`, {})
+    } else if (op === 'readcompletedListFilter') {
+      const c = 20
+      await api.post(`/api/processplatform/assemble/surface/readcompleted/list/${id()}/next/${c}/filter`, {})
+    } else if (op === 'processListFilter') {
+      const af = encodeURIComponent(prompt('应用标识:', '') || '')
+      await api.post(`/api/processplatform/assemble/surface/process/list/application/${af}/filter`, {})
+    } else {
+      const w = encodeURIComponent(prompt('工作 ID:', '') || '')
+      await api.post(`/api/processplatform/assemble/surface/documentversion/work/${w}`, {})
+    }
     toast.success('流程表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
@@ -1687,14 +2081,31 @@ async function surfaceOps7(op: string): Promise<void> {
   try {
     const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
     const wk = () => encodeURIComponent(prompt('工作 ID:', '') || '')
-    if (op === 'docToWord') await api.post(`/api/processplatform/assemble/surface/attachment/doc/to/word/work/${wk()}`, {})
-    else if (op === 'docToWordWowc') { const f = encodeURIComponent(prompt('工作或已办 ID:', '') || ''); await api.post(`/api/processplatform/assemble/surface/attachment/doc/to/word/workorworkcompleted/${f}`, {}) }
-    else if (op === 'editByWork') { const a = id(); const w = wk(); await api.put(`/api/processplatform/assemble/surface/attachment/edit/${a}/work/${w}`, {}) }
-    else if (op === 'copyToWork') await api.post(`/api/processplatform/assemble/surface/attachment/copy/work/${wk()}`, {})
-    else if (op === 'copyToWorkSoft') await api.post(`/api/processplatform/assemble/surface/attachment/copy/work/${wk()}/soft`, {})
-    else if (op === 'copyToWc') { const wc = encodeURIComponent(prompt('已办 ID:', '') || ''); await api.post(`/api/processplatform/assemble/surface/attachment/copy/workcompleted/${wc}`, {}) }
-    else if (op === 'updateContent') { const a = id(); const w = wk(); await api.put(`/api/processplatform/assemble/surface/attachment/update/content/${a}/work/${w}`, {}) }
-    else { const a = id(); const w = wk(); await api.put(`/api/processplatform/assemble/surface/attachment/update/${a}/work/${w}`, {}) }
+    if (op === 'docToWord')
+      await api.post(`/api/processplatform/assemble/surface/attachment/doc/to/word/work/${wk()}`, {})
+    else if (op === 'docToWordWowc') {
+      const f = encodeURIComponent(prompt('工作或已办 ID:', '') || '')
+      await api.post(`/api/processplatform/assemble/surface/attachment/doc/to/word/workorworkcompleted/${f}`, {})
+    } else if (op === 'editByWork') {
+      const a = id()
+      const w = wk()
+      await api.put(`/api/processplatform/assemble/surface/attachment/edit/${a}/work/${w}`, {})
+    } else if (op === 'copyToWork')
+      await api.post(`/api/processplatform/assemble/surface/attachment/copy/work/${wk()}`, {})
+    else if (op === 'copyToWorkSoft')
+      await api.post(`/api/processplatform/assemble/surface/attachment/copy/work/${wk()}/soft`, {})
+    else if (op === 'copyToWc') {
+      const wc = encodeURIComponent(prompt('已办 ID:', '') || '')
+      await api.post(`/api/processplatform/assemble/surface/attachment/copy/workcompleted/${wc}`, {})
+    } else if (op === 'updateContent') {
+      const a = id()
+      const w = wk()
+      await api.put(`/api/processplatform/assemble/surface/attachment/update/content/${a}/work/${w}`, {})
+    } else {
+      const a = id()
+      const w = wk()
+      await api.put(`/api/processplatform/assemble/surface/attachment/update/${a}/work/${w}`, {})
+    }
     toast.success('流程表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
@@ -1708,17 +2119,41 @@ async function surfaceOps8(op: string): Promise<void> {
   engineBusy.value = true
   try {
     const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
-    if (op === 'appComplexManage') { const p = encodeURIComponent(prompt('人员:', '') || ''); await api.get(`/api/processplatform/assemble/surface/application/list/complex/manage/${p}`) }
-    else if (op === 'dataJobArray') { const j = encodeURIComponent(prompt('Job ID:', '') || ''); await api.post(`/api/processplatform/assemble/surface/data/job/${j}/array/data`, {}) }
-    else if (op === 'dataFetchJob') { const j = encodeURIComponent(prompt('Job ID:', '') || ''); await api.post(`/api/processplatform/assemble/surface/data/fetch/job/${j}`, {}) }
-    else if (op === 'readPrevFilter') { const c = 20; await api.post(`/api/processplatform/assemble/surface/read/list/${id()}/prev/${c}/filter`, {}) }
-    else if (op === 'readcompletedPrevFilter') { const c = 20; await api.post(`/api/processplatform/assemble/surface/readcompleted/list/${id()}/prev/${c}/filter`, {}) }
-    else if (op === 'readV2ListNext') { const c = 20; await api.post(`/api/processplatform/assemble/surface/read/v2/list/${id()}/next/${c}`, {}) }
-    else if (op === 'readV2ListPrev') { const c = 20; await api.post(`/api/processplatform/assemble/surface/read/v2/list/${id()}/prev/${c}`, {}) }
-    else if (op === 'modeClear') { const p = encodeURIComponent(prompt('人员:', '') || ''); if (!(await confirmMsg('确定清理该人模式？'))) return; await api.post(`/api/processplatform/assemble/surface/mode/clear/person/${p}/manager`, {}) }
-    else if (op === 'attTransfer') { const f = encodeURIComponent(prompt('转存标识:', '') || ''); await api.get(`/api/processplatform/assemble/surface/attachment/download/transfer/flag/${f}`) }
-    else if (op === 'attPreviewPdfResult') { const f = encodeURIComponent(prompt('附件标识:', '') || ''); await api.get(`/api/processplatform/assemble/surface/attachment/preview/pdf/${f}/result`) }
-    else { const f = encodeURIComponent(prompt('附件标识:', '') || ''); await api.get(`/api/processplatform/assemble/surface/attachment/preview/image/${f}/result`) }
+    if (op === 'appComplexManage') {
+      const p = encodeURIComponent(prompt('人员:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/application/list/complex/manage/${p}`)
+    } else if (op === 'dataJobArray') {
+      const j = encodeURIComponent(prompt('Job ID:', '') || '')
+      await api.post(`/api/processplatform/assemble/surface/data/job/${j}/array/data`, {})
+    } else if (op === 'dataFetchJob') {
+      const j = encodeURIComponent(prompt('Job ID:', '') || '')
+      await api.post(`/api/processplatform/assemble/surface/data/fetch/job/${j}`, {})
+    } else if (op === 'readPrevFilter') {
+      const c = 20
+      await api.post(`/api/processplatform/assemble/surface/read/list/${id()}/prev/${c}/filter`, {})
+    } else if (op === 'readcompletedPrevFilter') {
+      const c = 20
+      await api.post(`/api/processplatform/assemble/surface/readcompleted/list/${id()}/prev/${c}/filter`, {})
+    } else if (op === 'readV2ListNext') {
+      const c = 20
+      await api.post(`/api/processplatform/assemble/surface/read/v2/list/${id()}/next/${c}`, {})
+    } else if (op === 'readV2ListPrev') {
+      const c = 20
+      await api.post(`/api/processplatform/assemble/surface/read/v2/list/${id()}/prev/${c}`, {})
+    } else if (op === 'modeClear') {
+      const p = encodeURIComponent(prompt('人员:', '') || '')
+      if (!(await confirmMsg('确定清理该人模式？'))) return
+      await api.post(`/api/processplatform/assemble/surface/mode/clear/person/${p}/manager`, {})
+    } else if (op === 'attTransfer') {
+      const f = encodeURIComponent(prompt('转存标识:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/attachment/download/transfer/flag/${f}`)
+    } else if (op === 'attPreviewPdfResult') {
+      const f = encodeURIComponent(prompt('附件标识:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/attachment/preview/pdf/${f}/result`)
+    } else {
+      const f = encodeURIComponent(prompt('附件标识:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/attachment/preview/image/${f}/result`)
+    }
     toast.success('流程表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
@@ -1733,13 +2168,28 @@ async function surfaceOps9(op: string): Promise<void> {
   try {
     const pg = 1
     const sz = 20
-    if (op === 'fileAppDownload') { const f = encodeURIComponent(prompt('文件标识:', '') || ''); const af = encodeURIComponent(prompt('应用标识:', '') || ''); await api.get(`/api/processplatform/assemble/surface/file/application/download/${f}/${af}`) }
-    else if (op === 'attBatchZip') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); const site = encodeURIComponent(prompt('站点:', '') || ''); await api.get(`/api/processplatform/assemble/surface/attachment/batch/download/work/${w}/site/${site}`) }
-    else if (op === 'attInvoice') { const f = encodeURIComponent(prompt('发票标识:', '') || ''); const wowc = encodeURIComponent(prompt('工作或已办 ID:', '') || ''); await api.get(`/api/processplatform/assemble/surface/attachment/download/invoice/${f}/joborworkorworkcompleted/${wowc}`) }
-    else if (op === 'readV2Paging') await api.post(`/api/processplatform/assemble/surface/read/v2/list/create/paging/${pg}/size/${sz}`, {})
-    else if (op === 'readcompletedV2Paging') await api.post(`/api/processplatform/assemble/surface/readcompleted/v2/list/create/paging/${pg}/size/${sz}`, {})
-    else if (op === 'reviewV2Paging') await api.post(`/api/processplatform/assemble/surface/review/v2/list/create/paging/${pg}/size/${sz}`, {})
-    else await api.post(`/api/processplatform/assemble/surface/taskcompleted/v2/list/create/paging/${pg}/size/${sz}`, {})
+    if (op === 'fileAppDownload') {
+      const f = encodeURIComponent(prompt('文件标识:', '') || '')
+      const af = encodeURIComponent(prompt('应用标识:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/file/application/download/${f}/${af}`)
+    } else if (op === 'attBatchZip') {
+      const w = encodeURIComponent(prompt('工作 ID:', '') || '')
+      const site = encodeURIComponent(prompt('站点:', '') || '')
+      await api.get(`/api/processplatform/assemble/surface/attachment/batch/download/work/${w}/site/${site}`)
+    } else if (op === 'attInvoice') {
+      const f = encodeURIComponent(prompt('发票标识:', '') || '')
+      const wowc = encodeURIComponent(prompt('工作或已办 ID:', '') || '')
+      await api.get(
+        `/api/processplatform/assemble/surface/attachment/download/invoice/${f}/joborworkorworkcompleted/${wowc}`,
+      )
+    } else if (op === 'readV2Paging')
+      await api.post(`/api/processplatform/assemble/surface/read/v2/list/create/paging/${pg}/size/${sz}`, {})
+    else if (op === 'readcompletedV2Paging')
+      await api.post(`/api/processplatform/assemble/surface/readcompleted/v2/list/create/paging/${pg}/size/${sz}`, {})
+    else if (op === 'reviewV2Paging')
+      await api.post(`/api/processplatform/assemble/surface/review/v2/list/create/paging/${pg}/size/${sz}`, {})
+    else
+      await api.post(`/api/processplatform/assemble/surface/taskcompleted/v2/list/create/paging/${pg}/size/${sz}`, {})
     toast.success('流程表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
@@ -1757,8 +2207,10 @@ async function surfaceOps10(op: string): Promise<void> {
     else if (op === 'processListIds') await api.post('/api/processplatform/assemble/surface/process/list/ids', {})
     else if (op === 'readCountFilter') await api.post('/api/processplatform/assemble/surface/read/count/filter', {})
     else if (op === 'readV2Count') await api.post('/api/processplatform/assemble/surface/read/v2/count', {})
-    else if (op === 'attBatchDelete') { if (!(await confirmMsg('确定批量删除附件？'))) return; await api.post('/api/processplatform/assemble/surface/attachment/batch/delete/manage', {}) }
-    else await api.post('/api/processplatform/assemble/surface/attachment/batch/update/manage', {})
+    else if (op === 'attBatchDelete') {
+      if (!(await confirmMsg('确定批量删除附件？'))) return
+      await api.post('/api/processplatform/assemble/surface/attachment/batch/delete/manage', {})
+    } else await api.post('/api/processplatform/assemble/surface/attachment/batch/update/manage', {})
     toast.success('流程表面操作已提交')
   } catch (e: any) {
     toast.error('操作失败: ' + (e?.message ?? ''))
@@ -1772,10 +2224,13 @@ async function surfaceOps11(op: string): Promise<void> {
   engineBusy.value = true
   try {
     if (op === 'appListKey') await api.get('/api/processplatform/assemble/surface/application/list/key/key')
-    else if (op === 'appListTerminal') await api.get('/api/processplatform/assemble/surface/application/list/terminal/terminal')
+    else if (op === 'appListTerminal')
+      await api.get('/api/processplatform/assemble/surface/application/list/terminal/terminal')
     else if (op === 'routeList') await api.put('/api/processplatform/assemble/surface/route/list', {})
-    else if (op === 'readCompletedV2Count') await api.post('/api/processplatform/assemble/surface/readcompleted/v2/count', {})
-    else if (op === 'reviewCountApp') await api.post('/api/processplatform/assemble/surface/review/count/application', {})
+    else if (op === 'readCompletedV2Count')
+      await api.post('/api/processplatform/assemble/surface/readcompleted/v2/count', {})
+    else if (op === 'reviewCountApp')
+      await api.post('/api/processplatform/assemble/surface/review/count/application', {})
     else await api.post('/api/processplatform/assemble/surface/taskcompleted/v2/count', {})
     toast.success('流程表面操作已提交')
   } catch (e: any) {
@@ -1791,7 +2246,8 @@ async function surfaceOps12(op: string): Promise<void> {
   try {
     if (op === 'createSurface') await api.post('/api/processplatform/assemble/surface/create', {})
     else if (op === 'openapi') await api.get('/api/processplatform/assemble/surface/openapi')
-    else if (op === 'reviewFilterEntry') await api.get('/api/processplatform/assemble/surface/review/filter/create/entry')
+    else if (op === 'reviewFilterEntry')
+      await api.get('/api/processplatform/assemble/surface/review/filter/create/entry')
     else if (op === 'workV3Retract') await api.post('/api/processplatform/assemble/surface/work/v3/retract', {})
     else await api.post('/api/processplatform/assemble/surface/workcompleted/shift/time', {})
     toast.success('流程表面操作已提交')
@@ -1889,8 +2345,10 @@ async function surfaceOps17(op: string): Promise<void> {
   engineBusy.value = true
   try {
     const id = encodeURIComponent(prompt('目标 ID:', '') || '')
-    if (op === 'readProcessing') await api.post(`/api/processplatform/assemble/surface/read/processing/manage/${id}`, {})
-    else if (op === 'readCompletedOpinion') await api.post(`/api/processplatform/assemble/surface/readcompleted/${id}/opinion/manage`, {})
+    if (op === 'readProcessing')
+      await api.post(`/api/processplatform/assemble/surface/read/processing/manage/${id}`, {})
+    else if (op === 'readCompletedOpinion')
+      await api.post(`/api/processplatform/assemble/surface/readcompleted/${id}/opinion/manage`, {})
     else await api.put(`/api/processplatform/assemble/surface/taskcompleted/${id}/opinion/manage`, {})
     toast.success('流程表面操作已提交')
   } catch (e: any) {
@@ -1971,16 +2429,40 @@ async function engineRest3(op: string): Promise<void> {
     else if (op === 'taskV2Reset') await api.put(`/api/processplatform/service/processing/task/v2/${id()}/reset`, {})
     else if (op === 'taskV2Resume') await api.get(`/api/processplatform/service/processing/task/v2/${id()}/resume`)
     else if (op === 'taskV3Add') await api.post(`/api/processplatform/service/processing/task/v3/${id()}/add`, {})
-    else if (op === 'attEditText') await api.put(`/api/processplatform/service/processing/attachment/edit/${id()}/text`, {})
-    else if (op === 'dataPathDelete') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); if (!(await confirmMsg('确定删除该路径数据？'))) return; await api.post(`/api/processplatform/service/processing/data/path/delete/${w}/${id()}`, {}) }
-    else if (op === 'manualAfter') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); await api.post(`/api/processplatform/service/processing/manual/after/processing/${w}`, {}) }
-    else if (op === 'manualAppendId') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/manual/append/identity/${w}/${id()}`) }
-    else if (op === 'recordJob') { const j = encodeURIComponent(prompt('Job ID:', '') || ''); await api.post(`/api/processplatform/service/processing/record/job/${j}`, {}) }
-    else if (op === 'serviceWorkTouch') await api.put(`/api/processplatform/service/processing/service/work/${id()}/touch`, {})
+    else if (op === 'attEditText')
+      await api.put(`/api/processplatform/service/processing/attachment/edit/${id()}/text`, {})
+    else if (op === 'dataPathDelete') {
+      const w = encodeURIComponent(prompt('工作 ID:', '') || '')
+      if (!(await confirmMsg('确定删除该路径数据？'))) return
+      await api.post(`/api/processplatform/service/processing/data/path/delete/${w}/${id()}`, {})
+    } else if (op === 'manualAfter') {
+      const w = encodeURIComponent(prompt('工作 ID:', '') || '')
+      await api.post(`/api/processplatform/service/processing/manual/after/processing/${w}`, {})
+    } else if (op === 'manualAppendId') {
+      const w = encodeURIComponent(prompt('工作 ID:', '') || '')
+      await api.get(`/api/processplatform/service/processing/manual/append/identity/${w}/${id()}`)
+    } else if (op === 'recordJob') {
+      const j = encodeURIComponent(prompt('Job ID:', '') || '')
+      await api.post(`/api/processplatform/service/processing/record/job/${j}`, {})
+    } else if (op === 'serviceWorkTouch')
+      await api.put(`/api/processplatform/service/processing/service/work/${id()}/touch`, {})
     else if (op === 'snapIdRestore') await api.get(`/api/processplatform/service/processing/snap/${id()}/restore`)
-    else if (op === 'attCopy2') { const src = encodeURIComponent(prompt('源附件 ID:', '') || ''); const w = encodeURIComponent(prompt('目标工作 ID:', '') || ''); await api.post(`/api/processplatform/service/processing/attachment/copy/${src}/${w}`, {}) }
-    else if (op === 'snapUpload') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); await api.post('/api/processplatform/service/processing/snap/upload', { workId: w, snapType: 'manual', snapData: {} }) }
-    else { const j = encodeURIComponent(prompt('Job ID:', '') || ''); if (!(await confirmMsg('确定删除该 Job？'))) return; await api.delete(`/api/processplatform/service/processing/job/${j}`) }
+    else if (op === 'attCopy2') {
+      const src = encodeURIComponent(prompt('源附件 ID:', '') || '')
+      const w = encodeURIComponent(prompt('目标工作 ID:', '') || '')
+      await api.post(`/api/processplatform/service/processing/attachment/copy/${src}/${w}`, {})
+    } else if (op === 'snapUpload') {
+      const w = encodeURIComponent(prompt('工作 ID:', '') || '')
+      await api.post('/api/processplatform/service/processing/snap/upload', {
+        workId: w,
+        snapType: 'manual',
+        snapData: {},
+      })
+    } else {
+      const j = encodeURIComponent(prompt('Job ID:', '') || '')
+      if (!(await confirmMsg('确定删除该 Job？'))) return
+      await api.delete(`/api/processplatform/service/processing/job/${j}`)
+    }
     toast.success('引擎操作已提交')
   } catch (e: any) {
     toast.error('引擎操作失败: ' + (e?.message ?? ''))
@@ -1994,13 +2476,27 @@ async function engineRest4(op: string): Promise<void> {
   engineBusy.value = true
   try {
     const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
-    if (op === 'tcPressWork') { const w = encodeURIComponent(prompt('工作 ID:', '') || ''); await api.get(`/api/processplatform/service/processing/taskcompleted/${id()}/press/work/${w}`) }
-    else if (op === 'wcMergeFlag') await api.get(`/api/processplatform/service/processing/workcompleted/${id()}/merge`)
-    else if (op === 'wcRollbackFlag') await api.put(`/api/processplatform/service/processing/workcompleted/${id()}/rollback`, {})
-    else if (op === 'workProcessing') await api.put(`/api/processplatform/service/processing/work/${id()}/processing`, {})
-    else if (op === 'dataPathDel') { const path = encodeURIComponent(prompt('数据路径:', '') || ''); if (!(await confirmMsg('确定删除该路径数据？'))) return; await api.post(`/api/processplatform/service/processing/data/work/${id()}/${path}/delete`, {}) }
-    else if (op === 'workSerial') { const pid = encodeURIComponent(prompt('流程 ID:', '') || ''); const name = encodeURIComponent(prompt('活动名:', '') || ''); await api.post(`/api/processplatform/service/processing/work/process/${pid}/name/${name}/serial`, {}) }
-    else { const t = encodeURIComponent(prompt('快照类型:', '') || ''); await api.get(`/api/processplatform/service/processing/snap/workcompleted/abandonedworkcompleted/${id()}/${t}`) }
+    if (op === 'tcPressWork') {
+      const w = encodeURIComponent(prompt('工作 ID:', '') || '')
+      await api.get(`/api/processplatform/service/processing/taskcompleted/${id()}/press/work/${w}`)
+    } else if (op === 'wcMergeFlag')
+      await api.get(`/api/processplatform/service/processing/workcompleted/${id()}/merge`)
+    else if (op === 'wcRollbackFlag')
+      await api.put(`/api/processplatform/service/processing/workcompleted/${id()}/rollback`, {})
+    else if (op === 'workProcessing')
+      await api.put(`/api/processplatform/service/processing/work/${id()}/processing`, {})
+    else if (op === 'dataPathDel') {
+      const path = encodeURIComponent(prompt('数据路径:', '') || '')
+      if (!(await confirmMsg('确定删除该路径数据？'))) return
+      await api.post(`/api/processplatform/service/processing/data/work/${id()}/${path}/delete`, {})
+    } else if (op === 'workSerial') {
+      const pid = encodeURIComponent(prompt('流程 ID:', '') || '')
+      const name = encodeURIComponent(prompt('活动名:', '') || '')
+      await api.post(`/api/processplatform/service/processing/work/process/${pid}/name/${name}/serial`, {})
+    } else {
+      const t = encodeURIComponent(prompt('快照类型:', '') || '')
+      await api.get(`/api/processplatform/service/processing/snap/workcompleted/abandonedworkcompleted/${id()}/${t}`)
+    }
     toast.success('引擎操作已提交')
   } catch (e: any) {
     toast.error('引擎操作失败: ' + (e?.message ?? ''))
@@ -2083,7 +2579,10 @@ async function engineReviewWork(op: string): Promise<void> {
       if (!id.trim()) return
       const nextTaskIdentity = prompt('下一处理身份:', '') || ''
       if (!nextTaskIdentity.trim()) return
-      await api.put('/api/processplatform/service/processing/taskcompleted/next/task/identity', { id, nextTaskIdentity })
+      await api.put('/api/processplatform/service/processing/taskcompleted/next/task/identity', {
+        id,
+        nextTaskIdentity,
+      })
       toast.success('下一身份已更新')
     } else if (op === 'dataJobPut') {
       // rev446：按 job 整体写数据（data_job_put Path<job>+Json）
@@ -2091,7 +2590,12 @@ async function engineReviewWork(op: string): Promise<void> {
       if (!job) return
       const raw = prompt('数据(JSON):', '{}') || '{}'
       let data: any
-      try { data = JSON.parse(raw) } catch { toast.error('JSON 解析失败'); return }
+      try {
+        data = JSON.parse(raw)
+      } catch {
+        toast.error('JSON 解析失败')
+        return
+      }
       await api.put(`/api/processplatform/service/processing/data/job/${job}`, data)
       toast.success('Job 数据已写入')
     } else {
@@ -2137,11 +2641,27 @@ async function engineRest5(op: string): Promise<void> {
   try {
     const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
     const path = () => encodeURIComponent(prompt('数据路径:', '') || '')
-    if (op === 'dataWorkCreatePath') { const i = id(); const p = path(); await api.post(`/api/processplatform/service/processing/data/work/${i}/${p}`, {}) }
-    else if (op === 'dataWorkUpdatePath') { const i = id(); const p = path(); await api.put(`/api/processplatform/service/processing/data/work/${i}/${p}`, {}) }
-    else if (op === 'dataJobPath') { const j = encodeURIComponent(prompt('Job ID:', '') || ''); const p = path(); await api.put(`/api/processplatform/service/processing/data/job/${j}/${p}`, {}) }
-    else if (op === 'dataWcPath') { const i = id(); const p = path(); await api.put(`/api/processplatform/service/processing/data/workcompleted/${i}/${p}`, {}) }
-    else { const w = encodeURIComponent(prompt('源附件所属工作:', '') || ''); const wi = encodeURIComponent(prompt('目标 workId:', '') || ''); await api.post(`/api/processplatform/service/processing/attachment/copy/${w}/${wi}`, {}) }
+    if (op === 'dataWorkCreatePath') {
+      const i = id()
+      const p = path()
+      await api.post(`/api/processplatform/service/processing/data/work/${i}/${p}`, {})
+    } else if (op === 'dataWorkUpdatePath') {
+      const i = id()
+      const p = path()
+      await api.put(`/api/processplatform/service/processing/data/work/${i}/${p}`, {})
+    } else if (op === 'dataJobPath') {
+      const j = encodeURIComponent(prompt('Job ID:', '') || '')
+      const p = path()
+      await api.put(`/api/processplatform/service/processing/data/job/${j}/${p}`, {})
+    } else if (op === 'dataWcPath') {
+      const i = id()
+      const p = path()
+      await api.put(`/api/processplatform/service/processing/data/workcompleted/${i}/${p}`, {})
+    } else {
+      const w = encodeURIComponent(prompt('源附件所属工作:', '') || '')
+      const wi = encodeURIComponent(prompt('目标 workId:', '') || '')
+      await api.post(`/api/processplatform/service/processing/attachment/copy/${w}/${wi}`, {})
+    }
     toast.success('引擎操作已提交')
   } catch (e: any) {
     toast.error('引擎操作失败: ' + (e?.message ?? ''))
@@ -2158,12 +2678,22 @@ async function engineRest6(op: string): Promise<void> {
   engineBusy.value = true
   try {
     const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
-    if (op === 'wcShiftTime') await api.post('/api/processplatform/service/processing/workcompleted/shift/time', { minutes: 5 })
+    if (op === 'wcShiftTime')
+      await api.post('/api/processplatform/service/processing/workcompleted/shift/time', { minutes: 5 })
     else if (op === 'attCopyParam') await api.post('/api/processplatform/service/processing/attachment/copy/9/w1', {})
-    else if (op === 'workTouch') { const i = id(); await api.put(`/api/processplatform/assemble/surface/service/work/${i}/touch`, {}) }
-    else if (op === 'attCopyWcSoft') { const wc = id(); await api.post(`/api/processplatform/assemble/surface/attachment/copy/workcompleted/${wc}/soft`, { ids: ['0'] }) }
-    else if (op === 'serialGen') { const p = encodeURIComponent(prompt('流程 processId:', '') || '0'); const n = encodeURIComponent(prompt('序列号名 name:', '') || '0'); await api.post(`/api/processplatform/assemble/surface/serialnumber/generate/process/${p}/name/${n}/serial`, {}) }
-    else { await api.put('/api/processplatform/assemble/surface/keylock/lock', { key: 'g5k' }) }
+    else if (op === 'workTouch') {
+      const i = id()
+      await api.put(`/api/processplatform/assemble/surface/service/work/${i}/touch`, {})
+    } else if (op === 'attCopyWcSoft') {
+      const wc = id()
+      await api.post(`/api/processplatform/assemble/surface/attachment/copy/workcompleted/${wc}/soft`, { ids: ['0'] })
+    } else if (op === 'serialGen') {
+      const p = encodeURIComponent(prompt('流程 processId:', '') || '0')
+      const n = encodeURIComponent(prompt('序列号名 name:', '') || '0')
+      await api.post(`/api/processplatform/assemble/surface/serialnumber/generate/process/${p}/name/${n}/serial`, {})
+    } else {
+      await api.put('/api/processplatform/assemble/surface/keylock/lock', { key: 'g5k' })
+    }
     toast.success('引擎/表面操作已提交')
   } catch (e: any) {
     toast.error('引擎/表面操作失败: ' + (e?.message ?? ''))
@@ -2464,19 +2994,24 @@ async function surfaceList(op: string): Promise<void> {
     else if (op === 'taskCount') await api.post('/api/processplatform/assemble/surface/task/v2/count', {})
     else if (op === 'taskMy') await api.post('/api/processplatform/assemble/surface/task/list/my/filter/1/size/20', {})
     else if (op === 'taskCompletedV2') await api.post('/api/processplatform/assemble/surface/taskcompleted/v2/list', {})
-    else if (op === 'taskCompletedMy') await api.post('/api/processplatform/assemble/surface/taskcompleted/list/my/filter/1/size/20', {})
+    else if (op === 'taskCompletedMy')
+      await api.post('/api/processplatform/assemble/surface/taskcompleted/list/my/filter/1/size/20', {})
     else if (op === 'readV2') await api.post('/api/processplatform/assemble/surface/read/v2/list', {})
     else if (op === 'readMy') await api.post('/api/processplatform/assemble/surface/read/list/my/filter/1/size/20', {})
     else if (op === 'readCompletedV2') await api.post('/api/processplatform/assemble/surface/readcompleted/v2/list', {})
-    else if (op === 'readCompletedMy') await api.post('/api/processplatform/assemble/surface/readcompleted/list/my/filter/1/size/20', {})
+    else if (op === 'readCompletedMy')
+      await api.post('/api/processplatform/assemble/surface/readcompleted/list/my/filter/1/size/20', {})
     else if (op === 'reviewV2') await api.post('/api/processplatform/assemble/surface/review/v2/list', {})
     else if (op === 'reviewCount') await api.post('/api/processplatform/assemble/surface/review/v2/count', {})
     else if (op === 'reviewSearch') await api.post('/api/processplatform/assemble/surface/review/v2/search', {})
     else if (op === 'workV2') await api.post('/api/processplatform/assemble/surface/work/v2/list', {})
     else if (op === 'workMy') await api.post('/api/processplatform/assemble/surface/work/list/my/paging/1/size/20', {})
-    else if (op === 'draftMy') await api.post('/api/processplatform/assemble/surface/draft/list/my/paging/1/size/20', {})
-    else if (op === 'handover') await api.post('/api/processplatform/assemble/surface/handover/list/paging/1/size/20', {})
-    else if (op === 'serialnumber') await api.post('/api/processplatform/assemble/surface/serialnumber/list/paging/1/size/20', {})
+    else if (op === 'draftMy')
+      await api.post('/api/processplatform/assemble/surface/draft/list/my/paging/1/size/20', {})
+    else if (op === 'handover')
+      await api.post('/api/processplatform/assemble/surface/handover/list/paging/1/size/20', {})
+    else if (op === 'serialnumber')
+      await api.post('/api/processplatform/assemble/surface/serialnumber/list/paging/1/size/20', {})
     else await api.post('/api/processplatform/assemble/surface/snap/list/my/filter/1/size/20', {})
     toast.success('数据查询已提交')
   } catch (e: any) {
@@ -2488,19 +3023,32 @@ async function surfaceList2(op: string): Promise<void> {
   try {
     if (op === 'taskV2Paging') await api.post('/api/processplatform/assemble/surface/task/v2/list/paging/1/size/20', {})
     else if (op === 'taskV2Next') await api.post('/api/processplatform/assemble/surface/task/v2/list/0/next/20', {})
-    else if (op === 'taskManage') await api.post('/api/processplatform/assemble/surface/task/list/filter/1/size/20/manage', {})
-    else if (op === 'taskCompletedPaging') await api.post('/api/processplatform/assemble/surface/taskcompleted/v2/list/paging/1/size/20', {})
-    else if (op === 'taskCompletedManage') await api.post('/api/processplatform/assemble/surface/taskcompleted/list/filter/1/size/20/manage', {})
-    else if (op === 'readV2Paging') await api.post('/api/processplatform/assemble/surface/read/v2/list/paging/1/size/20', {})
-    else if (op === 'readManage') await api.post('/api/processplatform/assemble/surface/read/list/filter/1/size/20/manage', {})
-    else if (op === 'readCompletedPaging') await api.post('/api/processplatform/assemble/surface/readcompleted/v2/list/paging/1/size/20', {})
-    else if (op === 'readCompletedManage') await api.post('/api/processplatform/assemble/surface/readcompleted/list/filter/1/size/20/manage', {})
-    else if (op === 'reviewV2Paging') await api.post('/api/processplatform/assemble/surface/review/v2/list/paging/1/size/20', {})
-    else if (op === 'reviewManage') await api.post('/api/processplatform/assemble/surface/review/v2/list/paging/1/size/20/manage', {})
-    else if (op === 'workV2Paging') await api.post('/api/processplatform/assemble/surface/work/v2/list/paging/1/size/20', {})
-    else if (op === 'workManage') await api.post('/api/processplatform/assemble/surface/work/list/filter/1/size/20/manage', {})
-    else if (op === 'workCompletedManage') await api.post('/api/processplatform/assemble/surface/workcompleted/list/filter/1/size/20/manage', {})
-    else if (op === 'snapManage') await api.post('/api/processplatform/assemble/surface/snap/list/filter/1/size/20/manage', {})
+    else if (op === 'taskManage')
+      await api.post('/api/processplatform/assemble/surface/task/list/filter/1/size/20/manage', {})
+    else if (op === 'taskCompletedPaging')
+      await api.post('/api/processplatform/assemble/surface/taskcompleted/v2/list/paging/1/size/20', {})
+    else if (op === 'taskCompletedManage')
+      await api.post('/api/processplatform/assemble/surface/taskcompleted/list/filter/1/size/20/manage', {})
+    else if (op === 'readV2Paging')
+      await api.post('/api/processplatform/assemble/surface/read/v2/list/paging/1/size/20', {})
+    else if (op === 'readManage')
+      await api.post('/api/processplatform/assemble/surface/read/list/filter/1/size/20/manage', {})
+    else if (op === 'readCompletedPaging')
+      await api.post('/api/processplatform/assemble/surface/readcompleted/v2/list/paging/1/size/20', {})
+    else if (op === 'readCompletedManage')
+      await api.post('/api/processplatform/assemble/surface/readcompleted/list/filter/1/size/20/manage', {})
+    else if (op === 'reviewV2Paging')
+      await api.post('/api/processplatform/assemble/surface/review/v2/list/paging/1/size/20', {})
+    else if (op === 'reviewManage')
+      await api.post('/api/processplatform/assemble/surface/review/v2/list/paging/1/size/20/manage', {})
+    else if (op === 'workV2Paging')
+      await api.post('/api/processplatform/assemble/surface/work/v2/list/paging/1/size/20', {})
+    else if (op === 'workManage')
+      await api.post('/api/processplatform/assemble/surface/work/list/filter/1/size/20/manage', {})
+    else if (op === 'workCompletedManage')
+      await api.post('/api/processplatform/assemble/surface/workcompleted/list/filter/1/size/20/manage', {})
+    else if (op === 'snapManage')
+      await api.post('/api/processplatform/assemble/surface/snap/list/filter/1/size/20/manage', {})
     else await api.post('/api/processplatform/assemble/surface/task/count/filter', {})
     toast.success('数据查询已提交')
   } catch (e: any) {
@@ -2542,7 +3090,9 @@ async function loadTaskV2(taskId: string): Promise<void> {
   try {
     // GET service/processing/task/v2/{id} —— v2 任务详情（含 task_status）
     const r: any = await api.get(`/api/processplatform/service/processing/task/v2/${taskId}`)
-    taskV2Status.value = String((r?.data as { task_status?: string; taskStatus?: string })?.task_status ?? (r?.data as any)?.taskStatus ?? '')
+    taskV2Status.value = String(
+      (r?.data as { task_status?: string; taskStatus?: string })?.task_status ?? (r?.data as any)?.taskStatus ?? '',
+    )
   } catch {
     taskV2Status.value = ''
   }

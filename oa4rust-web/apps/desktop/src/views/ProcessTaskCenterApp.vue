@@ -145,7 +145,11 @@ async function loadSurfaceMoreReads() {
       s(api.get(`/api/processplatform/assemble/surface/attachment/download/${attid}/work/${wk}/stream/${fn}`)),
       s(api.get(`/api/processplatform/assemble/surface/attachment/download/${attid}/work/${wk}/${fn}`)),
       s(api.get(`/api/processplatform/assemble/surface/attachment/download/${attid}/workcompleted/${wcid}/stream`)),
-      s(api.get(`/api/processplatform/assemble/surface/attachment/download/${attid}/workcompleted/${wcid}/stream/${fn}`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/attachment/download/${attid}/workcompleted/${wcid}/stream/${fn}`,
+        ),
+      ),
       s(api.get(`/api/processplatform/assemble/surface/attachment/download/${attid}/workcompleted/${wcid}/${fn}`)),
       s(api.get(`/api/processplatform/assemble/surface/attachment/batch/download/job/${job}/site/${site}`)),
       s(api.get(`/api/processplatform/assemble/surface/attachment/batch/download/work/${wk}/site/${site}/stream`)),
@@ -191,16 +195,34 @@ async function loadWorkCompletedFullCursors() {
     const rs = await Promise.all([
       s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/next/application/${id}/${cnt}/${app}`)),
       s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/prev/application/${id}/${cnt}/${app}`)),
-      s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/next/application/filter/${id}/${cnt}/${app}`)),
-      s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/prev/application/filter/${id}/${cnt}/${app}`)),
-      s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/next/application/manage/${id}/${cnt}/${app}`)),
-      s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/prev/application/manage/${id}/${cnt}/${app}`)),
-      s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/next/application/filter/manage/${id}/${cnt}/${app}`)),
-      s(api.get(`/api/processplatform/assemble/surface/workcompleted/filter/list/prev/application/${id}/${cnt}/${app}`)),
+      s(
+        api.get(`/api/processplatform/assemble/surface/workcompleted/list/next/application/filter/${id}/${cnt}/${app}`),
+      ),
+      s(
+        api.get(`/api/processplatform/assemble/surface/workcompleted/list/prev/application/filter/${id}/${cnt}/${app}`),
+      ),
+      s(
+        api.get(`/api/processplatform/assemble/surface/workcompleted/list/next/application/manage/${id}/${cnt}/${app}`),
+      ),
+      s(
+        api.get(`/api/processplatform/assemble/surface/workcompleted/list/prev/application/manage/${id}/${cnt}/${app}`),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/workcompleted/list/next/application/filter/manage/${id}/${cnt}/${app}`,
+        ),
+      ),
+      s(
+        api.get(`/api/processplatform/assemble/surface/workcompleted/filter/list/prev/application/${id}/${cnt}/${app}`),
+      ),
       s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/${id}/next/${cnt}/application/${app}`)),
       s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/${id}/prev/${cnt}/application/${app}`)),
-      s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/${id}/next/${cnt}/application/${app}/manage`)),
-      s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/${id}/prev/${cnt}/application/${app}/manage`)),
+      s(
+        api.get(`/api/processplatform/assemble/surface/workcompleted/list/${id}/next/${cnt}/application/${app}/manage`),
+      ),
+      s(
+        api.get(`/api/processplatform/assemble/surface/workcompleted/list/${id}/prev/${cnt}/application/${app}/manage`),
+      ),
       s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/application/process/manage/${cnt}/${app}`)),
       s(api.get(`/api/processplatform/assemble/surface/workcompleted/filter/attribute/application/${app}`)),
       s(api.get(`/api/processplatform/assemble/surface/workcompleted/process/${proc}`)),
@@ -357,7 +379,11 @@ async function loadTaskFullCursors() {
       // rev294：待办按人排除草稿管理 + 已办手动前翻 + 完成件快照 3 条补齐（PP_C_TASK/PP_C_TASKCOMPLETED/X_WORKCOMPLETED 真读）
       s(api.get(`/api/processplatform/assemble/surface/task/list/person/current/exclude/draft/1/manage`)),
       s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/prev/manual/${manualFlag}`)),
-      s(api.get(`/api/processplatform/service/processing/snap/workcompleted/snapworkcompleted/${encodeURIComponent(tid)}/${snapType}`)),
+      s(
+        api.get(
+          `/api/processplatform/service/processing/snap/workcompleted/snapworkcompleted/${encodeURIComponent(tid)}/${snapType}`,
+        ),
+      ),
     ])
     const hit = rs.filter((r) => (r as any)?.data != null).length
     taskCursorText.value = `待办真实读端点 ${rs.length} 条，命中 ${hit}`
@@ -394,11 +420,23 @@ async function loadJobDataReads() {
   try {
     const [byJob, corr, findWork, datarecord, signJob, invoice] = await Promise.all([
       s(api.get(`/api/processplatform/assemble/surface/data/job/${encodeURIComponent(job)}`)),
-      s(api.get(`/api/processplatform/assemble/surface/correlation/list/job/${encodeURIComponent(job)}/site/${encodeURIComponent(job)}`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/correlation/list/job/${encodeURIComponent(job)}/site/${encodeURIComponent(job)}`,
+        ),
+      ),
       s(api.get(`/api/processplatform/assemble/surface/job/${encodeURIComponent(job)}/find/work/workcompleted`)),
-      s(api.get(`/api/processplatform/assemble/surface/datarecord/get/job/${encodeURIComponent(job)}/path/${encodeURIComponent(job)}`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/datarecord/get/job/${encodeURIComponent(job)}/path/${encodeURIComponent(job)}`,
+        ),
+      ),
       s(api.get(`/api/processplatform/assemble/surface/sign/list/job/${encodeURIComponent(job)}`)),
-      s(api.get(`/api/processplatform/assemble/surface/attachment/invoice/${encodeURIComponent(wid)}/joborworkorworkcompleted/${encodeURIComponent(wid)}`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/attachment/invoice/${encodeURIComponent(wid)}/joborworkorworkcompleted/${encodeURIComponent(wid)}`,
+        ),
+      ),
     ])
     const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
@@ -536,7 +574,7 @@ async function loadSnapCursors() {
     settle(api.get(`/api/processplatform/assemble/surface/snap/workcompleted/${work}/type/abandonedworkcompleted`)),
     settle(api.get('/api/processplatform/assemble/surface/snap/list/my/paging/1/size/20')),
   ])
-  const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : ((r as any)?.data ? 1 : 0))
+  const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : (r as any)?.data ? 1 : 0)
   snapText.value = `单条 ${(one as any)?.data?.id ? '命中' : '未命中'} · 前翻 ${n(next)} · 后翻 ${n(prev)} · 完成快照 ${n(snapWc)} · 完成废弃 ${n(abandonWc)} · 我的分页 ${n(myPaging)}`
 }
 async function loadTouch() {
@@ -547,7 +585,7 @@ async function loadTouch() {
       api.get('/api/processplatform/assemble/surface/touch/passexpired'),
       api.get('/api/processplatform/assemble/surface/touch/touchdetained'),
     ])
-    const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     countsText.value = `超期 ${cnt(exp)} / 超期通过 ${cnt(passExp)} / 催办 ${cnt(detained)}`
   } catch (e: any) {
     toast.error('触发失败: ' + (e?.message ?? ''))

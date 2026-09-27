@@ -14,9 +14,9 @@
 // W7：真实脚本设计器——CodeMirror 编辑器（ScriptWorkbench 内建 XScript 补全）
 // + /api/script u2 CRUD + 脚本内容（scriptContent）。
 import { api } from '@oa4rust/sdk'
-import { toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ScriptWorkbench, { type ScriptListItem, type ScriptWorkbenchAdapter } from '../components/ScriptWorkbench.vue'
+import { toast } from '../utils/toast'
 
 function extractData(response: unknown): Record<string, unknown>[] {
   const data = (response as { data?: unknown })?.data
@@ -56,7 +56,10 @@ async function loadByUnique() {
   if (!uniqueName.trim()) return
   const appFlag = prompt('应用 flag:', '') || ''
   try {
-    const r: any = await api.post(`/api/script/${encodeURIComponent(uniqueName)}/appInfo/${encodeURIComponent(appFlag)}`, {})
+    const r: any = await api.post(
+      `/api/script/${encodeURIComponent(uniqueName)}/appInfo/${encodeURIComponent(appFlag)}`,
+      {},
+    )
     toast.success(`脚本：${(r as any)?.data?.name ?? uniqueName}`)
   } catch (e: any) {
     toast.error('加载脚本失败: ' + (e?.message ?? ''))

@@ -92,8 +92,15 @@ const cols = ref<string[]>([])
 // 视图详情：并发消费 view/{id} + viewcategory/list/view/{viewId} + viewfieldconfig/list/view/{viewId}
 const detail = ref({ open: false, loading: false, id: '', name: '', categoryCount: 0, fieldCount: 0 })
 async function viewDetail(v: ViewItem) {
-  detail.value = { open: true, loading: true, id: v.id, name: v.name || v.viewName || v.title || '', categoryCount: 0, fieldCount: 0 }
-  const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  detail.value = {
+    open: true,
+    loading: true,
+    id: v.id,
+    name: v.name || v.viewName || v.title || '',
+    categoryCount: 0,
+    fieldCount: 0,
+  }
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const [main, cats, fields] = await Promise.all([
     settle(api.get(`/api/view/${v.id}`)),
     settle(api.get(`/api/viewcategory/list/view/${v.id}`)),
