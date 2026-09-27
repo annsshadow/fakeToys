@@ -158,15 +158,23 @@ describe('攻方·防线护甲（armorPermille）', () => {
 describe('攻方·热量上限（heatCapPermille）', () => {
   it('热量上限加成真的抬高了 HeatMeter.cap', () => {
     const bare = mk({ heatCapPermille: 0n }).heat.cap
+    // ⚠️ 400‰ 是 **+40%**，不是 +400 点。
+    // 曾经的 `cap = HEAT_MAX + capBonus` 让它变成 +400 点（上限 4 倍），
+    // 而热量衰减率固定 ⇒ 玩家长期卡在死区 ⇒ 漏怪翻 2.2 倍、分数掉 13.8%。
     const boosted = mk({ heatCapPermille: 400n }).heat.cap
-    expect(boosted - bare).toBe(400n)
+    expect(boosted - bare).toBe((bare * 400n) / 1000n)
+    expect(boosted - bare).toBe(40n)
   })
 
   it('零加成时 cap 与常量基准一致', () => {
     const e = mk({ heatCapPermille: 0n })
-    // HEAT_MAX 是引擎基准；用「加成 0 与加成 1 的差」反推比硬编码数值稳
-    const with1 = mk({ heatCapPermille: 1n }).heat.cap
-    expect(e.heat.cap + 1n).toBe(with1)
+    // 用「加成 0 与加成 1000‰ 的比值」反推，而不是硬编码 HEAT_MAX ——
+    // 硬编码会在引擎基准变动时静默失配。
+    //
+    // ⚠️ 不能用 1‰ 做反推：千分比下 100 × 1001/1000 整除后仍是 100，
+    // 「+1 就等于 1‰ 的 cap」这个等式在整除下不成立。
+    const doubled = mk({ heatCapPermille: 1000n }).heat.cap
+    expect(doubled).toBe(e.heat.cap * 2n)
   })
 
   it('热量上限提高后过热更难触发（过热次数更少）', () => {

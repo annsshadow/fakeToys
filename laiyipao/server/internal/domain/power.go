@@ -160,7 +160,21 @@ func EvaluateMastery(allNodes []MasteryNode, selectedIDs map[int]bool, points in
 		case "reaction_mult":
 			effect.ReactionMultBonus += v
 		case "heat_cap":
-			effect.HeatCapBonus += v
+			// ⚠️ 必须 ×10 换算成**千分比**。
+			//
+			// `masteryLayerValues × 10` 给出的是 10 / 20 / 30，这个量级是按
+			// 「绝对值」设计的。而 `Attacker.HeatCapPermille` 的语义是千分比
+			// （与 Attack / ElementCoefPermille 同一量纲），
+			// 客户端按 `cap = HEAT_MAX × (1000 + capBonus) / 1000` 计算。
+			//
+			// 不换算的话，一个 30 的专精节点只给 3% 上限 ——
+			// 玩家点满 16 个 heat_cap 节点也只有 +48%，
+			// 而内容表上写的是"提高热量上限"，预期是显著提升。
+			//
+			// 换算后：第 1/2/3 层分别给 +10% / +20% / +30%，
+			// 8 系各点满 2 个节点 = 6 个 × 最多 30% = 180%（再由
+			// MaxLoadoutHeatCapPermille 封顶）。
+			effect.HeatCapBonus += v * 10
 		case "extra_slot":
 			effect.ExtraSlots += 1
 		case "skill_damage":
