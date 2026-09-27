@@ -393,7 +393,7 @@ async fn test_attachment_upload_download_roundtrip() {
     let app = crate::router(test_pool());
     let req = Request::builder()
         .method(Method::POST)
-        .uri(&format!("{}/attachment/upload/subject/{}", BASE, subject_id))
+        .uri(format!("{}/attachment/upload/subject/{}", BASE, subject_id))
         .header(
             "content-type",
             format!("multipart/form-data; boundary={}", boundary),
@@ -413,7 +413,7 @@ async fn test_attachment_upload_download_roundtrip() {
     let (st, dl_json) = {
         let r = Request::builder()
             .method(Method::GET)
-            .uri(&format!("{}/attachment/download/{}", BASE, att_id))
+            .uri(format!("{}/attachment/download/{}", BASE, att_id))
             .body(Body::empty())
             .unwrap();
         let resp = app2.oneshot(r).await.unwrap();
@@ -545,8 +545,8 @@ async fn send_with_session(
     if body.is_some() {
         builder = builder.header("content-type", "application/json");
     }
-    if session.is_some() {
-        builder = builder.extension(session.unwrap());
+    if let Some(sess) = session {
+        builder = builder.extension(sess);
     }
     let body_bytes = body
         .map(|b| serde_json::to_vec(&b).unwrap())

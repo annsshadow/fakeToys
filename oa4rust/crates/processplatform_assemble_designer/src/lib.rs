@@ -3558,6 +3558,7 @@ pub async fn workcompleted_process_processFlag_merge_data(
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

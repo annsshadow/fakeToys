@@ -136,7 +136,7 @@ pub fn parse_uplink(room: &str, sender: &str, text: &str) -> Uplink {
         .get("type")
         .and_then(Value::as_str)
         .unwrap_or_default();
-    let data = envelope.get("data").cloned().unwrap_or_else(|| Value::Null);
+    let data = envelope.get("data").cloned().unwrap_or(Value::Null);
     match msg_type {
         "im_create" | "im_revoke" | "im_conversation" | "notification" | "process_task" => {
             Uplink::Im(RealtimeMessage {
@@ -524,6 +524,7 @@ pub fn ws_route() -> Router {
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests {
     use super::*;
     use axum::body::Body;

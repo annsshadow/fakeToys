@@ -97,6 +97,7 @@ pub async fn is_workday(
 pub use routes::general_router;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

@@ -14,6 +14,7 @@ use std::collections::HashMap;
 pub mod routes;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_data_appdict;

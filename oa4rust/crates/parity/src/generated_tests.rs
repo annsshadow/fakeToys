@@ -7,15 +7,11 @@
 // is registered on the crate's Router.  A NOT_FOUND (404) response means the
 // route is missing from the Rust implementation — a parity gap.
 //
-// Generated: 2026-09-27 11:11:00
+// Generated: 2026-09-27 13:37:50
 // Crates: 55   Routes: 4044   Tests: 4044
 
-#[allow(unreachable_code, unused_variables, non_snake_case)]
-
-use axum::body::Body;
-use axum::http::{Request, Method, StatusCode};
+use axum::http::StatusCode;
 use tower::util::ServiceExt;
-use shared::testing::{test_pool, is_db_available};
 
     // ── x_ai_assemble_control → ai_assemble_control (49 routes) ──
     #[tokio::test]
@@ -50903,7 +50899,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__attachment_u2b_batch_download_zip() {
+    async fn parity__processplatform_assemble_surface__attachment_u2b_batch_download_zip_by_job() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -50925,7 +50921,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__attachment_u2b_batch_download_zip_1() {
+    async fn parity__processplatform_assemble_surface__attachment_u2b_batch_download_zip_by_work() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -50947,7 +50943,7 @@ use shared::testing::{test_pool, is_db_available};
         );
     }
     #[tokio::test]
-    async fn parity__processplatform_assemble_surface__attachment_u2b_batch_download_zip_2() {
+    async fn parity__processplatform_assemble_surface__attachment_u2b_batch_download_zip_by_work_1() {
         let router = oa4rust::processplatform_assemble_surface::router(shared::testing::test_pool());
         let response = router
             .oneshot(

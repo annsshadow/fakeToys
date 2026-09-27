@@ -785,6 +785,7 @@ pub fn query_assemble_surface_router() -> Router {
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

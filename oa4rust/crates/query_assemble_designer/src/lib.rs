@@ -896,6 +896,7 @@ pub fn query_assemble_designer_router(pool: Option<Pool>) -> Router {
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
