@@ -245,6 +245,40 @@ class TestConcurrentWritersNeverInterleave:
         assert target.read_bytes() == good
         assert [p.name for p in tmp_path.iterdir()] == ["ds.json"]
 
+    def test_a_transient_refusal_is_retried_and_the_write_still_lands(self, tmp_path, monkeypatch):
+        """退避重试的**正路**：前两次被瞬时拒绝、第三次换上 ⇒ 新内容落盘且一次抛错都没有
+
+        这一档是 L100 把「最后一次替换」移出循环后才变得可测的那条路径。旧写法里末次替换藏在
+        `if attempt == 末次: raise` 那一支里、循环的自然出口结构上不可达 ⇒ 那里永远挂着
+        一条测不到的偏支（A185 病理的同族）。断言盯三件事：确实退避了、退避用的就是那个常数、
+        退避之后写成功且目录不留临时件。
+        """
+        target = tmp_path / "ds.json"
+        atomic_write_json(target, _payload(10))
+
+        tried = []
+        sleeps = []
+
+        class _Flaky:
+            @staticmethod
+            def replace(src, dst):
+                tried.append(1)
+                if len(tried) <= 2:
+                    raise PermissionError(5, "拒绝访问（瞬时）")
+                return REAL_REPLACE(src, dst)
+
+        monkeypatch.setattr(atomic_write_module, "os", _Flaky)
+        monkeypatch.setattr(
+            atomic_write_module, "time",
+            type("TimeShim", (), {"sleep": staticmethod(lambda s: sleeps.append(s))})(),
+        )
+        atomic_write_json(target, _payload(20))
+
+        assert len(tried) == 3, "没重试到第三次就成功 ⇒ 退避那一档是零读数"
+        assert sleeps == [atomic_write_module._SWAP_BACKOFF_S] * 2
+        assert json.loads(target.read_text(encoding="utf-8")) == _payload(20)
+        assert [p.name for p in tmp_path.iterdir()] == ["ds.json"]
+
 
 
 class TestThroatsAreWired:
