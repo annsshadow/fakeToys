@@ -407,11 +407,13 @@ pub async fn building_list_start_start_completed_completed(
     pool: Extension<Pool>,
     axum::extract::Path((start, completed)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // o2server 语义：按 [start, completed] 时段列会议（codegen 把 Action 前缀
+    // 误写为 building，但 building 表无时段列——数据源是 x_meeting）。
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, name, pinyin, pinyin_initial, address, description, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting_building WHERE start_time >= $1 AND end_time <= $2 ORDER BY create_time",
+            "SELECT id, title, status, room_id, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= $1::timestamp AND end_time <= $2::timestamp ORDER BY start_time",
             &[&start, &completed],
         )
         .await
@@ -419,38 +421,7 @@ pub async fn building_list_start_start_completed_completed(
 
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                (
-                    "pinyin".to_string(),
-                    Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default()),
-                ),
-                (
-                    "pinyinInitial".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("pinyin_initial")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "address".to_string(),
-                    Value::String(row.get::<_, Option<String>>("address").unwrap_or_default()),
-                ),
-                (
-                    "description".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("description")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(row.get("create_time")),
-                ),
-            ]))
-        })
+        .map(meeting_row_json)
         .collect();
 
     let count = data.len() as i64;
@@ -470,7 +441,7 @@ pub async fn building_list_start_start_completed_completed_allmeeting(
 
     let rows = client
         .query(
-            "SELECT id, name, pinyin, pinyin_initial, address, description, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting_building WHERE start_time >= $1 AND end_time <= $2 ORDER BY create_time",
+            "SELECT id, title, status, room_id, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= $1::timestamp AND end_time <= $2::timestamp ORDER BY start_time",
             &[&start, &completed],
         )
         .await
@@ -478,38 +449,7 @@ pub async fn building_list_start_start_completed_completed_allmeeting(
 
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                (
-                    "pinyin".to_string(),
-                    Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default()),
-                ),
-                (
-                    "pinyinInitial".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("pinyin_initial")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "address".to_string(),
-                    Value::String(row.get::<_, Option<String>>("address").unwrap_or_default()),
-                ),
-                (
-                    "description".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("description")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(row.get("create_time")),
-                ),
-            ]))
-        })
+        .map(meeting_row_json)
         .collect();
 
     let count = data.len() as i64;
@@ -534,7 +474,7 @@ pub async fn building_list_start_start_completed_completed_room_room_meeting_mee
 
     let rows = client
         .query(
-            "SELECT id, name, pinyin, pinyin_initial, address, description, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting_building WHERE start_time >= $1 AND end_time <= $2 AND room_id = $3 AND meeting_id = $4 ORDER BY create_time",
+            "SELECT id, title, status, room_id, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= $1::timestamp AND end_time <= $2::timestamp AND room_id = $3 AND id = $4 ORDER BY start_time",
             &[&start, &completed, &room, &meeting],
         )
         .await
@@ -542,38 +482,7 @@ pub async fn building_list_start_start_completed_completed_room_room_meeting_mee
 
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                (
-                    "pinyin".to_string(),
-                    Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default()),
-                ),
-                (
-                    "pinyinInitial".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("pinyin_initial")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "address".to_string(),
-                    Value::String(row.get::<_, Option<String>>("address").unwrap_or_default()),
-                ),
-                (
-                    "description".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("description")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(row.get("create_time")),
-                ),
-            ]))
-        })
+        .map(meeting_row_json)
         .collect();
 
     let count = data.len() as i64;
@@ -582,6 +491,37 @@ pub async fn building_list_start_start_completed_completed_room_room_meeting_mee
         count,
         0,
     )))
+}
+
+fn meeting_row_json(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
+    Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(row.get("id"))),
+        (
+            "title".to_string(),
+            Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+        ),
+        (
+            "status".to_string(),
+            Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+        ),
+        (
+            "roomId".to_string(),
+            Value::String(row.get::<_, Option<String>>("room_id").unwrap_or_default()),
+        ),
+        (
+            "startTime".to_string(),
+            Value::String(row.get::<_, Option<String>>("start_time").unwrap_or_default()),
+        ),
+        (
+            "completedTime".to_string(),
+            Value::String(row.get::<_, Option<String>>("end_time").unwrap_or_default()),
+        ),
+        (
+            "creator".to_string(),
+            Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+        ),
+        ("createTime".to_string(), Value::String(row.get("create_time"))),
+    ]))
 }
 
 #[allow(non_snake_case)]
