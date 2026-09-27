@@ -77,6 +77,15 @@ export const useGameStore = defineStore('game', () => {
         elementCap: BigInt(raw.element_cap),
         reactionTier: BigInt(raw.reaction_tier),
         elementCoefPermille: BigInt(raw.element_coef_permille),
+        // 三项本轮新增：防线护甲 / 热量上限 / 机制卡强度。
+        //
+        // ⚠️ 用 `?? 0` 而不是直接 BigInt(undefined)：
+        // BigInt(undefined) 抛 TypeError，而 `raw` 是 `any`（服务端 JSON），
+        // 老版本服务端的 build_snapshot 里没有这三个字段 ——
+        // 缺省成 0 正好等价于"没有装备/宝石/专精"。
+        heatCapPermille: BigInt(raw.heat_cap_permille ?? 0),
+        armorPermille: BigInt(raw.armor_permille ?? 0),
+        mechanicPermille: BigInt(raw.mechanic_permille ?? 0),
       }
     }
     console.warn(
