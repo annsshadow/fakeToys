@@ -44,6 +44,12 @@ var (
 	ErrTooManyShots     = errors.New("发射数超过该时长的物理上限")
 	ErrTooManyLeaked    = errors.New("漏怪数超过该关总怪数")
 	ErrInvalidField     = errors.New("上报字段非法")
+	// ErrHPLeftExceedsBase 表示上报的剩余血量超过该关初始血量。
+	//
+	// ⚠️ 诚实标注：这不是刷分漏洞。`hp_left` 只写进 battle_records，
+	// **不参与任何奖励计算**（星星与掉落都由分数决定）。
+	// 它是数据完整性问题 —— 血量本身就是假的战报会让整个战报库失去分析价值。
+	ErrHPLeftExceedsBase = errors.New("剩余血量超过该关初始血量")
 )
 
 // MaxReactionsPerHit 是一次开火最多能触发的反应次数：
@@ -186,6 +192,37 @@ type SettleLimits struct {
 // ⚠️ 若将来把关卡调到 60 秒以内可通关，这个值要跟着调；
 // TestScoreCapNeverAllowsInstantFull 会在调整前提醒。
 const ScoreFullAtSec = 60
+
+// validateHPLeft 校验上报的剩余血量：0 ≤ hp_left ≤ 该关初始血量。
+//
+// ⚠️ 此前**只校验下界**，于是 `hp_left` 可以上报任意大的值。
+//
+// 诚实标注：这不是**刷分漏洞** —— `hp_left` 只写进 battle_records，
+// 不参与任何奖励计算（星星由分数决定，掉落由分数决定）。
+// 它是**数据完整性**问题：一条写着"血量 999999"的战报，
+// 让整个战报库失去分析价值，也让 I-6 的验真叙事站不住 ——
+// 验真要证明"这局确实是这样打的"，而血量本身就是假的。
+//
+// 上界取 `gl.BaseHP`：引擎里 `baseHp` 只减不增
+// （`baseHp -= dmg` / `baseHp = 0n`，没有任何恢复路径），
+// 所以这个界是**紧**的。用生成器给出的 `gl.BaseHP`（已含关卡进度加成），
+// 而不是章节表的裸值 —— 客户端读到的就是前者。
+//
+// 抽成具名函数而不是内联，是为了让测试走**同一条路径**：
+// 测试里复刻一份逻辑就变成了同义反复 —— 它只能证明"复刻的那份对"，
+// 证明不了"生产代码对"。
+func validateHPLeft(gl GeneratedLevel, hpLeft int) error {
+	if hpLeft < 0 {
+		return fmt.Errorf("%w：剩余血量 %d", ErrInvalidField, hpLeft)
+	}
+	if int64(hpLeft) > gl.BaseHP {
+		return fmt.Errorf(
+			"%w：剩余血量 %d 超过该关初始血量 %d",
+			ErrHPLeftExceedsBase, hpLeft, gl.BaseHP,
+		)
+	}
+	return nil
+}
 
 // scoreCapFor 返回给定秒数下的得分上界。
 //
@@ -367,8 +404,8 @@ func ValidateSettle(
 	if in.Leaked < 0 || in.Leaked > maxKills {
 		return SettleResult{}, fmt.Errorf("%w：漏怪 %d > %d", ErrTooManyLeaked, in.Leaked, maxKills)
 	}
-	if in.HPLeft < 0 {
-		return SettleResult{}, fmt.Errorf("%w：剩余血量 %d", ErrInvalidField, in.HPLeft)
+	if err := validateHPLeft(gl, in.HPLeft); err != nil {
+		return SettleResult{}, err
 	}
 
 	// 时长过短检查已上移到第 5 步（在发射数上界之前，理由见那里的注释）。
