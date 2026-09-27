@@ -2022,7 +2022,12 @@ pub async fn mergeitemplan_estimate(
 #[allow(non_snake_case)]
 pub async fn mergeitemplan_list_application_applicationId_paging_page_size_size(
     pool: Extension<Pool>,
-    axum::extract::Path((applicationId, page, size, _s3)): axum::extract::Path<(String, i64, i64, String)>,
+    axum::extract::Path((applicationId, page, size, _s3)): axum::extract::Path<(
+        String,
+        i64,
+        i64,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let size = size.clamp(1, 100);

@@ -205,7 +205,10 @@ mod u2_tests {
             StatusCode::OK,
             "db backend must persist via PgBlobStorage and succeed: {json}"
         );
-        assert_eq!(json["data"]["uploaded"], true, "must report real upload: {json}");
+        assert_eq!(
+            json["data"]["uploaded"], true,
+            "must report real upload: {json}"
+        );
 
         client
             .execute("DELETE FROM x_meeting WHERE id = $1", &[&mid])

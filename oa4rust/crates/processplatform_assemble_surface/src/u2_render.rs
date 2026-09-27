@@ -28,7 +28,6 @@ use serde_json::Value;
 use shared::error::AppError;
 use shared::response::ActionResult;
 
-
 /// GeneralFile 落盘并返回 `{id}`（flag 与 id 同值）。
 pub async fn general_file_store(
     pool: &Pool,
@@ -66,12 +65,10 @@ pub fn html_to_word_binary(content: &str) -> Result<Vec<u8>, AppError> {
         AppError::Internal
     })?;
     {
-        let mut stream = cfb
-            .create_stream("WordDocument")
-            .map_err(|e| {
-                tracing::warn!(error = %e, "cfb stream create failed");
-                AppError::Internal
-            })?;
+        let mut stream = cfb.create_stream("WordDocument").map_err(|e| {
+            tracing::warn!(error = %e, "cfb stream create failed");
+            AppError::Internal
+        })?;
         stream
             .write_all(html.as_bytes())
             .map_err(|_| AppError::Internal)?;
@@ -215,9 +212,8 @@ pub fn html_to_pdf_bytes(html: &str) -> Result<Option<Vec<u8>>, AppError> {
         return Ok(None);
     };
     // bold/italic/合成体统一复用 regular 字形（简化排版无字重变化）
-    let mk_font = || {
-        genpdf::fonts::FontData::new(font_bytes.clone(), None).map_err(|_| AppError::Internal)
-    };
+    let mk_font =
+        || genpdf::fonts::FontData::new(font_bytes.clone(), None).map_err(|_| AppError::Internal);
     let family = genpdf::fonts::FontFamily {
         regular: mk_font()?,
         bold: mk_font()?,
@@ -241,17 +237,15 @@ pub fn html_to_pdf_bytes(html: &str) -> Result<Option<Vec<u8>>, AppError> {
             genpdf::style::Style::new().bold().with_font_size(font_size),
         ));
         doc.push(para);
-        doc.push(genpdf::elements::Paragraph::new(genpdf::style::StyledString::new(
-            " ",
-            genpdf::style::Style::new().with_font_size(6),
-        )));
+        doc.push(genpdf::elements::Paragraph::new(
+            genpdf::style::StyledString::new(" ", genpdf::style::Style::new().with_font_size(6)),
+        ));
     }
     let mut out = Vec::new();
-    doc.render(&mut out)
-        .map_err(|e| {
-            tracing::warn!(error = %e, "pdf render failed");
-            AppError::Internal
-        })?;
+    doc.render(&mut out).map_err(|e| {
+        tracing::warn!(error = %e, "pdf render failed");
+        AppError::Internal
+    })?;
     Ok(Some(out))
 }
 
@@ -278,11 +272,10 @@ pub fn classify_attachment(name: &str, bytes: &[u8]) -> AttKind {
 
 /// 图片重编码为 PNG（预览用统一格式）。
 pub fn image_to_png(bytes: &[u8]) -> Result<Option<Vec<u8>>, AppError> {
-    let img = image::load_from_memory(bytes)
-        .map_err(|e| {
-            tracing::warn!(error = %e, "image decode failed");
-            AppError::BadRequest("attachment is not a decodable image".to_string())
-        })?;
+    let img = image::load_from_memory(bytes).map_err(|e| {
+        tracing::warn!(error = %e, "image decode failed");
+        AppError::BadRequest("attachment is not a decodable image".to_string())
+    })?;
     let mut out = Vec::new();
     img.write_to(&mut Cursor::new(&mut out), image::ImageFormat::Png)
         .map_err(|_| AppError::Internal)?;
@@ -299,11 +292,10 @@ pub fn html_to_image_bytes(html: &str) -> Result<Option<Vec<u8>>, AppError> {
     // ttc 集合取第 0 面；ttf 直取
     let font = match ab_glyph::FontRef::try_from_slice(&font_bytes) {
         Ok(f) => f,
-        Err(_) => ab_glyph::FontRef::try_from_slice_and_index(&font_bytes, 0)
-            .map_err(|e| {
-                tracing::warn!(error = %e, "font parse failed");
-                AppError::Internal
-            })?,
+        Err(_) => ab_glyph::FontRef::try_from_slice_and_index(&font_bytes, 0).map_err(|e| {
+            tracing::warn!(error = %e, "font parse failed");
+            AppError::Internal
+        })?,
     };
     const WIDTH: u32 = 1240; // A4@150dpi
     let blocks = html_blocks(html);
@@ -311,7 +303,10 @@ pub fn html_to_image_bytes(html: &str) -> Result<Option<Vec<u8>>, AppError> {
         return Ok(None);
     }
     // 先排版算行高，再开画布
-    struct Line { size: f32, text: String }
+    struct Line {
+        size: f32,
+        text: String,
+    }
     let mut lines: Vec<Line> = Vec::new();
     for (style, text) in &blocks {
         let size = match style {
@@ -330,7 +325,10 @@ pub fn html_to_image_bytes(html: &str) -> Result<Option<Vec<u8>>, AppError> {
         for ch in text.chars() {
             let advance = scaled.h_advance(scaled.glyph_id(ch));
             if width_px + advance > (WIDTH - 80) as f32 && !line.is_empty() {
-                lines.push(Line { size, text: std::mem::take(&mut line) });
+                lines.push(Line {
+                    size,
+                    text: std::mem::take(&mut line),
+                });
                 width_px = 0.0;
             }
             line.push(ch);
@@ -400,9 +398,8 @@ pub fn image_to_pdf_bytes(bytes: &[u8]) -> Result<Option<Vec<u8>>, AppError> {
         image::DynamicImage::ImageRgb8(rgb)
     };
     // bold/italic/合成体统一复用 regular 字形（简化排版无字重变化）
-    let mk_font = || {
-        genpdf::fonts::FontData::new(font_bytes.clone(), None).map_err(|_| AppError::Internal)
-    };
+    let mk_font =
+        || genpdf::fonts::FontData::new(font_bytes.clone(), None).map_err(|_| AppError::Internal);
     let family = genpdf::fonts::FontFamily {
         regular: mk_font()?,
         bold: mk_font()?,
@@ -429,9 +426,15 @@ mod tests {
     fn cfb_container_round_trips() {
         let bytes = html_to_word_binary("<p>hello 你好</p>").unwrap();
         assert!(bytes.len() > 512, "CFB sector-aligned container");
-        assert_eq!(&bytes[..8], b"\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1", "OLE2 magic");
+        assert_eq!(
+            &bytes[..8],
+            b"\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1",
+            "OLE2 magic"
+        );
         // 可读回
-        let mut compound = cfb::OpenOptions::new().open_with(Cursor::new(&bytes)).unwrap();
+        let mut compound = cfb::OpenOptions::new()
+            .open_with(Cursor::new(&bytes))
+            .unwrap();
         let mut back = Vec::new();
         use std::io::Read;
         compound
@@ -439,7 +442,10 @@ mod tests {
             .unwrap()
             .read_to_end(&mut back)
             .unwrap();
-        assert_eq!(String::from_utf8(back).unwrap(), "<html><head></head><body><p>hello 你好</p></body></html>");
+        assert_eq!(
+            String::from_utf8(back).unwrap(),
+            "<html><head></head><body><p>hello 你好</p></body></html>"
+        );
     }
 
     #[test]
@@ -457,7 +463,10 @@ mod tests {
     fn classify_by_magic_not_extension() {
         let mut fake = b"%.PNG not really".to_vec();
         fake.extend_from_slice(&[0u8; 32]);
-        assert!(matches!(classify_attachment("a.png", &fake), AttKind::Other));
+        assert!(matches!(
+            classify_attachment("a.png", &fake),
+            AttKind::Other
+        ));
         let pdf = b"%PDF-1.7 fake".to_vec();
         assert!(matches!(classify_attachment("a.txt", &pdf), AttKind::Pdf));
     }

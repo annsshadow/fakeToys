@@ -565,9 +565,7 @@ pub async fn agent_flag_execute(
 }
 
 #[allow(non_snake_case)]
-pub async fn agent_flag_file(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn agent_flag_file(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -2015,9 +2013,7 @@ pub async fn collect_code_mobile_mobile(
 }
 
 #[allow(non_snake_case)]
-pub async fn collect_connect(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_connect(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -2220,9 +2216,7 @@ pub async fn collect_disconnect(
 }
 
 #[allow(non_snake_case)]
-pub async fn collect_login(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_login(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -2426,9 +2420,7 @@ pub async fn collect_name_name_mobile_mobile_code_code(
 }
 
 #[allow(non_snake_case)]
-pub async fn collect_person(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_person(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -3052,9 +3044,7 @@ pub async fn config_change_password(
 }
 
 #[allow(non_snake_case)]
-pub async fn config_collect(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_collect(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -3100,9 +3090,7 @@ pub async fn config_collect(
 }
 
 #[allow(non_snake_case)]
-pub async fn config_license(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_license(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -3416,9 +3404,7 @@ pub async fn config_list_entity(
 }
 
 #[allow(non_snake_case)]
-pub async fn config_open(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_open(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -3512,9 +3498,7 @@ pub async fn config_open_run_time_config(
 }
 
 #[allow(non_snake_case)]
-pub async fn config_person(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_person(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -3560,9 +3544,7 @@ pub async fn config_person(
 }
 
 #[allow(non_snake_case)]
-pub async fn config_portal(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_portal(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -3608,9 +3590,7 @@ pub async fn config_portal(
 }
 
 #[allow(non_snake_case)]
-pub async fn config_proxy(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_proxy(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -6355,9 +6335,7 @@ pub async fn module_list_category(
 }
 
 #[allow(non_snake_case)]
-pub async fn module_output(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn module_output(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -6632,9 +6610,7 @@ pub async fn module_id_compare(
 }
 
 #[allow(non_snake_case)]
-pub async fn mpweixin_check(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn mpweixin_check(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(

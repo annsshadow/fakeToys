@@ -68,12 +68,18 @@ mod u2_tests {
     ) -> (StatusCode, serde_json::Value) {
         respond_inner(method, uri, headers, body, true).await
     }
-
+
     // upload/with/url 已从「把 URL 字符串当内容入库」的假实现改为真拉取
     // （shared::netguard SSRF 防护）。契约：缺 url 400；私网目标在发起请求前被拒 400。
     #[tokio::test]
     async fn u2_upload_with_url_requires_url() {
-        let (status, _) = respond_auth("POST", "/api/file/assemble/control/file/upload/with/url", JSON, Body::from("{}")).await;
+        let (status, _) = respond_auth(
+            "POST",
+            "/api/file/assemble/control/file/upload/with/url",
+            JSON,
+            Body::from("{}"),
+        )
+        .await;
         assert_eq!(status, StatusCode::BAD_REQUEST);
     }
 
@@ -88,7 +94,6 @@ mod u2_tests {
         .await;
         assert_eq!(status, StatusCode::BAD_REQUEST);
     }
-
 
     fn multipart_body(filename: &str) -> Body {
         Body::from(format!(
@@ -148,7 +153,10 @@ mod u2_tests {
             .await
             .unwrap();
         let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap_or_default();
-        assert_eq!(json["type"], "error", "handler 404 must carry error envelope");
+        assert_eq!(
+            json["type"], "error",
+            "handler 404 must carry error envelope"
+        );
     }
 
     // ── zip 打包真实现：happy path 必须产出可解压的有效 zip ─────────────────

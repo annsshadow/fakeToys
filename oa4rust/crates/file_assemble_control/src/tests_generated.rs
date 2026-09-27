@@ -116,7 +116,9 @@ mod tests {
             .await
             .unwrap();
         let __st = response.status();
-        let __body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        let __body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
         assert!(
             __st != StatusCode::NOT_FOUND || !__body.is_empty(),
             "anonymous_file_id_download route should be registered (handler 返回体表明已路由; 空体 404 才是未注册)"
@@ -248,7 +250,9 @@ mod tests {
             .await
             .unwrap();
         let __st = response.status();
-        let __body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        let __body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
         assert!(
             __st != StatusCode::NOT_FOUND || !__body.is_empty(),
             "attachment_id_download route should be registered (handler 返回体表明已路由; 空体 404 才是未注册)"
@@ -463,7 +467,9 @@ mod tests {
             .await
             .unwrap();
         let __st = response.status();
-        let __body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        let __body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
         assert!(
             __st != StatusCode::NOT_FOUND || !__body.is_empty(),
             "attachment2_id_download route should be registered (handler 返回体表明已路由; 空体 404 才是未注册)"
@@ -485,7 +491,9 @@ mod tests {
             .await
             .unwrap();
         let __st = response.status();
-        let __body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        let __body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
         assert!(
             __st != StatusCode::NOT_FOUND || !__body.is_empty(),
             "attachment2_id_download_image_width_width_height_height route should be registered (handler 返回体表明已路由; 空体 404 才是未注册)"
@@ -507,7 +515,9 @@ mod tests {
             .await
             .unwrap();
         let __st = response.status();
-        let __body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        let __body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
         assert!(
             __st != StatusCode::NOT_FOUND || !__body.is_empty(),
             "attachment2_id_download_stream route should be registered (handler 返回体表明已路由; 空体 404 才是未注册)"
@@ -1041,7 +1051,9 @@ mod tests {
             .await
             .unwrap();
         let __st = response.status();
-        let __body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        let __body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
         assert!(
             __st != StatusCode::NOT_FOUND || !__body.is_empty(),
             "share_download_share_shareId_file_fileId route should be registered (handler 返回体表明已路由; 空体 404 才是未注册)"

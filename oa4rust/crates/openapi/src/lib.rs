@@ -390,7 +390,8 @@ async fn ai_assemble_control_c2cd06_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn ai_assemble_control_chat_list_paging_page_size_size_chat_list_paging_page_size_size_get() {}
+async fn ai_assemble_control_chat_list_paging_page_size_size_chat_list_paging_page_size_size_get() {
+}
 #[utoipa::path(get,
     path = "/api/ai_assemble_control/config/base/config",
     tag = "ai",
@@ -508,7 +509,9 @@ async fn ai_assemble_control_config_list_enable_model_config_list_enable_model_g
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn ai_assemble_control_config_list_mcp_paging_page_size_size_config_list_mcp_paging_page_size_size_get() {}
+async fn ai_assemble_control_config_list_mcp_paging_page_size_size_config_list_mcp_paging_page_size_size_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/ai_assemble_control/config/list/model/paging/{page}/size/{size}",
     tag = "ai",
@@ -740,7 +743,9 @@ async fn ai_assemble_control_ai_assemble_control_config_create_mcp_config_create
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn ai_assemble_control_ai_assemble_control_config_delete_mcp_id_config_delete_mcp_flag_post() {}
+async fn ai_assemble_control_ai_assemble_control_config_delete_mcp_id_config_delete_mcp_flag_post()
+{
+}
 #[utoipa::path(post,
     path = "/api/ai/assemble/control/config/update/mcp/{id}",
     tag = "ai",
@@ -754,7 +759,9 @@ async fn ai_assemble_control_ai_assemble_control_config_delete_mcp_id_config_del
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn ai_assemble_control_ai_assemble_control_config_update_mcp_id_config_update_mcp_flag_post() {}
+async fn ai_assemble_control_ai_assemble_control_config_update_mcp_id_config_update_mcp_flag_post()
+{
+}
 #[utoipa::path(post,
     path = "/api/ai_assemble_control/chat/completion",
     tag = "ai",
@@ -888,7 +895,9 @@ async fn ai_assemble_control_file_list_file_list_with_ids_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn ai_assemble_control_file_list_paging_page_size_size_file_list_paging_page_size_size_post() {}
+async fn ai_assemble_control_file_list_paging_page_size_size_file_list_paging_page_size_size_post()
+{
+}
 #[utoipa::path(post,
     path = "/api/ai_assemble_control/file/upload",
     tag = "ai",
@@ -915,7 +924,9 @@ async fn ai_assemble_control_file_upload_file_upload_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn ai_assemble_control_index_list_paging_page_size_size_index_list_paging_page_size_size_post() {}
+async fn ai_assemble_control_index_list_paging_page_size_size_index_list_paging_page_size_size_post(
+) {
+}
 #[utoipa::path(put,
     path = "/api/ai/assemble/control/ann/save/{id}",
     tag = "ai",
@@ -1243,7 +1254,9 @@ async fn attendance_assemble_control_75b847_delete() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_dingding_all_dingding_delete_all_delete() {}
+async fn attendance_assemble_control_attendance_assemble_control_dingding_all_dingding_delete_all_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/attendance/assemble/control/qywx/all",
     tag = "attendance",
@@ -1254,7 +1267,8 @@ async fn attendance_assemble_control_attendance_assemble_control_dingding_all_di
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_qywx_all_qywx_delete_all_delete() {}
+async fn attendance_assemble_control_attendance_assemble_control_qywx_all_qywx_delete_all_delete() {
+}
 #[utoipa::path(delete,
     path = "/api/attendance/assemble/control/rule/{id}",
     tag = "attendance",
@@ -1268,7 +1282,9 @@ async fn attendance_assemble_control_attendance_assemble_control_qywx_all_qywx_d
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_rule_id_delete_control_rule_delete() {}
+async fn attendance_assemble_control_attendance_assemble_control_rule_id_delete_control_rule_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/attendance/assemble/control/selfholidaysimple/docId/{docId}",
     tag = "attendance",
@@ -1296,7 +1312,9 @@ async fn attendance_assemble_control_50fb5a_delete() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_v2_workplace_id_v2_workplace_delete_delete() {}
+async fn attendance_assemble_control_attendance_assemble_control_v2_workplace_id_v2_workplace_delete_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/attendance/assemble/control/workplace/{id}",
     tag = "attendance",
@@ -1310,7 +1328,9 @@ async fn attendance_assemble_control_attendance_assemble_control_v2_workplace_id
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_workplace_id_workplace_delete_delete() {}
+async fn attendance_assemble_control_attendance_assemble_control_workplace_id_workplace_delete_delete(
+) {
+}
 #[utoipa::path(get,
     path = "/api/attendance/assemble/control/attendanceadmin/list/all",
     tag = "attendance",
@@ -1335,7 +1355,9 @@ async fn attendance_assemble_control_e1dac3_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_attendanceadmin_id_attendanceadmin_id_get() {}
+async fn attendance_assemble_control_attendance_assemble_control_attendanceadmin_id_attendanceadmin_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/attendance/assemble/control/attendanceappealInfo/archive/{id}",
     tag = "attendance",
@@ -1630,7 +1652,9 @@ async fn attendance_assemble_control_2fd6b4_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_attendancedetail_id_attendancedetail_id_get() {}
+async fn attendance_assemble_control_attendance_assemble_control_attendancedetail_id_attendancedetail_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/attendance/assemble/control/attendanceemployeeconfig/list/all",
     tag = "attendance",
@@ -1985,7 +2009,9 @@ async fn attendance_assemble_control_ef42e9_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_dingding_sync_list_dingding_sync_list_get() {}
+async fn attendance_assemble_control_attendance_assemble_control_dingding_sync_list_dingding_sync_list_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/attendance/assemble/control/dingdingstatistic/person/unit/{unit}/{year}/{month}",
     tag = "attendance",
@@ -2090,7 +2116,9 @@ async fn attendance_assemble_control_1eb979_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_qywx_sync_list_qywx_sync_list_get() {}
+async fn attendance_assemble_control_attendance_assemble_control_qywx_sync_list_qywx_sync_list_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/attendance/assemble/control/qywxstatistic/person/unit/{unit}/{year}/{month}",
     tag = "attendance",
@@ -2149,7 +2177,9 @@ async fn attendance_assemble_control_872971_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_rule_list_list_control_rules_get() {}
+async fn attendance_assemble_control_attendance_assemble_control_rule_list_list_control_rules_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/attendance/assemble/control/selfholidaysimple/docId/{docId}",
     tag = "attendance",
@@ -2185,7 +2215,9 @@ async fn attendance_assemble_control_attendance_assemble_control_statistic_do_st
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_statistics_list_list_statistics_get() {}
+async fn attendance_assemble_control_attendance_assemble_control_statistics_list_list_statistics_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/attendance/assemble/control/statisticshow/filter/personMonth/list/{id}/next/{count}",
     tag = "attendance",
@@ -2614,7 +2646,9 @@ async fn attendance_assemble_control_attendance_assemble_control_v2_config_v2_co
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_v2_config_person_v2_config_person_get_get() {}
+async fn attendance_assemble_control_attendance_assemble_control_v2_config_person_v2_config_person_get_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/attendance/assemble/control/v2/detail/rebuild/person/{person}/date/{date}",
     tag = "attendance",
@@ -2701,7 +2735,9 @@ async fn attendance_assemble_control_attendance_assemble_control_v2_group_id_v2_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_v2_group_id_delete_v2_group_delete_get() {}
+async fn attendance_assemble_control_attendance_assemble_control_v2_group_id_delete_v2_group_delete_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/attendance/assemble/control/v2/group/{id}/refresh/participate",
     tag = "attendance",
@@ -2758,7 +2794,9 @@ async fn attendance_assemble_control_7b5f95_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_v2_leave_delete_id_v2_leave_delete_get() {}
+async fn attendance_assemble_control_attendance_assemble_control_v2_leave_delete_id_v2_leave_delete_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/attendance/assemble/control/v2/leave/import/result/flag/{flag}",
     tag = "attendance",
@@ -2783,7 +2821,9 @@ async fn attendance_assemble_control_c4eddd_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_v2_leave_template_v2_leave_template_get() {}
+async fn attendance_assemble_control_attendance_assemble_control_v2_leave_template_v2_leave_template_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/attendance/assemble/control/v2/mobile/check/pre",
     tag = "attendance",
@@ -2794,7 +2834,9 @@ async fn attendance_assemble_control_attendance_assemble_control_v2_leave_templa
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_v2_mobile_check_pre_v2_mobile_pre_check_get() {}
+async fn attendance_assemble_control_attendance_assemble_control_v2_mobile_check_pre_v2_mobile_pre_check_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/attendance/assemble/control/v2/my/controls",
     tag = "attendance",
@@ -2805,7 +2847,9 @@ async fn attendance_assemble_control_attendance_assemble_control_v2_mobile_check
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_v2_my_controls_v2_my_controls_get() {}
+async fn attendance_assemble_control_attendance_assemble_control_v2_my_controls_v2_my_controls_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/attendance/assemble/control/v2/my/version",
     tag = "attendance",
@@ -2816,7 +2860,8 @@ async fn attendance_assemble_control_attendance_assemble_control_v2_my_controls_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_v2_my_version_v2_my_version_get() {}
+async fn attendance_assemble_control_attendance_assemble_control_v2_my_version_v2_my_version_get() {
+}
 #[utoipa::path(get,
     path = "/api/attendance/assemble/control/v2/record/delete/people/{people}/date/{date}",
     tag = "attendance",
@@ -2842,7 +2887,9 @@ async fn attendance_assemble_control_f78568_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_v2_record_template_v2_record_template_get() {}
+async fn attendance_assemble_control_attendance_assemble_control_v2_record_template_v2_record_template_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/attendance/assemble/control/v2/record/{id}",
     tag = "attendance",
@@ -2870,7 +2917,9 @@ async fn attendance_assemble_control_attendance_assemble_control_v2_record_id_v2
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_v2_shift_delete_id_v2_shift_delete_get() {}
+async fn attendance_assemble_control_attendance_assemble_control_v2_shift_delete_id_v2_shift_delete_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/attendance/assemble/control/v2/shift/{id}",
     tag = "attendance",
@@ -2906,7 +2955,9 @@ async fn attendance_assemble_control_e311a5_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_workplace_list_all_workplace_list_all_get() {}
+async fn attendance_assemble_control_attendance_assemble_control_workplace_list_all_workplace_list_all_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/attendance/assemble/control/workplace/{id}",
     tag = "attendance",
@@ -2931,7 +2982,9 @@ async fn attendance_assemble_control_attendance_assemble_control_workplace_id_wo
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_attendanceadmin_attendanceadmin_create_post() {}
+async fn attendance_assemble_control_attendance_assemble_control_attendanceadmin_attendanceadmin_create_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/attendance/assemble/control/attendanceappealInfo/appeal/{id}",
     tag = "attendance",
@@ -3262,7 +3315,9 @@ async fn attendance_assemble_control_a019e5_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_rule_create_create_control_rule_post() {}
+async fn attendance_assemble_control_attendance_assemble_control_rule_create_create_control_rule_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/attendance/assemble/control/rule/{id}/toggle",
     tag = "attendance",
@@ -3276,7 +3331,9 @@ async fn attendance_assemble_control_attendance_assemble_control_rule_create_cre
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_rule_id_toggle_toggle_control_rule_post() {}
+async fn attendance_assemble_control_attendance_assemble_control_rule_id_toggle_toggle_control_rule_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/attendance/assemble/control/selfholidaysimple",
     tag = "attendance",
@@ -3378,7 +3435,9 @@ async fn attendance_assemble_control_attendance_assemble_control_v2_config_v2_co
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_v2_config_person_v2_config_person_post_post() {}
+async fn attendance_assemble_control_attendance_assemble_control_v2_config_person_v2_config_person_post_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/attendance/assemble/control/v2/detail/list/{page}/size/{size}",
     tag = "attendance",
@@ -3452,7 +3511,9 @@ async fn attendance_assemble_control_ee1384_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_v2_groupschedule_v2_groupschedule_post_post() {}
+async fn attendance_assemble_control_attendance_assemble_control_v2_groupschedule_v2_groupschedule_post_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/attendance/assemble/control/v2/groupschedule/list/filter",
     tag = "attendance",
@@ -3485,7 +3546,9 @@ async fn attendance_assemble_control_attendance_assemble_control_v2_leave_v2_lea
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_v2_leave_import_v2_leave_import_post() {}
+async fn attendance_assemble_control_attendance_assemble_control_v2_leave_import_v2_leave_import_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/attendance/assemble/control/v2/leave/list/{page}/size/{size}",
     tag = "attendance",
@@ -3511,7 +3574,9 @@ async fn attendance_assemble_control_fc3130_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_v2_mobile_check_v2_mobile_check_post() {}
+async fn attendance_assemble_control_attendance_assemble_control_v2_mobile_check_v2_mobile_check_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/attendance/assemble/control/v2/mobile/check/ from/out",
     tag = "attendance",
@@ -3544,7 +3609,9 @@ async fn attendance_assemble_control_146baa_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_v2_my_detail_list_v2_my_detail_list_post() {}
+async fn attendance_assemble_control_attendance_assemble_control_v2_my_detail_list_v2_my_detail_list_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/attendance/assemble/control/v2/my/rest/date/check",
     tag = "attendance",
@@ -3566,7 +3633,9 @@ async fn attendance_assemble_control_e6ffc8_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_v2_my_statistic_v2_my_statistic_post() {}
+async fn attendance_assemble_control_attendance_assemble_control_v2_my_statistic_v2_my_statistic_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/attendance/assemble/control/v2/record/import",
     tag = "attendance",
@@ -3577,7 +3646,9 @@ async fn attendance_assemble_control_attendance_assemble_control_v2_my_statistic
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_v2_record_import_v2_record_import_post() {}
+async fn attendance_assemble_control_attendance_assemble_control_v2_record_import_v2_record_import_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/attendance/assemble/control/v2/record/import/daily",
     tag = "attendance",
@@ -3614,7 +3685,9 @@ async fn attendance_assemble_control_aa2363_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_v2_shift_create_v2_shift_create_post() {}
+async fn attendance_assemble_control_attendance_assemble_control_v2_shift_create_v2_shift_create_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/attendance/assemble/control/v2/shift/list/{page}/size/{size}",
     tag = "attendance",
@@ -3640,7 +3713,9 @@ async fn attendance_assemble_control_f58b2a_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_v2_shift_update_v2_shift_update_post() {}
+async fn attendance_assemble_control_attendance_assemble_control_v2_shift_update_v2_shift_update_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/attendance/assemble/control/v2/workplace",
     tag = "attendance",
@@ -3651,7 +3726,9 @@ async fn attendance_assemble_control_attendance_assemble_control_v2_shift_update
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_v2_workplace_v2_workplace_post_post() {}
+async fn attendance_assemble_control_attendance_assemble_control_v2_workplace_v2_workplace_post_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/attendance/assemble/control/v2/workplace/list/ids",
     tag = "attendance",
@@ -3673,7 +3750,8 @@ async fn attendance_assemble_control_804148_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_workplace_workplace_create_post() {}
+async fn attendance_assemble_control_attendance_assemble_control_workplace_workplace_create_post() {
+}
 #[utoipa::path(put,
     path = "/api/attendance/assemble/control/attendanceappealInfo/appeal/{id}",
     tag = "attendance",
@@ -3975,7 +4053,9 @@ async fn attendance_assemble_control_edbea7_put() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn attendance_assemble_control_attendance_assemble_control_rule_id_toggle_toggle_control_rule_put() {}
+async fn attendance_assemble_control_attendance_assemble_control_rule_id_toggle_toggle_control_rule_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/attendance/assemble/control/statisticshow/filter/personMonth/list/{id}/next/{count}",
     tag = "attendance",
@@ -4940,7 +5020,9 @@ async fn bbs_assemble_control_bbs_assemble_control_subject_statgrade_subject_sta
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn bbs_assemble_control_bbs_assemble_control_topic_list_forum_forumid_list_topics_by_forum_get() {}
+async fn bbs_assemble_control_bbs_assemble_control_topic_list_forum_forumid_list_topics_by_forum_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/bbs/assemble/control/user/info",
     tag = "bbs",
@@ -5072,7 +5154,9 @@ async fn bbs_assemble_control_859489_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn bbs_assemble_control_bbs_assemble_control_update_control_config_update_control_config_post() {}
+async fn bbs_assemble_control_bbs_assemble_control_update_control_config_update_control_config_post(
+) {
+}
 #[utoipa::path(put,
     path = "/api/bbs/assemble/control/section/save/{id}",
     tag = "bbs",
@@ -5097,7 +5181,9 @@ async fn bbs_assemble_control_bbs_assemble_control_section_save_id_section_updat
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn bbs_assemble_control_bbs_assemble_control_update_control_config_update_control_config_put() {}
+async fn bbs_assemble_control_bbs_assemble_control_update_control_config_update_control_config_put()
+{
+}
 #[utoipa::path(delete,
     path = "/api/bbs/core/entity/forum/{id}",
     tag = "bbs",
@@ -5419,7 +5505,9 @@ async fn calendar_event_update_event_update_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn calendar_assemble_control_calendar_assemble_control_calendar_detail_id_get_calendar_detail_get() {}
+async fn calendar_assemble_control_calendar_assemble_control_calendar_detail_id_get_calendar_detail_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/calendar_assemble_control/get/control/config",
     tag = "calendar",
@@ -5474,7 +5562,8 @@ async fn calendar_core_entity_calendar_core_entity_calendar_list_my_calendar_lis
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn calendar_core_entity_calendar_core_entity_calendar_list_public_calendar_list_public_get() {}
+async fn calendar_core_entity_calendar_core_entity_calendar_list_public_calendar_list_public_get() {
+}
 #[utoipa::path(get,
     path = "/api/calendar/core/entity/calendar/{id}",
     tag = "calendar",
@@ -5502,7 +5591,9 @@ async fn calendar_core_entity_calendar_core_entity_calendar_id_calendar_get_get(
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn calendar_core_entity_calendar_core_entity_event_list_calendarid_event_list_by_calendar_get() {}
+async fn calendar_core_entity_calendar_core_entity_event_list_calendarid_event_list_by_calendar_get(
+) {
+}
 #[utoipa::path(post,
     path = "/api/calendar/core/entity/calendar/create",
     tag = "calendar",
@@ -5610,7 +5701,9 @@ async fn cms_assemble_control_appinfo_id_appinfo_u2_delete_delete() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_categoryinfo_erase_category_id_categoryinfo_erase_category_id_delete() {}
+async fn cms_assemble_control_categoryinfo_erase_category_id_categoryinfo_erase_category_id_delete()
+{
+}
 #[utoipa::path(delete,
     path = "/api/categoryinfo/{id}",
     tag = "cms",
@@ -5739,7 +5832,9 @@ async fn cms_assemble_control_data_document_id_path0_data_document_id_path0_dele
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_data_document_id_path0_path1_data_document_id_path0_path1_delete_delete() {}
+async fn cms_assemble_control_data_document_id_path0_path1_data_document_id_path0_path1_delete_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/data/document/{id}/{path0}/{path1}/{path2}",
     tag = "cms",
@@ -6251,7 +6346,9 @@ async fn cms_assemble_control_d96dcc_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_anonymous_fileinfo_id_document_documentid_fileinfo_id_document_documentId_get() {}
+async fn cms_assemble_control_anonymous_fileinfo_id_document_documentid_fileinfo_id_document_documentId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/anonymous/form/v2/lookup/document/{docId}",
     tag = "cms",
@@ -6563,7 +6660,9 @@ async fn cms_assemble_control_appinfo_alias_alias_appinfo_alias_alias_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_appinfo_erase_app_id_mockdeletetoget_appinfo_erase_app_id_mockdeletetoget_get() {}
+async fn cms_assemble_control_appinfo_erase_app_id_mockdeletetoget_appinfo_erase_app_id_mockdeletetoget_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/appinfo/flag",
     tag = "cms",
@@ -6643,7 +6742,9 @@ async fn cms_assemble_control_appinfo_list_has_document_appinfo_list_has_documen
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_appinfo_list_has_document_app_type_appinfo_list_has_document_appType_get() {}
+async fn cms_assemble_control_appinfo_list_has_document_app_type_appinfo_list_has_document_appType_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/appinfo/list/has/document/type/{appType}",
     tag = "cms",
@@ -6682,7 +6783,9 @@ async fn cms_assemble_control_appinfo_list_manage_appinfo_list_manage_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_appinfo_list_manage_type_apptype_appinfo_list_manage_type_appType_get() {}
+async fn cms_assemble_control_appinfo_list_manage_type_apptype_appinfo_list_manage_type_appType_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/appinfo/list/user/publish",
     tag = "cms",
@@ -6913,7 +7016,9 @@ async fn cms_assemble_control_categoryinfo_list_all_categoryinfo_list_all_get() 
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_categoryinfo_list_manage_app_appid_categoryinfo_list_manage_app_appId_get() {}
+async fn cms_assemble_control_categoryinfo_list_manage_app_appid_categoryinfo_list_manage_app_appId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/categoryinfo/list/publish/app/{appId}",
     tag = "cms",
@@ -6927,7 +7032,9 @@ async fn cms_assemble_control_categoryinfo_list_manage_app_appid_categoryinfo_li
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_categoryinfo_list_publish_app_appid_categoryinfo_list_publish_app_appId_get() {}
+async fn cms_assemble_control_categoryinfo_list_publish_app_appid_categoryinfo_list_publish_app_appId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/categoryinfo/list/view/app/{appId}",
     tag = "cms",
@@ -6941,7 +7048,9 @@ async fn cms_assemble_control_categoryinfo_list_publish_app_appid_categoryinfo_l
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_categoryinfo_list_view_app_appid_categoryinfo_list_view_app_appId_get() {}
+async fn cms_assemble_control_categoryinfo_list_view_app_appid_categoryinfo_list_view_app_appId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/categoryinfo/list/view/app/{appId}/all",
     tag = "cms",
@@ -6955,7 +7064,9 @@ async fn cms_assemble_control_categoryinfo_list_view_app_appid_categoryinfo_list
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_categoryinfo_list_view_app_appid_all_categoryinfo_list_view_app_appId_all_get() {}
+async fn cms_assemble_control_categoryinfo_list_view_app_appid_all_categoryinfo_list_view_app_appId_all_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/categoryinfo/list/view/app/{appId}/data",
     tag = "cms",
@@ -6969,7 +7080,9 @@ async fn cms_assemble_control_categoryinfo_list_view_app_appid_all_categoryinfo_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_categoryinfo_list_view_app_appid_data_categoryinfo_list_view_app_appId_data_get() {}
+async fn cms_assemble_control_categoryinfo_list_view_app_appid_data_categoryinfo_list_view_app_appId_data_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/categoryinfo/{id}",
     tag = "cms",
@@ -7011,7 +7124,9 @@ async fn cms_assemble_control_categoryinfo_id_control_categoryinfo_id_control_ge
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_categoryinfo_id_mockdeletetoget_categoryinfo_id_mockdeletetoget_get() {}
+async fn cms_assemble_control_categoryinfo_id_mockdeletetoget_categoryinfo_id_mockdeletetoget_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/cms/assemble/control/dict/list",
     tag = "cms",
@@ -7226,7 +7341,9 @@ async fn cms_assemble_control_correlation_list_doc_docid_correlation_list_doc_do
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_correlation_list_doc_docid_site_site_correlation_list_doc_docId_site_site_get() {}
+async fn cms_assemble_control_correlation_list_doc_docid_site_site_correlation_list_doc_docId_site_site_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/data/document/{id}",
     tag = "cms",
@@ -7254,7 +7371,9 @@ async fn cms_assemble_control_data_document_id_data_document_id_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_data_document_id_mockdeletetoget_data_document_id_mockdeletetoget_get() {}
+async fn cms_assemble_control_data_document_id_mockdeletetoget_data_document_id_mockdeletetoget_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/data/document/{id}/{path0}",
     tag = "cms",
@@ -7333,7 +7452,9 @@ async fn cms_assemble_control_61e94d_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_data_document_id_path0_path1_path2_data_document_id_path0_path1_path2_get() {}
+async fn cms_assemble_control_data_document_id_path0_path1_path2_data_document_id_path0_path1_path2_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/data/document/{id}/{path0}/{path1}/{path2}/mockdeletetoget",
     tag = "cms",
@@ -7564,7 +7685,9 @@ async fn cms_assemble_control_b693ca_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_design_appdict_list_app_info_appid_design_appdict_list_appInfo_appId_get() {}
+async fn cms_assemble_control_design_appdict_list_app_info_appid_design_appdict_list_appInfo_appId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/design/appdict/{id}",
     tag = "cms",
@@ -7592,7 +7715,9 @@ async fn cms_assemble_control_design_appdict_id_design_appdict_id_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_design_appdict_id_mockdeletetoget_design_appdict_id_mockdeletetoget_get() {}
+async fn cms_assemble_control_design_appdict_id_mockdeletetoget_design_appdict_id_mockdeletetoget_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/document/achive/{id}",
     tag = "cms",
@@ -7631,7 +7756,9 @@ async fn cms_assemble_control_document_batch_status_document_batch_status_u3_get
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_document_batch_id_mockdeletetoget_document_batch_delete_mock_u3_get() {}
+async fn cms_assemble_control_document_batch_id_mockdeletetoget_document_batch_delete_mock_u3_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/document/batch/{id}/status",
     tag = "cms",
@@ -7953,7 +8080,9 @@ async fn cms_assemble_control_6a8afc_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_file_flag_app_info_appinfoflag_download_file_download_with_app_u3_get() {}
+async fn cms_assemble_control_file_flag_app_info_appinfoflag_download_file_download_with_app_u3_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/file/{id}",
     tag = "cms",
@@ -8052,7 +8181,9 @@ async fn cms_assemble_control_fileinfo_download_document_id_fileinfo_download_do
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_fileinfo_download_document_id_stream_fileinfo_download_document_id_stream_get() {}
+async fn cms_assemble_control_fileinfo_download_document_id_stream_fileinfo_download_document_id_stream_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/fileinfo/download/transfer/flag/{flag}",
     tag = "cms",
@@ -8066,7 +8197,9 @@ async fn cms_assemble_control_fileinfo_download_document_id_stream_fileinfo_down
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_fileinfo_download_transfer_flag_flag_fileinfo_download_transfer_flag_flag_get() {}
+async fn cms_assemble_control_fileinfo_download_transfer_flag_flag_fileinfo_download_transfer_flag_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/fileinfo/list/all",
     tag = "cms",
@@ -8091,7 +8224,9 @@ async fn cms_assemble_control_fileinfo_list_all_fileinfo_list_all_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_fileinfo_list_document_documentid_fileinfo_list_document_documentId_get() {}
+async fn cms_assemble_control_fileinfo_list_document_documentid_fileinfo_list_document_documentId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/fileinfo/{id}",
     tag = "cms",
@@ -8232,7 +8367,9 @@ async fn cms_assemble_control_form_list_app_appid_form_list_app_appId_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_form_list_formfield_app_info_appid_form_list_formfield_appInfo_appId_get() {}
+async fn cms_assemble_control_form_list_formfield_app_info_appid_form_list_formfield_appInfo_appId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/form/list/{id}/formfield",
     tag = "cms",
@@ -8274,7 +8411,9 @@ async fn cms_assemble_control_form_v2_lookup_document_docid_form_v2_lookup_docum
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_form_v2_lookup_document_docid_mobile_form_v2_lookup_document_docId_mobile_get() {}
+async fn cms_assemble_control_form_v2_lookup_document_docid_mobile_form_v2_lookup_document_docId_mobile_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/form/v2/{id}",
     tag = "cms",
@@ -8493,7 +8632,9 @@ async fn cms_assemble_control_output_list_output_list_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_permission_app_info_id_manageable_permission_appInfo_id_manageable_get() {}
+async fn cms_assemble_control_permission_app_info_id_manageable_permission_appInfo_id_manageable_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/permission/appInfo/{id}/managers",
     tag = "cms",
@@ -8507,7 +8648,8 @@ async fn cms_assemble_control_permission_app_info_id_manageable_permission_appIn
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_permission_app_info_id_managers_permission_appInfo_id_managers_get() {}
+async fn cms_assemble_control_permission_app_info_id_managers_permission_appInfo_id_managers_get() {
+}
 #[utoipa::path(get,
     path = "/api/permission/appInfo/{id}/publishers",
     tag = "cms",
@@ -8521,7 +8663,9 @@ async fn cms_assemble_control_permission_app_info_id_managers_permission_appInfo
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_permission_app_info_id_publishers_permission_appInfo_id_publishers_get() {}
+async fn cms_assemble_control_permission_app_info_id_publishers_permission_appInfo_id_publishers_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/permission/appInfo/{id}/viewers",
     tag = "cms",
@@ -8549,7 +8693,9 @@ async fn cms_assemble_control_permission_app_info_id_viewers_permission_appInfo_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_permission_category_id_managers_permission_category_id_managers_get() {}
+async fn cms_assemble_control_permission_category_id_managers_permission_category_id_managers_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/permission/category/{id}/publishers",
     tag = "cms",
@@ -8563,7 +8709,9 @@ async fn cms_assemble_control_permission_category_id_managers_permission_categor
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_permission_category_id_publishers_permission_category_id_publishers_get() {}
+async fn cms_assemble_control_permission_category_id_publishers_permission_category_id_publishers_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/permission/category/{id}/viewers",
     tag = "cms",
@@ -8602,7 +8750,9 @@ async fn cms_assemble_control_4d46c8_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_permission_management_refresh_all_permission_management_refresh_all_get() {}
+async fn cms_assemble_control_permission_management_refresh_all_permission_management_refresh_all_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/permission/management/refresh/category/{categoryId}",
     tag = "cms",
@@ -8631,7 +8781,9 @@ async fn cms_assemble_control_ea6237_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_queryview_flag_view_flag_definition_query_flag_queryview_flag_definition_get() {}
+async fn cms_assemble_control_queryview_flag_view_flag_definition_query_flag_queryview_flag_definition_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/script/list/app/{appId}/name/{name}",
     tag = "cms",
@@ -8646,7 +8798,9 @@ async fn cms_assemble_control_queryview_flag_view_flag_definition_query_flag_que
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_script_list_app_appid_name_name_script_list_app_appId_name_name_get() {}
+async fn cms_assemble_control_script_list_app_appid_name_name_script_list_app_appId_name_name_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/script/list/app/{flag}",
     tag = "cms",
@@ -8733,7 +8887,9 @@ async fn cms_assemble_control_script_id_mockdeletetoget_script_id_mockdeletetoge
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_script_uniquename_app_flag_imported_script_uniqueName_app_flag_imported_get() {}
+async fn cms_assemble_control_script_uniquename_app_flag_imported_script_uniqueName_app_flag_imported_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/scriptversion/list/script/{scriptId}",
     tag = "cms",
@@ -8747,7 +8903,9 @@ async fn cms_assemble_control_script_uniquename_app_flag_imported_script_uniqueN
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_scriptversion_list_script_scriptid_scriptversion_list_script_scriptId_get() {}
+async fn cms_assemble_control_scriptversion_list_script_scriptid_scriptversion_list_script_scriptId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/scriptversion/{id}",
     tag = "cms",
@@ -9209,7 +9367,9 @@ async fn cms_assemble_control_templateform_id_templateform_id_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_templateform_id_mockdeletetoget_templateform_id_mockdeletetoget_get() {}
+async fn cms_assemble_control_templateform_id_mockdeletetoget_templateform_id_mockdeletetoget_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/uuid/random",
     tag = "cms",
@@ -9326,7 +9486,9 @@ async fn cms_assemble_control_viewcategory_list_all_viewcategory_list_all_get() 
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_viewcategory_list_category_categoryid_viewcategory_list_category_categoryId_get() {}
+async fn cms_assemble_control_viewcategory_list_category_categoryid_viewcategory_list_category_categoryId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/viewcategory/list/view/{viewId}",
     tag = "cms",
@@ -9368,7 +9530,9 @@ async fn cms_assemble_control_viewcategory_id_viewcategory_id_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_viewcategory_id_mockdeletetoget_viewcategory_id_mockdeletetoget_get() {}
+async fn cms_assemble_control_viewcategory_id_mockdeletetoget_viewcategory_id_mockdeletetoget_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/viewfieldconfig/list/all",
     tag = "cms",
@@ -9393,7 +9557,9 @@ async fn cms_assemble_control_viewfieldconfig_list_all_viewfieldconfig_list_all_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_viewfieldconfig_list_view_viewid_viewfieldconfig_list_view_viewId_get() {}
+async fn cms_assemble_control_viewfieldconfig_list_view_viewid_viewfieldconfig_list_view_viewId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/viewfieldconfig/{id}",
     tag = "cms",
@@ -9421,7 +9587,9 @@ async fn cms_assemble_control_viewfieldconfig_id_viewfieldconfig_id_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_viewfieldconfig_id_mockdeletetoget_viewfieldconfig_id_mockdeletetoget_get() {}
+async fn cms_assemble_control_viewfieldconfig_id_mockdeletetoget_viewfieldconfig_id_mockdeletetoget_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/viewrecord/document/{docId}/filter/list/{id}/next/{count}",
     tag = "cms",
@@ -9451,7 +9619,9 @@ async fn cms_assemble_control_be26a1_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_viewrecord_document_docid_has_view_viewrecord_document_docId_has_view_get() {}
+async fn cms_assemble_control_viewrecord_document_docid_has_view_viewrecord_document_docId_has_view_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/viewrecord/person/{person}",
     tag = "cms",
@@ -9687,7 +9857,9 @@ async fn cms_assemble_control_categoryinfo_list_objects_categoryinfo_list_object
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_categoryinfo_id_execute_projection_categoryinfo_id_execute_projection_post() {}
+async fn cms_assemble_control_categoryinfo_id_execute_projection_categoryinfo_id_execute_projection_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/categoryinfo/{id}/permission",
     tag = "cms",
@@ -9872,7 +10044,9 @@ async fn cms_assemble_control_cms_assemble_control_xform_save_id_xform_save_post
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_commend_list_paging_page_size_size_commend_list_paging_page_size_size_post() {}
+async fn cms_assemble_control_commend_list_paging_page_size_size_commend_list_paging_page_size_size_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/comment",
     tag = "cms",
@@ -9928,7 +10102,9 @@ async fn cms_assemble_control_badf94_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_comment_list_page_size_size_mockputtopost_comment_u2_list_page_size_size_post() {}
+async fn cms_assemble_control_comment_list_page_size_size_mockputtopost_comment_u2_list_page_size_size_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/correlation/doc/{docId}/delete",
     tag = "cms",
@@ -9998,7 +10174,8 @@ async fn cms_assemble_control_data_document_id_array_data_data_document_id_array
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_data_document_id_mockputtopost_data_document_id_mockputtopost_post() {}
+async fn cms_assemble_control_data_document_id_mockputtopost_data_document_id_mockputtopost_post() {
+}
 #[utoipa::path(post,
     path = "/api/data/document/{id}/{path0}",
     tag = "cms",
@@ -10028,7 +10205,9 @@ async fn cms_assemble_control_data_document_id_path0_data_document_id_path0_crea
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_data_document_id_path0_mockputtopost_data_document_id_path0_mockputtopost_post() {}
+async fn cms_assemble_control_data_document_id_path0_mockputtopost_data_document_id_path0_mockputtopost_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/data/document/{id}/{path0}/{path1}",
     tag = "cms",
@@ -10044,7 +10223,9 @@ async fn cms_assemble_control_data_document_id_path0_mockputtopost_data_document
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_data_document_id_path0_path1_data_document_id_path0_path1_create_post() {}
+async fn cms_assemble_control_data_document_id_path0_path1_data_document_id_path0_path1_create_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/data/document/{id}/{path0}/{path1}/mockputtopost",
     tag = "cms",
@@ -10334,7 +10515,9 @@ async fn cms_assemble_control_bd6d39_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_design_appdict_id_mockputtopost_design_appdict_id_mockputtopost_post() {}
+async fn cms_assemble_control_design_appdict_id_mockputtopost_design_appdict_id_mockputtopost_post()
+{
+}
 #[utoipa::path(post,
     path = "/api/designer/search",
     tag = "cms",
@@ -10378,7 +10561,9 @@ async fn cms_assemble_control_document_document_u2_create_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_document_batch_data_modify_mockputtopost_document_batch_modify_mock_u3_post() {}
+async fn cms_assemble_control_document_batch_data_modify_mockputtopost_document_batch_modify_mock_u3_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/document/category/change/mockputtopost",
     tag = "cms",
@@ -10389,7 +10574,9 @@ async fn cms_assemble_control_document_batch_data_modify_mockputtopost_document_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_document_category_change_mockputtopost_document_u2_category_change_post() {}
+async fn cms_assemble_control_document_category_change_mockputtopost_document_u2_category_change_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/document/cipher/filter/list/{page}/size/{size}/mockputtopost",
     tag = "cms",
@@ -10444,7 +10631,9 @@ async fn cms_assemble_control_6594da_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_document_draft_list_id_next_count_mockputtopost_document_draft_next_u3_post() {}
+async fn cms_assemble_control_document_draft_list_id_next_count_mockputtopost_document_draft_next_u3_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/document/filter/count/mockputtopost",
     tag = "cms",
@@ -10470,7 +10659,9 @@ async fn cms_assemble_control_document_filter_count_mockputtopost_document_u2_fi
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_document_filter_list_id_next_count_mockputtopost_document_filter_next_u3_post() {}
+async fn cms_assemble_control_document_filter_list_id_next_count_mockputtopost_document_filter_next_u3_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/document/filter/list/{id}/prev/{count}/mockputtopost",
     tag = "cms",
@@ -10485,7 +10676,9 @@ async fn cms_assemble_control_document_filter_list_id_next_count_mockputtopost_d
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_document_filter_list_id_prev_count_mockputtopost_document_filter_prev_u3_post() {}
+async fn cms_assemble_control_document_filter_list_id_prev_count_mockputtopost_document_filter_prev_u3_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/document/filter/list/{page}/size/{size}/manager",
     tag = "cms",
@@ -10548,7 +10741,9 @@ async fn cms_assemble_control_document_list_document_data_document_list_document
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_document_publish_content_mockputtopost_document_publish_content_mock_u3_post() {}
+async fn cms_assemble_control_document_publish_content_mockputtopost_document_publish_content_mock_u3_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/document/publish/{id}/cancel/mockputtopost",
     tag = "cms",
@@ -10562,7 +10757,9 @@ async fn cms_assemble_control_document_publish_content_mockputtopost_document_pu
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_document_publish_id_cancel_mockputtopost_document_u2_publish_cancel_post() {}
+async fn cms_assemble_control_document_publish_id_cancel_mockputtopost_document_u2_publish_cancel_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/document/publish/{id}/mockputtopost",
     tag = "cms",
@@ -10967,7 +11164,9 @@ async fn cms_assemble_control_input_create_mockputtopost_input_create_mockputtop
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_input_prepare_cover_mockputtopost_input_prepare_cover_mockputtopost_post() {}
+async fn cms_assemble_control_input_prepare_cover_mockputtopost_input_prepare_cover_mockputtopost_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/input/prepare/create/mockputtopost",
     tag = "cms",
@@ -10978,7 +11177,9 @@ async fn cms_assemble_control_input_prepare_cover_mockputtopost_input_prepare_co
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_input_prepare_create_mockputtopost_input_prepare_create_mockputtopost_post() {}
+async fn cms_assemble_control_input_prepare_create_mockputtopost_input_prepare_create_mockputtopost_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/log/filter/list/{id}/next/{count}",
     tag = "cms",
@@ -11023,7 +11224,8 @@ async fn cms_assemble_control_log_filter_list_id_prev_count_log_filter_list_id_p
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_log_list_filter_page_size_size_log_list_filter_page_size_size_post() {}
+async fn cms_assemble_control_log_list_filter_page_size_size_log_list_filter_page_size_size_post() {
+}
 #[utoipa::path(post,
     path = "/api/output/{appInfoFlag}/select/mockputtopost",
     tag = "cms",
@@ -11051,7 +11253,8 @@ async fn cms_assemble_control_d0177d_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_permission_manager_app_info_id_permission_save_manager_app_u3_post() {}
+async fn cms_assemble_control_permission_manager_app_info_id_permission_save_manager_app_u3_post() {
+}
 #[utoipa::path(post,
     path = "/api/permission/manager/categoryInfo/{id}",
     tag = "cms",
@@ -11065,7 +11268,9 @@ async fn cms_assemble_control_permission_manager_app_info_id_permission_save_man
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_permission_manager_category_info_id_permission_save_manager_category_u3_post() {}
+async fn cms_assemble_control_permission_manager_category_info_id_permission_save_manager_category_u3_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/permission/publisher/appInfo/{id}",
     tag = "cms",
@@ -11079,7 +11284,9 @@ async fn cms_assemble_control_permission_manager_category_info_id_permission_sav
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_permission_publisher_app_info_id_permission_save_publisher_app_u3_post() {}
+async fn cms_assemble_control_permission_publisher_app_info_id_permission_save_publisher_app_u3_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/permission/publisher/categoryInfo/{id}",
     tag = "cms",
@@ -11121,7 +11328,9 @@ async fn cms_assemble_control_permission_viewer_app_info_id_permission_save_view
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_permission_viewer_category_info_id_permission_save_viewer_category_u3_post() {}
+async fn cms_assemble_control_permission_viewer_category_info_id_permission_save_viewer_category_u3_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/review/v2/search",
     tag = "cms",
@@ -11172,7 +11381,9 @@ async fn cms_assemble_control_script_list_manager_script_u2_list_manager_post() 
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_script_list_paging_page_size_size_script_list_paging_page_size_size_post() {}
+async fn cms_assemble_control_script_list_paging_page_size_size_script_list_paging_page_size_size_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/script/{id}/mockputtopost",
     tag = "cms",
@@ -11600,7 +11811,9 @@ async fn cms_assemble_control_view_view_u2_create_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_view_viewdata_list_id_next_count_view_viewdata_list_id_next_count_post() {}
+async fn cms_assemble_control_view_viewdata_list_id_next_count_view_viewdata_list_id_next_count_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/view/{id}/mockputtopost",
     tag = "cms",
@@ -11650,7 +11863,9 @@ async fn cms_assemble_control_viewfieldconfig_viewfieldconfig_u2_create_post() {
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_viewfieldconfig_id_mockputtopost_viewfieldconfig_id_mockputtopost_post() {}
+async fn cms_assemble_control_viewfieldconfig_id_mockputtopost_viewfieldconfig_id_mockputtopost_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/viewrecord/list/install/log/paging/{page}/size/{size}",
     tag = "cms",
@@ -11721,7 +11936,9 @@ async fn cms_assemble_control_96734c_put() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_appinfo_filter_list_id_next_count_appinfo_filter_list_id_next_count_put() {}
+async fn cms_assemble_control_appinfo_filter_list_id_next_count_appinfo_filter_list_id_next_count_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/appinfo/filter/list/{id}/prev/{count}",
     tag = "cms",
@@ -11736,7 +11953,9 @@ async fn cms_assemble_control_appinfo_filter_list_id_next_count_appinfo_filter_l
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_appinfo_filter_list_id_prev_count_appinfo_filter_list_id_prev_count_put() {}
+async fn cms_assemble_control_appinfo_filter_list_id_prev_count_appinfo_filter_list_id_prev_count_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/categoryinfo/bind/{categoryId}/view",
     tag = "cms",
@@ -11750,7 +11969,9 @@ async fn cms_assemble_control_appinfo_filter_list_id_prev_count_appinfo_filter_l
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_categoryinfo_bind_categoryid_view_categoryinfo_bind_categoryId_view_put() {}
+async fn cms_assemble_control_categoryinfo_bind_categoryid_view_categoryinfo_bind_categoryId_view_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/categoryinfo/filter/list/{id}/next/{count}/app/{appId}",
     tag = "cms",
@@ -11954,7 +12175,9 @@ async fn cms_assemble_control_data_document_id_path0_data_document_id_path0_upda
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_data_document_id_path0_path1_data_document_id_path0_path1_update_put() {}
+async fn cms_assemble_control_data_document_id_path0_path1_data_document_id_path0_path1_update_put()
+{
+}
 #[utoipa::path(put,
     path = "/api/data/document/{id}/{path0}/{path1}/{path2}",
     tag = "cms",
@@ -12133,7 +12356,9 @@ async fn cms_assemble_control_f34e7b_put() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_assemble_control_document_cipher_publish_content_document_cipher_publish_workflow_u3_put() {}
+async fn cms_assemble_control_document_cipher_publish_content_document_cipher_publish_workflow_u3_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/document/draft/list/{id}/next/{count}",
     tag = "cms",
@@ -12687,7 +12912,9 @@ async fn cms_core_entity_cms_core_entity_column_delete_id_cms_entity_column_dele
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_core_entity_cms_core_entity_column_manager_delete_id_cms_entity_column_manager_delete_delete() {}
+async fn cms_core_entity_cms_core_entity_column_manager_delete_id_cms_entity_column_manager_delete_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/cms/core/entity/index/delete/{id}",
     tag = "cms",
@@ -12906,7 +13133,9 @@ async fn cms_core_entity_cms_core_entity_column_save_id_cms_entity_column_save_p
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_core_entity_cms_core_entity_column_manager_create_cms_entity_column_manager_create_post() {}
+async fn cms_core_entity_cms_core_entity_column_manager_create_cms_entity_column_manager_create_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/cms/core/entity/column_manager/delete/{id}",
     tag = "cms",
@@ -12920,7 +13149,9 @@ async fn cms_core_entity_cms_core_entity_column_manager_create_cms_entity_column
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_core_entity_cms_core_entity_column_manager_delete_id_cms_entity_column_manager_delete_post() {}
+async fn cms_core_entity_cms_core_entity_column_manager_delete_id_cms_entity_column_manager_delete_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/cms/core/entity/column_manager/save/{id}",
     tag = "cms",
@@ -12934,7 +13165,9 @@ async fn cms_core_entity_cms_core_entity_column_manager_delete_id_cms_entity_col
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_core_entity_cms_core_entity_column_manager_save_id_cms_entity_column_manager_save_post() {}
+async fn cms_core_entity_cms_core_entity_column_manager_save_id_cms_entity_column_manager_save_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/cms/core/entity/index/create",
     tag = "cms",
@@ -13079,7 +13312,9 @@ async fn cms_core_entity_cms_core_entity_column_save_id_cms_entity_column_save_p
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn cms_core_entity_cms_core_entity_column_manager_save_id_cms_entity_column_manager_save_put() {}
+async fn cms_core_entity_cms_core_entity_column_manager_save_id_cms_entity_column_manager_save_put()
+{
+}
 #[utoipa::path(put,
     path = "/api/cms/core/entity/index/save/{id}",
     tag = "cms",
@@ -13359,7 +13594,9 @@ async fn component_assemble_control_update_control_config_update_control_config_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn component_assemble_control_component_assemble_control_component_delete_all_component_delete_all_post() {}
+async fn component_assemble_control_component_assemble_control_component_delete_all_component_delete_all_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/component_assemble_control/component",
     tag = "component",
@@ -13696,7 +13933,9 @@ async fn correlation_core_entity_correlation_core_entity_list_list_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn correlation_core_entity_correlation_core_entity_list_by_sourcetype_sourceid_list_by_source_get() {}
+async fn correlation_core_entity_correlation_core_entity_list_by_sourcetype_sourceid_list_by_source_get(
+) {
+}
 #[utoipa::path(post,
     path = "/api/correlation/core/entity/create",
     tag = "correlation",
@@ -13772,7 +14011,9 @@ async fn correlation_service_processing_1c6008_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn correlation_service_processing_correlation_service_processing_link_sourcetype_sourceid_get_link_get() {}
+async fn correlation_service_processing_correlation_service_processing_link_sourcetype_sourceid_get_link_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/correlation/service/processing/list/{personId}",
     tag = "correlation",
@@ -13786,7 +14027,9 @@ async fn correlation_service_processing_correlation_service_processing_link_sour
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn correlation_service_processing_correlation_service_processing_list_personid_list_correlations_get() {}
+async fn correlation_service_processing_correlation_service_processing_list_personid_list_correlations_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/correlation/service/processing/{id}",
     tag = "correlation",
@@ -13811,7 +14054,9 @@ async fn correlation_service_processing_correlation_service_processing_id_get_co
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn correlation_service_processing_correlation_service_processing_create_create_correlation_post() {}
+async fn correlation_service_processing_correlation_service_processing_create_create_correlation_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/correlation/service/processing/delete/{id}",
     tag = "correlation",
@@ -13825,7 +14070,9 @@ async fn correlation_service_processing_correlation_service_processing_create_cr
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn correlation_service_processing_correlation_service_processing_delete_id_delete_correlation_post() {}
+async fn correlation_service_processing_correlation_service_processing_delete_id_delete_correlation_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/correlation/service/processing/link",
     tag = "correlation",
@@ -13850,7 +14097,9 @@ async fn correlation_service_processing_correlation_service_processing_link_link
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn correlation_service_processing_correlation_service_processing_save_id_save_correlation_post() {}
+async fn correlation_service_processing_correlation_service_processing_save_id_save_correlation_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/correlation/service/processing/unlink/{sourceType}/{sourceId}/{targetType}/{targetId}",
     tag = "correlation",
@@ -14386,7 +14635,9 @@ async fn file_assemble_control_anonymous_file_id_download_anonymous_file_id_down
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_anonymous_file_id_download_stream_anonymous_file_id_download_stream_get() {}
+async fn file_assemble_control_anonymous_file_id_download_stream_anonymous_file_id_download_stream_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/attachment/download/{attid}/stream",
     tag = "file",
@@ -14400,7 +14651,9 @@ async fn file_assemble_control_anonymous_file_id_download_stream_anonymous_file_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_attachment_download_attid_stream_attachment_id_download_stream_get() {}
+async fn file_assemble_control_attachment_download_attid_stream_attachment_id_download_stream_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/attachment/list/editor/{owner}",
     tag = "file",
@@ -14428,7 +14681,9 @@ async fn file_assemble_control_attachment_list_editor_owner_attachment_list_edit
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_attachment_list_folder_folderid_attachment_list_folder_folderId_get() {}
+async fn file_assemble_control_attachment_list_folder_folderid_attachment_list_folder_folderId_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/attachment/list/share/{owner}",
     tag = "file",
@@ -14554,7 +14809,8 @@ async fn file_assemble_control_a5168c_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_attachment2_exist_file_filemd5_attachment2_exist_file_fileMd5_get() {}
+async fn file_assemble_control_attachment2_exist_file_filemd5_attachment2_exist_file_fileMd5_get() {
+}
 #[utoipa::path(get,
     path = "/api/attachment2/list/editor/{owner}",
     tag = "file",
@@ -14596,7 +14852,9 @@ async fn file_assemble_control_attachment2_list_filter_name_attachment2_list_fil
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_attachment2_list_folder_folderid_attachment2_list_folder_folderId_get() {}
+async fn file_assemble_control_attachment2_list_folder_folderid_attachment2_list_folder_folderId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/attachment2/list/share/{owner}",
     tag = "file",
@@ -14704,7 +14962,8 @@ async fn file_assemble_control_550052_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_attachment2_id_download_stream_attachment2_id_download_stream_get() {}
+async fn file_assemble_control_attachment2_id_download_stream_attachment2_id_download_stream_get() {
+}
 #[utoipa::path(get,
     path = "/api/attachment2/{id}/image/scale/{scale}/binary/base64",
     tag = "file",
@@ -14865,7 +15124,9 @@ async fn file_assemble_control_18b885_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_file_assemble_control_file_list_referencetype_u2_file_list_reference_types_get() {}
+async fn file_assemble_control_file_assemble_control_file_list_referencetype_u2_file_list_reference_types_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/file/assemble/control/file/list/referencetype/{referenceType}/reference/{reference}",
     tag = "file",
@@ -14920,7 +15181,9 @@ async fn file_assemble_control_file_assemble_control_file_list_id_list_files_get
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_file_assemble_control_file_list_id_next_count_file_list_id_next_count_get() {}
+async fn file_assemble_control_file_assemble_control_file_list_id_next_count_file_list_id_next_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/file/assemble/control/file/list/{id}/next/{count}/all",
     tag = "file",
@@ -14966,7 +15229,9 @@ async fn file_assemble_control_fa6cdd_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_file_assemble_control_file_list_id_prev_count_file_list_id_prev_count_get() {}
+async fn file_assemble_control_file_assemble_control_file_list_id_prev_count_file_list_id_prev_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/file/assemble/control/file/list/{id}/prev/{count}/all",
     tag = "file",
@@ -15025,7 +15290,9 @@ async fn file_assemble_control_file_assemble_control_file_id_get_file_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_file_assemble_control_file_id_binary_base64_file_id_binary_base64_get() {}
+async fn file_assemble_control_file_assemble_control_file_id_binary_base64_file_id_binary_base64_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/file/assemble/control/file/{id}/download",
     tag = "file",
@@ -15053,7 +15320,9 @@ async fn file_assemble_control_file_assemble_control_file_id_download_file_id_do
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_file_attachment_list_folder_folderid_attachment_list_folder_folderId_get() {}
+async fn file_assemble_control_file_attachment_list_folder_folderid_attachment_list_folder_folderId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/file/attachment/list/top",
     tag = "file",
@@ -15151,7 +15420,9 @@ async fn file_assemble_control_1b7e03_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_file_attachment2_exist_file_filemd5_attachment2_exist_file_fileMd5_get() {}
+async fn file_assemble_control_file_attachment2_exist_file_filemd5_attachment2_exist_file_fileMd5_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/file/attachment2/list/filter/{name}",
     tag = "file",
@@ -15165,7 +15436,9 @@ async fn file_assemble_control_file_attachment2_exist_file_filemd5_attachment2_e
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_file_attachment2_list_filter_name_attachment2_list_filter_name_get() {}
+async fn file_assemble_control_file_attachment2_list_filter_name_attachment2_list_filter_name_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/file/attachment2/list/folder/{folderId}",
     tag = "file",
@@ -15179,7 +15452,9 @@ async fn file_assemble_control_file_attachment2_list_filter_name_attachment2_lis
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_file_attachment2_list_folder_folderid_attachment2_list_folder_folderId_get() {}
+async fn file_assemble_control_file_attachment2_list_folder_folderid_attachment2_list_folder_folderId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/file/attachment2/list/top",
     tag = "file",
@@ -15218,7 +15493,9 @@ async fn file_assemble_control_file_attachment2_id_attachment2_id_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_file_attachment2_id_binary_base64_attachment2_id_binary_base64_get() {}
+async fn file_assemble_control_file_attachment2_id_binary_base64_attachment2_id_binary_base64_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/file/attachment2/{id}/download",
     tag = "file",
@@ -15262,7 +15539,9 @@ async fn file_assemble_control_af3a6f_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_file_attachment2_id_download_stream_attachment2_id_download_stream_get() {}
+async fn file_assemble_control_file_attachment2_id_download_stream_attachment2_id_download_stream_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/file/attachment2/{id}/image/scale/{scale}/binary/base64",
     tag = "file",
@@ -15893,7 +16172,9 @@ async fn file_assemble_control_share_list_my_share_list_my_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_share_list_my2_sharetype_filetype_share_list_my2_shareType_fileType_get() {}
+async fn file_assemble_control_share_list_my2_sharetype_filetype_share_list_my2_shareType_fileType_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/share/list/to/me",
     tag = "file",
@@ -15975,7 +16256,9 @@ async fn file_assemble_control_share_id_password_password_u2_share_get_with_pass
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_anonymous_file_id_download_stream_anonymous_file_id_download_stream_post() {}
+async fn file_assemble_control_anonymous_file_id_download_stream_anonymous_file_id_download_stream_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/attachment/update/callback/callback/{id}",
     tag = "file",
@@ -15989,7 +16272,9 @@ async fn file_assemble_control_anonymous_file_id_download_stream_anonymous_file_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_attachment_update_callback_id_attachment_id_update_callback_callback_post() {}
+async fn file_assemble_control_attachment_update_callback_id_attachment_id_update_callback_callback_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/attachment/update/{id}",
     tag = "file",
@@ -16031,7 +16316,9 @@ async fn file_assemble_control_f5c8f1_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_attachment_upload_folder_folderid_attachment_upload_folder_folderId_post() {}
+async fn file_assemble_control_attachment_upload_folder_folderid_attachment_upload_folder_folderId_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/attachment/upload/folder/{folderId}/callback/{callback}",
     tag = "file",
@@ -16090,7 +16377,9 @@ async fn file_assemble_control_aa5e26_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_attachment2_upload_folder_folderid_attachment2_upload_folder_folderId_post() {}
+async fn file_assemble_control_attachment2_upload_folder_folderid_attachment2_upload_folder_folderId_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/config",
     tag = "file",
@@ -16187,7 +16476,9 @@ async fn file_assemble_control_589ed1_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_file_assemble_control_file_upload_with_url_file_upload_with_url_post() {}
+async fn file_assemble_control_file_assemble_control_file_upload_with_url_file_upload_with_url_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/file/assemble/control/file/{id}/download/stream",
     tag = "file",
@@ -16202,7 +16493,9 @@ async fn file_assemble_control_file_assemble_control_file_upload_with_url_file_u
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_file_assemble_control_file_id_download_stream_file_id_download_stream_post() {}
+async fn file_assemble_control_file_assemble_control_file_id_download_stream_file_id_download_stream_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/file/core/entity/file/create",
     tag = "file",
@@ -16366,7 +16659,9 @@ async fn file_assemble_control_share_u2_share_create_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_share_shareid_file_fileid_folder_folderid_u2_share_save_to_folder_post() {}
+async fn file_assemble_control_share_shareid_file_fileid_folder_folderid_u2_share_save_to_folder_post(
+) {
+}
 #[utoipa::path(put,
     path = "/api/attachment/update/callback/callback/{id}",
     tag = "file",
@@ -16380,7 +16675,9 @@ async fn file_assemble_control_share_shareid_file_fileid_folder_folderid_u2_shar
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_attachment_update_callback_id_attachment_id_update_callback_callback_put() {}
+async fn file_assemble_control_attachment_update_callback_id_attachment_id_update_callback_callback_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/attachment/update/{id}",
     tag = "file",
@@ -16419,7 +16716,9 @@ async fn file_assemble_control_attachment_id_update_u2_attachment_update_content
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn file_assemble_control_file_assemble_control_update_control_config_update_control_config_put() {}
+async fn file_assemble_control_file_assemble_control_update_control_config_update_control_config_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/file/core/entity/file/update/{id}",
     tag = "file",
@@ -16546,7 +16845,9 @@ async fn general_assemble_control_general_assemble_control_area_delete_id_area_d
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_attendscope_delete_id_attendscope_delete_delete() {}
+async fn general_assemble_control_general_assemble_control_attendscope_delete_id_attendscope_delete_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/general/assemble/control/delete/{id}",
     tag = "general",
@@ -16560,7 +16861,9 @@ async fn general_assemble_control_general_assemble_control_attendscope_delete_id
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_delete_id_general_control_delete_delete() {}
+async fn general_assemble_control_general_assemble_control_delete_id_general_control_delete_delete()
+{
+}
 #[utoipa::path(delete,
     path = "/api/general/assemble/control/invoice/delete/{id}",
     tag = "general",
@@ -16574,7 +16877,9 @@ async fn general_assemble_control_general_assemble_control_delete_id_general_con
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_invoice_delete_id_invoice_delete_id_delete() {}
+async fn general_assemble_control_general_assemble_control_invoice_delete_id_invoice_delete_id_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/general/assemble/control/qrcode/delete/{id}",
     tag = "general",
@@ -16588,7 +16893,8 @@ async fn general_assemble_control_general_assemble_control_invoice_delete_id_inv
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_qrcode_delete_id_qrcode_delete_delete() {}
+async fn general_assemble_control_general_assemble_control_qrcode_delete_id_qrcode_delete_delete() {
+}
 #[utoipa::path(delete,
     path = "/api/general/assemble/control/securityclearance/delete/{id}",
     tag = "general",
@@ -16683,7 +16989,8 @@ async fn general_assemble_control_general_assemble_control_area_id_area_get_get(
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_attendscope_list_attendscope_list_get() {}
+async fn general_assemble_control_general_assemble_control_attendscope_list_attendscope_list_get() {
+}
 #[utoipa::path(get,
     path = "/api/general/assemble/control/attendscope/{id}",
     tag = "general",
@@ -16722,7 +17029,9 @@ async fn general_assemble_control_general_assemble_control_ecnet_check_ecnet_che
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_excel_result_flag_flag_excel_result_flag_get() {}
+async fn general_assemble_control_general_assemble_control_excel_result_flag_flag_excel_result_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/general/assemble/control/excel/{excelName}",
     tag = "general",
@@ -16736,7 +17045,9 @@ async fn general_assemble_control_general_assemble_control_excel_result_flag_fla
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_excel_excelname_excel_excelName_excelName_get() {}
+async fn general_assemble_control_general_assemble_control_excel_excelname_excel_excelName_excelName_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/general/assemble/control/excel/{excelName}/sheetList",
     tag = "general",
@@ -16778,7 +17089,9 @@ async fn general_assemble_control_8b6245_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_generalfile_flag_flag_generalfile_flag_flag_get() {}
+async fn general_assemble_control_general_assemble_control_generalfile_flag_flag_generalfile_flag_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/general/assemble/control/generalfile/flag/{flag}/binary/base64",
     tag = "general",
@@ -16806,7 +17119,9 @@ async fn general_assemble_control_8cc99b_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_invoice_delete_id_invoice_delete_id_get() {}
+async fn general_assemble_control_general_assemble_control_invoice_delete_id_invoice_delete_id_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/general/assemble/control/invoice/download/flag/{flag}",
     tag = "general",
@@ -16902,7 +17217,9 @@ async fn general_assemble_control_d4e958_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_permissions_module_get_module_permissions_get() {}
+async fn general_assemble_control_general_assemble_control_permissions_module_get_module_permissions_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/general/assemble/control/qrcode/list",
     tag = "general",
@@ -16954,7 +17271,9 @@ async fn general_assemble_control_general_assemble_control_qrcode_id_qrcode_get_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_securityclearance_securityclearance_create_get() {}
+async fn general_assemble_control_general_assemble_control_securityclearance_securityclearance_create_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/general/assemble/control/securityclearance/object",
     tag = "general",
@@ -17001,7 +17320,9 @@ async fn general_assemble_control_af025a_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_securityclearance_id_securityclearance_get_get() {}
+async fn general_assemble_control_general_assemble_control_securityclearance_id_securityclearance_get_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/general/assemble/control/status",
     tag = "general",
@@ -17012,7 +17333,8 @@ async fn general_assemble_control_general_assemble_control_securityclearance_id_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_status_get_general_control_status_get() {}
+async fn general_assemble_control_general_assemble_control_status_get_general_control_status_get() {
+}
 #[utoipa::path(get,
     path = "/api/general/assemble/control/upgrade/2021090901",
     tag = "general",
@@ -17023,7 +17345,9 @@ async fn general_assemble_control_general_assemble_control_status_get_general_co
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_upgrade_2021090901_upgrade_2021090901_get() {}
+async fn general_assemble_control_general_assemble_control_upgrade_2021090901_upgrade_2021090901_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/general/assemble/control/upgrade/2021090902",
     tag = "general",
@@ -17034,7 +17358,9 @@ async fn general_assemble_control_general_assemble_control_upgrade_2021090901_up
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_upgrade_2021090902_upgrade_2021090902_get() {}
+async fn general_assemble_control_general_assemble_control_upgrade_2021090902_upgrade_2021090902_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/general/assemble/control/worktime/between/holiday/count/start/{startDate}/end/{endDate}",
     tag = "general",
@@ -17366,7 +17692,9 @@ async fn general_assemble_control_general_assemble_control_area_update_id_area_u
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_attendscope_create_attendscope_create_post() {}
+async fn general_assemble_control_general_assemble_control_attendscope_create_attendscope_create_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/general/assemble/control/attendscope/delete/{id}",
     tag = "general",
@@ -17380,7 +17708,9 @@ async fn general_assemble_control_general_assemble_control_attendscope_create_at
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_attendscope_delete_id_attendscope_delete_post() {}
+async fn general_assemble_control_general_assemble_control_attendscope_delete_id_attendscope_delete_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/general/assemble/control/attendscope/save/{id}",
     tag = "general",
@@ -17394,7 +17724,9 @@ async fn general_assemble_control_general_assemble_control_attendscope_delete_id
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_attendscope_save_id_attendscope_save_post() {}
+async fn general_assemble_control_general_assemble_control_attendscope_save_id_attendscope_save_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/general/assemble/control/create",
     tag = "general",
@@ -17419,7 +17751,8 @@ async fn general_assemble_control_general_assemble_control_create_general_contro
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_delete_id_general_control_delete_post() {}
+async fn general_assemble_control_general_assemble_control_delete_id_general_control_delete_post() {
+}
 #[utoipa::path(post,
     path = "/api/general/assemble/control/ecnet/check",
     tag = "general",
@@ -17480,7 +17813,9 @@ async fn general_assemble_control_general_assemble_control_excel_upload_excel_up
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_excel_upload_with_url_excel_upload_with_url_post() {}
+async fn general_assemble_control_general_assemble_control_excel_upload_with_url_excel_upload_with_url_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/general/assemble/control/generalfile",
     tag = "general",
@@ -17516,7 +17851,9 @@ async fn general_assemble_control_general_assemble_control_invoice_create_invoic
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_invoice_delete_id_invoice_delete_id_post() {}
+async fn general_assemble_control_general_assemble_control_invoice_delete_id_invoice_delete_id_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/general/assemble/control/invoice/list/paging/{page}/size/{size}",
     tag = "general",
@@ -17559,7 +17896,9 @@ async fn general_assemble_control_73ce6b_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_invoice_update_id_invoice_update_id_post() {}
+async fn general_assemble_control_general_assemble_control_invoice_update_id_invoice_update_id_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/general/assemble/control/invoice/upload",
     tag = "general",
@@ -17614,7 +17953,9 @@ async fn general_assemble_control_general_assemble_control_office_office_html_to
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_office_html_to_word_office_html_to_word_post() {}
+async fn general_assemble_control_general_assemble_control_office_html_to_word_office_html_to_word_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/general/assemble/control/qrcode",
     tag = "general",
@@ -17730,7 +18071,9 @@ async fn general_assemble_control_5a12de_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_status_update_update_general_control_status_post() {}
+async fn general_assemble_control_general_assemble_control_status_update_update_general_control_status_post(
+) {
+}
 #[utoipa::path(put,
     path = "/api/general/assemble/control/area/update/{id}",
     tag = "general",
@@ -17758,7 +18101,9 @@ async fn general_assemble_control_general_assemble_control_area_update_id_area_u
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_attendscope_save_id_attendscope_save_put() {}
+async fn general_assemble_control_general_assemble_control_attendscope_save_id_attendscope_save_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/general/assemble/control/invoice/update/apply/status/{id}",
     tag = "general",
@@ -17786,7 +18131,9 @@ async fn general_assemble_control_22dd6e_put() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_invoice_update_id_invoice_update_id_put() {}
+async fn general_assemble_control_general_assemble_control_invoice_update_id_invoice_update_id_put()
+{
+}
 #[utoipa::path(put,
     path = "/api/general/assemble/control/save/{id}",
     tag = "general",
@@ -17825,7 +18172,9 @@ async fn general_assemble_control_6cc1e3_put() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn general_assemble_control_general_assemble_control_status_update_update_general_control_status_put() {}
+async fn general_assemble_control_general_assemble_control_status_update_update_general_control_status_put(
+) {
+}
 #[utoipa::path(get,
     path = "/api/general/dict/item/list/{dictId}",
     tag = "general",
@@ -18141,7 +18490,9 @@ async fn hotpic_user_hotpic_id_get_by_id_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn hotpic_assemble_control_hotpic_assemble_control_cipher_hotpic_bbs_id_cipher_hotpic_bbs_id_delete() {}
+async fn hotpic_assemble_control_hotpic_assemble_control_cipher_hotpic_bbs_id_cipher_hotpic_bbs_id_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/hotpic/assemble/control/cipher/hotpic/cms/{id}",
     tag = "hotpic",
@@ -18155,7 +18506,9 @@ async fn hotpic_assemble_control_hotpic_assemble_control_cipher_hotpic_bbs_id_ci
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn hotpic_assemble_control_hotpic_assemble_control_cipher_hotpic_cms_id_cipher_hotpic_cms_id_delete() {}
+async fn hotpic_assemble_control_hotpic_assemble_control_cipher_hotpic_cms_id_cipher_hotpic_cms_id_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/hotpic/assemble/control/user/hotpic/{id}",
     tag = "hotpic",
@@ -18184,7 +18537,9 @@ async fn hotpic_assemble_control_hotpic_assemble_control_user_hotpic_id_user_hot
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn hotpic_assemble_control_hotpic_assemble_control_user_hotpic_id_id2_user_hotpic_delete_by_ids_delete() {}
+async fn hotpic_assemble_control_hotpic_assemble_control_user_hotpic_id_id2_user_hotpic_delete_by_ids_delete(
+) {
+}
 #[utoipa::path(get,
     path = "/api/hotpic/assemble/control/cipher/hotpic/bbs/{id}",
     tag = "hotpic",
@@ -18198,7 +18553,9 @@ async fn hotpic_assemble_control_hotpic_assemble_control_user_hotpic_id_id2_user
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn hotpic_assemble_control_hotpic_assemble_control_cipher_hotpic_bbs_id_cipher_hotpic_bbs_id_get() {}
+async fn hotpic_assemble_control_hotpic_assemble_control_cipher_hotpic_bbs_id_cipher_hotpic_bbs_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/hotpic/assemble/control/cipher/hotpic/cms/{id}",
     tag = "hotpic",
@@ -18212,7 +18569,9 @@ async fn hotpic_assemble_control_hotpic_assemble_control_cipher_hotpic_bbs_id_ci
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn hotpic_assemble_control_hotpic_assemble_control_cipher_hotpic_cms_id_cipher_hotpic_cms_id_get() {}
+async fn hotpic_assemble_control_hotpic_assemble_control_cipher_hotpic_cms_id_cipher_hotpic_cms_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/hotpic/assemble/control/cipher/hotpic/filter/list/page/{page}/count/{count}",
     tag = "hotpic",
@@ -18274,7 +18633,9 @@ async fn hotpic_assemble_control_3696cb_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn hotpic_assemble_control_hotpic_assemble_control_list_control_panels_list_control_panels_get() {}
+async fn hotpic_assemble_control_hotpic_assemble_control_list_control_panels_list_control_panels_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/hotpic/assemble/control/user/hotpic/exists/check",
     tag = "hotpic",
@@ -18485,7 +18846,9 @@ async fn hotpic_assemble_control_user_hotpic_exists_check_user_hotpic_exists_che
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn hotpic_assemble_control_user_hotpic_application_infoid_user_hotpic_application_infoId_get() {}
+async fn hotpic_assemble_control_user_hotpic_application_infoid_user_hotpic_application_infoId_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/hotpic_assemble_control/user/hotpic/{id}",
     tag = "hotpic",
@@ -18510,7 +18873,9 @@ async fn hotpic_assemble_control_user_hotpic_id_user_hotpic_id_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn hotpic_assemble_control_hotpic_assemble_control_update_control_config_update_control_config_post() {}
+async fn hotpic_assemble_control_hotpic_assemble_control_update_control_config_update_control_config_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/hotpic/assemble/control/user/hotpic",
     tag = "hotpic",
@@ -18628,7 +18993,9 @@ async fn hotpic_core_entity_hotpic_core_entity_list_list_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn hotpic_core_entity_hotpic_core_entity_list_by_application_infoid_list_by_app_and_info_get() {}
+async fn hotpic_core_entity_hotpic_core_entity_list_by_application_infoid_list_by_app_and_info_get()
+{
+}
 #[utoipa::path(post,
     path = "/api/hotpic/core/entity/create",
     tag = "hotpic",
@@ -18775,7 +19142,9 @@ async fn jpush_assemble_control_d341ad_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn jpush_assemble_control_jpush_assemble_control_device_config_push_type_device_config_push_type_get() {}
+async fn jpush_assemble_control_jpush_assemble_control_device_config_push_type_device_config_push_type_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/jpush/assemble/control/device/list/{pushType}",
     tag = "jpush",
@@ -18789,7 +19158,9 @@ async fn jpush_assemble_control_jpush_assemble_control_device_config_push_type_d
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn jpush_assemble_control_jpush_assemble_control_device_list_pushtype_device_list_pushType_get() {}
+async fn jpush_assemble_control_jpush_assemble_control_device_list_pushtype_device_list_pushType_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/jpush/assemble/control/list/control/apps",
     tag = "jpush",
@@ -18995,7 +19366,9 @@ async fn jpush_assemble_control_jpush_assemble_control_device_bind_device_bind_p
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn jpush_assemble_control_jpush_assemble_control_update_control_config_update_control_config_post() {}
+async fn jpush_assemble_control_jpush_assemble_control_update_control_config_update_control_config_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/jpush/create",
     tag = "jpush",
@@ -19045,7 +19418,9 @@ async fn jpush_assemble_control_jpush_save_id_save_jpush_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn jpush_assemble_control_device_admin_unbind_all_person_device_admin_unbind_all_person_post() {}
+async fn jpush_assemble_control_device_admin_unbind_all_person_device_admin_unbind_all_person_post()
+{
+}
 #[utoipa::path(post,
     path = "/api/jpush_assemble_control/device/bind",
     tag = "jpush",
@@ -19278,7 +19653,8 @@ async fn meeting_meetingid_participant_add_add_participant_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_building_id_u2_building_delete_delete() {}
+async fn meeting_assemble_control_meeting_assemble_control_building_id_u2_building_delete_delete() {
+}
 #[utoipa::path(delete,
     path = "/api/meeting/assemble/control/delete/{id}",
     tag = "meeting",
@@ -19292,7 +19668,9 @@ async fn meeting_assemble_control_meeting_assemble_control_building_id_u2_buildi
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_delete_id_delete_meeting_control_delete() {}
+async fn meeting_assemble_control_meeting_assemble_control_delete_id_delete_meeting_control_delete()
+{
+}
 #[utoipa::path(delete,
     path = "/api/meeting/assemble/control/meeting/delete/{id}",
     tag = "meeting",
@@ -19306,7 +19684,9 @@ async fn meeting_assemble_control_meeting_assemble_control_delete_id_delete_meet
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_meeting_delete_id_delete_meeting_delete() {}
+async fn meeting_assemble_control_meeting_assemble_control_meeting_delete_id_delete_meeting_delete()
+{
+}
 #[utoipa::path(delete,
     path = "/api/meeting/assemble/control/meeting/{id}",
     tag = "meeting",
@@ -19320,7 +19700,9 @@ async fn meeting_assemble_control_meeting_assemble_control_meeting_delete_id_del
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_meeting_id_u2_meeting_delete_owned_delete() {}
+async fn meeting_assemble_control_meeting_assemble_control_meeting_id_u2_meeting_delete_owned_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/meeting/assemble/control/meeting/{id}/delete/invite",
     tag = "meeting",
@@ -19460,7 +19842,9 @@ async fn meeting_assemble_control_fddbea_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_building_list_like_key_building_list_like_key_get() {}
+async fn meeting_assemble_control_meeting_assemble_control_building_list_like_key_building_list_like_key_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/meeting/assemble/control/building/list/pinyininitial/{key}",
     tag = "meeting",
@@ -19546,7 +19930,9 @@ async fn meeting_assemble_control_meeting_assemble_control_building_id_building_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_config_system_config_config_system_config_get() {}
+async fn meeting_assemble_control_meeting_assemble_control_config_system_config_config_system_config_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/meeting/assemble/control/config/system/config/manage",
     tag = "meeting",
@@ -19571,7 +19957,9 @@ async fn meeting_assemble_control_b149a3_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_list_meeting_controls_list_meeting_controls_get() {}
+async fn meeting_assemble_control_meeting_assemble_control_list_meeting_controls_list_meeting_controls_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/meeting/assemble/control/list/{meetingId}",
     tag = "meeting",
@@ -19585,7 +19973,9 @@ async fn meeting_assemble_control_meeting_assemble_control_list_meeting_controls
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_list_meetingid_list_meeting_controls_get() {}
+async fn meeting_assemble_control_meeting_assemble_control_list_meetingid_list_meeting_controls_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/meeting/assemble/control/meeting/list/applied/completed",
     tag = "meeting",
@@ -19973,7 +20363,9 @@ async fn meeting_assemble_control_meeting_assemble_control_meeting_id_meeting_id
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_meeting_id_accept_meeting_id_accept_get() {}
+async fn meeting_assemble_control_meeting_assemble_control_meeting_id_accept_meeting_id_accept_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/meeting/assemble/control/meeting/{id}/checkin",
     tag = "meeting",
@@ -19987,7 +20379,9 @@ async fn meeting_assemble_control_meeting_assemble_control_meeting_id_accept_mee
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_meeting_id_checkin_u2_meeting_checkin_get_get() {}
+async fn meeting_assemble_control_meeting_assemble_control_meeting_id_checkin_u2_meeting_checkin_get_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/meeting/assemble/control/meeting/{id}/checkin/code",
     tag = "meeting",
@@ -20057,7 +20451,9 @@ async fn meeting_assemble_control_752307_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_meeting_id_reject_meeting_id_reject_get() {}
+async fn meeting_assemble_control_meeting_assemble_control_meeting_id_reject_meeting_id_reject_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/meeting/assemble/control/openmeeting",
     tag = "meeting",
@@ -20079,7 +20475,9 @@ async fn meeting_assemble_control_meeting_assemble_control_openmeeting_u2_openme
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_openmeeting_list_room_openmeeting_list_room_get() {}
+async fn meeting_assemble_control_meeting_assemble_control_openmeeting_list_room_openmeeting_list_room_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/meeting/assemble/control/room/list",
     tag = "meeting",
@@ -20118,7 +20516,9 @@ async fn meeting_assemble_control_ea621c_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_room_list_like_key_room_list_like_key_get() {}
+async fn meeting_assemble_control_meeting_assemble_control_room_list_like_key_room_list_like_key_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/meeting/assemble/control/room/list/pinyininitial/{key}",
     tag = "meeting",
@@ -20311,7 +20711,8 @@ async fn meeting_assemble_control_meeting_assemble_control_meeting_create_create
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_meeting_delete_id_delete_meeting_post() {}
+async fn meeting_assemble_control_meeting_assemble_control_meeting_delete_id_delete_meeting_post() {
+}
 #[utoipa::path(post,
     path = "/api/meeting/assemble/control/meeting/list/apply/{page}/size/{size}",
     tag = "meeting",
@@ -20415,7 +20816,9 @@ async fn meeting_assemble_control_meeting_assemble_control_meeting_save_id_save_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_meeting_id_accept_meeting_id_accept_post() {}
+async fn meeting_assemble_control_meeting_assemble_control_meeting_id_accept_meeting_id_accept_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/meeting/assemble/control/meeting/{id}/add/invite",
     tag = "meeting",
@@ -20429,7 +20832,9 @@ async fn meeting_assemble_control_meeting_assemble_control_meeting_id_accept_mee
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_meeting_id_add_invite_meeting_id_add_invite_post() {}
+async fn meeting_assemble_control_meeting_assemble_control_meeting_id_add_invite_meeting_id_add_invite_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/meeting/assemble/control/meeting/{id}/checkin",
     tag = "meeting",
@@ -20443,7 +20848,9 @@ async fn meeting_assemble_control_meeting_assemble_control_meeting_id_add_invite
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_meeting_id_checkin_meeting_id_checkin_post() {}
+async fn meeting_assemble_control_meeting_assemble_control_meeting_id_checkin_meeting_id_checkin_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/meeting/assemble/control/meeting/{id}/confirm/allow",
     tag = "meeting",
@@ -20541,7 +20948,9 @@ async fn meeting_assemble_control_71608a_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_meeting_id_reject_meeting_id_reject_post() {}
+async fn meeting_assemble_control_meeting_assemble_control_meeting_id_reject_meeting_id_reject_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/meeting/assemble/control/room",
     tag = "meeting",
@@ -20580,7 +20989,9 @@ async fn meeting_assemble_control_meeting_assemble_control_room_id_photo_u2_room
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_attachment_id_update_u2_attachment_update_put() {}
+async fn meeting_assemble_control_meeting_assemble_control_attachment_id_update_u2_attachment_update_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/meeting/assemble/control/building/{id}",
     tag = "meeting",
@@ -20622,7 +21033,9 @@ async fn meeting_assemble_control_meeting_assemble_control_meeting_save_id_save_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_assemble_control_meeting_assemble_control_meeting_id_add_invite_meeting_id_add_invite_put() {}
+async fn meeting_assemble_control_meeting_assemble_control_meeting_id_add_invite_meeting_id_add_invite_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/meeting/assemble/control/meeting/{id}/delete/invite",
     tag = "meeting",
@@ -20703,7 +21116,8 @@ async fn meeting_core_entity_meeting_core_entity_meeting_list_meeting_list_get()
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn meeting_core_entity_meeting_core_entity_meeting_list_by_roomid_meeting_list_by_room_get() {}
+async fn meeting_core_entity_meeting_core_entity_meeting_list_by_roomid_meeting_list_by_room_get() {
+}
 #[utoipa::path(get,
     path = "/api/meeting/core/entity/meeting/{id}",
     tag = "meeting",
@@ -20970,7 +21384,9 @@ async fn message_assemble_communicate_b99761_delete() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_mass_id_mass_id_mockdeletetoget_delete() {}
+async fn message_assemble_communicate_message_assemble_communicate_mass_id_mass_id_mockdeletetoget_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/message/assemble/communicate/mass/{id}/mockdeletetoget",
     tag = "message",
@@ -21044,7 +21460,9 @@ async fn message_assemble_communicate_a2e21b_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_consume_type_type_consume_type_type_get() {}
+async fn message_assemble_communicate_message_assemble_communicate_consume_type_type_consume_type_type_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/message/assemble/communicate/consume/{id}/type/{type}",
     tag = "message",
@@ -21109,7 +21527,9 @@ async fn message_assemble_communicate_d48e8e_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_im_conversation_id_im_conversation_id_get() {}
+async fn message_assemble_communicate_message_assemble_communicate_im_conversation_id_im_conversation_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/message/assemble/communicate/im/conversation/{id}/group",
     tag = "message",
@@ -21204,7 +21624,9 @@ async fn message_assemble_communicate_d74ee8_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_im_manager_config_im_manager_config_get() {}
+async fn message_assemble_communicate_message_assemble_communicate_im_manager_config_im_manager_config_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/message/assemble/communicate/im/msg/collection/list/{page}/size/{size}",
     tag = "message",
@@ -21233,7 +21655,9 @@ async fn message_assemble_communicate_644304_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_im_msg_download_id_im_msg_download_id_get() {}
+async fn message_assemble_communicate_message_assemble_communicate_im_msg_download_id_im_msg_download_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/message/assemble/communicate/im/msg/download/{id}/image/width/{width}/height/{height}",
     tag = "message",
@@ -21260,7 +21684,9 @@ async fn message_assemble_communicate_4b4785_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_im_msg_list_object_im_msg_list_object_get() {}
+async fn message_assemble_communicate_message_assemble_communicate_im_msg_list_object_im_msg_list_object_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/message/assemble/communicate/im/msg/list/{page}/size/{size}",
     tag = "message",
@@ -21289,7 +21715,9 @@ async fn message_assemble_communicate_7e73c1_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_im_msg_revoke_id_im_msg_revoke_id_get() {}
+async fn message_assemble_communicate_message_assemble_communicate_im_msg_revoke_id_im_msg_revoke_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/message/assemble/communicate/instant/currentperson/consumed",
     tag = "message",
@@ -21450,7 +21878,9 @@ async fn message_assemble_communicate_82aea8_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_mass_enable_type_mass_enable_type_get_get() {}
+async fn message_assemble_communicate_message_assemble_communicate_mass_enable_type_mass_enable_type_get_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/message/assemble/communicate/mass/list/{id}/next/{count}",
     tag = "message",
@@ -21537,7 +21967,9 @@ async fn message_assemble_communicate_28bc52_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_receive_consume_receive_list_get() {}
+async fn message_assemble_communicate_message_assemble_communicate_receive_consume_receive_list_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/message/assemble/communicate/ws/count/person",
     tag = "message",
@@ -21548,7 +21980,9 @@ async fn message_assemble_communicate_message_assemble_communicate_receive_consu
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_ws_count_person_ws_count_person_get() {}
+async fn message_assemble_communicate_message_assemble_communicate_ws_count_person_ws_count_person_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/message/assemble/communicate/ws/list/person",
     tag = "message",
@@ -21559,7 +21993,9 @@ async fn message_assemble_communicate_message_assemble_communicate_ws_count_pers
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_ws_list_person_ws_list_person_get() {}
+async fn message_assemble_communicate_message_assemble_communicate_ws_list_person_ws_list_person_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/message/assemble/communicate/ws/list/person/current/node",
     tag = "message",
@@ -21592,7 +22028,9 @@ async fn message_assemble_communicate_message_unread_count_unread_count_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_connector_connector_create_post() {}
+async fn message_assemble_communicate_message_assemble_communicate_connector_connector_create_post()
+{
+}
 #[utoipa::path(post,
     path = "/api/message/assemble/communicate/consume/type/{type}/mockputtopost",
     tag = "message",
@@ -21632,7 +22070,9 @@ async fn message_assemble_communicate_d274f2_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_im_conversation_im_conversation_post() {}
+async fn message_assemble_communicate_message_assemble_communicate_im_conversation_im_conversation_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/message/assemble/communicate/im/conversation/list/with/person",
     tag = "message",
@@ -21785,7 +22225,9 @@ async fn message_assemble_communicate_message_assemble_communicate_im_msg_im_msg
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_im_msg_clear_im_msg_clear_post() {}
+async fn message_assemble_communicate_message_assemble_communicate_im_msg_clear_im_msg_clear_post()
+{
+}
 #[utoipa::path(post,
     path = "/api/message/assemble/communicate/im/msg/collection",
     tag = "message",
@@ -21796,7 +22238,9 @@ async fn message_assemble_communicate_message_assemble_communicate_im_msg_clear_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_im_msg_collection_im_msg_collection_post() {}
+async fn message_assemble_communicate_message_assemble_communicate_im_msg_collection_im_msg_collection_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/message/assemble/communicate/im/msg/collection/list/{page}/size/{size}",
     tag = "message",
@@ -21833,7 +22277,9 @@ async fn message_assemble_communicate_d330bf_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_im_msg_list_object_im_msg_list_object_post() {}
+async fn message_assemble_communicate_message_assemble_communicate_im_msg_list_object_im_msg_list_object_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/message/assemble/communicate/im/msg/list/{page}/size/{size}",
     tag = "message",
@@ -21862,7 +22308,9 @@ async fn message_assemble_communicate_a40135_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_im_msg_revoke_id_im_msg_revoke_id_post() {}
+async fn message_assemble_communicate_message_assemble_communicate_im_msg_revoke_id_im_msg_revoke_id_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/message/assemble/communicate/im/msg/upload/{conversationId}/type/{type}",
     tag = "message",
@@ -21924,7 +22372,9 @@ async fn message_assemble_communicate_message_assemble_communicate_mass_mass_cre
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_mass_enable_type_mass_enable_type_post() {}
+async fn message_assemble_communicate_message_assemble_communicate_mass_enable_type_mass_enable_type_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/message/assemble/communicate/message/custom/create",
     tag = "message",
@@ -21997,7 +22447,9 @@ async fn message_assemble_communicate_d7bb31_put() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn message_assemble_communicate_message_assemble_communicate_im_conversation_im_conversation_put() {}
+async fn message_assemble_communicate_message_assemble_communicate_im_conversation_im_conversation_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/message/assemble/communicate/im/conversation/{id}",
     tag = "message",
@@ -22345,7 +22797,9 @@ async fn mind_assemble_control_mind_assemble_control_folder_id_update_update_fol
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn mind_assemble_control_mind_assemble_control_folder_move_folderid_folder_move_folderId_put() {}
+async fn mind_assemble_control_mind_assemble_control_folder_move_folderid_folder_move_folderId_put()
+{
+}
 #[utoipa::path(delete,
     path = "/api/mind/core/entity/folder/{id}",
     tag = "mind",
@@ -22537,7 +22991,9 @@ async fn organization_assemble_authentication_0849ca_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_authentication_organization_assemble_authentication_oauth_list_oauth_list_get() {}
+async fn organization_assemble_authentication_organization_assemble_authentication_oauth_list_oauth_list_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/organization/assemble/authentication/authentication/oauth/login/dingding/code/{code}",
     tag = "organization_assemble_authentication",
@@ -22716,7 +23172,9 @@ async fn organization_assemble_authentication_f96cf7_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_authentication_organization_assemble_authentication_oauth_auth_oauth_auth_get() {}
+async fn organization_assemble_authentication_organization_assemble_authentication_oauth_auth_oauth_auth_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/organization/assemble/authentication/oauth/info",
     tag = "organization_assemble_authentication",
@@ -23131,7 +23589,9 @@ async fn organization_assemble_control_identity_id_identity_id_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_control_organization_assemble_control_export_all_export_export_all_get() {}
+async fn organization_assemble_control_organization_assemble_control_export_all_export_export_all_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/organization/assemble/control/export/result/flag/{flag}",
     tag = "organization",
@@ -23167,7 +23627,9 @@ async fn organization_assemble_control_485139_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_control_organization_assemble_control_group_list_like_group_list_like_get() {}
+async fn organization_assemble_control_organization_assemble_control_group_list_like_group_list_like_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/organization/assemble/control/group/list/like/mockputtopost",
     tag = "organization",
@@ -23615,7 +24077,9 @@ async fn organization_assemble_control_a21208_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_control_organization_assemble_control_identity_flag_identity_flag_get() {}
+async fn organization_assemble_control_organization_assemble_control_identity_flag_identity_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/organization/assemble/control/identity/{flag}/mockdeletetoget",
     tag = "organization",
@@ -23694,7 +24158,9 @@ async fn organization_assemble_control_1fb824_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_control_organization_assemble_control_inputperson_wipe_inputperson_wipe_get() {}
+async fn organization_assemble_control_organization_assemble_control_inputperson_wipe_inputperson_wipe_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/organization/assemble/control/loginrecord/{stream}",
     tag = "organization",
@@ -23985,7 +24451,9 @@ async fn organization_assemble_control_fa342f_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_control_organization_assemble_control_personcard_mylist_personcard_mylist_get() {}
+async fn organization_assemble_control_organization_assemble_control_personcard_mylist_personcard_mylist_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/organization/assemble/control/personcard/{flag}",
     tag = "organization",
@@ -23999,7 +24467,9 @@ async fn organization_assemble_control_organization_assemble_control_personcard_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_control_organization_assemble_control_personcard_flag_personcard_flag_get() {}
+async fn organization_assemble_control_organization_assemble_control_personcard_flag_personcard_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/organization/assemble/control/personcard/{flag}/mockdeletetoget",
     tag = "organization",
@@ -24038,7 +24508,9 @@ async fn organization_assemble_control_198d62_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_control_organization_assemble_control_role_list_like_role_list_like_get() {}
+async fn organization_assemble_control_organization_assemble_control_role_list_like_role_list_like_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/organization/assemble/control/role/list/like/mockputtopost",
     tag = "organization",
@@ -24470,7 +24942,9 @@ async fn organization_assemble_control_e561b4_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_control_organization_assemble_control_unitduty_flag_unitduty_flag_get() {}
+async fn organization_assemble_control_organization_assemble_control_unitduty_flag_unitduty_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/organization/assemble/control/unitduty/{flag}/mockdeletetoget",
     tag = "organization",
@@ -24531,7 +25005,9 @@ async fn organization_assemble_control_79b14d_put() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_organization_assemble_express_config_get_get_express_config_get() {}
+async fn organization_assemble_express_organization_assemble_express_config_get_get_express_config_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/organization/assemble/express/data/sync",
     tag = "organization",
@@ -24542,7 +25018,9 @@ async fn organization_assemble_express_organization_assemble_express_config_get_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_organization_assemble_express_data_sync_sync_organization_data_get() {}
+async fn organization_assemble_express_organization_assemble_express_data_sync_sync_organization_data_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/organization/assemble/express/status/get",
     tag = "organization",
@@ -24553,7 +25031,9 @@ async fn organization_assemble_express_organization_assemble_express_data_sync_s
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_organization_assemble_express_status_get_get_express_status_get() {}
+async fn organization_assemble_express_organization_assemble_express_status_get_get_express_status_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/organization/assemble/express/units/list",
     tag = "organization",
@@ -24564,7 +25044,9 @@ async fn organization_assemble_express_organization_assemble_express_status_get_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_organization_assemble_express_units_list_list_organization_units_get() {}
+async fn organization_assemble_express_organization_assemble_express_units_list_list_organization_units_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/person/auth/info/{flag}",
     tag = "organization",
@@ -24678,7 +25160,8 @@ async fn organization_assemble_express_unit_list_all_object_unit_list_all_object
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_unit_list_type_type_object_unit_list_type_type_object_get() {}
+async fn organization_assemble_express_unit_list_type_type_object_unit_list_type_type_object_get() {
+}
 #[utoipa::path(post,
     path = "/api/distinguishedname/list",
     tag = "organization",
@@ -24701,7 +25184,9 @@ async fn organization_assemble_express_distinguishedname_list_distinguishedname_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_empower_list_identity_object_empower_list_identity_object_post() {}
+async fn organization_assemble_express_empower_list_identity_object_empower_list_identity_object_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/empowerlog",
     tag = "organization",
@@ -24748,7 +25233,9 @@ async fn organization_assemble_express_group_list_group_list_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_group_list_group_sub_direct_group_list_group_sub_direct_post() {}
+async fn organization_assemble_express_group_list_group_sub_direct_group_list_group_sub_direct_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/group/list/group/sub/direct/object",
     tag = "organization",
@@ -24772,7 +25259,9 @@ async fn organization_assemble_express_dad624_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_group_list_group_sub_nested_group_list_group_sub_nested_post() {}
+async fn organization_assemble_express_group_list_group_sub_nested_group_list_group_sub_nested_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/group/list/group/sub/nested/object",
     tag = "organization",
@@ -24796,7 +25285,9 @@ async fn organization_assemble_express_50d876_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_group_list_group_sup_direct_group_list_group_sup_direct_post() {}
+async fn organization_assemble_express_group_list_group_sup_direct_group_list_group_sup_direct_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/group/list/group/sup/direct/object",
     tag = "organization",
@@ -24820,7 +25311,9 @@ async fn organization_assemble_express_fe018f_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_group_list_group_sup_nested_group_list_group_sup_nested_post() {}
+async fn organization_assemble_express_group_list_group_sup_nested_group_list_group_sup_nested_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/group/list/group/sup/nested/object",
     tag = "organization",
@@ -24868,7 +25361,9 @@ async fn organization_assemble_express_group_list_identity_group_list_identity_p
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_group_list_identity_object_group_list_identity_object_post() {}
+async fn organization_assemble_express_group_list_identity_object_group_list_identity_object_post()
+{
+}
 #[utoipa::path(post,
     path = "/api/group/list/object",
     tag = "organization",
@@ -24940,7 +25435,9 @@ async fn organization_assemble_express_identity_list_group_identity_list_group_p
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_identity_list_group_object_identity_list_group_object_post() {}
+async fn organization_assemble_express_identity_list_group_object_identity_list_group_object_post()
+{
+}
 #[utoipa::path(post,
     path = "/api/identity/list/major/person",
     tag = "organization",
@@ -24952,7 +25449,9 @@ async fn organization_assemble_express_identity_list_group_object_identity_list_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_identity_list_major_person_identity_list_major_person_post() {}
+async fn organization_assemble_express_identity_list_major_person_identity_list_major_person_post()
+{
+}
 #[utoipa::path(post,
     path = "/api/identity/list/major/person/object",
     tag = "organization",
@@ -25000,7 +25499,9 @@ async fn organization_assemble_express_identity_list_person_identity_list_person
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_identity_list_person_object_identity_list_person_object_post() {}
+async fn organization_assemble_express_identity_list_person_object_identity_list_person_object_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/identity/list/unit/person",
     tag = "organization",
@@ -25024,7 +25525,9 @@ async fn organization_assemble_express_identity_list_unit_person_identity_list_u
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_identity_list_unit_person_object_identity_list_unit_person_object_post() {}
+async fn organization_assemble_express_identity_list_unit_person_object_identity_list_unit_person_object_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/identity/list/unit/sub/direct",
     tag = "organization",
@@ -25036,7 +25539,9 @@ async fn organization_assemble_express_identity_list_unit_person_object_identity
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_identity_list_unit_sub_direct_identity_list_unit_sub_direct_post() {}
+async fn organization_assemble_express_identity_list_unit_sub_direct_identity_list_unit_sub_direct_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/identity/list/unit/sub/direct/object",
     tag = "organization",
@@ -25060,7 +25565,9 @@ async fn organization_assemble_express_203197_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_identity_list_unit_sub_nested_identity_list_unit_sub_nested_post() {}
+async fn organization_assemble_express_identity_list_unit_sub_nested_identity_list_unit_sub_nested_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/identity/list/unit/sub/nested/object",
     tag = "organization",
@@ -25127,7 +25634,9 @@ async fn organization_assemble_express_person_list_person_list_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_person_list_filter_page_size_size_person_list_filter_page_size_post() {}
+async fn organization_assemble_express_person_list_filter_page_size_size_person_list_filter_page_size_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/person/list/group",
     tag = "organization",
@@ -25175,7 +25684,9 @@ async fn organization_assemble_express_person_list_identity_person_list_identity
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_person_list_identity_object_person_list_identity_object_post() {}
+async fn organization_assemble_express_person_list_identity_object_person_list_identity_object_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/person/list/login/after",
     tag = "organization",
@@ -25199,7 +25710,9 @@ async fn organization_assemble_express_person_list_login_after_person_list_login
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_person_list_login_after_object_person_list_login_after_object_post() {}
+async fn organization_assemble_express_person_list_login_after_object_person_list_login_after_object_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/person/list/login/recent",
     tag = "organization",
@@ -25223,7 +25736,9 @@ async fn organization_assemble_express_person_list_login_recent_person_list_logi
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_person_list_login_recent_object_person_list_login_recent_object_post() {}
+async fn organization_assemble_express_person_list_login_recent_object_person_list_login_recent_object_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/person/list/object",
     tag = "organization",
@@ -25259,7 +25774,9 @@ async fn organization_assemble_express_person_list_pair_identity_person_list_pai
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_person_list_person_sub_direct_person_list_person_sub_direct_post() {}
+async fn organization_assemble_express_person_list_person_sub_direct_person_list_person_sub_direct_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/person/list/person/sub/direct/object",
     tag = "organization",
@@ -25283,7 +25800,9 @@ async fn organization_assemble_express_f33139_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_person_list_person_sub_nested_person_list_person_sub_nested_post() {}
+async fn organization_assemble_express_person_list_person_sub_nested_person_list_person_sub_nested_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/person/list/person/sub/nested/object",
     tag = "organization",
@@ -25307,7 +25826,9 @@ async fn organization_assemble_express_a8eade_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_person_list_person_sup_direct_person_list_person_sup_direct_post() {}
+async fn organization_assemble_express_person_list_person_sup_direct_person_list_person_sup_direct_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/person/list/person/sup/direct/object",
     tag = "organization",
@@ -25331,7 +25852,9 @@ async fn organization_assemble_express_fc36d9_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_person_list_person_sup_nested_person_list_person_sup_nested_post() {}
+async fn organization_assemble_express_person_list_person_sup_nested_person_list_person_sup_nested_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/person/list/person/sup/nested/object",
     tag = "organization",
@@ -25355,7 +25878,9 @@ async fn organization_assemble_express_0e25fd_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_person_list_personattribute_person_list_personattribute_post() {}
+async fn organization_assemble_express_person_list_personattribute_person_list_personattribute_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/person/list/personattribute/object",
     tag = "organization",
@@ -25403,7 +25928,9 @@ async fn organization_assemble_express_person_list_role_object_person_list_role_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_person_list_unit_sub_direct_person_list_unit_sub_direct_post() {}
+async fn organization_assemble_express_person_list_unit_sub_direct_person_list_unit_sub_direct_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/person/list/unit/sub/direct/like",
     tag = "organization",
@@ -25415,7 +25942,9 @@ async fn organization_assemble_express_person_list_unit_sub_direct_person_list_u
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_person_list_unit_sub_direct_like_person_list_unit_sub_direct_like_post() {}
+async fn organization_assemble_express_person_list_unit_sub_direct_like_person_list_unit_sub_direct_like_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/person/list/unit/sub/direct/like/object",
     tag = "organization",
@@ -25451,7 +25980,9 @@ async fn organization_assemble_express_837066_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_person_list_unit_sub_nested_person_list_unit_sub_nested_post() {}
+async fn organization_assemble_express_person_list_unit_sub_nested_person_list_unit_sub_nested_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/person/list/unit/sub/nested/like",
     tag = "organization",
@@ -25463,7 +25994,9 @@ async fn organization_assemble_express_person_list_unit_sub_nested_person_list_u
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_person_list_unit_sub_nested_like_person_list_unit_sub_nested_like_post() {}
+async fn organization_assemble_express_person_list_unit_sub_nested_like_person_list_unit_sub_nested_like_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/person/list/unit/sub/nested/like/object",
     tag = "organization",
@@ -25498,7 +26031,9 @@ async fn organization_assemble_express_6aa1f6_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_personattribute_append_person_name_personattr_append_person_name_post() {}
+async fn organization_assemble_express_personattribute_append_person_name_personattr_append_person_name_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/personattribute/list/attribute/person/name",
     tag = "organization",
@@ -25520,7 +26055,9 @@ async fn organization_assemble_express_bbc21e_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_personattribute_list_name_person_personattr_list_name_person_post() {}
+async fn organization_assemble_express_personattribute_list_name_person_personattr_list_name_person_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/personattribute/list/person/object",
     tag = "organization",
@@ -25531,7 +26068,9 @@ async fn organization_assemble_express_personattribute_list_name_person_personat
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_personattribute_list_person_object_personattr_list_person_object_post() {}
+async fn organization_assemble_express_personattribute_list_person_object_personattr_list_person_object_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/personattribute/set/person/name",
     tag = "organization",
@@ -25542,7 +26081,9 @@ async fn organization_assemble_express_personattribute_list_person_object_person
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_personattribute_set_person_name_personattr_set_person_name_post() {}
+async fn organization_assemble_express_personattribute_set_person_name_personattr_set_person_name_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/role/list",
     tag = "organization",
@@ -25602,7 +26143,9 @@ async fn organization_assemble_express_role_list_person_object_role_list_person_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_unit_check_unit_has_identity_unit_check_unit_has_identity_post() {}
+async fn organization_assemble_express_unit_check_unit_has_identity_unit_check_unit_has_identity_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/unit/check/unit/has/person",
     tag = "organization",
@@ -25614,7 +26157,9 @@ async fn organization_assemble_express_unit_check_unit_has_identity_unit_check_u
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_unit_check_unit_has_person_unit_check_unit_has_person_post() {}
+async fn organization_assemble_express_unit_check_unit_has_person_unit_check_unit_has_person_post()
+{
+}
 #[utoipa::path(post,
     path = "/api/unit/check/unit/has/unit",
     tag = "organization",
@@ -25638,7 +26183,9 @@ async fn organization_assemble_express_unit_check_unit_has_unit_unit_check_unit_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_unit_identity_level_unit_get_with_identity_with_level_post() {}
+async fn organization_assemble_express_unit_identity_level_unit_get_with_identity_with_level_post()
+{
+}
 #[utoipa::path(post,
     path = "/api/unit/identity/level/object",
     tag = "organization",
@@ -25674,7 +26221,9 @@ async fn organization_assemble_express_unit_identity_type_unit_get_with_identity
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_unit_identity_type_object_unit_get_with_identity_with_type_object_post() {}
+async fn organization_assemble_express_unit_identity_type_object_unit_get_with_identity_with_type_object_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/unit/list",
     tag = "organization",
@@ -25722,7 +26271,9 @@ async fn organization_assemble_express_unit_list_identity_object_unit_list_ident
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_unit_list_identity_sup_nested_unit_list_identity_sup_nested_post() {}
+async fn organization_assemble_express_unit_list_identity_sup_nested_unit_list_identity_sup_nested_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/unit/list/identity/sup/nested/object",
     tag = "organization",
@@ -25758,7 +26309,9 @@ async fn organization_assemble_express_unit_list_level_unit_list_level_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_unit_list_level_name_object_unit_list_level_name_object_post() {}
+async fn organization_assemble_express_unit_list_level_name_object_unit_list_level_name_object_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/unit/list/level/object",
     tag = "organization",
@@ -25818,7 +26371,9 @@ async fn organization_assemble_express_unit_list_person_object_unit_list_person_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_unit_list_person_sup_nested_unit_list_person_sup_nested_post() {}
+async fn organization_assemble_express_unit_list_person_sup_nested_unit_list_person_sup_nested_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/unit/list/person/sup/nested/object",
     tag = "organization",
@@ -25878,7 +26433,9 @@ async fn organization_assemble_express_unit_list_unit_sub_direct_unit_list_unit_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_unit_list_unit_sub_direct_object_unit_list_unit_sub_direct_object_post() {}
+async fn organization_assemble_express_unit_list_unit_sub_direct_object_unit_list_unit_sub_direct_object_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/unit/list/unit/sub/nested",
     tag = "organization",
@@ -25902,7 +26459,9 @@ async fn organization_assemble_express_unit_list_unit_sub_nested_unit_list_unit_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_unit_list_unit_sub_nested_object_unit_list_unit_sub_nested_object_post() {}
+async fn organization_assemble_express_unit_list_unit_sub_nested_object_unit_list_unit_sub_nested_object_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/unit/list/unit/sup/direct",
     tag = "organization",
@@ -25926,7 +26485,9 @@ async fn organization_assemble_express_unit_list_unit_sup_direct_unit_list_unit_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_unit_list_unit_sup_direct_object_unit_list_unit_sup_direct_object_post() {}
+async fn organization_assemble_express_unit_list_unit_sup_direct_object_unit_list_unit_sup_direct_object_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/unit/list/unit/sup/nested",
     tag = "organization",
@@ -25950,7 +26511,9 @@ async fn organization_assemble_express_unit_list_unit_sup_nested_unit_list_unit_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_unit_list_unit_sup_nested_object_unit_list_unit_sup_nested_object_post() {}
+async fn organization_assemble_express_unit_list_unit_sup_nested_object_unit_list_unit_sup_nested_object_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/unit/list/unit/tree",
     tag = "organization",
@@ -25986,7 +26549,9 @@ async fn organization_assemble_express_unit_list_unitattribute_unit_list_unitatt
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_unit_list_unitattribute_object_unit_list_unitattribute_object_post() {}
+async fn organization_assemble_express_unit_list_unitattribute_object_unit_list_unitattribute_object_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/unit/list/unitduty",
     tag = "organization",
@@ -26021,7 +26586,9 @@ async fn organization_assemble_express_unit_list_unitduty_object_unit_list_unitd
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_unitattribute_append_unit_name_unitattr_append_unit_name_post() {}
+async fn organization_assemble_express_unitattribute_append_unit_name_unitattr_append_unit_name_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/unitattribute/list/attribute/unit/name",
     tag = "organization",
@@ -26043,7 +26610,8 @@ async fn organization_assemble_express_b4dd44_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_unitattribute_list_name_unit_unitattr_list_name_unit_post() {}
+async fn organization_assemble_express_unitattribute_list_name_unit_unitattr_list_name_unit_post() {
+}
 #[utoipa::path(post,
     path = "/api/unitattribute/list/unit/object",
     tag = "organization",
@@ -26054,7 +26622,9 @@ async fn organization_assemble_express_unitattribute_list_name_unit_unitattr_lis
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_unitattribute_list_unit_object_unitattr_list_unit_object_post() {}
+async fn organization_assemble_express_unitattribute_list_unit_object_unitattr_list_unit_object_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/unitattribute/set/unit/name",
     tag = "organization",
@@ -26076,7 +26646,9 @@ async fn organization_assemble_express_unitattribute_set_unit_name_unitattr_set_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_unitduty_find_by_unit_name_unitduty_find_by_unit_name_post() {}
+async fn organization_assemble_express_unitduty_find_by_unit_name_unitduty_find_by_unit_name_post()
+{
+}
 #[utoipa::path(post,
     path = "/api/unitduty/list/identity/unit/name",
     tag = "organization",
@@ -26087,7 +26659,9 @@ async fn organization_assemble_express_unitduty_find_by_unit_name_unitduty_find_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_unitduty_list_identity_unit_name_unitduty_list_identity_unit_name_post() {}
+async fn organization_assemble_express_unitduty_list_identity_unit_name_unitduty_list_identity_unit_name_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/unitduty/list/identity/unit/name/object",
     tag = "organization",
@@ -26120,7 +26694,9 @@ async fn organization_assemble_express_unitduty_list_name_unitduty_list_name_pos
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_express_unitduty_list_name_identity_unitduty_list_name_identity_post() {}
+async fn organization_assemble_express_unitduty_list_name_identity_unitduty_list_name_identity_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/unitduty/list/name/unit",
     tag = "organization",
@@ -26156,7 +26732,9 @@ async fn organization_assemble_express_unitduty_list_unit_object_unitduty_list_u
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_personal_organization_assemble_personal_id_role_list_user_role_list_get() {}
+async fn organization_assemble_personal_organization_assemble_personal_id_role_list_user_role_list_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/organization/assemble/personal/{id}/setting",
     tag = "organization_assemble_personal",
@@ -26170,7 +26748,9 @@ async fn organization_assemble_personal_organization_assemble_personal_id_role_l
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn organization_assemble_personal_organization_assemble_personal_id_setting_user_setting_get() {}
+async fn organization_assemble_personal_organization_assemble_personal_id_setting_user_setting_get()
+{
+}
 #[utoipa::path(post,
     path = "/api/organization/assemble/personal/custom/{id}/mockputtopost",
     tag = "organization_assemble_personal",
@@ -26714,7 +27294,9 @@ async fn portal_assemble_designer_portal_assemble_designer_portal_id_delete_port
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_designer_portal_assemble_designer_templatepage_id_delete_templatepage_delete() {}
+async fn portal_assemble_designer_portal_assemble_designer_templatepage_id_delete_templatepage_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/portal/assemble/designer/widget/delete/{id}",
     tag = "portal",
@@ -26728,7 +27310,8 @@ async fn portal_assemble_designer_portal_assemble_designer_templatepage_id_delet
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_designer_portal_assemble_designer_widget_delete_id_widget_delete_delete() {}
+async fn portal_assemble_designer_portal_assemble_designer_widget_delete_id_widget_delete_delete() {
+}
 #[utoipa::path(delete,
     path = "/api/portal/assemble/designer/widget/{id}",
     tag = "portal",
@@ -26822,7 +27405,8 @@ async fn portal_assemble_designer_portal_assemble_designer_dict_id_dict_id_get()
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_designer_portal_assemble_designer_file_download_id_file_id_download_get() {}
+async fn portal_assemble_designer_portal_assemble_designer_file_download_id_file_id_download_get() {
+}
 #[utoipa::path(get,
     path = "/api/portal/assemble/designer/file/list/application/{applicationFlag}",
     tag = "portal",
@@ -26999,7 +27583,9 @@ async fn portal_assemble_designer_6a6f47_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_designer_portal_assemble_designer_page_list_category_list_pages_by_category_get() {}
+async fn portal_assemble_designer_portal_assemble_designer_page_list_category_list_pages_by_category_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/portal/assemble/designer/page/{id}",
     tag = "portal",
@@ -27106,7 +27692,9 @@ async fn portal_assemble_designer_6e38c8_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_designer_portal_assemble_designer_portal_list_summary_portal_list_summary_get() {}
+async fn portal_assemble_designer_portal_assemble_designer_portal_list_summary_portal_list_summary_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/portal/assemble/designer/portal/list/summary/portalcategory/{portalCategory}",
     tag = "portal",
@@ -27134,7 +27722,9 @@ async fn portal_assemble_designer_e3bc70_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_designer_portal_assemble_designer_portal_permission_id_portal_id_permission_get() {}
+async fn portal_assemble_designer_portal_assemble_designer_portal_permission_id_portal_id_permission_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/portal/assemble/designer/portal/{id}",
     tag = "portal",
@@ -27159,7 +27749,9 @@ async fn portal_assemble_designer_portal_assemble_designer_portal_id_portal_id_g
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_designer_portal_assemble_designer_portalcategory_list_portalcategory_list_get() {}
+async fn portal_assemble_designer_portal_assemble_designer_portalcategory_list_portalcategory_list_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/portal/assemble/designer/script/list/paging/{page}/{size}/{size}",
     tag = "portal",
@@ -27231,7 +27823,8 @@ async fn portal_assemble_designer_e36e83_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_designer_portal_assemble_designer_scriptversion_id_scriptversion_id_get() {}
+async fn portal_assemble_designer_portal_assemble_designer_scriptversion_id_scriptversion_id_get() {
+}
 #[utoipa::path(get,
     path = "/api/portal/assemble/designer/templatepage/list",
     tag = "portal",
@@ -27242,7 +27835,9 @@ async fn portal_assemble_designer_portal_assemble_designer_scriptversion_id_scri
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_designer_portal_assemble_designer_templatepage_list_templatepage_list_get() {}
+async fn portal_assemble_designer_portal_assemble_designer_templatepage_list_templatepage_list_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/portal/assemble/designer/templatepage/list/category",
     tag = "portal",
@@ -27493,7 +28088,9 @@ async fn portal_assemble_designer_portal_assemble_designer_portal_create_portal_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_designer_portal_assemble_designer_portal_list_summary_v2_portal_list_summary_v2_post() {}
+async fn portal_assemble_designer_portal_assemble_designer_portal_list_summary_v2_portal_list_summary_v2_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/portal/assemble/designer/portal/{id}/permission",
     tag = "portal",
@@ -27532,7 +28129,9 @@ async fn portal_assemble_designer_portal_assemble_designer_save_id_save_design_p
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_designer_portal_assemble_designer_script_list_manager_script_list_manager_post() {}
+async fn portal_assemble_designer_portal_assemble_designer_script_list_manager_script_list_manager_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/portal/assemble/designer/templatepage",
     tag = "portal",
@@ -27543,7 +28142,8 @@ async fn portal_assemble_designer_portal_assemble_designer_script_list_manager_s
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_designer_portal_assemble_designer_templatepage_create_templatepage_post() {}
+async fn portal_assemble_designer_portal_assemble_designer_templatepage_create_templatepage_post() {
+}
 #[utoipa::path(post,
     path = "/api/portal/assemble/designer/widget",
     tag = "portal",
@@ -27662,7 +28262,9 @@ async fn portal_assemble_designer_portal_assemble_designer_input_create_input_cr
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_designer_portal_assemble_designer_input_prepare_cover_input_prepare_cover_put() {}
+async fn portal_assemble_designer_portal_assemble_designer_input_prepare_cover_input_prepare_cover_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/portal/assemble/designer/input/prepare/create",
     tag = "portal",
@@ -27673,7 +28275,9 @@ async fn portal_assemble_designer_portal_assemble_designer_input_prepare_cover_i
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_designer_portal_assemble_designer_input_prepare_create_input_prepare_create_put() {}
+async fn portal_assemble_designer_portal_assemble_designer_input_prepare_create_input_prepare_create_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/portal/assemble/designer/page/save/{id}",
     tag = "portal",
@@ -27729,7 +28333,8 @@ async fn portal_assemble_designer_portal_assemble_designer_portal_id_update_port
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_designer_portal_assemble_designer_portal_id_icon_update_portal_icon_put() {}
+async fn portal_assemble_designer_portal_assemble_designer_portal_id_icon_update_portal_icon_put() {
+}
 #[utoipa::path(put,
     path = "/api/portal/assemble/designer/save/{id}",
     tag = "portal",
@@ -27984,7 +28589,9 @@ async fn portal_assemble_surface_714bf4_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_surface_portal_assemble_surface_file_download_flag_file_flag_download_get() {}
+async fn portal_assemble_surface_portal_assemble_surface_file_download_flag_file_flag_download_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/portal/assemble/surface/file/list/portal/{portalFlag}",
     tag = "portal",
@@ -28100,7 +28707,9 @@ async fn portal_assemble_surface_portal_assemble_surface_get_id_get_surface_get(
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_surface_portal_assemble_surface_list_portal_page_page_list_portal_portal_get() {}
+async fn portal_assemble_surface_portal_assemble_surface_list_portal_page_page_list_portal_portal_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/portal/assemble/surface/list/{category}",
     tag = "portal",
@@ -28143,7 +28752,9 @@ async fn portal_assemble_surface_portal_assemble_surface_mobile_page_id_page_id_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_surface_portal_assemble_surface_page_list_portal_portal_page_list_portal_portal_get() {}
+async fn portal_assemble_surface_portal_assemble_surface_page_list_portal_portal_page_list_portal_portal_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/portal/assemble/surface/page/v2/{flag}/portal/{portalFlag}",
     tag = "portal",
@@ -28201,7 +28812,8 @@ async fn portal_assemble_surface_portal_assemble_surface_page_v2_id_page_v2_id_g
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_surface_portal_assemble_surface_page_v2_id_mobile_page_v2_id_mobile_get() {}
+async fn portal_assemble_surface_portal_assemble_surface_page_v2_id_mobile_page_v2_id_mobile_get() {
+}
 #[utoipa::path(get,
     path = "/api/portal/assemble/surface/page/{flag}/portal/{portalFlag}",
     tag = "portal",
@@ -28259,7 +28871,9 @@ async fn portal_assemble_surface_portal_assemble_surface_page_id_mobile_page_id_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_surface_portal_assemble_surface_portal_corner_mark_flag_portal_flag_corner_mark_get() {}
+async fn portal_assemble_surface_portal_assemble_surface_portal_corner_mark_flag_portal_flag_corner_mark_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/portal/assemble/surface/portal/icon/base64/{id}",
     tag = "portal",
@@ -28273,7 +28887,9 @@ async fn portal_assemble_surface_portal_assemble_surface_portal_corner_mark_flag
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_surface_portal_assemble_surface_portal_icon_base64_id_portal_id_icon_base64_get() {}
+async fn portal_assemble_surface_portal_assemble_surface_portal_icon_base64_id_portal_id_icon_base64_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/portal/assemble/surface/portal/icon/{id}",
     tag = "portal",
@@ -28298,7 +28914,9 @@ async fn portal_assemble_surface_portal_assemble_surface_portal_icon_id_portal_i
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_surface_portal_assemble_surface_portal_list_mobile_portal_list_mobile_get() {}
+async fn portal_assemble_surface_portal_assemble_surface_portal_list_mobile_portal_list_mobile_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/portal/assemble/surface/portal/mobile/{page}/{flag}/{portalFlag}",
     tag = "portal",
@@ -28342,7 +28960,9 @@ async fn portal_assemble_surface_portal_assemble_surface_portal_flag_portal_flag
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_surface_portal_assemble_surface_portal_flag_corner_mark_portal_flag_corner_mark_get() {}
+async fn portal_assemble_surface_portal_assemble_surface_portal_flag_corner_mark_portal_flag_corner_mark_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/portal/assemble/surface/portal/{id}/icon",
     tag = "portal",
@@ -28370,7 +28990,9 @@ async fn portal_assemble_surface_portal_assemble_surface_portal_id_icon_portal_i
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_surface_portal_assemble_surface_portal_id_icon_base64_portal_id_icon_base64_get() {}
+async fn portal_assemble_surface_portal_assemble_surface_portal_id_icon_base64_portal_id_icon_base64_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/portal/assemble/surface/portal/{page}/{flag}/{portalFlag}",
     tag = "portal",
@@ -28473,7 +29095,9 @@ async fn portal_assemble_surface_portal_assemble_surface_script_id_script_id_get
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn portal_assemble_surface_portal_assemble_surface_v2_mobile_page_id_page_v2_id_mobile_p2_get() {}
+async fn portal_assemble_surface_portal_assemble_surface_v2_mobile_page_id_page_v2_id_mobile_p2_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/portal/assemble/surface/v2/portal/mobile/{page}/{flag}/{portalFlag}",
     tag = "portal",
@@ -30064,7 +30688,9 @@ async fn processplatform_assemble_bam_077aa8_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_bam_processplatform_assemble_bam_state_category_state_category_get() {}
+async fn processplatform_assemble_bam_processplatform_assemble_bam_state_category_state_category_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/bam/state/category/trigger",
     tag = "process",
@@ -30086,7 +30712,9 @@ async fn processplatform_assemble_bam_cfc1fc_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_bam_processplatform_assemble_bam_state_organization_state_organization_get() {}
+async fn processplatform_assemble_bam_processplatform_assemble_bam_state_organization_state_organization_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/bam/state/running",
     tag = "process",
@@ -30097,7 +30725,9 @@ async fn processplatform_assemble_bam_processplatform_assemble_bam_state_organiz
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_bam_processplatform_assemble_bam_state_running_state_running_get() {}
+async fn processplatform_assemble_bam_processplatform_assemble_bam_state_running_state_running_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/bam/state/summary",
     tag = "process",
@@ -30108,7 +30738,9 @@ async fn processplatform_assemble_bam_processplatform_assemble_bam_state_running
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_bam_processplatform_assemble_bam_state_summary_state_summary_get() {}
+async fn processplatform_assemble_bam_processplatform_assemble_bam_state_summary_state_summary_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/bam/status/{id}",
     tag = "process",
@@ -30487,7 +31119,9 @@ async fn processplatform_assemble_designer_2bfc87_delete() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_designer_bare_list_get() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_designer_bare_list_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/designer/application/icon/{id}",
     tag = "process",
@@ -30623,7 +31257,9 @@ async fn processplatform_assemble_designer_516d9e_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_dict_list_dict_list_get() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_dict_list_dict_list_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/designer/elementtool/applicationdict/orphan",
     tag = "process",
@@ -30754,7 +31390,9 @@ async fn processplatform_assemble_designer_6ff959_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_file_flag_file_flag_get() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_file_flag_file_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/designer/file/{flag}/application/{applicationFlag}",
     tag = "process",
@@ -30780,7 +31418,9 @@ async fn processplatform_assemble_designer_05a2a2_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_form_list_form_list_get() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_form_list_form_list_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/designer/form/list/application/{applicationId}",
     tag = "process",
@@ -30882,7 +31522,8 @@ async fn processplatform_assemble_designer_e88680_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_form_id_form_id_get() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_form_id_form_id_get() {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/designer/formversion/list/form/{formId}",
     tag = "process",
@@ -30924,7 +31565,8 @@ async fn processplatform_assemble_designer_8df202_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_get_id_get_flow_get() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_get_id_get_flow_get() {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/designer/item-access/path/{path}",
     tag = "process",
@@ -31023,7 +31665,9 @@ async fn processplatform_assemble_designer_4e0015_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_list_category_list_flows_get() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_list_category_list_flows_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/designer/mapping/execute/{flag}",
     tag = "process",
@@ -31111,7 +31755,9 @@ async fn processplatform_assemble_designer_ec3ce1_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_mapping_flag_mapping_flag_get() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_mapping_flag_mapping_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/designer/mapping/{flag}/execute",
     tag = "process",
@@ -31198,7 +31844,9 @@ async fn processplatform_assemble_designer_5ed317_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_preview_id_preview_flow_get() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_preview_id_preview_flow_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/designer/process/activity/{flag}/{activityType}/{activityType}",
     tag = "process",
@@ -31422,7 +32070,9 @@ async fn processplatform_assemble_designer_b201ff_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_process_id_process_id_get() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_process_id_process_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/designer/process/{id}/disable",
     tag = "process",
@@ -31611,7 +32261,9 @@ async fn processplatform_assemble_designer_faf425_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_script_id_script_id_get() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_script_id_script_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/designer/scriptversion/list/script/{scriptId}",
     tag = "process",
@@ -31706,7 +32358,9 @@ async fn processplatform_assemble_designer_9ba30a_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_xform_list_xform_list_get() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_xform_list_xform_list_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/designer/{id}/{count}",
     tag = "process",
@@ -31721,7 +32375,9 @@ async fn processplatform_assemble_designer_processplatform_assemble_designer_xfo
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_id_count_id_count_get() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_id_count_id_count_get()
+{
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/designer/application/{id}/permission",
     tag = "process",
@@ -31787,7 +32443,9 @@ async fn processplatform_assemble_designer_7e2bbd_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_create_create_flow_post() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_create_create_flow_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/designer/delete/{id}",
     tag = "process",
@@ -31801,7 +32459,9 @@ async fn processplatform_assemble_designer_processplatform_assemble_designer_cre
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_delete_id_delete_flow_post() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_delete_id_delete_flow_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/designer/dict/create",
     tag = "process",
@@ -31812,7 +32472,9 @@ async fn processplatform_assemble_designer_processplatform_assemble_designer_del
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_dict_create_dict_create_post() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_dict_create_dict_create_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/designer/dict/delete/{id}",
     tag = "process",
@@ -31826,7 +32488,9 @@ async fn processplatform_assemble_designer_processplatform_assemble_designer_dic
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_dict_delete_id_dict_delete_post() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_dict_delete_id_dict_delete_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/designer/dict/save/{id}",
     tag = "process",
@@ -31840,7 +32504,9 @@ async fn processplatform_assemble_designer_processplatform_assemble_designer_dic
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_dict_save_id_dict_save_post() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_dict_save_id_dict_save_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/designer/file/upload/{id}",
     tag = "process",
@@ -31865,7 +32531,9 @@ async fn processplatform_assemble_designer_57e273_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_form_create_form_create_post() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_form_create_form_create_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/designer/form/delete/{id}",
     tag = "process",
@@ -31879,7 +32547,9 @@ async fn processplatform_assemble_designer_processplatform_assemble_designer_for
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_form_delete_id_form_delete_post() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_form_delete_id_form_delete_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/designer/form/save/{id}",
     tag = "process",
@@ -31893,7 +32563,9 @@ async fn processplatform_assemble_designer_processplatform_assemble_designer_for
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_form_save_id_form_save_post() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_form_save_id_form_save_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/designer/item-access",
     tag = "process",
@@ -31940,7 +32612,9 @@ async fn processplatform_assemble_designer_4abca9_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_mapping_mapping_create_post() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_mapping_mapping_create_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/designer/mergeitemplan",
     tag = "process",
@@ -32123,7 +32797,9 @@ async fn processplatform_assemble_designer_af0a25_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_save_id_save_flow_post() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_save_id_save_flow_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/designer/workcompleted/application/merge/data/{applicationFlag}",
     tag = "process",
@@ -32162,7 +32838,9 @@ async fn processplatform_assemble_designer_ccc702_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_xform_create_xform_create_post() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_xform_create_xform_create_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/designer/xform/delete/{id}",
     tag = "process",
@@ -32190,7 +32868,9 @@ async fn processplatform_assemble_designer_8371d2_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_xform_save_id_xform_save_post() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_xform_save_id_xform_save_post(
+) {
+}
 #[utoipa::path(put,
     path = "/api/processplatform/assemble/designer/application/{id}/icon",
     tag = "process",
@@ -32218,7 +32898,9 @@ async fn processplatform_assemble_designer_e4b21e_put() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_dict_save_id_dict_save_put() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_dict_save_id_dict_save_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/processplatform/assemble/designer/form/save/{id}",
     tag = "process",
@@ -32232,7 +32914,9 @@ async fn processplatform_assemble_designer_processplatform_assemble_designer_dic
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_form_save_id_form_save_put() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_form_save_id_form_save_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/processplatform/assemble/designer/xform/save/{id}",
     tag = "process",
@@ -32246,7 +32930,9 @@ async fn processplatform_assemble_designer_processplatform_assemble_designer_for
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_designer_processplatform_assemble_designer_xform_save_id_xform_save_put() {}
+async fn processplatform_assemble_designer_processplatform_assemble_designer_xform_save_id_xform_save_put(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/processplatform/assemble/surface/application/{flag}/{onlyRemoveNotCompleted}",
     tag = "process",
@@ -32450,7 +33136,9 @@ async fn processplatform_assemble_surface_5a1ca2_delete() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_attachment_id_attachment_id_delete() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_attachment_id_attachment_id_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/processplatform/assemble/surface/attachment/{id}/work/{workId}",
     tag = "process",
@@ -32494,7 +33182,9 @@ async fn processplatform_assemble_surface_f5a87e_delete() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_data_work_id_data_work_id_delete() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_data_work_id_data_work_id_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/processplatform/assemble/surface/data/work/{id}/{path0}",
     tag = "process",
@@ -32656,7 +33346,9 @@ async fn processplatform_assemble_surface_edd415_delete() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_draft_id_draft_id_delete() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_draft_id_draft_id_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/processplatform/assemble/surface/process/{flag}/{onlyRemoveNotCompleted}",
     tag = "process",
@@ -32770,7 +33462,9 @@ async fn processplatform_assemble_surface_97d46b_delete() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_sign_id_sign_id_delete() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_sign_id_sign_id_delete()
+{
+}
 #[utoipa::path(delete,
     path = "/api/processplatform/assemble/surface/snap/{id}",
     tag = "process",
@@ -32784,7 +33478,9 @@ async fn processplatform_assemble_surface_processplatform_assemble_surface_sign_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_snap_id_snap_u2_delete_delete() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_snap_id_snap_u2_delete_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/processplatform/assemble/surface/task/{id}/manage",
     tag = "process",
@@ -32826,7 +33522,9 @@ async fn processplatform_assemble_surface_e9b652_delete() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_work_id_work_id_delete() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_work_id_work_id_delete()
+{
+}
 #[utoipa::path(delete,
     path = "/api/processplatform/assemble/surface/work/{id}/relative/manage",
     tag = "process",
@@ -34159,7 +34857,9 @@ async fn processplatform_assemble_surface_551139_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_data_job_job_data_job_job_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_data_job_job_data_job_job_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/data/job/{job}/{path0}",
     tag = "process",
@@ -34335,7 +35035,9 @@ async fn processplatform_assemble_surface_6dc5ca_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_data_work_id_data_work_id_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_data_work_id_data_work_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/data/work/{id}/mockdeletetoget",
     tag = "process",
@@ -35124,7 +35826,8 @@ async fn processplatform_assemble_surface_4769a1_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_draft_id_draft_id_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_draft_id_draft_id_get() {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/draft/{id}/mockdeletetoget",
     tag = "process",
@@ -35152,7 +35855,9 @@ async fn processplatform_assemble_surface_cacf2e_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_draft_id_start_draft_id_start_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_draft_id_start_draft_id_start_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/file/application/content/{flag}/{applicationFlag}",
     tag = "process",
@@ -35368,7 +36073,9 @@ async fn processplatform_assemble_surface_ca7b58_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_form_v2_id_form_v2_id_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_form_v2_id_form_v2_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/form/v2/{id}/mobile",
     tag = "process",
@@ -35396,7 +36103,9 @@ async fn processplatform_assemble_surface_61bc18_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_form_flag_form_flag_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_form_flag_form_flag_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/form/{flag}/application/{applicationFlag}",
     tag = "process",
@@ -35454,7 +36163,9 @@ async fn processplatform_assemble_surface_6fddb6_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_get_id_get_surface_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_get_id_get_surface_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/handover/cancel/{id}",
     tag = "process",
@@ -35512,7 +36223,9 @@ async fn processplatform_assemble_surface_f657e0_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_handover_id_handover_id_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_handover_id_handover_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/job/latest/work/workcompleted/serial/{serial}",
     tag = "process",
@@ -35594,7 +36307,9 @@ async fn processplatform_assemble_surface_5d9db6_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_list_category_list_surfaces_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_list_category_list_surfaces_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/mode/clear/person/person/{p0}",
     tag = "process",
@@ -35622,7 +36337,9 @@ async fn processplatform_assemble_surface_df9fce_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_mode_id_delete_mode_id_delete_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_mode_id_delete_mode_id_delete_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/openapi",
     tag = "process",
@@ -35633,7 +36350,9 @@ async fn processplatform_assemble_surface_processplatform_assemble_surface_mode_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_openapi_openapi_get_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_openapi_openapi_get_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/preview/{id}",
     tag = "process",
@@ -35647,7 +36366,9 @@ async fn processplatform_assemble_surface_processplatform_assemble_surface_opena
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_preview_id_preview_surface_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_preview_id_preview_surface_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/process/activity/activity/{activityType}/{activityType}",
     tag = "process",
@@ -35790,7 +36511,9 @@ async fn processplatform_assemble_surface_c0027a_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_process_flag_process_flag_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_process_flag_process_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/process/{flag}/allowrerouteto",
     tag = "process",
@@ -36289,7 +37012,9 @@ async fn processplatform_assemble_surface_ff784f_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_read_manage_id_read_id_manage_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_read_manage_id_read_id_manage_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/read/mockputtopost/{id}",
     tag = "process",
@@ -37283,7 +38008,9 @@ async fn processplatform_assemble_surface_398851_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_review_id_review_id_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_review_id_review_id_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/review/{id}/application/{applicationFlag}/manage/mockdeletetoget",
     tag = "process",
@@ -37337,7 +38064,8 @@ async fn processplatform_assemble_surface_6b7f21_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_route_id_route_id_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_route_id_route_id_get() {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/route/{id}/selectconfig",
     tag = "process",
@@ -37789,7 +38517,9 @@ async fn processplatform_assemble_surface_1b467a_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_snap_id_snap_u2_get_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_snap_id_snap_u2_get_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/snap/{id}/download",
     tag = "process",
@@ -38368,7 +39098,9 @@ async fn processplatform_assemble_surface_2b113f_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_task_manage_id_task_id_manage_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_task_manage_id_task_id_manage_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/task/mockputtopost/{id}",
     tag = "process",
@@ -38498,7 +39230,9 @@ async fn processplatform_assemble_surface_c0ef40_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_task_v3_pin_id_task_v3_id_pin_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_task_v3_pin_id_task_v3_id_pin_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/task/v3/{id}/pin",
     tag = "process",
@@ -38512,7 +39246,9 @@ async fn processplatform_assemble_surface_processplatform_assemble_surface_task_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_task_v3_id_pin_task_v3_id_pin_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_task_v3_id_pin_task_v3_id_pin_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/task/{count}/{credential}",
     tag = "process",
@@ -38597,7 +39333,9 @@ async fn processplatform_assemble_surface_6ca158_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_task_id_will_task_id_will_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_task_id_will_task_id_will_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/taskcompleted/count/{credential}",
     tag = "process",
@@ -39170,7 +39908,9 @@ async fn processplatform_assemble_surface_1d4d2d_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_touch_expire_touch_expire_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_touch_expire_touch_expire_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/touch/passexpired",
     tag = "process",
@@ -39800,7 +40540,9 @@ async fn processplatform_assemble_surface_b42a2a_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_work_manage_id_work_id_manage_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_work_manage_id_work_id_manage_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/work/process/force/{processFlag}",
     tag = "process",
@@ -39856,7 +40598,9 @@ async fn processplatform_assemble_surface_29bb50_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_work_refer_id_work_id_refer_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_work_refer_id_work_id_refer_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/work/relative/manage/{id}",
     tag = "process",
@@ -40239,7 +40983,9 @@ async fn processplatform_assemble_surface_29efeb_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_work_id_manage_work_id_manage_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_work_id_manage_work_id_manage_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/work/{id}/mockdeletetoget",
     tag = "process",
@@ -40281,7 +41027,9 @@ async fn processplatform_assemble_surface_af9a18_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_work_id_refer_work_id_refer_get() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_work_id_refer_work_id_refer_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/assemble/surface/work/{id}/relative/manage",
     tag = "process",
@@ -41544,7 +42292,9 @@ async fn processplatform_assemble_surface_1785f9_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_create_create_surface_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_create_create_surface_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/surface/data/fetch/job/{job}",
     tag = "process",
@@ -41762,7 +42512,9 @@ async fn processplatform_assemble_surface_f4eaa8_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_data_work_id_data_work_id_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_data_work_id_data_work_id_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/surface/data/work/{id}/mockputtopost",
     tag = "process",
@@ -42248,7 +43000,9 @@ async fn processplatform_assemble_surface_86ffcb_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_delete_id_delete_surface_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_delete_id_delete_surface_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/surface/documentversion/work/{work}",
     tag = "process",
@@ -42330,7 +43084,9 @@ async fn processplatform_assemble_surface_6021cd_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_draft_start_id_draft_id_start_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_draft_start_id_draft_id_start_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/surface/handover",
     tag = "process",
@@ -42341,7 +43097,9 @@ async fn processplatform_assemble_surface_processplatform_assemble_surface_draft
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_handover_handover_u2_create_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_handover_handover_u2_create_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/surface/handover/list/paging/{page}/size/{size}",
     tag = "process",
@@ -42423,7 +43181,9 @@ async fn processplatform_assemble_surface_78086a_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_mode_delete_id_mode_id_delete_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_mode_delete_id_mode_id_delete_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/surface/mode/list",
     tag = "process",
@@ -42434,7 +43194,9 @@ async fn processplatform_assemble_surface_processplatform_assemble_surface_mode_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_mode_list_mode_list_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_mode_list_mode_list_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/surface/mode/save",
     tag = "process",
@@ -42445,7 +43207,9 @@ async fn processplatform_assemble_surface_processplatform_assemble_surface_mode_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_mode_save_mode_save_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_mode_save_mode_save_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/surface/process/list/application/{applicationFlag}/filter",
     tag = "process",
@@ -42484,7 +43248,9 @@ async fn processplatform_assemble_surface_8dcedd_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_publish_id_publish_surface_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_publish_id_publish_surface_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/surface/read/count/filter",
     tag = "process",
@@ -42703,7 +43469,9 @@ async fn processplatform_assemble_surface_643a86_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_read_v2_count_read_v2_count_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_read_v2_count_read_v2_count_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/surface/read/v2/list",
     tag = "process",
@@ -42714,7 +43482,9 @@ async fn processplatform_assemble_surface_processplatform_assemble_surface_read_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_read_v2_list_read_v2_list_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_read_v2_list_read_v2_list_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/surface/read/v2/list/create/next/{id}/{count}",
     tag = "process",
@@ -43370,7 +44140,9 @@ async fn processplatform_assemble_surface_f7c25b_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_review_v2_list_review_v2_list_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_review_v2_list_review_v2_list_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/surface/review/v2/list/create/next/{id}/{count}",
     tag = "process",
@@ -43557,7 +44329,9 @@ async fn processplatform_assemble_surface_834721_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_save_id_save_surface_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_save_id_save_surface_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/surface/script/{flag}/application/{applicationFlag}",
     tag = "process",
@@ -43812,7 +44586,9 @@ async fn processplatform_assemble_surface_de97b5_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_snap_upload_snap_u2_upload_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_snap_upload_snap_u2_upload_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/surface/task/count/filter",
     tag = "process",
@@ -44089,7 +44865,9 @@ async fn processplatform_assemble_surface_95f6f3_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_task_v2_count_task_v2_count_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_task_v2_count_task_v2_count_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/surface/task/v2/list",
     tag = "process",
@@ -44100,7 +44878,9 @@ async fn processplatform_assemble_surface_processplatform_assemble_surface_task_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_task_v2_list_task_v2_list_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_task_v2_list_task_v2_list_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/surface/task/v2/list/create/next/{id}/{count}",
     tag = "process",
@@ -44320,7 +45100,9 @@ async fn processplatform_assemble_surface_560ae8_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_task_v3_add_id_task_v3_id_add_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_task_v3_add_id_task_v3_id_add_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/surface/task/v3/{id}/add",
     tag = "process",
@@ -44334,7 +45116,9 @@ async fn processplatform_assemble_surface_processplatform_assemble_surface_task_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_task_v3_id_add_task_v3_id_add_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_task_v3_id_add_task_v3_id_add_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/surface/task/will/{id}",
     tag = "process",
@@ -44348,7 +45132,9 @@ async fn processplatform_assemble_surface_processplatform_assemble_surface_task_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_task_will_id_task_id_will_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_task_will_id_task_id_will_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/surface/task/{id}/mockputtopost",
     tag = "process",
@@ -45037,7 +45823,9 @@ async fn processplatform_assemble_surface_9320c9_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_work_v2_list_work_v2_list_post() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_work_v2_list_work_v2_list_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/assemble/surface/work/v2/list/paging/{page}/size/{size}",
     tag = "process",
@@ -45626,7 +46414,9 @@ async fn processplatform_assemble_surface_30b24e_put() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_data_job_job_data_job_job_put() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_data_job_job_data_job_job_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/processplatform/assemble/surface/data/job/{job}/{path0}",
     tag = "process",
@@ -45788,7 +46578,9 @@ async fn processplatform_assemble_surface_dd9943_put() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_data_work_id_data_work_id_put() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_data_work_id_data_work_id_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/processplatform/assemble/surface/data/work/{id}/{path0}",
     tag = "process",
@@ -46125,7 +46917,9 @@ async fn processplatform_assemble_surface_248e98_put() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_draft_draft_u2_save_put() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_draft_draft_u2_save_put()
+{
+}
 #[utoipa::path(put,
     path = "/api/processplatform/assemble/surface/keylock/lock",
     tag = "process",
@@ -46136,7 +46930,9 @@ async fn processplatform_assemble_surface_processplatform_assemble_surface_draft
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_keylock_lock_keylock_u2_lock_put() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_keylock_lock_keylock_u2_lock_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/processplatform/assemble/surface/read/{id}",
     tag = "process",
@@ -46217,7 +47013,9 @@ async fn processplatform_assemble_surface_345910_put() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_assemble_surface_processplatform_assemble_surface_route_list_route_list_put() {}
+async fn processplatform_assemble_surface_processplatform_assemble_surface_route_list_route_list_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/processplatform/assemble/surface/serialnumber/{id}",
     tag = "process",
@@ -46499,7 +47297,9 @@ async fn processplatform_core_entity_process_workcompleted_list_workcompleted_li
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_core_express_processplatform_task_count_with_person_id_task_count_with_person_get() {}
+async fn processplatform_core_express_processplatform_task_count_with_person_id_task_count_with_person_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/task/processing/{id}",
     tag = "process",
@@ -46527,7 +47327,9 @@ async fn processplatform_core_express_processplatform_task_processing_id_task_pr
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_core_express_processplatform_work_count_with_person_id_work_count_with_person_get() {}
+async fn processplatform_core_express_processplatform_work_count_with_person_id_work_count_with_person_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/work/processing/{id}",
     tag = "process",
@@ -46686,7 +47488,9 @@ async fn processplatform_service_processing_8da221_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_data_job_job_data_job_job_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_data_job_job_data_job_job_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/service/processing/documentversion/{work}/{work}",
     tag = "process",
@@ -46744,7 +47548,9 @@ async fn processplatform_service_processing_efa9d5_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_get_id_get_process_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_get_id_get_process_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/service/processing/instance/{executionId}",
     tag = "process",
@@ -46905,7 +47711,9 @@ async fn processplatform_service_processing_a8a550_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_record_id_record_id_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_record_id_record_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/service/processing/record/{job}/{job}",
     tag = "process",
@@ -46934,7 +47742,9 @@ async fn processplatform_service_processing_861f45_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_review_id_review_id_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_review_id_review_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/service/processing/snap/abandoned/{work}/{workId}/{type}",
     tag = "process",
@@ -47040,7 +47850,9 @@ async fn processplatform_service_processing_68d5e1_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_snap_id_snap_id_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_snap_id_snap_id_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/processplatform/service/processing/snap/{id}/restore",
     tag = "process",
@@ -47079,7 +47891,9 @@ async fn processplatform_service_processing_8ad0d4_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_task_list_task_list_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_task_list_task_list_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/service/processing/task/pass/expired/{id}",
     tag = "process",
@@ -47121,7 +47935,9 @@ async fn processplatform_service_processing_1fe629_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_task_urge_id_task_id_urge_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_task_urge_id_task_id_urge_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/service/processing/task/v2/pause/{id}",
     tag = "process",
@@ -47149,7 +47965,9 @@ async fn processplatform_service_processing_49311a_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_task_v2_id_task_v2_id_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_task_v2_id_task_v2_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/service/processing/task/v2/{id}/pause",
     tag = "process",
@@ -47191,7 +48009,9 @@ async fn processplatform_service_processing_c8ad92_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_task_id_task_id_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_task_id_task_id_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/processplatform/service/processing/task/{id}/expire",
     tag = "process",
@@ -47247,7 +48067,9 @@ async fn processplatform_service_processing_ded064_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_task_id_urge_task_id_urge_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_task_id_urge_task_id_urge_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/service/processing/task/{id}/will",
     tag = "process",
@@ -47261,7 +48083,9 @@ async fn processplatform_service_processing_processplatform_service_processing_t
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_task_id_will_task_id_will_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_task_id_will_task_id_will_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/service/processing/taskcompleted/task/identity/{next}",
     tag = "process",
@@ -47392,7 +48216,9 @@ async fn processplatform_service_processing_918313_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_work_list_work_list_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_work_list_work_list_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/processplatform/service/processing/work/v2/{id}/terminate",
     tag = "process",
@@ -47463,7 +48289,9 @@ async fn processplatform_service_processing_e537fe_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_job_job_job_job_get() {}
+async fn processplatform_service_processing_processplatform_service_processing_job_job_job_job_get()
+{
+}
 #[utoipa::path(post,
     path = "/api/gateway/{work_id}/{activity_token}/join",
     tag = "process",
@@ -47478,7 +48306,9 @@ async fn processplatform_service_processing_processplatform_service_processing_j
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_gateway_work_id_activity_token_join_gateway_join_post() {}
+async fn processplatform_service_processing_gateway_work_id_activity_token_join_gateway_join_post()
+{
+}
 #[utoipa::path(post,
     path = "/api/processplatform/service/processing/attachment/copy/workcompleted/{workCompletedId}",
     tag = "process",
@@ -47546,7 +48376,9 @@ async fn processplatform_service_processing_1cce08_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_create_create_process_post() {}
+async fn processplatform_service_processing_processplatform_service_processing_create_create_process_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/service/processing/data/delete/{work}/{id}",
     tag = "process",
@@ -47696,7 +48528,9 @@ async fn processplatform_service_processing_74017b_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_snap_upload_snap_upload_post() {}
+async fn processplatform_service_processing_processplatform_service_processing_snap_upload_snap_upload_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/service/processing/task/press/{id}",
     tag = "process",
@@ -47794,7 +48628,9 @@ async fn processplatform_service_processing_3f420c_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_task_will_id_task_id_will_post() {}
+async fn processplatform_service_processing_processplatform_service_processing_task_will_id_task_id_will_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/service/processing/task/{id}/replace",
     tag = "process",
@@ -47835,7 +48671,9 @@ async fn processplatform_service_processing_858d08_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_timer_start_start_timer_post() {}
+async fn processplatform_service_processing_processplatform_service_processing_timer_start_start_timer_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/service/processing/timer/{job_id}/cancel",
     tag = "process",
@@ -48033,7 +48871,9 @@ async fn processplatform_service_processing_ce1c11_put() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn processplatform_service_processing_processplatform_service_processing_task_v2_id_task_v2_id_put() {}
+async fn processplatform_service_processing_processplatform_service_processing_task_v2_id_task_v2_id_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/processplatform/service/processing/task/v2/{id}/reset",
     tag = "process",
@@ -48237,7 +49077,9 @@ async fn program_center_application_id_application_delete_delete() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_application_top_erase_appstyle_image_application_top_erase_delete() {}
+async fn program_center_appstyle_image_application_top_erase_appstyle_image_application_top_erase_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/program_center/appstyle/image/launch/logo/erase",
     tag = "program",
@@ -48248,7 +49090,8 @@ async fn program_center_appstyle_image_application_top_erase_appstyle_image_appl
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_launch_logo_erase_appstyle_image_launch_logo_erase_delete() {}
+async fn program_center_appstyle_image_launch_logo_erase_appstyle_image_launch_logo_erase_delete() {
+}
 #[utoipa::path(delete,
     path = "/api/program_center/appstyle/image/login/avatar/erase",
     tag = "program",
@@ -48259,7 +49102,9 @@ async fn program_center_appstyle_image_launch_logo_erase_appstyle_image_launch_l
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_login_avatar_erase_appstyle_image_login_avatar_erase_delete() {}
+async fn program_center_appstyle_image_login_avatar_erase_appstyle_image_login_avatar_erase_delete()
+{
+}
 #[utoipa::path(delete,
     path = "/api/program_center/appstyle/image/menu/logo/blur/erase",
     tag = "program",
@@ -48270,7 +49115,9 @@ async fn program_center_appstyle_image_login_avatar_erase_appstyle_image_login_a
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_menu_logo_blur_erase_appstyle_image_menu_logo_blur_erase_delete() {}
+async fn program_center_appstyle_image_menu_logo_blur_erase_appstyle_image_menu_logo_blur_erase_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/program_center/appstyle/image/menu/logo/focus/erase",
     tag = "program",
@@ -48281,7 +49128,9 @@ async fn program_center_appstyle_image_menu_logo_blur_erase_appstyle_image_menu_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_menu_logo_focus_erase_appstyle_image_menu_logo_focus_erase_delete() {}
+async fn program_center_appstyle_image_menu_logo_focus_erase_appstyle_image_menu_logo_focus_erase_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/program_center/appstyle/image/process/default/erase",
     tag = "program",
@@ -48292,7 +49141,9 @@ async fn program_center_appstyle_image_menu_logo_focus_erase_appstyle_image_menu
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_process_default_erase_appstyle_image_process_default_erase_delete() {}
+async fn program_center_appstyle_image_process_default_erase_appstyle_image_process_default_erase_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/program_center/appstyle/image/setup/about/logo/erase",
     tag = "program",
@@ -48303,7 +49154,9 @@ async fn program_center_appstyle_image_process_default_erase_appstyle_image_proc
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_setup_about_logo_erase_appstyle_image_setup_about_logo_erase_delete() {}
+async fn program_center_appstyle_image_setup_about_logo_erase_appstyle_image_setup_about_logo_erase_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/program_center/collect/delete/{id}",
     tag = "program",
@@ -48333,7 +49186,9 @@ async fn program_center_collect_delete_id_collect_delete_delete() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_collect_name_name_mobile_mobile_code_code_u3_collect_delete_name_mobile_code_delete() {}
+async fn program_center_collect_name_name_mobile_mobile_code_code_u3_collect_delete_name_mobile_code_delete(
+) {
+}
 #[utoipa::path(delete,
     path = "/api/program_center/dict/dictFlag/path/data/mockdeletetoget",
     tag = "program",
@@ -48682,7 +49537,9 @@ async fn program_center_appstyle_image_application_top_appstyle_image_applicatio
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_application_top_erase_u3_appstyle_application_top_erase_get_get() {}
+async fn program_center_appstyle_image_application_top_erase_u3_appstyle_application_top_erase_get_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/program_center/appstyle/image/launch/logo",
     tag = "program",
@@ -48726,7 +49583,8 @@ async fn program_center_appstyle_image_login_avatar_appstyle_image_login_avatar_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_login_avatar_erase_u2_appstyle_login_avatar_erase_get_get() {}
+async fn program_center_appstyle_image_login_avatar_erase_u2_appstyle_login_avatar_erase_get_get() {
+}
 #[utoipa::path(get,
     path = "/api/program_center/appstyle/image/menu/logo/blur",
     tag = "program",
@@ -48748,7 +49606,9 @@ async fn program_center_appstyle_image_menu_logo_blur_appstyle_image_menu_logo_b
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_menu_logo_blur_erase_u3_appstyle_menu_logo_blur_erase_get_get() {}
+async fn program_center_appstyle_image_menu_logo_blur_erase_u3_appstyle_menu_logo_blur_erase_get_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/program_center/appstyle/image/menu/logo/focus",
     tag = "program",
@@ -48770,7 +49630,9 @@ async fn program_center_appstyle_image_menu_logo_focus_appstyle_image_menu_logo_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_menu_logo_focus_erase_u3_appstyle_menu_logo_focus_erase_get_get() {}
+async fn program_center_appstyle_image_menu_logo_focus_erase_u3_appstyle_menu_logo_focus_erase_get_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/program_center/appstyle/image/process/default",
     tag = "program",
@@ -48792,7 +49654,9 @@ async fn program_center_appstyle_image_process_default_appstyle_image_process_de
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_process_default_erase_u3_appstyle_process_default_erase_get_get() {}
+async fn program_center_appstyle_image_process_default_erase_u3_appstyle_process_default_erase_get_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/program_center/appstyle/image/setup/about/logo",
     tag = "program",
@@ -48814,7 +49678,9 @@ async fn program_center_appstyle_image_setup_about_logo_appstyle_image_setup_abo
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_setup_about_logo_erase_u3_appstyle_setup_about_logo_erase_get_get() {}
+async fn program_center_appstyle_image_setup_about_logo_erase_u3_appstyle_setup_about_logo_erase_get_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/program_center/appstyle/index/portal",
     tag = "program",
@@ -48862,7 +49728,9 @@ async fn program_center_bar_create_mass_from_count_u3_bar_create_mass_from_count
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_bar_select1_field_value_count_bar_select1_field_field_value_value_count_count_get() {}
+async fn program_center_bar_select1_field_value_count_bar_select1_field_field_value_value_count_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/program_center/bar/select1/field/{field}/value/{value}/count/{count}",
     tag = "program",
@@ -48878,7 +49746,9 @@ async fn program_center_bar_select1_field_value_count_bar_select1_field_field_va
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_bar_select1_field_field_value_value_count_count_u3_bar_select1_field_value_count_get() {}
+async fn program_center_bar_select1_field_field_value_value_count_count_u3_bar_select1_field_value_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/program_center/bar/select2/count/count",
     tag = "program",
@@ -48914,7 +49784,9 @@ async fn program_center_bar_select2_count_count_u3_bar_select2_count_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_bar_select3_field_value_count_bar_select3_field_field_value_value_count_count_get() {}
+async fn program_center_bar_select3_field_value_count_bar_select3_field_field_value_value_count_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/program_center/bar/select3/field/{field}/value/{value}/count/{count}",
     tag = "program",
@@ -48930,7 +49802,9 @@ async fn program_center_bar_select3_field_value_count_bar_select3_field_field_va
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_bar_select3_field_field_value_value_count_count_u3_bar_select3_field_value_count_get() {}
+async fn program_center_bar_select3_field_field_value_value_count_count_u3_bar_select3_field_value_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/program_center/bar/select4/field/field/value/value/count/count",
     tag = "program",
@@ -48941,7 +49815,9 @@ async fn program_center_bar_select3_field_field_value_value_count_count_u3_bar_s
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_bar_select4_field_value_count_bar_select4_field_field_value_value_count_count_get() {}
+async fn program_center_bar_select4_field_value_count_bar_select4_field_field_value_value_count_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/program_center/bar/select4/field/{field}/value/{value}/count/{count}",
     tag = "program",
@@ -48957,7 +49833,9 @@ async fn program_center_bar_select4_field_value_count_bar_select4_field_field_va
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_bar_select4_field_field_value_value_count_count_u3_bar_select4_field_value_count_get() {}
+async fn program_center_bar_select4_field_field_value_value_count_count_u3_bar_select4_field_value_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/program_center/captcha/list",
     tag = "program",
@@ -49159,7 +50037,9 @@ async fn program_center_collect_controllebbs_collect_controllebbs_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_collect_controllermobile_name_name_mobile_mobile_u3_collect_controllermobile_get_get() {}
+async fn program_center_collect_controllermobile_name_name_mobile_mobile_u3_collect_controllermobile_get_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/program_center/collect/disconnect",
     tag = "program",
@@ -49349,7 +50229,9 @@ async fn program_center_config_u3_config_dump_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_config_open_get_disable_export_enable_config_open_get_disable_export_enable_get() {}
+async fn program_center_config_open_get_disable_export_enable_config_open_get_disable_export_enable_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/program_center/config/centerserver",
     tag = "program",
@@ -49437,7 +50319,9 @@ async fn program_center_config_list_dump_data_config_list_dump_data_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_config_list_dump_data_current_node_config_list_dump_data_current_node_get() {}
+async fn program_center_config_list_dump_data_current_node_config_list_dump_data_current_node_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/program_center/config/list/entity",
     tag = "program",
@@ -49645,7 +50529,9 @@ async fn program_center_dict_dictflag_data_dict_dictFlag_data_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_dict_dictflag_path_data_mockdeletetoget_dict_dictFlag_path_data_mockdeletetoget_get() {}
+async fn program_center_dict_dictflag_path_data_mockdeletetoget_dict_dictFlag_path_data_mockdeletetoget_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/program_center/dingding/get/callback/aes",
     tag = "program",
@@ -49689,7 +50575,9 @@ async fn program_center_dingding_request_pull_sync_dingding_request_pull_sync_ge
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_dingding_sync_organization_callback_dingding_sync_organization_callback_get() {}
+async fn program_center_dingding_sync_organization_callback_dingding_sync_organization_callback_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/program_center/dingding/sync/organization/register/callback/{enable}",
     tag = "program",
@@ -49739,7 +50627,9 @@ async fn program_center_distribute_assemble_source_source_u3_distribute_source_g
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_distribute_webserver_assemble_source_distribute_webserver_assemble_source_source_get() {}
+async fn program_center_distribute_webserver_assemble_source_distribute_webserver_assemble_source_source_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/program_center/distribute/webserver/assemble/source/{source}",
     tag = "program",
@@ -49753,7 +50643,9 @@ async fn program_center_distribute_webserver_assemble_source_distribute_webserve
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_distribute_webserver_assemble_source_source_u3_distribute_webserver_source_get_get() {}
+async fn program_center_distribute_webserver_assemble_source_source_u3_distribute_webserver_source_get_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/program_center/foo/create/mass/{from}/{count}",
     tag = "program",
@@ -50376,7 +51268,9 @@ async fn program_center_output_flag_select_file_output_flag_select_file_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_prompterrorlog_count_exceptionclass_prompterrorlog_count_exceptionclass_get() {}
+async fn program_center_prompterrorlog_count_exceptionclass_prompterrorlog_count_exceptionclass_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/program_center/prompterrorlog/count/loggername",
     tag = "program",
@@ -50571,7 +51465,9 @@ async fn program_center_qiyeweixin_pull_sync_qiyeweixin_pull_sync_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_qiyeweixin_send_getprivateinfo_message_qiyeweixin_send_getprivateinfo_message_get() {}
+async fn program_center_qiyeweixin_send_getprivateinfo_message_qiyeweixin_send_getprivateinfo_message_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/program_center/schedule/list/schedule",
     tag = "program",
@@ -50702,7 +51598,9 @@ async fn program_center_test_test2_test_test2_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_unexpectederrorlog_list_id_next_count_unexpectederrorlog_list_id_next_count_get() {}
+async fn program_center_unexpectederrorlog_list_id_next_count_unexpectederrorlog_list_id_next_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/program_center/unexpectederrorlog/list/{id}/next/{count}/date/{date}",
     tag = "program",
@@ -50733,7 +51631,9 @@ async fn program_center_b16db6_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_unexpectederrorlog_list_id_prev_count_unexpectederrorlog_list_id_prev_count_get() {}
+async fn program_center_unexpectederrorlog_list_id_prev_count_unexpectederrorlog_list_id_prev_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/program_center/unexpectederrorlog/list/{id}/prev/{count}/date/{date}",
     tag = "program",
@@ -50830,7 +51730,9 @@ async fn program_center_warnlog_list_id_next_count_warnlog_list_next_count_get()
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_warnlog_list_id_next_count_date_date_warnlog_list_next_count_date_date_get() {}
+async fn program_center_warnlog_list_id_next_count_date_date_warnlog_list_next_count_date_date_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/program_center/warnlog/list/{id}/prev/{count}",
     tag = "program",
@@ -50861,7 +51763,9 @@ async fn program_center_warnlog_list_id_prev_count_warnlog_list_prev_count_get()
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_warnlog_list_id_prev_count_date_date_warnlog_list_prev_count_date_date_get() {}
+async fn program_center_warnlog_list_id_prev_count_date_date_warnlog_list_prev_count_date_date_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/program_center/warnlog/view/system/log/tag/{tag}",
     tag = "program",
@@ -51226,7 +52130,8 @@ async fn program_center_config_ternary_management_u3_config_ternary_management_p
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_deploy_list_paging_page_size_size_deploy_list_paging_page_size_size_post() {}
+async fn program_center_deploy_list_paging_page_size_size_deploy_list_paging_page_size_size_post() {
+}
 #[utoipa::path(post,
     path = "/api/program_center/deploy/server/o2",
     tag = "program",
@@ -51297,7 +52202,9 @@ async fn program_center_dict_dict_create_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_dict_dict_flag_path_data_mockputtopost_dict_dictFlag_path_data_mockputtopost_post() {}
+async fn program_center_dict_dict_flag_path_data_mockputtopost_dict_dictFlag_path_data_mockputtopost_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/program_center/dict/list/paging/{page}/size/{size}",
     tag = "program",
@@ -51360,7 +52267,9 @@ async fn program_center_dict_dictflag_path_data_dict_data_save_put_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_dict_dictflag_path_data_mockputtopost_dict_dictFlag_path_data_mockputtopost_post() {}
+async fn program_center_dict_dictflag_path_data_mockputtopost_dict_dictFlag_path_data_mockputtopost_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/program_center/dingding/request/pull/sync",
     tag = "program",
@@ -51382,7 +52291,9 @@ async fn program_center_dingding_request_pull_sync_dingding_request_pull_sync_po
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_dingding_sync_organization_callback_dingding_sync_organization_callback_post() {}
+async fn program_center_dingding_sync_organization_callback_dingding_sync_organization_callback_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/program_center/foo/create/mass/from/count",
     tag = "program",
@@ -51531,7 +52442,9 @@ async fn program_center_invoke_token_invoke_token_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_invoke_flag_client_client_token_token_execute_u3_invoke_execute_with_token_post() {}
+async fn program_center_invoke_flag_client_client_token_token_execute_u3_invoke_execute_with_token_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/program_center/invoke/{flag}/execute",
     tag = "program",
@@ -51583,7 +52496,9 @@ async fn program_center_market_install_offline_market_install_offline_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_market_list_install_log_paging_page_size_size_u3_market_install_log_paging_post_post() {}
+async fn program_center_market_list_install_log_paging_page_size_size_u3_market_install_log_paging_post_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/program_center/market/list/paging/{page}/size/{size}",
     tag = "program",
@@ -51755,7 +52670,9 @@ async fn program_center_qiyeweixin_request_pull_sync_u3_qiyeweixin_request_pull_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_qiyeweixin_send_getprivateinfo_message_qiyeweixin_send_getprivateinfo_message_post() {}
+async fn program_center_qiyeweixin_send_getprivateinfo_message_qiyeweixin_send_getprivateinfo_message_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/program_center/schedule/report",
     tag = "program",
@@ -51805,7 +52722,8 @@ async fn program_center_script_script_create_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_script_list_paging_page_size_size_script_list_paging_page_size_size_post() {}
+async fn program_center_script_list_paging_page_size_size_script_list_paging_page_size_size_post() {
+}
 #[utoipa::path(post,
     path = "/api/program_center/script/name/{name}",
     tag = "program",
@@ -51968,7 +52886,8 @@ async fn program_center_appstyle_current_update_appstyle_current_update_put() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_application_top_u3_appstyle_image_application_top_put_put() {}
+async fn program_center_appstyle_image_application_top_u3_appstyle_image_application_top_put_put() {
+}
 #[utoipa::path(put,
     path = "/api/program_center/appstyle/image/launch/logo",
     tag = "program",
@@ -52012,7 +52931,8 @@ async fn program_center_appstyle_image_menu_logo_blur_u3_appstyle_image_menu_log
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_menu_logo_focus_u3_appstyle_image_menu_logo_focus_put_put() {}
+async fn program_center_appstyle_image_menu_logo_focus_u3_appstyle_image_menu_logo_focus_put_put() {
+}
 #[utoipa::path(put,
     path = "/api/program_center/appstyle/image/process/default",
     tag = "program",
@@ -52023,7 +52943,8 @@ async fn program_center_appstyle_image_menu_logo_focus_u3_appstyle_image_menu_lo
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_process_default_u3_appstyle_image_process_default_put_put() {}
+async fn program_center_appstyle_image_process_default_u3_appstyle_image_process_default_put_put() {
+}
 #[utoipa::path(put,
     path = "/api/program_center/appstyle/image/setup/about/logo",
     tag = "program",
@@ -52034,7 +52955,9 @@ async fn program_center_appstyle_image_process_default_u3_appstyle_image_process
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn program_center_appstyle_image_setup_about_logo_u3_appstyle_image_setup_about_logo_put_put() {}
+async fn program_center_appstyle_image_setup_about_logo_u3_appstyle_image_setup_about_logo_put_put()
+{
+}
 #[utoipa::path(put,
     path = "/api/program_center/cachedispatch",
     tag = "program",
@@ -52596,7 +53519,9 @@ async fn query_assemble_designer_query_assemble_designer_delete_id_delete_design
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_importer_delete_id_importer_delete_delete() {}
+async fn query_assemble_designer_query_assemble_designer_importer_delete_id_importer_delete_delete()
+{
+}
 #[utoipa::path(delete,
     path = "/api/query/assemble/designer/table/row/delete/all/{tableFlag}",
     tag = "query",
@@ -52819,7 +53744,9 @@ async fn query_assemble_designer_151621_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_list_view_query_flag_view_list_query_flag_p3_get() {}
+async fn query_assemble_designer_query_assemble_designer_list_view_query_flag_view_list_query_flag_p3_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/neural/generate/model/{modelFlag}",
     tag = "query",
@@ -52858,7 +53785,8 @@ async fn query_assemble_designer_fa3d30_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_neural_list_model_neural_list_model_get() {}
+async fn query_assemble_designer_query_assemble_designer_neural_list_model_neural_list_model_get() {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/neural/model/{modelFlag}",
     tag = "query",
@@ -52872,7 +53800,9 @@ async fn query_assemble_designer_query_assemble_designer_neural_list_model_neura
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_neural_model_modelflag_neural_model_modelFlag_get() {}
+async fn query_assemble_designer_query_assemble_designer_neural_model_modelflag_neural_model_modelFlag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/neural/model/{modelFlag}/reset/status",
     tag = "query",
@@ -52939,7 +53869,9 @@ async fn query_assemble_designer_query_assemble_designer_output_list_output_list
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_output_select_file_flag_output_flag_select_file_get() {}
+async fn query_assemble_designer_query_assemble_designer_output_select_file_flag_output_flag_select_file_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/output/select/{queryFlag}",
     tag = "query",
@@ -52953,7 +53885,9 @@ async fn query_assemble_designer_query_assemble_designer_output_select_file_flag
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_output_select_queryflag_output_queryFlag_select_get() {}
+async fn query_assemble_designer_query_assemble_designer_output_select_queryflag_output_queryFlag_select_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/output/{flag}/select/file",
     tag = "query",
@@ -52967,7 +53901,9 @@ async fn query_assemble_designer_query_assemble_designer_output_select_queryflag
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_output_flag_select_file_output_flag_select_file_get() {}
+async fn query_assemble_designer_query_assemble_designer_output_flag_select_file_output_flag_select_file_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/permission/{query}/{id}",
     tag = "query",
@@ -52982,7 +53918,9 @@ async fn query_assemble_designer_query_assemble_designer_output_flag_select_file
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_permission_query_id_query_id_permission_get() {}
+async fn query_assemble_designer_query_assemble_designer_permission_query_id_query_id_permission_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/query/entity/{entity}/category/{entityCategory}/properties",
     tag = "query",
@@ -53033,7 +53971,9 @@ async fn query_assemble_designer_067541_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_query_list_summary_query_list_summary_get() {}
+async fn query_assemble_designer_query_assemble_designer_query_list_summary_query_list_summary_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/query/list/summary/querycategory/{queryCategory}",
     tag = "query",
@@ -53083,7 +54023,9 @@ async fn query_assemble_designer_query_assemble_designer_query_flag_query_flag_g
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_querycategory_list_query_querycategory_list_get() {}
+async fn query_assemble_designer_query_assemble_designer_querycategory_list_query_querycategory_list_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/simulate/{view}/{id}",
     tag = "query",
@@ -53123,7 +54065,9 @@ async fn query_assemble_designer_query_assemble_designer_stat_list_stat_list_get
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_stat_list_query_queryflag_stat_list_query_flag_get() {}
+async fn query_assemble_designer_query_assemble_designer_stat_list_query_queryflag_stat_list_query_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/stat/list/{id}/next/{count}",
     tag = "query",
@@ -53138,7 +54082,9 @@ async fn query_assemble_designer_query_assemble_designer_stat_list_query_queryfl
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_stat_list_id_next_count_stat_list_id_next_count_get() {}
+async fn query_assemble_designer_query_assemble_designer_stat_list_id_next_count_stat_list_id_next_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/stat/list/{id}/prev/{count}",
     tag = "query",
@@ -53153,7 +54099,9 @@ async fn query_assemble_designer_query_assemble_designer_stat_list_id_next_count
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_stat_list_id_prev_count_stat_list_id_prev_count_get() {}
+async fn query_assemble_designer_query_assemble_designer_stat_list_id_prev_count_stat_list_id_prev_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/stat/list/{id}/{next}/{count}",
     tag = "query",
@@ -53184,7 +54132,9 @@ async fn query_assemble_designer_fec7c4_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_stat_list_query_flag_stat_list_query_flag_p2_get() {}
+async fn query_assemble_designer_query_assemble_designer_stat_list_query_flag_stat_list_query_flag_p2_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/stat/permission/{id}",
     tag = "query",
@@ -53198,7 +54148,9 @@ async fn query_assemble_designer_query_assemble_designer_stat_list_query_flag_st
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_stat_permission_id_stat_id_permission_get() {}
+async fn query_assemble_designer_query_assemble_designer_stat_permission_id_stat_id_permission_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/stat/simulate/{id}",
     tag = "query",
@@ -53254,7 +54206,9 @@ async fn query_assemble_designer_b31abd_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_table_build_query_query_table_query_query_build_get() {}
+async fn query_assemble_designer_query_assemble_designer_table_build_query_query_table_query_query_build_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/table/build/{flag}/{status}",
     tag = "query",
@@ -53326,7 +54280,8 @@ async fn query_assemble_designer_f4e4d5_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_table_list_manage_table_list_manage_get() {}
+async fn query_assemble_designer_query_assemble_designer_table_list_manage_table_list_manage_get() {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/table/list/query/{flag}",
     tag = "query",
@@ -53340,7 +54295,9 @@ async fn query_assemble_designer_query_assemble_designer_table_list_manage_table
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_table_list_query_flag_table_list_query_flag_get() {}
+async fn query_assemble_designer_query_assemble_designer_table_list_query_flag_table_list_query_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/table/list/row/{tableFlag}/{id}/prev/{count}",
     tag = "query",
@@ -53435,7 +54392,9 @@ async fn query_assemble_designer_753099_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_table_list_query_flag_table_list_query_flag_p2_get() {}
+async fn query_assemble_designer_query_assemble_designer_table_list_query_flag_table_list_query_flag_p2_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/table/permission/{id}",
     tag = "query",
@@ -53449,7 +54408,9 @@ async fn query_assemble_designer_query_assemble_designer_table_list_query_flag_t
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_table_permission_id_table_id_permission_get() {}
+async fn query_assemble_designer_query_assemble_designer_table_permission_id_table_id_permission_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/table/query/{query}/build",
     tag = "query",
@@ -53474,7 +54435,9 @@ async fn query_assemble_designer_38d351_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_table_reload_dynamic_table_reload_dynamic_get() {}
+async fn query_assemble_designer_query_assemble_designer_table_reload_dynamic_table_reload_dynamic_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/table/row/where/where/{tableFlag}/{count}",
     tag = "query",
@@ -53503,7 +54466,9 @@ async fn query_assemble_designer_d4f8bc_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_table_row_tableflag_table_tableFlag_row_get() {}
+async fn query_assemble_designer_query_assemble_designer_table_row_tableflag_table_tableFlag_row_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/table/row/{tableFlag}/{id}",
     tag = "query",
@@ -53518,7 +54483,9 @@ async fn query_assemble_designer_query_assemble_designer_table_row_tableflag_tab
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_table_row_tableflag_id_table_tableFlag_row_id_get() {}
+async fn query_assemble_designer_query_assemble_designer_table_row_tableflag_id_table_tableFlag_row_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/table/{flag}",
     tag = "query",
@@ -53562,7 +54529,9 @@ async fn query_assemble_designer_985e61_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_table_flag_row_id_table_tableFlag_row_id_get() {}
+async fn query_assemble_designer_query_assemble_designer_table_flag_row_id_table_tableFlag_row_id_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/table/{flag}/status/build",
     tag = "query",
@@ -53576,7 +54545,9 @@ async fn query_assemble_designer_query_assemble_designer_table_flag_row_id_table
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_table_flag_status_build_table_flag_status_build_get() {}
+async fn query_assemble_designer_query_assemble_designer_table_flag_status_build_table_flag_status_build_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/table/{flag}/status/draft",
     tag = "query",
@@ -53590,7 +54561,9 @@ async fn query_assemble_designer_query_assemble_designer_table_flag_status_build
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_table_flag_status_draft_table_flag_status_draft_get() {}
+async fn query_assemble_designer_query_assemble_designer_table_flag_status_draft_table_flag_status_draft_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/view/list/query/{queryFlag}",
     tag = "query",
@@ -53604,7 +54577,9 @@ async fn query_assemble_designer_query_assemble_designer_table_flag_status_draft
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_view_list_query_queryflag_view_list_query_flag_get() {}
+async fn query_assemble_designer_query_assemble_designer_view_list_query_queryflag_view_list_query_flag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/view/list/{id}/next/{count}",
     tag = "query",
@@ -53619,7 +54594,9 @@ async fn query_assemble_designer_query_assemble_designer_view_list_query_queryfl
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_view_list_id_next_count_view_list_id_next_count_get() {}
+async fn query_assemble_designer_query_assemble_designer_view_list_id_next_count_view_list_id_next_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/view/list/{id}/prev/{count}",
     tag = "query",
@@ -53634,7 +54611,9 @@ async fn query_assemble_designer_query_assemble_designer_view_list_id_next_count
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_view_list_id_prev_count_view_list_id_prev_count_get() {}
+async fn query_assemble_designer_query_assemble_designer_view_list_id_prev_count_view_list_id_prev_count_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/view/permission/{id}",
     tag = "query",
@@ -53648,7 +54627,9 @@ async fn query_assemble_designer_query_assemble_designer_view_list_id_prev_count
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_view_permission_id_view_id_permission_get() {}
+async fn query_assemble_designer_query_assemble_designer_view_permission_id_view_id_permission_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/designer/view/{id}",
     tag = "query",
@@ -53738,7 +54719,8 @@ async fn query_assemble_designer_query_assemble_designer_importer_create_importe
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_importer_delete_id_importer_delete_post() {}
+async fn query_assemble_designer_query_assemble_designer_importer_delete_id_importer_delete_post() {
+}
 #[utoipa::path(post,
     path = "/api/query/assemble/designer/importer/save/{id}",
     tag = "query",
@@ -53921,7 +54903,9 @@ async fn query_assemble_designer_query_assemble_designer_table_create_table_defi
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_table_execute_flag_table_flag_execute_post() {}
+async fn query_assemble_designer_query_assemble_designer_table_execute_flag_table_flag_execute_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/query/assemble/designer/table/row/delete/all/{tableFlag}",
     tag = "query",
@@ -53963,7 +54947,9 @@ async fn query_assemble_designer_4ffa61_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_table_flag_execute_execute_table_definition_post() {}
+async fn query_assemble_designer_query_assemble_designer_table_flag_execute_execute_table_definition_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/query/assemble/designer/table/{flag}/row/save",
     tag = "query",
@@ -53977,7 +54963,9 @@ async fn query_assemble_designer_query_assemble_designer_table_flag_execute_exec
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_table_flag_row_save_table_tableFlag_row_save_post() {}
+async fn query_assemble_designer_query_assemble_designer_table_flag_row_save_table_tableFlag_row_save_post(
+) {
+}
 #[utoipa::path(put,
     path = "/api/query/assemble/designer/importer/save/{id}",
     tag = "query",
@@ -54035,7 +55023,9 @@ async fn query_assemble_designer_query_assemble_designer_input_create_input_crea
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_input_prepare_cover_input_prepare_cover_put() {}
+async fn query_assemble_designer_query_assemble_designer_input_prepare_cover_input_prepare_cover_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/query/assemble/designer/input/prepare/create",
     tag = "query",
@@ -54046,7 +55036,9 @@ async fn query_assemble_designer_query_assemble_designer_input_prepare_cover_inp
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_input_prepare_create_input_prepare_create_put() {}
+async fn query_assemble_designer_query_assemble_designer_input_prepare_create_input_prepare_create_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/query/assemble/designer/save",
     tag = "query",
@@ -54099,7 +55091,9 @@ async fn query_assemble_designer_query_assemble_designer_stat_save_id_stat_save_
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_designer_query_assemble_designer_table_edit_flag_update_table_definition_put() {}
+async fn query_assemble_designer_query_assemble_designer_table_edit_flag_update_table_definition_put(
+) {
+}
 #[utoipa::path(put,
     path = "/api/query/assemble/designer/table/row/save/{tableFlag}",
     tag = "query",
@@ -54141,7 +55135,9 @@ async fn query_assemble_designer_query_assemble_designer_table_flag_update_table
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_surface_queryview_table_flag_row_delete_all_table_tableFlag_row_delete_all_delete() {}
+async fn query_assemble_surface_queryview_table_flag_row_delete_all_table_tableFlag_row_delete_all_delete(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/assemble/surface/explorer/list",
     tag = "query",
@@ -54365,7 +55361,9 @@ async fn query_assemble_surface_d3385e_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_surface_queryview_importmodel_record_recordid_importmodel_record_recordId_get() {}
+async fn query_assemble_surface_queryview_importmodel_record_recordid_importmodel_record_recordId_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/queryview/importmodel/record/{recordId}/mockdeletetoget",
     tag = "query",
@@ -54545,7 +55543,9 @@ async fn query_assemble_surface_c402bc_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_surface_queryview_table_list_row_select_tableflag_table_list_tableFlag_row_select_get() {}
+async fn query_assemble_surface_queryview_table_list_row_select_tableflag_table_list_tableFlag_row_select_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/queryview/table/list/row/{tableFlag}/{id}/prev/{count}",
     tag = "query",
@@ -54688,7 +55688,9 @@ async fn query_assemble_surface_3cafdb_get() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_surface_queryview_table_list_id_next_count_table_list_id_next_count_p3_get() {}
+async fn query_assemble_surface_queryview_table_list_id_next_count_table_list_id_next_count_p3_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/queryview/table/reload/dynamic",
     tag = "query",
@@ -54859,7 +55861,9 @@ async fn query_assemble_surface_queryview_view_excel_result_flag_view_excel_resu
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_surface_queryview_view_flag_flag_query_queryflag_view_flag_flag_query_queryFlag_get() {}
+async fn query_assemble_surface_queryview_view_flag_flag_query_queryflag_view_flag_flag_query_queryFlag_get(
+) {
+}
 #[utoipa::path(get,
     path = "/api/queryview/view/list/query/{queryFlag}",
     tag = "query",
@@ -54873,7 +55877,9 @@ async fn query_assemble_surface_queryview_view_flag_flag_query_queryflag_view_fl
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_surface_queryview_view_list_query_queryflag_view_list_query_queryFlag_get() {}
+async fn query_assemble_surface_queryview_view_list_query_queryflag_view_list_query_queryFlag_get()
+{
+}
 #[utoipa::path(get,
     path = "/api/queryview/view/{id}",
     tag = "query",
@@ -55038,7 +56044,9 @@ async fn query_assemble_surface_447ac5_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_surface_queryview_bundle_mockputtopost_view_id_view_id_bundle_mockputtopost_post() {}
+async fn query_assemble_surface_queryview_bundle_mockputtopost_view_id_view_id_bundle_mockputtopost_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/queryview/excel/mockputtopost/{view}/{flag}/{flag}/{query}/{queryFlag}",
     tag = "query",
@@ -55071,7 +56079,9 @@ async fn query_assemble_surface_559cf3_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_surface_queryview_excel_mockputtopost_view_id_view_id_excel_mockputtopost_post() {}
+async fn query_assemble_surface_queryview_excel_mockputtopost_view_id_view_id_excel_mockputtopost_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/queryview/execute/mockputtopost/{view}/{flag}/{flag}/{query}/{queryFlag}",
     tag = "query",
@@ -55104,7 +56114,9 @@ async fn query_assemble_surface_f21baa_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_surface_queryview_execute_mockputtopost_view_id_view_id_execute_mockputtopost_post() {}
+async fn query_assemble_surface_queryview_execute_mockputtopost_view_id_view_id_execute_mockputtopost_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/queryview/importmodel/execute/record/{recordId}",
     tag = "query",
@@ -55223,7 +56235,9 @@ async fn query_assemble_surface_1925ba_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_surface_queryview_importmodel_record_recordid_importmodel_record_recordId_post() {}
+async fn query_assemble_surface_queryview_importmodel_record_recordid_importmodel_record_recordId_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/queryview/importmodel/record/{recordId}/{status}",
     tag = "query",
@@ -55342,7 +56356,9 @@ async fn query_assemble_surface_33796f_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_surface_queryview_table_row_delete_all_tableflag_table_tableFlag_row_delete_all_post() {}
+async fn query_assemble_surface_queryview_table_row_delete_all_tableflag_table_tableFlag_row_delete_all_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/queryview/table/row/mockdeletetoget/{tableFlag}/{id}",
     tag = "query",
@@ -55431,7 +56447,9 @@ async fn query_assemble_surface_252ab5_post() {}
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_surface_queryview_view_id_excel_mockputtopost_view_id_excel_mockputtopost_post() {}
+async fn query_assemble_surface_queryview_view_id_excel_mockputtopost_view_id_excel_mockputtopost_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/queryview/view/{id}/execute/mockputtopost",
     tag = "query",
@@ -55445,7 +56463,9 @@ async fn query_assemble_surface_queryview_view_id_excel_mockputtopost_view_id_ex
         (status = 500, description = "Internal Server Error")
     ),
 )]
-async fn query_assemble_surface_queryview_view_id_execute_mockputtopost_view_id_execute_mockputtopost_post() {}
+async fn query_assemble_surface_queryview_view_id_execute_mockputtopost_view_id_execute_mockputtopost_post(
+) {
+}
 #[utoipa::path(get,
     path = "/api/query/import/list",
     tag = "query",

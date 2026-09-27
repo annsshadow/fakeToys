@@ -9,10 +9,9 @@ use axum::{
 
 use crate::{
     cipher_hotpic_bbs_id, cipher_hotpic_cms_id, cipher_hotpic_filter_list_page_page_count_count,
-    cipher_hotpic_id, create_hotpic, get_control_config, get_hotpic,
-    list_control_applications, list_control_panels, list_hotpics,
-    update_control_config, user_hotpic_application_infoId, user_hotpic_changeTitle,
-    user_hotpic_delete_by_ids, user_hotpic_exists_check,
+    cipher_hotpic_id, create_hotpic, get_control_config, get_hotpic, list_control_applications,
+    list_control_panels, list_hotpics, update_control_config, user_hotpic_application_infoId,
+    user_hotpic_changeTitle, user_hotpic_delete_by_ids, user_hotpic_exists_check,
     user_hotpic_filter_list_page_page_count_count, user_hotpic_id,
 };
 
@@ -46,9 +45,6 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
             "/api/hotpic_assemble_control/list/control/applications",
             get(list_control_applications),
         )
-
-
-
         .route(
             "/api/hotpic_assemble_control/cipher/hotpic/{id}",
             get(cipher_hotpic_id),
@@ -61,7 +57,6 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
             "/api/hotpic_assemble_control/user/hotpic/exists/check",
             get(user_hotpic_exists_check),
         )
-
         .route(
             "/api/hotpic_assemble_control/user/hotpic/{application}/{infoId}",
             get(user_hotpic_application_infoId),

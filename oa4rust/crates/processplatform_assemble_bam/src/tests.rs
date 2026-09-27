@@ -336,7 +336,6 @@ fn test_period_count_grouped_envelope_format() {
     assert_eq!(v["data"]["data"][1]["key"], "app2");
 }
 
-
 // 回归守卫：每条注册路由的 {param} 槽数必须与 handler 的 Path 提取器元数一致，
 // 否则 axum 运行时返回 500「Wrong number of path arguments」。逐条 oneshot 校验无该错误体。
 #[tokio::test]
@@ -440,10 +439,18 @@ async fn route_path_arity_matches_handlers() {
         let app = crate::router(pool);
         let m = Method::from_bytes(method.as_bytes()).unwrap();
         let resp = app
-            .oneshot(Request::builder().method(m).uri(*path).body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .method(m)
+                    .uri(*path)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
-        let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+        let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+            .await
+            .unwrap();
         let body = String::from_utf8_lossy(&bytes);
         if body.contains("Wrong number of path arguments") {
             bad.push((*path).to_string());
@@ -451,7 +458,9 @@ async fn route_path_arity_matches_handlers() {
     }
     if !bad.is_empty() {
         println!("ARITY-TRAP remaining: {}", bad.len());
-        for b in &bad { println!("  {}", b); }
+        for b in &bad {
+            println!("  {}", b);
+        }
     }
     assert!(bad.is_empty(), "{} arity traps remain", bad.len());
 }

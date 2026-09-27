@@ -23,8 +23,6 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
             "/api/jpush_assemble_control/create/jpush",
             get(create_jpush),
         )
-
-
         .route(
             "/api/jpush_assemble_control/get/control/config",
             get(get_control_config),
@@ -50,7 +48,6 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
             "/api/jpush_assemble_control/device/list/{pushType}",
             get(device_list_pushType),
         )
-
         .route(
             "/api/jpush_assemble_control/message/test/send",
             get(message_test_send),
@@ -89,8 +86,6 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
             "/api/jpush/assemble/control/device/list/{pushType}",
             get(device_list_pushType),
         )
-
-
         .route(
             "/api/jpush/assemble/control/message/test/send",
             get(message_test_send),

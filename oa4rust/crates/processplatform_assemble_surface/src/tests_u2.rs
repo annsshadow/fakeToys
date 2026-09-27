@@ -616,7 +616,9 @@ mod u2b_tests {
                     .method("POST")
                     .header("content-type", "application/json")
                     .extension(test_session())
-                    .body(Body::from(r#"{"url":"http://169.254.169.254/latest/meta-data"}"#))
+                    .body(Body::from(
+                        r#"{"url":"http://169.254.169.254/latest/meta-data"}"#,
+                    ))
                     .unwrap(),
             )
             .await

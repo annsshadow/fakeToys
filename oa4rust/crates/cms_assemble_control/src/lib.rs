@@ -5558,8 +5558,8 @@ pub async fn formversion_list_form_formId(
     list_from_table_filtered_legacy(
         &pool,
         "x_cms_form_v2",
-        &format!("deleted_at IS NULL AND id = '{}'", form_id),
-        &[],
+        "deleted_at IS NULL AND id = $1",
+        &[&form_id],
     )
     .await
 }
@@ -6329,8 +6329,8 @@ pub async fn scriptversion_list_script_scriptId(
     list_from_table_filtered_legacy(
         &pool,
         "x_cms_script",
-        &format!("deleted_at IS NULL AND id = '{}'", script_id),
-        &[],
+        "deleted_at IS NULL AND id = $1",
+        &[&script_id],
     )
     .await
 }

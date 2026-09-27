@@ -64,7 +64,11 @@ async fn every_registered_route_has_matching_path_arity() {
     let mut skipped_uri = 0usize;
     for (method, path) in &cases {
         let m = Method::from_bytes(method.as_bytes()).unwrap_or(Method::GET);
-        let req = match Request::builder().method(m).uri(path.as_str()).body(Body::empty()) {
+        let req = match Request::builder()
+            .method(m)
+            .uri(path.as_str())
+            .body(Body::empty())
+        {
             Ok(r) => r,
             // 含非法 URI 字符（如 legacy 畸形空格路径）——正常客户端无法触达，跳过计数。
             Err(_) => {
@@ -74,7 +78,9 @@ async fn every_registered_route_has_matching_path_arity() {
         };
         let resp = app.clone().oneshot(req).await.unwrap();
         let status = resp.status();
-        let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+        let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+            .await
+            .unwrap();
         let body = String::from_utf8_lossy(&bytes);
         if body.contains("Wrong number of path arguments") {
             arity_traps.push(format!("{method} {path}"));
@@ -107,7 +113,11 @@ async fn every_registered_route_has_matching_path_arity() {
         sorted.sort();
         let _ = std::fs::write(
             dir.join(format!("_current_{name}")),
-            sorted.iter().map(|s| s.as_str()).collect::<Vec<_>>().join("\n"),
+            sorted
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<_>>()
+                .join("\n"),
         );
         let new: Vec<&String> = current.difference(&known).collect();
         eprintln!(
@@ -123,7 +133,11 @@ async fn every_registered_route_has_matching_path_arity() {
         new.len()
     };
     let new_arity = ratchet("_arity_traps_baseline.txt", &arity_traps, "arity-500");
-    let new_404 = ratchet("_arity_unreachable_baseline.txt", &unreachable, "unreachable-404");
+    let new_404 = ratchet(
+        "_arity_unreachable_baseline.txt",
+        &unreachable,
+        "unreachable-404",
+    );
     assert_eq!(
         new_arity + new_404,
         0,

@@ -1363,7 +1363,11 @@ pub async fn page_list_portal_portal(
 }
 
 #[allow(non_snake_case)]
-async fn page_v2_flag_portal_portalFlag_core(pool: Extension<Pool>, flag: String, portal_flag: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn page_v2_flag_portal_portalFlag_core(
+    pool: Extension<Pool>,
+    flag: String,
+    portal_flag: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -1399,17 +1403,27 @@ async fn page_v2_flag_portal_portalFlag_core(pool: Extension<Pool>, flag: String
 }
 
 #[allow(non_snake_case)]
-pub async fn page_v2_flag_portal_portalFlag(pool: Extension<Pool>, axum::extract::Path((flag, portal_flag)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn page_v2_flag_portal_portalFlag(
+    pool: Extension<Pool>,
+    axum::extract::Path((flag, portal_flag)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     page_v2_flag_portal_portalFlag_core(pool, flag, portal_flag).await
 }
 
 #[allow(non_snake_case)]
-pub async fn page_v2_flag_portal_portalFlag_p3(pool: Extension<Pool>, axum::extract::Path((_s0, flag, portal_flag)): axum::extract::Path<(String, String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn page_v2_flag_portal_portalFlag_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, flag, portal_flag)): axum::extract::Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     page_v2_flag_portal_portalFlag_core(pool, flag, portal_flag).await
 }
 
 #[allow(non_snake_case)]
-async fn page_v2_flag_portal_portalFlag_mobile_core(pool: Extension<Pool>, flag: String, portal_flag: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn page_v2_flag_portal_portalFlag_mobile_core(
+    pool: Extension<Pool>,
+    flag: String,
+    portal_flag: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -1448,17 +1462,26 @@ async fn page_v2_flag_portal_portalFlag_mobile_core(pool: Extension<Pool>, flag:
 }
 
 #[allow(non_snake_case)]
-pub async fn page_v2_flag_portal_portalFlag_mobile(pool: Extension<Pool>, axum::extract::Path((flag, portal_flag)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn page_v2_flag_portal_portalFlag_mobile(
+    pool: Extension<Pool>,
+    axum::extract::Path((flag, portal_flag)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     page_v2_flag_portal_portalFlag_mobile_core(pool, flag, portal_flag).await
 }
 
 #[allow(non_snake_case)]
-pub async fn page_v2_flag_portal_portalFlag_mobile_p3(pool: Extension<Pool>, axum::extract::Path((_s0, flag, portal_flag)): axum::extract::Path<(String, String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn page_v2_flag_portal_portalFlag_mobile_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, flag, portal_flag)): axum::extract::Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     page_v2_flag_portal_portalFlag_mobile_core(pool, flag, portal_flag).await
 }
 
 #[allow(non_snake_case)]
-async fn page_v2_id_core(pool: Extension<Pool>, id: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn page_v2_id_core(
+    pool: Extension<Pool>,
+    id: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -1494,17 +1517,26 @@ async fn page_v2_id_core(pool: Extension<Pool>, id: String) -> Result<Json<Actio
 }
 
 #[allow(non_snake_case)]
-pub async fn page_v2_id(pool: Extension<Pool>, axum::extract::Path(id): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn page_v2_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     page_v2_id_core(pool, id).await
 }
 
 #[allow(non_snake_case)]
-pub async fn page_v2_id_p2(pool: Extension<Pool>, axum::extract::Path((_s0, id)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn page_v2_id_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, id)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     page_v2_id_core(pool, id).await
 }
 
 #[allow(non_snake_case)]
-async fn page_v2_id_mobile_core(pool: Extension<Pool>, id: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn page_v2_id_mobile_core(
+    pool: Extension<Pool>,
+    id: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -1543,17 +1575,27 @@ async fn page_v2_id_mobile_core(pool: Extension<Pool>, id: String) -> Result<Jso
 }
 
 #[allow(non_snake_case)]
-pub async fn page_v2_id_mobile(pool: Extension<Pool>, axum::extract::Path(id): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn page_v2_id_mobile(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     page_v2_id_mobile_core(pool, id).await
 }
 
 #[allow(non_snake_case)]
-pub async fn page_v2_id_mobile_p2(pool: Extension<Pool>, axum::extract::Path((_s0, id)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn page_v2_id_mobile_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, id)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     page_v2_id_mobile_core(pool, id).await
 }
 
 #[allow(non_snake_case)]
-async fn page_flag_portal_portalFlag_core(pool: Extension<Pool>, flag: String, portal_flag: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn page_flag_portal_portalFlag_core(
+    pool: Extension<Pool>,
+    flag: String,
+    portal_flag: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -1589,17 +1631,27 @@ async fn page_flag_portal_portalFlag_core(pool: Extension<Pool>, flag: String, p
 }
 
 #[allow(non_snake_case)]
-pub async fn page_flag_portal_portalFlag(pool: Extension<Pool>, axum::extract::Path((flag, portal_flag)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn page_flag_portal_portalFlag(
+    pool: Extension<Pool>,
+    axum::extract::Path((flag, portal_flag)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     page_flag_portal_portalFlag_core(pool, flag, portal_flag).await
 }
 
 #[allow(non_snake_case)]
-pub async fn page_flag_portal_portalFlag_p3(pool: Extension<Pool>, axum::extract::Path((_s0, flag, portal_flag)): axum::extract::Path<(String, String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn page_flag_portal_portalFlag_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, flag, portal_flag)): axum::extract::Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     page_flag_portal_portalFlag_core(pool, flag, portal_flag).await
 }
 
 #[allow(non_snake_case)]
-async fn page_flag_portal_portalFlag_mobile_core(pool: Extension<Pool>, flag: String, portal_flag: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn page_flag_portal_portalFlag_mobile_core(
+    pool: Extension<Pool>,
+    flag: String,
+    portal_flag: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -1638,12 +1690,18 @@ async fn page_flag_portal_portalFlag_mobile_core(pool: Extension<Pool>, flag: St
 }
 
 #[allow(non_snake_case)]
-pub async fn page_flag_portal_portalFlag_mobile(pool: Extension<Pool>, axum::extract::Path((flag, portal_flag)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn page_flag_portal_portalFlag_mobile(
+    pool: Extension<Pool>,
+    axum::extract::Path((flag, portal_flag)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     page_flag_portal_portalFlag_mobile_core(pool, flag, portal_flag).await
 }
 
 #[allow(non_snake_case)]
-pub async fn page_flag_portal_portalFlag_mobile_p3(pool: Extension<Pool>, axum::extract::Path((_s0, flag, portal_flag)): axum::extract::Path<(String, String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn page_flag_portal_portalFlag_mobile_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, flag, portal_flag)): axum::extract::Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     page_flag_portal_portalFlag_mobile_core(pool, flag, portal_flag).await
 }
 
@@ -1687,7 +1745,10 @@ pub async fn page_id(
 }
 
 #[allow(non_snake_case)]
-async fn page_id_mobile_core(pool: Extension<Pool>, id: String) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn page_id_mobile_core(
+    pool: Extension<Pool>,
+    id: String,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -1726,12 +1787,18 @@ async fn page_id_mobile_core(pool: Extension<Pool>, id: String) -> Result<Json<A
 }
 
 #[allow(non_snake_case)]
-pub async fn page_id_mobile(pool: Extension<Pool>, axum::extract::Path(id): axum::extract::Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn page_id_mobile(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     page_id_mobile_core(pool, id).await
 }
 
 #[allow(non_snake_case)]
-pub async fn page_id_mobile_p2(pool: Extension<Pool>, axum::extract::Path((_s0, id)): axum::extract::Path<(String, String)>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn page_id_mobile_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, id)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     page_id_mobile_core(pool, id).await
 }
 

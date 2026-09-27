@@ -3232,10 +3232,12 @@ pub async fn file_upload_with_url(
     // 真拉取远程内容（SSRF 防护见 shared::netguard）。此前这里把 URL 字符串本身
     // base64 当文件内容入库——假实现且污染数据。
     let fetcher = shared::netguard::fetch_client().map_err(|_| AppError::Internal)?;
-    let (final_url, bytes) = shared::netguard::fetch_limited(&fetcher, &url).await.map_err(|e| {
-        tracing::warn!(url = %url, error = %e, "remote url fetch rejected or failed");
-        AppError::BadRequest(format!("remote fetch failed: {e}"))
-    })?;
+    let (final_url, bytes) = shared::netguard::fetch_limited(&fetcher, &url)
+        .await
+        .map_err(|e| {
+            tracing::warn!(url = %url, error = %e, "remote url fetch rejected or failed");
+            AppError::BadRequest(format!("remote fetch failed: {e}"))
+        })?;
 
     let name = if name.is_empty() {
         shared::netguard::filename_from_url(&url, &final_url)
@@ -4295,9 +4297,7 @@ fn build_zip_archive(entries: Vec<(String, Vec<u8>)>) -> Result<Vec<u8>, AppErro
         writer
             .start_file(entry.as_str(), SimpleFileOptions::default())
             .map_err(|_| AppError::Internal)?;
-        writer
-            .write_all(&bytes)
-            .map_err(|_| AppError::Internal)?;
+        writer.write_all(&bytes).map_err(|_| AppError::Internal)?;
     }
     Ok(writer
         .finish()
@@ -4305,7 +4305,10 @@ fn build_zip_archive(entries: Vec<(String, Vec<u8>)>) -> Result<Vec<u8>, AppErro
         .into_inner())
 }
 
-fn zip_download_response(bytes: Vec<u8>, filename: &str) -> Result<axum::response::Response, AppError> {
+fn zip_download_response(
+    bytes: Vec<u8>,
+    filename: &str,
+) -> Result<axum::response::Response, AppError> {
     Ok(axum::response::Response::builder()
         .status(axum::http::StatusCode::OK)
         .header("Content-Type", "application/zip")
