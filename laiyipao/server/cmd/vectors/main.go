@@ -111,6 +111,16 @@ type smokeFixture struct {
 	// Go 算出的 star_targets 会与 TS 算出的实际得分对不上，
 	// 而**没有任何测试会发现** —— 因为两端各自都自洽。
 	ScoreRules domain.ScoreRules `json:"score_rules"`
+	// SkillRules 是技能升级规则。
+	//
+	// 存在的理由同 ScoreRules：客户端的升级按钮要显示费用、
+	// 战斗要按等级缩放伤害，这三个数如果两端各写一份，
+	// 漂移时表现为「玩家付了 800 金币，伤害却按 50‰ 涨」——
+	// 而这种 bug 在数值上极难从战报里看出来。
+	//
+	// 夹具里带上它，客户端 TestSkillRulesMatchServerContract 就能断言
+	// `DEFAULT_SKILL_RULES` 与 Go 侧逐字段一致。
+	SkillRules domain.SkillRules `json:"skill_rules"`
 }
 
 // smokeLevelIDs 是导出的关卡：**全部 100 关**。
@@ -147,6 +157,9 @@ func buildSmoke() ([]byte, error) {
 		// 分数规则也进夹具：客户端测试据此断言自己的默认值与服务端一致。
 		// 漂移了没有任何其他手段能发现（两端各自都自洽）。
 		ScoreRules: domain.DefaultScoreRules(),
+		// 客户端会**离线**用 DEFAULT_SKILL_RULES 兜底（config 未到达时），
+		// 夹具带上真值才能让跨端守卫有东西可比。
+		SkillRules: domain.DefaultSkillRules(),
 	}
 
 	// 只导这些关卡真正用到的敌人

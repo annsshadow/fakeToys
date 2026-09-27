@@ -25,6 +25,7 @@ import { type Attacker } from './damage'
 import type { EquippedSkill } from './heatmap'
 import type { Element } from './elements'
 import type { EnemyDef, GeneratedLevel, SkillDef } from './types'
+import { DEFAULT_SKILL_RULES, skillBaseDamageAtLevel } from './skill'
 
 /** 服务端 /battle/{id}/replay 的响应。 */
 export interface ReplayInfo {
@@ -152,6 +153,18 @@ export interface ReplayOutcome {
  *
  * ⚠️ 槽位顺序必须与首次对战时**完全一致**，否则哈希必然不同。
  * 这里按 snapshot 里的 slot 升序排，slot = -1 的技能视为未装备（跳过）。
+ *
+ * ## 这是 `EquippedSkill` 的**唯一**构造点
+ *
+ * 此前 `pages/battle/battle.vue` 里有一份**逐行复制**的本函数
+ * —— 实战开局自己拼一遍、重放再拼一遍。
+ *
+ * 那是本项目「战斗层与重放层各读各的」的典型形状：
+ * 两份都自洽，改一处忘另一处，
+ * 症状是**实战哈希与重放哈希永远对不上**，
+ * 而排查方向会自然滑向「I-6 坏了」而不是「构造逻辑有两份」。
+ *
+ * 现在 `battle.vue` 直接调本函数：一份逻辑、一处改动。
  */
 export function equippedFromSnapshot(build: BuildSnapshot, skills: Map<number, SkillDef>): EquippedSkill[] {
   const list = Object.values(build?.skills ?? {})
@@ -172,7 +185,19 @@ export function equippedFromSnapshot(build: BuildSnapshot, skills: Map<number, S
       cooldownMs: def.cooldown_ms,
       pierce: def.pierce,
       aoeRadius: def.aoe_radius,
-      baseDamage: BigInt(def.base_damage),
+      // ⚠️ 等级在这里烘进 baseDamage。
+      //
+      // 之所以不把 level 作为独立字段往下传（而在这里乘掉）：
+      // `replayHash()` 的锚点是 `slot:skillId:baseDamage:applyStacks:heatCost`。
+      // 烘进去 → 不同等级天然算出不同哈希；
+      // 独立字段 → 等级不在哈希里，两个不同等级的构筑可能算出同一份哈希，
+      // **验真通过但伤害对不上**，哈希在说谎。
+      //
+      // 与「`activeSlots` 缺省必须是 `ACTIVE_SLOTS = 4`」同一个道理：
+      // 凡是能改变战斗结果的输入，都必须落在哈希锚点里。
+      //
+      // 详见 skill.ts 的 skillBaseDamageAtLevel。
+      baseDamage: skillBaseDamageAtLevel(DEFAULT_SKILL_RULES, BigInt(def.base_damage), s.level),
       applyElement: (def.apply_element || def.element) as Element | '',
       applyStacks: BigInt(def.apply_stacks),
       projectileSpeed: def.projectile_speed,

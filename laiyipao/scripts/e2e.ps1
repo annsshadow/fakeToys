@@ -245,7 +245,45 @@ if ($battles.items.Count -gt 0) {
   if ($v2.matched) { Bad "错误哈希竟然验真通过" }
 }
 
-Step "16. 未认证访问必须被拒"
+Step "16. 技能升级（消耗金币 → 等级 +1 → 进 build 快照）"
+# ⚠️ 这一步是**唯一**能覆盖 `UpgradeSkill` 事务逻辑的地方。
+# Go 单元测试碰不到 SQL：FOR UPDATE、条件扣费（`WHERE coin >= $3`）、
+# 满级短路、未拥有拒绝 —— 四条都只能在这里验。
+#
+# 判据按「行为 > 反射」：不比「level 字段变成 2」，
+# 而是比**扣了多少金币** + **重放哈希是否随之改变**。
+# 只比字段的话，一个「只加字段不扣钱」的 bug 也能通过。
+$wBefore = Invoke-RestMethod "$base/api/v1/wallet" -Headers $hdr -TimeoutSec 10
+$costExpect = 100   # CostFrom(1) = baseCost × 当前等级 = 100
+try {
+  $up = Invoke-RestMethod "$base/api/v1/me/skills/1/upgrade" -Method Post -Headers $hdr -TimeoutSec 10
+  Ok "技能 1 升级 → level=$($up.level)，余额 $($wBefore.coin) → $($up.wallet.coin)"
+  if ($up.level -ne 2) { Bad "升级后期望 level=2，实得 $($up.level)" }
+  $spent = $wBefore.coin - $up.wallet.coin
+  if ($spent -ne $costExpect) { Bad "扣费期望 $costExpect，实扣 $spent" }
+
+  # 等级必须真的进 build 快照 —— 否则客户端拿到的还是 1 级
+  $bt2 = Invoke-RestMethod "$base/api/v1/battle/token" -Method Post -Headers $hdr `
+    -ContentType 'application/json' -Body '{"level_id":1}' -TimeoutSec 10
+  $lv1 = $bt2.build.skills.'1'
+  if ($null -eq $lv1) {
+    Bad "build 快照里找不到技能 1"
+  } elseif ($lv1.level -ne 2) {
+    Bad "build 快照里技能 1 的 level=$($lv1.level)，期望 2（等级没进快照 = 客户端算不出伤害）"
+  } else {
+    Ok "build 快照已带等级：skill 1 level=$($lv1.level)（客户端按它缩放伤害）"
+  }
+
+  # 未拥有的技能必须被拒（升级别人的/不存在的技能 = 白送一级）
+  try {
+    Invoke-RestMethod "$base/api/v1/me/skills/99999/upgrade" -Method Post -Headers $hdr -TimeoutSec 10 | Out-Null
+    Bad "升级未拥有的技能 99999 竟然成功"
+  } catch { Ok "升级未拥有的技能被拒 HTTP $($_.Exception.Response.StatusCode.value__)" }
+} catch {
+  Bad "技能升级失败：$($_.ErrorDetails.Message)"
+}
+
+Step "17. 未认证访问必须被拒"
 try {
   Invoke-RestMethod "$base/api/v1/me" -TimeoutSec 10 | Out-Null
   Bad "未带令牌竟能访问 /me"
