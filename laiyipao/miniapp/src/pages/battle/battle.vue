@@ -267,6 +267,13 @@ async function setup() {
       attacker: store.attacker,
       // seed 服务端以字符串下发（避免 JSON number 精度损失），转 bigint 供 PRNG 用
       seed: BigInt(bt.seed),
+      // 可用槽位数同样由服务端权威下发（基础 5 槽 + 专精「额外插槽」）。
+      //
+      // ⚠️ 缺省绝不能变：绝大多数战报是 4 槽的，
+      // 引擎缺省取 ACTIVE_SLOTS = 4 才让历史战报照常重放。
+      // 专精那 8 个「额外插槽」节点此前完全惰性 ——
+      // 客户端用编译期常量，根本不读服务端下发的槽位数。
+      activeSlots: bt.build?.active_slots,
     })
     engine.value = eng
     eng.start()
