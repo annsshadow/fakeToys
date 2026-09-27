@@ -293,9 +293,22 @@ FLOOR = {
 #: （索引里有 `api/routes/quality.py` / `augmentor/quality.py` / `augmentor/cli/commands/quality.py`
 #: 三家）⇒ `ambiguous_file` 145 → 146，处置按 L83/L87 的同一口径：**改散文补目录前缀，不抬上限**。
 #: 同一条规则不抓 `deps.py` 是因为索引里它只有 `api/deps.py` 一家 —— 涨不涨由索引说，不由我以为。
+#: **L94（产品 Python 码零改动 ⇒ 涨的两格全部指得到文档句子）**：账本 `file_tokens` 1457 →
+#: **1475**（+18 / −0，`Temp/l92q/token_diff.py` 逐 token 点名：本轮新建的四个仓库件
+#: `tests/residue_watch.py` 3、`tests/unit/test_measurement_rulers_l94.py` 3、
+#: `tests/unit/test_repo_residue_l94.py` 2、`tests/conftest.py` 4，三支 Temp 探针各 1，
+#: 加上 `api/deps.py` / 裸 `residue_watch.py` 各 2 / 1 的既名复现），架构文档 241 → **244**
+#: （+3：§7 目录树新增的 `tests/residue_watch.py`、被改动的 `tests/conftest.py` 与新写的
+#: `tests/unit/test_measurement_rulers_l94.py`）。`line_refs` 两侧照旧（42 / 290 —— 本轮
+#: 不写一个 `path:line`），`code_but_no_name_match` 照旧（37 / 161 —— 产品码没动，
+#: 漂移档自然不动）。**棘轮桶本轮又被自己写坏过一次**：L94 块与 A171 行里为了说「basename
+#: 会撞」把三个裸名加了反引号 ⇒ `ambiguous_file` 145 → 151（6 条），处置还是 L83/L87/L93
+#: 那一格的正解：**把反引号摘掉（它们是一段同名文件的称呼，不是引用），不抬上限**。
+#: `scratch_missing` 现量 112 的那 1 条是本轮自己的填数脚本 `Temp/l94q/fill_numbers_l94.py`
+#: 被引用时还不存在 ⇒ 脚本落地即回落 111，这一格是「引用先于文件」的形状，不是缺陷。
 MEASURED = {
-    ARCH: {"line_refs": 42, "file_tokens": 241, "code_but_no_name_match": 37},
-    LEDGER: {"line_refs": 290, "file_tokens": 1457, "code_but_no_name_match": 161},
+    ARCH: {"line_refs": 42, "file_tokens": 244, "code_but_no_name_match": 37},
+    LEDGER: {"line_refs": 290, "file_tokens": 1475, "code_but_no_name_match": 161},
 }
 
 #: 日志块标题行上「下一轮才填得出自己哈希」的占位符。精确相等 = **只许有该填的那几条**。
@@ -316,6 +329,10 @@ MEASURED = {
 #: **L93 两次都动了（现量 15）**：填掉 L92 的三批哈希（`15c340e80` + `462dd405f` + `d11053a30`）
 #: ⇒ 14；L93 落自己的日志块标题与进度行 ⇒ 15。**下一轮的读法**：填掉 L93 这三批时这里改回 14，
 #: 写 L94 块标题时再改回 15 —— 两个方向各红一次，不许用区间把它们对消。
+#: **L94 回填侧（15 → 14，第一次动）**：填掉 L93 的三批哈希（`229b545fb` + `11257a75a` +
+#: `50da13633`）后只剩 14 条历史欠账；本轮写 L94 日志块标题时按同一纪律改回 **15**。
+#: **L94 第二次动（14 → 15，现量 15）**：本轮落下自己的日志块标题与进度行，欠账重新变成 15 条；
+#: 下一轮填掉 L94 那笔时这里改回 14，写 L95 块标题时再改回 15。
 HASH_PLACEHOLDER = re.compile(r"^- \*\*L\d+\*\* `哈希待 L\d+ 回填`", re.MULTILINE)
 PLACEHOLDER_CEILING = 15
 
