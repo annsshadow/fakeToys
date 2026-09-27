@@ -12,7 +12,7 @@ import {
   Tag,
   type TableColumnsType
 } from 'antd'
-import { apiErrorDetail, previewExport, batchExport } from '../services/api'
+import { apiErrorDetail, bulkErrorDetail, previewExport, batchExport } from '../services/api'
 import type { ExportPreviewResponse } from '../types/api'
 
 interface ExportDialogProps {
@@ -74,7 +74,7 @@ export default function ExportDialog({ inputFile, open, onClose }: ExportDialogP
       message.success('导出完成')
       onClose()
     } catch (err) {
-      message.error(apiErrorDetail(err, '导出失败'))
+      message.error(bulkErrorDetail(err, '导出失败'))
     } finally {
       setLoading(false)
     }

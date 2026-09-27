@@ -6,8 +6,8 @@
  * 写了那个属性，证明不了 antd 的控件真的把它渲染出来、也证明不了失败时用户看得见
  * 服务端那句判决。渲染档补的正是这半格。
  *
- * 服务层用 `importOriginal` 做**部分替身**：`apiErrorDetail` 必须留真身，否则本用例
- * 断言的是替身的行为而不是页面的行为。
+ * 服务层用 `importOriginal` 做**部分替身**：`apiErrorDetail` / `bulkErrorDetail` /
+ * `isTimeoutError` 必须留真身，否则本用例断言的是替身的行为而不是页面的行为。
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
@@ -108,6 +108,31 @@ describe('上传控件的渲染面', () => {
       () => expect(document.body.textContent).toContain('上传内容整份是一份合法 JSON'),
       { timeout: 4000 }
     )
+  })
+
+  /**
+   * 超时不是「失败」，而且要有动作陪着那句话
+   *
+   * 这条钉的是 A167 的产品后果：客户端停止等待时服务端往往还在跑（实测那份
+   * 45 840 001 B 的文件在客户端 0.60 s 放弃之后照样落盘）。所以说「上传失败」
+   * 会把用户推向重试＝同一份数据落两次。页面在这里要做两件事：说清「可能已落盘」，
+   * 并主动重读一次列表让已经落盘的文件自己现身。
+   */
+  it('上传超时说的是「服务端可能已落盘」，并且真的重读了一次列表', async () => {
+    spies.uploadData.mockRejectedValueOnce({
+      code: 'ECONNABORTED',
+      message: 'timeout of 1800000ms exceeded',
+    })
+    const { container } = render(<DataManagement />)
+    const baseline = spies.getDataFiles.mock.calls.length
+
+    await pickFile(container, new File(['a,b\n1,2'], 'big.csv', { type: 'text/csv' }))
+
+    await waitFor(() => expect(document.body.textContent).toContain('客户端已停止等待'), {
+      timeout: 4000,
+    })
+    expect(document.body.textContent).toContain('已把结果落盘')
+    expect(spies.getDataFiles.mock.calls.length).toBeGreaterThan(baseline)
   })
 })
 

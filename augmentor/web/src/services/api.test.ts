@@ -126,11 +126,15 @@ describe('数据管理', () => {
 
     await api.exportData('in.json', 'out', ['jsonl', 'csv'])
 
-    expect(instance.post).toHaveBeenCalledWith('/data/export', {
-      input_file: 'in.json',
-      output_dir: 'out',
-      formats: ['jsonl', 'csv'],
-    })
+    expect(instance.post).toHaveBeenCalledWith(
+      '/data/export',
+      {
+        input_file: 'in.json',
+        output_dir: 'out',
+        formats: ['jsonl', 'csv'],
+      },
+      { timeout: api.BULK_REQUEST_TIMEOUT_MS }
+    )
   })
 })
 
@@ -312,11 +316,15 @@ describe('导出', () => {
 
     await api.batchExport({ d1: 'a.json' }, 'out', ['jsonl'])
 
-    expect(instance.post).toHaveBeenCalledWith('/export/batch', {
-      datasets: { d1: 'a.json' },
-      output_dir: 'out',
-      formats: ['jsonl'],
-    })
+    expect(instance.post).toHaveBeenCalledWith(
+      '/export/batch',
+      {
+        datasets: { d1: 'a.json' },
+        output_dir: 'out',
+        formats: ['jsonl'],
+      },
+      { timeout: api.BULK_REQUEST_TIMEOUT_MS }
+    )
   })
 })
 
@@ -573,5 +581,147 @@ describe('apiErrorDetail', () => {
     expect(
       api.apiErrorDetail(httpError('<html>502 Bad Gateway</html>'), '导出失败')
     ).toBe('导出失败')
+  })
+})
+
+/**
+ * 大块请求的超时档（A167）
+ *
+ * 这一组钉的不是「参数存在」，而是**一条实测出来的边界**：上传端到端约 0.95 s/MiB，
+ * 而实例默认档只有 30 s ⇒ 31 MiB 上下的合法进料（服务端闸是 256 MiB）会被前端自己掐断。
+ * 所以三条批量请求必须各带自己的 `timeout`，其余短请求必须**不**跟着放宽 ——
+ * 后半句由上面那条实例契约（`timeout: 30000`）守住。
+ */
+describe('大块请求的每请求超时', () => {
+  it('档位是 30 分钟，且远大于实例默认档', () => {
+    // 30 min = 闸顶 256 MiB × 实测最慢的 5.2 s/MiB（xlsx ≈ 22 min）再留余量；
+    // 这里钉数量级， derivation 的原文在 api.ts 的注释里。
+    expect(api.BULK_REQUEST_TIMEOUT_MS).toBe(30 * 60 * 1000)
+    expect(api.BULK_REQUEST_TIMEOUT_MS).toBeGreaterThan(30000)
+  })
+
+  it('uploadData 把 timeout 作为第三个实参交给 axios', async () => {
+    respondWith({ ok: true })
+
+    await api.uploadData(new File(['{}'], 'a.json', { type: 'application/json' }))
+
+    const config = instance.post.mock.calls[0][2] as { timeout: number }
+    expect(config.timeout).toBe(api.BULK_REQUEST_TIMEOUT_MS)
+  })
+
+  it('exportData / batchExport 同样带档', async () => {
+    respondWith({})
+
+    await api.exportData('a.json', 'out', ['jsonl'])
+    await api.batchExport({ d: 'a.json' }, 'out', ['jsonl'])
+
+    expect(instance.post.mock.calls[0][2]).toEqual({ timeout: api.BULK_REQUEST_TIMEOUT_MS })
+    expect(instance.post.mock.calls[1][2]).toEqual({ timeout: api.BULK_REQUEST_TIMEOUT_MS })
+  })
+
+  it('短请求（列表 / 状态）不传 per-request config，继续吃 30 s 默认档', async () => {
+    respondWith({})
+
+    await api.getDataFiles()
+    await api.getServiceStatus()
+
+    expect(instance.post.mock.calls).toHaveLength(0)
+    expect(instance.get.mock.calls[0]).toEqual(['/data/list'])
+    expect(instance.get.mock.calls[1]).toEqual(['/status'])
+  })
+})
+
+/**
+ * `isTimeoutError`：把「客户端等不及」和「服务端答错」分开
+ *
+ * 分开是因为这两件事的后果相反：答错要改输入，等不及可能什么都没错
+ * （实测：客户端在 0.60 s 放弃后，服务端照样写完了那份 45 840 001 B 的文件）。
+ *
+ * 错误对象用 `vi.importActual('axios')` 取**真身** `AxiosError` 来造，形状照
+ * `lib/adapters/xhr.js` 的 ontimeout 与 `lib/helpers/composeSignals.js` 的 fetch 档，
+ * 而不是我自己编一个 `{ code, message }`：编的形状只能自证，真身的常量若改名会在这里变红。
+ */
+describe('isTimeoutError', () => {
+  /** 真 axios 模块（本文件顶部把 axios 整体换成了替身，所以走 importActual） */
+  const realAxios = async () =>
+    (await vi.importActual('axios')) as unknown as {
+      AxiosError: {
+        new (message: string, code?: string): Error
+        ECONNABORTED: string
+        ETIMEDOUT: string
+      }
+    }
+
+  it('axios 的两个超时常量与本判据用的是同一串字面量', async () => {
+    const { AxiosError } = await realAxios()
+
+    // 若哪天 axios 改了 code 字面量，这条先红，而不是让下面的用例和判据一起自证。
+    expect(AxiosError.ECONNABORTED).toBe('ECONNABORTED')
+    expect(AxiosError.ETIMEDOUT).toBe('ETIMEDOUT')
+  })
+
+  it('xhr/http 档的超时（ECONNABORTED + `timeout of Nms exceeded`）判为超时', async () => {
+    const { AxiosError } = await realAxios()
+    // 照抄 xhr.js：`'timeout of ' + config.timeout + 'ms exceeded'` + ECONNABORTED
+    const err = new AxiosError('timeout of 1800000ms exceeded', 'ECONNABORTED')
+
+    expect(api.isTimeoutError(err)).toBe(true)
+  })
+
+  it('fetch 档开了 clarifyTimeoutError（ETIMEDOUT）也判为超时', async () => {
+    const { AxiosError } = await realAxios()
+    const err = new AxiosError('timeout of 1800000ms exceeded', 'ETIMEDOUT')
+
+    expect(api.isTimeoutError(err)).toBe(true)
+  })
+
+  it('用户主动中止同为 ECONNABORTED，但不是超时（这是判据不看 code 就完蛋的那格）', async () => {
+    const { AxiosError } = await realAxios()
+    // xhr.js 的 abort 分支给的是同一枚 code，只有 message 能把两者分开
+    const err = new AxiosError('Request aborted', 'ECONNABORTED')
+
+    expect(api.isTimeoutError(err)).toBe(false)
+  })
+
+  it('带 response 的 4xx/5xx 不是超时；没有 code 的原生 Error、null、字符串也不是', () => {
+    expect(
+      api.isTimeoutError({ response: { status: 504, data: {} }, code: 'ERR_BAD_RESPONSE' })
+    ).toBe(false)
+    expect(api.isTimeoutError(new Error('timeout of 30000ms exceeded'))).toBe(false)
+    expect(api.isTimeoutError(null)).toBe(false)
+    expect(api.isTimeoutError(undefined)).toBe(false)
+    expect(api.isTimeoutError('timeout')).toBe(false)
+    // 对象上没有 message 时不能把 String(undefined) 当成匹配
+    expect(api.isTimeoutError({ code: 'ECONNABORTED' })).toBe(false)
+  })
+})
+
+/**
+ * `bulkErrorDetail`：超时说人话，其余照旧把后端的判决透出来
+ *
+ * 三条路径都要点到：超时走新文案、有 detail 仍走 detail（这次改动不能把 A162 的成果吃掉）、
+ * 没有 detail 也没有超时仍走裸 fallback（不能把「刷新确认」那句撒到所有失败上）。
+ */
+describe('bulkErrorDetail', () => {
+  const timeout = { code: 'ECONNABORTED', message: 'timeout of 1800000ms exceeded' }
+
+  it('超时：先复述是哪件事，再说清「服务端可能已经落盘、别急着重试」', () => {
+    const text = api.bulkErrorDetail(timeout, '上传失败')
+
+    expect(text).toContain('上传失败')
+    expect(text).toContain('客户端已停止等待')
+    expect(text).toContain('已把结果落盘')
+    expect(text).toContain('请先确认结果再重试')
+  })
+
+  it('非超时且有 detail：原样端出后端那句判决（不吃掉 A162 的收口）', () => {
+    const detail = '文件超过 256 MiB 上限'
+
+    expect(api.bulkErrorDetail({ response: { data: { detail } } }, '上传失败')).toBe(detail)
+  })
+
+  it('非超时且无 detail：只有裸 fallback，不混进超时文案', () => {
+    expect(api.bulkErrorDetail(new Error('Network Error'), '导出失败')).toBe('导出失败')
+    expect(api.bulkErrorDetail(undefined, '导出失败')).toBe('导出失败')
   })
 })
