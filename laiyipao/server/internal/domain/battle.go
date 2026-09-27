@@ -407,6 +407,15 @@ func ValidateSettle(
 	if err := validateHPLeft(gl, in.HPLeft); err != nil {
 		return SettleResult{}, err
 	}
+	// 集合类字段（元素/反应/地形/选牌/哈希）的边界。
+	//
+	// ⚠️ 这五个字段此前**完全无界**，而且它们直接落进 battle_records、
+	// `reactions_used` 还会被运营看板的 GROUP BY 读走。
+	// 「不参与奖励计算」不等于「不需要校验」——
+	// 不校验它，它就进了数据库、进了报表、进了别人基于它做的决策。
+	if err := validateReportCollections(gl, in); err != nil {
+		return SettleResult{}, err
+	}
 
 	// 时长过短检查已上移到第 5 步（在发射数上界之前，理由见那里的注释）。
 	// 这里只保留胜负判定所需的 win 标记。
