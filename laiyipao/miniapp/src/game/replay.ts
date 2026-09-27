@@ -75,6 +75,18 @@ export interface SnapshotAttacker {
   element_cap: number
   reaction_tier: number
   element_coef_permille: number
+  /**
+   * 下面三项由本轮补上（专精 heat_cap/armor/mechanic + 全部装备与宝石）。
+   *
+   * ⚠️ 标成**可选**是有意的：老战报的 build_snapshot 里没有它们。
+   * 可选 + 读取处 `?? 0` 才能让老战报照常重放（缺失等价于"无加成"）。
+   *
+   * 标成必填会让"读老战报"变成类型错误；标成必填但读处不兜默认值，
+   * 则重放时得到 NaN/0 混用 —— 两种都更糟。
+   */
+  heat_cap_permille?: number
+  armor_permille?: number
+  mechanic_permille?: number
 }
 
 export interface BuildSnapshot {
@@ -188,6 +200,16 @@ function attackerFromSnapshot(build: BuildSnapshot): { att: Attacker } | { error
       elementCap: BigInt(a.element_cap ?? 3),
       reactionTier: BigInt(a.reaction_tier ?? 1),
       elementCoefPermille: BigInt(a.element_coef_permille ?? 1000),
+      // ⚠️ 这三项缺省 0，是**有意的**：老战报的 build_snapshot 里没有它们
+      // （那时它们根本不存在），而"缺失 = 0"正好等价于"没有装备/宝石/专精"。
+      // 填任何非 0 的缺省都会让老战报重放出的哈希与当年记录的不符。
+      //
+      // 反过来，服务端不下发这三项时玩家会**丢掉全部装备与专精加成**
+      // 却毫无提示 —— 所以服务端侧由 TestAttackerViewCoversEveryField
+      // 守死"Attacker 每个字段都必须出现在 AttackerView 里"。
+      heatCapPermille: BigInt(a.heat_cap_permille ?? 0),
+      armorPermille: BigInt(a.armor_permille ?? 0),
+      mechanicPermille: BigInt(a.mechanic_permille ?? 0),
     },
   }
 }

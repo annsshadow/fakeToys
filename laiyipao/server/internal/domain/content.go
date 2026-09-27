@@ -474,6 +474,23 @@ var SeedEquipmentList = []SeedEquipment{
 	{ID: 18, Code: "c_p3", Name: "母核碎片", Slot: "charm", Tier: 3, Element: ElementCorrosion, Descr: "从母巢抢出的碎片，仍在搏动。", BaseArmor: 0, BaseBonusPct: 220, UnlockLevel: 60},
 }
 
+// EquipmentByID 按 id 查装备。
+//
+// ⚠️ 找不到时返回 ok=false，**不返回零值装备**。
+//
+// 调用方（service.loadLoadout）遇到未知 id 会跳过。回落到"某件默认装备"
+// 等于白送一份属性 —— 而 DB 里的 equipment_id 有外键约束，
+// 出现未知 id 说明数据被改过或 seed 版本不匹配，
+// 那种情况下宁可少给也不能多给。
+func EquipmentByID(id int64) (SeedEquipment, bool) {
+	for _, e := range SeedEquipmentList {
+		if e.ID == int(id) {
+			return e, true
+		}
+	}
+	return SeedEquipment{}, false
+}
+
 // --- 宝石（8 属性） ---
 
 var SeedGems = []SeedGem{

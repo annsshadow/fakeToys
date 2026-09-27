@@ -83,6 +83,11 @@ const attacker = (): Attacker => ({
   attack: 400n, critPermille: 50n, critMultiplierPermille: 1500n,
   reactionMultPermille: 1000n, elementCap: 3n, reactionTier: 2n,
   elementCoefPermille: 1500n,
+  // 三项本轮新增的攻方字段（防线护甲 / 热量上限 / 机制卡强度）。
+  // 刻意给 armorPermille 非零，让这个测试同时覆盖"装备护甲真的减免漏怪伤害"。
+  heatCapPermille: 0n,
+  armorPermille: 200n,
+  mechanicPermille: 0n,
 })
 
 const deps = {

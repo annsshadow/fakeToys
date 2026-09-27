@@ -310,6 +310,15 @@ export class BattleEngine {
     this.totalEnemies = total
     this.scoreRules = cfg.scoreRules ?? DEFAULT_SCORE_RULES
 
+    // 热量上限加成（专精 heat_cap + 宝石 gem_heat）。
+    //
+    // ⚠️ 此前**从未从攻方读入**，于是「热量上限」专精节点（16 个）
+    // 与散热石宝石完全无效 —— 它们只进 I-7 评分。
+    //
+    // 放在构造器而不是每次读 cap 时加：capBonus 是 HeatMeter 的可变状态，
+    // 而 heat_cap 攻方字段是本局常量，构造时注入一次最省。
+    this.heat.capBonus = cfg.attacker.heatCapPermille
+
     for (const t of cfg.level.terrain ?? []) {
       this.terrains.push(new Terrain(t))
     }
@@ -767,18 +776,22 @@ export class BattleEngine {
   }
 
   /**
-   * 防线的有效护甲 = 关卡基础护甲 + 卡牌加成。
+   * 防线的有效护甲 = 关卡基础护甲 + 卡牌加成 + **攻方护甲加成**。
    *
    * ⚠️ 卡牌加成（buffs.armorPermille）只在这里生效。
    * 它曾经被加到 `spawnEnemy` 里敌人的护甲上，效果完全反向 ——
-   * 写着「防线护甲 +10%」的卡让玩家变弱。专精树的 armor 节点与
-   * 壁垒石装备走的是同一条路径，所以整条「防线护甲」成长线都是反的。
+   * 写着「防线护甲 +10%」的卡让玩家变弱。
+   *
+   * 攻方护甲（attacker.armorPermille）是本轮补上的第三项：
+   * 装备的 `BaseArmor`、专精树的 armor 节点、宝石的 gem_armor 词条
+   * 全部汇总到这一个字段。此前它们**只进 I-7 构筑评分**，
+   * 战斗里完全无效 —— 玩家穿上「钢鳞胸甲」后漏怪伤害一点没少。
    *
    * applyArmor 内部已有 MAX_ARMOR=750‰ 封顶，
-   * 所以「关卡 250‰ + 叠 6 张卡 600‰」会收敛到 750‰，那是设计内的 clamp。
+   * 所以「关卡 250‰ + 卡 600‰ + 装备 250‰」会收敛到 750‰，那是设计内的 clamp。
    */
   private defenseArmorPermille(): bigint {
-    return this.baseArmorPermille + this.buffs.armorPermille
+    return this.baseArmorPermille + this.buffs.armorPermille + this.cfg.attacker.armorPermille
   }
 
   /**
@@ -1079,6 +1092,17 @@ export class BattleEngine {
       elementCap: (lv.element_cap ? BigInt(lv.element_cap) : base.elementCap) + this.buffs.elementCapBonus,
       reactionTier: BigInt(lv.max_reaction_tier || 1),
       elementCoefPermille: base.elementCoefPermille + this.buffs.elementCoefPermille,
+      // 这三项**原样透传**，不与局内 Buffs 相加 ——
+      // 因为它们的消费者不在伤害公式里：
+      //   armorPermille    → defenseArmorPermille()（防线护甲，不走 currentAttacker）
+      //   heatCapPermille  → 构造器注入 heat.capBonus
+      //   mechanicPermille → applyMechanic 放大卡面数值
+      //
+      // 在这里相加会让它们**既*被计入*攻方又*被单独消费*** 一次，
+      // 而 currentAttacker 的返回值也参与重放哈希 —— 多加一次就哈希不符。
+      heatCapPermille: base.heatCapPermille,
+      armorPermille: base.armorPermille,
+      mechanicPermille: base.mechanicPermille,
     }
   }
 
@@ -1430,22 +1454,45 @@ export class BattleEngine {
   }
 
   private applyMechanic(m: MechanicEffect): void {
+    // 机制卡强度加成（专精树第 3 层槽 1「机制改造」，8 个节点）。
+    //
+    // ⚠️ 这个 kind 此前在服务端 `EvaluateMastery` 的 switch 里**连 case 都没有**，
+    // 于是 8 系 × 1 个节点 = 8 个真实节点完全惰性 ——
+    // 玩家花点数点出「机制改造」，战斗里什么都不变。
+    //
+    // 语义：把卡面数值整体放大 (1000 + v)/1000。
+    // 选"放大卡面数值"而不是"抽到好卡的概率更高"，是因为前者是确定性的
+    // （重放时能逐位复现），后者需要改抽牌随机序列，
+    // 而卡牌是客户端选的、改序列会与 I-6 的 CardPicks 闭环冲突。
+    // 全程 bigint 运算（README 工程约束 8：禁止实数运算）。
+    //
+    // MechanicEffect.value 是 number（小整数计数），攻方是 bigint，
+    // 所以先 Math.trunc 成整数再进 bigint 域 —— 内容表的机制卡面值
+    // 全是整数，trunc 不会丢精度；真出现小数时是内容表错了，
+    // 静默四舍五入会让"卡面显示 3、实际生效 2"这类问题更难查。
+    const v = Number(
+      mulDiv(
+        BigInt(Math.trunc(m.value)),
+        PERMILLE + this.cfg.attacker.mechanicPermille,
+        PERMILLE,
+      ),
+    )
     switch (m.kind) {
       case 'pierce_bonus':
-        this.buffs.pierceBonus += m.value
+        this.buffs.pierceBonus += v
         break
       case 'chain_bonus':
-        this.buffs.chainBonus += m.value
+        this.buffs.chainBonus += v
         break
       case 'aoe_bonus':
-        this.buffs.aoeBonus += m.value
+        this.buffs.aoeBonus += v
         break
       case 'free_discard':
-        this.buffs.freeDiscard += m.value
-        this.deck.discardsLeft += m.value
+        this.buffs.freeDiscard += v
+        this.deck.discardsLeft += v
         break
       case 'overheat_guard':
-        this.buffs.overheatGuard += m.value
+        this.buffs.overheatGuard += v
         break
     }
   }

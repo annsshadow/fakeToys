@@ -47,6 +47,13 @@ const (
 
 	// 反通胀红线：反应伤害中攻击力贡献占比上限（千分比）
 	MaxReactionAttackWeightPermille = 300
+
+	// MaxElementCap 元素层数上限。
+	//
+	// ⚠️ 此前是散落在 computeAttacker 里的字面量 `8`。
+	// 宝石的 element_cap 是**后加的**（本轮接线），于是需要在两处
+	// 都能读到同一个上界 —— 散落的字面量必然有一处被漏改。
+	MaxElementCap = 8
 )
 
 // Attacker 是攻方结算所需的养成属性快照。
@@ -65,6 +72,36 @@ type Attacker struct {
 	ReactionTier int64
 	// ElementCoef 元素层数系数（千分比），吃元素词条
 	ElementCoefPermille int64
+
+	// ⚠️ 下面三个字段是本轮补上的**遗漏成长维度**。
+	//
+	// 它们此前**只被计算、从不被装配**：
+	//   - MasteryEffect.HeatCapBonus 在 EvaluateMastery 里累加，
+	//     但 computeAttacker 从不读它 → 专精树第 1/2 层的「热量上限」
+	//     节点（8 系 × 2 层 × 1 槽 = 16 个节点）是纯装饰
+	//   - MasteryEffect.ArmorBonus 同样只进 I-7 评分 → 第 3 层的
+	//     「护甲」节点（8 个）是纯装饰
+	//   - 专精第 3 层槽 1 的「机制改造」（mechanic，8 个节点）
+	//     **在 EvaluateMastery 里连 case 都没有**，完全惰性
+	//
+	// 为什么不给「技能伤害加成」单开一个乘区，而是折进 Attack？
+	// 因为 Attack 是 I-1 反通胀公式里**攻击力侧**的那一项：
+	//
+	//	反应伤害 = 攻击力侧 + 元素侧，且攻击力侧占比 ≤ 30‰ 红线
+	//
+	// 单开一个 `SkillDamagePermille` 乘区，就等于给养成开了一扇
+	// 绕过这条红线的后门 —— 现有反通胀不变式将不再覆盖它。
+	// 折进 Attack 则反通胀测试继续原样守着。
+	//
+	// HeatCapPermille 热量上限加成（专精 heat_cap + 宝石 gem_heat）。
+	HeatCapPermille int64
+	// ArmorPermille 玩家护甲（装备 BaseArmor + 专精 armor + 宝石 gem_armor），
+	// 减免漏怪伤害。封顶 MaxArmorPermille —— 见 ApplyPlayerArmor。
+	ArmorPermille int64
+	// MechanicPermille 机制卡强度加成（专精 mechanic）。
+	// 作用在**卡面数值**上：取牌时把 MechanicEffect.value
+	// 乘以 (1000+本值)/1000。
+	MechanicPermille int64
 }
 
 // DefaultAttacker 返回新号默认属性。零值不可直接使用，必须走构造函数。
