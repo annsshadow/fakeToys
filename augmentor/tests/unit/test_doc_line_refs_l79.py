@@ -427,8 +427,12 @@ MEASURED = {
     #: 现量那 3 条只换号不增不减）、`file_tokens` 1626 → **1629**（同那 3 条改以 `` `x.py` `` 形状重写 ⇒
     #: 从 LINE_REF 语法搬进 FILE_TOKEN 语法：**总数 +3 而引用总规模 −3**，两种语法互斥的直接读数）、
     #: 漂移 166 → **161**（历史 2 条消失 + 现量 3 条因为换到真 `def` 行而搬回 `name_hit`）。
-    #: 四档棘轮与两格硬 0 未动。
-    LEDGER: {"line_refs": 296, "file_tokens": 1629, "code_but_no_name_match": 161},
+    #: 四档棘轮与两格硬 0 未动。**批③ 之后再量一次**：`file_tokens` 1629 → **1638**（+9，全是三颗新
+    #: 子弹点名的活文件与探针名），`line_refs` **296** 与漂移 **161** 一格未动 —— 那三颗子弹刻意只用
+    #: 名字锚点、不写行号；而它自己就被硬 0 档抓过一次：第一版把被描述的那条失效引用原样抄进账本
+    #: （`` `x.py:218` `` 形状）⇒ `dead_line` 0 → 1，与 A153 那格记录的「记账行自己变成新 dead_line」
+    #: 逐字同形，本轮在自己身上第三次复现。
+    LEDGER: {"line_refs": 296, "file_tokens": 1638, "code_but_no_name_match": 161},
 }
 
 #: 日志块标题行上「下一轮才填得出自己哈希」的占位符。精确相等 = **只许有该填的那几条**。
@@ -1057,9 +1061,23 @@ BACKLOG_HEADS = ("| # | 位置 | 问题 | 量级 |", "|---|------|------|------|
 #: 换掉了，处方三件里含相对 `checkpoint_dir` 的落点口径），本轮不关任何旧行 ⇒ 行数 +1、最大号 +1，
 #: 编号行 184 = 最大号 185 − 跳号 1，量式仍成立。关闭那一档本轮同时按两个口径量（含删除线的行 100 /
 #: 整行被划掉的行 85），因为 L98 那格只报了后一个口径而它的 84 与本格的 85 差的正是本轮关掉的 A167。
+#: **L100 批③ 回填（关掉 A185，零新立）**：行数与最大号都不动（关闭一行 ≠ 删掉一行），两个「关闭」口径
+#: 各 +1 ⇒ 含删除线 100 → **101**、整行划掉 85 → **86**。**这一格顺手量出一个新的无人对账档**：那 100 / 85
+#: 两个数只住在**本注释**里，仓里没有任何判据读它们 ⇒ 它们在本轮不动声色地腐坏了一次（我改 A185 那一行
+#: 时把闭合句写进行首，两个口径同时 +1，而整套守卫全绿）。这与 A181（批次的 type(scope) 无人对账）、
+#: A184（注释里的路径引用无人对账）同族，是**注释里的数字**这一族的第三格，已写进 L100 日志块。
 BACKLOG_A_LINES = 186
 BACKLOG_A_MAX = 185
 BACKLOG_A_MISSING = {52}
+#: 「结案规模」两个口径的**现量**，L100 批③ 从注释里的散文数字升格成判据。
+#: ① `CLOSED`：A 表里带任意删除线的行（关闭一行 ≠ 删掉一行，本表沿用这个形状）；
+#: ② `CLOSED_AT_HEAD`：行首就是 `| ~~A<n>~~ |` 的行，即**落笔时就已结案**的那一档。
+#: 为什么现在才入库：这两个数此前只住在本文件的注释里，没有任何判据读它们，没有任何判据读它们，
+#: 于是本轮我改 A185 那一行时它们各 +1 而整套守卫全绿 —— 与 A181（批次的 type(scope) 无人对账）、
+#: A184（注释里的路径引用无人对账）同族的第三格：**注释里的数字**。差值本身也有含义：
+#: 现量 101 − 86 = 15 行是「先立案、后来只划掉位置列或局部字段」的关闭形状。
+BACKLOG_A_CLOSED = 101
+BACKLOG_A_CLOSED_AT_HEAD = 86
 #: Backlog B 现量：11 条竖线行 = 2 表头 + 7 条可编号 + 2 条带角标（B3① / ~~B3②~~）。
 BACKLOG_B_LINES = 11
 BACKLOG_B_SUBSCRIPT = ("B3①", "B3②")
@@ -1098,6 +1116,17 @@ class TestBacklogAndRoundSkeleton:
         assert len(ids) == len(set(ids)), sorted({n for n in ids if ids.count(n) > 1})
         assert set(ids) == set(range(1, BACKLOG_A_MAX + 1)) - BACKLOG_A_MISSING, \
             sorted(set(range(1, BACKLOG_A_MAX + 1)) - set(ids))
+
+    def test_the_two_closure_gauges_are_the_measured_ones(self):
+        """结案规模两个口径入库：注释里那两个数此前**没有人对账**（A181 / A184 同族第三格）
+
+        判据钉的是「带删除线的行」与「行首即结案」两档，二者之差就是「先立案、后来只划掉局部」
+        的形状数 —— 只钉一个口径会漏掉 L98 那格撞到的位移（84 与 85 差的正是一行局部关闭）。
+        """
+        body = section_body((ROOT / LEDGER).read_text(encoding="utf-8"), "## Backlog A")
+        rows = [ln for ln in body.splitlines() if ln.startswith("|")]
+        assert sum("~~" in ln for ln in rows) == BACKLOG_A_CLOSED
+        assert sum(ln.startswith("| ~~A") for ln in rows) == BACKLOG_A_CLOSED_AT_HEAD
 
     def test_backlog_b_keeps_its_numbered_rows_and_the_two_subscripted_ones(self):
         """B 表两档分开数：可编号的 7 行 + 带角标的 2 行（角标行**不该**被号判据吞掉）
