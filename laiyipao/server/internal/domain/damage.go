@@ -180,7 +180,19 @@ func (d *Defender) ClearElements() {
 
 // HitInput 描述一次命中。
 type HitInput struct {
-	// SkillDamage 单发基准伤害（技能表原始值 × 等级系数）
+	// SkillDamage 单发基准伤害（技能表原始值）
+	//
+	// ⚠️ 这里**曾经注释成**「技能表原始值 × 等级系数」——
+	// 而代码里从来没有等级系数：`user_skills.level` 只被读进 build 快照，
+	// **从无写入**，且**没有任何技能升级端点**，所以等级恒为 1。
+	//
+	// 注释描述一个不存在的公式，比没有注释更糟：
+	// 后来人会照着它去实现"等级加成"，或者反过来
+	// 以为等级已经在生效、因而去查"为什么升级了没变强"。
+	// 两者都是被这份注释误导的。
+	//
+	// 真要接等级成长，前置条件是**先有升级路径**（消耗资源 → 提升 level），
+	// 再定缩放曲线，并保证两端一致（I-6）。已记入 README「未做」。
 	SkillDamage int64
 	// SkillElement 该技能携带的主元素
 	SkillElement Element
