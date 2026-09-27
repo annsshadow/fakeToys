@@ -17,6 +17,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from fastapi import Header, HTTPException
 
 from augmentor import AugmentorPipeline, load_config
+from augmentor.atomic_write import atomic_write_json
 from augmentor.config import WebConfig
 
 logger = logging.getLogger(__name__)
@@ -603,15 +604,23 @@ async def read_json_file(file_path: Path) -> list:
 
 
 def _sync_write_json(file_path: Path, data: list):
-    """同步写入 JSON 文件
+    """同步写入 JSON 文件 —— 整份数据集落盘的**唯一咽喉**，原子替换在 `atomic_write_json`
+
+    为什么这一层必须有名字：API 面写数据集的三条边（`api/routes/data.py` 的三处
+    `write_json_file`：更新单条、删除单条、上传落点）全部汇到这里，所以「读者看不见
+    半份」这一条只需在一处成立。把它接进 `augmentor/atomic_write.py` 而不是在此复刻八行，
+    是因为断点写边（`augmentor/checkpoint.py` 的 `_save_checkpoint`）撞的是同一族缺陷，
+    而它的读侧后果更重 —— 那里截断不报错，而是把已有进度读成「没有断点」。两兄弟模块共用
+    一把尺子，漂移就有守卫可抓（`tests/unit/test_atomic_json_write_l99.py`）。
+
+    取证的数字（写窗口 0.7 s / 45 MB、两次 `JSONDecodeError` 的字节读数）记在
+    `atomic_write_json` 自己的文档串里，这里是调用点，不复述。
 
     Args:
-        file_path: 文件路径
-        data: 数据列表
+        file_path: 目标路径（父目录不存在时创建）
+        data: 要序列化的记录列表；失败时目标文件保持原样，不留临时件
     """
-    file_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(file_path, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
+    atomic_write_json(file_path, data)
 
 
 async def write_json_file(file_path: Path, data: list):
