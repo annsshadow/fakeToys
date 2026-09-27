@@ -9,7 +9,7 @@ mod u2_tests {
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use shared::session::Session;
-    use shared::storage::{BlobStorage, DbBlobStorage, FsBlobStorage};
+    use shared::storage::{DbBlobStorage, FsBlobStorage};
     use tower::ServiceExt;
 
     fn test_session() -> Session {
@@ -68,10 +68,27 @@ mod u2_tests {
     ) -> (StatusCode, serde_json::Value) {
         respond_inner(method, uri, headers, body, true).await
     }
-
-    async fn status_of(method: &str, uri: &str) -> StatusCode {
-        respond(method, uri, &[], Body::empty()).await.0
+
+    // upload/with/url 已从「把 URL 字符串当内容入库」的假实现改为真拉取
+    // （shared::netguard SSRF 防护）。契约：缺 url 400；私网目标在发起请求前被拒 400。
+    #[tokio::test]
+    async fn u2_upload_with_url_requires_url() {
+        let (status, _) = respond_auth("POST", "/api/file/assemble/control/file/upload/with/url", JSON, Body::from("{}")).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
     }
+
+    #[tokio::test]
+    async fn u2_upload_with_url_rejects_private_target() {
+        let (status, _) = respond_auth(
+            "POST",
+            "/api/file/assemble/control/file/upload/with/url",
+            JSON,
+            Body::from(r#"{"url":"http://169.254.169.254/latest/meta-data"}"#),
+        )
+        .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+    }
+
 
     fn multipart_body(filename: &str) -> Body {
         Body::from(format!(
