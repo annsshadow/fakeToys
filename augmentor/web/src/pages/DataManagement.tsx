@@ -108,9 +108,10 @@ export default function DataManagement() {
       loadFiles()
     } catch (err) {
       message.error(bulkErrorDetail(err, '上传失败'))
-      // 超时这一支要主动刷一次列表：客户端停止等待不等于服务端失败，实测服务端
-      // 在客户端放弃之后照样把整份文件落完了。不刷的话，用户看到的是一句「失败」
-      // 加一份已经在盘上的数据，而重试会把同一份再落一次。
+      // 超时这一支要主动刷一次列表：客户端停止等待不等于服务端失败 —— 字节已被服务端取走
+      // 时（axios 的 timeout 到期正是这种优雅关闭），实测服务端照样把整份文件落完
+      // （`Temp/l99q/fin_after_drain_l99.py` 的 D 档；同一支的 E 档「交完立刻关闭」就**不**落）。
+      // 不刷的话，用户看到的是一句「失败」加一份已经在盘上、列表里却没显示的数据。
       if (isTimeoutError(err)) loadFiles()
     } finally {
       setUploading(false)
