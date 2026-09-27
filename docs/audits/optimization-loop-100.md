@@ -61,3 +61,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | 48 | workspace 依赖复用 | 绕过 workspace 的版本号 | IMPROVE(deferred) | 41 处叶子依赖（zip/image 等）无缺陷，统一声明属后续合理化 |
 | 49 | 大段注释死代码 | 25+ 行连续注释块 | CLEAN | 15 块集中在 tests_generated 的 SKIPPED 说明与模块文档，有存档价值 |
 | 50 | **完整门禁①** | clippy + workspace lib + parity + biome + tsc + vitest + build + reconcile | FIX×3 | clippy 0 / lib 0 failed / parity 4145/4145 / lint 234×0 / vitest 953+101 / build ✓ / gate PASS；clippy 捕获本批引入 3 处（preview 残留 use、tests_u2 死变量、parity 生成器多余 use——含 f-string 花括号陷阱）全修 |
+| 51/52 | 路由-视图对齐 | main.ts 动态导入 vs views 全集 | CLEAN | 83/83 全注册，零死组件 |
+| 53 | apis 包死导出 | 导出 vs 引用计数 | IMPROVE(deferred) | 独立 *Api 命名导出由 oa4rustApis 聚合覆盖，对外契约保留 |
+| 54 | 全局错误兜底 | errorHandler 扫描 | FIX | main.ts 补 app.config.errorHandler（未捕获渲染/Promise 错误 fail-loud） |
+| 55 | 路由守卫 | beforeEach/requiresAuth | CLEAN | 守卫在位 |
+| 56 | 多语言残留 | en 字符串抽查 | CLEAN | 全中文产品一致 |
+| 57 | 大组件 | 行数盘点 | CLEAN(note) | ProcessDesigner 11.9k 行为设计器固有复杂度，拆分属重构议题 |
+| 58 | utils 重复 | 跨文件同名导出 | CLEAN | 7 导出零重复 |
+| 59 | SDK 超时 | timeoutMs/AbortSignal | CLEAN | 已有超时+中止 |
+| 60 | 中型门禁② | vitest 全量 | CLEAN | 953/953 |
