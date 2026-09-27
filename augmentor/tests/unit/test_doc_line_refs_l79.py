@@ -306,9 +306,21 @@ FLOOR = {
 #: 那一格的正解：**把反引号摘掉（它们是一段同名文件的称呼，不是引用），不抬上限**。
 #: `scratch_missing` 现量 112 的那 1 条是本轮自己的填数脚本 `Temp/l94q/fill_numbers_l94.py`
 #: 被引用时还不存在 ⇒ 脚本落地即回落 111，这一格是「引用先于文件」的形状，不是缺陷。
+#: **L95（产品码只动一支 `augmentor/leakage.py` ⇒ 涨的三格全部指得到本轮落笔处）**：账本
+#: `line_refs` 290 → **294**（+4 / −0，`Temp/l92q/token_diff.py` 逐条点名：A172 的
+#: `augmentor/cli/commands/security.py:28` 与 A173 的 `augmentor/schema.py:66 / 91 / 177`），
+#: `file_tokens` 1475 → **1482**（+7 / −0：本轮三支探针 `Temp/l95q/census_l95.py` 1、
+#: `Temp/l95q/mutate_l95.py` 2、`Temp/l95q/fix_rows_l95.py` 1，被改写的 `augmentor/leakage.py`
+#: 与本轮首次点名的 `api/routes/leakage.py`、判红那一格的 `tests/unit/test_docs_markdown_structure.py`
+#: 各 1）；架构文档两侧照旧（42 / 244 —— 本轮没往 §6/§7 写新名）。
+#: `code_but_no_name_match` 停在 **161** 而不是随 A173 涨到 162：`augmentor/schema.py:122`
+#: 那一处最初指到了 `if` 行上，按 line 466 的分桶口径（引用必须落在**声明行**才进 `name_hit`）
+#: 把它改指 `augmentor/schema.py:91`，处置是**改引用形状，不抬上限** —— 与 L83/L87/L93/L94
+#: 的棘轮桶同一格正解。`ambiguous_file`（145）/ `ambiguous_line`（68）/ `bare`（149）/
+#: `scratch_missing`（111）四档上限本轮一格未抬。
 MEASURED = {
     ARCH: {"line_refs": 42, "file_tokens": 244, "code_but_no_name_match": 37},
-    LEDGER: {"line_refs": 290, "file_tokens": 1475, "code_but_no_name_match": 161},
+    LEDGER: {"line_refs": 294, "file_tokens": 1482, "code_but_no_name_match": 161},
 }
 
 #: 日志块标题行上「下一轮才填得出自己哈希」的占位符。精确相等 = **只许有该填的那几条**。
@@ -870,8 +882,14 @@ BACKLOG_HEADS = ("| # | 位置 | 问题 | 量级 |", "|---|------|------|------|
 #: A171（**填数与计数机器自己的恒真判据**：页脚 `failed` 恒读 0、AST 取错字段把几十处调用点
 #: 数成 0、`deps_row` 读不到走 fallback 而不是当场红）由 `Temp/l93q/add_a171.py` 追加。
 #: 四行都是整行锚点 + 行数断言，形状判据一次未红；跳号集合继续未变（缺号仍只有 52）。
-BACKLOG_A_LINES = 172
-BACKLOG_A_MAX = 171
+#: **L95 回填（+2 行）**：A172（`fuzzy_threshold` 在 API/CLI 两侧都没有范围判据，`t <= 0` 时
+#: 从网络面就能报出 100% 泄漏率 —— 修它是破坏性变更，**待用户拍口径**）与 A173
+#: （`schema.from_spec` 把字段类型名写成字符串时 `isinstance` 抛 `TypeError` 崩掉整份校验，
+#: 本轮普查顺路撞出、已坐实未修）两行由 `Temp/l95q/add_backlog_l95.py` 按整行锚点 +
+#: 行数断言插入。本轮 A 表只涨不结案，所以 `BACKLOG_A_MAX` 与行数同步 +2；跳号集合
+#: 第八次未变（缺号仍只有 52）。
+BACKLOG_A_LINES = 174
+BACKLOG_A_MAX = 173
 BACKLOG_A_MISSING = {52}
 #: Backlog B 现量：11 条竖线行 = 2 表头 + 7 条可编号 + 2 条带角标（B3① / ~~B3②~~）。
 BACKLOG_B_LINES = 11
