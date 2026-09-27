@@ -318,9 +318,15 @@ FLOOR = {
 #: 把它改指 `augmentor/schema.py:91`，处置是**改引用形状，不抬上限** —— 与 L83/L87/L93/L94
 #: 的棘轮桶同一格正解。`ambiguous_file`（145）/ `ambiguous_line`（68）/ `bare`（149）/
 #: `scratch_missing`（111）四档上限本轮一格未抬。
+#: **L95 批④（本轮回看补写，账本只多一行 A174 与一段回看子弹）**：`file_tokens` 1482 → **1483**
+#: （+1 / −0，唯一一处新点名 = A174 位置格里的 `tests/unit/test_docs_markdown_structure.py`，
+#: 现量它没有落进 `code_but_no_name_match`（该档停在 **161**，因为那是一份真实存在的仓库文件），
+#: 也没有落进 `ambiguous_file`（上限 145 未动））；
+#: `line_refs` 294 照旧（回看子弹与 A174 行**一个 `path:line` 都没写**，全部用名字锚点）。
+#: 这一格是「记账中性」口径的又一次实测：新增 400 余字正文而三档读数只动一支，动的这支指得到落笔处。
 MEASURED = {
     ARCH: {"line_refs": 42, "file_tokens": 244, "code_but_no_name_match": 37},
-    LEDGER: {"line_refs": 294, "file_tokens": 1482, "code_but_no_name_match": 161},
+    LEDGER: {"line_refs": 294, "file_tokens": 1483, "code_but_no_name_match": 161},
 }
 
 #: 日志块标题行上「下一轮才填得出自己哈希」的占位符。精确相等 = **只许有该填的那几条**。
@@ -888,8 +894,16 @@ BACKLOG_HEADS = ("| # | 位置 | 问题 | 量级 |", "|---|------|------|------|
 #: 本轮普查顺路撞出、已坐实未修）两行由 `Temp/l95q/add_backlog_l95.py` 按整行锚点 +
 #: 行数断言插入。本轮 A 表只涨不结案，所以 `BACKLOG_A_MAX` 与行数同步 +2；跳号集合
 #: 第八次未变（缺号仍只有 52）。
-BACKLOG_A_LINES = 174
-BACKLOG_A_MAX = 173
+#: **L95 批④ 回填（+1 行，本轮回看补写那一支）**：A174（「每轮末尾那道回看」是用户硬要求而
+#: **没有任何机械判据**管它——本轮 L95 日志块整条漏写、全量照样绿，直到收尾对照 L94 才发现）
+#: 一行由 `Temp/l95q/add_a174_l95.py` 按整行锚点插入。该脚本本轮**先红后绿两次**，都是自造判据之过：
+#: ① 它先断言「A 表 id 单调」，现量 A 表行序有 **7 处逆序**（42→32、137→124 等），那条断言是我按
+#: 推理造的，守卫真用的是「号集精确相等 + 无重号」⇒ 改成复用真判据；② 它裸数 `count("|")` 要求全表
+#: 等于表头 5，而仓库那把尺子 `ragged_tables` 是**先清空行内代码再数**的，既有五行（A27 / A70 /
+#: A89 / A97 / A133）正文里带竖线，于是探针把合法行判成畸形 ⇒ 改成直接 `import` 那两个函数。
+#: 跳号集合第九次未变。
+BACKLOG_A_LINES = 175
+BACKLOG_A_MAX = 174
 BACKLOG_A_MISSING = {52}
 #: Backlog B 现量：11 条竖线行 = 2 表头 + 7 条可编号 + 2 条带角标（B3① / ~~B3②~~）。
 BACKLOG_B_LINES = 11
