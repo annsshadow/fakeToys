@@ -40,10 +40,15 @@ class CheckpointManager:
         """初始化断点管理器
         
         Args:
-            checkpoint_dir: 断点存储目录
+            checkpoint_dir: 断点存储目录；**相对路径在构造这一刻就定基**（按构造时的当前目录
+                解析成绝对路径）。不这么做的话，落点会跟着写盘时的当前目录漂移：构造时在本目录
+                建好 `checkpoints/`，之后任何一次 `os.chdir` 都会让下一个断点写到别的目录去，
+                于是同一个任务的两半进度分家。绝对路径原样保留，不做规范化。
             auto_save_interval: 自动保存间隔（每 N 条）
         """
         self.checkpoint_dir = Path(checkpoint_dir)
+        if not self.checkpoint_dir.is_absolute():
+            self.checkpoint_dir = self.checkpoint_dir.resolve()
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         self.auto_save_interval = auto_save_interval
         
@@ -220,6 +225,10 @@ class CheckpointManager:
 
         崩溃安全由读侧负责：一行写完一次 `write`，尾行若被截断只丢那一批，
         `_read_delta` 会跳过坏行而不是把整份增量作废。
+
+        追加失败（目录不在、盘满、路径被占）时的口径是**不清空待保存集合**：那一批留在内存里，
+        下一次保存连同新批次一起补写，代价是延迟落盘而不是丢失。因此调用方不必看返回值，但也
+        不能把「本函数返回」读成「这一批已经在盘上」。
         """
         if self._current_checkpoint is None:
             return

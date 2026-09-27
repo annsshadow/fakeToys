@@ -44,15 +44,19 @@ _SWAP_BACKOFF_S = 0.02
 
 
 def _replace_with_retry(src: Path, dst: Path):
-    """`os.replace` 的有界重试档，只对 Windows 的瞬时拒绝访问重试"""
-    for attempt in range(_SWAP_ATTEMPTS):
+    """`os.replace` 的有界重试档，只对 Windows 的瞬时拒绝访问重试
+
+    最后一次替换刻意放在循环外：它让「上限内始终被拒」不需要一个 `if attempt == 末次: raise`
+    的分支，于是循环的自然出口就是「前面每次都被拒、最后一次照常上抛」这条真实路径。
+    旧写法那条 `raise` 让循环出口结构上不可达，覆盖率只能挂着一个永远红不了的偏支。
+    """
+    for _attempt in range(_SWAP_ATTEMPTS - 1):
         try:
             os.replace(src, dst)
             return
         except PermissionError:
-            if attempt == _SWAP_ATTEMPTS - 1:
-                raise
             time.sleep(_SWAP_BACKOFF_S)
+    os.replace(src, dst)
 
 
 def atomic_write_json(file_path: Path, data: Union[List, Any]):
