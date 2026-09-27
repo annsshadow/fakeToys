@@ -244,7 +244,7 @@ pub async fn page_update(
     let result = db.0
         .execute(Statement::from_sql_and_values(
             sea_orm::DbBackend::Postgres,
-            "UPDATE portal_page SET name = $1, content = $2, status = $3 WHERE id = $4 AND deleted_at IS NULL",
+            "UPDATE x_portal_page SET name = $1, content = $2, status = $3 WHERE id = $4 AND deleted_at IS NULL",
             vec![name.into(), content.into(), status.into(), id.clone().into()],
         ))
         .await
@@ -281,7 +281,7 @@ pub async fn page_remove(
     let result =
         db.0.execute(Statement::from_sql_and_values(
             sea_orm::DbBackend::Postgres,
-            "UPDATE portal_page SET deleted_at = $1 WHERE id = $2 AND deleted_at IS NULL",
+            "UPDATE x_portal_page SET deleted_at = $1 WHERE id = $2 AND deleted_at IS NULL",
             vec![now.into(), id.clone().into()],
         ))
         .await
