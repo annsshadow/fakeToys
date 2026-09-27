@@ -1,10 +1,12 @@
 # API 文档
 
-REST API 由 FastAPI 提供，默认监听 `http://localhost:8000`。交互式文档见 `/docs`（Swagger UI）。
+REST API 由 FastAPI 提供，监听地址与静态目录取自配置的 `web` 节（出厂默认 `0.0.0.0:8000`，即 `http://localhost:8000`）。交互式文档见 `/docs`（Swagger UI）。
 
 ```bash
-uvicorn api.main:app --host 0.0.0.0 --port 8000
+python api/main.py             # 读配置：web.host / web.port / web.static_dir
 ```
+
+也可以照旧用 uvicorn 起（`uvicorn api.main:app --host 127.0.0.1 --port 8000`），此时**命令行参数优先于配置**。`python api/main.py` 这条入口不传字面量：`web.host: 127.0.0.1` 就真的只绑回环。
 
 ## 通用约定
 

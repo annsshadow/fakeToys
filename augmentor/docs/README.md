@@ -271,7 +271,7 @@ npm install
 npm run build          # 产物输出到 web/dist
 ```
 
-`api/main.py` 检测到 `web/dist` 存在时会自动挂载为静态目录，直接访问
+`api/main.py` 检测到 `web.static_dir`（默认 `web/dist`）存在时会自动挂载为静态目录，直接访问
 <http://localhost:8000> 即可。开发模式：
 
 ```bash
