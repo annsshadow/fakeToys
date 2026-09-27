@@ -1010,3 +1010,128 @@ class TestBacklogAndRoundSkeleton:
         assert len(after) == len(base), (len(after), len(base))  # 号没丢，只是序变了
         assert after != sorted(after), after
         assert [a for a, b in zip(after, after[1:]) if b <= a] == [base[-1]]
+
+
+#: ---- L96（A174 的机械答案）：「每轮末尾那道回看」从散文纪律变成判据 ----------
+#:
+#: **立案现场**（L95 批④ 记的那格）：用户要求「每一轮整改后回看循环机制有没有发现缺陷」，
+#: 这条要求在账本里的唯一可见形状是每个日志块里那条**标题以「回看」开头**的子弹。L95 起草时
+#: 整条漏写 ⇒ 全量 7 119 例照样绿，直到收尾人工按 L94 的形状对照才看见。**本循环第一次由
+#: 「缺写的输出」而不是「写错的数字」造成事故**，所以这一档必须能红。
+#:
+#: **范围的现量依据**（探针 `Temp/l96q/review_census.py`，命令见 L96 日志块）：文末日志块共
+#: 92 块（L3..L95 减 L12），带这种子弹的 **29** 块；**L71 起连续 25 块只缺 L93**，L71 之前
+#: 只有 L32–L36 那五块（「机制回看」那一族旧措辞）写过 ⇒ `REVIEW_FROM = 71` 不是「从今天起算」，
+#: 而是把已经成立 25 轮的实践钉住。残额写成**精确相等**而不是「≤」：下一轮忘写 ⇒ 多一格红；
+#: 谁补了 L93 ⇒ 少一格红（与 `test_the_progress_only_rounds_are_the_measured_three` 同设计）。
+#:
+#: **标题必须「以回看开头」而不是「含回看」**（本轮自己抓到的假绿，取证见
+#: `test_a_bullet_that_only_mentions_the_word_is_not_a_review`）：宽版判据会把
+#: 「选题来自上一轮回看…」这类**选题说明**子弹当成回看 —— L94 与 L95 两块里就有这种子弹，
+#: 于是「整块没写回看」也能过判据。这正是 A165 那一族（案文顶替代码通过扫描型判据）。
+REVIEW_FROM = 71
+REVIEW_MISSING = {"93"}
+REVIEW_EARLY = {"32", "33", "34", "35", "36"}
+REVIEW_BULLET = re.compile(r"^  - \*\*(?:本轮|机制)?回看[^*\n]*\*\*", re.MULTILINE)
+
+
+def log_block_bodies(text):
+    """按**行首形状**切文末日志块，返回 `[(轮号, 整块正文)]`（最后一块吃到文件尾）
+
+    与 `LOG_BLOCK` 同一条教训：只认行首，正文里谈论某块标题的散文不算一块。
+    """
+    marks = list(LOG_BLOCK.finditer(text))
+    return [(m.group(1),
+             text[m.start():(marks[k + 1].start() if k + 1 < len(marks) else len(text))])
+            for k, m in enumerate(marks)]
+
+
+def rounds_with_review(text):
+    return {num for num, body in log_block_bodies(text) if REVIEW_BULLET.search(body)}
+
+
+def rounds_without_review(text):
+    """`REVIEW_FROM` 起**没有**回看子弹的轮号 —— 判据与三次注入取证共用这一个提取口"""
+    return {num for num, body in log_block_bodies(text)
+            if int(num) >= REVIEW_FROM and not REVIEW_BULLET.search(body)}
+
+
+def strip_review_bullet(text, num):
+    """把第 `num` 块里那条回看子弹的**标题整行**摘掉（块内其余正文一字不动）"""
+    body = dict(log_block_bodies(text))[num]
+    line = next(ln for ln in body.split("\n") if REVIEW_BULLET.match(ln))
+    assert body.count(line) == 1, line[:40]
+    assert text.count(line) == 1, "摘行用的锚点在全档不唯一"
+    return text.replace(line + "\n", "", 1)
+
+
+class TestEveryRoundWritesItsReview:
+    """A174：回看那一档不再靠「我记得写过」——**缺写的输出也要能红**"""
+
+    def test_the_missing_set_is_the_measured_one(self):
+        """硬门禁（A174 的病理本体）：写了日志块却没写回看子弹 ⇒ 当场红"""
+        text = (ROOT / LEDGER).read_text(encoding="utf-8")
+        missing = rounds_without_review(text)
+        assert missing == REVIEW_MISSING, (
+            f"这些轮写了日志块却没写回看子弹（或有人悄悄补了账上的残额，两种都要在账上留字）："
+            f"{sorted(missing, key=int)}")
+
+    def test_the_range_and_the_two_sides_of_history_are_pinned(self):
+        """钉住 `REVIEW_FROM` 的来路：71 起是连续制度，71 之前只有 L32–L36 那一族旧措辞
+
+        这一档防的是「下一轮把 `REVIEW_FROM` 往后挪好让自己省事」：挪了它，L71 那一格就不再
+        在制度里，而这里的两个集合会立刻对不上。
+        """
+        text = (ROOT / LEDGER).read_text(encoding="utf-8")
+        nums = {int(n) for n, _ in log_block_bodies(text)}
+        with_rev = {int(n) for n in rounds_with_review(text)}
+        assert min(nums) == LOG_BLOCK_FIRST and \
+            nums == set(range(LOG_BLOCK_FIRST, max(nums) + 1)) - LOG_BLOCK_HOLES, sorted(nums)
+        assert {n for n in with_rev if n < REVIEW_FROM} == {int(n) for n in REVIEW_EARLY}
+        assert {n for n in with_rev if n >= REVIEW_FROM} == \
+            set(range(REVIEW_FROM, max(nums) + 1)) - {int(n) for n in REVIEW_MISSING}
+
+    def test_a_bullet_that_only_mentions_the_word_is_not_a_review(self):
+        """注入档①（宽版判据的证伪）：摘掉真回看子弹、只留「选题……回看……」那类子弹 ⇒ 必须判缺
+
+        反证写在代码里：同一块文本用**含**「回看」的宽正则判是「有」，用本判据判是「缺」。
+        ⇒ 这一条钉住的是措辞口径，防的是下一轮有人把 `REVIEW_BULLET` 放宽成 `回看` 子串匹配
+        （A165 那一族：案文顶替代码通过扫描型判据）。
+        """
+        text = (ROOT / LEDGER).read_text(encoding="utf-8")
+        newest = max((n for n, _ in log_block_bodies(text)), key=int)
+        cut = strip_review_bullet(text, newest)
+        assert rounds_without_review(cut) == REVIEW_MISSING | {newest}, \
+            sorted(rounds_without_review(cut), key=int)
+        body = dict(log_block_bodies(cut))[newest]
+        loose = re.compile(r"^  - \*\*[^*\n]*回看[^*\n]*\*\*", re.MULTILINE)
+        assert loose.search(body), "这块里已经没有「提到回看」的子弹，反证不成立"
+        assert not REVIEW_BULLET.search(body)
+
+    def test_dropping_the_current_rounds_bullet_is_red(self):
+        """注入档②（判据活着）：**号从现量取，不手抄**——摘掉最新那块的回看子弹 ⇒ 缺集合 +1
+
+        承 L79 纪律 (f) 与 `test_the_guard_fires_in_both_directions` 的同一口径：写死轮号的
+        注入档下一轮测的是别人那一轮（真事实配假因果）。
+        """
+        text = (ROOT / LEDGER).read_text(encoding="utf-8")
+        newest = max((n for n, _ in log_block_bodies(text)), key=int)
+        assert rounds_without_review(text) == REVIEW_MISSING
+        assert rounds_without_review(strip_review_bullet(text, newest)) == \
+            REVIEW_MISSING | {newest}
+
+    def test_backfilling_the_whitelisted_hole_is_also_red(self):
+        """注入档③（反向）：给账上残额那一块补一条回看子弹 ⇒ 缺集合变空集，与常数不再相等
+
+        ⇒ 精确相等不是装饰：它同时拦「忘写」和「悄悄补账」。真补 L93 的正解是**改常数并留字**，
+        不是让判据看着空集通过。
+        """
+        text = (ROOT / LEDGER).read_text(encoding="utf-8")
+        hole = next(iter(REVIEW_MISSING))
+        title = next(ln for ln in text.split("\n")
+                     if ln.startswith(f"- **L{hole}** "))
+        assert text.count(title) == 1, "补账注入用的锚点在全档不唯一"
+        filled = text.replace(title, title + "\n" + "  - **本轮回看循环机制（探针注入档）**：这一条不是真账", 1)
+        assert rounds_without_review(filled) == set(), sorted(
+            rounds_without_review(filled), key=int)
+        assert rounds_without_review(filled) != REVIEW_MISSING
