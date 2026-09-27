@@ -9,6 +9,7 @@ use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
 pub mod routes;
+pub mod u2_render;
 
 #[derive(Debug, Deserialize)]
 pub struct CreateSurfaceRequest {
@@ -25034,55 +25035,363 @@ pub async fn attachment_u2b_batch_upload_manage(
 
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_doc_to_word(
-    axum::extract::Path(_work): axum::extract::Path<String>,
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(work_id): axum::extract::Path<String>,
+    axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Err(u2_capability_unavailable("doc->word conversion"))
+    // o2server ActionDocToWord：content（URL 编码 HTML）+ fileName + site，
+    // 按 work→job 找既有附件（site+文件名匹配）更新或新建。本地分支语义 =
+    // HTML 包 OLE2/CFB 壳（Word 可打开显示），见 u2_render::html_to_word_binary。
+    doc_to_word_for_job(&pool, &session.person_unique, &work_id, "pp_c_work", body).await
 }
 
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_doc_to_word_wowc(
-    axum::extract::Path(_flag): axum::extract::Path<String>,
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+    axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Err(u2_capability_unavailable("doc->word conversion"))
+    // workOrWorkCompleted：先查 work，缺失再查 workcompleted（o2 双表语义）
+    match doc_to_word_for_job(&pool, &session.person_unique, &flag, "pp_c_work", body.clone()).await
+    {
+        Err(AppError::NotFound) => {
+            doc_to_word_for_job(&pool, &session.person_unique, &flag, "pp_c_workcompleted", body)
+                .await
+        }
+        other => other,
+    }
+}
+
+async fn doc_to_word_for_job(
+    pool: &Pool,
+    person: &str,
+    work_id: &str,
+    work_table: &str,
+    body: Value,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // work_table 仅由两个调用点的字面量决定（"pp_c_work"/"pp_c_workcompleted"）
+    let content = body
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .trim()
+        .to_string();
+    let file_name = body
+        .get("fileName")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .trim()
+        .to_string();
+    let site = body
+        .get("site")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .trim()
+        .to_string();
+    if content.is_empty() || file_name.is_empty() || site.is_empty() {
+        return Err(AppError::BadRequest(
+            "content, fileName and site are required (o2 Wi contract)".to_string(),
+        ));
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let sql = format!("SELECT xjob FROM {work_table} WHERE xid = $1 AND deleted_at IS NULL");
+    let job: String = client
+        .query_opt(&sql, &[&work_id])
+        .await
+        .map_err(|_| AppError::Internal)?
+        .map(|row| row.get::<_, Option<String>>("xjob").unwrap_or_default())
+        .filter(|j| !j.is_empty())
+        .ok_or(AppError::NotFound)?;
+
+    // o2 对 content 先做 URLDecoder.decode（前端以 URL 编码形式提交）
+    let content = percent_decode(&content);
+
+    let bytes = u2_render::html_to_word_binary(&content)?;
+
+    // 按 job+site+文件名匹配既有附件：命中则覆盖内容，否则新建（o2 同语义）
+    let existing = client
+        .query_opt(
+            "SELECT id FROM pp_c_attachment WHERE xjob = $1 AND xsite = $2 AND lower(xname) = lower($3) LIMIT 1",
+            &[&job, &site, &file_name],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let storage = shared::storage::storage_with_pool(pool.clone());
+    let attachment_id = match existing {
+        Some(row) => {
+            let id: String = row.get("id");
+            let key = u2_att_blob_key(&id, &file_name)?;
+            u2_att_persist_verified(storage.as_ref(), &key, &bytes).await?;
+            let ext = file_extension_of(&file_name);
+            client
+                .execute(
+                    "UPDATE pp_c_attachment SET xstorage = $1, xname = $2, xextension = $3, \
+                     xlength = $4, \"xupdateTime\" = NOW() WHERE id = $5",
+                    &[&key, &file_name, &ext, &(bytes.len() as i64), &id],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            id
+        }
+        None => {
+            let id = uuid::Uuid::new_v4().to_string();
+            let key = u2_att_blob_key(&id, &file_name)?;
+            u2_att_persist_verified(storage.as_ref(), &key, &bytes).await?;
+            let ext = file_extension_of(&file_name);
+            let now = chrono::Utc::now().to_rfc3339();
+            client
+                .execute(
+                    "INSERT INTO pp_c_attachment \
+                     (\"xid\",\"xname\",\"xextension\",\"xlength\",\"xstorage\",\"xsite\",\"xjob\",\
+                      \"xperson\",\"xlastUpdatePerson\",\"xcreateTime\",\"xupdateTime\",\
+                      id,\"creator\",\"creator_person\",\"create_time\",\"update_time\") \
+                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8,$9,$9,$1,$8,$8,$9,$9)",
+                    &[
+                        &id,
+                        &file_name,
+                        &ext,
+                        &(bytes.len() as i64),
+                        &key,
+                        &site,
+                        &job,
+                        &person,
+                        &now,
+                    ],
+                )
+                .await
+                .map_err(|e| {
+                    tracing::warn!(error = %e, "docToWord attachment insert failed after blob write");
+                    AppError::Internal
+                })?;
+            id
+        }
+    };
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("id".to_string(), Value::String(attachment_id))]),
+    ))))
+}
+
+/// o2 前端以 URL 编码提交 content（ActionDocToWord 里 URLDecoder.decode）。
+fn percent_decode(s: &str) -> String {
+    urlencoding::decode(s)
+        .map(|c| c.to_string())
+        .unwrap_or_else(|_| s.to_string())
+}
+
+fn file_extension_of(name: &str) -> String {
+    name.rsplit('.')
+        .next()
+        .filter(|e| !e.is_empty() && e.len() < name.len() && !name.starts_with('.'))
+        .unwrap_or("bin")
+        .to_string()
 }
 
 #[allow(non_snake_case)]
-pub async fn attachment_u2b_html_to_pdf() -> Result<Json<ActionResult<Value>>, AppError> {
-    Err(u2_capability_unavailable("html->pdf conversion"))
+pub async fn attachment_u2b_html_to_pdf(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Json(body): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // o2server ActionHtmlToPdf：{workHtml, title?} → iText 本地渲染 → GeneralFile。
+    // 这里用 genpdf 简化排版（真实 PDF、内容完整，非浏览器级保真）；workHtml
+    // 为空时 o2 落「无内容」。
+    let work_html = body
+        .get("workHtml")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or("无内容");
+    let title = body
+        .get("title")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.trim().is_empty())
+        .map(|s| format!("{}.pdf", s.trim()))
+        .unwrap_or_else(|| {
+            format!(
+                "{}-{}.pdf",
+                session.person_unique,
+                chrono::Utc::now().format("%Y%m%d%H%M%S")
+            )
+        });
+    let bytes = u2_render::html_to_pdf_bytes(work_html)?;
+    let Some(bytes) = bytes else {
+        // 无可用 CJK 字体：产 PDF 必丢字，诚实 501 而非静默丢字
+        return Err(u2_capability_unavailable(
+            "pdf typography (no CJK font found)",
+        ));
+    };
+    u2_render::general_file_store(&pool, &session.person_unique, &title, &bytes).await
 }
 
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_html_to_image() -> Result<Json<ActionResult<Value>>, AppError> {
+    // o2 的 html->image 同样依赖 O2 云转换（DocumentTools 系列），纯 Rust 无
+    // HTML 光栅化方案；浏览器端可用 html2canvas 兜底。维持诚实 501。
     Err(u2_capability_unavailable("html->image conversion"))
 }
 
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_preview_pdf(
-    axum::extract::Path(_id): axum::extract::Path<String>,
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Err(u2_capability_unavailable("pdf preview rendering"))
+    // o2server ActionPreviewPdf：附件 → toPdf → GeneralFile → {id}。o2 的转换走
+    // O2 云；本地按类型分级（PDF 原样 / 图片嵌 PDF），其余类型 501（与 o2 离线
+    // 行为一致，不造假）。
+    let (name, bytes) = read_attachment_blob(&pool, &session.person_unique, &id).await?;
+    let base = name.trim_end_matches(|c| c != '.');
+    let pdf = match u2_render::classify_attachment(&name, &bytes) {
+        u2_render::AttKind::Pdf => bytes,
+        u2_render::AttKind::Image(_) => {
+            u2_render::image_to_pdf_bytes(&bytes)?.ok_or(AppError::NotImplemented)?
+        }
+        u2_render::AttKind::Other => {
+            return Err(u2_capability_unavailable("attachment->pdf conversion"));
+        }
+    };
+    u2_render::general_file_store(
+        &pool,
+        &session.person_unique,
+        &format!("{}.pdf", base),
+        &pdf,
+    )
+    .await
 }
 
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_preview_image_page(
-    axum::extract::Path((_id, _page)): axum::extract::Path<(String, i64)>,
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path((id, page)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Err(u2_capability_unavailable("image preview rendering"))
+    // o2server ActionPreviewImage：附件 → 图片 → GeneralFile → {id}。图片附件
+    // 统一重编码 PNG；PDF 光栅化需外部引擎（o2 走云），诚实 501。page 仅对
+    // 单页图片源有意义，>1 显式拒绝。
+    if page != 1 {
+        return Err(AppError::BadRequest(
+            "image preview supports page 1 only (single-page source)".to_string(),
+        ));
+    }
+    let (name, bytes) = read_attachment_blob(&pool, &session.person_unique, &id).await?;
+    if !matches!(
+        u2_render::classify_attachment(&name, &bytes),
+        u2_render::AttKind::Image(_)
+    ) {
+        return Err(u2_capability_unavailable("image preview rendering"));
+    }
+    let png = u2_render::image_to_png(&bytes)?.ok_or(AppError::NotImplemented)?;
+    let base = name.trim_end_matches(|c| c != '.');
+    u2_render::general_file_store(
+        &pool,
+        &session.person_unique,
+        &format!("{}-{}.png", base, page),
+        &png,
+    )
+    .await
 }
-
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_preview_pdf_result(
-    axum::extract::Path(_flag): axum::extract::Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    Err(u2_capability_unavailable("pdf preview rendering"))
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<axum::response::Response, AppError> {
+    // o2server ActionPreviewPdfResult：按 GeneralFile id 取回渲染结果文件流
+    // （仅本人可见）。image result 同款（o2 两端点行为一致）。
+    preview_result_file(&pool, &session.person_unique, &flag).await
 }
 
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_preview_image_result(
-    axum::extract::Path(_flag): axum::extract::Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    Err(u2_capability_unavailable("image preview rendering"))
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<axum::response::Response, AppError> {
+    preview_result_file(&pool, &session.person_unique, &flag).await
 }
+
+async fn preview_result_file(
+    pool: &Pool,
+    person: &str,
+    flag: &str,
+) -> Result<axum::response::Response, AppError> {
+    use axum::http::header::{CONTENT_DISPOSITION, CONTENT_TYPE};
+    use base64::Engine as _;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT name, content, creator FROM x_general_assemble_general_file WHERE id = $1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let (name, content_b64, creator) = match row {
+        Some(row) => (
+            row.get::<_, Option<String>>("name").unwrap_or_default(),
+            row.get::<_, Option<String>>("content").unwrap_or_default(),
+            row.get::<_, Option<String>>("creator").unwrap_or_default(),
+        ),
+        None => return Err(AppError::NotFound),
+    };
+    if creator != person {
+        return Err(AppError::Forbidden);
+    }
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(content_b64.as_bytes())
+        .unwrap_or_default();
+    let mime = if name.to_lowercase().ends_with(".pdf") {
+        "application/pdf"
+    } else if name.to_lowercase().ends_with(".png") {
+        "image/png"
+    } else {
+        "application/octet-stream"
+    };
+    Ok(axum::response::Response::builder()
+        .status(axum::http::StatusCode::OK)
+        .header(CONTENT_TYPE, mime)
+        .header(
+            CONTENT_DISPOSITION,
+            format!("attachment; filename=\"{}\"", name.replace('"', "")),
+        )
+        .body(axum::body::Body::from(bytes))
+        .unwrap())
+}
+
+/// 读附件（归属门禁 + blob）。crate 内 preview/转换共用。
+async fn read_attachment_blob(
+    pool: &Pool,
+    person: &str,
+    id: &str,
+) -> Result<(String, Vec<u8>), AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT xname, xstorage FROM pp_c_attachment WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let (name, key) = match row {
+        Some(row) => (
+            row.get::<_, Option<String>>("xname").unwrap_or_default(),
+            row.get::<_, Option<String>>("xstorage").unwrap_or_default(),
+        ),
+        None => return Err(AppError::NotFound),
+    };
+    u2_gate_att_or_business_error(pool, id, person).await?;
+    if key.is_empty() {
+        // db-row 模式（内容不在 BlobStorage），无法渲染
+        return Err(u2_capability_unavailable("attachment blob conversion"));
+    }
+    let storage = shared::storage::storage_with_pool(pool.clone());
+    let bytes = storage.get(&key).await.map_err(|_| AppError::Internal)?;
+    Ok((name, bytes))
+}
+
+
 
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_invoice_info(
