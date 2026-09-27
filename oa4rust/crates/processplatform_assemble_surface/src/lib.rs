@@ -25227,10 +25227,32 @@ pub async fn attachment_u2b_html_to_pdf(
 }
 
 #[allow(non_snake_case)]
-pub async fn attachment_u2b_html_to_image() -> Result<Json<ActionResult<Value>>, AppError> {
-    // o2 的 html->image 同样依赖 O2 云转换（DocumentTools 系列），纯 Rust 无
-    // HTML 光栅化方案；浏览器端可用 html2canvas 兜底。维持诚实 501。
-    Err(u2_capability_unavailable("html->image conversion"))
+pub async fn attachment_u2b_html_to_image(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Json(body): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // o2 的 html->image 走云转换；这里用 ab_glyph 文本光栅化做简化排版真实现
+    // （与 htmlToPdf 同构：块级结构 + 系统 CJK 字体，白底黑字 A4@150dpi，
+    // 内容完整非浏览器级保真）。无字体环境诚实 501。落 GeneralFile 返回 {id}。
+    let work_html = body
+        .get("workHtml")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or("无内容");
+    let title = body
+        .get("title")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.trim().is_empty())
+        .map(|s| format!("{}.png", s.trim()))
+        .unwrap_or_else(|| {
+            format!("{}-{}.png", session.person_unique, chrono::Utc::now().format("%Y%m%d%H%M%S"))
+        });
+    let bytes = u2_render::html_to_image_bytes(work_html)?;
+    let Some(bytes) = bytes else {
+        return Err(u2_capability_unavailable("image typography (no CJK font found)"));
+    };
+    u2_render::general_file_store(&pool, &session.person_unique, &title, &bytes).await
 }
 
 #[allow(non_snake_case)]
