@@ -1467,7 +1467,7 @@ pub async fn im_msg_download_id(
         (header::CONTENT_TYPE, mime),
         (
             header::CONTENT_DISPOSITION,
-            format!("attachment; filename=\"{name}\""),
+            shared::response::attachment_disposition(&name),
         ),
     ];
     Ok((StatusCode::OK, headers, data).into_response())
