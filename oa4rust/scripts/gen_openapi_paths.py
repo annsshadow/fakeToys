@@ -152,26 +152,35 @@ def parse_routes_from_file(filepath: Path) -> list:
     routes = []
     seen_keys = set()
 
-    # Multi-method: .route("path", put(h1).delete(h2))
-    multi_pattern = r'\.route\(\s*"([^"]+)",\s*(put|delete|patch)\((?:crate::)?(\w+)\)\.(put|delete|patch)\((?:crate::)?(\w+)\)'
-    for match in re.finditer(multi_pattern, text_flat):
-        path = match.group(1)
-        for method_str, handler in [(match.group(2), match.group(3)), (match.group(4), match.group(5))]:
-            key = (path, method_str.upper(), handler)
+    # 与 gen_mcp_tools.py 同口径（优化轮13）：按括号配平切出每个 .route 的 handler
+    # 表达式，再枚举链上全部 HTTP 方法。此前 multi_pattern 只认「首方法 put/delete/patch
+    # 的恰好两段链」、single_pattern 只取链首方法 —— 三方法 CRUD get(h).put(h).delete(h)
+    # 会丢 PUT/DELETE，令 OpenAPI 文档缺失这些方法。
+    method_call = re.compile(r'(?:crate::)?\b(get|post|put|delete|patch|head|options)\s*\(\s*(?:crate::)?([\w:]+)')
+    for m in re.finditer(r'\.route\(\s*"([^"]+)"\s*,', text_flat):
+        path = m.group(1)
+        start = m.end()
+        depth = 1
+        i = start
+        while i < len(text_flat) and depth > 0:
+            ch = text_flat[i]
+            if ch == '(':
+                depth += 1
+            elif ch == ')':
+                depth -= 1
+            i += 1
+        expr = text_flat[start:i]
+        seen_methods = set()
+        for mm in method_call.finditer(expr):
+            method_str = mm.group(1).upper()
+            handler = mm.group(2).split('::')[-1]
+            if method_str in seen_methods:
+                continue
+            seen_methods.add(method_str)
+            key = (path, method_str, handler)
             if key not in seen_keys:
                 seen_keys.add(key)
-                routes.append((path, method_str.upper(), handler))
-
-    # Single-method: .route("path", get(handler))
-    single_pattern = r'\.route\(\s*"([^"]+)",\s*(get|post|put|delete|patch)\((?:crate::)?(\w+)\)'
-    for match in re.finditer(single_pattern, text_flat):
-        path = match.group(1)
-        method_str = match.group(2)
-        handler = match.group(3)
-        key = (path, method_str.upper(), handler)
-        if key not in seen_keys:
-            seen_keys.add(key)
-            routes.append((path, method_str.upper(), handler))
+                routes.append((path, method_str, handler))
 
     return routes
 
