@@ -42,6 +42,11 @@ const ENEMIES: EnemyDef[] = [
   },
 ]
 
+/** 在默认守卫模板上覆写部分字段，快速造弱怪/强怪。 */
+function mkEnemyDef(id: number, over: Partial<EnemyDef>): EnemyDef {
+  return { ...ENEMIES[0], id, ...over }
+}
+
 function skill(id: number, element: Element, name: string): SkillDef {
   return {
     id, code: `s${id}`, name, family: 'flame', element, kind: 'active', descr: '',
@@ -239,6 +244,106 @@ describe('runChallenge', () => {
     expect(withWorks.report.replay_hash).not.toBe(without.report.replay_hash)
   })
 
+  it('工程装置 block_wall / tesla_grid 各自生效（不只是 slow_belt）', () => {
+    // applyWorks 的 switch 有三个 case，此前只被 slow_belt 走到过 ——
+    // 另两个装置是「看起来实现了」。装置折算成攻方属性后进入 replayHash
+    // 前缀（block_wall→elementCap、tesla_grid→reactionMultPermille），
+    // 「哈希改变」是装置生效的确定性证据。
+    //
+    // ⚠️ 关键：block_wall 折算的 elementCap 在 currentAttacker 里会被
+    // **关卡自带的 element_cap 覆盖**（`lv.element_cap ? lv值 : base值`）——
+    // 默认 level() 有 element_cap:3，block_wall 的 +1 会被丢掉、装置形同虚设。
+    // 所以这里必须在 element_cap 未固定（0）的关卡上验证 block_wall，
+    // 否则测的是「被覆盖后的无效果」。这条覆盖本身就是该设计约束的记录。
+    const openCapLevel = { ...level(), element_cap: 0 }
+    const capDeps = { ...deps, level: openCapLevel }
+    const without = runChallenge(
+      view({ snapshot: { ...view().snapshot!, works: [] } }),
+      capDeps,
+    )
+    const blockWall = runChallenge(
+      view({ snapshot: { ...view().snapshot!, works: ['block_wall'] } }),
+      capDeps,
+    )
+    const teslaGrid = runChallenge(
+      view({ snapshot: { ...view().snapshot!, works: ['tesla_grid'] } }),
+      capDeps,
+    )
+    expect(blockWall.report.replay_hash).not.toBe(without.report.replay_hash)
+    expect(teslaGrid.report.replay_hash).not.toBe(without.report.replay_hash)
+    // 两种装置折算的是不同属性，彼此也不能等值
+    expect(blockWall.report.replay_hash).not.toBe(teslaGrid.report.replay_hash)
+  })
+
+  it('block_wall 的护甲折算被关卡 element_cap 覆盖（记录该设计约束）', () => {
+    // 在固定了 element_cap 的关卡（所有真实关卡都固定）上，block_wall
+    // 对 elementCap 的 +1 会被 currentAttacker 丢弃，装置不改变战局。
+    // 这不是断言"装置该失效"，而是把「当前实现下它确实失效」钉住，
+    // 以后若接上真实护甲通道，这条会红并提示更新。
+    const without = runChallenge(
+      view({ snapshot: { ...view().snapshot!, works: [] } }),
+      deps,
+    )
+    const blockWall = runChallenge(
+      view({ snapshot: { ...view().snapshot!, works: ['block_wall'] } }),
+      deps,
+    )
+    expect(blockWall.report.replay_hash).toBe(without.report.replay_hash)
+  })
+
+  it('快照缺 works 字段时按无装置处理（老快照兼容）', () => {
+    // 服务端早期快照没有 works 字段。挑战不能因此失败 ——
+    // 「没有装置」与「缺字段」语义等价。
+    const r = runChallenge(
+      view({ snapshot: { ...view().snapshot!, works: undefined as unknown as string[] } }),
+      deps,
+    )
+    expect(r.error).toBeUndefined()
+    expect(r.report.replay_hash).toMatch(/^[0-9a-f]{16}$/)
+  })
+
+  it('关卡血量为 0 的畸形数据：hp_left_pct 为 0 而不是 NaN', () => {
+    // base_hp=0 时 hpMax<=0，除法会得 NaN 并污染上报。这里钉住
+    // 「畸形关卡上报 0%」的兜底行为。敌人特意无攻击力 ——
+    // 漏怪伤害走 breachDamage 的 baseHpMax<=0 兜底（100 点），
+    // 让引擎侧与上报侧的同一条畸形数据路径都被走到。
+    const r = runChallenge(view(), {
+      ...deps,
+      level: { ...level(), base_hp: 0 },
+      enemies: new Map([[1, mkEnemyDef(1, { attack: 0 })]]),
+      myAttacker: { ...attacker(), attack: 0n }, // 保证有怪漏进防线
+    })
+    expect(r.won).toBe(false)
+    expect(r.report.hp_left_pct).toBe(0)
+    expect(r.stats.hpLeftPct).toBe(0)
+  })
+
+  it('两波关卡：波间隙的 card_select 由无人值守循环自动跳过', () => {
+    // 防线挑战没有玩家在场 —— runToEnd 必须在 card_select 阶段
+    // 替玩家跳过整波，否则战斗会永远停在选牌界面（直到 25 分钟
+    // 上限被强制判负）。这条用例就是那条「必须能跨过波间隙」的契约。
+    const weakEnemy = mkEnemyDef(1, { hp: 30, speed: 10000 })
+    const twoWaveDeps = {
+      ...deps,
+      enemies: new Map([[1, weakEnemy]]),
+      level: {
+        ...level(),
+        base_hp: 100_000,
+        wave_count: 2,
+        waves: [
+          { wave_index: 0, spawns: [{ enemy_id: 1, count: 2, interval: 60, delay: 0 }] },
+          { wave_index: 1, spawns: [{ enemy_id: 1, count: 2, interval: 60, delay: 0 }] },
+        ],
+      },
+    }
+    const r = runChallenge(view(), twoWaveDeps)
+    expect(r.error).toBeUndefined()
+    expect(r.won).toBe(true)
+    // 守恒：两波共 4 只，全部被处理
+    expect(r.stats.kills + r.stats.leaked).toBe(4)
+    expect(r.stats.waves).toBe(2)
+  })
+
   it('守恒不变量：击杀 + 漏怪恒等于该关总怪数（8 只）', () => {
     // 这条比"强弱对比"稳得多：不依赖具体战局，只依赖引擎的结算守恒。
     // 服务端 ValidateSettle 里 "kills ≤ 总怪数" 的校验依据正是同一性质。
@@ -298,6 +403,16 @@ describe('辅助函数', () => {
 
   it('snapshotDigest 输出 16 位 hex', () => {
     expect(snapshotDigest([], [])).toMatch(/^[0-9a-f]{16}$/)
+  })
+
+  it('snapshotDigest 对缺失 works（老快照/脏数据）按空装置计算，不抛错', () => {
+    // 为什么钉：works 静态类型是 string[]，但摘要的入参可能来自缺字段的
+    // 老快照（见 runChallenge 的 `?? []` 兼容）。这里直接给 undefined，
+    // 触发 `[...(works ?? [])]` 的空数组回退分支——摘要必须仍是合法 16 位 hex，
+    // 且与"显式传空数组"结果一致（否则同一份构筑的本地校验哈希会漂移）。
+    const withUndef = snapshotDigest(undefined as unknown as string[], [1, 2])
+    expect(withUndef).toMatch(/^[0-9a-f]{16}$/)
+    expect(withUndef).toBe(snapshotDigest([], [1, 2]))
   })
 
   it('snapshotElements 过滤非法元素', () => {

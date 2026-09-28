@@ -23,8 +23,10 @@ import {
   TOTAL_SLOTS,
   PASSIVE_SLOT,
   CardDeck,
+  rollSkillCards,
   type EquippedSkill,
 } from './heatmap'
+import { BattleRng } from './lcg'
 
 const TICK = 50
 
@@ -370,5 +372,64 @@ describe('牌堆', () => {
     expect(d.discardsLeft).toBe(DISCARD_PER_WAVE) // 未消耗
     expect(d.size).toBe(0)
     expect(d.drop('a')).toBe(false) // 已取走
+  })
+
+  it('弃不存在的牌返回 ok:false 且不消耗次数', () => {
+    // discard 与 take 是两条独立路径：take 找不到牌返回 null，
+    // discard 要把它翻译成 {ok:false}。若漏了这一层翻译，
+    // 一次误触会白白消耗每波唯一的一次弃牌机会。
+    const d = new CardDeck()
+    d.setHand([mkCard('a')])
+    const r = d.discard('nope')
+    expect(r).toEqual({ ok: false, refund: 0n })
+    expect(d.discardsLeft).toBe(DISCARD_PER_WAVE)
+  })
+})
+
+describe('热量：状态快照（防线值守用）', () => {
+  it('snapshot 输出热量的字符串形态与过热标记', () => {
+    // 快照要跨进程/网络传输，bigint 不可序列化 —— 这里钉住
+    // 「heat 出来必须是 string」这一契约，防止有人顺手改成 bigint。
+    const h = newHeat()
+    h.tryCast(50n)
+    expect(h.snapshot()).toEqual({ heat: '50', overheated: false })
+  })
+
+  it('过热状态下 snapshot 如实标记 overheated', () => {
+    const h = newHeat()
+    h.heat = HEAT_MAX
+    h.checkOverheat()
+    const snap = h.snapshot()
+    expect(snap.overheated).toBe(true)
+    expect(snap.heat).toBe(String(HEAT_MAX))
+  })
+})
+
+describe('技能牌池', () => {
+  const active = (id: number, name: string) => ({
+    id,
+    name,
+    element: 'fire' as const,
+    kind: 'active' as const,
+  })
+
+  it('解锁列表里没有主动技能时返回空（被动不能进技能牌）', () => {
+    // 被动技能没有独立的释放语义，抽出来也打不出去 ——
+    // 牌池必须把它们过滤掉，否则玩家会拿到一张"没有效果"的技能卡。
+    const rng = new BattleRng(1)
+    expect(rollSkillCards(rng, [{ id: 9, name: '被动', element: 'fire', kind: 'passive' }], 3)).toEqual([])
+  })
+
+  it('可选项不足 count 时重复抽取同一技能也不返回 undefined', () => {
+    // 只有 1 个主动技能却要抽 2 张：第二次抽取必然命中已用过的 id，
+    // 重抽循环最多再试 actives.length 次，随后**照常出牌** ——
+    // 这钉住"缺货时降级为重复"而不是"卡死或出空牌"。
+    const rng = new BattleRng(7)
+    const cards = rollSkillCards(rng, [active(1, '燃烧弹')], 2)
+    expect(cards).toHaveLength(2)
+    expect(cards[0].skillId).toBe(1)
+    expect(cards[1].skillId).toBe(1)
+    // 卡 id 必须互不相同（同一场选牌里两张一样的牌没法分别操作）
+    expect(new Set(cards.map((c) => c.id)).size).toBe(2)
   })
 })

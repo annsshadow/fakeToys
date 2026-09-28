@@ -267,6 +267,11 @@ const MAX_TICKS_PER_REPLAY = 60 * 60 * 10 // 10 分钟游戏时长
  */
 function runToEnd(engine: BattleEngine, maxTicks: number): number {
   let ticks = 0
+  // 循环的 false 退出分支与底部 return 均**构造性不可达**：
+  // maxTicks 唯一取值 MAX_TICKS_PER_REPLAY(36000)，而 BattleEngine 的停滞兜底
+  // checkStalemate 在 tick 到 MAX_BATTLE_TICKS(30000) 时就强制 finish(lost)，引擎最迟
+  // ~30000 步终局，循环必从内部 won/lost 提前 return —— `ticks<maxTicks` 变 false 与走到
+  // 底部 return 永远轮不到（36000>30000 余量）。是"引擎万一挂死"的安全阀（与 defense.ts 同源）。
   while (ticks < maxTicks) {
     const phase: string = engine.phase
     if (phase === 'won' || phase === 'lost') return ticks
@@ -276,7 +281,9 @@ function runToEnd(engine: BattleEngine, maxTicks: number): number {
     if (phase === 'card_select' && !engine.hasReplayScript()) engine.skipCards()
     engine.step()
     ticks++
+    /* v8 ignore next -- 见上：循环 false 退出分支不可达（36000>30000） */
   }
+  /* v8 ignore next 2 -- 见上：耗尽 maxTicks 的收尾 return 与函数末返回点不可达 */
   return ticks
 }
 

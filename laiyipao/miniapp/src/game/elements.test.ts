@@ -1,8 +1,15 @@
 import { describe, it, expect } from 'vitest'
 import { LCG } from './lcg'
-import { lookupReaction, REACTION_ORDER, REACTIONS } from './elements'
+import {
+  lookupReaction,
+  reachableReactions,
+  isElement,
+  ELEMENT_ORDER,
+  REACTION_ORDER,
+  REACTIONS,
+  type Element,
+} from './elements'
 import { MAX_REACTION_ATTACK_WEIGHT } from './fixed'
-import type { Element } from './elements'
 import levelSeeds from '@vectors/level_seeds.json'
 
 describe('反应链数据完整性', () => {
@@ -45,6 +52,63 @@ describe('反应查表与 Go 侧一致', () => {
   it('空元素不触发反应', () => {
     expect(lookupReaction('', 'fire')).toBeNull()
     expect(lookupReaction('fire', '')).toBeNull()
+  })
+
+  it('未知的施加元素（网络脏值）安全回退为无反应，而非抛错或误算', () => {
+    // 为什么钉这条分支：incoming 的静态类型是 Element，但它来自网络
+    // ——构筑快照 / 关卡行经 JSON 往返、灰度期新元素下发到旧客户端，
+    // 都可能送来一个类型上"不存在"的元素名。此时 REACTION_TABLE[incoming]
+    // 为 undefined（`!byIncoming` 分支），必须回退成 null；若放行，
+    // 下游会拿着 undefined 继续算反应伤害并静默出错（与 damage.ts 里
+    // 「同名不同义」隐患同源）。这正是 lookupReaction 第一道空表守卫。
+    const bogus = 'plasma' as unknown as Element
+    // incoming 未知：命中 `if (!byIncoming) return null`
+    expect(lookupReaction('fire', bogus)).toBeNull()
+    // existing 未知：走到二级查表 `byIncoming[existing] ?? null`，
+    // 同样不得抛错，回退 null
+    expect(lookupReaction(bogus, 'fire')).toBeNull()
+  })
+})
+
+describe('reachableReactions（构筑评分用）', () => {
+  it('单一元素无法触发任何反应（反应必须有先后两种元素）', () => {
+    for (const e of ELEMENT_ORDER) {
+      expect(reachableReactions(new Set([e])).size).toBe(0)
+    }
+  })
+
+  it('焰 + 冰 只能出蒸汽爆发', () => {
+    const out = reachableReactions(new Set<Element>(['fire', 'ice']))
+    expect(out).toEqual(new Set(['steam_burst']))
+  })
+
+  it('全元素搭配恰好覆盖全部 7 条反应（覆盖率评分的满分前提）', () => {
+    const out = reachableReactions(new Set(ELEMENT_ORDER))
+    expect(out).toEqual(new Set(REACTION_ORDER))
+  })
+
+  it('动能在搭配里永远只贡献破甲击退', () => {
+    // REACTION_TABLE 里 kinetic 作先手只映射 armor_break ——
+    // 这是「动能不能作为已附着元素触发新反应」的读侧体现。
+    const withKinetic = reachableReactions(new Set<Element>(['kinetic', 'fire', 'ice', 'lightning', 'corrosion']))
+    expect(withKinetic.has('armor_break')).toBe(true)
+    expect(withKinetic.size).toBe(REACTION_ORDER.length)
+  })
+})
+
+describe('isElement（网络数据校验入口）', () => {
+  it('合法元素名返回 true', () => {
+    for (const e of ELEMENT_ORDER) expect(isElement(e)).toBe(true)
+  })
+
+  it('非法元素名返回 false 且类型收窄可用', () => {
+    // 服务端 /config 的元素串经 JSON 往返，拼错一个字母就类型上
+    // "不存在"。isElement 是把 unknown 收窄回 Element 的唯一闸门，
+    // 它放行一个非法值，下游查表就会拿到 undefined 静默错下去。
+    const bogus = ['flame', 'FIRE', '', 'fir e', 'poison'] as unknown as string[]
+    for (const s of bogus) {
+      expect(isElement(s)).toBe(false)
+    }
   })
 })
 

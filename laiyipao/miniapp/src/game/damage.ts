@@ -219,6 +219,12 @@ function reactionAttackCap(
   elemPortion: bigint,
   multPermille: bigint,
 ): bigint {
+  // 上限守卫：w>=PERMILLE 时 PERMILLE-w<=0 会让下面的 mulDiv 除零，故短路。
+  // 但此真分支**构造性不可达**：本函数是模块私有，唯一调用点 resolveHit 传入的
+  // w = REACTIONS[key].attackWeightPct，全表最大 300（硬红线 MAX_REACTION_ATTACK_WEIGHT），
+  // 而 PERMILLE=1000。w 永远 <PERMILLE，无任何注入点能越过。既无法经公开 API 触达、
+  // 又不能改产品导出来测，按死守卫豁免其分支覆盖（保留守卫本身以防未来红线被改动）。
+  /* v8 ignore next -- 见上：w<=300<PERMILLE，除零守卫的真分支不可达 */
   if (w >= PERMILLE) return elemPortion * PERMILLE
   // multPermille <= 0 时不加成，等价于零倍率（攻击侧完全无效）
   if (multPermille <= 0n) return 0n

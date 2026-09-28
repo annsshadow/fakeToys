@@ -449,3 +449,39 @@ describe('地形：坐标约定', () => {
     expect(BASE_X).toBe(60)
   })
 })
+
+describe('地形：serialize', () => {
+  it('把地形的身份、位置与运行时状态拍平成可序列化对象', () => {
+    // serialize 是防线快照 / 回放侧读取地形状态的出口。它必须同时
+    // 带上**静态身份**（kind/x/y）与**动态状态**（state/triggered）——
+    // 少了后者，快照会声称"掩体完好"而实际早已崩塌。
+    const t = place('oil_drum', 20, 500, 500)
+    expect(t.serialize()).toEqual({
+      kind: 'oil_drum',
+      x: 500,
+      y: 500,
+      state: 'idle',
+      triggered: false,
+    })
+
+    // 触发后：动态字段必须如实反映
+    t.onHit('fire', 500n, toFixed(500), toFixed(500))
+    for (let i = 0; i < 9 && t.state !== 'burning'; i++) {
+      t.onHit('fire', 500n, toFixed(500), toFixed(500))
+    }
+    const snap = t.serialize()
+    expect(snap.state).toBe('burning')
+    expect(snap.triggered).toBe(true)
+  })
+
+  it('崩塌后的掩体序列化为 collapsed 且不再阻挡弹道', () => {
+    const t = place('collapse_wall', 10)
+    expect(t.blocksProjectile()).toBe(true)
+    for (let i = 0; i < 20 && t.state !== 'collapsed'; i++) {
+      t.onHit('kinetic', 500n, toFixed(500), toFixed(500))
+    }
+    expect(t.state).toBe('collapsed')
+    expect(t.serialize().state).toBe('collapsed')
+    expect(t.blocksProjectile()).toBe(false)
+  })
+})
