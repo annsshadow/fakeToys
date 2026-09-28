@@ -243,6 +243,26 @@ type AdminUserView struct {
 	Gem         int64     `json:"gem"`
 	CreatedAt   time.Time `json:"created_at"`
 	LastLoginAt time.Time `json:"last_login_at"`
+
+	// 验真统计：把已有但**不可执行**的信号接到执法链上。
+	//
+	// 背景（实测查证）：`replay_verifications` 表全项目**只被一个查询读过** ——
+	// `stats.go` 里的那个 COUNT。也就是说一次不匹配会被**记录、被统计**，
+	// 但没有任何后果：不撤销奖励、不标记用户，运营也查不出是哪几场。
+	// 看板上的「验真一致率」因此是个**不可执行的数字**：
+	// 运营看到「10/1000 不匹配」，却不知道该封谁。
+	//
+	// ⚠️ **两个字段而不是一个**，因为这两件事必须可区分：
+	//
+	//   VerifyChecked = 0, VerifyMismatched = 0  →  从没被验真过 = **未知**
+	//   VerifyChecked = 8, VerifyMismatched = 0  →  验过且都一致 = 干净
+	//   VerifyChecked = 8, VerifyMismatched = 3  →  **可疑**
+	//
+	// 合成一个 `mismatches` 字段的话，「没验过」和「验过且一致」都会显示 0，
+	// 于是**最不可信的那批用户看起来最干净** ——
+	// 那正是本项目反复修的「静默降级而不是失败」。
+	VerifyChecked    int64 `json:"verify_checked"`
+	VerifyMismatched int64 `json:"verify_mismatched"`
 }
 
 // AdminListUsers 分页查询玩家。
@@ -262,13 +282,34 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 		return nil, 0, fmt.Errorf("count users: %w", err)
 	}
 
+	// 验真统计走**子查询预聚合**再 LEFT JOIN，而不是直接 JOIN 明细表。
+	//
+	// 原因：一场战斗可以被验真多次（不同验真人、或同一人重验），
+	// 直接 JOIN 会让 users 一行变成 N 行 —— 而这个接口是**分页**的，
+	// 行数被放大后 `LIMIT/OFFSET` 就切在错误的粒度上（分页结果会重复/漏掉用户）。
+	//
+	// 子查询里 `GROUP BY br.user_id` 保证每个用户最多贡献一行。
+	//
+	// 关联路径是 `replay_verifications → battle_records → users`：
+	// 注意 `replay_verifications.verifier_id` 是**验真人**，
+	// 不是这场战斗的**主人**。按 verifier 统计会得到完全错误的数字
+	// （谁验得多谁就「可疑」）。
 	rows, err := s.pool.Query(ctx, `
 		SELECT u.id, u.nickname, u.is_guest, u.status,
 		       COALESCE(p.max_stage, 0), COALESCE(p.level_exp, 0),
-		       COALESCE(w.coin, 0), COALESCE(w.gem, 0), u.created_at, u.last_login_at
+		       COALESCE(w.coin, 0), COALESCE(w.gem, 0), u.created_at, u.last_login_at,
+		       COALESCE(v.checked, 0), COALESCE(v.mismatched, 0)
 		FROM users u
 		LEFT JOIN user_progress p ON p.user_id = u.id
 		LEFT JOIN user_wallets w ON w.user_id = u.id
+		LEFT JOIN (
+			SELECT br.user_id,
+			       COUNT(*) AS checked,
+			       COUNT(*) FILTER (WHERE NOT rv.matched) AS mismatched
+			FROM replay_verifications rv
+			JOIN battle_records br ON br.id = rv.battle_id
+			GROUP BY br.user_id
+		) v ON v.user_id = u.id
 		WHERE $1 = '%%' OR u.nickname LIKE $1 OR u.guest_token LIKE $1
 		ORDER BY u.id DESC LIMIT $2 OFFSET $3`, pattern, limit, offset)
 	if err != nil {
@@ -280,7 +321,8 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 	for rows.Next() {
 		var v AdminUserView
 		if err := rows.Scan(&v.ID, &v.Nickname, &v.IsGuest, &v.Status, &v.MaxStage,
-			&v.Power, &v.Coin, &v.Gem, &v.CreatedAt, &v.LastLoginAt); err != nil {
+			&v.Power, &v.Coin, &v.Gem, &v.CreatedAt, &v.LastLoginAt,
+			&v.VerifyChecked, &v.VerifyMismatched); err != nil {
 			return nil, 0, err
 		}
 		out = append(out, v)
