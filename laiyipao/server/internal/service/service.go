@@ -424,8 +424,16 @@ type ChapterInfo struct {
 
 // LoadGameConfig 组装配置下发包。
 //
-// 一次全量下发而非多次增量：100 关 + 42 技能压缩后约 60KB，
+// 一次全量下发而非多次增量：实测未压缩 **167,124 字节**（163 KB），
+// 其中 `levels` 一个字段就占 123,717 字节（74%）。
 // 一次请求比七次增量更简单也更快，且关卡数据变化不频繁。
+//
+// ⚠️ 这里原来写的是「压缩后约 60KB」—— **那个数字是错的**（实测 163KB），
+// 而且「压缩后」指的是压缩前就已存在的 JSON 体积，不是 gzip 之后的。
+// 现已按实测数字改写，量级由 `internal/httpapi` 的
+// `TestConfigVolumeIsKnown` 守着。
+//
+// 传输侧由 `middleware/compress` 兜住：gzip 后 23,964 字节（14.3%）。
 func (s *Service) LoadGameConfig(ctx context.Context) GameConfig {
 	cfg := GameConfig{
 		Levels: domain.GenerateAllLevels(),
@@ -458,8 +466,30 @@ func (s *Service) LoadGameConfig(ctx context.Context) GameConfig {
 		})
 	}
 	// 版本号：客户端据此判断是否需要刷新配置。
-	// ⚠️ 现在是时间戳取模而非真正的内容哈希——每秒都在变，
-	// 客户端"版本没变就不用刷新"的判断形同虚设（见报告）。
+	//
+	// ⚠️ **当前这个机制是死的**，而且死因不止一处。查证结果：
+	//
+	//  1. 这里是**时间戳取模**，不是内容哈希 —— 每秒都在变。
+	//  2. 客户端**根本没有读它**：`miniapp/src/store/game.ts` 的
+	//     `loadConfig()` 只有 `if (config.value) return` 这个**内存内**缓存，
+	//     `config.version` 在整个客户端代码里**零引用**。
+	//     也就是说「版本没变就不用刷新」这个判断**从来没被实现过**。
+	//  3. 配置里还有 `server_time: time.Now()`，所以**同一个配置在两次请求里
+	//     本来就不相同** —— 客户端无法按内容做任何缓存。
+	//     （`internal/httpapi` 的 `TestCompressedPayloadIsByteIdenticalToPlain`
+	//     一开始就栽在这上面：它以为两次响应该逐字节相同，结果红了。）
+	//
+	// 因此每次冷启动都会实打实拉一次全量配置（163KB，gzip 后 24KB）。
+	//
+	// ## 要真正做缓存，需要三件事一起做
+	//
+	//   a. `version` 改成**内容哈希**（哈希时排除 `server_time`/`version` 自己）；
+	//   b. 客户端把配置**持久化**（`uni.setStorageSync`），而不是只存内存；
+	//   c. 客户端拿持久化的 `version` 与响应里的比对，相同就不更新。
+	//
+	// 只做 a 是「只写不读」—— 仍然没人读它，还给最热的端点加上
+	// 「marshal 167KB + 哈希」的每请求 CPU。所以这里**故意保持现状**，
+	// 只把事实记录下来。传输侧的成本已由 `middleware/compress` 压到 14.3%。
 	cfg.Version = int(time.Now().Unix() % 100000)
 	return cfg
 }
