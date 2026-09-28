@@ -634,3 +634,42 @@ class TestRuntimeSectionJudgements:
         with pytest.raises(DataValidationError, match="不能是 null"):
             load_config(self._write(tmp_path, {"web": {"port": None}}))
 
+
+
+class TestSaveConfigExistingTolerance:
+    """save_config 读既有文件的两条守卫支（L102，A202）
+
+    「保留未建模顶层键」的读入侧：文件读不了（OSError）与「合法 YAML 但不是
+    映射」都必须当成「没有既有段」继续保存，而不是让保存操作本身失败——
+    否则一个损坏的旧配置文件会把用户的新配置永久锁在门外。
+    """
+
+    def test_existing_file_unreadable_oserror_still_saves(self, tmp_path, monkeypatch):
+        import builtins
+
+        from augmentor.config import save_config
+
+        target = tmp_path / "config.yaml"
+        target.write_text("custom_key: keep\n", encoding="utf-8")
+        real_open = builtins.open
+
+        def fake_open(path, mode="r", *args, **kwargs):
+            if str(path) == str(target) and "r" in mode:
+                raise PermissionError(13, "不可读")
+            return real_open(path, mode, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "open", fake_open)
+        save_config(AppConfig(), str(target))
+        assert "models" in target.read_text(encoding="utf-8")
+
+    def test_existing_file_non_dict_yaml_still_saves(self, tmp_path):
+        import yaml
+
+        from augmentor.config import save_config
+
+        target = tmp_path / "config.yaml"
+        target.write_text("42\n", encoding="utf-8")
+        save_config(AppConfig(), str(target))
+        data = yaml.safe_load(target.read_text(encoding="utf-8"))
+        assert isinstance(data, dict)
+        assert "models" in data
