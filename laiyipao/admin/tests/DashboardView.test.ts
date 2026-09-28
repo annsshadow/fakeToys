@@ -13,7 +13,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DashboardResp } from '@/api'
 
 const fetchDashboard = vi.hoisted(() => vi.fn())
-vi.mock('@/api', () => ({ fetchDashboard }))
+// 反应名来自服务端（`GET /admin/reactions` → `domain.AllReactionSpecs()`），
+// 不再是本文件/视图里那张硬编码的 REACTION_LABEL。
+const fetchReactions = vi.hoisted(() => vi.fn())
+vi.mock('@/api', () => ({ fetchDashboard, fetchReactions }))
 
 const chartStub = { setOption: vi.fn(), dispose: vi.fn() }
 const echartsInit = vi.hoisted(() => vi.fn())
@@ -50,10 +53,30 @@ async function mountDashboard() {
   return wrapper
 }
 
+/** 服务端会下发的反应表（字段与 domain.ReactionSpec 的 json tag 对齐）。 */
+function reactionSpec(key: string, name: string) {
+  return {
+    key,
+    name,
+    base_coef: 60,
+    attack_weight_pct: 300,
+    status_duration_ms: 0,
+    aoe_radius: 0,
+    dispel_shield: false,
+    amplify_pct: 0,
+    descr: '',
+  }
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   echartsInit.mockReturnValue(chartStub)
   fetchDashboard.mockResolvedValue(dashboardFixture())
+  fetchReactions.mockResolvedValue([
+    reactionSpec('steam_burst', '蒸汽爆发'),
+    reactionSpec('overheat', '过热'),
+    // 故意**不含** custom_rx：用来验证未知 key 的兜底
+  ])
 })
 
 describe('DashboardView KPI 渲染', () => {
@@ -177,5 +200,54 @@ describe('DashboardView 加载失败', () => {
     expect(wrapper.text()).toContain('请先启动 server')
     expect(wrapper.find('.kpi-value').exists()).toBe(false)
     expect(echartsInit).not.toHaveBeenCalled()
+  })
+})
+
+describe('DashboardView 反应名映射', () => {
+  /**
+   * 取反应图 setOption 的入参。
+   *
+   * 走 stub 而不是查 DOM：反应名只出现在 **echarts 的配置对象**里
+   * （yAxis.data），并不渲染成 DOM 文本 ——
+   * jsdom 里 canvas 不可用，图形根本不画，所以 DOM 上永远查不到。
+   * 断言 DOM 的话，这条测试会「因为查不到而恒绿」或直接误报。
+   */
+  function reactionAxisData(): unknown {
+    expect(echartsInit).toHaveBeenCalled()
+    const opts = chartStub.setOption.mock.calls.map((c) => c[0] as Record<string, any>)
+    const found = opts.find((o) => Array.isArray(o?.yAxis?.data))
+    expect(found, '没有找到含 yAxis.data 的 setOption 调用').toBeTruthy()
+    return found!.yAxis.data
+  }
+
+  it('已知 key 用服务端下发的中文名', async () => {
+    await mountDashboard()
+    const axis = reactionAxisData() as string[]
+    expect(axis).toContain('蒸汽爆发')
+    expect(axis).toContain('过热')
+  })
+
+  it('服务端没下发的 key 退回原始 key，而不是显示 undefined', async () => {
+    // 夹具里有个 custom_rx，而 mock 的反应表里**故意没有**它。
+    //
+    // 这一条守的是 `labelOf` 的兜底。曾经的写法是
+    // `REACTION_LABEL[x.reaction] || x.reaction`，
+    // 硬编码表漏一项时坐标轴就出现英文 key —— 现在兜底逻辑搬到了
+    // `labelOf(key) = reactionLabel[key] || key`，
+    // 守的是**同一个性质**（永远显示得出来），只是数据源换了。
+    await mountDashboard()
+    const axis = reactionAxisData() as string[]
+    expect(axis).toContain('custom_rx')
+    expect(axis.some((x) => x === 'undefined' || x === '')).toBe(false)
+  })
+
+  it('不下发任何反应名时仍能出图（全部退回原始 key）', async () => {
+    // 「后端连的是旧版本、还没有 /admin/reactions」不该让整页崩掉。
+    fetchReactions.mockResolvedValueOnce([])
+    const wrapper = await mountDashboard()
+    const axis = reactionAxisData() as string[]
+    expect(axis).toContain('steam_burst')
+    expect(axis).toContain('custom_rx')
+    expect(wrapper.find('.page-title').text()).toBe('数据看板')
   })
 })
