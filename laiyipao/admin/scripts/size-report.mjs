@@ -40,11 +40,17 @@ const assets = join(dist, 'assets')
 
 /**
  * 预算。留了余量，让正常加功能不会误报；
- * 但一次「整包注册」级别的回归（实测 +1051 KB）会超出 4 倍，必红。
+ * 但一次「整包注册」级别的回归（实测首屏 161 → 1195 KB）会超出 5 倍，必红。
+ *
+ * ⚠️ 这两个数字改过两次，每次都是因为**我的测量本身错了**：
+ *  1. 第一次拿 dist 总量当首屏（1981 KB），而 dist 里还残留着更早的构建文件；
+ *  2. 第二次 CSS 把 27 个文件全加了，实际首屏只 link 1 个（8 KB）。
+ * 所以基线必须**由本脚本实测**、改动后**重测**，
+ * 不要从提交信息里抄一个数过来 —— 那正是我两次都做错的事。
  */
 export const BUDGET = {
-  firstLoadRawKB: 420, // 实测 328
-  firstLoadGzipKB: 115, // 实测 89
+  firstLoadRawKB: 220, // 实测 161
+  firstLoadGzipKB: 80, // 实测 62
 }
 
 if (!existsSync(assets)) {
@@ -132,6 +138,33 @@ if (!entry) {
 }
 
 const first = closure(entry[1])
+
+/**
+ * 首屏 CSS：**只算 index.html 真正 link 的那些**。
+ *
+ * ⚠️ 第一版把 `assets/` 下**全部** CSS 加总 —— 那 27 个文件里 26 个是
+ * 懒加载页的样式，首屏一个都不加载。于是报出「首屏 CSS 175 KB」，
+ * 而 index.html 里只 link 了 **1** 个文件。
+ *
+ * 症状与本文件开头的陈旧 dist 检查一模一样：数字**偏大**、格式正常、
+ * **不报任何错**。而且这属于最讽刺的一类错误 ——
+ * 本文件存在的全部意义就是「用对指标」，结果自己把一个只该算进
+ * dist 总量的东西算进了首屏。
+ *
+ * 正确做法：从 index.html 解析 `<link rel="stylesheet">`，
+ * 再补上首屏 JS 闭包里静态引用到的 CSS
+ * （vite 通常会合并进 entry CSS，但显式检查比假设它会合并可靠）。
+ */
+const linkedCss = [
+  ...html.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="\/assets\/([^"]+\.css)"/g),
+].map((m) => m[1])
+for (const f of first) {
+  const src = readFileSync(join(assets, f), 'utf8')
+  for (const m of src.matchAll(/["']\.\/([^"']+\.css)["']/g)) {
+    if (!linkedCss.includes(m[1]) && existsSync(join(assets, m[1]))) linkedCss.push(m[1])
+  }
+}
+
 let jsRaw = 0
 let jsGz = 0
 for (const f of first) {
@@ -139,26 +172,32 @@ for (const f of first) {
   jsRaw += b.length
   jsGz += gzipSync(b, { level: 9 }).length
 }
-const cssFiles = readdirSync(assets).filter((f) => f.endsWith('.css'))
 let cssRaw = 0
 let cssGz = 0
-for (const f of cssFiles) {
+for (const f of linkedCss) {
   const b = readFileSync(join(assets, f))
   cssRaw += b.length
   cssGz += gzipSync(b, { level: 9 }).length
 }
 
 const allJs = readdirSync(assets).filter((f) => f.endsWith('.js'))
+const allCss = readdirSync(assets).filter((f) => f.endsWith('.css'))
 let distRaw = 0
 for (const f of allJs) distRaw += statSync(join(assets, f)).size
+let distCssRaw = 0
+for (const f of allCss) distCssRaw += statSync(join(assets, f)).size
 
 console.log('=== 首屏（index.html 入口的静态 import 闭包）===')
 for (const f of [...first].sort()) {
   console.log('  ' + f.padEnd(32) + kb(statSync(join(assets, f)).size) + ' KB')
 }
-console.log('  ' + '-'.repeat(50))
+for (const f of [...linkedCss].sort()) {
+  console.log('  ' + f.padEnd(32) + kb(statSync(join(assets, f)).size) + ' KB  <- index.html link 的')
+}
+console.log('  ' + '-'.repeat(52))
 console.log(
-  `  JS  ${kb(jsRaw)} KB（gzip ${kb(jsGz)}）  CSS ${kb(cssRaw)} KB（gzip ${kb(cssGz)}）`,
+  `  JS  ${kb(jsRaw)} KB（gzip ${kb(jsGz)}）  ` +
+    `CSS ${kb(cssRaw)} KB（gzip ${kb(cssGz)}；${linkedCss.length}/${allCss.length} 个文件进了首屏）`,
 )
 console.log(
   `  首屏合计 ${kb(jsRaw + cssRaw)} KB（gzip ${kb(jsGz + cssGz)}）  ` +
@@ -166,7 +205,10 @@ console.log(
 )
 
 console.log('')
-console.log(`=== dist 总量 ${kb(distRaw)} KB（${allJs.length} 个 chunk）——仅供参照，不是首屏 ===`)
+console.log(
+  `=== dist 总量 ${kb(distRaw + distCssRaw)} KB（${allJs.length} js + ${allCss.length} css）` +
+    `——仅供参照，不是首屏 ===`,
+)
 
 console.log('')
 console.log('=== 各路由的额外代价（进那个页面才付）===')
