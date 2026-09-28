@@ -202,7 +202,7 @@ async function loadByCategory() {
     const r: any = await api.get(`/api/query/assemble/designer/list/${encodeURIComponent(cat)}`)
     items.value = (Array.isArray(r?.data) ? r.data : (r?.data?.data ?? [])) as Item[]
   } catch (e: any) {
-    toast.error('按分类加载失败: ' + (e?.message ?? ''))
+    toast.error(`按分类加载失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -238,7 +238,7 @@ async function viewSurface(s: Surface): Promise<void> {
     const d = r?.data
     sfDetailText.value = d ? JSON.stringify(d).slice(0, 200) : '（空）'
   } catch (e: any) {
-    toast.error('加载表面详情失败: ' + (e?.message ?? ''))
+    toast.error(`加载表面详情失败: ${e?.message ?? ''}`)
   }
 }
 function openSurfaceCreate(): void {
@@ -271,7 +271,7 @@ async function saveSurface(): Promise<void> {
     showSurfaceModal.value = false
     await loadSurfaces()
   } catch (e: any) {
-    toast.error('保存表面失败: ' + (e?.message ?? ''))
+    toast.error(`保存表面失败: ${e?.message ?? ''}`)
   } finally {
     sfSaving.value = false
   }
@@ -284,7 +284,7 @@ async function deleteSurface(s: Surface): Promise<void> {
     surfaces.value = surfaces.value.filter((x) => x.id !== s.id)
     toast.success('表面已删除')
   } catch (e: any) {
-    toast.error('删除表面失败: ' + (e?.message ?? ''))
+    toast.error(`删除表面失败: ${e?.message ?? ''}`)
   }
 }
 </script>

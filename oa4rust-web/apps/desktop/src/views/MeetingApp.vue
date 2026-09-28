@@ -279,9 +279,9 @@ async function showParticipants(m: M) {
     // GET /api/meeting/{meetingId}/participant/list —— 参会人列表
     const r: any = await api.get(`/api/meeting/${encodeURIComponent(m.id)}/participant/list`)
     const n = Array.isArray(r.data) ? r.data.length : 0
-    toast.success('参会人数：' + n)
+    toast.success(`参会人数：${n}`)
   } catch (e: any) {
-    toast.error('查询失败: ' + (e?.message ?? ''))
+    toast.error(`查询失败: ${e?.message ?? ''}`)
   }
 }
 async function inviteParticipant(m: M) {
@@ -292,7 +292,7 @@ async function inviteParticipant(m: M) {
     await api.post(`/api/meeting/${encodeURIComponent(m.id)}/participant/add`, { invitee })
     toast.success('已邀请')
   } catch (e: any) {
-    toast.error('邀请失败: ' + (e?.message ?? ''))
+    toast.error(`邀请失败: ${e?.message ?? ''}`)
   }
 }
 const appliedText = ref('')
@@ -307,7 +307,7 @@ async function loadMyInvited() {
     const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     appliedText.value = `受邀进行 ${cnt(proc)} / 已办 ${cnt(done)} / 已拒 ${cnt(rej)}`
   } catch (e: any) {
-    toast.error('加载我的邀请失败: ' + (e?.message ?? ''))
+    toast.error(`加载我的邀请失败: ${e?.message ?? ''}`)
   }
 }
 async function loadMyApplied() {
@@ -321,7 +321,7 @@ async function loadMyApplied() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     appliedText.value = `待审 ${n(wait)} / 进行 ${n(proc)} / 已办 ${n(done)}`
   } catch (e: any) {
-    toast.error('加载我的申请失败: ' + (e?.message ?? ''))
+    toast.error(`加载我的申请失败: ${e?.message ?? ''}`)
   }
 }
 // 检索/前瞻族 3 条真实 distinct 路由：楼栋名模糊 building/list/like/{key}（x_meeting_building ILIKE）
@@ -345,7 +345,7 @@ async function loadMeetingPinyin() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     appliedText.value = `楼栋拼音 ${n(bP)}/首字母 ${n(bI)} · 会议室拼音 ${n(rP)}/首字母 ${n(rI)}`
   } catch (e: any) {
-    toast.error('加载拼音检索失败: ' + (e?.message ?? ''))
+    toast.error(`加载拼音检索失败: ${e?.message ?? ''}`)
   }
 }
 async function loadMeetingCore() {
@@ -360,7 +360,7 @@ async function loadMeetingCore() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     appliedText.value = `核心会议室 ${n(rooms)} / 楼栋 ${n(blds)} / 未来7天日程 ${n(sched)} / 实体房间 ${n(coreRooms)}`
   } catch (e: any) {
-    toast.error('加载核心资源/日程失败: ' + (e?.message ?? ''))
+    toast.error(`加载核心资源/日程失败: ${e?.message ?? ''}`)
   }
 }
 // rev210：会议实体 4 条真实 distinct 路由（SeaORM）：core/entity/meeting/list（全部按开始降序 limit20）
@@ -381,7 +381,7 @@ async function loadMeetingEntities() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     appliedText.value = `实体会议 ${rows.length} / 按房间 ${n(byRoom)} / 会议详情 ${(meetingOne as any)?.data?.id ? '命中' : '未命中'} / 房间详情 ${(roomOne as any)?.data?.id ? '命中' : '未命中'}`
   } catch (e: any) {
-    toast.error('加载会议实体失败: ' + (e?.message ?? ''))
+    toast.error(`加载会议实体失败: ${e?.message ?? ''}`)
   }
 }
 // rev222：会议控制台 楼栋/会议室/照片/附件游标族 7 条真实 distinct 路由
@@ -405,7 +405,7 @@ async function loadMeetingControlAssets() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     appliedText.value = `楼栋 ${(building as any)?.data?.id ? '命中' : '未命中'} · 会议室 ${(room as any)?.data?.id ? '命中' : '未命中'} · 会议游标 ${n(meetingCursor)} · 照片 ${(photo as any)?.data ? '有' : '无'} · 附件 ${(attach as any)?.data ? '有' : '无'}（前 ${n(attNext)}/后 ${n(attPrev)}）`
   } catch (e: any) {
-    toast.error('加载会议控制台资源失败: ' + (e?.message ?? ''))
+    toast.error(`加载会议控制台资源失败: ${e?.message ?? ''}`)
   }
 }
 // rev239：会议按日期/时间范围列表 4 条真实 distinct 读路由（arity 已核：URL 参数数==handler Path 元数）
@@ -452,7 +452,7 @@ async function loadMeetingDateLists() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     appliedText.value = `楼栋(时间范围) ${n(building)} · 即将3月 ${n(coming)} · 本年月 ${n(byMonth)} · 本年月日 ${n(byDay)} · 全量会议 ${n(allList)} · 系统配置 ${(sysCfg as any)?.data ? '有' : '无'} · 未来6月 ${n(forward)}`
   } catch (e: any) {
-    toast.error('加载会议日期列表失败: ' + (e?.message ?? ''))
+    toast.error(`加载会议日期列表失败: ${e?.message ?? ''}`)
   }
 }
 // rev240：会议 房间/开放会议 4 条真实 distinct 读路由（arity 已核；跳 day/{day}/all 与 building/.../allmeeting 同 SQL 孪生、invite/{page}/{size}/{size} 重复参 arity 不符）
@@ -472,7 +472,7 @@ async function loadMeetingOpenRooms() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     appliedText.value = `按房间日程 ${n(byRoom)} · 楼栋(房间/会议过滤) ${n(buildingRoomMeeting)} · 开放会议室 ${n(openRooms)} · 开放会议配置 ${n(openConfig)}`
   } catch (e: any) {
-    toast.error('加载开放会议资源失败: ' + (e?.message ?? ''))
+    toast.error(`加载开放会议资源失败: ${e?.message ?? ''}`)
   }
 }
 async function loadMeetingSearch() {
@@ -486,7 +486,7 @@ async function loadMeetingSearch() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     appliedText.value = `楼栋匹配 ${n(blds)} / 会议室匹配 ${n(rooms)} / 未来3月会议 ${n(forward)}`
   } catch (e: any) {
-    toast.error('检索失败: ' + (e?.message ?? ''))
+    toast.error(`检索失败: ${e?.message ?? ''}`)
   }
 }
 async function loadMeetingMore() {
@@ -503,7 +503,7 @@ async function loadMeetingMore() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : r?.data ? 1 : 0)
     appliedText.value = `待接受 ${n(wait)} / 本月 ${n(month)} / 系统配置项 ${n(cfg)}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function addBuilding() {
@@ -516,17 +516,17 @@ async function addBuilding() {
     const r: any = await api.get('/api/meeting/assemble/control/building/list')
     buildings.value = (r.data ?? []) as Bldg[]
   } catch (e: any) {
-    toast.error('新建失败: ' + (e?.message ?? ''))
+    toast.error(`新建失败: ${e?.message ?? ''}`)
   }
 }
 async function removeBuilding(b: Bldg) {
-  if (!(await confirmMsg('确定删除楼栋「' + (b.name || b.id) + '」？'))) return
+  if (!(await confirmMsg(`确定删除楼栋「${b.name || b.id}」？`))) return
   try {
     // DELETE /api/meeting/assemble/control/building/{id}
-    await api.delete('/api/meeting/assemble/control/building/' + encodeURIComponent(b.id))
+    await api.delete(`/api/meeting/assemble/control/building/${encodeURIComponent(b.id)}`)
     buildings.value = buildings.value.filter((x) => x.id !== b.id)
   } catch (e: any) {
-    toast.error('删除失败: ' + (e?.message ?? ''))
+    toast.error(`删除失败: ${e?.message ?? ''}`)
   }
 }
 const roomBuildingId = ref('')
@@ -556,17 +556,17 @@ async function addRoom() {
     toast.success('已新建会议室')
     loadRoomList()
   } catch (e: any) {
-    toast.error('新建失败: ' + (e?.message ?? ''))
+    toast.error(`新建失败: ${e?.message ?? ''}`)
   }
 }
 async function removeRoom(rm: Room) {
-  if (!(await confirmMsg('确定删除会议室「' + (rm.name || rm.id) + '」？'))) return
+  if (!(await confirmMsg(`确定删除会议室「${rm.name || rm.id}」？`))) return
   try {
     // DELETE /api/meeting/assemble/control/room/{id}
-    await api.delete('/api/meeting/assemble/control/room/' + encodeURIComponent(rm.id))
+    await api.delete(`/api/meeting/assemble/control/room/${encodeURIComponent(rm.id)}`)
     roomList.value = roomList.value.filter((x) => x.id !== rm.id)
   } catch (e: any) {
-    toast.error('删除失败: ' + (e?.message ?? ''))
+    toast.error(`删除失败: ${e?.message ?? ''}`)
   }
 }
 onMounted(loadMeetings)
@@ -576,20 +576,20 @@ async function updateMeeting(m: M) {
   if (!title) return
   try {
     // 后端为 RESTful PUT meeting/{id}（无 /meeting/update）。
-    await api.put('/api/meeting/assemble/control/meeting/' + encodeURIComponent(m.id), { title })
+    await api.put(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}`, { title })
     loadMeetings()
   } catch (e: any) {
-    toast.error('更新失败: : ' + (e?.message ?? ''))
+    toast.error(`更新失败: : ${e?.message ?? ''}`)
   }
 }
 async function cancelMeeting(m: M) {
   if (!(await confirmMsg('确定取消该会议？'))) return
   try {
     // 后端无 /meeting/cancel；取消会议 = 删除该会议。
-    await api.delete('/api/meeting/assemble/control/meeting/' + encodeURIComponent(m.id))
+    await api.delete(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}`)
     loadMeetings()
   } catch (e: any) {
-    toast.error('取消失败: : ' + (e?.message ?? ''))
+    toast.error(`取消失败: : ${e?.message ?? ''}`)
   }
 }
 async function approveMeeting(m: M) {
@@ -598,7 +598,7 @@ async function approveMeeting(m: M) {
     await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/confirm/allow`)
     loadMeetings()
   } catch (e: any) {
-    toast.error('审批失败: : ' + (e?.message ?? ''))
+    toast.error(`审批失败: : ${e?.message ?? ''}`)
   }
 }
 async function joinMeeting(m: M) {
@@ -608,7 +608,7 @@ async function joinMeeting(m: M) {
     toast.info('已加入会议')
     loadMeetings()
   } catch (e: any) {
-    toast.error('加入失败: : ' + (e?.message ?? ''))
+    toast.error(`加入失败: : ${e?.message ?? ''}`)
   }
 }
 async function leaveMeeting(m: M) {
@@ -617,7 +617,7 @@ async function leaveMeeting(m: M) {
     await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/reject`)
     loadMeetings()
   } catch (e: any) {
-    toast.error('离开失败: : ' + (e?.message ?? ''))
+    toast.error(`离开失败: : ${e?.message ?? ''}`)
   }
 }
 // rev314：会议管理真实写端点（用户触发，非挂载自动触发）——改时间/标记完成/签到码/邀请增删
@@ -640,7 +640,7 @@ async function modifyMeetingTime(m: M) {
     toast.success('会议时间已更新')
     loadMeetings()
   } catch (e: any) {
-    toast.error('改时间失败: ' + (e?.message ?? ''))
+    toast.error(`改时间失败: ${e?.message ?? ''}`)
   }
 }
 async function markMeetingCompleted(m: M) {
@@ -651,7 +651,7 @@ async function markMeetingCompleted(m: M) {
     toast.success('已标记完成')
     loadMeetings()
   } catch (e: any) {
-    toast.error('标记完成失败: ' + (e?.message ?? ''))
+    toast.error(`标记完成失败: ${e?.message ?? ''}`)
   }
 }
 async function showCheckinCode(m: M) {
@@ -661,7 +661,7 @@ async function showCheckinCode(m: M) {
     const code = (r as any)?.data?.checkinCode
     toast.info(code ? `签到码：${code}` : '暂无签到码')
   } catch (e: any) {
-    toast.error('获取签到码失败: ' + (e?.message ?? ''))
+    toast.error(`获取签到码失败: ${e?.message ?? ''}`)
   }
 }
 async function manageInvitee(m: M) {
@@ -680,7 +680,7 @@ async function manageInvitee(m: M) {
     }
     loadMeetings()
   } catch (e: any) {
-    toast.error('邀请管理失败: ' + (e?.message ?? ''))
+    toast.error(`邀请管理失败: ${e?.message ?? ''}`)
   }
 }
 // rev336：会议 审批(接受/拒绝/确认)/存删/楼栋·会议室编辑删照片/配置/核心会议室 真实写端点（用户触发，shape 已核；全字面量路径）
@@ -732,7 +732,7 @@ async function meetingWrite(op: string) {
     } else await api.put(`/api/meeting/assemble/control/attachment/${e}/update`, {})
     toast.success('会议操作已提交')
   } catch (err: any) {
-    toast.error('会议操作失败: ' + (err?.message ?? ''))
+    toast.error(`会议操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev360：会议 邀请增删/改起止时间/手动结束 + 核心实体会议建改删 真实写（shape 已核：add/delete invite{invitee}、modify starttime{startTime,endTime?}·completedtime{completedTime}、core create{title,content?,roomId?}）
@@ -766,7 +766,7 @@ async function meetingMore(op: string) {
     }
     toast.success('会议操作已提交')
   } catch (err: any) {
-    toast.error('会议操作失败: ' + (err?.message ?? ''))
+    toast.error(`会议操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev386：会议 控制级删会议(delete_meeting_control)/会议实体删(delete_meeting)/核心实体会议室删(delete_room)/附件下载(2参) 真实路由（均 Path-only 已核，用户触发；delete/invite PUT 已由 delInvite 消费为同 handler 孪生故跳过）
@@ -789,7 +789,7 @@ async function meetingMore2(op: string) {
     }
     toast.success('会议操作已提交')
   } catch (err: any) {
-    toast.error('会议操作失败: ' + (err?.message ?? ''))
+    toast.error(`会议操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev360：会议 我的/管理/受邀/申请 分页 + 会议控制项 + 开放会议室 真实只读（用户触发，分页参数正确 {page}/size/{size}）
@@ -807,7 +807,7 @@ async function meetingLists() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     toast.success(`会议清单读 ${rs.length} 条命中 ${hit}`)
   } catch (err: any) {
-    toast.error('会议清单加载失败: ' + (err?.message ?? ''))
+    toast.error(`会议清单加载失败: ${err?.message ?? ''}`)
   }
 }
 
@@ -891,7 +891,7 @@ async function loadMeetingTwin() {
     ])
     toast.success(`会议孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('会议孪生端点失败: ' + (e?.message ?? ''))
+    toast.error(`会议孪生端点失败: ${e?.message ?? ''}`)
   }
 }
 </script>

@@ -157,7 +157,7 @@ async function loadSurfaceMoreReads() {
     const hit = rs.filter((r) => (r as any) != null).length
     surfaceMoreText.value = `流程-表面只读端点 ${rs.length} 条，返回 ${hit}`
   } catch (e: any) {
-    toast.error('加载流程-表面只读端点失败: ' + (e?.message ?? ''))
+    toast.error(`加载流程-表面只读端点失败: ${e?.message ?? ''}`)
   }
 }
 // rev378：流程-引擎 service/processing 非破坏性真实读补消费（用户触发；attachment/data/job/record 均真 SELECT，
@@ -179,7 +179,7 @@ async function loadProcessingEngineReads() {
     const hit = rs.filter((r) => (r as any) != null).length
     surfaceMoreText.value = `流程-引擎只读端点 ${rs.length} 条，返回 ${hit}`
   } catch (e: any) {
-    toast.error('加载流程-引擎只读端点失败: ' + (e?.message ?? ''))
+    toast.error(`加载流程-引擎只读端点失败: ${e?.message ?? ''}`)
   }
 }
 // rev287：完成件 PP_C_WORKCOMPLETED 全量真实读端点（双向游标 application/filter/manage + 属性筛选 + 详情 manage/assignment + 数据快照 data/from）；均只读 arity 已核
@@ -238,7 +238,7 @@ async function loadWorkCompletedFullCursors() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     wcCursorText.value = `完成件真实读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载完成件全量游标失败: ' + (e?.message ?? ''))
+    toast.error(`加载完成件全量游标失败: ${e?.message ?? ''}`)
   }
 }
 // rev285：已阅 PP_C_READCOMPLETED 全量真实读端点（双向游标 base/application/process/filter + 按工作 + 详情 reference）；均只读 arity 已核
@@ -271,7 +271,7 @@ async function loadReadCompletedFullCursors() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     readCompCursorText.value = `已阅真实读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载已阅全量游标失败: ' + (e?.message ?? ''))
+    toast.error(`加载已阅全量游标失败: ${e?.message ?? ''}`)
   }
 }
 // rev284：待阅 PP_C_READ 全量真实读端点（双向游标 base/application/process/filter + 按人管理 + 详情 reference + 按完成件）；均只读 arity 已核
@@ -305,7 +305,7 @@ async function loadReadFullCursors() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     readCursorText.value = `待阅真实读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载待阅全量游标失败: ' + (e?.message ?? ''))
+    toast.error(`加载待阅全量游标失败: ${e?.message ?? ''}`)
   }
 }
 // rev283：已办 PP_C_TASKCOMPLETED 全量真实读端点（双向游标 base/application/process/filter + 按日期时段管理 + 详情 reference）；均只读 arity 已核
@@ -339,7 +339,7 @@ async function loadTaskCompletedFullCursors() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     taskCompCursorText.value = `已办真实读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载已办全量游标失败: ' + (e?.message ?? ''))
+    toast.error(`加载已办全量游标失败: ${e?.message ?? ''}`)
   }
 }
 // rev282：待办 PP_C_TASK 全量真实读端点接线（游标 next/prev × base/application/process/manage/filter + 详情 manage/reference）
@@ -388,7 +388,7 @@ async function loadTaskFullCursors() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     taskCursorText.value = `待办真实读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载待办全量游标失败: ' + (e?.message ?? ''))
+    toast.error(`加载待办全量游标失败: ${e?.message ?? ''}`)
   }
 }
 // rev269：流程引擎 工作复合/作业投影 2 条真实 distinct 读路由（引擎表，区别于表面 PP_C_*）
@@ -406,7 +406,7 @@ async function loadWorkJobProjection() {
     const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
     workJobText.value = `工作复合 ${has(complex)} · 作业投影 ${has(projection)}`
   } catch (e: any) {
-    toast.error('加载工作复合/作业投影失败: ' + (e?.message ?? ''))
+    toast.error(`加载工作复合/作业投影失败: ${e?.message ?? ''}`)
   }
 }
 // rev266：流程表面 作业/数据记录/签署/发票 6 条真实 distinct 读路由（全字面量，arity 均已核）
@@ -442,7 +442,7 @@ async function loadJobDataReads() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     jobDataText.value = `作业数据 ${has(byJob)} · 关联(job+site) ${n(corr)} · 作业定位工作 ${has(findWork)} · 数据记录 ${has(datarecord)} · 签署(按job) ${n(signJob)} · 发票 ${has(invoice)}`
   } catch (e: any) {
-    toast.error('加载作业/数据/签署/发票失败: ' + (e?.message ?? ''))
+    toast.error(`加载作业/数据/签署/发票失败: ${e?.message ?? ''}`)
   }
 }
 const workDetailText = ref('')
@@ -588,7 +588,7 @@ async function loadTouch() {
     const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     countsText.value = `超期 ${cnt(exp)} / 超期通过 ${cnt(passExp)} / 催办 ${cnt(detained)}`
   } catch (e: any) {
-    toast.error('触发失败: ' + (e?.message ?? ''))
+    toast.error(`触发失败: ${e?.message ?? ''}`)
   }
 }
 async function loadCounts() {
@@ -604,7 +604,7 @@ async function loadCounts() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     countsText.value = `待办 ${n(task)} / 待阅 ${n(read)} / 已办工作 ${n(done)} / 已办任务 ${n(taskDone)} / 已阅 ${n(readDone)}`
   } catch (e: any) {
-    toast.error('加载计数失败: ' + (e?.message ?? ''))
+    toast.error(`加载计数失败: ${e?.message ?? ''}`)
   }
 }
 async function loadAppOverview() {
@@ -618,7 +618,7 @@ async function loadAppOverview() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     countsText.value = `全部应用 ${n(apps)} / 复杂应用 ${n(complex)} / 工作计数 ${n(workCount)}`
   } catch (e: any) {
-    toast.error('加载应用概览失败: ' + (e?.message ?? ''))
+    toast.error(`加载应用概览失败: ${e?.message ?? ''}`)
   }
 }
 async function loadWorkList() {
@@ -628,7 +628,7 @@ async function loadWorkList() {
     workItems.value = (r.data ?? []) as Array<{ id?: string; title?: string }>
     if (workItems.value.length === 0) toast.success('暂无工作实例')
   } catch (e: any) {
-    toast.error('加载工作实例失败: ' + (e?.message ?? ''))
+    toast.error(`加载工作实例失败: ${e?.message ?? ''}`)
   }
 }
 const qk = ['ProcessTaskCenter', 'list']

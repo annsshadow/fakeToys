@@ -29,7 +29,7 @@ export async function openApp(
   params?: Record<string, unknown>,
   options?: { newWindow?: boolean; replace?: boolean },
 ): Promise<void> {
-  const query = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : ''
+  const query = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : ''
   const path = `/app/${appId}${query}`
 
   if (options?.newWindow) {

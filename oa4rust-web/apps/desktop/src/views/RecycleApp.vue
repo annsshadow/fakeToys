@@ -79,7 +79,7 @@ async function resume(item: RecycleItem) {
     await api.post(`/api/recycle/resume/${item.id}`, null)
     items.value = items.value.filter((i) => i.id !== item.id)
   } catch (e: any) {
-    toast.error('恢复失败: : ' + (e?.message ?? ''))
+    toast.error(`恢复失败: : ${e?.message ?? ''}`)
   }
 }
 
@@ -89,7 +89,7 @@ async function permanentDelete(item: RecycleItem) {
     await api.delete(`/api/recycle/${item.id}`)
     items.value = items.value.filter((i) => i.id !== item.id)
   } catch (e: any) {
-    toast.error('删除失败: : ' + (e?.message ?? ''))
+    toast.error(`删除失败: : ${e?.message ?? ''}`)
   }
 }
 
@@ -100,7 +100,7 @@ async function emptyRecycle() {
     await api.delete('/api/recycle/empty')
     items.value = []
   } catch (e: any) {
-    toast.error('清空失败: : ' + (e?.message ?? ''))
+    toast.error(`清空失败: : ${e?.message ?? ''}`)
   }
 }
 // rev474（用户裁定放宽双计口径）：回收站镜像/方法孪生真注册路由 2 条（/api/recycle/{id}/delete·/api/recycle/{id}/resume 与已消费反向路由同 handler 镜像）
@@ -110,7 +110,7 @@ async function loadRecycleTwin() {
     const rs = await Promise.all([s(api.delete('/api/recycle/0/delete')), s(api.post('/api/recycle/0/resume', {}))])
     toast.success(`回收站孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('回收站孪生端点失败: ' + (e?.message ?? ''))
+    toast.error(`回收站孪生端点失败: ${e?.message ?? ''}`)
   }
 }
 

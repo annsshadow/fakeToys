@@ -259,7 +259,7 @@ async function loadAuthScopes() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     authMetaText.value = `单位 ${n(units)} · 角色 ${n(roles)} · 群组 ${n(groups)}`
   } catch (e: any) {
-    toast.error('加载身份范围失败: ' + (e?.message ?? ''))
+    toast.error(`加载身份范围失败: ${e?.message ?? ''}`)
   }
 }
 async function loadMailMeta() {
@@ -275,7 +275,7 @@ async function loadMailMeta() {
     const cntText = typeof cnt === 'number' ? cnt : (cnt ?? '—')
     authMetaText.value = `新邮件 ${cntText} · 邮件标题 ${n(titles)} · 注册方式 ${(regist as any)?.data ? '已配置' : '—'}`
   } catch (e: any) {
-    toast.error('加载邮件信息失败: ' + (e?.message ?? ''))
+    toast.error(`加载邮件信息失败: ${e?.message ?? ''}`)
   }
 }
 async function loadOauthConfig() {
@@ -289,7 +289,7 @@ async function loadOauthConfig() {
     const has = (r: any) => ((r as any)?.data ? '有' : '无')
     authMetaText.value = `企微配置 ${has(qywx)} · 钉钉配置 ${has(dingding)} · 验证码公钥 ${has(rsa)}`
   } catch (e: any) {
-    toast.error('加载 OAuth 配置失败: ' + (e?.message ?? ''))
+    toast.error(`加载 OAuth 配置失败: ${e?.message ?? ''}`)
   }
 }
 const authOAuthText = ref('')
@@ -328,7 +328,7 @@ async function loadAuthOAuthServer() {
     const hit = rs.filter((r) => (r as any) != null).length
     authOAuthText.value = `OAuth/认证服务器端点 ${rs.length} 条，返回 ${hit}`
   } catch (e: any) {
-    toast.error('加载 OAuth/认证诊断失败: ' + (e?.message ?? ''))
+    toast.error(`加载 OAuth/认证诊断失败: ${e?.message ?? ''}`)
   }
 }
 // rev382：短前缀 /api/authentication（auth crate）非破坏性真实读补消费（用户触发；oauth 配置/清单、验证码、
@@ -361,7 +361,7 @@ async function loadAuthShortDiag() {
     const hit = rs.filter((r) => (r as any) != null).length
     authOAuthText.value = `短前缀认证端点 ${rs.length} 条，返回 ${hit}`
   } catch (e: any) {
-    toast.error('加载短前缀认证诊断失败: ' + (e?.message ?? ''))
+    toast.error(`加载短前缀认证诊断失败: ${e?.message ?? ''}`)
   }
 }
 async function loadAuthMeta() {
@@ -376,7 +376,7 @@ async function loadAuthMeta() {
     const m = (mode as any)?.data
     authMetaText.value = `登录方式 ${typeof m === 'string' ? m : JSON.stringify(m ?? {}).slice(0, 30)} · 绑定 ${n(binds)} · OAuth ${n(oauth)}`
   } catch (e: any) {
-    toast.error('加载登录方式失败: ' + (e?.message ?? ''))
+    toast.error(`加载登录方式失败: ${e?.message ?? ''}`)
   }
 }
 // 认证明细/绑定 4 条真实 distinct（rev201，organization_assemble_authentication）：identity/{id}（x_org_identity 详情）
@@ -398,7 +398,7 @@ async function loadAuthDetails() {
     const has = (r: any) => ((r as any)?.data ? '有' : '无')
     authDetailText.value = `身份详情 ${has(ident)} · 头像 ${has(icon)} · 验证码 ${has(captcha)} · 绑定元 ${has(bindMeta)} · 会话自检 ${has(who)}`
   } catch (e: any) {
-    toast.error('加载认证明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载认证明细失败: ${e?.message ?? ''}`)
   }
 }
 // rev473（用户裁定放宽双计口径）：个人域镜像/方法孪生真注册路由 10 条（去重后；arity 已校验）
@@ -419,7 +419,7 @@ async function loadPersonalTwin() {
     ])
     toast.success(`个人孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('个人孪生端点失败: ' + (e?.message ?? ''))
+    toast.error(`个人孪生端点失败: ${e?.message ?? ''}`)
   }
 }
 // rev217：个人域 头像/签名/自定义/授权游标族 7 条真实 distinct 路由
@@ -445,7 +445,7 @@ async function loadPersonalExtras() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     personalExtraText.value = `头像 ${(icon as any)?.data ? '有' : '无'} · 当前头像 ${(curIcon as any)?.data ? '有' : '无'} · 签名 ${n(sigs)} · 定义 ${(def as any)?.data ? '有' : '无'} · 自定义 ${(custom as any)?.data ? '有' : '无'} · 授权前翻 ${n(empNext)} · 后翻 ${n(empPrev)} · 按人 ${n(empByPerson)}`
   } catch (e: any) {
-    toast.error('加载个人扩展明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载个人扩展明细失败: ${e?.message ?? ''}`)
   }
 }
 // rev230：个人 当前信息/授权日志/管理自定义族 7 条真实 distinct 路由
@@ -469,7 +469,7 @@ async function loadPersonalMore() {
     const has = (r: any) => ((r as any)?.data ? '有' : '无')
     personalExtraText.value = `当前 ${has(person)} · 管理自定义 ${has(custMgr)} · 授权日志 前${n(logNext)}/后${n(logPrev)} · info ${has(info)} · detail ${has(detail)} · 头像 ${has(icon)}`
   } catch (e: any) {
-    toast.error('加载个人更多明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载个人更多明细失败: ${e?.message ?? ''}`)
   }
 }
 // rev243：人员游标/注册校验/授权启用 7 条真实 distinct 读路由（arity 已核；full-literal）
@@ -490,7 +490,7 @@ async function loadPersonalRegistEmpower() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : (r as any)?.data != null ? 1 : 0)
     personalExtraText.value = `人员后翻 ${n(pNext)} · 前翻 ${n(pPrev)} · 名校验 ${n(ckName)} · 手机校验 ${n(ckMobile)} · 邮箱校验 ${n(ckEmail)} · 授权给我(启用) ${n(empTo)} · 我发出(启用) ${n(empCur)}`
   } catch (e: any) {
-    toast.error('加载注册/授权启用失败: ' + (e?.message ?? ''))
+    toast.error(`加载注册/授权启用失败: ${e?.message ?? ''}`)
   }
 }
 const sigManagers = ref<SigMgr[]>([])
@@ -501,7 +501,7 @@ async function loadSignatureManagers() {
     sigManagers.value = (r.data ?? []) as SigMgr[]
     if (sigManagers.value.length === 0) toast.success('暂无签名记录')
   } catch (e: any) {
-    toast.error('查询失败（需管理员）: ' + (e?.message ?? ''))
+    toast.error(`查询失败（需管理员）: ${e?.message ?? ''}`)
   }
 }
 interface Emp {
@@ -537,7 +537,7 @@ async function toggleEmpower(e: Emp, on: boolean) {
     toast.success(on ? '已启用' : '已禁用')
     loadEmpower('mine')
   } catch (err: any) {
-    toast.error('操作失败: ' + (err?.message ?? ''))
+    toast.error(`操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev356：授权委托 建/详情/改/删 + 管理员授权建/列表 + 授权日志(本人发出/授权给我/管理)分页 + 日志删 真实写读（shape 已核：empower{to_person 必填,role_id?}、update{role_id?,enabled?}、log 分页 POST body{}）
@@ -577,7 +577,7 @@ async function empManage(op: string) {
     }
     toast.success('授权委托操作已提交')
   } catch (err: any) {
-    toast.error('操作失败: ' + (err?.message ?? ''))
+    toast.error(`操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev376：人员 详情/改/删 + 管理授权改删 + 人员清单/过滤/详情/属性/关系(sup·unit sub/nested/like) + 个人设置/自定义/定义/资料更新 真实路由（body{personList}/{unitList}；custom·definition PUT/POST 孪生择一）
@@ -635,7 +635,7 @@ async function personMore(op: string) {
     } else await api.put('/api/personal/update', {})
     toast.success('人员操作已提交')
   } catch (err: any) {
-    toast.error('操作失败: ' + (err?.message ?? ''))
+    toast.error(`操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev398：组织-个人 授权 启用/禁用(按id) + 企业邮箱 回调/SSO/被动新邮件计数 真实路由（empower enable/disable Path-only、exmail 读 Path-free/Query；用户触发）
@@ -652,7 +652,7 @@ async function personExtra(op: string) {
     else await api.get('/api/person/exmail/new/count/passive')
     toast.success('个人操作已提交')
   } catch (err: any) {
-    toast.error('操作失败: ' + (err?.message ?? ''))
+    toast.error(`操作失败: ${err?.message ?? ''}`)
   }
 }
 
@@ -671,7 +671,7 @@ async function loadPersonalTwin2() {
     ])
     toast.success(`个人孪生端点B ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('个人孪生端点B失败: ' + (e?.message ?? ''))
+    toast.error(`个人孪生端点B失败: ${e?.message ?? ''}`)
   }
 }
 </script>

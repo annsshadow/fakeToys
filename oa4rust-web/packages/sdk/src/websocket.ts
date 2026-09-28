@@ -143,8 +143,12 @@ export class O2WebSocketClient {
   }
 
   private dispatch(event: string, data: unknown): void {
-    this.handlers.get(event)?.forEach((h) => h(data))
-    this.handlers.get('$all')?.forEach((h) => h({ event, data }))
+    this.handlers.get(event)?.forEach((h) => {
+      h(data)
+    })
+    this.handlers.get('$all')?.forEach((h) => {
+      h({ event, data })
+    })
   }
 
   private startHeartbeat(): void {

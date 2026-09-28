@@ -74,16 +74,16 @@ async function createCategory() {
     await api.post('/api/categoryinfo', { appId, name })
     load()
   } catch (e: any) {
-    toast.error('新建失败: ' + (e?.message ?? ''))
+    toast.error(`新建失败: ${e?.message ?? ''}`)
   }
 }
 async function deleteCategory(item: any) {
-  if (!(await confirmMsg('确定删除分类「' + (item.name || item.id) + '」？'))) return
+  if (!(await confirmMsg(`确定删除分类「${item.name || item.id}」？`))) return
   try {
-    await api.delete('/api/categoryinfo/' + item.id)
+    await api.delete(`/api/categoryinfo/${item.id}`)
     load()
   } catch (e: any) {
-    toast.error('删除失败: ' + (e?.message ?? ''))
+    toast.error(`删除失败: ${e?.message ?? ''}`)
   }
 }
 

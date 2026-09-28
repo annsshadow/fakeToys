@@ -88,7 +88,7 @@ async function loadBamConfigs() {
     const st = (status as any)?.data?.status ?? ((status as any)?.data ? '有状态' : '无状态')
     periodText.value = `BAM定义 ${rows.length}（首个「${name}」· ${st}）`
   } catch (e: any) {
-    toast.error('加载 BAM 定义失败: ' + (e?.message ?? ''))
+    toast.error(`加载 BAM 定义失败: ${e?.message ?? ''}`)
   }
 }
 // BAM 维度周期统计族 3 条真实 distinct 路由（各 SQL 维度不同，非退化）：按单位已办任务 period/list/completed/task/{unit}（x_task 该单位人员已办）
@@ -119,7 +119,7 @@ async function loadDimensionStats() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     periodText.value = `单位已办任务 ${n(doneTask)} · 应用已办工作 ${n(doneWork)} · 单位超期任务 ${n(expiredTask)}`
   } catch (e: any) {
-    toast.error('加载维度统计失败: ' + (e?.message ?? ''))
+    toast.error(`加载维度统计失败: ${e?.message ?? ''}`)
   }
 }
 // rev218：BAM 计数聚合族 7 条真实 distinct 路由（period_count_query 按 kind×period×group 分组统计）
@@ -172,7 +172,7 @@ async function loadCountStats() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     periodText.value = `已办任务/应用 ${n(ctA)} · 已办工作/应用 ${n(cwA)} · 已办任务/流程 ${n(ctP)} · 超期任务/应用 ${n(etA)} · 超期工作/应用 ${n(ewA)} · 起始任务/应用 ${n(stA)} · 起始工作/应用 ${n(swA)}`
   } catch (e: any) {
-    toast.error('加载计数统计失败: ' + (e?.message ?? ''))
+    toast.error(`加载计数统计失败: ${e?.message ?? ''}`)
   }
 }
 async function loadPeriodStats() {
@@ -185,7 +185,7 @@ async function loadPeriodStats() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     periodText.value = `已办任务周期 ${n(done)} / 超期任务周期 ${n(expired)}`
   } catch (e: any) {
-    toast.error('加载周期统计失败: ' + (e?.message ?? ''))
+    toast.error(`加载周期统计失败: ${e?.message ?? ''}`)
   }
 }
 async function loadUnitStubs() {
@@ -199,7 +199,7 @@ async function loadUnitStubs() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     periodText.value = `已办工作(单位) ${n(workUnit)} / 超期工作(应用) ${n(expWorkApp)} / 超期任务(单位) ${n(expTaskUnit)}`
   } catch (e: any) {
-    toast.error('加载单位存根失败: ' + (e?.message ?? ''))
+    toast.error(`加载单位存根失败: ${e?.message ?? ''}`)
   }
 }
 async function loadCompletedStubs() {
@@ -213,7 +213,7 @@ async function loadCompletedStubs() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     periodText.value = `已办任务(应用) ${n(taskApp)} / 已办工作(应用) ${n(workApp)} / 超期任务(应用) ${n(expTask)}`
   } catch (e: any) {
-    toast.error('加载存根统计失败: ' + (e?.message ?? ''))
+    toast.error(`加载存根统计失败: ${e?.message ?? ''}`)
   }
 }
 async function loadStartStubs() {
@@ -227,7 +227,7 @@ async function loadStartStubs() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     periodText.value = `起始任务(应用) ${n(taskApp)} / 起始工作(应用) ${n(workApp)} / 起始任务(单位) ${n(taskUnit)}`
   } catch (e: any) {
-    toast.error('加载起始统计失败: ' + (e?.message ?? ''))
+    toast.error(`加载起始统计失败: ${e?.message ?? ''}`)
   }
 }
 async function loadStateStats() {
@@ -241,7 +241,7 @@ async function loadStateStats() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     periodText.value = `运行中 ${n(running)} / 分类 ${n(category)} / 组织 ${n(org)}`
   } catch (e: any) {
-    toast.error('加载状态监控失败: ' + (e?.message ?? ''))
+    toast.error(`加载状态监控失败: ${e?.message ?? ''}`)
   }
 }
 // period/list 深度多维统计：已办/超期/起始 × work/task × application/process/activity/unit/person 组合 27 条真实读路由
@@ -384,7 +384,7 @@ async function loadPeriodMatrix() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     periodText.value = `周期多维统计 真实读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载周期多维统计失败: ' + (e?.message ?? ''))
+    toast.error(`加载周期多维统计失败: ${e?.message ?? ''}`)
   }
 }
 // rev312：period/list/count by/unit·by/process·by/activity 维度聚合 14 条真实读路由（x_work/x_task period 聚合）
@@ -517,7 +517,7 @@ async function loadPeriodMatrix2() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     periodText.value = `周期维度聚合 真实读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载周期维度聚合失败: ' + (e?.message ?? ''))
+    toast.error(`加载周期维度聚合失败: ${e?.message ?? ''}`)
   }
 }
 // rev342：BAM 定义建删/状态触发/周期统计查询 真实写端点（用户触发，shape 已核；全字面量路径）
@@ -544,7 +544,7 @@ async function bamWrite(op: string) {
     }
     toast.success('BAM 操作已提交')
   } catch (e: any) {
-    toast.error('BAM 操作失败: ' + (e?.message ?? ''))
+    toast.error(`BAM 操作失败: ${e?.message ?? ''}`)
   }
 }
 // rev372：BAM 定义删 + 完成任务/超时工作/开始工作 单位存根 + 应用/分类状态触发 + 周期任务/工作 多维统计 真实路由（清 GET 无参 + 多参统计用户填值）
@@ -573,7 +573,7 @@ async function bamMore(op: string) {
     }
     toast.success('BAM 操作已提交')
   } catch (e: any) {
-    toast.error('BAM 操作失败: ' + (e?.message ?? ''))
+    toast.error(`BAM 操作失败: ${e?.message ?? ''}`)
   }
 }
 const events = ref<any[]>([])

@@ -936,7 +936,7 @@ function onDrop(e: DragEvent) {
   draggedType.value = null
 }
 function genId() {
-  return 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)
+  return `f_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
 }
 function makeField(type: string): FormField {
   const d: Record<string, Partial<FormField>> = {
@@ -1099,7 +1099,7 @@ async function saveForm() {
     await loadForms()
     toast.info('保存成功')
   } catch (e: any) {
-    toast.error('保存失败: ' + (e?.message ?? ''))
+    toast.error(`保存失败: ${e?.message ?? ''}`)
   }
 }
 function togglePreview() {
@@ -1112,7 +1112,7 @@ function pushFormHistory() {
   formHistory.value.push({
     fields: JSON.parse(JSON.stringify(currentForm.value.fields)),
     timestamp: Date.now(),
-    label: '自动保存 ' + new Date().toLocaleTimeString('zh-CN'),
+    label: `自动保存 ${new Date().toLocaleTimeString('zh-CN')}`,
   })
   historyIdx.value = formHistory.value.length - 1
 }
@@ -1239,17 +1239,17 @@ function validatePreview(): boolean {
   previewErrors.value = {}
   for (const field of currentForm.value.fields) {
     if (['section', 'section_end', 'divider', 'spacer'].includes(field.type)) continue
-    if (field.required && !previewData.value[field.key]) previewErrors.value[field.key] = field.label + ' 不能为空'
+    if (field.required && !previewData.value[field.key]) previewErrors.value[field.key] = `${field.label} 不能为空`
     if (field.pattern && previewData.value[field.key] && !new RegExp(field.pattern).test(previewData.value[field.key]))
-      previewErrors.value[field.key] = field.label + ' 格式错误'
+      previewErrors.value[field.key] = `${field.label} 格式错误`
     if (field.minLength && previewData.value[field.key] && previewData.value[field.key].length < field.minLength)
-      previewErrors.value[field.key] = field.label + ' 至少' + field.minLength + '字符'
+      previewErrors.value[field.key] = `${field.label} 至少${field.minLength}字符`
     if (field.maxLength && previewData.value[field.key] && previewData.value[field.key].length > field.maxLength)
-      previewErrors.value[field.key] = field.label + ' 最多' + field.maxLength + '字符'
+      previewErrors.value[field.key] = `${field.label} 最多${field.maxLength}字符`
     if (field.min !== undefined && previewData.value[field.key] && Number(previewData.value[field.key]) < field.min)
-      previewErrors.value[field.key] = field.label + ' 不能小于' + field.min
+      previewErrors.value[field.key] = `${field.label} 不能小于${field.min}`
     if (field.max !== undefined && previewData.value[field.key] && Number(previewData.value[field.key]) > field.max)
-      previewErrors.value[field.key] = field.label + ' 不能大于' + field.max
+      previewErrors.value[field.key] = `${field.label} 不能大于${field.max}`
   }
   return Object.keys(previewErrors.value).length === 0
 }
@@ -1261,7 +1261,7 @@ async function submitPreview() {
     previewData.value = {}
     previewErrors.value = {}
   } catch (e: any) {
-    toast.error('提交失败: : ' + (e?.message ?? ''))
+    toast.error(`提交失败: : ${e?.message ?? ''}`)
   }
 }
 // --- Import/Export ---
@@ -1283,7 +1283,7 @@ function downloadFormJson() {
   const u = URL.createObjectURL(b)
   const a = document.createElement('a')
   a.href = u
-  a.download = (currentForm.value?.flag || 'form') + '.json'
+  a.download = `${currentForm.value?.flag || 'form'}.json`
   a.click()
   URL.revokeObjectURL(u)
 }
@@ -1384,19 +1384,19 @@ function addDependency() {
   selectedField.value.dependencies.push({ sourceField: '', operator: '==', values: [''], action: 'show' })
 }
 function removeDependency(idx: number) {
-  if (!selectedField.value || !selectedField.value.dependencies) return
+  if (!selectedField.value?.dependencies) return
   selectedField.value.dependencies.splice(idx, 1)
 }
 // ── Section Management ─────────────────────────────────────────────
 function addSection() {
-  sections.value.push({ id: genId(), label: '分组 ' + (sections.value.length + 1), fields: [] })
+  sections.value.push({ id: genId(), label: `分组 ${sections.value.length + 1}`, fields: [] })
 }
 function removeSection(idx: number) {
   sections.value.splice(idx, 1)
 }
 // ── Tab Management ─────────────────────────────────────────────────
 function addTab() {
-  tabs.value.push({ id: genId(), label: '页签 ' + (tabs.value.length + 1), icon: '📑', fields: [] })
+  tabs.value.push({ id: genId(), label: `页签 ${tabs.value.length + 1}`, icon: '📑', fields: [] })
 }
 function removeTab(idx: number) {
   tabs.value.splice(idx, 1)
@@ -1510,7 +1510,7 @@ function exportFormSchema() {
   jsonSchemaText.value = JSON.stringify(schema, null, 2)
   showJsonSchemaPanel.value = true
 }
-function importFormSchema(text: string) {
+function importFormSchema(_text: string) {
   try {
     if (!currentForm.value) resetForm()
     if (currentForm.value) {
@@ -1526,7 +1526,7 @@ function importFormSchema(text: string) {
           defaultValue: f.defaultValue,
           required: f.required || false,
           disabled: f.disabled || false,
-          optionsStr: f.options ? f.options.map((o: any) => o.value + '|' + o.label).join('\n') : '',
+          optionsStr: f.options ? f.options.map((o: any) => `${o.value}|${o.label}`).join('\n') : '',
           validation: f.validation || null,
           dependencies: f.dependencies || null,
         }))
@@ -1806,20 +1806,20 @@ function removeConditionNode(nodeId: string) {
 function validateField(field: FormField): string[] {
   const errors: string[] = []
   if (field.validation?.required && (!field.defaultValue || field.defaultValue === '')) {
-    errors.push((field.label || field.key) + ' 不能为空')
+    errors.push(`${field.label || field.key} 不能为空`)
   }
   if (field.validation?.minLength && field.defaultValue && field.defaultValue.length < field.validation.minLength) {
-    errors.push((field.label || field.key) + ' 长度不能少于 ' + field.validation.minLength)
+    errors.push(`${field.label || field.key} 长度不能少于 ${field.validation.minLength}`)
   }
   if (field.validation?.maxLength && field.defaultValue && field.defaultValue.length > field.validation.maxLength) {
-    errors.push((field.label || field.key) + ' 长度不能超过 ' + field.validation.maxLength)
+    errors.push(`${field.label || field.key} 长度不能超过 ${field.validation.maxLength}`)
   }
   if (
     field.validation?.pattern &&
     field.defaultValue &&
     !new RegExp(field.validation.pattern).test(field.defaultValue)
   ) {
-    errors.push(field.validation.patternMsg || (field.label || field.key) + ' 格式不正确')
+    errors.push(field.validation.patternMsg || `${field.label || field.key} 格式不正确`)
   }
   return errors
 }
@@ -1842,7 +1842,7 @@ function runValidation() {
     errors: Object.keys(result.errors).length,
     warnings: (currentForm.value?.fields || []).filter((f) => f.condition).length,
   }
-  showToast(result.valid ? '验证通过' : '发现 ' + result.errors.length + ' 个错误', result.valid ? 'success' : 'error')
+  showToast(result.valid ? '验证通过' : `发现 ${result.errors.length} 个错误`, result.valid ? 'success' : 'error')
 }
 function simulateSubmit() {
   if (!currentForm.value) return
@@ -1873,7 +1873,7 @@ function generateHTMLForm(): string {
   if (!currentForm.value) return ''
   let html = '<form class="oa4rust-form">'
   currentForm.value.fields.forEach((f) => {
-    html += '<div class="form-item"><label>' + (f.label || f.key) + '</label><input type="' + f.type + '" /></div>'
+    html += `<div class="form-item"><label>${f.label || f.key}</label><input type="${f.type}" /></div>`
   })
   html += '</form>'
   return html
@@ -1934,7 +1934,7 @@ function autoLayout() {
   if (!currentForm.value) return
   const cols = layoutConfig.value.columns
   const fields = currentForm.value.fields
-  fields.forEach((f, i) => {
+  fields.forEach((f, _i) => {
     f.span = Math.min(cols, Math.max(1, Math.ceil(fields.length / cols)))
   })
   pushFormHistory()
@@ -1944,8 +1944,8 @@ function duplicateField(idx: number) {
   if (!currentForm.value || idx < 0) return
   const orig = currentForm.value.fields[idx]
   const clone = JSON.parse(JSON.stringify(orig))
-  clone.key = orig.key + '_copy'
-  clone.label = orig.label + ' (副本)'
+  clone.key = `${orig.key}_copy`
+  clone.label = `${orig.label} (副本)`
   currentForm.value.fields.splice(idx + 1, 0, clone)
   pushFormHistory()
   showToast('字段已复制', 'success')
@@ -2036,14 +2036,14 @@ function getFormFieldStats(): {
 }
 function generateFormDocumentation(): string {
   if (!currentForm.value) return ''
-  let doc = '# ' + (currentForm.value.name || '未命名表单') + '\n\n'
-  doc += '**字段总数**: ' + (currentForm.value.fields || []).length + '\n\n'
+  let doc = `# ${currentForm.value.name || '未命名表单'}\n\n`
+  doc += `**字段总数**: ${(currentForm.value.fields || []).length}\n\n`
   ;(currentForm.value.fields || []).forEach((f, i) => {
-    doc += '## ' + (i + 1) + '. ' + (f.label || f.key) + '\n'
-    doc += '- 类型: ' + f.type + '\n'
-    doc += '- 键名: ' + f.key + '\n'
+    doc += `## ${i + 1}. ${f.label || f.key}\n`
+    doc += `- 类型: ${f.type}\n`
+    doc += `- 键名: ${f.key}\n`
     if (f.validation?.required) doc += '- 必填: 是\n'
-    if (f.description) doc += '- 说明: ' + f.description + '\n'
+    if (f.description) doc += `- 说明: ${f.description}\n`
     doc += '\n'
   })
   return doc
@@ -2055,10 +2055,10 @@ function exportDocumentation() {
   exportFormat.value = 'json'
 }
 function getLayoutClasses(): string {
-  return 'fd-canvas ' + layoutConfig.value.columns + '-col'
+  return `fd-canvas ${layoutConfig.value.columns}-col`
 }
 function getColumnClass(span: number): string {
-  return span > 1 ? 'span-' + span : ''
+  return span > 1 ? `span-${span}` : ''
 }
 function getFieldSpan(field: FormField): number {
   return field.span || layoutConfig.value.columns
@@ -2101,11 +2101,11 @@ function clearFieldOptionsCache() {
 function getFieldValidationSummary(field: FormField): string[] {
   const msgs: string[] = []
   if (field.validation?.required) msgs.push('必填')
-  if (field.validation?.minLength) msgs.push('最少' + field.validation.minLength + '字符')
-  if (field.validation?.maxLength) msgs.push('最多' + field.validation.maxLength + '字符')
-  if (field.validation?.min) msgs.push('最小值' + field.validation.min)
-  if (field.validation?.max) msgs.push('最大值' + field.validation.max)
-  if (field.validation?.pattern) msgs.push('格式:' + field.validation.pattern)
+  if (field.validation?.minLength) msgs.push(`最少${field.validation.minLength}字符`)
+  if (field.validation?.maxLength) msgs.push(`最多${field.validation.maxLength}字符`)
+  if (field.validation?.min) msgs.push(`最小值${field.validation.min}`)
+  if (field.validation?.max) msgs.push(`最大值${field.validation.max}`)
+  if (field.validation?.pattern) msgs.push(`格式:${field.validation.pattern}`)
   return msgs
 }
 // ── Security & Performance ──────────────────────────────────────────
@@ -2122,10 +2122,9 @@ function checkFormSecurity(): void {
   securityIssues.value = []
   if (!currentForm.value) return
   currentForm.value.fields.forEach((f) => {
-    if (f.type === 'password' && !f.validation?.pattern)
-      securityIssues.value.push('密码字段 "' + f.key + '" 缺少格式验证')
+    if (f.type === 'password' && !f.validation?.pattern) securityIssues.value.push(`密码字段 "${f.key}" 缺少格式验证`)
     if (f.type === 'email' && f.validation?.pattern && !f.validation.pattern.includes('@'))
-      securityIssues.value.push('邮箱 "' + f.key + '" 正则可能不正确')
+      securityIssues.value.push(`邮箱 "${f.key}" 正则可能不正确`)
   })
   if (currentForm.value.fields.length === 0) securityIssues.value.push('表单无字段')
 }
@@ -2162,8 +2161,8 @@ function exportSchemaAsJSON(): void {
 }
 function generateFieldDocumentation(): string {
   if (!currentForm.value) return ''
-  let doc = '# 表单设计文档: ' + (currentForm.value.name || '未命名') + '\n\n'
-  doc += '**字段总数**: ' + currentForm.value.fields.length + '\n\n'
+  let doc = `# 表单设计文档: ${currentForm.value.name || '未命名'}\n\n`
+  doc += `**字段总数**: ${currentForm.value.fields.length}\n\n`
   doc += '| # | 键名 | 类型 | 标签 | 必填 | 验证 | 说明 |\n|---|------|------|------|------|------|------|\n'
   currentForm.value.fields.forEach((f, i) => {
     const v = getFieldValidationSummary(f).join(', ') || '-'
@@ -2308,7 +2307,7 @@ function openCrossFieldPanel(): void {
 function addCrossFieldCalc(): void {
   if (!newCalcFormula.value.trim() || !newCalcTarget.value.trim()) return
   crossFieldCalcs.value.push({
-    id: 'cf' + Date.now(),
+    id: `cf${Date.now()}`,
     sourceFields: [newCalcSource.value],
     formula: newCalcFormula.value,
     targetField: newCalcTarget.value,
@@ -2329,12 +2328,12 @@ function openDataSourcePanel(): void {
   showDataSourcePanel.value = true
 }
 function testDataSource(ds: DataSourceItem): void {
-  showToast('正在测试 ' + ds.url + '...', 'info')
+  showToast(`正在测试 ${ds.url}...`, 'info')
 }
 function openFieldPermissionsPanel(): void {
   showFieldPermissionsPanel.value = true
 }
-function togglePermission(fieldId: string, roleId: string, perm: keyof FieldPermission): void {
+function togglePermission(_fieldId: string, _roleId: string, perm: keyof FieldPermission): void {
   if (p) (p as any)[perm] = !(p as any)[perm]
 }
 function openIntlPanel(): void {
@@ -2538,20 +2537,20 @@ function openExportHistory(): void {
   showExportHistory.value = true
 }
 function recordExport(fmt: string): void {
-  exportHistory.value.unshift({ id: 'exp_' + Date.now(), format: fmt, exportedAt: Date.now(), size: 2048 })
+  exportHistory.value.unshift({ id: `exp_${Date.now()}`, format: fmt, exportedAt: Date.now(), size: 2048 })
 }
 function openImportHistory(): void {
   showImportHistory.value = true
 }
 function recordImport(src: string, fields: number): void {
-  importHistory.value.unshift({ id: 'imp_' + Date.now(), source: src, importedAt: Date.now(), fields })
+  importHistory.value.unshift({ id: `imp_${Date.now()}`, source: src, importedAt: Date.now(), fields })
 }
 function openValidationHistory(): void {
   showValidationHistory.value = true
 }
 function recordValidation(valid: boolean, errs: number, warns: number): void {
   validationHistory.value.unshift({
-    id: 'val_' + Date.now(),
+    id: `val_${Date.now()}`,
     timestamp: Date.now(),
     valid,
     errors: errs,
@@ -2580,7 +2579,7 @@ function openRestorePanel(): void {
   ]
 }
 function restoreVersion(idx: number): void {
-  showToast('已恢复版本 ' + idx, 'success')
+  showToast(`已恢复版本 ${idx}`, 'success')
 }
 function openLockPanel(): void {
   showLockPanel.value = true
@@ -2596,8 +2595,8 @@ function openPublishPanel(): void {
 }
 function publishForm(): void {
   publishVersions.value.unshift({
-    id: 'pub_' + Date.now(),
-    version: 'v' + (publishVersions.value.length + 1),
+    id: `pub_${Date.now()}`,
+    version: `v${publishVersions.value.length + 1}`,
     publishedAt: Date.now(),
     publishedBy: '当前用户',
     status: 'success',

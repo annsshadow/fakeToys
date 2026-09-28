@@ -234,7 +234,7 @@ async function loadFileMeta(): Promise<void> {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     toast.success(`附件2 ${n(att2)} / 编辑器 ${n(editors)}`)
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 // rev236：附件分享/附件2 6 条真实 distinct 读路由（不同表/WHERE；跳过 top 双注册 twin 与 _all 退化）
@@ -272,7 +272,7 @@ async function loadFolderTopByRef(): Promise<void> {
       `顶层文件夹 ${n(top)} / 按引用类型文件 ${n(byRef)} / 顶层附件 ${n(attTop)} / CMS文件游标 ${n(cmsNext)}·${n(cmsPrev)} / 全量游标 ${n(fNext)}·${n(fPrev)}`,
     )
   } catch (e: any) {
-    toast.error('加载顶层文件夹/引用文件失败: ' + (e?.message ?? ''))
+    toast.error(`加载顶层文件夹/引用文件失败: ${e?.message ?? ''}`)
   }
 }
 // rev312：文件/附件 深度读 14 条（附件详情/base64/附件2/office预览/文件内容/appInfo内容/fileinfo文档/引用类型游标）；handler 体经核实纯 SELECT
@@ -306,7 +306,7 @@ async function loadFileDeepReads(): Promise<void> {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     toast.success(`文件深度读端点 ${rs.length} 条，命中 ${hit}`)
   } catch (e: any) {
-    toast.error('加载文件深度读失败: ' + (e?.message ?? ''))
+    toast.error(`加载文件深度读失败: ${e?.message ?? ''}`)
   }
 }
 // rev323：文件/附件 真实写端点（用户触发 prompt+确认，非造假）——文件建删/实体文件CRUD/附件更新+回调/控制配置；全字面量路径
@@ -318,7 +318,7 @@ async function fileCreate(kind: 'control' | 'entity') {
     else await api.post('/api/file/core/entity/file/create', { name })
     toast.success('文件已创建')
   } catch (e: any) {
-    toast.error('新建文件失败: ' + (e?.message ?? ''))
+    toast.error(`新建文件失败: ${e?.message ?? ''}`)
   }
 }
 async function fileDelete(kind: 'controlPost' | 'controlDel' | 'entityPost' | 'entityDel') {
@@ -333,7 +333,7 @@ async function fileDelete(kind: 'controlPost' | 'controlDel' | 'entityPost' | 'e
     else await api.delete(`/api/file/core/entity/file/delete/${e}`)
     toast.success('文件已删除')
   } catch (err: any) {
-    toast.error('删除文件失败: ' + (err?.message ?? ''))
+    toast.error(`删除文件失败: ${err?.message ?? ''}`)
   }
 }
 async function fileUpdate(
@@ -354,7 +354,7 @@ async function fileUpdate(
     else await api.post(`/api/attachment/${e}/update/callback/${cbFlag}`, {})
     toast.success('更新已提交')
   } catch (err: any) {
-    toast.error('更新失败: ' + (err?.message ?? ''))
+    toast.error(`更新失败: ${err?.message ?? ''}`)
   }
 }
 async function fileSaveConfig(): Promise<void> {
@@ -362,7 +362,7 @@ async function fileSaveConfig(): Promise<void> {
     await api.put('/api/file/assemble/control/update/control/config', {})
     toast.success('文件控制配置已保存')
   } catch (e: any) {
-    toast.error('保存配置失败: ' + (e?.message ?? ''))
+    toast.error(`保存配置失败: ${e?.message ?? ''}`)
   }
 }
 // rev331：网盘 文件夹/分享/回收站/实体文件/权限 真实写端点（用户触发，shape 已核 file crate handler；全字面量路径）
@@ -421,7 +421,7 @@ async function fileNetDisk(op: string) {
     }
     toast.success('网盘操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 // rev346：附件/附件2/文件 REST 更新删除+按引用清理 真实写端点（用户触发，shape 已核；全字面量路径）
@@ -459,7 +459,7 @@ async function fileAtt(op: string) {
     }
     toast.success('文件操作已提交')
   } catch (err: any) {
-    toast.error('文件操作失败: ' + (err?.message ?? ''))
+    toast.error(`文件操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev354：文件/附件 附件2·附件 文件夹清单 + 引用类型清单 + 游标翻页(next/prev/all) + 文件夹/复合文件夹 真实只读（用户触发按钮，全字面量路径，非 onMounted）
@@ -487,7 +487,7 @@ async function fileRead2(): Promise<void> {
     fileRead2Text.value = `附件2夹${ok(a2Folder)} 附件2筛${ok(a2Filter)} 附件夹${ok(aFolder)} 引用类型${ok(refList)} | 后翻${ok(listNext)} 前翻${ok(listPrev)} 全部${ok(listAll)} 文件夹清单${ok(folderList)} 文件夹2清单${ok(folder2List)} 复合夹${ok(complexFolder)}`
     toast.success('文件清单已加载')
   } catch (err: any) {
-    toast.error('文件清单加载失败: ' + (err?.message ?? ''))
+    toast.error(`文件清单加载失败: ${err?.message ?? ''}`)
   }
 }
 // rev376：文件/附件 非破坏性真实读补消费（用户触发）——attachment/attachment2 元数据/二进制base64/缩放、
@@ -545,7 +545,7 @@ async function fileRead3(): Promise<void> {
     fileRead3Text.value = `文件/附件只读端点 ${rs.length} 条，返回 ${hit}`
     toast.success('文件/附件只读端点已加载')
   } catch (err: any) {
-    toast.error('文件/附件只读加载失败: ' + (err?.message ?? ''))
+    toast.error(`文件/附件只读加载失败: ${err?.message ?? ''}`)
   }
 }
 // rev373：fileinfo 文档附件族 + file/attachment/attachment2 REST（真实 {id}/{docId}/{flag} 参数）读改删下载 真实路由（避 /id/ 字面段 trap500 与 upload 多部件）
@@ -652,7 +652,7 @@ async function fileRest3(op: string) {
     }
     toast.success('文件操作已提交')
   } catch (err: any) {
-    toast.error('文件操作失败: ' + (err?.message ?? ''))
+    toast.error(`文件操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev474（用户裁定放宽双计口径）：文件域镜像/方法孪生真注册路由 19 条（arity 已校验；folder2·complex·share·anonymous 为 off-metric 全局面）
@@ -682,7 +682,7 @@ async function loadFileTwin() {
     ])
     toast.success(`文件孪生端点 ${rs.length} 条已提交`)
   } catch (err: any) {
-    toast.error('文件孪生端点失败: ' + (err?.message ?? ''))
+    toast.error(`文件孪生端点失败: ${err?.message ?? ''}`)
   }
 }
 async function loadAttachmentShares(): Promise<void> {
@@ -705,7 +705,7 @@ async function loadAttachmentShares(): Promise<void> {
       `附件分享 ${n(attShare)} / 附件2文件夹 ${n(att2Folder)} / 附件2分享 ${n(att2Share)} / MD5存在 ${has(att2Exist)} / 后翻 ${n(next)} / 前翻 ${n(prev)}`,
     )
   } catch (e: any) {
-    toast.error('加载附件分享失败: ' + (e?.message ?? ''))
+    toast.error(`加载附件分享失败: ${e?.message ?? ''}`)
   }
 }
 // 附件检索族 3 条真实 distinct 路由（均 FILE_FILE，WHERE 各异）：文件夹内附件 attachment/list/folder/{folderId}（WHERE folder_id）
@@ -725,7 +725,7 @@ async function loadAttachmentSearch(): Promise<void> {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     toast.success(`文件夹内 ${n(inFolder)} / 名称匹配 ${n(byName)} / 未引用 ${n(unused)}`)
   } catch (e: any) {
-    toast.error('检索失败: ' + (e?.message ?? ''))
+    toast.error(`检索失败: ${e?.message ?? ''}`)
   }
 }
 async function loadShareScopes(): Promise<void> {
@@ -739,7 +739,7 @@ async function loadShareScopes(): Promise<void> {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     toast.success(`文件夹2 ${n(folder2)} / 我的分享 ${n(myShares)} / 收到分享 ${n(toMe)}`)
   } catch (e: any) {
-    toast.error('加载分享失败: ' + (e?.message ?? ''))
+    toast.error(`加载分享失败: ${e?.message ?? ''}`)
   }
 }
 async function loadFolderShare(): Promise<void> {
@@ -755,7 +755,7 @@ async function loadFolderShare(): Promise<void> {
     const capText = cap && typeof cap === 'object' ? JSON.stringify(cap).slice(0, 40) : '—'
     toast.success(`顶层文件夹 ${n(folders)} / 分享 ${n(shares)} / 容量 ${capText}`)
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadTopAttachments(): Promise<void> {
@@ -763,9 +763,9 @@ async function loadTopAttachments(): Promise<void> {
     // GET /api/file/attachment/list/top —— 顶层附件列表
     const resp: any = await api.get('/api/file/attachment/list/top')
     const n = Array.isArray(resp?.data) ? resp.data.length : 0
-    toast.success('顶层附件：' + n + ' 个')
+    toast.success(`顶层附件：${n} 个`)
   } catch (e: any) {
-    toast.error('加载顶层附件失败: ' + (e?.message ?? ''))
+    toast.error(`加载顶层附件失败: ${e?.message ?? ''}`)
   }
 }
 async function loadFiles(folderId?: string): Promise<void> {
@@ -838,9 +838,9 @@ function iconForFile(f: FileItem): string {
 
 function formatSize(bytes?: number): string {
   if (!bytes) return '—'
-  if (bytes < 1024) return bytes + ' B'
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 function fmtTime(ts?: string): string {
@@ -899,7 +899,7 @@ async function loadRefTypes(): Promise<void> {
     }))
     refPanel.value.open = true
   } catch (e: any) {
-    toast.error('加载引用类型失败: ' + (e?.message ?? ''))
+    toast.error(`加载引用类型失败: ${e?.message ?? ''}`)
   }
 }
 // 消费 fileinfo（x_cms_fileinfo 文档附件）真实 distinct 路由：文件信息 / 在线编辑信息 / PDF 预览信息
@@ -925,7 +925,7 @@ async function loadDocFileInfo(): Promise<void> {
     const pdfOk = (pdf as any)?.data ? '有PDF预览' : '无PDF预览'
     toast.success(`文档文件 ${rows.length} 条 · 首个「${name}」· ${onlineOk} · ${pdfOk}`)
   } catch (e: any) {
-    toast.error('加载文档文件信息失败: ' + (e?.message ?? ''))
+    toast.error(`加载文档文件信息失败: ${e?.message ?? ''}`)
   }
 }
 // rev231：文件核心实体族 4 条真实 distinct 路由（SeaORM file_folder/file_file）
@@ -944,7 +944,7 @@ async function loadFileCoreEntities(): Promise<void> {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     toast.success(`顶层文件夹 ${folders.length} · 子目录 ${n(subFolders)} · 文件 ${n(files)} · 复合顶层 ${n(complex)}`)
   } catch (e: any) {
-    toast.error('加载文件实体失败: ' + (e?.message ?? ''))
+    toast.error(`加载文件实体失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -1061,7 +1061,7 @@ async function loadFileTwin2() {
     ])
     toast.success(`文件孪生端点B ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('文件孪生端点B失败: ' + (e?.message ?? ''))
+    toast.error(`文件孪生端点B失败: ${e?.message ?? ''}`)
   }
 }
 // rev485（桶外 off-metric 第二波）：匿名 fileinfo 文档目录/文件夹批量与单件下载/分享再共享 真注册路由 4 条
@@ -1083,7 +1083,7 @@ async function loadFileTwin3() {
     ])
     toast.success(`文件桶外端点C ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('文件桶外端点C失败: ' + (e?.message ?? ''))
+    toast.error(`文件桶外端点C失败: ${e?.message ?? ''}`)
   }
 }
 </script>

@@ -279,7 +279,7 @@ async function loadV2() {
 
 function viewDetail(f: FormItem) {
   api
-    .get('/api/form/' + f.id)
+    .get(`/api/form/${f.id}`)
     .then((r) => {
       detailItem.value = r.data ?? f
     })
@@ -299,7 +299,7 @@ function editFormV2(f: FormItem) {
   editForm(f as FormItem)
 }
 function previewForm(f: FormItem) {
-  toast.info('预览表单: ' + (f.name || f.id))
+  toast.info(`预览表单: ${f.name || f.id}`)
 }
 function previewFormV2(f: FormItem) {
   previewForm(f as FormItem)
@@ -314,31 +314,31 @@ async function saveForm() {
     // 后端 form_u2 契约：name + definition（definition 兼容 JSON 字符串）
     const payload = { name: mform.value.name, definition: mform.value.schema }
     if (editingForm.value?.id) {
-      await api.put('/api/form/' + editingForm.value.id, payload)
+      await api.put(`/api/form/${editingForm.value.id}`, payload)
     } else {
       await api.post('/api/form', payload)
     }
     showCreate.value = false
     loadList()
   } catch (e: any) {
-    toast.error('保存失败: : ' + (e?.message ?? ''))
+    toast.error(`保存失败: : ${e?.message ?? ''}`)
   }
 }
 
 async function deleteForm(f: FormItem) {
-  if (!(await confirmMsg('确定删除表单「' + (f.name || f.id) + '」？'))) return
+  if (!(await confirmMsg(`确定删除表单「${f.name || f.id}」？`))) return
   try {
-    await api.delete('/api/form/' + f.id)
+    await api.delete(`/api/form/${f.id}`)
     items.value = items.value.filter((x) => x.id !== f.id)
   } catch (e: any) {
-    toast.error('删除失败: : ' + (e?.message ?? ''))
+    toast.error(`删除失败: : ${e?.message ?? ''}`)
   }
 }
 
 function useTemplate(t: any) {
   mform.value = {
     name: t.name,
-    flag: t.name.toLowerCase() + '_form',
+    flag: `${t.name.toLowerCase()}_form`,
     category: 'biz',
     schema: JSON.stringify({ fields: t.fields }, null, 2),
   }
@@ -347,10 +347,10 @@ function useTemplate(t: any) {
 }
 
 function restoreVersion(vi: number) {
-  toast.info('恢复版本 ' + (versionList.value[vi]?.version || '?'))
+  toast.info(`恢复版本 ${versionList.value[vi]?.version || '?'}`)
 }
 function compareVersion(vi: number) {
-  toast.info('对比版本 ' + (vi + 1))
+  toast.info(`对比版本 ${vi + 1}`)
 }
 
 function doExport() {
@@ -358,12 +358,11 @@ function doExport() {
   if (exportFmt.value === 'json') {
     downloadBlob(
       new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
-      'forms_' + new Date().toISOString().slice(0, 10) + '.json',
+      `forms_${new Date().toISOString().slice(0, 10)}.json`,
     )
   } else {
-    const csv =
-      'name,flag,version\n' + data.map((d) => '"' + d.name + '","' + d.flag + '","' + d.version + '"').join('\n')
-    downloadBlob(new Blob([csv], { type: 'text/csv' }), 'forms_' + new Date().toISOString().slice(0, 10) + '.csv')
+    const csv = `name,flag,version\n${data.map((d) => `"${d.name}","${d.flag}","${d.version}"`).join('\n')}`
+    downloadBlob(new Blob([csv], { type: 'text/csv' }), `forms_${new Date().toISOString().slice(0, 10)}.csv`)
   }
   showImportExport.value = false
 }
@@ -386,11 +385,11 @@ async function doImport() {
         await api.post('/api/form', f)
       } catch {}
     }
-    importMsg.value = { ok: true, txt: '成功导入 ' + data.length + ' 个表单' }
+    importMsg.value = { ok: true, txt: `成功导入 ${data.length} 个表单` }
     loadList()
     showImportExport.value = false
   } catch (e: any) {
-    importMsg.value = { ok: false, txt: '导入失败: ' + e.message }
+    importMsg.value = { ok: false, txt: `导入失败: ${e.message}` }
   }
 }
 

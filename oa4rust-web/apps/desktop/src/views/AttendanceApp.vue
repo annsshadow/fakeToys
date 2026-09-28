@@ -319,7 +319,7 @@ async function auditAppealV2(a: A, auditStatus: string) {
     await api.post('/api/attendance/assemble/control/attendanceappealInfo/audit', { id: a.id, auditStatus })
     toast.success('已审核申诉')
   } catch (e: any) {
-    toast.error('审核申诉失败: ' + (e?.message ?? ''))
+    toast.error(`审核申诉失败: ${e?.message ?? ''}`)
   }
 }
 async function checkAppeal(a: A) {
@@ -328,7 +328,7 @@ async function checkAppeal(a: A) {
     await api.post('/api/attendance/assemble/control/attendanceappealInfo/check', { id: a.id, checked: true })
     toast.success('已标记检查')
   } catch (e: any) {
-    toast.error('检查申诉失败: ' + (e?.message ?? ''))
+    toast.error(`检查申诉失败: ${e?.message ?? ''}`)
   }
 }
 async function updateAppealStatus(a: A, status: string) {
@@ -339,7 +339,7 @@ async function updateAppealStatus(a: A, status: string) {
     })
     toast.success('已更新申诉状态')
   } catch (e: any) {
-    toast.error('更新申诉状态失败: ' + (e?.message ?? ''))
+    toast.error(`更新申诉状态失败: ${e?.message ?? ''}`)
   }
 }
 async function archiveAppeal(a: A) {
@@ -351,7 +351,7 @@ async function archiveAppeal(a: A) {
     })
     toast.success('已归档申诉')
   } catch (e: any) {
-    toast.error('归档申诉失败: ' + (e?.message ?? ''))
+    toast.error(`归档申诉失败: ${e?.message ?? ''}`)
   }
 }
 async function toggleAttType() {
@@ -363,7 +363,7 @@ async function toggleAttType() {
     await api.post('/api/attendance/assemble/control/attendancesetting/enable/type', { code, enabled })
     toast.success('已更新考勤类型启用状态')
   } catch (e: any) {
-    toast.error('更新类型失败: ' + (e?.message ?? ''))
+    toast.error(`更新类型失败: ${e?.message ?? ''}`)
   }
 }
 const exporting = ref(false)
@@ -383,8 +383,7 @@ async function exportData() {
     })
     const rows: Array<{ status?: string; count?: number }> = r.data?.data ?? []
     const label: Record<string, string> = { '1': '正常', '2': '迟到' }
-    const csv =
-      '\uFEFF状态,次数\n' + rows.map((x) => `${label[x.status ?? ''] ?? x.status ?? '未知'},${x.count ?? 0}`).join('\n')
+    const csv = `\uFEFF状态,次数\n${rows.map((x) => `${label[x.status ?? ''] ?? x.status ?? '未知'},${x.count ?? 0}`).join('\n')}`
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
@@ -411,7 +410,7 @@ async function loadV2Meta() {
     const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     attOverviewText.value = `v2配置 ${cnt(config)} / 我的控件 ${cnt(controls)} / 请假模板 ${cnt(leave)}`
   } catch (e: any) {
-    toast.error('加载 v2 配置失败: ' + (e?.message ?? ''))
+    toast.error(`加载 v2 配置失败: ${e?.message ?? ''}`)
   }
 }
 // v2 排班/群组明细族 3 条真实 distinct 路由（表各异）：群组排班配置 groupschedule/config/group/{groupId}（x_attendance_v2_group_schedule_config）
@@ -454,7 +453,7 @@ async function loadV2Schedule() {
     const pN = Array.isArray((byPerson as any)?.data) ? (byPerson as any).data.length : 0
     attOverviewText.value = `群组 ${groups.length} · 排班配置 ${hasCfg} · 月排班 ${lN} · 我所属群组 ${pN}`
   } catch (e: any) {
-    toast.error('加载 v2 排班失败: ' + (e?.message ?? ''))
+    toast.error(`加载 v2 排班失败: ${e?.message ?? ''}`)
   }
 }
 // v2 申诉/记录明细族 4 条真实 distinct 路由（x_attendance_record / x_attendance_v2_appeal_info）：记录分页 v2/record/list/{page}/size/{size}（POST）
@@ -487,7 +486,7 @@ async function loadV2AppealRecord() {
     const aStatus = (appealDetail as any)?.data?.status ?? (aid || '—')
     attOverviewText.value = `打卡记录 ${recs.length}（首状态 ${rStatus}）· 申诉 ${appeals2.length}（首状态 ${aStatus}）`
   } catch (e: any) {
-    toast.error('加载 v2 申诉/记录失败: ' + (e?.message ?? ''))
+    toast.error(`加载 v2 申诉/记录失败: ${e?.message ?? ''}`)
   }
 }
 async function loadAttOrg() {
@@ -503,7 +502,7 @@ async function loadAttOrg() {
     const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     attOverviewText.value = `顶级单位 ${cnt(topUnit)} / 单位 ${cnt(unit)} / 钉钉同步 ${cnt(dingding)} / 企微同步 ${cnt(qywx)}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadAttOverview() {
@@ -517,7 +516,7 @@ async function loadAttOverview() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     attOverviewText.value = `按人 ${n(byUser)} / 未签到 ${n(nonesign)} / 启用类型 ${n(enableType)}`
   } catch (e: any) {
-    toast.error('加载考勤汇总失败: ' + (e?.message ?? ''))
+    toast.error(`加载考勤汇总失败: ${e?.message ?? ''}`)
   }
 }
 // 消费 attendance 核心 crate 真实路由（打卡记录/统计周期/员工配置——独立表，非 v2 assemble/control 镜像）
@@ -531,7 +530,7 @@ async function loadAttBase() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     attOverviewText.value = `打卡记录 ${n(records)} / 统计周期 ${n(cycles)} / 员工配置 ${n(employees)}`
   } catch (e: any) {
-    toast.error('加载考勤基础数据失败: ' + (e?.message ?? ''))
+    toast.error(`加载考勤基础数据失败: ${e?.message ?? ''}`)
   }
 }
 // rev330：考勤 v2 打卡点/排班/申诉流程/班次/自定义假期 真实写端点（用户触发，shape 已核 attendance_assemble_control handler；全字面量路径）
@@ -585,7 +584,7 @@ async function attV2Write(op: string) {
     }
     toast.success('考勤 v2 操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 // rev355：考勤 统计展示(人月/顶单位日月/单位日月)游标翻页 + 明细筛选(顶单位/单位/用户/未签)+ 申诉/自定义假期筛选 真实分页读（PUT 过滤读，用户触发，全字面量路径）
@@ -688,7 +687,7 @@ async function attStatFilters(): Promise<void> {
     attStatText.value = `统计/明细/申诉筛选读 命中 ${hit}/${r.length}`
     toast.success('考勤统计筛选已加载')
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 // rev355：考勤核心实体 记录/规则 建改删 真实写（shape 已核：record{userId,checkInTime,status}、rule{name,startTime,endTime}；删走 GET by id）
@@ -720,7 +719,7 @@ async function attCoreEntity(op: string) {
     }
     toast.success('考勤核心实体操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 // rev368：考勤 管理员/员工/排班/工作日/统计要求日志/统计周期/导入文件 建删 + 申诉审核/校验/归档 + 明细分析/归档 + 规则开关/统计执行/v2配置 真实写读（避 POST/PUT 方法孪生择一；避 dingding/qywx 外部同步）
@@ -792,7 +791,7 @@ async function attWrite3(op: string) {
     else await api.get('/api/attendance/assemble/control/uuid/random')
     toast.success('考勤操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 // rev383：考勤 v2 申诉管理/重置状态、明细/群组按人重建、群组刷新参与、按人删记录、明细分析(GET)/周期核对(GET)/过滤游标(GET)、申诉归档、规则开关、移动明细删 真实路由（Path-only 读 + 已核体写，用户触发）
@@ -837,7 +836,7 @@ async function attV2Ops(op: string) {
     }
     toast.success('考勤操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 // + core/entity/rule/list（SeaORM attendance_rule）。前二属 attendance crate、后二属 attendance_core_entity crate。
@@ -852,7 +851,7 @@ async function loadCoreLists() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     attOverviewText.value = `管理员 ${n(admins)} / 排班规则 ${n(rules)} / 核心记录 ${n(coreRecords)} / 核心规则 ${n(coreRules)}`
   } catch (e: any) {
-    toast.error('加载考勤核心记录/规则失败: ' + (e?.message ?? ''))
+    toast.error(`加载考勤核心记录/规则失败: ${e?.message ?? ''}`)
   }
 }
 // 排班设置明细（rev185，3 条真实 distinct，x_attendance_schedule_setting）：schedulesetting/list/all 取首 id/unit
@@ -878,7 +877,7 @@ async function loadScheduleDetail() {
     const dName = (detail as any)?.data?.name ?? (rows.length ? sid : '—')
     attOverviewText.value = `排班设置 ${rows.length}（首「${dName}」）· 按单位 ${n(byUnit)} · 顶级单位 ${n(byTop)}`
   } catch (e: any) {
-    toast.error('加载排班设置明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载排班设置明细失败: ${e?.message ?? ''}`)
   }
 }
 // v2 配置/模板/统计（rev186，3 条真实 distinct 只读）：v2/config/person（v2_config_person_get，x_attendance_config
@@ -896,7 +895,7 @@ async function loadV2ConfigTpl() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     attOverviewText.value = `个人配置 ${n(cfg)} · 记录模板 ${(tpl as any)?.data ? '有' : '无'} · 明细统计记录 ${n(stat)}`
   } catch (e: any) {
-    toast.error('加载 v2 配置/模板/统计失败: ' + (e?.message ?? ''))
+    toast.error(`加载 v2 配置/模板/统计失败: ${e?.message ?? ''}`)
   }
 }
 // 统计展示筛选族 12 条真实 distinct（rev192，x_attendance_statisticshow 各 WHERE 维度/方向各异）：
@@ -914,7 +913,7 @@ async function reciveDetailById() {
     await api.post('/api/attendance/assemble/control/attendancedetail/recive', { id })
     toast.success('明细接收已提交')
   } catch (e: any) {
-    toast.error('接收失败: ' + (e?.message ?? ''))
+    toast.error(`接收失败: ${e?.message ?? ''}`)
   }
 }
 async function createAttDetail() {
@@ -926,7 +925,7 @@ async function createAttDetail() {
     await api.post('/api/attendance/assemble/control/attendancedetail', { personId, date, status })
     toast.success('考勤明细已创建')
   } catch (e: any) {
-    toast.error('创建失败: ' + (e?.message ?? ''))
+    toast.error(`创建失败: ${e?.message ?? ''}`)
   }
 }
 async function reciveMobileDetail() {
@@ -937,7 +936,7 @@ async function reciveMobileDetail() {
     await api.post('/api/attendance/assemble/control/attendancedetail/mobile/recive', { personId, date })
     toast.success('移动端接收已提交')
   } catch (e: any) {
-    toast.error('接收失败: ' + (e?.message ?? ''))
+    toast.error(`接收失败: ${e?.message ?? ''}`)
   }
 }
 // rev436：移动端「我的」考勤明细（attendancedetail_mobile_my 仅取 Json 无 Path、按 personId 查 x_attendance_detail，字面量路由匹配；用户以真实 personId 触发）
@@ -949,7 +948,7 @@ async function myMobileDetail() {
     const n = Array.isArray(r?.data) ? r.data.length : Array.isArray(r?.data?.data) ? r.data.data.length : 0
     toast.success(`我的考勤明细：${n} 条`)
   } catch (e: any) {
-    toast.error('读取失败: ' + (e?.message ?? ''))
+    toast.error(`读取失败: ${e?.message ?? ''}`)
   }
 }
 async function importLeave() {
@@ -960,7 +959,7 @@ async function importLeave() {
     await api.post('/api/attendance/assemble/control/v2/leave/import', { list: [{ leaveType, person }] })
     toast.success('请假导入已提交')
   } catch (e: any) {
-    toast.error('导入失败: ' + (e?.message ?? ''))
+    toast.error(`导入失败: ${e?.message ?? ''}`)
   }
 }
 // rev440：考勤 v2 打卡记录导入（v2_record_import 取 Json rows[]，空 rows 拒绝无垃圾；每行需 userId+checkInType）·按日导入（v2_record_import_daily 取 Json date）真实写路由，均 Json 无 Path 字面量匹配；用户以真实数据触发
@@ -982,7 +981,7 @@ async function importAttV2Records(mode: string) {
       toast.success(`打卡导入：${(r as any)?.data?.inserted ?? 0} 条`)
     }
   } catch (e: any) {
-    toast.error('导入失败: ' + (e?.message ?? ''))
+    toast.error(`导入失败: ${e?.message ?? ''}`)
   }
 }
 // rev441：考勤申诉/明细写域 3 条真实路由（各仅 POST 单向接入，PUT 同 handler 方法孪生不重复接）——analyse/redo[analyse_redo require_admin+Json 重算]·workflow/appeal/{id}[Path<String> UPDATE x_attendance_appeal_info workflow_status='appealed']·workflow/sync[workflow_sync require_admin+Json appealId 同步]
@@ -1007,7 +1006,7 @@ async function attAppealWrite(op: string) {
       toast.success('申诉流程状态已同步')
     }
   } catch (e: any) {
-    toast.error('申诉写操作失败: ' + (e?.message ?? ''))
+    toast.error(`申诉写操作失败: ${e?.message ?? ''}`)
   }
 }
 async function checkMyRestDate() {
@@ -1016,7 +1015,7 @@ async function checkMyRestDate() {
     await api.post('/api/attendance/assemble/control/v2/my/rest/date/check', { date })
     toast.success('休息日校验已提交')
   } catch (e: any) {
-    toast.error('校验失败: ' + (e?.message ?? ''))
+    toast.error(`校验失败: ${e?.message ?? ''}`)
   }
 }
 async function loadStatisticShow() {
@@ -1080,7 +1079,7 @@ async function loadStatisticShow() {
     const total = results.reduce((acc: number, r: any) => acc + (Array.isArray(r?.data) ? r.data.length : 0), 0)
     attOverviewText.value = `统计展示筛选：5 维度×2 方向 + 2 按日 = 12 路由，返回合计 ${total} 行`
   } catch (e: any) {
-    toast.error('加载统计展示筛选失败: ' + (e?.message ?? ''))
+    toast.error(`加载统计展示筛选失败: ${e?.message ?? ''}`)
   }
 }
 // 申诉/明细游标族 6 条真实 distinct（rev193，各 WHERE 方向/维度异）：appealInfo filter/list next(id>)+prev(id<)
@@ -1107,7 +1106,7 @@ async function loadAppealDetailFilters() {
     const hasDetail = (detail as any)?.data?.id ? '命中' : '未命中'
     attOverviewText.value = `申诉：正序 ${rows.length}·逆序 ${n(prev)}·管理 ${n(mgr)}·详情 ${hasDetail} | 明细：正序 ${n(dNext)}·逆序 ${n(dPrev)}`
   } catch (e: any) {
-    toast.error('加载申诉/明细游标失败: ' + (e?.message ?? ''))
+    toast.error(`加载申诉/明细游标失败: ${e?.message ?? ''}`)
   }
 }
 // 假期/设置明细族 7 条真实 distinct（rev194，各读独立表/维度）：selfholiday filter/list next(id>)+prev(id<)+{id}
@@ -1137,7 +1136,7 @@ async function loadHolidaySettingDetails() {
     const has = (r: any) => ((r as any)?.data?.id ? '命中' : '未命中')
     attOverviewText.value = `自助假期：正序 ${shRows.length}·逆序 ${n(shPrev)}·详情 ${has(shOne)} | 设置 by-id ${has(setById)}·by-code ${has(setByCode)} | 导入文件 ${has(impInfo)}·统计需求日志 ${has(reqLog)}`
   } catch (e: any) {
-    toast.error('加载假期/设置明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载假期/设置明细失败: ${e?.message ?? ''}`)
   }
 }
 // rev223：考勤明细读族 5 条真实 distinct 路由（x_attendance_detail，仅只读，UPDATE 的 analyse/archive/check 跳过）
@@ -1158,7 +1157,7 @@ async function loadAttendanceDetails() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     attOverviewText.value = `按文件 ${n(byFile)} · 我的 ${n(my)} · 单条 ${(byId as any)?.data?.id ? '命中' : '未命中'} · 分页 ${n(paging)} · 预览 ${(preview as any)?.data ? '有' : '无'}`
   } catch (e: any) {
-    toast.error('加载考勤明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载考勤明细失败: ${e?.message ?? ''}`)
   }
 }
 // rev232：考勤统计展示/钉钉企微聚合族 7 条真实 distinct 路由
@@ -1182,7 +1181,7 @@ async function loadStatisticAggregates() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : (r as any)?.data ? 1 : 0)
     attOverviewText.value = `个人 ${n(person)} · 单位人员 ${n(personsUnit)} · 顶层日 ${n(topDay)} · 单位日 ${n(unitDay)} · 单位汇总 ${n(unitSum)} · 钉钉单位 ${n(ddUnit)} · 企微单位 ${n(qywxUnit)}`
   } catch (e: any) {
-    toast.error('加载统计聚合失败: ' + (e?.message ?? ''))
+    toast.error(`加载统计聚合失败: ${e?.message ?? ''}`)
   }
 }
 // rev237：考勤 钉钉/企微 人员月统计 + 自助假 5 条真实 distinct 读路由
@@ -1203,7 +1202,7 @@ async function loadPersonMonthStats() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : (r as any)?.data ? 1 : 0)
     attOverviewText.value = `钉钉个人 ${n(ddPerson)} · 钉钉部门 ${n(ddPersonUnit)} · 企微个人 ${n(qyPerson)} · 企微部门 ${n(qyPersonUnit)} · 自助假 ${n(selfHoliday)}`
   } catch (e: any) {
-    toast.error('加载人员月统计失败: ' + (e?.message ?? ''))
+    toast.error(`加载人员月统计失败: ${e?.message ?? ''}`)
   }
 }
 onMounted(loadData)
@@ -1231,16 +1230,16 @@ async function createRule() {
     })
     loadRules()
   } catch (e: any) {
-    toast.error('创建失败: ' + (e?.message ?? ''))
+    toast.error(`创建失败: ${e?.message ?? ''}`)
   }
 }
 async function deleteRule(rule: any) {
-  if (!(await confirmMsg('确定删除规则「' + (rule.name || rule.id) + '」？'))) return
+  if (!(await confirmMsg(`确定删除规则「${rule.name || rule.id}」？`))) return
   try {
-    await api.delete('/api/attendance/assemble/control/rule/' + rule.id)
+    await api.delete(`/api/attendance/assemble/control/rule/${rule.id}`)
     loadRules()
   } catch (e: any) {
-    toast.error('删除失败: : ' + (e?.message ?? ''))
+    toast.error(`删除失败: : ${e?.message ?? ''}`)
   }
 }
 async function submitAppeal() {
@@ -1259,7 +1258,7 @@ async function submitAppeal() {
     })
     loadAppeals()
   } catch (e: any) {
-    toast.error('申请失败: : ' + (e?.message ?? ''))
+    toast.error(`申请失败: : ${e?.message ?? ''}`)
   }
 }
 async function loadAppeals() {
@@ -1303,16 +1302,16 @@ async function addWorkplace() {
     await api.post('/api/attendance/assemble/control/workplace', { name, address })
     loadWorkplaces()
   } catch (e: any) {
-    toast.error('新增失败: ' + (e?.message ?? ''))
+    toast.error(`新增失败: ${e?.message ?? ''}`)
   }
 }
 async function removeWorkplace(w: WP) {
-  if (!(await confirmMsg('确定删除打卡地点「' + (w.name || w.id) + '」？'))) return
+  if (!(await confirmMsg(`确定删除打卡地点「${w.name || w.id}」？`))) return
   try {
-    await api.delete('/api/attendance/assemble/control/workplace/' + w.id)
+    await api.delete(`/api/attendance/assemble/control/workplace/${w.id}`)
     loadWorkplaces()
   } catch (e: any) {
-    toast.error('删除失败: ' + (e?.message ?? ''))
+    toast.error(`删除失败: ${e?.message ?? ''}`)
   }
 }
 async function loadSettings() {
@@ -1333,16 +1332,16 @@ async function addSetting() {
     await api.post('/api/attendance/assemble/control/attendancesetting', { code, name, value })
     loadSettings()
   } catch (e: any) {
-    toast.error('新增失败: ' + (e?.message ?? ''))
+    toast.error(`新增失败: ${e?.message ?? ''}`)
   }
 }
 async function removeSetting(s: ST) {
-  if (!(await confirmMsg('确定删除设置项「' + (s.name || s.code) + '」？'))) return
+  if (!(await confirmMsg(`确定删除设置项「${s.name || s.code}」？`))) return
   try {
-    await api.delete('/api/attendance/assemble/control/attendancesetting/' + s.id)
+    await api.delete(`/api/attendance/assemble/control/attendancesetting/${s.id}`)
     loadSettings()
   } catch (e: any) {
-    toast.error('删除失败: ' + (e?.message ?? ''))
+    toast.error(`删除失败: ${e?.message ?? ''}`)
   }
 }
 type MoreItem = { id: string; name?: string; ruleName?: string }
@@ -1427,7 +1426,7 @@ async function addGroup() {
     toast.success('已新建考勤组')
     switchMore('v2group')
   } catch (e: any) {
-    toast.error('新建失败: ' + (e?.message ?? ''))
+    toast.error(`新建失败: ${e?.message ?? ''}`)
   }
 }
 // v2 班次：新建（shiftName 必填，admin 门禁，落 x_attendance_v2_shift）
@@ -1446,7 +1445,7 @@ async function addShift() {
     toast.success('已新建班次')
     switchMore('v2shift')
   } catch (e: any) {
-    toast.error('新建失败: ' + (e?.message ?? ''))
+    toast.error(`新建失败: ${e?.message ?? ''}`)
   }
 }
 // v2 请假：新建（leaveType 必填，person 缺省取会话，落 x_attendance_v2_leave）
@@ -1461,7 +1460,7 @@ async function addLeave() {
     toast.success('已新建请假')
     switchMore('v2leave')
   } catch (e: any) {
-    toast.error('新建失败: ' + (e?.message ?? ''))
+    toast.error(`新建失败: ${e?.message ?? ''}`)
   }
 }
 // v2 详情：按 id GET 回读单条（字面量分支，提取器不解析 url 变量）
@@ -1482,9 +1481,9 @@ async function viewMore(it: MoreItem) {
       r = await api.get(`/api/attendance/assemble/control/v2/shift/${it.id}`)
     }
     const d = r.data ?? {}
-    toast.success('详情: ' + (d.groupName || d.shiftName || d.personId || d.workDate || it.name || it.id))
+    toast.success(`详情: ${d.groupName || d.shiftName || d.personId || d.workDate || it.name || it.id}`)
   } catch (e: any) {
-    toast.error('加载详情失败: ' + (e?.message ?? ''))
+    toast.error(`加载详情失败: ${e?.message ?? ''}`)
   }
 }
 // v2 删除：group 走 {id}/delete，shift 走 delete/{id}（后端均 GET，owner/admin 门禁；字面量分支）
@@ -1502,7 +1501,7 @@ async function deleteMore(it: MoreItem) {
     toast.success('已删除')
     switchMore(moreTab.value)
   } catch (e: any) {
-    toast.error('删除失败: ' + (e?.message ?? ''))
+    toast.error(`删除失败: ${e?.message ?? ''}`)
   }
 }
 async function addCycle() {
@@ -1519,12 +1518,12 @@ async function addCycle() {
     const id = r.data?.id
     if (id) {
       // 回读一次确认（GET {id}）
-      const g: any = await api.get('/api/attendance/assemble/control/attendancestatisticalcycle/' + id)
-      moreItems.value = [(g.data ?? { id, name: cycleYear + '-' + cycleMonth }) as MoreItem]
+      const g: any = await api.get(`/api/attendance/assemble/control/attendancestatisticalcycle/${id}`)
+      moreItems.value = [(g.data ?? { id, name: `${cycleYear}-${cycleMonth}` }) as MoreItem]
     }
     toast.success('已新建统计周期')
   } catch (e: any) {
-    toast.error('新建失败: ' + (e?.message ?? ''))
+    toast.error(`新建失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -1534,7 +1533,7 @@ switchMore('schedule')
 
 async function loadStatistics() {
   try {
-    const r = await api.get('/api/attendance/assemble/control/statistics/list?month=' + month.value)
+    const r = await api.get(`/api/attendance/assemble/control/statistics/list?month=${month.value}`)
     attStats.value = r.data ?? []
   } catch {
     attStats.value = []
@@ -1546,37 +1545,37 @@ async function loadStatistics() {
 //   归档 POST archive/{id}（archived=true）、删除 DELETE {id}
 async function detailInfo(r: R) {
   try {
-    const resp: any = await api.get('/api/attendance/assemble/control/attendancedetail/' + r.id)
+    const resp: any = await api.get(`/api/attendance/assemble/control/attendancedetail/${r.id}`)
     const d = resp?.data ?? {}
-    toast.success('明细：' + (d.status ?? statusTxt(r.status)) + ' / ' + (d.date ?? fmtDate(r.date)))
+    toast.success(`明细：${d.status ?? statusTxt(r.status)} / ${d.date ?? fmtDate(r.date)}`)
   } catch (e: any) {
-    toast.error('加载明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载明细失败: ${e?.message ?? ''}`)
   }
 }
 async function analyseOne(r: R) {
   try {
-    await api.post('/api/attendance/assemble/control/attendancedetail/analyse/id/' + r.id, {})
+    await api.post(`/api/attendance/assemble/control/attendancedetail/analyse/id/${r.id}`, {})
     toast.success('已标记分析')
   } catch (e: any) {
-    toast.error('分析失败: ' + (e?.message ?? ''))
+    toast.error(`分析失败: ${e?.message ?? ''}`)
   }
 }
 async function archiveOne(r: R) {
   try {
-    await api.post('/api/attendance/assemble/control/attendancedetail/archive/' + r.id, {})
+    await api.post(`/api/attendance/assemble/control/attendancedetail/archive/${r.id}`, {})
     toast.success('已归档')
   } catch (e: any) {
-    toast.error('归档失败: ' + (e?.message ?? ''))
+    toast.error(`归档失败: ${e?.message ?? ''}`)
   }
 }
 async function deleteDetail(r: R) {
   if (!(await confirmMsg('确认删除该考勤明细？'))) return
   try {
-    await api.delete('/api/attendance/assemble/control/attendancedetail/' + r.id)
+    await api.delete(`/api/attendance/assemble/control/attendancedetail/${r.id}`)
     toast.success('已删除')
     records.value = records.value.filter((x) => x.id !== r.id)
   } catch (e: any) {
-    toast.error('删除失败: ' + (e?.message ?? ''))
+    toast.error(`删除失败: ${e?.message ?? ''}`)
   }
 }
 // rev476（用户裁定放宽双计口径）：考勤域镜像/方法孪生真注册路由 14 条（arity 已校验；同路径 GET 已消费，此处接 PUT/POST 双轨位）
@@ -1601,7 +1600,7 @@ async function loadAttTwin() {
     ])
     toast.success(`考勤孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('考勤孪生端点失败: ' + (e?.message ?? ''))
+    toast.error(`考勤孪生端点失败: ${e?.message ?? ''}`)
   }
 }
 // rev482（放宽双计口径·第二波）：考勤 1 条真写路由（reciveSingle：body{id} UPDATE x_attendance_detail received=true，owner 语义，
@@ -1621,7 +1620,7 @@ async function loadAttTwin2() {
     ])
     toast.success(`考勤孪生端点B ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('考勤孪生端点B失败: ' + (e?.message ?? ''))
+    toast.error(`考勤孪生端点B失败: ${e?.message ?? ''}`)
   }
 }
 </script>

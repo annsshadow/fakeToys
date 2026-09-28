@@ -250,7 +250,7 @@ async function loadOrgAttributes() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     orgMetaText.value = `职务搜索 ${duties.length}（详情 ${(dutyOne as any)?.data?.id ? '命中' : '未命中'}）· 群组拼音 ${n(grpPinyin)} · 人员属性 ${n(personAttr)} · 单位属性 ${n(unitAttr)} · 单位上翻 ${n(unitPrev)}`
   } catch (e: any) {
-    toast.error('加载组织属性/职务失败: ' + (e?.message ?? ''))
+    toast.error(`加载组织属性/职务失败: ${e?.message ?? ''}`)
   }
 }
 // rev215：组织控制 人员游标/关系 + like 搜索族 7 条真实 distinct 路由
@@ -272,7 +272,7 @@ async function loadOrgSearchCursors() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     orgMetaText.value = `人员前翻 ${n(pNext)} / 后翻 ${n(pPrev)} / 群组直属 ${n(pGroup)} / 身份搜索 ${n(idLike)} / 拼音 ${n(idPinyin)} / 顶层单位 ${n(unitTop)} / 角色搜索 ${n(roleLike)}`
   } catch (e: any) {
-    toast.error('加载组织搜索/游标失败: ' + (e?.message ?? ''))
+    toast.error(`加载组织搜索/游标失败: ${e?.message ?? ''}`)
   }
 }
 // rev238：核心 group/role/unit 列表游标 + 单位对象列表 7 条真实 distinct 读路由（不同表/方向/WHERE）
@@ -292,7 +292,7 @@ async function loadOrgListCursors() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     orgMetaText.value = `群组逆翻 ${n(gPrev)} / 角色顺翻 ${n(rNext)} / 角色逆翻 ${n(rPrev)} / 单位顺翻 ${n(uNext)} / 单位逆翻 ${n(uPrev)} / 单位全量 ${n(uAll)} / 单位按类型 ${n(uType)}`
   } catch (e: any) {
-    toast.error('加载核心列表游标失败: ' + (e?.message ?? ''))
+    toast.error(`加载核心列表游标失败: ${e?.message ?? ''}`)
   }
 }
 // rev242：组织控制 身份职务名/名片/单位子直属+按身份 6 条真实 distinct 读路由（arity 已核；跳 mockputtopost 别名、sup/nested/type 忽略 type 孪生、role/list/like/pinyin 无 WHERE 退化、person/list/group/sub/nested 双 Path 抽取风险）
@@ -316,7 +316,7 @@ async function loadOrgControlReads() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : (r as any)?.data ? 1 : 0)
     orgMetaText.value = `按职务名身份 ${n(idByDuty)} / 名片vCard ${n(vcf)} / 子直属按类型 ${n(subDirectType)} / 按身份层级单位 ${n(byIdLevel)} / 按身份类型单位 ${n(byIdType)} / 导入结果 ${n(importResult)} / 名片分页 ${n(cardPaging)}`
   } catch (e: any) {
-    toast.error('加载组织控制读取失败: ' + (e?.message ?? ''))
+    toast.error(`加载组织控制读取失败: ${e?.message ?? ''}`)
   }
 }
 async function loadOrgControlDeep() {
@@ -346,7 +346,7 @@ async function loadOrgControlDeep() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     orgMetaText.value = `组织控制深度读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载组织控制深度读失败: ' + (e?.message ?? ''))
+    toast.error(`加载组织控制深度读失败: ${e?.message ?? ''}`)
   }
 }
 // rev460：express 对象投影批读 5 条真实读（unit 按层级名/职务、person 属性、unit 属性、empower 身份；均 pool+Json<Value> 纯 SELECT，body 传对应 *List 键；无已消费同源基路由故非投影孪生）
@@ -367,7 +367,7 @@ async function loadOrgObjectReads() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     orgMetaText.value = `对象投影批读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载对象投影批读失败: ' + (e?.message ?? ''))
+    toast.error(`加载对象投影批读失败: ${e?.message ?? ''}`)
   }
 }
 // rev465：组织管理员人员解锁 + 授权日志 2 条真实路由
@@ -396,7 +396,7 @@ async function loadOrgAdminOps() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     orgMetaText.value = `管理员解锁/授权日志 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('管理员操作失败: ' + (e?.message ?? ''))
+    toast.error(`管理员操作失败: ${e?.message ?? ''}`)
   }
 }
 // rev473（用户裁定放宽双计口径）：组织/通用域镜像与同 handler 镜像真注册路由 25 条（arity 已校验；含 13 条 off-metric 全局面）
@@ -432,7 +432,7 @@ async function loadOrgTwin() {
     ])
     toast.success(`组织孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('组织孪生端点失败: ' + (e?.message ?? ''))
+    toast.error(`组织孪生端点失败: ${e?.message ?? ''}`)
   }
 }
 // rev481（放宽双计口径·第二波）：/object 投影族 48 条真注册纯读路由（组织/身份/角色/群组/人员/职务投影，
@@ -504,7 +504,7 @@ async function loadOrgObjectTwins() {
     ])
     toast.success(`对象投影孪生 ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('对象投影孪生失败: ' + (e?.message ?? ''))
+    toast.error(`对象投影孪生失败: ${e?.message ?? ''}`)
   }
 }
 // rev484（桶外 off-metric 波）：权限刷新型 2 + 快递 express 族 12 + 通用 区域/考勤范围/Excel/通用文件 控制族
@@ -554,7 +554,7 @@ async function loadOrgTwin2() {
     ])
     toast.success(`桶外端点A ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('桶外端点A失败: ' + (e?.message ?? ''))
+    toast.error(`桶外端点A失败: ${e?.message ?? ''}`)
   }
 }
 // rev484（桶外 off-metric 波）：通用 发票/Office 转 Word/权限/二维码/密级/状态 控制族 + 字典/发票/文件 族
@@ -621,7 +621,7 @@ async function loadOrgTwin3() {
     ])
     toast.success(`桶外端点B ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('桶外端点B失败: ' + (e?.message ?? ''))
+    toast.error(`桶外端点B失败: ${e?.message ?? ''}`)
   }
 }
 // rev485（桶外 off-metric 第二波）：通用 城市两级·Excel 双参·发票分页·二维码尺寸·工时区间/前推族 20 条
@@ -662,7 +662,7 @@ async function loadOrgTwin4() {
     ])
     toast.success(`桶外端点C ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('桶外端点C失败: ' + (e?.message ?? ''))
+    toast.error(`桶外端点C失败: ${e?.message ?? ''}`)
   }
 }
 // rev357：组织 express 单位树/校验/属性职务读（POST body{unitList}/{unit,name}），全字面量路径，用户触发按钮
@@ -687,7 +687,7 @@ async function orgUnitExpress() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     orgMetaText.value = `单位树/校验/属性读 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载单位 express 读失败: ' + (e?.message ?? ''))
+    toast.error(`加载单位 express 读失败: ${e?.message ?? ''}`)
   }
 }
 // rev357：组织 单位属性 全量替换/追加 + 群组/单位 express 建改删 真实写（shape 已核：attr{unit,name,attributeList}）
@@ -729,7 +729,7 @@ async function orgUnitWrite(op: string) {
     }
     toast.success('组织 express 写操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 // rev369：组织控制 人员/单位/身份/群组/角色/职务 模糊·拼音·首字母 清单 + 名片分页 + 过滤/控制器 真实只读（PUT/POST body{}，用户触发；避 password/credential）
@@ -763,7 +763,7 @@ async function orgLikeReads() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     orgMetaText.value = `组织控制模糊/拼音/分页读 ${rs.length} 条命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载组织控制清单失败: ' + (e?.message ?? ''))
+    toast.error(`加载组织控制清单失败: ${e?.message ?? ''}`)
   }
 }
 // rev369：组织控制 群组成员增删/身份排序/名片二维码/单位下级按类型/群组下人员/批量删除 真实动作（GET/POST，用户触发确认；避 password/unlock/icon 凭证类）
@@ -801,7 +801,7 @@ async function orgCtlActions(op: string) {
     }
     toast.success('组织控制操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 // rev390：组织-快递 平台 数据同步/配置/状态/同步 真实只读（4 条均 Path-free GET，用户触发；对应 organization_assemble_express + organization_core_express 域）
@@ -817,7 +817,7 @@ async function orgExpressReads() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     toast.success(`组织快递平台读 ${rs.length} 条命中 ${hit}`)
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 // rev322：组织控制 真实写端点（用户触发 prompt+确认，非造假）——人员/单位/身份/群组/角色/属性/权限设置/名片 建改删+成员+账号；全字面量路径
@@ -848,7 +848,7 @@ async function orgCreate(
     else await api.post('/api/organization/assemble/control/inputperson', { name })
     toast.success(`${kind} 已创建`)
   } catch (e: any) {
-    toast.error(`新建${kind}失败: ` + (e?.message ?? ''))
+    toast.error(`新建${kind}失败: ${e?.message ?? ''}`)
   }
 }
 async function orgUpdate(
@@ -883,7 +883,7 @@ async function orgUpdate(
     else await api.put(`/api/organization/assemble/control/personcard/${e}`, { name: '更新' })
     toast.success(`${kind} 已更新`)
   } catch (err: any) {
-    toast.error(`更新${kind}失败: ` + (err?.message ?? ''))
+    toast.error(`更新${kind}失败: ${err?.message ?? ''}`)
   }
 }
 async function orgDelete(
@@ -904,7 +904,7 @@ async function orgDelete(
     else await api.delete(`/api/organization/assemble/control/personcard/${e}`)
     toast.success(`${kind} 已删除`)
   } catch (err: any) {
-    toast.error(`删除${kind}失败: ` + (err?.message ?? ''))
+    toast.error(`删除${kind}失败: ${err?.message ?? ''}`)
   }
 }
 async function orgMember(op: 'groupAdd' | 'groupDel' | 'dutyPost' | 'dutyPut') {
@@ -920,7 +920,7 @@ async function orgMember(op: 'groupAdd' | 'groupDel' | 'dutyPost' | 'dutyPut') {
     else await api.put('/api/organization/assemble/control/unitduty/update/member', { member: '' })
     toast.success('成员操作已提交')
   } catch (err: any) {
-    toast.error('成员操作失败: ' + (err?.message ?? ''))
+    toast.error(`成员操作失败: ${err?.message ?? ''}`)
   }
 }
 async function orgAccount(op: 'lock' | 'ban' | 'unban' | 'password' | 'icon' | 'reserve' | 'tmSave' | 'tmDelete') {
@@ -939,7 +939,7 @@ async function orgAccount(op: 'lock' | 'ban' | 'unban' | 'password' | 'icon' | '
     else await api.delete(`/api/organization/assemble/control/threemember/delete/${e}`)
     toast.success('账号/三员操作已提交')
   } catch (err: any) {
-    toast.error('账号操作失败: ' + (err?.message ?? ''))
+    toast.error(`账号操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev329：组织 SeaORM 群组/身份 CRUD + express 关系批查询 真实写端点（用户触发，shape 已核 handler）
@@ -970,7 +970,7 @@ async function orgEntity(op: string) {
     }
     toast.success('组织实体操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 async function orgRelQuery(op: string) {
@@ -988,7 +988,7 @@ async function orgRelQuery(op: string) {
     else await api.post('/api/unitduty/list/identity/unit/name', { identityList: [key] })
     toast.success('关系查询已提交')
   } catch (e: any) {
-    toast.error('查询失败: ' + (e?.message ?? ''))
+    toast.error(`查询失败: ${e?.message ?? ''}`)
   }
 }
 async function loadOrgMeta() {
@@ -1001,7 +1001,7 @@ async function loadOrgMeta() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     orgMetaText.value = `权限设置 ${n(perms)} / 卡分组类型 ${n(cardTypes)}`
   } catch (e: any) {
-    toast.error('加载组织元数据失败: ' + (e?.message ?? ''))
+    toast.error(`加载组织元数据失败: ${e?.message ?? ''}`)
   }
 }
 async function loadExpressMeta() {
@@ -1015,7 +1015,7 @@ async function loadExpressMeta() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     orgMetaText.value = `同步配置 ${n(config)} / 单位 ${n(units)} / 状态 ${n(status)}`
   } catch (e: any) {
-    toast.error('加载同步元数据失败: ' + (e?.message ?? ''))
+    toast.error(`加载同步元数据失败: ${e?.message ?? ''}`)
   }
 }
 // 消费 personcard 名片族 3 条真实 distinct 路由：分页列表 → 首张详情 → 生成二维码
@@ -1038,7 +1038,7 @@ async function loadPersonCards() {
     const hasQR = (qr as any)?.data ? '已生成二维码' : '无二维码'
     orgMetaText.value = `名片 ${rows.length} 张 · 首张「${name}」· ${hasQR}`
   } catch (e: any) {
-    toast.error('加载名片失败: ' + (e?.message ?? ''))
+    toast.error(`加载名片失败: ${e?.message ?? ''}`)
   }
 }
 // 消费 org-control 明细族：角色详情 role/{flag} + 身份详情 identity/{flag} + 身份职务 unitduty/list/identity/{identityFlag}
@@ -1080,7 +1080,7 @@ async function loadOrgDetails() {
     const dN = Array.isArray((duties as any)?.data) ? (duties as any).data.length : 0
     orgMetaText.value = `角色「${rName}」· 身份「${iName}」· 该身份职务 ${dN}`
   } catch (e: any) {
-    toast.error('加载明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载明细失败: ${e?.message ?? ''}`)
   }
 }
 // 消费 unit 明细族：单位详情 unit/{flag} + 直接上级 unit/{flag}/sup/direct + 直接下级 unit/list/{flag}/sub/direct
@@ -1103,7 +1103,7 @@ async function loadUnitDetails() {
     const subN = Array.isArray((sub as any)?.data) ? (sub as any).data.length : 0
     orgMetaText.value = `单位「${name}」· 直接上级 ${supN} · 直接下级 ${subN}`
   } catch (e: any) {
-    toast.error('加载单位明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载单位明细失败: ${e?.message ?? ''}`)
   }
 }
 // 消费单位嵌套/游标族 3 条真实 distinct 路由（x_org_unit）：顶级单位 → 嵌套下级 unit/list/{flag}/sub/nested（WITH RECURSIVE sub）
@@ -1126,7 +1126,7 @@ async function loadUnitNested() {
     const c = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     orgMetaText.value = `嵌套下级 ${c(subN)} · 嵌套上级 ${c(supN)} · 单位游标 ${c(next)}`
   } catch (e: any) {
-    toast.error('加载单位嵌套失败: ' + (e?.message ?? ''))
+    toast.error(`加载单位嵌套失败: ${e?.message ?? ''}`)
   }
 }
 // 消费职务/身份明细族 3 条真实 distinct 路由（均落 x_org_duty/x_org_identity，查询各异）：
@@ -1167,7 +1167,7 @@ async function loadDutyDetails() {
     const dnN = Array.isArray((distinctName as any)?.data) ? (distinctName as any).data.length : 0
     orgMetaText.value = `职务「${dutyName || '—'}」· 名下身份 ${idN} · 同名职务 ${snN} · 去重名 ${dnN}`
   } catch (e: any) {
-    toast.error('加载职务/身份明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载职务/身份明细失败: ${e?.message ?? ''}`)
   }
 }
 // 消费属性族：单位/个人属性游标列表（flag=0 从头）→取首个 attr id→属性详情。4 条真实 distinct 路由。
@@ -1197,7 +1197,7 @@ async function loadAttrDetails() {
     const pN = Array.isArray((pList as any)?.data) ? (pList as any).data.length : 0
     orgMetaText.value = `单位属性 ${uN}（首「${uKey}」）· 个人属性 ${pN}（首「${pKey}」）`
   } catch (e: any) {
-    toast.error('加载属性明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载属性明细失败: ${e?.message ?? ''}`)
   }
 }
 // 消费群组明细族 3 条真实 distinct 路由（x_org_group）：从 role/list 首项取角色 → 角色下群组 group/list/role/{roleFlag}（子查询 x_org_group_role）
@@ -1223,7 +1223,7 @@ async function loadGroupDetails() {
     const pN = Array.isArray((prev as any)?.data) ? (prev as any).data.length : 0
     orgMetaText.value = `角色下群组 ${rN} · 群组游标 next ${nN} / prev ${pN}`
   } catch (e: any) {
-    toast.error('加载群组明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载群组明细失败: ${e?.message ?? ''}`)
   }
 }
 // 消费身份/角色/职务的头部游标列表（flag=0 从头）——3 条真实 distinct 路由
@@ -1237,7 +1237,7 @@ async function loadCursorLists() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     orgMetaText.value = `身份 ${n(ident)} · 角色 ${n(role)} · 职务 ${n(duty)}（头部游标各取 10）`
   } catch (e: any) {
-    toast.error('加载游标列表失败: ' + (e?.message ?? ''))
+    toast.error(`加载游标列表失败: ${e?.message ?? ''}`)
   }
 }
 // 消费身份/角色/职务的逆序游标列表（flag=0 从头）——3 条真实 distinct 路由（与 next 不同 handler）
@@ -1251,7 +1251,7 @@ async function loadCursorListsPrev() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     orgMetaText.value = `逆序：身份 ${n(ident)} · 角色 ${n(role)} · 职务 ${n(duty)}（各取 10）`
   } catch (e: any) {
-    toast.error('加载逆序游标失败: ' + (e?.message ?? ''))
+    toast.error(`加载逆序游标失败: ${e?.message ?? ''}`)
   }
 }
 async function loadPinyinIndex() {
@@ -1265,7 +1265,7 @@ async function loadPinyinIndex() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     orgMetaText.value = `群组首字母 ${n(groups)} / 身份首字母 ${n(identities)} / 角色首字母 ${n(roles)}`
   } catch (e: any) {
-    toast.error('加载拼音索引失败: ' + (e?.message ?? ''))
+    toast.error(`加载拼音索引失败: ${e?.message ?? ''}`)
   }
 }
 // 身份关系族 3 条真实 distinct 路由（express 批量查询，x_org_identity JOIN 各异）：
@@ -1296,7 +1296,7 @@ async function loadIdentityRelations() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     orgMetaText.value = `单位∩人员身份 ${n(byUnitPerson)} · 群组身份 ${n(byGroup)} · 主身份 ${n(majorByPerson)}`
   } catch (e: any) {
-    toast.error('加载身份关系失败: ' + (e?.message ?? ''))
+    toast.error(`加载身份关系失败: ${e?.message ?? ''}`)
   }
 }
 // 成员/层级族 3 条真实 distinct 路由（express 批量查询，SQL 各异）：群组人员 /api/group/list/person（JOIN x_org_group_member）
@@ -1323,7 +1323,7 @@ async function loadOrgMembers() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     orgMetaText.value = `群组人员 ${n(byGroup)} · 角色人员 ${n(byRole)} · 单位层级 ${n(byLevel)}`
   } catch (e: any) {
-    toast.error('加载成员/层级失败: ' + (e?.message ?? ''))
+    toast.error(`加载成员/层级失败: ${e?.message ?? ''}`)
   }
 }
 // 单位归属/群角族 3 条真实 distinct 路由（express，SQL 各异）：身份所属单位 /api/unit/list/identity（JOIN x_org_identity）
@@ -1353,7 +1353,7 @@ async function loadUnitScope() {
     const hr = (hasRole as any)?.data ? '是' : '否'
     orgMetaText.value = `身份所属单位 ${n(byIdentity)} · 人员所属单位 ${n(byPerson)} · 群组含角色 ${hr}`
   } catch (e: any) {
-    toast.error('加载单位归属/群角失败: ' + (e?.message ?? ''))
+    toast.error(`加载单位归属/群角失败: ${e?.message ?? ''}`)
   }
 }
 // 职务批量族 3 条真实 distinct 路由（express，x_org_duty 各异）：单位下职务名 /api/unitduty/list/name/unit（JOIN x_org_unit，SELECT DISTINCT d.name）
@@ -1380,7 +1380,7 @@ async function loadDutyBatch() {
     const fN = (found as any)?.data ? '命中' : '未命中'
     orgMetaText.value = `单位「${unit || '—'}」职务名 ${names.length}（首「${dutyName || '—'}」）· 按名批量 ${n(byName)} · 精确定位 ${fN}`
   } catch (e: any) {
-    toast.error('加载职务批量失败: ' + (e?.message ?? ''))
+    toast.error(`加载职务批量失败: ${e?.message ?? ''}`)
   }
 }
 // 群组树/关系 6 条真实 distinct（rev198，organization_assemble_express，body{groupList}）：group/list/group/
@@ -1404,7 +1404,7 @@ async function loadGroupTree() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     orgMetaText.value = `群组「${g}」下级 直接${n(subD)}/嵌套${n(subN)} · 上级 直接${n(supD)}/嵌套${n(supN)} · 树 ${n(tree)} · 身份 ${n(ident)}`
   } catch (e: any) {
-    toast.error('加载群组树/关系失败: ' + (e?.message ?? ''))
+    toast.error(`加载群组树/关系失败: ${e?.message ?? ''}`)
   }
 }
 // 单位关系 3 条真实 distinct（rev199，express）：unit/list（body{unitList}，全部/按标识单位）+ unit/list/identity/sup/nested
@@ -1423,7 +1423,7 @@ async function loadUnitRelations() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     orgMetaText.value = `单位关系：列表 ${n(all)} · 身份→单位上级 ${n(byIdent)} · 人员→单位上级 ${n(byPerson)}`
   } catch (e: any) {
-    toast.error('加载单位关系失败: ' + (e?.message ?? ''))
+    toast.error(`加载单位关系失败: ${e?.message ?? ''}`)
   }
 }
 // 身份单位树 3 条真实 distinct（rev200，express）：identity/list/person（body{personList}，人员的身份）
@@ -1442,7 +1442,7 @@ async function loadIdentityUnitTree() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     orgMetaText.value = `身份：按人员 ${n(byPerson)} · 单位直接下级 ${n(subD)} · 单位嵌套下级 ${n(subN)}`
   } catch (e: any) {
-    toast.error('加载身份单位树失败: ' + (e?.message ?? ''))
+    toast.error(`加载身份单位树失败: ${e?.message ?? ''}`)
   }
 }
 // 人员登录/配对 4 条真实 distinct（rev199，express，x_org_person）：person/list/all（全部人员）
@@ -1465,7 +1465,7 @@ async function loadPersonLogins() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     orgMetaText.value = `全部人员 ${n(all)} · 登录之后 ${n(after)} · 最近登录 ${n(recent)} · 身份配对 ${n(pair)}`
   } catch (e: any) {
-    toast.error('加载人员登录/配对失败: ' + (e?.message ?? ''))
+    toast.error(`加载人员登录/配对失败: ${e?.message ?? ''}`)
   }
 }
 const keyword = ref('')
@@ -1488,7 +1488,7 @@ function toggleNode(n: N) {
   if (n._exp && !n.children) {
     const id = n.id
     // 真实路由为 group/list/{flag}/sub/nested。
-    api.get('/api/organization/assemble/control/group/list/' + id + '/sub/nested').then((r: any) => {
+    api.get(`/api/organization/assemble/control/group/list/${id}/sub/nested`).then((r: any) => {
       n.children = (r.data ?? []) as N[]
     })
   }
@@ -1515,7 +1515,7 @@ async function selectNode(n: N) {
     const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     try {
       // group/{flag}（详情，确保命中真实端点）+ group/list/{flag}/sub/direct（直接子群组）
-      await api.get('/api/organization/assemble/control/group/' + n.id)
+      await api.get(`/api/organization/assemble/control/group/${n.id}`)
       const r: any = await api.get(`/api/organization/assemble/control/group/list/${n.id}/sub/direct`)
       subGroups.value = (r.data ?? []) as N[]
     } catch {

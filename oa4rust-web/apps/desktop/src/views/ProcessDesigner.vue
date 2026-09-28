@@ -3201,7 +3201,7 @@ const nodeConfigs: Record<string, NodeConfig> = {
   },
 }
 function getNodeConfig(type: string): NodeConfig {
-  return nodeConfigs[type] || nodeConfigs['task']
+  return nodeConfigs[type] || nodeConfigs.task
 }
 function isGate(type: string): boolean {
   return type === 'gate_and' || type === 'gate_or' || type === 'gate_xor'
@@ -3366,9 +3366,9 @@ function openCondEditor() {
 }
 function applyCondExpression() {
   if (!condEditorField.value) return
-  const expr = condEditorField.value + ' ' + condEditorOp.value + ' ' + condEditorValue.value
+  const expr = `${condEditorField.value} ${condEditorOp.value} ${condEditorValue.value}`
   if (getNodeProp('condition')) {
-    _setNodeProp('condition', getNodeProp('condition') + ' ' + condEditorLogic.value + ' ' + expr)
+    _setNodeProp('condition', `${getNodeProp('condition')} ${condEditorLogic.value} ${expr}`)
   } else {
     _setNodeProp('condition', expr)
   }
@@ -4059,10 +4059,10 @@ function redo() {
 }
 // ── Helpers ───────────────────────────────────────────────────────────
 function genId() {
-  return 'n_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)
+  return `n_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
 }
 function genEdgeId() {
-  return 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)
+  return `e_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
 }
 function getNodeLabel(type: string) {
   const m: Record<string, string> = {
@@ -4122,10 +4122,10 @@ function computeForkJoinPath(branchIndices: number[]): string {
   if (branchIndices.length < 2 || !processDef.value) return ''
   const nodes = branchIndices.map((i) => processDef.value!.nodes[i]).filter(Boolean)
   if (nodes.length < 2) return ''
-  let d = 'M ' + (nodes[0].x + (nodes[0].w || 120)) + ' ' + (nodes[0].y + (nodes[0].h || 50) / 2)
+  let d = `M ${nodes[0].x + (nodes[0].w || 120)} ${nodes[0].y + (nodes[0].h || 50) / 2}`
   for (let i = 1; i < nodes.length; i++) {
     const n = nodes[i]
-    d += ' L ' + (n.x + (n.w || 120)) + ' ' + (n.y + (n.h || 50) / 2)
+    d += ` L ${n.x + (n.w || 120)} ${n.y + (n.h || 50) / 2}`
   }
   return d
 }
@@ -4224,7 +4224,7 @@ function createVersion(label?: string) {
   const v: ProcVersion = {
     id: genId(),
     timestamp: Date.now(),
-    label: label || '版本 ' + (versions.value.length + 1),
+    label: label || `版本 ${versions.value.length + 1}`,
     config: JSON.parse(JSON.stringify(processDef.value)),
     author: 'user',
     message: label || '自动快照',
@@ -4640,7 +4640,7 @@ function downloadSvg() {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = (currentProcess.value?.flag || 'process') + '.svg'
+  a.download = `${currentProcess.value?.flag || 'process'}.svg`
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -5640,8 +5640,8 @@ function subAddNode(type: string) {
   if (!subprocessDef.value) return
   const w = isGate(type) ? 100 : type === 'approval' ? 130 : type === 'subprocess' ? 120 : 120
   const h = type === 'approval' ? 70 : type === 'subprocess' ? 60 : 50
-  const cx = (-subPanX.value + subCanvasRef.value?.clientWidth! / 2) / subZoom.value
-  const cy = (-subPanY.value + subCanvasRef.value?.clientHeight! / 2) / subZoom.value
+  const cx = (-subPanX.value + (subCanvasRef.value?.clientWidth ?? 0) / 2) / subZoom.value
+  const cy = (-subPanY.value + (subCanvasRef.value?.clientHeight ?? 0) / 2) / subZoom.value
   const sx = Math.round(cx / GRID_SIZE) * GRID_SIZE
   const sy = Math.round(cy / GRID_SIZE) * GRID_SIZE
   subprocessDef.value.nodes.push({ id: genId(), type, label: getNodeLabel(type), x: sx - w / 2, y: sy - h / 2, w, h })
@@ -5810,7 +5810,7 @@ async function createProcess() {
     await loadProcesses()
     toast.success('流程已创建')
   } catch (e: any) {
-    toast.error('创建失败: ' + (e?.message ?? ''))
+    toast.error(`创建失败: ${e?.message ?? ''}`)
   }
 }
 async function saveProcess() {
@@ -5823,7 +5823,7 @@ async function saveProcess() {
     currentProcess.value.definition = definition
     toast.info('保存成功')
   } catch (e: any) {
-    toast.error('保存失败: ' + (e?.message ?? ''))
+    toast.error(`保存失败: ${e?.message ?? ''}`)
   }
 }
 async function loadProcesses() {
@@ -5868,7 +5868,7 @@ async function loadDesignerFileApp() {
     const d = r?.data
     toast.success(d?.name || d?.xid ? `文件定义「${d.name ?? d.xid}」@应用 0` : '未找到应用 0 下的文件定义 0')
   } catch (e: any) {
-    toast.error('加载文件定义失败: ' + (e?.message ?? ''))
+    toast.error(`加载文件定义失败: ${e?.message ?? ''}`)
   }
 }
 // Connection rules state
@@ -6123,7 +6123,7 @@ function downloadJson() {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = (currentProcess.value?.flag || 'process') + '.json'
+  a.download = `${currentProcess.value?.flag || 'process'}.json`
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -6342,32 +6342,44 @@ function alignNodes(dir: AlignDir) {
   switch (dir) {
     case 'left': {
       const minX = Math.min(...nodes.map((n) => n.x))
-      nodes.forEach((n) => (n.x = minX))
+      nodes.forEach((n) => {
+        n.x = minX
+      })
       break
     }
     case 'right': {
       const maxX = Math.max(...nodes.map((n) => n.x + (n.w || 120)))
-      nodes.forEach((n) => (n.x = maxX - (n.w || 120)))
+      nodes.forEach((n) => {
+        n.x = maxX - (n.w || 120)
+      })
       break
     }
     case 'top': {
       const minY = Math.min(...nodes.map((n) => n.y))
-      nodes.forEach((n) => (n.y = minY))
+      nodes.forEach((n) => {
+        n.y = minY
+      })
       break
     }
     case 'bottom': {
       const maxY = Math.max(...nodes.map((n) => n.y + (n.h || 50)))
-      nodes.forEach((n) => (n.y = maxY - (n.h || 50)))
+      nodes.forEach((n) => {
+        n.y = maxY - (n.h || 50)
+      })
       break
     }
     case 'center-x': {
       const cx = nodes.reduce((s, n) => s + n.x + (n.w || 120) / 2, 0) / nodes.length
-      nodes.forEach((n) => (n.x = cx - (n.w || 120) / 2))
+      nodes.forEach((n) => {
+        n.x = cx - (n.w || 120) / 2
+      })
       break
     }
     case 'center-y': {
       const cy = nodes.reduce((s, n) => s + n.y + (n.h || 50) / 2, 0) / nodes.length
-      nodes.forEach((n) => (n.y = cy - (n.h || 50) / 2))
+      nodes.forEach((n) => {
+        n.y = cy - (n.h || 50) / 2
+      })
       break
     }
   }
@@ -6428,7 +6440,7 @@ function validateConnections(): ValidationResult {
   }
   const isolated = nodes.filter((n) => !connectedIds.has(n.id) && n.type !== 'start' && n.type !== 'end')
   for (const n of isolated)
-    issues.push({ type: 'isolated', message: '未连接: ' + (n.label || n.id), severity: 'warning' })
+    issues.push({ type: 'isolated', message: `未连接: ${n.label || n.id}`, severity: 'warning' })
   const reachable = new Set<string>()
   if (starts.length > 0) {
     const q = [starts[0].id]
@@ -6442,10 +6454,10 @@ function validateConnections(): ValidationResult {
     }
   }
   const unreachable = nodes.filter((n) => !reachable.has(n.id) && n.type !== 'start').map((n) => n.label || n.id)
-  for (const id of unreachable) issues.push({ type: 'unreachable', message: '无法到达: ' + id, severity: 'warning' })
+  for (const id of unreachable) issues.push({ type: 'unreachable', message: `无法到达: ${id}`, severity: 'warning' })
   const es = new Set<string>()
   for (const e of edges) {
-    const k = e.from + '-' + e.to
+    const k = `${e.from}-${e.to}`
     if (es.has(k)) issues.push({ type: 'dup', message: '重复连线', severity: 'warning' })
     else es.add(k)
   }
@@ -6786,7 +6798,7 @@ function computeCustomEdgePath(edge: PDEdge): string {
     tp = getNodePort(to, 'in')
   let d = `M ${fp.x} ${fp.y}`
   for (const cp of cfg.controlPoints) d += ` L ${cp.x} ${cp.y}`
-  return d + ` L ${tp.x} ${tp.y}`
+  return `${d} L ${tp.x} ${tp.y}`
 }
 function applyRoutingPreset(preset: 'smooth' | 'orthogonal' | 'manhattan' | 'zigzag') {
   if (selectedRoutingEdge.value === null) return
@@ -6949,12 +6961,12 @@ function detectParallelBranchesEnhanced(): ForkJoinAnnotation[] {
           branchIndices,
           forkNodeIdx: i,
           joinNodeIdx: potentialJoins.length > 0 ? nodes.findIndex((n) => n.id === potentialJoins[0].id) : undefined,
-          label: '分支' + (annotations.length + 1),
+          label: `分支${annotations.length + 1}`,
           color: '#f59e0b',
           annotations: [
-            { type: 'label', text: 'FORK #' + (annotations.length + 1) },
-            { type: 'flow', text: outgoing.length + ' 路并行' },
-            { type: 'count', text: members.size + ' 分支' },
+            { type: 'label', text: `FORK #${annotations.length + 1}` },
+            { type: 'flow', text: `${outgoing.length} 路并行` },
+            { type: 'count', text: `${members.size} 分支` },
           ],
         })
       }
@@ -7140,10 +7152,10 @@ function getEdgeDirections(): EdgeDirection[] {
   }
   const total = edges.length
   return [
-    { direction: '→ 右', count: rightCount, percentage: ((rightCount / total) * 100).toFixed(1) + '%' },
-    { direction: '← 左', count: leftCount, percentage: ((leftCount / total) * 100).toFixed(1) + '%' },
-    { direction: '↓ 下', count: downCount, percentage: ((downCount / total) * 100).toFixed(1) + '%' },
-    { direction: '↑ 上', count: upCount, percentage: ((upCount / total) * 100).toFixed(1) + '%' },
+    { direction: '→ 右', count: rightCount, percentage: `${((rightCount / total) * 100).toFixed(1)}%` },
+    { direction: '← 左', count: leftCount, percentage: `${((leftCount / total) * 100).toFixed(1)}%` },
+    { direction: '↓ 下', count: downCount, percentage: `${((downCount / total) * 100).toFixed(1)}%` },
+    { direction: '↑ 上', count: upCount, percentage: `${((upCount / total) * 100).toFixed(1)}%` },
   ].filter((e) => e.count > 0)
 }
 // ── Path Length Analysis ───────────────────────────────────────────
@@ -7416,7 +7428,7 @@ function exportAsSvgEnhanced() {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = (currentProcess.value?.flag || 'process') + '_enhanced.svg'
+  a.download = `${currentProcess.value?.flag || 'process'}_enhanced.svg`
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -7427,7 +7439,7 @@ function exportAsJsonEnhanced() {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = (currentProcess.value.flag || 'process') + '_enhanced.json'
+  a.download = `${currentProcess.value.flag || 'process'}_enhanced.json`
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -7804,7 +7816,7 @@ function setSubprocessDesc(desc: string) {
 function onMapDragStart(e: DragEvent, item: any) {
   e.dataTransfer?.setData('text/plain', JSON.stringify(item))
 }
-function onMapDrop(e: DragEvent, target: any) {
+function onMapDrop(e: DragEvent, _target: any) {
   try {
     const data = JSON.parse(e.dataTransfer?.getData('text/plain') || '{}')
   } catch {}
@@ -8073,7 +8085,7 @@ function addFlowVar() {
     type: newVarType.value,
     scope: 'global',
     defaultValue: '',
-    description: newVarName.value.trim() + '变量',
+    description: `${newVarName.value.trim()}变量`,
   })
   newVarName.value = ''
 }
@@ -8194,7 +8206,7 @@ function execContextAction(action: string) {
   else if (action === 'group') createGroup()
   else if (action === 'ungroup') ungroupSelected()
   else if (action === 'properties') selectedNode.value = contextMenuNodeId.value
-  showToast('操作: ' + action, 'info')
+  showToast(`操作: ${action}`, 'info')
 }
 function showNodeTooltip(x: number, y: number, content: string) {
   tooltipX.value = x
@@ -8299,7 +8311,7 @@ function startSimulation() {
   simEvents.value = []
   const nodes = processDef.value?.nodes || []
   let t = 0
-  nodes.forEach((n, i) => {
+  nodes.forEach((n, _i) => {
     t += 500 + Math.random() * 1000
     simEvents.value.push({ time: t, nodeId: n.id, event: 'start', label: n.label || n.type })
     t += 200 + Math.random() * 500
@@ -8326,7 +8338,7 @@ function handleShortcut(e: KeyboardEvent) {
   const key = e.key
   const ctrl = e.ctrlKey || e.metaKey
   const shift = e.shiftKey
-  const combo = ctrl ? (shift ? 'Ctrl+Shift+' + key : 'Ctrl+' + key) : key
+  const combo = ctrl ? (shift ? `Ctrl+Shift+${key}` : `Ctrl+${key}`) : key
   const match = shortcuts.find((s) => {
     if (s.key === combo) return true
     if (s.key === key && !ctrl && !shift) return true
@@ -8390,7 +8402,7 @@ function addFormRuleSet() {
 function removeFormRuleSet(idx: number) {
   formRuleSets.value.splice(idx, 1)
 }
-function applyFormRules(ruleSetIdx: number) {
+function applyFormRules(_ruleSetIdx: number) {
   showToast('规则已应用', 'success')
 }
 // ── Script Editor Functions ─────────────────────────────────────────
@@ -8434,7 +8446,7 @@ function runScriptTest() {
   const result = validateScriptCode()
   scriptValidation.value = result
   if (!result.valid) {
-    scriptLogs.value = result.errors.map((e) => '[ERROR] ' + e)
+    scriptLogs.value = result.errors.map((e) => `[ERROR] ${e}`)
     showScriptLogPanel.value = true
     return
   }
@@ -8469,8 +8481,8 @@ function saveScriptToNode() {
   pushHistory()
   scriptLogs.value = [
     '[INFO] 脚本已保存到节点',
-    '[INFO] 语言: ' + cfg.language,
-    '[INFO] 变量数: ' + cfg.variables.length,
+    `[INFO] 语言: ${cfg.language}`,
+    `[INFO] 变量数: ${cfg.variables.length}`,
   ]
   showScriptLogPanel.value = true
   closeScriptEditor()
@@ -8488,7 +8500,7 @@ function simulateParallelExecution() {
       time: t,
       branchId: br.id,
       event: 'start',
-      details: '分支 ' + (br.label || 'B' + i) + ' 开始',
+      details: `分支 ${br.label || `B${i}`} 开始`,
     })
     t += 1000 + Math.random() * 2000
     const ok = Math.random() > 0.1
@@ -8497,7 +8509,7 @@ function simulateParallelExecution() {
       time: t,
       branchId: br.id,
       event: ok ? 'complete' : 'fail',
-      details: ok ? '分支 ' + (br.label || 'B' + i) + ' 完成' : '分支 ' + (br.label || 'B' + i) + ' 失败',
+      details: ok ? `分支 ${br.label || `B${i}`} 完成` : `分支 ${br.label || `B${i}`} 失败`,
     })
   })
   showBranchTimeline.value = true
@@ -8604,7 +8616,7 @@ function computeNodeShadow(node: PDNode): string {
   return '0 2px 8px rgba(0,0,0,0.2)'
 }
 function formatDuration(ms: number): string {
-  return ms < 1000 ? ms + 'ms' : (ms / 1000).toFixed(1) + 's'
+  return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`
 }
 function formatTimestamp(ts: number): string {
   return new Date(ts).toLocaleString('zh-CN')
@@ -8615,7 +8627,7 @@ function createArchive() {
   processArchive.value.unshift({
     id: genId(),
     timestamp: Date.now(),
-    name: newArchiveLabel.value || '存档' + (processArchive.value.length + 1),
+    name: newArchiveLabel.value || `存档${processArchive.value.length + 1}`,
     nodeCount: processDef.value.nodes.length,
     edgeCount: processDef.value.edges?.length || 0,
     snapshot: JSON.parse(JSON.stringify(processDef.value)),
@@ -8681,7 +8693,7 @@ function easeInOutCubic(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2
 }
 function generateNodeId(prefix: string = 'node'): string {
-  return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6)
+  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`
 }
 function deepClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj))
@@ -9502,7 +9514,7 @@ function filterCustomTemplates(): Array<{
 function loadCustomTemplate(idx: number) {
   const tpl = customTemplates.value[idx]
   if (!tpl || !processDef.value) return
-  showToast('模板 "' + tpl.name + '" 已加载', 'success')
+  showToast(`模板 "${tpl.name}" 已加载`, 'success')
   showTemplateManager.value = false
 }
 function deleteCustomTemplate(idx: number) {
@@ -9517,7 +9529,7 @@ function exportCustomTemplate(idx: number) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = tpl.name + '.json'
+  a.download = `${tpl.name}.json`
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -9602,8 +9614,9 @@ function executeAllWorkflowRules(): void {
     .filter((r) => r.enabled)
     .forEach((rule) => {
       try {
+        // biome-ignore lint: 流程规则条件在设计器内按作者自定义表达式动态求值，间接 eval 属既有设计。
         const result = (0, eval)(rule.condition)
-        if (result) showToast('规则 "' + rule.name + '" 已触发: ' + rule.action, 'info')
+        if (result) showToast(`规则 "${rule.name}" 已触发: ${rule.action}`, 'info')
       } catch {
         /* skip invalid rules */
       }
@@ -9701,7 +9714,7 @@ function recordVersionRecord(label: string, summary: string): void {
   })
   if (versionRecordsList.value.length > 20) versionRecordsList.value.pop()
   logAudit('version_record', currentProcess.value.flag || 'process', summary)
-  showToast('版本已记录: ' + label, 'success')
+  showToast(`版本已记录: ${label}`, 'success')
 }
 function compareVersionsCompare(idx1: number, idx2: number): void {
   if (idx1 >= versionRecordsList.value.length || idx2 >= versionRecordsList.value.length) return
@@ -9723,7 +9736,7 @@ function restoreVersionRecord(idx: number): void {
   const snap = versionRecordsList.value[idx].config
   processDef.value = { nodes: snap.nodes, edges: snap.edges || [] }
   pushHistory()
-  showToast('已恢复到版本: ' + versionRecordsList.value[idx].label, 'info')
+  showToast(`已恢复到版本: ${versionRecordsList.value[idx].label}`, 'info')
 }
 // ── Performance Monitor Functions ────────────────────────────────────
 function startPerfMonitorLocal(): void {
@@ -9885,8 +9898,8 @@ function validateConstraintsValidate(): { valid: boolean; errors: string[] } {
   nodeConstraintsList.value.forEach((c) => {
     if (!c.active) return
     const node = processDef.value!.nodes.find((n) => n.id === c.nodeId)
-    if (!node) errors.push('约束 ' + c.id + ': 节点不存在')
-    else if (c.type === 'forbidden') errors.push('约束 ' + c.id + ': ' + (node.label || node.id) + ' 被禁止但仍存在')
+    if (!node) errors.push(`约束 ${c.id}: 节点不存在`)
+    else if (c.type === 'forbidden') errors.push(`约束 ${c.id}: ${node.label || node.id} 被禁止但仍存在`)
   })
   return { valid: errors.length === 0, errors }
 }
@@ -9894,7 +9907,7 @@ function getConstraintViolationsValidate(): string[] {
   return validateConstraintsValidate().errors
 }
 // ── Batch Operation Functions ────────────────────────────────────────
-function runBatchOperationLocal(opId: string): void {
+function runBatchOperationLocal(_opId: string): void {
   if (!processDef.value) return
   const targets =
     batchSelectedNodes.value.length > 0
@@ -9912,10 +9925,7 @@ function runBatchOperationLocal(opId: string): void {
   })
   batchOpResults.value = result
   pushHistory()
-  showToast(
-    '批量操作完成: ' + result.success + '成功 ' + result.failed + '失败',
-    result.failed > 0 ? 'warning' : 'success',
-  )
+  showToast(`批量操作完成: ${result.success}成功 ${result.failed}失败`, result.failed > 0 ? 'warning' : 'success')
 }
 // ── Deepened Types ──────────────────────────────────────────────────
 interface ProcessDependency {
@@ -10337,7 +10347,7 @@ function applyColorTheme(themeId: string) {
     ;(n as any).textColor = theme.textColor
   })
   pushHistory()
-  showToast('主题已应用: ' + theme.name, 'success')
+  showToast(`主题已应用: ${theme.name}`, 'success')
 }
 function addCustomColorTheme(name: string, fill: string, stroke: string, textColor: string) {
   nodeColorThemes.value.push({ id: genId(), name, fill, stroke, textColor, icon: '🎨', isDefault: false })
@@ -10573,11 +10583,12 @@ function executeWorkflowRules(): void {
     .filter((r) => r.enabled)
     .forEach((rule) => {
       try {
+        // biome-ignore lint: 流程规则条件在设计器内按作者自定义表达式动态求值，间接 eval 属既有设计。
         const result = (0, eval)(rule.condition)
         if (result) {
           rule.executionLog.push({ time: Date.now(), result: 'triggered' })
           logEvent('rule_triggered', '', rule.name, { action: rule.action })
-          showToast('工作流规则 "' + rule.name + '" 已触发', 'info')
+          showToast(`工作流规则 "${rule.name}" 已触发`, 'info')
         }
       } catch {
         rule.executionLog.push({ time: Date.now(), result: 'error' })
@@ -10642,11 +10653,11 @@ function exportProcessEnhanced(): void {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = (processMetadata.value.flag || 'process') + '.' + ext
+  a.download = `${processMetadata.value.flag || 'process'}.${ext}`
   a.click()
   URL.revokeObjectURL(url)
   showExportConfigPanel.value = false
-  showToast('已导出为 ' + ext.toUpperCase() + ' 格式', 'success')
+  showToast(`已导出为 ${ext.toUpperCase()} 格式`, 'success')
 }
 // ── Node Style Editor Functions ──────────────────────────────────────
 function openNodeStyleEditor(nodeIdx: number) {
@@ -10707,7 +10718,7 @@ function applyAnimationPreset(presetId: string) {
   if (!preset || !processDef.value) return
   ;(processDef.value as any).__animationPreset = presetId
   pushHistory()
-  showToast('动画预设已应用: ' + preset.name, 'success')
+  showToast(`动画预设已应用: ${preset.name}`, 'success')
 }
 function addAnimationPreset(name: string, entrance: string, exit: string, hover: string, click: string) {
   animationPresets.value.push({ id: genId(), name, entrance, exit, hover, click, duration: 300, easing: 'ease-in-out' })
@@ -10762,7 +10773,7 @@ function runFullValidation(): void {
         id: genId(),
         type: 'warning',
         nodeId: n.id,
-        message: '节点 "' + (n.label || n.id) + '" 完全孤立',
+        message: `节点 "${n.label || n.id}" 完全孤立`,
         suggestion: '添加连线或移除节点',
         severity: 2,
       })
@@ -10777,7 +10788,7 @@ function runFullValidation(): void {
         id: genId(),
         type: 'warning',
         nodeId: n.id,
-        message: '节点 "' + (n.label || n.id) + '" 连接度过高 (' + degree + ')',
+        message: `节点 "${n.label || n.id}" 连接度过高 (${degree})`,
         suggestion: '考虑拆分为子流程',
         severity: 1,
       })
@@ -10789,7 +10800,7 @@ function runFullValidation(): void {
     validationIssues.value.push({
       id: genId(),
       type: 'info',
-      message: '流程节点数较多 (' + nodes.length + ')',
+      message: `流程节点数较多 (${nodes.length})`,
       suggestion: '考虑使用子流程拆分',
       severity: 0,
     })
@@ -10919,7 +10930,9 @@ function buildEnhancedTimeline(): void {
   const nodes = processDef.value.nodes,
     edges = processDef.value.edges || []
   const inDeg = new Map<string, number>()
-  nodes.forEach((n) => inDeg.set(n.id, edges.filter((e) => e.to === n.id).length))
+  nodes.forEach((n) => {
+    inDeg.set(n.id, edges.filter((e) => e.to === n.id).length)
+  })
   let t = 0
   const startNodes = nodes.filter((n) => (inDeg.get(n.id) || 0) === 0)
   startNodes.forEach((sn) => {
@@ -10978,14 +10991,14 @@ function getTimelineDuration(): number {
     : 0
 }
 // ── Utility Functions ────────────────────────────────────────────────
-function debounce(fn: Function, ms: number): Function {
+function debounce(fn: (...args: any[]) => unknown, ms: number): (...args: any[]) => void {
   let timer: any = null
   return (...args: any[]) => {
     if (timer) clearTimeout(timer)
     timer = setTimeout(() => fn(...args), ms)
   }
 }
-function throttle(fn: Function, ms: number): Function {
+function throttle(fn: (...args: any[]) => unknown, ms: number): (...args: any[]) => void {
   let last = 0
   return (...args: any[]) => {
     const now = Date.now()
@@ -10996,8 +11009,8 @@ function throttle(fn: Function, ms: number): Function {
   }
 }
 function formatNumber(num: number): string {
-  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M'
-  if (num >= 1000) return (num / 1000).toFixed(1) + 'K'
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
   return String(num)
 }
 function clampNum(val: number, min: number, max: number): number {
@@ -11013,7 +11026,7 @@ function interpolateColor(color1: string, color2: string, factor: number): strin
   const r = Math.round(r1 + (r2 - r1) * factor),
     g = Math.round(g1 + (g2 - g1) * factor),
     b = Math.round(b1 + (b2 - b1) * factor)
-  return '#' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('')
+  return `#${[r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('')}`
 }
 function generateChecksum(data: string): string {
   let hash = 0
@@ -11021,7 +11034,7 @@ function generateChecksum(data: string): string {
     hash = (hash << 5) - hash + data.charCodeAt(i)
     hash |= 0
   }
-  return 'crc_' + Math.abs(hash).toString(16)
+  return `crc_${Math.abs(hash).toString(16)}`
 }
 function compareVersions(v1: string, v2: string): number {
   const p1 = v1.split('.').map(Number),
@@ -11039,7 +11052,7 @@ function slugify(text: string): string {
     .replace(/s+/g, '-')
 }
 function truncateText(text: string, maxLen: number): string {
-  return text.length <= maxLen ? text : text.substring(0, maxLen) + '...'
+  return text.length <= maxLen ? text : `${text.substring(0, maxLen)}...`
 }
 function randomColor(): string {
   return (
@@ -11203,7 +11216,7 @@ function computeSLAMetrics(): void {
     const target = 5000 + i * 2000
     const current = target * (0.5 + Math.random() * 1.5)
     metrics.push({
-      slaId: 'sla_' + n.id,
+      slaId: `sla_${n.id}`,
       name: n.label || n.type,
       targetMs: target,
       currentMs: Math.round(current),
@@ -11223,7 +11236,7 @@ function generateCrossProcessRefs(): void {
   const refs: CrossProcessRef[] = []
   for (let i = 0; i < 5; i++) {
     refs.push({
-      targetProcId: 'proc_' + (i + 1),
+      targetProcId: `proc_${i + 1}`,
       targetType: 'process',
       label: types[i],
       relationType: rels[i % rels.length],
@@ -11264,7 +11277,7 @@ function estimateCosts(): void {
   const resources = ['计算资源', '存储资源', '网络带宽', '人工成本', '第三方服务']
   const units = ['ms', 'MB', 'Mbps', '人时', '元']
   costEstimates.value = resources.map((r, i) => ({
-    resourceId: 'res_' + i,
+    resourceId: `res_${i}`,
     resourceName: r,
     timeCost: +(Math.random() * 100).toFixed(1),
     memoryCost: +(Math.random() * 500).toFixed(0),
@@ -11304,13 +11317,13 @@ function loadAuditLog(): void {
   const actions = ['创建', '修改', '删除', '发布', '撤回', '审批', '执行', '回滚']
   const users = ['张三', '李四', '王五', '赵六']
   auditEntries.value = Array.from({ length: 15 }, (_, i) => ({
-    id: 'a' + i,
+    id: `a${i}`,
     timestamp: Date.now() - i * 3600000 * Math.random() * 48,
     user: users[Math.floor(Math.random() * users.length)],
     action: actions[Math.floor(Math.random() * actions.length)],
-    target: '流程节点_' + Math.floor(Math.random() * 20),
+    target: `流程节点_${Math.floor(Math.random() * 20)}`,
     oldVal: '旧值',
-    newVal: '新值' + i,
+    newVal: `新值${i}`,
   }))
 }
 function openHealthPanel(): void {
@@ -11391,11 +11404,11 @@ function generateOptimizations(): void {
   ]
   const impacts: Array<'high' | 'medium' | 'low'> = ['high', 'medium', 'low']
   optimizationSuggestions.value = Array.from({ length: 6 }, (_, i) => ({
-    id: 'opt_' + i,
+    id: `opt_${i}`,
     type: types[i % types.length],
     description: descriptions[i],
     impact: impacts[i % impacts.length],
-    estimatedSaving: Math.floor(10 + Math.random() * 40) + '%',
+    estimatedSaving: `${Math.floor(10 + Math.random() * 40)}%`,
   }))
 }
 function openChangePanel(): void {
@@ -11406,9 +11419,9 @@ function loadChangeRequests(): void {
   const statuses: ChangeRequest['status'][] = ['draft', 'review', 'approved', 'rejected', 'implemented']
   const authors = ['张三', '李四', '王五']
   changeRequests.value = Array.from({ length: 5 }, (_, i) => ({
-    id: 'cr_' + i,
-    title: '变更请求 #' + (i + 1),
-    description: '优化第' + (i + 1) + '个节点的执行逻辑',
+    id: `cr_${i}`,
+    title: `变更请求 #${i + 1}`,
+    description: `优化第${i + 1}个节点的执行逻辑`,
     status: statuses[i % statuses.length],
     author: authors[i % authors.length],
     createdAt: Date.now() - i * 86400000,
@@ -11429,17 +11442,17 @@ function runAIAnalysis(): void {
   }))
 }
 function applyOptimization(optId: string): void {
-  showToast('已应用优化: ' + optId, 'success')
+  showToast(`已应用优化: ${optId}`, 'success')
 }
 function approveChangeRequest(crId: string): void {
   const cr = changeRequests.value.find((c) => c.id === crId)
   if (cr) cr.status = 'approved'
-  showToast('已批准变更请求: ' + crId, 'success')
+  showToast(`已批准变更请求: ${crId}`, 'success')
 }
 function rejectChangeRequest(crId: string): void {
   const cr = changeRequests.value.find((c) => c.id === crId)
   if (cr) cr.status = 'rejected'
-  showToast('已拒绝变更请求: ' + crId, 'warning')
+  showToast(`已拒绝变更请求: ${crId}`, 'warning')
 }
 function simulatePerformance(): void {
   showToast('性能模拟中...', 'info')
@@ -11491,10 +11504,10 @@ function getHealthScoreColor(v: number): string {
   return v > 70 ? '#10b981' : v > 50 ? '#f59e0b' : '#ef4444'
 }
 function getCellBg(color: string): string {
-  return color + '22'
+  return `${color}22`
 }
 function getSLAPct(m: any): string {
-  return Math.min(100, (m.currentMs / m.targetMs) * 100) + '%'
+  return `${Math.min(100, (m.currentMs / m.targetMs) * 100)}%`
 }
 
 // -- Permission & Lock State
@@ -11615,7 +11628,7 @@ function togglePermissionRule(idx: number): void {
   r.allowedRoles = r.allowedRoles.includes('all') ? [] : ['all']
 }
 function addPermissionRule(): void {
-  permissionRules.value.push({ id: 'p' + Date.now(), nodeType: 'task', allowedRoles: [], deniedRoles: [] })
+  permissionRules.value.push({ id: `p${Date.now()}`, nodeType: 'task', allowedRoles: [], deniedRoles: [] })
 }
 function removePermissionRule(idx: number): void {
   permissionRules.value.splice(idx, 1)
@@ -11640,8 +11653,8 @@ function openPublishPanel(): void {
 }
 function publishProcess(): void {
   publishHistory.value.unshift({
-    id: 'pub_' + Date.now(),
-    version: 'v' + (publishHistory.value.length + 1),
+    id: `pub_${Date.now()}`,
+    version: `v${publishHistory.value.length + 1}`,
     publishedAt: Date.now(),
     publishedBy: '当前用户',
     status: 'success',
@@ -11660,7 +11673,7 @@ function clearDebugLog(): void {
 }
 function exportDebugLog(): void {
   const blob = new Blob(
-    [debugLog.value.map((e) => '[' + new Date(e.ts).toISOString() + '] ' + e.level + ': ' + e.msg).join('\n')],
+    [debugLog.value.map((e) => `[${new Date(e.ts).toISOString()}] ${e.level}: ${e.msg}`).join('\n')],
     { type: 'text/plain' },
   )
   const a = document.createElement('a')
@@ -11681,15 +11694,15 @@ function openMacroEditor(): void {
   macroCode.value = '// 宏脚本\nemit("macro_exec");'
 }
 function macroNew(): void {
-  macroName.value = 'macro_' + Date.now()
+  macroName.value = `macro_${Date.now()}`
   macroCode.value = ''
 }
 function macroRun(): void {
-  macroResult.value = '执行完成，耗时: ' + Math.floor(Math.random() * 100) + 'ms'
-  debugLog.value.push({ ts: Date.now(), level: 'info', msg: '宏 [' + macroName.value + '] 已执行' })
+  macroResult.value = `执行完成，耗时: ${Math.floor(Math.random() * 100)}ms`
+  debugLog.value.push({ ts: Date.now(), level: 'info', msg: `宏 [${macroName.value}] 已执行` })
 }
 function macroSave(): void {
-  debugLog.value.push({ ts: Date.now(), level: 'success', msg: '宏 ' + macroName.value + ' 已保存' })
+  debugLog.value.push({ ts: Date.now(), level: 'success', msg: `宏 ${macroName.value} 已保存` })
 }
 
 // -- Snippet Library Functions --
@@ -11704,7 +11717,7 @@ const filteredSnippets = computed(() => {
 function insertSnippet(idx: number): void {
   const s = snippets.value[idx]
   if (s) {
-    debugLog.value.push({ ts: Date.now(), level: 'info', msg: '已插入片段: ' + s.title })
+    debugLog.value.push({ ts: Date.now(), level: 'info', msg: `已插入片段: ${s.title}` })
   }
 }
 function copySnippet(idx: number): void {
@@ -11737,7 +11750,7 @@ function removeEventMapping(idx: number): void {
   eventMappings.value.splice(idx, 1)
 }
 function applyEventMappings(): void {
-  debugLog.value.push({ ts: Date.now(), level: 'success', msg: '已应用 ' + eventMappings.value.length + ' 条事件映射' })
+  debugLog.value.push({ ts: Date.now(), level: 'success', msg: `已应用 ${eventMappings.value.length} 条事件映射` })
   showEventMapper.value = false
 }
 function clearEventMappings(): void {
@@ -11785,13 +11798,13 @@ function openWorkflowBuilder(): void {
   updateWbSteps()
 }
 function addNodeFromPalette(nt: string): void {
-  debugLog.value.push({ ts: Date.now(), level: 'info', msg: '从构建器添加节点: ' + nt })
+  debugLog.value.push({ ts: Date.now(), level: 'info', msg: `从构建器添加节点: ${nt}` })
   wbSteps.value[0].done = true
 }
 function runWorkflowBuildCheck(): void {
   const issues = []
   if (!processDef.value?.nodes?.length) issues.push('画布无节点')
-  if (issues.length) debugLog.value.push({ ts: Date.now(), level: 'warning', msg: '验证发现: ' + issues.join(', ') })
+  if (issues.length) debugLog.value.push({ ts: Date.now(), level: 'warning', msg: `验证发现: ${issues.join(', ')}` })
   else debugLog.value.push({ ts: Date.now(), level: 'success', msg: '验证通过，流程有效' })
 }
 function applyWorkflowBuild(): void {
@@ -11799,7 +11812,9 @@ function applyWorkflowBuild(): void {
   showWorkflowBuilder.value = false
 }
 function updateWbSteps(): void {
-  wbSteps.value.forEach((s) => (s.done = false))
+  wbSteps.value.forEach((s) => {
+    s.done = false
+  })
   if (processDef.value?.nodes?.length) wbSteps.value[0].done = true
 }
 
@@ -11883,7 +11898,7 @@ function getProcStatusLabel(s: string): string {
 // -- Debug Panel Helpers --
 function dbgEntryClass(level: string): Record<string, boolean> {
   const r: Record<string, boolean> = { dbg_entry: true }
-  r['dbg_' + level] = true
+  r[`dbg_${level}`] = true
   return r
 }
 function dbgStepClass(status: string): Record<string, boolean> {
@@ -11899,7 +11914,7 @@ async function exportProcess() {
     const blob = new Blob([JSON.stringify(r.data, null, 2)], { type: 'application/json' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
-    a.download = (selectedProcess.value.name || 'process') + '.json'
+    a.download = `${selectedProcess.value.name || 'process'}.json`
     a.click()
   } catch (e) {
     toast.info('导出失败')

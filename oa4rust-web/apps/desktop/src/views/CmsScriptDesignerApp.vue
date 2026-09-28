@@ -62,7 +62,7 @@ async function loadByUnique() {
     )
     toast.success(`脚本：${(r as any)?.data?.name ?? uniqueName}`)
   } catch (e: any) {
-    toast.error('加载脚本失败: ' + (e?.message ?? ''))
+    toast.error(`加载脚本失败: ${e?.message ?? ''}`)
   }
 }
 </script>

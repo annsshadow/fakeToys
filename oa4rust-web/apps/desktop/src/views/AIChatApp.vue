@@ -177,7 +177,7 @@ async function loadAiControl() {
     const has = (r: any) => ((r as any)?.data ? '有' : '无')
     aiMetaText.value = `基础配置 ${has(base)} / 控制配置 ${has(ctrl)} / 用量统计 ${has(usage)}`
   } catch (e: any) {
-    toast.error('加载 AI 控制配置失败: ' + (e?.message ?? ''))
+    toast.error(`加载 AI 控制配置失败: ${e?.message ?? ''}`)
   }
 }
 // rev211：AI 实体/聊天/配置 7 条真实 distinct 路由
@@ -201,7 +201,7 @@ async function loadAiEntities() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     aiMetaText.value = `聊天线索 ${rows.length} / 补全 ${n(comps)} / 实体应用 ${n(apps)} / 模型 ${n(models)} / 会话 ${n(convs)} / 基础配置 ${(base as any)?.data ? '有' : '无'} / MCP ${(mcp as any)?.data ? '有' : '无'}`
   } catch (e: any) {
-    toast.error('加载 AI 实体失败: ' + (e?.message ?? ''))
+    toast.error(`加载 AI 实体失败: ${e?.message ?? ''}`)
   }
 }
 // rev226：AI 索引/文件/MCP 配置族 5 条真实 distinct 路由
@@ -224,7 +224,7 @@ async function loadAiIndexFiles() {
     const has = (r: any) => ((r as any)?.data ? '有' : '无')
     aiMetaText.value = `MCP ${mcps.length}（详情 ${has(mcpOne)}）· CMS文档 ${has(cmsDoc)}·按应用 ${has(cmsDocApp)} · AI文件 ${has(file)}`
   } catch (e: any) {
-    toast.error('加载 AI 索引/文件失败: ' + (e?.message ?? ''))
+    toast.error(`加载 AI 索引/文件失败: ${e?.message ?? ''}`)
   }
 }
 // rev312：AI 控制配置 深度读 8 条（可用模型/MCP扩展·MCP·模型配置/AI文件/CMS文档索引/模型分页）；handler 体经核实纯 SELECT
@@ -249,7 +249,7 @@ async function loadAiDeep() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     aiMetaText.value = `AI 控制深度读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载 AI 控制深度读失败: ' + (e?.message ?? ''))
+    toast.error(`加载 AI 控制深度读失败: ${e?.message ?? ''}`)
   }
 }
 // rev338：AI 配置/模型/MCP/公告/聊天线索 真实写端点（用户触发，shape 已核 ai_assemble_control handler；全字面量路径）
@@ -290,7 +290,7 @@ async function aiWrite(op: string) {
     }
     toast.success('AI 操作已提交')
   } catch (e: any) {
-    toast.error('AI 操作失败: ' + (e?.message ?? ''))
+    toast.error(`AI 操作失败: ${e?.message ?? ''}`)
   }
 }
 // rev366：AI 知识索引同步/删除 + 文件下载/缩放/删除 + 文件·索引 分页清单 真实路由（每 op 择一轨，避开双轨孪生与 guard 禁的 mcp 删除与聊天端点）
@@ -316,7 +316,7 @@ async function aiMore(op: string) {
     else await api.post('/api/ai_assemble_control/file/list', {})
     toast.success('AI 操作已提交')
   } catch (e: any) {
-    toast.error('AI 操作失败: ' + (e?.message ?? ''))
+    toast.error(`AI 操作失败: ${e?.message ?? ''}`)
   }
 }
 // rev401：AI MCP 配置 读/建/改/删 + 删模型配置 + 删对话 真实路由（config_get Path-free、create_mcp Option<Json> 空体、update·delete mcp/model/chat Path-only；各方法·双前缀孪生择一，规避守卫禁的 mcp flag 字面与裸 chat 精确串）
@@ -357,7 +357,7 @@ async function aiMore2(op: string) {
     await api.get(`/api/ai/chat/delete/${clue}`)
     toast.success('对话已删除')
   } catch (e: any) {
-    toast.error('AI 操作失败: ' + (e?.message ?? ''))
+    toast.error(`AI 操作失败: ${e?.message ?? ''}`)
   }
 }
 async function loadAiConv() {
@@ -372,7 +372,7 @@ async function loadAiConv() {
     const hasCfg = (cfg as any)?.data ? '有' : '无'
     aiMetaText.value = `会话 ${n(convs)} / 配置 ${hasCfg} / 控制模型 ${n(models)}`
   } catch (e: any) {
-    toast.error('加载 AI 会话/配置失败: ' + (e?.message ?? ''))
+    toast.error(`加载 AI 会话/配置失败: ${e?.message ?? ''}`)
   }
 }
 async function loadAiMeta() {
@@ -386,7 +386,7 @@ async function loadAiMeta() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     aiMetaText.value = `模型 ${n(models)} / 应用 ${n(apps)} / 可用模型 ${n(enabled)}`
   } catch (e: any) {
-    toast.error('加载 AI 元数据失败: ' + (e?.message ?? ''))
+    toast.error(`加载 AI 元数据失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -454,7 +454,7 @@ async function sendMessage() {
     const reply = r.data?.content ?? r.data?.reply ?? r.data?.message ?? '已收到'
     messages.value.push({ role: 'assistant', content: String(reply) })
   } catch (e: any) {
-    messages.value.push({ role: 'assistant', content: '❌ 错误: ' + (e?.message ?? '未知错误') })
+    messages.value.push({ role: 'assistant', content: `❌ 错误: ${e?.message ?? '未知错误'}` })
   } finally {
     loading.value = false
     await nextTick(() => scrollToBottom())
@@ -520,7 +520,7 @@ async function loadCoreModels() {
         : 0
     coreText.value = `核心模型 ${coreModels.value.length} / MCP ${mcpN}`
   } catch (e: any) {
-    toast.error('加载核心模型失败: ' + (e?.message ?? ''))
+    toast.error(`加载核心模型失败: ${e?.message ?? ''}`)
   }
 }
 async function viewCoreModel(flag: string) {
@@ -528,9 +528,9 @@ async function viewCoreModel(flag: string) {
     // GET ai/config/get/model/{flag} —— 模型详情
     const r: any = await api.get(`/api/ai/config/get/model/${encodeURIComponent(flag)}`)
     const d = r?.data ?? {}
-    toast.success('模型: ' + (d.name || d.model || flag))
+    toast.success(`模型: ${d.name || d.model || flag}`)
   } catch (e: any) {
-    toast.error('加载模型详情失败: ' + (e?.message ?? ''))
+    toast.error(`加载模型详情失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -544,7 +544,7 @@ async function toggleMcp(m: McpItem) {
     })
     m.enabled = !m.enabled
   } catch (e: any) {
-    toast.info('操作失败: ' + (e?.message ?? ''))
+    toast.info(`操作失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -554,7 +554,7 @@ async function delMcp(id: string) {
     await api.delete(`/api/ai_assemble_control/config/delete/mcp/${encodeURIComponent(id)}`)
     mcps.value = mcps.value.filter((x) => x.id !== id)
   } catch (e: any) {
-    toast.info('删除失败: ' + (e?.message ?? ''))
+    toast.info(`删除失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -571,7 +571,7 @@ async function addMcp() {
     showAddMcp.value = false
     await loadMcps()
   } catch (e: any) {
-    toast.info('添加失败: ' + (e?.message ?? ''))
+    toast.info(`添加失败: ${e?.message ?? ''}`)
   }
 }
 // rev478（用户裁定放宽双计口径）：AI alias 轨同 handler 镜像真注册路由 3 条（主轨 /api/ai/* 已消费，alias 轨逐注册路由计；arity 已校验）
@@ -585,7 +585,7 @@ async function loadAiTwin() {
     ])
     toast.success(`AI孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('AI孪生端点失败: ' + (e?.message ?? ''))
+    toast.error(`AI孪生端点失败: ${e?.message ?? ''}`)
   }
 }
 // rev482（放宽双计口径·第二波）：AI alias 轨余 4 条真路由（file download/scale 元数据读、file/index delete 位、
@@ -601,7 +601,7 @@ async function loadAiTwin2() {
     ])
     toast.success(`AI孪生端点B ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('AI孪生端点B失败: ' + (e?.message ?? ''))
+    toast.error(`AI孪生端点B失败: ${e?.message ?? ''}`)
   }
 }
 </script>
