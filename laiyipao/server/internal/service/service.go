@@ -464,6 +464,40 @@ func (s *Service) LoadGameConfig(ctx context.Context) GameConfig {
 	return cfg
 }
 
+// orEmptyMap 把 nil map 换成空 map。
+//
+// ## 为什么需要它
+//
+// `json.Marshal(map[string]int(nil))` 返回 `[]byte("null")`，
+// 存进 jsonb 列就是 jsonb `null`（注意不是 SQL NULL）。
+//
+// 而 jsonb `null` 有两个实际危害（都实测过）：
+//
+//  1. `null <> '{}'::jsonb` 在 SQL 里求值为 **NULL 而不是 true**，
+//     所以 `WHERE reactions_used <> '{}'` 会**静默排除**这些行。
+//     实测 58 行里 8 行（13.8%）的反应分布没进后台看板。
+//  2. `jsonb_each_text(jsonb 'null')` 直接**报错**
+//     （「不能在非对象上调用」），任何 JSONB 聚合 SQL 都会崩。
+//
+// 空 map 序列化成 `{}`，两条都不会发生，且语义完全正确
+// （「本局没用到任何反应」就是 `{}`）。
+func orEmptyMap(m map[string]int) map[string]int {
+	if m == nil {
+		return map[string]int{}
+	}
+	return m
+}
+
+// orEmptySlice 把 nil slice 换成空 slice（`[]` 而不是 `null`）。
+//
+// 理由同 orEmptyMap。
+func orEmptySlice[T any](s []T) []T {
+	if s == nil {
+		return []T{}
+	}
+	return s
+}
+
 // marshalJSON 是带错误传播的 JSON 编码辅助。
 func marshalJSON(v any) ([]byte, error) {
 	b, err := json.Marshal(v)

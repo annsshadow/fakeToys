@@ -144,9 +144,32 @@ func TestRunMigrateDownFails(t *testing.T) {
 	}
 	pool.Close()
 
-	if err := run(ctx, testCfg(dsn), true); err == nil {
-		t.Fatal("依赖表缺失时回滚应失败")
-	} else if !strings.Contains(err.Error(), "回滚失败") {
-		t.Errorf("错误应说明是回滚失败：%v", err)
+	// ⚠️ 必须**循环回滚直到失败**，不能只回滚一步。
+	//
+	// 原来只调一次 `run(..., down=true)`，那时 00009 恰好是最后一条迁移，
+	// 所以那一步就会失败。
+	// 之后有人加了 00010（Down 是空操作），第一步回滚成功、第二步才失败 ——
+	// 断言立刻红了，而红的原因与「MigrateDown 是否暴露错误」毫无关系。
+	//
+	// 硬编码「第 N 步会失败」和硬编码「第 9 条迁移」是同一类错误：
+	// 都在断言一个会随别人改动而变化的事实。
+	//
+	// 这里断言的是**真正要守的性质**：只要还有一步会失败，
+	// 就不该出现「一路回滚全成功」。
+	const maxSteps = 100 // 迁移数量级的上限，防止死循环
+	sawError := false
+	for i := 0; i < maxSteps; i++ {
+		err := run(ctx, testCfg(dsn), true)
+		if err == nil {
+			continue // 这一步回滚成功，继续往下
+		}
+		if !strings.Contains(err.Error(), "回滚失败") {
+			t.Errorf("第 %d 步回滚应说明是回滚失败，实际：%v", i+1, err)
+		}
+		sawError = true
+		break
+	}
+	if !sawError {
+		t.Fatal("依赖表缺失时回滚本应失败，却一路回滚成功了")
 	}
 }
