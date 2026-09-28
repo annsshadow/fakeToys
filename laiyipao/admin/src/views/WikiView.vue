@@ -21,13 +21,62 @@ interface ConfigResp {
   reactions: Array<{ key: string; name: string; base_coef: number; attack_weight_pct: number; status_duration_ms: number; aoe_radius: number; dispel_shield: boolean; amplify_pct: number }>
   chapters: Array<{ id: number; name: string; start_level: number; end_level: number; terrain_kind: string; boss_enemy_id: number }>
   rating_weights: Record<string, number>
+  // ⚠️ 字段名与 Go 的 json tag 一律 snake_case（PascalCase 那些是笔误，
+  // 全链路一律走 snake_case）。
+  score_rules: {
+    per_damage_unit: number
+    on_kill_normal: number
+    on_kill_boss: number
+    star_target_ratio: number[]
+    score_full_at_sec: number
+  }
+  skill_rules: {
+    max_level: number
+    coef_permille: number
+    base_cost: number
+  }
   mastery_families: Array<{ family: string; name: string; nodes: Array<{ name: string; layer: number }> }>
+}
+
+/** 把控制时长渲染成人话（秒，保留 1 位小数）。 */
+function statusText(key: string, ms: number): string {
+  const kind =
+    key === 'flash_freeze' ? '冻结'
+    : key === 'superconduct' ? '减速'
+    : key === 'overheat' ? '眩晕'
+    : '控制'
+  return `${kind} ${(ms / 1000).toFixed(1)}s`
 }
 
 const loading = ref(false)
 const cfg = ref<ConfigResp | null>(null)
 const reactUsage = ref<Array<{ reaction: string; count: number }>>([])
 const activeTab = ref('basics')
+
+/** 星级比例行（三档），由 `score_rules.star_target_ratio` 驱动而非硬编码。 */
+const starRatioRows = computed(() => {
+  const r = cfg.value?.score_rules?.star_target_ratio ?? []
+  const labels = ['一星', '二星', '三星']
+  return r.map((v, i) => ({ label: labels[i] ?? `${i + 1} 星`, v: `${v}‰` }))
+})
+
+/**
+ * 满级一个技能的总金币。
+ *
+ * 费用是线性的（`base_cost × 当前等级`），所以
+ * `1 + 2 + … + (max_level-1)` = `max_level × (max_level-1) / 2`。
+ *
+ * ⚠️ 这个求和公式必须与服务端 `SkillRules.CostFrom` 一致。
+ * 漂移的表现是「页面显示 4500、实际扣 4600」——
+ * 而玩家只会在扣款那一刻发现，所以这里用服务端下发的
+ * `base_cost` / `max_level` 现算，而不是写死 4500。
+ */
+const fullUpgradeCost = computed(() => {
+  const r = cfg.value?.skill_rules
+  if (!r) return '—'
+  const n = r.max_level
+  return (r.base_cost * (n * (n - 1))) / 2
+})
 
 const ELEMENT_LABEL: Record<string, string> = {
   fire: '焰',
@@ -133,6 +182,28 @@ onMounted(load)
               </el-tag>
             </template>
           </el-table-column>
+          <el-table-column label="控制效果" width="150">
+            <template #default="{ row }">
+              <el-tag v-if="row.status_duration_ms > 0" size="small" type="success">
+                {{ statusText(row.key, row.status_duration_ms) }}
+              </el-tag>
+              <span v-else class="muted">—</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="受击增伤" width="110">
+            <template #default="{ row }">
+              <el-tag v-if="row.amplify_pct > 0" size="small" type="warning">
+                +{{ row.amplify_pct }}%
+              </el-tag>
+              <span v-else class="muted">—</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="驱散护盾" width="100">
+            <template #default="{ row }">
+              <el-tag v-if="row.dispel_shield" size="small" type="danger">可驱散</el-tag>
+              <span v-else class="muted">—</span>
+            </template>
+          </el-table-column>
           <el-table-column label="溅射半径" width="100">
             <template #default="{ row }">{{ row.aoe_radius || '单体' }}</template>
           </el-table-column>
@@ -224,6 +295,77 @@ onMounted(load)
       </el-tab-pane>
 
       <!-- 专精 -->
+      <el-tab-pane label="数值规则" name="rules">
+        <!--
+          这一页展示的是**分数与升级的规则本身**，不是内容数据。
+
+          为什么单独一页：运营最常问的两个问题是
+          「为什么我三星变两星」「升级为什么涨这么少」，
+          而答案（星级门槛、每级系数、费用曲线）都在这两个规则对象里。
+          之前它们没被展示，运营只能去翻代码。
+
+          ⚠️ 全部读 `/api/v1/config` 的 `score_rules` / `skill_rules`，
+          **不硬编码任何数字** —— 这样后台改规则，这一页自动跟着变，
+          不会成为第二份需要同步的副本。
+        -->
+        <el-alert
+          type="info"
+          show-icon
+          :closable="false"
+          title="这一页的数字全部来自 /api/v1/config，与结算逻辑同源"
+          style="margin-bottom: 14px"
+        />
+
+        <h4>分数与星级</h4>
+        <el-descriptions :column="2" border size="small">
+          <el-descriptions-item label="每多少伤害算 1 分">
+            {{ cfg?.score_rules?.per_damage_unit ?? '—' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="击杀普通敌人">
+            {{ cfg?.score_rules?.on_kill_normal ?? '—' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="击杀 BOSS">
+            {{ cfg?.score_rules?.on_kill_boss ?? '—' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="打满理论满分所需最短秒数">
+            {{ cfg?.score_rules?.score_full_at_sec ?? '—' }}
+          </el-descriptions-item>
+        </el-descriptions>
+        <p class="note">
+          星级门槛 = 该关理论满分 × 下列比例。理论满分由「所有敌人的
+          血量＋护盾换算成分」加「全部击杀分」得出，
+          所以<strong>打法不同不影响门槛，只有实际拿到的分影响</strong>。
+        </p>
+        <el-table :data="starRatioRows" size="small" border style="margin-bottom: 8px">
+          <el-table-column prop="label" label="星级" width="100" />
+          <el-table-column prop="v" label="占理论满分" width="140" />
+        </el-table>
+        <p class="note">
+          ⚠️ 结算时的得分速率裁剪锚点（<code>score_full_at_sec</code>）
+          远低于实际通关时长，因此<strong>它从不生效</strong> ——
+          「打得快」目前不进分数。
+        </p>
+
+        <h4>技能升级</h4>
+        <el-descriptions :column="3" border size="small">
+          <el-descriptions-item label="等级上限">
+            {{ cfg?.skill_rules?.max_level ?? '—' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="每级伤害加成">
+            {{ cfg?.skill_rules?.coef_permille ?? '—' }}‰
+          </el-descriptions-item>
+          <el-descriptions-item label="费用基数">
+            {{ cfg?.skill_rules?.base_cost ?? '—' }} 金币 × 当前等级
+          </el-descriptions-item>
+        </el-descriptions>
+        <p class="note">
+          升到满级共需 <strong>{{ fullUpgradeCost }}</strong> 金币。
+          等级系数刻意取得比攻击力封顶更低 ——
+          技能伤害与面板攻击走同一个乘区，抬得更高会压制元素反应，
+          而反应正是这个项目的核心创新。
+        </p>
+      </el-tab-pane>
+
       <el-tab-pane label="专精树" name="mastery">
         <p class="note">
           每层只能选 2 个节点（4 选 2），且第 2、3 层必须先点亮前一层。
