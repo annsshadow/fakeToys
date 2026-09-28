@@ -741,6 +741,7 @@ export const REGISTERED_BACKEND_ROUTES: string[] = [
   '/api/config/create',
   '/api/config/delete/{id}',
   '/api/config/is/file/manager',
+  '/api/config/system',
   '/api/config/system/config',
   '/api/config/update/{id}',
   '/api/console/cache/clear/{type}',
