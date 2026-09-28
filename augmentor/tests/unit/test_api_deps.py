@@ -127,3 +127,20 @@ class TestFileHelpers:
 
         result = asyncio.run(deps.run_in_thread(lambda: 40 + 2))
         assert result == 42
+
+
+class TestConfigDataRootsMissingFile:
+    def test_missing_config_file_skips_cache(self):
+        """config 文件 stat 不了时走降级键：默认根照常返回，且不落缓存（L102，A202）
+
+        `_config_data_roots` 的 docstring 口径：「文件不存在（stat 不了）时不缓存，
+        免得把降级路径一起冻住」——若这一支把 ``(path, None)`` 也写进缓存，配置文件
+        修好之前 mtime 永远不会跳变，降级结果会被冻住，缓存失效机制对它整体失明。
+        """
+        import api.deps as deps
+
+        deps._config_roots_cache.clear()
+        missing = Path("l102-definitely-not-present.yaml")
+        roots = deps._config_data_roots(missing)
+        assert len(roots) == 1 and roots[0].name == "data"
+        assert deps._config_roots_cache.get((str(missing), None)) is None
