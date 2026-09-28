@@ -735,3 +735,56 @@ class TestServerWaitCeilingKnob:
 
         param = inspect.signature(with_retries).parameters["max_retry_wait"]
         assert param.default == MAX_RETRY_AFTER
+
+
+class TestRetryAfterTolerancePaths:
+    """Retry-After 解析与状态分类的守卫支（L101，A201）
+
+    parse_retry_after 的 HTTP-date 分支里 parsedate_to_datetime 返回 None、
+    retry_after_seconds 的 headers.get 抛 TypeError/AttributeError、classify_error
+    对「不在可重试集合的 5xx」与「1xx/3xx」两支 —— 都是真实 HTTP 环境会出现的
+    形状，此前零用例踩过（L100 终态 coverage 缺数 retry.py 304 / 327-328 / 363-367）。
+    """
+
+    def test_retry_after_http_date_parser_returns_none(self, monkeypatch):
+        """HTTP-date 解析器返回 None 时必须回落为「无等待」而不是炸出去"""
+        import email.utils
+
+        from augmentor import parse_retry_after
+
+        monkeypatch.setattr(email.utils, "parsedate_to_datetime", lambda text: None)
+        assert parse_retry_after("Wed, 21 Oct 2026 07:28:00 GMT") is None
+
+    def test_retry_after_headers_get_raises(self):
+        """headers 对象存在但 .get 不可用时返回 None（守卫支 TypeError 一侧）"""
+        from types import SimpleNamespace
+
+        from augmentor import retry_after_seconds
+
+        class RaisingHeaders:
+            def get(self, name):
+                raise TypeError("headers 不可用")
+
+        exc = RuntimeError("boom")
+        exc.response = SimpleNamespace(headers=RaisingHeaders())
+        assert retry_after_seconds(exc) is None
+
+    def test_classify_error_5xx_outside_retryable_set_retries(self):
+        """5xx 即使不在可重试集合也归为可重试（等服务端恢复），等待交回退避计算"""
+        from types import SimpleNamespace
+
+        from augmentor import classify_error
+
+        exc = RuntimeError("boom")
+        exc.response = SimpleNamespace(status_code=599)
+        assert classify_error(exc) == (True, None)
+
+    def test_classify_error_3xx_does_not_retry(self):
+        """1xx/3xx 不由 raise_for_status 触发，保守起见不重试"""
+        from types import SimpleNamespace
+
+        from augmentor import classify_error
+
+        exc = RuntimeError("boom")
+        exc.response = SimpleNamespace(status_code=302)
+        assert classify_error(exc) == (False, None)
