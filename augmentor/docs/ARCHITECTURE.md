@@ -1496,12 +1496,14 @@ A75 行末预告的「等待预算」一轮落地，做足 A73 + A75 两件事�
 > 五个后端的**推理**请求现在全部只读一根新旋钮 `augmentation.request_timeout`（区间 1–600、默认 120，
 > 即改前那一组里的最大值），各模型条目可用 `models.<名字>.request_timeout` 覆盖；另一条轴上拍的是
 > 「ernie 换 token 那一支**继续用**自己的 10 s 常数、刻意不吃旋钮」。同一批行号引用也已漂移：
-> 下面第二段说的两键在出厂模板里的位置自 L71 起是 `config.yaml:103` 与 `:109`（新旋钮 `request_timeout`
-> 写在 `:125`），而「本文档与账本按 L47 的规矩在最后一次编辑之后量」那条纪律没变。
+> 下面第二段说的两键在出厂模板里就是 `config.yaml` 的 `max_retry_wait` 与 `retry_jitter` 两键
+> （新旋钮 `request_timeout` 紧随其后）。这里刻意只给键名、不给行号 —— 同一批位置自 L49 起已搬过
+> 两轮（`88` / `94` → `103` / `109` / `125` → 现量 106 / 112 / 128），而 YAML 每加一条注释就整体
+> 下移，键名才是不会搬家的锚点。「本文档与账本按 L47 的规矩在最后一次编辑之后量」那条纪律没变。
 
 **两个新旋钮**都进 `AugmentationConfig`（**不是** `ModelConfig`，A64 行记错过一次）：`max_retry_wait: float = 300.0`
 （`augmentor/config.py` 的 `AugmentationConfig.max_retry_wait`）与 `retry_jitter: float = 0.0`（同节的 `retry_jitter`），默认值就是 L47 / L48 定下的那两个常数 ⇒ 已发布配置
-的行为一字不变；`config.yaml:88` / `:94` 把两键写出显式值并各带注释。接线面八处，一处不落（避免 A54 型
+的行为一字不变；`config.yaml` 的 `max_retry_wait` / `retry_jitter` 两键写出显式值并各带注释。接线面八处，一处不落（避免 A54 型
 「契约面有旋钮、实现面不消费」）：`augmentor/config.py` 字段 + `config_sections` 映射表（`:314`；**该表已于 L77 删掉**，
 现在那张清单只剩「节名 → 类」两元组，默认值的唯一权威是 dataclass 字段本身，见账本 L77 / A123）→ `config_validator`
 的 KNOWN_FIELDS 规格（0-300 / 0-1）→ `pipeline._init_components` 两道判据（排在降级 `try/except` **之外**，
