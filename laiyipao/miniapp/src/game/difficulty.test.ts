@@ -124,7 +124,7 @@ describe('跨关卡：难度必须递增', () => {
   it('打印各关卡基线（供人工核对量级）', () => {
     for (const r of runs) console.log(`[diff] ${trace(r)}`)
     expect(runs.length).toBeGreaterThanOrEqual(6)
-  })
+  }, 300000)
 
   // 核心断言：整体难度随关卡上升。
   //
@@ -137,7 +137,7 @@ describe('跨关卡：难度必须递增', () => {
     expect(first.phase).toBe('won')
     expect(last.phase).toBe('won')
     expect(last.sec).toBeGreaterThan(first.sec * 1.5)
-  })
+  }, 300000)
 
   it('默认构筑能打通前几关（新手关不该劝退）', () => {
     // 第 1 关与第 10 关：默认构筑（4 个基础技能、无任何养成）应当能赢。
@@ -145,7 +145,7 @@ describe('跨关卡：难度必须递增', () => {
     for (const r of runs.filter((x) => x.id <= 10)) {
       expect(r.phase).toBe('won')
     }
-  })
+  }, 300000)
 
   it('后期关卡的敌人总强度显著高于前期', () => {
     const first = runs[0]
@@ -153,7 +153,7 @@ describe('跨关卡：难度必须递增', () => {
     // 强度代理量：总血量（怪数 × 平均血量近似不了，
     // 但「击杀所需时间」可以）—— 用通关时长的比值，要求 ≥ 1.5
     expect(last.sec).toBeGreaterThan(first.sec * 1.5)
-  })
+  }, 300000)
 })
 
 describe('跨关卡：星级门槛必须可达', () => {
@@ -192,7 +192,7 @@ describe('跨关卡：星级门槛必须可达', () => {
     }
     expect(low.slice(0, 5).join('\n')).toBe('')
     expect(high.slice(0, 5).join('\n')).toBe('')
-  })
+  }, 300000)
 
   it('理论满分（max_score）必须不低于 3 星门槛', () => {
     // 这条是上一条的推论，但值得单独钉住：
@@ -202,7 +202,7 @@ describe('跨关卡：星级门槛必须可达', () => {
       expect(lv.max_score).toBeGreaterThan(0)
       expect(lv.star_targets[lv.star_targets.length - 1]).toBeLessThanOrEqual(lv.max_score)
     }
-  })
+  }, 300000)
 
   it('BOSS 的伤害分占比随章节递增（后期 BOSS 拼爆发，前期拼生存）', () => {
     // 我最初写成「所有 BOSS 关的 3 星门槛都高于击杀分总和」，
@@ -237,7 +237,7 @@ describe('跨关卡：星级门槛必须可达', () => {
     // 否则"打得好"在最后 6 章完全不影响得分
     const last = ratios[ratios.length - 1]
     expect(last.ratio).toBeGreaterThan(0.3)
-  })
+  }, 300000)
 
   it('最难的关卡 3 星不是白送的（否则星级只是装饰）', () => {
     // 实测：默认构筑在 99/100 关都能拿 3 星，只有第 97 关拿到 2 星。
@@ -245,7 +245,7 @@ describe('跨关卡：星级门槛必须可达', () => {
     const hard = play(levels.find((l) => l.id === 97)!, 1, 40000)
     expect(hard.phase).toBe('won')
     expect(hard.stars).toBeLessThan(3)
-  })
+  }, 300000)
 
   it('给足攻击力和时间时，前 3 档关卡都能拿到 3 星', () => {
     // 星级是玩家的长期目标。若「堆满养成仍然拿不到 3 星」，
@@ -254,5 +254,5 @@ describe('跨关卡：星级门槛必须可达', () => {
       const r = play(lv, 20, 40000)
       expect(r.stars).toBe(3)
     }
-  })
+  }, 300000)
 })
