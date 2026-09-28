@@ -10,6 +10,15 @@ use tower::ServiceExt;
 
 const BASE: &str = "/api/organization/assemble/control";
 
+fn u2_session() -> shared::session::Session {
+    shared::session::Session {
+        token: "u2-org-test-token".to_string(),
+        person_unique: "tester@u2@P".to_string(),
+        created_at: chrono::Utc::now().naive_utc(),
+        expires_at: (chrono::Utc::now() + chrono::Duration::hours(1)).naive_utc(),
+    }
+}
+
 fn build_test_pool() -> deadpool_postgres::Pool {
     deadpool_postgres::Pool::builder(deadpool_postgres::Manager::new(
         deadpool_postgres::tokio_postgres::Config::new(),
@@ -659,4 +668,115 @@ async fn role_duty_permission_attribute_card_input_routes_registered() {
         .await,
         StatusCode::INTERNAL_SERVER_ERROR
     );
+}
+
+// ═══ KNOWN_BACKEND_GAPS 最后两条（/api/users/list、/api/departments/tree）实装回归 ═══
+// 设计器数据源示例默认值所指端点；真 DB 往返（mock_pool 无表，无 DB 时跳过）。
+
+#[tokio::test]
+async fn users_list_returns_seeded_person() {
+    if !shared::testing::is_db_available().await {
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    let client = pool.get().await.unwrap();
+    client
+        .execute(
+            "INSERT INTO x_org_person (id, name, mobile, email) VALUES ($1, $2, $3, $4)",
+            &[
+                &"u2-users-list-p1",
+                &"张三",
+                &"13800000000",
+                &"zhang@u2.test",
+            ],
+        )
+        .await
+        .unwrap();
+    let response = crate::router(pool.clone())
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/api/users/list")
+                .extension(u2_session())
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(json["type"], "success");
+    let items = json["data"].as_array().expect("data is array");
+    assert!(
+        items
+            .iter()
+            .any(|it| it["id"] == "u2-users-list-p1" && it["name"] == "张三"),
+        "seeded person must be listed"
+    );
+    client
+        .execute(
+            "DELETE FROM x_org_person WHERE id = $1",
+            &[&"u2-users-list-p1"],
+        )
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn departments_tree_nests_child_under_parent() {
+    if !shared::testing::is_db_available().await {
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    let client = pool.get().await.unwrap();
+    client
+        .execute(
+            "INSERT INTO x_org_unit (id, name, parent_id, level) VALUES ($1, $2, NULL, 0)",
+            &[&"u2-unit-root", &"总公司"],
+        )
+        .await
+        .unwrap();
+    client
+        .execute(
+            "INSERT INTO x_org_unit (id, name, parent_id, level) VALUES ($1, $2, $3, 1)",
+            &[&"u2-unit-child", &"研发部", &"u2-unit-root"],
+        )
+        .await
+        .unwrap();
+    let response = crate::router(pool.clone())
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/api/departments/tree")
+                .extension(u2_session())
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    let roots = json["data"].as_array().expect("data is tree array");
+    let root = roots
+        .iter()
+        .find(|n| n["id"] == "u2-unit-root")
+        .expect("root unit present");
+    let children = root["children"].as_array().expect("children array");
+    assert!(
+        children.iter().any(|c| c["id"] == "u2-unit-child"),
+        "child unit must nest under its parent"
+    );
+    client
+        .execute(
+            "DELETE FROM x_org_unit WHERE id IN ($1, $2)",
+            &[&"u2-unit-root", &"u2-unit-child"],
+        )
+        .await
+        .unwrap();
 }
