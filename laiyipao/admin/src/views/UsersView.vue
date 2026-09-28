@@ -142,6 +142,21 @@ function fmtTime(s: string): string {
 }
 
 onMounted(load)
+
+/**
+ * `el-table` 插槽给出的行类型是 element-plus 内部的 `DefaultRow`，
+ * 它不能直接传给形参是 `AdminUser` 的函数（TS2345），所以在调用点集中断言一次。
+ *
+ * cast 编译后被擦除，**运行时行为与之前逐字节相同**。
+ *
+ * ⚠️ 值得记一笔的是：这些调用此前**根本没有被类型检查**。
+ * `components.d.ts` 不存在时 `el-table` 是未知组件、插槽行是 `any`，
+ * 于是 22 处调用全部静默通过 —— 也就是说，
+ * 「参数名拼错」或「形参类型改窄」这类错误在过去是**查不出来**的。
+ * 断言让它们重新受检；但它断言的是**形状**，
+ * 字段名本身拼错仍要靠运行时的 `undefined` 暴露。
+ */
+const asRow = (r: unknown) => r as AdminUser
 </script>
 
 <template>
@@ -174,12 +189,12 @@ onMounted(load)
           <template #default="{ row }">
             {{ row.nickname || '（未命名）' }}
             <el-tag v-if="row.is_guest" size="small" type="info" effect="plain">游客</el-tag>
-            <el-tag v-if="suspicious(row)" size="small" type="warning" effect="dark">需核查</el-tag>
+            <el-tag v-if="suspicious(asRow(row))" size="small" type="warning" effect="dark">需核查</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="状态" width="76">
           <template #default="{ row }">
-            <el-tag :type="statusOf(row).type" size="small">{{ statusOf(row).text }}</el-tag>
+            <el-tag :type="statusOf(asRow(row)).type" size="small">{{ statusOf(asRow(row)).text }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="max_stage" label="最高关" width="86" />
@@ -193,8 +208,8 @@ onMounted(load)
             把它们都当成「干净」，最不可信的用户反而看起来最干净。
           -->
           <template #default="{ row }">
-            <el-tag :type="verifyTag(row).type" size="small" effect="plain">
-              {{ verifyTag(row).text }}
+            <el-tag :type="verifyTag(asRow(row)).type" size="small" effect="plain">
+              {{ verifyTag(asRow(row)).text }}
             </el-tag>
           </template>
         </el-table-column>
@@ -203,12 +218,12 @@ onMounted(load)
         </el-table-column>
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" text @click="onGrant(row)">发资源</el-button>
+            <el-button size="small" text @click="onGrant(asRow(row))">发资源</el-button>
             <el-button
               size="small"
               text
               :type="row.status === 1 ? 'danger' : 'success'"
-              @click="row.status === 1 ? onBan(row) : onUnban(row)"
+              @click="row.status === 1 ? onBan(asRow(row)) : onUnban(asRow(row))"
             >
               {{ row.status === 1 ? '封禁' : '解封' }}
             </el-button>
