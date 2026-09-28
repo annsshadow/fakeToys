@@ -189,7 +189,7 @@
           <div v-if="mode==='import'" class="editor-mode">
             <div class="em-header"><span class="em-title">导入配置</span></div>
             <div class="import-config">
-              <div class="ic-row"><label>源文件</label><input type="file" class="ic-file" accept=".csv,.xlsx,.xls" /></div>
+              <div class="ic-row"><label>源文件</label><input ref="importFileEl" type="file" class="ic-file" accept=".csv,.tsv,.txt" /></div>
               <div class="ic-row"><label>分隔符</label>
                 <select v-model="importConfig.delimiter" class="ic-select">
                   <option value=",">逗号(,)</option>
@@ -402,6 +402,8 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+import { parseCsv } from '../utils/csv'
+import { confirmMsg, toast } from '../utils/toast'
 
 interface QueryDef {
   id: string
@@ -806,8 +808,48 @@ function refresh() {
 function applyViewConfig() {
   /* apply config to current query */
 }
-function importData() {
-  toast.warning('导入功能开发中')
+const importFileEl = ref<HTMLInputElement | null>(null)
+const IMPORT_ROW_LIMIT = 500
+async function importData() {
+  const file = importFileEl.value?.files?.[0]
+  if (!file) {
+    toast.warning('请先选择要导入的 CSV/TSV 文件')
+    return
+  }
+  if (/\.(xlsx|xls)$/i.test(file.name)) {
+    toast.warning('请先将 Excel 另存为 CSV/TSV 再导入（当前支持文本格式）')
+    return
+  }
+  const flag = prompt('要导入的数据表 flag:', '') || ''
+  if (!flag) return
+  const text = await file.text()
+  const { headers, rows } = parseCsv(text, importConfig.value.delimiter)
+  if (!headers.length || !rows.length) {
+    toast.warning('未解析到有效数据行')
+    return
+  }
+  const picked = rows.slice(0, IMPORT_ROW_LIMIT)
+  if (!(await confirmMsg(`将向表 ${flag} 导入 ${picked.length} 行，确定？`))) return
+  let ok = 0
+  let fail = 0
+  const firstErrors: string[] = []
+  for (let i = 0; i < picked.length; i++) {
+    try {
+      await api.post(
+        `/api/query/assemble/designer/table/${encodeURIComponent(flag)}/row`,
+        Object.fromEntries(headers.map((h, j) => [h, picked[i]?.[j] ?? ''])),
+      )
+      ok++
+    } catch (e: any) {
+      fail++
+      if (firstErrors.length < 3) firstErrors.push(e?.message ?? '未知错误')
+    }
+    if ((i + 1) % 100 === 0) toast.info(`导入进度 ${i + 1}/${picked.length}`)
+  }
+  const truncated = rows.length - picked.length
+  const tail = truncated > 0 ? `（超出上限截断 ${truncated} 行）` : ''
+  if (fail) toast.error(`导入完成：成功 ${ok} / 失败 ${fail}${tail}；首个错误：${firstErrors[0]}`)
+  else toast.success(`导入完成：成功 ${ok} 行${tail}`)
 }
 function exportResults() {
   if (!resultData.value.length) return
