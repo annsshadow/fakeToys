@@ -192,12 +192,24 @@ export interface AdminBattle {
   heat_max: number
   replay_hash: string
   created_at: string
+  /**
+   * 本场战报的验真状态。**两个字段必须一起看**：
+   * `0 / 0` = 从没被验真过（**未知**，不是「干净」）。
+   *
+   * 上一轮 `fetchUsers` 那边已有同样两个字段，语义完全一致。
+   */
+  verify_checked: number
+  verify_mismatched: number
 }
 
-export function fetchBattles(params: { user_id?: number; level_id?: number; limit?: number } = {}) {
+export function fetchBattles(
+  params: { user_id?: number; level_id?: number; limit?: number; only_mismatched?: boolean } = {},
+) {
   const q = new URLSearchParams()
   if (params.user_id) q.set('user_id', String(params.user_id))
   if (params.level_id) q.set('level_id', String(params.level_id))
+  // 只看验真不匹配的战报：从「这个用户有 3 次不匹配」直接跳到「是哪 3 场」
+  if (params.only_mismatched) q.set('only_mismatched', '1')
   q.set('limit', String(params.limit ?? 50))
   return api.get<{ items: AdminBattle[]; total: number }>(`/admin/battles?${q}`)
 }

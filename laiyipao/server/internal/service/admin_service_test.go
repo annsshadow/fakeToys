@@ -367,22 +367,22 @@ func TestAdminListBattles(t *testing.T) {
 		t.Fatalf("结算失败：%v", err)
 	}
 
-	_, total, err := ts.AdminListBattles(ctx, uid, 1, 10)
+	_, total, err := ts.AdminListBattles(ctx, uid, 1, 10, false)
 	if err != nil || total < 1 {
 		t.Fatalf("按用户+关卡过滤应命中：%d, %v", total, err)
 	}
 	// 非匹配过滤 → 0
-	_, total, err = ts.AdminListBattles(ctx, uid, 99, 10)
+	_, total, err = ts.AdminListBattles(ctx, uid, 99, 10, false)
 	if err != nil || total != 0 {
 		t.Errorf("level_id=99 不应命中：%d, %v", total, err)
 	}
 	// limit 夹紧
-	if _, _, err := ts.AdminListBattles(ctx, 0, 0, 0); err != nil {
+	if _, _, err := ts.AdminListBattles(ctx, 0, 0, 0, false); err != nil {
 		t.Errorf("limit=0 应回落默认：%v", err)
 	}
 
 	broken := openBrokenService(t)
-	if _, _, err := broken.AdminListBattles(ctx, 0, 0, 10); err == nil {
+	if _, _, err := broken.AdminListBattles(ctx, 0, 0, 10, false); err == nil {
 		t.Error("数据库故障时应报错")
 	}
 }

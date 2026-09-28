@@ -407,26 +407,74 @@ type AdminBattleView struct {
 	HeatMax     int       `json:"heat_max"`
 	ReplayHash  string    `json:"replay_hash"`
 	CreatedAt   time.Time `json:"created_at"`
+
+	// 本场战报的验真状态。
+	//
+	// 上一轮把「每用户」的验真统计接进了 `/admin/users`，运营于是知道**谁**可疑；
+	// 但「**哪一场**对局不匹配」仍然答不出来 —— 还得手工按 user_id 去查战报、
+	// 再和 `replay_verifications` 交叉比对。这里补上最后一段。
+	//
+	// 同样是**两个字段**：没被验真过（0/0）不等于「验过且一致」。
+	VerifyChecked    int64 `json:"verify_checked"`
+	VerifyMismatched int64 `json:"verify_mismatched"`
 }
 
 // AdminListBattles 分页查询战报。
-func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID int, limit int) ([]AdminBattleView, int64, error) {
+//
+// onlyMismatched 为真时**只**返回「被验真过且有不匹配记录」的战报，
+// 用来从「这个用户有 3 次不匹配」直接跳到「是哪 3 场」。
+func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID int, limit int, onlyMismatched bool) ([]AdminBattleView, int64, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
+
+	// 验真统计同样走**子查询预聚合**：一场战斗可以被验真多次，
+	// 直接 JOIN 会放大行数，让分页切在错误粒度上。
+	const vsub = `LEFT JOIN (
+		SELECT battle_id,
+		       COUNT(*) AS checked,
+		       COUNT(*) FILTER (WHERE NOT matched) AS mismatched
+		FROM replay_verifications GROUP BY battle_id
+	) v ON v.battle_id = br.id`
+
+	// 过滤条件写成 `COALESCE(v.mismatched, 0) > 0` 而不是 `v.mismatched > 0`。
+	//
+	// ⚠️ 这里我一开始写了「后者会让未验真的行被静默丢弃」—— **那句话是错的**，
+	// 是我的第 16 次「前提不成立」。实测：把 COALESCE 去掉，三个测试**照样全绿**。
+	//
+	// 原因是 `> 0` 这种比较下两种写法**行为完全相同**：
+	// LEFT JOIN 未匹配时 v.mismatched 是 NULL，`NULL > 0` 求值为 NULL（不是 true），
+	// 于是那行被排除；而 COALESCE 版本得 `0 > 0` = false，也被排除。
+	// 「未验真的战报不该出现在「只看不匹配」的列表里」是**预期行为**，
+	// 不是 COALESCE 修掉的 bug。
+	//
+	// 那为什么还保留 COALESCE？**为了可读性**：它把「没有验真记录 ⇒ 计数为 0」
+	// 这件事写在脸上，而不是依赖「NULL 会顺着比较运算传播」这条不直观的规则。
+	// 真正会区分两者的写法是 `IS NOT TRUE` 那种（NULL 与 false 分开对待），
+	// 本查询不需要。
+	//
+	// 保留这条注释而不是删掉：下一个人很可能也会认为这里有坑，
+	// 然后为了「修」它而改动别的地方。
+	where := `($1 = 0 OR br.user_id = $1) AND ($2 = 0 OR br.level_id = $2)`
+	if onlyMismatched {
+		where += ` AND COALESCE(v.mismatched, 0) > 0`
+	}
+
 	var total int64
 	if err := s.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM battle_records
-		 WHERE ($1 = 0 OR user_id = $1) AND ($2 = 0 OR level_id = $2)`,
+		`SELECT COUNT(*) FROM battle_records br `+vsub+` WHERE `+where,
 		userID, levelID).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("count battles: %w", err)
 	}
 	rows, err := s.pool.Query(ctx, `
 		SELECT br.id, br.user_id, COALESCE(u.nickname,''), br.level_id, br.result, br.stars, br.score,
 		       br.kills, br.leaked, br.wave_reached, br.duration_ms, br.reactions, br.heat_max,
-		       br.replay_hash, br.created_at
-		FROM battle_records br LEFT JOIN users u ON u.id = br.user_id
-		WHERE ($1 = 0 OR br.user_id = $1) AND ($2 = 0 OR br.level_id = $2)
+		       br.replay_hash, br.created_at,
+		       COALESCE(v.checked, 0), COALESCE(v.mismatched, 0)
+		FROM battle_records br
+		LEFT JOIN users u ON u.id = br.user_id
+		`+vsub+`
+		WHERE `+where+`
 		ORDER BY br.id DESC LIMIT $3`, userID, levelID, limit)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list battles: %w", err)
@@ -437,7 +485,8 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 		var v AdminBattleView
 		if err := rows.Scan(&v.ID, &v.UserID, &v.Nickname, &v.LevelID, &v.Result, &v.Stars,
 			&v.Score, &v.Kills, &v.Leaked, &v.WaveReached, &v.DurationMs, &v.Reactions,
-			&v.HeatMax, &v.ReplayHash, &v.CreatedAt); err != nil {
+			&v.HeatMax, &v.ReplayHash, &v.CreatedAt,
+			&v.VerifyChecked, &v.VerifyMismatched); err != nil {
 			return nil, 0, err
 		}
 		out = append(out, v)

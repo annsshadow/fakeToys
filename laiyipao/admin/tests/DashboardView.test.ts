@@ -11,6 +11,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import ElementPlus from 'element-plus'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DashboardResp } from '@/api'
+import { __resetReactionLabelCache } from '@/reactions'
 
 const fetchDashboard = vi.hoisted(() => vi.fn())
 // 反应名来自服务端（`GET /admin/reactions` → `domain.AllReactionSpecs()`），
@@ -70,6 +71,9 @@ function reactionSpec(key: string, name: string) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  // ⚠️ 必须清 `@/reactions` 的模块级缓存：`vi.clearAllMocks()` 清不掉模块里
+  // 已缓存的 Promise，不清的话第一个用例取到的反应名会泄漏到后面所有用例。
+  __resetReactionLabelCache()
   echartsInit.mockReturnValue(chartStub)
   fetchDashboard.mockResolvedValue(dashboardFixture())
   fetchReactions.mockResolvedValue([
