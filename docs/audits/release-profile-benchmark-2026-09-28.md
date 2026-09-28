@@ -85,6 +85,27 @@ bash scripts/bench_endpoint_latency.sh \
   端点，LTO 的 CPU 内联收益本就有限——若要更强证据可多轮取中位或用 `hyperfine`/`wrk`
   提升并发与样本量。
 
+### 复测（多轮 · 多端点，取各轮中位；N=300 × 5 轮）
+
+`scripts/bench_endpoint_latency_multi.sh`（`hyperfine`/`wrk`/`ab` 本机均缺，故 curl 实现），
+两档二进制均从当前 HEAD 重建。取每档每端点「5 轮 p50/p95 的中位数」压噪声：
+
+| 端点 | baseline p50 / p95 | optimized p50 / p95 |
+|---|---:|---:|
+| `/api/authentication/captcha` | 1.73 / 2.00 ms | 1.76 / 2.14 ms |
+| `/api/authentication/captcha/width/200/height/80` | 2.20 / 2.58 ms | 2.23 / 2.54 ms |
+| `/openapi.json`（序列化大 OpenAPI 文档，CPU 较重） | 47.14 / 61.13 ms | 47.54 / 61.21 ms |
+
+**修正结论（重要）**：多轮复测下，两档在三个端点上的 p50/p95 差异 **均 < 2% 且方向不一致**
+（optimized 在 captcha p50 反而略高、在 sized-captcha p95 略低），**落在运行间噪声内、无统计显著性**。
+即上节单轮所见的 mean −7.1% / p99 −13.9% 主要是**单轮噪声**，并非可复现的 LTO 运行时收益。
+成因合理：这些端点由 axum 框架开销 + I/O（及 openapi 的序列化）主导，thin-LTO 的跨 crate 内联
+收益低于测量噪声底。
+
+**因此**：`[profile.release]` 的**确定性收益在二进制体积**（.exe −7.1%、.pdb −56.9%，见上），
+**接口延迟层面无可测量差异**——如需证明 LTO 的 CPU 收益应改测纯 CPU 密集路径的微基准
+（criterion），而非 HTTP 端点延迟。诚实起见不把 LTO 宣称为端点提速。
+
 ## 运行时基准复现步骤（其他环境）
 
 
