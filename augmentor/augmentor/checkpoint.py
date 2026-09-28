@@ -41,15 +41,15 @@ class CheckpointManager:
         
         Args:
             checkpoint_dir: 断点存储目录；**相对路径在构造这一刻就定基**（按构造时的当前目录
-                解析成绝对路径）。不这么做的话，落点会跟着写盘时的当前目录漂移：构造时在本目录
-                建好 `checkpoints/`，之后任何一次 `os.chdir` 都会让下一个断点写到别的目录去，
-                于是同一个任务的两半进度分家。绝对路径原样保留，不做规范化。
+                解析成绝对路径），但**不建目录** —— 建目录推迟到第一次真正写断点/增量时。
+                不定基的话落点会跟着写盘时的当前目录漂移：这里建好目录、之后任何一次
+                `os.chdir` 都会让下一个断点写到别的目录去，于是同一个任务的两半进度分家。
+                绝对路径原样保留，不做规范化。
             auto_save_interval: 自动保存间隔（每 N 条）
         """
         self.checkpoint_dir = Path(checkpoint_dir)
         if not self.checkpoint_dir.is_absolute():
             self.checkpoint_dir = self.checkpoint_dir.resolve()
-        self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         self.auto_save_interval = auto_save_interval
         
         self._current_checkpoint: Optional[CheckpointData] = None
@@ -249,6 +249,7 @@ class CheckpointManager:
         }
         
         try:
+            delta_path.parent.mkdir(parents=True, exist_ok=True)
             with open(delta_path, 'a', encoding='utf-8') as f:
                 f.write(json.dumps(record, ensure_ascii=False, separators=(',', ':')) + "\n")
             
