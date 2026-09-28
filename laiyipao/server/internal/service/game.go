@@ -171,9 +171,35 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 		return SettleResp{}, fmt.Errorf("settle rejected: %w", err)
 	}
 
-	elementsRaw, _ := marshalJSON(in.ElementsUsed)
-	reactionsRaw, _ := marshalJSON(in.ReactionsUsed)
-	terrainRaw, _ := marshalJSON(in.TerrainUsed)
+	// ⚠️ 三个上报集合**必须归一化 nil**，否则会写成 JSON `null`。
+	//
+	// `json.Marshal(map[string]int(nil))` 返回 `[]byte("null")`，
+	// 存进 jsonb 列就是 jsonb `null`（注意不是 SQL NULL）。
+	//
+	// 后果有两条，都是实测过的：
+	//
+	//  1. **统计静默漏行**。看板的反应分布查询写的是
+	//     `WHERE reactions_used <> '{}'::jsonb`，而
+	//     `null <> '{}'` 在 SQL 里求值为 NULL（不是 true），
+	//     所以这些行被排除。实测 58 行里有 8 行（13.8%）带 jsonb null。
+	//
+	//     ⚠️ **不要**拿「少统计了多少反应次数」来量化这个 bug。
+	//     `reactions`（标量）与 `sum(reactions_used)`（map 之和）在引擎里
+	//     是相邻两行自增（engine.ts 的 reactionsCount++ / reactionsUsed[k]++），
+	//     本应恒等；但现有 58 行**全是 e2e 手搓的 payload**，两者互相矛盾
+	//     （例：标量 90 / map 之和 53，全表 0 行相等）。
+	//     拿它们相减得到的「漏了多少」是拿矛盾数据算出来的，没有意义。
+	//     —— 这是我在本轮犯的第 13 次「前提不成立」。
+	//  2. **任何 JSONB 函数调用会直接报错**。
+	//     `jsonb_each_text(jsonb 'null')` 抛
+	//     「不能在非对象上调用 jsonb_each_text」——
+	//     将来谁写一条更合理的聚合 SQL，会当场崩掉。
+	//
+	// 触发条件不需要恶意：客户端省字段、第三方工具、老版本客户端
+	// 都会走到这里。e2e 的「谎报星级」用例就是故意省掉这三个字段的。
+	elementsRaw, _ := marshalJSON(orEmptyMap(in.ElementsUsed))
+	reactionsRaw, _ := marshalJSON(orEmptyMap(in.ReactionsUsed))
+	terrainRaw, _ := marshalJSON(orEmptySlice(in.TerrainUsed))
 
 	// 选牌决策序列：I-6 重放闭环的最后一环。
 	// 逗号分隔的紧凑文本，-1 表示该波跳过。

@@ -21,7 +21,9 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/laiyipao/server/migrations"
 
 	"github.com/laiyipao/server/internal/config"
 )
@@ -173,20 +175,37 @@ func TestMigrateUpAndDownOnScratchDB(t *testing.T) {
 	if err := db.Pool.QueryRow(ctx, `SELECT MAX(version_id) FROM goose_db_version`).Scan(&version); err != nil {
 		t.Fatalf("读 goose 版本失败：%v", err)
 	}
-	if version != 9 {
-		t.Errorf("迁移后 goose 版本应停在 9，实际 %d", version)
+	// ⚠️ 这里**不能**硬编码版本号。
+	//
+	// 原来写的是 `version != 9` —— 于是每加一条迁移，这个测试就红一次，
+	// 而红的原因与「迁移是否可用」毫无关系。
+	// 硬编码版本号的测试守的是「迁移文件恰好有 9 个」，
+	// 不是「迁移能把库升到最新」。
+	//
+	// 改成从**嵌入的迁移集**数出来：真正的语义是
+	// 「goose 记录的版本 = 迁移文件的数量」。
+	if want := migrationCount(t); version != int64(want) {
+		t.Errorf("迁移后 goose 版本应等于迁移文件数 %d，实际 %d", want, version)
 	}
 
-	// 回滚一步：00009 给 redeem_codes.id 加 IDENTITY，回滚后必须还原为普通列
+	// 回滚一步：版本必须**恰好减一**。
+	//
+	// ⚠️ 原来这里断言的是「00009 的 down 把 redeem_codes.id 的 IDENTITY 去掉」。
+	// 那条断言只在「00009 恰好是最后一条迁移」时成立 ——
+	// 我加了 00010 之后它就在测错东西了（回滚的是 00010，不是 00009）。
+	//
+	// 换成与编号无关的性质：回滚一步 = 版本 -1。
+	// 具体某条迁移的 down 效果，由那条迁移自己的测试负责。
 	if err := db.MigrateDown(ctx); err != nil {
 		t.Fatalf("MigrateDown 失败：%v", err)
 	}
-	var n int
-	if err := db.Pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM pg_attribute
-		 WHERE attrelid = 'redeem_codes'::regclass AND attname = 'id' AND attidentity <> ''`).
-		Scan(&n); err != nil || n != 0 {
-		t.Errorf("回滚一步后 redeem_codes.id 不应是 IDENTITY 列（count=%d err=%v）", n, err)
+	var after int64
+	if err := db.Pool.QueryRow(ctx, `SELECT MAX(version_id) FROM goose_db_version`).
+		Scan(&after); err != nil {
+		t.Fatalf("读回滚后 goose 版本失败：%v", err)
+	}
+	if after != version-1 {
+		t.Errorf("回滚一步后版本应从 %d 变成 %d", version, after)
 	}
 }
 
@@ -273,4 +292,26 @@ func TestCloseNilSafety(t *testing.T) {
 	var nilDB *DB
 	nilDB.Close() // 不应 panic
 	(&DB{}).Close()
+}
+
+// migrationCount 数嵌入的迁移文件数量。
+//
+// 它的存在是为了让「goose 版本」断言不依赖硬编码编号 ——
+// 每加一条迁移就要改一次测试的那种断言守不到任何东西。
+func migrationCount(t *testing.T) int {
+	t.Helper()
+	entries, err := migrations.FS.ReadDir(".")
+	if err != nil {
+		t.Fatalf("读迁移目录失败：%v", err)
+	}
+	n := 0
+	for _, e := range entries {
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".sql") {
+			n++
+		}
+	}
+	if n == 0 {
+		t.Fatal("迁移文件数为 0 —— 嵌入是否失效？")
+	}
+	return n
 }
