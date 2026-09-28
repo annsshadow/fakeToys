@@ -29,6 +29,14 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | 2 | FEAT（后端+desktop） | FEAT | **系统参数读/写从 501 契约转真实现**（commit `6b5f98707`）：`config_system_config` 实装 x_system_config 未删行全量读（legacy_success 信封）；`u2_config_save_system_config` 实装按 name UPSERT（value 统一落 TEXT）；`u2_capability_unavailable` 失去最后调用点随之删除；新增前端契约形状 `GET /api/config/system`（原 404）+ 保留旧形状 `/api/config/system/config`；Settings.vue 预览横幅移除、onMounted 真装载（数字/布尔按表单类型还原）+ 真 POST 保存；契约测试改写（删 501 前提测试、补真 DB 往返三闸）。**坑：x_system_config 时间列为真 TIMESTAMP，to_char 文本必炸，统一 NOW()**。门禁：cargo 87/87、vitest 967/967、biome/tsc/fmt 全绿 |
 | 3 | FEAT（后端，缺口清零） | FEAT | **KNOWN_BACKEND_GAPS 最后两条实装清零**（commit `e0fcb616f`）：`GET /api/users/list`（x_org_person 未删行清单）+ `GET /api/departments/tree`（x_org_unit 部门树，level 自底向上挂 children 防浅拷贝丢深层节点）；desktop-endpoints 守卫缺口声明清空——**至此全仓无已声明未实现端点**；两个真 DB 往返测试。门禁：org crate 147/147 + clippy 0、vitest 967/967、biome/tsc/fmt 全绿 |
 | 4 | FIX（desktop，真 404 修复） | FIX | **查询视图 Excel 导出真契约化**（commit `4b7564f6`）：`exportExcel` 原调单段 `/api/queryview/excel/{flag}`（后端仅注册双段 `{view}/{id}`，运行时必 404；desktop-endpoints 守卫槽位宽松匹配漏放）→ 修为与 execute 同形状双段真实路由；消费真契约 `{id, viewFlag, excelData}`（o2 存量 excel_data）：base64 落 .xlsx / 文本落 .csv / 空值如实提示，不再等永不存在的 url 字段；顺修双冒号文案缺陷。**守卫教训：槽位数不同的路径被宽松匹配放过——守卫判定与运行时路由表仍有缝**。门禁：vitest 970/970、biome 240×0、tsc 6 包 Done |
+| 5 | FEAT（desktop） | FEAT | **查询管理视图配置从空壳转真应用**（commit `6a9d2d6e0`）：`applyViewConfig` 空壳 → 校验视图列/排序列存在性 + 应用摘要；computed 活应用 viewHeaders（列投影）/viewRows（过滤→排序→分页链），网格实时跟随；过滤表达式纯客户端求值（field=value/!=/~子串/裸子串，不拼 SQL 无注入面）；导出跟随视图投影所见即所得。门禁：vitest 973/973、biome 241×0、tsc 6 包 Done、desktop build 2.31s |
+
+> **会话小结（2026-09-28 首批 5 轮）**：功能扩展 5 连发全绿闭环。已探明面：mobile 占位文案 0、
+> desktop 空函数仅剩 2 个无害 v-model 旁路钩子（ConfigDesignerApp.onConfigChange /
+> DesignCenterApp.filterDesigners，v-model 已实时生效，属可留的死钩子）、501 契约仅剩结构性
+> 4 处（审计轮83 终态）。**下一批候选方向**：① 后端 real-consumption 剩余 arity-trap 深水区
+> （memory: arity-trap-real-consumption-2026-09-25，289 条最难族）；② 三端性能面（bundle 分片、
+> 慢查询索引复扫）；③ desktop 死钩子清理或接线；④ mobile 业务域扩面。
 
 
 
