@@ -52,8 +52,11 @@ NS_PREFIXES = frozenset({
 # 是「argvalues 全是字符串字面量」的可读形状 ⇒ 只抬两格读数，93 格盲面与 L98 的六档分布一字未动。
 # 这里刻意不用反引号点名那支新守卫文件：本文件的注释也在 A184 普查的扫描面里，多写一条断言形状
 # 就要多改一处账（A141「写账本身还税」那一族的第 N 次复现，本轮选择少欠一笔）。
-MEASURED_CALLS = 356
-MEASURED_READABLE = 263
+# **第二本账 L114 回填（总数 +1、可读 +1，盲面不动）**：test_export_enhanced 新增一支
+# TestConversationEmptyFieldBranches 的对话式格式空字段假支参数化，桶=plain（可读）⇒
+# MEASURED_CALLS 356→357、MEASURED_READABLE 263→264，MEASURED_BLIND 93 与 L98 六档分布一字未动。
+MEASURED_CALLS = 357
+MEASURED_READABLE = 264
 MEASURED_BLIND = 93
 #: 值位含类型对象的那些档（必须全部自带 ids，否则就是本判据的违规）
 KNOWN_TYPED_SITES = frozenset({("tests/unit/test_schema_type_spec_l96.py", "test_label")})
