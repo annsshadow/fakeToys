@@ -10,6 +10,7 @@
     { "path": "pages/contacts/contacts" },
     { "path": "pages/meeting/meeting" },
     { "path": "pages/calendar/calendar" },
+    { "path": "pages/bbs/bbs", "style": { "navigationBarTitleText": "论坛", "enablePullDownRefresh": true } },
     { "path": "pages/browse/browse" },
     { "path": "pages/search/search" },
     { "path": "pages/recycle/recycle" },
