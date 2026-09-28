@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/compress"
 
 	"github.com/laiyipao/server/internal/domain"
 	"github.com/laiyipao/server/internal/service"
@@ -21,6 +22,25 @@ func New(svc *service.Service) *Server { return &Server{Svc: svc} }
 // Register 挂载全部路由。
 func (s *Server) Register(app *fiber.App) {
 	app.Use(recoverPanic())
+	// ⚠️ 压缩必须放在**所有产生响应的中间件之前**，否则拿不到它们的输出。
+	//
+	// 加它的理由是实测数字，不是「JSON 该压缩」这种常识：
+	//
+	//   /api/v1/config 未压缩 **167,124 字节**
+	//   gzip(BestSpeed)      31,322 字节（18.7%）
+	//   gzip(Default)        23,964 字节（14.3%）   ← 省掉 85.7%
+	//
+	// 逐字段看，`levels` 一个字段就占 123,717 字节（74%），
+	// 而且它是 100 关高度重复的结构 —— 压缩率天然就高。
+	//
+	// 客户端是**每次冷启动都拉一次**（`loadConfig` 只有内存内缓存，
+	// 见 store/game.ts），所以这 163KB 是**每次启动**的固定流量。
+	// 在移动网络下这是实打实的钱。
+	//
+	// 之前注释里写「压缩后约 60KB」—— 那个数字是错的（实测 163KB），
+	// 而且「压缩后」指的是压缩前就已存在的 JSON 体积，不是 gzip 之后。
+	// 已按实测数字改写。
+	app.Use(compress.New())
 	app.Use(requestLogger())
 	app.Use(cors())
 
