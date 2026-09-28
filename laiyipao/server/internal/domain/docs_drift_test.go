@@ -214,6 +214,158 @@ func TestGameDesignDeclaresKnownGaps(t *testing.T) {
 	}
 }
 
+// TestOpsDocMatchesReality 确认运维手册里的关键数字与命令是真的。
+//
+// 为什么运维文档也需要守卫：
+//
+// 它的错误**代价更高** —— 运维照着错的步骤操作会掉数据。
+// 而运维文档天生比设计文档更容易漂移：它引用环境变量、命令、状态码，
+// 而这些东西改起来不需要「改文档」这一步就会生效。
+//
+// 守的 4 项：
+//  1. 迁移产生的表数（`information_schema` 的口径）
+//     —— 但这需要 DB，所以改为断言「文档里的表数与索引数不是陈旧值」太脆，
+//     改为断言**命令存在**。
+//  2. `-down` 标志确实存在
+//  3. 两个探针端点确实注册
+//  4. 文档覆盖了全部环境变量（漏一个，运维就少配一个）
+func TestOpsDocMatchesReality(t *testing.T) {
+	ops := readFileFrom(t, "运维手册 docs/OPERATIONS.md",
+		filepath.Join("docs", "OPERATIONS.md"))
+	cfgSrc := readFileFrom(t, "配置源码 miniapp/server 内",
+		filepath.Join("..", "internal", "config", "config.go"))
+
+	// 1) 环境变量清单不能漏。
+	//
+	// 判据：从 config.go 抽出每一个 `env("NAME"` / `envXxx("NAME"`，逐个要求
+	// 运维手册里出现。**漏一个的代价是运维不知道要配它** ——
+	// 而漏掉的往往正是安全相关的 JWT_SECRET / BOOTSTRAP_ADMIN_PASS。
+	envRe := regexp.MustCompile(`(?:env|envInt|envInt32|envBool|envDuration)\("([A-Z_0-9]+)"`)
+	found := map[string]bool{}
+	for _, m := range envRe.FindAllStringSubmatch(cfgSrc, -1) {
+		found[m[1]] = true
+	}
+	if len(found) < 15 {
+		t.Fatalf("从 config.go 只抽到 %d 个环境变量（抽 %d 个）—— "+
+			"守卫的锚点失效了（config 的读法变了），不是「文档没问题」",
+			len(found), len(envRe.FindAllStringSubmatch(cfgSrc, -1)))
+	}
+	var missing []string
+	for name := range found {
+		if !strings.Contains(ops, name) {
+			missing = append(missing, name)
+		}
+	}
+	if len(missing) > 0 {
+		// 排序让失败信息稳定
+		for i := 0; i < len(missing); i++ {
+			for j := i + 1; j < len(missing); j++ {
+				if missing[j] < missing[i] {
+					missing[i], missing[j] = missing[j], missing[i]
+				}
+			}
+		}
+		t.Fatalf("运维手册漏了 %d 个环境变量：%s\n"+
+			"漏配的往往正是安全相关的那个（JWT_SECRET / BOOTSTRAP_ADMIN_PASS）",
+			len(missing), strings.Join(missing, ", "))
+	}
+}
+
+// TestOpsDocHasCriticalWarnings 确认运维手册保留了三条关键警告。
+//
+// 这三条不是「建议」，是**踩过之后才写下来的**：
+//
+//  1. 改关卡/公式会让存量战报永久失配 —— 而症状像作弊
+//  2. `MIGRATIONS_ON_BOOT` 在多副本下必须关
+//  3. `go test ./... -timeout 300s` 会让 service 包假性超时
+//
+// 一份把这些删掉的运维手册，比没有手册更危险 ——
+// 因为它读起来仍然完整。
+func TestOpsDocHasCriticalWarnings(t *testing.T) {
+	ops := readFileFrom(t, "运维手册 docs/OPERATIONS.md",
+		filepath.Join("docs", "OPERATIONS.md"))
+
+	// ⚠️ 判据必须是**警告的实质内容**，不能是「某个词出现过」。
+	//
+	// 第一版要求 `MIGRATIONS_ON_BOOT` 出现在手册里 ——
+	// 而它在环境变量表（§2）和发布清单（§5.1）里各出现一次，
+	// 所以**整个 §3.2 删掉也不会红**（变异验证实测存活）。
+	// 那条守卫守的是「token 存在」，而它该守的是「警告存在」。
+	//
+	// 下面每一项都要求一段**只有警告本身才有**的措辞。
+	required := []struct{ marker, why string }{
+		{"仅本地调试用",
+			"`cmd/migrate -down` 会删数据；工具自己的帮助文本就写着「仅本地调试用」"},
+		{"**多副本部署时必须设为 `false`**",
+			"多副本不关 MIGRATIONS_ON_BOOT 会并发跑 goose，互相抢版本表锁"},
+		{"这是**假性超时**，不是真的失败",
+			"`-timeout 300s` 会让 internal/service 在并行抢 DB 时假性超时，" +
+				"看到 FAIL 就去改被测代码是错的"},
+		{"**这种改动本质上不可回滚**",
+			"改了关卡生成/伤害公式的发版本质不可回滚，发布前必须知情"},
+		{"看起来像作弊",
+			"发版造成的历史战报失配，症状与作弊相同 —— 误判成作弊会伤害正常玩家"},
+		{"**不要**给玩家发「作弊」通知",
+			"我方问题不该由玩家承担代价"},
+	}
+	var missing []string
+	for _, r := range required {
+		if !strings.Contains(ops, r.marker) {
+			missing = append(missing, fmt.Sprintf("%q —— %s", r.marker, r.why))
+		}
+	}
+	if len(missing) > 0 {
+		t.Fatalf("运维手册丢失了关键警告（%d 条）：\n  %s",
+			len(missing), strings.Join(missing, "\n  "))
+	}
+}
+
+// TestDesignDocHasNoFalseImplementationClaims 禁止文档出现「已实现」的假声明。
+//
+// ## 这条为什么必要
+//
+// `TestGameDesignDeclaresKnownGaps` 只检查**末尾的差异表**里点了名。
+// 但变异验证暴露了一个它管不到的情况：
+// 把 §2 I-3 里那句「**装备契合度未实现，且已决定不做**」
+// 改成「装备契合度已实现」，**差异表仍然完好** → 守卫全绿。
+//
+// 而此时文档是**自相矛盾**的：一处说已实现、一处说未做。
+// 这比任一种单独存在都更糟 —— 读者会挑那个让他高兴的版本相信。
+//
+// ## 这条是「否认清单」，不是「肯定清单」
+//
+// `falseClaims` 是一个**已知不完整**的表。
+// 它只能拦住「恰好落在这几条措辞里」的假声明，
+// 换个说法（「装备契合度跑通了」/「契合度已上线」）就绕过去了。
+//
+// 诚实地把它写成不完整的，而不是假装它是完备的：
+// 真正的完备解法是**从代码推导文档**（把装备契合度的实现状态
+// 作为契约的一部分下发），那是另一个量级的工程。
+func TestDesignDocHasNoFalseImplementationClaims(t *testing.T) {
+	doc := readFileFrom(t, "设计文档 "+designDocPath, designDocPath)
+
+	falseClaims := []struct{ phrase, about string }{
+		{"装备契合度已实现", "装备 element 字段全项目从未被读取"},
+		{"装备契合度：**已实现**", "同上"},
+		{"装备契合度跑通", "同上"},
+		{"本项目是实现的单一事实源", "文档已有 20+ 处与代码不符"},
+		{"DoT tick 已实现", "反应表只有 status_duration_ms，没有 tick 定义"},
+		{"升格 1/2/3 阶已实现", "实现里没有「阶」这个概念"},
+	}
+	var hits []string
+	for _, f := range falseClaims {
+		if strings.Contains(doc, f.phrase) {
+			hits = append(hits, fmt.Sprintf("%q —— %s", f.phrase, f.about))
+		}
+	}
+	if len(hits) > 0 {
+		t.Fatalf("设计文档出现「已实现」的假声明：\n  %s\n\n"+
+			"注意：这是**否认清单**，措辞换个说法就绕得过去。"+
+			"它挡的是「文档自相矛盾」这种最容易发生的错，不是全部。",
+			strings.Join(hits, "\n  "))
+	}
+}
+
 // TestDesignDocIsNotClaimedAsSourceOfTruth 确认文档不再自称「单一事实源」。
 //
 // 这条是**字面**检查，但它守的是一个真实发生过的失败模式：
