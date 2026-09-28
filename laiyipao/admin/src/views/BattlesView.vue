@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { fetchBattles, fetchBattleDetail, type AdminBattle } from '@/api'
+import { fetchBattles, fetchBattleDetail, verifyBattle, type AdminBattle, type VerifyResult } from '@/api'
 import { fetchReactionLabels, labelOfReaction, type ReactionLabels } from '@/reactions'
 
 const loading = ref(false)
@@ -75,12 +75,36 @@ async function load() {
 }
 
 async function openDetail(row: AdminBattle) {
+  // 换一条战报就把上一次的输入与结果清掉 —— 否则会把 A 的比对结果
+  // 看成 B 的结论，而两个都是合法的界面状态。
+  verifyHashInput.value = ''
+  verifyResult.value = null
   try {
     const res = await fetchBattleDetail(row.id)
     detail.value = res.battle
     detailDrawer.value = true
   } catch (e) {
     ElMessage.error((e as Error).message)
+  }
+}
+
+const verifyHashInput = ref('')
+const verifyResult = ref<VerifyResult | null>(null)
+const verifying = ref(false)
+
+async function submitVerify() {
+  if (!detail.value || verifying.value) return
+  if (!verifyHashInput.value.trim()) {
+    ElMessage.warning('请先粘贴重放算出的哈希')
+    return
+  }
+  verifying.value = true
+  try {
+    verifyResult.value = await verifyBattle(detail.value.id, verifyHashInput.value.trim())
+  } catch (e) {
+    ElMessage.error(`验真失败：${(e as Error).message}`)
+  } finally {
+    verifying.value = false
   }
 }
 
@@ -221,6 +245,48 @@ onMounted(load)
           </el-descriptions-item>
         </el-descriptions>
 
+        <!--
+          运营侧验真入口（R41 之前只有玩家能发起验真）。
+
+          ⚠️ 这里**不会**自动重算哈希 —— 服务端没有引擎。
+          运营需要用小程序验证页（或任何能跑引擎的地方）拿种子重放，
+          把算出来的 hash 贴进来提交比对。
+          所以这里必须把 seed 一起显示出来，否则运营无从重算。
+        -->
+        <div class="section-title">发起验真</div>
+        <el-alert
+          type="info"
+          :closable="false"
+          show-icon
+          style="margin-bottom: 8px"
+          title="本后台不重放：需要你在能跑引擎的地方用种子重放，把算出的哈希贴到下面。"
+          description="该比对防的是「改了数据却没改凭证」。若上报方本身就是伪造的客户端，它可以报一个相同的哈希让结果「一致」。"
+        />
+        <div class="verify-row">
+          <span class="muted">种子</span>
+          <code class="hash">{{ detail.seed ?? '—' }}</code>
+        </div>
+        <div class="verify-row">
+          <el-input
+            v-model="verifyHashInput"
+            placeholder="粘贴重放算出的 replay_hash"
+            size="small"
+            style="flex: 1"
+          />
+          <el-button size="small" :loading="verifying" @click="submitVerify">
+            提交比对
+          </el-button>
+        </div>
+        <div v-if="verifyResult" class="verify-row">
+          <el-tag :type="verifyResult.matched ? 'success' : 'danger'" size="small">
+            {{ verifyResult.matched ? '一致' : '不匹配' }}
+          </el-tag>
+          <span class="muted">
+            记录值 <code class="hash">{{ verifyResult.expected_hash }}</code>
+            ／ 本次 <code class="hash">{{ verifyResult.actual_hash }}</code>
+          </span>
+        </div>
+
         <div class="section-title">元素使用分布</div>
         <div class="chip-row">
           <template v-for="(v, k) in parseObj(detail.elements_used)" :key="k">
@@ -279,6 +345,13 @@ onMounted(load)
   font-size: 13px;
   font-weight: 600;
   color: var(--lyp-muted);
+}
+/* 验真区：种子 + 粘贴框 + 结果同一行的阅读节奏 */
+.verify-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 .chip-row {
   display: flex;

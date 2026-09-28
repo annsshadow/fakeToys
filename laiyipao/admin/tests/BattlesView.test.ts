@@ -15,7 +15,8 @@ const fetchBattles = vi.hoisted(() => vi.fn())
 const fetchBattleDetail = vi.hoisted(() => vi.fn())
 // `@/reactions` 内部调 `@/api` 的 fetchReactions，所以 mock 必须提供它
 const fetchReactions = vi.hoisted(() => vi.fn())
-vi.mock('@/api', () => ({ fetchBattles, fetchBattleDetail, fetchReactions }))
+const verifyBattle = vi.hoisted(() => vi.fn())
+vi.mock('@/api', () => ({ fetchBattles, fetchBattleDetail, fetchReactions, verifyBattle }))
 
 import BattlesView from '@/views/BattlesView.vue'
 
@@ -74,6 +75,15 @@ beforeEach(() => {
     reactionSpec('steam_burst', '蒸汽爆发'),
     reactionSpec('overheat', '过热'),
   ])
+  verifyBattle.mockResolvedValue({
+    battle_id: 1,
+    expected_hash: 'stored-hash',
+    actual_hash: 'stored-hash',
+    matched: true,
+    level_id: 3,
+    seed: '12345',
+    recorded_at: '2026-01-02T03:04:05Z',
+  })
 })
 
 describe('BattlesView 列表渲染', () => {
@@ -282,6 +292,148 @@ describe('BattlesView 验真列与过滤器', () => {
     const wrapper = await mountBattles([battleFixture({ id: 7 })])
     expect(wrapper.findAll(".el-table__row").length).toBeGreaterThan(0)
     expect(wrapper.text()).not.toContain('reactions down')
+  })
+})
+
+describe('BattlesView 运营侧验真入口', () => {
+  /**
+   * 打开某条战报的详情抽屉。
+   *
+   * ⚠️ 三处都抄本文件里已经跑通的写法：
+   *  - 按钮用 `text() === '详情'`（不是「行内第一个按钮」，那个会匹配到别的东西）；
+   *  - 关抽屉用 `ElDrawer` 的 `update:modelValue`（不是点关闭按钮，jsdom 下点不到）；
+   *  - 每次自己 mock `fetchBattleDetail`（本文件**没有**它的默认实现）。
+   *
+   * 早先一版三条都踩了，症状是 6 条用例全红而功能其实写好了 ——
+   * 「测试全红」和「功能坏了」看起来一模一样，必须逐条核对前提。
+   */
+  async function openDetailOf(row: AdminBattle) {
+    fetchBattleDetail.mockResolvedValueOnce({
+      battle: { ...row, shots: 10, hits: 8, seed: '424242' } as AdminBattle &
+        Record<string, unknown>,
+    })
+    const wrapper = await mountBattles([row])
+    const btn = wrapper.findAll('button').find((b) => b.text() === '详情')
+    expect(btn, '找不到「详情」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+    return wrapper
+  }
+
+  async function closeDrawer(wrapper: Awaited<ReturnType<typeof openDetailOf>>) {
+    await wrapper.findComponent(ElDrawer).vm.$emit('update:modelValue', false)
+    await flushPromises()
+  }
+
+  function hashInput(wrapper: Awaited<ReturnType<typeof openDetailOf>>) {
+    const el = wrapper.find('input[placeholder*="重放算出的 replay_hash"]')
+    expect(el.exists(), '找不到粘贴哈希的输入框').toBe(true)
+    return el
+  }
+
+  function submitBtn(wrapper: Awaited<ReturnType<typeof openDetailOf>>) {
+    const b = wrapper.findAll('button').find((x) => x.text().includes('提交比对'))
+    expect(b, '找不到「提交比对」按钮').toBeTruthy()
+    return b!
+  }
+
+  it('抽屉里给出验真入口与种子', async () => {
+    // 本后台**不重放**（服务端没有引擎），运营必须在别处用种子重跑才能算哈希。
+    // 种子不给出来，这个入口就只是个摆设。
+    const wrapper = await openDetailOf(battleFixture({ id: 1 }))
+    expect(wrapper.text()).toContain('发起验真')
+    expect(wrapper.text()).toContain('424242')
+  })
+
+  it('提交时带上 battle_id 与粘贴的哈希（去掉首尾空白）', async () => {
+    const wrapper = await openDetailOf(battleFixture({ id: 42 }))
+    await hashInput(wrapper).setValue('  recomputed-hash  ')
+    await submitBtn(wrapper).trigger('click')
+    await flushPromises()
+    expect(verifyBattle).toHaveBeenCalledWith(42, 'recomputed-hash')
+  })
+
+  it('空输入不提交（免得凭空记一条「不匹配」）', async () => {
+    const wrapper = await openDetailOf(battleFixture({ id: 7 }))
+    await submitBtn(wrapper).trigger('click')
+    await flushPromises()
+    expect(verifyBattle).not.toHaveBeenCalled()
+  })
+
+  it('一致时显示结论与两个哈希', async () => {
+    verifyBattle.mockResolvedValueOnce({
+      battle_id: 1,
+      expected_hash: 'stored-AAA',
+      actual_hash: 'actual-BBB',
+      matched: true,
+      level_id: 3,
+      seed: '424242',
+      recorded_at: '2026-01-02T03:04:05Z',
+    })
+    const wrapper = await openDetailOf(battleFixture({ id: 1 }))
+    await hashInput(wrapper).setValue('whatever')
+    await submitBtn(wrapper).trigger('click')
+    await flushPromises()
+    const text = wrapper.text()
+    // ⚠️ 判据用**哈希字符串**，不用「一致」二字 ——
+    // 表格的验真列本来就写着「一致 3」，用它当判据会恒绿。
+    expect(text).toContain('actual-BBB')
+    expect(text).toContain('stored-AAA')
+  })
+
+  it('不匹配时给出「不匹配」结论', async () => {
+    verifyBattle.mockResolvedValueOnce({
+      battle_id: 5,
+      expected_hash: 'stored-CCC',
+      actual_hash: 'actual-DDD',
+      matched: false,
+      level_id: 3,
+      seed: '424242',
+      recorded_at: '2026-01-02T03:04:05Z',
+    })
+    const wrapper = await openDetailOf(battleFixture({ id: 5 }))
+    await hashInput(wrapper).setValue('different')
+    await submitBtn(wrapper).trigger('click')
+    await flushPromises()
+    // 表格里不会出现「不匹配」（那三行的验真列都是「一致 3」），所以这里可以安全用它
+    expect(wrapper.text()).toContain('不匹配')
+    expect(wrapper.text()).toContain('actual-DDD')
+  })
+
+  it('换一条战报会清掉上一次的输入与结果', async () => {
+    // 不清的话会把 A 的比对结论看成 B 的 —— 而两者都是合法的界面状态。
+    verifyBattle.mockResolvedValueOnce({
+      battle_id: 1,
+      expected_hash: 'stored-EEE',
+      actual_hash: 'actual-FFF',
+      matched: true,
+      level_id: 3,
+      seed: '424242',
+      recorded_at: '2026-01-02T03:04:05Z',
+    })
+    fetchBattleDetail
+      .mockResolvedValueOnce({ battle: { ...battleFixture({ id: 1 }) } as never })
+      .mockResolvedValueOnce({ battle: { ...battleFixture({ id: 2 }) } as never })
+
+    const wrapper = await mountBattles([battleFixture({ id: 1 }), battleFixture({ id: 2 })])
+    const detailBtns = () => wrapper.findAll('button').filter((b) => b.text() === '详情')
+    await detailBtns()[0].trigger('click')
+    await flushPromises()
+
+    await hashInput(wrapper).setValue('hash-of-battle-1')
+    await submitBtn(wrapper).trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('actual-FFF')
+
+    await closeDrawer(wrapper)
+    // 下标 1 = 第二行。写 0 的话又打开了第一场，断言就成了假阳性：
+    // 同一条战报的状态**本来就该保留**。
+    await detailBtns()[1].trigger('click')
+    await flushPromises()
+
+    const el = wrapper.find('input[placeholder*="重放算出的 replay_hash"]')
+    expect((el.element as HTMLInputElement).value).toBe('')
+    expect(wrapper.text()).not.toContain('actual-FFF')
   })
 })
 
