@@ -58,7 +58,8 @@
       "linter": {
         "rules": {
           "suspicious": { "noExplicitAny": "off" },
-          "correctness": { "noUnusedVariables": "off" }
+          "correctness": { "noUnusedVariables": "off" },
+          "style": { "useVueMultiWordComponentNames": "off" }
         }
       }
     },
