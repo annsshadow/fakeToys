@@ -11,7 +11,8 @@ import {
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 
-import { fetchDashboard, fetchReactions, type DashboardResp } from '@/api'
+import { fetchDashboard, type DashboardResp } from '@/api'
+import { fetchReactionLabels, labelOfReaction, type ReactionLabels } from '@/reactions'
 
 echarts.use([
   BarChart,
@@ -40,24 +41,20 @@ let reactionChart: echarts.ECharts | null = null
  *
  * ⚠️ 这里原本是一张**硬编码**的 `REACTION_LABEL`（7 个反应逐个写死）。
  *
- * 它当前**恰好是全的**（`domain/elements.go` 里正好 7 个 ReactionKey 常量），
+ * 它当时**恰好是全的**（`domain/elements.go` 里正好 7 个 ReactionKey 常量），
  * 所以看不出任何问题 —— 但它是**纯重复**：名字的真源在服务端，
  * 连 `ReactionSpec.Name` 的注释都写着「反应的中文名，后台系统/运营看板要用」。
  *
  * 复制一份的真实代价：有人加第 8 个反应而忘了改这张表时，
- * 症状**不是报错**，而是图表 y 轴上悄悄出现一个英文 key
- * （靠 `LABEL[x] || x` 的兜底）。这种漂移很难被发现。
+ * 症状**不是报错**，而是图表 y 轴上悄悄出现一个英文 key。这种漂移很难被发现。
  *
- * 所以改成从 `GET /admin/reactions` 取 —— 服务端就是 `domain.AllReactionSpecs()`，
- * 不多不少。加反应时后台自动跟上，不需要改两处。
- *
- * 兜底仍保留 `x`（原始 key）：万一后台连的是旧版服务端、缺少新反应，
- * 那时至少还能显示 key，而不是显示 `undefined`。
+ * 取名与查名的逻辑已收敛到 `@/reactions`（BattlesView 也有同一张表的另一份，
+ * R38 只消除了本页面这一份 —— 教训见 `@/reactions` 的文件头）。
  */
-const reactionLabel = ref<Record<string, string>>({})
+const reactionLabel = ref<ReactionLabels>({})
 
 function labelOf(key: string): string {
-  return reactionLabel.value[key] || key
+  return labelOfReaction(reactionLabel.value, key)
 }
 
 const verificationRate = computed(() => {
@@ -146,11 +143,11 @@ async function load() {
     // `GET /admin/reactions` 是纯内存返回（`domain.AllReactionSpecs()`，
     // 不查库、不可能失败）。所以「反应名拿不到导致整页报错」这个场景不存在。
     //
-    // 兜底 `labelOf` 里的 `|| key` 覆盖的是另一种情况：
+    // 兜底 `labelOfReaction` 里的 `|| key` 覆盖的是另一种情况：
     // 后台连的是**旧版服务端**、响应里没有某个新反应 —— 那时只影响坐标轴文案。
-    const [dash, specs] = await Promise.all([fetchDashboard(), fetchReactions()])
+    const [dash, labels] = await Promise.all([fetchDashboard(), fetchReactionLabels()])
     data.value = dash
-    reactionLabel.value = Object.fromEntries(specs.map((r) => [r.key, r.name]))
+    reactionLabel.value = labels
     await new Promise((r) => setTimeout(r, 30))
     renderCharts()
   } catch (e) {

@@ -2,12 +2,16 @@
 import { onMounted, ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { fetchBattles, fetchBattleDetail, type AdminBattle } from '@/api'
+import { fetchReactionLabels, labelOfReaction, type ReactionLabels } from '@/reactions'
 
 const loading = ref(false)
 const battles = ref<AdminBattle[]>([])
 const total = ref(0)
 const userId = ref<number | undefined>(undefined)
 const levelId = ref<number | undefined>(undefined)
+
+/** 反应 key → 中文名。取自服务端（见 `@/reactions`）。 */
+const reactionLabel = ref<ReactionLabels>({})
 
 const detailDrawer = ref(false)
 const detail = ref<(AdminBattle & Record<string, unknown>) | null>(null)
@@ -26,18 +30,43 @@ function reactionAbuse(b: AdminBattle): boolean {
   return b.reactions > 0 && b.kills > 0 && b.reactions / b.kills > 30
 }
 
+/**
+ * 本场战报的验真标签（三态）。
+ *
+ * ⚠️ `0 / 0` 是**未验真 = 未知**，不是「一致」。
+ * 与 `UsersView.verifyTag` 语义完全一致 —— 同一个概念在两个页面
+ * 必须说同一套话，否则运营会以为「用户页说一致、战报页说未验真」是矛盾。
+ */
+function verifyTag(b: AdminBattle): { text: string; type: 'info' | 'success' | 'danger' } {
+  const checked = b.verify_checked ?? 0
+  const mismatched = b.verify_mismatched ?? 0
+  if (mismatched > 0) return { text: `不匹配 ${mismatched}/${checked}`, type: 'danger' }
+  if (checked === 0) return { text: '未验真', type: 'info' }
+  return { text: `一致 ${checked}`, type: 'success' }
+}
+
+const onlyMismatched = ref(false)
+
 const filterParams = computed(() => ({
   user_id: userId.value,
   level_id: levelId.value,
   limit: 50,
+  only_mismatched: onlyMismatched.value || undefined,
 }))
 
 async function load() {
   loading.value = true
   try {
-    const res = await fetchBattles(filterParams.value)
+    // 反应名与战报并发取。反应名失败**不**阻断战报列表 ——
+    // 少了它只是战报详情里的反应 chip 显示原始 key，列表本身仍然可用。
+    // 所以这里用 allSettled 而不是 all：把「锦上添花」和「必需」分开处理。
+    const [res, labels] = await Promise.all([
+      fetchBattles(filterParams.value),
+      fetchReactionLabels().catch(() => null),
+    ])
     battles.value = res.items
     total.value = res.total
+    reactionLabel.value = labels ?? reactionLabel.value
   } catch (e) {
     ElMessage.error(`战报加载失败：${(e as Error).message}`)
   } finally {
@@ -81,15 +110,6 @@ const ELEMENT_LABEL: Record<string, string> = {
   corrosion: '毒',
   kinetic: '动能',
 }
-const REACTION_LABEL: Record<string, string> = {
-  steam_burst: '蒸汽爆发',
-  overheat: '过热',
-  burn_cloud: '燃烧云',
-  superconduct: '超导',
-  flash_freeze: '急速冻结',
-  corrosion_spread: '腐蚀扩散',
-  armor_break: '破甲击退',
-}
 
 onMounted(load)
 </script>
@@ -118,6 +138,9 @@ onMounted(load)
           style="width: 120px"
         />
         <el-button @click="load">筛选</el-button>
+        <el-checkbox v-model="onlyMismatched" style="margin-left: 12px">
+          只看验真不匹配
+        </el-checkbox>
         <span class="toolbar-spacer" />
         <span class="muted">共 {{ total }} 条</span>
       </div>
@@ -142,6 +165,17 @@ onMounted(load)
         <el-table-column label="一致性" width="94">
           <template #default="{ row }">
             <el-tag :type="consistencyTag(row).type" size="small">{{ consistencyTag(row).text }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="验真" width="118">
+          <!--
+            三态。`0/0` 是「未验真 = 未知」，不是「一致」——
+            与 UsersView 的验真标签说同一套话。
+          -->
+          <template #default="{ row }">
+            <el-tag :type="verifyTag(row).type" size="small" effect="plain">
+              {{ verifyTag(row).text }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="reactions" label="反应" width="76">
@@ -200,7 +234,7 @@ onMounted(load)
         <div class="section-title">反应使用分布</div>
         <div class="chip-row">
           <template v-for="(v, k) in parseObj(detail.reactions_used)" :key="k">
-            <span class="chip reaction">{{ REACTION_LABEL[k] ?? k }} × {{ v }}</span>
+            <span class="chip reaction">{{ labelOfReaction(reactionLabel, k) }} × {{ v }}</span>
           </template>
           <span v-if="Object.keys(parseObj(detail.reactions_used)).length === 0" class="muted">
             无记录 —— 这一局完全没触发反应，说明玩家在无脑堆面板
