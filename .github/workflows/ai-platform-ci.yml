@@ -42,8 +42,12 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           # 账本哈希槽守卫（test_ledger_hash_slots_l98）按 `git log --first-parent`
-          # 核对每笔回填哈希，浅克隆只有 1 笔历史会让它整类 RulerNotProven。
+          # 核对每笔回填哈希：① fetch-depth:0 取全量历史（否则浅克隆只有 1 笔）；
+          # ② PR 事件默认检出 merge ref，其 first-parent 走的是 base(main) 那条线、
+          #    分支上的回填提交根本不在其中（实测 CI 只见 415 笔 = main 线，分支实为 1076），
+          #    故显式检出 PR head sha，让守卫看到分支自己的线性历史。
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b
