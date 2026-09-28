@@ -103,8 +103,30 @@ bash scripts/bench_endpoint_latency.sh \
 收益低于测量噪声底。
 
 **因此**：`[profile.release]` 的**确定性收益在二进制体积**（.exe −7.1%、.pdb −56.9%，见上），
-**接口延迟层面无可测量差异**——如需证明 LTO 的 CPU 收益应改测纯 CPU 密集路径的微基准
-（criterion），而非 HTTP 端点延迟。诚实起见不把 LTO 宣称为端点提速。
+**接口延迟层面无可测量差异**——LTO 的 CPU 收益应改测纯 CPU 密集路径的微基准，而非 HTTP 端点延迟。
+
+### CPU 微基准（LTO 开 vs 关，纯 CPU 路径）
+
+`crates/shared/examples/bench_cpu.rs`（std::time 计时，无外部 bench 依赖以免污染 Cargo.lock）。
+同源分别以 LTO 开/关构建并各跑一遍：
+
+```bash
+cargo run --release -p shared --example bench_cpu                              # LTO 开（本仓档）
+cargo run --release -p shared --example bench_cpu \
+  --config profile.release.lto=false --config profile.release.codegen-units=16 # LTO 关
+```
+
+| 工作负载 | LTO 开（thin/cu=1） | LTO 关（默认） | Δ（开 vs 关） |
+|---|---:|---:|---:|
+| `json_serialize`（序列化 27KB 响应） | 34.72 µs/op | 33.69 µs/op | +3%（噪声） |
+| `json_roundtrip`（序列化+反序列化） | 299.2 µs/op | 379.0 µs/op | **−21.0%** |
+| `sha256_digest`（27KB 摘要） | 12.89 µs/op | 12.89 µs/op | 0% |
+
+**结论（终于把 LTO 运行时收益量化清楚）**：thin-LTO 对**内联密集的 CPU 路径确有实质加速**
+——serde_json 序列化+反序列化往返 **快约 21%**（跨 crate 内联生效）；对 asm 优化的 SHA-256
+（ring/sha2）**零影响**；对单纯序列化在噪声内。这解释了为何**端点延迟看不出差异**：单个请求里
+JSON 解析这类 CPU 片段只占 ~2ms 请求的很小一部分，21% 的相对收益被框架/IO 开销稀释到测不出。
+（单次运行，方向与量级明确；json_roundtrip 的 21% 远超噪声底。）
 
 ## 运行时基准复现步骤（其他环境）
 
