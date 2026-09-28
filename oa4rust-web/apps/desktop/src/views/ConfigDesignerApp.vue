@@ -251,7 +251,10 @@ async function deleteItem(item: ConfigItem) {
   if (!(await confirmMsg(`删除配置「${item.name || item.flag}」？`))) return
   try {
     await api.delete(`/api/config/delete/${item.id}`)
-  } catch {}
+  } catch (e: any) {
+    toast.error(`删除失败: ${e?.message ?? ''}`)
+    return
+  }
   items.value = items.value.filter((i) => i.id !== item.id)
   if (selected.value?.id === item.id) selected.value = null
 }
@@ -321,23 +324,35 @@ function exportSelected() {
   a.download = `${selected.value.flag || 'config'}.json`
   a.click()
 }
-function importConfigs() {
+async function importConfigs() {
+  let data: unknown
   try {
-    const data = JSON.parse(importData.value)
-    if (Array.isArray(data)) {
-      for (const item of data) {
-        try {
-          api.post('/api/config/create', item)
-        } catch {}
-      }
-      importMsg.value = { ok: true, txt: `成功导入 ${data.length} 项` }
-    } else {
-      importMsg.value = { ok: false, txt: '格式错误: 期望数组' }
-    }
-    qc.invalidateQueries({ queryKey: ['config', 'list'] })
+    data = JSON.parse(importData.value)
   } catch (e: any) {
     importMsg.value = { ok: false, txt: `导入失败: ${e.message}` }
+    return
   }
+  if (!Array.isArray(data)) {
+    importMsg.value = { ok: false, txt: '格式错误: 期望数组' }
+    return
+  }
+  // 逐项真实 await + 成败计数：此前 api.post 未 await（fire-and-forget，内层 catch
+  // 根本捕不到异步失败），且无论成败都恒报"成功导入 N 项"——误导用户。
+  let ok = 0
+  let fail = 0
+  for (const item of data) {
+    try {
+      await api.post('/api/config/create', item)
+      ok++
+    } catch {
+      fail++
+    }
+  }
+  importMsg.value = {
+    ok: fail === 0,
+    txt: fail === 0 ? `成功导入 ${ok} 项` : `导入完成：成功 ${ok} / 失败 ${fail}`,
+  }
+  qc.invalidateQueries({ queryKey: ['config', 'list'] })
 }
 function addHistory(isAuto: boolean) {
   configHistory.value.unshift({
