@@ -1,4 +1,4 @@
-const fs = require('fs')
+const fs = require('node:fs')
 const content = fs.readFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/FormDesigner.vue', 'utf8')
 
 // Add advanced functions before onMounted

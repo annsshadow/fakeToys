@@ -574,7 +574,7 @@ const {
       const replyTopics: Topic[] = replyRows.map((r) => ({
         id: String(r.id ?? ''),
         topicRef: String(r.topic_id ?? r.topicId ?? ''),
-        title: '回复 · 主题 ' + String(r.topic_id ?? r.topicId ?? ''),
+        title: `回复 · 主题 ${String(r.topic_id ?? r.topicId ?? '')}`,
         content: String(r.content ?? ''),
         author: String(r.creator ?? ''),
         createTime: String(r.create_time ?? r.createTime ?? ''),
@@ -717,7 +717,7 @@ async function openTopic(topic: Topic): Promise<void> {
   try {
     const resp = (await api.get(`/api/bbs/subject/view/${targetId}`)) as { data?: unknown }
     const full = resp.data as Topic | null
-    if (full && full.id) {
+    if (full?.id) {
       viewingTopic.value = { ...topic, ...full, author: (full.author as string | undefined) ?? full.authorId }
     }
   } catch {
@@ -828,8 +828,8 @@ function fmtTime(ts?: string): string {
     const now = new Date()
     const diff = now.getTime() - d.getTime()
     if (diff < 60_000) return '刚刚'
-    if (diff < 3600_000) return Math.floor(diff / 60_000) + '分钟前'
-    if (diff < 86400_000) return Math.floor(diff / 3600_000) + '小时前'
+    if (diff < 3600_000) return `${Math.floor(diff / 60_000)}分钟前`
+    if (diff < 86400_000) return `${Math.floor(diff / 3600_000)}小时前`
     return d.toLocaleDateString('zh-CN')
   } catch {
     return String(ts)
@@ -862,7 +862,7 @@ async function loadForums() {
     }
     forumsText.value = `版块：${forums.length} 个${detailName ? `（首「${detailName}」）` : ''}`
   } catch (e: any) {
-    toast.error('加载版块失败: ' + (e?.message ?? ''))
+    toast.error(`加载版块失败: ${e?.message ?? ''}`)
   }
 }
 const bbsViewsText = ref('')
@@ -887,7 +887,7 @@ async function loadBbsViews() {
     const topN = Array.isArray((topSubjects as any)?.data) ? (topSubjects as any).data.length : 0
     bbsViewsText.value = `论坛 ${forums.length}（首「${fName}」）· 分区 ${sections.length} · 首分区置顶帖 ${topN}`
   } catch (e: any) {
-    toast.error('加载视图浏览失败: ' + (e?.message ?? ''))
+    toast.error(`加载视图浏览失败: ${e?.message ?? ''}`)
   }
 }
 // rev221：BBS 核心实体族 5 条真实 distinct 路由（SeaORM bbs_forum_info/bbs_section_info/bbs_subject_info）
@@ -911,7 +911,7 @@ async function loadBbsEntities() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     bbsEntityText.value = `实体论坛 ${forums.length} · 分区 ${sections.length} · 置顶帖 ${n(topSubs)} · 主题 ${n(subs)} · 搜索 ${n(searched)}`
   } catch (e: any) {
-    toast.error('加载 BBS 实体失败: ' + (e?.message ?? ''))
+    toast.error(`加载 BBS 实体失败: ${e?.message ?? ''}`)
   }
 }
 const bbsControlText = ref('')
@@ -942,7 +942,7 @@ async function loadBbsControl() {
     const hasUuid = (uuid as any)?.data?.uuid ? '有' : '无'
     bbsControlText.value = `版块下分区 ${n(byForum)} · 控制配置 ${hasCfg} · 用户信息 ${hasUser} · UUID ${hasUuid}`
   } catch (e: any) {
-    toast.error('加载控制台/检索失败: ' + (e?.message ?? ''))
+    toast.error(`加载控制台/检索失败: ${e?.message ?? ''}`)
   }
 }
 const bbsDeepText = ref('')
@@ -985,7 +985,7 @@ async function loadBbsDeepReads() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     bbsDeepText.value = `BBS 深度读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载 BBS 深度读失败: ' + (e?.message ?? ''))
+    toast.error(`加载 BBS 深度读失败: ${e?.message ?? ''}`)
   }
 }
 // rev324：BBS 论坛管理 真实写端点（用户触发 prompt+确认，非造假）——发帖/回复/版块/禁言/角色/设置/投票 建改删；全字面量路径
@@ -1005,7 +1005,7 @@ async function bbsPost(kind: string) {
     else await api.post('/api/bbs/core/entity/reply', { content: v })
     toast.success(`${kind} 已提交`)
   } catch (e: any) {
-    toast.error(`${kind} 失败: ` + (e?.message ?? ''))
+    toast.error(`${kind} 失败: ${e?.message ?? ''}`)
   }
 }
 // rev349：BBS 主题附件上传 真实用户触发（文件选择 → multipart → x_bbs_attachment.content 落盘）
@@ -1029,7 +1029,7 @@ async function bbsUpload(withCallback: boolean) {
       }
       toast.success('附件已上传')
     } catch (e: any) {
-      toast.error('附件上传失败: ' + (e?.message ?? ''))
+      toast.error(`附件上传失败: ${e?.message ?? ''}`)
     }
   }
   input.click()
@@ -1055,7 +1055,7 @@ async function bbsPut(kind: string) {
     else await api.put('/api/bbs/assemble/control/userinfo', {})
     toast.success(`${kind} 已提交`)
   } catch (err: any) {
-    toast.error(`${kind} 失败: ` + (err?.message ?? ''))
+    toast.error(`${kind} 失败: ${err?.message ?? ''}`)
   }
 }
 async function bbsDel(kind: string) {
@@ -1077,7 +1077,7 @@ async function bbsDel(kind: string) {
     else await api.delete(`/api/bbs/core/entity/subject/${e}`)
     toast.success(`${kind} 已删除`)
   } catch (err: any) {
-    toast.error(`删除${kind}失败: ` + (err?.message ?? ''))
+    toast.error(`删除${kind}失败: ${err?.message ?? ''}`)
   }
 }
 // rev348：BBS 核心实体论坛/版块/主题 CRUD + 主题分页检索（精华/索引/推荐/搜索/筛选）+我的回复主题投票 真实写端点（用户触发，shape 已核；避 autoquery-guards canary + upload/login trap）
@@ -1112,7 +1112,7 @@ async function bbsEntity(op: string) {
     else await api.put('/api/bbs/assemble/control/user/subject/voterecord/list/page/1/count/20', {})
     toast.success('BBS 实体操作已提交')
   } catch (err: any) {
-    toast.error('BBS 实体操作失败: ' + (err?.message ?? ''))
+    toast.error(`BBS 实体操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev358：BBS 主题版主动作 原创/推荐首页/置顶(BBS/论坛/主版块)各 set/non + 采纳/取消采纳回复 真实 GET 列标志 UPDATE（事件触发按主题 id，非 mounted；u2_subject_* 宏生成各列 distinct）
@@ -1136,7 +1136,7 @@ async function bbsSubjectMod(op: string) {
     } else await api.get(`/api/bbs/assemble/control/user/subject/unacceptreply/${e}`)
     toast.success('主题版主动作已提交')
   } catch (err: any) {
-    toast.error('操作失败: ' + (err?.message ?? ''))
+    toast.error(`操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev358：BBS 用户版块/权限 真实只读（用户触发按钮；section/all·sub·viewforum + permission forum/section/role）
@@ -1156,7 +1156,7 @@ async function bbsUserReads() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     toast.success(`BBS 版块/权限读 ${rs.length} 条命中 ${hit}`)
   } catch (err: any) {
-    toast.error('BBS 读失败: ' + (err?.message ?? ''))
+    toast.error(`BBS 读失败: ${err?.message ?? ''}`)
   }
 }
 // rev384：BBS 禁言分页/主题过滤主题信息/UUID 读 + 用户昵称更新 真实路由（shutup_list Path(page,count)/topic_filter_listsubjectinfo Json 体/uuid_generate 无 Path/u2_userinfo_update_nick Path+Query，用户触发；规避 shutup/create·topic/create·delete/subject·comment commend 守卫禁词与 501/trap500 裸路由）
@@ -1171,7 +1171,7 @@ async function bbsMore2() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     toast.success(`BBS 禁言/主题信息/UUID 读 ${rs.length} 条命中 ${hit}`)
   } catch (err: any) {
-    toast.error('BBS 读失败: ' + (err?.message ?? ''))
+    toast.error(`BBS 读失败: ${err?.message ?? ''}`)
   }
 }
 async function bbsUpdateNick() {
@@ -1181,7 +1181,7 @@ async function bbsUpdateNick() {
     await api.get(`/api/bbs/assemble/control/userinfo/update/nick/name/${person}?nickname=${nick}`)
     toast.success('昵称已更新')
   } catch (err: any) {
-    toast.error('昵称更新失败: ' + (err?.message ?? ''))
+    toast.error(`昵称更新失败: ${err?.message ?? ''}`)
   }
 }
 const api_control__714_data = ref<any[]>([])

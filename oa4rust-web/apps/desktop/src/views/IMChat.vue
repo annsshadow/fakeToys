@@ -222,7 +222,9 @@ async function startCall(): Promise<void> {
     return
   }
   localRtc = new RTCPeerConnection(RTC_CONFIG)
-  localStream.getAudioTracks().forEach((t) => localRtc?.addTrack(t, localStream))
+  localStream.getAudioTracks().forEach((t) => {
+    localRtc?.addTrack(t, localStream)
+  })
   localRtc.ontrack = (e) => {
     if (remoteAudio.value) remoteAudio.value.srcObject = e.streams[0]
   }
@@ -250,7 +252,9 @@ async function handleRtcSignal(data: any): Promise<void> {
         return
       }
       localRtc = new RTCPeerConnection(RTC_CONFIG)
-      localStream.getAudioTracks().forEach((t) => localRtc?.addTrack(t, localStream))
+      localStream.getAudioTracks().forEach((t) => {
+        localRtc?.addTrack(t, localStream)
+      })
       localRtc.ontrack = (e) => {
         if (remoteAudio.value) remoteAudio.value.srcObject = e.streams[0]
       }
@@ -280,7 +284,9 @@ async function handleRtcSignal(data: any): Promise<void> {
 function endCall(notify = true): void {
   const convId = selectedChat.value?.id
   localRtc?.close()
-  localStream?.getTracks().forEach((t) => t.stop())
+  localStream?.getTracks().forEach((t) => {
+    t.stop()
+  })
   localRtc = null
   localStream = null
   if (remoteAudio.value) remoteAudio.value.srcObject = null
@@ -564,7 +570,7 @@ async function imConvAction(kind: string): Promise<void> {
     }
     toast.success('操作已提交')
   } catch (err: any) {
-    toast.error('操作失败: ' + (err?.message ?? ''))
+    toast.error(`操作失败: ${err?.message ?? ''}`)
   }
 }
 async function imMsgAction(kind: string): Promise<void> {
@@ -601,7 +607,7 @@ async function imMsgAction(kind: string): Promise<void> {
       toast.success('群发已提交')
     }
   } catch (err: any) {
-    toast.error('操作失败: ' + (err?.message ?? ''))
+    toast.error(`操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev367：IM 会话更新/按人列会话/管理配置 + 消息收藏分页/下载/缩略/列表 + 标记已读/消费/消费类型/自定义消息/分页/群发类型/删群发 真实路由（避已消费方法孪生，仅接 distinct 新端点）
@@ -642,7 +648,7 @@ async function imMore(op: string) {
     }
     toast.success('IM 操作已提交')
   } catch (err: any) {
-    toast.error('操作失败: ' + (err?.message ?? ''))
+    toast.error(`操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev387：IM assemble/communicate 会话置顶/取消置顶/标记已读/退群、消息撤回、按类型消费、当前人已消费读 真实路由（均 Path-only 已核，各方法孪生择一；规避 im/msg/clear 裸路由 trap500）
@@ -671,7 +677,7 @@ async function imMore2(op: string) {
     } else await api.get('/api/message/assemble/communicate/instant/currentperson/consumed')
     toast.success('IM 操作已提交')
   } catch (err: any) {
-    toast.error('操作失败: ' + (err?.message ?? ''))
+    toast.error(`操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev412：IM 即时消息全部标记已消费(PUT session UPDATE，区别于既有 GET 读) + 按消息移除收藏(DELETE body messageId x_message_collection) 真实写
@@ -686,7 +692,7 @@ async function imMore3(op: string) {
     }
     toast.success('IM 操作已提交')
   } catch (err: any) {
-    toast.error('操作失败: ' + (err?.message ?? ''))
+    toast.error(`操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev426：IM communicate 写端点 发送消息(send→x_message)·创建连接器即时消息(connector→x_message_instant)·创建ws消费消息(ws→x_message_consume)（handler unwrap_or_default 不 guard，故用 prompt 真实内容避免插垃圾行；用户触发）
@@ -720,7 +726,7 @@ async function imMore4(op: string) {
     }
     toast.success('IM 消息已提交')
   } catch (err: any) {
-    toast.error('操作失败: ' + (err?.message ?? ''))
+    toast.error(`操作失败: ${err?.message ?? ''}`)
   }
 }
 
@@ -758,7 +764,7 @@ async function loadImStats() {
       `未读 ${num(unread)} / 在线 ${num(online)} / IM配置 ${(cfg as any)?.data ? '有' : '无'} / 在线清单 ${num(wsList)}`,
     )
   } catch (e: any) {
-    toast.error('加载 IM 统计失败: ' + (e?.message ?? ''))
+    toast.error(`加载 IM 统计失败: ${e?.message ?? ''}`)
   }
 }
 async function loadImMeta() {
@@ -771,7 +777,7 @@ async function loadImMeta() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     toast.success(`会话 ${n(convs)} / 在线 ${n(online)}`)
   } catch (e: any) {
-    toast.error('加载会话概览失败: ' + (e?.message ?? ''))
+    toast.error(`加载会话概览失败: ${e?.message ?? ''}`)
   }
 }
 // 消费即时消息/群发族 3 条真实 distinct 路由：当前人已消费即时消息 + 当前人消息列表(desc) + 群发启用类型
@@ -790,7 +796,7 @@ async function loadImInstant() {
       `已消费 ${n(consumed)} / 近期消息 ${n(listDesc)} / 群发类型 ${(massType as any)?.data ? '已启用' : '未启用'}`,
     )
   } catch (e: any) {
-    toast.error('加载即时消息失败: ' + (e?.message ?? ''))
+    toast.error(`加载即时消息失败: ${e?.message ?? ''}`)
   }
 }
 // 消费消息归档族 3 条真实 distinct 路由：收藏消息分页 + 当前人全部已消费 + 全站消息分页
@@ -806,7 +812,7 @@ async function loadImArchive() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     toast.success(`收藏 ${n(collection)} / 全部已消费 ${n(consumedAll)} / 消息 ${n(msgPaging)} / 核心 ${n(coreList)}`)
   } catch (e: any) {
-    toast.error('加载消息归档失败: ' + (e?.message ?? ''))
+    toast.error(`加载消息归档失败: ${e?.message ?? ''}`)
   }
 }
 // 消息分类族 3 条真实 distinct 路由（均 x_message_consume，WHERE 各异）：按类型 consume/type/{type}（WHERE type=$1）
@@ -829,7 +835,7 @@ async function loadMsgByType() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     toast.success(`information类 ${n(byType)} / 未消费 ${n(notConsumed)} / 非IM ${n(noim)} / 非文本 ${n(objList)}`)
   } catch (e: any) {
-    toast.error('加载消息分类失败: ' + (e?.message ?? ''))
+    toast.error(`加载消息分类失败: ${e?.message ?? ''}`)
   }
 }
 // 群发消息族 3 条真实 distinct 路由：群发详情 mass/{id}（x_message_mass by id）+ 群发消息游标
@@ -847,7 +853,7 @@ async function loadMassMessages() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     toast.success(`群发「${title}」· 游标 next ${n(next)} / prev ${n(prev)}`)
   } catch (e: any) {
-    toast.error('加载群发消息失败: ' + (e?.message ?? ''))
+    toast.error(`加载群发消息失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -870,7 +876,7 @@ async function loadInstantFacets() {
       `已消费 升 ${n(consAsc)}/降 ${n(consDesc)} · 全部升 ${n(allAsc)} · 未消费升 ${n(notCons)} · 游标 next ${n(next)}/prev ${n(prev)}`,
     )
   } catch (e: any) {
-    toast.error('加载即时消息维度失败: ' + (e?.message ?? ''))
+    toast.error(`加载即时消息维度失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -903,7 +909,7 @@ async function loadConsumeFacets() {
       `接收 ${n(receive)} · 队列 ${n(listCount)} · 当前人 ${n(curPerson)} · 指定人 ${n(byPerson)} · 实体 ${n(coreList)} · 未读 ${cnt(unread)}`,
     )
   } catch (e: any) {
-    toast.error('加载消费队列失败: ' + (e?.message ?? ''))
+    toast.error(`加载消费队列失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -923,7 +929,7 @@ async function loadImTwin() {
     ])
     toast.success(`IM孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('IM孪生端点失败: ' + (e?.message ?? ''))
+    toast.error(`IM孪生端点失败: ${e?.message ?? ''}`)
   }
 }
 </script>

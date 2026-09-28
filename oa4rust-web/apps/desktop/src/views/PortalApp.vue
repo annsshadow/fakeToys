@@ -102,7 +102,7 @@ async function loadPortalSurface() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     portalListText.value = `表面门户 ${n(surface)} / 移动门户 ${n(mobile)}`
   } catch (e: any) {
-    toast.error('加载门户表面失败: ' + (e?.message ?? ''))
+    toast.error(`加载门户表面失败: ${e?.message ?? ''}`)
   }
 }
 async function loadPortalList() {
@@ -112,7 +112,7 @@ async function loadPortalList() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     portalListText.value = `门户 ${n(portals)} 个 / 分类 ${n(cats)} 个`
   } catch (e: any) {
-    toast.error('加载门户列表失败: ' + (e?.message ?? ''))
+    toast.error(`加载门户列表失败: ${e?.message ?? ''}`)
   }
 }
 // 门户资源（default 门户）：字典 + 文件 + 页面——三条 distinct 真实路由（portalFlag/page 参数匹配）
@@ -126,7 +126,7 @@ async function loadPortalResources() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     portalListText.value = `字典 ${n(dict)} / 文件 ${n(files)} / 页面 ${n(portalPages)}`
   } catch (e: any) {
-    toast.error('加载门户资源失败: ' + (e?.message ?? ''))
+    toast.error(`加载门户资源失败: ${e?.message ?? ''}`)
   }
 }
 // 门户明细族 3 条真实 distinct 路由：从 portal/list 首项取 flag → 门户详情 portal/{flag}（x_portal 全列）
@@ -154,7 +154,7 @@ async function loadPortalDetail() {
     const fName = (file as any)?.data?.name ?? '—'
     portalListText.value = `门户「${name}」· 角标 ${mark} · 文件「${fName}」`
   } catch (e: any) {
-    toast.error('加载门户明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载门户明细失败: ${e?.message ?? ''}`)
   }
 }
 // rev214：门户表面组件/脚本/字典/页面族 7 条真实 distinct 路由
@@ -183,7 +183,7 @@ async function loadPortalSurfaceEntities() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     portalListText.value = `表面 ${hit(surf)} · 分类列表 ${n(byCat)} · 组件 ${hit(widget)}（按flag ${hit(widgetByFlag)}）· 脚本 ${hit(script)} · 移动页 ${hit(pageMobile)} · 字典 ${(dict as any)?.data ? '有' : '无'}`
   } catch (e: any) {
-    toast.error('加载门户表面实体失败: ' + (e?.message ?? ''))
+    toast.error(`加载门户表面实体失败: ${e?.message ?? ''}`)
   }
 }
 // rev244：门户表面 字典/角标/组件移动 4 条真实 distinct 读路由（arity 已核；跳 get/layout·list/layouts·script/list/portal/portal·mobile/{page}/{id}·v2/{page}/{id} 等 handler Path 元数与 URL 参数数不符=运行时 500，及 dict/{}/portal/{}/data 双注册孪生）
@@ -208,7 +208,7 @@ async function loadPortalMobileFacets() {
     const hit = (r: any) => ((r as any)?.data ? '命中' : '未命中')
     portalListText.value = `字典数据 ${hit(dictData)} · 角标 ${hit(corner)} · 组件移动(按id) ${hit(widgetMobile)} · 组件移动(按flag) ${hit(widgetByFlag)}`
   } catch (e: any) {
-    toast.error('加载门户移动族失败: ' + (e?.message ?? ''))
+    toast.error(`加载门户移动族失败: ${e?.message ?? ''}`)
   }
 }
 // 门户表面/设计器 深度读：页面/移动/字典/组件/脚本/文件/图标/预览/版本 按 portal·flag·page 组合 33 条真实读路由
@@ -269,7 +269,7 @@ async function loadPortalDeep() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     portalListText.value = `门户深度读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载门户深度读失败: ' + (e?.message ?? ''))
+    toast.error(`加载门户深度读失败: ${e?.message ?? ''}`)
   }
 }
 // rev475（用户裁定放宽双计口径）：门户域镜像/方法孪生真注册路由 11 条（arity 已校验；含同 handler 三胞胎 script imported 位）
@@ -291,7 +291,7 @@ async function loadPortalTwin() {
     ])
     toast.success(`门户孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('门户孪生端点失败: ' + (e?.message ?? ''))
+    toast.error(`门户孪生端点失败: ${e?.message ?? ''}`)
   }
 }
 // rev318：门户设计器 真实写端点（用户触发）——门户/页面/组件/模板页/字典/脚本 建·改·删；请求体经 handler 源码/结构体核实
@@ -308,7 +308,7 @@ async function designerCreate(kind: 'portal' | 'page' | 'widget' | 'templatepage
     else await api.post(`/api/portal/assemble/designer/script`, { name })
     toast.success(`${kind} 已创建`)
   } catch (e: any) {
-    toast.error(`新建${kind}失败: ` + (e?.message ?? ''))
+    toast.error(`新建${kind}失败: ${e?.message ?? ''}`)
   }
 }
 async function designerUpdate(kind: 'portal' | 'page' | 'widget' | 'dict' | 'script') {
@@ -329,7 +329,7 @@ async function designerUpdate(kind: 'portal' | 'page' | 'widget' | 'dict' | 'scr
     else await api.put(`/api/portal/assemble/designer/script/${encodeURIComponent(id)}`, { text: '' })
     toast.success(`${kind} 已更新`)
   } catch (e: any) {
-    toast.error(`更新${kind}失败: ` + (e?.message ?? ''))
+    toast.error(`更新${kind}失败: ${e?.message ?? ''}`)
   }
 }
 async function designerDelete(kind: 'portal' | 'page' | 'widget' | 'templatepage' | 'dict' | 'script') {
@@ -346,7 +346,7 @@ async function designerDelete(kind: 'portal' | 'page' | 'widget' | 'templatepage
     else await api.delete(`/api/portal/assemble/designer/script/${encodeURIComponent(id)}`)
     toast.success(`${kind} 已删除`)
   } catch (e: any) {
-    toast.error(`删除${kind}失败: ` + (e?.message ?? ''))
+    toast.error(`删除${kind}失败: ${e?.message ?? ''}`)
   }
 }
 // rev335：门户设计器 图标/权限/save变体/输入/检索/汇总 真实写端点（用户触发，shape 已核；全字面量路径）
@@ -383,7 +383,7 @@ async function designerMisc(op: string) {
     }
     toast.success('门户设计器操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 // rev364：门户表面 建/发布 + 分页门户/页面 + 门户字典路径数据 读写删 + 门户脚本按名建 真实路由（避开 get/layout·list/layouts 裸路由500；dict data POST/DELETE 各一 op）
@@ -433,7 +433,7 @@ async function surfaceOps(op: string) {
     }
     toast.success('门户表面操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 const pages = ref<PortalPage[]>([])
@@ -484,7 +484,7 @@ async function loadPortalTwin2() {
     ])
     toast.success(`门户孪生端点B ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('门户孪生端点B失败: ' + (e?.message ?? ''))
+    toast.error(`门户孪生端点B失败: ${e?.message ?? ''}`)
   }
 }
 </script>

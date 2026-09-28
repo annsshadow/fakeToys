@@ -169,9 +169,9 @@ async function loadCmsConfig() {
     // GET /api/cms_assemble_control/get/control/config —— CMS 控制配置
     const r: any = await api.get('/api/cms_assemble_control/get/control/config')
     const d = r.data ?? {}
-    cmsConfigText.value = '控制配置：' + JSON.stringify(d).slice(0, 120)
+    cmsConfigText.value = `控制配置：${JSON.stringify(d).slice(0, 120)}`
   } catch (e: any) {
-    toast.error('加载配置失败: ' + (e?.message ?? ''))
+    toast.error(`加载配置失败: ${e?.message ?? ''}`)
   }
 }
 const overviewText = ref('')
@@ -186,7 +186,7 @@ async function loadCmsOverview() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     overviewText.value = `分类 ${n(cat)} / 文章 ${n(art)} / 模板表单 ${n(tf)}`
   } catch (e: any) {
-    toast.error('加载概览失败: ' + (e?.message ?? ''))
+    toast.error(`加载概览失败: ${e?.message ?? ''}`)
   }
 }
 // 消费 cms express/core 真实 distinct 路由：内容列表→内容详情 + 全部视图（x_cms_content / cms views）
@@ -207,7 +207,7 @@ async function loadCmsExpress() {
     const vN = Array.isArray((views as any)?.data) ? (views as any).data.length : 0
     overviewText.value = `内容 ${rows.length}（首篇「${title}」）· 视图 ${vN}`
   } catch (e: any) {
-    toast.error('加载内容/视图失败: ' + (e?.message ?? ''))
+    toast.error(`加载内容/视图失败: ${e?.message ?? ''}`)
   }
 }
 // 消费分类/文章详情 + 控制版块 3 条真实 distinct 路由（cms_core_entity category/article、cms_control sections）
@@ -233,7 +233,7 @@ async function loadCmsDetails() {
     const sN = Array.isArray((sections as any)?.data) ? (sections as any).data.length : 0
     overviewText.value = `分类「${cName}」· 文章「${aTitle}」· 控制版块 ${sN}`
   } catch (e: any) {
-    toast.error('加载分类/文章明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载分类/文章明细失败: ${e?.message ?? ''}`)
   }
 }
 // 表单明细族 3 条真实 distinct 路由：表单运行时 form/v2/{id}（form_runtime_by_id）+ 应用下表单 form/list/app/{appId}（x_cms_form WHERE app_id）
@@ -266,7 +266,7 @@ async function loadFormDetails() {
     const hasDoc = (docForm as any)?.data ? '有' : '无'
     overviewText.value = `表单「${fName}」· 应用下表单 ${aN} · 文档表单 ${hasDoc}`
   } catch (e: any) {
-    toast.error('加载表单明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载表单明细失败: ${e?.message ?? ''}`)
   }
 }
 // rev258：CMS 应用别名/发布/分类别名/表单+应用 4 条真实 distinct 读路由（非退化桩）
@@ -285,7 +285,7 @@ async function loadCmsAliasForm() {
     const h = (r: any) => ((r as any)?.data ? '命中' : '未命中')
     overviewText.value = `应用别名 ${h(appAlias)} · 应用发布 ${h(appPublish)} · 分类别名 ${h(catAlias)} · 表单(按应用) ${h(formApp)} · 文档读权限 ${h(docPerm)}`
   } catch (e: any) {
-    toast.error('加载别名/表单失败: ' + (e?.message ?? ''))
+    toast.error(`加载别名/表单失败: ${e?.message ?? ''}`)
   }
 }
 // rev268：CMS 浏览记录 文档/人员 2 条真实 distinct 读路由
@@ -302,7 +302,7 @@ async function loadViewRecords() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     overviewText.value = `文档浏览 ${h(byDoc)} · 人员浏览记录 ${n(byPerson)}`
   } catch (e: any) {
-    toast.error('加载浏览记录失败: ' + (e?.message ?? ''))
+    toast.error(`加载浏览记录失败: ${e?.message ?? ''}`)
   }
 }
 // rev289：CMS 分类/表单/表单版本/脚本 按应用真实读端点集（categoryinfo publish/view、form formfield/v2、formversion、appinfo control、script list）；均只读 arity 已核
@@ -329,7 +329,7 @@ async function loadCmsAppReads() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     overviewText.value = `CMS 按应用真实读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载分类/表单/脚本失败: ' + (e?.message ?? ''))
+    toast.error(`加载分类/表单/脚本失败: ${e?.message ?? ''}`)
   }
 }
 // rev298：CMS 视图/搜索过滤/脚本游标/应用视图族 真实读端点集（appinfo view/publish/manage type、appinfo/categoryinfo/file flag、script 游标、searchfilter category、view/viewcategory list、viewrecord filter）；均只读 arity<=url 已核
@@ -350,7 +350,7 @@ async function loadCmsDeepReads() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     cmsConfigText.value = `CMS 深度读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载 CMS 深度读失败: ' + (e?.message ?? ''))
+    toast.error(`加载 CMS 深度读失败: ${e?.message ?? ''}`)
   }
 }
 // rev316：CMS 内容真实写端点（用户触发）——新建分类/新建文章/发布·取消发布视图；请求体经 handler 源码核实
@@ -362,7 +362,7 @@ async function createCmsCategory() {
     await api.post('/api/cms/category/create', { name, parentId: '', sortOrder: 0, status: 'enabled' })
     toast.success('分类已创建')
   } catch (e: any) {
-    toast.error('新建分类失败: ' + (e?.message ?? ''))
+    toast.error(`新建分类失败: ${e?.message ?? ''}`)
   }
 }
 async function createCmsArticle() {
@@ -374,7 +374,7 @@ async function createCmsArticle() {
     await api.post('/api/cms/article/create', { title, content: '', categoryId, status: 'draft' })
     toast.success('文章已创建')
   } catch (e: any) {
-    toast.error('新建文章失败: ' + (e?.message ?? ''))
+    toast.error(`新建文章失败: ${e?.message ?? ''}`)
   }
 }
 async function toggleViewPublish(publish: boolean) {
@@ -386,7 +386,7 @@ async function toggleViewPublish(publish: boolean) {
     await api.post(`/api/cms/view/${seg}/${encodeURIComponent(id)}`)
     toast.success(publish ? '视图已发布' : '视图已取消发布')
   } catch (e: any) {
-    toast.error('视图发布操作失败: ' + (e?.message ?? ''))
+    toast.error(`视图发布操作失败: ${e?.message ?? ''}`)
   }
 }
 // rev321：CMS 定义 保存/删除 真实写端点（用户触发）——字典/表单/视图/xform/模板表单 + 控制配置 + 文档更新；全字面量路径
@@ -402,7 +402,7 @@ async function cmsSave(kind: 'dict' | 'form' | 'view' | 'xform' | 'templateform'
     else await api.put(`/api/templateform/save/${e}`, { data: {} })
     toast.success(`${kind} 已保存`)
   } catch (err: any) {
-    toast.error(`保存${kind}失败: ` + (err?.message ?? ''))
+    toast.error(`保存${kind}失败: ${err?.message ?? ''}`)
   }
 }
 async function cmsDelete(kind: 'dict' | 'form' | 'view' | 'xform' | 'templateform') {
@@ -418,7 +418,7 @@ async function cmsDelete(kind: 'dict' | 'form' | 'view' | 'xform' | 'templatefor
     else await api.delete(`/api/templateform/delete/${e}`)
     toast.success(`${kind} 已删除`)
   } catch (err: any) {
-    toast.error(`删除${kind}失败: ` + (err?.message ?? ''))
+    toast.error(`删除${kind}失败: ${err?.message ?? ''}`)
   }
 }
 async function cmsSaveConfig() {
@@ -427,7 +427,7 @@ async function cmsSaveConfig() {
     await api.put('/api/cms_assemble_control/update/control/config', {})
     toast.success('CMS 控制配置已保存')
   } catch (e: any) {
-    toast.error('保存配置失败: ' + (e?.message ?? ''))
+    toast.error(`保存配置失败: ${e?.message ?? ''}`)
   }
 }
 async function cmsUpdateDocument() {
@@ -438,7 +438,7 @@ async function cmsUpdateDocument() {
     await api.post(`/api/document/${encodeURIComponent(id)}/update`, {})
     toast.success('文档已更新')
   } catch (e: any) {
-    toast.error('更新文档失败: ' + (e?.message ?? ''))
+    toast.error(`更新文档失败: ${e?.message ?? ''}`)
   }
 }
 // rev347：CMS 根级 U2 CRUD（表单/视图/脚本/模板表单/视图分类·字段/评论/设计字典/核心实体列·模块·索引·备注） 真实写端点（用户触发，shape 已核；全字面量路径）
@@ -487,7 +487,7 @@ async function cmsRoot(op: string) {
     else await api.post(`/api/cms/core/entity/note/save/${e}`, {})
     toast.success('CMS 操作已提交')
   } catch (err: any) {
-    toast.error('CMS 操作失败: ' + (err?.message ?? ''))
+    toast.error(`CMS 操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev349：CMS 分页/游标筛选查询（文档/日志/分类/应用/表单/评论）真实读端点（POST/PUT 数据查询，用户触发；全字面量路径）
@@ -506,7 +506,7 @@ async function cmsQuery(op: string) {
     else await api.put('/api/comment/list/1/size/20', {})
     toast.success('查询已提交')
   } catch (e: any) {
-    toast.error('查询失败: ' + (e?.message ?? ''))
+    toast.error(`查询失败: ${e?.message ?? ''}`)
   }
 }
 // rev365：CMS 分类/表单/文档 游标过滤 + 视图分类/字段配置详情 + 归档 + 脚本/视图记录分页 真实只读（用户触发，参数正确；app 维度过滤走 {id}/next/{count}/app/{appId}）
@@ -534,7 +534,7 @@ async function cmsQuery3(op: string) {
     else await api.put('/api/viewrecord/unread', {})
     toast.success('CMS 查询已提交')
   } catch (e: any) {
-    toast.error('查询失败: ' + (e?.message ?? ''))
+    toast.error(`查询失败: ${e?.message ?? ''}`)
   }
 }
 // rev365：CMS 分类变更/绑定视图/擦除 + 文档批量改删/发布HTML + 视图发布 + core entity 列/模块/索引/笔记删 真实写（Path 参数，用户触发确认）
@@ -582,7 +582,7 @@ async function cmsWrite2(op: string) {
     }
     toast.success('CMS 写操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 // rev403：CMS 分类信息 权限/扩展内容存/对象清单/投影执行 + 文档密文发布内容 + 脚本按应用运行 真实路由（categoryinfo/document/script handler 已核 Path+Json，projection Path-only；用户触发）
@@ -604,7 +604,7 @@ async function cmsWrite3(op: string) {
     }
     toast.success('CMS 操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 async function loadCmsAppReads2() {
@@ -642,7 +642,7 @@ async function loadCmsAppReads2() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     overviewText.value = `CMS 视图/过滤/脚本 真实读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载视图/搜索过滤/脚本失败: ' + (e?.message ?? ''))
+    toast.error(`加载视图/搜索过滤/脚本失败: ${e?.message ?? ''}`)
   }
 }
 const createEp = '/api/cms/core/entity/index/create'
@@ -749,7 +749,7 @@ async function loadCmsTwin() {
     ])
     toast.success(`内容孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('内容孪生端点失败: ' + (e?.message ?? ''))
+    toast.error(`内容孪生端点失败: ${e?.message ?? ''}`)
   }
 }
 // rev484（桶外 off-metric 波）：内容/组件/应用配置/组织绑定 真注册路由 35 条（arity 已校验；
@@ -795,7 +795,7 @@ async function loadCmsTwin2() {
     ])
     toast.success(`内容孪生端点B ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('内容孪生端点B失败: ' + (e?.message ?? ''))
+    toast.error(`内容孪生端点B失败: ${e?.message ?? ''}`)
   }
 }
 // rev485（桶外 off-metric 第二波）：surface/anonymous appdict 深 path 数据族 45 条（GET/POST/PUT/DELETE 各 8 深度 +
@@ -855,7 +855,7 @@ async function loadCmsTwin3() {
     ])
     toast.success(`内容孪生端点C ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('内容孪生端点C失败: ' + (e?.message ?? ''))
+    toast.error(`内容孪生端点C失败: ${e?.message ?? ''}`)
   }
 }
 </script>

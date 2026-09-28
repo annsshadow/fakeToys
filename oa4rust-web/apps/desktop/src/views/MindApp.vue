@@ -223,7 +223,7 @@ async function loadMindFilters() {
     ])
     mindFilterText.value = `收到共享 ${pg(received)} · 回收站 ${pg(recycle)} · 我共享 ${pg(shared)}`
   } catch (e: any) {
-    toast.error('加载共享/回收站失败: ' + (e?.message ?? ''))
+    toast.error(`加载共享/回收站失败: ${e?.message ?? ''}`)
   }
 }
 async function loadMindConfig() {
@@ -237,7 +237,7 @@ async function loadMindConfig() {
     const n = Array.isArray((folders as any)?.data) ? (folders as any).data.length : 0
     allMindsText.value = `控制配置 ${hasCfg} / 我的目录 ${n} 个`
   } catch (e: any) {
-    toast.error('加载导图配置失败: ' + (e?.message ?? ''))
+    toast.error(`加载导图配置失败: ${e?.message ?? ''}`)
   }
 }
 async function loadAllMinds() {
@@ -250,7 +250,7 @@ async function loadAllMinds() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     allMindsText.value = `导图 ${n(minds)} 个 / 文件夹 ${n(folders)} 个`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 // rev212：导图明细/版本族 6 条真实 distinct 路由
@@ -273,7 +273,7 @@ async function loadMindDetails() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     allMindsText.value = `导图详情 ${(base as any)?.data?.id ? '命中' : '未命中'} / 版本 ${n(versions)} / 目录 ${(folder as any)?.data?.id ? '命中' : '未命中'} / 最新版 ${(latestVer as any)?.data ? '有' : '无'} / 图标 ${(icon as any)?.data ? '有' : '无'} / 实体版本 ${n(coreVer)}`
   } catch (e: any) {
-    toast.error('加载导图明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载导图明细失败: ${e?.message ?? ''}`)
   }
 }
 // rev317：思维导图 RESTful CRUD + 分享 真实写端点（用户触发）；请求体经 handler 源码核实
@@ -286,7 +286,7 @@ async function createMindRest() {
     toast.success('导图已创建')
     if (currentFolder.value) loadMinds(currentFolder.value.id)
   } catch (e: any) {
-    toast.error('新建导图失败: ' + (e?.message ?? ''))
+    toast.error(`新建导图失败: ${e?.message ?? ''}`)
   }
 }
 async function renameMindRest(item: MindItem) {
@@ -298,7 +298,7 @@ async function renameMindRest(item: MindItem) {
     toast.success('导图已重命名')
     if (currentFolder.value) loadMinds(currentFolder.value.id)
   } catch (e: any) {
-    toast.error('重命名失败: ' + (e?.message ?? ''))
+    toast.error(`重命名失败: ${e?.message ?? ''}`)
   }
 }
 async function deleteMindRest(item: MindItem) {
@@ -309,7 +309,7 @@ async function deleteMindRest(item: MindItem) {
     toast.success('导图已删除')
     if (currentFolder.value) loadMinds(currentFolder.value.id)
   } catch (e: any) {
-    toast.error('删除失败: ' + (e?.message ?? ''))
+    toast.error(`删除失败: ${e?.message ?? ''}`)
   }
 }
 async function createMindFolder() {
@@ -321,7 +321,7 @@ async function createMindFolder() {
     toast.success('目录已创建')
     loadFolders()
   } catch (e: any) {
-    toast.error('新建目录失败: ' + (e?.message ?? ''))
+    toast.error(`新建目录失败: ${e?.message ?? ''}`)
   }
 }
 async function shareMindToggle(item: MindItem, share: boolean) {
@@ -335,7 +335,7 @@ async function shareMindToggle(item: MindItem, share: boolean) {
       toast.success('已取消分享')
     }
   } catch (e: any) {
-    toast.error('分享操作失败: ' + (e?.message ?? ''))
+    toast.error(`分享操作失败: ${e?.message ?? ''}`)
   }
 }
 // rev341：思维导图 配置/文件夹保存移动强删/回收站删/彻底删/图标 真实写端点（用户触发，shape 已核；避 3 轨镜像 CUD）
@@ -365,7 +365,7 @@ async function mindWrite(op: string) {
     }
     toast.success('导图操作已提交')
   } catch (err: any) {
-    toast.error('导图操作失败: ' + (err?.message ?? ''))
+    toast.error(`导图操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev378：思维导图 恢复/版本 + core entity 导图/文件夹/版本 建改删 真实路由（core/entity 为独立 SeaORM crate 首次消费；短/assemble 轨 folder CRUD 属镜像已跳过）
@@ -394,7 +394,7 @@ async function mindMore(op: string) {
     } else await api.post('/api/mind/core/entity/version', {})
     toast.success('导图操作已提交')
   } catch (err: any) {
-    toast.error('导图操作失败: ' + (err?.message ?? ''))
+    toast.error(`导图操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev391：思维导图 assemble/control 文件夹删/改 + mind 顶层文件夹改/删 真实路由（folder_delete/delete_folder Path-only、update_folder Path+Json，跨 crate 不同 handler 各计一次，用户触发；规避守卫禁的 core/entity/folder-001）
@@ -413,7 +413,7 @@ async function mindFolderOps(op: string) {
     }
     toast.success('导图文件夹操作已提交')
   } catch (err: any) {
-    toast.error('导图操作失败: ' + (err?.message ?? ''))
+    toast.error(`导图操作失败: ${err?.message ?? ''}`)
   }
 }
 
@@ -612,7 +612,9 @@ const outlineRows = computed(() => {
   const rows: Array<{ node: MindNode; depth: number }> = []
   const walk = (node: MindNode, depth: number) => {
     rows.push({ node, depth })
-    node.children.forEach((child) => walk(child, depth + 1))
+    node.children.forEach((child) => {
+      walk(child, depth + 1)
+    })
   }
   if (editor.value) walk(editor.value.root, 0)
   return rows

@@ -198,7 +198,7 @@ async function loadCalSettings() {
     const setIsMgr = (setMgr as any)?.data?.value === true
     calSettingText.value = `设置 ${n} 项（首「${sName}」）· 日历${isMgr ? '管理员' : '普通'} · 设置${setIsMgr ? '可管' : '只读'}`
   } catch (e: any) {
-    toast.error('加载日历设置失败: ' + (e?.message ?? ''))
+    toast.error(`加载日历设置失败: ${e?.message ?? ''}`)
   }
 }
 // rev337：日历 assemble_control 事件重复范围删改/事件管理/日历删/设置·提醒建 真实写端点（用户触发，shape 已核；避 3 轨镜像 create/update/remove）
@@ -226,7 +226,7 @@ async function calWrite(op: string) {
     else await api.post('/api/calendar_assemble_control/message', { content: '日历提醒' })
     toast.success('日历操作已提交')
   } catch (err: any) {
-    toast.error('日历操作失败: ' + (err?.message ?? ''))
+    toast.error(`日历操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev362：日历 详情/取消关注 + 日历·事件 抽样过滤清单 真实读（distinct，非三轨镜像 CRUD；detail/follow-cancel/list-filter/event-sample-filter/manager）
@@ -247,7 +247,7 @@ async function calMore(op: string) {
     }
     toast.success('日历读/操作已提交')
   } catch (err: any) {
-    toast.error('日历操作失败: ' + (err?.message ?? ''))
+    toast.error(`日历操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev388：日历 core/entity 日历建/改 + 事件建/改/删 + 日历删(calendar/calendar/remove 轨) 真实写路由（3 轨镜像择一轨接线，字段已核 CreateCalendarRequest/CreateEventRequest 等；规避守卫禁的 core/entity/calendar/remove，删日历改走 /calendar/calendar/remove）
@@ -285,7 +285,7 @@ async function calWriteCE(op: string) {
     }
     toast.success('日历写操作已提交')
   } catch (err: any) {
-    toast.error('日历操作失败: ' + (err?.message ?? ''))
+    toast.error(`日历操作失败: ${err?.message ?? ''}`)
   }
 }
 async function loadCalCoreEntities() {
@@ -304,7 +304,7 @@ async function loadCalCoreEntities() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     calSettingText.value = `实体公共 ${n(pub)} / 我的 ${n(my)} / 详情 ${(detail as any)?.data?.id ? '命中' : '未命中'} / 事件 ${n(events)}`
   } catch (e: any) {
-    toast.error('加载日历实体失败: ' + (e?.message ?? ''))
+    toast.error(`加载日历实体失败: ${e?.message ?? ''}`)
   }
 }
 async function loadCalendars(scope: 'my' | 'public') {
@@ -407,7 +407,7 @@ async function createEvent(): Promise<void> {
     evtForm.value = { title: '', startTime: '', endTime: '', location: '' }
     await loadCalEvents()
   } catch (e: any) {
-    toast.error('创建事件失败: ' + (e?.message ?? ''))
+    toast.error(`创建事件失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -418,7 +418,7 @@ async function finishEvent(evt: CalendarEvent): Promise<void> {
     toast.success('事件已结束')
     await loadCalEvents()
   } catch (e: any) {
-    toast.error('更新事件失败: ' + (e?.message ?? ''))
+    toast.error(`更新事件失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -430,7 +430,7 @@ async function removeEvent(evt: CalendarEvent): Promise<void> {
     toast.success('事件已删除')
     await loadCalEvents()
   } catch (e: any) {
-    toast.error('删除事件失败: ' + (e?.message ?? ''))
+    toast.error(`删除事件失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -617,7 +617,7 @@ async function loadCalTwin() {
     ])
     toast.success(`日历孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('日历孪生端点失败: ' + (e?.message ?? ''))
+    toast.error(`日历孪生端点失败: ${e?.message ?? ''}`)
   }
 }
 </script>

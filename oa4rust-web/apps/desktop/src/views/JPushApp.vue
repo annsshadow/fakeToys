@@ -190,7 +190,7 @@ async function jpushWrite(op: string) {
     }
     toast.success('推送操作已提交')
   } catch (e: any) {
-    toast.error('推送操作失败: ' + (e?.message ?? ''))
+    toast.error(`推送操作失败: ${e?.message ?? ''}`)
   }
 }
 // rev406：极光推送 按设备名·类型·推送类型 新版解绑 真实路由（device_unbind_new Path<3-tuple> 已核；规避 device/config/push/type 是 handler 取 Path 但路由末段字面 'type' 的 trap500；用户触发）
@@ -202,7 +202,7 @@ async function jpushUnbindNew() {
     await api.get(`/api/jpush_assemble_control/device/unbind/new/${dn}/${dt}/${pt}`)
     toast.success('设备已解绑')
   } catch (e: any) {
-    toast.error('解绑失败: ' + (e?.message ?? ''))
+    toast.error(`解绑失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -216,7 +216,7 @@ async function jpushCtrlWrite(_op: string) {
     await api.post('/api/jpush/assemble/control/device/bind', { deviceName, deviceType, pushType })
     toast.success('控制操作已提交')
   } catch (e: any) {
-    toast.error('控制操作失败: ' + (e?.message ?? ''))
+    toast.error(`控制操作失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -226,7 +226,7 @@ async function delDevice(d: any) {
     await api.delete(`/api/jpush/core/entity/device/${d.id}`)
     devices.value = devices.value.filter((x) => x.id !== d.id)
   } catch (e: any) {
-    toast.error('删除失败: : ' + (e?.message ?? ''))
+    toast.error(`删除失败: : ${e?.message ?? ''}`)
   }
 }
 

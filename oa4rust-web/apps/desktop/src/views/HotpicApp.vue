@@ -85,7 +85,7 @@ async function loadHotpicMeta2() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     hotpicMetaText.value = `热图 ${n(hp)} / 面板 ${n(panels)} / 应用 ${n(apps)}`
   } catch (e: any) {
-    toast.error('加载热图元数据失败: ' + (e?.message ?? ''))
+    toast.error(`加载热图元数据失败: ${e?.message ?? ''}`)
   }
 }
 async function loadHotpicDeep() {
@@ -111,7 +111,7 @@ async function loadHotpicDeep() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     hotpicMetaText.value = `热图深度读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载热图深度读失败: ' + (e?.message ?? ''))
+    toast.error(`加载热图深度读失败: ${e?.message ?? ''}`)
   }
 }
 // rev340：热图 创建/改标题/配置/用户热图增删/密文清除/实体 真实写端点（用户触发，shape 已核；避 autoquery-guards 禁的 save/hotpic·delete/hotpic）
@@ -150,7 +150,7 @@ async function hotpicWrite(op: string) {
     }
     toast.success('热图操作已提交')
   } catch (e: any) {
-    toast.error('热图操作失败: ' + (e?.message ?? ''))
+    toast.error(`热图操作失败: ${e?.message ?? ''}`)
   }
 }
 // rev363：热图 存在校验 + 用户热图按应用/按 id + 密文/用户热图 分页过滤读 + 用户热图删（复合 id/{id2}）真实路由（避开 autoquery-guards 禁的 save/hotpic·delete/hotpic）
@@ -176,7 +176,7 @@ async function hotpicMore(op: string) {
     }
     toast.success('热图操作已提交')
   } catch (e: any) {
-    toast.error('热图操作失败: ' + (e?.message ?? ''))
+    toast.error(`热图操作失败: ${e?.message ?? ''}`)
   }
 }
 async function loadHotpicMeta() {
@@ -190,7 +190,7 @@ async function loadHotpicMeta() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     hotpicMetaText.value = `热图 ${n(hp)} / 面板 ${n(panels)} / 应用 ${n(apps)}`
   } catch (e: any) {
-    toast.error('加载热图元数据失败: ' + (e?.message ?? ''))
+    toast.error(`加载热图元数据失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -212,7 +212,7 @@ async function onDelete(item: any) {
     await api.delete(`/api/hotpic/core/entity/delete/${item.id}`)
     items.value = items.value.filter((i) => i.id !== item.id)
   } catch (e: any) {
-    toast.error('删除失败: : ' + (e?.message ?? '未知错误'))
+    toast.error(`删除失败: : ${e?.message ?? '未知错误'}`)
   }
 }
 
@@ -272,7 +272,7 @@ async function loadHotpicTwin() {
     ])
     toast.success(`热图孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('热图孪生端点失败: ' + (e?.message ?? ''))
+    toast.error(`热图孪生端点失败: ${e?.message ?? ''}`)
   }
 }
 </script>

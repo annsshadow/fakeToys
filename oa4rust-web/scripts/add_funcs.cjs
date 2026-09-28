@@ -1,4 +1,4 @@
-const fs = require('fs')
+const fs = require('node:fs')
 const content = fs.readFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/ProcessDesigner.vue', 'utf8')
 const marker = 'onUnmounted(() => {\n  document.removeEventListener'
 const idx = content.indexOf(marker)

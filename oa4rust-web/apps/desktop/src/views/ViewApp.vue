@@ -122,7 +122,7 @@ async function removeView(v: ViewItem) {
     toast.success('已删除')
     loadViews()
   } catch (e: any) {
-    toast.error('删除失败: ' + (e?.message ?? ''))
+    toast.error(`删除失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -132,9 +132,9 @@ async function loadViewCategories() {
     // GET /api/viewcategory/list/all —— 视图分类
     const r: any = await api.get('/api/viewcategory/list/all')
     const n = Array.isArray(r.data) ? r.data.length : 0
-    metaText.value = '视图分类：' + n + ' 个'
+    metaText.value = `视图分类：${n} 个`
   } catch (e: any) {
-    toast.error('加载分类失败: ' + (e?.message ?? ''))
+    toast.error(`加载分类失败: ${e?.message ?? ''}`)
   }
 }
 async function loadFieldConfigs() {
@@ -142,9 +142,9 @@ async function loadFieldConfigs() {
     // GET /api/viewfieldconfig/list/all —— 视图字段配置
     const r: any = await api.get('/api/viewfieldconfig/list/all')
     const n = Array.isArray(r.data) ? r.data.length : 0
-    metaText.value = '字段配置：' + n + ' 条'
+    metaText.value = `字段配置：${n} 条`
   } catch (e: any) {
-    toast.error('加载字段配置失败: ' + (e?.message ?? ''))
+    toast.error(`加载字段配置失败: ${e?.message ?? ''}`)
   }
 }
 

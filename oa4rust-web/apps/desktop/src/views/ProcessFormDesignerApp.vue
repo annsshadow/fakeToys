@@ -77,7 +77,7 @@ async function loadTemplateForms() {
     templateForms.value = (r.data ?? []) as Array<{ id?: string; name?: string }>
     if (templateForms.value.length === 0) toast.success('该分类暂无模板表单')
   } catch (e: any) {
-    toast.error('加载模板表单失败: ' + (e?.message ?? ''))
+    toast.error(`加载模板表单失败: ${e?.message ?? ''}`)
   }
 }
 const qk = ['ProcessFormDesigner', 'list']
@@ -194,7 +194,7 @@ async function loadFormDetails() {
     const aN = Array.isArray((appForms as any)?.data) ? (appForms as any).data.length : 0
     formDetailText.value = `表单「${fName}」· 版本 ${vN} · 同应用表单 ${aN}`
   } catch (e: any) {
-    toast.error('加载表单明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载表单明细失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -224,7 +224,7 @@ async function loadFormCursors() {
     const hasVer = (verDetail as any)?.data?.id ? '命中' : '未命中'
     formCursorText.value = `游标：后续 ${n(next)}·前序 ${n(prev)} | 字段(表单) ${n(fieldsById)}·字段(应用) ${n(fieldsByApp)} | 版本详情 ${hasVer}`
   } catch (e: any) {
-    toast.error('加载表单游标/字段/版本失败: ' + (e?.message ?? ''))
+    toast.error(`加载表单游标/字段/版本失败: ${e?.message ?? ''}`)
   }
 }
 </script>

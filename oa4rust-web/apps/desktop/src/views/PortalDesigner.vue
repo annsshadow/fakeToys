@@ -176,7 +176,7 @@ async function loadDesignerAssets() {
     const has = (r: any) => ((r as any)?.data?.id ? '命中' : '未命中')
     assetText.value = `组件 ${has(widget)} · 脚本 ${has(script)}（版本 ${has(svDetail)}）· 模板页 ${has(templatepage)} · 字典 ${has(dict)}`
   } catch (e: any) {
-    toast.error('加载资产明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载资产明细失败: ${e?.message ?? ''}`)
   }
 }
 // rev213：门户设计器分类/页面/文件族 6 条真实 distinct 路由
@@ -213,7 +213,7 @@ async function loadDesignerCategories() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     assetText.value = `分类页 ${n(byCat)} · 门户页 ${n(byPortal)} · 图标 ${(icon as any)?.data ? '有' : '无'} · 应用文件 ${n(files)} · 页版本 ${n(versions)} · 同类门户 ${n(catFull)}`
   } catch (e: any) {
-    toast.error('加载分类/页面明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载分类/页面明细失败: ${e?.message ?? ''}`)
   }
 }
 // rev228：门户设计器 分页/文件/版本/摘要族 5 条真实 distinct 路由
@@ -244,7 +244,7 @@ async function loadDesignerPaging() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     assetText.value = `字典分页 ${n(dicts)} · 文件 ${(file as any)?.data?.id ? '命中' : '未命中'} · 页版本 ${n(versions)} · 同类摘要 ${n(summary)} · 脚本分页 ${n(scripts)}`
   } catch (e: any) {
-    toast.error('加载分页/文件/版本失败: ' + (e?.message ?? ''))
+    toast.error(`加载分页/文件/版本失败: ${e?.message ?? ''}`)
   }
 }
 // rev255：门户设计器 输出(按文件flag/按门户flag)·文件列表前翻 3 条真实 distinct 读路由
@@ -261,7 +261,7 @@ async function loadDesignerOutputs() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     assetText.value = `输出(按文件) ${(outFile as any)?.data ? '命中' : '未命中'} · 输出(按门户) ${n(outPortal)} · 文件前翻 ${n(filePrev)}`
   } catch (e: any) {
-    toast.error('加载输出/文件前翻失败: ' + (e?.message ?? ''))
+    toast.error(`加载输出/文件前翻失败: ${e?.message ?? ''}`)
   }
 }
 const widgets = ref<PortalWidget[]>([])

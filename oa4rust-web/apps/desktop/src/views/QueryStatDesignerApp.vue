@@ -131,7 +131,7 @@ async function viewStat(item: Item) {
       `统计: ${d.name || item.name || item.id} · ${d.stat_type || d.statType || '—'} · ${hasPerm} · ${canSim} · 相邻 ${prevN}`,
     )
   } catch (e: any) {
-    toast.error('加载统计详情失败: ' + (e?.message ?? ''))
+    toast.error(`加载统计详情失败: ${e?.message ?? ''}`)
   }
 }
 function closeModal() {

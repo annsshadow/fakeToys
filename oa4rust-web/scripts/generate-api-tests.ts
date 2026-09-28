@@ -94,6 +94,5 @@ fs.writeFileSync(outputPath, testFile.join('\n'))
 
 const totalFunctions = Object.values(modules).flat().length
 const skippedCount = skipModules.length
-const msg =
-  'Generated tests for ' + (Object.keys(modules).length - skippedCount) + ' modules, ' + totalFunctions + ' functions'
+const msg = `Generated tests for ${Object.keys(modules).length - skippedCount} modules, ${totalFunctions} functions`
 console.log(msg)

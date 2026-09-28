@@ -511,7 +511,7 @@ async function qdCreate(kind: 'query' | 'statement' | 'stat' | 'importmodel' | '
     else await api.post('/api/query/assemble/designer/neural/model', { name })
     toast.success(`${kind} 已创建`)
   } catch (e: any) {
-    toast.error(`新建${kind}失败: ` + (e?.message ?? ''))
+    toast.error(`新建${kind}失败: ${e?.message ?? ''}`)
   }
 }
 async function qdEdit(kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 'importmodel' | 'neural' | 'importer') {
@@ -531,7 +531,7 @@ async function qdEdit(kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 
     else await api.put(`/api/query/assemble/designer/importer/save/${eid}`, { name: '保存导入器' })
     toast.success(`${kind} 已更新`)
   } catch (e: any) {
-    toast.error(`更新${kind}失败: ` + (e?.message ?? ''))
+    toast.error(`更新${kind}失败: ${e?.message ?? ''}`)
   }
 }
 async function qdDelete(
@@ -552,7 +552,7 @@ async function qdDelete(
     else await api.delete(`/api/query/assemble/designer/importer/delete/${eid}`)
     toast.success(`${kind} 已删除`)
   } catch (e: any) {
-    toast.error(`删除${kind}失败: ` + (e?.message ?? ''))
+    toast.error(`删除${kind}失败: ${e?.message ?? ''}`)
   }
 }
 async function qdPerm(kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 'importmodel') {
@@ -568,7 +568,7 @@ async function qdPerm(kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 
     else await api.post(`/api/query/assemble/designer/importmodel/${eid}/permission`, {})
     toast.success(`${kind} 权限已设置`)
   } catch (e: any) {
-    toast.error(`设置${kind}权限失败: ` + (e?.message ?? ''))
+    toast.error(`设置${kind}权限失败: ${e?.message ?? ''}`)
   }
 }
 // rev334：查询设计器 检索/表执行/统计模拟/图标/输出选择/语句列举 真实写端点（用户触发，shape 已核；避 neural/reset 双参 arity trap）
@@ -597,7 +597,7 @@ async function qdMisc(op: string) {
     }
     toast.success('查询设计器操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 // rev361：查询设计器 统计/导入模型/视图/表/语句/神经网络模型 建改删执行 真实写（各 Path 参数 + Json body；均为 distinct 逻辑 op，不接双注册孪生）
@@ -647,7 +647,7 @@ async function qdWrite2(op: string) {
     }
     toast.success('查询设计器写操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 // rev361：查询设计器 表构建/草稿/清单 + 统计清单 + 神经网络 生成/学习 + 动态重载 真实只读（用户触发，GET 参数正确）
@@ -668,7 +668,7 @@ async function qdReads2() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     toast.success(`查询设计器读 ${rs.length} 条命中 ${hit}`)
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 // rev385：查询设计器 neural 停止生成/学习·重置状态 + table 构建派发/构建查询/按 flag 派发·构建态·草稿态 读 + 设计器按 id 删 真实路由（全单参 Path<String>，用户触发；规避 {query}/{flag} 双参单-String arity trap 与 {id}/{count} 单-i64 arity trap）
@@ -689,7 +689,7 @@ async function qdReads3() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     toast.success(`查询设计器构建/神经态读 ${rs.length} 条命中 ${hit}`)
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function qdDeleteDesigner() {
@@ -700,7 +700,7 @@ async function qdDeleteDesigner() {
     await api.post(`/api/query/assemble/designer/delete/${id}`, {})
     toast.success('查询设计器已删除')
   } catch (e: any) {
-    toast.error('删除失败: ' + (e?.message ?? ''))
+    toast.error(`删除失败: ${e?.message ?? ''}`)
   }
 }
 async function qdInput(op: 'compare' | 'cover' | 'create' | 'prepare/cover' | 'prepare/create') {
@@ -712,7 +712,7 @@ async function qdInput(op: 'compare' | 'cover' | 'create' | 'prepare/cover' | 'p
     else await api.put('/api/query/assemble/designer/input/prepare/create', {})
     toast.success(`输入 ${op} 已提交`)
   } catch (e: any) {
-    toast.error(`输入操作失败: ` + (e?.message ?? ''))
+    toast.error(`输入操作失败: ${e?.message ?? ''}`)
   }
 }
 async function qdTableRow(op: 'insert' | 'update' | 'delete' | 'save' | 'deleteAll') {
@@ -730,7 +730,7 @@ async function qdTableRow(op: 'insert' | 'update' | 'delete' | 'save' | 'deleteA
     }
     toast.success(`表行 ${op} 已提交`)
   } catch (e: any) {
-    toast.error(`表行操作失败: ` + (e?.message ?? ''))
+    toast.error(`表行操作失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -746,7 +746,7 @@ async function runQuery() {
     resultHeaders.value = resultData.value.length > 0 ? Object.keys(resultData.value[0]) : []
     sqlStatus.value = `执行成功: ${resultData.value.length} 行`
   } catch (e: any) {
-    sqlStatus.value = '执行失败: ' + (e?.message ?? '未知错误')
+    sqlStatus.value = `执行失败: ${e?.message ?? '未知错误'}`
     resultData.value = []
     resultHeaders.value = []
   } finally {
@@ -813,9 +813,9 @@ function exportResults() {
   if (!resultData.value.length) return
   const header = resultHeaders.value.join(',')
   const rows = resultData.value.map((r) =>
-    resultHeaders.value.map((h) => '"' + String(r[h] ?? '').replace(/"/g, '""') + '"').join(','),
+    resultHeaders.value.map((h) => `"${String(r[h] ?? '').replace(/"/g, '""')}"`).join(','),
   )
-  const blob = new Blob([header + '\n' + rows.join('\n')], { type: 'text/csv;charset=utf-8' })
+  const blob = new Blob([`${header}\n${rows.join('\n')}`], { type: 'text/csv;charset=utf-8' })
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
   a.download = 'query_result.csv'
@@ -941,19 +941,16 @@ function doExport() {
   if (exportFmt.value === 'json') {
     downloadBlob(
       new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
-      'queries_' + new Date().toISOString().slice(0, 10) + '.json',
+      `queries_${new Date().toISOString().slice(0, 10)}.json`,
     )
   } else if (exportFmt.value === 'csv') {
     const csv =
       'name,category,sql\n' +
       data.map((d) => `"${d.name}","${d.category}","${(d.sql || '').replace(/"/g, '""')}"`).join('\n')
-    downloadBlob(new Blob([csv], { type: 'text/csv' }), 'queries_' + new Date().toISOString().slice(0, 10) + '.csv')
+    downloadBlob(new Blob([csv], { type: 'text/csv' }), `queries_${new Date().toISOString().slice(0, 10)}.csv`)
   } else {
     const sqlStr = data.map((d) => `-- ${d.name}\n${d.sql}`).join('\n\n')
-    downloadBlob(
-      new Blob([sqlStr], { type: 'text/plain' }),
-      'queries_' + new Date().toISOString().slice(0, 10) + '.sql',
-    )
+    downloadBlob(new Blob([sqlStr], { type: 'text/plain' }), `queries_${new Date().toISOString().slice(0, 10)}.sql`)
   }
   showExportImport.value = false
 }
@@ -980,7 +977,7 @@ async function doImport() {
     showExportImport.value = false
     refresh()
   } catch (e: any) {
-    importMsg.value = { ok: false, txt: '导入失败: ' + e.message }
+    importMsg.value = { ok: false, txt: `导入失败: ${e.message}` }
   }
 }
 

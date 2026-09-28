@@ -185,7 +185,7 @@ async function loadRunningProcesses() {
     runningProcs.value = (r.data ?? []) as Array<{ id?: string; name?: string }>
     if (runningProcs.value.length === 0) toast.success('该分类暂无流程')
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadOrphans() {
@@ -199,7 +199,7 @@ async function loadOrphans() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     toast.success(`孤儿 表单 ${n(form)} / 流程 ${n(proc)} / 脚本 ${n(script)}`)
   } catch (e: any) {
-    toast.error('检测失败: ' + (e?.message ?? ''))
+    toast.error(`检测失败: ${e?.message ?? ''}`)
   }
 }
 async function loadAppProcesses() {
@@ -214,7 +214,7 @@ async function loadAppProcesses() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     toast.success(`终端应用 ${n(byTerminal)} / 按键应用 ${n(byKey)} / 应用流程 ${n(procs)}`)
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadManagedApps() {
@@ -222,9 +222,9 @@ async function loadManagedApps() {
     // GET processplatform/assemble/surface/application/list/complex/manage/person —— 我管理的流程应用
     const r: any = await api.get('/api/processplatform/assemble/surface/application/list/complex/manage/person')
     const n = Array.isArray(r.data) ? r.data.length : 0
-    toast.success('我管理的应用：' + n + ' 个')
+    toast.success(`我管理的应用：${n} 个`)
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 const qk = ['ProcessManager', 'list']
@@ -295,7 +295,7 @@ async function loadMappingAccess() {
     const mN = Array.isArray((mappings as any)?.data) ? (mappings as any).data.length : 0
     mappingText.value = `项权限 ${accessRows.length}（首「${accName}」）· 应用映射 ${mN}`
   } catch (e: any) {
-    toast.error('加载映射/项权限失败: ' + (e?.message ?? ''))
+    toast.error(`加载映射/项权限失败: ${e?.message ?? ''}`)
   }
 }
 // 映射游标/字典/流程族 7 条真实 distinct（rev196，PP_E_MAPPING/APPLICATIONDICT/PROCESS）：mapping/list/application 取首映射 →
@@ -353,7 +353,7 @@ async function loadSurfaceManageReads() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     surfaceManageText.value = `表面管理/计数/投影 真实读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载表面管理读取失败: ' + (e?.message ?? ''))
+    toast.error(`加载表面管理读取失败: ${e?.message ?? ''}`)
   }
 }
 // rev311：流程设计器 深度读 16 条（应用定义/文件内容/项访问/预览/流程/脚本版本/映射/表单列表游标）；handler 体经跨 crate 核实纯 SELECT
@@ -392,7 +392,7 @@ async function loadDesignerDeep() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     designerDeepText.value = `设计器深度读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载设计器深度读失败: ' + (e?.message ?? ''))
+    toast.error(`加载设计器深度读失败: ${e?.message ?? ''}`)
   }
 }
 // rev311：流程引擎 processing 深度读 12 条（记录/快照/待阅/数据/流程/投影/附件）；handler 体纯 SELECT，已排除 touch/manual-append 动作
@@ -426,7 +426,7 @@ async function loadEngineReads() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     engineReadText.value = `引擎 processing 深度读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载引擎读取失败: ' + (e?.message ?? ''))
+    toast.error(`加载引擎读取失败: ${e?.message ?? ''}`)
   }
 }
 // rev320：流程设计器 真实写端点（用户触发 prompt+确认，非造假）——应用/字典/映射/合并项计划/item-access/流程/表单/xform 建改删+权限
@@ -442,7 +442,7 @@ async function pdCreate(kind: 'applicationdict' | 'mapping' | 'mergeitemplan' | 
     else await api.post('/api/processplatform/assemble/designer/item-access/bach/save', { list: [] })
     toast.success(`${kind} 已创建`)
   } catch (e: any) {
-    toast.error(`新建${kind}失败: ` + (e?.message ?? ''))
+    toast.error(`新建${kind}失败: ${e?.message ?? ''}`)
   }
 }
 async function pdEdit(
@@ -467,7 +467,7 @@ async function pdEdit(
     else await api.put(`/api/processplatform/assemble/designer/xform/save/${e}`, { data: {} })
     toast.success(`${kind} 已更新`)
   } catch (err: any) {
-    toast.error(`更新${kind}失败: ` + (err?.message ?? ''))
+    toast.error(`更新${kind}失败: ${err?.message ?? ''}`)
   }
 }
 async function pdDelete(kind: 'applicationdict' | 'mapping' | 'mergeitemplan' | 'dict' | 'form' | 'xform') {
@@ -484,7 +484,7 @@ async function pdDelete(kind: 'applicationdict' | 'mapping' | 'mergeitemplan' | 
     else await api.delete(`/api/processplatform/assemble/designer/xform/delete/${e}`)
     toast.success(`${kind} 已删除`)
   } catch (err: any) {
-    toast.error(`删除${kind}失败: ` + (err?.message ?? ''))
+    toast.error(`删除${kind}失败: ${err?.message ?? ''}`)
   }
 }
 async function pdPerm(kind: 'application' | 'process') {
@@ -496,7 +496,7 @@ async function pdPerm(kind: 'application' | 'process') {
     else await api.post(`/api/processplatform/assemble/designer/process/${e}/permission`, {})
     toast.success(`${kind} 权限已设置`)
   } catch (err: any) {
-    toast.error(`设置${kind}权限失败: ` + (err?.message ?? ''))
+    toast.error(`设置${kind}权限失败: ${err?.message ?? ''}`)
   }
 }
 // rev328：流程表面管理 流水号/交接/会签/草稿/模式 真实写端点（用户触发，shape 已核 processplatform_assemble_surface handler）
@@ -514,7 +514,7 @@ async function psSerial(kind: string) {
       toast.success('流水号已删除')
     }
   } catch (e: any) {
-    toast.error('流水号操作失败: ' + (e?.message ?? ''))
+    toast.error(`流水号操作失败: ${e?.message ?? ''}`)
   }
 }
 async function psHandover(kind: string) {
@@ -538,7 +538,7 @@ async function psHandover(kind: string) {
       toast.success('交接操作已提交')
     }
   } catch (e: any) {
-    toast.error('交接操作失败: ' + (e?.message ?? ''))
+    toast.error(`交接操作失败: ${e?.message ?? ''}`)
   }
 }
 async function psSign(kind: string) {
@@ -555,7 +555,7 @@ async function psSign(kind: string) {
     }
     toast.success('会签操作已提交')
   } catch (err: any) {
-    toast.error('会签操作失败: ' + (err?.message ?? ''))
+    toast.error(`会签操作失败: ${err?.message ?? ''}`)
   }
 }
 async function psDraft(kind: string) {
@@ -580,7 +580,7 @@ async function psDraft(kind: string) {
       toast.success('草稿已删除')
     }
   } catch (e: any) {
-    toast.error('草稿操作失败: ' + (e?.message ?? ''))
+    toast.error(`草稿操作失败: ${e?.message ?? ''}`)
   }
 }
 async function psModeDelete() {
@@ -590,7 +590,7 @@ async function psModeDelete() {
     await api.post(`/api/processplatform/assemble/surface/mode/delete/${encodeURIComponent(id)}`, {})
     toast.success('查询模式已删除')
   } catch (e: any) {
-    toast.error('删除失败: ' + (e?.message ?? ''))
+    toast.error(`删除失败: ${e?.message ?? ''}`)
   }
 }
 // rev333：流程已办/已阅/记录/快照 管理写端点（用户触发，shape 已核；避 review/create/work·press/work/work trap500）
@@ -622,7 +622,7 @@ async function psCompleted(op: string) {
     } else await api.post(`/api/processplatform/assemble/surface/record/job/${e}/manage`, {})
     toast.success('管理操作已提交')
   } catch (err: any) {
-    toast.error('操作失败: ' + (err?.message ?? ''))
+    toast.error(`操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev343：流程设计器 流程投影/元素列举/升级/合并项估算/项权限精删/应用字典删/合并数据 真实写端点（用户触发，shape 已核）
@@ -653,7 +653,7 @@ async function pdMisc(op: string) {
     else await api.post(`/api/processplatform/assemble/designer/workcompleted/process/merge/data/${e}`, {})
     toast.success('设计器操作已提交')
   } catch (err: any) {
-    toast.error('操作失败: ' + (err?.message ?? ''))
+    toast.error(`操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev345：流程引擎 流程实例建/执行/取消/网关分叉/定时器/合并触达/记录·评审·已办已阅·任务·工作删/事件表 真实写端点（用户触发，shape 已核，全字面量；避 touch 无参 Path trap500）
@@ -690,7 +690,7 @@ async function pdEngine(op: string) {
     }
     toast.success('引擎操作已提交')
   } catch (err: any) {
-    toast.error('操作失败: ' + (err?.message ?? ''))
+    toast.error(`操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev352：流程工作数据/应用字典单层数据 建改删 真实写端点（用户触发，shape 已核；仅取 path0 单层，不铺 path1-7 深度扇；全字面量含参数占位）
@@ -727,7 +727,7 @@ async function dataWrite(op: string) {
     }
     toast.success('数据操作已提交')
   } catch (err: any) {
-    toast.error('操作失败: ' + (err?.message ?? ''))
+    toast.error(`操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev371：流程设计器 应用字典分页/文件/版本/投影读 + 流程启停/升级/合并计划/版次/项权限删/设计器删 真实路由（避 mergeitemplan 三参 arity trap；enable/disable 择 {id}/... 一式）
@@ -792,7 +792,7 @@ async function pdDesigner2(op: string) {
     }
     toast.success('流程设计器操作已提交')
   } catch (err: any) {
-    toast.error('操作失败: ' + (err?.message ?? ''))
+    toast.error(`操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev404：流程设计器 映射执行(位置态)/流程启用·禁用(位置态)/流程版次删 真实路由（mapping/execute/{flag}·process/enable·disable/{id} 与既有 {flag}/execute·{id}/enable 位置不同为独立注册、process_edition_delete Path<2-tuple> 已核；规避 {id}/{onlyRemoveNotCompleted} 单-String handler arity trap；用户触发）
@@ -815,7 +815,7 @@ async function pdDesigner3(op: string) {
     }
     toast.success('流程设计器操作已提交')
   } catch (err: any) {
-    toast.error('操作失败: ' + (err?.message ?? ''))
+    toast.error(`操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev290：流程设计器 应用汇总/元素孤儿字典/流程引出/启用/权限 真实读端点集；均只读 arity 已核
@@ -846,7 +846,7 @@ async function loadDesignerProcessReads() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     designerProcText.value = `设计器流程真实读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载设计器流程读取失败: ' + (e?.message ?? ''))
+    toast.error(`加载设计器流程读取失败: ${e?.message ?? ''}`)
   }
 }
 // rev288：流程表面 表单/流程/脚本/草稿/快照/审阅记录 真实读端点集（form v2 lookup/mobile、process activity/application/available、script application、draft、snap 游标、review v2、job allow/visit、readrecord）
@@ -892,7 +892,7 @@ async function loadSurfaceMiscReads() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     surfaceMiscText.value = `表单/流程/脚本/快照 真实读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载表面杂项读取失败: ' + (e?.message ?? ''))
+    toast.error(`加载表面杂项读取失败: ${e?.message ?? ''}`)
   }
 }
 // rev267：流程设计器 合并项计划(按应用/全量分页)/启用流程 3 条真实 distinct 读路由
@@ -923,7 +923,7 @@ async function loadMergeitemEnabled() {
     const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
     mergeEnabledText.value = `合并项计划(按应用) ${n(byApp)} · 合并项计划(全量) ${n(all)} · 启用流程 ${has(enabled)} · 完成件合并(按应用) ${n(wcByApp)} · 完成件合并(按流程) ${n(wcByProc)}`
   } catch (e: any) {
-    toast.error('加载合并项计划/启用流程失败: ' + (e?.message ?? ''))
+    toast.error(`加载合并项计划/启用流程失败: ${e?.message ?? ''}`)
   }
 }
 async function loadDesignerExtras() {
@@ -952,7 +952,7 @@ async function loadDesignerExtras() {
     const has = (r: any) => ((r as any)?.data?.id || (r as any)?.data?.xid ? '命中' : '未命中')
     designerExtraText.value = `映射 ${mapRows.length}（详情 ${has(mapOne)}·后续 ${n(mapNext)}·前序 ${n(mapPrev)}）| 字典 ${dictRows.length}（详情 ${has(dictOne)}）| 应用流程 ${n(procByApp)}·按表单流程 ${n(procByForm)}`
   } catch (e: any) {
-    toast.error('加载映射游标/字典/流程失败: ' + (e?.message ?? ''))
+    toast.error(`加载映射游标/字典/流程失败: ${e?.message ?? ''}`)
   }
 }
 // rev225：设计器 文件/脚本/合并项/图标族 6 条真实 distinct 路由
@@ -986,7 +986,7 @@ async function loadDesignerFileScript() {
     const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
     designerExtraText.value = `文件 ${fRows.length}（详情 ${has(fileOne)}）| 脚本 ${sRows.length}（按名 ${has(scriptByName)}）| 合并项 ${has(mergeOne)} | 应用图标 ${has(icon)}`
   } catch (e: any) {
-    toast.error('加载文件/脚本/图标失败: ' + (e?.message ?? ''))
+    toast.error(`加载文件/脚本/图标失败: ${e?.message ?? ''}`)
   }
 }
 // rev245：流程表面 surface实体/字典/流程复杂/按应用过滤 5 条真实 distinct 读路由（arity 已核；跳 applicationdict data(同 xid SQL 孪生)、controllable(与 filter 同 xapplication SQL 孪生)、is/manager(与 app get 同表投影)）
@@ -1010,7 +1010,7 @@ async function loadSurfaceProcessReads() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     designerExtraText.value = `表面实体 ${has(surfaceGet)} | 表面分类 ${n(surfaceList)} | 应用字典 ${has(appdict)} | 流程复杂 ${has(complex)} | 按应用流程 ${n(byApp)}`
   } catch (e: any) {
-    toast.error('加载流程表面读取失败: ' + (e?.message ?? ''))
+    toast.error(`加载流程表面读取失败: ${e?.message ?? ''}`)
   }
 }
 // rev246：流程表面 完成件/草稿/表单/键锁 4 条真实 distinct 读路由（不同表 PP_C_WORKCOMPLETED/PP_C_DRAFT/PP_E_FORM/PP_C_KEYLOCK；arity 已核；跳 from/data·from/item·form/mobile·allowrerouteto·available/identity 等 xid-桩孪生 与 datarecord/documentversion/job/job 字面量 0 参=500）
@@ -1033,7 +1033,7 @@ async function loadSurfaceDataForms() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     designerExtraText.value = `完成件数据 ${has(wc)} | 草稿游标 ${n(draft)} | 表单 ${has(form)} | 键锁 ${has(keylock)}`
   } catch (e: any) {
-    toast.error('加载完成件/草稿/表单失败: ' + (e?.message ?? ''))
+    toast.error(`加载完成件/草稿/表单失败: ${e?.message ?? ''}`)
   }
 }
 // rev254：设计器 项访问(按路径/按流程)·输出(按应用)·流程(按应用+版次) 4 条真实 distinct 读路由
@@ -1060,7 +1060,7 @@ async function loadDesignerItemAccess() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     designerExtraText.value = `项访问 按路径${n(byPath)}/按流程${n(byProcess)} | 输出(按应用) ${n(output)} | 流程(按应用+版次) ${n(edition)}`
   } catch (e: any) {
-    toast.error('加载项访问/输出失败: ' + (e?.message ?? ''))
+    toast.error(`加载项访问/输出失败: ${e?.message ?? ''}`)
   }
 }
 // rev262：流程表面 路由/签署/可控流程 3 条真实 distinct 读路由
@@ -1084,7 +1084,7 @@ async function loadSurfaceRouteSign() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     surfaceRouteSignText.value = `路由 ${has(route)} | 签署 ${has(sign)} | 可控流程(按应用) ${n(controllable)}`
   } catch (e: any) {
-    toast.error('加载路由/签署失败: ' + (e?.message ?? ''))
+    toast.error(`加载路由/签署失败: ${e?.message ?? ''}`)
   }
 }
 // 设计器流程明细族 3 条真实 distinct 路由：首流程 → 流程详情 process/{id}（PP_E_PROCESS query_opt）
@@ -1113,7 +1113,7 @@ async function loadProcessDetails() {
     const vN = Array.isArray((versions as any)?.data) ? (versions as any).data.length : 0
     procDetailText.value = `流程「${pName}」· 元素 ${eN} · 版本 ${vN}`
   } catch (e: any) {
-    toast.error('加载流程明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载流程明细失败: ${e?.message ?? ''}`)
   }
 }
 // rev431：设计器文件读 GET /api/processplatform/assemble/designer/file/{flag}/application/{applicationFlag}（读 pp_e_file by xid+xapplication；flag 用 prompt、application 取首行）
@@ -1131,7 +1131,7 @@ async function loadDesignerFile() {
     )
     toast.success(`设计器文件：${(r as any)?.data?.name ?? '—'}`)
   } catch (e: any) {
-    toast.error('读取设计器文件失败: ' + (e?.message ?? ''))
+    toast.error(`读取设计器文件失败: ${e?.message ?? ''}`)
   }
 }
 </script>

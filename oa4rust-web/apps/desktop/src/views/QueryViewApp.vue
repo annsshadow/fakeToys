@@ -162,9 +162,9 @@ async function loadQueryList() {
     // GET /api/queryview/query/list —— 查询视图-查询列表
     const r: any = await api.get('/api/queryview/query/list')
     const n = Array.isArray(r.data) ? r.data.length : 0
-    queryListText.value = '查询列表：' + n + ' 个'
+    queryListText.value = `查询列表：${n} 个`
   } catch (e: any) {
-    toast.error('加载查询列表失败: ' + (e?.message ?? ''))
+    toast.error(`加载查询列表失败: ${e?.message ?? ''}`)
   }
 }
 // 消费查询/视图明细 3 条真实 distinct 路由：查询详情 query/{flag} + 该查询统计 stat/list/query/{queryFlag} + 视图详情 view/{id}
@@ -190,7 +190,7 @@ async function loadQvDetails() {
     const vName = (view as any)?.data?.name ?? (vid || '—')
     queryListText.value = `查询「${qName}」· 统计 ${sN} · 视图「${vName}」`
   } catch (e: any) {
-    toast.error('加载查询/视图明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载查询/视图明细失败: ${e?.message ?? ''}`)
   }
 }
 // 语句/统计明细 3 条真实 distinct 路由：查询语句列表 statement/list/query/{queryFlag}（POST x_query_statement by query_flag）
@@ -222,7 +222,7 @@ async function loadStatementStat() {
     const statName = (statDetail as any)?.data?.name ?? (stId || '—')
     queryListText.value = `语句 ${stmtRows.length}（首「${stmtName}」）· 统计详情「${statName}」`
   } catch (e: any) {
-    toast.error('加载语句/统计明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载语句/统计明细失败: ${e?.message ?? ''}`)
   }
 }
 // 导入模型族 3 条真实 distinct 路由（x_query_import_model）：按查询列模型 importmodel/list/query/{queryFlag}（WHERE query_flag）
@@ -256,7 +256,7 @@ async function loadImportModels() {
     const hasByFlag = (byFlag as any)?.data ? '有' : '无'
     queryListText.value = `导入模型 ${models.length}（首「${mName}」）· 按flag查询命中 ${hasByFlag}`
   } catch (e: any) {
-    toast.error('加载导入模型失败: ' + (e?.message ?? ''))
+    toast.error(`加载导入模型失败: ${e?.message ?? ''}`)
   }
 }
 // 数据表（rev117）：分页列表 + 首表详情 + 首表行数据，三条 distinct 真实路由
@@ -281,7 +281,7 @@ async function loadTables() {
     }
     tableText.value = `数据表 ${rows.length} 张${extra}`
   } catch (e: any) {
-    toast.error('加载数据表失败: ' + (e?.message ?? ''))
+    toast.error(`加载数据表失败: ${e?.message ?? ''}`)
   }
 }
 // rev205：表行游标族 6 条真实 distinct 路由（x_query_table_data / x_query_statement）
@@ -335,7 +335,7 @@ async function loadTableRowsCursor() {
     const n = (x: any) => (Array.isArray(x?.data) ? x.data.length : 0)
     tableText.value = `表「${flag}」全部行 ${n(all)} · 过滤 ${n(where)} · 上翻 ${n(prev)} · 双条件行 ${n(direct)} · 首行详情 ${(detail as any)?.data ? '有' : '无'} · 语句格式「${fmtName}」`
   } catch (e: any) {
-    toast.error('加载表行游标失败: ' + (e?.message ?? ''))
+    toast.error(`加载表行游标失败: ${e?.message ?? ''}`)
   }
 }
 // rev475（用户裁定放宽双计口径）：查询域镜像/方法孪生真注册路由 13 条（arity 已校验；importmodel 为 off-metric 全局面）
@@ -359,7 +359,7 @@ async function loadQueryTwin() {
     ])
     toast.success(`查询孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('查询孪生端点失败: ' + (e?.message ?? ''))
+    toast.error(`查询孪生端点失败: ${e?.message ?? ''}`)
   }
 }
 // rev233：查询表面 计数/导入记录/统计/查询检索族 6 条真实 distinct 路由
@@ -386,7 +386,7 @@ async function loadQueryViewExtras() {
     const nn = (x: any) => (Array.isArray((x as any)?.data) ? (x as any).data.length : 0)
     tableText.value = `过滤计数 ${cv} · 导入记录 ${(rec as any)?.data ? '有' : '无'}（状态 ${(recStatus as any)?.data?.status ?? '—'}）· 统计 ${(stat as any)?.data ? '有' : '无'} · 查询检索 ${nn(keySearch)} · 单行 ${(rowById as any)?.data ? '命中' : '未命中'}`
   } catch (e: any) {
-    toast.error('加载查询表面扩展失败: ' + (e?.message ?? ''))
+    toast.error(`加载查询表面扩展失败: ${e?.message ?? ''}`)
   }
 }
 // rev253：queryview 表行游标(id 全表/表内 next/prev)·行过滤·视图按flag+query 5 条真实 distinct 读路由（arity 已核，全 x_query_table_data 各 WHERE/方向 与 x_query_view）
@@ -406,7 +406,7 @@ async function loadQueryViewCursors() {
     const n = (x: any) => (Array.isArray((x as any)?.data) ? (x as any).data.length : 0)
     tableText.value = `全表后翻 ${n(idNext)} · 行过滤 ${n(rowWhere)} · 表内前翻 ${n(rowPrev)} · 视图(flag+query) ${(viewByFlag as any)?.data ? '命中' : '未命中'} · 行后翻 ${n(rowNext)} · 视图定义 ${(viewDef as any)?.data ? '命中' : '未命中'}`
   } catch (e: any) {
-    toast.error('加载 queryview 游标失败: ' + (e?.message ?? ''))
+    toast.error(`加载 queryview 游标失败: ${e?.message ?? ''}`)
   }
 }
 async function loadQueryViewDeep() {
@@ -450,7 +450,7 @@ async function loadQueryViewDeep() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     tableText.value = `queryview 深度读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载 queryview 深度读失败: ' + (e?.message ?? ''))
+    toast.error(`加载 queryview 深度读失败: ${e?.message ?? ''}`)
   }
 }
 // rev377：queryview 导入模型记录分页/状态/执行 + neural/表清单 非破坏性真实读补消费（用户触发；均 x_query_* 真 SELECT，含 POST importmodel 系列在 Rust 实为 SELECT 读）
@@ -485,7 +485,7 @@ async function loadQueryViewMore() {
     const hit = rs.filter((r) => (r as any) != null).length
     tableText.value = `queryview 导入模型/清单只读端点 ${rs.length} 条，返回 ${hit}`
   } catch (e: any) {
-    toast.error('加载 queryview 导入模型只读端点失败: ' + (e?.message ?? ''))
+    toast.error(`加载 queryview 导入模型只读端点失败: ${e?.message ?? ''}`)
   }
 }
 // rev332：queryview 表数据行/视图执行/统计/导入模型 真实写端点（用户触发，shape 已核 query crate handler；全字面量路径）
@@ -537,7 +537,7 @@ async function qvWrite(op: string) {
     }
     toast.success('queryview 操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 // rev375：queryview 视图按应用执行/打包/Excel/v2执行 + 统计执行 + 导入模型执行/清单 + 语句执行 + 表分页/行/动态重载 + 神经计算 真实路由（全字面量含参占位；避 importmodel/record 守卫意图与 3+ 参 arity trap）
@@ -635,7 +635,7 @@ async function qvMore(op: string) {
     }
     toast.success('queryview 操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 // rev402：查询视图 数据表行 读(按表·id)/插入/单行插入/清空/按行删/部分更新 真实路由（Path arity 已核，insert/part-update Json 空体；用户触发，规避守卫禁 importmodel/record 与 query 探针）
@@ -667,7 +667,7 @@ async function qvRows(op: string) {
     }
     toast.success('数据表行操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 // rev442：查询设计器动态表行 CRUD 3 条真实路由（designer 前缀，区别于已消费的 surface/queryview 表行）——insert{tableFlag}[u2 INSERT x_query_table_data，要求非空 data 避免垃圾]·update{tableFlag}/{id}[UPDATE by flag+id]·delete{tableFlag}/{id}[DELETE by flag+id]，Path arity 与路由严格一致
@@ -731,7 +731,7 @@ async function qvDesignerRows(op: string) {
       toast.success('设计器表行已删除')
     }
   } catch (e: any) {
-    toast.error('设计器表行操作失败: ' + (e?.message ?? ''))
+    toast.error(`设计器表行操作失败: ${e?.message ?? ''}`)
   }
 }
 async function loadViews() {
@@ -758,7 +758,7 @@ async function executeView(v: ViewItem) {
     )
     execResult.value = r.data?.list ?? r.data ?? []
   } catch (e: any) {
-    toast.error('执行失败: : ' + (e?.message ?? '未知错误'))
+    toast.error(`执行失败: : ${e?.message ?? '未知错误'}`)
   } finally {
     execLoading.value = false
   }
@@ -773,7 +773,7 @@ async function exportExcel(v: ViewItem) {
       toast.info('Excel导出暂未生成URL')
     }
   } catch (e: any) {
-    toast.error('导出失败: : ' + (e?.message ?? ''))
+    toast.error(`导出失败: : ${e?.message ?? ''}`)
   }
 }
 
@@ -842,7 +842,7 @@ async function loadQueryTwin2() {
     ])
     toast.success(`查询孪生端点B ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('查询孪生端点B失败: ' + (e?.message ?? ''))
+    toast.error(`查询孪生端点B失败: ${e?.message ?? ''}`)
   }
 }
 // rev485（桶外 off-metric 第二波）：query_service_processing 服务处理读族 27 条
@@ -878,7 +878,7 @@ async function loadQueryTwin3() {
     ])
     toast.success(`服务处理读C ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('服务处理读C失败: ' + (e?.message ?? ''))
+    toast.error(`服务处理读C失败: ${e?.message ?? ''}`)
   }
 }
 </script>

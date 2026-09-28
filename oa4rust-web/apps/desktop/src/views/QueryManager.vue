@@ -83,7 +83,7 @@ async function loadQueryAll() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     queryMetaText.value = `全部查询 ${n(all)} / 概要 ${n(summary)} / 分类 ${n(cats)}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadQueryExtra() {
@@ -97,7 +97,7 @@ async function loadQueryExtra() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     queryMetaText.value = `神经模型 ${n(models)} / 导出 ${n(outputs)} / 概要 ${n(summary)}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadQueryMeta() {
@@ -110,7 +110,7 @@ async function loadQueryMeta() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     queryMetaText.value = `查询分类 ${n(cats)} / 语句 ${n(stmts)}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 const sq = ref(''),
