@@ -125,6 +125,21 @@ augmentor/up.json
 opencode.json
 test_output.json
 
+# augmentor 的探针草稿与遗留数据集（2026-09-28 追加）。
+#   Temp/    100 轮审计循环的探针产物（现量 1.2 GB / 13214 个文件）。**不入仓，也不可清**：
+#            账本 `augmentor/OPTIMIZATION_LOOP.md` 有 262 条路径点名 Temp 下的工件（21 个目录
+#            + 241 个文件），而 `tests/unit/test_doc_line_refs_l79.py` 的
+#            `CEILING[LEDGER]["scratch_missing"] = 113` 是**精确相等**棘轮 —— 删掉被点名的工件
+#            会让「引用了但磁盘上没有」的读数上涨，守卫因与代码无关的原因当场变红。
+#   alpaca   6901 条真实训练样本，是账本里所有「真实 6902 条」性能主张的输入；属用户数据。
+#   o.xlsx   4.8 KB 的 xlsx，2026-09-26 探针期以相对路径落进工作树的残留（出处未逐条坐实）。
+#   x        0 字节，同一次探针的 shell 重定向打错留下的空文件。
+# 只屏蔽、不删除、不提交：删除毁掉可复现性，提交会把 1.2 GB 探针与真实业务样本写进历史。
+augmentor/Temp/
+augmentor/alpaca
+augmentor/o.xlsx
+augmentor/x
+
 # PR 描述草稿（内容已提交至 PR，不入库）
 PR_DESCRIPTION.md
 .vitest/
