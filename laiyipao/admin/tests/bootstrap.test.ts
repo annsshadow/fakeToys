@@ -54,9 +54,16 @@ describe('App.vue 根组件', () => {
     const { router } = await import('@/router')
     const { mount } = await import('@vue/test-utils')
     const { setToken } = await import('@/api/client')
+    const { default: ElementPlus } = await import('element-plus')
 
     localStorage.clear()
-    const wrapper = mount(App, { global: { plugins: [router] } })
+    // ⚠️ 必须装 Element Plus，与 `main.ts` 的 `app.use(ElementPlus)` 一致。
+    //
+    // 不装的话这一处会刷出 22 条「Failed to resolve component: el-*」警告。
+    // 而这批噪声是有代价的：图标那个真缺陷（10 个图标全空、`Reading` 未解析）
+    // 就一直**混在这类警告里**，没人分得清哪个是真问题。
+    // 噪声归零之后，新的未解析组件警告才重新具备信号价值。
+    const wrapper = mount(App, { global: { plugins: [router, ElementPlus] } })
     await flushPromises()
     // 无令牌：守卫把初始导航带到登录页
     await vi.waitFor(() => expect(wrapper.text()).toContain('默认账号'), { timeout: 15000 })
