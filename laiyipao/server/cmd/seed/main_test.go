@@ -92,3 +92,38 @@ func TestRunSeedsScratchDB(t *testing.T) {
 		t.Fatalf("两次种子结果不一致：\n%+v\n%+v", res, res2)
 	}
 }
+
+// TestRunSeedBadDSN 覆盖 run 的"连接数据库失败"分支。
+func TestRunSeedBadDSN(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if _, err := run(ctx, testCfg("::bad dsn::")); err == nil {
+		t.Fatal("非法 DSN 应报错")
+	} else if !strings.Contains(err.Error(), "连接数据库失败") {
+		t.Errorf("错误应说明是连接失败：%v", err)
+	}
+}
+
+// TestRunSeedMigrateFails 覆盖 run 的"迁移失败"分支（Open 成功、Migrate 失败）。
+// 构造：scratch 库预建 00001 会 CREATE 的 users 表 → goose up 撞表报错。
+func TestRunSeedMigrateFails(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	dsn := scratchDSN(t)
+
+	pool, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		t.Skipf("scratch 库连不上，跳过：%v", err)
+	}
+	if _, err := pool.Exec(ctx, `CREATE TABLE users (id int)`); err != nil {
+		pool.Close()
+		t.Skipf("预建冲突表失败：%v", err)
+	}
+	pool.Close()
+
+	if _, err := run(ctx, testCfg(dsn)); err == nil {
+		t.Fatal("已存在 users 表时迁移应失败")
+	} else if !strings.Contains(err.Error(), "迁移失败") {
+		t.Errorf("错误应说明是迁移失败：%v", err)
+	}
+}

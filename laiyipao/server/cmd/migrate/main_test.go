@@ -97,3 +97,56 @@ func TestRunBadDSN(t *testing.T) {
 		t.Fatal("非法 DSN 应报错")
 	}
 }
+
+// TestRunMigrateUpFails 覆盖 run 的"迁移失败"分支（Open 成功、Migrate 失败）。
+// 构造：scratch 库里预建一张 00001 会 CREATE 的 users 表 → goose up 撞表报错。
+// 意义：迁移执行失败必须被包装成 "迁移失败" 上抛，而不是当成完成。
+func TestRunMigrateUpFails(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	dsn := scratchDSN(t)
+
+	pool, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		t.Skipf("scratch 库连不上，跳过：%v", err)
+	}
+	if _, err := pool.Exec(ctx, `CREATE TABLE users (id int)`); err != nil {
+		pool.Close()
+		t.Skipf("预建冲突表失败：%v", err)
+	}
+	pool.Close()
+
+	if err := run(ctx, testCfg(dsn), false); err == nil {
+		t.Fatal("已存在 users 表时迁移应失败")
+	} else if !strings.Contains(err.Error(), "迁移失败") {
+		t.Errorf("错误应说明是迁移失败：%v", err)
+	}
+}
+
+// TestRunMigrateDownFails 覆盖 run 的"回滚失败"分支（Open 成功、MigrateDown 失败）。
+// 构造：迁移到顶后删掉 00009 down 要改的 redeem_codes 表 → 回滚 SQL 找不到表报错。
+func TestRunMigrateDownFails(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	defer cancel()
+	dsn := scratchDSN(t)
+
+	if err := run(ctx, testCfg(dsn), false); err != nil {
+		t.Fatalf("先迁移到顶应成功：%v", err)
+	}
+	pool, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		t.Skipf("scratch 库连不上，跳过：%v", err)
+	}
+	// 删掉最新迁移（00009）Down SQL 依赖的表 → 回滚必失败
+	if _, err := pool.Exec(ctx, `DROP TABLE redeem_codes CASCADE`); err != nil {
+		pool.Close()
+		t.Skipf("删表失败：%v", err)
+	}
+	pool.Close()
+
+	if err := run(ctx, testCfg(dsn), true); err == nil {
+		t.Fatal("依赖表缺失时回滚应失败")
+	} else if !strings.Contains(err.Error(), "回滚失败") {
+		t.Errorf("错误应说明是回滚失败：%v", err)
+	}
+}

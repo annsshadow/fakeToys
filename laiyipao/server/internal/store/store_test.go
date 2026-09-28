@@ -112,6 +112,25 @@ func TestOpenRejectsUnreachableDB(t *testing.T) {
 	}
 }
 
+// TestOpenRejectsBadPoolConfig 构造 pgxpool.NewWithConfig 的失败分支：
+// DSN 本身合法（ParseConfig 通过），但 Open 随后把 MaxConns 覆写成 0，
+// pgxpool 在建池时校验 "MaxConns 必须 > 0" 直接报错。
+// 这条分支此前无人覆盖，且无需真实数据库 —— 校验发生在建立连接之前。
+// 意义：配置装配的错误必须在 Open 里被"create pool"包装并上抛，
+// 而不是带着非法池配置继续启动服务。
+func TestOpenRejectsBadPoolConfig(t *testing.T) {
+	cfg := openCfg("postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable")
+	cfg.DBMaxConns = 0 // 合法 DSN + 非法池参数
+	db, err := Open(context.Background(), cfg)
+	if err == nil {
+		db.Close()
+		t.Fatal("MaxConns=0 应让建池失败")
+	}
+	if !strings.Contains(err.Error(), "create pool") {
+		t.Errorf("错误应说明是建池失败（而非 DSN 解析或连通性）：%v", err)
+	}
+}
+
 // TestMigrateUpAndDownOnScratchDB 是本文件的核心：
 // 迁移到顶 → 校验业务表存在且 goose 记录到最新 → 回滚一步 → 校验回滚生效。
 // 全程在 scratch 库上，绝不碰开发库。
@@ -149,25 +168,51 @@ func TestMigrateUpAndDownOnScratchDB(t *testing.T) {
 			t.Errorf("迁移后应存在表 %s（count=%d err=%v）", table, n, err)
 		}
 	}
-	// goose 版本记录应停在最新（00008_replay_card_picks → 8）
+	// goose 版本记录应停在最新（00009_redeem_code_identity → 9）
 	var version int64
 	if err := db.Pool.QueryRow(ctx, `SELECT MAX(version_id) FROM goose_db_version`).Scan(&version); err != nil {
 		t.Fatalf("读 goose 版本失败：%v", err)
 	}
-	if version != 8 {
-		t.Errorf("迁移后 goose 版本应停在 8，实际 %d", version)
+	if version != 9 {
+		t.Errorf("迁移后 goose 版本应停在 9，实际 %d", version)
 	}
 
-	// 回滚一步：00008 给 battle_records 加 card_picks 列，回滚后该列必须消失
+	// 回滚一步：00009 给 redeem_codes.id 加 IDENTITY，回滚后必须还原为普通列
 	if err := db.MigrateDown(ctx); err != nil {
 		t.Fatalf("MigrateDown 失败：%v", err)
 	}
 	var n int
 	if err := db.Pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM information_schema.columns
-		 WHERE table_name = 'battle_records' AND column_name = 'card_picks'`).
+		`SELECT COUNT(*) FROM pg_attribute
+		 WHERE attrelid = 'redeem_codes'::regclass AND attname = 'id' AND attidentity <> ''`).
 		Scan(&n); err != nil || n != 0 {
-		t.Errorf("回滚一步后 card_picks 列应不存在（count=%d err=%v）", n, err)
+		t.Errorf("回滚一步后 redeem_codes.id 不应是 IDENTITY 列（count=%d err=%v）", n, err)
+	}
+}
+
+// TestMigrateFailsOnCancelledContext 构造 goose.UpContext 的失败路径：
+// 传入已取消的 context，迁移必须把错误包成 "goose up: ..." 向上返回，
+// 而不是静默当作"迁移完成"。这是 store.go 里唯一可构造的迁移失败分支
+// （SetDialect("postgres") 是硬编码合法方言，永不可达）。
+func TestMigrateFailsOnCancelledContext(t *testing.T) {
+	dsn := scratchDB(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	db, err := Open(ctx, openCfg(dsn))
+	if err != nil {
+		t.Skipf("scratch 库连不上，跳过：%v", err)
+	}
+	t.Cleanup(db.Close)
+
+	cancelled, cancelFn := context.WithCancel(context.Background())
+	cancelFn() // 先取消再调用
+	err = db.Migrate(cancelled)
+	if err == nil {
+		t.Fatal("已取消的 context 必须让 Migrate 失败")
+	}
+	if !strings.Contains(err.Error(), "goose up") {
+		t.Errorf("错误应说明是迁移执行失败：%v", err)
 	}
 }
 

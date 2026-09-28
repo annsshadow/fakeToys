@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -88,5 +89,27 @@ func TestBuildAppErrorHandler(t *testing.T) {
 	}
 	if body.Error.Code != "http_error" {
 		t.Errorf("错误码 = %q，期望 http_error", body.Error.Code)
+	}
+}
+
+// TestBuildAppErrorHandlerPassthrough 非 *fiber.Error 的错误必须**原样上抛**
+// （不被包装成 http_error）。构造：在 buildApp 产出的 app 上临时挂一个返回
+// 普通 error 的路由，命中它 → ErrorHandler 走 `return err` 分支。
+// 意义：只有 fiber.Error 才应被翻成结构化 body；其它错误保持默认 500，
+// 若把它们也当 http_error 会掩盖真正的内部故障类型。
+func TestBuildAppErrorHandlerPassthrough(t *testing.T) {
+	app := buildApp(testService(t))
+	app.Get("/_test/plain-error", func(_ *fiber.Ctx) error {
+		return errors.New("这是一个非 fiber.Error 的普通错误")
+	})
+
+	resp, err := app.Test(httptest.NewRequest(http.MethodGet, "/_test/plain-error", nil), 5000)
+	if err != nil {
+		t.Fatalf("请求失败：%v", err)
+	}
+	defer resp.Body.Close()
+	// 默认 fiber 处理普通错误 → 500
+	if resp.StatusCode != fiber.StatusInternalServerError {
+		t.Errorf("普通错误应走默认 500，实际 %d", resp.StatusCode)
 	}
 }
