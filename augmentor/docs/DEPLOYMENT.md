@@ -306,7 +306,7 @@ livenessProbe:
 
 ### 5.2 日志
 
-- 应用日志默认写入 `app.log`（由 `config.yaml` 的 `logging.file` 控制）
+- 应用日志默认**不落文件**（`config.yaml` 的 `logging.file` 出厂默认空串）：CLI 走 WARNING 档裸消息到 stderr，API 进程由 `api/main.py` 的 `basicConfig` 装成 INFO 档；想同时落文件要显式写 `logging.file`
 - 每个 HTTP 响应携带 `X-Process-Time`，超过 2.0 秒的请求会写 WARNING
 - Docker：`docker compose logs -f api`
 - systemd：`journalctl -u ai-data-platform -f`
