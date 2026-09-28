@@ -213,27 +213,29 @@ pub async fn person_reserve_delete(
     Path(flag): Path<String>,
 ) -> HandlerResult {
     require_admin(&pool, &session).await?;
-    let client = client_of(&pool).await?;
+    let mut client = client_of(&pool).await?;
     let Some(pid) = resolve_person_id(&client, &flag).await? else {
         return err("person not found");
     };
+    // 级联删除（身份/组成员/属性 3 表 + 软删人员）必须原子：中途失败不得留下
+    // 人员仍"存在"却已丢失全部身份/成员/属性的孤儿损坏态。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     for sql in [
         "DELETE FROM x_org_identity WHERE person_id = $1",
         "DELETE FROM x_org_group_member WHERE person_id = $1",
         "DELETE FROM x_org_person_attribute WHERE person_id = $1",
     ] {
-        client
-            .execute(sql, &[&pid])
+        tx.execute(sql, &[&pid])
             .await
             .map_err(|_| AppError::Internal)?;
     }
-    client
-        .execute(
-            "UPDATE x_org_person SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
-            &[&pid],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+    tx.execute(
+        "UPDATE x_org_person SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+        &[&pid],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     ok(Value::Object(
         vec![("id".to_string(), Value::String(pid))]
             .into_iter()
