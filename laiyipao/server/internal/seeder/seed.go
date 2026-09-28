@@ -387,5 +387,16 @@ func seedRedeemCodes(ctx context.Context, tx pgx.Tx) error {
 			return fmt.Errorf("insert redeem code %d: %w", c.id, err)
 		}
 	}
+	// 00009 之后 redeem_codes.id 是 IDENTITY：显式插入固定 id 不会推进序列，
+	// 必须手动对齐，否则管理端第一条"自动 id"兑换码会撞上种子数据
+	//（unique violation → 创建接口 500）。
+	if _, err := tx.Exec(ctx, `
+		SELECT setval(
+			pg_get_serial_sequence('redeem_codes', 'id'),
+			GREATEST((SELECT COALESCE(MAX(id), 0) FROM redeem_codes), 3) + 1,
+			false
+		)`); err != nil {
+		return fmt.Errorf("sync redeem_codes id sequence: %w", err)
+	}
 	return nil
 }

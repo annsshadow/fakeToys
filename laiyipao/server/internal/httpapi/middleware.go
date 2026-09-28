@@ -4,6 +4,7 @@ package httpapi
 import (
 	"errors"
 	"log"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -49,13 +50,8 @@ func failErr(c *fiber.Ctx, err error) error {
 		return fail(c, fiber.StatusUnprocessableEntity, "settle_rejected", err.Error())
 	}
 	// 其余一律 500 + 通用文案。
-	// 真实原因必须落到服务端日志 —— 只写进 Locals 等于没写，
-	// 出问题时线上只能看到"服务内部错误"，无从定位。
-	if detail, ok := c.Locals("internal_error").(string); ok {
-		log.Printf("[http] %s %s -> 500: %s", c.Method(), c.OriginalURL(), detail)
-	} else {
-		log.Printf("[http] %s %s -> 500: %v", c.Method(), c.OriginalURL(), err)
-	}
+	// 真实原因必须落到服务端日志，出问题时线上才能定位。
+	log.Printf("[http] %s %s -> 500: %v", c.Method(), c.OriginalURL(), err)
 	return fail(c, fiber.StatusInternalServerError, "internal_error", "服务内部错误")
 }
 
@@ -129,11 +125,16 @@ func adminIDFrom(c *fiber.Ctx) int64 {
 }
 
 // recoverPanic 兜底 panic，避免单个请求打挂整个进程。
+//
+// ⚠️ panic 值必须直接落日志：曾经的实现是写进 Locals("internal_error")
+// 等着 failErr 来读 —— 但 failErr 只在 handler 正常返回 error 时被调用，
+// panic 展开（unwind）后根本不会走到它，那份"详情"永远无人读取，
+// 线上只能看到"服务内部错误"五个字，panic 现场完全丢失。
 func recoverPanic() fiber.Handler {
 	return func(c *fiber.Ctx) (err error) {
 		defer func() {
 			if r := recover(); r != nil {
-				c.Locals("internal_error", "panic")
+				log.Printf("[panic] %s %s: %v\n%s", c.Method(), c.OriginalURL(), r, debug.Stack())
 				err = fail(c, fiber.StatusInternalServerError, "internal_error", "服务内部错误")
 			}
 		}()

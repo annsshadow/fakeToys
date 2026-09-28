@@ -549,16 +549,16 @@ func computeLoot(gl GeneratedLevel, stars, kills, maxKills int64, reactions int6
 	caps := DefaultLootCaps()
 
 	// 饱和加法：任一输入异常大时结果封顶在 MaxCoinPerBattle，
-	// 不依赖中间值不溢出。
+	// 不依赖中间值不溢出。satAdd 的契约保证结果 ∈ [0, cap]：
+	// cap 经 nonNeg 归正、每个加数经 nonNeg 归零后再累加，
+	// 所以这里不需要（也曾经多写过）一层 `if coin < 0` 兜底——
+	// 那是 satAdd 引入之前的旧写法残留，结构性不可达。
 	coin := satAdd(caps.MaxCoinPerBattle,
 		r.CoinBase,
 		satMul(int64(stars), r.CoinPerStar, caps.MaxCoinPerBattle),
 		satMul(kills, r.CoinPerKill, caps.MaxCoinPerBattle),
 		satMul(divNonNeg(reactions, 10), r.ReactionBonus, caps.MaxCoinPerBattle),
 	)
-	if coin < 0 {
-		coin = 0
-	}
 
 	loot := map[string]int64{"coin": coin}
 	if stars >= 3 {

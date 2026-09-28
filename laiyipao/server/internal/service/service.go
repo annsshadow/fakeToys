@@ -426,7 +426,7 @@ type ChapterInfo struct {
 //
 // 一次全量下发而非多次增量：100 关 + 42 技能压缩后约 60KB，
 // 一次请求比七次增量更简单也更快，且关卡数据变化不频繁。
-func (s *Service) LoadGameConfig(ctx context.Context) (GameConfig, error) {
+func (s *Service) LoadGameConfig(ctx context.Context) GameConfig {
 	cfg := GameConfig{
 		Levels: domain.GenerateAllLevels(),
 		// ⚠️ 分数规则必须下发，不能让客户端自己写死
@@ -457,15 +457,11 @@ func (s *Service) LoadGameConfig(ctx context.Context) (GameConfig, error) {
 			Terrain: c.TerrainKind, BossEnemy: c.BossEnemyID,
 		})
 	}
-	// 版本号：内容哈希，保证客户端可判断是否需要刷新
-	raw, err := json.Marshal(struct {
-		L, E, S int
-	}{len(cfg.Levels), len(cfg.Enemies), len(cfg.Skills)})
-	if err == nil {
-		cfg.Version = int(time.Now().Unix() % 100000)
-		_ = raw
-	}
-	return cfg, nil
+	// 版本号：客户端据此判断是否需要刷新配置。
+	// ⚠️ 现在是时间戳取模而非真正的内容哈希——每秒都在变，
+	// 客户端"版本没变就不用刷新"的判断形同虚设（见报告）。
+	cfg.Version = int(time.Now().Unix() % 100000)
+	return cfg
 }
 
 // marshalJSON 是带错误传播的 JSON 编码辅助。
