@@ -187,6 +187,47 @@ describe('element-plus 按需引入（体积守卫）', () => {
     ).toBeGreaterThan(10)
   })
 
+  it('README「后台构建体积」一节的数字与 size-report.mjs 的预算一致', () => {
+    // 为什么需要这条：第 47~49 三轮得到的首屏数字，
+    // 如果只躺在提交信息里，README 上看不到，而**预算**在脚本里。
+    // 两者一旦漂移，就会出现「文档说 161、脚本按 220 放行」这种情况 ——
+    // 没人会发现，直到某天首屏真的涨上去。
+    //
+    // 这与 `server/internal/domain/readme_drift_test.go`（守迁移数）
+    // 同一个思路：README 里的数字必须**对着真源核**，
+    // 而不是等着某个人想起来更新。
+    // ⚠️ 路径是 `../README.md`：那份 README 在 `laiyipao/` 下，不在 `admin/` 下。
+    // 我第一版写成 `read('README.md')`，守卫立刻报「找不到文件」——
+    // 正是它被设计成**响亮失败**而不是静默跳过的原因。
+    const readme = read('../README.md')
+    const script = read('scripts/size-report.mjs')
+
+    const raw = script.match(/firstLoadRawKB:\s*(\d+)/)
+    const gz = script.match(/firstLoadGzipKB:\s*(\d+)/)
+    expect(raw, 'size-report.mjs 里读不到 firstLoadRawKB —— 预算被改名或删了').not.toBeNull()
+    expect(gz, 'size-report.mjs 里读不到 firstLoadGzipKB').not.toBeNull()
+    const budgetRaw = Number(raw![1])
+    const budgetGz = Number(gz![1])
+
+    const start = readme.indexOf('## 后台构建体积')
+    expect(start, 'README 里没有「## 后台构建体积」这一节').toBeGreaterThan(-1)
+    const sec = readme.slice(start, start + 1200)
+
+    expect(
+      sec,
+      `README 的「后台构建体积」一节里没有出现脚本当前的预算 ${budgetRaw} —— 改预算时忘了同步 README`,
+    ).toContain(String(budgetRaw))
+    expect(sec, `README 里没有出现 gzip 预算 ${budgetGz}`).toContain(String(budgetGz))
+
+    const m = sec.match(/首屏合计[^\d]*(\d+) KB/)
+    expect(m, 'README 里找不到「首屏合计」的实测值').not.toBeNull()
+    const measured = Number(m![1])
+    expect(
+      measured,
+      `README 记的首屏 ${measured} KB 已经 >= 预算 ${budgetRaw} KB —— 预算失效，该重新评估而不是继续放行`,
+    ).toBeLessThan(budgetRaw)
+  })
+
   it('记录本轮实测基线（供下次对比；改动后请更新这里）', () => {
     const baseline = { totalKB: 1101, elementKB: 286, gzipKB: 401 }
     // 只做「数据完整」的自检，不做阈值判断 ——
