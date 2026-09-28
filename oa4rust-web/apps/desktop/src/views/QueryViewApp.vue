@@ -758,7 +758,7 @@ async function executeView(v: ViewItem) {
     )
     execResult.value = r.data?.list ?? r.data ?? []
   } catch (e: any) {
-    toast.error(`执行失败: : ${e?.message ?? '未知错误'}`)
+    toast.error(`执行失败: ${e?.message ?? '未知错误'}`)
   } finally {
     execLoading.value = false
   }
@@ -766,14 +766,32 @@ async function executeView(v: ViewItem) {
 
 async function exportExcel(v: ViewItem) {
   try {
-    const r = await api.get(`/api/queryview/excel/${v.flag || v.id}`)
-    if (r.data?.url) {
-      window.open(r.data.url, '_blank')
-    } else {
-      toast.info('Excel导出暂未生成URL')
+    // 真实契约：GET /api/queryview/excel/{view}/{id} → { id, viewFlag, excelData }
+    // （o2 存量 excel_data 序列化内容，非下载 URL）。base64 可解码则落 .xlsx，
+    // 否则按文本落 .csv；视图尚未生成 Excel 数据时如实提示。
+    const r = await api.get(`/api/queryview/excel/${encodeURIComponent(v.flag || 'view')}/${encodeURIComponent(v.id)}`)
+    const data: string = r.data?.excelData ?? ''
+    if (!data) {
+      toast.info('该视图尚未生成 Excel 数据')
+      return
     }
+    let blob: Blob
+    let name: string
+    try {
+      const bin = atob(data)
+      blob = new Blob([Uint8Array.from(bin, (ch) => ch.charCodeAt(0))], { type: 'application/vnd.ms-excel' })
+      name = `view-${v.flag || v.id}.xlsx`
+    } catch {
+      blob = new Blob([data], { type: 'text/csv;charset=utf-8' })
+      name = `view-${v.flag || v.id}.csv`
+    }
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = name
+    a.click()
+    URL.revokeObjectURL(a.href)
   } catch (e: any) {
-    toast.error(`导出失败: : ${e?.message ?? ''}`)
+    toast.error(`导出失败: ${e?.message ?? '未知错误'}`)
   }
 }
 
