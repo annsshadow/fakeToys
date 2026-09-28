@@ -477,9 +477,9 @@ func applyArmor(dmg, armorPermille int64) int64 {
 		armorPermille = MaxArmorPermille
 	}
 	kept := permille - armorPermille
-	if kept <= 0 {
-		return 0
-	}
+	// kept = 1000 - armorPermille，而 armorPermille 已被夹进 (0, 750]，
+	// 所以 kept ∈ [250, 999] 恒正 —— 这里不需要（也曾经多写过）
+	// 一层 `if kept <= 0` 兜底，那是封顶引入之前的旧写法残留。
 	// dmg = q*permille + r  =>  dmg*kept/permille = q*kept + r*kept/permille
 	q := dmg / permille
 	r := dmg % permille
