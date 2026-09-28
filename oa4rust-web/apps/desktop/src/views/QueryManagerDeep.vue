@@ -205,16 +205,16 @@
           <div class="results-area" v-if="resultData.length > 0 || resultLoading">
             <div class="ra-header">
               <span>执行结果</span>
-              <span class="ra-count">{{ resultData.length }} 行</span>
+              <span class="ra-count">{{ viewRows.length }} / {{ resultData.length }} 行</span>
               <button class="btn-sm" @click="exportResults">📥 导出</button>
             </div>
             <div class="ra-content" :class="{loading: resultLoading}">
               <div v-if="resultLoading" class="ra-loading">执行中...</div>
               <table v-else class="res-table">
-                <thead><tr><th v-for="h in resultHeaders" :key="h">{{ h }}</th></tr></thead>
+                <thead><tr><th v-for="h in viewHeaders" :key="h">{{ h }}</th></tr></thead>
                 <tbody>
-                  <tr v-for="(row,i) in resultData" :key="i">
-                    <td v-for="h in resultHeaders" :key="h" class="mono">{{ row[h] ?? '—' }}</td>
+                  <tr v-for="(row,i) in viewRows" :key="i">
+                    <td v-for="h in viewHeaders" :key="h" class="mono">{{ row[h] ?? '—' }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -805,8 +805,72 @@ function createQuery() {
 function refresh() {
   qc.invalidateQueries({ queryKey: ['qm', 'list'] })
 }
+// 视图配置真应用：列投影 + 客户端过滤 + 排序 + 分页，全部作用于最近一次执行结果，
+// 网格与导出所见即所得。过滤支持 field=value / field!=value / field~子串 / 裸子串，
+// 纯客户端求值，不拼接 SQL（无注入面）。
+const viewHeaders = computed<string[]>(() => {
+  const cols = viewConfig.value.columns
+    .split(',')
+    .map((c) => c.trim())
+    .filter(Boolean)
+  if (!cols.length) return resultHeaders.value
+  return cols.filter((c) => resultHeaders.value.includes(c))
+})
+
+function matchFilter(row: Record<string, unknown>, expr: string): boolean {
+  const eq = expr.match(/^(\w+)\s*=\s*(.*)$/)
+  const neq = expr.match(/^(\w+)\s*!=\s*(.*)$/)
+  const contains = expr.match(/^(\w+)\s*~\s*(.*)$/)
+  if (eq) return String(row[eq[1]!] ?? '') === eq[2]!.trim()
+  if (neq) return String(row[neq[1]!] ?? '') !== neq[2]!.trim()
+  if (contains) return String(row[contains[1]!] ?? '').includes(contains[2]!.trim())
+  return JSON.stringify(row).toLowerCase().includes(expr.toLowerCase())
+}
+
+const viewRows = computed<Record<string, unknown>[]>(() => {
+  let rows = resultData.value
+  const filter = viewConfig.value.filter.trim()
+  if (filter) rows = rows.filter((row) => matchFilter(row, filter))
+  const sort = viewConfig.value.sort.trim()
+  if (sort) {
+    const m = sort.match(/^(\w+)(?:\s+(desc|asc))?$/i)
+    const col = m?.[1] ?? ''
+    const dir = (m?.[2] ?? 'asc').toLowerCase()
+    if (resultHeaders.value.includes(col)) {
+      rows = [...rows].sort((a, b) => {
+        const av = a[col]
+        const bv = b[col]
+        const cmp =
+          typeof av === 'number' && typeof bv === 'number'
+            ? av - bv
+            : String(av ?? '').localeCompare(String(bv ?? ''), 'zh-CN')
+        return dir === 'desc' ? -cmp : cmp
+      })
+    }
+  }
+  const size = Math.max(1, Number(viewConfig.value.pageSize) || resultData.value.length || 1)
+  return rows.slice(0, size)
+})
+
 function applyViewConfig() {
-  /* apply config to current query */
+  const cols = viewConfig.value.columns
+    .split(',')
+    .map((c) => c.trim())
+    .filter(Boolean)
+  const unknown = cols.filter((c) => !resultHeaders.value.includes(c))
+  if (unknown.length) {
+    toast.warning(`视图列不存在: ${unknown.join(', ')}`)
+    return
+  }
+  const sort = viewConfig.value.sort.trim()
+  if (sort && !resultHeaders.value.includes(sort.replace(/\s+(desc|asc)\s*$/i, ''))) {
+    toast.warning(`排序列不存在: ${sort}`)
+    return
+  }
+  const filter = viewConfig.value.filter.trim()
+  toast.success(
+    `视图配置已应用：${viewHeaders.value.length} 列 · 过滤后 ${viewRows.length} 行 · 每页 ${viewConfig.value.pageSize}`,
+  )
 }
 const importFileEl = ref<HTMLInputElement | null>(null)
 const IMPORT_ROW_LIMIT = 500
@@ -852,10 +916,11 @@ async function importData() {
   else toast.success(`导入完成：成功 ${ok} 行${tail}`)
 }
 function exportResults() {
-  if (!resultData.value.length) return
-  const header = resultHeaders.value.join(',')
-  const rows = resultData.value.map((r) =>
-    resultHeaders.value.map((h) => `"${String(r[h] ?? '').replace(/"/g, '""')}"`).join(','),
+  if (!viewRows.value.length) return
+  // 导出跟随视图配置投影（所见即所得）
+  const header = viewHeaders.value.join(',')
+  const rows = viewRows.value.map((r) =>
+    viewHeaders.value.map((h) => `"${String(r[h] ?? '').replace(/"/g, '""')}"`).join(','),
   )
   const blob = new Blob([`${header}\n${rows.join('\n')}`], { type: 'text/csv;charset=utf-8' })
   const a = document.createElement('a')
