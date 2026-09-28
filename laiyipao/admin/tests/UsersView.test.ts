@@ -36,6 +36,9 @@ function userFixture(overrides: Partial<AdminUser> = {}): AdminUser {
     gem: 50,
     last_login_at: '2026-01-02T03:04:05Z',
     created_at: '2025-12-01T00:00:00Z',
+    // 默认「验过且一致」；覆盖 {verify_checked:0,verify_mismatched:0} 即「未验真」
+    verify_checked: 5,
+    verify_mismatched: 0,
     ...overrides,
   }
 }
@@ -339,3 +342,59 @@ describe('UsersView 发放资源', () => {
     wrapper2.unmount()
   })
 })
+
+describe('UsersView 验真信号三态', () => {
+  /**
+   * 判据是**文案**而不是颜色。
+   *
+   * 颜色（el-tag 的 type）落在渲染后的 class 上，很脆；
+   * 而运营真正要读到的信息是「未验真」和「不匹配 3/5」这两个说法本身。
+   */
+  it('未验真（0/0）标为「未验真」而不是「一致」', async () => {
+    // 这一条是本组最关键的：**0/0 是「未知」，不是「干净」**。
+    // 如果这里显示成「一致」，那么最不可信的用户看起来最干净。
+    const wrapper = await mountUsers([
+      userFixture({ id: 1, nickname: '未验真甲', verify_checked: 0, verify_mismatched: 0 }),
+    ])
+    expect(wrapper.text()).toContain('未验真')
+    expect(wrapper.text()).not.toContain('一致 ')
+  })
+
+  it('验过且一致显示次数', async () => {
+    const wrapper = await mountUsers([
+      userFixture({ id: 2, nickname: '干净乙', verify_checked: 8, verify_mismatched: 0 }),
+    ])
+    expect(wrapper.text()).toContain('一致 8')
+  })
+
+  it('有不匹配时显示「不匹配 m/n」', async () => {
+    const wrapper = await mountUsers([
+      userFixture({ id: 3, nickname: '可疑丙', verify_checked: 5, verify_mismatched: 3 }),
+    ])
+    expect(wrapper.text()).toContain('不匹配 3/5')
+  })
+
+  it('三个状态互不串味（一次挂三个用户）', async () => {
+    const wrapper = await mountUsers([
+      userFixture({ id: 1, nickname: 'A', verify_checked: 0, verify_mismatched: 0 }),
+      userFixture({ id: 2, nickname: 'B', verify_checked: 4, verify_mismatched: 0 }),
+      userFixture({ id: 3, nickname: 'C', verify_checked: 4, verify_mismatched: 1 }),
+    ])
+    const t = wrapper.text()
+    expect(t).toContain('未验真')
+    expect(t).toContain('一致 4')
+    expect(t).toContain('不匹配 1/4')
+  })
+
+  it('字段缺失（旧版后端）时按「未验真」处理，不显示 undefined', async () => {
+    // 后台连旧版服务端时这两个字段不存在。此时必须显示「未验真」，
+    // 而不是 `undefined` —— 页面上的 "undefined" 会让运营以为出了 bug。
+    const legacy = userFixture({ id: 9, nickname: '旧版' })
+    delete (legacy as Partial<AdminUser>).verify_checked
+    delete (legacy as Partial<AdminUser>).verify_mismatched
+    const wrapper = await mountUsers([legacy])
+    expect(wrapper.text()).toContain('未验真')
+    expect(wrapper.text()).not.toContain('undefined')
+  })
+})
+
