@@ -25316,7 +25316,7 @@ async fn u2_att_download_response(
                     (CONTENT_TYPE, "application/octet-stream".to_string()),
                     (
                         CONTENT_DISPOSITION,
-                        format!("attachment; filename=\"{name}\""),
+                        shared::response::attachment_disposition(&name),
                     ),
                 ],
                 bytes,
@@ -25977,7 +25977,7 @@ async fn preview_result_file(
         .header(CONTENT_TYPE, mime)
         .header(
             CONTENT_DISPOSITION,
-            format!("attachment; filename=\"{}\"", name.replace('"', "")),
+            shared::response::attachment_disposition(&name),
         )
         .body(axum::body::Body::from(bytes))
         .unwrap())
