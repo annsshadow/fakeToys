@@ -366,6 +366,126 @@ func TestDesignDocHasNoFalseImplementationClaims(t *testing.T) {
 	}
 }
 
+// TestOpsDocURLsAreReal 确认运维手册里出现的**完整 URL** 都是真路由。
+//
+// ## 为什么这条值得单列
+//
+// 写手册时我凭印象写了 `curl http://127.0.0.1:8080/config`，
+// 而配置端点实际挂在 `/api/v1/config` 下 —— 是**实际跑一次**才抓出来的。
+//
+// 「凭印象写路径」是最容易犯也最难自查的一类文档错误：
+// 它读起来完全合理，而复制粘贴的人会得到一个 404。
+//
+// ## 判据：前缀必须落在真实的挂载点上
+//
+// 第一版只查「URL 首段是否出现在 routes.go 里」—— **变异存活**：
+// 把 `/api/v1/config` 改回 `/config` 不会红，因为 `config` 确实是
+// 一个合法的 handler 名（`v1.Get("/config", …)`），只是挂错了前缀。
+//
+// 「挂错前缀」恰好是凭印象写路径最常见的错法，所以必须查前缀。
+// 现在从 `routes.go` 抽出全部 `Group("...")` 挂载点，
+// 要求每个 URL 要么命中根挂载（`/healthz`、`/readyz`），
+// 要么以某个 Group 前缀开头，且剩余部分能对上某个注册路径。
+func TestOpsDocURLsAreReal(t *testing.T) {
+	ops := readFileFrom(t, "运维手册 docs/OPERATIONS.md",
+		filepath.Join("docs", "OPERATIONS.md"))
+	routes := readFileFrom(t, "路由表 server/internal/httpapi/routes.go",
+		filepath.Join("..", "httpapi", "routes.go"))
+
+	// 1) 抽出手册里出现的所有本机 URL
+	urlRe := regexp.MustCompile(`127\.0\.0\.1:8080(/[A-Za-z0-9/_-]*)`)
+	seen := map[string]bool{}
+	for _, m := range urlRe.FindAllStringSubmatch(ops, -1) {
+		seen[m[1]] = true
+	}
+	if len(seen) == 0 {
+		t.Fatal("手册里没抽出任何 127.0.0.1:8080 形式的 URL —— " +
+			"要么手册没写验证命令，要么 URL 写法变了（守卫锚点失效）")
+	}
+
+	// 2) 抽出真实的挂载前缀（含根）
+	//    `v1 := app.Group("/api/v1")` 与 `me := v1.Group("/me", …)`
+	mountRe := regexp.MustCompile(`(?:app|v1)\.Group\("([^"]+)"`)
+	mounts := map[string]bool{"/healthz": true, "/readyz": true}
+	for _, m := range mountRe.FindAllStringSubmatch(routes, -1) {
+		mounts[m[1]] = true
+	}
+	if len(mounts) < 3 {
+		t.Fatalf("只从 routes.go 抽到 %d 个挂载点（抽到 %d 个）—— "+
+			"守卫锚点失效（Group 的写法变了），不是「文档没问题」",
+			len(mounts), len(mountRe.FindAllStringSubmatch(routes, -1)))
+	}
+
+	// 3) 逐个 URL 判定
+	paths := make([]string, 0, len(seen))
+	for p := range seen {
+		paths = append(paths, p)
+	}
+	for i := 0; i < len(paths); i++ {
+		for j := i + 1; j < len(paths); j++ {
+			if paths[j] < paths[i] {
+				paths[i], paths[j] = paths[j], paths[i]
+			}
+		}
+	}
+
+	var bad []string
+	for _, p := range paths {
+		norm := "/" + strings.Trim(p, "/")
+		if mounts[norm] {
+			continue // 根挂载的健康检查
+		}
+		ok := false
+		var matched []string
+		for m := range mounts {
+			if m == "/healthz" || m == "/readyz" {
+				continue
+			}
+			if strings.HasPrefix(norm, m+"/") {
+				matched = append(matched, m)
+			}
+		}
+		// 命中最长的前缀，再看剩余段是否是已注册的 handler 名
+		if len(matched) > 0 {
+			longest := ""
+			for _, m := range matched {
+				if len(m) > len(longest) {
+					longest = m
+				}
+			}
+			rest := strings.TrimPrefix(norm, longest)
+			head := strings.Split(strings.Trim(rest, "/"), "/")[0]
+			if head != "" && strings.Contains(routes, head) {
+				ok = true
+			}
+		}
+		if !ok {
+			bad = append(bad, fmt.Sprintf(
+				"%q 没有对应的挂载前缀 —— 复制这条命令会 404（真实挂载点：%s）",
+				p, joinSorted(mounts)))
+		}
+	}
+	if len(bad) > 0 {
+		t.Fatalf("运维手册里有 %d 条 URL 指向不存在的路由：\n  %s",
+			len(bad), strings.Join(bad, "\n  "))
+	}
+}
+
+func joinSorted(m map[string]bool) string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	for i := 0; i < len(out); i++ {
+		for j := i + 1; j < len(out); j++ {
+			if out[j] < out[i] {
+				out[i], out[j] = out[j], out[i]
+			}
+		}
+	}
+	return strings.Join(out, ", ")
+}
+
 // TestDesignDocIsNotClaimedAsSourceOfTruth 确认文档不再自称「单一事实源」。
 //
 // 这条是**字面**检查，但它守的是一个真实发生过的失败模式：
