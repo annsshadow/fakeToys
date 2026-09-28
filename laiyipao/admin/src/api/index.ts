@@ -219,6 +219,29 @@ export function fetchBattleDetail(id: number) {
 }
 
 /**
+ * 运营侧发起验真（R41 新增）。
+ *
+ * ⚠️ **本端点不重算哈希** —— 服务端没有引擎。
+ * 调用方需要自己在能跑引擎的地方用种子重放，把算出的 hash 贴进来。
+ * 比对的是「提交的」与「结算时记录的」，所以它防的是
+ * 「改了数据却没改凭证」，**不是**「从一开始就伪造」。
+ */
+export interface VerifyResult {
+  battle_id: number
+  expected_hash: string
+  actual_hash: string
+  matched: boolean
+  level_id: number
+  /** 字符串下发：int64 可能超过 2^53，JSON number 会被 JS 解析成错的 */
+  seed: string
+  recorded_at: string
+}
+
+export function verifyBattle(id: number, replayHash: string) {
+  return api.post<VerifyResult>(`/admin/battles/${id}/verify`, { replay_hash: replayHash })
+}
+
+/**
  * 反应表（key + 中文名 + 各档数值），直接对应服务端的 `domain.AllReactionSpecs()`。
  *
  * 看板的「反应使用分布」图用它把 `reactions_used` 的 key 翻成中文。
