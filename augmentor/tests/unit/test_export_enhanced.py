@@ -500,3 +500,41 @@ class TestHeterogeneousDelimitedExport:
         # 前三条没有 category，落为空单元格而不是整行丢失
         assert lines[1].split(delimiter)[-1] == ""
         assert lines[-1].split(delimiter)[-1] == "y"
+
+
+class TestConversationEmptyFieldBranches:
+    """对话式格式（sharegpt / chatml / openai）遇到空 instruction 或空 output 的假支（L114，A205）
+
+    三个转换器都逐条判 `if instruction:` / `if output_text:`，只有当条目某一侧为空时才走
+    「跳过该轮消息」的假支——正常样本两侧都非空，这六条假支此前从未被踩（L100 终态偏支
+    241->247 / 247->253 / 268->274 / 274->280 / 345->347 / 347->350）。空侧是真实数据形态：
+    只有答案没问题、或只有问题没答案的半条记录。
+    """
+
+    @pytest.mark.parametrize(
+        "fmt,role_key,human_key,assistant_key",
+        [
+            (ExportFormat.SHAREGPT, "conversations", "human", "gpt"),
+            (ExportFormat.CHATML, "messages", "user", "assistant"),
+            (ExportFormat.OPENAI, "messages", "user", "assistant"),
+        ],
+    )
+    def test_empty_side_is_skipped_not_emitted(
+        self, tmp_path, fmt, role_key, human_key, assistant_key
+    ):
+        items = [
+            {"instruction": "只有问题", "output": ""},   # output 空 ⇒ 跳过 assistant 轮
+            {"instruction": "", "output": "只有答案"},   # instruction 空 ⇒ 跳过 human 轮
+        ]
+        output_path = tmp_path / f"conv.{fmt.value}.json"
+
+        result = EnhancedExporter().export(items, str(output_path), ExportOptions(format=fmt))
+
+        assert result["item_count"] == 2
+        rows = json.loads(output_path.read_text(encoding="utf-8"))
+        # 第一条只应有一轮（human/user），没有 assistant/gpt
+        first_roles = [turn.get("from") or turn.get("role") for turn in rows[0][role_key]]
+        assert first_roles == [human_key]
+        # 第二条只应有一轮（assistant/gpt），没有 human/user
+        second_roles = [turn.get("from") or turn.get("role") for turn in rows[1][role_key]]
+        assert second_roles == [assistant_key]
