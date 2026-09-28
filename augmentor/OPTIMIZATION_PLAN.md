@@ -203,14 +203,17 @@ augmentor/
 - **读**一侧的写法不变：裸文件名会在白名单各根目录内查找（见 F-08），所以
   `/api/data/load/train_data.json` 与前端列表都能继续用；命中不了工作目录解释时才 403。
 - **写**新文件必须显式给白名单内的路径，如 `data/out.json`；服务端不猜写入目录。
-- 工作目录（`augmentor/`）根下的 4 个 `train_data*.json`（共约 10.3 MB，
-  `train_data.json` / `train_data_final.json` / `train_data_final01.json` / `train_data_final02.json`）
-  以及 `up.json`、`test_output.json` 从此**对 API 不可见**（它们不在 `data/` 里，
-  裸文件名查找也找不到）。要继续用需自行移动：`mv train_data*.json data/`，
-  或把该目录并进 `AUGMENTOR_DATA_ROOTS`。
-  这些文件由 `.gitignore` 显式忽略（`augmentor/train_data.json` 等条目），**不在版本库里**，
-  所以移动后需同步 `.gitignore` 的路径，且换机器不会自动恢复。
-  文档示例（`docs/README.md`、`enhanceTXT.py` 等）里引用这些根路径的地方需同步。
+- 工作目录（`augmentor/`）根下的 4 个 `train_data*.json`（共约 10.3 MB；md5 现量：
+  `train_data.json` 与 `train_data_final.json` **逐字节相同**）以及 `up.json`，已于
+  **2026-09-28 按本条处方搬进 `data/`**，因此现在对 API 可见。它们全部未被跟踪，
+  搬动不产生任何提交；`.gitignore` 里 `augmentor/data/` 那条已经覆盖新落点，而根目录那几条
+  按名的规则**保留作兜底**（防止日后有代码按 CWD 裸名再落一份回根目录）。换机器不会自动恢复。
+- **`test_output.json` 不属于上面这批**：它不是数据集而是**套件产物**。原来 `tests/unit/test_export_opt.py`
+  里那句导出传的是相对裸名，每跑一次套件就在 CWD 落一份；那份既存文件会让 A168 的残留守卫
+  把 before/after 差集抵冲成空（与 `x` 那一族同形）。现已改为写 `tmp_path`，先前留在
+  工作目录根与仓库根的两份产物移进 Temp 下观察一轮，**不删**（可逆）。
+- 文档示例（`docs/README.md`、`enhanceTXT.py` 等）里那些「工作目录根下」的写法指的是**文件名**，
+  不是落点断言；真正按路径读它们的只有 `archive/enhanceTXT.py` 那份归档脚本（运行时无人调用）。
 - Docker 部署不受影响：镜像工作目录 `/app`、数据在 `/app/data`，新默认与之一致。
 - 需要旧行为时显式声明 `web.data_roots: ["."]` 或设 `AUGMENTOR_DATA_ROOTS`——
   白名单收紧后这两条是唯一的逃生阀，且都有测试覆盖。
