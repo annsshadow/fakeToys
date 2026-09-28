@@ -18,15 +18,17 @@
 ## 已完成
 
 - [x] **L101** `015b2ca2e` + （批② docs 即本条所在提交）`test,docs(retry,version_control,models,loop)`：**A201 容错路径族 16 条缺数清零，偏支 85 → 80** —— 三支文件（`augmentor/retry.py`、`augmentor/version_control.py`、`augmentor/models/base.py`）的守卫支第一次被踩，9 例新用例全绿，全量 7290 passed / 3 skipped / exit 0 ⇒ 详见循环日志 L101
+- [x] **L102** `c1734be35` + （账本批即本条所在提交）`test(api,config)`：**A202 路由/依赖/配置错误路径族 11 条缺数清零** —— health-gate 的 FileNotFoundError 防御支与 500 收尾、`/api/data/export` 500 收尾、augment/multimodal 的 HTTPException 复位支、`_config_data_roots` 降级不冻缓存、`save_config` 对坏旧文件的「继续保存」两支；8 例新增定向全绿，**全量读数被并行会话撞库污染（9 failed 全部归因对方在途改动），干净全量待补** ⇒ 详见循环日志 L102 与撞库记录
+- [x] **L103** `28e3a1264` + （同上）`test(cli,preview)`：**A203/A204——version delete 动作三支（缺参 exit / 删除成功 / 版本不存在 exit）与非原生导出格式守卫支清零**，9 条缺数（version.py 98-106 + preview 177）定向覆盖实证从缺数清单消失 ⇒ 详见循环日志 L103
 
 ## Backlog A — 质量缺口（缺数 / 偏支 / 健壮性）
 
 | # | 位置 | 内容 | 量级 |
 |---|------|------|------|
 | A201 | `augmentor/retry.py`、`augmentor/version_control.py`、`augmentor/models/base.py` | **已关闭（L101）**：16 条缺数 + 3 条隐藏偏支弧全清 | S |
-| A202 | `api/routes/quality.py`、`api/routes/export.py`、`api/routes/augment.py`、`api/routes/multimodal.py`、`api/deps.py`、`augmentor/config.py` | 路由与依赖层的 11 条缺数：错误/降级支从未被踩过（quality 535/541-542、export 90-91、augment 89、multimodal 90、deps 188-189、config 1110-1113） | S |
-| A203 | `augmentor/cli/commands/version.py` | CLI version 的 delete 动作 8 条缺数（98-106）：缺失参数与删除失败两条出口零覆盖 | S |
-| A204 | `augmentor/preview.py` | 1 条缺数（177） | XS |
+| A202 | `api/routes/quality.py`、`api/routes/export.py`、`api/routes/augment.py`、`api/routes/multimodal.py`、`api/deps.py`、`augmentor/config.py` | **已关闭（L102）**：11 条缺数（路由错误/降级支 + 依赖层降级键 + 配置保存容错）全清 | S |
+| A203 | `augmentor/cli/commands/version.py` | **已关闭（L103）**：delete 动作 8 条缺数（98-106）全清 | S |
+| A204 | `augmentor/preview.py` | **已关闭（L103）**：非原生格式的 DataValidationError 守卫支（177）清零 | XS |
 | A205 | 全仓约 40 支 | 偏支 85 条：逐支判定「真分支该测」还是「结构性不可达该记档」，目标是有据可查的终态 | M |
 | A206 | `web/src/pages` | 页面级组件测试：11 页仅 DataManagement 一页有，其余 10 页零组件测试 | L |
 | A207 | `web` | bundle 拆分与构建产物体检（第一本账 P3 段留的口） | M |
@@ -65,4 +67,44 @@
   3. **偏支对账必须按 brpart 列数，不许数显示出来的 `->`**：coverage 对「挂在本就缺失的行
      上的弧」不显示（L100 的 base 行 brpart=3 只显示 1 条弧）⇒ 按显示数对账会差出 5 条
      且方向可疑，差点记成一笔「归因不明」。
+
+
+### L102（2026-09-28）— A202 路由/依赖/配置错误路径族 11 条缺数清零（含撞库记录）
+
+- 8 例新增（5 例路由注入 + 1 例 deps + 2 例 config），定向 15 passed（含 7 例既有）。
+  命中证据（定向覆盖读数，ini 自带全包 `--cov`）：六支文件的目标行从缺数清单消失——
+  `api/routes/quality.py` 535/541-542、`api/routes/export.py` 90-91、`api/routes/augment.py` 89、
+  `api/routes/multimodal.py` 90、`api/deps.py` 188-189（连同 196->199 偏支）、
+  `augmentor/config.py` 1110-1113。
+- 立项时的两处口径订正：① health-gate 的 `except FileNotFoundError` 是**防御支**——
+  `load_items` 对缺失文件抛的是 HTTPException(404)（走复位支），原生 FileNotFoundError
+  要用假 load_items 注入才命中；② augment/multimodal 复位支的触发器是 `..` 组件的
+  **400**（不是 403）——`resolve_within_roots` 对 `..` 直接判 400「路径包含非法组件」。
+- **撞库记录（本账最重要的一笔，旧账本 L8 事故的同族再现）**：18:46–18:52 检测到
+  **另一活动会话与本会话共享同一工作树**（同在 augmentor-opt100 分支）：其改动为
+  产品三支（`checkpoint.py`/`tracker.py`/`visualizer.py` 改「构造不碰盘、首次写才建目录」）
+  + 新测试 `test_lazy_output_dir.py`（非本会话所建）+ `test_tracker.py` + 旧账本一行
+  + 两份 README，全部未提交、仍在途。
+- 撞库当日全量的 9 failed 逐例归因（**没有一例属于本会话改动**）：4 例文档守卫 =
+  瞬态（本会话全量读到对方**写了一半**的旧账本；隔离复跑 57 passed 全绿）；2 例既有
+  visualizer 测试（`test_output_dir_is_created` / `test_output_dir_attribute`）与产品新行为
+  相逆（断言构造期建目录，产品已改惰性）+ 对方新测试 2 例全量序下失败 + tracker 1 例 =
+  全部是对方在途工作的中间态。**处置**：不碰对方文件、不代其修复、只用显式路径提交
+  本会话自己的文件；干净全量读数待工作树安静后由后续轮次补跑（缺数 37→12 的总趋势
+  已由 L102 前的一次全量 + 两次定向覆盖读数双向印证）。
+- **新纪律（本轮起每轮开工先跑）**：`git status` 先看有没有别人的在途改动——有则在本轮
+  账本记一笔、只碰自己的文件、全量读数改用「定向覆盖读数 + 撞库注记」的组合口径，
+  等工作树安静后再补一次干净全量。
+
+### L103（2026-09-28）— A203/A204：CLI version delete 三支 + 预览非原生格式守卫
+
+- 4 例新增，定向 4 passed（含一处断言修正：`_run` helper 的 code 语义是「None = main()
+  自然走完未判负」——成功路径不触发 SystemExit，`code == 0` 是我抄错既有用例的形状；
+  修法是验输出标记 + 用 `list_versions()` 复核版本真被删掉，不放宽成对 None 装没看见）。
+- 命中证据（定向覆盖读数）：`augmentor/cli/commands/version.py` 98-106 与
+  `augmentor/preview.py` 177 从缺数清单消失（version.py 仅余 `98->exit` 形状的偏支弧，
+  与 L100 基线同形）。
+- 一个有趣的形状：`preview` 里同样的「不支持的导出格式」消息有两处 raise（155 与 177）
+  ——前者管「不是合法 ExportFormat 成员」，后者管「成员合法但没有原生转换器」；
+  只测前者时 177 依然黑着，两格要分别喂 `openai`（合法成员、非原生）与真正的坏串。
 
