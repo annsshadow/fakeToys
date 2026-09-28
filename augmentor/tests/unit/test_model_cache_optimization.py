@@ -427,3 +427,54 @@ class TestPipelineCacheWiring:
         assert captured["response_cache_dir"] is None, "管道默认不应开启磁盘缓存"
 
 
+class TestGenerationCacheTolerancePaths:
+    """生成缓存的两条守卫支与析构兜底（L101，A201）
+
+    `_generation_cache` 缺席的实例（构造半途而废、子类绕过 __init__）在
+    _cache_get/_cache_put 上必须自愈或返回 None；__del__ 里 close() 抛异常必须
+    被吞掉 —— 否则解释器退出流程会被污染（pytest 报
+    PytestUnraisableExceptionWarning）。此前零用例踩过（L100 终态 coverage 缺数
+    models/base.py 325 / 332-333 / 478-479）。
+    """
+
+    @staticmethod
+    def _bare_backend(cls):
+        return cls.__new__(cls)  # 跳过 __init__ ⇒ _generation_cache 缺席
+
+    def _backend_class(self):
+        from augmentor.models.base import ModelBackend
+
+        class _Bare(ModelBackend):
+            def _call_api(self, prompt: str) -> str:
+                return prompt
+
+        return _Bare
+
+    def test_cache_get_without_cache_returns_none(self):
+        backend = self._bare_backend(self._backend_class())
+        assert backend._cache_get("k") is None
+
+    def test_cache_put_creates_cache_lazily(self):
+        from augmentor.cache import MemoryCache
+
+        backend = self._bare_backend(self._backend_class())
+        backend._cache_put("k", "v")
+        assert isinstance(backend._generation_cache, MemoryCache)
+        assert backend._cache_get("k") == "v"
+
+    def test_del_with_failing_close_is_silent(self):
+        import gc
+
+        events = []
+
+        class _BadClose(self._backend_class()):
+            def close(self):
+                events.append("close")
+                raise RuntimeError("close 爆炸")
+
+        backend = self._bare_backend(_BadClose)
+        del backend
+        gc.collect()
+        assert events == ["close"], "__del__ 必须真的调用了 close，才算踩到吞异常那一支"
+
+
