@@ -134,7 +134,9 @@ class TestFallbackWithoutDependencies:
 
     def test_output_dir_is_created(self, tmp_path):
         target = tmp_path / "nested" / "viz"
-        DataVisualizer(output_dir=str(target))
+        visualizer = DataVisualizer(output_dir=str(target))
+        assert not target.exists(), "构造函数不该碰盘"
+        visualizer._output_path("any.png")
         assert target.is_dir()
 
 
