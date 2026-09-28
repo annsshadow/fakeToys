@@ -76,8 +76,8 @@ func TestHandlerErrorBranchesOnBrokenPool(t *testing.T) {
 	//   getReplay / adminBattleDetail → ErrNotFound → 404
 	// want=0 表示取默认 500。
 	// hasID 为 true 的 handler 读 c.Params("id")，路由须注册 ":id" 参数。
-	// ⚠️ getConfig 不在清单里：LoadGameConfig 纯内存计算永不返回错误，
-	// 它的 failErr 分支不可达（豁免，见报告）。
+	// getConfig 不在清单里：LoadGameConfig 已改为无 error 返回值
+	// （纯内存构造恒不失败），handler 里没有可触发的失败分支。
 	cases := []struct {
 		name   string
 		method string

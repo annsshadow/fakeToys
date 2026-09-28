@@ -5,10 +5,6 @@ package httpapi
 // 管理员的特殊性：账号由测试自建（admin_users 直接插入 bcrypt 哈希），
 // 不依赖 BOOTSTRAP_ADMIN_PASS —— 开发库的管理员状态不可预测，
 // 测试必须自己控制夹具而不是假设环境。
-//
-// ⚠️ 其中一条用例是**特征化断言**：POST /admin/redeem-codes 当前必然 500，
-// 根因是 redeem_codes.id 无默认值而 INSERT 未提供（真缺陷，见报告）。
-// 修复该缺陷时此断言必须翻转为 200。
 
 import (
 	"context"
@@ -347,17 +343,28 @@ func TestE2EAdminShopAnnouncementsRedeem(t *testing.T) {
 		t.Errorf("兑换码列表应 200，实际 %d", status)
 	}
 
-	// ⚠️ 特征化断言（真缺陷，见覆盖率报告「发现的真缺陷」#1）：
-	// redeem_codes.id 是无默认值的裸 INTEGER PRIMARY KEY，
-	// AdminCreateRedeemCode 的 INSERT 不提供 id → not-null violation → 500。
-	// 修复（迁移成 IDENTITY 或 INSERT 显式给 id）后，本断言应翻转为 200。
+	// 00009 修复后（id 改为 IDENTITY），创建必须成功且返回创建项。
+	// 修复前这里是特征化断言"必然 500"（id 无默认值，not-null violation）。
+	code := fmt.Sprintf("E2EBUG%d", time.Now().UnixNano()%1_000_000)
 	status, body = e.post(t, "/api/v1/admin/redeem-codes", tok, map[string]any{
-		"code":   fmt.Sprintf("E2EBUG%d", time.Now().UnixNano()%1_000_000),
-		"reward": map[string]int{"coin": 1}, "max_uses": 3,
+		"code": code, "reward": map[string]int{"coin": 1}, "max_uses": 3,
 	})
-	if status != fiber.StatusInternalServerError {
-		t.Errorf("已知缺陷：创建兑换码当前必然 500（id 无默认值），实际 %d %v", status, body)
+	if status != fiber.StatusOK {
+		t.Fatalf("创建兑换码应 200（00009 修复 id 无默认值缺陷），实际 %d %v", status, body)
 	}
+	item := body["item"].(map[string]any)
+	if item["code"].(string) != code {
+		t.Errorf("返回的 code = %v，期望 %s", item["code"], code)
+	}
+	if item["id"].(float64) <= 3 {
+		t.Errorf("自动生成的 id 应与种子数据（1..3）不冲突，实际 %v", item["id"])
+	}
+	// 清理：审计日志随 admin_users 级联，兑换码需显式删
+	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_, _ = e.pool.Exec(ctx, `DELETE FROM redeem_codes WHERE code = $1`, code)
+	})
 }
 
 func TestE2EAdminBattlesAndAudit(t *testing.T) {
