@@ -86,10 +86,10 @@ async function resume(item: RecycleItem) {
 async function permanentDelete(item: RecycleItem) {
   if (!(await confirmMsg(`确定永久删除「${item.name || item.id}」？此操作不可恢复。`))) return
   try {
-    await api.delete(`/api/recycle/${item.id}`)
+    await api.delete(`/api/recycle/${item.id}/delete`)
     items.value = items.value.filter((i) => i.id !== item.id)
   } catch (e: any) {
-    toast.error(`删除失败: : ${e?.message ?? ''}`)
+    toast.error(`删除失败: ${e?.message ?? ''}`)
   }
 }
 
