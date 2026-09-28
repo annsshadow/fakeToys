@@ -70,9 +70,9 @@ function fileIcon(f: FileInfo) {
 
 function formatSize(bytes?: number) {
   if (!bytes) return '-'
-  if (bytes < 1024) return bytes + ' B'
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 async function downloadFile(f: FileInfo) {
@@ -81,7 +81,7 @@ async function downloadFile(f: FileInfo) {
     if (r.data?.url) window.open(r.data.url, '_blank')
     else toast.info('下载链接未生成')
   } catch (e: any) {
-    toast.error('下载失败: : ' + (e?.message ?? ''))
+    toast.error(`下载失败: : ${e?.message ?? ''}`)
   }
 }
 
@@ -104,7 +104,7 @@ async function docMeta(f: FileInfo) {
     const r: any = await api.get(`/api/fileinfo/${encodeURIComponent(f.id)}/document/${encodeURIComponent(docId)}`)
     toast.success(`元数据：${(r as any)?.data?.originalName ?? (r as any)?.data?.id ?? '无'}`)
   } catch (e: any) {
-    toast.error('读取元数据失败: ' + (e?.message ?? ''))
+    toast.error(`读取元数据失败: ${e?.message ?? ''}`)
   }
 }
 // rev449：清理 cmsdocument_manage 无引用文件（file_clean_unused_referencetype_cmsdocument_manage pool-only，DELETE FILE_FILE by reference_type）
@@ -114,7 +114,7 @@ async function cleanUnusedFiles() {
     const r: any = await api.get('/api/file/clean/unused/referencetype/cmsdocument/manage')
     toast.success(`已清理无引用文件：${(r as any)?.data?.deleted ?? (r as any)?.data?.count ?? 0}`)
   } catch (e: any) {
-    toast.error('清理失败: ' + (e?.message ?? ''))
+    toast.error(`清理失败: ${e?.message ?? ''}`)
   }
 }
 

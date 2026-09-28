@@ -74,11 +74,11 @@ async function showRoleMembers(r: Role) {
   if (!flag) return
   try {
     // GET organization/assemble/control/person/list/role/{roleFlag} —— 角色下人员
-    const resp: any = await api.get('/api/organization/assemble/control/person/list/role/' + encodeURIComponent(flag))
+    const resp: any = await api.get(`/api/organization/assemble/control/person/list/role/${encodeURIComponent(flag)}`)
     const n = Array.isArray(resp.data) ? resp.data.length : 0
-    toast.success('角色成员：' + n + ' 人')
+    toast.success(`角色成员：${n} 人`)
   } catch (e: any) {
-    toast.error('查询成员失败: ' + (e?.message ?? ''))
+    toast.error(`查询成员失败: ${e?.message ?? ''}`)
   }
 }
 const showCreate = ref(false)
@@ -124,7 +124,7 @@ async function onSave() {
     form.value = { name: '', flag: '', desc: '' }
     loadRoles()
   } catch (e: any) {
-    toast.error('保存失败: : ' + (e?.message ?? '未知错误'))
+    toast.error(`保存失败: : ${e?.message ?? '未知错误'}`)
   } finally {
     creating.value = false
   }
@@ -136,7 +136,7 @@ async function deleteRole(r: Role) {
     await api.delete(`/api/role/${r.flag || r.id}`)
     roles.value = roles.value.filter((x) => x.flag !== r.flag)
   } catch (e: any) {
-    toast.error('删除失败: : ' + (e?.message ?? ''))
+    toast.error(`删除失败: : ${e?.message ?? ''}`)
   }
 }
 

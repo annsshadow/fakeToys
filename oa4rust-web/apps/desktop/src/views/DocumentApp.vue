@@ -124,7 +124,7 @@ async function loadDocMeta() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     docMetaText.value = `字段 ${n(fields)} / 批量状态 ${n(status)} / uuid ${(uuid as any)?.data ? '有' : '—'}`
   } catch (e: any) {
-    toast.error('加载文档元数据失败: ' + (e?.message ?? ''))
+    toast.error(`加载文档元数据失败: ${e?.message ?? ''}`)
   }
 }
 // rev437：密文文档筛选列表读（document_cipher_filter_list_page_size_size 仅取 pool 查 x_cms_document_cipher，{page}/size/{size} 参数被忽略但字面量路由匹配、非 arity trap）
@@ -136,7 +136,7 @@ async function loadCipherList() {
     const n = Array.isArray(r?.data) ? r.data.length : Array.isArray(r?.data?.data) ? r.data.data.length : 0
     docMetaText.value = `密文文档：${n} 条`
   } catch (e: any) {
-    toast.error('加载密文列表失败: ' + (e?.message ?? ''))
+    toast.error(`加载密文列表失败: ${e?.message ?? ''}`)
   }
 }
 // rev437：密文文档发布（document_cipher_publish_workflow_u3 取 Json docIds/docId+cipherText+personId→u3_cipher_upsert 写；空 ids 不落库无垃圾，用户以真实 docId+密文触发）
@@ -147,7 +147,7 @@ async function onCipherPublish(item: DocItem) {
     const r: any = await api.put('/api/document/cipher/publish/content', { docId: item.id, cipherText })
     toast.success(`密文已发布：${(r as any)?.data?.ciphered ?? 0} 条`)
   } catch (e: any) {
-    toast.error('密文发布失败: ' + (e?.message ?? ''))
+    toast.error(`密文发布失败: ${e?.message ?? ''}`)
   }
 }
 const items = ref<DocItem[]>([])
@@ -196,9 +196,9 @@ async function loadManagerList() {
   try {
     const r: any = await api.post('/api/document/filter/list/1/size/50/manager', {})
     items.value = (r.data?.list ?? r.data ?? []) as DocItem[]
-    toast.success('已加载管理视图（全量）：' + items.value.length + ' 条')
+    toast.success(`已加载管理视图（全量）：${items.value.length} 条`)
   } catch (e: any) {
-    toast.error('管理视图加载失败（需管理员权限）: ' + (e?.message ?? ''))
+    toast.error(`管理视图加载失败（需管理员权限）: ${e?.message ?? ''}`)
   } finally {
     loading.value = false
   }
@@ -213,7 +213,7 @@ async function onCreate() {
     createForm.value = { title: '', content: '' }
     doSearch()
   } catch (e: any) {
-    toast.error('创建失败: ' + (e?.message ?? '未知错误'))
+    toast.error(`创建失败: ${e?.message ?? '未知错误'}`)
   } finally {
     creating.value = false
   }
@@ -225,7 +225,7 @@ async function onDelete(item: DocItem) {
     await api.delete(`/api/document/${item.id}`)
     items.value = items.value.filter((i) => i.id !== item.id)
   } catch (e: any) {
-    toast.error('删除失败: : ' + (e?.message ?? ''))
+    toast.error(`删除失败: : ${e?.message ?? ''}`)
   }
 }
 
@@ -235,7 +235,7 @@ async function onCommend(item: DocItem) {
     await api.get(`/api/document/${item.id}/commend`)
     toast.success('已推荐')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 async function onTop(item: DocItem) {
@@ -244,7 +244,7 @@ async function onTop(item: DocItem) {
     await api.get(`/api/document/${item.id}/top`)
     toast.success('已置顶')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 async function onPublish(item: DocItem) {
@@ -254,7 +254,7 @@ async function onPublish(item: DocItem) {
     toast.success('已发布')
     doSearch()
   } catch (e: any) {
-    toast.error('发布失败: ' + (e?.message ?? ''))
+    toast.error(`发布失败: ${e?.message ?? ''}`)
   }
 }
 async function onUncommend(item: DocItem) {
@@ -263,7 +263,7 @@ async function onUncommend(item: DocItem) {
     await api.get(`/api/document/${item.id}/uncommend`)
     toast.success('已取消推荐')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 async function onUnTop(item: DocItem) {
@@ -272,7 +272,7 @@ async function onUnTop(item: DocItem) {
     await api.get(`/api/document/${item.id}/unTop`)
     toast.success('已取消置顶')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 async function onPublishCancel(item: DocItem) {
@@ -282,16 +282,16 @@ async function onPublishCancel(item: DocItem) {
     toast.success('已撤销发布')
     doSearch()
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 async function onViewCount(item: DocItem) {
   try {
     // GET document/{id}/view/count —— 阅读数
     const r: any = await api.get(`/api/document/${item.id}/view/count`)
-    toast.success('阅读数：' + (r.data?.count ?? r.data ?? 0))
+    toast.success(`阅读数：${r.data?.count ?? r.data ?? 0}`)
   } catch (e: any) {
-    toast.error('查询失败: ' + (e?.message ?? ''))
+    toast.error(`查询失败: ${e?.message ?? ''}`)
   }
 }
 async function onPersons(item: DocItem) {
@@ -299,9 +299,9 @@ async function onPersons(item: DocItem) {
     // GET document/{id}/persons —— 可见人列表
     const r: any = await api.get(`/api/document/${item.id}/persons`)
     const n = Array.isArray(r.data) ? r.data.length : 0
-    toast.success('可见人数：' + n)
+    toast.success(`可见人数：${n}`)
   } catch (e: any) {
-    toast.error('查询失败: ' + (e?.message ?? ''))
+    toast.error(`查询失败: ${e?.message ?? ''}`)
   }
 }
 async function onNotify(item: DocItem) {
@@ -310,7 +310,7 @@ async function onNotify(item: DocItem) {
     await api.post(`/api/document/${item.id}/notify`, {})
     toast.success('已发送通知')
   } catch (e: any) {
-    toast.error('通知失败: ' + (e?.message ?? ''))
+    toast.error(`通知失败: ${e?.message ?? ''}`)
   }
 }
 // rev422：记录文档浏览 POST /api/document/cipher/{id}/persist/view/record（append x_cms_viewrecord，doc_id 取行、person 会话；用户点击触发的真实浏览留痕）
@@ -319,7 +319,7 @@ async function onViewRecord(item: DocItem) {
     await api.post(`/api/document/cipher/${item.id}/persist/view/record`, { viewId: '', recordData: 'desktop-view' })
     toast.success('已记录浏览')
   } catch (e: any) {
-    toast.error('记录浏览失败: ' + (e?.message ?? ''))
+    toast.error(`记录浏览失败: ${e?.message ?? ''}`)
   }
 }
 async function onDocLog(item: DocItem) {
@@ -327,9 +327,9 @@ async function onDocLog(item: DocItem) {
     // GET /api/log/list/document/{documentId} —— 文档操作日志
     const r: any = await api.get(`/api/log/list/document/${item.id}`)
     const n = Array.isArray(r.data) ? r.data.length : 0
-    toast.success('操作日志：' + n + ' 条')
+    toast.success(`操作日志：${n} 条`)
   } catch (e: any) {
-    toast.error('查询日志失败: ' + (e?.message ?? ''))
+    toast.error(`查询日志失败: ${e?.message ?? ''}`)
   }
 }
 async function onCommendList(item: DocItem) {
@@ -337,9 +337,9 @@ async function onCommendList(item: DocItem) {
     // GET /api/commend/list/paging/{docId} —— 文档点赞列表
     const r: any = await api.get(`/api/commend/list/paging/${item.id}`)
     const n = Array.isArray(r.data) ? r.data.length : (r.data?.total ?? 0)
-    toast.success('点赞数：' + n)
+    toast.success(`点赞数：${n}`)
   } catch (e: any) {
-    toast.error('查询点赞失败: ' + (e?.message ?? ''))
+    toast.error(`查询点赞失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -432,7 +432,7 @@ async function loadDocTwin() {
     const rs = await Promise.all([s(api.get('/api/anonymous/document/0/view')), s(api.get('/api/editor/list'))])
     toast.success(`文档孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('文档孪生端点失败: ' + (e?.message ?? ''))
+    toast.error(`文档孪生端点失败: ${e?.message ?? ''}`)
   }
 }
 // rev484（桶外 off-metric 波）：预览服务 转换/上传 真注册路由 2 条（arity 已校验）
@@ -442,7 +442,7 @@ async function loadDocTwin2() {
     const rs = await Promise.all([s(api.post('/preview/convert', {})), s(api.post('/preview/upload', {}))])
     toast.success(`文档孪生端点B ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('文档孪生端点B失败: ' + (e?.message ?? ''))
+    toast.error(`文档孪生端点B失败: ${e?.message ?? ''}`)
   }
 }
 // rev485（桶外 off-metric 第二波）：data/document 深段族（GET×8 深度、POST/PUT/DELETE path 变体各 8）
@@ -490,7 +490,7 @@ async function loadDocTwin3() {
     ])
     toast.success(`数据·文档深度C ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('数据·文档深度C失败: ' + (e?.message ?? ''))
+    toast.error(`数据·文档深度C失败: ${e?.message ?? ''}`)
   }
 }
 </script>

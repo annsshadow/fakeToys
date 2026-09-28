@@ -224,10 +224,10 @@ function itemIcon(item: ConfigItem) {
 
 function selectItem(item: ConfigItem) {
   selected.value = item
-  config.value = item.config ? '\n' + item.config : '{}'
+  config.value = item.config ? `\n${item.config}` : '{}'
 }
 function createNew() {
-  const n: ConfigItem = { id: 'c' + Date.now(), name: '未命名', flag: '', config: '{}', category: 'business' }
+  const n: ConfigItem = { id: `c${Date.now()}`, name: '未命名', flag: '', config: '{}', category: 'business' }
   items.value = [n, ...items.value]
   selectItem(n)
 }
@@ -237,7 +237,7 @@ function editItem(item: ConfigItem) {
 async function deleteItem(item: ConfigItem) {
   if (!(await confirmMsg(`删除配置「${item.name || item.flag}」？`))) return
   try {
-    await api.delete('/api/config/delete/' + item.id)
+    await api.delete(`/api/config/delete/${item.id}`)
   } catch {}
   items.value = items.value.filter((i) => i.id !== item.id)
   if (selected.value?.id === item.id) selected.value = null
@@ -246,15 +246,15 @@ async function deleteItem(item: ConfigItem) {
 async function save() {
   if (!selected.value) return
   try {
-    await api.put('/api/config/update/' + selected.value.id, { ...selected.value, config: config.value })
+    await api.put(`/api/config/update/${selected.value.id}`, { ...selected.value, config: config.value })
     qc.invalidateQueries({ queryKey: ['config', 'list'] })
     addHistory(true)
   } catch (e: any) {
-    toast.error('保存失败: : ' + (e?.message ?? ''))
+    toast.error(`保存失败: : ${e?.message ?? ''}`)
   }
 }
 async function preview() {
-  toast.info('配置预览: ' + config.value)
+  toast.info(`配置预览: ${config.value}`)
 }
 async function clearConfig() {
   if (await confirmMsg('清空配置？')) config.value = '{}'
@@ -271,7 +271,7 @@ function validateConfig() {
     JSON.parse(config.value)
     toast.info('JSON格式有效')
   } catch (e: any) {
-    toast.error('JSON格式错误: ' + e.message)
+    toast.error(`JSON格式错误: ${e.message}`)
   }
 }
 function applyFormat() {
@@ -286,7 +286,7 @@ function downloadConfig() {
   const blob = new Blob([config.value], { type: 'application/json' })
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
-  a.download = (selected.value?.flag || 'config') + '.json'
+  a.download = `${selected.value?.flag || 'config'}.json`
   a.click()
 }
 function exportConfigs() {
@@ -294,7 +294,7 @@ function exportConfigs() {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
-  a.download = 'configs_' + new Date().toISOString().slice(0, 10) + '.json'
+  a.download = `configs_${new Date().toISOString().slice(0, 10)}.json`
   a.click()
 }
 function exportSelected() {
@@ -305,7 +305,7 @@ function exportSelected() {
   )
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
-  a.download = (selected.value.flag || 'config') + '.json'
+  a.download = `${selected.value.flag || 'config'}.json`
   a.click()
 }
 function importConfigs() {
@@ -317,13 +317,13 @@ function importConfigs() {
           api.post('/api/config/create', item)
         } catch {}
       }
-      importMsg.value = { ok: true, txt: '成功导入 ' + data.length + ' 项' }
+      importMsg.value = { ok: true, txt: `成功导入 ${data.length} 项` }
     } else {
       importMsg.value = { ok: false, txt: '格式错误: 期望数组' }
     }
     qc.invalidateQueries({ queryKey: ['config', 'list'] })
   } catch (e: any) {
-    importMsg.value = { ok: false, txt: '导入失败: ' + e.message }
+    importMsg.value = { ok: false, txt: `导入失败: ${e.message}` }
   }
 }
 function addHistory(isAuto: boolean) {

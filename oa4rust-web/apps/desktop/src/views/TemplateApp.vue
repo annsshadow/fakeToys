@@ -84,10 +84,10 @@ async function loadTplCategory() {
   try {
     // GET /api/templateform/list/category —— 模板表单分类
     const r: any = await api.get('/api/templateform/list/category')
-    tplCatText.value = '模板分类：' + (Array.isArray(r?.data) ? r.data.length : 0)
+    tplCatText.value = `模板分类：${Array.isArray(r?.data) ? r.data.length : 0}`
     toast.success(tplCatText.value)
   } catch (e: any) {
-    toast.error('加载分类失败: ' + (e?.message ?? ''))
+    toast.error(`加载分类失败: ${e?.message ?? ''}`)
   }
 }
 const createEp = '/api/templateform/create'
@@ -155,7 +155,7 @@ async function viewDetail(item: Item) {
     }
   } catch (e: any) {
     detail.value.loading = false
-    toast.error('加载详情失败: ' + (e?.message ?? ''))
+    toast.error(`加载详情失败: ${e?.message ?? ''}`)
   }
 }
 function closeModal() {

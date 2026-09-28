@@ -43,7 +43,7 @@ const XSCRIPT_COMPLETIONS = [
   { label: 'require', type: 'function', apply: 'require()' },
 ]
 
-function xscriptCompletion(context: CompletionContext) {
+function xscriptCompletion(_context: CompletionContext) {
   return { from: word.from, options: XSCRIPT_COMPLETIONS, validFor: /^[\w$]*$/ }
 }
 

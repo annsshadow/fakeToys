@@ -354,7 +354,7 @@ async function loadQueryDetail() {
     const mN = Array.isArray((models as any)?.data) ? (models as any).data.length : 0
     queryDetailText.value = `查询「${dName}」· 数据表 ${tN} · 导入模型 ${mN}`
   } catch (e: any) {
-    toast.error('加载查询明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载查询明细失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -389,7 +389,7 @@ async function loadQueryPerms() {
     const hasTblPerm = (tablePerm as any)?.data?.id ? '有' : '无'
     queryPermText.value = `查询权限 ${hasPerm} · 同分类查询 ${catN} · 数据表权限 ${hasTblPerm}`
   } catch (e: any) {
-    toast.error('加载查询权限/分类失败: ' + (e?.message ?? ''))
+    toast.error(`加载查询权限/分类失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -420,7 +420,7 @@ async function loadTableRows() {
     const statN = Array.isArray((stats as any)?.data) ? (stats as any).data.length : 0
     tableRowText.value = `数据表 ${tables.length} · 行 ${rows.length}（首行 ${hasRow}）· 统计 ${statN}`
   } catch (e: any) {
-    toast.error('加载表数据/统计失败: ' + (e?.message ?? ''))
+    toast.error(`加载表数据/统计失败: ${e?.message ?? ''}`)
   }
 }
 // rev206：设计器表行游标族 5 条真实 distinct 路由（x_query_table_data）
@@ -465,7 +465,7 @@ async function loadTableCursors() {
     const cntV = (cnt as any)?.data?.count ?? (cnt as any)?.data ?? 0
     tableRowText.value = `过滤行 ${n(filtered)} · 计数 ${cntV} · 下翻 ${n(next)} · 上翻 ${n(prev)} · 单行 ${(one as any)?.data?.id ? '命中' : '未命中'}`
   } catch (e: any) {
-    toast.error('加载表游标失败: ' + (e?.message ?? ''))
+    toast.error(`加载表游标失败: ${e?.message ?? ''}`)
   }
 }
 // rev227：设计器 视图/统计/分类游标族 6 条真实 distinct 路由
@@ -487,7 +487,7 @@ async function loadDesignerViewStat() {
     const n = (x: any) => (Array.isArray((x as any)?.data) ? (x as any).data.length : 0)
     tableRowText.value = `视图权限 ${(viewPerm as any)?.data ? '有' : '无'} · 视图上翻 ${n(viewPrev)}·下翻 ${n(viewNext)} · 分类查询 ${n(byCat)} · 统计按查询 ${n(statByQuery)}·下翻 ${n(statNext)}`
   } catch (e: any) {
-    toast.error('加载视图/统计游标失败: ' + (e?.message ?? ''))
+    toast.error(`加载视图/统计游标失败: ${e?.message ?? ''}`)
   }
 }
 // rev377：设计器 统计/表清单/导出/导入模型清单 非破坏性真实读补消费（用户触发；均 x_query_* 真 SELECT）
@@ -512,7 +512,7 @@ async function loadQueryDesignerMore() {
     const hit = rs.filter((r) => (r as any) != null).length
     tableRowText.value = `设计器只读端点 ${rs.length} 条，返回 ${hit}`
   } catch (e: any) {
-    toast.error('加载设计器只读端点失败: ' + (e?.message ?? ''))
+    toast.error(`加载设计器只读端点失败: ${e?.message ?? ''}`)
   }
 }
 // rev241：查询设计器 输出/包/实体属性/分类/统计/表行 7 条真实 distinct 读路由（arity 已核；跳 icon/{query}/{flag}=Path<String>与2参URL不符 500、row/count/where=row/select/where 投影孪生、list/summary/querycategory/{query}/{queryCategory}=同 handler 双注册）
@@ -543,7 +543,7 @@ async function loadDesignerOutputBundle() {
     const n = (x: any) => (Array.isArray((x as any)?.data) ? (x as any).data.length : 0)
     tableRowText.value = `输出文件 ${(outFile as any)?.data ? '有' : '无'} · 输出选择 ${n(outSelect)} · 视图包 ${(bundle as any)?.data ? '有' : '无'} · 实体属性 ${n(entityProps)} · 分类摘要 ${n(catSummary)} · 统计按查询 ${n(statByQuery)} · 表行过滤 ${n(tableRows)} · 表行前翻 ${n(tableRowsPrev)}`
   } catch (e: any) {
-    toast.error('加载输出/包/属性失败: ' + (e?.message ?? ''))
+    toast.error(`加载输出/包/属性失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -593,7 +593,7 @@ async function saveQuery() {
     showModal.value = false
     loadQueries()
   } catch (e: any) {
-    toast.error('保存失败: : ' + (e?.message ?? ''))
+    toast.error(`保存失败: : ${e?.message ?? ''}`)
   }
 }
 
@@ -613,7 +613,7 @@ async function runQuery() {
     })
     resultData.value = r.data?.list ?? r.data ?? []
   } catch (e: any) {
-    toast.error('执行失败: : ' + (e?.message ?? ''))
+    toast.error(`执行失败: : ${e?.message ?? ''}`)
   } finally {
     rLoading.value = false
   }
@@ -626,7 +626,7 @@ async function deleteQuery(q: QueryDef) {
     if (selected.value?.id === q.id) selected.value = null
     queries.value = queries.value.filter((x) => x.id !== q.id)
   } catch (e: any) {
-    toast.error('删除失败: : ' + (e?.message ?? ''))
+    toast.error(`删除失败: : ${e?.message ?? ''}`)
   }
 }
 
@@ -674,9 +674,9 @@ function applyFilterRules() {
   const cond = generatedFilterWhere.value
   if (cond) {
     if (/\bWHERE\b/i.test(sql.value || '')) {
-      sql.value = sql.value!.replace(/WHERE\s+[^;]+/i, 'WHERE ' + cond)
+      sql.value = sql.value!.replace(/WHERE\s+[^;]+/i, `WHERE ${cond}`)
     } else {
-      sql.value = (sql.value || '') + '\nWHERE ' + cond
+      sql.value = `${sql.value || ''}\nWHERE ${cond}`
     }
   }
   showFilterBuilder.value = false
@@ -702,7 +702,7 @@ function renderChart() {
   const entries = [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, 20)
   const maxVal = Math.max(1, ...entries.map(([, v]) => v))
   const nums = entries.map(([, v]) => v)
-  chartData.value = entries.map(([label, value], i) => ({ label, value, h: Math.round((value / maxVal) * 150) }))
+  chartData.value = entries.map(([label, value], _i) => ({ label, value, h: Math.round((value / maxVal) * 150) }))
   chartStats.value = {
     count: resultData.value.length,
     max: Math.max(...nums),
@@ -742,19 +742,16 @@ function doExport() {
   if (exportFmt.value === 'json') {
     downloadBlob(
       new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
-      'queries_' + new Date().toISOString().slice(0, 10) + '.json',
+      `queries_${new Date().toISOString().slice(0, 10)}.json`,
     )
   } else if (exportFmt.value === 'csv') {
     const csv =
       'name,category,sql\n' +
       data.map((d) => `"${d.name}","${d.category}","${(d.sql || '').replace(/"/g, '""')}"`).join('\n')
-    downloadBlob(new Blob([csv], { type: 'text/csv' }), 'queries_' + new Date().toISOString().slice(0, 10) + '.csv')
+    downloadBlob(new Blob([csv], { type: 'text/csv' }), `queries_${new Date().toISOString().slice(0, 10)}.csv`)
   } else {
     const sqlStr = data.map((d) => `-- ${d.name}\n${d.sql}`).join('\n\n')
-    downloadBlob(
-      new Blob([sqlStr], { type: 'text/plain' }),
-      'queries_' + new Date().toISOString().slice(0, 10) + '.sql',
-    )
+    downloadBlob(new Blob([sqlStr], { type: 'text/plain' }), `queries_${new Date().toISOString().slice(0, 10)}.sql`)
   }
   showImportExport.value = false
 }
@@ -781,7 +778,7 @@ async function doImport() {
     loadQueries()
     showImportExport.value = false
   } catch (e: any) {
-    importMsg.value = { ok: false, txt: '导入失败: ' + e.message }
+    importMsg.value = { ok: false, txt: `导入失败: ${e.message}` }
   }
 }
 

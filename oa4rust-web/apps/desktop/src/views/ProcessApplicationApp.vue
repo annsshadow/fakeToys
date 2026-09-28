@@ -183,7 +183,7 @@ async function loadCategories() {
     categories.value = (r.data ?? []) as Array<{ id?: string; name?: string }>
     if (categories.value.length === 0) toast.success('暂无分类')
   } catch (e: any) {
-    toast.error('加载分类失败: ' + (e?.message ?? ''))
+    toast.error(`加载分类失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -221,7 +221,7 @@ async function loadDesignerApp() {
     const pKeys = perm && (perm as any).data?.permissions ? Object.keys((perm as any).data.permissions).length : 0
     designerText.value = `分类 ${cats.length} · 应用「${dName}」· 权限项 ${pKeys}`
   } catch (e: any) {
-    toast.error('加载设计器应用明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载设计器应用明细失败: ${e?.message ?? ''}`)
   }
 }
 // 表面流程应用族 3 条真实 distinct 路由（surface，均以流程应用 id 定位，投影/表各异）：
@@ -260,7 +260,7 @@ async function loadSurfaceApp() {
     const dictCount = Array.isArray((dict as any)?.data) ? (dict as any).data.length : 0
     surfaceText.value = `应用「${appId}」· 管理员权限 ${isMgr} · 图标 ${hasIcon} · 数据字典 ${dictCount} 项`
   } catch (e: any) {
-    toast.error('加载表面应用信息失败: ' + (e?.message ?? ''))
+    toast.error(`加载表面应用信息失败: ${e?.message ?? ''}`)
   }
 }
 function fmtTime(t?: string) {

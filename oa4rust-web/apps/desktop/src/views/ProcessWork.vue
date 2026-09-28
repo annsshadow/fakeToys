@@ -729,7 +729,7 @@ async function loadWorkFullCursors(): Promise<void> {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     workFullText.value = `工作真实读端点 ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载工作全量游标失败: ' + (e?.message ?? ''))
+    toast.error(`加载工作全量游标失败: ${e?.message ?? ''}`)
   }
 }
 // rev252：文档版本按job+分类·按工作+分类 · 待阅按工作 · 待阅/已阅我的分页 5 条真实 distinct 读路由
@@ -897,7 +897,7 @@ async function loadSurfaceReadA(): Promise<void> {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     surfaceReadText.value = `表面深度读A ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载表面深度读A失败: ' + (e?.message ?? ''))
+    toast.error(`加载表面深度读A失败: ${e?.message ?? ''}`)
   }
 }
 // rev309：流程表面 预览/流程/待阅已阅/待办已办/记录/审阅/脚本/工作 计数与分页深度读 47 条真实路由
@@ -1143,7 +1143,7 @@ async function loadSurfaceReadB(): Promise<void> {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     surfaceReadText.value = `表面深度读B ${rs.length} 条，命中 ${hit}`
   } catch (e: any) {
-    toast.error('加载表面深度读B失败: ' + (e?.message ?? ''))
+    toast.error(`加载表面深度读B失败: ${e?.message ?? ''}`)
   }
 }
 async function loadDocReadPaging(): Promise<void> {
@@ -1593,7 +1593,7 @@ async function pressTask(): Promise<void> {
     await api.post(`/api/processplatform/service/processing/task/press/${taskId}`, {})
     toast.success('已催办')
   } catch (e: any) {
-    toast.error('催办失败: ' + (e?.message ?? ''))
+    toast.error(`催办失败: ${e?.message ?? ''}`)
   } finally {
     pressing.value = false
   }
@@ -1627,7 +1627,7 @@ async function engineWorkAction(kind: string): Promise<void> {
     }
     toast.success('操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -1642,7 +1642,7 @@ async function engineTaskAction(kind: string): Promise<void> {
     else if (kind === 'processing') await api.post(`/api/processplatform/service/processing/task/processing/${id}`, {})
     toast.success('任务操作已提交')
   } catch (e: any) {
-    toast.error('任务操作失败: ' + (e?.message ?? ''))
+    toast.error(`任务操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -1660,7 +1660,7 @@ async function engineAttAction(kind: string): Promise<void> {
     }
     toast.success('附件操作已提交')
   } catch (e: any) {
-    toast.error('附件操作失败: ' + (e?.message ?? ''))
+    toast.error(`附件操作失败: ${e?.message ?? ''}`)
   }
 }
 // rev359：流程引擎 REST 式工作/任务生命周期 + v2/v3 双参 + 快照 + 已办合并回滚 + 定时器取消 真实动作（全 Path 参数无 body 或 {}；handler 已核 Path-only；用户触发 prompt+确认）
@@ -1730,7 +1730,7 @@ async function engineRest(op: string): Promise<void> {
     }
     toast.success('引擎操作已提交')
   } catch (e: any) {
-    toast.error('引擎操作失败: ' + (e?.message ?? ''))
+    toast.error(`引擎操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -1819,7 +1819,7 @@ async function engineRest2(op: string): Promise<void> {
     }
     toast.success('引擎操作已提交')
   } catch (e: any) {
-    toast.error('引擎操作失败: ' + (e?.message ?? ''))
+    toast.error(`引擎操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -1875,7 +1875,7 @@ async function surfaceOps3(op: string): Promise<void> {
     else await api.post(`/api/processplatform/assemble/surface/delete/${id()}`, {})
     toast.success('流程表面操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -1900,7 +1900,7 @@ async function surfaceReads3(): Promise<void> {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     toast.success(`流程表面清单读 ${rs.length} 条命中 ${hit}`)
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 // rev380：流程表面 阅办管理态/已办参考控制/工作强制/快照按工作/草稿启动/数据与附件删/按应用退化清单 真实路由（全字面量，用户触发，Path-only 空体）
@@ -1973,7 +1973,7 @@ async function surfaceOps4(op: string): Promise<void> {
     }
     toast.success('流程表面操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2028,7 +2028,7 @@ async function surfaceOps5(op: string): Promise<void> {
     }
     toast.success('流程表面操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2069,7 +2069,7 @@ async function surfaceOps6(op: string): Promise<void> {
     }
     toast.success('流程表面操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2108,7 +2108,7 @@ async function surfaceOps7(op: string): Promise<void> {
     }
     toast.success('流程表面操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2156,7 +2156,7 @@ async function surfaceOps8(op: string): Promise<void> {
     }
     toast.success('流程表面操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2192,7 +2192,7 @@ async function surfaceOps9(op: string): Promise<void> {
       await api.post(`/api/processplatform/assemble/surface/taskcompleted/v2/list/create/paging/${pg}/size/${sz}`, {})
     toast.success('流程表面操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2213,7 +2213,7 @@ async function surfaceOps10(op: string): Promise<void> {
     } else await api.post('/api/processplatform/assemble/surface/attachment/batch/update/manage', {})
     toast.success('流程表面操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2234,7 +2234,7 @@ async function surfaceOps11(op: string): Promise<void> {
     else await api.post('/api/processplatform/assemble/surface/taskcompleted/v2/count', {})
     toast.success('流程表面操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2252,7 +2252,7 @@ async function surfaceOps12(op: string): Promise<void> {
     else await api.post('/api/processplatform/assemble/surface/workcompleted/shift/time', {})
     toast.success('流程表面操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2268,7 +2268,7 @@ async function surfaceOps13(op: string): Promise<void> {
     else await api.get(`/api/processplatform/assemble/surface/work/${id}/close/check`)
     toast.success('流程表面操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2290,7 +2290,7 @@ async function surfaceOps14(op: string): Promise<void> {
     }
     toast.success('流程表面操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2312,7 +2312,7 @@ async function surfaceOps15(op: string): Promise<void> {
     }
     toast.success('流程表面操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2334,7 +2334,7 @@ async function surfaceOps16(op: string): Promise<void> {
     }
     toast.success('流程表面操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2352,7 +2352,7 @@ async function surfaceOps17(op: string): Promise<void> {
     else await api.put(`/api/processplatform/assemble/surface/taskcompleted/${id}/opinion/manage`, {})
     toast.success('流程表面操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2374,7 +2374,7 @@ async function surfaceOps18(op: string): Promise<void> {
     }
     toast.success('流程表面操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2392,7 +2392,7 @@ async function surfaceOps19(op: string): Promise<void> {
     else await api.post(`/api/processplatform/assemble/surface/work/v2/${id}/terminate`, {})
     toast.success('流程表面操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2410,7 +2410,7 @@ async function surfaceOps20(op: string): Promise<void> {
     else await api.post(`/api/processplatform/assemble/surface/task/v3/${id}/add`, {})
     toast.success('流程表面操作已提交')
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2465,7 +2465,7 @@ async function engineRest3(op: string): Promise<void> {
     }
     toast.success('引擎操作已提交')
   } catch (e: any) {
-    toast.error('引擎操作失败: ' + (e?.message ?? ''))
+    toast.error(`引擎操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2499,7 +2499,7 @@ async function engineRest4(op: string): Promise<void> {
     }
     toast.success('引擎操作已提交')
   } catch (e: any) {
-    toast.error('引擎操作失败: ' + (e?.message ?? ''))
+    toast.error(`引擎操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2548,7 +2548,7 @@ async function engineTouch(op: string): Promise<void> {
       toast.success(`已接管无主作业：${n}`)
     }
   } catch (e: any) {
-    toast.error('引擎操作失败: ' + (e?.message ?? ''))
+    toast.error(`引擎操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2606,7 +2606,7 @@ async function engineReviewWork(op: string): Promise<void> {
       toast.success('工作已 v3 撤回')
     }
   } catch (e: any) {
-    toast.error('引擎操作失败: ' + (e?.message ?? ''))
+    toast.error(`引擎操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2629,7 +2629,7 @@ async function engineAttachmentOrder(op: string): Promise<void> {
       toast.success('附件顺序已调整')
     }
   } catch (e: any) {
-    toast.error('引擎操作失败: ' + (e?.message ?? ''))
+    toast.error(`引擎操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2664,7 +2664,7 @@ async function engineRest5(op: string): Promise<void> {
     }
     toast.success('引擎操作已提交')
   } catch (e: any) {
-    toast.error('引擎操作失败: ' + (e?.message ?? ''))
+    toast.error(`引擎操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2696,7 +2696,7 @@ async function engineRest6(op: string): Promise<void> {
     }
     toast.success('引擎/表面操作已提交')
   } catch (e: any) {
-    toast.error('引擎/表面操作失败: ' + (e?.message ?? ''))
+    toast.error(`引擎/表面操作失败: ${e?.message ?? ''}`)
   } finally {
     engineBusy.value = false
   }
@@ -2737,7 +2737,7 @@ async function loadTwinA() {
     ])
     toast.success(`孪生读A ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('孪生读A失败: ' + (e?.message ?? ''))
+    toast.error(`孪生读A失败: ${e?.message ?? ''}`)
   }
 }
 async function loadTwinB() {
@@ -2775,7 +2775,7 @@ async function loadTwinB() {
     ])
     toast.success(`孪生读B ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('孪生读B失败: ' + (e?.message ?? ''))
+    toast.error(`孪生读B失败: ${e?.message ?? ''}`)
   }
 }
 async function loadTwinC() {
@@ -2796,7 +2796,7 @@ async function loadTwinC() {
     ])
     toast.success(`孪生读C ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('孪生读C失败: ' + (e?.message ?? ''))
+    toast.error(`孪生读C失败: ${e?.message ?? ''}`)
   }
 }
 // rev482（放宽双计口径·第二波）：表面退化/镜像位 3 条（taskcompleted v2 create 位 next/prev 同 SQL 退化重复 2 条——
@@ -2812,7 +2812,7 @@ async function loadTwinD() {
     ])
     toast.success(`孪生读D ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('孪生读D失败: ' + (e?.message ?? ''))
+    toast.error(`孪生读D失败: ${e?.message ?? ''}`)
   }
 }
 // rev484（桶外 off-metric 波）：correlation 读族 17 条（doc/type/cms·processplatform/core 实体·service 处理读）
@@ -2848,7 +2848,7 @@ async function loadTwinE() {
     ])
     toast.success(`孪生读E ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('孪生读E失败: ' + (e?.message ?? ''))
+    toast.error(`孪生读E失败: ${e?.message ?? ''}`)
   }
 }
 // rev484（桶外 off-metric 波）：correlation 写族 12 条（delete/readable/update·create·save）
@@ -2888,7 +2888,7 @@ async function loadTwinF() {
     ])
     toast.success(`孪生读F ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('孪生读F失败: ' + (e?.message ?? ''))
+    toast.error(`孪生读F失败: ${e?.message ?? ''}`)
   }
 }
 // rev486（588 分诊重审·源码 arity 精确核）：applicationdict 深 data×3 深度 D/P/U + data/work 深段 D/P/U
@@ -2926,7 +2926,7 @@ async function loadTwinG() {
     ])
     toast.success(`孪生读G ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('孪生读G失败: ' + (e?.message ?? ''))
+    toast.error(`孪生读G失败: ${e?.message ?? ''}`)
   }
 }
 // rev486（588 分诊重审·源码 arity 精确核）：data/workcompleted 深段 PUT×4 + service/processing 引擎
@@ -2963,7 +2963,7 @@ async function loadTwinH() {
     ])
     toast.success(`孪生读H ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('孪生读H失败: ' + (e?.message ?? ''))
+    toast.error(`孪生读H失败: ${e?.message ?? ''}`)
   }
 }
 async function engineReadAction(kind: string): Promise<void> {
@@ -2984,7 +2984,7 @@ async function engineReadAction(kind: string): Promise<void> {
     }
     toast.success('待阅操作已提交')
   } catch (err: any) {
-    toast.error('待阅操作失败: ' + (err?.message ?? ''))
+    toast.error(`待阅操作失败: ${err?.message ?? ''}`)
   }
 }
 // rev350：流程表面 待办/已办/待阅/已阅/评审/工作/草稿/交接/快照 分页筛选数据查询（POST 真实读，用户触发；全字面量路径）
@@ -3015,7 +3015,7 @@ async function surfaceList(op: string): Promise<void> {
     else await api.post('/api/processplatform/assemble/surface/snap/list/my/filter/1/size/20', {})
     toast.success('数据查询已提交')
   } catch (e: any) {
-    toast.error('数据查询失败: ' + (e?.message ?? ''))
+    toast.error(`数据查询失败: ${e?.message ?? ''}`)
   }
 }
 // rev351：流程表面 待办/已办/待阅/已阅/工作/评审 游标(next/prev)+管理(manage)+v2分页 数据查询（POST 真实读 distinct 游标方向，用户触发；全字面量路径）
@@ -3052,7 +3052,7 @@ async function surfaceList2(op: string): Promise<void> {
     else await api.post('/api/processplatform/assemble/surface/task/count/filter', {})
     toast.success('数据查询已提交')
   } catch (e: any) {
-    toast.error('数据查询失败: ' + (e?.message ?? ''))
+    toast.error(`数据查询失败: ${e?.message ?? ''}`)
   }
 }
 // ── 附件详情 / 待阅详情（rev110，均按 id 拉单条 distinct handler）────
@@ -3066,7 +3066,7 @@ async function viewAttachment(id: string): Promise<void> {
     const d = r?.data ?? {}
     attachDetailText.value = `附件：${d.name ?? id} · 创建人 ${d.creator ?? '—'}`
   } catch (e: any) {
-    toast.error('加载附件详情失败: ' + (e?.message ?? ''))
+    toast.error(`加载附件详情失败: ${e?.message ?? ''}`)
   }
 }
 async function viewRead(id: string): Promise<void> {
@@ -3077,7 +3077,7 @@ async function viewRead(id: string): Promise<void> {
     const d = r?.data ?? {}
     readDetailText.value = `待阅：${d.xtitle ?? d.title ?? id} · ${d.xperson ?? d.person ?? '—'}`
   } catch (e: any) {
-    toast.error('加载待阅详情失败: ' + (e?.message ?? ''))
+    toast.error(`加载待阅详情失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -3115,7 +3115,7 @@ async function taskV2Action(kind: 'pause' | 'resume' | 'reset'): Promise<void> {
     toast.success('操作成功')
     await loadTaskV2(taskId)
   } catch (e: any) {
-    toast.error('操作失败: ' + (e?.message ?? ''))
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   } finally {
     v2Busy.value = false
   }

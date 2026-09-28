@@ -84,7 +84,7 @@ async function loadBaseMeta2() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     sysStatusText.value = `根Echo ${(echo as any)?.data ? '通' : '—'} · 根缓存 ${n(cache)} · 根OpenAPI ${(openapi as any)?.data ? '有' : '—'}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadBaseMeta() {
@@ -98,7 +98,7 @@ async function loadBaseMeta() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     sysStatusText.value = `Echo ${(echo as any)?.data ? '通' : '—'} · 缓存详情 ${n(cache)} · OpenAPI ${(openapi as any)?.data ? '有' : '—'}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadGeneralMeta3() {
@@ -112,7 +112,7 @@ async function loadGeneralMeta3() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     sysStatusText.value = `密级对象 ${n(obj)} · 密级主体 ${n(subj)} · 内网配置 ${n(ecnet)}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadGeneralMeta2() {
@@ -126,7 +126,7 @@ async function loadGeneralMeta2() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     sysStatusText.value = `密级系统 ${(sec as any)?.data ? '有' : '无'} · 考勤范围 ${n(scope)} · 二维码 ${n(qr)}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadGeneralMeta() {
@@ -140,7 +140,7 @@ async function loadGeneralMeta() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     sysStatusText.value = `通用状态 ${(status as any)?.data ? '有' : '无'} · 区域 ${n(area)} · 工时配置 ${(worktime as any)?.data ? '有' : '无'}`
   } catch (e: any) {
-    toast.error('加载通用配置失败: ' + (e?.message ?? ''))
+    toast.error(`加载通用配置失败: ${e?.message ?? ''}`)
   }
 }
 async function loadSysStatus() {
@@ -160,7 +160,7 @@ async function loadSysStatus() {
     const infoObj = (info as any)?.data ?? {}
     sysStatusText.value = `状态 ${st} · 信息 ${JSON.stringify(infoObj).slice(0, 60)} · 指标 ${(metric as any)?.data ? '命中' : '未命中'}`
   } catch (e: any) {
-    toast.error('加载系统状态失败: ' + (e?.message ?? ''))
+    toast.error(`加载系统状态失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -199,7 +199,7 @@ async function loadExecuteStatus() {
     execOutput.value = JSON.stringify(r?.data ?? {}, null, 2)
     execError.value = ''
   } catch (e: any) {
-    execError.value = '读取执行状态失败: ' + (e?.message ?? '')
+    execError.value = `读取执行状态失败: ${e?.message ?? ''}`
   }
 }
 
@@ -210,7 +210,7 @@ async function stopServer() {
     await api.get('/api/server/stop')
     execOutput.value = '服务器已停止'
   } catch (e: any) {
-    execError.value = '停止失败: ' + (e?.message ?? '')
+    execError.value = `停止失败: ${e?.message ?? ''}`
   }
 }
 
@@ -246,7 +246,7 @@ async function serverConsoleOps(op: string) {
     }
     execOutput.value = '控制台操作已提交'
   } catch (e: any) {
-    execError.value = '操作失败: ' + (e?.message ?? '')
+    execError.value = `操作失败: ${e?.message ?? ''}`
   }
 }
 
@@ -290,7 +290,7 @@ async function loadServerTwin() {
     ])
     toast.success(`服务器孪生端点 ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('服务器孪生端点失败: ' + (e?.message ?? ''))
+    toast.error(`服务器孪生端点失败: ${e?.message ?? ''}`)
   }
 }
 // rev484（桶外 off-metric 波）：服务器/根域真注册路由 14 条（h2·外部数据源·备份恢复·密钥检查·根 echo·根 OpenAPI；
@@ -316,7 +316,7 @@ async function loadServerTwin2() {
     ])
     toast.success(`服务器孪生端点B ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('服务器孪生端点B失败: ' + (e?.message ?? ''))
+    toast.error(`服务器孪生端点B失败: ${e?.message ?? ''}`)
   }
 }
 // rev485（桶外 off-metric 第二波）：根缓存 POST/定时任务类名/系统资源路径/外部数据源校验/操作日志族
@@ -339,7 +339,7 @@ async function loadServerTwin3() {
     ])
     toast.success(`日志/调度/资源C ${rs.length} 条已提交`)
   } catch (e: any) {
-    toast.error('日志/调度/资源C失败: ' + (e?.message ?? ''))
+    toast.error(`日志/调度/资源C失败: ${e?.message ?? ''}`)
   }
 }
 </script>

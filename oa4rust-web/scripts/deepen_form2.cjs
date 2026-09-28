@@ -1,4 +1,4 @@
-const fs = require('fs')
+const fs = require('node:fs')
 let content = fs.readFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/FormDesigner.vue', 'utf8')
 
 // === Add enhanced palette with more field types ===
@@ -511,7 +511,7 @@ const extraCss = `
 .spacer-preview{height:20px;background:repeating-linear-gradient(90deg,var(--border-color),var(--border-color) 4px,transparent 4px,transparent 8px);border-radius:2px;margin:4px 0}
 .divider-preview{height:1px;background:var(--border-color);margin:8px 0}
 `
-content = content.replace(styleEnd, extraCss + '\n</style>')
+content = content.replace(styleEnd, `${extraCss}\n</style>`)
 
 // Write back
 fs.writeFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/FormDesigner.vue', content)
