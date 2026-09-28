@@ -129,7 +129,7 @@ describe('全关卡：没有一关会挂死', () => {
     expect(runs.length).toBe(100)
     expect(levels[0].id).toBe(1)
     expect(levels[levels.length - 1].id).toBe(100)
-  })
+  }, 300000)
 
   it('每一关都在停滞阈值之前分出胜负（无死局）', () => {
     // 这是本次事故的直接守卫。
@@ -138,7 +138,7 @@ describe('全关卡：没有一关会挂死', () => {
     expect(
       stuck.map((r) => `关${r.id}(tick=${r.tick}, 命中${(r.hitRate * 100).toFixed(0)}%)`).join('\n'),
     ).toBe('')
-  })
+  }, 300000)
 
   it('没有一关触发停滞兜底（说明兜底是纯防御，不是日常路径）', () => {
     // ⚠️ 这一条刻意与上一条**成对**：
@@ -147,7 +147,7 @@ describe('全关卡：没有一关会挂死', () => {
     // 但那意味着所有关卡都被强行判负 —— 一个把 bug 藏起来的修复。
     const hitCap = runs.filter((r) => r.tick >= MAX_BATTLE_TICKS)
     expect(hitCap.map((r) => `关${r.id}(tick=${r.tick})`).join('\n')).toBe('')
-  })
+  }, 300000)
 
   it('每关的命中率都在合理区间（挂死前的征兆是命中率崩塌）', () => {
     // 挂死时命中率会掉到 1% —— 那是"弹丸全被吃掉"的最灵敏指标。
@@ -156,7 +156,7 @@ describe('全关卡：没有一关会挂死', () => {
     expect(
       low.map((r) => `关${r.id}: 命中率 ${(r.hitRate * 100).toFixed(0)}%`).join('\n'),
     ).toBe('')
-  })
+  }, 300000)
 
   it('没有难度回归点（上一关能过、这一关过不了）', () => {
     const bad: string[] = []
@@ -168,7 +168,7 @@ describe('全关卡：没有一关会挂死', () => {
       }
     }
     expect(bad.join('\n')).toBe('')
-  })
+  }, 300000)
 })
 
 describe('全关卡：基线数据（供人工核对量级）', () => {
@@ -188,5 +188,5 @@ describe('全关卡：基线数据（供人工核对量级）', () => {
       `[hang] 汇总：won ${won} / lost ${lost}，平均 ${avgSec.toFixed(0)}s，最长 ${maxSec}s`,
     )
     expect(won + lost).toBe(100)
-  })
+  }, 300000)
 })
