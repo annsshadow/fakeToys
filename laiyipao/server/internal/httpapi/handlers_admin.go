@@ -261,7 +261,13 @@ func (s *Server) adminBattles(c *fiber.Ctx) error {
 	limit, _ := strconv.Atoi(c.Query("limit", "50"))
 	userID, _ := strconv.ParseInt(c.Query("user_id", "0"), 10, 64)
 	levelID, _ := strconv.Atoi(c.Query("level_id", "0"))
-	items, total, err := s.Svc.AdminListBattles(c.Context(), userID, levelID, limit)
+	// 只看验真不匹配的战报。
+	//
+	// 上一轮把「每用户验真统计」接进了 /admin/users，运营知道**谁**可疑；
+	// 这一步是为了能直接回答「**哪一场**对局对不上」——
+	// 否则还得手工按 user_id 查战报再交叉比对 replay_verifications。
+	onlyMismatched := c.Query("only_mismatched") == "1" || c.Query("only_mismatched") == "true"
+	items, total, err := s.Svc.AdminListBattles(c.Context(), userID, levelID, limit, onlyMismatched)
 	if err != nil {
 		return failErr(c, err)
 	}

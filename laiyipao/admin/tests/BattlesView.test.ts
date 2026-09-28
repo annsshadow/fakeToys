@@ -9,10 +9,13 @@ import { ElDrawer, ElInputNumber } from 'element-plus'
 import ElementPlus from 'element-plus'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AdminBattle } from '@/api'
+import { __resetReactionLabelCache } from '@/reactions'
 
 const fetchBattles = vi.hoisted(() => vi.fn())
 const fetchBattleDetail = vi.hoisted(() => vi.fn())
-vi.mock('@/api', () => ({ fetchBattles, fetchBattleDetail }))
+// `@/reactions` 内部调 `@/api` 的 fetchReactions，所以 mock 必须提供它
+const fetchReactions = vi.hoisted(() => vi.fn())
+vi.mock('@/api', () => ({ fetchBattles, fetchBattleDetail, fetchReactions }))
 
 import BattlesView from '@/views/BattlesView.vue'
 
@@ -32,6 +35,8 @@ function battleFixture(overrides: Partial<AdminBattle> = {}): AdminBattle {
     heat_max: 90,
     replay_hash: 'abcd1234abcd1234abcd1234abcd1234',
     created_at: '2026-01-02T03:04:05Z',
+    verify_checked: 3,
+    verify_mismatched: 0,
     ...overrides,
   }
 }
@@ -43,8 +48,32 @@ async function mountBattles(items: AdminBattle[] = [], total = items.length) {
   return wrapper
 }
 
+/** 构造一份最小反应表，字段与 domain.ReactionSpec 的 json tag 对齐。 */
+function reactionSpec(key: string, name: string) {
+  return {
+    key,
+    name,
+    base_coef: 60,
+    attack_weight_pct: 300,
+    status_duration_ms: 0,
+    aoe_radius: 0,
+    dispel_shield: false,
+    amplify_pct: 0,
+    descr: '',
+  }
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
+  // ⚠️ 必须清 `@/reactions` 的模块级缓存。
+  // `vi.clearAllMocks()` 只清 mock 的调用记录，**清不掉模块里已缓存的 Promise** ——
+  // 不清的话第一个用例取到的反应名会泄漏到后面所有用例，
+  // 而且症状是「某个用例莫名其妙地看到了中文名」。
+  __resetReactionLabelCache()
+  fetchReactions.mockResolvedValue([
+    reactionSpec('steam_burst', '蒸汽爆发'),
+    reactionSpec('overheat', '过热'),
+  ])
 })
 
 describe('BattlesView 列表渲染', () => {
@@ -207,3 +236,52 @@ describe('BattlesView 详情抽屉', () => {
     wrapper.unmount()
   })
 })
+
+describe('BattlesView 验真列与过滤器', () => {
+  it('未验真（0/0）显示「未验真」而不是「一致」', async () => {
+    // 与 UsersView 同一个语义：**0/0 是未知，不是干净**。
+    // 两个页面对同一概念说不同的话，运营会以为是数据矛盾。
+    const wrapper = await mountBattles([
+      battleFixture({ id: 1, verify_checked: 0, verify_mismatched: 0 }),
+    ])
+    expect(wrapper.text()).toContain('未验真')
+    expect(wrapper.text()).not.toContain('一致 ')
+  })
+
+  it('有不匹配时显示「不匹配 m/n」', async () => {
+    const wrapper = await mountBattles([
+      battleFixture({ id: 1, verify_checked: 6, verify_mismatched: 2 }),
+    ])
+    expect(wrapper.text()).toContain('不匹配 2/6')
+  })
+
+  it('勾选「只看验真不匹配」会把 only_mismatched 传给接口', async () => {
+    const wrapper = await mountBattles([battleFixture()])
+    // 先确认默认不带这个参数
+    expect(fetchBattles).toHaveBeenLastCalledWith(
+      expect.objectContaining({ only_mismatched: undefined }),
+    )
+
+    // 再勾选并触发筛选
+    const cb = wrapper.findAll('.el-checkbox').find((c) => c.text().includes('只看验真不匹配'))
+    expect(cb, '找不到「只看验真不匹配」复选框').toBeTruthy()
+    await cb!.find("input").setValue(true)
+    await flushPromises()
+    ;(wrapper.vm as unknown as { load: () => Promise<void> }).load()
+    await flushPromises()
+
+    expect(fetchBattles).toHaveBeenLastCalledWith(
+      expect.objectContaining({ only_mismatched: true }),
+    )
+  })
+
+  it('反应名取不到时战报列表仍然出得来（锦上添花 ≠ 必需）', async () => {
+    // 反应名只影响详情抽屉里的 chip。取不到时列表必须照常显示，
+    // 否则一次网络抖动会让运营**看不到任何战报**。
+    fetchReactions.mockRejectedValue(new Error('reactions down'))
+    const wrapper = await mountBattles([battleFixture({ id: 7 })])
+    expect(wrapper.findAll(".el-table__row").length).toBeGreaterThan(0)
+    expect(wrapper.text()).not.toContain('reactions down')
+  })
+})
+
