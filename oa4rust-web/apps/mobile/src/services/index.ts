@@ -495,6 +495,11 @@ export const recycleApi = {
   empty: () => mapi.delete<never>('/api/recycle/empty', { discardResponse: true }),
 }
 
+export const bbsApi = {
+  /** 移动端论坛首页：最新 20 条主题（o2 移动契约 mobile/view/all）。 */
+  mobileViewAll: () => list(mapi.get<Record<string, unknown>[]>('/api/bbs/assemble/control/mobile/view/all')),
+}
+
 export const searchApi = {
   /** 全局检索（queryview，后端仅注册 POST，读取键为 key）。 */
   global: (keyword: string) => list(mapi.post<Record<string, unknown>[]>('/api/queryview/search', { key: keyword })),
@@ -555,6 +560,7 @@ export const apis = {
   cms: cmsApi,
   recycle: recycleApi,
   search: searchApi,
+  bbs: bbsApi,
   statistics: statisticsApi,
   push: pushApi,
 }

@@ -129,6 +129,10 @@ function goPage(url: string) {
         <text class="cell-emoji">🗓️</text>
         <text class="cell-text">日程</text>
       </view>
+      <view class="cell" @tap="goPage('/pages/bbs/bbs')">
+        <text class="cell-emoji">🗣</text>
+        <text class="cell-text">论坛</text>
+      </view>
       <view class="cell" @tap="goPage('/pages/browse/browse')">
         <text class="cell-emoji">📚</text>
         <text class="cell-text">浏览</text>
