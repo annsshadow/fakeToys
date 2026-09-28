@@ -796,34 +796,4 @@ mod office_preview_tests {
         assert!(crate::xlsx_to_html(b"not a zip").is_none());
         assert!(crate::pptx_to_html(b"not a zip").is_none());
     }
-
-    #[test]
-    fn attachment_disposition_handles_cjk_and_specials_without_panic() {
-        // 中文文件名：ASCII 回退全为占位，filename* 为 UTF-8 百分号编码，头值纯 ASCII 可构造
-        let v = crate::attachment_disposition("报告.docx");
-        assert!(v.starts_with("attachment; filename=\""));
-        assert!(v.contains("filename*=UTF-8''"));
-        assert!(v.is_ascii(), "header value must be pure ASCII: {v}");
-        // 真正能作为 HeaderValue 构造（此前中文名在此 panic）
-        assert!(axum::http::HeaderValue::from_str(&v).is_ok());
-        // 报告 => %E6%8A%A5%E5%91%8A，.docx 保留
-        assert!(v.contains("%E6%8A%A5%E5%91%8A"));
-        assert!(v.ends_with(".docx"));
-    }
-
-    #[test]
-    fn attachment_disposition_neutralizes_quote_and_control_in_fallback() {
-        // 参数含引号与换行控制字符（都会破坏 HeaderValue）
-        let v = crate::attachment_disposition("a\"b\nc.txt");
-        assert!(axum::http::HeaderValue::from_str(&v).is_ok());
-        let fallback = v
-            .split("filename=\"")
-            .nth(1)
-            .unwrap()
-            .split("\";")
-            .next()
-            .unwrap();
-        assert!(!fallback.contains('"'));
-        assert!(!fallback.contains('\n'));
-    }
 }

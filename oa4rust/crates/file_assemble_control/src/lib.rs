@@ -15,34 +15,6 @@ use std::sync::Arc;
 
 pub use shared::{ControlClient, ControlPool, DynControlPool, RowGet};
 
-/// RFC 6266/5987 安全的附件 Content-Disposition 值。
-///
-/// 此前各下载 handler 直接把数据库里的原始文件名塞进 `filename="{name}"`，
-/// 中文/特殊字符文件名会让 `HeaderValue` 构造失败、随后 `.body(...).unwrap()`
-/// **panic**（O2OA 文档普遍中文命名，等于下载即崩）。这里产出纯 ASCII 的
-/// `filename=` 回退 + 百分号编码的 `filename*=UTF-8''`，任何 UTF-8 名都安全。
-fn attachment_disposition(name: &str) -> String {
-    let ascii_fallback: String = name
-        .chars()
-        .map(|c| {
-            if c.is_ascii() && c != '"' && c != '\\' && !c.is_ascii_control() {
-                c
-            } else {
-                '_'
-            }
-        })
-        .collect();
-    let mut encoded = String::new();
-    for b in name.as_bytes() {
-        if b.is_ascii_alphanumeric() || matches!(b, b'-' | b'.' | b'_' | b'~') {
-            encoded.push(*b as char);
-        } else {
-            encoded.push_str(&format!("%{b:02X}"));
-        }
-    }
-    format!("attachment; filename=\"{ascii_fallback}\"; filename*=UTF-8''{encoded}")
-}
-
 pub const API_BASE: &str = "/api/file_assemble_control";
 pub mod routes;
 
@@ -744,7 +716,10 @@ pub async fn anonymous_file_id_download(
             Ok(axum::response::Response::builder()
                 .status(axum::http::StatusCode::OK)
                 .header("Content-Type", mime)
-                .header("Content-Disposition", attachment_disposition(&name))
+                .header(
+                    "Content-Disposition",
+                    shared::response::attachment_disposition(&name),
+                )
                 .body(axum::body::Body::from(bytes))
                 .unwrap())
         }
@@ -1268,7 +1243,10 @@ pub async fn attachment_id_download(
             Ok(axum::response::Response::builder()
                 .status(axum::http::StatusCode::OK)
                 .header("Content-Type", mime)
-                .header("Content-Disposition", attachment_disposition(&name))
+                .header(
+                    "Content-Disposition",
+                    shared::response::attachment_disposition(&name),
+                )
                 .body(axum::body::Body::from(bytes))
                 .unwrap())
         }
@@ -2047,7 +2025,10 @@ pub async fn attachment2_id_download(
             Ok(axum::response::Response::builder()
                 .status(axum::http::StatusCode::OK)
                 .header("Content-Type", mime)
-                .header("Content-Disposition", attachment_disposition(&name))
+                .header(
+                    "Content-Disposition",
+                    shared::response::attachment_disposition(&name),
+                )
                 .body(axum::body::Body::from(bytes))
                 .unwrap())
         }
@@ -3474,7 +3455,10 @@ pub async fn file_id_download(
             Ok(axum::response::Response::builder()
                 .status(axum::http::StatusCode::OK)
                 .header("Content-Type", mime)
-                .header("Content-Disposition", attachment_disposition(&name))
+                .header(
+                    "Content-Disposition",
+                    shared::response::attachment_disposition(&name),
+                )
                 .body(axum::body::Body::from(bytes))
                 .unwrap())
         }
@@ -3959,7 +3943,10 @@ pub async fn share_download_share_shareId_file_fileId(
             Ok(axum::response::Response::builder()
                 .status(axum::http::StatusCode::OK)
                 .header("Content-Type", mime)
-                .header("Content-Disposition", attachment_disposition(&name))
+                .header(
+                    "Content-Disposition",
+                    shared::response::attachment_disposition(&name),
+                )
                 .body(axum::body::Body::from(bytes))
                 .unwrap())
         }
@@ -4368,7 +4355,10 @@ fn zip_download_response(
     Ok(axum::response::Response::builder()
         .status(axum::http::StatusCode::OK)
         .header("Content-Type", "application/zip")
-        .header("Content-Disposition", attachment_disposition(filename))
+        .header(
+            "Content-Disposition",
+            shared::response::attachment_disposition(filename),
+        )
         .body(axum::body::Body::from(bytes))
         .unwrap())
 }
