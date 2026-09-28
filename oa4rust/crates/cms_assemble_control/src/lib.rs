@@ -10117,17 +10117,18 @@ pub async fn correlation_create_u3(
         return Err(AppError::BadRequest("relatedDocId(s) required".to_string()));
     }
     let correlation_type = u2_body_str(&body, "correlationType").unwrap_or_default();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 批量关联「逐对删旧+插新」须整体原子：中途失败不得留下部分关联的半成品集合。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let mut created = 0u64;
     for target in &related {
-        client
-            .execute(
-                "DELETE FROM x_cms_correlation WHERE doc_id = $1 AND related_doc_id = $2",
-                &[&doc_id, &target],
-            )
-            .await
-            .map_err(|_| AppError::Internal)?;
-        created += client
+        tx.execute(
+            "DELETE FROM x_cms_correlation WHERE doc_id = $1 AND related_doc_id = $2",
+            &[&doc_id, &target],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+        created += tx
             .execute(
                 "INSERT INTO x_cms_correlation (id, doc_id, related_doc_id, correlation_type) \
                  VALUES (gen_random_uuid()::text, $1, $2, $3)",
@@ -10136,6 +10137,7 @@ pub async fn correlation_create_u3(
             .await
             .map_err(|_| AppError::Internal)?;
     }
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("docId".to_string(), Value::String(doc_id)),
@@ -10164,17 +10166,18 @@ pub async fn correlation_update_u3(
         return Err(AppError::BadRequest("relatedDocId(s) required".to_string()));
     }
     let correlation_type = u2_body_str(&body, "correlationType").unwrap_or_default();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 批量关联「逐对删旧+插新」须整体原子：中途失败不得留下部分关联的半成品集合。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let mut updated = 0u64;
     for target in &related {
-        client
-            .execute(
-                "DELETE FROM x_cms_correlation WHERE doc_id = $1 AND related_doc_id = $2",
-                &[&doc_id, &target],
-            )
-            .await
-            .map_err(|_| AppError::Internal)?;
-        updated += client
+        tx.execute(
+            "DELETE FROM x_cms_correlation WHERE doc_id = $1 AND related_doc_id = $2",
+            &[&doc_id, &target],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+        updated += tx
             .execute(
                 "INSERT INTO x_cms_correlation (id, doc_id, related_doc_id, correlation_type) \
                  VALUES (gen_random_uuid()::text, $1, $2, $3)",
@@ -10183,6 +10186,7 @@ pub async fn correlation_update_u3(
             .await
             .map_err(|_| AppError::Internal)?;
     }
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("docId".to_string(), Value::String(doc_id)),
