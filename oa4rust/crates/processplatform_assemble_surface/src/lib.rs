@@ -9307,10 +9307,14 @@ async fn filter_attr_options(
     value_col: &str,
     name_col: &str,
 ) -> Result<Value, AppError> {
+    // 列名统一在此以 PostgreSQL 标识符引用包裹（camelCase 列如 xprocessName 必须加引号，
+    // 否则被折叠为小写导致「列不存在」→ 500）。调用点传裸列名即可，不再手写转义引号字面量。
+    let value_ident = format!("\"{value_col}\"");
+    let name_ident = format!("\"{name_col}\"");
     let sql = format!(
-        "SELECT {value_col} AS v, MAX({name_col}) AS n, COUNT(*) AS c FROM {table} \
-         WHERE {value_col} IS NOT NULL AND {value_col} <> '' \
-         GROUP BY {value_col} ORDER BY c DESC, v ASC"
+        "SELECT {value_ident} AS v, MAX({name_ident}) AS n, COUNT(*) AS c FROM {table} \
+         WHERE {value_ident} IS NOT NULL AND {value_ident} <> '' \
+         GROUP BY {value_ident} ORDER BY c DESC, v ASC"
     );
     let rows = client
         .query(&sql, &[])
@@ -9345,12 +9349,11 @@ pub async fn read_filter_attribute(
     let data = Value::Object(serde_json::Map::from_iter([
         (
             "applicationList".to_string(),
-            filter_attr_options(&client, "PP_C_READ", "xapplication", "\"xapplicationName\"")
-                .await?,
+            filter_attr_options(&client, "PP_C_READ", "xapplication", "xapplicationName").await?,
         ),
         (
             "processList".to_string(),
-            filter_attr_options(&client, "PP_C_READ", "xprocess", "\"xprocessName\"").await?,
+            filter_attr_options(&client, "PP_C_READ", "xprocess", "xprocessName").await?,
         ),
         (
             "personList".to_string(),
@@ -11418,19 +11421,13 @@ pub async fn readcompleted_filter_attribute(
                 &client,
                 "PP_C_READCOMPLETED",
                 "xapplication",
-                "\"xapplicationName\"",
+                "xapplicationName",
             )
             .await?,
         ),
         (
             "processList".to_string(),
-            filter_attr_options(
-                &client,
-                "PP_C_READCOMPLETED",
-                "xprocess",
-                "\"xprocessName\"",
-            )
-            .await?,
+            filter_attr_options(&client, "PP_C_READCOMPLETED", "xprocess", "xprocessName").await?,
         ),
         (
             "personList".to_string(),
@@ -13676,27 +13673,15 @@ pub async fn review_filter_attribute(
     let data = Value::Object(serde_json::Map::from_iter([
         (
             "applicationList".to_string(),
-            filter_attr_options(
-                &client,
-                "PP_C_REVIEW",
-                "xapplication",
-                "\"xapplicationName\"",
-            )
-            .await?,
+            filter_attr_options(&client, "PP_C_REVIEW", "xapplication", "xapplicationName").await?,
         ),
         (
             "processList".to_string(),
-            filter_attr_options(&client, "PP_C_REVIEW", "xprocess", "\"xprocessName\"").await?,
+            filter_attr_options(&client, "PP_C_REVIEW", "xprocess", "xprocessName").await?,
         ),
         (
             "creatorPersonList".to_string(),
-            filter_attr_options(
-                &client,
-                "PP_C_REVIEW",
-                "\"xcreatorPerson\"",
-                "\"xcreatorPerson\"",
-            )
-            .await?,
+            filter_attr_options(&client, "PP_C_REVIEW", "xcreatorPerson", "xcreatorPerson").await?,
         ),
     ]));
     Ok(Json(ActionResult::success(data)))
@@ -13752,27 +13737,15 @@ pub async fn review_filter_entry(
     let data = Value::Object(serde_json::Map::from_iter([
         (
             "applicationList".to_string(),
-            filter_attr_options(
-                &client,
-                "PP_C_REVIEW",
-                "xapplication",
-                "\"xapplicationName\"",
-            )
-            .await?,
+            filter_attr_options(&client, "PP_C_REVIEW", "xapplication", "xapplicationName").await?,
         ),
         (
             "processList".to_string(),
-            filter_attr_options(&client, "PP_C_REVIEW", "xprocess", "\"xprocessName\"").await?,
+            filter_attr_options(&client, "PP_C_REVIEW", "xprocess", "xprocessName").await?,
         ),
         (
             "creatorPersonList".to_string(),
-            filter_attr_options(
-                &client,
-                "PP_C_REVIEW",
-                "\"xcreatorPerson\"",
-                "\"xcreatorPerson\"",
-            )
-            .await?,
+            filter_attr_options(&client, "PP_C_REVIEW", "xcreatorPerson", "xcreatorPerson").await?,
         ),
     ]));
     Ok(Json(ActionResult::success(data)))
@@ -15605,16 +15578,15 @@ pub async fn task_filter_attribute(
     let data = Value::Object(serde_json::Map::from_iter([
         (
             "applicationList".to_string(),
-            filter_attr_options(&client, "PP_C_TASK", "xapplication", "\"xapplicationName\"")
-                .await?,
+            filter_attr_options(&client, "PP_C_TASK", "xapplication", "xapplicationName").await?,
         ),
         (
             "processList".to_string(),
-            filter_attr_options(&client, "PP_C_TASK", "xprocess", "\"xprocessName\"").await?,
+            filter_attr_options(&client, "PP_C_TASK", "xprocess", "xprocessName").await?,
         ),
         (
             "activityNameList".to_string(),
-            filter_attr_options(&client, "PP_C_TASK", "xactivity", "\"xactivityName\"").await?,
+            filter_attr_options(&client, "PP_C_TASK", "xactivity", "xactivityName").await?,
         ),
         (
             "personList".to_string(),
@@ -18176,27 +18148,21 @@ pub async fn taskcompleted_filter_attribute(
                 &client,
                 "PP_C_TASKCOMPLETED",
                 "xapplication",
-                "\"xapplicationName\"",
+                "xapplicationName",
             )
             .await?,
         ),
         (
             "processList".to_string(),
-            filter_attr_options(
-                &client,
-                "PP_C_TASKCOMPLETED",
-                "xprocess",
-                "\"xprocessName\"",
-            )
-            .await?,
+            filter_attr_options(&client, "PP_C_TASKCOMPLETED", "xprocess", "xprocessName").await?,
         ),
         (
             "creatorPersonList".to_string(),
             filter_attr_options(
                 &client,
                 "PP_C_TASKCOMPLETED",
-                "\"xcreatorPerson\"",
-                "\"xcreatorPerson\"",
+                "xcreatorPerson",
+                "xcreatorPerson",
             )
             .await?,
         ),

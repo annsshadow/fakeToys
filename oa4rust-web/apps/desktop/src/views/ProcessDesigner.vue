@@ -2824,7 +2824,7 @@ import {
   processCreatePayload,
   serializeProcessDefinition,
 } from '../contracts/process-definition'
-import { runInSandbox } from '../utils/sandbox'
+import { destroySandbox, runInSandbox } from '../utils/sandbox'
 import { toast } from '../utils/toast'
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -6662,7 +6662,7 @@ onUnmounted(() => {
   stopEdgeAnimation()
   stopAnimationLoop()
   // Clean up the sandbox iframe to prevent memory leaks.
-  import('../utils/sandbox').then((m) => m.destroySandbox())
+  destroySandbox()
 })
 // ── Group Drag ──────────────────────────────────────────────────────
 function onGroupResizeMouseDown(e: MouseEvent, idx: number, dir: string) {
