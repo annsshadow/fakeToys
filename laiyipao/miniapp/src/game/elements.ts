@@ -208,6 +208,10 @@ export function reachableReactions(elements: Set<Element>): Set<ReactionKey> {
   for (const existing of ELEMENT_ORDER) {
     if (!elements.has(existing)) continue
     for (const incoming of ELEMENT_ORDER) {
+      // incoming 也必须在搭配里：反应需要先后两种元素**都能打出**，
+      // 只带一种元素的构筑触发不了任何反应。不限定 incoming 会让
+      // 单元素也被算出反应，构筑评分虚高。
+      if (!elements.has(incoming)) continue
       const k = lookupReaction(existing, incoming)
       if (k) out.add(k)
     }

@@ -66,7 +66,10 @@ export default defineConfig({
     globals: true,
     coverage: {
       // src/test/** 是测试基建（uni mock / 生命周期替身 / 夹具），不是产品代码。
-      exclude: [...coverageConfigDefaults.exclude, 'src/test/**'],
+      // src/game/types.ts 是纯类型声明（interface / type / 字面量联合），
+      // 编译后不产生任何运行时代码 —— 覆盖率对它恒为 0%，纳入统计只会
+      // 拉低总分而无法被任何测试"覆盖"，故按纯类型模块豁免。
+      exclude: [...coverageConfigDefaults.exclude, 'src/test/**', 'src/game/types.ts'],
     },
   },
   // 契约向量在 server/testdata/ 下，物理路径必须解析到那里。

@@ -342,6 +342,65 @@ describe('equippedFromSnapshot', () => {
     const b = build({ skills: {} })
     expect(equippedFromSnapshot(b, new Map())).toEqual([])
   })
+
+  it('构筑快照整体缺失时返回空数组而不是抛错', () => {
+    // battle.vue 直接以服务端响应调用本函数；老战报 / 灰度环境
+    // 可能根本没有 build_snapshot。返回空列表让上层走「缺构筑」
+    // 的明确报错路径，而不是让页面白屏。
+    expect(equippedFromSnapshot(undefined as unknown as BuildSnapshot, deps.skills)).toEqual([])
+  })
+
+  it('apply_element 缺失时回退到技能自身元素', () => {
+    // 内容表允许技能不填 apply_element（就用本技能元素施加）。
+    // 回退丢了的话，EquippedSkill.applyElement 变成 ''，命中后
+    // 不挂任何元素 —— 反应链整条哑火且无报错。
+    const skills = new Map(
+      [
+        {
+          ...SKILLS[0],
+          apply_element: '',
+        },
+      ].map((s) => [s.id, s]),
+    )
+    const b = build({
+      skills: {
+        '1': { id: 1, name: '燃烧弹', family: 'flame', element: 'fire', kind: 'active', level: 1, slot: 0 },
+      },
+    })
+    const out = equippedFromSnapshot(b, skills)
+    expect(out).toHaveLength(1)
+    expect(out[0].applyElement).toBe('fire')
+  })
+})
+
+describe('attacker 快照的字段缺省（老战报兼容）', () => {
+  it('attacker 只带 attack 时，其余字段逐项落到文档缺省值', () => {
+    // ⚠️ 缺省值直接决定重放哈希，必须逐项钉死而不是只断言"能跑"：
+    // 有人把 `?? 50` 改成 `?? 60`，老战报全部重放不出原哈希，
+    // I-6 会把正常对局判成伪造 —— 这条用例就是要第一时间红。
+    const partial = build({ attacker: { attack: 300 } as BuildSnapshot['attacker'] })
+    const explicit = build({
+      attacker: {
+        attack: 300,
+        crit_permille: 50,
+        crit_multiplier_permille: 1500,
+        reaction_mult_permille: 1000,
+        element_cap: 3,
+        reaction_tier: 1,
+        element_coef_permille: 1000,
+        heat_cap_permille: 0,
+        armor_permille: 0,
+        mechanic_permille: 0,
+      },
+    })
+    const a = replay(info({ build: partial }), deps)
+    const b = replay(info({ build: explicit }), deps)
+    expect(a.error).toBeUndefined()
+    expect(b.error).toBeUndefined()
+    // 缺省值 == 显式值 ⇒ 同一场战斗 ⇒ 哈希逐位相同
+    expect(a.computedHash).toBe(b.computedHash)
+    expect(a.computedHash).toMatch(/^[0-9a-f]{16}$/)
+  })
 })
 
 describe('显示辅助', () => {
@@ -351,6 +410,12 @@ describe('显示辅助', () => {
 
   it('prettyHash 对空串安全', () => {
     expect(prettyHash('')).toBe('')
+  })
+
+  it('prettyHash 对非十六进制垃圾输入不抛错', () => {
+    // match(/.{1,4}/g) 遇到「只含换行等不可见字符」的串会返回 null。
+    // `?? []` 就是给这类垃圾输入兜底的 —— 展示函数崩掉比显示空更糟。
+    expect(prettyHash('\n\n')).toBe('')
   })
 
   it('prettyDuration 输出 m:ss', () => {

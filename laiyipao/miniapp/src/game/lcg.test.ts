@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { BattleRng, LCG, fnv1a64, hex16, LCG_KNOWN_VECTORS } from './lcg'
-
 describe('LCG 跨端契约', () => {
   it('必须与 Go 侧 TestLCGKnownVectors 产出逐位相同的序列', () => {
     const l = new LCG(12345)
@@ -36,6 +35,22 @@ describe('LCG 跨端契约', () => {
     }
   })
 
+  it('permille 落在 [0,1000) 内且逐位确定（千分比量纲的滚点）', () => {
+    // LCG.permille 是「千分比量纲随机数」的独立出口 —— 它从不被
+    // intn/roll 间接执行（roll 走的是 intn(1000)）。若没有测试触碰，
+    // 有人把 `next() % 1000n` 误改成 `next() % 10000n` 也不会红，
+    // 而所有以 permille 为量纲的调用方会瞬间越界。
+    const a = new LCG(2024)
+    const b = new LCG(2024)
+    for (let i = 0; i < 500; i++) {
+      const v = a.permille()
+      expect(v).toBeGreaterThanOrEqual(0n)
+      expect(v).toBeLessThan(1000n)
+      expect(v).toBeTypeOf('bigint')
+      expect(v).toBe(b.permille())
+    }
+  })
+
   it('同种子两次产生相同序列（确定性）', () => {
     const a = new LCG(999)
     const b = new LCG(999)
@@ -56,6 +71,16 @@ describe('FNV-1a 64', () => {
   it('"foobar" 的哈希与 Go 一致', () => {
     // Go: fnv.New64a(); h.Write([]byte("foobar")) => 0x85944171f73967e8
     expect(fnv1a64('foobar')).toBe(0x85944171f73967e8n)
+  })
+
+  it('Uint8Array 输入与同内容字符串产出相同哈希（两个入口同一算法）', () => {
+    // fnv1a64 有 string 与 Uint8Array 两个入口。防线快照摘要传的是
+    // 拼接字符串，回放哈希侧曾计划传字节 —— 若两个入口分叉，
+    // 同一份数据会算出两个哈希，跨端对齐直接失效。
+    // 顺手钉住字节入口本身的绝对值（非空字节确实参与了迭代）。
+    const bytes = new TextEncoder().encode('foobar')
+    expect(fnv1a64(bytes)).toBe(fnv1a64('foobar'))
+    expect(fnv1a64(new Uint8Array([0x66, 0x6f, 0x6f]))).toBe(fnv1a64('foo'))
   })
 
   it('hex16 补足 16 位小写十六进制', () => {

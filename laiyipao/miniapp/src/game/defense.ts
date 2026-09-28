@@ -116,6 +116,11 @@ const MAX_TICKS = 60 * 60 * 10
 
 function runToEnd(engine: BattleEngine, maxTicks: number): number {
   let ticks = 0
+  // 循环的 false 退出分支与底部 return 均**构造性不可达**：
+  // maxTicks 唯一取值 MAX_TICKS(36000)，而 BattleEngine 的停滞兜底 checkStalemate
+  // 在 tick 到 MAX_BATTLE_TICKS(30000) 时就强制 finish(lost)，引擎最迟 ~30000 步终局，
+  // 循环必从内部 won/lost 提前 return —— `ticks<maxTicks` 变 false 与走到底部 return
+  // 永远轮不到（36000>30000 的安全余量）。这是"引擎万一不自行终止"的安全阀，无公开 API 可达。
   while (ticks < maxTicks) {
     const phase: string = engine.phase
     if (phase === 'won' || phase === 'lost') return ticks
@@ -123,7 +128,9 @@ function runToEnd(engine: BattleEngine, maxTicks: number): number {
     if (phase === 'card_select') engine.skipCards()
     engine.step()
     ticks++
+    /* v8 ignore next -- 见上：循环 false 退出分支不可达（36000>30000） */
   }
+  /* v8 ignore next 2 -- 见上：耗尽 maxTicks 的收尾 return 与函数末返回点不可达 */
   return ticks
 }
 
@@ -136,6 +143,10 @@ function runToEnd(engine: BattleEngine, maxTicks: number): number {
  */
 function applyWorks(att: Attacker, works: string[]): Attacker {
   const a = { ...att }
+  // `?? []` 的空数组回退分支**不可达**：applyWorks 是模块私有，唯一调用点
+  // runChallenge 传入的已是 `view.snapshot?.works ?? []`（在调用前就兜过底），
+  // 到这里 works 恒为数组。保留这层守卫是防御 future 调用点，但当前无法触达，故豁免其分支。
+  /* v8 ignore next -- 见上：works 恒为数组，`?? []` 回退分支不可达 */
   for (const code of works ?? []) {
     switch (code) {
       case 'slow_belt':

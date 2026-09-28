@@ -555,6 +555,10 @@ export class BattleEngine {
    * 之前 updateEnemies 在 tick 开头就做了位移，导致测试无法单独验证。
    */
   stepEnemyMotion(e: Enemy, frozenAll: boolean): void {
+    // `e.dead` 守卫的 true 分支**不可达**：唯一调用点 updateEnemies 在循环里
+    // 已先 `if (e.dead) continue`（见上方 updateEnemies），传进来的 e 必非 dead。
+    // 保留是防御未来新增调用点，当前无法触达。
+    /* v8 ignore next -- 见上：调用点已过滤 dead，此守卫真分支不可达 */
     if (e.dead) return
     if (e.spawnProgress < SPAWN_PROGRESS_FULL) {
       e.spawnProgress = Math.min(SPAWN_PROGRESS_FULL, e.spawnProgress + SPAWN_PROGRESS_STEP)
@@ -723,6 +727,11 @@ export class BattleEngine {
       const target = this.pickTarget(s)
       if (!target) continue
 
+      // tryCast 失败的分支**不可达**：上面第 725 行已 `if (heat + heatCost > cap) continue`
+      // 预过滤，其判据与 tryCast 内部拒绝条件（heat+cost>cap）逐字相同，且两行之间
+      // pickTarget 不改热量。故走到这里 tryCast 必然成功（并原子地累加热量）。
+      // 保留 tryCast 的返回值检查是"预检 + 原子提交"的双保险，但当前 continue 无法触达。
+      /* v8 ignore next -- 见上：725 行已预过滤同一判据，tryCast 必成功，此 continue 不可达 */
       if (!this.heat.tryCast(s.heatCost)) continue
       s.cooldownRemaining = s.cooldownMs
       this.fire(s, target)
@@ -886,6 +895,10 @@ export class BattleEngine {
     const SUB_STEPS = 2
     const tickBig = BigInt(TICK_MS)
     for (const p of this.projectiles) {
+      // `p.dead` 守卫的 true 分支**不可达**：每次 updateProjectiles 末尾都
+      // `this.projectiles = this.projectiles.filter((p) => !p.dead)`（见函数尾），
+      // 故下一 tick 进入本循环时数组里不含 dead 弹丸；本 tick 内每颗只遍历一次。
+      /* v8 ignore next -- 见上：末尾已滤除 dead，此守卫真分支不可达 */
       if (p.dead) continue
       for (let s = 0; s < SUB_STEPS; s++) {
         p.x += p.vx / tickBig
@@ -1316,6 +1329,10 @@ export class BattleEngine {
     let guard = 0
     while (this.phase === 'card_select' && guard++ < 16) {
       const script = this.replayScript
+      // `script === null` 的 true 分支**不可达**：applyReplayDecision 仅在
+      // step() 里 `phase==='card_select' && this.replayScript !== null` 时被调用，
+      // 且循环内无处把 replayScript 置空。保留是类型收窄（null 排除）用。
+      /* v8 ignore next -- 见上：调用点已保证 replayScript!==null，此真分支不可达 */
       if (script === null) return
 
       if (this.replayScriptPos >= script.length) {
@@ -1559,6 +1576,10 @@ export class BattleEngine {
    *   避免出现"客户端结束了、服务端却认为时长非法"的不一致。
    */
   private checkStalemate(): boolean {
+    // 终局守卫的 true 分支**不可达**：step() 开头已 `if (won||lost) return`（见 step），
+    // checkStalemate 只在其后被调用，运行到这里时 phase 必非终局。是与 step 重复的
+    // 双保险，保留但当前无法触达。
+    /* v8 ignore next -- 见上：step 已拦终局，此守卫真分支不可达 */
     if (this.phase === 'won' || this.phase === 'lost') return false
     if (this.tick < MAX_BATTLE_TICKS) return false
     this.emit({ type: 'stalemate' })
@@ -1643,6 +1664,12 @@ function terrainIndex(kind: string): number {
 }
 
 function cardIndex(c: Card): number {
+  // 三处防御性回退（`skillId ?? 0`、`effect ? :0`、`mechanic ? :0`）的落空分支**不可达**：
+  // cardIndex 只被 record() 用于牌局中的真实手牌，而手牌全部由 CardDeck 造出——
+  // skill 卡必带 skillId、attribute 卡必带 effect、mechanic 卡必带 mechanic（见 heatmap.ts）。
+  // 缺字段的卡无从经公开 API 进入本函数。分派用的 kind 判定本身由 take/discard/skip 用例覆盖，
+  // 这里整体豁免只影响这些永不触达的空值回退。
+  /* v8 ignore next 3 -- 见上：卡片恒为良构，三处空值回退分支不可达 */
   if (c.kind === 'skill') return (c.skillId ?? 0) * 10
   if (c.kind === 'attribute') return 500 + (c.effect ? attributeIndex(c.effect.kind) : 0)
   return 900 + (c.mechanic ? mechanicIndex(c.mechanic.kind) : 0)
