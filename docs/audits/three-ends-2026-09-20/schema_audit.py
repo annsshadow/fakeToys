@@ -141,8 +141,10 @@ def cfg_test_ranges(masked):
 
 
 FN_RE = re.compile(r"(?:pub\s+)?(?:async\s+)?fn\s+([A-Za-z_]\w*)\s*\(")
-# 允许全限定写法 axum::extract::Json —— 否则会漏掉大量 handler（实测误报 17 处）
-QJSON = r"(?:axum\s*::\s*)?(?:extract\s*::\s*)?Json"
+# 允许全限定写法 axum::extract::Json 与本仓惯用别名 `use axum::Json as AxumJson`
+# —— 否则会漏掉整批 crate（attendance/calendar/meeting/organization/portal core 等，实测
+# 22 个 crate 的 handler 因 AxumJson 未被识别而 body_params 为空、被当成「请求体被忽略」误报）
+QJSON = r"(?:axum\s*::\s*)?(?:extract\s*::\s*)?(?:Axum)?Json"
 # 允许 Option<Json<...>> 可选请求体
 JSON_BODY_RE = re.compile(
     r"\b" + QJSON + r"\s*\(\s*([A-Za-z_]\w*)\s*\)\s*:\s*(?:Option\s*<\s*)?" + QJSON + r"\s*<"
