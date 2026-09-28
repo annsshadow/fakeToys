@@ -569,7 +569,10 @@ class TestEndpointCeilingFace:
              for root in (AI_DIR, AI_DIR / "data")
              for p in root.glob("train_data*.json")),
             default=0)
-        assert biggest, "取证需要在工作目录根或 data/ 里找到真实数据集文件"
+        if not biggest:
+            import pytest
+            pytest.skip("工作目录根 / data/ 里没有真实数据集（未入仓，干净 CI 克隆不含）；"
+                        "无实文件即无「今天最大的成功上传」可定标，护栏无对象可证")
         assert biggest < DEFAULT, "出厂默认应当远大于仓内最大文件，实测值：%d" % biggest
         assert MAX_UPLOAD_BYTES_MIN <= max_upload_bytes()
 
