@@ -179,9 +179,19 @@
               <button class="btn-sm" @click="runStats">执行分析</button>
             </div>
             <div v-if="statResult" class="stat-result">
-              <div v-for="(v,k) in statResult" :key="k" class="sr-item">
-                <span class="sr-key">{{ k }}</span><span class="sr-val">{{ v }}</span>
-              </div>
+              <EChartsView
+                v-if="statConfig.chartType !== 'table' && statChartData.length"
+                :data="statChartData"
+                :columns="statChartColumns"
+                :chart-type="statConfig.chartType"
+                dimension="name"
+                metric="value"
+              />
+              <template v-else>
+                <div v-for="(v,k) in statResult" :key="k" class="sr-item">
+                  <span class="sr-key">{{ k }}</span><span class="sr-val">{{ v }}</span>
+                </div>
+              </template>
             </div>
           </div>
 
@@ -402,6 +412,8 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import EChartsView from '../components/EChartsView.vue'
 import { parseCsv } from '../utils/csv'
 import { confirmMsg, toast } from '../utils/toast'
 
@@ -433,8 +445,17 @@ const showCreate = ref(false),
 
 const viewConfig = ref({ columns: '', filter: '', sort: '', pageSize: 100 })
 const tableConfig = ref({ theme: 'default', sortable: true, filterable: false, rowSelect: false })
-const statConfig = ref({ dimension: '', metric: '', chartType: 'bar' })
+const statConfig = ref<{ dimension: string; metric: string; chartType: 'bar' | 'pie' | 'line' | 'table' }>({
+  dimension: '',
+  metric: '',
+  chartType: 'bar',
+})
 const statResult = ref<Record<string, number> | null>(null)
+// 统计结果 { 标签: 数值 } 映射转 ECharts 行集，供柱/饼/折线渲染；表格模式沿用键值列表。
+const statChartColumns = ['name', 'value']
+const statChartData = computed(() =>
+  statResult.value ? Object.entries(statResult.value).map(([name, value]) => ({ name, value })) : [],
+)
 const importConfig = ref({ delimiter: ',' })
 
 const qc = useQueryClient()
