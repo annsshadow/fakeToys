@@ -136,6 +136,7 @@ func (s *Server) Register(app *fiber.App) {
 	adm.Post("/users/:id/grant", s.adminGrantUser)
 	adm.Get("/battles", s.adminBattles)
 	adm.Get("/battles/:id", s.adminBattleDetail)
+	adm.Post("/battles/:id/verify", s.adminVerifyBattle)
 	adm.Get("/defenses", s.adminDefenses)
 	adm.Get("/economy", s.adminEconomy)
 	adm.Put("/shop/:id", s.adminUpdateShop)
