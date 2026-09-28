@@ -4181,7 +4181,7 @@ pub async fn identity_flag_order_before_followFlag(
     pool: Extension<Pool>,
     axum::extract::Path((flag, follow_flag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let identity_row = client
         .query_opt(
@@ -4240,9 +4240,12 @@ pub async fn identity_flag_order_before_followFlag(
     }
 
     let mut order_result: u64 = 0;
+    // 整表重排 order_number 须原子：中途失败留下半排序（部分行新序号、部分旧序号）
+    // 的错乱/重号身份顺序。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     for (index, id) in ids.iter().enumerate() {
         let order_num = (index + 1) as i32;
-        order_result += client
+        order_result += tx
             .execute(
                 "UPDATE x_org_identity SET order_number = $1 WHERE id = $2",
                 &[&order_num, id],
@@ -4250,6 +4253,7 @@ pub async fn identity_flag_order_before_followFlag(
             .await
             .map_err(|_| AppError::Internal)?;
     }
+    tx.commit().await.map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("success".to_string(), Value::Bool(order_result > 0))]),
