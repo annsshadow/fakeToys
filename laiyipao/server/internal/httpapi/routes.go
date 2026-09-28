@@ -129,6 +129,7 @@ func (s *Server) Register(app *fiber.App) {
 	adm.Get("/skills", s.adminSkills)
 	adm.Put("/skills/:id", s.adminUpdateSkill)
 	adm.Get("/equipment", s.adminEquipment)
+	adm.Get("/reactions", s.adminReactions)
 	adm.Get("/users", s.adminUsers)
 	adm.Post("/users/:id/ban", s.adminBanUser)
 	adm.Post("/users/:id/unban", s.adminUnbanUser)

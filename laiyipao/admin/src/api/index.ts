@@ -195,6 +195,35 @@ export function fetchBattleDetail(id: number) {
   return api.get<{ battle: AdminBattle & Record<string, unknown> }>(`/admin/battles/${id}`)
 }
 
+/**
+ * 反应表（key + 中文名 + 各档数值），直接对应服务端的 `domain.AllReactionSpecs()`。
+ *
+ * 看板的「反应使用分布」图用它把 `reactions_used` 的 key 翻成中文。
+ *
+ * 为什么不复用 `/api/v1/config`：那个响应实测 167,124 字节（`levels` 占 74%），
+ * 而且每次请求都要重算 100 关关卡数据 —— 为了 7 个名字不值得。
+ */
+export interface ReactionSpec {
+  key: string
+  name: string
+  base_coef: number
+  attack_weight_pct: number
+  status_duration_ms: number
+  aoe_radius: number
+  dispel_shield: boolean
+  amplify_pct: number
+  descr: string
+}
+
+/**
+ * 响应包了一层 `{ reactions: [...] }` 而不是裸数组 ——
+ * 与 admin 其余端点（`{items,total}` / `{equipment,gems,skins}`）保持一致，
+ * 以后加分页或元数据也不必改响应形状。
+ */
+export function fetchReactions() {
+  return api.get<{ reactions: ReactionSpec[] }>('/admin/reactions').then((r) => r.reactions)
+}
+
 // ---------- 防线 ----------
 
 export function fetchDefenses(limit = 50) {

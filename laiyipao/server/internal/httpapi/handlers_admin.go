@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/laiyipao/server/internal/domain"
 	"github.com/laiyipao/server/internal/service"
 )
 
@@ -161,6 +162,35 @@ func (s *Server) adminEquipment(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	return c.JSON(data)
+}
+
+// adminReactions 返回反应表（key + 中文名 + 各档数值）。
+//
+// ## 为什么要单独开一个端点，而不是让后台去拉 /api/v1/config
+//
+// `ReactionSpec.Name` 的注释本来就写着「反应的中文名，后台系统/运营看板要用」——
+// 也就是说**服务端本来就打算把名字下发给运营**。
+//
+// 而后台的看板（DashboardView）之前是自己硬编码了一张
+// `REACTION_LABEL: Record<string,string>`。
+// 那张表当前**恰好是全的**（7 个反应常量对 7 个条目），所以看不出问题；
+// 但它是**纯重复**：名字的真源在 `domain/elements.go` 的常量旁边，
+// 复制一份就多一个「两处可能不同步」的面。
+//
+// 有人加第 8 个反应而忘了改那张表时，后果不是报错，而是
+// 图表上悄悄出现一个英文 key（`REACTION_LABEL[x] || x` 的兜底）。
+//
+// 为什么不复用 `/api/v1/config`：那个响应实测 **167,124 字节**
+// （其中 `levels` 占 74%），而且每次请求都要 `GenerateAllLevels()` 重算 100 关。
+// 为了拿 7 个名字去生成 100 关关卡数据，不划算。
+//
+// 返回**对象**而不是裸数组，理由有两个：
+//  1. 符合 admin 其余端点的约定（`{items,total}` / `{equipment,gems,skins}`），
+//     以后要加分页或元数据也不必改响应形状；
+//  2. 裸数组在多数 HTTP 客户端的解码助手（`map[string]any`）里会直接失败 ——
+//     这是实测踩到的，不是理论顾虑。
+func (s *Server) adminReactions(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{"reactions": domain.AllReactionSpecs()})
 }
 
 func (s *Server) adminUsers(c *fiber.Ctx) error {
