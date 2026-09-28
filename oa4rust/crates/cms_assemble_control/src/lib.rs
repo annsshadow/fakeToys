@@ -9873,10 +9873,12 @@ async fn u3_cipher_upsert(
     if doc_ids.is_empty() {
         return Err(AppError::BadRequest("docIds required".to_string()));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 批量文档加密须整体原子：中途失败不得留下部分文档已加密、其余明文的半加密集合。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let mut written = 0u64;
     for doc_id in doc_ids {
-        written += client
+        written += tx
             .execute(
                 "INSERT INTO x_cms_document_cipher (id, doc_id, cipher_text, person_id) \
                  VALUES (gen_random_uuid()::text, $1, $2, $3) \
@@ -9886,6 +9888,7 @@ async fn u3_cipher_upsert(
             .await
             .map_err(|_| AppError::Internal)?;
     }
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(written)
 }
 
