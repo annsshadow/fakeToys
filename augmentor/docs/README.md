@@ -369,5 +369,5 @@ A：词云依赖 `C:/Windows/Fonts/simhei.ttf`，请确认该字体存在。
 
 - 百度 API 有调用频率限制与费用，请合理控制 `augmentation.num_threads`
 - 原始种子数据包含业务敏感信息，请勿对外泄露
-- 日志默认输出到 `app.log`
-- `checkpoints/` `experiments/` `visualizations/` 目录会在管道初始化时自动创建
+- 日志默认**不落文件**（`logging.file` 出厂默认空串），WARNING 档走控制台；要落文件在 `config.yaml` 写 `logging.file`
+- `checkpoints/` `experiments/` `visualizations/` 目录在**首次写入对应产物**时创建（管道初始化不再留下空目录）

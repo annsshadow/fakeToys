@@ -405,7 +405,7 @@ python -m pytest tests/ --cov=augmentor --cov-report=html
 ## 注意事项
 
 - 模型 API 有调用频率限制和费用，请合理控制并发数
-- 日志输出到 `app.log`，仅 ERROR 级别日志打印到控制台
+- 日志默认不落文件、WARNING 档进控制台；想看进度在 `config.yaml` 写 `logging.level: INFO`，想落文件写 `logging.file`
 - 原始种子数据包含业务敏感信息，请勿对外泄露
 
 ## 文档
