@@ -41,6 +41,8 @@ const REGISTERED_BACKEND_ROUTES: string[] = [
   '/api/organization/assemble/control/person/{flag}',
   // 通用（general crate）
   '/api/general/dict/list',
+  // 论坛（bbs_assemble_control/routes.rs，o2 移动契约）
+  '/api/bbs/assemble/control/mobile/view/all',
   // IM 发起单聊（message_assemble_communicate，创建 single 会话）
   '/api/message/assemble/communicate/im/conversation',
   // 流程发起（processplatform designer + service_processing，桌面 ProcessWork 同源端点）
