@@ -137,6 +137,61 @@ function probe(tier: Partial<Attacker>): Probe {
   return out
 }
 
+// ── 漏怪逐关观测：共享且带缓存 ─────────────────────────────────
+//
+// ⚠️ 这个函数**不能**和上面的 `probe` 合并 —— 两者口径不同：
+//
+//   probe(tier)      **真的取牌**（固定轮转），记反应构成 + 漏怪
+//   leakedPerLevel()  `skipCards()`，                只记漏怪
+//
+// 差别不是笔误。`tier_impact.test.ts` 里记着同一个坑：
+// 「一开始用 skipCards()，结果 mechanicPermille 测出来是完全无效 ——
+// 而它其实生效，只是没有任何卡被取过，**没有东西可放大**」。
+// 也就是说 `skipCards()` 下测出来的量属于另一个体系。
+//
+// 而本文件那个 1200‰ 封顶的结论正是**建立在这套 skipCards 口径**上的
+// （见下面「守卫」那个 describe 的注释）。所以改口径 = 改结论，
+// 数值会变、依据会失效。**保持现状，不要「顺手统一」。**
+//
+// 原来这里有**两份逐字相同的 20 行 `perLevel` 局部函数**（分别在
+// 「决定性检验」与「封顶守卫」两个 `it` 里），外加 5 次全量扫描
+// ——而互不相同的只有 3 份构筑。
+const LEAK_TIERS = {
+  base: {},
+  c400: { elementCoefPermille: 400n },
+  c1200: { elementCoefPermille: 1200n },
+} satisfies Record<string, Partial<Attacker>>
+
+const leakedCache = new Map<string, Map<number, number>>()
+
+/** 返回的 Map 是**共享对象**，只读；需要改先 `new Map(...)` 复制。 */
+function leakedPerLevel(key: keyof typeof LEAK_TIERS): Map<number, number> {
+  let m = leakedCache.get(key)
+  if (!m) {
+    m = new Map<number, number>()
+    for (const lv of levels) {
+      const cfg: BattleConfig = {
+        level: lv,
+        enemies,
+        skills,
+        equipped: equipped(),
+        attacker: { ...defaultAttacker(), ...LEAK_TIERS[key] },
+        seed: 12345,
+      }
+      const e = new BattleEngine(cfg)
+      e.start()
+      for (let t = 0; t < MAX_BATTLE_TICKS; t++) {
+        if (e.phase === 'won' || e.phase === 'lost') break
+        if (e.phase === 'card_select') e.skipCards()
+        e.step()
+      }
+      m.set(lv.id, e.leaked)
+    }
+    leakedCache.set(key, m)
+  }
+  return m
+}
+
 describe('诊断：元素系数非单调', () => {
   it('对比 0‰ 与 400‰ 的反应构成、胜负分布', () => {
     const a = probe({})
@@ -190,35 +245,12 @@ describe('诊断：元素系数非单调', () => {
     // 「均匀分布」= 系统性的效率损失（那是真缺陷）
     //
     // 判据：前 5 关贡献了增量的多少比例。> 60% 判为共振。
-    const perLevel = (tier: Partial<Attacker>) => {
-      const m = new Map<number, number>()
-      for (const lv of levels) {
-        const cfg: BattleConfig = {
-          level: lv,
-          enemies,
-          skills,
-          equipped: equipped(),
-          attacker: { ...defaultAttacker(), ...tier },
-          seed: 12345,
-        }
-        const e = new BattleEngine(cfg)
-        e.start()
-        for (let t = 0; t < MAX_BATTLE_TICKS; t++) {
-          if (e.phase === 'won' || e.phase === 'lost') break
-          if (e.phase === 'card_select') e.skipCards()
-          e.step()
-        }
-        m.set(lv.id, e.leaked)
-      }
-      return m
-    }
-
-    const base = perLevel({})
-    for (const [name, coef] of [
-      ['400‰', 400n],
-      ['1200‰', 1200n],
+    const base = leakedPerLevel('base')
+    for (const [name, key] of [
+      ['400‰', 'c400'],
+      ['1200‰', 'c1200'],
     ] as const) {
-      const m = perLevel({ elementCoefPermille: coef })
+      const m = leakedPerLevel(key)
       const deltas = levels
         .map((lv) => ({ id: lv.id, d: (m.get(lv.id) ?? 0) - (base.get(lv.id) ?? 0) }))
         .filter((x) => x.d > 0)
@@ -258,30 +290,8 @@ describe('守卫：元素系数封顶必须避开惩罚区间', () => {
   //
   // 本守卫的作用是**防止有人把封顶调进惩罚区间**。
   it('在封顶值（1200‰）下，漏怪增量可忽略', () => {
-    const perLevel = (tier: Partial<Attacker>) => {
-      const m = new Map<number, number>()
-      for (const lv of levels) {
-        const cfg: BattleConfig = {
-          level: lv,
-          enemies,
-          skills,
-          equipped: equipped(),
-          attacker: { ...defaultAttacker(), ...tier },
-          seed: 12345,
-        }
-        const e = new BattleEngine(cfg)
-        e.start()
-        for (let t = 0; t < MAX_BATTLE_TICKS; t++) {
-          if (e.phase === 'won' || e.phase === 'lost') break
-          if (e.phase === 'card_select') e.skipCards()
-          e.step()
-        }
-        m.set(lv.id, e.leaked)
-      }
-      return m
-    }
-    const base = perLevel({})
-    const capped = perLevel({ elementCoefPermille: 1200n })
+    const base = leakedPerLevel('base')
+    const capped = leakedPerLevel('c1200')
     let worse = 0
     let totalDelta = 0
     for (const lv of levels) {
