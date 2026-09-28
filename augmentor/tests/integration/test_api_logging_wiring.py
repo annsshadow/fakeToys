@@ -6,8 +6,8 @@
 L57 把三根旋钮接上了 `load_config`，但它的 17 例集成全走 CLI 真子进程，单元面又只能
 在**同一个**进程里摆 root handler。于是有一条分支今天没有任何一次「真起 API」的验证：
 
-`api/main.py:42` 自己 `basicConfig(level=INFO, format="…%(name)s…")` —— root 一上来就
-有且只有一条 handler；随后 `api/main.py:116` 的 `load_config` 命中 `logging` 节时，
+`api/main.py:44` 自己 `basicConfig(level=INFO, format="…%(name)s…")` —— root 一上来就
+有且只有一条 handler；随后 `api/main.py:130` 的 `load_config` 命中 `logging` 节时，
 `apply_logging_config` 走的是「root 已有 handler」那一支：**不加第二条 handler、级别照写、
 formatter 照换**（`logging_setup.py` 的 `if keys and not root.handlers` 与
 `for handler in root.handlers`）。这条支的正确性在进程内测不到（pytest 自己的
