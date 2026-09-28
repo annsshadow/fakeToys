@@ -33,6 +33,8 @@
       </div>
       <div class="toolbar-right">
         <span class="tb-info">{{ configLines }} 行 · {{ config.length }} 字符</span>
+        <span v-if="configValid === true" class="tb-valid">✓ JSON 合法</span>
+        <span v-else-if="configValid === false" class="tb-invalid">✕ JSON 格式错误</span>
         <button class="btn-sm" @click="formatConfig">📐 格式化</button>
         <button class="btn-sm" @click="validateConfig">✅ 验证</button>
         <button class="btn-sm btn-danger" @click="clearConfig">🗑 清空</button>
@@ -88,7 +90,7 @@
             <span class="bc-label">配置路径:</span>
             <code class="bc-path">{{ selected.flag || selected.id }}</code>
           </div>
-          <textarea v-model="config" class="code-editor" :placeholder="'在此输入JSON配置...'" spellcheck="false" @input="onConfigChange"></textarea>
+          <textarea v-model="config" class="code-editor" :placeholder="'在此输入JSON配置...'" spellcheck="false"></textarea>
           <div class="ec-footer">
             <div class="ec-status">{{ statusText }}</div>
             <div class="ec-actions">
@@ -185,6 +187,17 @@ const selected = ref<ConfigItem | null>(null),
 const editorLang = ref('json'),
   editorTheme = ref('dark')
 const configLines = computed(() => config.value.split('\n').length)
+// 编辑器实时 JSON 合法性（空内容视为中性，不报错）
+const configValid = computed(() => {
+  const t = config.value.trim()
+  if (!t) return null
+  try {
+    JSON.parse(t)
+    return true
+  } catch {
+    return false
+  }
+})
 const statusText = computed(() =>
   selected.value ? `已选择: ${selected.value.name || selected.value.flag}` : '未选择配置',
 )
@@ -344,9 +357,6 @@ function restoreHistory(idx: number) {
     }
   }
 }
-function onConfigChange() {
-  /* auto-save debounce could go here */
-}
 function fmtTime(t?: string) {
   if (!t) return ''
   try {
@@ -387,6 +397,8 @@ const api_config_i_771_data = ref<any[]>([])
 .toolbar-left,.toolbar-right{display:flex;align-items:center;gap:8px}
 .tb-select{padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;outline:none}
 .tb-info{font-size:11px;color:var(--text-muted)}
+.tb-valid{font-size:11px;color:#3fbf6f;margin-left:8px}
+.tb-invalid{font-size:11px;color:#e0564f;margin-left:8px}
 .editor-layout{display:flex;flex:1;min-height:0;overflow:hidden}
 .editor-sidebar{width:260px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border-color);overflow:hidden}
 .sb-search{padding:8px}
