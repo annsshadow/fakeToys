@@ -28,7 +28,7 @@
     <div class="content-panel glass-card">
       <!-- Search -->
       <div class="search-bar">
-        <input v-model="searchQuery" class="search-input" placeholder="搜索设计器..." @input="filterDesigners" />
+        <input v-model="searchQuery" class="search-input" placeholder="搜索设计器..." />
       </div>
 
       <!-- Designer grid -->
@@ -248,9 +248,6 @@ const filteredDesigners = computed(() => {
   return allDesigners.value.filter((d) => d.name.toLowerCase().includes(q) || d.desc.toLowerCase().includes(q))
 })
 
-function filterDesigners() {
-  /* reactive via computed */
-}
 function refreshAll() {
   coveredRoutes.value = 2847
   activeViews.value = 30
