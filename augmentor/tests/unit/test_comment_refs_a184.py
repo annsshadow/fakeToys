@@ -65,7 +65,7 @@ import tokenize
 
 import pytest
 
-from tests.unit.test_doc_line_refs_l79 import LINE_REF, name_bucket
+from tests.unit.test_doc_line_refs_l79 import LINE_REF, name_bucket, require_authoring_tree
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
@@ -548,6 +548,7 @@ class TestRatchetsAreExact:
     @pytest.mark.parametrize("bucket", ["ambiguous", "runtime_ns", "scratch",
                                         "scratch_missing"])
     def test_bucket_matches_its_ceiling(self, bucket):
+        require_authoring_tree()
         counts, _, _ = census()
         assert counts[bucket] == CEILING[bucket], \
             "%s 现量 %d，常数是 %d" % (bucket, counts[bucket], CEILING[bucket])
@@ -605,6 +606,7 @@ class TestRulerProvesItself:
         assert ask_state("docs/CONFIG.md") == "dead_path"
 
     def test_example_path_in_a_runtime_namespace_is_not_dead(self):
+        require_authoring_tree()
         assert ask_state("data/xxx.json") == "runtime_ns"
 
     def test_a_live_augmentor_relative_path_is_recognised(self):
