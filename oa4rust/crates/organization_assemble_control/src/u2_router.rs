@@ -6,6 +6,7 @@ use axum::Router;
 
 pub fn router() -> Router {
     Router::new()
+        .route("/api/users/list", axum::routing::get(u2_org::users_list))
         .route("/api/organization/assemble/control/person", axum::routing::post(u2_person::person_create))
         .route(
             "/api/organization/assemble/control/person/{flag}",
@@ -70,6 +71,7 @@ pub fn router() -> Router {
         .route("/api/organization/assemble/control/person/ban/{flag}", axum::routing::post(u2_person::person_ban))
         .route("/api/organization/assemble/control/person/unban/{flag}", axum::routing::post(u2_person::person_unban))
         .route("/api/organization/assemble/control/unit", axum::routing::post(u2_org::unit_create))
+        .route("/api/departments/tree", axum::routing::get(u2_org::departments_tree))
         .route(
             "/api/organization/assemble/control/unit/{flag}",
             axum::routing::put(u2_org::unit_edit).delete(u2_org::unit_delete),
