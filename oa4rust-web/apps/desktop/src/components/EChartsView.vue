@@ -6,8 +6,13 @@
 </template>
 
 <script setup lang="ts">
-import * as echarts from 'echarts'
+import { BarChart, LineChart, PieChart } from 'echarts/charts'
+import { GridComponent, TooltipComponent } from 'echarts/components'
+import * as echarts from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+
+echarts.use([BarChart, LineChart, PieChart, GridComponent, TooltipComponent, CanvasRenderer])
 
 const props = defineProps<{
   data: any[]
@@ -18,7 +23,7 @@ const props = defineProps<{
 }>()
 
 const chartRef = ref<HTMLElement | null>(null)
-let chart: echarts.ECharts | null = null
+let chart: ReturnType<typeof echarts.init> | null = null
 
 const chartTypeMap = computed(() => props.chartType)
 
