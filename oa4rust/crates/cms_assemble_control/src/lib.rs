@@ -9580,20 +9580,21 @@ async fn u2_write_permissions(
     if person_ids.is_empty() {
         return Err(AppError::BadRequest("personIds required".to_string()));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
-        .execute(
-            &format!(
-                "DELETE FROM x_cms_permission WHERE {} = $1 AND role_type = $2",
-                scope_col
-            ),
-            &[&scope_id, &role_type],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 「删旧权限 + 逐人重授」是集合替换语义，必须原子：中途失败不得留下半删半授状态。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    tx.execute(
+        &format!(
+            "DELETE FROM x_cms_permission WHERE {} = $1 AND role_type = $2",
+            scope_col
+        ),
+        &[&scope_id, &role_type],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
     let mut granted: u64 = 0;
     for pid in &person_ids {
-        granted += client
+        granted += tx
             .execute(
                 "INSERT INTO x_cms_permission (id, role_type, permission_level, person_id) \
                  VALUES (gen_random_uuid()::text, $1, 'write', $2)",
@@ -9602,6 +9603,7 @@ async fn u2_write_permissions(
             .await
             .map_err(|_| AppError::Internal)?;
     }
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     let _ = pool;
     let _ = scope_col;
     Ok(Json(ActionResult::success(Value::Object(
@@ -9926,8 +9928,11 @@ async fn u3_save_scope_permissions(
             } else {
                 "category_id"
             };
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
-            client
+            let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+            // 「删旧权限 + 逐人重授」是集合替换语义，必须原子：中途失败不得留下
+            // 半删半授的越权/漏权状态（与 ai/portal/process designer 既有事务惯例一致）。
+            let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+            tx
                 .execute(
                     &format!(
                         "DELETE FROM x_cms_permission WHERE {} = $1 AND role_type = $2 AND deleted_at IS NULL",
@@ -9939,7 +9944,7 @@ async fn u3_save_scope_permissions(
                 .map_err(|_| AppError::Internal)?;
             let mut granted = 0u64;
             for pid in &person_ids {
-                granted += client
+                granted += tx
                     .execute(
                         &format!(
                             "INSERT INTO x_cms_permission (id, {}, role_type, permission_level, person_id) \
@@ -9951,6 +9956,7 @@ async fn u3_save_scope_permissions(
                     .await
                     .map_err(|_| AppError::Internal)?;
             }
+            tx.commit().await.map_err(|_| AppError::Internal)?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("scope".to_string(), Value::String(scope.to_string())),
