@@ -4,7 +4,7 @@
  * 导出中心此前零组件测试。四条要点：① 预览格式下拉从 getExportFormats 填充；
  * ② 未选数据集时点预览得到 warning、不调服务层；③ 预览成功后渲染「共 N 条 /
  * 预览 M 条」标签与转换结果表；④ 批量导出把选中文件名去扩展名后作为 datasets 键
- * （`a.json` → `{ a: 'a.json' }`）递给服务层。
+ * （「a.json」映射成 { a: 'a.json' }）递给服务层。
  *
  * DataList / ExportDialog 用替身组件（DataList 暴露一个按钮驱动 onChange 选中文件），
  * 服务层 `importOriginal` 部分替身（`apiErrorDetail` / `bulkErrorDetail` 留真身）。
@@ -124,7 +124,7 @@ describe('Export 批量导出', () => {
   })
 
   it('reduce 把文件名去扩展名后作为 datasets 键（纯函数口径）', () => {
-    // handleBatch 里的 datasets 构造是本页唯一的业务变换：`a.json` → `{ a: 'a.json' }`。
+    // handleBatch 里的 datasets 构造是本页唯一的业务变换：把「a.json」映射成 { a: 'a.json' }。
     // 组件内联无法单独导出，这里用与源码逐字一致的表达式钉住它的语义，
     // 源码那处一旦改坏（例如漏了 replace）此断言即失配。
     const files = ['a.json', 'b.data.jsonl', 'c']
