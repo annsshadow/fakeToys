@@ -7657,7 +7657,7 @@ pub async fn v2_group_rebuild_detail_group_date(
         ));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let group = client
         .query_opt(
@@ -7689,24 +7689,26 @@ pub async fn v2_group_rebuild_detail_group_date(
         return Ok(Json(ActionResult::error("group has no participants")));
     }
 
+    // 全员逐人「删旧明细+插新明细」重算须整体原子：中途失败不得留下部分人已重算、
+    // 其余人旧明细残留的不一致考勤集合。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     for person in &participate {
-        client
-            .execute(
-                "DELETE FROM x_attendance_detail WHERE person_id = $1 AND date = $2",
-                &[person, &date],
-            )
-            .await
-            .map_err(|_| AppError::Internal)?;
+        tx.execute(
+            "DELETE FROM x_attendance_detail WHERE person_id = $1 AND date = $2",
+            &[person, &date],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
         let new_id = uuid::Uuid::new_v4().to_string();
-        client
-            .execute(
-                "INSERT INTO x_attendance_detail (id, person_id, date, status, creator_person, create_time, update_time) \
+        tx.execute(
+            "INSERT INTO x_attendance_detail (id, person_id, date, status, creator_person, create_time, update_time) \
                  VALUES ($1, $2, $3, 'init', $4, NOW(), NOW())",
-                &[&new_id, person, &date, &session.person_unique],
-            )
-            .await
-            .map_err(|_| AppError::Internal)?;
+            &[&new_id, person, &date, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
     }
+    tx.commit().await.map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
