@@ -61,7 +61,7 @@ go run ./cmd/api          # 监听 :8080
 
 ```bash
 curl -s http://127.0.0.1:8080/readyz     # 期望 {"ok":true,"db":"up"}
-curl -s http://127.0.0.1:8080/config | head -c 200   # 期望能看到 levels 数组
+curl -s http://127.0.0.1:8080/api/v1/config | head -c 200   # 期望能看到 levels 数组
 ```
 
 - `/healthz` —— 返回 `{"ok":true,"time":"..."}`，**不查 DB**，用于 liveness 探针
