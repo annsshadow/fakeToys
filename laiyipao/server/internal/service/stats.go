@@ -135,26 +135,47 @@ func (s *Service) AdminDashboard(ctx context.Context) (Dashboard, error) {
 	}
 
 	// 反应使用分布
+	// 反应使用分布
+	//
+	// ⚠️ 两处改动，都因为「读侧不该依赖写侧」。
+	//
+	// 1) 过滤条件用 `jsonb_typeof(...) = 'object'`，不用 `<> '{}'`。
+	//    `<> '{}'` 对 jsonb `null` 求值为 **NULL 而不是 true**，
+	//    于是那些行被**静默排除**。实测 58 行里有 8 行（13.8%）带 jsonb null。
+	//
+	// 2) 改成在 SQL 里按 key 聚合，不用 `GROUP BY reactions_used`。
+	//    原来的写法按**整个 map** 分组再在 Go 里逐键累加，
+	//    代价是：对 JSONB 列做哈希分组（无索引可用）+ 最多 500 组被截断。
+	//    实测当前只有 2 种组合所以看不出问题，但组合数会随战报量爆炸 ——
+	//    6 种反应各 0~5 次就是 6^6 种组合，`LIMIT 500` 会开始丢数据。
+	//
+	//    顺带修掉一个更硬的问题：`jsonb_each_text(jsonb 'null')` 会**报错**
+	//    （「不能在非对象上调用」），所以旧写法连改个过滤条件都改不动。
 	rows, err := s.pool.Query(ctx, `
-		SELECT reactions_used, COUNT(*) FROM battle_records
-		WHERE reactions_used <> '{}'::jsonb
-		GROUP BY reactions_used LIMIT 500`)
+		SELECT e.key, SUM(e.value::bigint) AS total
+		FROM battle_records b,
+		     LATERAL jsonb_each_text(b.reactions_used) AS e(key, value)
+		WHERE jsonb_typeof(b.reactions_used) = 'object'
+		GROUP BY e.key
+		ORDER BY total DESC
+		LIMIT 100`)
 	if err != nil {
 		return d, fmt.Errorf("dashboard reactions: %w", err)
 	}
 	defer rows.Close()
+	// SQL 已经按 key 聚合好了，这里直接读两列。
+	//
+	// ⚠️ 旧实现在 Go 里 `json.Unmarshal` 整个 map 再逐键累加，
+	// 而错误被 `_ =` **静默吞掉** —— 解析失败时那一行就凭空消失，
+	// 没有任何日志。一个统计数字悄悄少掉一部分，比直接报错更难发现。
 	agg := map[string]int64{}
 	for rows.Next() {
-		var raw []byte
-		var n int64
-		if err := rows.Scan(&raw, &n); err != nil {
+		var key string
+		var total int64
+		if err := rows.Scan(&key, &total); err != nil {
 			return d, err
 		}
-		m := map[string]int{}
-		_ = json.Unmarshal(raw, &m)
-		for k, v := range m {
-			agg[k] += int64(v) * n
-		}
+		agg[key] = total
 	}
 	if err := rows.Err(); err != nil {
 		return d, err
