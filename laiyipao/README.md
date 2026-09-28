@@ -723,6 +723,48 @@ cd server && go run ./cmd/vectors -check   # 只校验是否最新（CI 用）
 
 ---
 
+## 后台构建体积
+
+后台是运营每天要开的页面，首屏体积直接等于等待时间。**这一节的数字有测量工具，
+不要凭印象改** —— 改完请重测。
+
+```bash
+cd admin && npm run build && npm run size        # 报告
+cd admin && npm run build && npm run size:check  # 超预算则退出码 1
+```
+
+| | 数值 |
+|---|---|
+| **首屏 JS** | 153 KB（gzip 60 KB），2 个 chunk |
+| **首屏 CSS** | 8 KB（gzip 2 KB），27 个 CSS 里只有 1 个进首屏 |
+| **首屏合计** | **161 KB（gzip 62 KB）** |
+| **预算** | **220 KB（gzip 80 KB）** —— 定在 `admin/scripts/size-report.mjs` 的 `BUDGET` |
+
+> 预算留了约 37% 余量，正常加功能不会误报；而一次「整包注册」级别的回归
+> （实测首屏会从 161 KB 涨到 1028 KB）会超出 4.7 倍，必红。
+> `tests/bundle_size.test.ts` 有一条守卫专门核对**本节的数字与脚本里的 `BUDGET` 一致** ——
+> 改预算忘了同步文档（或者反过来）会立刻被抓住。
+| element-plus | **286 KB**（15 个按需 chunk） |
+| echarts | 534 KB，**只服务 Dashboard 一个页面**，不进首屏 |
+
+第 47 轮把 element-plus 从整包注册改成按需引入，首屏从 **1378 KB 降到 161 KB**
+（gzip 386 → 62 KB）。依赖是 devDependencies 里**早就装了但一直没接进配置**的
+`unplugin-vue-components`。
+
+### 三个测量陷阱（都踩过，数字错了但不报错）
+
+1. **别用 dist 总量。** 路由是代码分割的，dist 总量把每个懒加载页都算进去。
+   用它会两头出错：**指错方向**（让人去优化只在 Dashboard 用的 echarts），
+   **低估收益**（element-plus 那次，dist 总量只反映 −520 KB，首屏实际 −1217 KB）。
+2. **别在陈旧 dist 上测。** `npm run size` 只读 dist、不构建，忘记 build 时它会
+   拿上一次的产物给出一个**格式正常、退出码 0 的错误数字**。
+   工具现在会比对 mtime，旧了直接退出码 2。
+3. **首屏 CSS 只能从 `index.html` 的 `<link>` 取。** 把 `assets/` 下所有 CSS 加总
+   会把 26 个懒加载页的样式也算进来（175 KB vs 实际的 8 KB）。
+
+> 这三条的共同点：**数字错了但没有任何报错。**
+> 一个能跑通、退出码 0、格式规整的报告比一个崩溃更危险，因为人会相信它。
+
 ## 已知边界（诚实声明）
 
 以下**没有做**，且不会假装做了：
