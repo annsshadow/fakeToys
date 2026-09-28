@@ -159,11 +159,26 @@ func (s *Service) loadLoadout(ctx context.Context, userID int64) (loadoutContrib
 
 	// --- 装备 ---
 	//
-	// 只读 equipped = TRUE 的行。注意 `level` / `star` 两列**存在但无效果**：
-	// `SeedEquipment` 只有 `BaseArmor` / `BaseBonusPct` 两个数值字段，
-	// 升级与升星没有任何缩放公式。这是**第三处未接线的养成维度**，
-	// 已记入 README 的「未做」，不在本轮补 ——
-	// 补它需要一条实测出来的缩放曲线，而凭空造一条曲线比留着它更糟。
+	// 只读 equipped = TRUE 的行。
+	//
+	// ⚠️ `level` / `star` 两列**存在但仍未接线**（下面 SQL 只 SELECT equipment_id）。
+	// 这不是「忘了做」，而是**实测过预算之后决定不做**。数据（2026-09-28）：
+	//
+	//	                      装备(每槽最优)  专精满  合计   封顶   余量
+	//	  base_bonus_pct(攻击)        1080       0  1080   1000   **-80**
+	//	  base_armor(护甲)             215     240    455    750   +295
+	//
+	// **攻击侧的基础值之和已经越过封顶**（1080 > 1000）。
+	// 所以「装备等级/星级 → 攻击力」会把玩家的钱推进**静默浪费区**：
+	// clampPermille 之外的部分直接消失，界面上看不出任何区别。
+	// 这与元素系数那个「惩罚区间」是同一种形状（400‰ 时漏怪反而变多，
+	// 那是实测才发现曲线是反的）。
+	//
+	// 护甲侧有 295‰ 真实预算，**可以**做缩放 —— 但曲线本身是设计决策，
+	// 且要保证「满级满星 + 专精满 ≤ 750」。这两条事实由
+	// `internal/service/equip_budget_test.go` 钉住。
+	//
+	// 完整推导见该测试的文件头。
 	rows, err := s.pool.Query(ctx,
 		`SELECT equipment_id FROM user_equipment WHERE user_id = $1 AND equipped ORDER BY slot`, userID)
 	if err != nil {
