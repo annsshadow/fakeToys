@@ -42,7 +42,11 @@ fn bench<F: FnMut()>(label: &str, iters: u32, mut f: F) {
         f();
     }
     let ns = t.elapsed().as_nanos() as f64;
-    println!("{label:<28} iters={iters}  total={:.1}ms  per_op={:.2}µs", ns / 1e6, ns / iters as f64 / 1e3);
+    println!(
+        "{label:<28} iters={iters}  total={:.1}ms  per_op={:.2}µs",
+        ns / 1e6,
+        ns / iters as f64 / 1e3
+    );
 }
 
 fn main() {
