@@ -139,6 +139,17 @@ export interface AdminUser {
   gem: number
   last_login_at: string
   created_at: string
+  /**
+   * 验真统计。**两个字段必须一起看**：
+   *
+   *   0 / 0 → 从没被验真过 = **未知**（不是「干净」）
+   *   n / 0 → 验过且都一致
+   *   n / m → m > 0 = **可疑**
+   *
+   * 只看 `verify_mismatched` 会把「没验过」误判成「验过且没问题」。
+   */
+  verify_checked: number
+  verify_mismatched: number
 }
 
 export function fetchUsers(params: { keyword?: string; limit?: number; offset?: number } = {}) {
