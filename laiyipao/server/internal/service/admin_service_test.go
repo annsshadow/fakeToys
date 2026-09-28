@@ -661,16 +661,39 @@ func TestAdminRedeemCodes(t *testing.T) {
 		t.Log("库中无兑换码（种子可能未跑）")
 	}
 
-	// ⚠️ 已知真缺陷（见覆盖率报告）：redeem_codes.id 无默认值，
-	// AdminCreateRedeemCode 的 INSERT 不提供 id → 必然 not-null violation。
-	// 此处特征化断言当前行为；修复后应翻转为成功并清理测试码。
+	// 迁移 00009 把 redeem_codes.id 改为 IDENTITY、种子跑完对齐了序列，
+	// 所以管理端"自动 id"创建兑换码现在能成功（此前 id 无默认值必然 500）。
+	// 这条钉住修复后的行为：创建成功、能被列表读回、且落库字段正确。
 	code := fmt.Sprintf("SVCBUG%d", time.Now().UnixNano()%1_000_000)
-	_, err = ts.AdminCreateRedeemCode(ctx, code, map[string]int{"coin": 1}, 3)
-	if err == nil {
-		t.Cleanup(func() {
-			_, _ = ts.pool.Exec(ctx, `DELETE FROM redeem_codes WHERE code = $1`, code)
-		})
-		t.Fatal("创建兑换码意外成功 —— 缺陷可能已修复，请更新本用例与报告")
+	created, err := ts.AdminCreateRedeemCode(ctx, code, map[string]int{"coin": 1}, 3)
+	if err != nil {
+		t.Fatalf("创建兑换码失败（迁移 00009 后应成功）：%v", err)
+	}
+	t.Cleanup(func() {
+		_, _ = ts.pool.Exec(ctx, `DELETE FROM redeem_codes WHERE code = $1`, code)
+	})
+	if id, _ := created["id"].(int); id <= 0 {
+		t.Errorf("自动分配的 id 应为正，得 %v", created["id"])
+	}
+
+	after, err := ts.AdminListRedeemCodes(ctx)
+	if err != nil {
+		t.Fatalf("创建后列表失败：%v", err)
+	}
+	if len(after) != len(items)+1 {
+		t.Errorf("列表应多出 1 条，前 %d 后 %d", len(items), len(after))
+	}
+	found := false
+	for _, it := range after {
+		if it["code"] == code {
+			found = true
+			if mu, _ := it["max_uses"].(int); mu != 3 {
+				t.Errorf("max_uses 应为 3，得 %v", it["max_uses"])
+			}
+		}
+	}
+	if !found {
+		t.Error("新建兑换码应出现在列表里")
 	}
 }
 

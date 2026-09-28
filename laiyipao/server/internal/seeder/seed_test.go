@@ -264,3 +264,49 @@ func TestRunFailsWhenPoolClosed(t *testing.T) {
 	}
 	_ = pool
 }
+
+// TestRunFailsLoudWhenCommitFails 覆盖 Run 的 Commit 失败分支（seed.go:74-76）。
+//
+// 这条分支无法用"改表名让 INSERT 失败"构造：任一 INSERT 失败都会在 Commit
+// 之前提前 return，永远走不到 Commit。手法是装一个**延迟约束触发器**：
+// 它在每次向 enemies 插入时排队，但直到 COMMIT 才真正执行并 RAISE。
+// 于是 10 个 seeder 全部写入成功、事务却在 Commit 阶段炸开 ——
+// 正是"全写完但提交失败"的唯一真实形态。
+//
+// 意义：若有人把 `if err := tx.Commit(...); err != nil` 写成忽略返回值，
+// 一次提交失败会被当成"种子成功"，而库里其实什么都没落。本测试钉住它。
+func TestRunFailsLoudWhenCommitFails(t *testing.T) {
+	pool, _ := openScratch(t)
+	ctx := context.Background()
+
+	// 延迟约束触发器：INSERT 时排队，COMMIT 时 RAISE。建在 enemies 上
+	// —— 它是 Run 里第一个写入的表，保证事务内一定产生排队事件。
+	if _, err := pool.Exec(ctx, `
+		CREATE OR REPLACE FUNCTION seed_test_commit_boom() RETURNS trigger
+		AS $fn$ BEGIN RAISE EXCEPTION 'commit 阶段故意失败'; END; $fn$ LANGUAGE plpgsql`); err != nil {
+		t.Fatalf("建触发器函数失败：%v", err)
+	}
+	if _, err := pool.Exec(ctx, `
+		CREATE CONSTRAINT TRIGGER seed_test_commit_fail
+		AFTER INSERT ON enemies DEFERRABLE INITIALLY DEFERRED
+		FOR EACH ROW EXECUTE FUNCTION seed_test_commit_boom()`); err != nil {
+		t.Fatalf("建延迟触发器失败：%v", err)
+	}
+
+	_, runErr := Run(ctx, pool)
+	if runErr == nil {
+		t.Fatal("Commit 阶段失败时 Run 必须报错，实际静默成功")
+	}
+	if !strings.Contains(runErr.Error(), "commit") {
+		t.Errorf("错误应说明是提交失败（commit: ...），实际 %v", runErr)
+	}
+
+	// 摘掉触发器后 Run 必须恢复成功 —— 证明失败只来自 Commit，
+	// 且回滚干净、没有半残写入残留。
+	if _, err := pool.Exec(ctx, `DROP TRIGGER seed_test_commit_fail ON enemies`); err != nil {
+		t.Fatalf("摘触发器失败：%v", err)
+	}
+	if _, err := Run(ctx, pool); err != nil {
+		t.Fatalf("摘掉触发器后 Run 应成功：%v", err)
+	}
+}
