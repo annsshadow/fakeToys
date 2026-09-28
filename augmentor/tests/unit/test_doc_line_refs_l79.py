@@ -525,6 +525,26 @@ def headings(text):
     return HEADING.findall(text)
 
 
+def authoring_tree_present():
+    """本机是否是「作者工作树」：带 `Temp/` 取证草稿 + `data/` 数据集的未入仓底料
+
+    棘轮/普查判据按**当前工作树**（含未入仓文件）精确计数，那些 `CEILING` 常数是在作者机上
+    量的。CI 是干净浅克隆：`Temp/` 与 `data/` 数据集都不在，逐档计数天然对不上（`scratch`
+    这类专数 Temp 工件的桶会直接归零）。这些判据本就是**本地写作纪律的仪表**而非可移植的
+    CI 闸门 —— 底料不在时按下面 `require_authoring_tree()` 显式（响亮地）跳过，而不是拿一份
+    环境噪声去撞死常数。底料回来了它们照常严格开火。
+    """
+    return (ROOT / "Temp").is_dir() and (ROOT / "data").is_dir()
+
+
+def require_authoring_tree():
+    import pytest
+    if not authoring_tree_present():
+        pytest.skip("需要作者工作树（Temp/ 取证草稿 + data/ 数据集底料）；干净 CI 克隆里"
+                    "这些未入仓文件不在，逐档精确计数无法复现（详见 authoring_tree_present）")
+
+
+
 @functools.lru_cache(maxsize=1)
 def build_index():
     """`{文件名: [仓内相对路径的段元组]}` —— 按名字分桶，查找代价与全仓规模无关
@@ -731,6 +751,7 @@ class TestRatchetsAreExact:
     """每条残余按**精确值**记账：变差要改回来，变好也要改常数并在账本留一句"""
 
     def test_each_document_matches_its_own_ceiling(self):
+        require_authoring_tree()
         index = build_index()
         for doc in DOCS:
             counts, rows = audit((ROOT / doc).read_text(encoding="utf-8"), index)
@@ -809,6 +830,7 @@ class TestTheAuditIsNotSpinning:
         `augmentor/api/`（真实文件是 `api/routes/dataset_tools.py`）；Temp 下有 HEAD 快照副本
         恰好同尾 ⇒ 先查工件会把它判成「指向不入仓工件」，永远不红。
         """
+        require_authoring_tree()
         live, scratch = resolve("augmentor/api/routes/dataset_tools.py", build_index())
         assert live == [], live                       # 产品树里没有
         assert len(scratch) >= 1, scratch             # Temp 快照里有：先查就会被它骗过

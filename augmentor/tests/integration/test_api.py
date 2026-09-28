@@ -16,11 +16,15 @@ AI_DIR = Path(__file__).resolve().parent.parent.parent
 
 
 @pytest.fixture
-def pipeline(tmp_path):
+def pipeline(tmp_path, monkeypatch):
     """构造使用临时目录的管道实例
 
     Args:
         tmp_path: pytest 临时目录
+        monkeypatch: 把当前目录切到 tmp_path —— 可视化/实验/断点等组件的默认输出目录是
+            **相对路径**（`visualizations` / `experiments` / `checkpoints`），首次写盘按当时
+            的当前目录定基。测试期把 CWD 定到临时目录，任何产品侧的相对落盘都进 tmp 而不落
+            仓库根，仓库根残留守卫（conftest 的 `fail_on_repo_residue`）因此保持零白名单。
 
     Returns:
         AugmentorPipeline 实例
@@ -29,6 +33,7 @@ def pipeline(tmp_path):
     from augmentor.checkpoint import CheckpointManager
     from augmentor.versioning import VersionManager
 
+    monkeypatch.chdir(tmp_path)
     config = load_config(str(AI_DIR / "config.yaml"))
     config.versioning.storage_dir = str(tmp_path / "versions")
 

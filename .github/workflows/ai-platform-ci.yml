@@ -40,6 +40,10 @@ jobs:
         working-directory: augmentor
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          # 账本哈希槽守卫（test_ledger_hash_slots_l98）按 `git log --first-parent`
+          # 核对每笔回填哈希，浅克隆只有 1 笔历史会让它整类 RulerNotProven。
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b
