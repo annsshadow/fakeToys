@@ -126,6 +126,21 @@ function spawnText(spawns: unknown): string {
 }
 
 onMounted(load)
+
+/**
+ * `el-table` 插槽给出的行类型是 element-plus 内部的 `DefaultRow`，
+ * 它不能直接传给形参是 `AdminLevel` 的函数（TS2345），所以在调用点集中断言一次。
+ *
+ * cast 编译后被擦除，**运行时行为与之前逐字节相同**。
+ *
+ * ⚠️ 值得记一笔的是：这些调用此前**根本没有被类型检查**。
+ * `components.d.ts` 不存在时 `el-table` 是未知组件、插槽行是 `any`，
+ * 于是 22 处调用全部静默通过 —— 也就是说，
+ * 「参数名拼错」或「形参类型改窄」这类错误在过去是**查不出来**的。
+ * 断言让它们重新受检；但它断言的是**形状**，
+ * 字段名本身拼错仍要靠运行时的 `undefined` 暴露。
+ */
+const asRow = (r: unknown) => r as AdminLevel
 </script>
 
 <template>
@@ -192,9 +207,9 @@ onMounted(load)
         </el-table-column>
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" text @click="openWaves(row)">波次</el-button>
-            <el-button size="small" text @click="onEdit(row)">改血量</el-button>
-            <el-button size="small" text @click="toggleEnabled(row)">
+            <el-button size="small" text @click="openWaves(asRow(row))">波次</el-button>
+            <el-button size="small" text @click="onEdit(asRow(row))">改血量</el-button>
+            <el-button size="small" text @click="toggleEnabled(asRow(row))">
               {{ row.enabled ? '停用' : '启用' }}
             </el-button>
           </template>

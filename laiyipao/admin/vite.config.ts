@@ -1,12 +1,32 @@
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import Components from 'unplugin-vue-components/vite'
+import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
-// 后端 API 地址：开发期走 proxy 规避跨域，生产走同域反代
+// ⚠️ API 地址：生产与开发同源，靠 proxy 反代，不必在构建时硬编码
 const API_TARGET = process.env.VITE_API_TARGET || 'http://127.0.0.1:8080'
 
 export default defineConfig({
-  plugins: [vue()],
+  // ⚠️ 顺序有讲究：Components 必须排在 vue() **之后** ——
+  // 它靠分析编译后的 render 函数来收集模板里用到的组件，
+  // 排在前面就什么也收集不到（表现为「构建成功但组件全丢」）。
+  plugins: [
+    vue(),
+    Components({
+      // 按需引入：只打进模板里**真正用到**的 el-* 组件。
+      //
+      // 为什么做：改之前 `app.use(ElementPlus)` 整包注册，
+      // element-plus 一个 chunk 就是 **901 KB**（占产物 1981 KB 的 45%）。
+      // 后台是运营每天要开的页面，这个体积直接等于首屏等待。
+      //
+      // 依赖（devDependencies 里早就装了，**但一直没接进配置**）：
+      // unplugin-vue-components + ElementPlusResolver。
+      resolvers: [ElementPlusResolver({ importStyle: 'css' })],
+      // 生成 src/components.d.ts，让 vue-tsc 认识这些全局组件
+      dts: 'src/components.d.ts',
+    }),
+  ],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -25,7 +45,10 @@ export default defineConfig({
       output: {
         manualChunks: {
           vue: ['vue', 'vue-router', 'pinia'],
-          element: ['element-plus', '@element-plus/icons-vue'],
+          // ⚠️ 这一行是「整包」的根因：手写 manualChunks 把整个
+          // element-plus 强行圈成一个 chunk，**绕过了按需引入的裁剪**。
+          // 改成按需之后不能再这么圈，否则前面的优化全部作废。
+          // 组件由 resolver 自动 import，交给 rollup 自行分块即可。
           charts: ['echarts'],
         },
       },
