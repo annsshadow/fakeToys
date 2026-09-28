@@ -1,29 +1,54 @@
 /**
- * 服务端新加的集合边界**必须接受真实引擎产出的上报**。
+ * 服务端新加的集合类边界**必须接受真实引擎产出的上报**。
  *
  * ## 为什么需要这条
  *
  * `server/internal/domain/battle_collections.go` 给 5 个集合类上报字段加了边界：
- * `elements_used` 合计 ≤ hits、`reactions_used` 合计 ≤ reactions、
- * `terrain_used` ⊆ 该关地形种类、`card_picks` 长度 ≤ 波数……
+ *   `elements_used` 合计 ≤ shots×怪数、`reactions_used` 合计 ≤ reactions、
+ *   `terrain_used` ⊆ 该关地形种类、`card_picks` 长度 ≤ 波数且每项 ≥ -1。
  *
- * 这些边界的**风险方向是反的**：写松了只是少拦一点作弊，
- * 写紧了会**拒绝玩家的正常对局** —— 而那表现为「打完一局提示结算失败」，
- * 是最伤的一种 bug。
+ * 这些边界的**风险方向是反的**：
+ *   写松了 → 只是少拦一点作弊（可接受）
+ *   写紧了 → **拒绝玩家的正常对局**，表现为「打完一局提示结算失败」（最伤）
  *
  * e2e 证明不了这件事：它发的是**合成 payload**，
- * 而合成 payload 是照着我的边界写的，属于自证。
+ * 而那份 payload 是照着我的边界写的 —— 属于自证。
  *
- * 所以这条测试取**引擎真实跑出来的 `report()`**，
+ * 所以这里取**引擎真实跑出来的 `settleInput()`**，
  * 逐条核对它满足服务端会检查的每一个不等式。
  *
- * ## 判据的方向
+ * 判据的方向是**「引擎产出 ⊆ 服务端上界」**（反方向才会要求服务端上界取可用值，
+ * 那是服务端的事，不该由客户端测试断言）。
  *
- * 全部是「引擎产出 ≤ 服务端上界」的单向不等式。
- * 反向（「服务端上界 ≤ 引擎产出」）会要求服务端上界取值可用，
- * 那是服务端的事，不该由客户端测试断言。
+ * ## 性能：7 次全量扫描合并成 1 次
+ *
+ * 第一版每个 `it` 各自 `for (const lv of levels) play(lv)`，
+ * 于是**同一个文件把 100 关扫了 7 遍**。实测单遍 ≈ 3.7s（561,516 tick，
+ * 平均 6.6 µs/tick），也就是这个文件 ~90% 的时间在重复计算同一件事。
+ *
+ * 现在改成 `beforeAll` 扫一遍、7 条判据共用这批观测，耗时降到约 1/7。
+ *
+ * ### 为什么合并不改变任何判定
+ *
+ * 7 条判据读的都是**同一批观测量**（elements/reactions 之和、terrain 集合、
+ * card_picks、replay_hash、hits、shots），它们之间**没有依赖关系**，
+ * 也没有任何一条会改变引擎状态或配置。
+ * 所以「先全部采集、再逐条断言」与「边跑边断言」完全等价。
+ *
+ * ### 这一版刻意**没有**加新断言
+ *
+ * 这是重构，不是补测试。加断言会让「提速」与「改了判据强度」两件事
+ * 混在同一批提交里，review 时无法分开看。
+ * 想加更强的判据（例如 reactions 分项合计应当**恒等**于 reactions），
+ * 请单独一批。
+ *
+ * ### 为什么扫描放在 beforeAll 而不是模块顶层
+ *
+ * 模块顶层代码在**收集阶段**执行：那里抛错会以「文件加载失败」的形式出现，
+ * 掩盖真正的失败点，也拿不到 `expect` 的语义。
+ * 放在 `beforeAll` 里，失败会正常标记本套件内所有用例失败。
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeAll } from 'vitest'
 import fixture from '@vectors/smoke_levels.json'
 import { BattleEngine, MAX_BATTLE_TICKS, type BattleConfig } from './engine'
 import { equippedFromSnapshot, type BuildSnapshot } from './replay'
@@ -87,130 +112,164 @@ const ALL_TERRAIN = new Set(
   ),
 )
 
+/** 一关跑完后，7 条判据各自需要的那个数字。 */
+interface Observation {
+  levelId: number
+  /** elements_used 各键之和 */
+  elemTotal: number
+  /** reactions_used 各键之和 */
+  reactTotal: number
+  reactions: number
+  hits: number
+  shots: number
+  /** 该关波次里声明的怪物总数（服务端上界里的 MaxKillsFor 那一项） */
+  enemyCount: number
+  waveCount: number
+  terrainUsed: string[]
+  /** 该关自己的地形种类 */
+  ownTerrain: Set<string>
+  cardPicks: number[]
+  replayHash: string
+}
+
+function sumRecord(m: unknown): number {
+  return Object.values(m as Record<string, number>).reduce((a, b) => a + b, 0)
+}
+
+/** 全量扫描的结果，**全文件只算一次**。 */
+let observations: Observation[] = []
+
+beforeAll(() => {
+  observations = levels.map((lv) => {
+    const r = play(lv)
+    return {
+      levelId: lv.id,
+      elemTotal: sumRecord(r.elements_used),
+      reactTotal: sumRecord(r.reactions_used),
+      reactions: r.reactions,
+      hits: r.hits,
+      shots: r.shots,
+      enemyCount: (lv.waves ?? []).reduce(
+        (a, w) => a + w.spawns.reduce((b, sp) => b + sp.count, 0),
+        0,
+      ),
+      waveCount: lv.wave_count,
+      terrainUsed: r.terrain_used,
+      ownTerrain: new Set(
+        ((lv as unknown as { terrain?: { kind: string }[] }).terrain ?? []).map((t) => t.kind),
+      ),
+      cardPicks: r.card_picks,
+      replayHash: r.replay_hash,
+    }
+  })
+}, 900_000)
+
+/** 逐条列出 100 条会把关键信息淹掉，所以只报前 5 个 offender。 */
+function reportFirst(bad: string[]): string {
+  return bad.slice(0, 5).join('\n')
+}
+
 describe('引擎真实上报满足服务端的新边界', () => {
   it('全 100 关：elements_used 合计 ≤ shots × 该关怪数', () => {
     // 服务端：if total > shots * MaxKillsFor(gl) { reject }
     //
     // ⚠️ 第一版这里写的是 `total <= hits`，**红了** ——
     // 真实引擎上报 139 > hits 134，max 比值 1.214。
-    // 若 e2e 用的是照着这个界写的合成 payload，
-    // 这个 bug 会一路带到线上，表现为「玩家打完一局提示结算失败」。
+    // 若 e2e 用的是真实 payload，这个 bug 会一路带到线上，
+    // 表现为「玩家打完一局提示结算失败」。
     //
     // 根因：`hits++` 只数直接命中，而 `elementsUsed` 在 `hitEnemy` 里，
     // AoE 与链式也走 `hitEnemy` 却不计入 `hits`。
     const bad: string[] = []
-    for (const lv of levels) {
-      const r = play(lv)
-      const total = Object.values(r.elements_used as Record<string, number>).reduce(
-        (a, b) => a + b,
-        0,
-      )
-      const enemyCount = (lv.waves ?? []).reduce(
-        (a, w) => a + w.spawns.reduce((b, sp) => b + sp.count, 0),
-        0,
-      )
-      const cap = r.shots * enemyCount
-      if (total > cap) bad.push(`L${lv.id}: 元素合计 ${total} > 上界 ${cap}`)
+    for (const o of observations) {
+      const cap = o.shots * o.enemyCount
+      if (o.elemTotal > cap) {
+        bad.push(`L${o.levelId}: 元素合计 ${o.elemTotal} > 上界 ${cap}`)
+      }
     }
-    expect(bad.slice(0, 5).join('\n')).toBe('')
-  }, 900_000)
+    expect(reportFirst(bad)).toBe('')
+  })
 
-  it('记录实测比值：合计/hits 会超过 1，而合计/(shots×怪数) 远小于 1', () => {
+  it('记录实测余量：合计/hits 会超过 1，合计/(shots×总敌数) 远小于 1', () => {
     // 把两个比值都钉住，作为「上界取哪个」的依据。
-    // 若哪天 `hits` 的口径改成也统计 AoE/链式，
-    // 第一条会变红 —— 那时可以把上界收紧回 hits，收益是更强的保护。
+    // 若哪天 `hits` 的口径改成含 AoE/链式：
+    //   第一条会变成：变绿。那时可以把上界收回到 hits，
+    //   收益是更严的保护，代价是边界与引擎耦合更深。
     let maxOverHits = 0
     let maxOverShotsEnemies = 0
-    for (const lv of levels) {
-      const r = play(lv)
-      const total = Object.values(r.elements_used as Record<string, number>).reduce(
-        (a, b) => a + b,
-        0,
-      )
-      const enemyCount = (lv.waves ?? []).reduce(
-        (a, w) => a + w.spawns.reduce((b, sp) => b + sp.count, 0),
-        0,
-      )
-      maxOverHits = Math.max(maxOverHits, total / Math.max(r.hits, 1))
+    for (const o of observations) {
+      maxOverHits = Math.max(maxOverHits, o.elemTotal / Math.max(o.hits, 1))
       maxOverShotsEnemies = Math.max(
         maxOverShotsEnemies,
-        total / Math.max(r.shots * enemyCount, 1),
+        o.elemTotal / Math.max(o.shots * o.enemyCount, 1),
       )
     }
-    // 实测 1.214 —— 明确大于 1，所以「≤ hits」这个界是错的
+    // 实测 1.214 倍，明确大于 1，所以**不能**用 hits
     expect(maxOverHits).toBeGreaterThan(1)
-    // 实测 0.0316 —— 上界有约 30 倍余量，安全
+    // 实测 0.0316 倍，上界留了约 30 倍余量，很宽裕
     expect(maxOverShotsEnemies).toBeLessThan(0.5)
-  }, 900_000)
+  })
 
   it('全 100 关：reactions_used 合计 ≤ reactions', () => {
     // 服务端：if totalR > in.Reactions { reject }
     const bad: string[] = []
-    for (const lv of levels) {
-      const r = play(lv)
-      const total = Object.values(r.reactions_used as Record<string, number>).reduce(
-        (a, b) => a + b,
-        0,
-      )
-      if (total > r.reactions) bad.push(`L${lv.id}: 反应分项合计 ${total} > reactions ${r.reactions}`)
+    for (const o of observations) {
+      if (o.reactTotal > o.reactions) {
+        bad.push(`L${o.levelId}: 反应分项合计 ${o.reactTotal} > reactions ${o.reactions}`)
+      }
     }
-    expect(bad.slice(0, 5).join('\n')).toBe('')
-  }, 900_000)
+    expect(reportFirst(bad)).toBe('')
+  })
 
   it('全 100 关：terrain_used 无重复、且是已知地形种类', () => {
     const bad: string[] = []
-    for (const lv of levels) {
-      const r = play(lv)
+    for (const o of observations) {
       const seen = new Set<string>()
-      for (const t of r.terrain_used) {
-        if (seen.has(t)) bad.push(`L${lv.id}: 地形 ${t} 重复`)
+      for (const t of o.terrainUsed) {
+        if (seen.has(t)) bad.push(`L${o.levelId}: 地形 ${t} 重复`)
         seen.add(t)
-        if (!ALL_TERRAIN.has(t)) bad.push(`L${lv.id}: 未知地形 ${t}`)
+        if (!ALL_TERRAIN.has(t)) bad.push(`L${o.levelId}: 未知地形 ${t}`)
       }
     }
-    expect(bad.slice(0, 5).join('\n')).toBe('')
-  }, 900_000)
+    expect(reportFirst(bad)).toBe('')
+  })
 
   it('全 100 关：terrain_used ⊆ 该关自己的地形种类', () => {
     // 服务端：if !distinct[t] { reject }
     //
-    // 这条是本轮最险的一条 —— 引擎的地形来自 `cfg.level.terrain`，
+    // 这条是本轮最险的一条：引擎的地形来自 `cfg.level.terrain`，
     // 而 `generateTerrain` 产出的 1~3 个地形**全是同一个 kind**，
     // 100 关里 75 关没有地形。所以只要引擎不动态造地形，它必然成立。
     // 但「必然」是推断，不是事实 —— 这里用实测把它钉住。
     const bad: string[] = []
-    for (const lv of levels) {
-      const r = play(lv)
-      const own = new Set(((lv as unknown as { terrain?: { kind: string }[] }).terrain ?? []).map((t) => t.kind))
-      for (const t of r.terrain_used) {
-        if (!own.has(t)) bad.push(`L${lv.id}: 上报了本关没有的地形 ${t}`)
+    for (const o of observations) {
+      for (const t of o.terrainUsed) {
+        if (!o.ownTerrain.has(t)) bad.push(`L${o.levelId}: 上报了本关没有的地形 ${t}`)
       }
     }
-    expect(bad.slice(0, 5).join('\n')).toBe('')
-  }, 900_000)
+    expect(reportFirst(bad)).toBe('')
+  })
 
   it('全 100 关：card_picks 长度 ≤ 波数、每项 ≥ -1', () => {
     const bad: string[] = []
-    for (const lv of levels) {
-      const r = play(lv)
-      if (r.card_picks.length > lv.wave_count) {
-        bad.push(`L${lv.id}: card_picks ${r.card_picks.length} 项 > 波数 ${lv.wave_count}`)
+    for (const o of observations) {
+      if (o.cardPicks.length > o.waveCount) {
+        bad.push(`L${o.levelId}: card_picks ${o.cardPicks.length} 项 > 波数 ${o.waveCount}`)
       }
-      r.card_picks.forEach((p, i) => {
-        if (p < -1) bad.push(`L${lv.id}: card_picks[${i}] = ${p} < -1`)
+      o.cardPicks.forEach((p, i) => {
+        if (p < -1) bad.push(`L${o.levelId}: card_picks[${i}] = ${p} < -1`)
       })
     }
-    expect(bad.slice(0, 5).join('\n')).toBe('')
-  }, 900_000)
+    expect(reportFirst(bad)).toBe('')
+  })
 
   it('全 100 关：replay_hash 是 16 位十六进制（服务端上限 64）', () => {
     const bad: string[] = []
-    for (const lv of levels) {
-      const r = play(lv)
-      if (!/^[0-9a-f]{16}$/.test(r.replay_hash)) {
-        bad.push(`L${lv.id}: replay_hash = ${r.replay_hash}`)
+    for (const o of observations) {
+      if (!/^[0-9a-f]{16}$/.test(o.replayHash)) {
+        bad.push(`L${o.levelId}: replay_hash = ${o.replayHash}`)
       }
     }
-    expect(bad.slice(0, 5).join('\n')).toBe('')
-  }, 900_000)
+    expect(reportFirst(bad)).toBe('')
+  })
 })

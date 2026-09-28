@@ -16,7 +16,7 @@
  *   1. 加成确实单调地让战斗更好（否则接线可能仍是半通）
  *   2. 满配下**没有出现新的失败**（封顶失控会毁掉关卡）
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeAll } from 'vitest'
 import fixture from '@vectors/smoke_levels.json'
 import { BattleEngine, MAX_BATTLE_TICKS, type BattleConfig } from './engine'
 import { defaultAttacker, type Attacker } from './damage'
@@ -139,12 +139,54 @@ function median(xs: number[]): number {
   return s[Math.floor(s.length / 2)]
 }
 
+// ── 全量扫描缓存 ──────────────────────────────────────────────
+//
+// 这一段原本在 5 个 `it` 里各自重跑，实测累计 **9 次全量扫描**：
+//
+//   it「加成让战斗更快」   bare + mid + max  → 3
+//   it「满配无失败关」     max               → 4
+//   it「满配无停滞」       max               → 5
+//   it「分数不下降」       bare + max        → 7
+//   it「星级不下降」       bare + max        → 9
+//
+// 而**真正需要的只有 3 次**（每种构筑扫一遍）。
+// 也就是说约 2/3 的墙钟时间花在重复计算同一批结果上。
+//
+// 缓存 keyed by 构筑名，所以「哪些 `it` 用了哪档」这件事在改动后
+// 依然一眼可见 —— 而不是散落成 5 处独立的 `play(lv, TIERS.x)` 调用。
+type Result = ReturnType<typeof play>
+const sweeps = new Map<string, Map<number, Result>>()
+
+function sweep(tierKey: keyof typeof TIERS): Map<number, Result> {
+  let m = sweeps.get(tierKey)
+  if (!m) {
+    m = new Map<number, Result>()
+    for (const lv of levels) m.set(lv.id, play(lv, TIERS[tierKey]))
+    sweeps.set(tierKey, m)
+  }
+  return m
+}
+
+/** 取某一关在某构筑下的结果；缺关会当场炸，而不是静默返回 undefined。 */
+function resultAt(tierKey: keyof typeof TIERS, levelId: number): Result {
+  const r = sweep(tierKey).get(levelId)
+  if (!r) throw new Error(`关卡 ${levelId} 不在 levels 里 —— sweep 结果与 levels 不一致`)
+  return r
+}
+
+beforeAll(() => {
+  // 预热三档，之后 5 个 `it` 全部走缓存。
+  sweep('bare')
+  sweep('mid')
+  sweep('max')
+}, 300_000)
+
 describe('攻方加成对关卡的影响（全 100 关）', () => {
   it('加成确实让战斗更快（否则说明接线仍是半通）', () => {
-    const secs = (tier: Partial<Attacker>) => median(levels.map((lv) => play(lv, tier).sec))
-    const bare = secs(TIERS.bare)
-    const mid = secs(TIERS.mid)
-    const max = secs(TIERS.max)
+    const secs = (key: keyof typeof TIERS) => median([...sweep(key).values()].map((r) => r.sec))
+    const bare = secs('bare')
+    const mid = secs('mid')
+    const max = secs('max')
     console.log(`[bal-tier] 通关时长中位数：裸装 ${bare}s → 中配 ${mid}s → 满配 ${max}s`)
     expect(mid).toBeLessThan(bare)
     expect(max).toBeLessThan(mid)
@@ -152,7 +194,7 @@ describe('攻方加成对关卡的影响（全 100 关）', () => {
 
   it('满配下没有任何一关变成失败（封顶失控会毁掉关卡）', () => {
     const failed = levels
-      .map((lv) => ({ id: lv.id, r: play(lv, TIERS.max) }))
+      .map((lv) => ({ id: lv.id, r: resultAt('max', lv.id) }))
       .filter((x) => x.r.phase !== 'won')
     // 统一写法：空列表 join 出来就是空串。|| '（无）' 会让空列表变成'（无）'
     // 再去比 ''，于是**永远失败** —— 一条恒红的守卫比没有守卫更糟。
@@ -161,7 +203,7 @@ describe('攻方加成对关卡的影响（全 100 关）', () => {
 
   it('满配下没有任何一关触发停滞兜底', () => {
     const stuck = levels
-      .map((lv) => ({ id: lv.id, r: play(lv, TIERS.max) }))
+      .map((lv) => ({ id: lv.id, r: resultAt('max', lv.id) }))
       .filter((x) => x.r.sec * 20 >= MAX_BATTLE_TICKS)
     expect(stuck.map((x) => `关${x.id}(${x.r.sec}s)`).join('\n')).toBe('')
   })
@@ -184,8 +226,8 @@ describe('攻方加成对关卡的影响（全 100 关）', () => {
     const TOL = 0.02
     const regress: string[] = []
     for (const lv of levels) {
-      const b = play(lv, TIERS.bare)
-      const x = play(lv, TIERS.max)
+      const b = resultAt('bare', lv.id)
+      const x = resultAt('max', lv.id)
       const drop = (b.score - x.score) / Math.max(1, b.score)
       if (drop > TOL) {
         regress.push(
@@ -199,8 +241,8 @@ describe('攻方加成对关卡的影响（全 100 关）', () => {
   it('星级不会因为满配而下降', () => {
     const regress: string[] = []
     for (const lv of levels) {
-      const b = play(lv, TIERS.bare)
-      const x = play(lv, TIERS.max)
+      const b = resultAt('bare', lv.id)
+      const x = resultAt('max', lv.id)
       if (x.stars < b.stars) regress.push(`关${lv.id}: ${b.stars}星 → ${x.stars}星`)
     }
     expect(regress.slice(0, 8).join('\n')).toBe('')

@@ -187,6 +187,48 @@ function sum(coef: bigint, ids: number[], multi = false) {
   return { leaked, reactions, kills, score, frozenTicks, stunnedTicks }
 }
 
+// ── 扫描缓存 ──────────────────────────────────────────────────
+//
+// 这一段原本重复扫了 **18** 次，而互不相同的只有 **11** 次：
+//
+//   it「六档漏怪非递增」   COEFS × sum(c, first40)          → 6
+//   it「反应次数递减」     COEFS × sum(c, first40)          → 12  ← 与上条逐位相同
+//   it「冻结/眩晕可达」   sum(1000n, first40, true)        → 13
+//   it「冻结累计下降」     sum(400n|1800n, first40, true)  → 15
+//   it「击杀饱和」         sum(1000n|3000n, 前20)           → 17
+//   it「伤害分份额」       sum(1000n, 前20)                → 18  ← 与上条相同
+//
+// 键用 **id 串**而不是数组引用，所以 `first40.slice(0, 20)` 与
+// 直接持有的「前 20 关」数组能命中同一条缓存 —— 它们内容相同，
+// 只是写法不同，靠引用比较是看不出来的。
+//
+// ### 为什么要做成「只有一个入口」
+//
+// 缓存键少写一个参数 = **静默返回错的结果**，而且测试照样绿。
+// 所以下面这个 `sweep` 是**唯一**的对外入口：
+// 不要绕过它直接调 `sum`。
+// 键覆盖了 `sum` 的全部三个形参（coef / ids / multi）——
+// 注意 `multi` 是**构筑**（多元素 vs 默认）而不是统计开关，
+// 漏掉它会让「默认构筑的冻结 tick」与「多元素构筑的」混为一谈。
+//
+// ### 返回的是**共享对象**
+//
+// 多次调用拿到的是同一个引用。当前所有断言都只读不改，
+// 但若将来有人在测试里写 `r.leaked = 0`，会同时污染其他用例。
+// 要改就先 `{ ...sweep(...) }` 复制一份。
+type Sum = ReturnType<typeof sum>
+const sumCache = new Map<string, Sum>()
+
+function sweep(coef: bigint, ids: number[], multi = false): Sum {
+  const key = `${coef}|${multi}|${ids.join(',')}`
+  let r = sumCache.get(key)
+  if (!r) {
+    r = sum(coef, ids, multi)
+    sumCache.set(key, r)
+  }
+  return r
+}
+
 const first40 = levels.slice(0, 40).map((l) => l.id)
 const COEFS = [200n, 400n, 700n, 1000n, 1500n, 1800n]
 
@@ -194,7 +236,7 @@ const COEFS = [200n, 400n, 700n, 1000n, 1500n, 1800n]
 
 describe('元素系数：漏怪严格单调递减，不存在「惩罚区间」', () => {
   it('六个档位的漏怪构成一条非递增序列', () => {
-    const rows = COEFS.map((c) => ({ coef: c, ...sum(c, first40) }))
+    const rows = COEFS.map((c) => ({ coef: c, ...sweep(c, first40) }))
     for (let i = 1; i < rows.length; i++) {
       const prev = rows[i - 1]
       const cur = rows[i]
@@ -207,7 +249,8 @@ describe('元素系数：漏怪严格单调递减，不存在「惩罚区间」'
   }, 900_000)
 
   it('反应次数随系数递减（敌人死得更快 → 攒不够层数触发反应）', () => {
-    const rows = COEFS.map((c) => ({ coef: c, ...sum(c, first40) }))
+    // 上面那条已经把这 6 次扫描算完了，这里全部命中缓存。
+    const rows = COEFS.map((c) => ({ coef: c, ...sweep(c, first40) }))
     for (let i = 1; i < rows.length; i++) {
       expect(rows[i].reactions).toBeLessThan(rows[i - 1].reactions)
     }
@@ -221,7 +264,7 @@ describe('控制时长与元素系数无关（否证第二条假设）', () => {
     // 这条是前提守卫：默认构筑只触发 steam_burst（statusDurationMs = 0），
     // 在它上面测控制效果恒为 0 —— 那是**仪器选错对象**，不是效果不存在。
     // 必须先证明效果可达，再谈它随不随系数变。
-    const r = sum(1000n, first40, true)
+    const r = sweep(1000n, first40, true)
     expect(r.frozenTicks).toBeGreaterThan(0)
     expect(r.stunnedTicks).toBeGreaterThan(0)
   }, 900_000)
@@ -246,8 +289,8 @@ describe('控制时长与元素系数无关（否证第二条假设）', () => {
     // 由 `engine.ts:1022` 的代码本身保证（读常量、不读系数），
     // 属于可读代码确认的事实，不适合用行为断言去守 ——
     // 行为断言在这里只能测出被混淆的累计量。
-    const a = sum(400n, first40, true)
-    const b = sum(1800n, first40, true)
+    const a = sweep(400n, first40, true)
+    const b = sweep(1800n, first40, true)
     expect(b.reactions).toBeLessThan(a.reactions)
     expect(b.frozenTicks).toBeLessThan(a.frozenTicks)
     // 单次时长的上界是可判定的：任何一个被冻的敌人，
@@ -265,8 +308,8 @@ describe('过量伤害：1000‰ 之后元素系数买到的几乎全是浪费',
   it('击杀数在 1000‰ 饱和，而伤害继续涨 ≥ 30%', () => {
     // 取前 20 关（无 BOSS，避免 killScore 5000 污染反推）
     const ids = levels.slice(0, 20).map((l) => l.id)
-    const at1000 = sum(1000n, ids)
-    const at3000 = sum(3000n, ids)
+    const at1000 = sweep(1000n, ids)
+    const at3000 = sweep(3000n, ids)
 
     expect(at1000.kills).toBeGreaterThan(0)
     // 击杀数基本不再增长（允许 1% 的抖动，超过就说明结论过期）
@@ -283,7 +326,9 @@ describe('过量伤害：1000‰ 之后元素系数买到的几乎全是浪费',
     // `engine.ts:1035` 把分数写进 `hit` 事件的 `c` 字段，
     // 而 `replayHash()` 覆盖事件序列 ——
     // 改计分口径 = 全部历史战报失去可重放性。
-    const at1000 = sum(1000n, first40.slice(0, 20))
+    // 上面「击杀饱和」那条已经算过 (1000n, 前20) 这一条，这里直接命中缓存：
+    // `first40.slice(0, 20)` 与那份「前 20 关」数组内容相同，键也就相同。
+    const at1000 = sweep(1000n, first40.slice(0, 20))
     const dmg = totalDamageOf(at1000.score, at1000.kills)
     // 伤害分占总分的比例：这就是「过量伤害」在分数里的份额上界
     const dmgScoreShare = dmg / 100 / at1000.score
