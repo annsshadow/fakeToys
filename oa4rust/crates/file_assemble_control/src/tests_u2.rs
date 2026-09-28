@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 // ════════════ plan002 U2：file 模块端点全量闭合回归测试 ════════════
-// 覆盖：无引擎端点精确 501、BlobStorage 上传 fail-loud（db 占位 → 501 非假成功）、
+// 覆盖：系统参数读/写真实现（读信封 + UPSERT 语义）、BlobStorage 上传 fail-loud（db 占位 → 501 非假成功）、
 // blob key 规范化、输入校验先于 DB、各族路由可达性、既有路由回归保护。
 #[cfg(test)]
 mod u2_tests {
@@ -106,21 +106,135 @@ mod u2_tests {
     const MP: &[(&str, &str)] = &[("content-type", "multipart/form-data; boundary=xboundary")];
     const JSON: &[(&str, &str)] = &[("content-type", "application/json")];
 
-    // ── 1. 无引擎能力端点：精确 501（fail loud，非静默 success） ─────────────
+    // ── 1. 系统参数读/写真实现（x_system_config，094 建表）────────────────────
+    // 原 fail-loud 501 契约随真实消费转向退役：桌面 Settings 页与 configApi.systemConfig
+    // （/api/config/system）均指向本能力。读 = 未删行全量 legacy_success 信封；
+    // 写 = POST /api/config {"configs":[…]} 按 name UPSERT，value 统一落 TEXT。
 
     #[tokio::test]
-    async fn u2_engine_less_endpoints_return_exact_501() {
-        for (method, path) in [
-            ("POST", "/api/config"),
-            ("GET", "/api/config/system/config"),
-        ] {
-            let (status, _) = respond(method, path, &[], Body::empty()).await;
+    async fn u2_system_config_read_returns_legacy_success_envelope() {
+        if !shared::testing::is_db_available().await {
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let client = pool.get().await.unwrap();
+        client
+            .execute(
+                "INSERT INTO x_system_config (id, name, value, category, create_time) VALUES ($1, $2, $3, $4, NOW())",
+                &[&"u2-cfg-read-test", &"u2.read.key", &"v1", &"u2test"],
+            )
+            .await
+            .unwrap();
+        for path in ["/api/config/system/config", "/api/config/system"] {
+            let response = crate::router(pool.clone())
+                .oneshot(
+                    Request::builder()
+                        .uri(path)
+                        .method("GET")
+                        .body(Body::empty())
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
             assert_eq!(
-                status,
-                StatusCode::NOT_IMPLEMENTED,
-                "engine-less endpoint must answer exact 501: {method} {path}"
+                response.status(),
+                StatusCode::OK,
+                "read must be real: {path}"
+            );
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap();
+            let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+            assert_eq!(json["type"], "success");
+            let items = json["data"].as_array().expect("data is array");
+            assert!(
+                items.iter().any(|it| it["name"] == "u2.read.key"),
+                "seeded row must be returned via {path}"
             );
         }
+        client
+            .execute(
+                "DELETE FROM x_system_config WHERE id = $1",
+                &[&"u2-cfg-read-test"],
+            )
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn u2_system_config_save_upserts_by_name() {
+        if !shared::testing::is_db_available().await {
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let client = pool.get().await.unwrap();
+        // 空/坏请求 fail-loud：缺 content-type 是客户端错误，绝不静默 success
+        let (status, _) = respond("POST", "/api/config", &[], Body::empty()).await;
+        assert!(
+            (400..500).contains(&status.as_u16()),
+            "empty body must be client-error, got {status}"
+        );
+        let response = crate::router(pool.clone())
+            .oneshot(
+                Request::builder()
+                    .uri("/api/config")
+                    .method("POST")
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        r#"{"configs":[{"name":"u2.save.key","value":"a","category":"u2test"},{"name":"u2.save.num","value":8}]}"#,
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK, "save must be real");
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(json["type"], "success");
+        assert_eq!(json["data"]["saved"], 2, "two rows saved");
+        // UPSERT 语义：同名二写不新增行，值被覆盖；数字 value 统一落 TEXT
+        let response = crate::router(pool.clone())
+            .oneshot(
+                Request::builder()
+                    .uri("/api/config")
+                    .method("POST")
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        r#"{"configs":[{"name":"u2.save.key","value":"b","category":"u2test"}]}"#,
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let row = client
+            .query_one(
+                "SELECT COUNT(*)::BIGINT, MAX(value) FROM x_system_config WHERE name = $1",
+                &[&"u2.save.key"],
+            )
+            .await
+            .unwrap();
+        let (n, v): (i64, Option<String>) = (row.get(0), row.get(1));
+        assert_eq!(n, 1, "same-name save must upsert, not duplicate");
+        assert_eq!(v.as_deref(), Some("b"), "second save wins");
+        let num = client
+            .query_one(
+                "SELECT value FROM x_system_config WHERE name = $1",
+                &[&"u2.save.num"],
+            )
+            .await
+            .unwrap();
+        let nv: String = num.get(0);
+        assert_eq!(nv, "8", "numeric value lands as TEXT");
+        client
+            .execute(
+                "DELETE FROM x_system_config WHERE name LIKE 'u2.save.%'",
+                &[],
+            )
+            .await
+            .unwrap();
     }
 
     // zip 打包已真实现（承 folder2_batch_download / folder2_id_download）：
@@ -223,18 +337,6 @@ mod u2_tests {
             .execute("DELETE FROM FILE_FOLDER WHERE id = $1", &[&folder_id])
             .await
             .unwrap();
-    }
-
-    #[tokio::test]
-    async fn u2_engine_less_501_body_is_action_result_error() {
-        let (status, json) = respond("GET", "/api/config/system/config", &[], Body::empty()).await;
-        assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
-        assert_eq!(json["type"], "error");
-        assert!(
-            json.get("message").is_some(),
-            "ActionResult.message required"
-        );
-        assert!(json["data"].is_null());
     }
 
     // ── 2. BlobStorage 接入点单元级行为 ──────────────────────────────────────

@@ -7,8 +7,6 @@
       <h1>系统设置</h1>
       <p class="subtitle">系统参数配置与管理</p>
     </div>
-    <div class="backend-off">ℹ️ 系统参数读/写后端暂未启用（返回 501，配置表已具备、读写端点契约预留），保存操作暂不生效，页面为功能预览态</div>
-
     <!-- 侧边导航 -->
     <div class="settings-layout">
       <aside class="s-sidebar glass-card">
@@ -73,7 +71,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { api } from '@oa4rust/sdk'
+import { onMounted, ref } from 'vue'
 import { toast } from '../utils/toast'
 
 const activeSection = ref('basic')
@@ -103,20 +102,57 @@ const toggles = ref([
   { key: 'twoFactor', label: '双重认证', on: false },
 ])
 
-// 系统参数读/写在 oa4rust 后端为 fail-loud 的 501 契约（u2_capability_unavailable，
-// 被 file_assemble_control 契约测试钉死），配置写入不可用。保存按钮给出明确提示，
-// 而不是静默空操作；表单项仍可作为前端预览态调整。
+// 系统参数读/写为真实现（file_assemble_control / x_system_config 表）：
+// GET /api/config/system（configApi.systemConfig 同形状）未删行全量；
+// POST /api/config {"configs":[…]} 按 name UPSERT。值统一字符串落库，
+// 装载时按本页表单类型（数字/布尔）还原。
+async function loadCfg() {
+  try {
+    const r: any = await api.get('/api/config/system')
+    const items: Array<{ name: string; value?: string }> = r?.data ?? []
+    const map = Object.fromEntries(items.map((it) => [it.name, it.value ?? '']))
+    const store = cfg.value as Record<string, unknown>
+    for (const [k, cur] of Object.entries(cfg.value)) {
+      const raw = map[k]
+      if (raw === undefined) continue
+      if (typeof cur === 'number') store[k] = Number(raw)
+      else if (typeof cur === 'boolean') store[k] = raw === 'true'
+      else store[k] = raw
+    }
+    for (const t of toggles.value) {
+      if (map[t.key] !== undefined) t.on = map[t.key] === 'true'
+    }
+  } catch (e: any) {
+    toast.error(`系统参数读取失败: ${e?.message ?? '未知错误'}`)
+  }
+}
+onMounted(loadCfg)
+
+function buildConfigs() {
+  return [
+    ...Object.entries(cfg.value).map(([name, value]) => ({ name, value: String(value), category: 'system' })),
+    ...toggles.value.map((t) => ({ name: t.key, value: String(t.on), category: 'notify' })),
+  ]
+}
+
+async function persistConfigs() {
+  try {
+    await api.post('/api/config', { configs: buildConfigs() })
+    toast.success('系统参数已保存')
+  } catch (e: any) {
+    toast.error(`系统参数保存失败: ${e?.message ?? '未知错误'}`)
+  }
+}
 function saveCfg(_section: string) {
-  toast.warning('系统参数保存暂未启用（后端 501），当前修改仅本地预览')
+  persistConfigs()
 }
 function saveToggles() {
-  toast.warning('系统参数保存暂未启用（后端 501），当前修改仅本地预览')
+  persistConfigs()
 }
 </script>
 
 <style scoped>
 .settings-view{display:flex;flex-direction:column;gap:16px;height:100%}
-.backend-off{margin:0 0 16px;padding:10px 16px;border-radius:var(--radius-md);border:1px dashed var(--border-subtle);color:var(--text-muted);font-size:12px}
 .view-header{padding:16px 24px}
 .view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
 .subtitle{font-size:12px;color:var(--text-muted);margin:0}
