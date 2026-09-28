@@ -2545,8 +2545,59 @@ pub async fn config_is_file_manager(
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn config_system_config() -> Result<Json<ActionResult<Value>>, AppError> {
-    Err(u2_capability_unavailable("file-system-config-read"))
+pub async fn config_system_config(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 系统参数读：x_system_config（094 迁移建表）全量未删行。此前为 fail-loud 501 契约，
+    // 桌面 Settings 页与 configApi.systemConfig(/api/config/system) 均指向本能力，实装为真实读；
+    // /api/config/system/config（旧注册形状）与 /api/config/system（前端契约形状）双路由同 handler。
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT name, value, category, description, update_time::text FROM x_system_config WHERE deleted_at IS NULL ORDER BY category, name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -4250,14 +4301,6 @@ pub async fn share_id_password_password(
 // /api/file/assemble/control/file/{id} 闭合，不再裸注册以免引入跨 crate 冲突；
 // 其余缺口一律按 o2server 真实路径注册（经归一化查重无跨 crate 占用）。
 
-fn u2_capability_unavailable(capability: &'static str) -> AppError {
-    tracing::warn!(
-        capability,
-        "endpoint requires an unavailable engine; returning 501"
-    );
-    AppError::NotImplemented
-}
-
 // ── zip 打包下载（folder2 batch / folder2 {id} download）─────────────────────
 
 /// FILE_FILE.content 是 base64 TEXT；解码失败按空字节处理（与 file_id_download 一致）。
@@ -5246,8 +5289,66 @@ pub async fn u2_attachment2_list_type_page_size_size(
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn u2_config_save_system_config() -> Result<Json<ActionResult<Value>>, AppError> {
-    Err(u2_capability_unavailable("file-system-config-write"))
+pub async fn u2_config_save_system_config(
+    pool: Extension<Pool>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 系统参数写：body {"configs":[{name,value,category?}]}，按 name UPSERT（未删行内更新，
+    // 否则新插入）；value 接受字符串/数字/布尔，统一落 TEXT。行间独立提交，配置行无事务耦合。
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let items = body
+        .get("configs")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    if items.is_empty() {
+        return Ok(Json(ActionResult::error("no configs to save")));
+    }
+    let mut saved = 0i64;
+    for item in &items {
+        let name = item
+            .get("name")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+        if name.is_empty() {
+            continue;
+        }
+        let value = match item.get("value") {
+            Some(Value::String(v)) => v.clone(),
+            Some(other) => other.to_string(),
+            None => String::new(),
+        };
+        let category = item
+            .get("category")
+            .and_then(Value::as_str)
+            .unwrap_or("system")
+            .to_string();
+        let updated = client
+            .execute(
+                "UPDATE x_system_config SET value = $1, category = $2, update_time = NOW() WHERE name = $3 AND deleted_at IS NULL",
+                &[&value, &category, &name],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        if updated == 0 {
+            let id = uuid::Uuid::new_v4().to_string();
+            client
+                .execute(
+                    "INSERT INTO x_system_config (id, name, value, category, create_time, update_time) VALUES ($1, $2, $3, $4, NOW(), NOW())",
+                    &[&id, &name, &value, &category],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+        }
+        saved += 1;
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([(
+            "saved".to_string(),
+            Value::Number(serde_json::Number::from(saved)),
+        )]),
+    ))))
 }
 
 #[cfg(test)]

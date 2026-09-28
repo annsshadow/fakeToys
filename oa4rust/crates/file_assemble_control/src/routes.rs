@@ -234,6 +234,7 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/config", post(u2_config_save_system_config))
         .route("/api/config/is/file/manager", get(config_is_file_manager))
         .route("/api/config/system/config", get(config_system_config))
+        .route("/api/config/system", get(config_system_config))
         .route("/api/editor/list", get(editor_list))
         // folder / folder2 族（folder2 CRUD 复用 folder 实现，同一 FILE_FOLDER 表）
         .route("/api/folder", post(u2_folder_create))
