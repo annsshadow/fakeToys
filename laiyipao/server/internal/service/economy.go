@@ -413,43 +413,12 @@ type VerifyResult struct {
 	RecordedAt string `json:"recorded_at"`
 }
 
-// VerifyReplay 记录一次验真尝试（I-6）。
+// VerifyReplay 已迁到 verification.go。
 //
-// 服务端不重放（那需要服务端跑引擎）—— 客户端本地重放后把哈希回传，
-// 服务端只做比对与留痕。被质疑的分数因此可被任何人独立复现。
-func (s *Service) VerifyReplay(ctx context.Context, userID, battleID int64, actualHash string) (VerifyResult, error) {
-	var r VerifyResult
-	// created_at 是 timestamptz，必须扫进 time.Time 再格式化 ——
-	// 扫进 string 会失败，而失败若被当成 not_found 包装，就会把
-	// "扫描类型错了" 误报成 "战报不存在"，极难排查。
-	var createdAt time.Time
-	var seed int64
-	err := s.pool.QueryRow(ctx,
-		`SELECT br.level_id, COALESCE(bt.seed, 0), br.replay_hash, br.created_at
-		 FROM battle_records br
-		 LEFT JOIN battle_tokens bt ON bt.id = br.battle_token_id
-		 WHERE br.id = $1`, battleID).
-		Scan(&r.LevelID, &seed, &r.Expected, &createdAt)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return VerifyResult{}, fmt.Errorf("%w: battle %d", ErrNotFound, battleID)
-	}
-	if err != nil {
-		return VerifyResult{}, fmt.Errorf("load battle %d for verify: %w", battleID, err)
-	}
-	r.RecordedAt = createdAt.UTC().Format(timeFormat)
-	r.BattleID = battleID
-	r.Seed = strconv.FormatInt(seed, 10)
-	r.Actual = actualHash
-	r.Matched = r.Expected == actualHash
-
-	if _, err := s.pool.Exec(ctx,
-		`INSERT INTO replay_verifications (battle_id, verifier_id, expected_hash, actual_hash, matched)
-		 VALUES ($1,$2,$3,$4,$5)`,
-		battleID, userID, r.Expected, r.Actual, r.Matched); err != nil {
-		return VerifyResult{}, fmt.Errorf("record verification: %w", err)
-	}
-	return r, nil
-}
+// 迁移原因：要新增运营侧验真（AdminVerifyReplay），而两条路径必须在
+// 「读哪些列、怎么比、往哪张表写」每一个细节上一致 —— 两份实现只要有一处漂移，
+// 就会出现「玩家验真和运营验真结论不同」，而这种 bug 极难发现。
+// 所以抽成共用的 compareAndRecord，两侧只差「验真人是谁」。
 
 // ReplayInfo 返回复现一局所需的全部信息（供客户端本地重放）。
 type ReplayInfo struct {

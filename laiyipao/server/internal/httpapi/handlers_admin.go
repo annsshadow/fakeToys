@@ -286,6 +286,53 @@ func (s *Server) adminBattleDetail(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"battle": info})
 }
 
+// adminVerifyBattle 运营侧发起验真。
+//
+// ## 补的是哪一段
+//
+// 验真机制此前**只有玩家入口**。而这产生了一个结构性后果：
+// **能采取行动的人（运营），恰恰是唯一不能发起验真的人。**
+// 于是「验真一致率」这个数字的分母，永远只由玩家的自愿行为决定。
+//
+// 现在运营可以拿着重算出来的 hash 发起比对，结果与玩家侧**落在同一张表**，
+// 前两轮加的「用户列表 / 战报列表的验真列」才会真的亮起来。
+//
+// ⚠️ 本端点**不重算**哈希。它比对的是「运营提交的」与「结算时记录的」。
+// 一个**原始作弊客户端**可以报一个相同的 hash 让结果「一致」——
+// 这个机制防的是「改数据不改凭证」，不是「从一开始就伪造」。
+// 详见 `internal/service/verification.go` 的文件头。
+func (s *Server) adminVerifyBattle(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil || id < 1 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "battle id 非法")
+	}
+	var body struct {
+		ReplayHash string `json:"replay_hash"`
+	}
+	_ = c.BodyParser(&body)
+	// 空的 actual hash 会被判成「不匹配」，把一条**没验过**的记录
+	// 写成「验过且不符」—— 那是凭空制造一条指控。
+	// 所以这里直接拒掉，与空白的处理方式保持一致。
+	if body.ReplayHash == "" {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "缺少 replay_hash")
+	}
+	// adminIDFrom 在取不到时返回 0，而 0 不是合法的 admin_users.id
+	// （`admin_verifier_id` 是外键）—— 插进去会撞 CHECK 或外键约束。
+	// 与其让那条约束报错（500，信息还很难读），不如明确拒绝。
+	adminID := adminIDFrom(c)
+	if adminID == 0 {
+		return fail(c, fiber.StatusUnauthorized, "unauthorized", "缺少管理员身份")
+	}
+	res, err := s.Svc.AdminVerifyReplay(c.Context(), adminID, id, body.ReplayHash)
+	if err != nil {
+		return failErr(c, err)
+	}
+	// 验真是一次**管理动作**，审计轨迹要独立于统计表存在。
+	s.Svc.Audit(c.Context(), adminID, "battle_verify", strconv.FormatInt(id, 10),
+		service.AuditVerificationDetail(res))
+	return c.JSON(res)
+}
+
 func (s *Server) adminDefenses(c *fiber.Ctx) error {
 	limit, _ := strconv.Atoi(c.Query("limit", "50"))
 	items, total, err := s.Svc.AdminListDefenses(c.Context(), limit)
