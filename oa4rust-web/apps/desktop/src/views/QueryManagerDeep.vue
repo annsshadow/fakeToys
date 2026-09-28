@@ -215,15 +215,33 @@
           <div class="results-area" v-if="resultData.length > 0 || resultLoading">
             <div class="ra-header">
               <span>执行结果</span>
-              <span class="ra-count">{{ viewRows.length }} / {{ resultData.length }} 行</span>
+              <span class="ra-count">{{ displayRows.length }} / {{ resultData.length }} 行</span>
+              <span v-if="tableConfig.rowSelect && selectedKeys.size" class="ra-count">已选 {{ selectedKeys.size }} 行</span>
+              <input
+                v-if="tableConfig.filterable"
+                v-model="quickFilter"
+                class="ra-filter"
+                placeholder="快速筛选…"
+              />
               <button class="btn-sm" @click="exportResults">📥 导出</button>
             </div>
             <div class="ra-content" :class="{loading: resultLoading}">
               <div v-if="resultLoading" class="ra-loading">执行中...</div>
-              <table v-else class="res-table">
-                <thead><tr><th v-for="h in viewHeaders" :key="h">{{ h }}</th></tr></thead>
+              <table v-else class="res-table" :class="['tc-' + tableConfig.theme, { sortable: tableConfig.sortable }]">
+                <thead>
+                  <tr>
+                    <th v-for="h in viewHeaders" :key="h" @click="toggleSort(h)">
+                      {{ h }}<span v-if="sortState?.key === h" class="th-sort">{{ sortState.dir === 'asc' ? ' ▲' : ' ▼' }}</span>
+                    </th>
+                  </tr>
+                </thead>
                 <tbody>
-                  <tr v-for="(row,i) in viewRows" :key="i">
+                  <tr
+                    v-for="(row,i) in displayRows"
+                    :key="i"
+                    :class="{ selected: tableConfig.rowSelect && selectedKeys.has(rowKey(row)) }"
+                    @click="toggleRow(row)"
+                  >
                     <td v-for="h in viewHeaders" :key="h" class="mono">{{ row[h] ?? '—' }}</td>
                   </tr>
                 </tbody>
@@ -873,6 +891,57 @@ const viewRows = computed<Record<string, unknown>[]>(() => {
   return rows.slice(0, size)
 })
 
+// 表格设计（tableConfig）交互层：主题走 CSS 类；可排序=点表头切列排序；可筛选=快速全列过滤；
+// 行选择=点行高亮并计数。均叠加在 viewRows（视图投影）之上，不改导出所见即所得口径。
+const sortState = ref<{ key: string; dir: 'asc' | 'desc' } | null>(null)
+const quickFilter = ref('')
+const selectedKeys = ref<Set<string>>(new Set())
+function rowKey(row: Record<string, unknown>): string {
+  return JSON.stringify(row)
+}
+function toggleSort(h: string) {
+  if (!tableConfig.value.sortable) return
+  if (sortState.value?.key === h) {
+    sortState.value = sortState.value.dir === 'asc' ? { key: h, dir: 'desc' } : null
+  } else {
+    sortState.value = { key: h, dir: 'asc' }
+  }
+}
+function toggleRow(row: Record<string, unknown>) {
+  if (!tableConfig.value.rowSelect) return
+  const k = rowKey(row)
+  const next = new Set(selectedKeys.value)
+  if (next.has(k)) next.delete(k)
+  else next.add(k)
+  selectedKeys.value = next
+}
+const displayRows = computed<Record<string, unknown>[]>(() => {
+  let rows = viewRows.value
+  if (tableConfig.value.filterable && quickFilter.value.trim()) {
+    const q = quickFilter.value.trim().toLowerCase()
+    rows = rows.filter((r) =>
+      viewHeaders.value.some((h) =>
+        String(r[h] ?? '')
+          .toLowerCase()
+          .includes(q),
+      ),
+    )
+  }
+  if (tableConfig.value.sortable && sortState.value) {
+    const { key, dir } = sortState.value
+    rows = [...rows].sort((a, b) => {
+      const av = a[key]
+      const bv = b[key]
+      const cmp =
+        typeof av === 'number' && typeof bv === 'number'
+          ? av - bv
+          : String(av ?? '').localeCompare(String(bv ?? ''), 'zh-CN')
+      return dir === 'desc' ? -cmp : cmp
+    })
+  }
+  return rows
+})
+
 function applyViewConfig() {
   const cols = viewConfig.value.columns
     .split(',')
@@ -1193,6 +1262,13 @@ const api_qu_39_data = ref<any[]>([])
 .res-table th{padding:6px 10px;text-align:left;border-bottom:1px solid var(--border-color);color:var(--text-muted);font-weight:600;font-size:11px;text-transform:uppercase;position:sticky;top:0;background:var(--bg-surface)}
 .res-table td{padding:5px 10px;border-bottom:1px solid var(--border-subtle);color:var(--text-primary);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .res-table tr:hover td{background:var(--bg-hover)}
+.res-table.sortable th{cursor:pointer;user-select:none}
+.res-table.sortable th:hover{color:var(--color-primary)}
+.th-sort{color:var(--color-primary)}
+.res-table.tc-striped tbody tr:nth-child(even) td{background:rgba(255,255,255,0.03)}
+.res-table.tc-bordered th,.res-table.tc-bordered td{border:1px solid var(--border-color)}
+.res-table tr.selected td{background:rgba(0,212,255,0.14)}
+.ra-filter{font-size:11px;padding:3px 8px;background:rgba(0,0,0,0.3);border:1px solid var(--border-color);color:var(--text-primary);border-radius:var(--radius-sm);outline:none;width:140px}
 .mono{font-family:'JetBrains Mono',monospace;font-size:11px}
 .stat-result{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
 .sr-item{padding:8px 16px;border-radius:var(--radius-md);background:var(--color-primary-soft)}
