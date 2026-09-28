@@ -17,7 +17,7 @@ describe('QueryManagerDeep 视图配置真应用', () => {
 
   it('结果网格与导出走视图投影（所见即所得）', () => {
     expect(source).toContain('v-for="h in viewHeaders"')
-    expect(source).toContain('v-for="(row,i) in viewRows"')
+    expect(source).toContain('v-for="(row,i) in displayRows"')
     expect(source).toContain('const header = viewHeaders.value.join')
     expect(source).toContain('const rows = viewRows.value.map')
   })
