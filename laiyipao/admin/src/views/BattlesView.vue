@@ -136,6 +136,21 @@ const ELEMENT_LABEL: Record<string, string> = {
 }
 
 onMounted(load)
+
+/**
+ * `el-table` 插槽给出的行类型是 element-plus 内部的 `DefaultRow`，
+ * 它不能直接传给形参是 `AdminBattle` 的函数（TS2345），所以在调用点集中断言一次。
+ *
+ * cast 编译后被擦除，**运行时行为与之前逐字节相同**。
+ *
+ * ⚠️ 值得记一笔的是：这些调用此前**根本没有被类型检查**。
+ * `components.d.ts` 不存在时 `el-table` 是未知组件、插槽行是 `any`，
+ * 于是 22 处调用全部静默通过 —— 也就是说，
+ * 「参数名拼错」或「形参类型改窄」这类错误在过去是**查不出来**的。
+ * 断言让它们重新受检；但它断言的是**形状**，
+ * 字段名本身拼错仍要靠运行时的 `undefined` 暴露。
+ */
+const asRow = (r: unknown) => r as AdminBattle
 </script>
 
 <template>
@@ -188,7 +203,7 @@ onMounted(load)
         <el-table-column prop="leaked" label="漏怪" width="70" />
         <el-table-column label="一致性" width="94">
           <template #default="{ row }">
-            <el-tag :type="consistencyTag(row).type" size="small">{{ consistencyTag(row).text }}</el-tag>
+            <el-tag :type="consistencyTag(asRow(row)).type" size="small">{{ consistencyTag(asRow(row)).text }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="验真" width="118">
@@ -197,14 +212,14 @@ onMounted(load)
             与 UsersView 的验真标签说同一套话。
           -->
           <template #default="{ row }">
-            <el-tag :type="verifyTag(row).type" size="small" effect="plain">
-              {{ verifyTag(row).text }}
+            <el-tag :type="verifyTag(asRow(row)).type" size="small" effect="plain">
+              {{ verifyTag(asRow(row)).text }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="reactions" label="反应" width="76">
           <template #default="{ row }">
-            <span :class="{ danger: reactionAbuse(row) }">{{ row.reactions }}</span>
+            <span :class="{ danger: reactionAbuse(asRow(row)) }">{{ row.reactions }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="heat_max" label="峰值热量" width="94" />
@@ -216,7 +231,7 @@ onMounted(load)
         </el-table-column>
         <el-table-column label="操作" width="80" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" text @click="openDetail(row)">详情</el-button>
+            <el-button size="small" text @click="openDetail(asRow(row))">详情</el-button>
           </template>
         </el-table-column>
       </el-table>
