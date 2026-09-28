@@ -355,7 +355,14 @@ class TestEveryWrittenFieldLands:
     """
 
     @pytest.mark.parametrize("section,field,value", WRITTEN)
-    def test_written_field_lands(self, tmp_path, section, field, value):
+    def test_written_field_lands(self, tmp_path, monkeypatch, section, field, value):
+        # `logging.file` 的自动取值是裸相对名（`_auto_value` 对空串给 `"x"`），而 `load_config`
+        # 会把 logging 节**当场装配**给 logging 模块 ⇒ `RotatingFileHandler("x")` 按进程 cwd
+        # 落盘，直接写进 `augmentor/` 根。A168 的残留守卫本来抓它，却因那个 0 字节文件
+        # **早在守卫落地前就躺在仓库根**（before/after 快照都含它）而长期瞎着 ——
+        # 2026-09-28 把它清掉之后守卫才第一次报出来。改法是逐用例切进 `tmp_path`，
+        # 让任何路径形状字段的相对写都落在临时目录里，而不是给某一键特举手抄绝对路径。
+        monkeypatch.chdir(tmp_path)
         cfg = load_config(_write(tmp_path, {section: {field: value}},
                                  name="land_%s_%s.yaml" % (section, field)))
         landed = getattr(getattr(cfg, section), field)
