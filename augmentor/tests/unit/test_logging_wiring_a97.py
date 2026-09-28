@@ -506,6 +506,10 @@ class TestBothSidesJudgeTheSameValues:
         ("format", "%(asctime)s %(levelname)s %(name)s %(message)s"),
     ])
     def test_legal_value_is_green_on_both_sides(self, tmp_path, key, value):
+        if key == "file" and value:
+            # `load_config` 会当场装配 logging 节，裸名按当前工作目录解释 ⇒ 在仓库根建
+            # 文件。落点改成 tmp_path（参数 id 不动，判据仍是「合法值两侧都绿」）。
+            value = str(tmp_path / value)
         raw = {"logging": {key: value}}
         paths = [e.path for e in validate_config(raw).errors]
         assert f"logging.{key}" not in paths, (key, value, paths)
@@ -586,12 +590,16 @@ class TestSaveConfigDoesNotAuthorTheSection:
         assert "logging" not in yaml.safe_load(io.open(path, encoding="utf-8").read())
 
     def test_an_existing_section_survives_a_save_verbatim(self, tmp_path):
+        # `logging.file` 必须是绝对路径：裸名按当前工作目录解释，那条 handler 会在
+        # 仓库根建文件（A168 的逐用例残留守卫抓过同形状的泄漏，见本账 L94 附近）
+        log = str(tmp_path / "mine.log")
         path = _write(tmp_path, "rt.yaml",
                       "models:\n  default: ernie\nlogging:\n  level: INFO\n"
-                      "  file: mine.log\n  format: \"%(message)s\"\n")
+                      f"  file: {log}\n"
+                      '  format: "%(message)s"\n')
         save_config(load_config(path), path)
         saved = yaml.safe_load(io.open(path, encoding="utf-8").read())
-        assert saved["logging"] == {"level": "INFO", "file": "mine.log",
+        assert saved["logging"] == {"level": "INFO", "file": log,
                                     "format": "%(message)s"}
 
     def test_round_trip_through_save_does_not_wire_anything_new(self, tmp_path):

@@ -558,14 +558,18 @@ class TestEndpointCeilingFace:
     def test_factory_default_does_not_reject_today_biggest_real_file(self, client):
         """定标护栏：出厂默认不许拦掉今天任何能成功的上传
 
-        仓内最大的数据集文件是 `train_data_final.json`（3 596 159 B）。这条用例是
-        默认档的「无回归」在端点上的等价物——改判据前先确认它不改变合法行为。
+        取证面 = 工作目录根 **加上出厂白名单根 `data/`**。2026-09-28 那批遗留数据集按
+        `OPTIMIZATION_PLAN.md` 3.2 的处方从工作目录根搬进了 `data/`，只 glob 一处会在
+        搬家后取不到证（实测红在 `biggest = 0`）；落点本来就是可搬的，判据不该跟着钉死。
+        仓内最大的数据集文件是 `train_data_final.json`（3 596 159 B）。
         """
         http, _, _ = client
         biggest = max(
-            (p.stat().st_size for p in AI_DIR.glob("train_data*.json")),
+            (p.stat().st_size
+             for root in (AI_DIR, AI_DIR / "data")
+             for p in root.glob("train_data*.json")),
             default=0)
-        assert biggest, "取证需要一个仓内真实数据集文件"
+        assert biggest, "取证需要在工作目录根或 data/ 里找到真实数据集文件"
         assert biggest < DEFAULT, "出厂默认应当远大于仓内最大文件，实测值：%d" % biggest
         assert MAX_UPLOAD_BYTES_MIN <= max_upload_bytes()
 
