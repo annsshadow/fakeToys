@@ -175,6 +175,26 @@ class TestDataSanitizer:
         assert len(result) == 2
         assert result[0]["output"] == "回答1新"
 
+    def test_remove_duplicates_keep_last_scans_past_non_matching(self):
+        """keep=last 且重复项在 result 中不居首时，替换循环要跳过前面不匹配的记录（L114，A205）
+
+        既有用例的重复项恰好是 result 的第 0 条 ⇒ 替换循环第一轮就 break，`if r==value`
+        的假支（跳过不匹配记录、继续找）从未被踩（L100 终态偏支 864->863）。这里让重复值
+        排在第二位，替换循环必须先跳过第 0 条才命中。
+        """
+        data = [
+            {"instruction": "问题2", "input": "", "output": "回答2"},
+            {"instruction": "问题1", "input": "", "output": "回答1旧"},
+            {"instruction": "问题1", "input": "", "output": "回答1新"},
+        ]
+        sanitizer = DataSanitizer()
+        result = sanitizer.remove_duplicates(data, keep="last")
+
+        assert len(result) == 2
+        # 问题1 被替换成「新」，且仍在原位（第二条），问题2 不动
+        assert result[0]["instruction"] == "问题2"
+        assert result[1]["output"] == "回答1新"
+
 
 class TestValidationResult:
     """ValidationResult 测试"""
@@ -627,3 +647,27 @@ class TestForbiddenPatternCompilation:
         validator.validate([])  # 空数据集不触发编译
         with pytest.raises(re.error):
             validator.validate([{"instruction": "q", "output": "a"}])
+
+
+class TestSanitizeDatasetRemoveDuplicatesFlag:
+    """sanitize_dataset 的 remove_duplicates 开关假支（L114，A205）
+
+    `remove_duplicates=False` 时跳过去重直接返回——这条假支此前未被踩
+    （L100 终态偏支 899->902）。既有用例只走默认 True 那一侧。
+    """
+
+    def test_remove_duplicates_false_keeps_duplicates(self):
+        data = [
+            {"instruction": "问题1", "input": "", "output": "回答1"},
+            {"instruction": "问题1", "input": "", "output": "回答1副本"},
+        ]
+        result = sanitize_dataset(data, remove_duplicates=False)
+        assert len(result) == 2
+
+    def test_remove_duplicates_true_dedups(self):
+        data = [
+            {"instruction": "问题1", "input": "", "output": "回答1"},
+            {"instruction": "问题1", "input": "", "output": "回答1副本"},
+        ]
+        result = sanitize_dataset(data, remove_duplicates=True)
+        assert len(result) == 1
