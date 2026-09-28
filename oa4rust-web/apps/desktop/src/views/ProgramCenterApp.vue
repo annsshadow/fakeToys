@@ -568,7 +568,7 @@ async function loadPcTwinB() {
       s(api.post('/api/program_center/config/ternary/management', {})),
       s(api.put('/api/program_center/config/portal', {})),
       s(api.put('/api/program_center/config/proxy', {})),
-      s(api.post('/api/reset', {})),
+      s(api.post('/api/reset/mockputtopost', {})),
     ])
     toast.success(`孪生端点B ${rs.length} 条已提交`)
   } catch (e: any) {

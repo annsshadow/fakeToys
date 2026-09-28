@@ -47,20 +47,36 @@ def parse_routes_from_file(filepath: Path) -> list:
     routes = []
     # Flatten multi-line .route() calls before matching
     text_flat = re.sub(r'\s+', ' ', text)
-    # Match single-method: .route("path", get(handler)) or .route("path", axum::routing::get(handler))
-    single_pattern = r'\.route\(\s*"([^"]+)",\s*(?:axum::routing::)?(\w+)\(([\w:]+(?:\([^)]*\))?)\)'
-    for match in re.finditer(single_pattern, text_flat):
-        path = match.group(1)
-        method_str = match.group(2)
-        handler = match.group(3)
-        routes.append((path, method_str.upper(), handler))
-    # Match multi-method: .route("path", put(handler).delete(handler))
-    multi_pattern = r'\.route\(\s*"([^"]+)",\s*(put|delete|patch)\(([\w:]+)\)\.(\w+)\(([\w:]+)\)'
-    for match in re.finditer(multi_pattern, text_flat):
-        path = match.group(1)
-        for method_str, handler in [(match.group(2), match.group(3)), (match.group(4), match.group(5))]:
-            routes.append((path, method_str.upper(), handler))
+    # 统一解析：定位每个 .route("path", <handler-expr>) 的 handler 表达式，
+    # 再从表达式里抽出所有链式 HTTP 方法。此前的实现有两处漏洞：
+    #   ① single_pattern 只取链首方法 —— get(h).put(h2).delete(h3) 只记 GET；
+    #   ② multi_pattern 仅认「首方法为 put/delete/patch 的恰好两段链」。
+    # 结果三方法 CRUD（get.put.delete）在 MCP 工具表里丢掉 PUT/DELETE，
+    # 令工具面欠表达、契约漂移守卫读到假错配。改为「先切 route 参数、再枚举链上全部方法」。
+    method_call = re.compile(r'(?:axum::routing::)?\b(get|post|put|delete|patch|head|options)\s*\(\s*([\w:]+)')
+    for m in re.finditer(r'\.route\(\s*"([^"]+)"\s*,', text_flat):
+        path = m.group(1)
+        # handler 表达式：从方法参数起到本 route 的配平右括号止（.route( 已吃掉一层）
+        start = m.end()
+        depth = 1
+        i = start
+        while i < len(text_flat) and depth > 0:
+            ch = text_flat[i]
+            if ch == '(':
+                depth += 1
+            elif ch == ')':
+                depth -= 1
+            i += 1
+        expr = text_flat[start:i]
+        seen = set()
+        for mm in method_call.finditer(expr):
+            method_str = mm.group(1).upper()
+            if method_str in seen:
+                continue
+            seen.add(method_str)
+            routes.append((path, method_str, mm.group(2)))
     return routes
+
 
 def extract_crate_name(filepath: Path) -> str:
     """从文件路径提取 crate 名称。"""
