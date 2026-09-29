@@ -32,7 +32,7 @@ pub async fn organization_assemble_control_role_list_flag_next_count(
     let rows = if flag == "0" {
         client
             .query(
-                "SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time::text DESC LIMIT $1",
+                "SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time DESC LIMIT $1",
                 &[&count],
             )
             .await
@@ -40,7 +40,7 @@ pub async fn organization_assemble_control_role_list_flag_next_count(
     } else {
         client
             .query(
-                "SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2",
+                "SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
                 &[&flag, &count],
             )
             .await
@@ -133,7 +133,7 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
     let rows = if flag == "0" {
         client
             .query(
-                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id IS NULL ORDER BY sort ASC, create_time::text DESC LIMIT $1",
+                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id IS NULL ORDER BY sort ASC, create_time DESC LIMIT $1",
                 &[&count],
             )
             .await
@@ -141,7 +141,7 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
     } else {
         client
             .query(
-                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 ORDER BY sort ASC, create_time::text DESC LIMIT $2",
+                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 ORDER BY sort ASC, create_time DESC LIMIT $2",
                 &[&flag, &count],
             )
             .await
@@ -400,7 +400,7 @@ pub async fn organization_assemble_control_person_list_like(
 
     let rows = client
         .query(
-            "SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE name ILIKE $1 ORDER BY create_time::text DESC",
+            "SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE name ILIKE $1 ORDER BY create_time DESC",
             &[&like_pattern],
         )
         .await
@@ -583,7 +583,7 @@ pub async fn group_list_like_mockputtopost(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time::text DESC", &[])
+        .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time DESC", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -627,7 +627,7 @@ pub async fn group_list_like_pinyin(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time::text DESC", &[])
+        .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time DESC", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -671,7 +671,7 @@ pub async fn group_list_like_pinyin_mockputtopost(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time::text DESC", &[])
+        .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time DESC", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -716,7 +716,7 @@ pub async fn group_list_pinyininitial(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time::text DESC", &[])
+        .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time DESC", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -760,7 +760,7 @@ pub async fn group_list_pinyininitial_mockputtopost(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time::text DESC", &[])
+        .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time DESC", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -807,7 +807,7 @@ pub async fn group_list_flag_sub_direct(
 
     let rows = client
         .query(
-            "SELECT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time::text FROM x_org_group g WHERE g.unit_id = $1 AND g.id != $1 AND g.deleted_at IS NULL ORDER BY g.create_time::text DESC",
+            "SELECT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time::text FROM x_org_group g WHERE g.unit_id = $1 AND g.id != $1 AND g.deleted_at IS NULL ORDER BY g.create_time DESC",
             &[&flag],
         )
         .await
@@ -856,7 +856,7 @@ pub async fn group_list_flag_sub_nested(
 
     let rows = client
         .query(
-            "WITH RECURSIVE sub AS (SELECT id FROM x_org_unit WHERE id = $1 AND deleted_at IS NULL UNION ALL SELECT u.id FROM x_org_unit u JOIN sub s ON u.parent_id = s.id WHERE u.deleted_at IS NULL) SELECT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time::text FROM x_org_group g JOIN sub s ON g.unit_id = s.id WHERE g.id != $2 AND g.deleted_at IS NULL ORDER BY g.create_time::text DESC",
+            "WITH RECURSIVE sub AS (SELECT id FROM x_org_unit WHERE id = $1 AND deleted_at IS NULL UNION ALL SELECT u.id FROM x_org_unit u JOIN sub s ON u.parent_id = s.id WHERE u.deleted_at IS NULL) SELECT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time::text FROM x_org_group g JOIN sub s ON g.unit_id = s.id WHERE g.id != $2 AND g.deleted_at IS NULL ORDER BY g.create_time DESC",
             &[&flag, &flag],
         )
         .await
@@ -1274,7 +1274,7 @@ pub async fn identity_list_like_mockputtopost(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time::text DESC", &[])
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time DESC", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1321,7 +1321,7 @@ pub async fn identity_list_like_pinyin(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time::text DESC", &[])
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time DESC", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1368,7 +1368,7 @@ pub async fn identity_list_like_pinyin_mockputtopost(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time::text DESC", &[])
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time DESC", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1416,7 +1416,7 @@ pub async fn identity_list_pinyininitial(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time::text DESC", &[])
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time DESC", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1463,7 +1463,7 @@ pub async fn identity_list_pinyininitial_mockputtopost(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time::text DESC", &[])
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time DESC", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1650,7 +1650,7 @@ pub async fn inputperson_template(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, person_id, status, message, create_time::text FROM x_org_import_result ORDER BY create_time::text DESC", &[])
+        .query("SELECT id, person_id, status, message, create_time::text FROM x_org_import_result ORDER BY create_time DESC", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1696,7 +1696,7 @@ pub async fn inputperson_wipe(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, person_id, status, message, create_time::text FROM x_org_import_result ORDER BY create_time::text DESC", &[])
+        .query("SELECT id, person_id, status, message, create_time::text FROM x_org_import_result ORDER BY create_time DESC", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1743,7 +1743,7 @@ pub async fn permissionsetting_list(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, creator, create_time::text FROM x_org_permission_setting ORDER BY create_time::text DESC", &[])
+        .query("SELECT id, name, creator, create_time::text FROM x_org_permission_setting ORDER BY create_time DESC", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2039,7 +2039,7 @@ pub async fn personcard_listgrouptypes(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time::text DESC", &[])
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time DESC", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2084,7 +2084,7 @@ pub async fn personcard_listpaging_page_page_size_size_mockputtopost(
     let limit = size.max(1);
 
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time::text DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2137,7 +2137,7 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost(
     let limit = size.max(1);
 
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time::text DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2186,7 +2186,7 @@ pub async fn personcard_mylist(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time::text DESC", &[])
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time DESC", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2316,7 +2316,7 @@ pub async fn role_list_like_mockputtopost(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time::text DESC", &[])
+        .query("SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time DESC", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2359,7 +2359,7 @@ pub async fn role_list_like_pinyin(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time::text DESC", &[])
+        .query("SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time DESC", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2402,7 +2402,7 @@ pub async fn role_list_like_pinyin_mockputtopost(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time::text DESC", &[])
+        .query("SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time DESC", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2446,7 +2446,7 @@ pub async fn role_list_pinyininitial(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time::text DESC", &[])
+        .query("SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time DESC", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2489,7 +2489,7 @@ pub async fn role_list_pinyininitial_mockputtopost(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time::text DESC", &[])
+        .query("SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time DESC", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2866,7 +2866,7 @@ pub async fn unitduty_update_member(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty ORDER BY create_time::text DESC", &[])
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty ORDER BY create_time DESC", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2917,12 +2917,12 @@ pub async fn unitduty_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty ORDER BY create_time::text DESC LIMIT $1",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty ORDER BY create_time DESC LIMIT $1",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -2974,12 +2974,12 @@ pub async fn unitduty_list_flag_next_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty ORDER BY create_time::text DESC LIMIT $1",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty ORDER BY create_time DESC LIMIT $1",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -3029,7 +3029,7 @@ pub async fn unitduty_list_unit_unitFlag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE unit_id = $1 ORDER BY create_time::text DESC", &[&unit_flag])
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE unit_id = $1 ORDER BY create_time DESC", &[&unit_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3079,7 +3079,7 @@ pub async fn unitduty_list_name_name(
 
     let pattern = format!("%{}%", name);
     let rows = client
-        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE name ILIKE $1 ORDER BY create_time::text DESC", &[&pattern])
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE name ILIKE $1 ORDER BY create_time DESC", &[&pattern])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3130,7 +3130,7 @@ pub async fn unitduty_list_like(
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
     let pattern = format!("%{}%", name);
     let rows = client
-        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE name ILIKE $1 ORDER BY create_time::text DESC", &[&pattern])
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE name ILIKE $1 ORDER BY create_time DESC", &[&pattern])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3179,7 +3179,7 @@ pub async fn unitduty_list_identity_identityFlag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE identity_id = $1 ORDER BY create_time::text DESC", &[&identity_flag])
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE identity_id = $1 ORDER BY create_time DESC", &[&identity_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3264,12 +3264,12 @@ pub async fn unitattribute_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute ORDER BY create_time::text DESC LIMIT $1",
+            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute ORDER BY create_time DESC LIMIT $1",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2",
+            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -3321,12 +3321,12 @@ pub async fn unitattribute_list_flag_next_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute ORDER BY create_time::text DESC LIMIT $1",
+            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute ORDER BY create_time DESC LIMIT $1",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2",
+            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -3376,7 +3376,7 @@ pub async fn unitattribute_list_unit_flag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE unit_id = $1 ORDER BY create_time::text DESC", &[&unit_flag])
+        .query("SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE unit_id = $1 ORDER BY create_time DESC", &[&unit_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3427,12 +3427,12 @@ pub async fn role_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time::text DESC LIMIT $1",
+            "SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time DESC LIMIT $1",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2",
+            "SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -3478,7 +3478,7 @@ pub async fn role_list_person_personFlag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE creator = $1 ORDER BY create_time::text DESC", &[&person_flag])
+        .query("SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE creator = $1 ORDER BY create_time DESC", &[&person_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3525,7 +3525,7 @@ pub async fn role_list_like(
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
     let pattern = format!("%{}%", name);
     let rows = client
-        .query("SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE name ILIKE $1 ORDER BY create_time::text DESC", &[&pattern])
+        .query("SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE name ILIKE $1 ORDER BY create_time DESC", &[&pattern])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3570,7 +3570,7 @@ pub async fn role_list_group_groupFlag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT r.id, r.name, r.description, r.creator, r.create_time::text FROM x_org_role r JOIN x_org_group_role gr ON gr.role_id = r.id WHERE gr.group_id = $1 AND r.deleted_at IS NULL ORDER BY r.create_time::text DESC", &[&group_flag])
+        .query("SELECT r.id, r.name, r.description, r.creator, r.create_time::text FROM x_org_role r JOIN x_org_group_role gr ON gr.role_id = r.id WHERE gr.group_id = $1 AND r.deleted_at IS NULL ORDER BY r.create_time DESC", &[&group_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3624,7 +3624,7 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size(
     let limit = size.max(1);
 
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time::text DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3677,7 +3677,7 @@ pub async fn personcard_listpaging_page_page_size_size(
     let limit = size.max(1);
 
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time::text DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3927,12 +3927,12 @@ pub async fn personattribute_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute ORDER BY create_time::text DESC LIMIT $1",
+            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute ORDER BY create_time DESC LIMIT $1",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2",
+            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -3984,12 +3984,12 @@ pub async fn personattribute_list_flag_next_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute ORDER BY create_time::text DESC LIMIT $1",
+            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute ORDER BY create_time DESC LIMIT $1",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2",
+            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -4039,7 +4039,7 @@ pub async fn personattribute_list_person_personFlag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE person_id = $1 AND deleted_at IS NULL ORDER BY create_time::text DESC", &[&person_flag])
+        .query("SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE person_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC", &[&person_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -4136,7 +4136,7 @@ pub async fn inputperson_result_flag_flag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, person_id, status, message, create_time::text FROM x_org_import_result WHERE import_id = $1 ORDER BY create_time::text DESC", &[&flag])
+        .query("SELECT id, person_id, status, message, create_time::text FROM x_org_import_result WHERE import_id = $1 ORDER BY create_time DESC", &[&flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -4214,7 +4214,7 @@ pub async fn identity_flag_order_before_followFlag(
 
     let rows = client
         .query(
-            "SELECT id FROM x_org_identity WHERE unit_id = $1 ORDER BY create_time::text DESC",
+            "SELECT id FROM x_org_identity WHERE unit_id = $1 ORDER BY create_time DESC",
             &[&unit_id],
         )
         .await
@@ -4268,7 +4268,7 @@ pub async fn identity_list_flag_unitduty_name_unitDutyName(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE id > $1 AND unit_id IN (SELECT id FROM x_org_duty WHERE name = $2) ORDER BY create_time::text DESC LIMIT 10", &[&flag, &unit_duty_name])
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE id > $1 AND unit_id IN (SELECT id FROM x_org_duty WHERE name = $2) ORDER BY create_time DESC LIMIT 10", &[&flag, &unit_duty_name])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -4319,12 +4319,12 @@ pub async fn identity_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time::text DESC LIMIT $1",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time DESC LIMIT $1",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -4376,12 +4376,12 @@ pub async fn identity_list_flag_next_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time::text DESC LIMIT $1",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time DESC LIMIT $1",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -4431,7 +4431,7 @@ pub async fn identity_list_unitduty_name_unitDutyName(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE unit_id IN (SELECT id FROM x_org_duty WHERE name = $1) ORDER BY create_time::text DESC", &[&unit_duty_name])
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE unit_id IN (SELECT id FROM x_org_duty WHERE name = $1) ORDER BY create_time DESC", &[&unit_duty_name])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -4480,7 +4480,7 @@ pub async fn identity_list_unit_unitFlag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE unit_id = $1 AND deleted_at IS NULL ORDER BY create_time::text DESC", &[&unit_flag])
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE unit_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC", &[&unit_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -4529,7 +4529,7 @@ pub async fn identity_list_person_personFlag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE person_id = $1 AND deleted_at IS NULL ORDER BY create_time::text DESC", &[&person_flag])
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE person_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC", &[&person_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -4580,7 +4580,7 @@ pub async fn identity_list_like(
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
     let pattern = format!("%{}%", name);
     let rows = client
-        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE name ILIKE $1 ORDER BY create_time::text DESC", &[&pattern])
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE name ILIKE $1 ORDER BY create_time DESC", &[&pattern])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -4631,12 +4631,12 @@ pub async fn group_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time::text DESC LIMIT $1",
+            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time DESC LIMIT $1",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2",
+            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -4685,12 +4685,12 @@ pub async fn group_list_flag_next_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time::text DESC LIMIT $1",
+            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time DESC LIMIT $1",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2",
+            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -4737,7 +4737,7 @@ pub async fn group_list_role_roleFlag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_role WHERE role_id = $1) AND deleted_at IS NULL ORDER BY create_time::text DESC", &[&role_flag])
+        .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_role WHERE role_id = $1) AND deleted_at IS NULL ORDER BY create_time DESC", &[&role_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -4789,7 +4789,7 @@ pub async fn group_list_person_personFlag_sup_nested(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("WITH RECURSIVE sup AS (SELECT id, name, unit_id, parent_id FROM x_org_unit WHERE id IN (SELECT unit_id FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_member WHERE person_id = $1) AND deleted_at IS NULL) AND deleted_at IS NULL UNION ALL SELECT u.id, u.name, u.unit_id, u.parent_id FROM x_org_unit u JOIN sup s ON u.id = s.parent_id WHERE u.deleted_at IS NULL) SELECT DISTINCT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time::text FROM x_org_group g JOIN sup s ON g.unit_id = s.id WHERE g.deleted_at IS NULL ORDER BY g.create_time::text DESC", &[&person_flag])
+        .query("WITH RECURSIVE sup AS (SELECT id, name, unit_id, parent_id FROM x_org_unit WHERE id IN (SELECT unit_id FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_member WHERE person_id = $1) AND deleted_at IS NULL) AND deleted_at IS NULL UNION ALL SELECT u.id, u.name, u.unit_id, u.parent_id FROM x_org_unit u JOIN sup s ON u.id = s.parent_id WHERE u.deleted_at IS NULL) SELECT DISTINCT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time::text FROM x_org_group g JOIN sup s ON g.unit_id = s.id WHERE g.deleted_at IS NULL ORDER BY g.create_time DESC", &[&person_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -4844,7 +4844,7 @@ pub async fn group_list_person_personFlag_sup_direct(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE unit_id IN (SELECT unit_id FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_member WHERE person_id = $1) AND deleted_at IS NULL) AND deleted_at IS NULL ORDER BY create_time::text DESC", &[&person_flag])
+        .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE unit_id IN (SELECT unit_id FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_member WHERE person_id = $1) AND deleted_at IS NULL) AND deleted_at IS NULL ORDER BY create_time DESC", &[&person_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -4898,7 +4898,7 @@ pub async fn group_list_like(
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
     let pattern = format!("%{}%", name);
     let rows = client
-        .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE name ILIKE $1 ORDER BY create_time::text DESC", &[&pattern])
+        .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE name ILIKE $1 ORDER BY create_time DESC", &[&pattern])
         .await
         .map_err(|_| AppError::Internal)?;
 
