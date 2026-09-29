@@ -1575,7 +1575,9 @@ async function handleSearch() {
       params: { keyword: keyword.value },
     })
     nodes.value = (r.data ?? []) as N[]
-  } catch {}
+  } catch {
+    // 搜索失败保留现有节点（best-effort 过滤，不打断浏览）
+  }
 }
 </script>
 <style scoped>

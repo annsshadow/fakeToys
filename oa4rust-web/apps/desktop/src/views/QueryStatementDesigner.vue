@@ -877,6 +877,7 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref } from 'vue'
+import { toast } from '../utils/toast'
 
 interface Stmt {
   id: string
@@ -1922,12 +1923,20 @@ async function doImport() {
       importMsg.value = { ok: false, txt: '数据格式错误: 期望数组' }
       return
     }
+    let ok = 0
+    let fail = 0
     for (const stmt of data) {
       try {
         await api.post('/api/query/assemble/designer/create', stmt)
-      } catch {}
+        ok++
+      } catch {
+        fail++
+      }
     }
-    importMsg.value = { ok: true, txt: `成功导入 ${data.length} 条语句` }
+    importMsg.value = {
+      ok: fail === 0,
+      txt: fail === 0 ? `成功导入 ${ok} 条语句` : `导入完成：成功 ${ok} / 失败 ${fail}`,
+    }
     showExportImport.value = false
     queryClient.invalidateQueries({ queryKey: ['stmt', 'list'] })
   } catch (e: any) {
@@ -1955,13 +1964,19 @@ function confirmBulkDelete() {
 }
 async function executeBulkDelete() {
   if (!bulkIds.value.length) return
+  let deleted = 0
+  let fail = 0
   for (const id of bulkIds.value) {
     try {
       await api.delete(`/api/query/assemble/designer/delete/${id}`)
-    } catch {}
+      deleted++
+    } catch {
+      fail++
+    }
   }
   bulkIds.value = []
   showBulkDelete.value = false
+  if (fail) toast.error(`批量删除完成：成功 ${deleted} / 失败 ${fail}`)
   queryClient.invalidateQueries({ queryKey: ['stmt', 'list'] })
 }
 

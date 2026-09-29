@@ -380,12 +380,20 @@ async function doImport() {
       importMsg.value = { ok: false, txt: '格式错误' }
       return
     }
+    let ok = 0
+    let fail = 0
     for (const f of data) {
       try {
         await api.post('/api/form', f)
-      } catch {}
+        ok++
+      } catch {
+        fail++
+      }
     }
-    importMsg.value = { ok: true, txt: `成功导入 ${data.length} 个表单` }
+    importMsg.value = {
+      ok: fail === 0,
+      txt: fail === 0 ? `成功导入 ${ok} 个表单` : `导入完成：成功 ${ok} / 失败 ${fail}`,
+    }
     loadList()
     showImportExport.value = false
   } catch (e: any) {
