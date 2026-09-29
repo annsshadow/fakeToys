@@ -311,7 +311,7 @@
         </div>
         <div class="modal-footer">
           <button class="btn" @click="copyExportResult()">📋 复制</button>
-          <button class="btn" @click="()=>{const b=new Blob([exportResult],{type:'text/plain'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='form.'+exportFormat;a.click();}">💾 下载</button>
+          <button class="btn" @click="downloadExportResult">💾 下载</button>
           <button class="btn btn-ghost" @click="showExportModal=false">关闭</button>
         </div>
       </div>
@@ -719,6 +719,7 @@ import {
   type XformDefinition,
   type XformLayout,
 } from '../contracts/xform'
+import { downloadBlob } from '../utils/download'
 import { toast } from '../utils/toast'
 
 interface FormField {
@@ -1280,12 +1281,10 @@ function importFormJson(text: string) {
 }
 function downloadFormJson() {
   const b = new Blob([exportFormJson()], { type: 'application/json' })
-  const u = URL.createObjectURL(b)
-  const a = document.createElement('a')
-  a.href = u
-  a.download = `${currentForm.value?.flag || 'form'}.json`
-  a.click()
-  URL.revokeObjectURL(u)
+  downloadBlob(b, `${currentForm.value?.flag || 'form'}.json`)
+}
+function downloadExportResult() {
+  downloadBlob(new Blob([exportResult.value], { type: 'text/plain' }), `form.${exportFormat.value}`)
 }
 // --- Schema ---
 const schemaJson = computed(() => {
