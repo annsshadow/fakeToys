@@ -219,13 +219,14 @@ class QualityScorer:
         sample_texts = existing_texts[:self.diversity_sample_size]
         if sample_texts != self._existing_texts:
             # 需要重新计算
-            if sample_texts:
-                self._existing_embeddings = self._model.encode(
-                    sample_texts,
-                    show_progress_bar=False,
-                    batch_size=32
-                )
-                self._existing_texts = sample_texts
+            # 入口 :181 已保证 existing_texts 非空、diversity_sample_size 判据最低 1，
+            # sample_texts 恒非空，原恒真守卫已在 L126 删除（偏支 222->230 随之消失）
+            self._existing_embeddings = self._model.encode(
+                sample_texts,
+                show_progress_bar=False,
+                batch_size=32
+            )
+            self._existing_texts = sample_texts
         
         if len(self._existing_embeddings) == 0:
             return 1.0
