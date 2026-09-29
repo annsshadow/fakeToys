@@ -66,7 +66,7 @@ pub async fn list_admins(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 
     let rows = client
         .query(
-            "SELECT id, unit_name, unit_ou, admin_name, admin, admin_level FROM x_attendance_admin ORDER BY create_time",
+            "SELECT id, unit_name, unit_ou, admin_name, admin, admin_level FROM x_attendance_admin ORDER BY create_time LIMIT 200",
             &[],
         )
         .await
@@ -129,7 +129,7 @@ pub async fn list_employee_configs(
 
     let rows = client
         .query(
-            "SELECT id, top_unit_name, top_unit_ou, unit_name, unit_ou, employee_name, employee_number, config_type, emp_in_top_unit_time FROM x_attendance_employee_config ORDER BY create_time",
+            "SELECT id, top_unit_name, top_unit_ou, unit_name, unit_ou, employee_name, employee_number, config_type, emp_in_top_unit_time FROM x_attendance_employee_config ORDER BY create_time LIMIT 200",
             &[],
         )
         .await
@@ -216,7 +216,7 @@ pub async fn list_statistical_cycles(
 
     let rows = client
         .query(
-            "SELECT id, top_unit_name, unit_name, cycle_year, cycle_month, cycle_start_date_string, cycle_end_date_string, description FROM x_attendance_statistical_cycle ORDER BY create_time",
+            "SELECT id, top_unit_name, unit_name, cycle_year, cycle_month, cycle_start_date_string, cycle_end_date_string, description FROM x_attendance_statistical_cycle ORDER BY create_time LIMIT 200",
             &[],
         )
         .await
@@ -388,9 +388,11 @@ pub async fn list_appeal_records(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    // 全量倾倒加护栏：与同族 list_check_in_records/list_schedule_rules 的 LIMIT 20 对齐，
+    // 申诉量大时应走分页版 v2/appeal/list/{page}/size/{size}。
     let rows = client
         .query(
-            "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info ORDER BY create_time DESC",
+            "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info ORDER BY create_time DESC LIMIT 20",
             &[],
         )
         .await
