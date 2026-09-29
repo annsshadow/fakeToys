@@ -4451,6 +4451,16 @@ async fn u2_store_new(
     reference_type: &str,
     reference: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 尺寸护栏：axum 默认 2MB body 上限兜底，但此公共存储口仍需自查——
+    // 与 x_file_assemble_control_config.max_upload_size 配置语义对齐（不读取 DB
+    // 是因为该配置无默认行时语义未定，硬护栏防误配置归零放行）。
+    const MAX_STORE_BYTES: usize = 2 * 1024 * 1024;
+    if bytes.len() > MAX_STORE_BYTES {
+        return Err(AppError::BadRequest(format!(
+            "upload size {} exceeds limit {MAX_STORE_BYTES}",
+            bytes.len()
+        )));
+    }
     let key = u2_blob_key(id, filename)?;
     let storage = shared::storage::storage_with_pool(pool.clone());
     u2_persist_verified(storage.as_ref(), &key, &bytes).await?;
