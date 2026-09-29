@@ -277,6 +277,16 @@ pub fn legacy_exception_for(kind: &str) -> String {
     format!("com.x.base.core.project.exception.{class}")
 }
 
+/// 分页窗口钳制：page<1 归 1、size 钳到 1..=200，返回 `(size, offset)`。
+/// 此前多处 handler 把路径/查询里的 (page,size) 直接算 `(page-1)*size`：
+/// page=0 → 负 OFFSET → Postgres 报错变 500；极端值 → i64 乘法溢出
+/// （debug panic / release 回绕）。统一在此钳制，杜绝非法分页输入。
+pub fn page_window(page: i64, size: i64) -> (i64, i64) {
+    let size = size.clamp(1, 200);
+    let page = page.max(1);
+    (size, (page - 1).saturating_mul(size))
+}
+
 /// RFC 6266/5987 安全的附件 `Content-Disposition` 头值。
 ///
 /// 各 crate 的下载 handler 此前把原始文件名直接塞进 `filename="{name}"`，
@@ -466,5 +476,17 @@ mod tests {
             .unwrap();
         assert!(!fallback.contains('"'));
         assert!(!fallback.contains('\n'));
+    }
+    #[test]
+    fn page_window_clamps_invalid_and_extreme_input() {
+        assert_eq!(super::page_window(1, 20), (20, 0));
+        assert_eq!(super::page_window(0, 20), (20, 0));
+        assert_eq!(super::page_window(-3, 20), (20, 0));
+        assert_eq!(super::page_window(2, 0), (1, 1));
+        assert_eq!(super::page_window(3, -5), (1, 2));
+        assert_eq!(super::page_window(2, 999), (200, 200));
+        let (s, off) = super::page_window(i64::MAX, 200);
+        assert_eq!(s, 200);
+        assert!(off > 0);
     }
 }
