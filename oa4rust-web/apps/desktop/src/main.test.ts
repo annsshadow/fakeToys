@@ -67,6 +67,12 @@ describe('main.ts executable verification', () => {
       expect(mainSource).toContain('async (to) =>')
     })
 
+    test('Source syncs document.title from route meta after navigation', () => {
+      // 86 条路由均声明 meta.title；afterEach 将其同步到 document.title（多标签页可辨识）
+      expect(mainSource).toContain('router.afterEach')
+      expect(mainSource).toContain('document.title = title ? `${title} · OA4Rust`')
+    })
+
     test('Source checks authentication status in guard', () => {
       expect(mainSource).toContain('useSession()')
       expect(mainSource).toContain('session.init()')

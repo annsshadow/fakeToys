@@ -501,6 +501,12 @@ router.beforeEach(async (to) => {
   }
 })
 
+// 86 条路由均声明 meta.title，导航后同步到 document.title（多标签页/历史记录可辨识）。
+router.afterEach((to) => {
+  const title = to.meta.title as string | undefined
+  document.title = title ? `${title} · OA4Rust` : 'OA4Rust'
+})
+
 const i18n = createI18n({
   legacy: false,
   locale: 'zh-cn',
