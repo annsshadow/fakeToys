@@ -480,14 +480,9 @@ class ConfigValidator:
 
     def __init__(self):
         """初始化验证器"""
-        self._validators = {
-            dict: self._validate_dict,
-            list: self._validate_list,
-            str: self._validate_string,
-            int: self._validate_int,
-            float: self._validate_float,
-            bool: self._validate_bool,
-        }
+        # 旧的 _validators 分发表（dict/list/str/int/float/bool 映射六个 _validate_* 方法）
+        # 从无任何调用点：类型检查一直走 _validate_known_fields 的本地 isinstance。
+        # 死表与六个不可达方法已在 L126 一并删除
     
     def validate_file(self, file_path: str) -> ValidationResult:
         """验证配置文件
@@ -754,47 +749,6 @@ class ConfigValidator:
                                 result.add_warning(f"{field_path}[{i}]", 
                                                  f"环境变量未设置: {var_name}")
     
-    def _validate_dict(self, value: Any, spec: Dict, path: str, result: ValidationResult):
-        """验证字典"""
-        if not isinstance(value, dict):
-            result.add_error(path, f"期望字典类型, 实际 {type(value).__name__}")
-    
-    def _validate_list(self, value: Any, spec: Dict, path: str, result: ValidationResult):
-        """验证列表"""
-        if not isinstance(value, list):
-            result.add_error(path, f"期望列表类型, 实际 {type(value).__name__}")
-    
-    def _validate_string(self, value: Any, spec: Dict, path: str, result: ValidationResult):
-        """验证字符串"""
-        if not isinstance(value, str):
-            result.add_error(path, f"期望字符串类型, 实际 {type(value).__name__}")
-        elif "enum" in spec and value not in spec["enum"]:
-            result.add_error(path, f"值不在允许范围内: {value}")
-    
-    def _validate_int(self, value: Any, spec: Dict, path: str, result: ValidationResult):
-        """验证整数"""
-        if not isinstance(value, int) or isinstance(value, bool):
-            result.add_error(path, f"期望整数类型, 实际 {type(value).__name__}")
-        else:
-            if "min" in spec and value < spec["min"]:
-                result.add_error(path, f"值过小: {value} < {spec['min']}")
-            if "max" in spec and value > spec["max"]:
-                result.add_error(path, f"值过大: {value} > {spec['max']}")
-    
-    def _validate_float(self, value: Any, spec: Dict, path: str, result: ValidationResult):
-        """验证浮点数"""
-        if not isinstance(value, (int, float)) or isinstance(value, bool):
-            result.add_error(path, f"期望数值类型, 实际 {type(value).__name__}")
-        else:
-            if "min" in spec and value < spec["min"]:
-                result.add_error(path, f"值过小: {value} < {spec['min']}")
-            if "max" in spec and value > spec["max"]:
-                result.add_error(path, f"值过大: {value} > {spec['max']}")
-    
-    def _validate_bool(self, value: Any, spec: Dict, path: str, result: ValidationResult):
-        """验证布尔值"""
-        if not isinstance(value, bool):
-            result.add_error(path, f"期望布尔类型, 实际 {type(value).__name__}")
 
 
 def validate_config_file(file_path: str) -> ValidationResult:

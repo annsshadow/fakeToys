@@ -13,7 +13,9 @@
 - config_validator.py 753->752  列表项里的环境变量引用**已设置** ⇒ `if var not in os.environ:`
                              假支（不设才告警，设了走回边）
 - config_validator.py 759->exit  `_validate_dict` 喂真字典 ⇒ 类型守卫假支（直调白盒）
+  （L126 简化轮已随六个 `_validate_*` 死方法整体删除，本条弧线随之消失）
 - config_validator.py 764->exit  `_validate_list` 喂真列表 ⇒ 类型守卫假支（直调白盒）
+  （同上，L126 删除）
 - sampler.py 279->282        覆盖充分的数据集 ⇒ `underrepresented` 为空 ⇒
                              `if underrepresented:` 假支
 
@@ -32,7 +34,7 @@
 """
 
 from augmentor.analytics import DatasetAnalyzer
-from augmentor.config_validator import ConfigValidator, ValidationResult
+from augmentor.config_validator import ConfigValidator
 from augmentor.sampler import ActiveSampler
 
 
@@ -119,24 +121,9 @@ class TestConfigValidatorEnvRefInListItem:
 
 
 class TestConfigValidatorTypeGuardsPositive:
-    """config_validator.py 759->exit / 764->exit：类型守卫喂**正确**类型 ⇒ 零错误
-
-    记档：`__init__` 里登记的 `self._validators` 分发表（dict→_validate_dict 等六格）
-    在 `_validate_known_fields` 里没有走查，类型检查是就地 isinstance 做的 ⇒ 这六个
-    `_validate_*` 方法当前**只能被测试直调**触达（死分发表，后续轮次可考虑删表收编）。
+    """原 759->exit / 764->exit 两条的正向喂入用例：L126 起随六个 _validate_* 方法
+    与其死分发表整体删除而失效（方法没了，弧自然消失），本类留空壳作历史标记。
     """
-
-    def test_validate_dict_with_real_dict_adds_nothing(self):
-        validator = ConfigValidator()
-        result = ValidationResult(is_valid=True)
-        validator._validate_dict({"a": 1}, {}, "p", result)
-        assert result.errors == []
-
-    def test_validate_list_with_real_list_adds_nothing(self):
-        validator = ConfigValidator()
-        result = ValidationResult(is_valid=True)
-        validator._validate_list([1], {}, "p", result)
-        assert result.errors == []
 
 
 # ---------------------------------------------------------------------------

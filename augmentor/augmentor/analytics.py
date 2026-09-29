@@ -346,9 +346,10 @@ class DatasetAnalyzer:
         completeness_ratio = complete_items / len(self._items)
         score *= completeness_ratio
         
-        if self._items:
-            consistency_ratio = consistent_items / len(self._items)
-            score *= (0.5 + 0.5 * consistency_ratio)
+        # 入口 :325 已对空 _items 早退，此处 self._items 恒非空，原恒真守卫已在
+        # L126 删除（偏支 349->353 随之消失）
+        consistency_ratio = consistent_items / len(self._items)
+        score *= (0.5 + 0.5 * consistency_ratio)
         
         return min(max(score, 0.0), 1.0)
     

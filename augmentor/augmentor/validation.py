@@ -241,8 +241,10 @@ def require_bool(name: str, value: Any) -> Optional[bool]:
 
     - `enabled: 'no'` ⇒ 加载放行，字段值是字符串 `'no'`，`bool('no')` 是 `True`
       ⇒ 用户写的是「关掉」，拿到的是「质量闸门照样打开」，且**没有任何一处报错**。
-      同一条配置送进 `validate_config` 却是红的（`_validate_bool` 对非 bool 一律
-      报「期望布尔类型, 实际 str」）⇒ 校验红 / 加载绿，正是 A77 那一族缝隙的形状。
+      同一条配置送进 `validate_config` 却是红的（`_validate_known_fields` 的
+      内联 bool 判据对非 bool 一律报「类型错误: 期望 bool, 实际 str」；该消息是
+      L126 删掉六个死 `_validate_*` 方法后的现行措辞，历史上由 _validate_bool
+      报）⇒ 校验红 / 加载绿，正是 A77 那一族缝隙的形状。
     - `enabled: 0` ⇒ 加载放行，真值恰好是假 ⇒ 与 `false` 逐字同答。这一条**碰巧**
       对上了用户意图，但「碰巧」不是判据：`0` / `'0'` / `'false'` / `[]` 都是
       「看起来像关掉」的写法，实测真值依次是 **假 / 真 / 真 / 假**（`bool('0')`
@@ -818,16 +820,15 @@ class DataSanitizer:
                 # 去除首尾空白
                 result[field_name] = result[field_name].strip()
                 
-                # 去除多余空白
-                if fix:
-                    result[field_name] = _WHITESPACE_PATTERN.sub(' ', result[field_name])
-                
+                # 去除多余空白并移除控制字符。原恒真守卫已在 L126 删除：本方法只在
+                # sanitize 的 fix=True 支被调用（:794），全量偏支审计的 822->826 /
+                # 826->816 两条假支随守卫一起消失
+                result[field_name] = _WHITESPACE_PATTERN.sub(' ', result[field_name])
                 # 移除控制字符
-                if fix:
-                    result[field_name] = ''.join(
-                        c for c in result[field_name] 
-                        if c.isprintable() or c in '\n\r\t'
-                    )
+                result[field_name] = ''.join(
+                    c for c in result[field_name] 
+                    if c.isprintable() or c in '\n\r\t'
+                )
         
         # 移除空的必填字段
         if not result.get("instruction") or not result.get("output"):

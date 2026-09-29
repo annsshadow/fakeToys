@@ -280,18 +280,48 @@
   missing**。较 L120 的 46 条：L121–L124 四轮以 24 条测试清零（8+5+5+6），余 22 条
   **全部已逐条记档**，A205「偏支逐支审计」在本批收官。
 - 余 22 条分两类：
-  - **可简化族（6 条弧 + 1 处死代码）**：validation 822->826 / 826->816 / 863->855
+  - **可简化族（5 条弧 + 1 处死代码）**：validation 822->826 / 826->816
     （`_sanitize_item` 里恒真的 `if fix:` 冗余守卫，L115 起记档待删）、quality 222->230
     （`if sample_texts:` 恒真冗余）、analytics 349->353（`if self._items:` 恒真冗余）、
     sampler 41->exit（`self._model` 死守卫）、config_validator 死分发表 + 六个只能
     测试直调的 `_validate_*`（L121 记档）。L126 以「删守卫/死码 + 回归护栏」收掉
-    前 6 条弧（删后对应假支消失、真支不变行为 ⇒ 全量 16 条 missing）。
-  - **永久记档的结构性不可达（16 条）**：rag 61/63（break 抢跑/空切片族）、export
+    前 5 条弧（删后对应假支消失、行为不变 ⇒ 全量 17 条 missing）。
+  - **永久记档的结构性不可达（17 条）**：rag 61/63（break 抢跑/空切片族）、export
     277 + cli version 98/142 + cli ops 125（封闭词表链尾族）、cli quality 86（兜底
     恒非空族）、retry 197（break 抢跑族）、cache 291（前提保非空族）、report 145
     （写死三元组族）、api/main 193（导入期环境分支族，子进程实证）、model_manager
     23 + search_enhanced 221 + visualizer 46（DCL/懒加载防御族）、pipeline 369
-    （并行失败侧恒 True 族）、sampler 265（封闭词表族）。
+    （并行失败侧恒 True 族）、sampler 265（封闭词表族）、validation 863->855
+    （去重内层循环耗尽出边：value 在 seen 里 ⟺ 必在 result 里、内层循环必然
+    break，耗尽支不可达——L115 起记档，属结构族而非可删守卫）。
 - 附带发现的产品缺陷 2 处已记档（preview 缓存键漏 format 维、config_validator 死
   分发表），均不属偏支审计范围，留专项轮。
 - 本批无前端改动；前端状态仍为 L113 阶段 13 文件 / 112 例绿。
+
+### L126（2026-09-29）— 简化轮：删 5 条恒真/死守卫 + 1 处死分发表
+
+- 产品码四处手术（全部「入口前提保证恒真」类，删除后行为不变，回归护栏 = 全量门禁）：
+  - validation.py：`_sanitize_item` 两个恒真 `if fix:` 守卫（:794 只在 fix=True 支
+    调用本方法）⇒ 偏支 822->826 / 826->816 消失；863->855 归结构族不动
+  - quality.py：`if sample_texts:`（入口 :181 空早退 + sample_size 判据 ≥1 ⇒ 恒非空）
+    ⇒ 222->230 消失
+  - analytics.py：`if self._items:`（入口 :325 空早退 ⇒ 恒非空）⇒ 349->353 消失
+  - sampler.py：`self._model` 死属性（唯一写入点 `__init__` 置 None、`_load_model`
+    从不回填）连同 `_load_model` 的恒真守卫一并删 ⇒ 41->exit 消失
+  - config_validator.py：`__init__` 的 `_validators` 死分发表（六个 `_validate_*`
+    方法零调用点、类型检查全在 `_validate_known_fields` 就地 isinstance）连表带方法
+    整体删
+- 测试侧随行清理（不删行为、只删打已删对象的脸）：
+  - test_config_validator.py 的 `TestConfigValidatorEdgeCases` 二十条里十六条直调六个
+    已删方法 ⇒ 删十六条，留四条打公共入口的（`test_error_to_dict` 等）
+  - test_partial_branches_l121.py 的 `TestConfigValidatorTypeGuardsPositive` 两条随方法
+    删除而失效 ⇒ 留空壳类 + docstring 历史注记（759/764 两条弧线随方法消失）
+  - test_sampler.py 两条打 `_model` 死属性的用例改以 `_use_sklearn` 为判据（重复
+    调用状态一致性）、降级通道改打「降级仍可用」的真实行为
+  - test_micro_branches_l58.py 两条直调 `_validate_int/_validate_float` 的范围用例
+    改走公共入口 `validate_config` 的内联 isinstance 路径（KNOWN_FIELDS 规格 max
+    与 config 常量同源，判据不变、入口更真）
+  - 账本 A92 行号引用因 validation.py 删行平移（:637 空行 → :639 现量落点）⇒
+    L79 漂移桶 161 → 160（棘轮只降不升，MEASURED 留一句「谁清的」）
+- 验收预期：全量偏支 22 → **17**（5 条可简化弧清零，余 17 条全为永久记档结构族）；
+  实际读数以下一轮全量门禁落账。
