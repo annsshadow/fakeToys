@@ -478,7 +478,11 @@ async fn soft_delete_by_id(pool: &Pool, table: &str, id: &str) -> Result<Value, 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let affected = client
         .execute(
-            &format!("UPDATE {} SET deleted_at = NOW() WHERE id = $1", table),
+            // 幂等软删：已删行不再刷新 deleted_at（保住真实删除时刻，重删返回 0 行）。
+            &format!(
+                "UPDATE {} SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+                table
+            ),
             &[&id],
         )
         .await
@@ -3160,7 +3164,7 @@ pub async fn design_appdict_id_mockdeletetoget(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     client
         .execute(
-            "UPDATE x_cms_surface_appdict SET deleted_at = NOW() WHERE id = $1",
+            "UPDATE x_cms_surface_appdict SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -3770,7 +3774,7 @@ pub async fn file_flag_mockdeletetoget(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     client
         .execute(
-            "UPDATE x_cms_file SET deleted_at = NOW() WHERE id = $1",
+            "UPDATE x_cms_file SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await

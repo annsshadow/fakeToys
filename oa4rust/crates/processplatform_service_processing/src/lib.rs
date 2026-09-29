@@ -1519,7 +1519,7 @@ pub async fn touch_deletedraft(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     client
         .execute(
-            "UPDATE x_draft SET deleted_at = NOW() WHERE id = $1",
+            "UPDATE x_draft SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -1884,7 +1884,10 @@ pub async fn data_work_id_delete(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     client
-        .execute("UPDATE x_work SET deleted_at = NOW() WHERE id = $1", &[&id])
+        .execute(
+            "UPDATE x_work SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     let row = client
