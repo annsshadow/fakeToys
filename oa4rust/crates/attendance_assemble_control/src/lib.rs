@@ -8777,6 +8777,7 @@ pub async fn v2_workplace_list_ids(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    const MAX_BATCH_IDS: usize = 200;
     let ids = payload
         .get("ids")
         .and_then(|v| v.as_array())
@@ -8786,9 +8787,16 @@ pub async fn v2_workplace_list_ids(
                 .map(|s| s.trim().to_string())
                 .filter(|s| !s.is_empty())
                 .collect::<Vec<_>>()
-                .join(",")
         })
         .unwrap_or_default();
+    // 批量上限：超大 id 列表会拖垮 string_to_array + ANY 查询（资源保护）。
+    if ids.len() > MAX_BATCH_IDS {
+        return Err(AppError::BadRequest(format!(
+            "batch size {} exceeds limit {MAX_BATCH_IDS}",
+            ids.len()
+        )));
+    }
+    let ids = ids.join(",");
     if ids.is_empty() {
         return Err(AppError::BadRequest("ids array is required".to_string()));
     }
