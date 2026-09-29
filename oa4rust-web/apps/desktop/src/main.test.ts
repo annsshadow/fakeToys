@@ -85,27 +85,11 @@ describe('main.ts executable verification', () => {
     })
   })
 
-  describe('i18n initialization', () => {
-    test('Creates i18n with Chinese locale', () => {
-      expect(mainSource).toContain('createI18n({')
-      expect(mainSource).toContain("locale: 'zh-cn'")
-      expect(mainSource).toContain("'zh-cn': {")
-    })
-
-    test('Has English locale fallback', () => {
-      expect(mainSource).toContain("fallbackLocale: 'en'")
-    })
-
-    test('Has Chinese translation keys', () => {
-      expect(mainSource).toContain("login: '登录'")
-      expect(mainSource).toContain("logout: '退出'")
-      expect(mainSource).toContain("search: '搜索'")
-    })
-
-    test('Has English translation keys', () => {
-      expect(mainSource).toContain("login: 'Login'")
-      expect(mainSource).toContain("logout: 'Logout'")
-      expect(mainSource).toContain("search: 'Search'")
+  describe('i18n removed (优化轮37)', () => {
+    test('入口不再装配 vue-i18n：全仓无 $t/useI18n 消费者，纯死代码占入口包体积', () => {
+      expect(mainSource).not.toContain('createI18n')
+      expect(mainSource).not.toContain('vue-i18n')
+      expect(mainSource).not.toContain('app.use(i18n)')
     })
   })
 
@@ -166,7 +150,6 @@ describe('main.ts executable verification', () => {
     test('Registers multiple plugins', () => {
       expect(mainSource).toContain('app.use(createPinia())')
       expect(mainSource).toContain('app.use(router)')
-      expect(mainSource).toContain('app.use(i18n)')
       expect(mainSource).toContain('app.use(VueQueryPlugin')
     })
   })
@@ -208,10 +191,6 @@ describe('main.ts executable verification', () => {
 
     test('Imports Pinia', () => {
       expect(mainSource).toContain("import { createPinia } from 'pinia'")
-    })
-
-    test('Imports vue-i18n', () => {
-      expect(mainSource).toContain("import { createI18n } from 'vue-i18n'")
     })
 
     test('Imports TanStack Query', () => {
