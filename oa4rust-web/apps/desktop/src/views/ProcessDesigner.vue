@@ -7816,10 +7816,13 @@ function setSubprocessDesc(desc: string) {
 function onMapDragStart(e: DragEvent, item: any) {
   e.dataTransfer?.setData('text/plain', JSON.stringify(item))
 }
+// 拖放目标尚未消费 payload（映射面板目标侧功能未实现），仅容忍非法 JSON。
 function onMapDrop(e: DragEvent, _target: any) {
   try {
-    const data = JSON.parse(e.dataTransfer?.getData('text/plain') || '{}')
-  } catch {}
+    JSON.parse(e.dataTransfer?.getData('text/plain') || '{}')
+  } catch {
+    // 非映射数据源拖入：忽略
+  }
 }
 // ── Condition Builder ───────────────────────────────────────────────
 const showCondBuilder = ref(false)
