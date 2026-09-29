@@ -34,20 +34,19 @@ class ActiveSampler:
     
     def __init__(self):
         """初始化主动学习选样器"""
-        self._model = None
     
     def _load_model(self):
         """延迟加载模型"""
-        if self._model is None:
-            try:
-                from sklearn.feature_extraction.text import TfidfVectorizer
-                from sklearn.cluster import KMeans
-                self._tfidf = TfidfVectorizer(max_features=1000)
-                self._use_sklearn = True
-                logger.info("使用 sklearn 进行主题分析")
-            except ImportError:
-                logger.warning("sklearn 未安装，使用简化分析")
-                self._use_sklearn = False
+        # _model 属性从未被回填、只被这个恒真守卫读，随 L126 一并删除
+        try:
+            from sklearn.feature_extraction.text import TfidfVectorizer
+            from sklearn.cluster import KMeans
+            self._tfidf = TfidfVectorizer(max_features=1000)
+            self._use_sklearn = True
+            logger.info("使用 sklearn 进行主题分析")
+        except ImportError:
+            logger.warning("sklearn 未安装，使用简化分析")
+            self._use_sklearn = False
     
     def _analyze_question_type(self, text: str) -> str:
         """分析问题类型

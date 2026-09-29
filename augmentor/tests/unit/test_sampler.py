@@ -210,12 +210,13 @@ class TestLoadModel:
     """_load_model 测试"""
 
     def test_load_model_idempotent(self):
-        """重复调用 _load_model 应保持一致状态"""
+        """重复调用 _load_model 保持一致状态（L126 起以 _use_sklearn 为判据：
+        原 _model 死属性已删，重复调用不再做对象恒等断言）"""
         sampler = ActiveSampler()
         sampler._load_model()
-        first_model = sampler._model
+        first_flag = sampler._use_sklearn
         sampler._load_model()
-        assert sampler._model is first_model
+        assert sampler._use_sklearn is first_flag
 
 
 class TestMissingInstructionField:
@@ -298,11 +299,16 @@ class TestSamplerExtended:
         assert result.coverage_analysis["total_items"] == 1
 
     def test_load_model_sklearn_available(self):
-        """加载模型（sklearn 缺失时 _model 为 None）"""
+        """_load_model 的模型状态（L126 起以 _use_sklearn/_tfidf 为准，_model 死属性已删）"""
         sampler = ActiveSampler()
         sampler._load_model()
-        # sklearn not installed, _model stays None
-        assert sampler._model is None
+        # sklearn 在场 ⇒ 走真实主题分析通道；缺失 ⇒ 降级通道仍可用
+        if sampler._use_sklearn:
+            assert sampler._tfidf is not None
+        else:
+            dist = sampler._analyze_topic_distribution(
+                [{"instruction": "租金问题"}, {"instruction": "押金问题"}])
+            assert "unique_words" in dist
 
     def test_analyze_topic_distribution_with_data(self):
         """有数据的主题分布"""
