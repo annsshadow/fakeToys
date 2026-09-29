@@ -6,7 +6,6 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { NConfigProvider } from 'naive-ui'
 import { createPinia } from 'pinia'
 import { createApp, h } from 'vue'
-import { createI18n } from 'vue-i18n'
 import { createRouter, createWebHistory, RouterView } from 'vue-router'
 import '@oa4rust/ui'
 import AppShell from '@oa4rust/ui/components/AppShell.vue'
@@ -507,27 +506,6 @@ router.afterEach((to) => {
   document.title = title ? `${title} · OA4Rust` : 'OA4Rust'
 })
 
-const i18n = createI18n({
-  legacy: false,
-  locale: 'zh-cn',
-  fallbackLocale: 'en',
-  messages: {
-    'zh-cn': {
-      common: { login: '登录', logout: '退出', confirm: '确认', cancel: '取消', search: '搜索', loading: '加载中...' },
-    },
-    en: {
-      common: {
-        login: 'Login',
-        logout: 'Logout',
-        confirm: 'Confirm',
-        cancel: 'Cancel',
-        search: 'Search',
-        loading: 'Loading...',
-      },
-    },
-  },
-})
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { staleTime: 5 * 60 * 1000, retry: 2, refetchOnWindowFocus: false },
@@ -545,6 +523,5 @@ app.config.errorHandler = (err, _instance, info) => {
 }
 app.use(createPinia())
 app.use(router)
-app.use(i18n)
 app.use(VueQueryPlugin, { queryClient })
 app.mount('#o2-app-root')
