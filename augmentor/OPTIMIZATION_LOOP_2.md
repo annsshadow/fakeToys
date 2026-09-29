@@ -30,10 +30,10 @@
 | A202 | `api/routes/quality.py`、`api/routes/export.py`、`api/routes/augment.py`、`api/routes/multimodal.py`、`api/deps.py`、`augmentor/config.py` | **已关闭（L102）**：11 条缺数（路由错误/降级支 + 依赖层降级键 + 配置保存容错）全清 | S |
 | A203 | `augmentor/cli/commands/version.py` | **已关闭（L103）**：delete 动作 8 条缺数（98-106）全清 | S |
 | A204 | `augmentor/preview.py` | **已关闭（L103）**：非原生格式的 DataValidationError 守卫支（177）清零 | XS |
-| A205 | 全仓约 40 支 | **进行中（L114–L115）**：偏支 85 → 77（L101–L103 顺带 −8）；本轮再补 8 条可达假支（export_enhanced 6 + validation 2），立 A205 方法学（可达补测 / 不可达记档），已记档 3 条结构性不可达支 | M |
+| A205 | 全仓约 40 支 | **已关闭（L114–L126）**：偏支 85 → 17，46 条逐支判定（24 条可达补测清零 + L126 删 5 条恒真守卫 + 余 17 条永久记档结构族） | M |
 | A206 | `web/src/pages` | **已关闭（L104–L113）**：10 页各建组件测试，前端全量 13 文件 112 例全绿 | L |
-| A207 | `web` | bundle 拆分与构建产物体检（第一本账 P3 段留的口） | M |
-| A208 | `docs` | FAQ 与 25 个端点的人读字段说明（第一本账 P3 段留的口） | M |
+| A207 | `web` | **已关闭（L128）**：路由懒加载 + 三 vendor 拆分本体已就位，补 `check-dist.mjs` 六格产物体检 + `npm run build:check` 入口 | M |
+| A208 | `docs` | **已关闭（L129）**：API 易混字段词典（9 字段）+ API 面排查 FAQ（6 问） | M |
 
 ## Backlog B — 功能增强与体验（价值 ÷ 工作量）
 
@@ -361,3 +361,27 @@
   exit 1，重建即复原。
 - 前端门禁维持 vitest + eslint + tsc 三件套不动（体检是 build 后置检查，
   不进 CI 常规链，`npm run build:check` 一轮一跑）。
+
+### L129（2026-09-29）— A208 收口：API 易混字段词典 + API 面排查 FAQ
+
+- **A208 = 「FAQ + 端点人读字段说明」**。既有 `docs/API.md` 第 1~7 节已逐端点给出
+  响应示例，缺的是两块：跨端点复现字段的**人读语义**、以及 REST 面特有的**排查**。
+- 新增 `docs/API.md` **易混字段词典**（9 行表，插在「响应契约」后）：只收字面直觉
+  与实际语义不符的字段，逐条标注陷阱，字段名以 `api/routes/*.py` 的 `*Response`
+  schema 为准（读源核过、未手抄）——`pass_rate` vs `avg_score`（门禁读前者）、
+  `effective_weights` 重归一化、`semantic_evaluated` API 面恒 false、`duplicate_groups`
+  是组数非明细、`removed_count`/`dropped_count` 不同名是既有契约、`is_valid` 空集
+  恒真（A92）、`overall_passed` 默认不判负（A91）、`metrics`/`all_metrics` 之别。
+- 新增 `docs/API.md` **§11 排查（API 面）**（6 问）：路径白名单 400、写入不自动建
+  目录、空集 is_valid=true、报告端点如何让 CI 变红、并发 progress 串号、
+  X-Process-Time 单位；只收 REST 面特有坑，通用依赖问题指回 README §9。
+- **A184 漂移连带修**：易混字段词典插在 API.md 中部（+约 18 行），把账本 L49 三处
+  历史行号引用（API.md 加冒号 849 那种写法）顶到空行（dead_line 0→3）。按 A153/A127
+  纪律«历史行号不是对今天文件的断言» 降成裸文件锚点 `docs/API.md`（file_tokens 侧仍
+  live，行号不再随 API.md 增删漂移）⇒ 三档硬 0 复零。**本条自己也踩了同一坑**：初稿把
+  那个「加冒号行号」的写法照抄成反引号引用，本账本身在扫描面里 ⇒ 记账行当场变成新
+  dead_line（A153 记录过的形状第 N 次复现）；改成裸文本描述、不成形为可解析引用即消。
+- 全量门禁：`7358 passed / 3 skipped / exit 0`（纯文档轮，与 L127 同数无回归）；
+  A184 + L79 + markdown 结构三守卫 115/115 绿。
+- **Backlog A 全清**：A201–A208 八项全部关闭（A205 偏支审计 L114–L126、A206 前端
+  L104–L113、A207 产物体检 L128、A208 文档 L129）。
