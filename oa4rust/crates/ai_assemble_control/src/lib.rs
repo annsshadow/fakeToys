@@ -939,7 +939,7 @@ pub async fn config_list_mcp_paging_page_size_size(
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = (page - 1) * size;
+    let (size, offset) = shared::response::page_window(page, size);
     let d = dialect();
     let sql = format!(
         "SELECT id, name, url, enabled, creator, create_time, update_time \
@@ -1005,7 +1005,7 @@ pub async fn config_list_model_paging_page_size_size(
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = (page - 1) * size;
+    let (size, offset) = shared::response::page_window(page, size);
     let d = dialect();
     let sql = format!(
         "SELECT id, name, url, enabled, creator, create_time, update_time FROM x_ai_model_config ORDER BY update_time DESC LIMIT {} OFFSET {}",
@@ -1418,7 +1418,7 @@ pub async fn file_list_paging_page_size_size(
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = (page - 1) * size;
+    let (size, offset) = shared::response::page_window(page, size);
     let rows = client
         .query(
             "SELECT id, name, file_name, file_size, file_type, enabled, creator, create_time FROM x_ai_file ORDER BY create_time DESC LIMIT $2 OFFSET $1",
@@ -1803,7 +1803,7 @@ pub async fn index_list_paging_page_size_size(
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = (page - 1) * size;
+    let (size, offset) = shared::response::page_window(page, size);
     let rows = client
         .query(
             "SELECT id, doc_id, app_id, title, enabled, creator, create_time FROM x_ai_index ORDER BY create_time DESC LIMIT $2 OFFSET $1",
@@ -2323,7 +2323,7 @@ pub async fn chat_list_paging_page_size_size(
         ));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = (page - 1) * size;
+    let (size, offset) = shared::response::page_window(page, size);
     let d = dialect();
     let sql = format!(
         "SELECT id, title, user_id, {} AS create_time \
@@ -2379,7 +2379,7 @@ pub async fn chat_list_completion_clue_id_paging_page_size_size(
         ));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = (page - 1) * size;
+    let (size, offset) = shared::response::page_window(page, size);
     let d = dialect();
     let sql = format!(
         "SELECT id, role, content, creator, {} AS create_time \
