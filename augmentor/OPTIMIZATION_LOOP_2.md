@@ -342,3 +342,22 @@
 - 全量门禁：`7358 passed / 3 skipped / exit 0`（较 L126 的 7355 + 3 新例，无一回归）。
 - L123 记档的两处产品缺陷至此已闭环 1 处（preview 缓存键）；另一处
   （config_validator 死分发表）已在 L126 删掉。
+
+### L128（2026-09-29）— A207 构建产物体检收口（web/scripts/check-dist.mjs）
+
+- A207 的「bundle 拆分」本体（路由级懒加载 + antd/echarts/react 三 vendor
+  manualChunks）此前已就位，本轮回**产物体检**：新增 `web/scripts/check-dist.mjs`
+  六格判据 + `npm run build:check` 入口（先构建再体检，红即 exit 1）：
+  1. 入口壳 ≤50 kB（实测 6.8 kB，壳里全是懒加载路由）
+  2. 11 个页面 chunk 齐全（懒加载没被摇掉）
+  3. 页面 chunk 均 ≤100 kB（vendor 没漏进业务块；实测最大 9.2 kB）
+  4. 首屏 modulepreload 名单无 echarts（实测仅 react-vendor + antd-vendor 两项；
+     echarts-vendor 1.15 MB 只由 Analysis 路由动态 import 拉取）
+  5. 大 vendor 只降不升基线：antd ≤1200 / echarts ≤1500 / react ≤300 kB
+     （现状 945 / 1145 / 180 kB；构建期 800 kB 告警阈值对这两个 vendor 是常态
+     噪声，判据收在体检脚本里不靠告警）
+  6. index.html 引用的产物全部在场（防半截提交）
+- 红能力实证：往入口 js 注 60 kB 后体检红在第一格（「壳被业务逻辑污染」）、
+  exit 1，重建即复原。
+- 前端门禁维持 vitest + eslint + tsc 三件套不动（体检是 build 后置检查，
+  不进 CI 常规链，`npm run build:check` 一轮一跑）。
