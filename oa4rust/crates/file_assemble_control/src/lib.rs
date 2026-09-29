@@ -715,7 +715,7 @@ pub async fn anonymous_file_id_download(
             };
             Ok(axum::response::Response::builder()
                 .status(axum::http::StatusCode::OK)
-                .header("Content-Type", mime)
+                .header("Content-Type", shared::response::sanitize_mime(&mime))
                 .header(
                     "Content-Disposition",
                     shared::response::attachment_disposition(&name),
@@ -1242,7 +1242,7 @@ pub async fn attachment_id_download(
             };
             Ok(axum::response::Response::builder()
                 .status(axum::http::StatusCode::OK)
-                .header("Content-Type", mime)
+                .header("Content-Type", shared::response::sanitize_mime(&mime))
                 .header(
                     "Content-Disposition",
                     shared::response::attachment_disposition(&name),
@@ -2024,7 +2024,7 @@ pub async fn attachment2_id_download(
             };
             Ok(axum::response::Response::builder()
                 .status(axum::http::StatusCode::OK)
-                .header("Content-Type", mime)
+                .header("Content-Type", shared::response::sanitize_mime(&mime))
                 .header(
                     "Content-Disposition",
                     shared::response::attachment_disposition(&name),
@@ -3454,7 +3454,7 @@ pub async fn file_id_download(
             };
             Ok(axum::response::Response::builder()
                 .status(axum::http::StatusCode::OK)
-                .header("Content-Type", mime)
+                .header("Content-Type", shared::response::sanitize_mime(&mime))
                 .header(
                     "Content-Disposition",
                     shared::response::attachment_disposition(&name),
@@ -3942,7 +3942,7 @@ pub async fn share_download_share_shareId_file_fileId(
             };
             Ok(axum::response::Response::builder()
                 .status(axum::http::StatusCode::OK)
-                .header("Content-Type", mime)
+                .header("Content-Type", shared::response::sanitize_mime(&mime))
                 .header(
                     "Content-Disposition",
                     shared::response::attachment_disposition(&name),
