@@ -77,7 +77,7 @@ pub async fn get_control_config(
 
     let rows = client
         .query(
-            "SELECT enabled, max_category_count, allow_anonymous FROM x_cms_assemble_control_config ORDER BY create_time::text LIMIT 1",
+            "SELECT enabled, max_category_count, allow_anonymous FROM x_cms_assemble_control_config ORDER BY create_time LIMIT 1",
             &[],
         )
         .await
@@ -126,7 +126,7 @@ pub async fn list_control_sections(
 
     let rows = client
         .query(
-            "SELECT id, name, enabled FROM x_cms_assemble_control_section ORDER BY create_time::text",
+            "SELECT id, name, enabled FROM x_cms_assemble_control_section ORDER BY create_time",
             &[],
         )
         .await
@@ -183,7 +183,7 @@ pub async fn update_control_config(
 
     client
         .execute(
-            "UPDATE x_cms_assemble_control_config SET enabled = $1, max_category_count = $2, allow_anonymous = $3 WHERE id = (SELECT id FROM x_cms_assemble_control_config ORDER BY create_time::text LIMIT 1)",
+            "UPDATE x_cms_assemble_control_config SET enabled = $1, max_category_count = $2, allow_anonymous = $3 WHERE id = (SELECT id FROM x_cms_assemble_control_config ORDER BY create_time LIMIT 1)",
             &[&enabled, &max_category_count, &allow_anonymous],
         )
         .await
@@ -7755,7 +7755,7 @@ pub async fn commend_list_paging(
     let (size, offset) = shared::response::page_window(page, size);
     let rows = client
         .query(
-            "SELECT id, doc_id, person_id, create_time::text FROM x_cms_commend WHERE doc_id = $1 AND deleted_at::text IS NULL ORDER BY create_time::text DESC LIMIT $2 OFFSET $3",
+            "SELECT id, doc_id, person_id, create_time::text FROM x_cms_commend WHERE doc_id = $1 AND deleted_at::text IS NULL ORDER BY create_time DESC LIMIT $2 OFFSET $3",
             &[&doc_id, &size, &offset],
         )
         .await

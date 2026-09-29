@@ -257,7 +257,7 @@ async fn cursor_page(pool: &Pool, flag: &str, count: i64, next: bool) -> Handler
     let limit = count.clamp(1, MAX_BATCH_IDS as i64).to_string();
     let rows = if flag == "0" || flag == "(0)" {
         let sql = format!(
-            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL ORDER BY create_time::text DESC LIMIT $1"
+            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1"
         );
         client
             .query(&sql, &[&limit])
@@ -266,7 +266,7 @@ async fn cursor_page(pool: &Pool, flag: &str, count: i64, next: bool) -> Handler
     } else {
         let op = if next { ">" } else { "<" };
         let sql = format!(
-            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND id {op} $1 ORDER BY create_time::text DESC LIMIT $2"
+            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND id {op} $1 ORDER BY create_time DESC LIMIT $2"
         );
         client
             .query(&sql, &[&flag.to_string(), &limit])
@@ -708,7 +708,7 @@ pub async fn person_list_filter_paging(
     let total: i64 = total_row.get("cnt");
 
     let data_sql = format!(
-        "SELECT {PERSON_COLS} FROM x_org_person WHERE {cond} ORDER BY create_time::text DESC LIMIT $6 OFFSET $7"
+        "SELECT {PERSON_COLS} FROM x_org_person WHERE {cond} ORDER BY create_time DESC LIMIT $6 OFFSET $7"
     );
     let rows = client
         .query(
@@ -744,7 +744,7 @@ pub async fn person_list_delete_paging(
     let offset = ((page - 1).saturating_mul(size)).to_string();
     let size_str = size.to_string();
     let sql = format!(
-        "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NOT NULL ORDER BY create_time::text DESC LIMIT $1 OFFSET $2"
+        "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NOT NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2"
     );
     let rows = client
         .query(&sql, &[&size_str, &offset])
@@ -758,7 +758,7 @@ pub async fn person_list_delete_paging(
 pub async fn threemember_list(pool: Extension<Pool>) -> HandlerResult {
     let client = client_of(&pool).await?;
     let sql = format!(
-        "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL ORDER BY create_time::text DESC"
+        "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL ORDER BY create_time DESC"
     );
     let rows = client
         .query(&sql, &[])
