@@ -18,3 +18,7 @@ CREATE INDEX IF NOT EXISTS idx_x_hotpic_deleted_create_time
 -- 单条最新配置（ORDER BY create_time LIMIT 1）
 CREATE INDEX IF NOT EXISTS idx_x_cms_assemble_control_config_create_time
     ON x_cms_assemble_control_config (create_time);
+
+-- 公告列表（WHERE deleted_at IS NULL ORDER BY create_time DESC）
+CREATE INDEX IF NOT EXISTS idx_x_ai_ann_deleted_create_time
+    ON x_ai_ann (deleted_at, create_time DESC);
