@@ -187,7 +187,12 @@ class PreviewGenerator:
             converted = raw_converted
 
         # 预览生成优化：缓存预览结果（避免相同数据重复生成预览）
-        preview_key = hashlib.md5(str(sample[:min(5, len(sample))]).encode()).hexdigest()[:8]
+        # 缓存键必须同时覆盖「同一次预览」的三个决定因子：格式、预览条数、数据样本。
+        # 只哈希样本会把「同数据换格式 / 换条数」误判为命中，返回旧格式/旧条数的残缺
+        # 结果（L123 记档缺陷）。三者缺一即换键。
+        preview_key = hashlib.md5(
+            f"{fmt}|{size}|{sample[:min(5, len(sample))]}".encode()
+        ).hexdigest()[:8]
         if hasattr(self, '_preview_cache') and preview_key in self._preview_cache:
             logger.debug(f"预览缓存命中（优化）: 格式 {fmt}")
             cached = self._preview_cache[preview_key]
