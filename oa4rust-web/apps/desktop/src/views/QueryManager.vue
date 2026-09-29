@@ -147,7 +147,10 @@ async function runQ() {
     const d = (r as any)?.data
     rdata.value = d?.list ?? []
     if (rdata.value.length > 0) rheaders.value = Object.keys(rdata.value[0])
-  } catch {
+  } catch (e: any) {
+    rdata.value = []
+    rheaders.value = []
+    toast.error(`执行失败: ${e?.message ?? '未知错误'}`)
   } finally {
     rloading.value = false
   }
