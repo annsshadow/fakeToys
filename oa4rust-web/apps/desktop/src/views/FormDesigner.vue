@@ -709,7 +709,7 @@
 </template>
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   definitionToDesignerFields,
@@ -2353,10 +2353,13 @@ function openSimPanel(): void {
 function runSimulation(): void {
   simRunning.value = true
   simProgress.value = 0
-  const interval = setInterval(() => {
+  // 组件卸载时终止模拟动画，防止定时器触达已卸载组件的响应式状态。
+  if (simInterval) clearInterval(simInterval)
+  simInterval = setInterval(() => {
     simProgress.value = Math.min(100, simProgress.value + 5)
     if (simProgress.value >= 100) {
-      clearInterval(interval)
+      clearInterval(simInterval)
+      simInterval = null
       simResult.value = {
         avgResponseMs: 45 + Math.random() * 30,
         p99Ms: 120 + Math.random() * 80,
@@ -2366,8 +2369,13 @@ function runSimulation(): void {
       simRunning.value = false
       showToast('模拟完成', 'success')
     }
-  }, 150)
+  }, 150) as unknown as number
 }
+
+let simInterval: ReturnType<typeof setInterval> | null = null
+onUnmounted(() => {
+  if (simInterval) clearInterval(simInterval)
+})
 function openA11yPanel(): void {
   showA11yPanel.value = true
   const issues: A11yIssue[] = []
