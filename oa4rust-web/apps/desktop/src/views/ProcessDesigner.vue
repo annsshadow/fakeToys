@@ -3468,6 +3468,58 @@ const plLoading = ref(false),
   sbFilter = ref('')
 const currentProcess = ref<ProcDef | null>(null)
 const processDef = ref<{ nodes: PDNode[]; edges: PDEdge[] }>({ nodes: [], edges: [] })
+// ── Process Metadata（元数据面板 + 导出嵌入，二者同源）────────────────
+// 此前 processMetadata/showMetadataPanel/saveMetadata 仅被模板与导出函数引用却从未声明：
+// 导出 JSON 路径读 processMetadata.value 会直接 TypeError（未定义），面板因 showMetadataPanel
+// 未定义恒为 falsy 从不渲染。此处声明并在 loadProcess 播种，导出不再崩、面板可用。
+interface ProcessMetadata {
+  name: string
+  flag: string
+  version: string
+  author: string
+  description: string
+  tags: string
+  category: string
+  status: string
+}
+const processMetadata = ref<ProcessMetadata>({
+  name: '',
+  flag: '',
+  version: '',
+  author: '',
+  description: '',
+  tags: '',
+  category: '',
+  status: 'active',
+})
+const showMetadataPanel = ref(false)
+function seedProcessMetadata() {
+  const p = currentProcess.value
+  processMetadata.value = {
+    name: p?.name ?? '',
+    flag: p?.flag ?? '',
+    version: p?.edition ?? '',
+    author: p?.application ?? '',
+    description: p?.desc ?? '',
+    tags: '',
+    category: p?.application ?? '',
+    status: p?.status ?? 'active',
+  }
+}
+function openMetadataPanel() {
+  seedProcessMetadata()
+  showMetadataPanel.value = true
+}
+function saveMetadata() {
+  const p = currentProcess.value
+  if (p) {
+    p.name = processMetadata.value.name
+    p.flag = processMetadata.value.flag
+    p.desc = processMetadata.value.description
+    p.status = processMetadata.value.status
+  }
+  showMetadataPanel.value = false
+}
 const selectedNode = ref<number | null>(null)
 const selectedEdge = ref<number | null>(null)
 const showNewModal = ref(false),
@@ -5202,23 +5254,8 @@ function stopEdgeAnimation() {
 }
 let showEdgeAnim = ref(false)
 // ── Process Metadata Editor ──────────────────────────────────────────
-const showMetaEditor = ref(false)
-const metaForm = ref({ description: '', owner: '', tags: '', version: '1.0.0' })
-function openMetaEditor() {
-  if (!currentProcess.value) return
-  metaForm.value = {
-    description: currentProcess.value.desc || '',
-    owner: currentProcess.value.flag || '',
-    tags: '',
-    version: '1.0.0',
-  }
-  showMetaEditor.value = true
-}
-function saveMeta() {
-  if (!currentProcess.value) return
-  currentProcess.value.desc = metaForm.value.description
-  showMetaEditor.value = false
-}
+// 元数据面板的状态/逻辑统一收敛到下方 processMetadata/saveMetadata（与 export 嵌入同源）；
+// 此处此前遗留的 metaForm/showMetaEditor/openMetaEditor/saveMeta 无任何模板引用，已移除。
 function onNodeMouseDown(e: MouseEvent, i: number) {
   if (!processDef.value) return
   // Shift+click for multi-select
@@ -5765,9 +5802,11 @@ async function loadProcess(p: ProcDef) {
     history.value = []
     histIdx.value = -1
     pushHistory()
+    seedProcessMetadata()
   } catch {
     currentProcess.value = { ...p, name: p.name, flag: p.flag, definition: {} }
     processDef.value = { nodes: [], edges: [] }
+    seedProcessMetadata()
   }
 }
 function newProcess() {
