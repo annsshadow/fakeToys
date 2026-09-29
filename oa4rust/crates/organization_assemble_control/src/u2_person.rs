@@ -685,7 +685,7 @@ pub async fn person_list_filter_paging(
     let client = client_of(&pool).await?;
     let page = page.max(1);
     let size = size.clamp(1, MAX_PAGE_SIZE);
-    let offset = ((page - 1) * size).to_string();
+    let offset = ((page - 1).saturating_mul(size)).to_string();
     let size_str = size.to_string();
 
     let name = normalize_key(opt(&body, &["name"]).unwrap_or_default());
@@ -741,7 +741,7 @@ pub async fn person_list_delete_paging(
     let client = client_of(&pool).await?;
     let page = page.max(1);
     let size = size.clamp(1, MAX_PAGE_SIZE);
-    let offset = ((page - 1) * size).to_string();
+    let offset = ((page - 1).saturating_mul(size)).to_string();
     let size_str = size.to_string();
     let sql = format!(
         "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NOT NULL ORDER BY create_time::text DESC LIMIT $1 OFFSET $2"

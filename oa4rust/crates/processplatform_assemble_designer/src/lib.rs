@@ -140,7 +140,7 @@ pub async fn list_flows(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let page = params.page.unwrap_or(1).max(1);
     let size = params.size.unwrap_or(20).clamp(1, 100);
-    let offset = (page - 1) * size;
+    let offset = (page - 1).saturating_mul(size);
 
     let total: i64 = if category.is_empty() || category == "all" {
         client
@@ -3841,7 +3841,7 @@ pub async fn applicationdict_paging_post(
         return Ok(Json(ActionResult::error("page and size must be >= 1")));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = (page - 1) * size;
+    let offset = (page - 1).saturating_mul(size);
     let total: i64 = client
         .query_one("SELECT COUNT(*)::bigint FROM pp_e_applicationdict", &[])
         .await
@@ -4426,7 +4426,7 @@ pub async fn mergeitemplan_paging_by_application(
         return Ok(Json(ActionResult::error("page and size must be >= 1")));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = (page - 1) * size;
+    let offset = (page - 1).saturating_mul(size);
     let total: i64 = client
         .query_one(
             "SELECT COUNT(*)::bigint FROM pp_e_mergeitemplan WHERE xapplication = $1",
@@ -4473,7 +4473,7 @@ pub async fn mergeitemplan_paging_exact(
         return Ok(Json(ActionResult::error("page and size must be >= 1")));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = (page - 1) * size;
+    let offset = (page - 1).saturating_mul(size);
     let total: i64 = client
         .query_one("SELECT COUNT(*)::bigint FROM pp_e_mergeitemplan", &[])
         .await

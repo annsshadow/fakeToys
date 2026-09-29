@@ -18,7 +18,7 @@ pub async fn chat_list_paging(
 
     let size = size.clamp(1, 200) as i64;
     let page = page.max(1) as i64;
-    let offset = (page - 1) * size;
+    let offset = (page - 1).saturating_mul(size);
 
     let total_row = client
         .query_one("SELECT COUNT(*) as cnt FROM x_ai_clue", &[])
@@ -71,7 +71,7 @@ pub async fn chat_list_completion_paging(
 
     let size = size.clamp(1, 200) as i64;
     let page = page.max(1) as i64;
-    let offset = (page - 1) * size;
+    let offset = (page - 1).saturating_mul(size);
 
     let total_row = client
         .query_one(

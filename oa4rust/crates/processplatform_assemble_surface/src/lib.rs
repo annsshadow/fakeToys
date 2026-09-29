@@ -27347,7 +27347,7 @@ pub async fn review_u2_v2_search(
 
     let size = wi.size.map(u2_adjust_size).unwrap_or(20); // o2server DEFAULT_PAGESIZE = 20
     let page = wi.page.map(u2_adjust_page).unwrap_or(1);
-    let offset = (page - 1) * size;
+    let offset = (page - 1).saturating_mul(size);
 
     let mut fs = U2FilterSql::default();
     if let Some(p) = &person {

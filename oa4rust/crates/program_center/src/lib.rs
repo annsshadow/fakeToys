@@ -11245,7 +11245,11 @@ async fn u3_market_list_paged(
     category: Option<&str>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = if page > 0 { (page - 1) * size } else { 0 };
+    let offset = if page > 0 {
+        (page - 1).saturating_mul(size)
+    } else {
+        0
+    };
     let rows = match category {
         Some(category) => {
             client
@@ -11315,7 +11319,11 @@ pub async fn u3_market_install_log_paging_post(
     Json(_body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = if page > 0 { (page - 1) * size } else { 0 };
+    let offset = if page > 0 {
+        (page - 1).saturating_mul(size)
+    } else {
+        0
+    };
     let rows = client
         .query(
             "SELECT id, schedule_id, application, status, message, create_time FROM x_program_schedule_log \

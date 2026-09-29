@@ -546,7 +546,12 @@ pub async fn person_list_filter_page_size(
                 "SELECT id, name, unit_id FROM x_org_person {} ORDER BY id LIMIT $3 OFFSET $4",
                 where_clause
             ),
-            &[&name_like, &unit_id, &size, &((page - 1) * size)],
+            &[
+                &name_like,
+                &unit_id,
+                &size,
+                &((page - 1).saturating_mul(size)),
+            ],
         )
         .await
         .map_err(|_| AppError::Internal)?;

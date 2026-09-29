@@ -156,7 +156,7 @@ pub async fn config_list_model_paging(
 
     let size = size.clamp(1, 200) as i64;
     let page = page.max(1) as i64;
-    let offset = (page - 1) * size;
+    let offset = (page - 1).saturating_mul(size);
 
     let total_row = client
         .query_one("SELECT COUNT(*) as cnt FROM x_ai_model", &[])
@@ -296,7 +296,7 @@ pub async fn config_list_mcp_paging(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = size.clamp(1, 200) as i64;
     let page = page.max(1) as i64;
-    let _offset = (page - 1) * size;
+    let _offset = (page - 1).saturating_mul(size);
     let total: i64 = 0;
 
     let data: Vec<Value> = vec![];
