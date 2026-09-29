@@ -162,8 +162,10 @@ const dm = useMutation({
     if (selected.value?.id) selected.value = null
   },
 })
-function delQ() {
-  if (selected.value && confirmMsg('确定删除？')) dm.mutate(selected.value.id)
+async function delQ() {
+  if (!selected.value) return
+  // confirmMsg 返回 Promise<boolean>：未 await 时恒为 truthy，删除会在用户点确认前就发出
+  if (await confirmMsg('确定删除？')) dm.mutate(selected.value.id)
 }
 const cm = useMutation({
   mutationFn: () => api.post('/api/query/assemble/designer/create', nform.value),

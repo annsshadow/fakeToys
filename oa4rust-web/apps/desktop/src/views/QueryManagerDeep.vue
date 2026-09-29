@@ -581,7 +581,7 @@ async function qdDelete(
 ) {
   const id = prompt(`要删除的${kind} ID/flag:`, '')
   if (!id) return
-  if (!confirmMsg(`确定删除该${kind}？`)) return
+  if (!(await confirmMsg(`确定删除该${kind}？`))) return
   const eid = encodeURIComponent(id)
   try {
     if (kind === 'query') await api.delete(`/api/query/assemble/designer/query/${eid}`)
@@ -821,8 +821,8 @@ const delM = useMutation({
     if (selected.value?.id) selected.value = null
   },
 })
-function deleteQuery() {
-  if (!selected.value || !confirmMsg('确定删除此查询？')) return
+async function deleteQuery() {
+  if (!selected.value || !(await confirmMsg('确定删除此查询？'))) return
   delM.mutate(selected.value.id)
 }
 
