@@ -1,0 +1,5 @@
+-- 104_create_list_order_hot_path_indexes_rollback.sql
+DROP INDEX IF EXISTS idx_x_cms_assemble_control_config_create_time;
+DROP INDEX IF EXISTS idx_x_hotpic_deleted_create_time;
+DROP INDEX IF EXISTS idx_x_cms_commend_doc_create_time;
+DROP INDEX IF EXISTS idx_x_org_person_deleted_create_time;

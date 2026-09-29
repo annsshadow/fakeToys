@@ -472,7 +472,7 @@ async fn card_page(
         .get("cnt");
     let data_sql = format!(
         "SELECT id, name, group_type, distinguished_name, mobile, office_phone, address, description, creator, create_time::text
-           FROM x_org_personcard WHERE {cond} ORDER BY create_time::text DESC LIMIT $3 OFFSET $4"
+           FROM x_org_personcard WHERE {cond} ORDER BY create_time DESC LIMIT $3 OFFSET $4"
     );
     let rows = client
         .query(&data_sql, &[&key, &group_type, &size_str, &offset])

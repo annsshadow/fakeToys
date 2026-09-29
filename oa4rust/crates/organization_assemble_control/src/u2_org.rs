@@ -158,7 +158,7 @@ async fn top_units(pool: &Pool, unit_type: Option<&str>, legacy_bare: bool) -> H
         Some(t) => {
             client
                 .query(
-                    "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id IS NULL AND deleted_at IS NULL AND type = $1 ORDER BY sort ASC, create_time::text DESC",
+                    "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id IS NULL AND deleted_at IS NULL AND type = $1 ORDER BY sort ASC, create_time DESC",
                     &[&t.to_string()],
                 )
                 .await
@@ -167,7 +167,7 @@ async fn top_units(pool: &Pool, unit_type: Option<&str>, legacy_bare: bool) -> H
         None => {
             client
                 .query(
-                    "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id IS NULL AND deleted_at IS NULL ORDER BY sort ASC, create_time::text DESC",
+                    "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id IS NULL AND deleted_at IS NULL ORDER BY sort ASC, create_time DESC",
                     &[],
                 )
                 .await
@@ -232,7 +232,7 @@ pub async fn unit_list_prev(
     let rows = if flag == "0" || flag == "(0)" {
         client
             .query(
-                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id IS NULL AND deleted_at IS NULL ORDER BY sort ASC, create_time::text ASC LIMIT $1",
+                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id IS NULL AND deleted_at IS NULL ORDER BY sort ASC, create_time ASC LIMIT $1",
                 &[&limit],
             )
             .await
@@ -240,7 +240,7 @@ pub async fn unit_list_prev(
     } else {
         client
             .query(
-                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 AND deleted_at IS NULL ORDER BY sort ASC, create_time::text ASC LIMIT $2",
+                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 AND deleted_at IS NULL ORDER BY sort ASC, create_time ASC LIMIT $2",
                 &[&flag, &limit],
             )
             .await
@@ -257,7 +257,7 @@ pub async fn unit_list_sub_direct(
     let client = client_of(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 AND deleted_at IS NULL ORDER BY sort ASC, create_time::text DESC",
+            "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 AND deleted_at IS NULL ORDER BY sort ASC, create_time DESC",
             &[&flag],
         )
         .await
@@ -273,7 +273,7 @@ pub async fn unit_list_sub_direct_with_type(
     let client = client_of(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 AND type = $2 AND deleted_at IS NULL ORDER BY sort ASC, create_time::text DESC",
+            "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 AND type = $2 AND deleted_at IS NULL ORDER BY sort ASC, create_time DESC",
             &[&flag, &unit_type],
         )
         .await
