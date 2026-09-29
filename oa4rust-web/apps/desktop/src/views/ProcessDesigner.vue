@@ -4262,8 +4262,9 @@ function computeDiff() {
     return orig && (orig.label !== n.label || Math.abs(orig.x - n.x) > 10 || Math.abs(orig.y - n.y) > 10)
   })
 }
-function clearCanvas() {
-  if (!processDef.value || !confirmMsg('清空画布？所有节点和连线将删除。')) return
+async function clearCanvas() {
+  // confirmMsg 返回 Promise：未 await 时 !promise 恒 false，确认形同虚设
+  if (!processDef.value || !(await confirmMsg('清空画布？所有节点和连线将删除。'))) return
   processDef.value = { nodes: [], edges: [] }
   selectedNode.value = null
   selectedEdge.value = null
