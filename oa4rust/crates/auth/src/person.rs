@@ -62,7 +62,7 @@ pub async fn list(
         .get("size")
         .and_then(|s| s.parse::<i64>().ok())
         .unwrap_or(20);
-    let offset = (page - 1) * size;
+    let (size, offset) = shared::response::page_window(page, size);
 
     let count_result = client
         .query_one("SELECT COUNT(*) as count FROM auth_person", &[])
