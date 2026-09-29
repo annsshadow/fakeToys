@@ -997,14 +997,12 @@ function uploadFile(file: File): void {
   uploadProgress.value = 0
   const formData = new FormData()
   formData.append('file', file)
-  // Simulate progress
-  const interval = setInterval(() => {
-    uploadProgress.value = Math.min(99, uploadProgress.value + 10)
-  }, 200)
+  // 真实上传进度（XHR upload.onprogress），不再假模拟
   api
-    .upload('/api/file/assemble/control/file/upload', formData)
+    .uploadWithProgress('/api/file/assemble/control/file/upload', formData, (p) => {
+      uploadProgress.value = Math.min(99, p)
+    })
     .then(() => {
-      clearInterval(interval)
       uploadProgress.value = 100
       setTimeout(() => {
         showUpload.value = false
@@ -1013,7 +1011,6 @@ function uploadFile(file: File): void {
       }, 500)
     })
     .catch(() => {
-      clearInterval(interval)
       uploadProgress.value = 0
     })
 }
