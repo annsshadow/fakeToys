@@ -5,7 +5,7 @@
 import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import { useSession } from '@/store/session'
-import { ensureAuthenticated, navigateHome } from '@/utils/auth-guard'
+import { navigateHome } from '@/utils/auth-guard'
 
 const session = useSession()
 const credential = ref('')
@@ -15,7 +15,10 @@ const error = ref('')
 
 async function onShowGuard() {
   // 已登录则直接进工作台，避免重复显示登录页。
-  if (await ensureAuthenticated()) navigateHome()
+  // 不用 ensureAuthenticated：未登录时它会 reLaunch 到登录页自身，
+  // 在微信小程序上 reLaunch 当前页会重触发 onShow → 无限重载循环。
+  await session.init()
+  if (session.isAuthenticated) navigateHome()
 }
 
 async function submit() {
