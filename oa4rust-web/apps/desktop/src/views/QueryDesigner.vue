@@ -273,6 +273,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
+import { downloadBlob } from '../utils/download'
 import { toast } from '../utils/toast'
 
 type QueryDef = {
@@ -754,12 +755,6 @@ function doExport() {
     downloadBlob(new Blob([sqlStr], { type: 'text/plain' }), `queries_${new Date().toISOString().slice(0, 10)}.sql`)
   }
   showImportExport.value = false
-}
-function downloadBlob(blob: Blob, filename: string) {
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = filename
-  a.click()
 }
 async function doImport() {
   if (!importJson.value.trim()) return

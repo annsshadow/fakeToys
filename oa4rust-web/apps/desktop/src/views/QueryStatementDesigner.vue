@@ -877,6 +877,7 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref } from 'vue'
+import { downloadBlob } from '../utils/download'
 import { toast } from '../utils/toast'
 
 interface Stmt {
@@ -1053,10 +1054,7 @@ function exportCSV() {
     resultHeaders.value.map((h) => `"${String(r[h] ?? '').replace(/"/g, '""')}"`).join(','),
   )
   const blob = new Blob([`${header}\n${rows.join('\n')}`], { type: 'text/csv;charset=utf-8' })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = 'query_result.csv'
-  a.click()
+  downloadBlob(blob, 'query_result.csv')
 }
 
 function loadStatements() {
@@ -1268,10 +1266,7 @@ function exportHistory() {
     ],
     { type: 'text/plain' },
   )
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = 'exec_history.txt'
-  a.click()
+  downloadBlob(blob, 'exec_history.txt')
 }
 
 async function runBatch() {
@@ -1700,10 +1695,7 @@ function exportVizData() {
   if (!vizBars.value.length) return
   const csv = `label,value\n${vizBars.value.map((d) => `${d.label},${d.value}`).join('\n')}`
   const blob = new Blob([csv], { type: 'text/csv' })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = 'chart_data.csv'
-  a.click()
+  downloadBlob(blob, 'chart_data.csv')
 }
 
 // --- Snippet Library ---
@@ -1908,12 +1900,6 @@ function doExport() {
     downloadBlob(new Blob([csv], { type: 'text/csv' }), `statements_${new Date().toISOString().slice(0, 10)}.csv`)
   }
   showExportImport.value = false
-}
-function downloadBlob(blob: Blob, filename: string) {
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = filename
-  a.click()
 }
 async function doImport() {
   if (!importData.value.trim()) return
