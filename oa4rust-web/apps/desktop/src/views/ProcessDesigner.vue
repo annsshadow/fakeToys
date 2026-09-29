@@ -2824,6 +2824,7 @@ import {
   processCreatePayload,
   serializeProcessDefinition,
 } from '../contracts/process-definition'
+import { downloadBlob } from '../utils/download'
 import { destroySandbox, runInSandbox } from '../utils/sandbox'
 import { toast } from '../utils/toast'
 
@@ -4637,12 +4638,7 @@ function downloadSvg() {
     return
   }
   const blob = new Blob([svg], { type: 'image/svg+xml' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${currentProcess.value?.flag || 'process'}.svg`
-  a.click()
-  URL.revokeObjectURL(url)
+  downloadBlob(blob, `${currentProcess.value?.flag || 'process'}.svg`)
 }
 function copySvg() {
   const svg = exportAsSvg()
@@ -6120,12 +6116,7 @@ function copyExportJson() {
 }
 function downloadJson() {
   const blob = new Blob([exportJson()], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${currentProcess.value?.flag || 'process'}.json`
-  a.click()
-  URL.revokeObjectURL(url)
+  downloadBlob(blob, `${currentProcess.value?.flag || 'process'}.json`)
 }
 function doImportJson() {
   try {
@@ -7425,23 +7416,13 @@ function exportAsSvgEnhanced() {
   }
   svg += `</g></svg>`
   const blob = new Blob([svg], { type: 'image/svg+xml' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${currentProcess.value?.flag || 'process'}_enhanced.svg`
-  a.click()
-  URL.revokeObjectURL(url)
+  downloadBlob(blob, `${currentProcess.value?.flag || 'process'}_enhanced.svg`)
 }
 function exportAsJsonEnhanced() {
   if (!processDef.value || !currentProcess.value) return
   const data = { process: currentProcess.value, definition: processDef.value, exportedAt: new Date().toISOString() }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${currentProcess.value.flag || 'process'}_enhanced.json`
-  a.click()
-  URL.revokeObjectURL(url)
+  downloadBlob(blob, `${currentProcess.value.flag || 'process'}_enhanced.json`)
 }
 // ── Execution Features ─────────────────────────────────────────────
 const executionLog = ref<ExecutionLog[]>([])
@@ -9529,12 +9510,7 @@ function exportCustomTemplate(idx: number) {
   if (!tpl) return
   const data = JSON.stringify(tpl, null, 2)
   const blob = new Blob([data], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${tpl.name}.json`
-  a.click()
-  URL.revokeObjectURL(url)
+  downloadBlob(blob, `${tpl.name}.json`)
 }
 // ── Collaboration Functions ──────────────────────────────────────────
 function addCollaborator(name: string, color: string) {
@@ -10653,12 +10629,7 @@ function exportProcessEnhanced(): void {
     ext = 'json'
   }
   const blob = new Blob([content], { type: mime })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${processMetadata.value.flag || 'process'}.${ext}`
-  a.click()
-  URL.revokeObjectURL(url)
+  downloadBlob(blob, `${processMetadata.value.flag || 'process'}.${ext}`)
   showExportConfigPanel.value = false
   showToast(`已导出为 ${ext.toUpperCase()} 格式`, 'success')
 }
@@ -11679,10 +11650,7 @@ function exportDebugLog(): void {
     [debugLog.value.map((e) => `[${new Date(e.ts).toISOString()}] ${e.level}: ${e.msg}`).join('\n')],
     { type: 'text/plain' },
   )
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = 'debug_log.txt'
-  a.click()
+  downloadBlob(blob, 'debug_log.txt')
 }
 function addDebugVar(k: string, v: any): void {
   debugVars.value[k] = v
@@ -11785,10 +11753,7 @@ function addAnnotationFromPanel(): void {
 }
 function exportAnnotations(): void {
   const blob = new Blob([JSON.stringify(annotations.value, null, 2)], { type: 'application/json' })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = 'annotations.json'
-  a.click()
+  downloadBlob(blob, 'annotations.json')
 }
 function clearAnnotations(): void {
   annotations.value = []
@@ -11915,10 +11880,7 @@ async function exportProcess() {
   try {
     const r = await api.get(`/api/processplatform/assemble/designer/get/${selectedProcess.value.id}`)
     const blob = new Blob([JSON.stringify(r.data, null, 2)], { type: 'application/json' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = `${selectedProcess.value.name || 'process'}.json`
-    a.click()
+    downloadBlob(blob, `${selectedProcess.value.name || 'process'}.json`)
   } catch (e) {
     toast.info('导出失败')
   }

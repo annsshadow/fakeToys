@@ -167,6 +167,7 @@
 import { api } from '@oa4rust/sdk'
 import { useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref } from 'vue'
+import { downloadBlob } from '../utils/download'
 import { confirmMsg, toast } from '../utils/toast'
 
 interface ConfigItem {
@@ -300,18 +301,12 @@ function copyConfig() {
 }
 function downloadConfig() {
   const blob = new Blob([config.value], { type: 'application/json' })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = `${selected.value?.flag || 'config'}.json`
-  a.click()
+  downloadBlob(blob, `${selected.value?.flag || 'config'}.json`)
 }
 function exportConfigs() {
   const data = items.value.map((i) => ({ name: i.name, flag: i.flag, category: i.category, config: i.config }))
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = `configs_${new Date().toISOString().slice(0, 10)}.json`
-  a.click()
+  downloadBlob(blob, `configs_${new Date().toISOString().slice(0, 10)}.json`)
 }
 function exportSelected() {
   if (!selected.value) return
@@ -319,10 +314,7 @@ function exportSelected() {
     [JSON.stringify({ name: selected.value.name, flag: selected.value.flag, config: config.value }, null, 2)],
     { type: 'application/json' },
   )
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = `${selected.value.flag || 'config'}.json`
-  a.click()
+  downloadBlob(blob, `${selected.value.flag || 'config'}.json`)
 }
 async function importConfigs() {
   let data: unknown

@@ -385,11 +385,7 @@ async function exportData() {
     const label: Record<string, string> = { '1': '正常', '2': '迟到' }
     const csv = `\uFEFF状态,次数\n${rows.map((x) => `${label[x.status ?? ''] ?? x.status ?? '未知'},${x.count ?? 0}`).join('\n')}`
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = `attendance-stat-${ym}.csv`
-    a.click()
-    URL.revokeObjectURL(a.href)
+    downloadBlob(blob, `attendance-stat-${ym}.csv`)
     toast.success(`已导出 ${rows.length} 条统计`)
   } catch {
     toast.error('考勤导出失败，请稍后重试')

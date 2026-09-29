@@ -132,6 +132,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { ref } from 'vue'
+import { downloadBlob } from '../utils/download'
 import { confirmMsg, toast } from '../utils/toast'
 
 type ViewItem = { id?: string; flag?: string; name?: string; viewName?: string; title?: string }
@@ -785,11 +786,7 @@ async function exportExcel(v: ViewItem) {
       blob = new Blob([data], { type: 'text/csv;charset=utf-8' })
       name = `view-${v.flag || v.id}.csv`
     }
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = name
-    a.click()
-    URL.revokeObjectURL(a.href)
+    downloadBlob(blob, name)
   } catch (e: any) {
     toast.error(`导出失败: ${e?.message ?? '未知错误'}`)
   }

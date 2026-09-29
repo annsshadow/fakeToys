@@ -433,6 +433,7 @@ import { computed, ref } from 'vue'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import EChartsView from '../components/EChartsView.vue'
 import { parseCsv } from '../utils/csv'
+import { downloadBlob } from '../utils/download'
 import { confirmMsg, toast } from '../utils/toast'
 
 interface QueryDef {
@@ -1013,10 +1014,7 @@ function exportResults() {
     viewHeaders.value.map((h) => `"${String(r[h] ?? '').replace(/"/g, '""')}"`).join(','),
   )
   const blob = new Blob([`${header}\n${rows.join('\n')}`], { type: 'text/csv;charset=utf-8' })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = 'query_result.csv'
-  a.click()
+  downloadBlob(blob, 'query_result.csv')
 }
 function fmtTime(t?: string) {
   if (!t) return ''
@@ -1150,12 +1148,6 @@ function doExport() {
     downloadBlob(new Blob([sqlStr], { type: 'text/plain' }), `queries_${new Date().toISOString().slice(0, 10)}.sql`)
   }
   showExportImport.value = false
-}
-function downloadBlob(blob: Blob, filename: string) {
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = filename
-  a.click()
 }
 async function doImport() {
   if (!importJson.value.trim()) return
