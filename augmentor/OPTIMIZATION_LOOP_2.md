@@ -198,3 +198,100 @@
   目录名再跑。本条补记自身即按此纪律书写：凡名字会进 scratch 档的一律不套反引号，以免账本
   自己给自己造新引用（两条带行号引用均为 live 档 + 区间 live，已现量核验）。
 - 全量偏支读数待阶段门禁落账。
+
+### L121（2026-09-29）— A205 偏支逐支审计·第三批（`61d075bf3`）
+
+- **权威清单重建**：L120 后剩余偏支以全量门禁 coverage.xml 的 missing-branches 重读，
+  得 46 条（L116 旧清单已过时）。坑：XML 的 `class.filename` 不带包前缀，首读把
+  `api/routes/export.py` 误并入 `augmentor/export.py`；拼上 `package.name` 才是 46 条
+  真身。L121–L124 全部以这份 46 条为基准。
+- `test_partial_branches_l121.py` 清 8 条可达 + 记 3 条不可达：
+  - analytics 182->181（停用词夹在 bigram 对 ⇒ 该对跳过；无停用词对照组必出 bigram 钉判据）
+  - analytics 192->190（纯空白文本句法切分无句 ⇒ `if sentences:` 假支）
+  - analytics 266->276（150 条数据集落在 [100,1000) ⇒ 数据量洞察两档全不中）
+  - analytics 422->418（重复候选 instruction 为空一方被挡；threshold=0.0 把「挡掉」变可观测）
+  - config_validator 753->752（列表项环境变量**已设置**不告警 + 未设置对照）
+  - config_validator 759->exit / 764->exit（`_validate_dict`/`_validate_list` 喂正确类型零错误）
+  - sampler 279->282（六问题类型×长度三档全覆盖 ⇒ `underrepresented` 为空）
+- 记档：analytics 349->353（入口 :325 空早退 ⇒ :349 `if self._items:` 恒真，冗余防御）、
+  sampler 41->exit（`self._model` 只置 None、`_load_model` 从不回填 ⇒ 死守卫）、
+  sampler 265->260（`identify_underrepresented` 产出口径封闭 {question_type,length} ⇒
+  elif 恒真支）。
+- 附带记档（死代码，无偏支弧）：config_validator `__init__` 登记的 `_validators`
+  分发表（dict/list/str/int/float/bool → 六个 `_validate_*`）**没有任何走查调用点**，
+  类型检查全在 `_validate_known_fields` 就地 isinstance ⇒ 六个方法只能被测试直调。
+  留 L126 简化轮收编。
+
+### L122（2026-09-29）— 第四批（`925610098`）
+
+- `test_partial_branches_l122.py` 清 5 条可达 + 记 3 条不可达：
+  - backup 219->223（备份文件外部缺失：跳 unlink、索引照清、仍成功）
+  - backup 331->330（索引**重复 backup_id** 的真实损坏形态：同 id 两条目，第一条
+    删光、第二条返回 False，`clean_old_backups` 计数只进一；走公共入口不碰私有方法）
+  - version_control 245->244（`get_version` 找列表尾 / 找不存在 id 两种扫过形态）
+  - version_control 382->384（同实例比较**不同版本对**：缓存键不同不进 :354 早退，
+    `hasattr` 已存在 ⇒ 跳缓存初始化）
+  - indexer 168->166（n-gram 字段混入 int 值被 `isinstance` 挡出索引、其余照索）
+- 记档：rag 61->68（分块循环每轮 `start+chunk_size ≥ len+overlap > len` ⇒ :66 `break`
+  恒先于 range 回边触发，回边不可达）、rag 63->65（range 的 start 恒 `< len(text)`，
+  空切片不可达，防御式判据）、export 277->286（ExportFormat 六成员封闭枚举 + :240
+  非原生委托早退 ⇒ 穷举 elif 链尾穿到 :286 不可达）。
+
+### L123（2026-09-29）— 第五批·九条单偏支（`0c61ba3dd`）
+
+- `test_partial_branches_l123.py` 清 5 条可达 + 记 4 条：
+  - performance_benchmark 59->63（`HAS_MEMORY_MONITOR` 假支：翻开关跳过采样、原样返回）
+  - preview 216->218（第二次预览必须**换数据**：缓存键是前 5 条样本的 md5、**不含
+    格式**，同数据换格式走 :191 命中早退到不了 :216。附带产品缺陷记档：同数据换
+    格式返回旧格式缓存结果，缓存键设计漏了 format 维，留后续轮次处置）
+  - tracker 126->125（指标登记了但从未记值（空值列表）⇒ 不进 final_metrics）
+  - logging_setup 133->135（handler 被外部从目标 root 摘走 ⇒ 撤装跳 remove、仍 close）
+  - models/base 223->258（DCL 内层假支的**本意场景**：锁等待中的 worker 见到并发
+    写者已置好的 `_session` ⇒ 返回预建会话；双线程确定性配方，不是记档项）
+- 记档：report 145->138（`metrics` 写死三元组，走到 :145 时 metric 必为 diversity，
+  elif 恒真支）、retry 197->237（最后一轮必走 :218 `break`，range 自然耗尽不可达）、
+  cache 291->297（`total > _max_bytes` 前提保证 entries 非空，淘汰循环零轮回边不可达）、
+  api/main 193->207（模块**导入期**环境分支：用例在子进程设/不设
+  `AUGMENTOR_API_KEY` 各跑一遍 import 断言 stderr，不在测试进程 reload 生产模块
+  （会替换全套 TestClient 持有的 app 对象）；**测量面该弧仍挂着**，属「子进程实证、
+  主进程不可达」形态，记档不硬凑）。
+
+### L124（2026-09-29）— 第六批·cli 家族 + faiss（`94f7f09a2`）
+
+- `test_partial_branches_l124.py` 清 6 条可达 + 记 4 条：
+  - cli data_ops 66->73（`validate` 不带 `--output`）、ops 118->exit（`dependency
+    --action graph` 不带 `--output`）、profiling 35->37（`outliers --field score` 走
+    「非 length 不挂长度字段」支）；三条都走真 argparse 流程（`from cli import main`；
+    顶层 `cli.py` 是壳、真正分发表在 `augmentor.cli.commands`）
+  - faiss 192->199（查询缓存命中后 `_ids` 被**绕过写接口**直接改 ⇒ 滤失效条目、
+    整条作废重算；触发要点：缓存键是 `(digest, min(top_k, len(_ids)))`，top_k 必须
+    小于删后条数才同键命中；faiss 缺失环境沿用测试树既有的伪 faiss 注入）
+  - faiss 268->271（faiss 可用时删空全部向量 ⇒ 不往空索引 add）
+  - faiss 334->337（load 零向量持久化 ⇒ 跳 `index.add`）
+- 记档：cli version 98->exit / 142->exit（`run_version` / `run_backup` 的 action 由
+  parser choices 封闭、全被 if/elif 覆盖 ⇒ 链尾假支不可达）、cli ops 125->exit
+  （dependency action 同形）、cli quality 86->91（`_generate_recommendations` 零建议时
+  兜底追加「质量良好」一行 ⇒ recommendations 恒非空）。
+
+### L125（2026-09-29）— 阶段全量门禁 + A205 判定收官读数
+
+- **全量门禁（`.coverage` 清空重跑，防 scoped 混数）**：`7373 passed / 3 skipped /
+  exit 0`，语句+分支总覆盖 **99.87%**；分支 3808 valid / 3786 covered / **22 条
+  missing**。较 L120 的 46 条：L121–L124 四轮以 24 条测试清零（8+5+5+6），余 22 条
+  **全部已逐条记档**，A205「偏支逐支审计」在本批收官。
+- 余 22 条分两类：
+  - **可简化族（6 条弧 + 1 处死代码）**：validation 822->826 / 826->816 / 863->855
+    （`_sanitize_item` 里恒真的 `if fix:` 冗余守卫，L115 起记档待删）、quality 222->230
+    （`if sample_texts:` 恒真冗余）、analytics 349->353（`if self._items:` 恒真冗余）、
+    sampler 41->exit（`self._model` 死守卫）、config_validator 死分发表 + 六个只能
+    测试直调的 `_validate_*`（L121 记档）。L126 以「删守卫/死码 + 回归护栏」收掉
+    前 6 条弧（删后对应假支消失、真支不变行为 ⇒ 全量 16 条 missing）。
+  - **永久记档的结构性不可达（16 条）**：rag 61/63（break 抢跑/空切片族）、export
+    277 + cli version 98/142 + cli ops 125（封闭词表链尾族）、cli quality 86（兜底
+    恒非空族）、retry 197（break 抢跑族）、cache 291（前提保非空族）、report 145
+    （写死三元组族）、api/main 193（导入期环境分支族，子进程实证）、model_manager
+    23 + search_enhanced 221 + visualizer 46（DCL/懒加载防御族）、pipeline 369
+    （并行失败侧恒 True 族）、sampler 265（封闭词表族）。
+- 附带发现的产品缺陷 2 处已记档（preview 缓存键漏 format 维、config_validator 死
+  分发表），均不属偏支审计范围，留专项轮。
+- 本批无前端改动；前端状态仍为 L113 阶段 13 文件 / 112 例绿。
