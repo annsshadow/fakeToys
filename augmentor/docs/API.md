@@ -289,6 +289,24 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 的端点给出人读说明，其余端点的字段请查 schema。**不要从本文档手抄字段名**：
 它会漂移，而 schema 由代码生成。
 
+### 易混字段词典
+
+以下字段跨多个端点复现、且**字面直觉常与实际语义不符**，逐条给出人读说明。
+字段名以 schema（`api/routes/*.py` 的 `*Response`）为准，这里只解释含义，不复述类型。
+
+| 字段 | 出现处 | 人读说明（陷阱在括号里） |
+|------|--------|--------------------------|
+| `pass_rate` | quality/evaluate、quality/report、health-gate | 通过阈值的样本占比 = `passed_samples / total_samples`。（**健康门禁 health-gate 判负读的是它、不是 `avg_score`**：想「平均分不达标就让 CI 红」的人要另判 `avg_score`。） |
+| `avg_score` | quality/evaluate | 全体样本质量分的算术平均。（与 `pass_rate` 无固定关系：高均分也可能低通过率，反之亦然。） |
+| `threshold` | quality/evaluate、benchmark | 本次评分实际生效的阈值（可能来自请求覆盖，不一定等于 `config.yaml` 的 `quality.threshold`）。 |
+| `effective_weights` | quality/evaluate | **重归一化后**的权重，不是配置原值。API 拿不到原始种子问题 ⇒ 语义相似度维度不参与评分，其权重被摊到其余维度上；返回它是为了让调用方能自行复算总分。 |
+| `semantic_evaluated` | quality/evaluate | 语义相似度维度**是否真的参与了**评分。API 面恒为 `false`（见上一行原因），CLI/SDK 面在有原始问题且装了 `sentence-transformers` 时才 `true`。 |
+| `duplicate_groups` | quality/dedup | 重复**组的数量**（一个整数），**不是**分组明细列表。要保留下来的条目下标看 `kept_indices`。 |
+| `removed_count` / `dropped_count` | dedup 用前者 / quality/clean 用后者 | 都是「被去掉的条数」，但**不同名是既有契约**：去重器（`removed_count`）与清洗器（`dropped_count`）是两个不同组件，不在 API 层统一。 |
+| `is_valid` | dataset/validate | 「数据集整体是否通过校验」。（**空数据集 `[]` 恒为 `true`**——一条问题都没有是因为一条都没看，见账本 A92；上游可能把语料写空却三面全绿，别把它当「数据没问题」。） |
+| `overall_passed` | quality/report | 报告级总判决位。报告形端点**默认不把它翻译成退出码**（只出报告不判负，见账本 A91 / §3.28），要门禁语义走 health-gate 或 CLI 的 `--gate`。 |
+| `metrics` / `all_metrics` | benchmark | `metrics` 只含**配置里声明**的指标；`all_metrics` 含全部已计算指标。CI 该盯的是前者。 |
+
 ---
 
 ## 端点总览
@@ -1097,3 +1115,32 @@ resp = requests.post(
 report = resp.json()
 print(report["pass_rate"], report["improvement_suggestions"])
 ```
+
+## 11. 排查（API 面）
+
+只列 REST 面特有的坑；依赖缺失、词云乱码等通用问题见 `docs/README.md` §9。
+
+**Q：`POST` 请求返回 400，报「路径不在白名单内」**
+A：所有 `input_file` / `filename` 都是**服务端路径**、不是 URL，且必须落在路径
+白名单里（出厂默认只有工作目录下的 `data/`）。传绝对路径或 `../` 逃逸都会被拒。
+把文件放进 `data/`、用相对名即可（见 §通用约定 · 路径白名单）。
+
+**Q：写入类端点（导出 / 版本创建）报「目标目录不存在」而不是自动建目录**
+A：写入必须显式给出已存在的目标路径，服务端**不替你造父目录**（防手滑把数据写到
+意料之外的地方）。先建目录或指到已存在的目录下。
+
+**Q：`dataset/validate` 对一份空数据集回 200 且 `is_valid: true`**
+A：这是**已知语义**（账本 A92）：没有任何条目 ⇒ 没有任何校验失败 ⇒ 判为通过。
+它不代表「数据没问题」。要拦空语料，调用方需自行判 `total_items > 0`。
+
+**Q：质量类端点（report / audit / leakage）即使有问题也回 200，怎么让 CI 变红**
+A：报告形端点默认只出报告、不判负（§响应契约、§易混字段词典 `overall_passed` 行）。
+门禁语义走 `POST /api/quality/health-gate`（读 `pass_rate`）或 CLI 的 `--gate` 开关。
+
+**Q：并发跑增强时 `GET /api/augment/progress` 的数字对不上**
+A：进度是**单进程内的全局状态**，多个并发增强会互相覆盖。API 面一次只应跑一个增强
+任务；需要并行请用独立进程 + 独立工作目录。
+
+**Q：响应头里的 `X-Process-Time` 是什么单位**
+A：秒（浮点）。它计的是服务端处理耗时，不含网络往返，可用来定位慢端点（见 §慢请求）。
+
