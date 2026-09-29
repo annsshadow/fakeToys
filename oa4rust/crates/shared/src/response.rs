@@ -316,6 +316,27 @@ pub fn attachment_disposition(name: &str) -> String {
     format!("attachment; filename=\"{ascii_fallback}\"; filename*=UTF-8''{encoded}")
 }
 
+/// 清洗客户端可控的 `Content-Type`（multipart field content_type 直通 DB 再回吐响应头）。
+/// 非 ASCII token / 控制字符 / CR-LF 会让 `HeaderValue` 构造失败（builder+unwrap 处 panic），
+/// 或注入第二头部；清洗为可见 ASCII token，无 `"/"` 时回退 `application/octet-stream`。
+pub fn sanitize_mime(raw: &str) -> String {
+    let cleaned: String = raw
+        .chars()
+        .map(|c| {
+            if c.is_ascii_graphic() && c != '"' && c != '\\' && c != ',' && c != ';' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    if cleaned.is_empty() {
+        "application/octet-stream".to_string()
+    } else {
+        cleaned
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -488,5 +509,17 @@ mod tests {
         let (s, off) = super::page_window(i64::MAX, 200);
         assert_eq!(s, 200);
         assert!(off > 0);
+    }
+    #[test]
+    fn sanitize_mime_neutralizes_non_ascii_and_injection() {
+        // 中文 mime / 换行注入 / 空值 回退
+        let v = super::sanitize_mime("文本/abc");
+        assert!(v.is_ascii(), "must be pure ASCII: {v}");
+        assert!(axum::http::HeaderValue::from_str(&v).is_ok());
+        let v2 = super::sanitize_mime("text/plain\r\nX-Inject: 1");
+        assert!(axum::http::HeaderValue::from_str(&v2).is_ok());
+        assert!(!v2.contains('\r') && !v2.contains('\n'));
+        assert_eq!(super::sanitize_mime(""), "application/octet-stream");
+        assert_eq!(super::sanitize_mime("image/png"), "image/png");
     }
 }
