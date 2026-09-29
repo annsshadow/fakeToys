@@ -1979,7 +1979,7 @@ pub async fn work_list(
         .get("size")
         .and_then(|s| s.parse().ok())
         .unwrap_or(20);
-    let offset = (page - 1) * size;
+    let offset = page.saturating_sub(1).saturating_mul(size);
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let count_row = client
