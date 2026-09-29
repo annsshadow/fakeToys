@@ -1497,7 +1497,7 @@ pub async fn attendancedetail_mobile_filter_list_page_page_count_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let offset = (page - 1) * count;
+    let (count, offset) = shared::response::page_window(page, count);
     let rows = client
         .query(
             "SELECT id, person_id, date, status FROM x_attendance_detail ORDER BY date DESC LIMIT $2 OFFSET $1",
@@ -4218,7 +4218,7 @@ fn json_page(page: i64, size: i64) -> Result<(i64, i64), AppError> {
             "page must be >= 1 and size in 1..=500".to_string(),
         ));
     }
-    Ok((size, (page - 1) * size))
+    Ok((size, (page - 1).saturating_mul(size)))
 }
 
 /// 管理表按 id 删除：先 admin 门禁，再执行真实 DELETE。
