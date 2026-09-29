@@ -3378,7 +3378,7 @@ pub async fn delete_widget(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
-            "UPDATE x_portal_widget SET deleted_at = NOW() WHERE id = $1",
+            "UPDATE x_portal_widget SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await

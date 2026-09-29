@@ -12129,7 +12129,7 @@ pub async fn dict_delete_id(
 
     let n = client
         .execute(
-            "UPDATE x_program_dict SET deleted_at = NOW() WHERE id = $1",
+            "UPDATE x_program_dict SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await

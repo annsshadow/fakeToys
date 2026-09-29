@@ -584,7 +584,7 @@ pub async fn att_delete_with_work(
     }
     let n = client
         .execute(
-            "UPDATE x_attachment SET deleted_at = NOW() WHERE id = $1",
+            "UPDATE x_attachment SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -615,7 +615,7 @@ pub async fn att_delete_with_workcompleted(
     }
     let n = client
         .execute(
-            "UPDATE x_attachment SET deleted_at = NOW() WHERE id = $1",
+            "UPDATE x_attachment SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -906,9 +906,12 @@ pub async fn read_processing(pool: Extension<Pool>, Path(id): Path<String>) -> H
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    tx.execute("UPDATE x_read SET deleted_at = NOW() WHERE id = $1", &[&id])
-        .await
-        .map_err(|_| AppError::Internal)?;
+    tx.execute(
+        "UPDATE x_read SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+        &[&id],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
     tx.commit().await.map_err(|_| AppError::Internal)?;
     ok(json!({ "id": id, "readCompletedId": rc_id, "value": true }))
 }
