@@ -201,3 +201,15 @@ async fn test_uuid_generate_route() {
 
     assert_eq!(response.status(), StatusCode::OK);
 }
+
+// 轾77：mobile 发帖页发 forumId（camel），反序列化须双向兼容，
+// 否则 forum_id 落 None → 主题以空 forum_id 落库、版块列表不可见。
+#[test]
+fn create_topic_request_accepts_forum_id_camel_and_snake() {
+    let camel: crate::CreateTopicRequest =
+        serde_json::from_value(json!({ "forumId": "f-1" })).unwrap();
+    assert_eq!(camel.forum_id.as_deref(), Some("f-1"));
+    let snake: crate::CreateTopicRequest =
+        serde_json::from_value(json!({ "forum_id": "f-2" })).unwrap();
+    assert_eq!(snake.forum_id.as_deref(), Some("f-2"));
+}
