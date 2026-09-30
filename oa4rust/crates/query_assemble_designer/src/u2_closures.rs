@@ -587,7 +587,7 @@ pub async fn importmodel_create(
     let norm = normalize_identifier(name);
     let dup_row = client
         .query_one(
-            "SELECT COUNT(*) AS cnt FROM x_query_import_model WHERE LOWER(TRIM(COALESCE(name,''))) = $1",
+            "SELECT COUNT(*) AS cnt FROM x_query_import_model WHERE LOWER(TRIM(COALESCE(name,''))) = $1 AND deleted_at IS NULL",
             &[&norm],
         )
         .await
@@ -753,7 +753,7 @@ pub async fn stat_create(
     let norm = normalize_identifier(name);
     let dup_row = client
         .query_one(
-            "SELECT COUNT(*) AS cnt FROM x_query_stat WHERE LOWER(TRIM(COALESCE(name,''))) = $1",
+            "SELECT COUNT(*) AS cnt FROM x_query_stat WHERE LOWER(TRIM(COALESCE(name,''))) = $1 AND deleted_at IS NULL",
             &[&norm],
         )
         .await
@@ -1325,7 +1325,7 @@ pub async fn importmodel_get_flag(
     let row = client
         .query_opt(
             "SELECT id, name, model_flag, query_flag, content, creator, create_time \
-             FROM x_query_import_model WHERE id = $1 OR model_flag = $1 LIMIT 1",
+             FROM x_query_import_model WHERE id = $1 OR model_flag = $1 AND deleted_at IS NULL LIMIT 1",
             &[&flag],
         )
         .await
@@ -1392,7 +1392,7 @@ pub async fn importmodel_edit_flag(
         &session,
         &client,
         "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_import_model \
-         WHERE id = $1 OR model_flag = $1 LIMIT 1",
+         WHERE id = $1 OR model_flag = $1 AND deleted_at IS NULL LIMIT 1",
         &flag,
     )
     .await?;
@@ -1406,7 +1406,7 @@ pub async fn importmodel_edit_flag(
         let dup_row = client
             .query_one(
                 "SELECT COUNT(*) AS cnt FROM x_query_import_model \
-                 WHERE LOWER(TRIM(COALESCE(name,''))) = $1 AND id <> $2",
+                 WHERE LOWER(TRIM(COALESCE(name,''))) = $1 AND id <> $2 AND deleted_at IS NULL",
                 &[&norm, &flag],
             )
             .await
@@ -1459,7 +1459,7 @@ pub async fn importmodel_delete_flag(
         &session,
         &client,
         "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_import_model \
-         WHERE id = $1 OR model_flag = $1 LIMIT 1",
+         WHERE id = $1 OR model_flag = $1 AND deleted_at IS NULL LIMIT 1",
         &flag,
     )
     .await?;
@@ -1499,7 +1499,7 @@ pub async fn importmodel_permission_set(
         &session,
         &client,
         "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_import_model \
-         WHERE id = $1 OR model_flag = $1 LIMIT 1",
+         WHERE id = $1 OR model_flag = $1 AND deleted_at IS NULL LIMIT 1",
         &flag,
     )
     .await?;
@@ -2006,7 +2006,7 @@ pub async fn stat_simulate_put(
         &pool,
         &session,
         &client,
-        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_stat WHERE id = $1",
+        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_stat WHERE id = $1 AND deleted_at IS NULL",
         &id,
     )
     .await?;
@@ -2016,7 +2016,7 @@ pub async fn stat_simulate_put(
 
     let row = client
         .query_opt(
-            "SELECT id, name, config FROM x_query_stat WHERE id = $1",
+            "SELECT id, name, config FROM x_query_stat WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await

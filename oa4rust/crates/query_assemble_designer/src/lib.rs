@@ -999,7 +999,7 @@ async fn importmodel_list_query_flag_core(
 
     let rows = client
         .query(
-            "SELECT id, name, model_flag, query_flag, creator, create_time FROM x_query_import_model WHERE query_flag = $1 ORDER BY create_time DESC",
+            "SELECT id, name, model_flag, query_flag, creator, create_time FROM x_query_import_model WHERE query_flag = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
             &[&query_flag],
         )
         .await
@@ -1079,7 +1079,7 @@ pub async fn importmodel_id(
 
     let row = client
         .query_opt(
-            "SELECT id, name, model_flag, query_flag, content, creator, create_time FROM x_query_import_model WHERE id = $1",
+            "SELECT id, name, model_flag, query_flag, content, creator, create_time FROM x_query_import_model WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -1141,7 +1141,7 @@ pub async fn importmodel_id_permission(
 
     let row = client
         .query_opt(
-            "SELECT id, permission FROM x_query_import_model WHERE id = $1",
+            "SELECT id, permission FROM x_query_import_model WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -2274,7 +2274,7 @@ async fn stat_list_query_flag_core(
 
     let rows = client
         .query(
-            "SELECT id, name, query_flag, stat_type, creator, create_time FROM x_query_stat WHERE query_flag = $1 ORDER BY create_time DESC",
+            "SELECT id, name, query_flag, stat_type, creator, create_time FROM x_query_stat WHERE query_flag = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
             &[&query_flag],
         )
         .await
@@ -2355,7 +2355,7 @@ async fn stat_list_id_next_count_core(
 
     let rows = client
         .query(
-            "SELECT id, name, query_flag, stat_type, creator, create_time FROM x_query_stat WHERE id > $1 ORDER BY id ASC LIMIT $2",
+            "SELECT id, name, query_flag, stat_type, creator, create_time FROM x_query_stat WHERE id > $1 AND deleted_at IS NULL ORDER BY id ASC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -2424,7 +2424,7 @@ pub async fn stat_list_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, name, query_flag, stat_type, creator, create_time FROM x_query_stat WHERE id < $1 ORDER BY id DESC LIMIT $2",
+            "SELECT id, name, query_flag, stat_type, creator, create_time FROM x_query_stat WHERE id < $1 AND deleted_at IS NULL ORDER BY id DESC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -2477,7 +2477,7 @@ pub async fn stat_id(
 
     let row = client
         .query_opt(
-            "SELECT id, name, query_flag, stat_type, config, creator, create_time FROM x_query_stat WHERE id = $1",
+            "SELECT id, name, query_flag, stat_type, config, creator, create_time FROM x_query_stat WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -2539,7 +2539,7 @@ pub async fn stat_id_permission(
 
     let row = client
         .query_opt(
-            "SELECT id, permission FROM x_query_stat WHERE id = $1",
+            "SELECT id, permission FROM x_query_stat WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -2574,7 +2574,7 @@ pub async fn stat_id_simulate(
 
     let row = client
         .query_opt(
-            "SELECT id, name, config FROM x_query_stat WHERE id = $1",
+            "SELECT id, name, config FROM x_query_stat WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
