@@ -2002,15 +2002,6 @@
         </div>
       </div>
     </div>
-    <!-- Documentation Panel -->
-    <div v-if="showDocPanel" class="doc-panel">
-      <div class="dp-header"><span>📄 流程文档</span>
-        <div class="dp-actions"><button class="btn-sm" @click="exportDocumentation()">💾 导出</button><button class="btn-sm" @click="showDocPanel=false">✕</button></div>
-      </div>
-      <div class="dp-body">
-        <textarea class="dp-editor" v-model="docContent" readonly></textarea>
-      </div>
-    </div>
     <!-- Node Shape Editor -->
     <div v-if="showShapeEditorDeep && shapePreviewNodeIdx!==null" class="shape-editor-panel">
       <div class="sep-header"><span>🔷 节点形状编辑器</span><button class="btn-sm" @click="showShapeEditorDeep=false">✕</button></div>
@@ -2024,29 +2015,6 @@
         </div>
         <div class="sep-shapes">
           <button v-for="s in ['rect','round','diamond','hex','circle','pill','chevron','inbox']" :key="s" :class="['sep-shape-btn',{active:true}]" @click="applyShapeDeep(shapePreviewNodeIdx, s)">{{ s }}</button>
-        </div>
-      </div>
-    </div>
-    <!-- Export Modal -->
-    <div v-if="showExportManager" class="modal-overlay" @click.self="showExportManager=false">
-      <div class="modal export-modal">
-        <div class="modal-header"><span>📤 导出流程</span><button class="btn-sm" @click="showExportManager=false">✕</button></div>
-        <div class="modal-body">
-          <div class="exp-formats">
-            <div v-for="fmt in exportFormats" :key="fmt.id" class="exp-format" @click="exportAs(fmt.id)">
-              <span class="exp-icon">{{ fmt.icon }}</span>
-              <div class="exp-info"><div class="exp-name">{{ fmt.name }}</div><div class="exp-desc">{{ fmt.description }}</div></div>
-            </div>
-          </div>
-          <div class="exp-options">
-            <label><input v-model="exportOptions.includeAnnotations" type="checkbox" /> 包含标注</label>
-            <label><input v-model="exportOptions.includeMetadata" type="checkbox" /> 包含元数据</label>
-            <label><input v-model="exportOptions.highQuality" type="checkbox" /> 高质量</label>
-          </div>
-          <div class="exp-progress" v-if="exportProgress > 0">
-            <div class="exp-bar" :style="{width:exportProgress+'%'}"></div>
-            <span class="exp-status">{{ exportStatus }}</span>
-          </div>
         </div>
       </div>
     </div>
@@ -2192,20 +2160,6 @@
           </div>
         </div>
         <button class="btn" @click="executeWorkflowRules()">▶ 执行所有规则</button>
-      </div>
-    </div>
-    <!-- Export Config Panel -->
-    <div v-if="showExportConfigPanel" class="modal-overlay" @click.self="showExportConfigPanel=false">
-      <div class="modal modal-md">
-        <div class="modal-header"><span>📤 导出设置</span><button class="btn-sm" @click="showExportConfigPanel=false">✕</button></div>
-        <div class="modal-body">
-          <div class="ex-field"><label>格式</label><select v-model="exportConfig.format" class="ex-select"><option value="json">JSON</option><option value="svg">SVG</option><option value="mermaid">Mermaid</option><option value="yaml">YAML</option><option value="html">HTML</option><option value="csv">CSV</option></select></div>
-          <div class="ex-field"><label>质量</label><select v-model="exportConfig.quality" class="ex-select"><option value="low">低</option><option value="medium">中</option><option value="high">高</option></select></div>
-          <div class="ex-field"><label><input v-model="exportConfig.includeAnnotations" type="checkbox" /> 包含标注</label></div>
-          <div class="ex-field"><label><input v-model="exportConfig.includeMetadata" type="checkbox" /> 包含元数据</label></div>
-          <div class="ex-field"><label><input v-model="exportConfig.includeHistory" type="checkbox" /> 包含历史</label></div>
-          <button class="btn" @click="applyExportConfig()">📤 导出</button>
-        </div>
       </div>
     </div>
     <!-- Node Style Editor -->
@@ -10076,15 +10030,6 @@ interface ProcessWorkflowRule {
   enabled: boolean
   executionLog: Array<{ time: number; result: string }>
 }
-interface ProcessExportConfig {
-  format: string
-  includeAnnotations: boolean
-  includeMetadata: boolean
-  includeHistory: boolean
-  quality: 'low' | 'medium' | 'high'
-  pageSize: string
-  orientation: string
-}
 interface ProcessNodeStyle {
   borderRadius: number
   borderWidth: number
@@ -10230,17 +10175,6 @@ const showHeatmapPanel = ref(false)
 const heatmapData = ref<ProcessHeatmapCell[]>([])
 const heatmapMetric = ref<'degree' | 'centrality' | 'betweenness' | ' PageRank'>('degree')
 // ── Workflow Rules ──────────────────────────────────────────────────
-// ── Export Config ───────────────────────────────────────────────────
-const showExportConfigPanel = ref(false)
-const exportConfig = ref<ProcessExportConfig>({
-  format: 'svg',
-  includeAnnotations: true,
-  includeMetadata: true,
-  includeHistory: false,
-  quality: 'high',
-  pageSize: 'A4',
-  orientation: 'landscape',
-})
 // ── Node Style Editor ───────────────────────────────────────────────
 const showNodeStyleEditor = ref(false)
 const nodeStyleEditorIdx = ref<number | null>(null)
@@ -10635,65 +10569,6 @@ function executeWorkflowRules(): void {
         rule.executionLog.push({ time: Date.now(), result: 'error' })
       }
     })
-}
-// ── Export Config Functions ──────────────────────────────────────────
-function openExportConfigPanel() {
-  showExportConfigPanel.value = true
-}
-function applyExportConfig(): void {
-  exportProcessEnhanced()
-}
-function exportProcessEnhanced(): void {
-  if (!processDef.value) return
-  const fmt = exportConfig.value.format
-  let content = '',
-    mime = '',
-    ext = ''
-  if (fmt === 'json') {
-    content = JSON.stringify(
-      { metadata: processMetadata.value, definition: processDef.value, exportedAt: new Date().toISOString() },
-      null,
-      2,
-    )
-    mime = 'application/json'
-    ext = 'json'
-  } else if (fmt === 'svg') {
-    content = generateSVGRich()
-    mime = 'image/svg+xml'
-    ext = 'svg'
-  } else if (fmt === 'mermaid') {
-    content = generateMermaid()
-    mime = 'text/plain'
-    ext = 'md'
-  } else if (fmt === 'plantuml') {
-    content = generatePlantUML()
-    mime = 'text/plain'
-    ext = 'plantuml'
-  } else if (fmt === 'dot') {
-    content = generateDOT()
-    mime = 'text/plain'
-    ext = 'dot'
-  } else if (fmt === 'yaml') {
-    content = generateYAMLEnhanced()
-    mime = 'text/yaml'
-    ext = 'yaml'
-  } else if (fmt === 'html') {
-    content = generateHTMLReportEnhanced()
-    mime = 'text/html'
-    ext = 'html'
-  } else if (fmt === 'csv') {
-    content = generateCSVEnhanced()
-    mime = 'text/csv'
-    ext = 'csv'
-  } else {
-    content = JSON.stringify(processDef.value, null, 2)
-    mime = 'application/json'
-    ext = 'json'
-  }
-  const blob = new Blob([content], { type: mime })
-  downloadBlob(blob, `${processMetadata.value.flag || 'process'}.${ext}`)
-  showExportConfigPanel.value = false
-  showToast(`已导出为 ${ext.toUpperCase()} 格式`, 'success')
 }
 // ── Node Style Editor Functions ──────────────────────────────────────
 function openNodeStyleEditor(nodeIdx: number) {
