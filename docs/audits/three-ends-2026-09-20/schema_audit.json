@@ -1,17 +1,2888 @@
 {
  "report": {
-  "A_body_ignored": [],
-  "B_sent_not_read": [],
-  "C_read_not_sent": [],
-  "D_delegated_unverifiable": [],
+  "A_body_ignored": [
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AttendanceApp.vue",
+    "line": 349,
+    "method": "POST",
+    "path": "/api/attendance/assemble/control/attendanceappealInfo/archive/${encodeURIComponent(a.id)}",
+    "sent": [
+     "id"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "attendanceappealInfo_archive_id"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AttendanceApp.vue",
+    "line": 1387,
+    "method": "POST",
+    "path": "/api/attendance/assemble/control/v2/shift/list/1/size/50",
+    "sent": [
+     "name"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "v2_shift_list_page_size"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 460,
+    "method": "POST",
+    "path": "/api/group/list/group/sub/direct/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "group_list_group_sub_direct_object"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 461,
+    "method": "POST",
+    "path": "/api/group/list/group/sub/nested/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "group_list_group_sub_nested_object"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 462,
+    "method": "POST",
+    "path": "/api/group/list/group/sup/direct/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "group_list_group_sup_direct_object"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 463,
+    "method": "POST",
+    "path": "/api/group/list/group/sup/nested/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "group_list_group_sup_nested_object"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 478,
+    "method": "POST",
+    "path": "/api/person/list/person/sub/direct/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "person_list_person_sub_direct_object"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 479,
+    "method": "POST",
+    "path": "/api/person/list/person/sub/nested/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "person_list_person_sub_nested_object"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 480,
+    "method": "POST",
+    "path": "/api/person/list/person/sup/direct/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "person_list_person_sup_direct_object"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 481,
+    "method": "POST",
+    "path": "/api/person/list/person/sup/nested/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "person_list_person_sup_nested_object"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 482,
+    "method": "POST",
+    "path": "/api/person/list/unit/sub/direct/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "person_list_unit_sub_direct_object"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 483,
+    "method": "POST",
+    "path": "/api/person/list/unit/sub/nested/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "person_list_unit_sub_nested_object"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 484,
+    "method": "POST",
+    "path": "/api/person/list/unit/sub/direct/like/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "person_list_unit_sub_direct_like_object"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 485,
+    "method": "POST",
+    "path": "/api/person/list/unit/sub/nested/like/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "person_list_unit_sub_nested_like_object"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 920,
+    "method": "PUT",
+    "path": "/api/organization/assemble/control/unitduty/update/member",
+    "sent": [
+     "member"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "unitduty_update_member"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 1397,
+    "method": "POST",
+    "path": "/api/group/list/group/sub/direct",
+    "sent": [
+     "groupList"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "group_list_group_sub_direct"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 1398,
+    "method": "POST",
+    "path": "/api/group/list/group/sub/nested",
+    "sent": [
+     "groupList"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "group_list_group_sub_nested"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 1399,
+    "method": "POST",
+    "path": "/api/group/list/group/sup/direct",
+    "sent": [
+     "groupList"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "group_list_group_sup_direct"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 1400,
+    "method": "POST",
+    "path": "/api/group/list/group/sup/nested",
+    "sent": [
+     "groupList"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "group_list_group_sup_nested"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 1548,
+    "method": "POST",
+    "path": "/api/person/list/person/sub/direct",
+    "sent": [
+     "personList"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "person_list_person_sub_direct"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 1549,
+    "method": "POST",
+    "path": "/api/person/list/person/sub/nested",
+    "sent": [
+     "personList"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "person_list_person_sub_nested"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 1550,
+    "method": "POST",
+    "path": "/api/person/list/person/sup/nested",
+    "sent": [
+     "personList"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "person_list_person_sup_nested"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/Personal.vue",
+    "line": 321,
+    "method": "POST",
+    "path": "/api/organization/assemble/authentication/authentication/check/token",
+    "sent": [
+     "token"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "check_token"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/Personal.vue",
+    "line": 326,
+    "method": "POST",
+    "path": "/api/organization/assemble/authentication/sso/encrypt",
+    "sent": [
+     "client",
+     "key",
+     "credential"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "sso_encrypt"
+    ]
+   }
+  ],
+  "B_sent_not_read": [
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AppInfoApp.vue",
+    "line": 206,
+    "method": "POST",
+    "path": "/api/appinfo/${id}/permission",
+    "sent": [
+     "viewerList"
+    ],
+    "handler_reads": [
+     "personIds",
+     "roleType"
+    ],
+    "handlers": [
+     "permission_u2_app_info"
+    ],
+    "not_read": [
+     "viewerList"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AttendanceApp.vue",
+    "line": 555,
+    "method": "POST",
+    "path": "/api/attendance/assemble/control/v2/groupschedule",
+    "sent": [
+     "name"
+    ],
+    "handler_reads": [
+     "groupId",
+     "scheduleDateString",
+     "scheduleMonthString",
+     "shiftId",
+     "userId"
+    ],
+    "handlers": [
+     "v2_groupschedule_post"
+    ],
+    "not_read": [
+     "name"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AttendanceApp.vue",
+    "line": 572,
+    "method": "POST",
+    "path": "/api/attendance/assemble/control/attendanceselfholiday",
+    "sent": [
+     "name"
+    ],
+    "handler_reads": [
+     "holidayDate",
+     "personId",
+     "reason"
+    ],
+    "handlers": [
+     "attendanceselfholiday_create"
+    ],
+    "not_read": [
+     "name"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AttendanceApp.vue",
+    "line": 579,
+    "method": "POST",
+    "path": "/api/attendance/assemble/control/selfholidaysimple",
+    "sent": [
+     "name"
+    ],
+    "handler_reads": [
+     "holidayDate",
+     "personId",
+     "reason"
+    ],
+    "handlers": [
+     "selfholidaysimple_create"
+    ],
+    "not_read": [
+     "name"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AttendanceApp.vue",
+    "line": 959,
+    "method": "POST",
+    "path": "/api/attendance/assemble/control/v2/leave/import",
+    "sent": [
+     "list"
+    ],
+    "handler_reads": [
+     "flag",
+     "rows"
+    ],
+    "handlers": [
+     "v2_leave_import"
+    ],
+    "not_read": [
+     "list"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CalendarApp.vue",
+    "line": 226,
+    "method": "POST",
+    "path": "/api/calendar_assemble_control/message",
+    "sent": [
+     "content"
+    ],
+    "handler_reads": [
+     "body",
+     "calendarId",
+     "title"
+    ],
+    "handlers": [
+     "message_create"
+    ],
+    "not_read": [
+     "content"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CalendarApp.vue",
+    "line": 399,
+    "method": "POST",
+    "path": "/api/calendar/event/create",
+    "sent": [
+     "calendarId",
+     "title",
+     "startTime",
+     "endTime",
+     "location"
+    ],
+    "handler_reads": [
+     "all_day",
+     "calendar_id",
+     "content",
+     "createor",
+     "end_time",
+     "location",
+     "start_time",
+     "title",
+     "visibility"
+    ],
+    "handlers": [
+     "event_create"
+    ],
+    "not_read": [
+     "calendarId",
+     "startTime",
+     "endTime"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsIndexApp.vue",
+    "line": 398,
+    "method": "PUT",
+    "path": "/api/cms/assemble/control/dict/save/${e}",
+    "sent": [
+     "data"
+    ],
+    "handler_reads": [
+     "application",
+     "name"
+    ],
+    "handlers": [
+     "dict_save"
+    ],
+    "not_read": [
+     "data"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsIndexApp.vue",
+    "line": 399,
+    "method": "PUT",
+    "path": "/api/cms/assemble/control/form/save/${e}",
+    "sent": [
+     "data"
+    ],
+    "handler_reads": [
+     "application",
+     "name"
+    ],
+    "handlers": [
+     "form_save"
+    ],
+    "not_read": [
+     "data"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsIndexApp.vue",
+    "line": 400,
+    "method": "PUT",
+    "path": "/api/cms/assemble/control/view/save/${e}",
+    "sent": [
+     "data"
+    ],
+    "handler_reads": [
+     "app_id",
+     "category_id",
+     "name",
+     "view_config"
+    ],
+    "handlers": [
+     "view_save"
+    ],
+    "not_read": [
+     "data"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsIndexApp.vue",
+    "line": 401,
+    "method": "PUT",
+    "path": "/api/cms/assemble/control/xform/save/${e}",
+    "sent": [
+     "data"
+    ],
+    "handler_reads": [
+     "definition",
+     "name",
+     "status"
+    ],
+    "handlers": [
+     "xform_save"
+    ],
+    "not_read": [
+     "data"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsIndexApp.vue",
+    "line": 402,
+    "method": "PUT",
+    "path": "/api/templateform/save/${e}",
+    "sent": [
+     "data"
+    ],
+    "handler_reads": [
+     "app_id",
+     "definition",
+     "name",
+     "status"
+    ],
+    "handlers": [
+     "templateform_save"
+    ],
+    "not_read": [
+     "data"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ConfigDesignerApp.vue",
+    "line": 262,
+    "method": "PUT",
+    "path": "/api/config/update/${selected.value.id}",
+    "sent": [
+     "config"
+    ],
+    "handler_reads": [
+     "category",
+     "description",
+     "name",
+     "value"
+    ],
+    "handlers": [
+     "config_update"
+    ],
+    "not_read": [
+     "config"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/DocumentApp.vue",
+    "line": 319,
+    "method": "POST",
+    "path": "/api/document/cipher/${item.id}/persist/view/record",
+    "sent": [
+     "viewId",
+     "recordData"
+    ],
+    "handler_reads": [
+     "personId"
+    ],
+    "handlers": [
+     "document_cipher_id_persist_view_record"
+    ],
+    "not_read": [
+     "viewId",
+     "recordData"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 384,
+    "method": "POST",
+    "path": "/api/file/permission/set",
+    "sent": [
+     "id"
+    ],
+    "handler_reads": [
+     "permissions",
+     "targetId",
+     "targetType"
+    ],
+    "handlers": [
+     "permission_set"
+    ],
+    "not_read": [
+     "id"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/IMChat.vue",
+    "line": 599,
+    "method": "POST",
+    "path": "/api/message/assemble/communicate/mass",
+    "sent": [
+     "personList",
+     "body",
+     "title"
+    ],
+    "handler_reads": [
+     "body",
+     "title",
+     "type"
+    ],
+    "handlers": [
+     "mass_create"
+    ],
+    "not_read": [
+     "personList"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/JPushApp.vue",
+    "line": 167,
+    "method": "POST",
+    "path": "/api/jpush/device/create",
+    "sent": [
+     "deviceName"
+    ],
+    "handler_reads": [
+     "platform",
+     "token",
+     "userId"
+    ],
+    "handlers": [
+     "device_create"
+    ],
+    "not_read": [
+     "deviceName"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/JPushApp.vue",
+    "line": 185,
+    "method": "POST",
+    "path": "/api/jpush/core/entity/device/create",
+    "sent": [
+     "deviceName"
+    ],
+    "handler_reads": [
+     "platform",
+     "token",
+     "userId"
+    ],
+    "handlers": [
+     "device_create"
+    ],
+    "not_read": [
+     "deviceName"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MeetingApp.vue",
+    "line": 696,
+    "method": "POST",
+    "path": "/api/meeting/assemble/control/meeting/save/${e}",
+    "sent": [
+     "subject"
+    ],
+    "handler_reads": [
+     "content",
+     "endTime",
+     "startTime",
+     "title"
+    ],
+    "handlers": [
+     "save_meeting"
+    ],
+    "not_read": [
+     "subject"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MeetingApp.vue",
+    "line": 731,
+    "method": "POST",
+    "path": "/api/meeting/assemble/control/attachment/create/from/processplatform",
+    "sent": [
+     "meetingId",
+     "fileName"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "u2_attachment_create_from_processplatform"
+    ],
+    "not_read": [
+     "fileName"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 457,
+    "method": "POST",
+    "path": "/api/group/list/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "groupList"
+    ],
+    "handlers": [
+     "group_list_object"
+    ],
+    "not_read": [
+     "personList",
+     "unitList",
+     "identityList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 458,
+    "method": "POST",
+    "path": "/api/group/list/identity/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "groupList"
+    ],
+    "handlers": [
+     "group_list_identity_object"
+    ],
+    "not_read": [
+     "personList",
+     "unitList",
+     "identityList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 459,
+    "method": "POST",
+    "path": "/api/group/list/person/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "groupList"
+    ],
+    "handlers": [
+     "group_list_person_object"
+    ],
+    "not_read": [
+     "personList",
+     "unitList",
+     "identityList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 464,
+    "method": "POST",
+    "path": "/api/identity/list/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "identityList"
+    ],
+    "handlers": [
+     "identity_list_object"
+    ],
+    "not_read": [
+     "personList",
+     "unitList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 465,
+    "method": "POST",
+    "path": "/api/identity/list/group/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "groupList"
+    ],
+    "handlers": [
+     "identity_list_group_object"
+    ],
+    "not_read": [
+     "personList",
+     "unitList",
+     "identityList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 466,
+    "method": "POST",
+    "path": "/api/identity/list/person/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "personList"
+    ],
+    "handlers": [
+     "identity_list_person_object"
+    ],
+    "not_read": [
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 467,
+    "method": "POST",
+    "path": "/api/identity/list/major/person/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "personList"
+    ],
+    "handlers": [
+     "identity_list_major_person_object"
+    ],
+    "not_read": [
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 468,
+    "method": "POST",
+    "path": "/api/identity/list/unit/person/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "personList",
+     "unitList"
+    ],
+    "handlers": [
+     "identity_list_unit_person_object"
+    ],
+    "not_read": [
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 469,
+    "method": "POST",
+    "path": "/api/identity/list/unit/sub/direct/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "unitList"
+    ],
+    "handlers": [
+     "identity_list_unit_sub_direct_object"
+    ],
+    "not_read": [
+     "personList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 470,
+    "method": "POST",
+    "path": "/api/identity/list/unit/sub/nested/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "unitList"
+    ],
+    "handlers": [
+     "identity_list_unit_sub_nested_object"
+    ],
+    "not_read": [
+     "personList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 471,
+    "method": "POST",
+    "path": "/api/person/list/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "includePii",
+     "personList"
+    ],
+    "handlers": [
+     "person_list_object"
+    ],
+    "not_read": [
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 475,
+    "method": "POST",
+    "path": "/api/person/list/personattribute/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "attribute",
+     "name"
+    ],
+    "handlers": [
+     "person_list_personattribute_object"
+    ],
+    "not_read": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 476,
+    "method": "POST",
+    "path": "/api/person/list/login/after/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "date"
+    ],
+    "handlers": [
+     "person_list_login_after_object"
+    ],
+    "not_read": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 477,
+    "method": "POST",
+    "path": "/api/person/list/login/recent/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "count"
+    ],
+    "handlers": [
+     "person_list_login_recent_object"
+    ],
+    "not_read": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 486,
+    "method": "POST",
+    "path": "/api/role/list/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "roleList"
+    ],
+    "handlers": [
+     "role_list_object"
+    ],
+    "not_read": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 487,
+    "method": "POST",
+    "path": "/api/role/list/person/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "personList"
+    ],
+    "handlers": [
+     "role_list_person_object"
+    ],
+    "not_read": [
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 488,
+    "method": "POST",
+    "path": "/api/unit/list/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "unitList"
+    ],
+    "handlers": [
+     "unit_list_object"
+    ],
+    "not_read": [
+     "personList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 489,
+    "method": "POST",
+    "path": "/api/unit/list/level/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "levelList"
+    ],
+    "handlers": [
+     "unit_list_level_object"
+    ],
+    "not_read": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 490,
+    "method": "POST",
+    "path": "/api/unit/list/types/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "typeList"
+    ],
+    "handlers": [
+     "unit_list_types_object"
+    ],
+    "not_read": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 491,
+    "method": "POST",
+    "path": "/api/unit/list/identity/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "identityList"
+    ],
+    "handlers": [
+     "unit_list_identity_object"
+    ],
+    "not_read": [
+     "personList",
+     "unitList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 493,
+    "method": "POST",
+    "path": "/api/unit/list/person/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "personList"
+    ],
+    "handlers": [
+     "unit_list_person_object"
+    ],
+    "not_read": [
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 495,
+    "method": "POST",
+    "path": "/api/unit/list/unitattribute/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "attribute",
+     "name"
+    ],
+    "handlers": [
+     "unit_list_unitattribute_object"
+    ],
+    "not_read": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 496,
+    "method": "POST",
+    "path": "/api/unit/list/unitduty/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "identity",
+     "name"
+    ],
+    "handlers": [
+     "unit_list_unitduty_object"
+    ],
+    "not_read": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 497,
+    "method": "POST",
+    "path": "/api/unit/list/unit/sub/direct/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "unitList"
+    ],
+    "handlers": [
+     "unit_list_unit_sub_direct_object"
+    ],
+    "not_read": [
+     "personList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 498,
+    "method": "POST",
+    "path": "/api/unit/list/unit/sub/nested/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "unitList"
+    ],
+    "handlers": [
+     "unit_list_unit_sub_nested_object"
+    ],
+    "not_read": [
+     "personList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 499,
+    "method": "POST",
+    "path": "/api/unit/list/unit/sup/direct/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "unitList"
+    ],
+    "handlers": [
+     "unit_list_unit_sup_direct_object"
+    ],
+    "not_read": [
+     "personList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 500,
+    "method": "POST",
+    "path": "/api/unit/list/unit/sup/nested/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "unitList"
+    ],
+    "handlers": [
+     "unit_list_unit_sup_nested_object"
+    ],
+    "not_read": [
+     "personList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 501,
+    "method": "POST",
+    "path": "/api/unit/identity/level/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "identity",
+     "level",
+     "type"
+    ],
+    "handlers": [
+     "unit_get_with_identity_with_level_object"
+    ],
+    "not_read": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 502,
+    "method": "POST",
+    "path": "/api/unit/identity/type/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "identity",
+     "level",
+     "type"
+    ],
+    "handlers": [
+     "unit_get_with_identity_with_type_object"
+    ],
+    "not_read": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 503,
+    "method": "POST",
+    "path": "/api/unitduty/list/identity/unit/name/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [
+     "recursiveUnit"
+    ],
+    "handlers": [
+     "unitduty_list_identity_unit_name_object"
+    ],
+    "not_read": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 679,
+    "method": "POST",
+    "path": "/api/unit/list/unitattribute",
+    "sent": [
+     "unitList"
+    ],
+    "handler_reads": [
+     "attribute",
+     "name"
+    ],
+    "handlers": [
+     "unit_list_unitattribute"
+    ],
+    "not_read": [
+     "unitList"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 680,
+    "method": "POST",
+    "path": "/api/unit/list/unitduty",
+    "sent": [
+     "unitList"
+    ],
+    "handler_reads": [
+     "identity",
+     "name"
+    ],
+    "handlers": [
+     "unit_list_unitduty"
+    ],
+    "not_read": [
+     "unitList"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 848,
+    "method": "POST",
+    "path": "/api/organization/assemble/control/inputperson",
+    "sent": [
+     "name"
+    ],
+    "handler_reads": [
+     "personList"
+    ],
+    "handlers": [
+     "input_person_import"
+    ],
+    "not_read": [
+     "name"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 878,
+    "method": "PUT",
+    "path": "/api/organization/assemble/control/unitattribute/${e}",
+    "sent": [
+     "name"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "unit_attribute_edit"
+    ],
+    "not_read": [
+     "name"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 880,
+    "method": "PUT",
+    "path": "/api/organization/assemble/control/personattribute/${e}",
+    "sent": [
+     "name"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "person_attribute_edit"
+    ],
+    "not_read": [
+     "name"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 919,
+    "method": "POST",
+    "path": "/api/organization/assemble/control/unitduty/update/member",
+    "sent": [
+     "member"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "duty_update_member"
+    ],
+    "not_read": [
+     "member"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 983,
+    "method": "POST",
+    "path": "/api/unit/identity/level",
+    "sent": [
+     "identityList"
+    ],
+    "handler_reads": [
+     "identity",
+     "level",
+     "type"
+    ],
+    "handlers": [
+     "unit_get_with_identity_with_level"
+    ],
+    "not_read": [
+     "identityList"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 984,
+    "method": "POST",
+    "path": "/api/unit/identity/type",
+    "sent": [
+     "identityList"
+    ],
+    "handler_reads": [
+     "identity",
+     "level",
+     "type"
+    ],
+    "handlers": [
+     "unit_get_with_identity_with_type"
+    ],
+    "not_read": [
+     "identityList"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 988,
+    "method": "POST",
+    "path": "/api/unitduty/list/identity/unit/name",
+    "sent": [
+     "identityList"
+    ],
+    "handler_reads": [
+     "recursiveUnit"
+    ],
+    "handlers": [
+     "unitduty_list_identity_unit_name"
+    ],
+    "not_read": [
+     "identityList"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 1321,
+    "method": "POST",
+    "path": "/api/unit/list/level",
+    "sent": [
+     "unitList"
+    ],
+    "handler_reads": [
+     "levelList"
+    ],
+    "handlers": [
+     "unit_list_level"
+    ],
+    "not_read": [
+     "unitList"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 1461,
+    "method": "POST",
+    "path": "/api/person/list/login/after",
+    "sent": [
+     "personList"
+    ],
+    "handler_reads": [
+     "date"
+    ],
+    "handlers": [
+     "person_list_login_after"
+    ],
+    "not_read": [
+     "personList"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 1462,
+    "method": "POST",
+    "path": "/api/person/list/login/recent",
+    "sent": [
+     "personList"
+    ],
+    "handler_reads": [
+     "count"
+    ],
+    "handlers": [
+     "person_list_login_recent"
+    ],
+    "not_read": [
+     "personList"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/Personal.vue",
+    "line": 313,
+    "method": "POST",
+    "path": "/api/organization/assemble/authentication/oauth/token",
+    "sent": [
+     "clientId"
+    ],
+    "handler_reads": [
+     "code"
+    ],
+    "handlers": [
+     "oauth_token_post"
+    ],
+    "not_read": [
+     "clientId"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/Personal.vue",
+    "line": 316,
+    "method": "POST",
+    "path": "/api/organization/assemble/authentication/oauth/token/jira",
+    "sent": [
+     "clientId"
+    ],
+    "handler_reads": [
+     "code"
+    ],
+    "handlers": [
+     "oauth_token_jira_post"
+    ],
+    "not_read": [
+     "clientId"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalApp.vue",
+    "line": 328,
+    "method": "PUT",
+    "path": "/api/portal/assemble/designer/dict/save/${encodeURIComponent(id)}",
+    "sent": [
+     "data"
+    ],
+    "handler_reads": [
+     "application",
+     "name"
+    ],
+    "handlers": [
+     "dict_save"
+    ],
+    "not_read": [
+     "data"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalApp.vue",
+    "line": 329,
+    "method": "PUT",
+    "path": "/api/portal/assemble/designer/script/${encodeURIComponent(id)}",
+    "sent": [
+     "text"
+    ],
+    "handler_reads": [
+     "category",
+     "content",
+     "name"
+    ],
+    "handlers": [
+     "update"
+    ],
+    "not_read": [
+     "text"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalApp.vue",
+    "line": 363,
+    "method": "PUT",
+    "path": "/api/portal/assemble/designer/widget/save/${encodeURIComponent(id)}",
+    "sent": [
+     "data"
+    ],
+    "handler_reads": [
+     "category",
+     "config",
+     "creator",
+     "name",
+     "portalId"
+    ],
+    "handlers": [
+     "widget_save"
+    ],
+    "not_read": [
+     "data"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
+    "line": 442,
+    "method": "POST",
+    "path": "/api/processplatform/assemble/designer/item-access/bach/save",
+    "sent": [
+     "list"
+    ],
+    "handler_reads": [
+     "items"
+    ],
+    "handlers": [
+     "item_access_bach_save"
+    ],
+    "not_read": [
+     "list"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
+    "line": 465,
+    "method": "PUT",
+    "path": "/api/processplatform/assemble/designer/dict/save/${e}",
+    "sent": [
+     "data"
+    ],
+    "handler_reads": [
+     "application",
+     "name"
+    ],
+    "handlers": [
+     "dict_save"
+    ],
+    "not_read": [
+     "data"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
+    "line": 466,
+    "method": "PUT",
+    "path": "/api/processplatform/assemble/designer/form/save/${e}",
+    "sent": [
+     "data"
+    ],
+    "handler_reads": [
+     "application",
+     "name"
+    ],
+    "handlers": [
+     "form_save"
+    ],
+    "not_read": [
+     "data"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
+    "line": 467,
+    "method": "PUT",
+    "path": "/api/processplatform/assemble/designer/xform/save/${e}",
+    "sent": [
+     "data"
+    ],
+    "handler_reads": [
+     "definition",
+     "name",
+     "status"
+    ],
+    "handlers": [
+     "xform_save"
+    ],
+    "not_read": [
+     "data"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
+    "line": 525,
+    "method": "POST",
+    "path": "/api/processplatform/assemble/surface/handover",
+    "sent": [
+     "type",
+     "scheme",
+     "person",
+     "targetIdentity",
+     "title"
+    ],
+    "handler_reads": [
+     "person",
+     "scheme",
+     "targetIdentity",
+     "title"
+    ],
+    "handlers": [
+     "handover_u2_create"
+    ],
+    "not_read": [
+     "type"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 2456,
+    "method": "POST",
+    "path": "/api/processplatform/service/processing/snap/upload",
+    "sent": [
+     "workId",
+     "snapType",
+     "snapData"
+    ],
+    "handler_reads": [
+     "data",
+     "snapType",
+     "workId"
+    ],
+    "handlers": [
+     "snap_upload"
+    ],
+    "not_read": [
+     "snapData"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 1352,
+    "method": "PUT",
+    "path": "/api/program_center/collect/save/${encodeURIComponent(id)}",
+    "sent": [
+     "name"
+    ],
+    "handler_reads": [
+     "personId",
+     "title",
+     "url"
+    ],
+    "handlers": [
+     "collect_save"
+    ],
+    "not_read": [
+     "name"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 1820,
+    "method": "POST",
+    "path": "/api/program_center/deploy/server/resource",
+    "sent": [
+     "resourceName",
+     "resourceType",
+     "path"
+    ],
+    "handler_reads": [
+     "name",
+     "path",
+     "type"
+    ],
+    "handlers": [
+     "u3_deploy_server_resource_post"
+    ],
+    "not_read": [
+     "resourceName",
+     "resourceType"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 1828,
+    "method": "PUT",
+    "path": "/api/program_center/agent/${encodeURIComponent(flag)}/file",
+    "sent": [
+     "resourceName",
+     "resourceType",
+     "path"
+    ],
+    "handler_reads": [
+     "fileName",
+     "filePath"
+    ],
+    "handlers": [
+     "u3_agent_file_flag"
+    ],
+    "not_read": [
+     "resourceName",
+     "resourceType",
+     "path"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryManagerDeep.vue",
+    "line": 525,
+    "method": "PUT",
+    "path": "/api/query/assemble/designer/statement/${eid}",
+    "sent": [
+     "name"
+    ],
+    "handler_reads": [
+     "alias",
+     "countingData",
+     "data"
+    ],
+    "handlers": [
+     "statement_edit"
+    ],
+    "not_read": [
+     "name"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryQueryApp.vue",
+    "line": 265,
+    "method": "POST",
+    "path": "/api/query/assemble/surface/save/${sfEditingId.value}",
+    "sent": [
+     "name",
+     "category",
+     "content"
+    ],
+    "handler_reads": [
+     "category",
+     "name",
+     "query",
+     "template"
+    ],
+    "handlers": [
+     "save_surface"
+    ],
+    "not_read": [
+     "content"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryQueryApp.vue",
+    "line": 268,
+    "method": "POST",
+    "path": "/api/query/assemble/surface/create",
+    "sent": [
+     "name",
+     "category",
+     "content"
+    ],
+    "handler_reads": [
+     "category",
+     "name",
+     "query",
+     "template"
+    ],
+    "handlers": [
+     "create_surface"
+    ],
+    "not_read": [
+     "content"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewApp.vue",
+    "line": 536,
+    "method": "POST",
+    "path": "/api/queryview/morelikethis",
+    "sent": [
+     "keyword"
+    ],
+    "handler_reads": [
+     "tableFlag"
+    ],
+    "handlers": [
+     "morelikethis_post"
+    ],
+    "not_read": [
+     "keyword"
+    ]
+   }
+  ],
+  "C_read_not_sent": [
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AttendanceApp.vue",
+    "line": 959,
+    "method": "POST",
+    "path": "/api/attendance/assemble/control/v2/leave/import",
+    "sent": [
+     "list"
+    ],
+    "handler_reads": [
+     "flag",
+     "rows"
+    ],
+    "handlers": [
+     "v2_leave_import"
+    ],
+    "missing": [
+     "rows"
+    ],
+    "missing_alt_groups": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AttendanceApp.vue",
+    "line": 971,
+    "method": "POST",
+    "path": "/api/attendance/assemble/control/v2/record/import/daily",
+    "sent": [
+     "date"
+    ],
+    "handler_reads": [
+     "date",
+     "records"
+    ],
+    "handlers": [
+     "v2_record_import_daily"
+    ],
+    "missing": [
+     "records"
+    ],
+    "missing_alt_groups": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MeetingApp.vue",
+    "line": 719,
+    "method": "POST",
+    "path": "/api/meeting/create",
+    "sent": [
+     "title",
+     "startTime",
+     "endTime"
+    ],
+    "handler_reads": [
+     "content",
+     "creator",
+     "endTime",
+     "roomId",
+     "startTime",
+     "title"
+    ],
+    "handlers": [
+     "create_meeting"
+    ],
+    "missing": [
+     "roomId"
+    ],
+    "missing_alt_groups": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MeetingApp.vue",
+    "line": 760,
+    "method": "POST",
+    "path": "/api/meeting/core/entity/meeting/create",
+    "sent": [
+     "title"
+    ],
+    "handler_reads": [
+     "content",
+     "endTime",
+     "organizerId",
+     "roomId",
+     "startTime",
+     "title"
+    ],
+    "handlers": [
+     "create_meeting"
+    ],
+    "missing": [
+     "endTime",
+     "roomId",
+     "startTime"
+    ],
+    "missing_alt_groups": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryManagerDeep.vue",
+    "line": 528,
+    "method": "PUT",
+    "path": "/api/query/assemble/designer/table/edit/${eid}",
+    "sent": [
+     "name"
+    ],
+    "handler_reads": [
+     "columns",
+     "name"
+    ],
+    "handlers": [
+     "update_table_definition"
+    ],
+    "missing": [
+     "columns"
+    ],
+    "missing_alt_groups": []
+   }
+  ],
+  "D_delegated_unverifiable": [
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 364,
+    "method": "POST",
+    "path": "/api/personattribute/list/name/person",
+    "sent": [
+     "personList"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "personattr_list_name_person"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 472,
+    "method": "POST",
+    "path": "/api/person/list/group/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "person_list_group_object"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 473,
+    "method": "POST",
+    "path": "/api/person/list/identity/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "person_list_identity_object"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 474,
+    "method": "POST",
+    "path": "/api/person/list/role/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "person_list_role_object"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 492,
+    "method": "POST",
+    "path": "/api/unit/list/identity/sup/nested/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "unit_list_identity_sup_nested_object"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 494,
+    "method": "POST",
+    "path": "/api/unit/list/person/sup/nested/object",
+    "sent": [
+     "personList",
+     "unitList",
+     "identityList",
+     "groupList",
+     "roleList",
+     "levelList",
+     "typeList",
+     "name",
+     "attribute"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "unit_list_person_sup_nested_object"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 684,
+    "method": "POST",
+    "path": "/api/unitattribute/list/name/unit",
+    "sent": [
+     "unitList"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "unitattr_list_name_unit"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 915,
+    "method": "PUT",
+    "path": "/api/organization/assemble/control/group/${e}/add/member",
+    "sent": [
+     "member"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "group_add_member"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 917,
+    "method": "PUT",
+    "path": "/api/organization/assemble/control/group/${e}/delete/member",
+    "sent": [
+     "member"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "group_delete_member"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 1420,
+    "method": "POST",
+    "path": "/api/unit/list/identity/sup/nested",
+    "sent": [
+     "identityList"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "unit_list_identity_sup_nested"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 1421,
+    "method": "POST",
+    "path": "/api/unit/list/person/sup/nested",
+    "sent": [
+     "personList"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "unit_list_person_sup_nested"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewApp.vue",
+    "line": 496,
+    "method": "POST",
+    "path": "/api/queryview/table/row/insert/${encodeURIComponent(tf)}",
+    "sent": [
+     "data"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "table_row_insert"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewApp.vue",
+    "line": 499,
+    "method": "POST",
+    "path": "/api/queryview/table/row/one/insert/${encodeURIComponent(tf)}",
+    "sent": [
+     "data"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "table_row_insert_one"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewApp.vue",
+    "line": 512,
+    "method": "POST",
+    "path": "/api/queryview/table/row/part/update/${encodeURIComponent(tf)}/${encodeURIComponent(rid)}",
+    "sent": [
+     "data"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "table_tableFlag_row_id_part_update"
+    ]
+   }
+  ],
   "meta": {
-   "handlers_indexed": 1031,
-   "structs_indexed": 278,
-   "frontend_body_calls": 195,
-   "A": 0,
-   "B": 0,
-   "C": 0,
-   "D": 0,
+   "handlers_indexed": 1070,
+   "structs_indexed": 279,
+   "frontend_body_calls": 1764,
+   "A": 24,
+   "B": 80,
+   "C": 5,
+   "D": 14,
    "E_total": 2
   },
   "E_quoted_key_defect": {
@@ -32,12 +2903,12 @@
      {
       "key": "clueId",
       "file": "crates/shared/src/db/dialect.rs",
-      "line": 321
+      "line": 324
      },
      {
       "key": "foo",
       "file": "crates/shared/src/db/dialect.rs",
-      "line": 383
+      "line": 386
      }
     ]
    }
@@ -2497,6 +5368,112 @@
    "emits": [],
    "file": "crates/attendance_assemble_control/src/lib.rs"
   },
+  "attendance_core_entity::record_create": {
+   "body_params": [
+    "payload"
+   ],
+   "reads": [
+    "checkInTime",
+    "status",
+    "userId"
+   ],
+   "opt_keys": [
+    "checkInTime",
+    "status",
+    "userId"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": false,
+   "crud_resolved": false,
+   "callees": [],
+   "emits": [],
+   "file": "crates/attendance_core_entity/src/lib.rs"
+  },
+  "attendance_core_entity::record_update": {
+   "body_params": [
+    "payload"
+   ],
+   "reads": [
+    "checkOutTime",
+    "status"
+   ],
+   "opt_keys": [
+    "checkOutTime",
+    "status"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": false,
+   "crud_resolved": false,
+   "callees": [],
+   "emits": [],
+   "file": "crates/attendance_core_entity/src/lib.rs"
+  },
+  "attendance_core_entity::rule_create": {
+   "body_params": [
+    "payload"
+   ],
+   "reads": [
+    "name",
+    "startTime"
+   ],
+   "opt_keys": [
+    "name",
+    "startTime"
+   ],
+   "alt_groups": [
+    [
+     "EndTime",
+     "endTime"
+    ]
+   ],
+   "opt_alt_groups": [
+    [
+     "EndTime",
+     "endTime"
+    ]
+   ],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "or_else"
+   ],
+   "emits": [],
+   "file": "crates/attendance_core_entity/src/lib.rs"
+  },
+  "attendance_core_entity::rule_update": {
+   "body_params": [
+    "payload"
+   ],
+   "reads": [
+    "name",
+    "startTime"
+   ],
+   "opt_keys": [
+    "name",
+    "startTime"
+   ],
+   "alt_groups": [
+    [
+     "endTime",
+     "EndTime"
+    ]
+   ],
+   "opt_alt_groups": [
+    [
+     "endTime",
+     "EndTime"
+    ]
+   ],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "or_else"
+   ],
+   "emits": [],
+   "file": "crates/attendance_core_entity/src/lib.rs"
+  },
   "auth::verify": {
    "body_params": [
     "req"
@@ -2677,6 +5654,39 @@
    "callees": [],
    "emits": [],
    "file": "crates/auth/src/oidc.rs"
+  },
+  "auth::qiyeweixin_jssdk_sign": {
+   "body_params": [
+    "req"
+   ],
+   "reads": [
+    "jsticketType",
+    "jsticket_type",
+    "nonce_str",
+    "url"
+   ],
+   "opt_keys": [
+    "jsticketType",
+    "jsticket_type",
+    "nonce_str",
+    "url"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "digest",
+    "success"
+   ],
+   "emits": [
+    "agentid",
+    "corpid",
+    "nonceStr",
+    "signature",
+    "timestamp"
+   ],
+   "file": "crates/auth/src/qiyeweixin.rs"
   },
   "auth::safe_logout": {
    "body_params": [
@@ -2950,7 +5960,7 @@
    "crud_resolved": true,
    "callees": [
     "crud_create",
-    "is_some_and"
+    "is_none_or"
    ],
    "emits": [
     "created",
@@ -3095,6 +6105,99 @@
    ],
    "file": "crates/bbs_assemble_control/src/lib.rs"
   },
+  "bbs_assemble_control::body_id": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [
+    "id"
+   ],
+   "opt_keys": [
+    "id"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": false,
+   "crud_resolved": false,
+   "callees": [],
+   "emits": [],
+   "file": "crates/bbs_assemble_control/src/lib.rs"
+  },
+  "bbs_assemble_control::delete_forum_body": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [
+    "id"
+   ],
+   "opt_keys": [
+    "id"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "body_id",
+    "execute",
+    "map_err"
+   ],
+   "emits": [
+    "deleted"
+   ],
+   "file": "crates/bbs_assemble_control/src/lib.rs",
+   "delegated_resolved": true
+  },
+  "bbs_assemble_control::delete_reply_body": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [
+    "id"
+   ],
+   "opt_keys": [
+    "id"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "body_id",
+    "execute",
+    "map_err"
+   ],
+   "emits": [
+    "deleted"
+   ],
+   "file": "crates/bbs_assemble_control/src/lib.rs",
+   "delegated_resolved": true
+  },
+  "bbs_assemble_control::delete_subject_body": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [
+    "id"
+   ],
+   "opt_keys": [
+    "id"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "body_id",
+    "execute",
+    "map_err"
+   ],
+   "emits": [
+    "deleted"
+   ],
+   "file": "crates/bbs_assemble_control/src/lib.rs",
+   "delegated_resolved": true
+  },
   "bbs_assemble_control::login": {
    "body_params": [
     "body"
@@ -3175,6 +6278,29 @@
     "id",
     "person",
     "reason"
+   ],
+   "file": "crates/bbs_assemble_control/src/lib.rs"
+  },
+  "bbs_assemble_control::shutup_delete": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [
+    "person"
+   ],
+   "opt_keys": [
+    "person"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "execute",
+    "map_err"
+   ],
+   "emits": [
+    "deleted"
    ],
    "file": "crates/bbs_assemble_control/src/lib.rs"
   },
@@ -5018,6 +8144,257 @@
     "name"
    ],
    "file": "crates/calendar_assemble_control/src/u2.rs"
+  },
+  "calendar_core_entity::calendar_create": {
+   "body_params": [
+    "req"
+   ],
+   "reads": [
+    "calendar_type",
+    "color",
+    "createor",
+    "description",
+    "is_public",
+    "name",
+    "source",
+    "target",
+    "type"
+   ],
+   "opt_keys": [
+    "calendar_type",
+    "color",
+    "createor",
+    "description",
+    "is_public",
+    "name",
+    "source",
+    "target",
+    "type"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "insert",
+    "option_to_json"
+   ],
+   "emits": [
+    "color",
+    "createor",
+    "description",
+    "id",
+    "isPublic",
+    "name",
+    "source",
+    "status",
+    "target",
+    "type"
+   ],
+   "file": "crates/calendar_core_entity/src/lib.rs"
+  },
+  "calendar_core_entity::calendar_update": {
+   "body_params": [
+    "req"
+   ],
+   "reads": [
+    "calendar_type",
+    "color",
+    "description",
+    "id",
+    "is_public",
+    "name",
+    "target",
+    "type"
+   ],
+   "opt_keys": [
+    "calendar_type",
+    "color",
+    "description",
+    "id",
+    "is_public",
+    "name",
+    "target",
+    "type"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "find_by_id",
+    "insert",
+    "option_to_json",
+    "or"
+   ],
+   "emits": [
+    "color",
+    "createor",
+    "description",
+    "id",
+    "isPublic",
+    "name",
+    "source",
+    "status",
+    "target",
+    "type"
+   ],
+   "file": "crates/calendar_core_entity/src/lib.rs"
+  },
+  "calendar_core_entity::calendar_remove": {
+   "body_params": [
+    "req"
+   ],
+   "reads": [
+    "id"
+   ],
+   "opt_keys": [
+    "id"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "find_by_id",
+    "from_iter"
+   ],
+   "emits": [
+    "color",
+    "id",
+    "name",
+    "status",
+    "target",
+    "type"
+   ],
+   "file": "crates/calendar_core_entity/src/lib.rs"
+  },
+  "calendar_core_entity::event_create": {
+   "body_params": [
+    "req"
+   ],
+   "reads": [
+    "all_day",
+    "calendar_id",
+    "content",
+    "createor",
+    "end_time",
+    "location",
+    "start_time",
+    "title",
+    "visibility"
+   ],
+   "opt_keys": [
+    "all_day",
+    "calendar_id",
+    "content",
+    "createor",
+    "end_time",
+    "location",
+    "start_time",
+    "title",
+    "visibility"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "insert",
+    "map_err",
+    "option_to_json"
+   ],
+   "emits": [
+    "allDay",
+    "calendarId",
+    "content",
+    "createor",
+    "endTime",
+    "id",
+    "location",
+    "startTime",
+    "status",
+    "title",
+    "visibility"
+   ],
+   "file": "crates/calendar_core_entity/src/lib.rs"
+  },
+  "calendar_core_entity::event_update": {
+   "body_params": [
+    "req"
+   ],
+   "reads": [
+    "all_day",
+    "content",
+    "end_time",
+    "id",
+    "location",
+    "start_time",
+    "status",
+    "title",
+    "visibility"
+   ],
+   "opt_keys": [
+    "all_day",
+    "content",
+    "end_time",
+    "id",
+    "location",
+    "start_time",
+    "status",
+    "title",
+    "visibility"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "find_by_id",
+    "insert",
+    "map_err",
+    "option_to_json",
+    "or"
+   ],
+   "emits": [
+    "allDay",
+    "calendarId",
+    "content",
+    "createor",
+    "endTime",
+    "id",
+    "location",
+    "startTime",
+    "status",
+    "title",
+    "visibility"
+   ],
+   "file": "crates/calendar_core_entity/src/lib.rs"
+  },
+  "calendar_core_entity::event_remove": {
+   "body_params": [
+    "req"
+   ],
+   "reads": [
+    "id"
+   ],
+   "opt_keys": [
+    "id"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "find_by_id",
+    "from_iter"
+   ],
+   "emits": [
+    "id",
+    "status",
+    "title"
+   ],
+   "file": "crates/calendar_core_entity/src/lib.rs"
   },
   "cms_assemble_control::update_control_config": {
    "body_params": [
@@ -10007,7 +13384,6 @@
     "mimeType",
     "name",
     "path",
-    "size",
     "url"
    ],
    "opt_keys": [
@@ -10015,7 +13391,6 @@
     "mimeType",
     "name",
     "path",
-    "size",
     "url"
    ],
    "alt_groups": [],
@@ -10023,9 +13398,9 @@
    "delegated": true,
    "crud_resolved": false,
    "callees": [
-    "encode",
     "execute",
-    "from",
+    "fetch_limited",
+    "filename_from_url",
     "from_iter",
     "map_err",
     "success"
@@ -10154,6 +13529,27 @@
     "fileId",
     "id",
     "shareType"
+   ],
+   "file": "crates/file_assemble_control/src/lib.rs"
+  },
+  "file_assemble_control::u2_config_save_system_config": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [
+    "configs"
+   ],
+   "opt_keys": [
+    "configs"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": false,
+   "crud_resolved": false,
+   "callees": [],
+   "emits": [
+    "configs",
+    "saved"
    ],
    "file": "crates/file_assemble_control/src/lib.rs"
   },
@@ -12319,6 +15715,157 @@
    ],
    "file": "crates/meeting_assemble_control/src/lib.rs"
   },
+  "meeting_core_entity::create_room": {
+   "body_params": [
+    "payload"
+   ],
+   "reads": [
+    "buildingId",
+    "capacity",
+    "description",
+    "equipment",
+    "floor",
+    "name",
+    "orderNumber",
+    "photo"
+   ],
+   "opt_keys": [
+    "buildingId",
+    "capacity",
+    "description",
+    "equipment",
+    "floor",
+    "orderNumber",
+    "photo"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "from",
+    "insert",
+    "option_to_json",
+    "success"
+   ],
+   "emits": [
+    "buildingId",
+    "capacity",
+    "floor",
+    "id",
+    "name",
+    "orderNumber"
+   ],
+   "file": "crates/meeting_core_entity/src/lib.rs"
+  },
+  "meeting_core_entity::update_room": {
+   "body_params": [
+    "payload"
+   ],
+   "reads": [
+    "buildingId",
+    "capacity",
+    "description",
+    "equipment",
+    "floor",
+    "name",
+    "orderNumber",
+    "photo"
+   ],
+   "opt_keys": [
+    "buildingId",
+    "capacity",
+    "description",
+    "equipment",
+    "floor",
+    "name",
+    "orderNumber",
+    "photo"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "execute",
+    "from_iter",
+    "map_err",
+    "success"
+   ],
+   "emits": [
+    "id",
+    "name",
+    "saved"
+   ],
+   "file": "crates/meeting_core_entity/src/lib.rs"
+  },
+  "meeting_core_entity::create_meeting": {
+   "body_params": [
+    "payload"
+   ],
+   "reads": [
+    "content",
+    "endTime",
+    "organizerId",
+    "roomId",
+    "startTime",
+    "title"
+   ],
+   "opt_keys": [
+    "content",
+    "organizerId"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "from_iter",
+    "map_err",
+    "success"
+   ],
+   "emits": [
+    "endTime",
+    "id",
+    "roomId",
+    "startTime",
+    "title"
+   ],
+   "file": "crates/meeting_core_entity/src/lib.rs"
+  },
+  "meeting_core_entity::update_meeting": {
+   "body_params": [
+    "payload"
+   ],
+   "reads": [
+    "content",
+    "endTime",
+    "startTime",
+    "title"
+   ],
+   "opt_keys": [
+    "content",
+    "endTime",
+    "startTime",
+    "title"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "execute",
+    "from_iter",
+    "map_err",
+    "success"
+   ],
+   "emits": [
+    "id",
+    "saved",
+    "title"
+   ],
+   "file": "crates/meeting_core_entity/src/lib.rs"
+  },
   "message::custom_create": {
    "body_params": [
     "req"
@@ -12563,6 +16110,36 @@
     "sender",
     "sent",
     "type"
+   ],
+   "file": "crates/message_assemble_communicate/src/lib.rs"
+  },
+  "message_assemble_communicate::im_msg_clear": {
+   "body_params": [
+    "req"
+   ],
+   "reads": [],
+   "opt_keys": [],
+   "alt_groups": [
+    [
+     "conversationId",
+     "conversation_id"
+    ]
+   ],
+   "opt_alt_groups": [
+    [
+     "conversationId",
+     "conversation_id"
+    ]
+   ],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "execute",
+    "map_err",
+    "or_else"
+   ],
+   "emits": [
+    "cleared"
    ],
    "file": "crates/message_assemble_communicate/src/lib.rs"
   },
@@ -20633,11 +24210,13 @@
    "reads": [
     "category",
     "content",
+    "id",
     "name"
    ],
    "opt_keys": [
     "category",
     "content",
+    "id",
     "name"
    ],
    "alt_groups": [],
@@ -20665,11 +24244,13 @@
    "reads": [
     "category",
     "content",
+    "id",
     "name"
    ],
    "opt_keys": [
     "category",
     "content",
+    "id",
     "name"
    ],
    "alt_groups": [],
@@ -20681,7 +24262,8 @@
     "from_iter",
     "map_err",
     "query_one",
-    "success"
+    "success",
+    "x_portal_layout"
    ],
    "emits": [
     "category",
@@ -20689,6 +24271,32 @@
     "id",
     "name",
     "updateTime"
+   ],
+   "file": "crates/portal_assemble_surface/src/lib.rs"
+  },
+  "portal_assemble_surface::delete_layout": {
+   "body_params": [
+    "req"
+   ],
+   "reads": [
+    "id"
+   ],
+   "opt_keys": [
+    "id"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "execute",
+    "from_iter",
+    "map_err",
+    "success"
+   ],
+   "emits": [
+    "deleted",
+    "id"
    ],
    "file": "crates/portal_assemble_surface/src/lib.rs"
   },
@@ -20802,6 +24410,93 @@
     "portalId"
    ],
    "file": "crates/portal_assemble_surface/src/lib.rs"
+  },
+  "portal_core_entity::page_create": {
+   "body_params": [
+    "payload"
+   ],
+   "reads": [
+    "content",
+    "name",
+    "portalId",
+    "status"
+   ],
+   "opt_keys": [
+    "content",
+    "portalId",
+    "status"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "from_iter",
+    "success"
+   ],
+   "emits": [
+    "id",
+    "name",
+    "status"
+   ],
+   "file": "crates/portal_core_entity/src/lib.rs"
+  },
+  "portal_core_entity::page_update": {
+   "body_params": [
+    "payload"
+   ],
+   "reads": [
+    "content",
+    "id",
+    "name",
+    "status"
+   ],
+   "opt_keys": [
+    "content",
+    "name",
+    "status"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "execute",
+    "from_iter",
+    "from_sql_and_values",
+    "map_err",
+    "success"
+   ],
+   "emits": [
+    "id",
+    "updated"
+   ],
+   "file": "crates/portal_core_entity/src/lib.rs"
+  },
+  "portal_core_entity::page_remove": {
+   "body_params": [
+    "payload"
+   ],
+   "reads": [
+    "id"
+   ],
+   "opt_keys": [],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "execute",
+    "from_iter",
+    "from_sql_and_values",
+    "map_err",
+    "success"
+   ],
+   "emits": [
+    "deleted",
+    "id"
+   ],
+   "file": "crates/portal_core_entity/src/lib.rs"
   },
   "preview::preview_upload_handler": {
    "body_params": [
@@ -21736,6 +25431,85 @@
    ],
    "file": "crates/processplatform_assemble_surface/src/lib.rs"
   },
+  "processplatform_assemble_surface::mode_save": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [
+    "id"
+   ],
+   "opt_keys": [
+    "id"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "execute",
+    "from_iter",
+    "map_err",
+    "query_opt"
+   ],
+   "emits": [
+    "createTime",
+    "id",
+    "updateTime"
+   ],
+   "file": "crates/processplatform_assemble_surface/src/lib.rs"
+  },
+  "processplatform_assemble_surface::review_create_work": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [
+    "id"
+   ],
+   "opt_keys": [
+    "id"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "from_iter",
+    "map_err",
+    "query_opt"
+   ],
+   "emits": [
+    "createTime",
+    "id",
+    "updateTime"
+   ],
+   "file": "crates/processplatform_assemble_surface/src/lib.rs"
+  },
+  "processplatform_assemble_surface::review_create_workcompleted": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [
+    "id"
+   ],
+   "opt_keys": [
+    "id"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "from_iter",
+    "map_err",
+    "query_opt"
+   ],
+   "emits": [
+    "createTime",
+    "id",
+    "updateTime"
+   ],
+   "file": "crates/processplatform_assemble_surface/src/lib.rs"
+  },
   "processplatform_assemble_surface::attachment_u2b_v2_upload_base64": {
    "body_params": [
     "body"
@@ -21762,6 +25536,165 @@
    "crud_resolved": false,
    "callees": [
     "decode",
+    "map_err",
+    "u2_att_store_new"
+   ],
+   "emits": [],
+   "file": "crates/processplatform_assemble_surface/src/lib.rs"
+  },
+  "processplatform_assemble_surface::attachment_u2b_doc_to_word": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [
+    "content",
+    "fileName",
+    "id",
+    "site"
+   ],
+   "opt_keys": [
+    "content",
+    "fileName",
+    "id",
+    "site"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "doc_to_word_for_job"
+   ],
+   "emits": [],
+   "file": "crates/processplatform_assemble_surface/src/lib.rs",
+   "delegated_resolved": true
+  },
+  "processplatform_assemble_surface::attachment_u2b_doc_to_word_wowc": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [
+    "content",
+    "fileName",
+    "id",
+    "site"
+   ],
+   "opt_keys": [
+    "content",
+    "fileName",
+    "id",
+    "site"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "doc_to_word_for_job"
+   ],
+   "emits": [],
+   "file": "crates/processplatform_assemble_surface/src/lib.rs",
+   "delegated_resolved": true
+  },
+  "processplatform_assemble_surface::doc_to_word_for_job": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [
+    "content",
+    "fileName",
+    "id",
+    "site"
+   ],
+   "opt_keys": [
+    "content",
+    "fileName",
+    "id",
+    "site"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "execute",
+    "file_extension_of",
+    "html_to_word_binary",
+    "map_err",
+    "percent_decode",
+    "query_opt",
+    "u2_att_blob_key"
+   ],
+   "emits": [
+    "id"
+   ],
+   "file": "crates/processplatform_assemble_surface/src/lib.rs"
+  },
+  "processplatform_assemble_surface::attachment_u2b_html_to_pdf": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [
+    "title",
+    "workHtml"
+   ],
+   "opt_keys": [
+    "title",
+    "workHtml"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "general_file_store",
+    "html_to_pdf_bytes"
+   ],
+   "emits": [],
+   "file": "crates/processplatform_assemble_surface/src/lib.rs"
+  },
+  "processplatform_assemble_surface::attachment_u2b_html_to_image": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [
+    "title",
+    "workHtml"
+   ],
+   "opt_keys": [
+    "title",
+    "workHtml"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "general_file_store",
+    "html_to_image_bytes"
+   ],
+   "emits": [],
+   "file": "crates/processplatform_assemble_surface/src/lib.rs"
+  },
+  "processplatform_assemble_surface::attachment_u2b_upload_with_url": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [
+    "site",
+    "url"
+   ],
+   "opt_keys": [
+    "site",
+    "url"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "fetch_limited",
+    "filename_from_url",
     "map_err",
     "u2_att_store_new"
    ],
@@ -22861,6 +26794,93 @@
     "recordId",
     "table"
    ],
+   "file": "crates/processplatform_service_processing/src/lib.rs"
+  },
+  "processplatform_service_processing::record_task_processing": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [],
+   "opt_keys": [],
+   "alt_groups": [
+    [
+     "taskId",
+     "id"
+    ]
+   ],
+   "opt_alt_groups": [
+    [
+     "taskId",
+     "id"
+    ]
+   ],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "map_err",
+    "or_else",
+    "query"
+   ],
+   "emits": [],
+   "file": "crates/processplatform_service_processing/src/lib.rs"
+  },
+  "processplatform_service_processing::attachment_copy_workcompleted_workCompletedId": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [],
+   "opt_keys": [],
+   "alt_groups": [
+    [
+     "id",
+     "attachmentId"
+    ]
+   ],
+   "opt_alt_groups": [
+    [
+     "id",
+     "attachmentId"
+    ]
+   ],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "map_err",
+    "or_else",
+    "query_opt"
+   ],
+   "emits": [
+    "id",
+    "workCompletedId"
+   ],
+   "file": "crates/processplatform_service_processing/src/lib.rs"
+  },
+  "processplatform_service_processing::workcompleted_flag_merge": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [],
+   "opt_keys": [],
+   "alt_groups": [
+    [
+     "targetId",
+     "id"
+    ]
+   ],
+   "opt_alt_groups": [
+    [
+     "targetId",
+     "id"
+    ]
+   ],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "execute",
+    "map_err",
+    "or_else"
+   ],
+   "emits": [],
    "file": "crates/processplatform_service_processing/src/lib.rs"
   },
   "processplatform_service_processing::completion_record_fields": {
@@ -24623,6 +28643,32 @@
    ],
    "emits": [
     "id"
+   ],
+   "file": "crates/program_center/src/lib.rs"
+  },
+  "program_center::schedule_schedule_fire": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [
+    "id"
+   ],
+   "opt_keys": [
+    "id"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "execute",
+    "from_iter",
+    "map_err",
+    "success",
+    "x_program_schedule_log"
+   ],
+   "emits": [
+    "scheduleId"
    ],
    "file": "crates/program_center/src/lib.rs"
   },
