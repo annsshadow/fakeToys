@@ -10,7 +10,7 @@
 import logging
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
-from .exceptions import QualityError
+from .exceptions import QualityError, DataValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -196,10 +196,83 @@ def build_default_gate(pass_rate_min: float = 0.6,
     return gate
 
 
+def gate_dataset_health(items: List[Dict[str, Any]],
+                        text_field: str = "instruction",
+                        weights: Optional[List[float]] = None,
+                        pass_rate: Optional[float] = None,
+                        pass_rate_min: float = 0.6,
+                        duplicate_rate_max: float = 0.3,
+                        completeness_min: float = 0.8,
+                        block_on_warning: bool = False) -> Dict[str, Any]:
+    """对一份数据集打健康分并跑默认门禁，返回 `{health, gate, skipped_rules}`
+
+    这是把 `DatasetHealthScore` + `ImpactEvaluator` + `QualityGate` 三个模块接成
+    一条判定链的**唯一**入口，CLI 与 API 共用它——门禁的取值口径一旦有两份实现，
+    两边就会给出不同的放行结论。
+
+    `pass_rate` 必须显式传：`GateRule.evaluate()` 对**缺失的指标键返回 False**，
+    所以指标字典里没有 `pass_rate` 时那条规则会判为不满足，门禁于是把「没算这一项」
+    表达成「算出来不及格」。两者对下游的意义完全相反，因此不传时把规则摘掉并记进
+    `skipped_rules`，让调用方看得见少了什么。
+
+    Args:
+        items: 数据集条目
+        text_field: 计算重复率所用的文本字段
+        weights: 健康分权重，None 用 `DatasetHealthScore` 默认值
+        pass_rate: 质量通过率（由 `QualityScorer` 那侧算好后传入）
+        pass_rate_min: pass_rate 规则的最低阈值
+        duplicate_rate_max: duplicate_rate 规则的最高阈值
+        completeness_min: completeness 规则的最低阈值
+        block_on_warning: warning 规则失败是否也阻断
+
+    Returns:
+        `{"health": ..., "gate": ..., "skipped_rules": [...]}`
+    """
+    from .health_score import DatasetHealthScore
+    from .impact import ImpactEvaluator
+
+    if not items:
+        # 空数据集上每项指标都是 0.0：duplicate_rate 规则会以「0 ≤ 上限」通过，
+        # 于是门禁给出一份本身为空的文件放行——正是门禁最不该犯的错。宁可报错。
+        raise DataValidationError("数据集为空，门禁无法给出有意义的判定")
+
+    health = DatasetHealthScore(weights=weights).score(items)
+
+    metrics: Dict[str, Any] = dict(health["metrics"])
+    metrics["duplicate_rate"] = ImpactEvaluator(
+        text_field=text_field
+    ).measure(items).duplicate_rate
+
+    rules = build_default_gate(
+        pass_rate_min=pass_rate_min,
+        duplicate_rate_max=duplicate_rate_max,
+        completeness_min=completeness_min,
+    ).rules
+
+    skipped_rules: List[str] = []
+    if pass_rate is None:
+        skipped_rules = [rule.name for rule in rules if rule.metric_key == "pass_rate"]
+        rules = [rule for rule in rules if rule.metric_key != "pass_rate"]
+    else:
+        metrics["pass_rate"] = pass_rate
+
+    report = QualityGate(
+        rules=rules,
+        block_on_warning=block_on_warning,
+    ).run(metrics)
+
+    return {
+        "health": health,
+        "gate": report.to_dict(),
+        "skipped_rules": skipped_rules,
+    }
+
+
 __all__ = [
     "QualityGate",
     "GateRule",
     "GateReport",
     "GateVerdict",
     "build_default_gate",
+    "gate_dataset_health",
 ]

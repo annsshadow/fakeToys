@@ -190,5 +190,9 @@ class QualityTrendTracker:
             "dataset_b_values": len(trend_b),
             "dataset_a_latest": trend_a[-1]["value"] if trend_a else None,
             "dataset_b_latest": trend_b[-1]["value"] if trend_b else None,
-            "comparison": "dataset_a_higher" if (trend_a[-1]["value"] if trend_a else 0) > (trend_b[-1]["value"] if trend_b else 0) else "dataset_b_higher"
+            "comparison": (
+                "dataset_a_higher" if (trend_a and trend_b and trend_a[-1]["value"] > trend_b[-1]["value"])
+                else ("dataset_b_higher" if (trend_a and trend_b and trend_b[-1]["value"] > trend_a[-1]["value"])
+                      else "tie")
+            ),
         }

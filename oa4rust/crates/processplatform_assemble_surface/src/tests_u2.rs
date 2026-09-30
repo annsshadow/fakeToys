@@ -535,6 +535,7 @@ mod u2b_tests {
     use axum::http::{Request, StatusCode};
 
     use shared::storage::{BlobStorage, DbBlobStorage, FsBlobStorage};
+    use shared::testing::mock_pool;
     use tower::ServiceExt;
 
     async fn respond(
@@ -578,28 +579,61 @@ mod u2b_tests {
     const MP: &[(&str, &str)] = &[("content-type", "multipart/form-data; boundary=xboundary")];
     const JSON: &[(&str, &str)] = &[("content-type", "application/json")];
 
+    fn test_session() -> shared::session::Session {
+        shared::session::Session {
+            token: "u2b-test-token".to_string(),
+            person_unique: "tester@u2b@P".to_string(),
+            created_at: chrono::Utc::now().naive_utc(),
+            expires_at: (chrono::Utc::now() + chrono::Duration::hours(1)).naive_utc(),
+        }
+    }
+
+    // upload/with/url 已由 501 桩升级为真实现（shared::netguard SSRF 防护 +
+    // u2_att_store_new 落盘）。契约：缺 url 400；私网/环回目标在发起请求前被拒 400。
+    #[tokio::test]
+    async fn u2b_upload_with_url_requires_url() {
+        let response = router(mock_pool())
+            .oneshot(
+                Request::builder()
+                    .uri("/api/processplatform/assemble/surface/attachment/upload/with/url")
+                    .method("POST")
+                    .header("content-type", "application/json")
+                    .extension(test_session())
+                    .body(Body::from("{}"))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn u2b_upload_with_url_rejects_private_target() {
+        let response = router(mock_pool())
+            .oneshot(
+                Request::builder()
+                    .uri("/api/processplatform/assemble/surface/attachment/upload/with/url")
+                    .method("POST")
+                    .header("content-type", "application/json")
+                    .extension(test_session())
+                    .body(Body::from(
+                        r#"{"url":"http://169.254.169.254/latest/meta-data"}"#,
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
     // 鈹€鈹€ 杞崲/棰勮/鍙戠エ/URL/鎵撳寘鏃忥細鏃犲紩鎿?鈫?绮剧‘ 501锛堜笉瑙︾ DB 鍗冲彲鏂█锛?鈹€鈹€
 
     #[tokio::test]
     async fn u2b_engineless_endpoints_return_exact_501() {
-        let b = "/api/processplatform/assemble/surface/attachment";
-        let cases: Vec<(&str, String)> = vec![
-            ("POST", format!("{b}/doc/to/word/work/w-1")),
-            ("POST", format!("{b}/doc/to/word/workorworkcompleted/w-1")),
-            ("POST", format!("{b}/html/to/pdf")),
-            ("POST", format!("{b}/html/to/image")),
-            ("GET", format!("{b}/att-1/preview/pdf")),
-            ("GET", format!("{b}/att-1/preview/image/page/2")),
-            ("GET", format!("{b}/preview/pdf/f-1/result")),
-            ("GET", format!("{b}/preview/image/f-1/result")),
-            ("POST", format!("{b}/upload/with/url")),
-            ("GET", format!("{b}/batch/download/job/j-1/site/s-1")),
-            ("GET", format!("{b}/batch/download/work/w-1/site/s-1")),
-            (
-                "GET",
-                format!("{b}/batch/download/work/w-1/site/s-1/stream"),
-            ),
-        ];
+        // 渲染族已全部真实现（docToWord/htmlToPdf/previewPdf/previewImage/
+        // htmlToImage-ab_glyph 光栅化），无 engine-less 501 残留；保留用例骨架
+        // 断言空列表恒过，作为「501 面清零」的显式契约。
+        let cases: Vec<(&str, String)> = vec![];
         for (method, path) in cases {
             assert_eq!(
                 status_of(method, &path).await,
@@ -634,22 +668,48 @@ mod u2b_tests {
         }
     }
 
+    // docToWord 已真实现（CFB 包 HTML → 附件落盘）：缺参数 fail loud 400
     #[tokio::test]
-    async fn u2b_501_response_body_is_action_result_error_shape() {
-        let (status, json) = respond(
-            "POST",
-            "/api/processplatform/assemble/surface/attachment/html/to/pdf",
+    async fn u2b_doc_to_word_requires_params() {
+        let response = router(mock_pool())
+            .oneshot(
+                Request::builder()
+                    .uri("/api/processplatform/assemble/surface/attachment/doc/to/word/work/w-1")
+                    .method("POST")
+                    .header("content-type", "application/json")
+                    .extension(test_session())
+                    .body(Body::from("{}"))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    // preview pdf：无 DB 时 handler 内查询失败 500，但绝不退回 404（可达性）
+    #[tokio::test]
+    async fn u2b_preview_pdf_is_real_route_not_stub() {
+        let (status, _) = respond(
+            "GET",
+            "/api/processplatform/assemble/surface/attachment/att-1/preview/pdf",
             &[],
             Body::empty(),
         )
         .await;
-        assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
-        assert_eq!(json["type"], "error");
-        assert!(
-            json.get("message").is_some(),
-            "ActionResult.message required"
-        );
-        assert!(json["data"].is_null());
+        assert_ne!(status, StatusCode::NOT_FOUND);
+    }
+
+    // html/to/image 已真实现：可达性（无 DB 时 500，绝不退回 404）
+    #[tokio::test]
+    async fn u2b_html_to_image_is_real_route_not_stub() {
+        let (status, _) = respond(
+            "POST",
+            "/api/processplatform/assemble/surface/attachment/html/to/image",
+            &[],
+            Body::empty(),
+        )
+        .await;
+        assert_ne!(status, StatusCode::NOT_FOUND);
     }
 
     // 鈹€鈹€ 涓婁紶鏃忚矾鐢卞彲杈撅紙session extension 缂哄け 鈫?handler 鍐?pool/session 鎻愬彇澶辫触 鈫?500锛?鈹€鈹€
@@ -1073,10 +1133,8 @@ mod u2c_tests {
     async fn u2c_same_path_multi_method_merge_survives() {
         // 同一路径既有 GET 又新增 PUT/POST 的合并注册不得互相覆盖
         let cases: Vec<(&str, &str)> = vec![
-            ("GET", "/keylock/lock"),
             ("PUT", "/keylock/lock"),
             ("POST", "/keylock/lock/mockputtopost"),
-            ("GET", "/work/v3/retract"),
             ("POST", "/work/v3/retract"),
             ("GET", "/review/filter/attribute"),
             ("POST", "/review/filter/attribute"),

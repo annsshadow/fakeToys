@@ -36,6 +36,9 @@
               <div class="meta">ID: {{ item.id }}</div>
             </div>
             <button class="btn-act2" @click.stop="showPerms(item)">权限</button>
+            <button class="btn-act2" @click.stop="writePerms(item)">设权限</button>
+            <button class="btn-act2" @click.stop="createFile(item)">建文件</button>
+            <button class="btn-act2" @click.stop="loadIcon(item)">图标</button>
             <button class="btn-del" @click.stop="deleteApp(item)">删除</button>
           </div>
         </div>
@@ -105,7 +108,7 @@ async function loadAppExtra2() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     appViewText.value = `类型管理 ${n(mgr)} / 含文档类型 ${n(hasDocType)} / 输出 ${n(out)}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadAppExtra() {
@@ -119,7 +122,7 @@ async function loadAppExtra() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     appViewText.value = `受控栏目 ${n(sections)} / 带流程可发布 ${n(pubProc)} / 视图数据 ${n(viewData)}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadAppPublish() {
@@ -133,7 +136,7 @@ async function loadAppPublish() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     appViewText.value = `可发布 ${n(pub)} / 全部视图 ${n(viewAll)} / 含文档 ${n(hasDoc)}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadAppViews() {
@@ -147,7 +150,7 @@ async function loadAppViews() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     appViewText.value = `管理 ${n(manage)} / 用户视图 ${n(userView)} / 类型 ${n(types)}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function createApp() {
@@ -159,16 +162,51 @@ async function createApp() {
     await api.post('/api/appinfo', { alias, appType })
     doSearch()
   } catch (e: any) {
-    toast.error('新建失败: ' + (e?.message ?? ''))
+    toast.error(`新建失败: ${e?.message ?? ''}`)
   }
 }
 async function deleteApp(item: any) {
-  if (!(await confirmMsg('确定删除应用「' + (item.name || item.alias || item.id) + '」？'))) return
+  if (!(await confirmMsg(`确定删除应用「${item.name || item.alias || item.id}」？`))) return
   try {
-    await api.delete('/api/appinfo/' + item.id)
+    await api.delete(`/api/appinfo/${item.id}`)
     doSearch()
   } catch (e: any) {
-    toast.error('删除失败: ' + (e?.message ?? ''))
+    toast.error(`删除失败: ${e?.message ?? ''}`)
+  }
+}
+// rev422：设置应用权限 POST /api/appinfo/{id}/permission（u2_require_admin，写 x_cms_appinfo 权限位；管理员用真实成员标识提交，查不到应用优雅报错）
+// rev432：新建 CMS 文件 POST /api/file（body {appId,name}，INSERT x_cms_file；用真实应用 id+文件名触发）
+// rev435：按尺寸读应用图标 POST /api/appinfo/{id}/icon/size/{size}（读 x_cms_appinfo icon by id；用真实应用 id 触发）
+async function loadIcon(item: any) {
+  try {
+    const r: any = await api.post(`/api/appinfo/${encodeURIComponent(item.id)}/icon/size/64`, {})
+    toast.success(`图标：${(r as any)?.data?.icon ? '有' : '无'}`)
+  } catch (e: any) {
+    toast.error(`读取图标失败: ${e?.message ?? ''}`)
+  }
+}
+async function createFile(item: any) {
+  const name = prompt('文件名:', '') || ''
+  if (!name.trim()) return
+  try {
+    await api.post('/api/file', { appId: item.id, name })
+    toast.success('文件已创建')
+  } catch (e: any) {
+    toast.error(`创建文件失败: ${e?.message ?? ''}`)
+  }
+}
+async function writePerms(item: any) {
+  const id = encodeURIComponent(item.id)
+  const readers = (prompt('查看者(逗号分隔标识，可空):', '') || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+  if (!(await confirmMsg('确定写入该应用权限？'))) return
+  try {
+    await api.post(`/api/appinfo/${id}/permission`, { viewerList: readers })
+    toast.success('应用权限已写入')
+  } catch (e: any) {
+    toast.error(`写入权限失败: ${e?.message ?? ''}`)
   }
 }
 async function showPerms(item: any) {
@@ -183,7 +221,7 @@ async function showPerms(item: any) {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     toast.success(`管理者 ${n(mgr)} / 发布者 ${n(pub)} / 查看者 ${n(viewer)}`)
   } catch (e: any) {
-    toast.error('查询权限失败: ' + (e?.message ?? ''))
+    toast.error(`查询权限失败: ${e?.message ?? ''}`)
   }
 }
 

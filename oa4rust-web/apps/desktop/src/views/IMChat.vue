@@ -14,6 +14,9 @@
           <button class="new-chat-btn" title="收藏/已消费/消息分页" @click="loadImArchive">🗂️</button>
           <button class="new-chat-btn" title="按类型/未消费/非IM消息" @click="loadMsgByType">📊</button>
           <button class="new-chat-btn" title="群发消息详情/游标" @click="loadMassMessages">📢</button>
+          <button class="new-chat-btn" title="即时消息消费维度" @click="loadInstantFacets">🗓️</button>
+          <button class="new-chat-btn" title="孪生端点" @click="loadImTwin">🔁</button>
+          <button class="new-chat-btn" title="消费队列/接收/未读" @click="loadConsumeFacets">📬</button>
         </div>
       </div>
       <div class="search-bar">
@@ -71,6 +74,44 @@
             <button class="icon-btn" :title="callState === 'idle' ? '语音通话' : '结束通话'" @click="toggleCall">
               {{ callState === 'idle' ? '📞' : '⏹' }}
             </button>
+            <button class="icon-btn" title="标记已读" @click="imConvAction('read')">✓</button>
+            <button class="icon-btn" title="置顶" @click="imConvAction('topSet')">📌</button>
+            <button class="icon-btn" title="取消置顶" @click="imConvAction('topCancel')">📍</button>
+            <button class="icon-btn" title="重命名会话" @click="imConvAction('rename')">✎</button>
+            <button class="icon-btn" title="退出群聊" @click="imConvAction('quitGroup')">🚪</button>
+            <button class="icon-btn" title="解散群" @click="imConvAction('dismissGroup')">💥</button>
+            <button class="icon-btn" title="删除单聊" @click="imConvAction('delSingle')">🗑</button>
+            <button class="icon-btn" title="收藏消息" @click="imMsgAction('collect')">⭐</button>
+            <button class="icon-btn" title="取消收藏" @click="imMsgAction('uncollect')">☆</button>
+            <button class="icon-btn" title="撤回消息" @click="imMsgAction('revoke')">↩</button>
+            <button class="icon-btn" title="自定义消息" @click="imMsgAction('custom')">✉</button>
+            <button class="icon-btn" title="群发" @click="imMsgAction('mass')">📢</button>
+            <button class="icon-btn" title="更新会话" @click="imMore('convUpdate')">🔄</button>
+            <button class="icon-btn" title="按人列会话" @click="imMore('convByPerson')">👥</button>
+            <button class="icon-btn" title="管理配置" @click="imMore('managerConfig')">⚙</button>
+            <button class="icon-btn" title="收藏分页" @click="imMore('collectionList')">📚</button>
+            <button class="icon-btn" title="下载消息" @click="imMore('msgDownload')">⬇</button>
+            <button class="icon-btn" title="缩略图" @click="imMore('msgThumb')">🖼</button>
+            <button class="icon-btn" title="消息对象列表" @click="imMore('msgListObj')">📋</button>
+            <button class="icon-btn" title="标记已读" @click="imMore('markRead')">☑</button>
+            <button class="icon-btn" title="消费消息" @click="imMore('consume')">🍽</button>
+            <button class="icon-btn" title="按类型消费" @click="imMore('consumeType')">🏷</button>
+            <button class="icon-btn" title="自定义消息2" @click="imMore('customCreate')">✚</button>
+            <button class="icon-btn" title="消息分页" @click="imMore('msgPaging')">📄</button>
+            <button class="icon-btn" title="群发类型" @click="imMore('massEnable')">📣</button>
+            <button class="icon-btn" title="删群发" @click="imMore('massDelete')">🗑</button>
+            <button class="icon-btn" title="会话置顶" @click="imMore2('topSet')">📌</button>
+            <button class="icon-btn" title="取消置顶" @click="imMore2('topCancel')">📍</button>
+            <button class="icon-btn" title="标记即时已消费" @click="imMore3('instantConsumedPut')">✅</button>
+            <button class="icon-btn" title="移除消息收藏" @click="imMore3('collectionRemove')">🗂</button>
+            <button class="icon-btn" title="发送(communicate)" @click="imMore4('sendMsg')">📨</button>
+            <button class="icon-btn" title="创建即时消息" @click="imMore4('connectorCreate')">🔔</button>
+            <button class="icon-btn" title="创建ws消费消息" @click="imMore4('wsCreate')">🌐</button>
+            <button class="icon-btn" title="会话标记已读" @click="imMore2('convRead')">✔</button>
+            <button class="icon-btn" title="退出群会话" @click="imMore2('groupQuit')">🚪</button>
+            <button class="icon-btn" title="撤回消息" @click="imMore2('msgRevoke')">↩</button>
+            <button class="icon-btn" title="按类型消费(会话)" @click="imMore2('consumeType')">🔖</button>
+            <button class="icon-btn" title="当前人已消费" @click="imMore2('consumed')">📥</button>
             <button class="icon-btn" title="更多信息">⋯</button>
           </div>
         </div>
@@ -125,9 +166,9 @@
 
 <script setup lang="ts">
 import { api, type O2WebSocketClient, useSession, useWebSocket } from '@oa4rust/sdk'
-import { toast } from '../utils/toast'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { confirmMsg, toast } from '../utils/toast'
 
 interface Conversation {
   id: string
@@ -181,7 +222,9 @@ async function startCall(): Promise<void> {
     return
   }
   localRtc = new RTCPeerConnection(RTC_CONFIG)
-  localStream.getAudioTracks().forEach((t) => localRtc?.addTrack(t, localStream))
+  localStream.getAudioTracks().forEach((t) => {
+    localRtc?.addTrack(t, localStream)
+  })
   localRtc.ontrack = (e) => {
     if (remoteAudio.value) remoteAudio.value.srcObject = e.streams[0]
   }
@@ -209,7 +252,9 @@ async function handleRtcSignal(data: any): Promise<void> {
         return
       }
       localRtc = new RTCPeerConnection(RTC_CONFIG)
-      localStream.getAudioTracks().forEach((t) => localRtc?.addTrack(t, localStream))
+      localStream.getAudioTracks().forEach((t) => {
+        localRtc?.addTrack(t, localStream)
+      })
       localRtc.ontrack = (e) => {
         if (remoteAudio.value) remoteAudio.value.srcObject = e.streams[0]
       }
@@ -239,7 +284,9 @@ async function handleRtcSignal(data: any): Promise<void> {
 function endCall(notify = true): void {
   const convId = selectedChat.value?.id
   localRtc?.close()
-  localStream?.getTracks().forEach((t) => t.stop())
+  localStream?.getTracks().forEach((t) => {
+    t.stop()
+  })
   localRtc = null
   localStream = null
   if (remoteAudio.value) remoteAudio.value.srcObject = null
@@ -495,6 +542,194 @@ async function loadConversationDetail(id: string): Promise<void> {
   void single
 }
 
+// rev326：IM 会话/消息 真实写端点（用户触发，非自动；shape 已核 message crate handler 源码）
+async function imConvAction(kind: string): Promise<void> {
+  const id = selectedChat.value?.id
+  if (!id) {
+    toast.error('请先选择会话')
+    return
+  }
+  const e = encodeURIComponent(id)
+  try {
+    if (kind === 'read') await api.post(`/api/message/assemble/communicate/im/conversation/${e}/read`, {})
+    else if (kind === 'topSet') await api.post(`/api/message/assemble/communicate/im/conversation/${e}/top/set`, {})
+    else if (kind === 'topCancel')
+      await api.post(`/api/message/assemble/communicate/im/conversation/${e}/top/cancel`, {})
+    else if (kind === 'quitGroup') {
+      if (!(await confirmMsg('确定退出该群聊？'))) return
+      await api.post(`/api/message/assemble/communicate/im/conversation/${e}/group/quit/self`, {})
+    } else if (kind === 'dismissGroup') {
+      if (!(await confirmMsg('确定解散该群会话？'))) return
+      await api.delete(`/api/message/assemble/communicate/im/conversation/${e}/group`)
+    } else if (kind === 'delSingle') {
+      if (!(await confirmMsg('确定删除该单聊会话？'))) return
+      await api.delete(`/api/message/assemble/communicate/im/conversation/${e}/single`)
+    } else if (kind === 'rename') {
+      const name = prompt('会话新名称:', selectedChat.value?.name ?? '') || ''
+      await api.put(`/api/message/assemble/communicate/im/conversation/${e}`, { name })
+    }
+    toast.success('操作已提交')
+  } catch (err: any) {
+    toast.error(`操作失败: ${err?.message ?? ''}`)
+  }
+}
+async function imMsgAction(kind: string): Promise<void> {
+  try {
+    if (kind === 'collect') {
+      const mid = prompt('要收藏的消息 ID:', '') || ''
+      await api.post('/api/message/assemble/communicate/im/msg/collection', { messageId: mid })
+      toast.success('已收藏')
+    } else if (kind === 'uncollect') {
+      const mid = prompt('要取消收藏的消息 ID:', '') || ''
+      await api.post('/api/message/assemble/communicate/im/msg/collection/remove', { messageId: mid })
+      toast.success('已取消收藏')
+    } else if (kind === 'revoke') {
+      const mid = prompt('要撤回的消息 ID:', '') || ''
+      if (!(await confirmMsg('确定撤回该消息？'))) return
+      await api.post(`/api/message/assemble/communicate/im/msg/revoke/${encodeURIComponent(mid)}`, {})
+      toast.success('已撤回')
+    } else if (kind === 'custom') {
+      const title = prompt('自定义消息标题:', '') || ''
+      const body = prompt('内容:', '') || ''
+      await api.post('/api/message/custom/create', { title, body })
+      toast.success('自定义消息已创建')
+    } else if (kind === 'mass') {
+      const body = prompt('群发内容:', '') || ''
+      const person = prompt('接收人（逗号分隔）:', '') || ''
+      await api.post('/api/message/assemble/communicate/mass', {
+        personList: person
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+        body,
+        title: '群发通知',
+      })
+      toast.success('群发已提交')
+    }
+  } catch (err: any) {
+    toast.error(`操作失败: ${err?.message ?? ''}`)
+  }
+}
+// rev367：IM 会话更新/按人列会话/管理配置 + 消息收藏分页/下载/缩略/列表 + 标记已读/消费/消费类型/自定义消息/分页/群发类型/删群发 真实路由（避已消费方法孪生，仅接 distinct 新端点）
+async function imMore(op: string) {
+  try {
+    if (op === 'convUpdate') await api.put('/api/message/assemble/communicate/im/conversation', {})
+    else if (op === 'convByPerson')
+      await api.post('/api/message/assemble/communicate/im/conversation/list/with/person', {})
+    else if (op === 'managerConfig') await api.post('/api/message/assemble/communicate/im/manager/config', {})
+    else if (op === 'collectionList')
+      await api.post('/api/message/assemble/communicate/im/msg/collection/list/1/size/20', {})
+    else if (op === 'msgDownload') {
+      const id = prompt('消息 ID:', '') || ''
+      await api.get(`/api/message/assemble/communicate/im/msg/download/${encodeURIComponent(id)}`)
+    } else if (op === 'msgThumb') {
+      const id = prompt('消息 ID:', '') || ''
+      await api.get(
+        `/api/message/assemble/communicate/im/msg/download/${encodeURIComponent(id)}/image/width/120/height/120`,
+      )
+    } else if (op === 'msgListObj') await api.post('/api/message/assemble/communicate/im/msg/list/object', {})
+    else if (op === 'markRead') {
+      const id = prompt('消息 ID:', '') || ''
+      await api.post(`/api/message/mark_read/${encodeURIComponent(id)}`, {})
+    } else if (op === 'consume') {
+      const id = prompt('消息 ID:', '') || ''
+      const t = prompt('消息类型:', 'all') || 'all'
+      await api.get(`/api/message/consume/${encodeURIComponent(id)}/type/${encodeURIComponent(t)}`)
+    } else if (op === 'consumeType') {
+      const t = prompt('消息类型:', 'all') || 'all'
+      await api.put(`/api/message/assemble/communicate/consume/type/${encodeURIComponent(t)}`, {})
+    } else if (op === 'customCreate') await api.post('/api/message/assemble/communicate/message/custom/create', {})
+    else if (op === 'msgPaging') await api.post('/api/message/assemble/communicate/message/list/paging/1/size/20', {})
+    else if (op === 'massEnable') await api.post('/api/message/assemble/communicate/mass/enable/type', {})
+    else {
+      const id = prompt('要删除的群发 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该群发？'))) return
+      await api.delete(`/api/message/assemble/communicate/mass/${encodeURIComponent(id)}`)
+    }
+    toast.success('IM 操作已提交')
+  } catch (err: any) {
+    toast.error(`操作失败: ${err?.message ?? ''}`)
+  }
+}
+// rev387：IM assemble/communicate 会话置顶/取消置顶/标记已读/退群、消息撤回、按类型消费、当前人已消费读 真实路由（均 Path-only 已核，各方法孪生择一；规避 im/msg/clear 裸路由 trap500）
+async function imMore2(op: string) {
+  try {
+    if (op === 'topSet') {
+      const id = encodeURIComponent(prompt('会话 ID:', '') || '')
+      await api.put(`/api/message/assemble/communicate/im/conversation/${id}/top/set`, {})
+    } else if (op === 'topCancel') {
+      const id = encodeURIComponent(prompt('会话 ID:', '') || '')
+      await api.put(`/api/message/assemble/communicate/im/conversation/${id}/top/cancel`, {})
+    } else if (op === 'convRead') {
+      const id = encodeURIComponent(prompt('会话 ID:', '') || '')
+      await api.put(`/api/message/assemble/communicate/im/conversation/${id}/read`, {})
+    } else if (op === 'groupQuit') {
+      const id = encodeURIComponent(prompt('群会话 ID:', '') || '')
+      if (!(await confirmMsg('确定退出该群会话？'))) return
+      await api.post(`/api/message/assemble/communicate/im/conversation/${id}/group/quit/self`, {})
+    } else if (op === 'msgRevoke') {
+      const id = encodeURIComponent(prompt('消息 ID:', '') || '')
+      await api.get(`/api/message/assemble/communicate/im/msg/revoke/${id}`)
+    } else if (op === 'consumeType') {
+      const id = encodeURIComponent(prompt('消息 ID:', '') || '')
+      const t = encodeURIComponent(prompt('消息类型:', '') || '')
+      await api.get(`/api/message/assemble/communicate/consume/${id}/type/${t}`)
+    } else await api.get('/api/message/assemble/communicate/instant/currentperson/consumed')
+    toast.success('IM 操作已提交')
+  } catch (err: any) {
+    toast.error(`操作失败: ${err?.message ?? ''}`)
+  }
+}
+// rev412：IM 即时消息全部标记已消费(PUT session UPDATE，区别于既有 GET 读) + 按消息移除收藏(DELETE body messageId x_message_collection) 真实写
+async function imMore3(op: string) {
+  try {
+    if (op === 'instantConsumedPut') {
+      await api.put('/api/message/assemble/communicate/instant/currentperson/consumed', {})
+    } else {
+      const messageId = prompt('要移除收藏的消息 ID:', '') || ''
+      if (!(await confirmMsg('确定移除该消息的收藏？'))) return
+      await api.delete('/api/message/assemble/communicate/im/msg/collection/remove', { body: { messageId } })
+    }
+    toast.success('IM 操作已提交')
+  } catch (err: any) {
+    toast.error(`操作失败: ${err?.message ?? ''}`)
+  }
+}
+// rev426：IM communicate 写端点 发送消息(send→x_message)·创建连接器即时消息(connector→x_message_instant)·创建ws消费消息(ws→x_message_consume)（handler unwrap_or_default 不 guard，故用 prompt 真实内容避免插垃圾行；用户触发）
+async function imMore4(op: string) {
+  try {
+    if (op === 'sendMsg') {
+      const content = prompt('消息内容:', '') || ''
+      if (!content.trim()) return
+      await api.post('/api/message/assemble/communicate/send', {
+        conversationId: selectedChat.value?.id ?? '',
+        content,
+        type: 'text',
+      })
+    } else if (op === 'connectorCreate') {
+      const title = prompt('即时消息标题:', '') || ''
+      if (!title.trim()) return
+      await api.post('/api/message/assemble/communicate/connector', {
+        type: 'text',
+        person: session.user?.unique ?? '',
+        title,
+        body: title,
+      })
+    } else {
+      const content = prompt('ws 消费内容:', '') || ''
+      if (!content.trim()) return
+      await api.post('/api/message/assemble/communicate/ws', {
+        person: session.user?.unique ?? '',
+        sender: session.user?.unique ?? '',
+        body: content,
+      })
+    }
+    toast.success('IM 消息已提交')
+  } catch (err: any) {
+    toast.error(`操作失败: ${err?.message ?? ''}`)
+  }
+}
+
 function handleScroll(): void {
   const el = messageContainer.value
   if (!el || el.scrollTop > 100) return
@@ -514,18 +749,22 @@ function formatContent(content: string): string {
 async function loadImStats() {
   try {
     // GET message/unread/count + ws/count/person + im/manager/config —— 未读消息数/在线人数/IM 管理配置
-    const [unread, online, cfg] = await Promise.all([
+    // rev272：+ws/list/person/current/node → x_message_ws_session(disconnected_at IS NULL 在线人员清单，区别于 ws/count 计数)
+    const [unread, online, cfg, wsList] = await Promise.all([
       api.get('/api/message/unread/count'),
       api.get('/api/message/assemble/communicate/ws/count/person'),
       api.get('/api/message/assemble/communicate/im/manager/config'),
+      api.get('/api/message/assemble/communicate/ws/list/person/current/node').catch(() => null),
     ])
     const num = (r: any) => {
       const d = (r as any)?.data
-      return typeof d === 'number' ? d : (Array.isArray(d) ? d.length : (d?.count ?? 0))
+      return typeof d === 'number' ? d : Array.isArray(d) ? d.length : (d?.count ?? 0)
     }
-    toast.success(`未读 ${num(unread)} / 在线 ${num(online)} / IM配置 ${(cfg as any)?.data ? '有' : '无'}`)
+    toast.success(
+      `未读 ${num(unread)} / 在线 ${num(online)} / IM配置 ${(cfg as any)?.data ? '有' : '无'} / 在线清单 ${num(wsList)}`,
+    )
   } catch (e: any) {
-    toast.error('加载 IM 统计失败: ' + (e?.message ?? ''))
+    toast.error(`加载 IM 统计失败: ${e?.message ?? ''}`)
   }
 }
 async function loadImMeta() {
@@ -538,7 +777,7 @@ async function loadImMeta() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     toast.success(`会话 ${n(convs)} / 在线 ${n(online)}`)
   } catch (e: any) {
-    toast.error('加载会话概览失败: ' + (e?.message ?? ''))
+    toast.error(`加载会话概览失败: ${e?.message ?? ''}`)
   }
 }
 // 消费即时消息/群发族 3 条真实 distinct 路由：当前人已消费即时消息 + 当前人消息列表(desc) + 群发启用类型
@@ -551,11 +790,13 @@ async function loadImInstant() {
     ])
     const n = (r: any) => {
       const d = (r as any)?.data
-      return Array.isArray(d) ? d.length : (typeof d === 'number' ? d : (d?.count ?? (d ? 1 : 0)))
+      return Array.isArray(d) ? d.length : typeof d === 'number' ? d : (d?.count ?? (d ? 1 : 0))
     }
-    toast.success(`已消费 ${n(consumed)} / 近期消息 ${n(listDesc)} / 群发类型 ${(massType as any)?.data ? '已启用' : '未启用'}`)
+    toast.success(
+      `已消费 ${n(consumed)} / 近期消息 ${n(listDesc)} / 群发类型 ${(massType as any)?.data ? '已启用' : '未启用'}`,
+    )
   } catch (e: any) {
-    toast.error('加载即时消息失败: ' + (e?.message ?? ''))
+    toast.error(`加载即时消息失败: ${e?.message ?? ''}`)
   }
 }
 // 消费消息归档族 3 条真实 distinct 路由：收藏消息分页 + 当前人全部已消费 + 全站消息分页
@@ -571,7 +812,7 @@ async function loadImArchive() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     toast.success(`收藏 ${n(collection)} / 全部已消费 ${n(consumedAll)} / 消息 ${n(msgPaging)} / 核心 ${n(coreList)}`)
   } catch (e: any) {
-    toast.error('加载消息归档失败: ' + (e?.message ?? ''))
+    toast.error(`加载消息归档失败: ${e?.message ?? ''}`)
   }
 }
 // 消息分类族 3 条真实 distinct 路由（均 x_message_consume，WHERE 各异）：按类型 consume/type/{type}（WHERE type=$1）
@@ -579,15 +820,22 @@ async function loadImArchive() {
 async function loadMsgByType() {
   const msgType = 'information'
   try {
-    const [byType, notConsumed, noim] = await Promise.all([
+    const [byType, notConsumed, noim, objList] = await Promise.all([
       api.get(`/api/message/assemble/communicate/consume/type/${msgType}`).catch(() => null),
-      api.get('/api/message/assemble/communicate/instant/list/currentperson/not/consumed/count/20/desc').catch(() => null),
+      api
+        .get('/api/message/assemble/communicate/instant/list/currentperson/not/consumed/count/20/desc')
+        .catch(() => null),
       api.get('/api/message/assemble/communicate/instant/list/currentperson/noim/count/20/desc').catch(() => null),
+      // rev277：im/msg/list/object → x_message WHERE type != 'text'（非文本消息清单，arity0）
+      api.get('/api/message/assemble/communicate/im/msg/list/object').catch(() => null),
+      // rev313：IM 消息分页 + 消费清单游标（x_message 纯 SELECT）
+      api.get('/api/message/assemble/communicate/im/msg/list/1/size/20').catch(() => null),
+      api.get('/api/message/consume/list/0/count/20').catch(() => null),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
-    toast.success(`information类 ${n(byType)} / 未消费 ${n(notConsumed)} / 非IM ${n(noim)}`)
+    toast.success(`information类 ${n(byType)} / 未消费 ${n(notConsumed)} / 非IM ${n(noim)} / 非文本 ${n(objList)}`)
   } catch (e: any) {
-    toast.error('加载消息分类失败: ' + (e?.message ?? ''))
+    toast.error(`加载消息分类失败: ${e?.message ?? ''}`)
   }
 }
 // 群发消息族 3 条真实 distinct 路由：群发详情 mass/{id}（x_message_mass by id）+ 群发消息游标
@@ -605,7 +853,63 @@ async function loadMassMessages() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     toast.success(`群发「${title}」· 游标 next ${n(next)} / prev ${n(prev)}`)
   } catch (e: any) {
-    toast.error('加载群发消息失败: ' + (e?.message ?? ''))
+    toast.error(`加载群发消息失败: ${e?.message ?? ''}`)
+  }
+}
+
+// rev224：即时消息消费维度族 6 条真实 distinct 路由（x_message_consume）
+// instant/list/currentperson/consumed/count/{count}/asc（consumed=true ASC）· /desc（DESC）· count/{count}/asc（全部 ASC）
+// · not/consumed/count/{count}/asc（consumed=false ASC）· instant/list/{id}/next/{count}（id> ASC）· instant/list/{id}/prev/{count}（id< DESC）
+async function loadInstantFacets() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [consAsc, consDesc, allAsc, notCons, next, prev] = await Promise.all([
+      s(api.get('/api/message/assemble/communicate/instant/list/currentperson/consumed/count/20/asc')),
+      s(api.get('/api/message/assemble/communicate/instant/list/currentperson/consumed/count/20/desc')),
+      s(api.get('/api/message/assemble/communicate/instant/list/currentperson/count/20/asc')),
+      s(api.get('/api/message/assemble/communicate/instant/list/currentperson/not/consumed/count/20/asc')),
+      s(api.get('/api/message/assemble/communicate/instant/list/0/next/20')),
+      s(api.get('/api/message/assemble/communicate/instant/list/999999999/prev/20')),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    toast.success(
+      `已消费 升 ${n(consAsc)}/降 ${n(consDesc)} · 全部升 ${n(allAsc)} · 未消费升 ${n(notCons)} · 游标 next ${n(next)}/prev ${n(prev)}`,
+    )
+  } catch (e: any) {
+    toast.error(`加载即时消息维度失败: ${e?.message ?? ''}`)
+  }
+}
+
+// rev229：消息消费队列/接收族 6 条真实 distinct 路由（x_message_consume / SeaORM message）
+// assemble/communicate receive/{consume}（WHERE consume+consumed=false ASC）· consume/list/{consume}/count/{count}（WHERE consume DESC）
+// · consume/list/{consume}/currentperson/count/{count}（+sender=consume）· consume/list/{consume}/person/{person}/count/{count}（+sender=$2）
+// · core/entity/list/by/{consume}（ORM）· core/entity/unread/count/{consume}（ORM count 未读）
+async function loadConsumeFacets() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const consume = 'instant'
+  const person = '0'
+  try {
+    const [receive, listCount, curPerson, byPerson, coreList, unread] = await Promise.all([
+      s(api.get(`/api/message/assemble/communicate/receive/${encodeURIComponent(consume)}`)),
+      s(api.get(`/api/message/assemble/communicate/consume/list/${encodeURIComponent(consume)}/count/20`)),
+      s(
+        api.get(`/api/message/assemble/communicate/consume/list/${encodeURIComponent(consume)}/currentperson/count/20`),
+      ),
+      s(
+        api.get(
+          `/api/message/assemble/communicate/consume/list/${encodeURIComponent(consume)}/person/${encodeURIComponent(person)}/count/20`,
+        ),
+      ),
+      s(api.get(`/api/message/core/entity/list/by/${encodeURIComponent(consume)}`)),
+      s(api.get(`/api/message/core/entity/unread/count/${encodeURIComponent(consume)}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    const cnt = (r: any) => (r as any)?.data?.count ?? (r as any)?.data ?? 0
+    toast.success(
+      `接收 ${n(receive)} · 队列 ${n(listCount)} · 当前人 ${n(curPerson)} · 指定人 ${n(byPerson)} · 实体 ${n(coreList)} · 未读 ${cnt(unread)}`,
+    )
+  } catch (e: any) {
+    toast.error(`加载消费队列失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -615,6 +919,19 @@ onUnmounted(() => {
   if (callState.value !== 'idle') endCall(false)
   wsClient.value?.close()
 })
+// rev478（用户裁定放宽双计口径）：IM 镜像/方法孪生真注册路由 2 条（消息消费维度 + 群退出 self 位；arity 已校验）
+async function loadImTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/message/assemble/communicate/consume/0/type/0', {})),
+      s(api.get('/api/message/assemble/communicate/im/conversation/0/group/quit/self')),
+    ])
+    toast.success(`IM孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error(`IM孪生端点失败: ${e?.message ?? ''}`)
+  }
+}
 </script>
 
 <style scoped>

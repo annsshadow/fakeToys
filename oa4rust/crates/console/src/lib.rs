@@ -167,8 +167,13 @@ pub async fn get_logs(
 #[allow(non_snake_case)]
 pub async fn send_message(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     axum::extract::Json(req): Json<SendMessageRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // RBAC: 运维面写操作仅 Admin
+    if !is_admin(pool.deref(), &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let token = req.token.unwrap_or_default();
     let message = req.message.unwrap_or_default();
 
@@ -195,8 +200,13 @@ pub async fn send_message(
 #[allow(non_snake_case)]
 pub async fn clear_cache(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     axum::extract::Path(cache_type): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // RBAC: 运维面写操作仅 Admin
+    if !is_admin(pool.deref(), &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -336,8 +346,13 @@ pub async fn get_system_info() -> Result<Json<ActionResult<Value>>, AppError> {
 #[allow(non_snake_case)]
 pub async fn config_create(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // RBAC: 运维面写操作仅 Admin
+    if !is_admin(pool.deref(), &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
@@ -383,9 +398,14 @@ pub async fn config_create(
 #[allow(non_snake_case)]
 pub async fn config_update(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     Path(id): Path<String>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // RBAC: 运维面写操作仅 Admin
+    if !is_admin(pool.deref(), &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = payload
         .get("name")
@@ -429,8 +449,13 @@ pub async fn config_update(
 #[allow(non_snake_case)]
 pub async fn config_delete(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // RBAC: 运维面写操作仅 Admin
+    if !is_admin(pool.deref(), &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM x_system_config WHERE id = $1", &[&id])
@@ -522,8 +547,13 @@ fn server_deploy_spec() -> shared::crud::CrudSpec {
 #[allow(non_snake_case)]
 pub async fn server_deploy_create(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // RBAC: 运维面写操作仅 Admin
+    if !is_admin(pool.deref(), &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let id = shared::crud_create(&pool, &server_deploy_spec(), &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -537,9 +567,14 @@ pub async fn server_deploy_create(
 #[allow(non_snake_case)]
 pub async fn server_deploy_save(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // RBAC: 运维面写操作仅 Admin
+    if !is_admin(pool.deref(), &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let saved = shared::crud_save(&pool, &server_deploy_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -553,8 +588,13 @@ pub async fn server_deploy_save(
 #[allow(non_snake_case)]
 pub async fn server_deploy_delete(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // RBAC: 运维面写操作仅 Admin
+    if !is_admin(pool.deref(), &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let deleted = shared::crud_delete(&pool, &server_deploy_spec(), &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

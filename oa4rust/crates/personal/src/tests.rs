@@ -157,6 +157,16 @@ mod tests {
         assert_eq!(req.new_password, "new");
     }
 
+    // 轮73 回归：桌面端 Personal.vue 发 camelCase——缺 alias 时反序列化 422，
+    // 桌面改密实跑必败。两种键形都必须可解。
+    #[test]
+    fn test_change_password_request_deserialize_camel_case() {
+        let req: ChangePasswordRequest =
+            serde_json::from_str(r#"{"oldPassword":"old","newPassword":"new"}"#).unwrap();
+        assert_eq!(req.old_password, "old");
+        assert_eq!(req.new_password, "new");
+    }
+
     #[test]
     fn test_reset_password_request_deserialize() {
         let req: crate::reset::ResetPasswordRequest =

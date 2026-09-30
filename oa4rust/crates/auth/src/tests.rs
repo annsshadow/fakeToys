@@ -633,9 +633,8 @@ mod tests {
         let decrypted = crate::password::des3_decrypt_ede2(&encrypted, "wrongkey12345678").unwrap();
         let result = String::from_utf8(decrypted);
         // 乱码通常不是合法 UTF-8
-        match result {
-            Ok(s) => assert_ne!(s, plain),
-            Err(_) => {} // 非 UTF-8 也符合预期
+        if let Ok(s) = result {
+            assert_ne!(s, plain); // 非 UTF-8 也符合预期
         }
     }
 

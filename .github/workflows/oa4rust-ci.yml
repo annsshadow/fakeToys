@@ -29,6 +29,8 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+        with:
+          components: clippy
       - name: Cache cargo registry
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
@@ -36,8 +38,10 @@ jobs:
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('oa4rust/Cargo.lock') }}
       - name: Check formatting
         run: cargo fmt --all -- --check
-      - name: Check workspace
-        run: cargo check --workspace
+      - name: Clippy (lint + type-check, deny warnings)
+        # clippy 是 cargo check 的超集：编译 --all-targets 全部目标并附加 lint，
+        # -D warnings 将任意 clippy/rustc 告警升级为错误。基线 0 告警（2026-09-28 建立）。
+        run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Designer route reconciliation (no DB)
         run: cargo test --test designer_route_match
       - name: Escaped-quote key guard (no DB)

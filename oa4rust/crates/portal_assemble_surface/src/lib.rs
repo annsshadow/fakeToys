@@ -25,6 +25,7 @@ pub struct CreateSurfaceRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct CreateLayoutRequest {
+    pub id: Option<String>,
     pub name: Option<String>,
     pub category: Option<String>,
     pub content: Option<String>,
@@ -459,7 +460,7 @@ pub fn portal_assemble_surface_router() -> Router {
         .route("/api/portal/assemble/surface/delete/layout", post(crate::delete_layout))
         .route("/api/portal/assemble/surface/dict/portal/{dictFlag}/{portalFlag}", get(crate::dict_dictFlag_portal_portalFlag))
         .route("/api/portal/assemble/surface/dict/portal/data/{dictFlag}/{portalFlag}", get(crate::dict_dictFlag_portal_portalFlag_data))
-        .route("/api/portal/assemble/surface/dict/portal/path/data/{dictFlag}/{portalFlag}", get(crate::dict_dictFlag_portal_portalFlag_path_data))
+        .route("/api/portal/assemble/surface/dict/portal/path/data/{dictFlag}/{portalFlag}", get(crate::dict_dictFlag_portal_portalFlag_path_data_short))
         .route("/api/portal/assemble/surface/dict/portal/path/data/mockdeletetoget/{dictFlag}/{portalFlag}", post(crate::dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget))
         .route("/api/portal/assemble/surface/dict/portal/path/data/mockputtopost/{dictFlag}/{portalFlag}", post(crate::dict_dictFlag_portal_portalFlag_path_data_mockputtopost))
         .route("/api/portal/assemble/surface/dict/list/portal/{portalFlag}", get(crate::dict_list_portal_portalFlag))
@@ -468,31 +469,29 @@ pub fn portal_assemble_surface_router() -> Router {
         .route("/api/portal/assemble/surface/file/portal/content/{flag}/{portalFlag}", get(crate::file_flag_portal_portalFlag_content))
         .route("/api/portal/assemble/surface/file/portal/download/{flag}/{portalFlag}", get(crate::file_flag_portal_portalFlag_download))
         .route("/api/portal/assemble/surface/file/list/portal/{portalFlag}", get(crate::file_list_portal_portalFlag))
-        .route("/api/portal/assemble/surface/get/layout", get(crate::get_layout))
-        .route("/api/portal/assemble/surface/list/layouts", get(crate::list_layouts))
-        .route("/api/portal/assemble/surface/portal/{page}/{flag}/{portalFlag}", get(crate::page_flag_portal_portalFlag))
-        .route("/api/portal/assemble/surface/portal/mobile/{page}/{flag}/{portalFlag}", get(crate::page_flag_portal_portalFlag_mobile))
+        .route("/api/portal/assemble/surface/portal/{page}/{flag}/{portalFlag}", get(crate::page_flag_portal_portalFlag_p3))
+        .route("/api/portal/assemble/surface/portal/mobile/{page}/{flag}/{portalFlag}", get(crate::page_flag_portal_portalFlag_mobile_p3))
         .route("/api/portal/assemble/surface/{page}/{id}", get(crate::page_id))
-        .route("/api/portal/assemble/surface/mobile/{page}/{id}", get(crate::page_id_mobile))
+        .route("/api/portal/assemble/surface/mobile/{page}/{id}", get(crate::page_id_mobile_p2))
         .route("/api/portal/assemble/surface/list/portal/portal/{page}", get(crate::page_list_portal_portal))
-        .route("/api/portal/assemble/surface/v2/portal/{page}/{flag}/{portalFlag}", get(crate::page_v2_flag_portal_portalFlag))
-        .route("/api/portal/assemble/surface/v2/portal/mobile/{page}/{flag}/{portalFlag}", get(crate::page_v2_flag_portal_portalFlag_mobile))
-        .route("/api/portal/assemble/surface/v2/{page}/{id}", get(crate::page_v2_id))
-        .route("/api/portal/assemble/surface/v2/mobile/{page}/{id}", get(crate::page_v2_id_mobile))
+        .route("/api/portal/assemble/surface/v2/portal/{page}/{flag}/{portalFlag}", get(crate::page_v2_flag_portal_portalFlag_p3))
+        .route("/api/portal/assemble/surface/v2/portal/mobile/{page}/{flag}/{portalFlag}", get(crate::page_v2_flag_portal_portalFlag_mobile_p3))
+        .route("/api/portal/assemble/surface/v2/{page}/{id}", get(crate::page_v2_id_p2))
+        .route("/api/portal/assemble/surface/v2/mobile/{page}/{id}", get(crate::page_v2_id_mobile_p2))
         .route("/api/portal/assemble/surface/portal/{flag}", get(crate::portal_flag))
         .route("/api/portal/assemble/surface/portal/corner/mark/{flag}", get(crate::portal_flag_corner_mark))
         .route("/api/portal/assemble/surface/portal/icon/{id}", get(crate::portal_id_icon))
         .route("/api/portal/assemble/surface/portal/icon/base64/{id}", get(crate::portal_id_icon_base64))
         .route("/api/portal/assemble/surface/save/layout", post(crate::save_layout))
         .route("/api/portal/assemble/surface/script/{id}", get(crate::script_id))
-        .route("/api/portal/assemble/surface/script/list/portal/portal", get(crate::script_list_portal_portal))
+        .route("/api/portal/assemble/surface/script/list/portal/{portal}", get(crate::script_list_portal_portal))
         .route("/api/portal/assemble/surface/script/portal/portal/{name}/{name}", get(crate::script_portal_portal_name_name))
         .route("/api/portal/assemble/surface/script/portal/portal/imported/{name}/{name}", post(crate::script_portal_portal_name_name_imported))
         .route("/api/portal/assemble/surface/widget/portal/{flag}/{portalFlag}", get(crate::widget_flag_portal_portalFlag))
         .route("/api/portal/assemble/surface/widget/portal/mobile/{flag}/{portalFlag}", get(crate::widget_flag_portal_portalFlag_mobile))
         .route("/api/portal/assemble/surface/widget/{id}", get(crate::widget_id))
         .route("/api/portal/assemble/surface/widget/mobile/{id}", get(crate::widget_id_mobile))
-        .route("/api/portal/assemble/surface/widget/list/portal/portal", get(crate::widget_list_portal_portal))
+        .route("/api/portal/assemble/surface/widget/list/portal/{portal}", get(crate::widget_list_portal_portal))
         .route("/api/portal/assemble/surface/delete/layout", delete(delete_layout))
         .route("/api/portal/assemble/surface/dict/portal/path/data/mockdeletetoget/{dictFlag}/{portalFlag}", delete(dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget))
         .route("/api/portal/assemble/surface/save/layout", put(save_layout))
@@ -528,6 +527,7 @@ pub fn portal_assemble_surface_router() -> Router {
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
@@ -669,7 +669,6 @@ pub async fn create_layout(
 #[allow(non_snake_case)]
 pub async fn save_layout(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(req): Json<CreateLayoutRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -677,8 +676,12 @@ pub async fn save_layout(
     let name = req.name.unwrap_or_default();
     let category = req.category.unwrap_or_default();
     let content = req.content.unwrap_or_default();
+    let id = req
+        .id
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
 
-    let result = client
+    let updated = client
         .execute(
             "UPDATE x_portal_layout SET name = $1, category = $2, content = $3, update_time = NOW() \
              WHERE id = $4",
@@ -687,8 +690,15 @@ pub async fn save_layout(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if result == 0 {
-        return Ok(Json(ActionResult::error("layout not found")));
+    if updated == 0 {
+        client
+            .execute(
+                "INSERT INTO x_portal_layout (id, name, category, content, creator, create_time, update_time) \
+                 VALUES ($1, $2, $3, $4, 'system', NOW(), NOW())",
+                &[&id, &name, &category, &content],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
     }
 
     let row = client
@@ -719,9 +729,15 @@ pub async fn save_layout(
 #[allow(non_snake_case)]
 pub async fn delete_layout(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let id = req
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
 
     let result = client
         .execute("DELETE FROM x_portal_layout WHERE id = $1", &[&id])
@@ -928,6 +944,17 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data(
         }
         None => Ok(Json(ActionResult::error("dict not found"))),
     }
+}
+
+/// 2 段变体：前端 PortalApp 调 dict/portal/path/data/{dictFlag}/{portalFlag}（无 path 段），
+/// 委派到 3 段实现，path 传空。
+#[allow(non_snake_case)]
+pub async fn dict_dictFlag_portal_portalFlag_path_data_short(
+    pool: Extension<Pool>,
+    Path((dict_flag, portal_flag)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    dict_dictFlag_portal_portalFlag_path_data(pool, Path((dict_flag, portal_flag, String::new())))
+        .await
 }
 
 #[allow(non_snake_case)]
@@ -1336,9 +1363,10 @@ pub async fn page_list_portal_portal(
 }
 
 #[allow(non_snake_case)]
-pub async fn page_v2_flag_portal_portalFlag(
+async fn page_v2_flag_portal_portalFlag_core(
     pool: Extension<Pool>,
-    Path((flag, portal_flag)): Path<(String, String)>,
+    flag: String,
+    portal_flag: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1375,9 +1403,26 @@ pub async fn page_v2_flag_portal_portalFlag(
 }
 
 #[allow(non_snake_case)]
-pub async fn page_v2_flag_portal_portalFlag_mobile(
+pub async fn page_v2_flag_portal_portalFlag(
     pool: Extension<Pool>,
-    Path((flag, portal_flag)): Path<(String, String)>,
+    axum::extract::Path((flag, portal_flag)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    page_v2_flag_portal_portalFlag_core(pool, flag, portal_flag).await
+}
+
+#[allow(non_snake_case)]
+pub async fn page_v2_flag_portal_portalFlag_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, flag, portal_flag)): axum::extract::Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    page_v2_flag_portal_portalFlag_core(pool, flag, portal_flag).await
+}
+
+#[allow(non_snake_case)]
+async fn page_v2_flag_portal_portalFlag_mobile_core(
+    pool: Extension<Pool>,
+    flag: String,
+    portal_flag: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1417,9 +1462,25 @@ pub async fn page_v2_flag_portal_portalFlag_mobile(
 }
 
 #[allow(non_snake_case)]
-pub async fn page_v2_id(
+pub async fn page_v2_flag_portal_portalFlag_mobile(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
+    axum::extract::Path((flag, portal_flag)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    page_v2_flag_portal_portalFlag_mobile_core(pool, flag, portal_flag).await
+}
+
+#[allow(non_snake_case)]
+pub async fn page_v2_flag_portal_portalFlag_mobile_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, flag, portal_flag)): axum::extract::Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    page_v2_flag_portal_portalFlag_mobile_core(pool, flag, portal_flag).await
+}
+
+#[allow(non_snake_case)]
+async fn page_v2_id_core(
+    pool: Extension<Pool>,
+    id: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1456,9 +1517,25 @@ pub async fn page_v2_id(
 }
 
 #[allow(non_snake_case)]
-pub async fn page_v2_id_mobile(
+pub async fn page_v2_id(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    page_v2_id_core(pool, id).await
+}
+
+#[allow(non_snake_case)]
+pub async fn page_v2_id_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, id)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    page_v2_id_core(pool, id).await
+}
+
+#[allow(non_snake_case)]
+async fn page_v2_id_mobile_core(
+    pool: Extension<Pool>,
+    id: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1498,9 +1575,26 @@ pub async fn page_v2_id_mobile(
 }
 
 #[allow(non_snake_case)]
-pub async fn page_flag_portal_portalFlag(
+pub async fn page_v2_id_mobile(
     pool: Extension<Pool>,
-    Path((flag, portal_flag)): Path<(String, String)>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    page_v2_id_mobile_core(pool, id).await
+}
+
+#[allow(non_snake_case)]
+pub async fn page_v2_id_mobile_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, id)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    page_v2_id_mobile_core(pool, id).await
+}
+
+#[allow(non_snake_case)]
+async fn page_flag_portal_portalFlag_core(
+    pool: Extension<Pool>,
+    flag: String,
+    portal_flag: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1537,9 +1631,26 @@ pub async fn page_flag_portal_portalFlag(
 }
 
 #[allow(non_snake_case)]
-pub async fn page_flag_portal_portalFlag_mobile(
+pub async fn page_flag_portal_portalFlag(
     pool: Extension<Pool>,
-    Path((flag, portal_flag)): Path<(String, String)>,
+    axum::extract::Path((flag, portal_flag)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    page_flag_portal_portalFlag_core(pool, flag, portal_flag).await
+}
+
+#[allow(non_snake_case)]
+pub async fn page_flag_portal_portalFlag_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, flag, portal_flag)): axum::extract::Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    page_flag_portal_portalFlag_core(pool, flag, portal_flag).await
+}
+
+#[allow(non_snake_case)]
+async fn page_flag_portal_portalFlag_mobile_core(
+    pool: Extension<Pool>,
+    flag: String,
+    portal_flag: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1579,9 +1690,25 @@ pub async fn page_flag_portal_portalFlag_mobile(
 }
 
 #[allow(non_snake_case)]
+pub async fn page_flag_portal_portalFlag_mobile(
+    pool: Extension<Pool>,
+    axum::extract::Path((flag, portal_flag)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    page_flag_portal_portalFlag_mobile_core(pool, flag, portal_flag).await
+}
+
+#[allow(non_snake_case)]
+pub async fn page_flag_portal_portalFlag_mobile_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, flag, portal_flag)): axum::extract::Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    page_flag_portal_portalFlag_mobile_core(pool, flag, portal_flag).await
+}
+
+#[allow(non_snake_case)]
 pub async fn page_id(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
+    Path((_s0, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1618,9 +1745,9 @@ pub async fn page_id(
 }
 
 #[allow(non_snake_case)]
-pub async fn page_id_mobile(
+async fn page_id_mobile_core(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
+    id: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1657,6 +1784,22 @@ pub async fn page_id_mobile(
         }
         None => Ok(Json(ActionResult::error("page not found"))),
     }
+}
+
+#[allow(non_snake_case)]
+pub async fn page_id_mobile(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    page_id_mobile_core(pool, id).await
+}
+
+#[allow(non_snake_case)]
+pub async fn page_id_mobile_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, id)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    page_id_mobile_core(pool, id).await
 }
 
 #[allow(non_snake_case)]

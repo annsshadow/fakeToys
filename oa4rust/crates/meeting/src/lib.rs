@@ -13,6 +13,7 @@ use shared::{
 pub mod routes;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

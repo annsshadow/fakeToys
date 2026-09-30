@@ -15,8 +15,11 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from queue import Queue
 
-from .config import AppConfig, load_config, get_model_config
-from .models import create_model_backend
+from .config import (REQUEST_TIMEOUT_RANGE, AppConfig, load_config,
+                     get_model_config)
+from .validation import require_count, require_ratio, require_seconds
+from .retry import MAX_RETRY_AFTER
+from .models import create_model_backend, extract_json_array
 from .quality import QualityScorer
 from .dedup import Deduplicator
 from .export import Exporter, ExportFormat
@@ -62,6 +65,22 @@ class AugmentorPipeline:
     
     def _init_components(self):
         """初始化各组件"""
+        # 重试与超时旋钮先判后建：下面那个 try/except 的既定语义是「模型没配好就降级」，
+        # 配置文件里写坏的 max_retries / retry_delay / max_retry_wait / retry_jitter /
+        # request_timeout 若让它去抛，症状会被读成
+        # 「后端不可用」，而真实原因是参数越界——所以判据必须在 try 之外。
+        require_count("augmentation.max_retries", self.config.augmentation.max_retries)
+        require_seconds("augmentation.retry_delay", self.config.augmentation.retry_delay)
+        require_seconds("augmentation.max_retry_wait",
+                        self.config.augmentation.max_retry_wait,
+                        minimum=0.0, maximum=MAX_RETRY_AFTER)
+        require_ratio("augmentation.retry_jitter",
+                      self.config.augmentation.retry_jitter)
+        lo, hi = REQUEST_TIMEOUT_RANGE
+        require_seconds("augmentation.request_timeout",
+                        self.config.augmentation.request_timeout,
+                        minimum=lo, maximum=hi)
+
         # 模型后端（可选：未配置模型/密钥时降级，避免阻断断点续传等只读能力）
         try:
             model_config = get_model_config(self.config, self.config.default_model)
@@ -70,6 +89,11 @@ class AugmentorPipeline:
                 response_cache_dir=self._response_cache_dir,
                 response_cache_ttl=self._response_cache_ttl,
                 response_cache_max_bytes=self._response_cache_max_bytes,
+                default_attempts=self.config.augmentation.max_retries,
+                default_retry_delay=self.config.augmentation.retry_delay,
+                default_max_retry_wait=self.config.augmentation.max_retry_wait,
+                default_retry_jitter=self.config.augmentation.retry_jitter,
+                default_request_timeout=self.config.augmentation.request_timeout,
             )
         except Exception as exc:
             logger.warning("模型后端初始化失败，增强功能将不可用：%s", exc)
@@ -151,27 +175,33 @@ class AugmentorPipeline:
         
         instruction = item.get("instruction", "")
         output = item.get("output", "")
-        
-        prompt = f"""作为AI领域数据增强专家，你的任务是把原JSON对象中的instruction字段内容在保持相同含义的情况下，扩充为{self.config.augmentation.variants_per_seed}种不同的提问方式，新JSON对象只需包含instruction字段，并将新JSON对象追加到JSON数组里面，注意最终结果只需要JSON数组，不需要任何说明文字，原JSON对象如下：[{{"instruction": "{instruction}"}}]"""
-        
+
+        # 原 JSON 用 json.dumps 生成而不是手拼字符串字面量：instruction 里带引号或
+        # 换行时，手拼的 `"instruction": "{instruction}"` 会把发给模型的 prompt 里的
+        # JSON 结构撑破（A109）。
+        seed_json = json.dumps([{"instruction": instruction}], ensure_ascii=False)
+        prompt = f"""作为AI领域数据增强专家，你的任务是把原JSON对象中的instruction字段内容在保持相同含义的情况下，扩充为{self.config.augmentation.variants_per_seed}种不同的提问方式，新JSON对象只需包含instruction字段，并将新JSON对象追加到JSON数组里面，注意最终结果只需要JSON数组，不需要任何说明文字，原JSON对象如下：{seed_json}"""
+
         try:
             response = self.model_backend.generate(prompt)
-            # 解析响应
-            if response.strip().startswith('['):
-                variants = json.loads(response.strip())
-                if isinstance(variants, list):
-                    result = []
-                    for v in variants[:self.config.augmentation.variants_per_seed]:
-                        if isinstance(v, dict) and "instruction" in v:
-                            result.append({
-                                "instruction": v["instruction"],
-                                "input": "",
-                                "output": output
-                            })
-                    return result
+            # 复用仓库里已带自测的 robust 提取器（直接解析 / 代码围栏 / 首个 '[' 到
+            # 末个 ']' 的括号切片），而不是「首个字符必须是 [」的手搓判据 —— 后者会让
+            # ```json 围栏或前置一句说明的正常响应静默变成 0 个变体（A108）。
+            # extract_json_array 是流水线唯一正确的解析器：这里的产物恒为 JSON 数组，
+            # 而它无法解析时抛 ModelResponseError，由下面的 except 收成一行 warning。
+            variants = extract_json_array(response)
+            result = []
+            for v in variants[:self.config.augmentation.variants_per_seed]:
+                if isinstance(v, dict) and "instruction" in v:
+                    result.append({
+                        "instruction": v["instruction"],
+                        "input": "",
+                        "output": output
+                    })
+            return result
         except Exception as e:
             logger.warning(f"生成变体失败: {e}")
-        
+
         return []
     
     def _process_single_item(self, 
@@ -220,16 +250,21 @@ class AugmentorPipeline:
             
         except Exception as e:
             logger.error(f"处理第 {idx} 条数据失败: {e}")
-            # 错误恢复增强：记录详细错误信息以便后续分析和重试
+            # 错误恢复增强：记录详细错误信息以便后续分析和重试。
+            # 本方法会由 ThreadPoolExecutor 里多个工作线程同时调用（augment_dataset
+            # 的并行路径），而 `_process_errors` 是惰性首用才建的共享 list——
+            # 「没有就建」+「append」两步不是原子的，须持锁包住，否则并发下会
+            # 重复建 list 丢掉错误记录。__init__ 里的 self._lock 就是为此留的。
             error_info = {
                 "index": idx,
                 "error_type": type(e).__name__,
                 "message": str(e),
                 "item_preview": str(item)[:100] if item else ""
             }
-            if not hasattr(self, '_process_errors'):
-                self._process_errors = []
-            self._process_errors.append(error_info)
+            with self._lock:
+                if not hasattr(self, '_process_errors'):
+                    self._process_errors = []
+                self._process_errors.append(error_info)
             result_queue.put((idx, False, []))
     
     def augment_dataset(self,

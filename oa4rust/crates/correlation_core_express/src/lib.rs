@@ -66,6 +66,7 @@ pub fn correlation_core_express_router(pool: Pool) -> Router {
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

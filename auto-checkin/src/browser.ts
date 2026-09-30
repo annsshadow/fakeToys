@@ -28,15 +28,21 @@ export async function openSiteContext(
     args: ["--no-sandbox", "--disable-blink-features=AutomationControlled"],
     viewport: { width: 1280, height: 900 },
   });
-  context.setDefaultTimeout(config.browser.timeoutMs);
-  context.setDefaultNavigationTimeout(config.browser.timeoutMs);
-  // tsx/esbuild 会给注入页面的 evaluate 代码加 __name 辅助函数（浏览器端不存在）。
-  // 预注入一个恒等实现，避免 "ReferenceError: __name is not defined"。
-  await context.addInitScript(() => {
-    // @ts-expect-error 浏览器端全局兜底
-    globalThis.__name = globalThis.__name || ((fn: unknown) => fn);
-  });
-  return context;
+  try {
+    context.setDefaultTimeout(config.browser.timeoutMs);
+    context.setDefaultNavigationTimeout(config.browser.timeoutMs);
+    // tsx/esbuild 会给注入页面的 evaluate 代码加 __name 辅助函数（浏览器端不存在）。
+    // 预注入一个恒等实现，避免 "ReferenceError: __name is not defined"。
+    await context.addInitScript(() => {
+      // @ts-expect-error 浏览器端全局兜底
+      globalThis.__name = globalThis.__name || ((fn: unknown) => fn);
+    });
+    return context;
+  } catch (err) {
+    // 浏览器已启动但初始化失败时，不能把 context 丢失给 runner。
+    await closeContext(context);
+    throw err;
+  }
 }
 
 export async function closeContext(context: BrowserContext): Promise<void> {

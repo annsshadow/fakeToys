@@ -104,7 +104,7 @@ class TestImageHeaderParsing:
 
     def test_process_image_unsupported_ext(self, tmp_path):
         p = tmp_path / "a.txt"
-        p.write_text("not an image")
+        p.write_text("not an image", encoding="utf-8")
         info = ImageProcessor().process_image(str(p))
         assert info.valid is False
         assert "不支持" in info.error
@@ -113,7 +113,7 @@ class TestImageHeaderParsing:
         good = tmp_path / "ok.png"
         good.write_bytes(_make_png(10, 10))
         bad = tmp_path / "ok.txt"
-        bad.write_text("x")
+        bad.write_text("x", encoding="utf-8")
         processor = ImageProcessor()
         results = processor.batch_process([str(good), str(bad)])
         assert results[0].valid is True
@@ -152,7 +152,7 @@ class TestAudioProcessing:
 
     def test_unsupported_audio_extension(self, tmp_path):
         p = tmp_path / "a.mid"
-        p.write_text("MThd")
+        p.write_text("MThd", encoding="utf-8")
         processor = AudioProcessor()
         info = processor.process_audio(str(p))
         assert info.valid is False

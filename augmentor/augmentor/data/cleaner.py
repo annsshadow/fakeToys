@@ -39,6 +39,10 @@ CONTROL_CHAR_PATTERN = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 WHITESPACE_PATTERN = re.compile(r"[ \t\u3000]+")
 CJK_PATTERN = re.compile(r"[\u4e00-\u9fff]")
 LATIN_PATTERN = re.compile(r"[A-Za-z]")
+# 换行规范化：`\r\n?` 折成 `\n`，三个及以上连续换行折成空行。
+# 同样编译一次放在模块级（`clean()` 逐条调用，真实语料 6902 条实测各 6902 次）。
+CRLF_PATTERN = re.compile(r"\r\n?")
+NEWLINE_RUN_PATTERN = re.compile(r"\n{3,}")
 
 
 @dataclass
@@ -117,8 +121,8 @@ class DataCleaner:
             normalized = normalized.replace(full, half)
 
         # 折叠连续换行与空白
-        normalized = re.sub(r"\r\n?", "\n", normalized)
-        normalized = re.sub(r"\n{3,}", "\n\n", normalized)
+        normalized = CRLF_PATTERN.sub("\n", normalized)
+        normalized = NEWLINE_RUN_PATTERN.sub("\n\n", normalized)
         normalized = WHITESPACE_PATTERN.sub(" ", normalized)
         return normalized.strip()
 

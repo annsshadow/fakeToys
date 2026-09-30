@@ -20,7 +20,7 @@ test('BBS section lifecycle: create, rename, delete via sidebar controls', async
   await expect(page.locator('.section-list')).toBeVisible()
 
   // 版块名受输入框 maxlength=30 约束：原名 + 「-renamed」须 ≤30，故用短唯一名（避免 uniqueFlag 的 13 位时间戳把拼接名顶爆截断）。
-  const sectionName = 'sec' + Math.random().toString(36).slice(2, 8)
+  const sectionName = `sec${Math.random().toString(36).slice(2, 8)}`
   const renamed = `${sectionName}-renamed`
 
   // 新建版块（侧栏 + 按钮 → section/create）

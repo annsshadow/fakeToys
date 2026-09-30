@@ -528,7 +528,7 @@ pub fn portal_assemble_designer_router() -> Router {
         )
         .route(
             "/api/portal/assemble/designer/list/portal/{page}/{portalId}",
-            get(crate::page_list_portal_portalId),
+            get(crate::page_list_portal_page_portalId),
         )
         .route(
             "/api/portal/assemble/designer/pageversion/{id}",
@@ -536,7 +536,7 @@ pub fn portal_assemble_designer_router() -> Router {
         )
         .route(
             "/api/portal/assemble/designer/pageversion/list/{page}/{pageId}",
-            get(crate::pageversion_list_page_pageId),
+            get(crate::pageversion_list_page_page_pageId),
         )
         .route(
             "/api/portal/assemble/designer/portal/{id}",
@@ -782,6 +782,7 @@ pub fn portal_assemble_designer_router() -> Router {
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
@@ -850,7 +851,7 @@ pub async fn designer_search(pool: Extension<Pool>) -> Result<Json<ActionResult<
 #[allow(non_snake_case)]
 pub async fn dict_list_paging_page_size_size(
     pool: Extension<Pool>,
-    Path((_page, _size)): Path<(i64, i64)>,
+    Path((_page, _size, _s2)): Path<(i64, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1072,7 +1073,7 @@ pub async fn file_list_application_applicationFlag(
 #[allow(non_snake_case)]
 pub async fn file_list_id_next_count(
     pool: Extension<Pool>,
-    Path((id, count)): Path<(String, i64)>,
+    Path((id, _s1, count)): Path<(String, String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1392,7 +1393,7 @@ pub async fn file_id_upload(
 #[allow(non_snake_case)]
 pub async fn id_count(
     pool: Extension<Pool>,
-    Path(count): Path<i64>,
+    Path((_s0, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1904,6 +1905,24 @@ pub async fn pageversion_list_page_pageId(
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
+}
+
+/// 2 段变体：前端 PortalDesigner 调 list/portal/{page}/{portalId}、
+/// pageversion/list/{page}/{pageId}（首段为分页页码），委派到 1 段实现按 id 取全量。
+#[allow(non_snake_case)]
+pub async fn page_list_portal_page_portalId(
+    pool: Extension<Pool>,
+    Path((_page, portal_id)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    page_list_portal_portalId(pool, Path(portal_id)).await
+}
+
+#[allow(non_snake_case)]
+pub async fn pageversion_list_page_page_pageId(
+    pool: Extension<Pool>,
+    Path((_page, page_id)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    pageversion_list_page_pageId(pool, Path(page_id)).await
 }
 
 #[allow(non_snake_case)]
@@ -2422,7 +2441,7 @@ pub async fn script_list_manager(
 #[allow(non_snake_case)]
 pub async fn script_list_paging_page_size_size(
     pool: Extension<Pool>,
-    Path((page, size)): Path<(i64, i64)>,
+    Path((page, size, _s2)): Path<(i64, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3359,7 +3378,7 @@ pub async fn delete_widget(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
-            "UPDATE x_portal_widget SET deleted_at = NOW() WHERE id = $1",
+            "UPDATE x_portal_widget SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await

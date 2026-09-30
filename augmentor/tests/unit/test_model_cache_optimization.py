@@ -394,9 +394,10 @@ class TestPipelineCacheWiring:
 
     def test_pipeline_forwards_cache_options(self, tmp_path, monkeypatch):
         captured = self._capture(monkeypatch)
+        config = self._config()
 
         AugmentorPipeline(
-            self._config(),
+            config,
             response_cache_dir=str(tmp_path / "resp"),
             response_cache_ttl=60,
             response_cache_max_bytes=2048,
@@ -406,6 +407,16 @@ class TestPipelineCacheWiring:
             "response_cache_dir": str(tmp_path / "resp"),
             "response_cache_ttl": 60,
             "response_cache_max_bytes": 2048,
+            # 自 L45 起管道还要翻译重试档位给工厂（A64 接线）。精确字典是故意的：
+            # 工厂契约每长一个键，这里就必须显式认领一次，不允许静默扩面。
+            # L49 的等待预算双旋钮（A73 + A75）就是按这条规矩显式认领的；L71 的请求超时
+            # 旋钮（A74）是第二次触发 —— 本轮它不是抓到 bug（管道确实传了），而是逼着
+            # 在这里认一次账：不写这一行，「工厂收到哪些键」这份契约就与实现悄悄脱钩。
+            "default_attempts": config.augmentation.max_retries,
+            "default_retry_delay": config.augmentation.retry_delay,
+            "default_max_retry_wait": config.augmentation.max_retry_wait,
+            "default_retry_jitter": config.augmentation.retry_jitter,
+            "default_request_timeout": config.augmentation.request_timeout,
         }
 
     def test_pipeline_defaults_to_disabled(self, monkeypatch):
@@ -414,5 +425,56 @@ class TestPipelineCacheWiring:
         AugmentorPipeline(self._config())
 
         assert captured["response_cache_dir"] is None, "管道默认不应开启磁盘缓存"
+
+
+class TestGenerationCacheTolerancePaths:
+    """生成缓存的两条守卫支与析构兜底（L101，A201）
+
+    `_generation_cache` 缺席的实例（构造半途而废、子类绕过 __init__）在
+    _cache_get/_cache_put 上必须自愈或返回 None；__del__ 里 close() 抛异常必须
+    被吞掉 —— 否则解释器退出流程会被污染（pytest 报
+    PytestUnraisableExceptionWarning）。此前零用例踩过（L100 终态 coverage 缺数
+    models/base.py 325 / 332-333 / 478-479）。
+    """
+
+    @staticmethod
+    def _bare_backend(cls):
+        return cls.__new__(cls)  # 跳过 __init__ ⇒ _generation_cache 缺席
+
+    def _backend_class(self):
+        from augmentor.models.base import ModelBackend
+
+        class _Bare(ModelBackend):
+            def _call_api(self, prompt: str) -> str:
+                return prompt
+
+        return _Bare
+
+    def test_cache_get_without_cache_returns_none(self):
+        backend = self._bare_backend(self._backend_class())
+        assert backend._cache_get("k") is None
+
+    def test_cache_put_creates_cache_lazily(self):
+        from augmentor.cache import MemoryCache
+
+        backend = self._bare_backend(self._backend_class())
+        backend._cache_put("k", "v")
+        assert isinstance(backend._generation_cache, MemoryCache)
+        assert backend._cache_get("k") == "v"
+
+    def test_del_with_failing_close_is_silent(self):
+        import gc
+
+        events = []
+
+        class _BadClose(self._backend_class()):
+            def close(self):
+                events.append("close")
+                raise RuntimeError("close 爆炸")
+
+        backend = self._bare_backend(_BadClose)
+        del backend
+        gc.collect()
+        assert events == ["close"], "__del__ 必须真的调用了 close，才算踩到吞异常那一支"
 
 

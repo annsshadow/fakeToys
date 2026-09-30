@@ -41,3 +41,18 @@ class TestPreviewOptimization:
         """空数据预览应包含警告"""
         result = generator.preview([])
         assert any("数据集为空" in w for w in result.warnings)
+
+
+class TestPreviewUnsupportedFormat:
+    def test_non_native_export_format_raises(self):
+        """合法 ExportFormat 成员但无原生转换器 → DataValidationError（L103，A204）
+
+        13 个 ExportFormat 成员里只有 6 个有原生转换（NATIVE_FORMATS）；
+        传 openai 这类合法但不原生的成员必须得到约定好的 DataValidationError，
+        而不是 KeyError。
+        """
+        from augmentor.exceptions import DataValidationError
+
+        items = [{"instruction": "问", "input": "", "output": "答"}]
+        with pytest.raises(DataValidationError, match="不支持的导出格式"):
+            PreviewGenerator().preview(items, format="openai")

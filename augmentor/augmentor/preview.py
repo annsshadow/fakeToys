@@ -14,6 +14,7 @@ from typing import List, Dict, Any, Optional
 
 from .export import Exporter, ExportFormat, NATIVE_FORMATS
 from .exceptions import DataValidationError
+from .validation import require_count
 
 logger = logging.getLogger(__name__)
 
@@ -62,8 +63,11 @@ class PreviewGenerator:
         """初始化预览生成器
 
         Args:
-            preview_size: 预览样本条数
+            preview_size: 预览样本条数，不小于 0 的整数；0 是合法的「只要格式信息和
+                告警、不要样本」
         """
+        require_count("preview_size", preview_size)
+
         self.preview_size = preview_size
 
     def _truncate(self, value: Any) -> Any:
@@ -135,7 +139,7 @@ class PreviewGenerator:
         Args:
             items: 数据列表
             format: 目标格式，为 None 时使用 jsonl
-            preview_size: 预览条数，为 None 时使用默认值
+            preview_size: 预览条数，为 None 时使用默认值；0 不会被当成「没传参数」
 
         Returns:
             ExportPreview 实例
@@ -151,7 +155,9 @@ class PreviewGenerator:
                 f"不支持的导出格式: {fmt}。支持: {[f.value for f in NATIVE_FORMATS]}"
             )
 
-        size = preview_size or self.preview_size
+        # `or` 会把 0 读成「没传参数」并回落到实例默认值；`is None` 才分得开两者
+        size = self.preview_size if preview_size is None else preview_size
+        require_count("preview_size", size)
         sample = items[:size]
 
         exporter = Exporter(default_format=fmt)
@@ -181,7 +187,12 @@ class PreviewGenerator:
             converted = raw_converted
 
         # 预览生成优化：缓存预览结果（避免相同数据重复生成预览）
-        preview_key = hashlib.md5(str(sample[:min(5, len(sample))]).encode()).hexdigest()[:8]
+        # 缓存键必须同时覆盖「同一次预览」的三个决定因子：格式、预览条数、数据样本。
+        # 只哈希样本会把「同数据换格式 / 换条数」误判为命中，返回旧格式/旧条数的残缺
+        # 结果（L123 记档缺陷）。三者缺一即换键。
+        preview_key = hashlib.md5(
+            f"{fmt}|{size}|{sample[:min(5, len(sample))]}".encode()
+        ).hexdigest()[:8]
         if hasattr(self, '_preview_cache') and preview_key in self._preview_cache:
             logger.debug(f"预览缓存命中（优化）: 格式 {fmt}")
             cached = self._preview_cache[preview_key]

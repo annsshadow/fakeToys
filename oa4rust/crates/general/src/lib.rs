@@ -78,7 +78,7 @@ pub async fn is_workday(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id FROM GEN_ARA_DISTRICT WHERE deleted_at IS NULL AND id = $1 LIMIT 1",
+            "SELECT id FROM x_gen_ara_district WHERE deleted_at IS NULL AND id = $1 LIMIT 1",
             &[&date],
         )
         .await
@@ -97,6 +97,7 @@ pub async fn is_workday(
 pub use routes::general_router;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

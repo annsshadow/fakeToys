@@ -14,6 +14,7 @@ import pytest
 from augmentor import AugmentorPipeline, load_config
 from augmentor.checkpoint import CheckpointManager
 from augmentor.config import ModelConfig
+from augmentor.exceptions import DataValidationError
 from augmentor.models.base import ModelBackend
 from augmentor.versioning import VersionManager
 
@@ -30,7 +31,9 @@ class FakeModelBackend(ModelBackend):
             variants: 生成的变体数量
             raw_response: 直接指定响应文本（用于测试异常响应）
         """
-        super().__init__(ModelConfig(type="fake"))
+                # `type` 自 A115 起是封闭清单（构造期就拒），替身因此要填一个真类型；
+        # 它覆写了 `_call_api`，填哪一个都不影响行为。
+        super().__init__(ModelConfig(type="ollama"))
         self.variants = variants
         self.raw_response = raw_response
 
@@ -407,6 +410,131 @@ class TestPipelineInitFailure:
         assert instance.model_backend is None
         assert instance.context_augmentor is None
         assert instance.expander is None
+
+
+class TestRetryKnobWiring:
+    """配置文件的重试旋钮 → 模型后端（A64 接线）
+
+    `augmentation.max_retries` / `retry_delay` 曾长期是死旋钮：字段在、默认值在、
+    配置文件里改得动，但没有任何消费者。这两个测试分别钉住「接上了」和
+    「接上的同时不越界」。
+    """
+
+    @staticmethod
+    def _capture_backend_factory(monkeypatch):
+        captured = {}
+
+        def fake_create(model_config, **kwargs):
+            captured.update(kwargs)
+            return None
+
+        monkeypatch.setattr("augmentor.pipeline.create_model_backend", fake_create)
+        return captured
+
+    def test_augmentation_retry_knobs_reach_the_factory(self, tmp_path, monkeypatch):
+        captured = self._capture_backend_factory(monkeypatch)
+        config = load_config(str(AI_DIR / "config.yaml"))
+        config.augmentation.max_retries = 7
+        config.augmentation.retry_delay = 3.5
+        config.versioning.storage_dir = str(tmp_path / "versions")
+
+        AugmentorPipeline(config)
+
+        assert captured["default_attempts"] == 7
+        assert captured["default_retry_delay"] == 3.5
+
+    def test_zero_knobs_are_forwarded_as_zero(self, tmp_path, monkeypatch):
+        """0 必须原样送到后端：它是「只调用一次」，不是「没配」"""
+        captured = self._capture_backend_factory(monkeypatch)
+        config = load_config(str(AI_DIR / "config.yaml"))
+        config.augmentation.max_retries = 0
+        config.augmentation.retry_delay = 0
+        config.versioning.storage_dir = str(tmp_path / "versions")
+
+        AugmentorPipeline(config)
+
+        assert captured["default_attempts"] == 0
+        assert captured["default_retry_delay"] == 0
+
+    @pytest.mark.parametrize("field,bad", [
+        ("max_retries", -1),
+        ("max_retries", 1.5),
+        ("retry_delay", -2.0),
+        ("retry_delay", float("nan")),
+        ("retry_delay", "1s"),
+    ])
+    def test_out_of_range_knobs_fail_loud_instead_of_disabling_the_backend(
+        self, tmp_path, field, bad
+    ):
+        """越界旋钮不能被「后端不可用」的降级掩盖：报错必须指名是哪个字段
+
+        `create_model_backend` 外面那层 try/except 的既定语义是「模型没配好就
+        降级」，判据若放在 try 里面，用户写坏的 `max_retries` 会表现为整个模型
+        能力凭空消失。
+        """
+        config = load_config(str(AI_DIR / "config.yaml"))
+        setattr(config.augmentation, field, bad)
+        config.versioning.storage_dir = str(tmp_path / "versions")
+
+        with pytest.raises(DataValidationError, match=f"augmentation.{field}"):
+            AugmentorPipeline(config)
+
+
+    def test_wait_budget_knobs_reach_the_factory(self, tmp_path, monkeypatch):
+        """A73 + A75：两副封顶的配置面必须一路送到后端
+
+        接线前实测（Temp `l49_probe.py`）：`retry.MAX_RETRY_AFTER` 是写死的常数，
+        429 + `Retry-After: 3000` 一律睡 300 s，配置里写了也不听；`jitter` 更是只有
+        `compute_delay` 的形参、没有任何调用方传它。
+        """
+        captured = self._capture_backend_factory(monkeypatch)
+        config = load_config(str(AI_DIR / "config.yaml"))
+        config.augmentation.max_retry_wait = 45.0
+        config.augmentation.retry_jitter = 0.5
+        config.versioning.storage_dir = str(tmp_path / "versions")
+
+        AugmentorPipeline(config)
+
+        assert captured["default_max_retry_wait"] == 45.0
+        assert captured["default_retry_jitter"] == 0.5
+
+    def test_untouched_config_keeps_the_promised_pair(self, tmp_path, monkeypatch):
+        """出厂 `config.yaml` 的档位 = 文档承诺：300 s / 不抖 ⇒ 老配置零行为变化"""
+        from augmentor import MAX_RETRY_AFTER
+
+        captured = self._capture_backend_factory(monkeypatch)
+        config = load_config(str(AI_DIR / "config.yaml"))
+        config.versioning.storage_dir = str(tmp_path / "versions")
+
+        AugmentorPipeline(config)
+
+        assert captured["default_max_retry_wait"] == MAX_RETRY_AFTER
+        assert captured["default_retry_jitter"] == 0.0
+
+    @pytest.mark.parametrize("field,bad", [
+        ("max_retry_wait", -1.0),
+        ("max_retry_wait", 301.0),
+        ("max_retry_wait", float("inf")),
+        ("max_retry_wait", True),
+        ("retry_jitter", 1.5),
+        ("retry_jitter", -0.1),
+        ("retry_jitter", "0.5"),
+    ])
+    def test_wait_budget_knobs_fail_at_construction_not_as_a_degradation(
+        self, tmp_path, field, bad
+    ):
+        """放大 300 s 承诺 / 坏抖动必须建管道时就响
+
+        与 `test_out_of_range_knobs_fail_loud_instead_of_disabling_the_backend` 同一条
+        理由：判据若在 `create_model_backend` 那层 try 里面，写坏的档位会表现为整个模型
+        能力凭空消失；这里要的是指名字段的报错。
+        """
+        config = load_config(str(AI_DIR / "config.yaml"))
+        setattr(config.augmentation, field, bad)
+        config.versioning.storage_dir = str(tmp_path / "versions")
+
+        with pytest.raises(DataValidationError, match=f"augmentation.{field}"):
+            AugmentorPipeline(config)
 
 
 class TestGenerateVariantsException:

@@ -77,7 +77,7 @@ async function loadTemplateForms() {
     templateForms.value = (r.data ?? []) as Array<{ id?: string; name?: string }>
     if (templateForms.value.length === 0) toast.success('该分类暂无模板表单')
   } catch (e: any) {
-    toast.error('加载模板表单失败: ' + (e?.message ?? ''))
+    toast.error(`加载模板表单失败: ${e?.message ?? ''}`)
   }
 }
 const qk = ['ProcessFormDesigner', 'list']
@@ -175,16 +175,26 @@ async function loadFormDetails() {
   const appId = String(first.application ?? '')
   try {
     const [detail, versions, appForms] = await Promise.all([
-      fid ? api.get(`/api/processplatform/assemble/designer/form/${encodeURIComponent(fid)}`).catch(() => null) : Promise.resolve(null),
-      fid ? api.get(`/api/processplatform/assemble/designer/formversion/list/form/${encodeURIComponent(fid)}`).catch(() => null) : Promise.resolve(null),
-      appId ? api.get(`/api/processplatform/assemble/designer/form/list/application/${encodeURIComponent(appId)}`).catch(() => null) : Promise.resolve(null),
+      fid
+        ? api.get(`/api/processplatform/assemble/designer/form/${encodeURIComponent(fid)}`).catch(() => null)
+        : Promise.resolve(null),
+      fid
+        ? api
+            .get(`/api/processplatform/assemble/designer/formversion/list/form/${encodeURIComponent(fid)}`)
+            .catch(() => null)
+        : Promise.resolve(null),
+      appId
+        ? api
+            .get(`/api/processplatform/assemble/designer/form/list/application/${encodeURIComponent(appId)}`)
+            .catch(() => null)
+        : Promise.resolve(null),
     ])
     const fName = (detail as any)?.data?.name ?? (fid || '—')
     const vN = Array.isArray((versions as any)?.data) ? (versions as any).data.length : 0
     const aN = Array.isArray((appForms as any)?.data) ? (appForms as any).data.length : 0
     formDetailText.value = `表单「${fName}」· 版本 ${vN} · 同应用表单 ${aN}`
   } catch (e: any) {
-    toast.error('加载表单明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载表单明细失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -198,7 +208,9 @@ async function loadFormCursors() {
   const appId = String(first?.application ?? '0')
   try {
     const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
-    const verList = await s(api.get(`/api/processplatform/assemble/designer/formversion/list/form/${encodeURIComponent(fid)}`))
+    const verList = await s(
+      api.get(`/api/processplatform/assemble/designer/formversion/list/form/${encodeURIComponent(fid)}`),
+    )
     const verRows = Array.isArray((verList as any)?.data) ? (verList as any).data : []
     const vid = verRows[0] ? String(verRows[0].id ?? '0') : '0'
     const [next, prev, fieldsById, fieldsByApp, verDetail] = await Promise.all([
@@ -212,7 +224,7 @@ async function loadFormCursors() {
     const hasVer = (verDetail as any)?.data?.id ? '命中' : '未命中'
     formCursorText.value = `游标：后续 ${n(next)}·前序 ${n(prev)} | 字段(表单) ${n(fieldsById)}·字段(应用) ${n(fieldsByApp)} | 版本详情 ${hasVer}`
   } catch (e: any) {
-    toast.error('加载表单游标/字段/版本失败: ' + (e?.message ?? ''))
+    toast.error(`加载表单游标/字段/版本失败: ${e?.message ?? ''}`)
   }
 }
 </script>

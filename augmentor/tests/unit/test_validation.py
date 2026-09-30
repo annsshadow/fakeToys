@@ -175,6 +175,45 @@ class TestDataSanitizer:
         assert len(result) == 2
         assert result[0]["output"] == "回答1新"
 
+    def test_remove_duplicates_keep_last_scans_past_non_matching(self):
+        """keep=last 语义：重复值的内容更新到**首次出现的位置**，且不影响其前的记录（L114 起，A205；L135 实现改 O(1) 后重述）
+
+        早期实现里这里守的是「替换循环要先跳过第 0 条不匹配记录」的假支（L100 终态偏支
+        864->863）；L135 把该扫描换成 seen 存 result 下标、O(1) 覆盖后，循环已不存在，
+        本用例改守语义本身：重复值「问题1」虽排第二位，其**新内容**仍落回第二条（首位），
+        第一条「问题2」原地不动——把「保留最后一次内容 + 落在首次出现位置 + 不动其它记录」
+        这三点一起钉死，任何 O(1) 化只要错位/多覆盖/漏覆盖就当场红。
+        """
+        data = [
+            {"instruction": "问题2", "input": "", "output": "回答2"},
+            {"instruction": "问题1", "input": "", "output": "回答1旧"},
+            {"instruction": "问题1", "input": "", "output": "回答1新"},
+        ]
+        sanitizer = DataSanitizer()
+        result = sanitizer.remove_duplicates(data, keep="last")
+
+        assert len(result) == 2
+        # 问题1 被替换成「新」，且仍在原位（第二条），问题2 不动
+        assert result[0]["instruction"] == "问题2"
+        assert result[1]["output"] == "回答1新"
+
+    def test_remove_duplicates_keep_last_o1_slot_invariant_l135(self):
+        """keep=last 的 O(1) 化：三次以上同值重复时，最终内容取**最后一次**，且只写一次进槽位"""
+
+        data = [
+            {"instruction": "q", "output": "0"},
+            {"instruction": "other", "output": "o"},
+            {"instruction": "q", "output": "1"},
+            {"instruction": "q", "output": "2"},
+            {"instruction": "q", "output": "3"},
+        ]
+        result = DataSanitizer().remove_duplicates(data, keep="last")
+
+        assert [r["output"] for r in result] == ["3", "o"], (
+            "q 的内容须是最后一次出现的 3（不是 1/2/旧值），且 other 原位不动"
+        )
+
+
 
 class TestValidationResult:
     """ValidationResult 测试"""
@@ -299,7 +338,7 @@ class TestValidationExtended:
         assert "\x02" not in result[0]["output"]
 
 
-class TestValidationExtended:
+class TestValidationAndSanitizeEdges:
     """DatasetValidator 扩展测试"""
 
     def test_validate_empty_dataset(self):
@@ -407,7 +446,7 @@ class TestValidationHistoryFormat:
         assert result.error_count > 0
 
 
-class TestValidationExtended:
+class TestValidationRuleViolations:
     """DatasetValidator 第二轮扩展测试（覆盖剩余分支）"""
 
     def test_unknown_preset_falls_back_to_basic(self):
@@ -482,3 +521,172 @@ class TestValidationExtended:
         validator = DatasetValidator(preset="chat")
         result = validator.validate(valid_dataset)
         assert result.total_items == 3
+
+
+class TestForbiddenPatternCompilation:
+    """禁止模式：整档只编译一次，而不是每条数据每次查表。
+
+    `re.search(字符串模式, ...)` 每次调用都要在 `re` 内部重做「按 (pattern, flags)
+    查编译缓存」。真实 6902 条数据的 strict 校验里，禁止模式那一段占整档耗时 53%，
+    预编译实测快 1.69×、整档 **28.99 → 19.49 ms（1.49×，9/9 轮比值 1.23–1.59）**。
+    护栏因此全部写成**调用次数**（确定性、不受机器负载影响），不用墙钟预算。
+    """
+
+    ITEMS = [
+        {"instruction": "如何申请租房？", "output": "请登录官网申请租房流程"},
+        {"instruction": "含 <SCRIPT> 标签的问题", "output": "正常回答内容足够长度"},
+        {"instruction": "干净的问题", "output": "里面写了 javascript:alert"},
+    ]
+
+    def compile_spy(self, monkeypatch):
+        """替换 `re.compile` 计数，返回调用记录列表"""
+        import re
+
+        real = re.compile
+        calls = []
+
+        def spy(pattern, flags=0):
+            calls.append((pattern, flags))
+            return real(pattern, flags)
+
+        monkeypatch.setattr(re, "compile", spy)
+        return calls
+
+    def test_patterns_compile_once_regardless_of_item_count(self, monkeypatch):
+        calls = self.compile_spy(monkeypatch)
+        # 探针先证明计数是响的：直接调一次必须被数到
+        import re
+        re.compile("probe", re.IGNORECASE)
+        assert len(calls) == 1, "计数探针没生效"
+        calls.clear()
+
+        validator = DatasetValidator(preset="strict")
+        validator.validate(self.ITEMS * 100)
+        first = len(calls)
+        calls.clear()
+        validator.validate(self.ITEMS * 400)
+
+        pattern_count = len(DatasetValidator.PRESET_RULES["strict"]["forbidden_patterns"])
+        assert first == pattern_count, f"400 条数据编译了 {first} 次，没复用编译结果"
+        assert calls == [], f"同一验证器第二次整档又编译了 {len(calls)} 次"
+
+    def test_no_re_search_per_item(self, monkeypatch):
+        """整档校验期间不得再出现「按字符串模式调 `re.search`」的调用"""
+        import re
+
+        real = re.search
+        calls = []
+
+        def spy(pattern, text, flags=0):
+            calls.append((pattern, flags))
+            return real(pattern, text, flags)
+
+        monkeypatch.setattr(re, "search", spy)
+        # 探针自证：0 条调用必须区分「复用了编译对象」与「探针没接上」
+        re.search("probe", "probe", re.IGNORECASE)
+        assert len(calls) == 1, "计数探针没生效"
+        calls.clear()
+
+        DatasetValidator(preset="strict").validate(self.ITEMS * 100)
+        assert calls == [], f"仍有 {len(calls)} 次逐条字符串模式搜索"
+
+    def test_no_per_item_import_of_re(self, monkeypatch):
+        """`import re` 必须在模块顶层，不能在逐条验证的函数体里"""
+        import builtins
+
+        real_import = builtins.__import__
+        calls = []
+
+        def spy(name, *args, **kwargs):
+            if name == "re":
+                calls.append(name)
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", spy)
+        __import__("re")  # 已在 sys.modules，仍会走一次 __import__
+        assert len(calls) == 1, "计数探针没生效"
+        calls.clear()
+
+        DatasetValidator(preset="strict").validate(self.ITEMS * 100)
+        assert calls == [], f"验证器每条数据 import 一次 re（{len(calls)} 次）"
+
+    def test_issue_semantics_unchanged(self):
+        """语义必须是逐字不变：字段、消息、严重程度、条目下标"""
+        result = DatasetValidator(preset="strict").validate(self.ITEMS)
+
+        assert [(i.field, i.message, i.severity.value, i.index) for i in result.issues] == [
+            ("instruction", "字段 instruction 包含禁止的模式: <script>", "error", 1),
+            ("output", "字段 output 包含禁止的模式: javascript:", "error", 2),
+        ]
+        assert result.total_items == 3
+        assert result.valid_items == 1
+        assert result.is_valid is False
+
+    def test_case_insensitive_still_matches(self):
+        """IGNORECASE 是原实现的行为，预编译不得丢掉它"""
+        result = DatasetValidator(preset="strict").validate(
+            [{"instruction": "标题 <ScRiPt> 混排", "output": "正常回答内容足够长度"}]
+        )
+        assert any("禁止的模式" in i.message for i in result.issues)
+
+    def test_replacing_pattern_list_recompiles(self, monkeypatch):
+        """换掉 `rules["forbidden_patterns"]` 必须生效：缓存键是列表对象本身"""
+        calls = self.compile_spy(monkeypatch)
+        validator = DatasetValidator(preset="strict")
+        validator.validate(self.ITEMS)
+        calls.clear()
+
+        validator.rules["forbidden_patterns"] = ["TODO"]
+        result = validator.validate(
+            [{"instruction": "TODO 待补答案", "output": "正常回答内容足够长度"}])
+
+        assert [c[0] for c in calls] == ["TODO"]
+        assert [i.message for i in result.issues] == ["字段 instruction 包含禁止的模式: TODO"]
+
+    def test_preset_rules_are_not_shared_state(self, monkeypatch):
+        """预设必须被拷贝：`self.rules = PRESET_RULES[preset]` 会让一个实例改坏全部预设"""
+        strict = DatasetValidator.PRESET_RULES["strict"]
+        # 用 monkeypatch 兜底复原：即使断言失败也不能把污染留给其它用例
+        monkeypatch.setitem(strict, "min_instruction_length", 5)
+
+        validator = DatasetValidator(preset="strict")
+        validator.rules["min_instruction_length"] = 1
+
+        assert strict["min_instruction_length"] == 5, "改动污染了类级预设"
+        assert DatasetValidator(preset="strict").rules["min_instruction_length"] == 5
+
+    def test_invalid_pattern_raises_during_validation_not_construction(self):
+        """非法模式的报错时机保持原样：构造时不抛，验证第一条数据时才抛"""
+        validator = DatasetValidator(rules={
+            "required_fields": ["instruction", "output"],
+            "forbidden_patterns": ["("],
+        })
+        import re
+
+        validator.validate([])  # 空数据集不触发编译
+        with pytest.raises(re.error):
+            validator.validate([{"instruction": "q", "output": "a"}])
+
+
+class TestSanitizeDatasetRemoveDuplicatesFlag:
+    """sanitize_dataset 的 remove_duplicates 开关假支（L114，A205）
+
+    `remove_duplicates=False` 时跳过去重直接返回——这条假支此前未被踩
+    （L100 终态偏支 899->902）。既有用例只走默认 True 那一侧。
+    """
+
+    def test_remove_duplicates_false_keeps_duplicates(self):
+        data = [
+            {"instruction": "问题1", "input": "", "output": "回答1"},
+            {"instruction": "问题1", "input": "", "output": "回答1副本"},
+        ]
+        result = sanitize_dataset(data, remove_duplicates=False)
+        assert len(result) == 2
+
+    def test_remove_duplicates_true_dedups(self):
+        data = [
+            {"instruction": "问题1", "input": "", "output": "回答1"},
+            {"instruction": "问题1", "input": "", "output": "回答1副本"},
+        ]
+        result = sanitize_dataset(data, remove_duplicates=True)
+        assert len(result) == 1

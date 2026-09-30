@@ -19,9 +19,17 @@ import logging
 from typing import List, Dict, Optional, Any, Set, Tuple
 from dataclasses import dataclass, field
 from collections import Counter, defaultdict
+from .validation import require_count
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+# 词法切分与句子切分各编译一次放在模块级：`re.findall(字面模式, text)` 每次调用
+# 都要走一遍 `re._compile()` 的缓存查找，而本模块对每条数据的每个文本字段各调多次
+# （真实语料 6902 条实测重编译：词法 41,412 次、句子 27,608 次）。
+# 口径与 `augmentor.statistics._TOKEN_PATTERN` 一致。
+_TOKEN_PATTERN = re.compile(r'[\u4e00-\u9fff]+|[a-zA-Z]+|\d+')
+_SENTENCE_PATTERN = re.compile(r'[。！？.!?]+')
 
 
 @dataclass
@@ -124,7 +132,7 @@ class DatasetAnalyzer:
     def _tokenize(self, text: str) -> List[str]:
         """分词（简单版本）"""
         # 简单的中文分词：按字符和标点分割
-        tokens = re.findall(r'[\u4e00-\u9fff]+|[a-zA-Z]+|\d+', text)
+        tokens = _TOKEN_PATTERN.findall(text)
         return tokens
     
     def _get_words(self, text: str) -> List[str]:
@@ -134,7 +142,7 @@ class DatasetAnalyzer:
     
     def _get_sentences(self, text: str) -> List[str]:
         """获取句子列表"""
-        sentences = re.split(r'[。！？.!?]+', text)
+        sentences = _SENTENCE_PATTERN.split(text)
         return [s.strip() for s in sentences if s.strip()]
     
     def _calculate_text_statistics(self, texts: List[str]) -> TextStatistics:
@@ -319,25 +327,29 @@ class DatasetAnalyzer:
         
         score = 1.0
         
-        # 检查数据完整性
-        complete_items = sum(1 for item in self._items 
-                          if item.get("instruction") and item.get("output"))
-        completeness_ratio = complete_items / len(self._items)
-        score *= completeness_ratio
-        
-        # 检查问题和回答的一致性
+        # 数据完整性与「问题—回答一致性」在同一趟走查里计数：两条判据取的是
+        # 同一对字段、互不依赖，分成两趟就是把整档多读一遍（真实 6902 条实测
+        # 白多 6,902 次 `item.get` × 2）。`set(instruction)` 同理只构造一次
+        # ——旧写法在分子和分母各构造一遍，每条目多一次全串扫描。
+        complete_items = 0
         consistent_items = 0
         for item in self._items:
             instruction = item.get("instruction", "")
             output = item.get("output", "")
             if instruction and output:
+                complete_items += 1
+                instruction_chars = set(instruction)
                 # 简单检查：如果问题和回答太相似，可能质量不高
-                if len(set(instruction) & set(output)) / max(len(set(instruction)), 1) < 0.8:
+                if len(instruction_chars & set(output)) / max(len(instruction_chars), 1) < 0.8:
                     consistent_items += 1
         
-        if self._items:
-            consistency_ratio = consistent_items / len(self._items)
-            score *= (0.5 + 0.5 * consistency_ratio)
+        completeness_ratio = complete_items / len(self._items)
+        score *= completeness_ratio
+        
+        # 入口 :325 已对空 _items 早退，此处 self._items 恒非空，原恒真守卫已在
+        # L126 删除（偏支 349->353 随之消失）
+        consistency_ratio = consistent_items / len(self._items)
+        score *= (0.5 + 0.5 * consistency_ratio)
         
         return min(max(score, 0.0), 1.0)
     
@@ -363,9 +375,12 @@ class DatasetAnalyzer:
         
         unique_ratio = len(set(all_words)) / len(all_words)
         
-        # 计算长度多样性
+        # 计算长度多样性（均值先算一次：放进生成器里会变成 O(n^2) 的重复求和）
         lengths = [len(inst) for inst in instructions]
-        length_std = (sum((l - sum(lengths)/len(lengths))**2 for l in lengths) / len(lengths)) ** 0.5
+        mean_length = sum(lengths) / len(lengths)
+        length_std = (
+            sum((length - mean_length) ** 2 for length in lengths) / len(lengths)
+        ) ** 0.5
         length_diversity = min(length_std / 50, 1.0)  # 归一化
         
         # 综合分数
@@ -398,21 +413,28 @@ class DatasetAnalyzer:
         Returns:
             重复候选列表 [(idx1, idx2, similarity), ...]
         """
+        # 每条 instruction 的字符集合**预计算一次**：改前在内层循环里对每个 i 重复
+        # 构造 set(inst_i) 共 n 次、set(inst_j) 共 n² 次，长文本上这些 str→set 构造
+        # 是真正的热点（实测 6000 条 71 s；本仓 SDK 公共方法）。空 instruction 记 None、
+        # 与改前 if inst_i and inst_j 同判（空串跳过），相似度公式与配对顺序不变。
+        # A/B（L131，2500 条 min-of-2 双序）：new/old ×0.36 / ×0.34；等价性 1200 条 ×
+        # 5 阈值逐元素一致（含空边界 + 平局），回归护栏见 test_analytics.py。
+        char_sets = [set(s) if (s := item.get("instruction", "")) else None
+                     for item in self._items]
         candidates = []
-        
-        for i in range(len(self._items)):
-            for j in range(i + 1, len(self._items)):
-                inst_i = self._items[i].get("instruction", "")
-                inst_j = self._items[j].get("instruction", "")
-                
-                if inst_i and inst_j:
-                    # 简单的字符重叠相似度
-                    set_i = set(inst_i)
-                    set_j = set(inst_j)
-                    similarity = len(set_i & set_j) / max(len(set_i | set_j), 1)
-                    
-                    if similarity >= threshold:
-                        candidates.append((i, j, similarity))
+        n = len(char_sets)
+        for i in range(n):
+            set_i = char_sets[i]
+            if set_i is None:
+                continue
+            for j in range(i + 1, n):
+                set_j = char_sets[j]
+                if set_j is None:
+                    continue
+                # 简单的字符重叠相似度
+                similarity = len(set_i & set_j) / max(len(set_i | set_j), 1)
+                if similarity >= threshold:
+                    candidates.append((i, j, similarity))
         
         return sorted(candidates, key=lambda x: x[2], reverse=True)
     
@@ -510,11 +532,15 @@ def analyze_dataset_fast(items: List[Dict], top_k: int = 5) -> Dict:
     
     Args:
         items: 数据列表
-        top_k: 返回前k个关键词
+        top_k: 返回前 k 个关键词，不小于 0 的整数。越界值在进入
+            `Counter.most_common(top_k)` 之前报错：负数在那里不报错，只是
+            静默返回空列表，「要 1 个」于是答出 0 个
     
     Returns:
         快速分析结果（包含基本统计、关键词、趋势简要信息）
     """
+    require_count("top_k", top_k)
+
     from collections import Counter
     
     # 快速提取基础信息（避免完整分析的计算开销）

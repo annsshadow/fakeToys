@@ -49,9 +49,14 @@ impl RedisWindowCounter {
 #[async_trait]
 impl WindowCounter for RedisWindowCounter {
     async fn incr_window(&self, key: &str, window_secs: i64) -> anyhow::Result<u64> {
-        let mut guard = self.pool.0.manager.lock().await;
-        let conn = guard
-            .as_mut()
+        let mut conn = self
+            .pool
+            .0
+            .manager
+            .lock()
+            .await
+            .as_ref()
+            .map(|m| m.clone())
             .context("Redis connection manager not initialized")?;
         let current: u64 = conn.incr(key, 1).await?;
         if current == 1 {

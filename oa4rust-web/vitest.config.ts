@@ -14,6 +14,11 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    // 默认 5s 超时在高负载/并行冷启动下会误伤「首测模块重导入」类用例
+    // （session / api-with-sdk 单独跑 1.5-2s，全量并行时偶发 >5s 假红）。
+    // 放宽到 15s 保留真慢 bug 检测，同时消除负载型 flake。
+    testTimeout: 15000,
+    hookTimeout: 15000,
     include: ['**/*.test.ts'],
     exclude: ['node_modules', 'dist', '**/node_modules/**', 'apps/mobile/**'],
     coverage: {

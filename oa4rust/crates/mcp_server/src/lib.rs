@@ -4,4 +4,5 @@
 pub mod tool_bridge;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;

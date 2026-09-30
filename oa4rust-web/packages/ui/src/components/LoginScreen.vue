@@ -180,8 +180,11 @@ async function handleLogin(): Promise<void> {
   try {
     await session.login(username.value, password.value, captchaId.value, captchaAnswer.value)
 
-    // 登录后跳转
-    const redirect = (route.query.redirect as string) || '/app/dashboard'
+    // 登录后跳转：query 值可能是数组形态；且只允许站内相对路径（防 //host 协议相对开放重定向）
+    const raw = route.query.redirect
+    const candidate =
+      typeof raw === 'string' ? raw : Array.isArray(raw) && typeof raw[0] === 'string' ? raw[0] : ''
+    const redirect = candidate.startsWith('/') && !candidate.startsWith('//') ? candidate : '/app/dashboard'
     router.replace(redirect)
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : '登录失败，请重试'

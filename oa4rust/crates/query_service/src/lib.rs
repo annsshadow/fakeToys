@@ -202,6 +202,7 @@ pub async fn processing_execute(
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

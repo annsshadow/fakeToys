@@ -200,13 +200,15 @@ class TestReport:
         scorer = QualityScorer()
         scorer._existing_embeddings = [1, 2, 3]
         scorer._existing_texts = ["a"]
-        scorer._existing_texts_hash = "hash"
+        scorer._existing_ngrams = [1, 2, 3]
+        scorer._existing_ngram_texts = ["a"]
 
         scorer.reset_cache()
 
         assert scorer._existing_embeddings == []
         assert scorer._existing_texts == []
-        assert scorer._existing_texts_hash is None
+        assert scorer._existing_ngrams == []
+        assert scorer._existing_ngram_texts == []
 
     def test_report_statistics(self):
         """报告统计值应正确计算"""
@@ -233,39 +235,162 @@ class TestReport:
         assert report["pass_rate"] == 1.0
 
 
-class TestComputeTextsHash:
-    """文本哈希计算测试"""
+class _HashModel:
+    """内容决定向量的假模型（同一段文本永远编出同一个单位向量）"""
 
-    def test_hash_consistent(self):
-        """相同文本应产生相同哈希"""
-        scorer = QualityScorer()
-        texts = ["hello", "world"]
-        
-        hash1 = scorer._compute_texts_hash(texts)
-        hash2 = scorer._compute_texts_hash(texts)
-        
-        assert hash1 == hash2
+    def __init__(self):
+        self.sizes: list = []
 
-    def test_hash_different_for_different_texts(self):
-        """不同文本应产生不同哈希"""
-        scorer = QualityScorer()
-        texts1 = ["hello"]
-        texts2 = ["world"]
-        
-        hash1 = scorer._compute_texts_hash(texts1)
-        hash2 = scorer._compute_texts_hash(texts2)
-        
-        assert hash1 != hash2
+    def encode(self, texts, **kwargs):
+        import hashlib
 
-    def test_hash_uses_first_100_items(self):
-        """哈希应只使用前 100 条文本"""
-        scorer = QualityScorer()
-        texts = [f"item{i}" for i in range(200)]
-        
-        hash1 = scorer._compute_texts_hash(texts)
-        hash2 = scorer._compute_texts_hash(texts[:100])
-        
-        assert hash1 == hash2
+        import numpy as np
+
+        self.sizes.append(len(texts))
+        rows = []
+        for t in texts:
+            digest = hashlib.sha256(t.encode("utf-8")).digest()
+            v = np.array([b / 255.0 for b in digest[:8]], dtype=np.float32)
+            rows.append(v / np.linalg.norm(v))
+        return np.array(rows)
+
+
+def _fallback_oracle(text, refs, size=30):
+    """不带任何缓存的多样性：每次新建评分器，作为被钉路径的预言机。"""
+    scorer = QualityScorer(diversity_sample_size=size)
+    scorer._model = "fallback"
+    return scorer._calculate_diversity(text, refs)
+
+
+class TestDiversityCacheKeyIsFaithful:
+    """参照集缓存的失效判据必须逐元素忠实于「被缓存的那一段」
+
+    早期版本比的是 `md5("|".join(切片[:100]))`，两处不忠实：分隔符让
+    `["a", "b"]` 与 `["a|b"]` 拼出同一个串；100 条截断让 `diversity_sample_size
+    > 100` 时第 101 条起无论怎么变都不失效。两类症状都是**静默**的——参照集
+    换了内容，多样性仍按旧参照集回答。预言机一律用「新建实例」，不读被测缓存。
+    """
+
+    # 拼接后逐字相同、但作为参照集含义不同的两组
+    JOIN_COLLISION = (["lorem ipsum", "dolor sit amet"], ["lorem ipsum|dolor sit amet"])
+    CANDIDATE = "lorem ipsum"
+
+    def test_premise_the_two_reference_lists_are_ambiguous_to_a_join(self):
+        """钉住「为什么这组语料能测出分隔符缺陷」这个前提
+
+        断言的是用例自己的素材性质（不是库的行为），所以它在缺陷态也必然绿，
+        注入时进白名单。若哪天有人换了语料，这条会先红，避免下面的用例变成
+        空洞的「两侧都一样」。
+        """
+        first, second = self.JOIN_COLLISION
+        assert "|".join(first) == "|".join(second)
+        # 两组参照集的真值必须不同，否则缓存中毒也答不出错
+        assert _fallback_oracle(self.CANDIDATE, first) != _fallback_oracle(
+            self.CANDIDATE, second
+        )
+
+    def test_fallback_join_collision_does_not_reuse_reference_cache(self):
+        """分隔符碰撞下，换内容的参照集必须重切参照集而不是复用旧分数"""
+        first, second = self.JOIN_COLLISION
+        scorer = QualityScorer(diversity_sample_size=30)
+        scorer._model = "fallback"
+
+        scorer._calculate_diversity(self.CANDIDATE, second)  # 先用无歧义的那组填缓存
+        got = scorer._calculate_diversity(self.CANDIDATE, first)
+
+        assert got == pytest.approx(_fallback_oracle(self.CANDIDATE, first))
+
+    def test_fallback_change_beyond_item_100_invalidates_reference_cache(self):
+        """`diversity_sample_size=150` 时，第 101 条之后的变化也要被看见"""
+        scorer = QualityScorer(diversity_sample_size=150)
+        scorer._model = "fallback"
+        head = [f"alpha topic {i} padding" for i in range(100)]
+        tail_a = [f"beta zebra quantum {i}" for i in range(50)]
+        tail_b = [f"gamma llama entropy {i}" for i in range(50)]
+
+        scorer._calculate_diversity("warmup", head + tail_a)
+        candidate = tail_b[7]
+        got = scorer._calculate_diversity(candidate, head + tail_b)
+
+        # 候选与 tail_b[7] 逐字相同 → 真值必须是 0；只看前 100 条的判据会答成「很新」
+        assert got == pytest.approx(0.0)
+        assert _fallback_oracle(candidate, head + tail_a, size=150) > 0.5, "预言机本身要能区分尾部"
+
+    def test_vector_branch_join_collision_reencodes_reference(self):
+        """向量分支同一口径：碰撞键不能让新参照集复用旧向量"""
+        first, second = self.JOIN_COLLISION
+        scorer = QualityScorer(diversity_sample_size=30)
+        model = _HashModel()
+        scorer._model = model
+
+        scorer._calculate_diversity(self.CANDIDATE, second)
+        assert model.sizes == [1, 1], "首轮应对候选（1 条）与参照切片（second 只 1 条）各编码一次"
+        scorer._calculate_diversity(self.CANDIDATE, first)
+        assert model.sizes == [1, 1, 1, 2], "换了内容的参照集没重编码 -> 复用了旧向量"
+
+        fresh = QualityScorer(diversity_sample_size=30)
+        fresh._model = _HashModel()
+        assert scorer._calculate_diversity(
+            self.CANDIDATE, first
+        ) == pytest.approx(fresh._calculate_diversity(self.CANDIDATE, first))
+
+    def test_vector_branch_change_beyond_item_100_reencodes(self):
+        """向量分支的 100 条截断口径同上"""
+        scorer = QualityScorer(diversity_sample_size=150)
+        model = _HashModel()
+        scorer._model = model
+        head = [f"alpha topic {i} padding" for i in range(100)]
+        tail_a = [f"beta zebra quantum {i}" for i in range(50)]
+        tail_b = [f"gamma llama entropy {i}" for i in range(50)]
+
+        scorer._calculate_diversity("warmup", head + tail_a)
+        assert model.sizes == [1, 150]
+        scorer._calculate_diversity("候选文本", head + tail_b)
+        assert model.sizes == [1, 150, 1, 150], "第 101 条之后的变化没触发重编码"
+
+    def test_reference_slice_unchanged_reuses_cache_without_reencoding(self):
+        """反向护栏：切片没变时不得重编码——修判据不能把缓存修没"""
+        scorer = QualityScorer(diversity_sample_size=30)
+        model = _HashModel()
+        scorer._model = model
+        refs = [f"参照文本{i}" for i in range(30)]
+
+        scorer._calculate_diversity("候选甲", refs)
+        first_sizes = list(model.sizes)
+        for i in range(10):
+            scorer._calculate_diversity(f"候选{i}", refs)
+
+        assert model.sizes == first_sizes + [1] * 10, "参照切片未变却重编码了"
+
+    def test_cache_hit_does_not_fingerprint_reference_content(self, monkeypatch):
+        """缓存命中路径不做内容指纹：md5 调用数为 0
+
+        被数的名字 `hashlib.md5` 就是旧实现真正走的那条路（两处键都经它）。
+        先手工调一次证明探针是响的，否则「0 次」可能只是探针没生效。
+        """
+        import hashlib
+
+        calls: list = []
+        real_md5 = hashlib.md5
+
+        def spy(*args, **kwargs):
+            calls.append(args)
+            return real_md5(*args, **kwargs)
+
+        monkeypatch.setattr(hashlib, "md5", spy)
+        hashlib.md5(b"arm-the-probe")
+        assert calls == [(b"arm-the-probe",)], "探针没数到直接调用"
+        calls.clear()
+
+        scorer = QualityScorer(diversity_sample_size=30)
+        scorer._model = "fallback"
+        refs = [f"参照文本{i}号内容" for i in range(30)]
+        scorer._calculate_diversity("候选甲", refs)
+        assert calls == [], "首轮建缓存就做了内容指纹"
+        for i in range(50):
+            scorer._calculate_diversity(f"候选{i}", refs)
+
+        assert calls == [], f"缓存命中路径仍做了 {len(calls)} 次内容指纹"
 
 
 class TestModelPaths:
@@ -333,7 +458,6 @@ class TestModelPaths:
                 return np.array(result)
         
         scorer._model = FakeModel()
-        scorer._existing_texts_hash = None
         diversity = scorer._calculate_diversity("new_text", ["existing1"])
         assert diversity == pytest.approx(1.0)
 
@@ -347,10 +471,10 @@ class TestModelPaths:
                 return np.array([[1.0, 0.0, 0.0]] * len(texts))
         
         scorer._model = FakeModel()
-        # 预设缓存使 hash 匹配且 embeddings 为空
+        # 预设缓存：判据是参照切片本身，所以这一份切片与调用参数相等 -> 命中，
+        # 而 embeddings 是空的 -> 按定义返回 1.0
         scorer._existing_embeddings = []
         scorer._existing_texts = ["existing"]
-        scorer._existing_texts_hash = scorer._compute_texts_hash(["existing"])
         diversity = scorer._calculate_diversity("text1", ["existing"])
         assert diversity == pytest.approx(1.0)
 
@@ -789,3 +913,162 @@ class TestEmbeddingCache:
         manual = scorer._calculate_diversity(target, existing)
 
         assert with_precomputed == pytest.approx(manual)
+
+
+class TestFallbackDiversityRefSets:
+    """n-gram 多样性的参照集整批只切一次（与向量分支的编码缓存同构）
+
+    向量分支早就有 `_existing_embeddings` + hash 失效判据，n-gram 分支却没有：
+    真实 1500 条 × 参照窗 100 实测每条候选都把它比的那 30 条参照文本重新切成
+    bigram——`get_ngrams` 被调 93000 次（每条 62 个集合），234 万次解释器迭代占
+    整条 `batch_score` 的 78%。预言机沿用 `_RecordingModel` 那套**数调用次数**，
+    不用计时（这台机器的墙钟不可复现）。
+    """
+
+    @pytest.fixture
+    def ngram_builds(self, monkeypatch):
+        """把模块级 `_char_ngrams` 换成计数版，真实实现照常执行"""
+        import augmentor.quality as quality
+
+        calls: list = []
+        real = quality._char_ngrams
+
+        def counting(text, n=quality._NGRAM_SIZE):
+            calls.append(text)
+            return real(text, n)
+
+        monkeypatch.setattr(quality, "_char_ngrams", counting)
+        return calls
+
+    @pytest.fixture
+    def pair_calls(self, monkeypatch):
+        """数 `_ngram_similarity` 被调了几次——这是**两版都存在**的名字
+
+        上一级夹具盯着新函数，这一级盯着「逐对比较」这件事本身：只要多样性又开始
+        逐对切集合，这里的计数就会随 `候选 × 参照` 增长，与实现叫什么名字无关。
+        """
+        import augmentor.quality as quality
+
+        calls: list = []
+        real = quality.QualityScorer._ngram_similarity
+
+        def spy(self, a, b, *args, **kwargs):
+            calls.append((a, b))
+            return real(self, a, b, *args, **kwargs)
+
+        monkeypatch.setattr(quality.QualityScorer, "_ngram_similarity", spy)
+        return calls
+
+    @staticmethod
+    def _fallback_scorer(**kwargs):
+        scorer = QualityScorer(**kwargs)
+        scorer._model = "fallback"
+        return scorer
+
+    def test_diversity_stops_comparing_pairwise(self, pair_calls):
+        """逐对比较次数从 候选 × 参照 降到 0
+
+        这个夹具只盯两版都有的 `_ngram_similarity` 名字，所以缺陷态下它同样能跑：
+        退回逐对比较时它数到 3000 次，断言就红。先手工调一次证明探针本身是响的，
+        免得「零次」是探针没生效造成的假绿。
+        """
+        scorer = self._fallback_scorer()
+        probe = scorer._ngram_similarity("abcde", "abcd")
+        assert pair_calls == [("abcde", "abcd")], "探针没数到直接调用"
+        assert probe == pytest.approx(0.75)
+
+        pair_calls.clear()
+        refs = [f"参照文本{i}号" for i in range(30)]
+        for i in range(100):
+            scorer._calculate_diversity(f"候选文本{i}号", refs)
+
+        # 一旦退回逐对比较，这里就是 候选 × 参照 = 3000 次
+        assert pair_calls == [], f"多样性逐对比较了 {len(pair_calls)} 次，参照集没被复用"
+
+    def test_reference_sets_cut_once_per_batch(self, ngram_builds):
+        """30 条参照文本 × 100 条候选 = 切 130 次而不是 6000 次"""
+        scorer = self._fallback_scorer()
+        refs = [f"参照文本{i}号" for i in range(30)]
+        candidates = [f"候选文本{i}号" for i in range(100)]
+
+        for cand in candidates:
+            scorer._calculate_diversity(cand, refs)
+
+        # 每条候选自己 1 次（它只被用一次，缓存它没有复用）+ 参照集 30 次（只切一遍）
+        assert sorted(ngram_builds) == sorted(refs + candidates)
+
+    def test_scores_do_not_depend_on_the_cache(self, ngram_builds):
+        """缓存不能改变分数：与「每条都新建评分器」逐个对照
+
+        只数构建次数会放过「缓存串了内容」这类错误，所以同一个断言集要在
+        冷评分器上再算一遍。参照预言机是不带缓存的新实例，不是被测的这份缓存。
+        """
+        scorer = self._fallback_scorer()
+        refs = [f"参照文本{i}号" for i in range(12)]
+        candidates = [f"候选文本{i}号甲" for i in range(12)]
+        # 让参照集在批次中途变化，逼出失效路径
+        mixed = []
+        for i, cand in enumerate(candidates):
+            window = refs[: i + 1]
+            mixed.append(scorer._calculate_diversity(cand, window))
+
+        fresh = [
+            self._fallback_scorer()._calculate_diversity(c, refs[: i + 1])
+            for i, c in enumerate(candidates)
+        ]
+        assert mixed == fresh
+
+    def test_diversity_matches_hand_computed_jaccard(self):
+        """与手算的 Jaccard 一致，并且**不做**大小写归一
+
+        第二条是口径守卫：原实现切的是原文的 n-gram，`AB` 与 `ab` 不共享 bigram。
+        顺手加个 `.lower()` 会把所有英文数据集的分数悄悄抬高。
+        """
+        scorer = self._fallback_scorer()
+
+        # "abcde" → {ab,bc,cd,de}; "abcd" → {ab,bc,cd}; 交 3 并 4 = 0.75 → 多样性 0.25
+        assert scorer._calculate_diversity("abcde", ["abcd"]) == pytest.approx(0.25)
+        # "AB" vs "ab"：bigram 集合无交集 → 相似度 0 → 多样性 1.0
+        assert scorer._calculate_diversity("AB", ["ab"]) == 1.0
+        # 参照文本短于 2 字符时切不出 bigram，相似度按定义是 0 而不是除零
+        assert scorer._calculate_diversity("abcde", ["x"]) == 1.0
+
+    def test_reference_window_change_invalidates(self, ngram_builds):
+        """换参照窗必须重建，否则新数据集会被旧参照集答成同一个分数"""
+        scorer = self._fallback_scorer()
+        first = scorer._calculate_diversity("abcde", ["abcd"])
+        second = scorer._calculate_diversity("abcde", ["bcde"])
+
+        # {ab,bc,cd} 交 {ab,bc,cd,de} = 3，并 4 → 0.75 → 0.25
+        # {bc,cd,de} 交 {ab,bc,cd,de} = 3，并 4 → 0.75 → 0.25（分数相同，但集合确实换了）
+        assert first == pytest.approx(second)
+        assert sorted(ngram_builds) == sorted(["abcd", "abcde", "bcde", "abcde"])
+
+    def test_reset_cache_clears_reference_sets(self, ngram_builds):
+        """`reset_cache()` 是公开的清缓存入口，必须连 n-gram 这份一起清"""
+        scorer = self._fallback_scorer()
+        refs = ["参照一", "参照二"]
+        scorer._calculate_diversity("候选甲", refs)
+        scorer.reset_cache()
+        assert scorer._existing_ngrams == []
+        assert scorer._existing_ngram_texts == []
+
+        scorer._calculate_diversity("候选乙", refs)
+        assert sorted(ngram_builds) == sorted(
+            ["参照一", "参照二", "候选甲", "参照一", "参照二", "候选乙"]
+        )
+
+    def test_ngram_cache_is_not_shared_with_embedding_cache(self):
+        """两份参照集缓存各自独立
+
+        它们装的是同一段文本的两种表示，共用一份判据的话，`_model` 一旦变化
+        （测试与降级路径都会）就会有一边认定「缓存有效」而另一边从没填过——
+        多样性会凭空变成 1.0。
+        """
+        scorer = self._fallback_scorer()
+        refs = ["参照文本"]
+        scorer._calculate_diversity("候选文本", refs)
+
+        assert scorer._existing_ngram_texts == refs
+        assert scorer._existing_texts == [], "n-gram 侧不该写向量侧的参照切片"
+        assert scorer._existing_embeddings == []

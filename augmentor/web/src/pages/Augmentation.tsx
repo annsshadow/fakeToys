@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Card, Button, Space, Select, Switch, message, Progress, Tag } from 'antd'
 import { RocketOutlined } from '@ant-design/icons'
-import { startAugmentation, getProgress, getDataFiles } from '../services/api'
+import { apiErrorDetail, startAugmentation, getProgress, getDataFiles } from '../services/api'
 import type { AugmentProgressDetail } from '../types/api'
 
 export default function Augmentation() {
@@ -24,8 +24,8 @@ export default function Augmentation() {
     try {
       const result = await getDataFiles()
       setFiles(result.files.map(f => f.name))
-    } catch {
-      message.error('加载文件列表失败')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '加载文件列表失败'))
     }
   }
 
@@ -57,8 +57,8 @@ export default function Augmentation() {
     try {
       await startAugmentation(inputFile, outputFile, useQuality, useDedup, useCheckpoint)
       message.success('增强任务已启动')
-    } catch {
-      message.error('启动失败')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '启动失败'))
       setRunning(false)
     }
   }

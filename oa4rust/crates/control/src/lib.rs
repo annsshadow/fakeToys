@@ -11,6 +11,7 @@ pub mod unit;
 pub use routes::control_router;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

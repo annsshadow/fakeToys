@@ -324,7 +324,7 @@ pub async fn search(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let keyword = params.keyword.unwrap_or_default();
 
-    let pattern = format!("%{}%", keyword);
+    let pattern = format!("%{}%", shared::db::escape_like(&keyword));
     let rows = client
         .query(
             "SELECT id, title, author_id, section_id, reply_count, view_count, is_top, create_time \

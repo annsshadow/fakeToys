@@ -7,7 +7,7 @@
     "dev": "pnpm --filter @oa4rust/desktop dev",
     "build": "pnpm --filter @oa4rust/desktop build",
     "preview": "pnpm --filter @oa4rust/desktop preview",
-    "lint": "biome check --diagnostic-level=error .",
+    "lint": "biome check --error-on-warnings .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "format:check": "biome format .",
@@ -19,7 +19,7 @@
     "test:e2e": "playwright test",
     "test:e2e:list": "playwright test --list",
     "gen-api": "tsx scripts/gen-api.ts",
-    "lint:check": "biome check --diagnostic-level=error ."
+    "lint:check": "biome check --error-on-warnings ."
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.11",

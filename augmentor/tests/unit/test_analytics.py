@@ -391,6 +391,43 @@ class TestGetDuplicateCandidates:
         analyzer = DatasetAnalyzer([])
         assert analyzer.get_duplicate_candidates() == []
 
+    def test_matches_reference_semantics_l131(self):
+        """L131 预计算优化的行为守卫：与「朴素双循环 + 逐对构造字符集」参照实现逐元素一致
+
+        钉住三件事，改写只要动了其一就会红：
+        - 只对 instruction **都非空**的对计算相似度（空 instruction 跳过，不产出候选）；
+        - 相似度 = 字符集 Jaccard = |交| / |并|，阈值用 >=；
+        - 返回按相似度**降序**排序。
+        参照实现刻意写成改前那种「内层循环里重建 set」的朴素形态，两者必须同答。
+        """
+        def reference(items, threshold):
+            out = []
+            for i in range(len(items)):
+                for j in range(i + 1, len(items)):
+                    a = items[i].get("instruction", "")
+                    b = items[j].get("instruction", "")
+                    if a and b:
+                        sa, sb = set(a), set(b)
+                        sim = len(sa & sb) / max(len(sa | sb), 1)
+                        if sim >= threshold:
+                            out.append((i, j, sim))
+            return sorted(out, key=lambda x: x[2], reverse=True)
+
+        items = [
+            {"instruction": "如何申请租房"},
+            {"output": "无 instruction 的条目"},        # 空 instruction，必须被跳过
+            {"instruction": "如何申请租房"},              # 与 [0] 完全相同 ⇒ 相似度 1.0
+            {"instruction": "如何办理过户手续"},
+            {"instruction": ""},                          # 空串，必须被跳过
+            {"instruction": "如何申请租房呢"},            # 与 [0] 高度相似
+        ]
+        for th in (0.0, 0.3, 0.5, 0.8, 0.9, 1.0):
+            assert DatasetAnalyzer(items).get_duplicate_candidates(th) == reference(items, th), th
+        # 没有任何候选牵扯到空 instruction 的下标（1 与 4）
+        got = DatasetAnalyzer(items).get_duplicate_candidates(0.0)
+        idxs = {i for i, _, _ in got} | {j for _, j, _ in got}
+        assert 1 not in idxs and 4 not in idxs
+
 
 class TestGetQualityDistribution:
     """质量分布测试"""

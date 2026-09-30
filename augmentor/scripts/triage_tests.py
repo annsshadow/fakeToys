@@ -21,6 +21,16 @@
     assert total == 100
 
 只读脚本，不修改任何文件。
+
+## 第二族判据：同作用域重复定义
+
+上面管的是"断言会不会失败"，`duplicate_definitions()` 管的是"这段测试**会不会被执行**"。
+同一作用域里写两次 `def test_x` / `class TestX`，后一份静默覆盖前一份，前一份连同它
+验证的行为一起蒸发，而覆盖率与通过数都看不出异常 —— 2026-09-26 在测试文件里改函数时
+真的踩到过一次（留下旧副本，全绿），而仓库当时任何守卫都不抓它。判据刻意只看作用域的
+**直接 body**：写在 `if` / `try` 里的条件定义（`try: import x` → `except ImportError:`
+里给个替身）与跨作用域同名（类方法 `convert_file` 加模块函数 `convert_file`）都合法，
+不报。首跑在 4 个旧测试文件里抓到 5 处覆盖事件。
 """
 
 import ast
@@ -178,9 +188,11 @@ def _collect_consts(func: ast.AST) -> dict:
     3. 没有被 `nonlocal` / `global` 声明；
     4. 没有作为可变方法的接收者（`x.append(...)` 等）；
     5. **没有作为参数传给任何调用**——被调用方可能原地修改它（包括传出
-       绑定方法 `x.append` 这种"交出修改权"的写法）。
+       绑定方法 `x.append` 这种"交出修改权"的写法）；
+    6. 没有被**下标写入或删除**过（`d[k] = v`、`del d[k]`、`lst[i] += 1`）——
+       名字没重绑，内容却变了。
 
-    条件 3~5 是保守的过度排除。早期版本只做"出现过 `name = <字面量>` 就当常量"，
+    条件 3~6 是保守的过度排除。早期版本只做"出现过 `name = <字面量>` 就当常量"，
     把 `call_count = 0`（后续被闭包 `+=`）、`missing = []`（后续被 `append`）误判为常量，
     进而把 `assert call_count == 1` 这类**有效断言**误报成空洞。宁可漏判不可误判。
 
@@ -208,6 +220,18 @@ def _collect_consts(func: ast.AST) -> dict:
             store_count[node.id] = store_count.get(node.id, 0) + 1
         if isinstance(node, ast.AugAssign) and isinstance(node.target, ast.Name):
             tainted.add(node.target.id)
+        # `d[k] = v` / `del d[k]`：**名字只绑定一次，内容却变了**。`_MUTATORS` 那份清单
+        # 管的是方法调用，而没人会写 `d.__setitem__(k, v)` —— 于是 L79 的守卫用例
+        # （`bad = {}` → 循环里 `bad[doc] = dead` → `assert bad == {}`）被当成恒真。
+        if isinstance(node, (ast.Assign, ast.AugAssign)):
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            for target in targets:
+                if isinstance(target, ast.Subscript) and isinstance(target.value, ast.Name):
+                    tainted.add(target.value.id)
+        if isinstance(node, ast.Delete):
+            for target in node.targets:
+                if isinstance(target, ast.Subscript) and isinstance(target.value, ast.Name):
+                    tainted.add(target.value.id)
         if isinstance(node, ast.For) and isinstance(node.target, ast.Name):
             tainted.add(node.target.id)
         if isinstance(node, ast.NamedExpr) and isinstance(node.target, ast.Name):
@@ -355,6 +379,69 @@ def _is_test_function(node: ast.AST) -> bool:
     return True
 
 
+def _unconditional_def(stmt):
+    """该语句若在本作用域内**无条件**绑定一个 def/class 名字，返回它
+
+    只看直接属于作用域 body 的 `FunctionDef` / `AsyncFunctionDef` / `ClassDef`：
+    写在 `if` / `try` / `match` 里的定义是**条件定义**（`try: import x` →
+    `except ImportError: def x(): ...` 这类回落写法），名字出现两次是合法的，
+    所以它们根本不在本判据的扫描范围内 —— 由调用方只遍历作用域的直接 body 保证。
+    """
+    if not isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+        return None
+    # 属性 setter/deleter 复用同名（`def x` + `@x.setter def x`）是语言规定的写法；
+    # `@overload` 同理。两者都不是被覆盖。
+    for dec in stmt.decorator_list:
+        text = ast.unparse(dec)
+        if "overload" in text:
+            return None
+        if text == stmt.name or text.startswith(f"{stmt.name}."):
+            return None
+    return stmt.name
+
+
+def duplicate_definitions(path: Path) -> list:
+    """找出**同一作用域内重复定义**的名字
+
+    Python 里后一个定义会静默覆盖前一个 —— 编辑器里两份函数体并排存在，跑起来只有
+    后一份生效，而测试照样全绿（前面那份连同它验证的行为一起蒸发了）。这类缺陷的
+    典型产地是复制粘贴与 Search/Replace 改函数时的残留副本，任何"断言是否有效"的
+    判据都抓不到它，因为生效的那份完全可能是真测试。
+
+    Args:
+        path: Python 源文件路径
+
+    Returns:
+        `[{"name", "lineno", "shadowed_lineno", "scope"}, ...]`，每项是一次覆盖；
+        `shadowed_lineno` 是**被它顶掉的那一份**的位置（三连同名会给出一条链）。
+    """
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    offenders = []
+    for scope in ast.walk(tree):
+        if isinstance(scope, ast.Module):
+            scope_name = "<module>"
+            body = scope.body
+        elif isinstance(scope, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+            scope_name = scope.name
+            body = scope.body
+        else:
+            continue
+        seen: dict = {}
+        for stmt in body:
+            name = _unconditional_def(stmt)
+            if name is None:
+                continue
+            if name in seen:
+                offenders.append({
+                    "name": name,
+                    "scope": scope_name,
+                    "shadowed_lineno": seen[name],
+                    "lineno": stmt.lineno,
+                })
+            seen[name] = stmt.lineno
+    return offenders
+
+
 def analyse_file(path: Path) -> dict:
     """分析单个测试文件
 
@@ -398,6 +485,11 @@ def analyse_file(path: Path) -> dict:
     imports = [ast.unparse(n) for n in ast.walk(tree)
                if isinstance(n, (ast.Import, ast.ImportFrom))]
 
+    try:
+        dupes = duplicate_definitions(path)
+    except (SyntaxError, UnicodeDecodeError):
+        dupes = []
+
     return {
         "file": str(path.relative_to(TESTS_DIR.parent)),
         "tests": len(test_funcs),
@@ -407,6 +499,7 @@ def analyse_file(path: Path) -> dict:
         "imports": imports,
         # 整文件无任何有效检查点 → 占位文件
         "placeholder": len(test_funcs) > 0 and real == 0,
+        "duplicate_definitions": dupes,
         "tests_detail": details,
     }
 
@@ -443,6 +536,24 @@ def _empty_shell_tests(rows: list) -> list:
     ]
 
 
+def duplicate_definition_list(rows: list) -> list:
+    """把 analyse_all() 结果里的重复定义摊平成 `"文件::作用域::名字:行号"` 列表
+
+    Args:
+        rows: analyse_all() 的输出
+
+    Returns:
+        覆盖事件列表（每项含被顶掉的位置）
+    """
+    return [
+        f"{r['file']}::{d['scope']}::{d['name']}:{d['lineno']} "
+        f"(顶掉了 :{d['shadowed_lineno']})"
+        for r in rows
+        if "error" not in r
+        for d in r.get("duplicate_definitions", [])
+    ]
+
+
 def main() -> int:
     rows = analyse_all()
     ok = [r for r in rows if "error" not in r]
@@ -451,6 +562,7 @@ def main() -> int:
     total_tests = sum(r["tests"] for r in ok)
     vacuous_total = sum(r["vacuous_asserts"] for r in ok)
     shells = _empty_shell_tests(rows)
+    dupes = duplicate_definition_list(rows)
 
     print("=" * 74)
     print(f"测试文件 {len(ok)} 个，测试函数 {total_tests} 个")
@@ -459,6 +571,7 @@ def main() -> int:
     print(f"空洞断言总数: {vacuous_total}")
     print(f"有效检查点总数: {sum(r['real_checks'] for r in ok)}")
     print(f"无有效检查点的单个测试: {len(shells)} 个")
+    print(f"同作用域重复定义: {len(dupes)} 处")
     print("=" * 74)
 
     print("\n--- 占位文件明细 ---")
@@ -479,17 +592,22 @@ def main() -> int:
         for s in shells[:40]:
             print(f"  {s}")
 
+    if dupes:
+        print(f"\n--- 同作用域重复定义（后一份静默覆盖前一份，共 {len(dupes)} 处）---")
+        for s in dupes:
+            print(f"  {s}")
+
     if "--json" in sys.argv:
         out = Path(sys.argv[sys.argv.index("--json") + 1])
         out.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
         print(f"\n明细已写入 {out}")
 
     if "--check" in sys.argv:
-        problems = len(placeholders) + vacuous_total + len(shells)
+        problems = len(placeholders) + vacuous_total + len(shells) + len(dupes)
         if problems:
             print(f"\n[FAIL] 测试卫生门禁未通过：{problems} 处问题")
             return 1
-        print("\n[OK] 测试卫生门禁通过：无占位文件、无空洞断言、无空壳测试")
+        print("\n[OK] 测试卫生门禁通过：无占位文件、无空洞断言、无空壳测试、无重复定义")
     return 0
 
 

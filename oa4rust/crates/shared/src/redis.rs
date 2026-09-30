@@ -73,17 +73,22 @@ impl RedisPool {
         ))
     }
 
-    /// 获取连接并执行异步操作（带重试）
+    /// 获取连接并执行异步操作。
+    /// 锁仅用于瞬时 clone：ConnectionManager 本身 Clone 且断线自动重连，
+    /// 命令执行期间不持锁，避免所有 Redis 访问被单锁串行化。
     pub async fn with_connection<F, Fut, R>(&self, f: F) -> anyhow::Result<R>
     where
-        F: FnOnce(&mut ConnectionManager) -> Fut,
+        F: FnOnce(ConnectionManager) -> Fut,
         Fut: std::future::Future<Output = anyhow::Result<R>>,
         R: Send,
     {
-        let mut guard = self.0.manager.lock().await;
-        let manager = guard
-            .as_mut()
-            .context("Redis connection manager not initialized")?;
+        let manager = {
+            let guard = self.0.manager.lock().await;
+            guard
+                .as_ref()
+                .context("Redis connection manager not initialized")?
+                .clone()
+        };
         f(manager).await
     }
 

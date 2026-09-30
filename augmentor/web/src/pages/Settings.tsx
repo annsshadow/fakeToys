@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Card, Form, InputNumber, Select, Switch, Button, message, Space } from 'antd'
 import { SaveOutlined } from '@ant-design/icons'
-import { getConfig, updateConfig, getModels } from '../services/api'
+import { apiErrorDetail, getConfig, updateConfig, getModels } from '../services/api'
 import type { AppConfig } from '../types/api'
 
 export default function Settings() {
@@ -32,8 +32,8 @@ export default function Settings() {
     try {
       const result = await getConfig()
       setConfig(result)
-    } catch {
-      message.error('加载配置失败')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '加载配置失败'))
     }
   }
 
@@ -42,8 +42,8 @@ export default function Settings() {
       const result = await getModels()
       setModels(result.models)
       setDefaultModel(result.default)
-    } catch {
-      message.error('加载模型列表失败')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '加载模型列表失败'))
     }
   }
 
@@ -61,8 +61,8 @@ export default function Settings() {
         multimodal: config?.multimodal
       })
       message.success('配置已保存到 config.yaml，部分配置需要重启服务生效')
-    } catch {
-      message.error('保存配置失败')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '保存配置失败'))
     } finally {
       setLoading(false)
     }

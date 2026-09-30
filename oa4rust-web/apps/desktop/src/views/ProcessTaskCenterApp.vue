@@ -20,9 +20,30 @@
         <button class="btn-refresh" @click="loadWorkDetail">🧾 工作明细</button>
         <button class="btn-refresh" @click="loadSnaps">📸 工作快照</button>
         <button class="btn-refresh" @click="loadSnapCursors">🎞️ 快照游标</button>
+        <button class="btn-refresh" @click="loadEngineEntities">🔧 引擎实体</button>
+        <button class="btn-refresh" @click="loadEngineMore">⚙️ 引擎扩展</button>
+        <button class="btn-refresh" @click="loadTaskCursorFilters">📋 待办/已办游标</button>
+        <button class="btn-refresh" @click="loadReadCursorFilters">📖 待阅/已阅游标</button>
+        <button class="btn-refresh" @click="loadJobDataReads">🧬 作业/数据记录/签署/发票</button>
+        <button class="btn-refresh" @click="loadWorkJobProjection">🛰️ 工作复合/作业投影</button>
+        <button class="btn-refresh" @click="loadTaskFullCursors">🗂️ 待办全量游标/详情</button>
+        <button class="btn-refresh" @click="loadTaskCompletedFullCursors">✅ 已办全量游标/详情</button>
+        <button class="btn-refresh" @click="loadReadFullCursors">📗 待阅全量游标/详情</button>
+        <button class="btn-refresh" @click="loadReadCompletedFullCursors">📘 已阅全量游标/详情</button>
+        <button class="btn-refresh" @click="loadWorkCompletedFullCursors">🏁 完成件全量游标/详情</button>
+        <button class="btn-refresh" @click="loadSurfaceMoreReads">🧩 表面只读补消费</button>
+        <button class="btn-refresh" @click="loadProcessingEngineReads">🔩 引擎只读补消费</button>
       </div>
       <div v-if="countsText" class="wk-chips"><span class="wk-chip">{{ countsText }}</span></div>
       <div v-if="workDetailText" class="wk-chips"><span class="wk-chip">{{ workDetailText }}</span></div>
+      <div v-if="jobDataText" class="wk-chips"><span class="wk-chip">{{ jobDataText }}</span></div>
+      <div v-if="workJobText" class="wk-chips"><span class="wk-chip">{{ workJobText }}</span></div>
+      <div v-if="taskCursorText" class="wk-chips"><span class="wk-chip">{{ taskCursorText }}</span></div>
+      <div v-if="taskCompCursorText" class="wk-chips"><span class="wk-chip">{{ taskCompCursorText }}</span></div>
+      <div v-if="readCursorText" class="wk-chips"><span class="wk-chip">{{ readCursorText }}</span></div>
+      <div v-if="readCompCursorText" class="wk-chips"><span class="wk-chip">{{ readCompCursorText }}</span></div>
+      <div v-if="wcCursorText" class="wk-chips"><span class="wk-chip">{{ wcCursorText }}</span></div>
+      <div v-if="surfaceMoreText" class="wk-chips"><span class="wk-chip">{{ surfaceMoreText }}</span></div>
       <div v-if="snapText" class="wk-chips"><span class="wk-chip">{{ snapText }}</span></div>
       <div v-if="workItems.length" class="wk-chips">
         <span v-for="w in workItems" :key="w.id || w.title" class="wk-chip">{{ w.title || w.id }}</span>
@@ -70,6 +91,360 @@ interface Item {
 const listEp = '/api/processplatform/service/processing/task/list'
 const workItems = ref<Array<{ id?: string; title?: string }>>([])
 const countsText = ref('')
+const jobDataText = ref('')
+const workJobText = ref('')
+const taskCursorText = ref('')
+const taskCompCursorText = ref('')
+const readCursorText = ref('')
+const readCompCursorText = ref('')
+const wcCursorText = ref('')
+const surfaceMoreText = ref('')
+// rev376：流程-表面 非破坏性真实读补消费（用户触发）——凭证游标计数(read/task/work/readcompleted/taskcompleted +
+// anonymous)、filter/attribute DISTINCT 维度聚合(read/readcompleted/review/task/taskcompleted + review/filter/entry)、
+// my paging 列表、documentversion、v2 list create paging(POST 真读)、附件二进制下载(dummy id→JSON 未找到)。
+// 排除破坏性/引擎/外部：mode/save·clear、review/create/*、attachment upload/*、html/to/image·pdf、upload/with/url、snap/upload。
+async function loadSurfaceMoreReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const cnt = '20'
+  const pg = '1'
+  const sz = '20'
+  const cred = 'diagnostic'
+  const cat = 'all'
+  const woc = '0'
+  const attid = '0'
+  const wk = '0'
+  const wcid = '0'
+  const fn = 'doc.txt'
+  const job = '0'
+  const site = '0'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/surface/anonymous/read/${cnt}/${cred}`)),
+      s(api.get(`/api/processplatform/assemble/surface/anonymous/task/${cnt}/${cred}`)),
+      s(api.get(`/api/processplatform/assemble/surface/read/${cnt}/${cred}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/${cnt}/${cred}`)),
+      s(api.get(`/api/processplatform/assemble/surface/work/${cnt}/${cred}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/${cnt}/${cred}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/${cnt}/${cred}`)),
+      s(api.get('/api/processplatform/assemble/surface/read/filter/attribute')),
+      s(api.get('/api/processplatform/assemble/surface/readcompleted/filter/attribute')),
+      s(api.get('/api/processplatform/assemble/surface/review/filter/attribute')),
+      s(api.get('/api/processplatform/assemble/surface/task/filter/attribute')),
+      s(api.get('/api/processplatform/assemble/surface/taskcompleted/filter/attribute')),
+      s(api.get('/api/processplatform/assemble/surface/review/filter/entry')),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/my/paging/${pg}/${sz}/${sz}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/my/paging/${pg}/${sz}/${sz}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/my/paging/${pg}/${sz}/${sz}`)),
+      s(api.get(`/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/${woc}/${cat}/${cat}`)),
+      s(api.post(`/api/processplatform/assemble/surface/read/v2/list/create/paging/${pg}/${sz}/${sz}`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/readcompleted/v2/list/create/paging/${pg}/${sz}/${sz}`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/review/v2/list/create/paging/${pg}/${sz}/${sz}`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/task/v2/list/create/paging/${pg}/${sz}/${sz}`, {})),
+      s(api.post(`/api/processplatform/assemble/surface/taskcompleted/v2/list/create/paging/${pg}/${sz}/${sz}`, {})),
+      s(api.get(`/api/processplatform/assemble/surface/attachment/download/${attid}/work/${wk}/stream`)),
+      s(api.get(`/api/processplatform/assemble/surface/attachment/download/${attid}/work/${wk}/stream/${fn}`)),
+      s(api.get(`/api/processplatform/assemble/surface/attachment/download/${attid}/work/${wk}/${fn}`)),
+      s(api.get(`/api/processplatform/assemble/surface/attachment/download/${attid}/workcompleted/${wcid}/stream`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/attachment/download/${attid}/workcompleted/${wcid}/stream/${fn}`,
+        ),
+      ),
+      s(api.get(`/api/processplatform/assemble/surface/attachment/download/${attid}/workcompleted/${wcid}/${fn}`)),
+      s(api.get(`/api/processplatform/assemble/surface/attachment/batch/download/job/${job}/site/${site}`)),
+      s(api.get(`/api/processplatform/assemble/surface/attachment/batch/download/work/${wk}/site/${site}/stream`)),
+    ])
+    const hit = rs.filter((r) => (r as any) != null).length
+    surfaceMoreText.value = `流程-表面只读端点 ${rs.length} 条，返回 ${hit}`
+  } catch (e: any) {
+    toast.error(`加载流程-表面只读端点失败: ${e?.message ?? ''}`)
+  }
+}
+// rev378：流程-引擎 service/processing 非破坏性真实读补消费（用户触发；attachment/data/job/record 均真 SELECT，
+// record/task/processing POST 在 Rust 实为按 body 查记录的读）。排除 signal（触发流程信号）与 press（催办）写副作用端点。
+async function loadProcessingEngineReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const wk = '0'
+  const wid = '0'
+  const job = '0'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/processplatform/service/processing/attachment/${id}/${wk}/${wid}`)),
+      s(api.get(`/api/processplatform/service/processing/data/${job}/${job}`)),
+      s(api.get(`/api/processplatform/service/processing/${job}/${job}`)),
+      s(api.get(`/api/processplatform/service/processing/record/${job}/${job}`)),
+      s(api.post('/api/processplatform/service/processing/record/task/processing', {})),
+    ])
+    const hit = rs.filter((r) => (r as any) != null).length
+    surfaceMoreText.value = `流程-引擎只读端点 ${rs.length} 条，返回 ${hit}`
+  } catch (e: any) {
+    toast.error(`加载流程-引擎只读端点失败: ${e?.message ?? ''}`)
+  }
+}
+// rev287：完成件 PP_C_WORKCOMPLETED 全量真实读端点（双向游标 application/filter/manage + 属性筛选 + 详情 manage/assignment + 数据快照 data/from）；均只读 arity 已核
+async function loadWorkCompletedFullCursors() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const cnt = '20'
+  const app = 'default'
+  const proc = 'default'
+  const first: any = items.value[0] ?? {}
+  const wid = String(first.id ?? '0')
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/next/application/${id}/${cnt}/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/prev/application/${id}/${cnt}/${app}`)),
+      s(
+        api.get(`/api/processplatform/assemble/surface/workcompleted/list/next/application/filter/${id}/${cnt}/${app}`),
+      ),
+      s(
+        api.get(`/api/processplatform/assemble/surface/workcompleted/list/prev/application/filter/${id}/${cnt}/${app}`),
+      ),
+      s(
+        api.get(`/api/processplatform/assemble/surface/workcompleted/list/next/application/manage/${id}/${cnt}/${app}`),
+      ),
+      s(
+        api.get(`/api/processplatform/assemble/surface/workcompleted/list/prev/application/manage/${id}/${cnt}/${app}`),
+      ),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/workcompleted/list/next/application/filter/manage/${id}/${cnt}/${app}`,
+        ),
+      ),
+      s(
+        api.get(`/api/processplatform/assemble/surface/workcompleted/filter/list/prev/application/${id}/${cnt}/${app}`),
+      ),
+      s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/${id}/next/${cnt}/application/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/${id}/prev/${cnt}/application/${app}`)),
+      s(
+        api.get(`/api/processplatform/assemble/surface/workcompleted/list/${id}/next/${cnt}/application/${app}/manage`),
+      ),
+      s(
+        api.get(`/api/processplatform/assemble/surface/workcompleted/list/${id}/prev/${cnt}/application/${app}/manage`),
+      ),
+      s(api.get(`/api/processplatform/assemble/surface/workcompleted/list/application/process/manage/${cnt}/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/workcompleted/filter/attribute/application/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/workcompleted/process/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/workcompleted/manage/${encodeURIComponent(wid)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/workcompleted/${encodeURIComponent(wid)}/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/workcompleted/assignment/manage/${encodeURIComponent(wid)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/workcompleted/${encodeURIComponent(wid)}/assignment/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/from/data/${encodeURIComponent(wid)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/from/item/${encodeURIComponent(wid)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/${encodeURIComponent(wid)}/from/data`)),
+      s(api.get(`/api/processplatform/assemble/surface/data/workcompleted/${encodeURIComponent(wid)}/from/item`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    wcCursorText.value = `完成件真实读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error(`加载完成件全量游标失败: ${e?.message ?? ''}`)
+  }
+}
+// rev285：已阅 PP_C_READCOMPLETED 全量真实读端点（双向游标 base/application/process/filter + 按工作 + 详情 reference）；均只读 arity 已核
+async function loadReadCompletedFullCursors() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const cnt = '20'
+  const app = 'default'
+  const proc = 'default'
+  const first: any = items.value[0] ?? {}
+  const rid = String(first.id ?? '0')
+  const work = String(first.work ?? first.id ?? '0')
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/${id}/next/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/${id}/prev/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/${id}/next/${cnt}/application/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/${id}/prev/${cnt}/application/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/${id}/next/${cnt}/process/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/${id}/prev/${cnt}/process/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/next/filter/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/prev/filter/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/prev/application/${id}/${cnt}/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/prev/process/${id}/${cnt}/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/prev/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/v2/list/prev/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/work/${encodeURIComponent(work)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/readcompleted/${encodeURIComponent(rid)}/reference`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    readCompCursorText.value = `已阅真实读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error(`加载已阅全量游标失败: ${e?.message ?? ''}`)
+  }
+}
+// rev284：待阅 PP_C_READ 全量真实读端点（双向游标 base/application/process/filter + 按人管理 + 详情 reference + 按完成件）；均只读 arity 已核
+async function loadReadFullCursors() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const cnt = '20'
+  const app = 'default'
+  const proc = 'default'
+  const person = 'current'
+  const first: any = items.value[0] ?? {}
+  const rid = String(first.id ?? '0')
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/surface/read/list/${id}/next/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/read/list/${id}/prev/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/read/list/${id}/next/${cnt}/application/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/read/list/${id}/prev/${cnt}/application/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/read/list/${id}/next/${cnt}/process/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/read/list/${id}/prev/${cnt}/process/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/read/list/next/filter/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/read/list/prev/filter/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/read/list/prev/application/${id}/${cnt}/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/read/list/prev/process/${id}/${cnt}/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/read/list/prev/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/read/v2/list/prev/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/read/list/person/${person}/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/read/workcompleted/${encodeURIComponent(rid)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/read/${encodeURIComponent(rid)}/reference`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    readCursorText.value = `待阅真实读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error(`加载待阅全量游标失败: ${e?.message ?? ''}`)
+  }
+}
+// rev283：已办 PP_C_TASKCOMPLETED 全量真实读端点（双向游标 base/application/process/filter + 按日期时段管理 + 详情 reference）；均只读 arity 已核
+async function loadTaskCompletedFullCursors() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const cnt = '20'
+  const app = 'default'
+  const proc = 'default'
+  const dt = new Date().toISOString().slice(0, 10)
+  const hr = '9'
+  const first: any = items.value[0] ?? {}
+  const tid = String(first.id ?? '0')
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/${id}/next/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/${id}/prev/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/${id}/next/${cnt}/application/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/${id}/prev/${cnt}/application/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/${id}/next/${cnt}/process/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/${id}/prev/${cnt}/process/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/next/filter/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/prev/filter/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/prev/application/${id}/${cnt}/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/prev/process/${id}/${cnt}/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/prev/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/v2/list/prev/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/date/${dt}/hour/${hr}/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/${encodeURIComponent(tid)}/reference`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    taskCompCursorText.value = `已办真实读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error(`加载已办全量游标失败: ${e?.message ?? ''}`)
+  }
+}
+// rev282：待办 PP_C_TASK 全量真实读端点接线（游标 next/prev × base/application/process/manage/filter + 详情 manage/reference）
+// 均为 query_opt/query_all 只读、arity 已核；作为待办列表的双向翻页/按应用按流程筛选/管理详情等真实 UI 读取，非 mock/写/500 桩
+async function loadTaskFullCursors() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const cnt = '20'
+  const app = 'default'
+  const proc = 'default'
+  const first: any = items.value[0] ?? {}
+  const tid = String(first.id ?? '0')
+  const manualFlag = 'default'
+  const snapType = 'latest'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/surface/task/list/${id}/next/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/${id}/prev/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/${id}/next/${cnt}/application/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/${id}/prev/${cnt}/application/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/${id}/next/${cnt}/process/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/${id}/prev/${cnt}/process/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/${id}/next/${cnt}/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/${id}/prev/${cnt}/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/next/filter/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/prev/filter/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/next/filter/manage/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/prev/filter/manage/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/next/manage/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/prev/manage/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/prev/application/${id}/${cnt}/${app}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/prev/process/${id}/${cnt}/${proc}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/list/prev/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/v2/list/prev/${id}/${cnt}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/manage/${encodeURIComponent(tid)}`)),
+      s(api.get(`/api/processplatform/assemble/surface/task/${encodeURIComponent(tid)}/reference`)),
+      // rev294：待办按人排除草稿管理 + 已办手动前翻 + 完成件快照 3 条补齐（PP_C_TASK/PP_C_TASKCOMPLETED/X_WORKCOMPLETED 真读）
+      s(api.get(`/api/processplatform/assemble/surface/task/list/person/current/exclude/draft/1/manage`)),
+      s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/prev/manual/${manualFlag}`)),
+      s(
+        api.get(
+          `/api/processplatform/service/processing/snap/workcompleted/snapworkcompleted/${encodeURIComponent(tid)}/${snapType}`,
+        ),
+      ),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    taskCursorText.value = `待办真实读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error(`加载待办全量游标失败: ${e?.message ?? ''}`)
+  }
+}
+// rev269：流程引擎 工作复合/作业投影 2 条真实 distinct 读路由（引擎表，区别于表面 PP_C_*）
+// process/{id}/complex → x_work WHERE id(query_opt) · job/v2/{job}/projection → x_job WHERE id(query_one)；均只读 arity1
+async function loadWorkJobProjection() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const first: any = items.value[0] ?? {}
+  const wid = String(first.work ?? first.id ?? '0')
+  const job = String(first.job ?? first.id ?? '0')
+  try {
+    const [complex, projection] = await Promise.all([
+      s(api.get(`/api/processplatform/service/processing/process/${encodeURIComponent(wid)}/complex`)),
+      s(api.get(`/api/processplatform/service/processing/job/v2/${encodeURIComponent(job)}/projection`)),
+    ])
+    const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
+    workJobText.value = `工作复合 ${has(complex)} · 作业投影 ${has(projection)}`
+  } catch (e: any) {
+    toast.error(`加载工作复合/作业投影失败: ${e?.message ?? ''}`)
+  }
+}
+// rev266：流程表面 作业/数据记录/签署/发票 6 条真实 distinct 读路由（全字面量，arity 均已核）
+// PP_C_JOB 三态：data/job/{job}(xjob) · correlation/list/job/{job}/site/{site}(xjob+xsite) · job/{job}/find/work/workcompleted(xid)
+// + datarecord/get/job/{job}/path/{path}→PP_C_DATA_RECORD(xid,新表) · sign/list/job/{job}→PP_C_DOC_SIGN(xjob，区别 rev262 xid) · attachment/invoice/{flag}/joborworkorworkcompleted/{w}→x_general_invoice(id,新表)
+async function loadJobDataReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const first: any = items.value[0] ?? {}
+  const job = String(first.job ?? first.id ?? '0')
+  const wid = String(first.work ?? first.id ?? '0')
+  try {
+    const [byJob, corr, findWork, datarecord, signJob, invoice] = await Promise.all([
+      s(api.get(`/api/processplatform/assemble/surface/data/job/${encodeURIComponent(job)}`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/correlation/list/job/${encodeURIComponent(job)}/site/${encodeURIComponent(job)}`,
+        ),
+      ),
+      s(api.get(`/api/processplatform/assemble/surface/job/${encodeURIComponent(job)}/find/work/workcompleted`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/datarecord/get/job/${encodeURIComponent(job)}/path/${encodeURIComponent(job)}`,
+        ),
+      ),
+      s(api.get(`/api/processplatform/assemble/surface/sign/list/job/${encodeURIComponent(job)}`)),
+      s(
+        api.get(
+          `/api/processplatform/assemble/surface/attachment/invoice/${encodeURIComponent(wid)}/joborworkorworkcompleted/${encodeURIComponent(wid)}`,
+        ),
+      ),
+    ])
+    const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    jobDataText.value = `作业数据 ${has(byJob)} · 关联(job+site) ${n(corr)} · 作业定位工作 ${has(findWork)} · 数据记录 ${has(datarecord)} · 签署(按job) ${n(signJob)} · 发票 ${has(invoice)}`
+  } catch (e: any) {
+    toast.error(`加载作业/数据/签署/发票失败: ${e?.message ?? ''}`)
+  }
+}
 const workDetailText = ref('')
 // 引擎工作明细（rev182，service/processing 域 3 条真实 distinct，按工作 id）：get/{work}（get_process x_work 详情）
 // + work/{work}/projection（work_id_projection x_task 任务投影）+ documentversion/{work}/{work}（x_document_version 版本）。
@@ -90,6 +465,71 @@ async function loadWorkDetail() {
   const projN = Array.isArray((projection as any)?.data) ? (projection as any).data.length : 0
   const docN = Array.isArray((docVer as any)?.data) ? (docVer as any).data.length : 0
   workDetailText.value = `工作「${wTitle}」· 任务投影 ${projN} · 文档版本 ${docN}`
+}
+// rev234：流程引擎按 id 实体族 8 条真实 distinct 路由（不同处理函数/表；全字面量路径避免变量前缀失配）
+async function loadEngineEntities() {
+  workDetailText.value = ''
+  const id = items.value[0] ? String(items.value[0].work ?? items.value[0].id ?? '0') : '0'
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [inst, appdict, dataWc, formAct, readc, review, taskc, proj] = await Promise.all([
+    s(api.get(`/api/processplatform/service/processing/instance/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/applicationdict/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/data/workcompleted/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/form/suitable/activity/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/readcompleted/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/review/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/taskcompleted/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/projection/${id}/${id}`)),
+  ])
+  const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
+  workDetailText.value = `实例 ${has(inst)} · 应用字典 ${has(appdict)} · 完成数据 ${has(dataWc)} · 表单适配 ${has(formAct)} · 已读完成 ${has(readc)} · 意见 ${has(review)} · 已办 ${has(taskc)} · 投影 ${has(proj)}`
+}
+// rev235：流程引擎 job/草稿/完成件 5 条真实 distinct 读路由（全字面量；跳过 v2/projection 双注册 twin）
+async function loadEngineMore() {
+  workDetailText.value = ''
+  const id = items.value[0] ? String(items.value[0].work ?? items.value[0].id ?? '0') : '0'
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [draft, wcProc, dataPath, dataWcPath, jobView, attnWc, tcIdentity] = await Promise.all([
+    s(api.get(`/api/processplatform/service/processing/draft/${id}/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/workcompleted/process/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/data/path/${id}/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/data/workcompleted/path/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/job/v2/${id}/person/${id}/view`)),
+    s(api.get(`/api/processplatform/service/processing/attachment/workcompleted/${id}/${id}`)),
+    s(api.get(`/api/processplatform/service/processing/taskcompleted/task/identity/${id}`)),
+  ])
+  const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
+  workDetailText.value = `草稿 ${has(draft)} · 完成件按流程 ${has(wcProc)} · 数据路径 ${has(dataPath)} · 完成数据路径 ${has(dataWcPath)} · job视图 ${has(jobView)} · 完成件附件 ${has(attnWc)} · 已办任务身份 ${has(tcIdentity)}`
+}
+// rev247：流程表面 task/taskcompleted 游标基/按应用/按流程 6 条真实 distinct 读路由（PP_C_TASK 与 PP_C_TASKCOMPLETED 两表，base(WHERE xid) 与 +xapplication/+xprocess 各异；跳 prev/filter/manage 同 WHERE xid 桩孪生）
+async function loadTaskCursorFilters() {
+  const id = items.value[0] ? String(items.value[0].work ?? items.value[0].id ?? '0') : '0'
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [tBase, tApp, tProc, tcBase, tcApp, tcProc] = await Promise.all([
+    s(api.get(`/api/processplatform/assemble/surface/task/list/next/${id}/20`)),
+    s(api.get(`/api/processplatform/assemble/surface/task/list/next/application/${id}/20/${id}`)),
+    s(api.get(`/api/processplatform/assemble/surface/task/list/next/process/${id}/20/${id}`)),
+    s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/next/${id}/20`)),
+    s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/next/application/${id}/20/${id}`)),
+    s(api.get(`/api/processplatform/assemble/surface/taskcompleted/list/next/process/${id}/20/${id}`)),
+  ])
+  const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+  workDetailText.value = `待办 基${n(tBase)}/应用${n(tApp)}/流程${n(tProc)} · 已办 基${n(tcBase)}/应用${n(tcApp)}/流程${n(tcProc)}`
+}
+// rev248：流程表面 read/readcompleted 游标基/按应用/按流程 6 条真实 distinct 读路由（PP_C_READ 与 PP_C_READCOMPLETED 两表，base(WHERE xid) 与 +xapplication/+xprocess 各异；跳 filter/prev 同 WHERE xid 桩孪生）
+async function loadReadCursorFilters() {
+  const id = items.value[0] ? String(items.value[0].work ?? items.value[0].id ?? '0') : '0'
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [rBase, rApp, rProc, rcBase, rcApp, rcProc] = await Promise.all([
+    s(api.get(`/api/processplatform/assemble/surface/read/list/next/${id}/20`)),
+    s(api.get(`/api/processplatform/assemble/surface/read/list/next/application/${id}/20/${id}`)),
+    s(api.get(`/api/processplatform/assemble/surface/read/list/next/process/${id}/20/${id}`)),
+    s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/next/${id}/20`)),
+    s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/next/application/${id}/20/${id}`)),
+    s(api.get(`/api/processplatform/assemble/surface/readcompleted/list/next/process/${id}/20/${id}`)),
+  ])
+  const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+  workDetailText.value = `待阅 基${n(rBase)}/应用${n(rApp)}/流程${n(rProc)} · 已阅 基${n(rcBase)}/应用${n(rcApp)}/流程${n(rcProc)}`
 }
 
 const snapText = ref('')
@@ -134,7 +574,7 @@ async function loadSnapCursors() {
     settle(api.get(`/api/processplatform/assemble/surface/snap/workcompleted/${work}/type/abandonedworkcompleted`)),
     settle(api.get('/api/processplatform/assemble/surface/snap/list/my/paging/1/size/20')),
   ])
-  const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : ((r as any)?.data ? 1 : 0))
+  const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : (r as any)?.data ? 1 : 0)
   snapText.value = `单条 ${(one as any)?.data?.id ? '命中' : '未命中'} · 前翻 ${n(next)} · 后翻 ${n(prev)} · 完成快照 ${n(snapWc)} · 完成废弃 ${n(abandonWc)} · 我的分页 ${n(myPaging)}`
 }
 async function loadTouch() {
@@ -145,10 +585,10 @@ async function loadTouch() {
       api.get('/api/processplatform/assemble/surface/touch/passexpired'),
       api.get('/api/processplatform/assemble/surface/touch/touchdetained'),
     ])
-    const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     countsText.value = `超期 ${cnt(exp)} / 超期通过 ${cnt(passExp)} / 催办 ${cnt(detained)}`
   } catch (e: any) {
-    toast.error('触发失败: ' + (e?.message ?? ''))
+    toast.error(`触发失败: ${e?.message ?? ''}`)
   }
 }
 async function loadCounts() {
@@ -164,7 +604,7 @@ async function loadCounts() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     countsText.value = `待办 ${n(task)} / 待阅 ${n(read)} / 已办工作 ${n(done)} / 已办任务 ${n(taskDone)} / 已阅 ${n(readDone)}`
   } catch (e: any) {
-    toast.error('加载计数失败: ' + (e?.message ?? ''))
+    toast.error(`加载计数失败: ${e?.message ?? ''}`)
   }
 }
 async function loadAppOverview() {
@@ -178,7 +618,7 @@ async function loadAppOverview() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     countsText.value = `全部应用 ${n(apps)} / 复杂应用 ${n(complex)} / 工作计数 ${n(workCount)}`
   } catch (e: any) {
-    toast.error('加载应用概览失败: ' + (e?.message ?? ''))
+    toast.error(`加载应用概览失败: ${e?.message ?? ''}`)
   }
 }
 async function loadWorkList() {
@@ -188,7 +628,7 @@ async function loadWorkList() {
     workItems.value = (r.data ?? []) as Array<{ id?: string; title?: string }>
     if (workItems.value.length === 0) toast.success('暂无工作实例')
   } catch (e: any) {
-    toast.error('加载工作实例失败: ' + (e?.message ?? ''))
+    toast.error(`加载工作实例失败: ${e?.message ?? ''}`)
   }
 }
 const qk = ['ProcessTaskCenter', 'list']

@@ -277,6 +277,66 @@ pub fn legacy_exception_for(kind: &str) -> String {
     format!("com.x.base.core.project.exception.{class}")
 }
 
+/// 分页窗口钳制：page<1 归 1、size 钳到 1..=200，返回 `(size, offset)`。
+/// 此前多处 handler 把路径/查询里的 (page,size) 直接算 `(page-1)*size`：
+/// page=0 → 负 OFFSET → Postgres 报错变 500；极端值 → i64 乘法溢出
+/// （debug panic / release 回绕）。统一在此钳制，杜绝非法分页输入。
+pub fn page_window(page: i64, size: i64) -> (i64, i64) {
+    let size = size.clamp(1, 200);
+    let page = page.max(1);
+    (size, (page - 1).saturating_mul(size))
+}
+
+/// RFC 6266/5987 安全的附件 `Content-Disposition` 头值。
+///
+/// 各 crate 的下载 handler 此前把原始文件名直接塞进 `filename="{name}"`，
+/// 中文/特殊字符文件名会让 `HeaderValue` 构造失败（`Response::builder().body().unwrap()`
+/// 直接 panic，或数组 headers 静默变 500）。本函数产出纯 ASCII 的 `filename=` 回退
+/// （引号/反斜杠/控制字符折成 `_`）+ 百分号编码的 `filename*=UTF-8''`，任何 UTF-8
+/// 文件名产出的头值都可安全构造。O2OA 文档普遍中文命名，这是必经路径。
+pub fn attachment_disposition(name: &str) -> String {
+    let ascii_fallback: String = name
+        .chars()
+        .map(|c| {
+            if c.is_ascii() && c != '"' && c != '\\' && !c.is_ascii_control() {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    let mut encoded = String::new();
+    for b in name.as_bytes() {
+        if b.is_ascii_alphanumeric() || matches!(b, b'-' | b'.' | b'_' | b'~') {
+            encoded.push(*b as char);
+        } else {
+            encoded.push_str(&format!("%{b:02X}"));
+        }
+    }
+    format!("attachment; filename=\"{ascii_fallback}\"; filename*=UTF-8''{encoded}")
+}
+
+/// 清洗客户端可控的 `Content-Type`（multipart field content_type 直通 DB 再回吐响应头）。
+/// 非 ASCII token / 控制字符 / CR-LF 会让 `HeaderValue` 构造失败（builder+unwrap 处 panic），
+/// 或注入第二头部；清洗为可见 ASCII token，无 `"/"` 时回退 `application/octet-stream`。
+pub fn sanitize_mime(raw: &str) -> String {
+    let cleaned: String = raw
+        .chars()
+        .map(|c| {
+            if c.is_ascii_graphic() && c != '"' && c != '\\' && c != ',' && c != ';' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    if cleaned.is_empty() {
+        "application/octet-stream".to_string()
+    } else {
+        cleaned
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -413,5 +473,53 @@ mod tests {
             body["prompt"],
             "com.x.base.core.project.exception.ExceptionInternal"
         );
+    }
+
+    #[test]
+    fn attachment_disposition_cjk_is_valid_header_value() {
+        let v = attachment_disposition("报告.docx");
+        assert!(v.is_ascii(), "header value must be pure ASCII: {v}");
+        assert!(axum::http::HeaderValue::from_str(&v).is_ok());
+        assert!(v.contains("filename*=UTF-8''%E6%8A%A5%E5%91%8A"));
+        assert!(v.ends_with(".docx"));
+    }
+
+    #[test]
+    fn attachment_disposition_neutralizes_quote_and_control() {
+        let v = attachment_disposition("a\"b\nc.txt");
+        assert!(axum::http::HeaderValue::from_str(&v).is_ok());
+        let fallback = v
+            .split("filename=\"")
+            .nth(1)
+            .unwrap()
+            .split("\";")
+            .next()
+            .unwrap();
+        assert!(!fallback.contains('"'));
+        assert!(!fallback.contains('\n'));
+    }
+    #[test]
+    fn page_window_clamps_invalid_and_extreme_input() {
+        assert_eq!(super::page_window(1, 20), (20, 0));
+        assert_eq!(super::page_window(0, 20), (20, 0));
+        assert_eq!(super::page_window(-3, 20), (20, 0));
+        assert_eq!(super::page_window(2, 0), (1, 1));
+        assert_eq!(super::page_window(3, -5), (1, 2));
+        assert_eq!(super::page_window(2, 999), (200, 200));
+        let (s, off) = super::page_window(i64::MAX, 200);
+        assert_eq!(s, 200);
+        assert!(off > 0);
+    }
+    #[test]
+    fn sanitize_mime_neutralizes_non_ascii_and_injection() {
+        // 中文 mime / 换行注入 / 空值 回退
+        let v = super::sanitize_mime("文本/abc");
+        assert!(v.is_ascii(), "must be pure ASCII: {v}");
+        assert!(axum::http::HeaderValue::from_str(&v).is_ok());
+        let v2 = super::sanitize_mime("text/plain\r\nX-Inject: 1");
+        assert!(axum::http::HeaderValue::from_str(&v2).is_ok());
+        assert!(!v2.contains('\r') && !v2.contains('\n'));
+        assert_eq!(super::sanitize_mime(""), "application/octet-stream");
+        assert_eq!(super::sanitize_mime("image/png"), "image/png");
     }
 }

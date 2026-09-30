@@ -1,6 +1,9 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+// 深段 codegen handler 的 Path 元组签名天然超长，属生成风格非设计问题
+#![allow(clippy::type_complexity)]
+
 use axum::{extract::Extension, routing::delete, routing::get, routing::post, Json, Router};
 use deadpool_postgres::Pool;
 use serde::Deserialize;
@@ -300,6 +303,7 @@ pub fn processplatform_assemble_bam_router() -> Router {
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
@@ -315,16 +319,15 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 #[allow(non_snake_case)]
 pub async fn period_list_completed_task_application(
     pool: Extension<Pool>,
-    axum::extract::Path(application_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
             "SELECT t.id, t.title, t.person, t.task_status, t.start_time, t.end_time, w.application
              FROM x_task t JOIN x_work w ON t.work = w.id
-             WHERE t.task_status = 'completed' AND w.application = $1
+             WHERE t.task_status = 'completed'
              ORDER BY t.end_time DESC",
-            &[&application_id],
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -473,7 +476,7 @@ pub async fn period_list_completed_work_application(
 #[allow(non_snake_case)]
 pub async fn period_list_completed_work_unit(
     pool: Extension<Pool>,
-    axum::extract::Path(unit_id): axum::extract::Path<String>,
+    axum::extract::Path((_, unit_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -530,7 +533,9 @@ pub async fn period_list_completed_work_unit(
 #[allow(non_snake_case)]
 pub async fn period_list_count_completed_task_application_applicationId_process_processId_activity_activityId_by_unit(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, activity_id)): axum::extract::Path<(
+    axum::extract::Path((_, application_id, process_id, activity_id, _)): axum::extract::Path<(
+        String,
+        String,
         String,
         String,
         String,
@@ -568,7 +573,7 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
 #[allow(non_snake_case)]
 pub async fn period_list_count_completed_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, activity_id, _unit_id, person_id)): axum::extract::Path<(String, String, String, String, String)>,
+    axum::extract::Path((_, application_id, process_id, activity_id, _, _, person_id, _)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -596,12 +601,9 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
 #[allow(non_snake_case)]
 pub async fn period_list_count_completed_task_application_applicationId_process_processId_unit_unit_person_person_by_activity(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, _unit_id, person_id)): axum::extract::Path<(
-        String,
-        String,
-        String,
-        String,
-    )>,
+    axum::extract::Path((_, application_id, process_id, _, _, person_id, _)): axum::extract::Path<
+        (String, String, String, String, String, String, String),
+    >,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -641,7 +643,10 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
 #[allow(non_snake_case)]
 pub async fn period_list_count_completed_task_application_applicationId_unit_unit_person_person_by_process(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, _unit_id, person_id)): axum::extract::Path<(
+    axum::extract::Path((_, application_id, _, _, person_id, _)): axum::extract::Path<(
+        String,
+        String,
+        String,
         String,
         String,
         String,
@@ -685,7 +690,13 @@ pub async fn period_list_count_completed_task_application_applicationId_unit_uni
 #[allow(non_snake_case)]
 pub async fn period_list_count_completed_task_unit_unit_person_person_by_application(
     pool: Extension<Pool>,
-    axum::extract::Path((_unit_id, person_id)): axum::extract::Path<(String, String)>,
+    axum::extract::Path((_, _, _, person_id, _)): axum::extract::Path<(
+        String,
+        String,
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -732,7 +743,13 @@ pub async fn period_list_count_completed_task_unit_unit_person_person_by_applica
 #[allow(non_snake_case)]
 pub async fn period_list_count_completed_work_application_applicationId_process_processId_by_unit(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id)): axum::extract::Path<(String, String)>,
+    axum::extract::Path((_, _, application_id, process_id, _)): axum::extract::Path<(
+        String,
+        String,
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -759,11 +776,7 @@ pub async fn period_list_count_completed_work_application_applicationId_process_
 #[allow(non_snake_case)]
 pub async fn period_list_count_completed_work_application_applicationId_process_processId_unit_unit_person_person(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, person_id)): axum::extract::Path<(
-        String,
-        String,
-        String,
-    )>,
+    axum::extract::Path((_, _, application_id, process_id, _, _, person_id, _)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -790,7 +803,15 @@ pub async fn period_list_count_completed_work_application_applicationId_process_
 #[allow(non_snake_case)]
 pub async fn period_list_count_completed_work_application_applicationId_unit_unit_person_person_by_process(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, person_id)): axum::extract::Path<(String, String)>,
+    axum::extract::Path((_, _, application_id, _, _, person_id, _)): axum::extract::Path<(
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -825,7 +846,14 @@ pub async fn period_list_count_completed_work_application_applicationId_unit_uni
 #[allow(non_snake_case)]
 pub async fn period_list_count_completed_work_unit_unit_person_person_by_application(
     pool: Extension<Pool>,
-    axum::extract::Path(person_id): axum::extract::Path<String>,
+    axum::extract::Path((_, _, _, _, person_id, _)): axum::extract::Path<(
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -870,7 +898,9 @@ pub async fn period_list_count_completed_work_unit_unit_person_person_by_applica
 #[allow(non_snake_case)]
 pub async fn period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_by_unit(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, activity_id)): axum::extract::Path<(
+    axum::extract::Path((_, application_id, process_id, activity_id, _)): axum::extract::Path<(
+        String,
+        String,
         String,
         String,
         String,
@@ -914,9 +944,7 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
 #[allow(non_snake_case)]
 pub async fn period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, activity_id, person_id)): axum::extract::Path<
-        (String, String, String, String),
-    >,
+    axum::extract::Path((_, application_id, process_id, activity_id, _, _, person_id, _)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -944,11 +972,9 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
 #[allow(non_snake_case)]
 pub async fn period_list_count_expired_task_application_applicationId_process_processId_unit_unit_person_person_by_activity(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, person_id)): axum::extract::Path<(
-        String,
-        String,
-        String,
-    )>,
+    axum::extract::Path((_, application_id, process_id, _, _, person_id, _)): axum::extract::Path<
+        (String, String, String, String, String, String, String),
+    >,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -988,7 +1014,14 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
 #[allow(non_snake_case)]
 pub async fn period_list_count_expired_task_application_applicationId_unit_unit_person_person_by_process(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, person_id)): axum::extract::Path<(String, String)>,
+    axum::extract::Path((_, application_id, _, _, person_id, _)): axum::extract::Path<(
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1028,7 +1061,13 @@ pub async fn period_list_count_expired_task_application_applicationId_unit_unit_
 #[allow(non_snake_case)]
 pub async fn period_list_count_expired_task_unit_unit_person_person_by_application(
     pool: Extension<Pool>,
-    axum::extract::Path(person_id): axum::extract::Path<String>,
+    axum::extract::Path((_, _, _, person_id, _)): axum::extract::Path<(
+        String,
+        String,
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1075,7 +1114,13 @@ pub async fn period_list_count_expired_task_unit_unit_person_person_by_applicati
 #[allow(non_snake_case)]
 pub async fn period_list_count_expired_work_application_applicationId_process_processId_by_unit(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id)): axum::extract::Path<(String, String)>,
+    axum::extract::Path((_, _, application_id, process_id, _)): axum::extract::Path<(
+        String,
+        String,
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1102,11 +1147,7 @@ pub async fn period_list_count_expired_work_application_applicationId_process_pr
 #[allow(non_snake_case)]
 pub async fn period_list_count_expired_work_application_applicationId_process_processId_unit_unit_person_person(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, person_id)): axum::extract::Path<(
-        String,
-        String,
-        String,
-    )>,
+    axum::extract::Path((_, _, application_id, process_id, _, _, person_id, _)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1133,7 +1174,15 @@ pub async fn period_list_count_expired_work_application_applicationId_process_pr
 #[allow(non_snake_case)]
 pub async fn period_list_count_expired_work_application_applicationId_unit_unit_person_person_by_process(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, person_id)): axum::extract::Path<(String, String)>,
+    axum::extract::Path((_, _, application_id, _, _, person_id, _)): axum::extract::Path<(
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1168,7 +1217,14 @@ pub async fn period_list_count_expired_work_application_applicationId_unit_unit_
 #[allow(non_snake_case)]
 pub async fn period_list_count_expired_work_unit_unit_person_person_by_application(
     pool: Extension<Pool>,
-    axum::extract::Path(person_id): axum::extract::Path<String>,
+    axum::extract::Path((_, _, _, _, person_id, _)): axum::extract::Path<(
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1213,7 +1269,10 @@ pub async fn period_list_count_expired_work_unit_unit_person_person_by_applicati
 #[allow(non_snake_case)]
 pub async fn period_list_count_start_task_application_applicationId_process_processId_activity_activityId_by_unit(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, activity_id)): axum::extract::Path<(
+    axum::extract::Path((_, _, application_id, process_id, activity_id, _)): axum::extract::Path<(
+        String,
+        String,
+        String,
         String,
         String,
         String,
@@ -1257,9 +1316,7 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
 #[allow(non_snake_case)]
 pub async fn period_list_count_start_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, activity_id, person_id)): axum::extract::Path<
-        (String, String, String, String),
-    >,
+    axum::extract::Path((_, _, application_id, process_id, activity_id, _, _, person_id, _)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1287,11 +1344,7 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
 #[allow(non_snake_case)]
 pub async fn period_list_count_start_task_application_applicationId_process_processId_unit_unit_person_person_by_activity(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, person_id)): axum::extract::Path<(
-        String,
-        String,
-        String,
-    )>,
+    axum::extract::Path((_, _, application_id, process_id, _, _, person_id, _)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1331,7 +1384,15 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
 #[allow(non_snake_case)]
 pub async fn period_list_count_start_task_application_applicationId_unit_unit_person_person_by_process(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, person_id)): axum::extract::Path<(String, String)>,
+    axum::extract::Path((_, _, application_id, _, _, person_id, _)): axum::extract::Path<(
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1371,7 +1432,14 @@ pub async fn period_list_count_start_task_application_applicationId_unit_unit_pe
 #[allow(non_snake_case)]
 pub async fn period_list_count_start_task_unit_unit_person_person_by_application(
     pool: Extension<Pool>,
-    axum::extract::Path(person_id): axum::extract::Path<String>,
+    axum::extract::Path((_, _, _, _, person_id, _)): axum::extract::Path<(
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1418,7 +1486,14 @@ pub async fn period_list_count_start_task_unit_unit_person_person_by_application
 #[allow(non_snake_case)]
 pub async fn period_list_count_start_work_application_applicationId_process_processId_by_unit(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id)): axum::extract::Path<(String, String)>,
+    axum::extract::Path((_, _, _, application_id, process_id, _)): axum::extract::Path<(
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1445,11 +1520,7 @@ pub async fn period_list_count_start_work_application_applicationId_process_proc
 #[allow(non_snake_case)]
 pub async fn period_list_count_start_work_application_applicationId_process_processId_unit_unit_person_person(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, person_id)): axum::extract::Path<(
-        String,
-        String,
-        String,
-    )>,
+    axum::extract::Path((_, _, _, application_id, process_id, _, _, person_id, _)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1476,7 +1547,16 @@ pub async fn period_list_count_start_work_application_applicationId_process_proc
 #[allow(non_snake_case)]
 pub async fn period_list_count_start_work_application_applicationId_unit_unit_person_person_by_process(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, person_id)): axum::extract::Path<(String, String)>,
+    axum::extract::Path((_, _, _, application_id, _, _, person_id, _)): axum::extract::Path<(
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1511,7 +1591,15 @@ pub async fn period_list_count_start_work_application_applicationId_unit_unit_pe
 #[allow(non_snake_case)]
 pub async fn period_list_count_start_work_unit_unit_person_person_by_application(
     pool: Extension<Pool>,
-    axum::extract::Path(person_id): axum::extract::Path<String>,
+    axum::extract::Path((_, _, _, _, _, person_id, _)): axum::extract::Path<(
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1556,16 +1644,15 @@ pub async fn period_list_count_start_work_unit_unit_person_person_by_application
 #[allow(non_snake_case)]
 pub async fn period_list_expired_task_application(
     pool: Extension<Pool>,
-    axum::extract::Path(application_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
             "SELECT t.id, t.title, t.person, t.task_status, t.start_time, t.end_time
              FROM x_task t JOIN x_work w ON t.work = w.id
-             WHERE t.task_status = 'expired' AND w.application = $1
+             WHERE t.task_status = 'expired'
              ORDER BY t.end_time DESC",
-            &[&application_id],
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1707,7 +1794,7 @@ pub async fn period_list_expired_work_application(
 #[allow(non_snake_case)]
 pub async fn period_list_expired_work_unit(
     pool: Extension<Pool>,
-    axum::extract::Path(unit_id): axum::extract::Path<String>,
+    axum::extract::Path((_, unit_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1815,7 +1902,7 @@ pub async fn period_list_start_task_application(
 #[allow(non_snake_case)]
 pub async fn period_list_start_task_unit(
     pool: Extension<Pool>,
-    axum::extract::Path(unit_id): axum::extract::Path<String>,
+    axum::extract::Path((_, unit_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1872,7 +1959,8 @@ pub async fn period_list_start_task_unit(
 #[allow(non_snake_case)]
 pub async fn period_list_start_work_application(
     pool: Extension<Pool>,
-    axum::extract::Path(application_id): axum::extract::Path<String>,
+    // 路由为 .../application/{start}/{work}：末段承载 application 维度取值（沿用 legacy 命名）
+    axum::extract::Path((_start, application_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1915,7 +2003,7 @@ pub async fn period_list_start_work_application(
 #[allow(non_snake_case)]
 pub async fn period_list_start_work_unit(
     pool: Extension<Pool>,
-    axum::extract::Path(unit_id): axum::extract::Path<String>,
+    axum::extract::Path((_, _, unit_id)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client

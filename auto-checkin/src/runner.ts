@@ -7,6 +7,7 @@ import { openSiteContext, closeContext, saveScreenshot } from "./browser.js";
 import { addRecord } from "./store.js";
 import { createLogger } from "./logger.js";
 import { adapters, getAdapter } from "./sites/index.js";
+import { acquireRunLock, releaseRunLock } from "./lock.js";
 
 let running = false;
 
@@ -43,8 +44,10 @@ async function runOne(adapter: SiteAdapter, config: AppConfig): Promise<CheckinR
   }
 
   siteLog.info("开始签到…");
-  const context = await openSiteContext(adapter.id, config);
+  let context: Awaited<ReturnType<typeof openSiteContext>> | undefined;
   try {
+    // 浏览器启动也必须纳入单站故障边界：某一站启动失败不能阻断后续站点。
+    context = await openSiteContext(adapter.id, config);
     const out = await adapter.checkin({
       credentials,
       config,
@@ -80,7 +83,7 @@ async function runOne(adapter: SiteAdapter, config: AppConfig): Promise<CheckinR
     addRecord(result);
     return result;
   } finally {
-    await closeContext(context);
+    if (context) await closeContext(context);
   }
 }
 
@@ -90,6 +93,12 @@ export async function runAll(config: AppConfig): Promise<CheckinResult[]> {
     createLogger("runner").warn("已有任务在运行，跳过本次触发");
     return [];
   }
+  const lock = acquireRunLock();
+  if (!lock.ok) {
+    createLogger("runner").warn(`已有其他签到/登录进程在运行（PID=${lock.holderPid}），跳过本次触发`);
+    return [];
+  }
+
   running = true;
   const results: CheckinResult[] = [];
   try {
@@ -98,6 +107,7 @@ export async function runAll(config: AppConfig): Promise<CheckinResult[]> {
     }
   } finally {
     running = false;
+    releaseRunLock();
   }
   return results;
 }
@@ -110,10 +120,17 @@ export async function runSite(siteId: string, config: AppConfig): Promise<Checki
     createLogger("runner").warn("已有任务在运行，跳过本次触发");
     return null;
   }
+  const lock = acquireRunLock();
+  if (!lock.ok) {
+    createLogger("runner").warn(`已有其他签到/登录进程在运行（PID=${lock.holderPid}），跳过本次运行`);
+    return null;
+  }
+
   running = true;
   try {
     return await runOne(adapter, config);
   } finally {
     running = false;
+    releaseRunLock();
   }
 }

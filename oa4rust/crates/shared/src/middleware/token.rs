@@ -139,12 +139,11 @@ pub async fn auth_middleware(
 ) -> Response {
     let path = request.uri().path().to_string();
 
-    if is_auth_exempt(&path) {
-        if !SECRET_INIT_PATHS.iter().any(|p| path_matches(&path, p))
-            || system_uninitialized(&state.pool).await
-        {
-            return next.run(request).await;
-        }
+    if is_auth_exempt(&path)
+        && (!SECRET_INIT_PATHS.iter().any(|p| path_matches(&path, p))
+            || system_uninitialized(&state.pool).await)
+    {
+        return next.run(request).await;
     }
 
     let Some(authentication) = extract_authentication(request.headers()) else {

@@ -799,6 +799,79 @@ mod u2_contract {
             .unwrap();
     }
 
+    // 轮59 回归：MAX(version)+1 无锁时两并发创建读到相同 MAX 而重复版本号；
+    // 父 work 行 FOR UPDATE 串行化后必须互异。
+    #[tokio::test]
+    async fn u2_documentversion_concurrent_creates_no_duplicate_versions() {
+        if !is_db_available().await {
+            eprintln!(
+                "skipping u2_documentversion_concurrent_creates_no_duplicate_versions: DATABASE_URL not reachable"
+            );
+            return;
+        }
+        let pool = test_pool();
+        ensure_schema(&pool).await;
+        {
+            let c = pool.get().await.unwrap();
+            c.execute(
+                "DELETE FROM x_document_version WHERE work_id='dv-race'",
+                &[],
+            )
+            .await
+            .unwrap();
+            c.execute("DELETE FROM x_work WHERE id='dv-race'", &[])
+                .await
+                .unwrap();
+            c.execute(
+                "INSERT INTO x_work (id,title,process,creator) VALUES ('dv-race','t','p','system')",
+                &[],
+            )
+            .await
+            .unwrap();
+        }
+        // 共享同一 pool（max_size=5）使两请求真正并发执行
+        let app = crate::router(pool.clone());
+        let make_req = || {
+            Request::builder()
+                .uri("/api/processplatform/service/processing/documentversion/work/dv-race")
+                .method(Method::POST)
+                .header("content-type", "application/json")
+                .body(Body::from(json!({}).to_string()))
+                .unwrap()
+        };
+        let (r1, r2) = tokio::join!(
+            app.clone().oneshot(make_req()),
+            app.clone().oneshot(make_req())
+        );
+        let parse = |resp: axum::response::Response| async {
+            assert_eq!(resp.status(), StatusCode::OK);
+            let raw = axum::body::to_bytes(resp.into_body(), usize::MAX)
+                .await
+                .unwrap();
+            let v: Value = serde_json::from_slice(&raw).unwrap();
+            v["data"]["version"].as_i64().expect("version must exist")
+        };
+        let s1 = parse(r1.unwrap()).await;
+        let s2 = parse(r2.unwrap()).await;
+        assert_ne!(s1, s2, "并发创建不得产生重复版本号（FOR UPDATE 串行化）");
+        let distinct = count(
+            &pool,
+            "SELECT COUNT(DISTINCT version) AS c FROM x_document_version WHERE work_id='dv-race'",
+        )
+        .await;
+        assert_eq!(distinct, 2, "落库版本号必须互异");
+        let c = pool.get().await.unwrap();
+        c.execute(
+            "DELETE FROM x_document_version WHERE work_id='dv-race'",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute("DELETE FROM x_work WHERE id='dv-race'", &[])
+            .await
+            .unwrap();
+    }
+
     #[tokio::test]
     async fn u2_snap_suspend_snapshots_and_sets_status() {
         if !is_db_available().await {

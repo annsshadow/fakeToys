@@ -324,11 +324,9 @@ async fn test_malformed_dup_param_reply_filter_route_removed() {
 
 #[tokio::test]
 async fn test_unlandable_endpoints_return_explicit_501() {
+    // 仅图像引擎 / 外部同步服务依赖项保持显式 501；
+    // attachment 下载/上传已迁移为真实 DB 落盘（见下方 attachment_* 测试）。
     const UNLANDABLE: &[(&str, &str)] = &[
-        ("GET", "attachment/download/att-1"),
-        ("GET", "attachment/download/att-1/stream/0"),
-        ("POST", "attachment/upload/subject/sub-1"),
-        ("POST", "attachment/upload/subject/sub-1/callback/cb"),
         ("POST", "picture/encode/base64/size/100"),
         ("POST", "picture/section/sec-1/icon"),
         ("GET", "section/syn"),
@@ -347,6 +345,99 @@ async fn test_unlandable_endpoints_return_explicit_501() {
             sub
         );
     }
+}
+
+/// attachment 下载不再是 501 占位：路由可达且非 501。
+/// 无 DB 时因 pool.get 失败为 500（非 501/非 404，证明已接真实 handler）。
+#[tokio::test]
+async fn test_attachment_binary_endpoints_not_501() {
+    let st = status(Method::GET, &format!("{}/attachment/download/att-1", BASE)).await;
+    assert_ne!(st, StatusCode::NOT_FOUND, "下载路由应已注册");
+    assert_ne!(
+        st,
+        StatusCode::NOT_IMPLEMENTED,
+        "下载已接真实 handler，非 501"
+    );
+
+    let st2 = status(
+        Method::GET,
+        &format!("{}/attachment/download/att-1/stream/0", BASE),
+    )
+    .await;
+    assert_ne!(st2, StatusCode::NOT_FOUND, "下载 stream 路由应已注册");
+    assert_ne!(
+        st2,
+        StatusCode::NOT_IMPLEMENTED,
+        "下载 stream 已接真实 handler，非 501"
+    );
+}
+
+/// attachment 上传→下载真实往返（live-gated）：
+/// multipart 上传字节落 x_bbs_attachment.content，再经 download 端点取回 base64 校验一致。
+#[tokio::test]
+async fn test_attachment_upload_download_roundtrip() {
+    use shared::testing::{is_db_available, test_pool};
+    if !is_db_available().await {
+        eprintln!("skipping test_attachment_upload_download_roundtrip: DB not reachable");
+        return;
+    }
+    u2::ensure_u2_schema(&test_pool().get().await.unwrap()).await;
+
+    let subject_id = "u2-att-subject-roundtrip";
+    let payload = b"hello-bbs-attachment";
+    let boundary = "xbbsboundary";
+    let mp_body = format!(
+        "--{b}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"note.txt\"\r\n\
+         Content-Type: text/plain\r\n\r\n{data}\r\n--{b}--\r\n",
+        b = boundary,
+        data = std::str::from_utf8(payload).unwrap()
+    );
+
+    // 上传
+    let app = crate::router(test_pool());
+    let req = Request::builder()
+        .method(Method::POST)
+        .uri(format!("{}/attachment/upload/subject/{}", BASE, subject_id))
+        .header(
+            "content-type",
+            format!("multipart/form-data; boundary={}", boundary),
+        )
+        .extension(make_session("u2-att-uploader", "up"))
+        .body(Body::from(mp_body))
+        .unwrap();
+    let resp = app.oneshot(req).await.unwrap();
+    assert_eq!(resp.status(), StatusCode::OK, "上传应 200");
+    let bytes = axum::body::to_bytes(resp.into_body(), 65536).await.unwrap();
+    let up_json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(up_json["data"]["uploaded"], true, "必须真实落盘: {up_json}");
+    let att_id = up_json["data"]["id"].as_str().unwrap().to_string();
+
+    // 下载并校验字节一致
+    let app2 = crate::router(test_pool());
+    let (st, dl_json) = {
+        let r = Request::builder()
+            .method(Method::GET)
+            .uri(format!("{}/attachment/download/{}", BASE, att_id))
+            .body(Body::empty())
+            .unwrap();
+        let resp = app2.oneshot(r).await.unwrap();
+        let st = resp.status();
+        let b = axum::body::to_bytes(resp.into_body(), 65536).await.unwrap();
+        (st, serde_json::from_slice::<serde_json::Value>(&b).unwrap())
+    };
+    assert_eq!(st, StatusCode::OK, "下载应 200: {dl_json}");
+    let b64 = dl_json["data"]["base64"].as_str().unwrap();
+    assert_eq!(
+        b64,
+        u2::base64_encode(payload),
+        "下载字节的 base64 须与上传内容一致"
+    );
+
+    // 清理
+    let client = test_pool().get().await.unwrap();
+    let _ = client
+        .execute("DELETE FROM x_bbs_attachment WHERE id = $1", &[&att_id])
+        .await;
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -458,8 +549,8 @@ async fn send_with_session(
     if body.is_some() {
         builder = builder.header("content-type", "application/json");
     }
-    if session.is_some() {
-        builder = builder.extension(session.unwrap());
+    if let Some(sess) = session {
+        builder = builder.extension(sess);
     }
     let body_bytes = body
         .map(|b| serde_json::to_vec(&b).unwrap())

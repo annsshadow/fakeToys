@@ -371,6 +371,7 @@ pub async fn designer_get_route(
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

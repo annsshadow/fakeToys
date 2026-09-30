@@ -391,6 +391,7 @@ pub async fn config_get(
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
@@ -564,15 +565,12 @@ pub async fn agent_flag_execute(
 }
 
 #[allow(non_snake_case)]
-pub async fn agent_flag_file(
-    pool: Extension<Pool>,
-    Path(id): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn agent_flag_file(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, name, flag, creator, create_time FROM x_program_agent WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, name, flag, creator, create_time FROM x_program_agent WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -778,14 +776,13 @@ pub async fn appstyle_image_application_top(
 #[allow(non_snake_case)]
 pub async fn appstyle_image_application_top_erase(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
-            "DELETE FROM x_program_deploy_resource WHERE id = $1 AND resource_type = 'app_top'",
-            &[&id],
+            "DELETE FROM x_program_deploy_resource WHERE resource_type = 'app_top'",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -795,7 +792,7 @@ pub async fn appstyle_image_application_top_erase(
     }
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
+        serde_json::Map::from_iter([("erased".to_string(), Value::Bool(true))]),
     ))))
 }
 
@@ -858,14 +855,13 @@ pub async fn appstyle_image_launch_logo(
 #[allow(non_snake_case)]
 pub async fn appstyle_image_launch_logo_erase(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
-            "DELETE FROM x_program_deploy_resource WHERE id = $1 AND resource_type = 'launch_logo'",
-            &[&id],
+            "DELETE FROM x_program_deploy_resource WHERE resource_type = 'launch_logo'",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -875,7 +871,7 @@ pub async fn appstyle_image_launch_logo_erase(
     }
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
+        serde_json::Map::from_iter([("erased".to_string(), Value::Bool(true))]),
     ))))
 }
 
@@ -938,14 +934,13 @@ pub async fn appstyle_image_login_avatar(
 #[allow(non_snake_case)]
 pub async fn appstyle_image_login_avatar_erase(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
-            "DELETE FROM x_program_deploy_resource WHERE id = $1 AND resource_type = 'login_avatar'",
-            &[&id],
+            "DELETE FROM x_program_deploy_resource WHERE resource_type = 'login_avatar'",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -955,7 +950,7 @@ pub async fn appstyle_image_login_avatar_erase(
     }
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
+        serde_json::Map::from_iter([("erased".to_string(), Value::Bool(true))]),
     ))))
 }
 
@@ -1018,14 +1013,13 @@ pub async fn appstyle_image_menu_logo_blur(
 #[allow(non_snake_case)]
 pub async fn appstyle_image_menu_logo_blur_erase(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
-            "DELETE FROM x_program_deploy_resource WHERE id = $1 AND resource_type = 'menu_logo_blur'",
-            &[&id],
+            "DELETE FROM x_program_deploy_resource WHERE resource_type = 'menu_logo_blur'",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1035,7 +1029,7 @@ pub async fn appstyle_image_menu_logo_blur_erase(
     }
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
+        serde_json::Map::from_iter([("erased".to_string(), Value::Bool(true))]),
     ))))
 }
 
@@ -1098,14 +1092,13 @@ pub async fn appstyle_image_menu_logo_focus(
 #[allow(non_snake_case)]
 pub async fn appstyle_image_menu_logo_focus_erase(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
-            "DELETE FROM x_program_deploy_resource WHERE id = $1 AND resource_type = 'menu_logo_focus'",
-            &[&id],
+            "DELETE FROM x_program_deploy_resource WHERE resource_type = 'menu_logo_focus'",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1115,7 +1108,7 @@ pub async fn appstyle_image_menu_logo_focus_erase(
     }
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
+        serde_json::Map::from_iter([("erased".to_string(), Value::Bool(true))]),
     ))))
 }
 
@@ -1178,14 +1171,13 @@ pub async fn appstyle_image_process_default(
 #[allow(non_snake_case)]
 pub async fn appstyle_image_process_default_erase(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
-            "DELETE FROM x_program_deploy_resource WHERE id = $1 AND resource_type = 'process_default'",
-            &[&id],
+            "DELETE FROM x_program_deploy_resource WHERE resource_type = 'process_default'",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1195,7 +1187,7 @@ pub async fn appstyle_image_process_default_erase(
     }
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
+        serde_json::Map::from_iter([("erased".to_string(), Value::Bool(true))]),
     ))))
 }
 
@@ -1258,14 +1250,13 @@ pub async fn appstyle_image_setup_about_logo(
 #[allow(non_snake_case)]
 pub async fn appstyle_image_setup_about_logo_erase(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
-            "DELETE FROM x_program_deploy_resource WHERE id = $1 AND resource_type = 'setup_about_logo'",
-            &[&id],
+            "DELETE FROM x_program_deploy_resource WHERE resource_type = 'setup_about_logo'",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1275,7 +1266,7 @@ pub async fn appstyle_image_setup_about_logo_erase(
     }
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
+        serde_json::Map::from_iter([("erased".to_string(), Value::Bool(true))]),
     ))))
 }
 
@@ -2022,15 +2013,12 @@ pub async fn collect_code_mobile_mobile(
 }
 
 #[allow(non_snake_case)]
-pub async fn collect_connect(
-    pool: Extension<Pool>,
-    Path(id): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_connect(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -2076,13 +2064,12 @@ pub async fn collect_connect(
 #[allow(non_snake_case)]
 pub async fn collect_controllebbs(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -2180,13 +2167,12 @@ pub async fn collect_controllermobile_name_name_mobile_mobile(
 #[allow(non_snake_case)]
 pub async fn collect_disconnect(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -2230,15 +2216,12 @@ pub async fn collect_disconnect(
 }
 
 #[allow(non_snake_case)]
-pub async fn collect_login(
-    pool: Extension<Pool>,
-    Path(id): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_login(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -2284,13 +2267,12 @@ pub async fn collect_login(
 #[allow(non_snake_case)]
 pub async fn collect_mobile_check_connect(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -2438,15 +2420,12 @@ pub async fn collect_name_name_mobile_mobile_code_code(
 }
 
 #[allow(non_snake_case)]
-pub async fn collect_person(
-    pool: Extension<Pool>,
-    Path(id): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_person(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -2492,13 +2471,12 @@ pub async fn collect_person(
 #[allow(non_snake_case)]
 pub async fn collect_resetpassword(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -2544,13 +2522,12 @@ pub async fn collect_resetpassword(
 #[allow(non_snake_case)]
 pub async fn collect_sync_area(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -2596,13 +2573,12 @@ pub async fn collect_sync_area(
 #[allow(non_snake_case)]
 pub async fn collect_updateUnit(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -2648,13 +2624,12 @@ pub async fn collect_updateUnit(
 #[allow(non_snake_case)]
 pub async fn collect_urlMapping(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -2700,13 +2675,12 @@ pub async fn collect_urlMapping(
 #[allow(non_snake_case)]
 pub async fn collect_validate(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -2752,13 +2726,12 @@ pub async fn collect_validate(
 #[allow(non_snake_case)]
 pub async fn collect_validate_codeanswer(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -2804,13 +2777,12 @@ pub async fn collect_validate_codeanswer(
 #[allow(non_snake_case)]
 pub async fn collect_validate_direct(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -2856,13 +2828,12 @@ pub async fn collect_validate_direct(
 #[allow(non_snake_case)]
 pub async fn collect_validate_password(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -2930,13 +2901,13 @@ pub async fn command_list_node(
 #[allow(non_snake_case)]
 pub async fn config_open_get_disable_export_enable(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config \
+             WHERE category = 'open' AND deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -2979,13 +2950,12 @@ pub async fn config_open_get_disable_export_enable(
 #[allow(non_snake_case)]
 pub async fn config_centerserver(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE category = $1 AND deleted_at IS NULL",
+            &[&"centerserver"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -3028,13 +2998,12 @@ pub async fn config_centerserver(
 #[allow(non_snake_case)]
 pub async fn config_change_password(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -3075,15 +3044,12 @@ pub async fn config_change_password(
 }
 
 #[allow(non_snake_case)]
-pub async fn config_collect(
-    pool: Extension<Pool>,
-    Path(id): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_collect(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE category = $1 AND deleted_at IS NULL",
+            &[&"collect"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -3124,15 +3090,12 @@ pub async fn config_collect(
 }
 
 #[allow(non_snake_case)]
-pub async fn config_license(
-    pool: Extension<Pool>,
-    Path(id): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_license(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE category = $1 AND deleted_at IS NULL",
+            &[&"license"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -3441,15 +3404,12 @@ pub async fn config_list_entity(
 }
 
 #[allow(non_snake_case)]
-pub async fn config_open(
-    pool: Extension<Pool>,
-    Path(id): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_open(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE category = $1 AND deleted_at IS NULL",
+            &[&"open"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -3492,13 +3452,12 @@ pub async fn config_open(
 #[allow(non_snake_case)]
 pub async fn config_open_run_time_config(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -3539,15 +3498,12 @@ pub async fn config_open_run_time_config(
 }
 
 #[allow(non_snake_case)]
-pub async fn config_person(
-    pool: Extension<Pool>,
-    Path(id): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_person(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE category = $1 AND deleted_at IS NULL",
+            &[&"person"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -3588,15 +3544,12 @@ pub async fn config_person(
 }
 
 #[allow(non_snake_case)]
-pub async fn config_portal(
-    pool: Extension<Pool>,
-    Path(id): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_portal(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE category = $1 AND deleted_at IS NULL",
+            &[&"portal"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -3637,15 +3590,12 @@ pub async fn config_portal(
 }
 
 #[allow(non_snake_case)]
-pub async fn config_proxy(
-    pool: Extension<Pool>,
-    Path(id): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_proxy(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE category = $1 AND deleted_at IS NULL",
+            &[&"proxy"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -4511,7 +4461,6 @@ pub async fn dict_dictFlag_path_data_mockdeletetoget(
     ))))
 }
 
-#[allow(non_snake_case)]
 /// POST /api/program_center/dict/{dictFlag}/data — 字典数据写入（无 path 段）。
 /// 与 `dict_dictFlag_path_data_mockputtopost` 同义：handler 本就忽略 path 段，
 /// 此处显式提供前端实际调用的无 path 形态。
@@ -4524,6 +4473,7 @@ pub async fn dict_dictFlag_data_post(
     dict_dictFlag_path_data_mockputtopost(pool, Path((dict_flag, String::new())), Json(body)).await
 }
 
+#[allow(non_snake_case)]
 pub async fn dict_dictFlag_path_data_mockputtopost(
     pool: Extension<Pool>,
     Path((dict_flag, _path)): Path<(String, String)>,
@@ -5408,13 +5358,12 @@ pub async fn invoke_flag_client_client_token_token_execute(
 #[allow(non_snake_case)]
 pub async fn invoke_flag_execute(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, name, flag FROM x_program_agent WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, name, flag FROM x_program_agent WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -6246,13 +6195,12 @@ pub async fn market_id_download(
 #[allow(non_snake_case)]
 pub async fn module_compare_upload(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -6387,15 +6335,12 @@ pub async fn module_list_category(
 }
 
 #[allow(non_snake_case)]
-pub async fn module_output(
-    pool: Extension<Pool>,
-    Path(id): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn module_output(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -6443,13 +6388,12 @@ pub async fn module_output_list_structure() -> Result<Json<ActionResult<Value>>,
 #[allow(non_snake_case)]
 pub async fn module_output_structure(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -6666,15 +6610,12 @@ pub async fn module_id_compare(
 }
 
 #[allow(non_snake_case)]
-pub async fn mpweixin_check(
-    pool: Extension<Pool>,
-    Path(id): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn mpweixin_check(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, create_time FROM x_program_mpweixin_menu WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, create_time FROM x_program_mpweixin_menu WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -6698,13 +6639,12 @@ pub async fn mpweixin_check(
 #[allow(non_snake_case)]
 pub async fn mpweixin_media_add_forever(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, create_time FROM x_program_mpweixin_menu WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, create_time FROM x_program_mpweixin_menu WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -6728,13 +6668,12 @@ pub async fn mpweixin_media_add_forever(
 #[allow(non_snake_case)]
 pub async fn mpweixin_menu_add(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, create_time FROM x_program_mpweixin_menu WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, create_time FROM x_program_mpweixin_menu WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -6758,13 +6697,12 @@ pub async fn mpweixin_menu_add(
 #[allow(non_snake_case)]
 pub async fn mpweixin_menu_create_to_weixin(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, create_time FROM x_program_mpweixin_menu WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, create_time FROM x_program_mpweixin_menu WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -6815,13 +6753,12 @@ pub async fn mpweixin_menu_list_weixin() -> Result<Json<ActionResult<Value>>, Ap
 #[allow(non_snake_case)]
 pub async fn mpweixin_menu_subscribe(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, create_time FROM x_program_mpweixin_menu WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, create_time FROM x_program_mpweixin_menu WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -6869,13 +6806,12 @@ pub async fn mpweixin_menu_update_id(
 #[allow(non_snake_case)]
 pub async fn mpweixin_message_template_send(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, create_time FROM x_program_mpweixin_menu WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, create_time FROM x_program_mpweixin_menu WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -7668,13 +7604,12 @@ pub async fn prompterrorlog_id(
 #[allow(non_snake_case)]
 pub async fn qiyeweixin_get_callback_aes(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, source, action, create_time FROM x_program_sync_log WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            "SELECT id, source, action, create_time FROM x_program_sync_log WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -8307,8 +8242,15 @@ pub async fn schedule_report(pool: Extension<Pool>) -> Result<Json<ActionResult<
 #[allow(non_snake_case)]
 pub async fn schedule_schedule_fire(
     pool: Extension<Pool>,
-    Path(schedule_id): Path<String>,
+    // 前端 ProgramCenterApp.vue: api.post('.../schedule/schedule/fire', { id } | {}) —— 无路径参数，
+    // 从体读 id（此前误声明 Path 致 0 槽路由恒 arity-500）。
+    axum::Json(body): axum::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let schedule_id = body
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client
@@ -9699,6 +9641,13 @@ pub async fn u2_invoke_create(
         )
         .await
         .map_err(|e| {
+            // 并发双建过检后由唯一索引兜底（uq_program_invoke_name / uq_program_invoke_alias）：
+            // 23505 转友好重复错误，其余仍按 Internal
+            if e.code()
+                == Some(&deadpool_postgres::tokio_postgres::error::SqlState::UNIQUE_VIOLATION)
+            {
+                return AppError::BadRequest("duplicate name or alias".to_string());
+            }
             tracing::error!("[u2_invoke_create] insert failed: {}", e);
             AppError::Internal
         })?;
@@ -11303,7 +11252,11 @@ async fn u3_market_list_paged(
     category: Option<&str>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = if page > 0 { (page - 1) * size } else { 0 };
+    let offset = if page > 0 {
+        (page - 1).saturating_mul(size)
+    } else {
+        0
+    };
     let rows = match category {
         Some(category) => {
             client
@@ -11373,7 +11326,11 @@ pub async fn u3_market_install_log_paging_post(
     Json(_body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = if page > 0 { (page - 1) * size } else { 0 };
+    let offset = if page > 0 {
+        (page - 1).saturating_mul(size)
+    } else {
+        0
+    };
     let rows = client
         .query(
             "SELECT id, schedule_id, application, status, message, create_time FROM x_program_schedule_log \
@@ -12187,7 +12144,7 @@ pub async fn dict_delete_id(
 
     let n = client
         .execute(
-            "UPDATE x_program_dict SET deleted_at = NOW() WHERE id = $1",
+            "UPDATE x_program_dict SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await

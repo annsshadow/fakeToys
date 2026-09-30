@@ -9,6 +9,7 @@ use shared::{error::AppError, response::ActionResult};
 pub mod routes;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
@@ -83,12 +84,20 @@ pub struct CalendarEvent {
 
 #[derive(Debug, Deserialize)]
 pub struct CreateEventRequest {
+    // 桌面 CalendarApp.vue 与移动 calendar.vue 均发 camelCase（calendarId/startTime/
+    // endTime）——无 alias 时全部 Option 落 None，event_create 直接 400
+    // 「calendarId is required」，两端建事件实跑必败（轮74 修复）。camelCase alias
+    // 兼容既有 snake_case 调用方（如 desktop 部分路径发 calendar_id）。
+    #[serde(alias = "calendarId")]
     pub calendar_id: Option<String>,
     pub title: Option<String>,
     pub content: Option<String>,
     pub location: Option<String>,
+    #[serde(alias = "startTime")]
     pub start_time: Option<String>,
+    #[serde(alias = "endTime")]
     pub end_time: Option<String>,
+    #[serde(alias = "allDay")]
     pub all_day: Option<bool>,
     pub visibility: Option<String>,
     pub createor: Option<String>,
@@ -100,8 +109,11 @@ pub struct UpdateEventRequest {
     pub title: Option<String>,
     pub content: Option<String>,
     pub location: Option<String>,
+    #[serde(alias = "startTime")]
     pub start_time: Option<String>,
+    #[serde(alias = "endTime")]
     pub end_time: Option<String>,
+    #[serde(alias = "allDay")]
     pub all_day: Option<bool>,
     pub visibility: Option<String>,
     pub status: Option<String>,

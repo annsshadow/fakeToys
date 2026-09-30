@@ -48,7 +48,7 @@ function startDrag(e: MouseEvent): void {
   if ((e.target as HTMLElement).classList.contains('win-btn')) return
   const startX = e.clientX - (props.x ?? 0)
   const startY = e.clientY - (props.y ?? 0)
-  const onMove = (ev: MouseEvent) => {
+  const onMove = (_ev: MouseEvent) => {
     document.body.style.cursor = 'move'
     document.body.style.userSelect = 'none'
   }

@@ -98,7 +98,9 @@ from .data_pipeline import DataPipeline, StageResult
 from .aggregator import DataAggregator, AggregationResult, aggregate_datasets
 from .impact import ImpactEvaluator, AugmentationImpact, evaluate_augmentation
 from .data_splitter import DataSplitter, split_dataset
-from .quality_gate import QualityGate, GateRule, GateReport, build_default_gate
+from .quality_gate import (
+    QualityGate, GateRule, GateReport, build_default_gate, gate_dataset_health,
+)
 from .health_score import DatasetHealthScore
 from .exceptions import (
     AugmentorError,
@@ -322,6 +324,7 @@ __all__ = [
     "GateRule",
     "GateReport",
     "build_default_gate",
+    "gate_dataset_health",
     "DatasetHealthScore",
     "AugmentorError",
     "ConfigError",

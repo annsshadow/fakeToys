@@ -715,6 +715,7 @@ pub async fn list_to_enable(
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

@@ -34,10 +34,12 @@ class TestVisualizerAll:
         assert results.get("topic_cluster") == "visualizations/topic.png"
 
     def test_output_dir_attribute(self, tmp_path, monkeypatch):
-        # 实例属性 output_dir 是 Path（构造函数中创建目录）
+        # 实例属性 output_dir 是 Path；目录不在构造时建，算出图路径那一步才建
         monkeypatch.chdir(tmp_path)
         viz = DataVisualizer(output_dir=str(tmp_path / "viz"))
         assert viz.output_dir == tmp_path / "viz"
+        assert not (tmp_path / "viz").exists()
+        viz._output_path("x.png")
         assert (tmp_path / "viz").is_dir()
 
 

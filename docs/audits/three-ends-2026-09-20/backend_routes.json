@@ -2585,37 +2585,37 @@
   {
    "method": "POST",
    "path": "/api/bbs/assemble/control/delete/forum",
-   "handler": "delete_forum",
+   "handler": "delete_forum_body",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "DELETE",
    "path": "/api/bbs/assemble/control/delete/forum",
-   "handler": "delete_forum",
+   "handler": "delete_forum_body",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "POST",
    "path": "/api/bbs/assemble/control/delete/reply",
-   "handler": "delete_reply",
+   "handler": "delete_reply_body",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "DELETE",
    "path": "/api/bbs/assemble/control/delete/reply",
-   "handler": "delete_reply",
+   "handler": "delete_reply_body",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "POST",
    "path": "/api/bbs/assemble/control/delete/subject",
-   "handler": "delete_subject",
+   "handler": "delete_subject_body",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "DELETE",
    "path": "/api/bbs/assemble/control/delete/subject",
-   "handler": "delete_subject",
+   "handler": "delete_subject_body",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
@@ -2626,62 +2626,8 @@
   },
   {
    "method": "GET",
-   "path": "/api/bbs/assemble/control/list/subjects/filtered",
-   "handler": "list_subjects_filtered",
-   "file": "crates/bbs_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/bbs/assemble/control/list/subjects/index",
-   "handler": "list_subjects_index",
-   "file": "crates/bbs_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/bbs/assemble/control/list/subjects/recommended/index",
-   "handler": "list_subjects_recommended_index",
-   "file": "crates/bbs_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/bbs/assemble/control/list/topics/creamed",
-   "handler": "list_topics_creamed",
-   "file": "crates/bbs_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/bbs/assemble/control/list/topics/recommended",
-   "handler": "list_topics_recommended",
-   "file": "crates/bbs_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/bbs/assemble/control/picture/list/{subjectId}",
    "handler": "picture_list",
-   "file": "crates/bbs_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/bbs/assemble/control/subject/creamed/list",
-   "handler": "subject_creamed_list",
-   "file": "crates/bbs_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/bbs/assemble/control/subject/filter/list",
-   "handler": "subject_filter_list",
-   "file": "crates/bbs_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/bbs/assemble/control/subject/index/list",
-   "handler": "subject_index_list",
-   "file": "crates/bbs_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/bbs/assemble/control/subject/search",
-   "handler": "subject_search",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
@@ -2691,45 +2637,9 @@
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
-   "method": "GET",
-   "path": "/api/bbs/assemble/control/topic/creamed/list",
-   "handler": "topic_creamed_list",
-   "file": "crates/bbs_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/bbs/assemble/control/topic/filter/list",
-   "handler": "topic_filter_list",
-   "file": "crates/bbs_assemble_control/src/routes.rs"
-  },
-  {
    "method": "POST",
    "path": "/api/bbs/assemble/control/topic/filter/listsubjectinfo",
    "handler": "topic_filter_listsubjectinfo",
-   "file": "crates/bbs_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/bbs/assemble/control/topic/index/list",
-   "handler": "topic_index_list",
-   "file": "crates/bbs_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/bbs/assemble/control/topic/recommended/index",
-   "handler": "topic_recommended_index",
-   "file": "crates/bbs_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/bbs/assemble/control/topic/recommended/list",
-   "handler": "topic_recommended_list",
-   "file": "crates/bbs_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/bbs/assemble/control/topic/search",
-   "handler": "topic_search",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
@@ -2753,13 +2663,13 @@
   {
    "method": "GET",
    "path": "/api/bbs/assemble/control/attachment/download/{id}",
-   "handler": "attachment_download_501",
+   "handler": "u2_attachment_download",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/bbs/assemble/control/attachment/download/{id}/stream/{stream}",
-   "handler": "attachment_download_stream_501",
+   "handler": "u2_attachment_download_stream",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
@@ -2771,13 +2681,13 @@
   {
    "method": "POST",
    "path": "/api/bbs/assemble/control/attachment/upload/subject/{subjectId}",
-   "handler": "attachment_upload_501",
+   "handler": "u2_attachment_upload",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "POST",
    "path": "/api/bbs/assemble/control/attachment/upload/subject/{subjectId}/callback/{callback}",
-   "handler": "attachment_upload_callback_501",
+   "handler": "u2_attachment_upload_callback",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
@@ -7022,18 +6932,6 @@
   },
   {
    "method": "GET",
-   "path": "/api/component_assemble_control/save/component",
-   "handler": "save_component",
-   "file": "crates/component_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/component_assemble_control/delete/component",
-   "handler": "delete_component",
-   "file": "crates/component_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/component_assemble_control/get/control/config",
    "handler": "get_control_config",
    "file": "crates/component_assemble_control/src/routes.rs"
@@ -7830,13 +7728,13 @@
   },
   {
    "method": "GET",
-   "path": "/api/file/anonymous/file/id/download",
+   "path": "/api/file/anonymous/file/{id}/download",
    "handler": "anonymous_file_id_download",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/attachment/list/folder/folderId",
+   "path": "/api/file/attachment/list/folder/{folderId}",
    "handler": "attachment_list_folder_folderId",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
@@ -7848,49 +7746,49 @@
   },
   {
    "method": "GET",
-   "path": "/api/file/attachment/id",
+   "path": "/api/file/attachment/{id}",
    "handler": "attachment_id",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/attachment/id/binary/base64",
+   "path": "/api/file/attachment/{id}/binary/base64",
    "handler": "attachment_id_binary_base64",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/attachment/id/download",
+   "path": "/api/file/attachment/{id}/download",
    "handler": "attachment_id_download",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/attachment/id/image/scale/scale/binary/base64",
+   "path": "/api/file/attachment/{id}/image/scale/{scale}/binary/base64",
    "handler": "attachment_id_image_scale_scale_binary_base64",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/attachment/id/image/width/width/height/height/binary/base64",
+   "path": "/api/file/attachment/{id}/image/width/{width}/height/{height}/binary/base64",
    "handler": "attachment_id_image_width_width_height_height_binary_base64",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/attachment2/exist/file/fileMd5",
+   "path": "/api/file/attachment2/exist/file/{fileMd5}",
    "handler": "attachment2_exist_file_fileMd5",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/attachment2/list/filter/name",
+   "path": "/api/file/attachment2/list/filter/{name}",
    "handler": "attachment2_list_filter_name",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/attachment2/list/folder/folderId",
+   "path": "/api/file/attachment2/list/folder/{folderId}",
    "handler": "attachment2_list_folder_folderId",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
@@ -7902,55 +7800,49 @@
   },
   {
    "method": "GET",
-   "path": "/api/file/attachment2/list/type/page/size/size",
-   "handler": "attachment2_list_type_page_size_size",
-   "file": "crates/file_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/file/attachment2/id",
+   "path": "/api/file/attachment2/{id}",
    "handler": "attachment2_id",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/attachment2/id/binary/base64",
+   "path": "/api/file/attachment2/{id}/binary/base64",
    "handler": "attachment2_id_binary_base64",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/attachment2/id/download",
+   "path": "/api/file/attachment2/{id}/download",
    "handler": "attachment2_id_download",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/attachment2/id/download/image/width/width/height/height",
+   "path": "/api/file/attachment2/{id}/download/image/width/{width}/height/{height}",
    "handler": "attachment2_id_download_image_width_width_height_height",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/attachment2/id/download/stream",
+   "path": "/api/file/attachment2/{id}/download/stream",
    "handler": "attachment2_id_download_stream",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/attachment2/id/image/scale/scale/binary/base64",
+   "path": "/api/file/attachment2/{id}/image/scale/{scale}/binary/base64",
    "handler": "attachment2_id_image_scale_scale_binary_base64",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/attachment2/id/image/width/width/height/height/binary/base64",
+   "path": "/api/file/attachment2/{id}/image/width/{width}/height/{height}/binary/base64",
    "handler": "attachment2_id_image_width_width_height_height_binary_base64",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/complex/folder/id",
+   "path": "/api/file/complex/folder/{id}",
    "handler": "complex_folder_id",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
@@ -7974,19 +7866,19 @@
   },
   {
    "method": "GET",
-   "path": "/api/file/copy/attachment/attachmentId/referencetype/referenceType/reference/reference/scale/scale",
+   "path": "/api/file/copy/attachment/{p0}/referencetype/{p1}/reference/{p2}/scale/{p3}",
    "handler": "file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/file/list/referencetype",
-   "handler": "file_list_referencetype",
+   "handler": "u2_file_list_reference_types",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/list/referencetype/referenceType/reference/reference",
+   "path": "/api/file/list/referencetype/{p0}/reference/{p1}",
    "handler": "file_list_referencetype_referenceType_reference_reference",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
@@ -7998,62 +7890,32 @@
   },
   {
    "method": "GET",
-   "path": "/api/file/list/id/next/count",
-   "handler": "file_list_id_next_count",
-   "file": "crates/file_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/file/list/id/next/count/all",
+   "path": "/api/file/list/{p0}/next/{p1}/all",
    "handler": "file_list_id_next_count_all",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/list/id/next/count/referencetype/referenceType",
+   "path": "/api/file/list/{p0}/next/{p1}/referencetype/{p2}",
    "handler": "file_list_id_next_count_referencetype_referenceType",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/list/id/prev/count",
-   "handler": "file_list_id_prev_count",
-   "file": "crates/file_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/file/list/id/prev/count/all",
+   "path": "/api/file/list/{p0}/prev/{p1}/all",
    "handler": "file_list_id_prev_count_all",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/list/id/prev/count/referencetype/referenceType",
+   "path": "/api/file/list/{p0}/prev/{p1}/referencetype/{p2}",
    "handler": "file_list_id_prev_count_referencetype_referenceType",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/referencetype/referenceType/reference/reference",
-   "handler": "file_referencetype_referenceType_reference_reference",
-   "file": "crates/file_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/file/id",
-   "handler": "file_id",
-   "file": "crates/file_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/file/id/binary/base64",
+   "path": "/api/file/{p0}/binary/base64",
    "handler": "file_id_binary_base64",
-   "file": "crates/file_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/file/id/download",
-   "handler": "file_id_download",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
@@ -8064,13 +7926,7 @@
   },
   {
    "method": "GET",
-   "path": "/api/file/folder/list/id",
-   "handler": "folder_list_id",
-   "file": "crates/file_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/file/folder/id",
+   "path": "/api/file/folder/{id}",
    "handler": "folder_id",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
@@ -8088,43 +7944,43 @@
   },
   {
    "method": "GET",
-   "path": "/api/file/folder2/list/id",
+   "path": "/api/file/folder2/list/{id}",
    "handler": "folder2_list_id",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/folder2/id",
+   "path": "/api/file/folder2/{id}",
    "handler": "folder2_id",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/folder2/id/download",
+   "path": "/api/file/folder2/{id}/download",
    "handler": "folder2_id_download",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/recycle/id",
+   "path": "/api/file/recycle/{id}",
    "handler": "recycle_id",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/share/download/share/shareId/file/fileId",
+   "path": "/api/file/share/download/share/{shareId}/file/{fileId}",
    "handler": "share_download_share_shareId_file_fileId",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/share/list/att/share/shareId/folder/folderId",
+   "path": "/api/file/share/list/att/share/{shareId}/folder/{folderId}",
    "handler": "share_list_att_share_shareId_folder_folderId",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/share/list/folder/share/shareId/folder/folderId",
+   "path": "/api/file/share/list/folder/share/{shareId}/folder/{folderId}",
    "handler": "share_list_folder_share_shareId_folder_folderId",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
@@ -8142,13 +7998,13 @@
   },
   {
    "method": "GET",
-   "path": "/api/file/share/id",
+   "path": "/api/file/share/{id}",
    "handler": "share_id",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/file/share/id/password/password",
+   "path": "/api/file/share/{id}/password/{password}",
    "handler": "share_id_password_password",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
@@ -9317,18 +9173,6 @@
    "file": "crates/general_assemble_control/src/routes.rs"
   },
   {
-   "method": "GET",
-   "path": "/api/general/assemble/control/excel/{excelName}/{excelName}",
-   "handler": "excel_excelName_excelName",
-   "file": "crates/general_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/general/assemble/control/excel/{excelName}/{excelName}/{sheetList}",
-   "handler": "excel_excelName_excelName_sheetList",
-   "file": "crates/general_assemble_control/src/routes.rs"
-  },
-  {
    "method": "DELETE",
    "path": "/api/general/assemble/control/area/delete/{id}",
    "handler": "area_delete",
@@ -9652,12 +9496,6 @@
  "hotpic": [
   {
    "method": "GET",
-   "path": "/api/hotpic/user/hotpic/exists/check",
-   "handler": "exists_check",
-   "file": "crates/hotpic/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/hotpic/user/hotpic/{id}",
    "handler": "get_by_id",
    "file": "crates/hotpic/src/routes.rs"
@@ -9690,18 +9528,6 @@
   },
   {
    "method": "GET",
-   "path": "/api/hotpic_assemble_control/save/hotpic",
-   "handler": "save_hotpic",
-   "file": "crates/hotpic_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/hotpic_assemble_control/delete/hotpic",
-   "handler": "delete_hotpic",
-   "file": "crates/hotpic_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/hotpic_assemble_control/get/control/config",
    "handler": "get_control_config",
    "file": "crates/hotpic_assemble_control/src/routes.rs"
@@ -9726,25 +9552,7 @@
   },
   {
    "method": "GET",
-   "path": "/api/hotpic_assemble_control/cipher/hotpic/bbs/id",
-   "handler": "cipher_hotpic_bbs_id",
-   "file": "crates/hotpic_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/hotpic_assemble_control/cipher/hotpic/cms/id",
-   "handler": "cipher_hotpic_cms_id",
-   "file": "crates/hotpic_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/hotpic_assemble_control/cipher/hotpic/filter/list/page/page/count/count",
-   "handler": "cipher_hotpic_filter_list_page_page_count_count",
-   "file": "crates/hotpic_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/hotpic_assemble_control/cipher/hotpic/id",
+   "path": "/api/hotpic_assemble_control/cipher/hotpic/{id}",
    "handler": "cipher_hotpic_id",
    "file": "crates/hotpic_assemble_control/src/routes.rs"
   },
@@ -9762,19 +9570,13 @@
   },
   {
    "method": "GET",
-   "path": "/api/hotpic_assemble_control/user/hotpic/filter/list/page/page/count/count",
-   "handler": "user_hotpic_filter_list_page_page_count_count",
-   "file": "crates/hotpic_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/hotpic_assemble_control/user/hotpic/application/infoId",
+   "path": "/api/hotpic_assemble_control/user/hotpic/{application}/{infoId}",
    "handler": "user_hotpic_application_infoId",
    "file": "crates/hotpic_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/hotpic_assemble_control/user/hotpic/id",
+   "path": "/api/hotpic_assemble_control/user/hotpic/{id}",
    "handler": "user_hotpic_id",
    "file": "crates/hotpic_assemble_control/src/routes.rs"
   },
@@ -9794,18 +9596,6 @@
    "method": "POST",
    "path": "/api/hotpic/create/hotpic",
    "handler": "create_hotpic",
-   "file": "crates/hotpic_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/hotpic/save/hotpic",
-   "handler": "save_hotpic",
-   "file": "crates/hotpic_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/hotpic/delete/hotpic",
-   "handler": "delete_hotpic",
    "file": "crates/hotpic_assemble_control/src/routes.rs"
   },
   {
@@ -9876,7 +9666,7 @@
   },
   {
    "method": "GET",
-   "path": "/api/hotpic/assemble/control/user/hotpic/application/{infoId}",
+   "path": "/api/hotpic/assemble/control/user/hotpic/{application}/{{infoId}}",
    "handler": "user_hotpic_application_infoId",
    "file": "crates/hotpic_assemble_control/src/routes.rs"
   },
@@ -10020,18 +9810,6 @@
   },
   {
    "method": "GET",
-   "path": "/api/jpush_assemble_control/save/jpush",
-   "handler": "save_jpush",
-   "file": "crates/jpush_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/jpush_assemble_control/delete/jpush",
-   "handler": "delete_jpush",
-   "file": "crates/jpush_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/jpush_assemble_control/get/control/config",
    "handler": "get_control_config",
    "file": "crates/jpush_assemble_control/src/routes.rs"
@@ -10062,12 +9840,6 @@
   },
   {
    "method": "GET",
-   "path": "/api/jpush_assemble_control/device/check/deviceName/deviceType/pushType",
-   "handler": "device_check_deviceName_deviceType_pushType",
-   "file": "crates/jpush_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/jpush_assemble_control/device/config/push/type",
    "handler": "device_config_push_type",
    "file": "crates/jpush_assemble_control/src/routes.rs"
@@ -10076,18 +9848,6 @@
    "method": "GET",
    "path": "/api/jpush_assemble_control/device/list/{pushType}",
    "handler": "device_list_pushType",
-   "file": "crates/jpush_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/jpush_assemble_control/device/unbind/new/deviceName/deviceType/pushType",
-   "handler": "device_unbind_new_deviceName_deviceType_pushType",
-   "file": "crates/jpush_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/jpush_assemble_control/device/unbind/deviceName/deviceType",
-   "handler": "device_unbind_deviceName_deviceType",
    "file": "crates/jpush_assemble_control/src/routes.rs"
   },
   {
@@ -10158,7 +9918,7 @@
   },
   {
    "method": "GET",
-   "path": "/api/jpush/assemble/control/device/check/deviceName/deviceType/pushType",
+   "path": "/api/jpush/assemble/control/device/check/{p0}/{p1}/{p2}",
    "handler": "device_check_deviceName_deviceType_pushType",
    "file": "crates/jpush_assemble_control/src/routes.rs"
   },
@@ -10172,18 +9932,6 @@
    "method": "GET",
    "path": "/api/jpush/assemble/control/device/list/{pushType}",
    "handler": "device_list_pushType",
-   "file": "crates/jpush_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/jpush/assemble/control/device/unbind/new/deviceName/deviceType/pushType",
-   "handler": "device_unbind_new_deviceName_deviceType_pushType",
-   "file": "crates/jpush_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/jpush/assemble/control/device/unbind/deviceName/deviceType",
-   "handler": "device_unbind_deviceName_deviceType",
    "file": "crates/jpush_assemble_control/src/routes.rs"
   },
   {
@@ -10585,26 +10333,8 @@
    "file": "crates/meeting_assemble_control/src/routes.rs"
   },
   {
-   "method": "POST",
-   "path": "/api/meeting/assemble/control/building/list/completed/completed/{start}/{start}",
-   "handler": "building_list_start_start_completed_completed",
-   "file": "crates/meeting_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/meeting/assemble/control/building/list/completed/completed/allmeeting/{start}/{start}",
-   "handler": "building_list_start_start_completed_completed_allmeeting",
-   "file": "crates/meeting_assemble_control/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/meeting/assemble/control/building/list/completed/completed/room/room/meeting/meeting/{start}/{start}",
-   "handler": "building_list_start_start_completed_completed_room_room_meeting_meeting",
-   "file": "crates/meeting_assemble_control/src/routes.rs"
-  },
-  {
    "method": "GET",
-   "path": "/api/meeting/assemble/control/list/meeting/controls",
+   "path": "/api/meeting/assemble/control/list/meeting/{controls}",
    "handler": "list_meeting_controls",
    "file": "crates/meeting_assemble_control/src/routes.rs"
   },
@@ -10617,7 +10347,7 @@
   {
    "method": "GET",
    "path": "/api/meeting/assemble/control/meeting/list/coming/{month}/{count}",
-   "handler": "meeting_list_coming_month_count",
+   "handler": "meeting_list_coming_month_count_p2",
    "file": "crates/meeting_assemble_control/src/routes.rs"
   },
   {
@@ -10635,25 +10365,25 @@
   {
    "method": "GET",
    "path": "/api/meeting/assemble/control/meeting/list/{id}/{next}/{count}",
-   "handler": "meeting_list_id_next_count",
+   "handler": "meeting_list_id_next_count_p3",
    "file": "crates/meeting_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/meeting/assemble/control/meeting/list/invite/{page}/{size}/{size}",
-   "handler": "meeting_list_invite_page_size_size",
+   "handler": "meeting_list_invite_page_size_size_p3",
    "file": "crates/meeting_assemble_control/src/routes.rs"
   },
   {
    "method": "POST",
    "path": "/api/meeting/assemble/control/meeting/list/manage/{page}/{size}/{size}",
-   "handler": "meeting_list_page_size_size_manage",
+   "handler": "meeting_list_page_size_size_manage_p3",
    "file": "crates/meeting_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/meeting/assemble/control/meeting/list/{year}/{year}/{month}/{month}/{day}/{day}/{roomId}",
-   "handler": "meeting_list_year_year_month_month_day_day_roomId",
+   "handler": "meeting_list_year_year_month_month_day_day_roomId_p7",
    "file": "crates/meeting_assemble_control/src/routes.rs"
   },
   {
@@ -15439,7 +15169,7 @@
   {
    "method": "GET",
    "path": "/api/portal/assemble/designer/list/portal/{page}/{portalId}",
-   "handler": "page_list_portal_portalId",
+   "handler": "page_list_portal_page_portalId",
    "file": "crates/portal_assemble_designer/src/lib.rs"
   },
   {
@@ -15451,7 +15181,7 @@
   {
    "method": "GET",
    "path": "/api/portal/assemble/designer/pageversion/list/{page}/{pageId}",
-   "handler": "pageversion_list_page_pageId",
+   "handler": "pageversion_list_page_page_pageId",
    "file": "crates/portal_assemble_designer/src/lib.rs"
   },
   {
@@ -15909,7 +15639,7 @@
   {
    "method": "GET",
    "path": "/api/portal/assemble/surface/dict/portal/path/data/{dictFlag}/{portalFlag}",
-   "handler": "dict_dictFlag_portal_portalFlag_path_data",
+   "handler": "dict_dictFlag_portal_portalFlag_path_data_short",
    "file": "crates/portal_assemble_surface/src/lib.rs"
   },
   {
@@ -15962,26 +15692,14 @@
   },
   {
    "method": "GET",
-   "path": "/api/portal/assemble/surface/get/layout",
-   "handler": "get_layout",
-   "file": "crates/portal_assemble_surface/src/lib.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/portal/assemble/surface/list/layouts",
-   "handler": "list_layouts",
-   "file": "crates/portal_assemble_surface/src/lib.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/portal/assemble/surface/portal/{page}/{flag}/{portalFlag}",
-   "handler": "page_flag_portal_portalFlag",
+   "handler": "page_flag_portal_portalFlag_p3",
    "file": "crates/portal_assemble_surface/src/lib.rs"
   },
   {
    "method": "GET",
    "path": "/api/portal/assemble/surface/portal/mobile/{page}/{flag}/{portalFlag}",
-   "handler": "page_flag_portal_portalFlag_mobile",
+   "handler": "page_flag_portal_portalFlag_mobile_p3",
    "file": "crates/portal_assemble_surface/src/lib.rs"
   },
   {
@@ -15993,7 +15711,7 @@
   {
    "method": "GET",
    "path": "/api/portal/assemble/surface/mobile/{page}/{id}",
-   "handler": "page_id_mobile",
+   "handler": "page_id_mobile_p2",
    "file": "crates/portal_assemble_surface/src/lib.rs"
   },
   {
@@ -16005,25 +15723,25 @@
   {
    "method": "GET",
    "path": "/api/portal/assemble/surface/v2/portal/{page}/{flag}/{portalFlag}",
-   "handler": "page_v2_flag_portal_portalFlag",
+   "handler": "page_v2_flag_portal_portalFlag_p3",
    "file": "crates/portal_assemble_surface/src/lib.rs"
   },
   {
    "method": "GET",
    "path": "/api/portal/assemble/surface/v2/portal/mobile/{page}/{flag}/{portalFlag}",
-   "handler": "page_v2_flag_portal_portalFlag_mobile",
+   "handler": "page_v2_flag_portal_portalFlag_mobile_p3",
    "file": "crates/portal_assemble_surface/src/lib.rs"
   },
   {
    "method": "GET",
    "path": "/api/portal/assemble/surface/v2/{page}/{id}",
-   "handler": "page_v2_id",
+   "handler": "page_v2_id_p2",
    "file": "crates/portal_assemble_surface/src/lib.rs"
   },
   {
    "method": "GET",
    "path": "/api/portal/assemble/surface/v2/mobile/{page}/{id}",
-   "handler": "page_v2_id_mobile",
+   "handler": "page_v2_id_mobile_p2",
    "file": "crates/portal_assemble_surface/src/lib.rs"
   },
   {
@@ -16064,7 +15782,7 @@
   },
   {
    "method": "GET",
-   "path": "/api/portal/assemble/surface/script/list/portal/portal",
+   "path": "/api/portal/assemble/surface/script/list/portal/{portal}",
    "handler": "script_list_portal_portal",
    "file": "crates/portal_assemble_surface/src/lib.rs"
   },
@@ -16106,7 +15824,7 @@
   },
   {
    "method": "GET",
-   "path": "/api/portal/assemble/surface/widget/list/portal/portal",
+   "path": "/api/portal/assemble/surface/widget/list/portal/{portal}",
    "handler": "widget_list_portal_portal",
    "file": "crates/portal_assemble_surface/src/lib.rs"
   },
@@ -17230,7 +16948,7 @@
   },
   {
    "method": "GET",
-   "path": "/api/processplatform/assemble/designer/item/access/path/path",
+   "path": "/api/processplatform/assemble/designer/item/access/path/{path}",
    "handler": "item_access_path_path",
    "file": "crates/processplatform_assemble_designer/src/routes.rs"
   },
@@ -17827,13 +17545,13 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/anonymous/read/{count}/{credential}",
-   "handler": "anonymous_read_count_credential",
+   "handler": "anonymous_read_count_credential_p2",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/anonymous/task/{count}/{credential}",
-   "handler": "anonymous_task_count_credential",
+   "handler": "anonymous_task_count_credential_p2",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -17892,150 +17610,6 @@
   },
   {
    "method": "GET",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/data/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_data",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/data/mockdeletetoget/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_data_mockdeletetoget",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/data/mockputtopost/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_data_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/path1/data/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/path1/data/mockdeletetoget/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_mockdeletetoget",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/path1/data/mockputtopost/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/data/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_data",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/data/mockdeletetoget/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_data_mockdeletetoget",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/data/mockputtopost/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_data_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/data/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_data",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/data/mockdeletetoget/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_data_mockdeletetoget",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/data/mockputtopost/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_data_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/data/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_data",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/data/mockdeletetoget/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_data_mockdeletetoget",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/data/mockputtopost/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_data_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/data/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_data",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/data/mockdeletetoget/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_data_mockdeletetoget",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/data/mockputtopost/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_data_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/data/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_data",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/data/mockdeletetoget/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_data_mockdeletetoget",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/data/mockputtopost/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_data_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/path7/data/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_path7_data",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/path7/data/mockdeletetoget/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_mockdeletetoget",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/path7/data/mockputtopost/{applicationDictFlag}/{applicationFlag}",
-   "handler": "applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/processplatform/assemble/surface/applicationdict/list/application/{applicationFlag}",
    "handler": "applicationdict_list_application_applicationFlag",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
@@ -18048,62 +17622,8 @@
   },
   {
    "method": "GET",
-   "path": "/api/processplatform/assemble/surface/correlation/job/job",
-   "handler": "correlation_job_job",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/assemble/surface/correlation/job/job/delete",
-   "handler": "correlation_job_job_delete",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/correlation/list/job/job",
-   "handler": "correlation_list_job_job",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/correlation/list/job/job/site/site",
-   "handler": "correlation_list_job_job_site_site",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/assemble/surface/correlation/update/job/job",
-   "handler": "correlation_update_job_job",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/fetch/job/job",
-   "handler": "data_fetch_job_job",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/job/job",
-   "handler": "data_job_job",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/job/job/array/data",
-   "handler": "data_job_job_array_data",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/processplatform/assemble/surface/data/job/job/mockputtopost",
    "handler": "data_job_job_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/job/job/path0",
-   "handler": "data_job_job_path0",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -18114,20 +17634,8 @@
   },
   {
    "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/job/job/path0/path1",
-   "handler": "data_job_job_path0_path1",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/processplatform/assemble/surface/data/job/job/path0/path1/mockputtopost",
    "handler": "data_job_job_path0_path1_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/job/job/path0/path1/path2",
-   "handler": "data_job_job_path0_path1_path2",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -18138,20 +17646,8 @@
   },
   {
    "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3",
-   "handler": "data_job_job_path0_path1_path2_path3",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/mockputtopost",
    "handler": "data_job_job_path0_path1_path2_path3_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4",
-   "handler": "data_job_job_path0_path1_path2_path3_path4",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -18162,32 +17658,14 @@
   },
   {
    "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5",
-   "handler": "data_job_job_path0_path1_path2_path3_path4_path5",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/mockputtopost",
    "handler": "data_job_job_path0_path1_path2_path3_path4_path5_mockputtopost",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6",
-   "handler": "data_job_job_path0_path1_path2_path3_path4_path5_path6",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/mockputtopost",
    "handler": "data_job_job_path0_path1_path2_path3_path4_path5_path6_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/path7",
-   "handler": "data_job_job_path0_path1_path2_path3_path4_path5_path6_path7",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -18216,150 +17694,6 @@
   },
   {
    "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/{id}",
-   "handler": "data_work_id_path0",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/mockdeletetoget/{id}",
-   "handler": "data_work_id_path0_mockdeletetoget",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/mockputtopost/{id}",
-   "handler": "data_work_id_path0_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/path1/{id}",
-   "handler": "data_work_id_path0_path1",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/path1/mockdeletetoget/{id}",
-   "handler": "data_work_id_path0_path1_mockdeletetoget",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/path1/mockputtopost/{id}",
-   "handler": "data_work_id_path0_path1_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/path1/path2/{id}",
-   "handler": "data_work_id_path0_path1_path2",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/path1/path2/mockdeletetoget/{id}",
-   "handler": "data_work_id_path0_path1_path2_mockdeletetoget",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/path1/path2/mockputtopost/{id}",
-   "handler": "data_work_id_path0_path1_path2_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/{id}",
-   "handler": "data_work_id_path0_path1_path2_path3",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/mockdeletetoget/{id}",
-   "handler": "data_work_id_path0_path1_path2_path3_mockdeletetoget",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/mockputtopost/{id}",
-   "handler": "data_work_id_path0_path1_path2_path3_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/{id}",
-   "handler": "data_work_id_path0_path1_path2_path3_path4",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/mockdeletetoget/{id}",
-   "handler": "data_work_id_path0_path1_path2_path3_path4_mockdeletetoget",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/mockputtopost/{id}",
-   "handler": "data_work_id_path0_path1_path2_path3_path4_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/{id}",
-   "handler": "data_work_id_path0_path1_path2_path3_path4_path5",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/mockdeletetoget/{id}",
-   "handler": "data_work_id_path0_path1_path2_path3_path4_path5_mockdeletetoget",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/mockputtopost/{id}",
-   "handler": "data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/{id}",
-   "handler": "data_work_id_path0_path1_path2_path3_path4_path5_path6",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/mockdeletetoget/{id}",
-   "handler": "data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeletetoget",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/mockputtopost/{id}",
-   "handler": "data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/path7/{id}",
-   "handler": "data_work_id_path0_path1_path2_path3_path4_path5_path6_path7",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/path7/mockdeletetoget/{id}",
-   "handler": "data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockdeletetoget",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/path7/mockputtopost/{id}",
-   "handler": "data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/processplatform/assemble/surface/data/workcompleted/{id}",
    "handler": "data_workcompleted_id",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
@@ -18384,122 +17718,8 @@
   },
   {
    "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/workcompleted/path0/{id}",
-   "handler": "data_workcompleted_id_path0",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/workcompleted/path0/mockputtopost/{id}",
-   "handler": "data_workcompleted_id_path0_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/workcompleted/path0/path1/{id}",
-   "handler": "data_workcompleted_id_path0_path1",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/workcompleted/path0/path1/mockputtopost/{id}",
-   "handler": "data_workcompleted_id_path0_path1_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/{id}",
-   "handler": "data_workcompleted_id_path0_path1_path2",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/mockputtopost/{id}",
-   "handler": "data_workcompleted_id_path0_path1_path2_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/{id}",
-   "handler": "data_workcompleted_id_path0_path1_path2_path3",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/mockputtopost/{id}",
-   "handler": "data_workcompleted_id_path0_path1_path2_path3_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/{id}",
-   "handler": "data_workcompleted_id_path0_path1_path2_path3_path4",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/mockputtopost/{id}",
-   "handler": "data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/{id}",
-   "handler": "data_workcompleted_id_path0_path1_path2_path3_path4_path5",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/mockputtopost/{id}",
-   "handler": "data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/path6/{id}",
-   "handler": "data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/path6/mockputtopost/{id}",
-   "handler": "data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/path6/path7/{id}",
-   "handler": "data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/path6/path7/mockputtopost/{id}",
-   "handler": "data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/datarecord/get/job/job/path/path",
-   "handler": "datarecord_get_job_job_path_path",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/datarecord/list/job/job",
-   "handler": "datarecord_list_job_job",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/processplatform/assemble/surface/documentversion/{id}",
    "handler": "documentversion_id",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/documentversion/list/job/job",
-   "handler": "documentversion_list_job_job",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -18517,13 +17737,7 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/{workOrWorkCompleted}/{category}/{category}",
-   "handler": "documentversion_list_workorworkcompleted_workOrWorkCompleted_category_category",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/documentversion/work/work",
-   "handler": "documentversion_work_work",
+   "handler": "documentversion_list_workorworkcompleted_workOrWorkCompleted_category_category_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -18559,7 +17773,7 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/draft/list/my/paging/{page}/{size}/{size}",
-   "handler": "draft_list_my_paging_page_size_size",
+   "handler": "draft_list_my_paging_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -18630,18 +17844,6 @@
   },
   {
    "method": "GET",
-   "path": "/api/processplatform/assemble/surface/form/v2/lookup/taskcompleted/taskcompleted",
-   "handler": "form_v2_lookup_taskcompleted_taskcompleted",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/form/v2/lookup/taskcompleted/taskcompleted/mobile",
-   "handler": "form_v2_lookup_taskcompleted_taskcompleted_mobile",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/{workOrWorkCompleted}",
    "handler": "form_v2_lookup_workorworkcompleted_workOrWorkCompleted",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
@@ -18673,37 +17875,7 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/handover/list/paging/{page}/{size}/{size}",
-   "handler": "handover_list_paging_page_size_size",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/job/job/allow/visit/person/person",
-   "handler": "job_job_allow_visit_person_person",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/job/job/find/work/workcompleted",
-   "handler": "job_job_find_work_workcompleted",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/job/latest/work/workcompleted/serial/serial",
-   "handler": "job_latest_work_workcompleted_serial_serial",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/job/v2/job/projection",
-   "handler": "job_v2_job_projection",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/keylock/lock",
-   "handler": "keylock_lock",
+   "handler": "handover_list_paging_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -18714,7 +17886,7 @@
   },
   {
    "method": "GET",
-   "path": "/api/processplatform/assemble/surface/mode/clear/person/person/manager",
+   "path": "/api/processplatform/assemble/surface/mode/clear/person/person/{p0}",
    "handler": "mode_clear_person_person_manager",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
@@ -18793,19 +17965,13 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/read/{count}/{credential}",
-   "handler": "read_count_credential",
+   "handler": "read_count_credential_p2",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/read/filter/attribute",
    "handler": "read_filter_attribute",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/read/filter/attribute/filter",
-   "handler": "read_filter_attribute_filter",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -18883,19 +18049,13 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/read/list/application/process/{count}/{applicationFlag}",
-   "handler": "read_list_count_application_applicationFlag_process",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/read/list/date/date/manage",
-   "handler": "read_list_date_date_manage",
+   "handler": "read_list_count_application_applicationFlag_process_p2",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/read/list/filter/manage/{page}/{size}/{size}",
-   "handler": "read_list_filter_page_size_size_manage",
+   "handler": "read_list_filter_page_size_size_manage_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -18948,32 +18108,14 @@
   },
   {
    "method": "GET",
-   "path": "/api/processplatform/assemble/surface/read/list/job/job",
-   "handler": "read_list_job_job",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/processplatform/assemble/surface/read/list/my/filter/{page}/{size}/{size}",
-   "handler": "read_list_my_filter_page_size_size",
+   "handler": "read_list_my_filter_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/read/list/my/paging/{page}/{size}/{size}",
-   "handler": "read_list_my_paging_page_size_size",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/read/list/person/person/manage",
-   "handler": "read_list_person_person_manage",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/read/list/work/work",
-   "handler": "read_list_work_work",
+   "handler": "read_list_my_paging_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -18997,7 +18139,7 @@
   {
    "method": "POST",
    "path": "/api/processplatform/assemble/surface/read/v2/list/create/paging/{page}/{size}/{size}",
-   "handler": "read_v2_list_create_paging_page_size_size",
+   "handler": "read_v2_list_create_paging_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -19015,7 +18157,7 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/read/v2/list/paging/{page}/{size}/{size}",
-   "handler": "read_v2_list_paging_page_size_size",
+   "handler": "read_v2_list_paging_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -19033,19 +18175,13 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/readcompleted/{count}/{credential}",
-   "handler": "readcompleted_count_credential",
+   "handler": "readcompleted_count_credential_p2",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/readcompleted/filter/attribute",
    "handler": "readcompleted_filter_attribute",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/readcompleted/filter/attribute/filter",
-   "handler": "readcompleted_filter_attribute_filter",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -19081,19 +18217,13 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/readcompleted/list/application/process/{count}/{applicationFlag}",
-   "handler": "readcompleted_list_count_application_applicationFlag_process",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/readcompleted/list/date/date/manage",
-   "handler": "readcompleted_list_date_date_manage",
+   "handler": "readcompleted_list_count_application_applicationFlag_process_p2",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/readcompleted/list/filter/manage/{page}/{size}/{size}",
-   "handler": "readcompleted_list_filter_page_size_size_manage",
+   "handler": "readcompleted_list_filter_page_size_size_manage_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -19146,26 +18276,14 @@
   },
   {
    "method": "GET",
-   "path": "/api/processplatform/assemble/surface/readcompleted/list/job/job",
-   "handler": "readcompleted_list_job_job",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/processplatform/assemble/surface/readcompleted/list/my/filter/{page}/{size}/{size}",
-   "handler": "readcompleted_list_my_filter_page_size_size",
+   "handler": "readcompleted_list_my_filter_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/readcompleted/list/my/paging/{page}/{size}/{size}",
-   "handler": "readcompleted_list_my_paging_page_size_size",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/readcompleted/list/work/work",
-   "handler": "readcompleted_list_work_work",
+   "handler": "readcompleted_list_my_paging_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -19189,7 +18307,7 @@
   {
    "method": "POST",
    "path": "/api/processplatform/assemble/surface/readcompleted/v2/list/create/paging/{page}/{size}/{size}",
-   "handler": "readcompleted_v2_list_create_paging_page_size_size",
+   "handler": "readcompleted_v2_list_create_paging_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -19207,13 +18325,7 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/readcompleted/v2/list/paging/{page}/{size}/{size}",
-   "handler": "readcompleted_v2_list_paging_page_size_size",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/readrecord/list/job/job",
-   "handler": "readrecord_list_job_job",
+   "handler": "readcompleted_v2_list_paging_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -19242,18 +18354,6 @@
   },
   {
    "method": "GET",
-   "path": "/api/processplatform/assemble/surface/record/job/job/manage",
-   "handler": "record_job_job_manage",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/record/list/job/job",
-   "handler": "record_list_job_job",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/processplatform/assemble/surface/record/list/job/job/paging/{page}/{size}/{size}",
    "handler": "record_list_job_job_paging_page_size_size",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
@@ -19267,13 +18367,13 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/record/list/workorworkcompleted/paging/{workOrWorkCompleted}/{page}/{size}/{size}",
-   "handler": "record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size",
+   "handler": "record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size_p4",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/review/person/{count}/{credential}",
-   "handler": "review_count_person_credential",
+   "handler": "review_count_person_credential_p2",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -19292,12 +18392,6 @@
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/review/filter/attribute",
    "handler": "review_filter_attribute",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/assemble/surface/review/filter/create/entry",
-   "handler": "review_filter_create_entry",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -19325,12 +18419,6 @@
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/review/list/job/job",
-   "handler": "review_list_job_job",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
    "method": "POST",
    "path": "/api/processplatform/assemble/surface/review/v2/list/create/next/{id}/{count}",
    "handler": "review_v2_list_create_id_next_count",
@@ -19345,7 +18433,7 @@
   {
    "method": "POST",
    "path": "/api/processplatform/assemble/surface/review/v2/list/create/paging/{page}/{size}/{size}",
-   "handler": "review_v2_list_create_paging_page_size_size",
+   "handler": "review_v2_list_create_paging_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -19363,19 +18451,13 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/review/v2/list/paging/{page}/{size}/{size}",
-   "handler": "review_v2_list_paging_page_size_size",
+   "handler": "review_v2_list_paging_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/review/v2/list/paging/manage/{page}/{size}/{size}",
-   "handler": "review_v2_list_paging_page_size_size_manage",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/review/v2/search",
-   "handler": "review_v2_search",
+   "handler": "review_v2_list_paging_page_size_size_manage_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -19447,7 +18529,7 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/serialnumber/list/paging/{page}/{size}/{size}",
-   "handler": "serialnumber_list_paging_page_size_size",
+   "handler": "serialnumber_list_paging_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -19481,12 +18563,6 @@
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/sign/list/job/job",
-   "handler": "sign_list_job_job",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
    "method": "POST",
    "path": "/api/processplatform/assemble/surface/sign/save/task/{taskId}",
    "handler": "sign_save_task_taskId",
@@ -19507,19 +18583,13 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/task/{count}/{credential}",
-   "handler": "task_count_credential",
+   "handler": "task_count_credential_p2",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/task/filter/attribute",
    "handler": "task_filter_attribute",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/task/filter/attribute/filter",
-   "handler": "task_filter_attribute_filter",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -19615,7 +18685,7 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/task/list/application/process/{count}/{applicationFlag}",
-   "handler": "task_list_count_application_applicationFlag_process",
+   "handler": "task_list_count_application_applicationFlag_process_p2",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -19627,7 +18697,7 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/task/list/filter/manage/{page}/{size}/{size}",
-   "handler": "task_list_filter_page_size_size_manage",
+   "handler": "task_list_filter_page_size_size_manage_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -19704,32 +18774,20 @@
   },
   {
    "method": "GET",
-   "path": "/api/processplatform/assemble/surface/task/list/job/job",
-   "handler": "task_list_job_job",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/processplatform/assemble/surface/task/list/my/filter/{page}/{size}/{size}",
-   "handler": "task_list_my_filter_page_size_size",
+   "handler": "task_list_my_filter_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/task/list/my/paging/{page}/{size}/{size}",
-   "handler": "task_list_my_paging_page_size_size",
+   "handler": "task_list_my_paging_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/task/list/person/person/exclude/draft/manage/{isExcludeDraft}",
    "handler": "task_list_person_person_exclude_draft_isExcludeDraft_manage",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/task/list/work/work",
-   "handler": "task_list_work_work",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -19777,7 +18835,7 @@
   {
    "method": "POST",
    "path": "/api/processplatform/assemble/surface/task/v2/list/create/paging/{page}/{size}/{size}",
-   "handler": "task_v2_list_create_paging_page_size_size",
+   "handler": "task_v2_list_create_paging_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -19795,7 +18853,7 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/task/v2/list/paging/{page}/{size}/{size}",
-   "handler": "task_v2_list_paging_page_size_size",
+   "handler": "task_v2_list_paging_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -19813,19 +18871,13 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/taskcompleted/{count}/{credential}",
-   "handler": "taskcompleted_count_credential",
+   "handler": "taskcompleted_count_credential_p2",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/taskcompleted/filter/attribute",
    "handler": "taskcompleted_filter_attribute",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/taskcompleted/filter/attribute/filter",
-   "handler": "taskcompleted_filter_attribute_filter",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -19873,19 +18925,13 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/taskcompleted/list/application/process/{count}/{applicationFlag}",
-   "handler": "taskcompleted_list_count_application_applicationFlag_process",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/taskcompleted/list/date/date/hour/hour/manage",
-   "handler": "taskcompleted_list_date_date_hour_hour_manage",
+   "handler": "taskcompleted_list_count_application_applicationFlag_process_p2",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/taskcompleted/list/filter/manage/{page}/{size}/{size}",
-   "handler": "taskcompleted_list_filter_page_size_size_manage",
+   "handler": "taskcompleted_list_filter_page_size_size_manage_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -19938,20 +18984,14 @@
   },
   {
    "method": "GET",
-   "path": "/api/processplatform/assemble/surface/taskcompleted/list/job/job",
-   "handler": "taskcompleted_list_job_job",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/processplatform/assemble/surface/taskcompleted/list/my/filter/{page}/{size}/{size}",
-   "handler": "taskcompleted_list_my_filter_page_size_size",
+   "handler": "taskcompleted_list_my_filter_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/taskcompleted/list/my/paging/{page}/{size}/{size}",
-   "handler": "taskcompleted_list_my_paging_page_size_size",
+   "handler": "taskcompleted_list_my_paging_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -19962,20 +19002,8 @@
   },
   {
    "method": "GET",
-   "path": "/api/processplatform/assemble/surface/taskcompleted/list/work/work",
-   "handler": "taskcompleted_list_work_work",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/processplatform/assemble/surface/taskcompleted/list/workorworkcompleted/{workOrWorkCompleted}",
    "handler": "taskcompleted_list_workorworkcompleted_workOrWorkCompleted",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/assemble/surface/taskcompleted/press/work/work",
-   "handler": "taskcompleted_press_work_work",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -19993,7 +19021,7 @@
   {
    "method": "POST",
    "path": "/api/processplatform/assemble/surface/taskcompleted/v2/list/create/paging/{page}/{size}/{size}",
-   "handler": "taskcompleted_v2_list_create_paging_page_size_size",
+   "handler": "taskcompleted_v2_list_create_paging_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -20011,7 +19039,7 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/taskcompleted/v2/list/paging/{page}/{size}/{size}",
-   "handler": "taskcompleted_v2_list_paging_page_size_size",
+   "handler": "taskcompleted_v2_list_paging_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -20023,7 +19051,7 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/work/{count}/{credential}",
-   "handler": "work_count_credential",
+   "handler": "work_count_credential_p2",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -20125,19 +19153,19 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/work/list/application/process/{count}/{applicationFlag}",
-   "handler": "work_list_count_application_applicationFlag_process",
+   "handler": "work_list_count_application_applicationFlag_process_p2",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/work/list/application/process/manage/{count}/{applicationFlag}",
-   "handler": "work_list_count_application_applicationFlag_process_manage",
+   "handler": "work_list_count_application_applicationFlag_process_manage_p2",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/work/list/filter/manage/{page}/{size}/{size}",
-   "handler": "work_list_filter_page_size_size_manage",
+   "handler": "work_list_filter_page_size_size_manage_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -20227,13 +19255,13 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/work/list/my/paging/{page}/{size}/{size}",
-   "handler": "work_list_my_paging_page_size_size",
+   "handler": "work_list_my_paging_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/work/list/paging/application/filter/manage/{page}/{size}/{size}/{applicationFlag}",
-   "handler": "work_list_paging_page_size_size_application_applicationFlag_filter_manage",
+   "handler": "work_list_paging_page_size_size_application_applicationFlag_filter_manage_p4",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -20335,25 +19363,13 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/work/v2/list/paging/{page}/{size}/{size}",
-   "handler": "work_v2_list_paging_page_size_size",
+   "handler": "work_v2_list_paging_page_size_size_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/work/v2/workorworkcompleted/{workOrWorkCompleted}",
    "handler": "work_v2_workorworkcompleted_workOrWorkCompleted",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/work/v3/retract",
-   "handler": "work_v3_retract",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/work/v3/retract/stage/job/job",
-   "handler": "work_v3_retract_stage_job_job",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -20431,19 +19447,19 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/workcompleted/list/application/process/{count}/{applicationFlag}",
-   "handler": "workcompleted_list_count_application_applicationFlag_process",
+   "handler": "workcompleted_list_count_application_applicationFlag_process_p2",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/workcompleted/list/application/process/manage/{count}/{applicationFlag}",
-   "handler": "workcompleted_list_count_application_applicationFlag_process_manage",
+   "handler": "workcompleted_list_count_application_applicationFlag_process_manage_p2",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/workcompleted/list/filter/manage/{page}/{size}/{size}",
-   "handler": "workcompleted_list_filter_page_size_size_manage",
+   "handler": "workcompleted_list_filter_page_size_size_manage_p3",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -20491,7 +19507,7 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/workcompleted/list/paging/application/filter/manage/{page}/{size}/{size}/{applicationFlag}",
-   "handler": "workcompleted_list_paging_page_size_size_application_applicationFlag_filter_manage",
+   "handler": "workcompleted_list_paging_page_size_size_application_applicationFlag_filter_manage_p4",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -20501,21 +19517,9 @@
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/workcompleted/shift/time",
-   "handler": "workcompleted_shift_time",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
    "method": "POST",
    "path": "/api/processplatform/assemble/surface/worklog/list/add/split/work/{workId}",
    "handler": "worklog_list_add_split_work_workId",
-   "file": "crates/processplatform_assemble_surface/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/assemble/surface/worklog/list/job/job",
-   "handler": "worklog_list_job_job",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
@@ -24389,54 +23393,6 @@
    "file": "crates/processplatform_service_processing/src/routes.rs"
   },
   {
-   "method": "GET",
-   "path": "/api/processplatform/service/processing/applicationdict/path0/data/{id}",
-   "handler": "applicationdict_id_path0_data",
-   "file": "crates/processplatform_service_processing/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/service/processing/applicationdict/path0/path1/data/{id}",
-   "handler": "applicationdict_id_path0_path1_data",
-   "file": "crates/processplatform_service_processing/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/service/processing/applicationdict/path0/path1/path2/data/{id}",
-   "handler": "applicationdict_id_path0_path1_path2_data",
-   "file": "crates/processplatform_service_processing/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/service/processing/applicationdict/path0/path1/path2/path3/data/{id}",
-   "handler": "applicationdict_id_path0_path1_path2_path3_data",
-   "file": "crates/processplatform_service_processing/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/service/processing/applicationdict/path0/path1/path2/path3/path4/data/{id}",
-   "handler": "applicationdict_id_path0_path1_path2_path3_path4_data",
-   "file": "crates/processplatform_service_processing/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/service/processing/applicationdict/path0/path1/path2/path3/path4/path5/data/{id}",
-   "handler": "applicationdict_id_path0_path1_path2_path3_path4_path5_data",
-   "file": "crates/processplatform_service_processing/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/service/processing/applicationdict/path0/path1/path2/path3/path4/path5/path6/data/{id}",
-   "handler": "applicationdict_id_path0_path1_path2_path3_path4_path5_path6_data",
-   "file": "crates/processplatform_service_processing/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/service/processing/applicationdict/path0/path1/path2/path3/path4/path5/path6/path7/data/{id}",
-   "handler": "applicationdict_id_path0_path1_path2_path3_path4_path5_path6_path7_data",
-   "file": "crates/processplatform_service_processing/src/routes.rs"
-  },
-  {
    "method": "POST",
    "path": "/api/processplatform/service/processing/attachment/copy/{work}/{workId}",
    "handler": "attachment_copy_work_workId",
@@ -24535,7 +23491,7 @@
   {
    "method": "GET",
    "path": "/api/processplatform/service/processing/v2/projection/{job}/{job}",
-   "handler": "job_v2_job_projection",
+   "handler": "job_v2_job_projection_p2",
    "file": "crates/processplatform_service_processing/src/routes.rs"
   },
   {
@@ -24581,15 +23537,9 @@
    "file": "crates/processplatform_service_processing/src/routes.rs"
   },
   {
-   "method": "GET",
-   "path": "/api/processplatform/service/processing/review/init/review",
-   "handler": "review_init_review",
-   "file": "crates/processplatform_service_processing/src/routes.rs"
-  },
-  {
    "method": "POST",
    "path": "/api/processplatform/service/processing/service/touch/{work}/{id}",
-   "handler": "service_work_id_touch",
+   "handler": "service_work_id_touch_p2",
    "file": "crates/processplatform_service_processing/src/routes.rs"
   },
   {
@@ -24737,42 +23687,6 @@
    "file": "crates/processplatform_service_processing/src/routes.rs"
   },
   {
-   "method": "POST",
-   "path": "/api/processplatform/service/processing/touch/deletedraft",
-   "handler": "touch_deletedraft",
-   "file": "crates/processplatform_service_processing/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/service/processing/touch/handoverjob",
-   "handler": "touch_handoverjob",
-   "file": "crates/processplatform_service_processing/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/service/processing/touch/merge",
-   "handler": "touch_merge",
-   "file": "crates/processplatform_service_processing/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/service/processing/touch/mergeitem",
-   "handler": "touch_mergeitem",
-   "file": "crates/processplatform_service_processing/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/service/processing/touch/touchdelay",
-   "handler": "touch_touchdelay",
-   "file": "crates/processplatform_service_processing/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/processplatform/service/processing/touch/urge",
-   "handler": "touch_urge",
-   "file": "crates/processplatform_service_processing/src/routes.rs"
-  },
-  {
    "method": "GET",
    "path": "/api/processplatform/service/processing/draft/{work}/{id}",
    "handler": "work_id_draft",
@@ -24781,13 +23695,13 @@
   {
    "method": "GET",
    "path": "/api/processplatform/service/processing/manual/append/identity/{work}/{id}",
-   "handler": "work_id_manual_append_identity",
+   "handler": "work_id_manual_append_identity_p2",
    "file": "crates/processplatform_service_processing/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/service/processing/projection/{work}/{id}",
-   "handler": "work_id_projection",
+   "handler": "work_id_projection_p2",
    "file": "crates/processplatform_service_processing/src/routes.rs"
   },
   {
@@ -24817,25 +23731,25 @@
   {
    "method": "POST",
    "path": "/api/processplatform/service/processing/v2/add/split/{work}/{id}",
-   "handler": "work_v2_id_add_split",
+   "handler": "work_v2_id_add_split_p2",
    "file": "crates/processplatform_service_processing/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/service/processing/v2/goback/{work}/{id}",
-   "handler": "work_v2_id_goback",
+   "handler": "work_v2_id_goback_p2",
    "file": "crates/processplatform_service_processing/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/service/processing/v2/reroute/{work}/{id}",
-   "handler": "work_v2_id_reroute",
+   "handler": "work_v2_id_reroute_p2",
    "file": "crates/processplatform_service_processing/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/service/processing/v2/rollback/{work}/{id}",
-   "handler": "work_v2_id_rollback",
+   "handler": "work_v2_id_rollback_p2",
    "file": "crates/processplatform_service_processing/src/routes.rs"
   },
   {
@@ -24860,12 +23774,6 @@
    "method": "GET",
    "path": "/api/processplatform/service/processing/workcompleted/process/{processFlag}",
    "handler": "workcompleted_process_processFlag",
-   "file": "crates/processplatform_service_processing/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/processplatform/service/processing/workcompleted/shift/time",
-   "handler": "workcompleted_shift_time",
    "file": "crates/processplatform_service_processing/src/routes.rs"
   },
   {
@@ -25785,12 +24693,6 @@
    "file": "crates/program_center/src/routes.rs"
   },
   {
-   "method": "GET",
-   "path": "/api/program_center/collect/remove",
-   "handler": "collect_remove",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
    "method": "POST",
    "path": "/api/program_center/collect/create",
    "handler": "collect_create",
@@ -25818,36 +24720,6 @@
    "method": "POST",
    "path": "/api/program_center/collect/delete/{id}",
    "handler": "collect_delete",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/config/get",
-   "handler": "config_get",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/agent/flag",
-   "handler": "agent_flag",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/agent/flag/disable",
-   "handler": "agent_flag_disable",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/agent/flag/enable",
-   "handler": "agent_flag_enable",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/agent/flag/execute",
-   "handler": "agent_flag_execute",
    "file": "crates/program_center/src/routes.rs"
   },
   {
@@ -26085,18 +24957,6 @@
    "file": "crates/program_center/src/routes.rs"
   },
   {
-   "method": "POST",
-   "path": "/api/program_center/captcha/v2/create/width/width/height/height",
-   "handler": "captcha_v2_create_width_width_height_height",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/captcha/id/validate/answer/answer",
-   "handler": "captcha_id_validate_answer_answer",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
    "method": "GET",
    "path": "/api/program_center/center/applications",
    "handler": "center_applications",
@@ -26106,12 +24966,6 @@
    "method": "GET",
    "path": "/api/program_center/center/version",
    "handler": "center_version",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/program_center/code/create/mobile/mobile",
-   "handler": "code_create_mobile_mobile",
    "file": "crates/program_center/src/routes.rs"
   },
   {
@@ -26128,24 +24982,6 @@
   },
   {
    "method": "GET",
-   "path": "/api/program_center/code/validate/mobile/mobile/answer/answer",
-   "handler": "code_validate_mobile_mobile_answer_answer",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/code/validate/mobile/mobile/answer/answer/cascade",
-   "handler": "code_validate_mobile_mobile_answer_answer_cascade",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/collect/code/mobile/mobile",
-   "handler": "collect_code_mobile_mobile",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/program_center/collect/connect",
    "handler": "collect_connect",
    "file": "crates/program_center/src/routes.rs"
@@ -26154,12 +24990,6 @@
    "method": "GET",
    "path": "/api/program_center/collect/controllebbs",
    "handler": "collect_controllebbs",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/collect/controllermobile/name/name/mobile/mobile",
-   "handler": "collect_controllermobile_name_name_mobile_mobile",
    "file": "crates/program_center/src/routes.rs"
   },
   {
@@ -26178,18 +25008,6 @@
    "method": "GET",
    "path": "/api/program_center/collect/mobile/check/connect",
    "handler": "collect_mobile_check_connect",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/collect/name/name/exist",
-   "handler": "collect_name_name_exist",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/collect/name/name/mobile/mobile/code/code",
-   "handler": "collect_name_name_mobile_mobile_code_code",
    "file": "crates/program_center/src/routes.rs"
   },
   {
@@ -26280,12 +25098,6 @@
    "method": "GET",
    "path": "/api/program_center/command/list/node",
    "handler": "command_list_node",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/config/open/get/disable/export/enable",
-   "handler": "config_open_get_disable_export_enable",
    "file": "crates/program_center/src/routes.rs"
   },
   {
@@ -26428,12 +25240,6 @@
   },
   {
    "method": "GET",
-   "path": "/api/program_center/deploy/list/paging/page/size/size",
-   "handler": "deploy_list_paging_page_size_size",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/program_center/deploy/server/o2",
    "handler": "deploy_server_o2",
    "file": "crates/program_center/src/routes.rs"
@@ -26448,18 +25254,6 @@
    "method": "GET",
    "path": "/api/program_center/deploy/server/resource",
    "handler": "deploy_server_resource",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/deploy/web/resource/as/new/asNew",
-   "handler": "deploy_web_resource_as_new_asNew",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/deploy/id",
-   "handler": "deploy_id",
    "file": "crates/program_center/src/routes.rs"
   },
   {
@@ -26481,27 +25275,9 @@
    "file": "crates/program_center/src/routes.rs"
   },
   {
-   "method": "GET",
-   "path": "/api/program_center/dict/list/paging/page/size/size",
-   "handler": "dict_list_paging_page_size_size",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/dict/dictFlag/data",
-   "handler": "dict_dictFlag_data",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
    "method": "POST",
    "path": "/api/program_center/dict/{dictFlag}/data",
    "handler": "dict_dictFlag_data_post",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/dict/dictFlag/path/data",
-   "handler": "dict_dictFlag_path_data",
    "file": "crates/program_center/src/routes.rs"
   },
   {
@@ -26514,12 +25290,6 @@
    "method": "POST",
    "path": "/api/program_center/dict/dictFlag/path/data/mockputtopost",
    "handler": "dict_dictFlag_path_data_mockputtopost",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/dict/id",
-   "handler": "dict_id",
    "file": "crates/program_center/src/routes.rs"
   },
   {
@@ -26556,12 +25326,6 @@
    "method": "POST",
    "path": "/api/program_center/dingding/sync/organization/callback",
    "handler": "dingding_sync_organization_callback",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/dingding/sync/organization/register/callback/enable",
-   "handler": "dingding_sync_organization_register_callback_enable",
    "file": "crates/program_center/src/routes.rs"
   },
   {
@@ -26674,20 +25438,8 @@
   },
   {
    "method": "GET",
-   "path": "/api/program_center/invoke/flag/client/client/token/token/execute",
-   "handler": "invoke_flag_client_client_token_token_execute",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/program_center/invoke/flag/execute",
    "handler": "invoke_flag_execute",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/invoke/flag/execute/get",
-   "handler": "invoke_flag_execute_get",
    "file": "crates/program_center/src/routes.rs"
   },
   {
@@ -26877,12 +25629,6 @@
    "file": "crates/program_center/src/routes.rs"
   },
   {
-   "method": "GET",
-   "path": "/api/program_center/market/id/download",
-   "handler": "market_id_download",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
    "method": "POST",
    "path": "/api/program_center/module/compare/upload",
    "handler": "module_compare_upload",
@@ -26937,36 +25683,6 @@
    "file": "crates/program_center/src/routes.rs"
   },
   {
-   "method": "POST",
-   "path": "/api/program_center/module/output/flag/file",
-   "handler": "module_output_flag_file",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/module/remove/structure/id",
-   "handler": "module_remove_structure_id",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/module/write/flag",
-   "handler": "module_write_flag",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "PUT",
-   "path": "/api/program_center/module/write/flag",
-   "handler": "module_write_flag",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/module/id/compare",
-   "handler": "module_id_compare",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
    "method": "GET",
    "path": "/api/program_center/mpweixin/check",
    "handler": "mpweixin_check",
@@ -26997,21 +25713,9 @@
    "file": "crates/program_center/src/routes.rs"
   },
   {
-   "method": "DELETE",
-   "path": "/api/program_center/mpweixin/menu/delete/id",
-   "handler": "mpweixin_menu_delete_id",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
    "method": "GET",
    "path": "/api/program_center/mpweixin/menu/subscribe",
    "handler": "mpweixin_menu_subscribe",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/program_center/mpweixin/menu/update/id",
-   "handler": "mpweixin_menu_update_id",
    "file": "crates/program_center/src/routes.rs"
   },
   {
@@ -27039,18 +25743,6 @@
    "file": "crates/program_center/src/routes.rs"
   },
   {
-   "method": "POST",
-   "path": "/api/program_center/output/appInfoFlag/select",
-   "handler": "output_appInfoFlag_select",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/program_center/output/flag/select/file",
-   "handler": "output_flag_select_file",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
    "method": "GET",
    "path": "/api/program_center/prompterrorlog/count/exceptionclass",
    "handler": "prompterrorlog_count_exceptionclass",
@@ -27064,60 +25756,6 @@
   },
   {
    "method": "GET",
-   "path": "/api/program_center/prompterrorlog/list/id/next/count",
-   "handler": "prompterrorlog_list_id_next_count",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/prompterrorlog/list/id/next/count/date/date",
-   "handler": "prompterrorlog_list_id_next_count_date_date",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/prompterrorlog/list/id/next/count/exceptionclass/exceptionClass",
-   "handler": "prompterrorlog_list_id_next_count_exceptionclass_exceptionClass",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/prompterrorlog/list/id/next/count/loggername/loggerName",
-   "handler": "prompterrorlog_list_id_next_count_loggername_loggerName",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/prompterrorlog/list/id/prev/count",
-   "handler": "prompterrorlog_list_id_prev_count",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/prompterrorlog/list/id/prev/count/date/date",
-   "handler": "prompterrorlog_list_id_prev_count_date_date",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/prompterrorlog/list/id/prev/count/exceptionclass/exceptionClass",
-   "handler": "prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/prompterrorlog/list/id/prev/count/loggername/loggerName",
-   "handler": "prompterrorlog_list_id_prev_count_loggername_loggerName",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/prompterrorlog/id",
-   "handler": "prompterrorlog_id",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/program_center/qiyeweixin/get/callback/aes",
    "handler": "qiyeweixin_get_callback_aes",
    "file": "crates/program_center/src/routes.rs"
@@ -27126,12 +25764,6 @@
    "method": "GET",
    "path": "/api/program_center/qiyeweixin/pull/sync",
    "handler": "qiyeweixin_pull_sync",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/qiyeweixin/request/pull/sync",
-   "handler": "qiyeweixin_request_pull_sync",
    "file": "crates/program_center/src/routes.rs"
   },
   {
@@ -27160,12 +25792,6 @@
   },
   {
    "method": "GET",
-   "path": "/api/program_center/schedule/list/schedulelog/application/application",
-   "handler": "schedule_list_schedulelog_application_application",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/program_center/schedule/report",
    "handler": "schedule_report",
    "file": "crates/program_center/src/routes.rs"
@@ -27190,36 +25816,6 @@
   },
   {
    "method": "GET",
-   "path": "/api/program_center/script/list/paging/page/size/size",
-   "handler": "script_list_paging_page_size_size",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/script/name/name",
-   "handler": "script_name_name",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/script/name/name/imported",
-   "handler": "script_name_name_imported",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/script/flag",
-   "handler": "script_flag",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/script/id",
-   "handler": "script_id",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/program_center/test/test1",
    "handler": "test_test1",
    "file": "crates/program_center/src/routes.rs"
@@ -27238,36 +25834,6 @@
   },
   {
    "method": "GET",
-   "path": "/api/program_center/unexpectederrorlog/list/id/next/count",
-   "handler": "unexpectederrorlog_list_id_next_count",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/unexpectederrorlog/list/id/next/count/date/date",
-   "handler": "unexpectederrorlog_list_id_next_count_date_date",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/unexpectederrorlog/list/id/prev/count",
-   "handler": "unexpectederrorlog_list_id_prev_count",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/unexpectederrorlog/list/id/prev/count/date/date",
-   "handler": "unexpectederrorlog_list_id_prev_count_date_date",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/unexpectederrorlog/id",
-   "handler": "unexpectederrorlog_id",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/program_center/validation/meta",
    "handler": "validation_meta",
    "file": "crates/program_center/src/routes.rs"
@@ -27276,12 +25842,6 @@
    "method": "GET",
    "path": "/api/program_center/validation/scripting/benchmark",
    "handler": "validation_scripting_benchmark",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/validation/timeout/timeout",
-   "handler": "validation_timeout_timeout",
    "file": "crates/program_center/src/routes.rs"
   },
   {
@@ -27609,12 +26169,6 @@
    "file": "crates/program_center/src/routes.rs"
   },
   {
-   "method": "DELETE",
-   "path": "/api/program_center/collect/remove",
-   "handler": "collect_remove",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
    "method": "PUT",
    "path": "/api/program_center/collect/updateUnit",
    "handler": "collect_updateUnit",
@@ -27624,18 +26178,6 @@
    "method": "PUT",
    "path": "/api/program_center/config/save",
    "handler": "config_save",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "DELETE",
-   "path": "/api/program_center/module/remove/structure/id",
-   "handler": "module_remove_structure_id",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "PUT",
-   "path": "/api/program_center/mpweixin/menu/update/id",
-   "handler": "mpweixin_menu_update_id",
    "file": "crates/program_center/src/routes.rs"
   },
   {
@@ -28407,7 +26949,7 @@
   {
    "method": "POST",
    "path": "/api/query/assemble/designer/importmodel/list/{query}/{flag}",
-   "handler": "importmodel_list_query_flag",
+   "handler": "importmodel_list_query_flag_p2",
    "file": "crates/query_assemble_designer/src/lib.rs"
   },
   {
@@ -28431,7 +26973,7 @@
   {
    "method": "POST",
    "path": "/api/query/assemble/designer/neural/model/reset/{modelFlag}/{status}",
-   "handler": "neural_model_modelFlag_reset_status",
+   "handler": "neural_model_modelFlag_reset_status_p2",
    "file": "crates/query_assemble_designer/src/lib.rs"
   },
   {
@@ -28461,7 +27003,7 @@
   {
    "method": "GET",
    "path": "/api/query/assemble/designer/entity/entity/properties/{query}/{category}/{entityCategory}",
-   "handler": "query_entity_entity_category_entityCategory_properties",
+   "handler": "query_entity_entity_category_entityCategory_properties_p3",
    "file": "crates/query_assemble_designer/src/lib.rs"
   },
   {
@@ -28479,13 +27021,13 @@
   {
    "method": "GET",
    "path": "/api/query/assemble/designer/list/querycategory/{query}/{queryCategory}",
-   "handler": "query_list_querycategory_queryCategory",
+   "handler": "query_list_querycategory_queryCategory_p2",
    "file": "crates/query_assemble_designer/src/lib.rs"
   },
   {
    "method": "GET",
    "path": "/api/query/assemble/designer/list/summary/querycategory/{query}/{queryCategory}",
-   "handler": "query_list_summary_querycategory_queryCategory",
+   "handler": "query_list_summary_querycategory_queryCategory_p2",
    "file": "crates/query_assemble_designer/src/lib.rs"
   },
   {
@@ -28509,19 +27051,19 @@
   {
    "method": "GET",
    "path": "/api/query/assemble/designer/stat/list/{id}/{next}/{count}",
-   "handler": "stat_list_id_next_count",
+   "handler": "stat_list_id_next_count_p3",
    "file": "crates/query_assemble_designer/src/lib.rs"
   },
   {
    "method": "GET",
    "path": "/api/query/assemble/designer/stat/list/{query}/{flag}",
-   "handler": "stat_list_query_flag",
+   "handler": "stat_list_query_flag_p2",
    "file": "crates/query_assemble_designer/src/lib.rs"
   },
   {
    "method": "GET",
    "path": "/api/query/assemble/designer/table/export/{tableFlag}/{count}/{count}",
-   "handler": "table_export_tableFlag_count_count",
+   "handler": "table_export_tableFlag_count_count_p3",
    "file": "crates/query_assemble_designer/src/lib.rs"
   },
   {
@@ -28539,13 +27081,13 @@
   {
    "method": "GET",
    "path": "/api/query/assemble/designer/table/build/{flag}/{status}",
-   "handler": "table_flag_status_build",
+   "handler": "table_flag_status_build_p2",
    "file": "crates/query_assemble_designer/src/lib.rs"
   },
   {
    "method": "GET",
    "path": "/api/query/assemble/designer/table/draft/{flag}/{status}",
-   "handler": "table_flag_status_draft",
+   "handler": "table_flag_status_draft_p2",
    "file": "crates/query_assemble_designer/src/lib.rs"
   },
   {
@@ -28557,19 +27099,13 @@
   {
    "method": "GET",
    "path": "/api/query/assemble/designer/table/list/{query}/{flag}",
-   "handler": "table_list_query_flag",
+   "handler": "table_list_query_flag_p2",
    "file": "crates/query_assemble_designer/src/lib.rs"
   },
   {
    "method": "GET",
    "path": "/api/query/assemble/designer/table/list/row/{tableFlag}/{id}/{next}/{count}",
-   "handler": "table_list_tableFlag_row_id_next_count",
-   "file": "crates/query_assemble_designer/src/lib.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/query/assemble/designer/table/list/row/select/where/where/{tableFlag}",
-   "handler": "table_list_tableFlag_row_select_where_where",
+   "handler": "table_list_tableFlag_row_id_next_count_p4",
    "file": "crates/query_assemble_designer/src/lib.rs"
   },
   {
@@ -28623,13 +27159,13 @@
   {
    "method": "GET",
    "path": "/api/query/assemble/designer/list/{view}/{id}/{next}/{count}",
-   "handler": "view_list_id_next_count",
+   "handler": "view_list_id_next_count_p4",
    "file": "crates/query_assemble_designer/src/lib.rs"
   },
   {
    "method": "GET",
    "path": "/api/query/assemble/designer/list/{view}/{query}/{flag}",
-   "handler": "view_list_query_flag",
+   "handler": "view_list_query_flag_p3",
    "file": "crates/query_assemble_designer/src/lib.rs"
   },
   {
@@ -29447,7 +27983,7 @@
   {
    "method": "POST",
    "path": "/api/queryview/importmodel/{flag}/{flag}/{query}/{queryFlag}",
-   "handler": "importmodel_flag_flag_query_queryFlag",
+   "handler": "importmodel_flag_flag_query_queryFlag_p4",
    "file": "crates/query_assemble_surface/src/lib.rs"
   },
   {
@@ -29459,19 +27995,19 @@
   {
    "method": "POST",
    "path": "/api/queryview/importmodel/list/{query}/{queryFlag}",
-   "handler": "importmodel_list_query_queryFlag",
+   "handler": "importmodel_list_query_queryFlag_p2",
    "file": "crates/query_assemble_surface/src/lib.rs"
   },
   {
    "method": "POST",
    "path": "/api/queryview/importmodel/list/record/item/paging/{page}/{size}/{size}",
-   "handler": "importmodel_list_record_item_paging_page_size_size",
+   "handler": "importmodel_list_record_item_paging_page_size_size_p3",
    "file": "crates/query_assemble_surface/src/lib.rs"
   },
   {
    "method": "POST",
    "path": "/api/queryview/importmodel/list/record/paging/{page}/{size}/{size}",
-   "handler": "importmodel_list_record_paging_page_size_size",
+   "handler": "importmodel_list_record_paging_page_size_size_p3",
    "file": "crates/query_assemble_surface/src/lib.rs"
   },
   {
@@ -29489,25 +28025,25 @@
   {
    "method": "POST",
    "path": "/api/queryview/importmodel/record/{recordId}/{status}",
-   "handler": "importmodel_record_recordId_status",
+   "handler": "importmodel_record_recordId_status_p2",
    "file": "crates/query_assemble_surface/src/lib.rs"
   },
   {
    "method": "GET",
    "path": "/api/queryview/neural/list/calculate/model/{modelFlag}/{work}/{workId}",
-   "handler": "neural_list_calculate_model_modelFlag_work_workId",
+   "handler": "neural_list_calculate_model_modelFlag_work_workId_p3",
    "file": "crates/query_assemble_surface/src/lib.rs"
   },
   {
    "method": "GET",
    "path": "/api/queryview/{query}/{flag}",
-   "handler": "query_flag",
+   "handler": "query_flag_p2",
    "file": "crates/query_assemble_surface/src/lib.rs"
   },
   {
    "method": "GET",
    "path": "/api/queryview/list/{query}/{key}/{key}",
-   "handler": "query_list_key_key",
+   "handler": "query_list_key_key_p3",
    "file": "crates/query_assemble_surface/src/lib.rs"
   },
   {
@@ -29519,19 +28055,19 @@
   {
    "method": "GET",
    "path": "/api/queryview/table/list/{id}/{next}/{count}",
-   "handler": "table_list_id_next_count",
+   "handler": "table_list_id_next_count_p3",
    "file": "crates/query_assemble_surface/src/lib.rs"
   },
   {
    "method": "GET",
    "path": "/api/queryview/table/list/paging/{page}/{size}/{size}",
-   "handler": "table_list_paging_page_size_size",
+   "handler": "table_list_paging_page_size_size_p3",
    "file": "crates/query_assemble_surface/src/lib.rs"
   },
   {
    "method": "GET",
    "path": "/api/queryview/table/list/row/{tableFlag}/{id}/{next}/{count}",
-   "handler": "table_list_tableFlag_row_id_next_count",
+   "handler": "table_list_tableFlag_row_id_next_count_p4",
    "file": "crates/query_assemble_surface/src/lib.rs"
   },
   {
@@ -29542,14 +28078,8 @@
   },
   {
    "method": "GET",
-   "path": "/api/queryview/table/list/row/select/where/where/{tableFlag}",
-   "handler": "table_list_tableFlag_row_select_where_where",
-   "file": "crates/query_assemble_surface/src/lib.rs"
-  },
-  {
-   "method": "GET",
    "path": "/api/queryview/table/list/table/row/paging/{tableFlag}/{page}/{size}/{size}",
-   "handler": "table_list_table_tableFlag_row_paging_page_size_size",
+   "handler": "table_list_table_tableFlag_row_paging_page_size_size_p4",
    "file": "crates/query_assemble_surface/src/lib.rs"
   },
   {
@@ -29609,13 +28139,13 @@
   {
    "method": "GET",
    "path": "/api/queryview/excel/result/{view}/{flag}",
-   "handler": "view_excel_result_flag",
+   "handler": "view_excel_result_flag_p2",
    "file": "crates/query_assemble_surface/src/lib.rs"
   },
   {
    "method": "GET",
    "path": "/api/queryview/{view}/{flag}/{flag}/{query}/{queryFlag}",
-   "handler": "view_flag_flag_query_queryFlag",
+   "handler": "view_flag_flag_query_queryFlag_p5",
    "file": "crates/query_assemble_surface/src/lib.rs"
   },
   {

@@ -1,0 +1,41 @@
+-- 102_create_pp_c_hot_path_indexes_rollback.sql
+-- 回滚轮6 的流程平台热路径索引批次。
+
+DROP INDEX IF EXISTS idx_pp_c_task_xperson;
+DROP INDEX IF EXISTS idx_pp_c_task_xwork;
+DROP INDEX IF EXISTS idx_pp_c_task_xjob;
+DROP INDEX IF EXISTS idx_pp_c_task_xprocess;
+DROP INDEX IF EXISTS idx_pp_c_task_xapplication;
+DROP INDEX IF EXISTS idx_pp_c_taskcompleted_xperson;
+DROP INDEX IF EXISTS idx_pp_c_taskcompleted_xwork;
+DROP INDEX IF EXISTS idx_pp_c_taskcompleted_xjob;
+DROP INDEX IF EXISTS idx_pp_c_taskcompleted_xprocess;
+DROP INDEX IF EXISTS idx_pp_c_taskcompleted_xapplication;
+DROP INDEX IF EXISTS idx_pp_c_read_xperson;
+DROP INDEX IF EXISTS idx_pp_c_read_xwork;
+DROP INDEX IF EXISTS idx_pp_c_read_xjob;
+DROP INDEX IF EXISTS idx_pp_c_read_xprocess;
+DROP INDEX IF EXISTS idx_pp_c_read_xapplication;
+DROP INDEX IF EXISTS idx_pp_c_readcompleted_xperson;
+DROP INDEX IF EXISTS idx_pp_c_readcompleted_xwork;
+DROP INDEX IF EXISTS idx_pp_c_readcompleted_xjob;
+DROP INDEX IF EXISTS idx_pp_c_readcompleted_xprocess;
+DROP INDEX IF EXISTS idx_pp_c_readcompleted_xapplication;
+DROP INDEX IF EXISTS idx_pp_c_review_xperson;
+DROP INDEX IF EXISTS idx_pp_c_review_xjob;
+DROP INDEX IF EXISTS idx_pp_c_work_xprocess;
+DROP INDEX IF EXISTS idx_pp_c_work_xapplication;
+DROP INDEX IF EXISTS idx_pp_c_workcompleted_xapplication;
+DROP INDEX IF EXISTS idx_pp_c_job_xjob;
+DROP INDEX IF EXISTS idx_pp_c_job_xperson;
+DROP INDEX IF EXISTS idx_pp_c_keylock_xwork;
+DROP INDEX IF EXISTS idx_pp_c_record_xwork;
+DROP INDEX IF EXISTS idx_pp_c_record_xjob;
+DROP INDEX IF EXISTS idx_pp_c_data_record_xwork;
+DROP INDEX IF EXISTS idx_pp_c_data_record_xjob;
+DROP INDEX IF EXISTS idx_pp_c_worklog_xwork;
+DROP INDEX IF EXISTS idx_pp_c_documentversion_xwork;
+DROP INDEX IF EXISTS idx_pp_c_documentversion_xjob;
+DROP INDEX IF EXISTS idx_pp_c_doc_sign_xjob;
+DROP INDEX IF EXISTS idx_pp_c_attachment_xjob;
+DROP INDEX IF EXISTS idx_pp_c_serialnumber_xapplication;

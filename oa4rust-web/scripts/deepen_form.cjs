@@ -398,7 +398,7 @@ content = content.replace(
 // Insert the modals before the closing </template>.
 content = content.replace(
   '  </div>\n</template>',
-  String.raw`
+  `
     <!-- Field Templates Modal -->
     <div v-if="showFieldTemplates" class="modal-overlay" @click.self="showFieldTemplates=false">
       <div class="modal modal-lg glass-card">

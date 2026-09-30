@@ -520,7 +520,7 @@ pub async fn person_list_filter_page_size(
         .get("name")
         .and_then(|v| v.as_str())
         .filter(|s| !s.is_empty())
-        .map(str::to_string);
+        .map(shared::db::escape_like);
     let unit_id = body
         .get("unitId")
         .and_then(|v| v.as_str())
@@ -546,7 +546,12 @@ pub async fn person_list_filter_page_size(
                 "SELECT id, name, unit_id FROM x_org_person {} ORDER BY id LIMIT $3 OFFSET $4",
                 where_clause
             ),
-            &[&name_like, &unit_id, &size, &((page - 1) * size)],
+            &[
+                &name_like,
+                &unit_id,
+                &size,
+                &((page - 1).saturating_mul(size)),
+            ],
         )
         .await
         .map_err(|_| AppError::Internal)?;

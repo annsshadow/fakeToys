@@ -116,7 +116,6 @@ const emit = defineEmits<{
   error: [error: unknown]
 }>()
 
-// biome-ignore lint/correctness/noUnusedVariables: Vue template consumes this binding.
 const typeLabels: Record<OrganizationSelectorType, string> = {
   unit: '组织',
   person: '人员',
@@ -158,7 +157,6 @@ function updateModel(value: OrganizationSelectorItem[]): void {
   emit('change', value)
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: Vue template consumes this handler.
 function toggle(item: OrganizationSelectorItem): void {
   if (isSelected(item)) {
     remove(item)
@@ -177,7 +175,6 @@ function remove(item: OrganizationSelectorItem): void {
   updateModel(props.modelValue.filter((selected) => itemKey(selected) !== key))
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: Vue template consumes this formatter.
 function itemDetail(item: OrganizationSelectorItem): string {
   if (item.type === 'person') return item.mobile || item.email || item.unitId || item.id
   if (item.type === 'identity') return item.unitId || item.personId || item.id

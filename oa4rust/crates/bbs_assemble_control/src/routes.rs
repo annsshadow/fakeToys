@@ -71,103 +71,43 @@ pub fn router(pool: Pool) -> Router {
         )
         .route(
             "/api/bbs/assemble/control/delete/forum",
-            post(crate::delete_forum),
+            post(crate::delete_forum_body),
         )
         .route(
             "/api/bbs/assemble/control/delete/forum",
-            delete(crate::delete_forum),
+            delete(crate::delete_forum_body),
         )
         .route(
             "/api/bbs/assemble/control/delete/reply",
-            post(crate::delete_reply),
+            post(crate::delete_reply_body),
         )
         .route(
             "/api/bbs/assemble/control/delete/reply",
-            delete(crate::delete_reply),
+            delete(crate::delete_reply_body),
         )
         .route(
             "/api/bbs/assemble/control/delete/subject",
-            post(crate::delete_subject),
+            post(crate::delete_subject_body),
         )
         .route(
             "/api/bbs/assemble/control/delete/subject",
-            delete(crate::delete_subject),
+            delete(crate::delete_subject_body),
         )
         .route(
             "/api/bbs/assemble/control/list/reply/filter",
             get(crate::list_reply_filter),
         )
         .route(
-            "/api/bbs/assemble/control/list/subjects/filtered",
-            get(crate::list_subjects_filtered),
-        )
-        .route(
-            "/api/bbs/assemble/control/list/subjects/index",
-            get(crate::list_subjects_index),
-        )
-        .route(
-            "/api/bbs/assemble/control/list/subjects/recommended/index",
-            get(crate::list_subjects_recommended_index),
-        )
-        .route(
-            "/api/bbs/assemble/control/list/topics/creamed",
-            get(crate::list_topics_creamed),
-        )
-        .route(
-            "/api/bbs/assemble/control/list/topics/recommended",
-            get(crate::list_topics_recommended),
-        )
-        .route(
             "/api/bbs/assemble/control/picture/list/{subjectId}",
             get(crate::picture_list),
-        )
-        .route(
-            "/api/bbs/assemble/control/subject/creamed/list",
-            get(subject_creamed_list),
-        )
-        .route(
-            "/api/bbs/assemble/control/subject/filter/list",
-            get(subject_filter_list),
-        )
-        .route(
-            "/api/bbs/assemble/control/subject/index/list",
-            get(subject_index_list),
-        )
-        .route(
-            "/api/bbs/assemble/control/subject/search",
-            get(crate::subject_search),
         )
         .route(
             "/api/bbs/assemble/control/subject/statgrade",
             get(subject_statgrade),
         )
         .route(
-            "/api/bbs/assemble/control/topic/creamed/list",
-            get(crate::topic_creamed_list),
-        )
-        .route(
-            "/api/bbs/assemble/control/topic/filter/list",
-            get(crate::topic_filter_list),
-        )
-        .route(
             "/api/bbs/assemble/control/topic/filter/listsubjectinfo",
             post(crate::topic_filter_listsubjectinfo),
-        )
-        .route(
-            "/api/bbs/assemble/control/topic/index/list",
-            get(crate::topic_index_list),
-        )
-        .route(
-            "/api/bbs/assemble/control/topic/recommended/index",
-            get(crate::topic_recommended_index),
-        )
-        .route(
-            "/api/bbs/assemble/control/topic/recommended/list",
-            get(crate::topic_recommended_list),
-        )
-        .route(
-            "/api/bbs/assemble/control/topic/search",
-            get(crate::topic_search),
         )
         .route("/api/bbs/assemble/control/user/info", get(user_info))
         // ════════ o2server 全集对齐（106 条；U2 冲刺 100%）════════
@@ -176,11 +116,11 @@ pub fn router(pool: Pool) -> Router {
         .route(&fmt("attachment/{id}"), delete(u2::u2_attachment_delete))
         .route(
             &fmt("attachment/download/{id}"),
-            get(u2::attachment_download_501),
+            get(u2::u2_attachment_download),
         )
         .route(
             &fmt("attachment/download/{id}/stream/{stream}"),
-            get(u2::attachment_download_stream_501),
+            get(u2::u2_attachment_download_stream),
         )
         .route(
             &fmt("attachment/list/subject/{subjectId}"),
@@ -188,11 +128,11 @@ pub fn router(pool: Pool) -> Router {
         )
         .route(
             &fmt("attachment/upload/subject/{subjectId}"),
-            post(u2::attachment_upload_501),
+            post(u2::u2_attachment_upload),
         )
         .route(
             &fmt("attachment/upload/subject/{subjectId}/callback/{callback}"),
-            post(u2::attachment_upload_callback_501),
+            post(u2::u2_attachment_upload_callback),
         )
         // ── forum（ForumInfoAction，2 条）──
         .route(&fmt("forum/{id}"), get(get_forum))

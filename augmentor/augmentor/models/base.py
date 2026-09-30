@@ -9,10 +9,11 @@ import logging
 import threading
 from abc import ABC, abstractmethod
 from typing import Optional
-from ..config import ModelConfig
+from ..config import (DEFAULT_REQUEST_TIMEOUT, REQUEST_TIMEOUT_RANGE, ModelConfig)
 from ..cache import MemoryCache, DiskCache
 from ..exceptions import ModelGenerateError, ModelResponseError
-from ..retry import with_retries, classify_error
+from ..retry import with_retries, classify_error, MAX_RETRY_AFTER
+from ..validation import require_count, require_ratio, require_seconds
 
 logger = logging.getLogger(__name__)
 
@@ -58,8 +59,33 @@ class ModelBackend(ABC):
     # 现在统一复用 cache.MemoryCache，容量与淘汰逻辑只维护一处。
     _GENERATION_CACHE_MAX = 512
 
-    # 单次重试等待上限（秒），防止退避时间无界增长
+    # 退避计算的等待上限（秒），防止指数退避无界增长。**只管退避计算那一支**：
+    # 服务端给出 `Retry-After` 时改由 `with_retries` 的 `max_retry_wait` 封顶（默认
+    # `retry.MAX_RETRY_AFTER` = 300 s），本常数参不到场（两副封顶为何故意不相犯，
+    # 见 docs/ARCHITECTURE.md §3.22）。
+    # 抖动默认 0 ⇒ 30 s 在本层是硬上限；`compute_delay` 的抖动加在夹逼**之后**，
+    # 所以 `augmentation.retry_jitter` 一旦配了非 0 值，这一支的最坏等待就变成
+    # `本常数 × (1 + jitter)`（默认档 0.5 即 45 s）。
     _MAX_RETRY_DELAY = 30.0
+
+    # generate() 未显式传参时的默认档位：总尝试次数与首次退避基数。
+    # 二者都可由 `default_attempts` / `default_retry_delay` 覆盖（配置文件的
+    # `augmentation.max_retries` / `retry_delay` 经工厂透传到这里）。
+    _DEFAULT_ATTEMPTS = 3
+    _DEFAULT_RETRY_DELAY = 1.0
+
+    # 等待预算的两条默认值（同上，可经工厂被 `augmentation.max_retry_wait` /
+    # `retry_jitter` 覆盖）。上界默认直接取公开常数，**不重抄 300.0** —— 重抄一份
+    # 就等于给「两处数字悄悄不同」留位置。
+    _DEFAULT_MAX_RETRY_WAIT = MAX_RETRY_AFTER
+    _DEFAULT_RETRY_JITTER = 0.0
+
+    # 单次请求超时（秒）的类默认档（A74）。这里**引用**`config.DEFAULT_REQUEST_TIMEOUT`
+    # 而不是重抄 120.0：改前六个硬编码是 60 / 120 两种值互不相同，而「两处抄同一个
+    # 数」正是 A77 已经付过代价的错误，所以默认档只有一个权威定义点。
+    # 配置文件那一半走 `augmentation.request_timeout`（同常数默认）+ 模型条目的
+    # `models.<名字>.request_timeout`（优先），两者都经工厂透传到这里。
+    _DEFAULT_REQUEST_TIMEOUT = DEFAULT_REQUEST_TIMEOUT
 
     # 磁盘响应缓存默认容量上限（256 MB）。磁盘缓存必须比内存缓存更保守：
     # 没有上限的磁盘缓存只是把内存泄漏换成了磁盘泄漏。
@@ -69,7 +95,12 @@ class ModelBackend(ABC):
                  config: ModelConfig,
                  response_cache_dir: Optional[str] = None,
                  response_cache_ttl: Optional[float] = None,
-                 response_cache_max_bytes: Optional[int] = None):
+                 response_cache_max_bytes: Optional[int] = None,
+                 default_attempts: Optional[int] = None,
+                 default_retry_delay: Optional[float] = None,
+                 default_max_retry_wait: Optional[float] = None,
+                 default_retry_jitter: Optional[float] = None,
+                 default_request_timeout: Optional[float] = None):
         """初始化模型后端
 
         Args:
@@ -80,12 +111,75 @@ class ModelBackend(ABC):
             response_cache_ttl: 磁盘缓存生存时间（秒），None 表示不按时间过期
             response_cache_max_bytes: 磁盘缓存容量上限（字节），
                 None 时用 DEFAULT_RESPONSE_CACHE_MAX_BYTES
+            default_attempts: 该后端的重试默认档位（**总尝试次数**，含首次调用），
+                `generate()` 未显式传 `max_retries` 时用它。None 时用 _DEFAULT_ATTEMPTS。
+                口径与 `generate(max_retries=…)` 完全一致：0 读作「只调用一次」
+            default_retry_delay: 该后端的退避基数默认值（秒），
+                `generate()` 未显式传 `retry_delay` 时用它。None 时用 _DEFAULT_RETRY_DELAY
+            default_max_retry_wait: 服务端指令（HTTP `Retry-After`）那一支的等待上限
+                （秒），None 时用 _DEFAULT_MAX_RETRY_WAIT（= `retry.MAX_RETRY_AFTER`）。
+                **只能把上限夹小、不能放大**：300 s 是对外的承诺，判据
+                `require_seconds(..., maximum=MAX_RETRY_AFTER)` 守的就是这一句
+            default_retry_jitter: 退避的随机抖动比例（0-1 闭区间），None 时用
+                _DEFAULT_RETRY_JITTER（0.0 ⇒ 各档等待与接参前逐字相同）
+            default_request_timeout: 单次请求超时（秒），`_call_api` 里每次
+                `session.post` 用它；None 时用 _DEFAULT_REQUEST_TIMEOUT。
+                配置文件的 `augmentation.request_timeout` 与模型条目的
+                `models.<名字>.request_timeout`（后者优先）经工厂透传到这里。
+                下界 1 是 `requests` 的硬约束而不是口味：实测 `timeout=0` 抛
+                `ValueError: Attempted to set connect timeout to 0, but the timeout
+                cannot be set to a value less than or equal to 0`，且它发生在第一次
+                真实调用上（A74）
+
+        Raises:
+            DataValidationError: default_attempts 不是不小于 0 的整数，
+                default_retry_delay 不是不小于 0 的有限数值，
+                default_max_retry_wait 不在 0-300 秒内，
+                default_retry_jitter 不在 0-1 之间，
+                或 default_request_timeout 不在配置区间内
         """
+        # 判参必须排在 _build_response_cache 之前：DiskCache.__init__ 会 mkdir，
+        # 坏档位不该留下一个建好了却没人用的缓存目录。
+        require_count("default_attempts", default_attempts, minimum=0)
+        require_seconds("default_retry_delay", default_retry_delay, minimum=0.0)
+        require_seconds("default_max_retry_wait", default_max_retry_wait,
+                        minimum=0.0, maximum=MAX_RETRY_AFTER)
+        require_ratio("default_retry_jitter", default_retry_jitter)
+        require_seconds("default_request_timeout", default_request_timeout,
+                        minimum=REQUEST_TIMEOUT_RANGE[0],
+                        maximum=REQUEST_TIMEOUT_RANGE[1])
+
         self.config = config
         self._request_count = 0
         self._error_count = 0
+        # A66：重试的「实际发生次数」与「累计等待秒」。`_request_count` / `_error_count`
+        # 只记「调用几次 / 失败几次」，**不含等待时长**——一次 429 之后按 `Retry-After`
+        # 睡满 300 s，在两个计数器上和「一次都没重试」完全一样。这里按「与两个计数同族、
+        # 纯加法」补上出口：成功路与会耗尽失败路都累计（经 `with_retries` 的 `on_retry`，
+        # 见 `generate`）。
+        self._retry_count = 0
+        self._retry_wait_seconds = 0.0
         self._lock = threading.Lock()
         self._session = None  # 连接池会话
+        self._default_attempts = (
+            default_attempts if default_attempts is not None else self._DEFAULT_ATTEMPTS
+        )
+        self._default_retry_delay = (
+            default_retry_delay if default_retry_delay is not None
+            else self._DEFAULT_RETRY_DELAY
+        )
+        self._default_max_retry_wait = (
+            default_max_retry_wait if default_max_retry_wait is not None
+            else self._DEFAULT_MAX_RETRY_WAIT
+        )
+        self._default_retry_jitter = (
+            default_retry_jitter if default_retry_jitter is not None
+            else self._DEFAULT_RETRY_JITTER
+        )
+        self._request_timeout = (
+            default_request_timeout if default_request_timeout is not None
+            else self._DEFAULT_REQUEST_TIMEOUT
+        )
         self._generation_cache = MemoryCache(max_size=self._GENERATION_CACHE_MAX)
         self._response_cache = self._build_response_cache(
             response_cache_dir, response_cache_ttl, response_cache_max_bytes
@@ -122,40 +216,44 @@ class ModelBackend(ABC):
         """获取或创建 HTTP 会话（线程安全）
         
         Returns:
-            requests.Session 或 httpx.Client
+            requests.Session（HTTPAdapter 不可用时是无连接池的裸 Session）
         """
         if self._session is None:
             with self._lock:
                 if self._session is None:
+                    # requests 是硬依赖：真缺它就直接抛 ImportError（fail loud），
+                    # 不能落进下面的降级分支——那会在 `requests.Session()` 处变成
+                    # 一个与根因无关的 NameError。可降级的只有连接池那一层。
+                    import requests
+
+                    session = requests.Session()
+
                     try:
-                        import requests
                         from requests.adapters import HTTPAdapter
-                        from urllib3.util.retry import Retry
-                        
-                        session = requests.Session()
-                        
-                        # 配置连接池和重试
-                        retry_strategy = Retry(
-                            total=3,
-                            backoff_factor=0.1,
-                            status_forcelist=[429, 500, 502, 503, 504]
+                    except ImportError:
+                        # 原文案「requests 未安装」在这种情形下必然为假（能走到
+                        # 这里说明 import requests 刚成功），会把排查方向带偏。
+                        logger.warning(
+                            "HTTPAdapter 不可用，已降级为基础会话（无连接池）",
+                            exc_info=True,
                         )
-                        
+                    else:
+                        # 只配连接池，**不配传输层重试**。真正的重试口径只有
+                        # `with_retries` + `classify_error` 这一层（`generate()` 的
+                        # max_retries/retry_delay 旋钮）。urllib3 的 Retry 默认不重
+                        # POST，而本仓库 5 个后端一律用 POST，所以原先挂上去的那副
+                        # 从未生效过一次，只会让人误以为存在第二层重试；实测数字、
+                        # 以及 10/20 这两个数与 requests 默认值的关系，见
+                        # docs/ARCHITECTURE.md §3.21。
                         adapter = HTTPAdapter(
-                            max_retries=retry_strategy,
                             pool_connections=10,
                             pool_maxsize=20
                         )
-                        
                         session.mount("http://", adapter)
                         session.mount("https://", adapter)
-                        
-                        self._session = session
                         logger.info("创建 HTTP 会话（带连接池）")
-                    except ImportError:
-                        logger.warning("requests 未安装，使用基础连接")
-                        import requests
-                        self._session = requests.Session()
+
+                    self._session = session
         
         return self._session
     
@@ -182,16 +280,38 @@ class ModelBackend(ABC):
         2. **必须是跨进程稳定的摘要**。内置 `hash()` 对 str 带进程随机盐
            （PYTHONHASHSEED），拿它当磁盘键会让缓存跨进程永远不命中，
            表现为「磁盘缓存文件越来越多但命中率为 0」。
+
+        还有一条同重的：**同一份语义只能有一个键**（比例两键走 `_ratio_token`，
+        见那里的说明）。
         """
         payload = "\x00".join([
             str(self.config.type or ""),
             str(self.config.model or ""),
-            repr(self.config.temperature),
-            repr(self.config.top_p),
+            self._ratio_token(self.config.temperature),
+            self._ratio_token(self.config.top_p),
             repr(self.config.max_output_tokens),
             prompt,
         ])
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def _ratio_token(value) -> str:
+        """把比例类采样参数归一成一个数值的两种字面量
+
+        `require_ratio` 收 int 也收 float，所以 YAML 里 `temperature: 1` 与
+        `temperature: 1.0` 是**同一份配置**（`models.<名字>.temperature` 的界
+        0.0–2.0 两边都判得下）。直接 `repr()` 会劈成 `'1'` 与 `'1.0'` 两个键，
+        症状不是崩而是命中率被字面量写法切开，内存与磁盘两路都劈。
+
+        `max_output_tokens` 不在这里归一：`require_count` 拒非整数，`2048.0`
+        两侧同红，那一支劈不了键。
+
+        归一对 int 与 float 同做，但 `repr(float(0.7)) == repr(0.7)` ⇒ **float 写法的
+        键与改前逐字节相同**，既有磁盘缓存不会因这行改动整体失效；唯一换键的是本来
+        就该并档的 int 写法（它们留下的旧条目再也取不到，属于自然失效）。非数值原样
+        交给 `repr`（判据已在构造期把非数值挡在外面，这里不再判一遍）。
+        """
+        return repr(float(value)) if isinstance(value, (int, float)) else repr(value)
 
     @property
     def response_cache(self) -> Optional[DiskCache]:
@@ -218,8 +338,11 @@ class ModelBackend(ABC):
 
         Args:
             prompt: 输入提示
-            max_retries: **总尝试次数**（含首次调用），默认 3
-            retry_delay: 首次重试的基础等待（秒），默认 1.0
+            max_retries: **总尝试次数**（含首次调用），None 时用后端的
+                `default_attempts`（构造时未指定则为 3）。必须是不小于 0 的
+                整数；0 读作「不重试」（即只调用一次）。
+            retry_delay: 首次重试的基础等待（秒），None 时用后端的
+                `default_retry_delay`（构造时未指定则为 1.0）
         
         Returns:
             模型生成的文本
@@ -227,10 +350,13 @@ class ModelBackend(ABC):
         Raises:
             ModelGenerateError: 重试次数用尽后仍失败，或遇到不可重试的错误
                 （如 401/403/404 —— 重试只会浪费配额）
+            DataValidationError: max_retries 为负数或非整数，或 retry_delay 非法
         """
         # max_retries 的既有语义是「总尝试次数」，不是「额外重试次数」
-        attempts = max(1, max_retries if max_retries is not None else 3)
-        delay = retry_delay if retry_delay is not None else 1.0
+        require_count("max_retries", max_retries, minimum=0)
+        require_seconds("retry_delay", retry_delay, minimum=0.0)
+        attempts = max(1, max_retries if max_retries is not None else self._default_attempts)
+        delay = retry_delay if retry_delay is not None else self._default_retry_delay
 
         # 缓存复用优化：内存缓存 → 磁盘缓存 → 真正调用
         cache_key = self._cache_key(prompt)
@@ -261,15 +387,28 @@ class ModelBackend(ABC):
                     self._error_count += 1
                 raise
 
+        def _record_retry(_attempt_no: int, _exc: BaseException, wait: float) -> None:
+            # 每发生一次「等待后重发」就累计一次。走 `on_retry` 而不是 `with_retries`
+            # 返回的那份 `RetryStats`：耗尽/放弃那条路会 `raise`、拿不到 stats，可等待
+            # 其实已经付了——只记成功路会系统性低估最该被看见的一类（重试到弹尽才失败）。
+            with self._lock:
+                self._retry_count += 1
+                self._retry_wait_seconds += wait
+
         try:
             # 统一走 retry.py：退避有上限，且由 classify_error 区分
-            # 「限流/网络抖动」（可重试）与「鉴权/参数错误」（立即放弃）
+            # 「限流/网络抖动」（可重试）与「鉴权/参数错误」（立即放弃）。
+            # 两副封顶各管一支：退避一支归 _MAX_RETRY_DELAY（再乘上配置的抖动），
+            # 服务端指令一支归 _default_max_retry_wait（`augmentation.max_retry_wait`）。
             result, _stats = with_retries(
                 _attempt,
                 max_retries=attempts - 1,
                 base_delay=delay,
                 max_delay=self._MAX_RETRY_DELAY,
+                max_retry_wait=self._default_max_retry_wait,
+                jitter=self._default_retry_jitter,
                 classify=classify_error,
+                on_retry=_record_retry,
             )
         except Exception as e:
             raise ModelGenerateError(
@@ -294,12 +433,24 @@ class ModelBackend(ABC):
     def error_count(self) -> int:
         """错误次数"""
         return self._error_count
+
+    @property
+    def retry_count(self) -> int:
+        """累计发生的重试次数（每次「等待后重发」计 1，不含首次调用；A66）"""
+        return self._retry_count
+
+    @property
+    def retry_wait_seconds(self) -> float:
+        """累计因重试而等待的总秒数（退避与服务端 `Retry-After` 两支都算；A66）"""
+        return self._retry_wait_seconds
     
     def reset_stats(self):
         """重置统计信息"""
         with self._lock:
             self._request_count = 0
             self._error_count = 0
+            self._retry_count = 0
+            self._retry_wait_seconds = 0.0
     
     def close(self):
         """关闭连接

@@ -129,7 +129,7 @@ async def batch_export(request: BatchExportRequest, _auth: None = Depends(verify
 async def preview_export(request: PreviewRequest):
     """预览导出格式转换结果"""
     try:
-        items = load_items(request.input_file)
+        items = await run_in_thread(load_items, request.input_file)
 
         def run():
             from augmentor.preview import PreviewGenerator

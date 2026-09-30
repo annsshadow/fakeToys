@@ -103,19 +103,19 @@ use crate::{
     form_v2_lookup_workorworkcompleted_workOrWorkCompleted_mobile, get_surface, handover_id,
     handover_id_cancel, handover_id_process, handover_list_paging_page_size_size,
     job_job_allow_visit_person_person, job_job_find_work_workcompleted,
-    job_latest_work_workcompleted_serial_serial, job_v2_job_projection, keylock_lock,
-    keylock_lock_mockputtopost, list_surfaces, mode_clear_person_person_manager, mode_id_delete,
-    mode_save, preview_surface, process_activity_activity_activityType_activityType, process_flag,
-    process_flag_allowrerouteto, process_flag_application_applicationFlag, process_flag_complex,
+    job_latest_work_workcompleted_serial_serial, job_v2_job_projection, keylock_lock_mockputtopost,
+    list_surfaces, mode_clear_person_person_manager, mode_id_delete, mode_save, preview_surface,
+    process_activity_activity_activityType_activityType, process_flag, process_flag_allowrerouteto,
+    process_flag_application_applicationFlag, process_flag_complex,
     process_flag_onlyRemoveNotCompleted, process_list_application_applicationFlag,
     process_list_application_applicationFlag_filter, process_list_available_identity_process_flag,
     process_list_controllable_application_applicationFlag, publish_surface, read_count_credential,
-    read_filter_attribute, read_filter_attribute_filter, read_id, read_id_manage,
-    read_id_manage_mockdeletetoget, read_id_mockputtopost, read_id_opinion_manage,
-    read_id_opinion_manage_mockputtopost, read_id_processing, read_id_processing_manage,
-    read_id_processing_manage_mockputtopost, read_id_reference, read_id_reset_manage,
-    read_id_reset_manage_mockputtopost, read_list_count_application_applicationFlag_process,
-    read_list_date_date_manage, read_list_filter_page_size_size_manage, read_list_id_next_count,
+    read_filter_attribute, read_id, read_id_manage, read_id_manage_mockdeletetoget,
+    read_id_mockputtopost, read_id_opinion_manage, read_id_opinion_manage_mockputtopost,
+    read_id_processing, read_id_processing_manage, read_id_processing_manage_mockputtopost,
+    read_id_reference, read_id_reset_manage, read_id_reset_manage_mockputtopost,
+    read_list_count_application_applicationFlag_process, read_list_date_date_manage,
+    read_list_filter_page_size_size_manage, read_list_id_next_count,
     read_list_id_next_count_application_applicationFlag, read_list_id_next_count_filter,
     read_list_id_next_count_process_processFlag, read_list_id_prev_count,
     read_list_id_prev_count_application_applicationFlag, read_list_id_prev_count_filter,
@@ -126,10 +126,9 @@ use crate::{
     read_v2_list_create_id_prev_count, read_v2_list_create_paging_page_size_size,
     read_v2_list_id_next_count, read_v2_list_id_prev_count, read_v2_list_paging_page_size_size,
     read_work_workId, read_workcompleted_workCompletedId, readcompleted_count_credential,
-    readcompleted_filter_attribute, readcompleted_filter_attribute_filter, readcompleted_id,
-    readcompleted_id_manage, readcompleted_id_manage_mockdeletetoget,
-    readcompleted_id_opinion_manage, readcompleted_id_reference,
-    readcompleted_list_count_application_applicationFlag_process,
+    readcompleted_filter_attribute, readcompleted_id, readcompleted_id_manage,
+    readcompleted_id_manage_mockdeletetoget, readcompleted_id_opinion_manage,
+    readcompleted_id_reference, readcompleted_list_count_application_applicationFlag_process,
     readcompleted_list_date_date_manage, readcompleted_list_filter_page_size_size_manage,
     readcompleted_list_id_next_count, readcompleted_list_id_next_count_application_applicationFlag,
     readcompleted_list_id_next_count_filter, readcompleted_list_id_next_count_process_processFlag,
@@ -147,27 +146,25 @@ use crate::{
     record_list_workorworkcompleted_workOrWorkCompleted,
     record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size,
     review_count_person_credential, review_create_work, review_create_workcompleted,
-    review_filter_attribute, review_filter_create_entry, review_filter_entry, review_id,
+    review_filter_attribute, review_filter_entry, review_id,
     review_id_application_applicationFlag_manage,
     review_id_application_applicationFlag_manage_mockdeletetoget, review_list_job_job,
     review_v2_list_create_id_next_count, review_v2_list_create_id_prev_count,
     review_v2_list_create_paging_page_size_size, review_v2_list_id_next_count,
     review_v2_list_id_prev_count, review_v2_list_paging_page_size_size,
-    review_v2_list_paging_page_size_size_manage, review_v2_search,
-    review_workorworkcompleted_workOrWorkCompleted, route_id, route_id_selectconfig,
-    route_list_mockputtopost, save_surface, script_flag_application_applicationFlag,
-    script_flag_application_applicationFlag_imported,
+    review_v2_list_paging_page_size_size_manage, review_workorworkcompleted_workOrWorkCompleted,
+    route_id, route_id_selectconfig, route_list_mockputtopost, save_surface,
+    script_flag_application_applicationFlag, script_flag_application_applicationFlag_imported,
     serialnumber_generate_process_processId_name_name_serial, serialnumber_id,
     serialnumber_id_mockdeletetoget, serialnumber_id_mockputtopost,
     serialnumber_list_application_applicationFlag, serialnumber_list_paging_page_size_size,
     service_work_id_touch, service_work_id_touch_mockputtopost, sign_download_scrawlId, sign_id,
     sign_id_mockdeletetoget, sign_list_job_job, sign_save_task_taskId, sign_task_taskId,
-    sign_task_taskId_mockdeletetoget, task_count_credential, task_filter_attribute,
-    task_filter_attribute_filter, task_id, task_id_manage, task_id_manage_mockdeletetoget,
-    task_id_mockputtopost, task_id_opinion_manage, task_id_opinion_manage_mockputtopost,
-    task_id_press_manage, task_id_processing, task_id_processing_manage,
-    task_id_processing_manage_mockputtopost, task_id_processing_neural, task_id_reference,
-    task_id_reset_manage, task_id_reset_manage_mockputtopost, task_id_will,
+    sign_task_taskId_mockdeletetoget, task_count_credential, task_filter_attribute, task_id,
+    task_id_manage, task_id_manage_mockdeletetoget, task_id_mockputtopost, task_id_opinion_manage,
+    task_id_opinion_manage_mockputtopost, task_id_press_manage, task_id_processing,
+    task_id_processing_manage, task_id_processing_manage_mockputtopost, task_id_processing_neural,
+    task_id_reference, task_id_reset_manage, task_id_reset_manage_mockputtopost, task_id_will,
     task_list_count_application_applicationFlag_process,
     task_list_date_date_hour_hour_exclude_draft_isExcludeDraft_manage,
     task_list_filter_page_size_size_manage, task_list_id_next_count,
@@ -184,10 +181,9 @@ use crate::{
     task_v2_list_create_id_prev_count, task_v2_list_create_paging_page_size_size,
     task_v2_list_id_next_count, task_v2_list_id_prev_count, task_v2_list_paging_page_size_size,
     task_v3_id_add, task_v3_id_pin, taskcompleted_count_credential, taskcompleted_filter_attribute,
-    taskcompleted_filter_attribute_filter, taskcompleted_id, taskcompleted_id_manage,
-    taskcompleted_id_manage_mockdeletetoget, taskcompleted_id_opinion_manage,
-    taskcompleted_id_opinion_manage_mockputtopost, taskcompleted_id_reference,
-    taskcompleted_id_reference_control,
+    taskcompleted_id, taskcompleted_id_manage, taskcompleted_id_manage_mockdeletetoget,
+    taskcompleted_id_opinion_manage, taskcompleted_id_opinion_manage_mockputtopost,
+    taskcompleted_id_reference, taskcompleted_id_reference_control,
     taskcompleted_list_count_application_applicationFlag_process,
     taskcompleted_list_date_date_hour_hour_manage, taskcompleted_list_filter_page_size_size_manage,
     taskcompleted_list_id_next_count, taskcompleted_list_id_next_count_application_applicationFlag,
@@ -228,8 +224,8 @@ use crate::{
     work_v2_id_rollback_mockputtopost, work_v2_id_terminate, work_v2_id_terminate_manage,
     work_v2_id_trigger_processing, work_v2_list_id_activity_goback, work_v2_list_id_next_count,
     work_v2_list_id_prev_count, work_v2_list_paging_page_size_size,
-    work_v2_workorworkcompleted_workOrWorkCompleted, work_v3_retract,
-    work_v3_retract_stage_job_job, work_v3_workorworkcompleted_workOrWorkCompleted_permission,
+    work_v2_workorworkcompleted_workOrWorkCompleted, work_v3_retract_stage_job_job,
+    work_v3_workorworkcompleted_workOrWorkCompleted_permission,
     work_workorworkcompleted_workOrWorkCompleted,
     workcompleted_filter_attribute_application_applicationFlag,
     workcompleted_filter_attribute_application_applicationFlag_manage,
@@ -248,8 +244,7 @@ use crate::{
     workcompleted_list_id_prev_count_application_applicationFlag_filter,
     workcompleted_list_id_prev_count_application_applicationFlag_manage,
     workcompleted_list_paging_page_size_size_application_applicationFlag_filter_manage,
-    workcompleted_process_processFlag, workcompleted_shift_time,
-    worklog_list_add_split_work_workId, worklog_list_job_job,
+    workcompleted_process_processFlag, worklog_list_add_split_work_workId, worklog_list_job_job,
     worklog_list_rollback_workorworkcompleted_workOrWorkCompleted,
     worklog_list_workorworkcompleted_workOrWorkCompleted,
 };
@@ -347,12 +342,13 @@ use crate::{
 };
 
 use crate::{
-    attachment_u2b_batch_delete_manage, attachment_u2b_batch_download_zip,
-    attachment_u2b_batch_update_manage, attachment_u2b_batch_upload_manage,
-    attachment_u2b_change_order_number, attachment_u2b_change_site, attachment_u2b_copy_to_work,
-    attachment_u2b_copy_to_work_soft, attachment_u2b_copy_to_workcompleted,
-    attachment_u2b_copy_to_workcompleted_soft, attachment_u2b_delete_by_workcompleted,
-    attachment_u2b_doc_to_word, attachment_u2b_doc_to_word_wowc, attachment_u2b_download_by_work,
+    attachment_u2b_batch_delete_manage, attachment_u2b_batch_download_zip_by_job,
+    attachment_u2b_batch_download_zip_by_work, attachment_u2b_batch_update_manage,
+    attachment_u2b_batch_upload_manage, attachment_u2b_change_order_number,
+    attachment_u2b_change_site, attachment_u2b_copy_to_work, attachment_u2b_copy_to_work_soft,
+    attachment_u2b_copy_to_workcompleted, attachment_u2b_copy_to_workcompleted_soft,
+    attachment_u2b_delete_by_workcompleted, attachment_u2b_doc_to_word,
+    attachment_u2b_doc_to_word_wowc, attachment_u2b_download_by_work,
     attachment_u2b_download_by_work_stream, attachment_u2b_download_by_workcompleted,
     attachment_u2b_download_by_workcompleted_stream, attachment_u2b_download_id,
     attachment_u2b_download_manage, attachment_u2b_download_manage_stream,
@@ -389,8 +385,8 @@ pub fn router(pool: Pool) -> Router {
         )
         .route("/api/processplatform/assemble/surface/publish/{id}", post(publish_surface))
         .route("/api/processplatform/assemble/surface/delete/{id}", post(delete_surface))
-                .route("/api/processplatform/assemble/surface/anonymous/read/{count}/{credential}", get(anonymous_read_count_credential))
-        .route("/api/processplatform/assemble/surface/anonymous/task/{count}/{credential}", get(anonymous_task_count_credential))
+                .route("/api/processplatform/assemble/surface/anonymous/read/{count}/{credential}", get(crate::anonymous_read_count_credential_p2))
+        .route("/api/processplatform/assemble/surface/anonymous/task/{count}/{credential}", get(crate::anonymous_task_count_credential_p2))
         .route("/api/processplatform/assemble/surface/application/{flag}", get(application_flag))
         .route("/api/processplatform/assemble/surface/application/icon/{flag}", get(application_flag_icon))
         .route("/api/processplatform/assemble/surface/application/is/manager/{flag}", get(application_flag_is_manager))
@@ -406,118 +402,36 @@ pub fn router(pool: Pool) -> Router {
         }))
         .route("/api/processplatform/assemble/surface/applicationdict/application/{applicationDictFlag}/{applicationFlag}", get(applicationdict_applicationDictFlag_application_applicationFlag))
         .route("/api/processplatform/assemble/surface/applicationdict/application/data/{applicationDictFlag}/{applicationFlag}", get(applicationdict_applicationDictFlag_application_applicationFlag_data))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/data/{applicationDictFlag}/{applicationFlag}", get(applicationdict_applicationDictFlag_application_applicationFlag_path0_data))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/data/mockdeletetoget/{applicationDictFlag}/{applicationFlag}", post(applicationdict_applicationDictFlag_application_applicationFlag_path0_data_mockdeletetoget))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/data/mockputtopost/{applicationDictFlag}/{applicationFlag}", get(applicationdict_applicationDictFlag_application_applicationFlag_path0_data_mockputtopost))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/data/{applicationDictFlag}/{applicationFlag}", get(applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/data/mockdeletetoget/{applicationDictFlag}/{applicationFlag}", post(applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_mockdeletetoget))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/data/mockputtopost/{applicationDictFlag}/{applicationFlag}", get(applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_mockputtopost))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/data/{applicationDictFlag}/{applicationFlag}", get(applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_data))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/data/mockdeletetoget/{applicationDictFlag}/{applicationFlag}", post(applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_data_mockdeletetoget))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/data/mockputtopost/{applicationDictFlag}/{applicationFlag}", get(applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_data_mockputtopost))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/data/{applicationDictFlag}/{applicationFlag}", get(applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_data))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/data/mockdeletetoget/{applicationDictFlag}/{applicationFlag}", post(applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_data_mockdeletetoget))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/data/mockputtopost/{applicationDictFlag}/{applicationFlag}", get(applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_data_mockputtopost))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/data/{applicationDictFlag}/{applicationFlag}", get(applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_data))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/data/mockdeletetoget/{applicationDictFlag}/{applicationFlag}", post(applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_data_mockdeletetoget))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/data/mockputtopost/{applicationDictFlag}/{applicationFlag}", get(applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_data_mockputtopost))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/data/{applicationDictFlag}/{applicationFlag}", get(applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_data))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/data/mockdeletetoget/{applicationDictFlag}/{applicationFlag}", post(applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_data_mockdeletetoget))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/data/mockputtopost/{applicationDictFlag}/{applicationFlag}", get(applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_data_mockputtopost))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/data/{applicationDictFlag}/{applicationFlag}", get(applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_data))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/data/mockdeletetoget/{applicationDictFlag}/{applicationFlag}", post(applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_data_mockdeletetoget))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/data/mockputtopost/{applicationDictFlag}/{applicationFlag}", get(applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_data_mockputtopost))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/path7/data/{applicationDictFlag}/{applicationFlag}", get(applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_path7_data))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/path7/data/mockdeletetoget/{applicationDictFlag}/{applicationFlag}", post(applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_mockdeletetoget))
-        .route("/api/processplatform/assemble/surface/applicationdict/application/path0/path1/path2/path3/path4/path5/path6/path7/data/mockputtopost/{applicationDictFlag}/{applicationFlag}", get(applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_mockputtopost))
         .route("/api/processplatform/assemble/surface/applicationdict/list/application/{applicationFlag}", get(applicationdict_list_application_applicationFlag))
         .route("/api/processplatform/assemble/surface/control/workorworkcompleted/{workOrWorkCompleted}", get(control_workorworkcompleted_workOrWorkCompleted))
-        .route("/api/processplatform/assemble/surface/correlation/job/job", get(correlation_job_job))
-        .route("/api/processplatform/assemble/surface/correlation/job/job/delete", post(correlation_job_job_delete))
-        .route("/api/processplatform/assemble/surface/correlation/list/job/job", get(correlation_list_job_job))
-        .route("/api/processplatform/assemble/surface/correlation/list/job/job/site/site", get(correlation_list_job_job_site_site))
-        .route("/api/processplatform/assemble/surface/correlation/update/job/job", post(correlation_update_job_job))
-        .route("/api/processplatform/assemble/surface/data/fetch/job/job", get(data_fetch_job_job))
-        .route("/api/processplatform/assemble/surface/data/job/job", get(data_job_job))
-        .route("/api/processplatform/assemble/surface/data/job/job/array/data", get(data_job_job_array_data))
+
+
         .route("/api/processplatform/assemble/surface/data/job/job/mockputtopost", get(data_job_job_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/job/job/path0", get(data_job_job_path0))
         .route("/api/processplatform/assemble/surface/data/job/job/path0/mockputtopost", get(data_job_job_path0_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/job/job/path0/path1", get(data_job_job_path0_path1))
         .route("/api/processplatform/assemble/surface/data/job/job/path0/path1/mockputtopost", get(data_job_job_path0_path1_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/job/job/path0/path1/path2", get(data_job_job_path0_path1_path2))
         .route("/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/mockputtopost", get(data_job_job_path0_path1_path2_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3", get(data_job_job_path0_path1_path2_path3))
         .route("/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/mockputtopost", get(data_job_job_path0_path1_path2_path3_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4", get(data_job_job_path0_path1_path2_path3_path4))
         .route("/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/mockputtopost", get(data_job_job_path0_path1_path2_path3_path4_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5", get(data_job_job_path0_path1_path2_path3_path4_path5))
         .route("/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/mockputtopost", get(data_job_job_path0_path1_path2_path3_path4_path5_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6", get(data_job_job_path0_path1_path2_path3_path4_path5_path6))
         .route("/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/mockputtopost", get(data_job_job_path0_path1_path2_path3_path4_path5_path6_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/path7", get(data_job_job_path0_path1_path2_path3_path4_path5_path6_path7))
         .route("/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/path7/mockputtopost", get(data_job_job_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost))
         .route("/api/processplatform/assemble/surface/data/work/{id}", get(data_work_id))
         .route("/api/processplatform/assemble/surface/data/work/mockdeletetoget/{id}", post(data_work_id_mockdeletetoget))
         .route("/api/processplatform/assemble/surface/data/work/mockputtopost/{id}", get(data_work_id_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/work/path0/{id}", get(data_work_id_path0))
-        .route("/api/processplatform/assemble/surface/data/work/path0/mockdeletetoget/{id}", post(data_work_id_path0_mockdeletetoget))
-        .route("/api/processplatform/assemble/surface/data/work/path0/mockputtopost/{id}", get(data_work_id_path0_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/work/path0/path1/{id}", get(data_work_id_path0_path1))
-        .route("/api/processplatform/assemble/surface/data/work/path0/path1/mockdeletetoget/{id}", post(data_work_id_path0_path1_mockdeletetoget))
-        .route("/api/processplatform/assemble/surface/data/work/path0/path1/mockputtopost/{id}", get(data_work_id_path0_path1_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/work/path0/path1/path2/{id}", get(data_work_id_path0_path1_path2))
-        .route("/api/processplatform/assemble/surface/data/work/path0/path1/path2/mockdeletetoget/{id}", post(data_work_id_path0_path1_path2_mockdeletetoget))
-        .route("/api/processplatform/assemble/surface/data/work/path0/path1/path2/mockputtopost/{id}", get(data_work_id_path0_path1_path2_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/{id}", get(data_work_id_path0_path1_path2_path3))
-        .route("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/mockdeletetoget/{id}", post(data_work_id_path0_path1_path2_path3_mockdeletetoget))
-        .route("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/mockputtopost/{id}", get(data_work_id_path0_path1_path2_path3_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/{id}", get(data_work_id_path0_path1_path2_path3_path4))
-        .route("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/mockdeletetoget/{id}", post(data_work_id_path0_path1_path2_path3_path4_mockdeletetoget))
-        .route("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/mockputtopost/{id}", get(data_work_id_path0_path1_path2_path3_path4_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/{id}", get(data_work_id_path0_path1_path2_path3_path4_path5))
-        .route("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/mockdeletetoget/{id}", post(data_work_id_path0_path1_path2_path3_path4_path5_mockdeletetoget))
-        .route("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/mockputtopost/{id}", get(data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/{id}", get(data_work_id_path0_path1_path2_path3_path4_path5_path6))
-        .route("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/mockdeletetoget/{id}", post(data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeletetoget))
-        .route("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/mockputtopost/{id}", get(data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/path7/{id}", get(data_work_id_path0_path1_path2_path3_path4_path5_path6_path7))
-        .route("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/path7/mockdeletetoget/{id}", post(data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockdeletetoget))
-        .route("/api/processplatform/assemble/surface/data/work/path0/path1/path2/path3/path4/path5/path6/path7/mockputtopost/{id}", get(data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost))
         .route("/api/processplatform/assemble/surface/data/workcompleted/{id}", get(data_workcompleted_id))
         .route("/api/processplatform/assemble/surface/data/workcompleted/from/data/{id}", get(data_workcompleted_id_from_data))
         .route("/api/processplatform/assemble/surface/data/workcompleted/from/item/{id}", get(data_workcompleted_id_from_item))
         .route("/api/processplatform/assemble/surface/data/workcompleted/mockputtopost/{id}", get(data_workcompleted_id_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/workcompleted/path0/{id}", get(data_workcompleted_id_path0))
-        .route("/api/processplatform/assemble/surface/data/workcompleted/path0/mockputtopost/{id}", get(data_workcompleted_id_path0_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/{id}", get(data_workcompleted_id_path0_path1))
-        .route("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/mockputtopost/{id}", get(data_workcompleted_id_path0_path1_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/{id}", get(data_workcompleted_id_path0_path1_path2))
-        .route("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/mockputtopost/{id}", get(data_workcompleted_id_path0_path1_path2_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/{id}", get(data_workcompleted_id_path0_path1_path2_path3))
-        .route("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/mockputtopost/{id}", get(data_workcompleted_id_path0_path1_path2_path3_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/{id}", get(data_workcompleted_id_path0_path1_path2_path3_path4))
-        .route("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/mockputtopost/{id}", get(data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/{id}", get(data_workcompleted_id_path0_path1_path2_path3_path4_path5))
-        .route("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/mockputtopost/{id}", get(data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/path6/{id}", get(data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6))
-        .route("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/path6/mockputtopost/{id}", get(data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost))
-        .route("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/path6/path7/{id}", get(data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7))
-        .route("/api/processplatform/assemble/surface/data/workcompleted/path0/path1/path2/path3/path4/path5/path6/path7/mockputtopost/{id}", get(data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost))
-        .route("/api/processplatform/assemble/surface/datarecord/get/job/job/path/path", get(datarecord_get_job_job_path_path))
-        .route("/api/processplatform/assemble/surface/datarecord/list/job/job", get(datarecord_list_job_job))
         .route("/api/processplatform/assemble/surface/documentversion/{id}", get(documentversion_id))
-        .route("/api/processplatform/assemble/surface/documentversion/list/job/job", get(documentversion_list_job_job))
         .route("/api/processplatform/assemble/surface/documentversion/list/job/job/{category}/{category}", get(documentversion_list_job_job_category_category))
         .route("/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/{workOrWorkCompleted}", get(documentversion_list_workorworkcompleted_workOrWorkCompleted))
-        .route("/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/{workOrWorkCompleted}/{category}/{category}", get(documentversion_list_workorworkcompleted_workOrWorkCompleted_category_category))
-        .route("/api/processplatform/assemble/surface/documentversion/work/work", get(documentversion_work_work))
+        .route("/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/{workOrWorkCompleted}/{category}/{category}", get(crate::documentversion_list_workorworkcompleted_workOrWorkCompleted_category_category_p3))
         .route("/api/processplatform/assemble/surface/draft/{id}", get(draft_id))
         .route("/api/processplatform/assemble/surface/draft/mockdeletetoget/{id}", post(draft_id_mockdeletetoget))
         .route("/api/processplatform/assemble/surface/draft/start/{id}", post(draft_id_start))
         .route("/api/processplatform/assemble/surface/draft/list/next/{id}/{count}", get(draft_list_id_next_count))
         .route("/api/processplatform/assemble/surface/draft/list/prev/{id}/{count}", get(draft_list_id_prev_count))
-        .route("/api/processplatform/assemble/surface/draft/list/my/paging/{page}/{size}/{size}", get(draft_list_my_paging_page_size_size))
+        .route("/api/processplatform/assemble/surface/draft/list/my/paging/{page}/{size}/{size}", get(crate::draft_list_my_paging_page_size_size_p3))
         .route("/api/processplatform/assemble/surface/draft/mockputtopost", get(draft_mockputtopost))
         .route("/api/processplatform/assemble/surface/draft/process/{processFlag}", get(draft_process_processFlag))
         .route("/api/processplatform/assemble/surface/file/application/content/{flag}/{applicationFlag}", get(file_flag_application_applicationFlag_content))
@@ -529,21 +443,14 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/form/mobile/{flag}", get(form_flag_mobile))
         .route("/api/processplatform/assemble/surface/form/v2/{id}", get(form_v2_id))
         .route("/api/processplatform/assemble/surface/form/v2/mobile/{id}", get(form_v2_id_mobile))
-        .route("/api/processplatform/assemble/surface/form/v2/lookup/taskcompleted/taskcompleted", get(form_v2_lookup_taskcompleted_taskcompleted))
-        .route("/api/processplatform/assemble/surface/form/v2/lookup/taskcompleted/taskcompleted/mobile", get(form_v2_lookup_taskcompleted_taskcompleted_mobile))
         .route("/api/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/{workOrWorkCompleted}", get(form_v2_lookup_workorworkcompleted_workOrWorkCompleted))
         .route("/api/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/mobile/{workOrWorkCompleted}", get(form_v2_lookup_workorworkcompleted_workOrWorkCompleted_mobile))
         .route("/api/processplatform/assemble/surface/handover/{id}", get(handover_id))
         .route("/api/processplatform/assemble/surface/handover/cancel/{id}", get(handover_id_cancel))
         .route("/api/processplatform/assemble/surface/handover/process/{id}", get(handover_id_process))
-        .route("/api/processplatform/assemble/surface/handover/list/paging/{page}/{size}/{size}", get(handover_list_paging_page_size_size))
-        .route("/api/processplatform/assemble/surface/job/job/allow/visit/person/person", get(job_job_allow_visit_person_person))
-        .route("/api/processplatform/assemble/surface/job/job/find/work/workcompleted", get(job_job_find_work_workcompleted))
-        .route("/api/processplatform/assemble/surface/job/latest/work/workcompleted/serial/serial", get(job_latest_work_workcompleted_serial_serial))
-        .route("/api/processplatform/assemble/surface/job/v2/job/projection", get(job_v2_job_projection))
-        .route("/api/processplatform/assemble/surface/keylock/lock", get(keylock_lock))
+        .route("/api/processplatform/assemble/surface/handover/list/paging/{page}/{size}/{size}", get(crate::handover_list_paging_page_size_size_p3))
         .route("/api/processplatform/assemble/surface/keylock/lock/mockputtopost", get(keylock_lock_mockputtopost))
-        .route("/api/processplatform/assemble/surface/mode/clear/person/person/manager", get(mode_clear_person_person_manager))
+        .route("/api/processplatform/assemble/surface/mode/clear/person/person/{p0}", get(mode_clear_person_person_manager))
         .route("/api/processplatform/assemble/surface/mode/delete/{id}", post(mode_id_delete))
         .route("/api/processplatform/assemble/surface/mode/save", post(mode_save))
         .route("/api/processplatform/assemble/surface/process/activity/activity/{activityType}/{activityType}", get(process_activity_activity_activityType_activityType))
@@ -556,9 +463,8 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/process/list/application/filter/{applicationFlag}", get(process_list_application_applicationFlag_filter))
         .route("/api/processplatform/assemble/surface/process/list/available/identity/process/{flag}", get(process_list_available_identity_process_flag))
         .route("/api/processplatform/assemble/surface/process/list/controllable/application/{applicationFlag}", get(process_list_controllable_application_applicationFlag))
-        .route("/api/processplatform/assemble/surface/read/{count}/{credential}", get(read_count_credential))
+        .route("/api/processplatform/assemble/surface/read/{count}/{credential}", get(crate::read_count_credential_p2))
         .route("/api/processplatform/assemble/surface/read/filter/attribute", get(read_filter_attribute))
-        .route("/api/processplatform/assemble/surface/read/filter/attribute/filter", get(read_filter_attribute_filter))
         .route("/api/processplatform/assemble/surface/read/{id}", get(read_id))
         .route("/api/processplatform/assemble/surface/read/manage/{id}", get(read_id_manage))
         .route("/api/processplatform/assemble/surface/read/manage/mockdeletetoget/{id}", post(read_id_manage_mockdeletetoget))
@@ -571,9 +477,8 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/read/reference/{id}", post(read_id_reference))
         .route("/api/processplatform/assemble/surface/read/reset/manage/{id}", post(read_id_reset_manage))
         .route("/api/processplatform/assemble/surface/read/reset/manage/mockputtopost/{id}", post(read_id_reset_manage_mockputtopost))
-        .route("/api/processplatform/assemble/surface/read/list/application/process/{count}/{applicationFlag}", get(read_list_count_application_applicationFlag_process))
-        .route("/api/processplatform/assemble/surface/read/list/date/date/manage", get(read_list_date_date_manage))
-        .route("/api/processplatform/assemble/surface/read/list/filter/manage/{page}/{size}/{size}", get(read_list_filter_page_size_size_manage))
+        .route("/api/processplatform/assemble/surface/read/list/application/process/{count}/{applicationFlag}", get(crate::read_list_count_application_applicationFlag_process_p2))
+        .route("/api/processplatform/assemble/surface/read/list/filter/manage/{page}/{size}/{size}", get(crate::read_list_filter_page_size_size_manage_p3))
         .route("/api/processplatform/assemble/surface/read/list/next/{id}/{count}", get(read_list_id_next_count))
         .route("/api/processplatform/assemble/surface/read/list/next/application/{id}/{count}/{applicationFlag}", get(read_list_id_next_count_application_applicationFlag))
         .route("/api/processplatform/assemble/surface/read/list/next/filter/{id}/{count}", get(read_list_id_next_count_filter))
@@ -582,31 +487,26 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/read/list/prev/application/{id}/{count}/{applicationFlag}", get(read_list_id_prev_count_application_applicationFlag))
         .route("/api/processplatform/assemble/surface/read/list/prev/filter/{id}/{count}", get(read_list_id_prev_count_filter))
         .route("/api/processplatform/assemble/surface/read/list/prev/process/{id}/{count}/{processFlag}", get(read_list_id_prev_count_process_processFlag))
-        .route("/api/processplatform/assemble/surface/read/list/job/job", get(read_list_job_job))
-        .route("/api/processplatform/assemble/surface/read/list/my/filter/{page}/{size}/{size}", get(read_list_my_filter_page_size_size))
-        .route("/api/processplatform/assemble/surface/read/list/my/paging/{page}/{size}/{size}", get(read_list_my_paging_page_size_size))
-        .route("/api/processplatform/assemble/surface/read/list/person/person/manage", get(read_list_person_person_manage))
-        .route("/api/processplatform/assemble/surface/read/list/work/work", get(read_list_work_work))
+        .route("/api/processplatform/assemble/surface/read/list/my/filter/{page}/{size}/{size}", get(crate::read_list_my_filter_page_size_size_p3))
+        .route("/api/processplatform/assemble/surface/read/list/my/paging/{page}/{size}/{size}", get(crate::read_list_my_paging_page_size_size_p3))
         .route("/api/processplatform/assemble/surface/read/list/workorworkcompleted/{workOrWorkCompleted}", get(read_list_workorworkcompleted_workOrWorkCompleted))
         .route("/api/processplatform/assemble/surface/read/v2/list/create/next/{id}/{count}", post(read_v2_list_create_id_next_count))
         .route("/api/processplatform/assemble/surface/read/v2/list/create/prev/{id}/{count}", post(read_v2_list_create_id_prev_count))
-        .route("/api/processplatform/assemble/surface/read/v2/list/create/paging/{page}/{size}/{size}", post(read_v2_list_create_paging_page_size_size))
+        .route("/api/processplatform/assemble/surface/read/v2/list/create/paging/{page}/{size}/{size}", post(crate::read_v2_list_create_paging_page_size_size_p3))
         .route("/api/processplatform/assemble/surface/read/v2/list/next/{id}/{count}", get(read_v2_list_id_next_count))
         .route("/api/processplatform/assemble/surface/read/v2/list/prev/{id}/{count}", get(read_v2_list_id_prev_count))
-        .route("/api/processplatform/assemble/surface/read/v2/list/paging/{page}/{size}/{size}", get(read_v2_list_paging_page_size_size))
+        .route("/api/processplatform/assemble/surface/read/v2/list/paging/{page}/{size}/{size}", get(crate::read_v2_list_paging_page_size_size_p3))
         .route("/api/processplatform/assemble/surface/read/work/{workId}", get(read_work_workId))
         .route("/api/processplatform/assemble/surface/read/workcompleted/{workCompletedId}", get(read_workcompleted_workCompletedId))
-        .route("/api/processplatform/assemble/surface/readcompleted/{count}/{credential}", get(readcompleted_count_credential))
+        .route("/api/processplatform/assemble/surface/readcompleted/{count}/{credential}", get(crate::readcompleted_count_credential_p2))
         .route("/api/processplatform/assemble/surface/readcompleted/filter/attribute", get(readcompleted_filter_attribute))
-        .route("/api/processplatform/assemble/surface/readcompleted/filter/attribute/filter", get(readcompleted_filter_attribute_filter))
         .route("/api/processplatform/assemble/surface/readcompleted/{id}", get(readcompleted_id))
         .route("/api/processplatform/assemble/surface/readcompleted/manage/{id}", get(readcompleted_id_manage))
         .route("/api/processplatform/assemble/surface/readcompleted/manage/mockdeletetoget/{id}", post(readcompleted_id_manage_mockdeletetoget))
         .route("/api/processplatform/assemble/surface/readcompleted/opinion/manage/{id}", post(readcompleted_id_opinion_manage))
         .route("/api/processplatform/assemble/surface/readcompleted/reference/{id}", post(readcompleted_id_reference))
-        .route("/api/processplatform/assemble/surface/readcompleted/list/application/process/{count}/{applicationFlag}", get(readcompleted_list_count_application_applicationFlag_process))
-        .route("/api/processplatform/assemble/surface/readcompleted/list/date/date/manage", get(readcompleted_list_date_date_manage))
-        .route("/api/processplatform/assemble/surface/readcompleted/list/filter/manage/{page}/{size}/{size}", get(readcompleted_list_filter_page_size_size_manage))
+        .route("/api/processplatform/assemble/surface/readcompleted/list/application/process/{count}/{applicationFlag}", get(crate::readcompleted_list_count_application_applicationFlag_process_p2))
+        .route("/api/processplatform/assemble/surface/readcompleted/list/filter/manage/{page}/{size}/{size}", get(crate::readcompleted_list_filter_page_size_size_manage_p3))
         .route("/api/processplatform/assemble/surface/readcompleted/list/next/{id}/{count}", get(readcompleted_list_id_next_count))
         .route("/api/processplatform/assemble/surface/readcompleted/list/next/application/{id}/{count}/{applicationFlag}", get(readcompleted_list_id_next_count_application_applicationFlag))
         .route("/api/processplatform/assemble/surface/readcompleted/list/next/filter/{id}/{count}", get(readcompleted_list_id_next_count_filter))
@@ -615,45 +515,38 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/readcompleted/list/prev/application/{id}/{count}/{applicationFlag}", get(readcompleted_list_id_prev_count_application_applicationFlag))
         .route("/api/processplatform/assemble/surface/readcompleted/list/prev/filter/{id}/{count}", get(readcompleted_list_id_prev_count_filter))
         .route("/api/processplatform/assemble/surface/readcompleted/list/prev/process/{id}/{count}/{processFlag}", get(readcompleted_list_id_prev_count_process_processFlag))
-        .route("/api/processplatform/assemble/surface/readcompleted/list/job/job", get(readcompleted_list_job_job))
-        .route("/api/processplatform/assemble/surface/readcompleted/list/my/filter/{page}/{size}/{size}", get(readcompleted_list_my_filter_page_size_size))
-        .route("/api/processplatform/assemble/surface/readcompleted/list/my/paging/{page}/{size}/{size}", get(readcompleted_list_my_paging_page_size_size))
-        .route("/api/processplatform/assemble/surface/readcompleted/list/work/work", get(readcompleted_list_work_work))
+        .route("/api/processplatform/assemble/surface/readcompleted/list/my/filter/{page}/{size}/{size}", get(crate::readcompleted_list_my_filter_page_size_size_p3))
+        .route("/api/processplatform/assemble/surface/readcompleted/list/my/paging/{page}/{size}/{size}", get(crate::readcompleted_list_my_paging_page_size_size_p3))
         .route("/api/processplatform/assemble/surface/readcompleted/list/workorworkcompleted/{workOrWorkCompleted}", get(readcompleted_list_workorworkcompleted_workOrWorkCompleted))
         .route("/api/processplatform/assemble/surface/readcompleted/v2/list/create/next/{id}/{count}", post(readcompleted_v2_list_create_id_next_count))
         .route("/api/processplatform/assemble/surface/readcompleted/v2/list/create/prev/{id}/{count}", post(readcompleted_v2_list_create_id_prev_count))
-        .route("/api/processplatform/assemble/surface/readcompleted/v2/list/create/paging/{page}/{size}/{size}", post(readcompleted_v2_list_create_paging_page_size_size))
+        .route("/api/processplatform/assemble/surface/readcompleted/v2/list/create/paging/{page}/{size}/{size}", post(crate::readcompleted_v2_list_create_paging_page_size_size_p3))
         .route("/api/processplatform/assemble/surface/readcompleted/v2/list/next/{id}/{count}", get(readcompleted_v2_list_id_next_count))
         .route("/api/processplatform/assemble/surface/readcompleted/v2/list/prev/{id}/{count}", get(readcompleted_v2_list_id_prev_count))
-        .route("/api/processplatform/assemble/surface/readcompleted/v2/list/paging/{page}/{size}/{size}", get(readcompleted_v2_list_paging_page_size_size))
-        .route("/api/processplatform/assemble/surface/readrecord/list/job/job", get(readrecord_list_job_job))
+        .route("/api/processplatform/assemble/surface/readcompleted/v2/list/paging/{page}/{size}/{size}", get(crate::readcompleted_v2_list_paging_page_size_size_p3))
         .route("/api/processplatform/assemble/surface/readrecord/list/workorworkcompleted/{workOrWorkCompleted}", get(readrecord_list_workorworkcompleted_workOrWorkCompleted))
         .route("/api/processplatform/assemble/surface/record/manage/{id}", get(record_id_manage))
         .route("/api/processplatform/assemble/surface/record/manage/mockdeletetoget/{id}", post(record_id_manage_mockdeletetoget))
         .route("/api/processplatform/assemble/surface/record/manage/mockputtopost/{id}", get(record_id_manage_mockputtopost))
-        .route("/api/processplatform/assemble/surface/record/job/job/manage", get(record_job_job_manage))
-        .route("/api/processplatform/assemble/surface/record/list/job/job", get(record_list_job_job))
+
         .route("/api/processplatform/assemble/surface/record/list/job/job/paging/{page}/{size}/{size}", get(record_list_job_job_paging_page_size_size))
         .route("/api/processplatform/assemble/surface/record/list/workorworkcompleted/{workOrWorkCompleted}", get(record_list_workorworkcompleted_workOrWorkCompleted))
-        .route("/api/processplatform/assemble/surface/record/list/workorworkcompleted/paging/{workOrWorkCompleted}/{page}/{size}/{size}", get(record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size))
-        .route("/api/processplatform/assemble/surface/review/person/{count}/{credential}", get(review_count_person_credential))
+        .route("/api/processplatform/assemble/surface/record/list/workorworkcompleted/paging/{workOrWorkCompleted}/{page}/{size}/{size}", get(crate::record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size_p4))
+        .route("/api/processplatform/assemble/surface/review/person/{count}/{credential}", get(crate::review_count_person_credential_p2))
         .route("/api/processplatform/assemble/surface/review/create/work", post(review_create_work))
         .route("/api/processplatform/assemble/surface/review/create/workcompleted", post(review_create_workcompleted))
         .route("/api/processplatform/assemble/surface/review/filter/attribute", get(review_filter_attribute))
-        .route("/api/processplatform/assemble/surface/review/filter/create/entry", post(review_filter_create_entry))
         .route("/api/processplatform/assemble/surface/review/filter/entry", get(review_filter_entry))
         .route("/api/processplatform/assemble/surface/review/{id}", get(review_id))
         .route("/api/processplatform/assemble/surface/review/application/manage/{id}/{applicationFlag}", get(review_id_application_applicationFlag_manage))
         .route("/api/processplatform/assemble/surface/review/application/manage/mockdeletetoget/{id}/{applicationFlag}", post(review_id_application_applicationFlag_manage_mockdeletetoget))
-        .route("/api/processplatform/assemble/surface/review/list/job/job", get(review_list_job_job))
         .route("/api/processplatform/assemble/surface/review/v2/list/create/next/{id}/{count}", post(review_v2_list_create_id_next_count))
         .route("/api/processplatform/assemble/surface/review/v2/list/create/prev/{id}/{count}", post(review_v2_list_create_id_prev_count))
-        .route("/api/processplatform/assemble/surface/review/v2/list/create/paging/{page}/{size}/{size}", post(review_v2_list_create_paging_page_size_size))
+        .route("/api/processplatform/assemble/surface/review/v2/list/create/paging/{page}/{size}/{size}", post(crate::review_v2_list_create_paging_page_size_size_p3))
         .route("/api/processplatform/assemble/surface/review/v2/list/next/{id}/{count}", get(review_v2_list_id_next_count))
         .route("/api/processplatform/assemble/surface/review/v2/list/prev/{id}/{count}", get(review_v2_list_id_prev_count))
-        .route("/api/processplatform/assemble/surface/review/v2/list/paging/{page}/{size}/{size}", get(review_v2_list_paging_page_size_size))
-        .route("/api/processplatform/assemble/surface/review/v2/list/paging/manage/{page}/{size}/{size}", get(review_v2_list_paging_page_size_size_manage))
-        .route("/api/processplatform/assemble/surface/review/v2/search", get(review_v2_search))
+        .route("/api/processplatform/assemble/surface/review/v2/list/paging/{page}/{size}/{size}", get(crate::review_v2_list_paging_page_size_size_p3))
+        .route("/api/processplatform/assemble/surface/review/v2/list/paging/manage/{page}/{size}/{size}", get(crate::review_v2_list_paging_page_size_size_manage_p3))
         .route("/api/processplatform/assemble/surface/review/workorworkcompleted/{workOrWorkCompleted}", get(review_workorworkcompleted_workOrWorkCompleted))
         .route("/api/processplatform/assemble/surface/route/{id}", get(route_id))
         .route("/api/processplatform/assemble/surface/route/selectconfig/{id}", get(route_id_selectconfig))
@@ -665,19 +558,17 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/serialnumber/mockdeletetoget/{id}", post(serialnumber_id_mockdeletetoget))
         .route("/api/processplatform/assemble/surface/serialnumber/mockputtopost/{id}", get(serialnumber_id_mockputtopost))
         .route("/api/processplatform/assemble/surface/serialnumber/list/application/{applicationFlag}", get(serialnumber_list_application_applicationFlag))
-        .route("/api/processplatform/assemble/surface/serialnumber/list/paging/{page}/{size}/{size}", get(serialnumber_list_paging_page_size_size))
+        .route("/api/processplatform/assemble/surface/serialnumber/list/paging/{page}/{size}/{size}", get(crate::serialnumber_list_paging_page_size_size_p3))
         .route("/api/processplatform/assemble/surface/service/work/touch/{id}", post(service_work_id_touch))
         .route("/api/processplatform/assemble/surface/service/work/touch/mockputtopost/{id}", post(service_work_id_touch_mockputtopost))
         .route("/api/processplatform/assemble/surface/sign/download/{scrawlId}", get(sign_download_scrawlId))
         .route("/api/processplatform/assemble/surface/sign/{id}", get(sign_id))
         .route("/api/processplatform/assemble/surface/sign/mockdeletetoget/{id}", post(sign_id_mockdeletetoget))
-        .route("/api/processplatform/assemble/surface/sign/list/job/job", get(sign_list_job_job))
         .route("/api/processplatform/assemble/surface/sign/save/task/{taskId}", post(sign_save_task_taskId))
         .route("/api/processplatform/assemble/surface/sign/task/{taskId}", get(sign_task_taskId))
         .route("/api/processplatform/assemble/surface/sign/task/mockdeletetoget/{taskId}", post(sign_task_taskId_mockdeletetoget))
-        .route("/api/processplatform/assemble/surface/task/{count}/{credential}", get(task_count_credential))
+        .route("/api/processplatform/assemble/surface/task/{count}/{credential}", get(crate::task_count_credential_p2))
         .route("/api/processplatform/assemble/surface/task/filter/attribute", get(task_filter_attribute))
-        .route("/api/processplatform/assemble/surface/task/filter/attribute/filter", get(task_filter_attribute_filter))
         .route("/api/processplatform/assemble/surface/task/{id}", get(task_id))
         .route("/api/processplatform/assemble/surface/task/manage/{id}", get(task_id_manage))
         .route("/api/processplatform/assemble/surface/task/manage/mockdeletetoget/{id}", post(task_id_manage_mockdeletetoget))
@@ -693,9 +584,9 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/task/reset/manage/{id}", post(task_id_reset_manage))
         .route("/api/processplatform/assemble/surface/task/reset/manage/mockputtopost/{id}", post(task_id_reset_manage_mockputtopost))
         .route("/api/processplatform/assemble/surface/task/will/{id}", post(task_id_will))
-        .route("/api/processplatform/assemble/surface/task/list/application/process/{count}/{applicationFlag}", get(task_list_count_application_applicationFlag_process))
+        .route("/api/processplatform/assemble/surface/task/list/application/process/{count}/{applicationFlag}", get(crate::task_list_count_application_applicationFlag_process_p2))
         .route("/api/processplatform/assemble/surface/task/list/date/date/hour/hour/exclude/draft/manage/{isExcludeDraft}", get(task_list_date_date_hour_hour_exclude_draft_isExcludeDraft_manage))
-        .route("/api/processplatform/assemble/surface/task/list/filter/manage/{page}/{size}/{size}", get(task_list_filter_page_size_size_manage))
+        .route("/api/processplatform/assemble/surface/task/list/filter/manage/{page}/{size}/{size}", get(crate::task_list_filter_page_size_size_manage_p3))
         .route("/api/processplatform/assemble/surface/task/list/next/{id}/{count}", get(task_list_id_next_count))
         .route("/api/processplatform/assemble/surface/task/list/next/application/{id}/{count}/{applicationFlag}", get(task_list_id_next_count_application_applicationFlag))
         .route("/api/processplatform/assemble/surface/task/list/next/filter/{id}/{count}", get(task_list_id_next_count_filter))
@@ -708,11 +599,9 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/task/list/prev/filter/manage/{id}/{count}", get(task_list_id_prev_count_filter_manage))
         .route("/api/processplatform/assemble/surface/task/list/prev/manage/{id}/{count}", get(task_list_id_prev_count_manage))
         .route("/api/processplatform/assemble/surface/task/list/prev/process/{id}/{count}/{processFlag}", get(task_list_id_prev_count_process_processFlag))
-        .route("/api/processplatform/assemble/surface/task/list/job/job", get(task_list_job_job))
-        .route("/api/processplatform/assemble/surface/task/list/my/filter/{page}/{size}/{size}", get(task_list_my_filter_page_size_size))
-        .route("/api/processplatform/assemble/surface/task/list/my/paging/{page}/{size}/{size}", get(task_list_my_paging_page_size_size))
+        .route("/api/processplatform/assemble/surface/task/list/my/filter/{page}/{size}/{size}", get(crate::task_list_my_filter_page_size_size_p3))
+        .route("/api/processplatform/assemble/surface/task/list/my/paging/{page}/{size}/{size}", get(crate::task_list_my_paging_page_size_size_p3))
         .route("/api/processplatform/assemble/surface/task/list/person/person/exclude/draft/manage/{isExcludeDraft}", get(task_list_person_person_exclude_draft_isExcludeDraft_manage))
-        .route("/api/processplatform/assemble/surface/task/list/work/work", get(task_list_work_work))
         .route("/api/processplatform/assemble/surface/task/v2/pause/{id}", get(task_v2_id_pause))
         .route("/api/processplatform/assemble/surface/task/v2/reset/{id}", post(task_v2_id_reset))
         .route("/api/processplatform/assemble/surface/task/v2/reset/mockputtopost/{id}", post(task_v2_id_reset_mockputtopost))
@@ -720,15 +609,14 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/task/v2/trigger/processing/{id}", post(task_v2_id_trigger_processing))
         .route("/api/processplatform/assemble/surface/task/v2/list/create/next/{id}/{count}", post(task_v2_list_create_id_next_count))
         .route("/api/processplatform/assemble/surface/task/v2/list/create/prev/{id}/{count}", post(task_v2_list_create_id_prev_count))
-        .route("/api/processplatform/assemble/surface/task/v2/list/create/paging/{page}/{size}/{size}", post(task_v2_list_create_paging_page_size_size))
+        .route("/api/processplatform/assemble/surface/task/v2/list/create/paging/{page}/{size}/{size}", post(crate::task_v2_list_create_paging_page_size_size_p3))
         .route("/api/processplatform/assemble/surface/task/v2/list/next/{id}/{count}", get(task_v2_list_id_next_count))
         .route("/api/processplatform/assemble/surface/task/v2/list/prev/{id}/{count}", get(task_v2_list_id_prev_count))
-        .route("/api/processplatform/assemble/surface/task/v2/list/paging/{page}/{size}/{size}", get(task_v2_list_paging_page_size_size))
+        .route("/api/processplatform/assemble/surface/task/v2/list/paging/{page}/{size}/{size}", get(crate::task_v2_list_paging_page_size_size_p3))
         .route("/api/processplatform/assemble/surface/task/v3/add/{id}", post(task_v3_id_add))
         .route("/api/processplatform/assemble/surface/task/v3/pin/{id}", get(task_v3_id_pin))
-        .route("/api/processplatform/assemble/surface/taskcompleted/{count}/{credential}", get(taskcompleted_count_credential))
+        .route("/api/processplatform/assemble/surface/taskcompleted/{count}/{credential}", get(crate::taskcompleted_count_credential_p2))
         .route("/api/processplatform/assemble/surface/taskcompleted/filter/attribute", get(taskcompleted_filter_attribute))
-        .route("/api/processplatform/assemble/surface/taskcompleted/filter/attribute/filter", get(taskcompleted_filter_attribute_filter))
         .route("/api/processplatform/assemble/surface/taskcompleted/{id}", get(taskcompleted_id))
         .route("/api/processplatform/assemble/surface/taskcompleted/manage/{id}", get(taskcompleted_id_manage))
         .route("/api/processplatform/assemble/surface/taskcompleted/manage/mockdeletetoget/{id}", post(taskcompleted_id_manage_mockdeletetoget))
@@ -736,9 +624,8 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/taskcompleted/opinion/manage/mockputtopost/{id}", post(taskcompleted_id_opinion_manage_mockputtopost))
         .route("/api/processplatform/assemble/surface/taskcompleted/reference/{id}", post(taskcompleted_id_reference))
         .route("/api/processplatform/assemble/surface/taskcompleted/reference/control/{id}", post(taskcompleted_id_reference_control))
-        .route("/api/processplatform/assemble/surface/taskcompleted/list/application/process/{count}/{applicationFlag}", get(taskcompleted_list_count_application_applicationFlag_process))
-        .route("/api/processplatform/assemble/surface/taskcompleted/list/date/date/hour/hour/manage", get(taskcompleted_list_date_date_hour_hour_manage))
-        .route("/api/processplatform/assemble/surface/taskcompleted/list/filter/manage/{page}/{size}/{size}", get(taskcompleted_list_filter_page_size_size_manage))
+        .route("/api/processplatform/assemble/surface/taskcompleted/list/application/process/{count}/{applicationFlag}", get(crate::taskcompleted_list_count_application_applicationFlag_process_p2))
+        .route("/api/processplatform/assemble/surface/taskcompleted/list/filter/manage/{page}/{size}/{size}", get(crate::taskcompleted_list_filter_page_size_size_manage_p3))
         .route("/api/processplatform/assemble/surface/taskcompleted/list/next/{id}/{count}", get(taskcompleted_list_id_next_count))
         .route("/api/processplatform/assemble/surface/taskcompleted/list/next/application/{id}/{count}/{applicationFlag}", get(taskcompleted_list_id_next_count_application_applicationFlag))
         .route("/api/processplatform/assemble/surface/taskcompleted/list/next/filter/{id}/{count}", get(taskcompleted_list_id_next_count_filter))
@@ -747,21 +634,19 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/taskcompleted/list/prev/application/{id}/{count}/{applicationFlag}", get(taskcompleted_list_id_prev_count_application_applicationFlag))
         .route("/api/processplatform/assemble/surface/taskcompleted/list/prev/filter/{id}/{count}", get(taskcompleted_list_id_prev_count_filter))
         .route("/api/processplatform/assemble/surface/taskcompleted/list/prev/process/{id}/{count}/{processFlag}", get(taskcompleted_list_id_prev_count_process_processFlag))
-        .route("/api/processplatform/assemble/surface/taskcompleted/list/job/job", get(taskcompleted_list_job_job))
-        .route("/api/processplatform/assemble/surface/taskcompleted/list/my/filter/{page}/{size}/{size}", get(taskcompleted_list_my_filter_page_size_size))
-        .route("/api/processplatform/assemble/surface/taskcompleted/list/my/paging/{page}/{size}/{size}", get(taskcompleted_list_my_paging_page_size_size))
+        .route("/api/processplatform/assemble/surface/taskcompleted/list/my/filter/{page}/{size}/{size}", get(crate::taskcompleted_list_my_filter_page_size_size_p3))
+        .route("/api/processplatform/assemble/surface/taskcompleted/list/my/paging/{page}/{size}/{size}", get(crate::taskcompleted_list_my_paging_page_size_size_p3))
         .route("/api/processplatform/assemble/surface/taskcompleted/list/prev/manual/{flag}", get(taskcompleted_list_prev_manual_flag))
-        .route("/api/processplatform/assemble/surface/taskcompleted/list/work/work", get(taskcompleted_list_work_work))
         .route("/api/processplatform/assemble/surface/taskcompleted/list/workorworkcompleted/{workOrWorkCompleted}", get(taskcompleted_list_workorworkcompleted_workOrWorkCompleted))
-        .route("/api/processplatform/assemble/surface/taskcompleted/press/work/work", post(taskcompleted_press_work_work))
+
         .route("/api/processplatform/assemble/surface/taskcompleted/v2/list/create/next/{id}/{count}", post(taskcompleted_v2_list_create_id_next_count))
         .route("/api/processplatform/assemble/surface/taskcompleted/v2/list/create/prev/{id}/{count}", post(taskcompleted_v2_list_create_id_prev_count))
-        .route("/api/processplatform/assemble/surface/taskcompleted/v2/list/create/paging/{page}/{size}/{size}", post(taskcompleted_v2_list_create_paging_page_size_size))
+        .route("/api/processplatform/assemble/surface/taskcompleted/v2/list/create/paging/{page}/{size}/{size}", post(crate::taskcompleted_v2_list_create_paging_page_size_size_p3))
         .route("/api/processplatform/assemble/surface/taskcompleted/v2/list/next/{id}/{count}", get(taskcompleted_v2_list_id_next_count))
         .route("/api/processplatform/assemble/surface/taskcompleted/v2/list/prev/{id}/{count}", get(taskcompleted_v2_list_id_prev_count))
-        .route("/api/processplatform/assemble/surface/taskcompleted/v2/list/paging/{page}/{size}/{size}", get(taskcompleted_v2_list_paging_page_size_size))
+        .route("/api/processplatform/assemble/surface/taskcompleted/v2/list/paging/{page}/{size}/{size}", get(crate::taskcompleted_v2_list_paging_page_size_size_p3))
         .route("/api/processplatform/assemble/surface/work/application/process/{applicationFlag}/{processFlag}", get(work_application_applicationFlag_process_processFlag))
-        .route("/api/processplatform/assemble/surface/work/{count}/{credential}", get(work_count_credential))
+        .route("/api/processplatform/assemble/surface/work/{count}/{credential}", get(crate::work_count_credential_p2))
         .route("/api/processplatform/assemble/surface/work/application/{count}/{credential}/{appId}", get(work_count_credential_application_appId))
         .route("/api/processplatform/assemble/surface/work/filter/attribute/application/{applicationFlag}", get(work_filter_attribute_application_applicationFlag))
         .route("/api/processplatform/assemble/surface/work/filter/attribute/application/manage/{applicationFlag}", get(work_filter_attribute_application_applicationFlag_manage))
@@ -778,9 +663,9 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/work/relative/manage/mockdeletetoget/{id}", post(work_id_relative_manage_mockdeletetoget))
         .route("/api/processplatform/assemble/surface/work/single/manage/{id}", get(work_id_single_manage))
         .route("/api/processplatform/assemble/surface/work/single/manage/mockdeletetoget/{id}", post(work_id_single_manage_mockdeletetoget))
-        .route("/api/processplatform/assemble/surface/work/list/application/process/{count}/{applicationFlag}", get(work_list_count_application_applicationFlag_process))
-        .route("/api/processplatform/assemble/surface/work/list/application/process/manage/{count}/{applicationFlag}", get(work_list_count_application_applicationFlag_process_manage))
-        .route("/api/processplatform/assemble/surface/work/list/filter/manage/{page}/{size}/{size}", get(work_list_filter_page_size_size_manage))
+        .route("/api/processplatform/assemble/surface/work/list/application/process/{count}/{applicationFlag}", get(crate::work_list_count_application_applicationFlag_process_p2))
+        .route("/api/processplatform/assemble/surface/work/list/application/process/manage/{count}/{applicationFlag}", get(crate::work_list_count_application_applicationFlag_process_manage_p2))
+        .route("/api/processplatform/assemble/surface/work/list/filter/manage/{page}/{size}/{size}", get(crate::work_list_filter_page_size_size_manage_p3))
         .route("/api/processplatform/assemble/surface/work/list/next/application/{id}/{count}/{applicationFlag}", get(work_list_id_next_count_application_applicationFlag))
         .route("/api/processplatform/assemble/surface/work/list/next/application/filter/{id}/{count}/{applicationFlag}", get(work_list_id_next_count_application_applicationFlag_filter))
         .route("/api/processplatform/assemble/surface/work/list/next/application/filter/manage/{id}/{count}/{applicationFlag}", get(work_list_id_next_count_application_applicationFlag_filter_manage))
@@ -795,8 +680,8 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/work/list/prev/creator/current/{id}/{count}", get(work_list_id_prev_count_creator_current))
         .route("/api/processplatform/assemble/surface/work/list/prev/creator/current/filter/{id}/{count}", get(work_list_id_prev_count_creator_current_filter))
         .route("/api/processplatform/assemble/surface/work/list/prev/process/{id}/{count}/{processFlag}", get(work_list_id_prev_count_process_processFlag))
-        .route("/api/processplatform/assemble/surface/work/list/my/paging/{page}/{size}/{size}", get(work_list_my_paging_page_size_size))
-        .route("/api/processplatform/assemble/surface/work/list/paging/application/filter/manage/{page}/{size}/{size}/{applicationFlag}", get(work_list_paging_page_size_size_application_applicationFlag_filter_manage))
+        .route("/api/processplatform/assemble/surface/work/list/my/paging/{page}/{size}/{size}", get(crate::work_list_my_paging_page_size_size_p3))
+        .route("/api/processplatform/assemble/surface/work/list/paging/application/filter/manage/{page}/{size}/{size}/{applicationFlag}", get(crate::work_list_paging_page_size_size_application_applicationFlag_filter_manage_p4))
         .route("/api/processplatform/assemble/surface/work/process/{processFlag}", get(work_process_processFlag))
         .route("/api/processplatform/assemble/surface/work/process/force/{processFlag}", get(work_process_processFlag_force))
         .route("/api/processplatform/assemble/surface/work/v2/add/split/{id}", post(work_v2_id_add_split))
@@ -813,10 +698,8 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/work/v2/list/activity/goback/{id}", get(work_v2_list_id_activity_goback))
         .route("/api/processplatform/assemble/surface/work/v2/list/next/{id}/{count}", get(work_v2_list_id_next_count))
         .route("/api/processplatform/assemble/surface/work/v2/list/prev/{id}/{count}", get(work_v2_list_id_prev_count))
-        .route("/api/processplatform/assemble/surface/work/v2/list/paging/{page}/{size}/{size}", get(work_v2_list_paging_page_size_size))
+        .route("/api/processplatform/assemble/surface/work/v2/list/paging/{page}/{size}/{size}", get(crate::work_v2_list_paging_page_size_size_p3))
         .route("/api/processplatform/assemble/surface/work/v2/workorworkcompleted/{workOrWorkCompleted}", get(work_v2_workorworkcompleted_workOrWorkCompleted))
-        .route("/api/processplatform/assemble/surface/work/v3/retract", get(work_v3_retract))
-        .route("/api/processplatform/assemble/surface/work/v3/retract/stage/job/job", get(work_v3_retract_stage_job_job))
         .route("/api/processplatform/assemble/surface/work/v3/workorworkcompleted/permission/{workOrWorkCompleted}", get(work_v3_workorworkcompleted_workOrWorkCompleted_permission))
         .route("/api/processplatform/assemble/surface/work/workorworkcompleted/{workOrWorkCompleted}", get(work_workorworkcompleted_workOrWorkCompleted))
         .route("/api/processplatform/assemble/surface/workcompleted/filter/attribute/application/{applicationFlag}", get(workcompleted_filter_attribute_application_applicationFlag))
@@ -829,9 +712,9 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/workcompleted/delete/manage/{id}", post(workcompleted_id_delete_manage))
         .route("/api/processplatform/assemble/surface/workcompleted/delete/manage/mockdeletetoget/{id}", post(workcompleted_id_delete_manage_mockdeletetoget))
         .route("/api/processplatform/assemble/surface/workcompleted/manage/{id}", get(workcompleted_id_manage))
-        .route("/api/processplatform/assemble/surface/workcompleted/list/application/process/{count}/{applicationFlag}", get(workcompleted_list_count_application_applicationFlag_process))
-        .route("/api/processplatform/assemble/surface/workcompleted/list/application/process/manage/{count}/{applicationFlag}", get(workcompleted_list_count_application_applicationFlag_process_manage))
-        .route("/api/processplatform/assemble/surface/workcompleted/list/filter/manage/{page}/{size}/{size}", get(workcompleted_list_filter_page_size_size_manage))
+        .route("/api/processplatform/assemble/surface/workcompleted/list/application/process/{count}/{applicationFlag}", get(crate::workcompleted_list_count_application_applicationFlag_process_p2))
+        .route("/api/processplatform/assemble/surface/workcompleted/list/application/process/manage/{count}/{applicationFlag}", get(crate::workcompleted_list_count_application_applicationFlag_process_manage_p2))
+        .route("/api/processplatform/assemble/surface/workcompleted/list/filter/manage/{page}/{size}/{size}", get(crate::workcompleted_list_filter_page_size_size_manage_p3))
         .route("/api/processplatform/assemble/surface/workcompleted/list/next/application/{id}/{count}/{applicationFlag}", get(workcompleted_list_id_next_count_application_applicationFlag))
         .route("/api/processplatform/assemble/surface/workcompleted/list/next/application/filter/{id}/{count}/{applicationFlag}", get(workcompleted_list_id_next_count_application_applicationFlag_filter))
         .route("/api/processplatform/assemble/surface/workcompleted/list/next/application/filter/manage/{id}/{count}/{applicationFlag}", get(workcompleted_list_id_next_count_application_applicationFlag_filter_manage))
@@ -839,11 +722,9 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/workcompleted/list/prev/application/{id}/{count}/{applicationFlag}", get(workcompleted_list_id_prev_count_application_applicationFlag))
         .route("/api/processplatform/assemble/surface/workcompleted/list/prev/application/filter/{id}/{count}/{applicationFlag}", get(workcompleted_list_id_prev_count_application_applicationFlag_filter))
         .route("/api/processplatform/assemble/surface/workcompleted/list/prev/application/manage/{id}/{count}/{applicationFlag}", get(workcompleted_list_id_prev_count_application_applicationFlag_manage))
-        .route("/api/processplatform/assemble/surface/workcompleted/list/paging/application/filter/manage/{page}/{size}/{size}/{applicationFlag}", get(workcompleted_list_paging_page_size_size_application_applicationFlag_filter_manage))
+        .route("/api/processplatform/assemble/surface/workcompleted/list/paging/application/filter/manage/{page}/{size}/{size}/{applicationFlag}", get(crate::workcompleted_list_paging_page_size_size_application_applicationFlag_filter_manage_p4))
         .route("/api/processplatform/assemble/surface/workcompleted/process/{processFlag}", get(workcompleted_process_processFlag))
-        .route("/api/processplatform/assemble/surface/workcompleted/shift/time", get(workcompleted_shift_time))
         .route("/api/processplatform/assemble/surface/worklog/list/add/split/work/{workId}", post(worklog_list_add_split_work_workId))
-        .route("/api/processplatform/assemble/surface/worklog/list/job/job", get(worklog_list_job_job))
         .route("/api/processplatform/assemble/surface/worklog/list/rollback/workorworkcompleted/{workOrWorkCompleted}", get(worklog_list_rollback_workorworkcompleted_workOrWorkCompleted))
         .route("/api/processplatform/assemble/surface/worklog/list/workorworkcompleted/{workOrWorkCompleted}", get(worklog_list_workorworkcompleted_workOrWorkCompleted))
         .route("/api/processplatform/assemble/surface/anonymous/task/count/{credential}", get(anonymous_task_count_credential))
@@ -1402,9 +1283,9 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/attachment/invoice/{flag}/joborworkorworkcompleted/{workOrWorkCompleted}", get(attachment_u2b_invoice_info))
         .route("/api/processplatform/assemble/surface/attachment/download/invoice/{flag}/joborworkorworkcompleted/{workOrWorkCompleted}", get(attachment_u2b_invoice_download))
         .route("/api/processplatform/assemble/surface/attachment/upload/with/url", post(attachment_u2b_upload_with_url))
-        .route("/api/processplatform/assemble/surface/attachment/batch/download/job/{job}/site/{site}", get(attachment_u2b_batch_download_zip))
-        .route("/api/processplatform/assemble/surface/attachment/batch/download/work/{work}/site/{site}", get(attachment_u2b_batch_download_zip))
-        .route("/api/processplatform/assemble/surface/attachment/batch/download/work/{work}/site/{site}/stream", get(attachment_u2b_batch_download_zip))
+        .route("/api/processplatform/assemble/surface/attachment/batch/download/job/{job}/site/{site}", get(attachment_u2b_batch_download_zip_by_job))
+        .route("/api/processplatform/assemble/surface/attachment/batch/download/work/{work}/site/{site}", get(attachment_u2b_batch_download_zip_by_work))
+        .route("/api/processplatform/assemble/surface/attachment/batch/download/work/{work}/site/{site}/stream", get(attachment_u2b_batch_download_zip_by_work))
         .route("/api/processplatform/assemble/surface/attachment/update/{id}/work/{workId}", put(attachment_u2b_update_by_work))
         .route("/api/processplatform/assemble/surface/attachment/update/{id}/work/{workId}", post(attachment_u2b_update_post))
         .route("/api/processplatform/assemble/surface/attachment/update/{id}/work/{workId}/callback/{callbackId}", post(attachment_u2b_update_callback))

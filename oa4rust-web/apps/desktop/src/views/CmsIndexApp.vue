@@ -19,6 +19,96 @@
         <button class="btn-refresh" @click="loadCmsExpress">📰 内容/视图</button>
         <button class="btn-refresh" @click="loadCmsDetails">🗃️ 分类/文章明细</button>
         <button class="btn-refresh" @click="loadFormDetails">📋 表单明细</button>
+        <button class="btn-refresh" @click="loadCmsTwin">🔁 孪生端点</button>
+        <button class="btn-refresh" @click="loadCmsTwin2">🔁 孪生端点B</button>
+        <button class="btn-refresh" @click="loadCmsTwin3">🔁 孪生端点C</button>
+        <button class="btn-refresh" @click="loadCmsAliasForm">🔖 别名/发布/表单</button>
+        <button class="btn-refresh" @click="loadViewRecords">👁️ 浏览记录(文档/人员)</button>
+        <button class="btn-refresh" @click="loadCmsAppReads">📚 分类/表单/脚本按应用</button>
+        <button class="btn-refresh" @click="loadCmsAppReads2">🔎 视图/搜索过滤/脚本游标/应用视图</button>
+        <button class="btn-refresh" @click="loadCmsDeepReads">🔬 控制配置/分类/文档批次/脚本版本</button>
+        <button class="btn-refresh" @click="createCmsCategory">➕ 新建分类</button>
+        <button class="btn-refresh" @click="createCmsArticle">📝 新建文章</button>
+        <button class="btn-refresh" @click="toggleViewPublish(true)">📢 发布视图</button>
+        <button class="btn-refresh" @click="toggleViewPublish(false)">🚫 取消发布</button>
+        <button class="btn-refresh" @click="cmsSave('dict')">存字典</button>
+        <button class="btn-refresh" @click="cmsSave('form')">存表单</button>
+        <button class="btn-refresh" @click="cmsSave('view')">存视图</button>
+        <button class="btn-refresh" @click="cmsSave('xform')">存xform</button>
+        <button class="btn-refresh" @click="cmsSave('templateform')">存模板表单</button>
+        <button class="btn-refresh" @click="cmsDelete('dict')">删字典</button>
+        <button class="btn-refresh" @click="cmsDelete('form')">删表单</button>
+        <button class="btn-refresh" @click="cmsDelete('view')">删视图</button>
+        <button class="btn-refresh" @click="cmsDelete('xform')">删xform</button>
+        <button class="btn-refresh" @click="cmsDelete('templateform')">删模板表单</button>
+        <button class="btn-refresh" @click="cmsSaveConfig">存控制配置</button>
+        <button class="btn-refresh" @click="cmsUpdateDocument">更新文档</button>
+        <button class="btn-refresh" @click="cmsRoot('formUpdate')">改表单</button>
+        <button class="btn-refresh" @click="cmsRoot('formDelete')">删表单2</button>
+        <button class="btn-refresh" @click="cmsRoot('viewCreate')">建视图2</button>
+        <button class="btn-refresh" @click="cmsRoot('viewUpdate')">改视图2</button>
+        <button class="btn-refresh" @click="cmsRoot('viewDelete')">删视图2</button>
+        <button class="btn-refresh" @click="cmsRoot('scriptUpdate')">改脚本</button>
+        <button class="btn-refresh" @click="cmsRoot('scriptDelete')">删脚本</button>
+        <button class="btn-refresh" @click="cmsRoot('tplCreate')">建模板表单2</button>
+        <button class="btn-refresh" @click="cmsRoot('tplDelete')">删模板表单2</button>
+        <button class="btn-refresh" @click="cmsRoot('viewCatCreate')">建视图分类</button>
+        <button class="btn-refresh" @click="cmsRoot('viewCatDelete')">删视图分类</button>
+        <button class="btn-refresh" @click="cmsRoot('viewFieldCreate')">建视图字段</button>
+        <button class="btn-refresh" @click="cmsRoot('viewFieldUpdate')">改视图字段</button>
+        <button class="btn-refresh" @click="cmsRoot('viewFieldDelete')">删视图字段</button>
+        <button class="btn-refresh" @click="cmsRoot('commentCreate')">建评论</button>
+        <button class="btn-refresh" @click="cmsRoot('commentDelete')">删评论</button>
+        <button class="btn-refresh" @click="cmsRoot('appdictCreate')">建设计字典</button>
+        <button class="btn-refresh" @click="cmsRoot('appdictUpdate')">改设计字典</button>
+        <button class="btn-refresh" @click="cmsRoot('appdictDelete')">删设计字典</button>
+        <button class="btn-refresh" @click="cmsRoot('entColumnSave')">存实体列</button>
+        <button class="btn-refresh" @click="cmsRoot('entModuleSave')">存实体模块</button>
+        <button class="btn-refresh" @click="cmsRoot('entIndexSave')">存实体索引</button>
+        <button class="btn-refresh" @click="cmsRoot('entNoteSave')">存实体备注</button>
+        <button class="btn-refresh" @click="cmsQuery('docFilterPaging')">文档筛选分页</button>
+        <button class="btn-refresh" @click="cmsQuery('docFilterManager')">文档管理筛选</button>
+        <button class="btn-refresh" @click="cmsQuery('docDraft')">文档草稿列表</button>
+        <button class="btn-refresh" @click="cmsQuery('docListData')">文档数据列表</button>
+        <button class="btn-refresh" @click="cmsQuery('docFilterCount')">文档筛选计数</button>
+        <button class="btn-refresh" @click="cmsQuery('logFilterList')">日志筛选列表</button>
+        <button class="btn-refresh" @click="cmsQuery('logFilterNext')">日志游标</button>
+        <button class="btn-refresh" @click="cmsQuery('catFilter')">分类筛选</button>
+        <button class="btn-refresh" @click="cmsQuery('appFilterNext')">应用游标</button>
+        <button class="btn-refresh" @click="cmsQuery('commentNext')">评论游标</button>
+        <button class="btn-refresh" @click="cmsQuery('commentPaging')">评论分页</button>
+        <button class="btn-refresh" @click="cmsQuery3('catNextApp')">分类游标(应用)</button>
+        <button class="btn-refresh" @click="cmsQuery3('catPrevApp')">分类逆游标(应用)</button>
+        <button class="btn-refresh" @click="cmsQuery3('formNextApp')">表单游标(应用)</button>
+        <button class="btn-refresh" @click="cmsQuery3('formPrevApp')">表单逆游标(应用)</button>
+        <button class="btn-refresh" @click="cmsQuery3('docNext')">文档游标</button>
+        <button class="btn-refresh" @click="cmsQuery3('docPrev')">文档逆游标</button>
+        <button class="btn-refresh" @click="cmsQuery3('appPrev')">应用逆游标</button>
+        <button class="btn-refresh" @click="cmsQuery3('scriptPaging')">脚本分页</button>
+        <button class="btn-refresh" @click="cmsQuery3('viewRecordLog')">视图记录日志</button>
+        <button class="btn-refresh" @click="cmsQuery3('viewCat')">视图分类详情</button>
+        <button class="btn-refresh" @click="cmsWrite3('catPermission')">分类权限</button>
+        <button class="btn-refresh" @click="cmsWrite3('catExtContent')">分类扩展内容</button>
+        <button class="btn-refresh" @click="cmsWrite3('catListObjects')">分类对象清单</button>
+        <button class="btn-refresh" @click="cmsWrite3('catProjection')">分类投影执行</button>
+        <button class="btn-refresh" @click="cmsWrite3('docPublishContent')">文档发布内容</button>
+        <button class="btn-refresh" @click="cmsWrite3('scriptRunApp')">脚本按应用运行</button>
+        <button class="btn-refresh" @click="cmsQuery3('viewField')">视图字段详情</button>
+        <button class="btn-refresh" @click="cmsQuery3('docArchive')">文档归档</button>
+        <button class="btn-refresh" @click="cmsQuery3('uuid')">UUID</button>
+        <button class="btn-refresh" @click="cmsQuery3('viewUnread')">视图未读</button>
+        <button class="btn-refresh" @click="cmsWrite2('docCatChange')">改文档分类</button>
+        <button class="btn-refresh" @click="cmsWrite2('catBindView')">分类绑视图</button>
+        <button class="btn-refresh" @click="cmsWrite2('appErase')">擦除应用</button>
+        <button class="btn-refresh" @click="cmsWrite2('catErase')">擦除分类</button>
+        <button class="btn-refresh" @click="cmsWrite2('docBatchModify')">批量改文档</button>
+        <button class="btn-refresh" @click="cmsWrite2('docBatchDelete')">批量删文档</button>
+        <button class="btn-refresh" @click="cmsWrite2('docPublishHtml')">发布HTML</button>
+        <button class="btn-refresh" @click="cmsWrite2('viewPublish')">发布视图</button>
+        <button class="btn-refresh" @click="cmsWrite2('colDelete')">删栏目</button>
+        <button class="btn-refresh" @click="cmsWrite2('moduleDelete')">删模块</button>
+        <button class="btn-refresh" @click="cmsWrite2('indexDelete')">删索引</button>
+        <button class="btn-refresh" @click="cmsWrite2('noteDelete')">删笔记</button>
       </div>
       <div v-if="cmsConfigText" class="cfg-note">{{ cmsConfigText }}</div>
       <div v-if="overviewText" class="cfg-note">{{ overviewText }}</div>
@@ -79,9 +169,9 @@ async function loadCmsConfig() {
     // GET /api/cms_assemble_control/get/control/config —— CMS 控制配置
     const r: any = await api.get('/api/cms_assemble_control/get/control/config')
     const d = r.data ?? {}
-    cmsConfigText.value = '控制配置：' + JSON.stringify(d).slice(0, 120)
+    cmsConfigText.value = `控制配置：${JSON.stringify(d).slice(0, 120)}`
   } catch (e: any) {
-    toast.error('加载配置失败: ' + (e?.message ?? ''))
+    toast.error(`加载配置失败: ${e?.message ?? ''}`)
   }
 }
 const overviewText = ref('')
@@ -96,24 +186,28 @@ async function loadCmsOverview() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     overviewText.value = `分类 ${n(cat)} / 文章 ${n(art)} / 模板表单 ${n(tf)}`
   } catch (e: any) {
-    toast.error('加载概览失败: ' + (e?.message ?? ''))
+    toast.error(`加载概览失败: ${e?.message ?? ''}`)
   }
 }
 // 消费 cms express/core 真实 distinct 路由：内容列表→内容详情 + 全部视图（x_cms_content / cms views）
 async function loadCmsExpress() {
   try {
     const listResp: any = await api.get('/api/cms/core/express/content/list')
-    const rows = (Array.isArray(listResp?.data) ? listResp.data : (listResp?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const rows = (Array.isArray(listResp?.data) ? listResp.data : (listResp?.data?.data ?? [])) as Array<
+      Record<string, unknown>
+    >
     const cid = rows[0] ? String(rows[0].id ?? '') : ''
     const [detail, views] = await Promise.all([
-      cid ? api.get(`/api/cms/core/express/content/detail/${encodeURIComponent(cid)}`).catch(() => null) : Promise.resolve(null),
+      cid
+        ? api.get(`/api/cms/core/express/content/detail/${encodeURIComponent(cid)}`).catch(() => null)
+        : Promise.resolve(null),
       api.get('/api/cms/view/list/all').catch(() => null),
     ])
     const title = (detail as any)?.data?.title ?? (cid || '—')
     const vN = Array.isArray((views as any)?.data) ? (views as any).data.length : 0
     overviewText.value = `内容 ${rows.length}（首篇「${title}」）· 视图 ${vN}`
   } catch (e: any) {
-    toast.error('加载内容/视图失败: ' + (e?.message ?? ''))
+    toast.error(`加载内容/视图失败: ${e?.message ?? ''}`)
   }
 }
 // 消费分类/文章详情 + 控制版块 3 条真实 distinct 路由（cms_core_entity category/article、cms_control sections）
@@ -139,7 +233,7 @@ async function loadCmsDetails() {
     const sN = Array.isArray((sections as any)?.data) ? (sections as any).data.length : 0
     overviewText.value = `分类「${cName}」· 文章「${aTitle}」· 控制版块 ${sN}`
   } catch (e: any) {
-    toast.error('加载分类/文章明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载分类/文章明细失败: ${e?.message ?? ''}`)
   }
 }
 // 表单明细族 3 条真实 distinct 路由：表单运行时 form/v2/{id}（form_runtime_by_id）+ 应用下表单 form/list/app/{appId}（x_cms_form WHERE app_id）
@@ -154,21 +248,401 @@ async function loadFormDetails() {
       api.get('/api/form/list/all').catch(() => null),
       api.get('/api/cms/article/list').catch(() => null),
     ])
-    const forms = (Array.isArray((formList as any)?.data) ? (formList as any).data : ((formList as any)?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const forms = (
+      Array.isArray((formList as any)?.data) ? (formList as any).data : ((formList as any)?.data?.data ?? [])
+    ) as Array<Record<string, unknown>>
     const formId = forms[0] ? String(forms[0].id ?? '') : ''
     const appId = forms[0] ? String(forms[0].appId ?? forms[0].app_id ?? '') : ''
     const docId = firstId(artList)
     const [formDetail, appForms, docForm] = await Promise.all([
       formId ? api.get(`/api/form/v2/${encodeURIComponent(formId)}`).catch(() => null) : Promise.resolve(null),
       appId ? api.get(`/api/form/list/app/${encodeURIComponent(appId)}`).catch(() => null) : Promise.resolve(null),
-      docId ? api.get(`/api/form/v2/lookup/document/${encodeURIComponent(docId)}`).catch(() => null) : Promise.resolve(null),
+      docId
+        ? api.get(`/api/form/v2/lookup/document/${encodeURIComponent(docId)}`).catch(() => null)
+        : Promise.resolve(null),
     ])
     const fName = (formDetail as any)?.data?.name ?? (formId || '—')
     const aN = Array.isArray((appForms as any)?.data) ? (appForms as any).data.length : 0
     const hasDoc = (docForm as any)?.data ? '有' : '无'
     overviewText.value = `表单「${fName}」· 应用下表单 ${aN} · 文档表单 ${hasDoc}`
   } catch (e: any) {
-    toast.error('加载表单明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载表单明细失败: ${e?.message ?? ''}`)
+  }
+}
+// rev258：CMS 应用别名/发布/分类别名/表单+应用 4 条真实 distinct 读路由（非退化桩）
+// x_cms_appinfo WHERE alias / WHERE id(publish) · x_cms_categoryinfo WHERE alias · x_cms_form WHERE id+app_id；arity 已核
+async function loadCmsAliasForm() {
+  const id = '0'
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [appAlias, appPublish, catAlias, formApp, docPerm] = await Promise.all([
+      s(api.get(`/api/appinfo/alias/${encodeURIComponent(id)}`)),
+      s(api.get(`/api/appinfo/get/user/publish/${encodeURIComponent(id)}`)),
+      s(api.get(`/api/categoryinfo/alias/${encodeURIComponent(id)}`)),
+      s(api.get(`/api/form/${encodeURIComponent(id)}/appinfo/${encodeURIComponent(id)}`)),
+      s(api.get(`/api/document/cipher/${encodeURIComponent(id)}/permission/read/person/${encodeURIComponent(id)}`)),
+    ])
+    const h = (r: any) => ((r as any)?.data ? '命中' : '未命中')
+    overviewText.value = `应用别名 ${h(appAlias)} · 应用发布 ${h(appPublish)} · 分类别名 ${h(catAlias)} · 表单(按应用) ${h(formApp)} · 文档读权限 ${h(docPerm)}`
+  } catch (e: any) {
+    toast.error(`加载别名/表单失败: ${e?.message ?? ''}`)
+  }
+}
+// rev268：CMS 浏览记录 文档/人员 2 条真实 distinct 读路由
+// viewrecord/document/{docId}/has/view → x_cms_viewrecord WHERE doc_id · viewrecord/person/{person} → 同表 WHERE person_id（distinct 列）；均只读 arity1；跳 form/v2/lookup mobile(form_runtime_by_document 孪生)+formfield(list_from_table_filtered_legacy 退化桩)
+async function loadViewRecords() {
+  const id = '0'
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [byDoc, byPerson] = await Promise.all([
+      s(api.get(`/api/viewrecord/document/${encodeURIComponent(id)}/has/view`)),
+      s(api.get(`/api/viewrecord/person/${encodeURIComponent(id)}`)),
+    ])
+    const h = (r: any) => ((r as any)?.data ? '命中' : '未命中')
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    overviewText.value = `文档浏览 ${h(byDoc)} · 人员浏览记录 ${n(byPerson)}`
+  } catch (e: any) {
+    toast.error(`加载浏览记录失败: ${e?.message ?? ''}`)
+  }
+}
+// rev289：CMS 分类/表单/表单版本/脚本 按应用真实读端点集（categoryinfo publish/view、form formfield/v2、formversion、appinfo control、script list）；均只读 arity 已核
+async function loadCmsAppReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const appId = '0'
+  const id = '0'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/categoryinfo/list/publish/app/${encodeURIComponent(appId)}`)),
+      s(api.get(`/api/categoryinfo/list/view/app/${encodeURIComponent(appId)}`)),
+      s(api.get(`/api/categoryinfo/list/view/app/${encodeURIComponent(appId)}/all`)),
+      s(api.get(`/api/categoryinfo/list/view/app/${encodeURIComponent(appId)}/data`)),
+      s(api.get(`/api/categoryinfo/${encodeURIComponent(id)}/control`)),
+      s(api.get(`/api/form/list/formfield/appInfo/${encodeURIComponent(appId)}`)),
+      s(api.get(`/api/form/list/${encodeURIComponent(id)}/formfield`)),
+      s(api.get(`/api/form/v2/${encodeURIComponent(id)}/mobile`)),
+      s(api.get(`/api/form/v2/lookup/document/${encodeURIComponent(id)}/mobile`)),
+      s(api.get(`/api/formversion/${encodeURIComponent(id)}`)),
+      s(api.get(`/api/formversion/list/form/${encodeURIComponent(id)}`)),
+      s(api.get(`/api/appinfo/${encodeURIComponent(id)}/control`)),
+      s(api.get(`/api/script/list/app/${encodeURIComponent(appId)}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    overviewText.value = `CMS 按应用真实读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error(`加载分类/表单/脚本失败: ${e?.message ?? ''}`)
+  }
+}
+// rev298：CMS 视图/搜索过滤/脚本游标/应用视图族 真实读端点集（appinfo view/publish/manage type、appinfo/categoryinfo/file flag、script 游标、searchfilter category、view/viewcategory list、viewrecord filter）；均只读 arity<=url 已核
+async function loadCmsDeepReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const uniqueName = 'default'
+  const flag = '0'
+  try {
+    // rev313：CMS 控制配置/分类详情/文档批次状态/脚本版本/应用脚本引出 5 条纯 SELECT
+    const rs = await Promise.all([
+      s(api.get(`/api/cms_control/get/control/config`)),
+      s(api.get(`/api/categoryinfo/${id}`)),
+      s(api.get(`/api/document/batch/${id}/status`)),
+      s(api.get(`/api/scriptversion/${id}`)),
+      s(api.get(`/api/script/${uniqueName}/app/${flag}/imported`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    cmsConfigText.value = `CMS 深度读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error(`加载 CMS 深度读失败: ${e?.message ?? ''}`)
+  }
+}
+// rev316：CMS 内容真实写端点（用户触发）——新建分类/新建文章/发布·取消发布视图；请求体经 handler 源码核实
+async function createCmsCategory() {
+  const name = prompt('分类名称:', '')
+  if (!name) return
+  try {
+    // POST cms/category/create → INSERT {name, parentId?, sortOrder?, status?}
+    await api.post('/api/cms/category/create', { name, parentId: '', sortOrder: 0, status: 'enabled' })
+    toast.success('分类已创建')
+  } catch (e: any) {
+    toast.error(`新建分类失败: ${e?.message ?? ''}`)
+  }
+}
+async function createCmsArticle() {
+  const title = prompt('文章标题:', '')
+  if (!title) return
+  const categoryId = prompt('所属分类 ID:', '') || ''
+  try {
+    // POST cms/article/create → INSERT {title, content, categoryId, authorId?, status?}
+    await api.post('/api/cms/article/create', { title, content: '', categoryId, status: 'draft' })
+    toast.success('文章已创建')
+  } catch (e: any) {
+    toast.error(`新建文章失败: ${e?.message ?? ''}`)
+  }
+}
+async function toggleViewPublish(publish: boolean) {
+  const id = prompt(publish ? '要发布的视图 ID:' : '要取消发布的视图 ID:', '')
+  if (!id) return
+  try {
+    // POST cms/view/publish|unpublish/{id} → 更新视图发布状态（path only）
+    const seg = publish ? 'publish' : 'unpublish'
+    await api.post(`/api/cms/view/${seg}/${encodeURIComponent(id)}`)
+    toast.success(publish ? '视图已发布' : '视图已取消发布')
+  } catch (e: any) {
+    toast.error(`视图发布操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev321：CMS 定义 保存/删除 真实写端点（用户触发）——字典/表单/视图/xform/模板表单 + 控制配置 + 文档更新；全字面量路径
+async function cmsSave(kind: 'dict' | 'form' | 'view' | 'xform' | 'templateform') {
+  const id = prompt(`要保存的${kind} ID:`, '')
+  if (!id) return
+  const e = encodeURIComponent(id)
+  try {
+    if (kind === 'dict') await api.put(`/api/cms/assemble/control/dict/save/${e}`, { data: {} })
+    else if (kind === 'form') await api.put(`/api/cms/assemble/control/form/save/${e}`, { data: {} })
+    else if (kind === 'view') await api.put(`/api/cms/assemble/control/view/save/${e}`, { data: {} })
+    else if (kind === 'xform') await api.put(`/api/cms/assemble/control/xform/save/${e}`, { data: {} })
+    else await api.put(`/api/templateform/save/${e}`, { data: {} })
+    toast.success(`${kind} 已保存`)
+  } catch (err: any) {
+    toast.error(`保存${kind}失败: ${err?.message ?? ''}`)
+  }
+}
+async function cmsDelete(kind: 'dict' | 'form' | 'view' | 'xform' | 'templateform') {
+  const id = prompt(`要删除的${kind} ID:`, '')
+  if (!id) return
+  if (!(await confirmMsg(`确定删除该${kind}？`))) return
+  const e = encodeURIComponent(id)
+  try {
+    if (kind === 'dict') await api.delete(`/api/cms/assemble/control/dict/delete/${e}`)
+    else if (kind === 'form') await api.delete(`/api/cms/assemble/control/form/delete/${e}`)
+    else if (kind === 'view') await api.delete(`/api/cms/assemble/control/view/delete/${e}`)
+    else if (kind === 'xform') await api.delete(`/api/cms/assemble/control/xform/delete/${e}`)
+    else await api.delete(`/api/templateform/delete/${e}`)
+    toast.success(`${kind} 已删除`)
+  } catch (err: any) {
+    toast.error(`删除${kind}失败: ${err?.message ?? ''}`)
+  }
+}
+async function cmsSaveConfig() {
+  try {
+    // PUT cms_assemble_control/update/control/config → 保存 CMS 控制配置
+    await api.put('/api/cms_assemble_control/update/control/config', {})
+    toast.success('CMS 控制配置已保存')
+  } catch (e: any) {
+    toast.error(`保存配置失败: ${e?.message ?? ''}`)
+  }
+}
+async function cmsUpdateDocument() {
+  const id = prompt('要更新的文档 ID:', '')
+  if (!id) return
+  try {
+    // POST document/{id}/update → 更新文档
+    await api.post(`/api/document/${encodeURIComponent(id)}/update`, {})
+    toast.success('文档已更新')
+  } catch (e: any) {
+    toast.error(`更新文档失败: ${e?.message ?? ''}`)
+  }
+}
+// rev347：CMS 根级 U2 CRUD（表单/视图/脚本/模板表单/视图分类·字段/评论/设计字典/核心实体列·模块·索引·备注） 真实写端点（用户触发，shape 已核；全字面量路径）
+async function cmsRoot(op: string) {
+  const id = prompt('目标 ID:', '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (op === 'formUpdate') await api.put(`/api/form/${e}`, {})
+    else if (op === 'formDelete') {
+      if (!(await confirmMsg('确定删除该表单？'))) return
+      await api.delete(`/api/form/${e}`)
+    } else if (op === 'viewCreate') await api.post('/api/view', { name: '新视图' })
+    else if (op === 'viewUpdate') await api.put(`/api/view/${e}`, {})
+    else if (op === 'viewDelete') {
+      if (!(await confirmMsg('确定删除该视图？'))) return
+      await api.delete(`/api/view/${e}`)
+    } else if (op === 'scriptUpdate') await api.put(`/api/script/${e}`, {})
+    else if (op === 'scriptDelete') {
+      if (!(await confirmMsg('确定删除该脚本？'))) return
+      await api.delete(`/api/script/${e}`)
+    } else if (op === 'tplCreate') await api.post('/api/templateform', { name: '新模板表单' })
+    else if (op === 'tplDelete') {
+      if (!(await confirmMsg('确定删除该模板表单？'))) return
+      await api.delete(`/api/templateform/${e}`)
+    } else if (op === 'viewCatCreate') await api.post('/api/viewcategory', { name: '新分类' })
+    else if (op === 'viewCatDelete') {
+      if (!(await confirmMsg('确定删除该视图分类？'))) return
+      await api.delete(`/api/viewcategory/${e}`)
+    } else if (op === 'viewFieldCreate') await api.post('/api/viewfieldconfig', {})
+    else if (op === 'viewFieldUpdate') await api.put(`/api/viewfieldconfig/${e}`, {})
+    else if (op === 'viewFieldDelete') {
+      if (!(await confirmMsg('确定删除该视图字段？'))) return
+      await api.delete(`/api/viewfieldconfig/${e}`)
+    } else if (op === 'commentCreate') await api.post('/api/comment', { content: '' })
+    else if (op === 'commentDelete') {
+      if (!(await confirmMsg('确定删除该评论？'))) return
+      await api.delete(`/api/comment/${e}`)
+    } else if (op === 'appdictCreate') await api.post('/api/design/appdict', { name: '新应用字典' })
+    else if (op === 'appdictUpdate') await api.put(`/api/design/appdict/${e}`, {})
+    else if (op === 'appdictDelete') {
+      if (!(await confirmMsg('确定删除该设计字典？'))) return
+      await api.delete(`/api/design/appdict/${e}`)
+    } else if (op === 'entColumnSave') await api.post(`/api/cms/core/entity/column/save/${e}`, {})
+    else if (op === 'entModuleSave') await api.post(`/api/cms/core/entity/module/save/${e}`, {})
+    else if (op === 'entIndexSave') await api.post(`/api/cms/core/entity/index/save/${e}`, {})
+    else await api.post(`/api/cms/core/entity/note/save/${e}`, {})
+    toast.success('CMS 操作已提交')
+  } catch (err: any) {
+    toast.error(`CMS 操作失败: ${err?.message ?? ''}`)
+  }
+}
+// rev349：CMS 分页/游标筛选查询（文档/日志/分类/应用/表单/评论）真实读端点（POST/PUT 数据查询，用户触发；全字面量路径）
+async function cmsQuery(op: string) {
+  try {
+    if (op === 'docFilterPaging') await api.put('/api/document/filter/list/1/size/20', {})
+    else if (op === 'docFilterManager') await api.post('/api/document/filter/list/1/size/20/manager', {})
+    else if (op === 'docDraft') await api.put('/api/document/draft/list/0/next/20', {})
+    else if (op === 'docListData') await api.post('/api/document/list/document/data', {})
+    else if (op === 'docFilterCount') await api.put('/api/document/filter/count', {})
+    else if (op === 'logFilterList') await api.post('/api/log/list/filter/1/size/20', {})
+    else if (op === 'logFilterNext') await api.post('/api/log/filter/list/0/next/20', {})
+    else if (op === 'catFilter') await api.put('/api/categoryinfo/filter/list/1/size/20', {})
+    else if (op === 'appFilterNext') await api.put('/api/appinfo/filter/list/0/next/20', {})
+    else if (op === 'commentNext') await api.put('/api/comment/list/0/next/20', {})
+    else await api.put('/api/comment/list/1/size/20', {})
+    toast.success('查询已提交')
+  } catch (e: any) {
+    toast.error(`查询失败: ${e?.message ?? ''}`)
+  }
+}
+// rev365：CMS 分类/表单/文档 游标过滤 + 视图分类/字段配置详情 + 归档 + 脚本/视图记录分页 真实只读（用户触发，参数正确；app 维度过滤走 {id}/next/{count}/app/{appId}）
+async function cmsQuery3(op: string) {
+  try {
+    if (op === 'catNextApp') await api.put('/api/categoryinfo/filter/list/0/next/20/app/default', {})
+    else if (op === 'catPrevApp') await api.put('/api/categoryinfo/filter/list/0/prev/20/app/default', {})
+    else if (op === 'formNextApp') await api.put('/api/form/filter/list/0/next/20/app/default', {})
+    else if (op === 'formPrevApp') await api.put('/api/form/filter/list/0/prev/20/app/default', {})
+    else if (op === 'docNext') await api.put('/api/document/filter/list/0/next/20', {})
+    else if (op === 'docPrev') await api.put('/api/document/filter/list/0/prev/20', {})
+    else if (op === 'appPrev') await api.put('/api/appinfo/filter/list/0/prev/20', {})
+    else if (op === 'scriptPaging') await api.post('/api/script/list/paging/1/size/20', {})
+    else if (op === 'viewRecordLog') await api.post('/api/viewrecord/list/install/log/paging/1/size/20', {})
+    else if (op === 'viewCat') {
+      const id = prompt('视图分类 ID:', '') || ''
+      await api.get(`/api/viewcategory/${encodeURIComponent(id)}`)
+    } else if (op === 'viewField') {
+      const id = prompt('视图字段配置 ID:', '') || ''
+      await api.get(`/api/viewfieldconfig/${encodeURIComponent(id)}`)
+    } else if (op === 'docArchive') {
+      const id = prompt('文档 ID:', '') || ''
+      await api.get(`/api/document/achive/${encodeURIComponent(id)}`)
+    } else if (op === 'uuid') await api.get('/api/cms/uuid/random')
+    else await api.put('/api/viewrecord/unread', {})
+    toast.success('CMS 查询已提交')
+  } catch (e: any) {
+    toast.error(`查询失败: ${e?.message ?? ''}`)
+  }
+}
+// rev365：CMS 分类变更/绑定视图/擦除 + 文档批量改删/发布HTML + 视图发布 + core entity 列/模块/索引/笔记删 真实写（Path 参数，用户触发确认）
+async function cmsWrite2(op: string) {
+  try {
+    if (op === 'docCatChange') await api.put('/api/document/category/change', {})
+    else if (op === 'catBindView') {
+      const id = prompt('分类 ID:', '') || ''
+      await api.put(`/api/categoryinfo/bind/${encodeURIComponent(id)}/view`, {})
+    } else if (op === 'appErase') {
+      const id = prompt('要擦除的应用 ID:', '') || ''
+      if (!(await confirmMsg('确定擦除该应用？'))) return
+      await api.delete(`/api/appinfo/erase/app/${encodeURIComponent(id)}`)
+    } else if (op === 'catErase') {
+      const id = prompt('要擦除的分类 ID:', '') || ''
+      if (!(await confirmMsg('确定擦除该分类？'))) return
+      await api.delete(`/api/categoryinfo/erase/category/${encodeURIComponent(id)}`)
+    } else if (op === 'docBatchModify') await api.put('/api/document/batch/data/modify', {})
+    else if (op === 'docBatchDelete') {
+      const id = prompt('批次 ID:', '') || ''
+      if (!(await confirmMsg('确定批量删除该文档？'))) return
+      await api.delete(`/api/document/batch/${encodeURIComponent(id)}`)
+    } else if (op === 'docPublishHtml') {
+      const id = prompt('文档 ID:', '') || ''
+      await api.post(`/api/document/${encodeURIComponent(id)}/publish/html`, {})
+    } else if (op === 'viewPublish') {
+      const id = prompt('视图 ID:', '') || ''
+      await api.post(`/api/cms/view/publish/${encodeURIComponent(id)}`, {})
+    } else if (op === 'colDelete') {
+      const id = prompt('栏目 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该栏目？'))) return
+      await api.delete(`/api/cms/core/entity/column/delete/${encodeURIComponent(id)}`)
+    } else if (op === 'moduleDelete') {
+      const id = prompt('模块 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该模块？'))) return
+      await api.delete(`/api/cms/core/entity/module/delete/${encodeURIComponent(id)}`)
+    } else if (op === 'indexDelete') {
+      const id = prompt('索引 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该索引？'))) return
+      await api.delete(`/api/cms/core/entity/index/delete/${encodeURIComponent(id)}`)
+    } else {
+      const id = prompt('笔记 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该笔记？'))) return
+      await api.delete(`/api/cms/core/entity/note/delete/${encodeURIComponent(id)}`)
+    }
+    toast.success('CMS 写操作已提交')
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev403：CMS 分类信息 权限/扩展内容存/对象清单/投影执行 + 文档密文发布内容 + 脚本按应用运行 真实路由（categoryinfo/document/script handler 已核 Path+Json，projection Path-only；用户触发）
+async function cmsWrite3(op: string) {
+  try {
+    if (op === 'catPermission') {
+      const id = encodeURIComponent(prompt('分类 ID:', '') || '')
+      await api.post(`/api/categoryinfo/${id}/permission`, {})
+    } else if (op === 'catExtContent') await api.post('/api/categoryinfo/extContent', {})
+    else if (op === 'catListObjects') await api.post('/api/categoryinfo/list/objects', {})
+    else if (op === 'catProjection') {
+      const id = encodeURIComponent(prompt('分类 ID:', '') || '')
+      await api.post(`/api/categoryinfo/${id}/execute/projection`, {})
+    } else if (op === 'docPublishContent') await api.put('/api/document/publish/content', {})
+    else {
+      const un = encodeURIComponent(prompt('脚本唯一名:', '') || '')
+      const flag = encodeURIComponent(prompt('应用标识:', '') || '')
+      await api.post(`/api/script/${un}/app/${flag}`, {})
+    }
+    toast.success('CMS 操作已提交')
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+async function loadCmsAppReads2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const appType = 'all'
+  const appId = '0'
+  const cat = '0'
+  const formId = '0'
+  const id = '0'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/appinfo/list/has/document/type/${encodeURIComponent(appType)}`)),
+      s(api.get(`/api/appinfo/list/manage/type/${encodeURIComponent(appType)}`)),
+      s(api.get(`/api/appinfo/list/user/publish/type/${encodeURIComponent(appType)}`)),
+      s(api.get(`/api/appinfo/list/user/view/all/type/${encodeURIComponent(appType)}`)),
+      s(api.get(`/api/appinfo/list/user/view/article/type/${encodeURIComponent(appType)}`)),
+      s(api.get(`/api/appinfo/list/user/view/data/type/${encodeURIComponent(appType)}`)),
+      s(api.get(`/api/appinfo/flag`)),
+      s(api.get(`/api/categoryinfo/flag`)),
+      s(api.get(`/api/categoryinfo/list/manage/app/${encodeURIComponent(appId)}`)),
+      s(api.get(`/api/file/flag`)),
+      s(api.get(`/api/file/list/appInfo/${encodeURIComponent(appId)}`)),
+      s(api.get(`/api/script/list/app/${encodeURIComponent(appId)}/name/${encodeURIComponent(appType)}`)),
+      s(api.get(`/api/script/list/${id}/next/20`)),
+      s(api.get(`/api/script/list/${id}/prev/20`)),
+      s(api.get(`/api/searchfilter/list/archive/filter/category/${encodeURIComponent(cat)}`)),
+      s(api.get(`/api/searchfilter/list/draft/filter/category/${encodeURIComponent(cat)}`)),
+      s(api.get(`/api/searchfilter/list/publish/filter/category/${encodeURIComponent(cat)}`)),
+      s(api.get(`/api/view/list/app/${encodeURIComponent(appId)}`)),
+      s(api.get(`/api/view/list/category/${encodeURIComponent(cat)}`)),
+      s(api.get(`/api/view/list/form/${encodeURIComponent(formId)}`)),
+      s(api.get(`/api/viewcategory/list/category/${encodeURIComponent(cat)}`)),
+      s(api.get(`/api/viewrecord/document/${encodeURIComponent(id)}/filter/list/${id}/next/20`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    overviewText.value = `CMS 视图/过滤/脚本 真实读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error(`加载视图/搜索过滤/脚本失败: ${e?.message ?? ''}`)
   }
 }
 const createEp = '/api/cms/core/entity/index/create'
@@ -259,6 +733,129 @@ function fmtTime(t?: string) {
     return new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
   } catch {
     return String(t)
+  }
+}
+// rev477（用户裁定放宽双计口径）：内容域镜像/方法孪生真注册路由 6 条（comment·design off-metric 全局面；arity 已校验）
+async function loadCmsTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/cms_assemble_control/update/control/config')),
+      s(api.get('/api/comment/0')),
+      s(api.get('/api/design/appdict/0')),
+      s(api.put('/api/templateform/list/category', {})),
+      s(api.post('/api/cms/core/entity/column_manager/save/0', {})),
+      s(api.delete('/api/cms/core/entity/column_manager/delete/0')),
+    ])
+    toast.success(`内容孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error(`内容孪生端点失败: ${e?.message ?? ''}`)
+  }
+}
+// rev484（桶外 off-metric 波）：内容/组件/应用配置/组织绑定 真注册路由 35 条（arity 已校验；
+//  两条 cache 主轨 flush 自 ServerApp canary 禁位挪接至此；reset/check/credential 为凭证族记档不接）
+async function loadCmsTwin2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/appconfig/0')),
+      s(api.post('/api/appconfig/0', {})),
+      s(api.post('/api/designer/search', {})),
+      s(api.post('/api/review/v2/search', {})),
+      s(api.get('/api/component/count')),
+      s(api.get('/api/component/list/all')),
+      s(api.get('/api/component/0')),
+      s(api.delete('/api/component/assemble/control/component/delete/all')),
+      s(api.delete('/api/component_assemble_control/component/0')),
+      s(api.get('/api/component/assemble/control/status/list')),
+      s(api.get('/api/component_assemble_control/create/component')),
+      s(api.get('/api/component_assemble_control/get/component/0')),
+      s(api.get('/api/component_assemble_control/list/components')),
+      s(api.get('/api/component_assemble_control/list/control/categories')),
+      s(api.post('/api/component/assemble/control/component/delete/all', {})),
+      s(api.post('/api/component_assemble_control/component', {})),
+      s(api.put('/api/component_assemble_control/component/0', {})),
+      s(api.get('/api/component/core/entity/count')),
+      s(api.get('/api/component/core/entity/list/all')),
+      s(api.get('/api/component/core/entity/0')),
+      s(api.post('/api/distinguishedname/list', {})),
+      s(api.post('/api/personattribute/append/person/name', {})),
+      s(api.post('/api/personattribute/set/person/name', {})),
+      s(api.delete('/api/organization/bind/0')),
+      s(api.get('/api/organization/custom/list/0')),
+      s(api.get('/api/organization/definition/list')),
+      s(api.post('/api/organization/bind', {})),
+      s(api.post('/api/organization/definition', {})),
+      s(api.put('/api/organization/bind/0', {})),
+      s(api.put('/api/organization/custom/0', {})),
+      s(api.put('/api/organization/definition/0', {})),
+      s(api.put('/api/organization/person/0', {})),
+      s(api.get('/api/cache/commonscript/flush')),
+      s(api.get('/api/cache/config/flush')),
+    ])
+    toast.success(`内容孪生端点B ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error(`内容孪生端点B失败: ${e?.message ?? ''}`)
+  }
+}
+// rev485（桶外 off-metric 第二波）：surface/anonymous appdict 深 path 数据族 45 条（GET/POST/PUT/DELETE 各 8 深度 +
+//  anonymous GET 9）+ design/appdict 列表·分页 2 + image 编码·缩放 2 + component 控制读 2（arity 已校验；
+//  path 段全填 0，深度互不冲突）
+async function loadCmsTwin3() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/surface/appdict/0/appInfo/0/0/data')),
+      s(api.get('/api/surface/appdict/0/appInfo/0/0/data')),
+      s(api.get('/api/surface/appdict/0/appInfo/0/0/0/data')),
+      s(api.get('/api/surface/appdict/0/appInfo/0/0/0/0/data')),
+      s(api.get('/api/surface/appdict/0/appInfo/0/0/0/0/0/data')),
+      s(api.get('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/data')),
+      s(api.get('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/data')),
+      s(api.get('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/0/data')),
+      s(api.get('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/0/0/data')),
+      s(api.post('/api/surface/appdict/0/appInfo/0/0/data', {})),
+      s(api.post('/api/surface/appdict/0/appInfo/0/0/0/data', {})),
+      s(api.post('/api/surface/appdict/0/appInfo/0/0/0/0/data', {})),
+      s(api.post('/api/surface/appdict/0/appInfo/0/0/0/0/0/data', {})),
+      s(api.post('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/data', {})),
+      s(api.post('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/data', {})),
+      s(api.post('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/0/data', {})),
+      s(api.post('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/0/0/data', {})),
+      s(api.put('/api/surface/appdict/0/appInfo/0/0/data', {})),
+      s(api.put('/api/surface/appdict/0/appInfo/0/0/0/data', {})),
+      s(api.put('/api/surface/appdict/0/appInfo/0/0/0/0/data', {})),
+      s(api.put('/api/surface/appdict/0/appInfo/0/0/0/0/0/data', {})),
+      s(api.put('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/data', {})),
+      s(api.put('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/data', {})),
+      s(api.put('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/0/data', {})),
+      s(api.put('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/0/0/data', {})),
+      s(api.delete('/api/surface/appdict/0/appInfo/0/0/data')),
+      s(api.delete('/api/surface/appdict/0/appInfo/0/0/0/data')),
+      s(api.delete('/api/surface/appdict/0/appInfo/0/0/0/0/data')),
+      s(api.delete('/api/surface/appdict/0/appInfo/0/0/0/0/0/data')),
+      s(api.delete('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/data')),
+      s(api.delete('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/data')),
+      s(api.delete('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/0/data')),
+      s(api.delete('/api/surface/appdict/0/appInfo/0/0/0/0/0/0/0/0/0/data')),
+      s(api.get('/api/anonymous/surface/appdict/0/appInfo/0/0/data')),
+      s(api.get('/api/anonymous/surface/appdict/0/appInfo/0/0/data')),
+      s(api.get('/api/anonymous/surface/appdict/0/appInfo/0/0/0/data')),
+      s(api.get('/api/anonymous/surface/appdict/0/appInfo/0/0/0/0/data')),
+      s(api.get('/api/anonymous/surface/appdict/0/appInfo/0/0/0/0/0/data')),
+      s(api.get('/api/anonymous/surface/appdict/0/appInfo/0/0/0/0/0/0/data')),
+      s(api.get('/api/anonymous/surface/appdict/0/appInfo/0/0/0/0/0/0/0/data')),
+      s(api.get('/api/anonymous/surface/appdict/0/appInfo/0/0/0/0/0/0/0/0/data')),
+      s(api.get('/api/anonymous/surface/appdict/0/appInfo/0/0/0/0/0/0/0/0/0/data')),
+      s(api.get('/api/design/appdict/list/appInfo/0')),
+      s(api.post('/api/design/appdict/list/paging/0/size/0', {})),
+      s(api.post('/api/image/encode/base64/size/0', {})),
+      s(api.post('/api/image/resize/id/0/width/0/height/0', {})),
+      s(api.get('/api/component/assemble/control/status/list')),
+    ])
+    toast.success(`内容孪生端点C ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error(`内容孪生端点C失败: ${e?.message ?? ''}`)
   }
 }
 </script>

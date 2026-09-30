@@ -9,6 +9,7 @@
 import pytest
 
 from augmentor.config import ModelConfig
+from augmentor.exceptions import DataValidationError, ModelGenerateError
 from augmentor.models import (
     create_model_backend,
     extract_json_array,
@@ -51,7 +52,10 @@ class TestFactory:
     def test_unknown_type_raises_with_hint(self):
         """未知类型报错需列出支持的类型，便于排查配置错误"""
         with pytest.raises(ValueError) as excinfo:
-            create_model_backend(ModelConfig(type="unknown"))
+            # 坏值从 `model_type=` 进：`ModelConfig` 现在在构造期就拦，本例要测的
+            # 不是那一层。
+            create_model_backend(ModelConfig(type="baidu"),
+                                 model_type="unknown")
         assert "支持的类型" in str(excinfo.value)
 
 
@@ -189,6 +193,148 @@ class TestModelBaseExtended:
         assert backend._error_count == 0
 
 
+class TestGenerateRetryKnobs:
+    """generate 的重试次数旋钮"""
+
+    def test_negative_attempts_rejected_at_entry(self):
+        """总尝试次数为负没有读法：静默夹成 1 次会让调用方以为重试生效了"""
+        backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
+        backend._call_api = lambda prompt: "ok"
+        with pytest.raises(DataValidationError, match="max_retries"):
+            backend.generate("p", max_retries=-1, retry_delay=0)
+        assert backend._request_count == 0
+
+    def test_zero_max_retries_still_calls_once(self):
+        """max_retries=0 的既有读法（只调用一次）不能被收紧顺手改掉"""
+        backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
+        backend._call_api = lambda prompt: "ok"
+        assert backend.generate("p", max_retries=0, retry_delay=0) == "ok"
+        assert backend._request_count == 1
+
+    @staticmethod
+    def _failing_backend(**kwargs):
+        """总是失败的 OpenAI 后端，返回它被调用的次数容器"""
+        backend = OpenAIBackend(
+            ModelConfig(type="openai", api_key="k", model="m"), **kwargs
+        )
+        calls = []
+
+        def boom(prompt):
+            calls.append(prompt)
+            raise RuntimeError("boom")
+
+        backend._call_api = boom
+        return backend, calls
+
+    def test_backend_default_attempts_decides_the_call_count(self):
+        """后端的默认档位必须真的决定调用次数
+
+        这是 A64 的全部意义：`augmentation.max_retries` 在接线前是死旋钮，
+        改它一次调用都不会变。
+        """
+        backend, calls = self._failing_backend(default_attempts=2, default_retry_delay=0)
+        with pytest.raises(ModelGenerateError, match="共尝试 2 次"):
+            backend.generate("p")
+        assert len(calls) == 2
+
+    def test_explicit_arg_beats_backend_default(self):
+        """单次调用的显式参数优先于配置档位，否则「这一次别重试」无从表达"""
+        backend, calls = self._failing_backend(default_attempts=5, default_retry_delay=0)
+        with pytest.raises(ModelGenerateError):
+            backend.generate("p", max_retries=1)
+        assert len(calls) == 1
+
+    def test_backend_defaults_reach_the_backoff_call(self, monkeypatch):
+        """默认档位要落到 with_retries 的实际参数上（含「总尝试 − 1 = 额外重试」换算）"""
+        captured = {}
+
+        def fake_with_retries(func, **kwargs):
+            captured.update(kwargs)
+            return "ok", None
+
+        monkeypatch.setattr("augmentor.models.base.with_retries", fake_with_retries)
+        backend = OpenAIBackend(
+            ModelConfig(type="openai", api_key="k", model="m"),
+            default_attempts=5,
+            default_retry_delay=2.5,
+        )
+        backend._call_api = lambda prompt: "ok"
+        assert backend.generate("p") == "ok"
+        assert captured["max_retries"] == 4
+        assert captured["base_delay"] == 2.5
+
+    @staticmethod
+    def _capture_with_retries(monkeypatch):
+        """截住 `generate()` 递给 `with_retries` 的实参"""
+        captured = {}
+
+        def fake_with_retries(func, **kwargs):
+            captured.update(kwargs)
+            return "ok", None
+
+        monkeypatch.setattr("augmentor.models.base.with_retries", fake_with_retries)
+        return captured
+
+    def test_backend_forwards_both_ceilings_at_its_defaults(self, monkeypatch):
+        """默认档必须把 §3.22 承诺的两个数原样送到 `with_retries`
+
+        本条取代 L48 写的 `test_backend_does_not_shake_the_backoff_yet`。那条钉的是
+        「后端**刻意不传** `jitter`」（当时抖动没有配置面，暴露面记在 A75），而 A75 与
+        A73 已在 L49 同批接上 ⇒ 那条的前提没了，硬留着就是把「旋钮没接」这件事伪装成
+        契约。改写后的主张：两副封顶都由配置决定，且默认档（300 s / 不抖）下每一档
+        等待与接参前逐字相同。
+        """
+        captured = self._capture_with_retries(monkeypatch)
+        backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
+        backend._call_api = lambda prompt: "ok"
+        assert backend.generate("p") == "ok"
+        assert captured["max_delay"] == backend._MAX_RETRY_DELAY
+        assert captured["max_retry_wait"] == backend._DEFAULT_MAX_RETRY_WAIT
+        assert captured["jitter"] == backend._DEFAULT_RETRY_JITTER
+
+    def test_default_ceilings_match_the_documented_promises(self, monkeypatch):
+        """后端默认值不许重抄数字：封顶跟着 `retry.MAX_RETRY_AFTER` 走"""
+        from augmentor import MAX_RETRY_AFTER
+
+        captured = self._capture_with_retries(monkeypatch)
+        backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
+        backend._call_api = lambda prompt: "ok"
+        backend.generate("p")
+        assert (backend._DEFAULT_MAX_RETRY_WAIT, captured["max_retry_wait"]) == (
+            MAX_RETRY_AFTER, MAX_RETRY_AFTER)
+        assert captured["jitter"] == 0.0
+
+    def test_shrunk_ceiling_and_configured_jitter_reach_the_call(self, monkeypatch):
+        """旋钮真接进 `generate()`：45 s / 0.5 两档都要落到 `with_retries` 的实参上
+
+        接线前实测（Temp `l49_probe.py`）：`max_retry_wait` 无处可传，429 + `Retry-After`
+        一律睡 300 s；`jitter` 只有 `compute_delay` 的形参、无人调用。
+        """
+        captured = self._capture_with_retries(monkeypatch)
+        backend = OpenAIBackend(
+            ModelConfig(type="openai", api_key="k", model="m"),
+            default_max_retry_wait=45.0,
+            default_retry_jitter=0.5,
+        )
+        backend._call_api = lambda prompt: "ok"
+        backend.generate("p")
+        assert (captured["max_retry_wait"], captured["jitter"]) == (45.0, 0.5)
+
+    @pytest.mark.parametrize("kwargs,name", [
+        ({"default_max_retry_wait": 301.0}, "max_retry_wait"),
+        ({"default_max_retry_wait": float("inf")}, "max_retry_wait"),
+        ({"default_max_retry_wait": -1.0}, "max_retry_wait"),
+        ({"default_max_retry_wait": True}, "max_retry_wait"),
+        ({"default_retry_jitter": 1.5}, "jitter"),
+        ({"default_retry_jitter": -0.1}, "jitter"),
+        ({"default_retry_jitter": "0.5"}, "jitter"),
+    ])
+    def test_bad_wait_budget_defaults_rejected_at_construction(self, kwargs, name):
+        """坏档位该在建后端时指名，而不是等第一次限流才表现为睡过头 / 抖不停"""
+        with pytest.raises(DataValidationError, match=name):
+            OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"), **kwargs)
+
+
 class TestJsonExtraction:
     """JSON 提取"""
 
@@ -220,7 +366,9 @@ class FakeBackend(ModelBackend):
         Args:
             failures: 前 N 次调用失败
         """
-        super().__init__(ModelConfig(type="fake"))
+                # `type` 自 A115 起是封闭清单（构造期就拒），替身因此要填一个真类型；
+        # 它覆写了 `_call_api`，填哪一个都不影响行为。
+        super().__init__(ModelConfig(type="ollama"))
         self.failures = failures
         self.calls = 0
 
@@ -262,6 +410,49 @@ class TestRetryMechanism:
 
         assert backend.request_count == 0
         assert backend.error_count == 0
+
+    def test_retry_count_zero_without_retry(self):
+        """A66：没重试时新出口停在 0（走满 `_request_count` 也不该虚增重试数）"""
+        backend = FakeBackend()
+        backend.generate("hi")
+        assert backend.retry_count == 0
+        assert backend.retry_wait_seconds == 0.0
+
+    def test_retry_count_tracks_transient_failures(self):
+        """A66：瞬时失败 2 次后成功 ⇒ 实际重试 2 回。`error_count` 只说「失败几次」，
+        说不出「其中发生了几回带重发的重试」，这条出口补的正是后者。"""
+        backend = FakeBackend(failures=2)
+        assert backend.generate("hi", max_retries=3, retry_delay=0) == "结果: hi"
+        assert backend.retry_count == 2
+        assert backend.error_count == 2  # 既有语义：每次失败照计
+
+    def test_retry_wait_seconds_accumulates_backoff_delays(self):
+        """A66：等待时长是这条出口存在的理由——`request_count`/`error_count` 对「总共睡了
+        多久」完全隐形。base=0.01、factor=2、无抖动 ⇒ 两回重试等 0.01 + 0.02。"""
+        backend = FakeBackend(failures=2)
+        backend.generate("hi", max_retries=3, retry_delay=0.01)
+        assert backend.retry_count == 2
+        assert backend.retry_wait_seconds == pytest.approx(0.03)
+
+    def test_retry_stats_survive_an_exhausted_call(self):
+        """A66 的关键判别：走 `on_retry` 而不是 `with_retries` 返回的 `RetryStats`——耗尽
+        那条路会 `raise`、拿不到 stats，可等待其实已经付了。失败到弹尽仍须记下已发生的重试。"""
+        backend = FakeBackend(failures=10)
+        with pytest.raises(ModelGenerateError):
+            backend.generate("hi", max_retries=3, retry_delay=0)
+        # attempts=3 ⇒ 首次 + 2 回重试，全失败后抛 ModelGenerateError
+        assert backend.retry_count == 2
+        assert backend.request_count == 3
+        assert backend.error_count == 3
+
+    def test_reset_stats_clears_retry_counters(self):
+        """A66：新计数纳入既有 `reset_stats` 家族，重置后一起归零"""
+        backend = FakeBackend(failures=2)
+        backend.generate("hi", max_retries=3, retry_delay=0.01)
+        assert backend.retry_count == 2 and backend.retry_wait_seconds > 0
+        backend.reset_stats()
+        assert backend.retry_count == 0
+        assert backend.retry_wait_seconds == 0.0
 
 
 class TestModelBackendExtended:

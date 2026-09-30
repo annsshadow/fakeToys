@@ -15,6 +15,7 @@ import numpy as np
 
 from .base import VectorDB, normalize_vectors
 from ..exceptions import VectorError
+from ..validation import require_count
 
 logger = logging.getLogger(__name__)
 
@@ -132,11 +133,13 @@ class ChromaDB(VectorDB):
 
         Args:
             query: 查询向量
-            top_k: 返回条数
+            top_k: 返回条数，不小于 0 的整数（判据见 `require_count`）
 
         Returns:
             结果列表，按相似度降序
         """
+        require_count("top_k", top_k)
+
         if self._collection.count() == 0:
             return []
 
@@ -150,9 +153,13 @@ class ChromaDB(VectorDB):
             )
 
         normalized = normalize_vectors(query_array)
+        k = min(top_k, self._collection.count())
+        if k == 0:
+            # 0 是合法请求，而库的 `n_results` 只收正数（实测真 chromadb 对 0 抛裸 TypeError）
+            return []
         result = self._collection.query(
             query_embeddings=normalized.tolist(),
-            n_results=min(top_k, self._collection.count()),
+            n_results=k,
             include=["metadatas", "distances"]
         )
 

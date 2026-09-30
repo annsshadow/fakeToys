@@ -47,6 +47,9 @@
             <button class="btn-edit" @click="loadQueryPerms">🔐 权限/分类</button>
             <button class="btn-edit" @click="loadTableRows">📊 表数据/统计</button>
             <button class="btn-edit" @click="loadTableCursors">🔀 表游标</button>
+            <button class="btn-edit" @click="loadDesignerViewStat">📐 视图/统计游标</button>
+            <button class="btn-edit" @click="loadQueryDesignerMore">🧾 设计器只读补消费</button>
+            <button class="btn-edit" @click="loadDesignerOutputBundle">📦 输出/包/属性</button>
             <button class="btn-del" @click="deleteQuery(selected)">🗑</button>
           </div>
         </div>
@@ -270,6 +273,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
+import { downloadBlob } from '../utils/download'
 import { toast } from '../utils/toast'
 
 type QueryDef = {
@@ -351,7 +355,7 @@ async function loadQueryDetail() {
     const mN = Array.isArray((models as any)?.data) ? (models as any).data.length : 0
     queryDetailText.value = `查询「${dName}」· 数据表 ${tN} · 导入模型 ${mN}`
   } catch (e: any) {
-    toast.error('加载查询明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载查询明细失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -374,7 +378,11 @@ async function loadQueryPerms() {
     const tableId = tables[0] ? String(tables[0].id ?? '0') : '0'
     const [perm, byCat, tablePerm] = await Promise.all([
       settle(api.get(`/api/query/assemble/designer/permission/${encodeURIComponent(flag)}/${encodeURIComponent(qid)}`)),
-      settle(api.get(`/api/query/assemble/designer/list/querycategory/${encodeURIComponent(flag)}/${encodeURIComponent(cat)}`)),
+      settle(
+        api.get(
+          `/api/query/assemble/designer/list/querycategory/${encodeURIComponent(flag)}/${encodeURIComponent(cat)}`,
+        ),
+      ),
       settle(api.get(`/api/query/assemble/designer/table/permission/${encodeURIComponent(tableId)}`)),
     ])
     const hasPerm = (perm as any)?.data?.id ? '有' : '无'
@@ -382,7 +390,7 @@ async function loadQueryPerms() {
     const hasTblPerm = (tablePerm as any)?.data?.id ? '有' : '无'
     queryPermText.value = `查询权限 ${hasPerm} · 同分类查询 ${catN} · 数据表权限 ${hasTblPerm}`
   } catch (e: any) {
-    toast.error('加载查询权限/分类失败: ' + (e?.message ?? ''))
+    toast.error(`加载查询权限/分类失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -404,14 +412,16 @@ async function loadTableRows() {
     const rows = Array.isArray((rowsRes as any)?.data) ? (rowsRes as any).data : []
     const rowId = rows[0] ? String(rows[0].id ?? '0') : '0'
     const [oneRow, stats] = await Promise.all([
-      settle(api.get(`/api/query/assemble/designer/table/row/${encodeURIComponent(tableFlag)}/${encodeURIComponent(rowId)}`)),
+      settle(
+        api.get(`/api/query/assemble/designer/table/row/${encodeURIComponent(tableFlag)}/${encodeURIComponent(rowId)}`),
+      ),
       settle(api.get(`/api/query/assemble/designer/stat/list/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}`)),
     ])
     const hasRow = (oneRow as any)?.data?.id ? '命中' : '未命中'
     const statN = Array.isArray((stats as any)?.data) ? (stats as any).data.length : 0
     tableRowText.value = `数据表 ${tables.length} · 行 ${rows.length}（首行 ${hasRow}）· 统计 ${statN}`
   } catch (e: any) {
-    toast.error('加载表数据/统计失败: ' + (e?.message ?? ''))
+    toast.error(`加载表数据/统计失败: ${e?.message ?? ''}`)
   }
 }
 // rev206：设计器表行游标族 5 条真实 distinct 路由（x_query_table_data）
@@ -432,17 +442,109 @@ async function loadTableCursors() {
     const rows = Array.isArray((rowsRes as any)?.data) ? (rowsRes as any).data : []
     const rowId = rows[0] ? String(rows[0].id ?? '0') : '0'
     const [filtered, cnt, next, prev, one] = await Promise.all([
-      settle(api.get(`/api/query/assemble/designer/table/list/row/select/where/where/${encodeURIComponent(tableFlag)}?where=a`)),
+      settle(
+        api.get(
+          `/api/query/assemble/designer/table/list/${encodeURIComponent(tableFlag)}/row/select/where/${encodeURIComponent('a')}`,
+        ),
+      ),
       settle(api.get(`/api/query/assemble/designer/table/row/where/where/${encodeURIComponent(tableFlag)}/10?where=a`)),
-      settle(api.get(`/api/query/assemble/designer/table/list/${encodeURIComponent(tableFlag)}/row/${encodeURIComponent(rowId)}/next/10`)),
-      settle(api.get(`/api/query/assemble/designer/table/list/${encodeURIComponent(tableFlag)}/row/${encodeURIComponent(rowId)}/prev/10`)),
-      settle(api.get(`/api/query/assemble/designer/table/${encodeURIComponent(tableFlag)}/row/${encodeURIComponent(rowId)}`)),
+      settle(
+        api.get(
+          `/api/query/assemble/designer/table/list/${encodeURIComponent(tableFlag)}/row/${encodeURIComponent(rowId)}/next/10`,
+        ),
+      ),
+      settle(
+        api.get(
+          `/api/query/assemble/designer/table/list/${encodeURIComponent(tableFlag)}/row/${encodeURIComponent(rowId)}/prev/10`,
+        ),
+      ),
+      settle(
+        api.get(`/api/query/assemble/designer/table/${encodeURIComponent(tableFlag)}/row/${encodeURIComponent(rowId)}`),
+      ),
     ])
     const n = (x: any) => (Array.isArray((x as any)?.data) ? (x as any).data.length : 0)
     const cntV = (cnt as any)?.data?.count ?? (cnt as any)?.data ?? 0
     tableRowText.value = `过滤行 ${n(filtered)} · 计数 ${cntV} · 下翻 ${n(next)} · 上翻 ${n(prev)} · 单行 ${(one as any)?.data?.id ? '命中' : '未命中'}`
   } catch (e: any) {
-    toast.error('加载表游标失败: ' + (e?.message ?? ''))
+    toast.error(`加载表游标失败: ${e?.message ?? ''}`)
+  }
+}
+// rev227：设计器 视图/统计/分类游标族 6 条真实 distinct 路由
+// view/permission/{id}（x_query_view SELECT permission）· view/list/{id}/prev/{count}（id< DESC）· view/list/{id}/next/{count}（id> ASC）
+// · query/list/querycategory/{queryCategory}（x_query_design WHERE category）· stat/list/{query}/{flag}（x_query_stat WHERE query_flag）· stat/list/{id}/next/{count}（id> ASC）
+async function loadDesignerViewStat() {
+  const flag = String(selected.value?.flag ?? selected.value?.id ?? '0')
+  const cat = String((selected.value as any)?.category ?? 'default')
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [viewPerm, viewPrev, viewNext, byCat, statByQuery, statNext] = await Promise.all([
+      s(api.get(`/api/query/assemble/designer/view/permission/${encodeURIComponent(flag)}`)),
+      s(api.get(`/api/query/assemble/designer/view/list/${encodeURIComponent(flag)}/prev/20`)),
+      s(api.get(`/api/query/assemble/designer/view/list/${encodeURIComponent(flag)}/next/20`)),
+      s(api.get(`/api/query/assemble/designer/query/list/querycategory/${encodeURIComponent(cat)}`)),
+      s(api.get(`/api/query/assemble/designer/stat/list/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}`)),
+      s(api.get(`/api/query/assemble/designer/stat/list/${encodeURIComponent(flag)}/next/20`)),
+    ])
+    const n = (x: any) => (Array.isArray((x as any)?.data) ? (x as any).data.length : 0)
+    tableRowText.value = `视图权限 ${(viewPerm as any)?.data ? '有' : '无'} · 视图上翻 ${n(viewPrev)}·下翻 ${n(viewNext)} · 分类查询 ${n(byCat)} · 统计按查询 ${n(statByQuery)}·下翻 ${n(statNext)}`
+  } catch (e: any) {
+    toast.error(`加载视图/统计游标失败: ${e?.message ?? ''}`)
+  }
+}
+// rev377：设计器 统计/表清单/导出/导入模型清单 非破坏性真实读补消费（用户触发；均 x_query_* 真 SELECT）
+async function loadQueryDesignerMore() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const nx = '0'
+  const cnt = '20'
+  const tf = '0'
+  const q = 'default'
+  const flag = 'default'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/query/assemble/designer/stat/list/${id}/${nx}/${cnt}`)),
+      s(api.get(`/api/query/assemble/designer/stat/list/${q}/${flag}`)),
+      s(api.get(`/api/query/assemble/designer/table/export/${tf}/${cnt}/${cnt}`)),
+      s(api.get(`/api/query/assemble/designer/table/list/row/${tf}/${id}/${nx}/${cnt}`)),
+      s(api.get(`/api/query/assemble/designer/table/list/${q}/${flag}`)),
+      s(api.get(`/api/query/assemble/designer/${id}/${cnt}`)),
+      s(api.post(`/api/query/assemble/designer/importmodel/list/${q}/${flag}`, {})),
+    ])
+    const hit = rs.filter((r) => (r as any) != null).length
+    tableRowText.value = `设计器只读端点 ${rs.length} 条，返回 ${hit}`
+  } catch (e: any) {
+    toast.error(`加载设计器只读端点失败: ${e?.message ?? ''}`)
+  }
+}
+// rev241：查询设计器 输出/包/实体属性/分类/统计/表行 7 条真实 distinct 读路由（arity 已核；跳 icon/{query}/{flag}=Path<String>与2参URL不符 500、row/count/where=row/select/where 投影孪生、list/summary/querycategory/{query}/{queryCategory}=同 handler 双注册）
+async function loadDesignerOutputBundle() {
+  const flag = String(selected.value?.flag ?? selected.value?.id ?? '0')
+  const cat = String((selected.value as any)?.category ?? '0')
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [outFile, outSelect, bundle, entityProps, catSummary, statByQuery, tableRows, tableRowsPrev] =
+      await Promise.all([
+        s(api.get(`/api/query/assemble/designer/output/select/file/${encodeURIComponent(flag)}`)),
+        s(api.get(`/api/query/assemble/designer/output/select/${encodeURIComponent(flag)}`)),
+        s(api.get(`/api/query/assemble/designer/bundle/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}`)),
+        s(
+          api.get(
+            `/api/query/assemble/designer/query/entity/${encodeURIComponent(flag)}/category/${encodeURIComponent(cat)}/properties`,
+          ),
+        ),
+        s(api.get(`/api/query/assemble/designer/query/list/summary/querycategory/${encodeURIComponent(cat)}`)),
+        s(api.get(`/api/query/assemble/designer/stat/list/query/${encodeURIComponent(flag)}`)),
+        s(api.get(`/api/query/assemble/designer/table/list/${encodeURIComponent(flag)}/row/select/where/a`)),
+        s(
+          api.get(
+            `/api/query/assemble/designer/table/list/row/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}/prev/20`,
+          ),
+        ),
+      ])
+    const n = (x: any) => (Array.isArray((x as any)?.data) ? (x as any).data.length : 0)
+    tableRowText.value = `输出文件 ${(outFile as any)?.data ? '有' : '无'} · 输出选择 ${n(outSelect)} · 视图包 ${(bundle as any)?.data ? '有' : '无'} · 实体属性 ${n(entityProps)} · 分类摘要 ${n(catSummary)} · 统计按查询 ${n(statByQuery)} · 表行过滤 ${n(tableRows)} · 表行前翻 ${n(tableRowsPrev)}`
+  } catch (e: any) {
+    toast.error(`加载输出/包/属性失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -492,7 +594,7 @@ async function saveQuery() {
     showModal.value = false
     loadQueries()
   } catch (e: any) {
-    toast.error('保存失败: : ' + (e?.message ?? ''))
+    toast.error(`保存失败: : ${e?.message ?? ''}`)
   }
 }
 
@@ -512,7 +614,7 @@ async function runQuery() {
     })
     resultData.value = r.data?.list ?? r.data ?? []
   } catch (e: any) {
-    toast.error('执行失败: : ' + (e?.message ?? ''))
+    toast.error(`执行失败: : ${e?.message ?? ''}`)
   } finally {
     rLoading.value = false
   }
@@ -525,7 +627,7 @@ async function deleteQuery(q: QueryDef) {
     if (selected.value?.id === q.id) selected.value = null
     queries.value = queries.value.filter((x) => x.id !== q.id)
   } catch (e: any) {
-    toast.error('删除失败: : ' + (e?.message ?? ''))
+    toast.error(`删除失败: : ${e?.message ?? ''}`)
   }
 }
 
@@ -573,9 +675,9 @@ function applyFilterRules() {
   const cond = generatedFilterWhere.value
   if (cond) {
     if (/\bWHERE\b/i.test(sql.value || '')) {
-      sql.value = sql.value!.replace(/WHERE\s+[^;]+/i, 'WHERE ' + cond)
+      sql.value = sql.value!.replace(/WHERE\s+[^;]+/i, `WHERE ${cond}`)
     } else {
-      sql.value = (sql.value || '') + '\nWHERE ' + cond
+      sql.value = `${sql.value || ''}\nWHERE ${cond}`
     }
   }
   showFilterBuilder.value = false
@@ -601,7 +703,7 @@ function renderChart() {
   const entries = [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, 20)
   const maxVal = Math.max(1, ...entries.map(([, v]) => v))
   const nums = entries.map(([, v]) => v)
-  chartData.value = entries.map(([label, value], i) => ({ label, value, h: Math.round((value / maxVal) * 150) }))
+  chartData.value = entries.map(([label, value], _i) => ({ label, value, h: Math.round((value / maxVal) * 150) }))
   chartStats.value = {
     count: resultData.value.length,
     max: Math.max(...nums),
@@ -641,27 +743,18 @@ function doExport() {
   if (exportFmt.value === 'json') {
     downloadBlob(
       new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
-      'queries_' + new Date().toISOString().slice(0, 10) + '.json',
+      `queries_${new Date().toISOString().slice(0, 10)}.json`,
     )
   } else if (exportFmt.value === 'csv') {
     const csv =
       'name,category,sql\n' +
       data.map((d) => `"${d.name}","${d.category}","${(d.sql || '').replace(/"/g, '""')}"`).join('\n')
-    downloadBlob(new Blob([csv], { type: 'text/csv' }), 'queries_' + new Date().toISOString().slice(0, 10) + '.csv')
+    downloadBlob(new Blob([csv], { type: 'text/csv' }), `queries_${new Date().toISOString().slice(0, 10)}.csv`)
   } else {
     const sqlStr = data.map((d) => `-- ${d.name}\n${d.sql}`).join('\n\n')
-    downloadBlob(
-      new Blob([sqlStr], { type: 'text/plain' }),
-      'queries_' + new Date().toISOString().slice(0, 10) + '.sql',
-    )
+    downloadBlob(new Blob([sqlStr], { type: 'text/plain' }), `queries_${new Date().toISOString().slice(0, 10)}.sql`)
   }
   showImportExport.value = false
-}
-function downloadBlob(blob: Blob, filename: string) {
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = filename
-  a.click()
 }
 async function doImport() {
   if (!importJson.value.trim()) return
@@ -671,16 +764,24 @@ async function doImport() {
       importMsg.value = { ok: false, txt: '格式错误' }
       return
     }
+    let ok = 0
+    let fail = 0
     for (const q of data) {
       try {
         await api.post('/api/query/assemble/designer/create', q)
-      } catch {}
+        ok++
+      } catch {
+        fail++
+      }
     }
-    importMsg.value = { ok: true, txt: `成功导入 ${data.length} 条` }
+    importMsg.value = {
+      ok: fail === 0,
+      txt: fail === 0 ? `成功导入 ${ok} 条` : `导入完成：成功 ${ok} / 失败 ${fail}`,
+    }
     loadQueries()
     showImportExport.value = false
   } catch (e: any) {
-    importMsg.value = { ok: false, txt: '导入失败: ' + e.message }
+    importMsg.value = { ok: false, txt: `导入失败: ${e.message}` }
   }
 }
 

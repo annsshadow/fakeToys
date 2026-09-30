@@ -11,8 +11,9 @@ import random
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional, Callable
 
-from .evaluation import compute_similarity
+from .evaluation import tokenize
 from .exceptions import DataValidationError
+from .validation import require_count
 
 logger = logging.getLogger(__name__)
 
@@ -69,8 +70,10 @@ class ActiveLearningLoop:
             raise DataValidationError(
                 f"不支持的采样策略: {strategy}。支持: {SUPPORTED_STRATEGIES}"
             )
-        if batch_size <= 0:
-            raise DataValidationError("batch_size 必须为正整数")
+        # 每轮必须选出样本，所以下界是 1 而不是 0（`select_samples` 的逐次覆盖
+        # 用同一个下界，见该方法）。非整数以前会在 `batch_size <= 0` 那里抛
+        # TypeError，绕过本模块的错误口径。
+        require_count("batch_size", batch_size, minimum=1)
 
         self.strategy = strategy
         self.batch_size = batch_size
@@ -141,13 +144,21 @@ class ActiveLearningLoop:
         if not texts:
             return []
 
+        # 相似度是对称的词元级 Jaccard，逐对调用 compute_similarity 会把每条文本
+        # 重新 tokenize 约 2n 次（外层 n 次 + 每次内层再切一遍两侧），n 条共 2n² 次。
+        # 先一次性把每条切成词元集合（n 次 tokenize），内层只做集合运算，语义不变。
+        token_sets = [set(tokenize(text)) for text in texts]
         scores = []
-        for index, text in enumerate(texts):
+        for index, set_i in enumerate(token_sets):
             max_similarity = 0.0
-            for other_index, other_text in enumerate(texts):
+            for other_index, set_j in enumerate(token_sets):
                 if index == other_index:
                     continue
-                similarity = compute_similarity(text, other_text)
+                if not set_i or not set_j:
+                    similarity = 0.0
+                else:
+                    union = len(set_i | set_j)
+                    similarity = len(set_i & set_j) / union if union else 0.0
                 if similarity > max_similarity:
                     max_similarity = similarity
             scores.append(1.0 - max_similarity)
@@ -198,10 +209,14 @@ class ActiveLearningLoop:
         Args:
             data: 候选数据列表
             strategy: 采样策略，为 None 时使用默认策略
-            batch_size: 选择数量，为 None 时使用默认值
+            batch_size: 选择数量，为 None 时使用默认值。越界值（负数、非整数）
+                与构造器同判据（不小于 1），不在这里另立一套
 
         Returns:
             选中的样本列表（按分值降序）
+
+        Raises:
+            DataValidationError: 策略名不存在，或 `batch_size` 越界
         """
         strategy = strategy or self.strategy
         if strategy not in SUPPORTED_STRATEGIES:
@@ -209,9 +224,14 @@ class ActiveLearningLoop:
                 f"不支持的采样策略: {strategy}。支持: {SUPPORTED_STRATEGIES}"
             )
 
+        # 先判参再短路：`if not data: return []` 排在这行之前时，
+        # `select_samples([], batch_size=-1)` 会静默返回空列表，把坏参数藏掉。
+        require_count("batch_size", batch_size, minimum=1)
+
         if not data:
             return []
 
+        # 下界已在上面判掉，`or` 在这里吞不掉任何合法值
         size = min(batch_size or self.batch_size, len(data))
         scores = self._compute_scores(data, strategy)
 

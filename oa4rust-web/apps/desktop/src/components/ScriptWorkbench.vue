@@ -160,7 +160,7 @@ async function save(): Promise<void> {
 }
 
 async function remove(): Promise<void> {
-  if (!activeId.value || !confirmMsg('确定删除该脚本？')) return
+  if (!activeId.value || !(await confirmMsg('确定删除该脚本？'))) return
   deleting.value = true
   try {
     await props.adapter.remove(activeId.value)

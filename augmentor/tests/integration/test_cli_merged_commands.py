@@ -326,7 +326,278 @@ class TestSearchCommand:
             ["cli", "search", "--input", str(clean), "--query", "租房", "--method", "fuzzy"]
         )
         assert code is None, err
-        assert "找到" in out
+        assert "找到 2 条匹配结果" in out
+
+    def test_fuzzy_finds_a_typo_query_that_contains_misses(self, dataset_context):
+        """把字换掉也要能找到——这正是 fuzzy 与 contains 的分工（L25 / A27）
+
+        样本里有「如何退租押金？」。查询写成「腿租押金」时 `contains` 找不到（0 条），
+        fuzzy 的等长窗口错配 1/4 = 0.75 ≥ 阈值 0.6 → 1 条。
+        修 A27 之前 fuzzy 也是 0 条：整段中文被 `_tokenize` 当成一个 token，
+        与整档 token 集合的 Jaccard 恒为 0，**任何**中文查询都搜不到东西。
+        """
+        clean, _, _ = dataset_context
+        typo = "腿租押金"
+
+        def count(method):
+            out, err, code = run_cli(
+                ["cli", "search", "--input", str(clean), "--query", typo, "--method", method]
+            )
+            assert code is None, err
+            return out
+
+        assert "找到 0 条匹配结果" in count("contains")
+        assert "找到 1 条匹配结果" in count("fuzzy")
+
+    def test_fuzzy_threshold_flag_changes_the_count(self, dataset_context):
+        """`--fuzzy-threshold` 得真的改变结果，而不是被 argparse 收下就丢掉
+
+        「租房」在默认 0.6 下 2 条；放到 0.5 就多出「如何退租押金？」（窗口「退租」
+        错 1/2 = 0.5，**正好压在阈值上**）和「租期最短多久？」（「租期」同为 0.5）
+        → 4 条。这个 0.5 与上一行的等号一起说明门槛是闭区间上界、开区间下界。
+        """
+        clean, _, _ = dataset_context
+
+        def count(extra):
+            out, err, code = run_cli(
+                ["cli", "search", "--input", str(clean), "--query", "租房",
+                 "--method", "fuzzy", *extra]
+            )
+            assert code is None, err
+            return out
+
+        assert "找到 2 条匹配结果" in count([])
+        assert "找到 4 条匹配结果" in count(["--fuzzy-threshold", "0.5"])
+
+    def test_ngram_n_flag_changes_the_count(self, dataset_context):
+        """`--ngram-n` 同样可调：1 是逐字覆盖，2 是二元，3 对 2 字查询无解"""
+        clean, _, _ = dataset_context
+
+        def count(n):
+            out, err, code = run_cli(
+                ["cli", "search", "--input", str(clean), "--query", "租房",
+                 "--method", "ngram", "--ngram-n", str(n)]
+            )
+            assert code is None, err
+            return out
+
+        assert "找到 2 条匹配结果" in count(2)
+        assert "找到 4 条匹配结果" in count(1)
+        assert "找到 0 条匹配结果" in count(3)
+
+    @pytest.mark.parametrize("extra, phrase", [
+        (["--fuzzy-threshold", "0"], "模糊阈值"),
+        (["--fuzzy-threshold", "1.5"], "模糊阈值"),
+        (["--ngram-n", "0"], "n-gram 长度"),
+        (["--ngram-n", "-2"], "n-gram 长度"),
+        (["--limit", "-1"], "limit"),
+        (["--offset", "-1"], "offset"),
+    ])
+    def test_out_of_range_knobs_fail_loudly(self, dataset_context, extra, phrase):
+        """越界的旋钮必须失败，不许交出「找到 0 条」
+
+        0 条在 CLI 里是完全正常的答案，用户读到的是「语料里没有」；而真相是参数写错了。
+        校验只挂在 SDK `search()` 那一处，经 `cli.main()` 的 `except Exception` 变成
+        `错误: …` + 退出码 1，所以这里同时钉住了「不在命令处理里重复校验」。
+
+        `--limit` / `--offset` 以前不在拒绝名单里：它们是分页切片的两个端点，
+        负数被 Python 读成反向窗口。`--limit -1` 于是打印「找到 2 条匹配结果」
+        却把**除了最后一条之外**的全部条目吐进 JSON——摘要与正文自相矛盾，
+        而且正文比摘要声称的总数还多。
+        """
+        clean, _, _ = dataset_context
+        out, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "租房", *extra]
+        )
+        assert code == 1, f"{extra} 未被拒绝: code={code}, out={out!r}"
+        assert phrase in err, f"stderr 没指出越界的是哪个旋钮: {err!r}"
+        assert "找到" not in out, "报错的同时还打印了结果摘要"
+
+    def test_limit_zero_is_a_real_answer_not_the_default(self, dataset_context):
+        """`--limit 0` 是合法请求：总数照报，条目为空
+
+        这条钉住的是判据的另一半——0 **不是**越界值，也不是「没传参数」。分页
+        以前写成 `limit or 100` 的话，「只要总数」就会静默变成「给我 100 条」，
+        所以 `require_count` 的下界是 0 而不是 1。
+        """
+        clean, _, _ = dataset_context
+        out, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "租房", "--limit", "0"]
+        )
+        assert code is None, err
+        assert "找到 2 条匹配结果" in out, out
+        assert out.strip().endswith("[]"), f"--limit 0 仍然吐出了条目: {out!r}"
+
+    def run_search(self, dataset_context, *extra):
+        """跑一次 `search` 并返回 stdout（摘要行 + JSON 列表）"""
+        clean, _, _ = dataset_context
+        out, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "租房", *extra]
+        )
+        assert code is None, err
+        return out
+
+    def test_the_summary_line_echoes_the_effective_threshold(self, dataset_context):
+        """`搜索方法` 那行要带上**当时生效**的阈值，包括没传参时的默认档
+
+        回显的是 `SearchResult.fuzzy_threshold`（SDK 算完的那份）而不是 argparse 的
+        `args.fuzzy_threshold`：两者在默认路径上恰好相同，但一旦某端改了默认值，
+        只有前者还能骗人。
+        """
+        assert "搜索方法: fuzzy (生效阈值 0.6)" in \
+            self.run_search(dataset_context, "--method", "fuzzy")
+        assert "搜索方法: fuzzy (生效阈值 0.5)" in \
+            self.run_search(dataset_context, "--method", "fuzzy",
+                            "--fuzzy-threshold", "0.5")
+
+    def test_the_summary_line_echoes_the_gram_length(self, dataset_context):
+        assert "搜索方法: ngram (生效 gram 长度 2)" in \
+            self.run_search(dataset_context, "--method", "ngram")
+        assert "搜索方法: ngram (生效 gram 长度 1)" in \
+            self.run_search(dataset_context, "--method", "ngram", "--ngram-n", "1")
+
+    @pytest.mark.parametrize("method", ["exact", "contains", "regex"])
+    def test_a_method_that_consumes_no_knob_prints_a_bare_method_line(self, method,
+                                                                      dataset_context):
+        """不消费旋钮的方法**不许**在旁边印一个数字
+
+        「搜索方法: contains (生效阈值 0.6)」会让人以为阈值管得到 contains，
+        而它根本没参与打分——这与 A27/A28④ 的「以为参数起了作用」是同一类静默。
+        """
+        out = self.run_search(dataset_context, "--method", method)
+
+        assert "搜索方法: " + method in out
+        assert "生效" not in out
+
+    def test_zero_hits_now_tell_apart_a_tight_knob_from_an_empty_corpus(self, dataset_context):
+        """本轮的落点：两条「找到 0 条」在 stdout 上终于有了区别
+
+        「腿租押金」阈值 0.8 → 0 条是**旋钮拧太紧**（0.75 就有 1 条），contains
+        「腿租押金」→ 0 条是**语料里真没有**。缺陷态两者除了方法名之外没有任何信息差。
+        """
+        clean, _, _ = dataset_context
+
+        def run(*extra):
+            out, err, code = run_cli(
+                ["cli", "search", "--input", str(clean), "--query", "腿租押金", *extra]
+            )
+            assert code is None, err
+            return out
+
+        tight = run("--method", "fuzzy", "--fuzzy-threshold", "0.8")
+        absent = run("--method", "contains")
+
+        assert "找到 0 条匹配结果" in tight and "找到 0 条匹配结果" in absent
+        assert "生效阈值 0.8" in tight
+        assert "生效" not in absent
+
+    def test_the_echo_stays_inside_the_two_summary_lines(self, dataset_context):
+        """回显不许改变 stdout 形状：仍是**两行摘要 + JSON 列表**
+
+        下游按 `out[out.index("["):]` 取条目，多印一行会把提示语混进 JSON 前面；
+        这条钉住「旋钮进第二行末尾」而不是新起一行。
+        """
+        out = self.run_search(dataset_context, "--method", "fuzzy")
+        lines = out.splitlines()
+
+        assert lines[0].startswith("找到 ")
+        assert lines[1].startswith("搜索方法: fuzzy")
+        assert len(json.loads("\n".join(lines[2:]))) == 2
+
+    def test_output_file_carries_the_effective_knobs(self, dataset_context):
+        """`--output` 落盘的 `to_dict()` 同样带旋钮（落盘的是结果，不是摘要行）"""
+        clean, _, tmp = dataset_context
+        out_file = tmp / "echo.json"
+        out, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "租房",
+             "--method", "fuzzy", "--fuzzy-threshold", "0.5", "--output", str(out_file)]
+        )
+        assert code is None, err
+        parsed = json.loads(out_file.read_text(encoding="utf-8"))
+
+        assert parsed["fuzzy_threshold"] == 0.5
+        assert parsed["ngram_n"] is None
+
+    def test_filter_flag_narrows_the_hits(self, dataset_context):
+        """`--filter FIELD OP VALUE` 真的走到检索之后再收窄：contains「租房」2 条 → 1 条
+
+        样本里 `instruction` 含「租房」的是「如何申请租房？」与「租房多少钱？」两条，
+        叠加 `output contains 登录` 后只剩第一条（它的 output 是「登录官网申请」）。
+        """
+        clean, _, _ = dataset_context
+        out, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "租房",
+             "--filter", "output", "contains", "登录"]
+        )
+        assert code is None, err
+        assert "找到 1 条匹配结果" in out
+
+    def test_the_filter_value_is_json_first_then_a_string(self, dataset_context):
+        """值先按 JSON 解，解不动才是字符串：`in` 拿到数组能用，拿到裸词就报错
+
+        `in` 要求集合，所以 `'["租房多少钱？"]'` 这一支要真被解成列表才可能命中 1 条；
+        同一位置写裸词（JSON 解不动 → 字符串）必须被咽喉判据拒绝，而不是静默 0 条
+        ——缺陷态 `_evaluate_filter` 对字符串走 `return False`，用户只会看到「没找到」。
+        """
+        clean, _, _ = dataset_context
+
+        def run(value):
+            return run_cli(
+                ["cli", "search", "--input", str(clean), "--query", "租房",
+                 "--filter", "instruction", "in", value]
+            )
+
+        out, err, code = run('["租房多少钱？"]')
+        assert code is None, err
+        assert "找到 1 条匹配结果" in out
+
+        out, err, code = run("租房多少钱？")
+        assert code == 1, f"字符串形态的 in 值没被拒绝: code={code}, out={out!r}"
+        assert "列表或集合" in err, err
+        assert "找到" not in out
+
+    def test_repeated_filters_intersect(self, dataset_context):
+        """`--filter` 可重复，多条是交集：一条留 2 条、两条一起 0 条"""
+        clean, _, _ = dataset_context
+        one, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "如何",
+             "--filter", "input", "eq", ""]
+        )
+        assert code is None, err
+        assert "找到 2 条匹配结果" in one, err
+
+        both, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "如何",
+             "--filter", "input", "eq", "", "--filter", "output", "contains", "月付"]
+        )
+        assert code is None, err
+        assert "找到 0 条匹配结果" in both
+
+    @pytest.mark.parametrize("operator, phrase", [
+        ("equals", "算子"),
+        ("EQ", "算子"),
+        ("gtt", "算子"),
+    ])
+    def test_a_bad_operator_fails_loudly(self, dataset_context, operator, phrase):
+        """算子拼错是退出码 1 + 指名算子，不许退化成「找到 0 条」"""
+        clean, _, _ = dataset_context
+        out, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "租房",
+             "--filter", "input", operator, ""]
+        )
+        assert code == 1, f"{operator} 未被拒绝: code={code}, out={out!r}"
+        assert phrase in err, err
+        assert "找到" not in out
+
+    def test_a_filter_element_missing_a_key_names_its_position(self, dataset_context):
+        """两个过滤器里坏掉的那个要被点名到序号（CLI 用户可以一次传多条）"""
+        clean, _, _ = dataset_context
+        out, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "租房",
+             "--filter", "input", "eq", "", "--filter", "output", "nope", "x"]
+        )
+        assert code == 1, f"坏算子未被拒绝: code={code}, out={out!r}"
+        assert "第 2 个过滤器" in err, err
 
     def test_saves_output(self, dataset_context):
         """--output 需写入可解析的结果 JSON"""
@@ -835,3 +1106,199 @@ class TestExportFormatSurface:
         )
         assert code is None, err
         assert out_file.exists(), f"{fmt} 未落盘: {out!r}{err!r}"
+
+
+class TestSearchFilterSurface:
+    """CLI `--filter` 的算子清单必须等于后端真实支持的算子集合。
+
+    与 `TestExportFormatSurface` 同一族：`parser.py` 里是一份手写清单，
+    `search_enhanced.FILTER_OPERATORS` 才是唯一事实来源，两者跨模块、没有编译期约束。
+    这里不能用 argparse 的 `choices=` 把清单接上——它会逐个校验 nargs 槽位，
+    把 FIELD / VALUE 也当算子比（实测 `invalid choice: 'output'` + 退出码 2），
+    所以漂移只能靠断言拦。两个方向都要拦：清单多写一个，用户照抄之后照样吃退出码 1；
+    少写一个，后端已支持的能力永远没人知道。
+
+    两个 parser 名字**刻意不在文件顶部 import**：那样一来缺陷态是整份文件收集失败
+    （连带 104 条既有例一起变红），红因就从「断言不成立」退化成「符号不存在」，
+    注入对照也就失去意义了。
+    """
+
+    # 每个算子配一个**该算子接受的值形状**（数字档要数字、成员档要列表），
+    # 所以这张表不能从清单生成；它的覆盖面由上面那条断言钉住。
+    OP_CASES = [
+        ("eq", '"如何申请租房？"'),
+        ("ne", '"如何申请租房？"'),
+        ("contains", '"租房"'),
+        ("gt", "0"),
+        ("lt", "99"),
+        ("gte", "0"),
+        ("lte", "99"),
+        ("in", '["如何申请租房？"]'),
+        ("not_in", '["如何申请租房？"]'),
+    ]
+
+    def _operators_in_help(self):
+        from augmentor.cli.parser import SEARCH_FILTER_HELP
+
+        segment = SEARCH_FILTER_HELP.split("OP 取 ")[1].split("，")[0]
+        return tuple(segment.split("/"))
+
+    def test_cli_help_lists_exactly_the_backend_operators(self):
+        from augmentor.cli.parser import SEARCH_FILTER_OPERATORS
+        from augmentor.search_enhanced import FILTER_OPERATORS
+
+        listed = self._operators_in_help()
+        # 本类的逐算子用例也必须覆盖全量，否则「清单等于后端」只证了一半
+        assert set(op for op, _ in self.OP_CASES) == set(FILTER_OPERATORS)
+        assert set(listed) == set(FILTER_OPERATORS), (
+            f"帮助里有 {sorted(set(listed) - set(FILTER_OPERATORS))}，"
+            f"后端有 {sorted(set(FILTER_OPERATORS) - set(listed))}"
+        )
+        # 连顺序也钉住：帮助按后端的枚举顺序印，读起来才是同一份清单
+        assert listed == FILTER_OPERATORS
+        assert tuple(SEARCH_FILTER_OPERATORS) == FILTER_OPERATORS
+
+    @pytest.mark.parametrize("operator, value", OP_CASES)
+    def test_every_listed_operator_reaches_the_backend(self, dataset_context, operator, value):
+        """清单里每个算子都要真能跑通——防止照抄进帮助却后端不认"""
+        clean, _, _ = dataset_context
+        out, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "租房",
+             "--field", "instruction", "--filter", "instruction", operator, value]
+        )
+        assert code is None, err
+        assert "找到" in out, f"{operator} 没有跑出结果摘要: {out!r}{err!r}"
+
+
+class TestFilterEchoOnStdout:
+    """`--filter` 生效后，第二行要说清「筛掉了多少」（A31 的 CLI 侧）
+
+    L28 把九种算子接到三端之后，「找到 0 条」在 CLI 上仍有三种读不出成因的形状：
+    ①语料里确实没有、②阈值/gram 拧太紧（L27 已治）、③**检索命中了却被过滤器筛光**。
+    第三种最隐蔽，而且它只在加了 `--filter` 后出现，所以本轮把收窄的数印在同一行末尾：
+    「(N 个过滤器: 检索 X → 保留 Y)」。承 L27 的两条口径：印在第二行末尾不另起一行
+    （下游按 `out[out.index("["):]` 取条目），且没消费时什么都不印（不印「0 个过滤器」，
+    否则「没过滤」与「过滤后剩 0 条」又同形）。
+    """
+
+    def run(self, dataset_context, *extra):
+        clean, _, _ = dataset_context
+        out, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "租房", *extra]
+        )
+        assert code is None, err
+        return out
+
+    def test_a_narrowing_filter_prints_before_and_after_counts(self, dataset_context):
+        """contains「租房」2 条 → `output contains 登录` 后 1 条，两个数都要印出来"""
+        out = self.run(dataset_context, "--filter", "output", "contains", "登录")
+
+        assert "找到 1 条匹配结果" in out
+        assert "(1 个过滤器: 检索 2 → 保留 1)" in out
+
+    def test_unfiltered_search_prints_no_filter_section(self, dataset_context):
+        """没传 `--filter` 时不许印「0 个过滤器」
+
+        那一行会让人以为后端跑了一遍过滤，而它连清单都没收到。
+        """
+        out = self.run(dataset_context, "--method", "contains")
+
+        assert "过滤器" not in out
+        assert "(" not in out.splitlines()[1]
+
+    def test_a_filter_that_narrows_nothing_still_prints_its_counts(self, dataset_context):
+        """一条都没筛掉时（2 → 2）也要印：用户问的正是「加了过滤器条数怎么没变」"""
+        out = self.run(dataset_context, "--filter", "input", "eq", '""')
+
+        assert "(1 个过滤器: 检索 2 → 保留 2)" in out
+
+    def test_two_filters_are_counted(self, dataset_context):
+        """`--filter` 可重复，回显的是**条数**而不是拼接的条件"""
+        out = self.run(dataset_context,
+                       "--filter", "input", "eq", '""',
+                       "--filter", "output", "contains", "登录")
+
+        assert "(2 个过滤器: 检索 2 → 保留 1)" in out
+
+    def test_the_two_zero_hit_causes_now_read_differently(self, dataset_context):
+        """本轮落点：同为「找到 0 条」，被筛光与本来没命中在 stdout 上分开了
+
+        前者「检索 2 → 保留 0」（「退租」在命中那两条的 output 里都不存在），
+        后者「检索 0 → 保留 0」（查询词根本不在语料里）。缺陷态这两份 stdout 完全同形。
+        """
+        clean, _, _ = dataset_context
+
+        def run(query, *extra):
+            out, err, code = run_cli(
+                ["cli", "search", "--input", str(clean), "--query", query, *extra]
+            )
+            assert code is None, err
+            return out
+
+        starved = run("租房", "--filter", "output", "contains", "退租")
+        absent = run("根本没有这个词", "--filter", "input", "eq", '""')
+
+        assert "找到 0 条匹配结果" in starved and "找到 0 条匹配结果" in absent
+        assert "检索 2 → 保留 0" in starved
+        assert "检索 0 → 保留 0" in absent
+
+    def test_the_filter_section_coexists_with_the_knob_section(self, dataset_context):
+        """旋钮段与过滤器段并排印在同一段里，谁也不覆盖谁
+
+        取 fuzzy：它是唯一既回显旋钮又能被过滤器收窄的方法（`elif` 保证旋钮段只有一个）。
+        """
+        out = self.run(dataset_context, "--method", "fuzzy",
+                       "--filter", "output", "contains", "登录")
+
+        line = out.splitlines()[1]
+        assert line == "搜索方法: fuzzy (生效阈值 0.6) (1 个过滤器: 检索 2 → 保留 1)"
+
+    def test_pagination_does_not_change_the_printed_counts(self, dataset_context):
+        """`--limit 1` 只切条目：印的仍是分页前的全集口径，否则这句话就是假话"""
+        out = self.run(dataset_context, "--filter", "input", "eq", '""', "--limit", "1")
+
+        assert "找到 2 条匹配结果" in out
+        assert "(1 个过滤器: 检索 2 → 保留 2)" in out
+        assert len(json.loads(out[out.index("["):])) == 1
+
+    def test_stdout_shape_is_still_two_summary_lines_then_json(self, dataset_context):
+        """带过滤器时 stdout 形状不变：两行摘要 + JSON 列表
+
+        下游解析依赖这个形状（`test_the_echo_stays_inside_the_two_summary_lines` 同源），
+        本轮把新段追加在第二行末尾，所以缺陷态这条也必须是绿的（进白名单）。
+        """
+        lines = self.run(dataset_context, "--filter", "output", "contains", "登录").splitlines()
+
+        assert lines[0].startswith("找到 ")
+        assert lines[1].startswith("搜索方法: contains")
+        assert len(json.loads("\n".join(lines[2:]))) == 1
+
+    def test_output_file_carries_both_filter_counts(self, dataset_context):
+        """`--output` 落盘的 `to_dict()` 带两键，机器读者不必解析中文摘要"""
+        clean, _, tmp = dataset_context
+        out_file = tmp / "filter_echo.json"
+        out, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "租房",
+             "--filter", "output", "contains", "登录", "--output", str(out_file)]
+        )
+        assert code is None, err
+        parsed = json.loads(out_file.read_text(encoding="utf-8"))
+
+        assert parsed["matches_before_filters"] == 2
+        assert parsed["applied_filters"] == [
+            {"field": "output", "operator": "contains", "value": "登录"}]
+
+    def test_output_file_has_neither_key_when_unfiltered(self, dataset_context):
+        """没过滤时落盘的是 `null`，不是 `[]` / `0`（与 SDK 同口径）"""
+        clean, _, tmp = dataset_context
+        out_file = tmp / "no_filter_echo.json"
+        out, err, code = run_cli(
+            ["cli", "search", "--input", str(clean), "--query", "租房",
+             "--output", str(out_file)]
+        )
+        assert code is None, err
+        parsed = json.loads(out_file.read_text(encoding="utf-8"))
+
+        assert "applied_filters" in parsed and parsed["applied_filters"] is None
+        assert "matches_before_filters" in parsed
+        assert parsed["matches_before_filters"] is None

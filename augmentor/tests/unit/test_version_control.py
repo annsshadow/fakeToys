@@ -409,3 +409,38 @@ class TestVersionControlExtended:
         m1.create_version(sample_dataset, "a")
         m2 = DatasetVersionManager(dir_path)
         assert len(m2.list_versions()) == 1
+
+
+class TestHistoryFileTolerancePaths:
+    """历史账本的三条守卫支（L101，A201）
+
+    _record 落盘失败（OSError）不得炸掉操作本身、get_history 对空行与坏 JSON 行
+    跳过而不是整个失败 —— 磁盘出现半截写入/损坏时的真实形状，此前零用例踩过
+    （L100 终态 coverage 缺数 version_control.py 91-92 / 111 / 114-115）。
+    """
+
+    def test_record_oserror_is_swallowed_and_logged(self, tmp_path, caplog):
+        import logging
+
+        manager = DatasetVersionManager(str(tmp_path / "v"))
+        manager._history_file = tmp_path / "v"  # 指向目录 ⇒ open('a') 抛 OSError 族
+        with caplog.at_level(logging.WARNING, logger="augmentor.version_control"):
+            manager._record("create", version="v1")
+        assert any("操作日志写入失败" in r.message for r in caplog.records)
+
+    def test_get_history_skips_blank_and_corrupt_lines(self, tmp_path, caplog):
+        import json
+        import logging
+
+        manager = DatasetVersionManager(str(tmp_path / "v"))
+        manager._history_file.write_text(
+            "\n"
+            + json.dumps({"timestamp": "t", "action": "create"}, ensure_ascii=False)
+            + "\n"
+            + "{broken json\n",
+            encoding="utf-8",
+        )
+        with caplog.at_level(logging.WARNING, logger="augmentor.version_control"):
+            entries = manager.get_history()
+        assert [e["action"] for e in entries] == ["create"]
+        assert any("跳过无法解析的历史记录行" in r.message for r in caplog.records)

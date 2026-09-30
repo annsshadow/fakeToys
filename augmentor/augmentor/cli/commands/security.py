@@ -4,6 +4,7 @@
 """CLI `security` 组命令（由 cli.py 拆出，逻辑未改）"""
 
 from ..io import _dump_json, _load_items, _print, _save_items
+from ..verdict import verdict_exit
 
 
 # ============ PII 脱敏 ============
@@ -46,6 +47,10 @@ def run_check_leakage(args, config):
         _dump_json(report.to_dict(), args.output)
         print(f"泄漏报告已保存到 {args.output}")
 
+    # 「有泄漏时照样把报告出完」是 L53 给报告形命令定的口径（恒 0 是决定不是遗漏），
+    # `--gate` 才把 `is_clean` 翻译成退出码 1
+    verdict_exit(report.is_clean, enforce=args.gate)
+
 
 # ============ 数据集就绪审计 ============
 def run_audit(args, config):
@@ -66,3 +71,6 @@ def run_audit(args, config):
     if args.output:
         _dump_json(report.to_dict(), args.output)
         print(f"审计报告已保存到 {args.output}")
+
+    # 同 `check-leakage`：`ready` 一直是这条命令的判决位，只是从前不出退出码
+    verdict_exit(report.ready, enforce=args.gate)

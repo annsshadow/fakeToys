@@ -117,10 +117,10 @@ async function loadUnitRoot() {
       api.get('/api/organization/assemble/control/unit/list/control/top'),
       api.get('/api/organization/assemble/control/personcard/mylist'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : r?.data ? 1 : 0)
     unitTypes.value = [`根单位 ${n(root)} · 可控顶级 ${n(ctrlTop)} · 我的名片 ${n(myCard)}`]
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadTopUnits() {
@@ -150,16 +150,14 @@ async function loadUnitTypes() {
 function doSearch() {
   // /api/unit/list 无关键字参数，按已加载列表做本地名称过滤
   const kw = keyword.value.trim().toLowerCase()
-  units.value = kw
-    ? allUnits.filter((u) => (u.name || u.title || '').toLowerCase().includes(kw))
-    : allUnits
+  units.value = kw ? allUnits.filter((u) => (u.name || u.title || '').toLowerCase().includes(kw)) : allUnits
 }
 
 async function checkUnit(u: UnitItem) {
   try {
     await api.get(`/api/unit/check/${u.flag || u.id}`)
   } catch (e: any) {
-    toast.error('验证失败: : ' + (e?.message ?? ''))
+    toast.error(`验证失败: : ${e?.message ?? ''}`)
   }
 }
 
@@ -203,9 +201,7 @@ async function loadIdentities() {
   if (!selectedUnit.value) return
   try {
     // GET organization/assemble/control/identity/list/unit/{unitFlag} —— 单位下身份
-    const r: any = await api.get(
-      '/api/organization/assemble/control/identity/list/unit/' + unitKey(selectedUnit.value),
-    )
+    const r: any = await api.get(`/api/organization/assemble/control/identity/list/unit/${unitKey(selectedUnit.value)}`)
     identities.value = (r.data ?? []) as Array<{ id: string; name?: string; personName?: string; unitName?: string }>
   } catch {
     identities.value = []
@@ -215,7 +211,7 @@ async function loadAttrs() {
   if (!selectedUnit.value) return
   try {
     const r: any = await api.get(
-      '/api/organization/assemble/control/unitattribute/list/unit/' + unitKey(selectedUnit.value),
+      `/api/organization/assemble/control/unitattribute/list/unit/${unitKey(selectedUnit.value)}`,
     )
     attrs.value = (r.data ?? []) as Attr[]
   } catch {
@@ -236,24 +232,22 @@ async function addAttr() {
     })
     loadAttrs()
   } catch (e: any) {
-    toast.error('新增属性失败: ' + (e?.message ?? ''))
+    toast.error(`新增属性失败: ${e?.message ?? ''}`)
   }
 }
 async function removeAttr(a: Attr) {
-  if (!(await confirmMsg('确定删除属性「' + a.attributeKey + '」？'))) return
+  if (!(await confirmMsg(`确定删除属性「${a.attributeKey}」？`))) return
   try {
-    await api.delete('/api/organization/assemble/control/unitattribute/' + a.id)
+    await api.delete(`/api/organization/assemble/control/unitattribute/${a.id}`)
     loadAttrs()
   } catch (e: any) {
-    toast.error('删除属性失败: ' + (e?.message ?? ''))
+    toast.error(`删除属性失败: ${e?.message ?? ''}`)
   }
 }
 async function loadDuties() {
   if (!selectedUnit.value) return
   try {
-    const r: any = await api.get(
-      '/api/organization/assemble/control/unitduty/list/unit/' + unitKey(selectedUnit.value),
-    )
+    const r: any = await api.get(`/api/organization/assemble/control/unitduty/list/unit/${unitKey(selectedUnit.value)}`)
     duties.value = (r.data ?? []) as Duty[]
   } catch {
     duties.value = []
@@ -272,16 +266,16 @@ async function addDuty() {
     })
     loadDuties()
   } catch (e: any) {
-    toast.error('新增职务失败: ' + (e?.message ?? ''))
+    toast.error(`新增职务失败: ${e?.message ?? ''}`)
   }
 }
 async function removeDuty(d: Duty) {
-  if (!(await confirmMsg('确定删除职务「' + d.name + '」？'))) return
+  if (!(await confirmMsg(`确定删除职务「${d.name}」？`))) return
   try {
-    await api.delete('/api/organization/assemble/control/unitduty/' + d.id)
+    await api.delete(`/api/organization/assemble/control/unitduty/${d.id}`)
     loadDuties()
   } catch (e: any) {
-    toast.error('删除职务失败: ' + (e?.message ?? ''))
+    toast.error(`删除职务失败: ${e?.message ?? ''}`)
   }
 }
 

@@ -28,8 +28,10 @@ class AuditRequest(BaseModel):
 async def audit_dataset_endpoint(request: AuditRequest):
     """对数据集做就绪审计，返回组合信号与总体判定"""
     try:
-        items = load_items(request.input_file)
-        reference = load_items(request.reference_file) if request.reference_file else None
+        items = await run_in_thread(load_items, request.input_file)
+        reference = None
+        if request.reference_file:
+            reference = await run_in_thread(load_items, request.reference_file)
 
         def run():
             auditor = DatasetAuditor(fields=request.fields)

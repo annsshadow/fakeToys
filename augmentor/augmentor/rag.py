@@ -10,6 +10,7 @@ import hashlib
 import logging
 from typing import List, Dict, Any, Optional
 from .exceptions import DataValidationError
+from .validation import require_chunk_window
 
 logger = logging.getLogger(__name__)
 
@@ -32,8 +33,8 @@ class RAGFormatter:
             chunk_size: 分块大小（字符数）
             chunk_overlap: 分块重叠字符数
         """
-        if chunk_overlap >= chunk_size:
-            raise DataValidationError("chunk_overlap 必须小于 chunk_size")
+        require_chunk_window("chunk_size", chunk_size,
+                             "chunk_overlap", chunk_overlap)
 
         self.text_key = text_key
         self.answer_key = answer_key

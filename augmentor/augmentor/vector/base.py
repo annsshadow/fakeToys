@@ -114,7 +114,7 @@ class VectorDB(ABC):
 
         Args:
             query: 查询向量
-            top_k: 返回条数
+            top_k: 返回条数，不小于 0 的整数（各后端在入口判，见 `require_count`）
 
         Returns:
             结果列表 [{"id":..., "score":..., "metadata":...}]

@@ -1,4 +1,4 @@
-const fs = require('fs')
+const fs = require('node:fs')
 let content = fs.readFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/ProcessDesigner.vue', 'utf8')
 
 // === 1. Add path prediction state after tempEdge ===
@@ -216,7 +216,7 @@ content = content.replace(oldEnterSub, newEnterSub)
 
 // === 6. Enhance template breadcrumb area ===
 const oldBreadcrumb = '<span v-if="subprocessEditing">← 返回主流程 | 拖拽节点 | 点击边缘拖出连线 | Shift+多选</span>'
-const newBreadcrumb = '<span v-if="subprocessEditing">'
+const _newBreadcrumb = '<span v-if="subprocessEditing">'
 const breadcrumbHtml = `<span v-if="subprocessEditing">`
 const breadcrumbContent = `
           <button class="tb-btn" @click="jumpToLevel(0)" title="返回主流程">🏠 主页</button>
@@ -228,7 +228,7 @@ const breadcrumbContent = `
           <span class="breadcrumb-sep">|</span>
           <button class="tb-btn" @click="exitSubprocess">✕ 退出层级</button>
           <span> | 拖拽节点 | 点击边缘拖出连线 | Shift+多选</span>`
-const newBreadcrumbFull = breadcrumbHtml + breadcrumbContent + '</span>'
+const newBreadcrumbFull = `${breadcrumbHtml + breadcrumbContent}</span>`
 content = content.replace(oldBreadcrumb, newBreadcrumbFull)
 
 // === 7. Add condition expression editor, script variable binding, retry visualization to props ===
@@ -360,7 +360,7 @@ const newStyles = `
 .sp-depth-badge{padding:1px 6px;border-radius:var(--radius-sm);background:var(--color-primary);color:#000;font-size:9px;font-weight:700;margin-left:8px}
 /* Prediction target highlight is handled in SVG */
 `
-content = content.replace(styleEndMarker, newStyles + '</style>')
+content = content.replace(styleEndMarker, `${newStyles}</style>`)
 
 // Write back
 fs.writeFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/ProcessDesigner.vue', content)

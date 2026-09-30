@@ -85,13 +85,16 @@ class TestUpdateProgress:
 
         for i in range(2):
             manager.update_progress(i, True)
-        assert not (tmp_path / "task-1_delta.json").exists()
+        assert not (tmp_path / "task-1_delta.jsonl").exists()
 
         manager.update_progress(2, True)
-        delta_path = tmp_path / "task-1_delta.json"
+        delta_path = tmp_path / "task-1_delta.jsonl"
         assert delta_path.exists()
 
-        delta = json.loads(delta_path.read_text(encoding="utf-8"))
+        # append-only JSONL：一次自动保存一行，读侧逐行合并
+        lines = [ln for ln in delta_path.read_text(encoding="utf-8").splitlines() if ln]
+        assert len(lines) == 1
+        delta = json.loads(lines[0])
         assert delta["completed"] == [0, 1, 2]
         assert manager._pending_completed == set()
 
@@ -223,18 +226,30 @@ class TestSaveAndDelete:
         manager = make_manager(tmp_path)
         manager.create_checkpoint("task-1", 3)
         manager.save_checkpoint()
+        assert not (tmp_path / "task-1_delta.jsonl").exists()
         assert not (tmp_path / "task-1_delta.json").exists()
 
     def test_delete_checkpoint_removes_both_files(self, tmp_path):
+        """删除必须把新格式（JSONL）与旧格式（单个 JSON 文档）一并清掉
+
+        旧格式文件本轮之后不会再被写出，但升级前留下的那份必须随断点一起消失，
+        否则同名任务重建时会被 `_delta_files` 合并进一份已经不存在的进度。
+        """
         manager = make_manager(tmp_path, auto_save_interval=1)
         manager.create_checkpoint("task-1", 3)
         manager.update_progress(0, True)
-        assert (tmp_path / "task-1_delta.json").exists()
+        assert (tmp_path / "task-1_delta.jsonl").exists()
+        legacy = tmp_path / "task-1_delta.json"
+        legacy.write_text(
+            json.dumps({"completed": [], "failed": [], "quality_scores": {}}),
+            encoding="utf-8",
+        )
 
         manager.delete_checkpoint("task-1")
 
         assert not (tmp_path / "task-1_checkpoint.json").exists()
-        assert not (tmp_path / "task-1_delta.json").exists()
+        assert not (tmp_path / "task-1_delta.jsonl").exists()
+        assert not legacy.exists()
 
     def test_delete_missing_checkpoint_is_noop(self, tmp_path):
         make_manager(tmp_path).delete_checkpoint("nope")

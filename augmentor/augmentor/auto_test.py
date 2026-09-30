@@ -391,7 +391,9 @@ class DatasetTestRunner:
         ]
         
         for result in suite.results:
-            status = "✅ 通过" if result.passed else "❌ 失败"
+            # 不用 ✅/❌：这份报告会被 `auto-test` 整体 print 到按 locale 编码的
+            # stdout，GBK 管道下那个字符让命令崩在 rc=1（L55 实测）
+            status = "[通过]" if result.passed else "[失败]"
             lines.append(f"{status} {result.test_name}: {result.message}")
             lines.append(f"  执行时间: {result.execution_time_ms:.2f}ms")
         

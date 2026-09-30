@@ -249,6 +249,7 @@ pub fn hotpic_core_entity_router(_pool: Pool) -> Router {
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

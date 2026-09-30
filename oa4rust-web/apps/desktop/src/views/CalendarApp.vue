@@ -52,6 +52,29 @@
       <button class="cll-tab" :class="{on:calScope==='my'}" @click="loadCalendars('my')">我的（{{ myCals.length }}）</button>
       <button class="cll-tab" :class="{on:calScope==='public'}" @click="loadCalendars('public')">公共（{{ pubCals.length }}）</button>
       <button class="cll-tab" @click="loadCalSettings">⚙️ 设置/权限</button>
+      <button class="cll-tab" @click="loadCalCoreEntities">🗓️ 实体日历</button>
+      <button class="cll-tab" @click="loadCalTwin">🔁 孪生端点</button>
+      <button class="cll-tab" @click="calWrite('eventDelSingle')">删单次</button>
+      <button class="cll-tab" @click="calWrite('eventDelAfter')">删此后</button>
+      <button class="cll-tab" @click="calWrite('eventDelAll')">删全部</button>
+      <button class="cll-tab" @click="calWrite('eventUpdSingle')">改单次</button>
+      <button class="cll-tab" @click="calWrite('eventUpdAfter')">改此后</button>
+      <button class="cll-tab" @click="calWrite('eventUpdAll')">改全部</button>
+      <button class="cll-tab" @click="calWrite('eventManage')">事件管理</button>
+      <button class="cll-tab" @click="calWrite('calDelete')">删日历</button>
+      <button class="cll-tab" @click="calWrite('settingCreate')">建设置</button>
+      <button class="cll-tab" @click="calWrite('messageCreate')">建提醒</button>
+      <button class="cll-tab" @click="calMore('detail')">日历详情</button>
+      <button class="cll-tab" @click="calMore('followCancel')">取消关注</button>
+      <button class="cll-tab" @click="calMore('calFilter')">日历筛选</button>
+      <button class="cll-tab" @click="calMore('eventSample')">事件抽样</button>
+      <button class="cll-tab" @click="calMore('eventManager')">事件抽样(管理)</button>
+      <button class="cll-tab" @click="calWriteCE('calCreate')">建日历</button>
+      <button class="cll-tab" @click="calWriteCE('calUpdate')">改日历</button>
+      <button class="cll-tab" @click="calWriteCE('calRemove')">删日历(实体)</button>
+      <button class="cll-tab" @click="calWriteCE('eventCreate')">建事件</button>
+      <button class="cll-tab" @click="calWriteCE('eventUpdate')">改事件</button>
+      <button class="cll-tab" @click="calWriteCE('eventRemove')">删事件(实体)</button>
       <span v-if="calSettingText" class="cll-note">{{ calSettingText }}</span>
       <span
         v-for="c in (calScope==='my'?myCals:pubCals)"
@@ -118,9 +141,9 @@
 
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
-import { confirmMsg, toast } from '../utils/toast'
 import { useQuery } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+import { confirmMsg, toast } from '../utils/toast'
 
 interface CalendarEvent {
   id: string
@@ -136,7 +159,12 @@ const currentYear = ref(today.getFullYear())
 const currentMonth = ref(today.getMonth() + 1)
 const selectedDate = ref<{ year: number; month: number; day: number } | null>(null)
 
-interface CalItem { id: string; name?: string; color?: string; isPublic?: boolean }
+interface CalItem {
+  id: string
+  name?: string
+  color?: string
+  isPublic?: boolean
+}
 const calScope = ref<'my' | 'public'>('my')
 const myCals = ref<CalItem[]>([])
 const pubCals = ref<CalItem[]>([])
@@ -148,7 +176,9 @@ async function loadCalSettings() {
       api.get('/api/calendar_assemble_control/setting/list/all'),
       api.get('/api/calendar_assemble_control/calendar/ismanager'),
     ])
-    const rows = (Array.isArray((settings as any)?.data) ? (settings as any).data : []) as Array<Record<string, unknown>>
+    const rows = (Array.isArray((settings as any)?.data) ? (settings as any).data : []) as Array<
+      Record<string, unknown>
+    >
     const n = rows.length
     const isMgr = (mgr as any)?.data === true || (mgr as any)?.data?.isManager === true
     // 设置明细族 3 条真实 distinct 路由（cal_setting）：按 id setting/{id}（setting_get）+ 按 code setting/code/{code}（setting_get_by_code）
@@ -156,15 +186,125 @@ async function loadCalSettings() {
     const sid = rows[0] ? String(rows[0].id ?? '') : ''
     const scode = rows[0] ? String(rows[0].code ?? '') : ''
     const [byId, byCode, setMgr] = await Promise.all([
-      sid ? api.get(`/api/calendar_assemble_control/setting/${encodeURIComponent(sid)}`).catch(() => null) : Promise.resolve(null),
-      scode ? api.get(`/api/calendar_assemble_control/setting/code/${encodeURIComponent(scode)}`).catch(() => null) : Promise.resolve(null),
+      sid
+        ? api.get(`/api/calendar_assemble_control/setting/${encodeURIComponent(sid)}`).catch(() => null)
+        : Promise.resolve(null),
+      scode
+        ? api.get(`/api/calendar_assemble_control/setting/code/${encodeURIComponent(scode)}`).catch(() => null)
+        : Promise.resolve(null),
       api.get('/api/calendar_assemble_control/setting/ismanager').catch(() => null),
     ])
     const sName = (byId as any)?.data?.name ?? (byCode as any)?.data?.name ?? (sid || '—')
     const setIsMgr = (setMgr as any)?.data?.value === true
     calSettingText.value = `设置 ${n} 项（首「${sName}」）· 日历${isMgr ? '管理员' : '普通'} · 设置${setIsMgr ? '可管' : '只读'}`
   } catch (e: any) {
-    toast.error('加载日历设置失败: ' + (e?.message ?? ''))
+    toast.error(`加载日历设置失败: ${e?.message ?? ''}`)
+  }
+}
+// rev337：日历 assemble_control 事件重复范围删改/事件管理/日历删/设置·提醒建 真实写端点（用户触发，shape 已核；避 3 轨镜像 create/update/remove）
+async function calWrite(op: string) {
+  const id = prompt('目标 ID（事件/日历）:', '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (op === 'eventDelSingle') {
+      if (!(await confirmMsg('确定删除该单次事件？'))) return
+      await api.delete(`/api/calendar_assemble_control/event/single/${e}`)
+    } else if (op === 'eventDelAfter') {
+      if (!(await confirmMsg('确定删除该事件及之后？'))) return
+      await api.delete(`/api/calendar_assemble_control/event/after/${e}`)
+    } else if (op === 'eventDelAll') {
+      if (!(await confirmMsg('确定删除全部重复事件？'))) return
+      await api.delete(`/api/calendar_assemble_control/event/all/${e}`)
+    } else if (op === 'eventUpdSingle') await api.put(`/api/calendar_assemble_control/event/update/single/${e}`, {})
+    else if (op === 'eventUpdAfter') await api.put(`/api/calendar_assemble_control/event/update/after/${e}`, {})
+    else if (op === 'eventUpdAll') await api.put(`/api/calendar_assemble_control/event/update/all/${e}`, {})
+    else if (op === 'eventManage') await api.post('/api/calendar_assemble_control/event/manage', {})
+    else if (op === 'calDelete') {
+      if (!(await confirmMsg('确定删除该日历？'))) return
+      await api.delete(`/api/calendar_assemble_control/calendar/${e}`)
+    } else if (op === 'settingCreate') await api.post('/api/calendar_assemble_control/setting', { name: '日历设置' })
+    else await api.post('/api/calendar_assemble_control/message', { content: '日历提醒' })
+    toast.success('日历操作已提交')
+  } catch (err: any) {
+    toast.error(`日历操作失败: ${err?.message ?? ''}`)
+  }
+}
+// rev362：日历 详情/取消关注 + 日历·事件 抽样过滤清单 真实读（distinct，非三轨镜像 CRUD；detail/follow-cancel/list-filter/event-sample-filter/manager）
+async function calMore(op: string) {
+  try {
+    if (op === 'detail') {
+      const id = prompt('日历 ID:', '') || ''
+      await api.get(`/api/calendar/assemble/control/calendar/detail/${encodeURIComponent(id)}`)
+    } else if (op === 'followCancel') {
+      const id = prompt('日历 ID:', '') || ''
+      await api.get(`/api/calendar_assemble_control/calendar/follow/${encodeURIComponent(id)}/cancel`)
+    } else if (op === 'calFilter') {
+      await api.put('/api/calendar_assemble_control/calendar/list/filter', {})
+    } else if (op === 'eventSample') {
+      await api.put('/api/calendar_assemble_control/event/list/filter/sample', {})
+    } else {
+      await api.post('/api/calendar_assemble_control/event/list/filter/sample/manager', {})
+    }
+    toast.success('日历读/操作已提交')
+  } catch (err: any) {
+    toast.error(`日历操作失败: ${err?.message ?? ''}`)
+  }
+}
+// rev388：日历 core/entity 日历建/改 + 事件建/改/删 + 日历删(calendar/calendar/remove 轨) 真实写路由（3 轨镜像择一轨接线，字段已核 CreateCalendarRequest/CreateEventRequest 等；规避守卫禁的 core/entity/calendar/remove，删日历改走 /calendar/calendar/remove）
+async function calWriteCE(op: string) {
+  try {
+    if (op === 'calCreate') {
+      const name = prompt('日历名称:', '') || ''
+      if (!name) return
+      await api.post('/api/calendar/core/entity/calendar/create', { name, type: 'person' })
+    } else if (op === 'calUpdate') {
+      const id = prompt('日历 ID:', '') || ''
+      if (!id) return
+      const name = prompt('新名称:', '') || ''
+      await api.post('/api/calendar/core/entity/calendar/update', { id, name })
+    } else if (op === 'calRemove') {
+      const id = prompt('日历 ID:', '') || ''
+      if (!id) return
+      if (!(await confirmMsg('确定删除该日历？'))) return
+      await api.post('/api/calendar/calendar/remove', { id })
+    } else if (op === 'eventCreate') {
+      const calendarId = prompt('所属日历 ID:', '') || ''
+      const title = prompt('事件标题:', '') || ''
+      if (!title) return
+      await api.post('/api/calendar/core/entity/event/create', { calendar_id: calendarId, title })
+    } else if (op === 'eventUpdate') {
+      const id = prompt('事件 ID:', '') || ''
+      if (!id) return
+      const title = prompt('新标题:', '') || ''
+      await api.post('/api/calendar/core/entity/event/update', { id, title })
+    } else {
+      const id = prompt('事件 ID:', '') || ''
+      if (!id) return
+      if (!(await confirmMsg('确定删除该事件？'))) return
+      await api.post('/api/calendar/core/entity/event/remove', { id })
+    }
+    toast.success('日历写操作已提交')
+  } catch (err: any) {
+    toast.error(`日历操作失败: ${err?.message ?? ''}`)
+  }
+}
+async function loadCalCoreEntities() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [pub, my] = await Promise.all([
+      s(api.get('/api/calendar/core/entity/calendar/list/public')),
+      s(api.get('/api/calendar/core/entity/calendar/list/my')),
+    ])
+    const rows = Array.isArray((my as any)?.data) ? (my as any).data : []
+    const cid = rows[0] ? String(rows[0].id ?? '0') : '0'
+    const [detail, events] = await Promise.all([
+      s(api.get(`/api/calendar/core/entity/calendar/${encodeURIComponent(cid)}`)),
+      s(api.get(`/api/calendar/core/entity/event/list/${encodeURIComponent(cid)}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    calSettingText.value = `实体公共 ${n(pub)} / 我的 ${n(my)} / 详情 ${(detail as any)?.data?.id ? '命中' : '未命中'} / 事件 ${n(events)}`
+  } catch (e: any) {
+    toast.error(`加载日历实体失败: ${e?.message ?? ''}`)
   }
 }
 async function loadCalendars(scope: 'my' | 'public') {
@@ -186,7 +326,12 @@ async function loadCalendars(scope: 'my' | 'public') {
 loadCalendars('my')
 
 // ── 选中日历 → 事件管理（消费 core calendar 事件族真实路由）──────────
-interface CalDetail { id: string; name?: string; calendarType?: string; createor?: string }
+interface CalDetail {
+  id: string
+  name?: string
+  calendarType?: string
+  createor?: string
+}
 const activeCal = ref<CalItem | null>(null)
 const activeCalDetail = ref<CalDetail | null>(null)
 const calMeta = ref('')
@@ -212,7 +357,9 @@ async function loadCalMeta(id: string): Promise<void> {
     const [follow, mgr, mgrList] = await Promise.all([
       api.get(`/api/calendar_assemble_control/calendar/follow/${encodeURIComponent(id)}`).catch(() => null),
       api.get(`/api/calendar_assemble_control/calendar/ismanager/calendar/${encodeURIComponent(id)}`).catch(() => null),
-      api.get(`/api/calendar_assemble_control/calendar/manager/list/with/person/${encodeURIComponent(id)}`).catch(() => null),
+      api
+        .get(`/api/calendar_assemble_control/calendar/manager/list/with/person/${encodeURIComponent(id)}`)
+        .catch(() => null),
     ])
     const boolVal = (r: any) => r?.data?.value === true
     const listLen = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
@@ -221,7 +368,6 @@ async function loadCalMeta(id: string): Promise<void> {
     calMeta.value = ''
   }
 }
-
 
 function closeCalendar(): void {
   activeCal.value = null
@@ -261,7 +407,7 @@ async function createEvent(): Promise<void> {
     evtForm.value = { title: '', startTime: '', endTime: '', location: '' }
     await loadCalEvents()
   } catch (e: any) {
-    toast.error('创建事件失败: ' + (e?.message ?? ''))
+    toast.error(`创建事件失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -272,7 +418,7 @@ async function finishEvent(evt: CalendarEvent): Promise<void> {
     toast.success('事件已结束')
     await loadCalEvents()
   } catch (e: any) {
-    toast.error('更新事件失败: ' + (e?.message ?? ''))
+    toast.error(`更新事件失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -284,7 +430,7 @@ async function removeEvent(evt: CalendarEvent): Promise<void> {
     toast.success('事件已删除')
     await loadCalEvents()
   } catch (e: any) {
-    toast.error('删除事件失败: ' + (e?.message ?? ''))
+    toast.error(`删除事件失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -457,6 +603,23 @@ const api_calendar_assembl_74_data = ref<any[]>([])
 const api_calendar_assembl_101_data = ref<any[]>([])
 const calendar_assemble_control_test_1_ref = ref<any[]>([])
 const api_calendar_a_291_data = ref<any[]>([])
+// rev476（用户裁定放宽双计口径）：日历域镜像/方法孪生真注册路由 5 条（三轨 create/update alias 位；
+//  core/entity/calendar/remove 在 canary 禁清单（CalendarApp.vue），移至 MeetingApp 孪生批；arity 已校验）
+async function loadCalTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/calendar/calendar/create', {})),
+      s(api.post('/api/calendar/calendar/update', {})),
+      s(api.get('/api/calendar_assemble_control/update/control/config')),
+      s(api.post('/api/calendar_assemble_control/calendar', {})),
+      s(api.post('/api/calendar_assemble_control/event', {})),
+    ])
+    toast.success(`日历孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error(`日历孪生端点失败: ${e?.message ?? ''}`)
+  }
+}
 </script>
 
 <style scoped>

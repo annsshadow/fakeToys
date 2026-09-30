@@ -19,6 +19,7 @@ pub const API_BASE: &str = "/api/ai_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
@@ -938,7 +939,7 @@ pub async fn config_list_mcp_paging_page_size_size(
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = (page - 1) * size;
+    let (size, offset) = shared::response::page_window(page, size);
     let d = dialect();
     let sql = format!(
         "SELECT id, name, url, enabled, creator, create_time, update_time \
@@ -1004,7 +1005,7 @@ pub async fn config_list_model_paging_page_size_size(
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = (page - 1) * size;
+    let (size, offset) = shared::response::page_window(page, size);
     let d = dialect();
     let sql = format!(
         "SELECT id, name, url, enabled, creator, create_time, update_time FROM x_ai_model_config ORDER BY update_time DESC LIMIT {} OFFSET {}",
@@ -1417,7 +1418,7 @@ pub async fn file_list_paging_page_size_size(
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = (page - 1) * size;
+    let (size, offset) = shared::response::page_window(page, size);
     let rows = client
         .query(
             "SELECT id, name, file_name, file_size, file_type, enabled, creator, create_time FROM x_ai_file ORDER BY create_time DESC LIMIT $2 OFFSET $1",
@@ -1802,7 +1803,7 @@ pub async fn index_list_paging_page_size_size(
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = (page - 1) * size;
+    let (size, offset) = shared::response::page_window(page, size);
     let rows = client
         .query(
             "SELECT id, doc_id, app_id, title, enabled, creator, create_time FROM x_ai_index ORDER BY create_time DESC LIMIT $2 OFFSET $1",
@@ -2322,7 +2323,7 @@ pub async fn chat_list_paging_page_size_size(
         ));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = (page - 1) * size;
+    let (size, offset) = shared::response::page_window(page, size);
     let d = dialect();
     let sql = format!(
         "SELECT id, title, user_id, {} AS create_time \
@@ -2378,7 +2379,7 @@ pub async fn chat_list_completion_clue_id_paging_page_size_size(
         ));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = (page - 1) * size;
+    let (size, offset) = shared::response::page_window(page, size);
     let d = dialect();
     let sql = format!(
         "SELECT id, role, content, creator, {} AS create_time \
@@ -2434,7 +2435,7 @@ pub async fn chat_delete_clue_id(
     Extension(session): Extension<shared::session::Session>,
     Path(clue_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let owner: Option<String> = client
         .query_opt(
@@ -2458,7 +2459,9 @@ pub async fn chat_delete_clue_id(
         _ => {}
     }
 
-    let completions = client
+    // 级联软删：会话与其全部对话记录必须原子，中途失败留「会话在而记录已删」。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let completions = tx
         .execute(
             "UPDATE x_ai_chat SET deleted_at = NOW() WHERE conversation_id = $1 AND deleted_at IS NULL",
             &[&clue_id],
@@ -2466,13 +2469,14 @@ pub async fn chat_delete_clue_id(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let clue = client
+    let clue = tx
         .execute(
             "UPDATE x_ai_conversation SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
             &[&clue_id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

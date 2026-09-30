@@ -9,11 +9,14 @@
 import json
 import random
 import logging
-from typing import List, Dict, Optional, Tuple, Union
+from typing import Any, List, Dict, Optional, Tuple, Union
 from pathlib import Path
 from dataclasses import dataclass
 import hashlib
 from .exceptions import DataValidationError
+from .validation import require_count
+from .allocation import largest_remainder
+from .data_splitter import DataSplitter
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +48,77 @@ class SplitConfig:
     seed: Optional[int] = None  # 随机种子
     stratify: bool = False  # 是否分层分割
     stratify_key: str = "instruction"  # 分层字段
+
+
+def _position_table(items: List[Dict]) -> Dict[int, Any]:
+    """一次走查建「对象 → 它在语料里的位置」表
+
+    只出现一次的引用把位置存成整数，被引用多次的对象把位置升序存进列表 —— 后者要靠
+    `_in_original_order` 按「第 k 次出现取第 k 个位置」还原，见那里的实测反例。
+
+    Args:
+        items: 语料（划分只搬运引用，期间全程存活）
+
+    Returns:
+        `id(item) -> 下标 或 升序下标列表`
+    """
+    positions: Dict[int, Any] = {}
+    for index, item in enumerate(items):
+        pid = id(item)
+        got = positions.get(pid)
+        if got is None:
+            positions[pid] = index
+        elif isinstance(got, list):
+            got.append(index)
+        else:
+            positions[pid] = [got, index]
+    return positions
+
+
+def _in_original_order(positions: Dict[int, Any],
+                       assigned: List[Dict]) -> List[Dict]:
+    """把 `assigned` 按它在语料里的相对顺序重排（成员与条数都不变）
+
+    代价口径（A58）：整份语料只被 `_position_table` 走查一次，本函数只在段内排序，
+    不再「每段各整份走查一遍」（HEAD 是三段三次全量走查）。数 `id()` 而不是比值：
+    值相等但不是同一对象的条目本可互换，而同一对象被引用多次时必须各归其位 —— 第 k
+    次出现的引用要取该对象的第 k 个位置（实测反例：语料 `A@{0,5} + B@{1}`、段
+    `[A, A, B]` 必须交出 `[A, B, A]`，拿首次位置当键交出 `[A, A, B]`，差分 120/120
+    全部分歧）。
+
+    刻意只留这把键，不加「语料无重复引用 ⇒ 用无状态键」的快路：快路实测能把本阶段从
+    ×0.854 再压到 ×0.561（真实 6,902 条三段合计 2.739 → 1.801 ms，min 与中位同向），
+    但开工前立的采纳门槛是「比单路径快 ≥2 倍」，实测只有 1.52 倍 ⇒ 按门槛退回单路径，
+    差价留在 A61，不靠「都写到这儿了」把分支留下。
+
+    Args:
+        positions: `_position_table(items)` 的返回值
+        assigned: 某一段的成员（按划分结果的次序）
+
+    前提：语料必须活到重排结束（`_stratified` 里 `items` 是入参，天然满足）。表里存的
+    是 `id()`，对象一旦被回收，它的地址可能被别的对象复用而**假命中**这张表 —— 那时
+    既不报错也不排序到位。旧写法拿着 `items` 走查，顺带把这条前提钉住了，改成表以后
+    前提就只在调用方手里。
+
+    Returns:
+        同一些成员，按它们在语料里的位置升序
+
+    Raises:
+        KeyError: `assigned` 里有语料之外的对象 —— 旧写法会把它整条静默丢掉，
+            段少一条却无人报错，正是 A47 那一族的形状
+        IndexError / TypeError: 段里同一对象的副本数超过语料（划分不可能产生，
+            真产生了就是上游坏了；抛哪个取决于该对象在语料里的副本形状）
+    """
+    taken: Dict[int, int] = {}
+
+    def key(item: Dict) -> int:
+        pid = id(item)
+        nth = taken.get(pid, 0)
+        taken[pid] = nth + 1
+        slot = positions[pid]
+        return slot[nth] if isinstance(slot, list) else slot
+
+    return sorted(assigned, key=key)
 
 
 class DatasetOperations:
@@ -169,13 +243,22 @@ class DatasetOperations:
         """
         config = config or SampleConfig()
         
-        # 确定采样数量
-        if config.size:
+        # 先判参，再区分「没给 size」与「给的是 0」：`if config.size:` 把 0 读成前者，
+        # 于是「采 0 条」交付整份数据集（真实 6902 条实测 size=0 → 6902 条）。
+        require_count("size", config.size)
+        if config.size is not None:
             sample_size = min(config.size, len(items))
         elif config.ratio:
             sample_size = int(len(items) * config.ratio)
         else:
             sample_size = len(items)
+
+        # 三条路径都可能算出 0：size=0，或 ratio 小到 int() 归零。0 就是「一条都不要」，
+        # 必须在 method 分发之前短路 —— systematic 那支的 `len(items) // sample_size`
+        # 在 0 上是 ZeroDivisionError（实测 ratio=0.0001），random / stratified 那两支
+        # 各自抛 `Sample larger than population`：同一个 0，三种 method 三种后果。
+        if sample_size == 0:
+            return []
         
         # 局部 Random：`random.seed()` 会改写进程级 RNG 状态，污染同进程内
         # 其它调用方的随机性（`seed=None` 时等价于取系统熵，行为不变）。
@@ -212,6 +295,12 @@ class DatasetOperations:
         Returns:
             采样后的数据列表
         """
+        # 空键不得静默退化成随机采样：`item.get("", "")` 对每条都交出 ""，于是全部
+        # 落进同一个 "empty" 组，配额等于全量池子的一次 `rng.sample`（实测 4 类 × 5 条
+        # 取 8 条，正常键给 2/2/2/2，空键给 5/2/1）。判据与 `_stratified` 同一条。
+        if not key:
+            raise DataValidationError("分层采样需要非空的 stratify_key")
+
         # 按字段值分组
         groups = {}
         for item in items:
@@ -222,21 +311,22 @@ class DatasetOperations:
                 groups[group_key] = []
             groups[group_key].append(item)
         
-        # 按比例从每组采样
-        sampled = []
-        total = len(items)
-        
-        for group_key, group_items in groups.items():
-            group_ratio = len(group_items) / total
-            group_sample_size = max(1, int(sample_size * group_ratio))
-            group_sampled = rng.sample(
-                group_items, min(group_sample_size, len(group_items)))
-            sampled.extend(group_sampled)
-        
-        # 调整到目标数量
-        if len(sampled) > sample_size:
-            sampled = rng.sample(sampled, sample_size)
-        
+        # 每组的配额一次算清。HEAD 两头都不守恒，中间靠砍：`max(1, int(...))` 先超发
+        # （20 组各 1 条、要 5 条 → 先攒 20 条），再 `rng.sample(sampled, 5)` 随机砍
+        # （实测三个种子交出三组互不相干的类别，「分层」退化成「随机挑组」）；而
+        # 4 组等权要 7 条时逐组 `int(1.75)` 只交回 4 条，少 3 条且无人提示。
+        names = list(groups)
+        group_sizes = [len(groups[name]) for name in names]
+        quotas = largest_remainder(sample_size, group_sizes,
+                                   caps=group_sizes, minimum_each=1)
+        sampled: List[Dict] = []
+        for name, quota in zip(names, quotas):
+            group_items = groups[name]
+            if quota >= len(group_items):
+                sampled.extend(group_items)
+            else:
+                sampled.extend(rng.sample(group_items, quota))
+
         return sampled
     
     def sample_file(self,
@@ -280,7 +370,8 @@ class DatasetOperations:
         
         Args:
             items: 数据列表
-            config: 分割配置
+            config: 分割配置；`stratify=True` 时走 `_stratified` 的分层支路，
+                默认的 `stratify=False` 走「打乱后按最大余数法切三段」
         
         Returns:
             (训练集, 验证集, 测试集)
@@ -292,23 +383,54 @@ class DatasetOperations:
         if abs(total_ratio - 1.0) > 0.01:
             raise DataValidationError(f"分割比例之和必须为1.0，当前为 {total_ratio}")
         
-        # 打乱数据
-        data = items.copy()
-        if config.shuffle:
-            random.Random(config.seed).shuffle(data)
-        
-        # 计算各部分大小
-        n = len(data)
-        train_size = int(n * config.ratios[0])
-        val_size = int(n * config.ratios[1])
-        
-        # 分割
-        train = data[:train_size]
-        val = data[train_size:train_size + val_size]
-        test = data[train_size + val_size:]
-        
+        if config.stratify:
+            # 分层的算法口径只有 `DataSplitter` 那一份，这里只接线（见 `_stratified`）
+            train, val, test = self._stratified(items, config)
+        else:
+            # 打乱数据
+            data = items.copy()
+            if config.shuffle:
+                random.Random(config.seed).shuffle(data)
+
+            # 计算各部分大小：余数不得整份偏给 test（实测 n=7 名义 10% 的测试集
+            # 实际拿到 28.6%，而 0.1 的验证集在 n ≤ 9 时交出 0 条）
+            n = len(data)
+            train_size, val_size, _ = largest_remainder(n, config.ratios)
+
+            # 分割
+            train = data[:train_size]
+            val = data[train_size:train_size + val_size]
+            test = data[train_size + val_size:]
+
         logger.info(f"分割完成: 训练集 {len(train)}, 验证集 {len(val)}, 测试集 {len(test)}")
         return train, val, test
+
+    def _stratified(self,
+                   items: List[Dict],
+                   config: SplitConfig) -> Tuple[List[Dict], List[Dict], List[Dict]]:
+        """分层分割支路：三段的目标与成员分配交给 `DataSplitter`
+
+        「哪几条进哪一段」只有 `DataSplitter._stratified_split` 一份实现（全体算一次
+        目标、逐组按「还欠多少条」摊派、组序按大小降序 + 同尺寸随机），本方法不复刻它，
+        只把 `SplitConfig` 的三个旋钮接上。分工要写清，三个旋钮各管一件事：
+
+        - `seed` 管**可复现**：分层时组序与组内成员选择都要消耗随机数，`seed=None`
+          时同一份输入两次跑出的成员分配不同（只有不分层且 `shuffle=False` 才全确定）。
+        - `shuffle` 管**三段内部的顺序**：True 沿用 `DataSplitter` 的打乱结果，False
+          把每段成员按 `items` 的原始相对顺序排回去（成员与条数都不变）。
+        - `stratify_key` 是分组字段；空值直接报错，不让「开了分层但没字段」静默退化成
+          不分层（那正是本方法以前对所有取值都在做的事）。
+        """
+        if not config.stratify_key:
+            raise DataValidationError("分层分割需要非空的 stratify_key")
+
+        result = DataSplitter(*config.ratios, seed=config.seed,
+                              stratify_field=config.stratify_key).split(items)
+        segments = (result.train, result.val, result.test)
+        if not config.shuffle:
+            positions = _position_table(items)
+            segments = tuple(_in_original_order(positions, seg) for seg in segments)
+        return segments
     
     def split_file(self,
                   input_path: str,
@@ -378,8 +500,10 @@ class DatasetOperations:
             n: 数量
         
         Returns:
-            前N条数据
+            前N条数据。`n` 允许 0（=「一条都不要」），负数与非整数抛
+            `DataValidationError`；HEAD 里 `n=-1` 会静默交出除末条外的全部
         """
+        require_count("n", n)
         return items[:n]
     
     def tail(self, items: List[Dict], n: int = 10) -> List[Dict]:
@@ -390,9 +514,11 @@ class DatasetOperations:
             n: 数量
         
         Returns:
-            后N条数据
+            后N条数据。`n` 允许 0，负数与非整数抛 `DataValidationError`；HEAD 里
+            `n=0` 因 `[-0:] == [0:]` 返回**全部**，`n=-1` 返回除第 1 条外的全部
         """
-        return items[-n:] if len(items) >= n else items
+        require_count("n", n)
+        return items[-n:] if n else []
     
     def filter_by_length(self,
                         items: List[Dict],

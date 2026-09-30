@@ -14,6 +14,7 @@ pub const API_BASE: &str = "/api/organization_assemble_personal";
 pub mod routes;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

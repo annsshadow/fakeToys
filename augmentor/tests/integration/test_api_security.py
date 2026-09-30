@@ -16,6 +16,7 @@
 
 import json
 import os
+import time
 from pathlib import Path
 
 import pytest
@@ -373,6 +374,37 @@ class TestAllowedRootsResolution:
 
         assert deps.allowed_data_roots() == [(Path.cwd() / "data").resolve()]
 
+    def test_scalar_shaped_config_falls_back_instead_of_splitting(self, monkeypatch,
+                                                                 tmp_path):
+        """真配置里的标量形状走同一条降级（L51 / A80 的接地点）
+
+        上一条用的是假异常；本条是真实的 YAML 形状缺陷。改前实测（Temp
+        `l51q/probe1.py`）：`data_roots: data` 被逐字符拆成 `d/a/t/a` 四个相对根，
+        服务照旧启动、数据端点一律 403，症状长得像后端坏了。现在
+        `WebConfig.__post_init__` 在加载那一刻就拒，异常由 `allowed_data_roots`
+        兜住，可见范围退回出厂的 `data/`。
+        """
+        from api import deps
+
+        bad = tmp_path / "scalar-roots.yaml"
+        bad.write_text("web:\n  data_roots: data\n", encoding="utf-8")
+        monkeypatch.delenv("AUGMENTOR_DATA_ROOTS", raising=False)
+        monkeypatch.setenv("AUGMENTOR_CONFIG_PATH", str(bad))
+
+        assert deps.allowed_data_roots() == [(Path.cwd() / "data").resolve()]
+
+    def test_valid_list_shape_is_still_honoured(self, monkeypatch, tmp_path):
+        """阳性对照：降级不许变成「配置文件里的白名单一概不认」"""
+        from api import deps
+
+        good = tmp_path / "good-roots.yaml"
+        good.write_text("web:\n  data_roots: [\"%s\"]\n" % tmp_path.as_posix(),
+                        encoding="utf-8")
+        monkeypatch.delenv("AUGMENTOR_DATA_ROOTS", raising=False)
+        monkeypatch.setenv("AUGMENTOR_CONFIG_PATH", str(good))
+
+        assert deps.allowed_data_roots() == [tmp_path.resolve()]
+
     @pytest.mark.parametrize("bad", ["", "   "])
     def test_empty_path_rejected_with_400(self, bad):
         """空路径直接 400，不进入文件系统解析"""
@@ -388,10 +420,12 @@ class TestAllowedRootsResolution:
 class TestShippedDataRootsDefault:
     """出厂默认 ``web.data_roots`` 必须是 ``["data"]``
 
-    默认值在三个地方各写了一遍：``WebConfig`` 的字段、``load_config`` 的
-    ``config_sections`` 兜底字典、仓库根的 ``config.yaml``。任何一处漏改都会
-    让「有配置文件」和「没有配置文件」两种部署的可见范围不一致，因此这里
-    分别用字面量钉死——不能拿 ``WebConfig()`` 去校验另外两处，那是同源预言机。
+    这个数从前在三个地方各写了一遍：``WebConfig`` 的字段、``load_config`` 的
+    ``config_sections`` 兜底字典、仓库根的 ``config.yaml``。A123 删掉了中间那一份
+    ⇒ 现在只剩两处，「漏改一处」这种漂移在加载链路上已经没有可漂的地方，但**磁盘上
+    的出厂 YAML 与类字段**仍是两个权威，任何一处漏改都会让「有配置文件」和「没有配置
+    文件」两种部署的可见范围不一致，因此这里分别用字面量钉死——不能拿 ``WebConfig()``
+    去校验另一处，那是同源预言机。
     """
 
     def test_webconfig_field_default(self):
@@ -401,7 +435,7 @@ class TestShippedDataRootsDefault:
         assert WebConfig().data_roots == ["data"]
 
     def test_defaults_apply_when_config_omits_web_section(self, tmp_path):
-        """配置文件存在但缺 web 段时，兜底字典同样给出 data"""
+        """配置文件存在但缺 web 段时，加载路径给出的就是字段默认那份数"""
         from augmentor.config import load_config
 
         quiet = tmp_path / "no_web.yaml"
@@ -420,7 +454,7 @@ class TestShippedDataRootsDefault:
 
         shipped = raw["web"]["data_roots"]
         assert shipped == ["data"]
-        # 三处默认值必须一致，否则有无配置文件是两种安全边界
+        # 两处默认值必须一致，否则有无配置文件是两种安全边界
         assert shipped == WebConfig().data_roots
 
     def test_workdir_is_not_a_default_root(self, monkeypatch, tmp_path):
@@ -436,6 +470,143 @@ class TestShippedDataRootsDefault:
         with pytest.raises(HTTPException) as exc:
             resolve_data_path(str(inside))
         assert exc.value.status_code == 403
+
+
+class TestShippedCorsDefault:
+    """跨源默认必须是「一个来源也不放行、且不带凭据」
+
+    与 `TestShippedDataRootsDefault` 同构：默认值有两处（`WebConfig` 字段、随仓库的
+    `config.yaml`；A123 删掉了 `load_config` 里那张映射表，第三个权威从此不存在），
+    任何一处漏改都会让「有无配置文件」变成两种安全边界，所以两处分别用字面量钉死，
+    不拿 `WebConfig()` 当预言机。
+
+    为什么旧的 `["*"] + credentials=True` 必须收紧（实测形状见
+    `test_wildcard_with_credentials_echoes_any_origin`）：starlette 在这种组合下会把
+    **请求方的 Origin 原样回显**并附 `access-control-allow-credentials: true`，预检一样
+    放行 —— 于是任意网站都能带用户凭据读本 API。而本仓的合法消费方都不需要跨源：
+    随包 UI 与后端同源（axios `baseURL: '/api'`，vite 开发模式走 proxy），API 也不用
+    cookie（鉴权是 `X-API-Key` 头）。
+    """
+
+    def test_webconfig_field_defaults(self):
+        """SDK 配置类的字段默认值"""
+        from augmentor.config import WebConfig
+
+        assert WebConfig().cors_origins == []
+        assert WebConfig().cors_credentials is False
+
+    def test_defaults_apply_when_config_omits_web_section(self, tmp_path):
+        """配置文件存在但没有 cors 两键时，读回来的仍是字段默认那对收紧值
+
+        A123 之后这一档走的是加载器的正路：`web` 节在场、`cors_*` 两键不在场 ⇒
+        构造器只收到 `port`，两键由 `WebConfig` 的字段默认回答。
+        """
+        from augmentor.config import load_config
+
+        quiet = tmp_path / "no_cors.yaml"
+        quiet.write_text("models:\n  default: ernie\nweb:\n  port: 8000\n",
+                         encoding="utf-8")
+
+        web = load_config(str(quiet)).web
+        assert web.cors_origins == []
+        assert web.cors_credentials is False
+
+    def test_shipped_config_yaml(self):
+        """随仓库分发的 config.yaml 必须与出厂默认一致"""
+        import yaml
+
+        from augmentor.config import WebConfig
+
+        with open(AI_DIR / "config.yaml", encoding="utf-8") as handle:
+            raw = yaml.safe_load(handle)
+
+        shipped = raw["web"]
+        assert shipped["cors_origins"] == []
+        assert shipped["cors_credentials"] is False
+        assert shipped["cors_origins"] == WebConfig().cors_origins
+        assert shipped["cors_credentials"] == WebConfig().cors_credentials
+
+    def test_app_middleware_reads_the_config_not_a_hardcoded_pair(self):
+        """A78 的正向断言：中间件参数就是配置里那两个值
+
+        缺陷的形状是「`api/main.py` 真的在读 `_config.web.cors_origins`，但映射表没有
+        这一项」⇒ 只有把配置改成与默认不同、再看中间件是否跟着变，才测得到接线本身。
+        """
+        from augmentor.config import load_config
+        from api.deps import config_file_path
+        from api.main import app
+
+        cors = [m for m in app.user_middleware
+                if m.cls.__name__ == "CORSMiddleware"]
+        assert len(cors) == 1
+        web = load_config(str(config_file_path())).web
+        assert cors[0].kwargs["allow_origins"] == web.cors_origins
+        assert cors[0].kwargs["allow_credentials"] == web.cors_credentials
+
+    def test_cross_origin_read_gets_no_cors_headers(self, client):
+        """默认配置下，任意来源的跨源读请求拿不到许可头"""
+        resp = client.get("/api/health", headers={"origin": "https://evil.example"})
+
+        assert resp.status_code == 200
+        assert not [k for k in resp.headers if k.lower().startswith("access-control")]
+
+    def test_cross_origin_preflight_is_denied(self, client):
+        """预检被拒（400），且拒绝里也不带 `allow-origin`"""
+        resp = client.options("/api/health", headers={
+            "origin": "https://evil.example",
+            "access-control-request-method": "GET",
+        })
+
+        assert resp.status_code == 400
+        assert "access-control-allow-origin" not in {
+            k.lower() for k in resp.headers}
+
+    def test_same_origin_and_non_browser_clients_are_untouched(self, client):
+        """不发 Origin 的请求（同源 UI、curl、SDK）行为一个字都不变"""
+        resp = client.get("/api/health")
+
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
+        assert not [k for k in resp.headers if k.lower().startswith("access-control")]
+
+    def test_wildcard_with_credentials_echoes_any_origin(self):
+        """本条是**上游形状**的锁，不是本仓行为的锁
+
+        收紧默认的代价与理由都压在这一个事实上：`allow_origins=["*"]` 配
+        `allow_credentials=True` 时 starlette 会把请求方 Origin 原样回显并允许凭据
+        ——「通配」在这里不是「不开放」，恰恰是「对任意站点开放」。上游哪天改掉这个
+        组合的处理，本条会红。
+
+        版本只进断言消息、不做等式判据：本仓机器上有两套解释器（venv `aug` 的
+        starlette 1.6.0 与 `C:\\Python314` 的 1.2.1），同一组请求在**两个版本下形状
+        逐字节相同**（实测 Temp `l50q/probe3.py`，NONCE-74891e9630fb / -38dd3b833cfe），
+        所以钉死版本号只会把测试绑在解释器身份上 —— L50 一度这样钉过，换解释器即红。
+        """
+        import starlette
+        from starlette.applications import Starlette
+        from starlette.middleware.cors import CORSMiddleware
+        from starlette.responses import PlainTextResponse
+        from starlette.routing import Route
+
+        shape = f"starlette {starlette.__version__} @ {starlette.__file__}"
+
+        def _app(origins, credentials):
+            inner = Starlette(routes=[Route(
+                "/x", lambda request: PlainTextResponse("ok"))])
+            inner.add_middleware(
+                CORSMiddleware, allow_origins=origins,
+                allow_credentials=credentials,
+                allow_methods=["*"], allow_headers=["*"])
+            return TestClient(inner)
+
+        loose = _app(["*"], True).get("/x", headers={"origin": "https://evil.example"})
+        assert loose.headers.get("access-control-allow-origin") == "https://evil.example", shape
+        assert loose.headers.get("access-control-allow-credentials") == "true", shape
+
+        # 同一来源、同一请求，在出厂默认下什么都拿不到
+        strict = _app([], False).get("/x", headers={"origin": "https://evil.example"})
+        assert "access-control-allow-origin" not in strict.headers, shape
+        assert "access-control-allow-credentials" not in strict.headers, shape
 
 
 class TestDataListScansWhitelist:
@@ -540,28 +711,11 @@ class TestBareNameResolvesInsideRoots:
         assert candidates[-1] == (Path.cwd() / "train_data_ui.json").resolve()
 
     def test_candidates_are_deduplicated(self, monkeypatch):
-        """根目录就是工作目录时不产生重复候选
-
-        收紧前的出厂默认正是 ``["."]``，此时「根目录解释」与「工作目录解释」重合，
-        候选必须塌成一条，否则每个路径参数都白做一次 ``exists()``。
-        """
-        from api.deps import _relative_candidates, allowed_data_roots
-
-        cwd = Path.cwd()
-        monkeypatch.setenv(
-            "AUGMENTOR_DATA_ROOTS", os.pathsep.join([str(cwd), str(cwd / ".")])
-        )
-
-        candidates = _relative_candidates(Path("train_data_ui.json"), allowed_data_roots())
-
-        assert candidates == [(cwd / "train_data_ui.json").resolve()]
-
-    def test_candidates_are_deduplicated(self, monkeypatch):
         """重复根目录不产生重复候选
 
         旧部署把 ``data_roots`` 配成工作目录（收紧前的出厂默认）时，「根目录解释」
-        与「工作目录兜底」完全重合；若不去重，每个路径参数都要多stat 一遍同样的
-        路径，且 ``x`` 与 ``x/.`` 这类等价写法会被当成两个候选。
+        与「工作目录兜底」完全重合；若不去重，每个路径参数都要多跑一次同样的
+        ``exists()``，且 ``x`` 与 ``x/.`` 这类等价写法会被当成两个候选。
         """
         from api.deps import _relative_candidates, allowed_data_roots
 
@@ -574,11 +728,34 @@ class TestBareNameResolvesInsideRoots:
 
         assert candidates == [(cwd / "train_data_ui.json").resolve()]
 
-    def test_new_file_is_not_guessed_into_a_root(self, monkeypatch, tmp_path):
-        """写入不存在的路径时**不**替调用方挑目录
+    def test_new_relative_name_lands_in_the_first_root(self, monkeypatch, tmp_path):
+        """一个候选都不存在时（写新文件）落**首个根解释**，而不是 403
 
-        猜测会把产物静默挪进某个根目录；这里宁可 403，让调用方显式写
-        ``data/xxx.json``。
+        改前的口径是「宁可 403，也不替调用方挑目录」，实测代价写在 A163 里：出厂
+        默认下工作目录是根的**父目录**，所以「不挑目录」等于「新文件一个也写不进
+        去」——UI 的默认输出名 `augmented_output.json` 从 `/api/augment/start` 必
+        403。这里锁的是新口径的两半：① 落点仍在白名单内（首个根，与读侧「第一个
+        存在」用的同一条优先级，不是另造一个猜测）；② 工作目录解释**在闸内时**
+        照旧优先尊重它，那一格由
+        `tests/unit/test_upload_ceiling_l87.py::TestUploadPathIsHonoured` 钉住。
+        """
+        from api.deps import resolve_data_path
+
+        root = tmp_path / "data"
+        root.mkdir()
+        monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(root))
+
+        path = resolve_data_path("brand_new_output.json", for_write=True)
+
+        assert path == (root / "brand_new_output.json").resolve()
+        assert path.parent == root.resolve()
+
+    def test_missing_read_is_404_not_403(self, monkeypatch, tmp_path):
+        """同一条兜底把「读不到的文件」从假 403 变回真 404
+
+        改前 `resolve_data_path("nope.json")` 在工作目录不在闸内时回 403「路径超出
+        允许的数据目录范围」，而真相是「文件不存在」——对客户端是两种完全不同的
+        处置（改路径 vs 改文件名）。
         """
         from fastapi import HTTPException
 
@@ -589,10 +766,9 @@ class TestBareNameResolvesInsideRoots:
         monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(root))
 
         with pytest.raises(HTTPException) as exc:
-            resolve_data_path("brand_new_output.json", for_write=True)
+            resolve_data_path("brand_new_input.json")
 
-        assert exc.value.status_code == 403
-        assert not (root / "brand_new_output.json").exists()
+        assert exc.value.status_code == 404
 
     def test_explicit_root_relative_spelling_works(self, monkeypatch, tmp_path):
         """显式 ``sub/xxx.json`` 这种写法照旧可用"""
@@ -624,15 +800,520 @@ class TestBareNameResolvesInsideRoots:
         assert exc.value.status_code == 403
 
 
+class TestDependencyRegistryDefaultPath:
+    """依赖端点在不传 ``registry_path`` 时也必须可用
+
+    残留缺陷：三个 ``/api/system/dependency/*`` 端点的默认注册表目录曾写死为
+    ``.dependency_registry``（相对工作目录）。白名单收到 ``data`` 之后工作目录不再
+    在闸内，于是**默认参数自己**会被自己设置的闸拦下：实测收紧后 POST/GET
+    ``/api/system/dependency/datasets`` 与 GET ``/api/system/dependency/graph``
+    全部 403 —— 缺省调用一条都走不通。默认值必须跟着白名单走。
+    """
+
+    def _root(self, monkeypatch, tmp_path):
+        """造一个只含白名单根目录的环境，工作目录刻意留在闸外"""
+        root = tmp_path / "data"
+        root.mkdir()
+        _write_json(root / "demo.json", [{"instruction": "q", "output": "a"}])
+        monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(root))
+        monkeypatch.chdir(tmp_path)
+        return root
+
+    def test_dependency_endpoints_work_with_default_registry_path(
+        self, client, monkeypatch, tmp_path
+    ):
+        """登记 → 列表 → 依赖图 三段缺省调用都要走通，且产物落在白名单内"""
+        root = self._root(monkeypatch, tmp_path)
+
+        registered = client.post(
+            "/api/system/dependency/datasets", json={"name": "demo", "input_file": "demo.json"}
+        )
+        listed = client.get("/api/system/dependency/datasets")
+        graph = client.get("/api/system/dependency/graph")
+
+        assert registered.status_code == 200
+        assert listed.status_code == 200
+        assert [d["name"] for d in listed.json()["datasets"]] == ["demo"]
+        assert graph.status_code == 200
+        assert (root / ".dependency_registry").is_dir()
+        assert not (tmp_path / ".dependency_registry").exists()
+
+    def test_explicit_registry_path_outside_roots_is_still_rejected(
+        self, client, monkeypatch, tmp_path
+    ):
+        """显式传参不参与缺省兜底，越界仍然 403
+
+        否则「默认值跟白名单走」会被一个可选参数绕开，白名单形同虚设。
+        """
+        self._root(monkeypatch, tmp_path)
+
+        response = client.get(
+            "/api/system/dependency/datasets",
+            params={"registry_path": str(tmp_path / "outside_registry")},
+        )
+
+        assert response.status_code == 403
+        assert not (tmp_path / "outside_registry").exists()
+
+    def test_empty_explicit_registry_path_is_not_silently_defaulted(
+        self, client, monkeypatch, tmp_path
+    ):
+        """显式传空串是非法入参（400），不能因为「有默认值」就被吞掉"""
+        self._root(monkeypatch, tmp_path)
+
+        response = client.get(
+            "/api/system/dependency/datasets", params={"registry_path": ""}
+        )
+
+        assert response.status_code == 400
+
+
+class TestBackupDirDefaultPath:
+    """备份端点在不传 ``backup_dir`` 时也必须可用（F-10，与 F-09 同构）
+
+    四条 ``/api/system/backups*`` 端点把默认目录写成相对工作目录的 ``.backups``；
+    白名单收到 ``data`` 之后工作目录不在闸内，实测不传参的 ``GET /api/system/backups``
+    与 ``POST`` 全部 **403**。同一份默认值还让备份测试把 ``.backups/`` 写进版本树。
+    """
+
+    def _root(self, monkeypatch, tmp_path):
+        root = tmp_path / "data"
+        root.mkdir()
+        _write_json(root / "demo.json", [{"instruction": "怎么办居住证", "output": "带上材料"}])
+        monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(root))
+        monkeypatch.chdir(tmp_path)
+        return root
+
+    def test_backup_lifecycle_works_with_default_backup_dir(
+        self, client, monkeypatch, tmp_path
+    ):
+        """创建 → 列表 → 恢复 → 删除，全程不传 ``backup_dir``"""
+        root = self._root(monkeypatch, tmp_path)
+
+        created = client.post(
+            "/api/system/backups", json={"input_file": "demo.json", "name": "snap"}
+        )
+        listed = client.get("/api/system/backups")
+        restored = client.post(
+            "/api/system/backups/snap/restore",
+            json={"output_file": "data/restored.json"},
+        )
+        deleted = client.delete("/api/system/backups/snap")
+
+        assert created.status_code == 200, created.text
+        assert created.json()["backup_id"] == "snap"
+        assert created.json()["item_count"] == 1
+        assert [b["backup_id"] for b in listed.json()["backups"]] == ["snap"]
+        assert restored.status_code == 200, restored.text
+        assert (root / "restored.json").is_file()
+        assert deleted.status_code == 200
+        # 产物一律落在白名单内，工作目录不留痕迹
+        assert (root / ".backups").is_dir()
+        assert not (tmp_path / ".backups").exists()
+
+    def test_explicit_backup_dir_outside_roots_is_rejected(
+        self, client, monkeypatch, tmp_path
+    ):
+        """显式传参不参与缺省兜底：越界仍 403"""
+        self._root(monkeypatch, tmp_path)
+
+        response = client.get(
+            "/api/system/backups", params={"backup_dir": str(tmp_path / "outside")}
+        )
+
+        assert response.status_code == 403
+
+    def test_empty_explicit_backup_dir_is_400(self, client, monkeypatch, tmp_path):
+        """空串是非法入参，不能被静默换成缺省目录"""
+        self._root(monkeypatch, tmp_path)
+
+        response = client.get("/api/system/backups", params={"backup_dir": ""})
+
+        assert response.status_code == 400
+
+
+class TestServiceConfigPath:
+    """服务自身的配置文件不过数据白名单（F-11）
+
+    ``POST /api/system/validate-config`` 的默认值曾写死成 ``config.yaml``（相对工作
+    目录），于是**不传参就是 403**；而配置文件本就不是数据集——它是服务端要读写的
+    东西。收口方式：默认校验 ``deps.config_file_path()``（可用
+    ``AUGMENTOR_CONFIG_PATH`` 指向别处），客户端**显式**给的路径仍按数据白名单校验。
+    """
+
+    def _env(self, monkeypatch, tmp_path):
+        root = tmp_path / "data"
+        root.mkdir()
+        service_cfg = tmp_path / "service.yaml"
+        service_cfg.write_text("models:\n  default: fallback\n", encoding="utf-8")
+        monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(root))
+        monkeypatch.setenv("AUGMENTOR_CONFIG_PATH", str(service_cfg))
+        monkeypatch.chdir(tmp_path)
+        return root
+
+    def test_default_validates_the_service_own_config(self, client, monkeypatch, tmp_path):
+        """缺省体 ``{}`` → 校验服务自己在用的那份配置，且它可以在白名单外"""
+        self._env(monkeypatch, tmp_path)
+
+        response = client.post("/api/system/validate-config", json={})
+
+        assert response.status_code == 200, response.text
+        assert response.json()["is_valid"] is True
+
+    def test_config_path_falls_back_to_cwd_and_explicit_stays_gated(
+        self, client, monkeypatch, tmp_path
+    ):
+        """无 ``AUGMENTOR_CONFIG_PATH`` 时回到工作目录的 ``config.yaml``；
+        但客户端**显式**传这个绝对路径仍然 403 —— 闸门只对服务端自己放行。
+        """
+        from api.deps import config_file_path
+
+        self._env(monkeypatch, tmp_path)
+        monkeypatch.delenv("AUGMENTOR_CONFIG_PATH")
+
+        assert config_file_path() == (tmp_path / "config.yaml").resolve()
+
+        response = client.post(
+            "/api/system/validate-config", json={"path": str(AI_DIR / "config.yaml")}
+        )
+
+        assert response.status_code == 403
+        assert "超出允许" in response.json()["detail"]
+
+    def test_client_supplied_config_path_is_still_gated(
+        self, client, monkeypatch, tmp_path
+    ):
+        """显式传入的配置路径仍在白名单内时照常可用"""
+        root = self._env(monkeypatch, tmp_path)
+        inside = root / "extra.yaml"
+        inside.write_text("models:\n  default: fallback\n", encoding="utf-8")
+
+        response = client.post(
+            "/api/system/validate-config", json={"path": "extra.yaml"}
+        )
+
+        assert response.status_code == 200, response.text
+        assert response.json()["is_valid"] is True
+
+
+class TestConfigDataRootsCache:
+    """配置文件来源的白名单不能每个请求重解析一遍
+
+    实测：未设置 ``AUGMENTOR_DATA_ROOTS`` 时 ``allowed_data_roots()`` 每次
+    **7.06 ms**，全部花在重新解析 ``config.yaml`` 上；而任何带路径参数的请求都
+    至少要过一次白名单，等于给每个请求凭空加 7 ms。缓存按 ``(路径, mtime_ns)``
+    建键——「改完配置立刻生效」这条不能为了省时间牺牲掉。
+    """
+
+    def _cfg(self, tmp_path, root_dir: Path):
+        """写一份只声明 ``web.data_roots`` 的配置"""
+        (tmp_path / "config.yaml").write_text(
+            f"web:\n  data_roots:\n    - {root_dir.as_posix()}\n", encoding="utf-8"
+        )
+
+    def _instrument(self, monkeypatch, tmp_path):
+        """清缓存、撤掉环境变量、返回 ``load_config`` 的调用记录"""
+        import api.deps as deps
+
+        calls: list = []
+        real = deps.load_config
+
+        def counting(config_path=None):
+            calls.append(config_path)
+            return real(config_path)
+
+        monkeypatch.delenv("AUGMENTOR_DATA_ROOTS", raising=False)
+        monkeypatch.setattr(deps, "load_config", counting)
+        monkeypatch.setattr(deps, "_config_roots_cache", {})
+        monkeypatch.setattr(deps, "_config_path_cache", {})
+        monkeypatch.chdir(tmp_path)
+        return deps, calls
+
+    def test_config_parsed_once_across_calls(self, monkeypatch, tmp_path):
+        """连查五次白名单，配置文件只解析一次"""
+        allowed = tmp_path / "allowed_a"
+        allowed.mkdir()
+        self._cfg(tmp_path, allowed)
+        deps, calls = self._instrument(monkeypatch, tmp_path)
+
+        roots = [deps.allowed_data_roots() for _ in range(5)][-1]
+
+        assert roots == [allowed.resolve()]
+        assert len(calls) == 1
+
+    def test_config_edit_takes_effect_immediately(self, monkeypatch, tmp_path):
+        """换根目录后必须立刻生效——缓存不能把白名单冻在旧值上"""
+        first = tmp_path / "allowed_a"
+        second = tmp_path / "allowed_b"
+        first.mkdir()
+        second.mkdir()
+        self._cfg(tmp_path, first)
+        deps, calls = self._instrument(monkeypatch, tmp_path)
+
+        assert deps.allowed_data_roots() == [first.resolve()]
+
+        self._cfg(tmp_path, second)
+        cfg = tmp_path / "config.yaml"
+        stat = cfg.stat()
+        os.utime(cfg, ns=(stat.st_atime_ns, stat.st_mtime_ns + 1_000_000))
+
+        assert deps.allowed_data_roots() == [second.resolve()]
+        assert len(calls) == 2
+
+    def test_broken_config_is_not_cached(self, monkeypatch, tmp_path):
+        """坏配置降级到出厂默认，且**不**进缓存（修好后下一次就该读到）"""
+        (tmp_path / "config.yaml").write_text(
+            "web:\n  data_roots: [unclosed\n", encoding="utf-8"
+        )
+        deps, calls = self._instrument(monkeypatch, tmp_path)
+
+        first = deps.allowed_data_roots()
+        second = deps.allowed_data_roots()
+
+        assert first == second == [(Path.cwd() / "data").resolve()]
+        assert len(calls) == 2
+
+    def test_whitelist_lookup_stays_sub_millisecond(self, monkeypatch, tmp_path):
+        """200 次白名单解析的总耗时预算（未加缓存时实测约 1400 ms）
+
+        时间断言本身不是预言机——所以同时钉住「200 次查询只解析过 1 次配置」，
+        否则缓存失效时只剩一个可能因机器抖动而误判的数字。
+        """
+        allowed = tmp_path / "allowed_a"
+        allowed.mkdir()
+        self._cfg(tmp_path, allowed)
+        deps, calls = self._instrument(monkeypatch, tmp_path)
+
+        deps.allowed_data_roots()
+        start = time.perf_counter()
+        for _ in range(200):
+            deps.allowed_data_roots()
+        elapsed_ms = (time.perf_counter() - start) * 1000
+
+        assert len(calls) == 1, f"200 次查询解析了 {len(calls)} 次配置，缓存未生效"
+        assert elapsed_ms < 200, f"白名单解析 200 次用了 {elapsed_ms:.1f} ms（缓存未生效？）"
+
+    def test_returned_roots_are_a_fresh_list(self, monkeypatch, tmp_path):
+        """缓存命中时也要返回新列表——调用方 append 不能污染白名单"""
+        allowed = tmp_path / "allowed_a"
+        allowed.mkdir()
+        self._cfg(tmp_path, allowed)
+        deps, _ = self._instrument(monkeypatch, tmp_path)
+
+        first = deps.allowed_data_roots()
+        first.append(Path(tmp_path.as_posix()))
+        second = deps.allowed_data_roots()
+
+        assert second == [allowed.resolve()]
+
+
+class TestConfigPathResolveCache:
+    """白名单**缓存命中**的路径也不该每次解析配置路径
+
+    ``TestConfigDataRootsCache`` 把「重新解析 YAML」缓存掉了，但命中路径仍要
+    1 ms/次：``config_file_path()`` 每次都 ``Path.resolve()``。Windows 上
+    resolve 要查 ``\\\\?\\`` 句柄并做大小写规范化，实测 **0.94 ms/次**，是命中
+    路径上唯一的开销 —— 200 次 ``allowed_data_roots()`` 要 218 ms，其中 200 次
+    resolve 就占 187 ms；把解析结果按 ``(环境变量, 工作目录)`` 缓存后，同样
+    200 次只要 1.87 ms。
+
+    预言机不是耗时而是 **resolve 发生的次数**：同一组合只许解析 1 次；换了
+    工作目录或环境变量必须重新解析——否则相对配置路径会被冻在上一个目录的
+    解释上，那是放宽边界。
+    """
+
+    def _instrument(self, monkeypatch):
+        """给 ``Path.resolve`` 装计数器，并清空两条路径缓存"""
+        import api.deps as deps
+
+        counts: list = []
+        real = Path.resolve
+
+        def counting(self, *args, **kwargs):
+            counts.append(self)
+            return real(self, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "resolve", counting)
+        monkeypatch.setattr(deps, "_config_path_cache", {})
+        monkeypatch.setattr(deps, "_config_roots_cache", {})
+        monkeypatch.delenv("AUGMENTOR_DATA_ROOTS", raising=False)
+        monkeypatch.delenv("AUGMENTOR_CONFIG_PATH", raising=False)
+        return deps, counts
+
+    def test_same_cold_then_hot_resolve_counts(self, monkeypatch, tmp_path):
+        """冷启动解析 1 次，之后 200 次命中一次都不解析"""
+        expected = (tmp_path / "config.yaml").resolve()   # 打补丁前先算好参照
+        deps, counts = self._instrument(monkeypatch)
+        monkeypatch.chdir(tmp_path)
+
+        base = len(counts)
+        first = deps.config_file_path()
+        cold = len(counts) - base
+        paths = [deps.config_file_path() for _ in range(200)]
+        hot = len(counts) - base - cold
+
+        assert first == expected
+        assert set(paths) == {expected}
+        assert cold == 1, f"冷启动解析了 {cold} 次，应为 1 次"
+        assert hot == 0, (
+            f"缓存命中后又解析了 {hot} 次配置路径："
+            "每次 resolve 在 Windows 上是 0.94 ms 的系统调用"
+        )
+
+    def test_cache_key_follows_working_directory(self, monkeypatch, tmp_path):
+        """换工作目录必须重新解析：缓存键里没有目录就是错的缓存"""
+        first = tmp_path / "a"
+        second = tmp_path / "b"
+        first.mkdir()
+        second.mkdir()
+        expected_a = (first / "config.yaml").resolve()
+        expected_b = (second / "config.yaml").resolve()
+        deps, counts = self._instrument(monkeypatch)
+
+        monkeypatch.chdir(first)
+        base = len(counts)
+        path_a = deps.config_file_path()
+        path_a_again = deps.config_file_path()
+        resolves_a = len(counts) - base
+
+        monkeypatch.chdir(second)
+        base = len(counts)
+        path_b = deps.config_file_path()
+        path_b_again = deps.config_file_path()
+        resolves_b = len(counts) - base
+
+        assert path_a == path_a_again == expected_a
+        assert path_b == path_b_again == expected_b
+        assert path_a != path_b, "两个目录拿到同一个配置路径，白名单会读错配置"
+        assert (resolves_a, resolves_b) == (1, 1), (
+            f"两个目录分别解析 {resolves_a}/{resolves_b} 次，应各 1 次："
+            "少于 1 次说明换目录没让缓存失效"
+        )
+
+    def test_cache_key_follows_env_config_path(self, monkeypatch, tmp_path):
+        """``AUGMENTOR_CONFIG_PATH`` 改值后必须立刻换人"""
+        cfg_one = tmp_path / "one.yaml"
+        cfg_two = tmp_path / "two.yaml"
+        expected_one = cfg_one.resolve()
+        expected_two = cfg_two.resolve()
+        deps, counts = self._instrument(monkeypatch)
+        monkeypatch.chdir(tmp_path)
+
+        base = len(counts)
+        monkeypatch.setenv("AUGMENTOR_CONFIG_PATH", str(cfg_one))
+        first = deps.config_file_path()
+        first_again = deps.config_file_path()
+        resolves_one = len(counts) - base
+
+        monkeypatch.setenv("AUGMENTOR_CONFIG_PATH", str(cfg_two))
+        base = len(counts)
+        second = deps.config_file_path()
+        resolves_two = len(counts) - base
+
+        assert first == first_again == expected_one
+        assert second == expected_two
+        assert (resolves_one, resolves_two) == (1, 1), (
+            f"两个环境变量值分别解析 {resolves_one}/{resolves_two} 次，应各 1 次"
+        )
+
+    def test_whitelist_hit_does_not_resolve_per_request(self, monkeypatch, tmp_path):
+        """整条白名单查询在缓存命中时不再触发任何 resolve
+
+        这条直接盯住真实调用链（``allowed_data_roots``），而不是只看
+        ``config_file_path`` 本身：缓存命中时它要能一次都不解析。
+        """
+        root = tmp_path / "allowed"
+        root.mkdir()
+        (tmp_path / "config.yaml").write_text(
+            f"web:\n  data_roots:\n    - {root.as_posix()}\n", encoding="utf-8"
+        )
+        expected = [root.resolve()]                      # 打补丁前算好
+        deps, counts = self._instrument(monkeypatch)
+        monkeypatch.chdir(tmp_path)
+
+        deps.allowed_data_roots()                       # 预热：这一次必然解析
+        base = len(counts)
+        roots = [deps.allowed_data_roots() for _ in range(200)]
+
+        assert roots == [expected] * 200
+        assert len(counts) - base == 0, (
+            f"200 次白名单查询又解析了 {len(counts) - base} 次路径"
+        )
+
+
+class TestEnvDataRootsCache:
+    """环境变量来源的白名单也要缓存，但缓存键必须带上工作目录
+
+    实测：``AUGMENTOR_DATA_ROOTS`` 设两个根目录时 ``allowed_data_roots()``
+    每次 **0.29 ms**，全花在 ``Path.resolve()`` 的系统调用上；测试环境恒设该
+    变量，等于整个套件每个请求都重复解析同一串值。
+
+    缓存按 ``(原值, 工作目录)`` 建键：白名单允许相对路径，只按原值建键会把
+    上一个目录的解释带到新目录下——那是**放宽**边界，比慢更糟。
+    """
+
+    def _roots(self, monkeypatch, value: str):
+        import api.deps as deps
+
+        monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", value)
+        monkeypatch.setattr(deps, "_env_roots_cache", {})
+        return deps
+
+    def test_relative_env_root_follows_cwd(self, monkeypatch, tmp_path):
+        """换工作目录后，同一个相对根目录必须重新解析"""
+        first = tmp_path / "first"
+        second = tmp_path / "second"
+        first.mkdir()
+        second.mkdir()
+
+        deps = self._roots(monkeypatch, "data")
+
+        monkeypatch.chdir(first)
+        assert deps.allowed_data_roots() == [(first / "data").resolve()]
+
+        monkeypatch.chdir(second)
+        assert deps.allowed_data_roots() == [(second / "data").resolve()]
+
+    def test_changed_env_value_takes_effect(self, monkeypatch, tmp_path):
+        """改环境变量值必须立刻生效，不能读到上一个值的缓存"""
+        deps = self._roots(monkeypatch, str(tmp_path / "a"))
+        assert deps.allowed_data_roots() == [(tmp_path / "a").resolve()]
+
+        monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(tmp_path / "b"))
+        assert deps.allowed_data_roots() == [(tmp_path / "b").resolve()]
+
+    def test_blank_env_value_falls_back_to_shipped_default(self, monkeypatch, tmp_path):
+        """环境变量全是分隔符/空白时按「未设置」处理，降级到出厂默认"""
+        deps = self._roots(monkeypatch, os.pathsep + "   " + os.pathsep)
+
+        roots = deps.allowed_data_roots()
+
+        assert roots == [(Path.cwd() / "data").resolve()]
+
+    def test_env_lookup_budget(self, monkeypatch, tmp_path):
+        """500 次白名单解析的总耗时预算（未缓存时实测约 145 ms，其中 resolve 占九成）"""
+        deps = self._roots(
+            monkeypatch, os.pathsep.join([str(tmp_path / "a"), str(tmp_path / "b")])
+        )
+
+        deps.allowed_data_roots()
+        start = time.perf_counter()
+        for _ in range(500):
+            deps.allowed_data_roots()
+        elapsed_ms = (time.perf_counter() - start) * 1000
+
+        assert elapsed_ms < 50, f"环境变量白名单解析 500 次用了 {elapsed_ms:.1f} ms"
+
+
 class TestWriteRouteAuthCoverage:
     """写路由鉴权覆盖率（元测试）
 
     残留风险：`verify_api_key` 是**逐个路由手动挂载**的，新增一条写路由时很容易漏挂，
     而漏挂不会让任何既有测试变红——鉴权静默失效。
 
-    因此这里把「全部 42 条路由的鉴权状态」固化下来：新增或删除路由都会让本测试失败，
-    迫使改动者显式做出分类——要么挂 `Depends(verify_api_key)`，要么把它加进
-    `OPEN_ALLOWLIST` 并说明为什么只读。
+    因此这里把「全部路由的鉴权状态」固化下来（条数不写死，以两份集合为准）：
+    新增或删除路由都会让本测试失败，迫使改动者显式做出分类——要么挂
+    `Depends(verify_api_key)`，要么把它加进 `OPEN_ALLOWLIST` 并说明为什么只读。
 
     注意：不能用 `app.routes` 枚举。当前 FastAPI 版本把 `include_router` 包装成不展开的
     `_IncludedRouter` 容器，必须回到各 router 模块的 `router.routes`。
@@ -691,7 +1372,9 @@ class TestWriteRouteAuthCoverage:
         ("POST", "/api/audit"),
         ("POST", "/api/dataset/auto-config"),
         ("POST", "/api/dataset/compare"),
+        ("POST", "/api/dataset/evaluate"),
         ("POST", "/api/dataset/features"),
+        ("POST", "/api/dataset/impact"),
         ("POST", "/api/dataset/search"),
         ("POST", "/api/dataset/stats"),
         ("POST", "/api/dataset/validate"),
@@ -705,6 +1388,7 @@ class TestWriteRouteAuthCoverage:
         ("POST", "/api/quality/clean"),
         ("POST", "/api/quality/dedup"),
         ("POST", "/api/quality/evaluate"),
+        ("POST", "/api/quality/health-gate"),
         ("POST", "/api/quality/outliers"),
         ("POST", "/api/quality/report"),
         ("POST", "/api/system/auto-test"),

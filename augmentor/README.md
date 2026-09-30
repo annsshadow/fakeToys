@@ -204,8 +204,16 @@ python cli.py merge --inputs data1.json data2.json --output merged.json
 # 采样数据集
 python cli.py sample --input data.json --output sampled.json --size 1000
 
+# 分层采样（按指定字段分组配额，字段留空会报错而不是退化成随机挑条）
+python cli.py sample --input data.json --output sampled.json --method stratified \
+    --size 1000 --stratify-key instruction
+
 # 分割数据集
 python cli.py split --input data.json --output-dir splits/
+
+# 分层分割（--stratify 委托 DataSplitter；--no-shuffle 只回排段内顺序）
+python cli.py split --input data.json --output-dir splits/ --stratify \
+    --stratify-key instruction --seed 7
 
 # 数据集统计
 python cli.py stats --input data.json
@@ -214,17 +222,26 @@ python cli.py stats --input data.json
 ### 验证和转换
 
 ```bash
-# 验证数据集格式
+# 验证数据集格式（判负 ⇒ 退出码 1；只有 warning 时不判负）
 python cli.py validate --input data.json --preset basic
 
 # 转换数据格式
 python cli.py convert --input data.json --output data.jsonl --format jsonl
 
+# 写成真正的 Excel 工作簿（可选依赖 pandas + openpyxl；输出名必须是 .xlsx）
+python cli.py convert --input data.json --output data.xlsx --format excel
+
+# 读回 Excel：读边认 .xlsx 与 .xls，全部列原样成行记录
+python cli.py convert --input data.xlsx --output back.json --format json
+# 老 .xls 只读不写：`--format xls` 由 argparse 直接拒，输出名写成 .xls 也在落盘前拒收
+# （写老格式要 xlwt，不在依赖表里；名字下装 JSON 文本比拒绝更坏）
+
 # 搜索数据集
 python cli.py search --input data.json --query "租房" --method contains
 
-# 验证配置文件
+# 验证配置文件（报 ERROR ⇒ 退出码 1；「写了没人读」的键只出声、不判负）
 python cli.py validate-config --config config.yaml
+# 同一批「没人读」不必先跑本命令：任何命令加载配置时就会打到 stderr（WARNING，不碰 stdout 也不改退出码）
 
 # 数据分析（JSON：洞察 + 质量/多样性/完整性分数 + 覆盖分析 + 去重报告）
 python cli.py analyze --input data.json
@@ -244,6 +261,8 @@ python cli.py export --input data.json --output sample.json --max-items 100 --sh
 
 # 质量报告
 python cli.py quality-report --input data.json --output quality_report.json
+# 想让它当 CI 门禁：加 --gate，「总体状态: 未通过」时退出码才变 1（不加则恒 0，报告照出）
+python cli.py quality-report --input data.json --threshold 0.8 --gate
 
 # 数据可视化（不传 --output 时生成图表；传 --output 时输出文本/JSON 报告）
 python cli.py visualize --input data.json --output-dir visualizations/
@@ -278,6 +297,23 @@ python cli.py version --action compare --version v1.0.0   # 缺省与当前版�
 python cli.py version --action load --version v1.0.0 --output loaded.json
 python cli.py version --action rollback --version v1.0.0
 ```
+
+> **CLI 退出码只有三种形状**（L55 起，`augmentor/cli/verdict.py` 是唯一出口）：
+> `0` = 判决通过，或这条命令压根不判负；`1` = 判决未通过，**或**命令抛异常被 `main()`
+> 翻译成 `错误: …` + `1` ⇒ 同样是 1，靠 **stderr 有没有「错误:」** 分「判负」与「崩溃」；
+> `2` = 参数用法错误（argparse）。校验形命令（`validate` / `validate-config` /
+> `dependency --action validate` / `health-gate`）判负即 `1`；报告形命令（`quality-report` /
+> `audit` / `check-leakage` / `doctor` / `auto-test` / `migrate`）**默认恒 0**，加 `--gate`
+> 才把各自的判决位（`overall_passed` / `ready` / `is_clean` / `all_required_present` /
+> 失败用例数 / 失败迁移条数）翻译成退出码。哪些命令接了这套口径由
+> `tests/integration/test_cli_verdict_wiring.py` 从 **parser 声明与 handler 源码双向推导**
+> 对账（声明 `--gate` 的命令 == handler 里真传 `enforce=args.gate` 的；源码出现
+> `verdict_exit(` == 子命令 help 里宣称「退出码」的），不抄清单。
+>
+> **编码不再参与退出码**（L56 起）：CLI 入口把 stdout / stderr 的错误处理器从 `strict` 换成
+> `replace`，产品侧文本读写显式带 `encoding=` ⇒ 用户数据里有 emoji（或任何当前 locale 编不出
+> 的字符）时命令照样跑完，那个字符落成一个 `?`、JSON 输出仍可 `json.loads`。上面那句
+> 「`1` = 崩溃」从此只对应真异常，不再对应编码事故；能编码的字符逐字节不变。
 
 > **3.0 破坏性变更（命令面）**
 >
@@ -369,7 +405,7 @@ python -m pytest tests/ --cov=augmentor --cov-report=html
 ## 注意事项
 
 - 模型 API 有调用频率限制和费用，请合理控制并发数
-- 日志输出到 `app.log`，仅 ERROR 级别日志打印到控制台
+- 日志默认不落文件、WARNING 档进控制台；想看进度在 `config.yaml` 写 `logging.level: INFO`，想落文件写 `logging.file`
 - 原始种子数据包含业务敏感信息，请勿对外泄露
 
 ## 文档

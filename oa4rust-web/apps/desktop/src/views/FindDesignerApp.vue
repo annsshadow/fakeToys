@@ -63,7 +63,7 @@ const { data } = useQuery({
 items.value = data.value ?? []
 function selectItem(item: Item) {
   selected.value = item
-  config.value = item.config ? '\n' + item.config : '{}'
+  config.value = item.config ? `\n${item.config}` : '{}'
 }
 function createNew() {
   const n: Item = { id: Date.now().toString(), name: '未命名', flag: '', config: '{}' }
@@ -71,7 +71,7 @@ function createNew() {
   selectItem(n)
 }
 function preview() {
-  toast.info('配置预览: ' + config.value)
+  toast.info(`配置预览: ${config.value}`)
 }
 function save() {
   const item = selected.value
@@ -88,7 +88,7 @@ function save() {
       query: config.value,
     })
     .then(() => toast.info('保存成功'))
-    .catch((e: any) => toast.error('保存失败: ' + (e?.message ?? '')))
+    .catch((e: any) => toast.error(`保存失败: ${e?.message ?? ''}`))
 }
 </script>
 <style scoped>

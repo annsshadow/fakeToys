@@ -140,6 +140,19 @@ class TestIdentifyUnderrepresented:
         assert "length:long" not in underrepresented
 
 
+    def test_never_flags_avg_length_as_length_bucket(self, sampler):
+        """avg_length 是均值（绝对值），不是占比桶；即便低于 threshold 也不得产出"""
+        items=[{"instruction": "", "output": "x"} for _ in range(40)]
+        # 全部空指令 ⇒ avg_length=0.0 < 0.1 阈值；改前会误把伪桶 length:avg_length 列进去
+        underrep=sampler.identify_underrepresented(items)
+        assert not any(x.startswith("length:avg_length") for x in underrep), underrep
+        # 只可能是真正的三个长度桶
+        assert all(
+            x in ("length:short", "length:medium", "length:long")
+            for x in underrep if x.startswith("length:")
+        )
+
+
 class TestRecommendSeeds:
     def test_empty_items_returns_guidance(self, sampler):
         result = sampler.recommend_seeds([])
@@ -206,16 +219,38 @@ class TestGenerateReport:
         assert report["recommended_seed_indices"] == []
 
 
+    def test_seed_index_uses_exact_object_not_first_equal_l138(self, sampler):
+        """recommended_seed_indices 取的是**被选中那个对象本身**的下标（L138，B208）
+
+        改前用 items.index(seed)（== 相等）：若 items 里有两个内容相等但对象不同的 dict，
+        会误报第一个的下标。改后用 id(seed) 建索引，精确到对象本身。这条钉死：即使存在
+        内容相等的兄弟，报的也是被真正选中的那条的下标，不是「内容相等里的第一个」。
+        """
+        import random
+        random.seed(0)
+        items = [{"instruction": "q" + str(random.randint(0, 5)), "output": "o"}
+                  for _ in range(40)]
+        result = sampler.recommend_seeds(items, top_k=3)
+        report = sampler.generate_report(items)
+        expected = [
+            next(i for i, it in enumerate(items) if it is seed)
+            for seed in result.recommended_seeds
+        ]
+        assert report["recommended_seed_indices"] == expected, (
+            "index 必须精确到被选中的对象本身，不能是内容相等里的第一个"
+        )
+
 class TestLoadModel:
     """_load_model 测试"""
 
     def test_load_model_idempotent(self):
-        """重复调用 _load_model 应保持一致状态"""
+        """重复调用 _load_model 保持一致状态（L126 起以 _use_sklearn 为判据：
+        原 _model 死属性已删，重复调用不再做对象恒等断言）"""
         sampler = ActiveSampler()
         sampler._load_model()
-        first_model = sampler._model
+        first_flag = sampler._use_sklearn
         sampler._load_model()
-        assert sampler._model is first_model
+        assert sampler._use_sklearn is first_flag
 
 
 class TestMissingInstructionField:
@@ -298,11 +333,16 @@ class TestSamplerExtended:
         assert result.coverage_analysis["total_items"] == 1
 
     def test_load_model_sklearn_available(self):
-        """加载模型（sklearn 缺失时 _model 为 None）"""
+        """_load_model 的模型状态（L126 起以 _use_sklearn/_tfidf 为准，_model 死属性已删）"""
         sampler = ActiveSampler()
         sampler._load_model()
-        # sklearn not installed, _model stays None
-        assert sampler._model is None
+        # sklearn 在场 ⇒ 走真实主题分析通道；缺失 ⇒ 降级通道仍可用
+        if sampler._use_sklearn:
+            assert sampler._tfidf is not None
+        else:
+            dist = sampler._analyze_topic_distribution(
+                [{"instruction": "租金问题"}, {"instruction": "押金问题"}])
+            assert "unique_words" in dist
 
     def test_analyze_topic_distribution_with_data(self):
         """有数据的主题分布"""

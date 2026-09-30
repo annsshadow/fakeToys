@@ -15,6 +15,7 @@ pub const API_BASE: &str = "/api/attendance_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
@@ -188,7 +189,6 @@ pub async fn list_statistics(pool: Extension<Pool>) -> Result<Json<ActionResult<
 }
 
 #[axum::debug_handler]
-#[allow(non_snake_case)]
 /// DELETE /api/attendance/assemble/control/rule/{id} — 删除考勤规则
 #[allow(non_snake_case)]
 pub async fn delete_control_rule(
@@ -1497,7 +1497,7 @@ pub async fn attendancedetail_mobile_filter_list_page_page_count_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let offset = (page - 1) * count;
+    let (count, offset) = shared::response::page_window(page, count);
     let rows = client
         .query(
             "SELECT id, person_id, date, status FROM x_attendance_detail ORDER BY date DESC LIMIT $2 OFFSET $1",
@@ -4218,7 +4218,7 @@ fn json_page(page: i64, size: i64) -> Result<(i64, i64), AppError> {
             "page must be >= 1 and size in 1..=500".to_string(),
         ));
     }
-    Ok((size, (page - 1) * size))
+    Ok((size, (page - 1).saturating_mul(size)))
 }
 
 /// 管理表按 id 删除：先 admin 门禁，再执行真实 DELETE。
@@ -7657,7 +7657,7 @@ pub async fn v2_group_rebuild_detail_group_date(
         ));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let group = client
         .query_opt(
@@ -7689,24 +7689,26 @@ pub async fn v2_group_rebuild_detail_group_date(
         return Ok(Json(ActionResult::error("group has no participants")));
     }
 
+    // 全员逐人「删旧明细+插新明细」重算须整体原子：中途失败不得留下部分人已重算、
+    // 其余人旧明细残留的不一致考勤集合。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     for person in &participate {
-        client
-            .execute(
-                "DELETE FROM x_attendance_detail WHERE person_id = $1 AND date = $2",
-                &[person, &date],
-            )
-            .await
-            .map_err(|_| AppError::Internal)?;
+        tx.execute(
+            "DELETE FROM x_attendance_detail WHERE person_id = $1 AND date = $2",
+            &[person, &date],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
         let new_id = uuid::Uuid::new_v4().to_string();
-        client
-            .execute(
-                "INSERT INTO x_attendance_detail (id, person_id, date, status, creator_person, create_time, update_time) \
+        tx.execute(
+            "INSERT INTO x_attendance_detail (id, person_id, date, status, creator_person, create_time, update_time) \
                  VALUES ($1, $2, $3, 'init', $4, NOW(), NOW())",
-                &[&new_id, person, &date, &session.person_unique],
-            )
-            .await
-            .map_err(|_| AppError::Internal)?;
+            &[&new_id, person, &date, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
     }
+    tx.commit().await.map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -8408,23 +8410,26 @@ pub async fn v2_record_delete_people_date(
     // 仅本人或管理员可删除打卡记录（IDOR）
     shared::middleware::require_owner(&pool, &session, &people).await?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let pattern = format!("{}%", date);
 
-    let n_record = client
+    // 同一人同一天的两表打卡记录逻辑上是同一实体，双删必须原子防半删态。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let n_record = tx
         .execute(
             "DELETE FROM x_attendance_record WHERE user_id = $1 AND check_in_time LIKE $2",
             &[&people, &pattern],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let n_checkin = client
+    let n_checkin = tx
         .execute(
             "DELETE FROM x_attendance_v2_checkin_record WHERE user_id = $1 AND record_date_string = $2",
             &[&people, &date],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -8469,7 +8474,9 @@ async fn import_checkin_rows(
     default_source: &str,
 ) -> Result<(i64, Vec<String>), AppError> {
     let admin = shared::middleware::is_admin(pool, &session.person_unique).await;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 整批导入包同一事务：中途失败不得留下部分行已导入的半导入态。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let mut inserted: i64 = 0;
     let mut ids: Vec<String> = Vec::with_capacity(rows.len());
 
@@ -8498,7 +8505,7 @@ async fn import_checkin_rows(
             ));
         }
 
-        let dup = client
+        let dup = tx
             .query_opt(
                 "SELECT id FROM x_attendance_v2_checkin_record \
                  WHERE user_id = $1 AND record_date_string = $2 AND check_in_type = $3 LIMIT 1",
@@ -8529,18 +8536,18 @@ async fn import_checkin_rows(
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
 
-        client
-            .execute(
-                "INSERT INTO x_attendance_v2_checkin_record (id, user_id, record_date_string, source_type, check_in_result, check_in_type, description, creator_person, create_time, update_time) \
-                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW(),NOW())",
-                &[&id, &user_id, &date_str, &source_type, &result, &check_in_type.to_string(), &description, &session.person_unique],
-            )
-            .await
-            .map_err(|_| AppError::Internal)?;
+        tx.execute(
+            "INSERT INTO x_attendance_v2_checkin_record (id, user_id, record_date_string, source_type, check_in_result, check_in_type, description, creator_person, create_time, update_time) \
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW(),NOW())",
+            &[&id, &user_id, &date_str, &source_type, &result, &check_in_type.to_string(), &description, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
         inserted += 1;
         ids.push(id);
     }
 
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok((inserted, ids))
 }
 
@@ -8775,6 +8782,7 @@ pub async fn v2_workplace_list_ids(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    const MAX_BATCH_IDS: usize = 200;
     let ids = payload
         .get("ids")
         .and_then(|v| v.as_array())
@@ -8784,9 +8792,16 @@ pub async fn v2_workplace_list_ids(
                 .map(|s| s.trim().to_string())
                 .filter(|s| !s.is_empty())
                 .collect::<Vec<_>>()
-                .join(",")
         })
         .unwrap_or_default();
+    // 批量上限：超大 id 列表会拖垮 string_to_array + ANY 查询（资源保护）。
+    if ids.len() > MAX_BATCH_IDS {
+        return Err(AppError::BadRequest(format!(
+            "batch size {} exceeds limit {MAX_BATCH_IDS}",
+            ids.len()
+        )));
+    }
+    let ids = ids.join(",");
     if ids.is_empty() {
         return Err(AppError::BadRequest("ids array is required".to_string()));
     }

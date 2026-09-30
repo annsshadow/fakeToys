@@ -16,11 +16,88 @@
         <button class="eb" @click="loadV2AppealRecord">📝 v2申诉/记录</button>
         <button class="eb" @click="loadAttBase">🗂️ 打卡/周期/员工</button>
         <button class="eb" @click="loadCoreLists">🧩 核心记录/规则</button>
+        <button class="eb" @click="loadAttTwin">🔁 孪生端点</button>
+        <button class="eb" @click="loadAttTwin2">🔁 孪生端点B</button>
         <button class="eb" @click="loadScheduleDetail">📅 排班设置明细</button>
         <button class="eb" @click="loadV2ConfigTpl">🧾 v2配置/模板/统计</button>
         <button class="eb" @click="loadStatisticShow">📈 统计展示筛选</button>
+        <button class="eb" @click="checkMyRestDate">🏖️ 我的休息日校验</button>
+        <button class="eb" @click="importLeave">📥 批量导入请假</button>
+        <button class="eb" @click="importAttV2Records('rows')">📥 导入打卡记录</button>
+        <button class="eb" @click="importAttV2Records('daily')">📥 按日导入打卡</button>
+        <button class="eb" @click="attAppealWrite('analyseRedo')">🔁 明细重算</button>
+        <button class="eb" @click="attAppealWrite('appealById')">📣 发起申诉</button>
+        <button class="eb" @click="attAppealWrite('sync')">🔄 同步申诉状态</button>
+        <button class="eb" @click="reciveMobileDetail">📱 移动端接收考勤</button>
+        <button class="eb" @click="myMobileDetail">📱 我的移动端明细</button>
+        <button class="eb" @click="reciveDetailById">✅ 按id接收明细</button>
+        <button class="eb" @click="createAttDetail">➕ 新建考勤明细</button>
+        <button class="eb" @click="toggleAttType">🔧 启用/禁用考勤类型</button>
         <button class="eb" @click="loadAppealDetailFilters">🧾 申诉/明细游标</button>
         <button class="eb" @click="loadHolidaySettingDetails">🏖️ 假期/设置明细</button>
+        <button class="eb" @click="loadAttendanceDetails">📋 考勤明细读</button>
+        <button class="eb" @click="loadStatisticAggregates">📊 统计聚合/平台</button>
+        <button class="eb" @click="loadPersonMonthStats">📈 人员月统计</button>
+        <button class="eb" @click="attV2Write('workplaceCreate')">建打卡点</button>
+        <button class="eb" @click="attV2Write('workplaceDelete')">删打卡点</button>
+        <button class="eb" @click="attV2Write('workplaceListIds')">按ID查打卡点</button>
+        <button class="eb" @click="attV2Write('scheduleCreate')">建排班</button>
+        <button class="eb" @click="attV2Write('scheduleListFilter')">排班筛选</button>
+        <button class="eb" @click="attV2Write('shiftUpdate')">改班次</button>
+        <button class="eb" @click="attV2Write('appealStart')">申诉起流程</button>
+        <button class="eb" @click="attV2Write('appealEnd')">申诉结流程</button>
+        <button class="eb" @click="attV2Write('detailStat')">明细统计筛选</button>
+        <button class="eb" @click="attV2Write('selfHolidayCreate')">建自定义假期</button>
+        <button class="eb" @click="attV2Write('selfHolidayDelete')">删自定义假期</button>
+        <button class="eb" @click="attV2Write('holidaySimpleCreate')">建简易假期</button>
+        <button class="eb" @click="attV2Write('holidaySimpleDelete')">删简易假期</button>
+        <button class="eb" @click="attStatFilters">统计/明细筛选读</button>
+        <button class="eb" @click="attCoreEntity('recordCreate')">建考勤记录</button>
+        <button class="eb" @click="attCoreEntity('recordUpdate')">改考勤记录</button>
+        <button class="eb" @click="attCoreEntity('recordDelete')">删考勤记录</button>
+        <button class="eb" @click="attCoreEntity('ruleCreate')">建考勤规则</button>
+        <button class="eb" @click="attCoreEntity('ruleUpdate')">改考勤规则</button>
+        <button class="eb" @click="attCoreEntity('ruleDelete')">删考勤规则</button>
+        <button class="eb" @click="attWrite3('adminCreate')">建管理员</button>
+        <button class="eb" @click="attWrite3('adminDelete')">删管理员</button>
+        <button class="eb" @click="attWrite3('empCreate')">建员工配置</button>
+        <button class="eb" @click="attWrite3('empDelete')">删员工配置</button>
+        <button class="eb" @click="attWrite3('schedCreate')">建排班设置</button>
+        <button class="eb" @click="attWrite3('schedDelete')">删排班设置</button>
+        <button class="eb" @click="attWrite3('workdayCreate')">建工作日配置</button>
+        <button class="eb" @click="attWrite3('workdayDelete')">删工作日配置</button>
+        <button class="eb" @click="attWrite3('workdayFilter')">工作日筛选</button>
+        <button class="eb" @click="attWrite3('reqlogCreate')">建统计日志</button>
+        <button class="eb" @click="attWrite3('reqlogDelete')">删统计日志</button>
+        <button class="eb" @click="attWrite3('cycleDelete')">删统计周期</button>
+        <button class="eb" @click="attWrite3('importDelete')">删导入文件</button>
+        <button class="eb" @click="attWrite3('appealAudit')">申诉审核</button>
+        <button class="eb" @click="attWrite3('appealCheck')">申诉校验</button>
+        <button class="eb" @click="attWrite3('appealDo')">申诉处理</button>
+        <button class="eb" @click="attWrite3('appealArchive')">申诉归档</button>
+        <button class="eb" @click="attWrite3('appealDelete')">删申诉</button>
+        <button class="eb" @click="attWrite3('detailAnalyse')">明细分析</button>
+        <button class="eb" @click="attWrite3('detailAnalyseId')">按ID分析</button>
+        <button class="eb" @click="attWrite3('detailArchive')">明细归档</button>
+        <button class="eb" @click="attWrite3('ruleToggle')">规则开关</button>
+        <button class="eb" @click="attWrite3('statDo')">执行统计</button>
+        <button class="eb" @click="attWrite3('v2Config')">v2配置</button>
+        <button class="eb" @click="attWrite3('v2ConfigPerson')">v2人员配置</button>
+        <button class="eb" @click="attWrite3('v2DetailList')">v2明细列表</button>
+        <button class="eb" @click="attWrite3('v2AppealMgr')">v2申诉管理</button>
+        <button class="eb" @click="attWrite3('uuid')">UUID</button>
+        <button class="eb" @click="attV2Ops('appealMgrStatus')">v2申诉管理态</button>
+        <button class="eb" @click="attV2Ops('appealResetStatus')">v2申诉重置态</button>
+        <button class="eb" @click="attV2Ops('detailRebuild')">v2按人重建明细</button>
+        <button class="eb" @click="attV2Ops('groupRebuild')">v2群组重建明细</button>
+        <button class="eb" @click="attV2Ops('groupRefresh')">v2群组刷新参与</button>
+        <button class="eb" @click="attV2Ops('recordDelete')">v2删记录(按人日)</button>
+        <button class="eb" @click="attV2Ops('analyse')">明细分析(日期)</button>
+        <button class="eb" @click="attV2Ops('checkCycle')">周期核对</button>
+        <button class="eb" @click="attV2Ops('filterNext')">明细过滤前翻</button>
+        <button class="eb" @click="attV2Ops('appealArchive')">申诉归档(工作流)</button>
+        <button class="eb" @click="attV2Ops('mobileDelete')">删移动明细</button>
+        <span v-if="attStatText" class="app-meta">{{ attStatText }}</span>
       </div>
       <div v-if="attOverviewText" class="att-note">{{ attOverviewText }}</div>
     </div>
@@ -66,6 +143,12 @@
           <div v-if="a.status==='pending'" class="aa">
             <button class="ba" @click="audit(a,'approved')">通过</button>
             <button class="br" @click="audit(a,'rejected')">驳回</button>
+          </div>
+          <div class="aa">
+            <button class="ba" @click="auditAppealV2(a,'approved')">审核</button>
+            <button class="ba" @click="checkAppeal(a)">检查</button>
+            <button class="ba" @click="updateAppealStatus(a,'processing')">改状态</button>
+            <button class="br" @click="archiveAppeal(a)">归档</button>
           </div>
         </div>
       </div>
@@ -183,7 +266,9 @@ const { data } = useQuery({
   queryFn: () =>
     // 裸 attendancedetail 仅注册 POST；列表真实端点为 attendancedetail/filter/list。
     api
-      .get(`/api/attendance/assemble/control/attendancedetail/filter/list?month=${month.value}&page=${page.value}&size=20`)
+      .get(
+        `/api/attendance/assemble/control/attendancedetail/filter/list?month=${month.value}&page=${page.value}&size=20`,
+      )
       .then((r: any) => {
         records.value = r.data?.list ?? []
         totalPages.value = Math.ceil((r.data?.total ?? 1) / 20)
@@ -227,6 +312,60 @@ const am = useMutation({
 function audit(a: A, action: string) {
   am.mutate({ id: a.id, status: action })
 }
+// rev315：考勤申诉管理真实写端点（用户触发）——审核/检查/更新状态/归档 + 启用类型；请求体经 handler 源码核实
+async function auditAppealV2(a: A, auditStatus: string) {
+  try {
+    // POST attendanceappealInfo/audit → UPDATE 审核状态 {id, auditStatus}
+    await api.post('/api/attendance/assemble/control/attendanceappealInfo/audit', { id: a.id, auditStatus })
+    toast.success('已审核申诉')
+  } catch (e: any) {
+    toast.error(`审核申诉失败: ${e?.message ?? ''}`)
+  }
+}
+async function checkAppeal(a: A) {
+  try {
+    // POST attendanceappealInfo/check → UPDATE {id, checked}
+    await api.post('/api/attendance/assemble/control/attendanceappealInfo/check', { id: a.id, checked: true })
+    toast.success('已标记检查')
+  } catch (e: any) {
+    toast.error(`检查申诉失败: ${e?.message ?? ''}`)
+  }
+}
+async function updateAppealStatus(a: A, status: string) {
+  try {
+    // POST attendanceappealInfo/appeal/{id} → UPDATE {status}
+    await api.post(`/api/attendance/assemble/control/attendanceappealInfo/appeal/${encodeURIComponent(a.id)}`, {
+      status,
+    })
+    toast.success('已更新申诉状态')
+  } catch (e: any) {
+    toast.error(`更新申诉状态失败: ${e?.message ?? ''}`)
+  }
+}
+async function archiveAppeal(a: A) {
+  if (!(await confirmMsg('确定归档该申诉？'))) return
+  try {
+    // POST attendanceappealInfo/archive/{id} → UPDATE 归档 {id}
+    await api.post(`/api/attendance/assemble/control/attendanceappealInfo/archive/${encodeURIComponent(a.id)}`, {
+      id: a.id,
+    })
+    toast.success('已归档申诉')
+  } catch (e: any) {
+    toast.error(`归档申诉失败: ${e?.message ?? ''}`)
+  }
+}
+async function toggleAttType() {
+  const code = prompt('考勤类型编码:', '')
+  if (!code) return
+  const enabled = await confirmMsg(`「${code}」确定=启用，取消=禁用`)
+  try {
+    // POST attendancesetting/enable/type → UPDATE {code, enabled}
+    await api.post('/api/attendance/assemble/control/attendancesetting/enable/type', { code, enabled })
+    toast.success('已更新考勤类型启用状态')
+  } catch (e: any) {
+    toast.error(`更新类型失败: ${e?.message ?? ''}`)
+  }
+}
 const exporting = ref(false)
 async function exportData() {
   if (exporting.value) return
@@ -244,14 +383,9 @@ async function exportData() {
     })
     const rows: Array<{ status?: string; count?: number }> = r.data?.data ?? []
     const label: Record<string, string> = { '1': '正常', '2': '迟到' }
-    const csv =
-      '\uFEFF状态,次数\n' + rows.map((x) => `${label[x.status ?? ''] ?? x.status ?? '未知'},${x.count ?? 0}`).join('\n')
+    const csv = `\uFEFF状态,次数\n${rows.map((x) => `${label[x.status ?? ''] ?? x.status ?? '未知'},${x.count ?? 0}`).join('\n')}`
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = `attendance-stat-${ym}.csv`
-    a.click()
-    URL.revokeObjectURL(a.href)
+    downloadBlob(blob, `attendance-stat-${ym}.csv`)
     toast.success(`已导出 ${rows.length} 条统计`)
   } catch {
     toast.error('考勤导出失败，请稍后重试')
@@ -260,6 +394,7 @@ async function exportData() {
   }
 }
 const attOverviewText = ref('')
+const attStatText = ref('')
 async function loadV2Meta() {
   try {
     // 消费 attendance v2 三条真实路由：全局配置 / 我的控件 / 请假模板
@@ -268,33 +403,53 @@ async function loadV2Meta() {
       api.get('/api/attendance/assemble/control/v2/my/controls'),
       api.get('/api/attendance/assemble/control/v2/leave/template'),
     ])
-    const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     attOverviewText.value = `v2配置 ${cnt(config)} / 我的控件 ${cnt(controls)} / 请假模板 ${cnt(leave)}`
   } catch (e: any) {
-    toast.error('加载 v2 配置失败: ' + (e?.message ?? ''))
+    toast.error(`加载 v2 配置失败: ${e?.message ?? ''}`)
   }
 }
 // v2 排班/群组明细族 3 条真实 distinct 路由（表各异）：群组排班配置 groupschedule/config/group/{groupId}（x_attendance_v2_group_schedule_config）
 // + 群组月排班 groupschedule/list/group/{groupId}/month/{month}（x_attendance_v2_group_schedule）+ 按人日期查群组 group/person/{person}/date/{date}（x_attendance_v2_group）
 async function loadV2Schedule() {
   try {
-    const groupResp: any = await api.post('/api/attendance/assemble/control/v2/group/list/1/size/50', {}).catch(() => null)
-    const groups = (Array.isArray(groupResp?.data) ? groupResp.data : (groupResp?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const groupResp: any = await api
+      .post('/api/attendance/assemble/control/v2/group/list/1/size/50', {})
+      .catch(() => null)
+    const groups = (Array.isArray(groupResp?.data) ? groupResp.data : (groupResp?.data?.data ?? [])) as Array<
+      Record<string, unknown>
+    >
     const gid = groups[0] ? String(groups[0].id ?? '') : ''
     const person = session.state.user?.unique ?? ''
     const monthStr = month.value
     const today = new Date().toISOString().slice(0, 10)
     const [cfg, list, byPerson] = await Promise.all([
-      gid ? api.get(`/api/attendance/assemble/control/v2/groupschedule/config/group/${encodeURIComponent(gid)}`).catch(() => null) : Promise.resolve(null),
-      gid ? api.get(`/api/attendance/assemble/control/v2/groupschedule/list/group/${encodeURIComponent(gid)}/month/${encodeURIComponent(monthStr)}`).catch(() => null) : Promise.resolve(null),
-      person ? api.get(`/api/attendance/assemble/control/v2/group/person/${encodeURIComponent(person)}/date/${encodeURIComponent(today)}`).catch(() => null) : Promise.resolve(null),
+      gid
+        ? api
+            .get(`/api/attendance/assemble/control/v2/groupschedule/config/group/${encodeURIComponent(gid)}`)
+            .catch(() => null)
+        : Promise.resolve(null),
+      gid
+        ? api
+            .get(
+              `/api/attendance/assemble/control/v2/groupschedule/list/group/${encodeURIComponent(gid)}/month/${encodeURIComponent(monthStr)}`,
+            )
+            .catch(() => null)
+        : Promise.resolve(null),
+      person
+        ? api
+            .get(
+              `/api/attendance/assemble/control/v2/group/person/${encodeURIComponent(person)}/date/${encodeURIComponent(today)}`,
+            )
+            .catch(() => null)
+        : Promise.resolve(null),
     ])
     const hasCfg = (cfg as any)?.data ? '有' : '无'
     const lN = Array.isArray((list as any)?.data) ? (list as any).data.length : 0
     const pN = Array.isArray((byPerson as any)?.data) ? (byPerson as any).data.length : 0
     attOverviewText.value = `群组 ${groups.length} · 排班配置 ${hasCfg} · 月排班 ${lN} · 我所属群组 ${pN}`
   } catch (e: any) {
-    toast.error('加载 v2 排班失败: ' + (e?.message ?? ''))
+    toast.error(`加载 v2 排班失败: ${e?.message ?? ''}`)
   }
 }
 // v2 申诉/记录明细族 4 条真实 distinct 路由（x_attendance_record / x_attendance_v2_appeal_info）：记录分页 v2/record/list/{page}/size/{size}（POST）
@@ -307,33 +462,43 @@ async function loadV2AppealRecord() {
       api.post(`/api/attendance/assemble/control/v2/record/list/${page}/size/${size}`).catch(() => null),
       api.post(`/api/attendance/assemble/control/v2/appeal/list/${page}/size/${size}`).catch(() => null),
     ])
-    const recs = (Array.isArray(recList?.data) ? recList.data : (recList?.data?.data ?? [])) as Array<Record<string, unknown>>
-    const appeals2 = (Array.isArray(appealList?.data) ? appealList.data : (appealList?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const recs = (Array.isArray(recList?.data) ? recList.data : (recList?.data?.data ?? [])) as Array<
+      Record<string, unknown>
+    >
+    const appeals2 = (Array.isArray(appealList?.data) ? appealList.data : (appealList?.data?.data ?? [])) as Array<
+      Record<string, unknown>
+    >
     const rid = recs[0] ? String(recs[0].id ?? '') : ''
     const aid = appeals2[0] ? String(appeals2[0].id ?? '') : ''
     const [recDetail, appealDetail] = await Promise.all([
-      rid ? api.get(`/api/attendance/assemble/control/v2/record/${encodeURIComponent(rid)}`).catch(() => null) : Promise.resolve(null),
-      aid ? api.get(`/api/attendance/assemble/control/v2/appeal/${encodeURIComponent(aid)}`).catch(() => null) : Promise.resolve(null),
+      rid
+        ? api.get(`/api/attendance/assemble/control/v2/record/${encodeURIComponent(rid)}`).catch(() => null)
+        : Promise.resolve(null),
+      aid
+        ? api.get(`/api/attendance/assemble/control/v2/appeal/${encodeURIComponent(aid)}`).catch(() => null)
+        : Promise.resolve(null),
     ])
     const rStatus = (recDetail as any)?.data?.status ?? (rid || '—')
     const aStatus = (appealDetail as any)?.data?.status ?? (aid || '—')
     attOverviewText.value = `打卡记录 ${recs.length}（首状态 ${rStatus}）· 申诉 ${appeals2.length}（首状态 ${aStatus}）`
   } catch (e: any) {
-    toast.error('加载 v2 申诉/记录失败: ' + (e?.message ?? ''))
+    toast.error(`加载 v2 申诉/记录失败: ${e?.message ?? ''}`)
   }
 }
 async function loadAttOrg() {
   try {
-    // GET attendancedetail/filter/list/topUnit + filter/list/unit + dingding/sync/list
-    const [topUnit, unit, dingding] = await Promise.all([
+    // GET attendancedetail/filter/list/topUnit + filter/list/unit + dingding/sync/list + qywx/sync/list
+    const [topUnit, unit, dingding, qywx] = await Promise.all([
       api.get('/api/attendance/assemble/control/attendancedetail/filter/list/topUnit'),
       api.get('/api/attendance/assemble/control/attendancedetail/filter/list/unit'),
       api.get('/api/attendance/assemble/control/dingding/sync/list'),
+      // rev439：企业微信同步记录（qywx_sync_list 仅取 pool 查 x_attendance_sync_record type='qywx'，本地读非外部）
+      api.get('/api/attendance/assemble/control/qywx/sync/list'),
     ])
     const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
-    attOverviewText.value = `顶级单位 ${cnt(topUnit)} / 单位 ${cnt(unit)} / 钉钉同步 ${cnt(dingding)}`
+    attOverviewText.value = `顶级单位 ${cnt(topUnit)} / 单位 ${cnt(unit)} / 钉钉同步 ${cnt(dingding)} / 企微同步 ${cnt(qywx)}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadAttOverview() {
@@ -347,7 +512,7 @@ async function loadAttOverview() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     attOverviewText.value = `按人 ${n(byUser)} / 未签到 ${n(nonesign)} / 启用类型 ${n(enableType)}`
   } catch (e: any) {
-    toast.error('加载考勤汇总失败: ' + (e?.message ?? ''))
+    toast.error(`加载考勤汇总失败: ${e?.message ?? ''}`)
   }
 }
 // 消费 attendance 核心 crate 真实路由（打卡记录/统计周期/员工配置——独立表，非 v2 assemble/control 镜像）
@@ -361,11 +526,315 @@ async function loadAttBase() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     attOverviewText.value = `打卡记录 ${n(records)} / 统计周期 ${n(cycles)} / 员工配置 ${n(employees)}`
   } catch (e: any) {
-    toast.error('加载考勤基础数据失败: ' + (e?.message ?? ''))
+    toast.error(`加载考勤基础数据失败: ${e?.message ?? ''}`)
   }
 }
-// 考勤核心记录/规则（rev184，4 条真实 distinct 无参列表）：admin/list/all（list_admins x_attendance_admin）
-// + rule/list（list_schedule_rules x_attendance_rule）+ core/entity/record/list（SeaORM attendance_record）
+// rev330：考勤 v2 打卡点/排班/申诉流程/班次/自定义假期 真实写端点（用户触发，shape 已核 attendance_assemble_control handler；全字面量路径）
+async function attV2Write(op: string) {
+  try {
+    if (op === 'workplaceCreate') {
+      const name = prompt('打卡点名称:', '') || ''
+      const address = prompt('地址:', '') || ''
+      await api.post('/api/attendance/assemble/control/v2/workplace', { name, address })
+    } else if (op === 'workplaceDelete') {
+      const id = prompt('要删除的打卡点 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该打卡点？'))) return
+      await api.delete(`/api/attendance/assemble/control/v2/workplace/${encodeURIComponent(id)}`)
+    } else if (op === 'workplaceListIds') {
+      const ids = (prompt('打卡点 ID（逗号分隔）:', '') || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+      await api.post('/api/attendance/assemble/control/v2/workplace/list/ids', { ids })
+    } else if (op === 'scheduleCreate') {
+      const name = prompt('排班名称:', '') || ''
+      await api.post('/api/attendance/assemble/control/v2/groupschedule', { name })
+    } else if (op === 'scheduleListFilter') {
+      await api.post('/api/attendance/assemble/control/v2/groupschedule/list/filter', {})
+    } else if (op === 'shiftUpdate') {
+      const id = prompt('班次 ID:', '') || ''
+      const shiftName = prompt('班次名称:', '') || ''
+      await api.post('/api/attendance/assemble/control/v2/shift/update', { id, shiftName })
+    } else if (op === 'appealStart') {
+      const id = prompt('申诉 ID:', '') || ''
+      await api.post(`/api/attendance/assemble/control/v2/appeal/${encodeURIComponent(id)}/start/process`, {})
+    } else if (op === 'appealEnd') {
+      const id = prompt('申诉 ID:', '') || ''
+      await api.post(`/api/attendance/assemble/control/v2/appeal/${encodeURIComponent(id)}/end/process`, {})
+    } else if (op === 'detailStat') {
+      await api.post('/api/attendance/assemble/control/v2/detail/statistic/filter', {})
+    } else if (op === 'selfHolidayCreate') {
+      const name = prompt('自定义假期名称:', '') || ''
+      await api.post('/api/attendance/assemble/control/attendanceselfholiday', { name })
+    } else if (op === 'selfHolidayDelete') {
+      const id = prompt('要删除的自定义假期 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该自定义假期？'))) return
+      await api.delete(`/api/attendance/assemble/control/attendanceselfholiday/${encodeURIComponent(id)}`)
+    } else if (op === 'holidaySimpleCreate') {
+      const name = prompt('简易假期名称:', '') || ''
+      await api.post('/api/attendance/assemble/control/selfholidaysimple', { name })
+    } else {
+      const docId = prompt('要删除的简易假期 docId:', '') || ''
+      if (!(await confirmMsg('确定删除该简易假期？'))) return
+      await api.delete(`/api/attendance/assemble/control/selfholidaysimple/docId/${encodeURIComponent(docId)}`)
+    }
+    toast.success('考勤 v2 操作已提交')
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev355：考勤 统计展示(人月/顶单位日月/单位日月)游标翻页 + 明细筛选(顶单位/单位/用户/未签)+ 申诉/自定义假期筛选 真实分页读（PUT 过滤读，用户触发，全字面量路径）
+async function attStatFilters(): Promise<void> {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '(0)'
+  const cnt = '20'
+  try {
+    const r = await Promise.all([
+      s(
+        api.put(
+          `/api/attendance/assemble/control/statisticshow/filter/personMonth/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/statisticshow/filter/personMonth/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/statisticshow/filter/unitDay/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/statisticshow/filter/unitDay/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/statisticshow/filter/unitMonth/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/statisticshow/filter/unitMonth/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(api.put('/api/attendance/assemble/control/attendancedetail/filter/list/topUnit', {})),
+      s(api.put('/api/attendance/assemble/control/attendancedetail/filter/list/unit', {})),
+      s(api.put('/api/attendance/assemble/control/attendancedetail/filter/list/user', {})),
+      s(api.put('/api/attendance/assemble/control/attendancedetail/list/persons/nonesign', {})),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/attendanceappealInfo/filter/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/attendanceappealInfo/manager/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/attendanceselfholiday/filter/list/${encodeURIComponent(id)}/next/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+      s(
+        api.put(
+          `/api/attendance/assemble/control/attendanceselfholiday/filter/list/${encodeURIComponent(id)}/prev/${encodeURIComponent(cnt)}`,
+          {},
+        ),
+      ),
+    ])
+    const hit = r.filter((x) => x !== null).length
+    attStatText.value = `统计/明细/申诉筛选读 命中 ${hit}/${r.length}`
+    toast.success('考勤统计筛选已加载')
+  } catch (e: any) {
+    toast.error(`加载失败: ${e?.message ?? ''}`)
+  }
+}
+// rev355：考勤核心实体 记录/规则 建改删 真实写（shape 已核：record{userId,checkInTime,status}、rule{name,startTime,endTime}；删走 GET by id）
+async function attCoreEntity(op: string) {
+  try {
+    if (op === 'recordCreate') {
+      const userId = prompt('人员 ID:', '') || ''
+      const checkInTime = prompt('打卡时间:', '') || ''
+      await api.post('/api/attendance/core/entity/record/create', { userId, checkInTime, status: 'normal' })
+    } else if (op === 'recordUpdate') {
+      const id = prompt('记录 ID:', '') || ''
+      await api.post(`/api/attendance/core/entity/record/${encodeURIComponent(id)}/update`, {})
+    } else if (op === 'recordDelete') {
+      const id = prompt('要删除的记录 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该考勤记录？'))) return
+      await api.get(`/api/attendance/core/entity/record/${encodeURIComponent(id)}/delete`)
+    } else if (op === 'ruleCreate') {
+      const name = prompt('规则名称:', '') || ''
+      const startTime = prompt('开始时间:', '') || ''
+      const endTime = prompt('结束时间:', '') || ''
+      await api.post('/api/attendance/core/entity/rule/create', { name, startTime, endTime })
+    } else if (op === 'ruleUpdate') {
+      const id = prompt('规则 ID:', '') || ''
+      await api.post(`/api/attendance/core/entity/rule/${encodeURIComponent(id)}/update`, {})
+    } else {
+      const id = prompt('要删除的规则 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该考勤规则？'))) return
+      await api.get(`/api/attendance/core/entity/rule/${encodeURIComponent(id)}/delete`)
+    }
+    toast.success('考勤核心实体操作已提交')
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev368：考勤 管理员/员工/排班/工作日/统计要求日志/统计周期/导入文件 建删 + 申诉审核/校验/归档 + 明细分析/归档 + 规则开关/统计执行/v2配置 真实写读（避 POST/PUT 方法孪生择一；避 dingding/qywx 外部同步）
+async function attWrite3(op: string) {
+  try {
+    if (op === 'adminCreate') await api.post('/api/attendance/assemble/control/attendanceadmin', {})
+    else if (op === 'adminDelete') {
+      const id = prompt('管理员 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该考勤管理员？'))) return
+      await api.delete(`/api/attendance/assemble/control/attendanceadmin/${encodeURIComponent(id)}`)
+    } else if (op === 'empCreate') await api.post('/api/attendance/assemble/control/attendanceemployeeconfig', {})
+    else if (op === 'empDelete') {
+      const id = prompt('员工配置 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该员工配置？'))) return
+      await api.delete(`/api/attendance/assemble/control/attendanceemployeeconfig/${encodeURIComponent(id)}`)
+    } else if (op === 'schedCreate') await api.post('/api/attendance/assemble/control/attendanceschedulesetting', {})
+    else if (op === 'schedDelete') {
+      const id = prompt('排班设置 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该排班设置？'))) return
+      await api.delete(`/api/attendance/assemble/control/attendanceschedulesetting/${encodeURIComponent(id)}`)
+    } else if (op === 'workdayCreate') await api.post('/api/attendance/assemble/control/attendanceworkdayconfig', {})
+    else if (op === 'workdayDelete') {
+      const id = prompt('工作日配置 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该工作日配置？'))) return
+      await api.delete(`/api/attendance/assemble/control/attendanceworkdayconfig/${encodeURIComponent(id)}`)
+    } else if (op === 'workdayFilter')
+      await api.post('/api/attendance/assemble/control/attendanceworkdayconfig/filter', {})
+    else if (op === 'reqlogCreate') await api.post('/api/attendance/assemble/control/attendancestatisticrequirelog', {})
+    else if (op === 'reqlogDelete') {
+      const id = prompt('统计要求日志 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该统计要求日志？'))) return
+      await api.delete(`/api/attendance/assemble/control/attendancestatisticrequirelog/${encodeURIComponent(id)}`)
+    } else if (op === 'cycleDelete') {
+      const id = prompt('统计周期 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该统计周期？'))) return
+      await api.delete(`/api/attendance/assemble/control/attendancestatisticalcycle/${encodeURIComponent(id)}`)
+    } else if (op === 'importDelete') {
+      const id = prompt('导入文件 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该导入文件？'))) return
+      await api.delete(`/api/attendance/assemble/control/attendanceimportfileinfo/${encodeURIComponent(id)}`)
+    } else if (op === 'appealAudit') await api.put('/api/attendance/assemble/control/attendanceappealInfo/audit', {})
+    else if (op === 'appealCheck') await api.put('/api/attendance/assemble/control/attendanceappealInfo/check', {})
+    else if (op === 'appealDo') {
+      const id = prompt('申诉 ID:', '') || ''
+      await api.put(`/api/attendance/assemble/control/attendanceappealInfo/appeal/${encodeURIComponent(id)}`, {})
+    } else if (op === 'appealArchive') {
+      const id = prompt('申诉 ID:', '') || ''
+      await api.get(`/api/attendance/assemble/control/attendanceappealInfo/archive/${encodeURIComponent(id)}`)
+    } else if (op === 'appealDelete') {
+      const id = prompt('申诉 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该申诉？'))) return
+      await api.delete(`/api/attendance/assemble/control/attendanceappealInfo/${encodeURIComponent(id)}`)
+    } else if (op === 'detailAnalyse') await api.post('/api/attendance/assemble/control/attendancedetail/analyse', {})
+    else if (op === 'detailAnalyseId') {
+      const id = prompt('明细 ID:', '') || ''
+      await api.get(`/api/attendance/assemble/control/attendancedetail/analyse/id/${encodeURIComponent(id)}`)
+    } else if (op === 'detailArchive') {
+      const id = prompt('明细 ID:', '') || ''
+      await api.get(`/api/attendance/assemble/control/attendancedetail/archive/${encodeURIComponent(id)}`)
+    } else if (op === 'ruleToggle') {
+      const id = prompt('规则 ID:', '') || ''
+      await api.post(`/api/attendance/assemble/control/rule/${encodeURIComponent(id)}/toggle`, {})
+    } else if (op === 'statDo') await api.post('/api/attendance/assemble/control/statistic/do', {})
+    else if (op === 'v2Config') await api.post('/api/attendance/assemble/control/v2/config', {})
+    else if (op === 'v2ConfigPerson') await api.post('/api/attendance/assemble/control/v2/config/person', {})
+    else if (op === 'v2DetailList') await api.post('/api/attendance/assemble/control/v2/detail/list/1/size/20', {})
+    else if (op === 'v2AppealMgr')
+      await api.post('/api/attendance/assemble/control/v2/appeal/list/manager/1/size/20', {})
+    else await api.get('/api/attendance/assemble/control/uuid/random')
+    toast.success('考勤操作已提交')
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev383：考勤 v2 申诉管理/重置状态、明细/群组按人重建、群组刷新参与、按人删记录、明细分析(GET)/周期核对(GET)/过滤游标(GET)、申诉归档、规则开关、移动明细删 真实路由（Path-only 读 + 已核体写，用户触发）
+async function attV2Ops(op: string) {
+  try {
+    const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
+    if (op === 'appealMgrStatus') await api.get(`/api/attendance/assemble/control/v2/appeal/${id()}/manager/status`)
+    else if (op === 'appealResetStatus')
+      await api.get(`/api/attendance/assemble/control/v2/appeal/${id()}/reset/status`)
+    else if (op === 'detailRebuild') {
+      const p = encodeURIComponent(prompt('人员:', '') || '')
+      const d = encodeURIComponent(prompt('日期(YYYY-MM-DD):', '') || '')
+      await api.get(`/api/attendance/assemble/control/v2/detail/rebuild/person/${p}/date/${d}`)
+    } else if (op === 'groupRebuild') {
+      const g = encodeURIComponent(prompt('群组 ID:', '') || '')
+      const d = encodeURIComponent(prompt('日期(YYYY-MM-DD):', '') || '')
+      await api.get(`/api/attendance/assemble/control/v2/group/rebuild/detail/group/${g}/date/${d}`)
+    } else if (op === 'groupRefresh')
+      await api.get(`/api/attendance/assemble/control/v2/group/${id()}/refresh/participate`)
+    else if (op === 'recordDelete') {
+      const p = encodeURIComponent(prompt('人员:', '') || '')
+      const d = encodeURIComponent(prompt('日期(YYYY-MM-DD):', '') || '')
+      if (!(await confirmMsg('确定删除该人当日记录？'))) return
+      await api.get(`/api/attendance/assemble/control/v2/record/delete/people/${p}/date/${d}`)
+    } else if (op === 'analyse') {
+      const sd = encodeURIComponent(prompt('开始日期(YYYY-MM-DD):', '') || '')
+      const ed = encodeURIComponent(prompt('结束日期(YYYY-MM-DD):', '') || '')
+      await api.get(`/api/attendance/assemble/control/attendancedetail/analyse/${sd}/${ed}`)
+    } else if (op === 'checkCycle') {
+      const y = encodeURIComponent(prompt('周期年:', '') || '')
+      const mo = encodeURIComponent(prompt('周期月:', '') || '')
+      await api.get(`/api/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/${y}/${mo}`)
+    } else if (op === 'filterNext') {
+      const cnt = 20
+      await api.get(`/api/attendance/assemble/control/attendancedetail/filter/list/${id()}/next/${cnt}`)
+    } else if (op === 'appealArchive') {
+      if (!(await confirmMsg('确定归档该申诉？'))) return
+      await api.post(`/api/attendance/appeal/archive/${id()}`, {})
+    } else {
+      if (!(await confirmMsg('确定删除该移动明细？'))) return
+      await api.delete(`/api/attendance/assemble/control/attendancedetail/mobile/${id()}`)
+    }
+    toast.success('考勤操作已提交')
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
 // + core/entity/rule/list（SeaORM attendance_rule）。前二属 attendance crate、后二属 attendance_core_entity crate。
 async function loadCoreLists() {
   try {
@@ -378,14 +847,16 @@ async function loadCoreLists() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     attOverviewText.value = `管理员 ${n(admins)} / 排班规则 ${n(rules)} / 核心记录 ${n(coreRecords)} / 核心规则 ${n(coreRules)}`
   } catch (e: any) {
-    toast.error('加载考勤核心记录/规则失败: ' + (e?.message ?? ''))
+    toast.error(`加载考勤核心记录/规则失败: ${e?.message ?? ''}`)
   }
 }
 // 排班设置明细（rev185，3 条真实 distinct，x_attendance_schedule_setting）：schedulesetting/list/all 取首 id/unit
 // → attendanceschedulesetting/{id}（WHERE id）+ list/unit/{name}（WHERE unit_id=$1）+ list/topUnit/{name}（WHERE unit_id IS NULL）。
 async function loadScheduleDetail() {
   try {
-    const listRes: any = await api.get('/api/attendance/assemble/control/attendanceschedulesetting/list/all').catch(() => null)
+    const listRes: any = await api
+      .get('/api/attendance/assemble/control/attendanceschedulesetting/list/all')
+      .catch(() => null)
     const rows = Array.isArray(listRes?.data) ? listRes.data : []
     const first = rows[0] ?? null
     const sid = String(first?.id ?? '0')
@@ -394,13 +865,15 @@ async function loadScheduleDetail() {
     const [detail, byUnit, byTop] = await Promise.all([
       settle(api.get(`/api/attendance/assemble/control/attendanceschedulesetting/${sid}`)),
       settle(api.get(`/api/attendance/assemble/control/attendanceschedulesetting/list/unit/${encodeURIComponent(nm)}`)),
-      settle(api.get(`/api/attendance/assemble/control/attendanceschedulesetting/list/topUnit/${encodeURIComponent(nm)}`)),
+      settle(
+        api.get(`/api/attendance/assemble/control/attendanceschedulesetting/list/topUnit/${encodeURIComponent(nm)}`),
+      ),
     ])
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     const dName = (detail as any)?.data?.name ?? (rows.length ? sid : '—')
     attOverviewText.value = `排班设置 ${rows.length}（首「${dName}」）· 按单位 ${n(byUnit)} · 顶级单位 ${n(byTop)}`
   } catch (e: any) {
-    toast.error('加载排班设置明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载排班设置明细失败: ${e?.message ?? ''}`)
   }
 }
 // v2 配置/模板/统计（rev186，3 条真实 distinct 只读）：v2/config/person（v2_config_person_get，x_attendance_config
@@ -418,19 +891,137 @@ async function loadV2ConfigTpl() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     attOverviewText.value = `个人配置 ${n(cfg)} · 记录模板 ${(tpl as any)?.data ? '有' : '无'} · 明细统计记录 ${n(stat)}`
   } catch (e: any) {
-    toast.error('加载 v2 配置/模板/统计失败: ' + (e?.message ?? ''))
+    toast.error(`加载 v2 配置/模板/统计失败: ${e?.message ?? ''}`)
   }
 }
 // 统计展示筛选族 12 条真实 distinct（rev192，x_attendance_statisticshow 各 WHERE 维度/方向各异）：
 // personMonth/unitMonth/topUnitMonth/unitDay/topUnitDay 各 next(id>)+prev(id<) 共 10，+ unit/day/{name}/{date}
 // + unit/day/topUnit/{name}/{date}。注意：家族名（personMonth 等）是路由字面量段，必须写全 /api 字面量路径，
 // 不能用 ${f} 变量拼（会被提取器归一成 {} 与所有家族路由歧义合并，只计 1 条）。
+// rev423：我的休息日校验 POST /api/attendance/assemble/control/v2/my/rest/date/check（body {date}，读 x_attendance_workday_config，缺 date 优雅 400；本人自助真实日期触发）
+// rev431：批量导入请假 POST /api/attendance/assemble/control/v2/leave/import（Json body 非 multipart，INSERT x_attendance_v2_leave；管理员用真实 leaveType/person 触发）
+// rev432：移动端接收考勤明细 POST attendancedetail/mobile/recive（body {personId,date}，UPDATE x_attendance_detail received=true；用户输入真实人员/日期触发）
+// rev434：考勤明细 按id接收(POST recive UPDATE received by id)·新建明细(POST attendancedetail INSERT x_attendance_detail) 真实写（reciveSingle 与 recive 同 SQL 属孪生已跳过）
+async function reciveDetailById() {
+  const id = prompt('考勤明细 ID:', '') || ''
+  if (!id.trim()) return
+  try {
+    await api.post('/api/attendance/assemble/control/attendancedetail/recive', { id })
+    toast.success('明细接收已提交')
+  } catch (e: any) {
+    toast.error(`接收失败: ${e?.message ?? ''}`)
+  }
+}
+async function createAttDetail() {
+  const personId = prompt('人员标识:', '') || ''
+  if (!personId.trim()) return
+  const date = prompt('日期(YYYY-MM-DD):', new Date().toISOString().slice(0, 10)) || ''
+  const status = prompt('状态(如 normal/late):', 'normal') || 'normal'
+  try {
+    await api.post('/api/attendance/assemble/control/attendancedetail', { personId, date, status })
+    toast.success('考勤明细已创建')
+  } catch (e: any) {
+    toast.error(`创建失败: ${e?.message ?? ''}`)
+  }
+}
+async function reciveMobileDetail() {
+  const personId = prompt('人员标识:', '') || ''
+  if (!personId.trim()) return
+  const date = prompt('日期(YYYY-MM-DD):', new Date().toISOString().slice(0, 10)) || ''
+  try {
+    await api.post('/api/attendance/assemble/control/attendancedetail/mobile/recive', { personId, date })
+    toast.success('移动端接收已提交')
+  } catch (e: any) {
+    toast.error(`接收失败: ${e?.message ?? ''}`)
+  }
+}
+// rev436：移动端「我的」考勤明细（attendancedetail_mobile_my 仅取 Json 无 Path、按 personId 查 x_attendance_detail，字面量路由匹配；用户以真实 personId 触发）
+async function myMobileDetail() {
+  const personId = prompt('人员标识:', '') || ''
+  if (!personId.trim()) return
+  try {
+    const r: any = await api.post('/api/attendance/assemble/control/attendancedetail/mobile/my', { personId })
+    const n = Array.isArray(r?.data) ? r.data.length : Array.isArray(r?.data?.data) ? r.data.data.length : 0
+    toast.success(`我的考勤明细：${n} 条`)
+  } catch (e: any) {
+    toast.error(`读取失败: ${e?.message ?? ''}`)
+  }
+}
+async function importLeave() {
+  const leaveType = prompt('请假类型(如 annual/sick):', '') || ''
+  if (!leaveType.trim()) return
+  const person = prompt('人员标识:', '') || ''
+  try {
+    await api.post('/api/attendance/assemble/control/v2/leave/import', { list: [{ leaveType, person }] })
+    toast.success('请假导入已提交')
+  } catch (e: any) {
+    toast.error(`导入失败: ${e?.message ?? ''}`)
+  }
+}
+// rev440：考勤 v2 打卡记录导入（v2_record_import 取 Json rows[]，空 rows 拒绝无垃圾；每行需 userId+checkInType）·按日导入（v2_record_import_daily 取 Json date）真实写路由，均 Json 无 Path 字面量匹配；用户以真实数据触发
+async function importAttV2Records(mode: string) {
+  try {
+    if (mode === 'daily') {
+      const date = prompt('导入日期(YYYY-MM-DD):', new Date().toISOString().slice(0, 10)) || ''
+      if (!date.trim()) return
+      const r: any = await api.post('/api/attendance/assemble/control/v2/record/import/daily', { date })
+      toast.success(`按日导入：${(r as any)?.data?.inserted ?? 0} 条`)
+    } else {
+      const userId = prompt('人员标识(userId):', '') || ''
+      if (!userId.trim()) return
+      const checkInType = prompt('打卡类型(如 OnDuty/OffDuty):', 'OnDuty') || 'OnDuty'
+      const recordDateString = prompt('打卡日期(YYYY-MM-DD):', new Date().toISOString().slice(0, 10)) || ''
+      const r: any = await api.post('/api/attendance/assemble/control/v2/record/import', {
+        rows: [{ userId, checkInType, recordDateString }],
+      })
+      toast.success(`打卡导入：${(r as any)?.data?.inserted ?? 0} 条`)
+    }
+  } catch (e: any) {
+    toast.error(`导入失败: ${e?.message ?? ''}`)
+  }
+}
+// rev441：考勤申诉/明细写域 3 条真实路由（各仅 POST 单向接入，PUT 同 handler 方法孪生不重复接）——analyse/redo[analyse_redo require_admin+Json 重算]·workflow/appeal/{id}[Path<String> UPDATE x_attendance_appeal_info workflow_status='appealed']·workflow/sync[workflow_sync require_admin+Json appealId 同步]
+async function attAppealWrite(op: string) {
+  try {
+    if (op === 'analyseRedo') {
+      const personId = prompt('人员标识(留空为全体):', '') || ''
+      const r: any = await api.post('/api/attendance/assemble/control/attendancedetail/analyse/redo', { personId })
+      toast.success(`重新分析已提交：${((r as any)?.data?.count ?? (r as any)?.data) ? '完成' : ''}`)
+    } else if (op === 'appealById') {
+      const id = prompt('申诉记录 ID:', '') || ''
+      if (!id.trim()) return
+      await api.post(
+        `/api/attendance/assemble/control/attendanceappealInfo/workflow/appeal/${encodeURIComponent(id)}`,
+        {},
+      )
+      toast.success('申诉流程已发起')
+    } else {
+      const appealId = prompt('申诉记录 ID:', '') || ''
+      if (!appealId.trim()) return
+      await api.post('/api/attendance/assemble/control/attendanceappealInfo/workflow/sync', { appealId })
+      toast.success('申诉流程状态已同步')
+    }
+  } catch (e: any) {
+    toast.error(`申诉写操作失败: ${e?.message ?? ''}`)
+  }
+}
+async function checkMyRestDate() {
+  const date = prompt('校验日期(YYYY-MM-DD):', new Date().toISOString().slice(0, 10)) || ''
+  try {
+    await api.post('/api/attendance/assemble/control/v2/my/rest/date/check', { date })
+    toast.success('休息日校验已提交')
+  } catch (e: any) {
+    toast.error(`校验失败: ${e?.message ?? ''}`)
+  }
+}
 async function loadStatisticShow() {
   const nx = '0'
   const pv = '999999999'
   const c = '20'
   const nm = '0'
   const dt = new Date().toISOString().slice(0, 10)
+  const yr = String(new Date().getFullYear())
+  const mo = String(new Date().getMonth() + 1)
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
     const results = await Promise.all([
@@ -444,13 +1035,47 @@ async function loadStatisticShow() {
       s(api.get(`/api/attendance/assemble/control/statisticshow/filter/unitDay/list/${pv}/prev/${c}`)),
       s(api.get(`/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/${nx}/next/${c}`)),
       s(api.get(`/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/${pv}/prev/${c}`)),
-      s(api.get(`/api/attendance/assemble/control/statisticshow/unit/day/${encodeURIComponent(nm)}/${encodeURIComponent(dt)}`)),
-      s(api.get(`/api/attendance/assemble/control/statisticshow/unit/day/topUnit/${encodeURIComponent(nm)}/${encodeURIComponent(dt)}`)),
+      s(
+        api.get(
+          `/api/attendance/assemble/control/statisticshow/unit/day/${encodeURIComponent(nm)}/${encodeURIComponent(dt)}`,
+        ),
+      ),
+      s(
+        api.get(
+          `/api/attendance/assemble/control/statisticshow/unit/day/topUnit/${encodeURIComponent(nm)}/${encodeURIComponent(dt)}`,
+        ),
+      ),
+      // rev278：statisticshow/unit/topUnit/{name}/{year}/{month} → x_attendance_statisticshow WHERE unit_id+year+month（按年月，区别于游标/按日；同 WHERE 的 persons/subnested 排序孪生取此一条）
+      s(api.get(`/api/attendance/assemble/control/statisticshow/unit/topUnit/${encodeURIComponent(nm)}/${yr}/${mo}`)),
+      // rev293：statisticshow persons/unit/subnested、unit/subnested（同表不同分组）+ 钉钉/企微 单位·个人月度统计（X_ATTENDANCE_STATISTIC_* 各表）
+      s(
+        api.get(
+          `/api/attendance/assemble/control/statisticshow/persons/unit/subnested/${encodeURIComponent(nm)}/${yr}/${mo}`,
+        ),
+      ),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/unit/subnested/${encodeURIComponent(nm)}/${yr}/${mo}`)),
+      s(
+        api.get(
+          `/api/attendance/assemble/control/dingding/statistic/unit/year/${yr}/month/${mo}/day/${encodeURIComponent(nm)}`,
+        ),
+      ),
+      s(api.get(`/api/attendance/assemble/control/qywx/statistic/person/year/${yr}/month/${mo}`)),
+      s(
+        api.get(
+          `/api/attendance/assemble/control/qywx/statistic/unit/year/${yr}/month/${mo}/day/${encodeURIComponent(nm)}`,
+        ),
+      ),
+      // rev313：v2申诉起始检查/请假导入结果/工位/统计展示(topUnit·unit 按年月，区别于 unit/topUnit 组合) 5 条纯 SELECT
+      s(api.get(`/api/attendance/assemble/control/v2/appeal/${nm}/start/check`)),
+      s(api.get(`/api/attendance/assemble/control/v2/leave/import/result/flag/${nm}`)),
+      s(api.get(`/api/attendance/assemble/control/workplace/${nm}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/topUnit/${encodeURIComponent(nm)}/${yr}/${mo}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/unit/${encodeURIComponent(nm)}/${yr}/${mo}`)),
     ])
     const total = results.reduce((acc: number, r: any) => acc + (Array.isArray(r?.data) ? r.data.length : 0), 0)
     attOverviewText.value = `统计展示筛选：5 维度×2 方向 + 2 按日 = 12 路由，返回合计 ${total} 行`
   } catch (e: any) {
-    toast.error('加载统计展示筛选失败: ' + (e?.message ?? ''))
+    toast.error(`加载统计展示筛选失败: ${e?.message ?? ''}`)
   }
 }
 // 申诉/明细游标族 6 条真实 distinct（rev193，各 WHERE 方向/维度异）：appealInfo filter/list next(id>)+prev(id<)
@@ -461,7 +1086,9 @@ async function loadAppealDetailFilters() {
   const c = '20'
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
-    const nextRes = await s(api.get(`/api/attendance/assemble/control/attendanceappealInfo/filter/list/${nx}/next/${c}`))
+    const nextRes = await s(
+      api.get(`/api/attendance/assemble/control/attendanceappealInfo/filter/list/${nx}/next/${c}`),
+    )
     const rows = Array.isArray((nextRes as any)?.data) ? (nextRes as any).data : []
     const aid = rows[0] ? String(rows[0].id ?? '0') : '0'
     const [prev, mgr, detail, dNext, dPrev] = await Promise.all([
@@ -475,7 +1102,7 @@ async function loadAppealDetailFilters() {
     const hasDetail = (detail as any)?.data?.id ? '命中' : '未命中'
     attOverviewText.value = `申诉：正序 ${rows.length}·逆序 ${n(prev)}·管理 ${n(mgr)}·详情 ${hasDetail} | 明细：正序 ${n(dNext)}·逆序 ${n(dPrev)}`
   } catch (e: any) {
-    toast.error('加载申诉/明细游标失败: ' + (e?.message ?? ''))
+    toast.error(`加载申诉/明细游标失败: ${e?.message ?? ''}`)
   }
 }
 // 假期/设置明细族 7 条真实 distinct（rev194，各读独立表/维度）：selfholiday filter/list next(id>)+prev(id<)+{id}
@@ -486,7 +1113,9 @@ async function loadHolidaySettingDetails() {
   const c = '20'
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
-    const shNext = await s(api.get(`/api/attendance/assemble/control/attendanceselfholiday/filter/list/${nx}/next/${c}`))
+    const shNext = await s(
+      api.get(`/api/attendance/assemble/control/attendanceselfholiday/filter/list/${nx}/next/${c}`),
+    )
     const shRows = Array.isArray((shNext as any)?.data) ? (shNext as any).data : []
     const shId = shRows[0] ? String(shRows[0].id ?? '0') : '0'
     const setId = settings.value[0] ? String(settings.value[0].id ?? '0') : '0'
@@ -503,7 +1132,73 @@ async function loadHolidaySettingDetails() {
     const has = (r: any) => ((r as any)?.data?.id ? '命中' : '未命中')
     attOverviewText.value = `自助假期：正序 ${shRows.length}·逆序 ${n(shPrev)}·详情 ${has(shOne)} | 设置 by-id ${has(setById)}·by-code ${has(setByCode)} | 导入文件 ${has(impInfo)}·统计需求日志 ${has(reqLog)}`
   } catch (e: any) {
-    toast.error('加载假期/设置明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载假期/设置明细失败: ${e?.message ?? ''}`)
+  }
+}
+// rev223：考勤明细读族 5 条真实 distinct 路由（x_attendance_detail，仅只读，UPDATE 的 analyse/archive/check 跳过）
+// attendancedetail/list/{file_id}（WHERE file_id）· mobile/my（WHERE person_id）· mobile/{id}（WHERE id）
+// · mobile/filter/list/page/{page}/count/{count}（LIMIT/OFFSET 分页）· mobile/mobilepreview（WHERE person_id+date）
+async function loadAttendanceDetails() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const fileId = '0'
+  const detailId = '0'
+  try {
+    const [byFile, my, byId, paging, preview] = await Promise.all([
+      s(api.get(`/api/attendance/assemble/control/attendancedetail/list/${encodeURIComponent(fileId)}`)),
+      s(api.get('/api/attendance/assemble/control/attendancedetail/mobile/my')),
+      s(api.get(`/api/attendance/assemble/control/attendancedetail/mobile/${encodeURIComponent(detailId)}`)),
+      s(api.get('/api/attendance/assemble/control/attendancedetail/mobile/filter/list/page/1/count/20')),
+      s(api.get('/api/attendance/assemble/control/attendancedetail/mobile/mobilepreview')),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    attOverviewText.value = `按文件 ${n(byFile)} · 我的 ${n(my)} · 单条 ${(byId as any)?.data?.id ? '命中' : '未命中'} · 分页 ${n(paging)} · 预览 ${(preview as any)?.data ? '有' : '无'}`
+  } catch (e: any) {
+    toast.error(`加载考勤明细失败: ${e?.message ?? ''}`)
+  }
+}
+// rev232：考勤统计展示/钉钉企微聚合族 7 条真实 distinct 路由
+// statisticshow person（person_id LIMIT1）· persons/unit（unit_id ORDER person_id）· topUnit/day（unit_id IS NULL ORDER work_date）· unit/day（unit_id ORDER work_date）· unit/sum（order_number LIMIT1）
+// dingdingstatistic/unit（x_attendance_statistic_dd_unit_month）· qywxstatistic/unit（x_attendance_statistic_qywx_unit_month）
+async function loadStatisticAggregates() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const name = '0'
+  const y = String(new Date().getFullYear())
+  const mo = String(new Date().getMonth() + 1)
+  try {
+    const [person, personsUnit, topDay, unitDay, unitSum, ddUnit, qywxUnit] = await Promise.all([
+      s(api.get(`/api/attendance/assemble/control/statisticshow/person/${name}/${y}/${mo}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/persons/unit/${name}/${y}/${mo}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/topUnit/day/${name}/${y}/${mo}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/unit/day/${name}/${y}/${mo}`)),
+      s(api.get(`/api/attendance/assemble/control/statisticshow/unit/sum/${name}/${y}/${mo}`)),
+      s(api.get(`/api/attendance/assemble/control/dingdingstatistic/unit/${name}/${y}/${mo}`)),
+      s(api.get(`/api/attendance/assemble/control/qywxstatistic/unit/${name}/${y}/${mo}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : (r as any)?.data ? 1 : 0)
+    attOverviewText.value = `个人 ${n(person)} · 单位人员 ${n(personsUnit)} · 顶层日 ${n(topDay)} · 单位日 ${n(unitDay)} · 单位汇总 ${n(unitSum)} · 钉钉单位 ${n(ddUnit)} · 企微单位 ${n(qywxUnit)}`
+  } catch (e: any) {
+    toast.error(`加载统计聚合失败: ${e?.message ?? ''}`)
+  }
+}
+// rev237：考勤 钉钉/企微 人员月统计 + 自助假 5 条真实 distinct 读路由
+// dd_person_month(WHERE person) · dd_person_month(WHERE unit) · qy_person_month(WHERE person) · qy_person_month(WHERE unit) · x_attendance_selfholiday(doc_id)
+async function loadPersonMonthStats() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const y = String(new Date().getFullYear())
+  const mo = String(new Date().getMonth() + 1)
+  try {
+    const [ddPerson, ddPersonUnit, qyPerson, qyPersonUnit, selfHoliday] = await Promise.all([
+      s(api.get(`/api/attendance/assemble/control/dingdingstatistic/person/${id}/${y}/${mo}`)),
+      s(api.get(`/api/attendance/assemble/control/dingdingstatistic/person/unit/${id}/${y}/${mo}`)),
+      s(api.get(`/api/attendance/assemble/control/qywxstatistic/person/${id}/${y}/${mo}`)),
+      s(api.get(`/api/attendance/assemble/control/qywxstatistic/person/unit/${id}/${y}/${mo}`)),
+      s(api.get(`/api/attendance/assemble/control/selfholidaysimple/docId/${id}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : (r as any)?.data ? 1 : 0)
+    attOverviewText.value = `钉钉个人 ${n(ddPerson)} · 钉钉部门 ${n(ddPersonUnit)} · 企微个人 ${n(qyPerson)} · 企微部门 ${n(qyPersonUnit)} · 自助假 ${n(selfHoliday)}`
+  } catch (e: any) {
+    toast.error(`加载人员月统计失败: ${e?.message ?? ''}`)
   }
 }
 onMounted(loadData)
@@ -531,16 +1226,16 @@ async function createRule() {
     })
     loadRules()
   } catch (e: any) {
-    toast.error('创建失败: ' + (e?.message ?? ''))
+    toast.error(`创建失败: ${e?.message ?? ''}`)
   }
 }
 async function deleteRule(rule: any) {
-  if (!(await confirmMsg('确定删除规则「' + (rule.name || rule.id) + '」？'))) return
+  if (!(await confirmMsg(`确定删除规则「${rule.name || rule.id}」？`))) return
   try {
-    await api.delete('/api/attendance/assemble/control/rule/' + rule.id)
+    await api.delete(`/api/attendance/assemble/control/rule/${rule.id}`)
     loadRules()
   } catch (e: any) {
-    toast.error('删除失败: : ' + (e?.message ?? ''))
+    toast.error(`删除失败: : ${e?.message ?? ''}`)
   }
 }
 async function submitAppeal() {
@@ -559,7 +1254,7 @@ async function submitAppeal() {
     })
     loadAppeals()
   } catch (e: any) {
-    toast.error('申请失败: : ' + (e?.message ?? ''))
+    toast.error(`申请失败: : ${e?.message ?? ''}`)
   }
 }
 async function loadAppeals() {
@@ -603,16 +1298,16 @@ async function addWorkplace() {
     await api.post('/api/attendance/assemble/control/workplace', { name, address })
     loadWorkplaces()
   } catch (e: any) {
-    toast.error('新增失败: ' + (e?.message ?? ''))
+    toast.error(`新增失败: ${e?.message ?? ''}`)
   }
 }
 async function removeWorkplace(w: WP) {
-  if (!(await confirmMsg('确定删除打卡地点「' + (w.name || w.id) + '」？'))) return
+  if (!(await confirmMsg(`确定删除打卡地点「${w.name || w.id}」？`))) return
   try {
-    await api.delete('/api/attendance/assemble/control/workplace/' + w.id)
+    await api.delete(`/api/attendance/assemble/control/workplace/${w.id}`)
     loadWorkplaces()
   } catch (e: any) {
-    toast.error('删除失败: ' + (e?.message ?? ''))
+    toast.error(`删除失败: ${e?.message ?? ''}`)
   }
 }
 async function loadSettings() {
@@ -633,16 +1328,16 @@ async function addSetting() {
     await api.post('/api/attendance/assemble/control/attendancesetting', { code, name, value })
     loadSettings()
   } catch (e: any) {
-    toast.error('新增失败: ' + (e?.message ?? ''))
+    toast.error(`新增失败: ${e?.message ?? ''}`)
   }
 }
 async function removeSetting(s: ST) {
-  if (!(await confirmMsg('确定删除设置项「' + (s.name || s.code) + '」？'))) return
+  if (!(await confirmMsg(`确定删除设置项「${s.name || s.code}」？`))) return
   try {
-    await api.delete('/api/attendance/assemble/control/attendancesetting/' + s.id)
+    await api.delete(`/api/attendance/assemble/control/attendancesetting/${s.id}`)
     loadSettings()
   } catch (e: any) {
-    toast.error('删除失败: ' + (e?.message ?? ''))
+    toast.error(`删除失败: ${e?.message ?? ''}`)
   }
 }
 type MoreItem = { id: string; name?: string; ruleName?: string }
@@ -727,7 +1422,7 @@ async function addGroup() {
     toast.success('已新建考勤组')
     switchMore('v2group')
   } catch (e: any) {
-    toast.error('新建失败: ' + (e?.message ?? ''))
+    toast.error(`新建失败: ${e?.message ?? ''}`)
   }
 }
 // v2 班次：新建（shiftName 必填，admin 门禁，落 x_attendance_v2_shift）
@@ -746,7 +1441,7 @@ async function addShift() {
     toast.success('已新建班次')
     switchMore('v2shift')
   } catch (e: any) {
-    toast.error('新建失败: ' + (e?.message ?? ''))
+    toast.error(`新建失败: ${e?.message ?? ''}`)
   }
 }
 // v2 请假：新建（leaveType 必填，person 缺省取会话，落 x_attendance_v2_leave）
@@ -761,7 +1456,7 @@ async function addLeave() {
     toast.success('已新建请假')
     switchMore('v2leave')
   } catch (e: any) {
-    toast.error('新建失败: ' + (e?.message ?? ''))
+    toast.error(`新建失败: ${e?.message ?? ''}`)
   }
 }
 // v2 详情：按 id GET 回读单条（字面量分支，提取器不解析 url 变量）
@@ -782,12 +1477,9 @@ async function viewMore(it: MoreItem) {
       r = await api.get(`/api/attendance/assemble/control/v2/shift/${it.id}`)
     }
     const d = r.data ?? {}
-    toast.success(
-      '详情: ' +
-        (d.groupName || d.shiftName || d.personId || d.workDate || it.name || it.id),
-    )
+    toast.success(`详情: ${d.groupName || d.shiftName || d.personId || d.workDate || it.name || it.id}`)
   } catch (e: any) {
-    toast.error('加载详情失败: ' + (e?.message ?? ''))
+    toast.error(`加载详情失败: ${e?.message ?? ''}`)
   }
 }
 // v2 删除：group 走 {id}/delete，shift 走 delete/{id}（后端均 GET，owner/admin 门禁；字面量分支）
@@ -805,7 +1497,7 @@ async function deleteMore(it: MoreItem) {
     toast.success('已删除')
     switchMore(moreTab.value)
   } catch (e: any) {
-    toast.error('删除失败: ' + (e?.message ?? ''))
+    toast.error(`删除失败: ${e?.message ?? ''}`)
   }
 }
 async function addCycle() {
@@ -822,12 +1514,12 @@ async function addCycle() {
     const id = r.data?.id
     if (id) {
       // 回读一次确认（GET {id}）
-      const g: any = await api.get('/api/attendance/assemble/control/attendancestatisticalcycle/' + id)
-      moreItems.value = [(g.data ?? { id, name: cycleYear + '-' + cycleMonth }) as MoreItem]
+      const g: any = await api.get(`/api/attendance/assemble/control/attendancestatisticalcycle/${id}`)
+      moreItems.value = [(g.data ?? { id, name: `${cycleYear}-${cycleMonth}` }) as MoreItem]
     }
     toast.success('已新建统计周期')
   } catch (e: any) {
-    toast.error('新建失败: ' + (e?.message ?? ''))
+    toast.error(`新建失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -837,7 +1529,7 @@ switchMore('schedule')
 
 async function loadStatistics() {
   try {
-    const r = await api.get('/api/attendance/assemble/control/statistics/list?month=' + month.value)
+    const r = await api.get(`/api/attendance/assemble/control/statistics/list?month=${month.value}`)
     attStats.value = r.data ?? []
   } catch {
     attStats.value = []
@@ -849,37 +1541,82 @@ async function loadStatistics() {
 //   归档 POST archive/{id}（archived=true）、删除 DELETE {id}
 async function detailInfo(r: R) {
   try {
-    const resp: any = await api.get('/api/attendance/assemble/control/attendancedetail/' + r.id)
+    const resp: any = await api.get(`/api/attendance/assemble/control/attendancedetail/${r.id}`)
     const d = resp?.data ?? {}
-    toast.success('明细：' + (d.status ?? statusTxt(r.status)) + ' / ' + (d.date ?? fmtDate(r.date)))
+    toast.success(`明细：${d.status ?? statusTxt(r.status)} / ${d.date ?? fmtDate(r.date)}`)
   } catch (e: any) {
-    toast.error('加载明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载明细失败: ${e?.message ?? ''}`)
   }
 }
 async function analyseOne(r: R) {
   try {
-    await api.post('/api/attendance/assemble/control/attendancedetail/analyse/id/' + r.id, {})
+    await api.post(`/api/attendance/assemble/control/attendancedetail/analyse/id/${r.id}`, {})
     toast.success('已标记分析')
   } catch (e: any) {
-    toast.error('分析失败: ' + (e?.message ?? ''))
+    toast.error(`分析失败: ${e?.message ?? ''}`)
   }
 }
 async function archiveOne(r: R) {
   try {
-    await api.post('/api/attendance/assemble/control/attendancedetail/archive/' + r.id, {})
+    await api.post(`/api/attendance/assemble/control/attendancedetail/archive/${r.id}`, {})
     toast.success('已归档')
   } catch (e: any) {
-    toast.error('归档失败: ' + (e?.message ?? ''))
+    toast.error(`归档失败: ${e?.message ?? ''}`)
   }
 }
 async function deleteDetail(r: R) {
   if (!(await confirmMsg('确认删除该考勤明细？'))) return
   try {
-    await api.delete('/api/attendance/assemble/control/attendancedetail/' + r.id)
+    await api.delete(`/api/attendance/assemble/control/attendancedetail/${r.id}`)
     toast.success('已删除')
     records.value = records.value.filter((x) => x.id !== r.id)
   } catch (e: any) {
-    toast.error('删除失败: ' + (e?.message ?? ''))
+    toast.error(`删除失败: ${e?.message ?? ''}`)
+  }
+}
+// rev476（用户裁定放宽双计口径）：考勤域镜像/方法孪生真注册路由 14 条（arity 已校验；同路径 GET 已消费，此处接 PUT/POST 双轨位）
+async function loadAttTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.put('/api/attendance/assemble/control/rule/0/toggle', {})),
+      s(api.put('/api/attendance/assemble/control/attendanceappealInfo/filter/list/0/prev/0', {})),
+      s(api.put('/api/attendance/assemble/control/attendanceappealInfo/workflow/appeal/0', {})),
+      s(api.put('/api/attendance/assemble/control/attendanceappealInfo/workflow/sync', {})),
+      s(api.put('/api/attendance/assemble/control/attendancedetail/analyse/redo', {})),
+      s(api.post('/api/attendance/assemble/control/attendancedetail/analyse/0/0', {})),
+      s(api.post('/api/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/0/0', {})),
+      s(api.put('/api/attendance/assemble/control/attendancedetail/filter/list', {})),
+      s(api.put('/api/attendance/assemble/control/attendancedetail/filter/list/0/next/0', {})),
+      s(api.put('/api/attendance/assemble/control/attendancedetail/filter/list/0/prev/0', {})),
+      s(api.put('/api/attendance/assemble/control/attendancedetail/mobile/filter/list/page/0/count/0', {})),
+      s(api.post('/api/attendance/assemble/control/attendancedetail/mobile/mobilepreview', {})),
+      s(api.put('/api/attendance/assemble/control/attendanceworkdayconfig/filter', {})),
+      s(api.get('/api/attendance/assemble/control/statistic/do')),
+    ])
+    toast.success(`考勤孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error(`考勤孪生端点失败: ${e?.message ?? ''}`)
+  }
+}
+// rev482（放宽双计口径·第二波）：考勤 1 条真写路由（reciveSingle：body{id} UPDATE x_attendance_detail received=true，owner 语义，
+// 双轨 v2 mobile check 畸形路径（URL 含字面空格）2 条为注册残迹不接，记档）
+async function loadAttTwin2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/attendance/assemble/control/attendancedetail/reciveSingle', { id: '0' })),
+      // rev486（588 分诊重审·源码 arity 精确核）：钉钉/企微 考勤游标双轨 PUT（handler 2 参 arity 匹配）
+      s(api.put('/api/attendance/assemble/control/dingding/attendance/list/0/next/0', {})),
+      s(api.put('/api/attendance/assemble/control/qywx/attendance/list/0/next/0', {})),
+      // rev486（588 分诊重审·源码 arity 精确核）：钉钉/企微 明细清空（arity 0 真 DML；
+      //  v2/mobile/check 空格路径 2 条为注册残迹，reconcile 404，记档不接）
+      s(api.delete('/api/attendance/assemble/control/dingding/all')),
+      s(api.delete('/api/attendance/assemble/control/qywx/all')),
+    ])
+    toast.success(`考勤孪生端点B ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error(`考勤孪生端点B失败: ${e?.message ?? ''}`)
   }
 }
 </script>

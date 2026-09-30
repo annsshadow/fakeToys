@@ -24,6 +24,7 @@ pub mod routes;
 use entities::{meeting, meeting_room};
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

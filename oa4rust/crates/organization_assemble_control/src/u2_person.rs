@@ -213,27 +213,29 @@ pub async fn person_reserve_delete(
     Path(flag): Path<String>,
 ) -> HandlerResult {
     require_admin(&pool, &session).await?;
-    let client = client_of(&pool).await?;
+    let mut client = client_of(&pool).await?;
     let Some(pid) = resolve_person_id(&client, &flag).await? else {
         return err("person not found");
     };
+    // 级联删除（身份/组成员/属性 3 表 + 软删人员）必须原子：中途失败不得留下
+    // 人员仍"存在"却已丢失全部身份/成员/属性的孤儿损坏态。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     for sql in [
         "DELETE FROM x_org_identity WHERE person_id = $1",
         "DELETE FROM x_org_group_member WHERE person_id = $1",
         "DELETE FROM x_org_person_attribute WHERE person_id = $1",
     ] {
-        client
-            .execute(sql, &[&pid])
+        tx.execute(sql, &[&pid])
             .await
             .map_err(|_| AppError::Internal)?;
     }
-    client
-        .execute(
-            "UPDATE x_org_person SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
-            &[&pid],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+    tx.execute(
+        "UPDATE x_org_person SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+        &[&pid],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     ok(Value::Object(
         vec![("id".to_string(), Value::String(pid))]
             .into_iter()
@@ -255,7 +257,7 @@ async fn cursor_page(pool: &Pool, flag: &str, count: i64, next: bool) -> Handler
     let limit = count.clamp(1, MAX_BATCH_IDS as i64).to_string();
     let rows = if flag == "0" || flag == "(0)" {
         let sql = format!(
-            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL ORDER BY create_time::text DESC LIMIT $1"
+            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1"
         );
         client
             .query(&sql, &[&limit])
@@ -264,7 +266,7 @@ async fn cursor_page(pool: &Pool, flag: &str, count: i64, next: bool) -> Handler
     } else {
         let op = if next { ">" } else { "<" };
         let sql = format!(
-            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND id {op} $1 ORDER BY create_time::text DESC LIMIT $2"
+            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND id {op} $1 ORDER BY create_time DESC LIMIT $2"
         );
         client
             .query(&sql, &[&flag.to_string(), &limit])
@@ -388,7 +390,7 @@ pub async fn person_list_like(pool: Extension<Pool>, Json(body): Json<Value>) ->
             .map_err(|_| AppError::Internal)?;
         return list_ok_legacy(rows.iter().map(person_row_json).collect());
     }
-    let pattern = format!("%{key}%");
+    let pattern = format!("%{}%", shared::db::escape_like(&key));
     let sql = format!(
         "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND name ILIKE $1"
     );
@@ -414,7 +416,7 @@ pub async fn person_list_like_pinyin(
             .map_err(|_| AppError::Internal)?;
         return list_ok_legacy(rows.iter().map(person_row_json).collect());
     }
-    let pattern = format!("{}%", key.to_lowercase());
+    let pattern = format!("{}%", shared::db::escape_like(&key.to_lowercase()));
     let sql = format!(
         "SELECT {PERSON_COLS} FROM {PERSON_TABLE}
           WHERE deleted_at IS NULL AND (LOWER(pinyin_initial) LIKE $1 OR LOWER(name) LIKE $1)"
@@ -683,12 +685,12 @@ pub async fn person_list_filter_paging(
     let client = client_of(&pool).await?;
     let page = page.max(1);
     let size = size.clamp(1, MAX_PAGE_SIZE);
-    let offset = ((page - 1) * size).to_string();
+    let offset = ((page - 1).saturating_mul(size)).to_string();
     let size_str = size.to_string();
 
-    let name = normalize_key(opt(&body, &["name"]).unwrap_or_default());
-    let mobile = normalize_key(opt(&body, &["mobile"]).unwrap_or_default());
-    let email = normalize_key(opt(&body, &["email"]).unwrap_or_default());
+    let name = shared::db::escape_like(&normalize_key(opt(&body, &["name"]).unwrap_or_default()));
+    let mobile = shared::db::escape_like(&normalize_key(opt(&body, &["mobile"]).unwrap_or_default()));
+    let email = shared::db::escape_like(&normalize_key(opt(&body, &["email"]).unwrap_or_default()));
     let status = normalize_key(opt(&body, &["status"]).unwrap_or_default());
     let unit_flag = normalize_key(opt(&body, &["unitFlag", "unitId"]).unwrap_or_default());
 
@@ -706,7 +708,7 @@ pub async fn person_list_filter_paging(
     let total: i64 = total_row.get("cnt");
 
     let data_sql = format!(
-        "SELECT {PERSON_COLS} FROM x_org_person WHERE {cond} ORDER BY create_time::text DESC LIMIT $6 OFFSET $7"
+        "SELECT {PERSON_COLS} FROM x_org_person WHERE {cond} ORDER BY create_time DESC LIMIT $6 OFFSET $7"
     );
     let rows = client
         .query(
@@ -739,10 +741,10 @@ pub async fn person_list_delete_paging(
     let client = client_of(&pool).await?;
     let page = page.max(1);
     let size = size.clamp(1, MAX_PAGE_SIZE);
-    let offset = ((page - 1) * size).to_string();
+    let offset = ((page - 1).saturating_mul(size)).to_string();
     let size_str = size.to_string();
     let sql = format!(
-        "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NOT NULL ORDER BY create_time::text DESC LIMIT $1 OFFSET $2"
+        "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NOT NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2"
     );
     let rows = client
         .query(&sql, &[&size_str, &offset])
@@ -756,7 +758,7 @@ pub async fn person_list_delete_paging(
 pub async fn threemember_list(pool: Extension<Pool>) -> HandlerResult {
     let client = client_of(&pool).await?;
     let sql = format!(
-        "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL ORDER BY create_time::text DESC"
+        "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL ORDER BY create_time DESC"
     );
     let rows = client
         .query(&sql, &[])

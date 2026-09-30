@@ -8,11 +8,13 @@
 
 import json
 import logging
-from typing import List, Dict, Optional, Any, Callable, Set
+import threading
+from typing import List, Dict, Optional, Any, Callable, Set, Tuple
 from dataclasses import dataclass, field
 from pathlib import Path
 from enum import Enum
 from collections import defaultdict
+from .validation import require_count
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +25,14 @@ class IndexType(Enum):
     INVERTED = "inverted"
     ENHANCED = "enhanced"  # 增强索引类型（优化：支持混合索引策略）
     NGRAM = "ngram"
+
+
+#: 默认清单：只决定 `list_indexes()` / `get_statistics()` 该报出哪几份索引，
+#: **不限制能查哪些字段**——清单外的字段在第一次被查询时同样按需建索引。
+DEFAULT_INDEX_FIELDS: Tuple[str, ...] = ("instruction", "output", "input")
+#: 同上，默认 n-gram 索引的 `(字段, n)` 清单
+DEFAULT_NGRAM_INDEXES: Tuple[Tuple[str, int], ...] = (("instruction", 2),)
+
 
 
 @dataclass
@@ -52,7 +62,7 @@ class DatasetIndexer:
     
     def __init__(self, items: List[Dict] = None):
         """初始化索引器
-        
+
         Args:
             items: 数据列表
         """
@@ -60,31 +70,70 @@ class DatasetIndexer:
         self._indexes: Dict[str, Any] = {}
         self._field_indexes: Dict[str, Dict[str, List[int]]] = {}
         self._ngram_indexes: Dict[str, Dict[str, Set[int]]] = {}
-        
-        if self._items:
-            self._build_default_indexes()
-    
+        # 索引**按需构建**。`DatasetView` 的每次 `filter/head/tail/sample/切片`
+        # 都新建一个索引器，而旧实现在构造时无条件建齐 4 份索引（真实 6902 条实测
+        # 70 ms、峰值 19 MB），可是这些操作连同 `search()` 的默认方法 contains
+        # **一个都不读它们**，白建。待建清单按「哪一份还没建」精确记录，见
+        # `_ensure_field_index` / `_ensure_ngram_index`。
+        self._build_lock = threading.Lock()
+        self._pending_fields: Set[str] = (
+            set(DEFAULT_INDEX_FIELDS) if self._items else set())
+        self._pending_ngrams: Set[Tuple[str, int]] = (
+            set(DEFAULT_NGRAM_INDEXES) if self._items else set())
+
     def load(self, items: List[Dict]):
         """加载数据
         
         Args:
             items: 数据列表
         """
-        self._items = items
-        self._indexes.clear()
-        self._field_indexes.clear()
-        self._ngram_indexes.clear()
-        self._build_default_indexes()
-    
-    def _build_default_indexes(self):
-        """构建默认索引"""
-        # 为常用字段构建倒排索引
-        for field_name in ["instruction", "output", "input"]:
-            self._build_field_index(field_name)
-        
-        # 为instruction构建n-gram索引
-        self._build_ngram_index("instruction", n=2)
-    
+        with self._build_lock:
+            self._items = items
+            self._indexes.clear()
+            self._field_indexes.clear()
+            self._ngram_indexes.clear()
+            # 换数据 = 作废索引：待建清单必须重新欠满，否则新数据会被旧索引
+            # 回答成「查无此项」。这里连空数据集也欠着，是为了保住旧实现
+            # 「`load([])` 之后 `list_indexes()` 报出 4 个空索引」的可见行为。
+            self._pending_fields = set(DEFAULT_INDEX_FIELDS)
+            self._pending_ngrams = set(DEFAULT_NGRAM_INDEXES)
+
+    def _ensure_field_index(self, field: str) -> None:
+        """要用到 `field` 的倒排索引时才建它
+
+        默认清单（`DEFAULT_INDEX_FIELDS`）只决定「报告里该有哪几份」，**不限制
+        能查哪些字段**：清单外的字段第一次被查询时同样按需建索引（L19 修 A23）。
+        判据是「要么欠着默认清单的账，要么手上真有数据可建」——后者让空数据集
+        不会凭空造出一份空索引，从而保住 `list_indexes()` 旧有的两种报告口径。
+        """
+        with self._build_lock:
+            if field in self._field_indexes:
+                return
+            # 建完才销账：先销后建会让并发进来的第二个线程以为已就绪，
+            # 却读不到 `_field_indexes[field]` 而把结果误报成「无匹配」。
+            if field in self._pending_fields or self._items:
+                self._build_field_index(field)
+                self._pending_fields.discard(field)
+
+    def _ensure_ngram_index(self, field: str, n: int) -> None:
+        """要用到 `(field, n)` 这份 n-gram 索引时才建它（同 `_ensure_field_index`，
+        字段与 `n` 都不限默认清单：L19 修 A23）"""
+        spec = (field, n)
+        key = f"{field}_{n}"
+        with self._build_lock:
+            if key in self._ngram_indexes:
+                return
+            if spec in self._pending_ngrams or self._items:
+                self._build_ngram_index(field, n)
+                self._pending_ngrams.discard(spec)
+
+    def _ensure_default_indexes(self) -> None:
+        """把默认清单里的索引全部建齐（`list_indexes` / `get_statistics` 用）"""
+        for field_name in DEFAULT_INDEX_FIELDS:
+            self._ensure_field_index(field_name)
+        for field_name, n in DEFAULT_NGRAM_INDEXES:
+            self._ensure_ngram_index(field_name, n)
+
     def _build_field_index(self, field: str):
         """构建字段倒排索引
         
@@ -126,14 +175,18 @@ class DatasetIndexer:
     
     def search_exact(self, field: str, value: str) -> List[int]:
         """精确搜索
-        
+
         Args:
-            field: 字段名
+            field: 字段名，任意字段都可查（不局限于默认清单）。
+                该字段第一次被查询时才会为其建一份倒排索引，
+                也就是那一次调用要付一遍扫全表的代价，之后同字段查询直接吃索引。
             value: 搜索值
-        
+
         Returns:
             匹配的索引列表
         """
+        self._ensure_field_index(field)
+
         if field not in self._field_indexes:
             return []
         
@@ -162,16 +215,19 @@ class DatasetIndexer:
     
     def search_ngram(self, field: str, query: str, n: int = 2, min_match: int = 1) -> List[int]:
         """n-gram搜索
-        
+
         Args:
-            field: 字段名
+            field: 字段名，任意字段都可查（不局限于默认清单）
             query: 查询字符串
-            n: n-gram大小
+            n: n-gram大小，任意值都可（每个 (字段, n) 组合各是一份独立索引，
+                第一次用到时才建，那一次调用付一遍扫全表的代价）
             min_match: 最小匹配数
-        
+
         Returns:
             匹配的索引列表
         """
+        self._ensure_ngram_index(field, n)
+
         index_key = f"{field}_{n}"
         if index_key not in self._ngram_indexes:
             return []
@@ -274,6 +330,10 @@ class DatasetIndexer:
         Returns:
             统计信息
         """
+        # 这份返回值里带着「建了哪些索引」的键，所以要先把默认清单建齐——
+        # 不然按需构建会让统计口径凭空少报几份索引。
+        self._ensure_default_indexes()
+
         field_stats = {}
         for field in ["instruction", "output", "input"]:
             values = [item.get(field, "") for item in self._items if field in item]
@@ -302,7 +362,10 @@ class DatasetIndexer:
             索引列表
         """
         from datetime import datetime
-        
+
+        # 同 `get_statistics()`：列出来的必须是「默认清单欠的账都还清」后的状态
+        self._ensure_default_indexes()
+
         indexes = []
         
         for field, index in self._field_indexes.items():
@@ -369,6 +432,7 @@ class DatasetView:
         Returns:
             新视图
         """
+        require_count("n", n)
         return DatasetView(self._items[:n], f"{self.name}_head")
     
     def tail(self, n: int = 10) -> 'DatasetView':
@@ -380,7 +444,9 @@ class DatasetView:
         Returns:
             新视图
         """
-        return DatasetView(self._items[-n:] if len(self._items) >= n else self._items, 
+        require_count("n", n)
+        # `n=0` 要的是空视图：`[-0:]` 就是 `[0:]`，旧口径下这里返回过全部条目（实测 100 条）
+        return DatasetView(self._items[-n:] if n else [],
                           f"{self.name}_tail")
     
     def sample(self, n: int = 10, seed: int = None) -> 'DatasetView':
@@ -395,6 +461,7 @@ class DatasetView:
         """
         import random
         # 局部 Random：不改动进程级 RNG 状态（seed=None 时仍取系统熵）
+        require_count("n", n)
         sampled = random.Random(seed).sample(self._items, min(n, len(self._items)))
         return DatasetView(sampled, f"{self.name}_sample")
     

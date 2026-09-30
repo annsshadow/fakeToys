@@ -344,7 +344,7 @@ pub fn query_assemble_surface_router() -> Router {
         )
         .route(
             "/api/queryview/importmodel/{flag}/{flag}/{query}/{queryFlag}",
-            post(crate::importmodel_flag_flag_query_queryFlag),
+            post(crate::importmodel_flag_flag_query_queryFlag_p4),
         )
         .route(
             "/api/queryview/importmodel/{id}",
@@ -352,15 +352,15 @@ pub fn query_assemble_surface_router() -> Router {
         )
         .route(
             "/api/queryview/importmodel/list/{query}/{queryFlag}",
-            post(crate::importmodel_list_query_queryFlag),
+            post(crate::importmodel_list_query_queryFlag_p2),
         )
         .route(
             "/api/queryview/importmodel/list/record/item/paging/{page}/{size}/{size}",
-            post(crate::importmodel_list_record_item_paging_page_size_size),
+            post(crate::importmodel_list_record_item_paging_page_size_size_p3),
         )
         .route(
             "/api/queryview/importmodel/list/record/paging/{page}/{size}/{size}",
-            post(crate::importmodel_list_record_paging_page_size_size),
+            post(crate::importmodel_list_record_paging_page_size_size_p3),
         )
         .route(
             "/api/queryview/importmodel/record/{recordId}",
@@ -372,41 +372,37 @@ pub fn query_assemble_surface_router() -> Router {
         )
         .route(
             "/api/queryview/importmodel/record/{recordId}/{status}",
-            post(crate::importmodel_record_recordId_status),
+            post(crate::importmodel_record_recordId_status_p2),
         )
         .route(
             "/api/queryview/neural/list/calculate/model/{modelFlag}/{work}/{workId}",
-            get(crate::neural_list_calculate_model_modelFlag_work_workId),
+            get(crate::neural_list_calculate_model_modelFlag_work_workId_p3),
         )
-        .route("/api/queryview/{query}/{flag}", get(crate::query_flag))
+        .route("/api/queryview/{query}/{flag}", get(crate::query_flag_p2))
         .route(
             "/api/queryview/list/{query}/{key}/{key}",
-            get(crate::query_list_key_key),
+            get(crate::query_list_key_key_p3),
         )
         .route("/api/queryview/table/{flag}", get(crate::table_flag))
         .route(
             "/api/queryview/table/list/{id}/{next}/{count}",
-            get(crate::table_list_id_next_count),
+            get(crate::table_list_id_next_count_p3),
         )
         .route(
             "/api/queryview/table/list/paging/{page}/{size}/{size}",
-            get(crate::table_list_paging_page_size_size),
+            get(crate::table_list_paging_page_size_size_p3),
         )
         .route(
             "/api/queryview/table/list/row/{tableFlag}/{id}/{next}/{count}",
-            get(crate::table_list_tableFlag_row_id_next_count),
+            get(crate::table_list_tableFlag_row_id_next_count_p4),
         )
         .route(
             "/api/queryview/table/list/row/select/{tableFlag}",
             get(crate::table_list_tableFlag_row_select),
         )
         .route(
-            "/api/queryview/table/list/row/select/where/where/{tableFlag}",
-            get(crate::table_list_tableFlag_row_select_where_where),
-        )
-        .route(
             "/api/queryview/table/list/table/row/paging/{tableFlag}/{page}/{size}/{size}",
-            get(crate::table_list_table_tableFlag_row_paging_page_size_size),
+            get(crate::table_list_table_tableFlag_row_paging_page_size_size_p4),
         )
         .route(
             "/api/queryview/table/row/{tableFlag}",
@@ -446,11 +442,11 @@ pub fn query_assemble_surface_router() -> Router {
         )
         .route(
             "/api/queryview/excel/result/{view}/{flag}",
-            get(crate::view_excel_result_flag),
+            get(crate::view_excel_result_flag_p2),
         )
         .route(
             "/api/queryview/{view}/{flag}/{flag}/{query}/{queryFlag}",
-            get(crate::view_flag_flag_query_queryFlag),
+            get(crate::view_flag_flag_query_queryFlag_p5),
         )
         .route(
             "/api/queryview/bundle/{view}/{flag}/{flag}/{query}/{queryFlag}",
@@ -788,6 +784,7 @@ pub fn query_assemble_surface_router() -> Router {
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
@@ -836,9 +833,10 @@ pub async fn importmodel_execute_record_recordId(
 }
 
 #[allow(non_snake_case)]
-pub async fn importmodel_flag_flag_query_queryFlag(
+async fn importmodel_flag_flag_query_queryFlag_core(
     pool: Extension<Pool>,
-    Path((flag, query_flag)): Path<(String, String)>,
+    flag: String,
+    query_flag: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -883,9 +881,30 @@ pub async fn importmodel_flag_flag_query_queryFlag(
 }
 
 #[allow(non_snake_case)]
-pub async fn importmodel_list_query_queryFlag(
+pub async fn importmodel_flag_flag_query_queryFlag(
     pool: Extension<Pool>,
-    Path(query_flag): Path<String>,
+    axum::extract::Path((flag, query_flag)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    importmodel_flag_flag_query_queryFlag_core(pool, flag, query_flag).await
+}
+
+#[allow(non_snake_case)]
+pub async fn importmodel_flag_flag_query_queryFlag_p4(
+    pool: Extension<Pool>,
+    axum::extract::Path((flag, _s1, _s2, query_flag)): axum::extract::Path<(
+        String,
+        String,
+        String,
+        String,
+    )>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    importmodel_flag_flag_query_queryFlag_core(pool, flag, query_flag).await
+}
+
+#[allow(non_snake_case)]
+async fn importmodel_list_query_queryFlag_core(
+    pool: Extension<Pool>,
+    query_flag: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -947,9 +966,100 @@ pub async fn importmodel_list_query_queryFlag(
 }
 
 #[allow(non_snake_case)]
+pub async fn importmodel_list_query_queryFlag(
+    pool: Extension<Pool>,
+    axum::extract::Path(query_flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    importmodel_list_query_queryFlag_core(pool, query_flag).await
+}
+
+#[allow(non_snake_case)]
+pub async fn importmodel_list_query_queryFlag_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, query_flag)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    importmodel_list_query_queryFlag_core(pool, query_flag).await
+}
+
+#[allow(non_snake_case)]
+async fn importmodel_list_record_item_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, model_flag, data, creator, create_time FROM x_query_import_model_record ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1::bigint - 1) * $2::bigint",
+            &[&page, &size],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "modelFlag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("model_flag")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "data".to_string(),
+                    Value::String(row.get::<_, Option<String>>("data").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
 pub async fn importmodel_list_record_item_paging_page_size_size(
     pool: Extension<Pool>,
-    Path((page, size)): Path<(i64, i64)>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    importmodel_list_record_item_paging_page_size_size_core(pool, page, size).await
+}
+
+#[allow(non_snake_case)]
+pub async fn importmodel_list_record_item_paging_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    importmodel_list_record_item_paging_page_size_size_core(pool, page, size).await
+}
+
+#[allow(non_snake_case)]
+async fn importmodel_list_record_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1006,58 +1116,17 @@ pub async fn importmodel_list_record_item_paging_page_size_size(
 #[allow(non_snake_case)]
 pub async fn importmodel_list_record_paging_page_size_size(
     pool: Extension<Pool>,
-    Path((page, size)): Path<(i64, i64)>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    importmodel_list_record_paging_page_size_size_core(pool, page, size).await
+}
 
-    let rows = client
-        .query(
-            "SELECT id, model_flag, data, creator, create_time FROM x_query_import_model_record ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1::bigint - 1) * $2::bigint",
-            &[&page, &size],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    let data: Vec<Value> = rows
-        .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                (
-                    "id".to_string(),
-                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
-                ),
-                (
-                    "modelFlag".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("model_flag")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "data".to_string(),
-                    Value::String(row.get::<_, Option<String>>("data").unwrap_or_default()),
-                ),
-                (
-                    "creator".to_string(),
-                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("create_time")
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]))
-        })
-        .collect();
-
-    let count = data.len() as i64;
-    Ok(Json(ActionResult::legacy_success(
-        Value::Array(data),
-        count,
-        0,
-    )))
+#[allow(non_snake_case)]
+pub async fn importmodel_list_record_paging_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    importmodel_list_record_paging_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
@@ -1151,9 +1220,9 @@ pub async fn importmodel_record_recordId_mockdeletetoget(
 }
 
 #[allow(non_snake_case)]
-pub async fn importmodel_record_recordId_status(
+async fn importmodel_record_recordId_status_core(
     pool: Extension<Pool>,
-    Path(record_id): Path<String>,
+    record_id: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1180,6 +1249,22 @@ pub async fn importmodel_record_recordId_status(
         )))),
         None => Ok(Json(ActionResult::error("record not found"))),
     }
+}
+
+#[allow(non_snake_case)]
+pub async fn importmodel_record_recordId_status(
+    pool: Extension<Pool>,
+    axum::extract::Path(record_id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    importmodel_record_recordId_status_core(pool, record_id).await
+}
+
+#[allow(non_snake_case)]
+pub async fn importmodel_record_recordId_status_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((record_id, _s1)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    importmodel_record_recordId_status_core(pool, record_id).await
 }
 
 #[allow(non_snake_case)]
@@ -1298,9 +1383,10 @@ pub async fn importmodel_id_execute(
 }
 
 #[allow(non_snake_case)]
-pub async fn neural_list_calculate_model_modelFlag_work_workId(
+async fn neural_list_calculate_model_modelFlag_work_workId_core(
     pool: Extension<Pool>,
-    Path((model_flag, work_id)): Path<(String, String)>,
+    model_flag: String,
+    work_id: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1359,6 +1445,22 @@ pub async fn neural_list_calculate_model_modelFlag_work_workId(
 }
 
 #[allow(non_snake_case)]
+pub async fn neural_list_calculate_model_modelFlag_work_workId(
+    pool: Extension<Pool>,
+    axum::extract::Path((model_flag, work_id)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    neural_list_calculate_model_modelFlag_work_workId_core(pool, model_flag, work_id).await
+}
+
+#[allow(non_snake_case)]
+pub async fn neural_list_calculate_model_modelFlag_work_workId_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((model_flag, _s1, work_id)): axum::extract::Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    neural_list_calculate_model_modelFlag_work_workId_core(pool, model_flag, work_id).await
+}
+
+#[allow(non_snake_case)]
 pub async fn query_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1410,9 +1512,9 @@ pub async fn query_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
 }
 
 #[allow(non_snake_case)]
-pub async fn query_list_key_key(
+async fn query_list_key_key_core(
     pool: Extension<Pool>,
-    Path(key): Path<String>,
+    key: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1464,9 +1566,25 @@ pub async fn query_list_key_key(
 }
 
 #[allow(non_snake_case)]
-pub async fn query_flag(
+pub async fn query_list_key_key(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
+    axum::extract::Path(key): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    query_list_key_key_core(pool, key).await
+}
+
+#[allow(non_snake_case)]
+pub async fn query_list_key_key_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, key, _s2)): axum::extract::Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    query_list_key_key_core(pool, key).await
+}
+
+#[allow(non_snake_case)]
+async fn query_flag_core(
+    pool: Extension<Pool>,
+    flag: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1519,9 +1637,26 @@ pub async fn query_flag(
 }
 
 #[allow(non_snake_case)]
-pub async fn table_list_paging_page_size_size(
+pub async fn query_flag(
     pool: Extension<Pool>,
-    Path((page, size)): Path<(i64, i64)>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    query_flag_core(pool, flag).await
+}
+
+#[allow(non_snake_case)]
+pub async fn query_flag_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, flag)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    query_flag_core(pool, flag).await
+}
+
+#[allow(non_snake_case)]
+async fn table_list_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    page: i64,
+    size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1576,9 +1711,27 @@ pub async fn table_list_paging_page_size_size(
 }
 
 #[allow(non_snake_case)]
-pub async fn table_list_table_tableFlag_row_paging_page_size_size(
+pub async fn table_list_paging_page_size_size(
     pool: Extension<Pool>,
-    Path((table_flag, page, size)): Path<(String, i64, i64)>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    table_list_paging_page_size_size_core(pool, page, size).await
+}
+
+#[allow(non_snake_case)]
+pub async fn table_list_paging_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    table_list_paging_page_size_size_core(pool, page, size).await
+}
+
+#[allow(non_snake_case)]
+async fn table_list_table_tableFlag_row_paging_page_size_size_core(
+    pool: Extension<Pool>,
+    table_flag: String,
+    page: i64,
+    size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1622,9 +1775,31 @@ pub async fn table_list_table_tableFlag_row_paging_page_size_size(
 }
 
 #[allow(non_snake_case)]
-pub async fn table_list_id_next_count(
+pub async fn table_list_table_tableFlag_row_paging_page_size_size(
     pool: Extension<Pool>,
-    Path((id, count)): Path<(String, i64)>,
+    axum::extract::Path((table_flag, page, size)): axum::extract::Path<(String, i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    table_list_table_tableFlag_row_paging_page_size_size_core(pool, table_flag, page, size).await
+}
+
+#[allow(non_snake_case)]
+pub async fn table_list_table_tableFlag_row_paging_page_size_size_p4(
+    pool: Extension<Pool>,
+    axum::extract::Path((table_flag, page, size, _s3)): axum::extract::Path<(
+        String,
+        i64,
+        i64,
+        String,
+    )>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    table_list_table_tableFlag_row_paging_page_size_size_core(pool, table_flag, page, size).await
+}
+
+#[allow(non_snake_case)]
+async fn table_list_id_next_count_core(
+    pool: Extension<Pool>,
+    id: String,
+    count: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1665,6 +1840,22 @@ pub async fn table_list_id_next_count(
         count,
         0,
     )))
+}
+
+#[allow(non_snake_case)]
+pub async fn table_list_id_next_count(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    table_list_id_next_count_core(pool, id, count).await
+}
+
+#[allow(non_snake_case)]
+pub async fn table_list_id_next_count_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, _s1, count)): axum::extract::Path<(String, String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    table_list_id_next_count_core(pool, id, count).await
 }
 
 #[allow(non_snake_case)]
@@ -1806,9 +1997,11 @@ pub async fn table_list_tableFlag_row_select_where_where(
 }
 
 #[allow(non_snake_case)]
-pub async fn table_list_tableFlag_row_id_next_count(
+async fn table_list_tableFlag_row_id_next_count_core(
     pool: Extension<Pool>,
-    Path((table_flag, id, count)): Path<(String, String, i64)>,
+    table_flag: String,
+    id: String,
+    count: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1849,6 +2042,27 @@ pub async fn table_list_tableFlag_row_id_next_count(
         count,
         0,
     )))
+}
+
+#[allow(non_snake_case)]
+pub async fn table_list_tableFlag_row_id_next_count(
+    pool: Extension<Pool>,
+    axum::extract::Path((table_flag, id, count)): axum::extract::Path<(String, String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    table_list_tableFlag_row_id_next_count_core(pool, table_flag, id, count).await
+}
+
+#[allow(non_snake_case)]
+pub async fn table_list_tableFlag_row_id_next_count_p4(
+    pool: Extension<Pool>,
+    axum::extract::Path((table_flag, id, _s2, count)): axum::extract::Path<(
+        String,
+        String,
+        String,
+        i64,
+    )>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    table_list_tableFlag_row_id_next_count_core(pool, table_flag, id, count).await
 }
 
 #[allow(non_snake_case)]
@@ -2308,9 +2522,9 @@ pub async fn table_tableFlag_row_id_part_update(
 }
 
 #[allow(non_snake_case)]
-pub async fn view_excel_result_flag(
+async fn view_excel_result_flag_core(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
+    flag: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2368,9 +2582,26 @@ pub async fn view_excel_result_flag(
 }
 
 #[allow(non_snake_case)]
-pub async fn view_flag_flag_query_queryFlag(
+pub async fn view_excel_result_flag(
     pool: Extension<Pool>,
-    Path((flag, query_flag)): Path<(String, String)>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    view_excel_result_flag_core(pool, flag).await
+}
+
+#[allow(non_snake_case)]
+pub async fn view_excel_result_flag_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, flag)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    view_excel_result_flag_core(pool, flag).await
+}
+
+#[allow(non_snake_case)]
+async fn view_flag_flag_query_queryFlag_core(
+    pool: Extension<Pool>,
+    flag: String,
+    query_flag: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2421,9 +2652,31 @@ pub async fn view_flag_flag_query_queryFlag(
 }
 
 #[allow(non_snake_case)]
+pub async fn view_flag_flag_query_queryFlag(
+    pool: Extension<Pool>,
+    axum::extract::Path((flag, query_flag)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    view_flag_flag_query_queryFlag_core(pool, flag, query_flag).await
+}
+
+#[allow(non_snake_case)]
+pub async fn view_flag_flag_query_queryFlag_p5(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, flag, _s2, _s3, query_flag)): axum::extract::Path<(
+        String,
+        String,
+        String,
+        String,
+        String,
+    )>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    view_flag_flag_query_queryFlag_core(pool, flag, query_flag).await
+}
+
+#[allow(non_snake_case)]
 pub async fn view_flag_flag_query_queryFlag_bundle(
     pool: Extension<Pool>,
-    Path((flag, query_flag)): Path<(String, String)>,
+    Path((_s0, flag, _s2, _s3, query_flag)): Path<(String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2496,7 +2749,7 @@ pub async fn view_flag_flag_query_queryFlag_bundle_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn view_flag_flag_query_queryFlag_excel(
     pool: Extension<Pool>,
-    Path((flag, query_flag)): Path<(String, String)>,
+    Path((_s0, flag, _s2, _s3, query_flag)): Path<(String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2828,7 +3081,7 @@ pub async fn view_id(
 #[allow(non_snake_case)]
 pub async fn view_id_bundle(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
+    Path((_s0, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2900,7 +3153,7 @@ pub async fn view_id_bundle_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn view_id_bundle_v2(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
+    Path((_s0, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2939,7 +3192,7 @@ pub async fn view_id_bundle_v2(
 #[allow(non_snake_case)]
 pub async fn view_id_excel(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
+    Path((_s0, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3014,7 +3267,7 @@ pub async fn view_id_excel_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn view_id_execute(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
+    Path((_s0, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3115,7 +3368,7 @@ pub async fn view_id_execute_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn view_id_execute_v2_page_page_size_size(
     pool: Extension<Pool>,
-    Path((id, page, size)): Path<(String, i64, i64)>,
+    Path((_s0, id, page, size)): Path<(String, String, i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 

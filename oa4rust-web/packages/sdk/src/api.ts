@@ -207,6 +207,68 @@ export class ApiClient {
     }
     return resp.json() as Promise<ApiResponse<T>>
   }
+
+  /** 文件上传（带真实进度回调；fetch 拿不到上传字节流，走 XHR）。 */
+  uploadWithProgress<T>(
+    path: string,
+    formData: FormData,
+    onProgress?: (percent: number) => void,
+    options?: ApiRequestOptions & { timeoutMs?: number },
+  ): Promise<ApiResponse<T>> {
+    return this.uploadWithProgressOnce<T>(path, formData, onProgress, options, false)
+  }
+
+  private uploadWithProgressOnce<T>(
+    path: string,
+    formData: FormData,
+    onProgress: ((percent: number) => void) | undefined,
+    options: (ApiRequestOptions & { timeoutMs?: number }) | undefined,
+    retried: boolean,
+  ): Promise<ApiResponse<T>> {
+    return new Promise((resolve, reject) => {
+      const url = this.resolveUrl(path)
+      const xhr = new XMLHttpRequest()
+      xhr.open('POST', url.toString())
+      xhr.withCredentials = true
+      for (const [k, v] of Object.entries(options?.headers ?? {})) {
+        xhr.setRequestHeader(k, String(v))
+      }
+      if (options?.timeoutMs) xhr.timeout = options.timeoutMs
+      xhr.upload.onprogress = (e) => {
+        if (onProgress && e.lengthComputable) {
+          onProgress(Math.round((e.loaded / e.total) * 100))
+        }
+      }
+      xhr.onload = () => {
+        if (xhr.status === 401 && options?.requireAuth !== false && !retried) {
+          this.refreshSession()
+            .then(() => this.uploadWithProgressOnce<T>(path, formData, onProgress, options, true).then(resolve, reject))
+            .catch(() => reject(this.authenticationFailed()))
+          return
+        }
+        if (xhr.status === 401) {
+          reject(this.authenticationFailed())
+          return
+        }
+        if (xhr.status === 403) {
+          reject(new PermissionError('Permission denied'))
+          return
+        }
+        if (xhr.status < 200 || xhr.status >= 300) {
+          reject(new ApiError(`HTTP ${xhr.status}`, xhr.status))
+          return
+        }
+        try {
+          resolve(JSON.parse(xhr.responseText) as ApiResponse<T>)
+        } catch {
+          reject(new ApiError('malformed JSON response', xhr.status))
+        }
+      }
+      xhr.onerror = () => reject(new ApiError('Network error', 0))
+      xhr.ontimeout = () => reject(new ApiError('Timeout', 0))
+      xhr.send(formData)
+    })
+  }
 }
 
 export class ApiError extends Error {

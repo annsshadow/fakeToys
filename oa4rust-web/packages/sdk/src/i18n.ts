@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { ref } from 'vue'
-import type { I18n } from 'vue-i18n'
+import type { Composer, I18n } from 'vue-i18n'
 import { createI18n } from 'vue-i18n'
 
 export type SupportedLocale = 'zh-cn' | 'en' | 'es'
@@ -31,12 +31,12 @@ export function getLocale(): SupportedLocale {
 
 export function setLocale(locale: SupportedLocale): void {
   _locale.value = locale
-  if (_i18n) (_i18n.global as any).locale.value = locale
+  if (_i18n) (_i18n.global as Composer).locale.value = locale
 }
 
 export function registerMessages(locale: SupportedLocale, messages: Record<string, string>): void {
   if (!_i18n) return
-  const inst = _i18n as any
-  const existing = inst.global.getLocaleMessage(locale) ?? {}
-  inst.global.setLocaleMessage(locale, { ...existing, ...messages })
+  const inst = _i18n.global as Composer
+  const existing = inst.getLocaleMessage(locale) ?? {}
+  inst.setLocaleMessage(locale, { ...existing, ...messages })
 }

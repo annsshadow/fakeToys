@@ -8,8 +8,17 @@ from typing import List, Dict, Optional
 from dataclasses import dataclass
 from collections import Counter
 import re
+from .validation import require_count
 
 logger = logging.getLogger(__name__)
+
+# 中文词串切分。编译一次放在模块级：`re.findall(字面模式, text)`
+# 每次都要走一遍 `re._compile()` 的缓存查找，而 `_analyze_topic_distribution` 的逐条
+# 循环对每条记录各调一次（真实语料 6902 条实测 6902 次）。
+# 本模式是 `\u4e00-\u9fa5`，与 `statistics` / `analytics` 的 `\u4e00-\u9fff`
+# 不是同一串，合并会改变词频口径（`龥` 与 `鿿` 之间的
+# 字归属不同），故各留一份常量，不共用。
+_CJK_WORD_PATTERN = re.compile(r'[\u4e00-\u9fa5]+')
 
 
 @dataclass
@@ -25,20 +34,19 @@ class ActiveSampler:
     
     def __init__(self):
         """初始化主动学习选样器"""
-        self._model = None
     
     def _load_model(self):
         """延迟加载模型"""
-        if self._model is None:
-            try:
-                from sklearn.feature_extraction.text import TfidfVectorizer
-                from sklearn.cluster import KMeans
-                self._tfidf = TfidfVectorizer(max_features=1000)
-                self._use_sklearn = True
-                logger.info("使用 sklearn 进行主题分析")
-            except ImportError:
-                logger.warning("sklearn 未安装，使用简化分析")
-                self._use_sklearn = False
+        # _model 属性从未被回填、只被这个恒真守卫读，随 L126 一并删除
+        try:
+            from sklearn.feature_extraction.text import TfidfVectorizer
+            from sklearn.cluster import KMeans
+            self._tfidf = TfidfVectorizer(max_features=1000)
+            self._use_sklearn = True
+            logger.info("使用 sklearn 进行主题分析")
+        except ImportError:
+            logger.warning("sklearn 未安装，使用简化分析")
+            self._use_sklearn = False
     
     def _analyze_question_type(self, text: str) -> str:
         """分析问题类型
@@ -102,7 +110,7 @@ class ActiveSampler:
         for item in items:
             text = item.get("instruction", "")
             # 提取关键词（简单的基于标点分割）
-            words = re.findall(r'[\u4e00-\u9fa5]+', text)
+            words = _CJK_WORD_PATTERN.findall(text)
             keywords.extend(words[:5])  # 取前5个关键词
         
         # 统计词频
@@ -206,8 +214,12 @@ class ActiveSampler:
             if ratio < threshold:
                 underrepresented.append(f"question_type:{q_type}")
         
-        # 检查长度分布
-        for length_type, ratio in analysis["length_distribution"].items():
+        # 检查长度分布（只认 short/medium/long 三个占比桶；_analyze_length_distribution
+        # 还会额外塞一个 avg_length「均值」键，它是绝对值不是占比，混进来会在
+        # avg_length < threshold 时误产出伪桶 "length:avg_length"，污染
+        # recommend_seeds 的 underrepresented 列表并白占一个 top_k 名额，匹配循环也打不中）
+        for length_type in ("short", "medium", "long"):
+            ratio = analysis["length_distribution"].get(length_type, 0)
             if isinstance(ratio, float) and ratio < threshold:
                 underrepresented.append(f"length:{length_type}")
         
@@ -225,6 +237,11 @@ class ActiveSampler:
         Returns:
             SamplingResult 实例
         """
+        # 判参先于「空数据集」短路：`items=[]` 时 HEAD 会先返回一个看似正常的
+        # 空结果，把 top_k 的坏值一起藏掉。真实 6902 条上 top_k=-1 答 2 个种子、
+        # -3 答 0 个（自然上限是 4 个），同一个负数随数据给不同答案。
+        require_count("top_k", top_k)
+
         if not items:
             return SamplingResult(
                 recommended_seeds=[],

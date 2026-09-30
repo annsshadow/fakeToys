@@ -77,6 +77,17 @@ describe('authApi request shapes', () => {
     await authApi.captcha()
     expect(last()).toMatchObject({ verb: 'get', path: '/api/authentication/captcha' })
   })
+
+  // 轮73：改密走 PUT /api/person/password（o2server PasswordAction 契约，
+  // 后端轮73 起 camelCase alias 兼容），camelCase 键形与桌面 Personal.vue 一致。
+  it('changePassword PUTs camelCase payload to /api/person/password', async () => {
+    await authApi.changePassword({ oldPassword: 'old', newPassword: 'newPass1' })
+    expect(last()).toMatchObject({
+      verb: 'put',
+      path: '/api/person/password',
+      body: { oldPassword: 'old', newPassword: 'newPass1' },
+    })
+  })
 })
 
 describe('processApi request shapes', () => {

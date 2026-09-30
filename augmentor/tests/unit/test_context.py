@@ -131,6 +131,44 @@ class TestGenerateMultiTurn:
         assert result["instruction"] == "Q1"
         assert result["history"] == []
 
+    def test_duplicate_across_multiple_existing_histories(self):
+        """重复问题在**第二条**已有历史里也须命中（L134，B204）
+
+        既有用例的 existing_histories 都只有 1 条历史；这条把重复项放进**第二条**历史、
+        并把 user/assistant 轮次混在一起，钉死「摊平为单一集合」的并集语义：改法里
+        只要误把判据退回「只看首条历史」（并集外的写法），Q2/Q3 会被漏判，这条当场红。
+        （旧逐条重建写法在此形状上语义等价地全命中，故此用例锁的是并集、非修 bug。）
+        """
+        augmentor = ContextAugmentor(ScriptedBackend(["Q2", "Q3"]), num_turns=3)
+        existing = [
+            [{"role": "user", "content": "无关1"}, {"role": "assistant", "content": "答1"}],
+            [
+                {"role": "user", "content": "Q2"},
+                {"role": "assistant", "content": "答2"},
+                {"role": "user", "content": "Q3"},
+            ],
+        ]
+        result = augmentor.generate_multi_turn(
+            {"instruction": "Q1", "output": "A1"}, existing_histories=existing
+        )
+        # Q2 在第二条历史里有 → 跳过；Q3 也在 → 跳过；没有可采纳轮次，退化为种子
+        assert result["instruction"] == "Q1"
+        assert result["history"] == []
+
+    def test_cross_history_partial_accept(self):
+        """只有部分历史命中的后续问题仍应被采纳（不误伤）"""
+        augmentor = ContextAugmentor(ScriptedBackend(["Q2", "Q9"]), num_turns=3)
+        existing = [
+            [{"role": "user", "content": "Q2"}],
+            [{"role": "user", "content": "别的问题"}, {"role": "assistant", "content": "答"}],
+        ]
+        result = augmentor.generate_multi_turn(
+            {"instruction": "Q1", "output": "A1"}, existing_histories=existing
+        )
+        # Q2 命中第一条历史 → 跳过；Q9 不在任何已有历史 → 采纳
+        assert result["instruction"] == "Q9"
+        assert [t["content"] for t in result["history"]] == ["Q1", "A1"]
+
 
 class TestBatchGenerate:
     def test_serial_generation_keeps_order(self):

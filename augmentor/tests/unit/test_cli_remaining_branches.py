@@ -151,3 +151,52 @@ class TestMigrateErrors:
         )
         assert "错误详情" in out
         assert "字段缺失" in out
+
+
+class TestVersionDeleteAction:
+    """delete 动作的三个分支（L103，A203）
+
+    整个 elif 分支此前零覆盖（L100 终态 coverage 缺数 98-106）：缺参 exit、
+    删除成功、版本不存在时 exit。CLI 的版本写操作里这是唯一没有任何用例
+    踩过的动作。
+    """
+
+    def test_delete_requires_version(self, tmp_path):
+        _, err, code = _run(
+            ["version", "--action", "delete", "--versions-dir", str(tmp_path / "v")],
+            cwd=tmp_path,
+        )
+        assert code == 1
+        assert "--version" in err
+
+    def test_delete_existing_version_succeeds(self, tmp_path):
+        from augmentor.version_control import DatasetVersionManager
+
+        data = [{"instruction": "问", "input": "", "output": "答"}]
+        created = DatasetVersionManager(str(tmp_path / "v")).create_version(data, "v1")
+        version_id = created.version_id if hasattr(created, "version_id") else created
+        out, _, code = _run(
+            [
+                "version", "--action", "delete",
+                "--version", str(version_id),
+                "--versions-dir", str(tmp_path / "v"),
+            ],
+            cwd=tmp_path,
+        )
+        # 成功路径自然走完 main()，不触发 SystemExit（helper 的 code 语义：None = 未判负）
+        assert "删除成功" in out
+        remaining = [v for v in DatasetVersionManager(str(tmp_path / "v")).list_versions()]
+        assert all(str(v.version_id if hasattr(v, "version_id") else v) != str(version_id)
+                   for v in remaining)
+
+    def test_delete_missing_version_fails(self, tmp_path):
+        _, err, code = _run(
+            [
+                "version", "--action", "delete",
+                "--version", "no-such-version",
+                "--versions-dir", str(tmp_path / "v"),
+            ],
+            cwd=tmp_path,
+        )
+        assert code == 1
+        assert "删除失败" in err

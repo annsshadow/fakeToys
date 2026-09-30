@@ -183,7 +183,7 @@ async function loadCategories() {
     categories.value = (r.data ?? []) as Array<{ id?: string; name?: string }>
     if (categories.value.length === 0) toast.success('暂无分类')
   } catch (e: any) {
-    toast.error('加载分类失败: ' + (e?.message ?? ''))
+    toast.error(`加载分类失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -199,19 +199,29 @@ async function loadDesignerApp() {
     const cats = (Array.isArray(catResp?.data) ? catResp.data : []) as Array<Record<string, unknown>>
     const cat = cats[0] ? String(cats[0].id ?? cats[0].name ?? '') : ''
     const appResp: any = cat
-      ? await api.get(`/api/processplatform/assemble/designer/application/list/applicationcategory/${encodeURIComponent(cat)}`).catch(() => null)
+      ? await api
+          .get(`/api/processplatform/assemble/designer/application/list/applicationcategory/${encodeURIComponent(cat)}`)
+          .catch(() => null)
       : null
-    const apps = (Array.isArray(appResp?.data?.data) ? appResp.data.data : (appResp?.data ?? [])) as Array<Record<string, unknown>>
+    const apps = (Array.isArray(appResp?.data?.data) ? appResp.data.data : (appResp?.data ?? [])) as Array<
+      Record<string, unknown>
+    >
     const appId = apps[0] ? String(apps[0].id ?? '') : ''
     const [detail, perm] = await Promise.all([
-      appId ? api.get(`/api/processplatform/assemble/designer/application/${encodeURIComponent(appId)}`).catch(() => null) : Promise.resolve(null),
-      appId ? api.get(`/api/processplatform/assemble/designer/application/permission/${encodeURIComponent(appId)}`).catch(() => null) : Promise.resolve(null),
+      appId
+        ? api.get(`/api/processplatform/assemble/designer/application/${encodeURIComponent(appId)}`).catch(() => null)
+        : Promise.resolve(null),
+      appId
+        ? api
+            .get(`/api/processplatform/assemble/designer/application/permission/${encodeURIComponent(appId)}`)
+            .catch(() => null)
+        : Promise.resolve(null),
     ])
     const dName = (detail as any)?.data?.name ?? (appId || '—')
     const pKeys = perm && (perm as any).data?.permissions ? Object.keys((perm as any).data.permissions).length : 0
     designerText.value = `分类 ${cats.length} · 应用「${dName}」· 权限项 ${pKeys}`
   } catch (e: any) {
-    toast.error('加载设计器应用明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载设计器应用明细失败: ${e?.message ?? ''}`)
   }
 }
 // 表面流程应用族 3 条真实 distinct 路由（surface，均以流程应用 id 定位，投影/表各异）：
@@ -224,25 +234,33 @@ async function loadSurfaceApp() {
     const cats = (Array.isArray(catResp?.data) ? catResp.data : []) as Array<Record<string, unknown>>
     const cat = cats[0] ? String(cats[0].id ?? cats[0].name ?? '') : ''
     const appResp: any = cat
-      ? await api.get(`/api/processplatform/assemble/designer/application/list/applicationcategory/${encodeURIComponent(cat)}`).catch(() => null)
+      ? await api
+          .get(`/api/processplatform/assemble/designer/application/list/applicationcategory/${encodeURIComponent(cat)}`)
+          .catch(() => null)
       : null
-    const apps = (Array.isArray(appResp?.data?.data) ? appResp.data.data : (appResp?.data ?? [])) as Array<Record<string, unknown>>
+    const apps = (Array.isArray(appResp?.data?.data) ? appResp.data.data : (appResp?.data ?? [])) as Array<
+      Record<string, unknown>
+    >
     const appId = apps[0] ? String(apps[0].id ?? '') : ''
     if (!appId) {
       surfaceText.value = '暂无流程应用可查表面信息'
       return
     }
     const [mgr, icon, dict] = await Promise.all([
-      api.get(`/api/processplatform/assemble/surface/application/${encodeURIComponent(appId)}/is/manager`).catch(() => null),
+      api
+        .get(`/api/processplatform/assemble/surface/application/${encodeURIComponent(appId)}/is/manager`)
+        .catch(() => null),
       api.get(`/api/processplatform/assemble/surface/application/${encodeURIComponent(appId)}/icon`).catch(() => null),
-      api.get(`/api/processplatform/assemble/surface/applicationdict/list/application/${encodeURIComponent(appId)}`).catch(() => null),
+      api
+        .get(`/api/processplatform/assemble/surface/applicationdict/list/application/${encodeURIComponent(appId)}`)
+        .catch(() => null),
     ])
     const isMgr = (mgr as any)?.data?.id ? '有权' : '未命中'
     const hasIcon = (icon as any)?.data?.id ? '有' : '无'
     const dictCount = Array.isArray((dict as any)?.data) ? (dict as any).data.length : 0
     surfaceText.value = `应用「${appId}」· 管理员权限 ${isMgr} · 图标 ${hasIcon} · 数据字典 ${dictCount} 项`
   } catch (e: any) {
-    toast.error('加载表面应用信息失败: ' + (e?.message ?? ''))
+    toast.error(`加载表面应用信息失败: ${e?.message ?? ''}`)
   }
 }
 function fmtTime(t?: string) {

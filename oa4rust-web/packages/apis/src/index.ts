@@ -599,8 +599,7 @@ export const documentApi = {
   delete: (id: string) => api.delete(`/api/document/${id}`),
   draftList: (page: number, size: number) => api.post(`/api/document/draft/list/paging/${page}/${size}`, {}),
   filterList: (params: unknown) => api.post('/api/document/filter/list', params),
-  managerList: (page: number, size: number) =>
-    api.post(`/api/document/filter/list/${page}/size/${size}/manager`, {}),
+  managerList: (page: number, size: number) => api.post(`/api/document/filter/list/${page}/size/${size}/manager`, {}),
   batch: (data: unknown) => api.post('/api/document/batch', data),
   categoryList: () => api.get('/api/document/category/list'),
   cipherList: (id: string) => api.get(`/api/document/cipher/list/${id}`),
@@ -676,19 +675,13 @@ export const attendanceDeepApi = {
   employeeList: (params: unknown) => api.post('/api/attendance/employee/list', params),
   // v2 考勤组（x_attendance_v2_group）：列表 POST paging、按 id 取/删、新建。
   v2GroupList: (page: number, size: number, name = '') =>
-    api.post<PagedResponse<unknown>>(
-      `/api/attendance/assemble/control/v2/group/list/${page}/size/${size}`,
-      { name },
-    ),
+    api.post<PagedResponse<unknown>>(`/api/attendance/assemble/control/v2/group/list/${page}/size/${size}`, { name }),
   v2GroupGet: (id: string) => api.get(`/api/attendance/assemble/control/v2/group/${id}`),
   v2GroupCreate: (data: unknown) => api.post('/api/attendance/assemble/control/v2/group', data),
   v2GroupDelete: (id: string) => api.get(`/api/attendance/assemble/control/v2/group/${id}/delete`),
   // v2 班次（x_attendance_v2_shift）：列表 POST paging、按 id 取/删、新建。
   v2ShiftList: (page: number, size: number, name = '') =>
-    api.post<PagedResponse<unknown>>(
-      `/api/attendance/assemble/control/v2/shift/list/${page}/size/${size}`,
-      { name },
-    ),
+    api.post<PagedResponse<unknown>>(`/api/attendance/assemble/control/v2/shift/list/${page}/size/${size}`, { name }),
   v2ShiftGet: (id: string) => api.get(`/api/attendance/assemble/control/v2/shift/${id}`),
   v2ShiftCreate: (data: unknown) => api.post('/api/attendance/assemble/control/v2/shift/create', data),
   v2ShiftDelete: (id: string) => api.get(`/api/attendance/assemble/control/v2/shift/delete/${id}`),

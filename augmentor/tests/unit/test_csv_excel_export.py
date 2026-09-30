@@ -77,7 +77,7 @@ class TestExportExcel:
         assert list(df.columns) == ["instruction"]
 
 
-class TestPandasMissing:
+class TestMissingDependencies:
     def test_export_csv_no_pandas_raises(self, tmp_path, monkeypatch):
         import augmentor.csv_excel_import as cei
 
@@ -85,9 +85,14 @@ class TestPandasMissing:
         with pytest.raises(ImportError, match="pandas"):
             export_to_csv(ITEMS, tmp_path / "x.csv")
 
-    def test_export_excel_no_pandas_raises(self, tmp_path, monkeypatch):
-        import augmentor.csv_excel_import as cei
+    def test_export_excel_no_openpyxl_raises(self, tmp_path, monkeypatch):
+        """L85 起 Excel 写边的依赖门是 openpyxl，不再看 pandas 标志位
 
-        monkeypatch.setattr(cei, "HAS_PANDAS", False)
-        with pytest.raises(ImportError, match="pandas"):
+        这里必须打 `excel_write.HAS_OPENPYXL`：转接口把实现交给了那边，继续打
+        `cei.HAS_PANDAS` 会变成一个「断言永真」的假守卫。
+        """
+        import augmentor.excel_write as excel_write
+
+        monkeypatch.setattr(excel_write, "HAS_OPENPYXL", False)
+        with pytest.raises(ImportError, match="openpyxl"):
             export_to_excel(ITEMS, tmp_path / "x.xlsx")
