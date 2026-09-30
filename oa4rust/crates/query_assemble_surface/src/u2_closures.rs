@@ -447,7 +447,7 @@ async fn execute_stat_by_id(
 ) -> Result<Value, AppError> {
     let row = client
         .query_opt(
-            "SELECT id, name, stat_type, config FROM x_query_stat WHERE id = $1 LIMIT 1",
+            "SELECT id, name, stat_type, config FROM x_query_stat WHERE id = $1 AND deleted_at IS NULL LIMIT 1",
             &[&id],
         )
         .await
@@ -516,7 +516,7 @@ pub async fn stat_get_id(
 
     let row = client
         .query_opt(
-            "SELECT id, name, query_flag, stat_type, config, creator FROM x_query_stat WHERE id = $1 LIMIT 1",
+            "SELECT id, name, query_flag, stat_type, config, creator FROM x_query_stat WHERE id = $1 AND deleted_at IS NULL LIMIT 1",
             &[&id],
         )
         .await
@@ -537,7 +537,7 @@ pub async fn stat_get_with_query(
 
     let row = client
         .query_opt(
-            "SELECT id, name, query_flag, stat_type, config, creator FROM x_query_stat WHERE (name = $1 OR id = $1) AND query_flag = $2 LIMIT 1",
+            "SELECT id, name, query_flag, stat_type, config, creator FROM x_query_stat WHERE (name = $1 OR id = $1) AND query_flag = $2 AND deleted_at IS NULL LIMIT 1",
             &[&flag, &query_flag],
         )
         .await
@@ -558,7 +558,7 @@ pub async fn stat_list_with_query(
 
     let rows = client
         .query(
-            "SELECT id, name, query_flag, stat_type, config, creator FROM x_query_stat WHERE query_flag = $1 ORDER BY create_time DESC",
+            "SELECT id, name, query_flag, stat_type, config, creator FROM x_query_stat WHERE query_flag = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
             &[&query_flag],
         )
         .await
@@ -1024,7 +1024,7 @@ async fn stat_execute_scoped(
 
     let row = client
         .query_opt(
-            "SELECT id FROM x_query_stat WHERE (name = $1 OR id = $1) AND query_flag = $2 LIMIT 1",
+            "SELECT id FROM x_query_stat WHERE (name = $1 OR id = $1) AND query_flag = $2 AND deleted_at IS NULL LIMIT 1",
             &[&flag, &query_flag],
         )
         .await

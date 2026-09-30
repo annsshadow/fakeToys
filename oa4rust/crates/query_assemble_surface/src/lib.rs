@@ -842,7 +842,7 @@ async fn importmodel_flag_flag_query_queryFlag_core(
 
     let row = client
         .query_opt(
-            "SELECT id, name, model_flag, query_flag FROM x_query_import_model WHERE flag = $1 AND query_flag = $2 LIMIT 1",
+            "SELECT id, name, model_flag, query_flag FROM x_query_import_model WHERE flag = $1 AND query_flag = $2 AND deleted_at IS NULL LIMIT 1",
             &[&flag, &query_flag],
         )
         .await
@@ -910,7 +910,7 @@ async fn importmodel_list_query_queryFlag_core(
 
     let rows = client
         .query(
-            "SELECT id, name, model_flag, query_flag, creator, create_time FROM x_query_import_model WHERE query_flag = $1 ORDER BY create_time DESC",
+            "SELECT id, name, model_flag, query_flag, creator, create_time FROM x_query_import_model WHERE query_flag = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
             &[&query_flag],
         )
         .await
@@ -1285,7 +1285,7 @@ pub async fn importmodel_id(
 
     let row = client
         .query_opt(
-            "SELECT id, name, model_flag, query_flag, content, creator, create_time FROM x_query_import_model WHERE id = $1",
+            "SELECT id, name, model_flag, query_flag, content, creator, create_time FROM x_query_import_model WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -1347,7 +1347,7 @@ pub async fn importmodel_id_execute(
 
     let row = client
         .query_opt(
-            "SELECT id, model_flag FROM x_query_import_model WHERE id = $1",
+            "SELECT id, model_flag FROM x_query_import_model WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
