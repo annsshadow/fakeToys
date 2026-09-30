@@ -157,6 +157,13 @@ type SettleInput struct {
 	ReactionsUsed map[string]int `json:"reactions_used"`
 	TerrainUsed   []string       `json:"terrain_used"`
 	ReplayHash    string         `json:"replay_hash"`
+	// ReplaySkills 是回放前缀里的 S 段：技能槽配置（第 56 轮新增）。
+	//
+	// 服务端用 user_skill_slots + user_skills.level + 内容表重算它并逐字比对，
+	// 不需要任何战斗模拟 —— 与 replay_hash 整体不同，那个算不出来（见 replayskills.go）。
+	//
+	// 抓的是：伪造底伤（等价于假报技能等级）、上报另一套技能、槽位错位。
+	ReplaySkills string `json:"replay_skills"`
 	// CardPicks 每波选中的手牌索引（-1 表示整波跳过）。
 	//
 	// ⚠️ 这是 I-6 重放闭环的最后一环：选牌会改变后续战斗，

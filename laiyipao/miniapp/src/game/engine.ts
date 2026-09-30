@@ -464,12 +464,42 @@ export class BattleEngine {
    * 注：种子不进前缀。种子的影响已经完整体现在事件流里
    * （刷怪洗牌、暴击滚点、命中次序），重复计入反而会让两端更难对齐。
    */
-  replayHash(): string {
-    const a = this.currentAttacker()
-    const skills = this.skills
+  /**
+   * 回放前缀里的 **`S` 段**：本局装载的技能槽配置。
+   *
+   * 格式：每槽一条 `slot:skillId:baseDamage:applyStacks:heatCost`，按字符串升序，逗号连接。
+   *
+   * ## 为什么把它单独提出来（第 56 轮）
+   *
+   * `replayHash` 整体是 **无法**被服务端廉价校验的：
+   * 它是 `fnv1a64(前缀;事件1;事件2;…)` 的单向哈希，
+   * 而前缀里的 `A` 段取自 `currentAttacker()` —— 那个值含 `this.buffs.*`，
+   * 是**战斗中选卡产生的加成**，服务端在结算时不知道。
+   *
+   * 但 `S` 段**不含 buff**，它完全由构筑决定：槽位、技能 id、
+   * 底伤（技能等级已烘进去）、叠层、热量。
+   * 服务端同样有这些数据，于是可以独立重算并比对。
+   *
+   * 它能抓住：
+   * - 伪造 `base_damage`（即假报技能等级 —— 等级必须烘进底伤）
+   * - 上报一套与 `user_skill_slots` 不同的技能
+   * - 槽位错位
+   *
+   * 抓不到的：伪造 `A` 段（攻方系数）—— 那需要模拟，已记入 README 已知边界。
+   *
+   * ⚠️ 这个字符串同时用于哈希与上报，**必须是同一个来源** ——
+   * 若上报时另算一份，两处一旦漂移，服务端会以「玩家作弊」为名拒绝合法对局。
+   */
+  replaySkillsSegment(): string {
+    return this.skills
       .map((s) => `${s.slot}:${s.skillId}:${s.baseDamage}:${s.applyStacks}:${s.heatCost}`)
       .sort()
       .join(',')
+  }
+
+  replayHash(): string {
+    const a = this.currentAttacker()
+    const skills = this.replaySkillsSegment()
     const prefix =
       `L${this.cfg.level.id}` +
       `|A${a.attack}.${a.critPermille}.${a.critMultiplierPermille}` +
@@ -1679,6 +1709,15 @@ export class BattleEngine {
       /** I-6 重放闭环：选牌决策序列，第三方据此复现原局 */
       card_picks: [...this.cardPicks],
       replay_hash: this.replayHash(),
+      /**
+       * 第 56 轮新增：前缀里的 S 段（技能槽配置）。
+       *
+       * 服务端用 `user_skill_slots` + `user_skills.level` + 内容表重算它并比对。
+       * 这不需要任何战斗模拟 —— 与 replay_hash 整体不同，那个算不出来。
+       *
+       * 抓的是：伪造 base_damage（假报技能等级）、上报另一套技能、槽位错位。
+       */
+      replay_skills: this.replaySkillsSegment(),
     }
   }
 }
