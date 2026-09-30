@@ -39,7 +39,8 @@
 
 | # | 内容 | 证据 | 量级 |
 |---|------|------|------|
-| B201 | 待第一轮普查后立项 | —— | — |
+| B201 | **已关闭（L131）**：`DatasetAnalyzer.get_duplicate_candidates`（SDK 公共方法）O(n²) 里逐对重建字符集是真热点 | 实测 6000 条 **71.8 s**；预计算后 2500 条 A/B new/old ×0.36 / ×0.34（双序），等价性 5 阈值逐元素一致 | S |
+| B202 | 待普查后立项 | —— | — |
 
 ## 循环日志
 
@@ -399,3 +400,23 @@
 - **前端三件套复验全绿**：lint exit 0 / tsc exit 0 / vitest **13 文件 112 例**通过。
 - **纪律补记**：新增任何被 `eslint .` 扫到的文件（不止 `src/`），当轮必须连
   `npm run lint` 一起复验，不能只验「脚本能跑」——lint 环境判定与运行时是两回事。
+
+### L131（2026-09-30）— B201 立项 + 关闭：get_duplicate_candidates O(n²) 热点预计算
+
+- **性能热点普查**（贴近真实的房产客服语料，`Temp/l131q`）：`DatasetAnalyzer.analyze()`
+  在 6000 条上 61.5 ms（text_statistics 36.5 / quality 19.3 / diversity 6.1，都健康），
+  但 `get_duplicate_candidates()` 单独 **71.8 s / 244225 候选** —— 数量级离群，是本轮热点。
+- **根因**：全对 Jaccard 是 O(n²) 无法回避，但改前把 `set(inst_i)` / `set(inst_j)` 写在
+  **内层循环里逐对重建** ⇒ str→set 构造被跑了 ~n² 次（长文本上这是主成本），`dict.get`
+  也在内层跑 n² 次。这是本仓 SDK 公共方法（`augmentor/__init__.py` 导出 `DatasetAnalyzer`）。
+- **修法**（行为完全不变，只把构造提到循环外）：每条 instruction 的字符集**预计算一次**
+  （空 instruction 记 `None`、与改前 `if inst_i and inst_j` 同判跳过），内层只做集合运算。
+  n² 次 set 构造降到 n 次；相似度公式、`>=` 阈值、配对顺序、降序排序一字未动。
+- **A/B（同进程双序 min-of-2，2500 条）**：old 13727 / 14067 ms，new 4957 / 4825 ms ⇒
+  **new/old ×0.361 / ×0.343**（约 2.8× 快）。等价性：1200 条 × 5 阈值（0.3/0.5/0.8/0.9/1.0）
+  **逐元素一致**，含空 instruction 边界与相似度平局。
+- **回归护栏**：`test_analytics.py::TestGetDuplicateCandidates::test_matches_reference_semantics_l131`
+  ——内嵌一个「朴素双循环 + 逐对重建 set」的参照实现，6 阈值逐元素比对 + 断言候选下标
+  不牵扯空 instruction 条目。改写只要动了「空跳过 / Jaccard / 降序」任一就红。
+- 全量门禁：`7359 passed / 3 skipped / exit 0`（L129 的 7358 + 1 新守卫，无回归）；
+  analytics 三测件 75/75、A184 21/21 绿。**B201 关闭**。
