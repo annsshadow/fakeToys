@@ -1743,7 +1743,9 @@ pub async fn u2_role_bind_object(
         .cloned()
         .unwrap_or_default();
     let mut bound = 0usize;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // N 次绑定插入事务化：中途失败整体回滚，不留半绑定中间态。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     for obj in objects {
         let object_type = obj
             .get("type")
@@ -1764,7 +1766,7 @@ pub async fn u2_role_bind_object(
             .unwrap_or("")
             .to_string();
         insert_bind(
-            &client,
+            tx.client(),
             &role_id,
             &object_type,
             &object_code,
@@ -1774,6 +1776,7 @@ pub async fn u2_role_bind_object(
         .await?;
         bound += 1;
     }
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("roleId".to_string(), Value::String(role_id)),
@@ -1804,14 +1807,25 @@ pub async fn u2_role_bind_user(
         .cloned()
         .unwrap_or_default();
     let mut bound = 0usize;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // N 次绑定插入事务化：中途失败整体回滚，不留半绑定中间态。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     for rid in role_ids {
         let Some(rid) = rid.as_str().map(String::from) else {
             continue;
         };
-        insert_bind(&client, &rid, "person", &person, "", &session.person_unique).await?;
+        insert_bind(
+            tx.client(),
+            &rid,
+            "person",
+            &person,
+            "",
+            &session.person_unique,
+        )
+        .await?;
         bound += 1;
     }
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("personCode".to_string(), Value::String(person)),
