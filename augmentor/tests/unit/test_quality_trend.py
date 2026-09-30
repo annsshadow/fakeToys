@@ -91,3 +91,26 @@ class TestTrendComparison:
         assert "dataset_a" in comparison
         assert "dataset_b" in comparison
         assert comparison["comparison"] == "dataset_a_higher"
+
+
+    def test_compare_trends_tie_when_equal(self, tracker):
+        """两数据集某指标最新值相等 ⇒ comparison = tie（改前误报 dataset_b_higher，L142，B212）"""
+        tracker.record_quality_metrics("ds_a", {"quality": 0.5})
+        tracker.record_quality_metrics("ds_b", {"quality": 0.5})
+        comparison = tracker.compare_trends("ds_a", "ds_b", "quality")
+        assert comparison["comparison"] == "tie"
+
+    def test_compare_trends_tie_when_metric_absent_on_both(self, tracker):
+        """某指标两数据集都从未记录 ⇒ comparison = tie（改前把缺指标静默当 0 比，误报 b_higher）"""
+        tracker.record_quality_metrics("ds_a", {"other": 0.9})
+        comparison = tracker.compare_trends("ds_a", "ds_b", "never")
+        assert comparison["dataset_a_latest"] is None
+        assert comparison["dataset_b_latest"] is None
+        assert comparison["comparison"] == "tie"
+
+    def test_compare_trends_a_higher_strict(self, tracker):
+        """严格大于才判 a_higher（钉死只有「>」触发，平局/小于都不是）"""
+        tracker.record_quality_metrics("ds_a", {"quality": 0.9})
+        tracker.record_quality_metrics("ds_b", {"quality": 0.7})
+        assert tracker.compare_trends("ds_a", "ds_b", "quality")["comparison"] == "dataset_a_higher"
+        assert tracker.compare_trends("ds_b", "ds_a", "quality")["comparison"] == "dataset_b_higher"
