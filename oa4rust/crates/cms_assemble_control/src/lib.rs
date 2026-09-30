@@ -11286,15 +11286,17 @@ pub async fn script_post_nested_u3(
             if scripts.is_empty() {
                 return Err(AppError::BadRequest("importedScripts required".to_string()));
             }
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
             let mut imported = 0u64;
+            // 脚本导入原子化：INSERT 无去重，裸循环中途失败后重试会产生重复脚本。
+            let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
             for script in &scripts {
                 let name = script.get("name").and_then(|v| v.as_str()).unwrap_or("");
                 let content = script
                     .get("scriptContent")
                     .and_then(|v| v.as_str())
                     .unwrap_or("");
-                imported += client
+                imported += tx
                     .execute(
                         "INSERT INTO x_cms_script (id, app_id, name, script_content, imported, creator) \
                          VALUES (gen_random_uuid()::text, $1, $2, $3, true, $4)",
@@ -11303,6 +11305,7 @@ pub async fn script_post_nested_u3(
                     .await
                     .map_err(|_| AppError::Internal)?;
             }
+            tx.commit().await.map_err(|_| AppError::Internal)?;
             let _ = unique_name;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
