@@ -715,21 +715,35 @@ pub async fn group_delete(
     Path(flag): Path<String>,
 ) -> HandlerResult {
     require_admin(&pool, &session).await?;
-    let client = client_of(&pool).await?;
-    let Some(gid) = soft_delete_generic(&client, GROUP_TABLE, &flag).await? else {
+    // 软删群组 + 级联清成员/角色三写必须原子：中途失败留孤儿成员/角色。
+    let mut client = client_of(&pool).await?;
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let find_sql =
+        format!("SELECT id FROM {GROUP_TABLE} WHERE (id = $1 OR name = $1) AND deleted_at IS NULL");
+    let Some(gid) = tx
+        .query_opt(&find_sql, &[&flag])
+        .await
+        .map_err(|_| AppError::Internal)?
+        .map(|r| r.get::<_, String>(0))
+    else {
+        tx.commit().await.map_err(|_| AppError::Internal)?;
         return err("group not found");
     };
-    client
-        .execute(
-            "DELETE FROM x_org_group_member WHERE group_id = $1",
-            &[&gid],
-        )
+    let del_sql =
+        format!("UPDATE {GROUP_TABLE} SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL");
+    tx.execute(&del_sql, &[&gid])
         .await
         .map_err(|_| AppError::Internal)?;
-    client
-        .execute("DELETE FROM x_org_group_role WHERE group_id = $1", &[&gid])
+    tx.execute(
+        "DELETE FROM x_org_group_member WHERE group_id = $1",
+        &[&gid],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
+    tx.execute("DELETE FROM x_org_group_role WHERE group_id = $1", &[&gid])
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     ok(Value::Object(
         vec![("id".to_string(), Value::String(gid))]
             .into_iter()
@@ -950,14 +964,29 @@ pub async fn role_delete(
     Path(flag): Path<String>,
 ) -> HandlerResult {
     require_admin(&pool, &session).await?;
-    let client = client_of(&pool).await?;
-    let Some(rid) = soft_delete_generic(&client, ROLE_TABLE, &flag).await? else {
+    // 软删角色 + 清授权两写必须原子：中途失败留「已删角色仍在授权表生效」的权限残留。
+    let mut client = client_of(&pool).await?;
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let find_sql =
+        format!("SELECT id FROM {ROLE_TABLE} WHERE (id = $1 OR name = $1) AND deleted_at IS NULL");
+    let Some(rid) = tx
+        .query_opt(&find_sql, &[&flag])
+        .await
+        .map_err(|_| AppError::Internal)?
+        .map(|r| r.get::<_, String>(0))
+    else {
+        tx.commit().await.map_err(|_| AppError::Internal)?;
         return err("role not found");
     };
-    client
-        .execute("DELETE FROM auth_person_role WHERE role_id = $1", &[&rid])
+    let del_sql =
+        format!("UPDATE {ROLE_TABLE} SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL");
+    tx.execute(&del_sql, &[&rid])
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.execute("DELETE FROM auth_person_role WHERE role_id = $1", &[&rid])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     ok(Value::Object(
         vec![("id".to_string(), Value::String(rid))]
             .into_iter()
