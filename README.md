@@ -4,12 +4,13 @@
 
 **一个装着若干「不那么玩具」的玩具箱**
 
-从 Rust 重写的企业级 OA 后端，到 AI 训练数据增强工具、自动签到面板、免登 Token 生成器——
+从 Rust 重写的企业级 OA 后端，到塔防元素反应小程序游戏、AI 训练数据增强工具、自动签到面板、免登 Token 生成器——
 几个互相独立、各自能跑的实验性项目，共处一个 monorepo。
 
 <br/>
 
 ![Rust](https://img.shields.io/badge/Rust-1.85+-000000?logo=rust&logoColor=white)
+![Go](https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go&logoColor=white)
 ![Vue](https://img.shields.io/badge/Vue-3.5-4FC08D?logo=vuedotjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
@@ -29,7 +30,8 @@
 | --- | --- | --- | --- |
 | 🦀 **[oa4rust](#-oa4rust--rust-重写的-oa-后端)** | 用 Rust 重写的企业级 OA 服务端（96 个 crate 的 workspace） | Rust · Axum · PostgreSQL | [README](oa4rust/README.md) |
 | 🖥️ **[oa4rust-web](#️-oa4rust-web--三端前端)** | oa4rust 的前端，桌面 Web + 移动端（uni-app）双端 | Vue3 · TS · Vite · UnoCSS | — |
-| 🧪 **[augmentor](#-augmentor--ai-训练数据增强)** | 把少量种子数据扩充成多轮问答对的训练数据增强工具 | Python · FastAPI · 向量去重 | [README](augmentor/README.md) |
+| 💥 **[laiyipao](#-laiyipao--塔防元素反应小游戏)** | 仿《向僵尸开炮》玩法内核的塔防 + 元素反应小程序游戏 | Go · uni-app · Vue3 · PostgreSQL | [README](laiyipao/README.md) |
+| 🧪 **[augmentor](#-augmentor--ai-训练数据增强)** | 把少量种子数据扩充成多轮问答对的训练数据增强工具 | Python · FastAPI · React | [README](augmentor/README.md) |
 | ✅ **[auto-checkin](#-auto-checkin--自动签到面板)** | 给多个大模型公益站自动签到领奖，带本地统计面板 | Node · Playwright · Express | [README](auto-checkin/README.md) |
 | 🔐 **[cool](#-cool--免登-token-生成)** | Cool College OA 的免登 Token 生成工具 | Java · AES/MD5 | [README](cool/README.md) |
 
@@ -39,7 +41,7 @@
 
 把一套 Java 企业 OA 系统（O2OA）用 Rust 逐模块重写，追求同等能力下更强的性能、内存安全与更低的资源占用。
 
-- **架构**：Axum + Tokio 异步栈，PostgreSQL 持久化，按业务域拆成 **96 个 crate** 的 Cargo workspace（认证、流程、门户、CMS、会议、考勤、即时通讯、AI……）。
+- **架构**：Axum + Tokio 异步栈，PostgreSQL 持久化，按业务域拆成 **96 个 crate** 的 Cargo workspace（认证、流程、门户、CMS、会议、考勤、即时通讯、AI、脑图、组织……）。
 - **契约对齐**：以 parity 测试对照原系统路由与行为，保证接口级别的一致性。
 - **实时能力**：内置 WebSocket 实时通道，支撑 IM 与在线状态。
 - **安全门禁**：全路径 HttpOnly Cookie + CSRF/CORS、RustSec 供应链审计、OpenAPI 漂移门禁。
@@ -70,15 +72,33 @@ pnpm test         # Vitest
 pnpm build        # 生产构建
 ```
 
+## 💥 laiyipao — 塔防元素反应小游戏
+
+仿微信小游戏《向僵尸开炮》玩法内核自研的**塔防 + 元素反应**小程序游戏。美术 100% Canvas 程序化绘制，不使用任何原作名称、素材、UI 或文案。
+
+- **三端子工程**：`server/`（Go Fiber + PostgreSQL）、`miniapp/`（uni-app，微信小程序 / H5）、`admin/`（Vue 3 运营后台 + 玩法文档站）。
+- **设计内核**：元素反应矩阵（攻击权重结构性 ≤30%，堆数值无法绕过搭配收益）、插槽与热量、专精树 + 装备契合度、地形机制关、防线值守、构筑评分。
+- **确定性战斗**：定点整数 + 确定性 PRNG，回放哈希验真——任何人可取回种子重放并证伪可疑分数。
+- **工程契约**：48 张业务表 + goose 迁移、端到端验收脚本、双端契约与文档漂移守卫。
+
+```bash
+cd laiyipao/server
+export DATABASE_URL="postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"
+go run ./cmd/migrate && go run ./cmd/seed && go run ./cmd/api
+```
+
+> 玩法创新、公式推导与部署运维见 [laiyipao/README.md](laiyipao/README.md) 与 `laiyipao/docs/`。
+
 ## 🧪 augmentor — AI 训练数据增强
 
 用于生成 AI 模型训练数据的工具：将少量种子数据，通过多种 LLM API 与 NLP 技术，扩充为高质量多轮问答对。
 
 - **多模型**：百度 ERNIE、OpenAI、Ollama、Claude、Gemini。
 - **质量控制**：语义相似度、回答相关性、多样性多维评分 + 基于向量的智能去重。
-- **工程能力**：断点续传、流式分块处理、数据集对比与校验。
+- **数据安全**：隐私脱敏、训练/测试泄漏检测、就绪审计（go / no-go）。
+- **工程能力**：断点续传、流式分块处理、数据集对比、画像与离群点检测。
 - **多格式导出**：JSONL、Llama-Factory、Alpaca、ShareGPT、ChatML、CSV。
-- 自带 `web/`（`ai-augmentor-web`）可视化界面。
+- **HTTP API + Web**：FastAPI 68 个 REST 端点（全部声明响应契约）+ `web/`（React 18 + Ant Design）可视化界面。
 
 > 详见 [augmentor/README.md](augmentor/README.md)。
 
@@ -112,12 +132,13 @@ Cool College（coolcollege）OA 系统的免登 Token 生成工具，支持 AES 
 fakeToys/
 ├── oa4rust/          # 🦀 Rust OA 后端（96-crate workspace）
 ├── oa4rust-web/      # 🖥️ 前端 monorepo（desktop + mobile）
-├── augmentor/        # 🧪 AI 训练数据增强工具（Python）
+├── laiyipao/         # 💥 塔防元素反应小游戏（Go server + uni-app + admin）
+├── augmentor/        # 🧪 AI 训练数据增强工具（Python + React）
 ├── auto-checkin/     # ✅ 公益站自动签到 + 统计面板（Node）
 ├── cool/             # 🔐 免登 Token 生成（Java）
 ├── docs/             # 📚 方案 / 评审 / 审计 / 已归档计划文档
 ├── scripts/          # 🛠️ 通用脚本
-└── .github/workflows # 🤖 各子项目的 CI（oa4rust / web / 供应链 / 三端契约）
+└── .github/workflows # 🤖 各子项目 CI（oa4rust / web / 供应链 / 三端契约 / AI 平台）
 ```
 
 ## 🚀 快速开始
@@ -126,6 +147,7 @@ fakeToys/
 
 - **oa4rust**：Rust 1.85+、PostgreSQL 14+
 - **oa4rust-web**：Node + pnpm
+- **laiyipao**：Go 1.26+、PostgreSQL 15+、Node 20+ + pnpm
 - **augmentor**：Python 3.10+
 - **auto-checkin**：Node + Playwright
 - **cool**：JDK 8+

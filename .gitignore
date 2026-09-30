@@ -117,6 +117,9 @@ augmentor/bak/
 #   两者均为运行时产物，不进版本控制。
 augmentor/data/
 augmentor/up.json
+# 增强任务断点续传的 checkpoint（2026-10-01）：按任务 id 生成的临时 JSON，
+# 程序续跑时读取，任务结束后无保留价值；进 status 只会污染「工作树是否干净」。
+augmentor/checkpoints/
 
 
 # OpenCode
