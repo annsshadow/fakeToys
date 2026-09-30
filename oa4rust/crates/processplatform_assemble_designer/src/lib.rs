@@ -4039,9 +4039,12 @@ pub async fn item_access_bach_save(
     if body.get("items").is_none() {
         return Ok(Json(ActionResult::error("items is required")));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let ts = now_text();
     let creator = session.person_unique.clone();
+    // 整批保存包同一事务，且 UPDATE 失败必须传播（此前 `unwrap_or(0)` 吞错：
+    // 更新失败被静默当 0 行计入，响应仍报成功，且批次中途失败留半保存态）。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let mut saved = 0i64;
     for item in &items {
         let name = item.get("name").and_then(|v| v.as_str()).unwrap_or("");
@@ -4049,17 +4052,17 @@ pub async fn item_access_bach_save(
         let path = item.get("path").and_then(|v| v.as_str()).unwrap_or("");
         match item.get("id").and_then(|v| v.as_str()) {
             Some(id) if !id.is_empty() => {
-                saved += client
+                saved += tx
                     .execute(
                         "UPDATE pp_e_item_access SET \"xname\" = $2, xprocess = $3, xpath = $4, \"xupdateTime\" = $5 WHERE xid = $1",
                         &[&id, &name, &process, &path, &ts],
                     )
                     .await
-                    .unwrap_or(0) as i64;
+                    .map_err(|_| AppError::Internal)? as i64;
             }
             _ => {
                 let id = uuid::Uuid::new_v4().to_string();
-                saved += client
+                saved += tx
                     .execute(
                         "INSERT INTO pp_e_item_access (xid, \"xname\", xprocess, xpath, \"xcreateTime\", \"xupdateTime\", creator_person) \
                          VALUES ($1, $2, $3, $4, $5, $5, $6)",
@@ -4070,6 +4073,7 @@ pub async fn item_access_bach_save(
             }
         }
     }
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("saved".to_string(), Value::Bool(saved > 0)),
