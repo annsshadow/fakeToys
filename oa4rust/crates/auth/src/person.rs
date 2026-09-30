@@ -71,7 +71,8 @@ pub async fn list(
 
     let rows = match client
         .query(
-            "SELECT id, unique_id, name, mobile, email FROM auth_person LIMIT $1 OFFSET $2",
+            // 主键全序保证分页确定性：无序分页在写入后翻页会出现跨页重复/漏行
+            "SELECT id, unique_id, name, mobile, email FROM auth_person ORDER BY id LIMIT $1 OFFSET $2",
             &[&size, &offset],
         )
         .await

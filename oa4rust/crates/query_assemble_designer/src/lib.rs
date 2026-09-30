@@ -2612,7 +2612,8 @@ async fn table_export_tableFlag_count_count_core(
 
     let rows = client
         .query(
-            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 LIMIT $2",
+            // 主键全序保证两次导出内容一致：无序 LIMIT 在表更新后导出行集会漂移
+            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 ORDER BY id LIMIT $2",
             &[&table_flag, &count],
         )
         .await
