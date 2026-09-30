@@ -3790,21 +3790,22 @@ pub async fn u2_meeting_delete_owned(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let creator = u2_meeting_creator(&client, &id).await?;
     let Some(creator) = creator else {
         return Err(AppError::NotFound);
     };
     shared::middleware::require_owner(&pool.0, &session, &creator).await?;
 
-    client
-        .execute("DELETE FROM x_meeting_invite WHERE meeting_id = $1", &[&id])
+    // 级联删除：邀请与会议两写必须原子，中途失败留「会议在而邀请全失」的幽灵会议。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    tx.execute("DELETE FROM x_meeting_invite WHERE meeting_id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
-    client
-        .execute("DELETE FROM x_meeting WHERE id = $1", &[&id])
+    tx.execute("DELETE FROM x_meeting WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
