@@ -253,4 +253,51 @@ class TestFieldComparisonBehavioral:
         assert result["only_in_b"] == ["only_b"]
         assert result["in_both"] == ["shared"]
         assert result["stats"]["only_in_a_count"] == 1
-        assert result["stats"]["in_both_count"] == 1
+        assert result["stats"]["in_both_count"] == 1
+
+
+class TestRecommendationStrings:
+    """_generate_recommendations 的字符串分支守卫（L139，B209）"""
+
+    def test_size_diff_over_threshold_appends_count_recommendation(self):
+        """size_diff > 100 ⇒ 追加「数据集A比B多 N 条数据」建议"""
+        from augmentor.compare_enhanced import EnhancedComparator, ComparisonMetrics
+        metrics = ComparisonMetrics(
+            size_a=200, size_b=50, size_diff=150,
+            size_ratio=4.0, common_items=0, unique_a=150, unique_b=0,
+            similarity_score=0.5, field_overlap=0.0
+        )
+        recs = EnhancedComparator()._generate_recommendations(metrics, {}) 
+        assert any("数据集A比B多 150 条数据" in r for r in recs), recs
+
+    def test_low_similarity_appends_same_source_warning(self):
+        """similarity < 0.5 ⇒ 追加「相似度较低，建议确认是否同一数据源」"""
+        from augmentor.compare_enhanced import EnhancedComparator, ComparisonMetrics
+        metrics = ComparisonMetrics(
+            size_a=10, size_b=10, size_diff=0,
+            size_ratio=1.0, common_items=1, unique_a=9, unique_b=9,
+            similarity_score=0.1, field_overlap=0.0
+        )
+        recs = EnhancedComparator()._generate_recommendations(metrics, {})
+        assert any("相似度较低" in r for r in recs), recs
+
+    def test_type_mismatch_and_value_diff_append_per_field_recommendations(self):
+        """有 type_mismatches / value_differences 的字段 ⇒ 各追加一条对应建议"""
+        from augmentor.compare_enhanced import (
+            EnhancedComparator, ComparisonMetrics, FieldComparison
+        )
+        metrics = ComparisonMetrics(
+            size_a=5, size_b=5, size_diff=0,
+            size_ratio=1.0, common_items=5, unique_a=0, unique_b=0,
+            similarity_score=1.0, field_overlap=1.0
+        )
+        comps = {
+            "output": FieldComparison(
+                field_name="output", in_a_only=0, in_b_only=0, in_both=5,
+                type_mismatches=2,
+                value_differences=[{"instruction": "q1", "value_a": "A", "value_b": "B"}],
+            )
+        }
+        recs = EnhancedComparator()._generate_recommendations(metrics, comps)
+        assert any("字段" in r and "类型不匹配" in r and "2" in r for r in recs), recs
+        assert any("字段" in r and "值差异" in r and "1" in r for r in recs), recs

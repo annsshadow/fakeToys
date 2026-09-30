@@ -47,7 +47,8 @@
 | B206 | **已关闭（L136）**：`EnhancedComparator._compare_fields` 的 instruction 匹配是 O(F×A×B) 逐条扫 B、每字段再各扫一遍 A/B 算 count；且 `type_mismatches`/`value_differences`/`diff_datasets` 成员语义无直达行为用例 | 双层索引 `instruction→{field:首个含该field的item_b}` + 一次 O(A+B) 字段计数，匹配变 O(A)；N=1500/F=12 A/B new/old ×0.097；等价性 200 随机数据集逐字段逐差异一致；补 3 条行为用例 | M |
 | B207 | **已关闭（L137）**：`AugmentorPipeline._process_single_item` 的 except 分支里 `_process_errors` 惰性「没有就建 + append」非原子——并行路径（ThreadPoolExecutor 多工作线程）并发触发时，两线程都读到 `hasattr` 为 False 各自建 `[]`，后建者吞掉先 append 的那条；而 `__init__` 里的 `self._lock` 建了却全程无人用（dead lock） | 持 `self._lock` 包住 check-then-act；补 `TestProcessErrorsThreadSafety` 2 条（并发 N 条错误一条不丢 + 源码级守卫钉死锁确实被用上，防未来把锁拿掉却因 GIL 窗口窄测不出） | S |
 | B208 | **已关闭（L138）**：`ActiveSampler.generate_report` 里 `recommended_seed_indices` 用 `items.index(seed)`（== 相等）取「seed 的下标」，内容相等的兄弟 item 会误报第一个的下标；候选「改 id(seed) 索引」优化经 A/B **证否**（真实 k 很小，O(n) 建表 > per-seed 2×O(n) 扫描，反而更慢）故不改产品，改补下标精确性守卫 | A/B：n=3000/50 seeds 下 new(id-map)/old ×3.56（变慢）；新增 1 条钉死「下标＝被选中对象本身的下标，不是内容相等里的第一个」的守卫 | S |
-| B209 | 待普查后立项 | —— | — |
+| B209 | **已关闭（L139）**：`EnhancedComparator._generate_recommendations` 的 4 条字符串分支（size_diff>±100 / 相似度<0.5 / 类型不匹配 / 值差异）此前**无任何直达断言**——既有用例只 `assert "recommendations" in d`（key 存在），全分支实际盲跑 | 补 3 条字符串守卫：size_diff=150⇒「数据集A比B多 150 条数据」；similarity=0.1⇒「相似度较低」；type_mismatches=2/value_diffs=1⇒各一条「字段 X 存在 N 个…」（含「高度相似」顺带路径） | S |
+| B210 | 待普查后立项 | —— | — |
 
 ## 循环日志
 
@@ -581,3 +582,19 @@
   查下标、或改用 first-equal 的宽松实现，这条当场红。
 - 全量门禁：`7372 passed / 3 skipped / exit 0`（L137 的 7371 + 1 新守卫，无回归）；
   sampler 58/58、A184 21/21 绿。**B208 关闭**（产品未改，账本如实记优化证否）。
+
+### L139（2026-09-30）— B209 立项 + 关闭：_generate_recommendations 字符串分支补断言
+
+- **缺口**（纯测试补齐，无产品改动）：`_generate_recommendations` 有 4 条字符串分支
+  （`size_diff>100` / `similarity<0.5` / 字段类型不匹配 / 字段值差异），此前**无任何直达
+  断言**——既有 `test_diff_datasets`/`test_to_dict` 只查 `"recommendations" in d`（key 存在），
+  分支里的具体文案、计数插值全是盲跑。哪条阈值/文案改错都不会红。
+- **修法**：补 `test_compare_enhanced.py::TestRecommendationStrings` 3 条，直接构造
+  `ComparisonMetrics`/`FieldComparison` 调 `_generate_recommendations`，逐字钉死：
+  ① `size_diff=150` ⇒ 出现「数据集A比B多 150 条数据」；
+  ② `similarity=0.1` ⇒ 出现「相似度较低」；
+  ③ `type_mismatches=2` + `value_differences` 1 条 ⇒ 各出现「字段 'output' 存在 2 个类型
+     不匹配」「字段 'output' 存在 1 个值差异」（顺带覆盖「高度相似」分支的相邻文案）。
+  三条都是「具体文案 + 具体计数」，任一分支改文案/改阈值/漏 append 就当场红。
+- 全量门禁：`7375 passed / 3 skipped / exit 0`（L138 的 7372 + 3 新守卫，无回归）；
+  compare_enhanced 22/22、A184 21/21 绿。**B209 关闭**。
