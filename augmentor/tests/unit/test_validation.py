@@ -176,11 +176,13 @@ class TestDataSanitizer:
         assert result[0]["output"] == "回答1新"
 
     def test_remove_duplicates_keep_last_scans_past_non_matching(self):
-        """keep=last 且重复项在 result 中不居首时，替换循环要跳过前面不匹配的记录（L114，A205）
+        """keep=last 语义：重复值的内容更新到**首次出现的位置**，且不影响其前的记录（L114 起，A205；L135 实现改 O(1) 后重述）
 
-        既有用例的重复项恰好是 result 的第 0 条 ⇒ 替换循环第一轮就 break，`if r==value`
-        的假支（跳过不匹配记录、继续找）从未被踩（L100 终态偏支 864->863）。这里让重复值
-        排在第二位，替换循环必须先跳过第 0 条才命中。
+        早期实现里这里守的是「替换循环要先跳过第 0 条不匹配记录」的假支（L100 终态偏支
+        864->863）；L135 把该扫描换成 seen 存 result 下标、O(1) 覆盖后，循环已不存在，
+        本用例改守语义本身：重复值「问题1」虽排第二位，其**新内容**仍落回第二条（首位），
+        第一条「问题2」原地不动——把「保留最后一次内容 + 落在首次出现位置 + 不动其它记录」
+        这三点一起钉死，任何 O(1) 化只要错位/多覆盖/漏覆盖就当场红。
         """
         data = [
             {"instruction": "问题2", "input": "", "output": "回答2"},
@@ -194,6 +196,23 @@ class TestDataSanitizer:
         # 问题1 被替换成「新」，且仍在原位（第二条），问题2 不动
         assert result[0]["instruction"] == "问题2"
         assert result[1]["output"] == "回答1新"
+
+    def test_remove_duplicates_keep_last_o1_slot_invariant_l135(self):
+        """keep=last 的 O(1) 化：三次以上同值重复时，最终内容取**最后一次**，且只写一次进槽位"""
+
+        data = [
+            {"instruction": "q", "output": "0"},
+            {"instruction": "other", "output": "o"},
+            {"instruction": "q", "output": "1"},
+            {"instruction": "q", "output": "2"},
+            {"instruction": "q", "output": "3"},
+        ]
+        result = DataSanitizer().remove_duplicates(data, keep="last")
+
+        assert [r["output"] for r in result] == ["3", "o"], (
+            "q 的内容须是最后一次出现的 3（不是 1/2/旧值），且 other 原位不动"
+        )
+
 
 
 class TestValidationResult:

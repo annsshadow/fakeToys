@@ -43,7 +43,8 @@
 | B202 | **已关闭（L132）**：`ActiveLearningLoop._diversity_scores` 逐对调用 `compute_similarity`，每对把两侧重新 tokenize，n 条共约 2n² 次切词 | 预计算词元集合后 n=800 A/B new/old ×0.088（≈11×，双序），等价性 4 数据集（含重复/空串/单条/多词）逐元素一致 | S |
 | B203 | **已关闭（L133）**：`DataCleaner._normalize_punctuation`（`normalize_punctuation` 规则）此前无任何直达行为用例；候选「14 道 replace → str.translate」优化经 A/B **证否**（长文本稀疏匹配 ×8.7 变慢）故不改产品，改补首个行为守卫 | A/B：重匹配 ×0.87、但真实场景（长文本少量全角）translate 逐字符查表 ×8.7 慢于 replace 的无命中短路；新增映射表 14 项 + 顺序 replace 参照逐字符等价的 3 用例 | S |
 | B204 | **已关闭（L134）**：`ContextAugmentor.generate_multi_turn` 在「每轮 × 每条历史」里各自重建 user 问题列表再 `in` 线性查，且重复判定散在循环内不易推理；循环不变量 `existing_histories` 被反复重算 | 改为循环外一次性摊平成单一 `existing_questions` 集合（并集语义），内层 O(1) 命中；新增 2 条跨多条历史的去重用例钉死并集语义 | S |
-| B205 | 待普查后立项 | —— | — |
+| B205 | **已关闭（L135）**：`DataSanitizer.remove_duplicates(keep="last")` 每次遇到重复都在**全 result 上**逐条 `r.get(key)` 线性找槽位，O(n×distinct)；重复多的数据上显著热点 | N=40000/D=400 实测 new/old **×0.0235**（≈42×，双序 min-of-2）；seen 改存 result 下标、O(1) 覆盖；等价性 300 dup 密集集 + 50 keep=first 集逐元素一致；1 条新槽位不变量用例 | S |
+| B206 | 待普查后立项 | —— | — |
 
 ## 循环日志
 
@@ -487,3 +488,22 @@
   本轮价值在语义收紧 + 简化，非计时。
 - 全量门禁：`7365 passed / 3 skipped / exit 0`（L133 的 7363 + 2 新守卫，无回归）；
   context 30/30、A184 21/21 绿。**B204 关闭**。
+
+### L135（2026-09-30）— B205 立项 + 关闭：remove_duplicates keep="last" O(n×D) → O(n) 槽位覆盖
+
+- **缺口**：`DataSanitizer.remove_duplicates(keep="last")` 每次撞上重复值，就在全
+  `result` 上逐条 `r.get(key,"")==value` 线性找槽位再 `result[i]=item`，重复多的数据上
+  是 O(n × distinct) 的显式热点（distinct 越大、重复越密集越糟）；`seen` 明明已经按值
+  建了索引，却把 items 下标存进去、再回头全表扫，索引白建了。
+- **修法**（语义等价、复杂度收紧）：`seen[value]` 改存 `len(result)`（首次出现时记录的
+  result 槽位），重复时直接 `result[seen[value]] = item`，O(1) 覆盖。保留「保留最后一次
+  的内容 + 落在首次出现位置 + 不动其它记录」三点语义不变。
+- **A/B（同进程双序 min-of-2，N=40000 / D=400 dup 密集）**：old 289 ms、new 6.8 ms ⇒
+  **new/old ×0.0235（≈42× 快）**。等价性：300 组随机 dup 密集集（D=15）逐元素一致 +
+  50 组 keep=first 回归集不变。
+- **回归护栏**：`test_validation.py` 既有的 L114 用例（重复值居第二、需跳过第 0 条）
+  改述为「O(1) 槽位不变量」——语义本身（更新到新内容、落回原槽、不动其它）仍是它守的，
+  但旧 docstring 里「替换循环假支 864->863」已随循环消失而失效，改为直接钉三点语义；
+  另新增 1 条「三次以上同值重复」的槽位不变量用例（内容取最后一次 3，只写一次进槽）。
+- 全量门禁：`7366 passed / 3 skipped / exit 0`（L134 的 7365 + 1 新守卫，无回归）；
+  validation 63/63、A184 21/21 绿。**B205 关闭**。
