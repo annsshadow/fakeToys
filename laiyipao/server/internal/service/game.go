@@ -840,34 +840,71 @@ func periodStart(t time.Time, scope string) time.Time {
 // 所以这是目前**唯一**能廉价抓到的技能侧伪造。攻方系数仍然抓不到。
 var ErrReplaySkillsMismatch = errors.New("回放技能配置与构筑不符")
 
-/**
- * 重算本局应上报的回放前缀 S 段（第 56 轮）。
- *
- * 数据来源与客户端**同一套**：`user_skill_slots`（槽位）+ `user_skills.level`（等级）
- * + `domain.SeedSkills`（底伤/叠层/热量）。
- *
- * ⚠️ 客户端在 `equippedFromSnapshot` 里用 `DEFAULT_SKILL_RULES` 烘等级，
- * 而这里用 `domain.DefaultSkillRules()`。两者必须相同 ——
- * `TestSkillRulesMatchServerContract` 守着这条。
- * 若哪天服务端改了 `SkillLevelCoefPermille` 而客户端的默认值没跟着改，
- * 这里会开始拒绝**所有合法对局**。
- */
+// 重算本局应上报的回放前缀 S 段（第 56 轮）。
+//
+// ## 数据来源：`skills` 表，不是 `domain.SeedSkills`
+//
+// 我第一版用的是 `domain.SeedSkills`，**这是错的**，而且错法很隐蔽：
+//
+// 客户端的技能内容是**服务端从库里下发**的（见 `miniapp/src/api/client.ts`
+// 的 `skills` + `composite_skills`）。也就是说，客户端烘进底伤用的
+// `def.base_damage` 就是 `skills` 表里的那一行。
+//
+// 而 `skills` 表**允许与 `domain.SeedSkills` 不一致** —— 运营后台的
+// `PUT /admin/skills/:id` 就是为了改它。两者一旦不同：
+//
+//   - 客户端上报的是 DB 里的底伤
+//   - 重算用的是 Go 常量里的底伤
+//     → **所有合法玩家的每一局都被判成作弊**
+//
+// 这不是假想：开发库当前就是漂的（`skills` 表 42 行 = 24 基础 + 18 复合，
+// 且基础技能 1 的底伤已被改成 33 而常量仍是 100 —— 管理端测试没还原）。
+// 全量跑测试时这条重算立刻失配，就是这么发现的。
+//
+// 复合技能也在同一张 `skills` 表里（`seedSkills` 把 `SeedSkills` 与
+// `SeedCompositeSkills` 一起写入），所以按 id 查一张表就够了。
+//
+// ## 与客户端的对应关系
+//
+// 客户端在 `equippedFromSnapshot` 里用 `DEFAULT_SKILL_RULES` 烘等级，
+// 这里用 `domain.DefaultSkillRules()`。两者必须相同 ——
+// `TestSkillRulesMatchServerContract` 守着这条。
+// 若哪天服务端改了 `SkillLevelCoefPermille` 而客户端默认值没跟着改，
+// 这里会开始拒绝**所有合法对局**。
 func (s *Service) replaySkillsSegment(ctx context.Context, userID int64) (string, error) {
-	slots, err := s.Loadout(ctx, userID)
+	rows, err := s.pool.Query(ctx,
+		`SELECT sl.slot, sl.skill_id, s.base_damage, s.apply_stacks, s.heat_cost,
+		        COALESCE(us.level, 1)
+		   FROM user_skill_slots sl
+		   JOIN skills s ON s.id = sl.skill_id
+		   LEFT JOIN user_skills us
+		          ON us.skill_id = sl.skill_id AND us.user_id = sl.user_id
+		  WHERE sl.user_id = $1`,
+		userID,
+	)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("query equipped skills: %w", err)
 	}
-	levels, err := s.SkillLevels(ctx, userID)
-	if err != nil {
-		return "", err
-	}
-	bySlot := make(map[int]int, len(slots))
-	for i, id := range slots {
-		if id > 0 {
-			bySlot[i] = id
+	defer rows.Close()
+
+	rules := domain.DefaultSkillRules()
+	items := make([]domain.ReplaySkillSlot, 0, domain.BaseSkillSlots)
+	for rows.Next() {
+		var slot, skillID, level int
+		var base, stacks, heat int64
+		if err := rows.Scan(&slot, &skillID, &base, &stacks, &heat, &level); err != nil {
+			return "", fmt.Errorf("scan equipped skill: %w", err)
 		}
+		items = append(items, domain.ReplaySkillSlot{
+			Slot:        slot,
+			SkillID:     skillID,
+			BaseDamage:  domain.SkillBaseDamageAtLevel(rules, base, level),
+			ApplyStacks: stacks,
+			HeatCost:    heat,
+		})
 	}
-	return domain.BuildReplaySkillsSegment(
-		domain.SeedSkills, bySlot, levels, domain.DefaultSkillRules(),
-	), nil
+	if err := rows.Err(); err != nil {
+		return "", fmt.Errorf("iterate equipped skills: %w", err)
+	}
+	return domain.ReplaySkillsSegment(items), nil
 }

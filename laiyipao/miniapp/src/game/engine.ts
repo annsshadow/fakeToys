@@ -56,6 +56,32 @@ import type {
   SkillDef,
 } from './types'
 
+/**
+ * 回放前缀的 **S 段**（技能槽配置）—— 抽成纯函数。
+ *
+ * 格式：每槽一条 `slot:skillId:baseDamage:applyStacks:heatCost`，按**字符串**升序，逗号连接。
+ *
+ * ## 为什么要抽出来（第 56 轮）
+ *
+ * 服务端要独立重算这个串来校验上报（见 `server/internal/domain/replayskills.go`）。
+ * 两端格式一旦漂移，合法玩家的每一局都会被判成作弊 —— 而且是那种
+ * 「客户端、服务端、e2e 全绿，只有真机玩家被拒」的漂移，极难定位。
+ *
+ * 所以这个串进了 `server/testdata/formula_vectors.json`：
+ * Go 与 TS 两侧的测试读**同一个**字面期望值。
+ *
+ * 顺带一提：`.sort()` 无参数时按 UTF-16 码元比较，所以 `10:...` 排在 `2:...` 前面。
+ * Go 侧必须用 `sort.Strings` 才等价 —— 写成按槽位数值排会锁死 10 槽以上的玩家。
+ */
+export function replaySkillsSegmentOf(
+  skills: readonly Pick<EquippedSkill, 'slot' | 'skillId' | 'baseDamage' | 'applyStacks' | 'heatCost'>[]
+): string {
+  return skills
+    .map((s) => `${s.slot}:${s.skillId}:${s.baseDamage}:${s.applyStacks}:${s.heatCost}`)
+    .sort()
+    .join(',')
+}
+
 export const TICK_HZ = 20
 /**
  * 每 tick 的毫秒数。
@@ -491,10 +517,7 @@ export class BattleEngine {
    * 若上报时另算一份，两处一旦漂移，服务端会以「玩家作弊」为名拒绝合法对局。
    */
   replaySkillsSegment(): string {
-    return this.skills
-      .map((s) => `${s.slot}:${s.skillId}:${s.baseDamage}:${s.applyStacks}:${s.heatCost}`)
-      .sort()
-      .join(',')
+    return replaySkillsSegmentOf(this.skills)
   }
 
   replayHash(): string {
