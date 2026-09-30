@@ -217,3 +217,40 @@ class TestCompareEnhancedExtended:
         assert "field_comparisons" in d
         assert "summary" in d
         assert "recommendations" in d
+
+
+
+class TestFieldComparisonBehavioral:
+    """_compare_fields 真实行为守卫（L136，B206）：type_mismatches / value_differences / diff_datasets 成员语义"""
+
+    def test_value_difference_detected_for_shared_instruction(self):
+        """同 instruction、同字段但值不同 ⇒ 产生一条 value_difference（不是只查 key 存在）"""
+        from augmentor.compare_enhanced import EnhancedComparator
+        a = [{"instruction": "q1", "output": "A1"}]
+        b = [{"instruction": "q1", "output": "B1"}]
+        comp = EnhancedComparator().compare(a, b)
+        fc = comp.field_comparisons["output"]
+        assert len(fc.value_differences) == 1
+        assert fc.value_differences[0]["instruction"] == "q1"
+        assert fc.value_differences[0]["value_a"] == "A1"
+        assert fc.value_differences[0]["value_b"] == "B1"
+
+    def test_type_mismatch_retyped_field(self):
+        """同字段 int vs str 应计数 type_mismatches、且不产生 value_difference（类型不同但值相等按位比较为不等仍算差异？—按实现，int(3) != "3" 为真，故两者都计入；这里只钉死 type_mismatches 命中）"""
+        from augmentor.compare_enhanced import EnhancedComparator
+        a = [{"instruction": "q1", "level": 3}]
+        b = [{"instruction": "q1", "level": "3"}]
+        comp = EnhancedComparator().compare(a, b)
+        fc = comp.field_comparisons["level"]
+        assert fc.type_mismatches == 1
+
+    def test_diff_datasets_membership_on_partial_overlap(self):
+        """部分重叠数据集的 only_in_a / only_in_b / in_both 成员须精确（现有用例只查 key 存在）"""
+        a = [{"instruction": "only_a"}, {"instruction": "shared"}]
+        b = [{"instruction": "shared"}, {"instruction": "only_b"}]
+        result = diff_datasets(a, b)
+        assert result["only_in_a"] == ["only_a"]
+        assert result["only_in_b"] == ["only_b"]
+        assert result["in_both"] == ["shared"]
+        assert result["stats"]["only_in_a_count"] == 1
+        assert result["stats"]["in_both_count"] == 1

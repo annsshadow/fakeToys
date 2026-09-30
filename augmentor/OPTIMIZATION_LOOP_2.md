@@ -44,7 +44,8 @@
 | B203 | **已关闭（L133）**：`DataCleaner._normalize_punctuation`（`normalize_punctuation` 规则）此前无任何直达行为用例；候选「14 道 replace → str.translate」优化经 A/B **证否**（长文本稀疏匹配 ×8.7 变慢）故不改产品，改补首个行为守卫 | A/B：重匹配 ×0.87、但真实场景（长文本少量全角）translate 逐字符查表 ×8.7 慢于 replace 的无命中短路；新增映射表 14 项 + 顺序 replace 参照逐字符等价的 3 用例 | S |
 | B204 | **已关闭（L134）**：`ContextAugmentor.generate_multi_turn` 在「每轮 × 每条历史」里各自重建 user 问题列表再 `in` 线性查，且重复判定散在循环内不易推理；循环不变量 `existing_histories` 被反复重算 | 改为循环外一次性摊平成单一 `existing_questions` 集合（并集语义），内层 O(1) 命中；新增 2 条跨多条历史的去重用例钉死并集语义 | S |
 | B205 | **已关闭（L135）**：`DataSanitizer.remove_duplicates(keep="last")` 每次遇到重复都在**全 result 上**逐条 `r.get(key)` 线性找槽位，O(n×distinct)；重复多的数据上显著热点 | N=40000/D=400 实测 new/old **×0.0235**（≈42×，双序 min-of-2）；seen 改存 result 下标、O(1) 覆盖；等价性 300 dup 密集集 + 50 keep=first 集逐元素一致；1 条新槽位不变量用例 | S |
-| B206 | 待普查后立项 | —— | — |
+| B206 | **已关闭（L136）**：`EnhancedComparator._compare_fields` 的 instruction 匹配是 O(F×A×B) 逐条扫 B、每字段再各扫一遍 A/B 算 count；且 `type_mismatches`/`value_differences`/`diff_datasets` 成员语义无直达行为用例 | 双层索引 `instruction→{field:首个含该field的item_b}` + 一次 O(A+B) 字段计数，匹配变 O(A)；N=1500/F=12 A/B new/old ×0.097；等价性 200 随机数据集逐字段逐差异一致；补 3 条行为用例 | M |
+| B207 | 待普查后立项 | —— | — |
 
 ## 循环日志
 
@@ -507,3 +508,27 @@
   另新增 1 条「三次以上同值重复」的槽位不变量用例（内容取最后一次 3，只写一次进槽）。
 - 全量门禁：`7366 passed / 3 skipped / exit 0`（L134 的 7365 + 1 新守卫，无回归）；
   validation 63/63、A184 21/21 绿。**B205 关闭**。
+
+### L136（2026-09-30）— B206 立项 + 关闭：_compare_fields O(F×A×B) 匹配 → 双层索引 + 补行为守卫
+
+- **缺口**：`EnhancedComparator._compare_fields`（`compare()`/`compare_datasets_enhanced`
+  公共路径）对每条字段、每条 A 项都**全扫一遍 B**找「同 instruction」记录，O(F×A×B)；
+  另外每个字段各扫一遍 A、B 算 `count`/`count_b`，又叠一层 O(F×(A+B))。同时
+  `type_mismatches` / `value_differences` / `diff_datasets` 成员语义此前**无任何直达行为
+  用例**——既有用例只 `assert "field_comparisons" in d`，全 O(F×A×B) 匹配逻辑实际是盲跑。
+- **修法**（行为等价、匹配降一档）：
+  - 一次 O(B×F) 建 `first_b_by_field[instruction][field] = 首个含该 field 的 item_b`
+    两层索引（旧内层是「取同 instruction 且**首个含该 field** 的 item_b 就 break」，
+    不能退成「取该 instruction 的整体首条」，须按字段维度记 first）。
+  - 一次 O(A+B) 累加 `field_count_a` / `field_count_b`，替代每字段各扫一遍的 O(F×(A+B))。
+  - 内层改成 O(1) 查表。`in_*` / `type_mismatches` / `value_differences` 计算一字未改。
+- **A/B（同进程双序 min-of-2，N=1500、F≈12）**：old 127.5 ms、new 12.4 ms ⇒
+  **new/old ×0.097（≈10× 快）**。等价性：200 组随机数据集（含重复 instruction、缺 field、
+  int/str 混型、空集）逐字段逐差异与旧 O(F×A×B) 参照实现全量一致。
+- **回归护栏**（先补后改）：`test_compare_enhanced.py::TestFieldComparisonBehavioral`
+  3 条 —— ① 共享 instruction、output 值不同 ⇒ 精确产生 1 条 value_difference；
+  ② 同字段 int vs str ⇒ `type_mismatches==1`；③ 部分重叠数据集 `diff_datasets` 的
+  `only_in_a`/`only_in_b`/`in_both` 成员精确（不是只查 key 存在）。这三条把「匹配逻辑
+  真正在算」钉死，任何索引化只要把「取哪个 item_b」搞错就当场红。
+- 全量门禁：`7369 passed / 3 skipped / exit 0`（L135 的 7366 + 3 新守卫，无回归）；
+  compare_enhanced 19/19、A184 21/21 绿。**B206 关闭**。
