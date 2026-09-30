@@ -9641,6 +9641,13 @@ pub async fn u2_invoke_create(
         )
         .await
         .map_err(|e| {
+            // 并发双建过检后由唯一索引兜底（uq_program_invoke_name / uq_program_invoke_alias）：
+            // 23505 转友好重复错误，其余仍按 Internal
+            if e.code()
+                == Some(&deadpool_postgres::tokio_postgres::error::SqlState::UNIQUE_VIOLATION)
+            {
+                return AppError::BadRequest("duplicate name or alias".to_string());
+            }
             tracing::error!("[u2_invoke_create] insert failed: {}", e);
             AppError::Internal
         })?;
