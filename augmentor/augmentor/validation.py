@@ -856,15 +856,12 @@ class DataSanitizer:
         for idx, item in enumerate(items):
             value = item.get(key, "")
             if value not in seen:
-                seen[value] = idx
+                seen[value] = len(result)
                 result.append(item)
             elif keep == "last":
-                # 替换之前的记录
-                old_idx = seen[value]
-                for i, r in enumerate(result):
-                    if r.get(key, "") == value:
-                        result[i] = item
-                        break
+                # 替换之前的记录：seen[value] 存的是 result 下标，O(1) 直接覆盖；
+                # 语义＝「保留最后一次的内容，落在首次出现的位置」（与原逐条扫描等价）
+                result[seen[value]] = item
         
         return result
 
