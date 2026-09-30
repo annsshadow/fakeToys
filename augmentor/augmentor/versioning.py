@@ -310,29 +310,39 @@ class VersionManager:
         """
         items1 = self.load_version(version1_id)
         items2 = self.load_version(version2_id)
-        
-        # 转换为可比较的格式
-        def item_to_key(item):
-            return (item.get("instruction", ""), item.get("output", ""))
-        
-        keys1 = {item_to_key(item): item for item in items1}
-        keys2 = {item_to_key(item): item for item in items2}
-        
+
+        # 身份键只用 instruction（一条 SFT 记录的自然主键）。若把 output 也算进键，
+        # 「改了某条的输出」在 diff 里就会拆成「删掉旧 (instr, out1) + 新增 (instr, out2)」
+        # 两条，而 modified 永远空——本方法承诺要能报出「修改数」（见 DiffResult 契约、
+        # docs/API.md 的 examples）。同一条 instruction 在单版本里出现多次时保留首条
+        # （与原有 dict 折叠语义一致，不在本轮扩大范围）。
+        def key_of(item):
+            return item.get("instruction", "")
+
+        keys1 = {key_of(item): item for item in items1}
+        keys2 = {key_of(item): item for item in items2}
+
         # 计算差异
         added = []
         removed = []
         modified = []
-        
-        # 新增的项
+
+        # 新增的项：instruction 只出现在 v2
         for key, item in keys2.items():
             if key not in keys1:
                 added.append(item)
-        
-        # 移除的项
+
+        # 移除的项：instruction 只出现在 v1
         for key, item in keys1.items():
             if key not in keys2:
                 removed.append(item)
-        
+
+        # 修改的项：同一 instruction 两版都有，但整条记录不同（主要是 output 变了）
+        for key, item2 in keys2.items():
+            item1 = keys1.get(key)
+            if item1 is not None and item1 != item2:
+                modified.append(item2)
+
         return DiffResult(
             version1=version1_id,
             version2=version2_id,

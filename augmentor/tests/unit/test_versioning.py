@@ -523,7 +523,24 @@ class TestVersioningHistoryEdges:
         v1 = manager.create_version([{"instruction": "q1", "output": "a1"}])
         v2 = manager.create_version([{"instruction": "q1", "output": "a2"}])
         diff = manager.diff(v1.version_id, v2.version_id)
-        assert diff.modified_count >= 0
+        assert diff.modified_count == 1, "仅 output 变化也必须报 modified（改前组合键下恒为 0）"
+
+    def test_diff_in_place_edit_is_modified_not_added_removed(self, tmp_path):
+        """原地改某条 instruction 的 output ⇒ modified=1 且 added/removed 都不动（L141，B211）"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        v1 = manager.create_version([
+            {"instruction": "q1", "output": "old"},
+            {"instruction": "q2", "output": "keep"},
+        ])
+        v2 = manager.create_version([
+            {"instruction": "q1", "output": "new"},
+            {"instruction": "q2", "output": "keep"},
+        ])
+        diff = manager.diff(v1.version_id, v2.version_id)
+        assert diff.modified_count == 1
+        assert diff.added_count == 0, "原地修改不应计入新增"
+        assert diff.removed_count == 0, "原地修改不应计入移除"
+        assert diff.modified_items == [{"instruction": "q1", "output": "new"}]
 
     def test_report_with_versions(self, tmp_path):
         """有版本时的报告"""
