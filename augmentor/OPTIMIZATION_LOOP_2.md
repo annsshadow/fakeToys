@@ -51,7 +51,8 @@
 | B210 | **已关闭（L140）**：`turns_to_canonical`（chatml/vicuna/sharegpt 逆运算）末尾两轮角色检查用裸 `["role"]`，缺 role 键时抛**裸 `KeyError`** 而非契约承诺的 `DataFormatError`（函数 docstring Raises 段明写抛 DataFormatError）；且该逆运算此前**无直达单测**（只在集成 CLI 用例里被间接触发） | `["role"]` 改 `.get("role")`（缺键 → 比对 `None` ≠ "user"/"assistant" → 走既有 DataFormatError 分支，顺带把 f-string 里的裸引用一起改）；补 `TestTurnsToCanonicalContract` 2 条（缺 role 键 / 角色顺序错），实证改前 KeyError 红、改后 DataFormatError 绿 | S |
 | B211 | **已关闭（L141）**：`VersionManager.diff()` 用 `(instruction, output)` 组合键做身份 ⇒ 「原地改某条 output」被拆成「删旧+增新」两条，`modified` 分支**恒为空**（`modified_count` 永远 0），而 `DiffResult` 字段注释与 docs/API.md 示例都承诺 `modified_count` 非零；既有唯一守卫还是空转的 `assert modified_count >= 0` | 身份键改成 `instruction` 单键，同 instruction 两版都在 ⇒ 整条 dict 不等即计入 `modified`；原地修改 now 报 modified=1/added=0/removed=0。既有 4 条 diff 用例（added/removed/identical/empty）全绿无回归；强化 `test_diff_modified_items` 断言 + 新增 1 条原地修改守卫 | M |
 | B212 | **已关闭（L142）**：`QualityTrendTracker.compare_trends()` 的 `comparison` 用「A > B else B_higher」二态判据——**平局**与「某侧根本没记过该指标」都误报 `dataset_b_higher`（缺指标被静默当 0 比，语义错）；既有唯一用例只钉了 A>B 一条 | 改成三态：双侧都有最新值且 A>B ⇒ `dataset_a_higher`，B>A ⇒ `dataset_b_higher`，其余（含平局、任一侧无记录）⇒ `tie`；补 3 条用例（平局 / 双侧缺指标 / 单侧缺指标）钉死 `tie` | S |
-| B213 | 待普查后立项 | —— | — |
+| B213 | **已关闭（L143）**：`ActiveSampler.identify_underrepresented` 把 `length_distribution` 的全部键都当占比桶遍历（`.items()`），但 `_analyze_length_distribution` 会额外塞一个 `avg_length` **均值**键（绝对值，非占比）；当 `avg_length < threshold` 时会误产出伪桶 `length:avg_length`，污染 `recommend_seeds` 的 underrepresented 列表并白占一个 top_k 名额（其匹配循环因没有该 bucket 分支而永远打不中） | 长度桶改为显式只遍历 `("short","medium","long")`；`avg_length` 不再是候选。等价性 200 随机数据集 new⊆old 且排除 avg_length 全过；新增 1 条守卫（空指令 avg_length=0 < 0.1 时不产出 `length:avg_length`），改前红/改后绿 | S |
+| B214 | 待普查后立项 | —— | — |
 
 ## 循环日志
 
@@ -655,3 +656,21 @@
   a_higher、对称地 b 更大才判 b_higher。改前 ①②会红（误报 b_higher），③会绿。
 - 全量门禁：`7381 passed / 3 skipped / exit 0`（L141 的 7378 + 3 新守卫，无回归）；
   quality_trend 13/13、A184 21/21 绿。**B212 关闭**。
+
+### L143（2026-09-30）— B213 立项 + 关闭：identify_underrepresented 误把 avg_length 当占比桶
+
+- **真缺陷（伪类型污染）**：`ActiveSampler.identify_underrepresented` 用
+  `.items()` 遍历 `length_distribution`，但 `_analyze_length_distribution` 除 short/medium/long
+  三个占比桶外还塞了一个 `avg_length` **均值**键（绝对值，非占比）。`isinstance(ratio, float)`
+  判不了它是均值——当数据集平均指令长度 < threshold（默认 0.1，即几乎全空指令）时，会误把
+  伪桶 `length:avg_length` 列进 underrepresented，进而：① 污染 `recommend_seeds` 的建议列表；
+  ② 白占一个 `top_k` 名额（`underrepresented[:top_k]`）；③ `recommend_seeds` 的匹配循环里
+  只有 short/medium/long 三个分支，`avg_length` 永远打不中，浪费一整轮迭代。
+- **修法**：长度桶显式只遍历 `("short","medium","long")`，`avg_length` 不再进候选。
+- **等价性**（证明只少报 avg_length、不动真实桶）：200 组随机数据集（含全空/混长短）
+  new ⊆ old 且 new 恒不含 `length:avg_length`，全过。
+- **回归护栏**：`test_sampler.py::test_never_flags_avg_length_as_length_bucket` —— 40 条全空
+  指令（avg_length=0 < 0.1），断言 underrep 不含 `length:avg_length` 且 length 前缀只能是
+  short/medium/long。**改前该用例红**（实测 1 failed）、**改后绿**（sampler 59/59）。
+- 全量门禁：`7382 passed / 3 skipped / exit 0`（L142 的 7381 + 1 新守卫，无回归）；
+  sampler 59/59、A184 21/21 绿。**B213 关闭**。

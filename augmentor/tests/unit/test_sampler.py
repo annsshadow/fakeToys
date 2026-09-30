@@ -140,6 +140,19 @@ class TestIdentifyUnderrepresented:
         assert "length:long" not in underrepresented
 
 
+    def test_never_flags_avg_length_as_length_bucket(self, sampler):
+        """avg_length 是均值（绝对值），不是占比桶；即便低于 threshold 也不得产出"""
+        items=[{"instruction": "", "output": "x"} for _ in range(40)]
+        # 全部空指令 ⇒ avg_length=0.0 < 0.1 阈值；改前会误把伪桶 length:avg_length 列进去
+        underrep=sampler.identify_underrepresented(items)
+        assert not any(x.startswith("length:avg_length") for x in underrep), underrep
+        # 只可能是真正的三个长度桶
+        assert all(
+            x in ("length:short", "length:medium", "length:long")
+            for x in underrep if x.startswith("length:")
+        )
+
+
 class TestRecommendSeeds:
     def test_empty_items_returns_guidance(self, sampler):
         result = sampler.recommend_seeds([])
