@@ -104,4 +104,27 @@ mod tests {
         assert!(person.calendar_type.eq_ignore_ascii_case("PERSON"));
         assert!(!unit.calendar_type.eq_ignore_ascii_case("PERSON"));
     }
+
+    // 轮74 回归：前端（桌面+移动）发 camelCase，CreateEventRequest 必须能解，
+    // 否则 calendar_id 落 None → event_create 400，建事件实跑必败。
+    #[test]
+    fn create_event_request_accepts_camel_case_from_frontends() {
+        let req: crate::CreateEventRequest = serde_json::from_str(
+            r#"{"calendarId":"cal-1","title":"评审","startTime":"2026-10-01 09:00","endTime":"2026-10-01 10:00","location":"会议室"}"#,
+        )
+        .unwrap();
+        assert_eq!(req.calendar_id.as_deref(), Some("cal-1"));
+        assert_eq!(req.start_time.as_deref(), Some("2026-10-01 09:00"));
+        assert_eq!(req.end_time.as_deref(), Some("2026-10-01 10:00"));
+    }
+
+    // snake_case 旧调用方仍须可解（alias 双向兼容）
+    #[test]
+    fn create_event_request_still_accepts_snake_case() {
+        let req: crate::CreateEventRequest =
+            serde_json::from_str(r#"{"calendar_id":"cal-2","start_time":"t1","end_time":"t2"}"#)
+                .unwrap();
+        assert_eq!(req.calendar_id.as_deref(), Some("cal-2"));
+        assert_eq!(req.start_time.as_deref(), Some("t1"));
+    }
 }
