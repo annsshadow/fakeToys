@@ -297,6 +297,24 @@ class TestConverterEdgeCases:
             converter.convert([], "unknown", "json")
 
 
+class TestTurnsToCanonicalContract:
+    """turns_to_canonical 的 DataFormatError 契约守卫（L140，B210）"""
+
+    def test_missing_role_key_raises_dataformaterror_not_keyerror(self):
+        """末尾两轮缺 role 键时，契约承诺 DataFormatError；改前是裸 KeyError（违反 Raises 契约）"""
+        from augmentor.converter import turns_to_canonical, DataFormatError
+        turns = [{"content": "q"}, {"content": "a"}]  # 无 role 键
+        with pytest.raises(DataFormatError):
+            turns_to_canonical(turns, "chatml")
+
+    def test_bad_tail_roles_raises_dataformaterror(self):
+        """末尾角色顺序错（user→user）仍应 DataFormatError，不是 KeyError/其它异常"""
+        from augmentor.converter import turns_to_canonical, DataFormatError
+        turns = [{"role": "user", "content": "q"}, {"role": "user", "content": "a"}]
+        with pytest.raises(DataFormatError):
+            turns_to_canonical(turns, "chatml")
+
+
 class TestDataFormat:
     """DataFormat 测试"""
     
