@@ -97,6 +97,15 @@ class ContextAugmentor:
         current_q = seed_qa.get("instruction", "")
         current_a = seed_qa.get("output", "")
         
+        # 已有历史在整个循环内不变，一次性把所有已有 user 问题摊平成集合；
+        # 原来每轮 × 每条历史都重建一遍列表再线性 in，改成常量集合 O(1) 命中。
+        existing_questions = set()
+        if existing_histories:
+            for existing in existing_histories:
+                existing_questions.update(
+                    t["content"] for t in existing if t["role"] == "user"
+                )
+
         # 生成后续对话
         for i in range(self.num_turns - 1):
             follow_up = self._generate_follow_up_question(
@@ -106,16 +115,9 @@ class ContextAugmentor:
             if not follow_up:
                 break
             
-            # 检查是否与已有历史重复
-            if existing_histories:
-                is_duplicate = False
-                for existing in existing_histories:
-                    existing_questions = [t["content"] for t in existing if t["role"] == "user"]
-                    if follow_up in existing_questions:
-                        is_duplicate = True
-                        break
-                if is_duplicate:
-                    continue
+            # 检查是否与已有历史重复（已有问题集合在循环外算好）
+            if follow_up in existing_questions:
+                continue
             
             history.append({"role": "user", "content": current_q})
             history.append({"role": "assistant", "content": current_a})
