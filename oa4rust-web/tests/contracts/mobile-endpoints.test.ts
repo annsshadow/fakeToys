@@ -131,7 +131,7 @@ const REGISTERED_BACKEND_ROUTES: string[] = [
   '/api/attendance/assemble/control/statistics/list',
   '/api/attendance/assemble/control/attendancestatisticalcycle/list/all',
   '/api/attendance/assemble/control/attendancestatisticalcycle/cycleDetail/{year}/{month}',
-  '/api/attendance/assemble/control/dingding/statistic/person/year/{year}/month/{month}',
+  '/api/attendance/assemble/control/dingdingstatistic/person/{person}/{year}/{month}',
   // v2 我的考勤（attendance_assemble_control v2/my/*）——rev102
   '/api/attendance/assemble/control/v2/my/statistic',
   '/api/attendance/assemble/control/v2/my/detail/list',
