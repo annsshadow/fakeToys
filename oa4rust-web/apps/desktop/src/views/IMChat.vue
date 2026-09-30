@@ -441,9 +441,10 @@ async function markConversationRead(convId: string): Promise<void> {
 }
 
 async function markAllRead(): Promise<void> {
-  for (const conv of conversations.value.filter((c) => c.unread > 0)) {
-    await markConversationRead(conv.id)
-  }
+  // 各会话标记已读互不依赖，并行发出（原逐会话 await，N 个未读即 N 次串行 RTT）；
+  // allSettled 保证单个失败不阻断其余会话的已读标记。
+  const unread = conversations.value.filter((c) => c.unread > 0)
+  await Promise.allSettled(unread.map((c) => markConversationRead(c.id)))
 }
 
 // ── WebSocket（P5：IM 完整协议——presence/receipt/会话房间）──────────────
