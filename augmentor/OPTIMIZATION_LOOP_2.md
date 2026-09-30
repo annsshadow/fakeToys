@@ -45,7 +45,8 @@
 | B204 | **已关闭（L134）**：`ContextAugmentor.generate_multi_turn` 在「每轮 × 每条历史」里各自重建 user 问题列表再 `in` 线性查，且重复判定散在循环内不易推理；循环不变量 `existing_histories` 被反复重算 | 改为循环外一次性摊平成单一 `existing_questions` 集合（并集语义），内层 O(1) 命中；新增 2 条跨多条历史的去重用例钉死并集语义 | S |
 | B205 | **已关闭（L135）**：`DataSanitizer.remove_duplicates(keep="last")` 每次遇到重复都在**全 result 上**逐条 `r.get(key)` 线性找槽位，O(n×distinct)；重复多的数据上显著热点 | N=40000/D=400 实测 new/old **×0.0235**（≈42×，双序 min-of-2）；seen 改存 result 下标、O(1) 覆盖；等价性 300 dup 密集集 + 50 keep=first 集逐元素一致；1 条新槽位不变量用例 | S |
 | B206 | **已关闭（L136）**：`EnhancedComparator._compare_fields` 的 instruction 匹配是 O(F×A×B) 逐条扫 B、每字段再各扫一遍 A/B 算 count；且 `type_mismatches`/`value_differences`/`diff_datasets` 成员语义无直达行为用例 | 双层索引 `instruction→{field:首个含该field的item_b}` + 一次 O(A+B) 字段计数，匹配变 O(A)；N=1500/F=12 A/B new/old ×0.097；等价性 200 随机数据集逐字段逐差异一致；补 3 条行为用例 | M |
-| B207 | 待普查后立项 | —— | — |
+| B207 | **已关闭（L137）**：`AugmentorPipeline._process_single_item` 的 except 分支里 `_process_errors` 惰性「没有就建 + append」非原子——并行路径（ThreadPoolExecutor 多工作线程）并发触发时，两线程都读到 `hasattr` 为 False 各自建 `[]`，后建者吞掉先 append 的那条；而 `__init__` 里的 `self._lock` 建了却全程无人用（dead lock） | 持 `self._lock` 包住 check-then-act；补 `TestProcessErrorsThreadSafety` 2 条（并发 N 条错误一条不丢 + 源码级守卫钉死锁确实被用上，防未来把锁拿掉却因 GIL 窗口窄测不出） | S |
+| B208 | 待普查后立项 | —— | — |
 
 ## 循环日志
 
@@ -532,3 +533,26 @@
   真正在算」钉死，任何索引化只要把「取哪个 item_b」搞错就当场红。
 - 全量门禁：`7369 passed / 3 skipped / exit 0`（L135 的 7366 + 3 新守卫，无回归）；
   compare_enhanced 19/19、A184 21/21 绿。**B206 关闭**。
+
+### L137（2026-09-30）— B207 立项 + 关闭：_process_single_item 惰性 _process_errors 竞态 → 持锁
+
+- **并发竞态专项**（普查：`grep ThreadPoolExecutor` 命中 pipeline/context/export/
+  expander/multilingual；逐个核谁在共享状态上竞写，pipeline 是唯一「多工作线程写同一
+  惰性 list」的真竞态）：`_process_single_item` 由 `augment_dataset` 的 `ThreadPoolExecutor`
+  多工作线程并发调用，其 except 分支对共享的 `self._process_errors` 走「`hasattr` 没有就
+  建 `[]` 再 `append`」两步非原子操作——两个线程都可能读到「还没有这个属性」，各自建一份
+  `[]`，后建者把先 append 的错误记录整份覆盖丢一条。
+- **dead lock 佐证**：`__init__` 里 `self._lock = threading.Lock()`（:58）建了之后**全程
+  无人 `with self._lock`**（`grep "with self._lock" pipeline.py` 改前为 0 命中）——锁是
+  白建的，惰性 list 恰好没被它保护，竞态就裸露着。本轮把 check-then-act 包进这把锁，
+  顺带把 dead lock 转成活锁。
+- **修法**（行为不变，只补并发安全）：`error_info` 构造仍在锁外（无共享），锁只包
+  「`hasattr`→建→append」三步；串行路径（单次调用）行为逐字节等价。
+- **回归护栏**：`test_pipeline_error_recovery.py::TestProcessErrorsThreadSafety` 2 条 ——
+  ① `test_concurrent_error_records_not_lost`：40 个真实线程同时走 except 分支（注入
+  RuntimeError），断言 `_process_errors` 恰好 N 条、index 集合完整（无丢失/无重复）；
+  ② `test_error_record_mutation_is_guarded_by_lock`：源码级钉死「record 分支必须持
+  `self._lock`」，防止未来有人把锁拿掉、却因 CPython GIL 窗口窄到行为测试测不出丢失而
+  静默退化。
+- 全量门禁：`7371 passed / 3 skipped / exit 0`（L136 的 7369 + 2 新守卫，无回归）；
+  pipeline 12/12、A184 21/21 绿。**B207 关闭**。
