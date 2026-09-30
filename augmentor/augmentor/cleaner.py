@@ -26,6 +26,8 @@ from typing import List, Dict, Optional, Any, Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .validation import require_count
+
 logger = logging.getLogger(__name__)
 
 # 噪声清除用的模式。与 `augmentor.data.cleaner` 保持一致，避免同一份数据
@@ -34,6 +36,18 @@ URL_PATTERN = re.compile(r"https?://\S+|www\.\S+")
 HTML_TAG_PATTERN = re.compile(r"<[^>]+>")
 # 控制字符 + 零宽字符（零宽空格/连接符/不连字符/BOM）
 CONTROL_CHAR_PATTERN = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\u200b\u200c\u200d\ufeff]")
+
+
+# 空白折叠 / 特殊字符 / 连续标点 / 关键词切分：编译一次放在模块级。
+# 前两条在**每条记录的每个字段**上各调一次（真实语料 6902 条实测 =
+# 各 19,605 次 `re._compile()` 缓存查找），后两条在 `TextNormalizer` 上。
+# 口径与 `augmentor.statistics._TOKEN_PATTERN` 一致。
+WHITESPACE_PATTERN = re.compile(r"\s+")
+SPECIAL_CHAR_PATTERN = re.compile(
+    r"[^\u4e00-\u9fff\w\s.,!?;:、。，！？；：\u201c\u201d\u2018\u2019（）\[\]【】]"
+)
+REPEATED_PUNCTUATION_PATTERN = re.compile(r"([。！？.!?])\1+")
+KEYWORD_PATTERN = re.compile(r"[\u4e00-\u9fff]+|[a-zA-Z]+")
 
 
 @dataclass
@@ -275,7 +289,7 @@ class DatasetCleaner:
             for field in fields:
                 if field in item and isinstance(item[field], str):
                     # 将多个空白字符替换为单个空格
-                    new_value = re.sub(r'\s+', ' ', item[field])
+                    new_value = WHITESPACE_PATTERN.sub(' ', item[field])
                     if new_value != item[field]:
                         item[field] = new_value
                         modified = True
@@ -298,7 +312,7 @@ class DatasetCleaner:
             for field in fields:
                 if field in item and isinstance(item[field], str):
                     # 保留中文、英文、数字和常用标点
-                    new_value = re.sub(r'[^\u4e00-\u9fff\w\s.,!?;:、。，！？；：\u201c\u201d\u2018\u2019（）\[\]【】]', '', item[field])
+                    new_value = SPECIAL_CHAR_PATTERN.sub('', item[field])
                     if new_value != item[field]:
                         item[field] = new_value
                         modified = True
@@ -436,7 +450,7 @@ class TextNormalizer:
         text = text.strip()
         
         # 标准化空白字符
-        text = re.sub(r'\s+', ' ', text)
+        text = WHITESPACE_PATTERN.sub(' ', text)
         
         # 标准化标点
         text = self._normalize_punctuation(text)
@@ -454,7 +468,7 @@ class TextNormalizer:
         """
         # 简单的标点标准化
         # 将连续的标点替换为单个
-        text = re.sub(r'([。！？.!?])\1+', r'\1', text)
+        text = REPEATED_PUNCTUATION_PATTERN.sub(r'\1', text)
         
         return text
     
@@ -463,14 +477,17 @@ class TextNormalizer:
         
         Args:
             text: 输入文本
-            top_k: 返回数量
+            top_k: 返回数量，不小于 0 的整数；0 是「一个关键词都不要」，
+                与「没传参数」是两件事。越界值报错而不是落到 `[:top_k]` 上被
+                读成「丢掉末尾 |top_k| 个」（见 `augmentor.validation.require_count`）
         
         Returns:
             关键词列表
         """
+        require_count("top_k", top_k)
         # 简单的关键词提取
         # 使用TF-IDF思想，选择出现频率适中的词
-        words = re.findall(r'[\u4e00-\u9fff]+|[a-zA-Z]+', text)
+        words = KEYWORD_PATTERN.findall(text)
         
         # 词频统计
         word_freq = {}
@@ -538,11 +555,17 @@ def clean_batch_optimized(items: List[Dict],
         items: 数据列表
         fields: 要清洗的字段列表
         rules: 要应用的规则列表
-        batch_size: 批处理大小
+        batch_size: 批处理大小，不小于 1 的整数（判据见 `require_count`）
     
     Returns:
         (清洗后的数据, 清洗结果汇总)
     """
+    # `batch_size` 是 `range()` 的步长，越界值在这行不报错、只改产物：0 抛裸
+    # `ValueError: range() arg 3 must not be zero`（经 API 就是 500 而不是 400），
+    # -1 则**静默交出空数据集**而清洗报告仍写 original_count=10（实测 10 条进 0 条出）。
+    # 步长没有「0 条」这种合法读法，故 minimum=1。
+    require_count("batch_size", batch_size, minimum=1)
+
     cleaner = DatasetCleaner()
     cleaned_items = []
     total_modified = 0

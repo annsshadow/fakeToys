@@ -27,7 +27,7 @@ const busyId = ref('')
 async function load(): Promise<void> {
   loading.value = true
   try {
-    let resp
+    let resp: { data?: MeetingRow[] | unknown }
     if (tab.value === 'wait') resp = await meetingApi.invitedWait()
     else if (tab.value === 'confirm') resp = await meetingApi.waitConfirm()
     else resp = await meetingApi.applied(1, 50)

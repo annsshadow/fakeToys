@@ -26,6 +26,7 @@ pub mod routes;
 pub mod u2;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
@@ -251,11 +252,11 @@ pub async fn section_create(
         Value::Object(o) => o,
         _ => serde_json::Map::new(),
     };
-    if !obj
+    if obj
         .get("creator")
         .and_then(|v| v.as_str())
         .map(str::trim)
-        .is_some_and(|s| !s.is_empty())
+        .is_none_or(|s| s.is_empty())
     {
         obj.insert(
             "creator".to_string(),
@@ -867,6 +868,73 @@ pub async fn delete_subject(
     ))))
 }
 
+// —— assemble/control 侧 delete/{forum,reply,subject}：前端 BBSForum.vue 以
+// `api.post(url, { id })` 携 JSON 体调用（无路径参数），故这些路由须从体读 id，
+// 而非 Path（0 槽路由 + Path handler 恒 arity-500）。Path 版保留给 core/entity/{id}。
+fn body_id(body: &Value) -> String {
+    body.get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string()
+}
+
+#[allow(non_snake_case)]
+pub async fn delete_forum_body(
+    pool: Extension<Pool>,
+    axum::Json(body): axum::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = body_id(&body);
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows_affected = client
+        .execute(
+            "UPDATE x_bbs_forum SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(rows_affected > 0))]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn delete_reply_body(
+    pool: Extension<Pool>,
+    axum::Json(body): axum::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = body_id(&body);
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows_affected = client
+        .execute(
+            "UPDATE x_bbs_reply SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(rows_affected > 0))]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn delete_subject_body(
+    pool: Extension<Pool>,
+    axum::Json(body): axum::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = body_id(&body);
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows_affected = client
+        .execute(
+            "UPDATE x_bbs_topic SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(rows_affected > 0))]),
+    ))))
+}
+
 #[allow(non_snake_case)]
 pub async fn list_reply_filter(
     pool: Extension<Pool>,
@@ -1276,11 +1344,18 @@ pub async fn shutup_create(
 #[allow(non_snake_case)]
 pub async fn shutup_delete(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
+    // 前端 BBSForum.vue: api.post('.../shutup/delete', { person }) —— 无路径参数，从体读 person，
+    // 解除该 person 的禁言（此前误声明 Path(id) 致 0 槽路由恒 arity-500）。
+    axum::Json(body): axum::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let person = body
+        .get("person")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows_affected = client
-        .execute("DELETE FROM x_bbs_shutup WHERE id = $1", &[&id])
+        .execute("DELETE FROM x_bbs_shutup WHERE person = $1", &[&person])
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
@@ -1471,7 +1546,6 @@ pub async fn subject_search(
 #[allow(non_snake_case)]
 pub async fn subject_statgrade(
     pool: Extension<Pool>,
-    Path((_section_name, _subject_type)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let total_row = client
@@ -1689,14 +1763,14 @@ pub async fn user_forum_list(pool: Extension<Pool>) -> Result<Json<ActionResult<
 #[allow(non_snake_case)]
 pub async fn user_info(
     pool: Extension<Pool>,
-    Path(person): Path<String>,
+    session: Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             "SELECT id, unique_id, name, mobile, email, icon, job, department, unit, position \
-             FROM auth_person WHERE id = $1 AND deleted_at IS NULL",
-            &[&person],
+             FROM auth_person WHERE unique_id = $1 AND deleted_at IS NULL",
+            &[&session.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;

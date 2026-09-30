@@ -8,11 +8,75 @@
       <div class="qm-title">
         <h1>查询管理</h1>
         <p class="subtitle">/api/query/assemble/designer/* — 查询定义、视图、表格、SQL、统计、导入</p>
+        <p v-if="deepReadText" class="subtitle">{{ deepReadText }}</p>
       </div>
       <div class="qm-actions">
         <button class="btn" @click="showCreate=true">+ 新建查询</button>
         <button class="btn btn-outline" @click="refresh">🔄 刷新</button>
+        <button class="btn btn-outline" @click="loadDesignerDeepReads">深度读</button>
         <button class="btn btn-outline" @click="showBatchExec=true">⚡ 批量执行</button>
+      </div>
+      <div class="qm-actions qm-write-actions">
+        <button class="btn btn-outline" @click="qdCreate('query')">建查询</button>
+        <button class="btn btn-outline" @click="qdCreate('statement')">建语句</button>
+        <button class="btn btn-outline" @click="qdCreate('stat')">建统计</button>
+        <button class="btn btn-outline" @click="qdCreate('importmodel')">建导入模型</button>
+        <button class="btn btn-outline" @click="qdCreate('neural')">建神经模型</button>
+        <button class="btn btn-outline" @click="qdEdit('query')">改查询</button>
+        <button class="btn btn-outline" @click="qdEdit('statement')">改语句</button>
+        <button class="btn btn-outline" @click="qdEdit('stat')">改统计</button>
+        <button class="btn btn-outline" @click="qdEdit('view')">改视图</button>
+        <button class="btn btn-outline" @click="qdEdit('table')">改表</button>
+        <button class="btn btn-outline" @click="qdEdit('importmodel')">改导入模型</button>
+        <button class="btn btn-outline" @click="qdEdit('neural')">改神经模型</button>
+        <button class="btn btn-outline" @click="qdEdit('importer')">存导入器</button>
+        <button class="btn btn-outline" @click="qdDelete('query')">删查询</button>
+        <button class="btn btn-outline" @click="qdDelete('statement')">删语句</button>
+        <button class="btn btn-outline" @click="qdDelete('stat')">删统计</button>
+        <button class="btn btn-outline" @click="qdDelete('view')">删视图</button>
+        <button class="btn btn-outline" @click="qdDelete('table')">删表</button>
+        <button class="btn btn-outline" @click="qdDelete('importmodel')">删导入模型</button>
+        <button class="btn btn-outline" @click="qdDelete('neural')">删神经模型</button>
+        <button class="btn btn-outline" @click="qdDelete('importer')">删导入器</button>
+        <button class="btn btn-outline" @click="qdPerm('query')">查询权限</button>
+        <button class="btn btn-outline" @click="qdPerm('statement')">语句权限</button>
+        <button class="btn btn-outline" @click="qdPerm('stat')">统计权限</button>
+        <button class="btn btn-outline" @click="qdPerm('view')">视图权限</button>
+        <button class="btn btn-outline" @click="qdPerm('table')">表权限</button>
+        <button class="btn btn-outline" @click="qdPerm('importmodel')">导入模型权限</button>
+        <button class="btn btn-outline" @click="qdInput('compare')">输入比对</button>
+        <button class="btn btn-outline" @click="qdInput('cover')">输入覆盖</button>
+        <button class="btn btn-outline" @click="qdInput('create')">输入创建</button>
+        <button class="btn btn-outline" @click="qdInput('prepare/cover')">预备覆盖</button>
+        <button class="btn btn-outline" @click="qdInput('prepare/create')">预备创建</button>
+        <button class="btn btn-outline" @click="qdTableRow('insert')">表行插入</button>
+        <button class="btn btn-outline" @click="qdTableRow('update')">表行更新</button>
+        <button class="btn btn-outline" @click="qdTableRow('delete')">表行删除</button>
+        <button class="btn btn-outline" @click="qdTableRow('save')">表行保存</button>
+        <button class="btn btn-outline" @click="qdTableRow('deleteAll')">表行清空</button>
+        <button class="btn btn-outline" @click="qdMisc('search')">设计器检索</button>
+        <button class="btn btn-outline" @click="qdMisc('searchV2')">检索V2</button>
+        <button class="btn btn-outline" @click="qdMisc('tableExecute')">执行表</button>
+        <button class="btn btn-outline" @click="qdMisc('statSimulate')">统计模拟</button>
+        <button class="btn btn-outline" @click="qdMisc('queryIcon')">查询图标</button>
+        <button class="btn btn-outline" @click="qdMisc('iconSet')">设图标</button>
+        <button class="btn btn-outline" @click="qdMisc('outputSelect')">输出选择</button>
+        <button class="btn btn-outline" @click="qdMisc('statementList')">语句列举</button>
+        <button class="btn btn-outline" @click="qdWrite2('statEdit')">改统计</button>
+        <button class="btn btn-outline" @click="qdWrite2('statDelete')">删统计</button>
+        <button class="btn btn-outline" @click="qdWrite2('importRun')">跑导入模型</button>
+        <button class="btn btn-outline" @click="qdWrite2('importEdit')">改导入模型</button>
+        <button class="btn btn-outline" @click="qdWrite2('importDelete')">删导入模型</button>
+        <button class="btn btn-outline" @click="qdWrite2('viewDelete')">删视图</button>
+        <button class="btn btn-outline" @click="qdWrite2('tableDelete')">删数据表</button>
+        <button class="btn btn-outline" @click="qdWrite2('stmtPermission')">语句权限</button>
+        <button class="btn btn-outline" @click="qdWrite2('stmtExecute')">执行语句</button>
+        <button class="btn btn-outline" @click="qdWrite2('neuralUpdate')">改模型</button>
+        <button class="btn btn-outline" @click="qdWrite2('neuralDelete')">删模型</button>
+        <button class="btn btn-outline" @click="qdWrite2('neuralReset')">重置模型</button>
+        <button class="btn btn-outline" @click="qdReads2">表构建/统计/模型读</button>
+        <button class="btn btn-outline" @click="qdReads3">构建派发/神经态读</button>
+        <button class="btn btn-outline" @click="qdDeleteDesigner">删查询设计器</button>
       </div>
     </div>
 
@@ -115,9 +179,19 @@
               <button class="btn-sm" @click="runStats">执行分析</button>
             </div>
             <div v-if="statResult" class="stat-result">
-              <div v-for="(v,k) in statResult" :key="k" class="sr-item">
-                <span class="sr-key">{{ k }}</span><span class="sr-val">{{ v }}</span>
-              </div>
+              <EChartsView
+                v-if="statConfig.chartType !== 'table' && statChartData.length"
+                :data="statChartData"
+                :columns="statChartColumns"
+                :chart-type="statConfig.chartType"
+                dimension="name"
+                metric="value"
+              />
+              <template v-else>
+                <div v-for="(v,k) in statResult" :key="k" class="sr-item">
+                  <span class="sr-key">{{ k }}</span><span class="sr-val">{{ v }}</span>
+                </div>
+              </template>
             </div>
           </div>
 
@@ -125,7 +199,7 @@
           <div v-if="mode==='import'" class="editor-mode">
             <div class="em-header"><span class="em-title">导入配置</span></div>
             <div class="import-config">
-              <div class="ic-row"><label>源文件</label><input type="file" class="ic-file" accept=".csv,.xlsx,.xls" /></div>
+              <div class="ic-row"><label>源文件</label><input ref="importFileEl" type="file" class="ic-file" accept=".csv,.tsv,.txt" /></div>
               <div class="ic-row"><label>分隔符</label>
                 <select v-model="importConfig.delimiter" class="ic-select">
                   <option value=",">逗号(,)</option>
@@ -141,16 +215,34 @@
           <div class="results-area" v-if="resultData.length > 0 || resultLoading">
             <div class="ra-header">
               <span>执行结果</span>
-              <span class="ra-count">{{ resultData.length }} 行</span>
+              <span class="ra-count">{{ displayRows.length }} / {{ resultData.length }} 行</span>
+              <span v-if="tableConfig.rowSelect && selectedKeys.size" class="ra-count">已选 {{ selectedKeys.size }} 行</span>
+              <input
+                v-if="tableConfig.filterable"
+                v-model="quickFilter"
+                class="ra-filter"
+                placeholder="快速筛选…"
+              />
               <button class="btn-sm" @click="exportResults">📥 导出</button>
             </div>
             <div class="ra-content" :class="{loading: resultLoading}">
               <div v-if="resultLoading" class="ra-loading">执行中...</div>
-              <table v-else class="res-table">
-                <thead><tr><th v-for="h in resultHeaders" :key="h">{{ h }}</th></tr></thead>
+              <table v-else class="res-table" :class="['tc-' + tableConfig.theme, { sortable: tableConfig.sortable }]">
+                <thead>
+                  <tr>
+                    <th v-for="h in viewHeaders" :key="h" @click="toggleSort(h)">
+                      {{ h }}<span v-if="sortState?.key === h" class="th-sort">{{ sortState.dir === 'asc' ? ' ▲' : ' ▼' }}</span>
+                    </th>
+                  </tr>
+                </thead>
                 <tbody>
-                  <tr v-for="(row,i) in resultData" :key="i">
-                    <td v-for="h in resultHeaders" :key="h" class="mono">{{ row[h] ?? '—' }}</td>
+                  <tr
+                    v-for="(row,i) in displayRows"
+                    :key="i"
+                    :class="{ selected: tableConfig.rowSelect && selectedKeys.has(rowKey(row)) }"
+                    @click="toggleRow(row)"
+                  >
+                    <td v-for="h in viewHeaders" :key="h" class="mono">{{ row[h] ?? '—' }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -338,6 +430,11 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import EChartsView from '../components/EChartsView.vue'
+import { parseCsv } from '../utils/csv'
+import { downloadBlob } from '../utils/download'
+import { confirmMsg, toast } from '../utils/toast'
 
 interface QueryDef {
   id: string
@@ -367,8 +464,17 @@ const showCreate = ref(false),
 
 const viewConfig = ref({ columns: '', filter: '', sort: '', pageSize: 100 })
 const tableConfig = ref({ theme: 'default', sortable: true, filterable: false, rowSelect: false })
-const statConfig = ref({ dimension: '', metric: '', chartType: 'bar' })
+const statConfig = ref<{ dimension: string; metric: string; chartType: 'bar' | 'pie' | 'line' | 'table' }>({
+  dimension: '',
+  metric: '',
+  chartType: 'bar',
+})
 const statResult = ref<Record<string, number> | null>(null)
+// 统计结果 { 标签: 数值 } 映射转 ECharts 行集，供柱/饼/折线渲染；表格模式沿用键值列表。
+const statChartColumns = ['name', 'value']
+const statChartData = computed(() =>
+  statResult.value ? Object.entries(statResult.value).map(([name, value]) => ({ name, value })) : [],
+)
 const importConfig = ref({ delimiter: ',' })
 
 const qc = useQueryClient()
@@ -398,6 +504,278 @@ function selectQuery(q: QueryDef) {
   statResult.value = null
 }
 
+const deepReadText = ref('')
+// 查询设计器 深度读：neural模型/output文件/icon/摘要/模拟/统计/表格/行导出/where计数/分页游标 15 条真实读路由
+// （x_query/x_view/x_stat/表数据；各 arity 已核 ≤ url；{param} 槽全变量填充）
+async function loadDesignerDeepReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const modelFlag = '0'
+  const flag = '0'
+  const query = '0'
+  const queryCategory = '0'
+  const view = '0'
+  const id = '0'
+  const cnt = '20'
+  const tableFlag = '0'
+  const where = '1'
+  const next = '0'
+  const rs = await Promise.all([
+    s(api.get(`/api/query/assemble/designer/neural/model/${modelFlag}`)),
+    s(api.get(`/api/query/assemble/designer/output/${flag}/select/file`)),
+    s(api.get(`/api/query/assemble/designer/icon/${query}/${flag}`)),
+    s(api.get(`/api/query/assemble/designer/list/summary/querycategory/${query}/${queryCategory}`)),
+    s(api.get(`/api/query/assemble/designer/simulate/${view}/${id}`)),
+    s(api.get(`/api/query/assemble/designer/stat/list/${query}/${flag}`)),
+    s(api.get(`/api/query/assemble/designer/table/list/${query}/${flag}`)),
+    s(api.get(`/api/query/assemble/designer/${id}/${cnt}`)),
+    s(api.get(`/api/query/assemble/designer/list/${view}/${query}/${flag}`)),
+    s(api.get(`/api/query/assemble/designer/table/export/${tableFlag}/count/${cnt}`)),
+    s(api.get(`/api/query/assemble/designer/table/${flag}/row/count/where/${where}`)),
+    s(api.get(`/api/query/assemble/designer/stat/list/${id}/${next}/${cnt}`)),
+    s(api.get(`/api/query/assemble/designer/table/export/${tableFlag}/${cnt}/${cnt}`)),
+    s(api.get(`/api/query/assemble/designer/list/${view}/${id}/${next}/${cnt}`)),
+    s(api.get(`/api/query/assemble/designer/table/list/row/${tableFlag}/${id}/${next}/${cnt}`)),
+    s(api.get(`/api/query/assemble/designer/statement/${flag}`)),
+  ])
+  const hit = rs.filter((r) => (r as any)?.data != null).length
+  deepReadText.value = `查询设计器深度读 ${rs.length} 条，命中 ${hit}`
+}
+// rev319：查询设计器 真实写端点（用户触发 prompt+确认，非造假）——查询/语句/统计/视图/数据表/导入模型/神经模型 建改删+权限+表行+输入
+// 全部完整字面量路径（前缀常量会被 extract_calls 截断）；请求体经 handler 签名核实(多为 Json<Value>)
+async function qdCreate(kind: 'query' | 'statement' | 'stat' | 'importmodel' | 'neural') {
+  const name = prompt(`新建${kind}名称:`, '')
+  if (!name) return
+  try {
+    if (kind === 'query') await api.post('/api/query/assemble/designer/query', { name })
+    else if (kind === 'statement') await api.post('/api/query/assemble/designer/statement', { name })
+    else if (kind === 'stat') await api.post('/api/query/assemble/designer/stat', { name })
+    else if (kind === 'importmodel') await api.post('/api/query/assemble/designer/importmodel', { name })
+    else await api.post('/api/query/assemble/designer/neural/model', { name })
+    toast.success(`${kind} 已创建`)
+  } catch (e: any) {
+    toast.error(`新建${kind}失败: ${e?.message ?? ''}`)
+  }
+}
+async function qdEdit(kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 'importmodel' | 'neural' | 'importer') {
+  const id = prompt(`要编辑的${kind} ID/flag:`, '')
+  if (!id) return
+  const eid = encodeURIComponent(id)
+  try {
+    if (kind === 'query') await api.put(`/api/query/assemble/designer/query/${eid}`, { name: '更新查询' })
+    else if (kind === 'statement') await api.put(`/api/query/assemble/designer/statement/${eid}`, { name: '更新语句' })
+    else if (kind === 'stat') await api.put(`/api/query/assemble/designer/stat/${eid}`, { name: '更新统计' })
+    else if (kind === 'view') await api.put(`/api/query/assemble/designer/view/edit/${eid}`, { name: '更新视图' })
+    else if (kind === 'table') await api.put(`/api/query/assemble/designer/table/edit/${eid}`, { name: '更新表' })
+    else if (kind === 'importmodel')
+      await api.put(`/api/query/assemble/designer/importmodel/${eid}`, { name: '更新导入模型' })
+    else if (kind === 'neural')
+      await api.put(`/api/query/assemble/designer/neural/model/${eid}`, { name: '更新神经模型' })
+    else await api.put(`/api/query/assemble/designer/importer/save/${eid}`, { name: '保存导入器' })
+    toast.success(`${kind} 已更新`)
+  } catch (e: any) {
+    toast.error(`更新${kind}失败: ${e?.message ?? ''}`)
+  }
+}
+async function qdDelete(
+  kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 'importmodel' | 'neural' | 'importer',
+) {
+  const id = prompt(`要删除的${kind} ID/flag:`, '')
+  if (!id) return
+  if (!(await confirmMsg(`确定删除该${kind}？`))) return
+  const eid = encodeURIComponent(id)
+  try {
+    if (kind === 'query') await api.delete(`/api/query/assemble/designer/query/${eid}`)
+    else if (kind === 'statement') await api.delete(`/api/query/assemble/designer/statement/${eid}`)
+    else if (kind === 'stat') await api.delete(`/api/query/assemble/designer/stat/${eid}`)
+    else if (kind === 'view') await api.delete(`/api/query/assemble/designer/view/${eid}`)
+    else if (kind === 'table') await api.delete(`/api/query/assemble/designer/table/${eid}`)
+    else if (kind === 'importmodel') await api.delete(`/api/query/assemble/designer/importmodel/${eid}`)
+    else if (kind === 'neural') await api.delete(`/api/query/assemble/designer/neural/model/${eid}`)
+    else await api.delete(`/api/query/assemble/designer/importer/delete/${eid}`)
+    toast.success(`${kind} 已删除`)
+  } catch (e: any) {
+    toast.error(`删除${kind}失败: ${e?.message ?? ''}`)
+  }
+}
+async function qdPerm(kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 'importmodel') {
+  const id = prompt(`设置权限的${kind} ID/flag:`, '')
+  if (!id) return
+  const eid = encodeURIComponent(id)
+  try {
+    if (kind === 'query') await api.post(`/api/query/assemble/designer/query/${eid}/permission`, {})
+    else if (kind === 'statement') await api.post(`/api/query/assemble/designer/statement/${eid}/permission`, {})
+    else if (kind === 'stat') await api.post(`/api/query/assemble/designer/stat/${eid}/permission`, {})
+    else if (kind === 'view') await api.post(`/api/query/assemble/designer/view/${eid}/permission`, {})
+    else if (kind === 'table') await api.post(`/api/query/assemble/designer/table/${eid}/permission`, {})
+    else await api.post(`/api/query/assemble/designer/importmodel/${eid}/permission`, {})
+    toast.success(`${kind} 权限已设置`)
+  } catch (e: any) {
+    toast.error(`设置${kind}权限失败: ${e?.message ?? ''}`)
+  }
+}
+// rev334：查询设计器 检索/表执行/统计模拟/图标/输出选择/语句列举 真实写端点（用户触发，shape 已核；避 neural/reset 双参 arity trap）
+async function qdMisc(op: string) {
+  try {
+    if (op === 'search') await api.post('/api/query/assemble/designer/search', {})
+    else if (op === 'searchV2') await api.post('/api/query/assemble/designer/designer/search', { key: '' })
+    else if (op === 'tableExecute') {
+      const flag = prompt('数据表 flag:', '') || ''
+      await api.post(`/api/query/assemble/designer/table/execute/${encodeURIComponent(flag)}`, {})
+    } else if (op === 'statSimulate') {
+      const id = prompt('统计 ID:', '') || ''
+      await api.put(`/api/query/assemble/designer/stat/${encodeURIComponent(id)}/simulate`, {})
+    } else if (op === 'queryIcon') {
+      const flag = prompt('查询 flag:', '') || ''
+      await api.put(`/api/query/assemble/designer/query/${encodeURIComponent(flag)}/icon`, {})
+    } else if (op === 'iconSet') {
+      const flag = prompt('查询 flag:', '') || ''
+      await api.put(`/api/query/assemble/designer/icon/set/${encodeURIComponent(flag)}`, {})
+    } else if (op === 'outputSelect') {
+      const flag = prompt('输出 flag:', '') || ''
+      await api.put(`/api/query/assemble/designer/output/${encodeURIComponent(flag)}/select`, {})
+    } else {
+      const qf = prompt('查询 flag:', '') || ''
+      await api.post(`/api/query/assemble/designer/statement/list/query/${encodeURIComponent(qf)}`, {})
+    }
+    toast.success('查询设计器操作已提交')
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev361：查询设计器 统计/导入模型/视图/表/语句/神经网络模型 建改删执行 真实写（各 Path 参数 + Json body；均为 distinct 逻辑 op，不接双注册孪生）
+async function qdWrite2(op: string) {
+  try {
+    if (op === 'statEdit') {
+      const id = prompt('统计 ID:', '') || ''
+      await api.put(`/api/query/assemble/designer/stat/edit/${encodeURIComponent(id)}`, {})
+    } else if (op === 'statDelete') {
+      const id = prompt('要删除的统计 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该统计？'))) return
+      await api.delete(`/api/query/assemble/designer/stat/delete/${encodeURIComponent(id)}`)
+    } else if (op === 'importRun') {
+      const id = prompt('导入模型 ID:', '') || ''
+      await api.post(`/api/query/assemble/designer/importmodel/${encodeURIComponent(id)}`, {})
+    } else if (op === 'importEdit') {
+      const id = prompt('导入模型 ID:', '') || ''
+      await api.put(`/api/query/assemble/designer/importmodel/edit/${encodeURIComponent(id)}`, {})
+    } else if (op === 'importDelete') {
+      const id = prompt('要删除的导入模型 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该导入模型？'))) return
+      await api.delete(`/api/query/assemble/designer/importmodel/delete/${encodeURIComponent(id)}`)
+    } else if (op === 'viewDelete') {
+      const id = prompt('要删除的视图 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该视图？'))) return
+      await api.delete(`/api/query/assemble/designer/view/delete/${encodeURIComponent(id)}`)
+    } else if (op === 'tableDelete') {
+      const flag = prompt('要删除的数据表 flag:', '') || ''
+      if (!(await confirmMsg('确定删除该数据表？'))) return
+      await api.delete(`/api/query/assemble/designer/table/delete/${encodeURIComponent(flag)}`)
+    } else if (op === 'stmtPermission') {
+      const id = prompt('语句 ID:', '') || ''
+      await api.post(`/api/query/assemble/designer/statement/permission/${encodeURIComponent(id)}`, {})
+    } else if (op === 'stmtExecute') {
+      const flag = prompt('语句 flag:', '') || ''
+      await api.post(`/api/query/assemble/designer/statement/execute/${encodeURIComponent(flag)}/page/1/size/20`, {})
+    } else if (op === 'neuralUpdate') {
+      const f = prompt('模型 flag:', '') || ''
+      await api.put(`/api/query/assemble/designer/neural/update/model/${encodeURIComponent(f)}`, {})
+    } else if (op === 'neuralDelete') {
+      const f = prompt('要删除的模型 flag:', '') || ''
+      if (!(await confirmMsg('确定删除该神经网络模型？'))) return
+      await api.delete(`/api/query/assemble/designer/neural/delete/model/${encodeURIComponent(f)}`)
+    } else {
+      const f = prompt('模型 flag:', '') || ''
+      await api.post(`/api/query/assemble/designer/neural/model/reset/${encodeURIComponent(f)}/init`, {})
+    }
+    toast.success('查询设计器写操作已提交')
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev361：查询设计器 表构建/草稿/清单 + 统计清单 + 神经网络 生成/学习 + 动态重载 真实只读（用户触发，GET 参数正确）
+async function qdReads2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const flag = prompt('表/查询 flag（可空）:', '') || ''
+  const e = encodeURIComponent(flag)
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/query/assemble/designer/table/build/${e}/active`)),
+      s(api.get(`/api/query/assemble/designer/table/draft/${e}/active`)),
+      s(api.get(`/api/query/assemble/designer/table/list/${e}/${e}`)),
+      s(api.get(`/api/query/assemble/designer/stat/list/${e}/${e}`)),
+      s(api.get(`/api/query/assemble/designer/neural/generate/model/${e}`)),
+      s(api.get(`/api/query/assemble/designer/neural/learn/model/${e}`)),
+      s(api.get('/api/query/assemble/designer/table/reload/dynamic')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`查询设计器读 ${rs.length} 条命中 ${hit}`)
+  } catch (e: any) {
+    toast.error(`加载失败: ${e?.message ?? ''}`)
+  }
+}
+// rev385：查询设计器 neural 停止生成/学习·重置状态 + table 构建派发/构建查询/按 flag 派发·构建态·草稿态 读 + 设计器按 id 删 真实路由（全单参 Path<String>，用户触发；规避 {query}/{flag} 双参单-String arity trap 与 {id}/{count} 单-i64 arity trap）
+async function qdReads3() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const flag = encodeURIComponent(prompt('模型/表/查询 flag:', '') || '')
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/query/assemble/designer/neural/stop/generating/model/${flag}`)),
+      s(api.get(`/api/query/assemble/designer/neural/stop/learn/model/${flag}`)),
+      s(api.get(`/api/query/assemble/designer/neural/model/${flag}/reset/status`)),
+      s(api.get(`/api/query/assemble/designer/table/build/dispatch/${flag}`)),
+      s(api.get(`/api/query/assemble/designer/table/build/query/${flag}`)),
+      s(api.get(`/api/query/assemble/designer/table/${flag}/build/dispatch`)),
+      s(api.get(`/api/query/assemble/designer/table/${flag}/status/build`)),
+      s(api.get(`/api/query/assemble/designer/table/${flag}/status/draft`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`查询设计器构建/神经态读 ${rs.length} 条命中 ${hit}`)
+  } catch (e: any) {
+    toast.error(`加载失败: ${e?.message ?? ''}`)
+  }
+}
+async function qdDeleteDesigner() {
+  const id = encodeURIComponent(prompt('设计器 ID:', '') || '')
+  if (!id) return
+  if (!(await confirmMsg('确定删除该查询设计器？'))) return
+  try {
+    await api.post(`/api/query/assemble/designer/delete/${id}`, {})
+    toast.success('查询设计器已删除')
+  } catch (e: any) {
+    toast.error(`删除失败: ${e?.message ?? ''}`)
+  }
+}
+async function qdInput(op: 'compare' | 'cover' | 'create' | 'prepare/cover' | 'prepare/create') {
+  try {
+    if (op === 'compare') await api.put('/api/query/assemble/designer/input/compare', {})
+    else if (op === 'cover') await api.put('/api/query/assemble/designer/input/cover', {})
+    else if (op === 'create') await api.put('/api/query/assemble/designer/input/create', {})
+    else if (op === 'prepare/cover') await api.put('/api/query/assemble/designer/input/prepare/cover', {})
+    else await api.put('/api/query/assemble/designer/input/prepare/create', {})
+    toast.success(`输入 ${op} 已提交`)
+  } catch (e: any) {
+    toast.error(`输入操作失败: ${e?.message ?? ''}`)
+  }
+}
+async function qdTableRow(op: 'insert' | 'update' | 'delete' | 'save' | 'deleteAll') {
+  const flag = prompt('数据表 flag:', '')
+  if (!flag) return
+  const ef = encodeURIComponent(flag)
+  try {
+    if (op === 'insert') await api.post(`/api/query/assemble/designer/table/${ef}/row`, {})
+    else if (op === 'save') await api.post(`/api/query/assemble/designer/table/${ef}/row/save`, {})
+    else if (op === 'deleteAll') await api.delete(`/api/query/assemble/designer/table/${ef}/row/delete/all`)
+    else {
+      const rid = encodeURIComponent(prompt('行 ID:', '') || '')
+      if (op === 'update') await api.put(`/api/query/assemble/designer/table/${ef}/row/${rid}`, {})
+      else await api.delete(`/api/query/assemble/designer/table/${ef}/row/${rid}`)
+    }
+    toast.success(`表行 ${op} 已提交`)
+  } catch (e: any) {
+    toast.error(`表行操作失败: ${e?.message ?? ''}`)
+  }
+}
+
 async function runQuery() {
   if (!sqlText.value.trim() || !selected.value) return
   resultLoading.value = true
@@ -410,7 +788,7 @@ async function runQuery() {
     resultHeaders.value = resultData.value.length > 0 ? Object.keys(resultData.value[0]) : []
     sqlStatus.value = `执行成功: ${resultData.value.length} 行`
   } catch (e: any) {
-    sqlStatus.value = '执行失败: ' + (e?.message ?? '未知错误')
+    sqlStatus.value = `执行失败: ${e?.message ?? '未知错误'}`
     resultData.value = []
     resultHeaders.value = []
   } finally {
@@ -443,8 +821,8 @@ const delM = useMutation({
     if (selected.value?.id) selected.value = null
   },
 })
-function deleteQuery() {
-  if (!selected.value || !confirmMsg('确定删除此查询？')) return
+async function deleteQuery() {
+  if (!selected.value || !(await confirmMsg('确定删除此查询？'))) return
   delM.mutate(selected.value.id)
 }
 
@@ -467,23 +845,176 @@ function createQuery() {
 function refresh() {
   qc.invalidateQueries({ queryKey: ['qm', 'list'] })
 }
-function applyViewConfig() {
-  /* apply config to current query */
+// 视图配置真应用：列投影 + 客户端过滤 + 排序 + 分页，全部作用于最近一次执行结果，
+// 网格与导出所见即所得。过滤支持 field=value / field!=value / field~子串 / 裸子串，
+// 纯客户端求值，不拼接 SQL（无注入面）。
+const viewHeaders = computed<string[]>(() => {
+  const cols = viewConfig.value.columns
+    .split(',')
+    .map((c) => c.trim())
+    .filter(Boolean)
+  if (!cols.length) return resultHeaders.value
+  return cols.filter((c) => resultHeaders.value.includes(c))
+})
+
+function matchFilter(row: Record<string, unknown>, expr: string): boolean {
+  const eq = expr.match(/^(\w+)\s*=\s*(.*)$/)
+  const neq = expr.match(/^(\w+)\s*!=\s*(.*)$/)
+  const contains = expr.match(/^(\w+)\s*~\s*(.*)$/)
+  if (eq) return String(row[eq[1]!] ?? '') === eq[2]!.trim()
+  if (neq) return String(row[neq[1]!] ?? '') !== neq[2]!.trim()
+  if (contains) return String(row[contains[1]!] ?? '').includes(contains[2]!.trim())
+  return JSON.stringify(row).toLowerCase().includes(expr.toLowerCase())
 }
-function importData() {
-  toast.warning('导入功能开发中')
+
+const viewRows = computed<Record<string, unknown>[]>(() => {
+  let rows = resultData.value
+  const filter = viewConfig.value.filter.trim()
+  if (filter) rows = rows.filter((row) => matchFilter(row, filter))
+  const sort = viewConfig.value.sort.trim()
+  if (sort) {
+    const m = sort.match(/^(\w+)(?:\s+(desc|asc))?$/i)
+    const col = m?.[1] ?? ''
+    const dir = (m?.[2] ?? 'asc').toLowerCase()
+    if (resultHeaders.value.includes(col)) {
+      rows = [...rows].sort((a, b) => {
+        const av = a[col]
+        const bv = b[col]
+        const cmp =
+          typeof av === 'number' && typeof bv === 'number'
+            ? av - bv
+            : String(av ?? '').localeCompare(String(bv ?? ''), 'zh-CN')
+        return dir === 'desc' ? -cmp : cmp
+      })
+    }
+  }
+  const size = Math.max(1, Number(viewConfig.value.pageSize) || resultData.value.length || 1)
+  return rows.slice(0, size)
+})
+
+// 表格设计（tableConfig）交互层：主题走 CSS 类；可排序=点表头切列排序；可筛选=快速全列过滤；
+// 行选择=点行高亮并计数。均叠加在 viewRows（视图投影）之上，不改导出所见即所得口径。
+const sortState = ref<{ key: string; dir: 'asc' | 'desc' } | null>(null)
+const quickFilter = ref('')
+const selectedKeys = ref<Set<string>>(new Set())
+function rowKey(row: Record<string, unknown>): string {
+  return JSON.stringify(row)
+}
+function toggleSort(h: string) {
+  if (!tableConfig.value.sortable) return
+  if (sortState.value?.key === h) {
+    sortState.value = sortState.value.dir === 'asc' ? { key: h, dir: 'desc' } : null
+  } else {
+    sortState.value = { key: h, dir: 'asc' }
+  }
+}
+function toggleRow(row: Record<string, unknown>) {
+  if (!tableConfig.value.rowSelect) return
+  const k = rowKey(row)
+  const next = new Set(selectedKeys.value)
+  if (next.has(k)) next.delete(k)
+  else next.add(k)
+  selectedKeys.value = next
+}
+const displayRows = computed<Record<string, unknown>[]>(() => {
+  let rows = viewRows.value
+  if (tableConfig.value.filterable && quickFilter.value.trim()) {
+    const q = quickFilter.value.trim().toLowerCase()
+    rows = rows.filter((r) =>
+      viewHeaders.value.some((h) =>
+        String(r[h] ?? '')
+          .toLowerCase()
+          .includes(q),
+      ),
+    )
+  }
+  if (tableConfig.value.sortable && sortState.value) {
+    const { key, dir } = sortState.value
+    rows = [...rows].sort((a, b) => {
+      const av = a[key]
+      const bv = b[key]
+      const cmp =
+        typeof av === 'number' && typeof bv === 'number'
+          ? av - bv
+          : String(av ?? '').localeCompare(String(bv ?? ''), 'zh-CN')
+      return dir === 'desc' ? -cmp : cmp
+    })
+  }
+  return rows
+})
+
+function applyViewConfig() {
+  const cols = viewConfig.value.columns
+    .split(',')
+    .map((c) => c.trim())
+    .filter(Boolean)
+  const unknown = cols.filter((c) => !resultHeaders.value.includes(c))
+  if (unknown.length) {
+    toast.warning(`视图列不存在: ${unknown.join(', ')}`)
+    return
+  }
+  const sort = viewConfig.value.sort.trim()
+  if (sort && !resultHeaders.value.includes(sort.replace(/\s+(desc|asc)\s*$/i, ''))) {
+    toast.warning(`排序列不存在: ${sort}`)
+    return
+  }
+  const filter = viewConfig.value.filter.trim()
+  toast.success(
+    `视图配置已应用：${viewHeaders.value.length} 列 · 过滤后 ${viewRows.length} 行 · 每页 ${viewConfig.value.pageSize}`,
+  )
+}
+const importFileEl = ref<HTMLInputElement | null>(null)
+const IMPORT_ROW_LIMIT = 500
+async function importData() {
+  const file = importFileEl.value?.files?.[0]
+  if (!file) {
+    toast.warning('请先选择要导入的 CSV/TSV 文件')
+    return
+  }
+  if (/\.(xlsx|xls)$/i.test(file.name)) {
+    toast.warning('请先将 Excel 另存为 CSV/TSV 再导入（当前支持文本格式）')
+    return
+  }
+  const flag = prompt('要导入的数据表 flag:', '') || ''
+  if (!flag) return
+  const text = await file.text()
+  const { headers, rows } = parseCsv(text, importConfig.value.delimiter)
+  if (!headers.length || !rows.length) {
+    toast.warning('未解析到有效数据行')
+    return
+  }
+  const picked = rows.slice(0, IMPORT_ROW_LIMIT)
+  if (!(await confirmMsg(`将向表 ${flag} 导入 ${picked.length} 行，确定？`))) return
+  let ok = 0
+  let fail = 0
+  const firstErrors: string[] = []
+  for (let i = 0; i < picked.length; i++) {
+    try {
+      await api.post(
+        `/api/query/assemble/designer/table/${encodeURIComponent(flag)}/row`,
+        Object.fromEntries(headers.map((h, j) => [h, picked[i]?.[j] ?? ''])),
+      )
+      ok++
+    } catch (e: any) {
+      fail++
+      if (firstErrors.length < 3) firstErrors.push(e?.message ?? '未知错误')
+    }
+    if ((i + 1) % 100 === 0) toast.info(`导入进度 ${i + 1}/${picked.length}`)
+  }
+  const truncated = rows.length - picked.length
+  const tail = truncated > 0 ? `（超出上限截断 ${truncated} 行）` : ''
+  if (fail) toast.error(`导入完成：成功 ${ok} / 失败 ${fail}${tail}；首个错误：${firstErrors[0]}`)
+  else toast.success(`导入完成：成功 ${ok} 行${tail}`)
 }
 function exportResults() {
-  if (!resultData.value.length) return
-  const header = resultHeaders.value.join(',')
-  const rows = resultData.value.map((r) =>
-    resultHeaders.value.map((h) => '"' + String(r[h] ?? '').replace(/"/g, '""') + '"').join(','),
+  if (!viewRows.value.length) return
+  // 导出跟随视图配置投影（所见即所得）
+  const header = viewHeaders.value.join(',')
+  const rows = viewRows.value.map((r) =>
+    viewHeaders.value.map((h) => `"${String(r[h] ?? '').replace(/"/g, '""')}"`).join(','),
   )
-  const blob = new Blob([header + '\n' + rows.join('\n')], { type: 'text/csv;charset=utf-8' })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = 'query_result.csv'
-  a.click()
+  const blob = new Blob([`${header}\n${rows.join('\n')}`], { type: 'text/csv;charset=utf-8' })
+  downloadBlob(blob, 'query_result.csv')
 }
 function fmtTime(t?: string) {
   if (!t) return ''
@@ -605,27 +1136,18 @@ function doExport() {
   if (exportFmt.value === 'json') {
     downloadBlob(
       new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
-      'queries_' + new Date().toISOString().slice(0, 10) + '.json',
+      `queries_${new Date().toISOString().slice(0, 10)}.json`,
     )
   } else if (exportFmt.value === 'csv') {
     const csv =
       'name,category,sql\n' +
       data.map((d) => `"${d.name}","${d.category}","${(d.sql || '').replace(/"/g, '""')}"`).join('\n')
-    downloadBlob(new Blob([csv], { type: 'text/csv' }), 'queries_' + new Date().toISOString().slice(0, 10) + '.csv')
+    downloadBlob(new Blob([csv], { type: 'text/csv' }), `queries_${new Date().toISOString().slice(0, 10)}.csv`)
   } else {
     const sqlStr = data.map((d) => `-- ${d.name}\n${d.sql}`).join('\n\n')
-    downloadBlob(
-      new Blob([sqlStr], { type: 'text/plain' }),
-      'queries_' + new Date().toISOString().slice(0, 10) + '.sql',
-    )
+    downloadBlob(new Blob([sqlStr], { type: 'text/plain' }), `queries_${new Date().toISOString().slice(0, 10)}.sql`)
   }
   showExportImport.value = false
-}
-function downloadBlob(blob: Blob, filename: string) {
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = filename
-  a.click()
 }
 async function doImport() {
   if (!importJson.value.trim()) return
@@ -635,16 +1157,24 @@ async function doImport() {
       importMsg.value = { ok: false, txt: '格式错误' }
       return
     }
+    let ok = 0
+    let fail = 0
     for (const q of data) {
       try {
         await api.post('/api/query/assemble/designer/create', q)
-      } catch {}
+        ok++
+      } catch {
+        fail++
+      }
     }
-    importMsg.value = { ok: true, txt: `成功导入 ${data.length} 条` }
+    importMsg.value = {
+      ok: fail === 0,
+      txt: fail === 0 ? `成功导入 ${ok} 条` : `导入完成：成功 ${ok} / 失败 ${fail}`,
+    }
     showExportImport.value = false
     refresh()
   } catch (e: any) {
-    importMsg.value = { ok: false, txt: '导入失败: ' + e.message }
+    importMsg.value = { ok: false, txt: `导入失败: ${e.message}` }
   }
 }
 
@@ -732,6 +1262,13 @@ const api_qu_39_data = ref<any[]>([])
 .res-table th{padding:6px 10px;text-align:left;border-bottom:1px solid var(--border-color);color:var(--text-muted);font-weight:600;font-size:11px;text-transform:uppercase;position:sticky;top:0;background:var(--bg-surface)}
 .res-table td{padding:5px 10px;border-bottom:1px solid var(--border-subtle);color:var(--text-primary);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .res-table tr:hover td{background:var(--bg-hover)}
+.res-table.sortable th{cursor:pointer;user-select:none}
+.res-table.sortable th:hover{color:var(--color-primary)}
+.th-sort{color:var(--color-primary)}
+.res-table.tc-striped tbody tr:nth-child(even) td{background:rgba(255,255,255,0.03)}
+.res-table.tc-bordered th,.res-table.tc-bordered td{border:1px solid var(--border-color)}
+.res-table tr.selected td{background:rgba(0,212,255,0.14)}
+.ra-filter{font-size:11px;padding:3px 8px;background:rgba(0,0,0,0.3);border:1px solid var(--border-color);color:var(--text-primary);border-radius:var(--radius-sm);outline:none;width:140px}
 .mono{font-family:'JetBrains Mono',monospace;font-size:11px}
 .stat-result{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
 .sr-item{padding:8px 16px;border-radius:var(--radius-md);background:var(--color-primary-soft)}

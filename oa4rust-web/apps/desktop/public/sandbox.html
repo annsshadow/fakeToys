@@ -7,7 +7,7 @@
 // It has NO access to window.document, window.localStorage, or fetch().
 // Only safe JS globals are available: console, Math, JSON, Array, Object, etc.
 window.addEventListener('message', (e) => {
-  if (!e.data || !e.data.__oa4rust_sandbox_code) return;
+  if (!e.data?.__oa4rust_sandbox_code) return;
   var code = e.data.__oa4rust_sandbox_code;
   var start = performance.now();
   let result;

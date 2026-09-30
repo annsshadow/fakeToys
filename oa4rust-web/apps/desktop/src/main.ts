@@ -6,7 +6,6 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { NConfigProvider } from 'naive-ui'
 import { createPinia } from 'pinia'
 import { createApp, h } from 'vue'
-import { createI18n } from 'vue-i18n'
 import { createRouter, createWebHistory, RouterView } from 'vue-router'
 import '@oa4rust/ui'
 import AppShell from '@oa4rust/ui/components/AppShell.vue'
@@ -501,25 +500,10 @@ router.beforeEach(async (to) => {
   }
 })
 
-const i18n = createI18n({
-  legacy: false,
-  locale: 'zh-cn',
-  fallbackLocale: 'en',
-  messages: {
-    'zh-cn': {
-      common: { login: '登录', logout: '退出', confirm: '确认', cancel: '取消', search: '搜索', loading: '加载中...' },
-    },
-    en: {
-      common: {
-        login: 'Login',
-        logout: 'Logout',
-        confirm: 'Confirm',
-        cancel: 'Cancel',
-        search: 'Search',
-        loading: 'Loading...',
-      },
-    },
-  },
+// 86 条路由均声明 meta.title，导航后同步到 document.title（多标签页/历史记录可辨识）。
+router.afterEach((to) => {
+  const title = to.meta.title as string | undefined
+  document.title = title ? `${title} · OA4Rust` : 'OA4Rust'
 })
 
 const queryClient = new QueryClient({
@@ -533,8 +517,23 @@ const themeProvider = createThemeProvider()
 themeProvider.init()
 
 const app = createApp({ render: () => h(NConfigProvider, null, { default: () => h(RouterView) }) })
+// 全局兜底：未捕获渲染/Promise 错误进 console 与用户可见 toast，不静默吞。
+// 3s 节流防连环错误触发 toast 风暴。
+let lastUnhandledToast = 0
+function reportUnhandled(err: unknown, source: string): void {
+  console.error('[unhandled]', source, err)
+  const now = Date.now()
+  if (now - lastUnhandledToast < 3000) return
+  lastUnhandledToast = now
+  import('./utils/toast').then(({ toast }) => toast.error('页面发生意外错误，请重试'))
+}
+app.config.errorHandler = (err, _instance, info) => reportUnhandled(err, info)
+window.addEventListener('unhandledrejection', (e) => {
+  // Vue 内部的 Promise 错误已由 errorHandler 上报，这里只兜 Vue 之外的
+  if (e.reason instanceof Error && e.reason.stack?.includes('vue')) return
+  reportUnhandled(e.reason, 'unhandledrejection')
+})
 app.use(createPinia())
 app.use(router)
-app.use(i18n)
 app.use(VueQueryPlugin, { queryClient })
 app.mount('#o2-app-root')

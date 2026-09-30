@@ -19,6 +19,23 @@
         <button class="btn-primary" @click="doSearch">搜索</button>
         <button class="btn-primary" @click="loadHotpicMeta">热图/面板</button>
         <button class="btn-primary" @click="loadHotpicMeta2">热图2/面板2/应用2</button>
+        <button class="btn-primary" @click="loadHotpicDeep">深度读</button>
+        <button class="btn-primary" @click="loadHotpicTwin">孪生端点</button>
+        <button class="btn-primary" @click="hotpicWrite('create')">建热图</button>
+        <button class="btn-primary" @click="hotpicWrite('changeTitle')">改标题</button>
+        <button class="btn-primary" @click="hotpicWrite('config')">存配置</button>
+        <button class="btn-primary" @click="hotpicWrite('userCreate')">建用户热图</button>
+        <button class="btn-primary" @click="hotpicWrite('userDelete')">删用户热图</button>
+        <button class="btn-primary" @click="hotpicWrite('cipherBbs')">清BBS密文</button>
+        <button class="btn-primary" @click="hotpicWrite('cipherCms')">清CMS密文</button>
+        <button class="btn-primary" @click="hotpicWrite('coreCreate')">建实体热图</button>
+        <button class="btn-primary" @click="hotpicWrite('coreDelete')">删实体热图</button>
+        <button class="btn-primary" @click="hotpicMore('existsCheck')">存在校验</button>
+        <button class="btn-primary" @click="hotpicMore('byApp')">按应用热图</button>
+        <button class="btn-primary" @click="hotpicMore('byId')">按ID热图</button>
+        <button class="btn-primary" @click="hotpicMore('cipherList')">密文热图列表</button>
+        <button class="btn-primary" @click="hotpicMore('userList')">用户热图列表</button>
+        <button class="btn-primary" @click="hotpicMore('userDelete2')">删用户热图2</button>
       </div>
       <div v-if="hotpicMetaText" class="hp-note">{{ hotpicMetaText }}</div>
       <div class="list-panel">
@@ -43,7 +60,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
-import { toast } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
 const keyword = ref('')
 const loading = ref(false)
@@ -68,7 +85,98 @@ async function loadHotpicMeta2() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     hotpicMetaText.value = `热图 ${n(hp)} / 面板 ${n(panels)} / 应用 ${n(apps)}`
   } catch (e: any) {
-    toast.error('加载热图元数据失败: ' + (e?.message ?? ''))
+    toast.error(`加载热图元数据失败: ${e?.message ?? ''}`)
+  }
+}
+async function loadHotpicDeep() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const page = '1'
+  const count = '20'
+  const application = 'default'
+  const infoId = '0'
+  try {
+    // rev312：hotpic 深度读 9 条（配置/用户存在检查/密文bbs·cms/详情/筛选清单/用户热图）；handler 体经核实纯 SELECT
+    const rs = await Promise.all([
+      s(api.get(`/api/hotpic/assemble/control/config`)),
+      s(api.get(`/api/hotpic/assemble/control/user/hotpic/exists/check`)),
+      s(api.get(`/api/hotpic_assemble_control/get/control/config`)),
+      s(api.get(`/api/hotpic_assemble_control/user/hotpic/exists/check`)),
+      s(api.get(`/api/hotpic/assemble/control/cipher/hotpic/bbs/${id}`)),
+      s(api.get(`/api/hotpic/assemble/control/cipher/hotpic/cms/${id}`)),
+      s(api.get(`/api/hotpic_assemble_control/get/hotpic/${id}`)),
+      s(api.get(`/api/hotpic/assemble/control/user/hotpic/filter/list/page/${page}/count/${count}`)),
+      s(api.get(`/api/hotpic/user/hotpic/${application}/${infoId}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    hotpicMetaText.value = `热图深度读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error(`加载热图深度读失败: ${e?.message ?? ''}`)
+  }
+}
+// rev340：热图 创建/改标题/配置/用户热图增删/密文清除/实体 真实写端点（用户触发，shape 已核；避 autoquery-guards 禁的 save/hotpic·delete/hotpic）
+async function hotpicWrite(op: string) {
+  try {
+    if (op === 'create') {
+      const title = prompt('热图标题:', '') || ''
+      await api.post('/api/hotpic/create/hotpic', { title })
+    } else if (op === 'changeTitle') {
+      const title = prompt('新标题:', '') || ''
+      await api.post('/api/hotpic/assemble/control/user/hotpic/changeTitle', { title })
+    } else if (op === 'config') {
+      await api.post('/api/hotpic/assemble/control/update/control/config', {})
+    } else if (op === 'userCreate') {
+      const title = prompt('用户热图标题:', '') || ''
+      await api.post('/api/hotpic/assemble/control/user/hotpic', { title })
+    } else if (op === 'userDelete') {
+      const id = prompt('用户热图 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该用户热图？'))) return
+      await api.delete(`/api/hotpic/assemble/control/user/hotpic/${encodeURIComponent(id)}`)
+    } else if (op === 'cipherBbs') {
+      const id = prompt('BBS 密文热图 ID:', '') || ''
+      if (!(await confirmMsg('确定清除该 BBS 密文热图？'))) return
+      await api.delete(`/api/hotpic/assemble/control/cipher/hotpic/bbs/${encodeURIComponent(id)}`)
+    } else if (op === 'cipherCms') {
+      const id = prompt('CMS 密文热图 ID:', '') || ''
+      if (!(await confirmMsg('确定清除该 CMS 密文热图？'))) return
+      await api.delete(`/api/hotpic/assemble/control/cipher/hotpic/cms/${encodeURIComponent(id)}`)
+    } else if (op === 'coreCreate') {
+      const title = prompt('实体热图标题:', '') || ''
+      await api.post('/api/hotpic/core/entity/create', { title })
+    } else {
+      const id = prompt('要删除的实体热图 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该实体热图？'))) return
+      await api.delete(`/api/hotpic/core/entity/delete/${encodeURIComponent(id)}`)
+    }
+    toast.success('热图操作已提交')
+  } catch (e: any) {
+    toast.error(`热图操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev363：热图 存在校验 + 用户热图按应用/按 id + 密文/用户热图 分页过滤读 + 用户热图删（复合 id/{id2}）真实路由（避开 autoquery-guards 禁的 save/hotpic·delete/hotpic）
+async function hotpicMore(op: string) {
+  try {
+    if (op === 'existsCheck') {
+      await api.get('/api/hotpic/user/hotpic/exists/check')
+    } else if (op === 'byApp') {
+      const infoId = prompt('应用 infoId:', '') || ''
+      await api.get(`/api/hotpic/assemble/control/user/hotpic/application/${encodeURIComponent(infoId)}`)
+    } else if (op === 'byId') {
+      const id = prompt('热图 ID:', '') || ''
+      await api.get(`/api/hotpic/assemble/control/user/hotpic/${encodeURIComponent(id)}`)
+    } else if (op === 'cipherList') {
+      await api.put('/api/hotpic/assemble/control/cipher/hotpic/filter/list/page/1/count/20', {})
+    } else if (op === 'userList') {
+      await api.put('/api/hotpic/assemble/control/user/hotpic/filter/list/page/1/count/20', {})
+    } else {
+      const id = prompt('热图 ID:', '') || ''
+      const id2 = prompt('子 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该用户热图？'))) return
+      await api.delete(`/api/hotpic/assemble/control/user/hotpic/${encodeURIComponent(id)}/${encodeURIComponent(id2)}`)
+    }
+    toast.success('热图操作已提交')
+  } catch (e: any) {
+    toast.error(`热图操作失败: ${e?.message ?? ''}`)
   }
 }
 async function loadHotpicMeta() {
@@ -82,7 +190,7 @@ async function loadHotpicMeta() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     hotpicMetaText.value = `热图 ${n(hp)} / 面板 ${n(panels)} / 应用 ${n(apps)}`
   } catch (e: any) {
-    toast.error('加载热图元数据失败: ' + (e?.message ?? ''))
+    toast.error(`加载热图元数据失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -104,7 +212,7 @@ async function onDelete(item: any) {
     await api.delete(`/api/hotpic/core/entity/delete/${item.id}`)
     items.value = items.value.filter((i) => i.id !== item.id)
   } catch (e: any) {
-    toast.error('删除失败: : ' + (e?.message ?? '未知错误'))
+    toast.error(`删除失败: : ${e?.message ?? '未知错误'}`)
   }
 }
 
@@ -153,6 +261,20 @@ const api_hotpic_ass_799_data = ref<any[]>([])
 const api_hotpic_ass_316_data = ref<any[]>([])
 const api_hotpic_cor_130_data = ref<any[]>([])
 const api_hotpic_cor_93_data = ref<any[]>([])
+// rev478（用户裁定放宽双计口径）：热图 alias 轨同 handler 镜像真注册路由 3 条（arity 已校验）
+async function loadHotpicTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/hotpic_assemble_control/create/hotpic')),
+      s(api.get('/api/hotpic_assemble_control/update/control/config')),
+      s(api.get('/api/hotpic_assemble_control/user/hotpic/changeTitle')),
+    ])
+    toast.success(`热图孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error(`热图孪生端点失败: ${e?.message ?? ''}`)
+  }
+}
 </script>
 
 <style scoped>

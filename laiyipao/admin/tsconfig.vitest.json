@@ -1,0 +1,10 @@
+{
+  // 测试面类型门禁。
+  //
+  // 基座 `tsconfig.json` 的 `include` 只有 `src/**` 与 `vite.config.ts` ⇒ `tests/**` 从来没被
+  // 类型检查过：`sanity.test.ts` 里那句 `w.nextTick()`（VTU **v1** 的 API，v2 上不存在）红了近两小时，
+  // 而 `type-check` 一路绿。这里把测试文件纳入编译范围，让同类缺陷在 tsc 阶段就出声，
+  // 不用等到 vitest 运行时才炸。与 miniapp 的同名门禁（`type-check:test`）同一口径。
+  "extends": "./tsconfig.json",
+  "include": ["vitest.config.ts", "tests/**/*.ts"]
+}

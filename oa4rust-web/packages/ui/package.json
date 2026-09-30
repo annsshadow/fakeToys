@@ -20,7 +20,7 @@
     "@oa4rust/sdk": "workspace:*",
     "naive-ui": "^2.40.3",
     "vue": "^3.5.13",
-    "uno-css": "npm:@unocss/vite@^66.0.0"
+    "unocss": "^66.0.0"
   },
   "devDependencies": {
     "typescript": "^5.8.0",

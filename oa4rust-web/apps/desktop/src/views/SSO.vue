@@ -27,10 +27,15 @@ const detail = ref('')
 onMounted(async () => {
   // SSO redirect delivers the provider-issued client + token; pass them straight to
   // the backend (never persist or log them). Route has no :platform param, so both
-  // arrive via query.
-  const q = route.query as Record<string, string>
-  const client = q.client ?? ''
-  const ssoToken = q.token ?? ''
+  // arrive via query. query 值可能是数组形态，取首个字符串值。
+  const firstStr = (v: unknown): string => {
+    if (typeof v === 'string') return v
+    if (Array.isArray(v) && typeof v[0] === 'string') return v[0]
+    return ''
+  }
+  const q = route.query as Record<string, unknown>
+  const client = firstStr(q.client)
+  const ssoToken = firstStr(q.token)
   try {
     if (!client || !ssoToken) throw new Error('missing client/token')
     const response = await fetch('/api/authentication/sso', {

@@ -70,7 +70,7 @@ impl SessionManager {
             redis_pool: Arc::new(std::sync::Mutex::new(None)),
             message_bus: None,
         };
-        manager.start_threshold_scanner()
+        manager.start_threshold_scanner().start_session_sweeper()
     }
 
     pub fn with_pool(pool: Pool) -> Self {
@@ -93,7 +93,22 @@ impl SessionManager {
             redis_pool: Arc::new(std::sync::Mutex::new(None)),
             message_bus: None,
         };
-        manager.start_threshold_scanner()
+        manager.start_threshold_scanner().start_session_sweeper()
+    }
+
+    /// 周期性清理内存中已过期、且不会再被访问到的会话条目。
+    /// validate_session 只在会话被再次访问时惰性清除；不活跃的过期条目
+    /// 若无人清扫会随运行时长无限累积（内存泄漏）。
+    fn start_session_sweeper(self) -> Self {
+        let sweeper = self.clone();
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(std::time::Duration::from_secs(300));
+            loop {
+                interval.tick().await;
+                sweeper.cleanup_expired_sessions().await;
+            }
+        });
+        self
     }
 
     fn start_threshold_scanner(self) -> Self {
@@ -278,8 +293,8 @@ impl SessionManager {
                     return Ok(session);
                 }
             };
-            let mut guard = pool.0.manager.lock().await;
-            if let Some(conn) = guard.as_mut() {
+            let mut conn = pool.0.manager.lock().await.as_ref().map(|m| m.clone());
+            if let Some(conn) = conn.as_mut() {
                 let _ = conn
                     .set_ex::<_, _, ()>(key, session_json, self.auth_config.session_ttl_seconds)
                     .await;
@@ -334,6 +349,12 @@ impl SessionManager {
                             &created_at_str,
                         ],
                     )
+                    .await;
+                // 顺带清理已过期会话行（每次登录一次的廉价簿记，失败仅延迟清理不破坏
+                // 登录，属有意 best-effort）：过期行此前仅在显式登出/删人时删除，
+                // 长期运行下 auth_session 无限增长。
+                let _ = client
+                    .execute("DELETE FROM auth_session WHERE expires_at < NOW()", &[])
                     .await;
             }
         }
@@ -398,14 +419,15 @@ impl SessionManager {
                     let signed_token = self.sign_token(token);
                     let key = format!("{}{}", SESSION_KEY_PREFIX, signed_token);
                     let result: Option<String> = {
-                        let mut guard = pool.0.manager.lock().await;
-                        if let Some(conn) = guard.as_mut() {
-                            conn.get::<_, Option<String>>(key.clone())
+                        // 锁仅瞬时 clone（ConnectionManager 可 Clone+自动重连），命令执行不持锁
+                        let mut conn = pool.0.manager.lock().await.as_ref().map(|m| m.clone());
+                        match conn.as_mut() {
+                            Some(conn) => conn
+                                .get::<_, Option<String>>(key.clone())
                                 .await
                                 .ok()
-                                .flatten()
-                        } else {
-                            None
+                                .flatten(),
+                            None => None,
                         }
                     };
 
@@ -419,8 +441,9 @@ impl SessionManager {
                                 return Some(session);
                             } else {
                                 let _ = {
-                                    let mut guard = pool.0.manager.lock().await;
-                                    if let Some(conn) = guard.as_mut() {
+                                    let mut conn =
+                                        pool.0.manager.lock().await.as_ref().map(|m| m.clone());
+                                    if let Some(conn) = conn.as_mut() {
                                         conn.del::<_, ()>(key).await.ok()
                                     } else {
                                         None
@@ -478,8 +501,8 @@ impl SessionManager {
         if let Some(ref pool) = self.get_redis_pool() {
             let signed_token = self.sign_token(token);
             let key = format!("{}{}", SESSION_KEY_PREFIX, signed_token);
-            let mut guard = pool.0.manager.lock().await;
-            if let Some(conn) = guard.as_mut() {
+            let mut conn = pool.0.manager.lock().await.as_ref().map(|m| m.clone());
+            if let Some(conn) = conn.as_mut() {
                 let _ = conn.del::<_, ()>(key).await;
             }
         }
@@ -647,11 +670,11 @@ impl SessionManager {
             self.sessions.write().await.remove(token);
         }
         if let Some(ref pool) = self.get_redis_pool() {
-            let prefix = "oa4rust:session:";
-            let mut guard = pool.0.manager.lock().await;
-            if let Some(conn) = guard.as_mut() {
+            let mut conn = pool.0.manager.lock().await.as_ref().map(|m| m.clone());
+            if let Some(conn) = conn.as_mut() {
                 for token in &expired {
-                    let key = format!("{}{}", prefix, token);
+                    // 与 create/validate/remove 一致：Redis key 存的是签名后的 token。
+                    let key = format!("{}{}", SESSION_KEY_PREFIX, self.sign_token(token));
                     let _: Result<(), _> = conn.del::<_, ()>(&key).await;
                 }
             }

@@ -15,6 +15,7 @@ pub mod routes;
 pub mod u2;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

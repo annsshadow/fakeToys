@@ -8,6 +8,7 @@ pub mod routes;
 pub use routes::personal_extend_router;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

@@ -8,6 +8,7 @@
 （3.0 起 `--enhanced` 已移除，改为守规范命令名本身）。
 """
 
+import csv
 import json
 from pathlib import Path
 
@@ -27,6 +28,38 @@ SAMPLE_ITEMS = [
     {"instruction": "租期最短多久？", "input": "", "output": "一个月起租"},
 ]
 
+# 分层采样输入：4 类各 5 条，`instruction` 就是类别名（分组键 = 它的前 10 字）
+STRATIFIED_ITEMS = [
+    {"instruction": f"类别{cat}", "input": "", "output": f"{cat}答案{i}"}
+    for cat in ("甲", "乙", "丙", "丁")
+    for i in range(1, 6)
+]
+
+# 分层分割输入：20 条，`instruction` 两类各 10（平衡），`category` 偏斜为 18 x + 2 y。
+# 两个字段故意错开（后两条 y 同时是「类别乙」）：换键必换 val 的类别形状，于是
+# 「`--stratify-key` 有没有真的传到分组那一侧」一条断言就能分辨。`output` 形如 o0..o19，
+# 每条唯一，用来检查段内顺序与成员集合。
+SPLIT_KNOB_ITEMS = [
+    {"instruction": "类别甲" if i < 10 else "类别乙",
+     "category": "y" if i >= 18 else "x",
+     "input": "", "output": f"o{i}"}
+    for i in range(20)
+]
+
+
+def _write_stratify_corpus(tmp_path):
+    """把分层分割语料写到临时目录
+
+    Args:
+        tmp_path: pytest 临时目录
+
+    Returns:
+        语料文件路径
+    """
+    path = tmp_path / "split_knobs.json"
+    path.write_text(json.dumps(SPLIT_KNOB_ITEMS, ensure_ascii=False), encoding="utf-8")
+    return path
+
 
 @pytest.fixture
 def dataset(tmp_path, monkeypatch):
@@ -42,6 +75,23 @@ def dataset(tmp_path, monkeypatch):
     monkeypatch.chdir(AI_DIR)
     path = tmp_path / "dataset.json"
     path.write_text(json.dumps(SAMPLE_ITEMS, ensure_ascii=False), encoding="utf-8")
+    return path
+
+
+@pytest.fixture
+def stratified_dataset(tmp_path, monkeypatch):
+    """写入 4 类 × 5 条的分层采样数据集
+
+    Args:
+        tmp_path: pytest 临时目录
+        monkeypatch: pytest fixture
+
+    Returns:
+        数据集文件路径
+    """
+    monkeypatch.chdir(AI_DIR)
+    path = tmp_path / "stratified.json"
+    path.write_text(json.dumps(STRATIFIED_ITEMS, ensure_ascii=False), encoding="utf-8")
     return path
 
 
@@ -77,6 +127,33 @@ def run_cli(argv):
     return content, parsed, exit_code
 
 
+def run_cli_error(argv):
+    """跑一次期望失败的命令，返回 (exit_code, stderr 文本)
+
+    Args:
+        argv: 完整参数列表（含程序名）
+
+    Returns:
+        (SystemExit 码或 None, stderr 文本)
+    """
+    import io
+    import sys
+    from contextlib import redirect_stderr, redirect_stdout
+
+    old_argv = sys.argv
+    sys.argv = argv
+    err = io.StringIO()
+    code = None
+    try:
+        with redirect_stdout(io.StringIO()), redirect_stderr(err):
+            main()
+    except SystemExit as exc:
+        code = exc.code
+    finally:
+        sys.argv = old_argv
+    return code, err.getvalue()
+
+
 class TestSampleCommand:
     def test_sample_by_ratio(self, dataset, tmp_path):
         """按比例采样需产出确定数量（0.4 * 5 = 2 条）"""
@@ -104,6 +181,133 @@ class TestSampleCommand:
         assert code is None
         assert len(json.loads(out.read_text(encoding="utf-8"))) == 3
 
+    def test_sample_zero_size_writes_an_empty_file(self, dataset, tmp_path):
+        """`--size 0` 交付空数据集
+
+        缺陷态：`if config.size:` 把 0 当成「没传 --size」，命令回「output_count: 5」
+        并把全部数据写进 --output —— 用户点名要的产物是空的，拿到的却是整份语料。
+        """
+        out = tmp_path / "sampled_zero.json"
+        _, parsed, code = run_cli(
+            [
+                "cli", "sample", "--input", str(dataset),
+                "--output", str(out), "--size", "0",
+            ]
+        )
+        assert code is None
+        assert parsed["output_count"] == 0
+        assert json.loads(out.read_text(encoding="utf-8")) == []
+
+    def test_sample_negative_size_is_a_param_error_and_writes_nothing(self, dataset, tmp_path):
+        """`--size -1` 报「指名参数」的错并退出 1，且不得留下产物文件
+
+        缺陷态分两支：random 走 `random.sample(items, -1)` 抛裸
+        「Sample larger than population or is negative」，报错文案里没有 `size`，
+        调用方看不出是自己填的参数坏了；systematic 干脆 exit 0 交出 4 条。
+        """
+        import io
+        import sys
+        from contextlib import redirect_stderr
+
+        out = tmp_path / "sampled_neg.json"
+        sys.argv = [
+            "cli", "sample", "--input", str(dataset),
+            "--output", str(out), "--size", "-1",
+        ]
+        err = io.StringIO()
+        with redirect_stderr(err):
+            try:
+                main()
+            except SystemExit as exc:
+                code = exc.code
+            else:
+                code = None
+        assert code == 1
+        assert "size" in err.getvalue()
+        assert not out.exists()
+
+    def test_stratified_sample_delivers_the_requested_size(self, stratified_dataset, tmp_path):
+        """分层采样要 7 条就给 7 条，且四类按 2/2/2/1 分到
+
+        缺陷态：逐类 `int(7 * 5/20) = 1` → 四类各 1 条，产物只有 4 条，
+        余下 3 条整份丢掉，命令退出码仍是 0。
+        """
+        out = tmp_path / "stratified_out.json"
+        _, parsed, code = run_cli(
+            [
+                "cli", "sample", "--input", str(stratified_dataset),
+                "--output", str(out), "--method", "stratified",
+                "--size", "7", "--seed", "7",
+            ]
+        )
+        assert code is None
+        assert parsed["output_count"] == 7
+        items = json.loads(out.read_text(encoding="utf-8"))
+        assert len(items) == 7
+        counts = {}
+        for item in items:
+            counts[item["instruction"]] = counts.get(item["instruction"], 0) + 1
+        assert sorted(counts.values()) == [1, 2, 2, 2]
+
+    @pytest.mark.parametrize("key,expected", [
+        ("instruction", {"类别甲": 2, "类别乙": 2, "类别丙": 2, "类别丁": 2}),
+        ("output", {"类别甲": 5, "类别乙": 3}),
+    ], ids=["by_class", "by_unique_field"])
+    def test_stratify_key_flag_selects_the_grouping(self, stratified_dataset,
+                                                    tmp_path, key, expected):
+        """`--stratify-key` 必须真的当分组字段：换字段就换形状
+
+        `--size 8 --seed 7`（Temp `l42e.py` 实测）。缺陷态：`run_sample` 没把这个参数
+        发给 `SampleConfig`，两行都会按出厂的 `instruction` 交出 2/2/2/2。
+        """
+        out = tmp_path / "strat_key.json"
+        _, parsed, code = run_cli(
+            [
+                "cli", "sample", "--input", str(stratified_dataset),
+                "--output", str(out), "--method", "stratified",
+                "--size", "8", "--seed", "7", "--stratify-key", key,
+            ]
+        )
+        assert code is None
+        assert parsed["output_count"] == 8
+        items = json.loads(out.read_text(encoding="utf-8"))
+        counts = {}
+        for item in items:
+            counts[item["instruction"]] = counts.get(item["instruction"], 0) + 1
+        assert counts == expected
+
+    def test_blank_stratify_key_exits_1_and_writes_nothing(self, stratified_dataset,
+                                                           tmp_path):
+        """`--stratify-key ""` 报错退出，不静默退化成随机挑条
+
+        退化形状实测过（Temp `l42b.py`）：空键时 4 类 × 5 条取 8 条交出 `5/2/1`，
+        而正常键恒为 `2/2/2/2` —— 用户拿到随机样本却以为是分层样本。
+        """
+        out = tmp_path / "blank_key.json"
+        code, err = run_cli_error(
+            [
+                "cli", "sample", "--input", str(stratified_dataset),
+                "--output", str(out), "--method", "stratified",
+                "--size", "8", "--stratify-key", "",
+            ]
+        )
+        assert code == 1
+        assert "分层采样需要非空" in err
+        assert not out.exists()
+
+    def test_blank_stratify_key_still_fine_for_random(self, stratified_dataset, tmp_path):
+        """对照组：判据只管分层支路，`random` 不读分组键"""
+        out = tmp_path / "random_blank_key.json"
+        _, parsed, code = run_cli(
+            [
+                "cli", "sample", "--input", str(stratified_dataset),
+                "--output", str(out), "--method", "random",
+                "--size", "8", "--seed", "7", "--stratify-key", "",
+            ]
+        )
+        assert code is None
+        assert parsed["output_count"] == 8
+
 
 class TestSplitCommand:
     def test_split_three_way(self, dataset, tmp_path):
@@ -122,6 +326,135 @@ class TestSplitCommand:
         assert total == len(SAMPLE_ITEMS)
         for name, meta in splits.items():
             assert Path(meta["file"]).exists()
+
+    def test_small_val_slice_is_not_rounded_away(self, tmp_path, monkeypatch):
+        """7 条按 0.8/0.1/0.1 分割，val 名义 0.7 条不能被抹平成 0
+
+        缺陷态：`int(7 * 0.1) = 0` 且余数整份给了 test → (5, 0, 2)，
+        test 实占 28.6% 而标称 10%。
+        """
+        monkeypatch.chdir(AI_DIR)
+        src = tmp_path / "seven.json"
+        rows = [{"instruction": f"条目{i}", "input": "", "output": f"结果{i}"}
+                for i in range(7)]
+        src.write_text(json.dumps(rows, ensure_ascii=False), encoding="utf-8")
+        out_dir = tmp_path / "splits7"
+        _, parsed, code = run_cli(
+            [
+                "cli", "split", "--input", str(src),
+                "--output-dir", str(out_dir),
+                "--train-ratio", "0.8", "--val-ratio", "0.1", "--test-ratio", "0.1",
+                "--seed", "7",
+            ]
+        )
+        assert code is None
+        counts = {name: meta["count"] for name, meta in parsed["splits"].items()}
+        assert counts == {"train": 5, "val": 1, "test": 1}
+        assert Path(parsed["splits"]["val"]["file"]).exists()
+
+    @pytest.mark.parametrize("key,expected_val", [
+        ("instruction", {"类别甲": 3, "类别乙": 2}),
+        ("category", {"类别甲": 4, "类别乙": 1}),
+    ], ids=["balanced_field", "skewed_field"])
+    def test_stratify_flags_select_the_grouping(self, tmp_path, monkeypatch,
+                                                key, expected_val):
+        """`--stratify` 与 `--stratify-key` 必须一路传到分割算法
+
+        20 条语料：`instruction` 10/10 平衡，`category` 18 x + 2 y（两条 y 恰好也是
+        「类别乙」）。0.5/0.25/0.25、seed 0（Temp `l42f.py` 实测）：按 `instruction`
+        分层 val 是 `甲3/乙2`，按 `category` 分层 val 全是 x，于是 `instruction` 形状
+        退回 `甲4/乙1`。缺陷态（CLI 没把字段发出去、或把键硬编码）各红一侧。
+        """
+        monkeypatch.chdir(AI_DIR)
+        src = _write_stratify_corpus(tmp_path)
+        out_dir = tmp_path / f"strat_{key}"
+        _, parsed, code = run_cli(
+            [
+                "cli", "split", "--input", str(src), "--output-dir", str(out_dir),
+                "--train-ratio", "0.5", "--val-ratio", "0.25", "--test-ratio", "0.25",
+                "--stratify", "--stratify-key", key, "--seed", "0",
+            ]
+        )
+        assert code is None
+        assert {n: m["count"] for n, m in parsed["splits"].items()} == \
+               {"train": 10, "val": 5, "test": 5}
+        rows = json.loads(Path(parsed["splits"]["val"]["file"]).read_text(encoding="utf-8"))
+        counts = {}
+        for row in rows:
+            counts[row["instruction"]] = counts.get(row["instruction"], 0) + 1
+        assert counts == expected_val
+
+    def test_stratify_flag_changes_the_answer(self, tmp_path, monkeypatch):
+        """开关本身不是死的：同一 seed 下分层与不分层的 val 类别配比不同
+
+        这就是 A54 的缺陷本体（`split()` 从不读 `stratify`），产品面以前根本拧不到。
+        段尺寸两边都是 10/5/5 —— 分层只改配比，不改尺寸。
+        """
+        monkeypatch.chdir(AI_DIR)
+        src = _write_stratify_corpus(tmp_path)
+        ratios = ["--train-ratio", "0.5", "--val-ratio", "0.25", "--test-ratio", "0.25"]
+
+        def val_counts(*extra):
+            out_dir = tmp_path / ("with" if extra else "without")
+            _, parsed, code = run_cli(
+                ["cli", "split", "--input", str(src), "--output-dir", str(out_dir),
+                 *ratios, "--seed", "0", *extra]
+            )
+            assert code is None
+            rows = json.loads(Path(parsed["splits"]["val"]["file"]).read_text(encoding="utf-8"))
+            counts = {}
+            for row in rows:
+                counts[row["instruction"]] = counts.get(row["instruction"], 0) + 1
+            return counts
+
+        assert val_counts() == {"类别甲": 4, "类别乙": 1}
+        assert val_counts("--stratify") == {"类别甲": 3, "类别乙": 2}
+
+    def test_no_shuffle_flag_restores_input_order(self, tmp_path, monkeypatch):
+        """`--no-shuffle` 在分层支路只回排段内顺序：成员与条数都不变
+
+        同 seed 两次请求（打乱 / 保序）三段尺寸一致、成员集合一致，只是保序那份按输入的
+        `o0..o19` 排好（Temp `l42g.py` 实测）。缺陷态：CLI 没把 `shuffle` 传出去，保序
+        那份仍是打乱序，`got == sorted(got)` 立刻红。
+        """
+        monkeypatch.chdir(AI_DIR)
+        src = _write_stratify_corpus(tmp_path)
+        results = {}
+        for sub, extra in (("shuf", []), ("ord", ["--no-shuffle"])):
+            out_dir = tmp_path / f"shuffle_{sub}"
+            _, parsed, code = run_cli(
+                [
+                    "cli", "split", "--input", str(src), "--output-dir", str(out_dir),
+                    "--train-ratio", "0.5", "--val-ratio", "0.25", "--test-ratio", "0.25",
+                    "--stratify", "--seed", "0", *extra,
+                ]
+            )
+            assert code is None
+            results[sub] = {
+                name: [row["output"] for row in
+                       json.loads(Path(meta["file"]).read_text(encoding="utf-8"))]
+                for name, meta in parsed["splits"].items()
+            }
+        for name in ("train", "val", "test"):
+            got, want = results["ord"][name], results["shuf"][name]
+            assert len(got) == len(want)
+            assert sorted(got) == sorted(want), f"{name} 的成员被保序旋钮改动了"
+            assert got == sorted(got, key=lambda o: int(o[1:]))
+            assert want != sorted(want, key=lambda o: int(o[1:]))
+
+    def test_blank_stratify_key_exits_1(self, tmp_path, monkeypatch):
+        """`--stratify --stratify-key ""`：报错退出，不静默按不分层跑"""
+        monkeypatch.chdir(AI_DIR)
+        src = _write_stratify_corpus(tmp_path)
+        code, err = run_cli_error(
+            [
+                "cli", "split", "--input", str(src),
+                "--output-dir", str(tmp_path / "blank"),
+                "--stratify", "--stratify-key", "", "--seed", "0",
+            ]
+        )
+        assert code == 1
+        assert "分层分割需要非空" in err
 
 
 class TestStatsCommand:
@@ -149,7 +482,10 @@ class TestValidateCommand:
         assert result["total_items"] == 5
 
     def test_validate_reports_invalid_data(self, dataset, tmp_path):
-        """缺字段的脏数据需被 strict 预设判为无效"""
+        """缺字段的脏数据需被 strict 预设判为无效，并以退出码 1 表达
+
+        上一条用例（`code is None`）钉的是「有效数据不因判决而变红」，本条钉判决本身。
+        """
         bad = tmp_path / "bad.json"
         bad.write_text(json.dumps([{"instruction": ""}], ensure_ascii=False), encoding="utf-8")
         out_file = tmp_path / "bad_validation.json"
@@ -159,7 +495,7 @@ class TestValidateCommand:
                 "--preset", "strict", "--output", str(out_file),
             ]
         )
-        assert code is None
+        assert code == 1
         result = json.loads(out_file.read_text(encoding="utf-8"))
         assert result["is_valid"] is False
 
@@ -261,7 +597,8 @@ class TestConvertFormatSurface:
     两侧曾经说的是两套话：`converter.get_supported_formats()` 直接由 `DataFormat`
     枚举生成，于是把转换图里没有 `json -> tsv` 这条边的 `tsv` 也报成支持能力
     （照它调用只会拿到 `UnsupportedFormatError`），而 CLI 的 `choices` 里没有 tsv。
-    现在公开清单由 `_converters` 反推，这两条测试守住「公开清单 == 能真跑通的目标」。
+    现在公开清单由 `_converters` 反推，守住「公开清单 == 能真跑通的目标 == CLI 收的
+    那批」。`tsv` 两条边已在 L20 补齐，所以它两侧都收。
     """
 
     @pytest.mark.parametrize("fmt", get_supported_formats())
@@ -275,15 +612,395 @@ class TestConvertFormatSurface:
         assert code is None
         assert out_file.exists()
 
-    def test_unsupported_tsv_is_not_claimed_by_either_side(self, dataset, tmp_path):
-        """`tsv` 是 `DataFormat` 成员，但转换图不支持：清单里没有，CLI 也拒绝"""
-        assert "tsv" in [f.value for f in DataFormat]
-        assert "tsv" not in get_supported_formats()
+    def test_format_outside_the_graph_is_rejected_by_cli(self, dataset, tmp_path, capsys):
+        """清单外的格式 CLI 要拒收（`invalid choice`），且不留下产物
 
-        out_file = tmp_path / "x.tsv"
+        用 `xml` 而不是某个 `DataFormat` 成员举例：转换图现已覆盖枚举全量，成员
+        里挑不出「枚举有、图里没有」的那个了；这一条守的是反方向不漂移——将来往
+        枚举加成员而没补转换边时，CLI 不能跟着虚报。
+        """
+        assert "xml" not in get_supported_formats()
+
+        out_file = tmp_path / "x.xml"
         _, _, code = run_cli(
             ["cli", "convert", "--input", str(dataset),
-             "--output", str(out_file), "--format", "tsv"]
+             "--output", str(out_file), "--format", "xml"]
         )
-        assert code == 2, f"CLI 未拒绝 tsv: code={code}"
+        err = capsys.readouterr().err
+        assert code == 2, f"CLI 未拒绝 xml: code={code}"
+        assert "invalid choice" in err, err
         assert not out_file.exists()
+
+    def test_cli_choices_cover_the_whole_graph(self, dataset, tmp_path):
+        """清单里的每个格式 CLI 都收：两侧清单必须等价，不是各写一份常量
+
+        `EXPORT_FORMATS` 那条漏了 `raw` 的老事故就是「两份清单各写各的」的结果，
+        这里用「清单逐个跑通」把等价关系钉住（`--format` 的 choices 是硬编码列表，
+        所以只能这么验）。
+        """
+        assert set(get_supported_formats()) == {f.value for f in DataFormat}, \
+            "转换图与 DataFormat 枚举已不再同集合：先确认新格式该不该支持，再改这里"
+
+        for fmt in get_supported_formats():
+            out_file = tmp_path / f"cover.{fmt}"
+            _, _, code = run_cli(
+                ["cli", "convert", "--input", str(dataset),
+                 "--output", str(out_file), "--format", fmt]
+            )
+            assert code is None, f"CLI 不收清单内的 {fmt}"
+
+
+class TestConvertInputFormat:
+    """`convert --input-format`：把「训练格式 → 规范形」的反向边接到命令行。
+
+    容器格式（sharegpt / vicuna / chatml）落盘也是 `.json`，**扩展名推不出源格式**，
+    只能由调用方显式声明。不声明时按 json 原样读，而 `json → chatml` 这条边只认
+    `instruction` / `history` 字段，`conversations` 整个被忽略。L16 加了声明入口，
+    L21 补上了「没声明就直接失败」的护栏——以前它会静默产出全空问答且退出码 0。
+    """
+
+    def write(self, tmp_path, payload):
+        path = tmp_path / "in.json"
+        path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        return path
+
+    def test_sharegpt_file_converts_to_chatml(self, tmp_path):
+        """声明 `--input-format sharegpt` 后，跨格式转换（经规范形中转）能跑通"""
+        src = self.write(tmp_path, [{"conversations": [
+            {"from": "human", "value": "如何退租"}, {"from": "gpt", "value": "满一年后退还"}]}])
+        out_file = tmp_path / "out.json"
+
+        _, parsed, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--input-format", "sharegpt", "--format", "chatml"]
+        )
+        assert code is None
+        assert parsed["source_format"] == "sharegpt"
+        assert parsed["input_count"] == 1
+        assert json.loads(out_file.read_text(encoding="utf-8")) == [{
+            "messages": [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": "如何退租"},
+                {"role": "assistant", "content": "满一年后退还"},
+            ]}]
+
+    def test_alpaca_file_returns_to_canonical_fields(self, tmp_path):
+        """alpaca → json：源字段原样回来，不补 `input` 空列"""
+        src = self.write(tmp_path, [{"instruction": "可以月付吗", "output": "支持月付",
+                                     "category": "付款"}])
+        out_file = tmp_path / "out.json"
+
+        _, parsed, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--input-format", "alpaca", "--format", "json"]
+        )
+        assert code is None
+        assert json.loads(out_file.read_text(encoding="utf-8")) == [
+            {"instruction": "可以月付吗", "output": "支持月付", "category": "付款"}]
+
+    def test_omitting_the_flag_fails_loud_instead_of_emptying_the_dataset(self, tmp_path, capsys):
+        """不给 `--input-format` 时以非 0 退出，并把该声明什么写在报错里
+
+        这条以前断言的是**坏结果**（退出码 0 + 全空问答），理由是「CLI 不能凭猜测
+        改老调用的语义」。L21 改了：判据窄到「取不到问答 且 记录里有对话数组」，
+        而这种产物的业务价值恒为 0，静默比失败更坏，所以宁可让老调用在这里停下。
+        """
+        src = self.write(tmp_path, [{"conversations": [
+            {"from": "human", "value": "如何退租"}, {"from": "gpt", "value": "满一年后退还"}]}])
+        out_file = tmp_path / "out.json"
+
+        _, _, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--format", "chatml"]
+        )
+        err = capsys.readouterr().err
+        assert code == 1, f"误标源格式应当以非 0 退出: code={code}"
+        assert "`conversations`" in err and "--input-format" in err, err
+        assert not out_file.exists()
+
+        # 同一个文件声明后立刻能转，报错里的建议是真能照做的
+        _, parsed, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--input-format", "sharegpt", "--format", "chatml"]
+        )
+        assert code is None
+        assert parsed["output_count"] == 1
+        assert json.loads(out_file.read_text(encoding="utf-8"))[0]["messages"][1] == {
+            "role": "user", "content": "如何退租"}
+
+    def test_plain_json_still_infers_from_the_extension(self, tmp_path):
+        """不给 `--input-format` 的常规路径不变：按扩展名当 json 读、正常产出
+
+        报错只针对「取不到问答 + 有对话数组」这一种误标，普通规范形数据不受影响。
+        """
+        src = self.write(tmp_path, [{"instruction": "如何退租", "output": "满一年后退还"}])
+        out_file = tmp_path / "out.json"
+
+        _, parsed, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--format", "chatml"]
+        )
+        assert code is None
+        assert parsed["source_format"] == "json"
+        assert json.loads(out_file.read_text(encoding="utf-8"))[0]["messages"][1] == {
+            "role": "user", "content": "如何退租"}
+
+    def test_bad_container_row_fails_with_row_number(self, tmp_path, capsys):
+        """源文件里第 2 条缺 `output`：退出码非 0、报错带条目下标、且不留半截产物"""
+        src = self.write(tmp_path, [{"instruction": "q", "output": "a"},
+                                    {"instruction": "只有问题"}])
+        out_file = tmp_path / "out.json"
+
+        _, _, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--input-format", "alpaca", "--format", "json"]
+        )
+        assert code == 1, f"坏数据应当以非 0 退出: code={code}"
+        assert "第 2 条 alpaca 记录缺少字段: output" in capsys.readouterr().err
+        assert not out_file.exists()
+
+    def test_tsv_is_accepted_on_both_sides(self, tmp_path):
+        """`tsv` 两条边补齐后，CLI 两侧都收它，且引号规则与 csv 同严
+
+        断言而不是只看退出码：`--input-format` 曾经根本不认 tsv，光看「不报错」
+        分不清是支持了还是绕过了。字段里塞进制表符、逗号、换行各一个，严格解析器
+        （`csv.reader`，非宽松模式）能原样读回才算真支持。
+        """
+        rows = [{"instruction": "含\t制表", "input": "含,逗号", "output": "含\n换行"},
+                {"instruction": "正常", "input": "", "output": "回答"}]
+        src = tmp_path / "in.tsv"
+        with src.open("w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=["instruction", "input", "output"],
+                                    delimiter="\t")
+            writer.writeheader()
+            writer.writerows(rows)
+        out_file = tmp_path / "out.json"
+
+        _, parsed, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--input-format", "tsv", "--format", "json"]
+        )
+        assert code is None
+        assert parsed["input_count"] == 2
+        assert json.loads(out_file.read_text(encoding="utf-8")) == rows
+
+        back = tmp_path / "back.tsv"
+        _, _, code = run_cli(
+            ["cli", "convert", "--input", str(out_file), "--output", str(back),
+             "--format", "tsv"]
+        )
+        assert code is None
+        with back.open(newline="", encoding="utf-8") as f:
+            assert list(csv.reader(f, delimiter="\t"))[0] == [
+                "instruction", "input", "output"]
+        assert json.loads(out_file.read_text(encoding="utf-8")) == rows
+
+
+class TestNonObjectRecordAtTheCli:
+    """记录不是对象（`null` / 标量）时 CLI 的三件事：非 0 退出、人话文案、不留半截文件。
+
+    A26① 的原始症状：`[null]` 转 alpaca 会把解释器内部措辞原样打给用户
+    （`错误: 'NoneType' object has no attribute 'get'`），转 csv 更坏——`DictWriter`
+    先把「按字符展开的表头」落盘再崩，退出码同样是 1，但磁盘上多出一份**看起来存在**
+    的坏文件。L22 之后两者都是 `DataFormatError`，文案带条目下标与实际类型。
+    """
+
+    def write(self, tmp_path, name, payload):
+        path = tmp_path / name
+        path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        return path
+
+    def test_scalar_record_exits_non_zero_with_row_number(self, tmp_path, capsys):
+        """alpaca 目标：以前是 `AttributeError` 文案，现在是「第 1 条记录必须是 JSON 对象」"""
+        src = self.write(tmp_path, "in.json", [None])
+        out_file = tmp_path / "out.json"
+
+        _, _, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--format", "alpaca"]
+        )
+        err = capsys.readouterr().err
+        assert code == 1, f"非对象记录应当以非 0 退出: code={code}"
+        assert "第 1 条记录必须是 JSON 对象" in err, err
+        assert "has no attribute" not in err, "不该再把解释器内部措辞当文案"
+        assert not out_file.exists()
+
+    def test_csv_target_leaves_no_half_written_file(self, tmp_path, capsys):
+        """最坏的一条：以前 csv 会先落一个按字符展开的表头再崩"""
+        src = self.write(tmp_path, "in.json", ["just a string"])
+        out_file = tmp_path / "out.csv"
+
+        _, _, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--format", "csv"]
+        )
+        assert code == 1
+        assert "第 1 条记录必须是 JSON 对象" in capsys.readouterr().err
+        assert not out_file.exists(), "报错前不得留下半截 csv"
+
+
+class TestEmptyQaProductAtTheCli:
+    """整档字段名认不出时 CLI 必须非 0 退出，而不是打一句「转换成功」。
+
+    A26② 的原始症状：一份 `question`/`answer` 语料按通用 json 转 chatml，退出码 0、
+    stdout 报成功，产物是 N 条 `{"messages": [{"content": ""}]}` —— 用户以为转换成了，
+    下游拿它去训练。L23 之后这一路是「N 条记录里取不到任何问答」，且不落盘。
+    """
+
+    ROWS = [{"question": "可以月付吗", "answer": "支持月付"},
+            {"question": "押金多少", "answer": "一个月"}]
+
+    def write(self, tmp_path, name, payload):
+        path = tmp_path / name
+        path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        return path
+
+    def test_unreadable_field_names_exit_non_zero(self, tmp_path, capsys):
+        """报错文案带条数与所认的键，用户照着改字段名就能跑通"""
+        src = self.write(tmp_path, "in.json", self.ROWS)
+        out_file = tmp_path / "out.json"
+
+        out, _, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--format", "chatml"]
+        )
+        err = capsys.readouterr().err
+        assert code == 1, f"空问答产物应当以非 0 退出: code={code} stdout={out}"
+        assert "2 条记录里取不到任何问答" in err, err
+        assert "成功" not in out, "失败时 stdout 不该报成功"
+        assert not out_file.exists()
+
+    def test_csv_target_keeps_columns_it_does_not_understand(self, tmp_path, capsys):
+        """例外的一侧：`csv` 表头取键并集，`question`/`answer` 照样是好产物，不得拦
+
+        整档空问答判定只适用于「写边会按固定键读字段」的六个训练格式。容器目标是
+        原样排版，拦它就等于禁止一切非训练格式的数据搬运。
+        """
+        src = self.write(tmp_path, "in.json", self.ROWS)
+        out_file = tmp_path / "out.csv"
+
+        _, _, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--format", "csv"]
+        )
+        assert code is None, capsys.readouterr().err
+        with out_file.open(newline="", encoding="utf-8") as f:
+            assert next(csv.reader(f)) == ["question", "answer"]
+
+    def test_a_single_readable_row_makes_the_run_succeed(self, tmp_path, capsys):
+        """整档判定不能把「大部分缺字段、至少一条能用」的数据集砸掉"""
+        src = self.write(tmp_path, "in.json",
+                         self.ROWS + [{"instruction": "可以月付吗", "output": "支持月付"}])
+        out_file = tmp_path / "out.json"
+
+        _, _, code = run_cli(
+            ["cli", "convert", "--input", str(src), "--output", str(out_file),
+             "--format", "chatml"]
+        )
+        assert code is None, capsys.readouterr().err
+        assert json.loads(out_file.read_text(encoding="utf-8"))[0]["messages"][1]["content"] == ""
+
+
+class TestStreamAndAggregateKnobs:
+    """`stream --chunk-size` / `aggregate --target-size`：同族第三轮的 CLI 面
+
+    两个旋钮都落到比较或算术，越界值不会自己喊停：`len(chunk) >= 0` 恒真
+    （于是逐条切块、白多花 61% 时间），`int(-1 * 占比)` 静默给 0 条
+    （于是「要 -1 条」答成「一条也没有」，与「三个源都是空的」同形）。
+    """
+
+    def test_stream_zero_chunk_size_is_a_param_error_and_writes_nothing(self, dataset, tmp_path):
+        """`--chunk-size 0` 退出 1 且不留产物（缺陷态：exit 0，逐条切块照跑完）"""
+        import io
+        import sys
+        from contextlib import redirect_stderr
+
+        out = tmp_path / "streamed.jsonl"
+        sys.argv = [
+            "cli", "stream", "--input", str(dataset),
+            "--output", str(out), "--operation", "export", "--chunk-size", "0",
+        ]
+        err = io.StringIO()
+        with redirect_stderr(err):
+            try:
+                main()
+            except SystemExit as exc:
+                code = exc.code
+            else:
+                code = None
+        assert code == 1
+        assert "chunk_size" in err.getvalue()
+        assert not out.exists()
+
+    def test_stream_negative_chunk_size_is_a_param_error(self, dataset, tmp_path):
+        """`--chunk-size -8` 与 0 同判：步长没有「0 条一块」的合法读法"""
+        out = tmp_path / "streamed_neg.jsonl"
+        _, _, code = run_cli(
+            [
+                "cli", "stream", "--input", str(dataset),
+                "--output", str(out), "--operation", "export", "--chunk-size", "-8",
+            ]
+        )
+        assert code == 1
+        assert not out.exists()
+
+    def test_stream_smallest_legal_chunk_size_still_copies_everything(self, dataset, tmp_path):
+        """反向护栏：`--chunk-size 1` 必须真的跑完 5 条，判据不能顺手拒掉下界"""
+        out = tmp_path / "streamed_one.jsonl"
+        _, parsed, code = run_cli(
+            [
+                "cli", "stream", "--input", str(dataset),
+                "--output", str(out), "--operation", "export", "--chunk-size", "1",
+            ]
+        )
+        assert code is None
+        assert parsed["total_output"] == len(SAMPLE_ITEMS)
+        assert len(out.read_text(encoding="utf-8").strip().splitlines()) == len(SAMPLE_ITEMS)
+
+    def test_aggregate_negative_target_size_is_a_param_error(self, dataset, tmp_path):
+        """`--target-size -1` 退出 1（缺陷态：exit 0 + 交出空产物文件）"""
+        import io
+        import sys
+        from contextlib import redirect_stderr
+
+        out = tmp_path / "agg_neg.json"
+        sys.argv = [
+            "cli", "aggregate", "--inputs", str(dataset),
+            "--output", str(out), "--strategy", "weighted", "--target-size", "-1",
+        ]
+        err = io.StringIO()
+        with redirect_stderr(err):
+            try:
+                main()
+            except SystemExit as exc:
+                code = exc.code
+            else:
+                code = None
+        assert code == 1
+        assert "target_size" in err.getvalue()
+        assert not out.exists()
+
+    def test_aggregate_zero_target_size_delivers_an_empty_file(self, dataset, tmp_path):
+        """0 条是合法请求：产物是空数组，`source_counts` 仍如实"""
+        out = tmp_path / "agg_zero.json"
+        _, parsed, code = run_cli(
+            [
+                "cli", "aggregate", "--inputs", str(dataset),
+                "--output", str(out), "--strategy", "weighted", "--target-size", "0",
+            ]
+        )
+        assert code is None
+        assert parsed["aggregated_count"] == 0
+        assert json.loads(out.read_text(encoding="utf-8")) == []
+
+    def test_aggregate_weighted_without_target_size_keeps_everything(self, dataset, tmp_path):
+        """不传 `--target-size` 走 argparse 默认 100：5 条都在（配额大于条数）"""
+        out = tmp_path / "agg_default.json"
+        _, parsed, code = run_cli(
+            [
+                "cli", "aggregate", "--inputs", str(dataset),
+                "--output", str(out), "--strategy", "weighted",
+            ]
+        )
+        assert code is None
+        assert parsed["aggregated_count"] == len(SAMPLE_ITEMS)

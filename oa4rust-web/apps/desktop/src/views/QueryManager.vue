@@ -83,7 +83,7 @@ async function loadQueryAll() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     queryMetaText.value = `全部查询 ${n(all)} / 概要 ${n(summary)} / 分类 ${n(cats)}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadQueryExtra() {
@@ -97,7 +97,7 @@ async function loadQueryExtra() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     queryMetaText.value = `神经模型 ${n(models)} / 导出 ${n(outputs)} / 概要 ${n(summary)}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadQueryMeta() {
@@ -110,7 +110,7 @@ async function loadQueryMeta() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     queryMetaText.value = `查询分类 ${n(cats)} / 语句 ${n(stmts)}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 const sq = ref(''),
@@ -147,7 +147,10 @@ async function runQ() {
     const d = (r as any)?.data
     rdata.value = d?.list ?? []
     if (rdata.value.length > 0) rheaders.value = Object.keys(rdata.value[0])
-  } catch {
+  } catch (e: any) {
+    rdata.value = []
+    rheaders.value = []
+    toast.error(`执行失败: ${e?.message ?? '未知错误'}`)
   } finally {
     rloading.value = false
   }
@@ -159,8 +162,10 @@ const dm = useMutation({
     if (selected.value?.id) selected.value = null
   },
 })
-function delQ() {
-  if (selected.value && confirmMsg('确定删除？')) dm.mutate(selected.value.id)
+async function delQ() {
+  if (!selected.value) return
+  // confirmMsg 返回 Promise<boolean>：未 await 时恒为 truthy，删除会在用户点确认前就发出
+  if (await confirmMsg('确定删除？')) dm.mutate(selected.value.id)
 }
 const cm = useMutation({
   mutationFn: () => api.post('/api/query/assemble/designer/create', nform.value),

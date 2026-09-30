@@ -19,6 +19,7 @@ pub const API_BASE: &str = "/api/file_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
@@ -714,18 +715,15 @@ pub async fn anonymous_file_id_download(
             };
             Ok(axum::response::Response::builder()
                 .status(axum::http::StatusCode::OK)
-                .header("Content-Type", mime)
+                .header("Content-Type", shared::response::sanitize_mime(&mime))
                 .header(
                     "Content-Disposition",
-                    format!("attachment; filename=\"{}\"", name),
+                    shared::response::attachment_disposition(&name),
                 )
                 .body(axum::body::Body::from(bytes))
                 .unwrap())
         }
-        None => Ok(axum::response::Response::builder()
-            .status(axum::http::StatusCode::NOT_FOUND)
-            .body(axum::body::Body::empty())
-            .unwrap()),
+        None => Err(AppError::NotFound),
     }
 }
 
@@ -821,7 +819,7 @@ pub async fn attachment_list_folder_folderId(
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
-             FROM FILE_FILE WHERE folder_id = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
+             FROM FILE_FILE WHERE superior = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&folder_id],
         )
         .await
@@ -1244,18 +1242,15 @@ pub async fn attachment_id_download(
             };
             Ok(axum::response::Response::builder()
                 .status(axum::http::StatusCode::OK)
-                .header("Content-Type", mime)
+                .header("Content-Type", shared::response::sanitize_mime(&mime))
                 .header(
                     "Content-Disposition",
-                    format!("attachment; filename=\"{}\"", name),
+                    shared::response::attachment_disposition(&name),
                 )
                 .body(axum::body::Body::from(bytes))
                 .unwrap())
         }
-        None => Ok(axum::response::Response::builder()
-            .status(axum::http::StatusCode::NOT_FOUND)
-            .body(axum::body::Body::empty())
-            .unwrap()),
+        None => Err(AppError::NotFound),
     }
 }
 
@@ -1526,7 +1521,7 @@ pub async fn attachment2_list_folder_folderId(
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
-             FROM FILE_FILE WHERE folder_id = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
+             FROM FILE_FILE WHERE superior = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&folder_id],
         )
         .await.map_err(|_| AppError::Internal)?;
@@ -2029,18 +2024,15 @@ pub async fn attachment2_id_download(
             };
             Ok(axum::response::Response::builder()
                 .status(axum::http::StatusCode::OK)
-                .header("Content-Type", mime)
+                .header("Content-Type", shared::response::sanitize_mime(&mime))
                 .header(
                     "Content-Disposition",
-                    format!("attachment; filename=\"{}\"", name),
+                    shared::response::attachment_disposition(&name),
                 )
                 .body(axum::body::Body::from(bytes))
                 .unwrap())
         }
-        None => Ok(axum::response::Response::builder()
-            .status(axum::http::StatusCode::NOT_FOUND)
-            .body(axum::body::Body::empty())
-            .unwrap()),
+        None => Err(AppError::NotFound),
     }
 }
 
@@ -2553,8 +2545,59 @@ pub async fn config_is_file_manager(
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn config_system_config() -> Result<Json<ActionResult<Value>>, AppError> {
-    Err(u2_capability_unavailable("file-system-config-read"))
+pub async fn config_system_config(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 系统参数读：x_system_config（094 迁移建表）全量未删行。此前为 fail-loud 501 契约，
+    // 桌面 Settings 页与 configApi.systemConfig(/api/config/system) 均指向本能力，实装为真实读；
+    // /api/config/system/config（旧注册形状）与 /api/config/system（前端契约形状）双路由同 handler。
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT name, value, category, description, update_time::text FROM x_system_config WHERE deleted_at IS NULL ORDER BY category, name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -3207,7 +3250,15 @@ pub async fn file_upload_with_url(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let url = body
+        .get("url")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .trim()
+        .to_string();
+    if url.is_empty() {
+        return Err(AppError::BadRequest("url is required".to_string()));
+    }
 
     let name = body
         .get("name")
@@ -3224,26 +3275,38 @@ pub async fn file_upload_with_url(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
-    let size: i64 = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let url = body
-        .get("url")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default()
-        .to_string();
     let mime_type = body
         .get("mimeType")
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
+    // 真拉取远程内容（SSRF 防护见 shared::netguard）。此前这里把 URL 字符串本身
+    // base64 当文件内容入库——假实现且污染数据。
+    let fetcher = shared::netguard::fetch_client().map_err(|_| AppError::Internal)?;
+    let (final_url, bytes) = shared::netguard::fetch_limited(&fetcher, &url)
+        .await
+        .map_err(|e| {
+            tracing::warn!(url = %url, error = %e, "remote url fetch rejected or failed");
+            AppError::BadRequest(format!("remote fetch failed: {e}"))
+        })?;
+
+    let name = if name.is_empty() {
+        shared::netguard::filename_from_url(&url, &final_url)
+    } else {
+        name
+    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let creator = session.person_unique.clone();
-    let content_b64 = base64::engine::general_purpose::STANDARD.encode(&url);
-    let ext = if let Some(ref fname) = name.split('.').next_back() {
-        fname
-    } else {
-        "bin"
-    };
+    let content_b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+    let size = bytes.len() as i64;
+    let ext = name
+        .rsplit('.')
+        .next()
+        .filter(|e| !e.is_empty() && *e != name)
+        .unwrap_or("bin")
+        .to_string();
 
     client
         .execute(
@@ -3391,18 +3454,15 @@ pub async fn file_id_download(
             };
             Ok(axum::response::Response::builder()
                 .status(axum::http::StatusCode::OK)
-                .header("Content-Type", mime)
+                .header("Content-Type", shared::response::sanitize_mime(&mime))
                 .header(
                     "Content-Disposition",
-                    format!("attachment; filename=\"{}\"", name),
+                    shared::response::attachment_disposition(&name),
                 )
                 .body(axum::body::Body::from(bytes))
                 .unwrap())
         }
-        None => Ok(axum::response::Response::builder()
-            .status(axum::http::StatusCode::NOT_FOUND)
-            .body(axum::body::Body::empty())
-            .unwrap()),
+        None => Err(AppError::NotFound),
     }
 }
 
@@ -3532,10 +3592,31 @@ pub async fn folder_id(
 #[allow(non_snake_case)]
 pub async fn folder2_batch_download(
     pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool;
-    // o2server 语义：按文件夹批量打包下载 —— 无打包引擎，显式 501 + warn。
-    Err(u2_capability_unavailable("zip-batch-download"))
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<axum::response::Response, AppError> {
+    // o2server 语义：批量打包下载 —— 无参 GET 版按当前用户全部未删文件打包。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT name, content FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY name",
+            &[&session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let entries: Vec<(String, Vec<u8>)> = rows
+        .iter()
+        .map(|row| {
+            (
+                row.get::<_, Option<String>>("name").unwrap_or_default(),
+                decode_file_content(row.get("content")),
+            )
+        })
+        .collect();
+    let zip_bytes = build_zip_archive(entries)?;
+    zip_download_response(zip_bytes, "batch-download.zip")
 }
 
 #[axum::debug_handler]
@@ -3600,10 +3681,38 @@ pub async fn folder2_id(
 pub async fn folder2_id_download(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = (pool, id);
-    // o2server 语义：文件夹打包下载 —— 无打包引擎，显式 501 + warn。
-    Err(u2_capability_unavailable("zip-folder-download"))
+) -> Result<axum::response::Response, AppError> {
+    // o2server 语义：文件夹打包下载 —— 把该文件夹内全部文件打包为 zip。
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let folder = client
+        .query_opt(
+            "SELECT name FROM FILE_FOLDER WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let folder_name: String = match folder {
+        Some(row) => row.get("name"),
+        None => return Err(AppError::NotFound),
+    };
+    let rows = client
+        .query(
+            "SELECT name, content FROM FILE_FILE WHERE superior = $1 AND deleted_at IS NULL ORDER BY name",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let entries: Vec<(String, Vec<u8>)> = rows
+        .iter()
+        .map(|row| {
+            (
+                row.get::<_, Option<String>>("name").unwrap_or_default(),
+                decode_file_content(row.get("content")),
+            )
+        })
+        .collect();
+    let zip_bytes = build_zip_archive(entries)?;
+    zip_download_response(zip_bytes, &format!("{}.zip", folder_name))
 }
 
 #[axum::debug_handler]
@@ -3833,18 +3942,15 @@ pub async fn share_download_share_shareId_file_fileId(
             };
             Ok(axum::response::Response::builder()
                 .status(axum::http::StatusCode::OK)
-                .header("Content-Type", mime)
+                .header("Content-Type", shared::response::sanitize_mime(&mime))
                 .header(
                     "Content-Disposition",
-                    format!("attachment; filename=\"{}\"", name),
+                    shared::response::attachment_disposition(&name),
                 )
                 .body(axum::body::Body::from(bytes))
                 .unwrap())
         }
-        None => Ok(axum::response::Response::builder()
-            .status(axum::http::StatusCode::NOT_FOUND)
-            .body(axum::body::Body::empty())
-            .unwrap()),
+        None => Err(AppError::NotFound),
     }
 }
 
@@ -3923,7 +4029,7 @@ pub async fn share_list_att_share_shareId_folder_folderId(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE folder_id = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
+            "SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE superior = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&folder_id],
         )
         .await.map_err(|_| AppError::Internal)?;
@@ -4195,12 +4301,66 @@ pub async fn share_id_password_password(
 // /api/file/assemble/control/file/{id} 闭合，不再裸注册以免引入跨 crate 冲突；
 // 其余缺口一律按 o2server 真实路径注册（经归一化查重无跨 crate 占用）。
 
-fn u2_capability_unavailable(capability: &'static str) -> AppError {
-    tracing::warn!(
-        capability,
-        "endpoint requires an unavailable engine; returning 501"
-    );
-    AppError::NotImplemented
+// ── zip 打包下载（folder2 batch / folder2 {id} download）─────────────────────
+
+/// FILE_FILE.content 是 base64 TEXT；解码失败按空字节处理（与 file_id_download 一致）。
+fn decode_file_content(content: Option<String>) -> Vec<u8> {
+    content
+        .as_deref()
+        .and_then(|c| base64::engine::general_purpose::STANDARD.decode(c).ok())
+        .unwrap_or_default()
+}
+
+/// 把 (文件名, 字节) 序列打包为 zip 内存档；重名文件追加序号避免 entry 冲突。
+fn build_zip_archive(entries: Vec<(String, Vec<u8>)>) -> Result<Vec<u8>, AppError> {
+    use std::io::{Cursor, Write as _};
+    use zip::write::SimpleFileOptions;
+
+    let mut writer = zip::ZipWriter::new(Cursor::new(Vec::new()));
+    let mut used_names = std::collections::HashSet::new();
+    for (index, (name, bytes)) in entries.into_iter().enumerate() {
+        let base = if name.is_empty() {
+            format!("file-{}", index + 1)
+        } else {
+            name
+        };
+        let mut entry = base.clone();
+        let mut seq = 1u32;
+        while !used_names.insert(entry.clone()) {
+            seq += 1;
+            let stem_ext: Option<(String, String)> = base
+                .rsplit_once('.')
+                .filter(|(_, ext)| !ext.is_empty() && !base.starts_with('.'))
+                .map(|(stem, ext)| (stem.to_string(), ext.to_string()));
+            entry = match stem_ext {
+                Some((stem, ext)) => format!("{}-{}.{}", stem, seq, ext),
+                None => format!("{}-{}", base, seq),
+            };
+        }
+        writer
+            .start_file(entry.as_str(), SimpleFileOptions::default())
+            .map_err(|_| AppError::Internal)?;
+        writer.write_all(&bytes).map_err(|_| AppError::Internal)?;
+    }
+    Ok(writer
+        .finish()
+        .map_err(|_| AppError::Internal)?
+        .into_inner())
+}
+
+fn zip_download_response(
+    bytes: Vec<u8>,
+    filename: &str,
+) -> Result<axum::response::Response, AppError> {
+    Ok(axum::response::Response::builder()
+        .status(axum::http::StatusCode::OK)
+        .header("Content-Type", "application/zip")
+        .header(
+            "Content-Disposition",
+            shared::response::attachment_disposition(filename),
+        )
+        .body(axum::body::Body::from(bytes))
+        .unwrap())
 }
 
 async fn u2_require_admin(pool: &Pool, session: &shared::session::Session) -> Result<(), AppError> {
@@ -4291,8 +4451,18 @@ async fn u2_store_new(
     reference_type: &str,
     reference: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 尺寸护栏：axum 默认 2MB body 上限兜底，但此公共存储口仍需自查——
+    // 与 x_file_assemble_control_config.max_upload_size 配置语义对齐（不读取 DB
+    // 是因为该配置无默认行时语义未定，硬护栏防误配置归零放行）。
+    const MAX_STORE_BYTES: usize = 2 * 1024 * 1024;
+    if bytes.len() > MAX_STORE_BYTES {
+        return Err(AppError::BadRequest(format!(
+            "upload size {} exceeds limit {MAX_STORE_BYTES}",
+            bytes.len()
+        )));
+    }
     let key = u2_blob_key(id, filename)?;
-    let storage = shared::storage::storage_from_env();
+    let storage = shared::storage::storage_with_pool(pool.clone());
     u2_persist_verified(storage.as_ref(), &key, &bytes).await?;
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -4439,7 +4609,7 @@ pub async fn u2_attachment_update_content(
 
     let (filename, _mime, bytes) = u2_read_multipart_file(multipart).await?;
     let key = u2_blob_key(&id, &filename)?;
-    let storage = shared::storage::storage_from_env();
+    let storage = shared::storage::storage_with_pool((*pool).clone());
     u2_persist_verified(storage.as_ref(), &key, &bytes).await?;
 
     let ext = u2_ext_of(&filename);
@@ -5129,8 +5299,66 @@ pub async fn u2_attachment2_list_type_page_size_size(
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn u2_config_save_system_config() -> Result<Json<ActionResult<Value>>, AppError> {
-    Err(u2_capability_unavailable("file-system-config-write"))
+pub async fn u2_config_save_system_config(
+    pool: Extension<Pool>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 系统参数写：body {"configs":[{name,value,category?}]}，按 name UPSERT（未删行内更新，
+    // 否则新插入）；value 接受字符串/数字/布尔，统一落 TEXT。行间独立提交，配置行无事务耦合。
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let items = body
+        .get("configs")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    if items.is_empty() {
+        return Ok(Json(ActionResult::error("no configs to save")));
+    }
+    let mut saved = 0i64;
+    for item in &items {
+        let name = item
+            .get("name")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+        if name.is_empty() {
+            continue;
+        }
+        let value = match item.get("value") {
+            Some(Value::String(v)) => v.clone(),
+            Some(other) => other.to_string(),
+            None => String::new(),
+        };
+        let category = item
+            .get("category")
+            .and_then(Value::as_str)
+            .unwrap_or("system")
+            .to_string();
+        let updated = client
+            .execute(
+                "UPDATE x_system_config SET value = $1, category = $2, update_time = NOW() WHERE name = $3 AND deleted_at IS NULL",
+                &[&value, &category, &name],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        if updated == 0 {
+            let id = uuid::Uuid::new_v4().to_string();
+            client
+                .execute(
+                    "INSERT INTO x_system_config (id, name, value, category, create_time, update_time) VALUES ($1, $2, $3, $4, NOW(), NOW())",
+                    &[&id, &name, &value, &category],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+        }
+        saved += 1;
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([(
+            "saved".to_string(),
+            Value::Number(serde_json::Number::from(saved)),
+        )]),
+    ))))
 }
 
 #[cfg(test)]

@@ -13,7 +13,7 @@ interface ToastOptions {
 }
 
 let container: HTMLDivElement | null = null
-const queue: ToastOptions[] = []
+const _queue: ToastOptions[] = []
 const MAX_VISIBLE = 4
 
 function getContainer(): HTMLDivElement {

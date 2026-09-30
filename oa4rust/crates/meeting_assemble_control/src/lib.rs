@@ -13,6 +13,7 @@ pub const API_BASE: &str = "/api/meeting_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
@@ -407,51 +408,19 @@ pub async fn building_list_start_start_completed_completed(
     pool: Extension<Pool>,
     axum::extract::Path((start, completed)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // o2server 语义：按 [start, completed] 时段列会议（codegen 把 Action 前缀
+    // 误写为 building，但 building 表无时段列——数据源是 x_meeting）。
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, name, pinyin, pinyin_initial, address, description, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting_building WHERE start_time >= $1 AND end_time <= $2 ORDER BY create_time",
+            "SELECT id, title, status, room_id, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= $1::timestamp AND end_time <= $2::timestamp ORDER BY start_time",
             &[&start, &completed],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
-        .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                (
-                    "pinyin".to_string(),
-                    Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default()),
-                ),
-                (
-                    "pinyinInitial".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("pinyin_initial")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "address".to_string(),
-                    Value::String(row.get::<_, Option<String>>("address").unwrap_or_default()),
-                ),
-                (
-                    "description".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("description")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(row.get("create_time")),
-                ),
-            ]))
-        })
-        .collect();
+    let data: Vec<Value> = rows.iter().map(meeting_row_json).collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::legacy_success(
@@ -470,47 +439,13 @@ pub async fn building_list_start_start_completed_completed_allmeeting(
 
     let rows = client
         .query(
-            "SELECT id, name, pinyin, pinyin_initial, address, description, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting_building WHERE start_time >= $1 AND end_time <= $2 ORDER BY create_time",
+            "SELECT id, title, status, room_id, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= $1::timestamp AND end_time <= $2::timestamp ORDER BY start_time",
             &[&start, &completed],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
-        .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                (
-                    "pinyin".to_string(),
-                    Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default()),
-                ),
-                (
-                    "pinyinInitial".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("pinyin_initial")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "address".to_string(),
-                    Value::String(row.get::<_, Option<String>>("address").unwrap_or_default()),
-                ),
-                (
-                    "description".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("description")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(row.get("create_time")),
-                ),
-            ]))
-        })
-        .collect();
+    let data: Vec<Value> = rows.iter().map(meeting_row_json).collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::legacy_success(
@@ -534,47 +469,13 @@ pub async fn building_list_start_start_completed_completed_room_room_meeting_mee
 
     let rows = client
         .query(
-            "SELECT id, name, pinyin, pinyin_initial, address, description, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting_building WHERE start_time >= $1 AND end_time <= $2 AND room_id = $3 AND meeting_id = $4 ORDER BY create_time",
+            "SELECT id, title, status, room_id, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= $1::timestamp AND end_time <= $2::timestamp AND room_id = $3 AND id = $4 ORDER BY start_time",
             &[&start, &completed, &room, &meeting],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
-        .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                (
-                    "pinyin".to_string(),
-                    Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default()),
-                ),
-                (
-                    "pinyinInitial".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("pinyin_initial")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "address".to_string(),
-                    Value::String(row.get::<_, Option<String>>("address").unwrap_or_default()),
-                ),
-                (
-                    "description".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("description")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(row.get("create_time")),
-                ),
-            ]))
-        })
-        .collect();
+    let data: Vec<Value> = rows.iter().map(meeting_row_json).collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::legacy_success(
@@ -582,6 +483,43 @@ pub async fn building_list_start_start_completed_completed_room_room_meeting_mee
         count,
         0,
     )))
+}
+
+fn meeting_row_json(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
+    Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(row.get("id"))),
+        (
+            "title".to_string(),
+            Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+        ),
+        (
+            "status".to_string(),
+            Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+        ),
+        (
+            "roomId".to_string(),
+            Value::String(row.get::<_, Option<String>>("room_id").unwrap_or_default()),
+        ),
+        (
+            "startTime".to_string(),
+            Value::String(
+                row.get::<_, Option<String>>("start_time")
+                    .unwrap_or_default(),
+            ),
+        ),
+        (
+            "completedTime".to_string(),
+            Value::String(row.get::<_, Option<String>>("end_time").unwrap_or_default()),
+        ),
+        (
+            "creator".to_string(),
+            Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+        ),
+        (
+            "createTime".to_string(),
+            Value::String(row.get("create_time")),
+        ),
+    ]))
 }
 
 #[allow(non_snake_case)]
@@ -1013,9 +951,9 @@ pub async fn meeting_list_coming_day_count(
 }
 
 #[allow(non_snake_case)]
-pub async fn meeting_list_coming_month_count(
+async fn meeting_list_coming_month_count_core(
     pool: Extension<Pool>,
-    axum::extract::Path(count): axum::extract::Path<i64>,
+    count: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1060,6 +998,22 @@ pub async fn meeting_list_coming_month_count(
         count,
         0,
     )))
+}
+
+#[allow(non_snake_case)]
+pub async fn meeting_list_coming_month_count(
+    pool: Extension<Pool>,
+    axum::extract::Path(count): axum::extract::Path<i64>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    meeting_list_coming_month_count_core(pool, count).await
+}
+
+#[allow(non_snake_case)]
+pub async fn meeting_list_coming_month_count_p2(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, count)): axum::extract::Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    meeting_list_coming_month_count_core(pool, count).await
 }
 
 #[allow(non_snake_case)]
@@ -1163,9 +1117,10 @@ pub async fn meeting_list_forward_monthcount_monthCount_all(
 }
 
 #[allow(non_snake_case)]
-pub async fn meeting_list_invite_page_size_size(
+async fn meeting_list_invite_page_size_size_core(
     pool: Extension<Pool>,
-    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+    page: i64,
+    size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1213,6 +1168,22 @@ pub async fn meeting_list_invite_page_size_size(
         count,
         size,
     )))
+}
+
+#[allow(non_snake_case)]
+pub async fn meeting_list_invite_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    meeting_list_invite_page_size_size_core(pool, page, size).await
+}
+
+#[allow(non_snake_case)]
+pub async fn meeting_list_invite_page_size_size_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    meeting_list_invite_page_size_size_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
@@ -1730,9 +1701,12 @@ pub async fn meeting_list_year_year_month_month_day_day_all(
 }
 
 #[allow(non_snake_case)]
-pub async fn meeting_list_year_year_month_month_day_day_roomId(
+async fn meeting_list_year_year_month_month_day_day_roomId_core(
     pool: Extension<Pool>,
-    axum::extract::Path((year, month, day, room_id)): axum::extract::Path<(i32, i32, i32, String)>,
+    year: i32,
+    month: i32,
+    day: i32,
+    room_id: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1783,9 +1757,34 @@ pub async fn meeting_list_year_year_month_month_day_day_roomId(
 }
 
 #[allow(non_snake_case)]
-pub async fn meeting_list_id_next_count(
+pub async fn meeting_list_year_year_month_month_day_day_roomId(
     pool: Extension<Pool>,
-    axum::extract::Path((flag, count)): axum::extract::Path<(String, i64)>,
+    axum::extract::Path((year, month, day, room_id)): axum::extract::Path<(i32, i32, i32, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    meeting_list_year_year_month_month_day_day_roomId_core(pool, year, month, day, room_id).await
+}
+
+#[allow(non_snake_case)]
+pub async fn meeting_list_year_year_month_month_day_day_roomId_p7(
+    pool: Extension<Pool>,
+    axum::extract::Path((year, _s1, month, _s3, day, _s5, room_id)): axum::extract::Path<(
+        i32,
+        String,
+        i32,
+        String,
+        i32,
+        String,
+        String,
+    )>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    meeting_list_year_year_month_month_day_day_roomId_core(pool, year, month, day, room_id).await
+}
+
+#[allow(non_snake_case)]
+async fn meeting_list_id_next_count_core(
+    pool: Extension<Pool>,
+    flag: String,
+    count: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1842,6 +1841,22 @@ pub async fn meeting_list_id_next_count(
         count,
         0,
     )))
+}
+
+#[allow(non_snake_case)]
+pub async fn meeting_list_id_next_count(
+    pool: Extension<Pool>,
+    axum::extract::Path((flag, count)): axum::extract::Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    meeting_list_id_next_count_core(pool, flag, count).await
+}
+
+#[allow(non_snake_case)]
+pub async fn meeting_list_id_next_count_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((_s0, flag, count)): axum::extract::Path<(String, String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    meeting_list_id_next_count_core(pool, flag, count).await
 }
 
 #[allow(non_snake_case)]
@@ -1950,9 +1965,10 @@ pub async fn meeting_list_page_size_size(
 }
 
 #[allow(non_snake_case)]
-pub async fn meeting_list_page_size_size_manage(
+async fn meeting_list_page_size_size_manage_core(
     pool: Extension<Pool>,
-    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+    page: i64,
+    size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2000,6 +2016,22 @@ pub async fn meeting_list_page_size_size_manage(
         count,
         size,
     )))
+}
+
+#[allow(non_snake_case)]
+pub async fn meeting_list_page_size_size_manage(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    meeting_list_page_size_size_manage_core(pool, page, size).await
+}
+
+#[allow(non_snake_case)]
+pub async fn meeting_list_page_size_size_manage_p3(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    meeting_list_page_size_size_manage_core(pool, page, size).await
 }
 
 #[allow(non_snake_case)]
@@ -2934,17 +2966,16 @@ fn u2_attachment_blob_key(id: &str, filename: &str) -> Result<String, AppError> 
 
 /// put + 回读校验。DB 占位后端 get 必然 Err —— 在此显式失败，
 /// 避免产生“上传成功但内容丢失”的假成功响应。
-async fn u2_persist_blob_verified(key: &str, bytes: &[u8]) -> Result<(), AppError> {
-    let storage = shared::storage::storage_from_env();
+async fn u2_persist_blob_verified(pool: &Pool, key: &str, bytes: &[u8]) -> Result<(), AppError> {
+    let storage = shared::storage::storage_with_pool(pool.clone());
     storage.put(key, bytes).await.map_err(|e| {
         tracing::warn!(key, error = %e, "blob put failed");
         AppError::Internal
     })?;
     if let Err(e) = storage.get(key).await {
         tracing::warn!(key, error = %e,
-            "blob backend did not persist upload (STORAGE_BACKEND=db placeholder); \
-             set STORAGE_BACKEND=fs to enable binary uploads");
-        return Err(AppError::NotImplemented);
+            "blob backend did not persist upload; check STORAGE_BACKEND / DB connectivity");
+        return Err(AppError::Internal);
     }
     Ok(())
 }
@@ -3056,7 +3087,7 @@ async fn u2_attachment_store_new(
 
     let id = uuid::Uuid::new_v4().to_string();
     let key = u2_attachment_blob_key(&id, filename)?;
-    u2_persist_blob_verified(&key, &bytes).await?;
+    u2_persist_blob_verified(pool, &key, &bytes).await?;
 
     let ext = filename.rsplit('.').next().unwrap_or("bin").to_string();
     let length = bytes.len() as i64;
@@ -3260,7 +3291,7 @@ async fn u2_attachment_update_inner(
             .map(|r| r.get::<_, Option<String>>("file_name").unwrap_or_default())
             .unwrap_or_default();
         let key = u2_attachment_blob_key(&id, file_name.unwrap_or(&current_name))?;
-        u2_persist_blob_verified(&key, &bytes).await?;
+        u2_persist_blob_verified(&pool, &key, &bytes).await?;
         Some(bytes.len() as i64)
     } else {
         None
@@ -3481,7 +3512,10 @@ pub async fn u2_attachment_delete(
     }
     if let Some(row) = key_row {
         if let Some(key) = row.get::<_, Option<String>>("storage_key") {
-            if let Err(e) = shared::storage::storage_from_env().delete(&key).await {
+            if let Err(e) = shared::storage::storage_with_pool((*pool).clone())
+                .delete(&key)
+                .await
+            {
                 tracing::warn!(key, error = %e, "blob delete failed after attachment delete");
             }
         }
@@ -3756,21 +3790,22 @@ pub async fn u2_meeting_delete_owned(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let creator = u2_meeting_creator(&client, &id).await?;
     let Some(creator) = creator else {
         return Err(AppError::NotFound);
     };
     shared::middleware::require_owner(&pool.0, &session, &creator).await?;
 
-    client
-        .execute("DELETE FROM x_meeting_invite WHERE meeting_id = $1", &[&id])
+    // 级联删除：邀请与会议两写必须原子，中途失败留「会议在而邀请全失」的幽灵会议。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    tx.execute("DELETE FROM x_meeting_invite WHERE meeting_id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
-    client
-        .execute("DELETE FROM x_meeting WHERE id = $1", &[&id])
+    tx.execute("DELETE FROM x_meeting WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),

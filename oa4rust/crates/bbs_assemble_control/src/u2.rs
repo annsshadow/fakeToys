@@ -257,24 +257,143 @@ macro_rules! unimplemented_endpoint {
     };
 }
 
-// o2server AttachmentAction.downloadWithSubject：附件二进制流下载，
-// 依赖 shared::storage 接线（见 lib.rs U6b 注释），当前显式 501。
-unimplemented_endpoint!(
-    attachment_download_501,
-    "binary download pending shared::storage wiring (plan002 U6b)"
-);
-unimplemented_endpoint!(
-    attachment_download_stream_501,
-    "binary streaming pending shared::storage wiring (plan002 U6b)"
-);
-unimplemented_endpoint!(
-    attachment_upload_501,
-    "multipart upload pending shared::storage wiring (plan002 U6b)"
-);
-unimplemented_endpoint!(
-    attachment_upload_callback_501,
-    "multipart upload pending shared::storage wiring (plan002 U6b)"
-);
+// o2server AttachmentAction.downloadWithSubject：附件二进制流下载。
+// 读 x_bbs_attachment.content BYTEA 转 base64（镜像 u2_subjectattach_base64）。
+pub async fn u2_attachment_download(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
+    attachment_download_base64(&pool, &id).await
+}
+
+pub async fn u2_attachment_download_stream(
+    pool: Extension<Pool>,
+    Path((id, _stream)): Path<(String, String)>,
+) -> ApiResult {
+    attachment_download_base64(&pool, &id).await
+}
+
+async fn attachment_download_base64(pool: &Pool, id: &str) -> ApiResult {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT name, extension, content FROM x_bbs_attachment \
+             WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(r) => {
+            let content: Option<Vec<u8>> = r.get("content");
+            match content {
+                Some(bytes) => Ok(Json(ActionResult::success(Value::Object(
+                    serde_json::Map::from_iter([
+                        ("id".to_string(), Value::String(id.to_string())),
+                        (
+                            "name".to_string(),
+                            row_opt_json::<String>(&r, "name").unwrap_or(Value::Null),
+                        ),
+                        (
+                            "extension".to_string(),
+                            row_opt_json::<String>(&r, "extension").unwrap_or(Value::Null),
+                        ),
+                        ("base64".to_string(), Value::String(base64_encode(&bytes))),
+                    ]),
+                )))),
+                None => Ok(Json(ActionResult::error(
+                    "attachment has no binary content",
+                ))),
+            }
+        }
+        None => Ok(Json(ActionResult::error("attachment not found"))),
+    }
+}
+
+// o2server AttachmentAction.upload：multipart 上传，字节存 x_bbs_attachment.content BYTEA。
+#[allow(non_snake_case)]
+pub async fn u2_attachment_upload(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(subjectId): Path<String>,
+    multipart: axum::extract::Multipart,
+) -> ApiResult {
+    attachment_upload_store(&pool, &session.person_unique, &subjectId, multipart).await
+}
+
+#[allow(non_snake_case)]
+pub async fn u2_attachment_upload_callback(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path((subjectId, _callback)): Path<(String, String)>,
+    multipart: axum::extract::Multipart,
+) -> ApiResult {
+    attachment_upload_store(&pool, &session.person_unique, &subjectId, multipart).await
+}
+
+async fn attachment_upload_store(
+    pool: &Pool,
+    creator: &str,
+    subject_id: &str,
+    mut multipart: axum::extract::Multipart,
+) -> ApiResult {
+    let mut filename = String::from("upload.bin");
+    let mut bytes: Vec<u8> = Vec::new();
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|_| AppError::BadRequest("malformed multipart".to_string()))?
+    {
+        if let Some(fname) = field.file_name() {
+            if !fname.is_empty() {
+                filename = fname.to_string();
+            }
+        }
+        let data = field
+            .bytes()
+            .await
+            .map_err(|_| AppError::BadRequest("unreadable upload field".to_string()))?;
+        if !data.is_empty() {
+            bytes = data.to_vec();
+            break;
+        }
+    }
+    if bytes.is_empty() {
+        return Err(AppError::BadRequest("no file content provided".to_string()));
+    }
+    let id = Uuid::new_v4().to_string();
+    let extension = filename
+        .rsplit_once('.')
+        .map(|(_, e)| e.to_string())
+        .unwrap_or_default();
+    let length = bytes.len() as i64;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    client
+        .execute(
+            "INSERT INTO x_bbs_attachment \
+             (id, subject_id, name, extension, content, length, creator, create_time) \
+             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
+            &[
+                &id,
+                &subject_id,
+                &filename,
+                &extension,
+                &bytes,
+                &length,
+                &creator,
+            ],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(filename)),
+            (
+                "length".to_string(),
+                Value::Number(serde_json::Number::from(length)),
+            ),
+            ("uploaded".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
 // o2server PictureAction.pictureEncode：图片解码缩放后转 base64，需要图像引擎。
 unimplemented_endpoint!(
     picture_encode_501,
@@ -505,20 +624,24 @@ pub async fn u2_subject_accept_reply(
         U2Gate::NotFound => Ok(Json(ActionResult::error("subject not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
-            let affected = client
+            // 采纳 = topic.accept_reply_id 与 reply.accepted 的跨表不变量对，必须原子；
+            // 此前第二写 `let _ =` 吞错且两写非事务，回帖标记失败会留主题悬空指向。
+            let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+            let affected = tx
                 .execute(
                     "UPDATE x_bbs_topic SET accept_reply_id = $1 WHERE id = $2 AND deleted_at IS NULL",
                     &[&reply_id, &id],
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
-            let _ = client
-                .execute(
-                    "UPDATE x_bbs_reply SET accepted = true WHERE id = $1 AND deleted_at IS NULL",
-                    &[&reply_id],
-                )
-                .await;
+            tx.execute(
+                "UPDATE x_bbs_reply SET accepted = true WHERE id = $1 AND deleted_at IS NULL",
+                &[&reply_id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+            tx.commit().await.map_err(|_| AppError::Internal)?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
@@ -542,14 +665,42 @@ pub async fn u2_subject_unaccept_reply(
         U2Gate::NotFound => Ok(Json(ActionResult::error("subject not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
-            client
-                .execute(
-                    "UPDATE x_bbs_topic SET accept_reply_id = NULL WHERE id = $1 AND deleted_at IS NULL",
+            // 取消采纳须同步清回帖侧 accepted 标记：此前只清主题指针，
+            // 旧回帖残留 accepted=true，会与后续新采纳并存造成双采纳。
+            let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+            let prev: Option<String> = tx
+                .query_opt(
+                    "SELECT accept_reply_id FROM x_bbs_topic WHERE id = $1 AND deleted_at IS NULL",
                     &[&id],
                 )
                 .await
+                .map_err(|_| AppError::Internal)?
+                .and_then(|r| r.get::<_, Option<String>>("accept_reply_id"));
+            if prev.is_none() {
+                tx.commit().await.map_err(|_| AppError::Internal)?;
+                return Ok(Json(ActionResult::success(Value::Object(
+                    serde_json::Map::from_iter([
+                        ("id".to_string(), Value::String(id)),
+                        ("acceptReplyId".to_string(), Value::Null),
+                    ]),
+                ))));
+            }
+            tx.execute(
+                "UPDATE x_bbs_topic SET accept_reply_id = NULL WHERE id = $1 AND deleted_at IS NULL",
+                &[&id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+            if let Some(prev_id) = prev {
+                tx.execute(
+                    "UPDATE x_bbs_reply SET accepted = false WHERE id = $1",
+                    &[&prev_id],
+                )
+                .await
                 .map_err(|_| AppError::Internal)?;
+            }
+            tx.commit().await.map_err(|_| AppError::Internal)?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
@@ -1040,21 +1191,22 @@ pub async fn u2_user_reply_accept(
         U2Gate::NotFound => Ok(Json(ActionResult::error("subject not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
-            client
-                .execute(
-                    "UPDATE x_bbs_reply SET accepted = true WHERE id = $1 AND deleted_at IS NULL",
-                    &[&reply_id],
-                )
-                .await
-                .map_err(|_| AppError::Internal)?;
-            client
-                .execute(
-                    "UPDATE x_bbs_topic SET accept_reply_id = $1 WHERE id = $2 AND deleted_at IS NULL",
-                    &[&reply_id, &subject_id],
-                )
-                .await
-                .map_err(|_| AppError::Internal)?;
+            // 同 u2_subject_accept_reply：跨表不变量对原子化。
+            let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+            tx.execute(
+                "UPDATE x_bbs_reply SET accepted = true WHERE id = $1 AND deleted_at IS NULL",
+                &[&reply_id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+            tx.execute(
+                "UPDATE x_bbs_topic SET accept_reply_id = $1 WHERE id = $2 AND deleted_at IS NULL",
+                &[&reply_id, &subject_id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+            tx.commit().await.map_err(|_| AppError::Internal)?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("subjectId".to_string(), Value::String(subject_id)),

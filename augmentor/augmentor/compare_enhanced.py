@@ -230,46 +230,67 @@ class EnhancedComparator:
             all_fields.update(item.keys())
         for item in items_b:
             all_fields.update(item.keys())
-        
+
+        # 一次 O(A+B) 预处理，替代原先「每个字段各扫一遍 A、B」的 O(F×(A+B))：
+        field_count_a = {}
+        field_count_b = {}
+        for item in items_a:
+            for k in item.keys():
+                field_count_a[k] = field_count_a.get(k, 0) + 1
+        for item in items_b:
+            for k in item.keys():
+                field_count_b[k] = field_count_b.get(k, 0) + 1
+
+        # 原逻辑内层对某 (instruction, field) 是「扫 items_b，取第一个**同时含该
+        # instruction 与 field** 的 item_b」，不是取该 instruction 的首条。这里按
+        # 「每条 item_b 只归到它自己的 instruction，且逐字段记 first-item-containing」
+        # 建两层索引，O(B×F) 一次建好，替代 O(F×A×B) 匹配，首条语义一一对应保留。
+        first_b_by_field = {}  # instruction -> {field: 首个含该 field 的 item_b}
+        for item_b in items_b:
+            instruction = item_b.get("instruction")
+            per_field = first_b_by_field.setdefault(instruction, {})
+            for k in item_b.keys():
+                if k not in per_field:
+                    per_field[k] = item_b
+
         field_comparisons = {}
-        
+
         for field in all_fields:
             # 计算字段出现次数
-            count_a = sum(1 for item in items_a if field in item)
-            count_b = sum(1 for item in items_b if field in item)
-            
+            count_a = field_count_a.get(field, 0)
+            count_b = field_count_b.get(field, 0)
+
             in_both = min(count_a, count_b)
             in_a_only = count_a - in_both
             in_b_only = count_b - in_both
-            
+
             # 检查类型不匹配
             type_mismatches = 0
             value_differences = []
-            
+
             # 比较值
             for i, item_a in enumerate(items_a):
                 if field in item_a:
                     value_a = item_a[field]
                     type_a = type(value_a).__name__
-                    
-                    # 在数据集B中查找相同指令
+
+                    # 在数据集B中查找相同指令（首个同时含该 instruction 与 field 的 item_b）
                     instruction = item_a.get("instruction", "")
-                    for item_b in items_b:
-                        if item_b.get("instruction") == instruction and field in item_b:
-                            value_b = item_b[field]
-                            type_b = type(value_b).__name__
-                            
-                            if type_a != type_b:
-                                type_mismatches += 1
-                            
-                            if value_a != value_b:
-                                value_differences.append({
-                                    "instruction": instruction,
-                                    "value_a": str(value_a)[:100],
-                                    "value_b": str(value_b)[:100]
-                                })
-                            break
-            
+                    item_b = first_b_by_field.get(instruction, {}).get(field)
+                    if item_b is not None:
+                        value_b = item_b[field]
+                        type_b = type(value_b).__name__
+
+                        if type_a != type_b:
+                            type_mismatches += 1
+
+                        if value_a != value_b:
+                            value_differences.append({
+                                "instruction": instruction,
+                                "value_a": str(value_a)[:100],
+                                "value_b": str(value_b)[:100]
+                            })
+
             field_comparisons[field] = FieldComparison(
                 field_name=field,
                 in_a_only=in_a_only,
@@ -278,7 +299,7 @@ class EnhancedComparator:
                 type_mismatches=type_mismatches,
                 value_differences=value_differences
             )
-        
+
         return field_comparisons
     
     def _generate_summary(self, metrics: ComparisonMetrics,

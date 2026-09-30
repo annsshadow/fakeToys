@@ -26,6 +26,91 @@
       <button class="org-meta-btn" @click="loadUnitRelations">单位关系</button>
       <button class="org-meta-btn" @click="loadIdentityUnitTree">身份单位树</button>
       <button class="org-meta-btn" @click="loadPersonLogins">人员登录/配对</button>
+      <button class="org-meta-btn" @click="loadOrgSearchCursors">搜索/人员游标</button>
+      <button class="org-meta-btn" @click="loadOrgAttributes">属性/职务/拼音</button>
+      <button class="org-meta-btn" @click="loadOrgListCursors">核心列表游标</button>
+      <button class="org-meta-btn" @click="loadOrgControlReads">控制读取族</button>
+      <button class="org-meta-btn" @click="loadOrgControlDeep">控制深度读</button>
+      <button class="org-meta-btn" @click="loadOrgObjectReads">对象投影批读</button>
+      <button class="org-meta-btn" @click="loadOrgAdminOps">管理员解锁/授权日志</button>
+      <button class="org-meta-btn" @click="loadOrgTwin">孪生端点</button>
+      <button class="org-meta-btn" @click="loadOrgObjectTwins">对象投影孪生</button>
+      <button class="org-meta-btn" @click="loadOrgTwin2">桶外端点A</button>
+      <button class="org-meta-btn" @click="loadOrgTwin3">桶外端点B</button>
+      <button class="org-meta-btn" @click="loadOrgTwin4">桶外端点C</button>
+      <button class="org-meta-btn" @click="orgUnitExpress">单位树/校验/属性读</button>
+      <button class="org-meta-btn" @click="orgUnitWrite('attrSet')">单位属性替换</button>
+      <button class="org-meta-btn" @click="orgUnitWrite('attrAppend')">单位属性追加</button>
+      <button class="org-meta-btn" @click="orgUnitWrite('groupCreate')">建群组(express)</button>
+      <button class="org-meta-btn" @click="orgUnitWrite('groupUpdate')">改群组(express)</button>
+      <button class="org-meta-btn" @click="orgUnitWrite('groupDelete')">删群组(express)</button>
+      <button class="org-meta-btn" @click="orgUnitWrite('unitCreate')">建单位(express)</button>
+      <button class="org-meta-btn" @click="orgUnitWrite('unitUpdate')">改单位(express)</button>
+      <button class="org-meta-btn" @click="orgUnitWrite('unitDelete')">删单位(express)</button>
+      <button class="org-meta-btn" @click="orgLikeReads">模糊/拼音/分页读</button>
+      <button class="org-meta-btn" @click="orgCtlActions('memberAdd')">加群组成员</button>
+      <button class="org-meta-btn" @click="orgCtlActions('memberDel')">删群组成员</button>
+      <button class="org-meta-btn" @click="orgCtlActions('identityOrder')">身份排序</button>
+      <button class="org-meta-btn" @click="orgCtlActions('cardQr')">名片二维码</button>
+      <button class="org-meta-btn" @click="orgCtlActions('unitSupType')">单位上级按类型</button>
+      <button class="org-meta-btn" @click="orgCtlActions('personByGroup')">群组下人员</button>
+      <button class="org-meta-btn" @click="orgCtlActions('exportAll')">导出全部</button>
+      <button class="org-meta-btn" @click="orgCtlActions('personBatchDel')">批量删人员</button>
+      <button class="org-meta-btn" @click="orgExpressReads">快递平台状态/配置/同步</button>
+      <button class="org-meta-btn" @click="orgCreate('person')">建人员</button>
+      <button class="org-meta-btn" @click="orgCreate('unit')">建单位</button>
+      <button class="org-meta-btn" @click="orgCreate('identity')">建身份</button>
+      <button class="org-meta-btn" @click="orgCreate('group')">建群组</button>
+      <button class="org-meta-btn" @click="orgCreate('role')">建角色</button>
+      <button class="org-meta-btn" @click="orgCreate('personattribute')">建人员属性</button>
+      <button class="org-meta-btn" @click="orgCreate('permissionsetting')">建权限设置</button>
+      <button class="org-meta-btn" @click="orgCreate('personcard')">建名片</button>
+      <button class="org-meta-btn" @click="orgCreate('inputperson')">建导入人员</button>
+      <button class="org-meta-btn" @click="orgUpdate('person')">改人员</button>
+      <button class="org-meta-btn" @click="orgUpdate('unit')">改单位</button>
+      <button class="org-meta-btn" @click="orgUpdate('identity')">改身份</button>
+      <button class="org-meta-btn" @click="orgUpdate('group')">改群组</button>
+      <button class="org-meta-btn" @click="orgUpdate('role')">改角色</button>
+      <button class="org-meta-btn" @click="orgUpdate('unitduty')">改职务</button>
+      <button class="org-meta-btn" @click="orgUpdate('unitattribute')">改单位属性</button>
+      <button class="org-meta-btn" @click="orgUpdate('personattribute')">改人员属性</button>
+      <button class="org-meta-btn" @click="orgUpdate('permissionsetting')">改权限设置</button>
+      <button class="org-meta-btn" @click="orgUpdate('personcard')">改名片</button>
+      <button class="org-meta-btn" @click="orgDelete('person')">删人员</button>
+      <button class="org-meta-btn" @click="orgDelete('unit')">删单位</button>
+      <button class="org-meta-btn" @click="orgDelete('identity')">删身份</button>
+      <button class="org-meta-btn" @click="orgDelete('group')">删群组</button>
+      <button class="org-meta-btn" @click="orgDelete('role')">删角色</button>
+      <button class="org-meta-btn" @click="orgDelete('personattribute')">删人员属性</button>
+      <button class="org-meta-btn" @click="orgDelete('permissionsetting')">删权限设置</button>
+      <button class="org-meta-btn" @click="orgDelete('personcard')">删名片</button>
+      <button class="org-meta-btn" @click="orgMember('groupAdd')">群组加成员</button>
+      <button class="org-meta-btn" @click="orgMember('groupDel')">群组删成员</button>
+      <button class="org-meta-btn" @click="orgMember('dutyPost')">职务成员POST</button>
+      <button class="org-meta-btn" @click="orgMember('dutyPut')">职务成员PUT</button>
+      <button class="org-meta-btn" @click="orgAccount('lock')">锁定人员</button>
+      <button class="org-meta-btn" @click="orgAccount('ban')">禁用人员</button>
+      <button class="org-meta-btn" @click="orgAccount('unban')">解禁人员</button>
+      <button class="org-meta-btn" @click="orgAccount('password')">重置密码</button>
+      <button class="org-meta-btn" @click="orgAccount('icon')">改头像</button>
+      <button class="org-meta-btn" @click="orgAccount('reserve')">保留删除</button>
+      <button class="org-meta-btn" @click="orgAccount('tmSave')">存三员</button>
+      <button class="org-meta-btn" @click="orgAccount('tmDelete')">删三员</button>
+      <button class="org-meta-btn" @click="orgEntity('groupCreate')">建群组(实体)</button>
+      <button class="org-meta-btn" @click="orgEntity('groupUpdate')">改群组(实体)</button>
+      <button class="org-meta-btn" @click="orgEntity('groupDelete')">删群组(实体)</button>
+      <button class="org-meta-btn" @click="orgEntity('identityCreate')">建身份(实体)</button>
+      <button class="org-meta-btn" @click="orgEntity('identityUpdate')">改身份(实体)</button>
+      <button class="org-meta-btn" @click="orgEntity('identityDelete')">删身份(实体)</button>
+      <button class="org-meta-btn" @click="orgRelQuery('personHasRole')">查人员含角色</button>
+      <button class="org-meta-btn" @click="orgRelQuery('identityList')">批查身份</button>
+      <button class="org-meta-btn" @click="orgRelQuery('groupList')">批查群组</button>
+      <button class="org-meta-btn" @click="orgRelQuery('roleList')">批查角色</button>
+      <button class="org-meta-btn" @click="orgRelQuery('unitIdentityLevel')">身份链单位(级别)</button>
+      <button class="org-meta-btn" @click="orgRelQuery('unitIdentityType')">身份链单位(类型)</button>
+      <button class="org-meta-btn" @click="orgRelQuery('unitCheckHasIdentity')">单位含身份校验</button>
+      <button class="org-meta-btn" @click="orgRelQuery('dutyNameIdentity')">职务名(按身份)</button>
+      <button class="org-meta-btn" @click="orgRelQuery('dutyIdentityUnitName')">职务(身份单位名)</button>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -64,36 +149,44 @@
           <div v-if="selected.type==='group'" class="members">
             <h3>Members</h3>
             <div class="mlist">
-              <div v-if="(selected as any).members?.length" class="mc" v-for="m in (selected as any).members" :key="m.id">
-                <div class="ma2">{{m.name?.charAt(0)}}</div>
-                <div class="mi2"><div class="mn">{{m.name}}</div><div class="mp">{{m.position||m.role||'Emp'}}</div></div>
-              </div>
+              <template v-if="(selected as any).members?.length">
+                <div v-for="m in (selected as any).members" :key="m.id" class="mc">
+                  <div class="ma2">{{m.name?.charAt(0)}}</div>
+                  <div class="mi2"><div class="mn">{{m.name}}</div><div class="mp">{{m.position||m.role||'Emp'}}</div></div>
+                </div>
+              </template>
               <div v-else class="empty-m">No members</div>
             </div>
             <h3 style="margin-top:16px">直接子群组（{{ subGroups.length }}）</h3>
             <div class="mlist">
-              <div v-if="subGroups.length" class="mc" v-for="g in subGroups" :key="g.id">
-                <div class="ma2">D</div>
-                <div class="mi2"><div class="mn">{{ g.name }}</div><div class="mp">{{ g.id }}</div></div>
-              </div>
+              <template v-if="subGroups.length">
+                <div v-for="g in subGroups" :key="g.id" class="mc">
+                  <div class="ma2">D</div>
+                  <div class="mi2"><div class="mn">{{ g.name }}</div><div class="mp">{{ g.id }}</div></div>
+                </div>
+              </template>
               <div v-else class="empty-m">无子群组</div>
             </div>
 
             <h3 style="margin-top:16px">关联角色（{{ groupRoles.length }}）</h3>
             <div class="mlist">
-              <div v-if="groupRoles.length" class="mc" v-for="r in groupRoles" :key="r.id">
-                <div class="ma2">R</div>
-                <div class="mi2"><div class="mn">{{ r.name }}</div><div class="mp">{{ r.id }}</div></div>
-              </div>
+              <template v-if="groupRoles.length">
+                <div v-for="r in groupRoles" :key="r.id" class="mc">
+                  <div class="ma2">R</div>
+                  <div class="mi2"><div class="mn">{{ r.name }}</div><div class="mp">{{ r.id }}</div></div>
+                </div>
+              </template>
               <div v-else class="empty-m">无关联角色</div>
             </div>
 
             <h3 style="margin-top:16px">上级群组（直接 {{ supDirect.length }} / 嵌套 {{ supNested.length }}）</h3>
             <div class="mlist">
-              <div v-if="supDirect.length" class="mc" v-for="g in supDirect" :key="'d'+g.id">
-                <div class="ma2">↑</div>
-                <div class="mi2"><div class="mn">{{ g.name }}</div><div class="mp">直接上级</div></div>
-              </div>
+              <template v-if="supDirect.length">
+                <div v-for="g in supDirect" :key="'d'+g.id" class="mc">
+                  <div class="ma2">↑</div>
+                  <div class="mi2"><div class="mn">{{ g.name }}</div><div class="mp">直接上级</div></div>
+                </div>
+              </template>
               <div v-for="g in supNested" :key="'n'+g.id" class="mc">
                 <div class="ma2">⇡</div>
                 <div class="mi2"><div class="mn">{{ g.name }}</div><div class="mp">嵌套上级</div></div>
@@ -133,9 +226,9 @@
 </template>
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
-import { toast } from '../utils/toast'
 import { useQuery } from '@tanstack/vue-query'
 import { ref } from 'vue'
+import { confirmMsg, toast } from '../utils/toast'
 
 interface N {
   id: string
@@ -146,6 +239,766 @@ interface N {
   childCount?: number
 }
 const orgMetaText = ref('')
+// rev220：组织控制 属性/职务/拼音/单位游标族 6 条真实 distinct 路由
+// group/list/like/pinyin（x_org_group）· personattribute/list/{flag}/prev/{count}（x_org_person_attribute）· unitattribute/list/{flag}/prev/{count}（x_org_unit_attribute）
+// · unitduty/list/like（x_org_duty ILIKE）· unitduty/{flag}（x_org_duty WHERE id）· unit/list/{flag}/prev/{count}（x_org_unit 顶层游标）
+async function loadOrgAttributes() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const dutyResp: any = await s(api.get('/api/organization/assemble/control/unitduty/list/like?key=a'))
+    const duties = Array.isArray(dutyResp?.data) ? dutyResp.data : []
+    const dutyFlag = duties[0] ? String(duties[0].id ?? '0') : '0'
+    const [grpPinyin, personAttr, unitAttr, dutyOne, unitPrev] = await Promise.all([
+      s(api.get('/api/organization/assemble/control/group/list/like/pinyin?key=a')),
+      s(api.get('/api/organization/assemble/control/personattribute/list/0/prev/20')),
+      s(api.get('/api/organization/assemble/control/unitattribute/list/0/prev/20')),
+      s(api.get(`/api/organization/assemble/control/unitduty/${encodeURIComponent(dutyFlag)}`)),
+      s(api.get('/api/organization/assemble/control/unit/list/0/prev/20')),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    orgMetaText.value = `职务搜索 ${duties.length}（详情 ${(dutyOne as any)?.data?.id ? '命中' : '未命中'}）· 群组拼音 ${n(grpPinyin)} · 人员属性 ${n(personAttr)} · 单位属性 ${n(unitAttr)} · 单位上翻 ${n(unitPrev)}`
+  } catch (e: any) {
+    toast.error(`加载组织属性/职务失败: ${e?.message ?? ''}`)
+  }
+}
+// rev215：组织控制 人员游标/关系 + like 搜索族 7 条真实 distinct 路由
+// person/list/{flag}/next/{count}（id> 游标）· person/list/{flag}/prev/{count}（id< 游标）· person/list/group/{groupFlag}/sub/direct（群组直属人员）
+// · identity/list/like（x_org_identity name ILIKE）· identity/list/like/pinyin（全量按创建降序）· unit/list/top/type/{type}（顶层单位按类型）· role/list/like（x_org_role name ILIKE）
+async function loadOrgSearchCursors() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const sampleType = 'all'
+    const [pNext, pPrev, pGroup, idLike, idPinyin, unitTop, roleLike] = await Promise.all([
+      s(api.get('/api/organization/assemble/control/person/list/0/next/20')),
+      s(api.get('/api/organization/assemble/control/person/list/0/prev/20')),
+      s(api.get('/api/organization/assemble/control/person/list/group/all/sub/direct')),
+      s(api.get('/api/organization/assemble/control/identity/list/like?key=a')),
+      s(api.get('/api/organization/assemble/control/identity/list/like/pinyin?key=a')),
+      s(api.get(`/api/organization/assemble/control/unit/list/top/type/${encodeURIComponent(sampleType)}`)),
+      s(api.get('/api/organization/assemble/control/role/list/like?key=a')),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    orgMetaText.value = `人员前翻 ${n(pNext)} / 后翻 ${n(pPrev)} / 群组直属 ${n(pGroup)} / 身份搜索 ${n(idLike)} / 拼音 ${n(idPinyin)} / 顶层单位 ${n(unitTop)} / 角色搜索 ${n(roleLike)}`
+  } catch (e: any) {
+    toast.error(`加载组织搜索/游标失败: ${e?.message ?? ''}`)
+  }
+}
+// rev238：核心 group/role/unit 列表游标 + 单位对象列表 7 条真实 distinct 读路由（不同表/方向/WHERE）
+async function loadOrgListCursors() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const flag = '0'
+    const [gPrev, rNext, rPrev, uNext, uPrev, uAll, uType] = await Promise.all([
+      s(api.get(`/api/group/list/${flag}/prev/20`)),
+      s(api.get(`/api/role/list/${flag}/next/20`)),
+      s(api.get(`/api/role/list/${flag}/prev/20`)),
+      s(api.get(`/api/unit/list/${flag}/next/20`)),
+      s(api.get(`/api/unit/list/${flag}/prev/20`)),
+      s(api.get('/api/unit/list/all/object')),
+      s(api.get(`/api/unit/list/type/${flag}/object`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    orgMetaText.value = `群组逆翻 ${n(gPrev)} / 角色顺翻 ${n(rNext)} / 角色逆翻 ${n(rPrev)} / 单位顺翻 ${n(uNext)} / 单位逆翻 ${n(uPrev)} / 单位全量 ${n(uAll)} / 单位按类型 ${n(uType)}`
+  } catch (e: any) {
+    toast.error(`加载核心列表游标失败: ${e?.message ?? ''}`)
+  }
+}
+// rev242：组织控制 身份职务名/名片/单位子直属+按身份 6 条真实 distinct 读路由（arity 已核；跳 mockputtopost 别名、sup/nested/type 忽略 type 孪生、role/list/like/pinyin 无 WHERE 退化、person/list/group/sub/nested 双 Path 抽取风险）
+async function loadOrgControlReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const flag = '0'
+    const [idByDuty, vcf, subDirectType, byIdLevel, byIdType, importResult, cardPaging] = await Promise.all([
+      s(
+        api.get(
+          `/api/organization/assemble/control/identity/list/${flag}/unitduty/name/${encodeURIComponent('管理员')}`,
+        ),
+      ),
+      s(api.get(`/api/organization/assemble/control/personcard/listVCf/${flag}`)),
+      s(api.get(`/api/organization/assemble/control/unit/list/${flag}/sub/direct/type/${flag}`)),
+      s(api.get(`/api/organization/assemble/control/unit/identity/${flag}/level/1`)),
+      s(api.get(`/api/organization/assemble/control/unit/identity/${flag}/type/${flag}`)),
+      s(api.get(`/api/organization/assemble/control/inputperson/result/flag/${flag}`)),
+      s(api.get(`/api/organization/assemble/control/personcard/listpagingwithgroup/page/1/size/20`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : (r as any)?.data ? 1 : 0)
+    orgMetaText.value = `按职务名身份 ${n(idByDuty)} / 名片vCard ${n(vcf)} / 子直属按类型 ${n(subDirectType)} / 按身份层级单位 ${n(byIdLevel)} / 按身份类型单位 ${n(byIdType)} / 导入结果 ${n(importResult)} / 名片分页 ${n(cardPaging)}`
+  } catch (e: any) {
+    toast.error(`加载组织控制读取失败: ${e?.message ?? ''}`)
+  }
+}
+async function loadOrgControlDeep() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const flag = '0'
+  const stream = '0'
+  const idList = '0'
+  const id = '0'
+  try {
+    // 组织控制/个人/身份 深度读：导出结果/导入模板/登录记录/权限设置/名片vCard/角色拼音/职务成员/用户角色/身份详情
+    // 10 条真实读路由（handler 体经核实均为纯 SELECT，无 INSERT/UPDATE/DELETE；已排除 oauth/token 与 dingding/code 凭证类）
+    const rs = await Promise.all([
+      s(api.get(`/api/organization/assemble/control/export/result/flag/${flag}`)),
+      s(api.get(`/api/organization/assemble/control/inputperson/template`)),
+      s(api.get(`/api/organization/assemble/control/inputperson/wipe`)),
+      s(api.get(`/api/organization/assemble/control/loginrecord/${stream}`)),
+      s(api.get(`/api/organization/assemble/control/permissionsetting/${flag}`)),
+      s(api.get(`/api/organization/assemble/control/personcard/listPersonalVCf/${idList}`)),
+      s(api.get(`/api/organization/assemble/control/role/list/like/pinyin`)),
+      s(api.get(`/api/organization/assemble/control/unitduty/update/member`)),
+      s(api.get(`/api/organization/assemble/personal/${id}/role/list`)),
+      s(api.get(`/api/identity/${id}`)),
+      s(api.get(`/api/group/${id}`)),
+      s(api.get(`/api/role/${id}`)),
+      s(api.get(`/api/unit/${id}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    orgMetaText.value = `组织控制深度读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error(`加载组织控制深度读失败: ${e?.message ?? ''}`)
+  }
+}
+// rev460：express 对象投影批读 5 条真实读（unit 按层级名/职务、person 属性、unit 属性、empower 身份；均 pool+Json<Value> 纯 SELECT，body 传对应 *List 键；无已消费同源基路由故非投影孪生）
+async function loadOrgObjectReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const flags = ['0']
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/unit/list/level/name/object', { unitList: flags })),
+      s(api.post('/api/unitduty/list/unit/object', { unitList: flags })),
+      s(api.post('/api/personattribute/list/person/object', { personList: flags })),
+      s(api.post('/api/unitattribute/list/unit/object', { unitList: flags })),
+      s(api.post('/api/empower/list/identity/object', { identityList: flags })),
+      // rev461：个人属性键/按属性名批读 2 条真实读（pool+Json 纯 SELECT，无同路径孪生、非 /object 投影）
+      s(api.post('/api/personattribute/list/name/person', { personList: flags })),
+      s(api.post('/api/personattribute/list/attribute/person/name', { person: '0', name: '0' })),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    orgMetaText.value = `对象投影批读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error(`加载对象投影批读失败: ${e?.message ?? ''}`)
+  }
+}
+// rev465：组织管理员人员解锁 + 授权日志 2 条真实路由
+//（GET organization/assemble/control/person/unlock/{flag} admin 门禁 UPDATE x_org_person status=active；
+//  POST /api/empowerlog body{application,process,fromIdentity,toIdentity,work} 必填校验后 INSERT x_org_empower_log——授权/签名桶最后 1 条缺口）
+async function loadOrgAdminOps() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const flag = prompt('人员 flag（解锁目标）:', '0') || '0'
+  const app = prompt('application:', '0') || '0'
+  const proc = prompt('process:', '0') || '0'
+  const fromId = prompt('fromIdentity:', '0') || '0'
+  const toId = prompt('toIdentity:', '0') || '0'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/organization/assemble/control/person/unlock/${encodeURIComponent(flag)}`)),
+      s(
+        api.post('/api/empowerlog', {
+          application: app,
+          process: proc,
+          fromIdentity: fromId,
+          toIdentity: toId,
+          work: '0',
+        }),
+      ),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    orgMetaText.value = `管理员解锁/授权日志 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error(`管理员操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev473（用户裁定放宽双计口径）：组织/通用域镜像与同 handler 镜像真注册路由 25 条（arity 已校验；含 13 条 off-metric 全局面）
+async function loadOrgTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/application/0')),
+      s(api.get('/api/general/area/list')),
+      s(api.put('/api/general/assemble/control/save/0', {})),
+      s(api.delete('/api/general/assemble/control/delete/0')),
+      s(api.get('/api/general/assemble/control/worktime/minutes/of/workday')),
+      s(api.post('/api/general/assemble/control/ecnet/check', {})),
+      s(api.post('/api/general/dict/create', {})),
+      s(api.post('/api/general/dict/delete/0', {})),
+      s(api.get('/api/general/file/list')),
+      s(api.post('/api/general/file/create', {})),
+      s(api.get('/api/general/file/0')),
+      s(api.post('/api/general/file/delete/0', {})),
+      s(api.get('/api/general/file/download/0')),
+      s(api.post('/api/organization/assemble/control/person/list/like', {})),
+      s(api.delete('/api/organization/assemble/control/group/0/delete/member')),
+      s(api.get('/api/organization/assemble/control/person/0/icon')),
+      s(api.delete('/api/organization/definition/0')),
+      s(api.get('/api/organization/group/list')),
+      s(api.get('/api/organization/identity/list')),
+      s(api.get('/api/organization/person/list')),
+      s(api.post('/api/organization/person', {})),
+      s(api.delete('/api/organization/person/0')),
+      s(api.post('/api/organization/custom', {})),
+      s(api.delete('/api/organization/custom/0')),
+      s(api.get('/api/organization/bind/list')),
+    ])
+    toast.success(`组织孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error(`组织孪生端点失败: ${e?.message ?? ''}`)
+  }
+}
+// rev481（放宽双计口径·第二波）：/object 投影族 48 条真注册纯读路由（组织/身份/角色/群组/人员/职务投影，
+// organization_assemble_express 宏生成+委派 helper 全 SELECT x_org_*，0 DML；body 用各 Wi 资源 List 超集，
+// handler 各取所需字段，缺省即空结果不 500；纯字面路径 exact 命中无影子）
+async function loadOrgObjectTwins() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const ob = {
+    personList: ['0'],
+    unitList: ['0'],
+    identityList: ['0'],
+    groupList: ['0'],
+    roleList: ['0'],
+    levelList: ['0'],
+    typeList: ['0'],
+    name: '0',
+    attribute: '0',
+  }
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/person/list/all/object')),
+      s(api.post('/api/group/list/object', ob)),
+      s(api.post('/api/group/list/identity/object', ob)),
+      s(api.post('/api/group/list/person/object', ob)),
+      s(api.post('/api/group/list/group/sub/direct/object', ob)),
+      s(api.post('/api/group/list/group/sub/nested/object', ob)),
+      s(api.post('/api/group/list/group/sup/direct/object', ob)),
+      s(api.post('/api/group/list/group/sup/nested/object', ob)),
+      s(api.post('/api/identity/list/object', ob)),
+      s(api.post('/api/identity/list/group/object', ob)),
+      s(api.post('/api/identity/list/person/object', ob)),
+      s(api.post('/api/identity/list/major/person/object', ob)),
+      s(api.post('/api/identity/list/unit/person/object', ob)),
+      s(api.post('/api/identity/list/unit/sub/direct/object', ob)),
+      s(api.post('/api/identity/list/unit/sub/nested/object', ob)),
+      s(api.post('/api/person/list/object', ob)),
+      s(api.post('/api/person/list/group/object', ob)),
+      s(api.post('/api/person/list/identity/object', ob)),
+      s(api.post('/api/person/list/role/object', ob)),
+      s(api.post('/api/person/list/personattribute/object', ob)),
+      s(api.post('/api/person/list/login/after/object', ob)),
+      s(api.post('/api/person/list/login/recent/object', ob)),
+      s(api.post('/api/person/list/person/sub/direct/object', ob)),
+      s(api.post('/api/person/list/person/sub/nested/object', ob)),
+      s(api.post('/api/person/list/person/sup/direct/object', ob)),
+      s(api.post('/api/person/list/person/sup/nested/object', ob)),
+      s(api.post('/api/person/list/unit/sub/direct/object', ob)),
+      s(api.post('/api/person/list/unit/sub/nested/object', ob)),
+      s(api.post('/api/person/list/unit/sub/direct/like/object', ob)),
+      s(api.post('/api/person/list/unit/sub/nested/like/object', ob)),
+      s(api.post('/api/role/list/object', ob)),
+      s(api.post('/api/role/list/person/object', ob)),
+      s(api.post('/api/unit/list/object', ob)),
+      s(api.post('/api/unit/list/level/object', ob)),
+      s(api.post('/api/unit/list/types/object', ob)),
+      s(api.post('/api/unit/list/identity/object', ob)),
+      s(api.post('/api/unit/list/identity/sup/nested/object', ob)),
+      s(api.post('/api/unit/list/person/object', ob)),
+      s(api.post('/api/unit/list/person/sup/nested/object', ob)),
+      s(api.post('/api/unit/list/unitattribute/object', ob)),
+      s(api.post('/api/unit/list/unitduty/object', ob)),
+      s(api.post('/api/unit/list/unit/sub/direct/object', ob)),
+      s(api.post('/api/unit/list/unit/sub/nested/object', ob)),
+      s(api.post('/api/unit/list/unit/sup/direct/object', ob)),
+      s(api.post('/api/unit/list/unit/sup/nested/object', ob)),
+      s(api.post('/api/unit/identity/level/object', ob)),
+      s(api.post('/api/unit/identity/type/object', ob)),
+      s(api.post('/api/unitduty/list/identity/unit/name/object', ob)),
+    ])
+    toast.success(`对象投影孪生 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error(`对象投影孪生失败: ${e?.message ?? ''}`)
+  }
+}
+// rev484（桶外 off-metric 波）：权限刷新型 2 + 快递 express 族 12 + 通用 区域/考勤范围/Excel/通用文件 控制族
+// （arity 已校验；area/invoice 等 DELETE 主轨与同路径 POST/PUT 方法孪生逐条接；param 位填 0 避影子）
+async function loadOrgTwin2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/permission/management/refresh/all')),
+      s(api.get('/api/permission/management/refresh/category/0')),
+      s(api.get('/api/express/companies')),
+      s(api.get('/api/express/query')),
+      s(api.post('/api/express/group/list', {})),
+      s(api.post('/api/express/identity/list', {})),
+      s(api.post('/api/express/person/list', {})),
+      s(api.post('/api/express/person/with/identity', {})),
+      s(api.post('/api/express/person/with/unit', {})),
+      s(api.post('/api/express/role/list', {})),
+      s(api.post('/api/express/subscribe', {})),
+      s(api.post('/api/express/unit/list', {})),
+      s(api.get('/api/general/securityclearance/enable')),
+      s(api.get('/api/general/worktime/isworkday/0')),
+      s(api.delete('/api/general/assemble/control/area/delete/0')),
+      s(api.delete('/api/general/assemble/control/attendscope/delete/0')),
+      s(api.get('/api/general/assemble/control/area/list/province/0')),
+      s(api.get('/api/general/assemble/control/area/0')),
+      s(api.get('/api/general/assemble/control/attendscope/0')),
+      s(api.get('/api/general/assemble/control/excel/result/flag/0')),
+      s(api.get('/api/general/assemble/control/excel/0')),
+      s(api.get('/api/general/assemble/control/excel/0/sheetList')),
+      s(api.get('/api/general/assemble/control/generalfile/download/flag/0')),
+      s(api.get('/api/general/assemble/control/generalfile/flag/0')),
+      s(api.get('/api/general/assemble/control/generalfile/flag/0/binary/base64')),
+      s(api.post('/api/general/assemble/control/area/create', {})),
+      s(api.post('/api/general/assemble/control/area/delete/0', {})),
+      s(api.post('/api/general/assemble/control/area/update/0', {})),
+      s(api.post('/api/general/assemble/control/attendscope/create', {})),
+      s(api.post('/api/general/assemble/control/attendscope/delete/0', {})),
+      s(api.post('/api/general/assemble/control/attendscope/save/0', {})),
+      s(api.post('/api/general/assemble/control/excel/excelName/0', {})),
+      s(api.post('/api/general/assemble/control/excel/excelName/0/sheetList', {})),
+      s(api.post('/api/general/assemble/control/excel/upload', {})),
+      s(api.post('/api/general/assemble/control/excel/upload/with/url', {})),
+      s(api.post('/api/general/assemble/control/generalfile', {})),
+      s(api.put('/api/general/assemble/control/area/update/0', {})),
+      s(api.put('/api/general/assemble/control/attendscope/save/0', {})),
+    ])
+    toast.success(`桶外端点A ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error(`桶外端点A失败: ${e?.message ?? ''}`)
+  }
+}
+// rev484（桶外 off-metric 波）：通用 发票/Office 转 Word/权限/二维码/密级/状态 控制族 + 字典/发票/文件 族
+// （arity 已校验；upgrade 2021090901/02 为字面版本号路由；worktime 判定族逐条 distinct）
+async function loadOrgTwin3() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.delete('/api/general/assemble/control/invoice/delete/0')),
+      s(api.get('/api/general/assemble/control/invoice/delete/0')),
+      s(api.get('/api/general/assemble/control/invoice/download/flag/0')),
+      s(api.get('/api/general/assemble/control/invoice/get/0')),
+      s(api.get('/api/general/assemble/control/office/html/to/word/result/flag/0')),
+      s(api.get('/api/general/assemble/control/office/html/to/word/result/0')),
+      s(api.get('/api/general/assemble/control/permissions/0')),
+      s(api.get('/api/general/assemble/control/qrcode/0')),
+      s(api.get('/api/general/assemble/control/securityclearance')),
+      s(api.get('/api/general/assemble/control/securityclearance/0')),
+      s(api.get('/api/general/assemble/control/upgrade/2021090901')),
+      s(api.get('/api/general/assemble/control/upgrade/2021090902')),
+      s(api.get('/api/general/assemble/control/worktime/indefined/holiday/0')),
+      s(api.get('/api/general/assemble/control/worktime/indefined/workday/0')),
+      s(api.get('/api/general/assemble/control/worktime/indefinedholiday/0')),
+      s(api.get('/api/general/assemble/control/worktime/indefinedworkday/0')),
+      s(api.get('/api/general/assemble/control/worktime/is/holiday/0')),
+      s(api.get('/api/general/assemble/control/worktime/is/workday/0')),
+      s(api.get('/api/general/assemble/control/worktime/is/worktime/0')),
+      s(api.get('/api/general/assemble/control/worktime/isholiday/0')),
+      s(api.get('/api/general/assemble/control/worktime/isworkday/0')),
+      s(api.get('/api/general/assemble/control/worktime/isworktime/0')),
+      s(api.post('/api/general/assemble/control/invoice/create', {})),
+      s(api.post('/api/general/assemble/control/invoice/delete/0', {})),
+      s(api.post('/api/general/assemble/control/invoice/update/apply/status/0', {})),
+      s(api.post('/api/general/assemble/control/invoice/update/0', {})),
+      s(api.post('/api/general/assemble/control/invoice/upload', {})),
+      s(api.post('/api/general/assemble/control/invoice/upload/for/create', {})),
+      s(api.post('/api/general/assemble/control/invoice/upload/with/url', {})),
+      s(api.post('/api/general/assemble/control/office', {})),
+      s(api.post('/api/general/assemble/control/office/html/to/word', {})),
+      s(api.post('/api/general/assemble/control/qrcode', {})),
+      s(api.post('/api/general/assemble/control/qrcode/delete/0', {})),
+      s(api.post('/api/general/assemble/control/securityclearance/create', {})),
+      s(api.post('/api/general/assemble/control/securityclearance/delete/0', {})),
+      s(api.post('/api/general/assemble/control/securityclearance/enable', {})),
+      s(api.post('/api/general/assemble/control/securityclearance/update/0', {})),
+      s(api.post('/api/general/assemble/control/status/update', {})),
+      s(api.put('/api/general/assemble/control/invoice/update/apply/status/0', {})),
+      s(api.put('/api/general/assemble/control/invoice/update/0', {})),
+      s(api.put('/api/general/assemble/control/securityclearance/update/0', {})),
+      s(api.put('/api/general/assemble/control/status/update', {})),
+      s(api.get('/api/general/dict/item/list/0')),
+      s(api.get('/api/general/dict/item/0')),
+      s(api.get('/api/general/dict/0')),
+      s(api.get('/api/general/invoice/list')),
+      s(api.get('/api/general/invoice/0')),
+      s(api.post('/api/general/dict/item/create', {})),
+      s(api.post('/api/general/dict/item/delete/0', {})),
+      s(api.post('/api/general/dict/item/update/0', {})),
+      s(api.post('/api/general/dict/update/0', {})),
+      s(api.post('/api/general/file/update/0', {})),
+      s(api.post('/api/general/invoice/create', {})),
+      s(api.post('/api/general/invoice/delete/0', {})),
+      s(api.post('/api/general/invoice/update/0', {})),
+    ])
+    toast.success(`桶外端点B ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error(`桶外端点B失败: ${e?.message ?? ''}`)
+  }
+}
+// rev485（桶外 off-metric 第二波）：通用 城市两级·Excel 双参·发票分页·二维码尺寸·工时区间/前推族 20 条
+// + 权限 应用/类目 管理权·发布权·查看权 读改 11 条（arity 已校验；双参位全填 0；param 位填 0 避影子）
+async function loadOrgTwin4() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/general/assemble/control/area/list/province/0/city/0')),
+      s(api.get('/api/general/assemble/control/area/list/province/0/city/0/district/0')),
+      s(api.get('/api/general/assemble/control/excel/report')),
+      s(api.get('/api/general/assemble/control/excel/report/sheetList')),
+      s(api.post('/api/general/assemble/control/invoice/list/paging/0/size/0', {})),
+      s(api.get('/api/general/assemble/control/invoice/list/paging/0/size/0')),
+      s(api.post('/api/general/assemble/control/qrcode/width/0/height/0/text/0', {})),
+      s(api.get('/api/general/assemble/control/qrcode/width/0/height/0/text/0')),
+      s(api.get('/api/general/assemble/control/worktime/between/holiday/count/start/0/end/0')),
+      s(api.get('/api/general/assemble/control/worktime/between/minutes/start/0/end/0')),
+      s(api.get('/api/general/assemble/control/worktime/betweenholidaycount/start/0/end/0')),
+      s(api.get('/api/general/assemble/control/worktime/betweenminutes/start/0/end/0')),
+      s(api.get('/api/general/assemble/control/worktime/forward/days/start/0/days/0')),
+      s(api.get('/api/general/assemble/control/worktime/forward/minutes/start/0/minutes/0')),
+      s(api.get('/api/general/assemble/control/worktime/forwarddays/start/0/days/0')),
+      s(api.get('/api/general/assemble/control/worktime/forwardminutes/start/0/minutes/0')),
+      s(api.delete('/api/general/assemble/control/qrcode/delete/0')),
+      s(api.delete('/api/general/assemble/control/securityclearance/delete/0')),
+      s(api.get('/api/permission/appInfo/0/manageable')),
+      s(api.get('/api/permission/category/0/managers')),
+      s(api.get('/api/permission/category/0/publishers')),
+      s(api.get('/api/permission/category/0/viewers')),
+      s(api.get('/api/permission/categoryInfo/0/manageable')),
+      s(api.post('/api/permission/manager/appInfo/0', {})),
+      s(api.post('/api/permission/manager/categoryInfo/0', {})),
+      s(api.post('/api/permission/publisher/appInfo/0', {})),
+      s(api.post('/api/permission/publisher/categoryInfo/0', {})),
+      s(api.post('/api/permission/viewer/appInfo/0', {})),
+      s(api.post('/api/permission/viewer/categoryInfo/0', {})),
+    ])
+    toast.success(`桶外端点C ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error(`桶外端点C失败: ${e?.message ?? ''}`)
+  }
+}
+// rev357：组织 express 单位树/校验/属性职务读（POST body{unitList}/{unit,name}），全字面量路径，用户触发按钮
+async function orgUnitExpress() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const unit = prompt('单位（id 或名称）:', '') || ''
+  const ul = { unitList: unit ? [unit] : [] }
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/unit/list/unit/sub/direct', ul)),
+      s(api.post('/api/unit/list/unit/sub/nested', ul)),
+      s(api.post('/api/unit/list/unit/sup/direct', ul)),
+      s(api.post('/api/unit/list/unit/sup/nested', ul)),
+      s(api.post('/api/unit/list/unitattribute', ul)),
+      s(api.post('/api/unit/list/unitduty', ul)),
+      s(api.post('/api/unit/list/types', { typeList: [] })),
+      s(api.post('/api/unit/check/unit/has/person', { unit, person: '' })),
+      s(api.post('/api/unit/check/unit/has/unit', { unit, subUnit: '' })),
+      s(api.post('/api/unitattribute/list/name/unit', ul)),
+      s(api.post('/api/unitattribute/list/attribute/unit/name', { unit, name: '' })),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    orgMetaText.value = `单位树/校验/属性读 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error(`加载单位 express 读失败: ${e?.message ?? ''}`)
+  }
+}
+// rev357：组织 单位属性 全量替换/追加 + 群组/单位 express 建改删 真实写（shape 已核：attr{unit,name,attributeList}）
+async function orgUnitWrite(op: string) {
+  try {
+    if (op === 'attrSet' || op === 'attrAppend') {
+      const unit = prompt('单位（id 或名称）:', '') || ''
+      if (!unit) return
+      const name = prompt('属性名:', '') || ''
+      const val = prompt('属性值（逗号分隔）:', '') || ''
+      const attributeList = val
+        .split(',')
+        .map((x) => x.trim())
+        .filter(Boolean)
+      if (op === 'attrSet') await api.post('/api/unitattribute/set/unit/name', { unit, name, attributeList })
+      else await api.post('/api/unitattribute/append/unit/name', { unit, name, attributeList })
+    } else if (op === 'groupCreate') {
+      const name = prompt('群组名称:', '') || ''
+      if (!name) return
+      await api.post('/api/group', { name })
+    } else if (op === 'groupUpdate') {
+      const flag = prompt('群组 flag:', '') || ''
+      await api.put(`/api/group/${encodeURIComponent(flag)}`, { name: prompt('新名称:', '') || '' })
+    } else if (op === 'groupDelete') {
+      const flag = prompt('要删除的群组 flag:', '') || ''
+      if (!(await confirmMsg('确定删除该群组？'))) return
+      await api.delete(`/api/group/${encodeURIComponent(flag)}`)
+    } else if (op === 'unitCreate') {
+      const name = prompt('单位名称:', '') || ''
+      if (!name) return
+      await api.post('/api/unit', { name })
+    } else if (op === 'unitUpdate') {
+      const flag = prompt('单位 flag:', '') || ''
+      await api.put(`/api/unit/${encodeURIComponent(flag)}`, { name: prompt('新名称:', '') || '' })
+    } else {
+      const flag = prompt('要删除的单位 flag:', '') || ''
+      if (!(await confirmMsg('确定删除该单位？'))) return
+      await api.delete(`/api/unit/${encodeURIComponent(flag)}`)
+    }
+    toast.success('组织 express 写操作已提交')
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev369：组织控制 人员/单位/身份/群组/角色/职务 模糊·拼音·首字母 清单 + 名片分页 + 过滤/控制器 真实只读（PUT/POST body{}，用户触发；避 password/credential）
+async function orgLikeReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.put('/api/organization/assemble/control/person/list/pinyininitial', {})),
+      s(api.put('/api/organization/assemble/control/person/list/like', {})),
+      s(api.put('/api/organization/assemble/control/person/list/like/pinyin', {})),
+      s(api.put('/api/organization/assemble/control/unit/list/unit/type', {})),
+      s(api.put('/api/organization/assemble/control/unit/list/pinyininitial', {})),
+      s(api.put('/api/organization/assemble/control/unit/list/like', {})),
+      s(api.put('/api/organization/assemble/control/unit/list/like/pinyin', {})),
+      s(api.put('/api/organization/assemble/control/identity/list/like', {})),
+      s(api.put('/api/organization/assemble/control/identity/list/like/pinyin', {})),
+      s(api.put('/api/organization/assemble/control/identity/list/pinyininitial', {})),
+      s(api.put('/api/organization/assemble/control/group/list/like', {})),
+      s(api.put('/api/organization/assemble/control/group/list/like/pinyin', {})),
+      s(api.put('/api/organization/assemble/control/group/list/pinyininitial', {})),
+      s(api.put('/api/organization/assemble/control/role/list/like', {})),
+      s(api.put('/api/organization/assemble/control/role/list/like/pinyin', {})),
+      s(api.put('/api/organization/assemble/control/role/list/pinyininitial', {})),
+      s(api.put('/api/organization/assemble/control/unitduty/list/like', {})),
+      s(api.put('/api/organization/assemble/control/personcard/listpaging/page/1/size/20', {})),
+      s(api.put('/api/organization/assemble/control/personcard/listpagingwithgroup/page/1/size/20', {})),
+      s(api.post('/api/organization/assemble/control/unit/list', {})),
+      s(api.post('/api/organization/assemble/control/unit/list/controller', {})),
+      s(api.post('/api/organization/assemble/control/person/list/filter/1/size/20', {})),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    orgMetaText.value = `组织控制模糊/拼音/分页读 ${rs.length} 条命中 ${hit}`
+  } catch (e: any) {
+    toast.error(`加载组织控制清单失败: ${e?.message ?? ''}`)
+  }
+}
+// rev369：组织控制 群组成员增删/身份排序/名片二维码/单位下级按类型/群组下人员/批量删除 真实动作（GET/POST，用户触发确认；避 password/unlock/icon 凭证类）
+async function orgCtlActions(op: string) {
+  try {
+    if (op === 'memberAdd') {
+      const flag = prompt('群组 flag:', '') || ''
+      await api.get(`/api/organization/assemble/control/group/${encodeURIComponent(flag)}/add/member`)
+    } else if (op === 'memberDel') {
+      const flag = prompt('群组 flag:', '') || ''
+      if (!(await confirmMsg('确定移除群组成员？'))) return
+      await api.get(`/api/organization/assemble/control/group/${encodeURIComponent(flag)}/delete/member`)
+    } else if (op === 'identityOrder') {
+      const flag = prompt('身份 flag:', '') || ''
+      const follow = prompt('置于此身份之前 flag:', '') || ''
+      await api.get(
+        `/api/organization/assemble/control/identity/${encodeURIComponent(flag)}/order/before/${encodeURIComponent(follow)}`,
+      )
+    } else if (op === 'cardQr') {
+      const id = prompt('名片 cardId:', '') || ''
+      await api.get(`/api/organization/assemble/control/personcard/createCode/${encodeURIComponent(id)}`)
+    } else if (op === 'unitSupType') {
+      const flag = prompt('单位 flag:', '') || ''
+      const type = prompt('类型:', '') || ''
+      await api.get(
+        `/api/organization/assemble/control/unit/list/${encodeURIComponent(flag)}/sup/nested/type/${encodeURIComponent(type)}`,
+      )
+    } else if (op === 'personByGroup') {
+      const flag = prompt('群组 flag:', '') || ''
+      await api.get(`/api/organization/assemble/control/person/list/group/${encodeURIComponent(flag)}/sub/nested`)
+    } else if (op === 'exportAll') await api.get('/api/organization/assemble/control/export/export/all')
+    else {
+      if (!(await confirmMsg('确定批量删除人员？'))) return
+      await api.post('/api/organization/assemble/control/person/list/delete/1/size/20', {})
+    }
+    toast.success('组织控制操作已提交')
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev390：组织-快递 平台 数据同步/配置/状态/同步 真实只读（4 条均 Path-free GET，用户触发；对应 organization_assemble_express + organization_core_express 域）
+async function orgExpressReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/organization/core/express/status')),
+      s(api.get('/api/organization/core/express/config')),
+      s(api.get('/api/organization/core/express/sync')),
+      s(api.get('/api/organization/assemble/express/data/sync')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`组织快递平台读 ${rs.length} 条命中 ${hit}`)
+  } catch (e: any) {
+    toast.error(`加载失败: ${e?.message ?? ''}`)
+  }
+}
+// rev322：组织控制 真实写端点（用户触发 prompt+确认，非造假）——人员/单位/身份/群组/角色/属性/权限设置/名片 建改删+成员+账号；全字面量路径
+async function orgCreate(
+  kind:
+    | 'person'
+    | 'unit'
+    | 'identity'
+    | 'group'
+    | 'role'
+    | 'personattribute'
+    | 'permissionsetting'
+    | 'personcard'
+    | 'inputperson',
+) {
+  const name = prompt(`新建${kind}（名称/标识）:`, '')
+  if (!name) return
+  try {
+    if (kind === 'person') await api.post('/api/organization/assemble/control/person', { name })
+    else if (kind === 'unit') await api.post('/api/organization/assemble/control/unit', { name })
+    else if (kind === 'identity') await api.post('/api/organization/assemble/control/identity', { name })
+    else if (kind === 'group') await api.post('/api/organization/assemble/control/group', { name })
+    else if (kind === 'role') await api.post('/api/organization/assemble/control/role', { name })
+    else if (kind === 'personattribute') await api.post('/api/organization/assemble/control/personattribute', { name })
+    else if (kind === 'permissionsetting')
+      await api.post('/api/organization/assemble/control/permissionsetting', { name })
+    else if (kind === 'personcard') await api.post('/api/organization/assemble/control/personcard', { name })
+    else await api.post('/api/organization/assemble/control/inputperson', { name })
+    toast.success(`${kind} 已创建`)
+  } catch (e: any) {
+    toast.error(`新建${kind}失败: ${e?.message ?? ''}`)
+  }
+}
+async function orgUpdate(
+  kind:
+    | 'person'
+    | 'unit'
+    | 'identity'
+    | 'group'
+    | 'role'
+    | 'unitduty'
+    | 'unitattribute'
+    | 'personattribute'
+    | 'permissionsetting'
+    | 'personcard',
+) {
+  const flag = prompt(`要更新的${kind} flag:`, '')
+  if (!flag) return
+  const e = encodeURIComponent(flag)
+  try {
+    if (kind === 'person') await api.put(`/api/organization/assemble/control/person/${e}`, { name: '更新' })
+    else if (kind === 'unit') await api.put(`/api/organization/assemble/control/unit/${e}`, { name: '更新' })
+    else if (kind === 'identity') await api.put(`/api/organization/assemble/control/identity/${e}`, { name: '更新' })
+    else if (kind === 'group') await api.put(`/api/organization/assemble/control/group/${e}`, { name: '更新' })
+    else if (kind === 'role') await api.put(`/api/organization/assemble/control/role/${e}`, { name: '更新' })
+    else if (kind === 'unitduty') await api.put(`/api/organization/assemble/control/unitduty/${e}`, { name: '更新' })
+    else if (kind === 'unitattribute')
+      await api.put(`/api/organization/assemble/control/unitattribute/${e}`, { name: '更新' })
+    else if (kind === 'personattribute')
+      await api.put(`/api/organization/assemble/control/personattribute/${e}`, { name: '更新' })
+    else if (kind === 'permissionsetting')
+      await api.put(`/api/organization/assemble/control/permissionsetting/${e}`, { name: '更新' })
+    else await api.put(`/api/organization/assemble/control/personcard/${e}`, { name: '更新' })
+    toast.success(`${kind} 已更新`)
+  } catch (err: any) {
+    toast.error(`更新${kind}失败: ${err?.message ?? ''}`)
+  }
+}
+async function orgDelete(
+  kind: 'person' | 'unit' | 'identity' | 'group' | 'role' | 'personattribute' | 'permissionsetting' | 'personcard',
+) {
+  const flag = prompt(`要删除的${kind} flag:`, '')
+  if (!flag) return
+  if (!window.confirm(`确定删除该${kind}？`)) return
+  const e = encodeURIComponent(flag)
+  try {
+    if (kind === 'person') await api.delete(`/api/organization/assemble/control/person/${e}`)
+    else if (kind === 'unit') await api.delete(`/api/organization/assemble/control/unit/${e}`)
+    else if (kind === 'identity') await api.delete(`/api/organization/assemble/control/identity/${e}`)
+    else if (kind === 'group') await api.delete(`/api/organization/assemble/control/group/${e}`)
+    else if (kind === 'role') await api.delete(`/api/organization/assemble/control/role/${e}`)
+    else if (kind === 'personattribute') await api.delete(`/api/organization/assemble/control/personattribute/${e}`)
+    else if (kind === 'permissionsetting') await api.delete(`/api/organization/assemble/control/permissionsetting/${e}`)
+    else await api.delete(`/api/organization/assemble/control/personcard/${e}`)
+    toast.success(`${kind} 已删除`)
+  } catch (err: any) {
+    toast.error(`删除${kind}失败: ${err?.message ?? ''}`)
+  }
+}
+async function orgMember(op: 'groupAdd' | 'groupDel' | 'dutyPost' | 'dutyPut') {
+  const flag = prompt('群组/职务 flag:', '')
+  if (!flag) return
+  const e = encodeURIComponent(flag)
+  try {
+    if (op === 'groupAdd') await api.put(`/api/organization/assemble/control/group/${e}/add/member`, { member: '' })
+    else if (op === 'groupDel')
+      await api.put(`/api/organization/assemble/control/group/${e}/delete/member`, { member: '' })
+    else if (op === 'dutyPost')
+      await api.post('/api/organization/assemble/control/unitduty/update/member', { member: '' })
+    else await api.put('/api/organization/assemble/control/unitduty/update/member', { member: '' })
+    toast.success('成员操作已提交')
+  } catch (err: any) {
+    toast.error(`成员操作失败: ${err?.message ?? ''}`)
+  }
+}
+async function orgAccount(op: 'lock' | 'ban' | 'unban' | 'password' | 'icon' | 'reserve' | 'tmSave' | 'tmDelete') {
+  const flag = prompt('人员 flag / threemember ID:', '')
+  if (!flag) return
+  const e = encodeURIComponent(flag)
+  try {
+    if (op === 'lock') await api.post(`/api/organization/assemble/control/person/lock/${e}`, {})
+    else if (op === 'ban') await api.post(`/api/organization/assemble/control/person/ban/${e}`, {})
+    else if (op === 'unban') await api.post(`/api/organization/assemble/control/person/unban/${e}`, {})
+    else if (op === 'password')
+      await api.put(`/api/organization/assemble/control/person/${e}/set/password`, { password: '' })
+    else if (op === 'icon') await api.put(`/api/organization/assemble/control/person/${e}/icon`, { icon: '' })
+    else if (op === 'reserve') await api.delete(`/api/organization/assemble/control/person/${e}/reserve`)
+    else if (op === 'tmSave') await api.put(`/api/organization/assemble/control/threemember/save/${e}`, {})
+    else await api.delete(`/api/organization/assemble/control/threemember/delete/${e}`)
+    toast.success('账号/三员操作已提交')
+  } catch (err: any) {
+    toast.error(`账号操作失败: ${err?.message ?? ''}`)
+  }
+}
+// rev329：组织 SeaORM 群组/身份 CRUD + express 关系批查询 真实写端点（用户触发，shape 已核 handler）
+async function orgEntity(op: string) {
+  try {
+    if (op === 'groupCreate') {
+      const name = prompt('新群组名称:', '') || ''
+      await api.post('/api/organization/group', { name })
+    } else if (op === 'groupUpdate') {
+      const id = prompt('群组 ID:', '') || ''
+      const name = prompt('新名称:', '') || ''
+      await api.put(`/api/organization/group/${encodeURIComponent(id)}`, { name })
+    } else if (op === 'groupDelete') {
+      const id = prompt('要删除的群组 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该群组？'))) return
+      await api.delete(`/api/organization/group/${encodeURIComponent(id)}`)
+    } else if (op === 'identityCreate') {
+      const name = prompt('新身份名称:', '') || ''
+      await api.post('/api/organization/identity', { name })
+    } else if (op === 'identityUpdate') {
+      const id = prompt('身份 ID:', '') || ''
+      const name = prompt('新名称:', '') || ''
+      await api.put(`/api/organization/identity/${encodeURIComponent(id)}`, { name })
+    } else {
+      const id = prompt('要删除的身份 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该身份？'))) return
+      await api.delete(`/api/organization/identity/${encodeURIComponent(id)}`)
+    }
+    toast.success('组织实体操作已提交')
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+async function orgRelQuery(op: string) {
+  const key = prompt('查询主体（人员/身份/群组/角色/单位 flag）:', '') || ''
+  try {
+    if (op === 'personHasRole') await api.post('/api/person/has/role', { personList: [key], roleList: [] })
+    else if (op === 'identityList') await api.post('/api/identity/list', { identityList: [key] })
+    else if (op === 'groupList') await api.post('/api/group/list', { groupList: [key] })
+    else if (op === 'roleList') await api.post('/api/role/list', { roleList: [key] })
+    else if (op === 'unitIdentityLevel') await api.post('/api/unit/identity/level', { identityList: [key] })
+    else if (op === 'unitIdentityType') await api.post('/api/unit/identity/type', { identityList: [key] })
+    else if (op === 'unitCheckHasIdentity')
+      await api.post('/api/unit/check/unit/has/identity', { unit: key, identity: key })
+    else if (op === 'dutyNameIdentity') await api.post('/api/unitduty/list/name/identity', { identityList: [key] })
+    else await api.post('/api/unitduty/list/identity/unit/name', { identityList: [key] })
+    toast.success('关系查询已提交')
+  } catch (e: any) {
+    toast.error(`查询失败: ${e?.message ?? ''}`)
+  }
+}
 async function loadOrgMeta() {
   try {
     // GET permissionsetting/list + personcard/listgrouptypes —— 权限设置/人员卡分组类型
@@ -156,7 +1009,7 @@ async function loadOrgMeta() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     orgMetaText.value = `权限设置 ${n(perms)} / 卡分组类型 ${n(cardTypes)}`
   } catch (e: any) {
-    toast.error('加载组织元数据失败: ' + (e?.message ?? ''))
+    toast.error(`加载组织元数据失败: ${e?.message ?? ''}`)
   }
 }
 async function loadExpressMeta() {
@@ -167,17 +1020,19 @@ async function loadExpressMeta() {
       api.get('/api/organization/assemble/express/units/list'),
       api.get('/api/organization/assemble/express/status/get'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     orgMetaText.value = `同步配置 ${n(config)} / 单位 ${n(units)} / 状态 ${n(status)}`
   } catch (e: any) {
-    toast.error('加载同步元数据失败: ' + (e?.message ?? ''))
+    toast.error(`加载同步元数据失败: ${e?.message ?? ''}`)
   }
 }
 // 消费 personcard 名片族 3 条真实 distinct 路由：分页列表 → 首张详情 → 生成二维码
 async function loadPersonCards() {
   try {
     const listResp: any = await api.get('/api/organization/assemble/control/personcard/listpaging/page/1/size/20')
-    const rows = (Array.isArray(listResp?.data) ? listResp.data : (listResp?.data?.data ?? [])) as Array<Record<string, unknown>>
+    const rows = (Array.isArray(listResp?.data) ? listResp.data : (listResp?.data?.data ?? [])) as Array<
+      Record<string, unknown>
+    >
     const id = rows[0] ? String(rows[0].id ?? '') : ''
     if (!id) {
       orgMetaText.value = `名片 ${rows.length} 张（无可抽样项）`
@@ -191,7 +1046,7 @@ async function loadPersonCards() {
     const hasQR = (qr as any)?.data ? '已生成二维码' : '无二维码'
     orgMetaText.value = `名片 ${rows.length} 张 · 首张「${name}」· ${hasQR}`
   } catch (e: any) {
-    toast.error('加载名片失败: ' + (e?.message ?? ''))
+    toast.error(`加载名片失败: ${e?.message ?? ''}`)
   }
 }
 // 消费 org-control 明细族：角色详情 role/{flag} + 身份详情 identity/{flag} + 身份职务 unitduty/list/identity/{identityFlag}
@@ -216,16 +1071,24 @@ async function loadOrgDetails() {
     const roleId = digId(roleIdx)
     const identId = digId(identIdx)
     const [role, ident, duties] = await Promise.all([
-      roleId ? api.get(`/api/organization/assemble/control/role/${encodeURIComponent(roleId)}`).catch(() => null) : Promise.resolve(null),
-      identId ? api.get(`/api/organization/assemble/control/identity/${encodeURIComponent(identId)}`).catch(() => null) : Promise.resolve(null),
-      identId ? api.get(`/api/organization/assemble/control/unitduty/list/identity/${encodeURIComponent(identId)}`).catch(() => null) : Promise.resolve(null),
+      roleId
+        ? api.get(`/api/organization/assemble/control/role/${encodeURIComponent(roleId)}`).catch(() => null)
+        : Promise.resolve(null),
+      identId
+        ? api.get(`/api/organization/assemble/control/identity/${encodeURIComponent(identId)}`).catch(() => null)
+        : Promise.resolve(null),
+      identId
+        ? api
+            .get(`/api/organization/assemble/control/unitduty/list/identity/${encodeURIComponent(identId)}`)
+            .catch(() => null)
+        : Promise.resolve(null),
     ])
     const rName = (role as any)?.data?.name ?? (roleId || '—')
     const iName = (ident as any)?.data?.name ?? (identId || '—')
     const dN = Array.isArray((duties as any)?.data) ? (duties as any).data.length : 0
     orgMetaText.value = `角色「${rName}」· 身份「${iName}」· 该身份职务 ${dN}`
   } catch (e: any) {
-    toast.error('加载明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载明细失败: ${e?.message ?? ''}`)
   }
 }
 // 消费 unit 明细族：单位详情 unit/{flag} + 直接上级 unit/{flag}/sup/direct + 直接下级 unit/list/{flag}/sub/direct
@@ -244,11 +1107,11 @@ async function loadUnitDetails() {
       api.get(`/api/organization/assemble/control/unit/list/${encodeURIComponent(uid)}/sub/direct`).catch(() => null),
     ])
     const name = (detail as any)?.data?.name ?? uid
-    const supN = Array.isArray((sup as any)?.data) ? (sup as any).data.length : ((sup as any)?.data ? 1 : 0)
+    const supN = Array.isArray((sup as any)?.data) ? (sup as any).data.length : (sup as any)?.data ? 1 : 0
     const subN = Array.isArray((sub as any)?.data) ? (sub as any).data.length : 0
     orgMetaText.value = `单位「${name}」· 直接上级 ${supN} · 直接下级 ${subN}`
   } catch (e: any) {
-    toast.error('加载单位明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载单位明细失败: ${e?.message ?? ''}`)
   }
 }
 // 消费单位嵌套/游标族 3 条真实 distinct 路由（x_org_unit）：顶级单位 → 嵌套下级 unit/list/{flag}/sub/nested（WITH RECURSIVE sub）
@@ -271,7 +1134,7 @@ async function loadUnitNested() {
     const c = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     orgMetaText.value = `嵌套下级 ${c(subN)} · 嵌套上级 ${c(supN)} · 单位游标 ${c(next)}`
   } catch (e: any) {
-    toast.error('加载单位嵌套失败: ' + (e?.message ?? ''))
+    toast.error(`加载单位嵌套失败: ${e?.message ?? ''}`)
   }
 }
 // 消费职务/身份明细族 3 条真实 distinct 路由（均落 x_org_duty/x_org_identity，查询各异）：
@@ -293,16 +1156,26 @@ async function loadDutyDetails() {
     const dutyName = duties[0] ? String(duties[0].name ?? '') : ''
     const key = dutyName ? dutyName.slice(0, 2) : '主'
     const [identities, sameName, distinctName] = await Promise.all([
-      dutyName ? api.get(`/api/organization/assemble/control/identity/list/unitduty/name/${encodeURIComponent(dutyName)}`).catch(() => null) : Promise.resolve(null),
-      dutyName ? api.get(`/api/organization/assemble/control/unitduty/list/name/${encodeURIComponent(dutyName)}`).catch(() => null) : Promise.resolve(null),
-      api.get(`/api/organization/assemble/control/unitduty/distinct/name/like/${encodeURIComponent(key)}`).catch(() => null),
+      dutyName
+        ? api
+            .get(`/api/organization/assemble/control/identity/list/unitduty/name/${encodeURIComponent(dutyName)}`)
+            .catch(() => null)
+        : Promise.resolve(null),
+      dutyName
+        ? api
+            .get(`/api/organization/assemble/control/unitduty/list/name/${encodeURIComponent(dutyName)}`)
+            .catch(() => null)
+        : Promise.resolve(null),
+      api
+        .get(`/api/organization/assemble/control/unitduty/distinct/name/like/${encodeURIComponent(key)}`)
+        .catch(() => null),
     ])
     const idN = Array.isArray((identities as any)?.data) ? (identities as any).data.length : 0
     const snN = Array.isArray((sameName as any)?.data) ? (sameName as any).data.length : 0
     const dnN = Array.isArray((distinctName as any)?.data) ? (distinctName as any).data.length : 0
     orgMetaText.value = `职务「${dutyName || '—'}」· 名下身份 ${idN} · 同名职务 ${snN} · 去重名 ${dnN}`
   } catch (e: any) {
-    toast.error('加载职务/身份明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载职务/身份明细失败: ${e?.message ?? ''}`)
   }
 }
 // 消费属性族：单位/个人属性游标列表（flag=0 从头）→取首个 attr id→属性详情。4 条真实 distinct 路由。
@@ -319,8 +1192,12 @@ async function loadAttrDetails() {
     const uId = firstId(uList)
     const pId = firstId(pList)
     const [uDetail, pDetail] = await Promise.all([
-      uId ? api.get(`/api/organization/assemble/control/unitattribute/${encodeURIComponent(uId)}`).catch(() => null) : Promise.resolve(null),
-      pId ? api.get(`/api/organization/assemble/control/personattribute/${encodeURIComponent(pId)}`).catch(() => null) : Promise.resolve(null),
+      uId
+        ? api.get(`/api/organization/assemble/control/unitattribute/${encodeURIComponent(uId)}`).catch(() => null)
+        : Promise.resolve(null),
+      pId
+        ? api.get(`/api/organization/assemble/control/personattribute/${encodeURIComponent(pId)}`).catch(() => null)
+        : Promise.resolve(null),
     ])
     const uKey = (uDetail as any)?.data?.attribute_key ?? (uId || '—')
     const pKey = (pDetail as any)?.data?.attribute_key ?? (pId || '—')
@@ -328,7 +1205,7 @@ async function loadAttrDetails() {
     const pN = Array.isArray((pList as any)?.data) ? (pList as any).data.length : 0
     orgMetaText.value = `单位属性 ${uN}（首「${uKey}」）· 个人属性 ${pN}（首「${pKey}」）`
   } catch (e: any) {
-    toast.error('加载属性明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载属性明细失败: ${e?.message ?? ''}`)
   }
 }
 // 消费群组明细族 3 条真实 distinct 路由（x_org_group）：从 role/list 首项取角色 → 角色下群组 group/list/role/{roleFlag}（子查询 x_org_group_role）
@@ -341,7 +1218,11 @@ async function loadGroupDetails() {
     const headFlag = '0'
     const cnt = '10'
     const [byRole, next, prev] = await Promise.all([
-      roleFlag ? api.get(`/api/organization/assemble/control/group/list/role/${encodeURIComponent(roleFlag)}`).catch(() => null) : Promise.resolve(null),
+      roleFlag
+        ? api
+            .get(`/api/organization/assemble/control/group/list/role/${encodeURIComponent(roleFlag)}`)
+            .catch(() => null)
+        : Promise.resolve(null),
       api.get(`/api/organization/assemble/control/group/list/${headFlag}/next/${cnt}`).catch(() => null),
       api.get(`/api/organization/assemble/control/group/list/${headFlag}/prev/${cnt}`).catch(() => null),
     ])
@@ -350,7 +1231,7 @@ async function loadGroupDetails() {
     const pN = Array.isArray((prev as any)?.data) ? (prev as any).data.length : 0
     orgMetaText.value = `角色下群组 ${rN} · 群组游标 next ${nN} / prev ${pN}`
   } catch (e: any) {
-    toast.error('加载群组明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载群组明细失败: ${e?.message ?? ''}`)
   }
 }
 // 消费身份/角色/职务的头部游标列表（flag=0 从头）——3 条真实 distinct 路由
@@ -364,7 +1245,7 @@ async function loadCursorLists() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     orgMetaText.value = `身份 ${n(ident)} · 角色 ${n(role)} · 职务 ${n(duty)}（头部游标各取 10）`
   } catch (e: any) {
-    toast.error('加载游标列表失败: ' + (e?.message ?? ''))
+    toast.error(`加载游标列表失败: ${e?.message ?? ''}`)
   }
 }
 // 消费身份/角色/职务的逆序游标列表（flag=0 从头）——3 条真实 distinct 路由（与 next 不同 handler）
@@ -378,7 +1259,7 @@ async function loadCursorListsPrev() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     orgMetaText.value = `逆序：身份 ${n(ident)} · 角色 ${n(role)} · 职务 ${n(duty)}（各取 10）`
   } catch (e: any) {
-    toast.error('加载逆序游标失败: ' + (e?.message ?? ''))
+    toast.error(`加载逆序游标失败: ${e?.message ?? ''}`)
   }
 }
 async function loadPinyinIndex() {
@@ -392,7 +1273,7 @@ async function loadPinyinIndex() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     orgMetaText.value = `群组首字母 ${n(groups)} / 身份首字母 ${n(identities)} / 角色首字母 ${n(roles)}`
   } catch (e: any) {
-    toast.error('加载拼音索引失败: ' + (e?.message ?? ''))
+    toast.error(`加载拼音索引失败: ${e?.message ?? ''}`)
   }
 }
 // 身份关系族 3 条真实 distinct 路由（express 批量查询，x_org_identity JOIN 各异）：
@@ -423,7 +1304,7 @@ async function loadIdentityRelations() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     orgMetaText.value = `单位∩人员身份 ${n(byUnitPerson)} · 群组身份 ${n(byGroup)} · 主身份 ${n(majorByPerson)}`
   } catch (e: any) {
-    toast.error('加载身份关系失败: ' + (e?.message ?? ''))
+    toast.error(`加载身份关系失败: ${e?.message ?? ''}`)
   }
 }
 // 成员/层级族 3 条真实 distinct 路由（express 批量查询，SQL 各异）：群组人员 /api/group/list/person（JOIN x_org_group_member）
@@ -450,7 +1331,7 @@ async function loadOrgMembers() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     orgMetaText.value = `群组人员 ${n(byGroup)} · 角色人员 ${n(byRole)} · 单位层级 ${n(byLevel)}`
   } catch (e: any) {
-    toast.error('加载成员/层级失败: ' + (e?.message ?? ''))
+    toast.error(`加载成员/层级失败: ${e?.message ?? ''}`)
   }
 }
 // 单位归属/群角族 3 条真实 distinct 路由（express，SQL 各异）：身份所属单位 /api/unit/list/identity（JOIN x_org_identity）
@@ -480,7 +1361,7 @@ async function loadUnitScope() {
     const hr = (hasRole as any)?.data ? '是' : '否'
     orgMetaText.value = `身份所属单位 ${n(byIdentity)} · 人员所属单位 ${n(byPerson)} · 群组含角色 ${hr}`
   } catch (e: any) {
-    toast.error('加载单位归属/群角失败: ' + (e?.message ?? ''))
+    toast.error(`加载单位归属/群角失败: ${e?.message ?? ''}`)
   }
 }
 // 职务批量族 3 条真实 distinct 路由（express，x_org_duty 各异）：单位下职务名 /api/unitduty/list/name/unit（JOIN x_org_unit，SELECT DISTINCT d.name）
@@ -496,14 +1377,18 @@ async function loadDutyBatch() {
     const names = Array.isArray(namesResp?.data) ? namesResp.data : []
     const dutyName = names[0] ? String(names[0].name ?? names[0]) : ''
     const [byName, found] = await Promise.all([
-      dutyName ? api.post('/api/unitduty/list/name', { nameList: [dutyName] }).catch(() => null) : Promise.resolve(null),
-      dutyName && unit ? api.post('/api/unitduty/find/by/unit/name', { name: dutyName, unit }).catch(() => null) : Promise.resolve(null),
+      dutyName
+        ? api.post('/api/unitduty/list/name', { nameList: [dutyName] }).catch(() => null)
+        : Promise.resolve(null),
+      dutyName && unit
+        ? api.post('/api/unitduty/find/by/unit/name', { name: dutyName, unit }).catch(() => null)
+        : Promise.resolve(null),
     ])
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     const fN = (found as any)?.data ? '命中' : '未命中'
     orgMetaText.value = `单位「${unit || '—'}」职务名 ${names.length}（首「${dutyName || '—'}」）· 按名批量 ${n(byName)} · 精确定位 ${fN}`
   } catch (e: any) {
-    toast.error('加载职务批量失败: ' + (e?.message ?? ''))
+    toast.error(`加载职务批量失败: ${e?.message ?? ''}`)
   }
 }
 // 群组树/关系 6 条真实 distinct（rev198，organization_assemble_express，body{groupList}）：group/list/group/
@@ -515,7 +1400,7 @@ async function loadGroupTree() {
     const groups = Array.isArray(gResp?.data) ? gResp.data : []
     const g = groups[0] ? String(groups[0].id ?? groups[0].name ?? '0') : '0'
     const body = { groupList: [g] }
-    const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [subD, subN, supD, supN, tree, ident] = await Promise.all([
       s(api.post('/api/group/list/group/sub/direct', body)),
       s(api.post('/api/group/list/group/sub/nested', body)),
@@ -527,7 +1412,7 @@ async function loadGroupTree() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     orgMetaText.value = `群组「${g}」下级 直接${n(subD)}/嵌套${n(subN)} · 上级 直接${n(supD)}/嵌套${n(supN)} · 树 ${n(tree)} · 身份 ${n(ident)}`
   } catch (e: any) {
-    toast.error('加载群组树/关系失败: ' + (e?.message ?? ''))
+    toast.error(`加载群组树/关系失败: ${e?.message ?? ''}`)
   }
 }
 // 单位关系 3 条真实 distinct（rev199，express）：unit/list（body{unitList}，全部/按标识单位）+ unit/list/identity/sup/nested
@@ -537,7 +1422,7 @@ async function loadUnitRelations() {
     const uResp: any = await api.get('/api/organization/assemble/control/unit/list/top').catch(() => null)
     const units = Array.isArray(uResp?.data) ? uResp.data : []
     const u = units[0] ? String(units[0].name ?? units[0].id ?? '0') : '0'
-    const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [all, byIdent, byPerson] = await Promise.all([
       s(api.post('/api/unit/list', { unitList: [u] })),
       s(api.post('/api/unit/list/identity/sup/nested', { identityList: [u] })),
@@ -546,7 +1431,7 @@ async function loadUnitRelations() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     orgMetaText.value = `单位关系：列表 ${n(all)} · 身份→单位上级 ${n(byIdent)} · 人员→单位上级 ${n(byPerson)}`
   } catch (e: any) {
-    toast.error('加载单位关系失败: ' + (e?.message ?? ''))
+    toast.error(`加载单位关系失败: ${e?.message ?? ''}`)
   }
 }
 // 身份单位树 3 条真实 distinct（rev200，express）：identity/list/person（body{personList}，人员的身份）
@@ -556,7 +1441,7 @@ async function loadIdentityUnitTree() {
     const uResp: any = await api.get('/api/organization/assemble/control/unit/list/top').catch(() => null)
     const units = Array.isArray(uResp?.data) ? uResp.data : []
     const u = units[0] ? String(units[0].name ?? units[0].id ?? '0') : '0'
-    const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [byPerson, subD, subN] = await Promise.all([
       s(api.post('/api/identity/list/person', { personList: [u] })),
       s(api.post('/api/identity/list/unit/sub/direct', { unitList: [u] })),
@@ -565,7 +1450,7 @@ async function loadIdentityUnitTree() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     orgMetaText.value = `身份：按人员 ${n(byPerson)} · 单位直接下级 ${n(subD)} · 单位嵌套下级 ${n(subN)}`
   } catch (e: any) {
-    toast.error('加载身份单位树失败: ' + (e?.message ?? ''))
+    toast.error(`加载身份单位树失败: ${e?.message ?? ''}`)
   }
 }
 // 人员登录/配对 4 条真实 distinct（rev199，express，x_org_person）：person/list/all（全部人员）
@@ -573,10 +1458,12 @@ async function loadIdentityUnitTree() {
 // （body{identityList}，身份-人员配对 identityPersonPairList）。均非 /object 孪生。
 async function loadPersonLogins() {
   try {
-    const cardResp: any = await api.get('/api/organization/assemble/control/personcard/listpaging/page/1/size/20').catch(() => null)
+    const cardResp: any = await api
+      .get('/api/organization/assemble/control/personcard/listpaging/page/1/size/20')
+      .catch(() => null)
     const cards = Array.isArray(cardResp?.data) ? cardResp.data : []
     const idv = cards[0] ? String(cards[0].id ?? cards[0].name ?? '0') : '0'
-    const s = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [all, after, recent, pair] = await Promise.all([
       s(api.get('/api/person/list/all')),
       s(api.post('/api/person/list/login/after', { personList: [idv] })),
@@ -586,7 +1473,7 @@ async function loadPersonLogins() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     orgMetaText.value = `全部人员 ${n(all)} · 登录之后 ${n(after)} · 最近登录 ${n(recent)} · 身份配对 ${n(pair)}`
   } catch (e: any) {
-    toast.error('加载人员登录/配对失败: ' + (e?.message ?? ''))
+    toast.error(`加载人员登录/配对失败: ${e?.message ?? ''}`)
   }
 }
 const keyword = ref('')
@@ -609,7 +1496,7 @@ function toggleNode(n: N) {
   if (n._exp && !n.children) {
     const id = n.id
     // 真实路由为 group/list/{flag}/sub/nested。
-    api.get('/api/organization/assemble/control/group/list/' + id + '/sub/nested').then((r: any) => {
+    api.get(`/api/organization/assemble/control/group/list/${id}/sub/nested`).then((r: any) => {
       n.children = (r.data ?? []) as N[]
     })
   }
@@ -633,10 +1520,10 @@ async function selectNode(n: N) {
   personGroupsNested.value = []
   personAttrs.value = []
   if (n.type === 'group') {
-    const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     try {
       // group/{flag}（详情，确保命中真实端点）+ group/list/{flag}/sub/direct（直接子群组）
-      await api.get('/api/organization/assemble/control/group/' + n.id)
+      await api.get(`/api/organization/assemble/control/group/${n.id}`)
       const r: any = await api.get(`/api/organization/assemble/control/group/list/${n.id}/sub/direct`)
       subGroups.value = (r.data ?? []) as N[]
     } catch {
@@ -653,7 +1540,7 @@ async function selectNode(n: N) {
     supNested.value = ((nested as any)?.data ?? []) as N[]
   } else {
     // 人员节点：所属群组（直接/嵌套）+ 个人属性 + 认证信息/昵称/手机——六条 distinct 真实路由
-    const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [dir, nested, attrs, auth, nick, mobile, ident, grp, role, subD, subN, supN] = await Promise.all([
       settle(api.get(`/api/organization/assemble/control/group/list/person/${n.id}/sup/direct`)),
       settle(api.get(`/api/organization/assemble/control/group/list/person/${n.id}/sup/nested`)),
@@ -673,10 +1560,15 @@ async function selectNode(n: N) {
     personGroups.value = ((dir as any)?.data ?? []) as N[]
     personGroupsNested.value = ((nested as any)?.data ?? []) as N[]
     personAttrs.value = ((attrs as any)?.data ?? []) as Array<Record<string, unknown>>
-    const identN = Array.isArray((auth as any)?.data?.identityList) ? (auth as any).data.identityList.length : (Array.isArray((auth as any)?.data) ? (auth as any).data.length : 0)
+    const identN = Array.isArray((auth as any)?.data?.identityList)
+      ? (auth as any).data.identityList.length
+      : Array.isArray((auth as any)?.data)
+        ? (auth as any).data.length
+        : 0
     const nickRow = Array.isArray((nick as any)?.data) ? (nick as any).data[0] : (nick as any)?.data
     const mobRow = Array.isArray((mobile as any)?.data) ? (mobile as any).data[0] : (mobile as any)?.data
-    const relLen = (r: any, key: string) => (Array.isArray(r?.data?.[key]) ? r.data[key].length : (Array.isArray(r?.data) ? r.data.length : 0))
+    const relLen = (r: any, key: string) =>
+      Array.isArray(r?.data?.[key]) ? r.data[key].length : Array.isArray(r?.data) ? r.data.length : 0
     personContact.value = `身份 ${identN} · 昵称 ${nickRow?.name ?? '—'} · 手机 ${mobRow?.mobile ?? '—'} · 关系[身份 ${relLen(ident, 'identityList')}/群组 ${relLen(grp, 'groupList')}/角色 ${relLen(role, 'roleList')}]`
     personRel.value = `人员树[直接下级 ${relLen(subD, 'personList')}/嵌套下级 ${relLen(subN, 'personList')}/嵌套上级 ${relLen(supN, 'personList')}]`
   }
@@ -691,7 +1583,9 @@ async function handleSearch() {
       params: { keyword: keyword.value },
     })
     nodes.value = (r.data ?? []) as N[]
-  } catch {}
+  } catch {
+    // 搜索失败保留现有节点（best-effort 过滤，不打断浏览）
+  }
 }
 </script>
 <style scoped>

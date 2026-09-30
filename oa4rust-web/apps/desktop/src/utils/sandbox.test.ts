@@ -72,7 +72,7 @@ async function loadSandbox() {
     addEventListener: (t: string, fn: (e: unknown) => void) => {
       if (t === 'message') messageListeners.push(fn)
     },
-    removeEventListener: (t: string, fn: (e: unknown) => void) => {
+    removeEventListener: (_t: string, fn: (e: unknown) => void) => {
       const i = messageListeners.indexOf(fn)
       if (i >= 0) messageListeners.splice(i, 1)
     },
@@ -154,7 +154,7 @@ describe('runInSandbox', () => {
 
   it('the sandbox iframe is created with sandbox="allow-scripts" and no same-origin access', async () => {
     sandbox.mod.runInSandbox('x') // 触发 getOrCreateFrame
-    expect(sandbox.iframe.attributes['sandbox']).toBe('allow-scripts')
+    expect(sandbox.iframe.attributes.sandbox).toBe('allow-scripts')
     expect(sandbox.body.children.length).toBeGreaterThan(0) // 已挂到 body
   })
 

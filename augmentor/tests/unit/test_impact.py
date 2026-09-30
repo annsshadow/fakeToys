@@ -6,6 +6,8 @@
 增强收益必须可量化：规模、多样性、去重、长度分布四个维度都要有增益口径。
 """
 
+import time
+
 import pytest
 
 from augmentor.impact import (
@@ -55,6 +57,42 @@ class TestMeasure:
         metrics = ImpactEvaluator().measure(items)
         # 2 条 a 重复 + 0 条 b -> 2/3
         assert metrics.duplicate_rate == pytest.approx(2 / 3)
+
+    def test_duplicate_rate_counts_whole_group(self):
+        """口径是「属于重复组的条目占比」，不是「多出来的副本数」
+
+        这个区别决定了实现能不能换成 `Counter`：`3 条 a + 1 条 b + 2 条 c` 里
+        属于重复组的是 3 + 2 = 5 条（5/6），而「额外副本」口径是 2 + 1 = 3 条。
+        """
+        items = [{"instruction": t} for t in ("a", "a", "a", "b", "c", "c")]
+
+        metrics = ImpactEvaluator().measure(items)
+
+        assert metrics.duplicate_rate == pytest.approx(5 / 6)
+        assert metrics.unique_instructions == 3
+
+    def test_measure_scales_linearly(self):
+        """`duplicate_rate` 不能退化成「每条扫一遍全表」
+
+        实测 `texts.count(t)` 写在推导式里时 n=1000/2000/4000 = 6.0/24.3/99.7 ms
+        （每翻倍一次 ×4），换成一次 `Counter` 后 n=16000 只要 4.4 ms。
+        预算 200 ms 留足覆盖率 trace 的放大余量，又远低于退化后的秒级。
+        """
+        items = [
+            {"instruction": f"独立问题 {i}：全表只出现这一次"}
+            if i % 4 == 0
+            else {"instruction": f"重复问题 {i // 4}：每条凑满三次"}
+            for i in range(16000)
+        ]
+
+        start = time.perf_counter()
+        metrics = ImpactEvaluator().measure(items)
+        elapsed_ms = (time.perf_counter() - start) * 1000
+
+        # 顺带锁住大样本下的口径：3/4 条目属于重复组；去重后 = 4000 条唯一 + 4000 个三元组
+        assert metrics.duplicate_rate == pytest.approx(0.75)
+        assert metrics.unique_instructions == 8000
+        assert elapsed_ms < 200, f"measure(16000) 用了 {elapsed_ms:.1f} ms，重复计数又变成 O(n²) 了"
 
     def test_length_statistics(self):
         items = [

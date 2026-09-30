@@ -102,9 +102,17 @@ def _validate_written_config(client):
     校验的必须是「服务自己写出的配置」，而不是仓库里那份手写的——后者在测试
     的临时 CWD 里并不存在。这也正是这条用例的价值：它把「保存」与「校验」
     串成闭环，任何一侧与另一侧不一致都会失败。
+
+    载荷必须是**真键**：A152① 之后一次没写成任何东西的 `POST /api/config` 不落盘，
+    从前那句 `json={}` 全靠「无条件整份重写」把文件凭空造出来，现在只会让下面的
+    校验对着一个不存在的文件跑。这里选的 `variants_per_seed=5` 就是出厂默认值，
+    所以既真落盘，又不改动这个（可能共享的）client 的任何配置语义。
     """
-    written = client.post("/api/config", json={})
+    written = client.post("/api/config", json={"augmentation": {"variants_per_seed": 5}})
     assert written.status_code == 200, written.text
+    payload = written.json()
+    assert payload["ignored_keys"] == [], "载荷没被写进配置，闭环就断了"
+    assert "配置已保存" in payload["message"]
     return client.post("/api/system/validate-config", json={"path": "config.yaml"})
 
 
@@ -143,7 +151,8 @@ CALLS = {
     ),
     ("GET", "/api/status"): _Case(
         request=lambda c: c.get("/api/status"),
-        keys=_keys("status", "version", "model_default", "model_available", "dependencies"),
+        keys=_keys("status", "version", "model_default", "model_available",
+                   "model_retry_count", "model_retry_wait_seconds", "dependencies"),
     ),
     # ---------- privacy ----------
     ("GET", "/api/privacy/patterns"): _Case(
@@ -250,6 +259,21 @@ CALLS = {
             "duplicate_rate", "language_distribution", "top_keywords",
         ),
     ),
+    ("POST", "/api/quality/health-gate"): _Case(
+        request=lambda c: c.post(
+            "/api/quality/health-gate", json={"input_file": "data.json"}
+        ),
+        keys=_keys("health", "gate", "skipped_rules"),
+        nested={
+            # 与 `DatasetHealthScore.score()` / `GateReport.to_dict()` 一一对应
+            "health": _keys(
+                "health_score", "level", "metrics", "weights", "total_samples",
+            ),
+            "gate": _keys(
+                "verdict", "passed", "failed_rules", "warned_rules", "metrics",
+            ),
+        },
+    ),
     # ---------- config ----------
     ("GET", "/api/config"): _Case(
         request=lambda c: c.get("/api/config"),
@@ -260,7 +284,7 @@ CALLS = {
     ),
     ("POST", "/api/config"): _Case(
         request=lambda c: c.post("/api/config", json={}),
-        keys=_keys("success", "message"),
+        keys=_keys("success", "message", "ignored_keys"),
     ),
     ("GET", "/api/models"): _Case(
         request=lambda c: c.get("/api/models"),
@@ -441,8 +465,12 @@ CALLS = {
         request=lambda c: c.post(
             "/api/dataset/search", json={"input_file": "data.json", "query": "租房"}
         ),
+        # 后四键是**生效的**松紧旋钮与过滤口径：默认方法 contains 谁都不消费、也没传
+        # filters，所以响应里全是 null，但键必须在——少一键就是 `SearchResponse`
+        # 漏声明、FastAPI 静默裁剪（`test_search_echoes_the_filters_it_applied` 钉值）。
         keys=_keys(
-            "query", "method", "total_matches", "query_time_ms", "items", "highlights"
+            "query", "method", "total_matches", "query_time_ms", "items", "highlights",
+            "fuzzy_threshold", "ngram_n", "applied_filters", "matches_before_filters",
         ),
     ),
     ("POST", "/api/dataset/compare"): _Case(
@@ -465,6 +493,39 @@ CALLS = {
             "quality_threshold", "dedup_threshold", "recommended_sample_size",
             "reasoning", "source_stats",
         ),
+    ),
+    ("POST", "/api/dataset/impact"): _Case(
+        request=lambda c: c.post(
+            "/api/dataset/impact",
+            json={"before_file": "data.json", "after_file": "train.json"},
+        ),
+        keys=_keys("before", "after", "gains", "beneficial"),
+        # before/after 是 `AugmentationMetrics.to_dict()`（含 `extra`），gains 是
+        # 四项增益。它们是 `Dict[str, Any]`，顶层模型只会保证「有这个键」，
+        # 里面漏一项都不会在顶层显形——所以必须递归钉。
+        nested={
+            "before": _keys(
+                "total_items", "unique_instructions", "avg_length",
+                "length_std", "duplicate_rate", "extra",
+            ),
+            "after": _keys(
+                "total_items", "unique_instructions", "avg_length",
+                "length_std", "duplicate_rate", "extra",
+            ),
+            "gains": _keys(
+                "scale_gain", "diversity_gain", "dedup_gain", "length_spread_gain"
+            ),
+        },
+    ),
+    ("POST", "/api/dataset/evaluate"): _Case(
+        request=lambda c: c.post(
+            "/api/dataset/evaluate",
+            json={
+                "generated_file": "data.json",
+                "reference_file": "train.json",
+            },
+        ),
+        keys=_keys("metrics", "sample_count", "details"),
     ),
     ("POST", "/api/dataset/convert"): _Case(
         request=lambda c: c.post(
@@ -706,6 +767,10 @@ def api_env(tmp_path, monkeypatch):
     monkeypatch.setattr(deps, "_pipeline", pipeline)
 
     monkeypatch.chdir(tmp_path)
+    # 白名单也收到临时目录：三个依赖端点不传 registry_path 时，默认注册表目录
+    # 跟着白名单首个根走（`api.deps.default_registry_dir`），这样契约测试不会在
+    # 仓库工作目录里留下 `.dependency_registry/`。
+    monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(tmp_path))
     payload = json.dumps(SAMPLE_ITEMS, ensure_ascii=False)
     (tmp_path / "data.json").write_text(payload, encoding="utf-8")
     (tmp_path / "train.json").write_text(payload, encoding="utf-8")

@@ -142,8 +142,8 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/api/component_assemble_control/save/component")
-                    .method("GET")
+                    .uri("/api/component_assemble_control/component/test-id")
+                    .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -163,8 +163,8 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/api/component_assemble_control/delete/component")
-                    .method("GET")
+                    .uri("/api/component_assemble_control/component/test-id")
+                    .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
             )

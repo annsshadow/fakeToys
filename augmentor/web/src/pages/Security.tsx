@@ -16,7 +16,7 @@ import {
   message
 } from 'antd'
 import DataList from '../components/DataList'
-import { auditDataset, checkLeakage, getDataFiles, getPiiPatterns, sanitizeData } from '../services/api'
+import { apiErrorDetail, auditDataset, checkLeakage, getDataFiles, getPiiPatterns, sanitizeData } from '../services/api'
 import type {
   AuditResponse,
   LeakageResponse,
@@ -50,11 +50,11 @@ export default function Security() {
   useEffect(() => {
     getPiiPatterns()
       .then(setPatterns)
-      .catch(() => message.error('加载 PII 模式清单失败'))
+      .catch((err) => message.error(apiErrorDetail(err, '加载 PII 模式清单失败')))
     // 泄漏检测要选两个文件，DataList 只解决「单文件 + 预览」，所以这里另拉一份文件名列表
     getDataFiles()
       .then(result => setFiles(result.files.map(item => item.name)))
-      .catch(() => message.error('加载数据文件列表失败'))
+      .catch((err) => message.error(apiErrorDetail(err, '加载数据文件列表失败')))
   }, [])
 
   /**
@@ -71,8 +71,8 @@ export default function Security() {
     setLoading(true)
     try {
       onDone(await task())
-    } catch {
-      message.error(failText)
+    } catch (err) {
+      message.error(apiErrorDetail(err, failText))
     } finally {
       setLoading(false)
     }

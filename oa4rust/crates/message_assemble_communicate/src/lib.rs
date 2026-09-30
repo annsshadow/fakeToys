@@ -165,6 +165,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
@@ -1243,9 +1244,16 @@ pub async fn im_msg(
 #[allow(non_snake_case)]
 pub async fn im_msg_clear(
     pool: Extension<Pool>,
-    axum::extract::Path(conversation_id): axum::extract::Path<String>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let conversation_id = req
+        .get("conversationId")
+        .or_else(|| req.get("conversation_id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
 
     let result = client
         .execute(
@@ -1361,7 +1369,7 @@ pub const MAX_IM_FILE_SIZE: usize = 50 * 1024 * 1024;
 
 /// W10：清洗上传文件名——剥离任意路径分量，防目录穿越/路径注入。
 pub fn sanitize_filename(name: &str) -> String {
-    name.rsplit(|c| c == '/' || c == '\\')
+    name.rsplit(['/', '\\'])
         .next()
         .unwrap_or_default()
         .to_string()
@@ -1459,7 +1467,7 @@ pub async fn im_msg_download_id(
         (header::CONTENT_TYPE, mime),
         (
             header::CONTENT_DISPOSITION,
-            format!("attachment; filename=\"{name}\""),
+            shared::response::attachment_disposition(&name),
         ),
     ];
     Ok((StatusCode::OK, headers, data).into_response())

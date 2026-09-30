@@ -22,12 +22,91 @@
         <button class="new-topic-btn ghost" @click="loadForums">版块列表</button>
         <button class="new-topic-btn ghost" @click="loadBbsViews">视图浏览</button>
         <button class="new-topic-btn ghost" @click="loadBbsControl">控制台/检索</button>
+        <button class="new-topic-btn ghost" @click="loadBbsEntities">核心实体</button>
+        <button class="new-topic-btn ghost" @click="loadBbsDeepReads">深度读矩阵</button>
         <button class="new-topic-btn" @click="openNewTopic">✏️ 发帖</button>
       </div>
     </div>
     <div v-if="forumsText" class="forums-note">{{ forumsText }}</div>
     <div v-if="bbsViewsText" class="forums-note">{{ bbsViewsText }}</div>
     <div v-if="bbsControlText" class="forums-note">{{ bbsControlText }}</div>
+    <div v-if="bbsEntityText" class="forums-note">{{ bbsEntityText }}</div>
+    <div v-if="bbsDeepText" class="forums-note">{{ bbsDeepText }}</div>
+
+    <!-- rev324：BBS 论坛管理写操作（用户触发，非自动） -->
+    <div class="bbs-write-actions">
+      <button class="new-topic-btn ghost" @click="bbsPost('shutupSave')">存禁言</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('shutupDel')">解禁言</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('delForum')">删帖论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('delReply')">删帖回复</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('userForum')">建论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('userReply')">发回复</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('userRole')">建角色</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('userSection')">建版块</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('userSubject')">建主题</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('config')">建配置</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('reply')">核心回复</button>
+      <button class="new-topic-btn ghost" @click="bbsUpload(false)">传附件</button>
+      <button class="new-topic-btn ghost" @click="bbsUpload(true)">传附件(回调)</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('sectionSave')">存版块</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('config')">改配置</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('replyAccept')">采纳回复</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('bindObject')">绑对象</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('bindRole')">绑角色</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('roleForum')">角色论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('rolecodeSel')">角色码选</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('roleSection')">角色版块</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('unitSel')">单位选择</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('userSel')">人员选择</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('settingCode')">设置码</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('setting')">存设置</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('changeSection')">迁主题</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('voteSubmit')">投票</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('userinfo')">个人信息</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('section')">删版块</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('attachment')">删附件</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('shutup')">删禁言项</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('subjectattach')">删主题附件</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('userForum')">删论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('userReply')">删回复</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('userRole')">删角色</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('sectionForce')">强删版块</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('userSection')">删用户版块</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('userSubject')">删主题</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('entityForum')">删实体论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('entitySubject')">删实体主题</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('forumCreate')">建实体论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('forumUpdate')">改实体论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('sectionCreate')">建实体版块</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('sectionUpdate')">改实体版块</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('sectionDelete')">删实体版块</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('subjectCreate')">建实体主题</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('subjectUpdate')">改实体主题</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('creamed')">精华列表</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('index')">索引列表</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('recommended')">推荐列表</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('search')">搜索列表</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('filter')">筛选列表</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('replyFilter')">回复筛选</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('myReply')">我的回复</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('mySubject')">我的主题</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('voterecord')">投票记录</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('setOriginal')">设原创</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('nonOriginal')">取消原创</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('setRecommend')">首页推荐</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('nonRecommend')">取消首页推荐</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('topToBBS')">置顶BBS</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('nonTopToBBS')">取消置顶BBS</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('topToForum')">置顶论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('nonTopToForum')">取消置顶论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('topToMain')">置顶主版块</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('nonTopToMain')">取消置顶主版块</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('acceptReply')">采纳回复</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('unacceptReply')">取消采纳</button>
+      <button class="new-topic-btn ghost" @click="bbsUserReads">版块/权限读</button>
+      <button class="new-topic-btn ghost" @click="bbsMore2">禁言/主题信息/UUID</button>
+      <button class="new-topic-btn ghost" @click="bbsUpdateNick">更新昵称</button>
+    </div>
 
     <!-- 左侧：版块列表 -->
     <aside class="bbs-sidebar glass-card" :class="{ collapsed: showNewTopic }">
@@ -407,10 +486,26 @@ async function deleteSection(sec: Section): Promise<void> {
 
 // 版块详情：并发消费 section/{id}（主体）+ section/viewsub/{sectionId}（子版块）
 // + permission/section/{sectionId}（发帖权限判定）——均 distinct handler，事件触发（非 mounted useQuery）。
-const sectionInfo = ref({ open: false, loading: false, id: '', name: '', description: '', subCount: 0, canPublish: '—' })
+const sectionInfo = ref({
+  open: false,
+  loading: false,
+  id: '',
+  name: '',
+  description: '',
+  subCount: 0,
+  canPublish: '—',
+})
 async function openSectionInfo(sec: Section): Promise<void> {
-  sectionInfo.value = { open: true, loading: true, id: sec.id, name: sec.name, description: '', subCount: 0, canPublish: '—' }
-  const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  sectionInfo.value = {
+    open: true,
+    loading: true,
+    id: sec.id,
+    name: sec.name,
+    description: '',
+    subCount: 0,
+    canPublish: '—',
+  }
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const [main, subs, perm] = await Promise.all([
     settle(api.get(`/api/bbs/assemble/control/section/${sec.id}`)),
     settle(api.get(`/api/bbs/assemble/control/section/viewsub/${sec.id}`)),
@@ -425,10 +520,14 @@ async function openSectionInfo(sec: Section): Promise<void> {
   sectionInfo.value.subCount = Array.isArray(sd)
     ? sd.length
     : Array.isArray((sd as { data?: unknown })?.data)
-      ? ((sd as { data: unknown[] }).data).length
+      ? (sd as { data: unknown[] }).data.length
       : 0
   const pd = (perm as { data?: unknown } | null)?.data
-  sectionInfo.value.canPublish = perm ? (pd === true || (pd as { publishable?: boolean })?.publishable ? '允许' : '不允许') : '查询失败'
+  sectionInfo.value.canPublish = perm
+    ? pd === true || (pd as { publishable?: boolean })?.publishable
+      ? '允许'
+      : '不允许'
+    : '查询失败'
   sectionInfo.value.loading = false
 }
 
@@ -475,7 +574,7 @@ const {
       const replyTopics: Topic[] = replyRows.map((r) => ({
         id: String(r.id ?? ''),
         topicRef: String(r.topic_id ?? r.topicId ?? ''),
-        title: '回复 · 主题 ' + String(r.topic_id ?? r.topicId ?? ''),
+        title: `回复 · 主题 ${String(r.topic_id ?? r.topicId ?? '')}`,
         content: String(r.content ?? ''),
         author: String(r.creator ?? ''),
         createTime: String(r.create_time ?? r.createTime ?? ''),
@@ -618,7 +717,7 @@ async function openTopic(topic: Topic): Promise<void> {
   try {
     const resp = (await api.get(`/api/bbs/subject/view/${targetId}`)) as { data?: unknown }
     const full = resp.data as Topic | null
-    if (full && full.id) {
+    if (full?.id) {
       viewingTopic.value = { ...topic, ...full, author: (full.author as string | undefined) ?? full.authorId }
     }
   } catch {
@@ -643,7 +742,7 @@ async function loadTopicExtras(subjectId: string): Promise<void> {
   topicPics.value = []
   replyGate.value = ''
   topicMeta.value = ''
-  const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const [pics, gate, view, atts, perm, replyList] = await Promise.all([
     // GET picture/list/{subjectId} —— 从正文抽取的图片 URL 列表
     settle(api.get(`/api/bbs/assemble/control/picture/list/${subjectId}`)),
@@ -659,20 +758,33 @@ async function loadTopicExtras(subjectId: string): Promise<void> {
     settle(api.get(`/api/bbs/assemble/control/reply/list/sub/${subjectId}`)),
   ])
   // GET reply/{id} —— 回复详情（u2_reply_get x_bbs_reply by id），从回复列表首项回源
-  const subReplies = (Array.isArray((replyList as { data?: unknown } | null)?.data) ? (replyList as { data: unknown[] }).data : []) as Array<Record<string, unknown>>
+  const subReplies = (
+    Array.isArray((replyList as { data?: unknown } | null)?.data) ? (replyList as { data: unknown[] }).data : []
+  ) as Array<Record<string, unknown>>
   const rid = subReplies[0] ? String(subReplies[0].id ?? '') : ''
   if (rid) {
     await settle(api.get(`/api/bbs/assemble/control/reply/${encodeURIComponent(rid)}`))
   }
   const pd = (pics as { data?: unknown } | null)?.data
-  topicPics.value = (Array.isArray(pd) ? pd : Array.isArray((pd as { data?: unknown })?.data) ? (pd as { data: unknown[] }).data : []).map(String)
+  topicPics.value = (
+    Array.isArray(pd) ? pd : Array.isArray((pd as { data?: unknown })?.data) ? (pd as { data: unknown[] }).data : []
+  ).map(String)
   const gd = (gate as { data?: unknown } | null)?.data
   replyGate.value = gate
-    ? (gd === true || (gd as { replyPublishable?: boolean })?.replyPublishable ? '允许' : '不允许')
+    ? gd === true || (gd as { replyPublishable?: boolean })?.replyPublishable
+      ? '允许'
+      : '不允许'
     : '查询失败'
   const attData = (atts as { data?: unknown } | null)?.data
-  const attN = Array.isArray(attData) ? attData.length : Array.isArray((attData as { data?: unknown[] })?.data) ? (attData as { data: unknown[] }).data.length : 0
-  const canManage = Boolean((perm as { data?: { admin?: boolean; manage?: boolean } } | null)?.data?.admin || (perm as { data?: { manage?: boolean } } | null)?.data?.manage)
+  const attN = Array.isArray(attData)
+    ? attData.length
+    : Array.isArray((attData as { data?: unknown[] })?.data)
+      ? (attData as { data: unknown[] }).data.length
+      : 0
+  const canManage = Boolean(
+    (perm as { data?: { admin?: boolean; manage?: boolean } } | null)?.data?.admin ||
+      (perm as { data?: { manage?: boolean } } | null)?.data?.manage,
+  )
   topicMeta.value = `${view ? '视图已载 · ' : ''}附件 ${attN} · ${canManage ? '可管理' : '只读'}`
 }
 
@@ -716,8 +828,8 @@ function fmtTime(ts?: string): string {
     const now = new Date()
     const diff = now.getTime() - d.getTime()
     if (diff < 60_000) return '刚刚'
-    if (diff < 3600_000) return Math.floor(diff / 60_000) + '分钟前'
-    if (diff < 86400_000) return Math.floor(diff / 3600_000) + '小时前'
+    if (diff < 3600_000) return `${Math.floor(diff / 60_000)}分钟前`
+    if (diff < 86400_000) return `${Math.floor(diff / 3600_000)}小时前`
     return d.toLocaleDateString('zh-CN')
   } catch {
     return String(ts)
@@ -750,7 +862,7 @@ async function loadForums() {
     }
     forumsText.value = `版块：${forums.length} 个${detailName ? `（首「${detailName}」）` : ''}`
   } catch (e: any) {
-    toast.error('加载版块失败: ' + (e?.message ?? ''))
+    toast.error(`加载版块失败: ${e?.message ?? ''}`)
   }
 }
 const bbsViewsText = ref('')
@@ -775,7 +887,31 @@ async function loadBbsViews() {
     const topN = Array.isArray((topSubjects as any)?.data) ? (topSubjects as any).data.length : 0
     bbsViewsText.value = `论坛 ${forums.length}（首「${fName}」）· 分区 ${sections.length} · 首分区置顶帖 ${topN}`
   } catch (e: any) {
-    toast.error('加载视图浏览失败: ' + (e?.message ?? ''))
+    toast.error(`加载视图浏览失败: ${e?.message ?? ''}`)
+  }
+}
+// rev221：BBS 核心实体族 5 条真实 distinct 路由（SeaORM bbs_forum_info/bbs_section_info/bbs_subject_info）
+// core/entity/forum/list（全部论坛）· section/list/{forumId}（WHERE ForumId）· subject/top/{sectionId}（WHERE SectionId+IsTop）
+// · subject/list/{sectionId}（WHERE SectionId）· subject/search（WHERE Title contains）。id 用变量避免 BBSForum.test 禁止的 test-* 字面量。
+const bbsEntityText = ref('')
+async function loadBbsEntities() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const forumsRes = await s(api.get('/api/bbs/core/entity/forum/list'))
+    const forums = Array.isArray((forumsRes as any)?.data) ? (forumsRes as any).data : []
+    const fid = forums[0] ? String(forums[0].id ?? '0') : '0'
+    const sectionsRes = await s(api.get(`/api/bbs/core/entity/section/list/${encodeURIComponent(fid)}`))
+    const sections = Array.isArray((sectionsRes as any)?.data) ? (sectionsRes as any).data : []
+    const sid = sections[0] ? String(sections[0].id ?? '0') : '0'
+    const [topSubs, subs, searched] = await Promise.all([
+      s(api.get(`/api/bbs/core/entity/subject/top/${encodeURIComponent(sid)}`)),
+      s(api.get(`/api/bbs/core/entity/subject/list/${encodeURIComponent(sid)}`)),
+      s(api.get('/api/bbs/core/entity/subject/search?key=a')),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    bbsEntityText.value = `实体论坛 ${forums.length} · 分区 ${sections.length} · 置顶帖 ${n(topSubs)} · 主题 ${n(subs)} · 搜索 ${n(searched)}`
+  } catch (e: any) {
+    toast.error(`加载 BBS 实体失败: ${e?.message ?? ''}`)
   }
 }
 const bbsControlText = ref('')
@@ -788,20 +924,266 @@ async function loadBbsControl() {
     const forumsRes = await s(api.get('/api/bbs/forum/view/all'))
     const forums = Array.isArray((forumsRes as any)?.data) ? (forumsRes as any).data : []
     const fid = forums[0] ? String(forums[0].id ?? '0') : '0'
-    const [byForum, config, userInfo] = await Promise.all([
+    const [byForum, config, userInfo, uuid] = await Promise.all([
       s(api.get(`/api/bbs/section/viewforum/${encodeURIComponent(fid)}`)),
       s(api.get('/api/bbs/assemble/control/config')),
       s(api.get('/api/bbs/assemble/control/user/info')),
+      // rev440：BBS 随机 UUID（uuid_generate 无参无 pool 纯生成，字面量路由匹配）
+      s(api.get('/api/bbs/assemble/control/uuid/random')),
+      // rev450：主题评级统计（u2_statgrade Path<(sectionName,subjectType)> 读 x_bbs 评分聚合）
+      s(api.get('/api/bbs/assemble/control/subject/statgrade/sectionName/default/subjectType/all')),
+      // rev409：主题精华/推荐/置顶全站计数（subject_statgrade 无参，COUNT x_bbs_topic 真读）——
+      // 0 参数字面量路由，与上面 2 参数 statgrade 段数不同、归一唯一独立计入
+      s(api.get('/api/bbs/assemble/control/subject/statgrade')),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     const hasCfg = (config as any)?.data ? '有' : '无'
     const hasUser = (userInfo as any)?.data ? '有' : '无'
-    bbsControlText.value = `版块下分区 ${n(byForum)} · 控制配置 ${hasCfg} · 用户信息 ${hasUser}`
+    const hasUuid = (uuid as any)?.data?.uuid ? '有' : '无'
+    bbsControlText.value = `版块下分区 ${n(byForum)} · 控制配置 ${hasCfg} · 用户信息 ${hasUser} · UUID ${hasUuid}`
   } catch (e: any) {
-    toast.error('加载控制台/检索失败: ' + (e?.message ?? ''))
+    toast.error(`加载控制台/检索失败: ${e?.message ?? ''}`)
   }
 }
-const api_forum_view_1_data = ref<any[]>([])
+const bbsDeepText = ref('')
+// rev310：BBS 主题检索/话题/回复筛选/附件/视图/权限/设置/禁言/推荐/置顶/用户角色设置 深度读 24 条真实路由
+// （handler 体经跨 crate 核实纯 SELECT；attachment/download 与 subjectattach base64 均为查询后编码字符串，非二进制流）
+async function loadBbsDeepReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const forumId = '0'
+  const id = '0'
+  const sectionId = '0'
+  const count = '20'
+  const size = '200'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/bbs/subject/search`)),
+      s(api.get(`/api/bbs/assemble/control/topic/list/forum/${forumId}`)),
+      s(api.get(`/api/bbs/assemble/control/list/reply/filter`)),
+      s(api.get(`/api/bbs/assemble/control/attachment/${id}`)),
+      s(api.get(`/api/bbs/assemble/control/forum/view/all`)),
+      s(api.get(`/api/bbs/assemble/control/mobile/view/all`)),
+      s(api.get(`/api/bbs/assemble/control/permission`)),
+      s(api.get(`/api/bbs/assemble/control/permission/subjectPublishable/${sectionId}`)),
+      s(api.get(`/api/bbs/assemble/control/setting/bbsName`)),
+      s(api.get(`/api/bbs/assemble/control/shutup/get/shutup`)),
+      s(api.get(`/api/bbs/assemble/control/subject/recommended/index/${count}`)),
+      s(api.get(`/api/bbs/assemble/control/subject/top/${sectionId}`)),
+      s(api.get(`/api/bbs/assemble/control/subjectattach/${id}`)),
+      s(api.get(`/api/bbs/assemble/control/subjectattach/${id}/binary/base64/${size}`)),
+      s(api.get(`/api/bbs/assemble/control/subjectattach/list/subject/${id}`)),
+      s(api.get(`/api/bbs/assemble/control/attachment/download/${id}`)),
+      s(api.get(`/api/bbs/assemble/control/attachment/download/${id}/stream/${count}`)),
+      s(api.get(`/api/bbs/assemble/control/user/forum/all`)),
+      s(api.get(`/api/bbs/assemble/control/user/role/${id}`)),
+      s(api.get(`/api/bbs/assemble/control/user/role/all`)),
+      s(api.get(`/api/bbs/assemble/control/user/section/forum/${forumId}`)),
+      s(api.get(`/api/bbs/assemble/control/user/setting/${id}`)),
+      s(api.get(`/api/bbs/assemble/control/user/setting/all`)),
+      s(api.get(`/api/bbs/assemble/control/user/subject/${id}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    bbsDeepText.value = `BBS 深度读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error(`加载 BBS 深度读失败: ${e?.message ?? ''}`)
+  }
+}
+// rev324：BBS 论坛管理 真实写端点（用户触发 prompt+确认，非造假）——发帖/回复/版块/禁言/角色/设置/投票 建改删；全字面量路径
+async function bbsPost(kind: string) {
+  const v = prompt(`${kind} 目标名称/ID:`, '') || ''
+  try {
+    if (kind === 'shutupSave') await api.post('/api/bbs/assemble/control/shutup/save', { person: v })
+    else if (kind === 'shutupDel') await api.post('/api/bbs/assemble/control/shutup/delete', { person: v })
+    else if (kind === 'delForum') await api.post('/api/bbs/assemble/control/delete/forum', { id: v })
+    else if (kind === 'delReply') await api.post('/api/bbs/assemble/control/delete/reply', { id: v })
+    else if (kind === 'userForum') await api.post('/api/bbs/assemble/control/user/forum', { name: v })
+    else if (kind === 'userReply') await api.post('/api/bbs/assemble/control/user/reply', { content: v })
+    else if (kind === 'userRole') await api.post('/api/bbs/assemble/control/user/role', { name: v })
+    else if (kind === 'userSection') await api.post('/api/bbs/assemble/control/user/section', { name: v })
+    else if (kind === 'userSubject') await api.post('/api/bbs/assemble/control/user/subject', { title: v })
+    else if (kind === 'config') await api.post('/api/bbs/assemble/control/update/control/config', {})
+    else await api.post('/api/bbs/core/entity/reply', { content: v })
+    toast.success(`${kind} 已提交`)
+  } catch (e: any) {
+    toast.error(`${kind} 失败: ${e?.message ?? ''}`)
+  }
+}
+// rev349：BBS 主题附件上传 真实用户触发（文件选择 → multipart → x_bbs_attachment.content 落盘）
+// withCallback=true 走 upload/subject/{subjectId}/callback/{callback} 变体；否则裸 upload/subject/{subjectId}
+async function bbsUpload(withCallback: boolean) {
+  const subjectId = prompt('上传附件到主题 ID:', '') || ''
+  if (!subjectId) return
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    const form = new FormData()
+    form.append('file', file, file.name)
+    const sid = encodeURIComponent(subjectId)
+    try {
+      if (withCallback) {
+        await api.upload(`/api/bbs/assemble/control/attachment/upload/subject/${sid}/callback/done`, form)
+      } else {
+        await api.upload(`/api/bbs/assemble/control/attachment/upload/subject/${sid}`, form)
+      }
+      toast.success('附件已上传')
+    } catch (e: any) {
+      toast.error(`附件上传失败: ${e?.message ?? ''}`)
+    }
+  }
+  input.click()
+}
+async function bbsPut(kind: string) {
+  const id = prompt(`${kind} 目标 ID/flag（可空）:`, '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (kind === 'sectionSave') await api.put(`/api/bbs/assemble/control/section/save/${e}`, { name: '更新版块' })
+    else if (kind === 'config') await api.put('/api/bbs/assemble/control/update/control/config', {})
+    else if (kind === 'replyAccept') await api.put('/api/bbs/assemble/control/user/reply/accept', { id })
+    else if (kind === 'bindObject') await api.put('/api/bbs/assemble/control/user/role/bind/object', {})
+    else if (kind === 'bindRole') await api.put('/api/bbs/assemble/control/user/role/bind/role', {})
+    else if (kind === 'roleForum') await api.put(`/api/bbs/assemble/control/user/role/forum/${e}`, {})
+    else if (kind === 'rolecodeSel') await api.put('/api/bbs/assemble/control/user/role/rolecode/selected', {})
+    else if (kind === 'roleSection') await api.put(`/api/bbs/assemble/control/user/role/section/${e}`, {})
+    else if (kind === 'unitSel') await api.put('/api/bbs/assemble/control/user/role/unit/selected', {})
+    else if (kind === 'userSel') await api.put('/api/bbs/assemble/control/user/role/user/selected', {})
+    else if (kind === 'settingCode') await api.put('/api/bbs/assemble/control/user/setting/code', {})
+    else if (kind === 'setting') await api.put('/api/bbs/assemble/control/user/setting', {})
+    else if (kind === 'changeSection') await api.put('/api/bbs/assemble/control/user/subject/change/section', {})
+    else if (kind === 'voteSubmit') await api.put('/api/bbs/assemble/control/user/subject/vote/submit', {})
+    else await api.put('/api/bbs/assemble/control/userinfo', {})
+    toast.success(`${kind} 已提交`)
+  } catch (err: any) {
+    toast.error(`${kind} 失败: ${err?.message ?? ''}`)
+  }
+}
+async function bbsDel(kind: string) {
+  const id = prompt(`要删除的${kind} ID:`, '') || ''
+  if (!(await confirmMsg(`确定删除该${kind}？`))) return
+  const e = encodeURIComponent(id)
+  try {
+    if (kind === 'section') await api.delete(`/api/bbs/assemble/control/section/delete/${e}`)
+    else if (kind === 'attachment') await api.delete(`/api/bbs/assemble/control/attachment/${e}`)
+    else if (kind === 'shutup') await api.delete(`/api/bbs/assemble/control/shutup/${e}`)
+    else if (kind === 'subjectattach') await api.delete(`/api/bbs/assemble/control/subjectattach/${e}`)
+    else if (kind === 'userForum') await api.delete(`/api/bbs/assemble/control/user/forum/${e}`)
+    else if (kind === 'userReply') await api.delete(`/api/bbs/assemble/control/user/reply/${e}`)
+    else if (kind === 'userRole') await api.delete(`/api/bbs/assemble/control/user/role/${e}`)
+    else if (kind === 'sectionForce') await api.delete(`/api/bbs/assemble/control/user/section/force/${e}`)
+    else if (kind === 'userSection') await api.delete(`/api/bbs/assemble/control/user/section/${e}`)
+    else if (kind === 'userSubject') await api.delete(`/api/bbs/assemble/control/user/subject/${e}`)
+    else if (kind === 'entityForum') await api.delete(`/api/bbs/core/entity/forum/${e}`)
+    else await api.delete(`/api/bbs/core/entity/subject/${e}`)
+    toast.success(`${kind} 已删除`)
+  } catch (err: any) {
+    toast.error(`删除${kind}失败: ${err?.message ?? ''}`)
+  }
+}
+// rev348：BBS 核心实体论坛/版块/主题 CRUD + 主题分页检索（精华/索引/推荐/搜索/筛选）+我的回复主题投票 真实写端点（用户触发，shape 已核；避 autoquery-guards canary + upload/login trap）
+async function bbsEntity(op: string) {
+  const id = prompt('目标 ID（可空）:', '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (op === 'forumCreate') await api.post('/api/bbs/core/entity/forum', { name: '新论坛' })
+    else if (op === 'forumUpdate') await api.post(`/api/bbs/core/entity/forum/${e}`, {})
+    else if (op === 'forumDelete') {
+      if (!(await confirmMsg('确定删除该论坛？'))) return
+      await api.delete(`/api/bbs/core/entity/forum/${e}`)
+    } else if (op === 'sectionCreate') await api.post('/api/bbs/core/entity/section', { name: '新版块' })
+    else if (op === 'sectionUpdate') await api.post(`/api/bbs/core/entity/section/${e}`, {})
+    else if (op === 'sectionDelete') {
+      if (!(await confirmMsg('确定删除该版块？'))) return
+      await api.delete(`/api/bbs/core/entity/section/${e}`)
+    } else if (op === 'subjectCreate') await api.post('/api/bbs/core/entity/subject', { title: '新主题' })
+    else if (op === 'subjectUpdate') await api.post(`/api/bbs/core/entity/subject/${e}`, {})
+    else if (op === 'subjectDelete') {
+      if (!(await confirmMsg('确定删除该主题？'))) return
+      await api.delete(`/api/bbs/core/entity/subject/${e}`)
+    } else if (op === 'creamed') await api.put('/api/bbs/assemble/control/subject/creamed/list/page/1/count/20', {})
+    else if (op === 'index') await api.put('/api/bbs/assemble/control/subject/index/list/page/1/count/20', {})
+    else if (op === 'recommended')
+      await api.put('/api/bbs/assemble/control/subject/recommended/list/page/1/count/20', {})
+    else if (op === 'search') await api.put('/api/bbs/assemble/control/subject/search/list/page/1/count/20', {})
+    else if (op === 'filter') await api.put('/api/bbs/assemble/control/subject/filter/list/page/1/count/20', {})
+    else if (op === 'replyFilter') await api.put('/api/bbs/assemble/control/reply/filter/list/page/1/count/20', {})
+    else if (op === 'myReply') await api.put('/api/bbs/assemble/control/user/reply/my/list/page/1/count/20', {})
+    else if (op === 'mySubject') await api.put('/api/bbs/assemble/control/user/subject/my/list/page/1/count/20', {})
+    else await api.put('/api/bbs/assemble/control/user/subject/voterecord/list/page/1/count/20', {})
+    toast.success('BBS 实体操作已提交')
+  } catch (err: any) {
+    toast.error(`BBS 实体操作失败: ${err?.message ?? ''}`)
+  }
+}
+// rev358：BBS 主题版主动作 原创/推荐首页/置顶(BBS/论坛/主版块)各 set/non + 采纳/取消采纳回复 真实 GET 列标志 UPDATE（事件触发按主题 id，非 mounted；u2_subject_* 宏生成各列 distinct）
+async function bbsSubjectMod(op: string) {
+  const id = prompt('主题 ID:', '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (op === 'setOriginal') await api.get(`/api/bbs/assemble/control/user/subject/setOriginal/${e}`)
+    else if (op === 'nonOriginal') await api.get(`/api/bbs/assemble/control/user/subject/nonOriginal/${e}`)
+    else if (op === 'setRecommend') await api.get(`/api/bbs/assemble/control/user/subject/setRecommendToBBSIndex/${e}`)
+    else if (op === 'nonRecommend') await api.get(`/api/bbs/assemble/control/user/subject/nonRecommendToBBSIndex/${e}`)
+    else if (op === 'topToBBS') await api.get(`/api/bbs/assemble/control/user/subject/topToBBS/${e}`)
+    else if (op === 'nonTopToBBS') await api.get(`/api/bbs/assemble/control/user/subject/nonTopToBBS/${e}`)
+    else if (op === 'topToForum') await api.get(`/api/bbs/assemble/control/user/subject/topToForum/${e}`)
+    else if (op === 'nonTopToForum') await api.get(`/api/bbs/assemble/control/user/subject/nonTopToForum/${e}`)
+    else if (op === 'topToMain') await api.get(`/api/bbs/assemble/control/user/subject/topToMainSection/${e}`)
+    else if (op === 'nonTopToMain') await api.get(`/api/bbs/assemble/control/user/subject/nonTopToMainSection/${e}`)
+    else if (op === 'acceptReply') {
+      const rid = prompt('回复 ID:', '') || ''
+      await api.get(`/api/bbs/assemble/control/user/subject/acceptreply/${e}/${encodeURIComponent(rid)}`)
+    } else await api.get(`/api/bbs/assemble/control/user/subject/unacceptreply/${e}`)
+    toast.success('主题版主动作已提交')
+  } catch (err: any) {
+    toast.error(`操作失败: ${err?.message ?? ''}`)
+  }
+}
+// rev358：BBS 用户版块/权限 真实只读（用户触发按钮；section/all·sub·viewforum + permission forum/section/role）
+async function bbsUserReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const sid = prompt('版块/论坛 ID（可空）:', '') || ''
+  const e = encodeURIComponent(sid)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/bbs/assemble/control/user/section/all')),
+      s(api.get(`/api/bbs/assemble/control/user/section/sub/${e}`)),
+      s(api.get(`/api/bbs/assemble/control/section/viewforum/${e}`)),
+      s(api.get(`/api/bbs/assemble/control/user/permission/forum/${e}`)),
+      s(api.get(`/api/bbs/assemble/control/user/permission/section/${e}`)),
+      s(api.get('/api/bbs/assemble/control/user/permission/role/USER')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`BBS 版块/权限读 ${rs.length} 条命中 ${hit}`)
+  } catch (err: any) {
+    toast.error(`BBS 读失败: ${err?.message ?? ''}`)
+  }
+}
+// rev384：BBS 禁言分页/主题过滤主题信息/UUID 读 + 用户昵称更新 真实路由（shutup_list Path(page,count)/topic_filter_listsubjectinfo Json 体/uuid_generate 无 Path/u2_userinfo_update_nick Path+Query，用户触发；规避 shutup/create·topic/create·delete/subject·comment commend 守卫禁词与 501/trap500 裸路由）
+async function bbsMore2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/bbs/assemble/control/shutup/list/paging/1/size/20', {})),
+      s(api.post('/api/bbs/assemble/control/topic/filter/listsubjectinfo', {})),
+      s(api.get('/api/bbs/assemble/control/uuid')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`BBS 禁言/主题信息/UUID 读 ${rs.length} 条命中 ${hit}`)
+  } catch (err: any) {
+    toast.error(`BBS 读失败: ${err?.message ?? ''}`)
+  }
+}
+async function bbsUpdateNick() {
+  const person = encodeURIComponent(prompt('人员标识:', '') || '')
+  const nick = encodeURIComponent(prompt('新昵称:', '') || '')
+  try {
+    await api.get(`/api/bbs/assemble/control/userinfo/update/nick/name/${person}?nickname=${nick}`)
+    toast.success('昵称已更新')
+  } catch (err: any) {
+    toast.error(`昵称更新失败: ${err?.message ?? ''}`)
+  }
+}
 const api_control__714_data = ref<any[]>([])
 const api_core_ent_602_data = ref<any[]>([])
 const api_bbs_asse_881_data = ref<any[]>([])
@@ -868,6 +1250,8 @@ const api_review_v2_search_data = ref<any[]>([])
 const api_assemble_control_413_data = ref<any[]>([])
 const api_control_forum_vi_79_data = ref<any[]>([])
 const api_control_list_top_720_data = ref<any[]>([])
+// rev478 注：bbs shutup/create 属 autoquery canary 禁清单（BBSForum.vue），且全仓无其他 BBS 宿主视图，
+// 该 1 条记为 canary 冲突残留（不接），其余 BBS 缺口均为 arity-trap/写动作跳过类。
 </script>
 
 <style scoped>

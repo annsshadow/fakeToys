@@ -20,10 +20,11 @@ class TestExportOptimization:
         assert hasattr(exporter, '_export_cache')
         assert isinstance(exporter._export_cache, dict)
     
-    def test_export_cache_stores_converted_data(self, exporter):
+    def test_export_cache_stores_converted_data(self, exporter, tmp_path):
         """导出后应缓存转换结果"""
-        # 使用简单数据测试缓存机制存在
+        # 落点必须在 tmp_path：这里原来写裸名，相对路径按 CWD 解释 ⇒ 每跑一次套件
+        # 就在仓库根留一份产物，而那份既存文件会把 A168 残留守卫的 before/after 差集抵冲成空
         sample = [{"instruction": "测试", "output": "回答"}]
-        exporter.export(sample, "test_output.json", format="jsonl")
+        exporter.export(sample, str(tmp_path / "exported.jsonl"), format="jsonl")
         # 验证缓存机制可访问
         assert isinstance(exporter._export_cache, dict)

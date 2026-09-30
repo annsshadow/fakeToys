@@ -1,0 +1,1752 @@
+/**
+ * 战斗引擎 —— 固定 60Hz 步进 + 确定性 + 事件队列。
+ *
+ * 三条铁律（违反其一 I-6 立即失效）：
+ *  1. 全部数学用 bigint 定点整数（fixed.ts）
+ *  2. 全部随机走 BattleRng（lcg.ts），禁止 Math.random
+ *  3. 固定步长推进，不依赖真实时间（渲染层可丢帧，但逻辑不可变速）
+ *
+ * 表现层通过 drainEvents() 取事件做动画，不直接读引擎内部状态。
+ */
+
+import { BattleRng, fnv1a64, hex16 } from './lcg'
+import { DEFAULT_SCORE_RULES, damageScore, killScore, type ScoreRules } from './score'
+import {
+  PERMILLE,
+  ELEMENT_PER_STACK_BASE,
+  mulDiv,
+  maxBig,
+  clampInt64,
+  applyArmor,
+  MAX_RESIST,
+} from './fixed'
+import {
+  ELEMENT_ORDER,
+  REACTIONS,
+  REACTION_ORDER,
+  type Element,
+  type ReactionKey,
+} from './elements'
+import {
+  Defender,
+  resolveHit,
+  applyElementStacks,
+  type Attacker,
+  type HitResult,
+} from './damage'
+import {
+  HeatSystem,
+  CardDeck,
+  rollWaveCards,
+  type Card,
+  type EquippedSkill,
+  type AttributeEffect,
+  type MechanicEffect,
+  ACTIVE_SLOTS,
+} from './heatmap'
+import { Terrain, BASE_X, BASE_Y, FIELD_W, FIELD_H, toFixed } from './terrain'
+import type {
+  Enemy,
+  EnemyDef,
+  FloatText,
+  GeneratedLevel,
+  Projectile,
+  ReplayEvent,
+  ReplayEventType,
+  SkillDef,
+} from './types'
+
+export const TICK_HZ = 20
+/**
+ * 每 tick 的毫秒数。
+ *
+ * ⚠️ 必须是整数：BigInt(TICK_MS) 在 TICK_MS 为小数时会直接抛
+ * RangeError，而 1000/60 = 16.666… 正是一个小数。
+ *
+ * 固定步长常用做法是把 tick 间隔取整：这里取 50ms（20Hz 逻辑步），
+ * 渲染层做插值。宁可步长粗一点，也不要引入浮点时间 ——
+ * 浮点时间会让回放哈希在跨设备时漂移。
+ */
+export const TICK_MS = 50
+
+/**
+ * 漏怪推进伤害的分母：漏怪伤害 = base_hp / LeakDamageDivisor。
+ *
+ * ⚠️ 曾经的实现是拿**敌人自己的血量**当漏怪伤害
+ * （pplyArmor(e.maxHp, ...)），于是血量调到 8 倍时漏一只就打死满血防线
+ * （base_hp=1000、漏怪伤害 560~2080）。这让平衡空间被压成一条窄缝：
+ * 血量低时全清、成长收益为 0；血量高时"漏一只即败"、同样没有成长空间。
+ *
+ * 取 10 的依据：base_hp=1000 时漏 10 只才归零，
+ * 配合"漏怪会扣分"（击杀分拿不到）已经形成足够压力，
+ * 不需要让单次失误直接终结战局。
+ */
+export const LeakDamageDivisor = 10n
+
+/**
+ * 输出位漏怪代价的分母（第 54 轮定稿）：`底血 × attack / LeakAttackerDivisor`。
+ *
+ * ## 为什么要改这条公式
+ *
+ * 内容表里 `attack` 是**平铺值**（8/10/28/35/45/60），而底血从 1000 涨到 14000。
+ * 于是「有攻击力的敌人」只掉 6~60 点，相对底血几乎为零；
+ * 而零攻击力的杂兵走 `breachDamage`，代价恒为底血的 1/10。
+ *
+ * **一只 boss 漏进防线的代价只有杂兵的 1/4 ~ 1/40**，没有哪条设计原则支持这个不对称。
+ * 后果是护甲（只减漏怪伤害）吃满封顶 750‰ 也只多买 **3.66%** 血量 ——
+ * 护甲、装备护甲、专精 armor 节点、宝石 armor 词条**全部买不到东西**。
+ *
+ * 改成随底血等比缩放后，**每关的相对代价一致**，护甲第一次在每一关都有分量。
+ *
+ * ## 分母怎么定的（1200 / 2400 / 3600 / 6000 / 12000 实测扫描，100 关 × 2 护甲档）
+ *
+ * | 分母 | 通关 | 护甲收益 | 掉血占比 | 前 30 关失败 |
+ * |---|---|---|---|---|
+ * | 基线(无缩放) | 100/100 | 3.66% | 5.33% | 无 |
+ * | 1200 | 96/100 | 1.86% | 13.81% | 无 |
+ * | 2400 | 96/100 | 1.60% | 13.50% | 无 |
+ * | **3600** | **99/100** | **6.81%** | 12.23% | **无** |
+ * | 6000 | 100/100 | 5.70% | 8.43% | 无 |
+ * | 12000 | 100/100 | 3.48% | 5.11% | 无 |
+ *
+ * 取 **3600**：护甲收益比基线高 **86%**，前 30 关**无进度墙**，
+ * 只有第 96 关失败（第 54 轮实测）。
+ *
+ * 更小的分母会让早期关卡被压垮：
+ * | | 第 1 关（底血 1000） | 第 100 关（底血 14000） |
+ * |---|---|---|
+ * | 基线 boss 漏一次 | 60（6.0% 底血） | 60（0.4% 底血） |
+ * | 平铺 ×5 | 300（**30%**） | 300（2.1%） |
+ *
+ * **平铺放大对早期关卡的伤害最大，与难度曲线完全相反** —— 入口关卡被压垮、
+ * 终盘反而相对变轻。这是第 53 轮那次失败的核心教训。
+ *
+ * ## 与内容表的关系
+ *
+ * 隐含「最强敌人攻击力 = 60」（chalkqueen）。改内容表 `attack` 上限时
+ * **必须同步这个分母**，否则最强输出位的相对代价会漂移，且不会有任何测试报错。
+ */
+export const LeakAttackerDivisor = 3600n
+
+/**
+ * 出场进度：**整数千分比** 0..SPAWN_PROGRESS_FULL。
+ *
+ * ⚠️ 敌人曾经用 0..1 的浮点记录出场进度、每 tick 累加 0.08，
+ * 这直接违反项目的定点整数铁律（README 六个工程约束第 2 条）。
+ *
+ * 为什么它不只是"风格问题"：这个值决定敌人**何时开始移动、何时可被命中**，
+ * 所以它会改变后续每一个 tick 的事件序列，进而改变 replayHash。
+ * 而 IEEE 754 浮点加法的中间精度**没有跨实现保证** ——
+ * 不同 V8 版本、不同 CPU 架构（x86 的 SSE 路径与 ARM 的实现不同）可能差 1 ulp。
+ * 差 1 ulp 就可能让某个边界判定在两端落在不同一侧，
+ * 于是 I-6 把这类关卡的正常对局判成伪造。
+ *
+ * 取 FULL=1000 / STEP=80 是为了**逐位等价**于原来的行为：
+ * 80/1000 = 0.08，13 个 tick 达到满（12 个 tick 时 960 < 1000）。
+ * 换成别的数值会让"敌人何时可被击中"的时刻整体平移，
+ * 存量战报的哈希会失配。
+ */
+export const SPAWN_PROGRESS_FULL = 1000
+
+/** 每 tick 的出场进度增量（80‰，等价于原来的 0.08）。 */
+export const SPAWN_PROGRESS_STEP = 80
+
+/**
+ * MAX_BATTLE_TICKS 是战斗的绝对 tick 上限（30000 tick = 1500s = 25 分钟）。
+ *
+ * 到达即强制判负并结束，防止引擎因任何死锁而**永久挂死**。
+ *
+ * ⚠️ 实测踩过：第 22/33/34 关因「掩体挡弹丸 → 弹丸打不到敌人 →
+ * 掩体永远打不破」的循环依赖，引擎永久停在 wave 阶段 ——
+ * 12000 tick 只杀 2~17 只怪，命中率 1%，战斗不会自然结束。
+ * 真机上那就是玩家盯着一个永远不结算的画面，体力也拿不回来。
+ *
+ * 那个具体缺陷已修，但**这类缺陷（循环依赖 / 几何互斥）无法靠读代码杜绝** ——
+ * 本项目已经栽过三次（掩体充能路径几何互斥、刷怪毫秒当 tick、
+ * 热量死区导致战斗停摆）。所以留一道兜底。
+ *
+ * 预算依据：实测最慢的合法关卡是第 100 关 594s = 11880 tick，
+ * 30000 是它的 2.5 倍余量 —— 合法对局**不可能**触碰这个上限，
+ * 因此它只会在真正死锁时触发。
+ *
+ * 与服务端的一致性：服务端对 duration_ms 的上界是 1800s（54000 tick），
+ * 比这里宽 1.8 倍。宁可服务端更宽松 —— 否则会出现
+ * "客户端因停滞结束了、服务端却认为时长非法"的不一致。
+ */
+export const MAX_BATTLE_TICKS = 30000
+
+/** TICK_MS 的 bigint 形式，供定点运算直接使用 */
+export const TICK_BIG = BigInt(TICK_MS)
+
+/**
+ * 坐标系约定（重要）：
+ *  - 逻辑空间 0..FIELD_W（1000），与地形/关卡配置一致，服务端也用它
+ *  - 引擎内部所有坐标是**定点整数**（逻辑值 × 1000）
+ *
+ * ⚠️ 混用这两者会让敌人瞬间穿过全场 —— 逻辑上 960 单位的距离，
+ * 若误当成 960 个定点单位（实际 0.96 逻辑单位），移动速度会放大 1000 倍。
+ * 所有从逻辑空间转换的地方必须走 terrain.toFixed()。
+ */
+export { toFixed } from './terrain'
+
+export type BattlePhase = 'prepare' | 'wave' | 'card_select' | 'won' | 'lost'
+
+export interface BattleConfig {
+  level: GeneratedLevel
+  enemies: Map<number, EnemyDef>
+  skills: Map<number, SkillDef>
+  equipped: EquippedSkill[]
+  attacker: Attacker
+  seed: number | bigint
+  /**
+   * 可用的主动技能槽位数。
+   *
+   * ⚠️ 缺省必须等于 `ACTIVE_SLOTS`（4），**不得改变**。
+   *
+   * 缺省值决定重放哈希：绝大多数战报是 4 槽的，
+   * 缺省一旦不是 4，历史战报全部重放不出原哈希。
+   *
+   * 只有玩家在专精树点了「额外插槽」（`MasteryEffect.ExtraSlots`）时
+   * 才会 > 4，而那由服务端 `/mastery` 的 `total_slots` 下发。
+   */
+  activeSlots?: number
+  /**
+   * 分数规则。缺省用 DEFAULT_SCORE_RULES。
+   *
+   * ⚠️ 真实对局应当**从服务端 /config 的 score_rules 下发**，
+   * 而不是用这里的默认值 —— 因为 star_targets 是服务端算的，
+   * 客户端用自己的一份就会与门槛算法漂移（见 score.ts 的注释）。
+   */
+  scoreRules?: ScoreRules
+}
+
+/** 引擎向外抛的事件 */
+export type BattleEvent =
+  | { type: 'fire'; slot: number; skillId: number }
+  | { type: 'hit'; x: bigint; y: bigint; damage: bigint; crit: boolean }
+  | {
+      type: 'reaction'
+      reaction: ReactionKey
+      x: bigint
+      y: bigint
+      damage: bigint
+      resisted: boolean
+    }
+  | { type: 'kill'; x: bigint; y: bigint; boss: boolean }
+  | { type: 'leak'; damage: bigint }
+  | { type: 'wave_start'; index: number }
+  | { type: 'wave_clear'; index: number }
+  | { type: 'overheat' }
+  /** 「隔热护罩」免疫了一次过热（与真正的 overheat 区分开） */
+  | { type: 'card_heated' }
+  /** 战斗到达绝对 tick 上限被强制结束（引擎停滞兜底） */
+  | { type: 'stalemate' }
+  | { type: 'card_offer'; cards: Card[] }
+  | { type: 'card_taken'; card: Card }
+  | { type: 'card_discarded'; card: Card }
+  | { type: 'terrain'; kind: string; x: number; y: number }
+  | { type: 'won'; score: number; stars: number }
+  | { type: 'lost'; score: number }
+
+/** 局内可变的攻方加成（由属性卡/机制卡累积） */
+export interface Buffs {
+  attackPermille: bigint
+  elementCoefPermille: bigint
+  critPermille: bigint
+  elementCapBonus: bigint
+  armorPermille: bigint
+  pierceBonus: number
+  chainBonus: number
+  aoeBonus: number
+  freeDiscard: number
+  overheatGuard: number
+}
+
+function newBuffs(): Buffs {
+  return {
+    attackPermille: 0n,
+    elementCoefPermille: 0n,
+    critPermille: 0n,
+    elementCapBonus: 0n,
+    armorPermille: 0n,
+    pierceBonus: 0,
+    chainBonus: 0,
+    aoeBonus: 0,
+    freeDiscard: 0,
+    overheatGuard: 0,
+  }
+}
+
+export class BattleEngine {
+  readonly cfg: BattleConfig
+  readonly rng: BattleRng
+  readonly heat = new HeatSystem()
+  readonly deck = new CardDeck()
+
+  phase: BattlePhase = 'prepare'
+  tick: number = 0
+  elapsedMs: number = 0
+  /** 当前波次序号（0 基）。UI 显示"第 N 波"用。 */
+  waveIndex = 0
+
+  baseHp: bigint
+  baseHpMax: bigint
+  baseArmorPermille: bigint
+
+  enemies: Enemy[] = []
+  projectiles: Projectile[] = []
+  floats: FloatText[] = []
+  terrains: Terrain[] = []
+
+  buffs: Buffs = newBuffs()
+  skills: EquippedSkill[]
+
+  // 统计
+  shots = 0
+  hits = 0
+  kills = 0
+  leaked = 0
+  reactionsCount = 0
+  score = 0
+  heatMax = 0
+
+  elementsUsed: Record<string, number> = {}
+  reactionsUsed: Record<string, number> = {}
+  terrainUsed: string[] = []
+
+  private events: BattleEvent[] = []
+  private replay: ReplayEvent[] = []
+  private uidSeq = 1
+  private spawnQueue: Array<{ enemyId: number; atTick: number; uid: number }> = []
+
+  /**
+   * 本关总怪数（开波前即可确定，与随机无关）。
+   *
+   * 存在的原因：胜负判定必须与服务端口径一致。
+   * 服务端 battle.go 的 `res.Win = result=="win" && kills >= MaxKillsFor(level)`，
+   * 而引擎原先的「spawnQueue 空 && enemies 空」判定会把**漏掉的敌人**
+   * 也算成清空（漏怪时 e.dead=true，随后被 filter 出 enemies 数组）。
+   * 于是玩家撑住防线并清空全部波次、但过程中漏了 1 只怪时：
+   * 客户端播通关动画、报 result='win'，服务端回 res.Win=false。
+   * 体验上是「我明明打完了，为什么结算说没赢」。
+   */
+  readonly totalEnemies: number
+
+  /** 当前可用的主动槽位数。见 BattleConfig.activeSlots 的缺省约定。 */
+  readonly activeSlots: number
+
+  /** 分数规则。缺省 DEFAULT_SCORE_RULES，实际对局应从服务端下发。 */
+  readonly scoreRules: ScoreRules
+
+  /**
+   * 无攻击力敌人漏进防线时的推进伤害。
+   *
+   * 取 base_hp 的 1/LeakDamageDivisor。Divisor 越大越宽容 ——
+   * base_hp=1000、Divisor=10 时漏 10 只才归零，
+   * 给玩家「失误几次还能救」的空间，而不是「漏一只就结束」。
+   *
+   * ⚠️ 它必须**只与关卡血量挂钩、��敌人血量无关**，
+   * 否则调敌人血量会连带把生存难度也改了，
+   * 两个变量纠缠在一起就没法单独调平衡。
+   */
+  private get breachDamage(): bigint {
+    const d = BigInt(LeakDamageDivisor)
+    return this.baseHpMax > 0n ? this.baseHpMax / d : 100n
+  }
+
+  constructor(cfg: BattleConfig) {
+    this.cfg = cfg
+    this.rng = new BattleRng(cfg.seed)
+    this.skills = cfg.equipped.map((s) => ({ ...s, cooldownRemaining: 0 }))
+
+    this.baseHp = BigInt(cfg.level.base_hp)
+    this.baseHpMax = BigInt(cfg.level.base_hp)
+    this.baseArmorPermille = BigInt(cfg.level.armor_permille || 0)
+
+    let total = 0
+    for (const w of cfg.level.waves ?? []) {
+      for (const sp of w.spawns) total += sp.count
+    }
+    this.totalEnemies = total
+    // ⚠️ 缺省必须是 ACTIVE_SLOTS —— 改这个默认值会让所有 4 槽战报的
+    // 重放哈希失配（绝大多数战报都是 4 槽的）。
+    //
+    // 只有玩家在专精树点了「额外插槽」（MasteryEffect.ExtraSlots）时才会 > 4，
+    // 那个值由服务端 `/mastery` 的 `total_slots` 下发。
+    this.activeSlots = cfg.activeSlots ?? ACTIVE_SLOTS
+    this.scoreRules = cfg.scoreRules ?? DEFAULT_SCORE_RULES
+
+    // 热量上限加成（专精 heat_cap + 宝石 gem_heat）。
+    //
+    // ⚠️ 此前**从未从攻方读入**，于是「热量上限」专精节点（16 个）
+    // 与散热石宝石完全无效 —— 它们只进 I-7 评分。
+    //
+    // 放在构造器而不是每次读 cap 时加：capBonus 是 HeatMeter 的可变状态，
+    // 而 heat_cap 攻方字段是本局常量，构造时注入一次最省。
+    this.heat.capBonus = cfg.attacker.heatCapPermille
+
+    for (const t of cfg.level.terrain ?? []) {
+      this.terrains.push(new Terrain(t))
+    }
+  }
+
+  // ---------- 生命周期 ----------
+
+  /** 开始第一波 */
+  start(): void {
+    this.phase = 'wave'
+    this.beginWave(0)
+  }
+
+  /**
+   * 每波选中的手牌索引（-1 = 整波跳过）。
+   *
+   * ⚠️ 这是 I-6 重放闭环的最后一环：选牌会改变后续战斗
+   * （技能升格 / 属性加成 / 机制词条），第三方拿不到这个序列
+   * 就复现不出原局，验真会把正常对局判成伪造。
+   *
+   * 索引而非卡牌 id：同一关卡 + 同一种子 → 同样的手牌顺序 → 同样的索引。
+   */
+  cardPicks: number[] = []
+
+  /**
+   * 重放脚本：外部注入的选牌序列。
+   *
+   * 注入后引擎在进入 card_select 时**自动**按脚本决策，
+   * 不再等待玩家输入 —— 这正是重放需要的无人值守模式。
+   */
+  private replayScript: number[] | null = null
+  private replayScriptPos = 0
+
+  /** 注入重放脚本。传 null 回到交互模式 */
+  setReplayScript(picks: number[] | null): void {
+    this.replayScript = picks
+    this.replayScriptPos = 0
+  }
+
+  /**
+   * 是否处于重放脚本模式。
+   *
+   * 外部驱动循环（如 replay.ts 的 runToEnd）必须先问这个：
+   * 脚本模式下**不能**自己调 skipCards()，否则会抢在引擎的
+   * 脚本决策之前把手牌丢掉 —— 表现为"脚本看起来完全没生效"。
+   */
+  hasReplayScript(): boolean {
+    return this.replayScript !== null
+  }
+
+  /** 取走并清空事件队列（渲染层调用） */
+  drainEvents(): BattleEvent[] {
+    const out = this.events
+    this.events = []
+    return out
+  }
+
+  private emit(e: BattleEvent): void {
+    this.events.push(e)
+  }
+
+  private record(t: number, type: ReplayEventType, a: number, b = 0, c = 0): void {
+    this.replay.push({ t, type, a, b, c })
+  }
+
+  /**
+   * 计算本局回放哈希（I-6）。
+   *
+   * 哈希覆盖**全部影响结果的输入**，不只是"恰好发生的事件"：
+   *   前缀 = 关卡 id + 攻方系数 + 技能槽配置
+   *   主体 = 事件序列
+   *
+   * ⚠️ 为什么必须带前缀：若只哈希事件流，当一场战斗全是漏怪（kills=0）
+   * 时事件里没有任何伤害数值 —— 此时改动攻击力、元素系数都不改变哈希，
+   * 作弊者就能"换一套属性"而不被验真发现。前缀把这类改动纳入证伪范围。
+   *
+   * 注：种子不进前缀。种子的影响已经完整体现在事件流里
+   * （刷怪洗牌、暴击滚点、命中次序），重复计入反而会让两端更难对齐。
+   */
+  replayHash(): string {
+    const a = this.currentAttacker()
+    const skills = this.skills
+      .map((s) => `${s.slot}:${s.skillId}:${s.baseDamage}:${s.applyStacks}:${s.heatCost}`)
+      .sort()
+      .join(',')
+    const prefix =
+      `L${this.cfg.level.id}` +
+      `|A${a.attack}.${a.critPermille}.${a.critMultiplierPermille}` +
+      `.${a.reactionMultPermille}.${a.elementCap}.${a.reactionTier}.${a.elementCoefPermille}` +
+      `|S${skills}`
+
+    // 事件序列编码成紧凑文本，保证跨端一致
+    const parts: string[] = [prefix]
+    for (const e of this.replay) {
+      parts.push(`${e.t}|${e.type}|${e.a}|${e.b}|${e.c}`)
+    }
+    return hex16(fnv1a64(parts.join(';')))
+  }
+
+  get replayEventCount(): number {
+    return this.replay.length
+  }
+
+  // ---------- 波次 ----------
+
+  private beginWave(index: number): void {
+    this.waveIndex = index
+    this.phase = 'wave'
+    this.deck.newWave()
+    this.deck.discardsLeft += this.buffs.freeDiscard
+
+    const wave = this.cfg.level.waves[index]
+    if (!wave) {
+      // ⚠️ 空关卡不是胜利。
+      // 原先这里是 finish(true)：waves=[] 的关卡 start() 立刻判胜，
+      // 而服务端 MaxKillsFor(gl)=0 让 `kills(0) >= 0` 成立，照样发掉落。
+      // 畸形关卡因此变成"秒胜 + 发钱"。
+      // 当前 levelgen 必填 >=5 波，所以不可达；但 level 是网络数据，
+      // 缺失字段时这个分支正是入口。
+      this.finish(false)
+      return
+    }
+    this.spawnQueue = []
+    for (const group of wave.spawns) {
+      // ⚠️ delay/interval 的单位是**毫秒**（levelgen.go 生成时按 ms，
+      // 字段注释也写明「毫秒」），而 atTick 是 tick 数（每 tick 50ms）。
+      // 直接相加等于把整关节奏放慢 50 倍：
+      // 实测第 1 关第一波 delay=1012ms 被当成 1012 tick = 50.6 秒才出第一只怪，
+      // 全关 39 只怪要刷 18.7 分钟，期间玩家在空场干等。
+      //
+      // 这里统一折算成 tick，并向上取整 —— 向上取整保证
+      // 「间隔 N 毫秒」不会因为截断变成「间隔 0 毫秒」而让同组怪同时出现。
+      const delayTicks = Math.ceil(group.delay / TICK_MS)
+      const intervalTicks = Math.ceil(group.interval / TICK_MS)
+      for (let i = 0; i < group.count; i++) {
+        this.spawnQueue.push({
+          enemyId: group.enemy_id,
+          atTick: this.tick + delayTicks + i * intervalTicks,
+          uid: this.uidSeq++,
+        })
+      }
+    }
+    // 确定性洗牌：同一波内的出场顺序由 PRNG 决定
+    for (let i = this.spawnQueue.length - 1; i > 0; i--) {
+      const j = this.rng.intn(i + 1)
+      const tmp = this.spawnQueue[i]
+      this.spawnQueue[i] = this.spawnQueue[j]
+      this.spawnQueue[j] = tmp
+    }
+
+    this.emit({ type: 'wave_start', index })
+    this.record(this.tick, 'wave', index)
+  }
+
+  private spawnEnemy(enemyId: number, uid: number): void {
+    const def = this.cfg.enemies.get(enemyId)
+    if (!def) return
+    const resist = new Map<Element, bigint>()
+    for (const e of ELEMENT_ORDER) {
+      // 字段名与服务端 json tag 对齐（snake_case）
+      const v = def.resist?.[e] ?? 0
+      resist.set(e, clampInt64(BigInt(v), -MAX_RESIST, MAX_RESIST))
+    }
+    const e: Enemy = {
+      uid,
+      defId: enemyId,
+      name: def.name,
+      category: def.category,
+      x: toFixed(FIELD_W - 40),
+      y: toFixed(600 + this.rng.intn(340)),
+      hp: BigInt(def.hp),
+      maxHp: BigInt(def.hp),
+      shield: BigInt(def.shield_hp),
+      // ⚠️ 这里**只能**是敌人自身的护甲，不能加 buffs.armorPermille。
+      //
+      // buffs.armorPermille 来自卡牌「加固工事：防线护甲 +10%」，
+      // 玩家预期是**减少漏怪时的伤害**。但它曾被加到敌人的护甲上，
+      // 于是效果完全反向：一张写着"防线护甲"的卡让玩家变弱 ——
+      // 玩家所有伤害打敌人时先被减 10%，而漏怪伤害一分不减免。
+      //
+      // 正确的消费点是漏怪结算的两处 applyArmor（见 updateEnemies），
+      // 那里用的才是 this.baseArmorPermille。
+      armorPermille: BigInt(def.armor || 0),
+      flyHeight: def.fly_height,
+      burrow: def.burrow,
+      isBoss: def.is_boss,
+      resist,
+      stacks: new Map(),
+      applyElement: (el: Element, add: bigint, cap: bigint) => {
+        const cur = e.stacks.get(el) ?? 0n
+        const next = cur + add > cap ? cap : cur + add
+        if (next !== cur) e.stacks.set(el, next)
+      },
+      speed: BigInt(def.speed),
+      attack: BigInt(def.attack),
+      attackRange: BigInt(def.attack_range),
+      attackInterval: def.attack_interval,
+      attackCooldown: def.attack_interval,
+      frozenMs: 0,
+      stunnedMs: 0,
+      slowedMs: 0,
+      amplifyPermille: 0n,
+      knockback: 0n,
+      dead: false,
+      spawnProgress: 0,
+      hitFlashMs: 0,
+    }
+    this.enemies.push(e)
+  }
+
+  /**
+   * 推进敌人位置。抽出来是为了让引擎内部调用与测试调用走同一份逻辑 ——
+   * 之前 updateEnemies 在 tick 开头就做了位移，导致测试无法单独验证。
+   */
+  stepEnemyMotion(e: Enemy, frozenAll: boolean): void {
+    // `e.dead` 守卫的 true 分支**不可达**：唯一调用点 updateEnemies 在循环里
+    // 已先 `if (e.dead) continue`（见上方 updateEnemies），传进来的 e 必非 dead。
+    // 保留是防御未来新增调用点，当前无法触达。
+    /* v8 ignore next -- 见上：调用点已过滤 dead，此守卫真分支不可达 */
+    if (e.dead) return
+    if (e.spawnProgress < SPAWN_PROGRESS_FULL) {
+      e.spawnProgress = Math.min(SPAWN_PROGRESS_FULL, e.spawnProgress + SPAWN_PROGRESS_STEP)
+      return
+    }
+    if (e.hitFlashMs > 0) e.hitFlashMs -= TICK_MS
+    if (e.frozenMs > 0) e.frozenMs -= TICK_MS
+    if (e.stunnedMs > 0) e.stunnedMs -= TICK_MS
+    if (e.slowedMs > 0) e.slowedMs -= TICK_MS
+
+    const frozen = e.frozenMs > 0 || e.stunnedMs > 0 || frozenAll
+    if (frozen) return
+
+    if (e.knockback !== 0n) {
+      e.x += e.knockback
+      e.knockback = 0n
+    } else {
+      const slowFactor = e.slowedMs > 0 ? 500n : 1000n
+      const step = mulDiv(e.speed, slowFactor, 1000n) * TICK_BIG / 1000n
+      e.x -= step
+    }
+  }
+
+  // ---------- 主循环 ----------
+
+  /** 推进一个固定步长。返回本步产生的事件 */
+  step(): BattleEvent[] {
+    if (this.phase === 'won' || this.phase === 'lost') return this.drainEvents()
+
+    // ⚠️ 重放决策必须在 tick++ **之前**执行，否则会多消耗一个 tick。
+    // tick 会写进每条 replay 事件（record(tick, ...)），
+    // 多一格会让后续所有事件时间戳整体偏移 → 哈希必然不同。
+    // 原局里玩家点牌同样不推进 tick，两者必须严格一致。
+    if (this.phase === 'card_select' && this.replayScript !== null) {
+      this.applyReplayDecision()
+      // 决策可能已推进到下一波（deck 空时 takeCard 会调 beginWave），
+      // 也可能仍是 card_select（脚本要求再选一张）。两种情况都继续本 tick。
+    }
+
+    this.tick++
+    this.elapsedMs += TICK_MS
+
+    // 停滞兜底：放在 tick++ 之后、任何战斗逻辑之前。
+    // 位置很关键 —— 必须在 phase 检查之后（本函数开头已 return 掉终局），
+    // 且必须在移动/开火之前，这样"到上限"这件事本身是这次 tick 的第一个事实。
+    if (this.checkStalemate()) return this.drainEvents()
+
+    this.heat.update(TICK_MS)
+    this.heat.tickCooldown(TICK_MS, this.skills)
+
+    if (this.phase === 'wave') {
+      this.updateSpawns()
+      this.updateEnemies()
+      this.updateAutoFire()
+      this.updateProjectiles()
+      this.updateTerrain()
+      this.updateFloats()
+      this.checkWaveEnd()
+    }
+
+    this.heatMax = Number(this.heat.maxHeatThisBattle)
+
+    return this.drainEvents()
+  }
+
+  private updateSpawns(): void {
+    for (let i = this.spawnQueue.length - 1; i >= 0; i--) {
+      if (this.spawnQueue[i].atTick <= this.tick) {
+        this.spawnEnemy(this.spawnQueue[i].enemyId, this.spawnQueue[i].uid)
+        this.spawnQueue.splice(i, 1)
+      }
+    }
+  }
+
+  private updateEnemies(): void {
+    const frozenAll = this.heat.overheated
+    for (const e of this.enemies) {
+      if (e.dead) continue
+      this.stepEnemyMotion(e, frozenAll)
+
+      // 远程敌人攻击
+      //
+      // ⚠️ `e.x > BASE_X` 这个条件是必需的，不是优化。
+      // 下面的「抵达防线」分支已经在处理 e.x <= BASE_X 的敌人。
+      // 曾经两个 if 顺序执行、没有互斥：敌人越过防线后
+      // `dist = e.x - BASE_X` 变成负数，`<= attackRange` 必然成立，
+      // 于是同一个 tick 里既远程打一次、又按抵达扣一次 ——
+      // 双倍伤害、leaked 计 2、发出两条 leak 事件。
+      // 内容表里远程敌人（attack_range 150~600）大量存在，
+      // 每个抵达时都触发一次，防线血量被额外扣掉接近一倍。
+      if (!e.burrow && e.attack > 0n && e.attackRange > 0n && e.x > toFixed(BASE_X)) {
+        e.attackCooldown -= TICK_MS
+        if (e.attackCooldown <= 0) {
+          e.attackCooldown = e.attackInterval
+          const dist = e.x - toFixed(BASE_X)
+          if (dist <= toFixed(Number(e.attackRange))) {
+            const dmg = this.leakDamageFor(e)
+            this.baseHp -= dmg
+            this.leaked++
+            this.emit({ type: 'leak', damage: dmg })
+            this.record(this.tick, 'leak', uidOf(dmg))
+            if (this.baseHp <= 0n) {
+              this.baseHp = 0n
+              this.finish(false)
+              return
+            }
+          }
+        }
+      }
+
+      // 抵达防线
+      if (e.x <= toFixed(BASE_X)) {
+        e.dead = true
+        const dmg = this.leakDamage(e)
+        this.baseHp -= dmg
+        this.leaked++
+        this.emit({ type: 'leak', damage: dmg })
+        this.record(this.tick, 'leak', e.uid)
+        if (this.baseHp <= 0n) {
+          this.baseHp = 0n
+          this.finish(false)
+          return
+        }
+      }
+    }
+    this.enemies = this.enemies.filter((e) => !e.dead)
+  }
+
+  /**
+   * 自动索敌开火：玩家只做微调，不做逐发操作。
+   *
+   * 热量检查放在索敌**之后**：先确认有目标再扣热量，
+   * 否则一波末尾敌人还没刷完就会白白积热并过热，
+   * 玩家会看到"我没出手却过热了"这种无法理解的死法。
+   */
+  private updateAutoFire(): void {
+    if (this.heat.overheated) return
+
+    // ⚠️ 死区兜底：必须在遍历技能**之前**做一次。
+    //
+    // 死区怎么形成的：tryCast 允许热量正好到 cap（`heat + cost > cap` 才拒），
+    // 而 checkOverheat 要求 heat >= cap。于是当
+    //   cap - 最便宜技能热量 < heat < cap
+    // 时，没有任何技能能放（都超 cap），可 checkOverheat 又不触发（没到 cap）。
+    // heat 停在这个区间里出不来，战斗永久停摆。
+    //
+    // 实测后果（第 1 关、4 个技能 20/18/22/20 热量、seed 12345）：
+    // 385 秒只开出 5 发、0 杀 10 漏、0 星 —— 游戏完全不可玩。
+    //
+    // 修法：进自动循环前，若「任何技能都放不出」就强制走一次过热。
+    // 语义上也说得通 —— 热量已经高到连最便宜的技能都用不起了，
+    // 这在 I-2 的框架里就是「过热」，玩家的正确反应本就是停手。
+    //
+    // 注意必须在 `pickTarget` 之前：无目标的空场里推进热量到死区
+    // 同样需要能被过热解救，否则玩家在等刷怪时也会卡死。
+    if (this.heatStuck()) {
+      this.enterOverheat()
+      return
+    }
+
+    for (const s of this.skills) {
+      if (s.slot >= this.activeSlots) continue // 被动槽不主动释放
+      if (s.cooldownRemaining > 0) continue
+      if (this.heat.heat + s.heatCost > this.heat.cap) continue
+
+      const target = this.pickTarget(s)
+      if (!target) continue
+
+      // tryCast 失败的分支**不可达**：上面第 725 行已 `if (heat + heatCost > cap) continue`
+      // 预过滤，其判据与 tryCast 内部拒绝条件（heat+cost>cap）逐字相同，且两行之间
+      // pickTarget 不改热量。故走到这里 tryCast 必然成功（并原子地累加热量）。
+      // 保留 tryCast 的返回值检查是"预检 + 原子提交"的双保险，但当前 continue 无法触达。
+      /* v8 ignore next -- 见上：725 行已预过滤同一判据，tryCast 必成功，此 continue 不可达 */
+      if (!this.heat.tryCast(s.heatCost)) continue
+      s.cooldownRemaining = s.cooldownMs
+      this.fire(s, target)
+
+      // ⚠️ 必须在开火后检查过热 —— 热量打满的那一刻正是"用尽最后一点资源"的时刻。
+      // 若在开火前检查，玩家会看到"我还没出手就过热了"。
+      //
+      // 这个调用一旦漏掉，热量会永久卡在上限、再也放不出技能（衰减虽在，
+      // 但不会触发过热状态），战斗直接停摆 —— 属于静默失效。
+      if (this.heat.checkOverheat()) {
+        this.enterOverheat(this.skillIndexOf(s))
+        break // 一次性触发，避免同帧多个技能重复发事件
+      }
+    }
+  }
+
+  /**
+   * 进入过热状态。
+   *
+   * 这里是「隔热护罩」（overheat_guard 机制卡）的**唯一**消费点。
+   *
+   * ⚠️ 该卡此前只写不读：`buffs.overheatGuard += m.value` 之后再无任何读取点，
+   * 所以玩家拿到一张写着「过热时免疫一次过热」的卡，
+   * 观察不到任何变化 —— 但它会通过 mechanicIndex 参与 replayHash，
+   * 也就是说**哈希记录了一个不产生任何效果的选择**。
+   *
+   * 5 张机制卡里 pierce_bonus / chain_bonus / aoe_bonus / free_discard
+   * 都有真实消费点，只有这一张是空转。
+   *
+   * 触发时：消耗一层护盾、**不进入过热**、且不弹 overheat 事件
+   * （没真的过热，弹事件会让 UI 显示"过热"而实际没过热）。
+   */
+  private enterOverheat(skillIndex = -1): void {
+    if (this.buffs.overheatGuard > 0) {
+      this.buffs.overheatGuard--
+      // 护盾生效：清空热量当作"扛过去了"，但不进入过热状态。
+      // 清空是必须的 —— 否则热量仍停在死区里，下一 tick 又会触发兜底，
+      // 形成"每 tick 消耗一层护盾"的空转。
+      this.heat.absorbOverheat()
+      this.emit({ type: 'card_heated' })
+      this.record(this.tick, 'guard', 0)
+      return
+    }
+    this.heat.forceOverheat()
+    this.emit({ type: 'overheat' })
+    this.record(this.tick, 'overheat', skillIndex)
+  }
+
+  /**
+   * 漏进防线一只敌人造成的伤害。
+   *
+   * ⚠️ 这里曾经是 `e.attack > 0 ? e.attack : applyArmor(e.maxHp, ...)`，
+   * 也就是**拿敌人的血量当漏怪伤害**。后果不是"数值偏大"，而是：
+   *
+   *   血量 ×8  →  漏怪伤害 560~2080  →  base_hp(1000) 漏一只就归零
+   *   血量 ×16 →  漏一只必死
+   *
+   * 于是平衡空间被压成一条极窄的缝：血量低到玩家能全清时，
+   * 分数被击杀分锁死、所有成长维度收益为 0；血量一高就变成
+   * "漏一只即败"，成长维度同样没有空间（只剩"从失败到成功"的跳变）。
+   * 实测 (弹速, 血量) 网格里 18 个组合没有一个落在健康区间。
+   *
+   * 正确的语义：漏怪的代价由**推进本身**决定，而不是由这只怪有多硬决定。
+   * 有攻击力的敌人按攻击力算；无攻击力的杂兵给一个固定的推进伤害 ——
+   * 大致是"漏掉它相当于丢掉 base_hp 的一个固定比例"，
+   * 于是「漏得多」是渐进惩罚（可调优的难度曲线），
+   * 而不是「血量一改就变成一击必杀」的悬崖。
+   */
+  private leakDamage(e: Enemy): bigint {
+    return this.leakDamageFor(e)
+  }
+
+  /**
+   * 一次漏怪对防线造成的伤害（已计护甲）。
+   *
+   * 「射程内扣血」与「抵达扣血」**必须用同一个函数** ——
+   * 两处各写一份公式时，护甲的效果会被两条路径分摊，
+   * 而 leaked 又把两类混在一起计数，于是任何按关卡平均的测量都不可信
+   * （第 50 轮就栽在这里：把 19 次漏怪按关卡平均分类，得出过错的归因）。
+   *
+   * - 有攻击力：底血 × attack / LeakAttackerDivisor
+   * - 无攻击力：底血 / LeakDamageDivisor（杂兵兜底，原本就有）
+   */
+  private leakDamageFor(e: Enemy): bigint {
+    if (e.attack <= 0n) return applyArmor(this.breachDamage, this.defenseArmorPermille())
+    // 先乘后除，避免整数截断把小数吃掉
+    const scaled = (this.baseHpMax * e.attack) / LeakAttackerDivisor
+    return applyArmor(scaled, this.defenseArmorPermille())
+  }
+
+  /**
+   * 防线的有效护甲 = 关卡基础护甲 + 卡牌加成 + **攻方护甲加成**。
+   *
+   * ⚠️ 卡牌加成（buffs.armorPermille）只在这里生效。
+   * 它曾经被加到 `spawnEnemy` 里敌人的护甲上，效果完全反向 ——
+   * 写着「防线护甲 +10%」的卡让玩家变弱。
+   *
+   * 攻方护甲（attacker.armorPermille）是本轮补上的第三项：
+   * 装备的 `BaseArmor`、专精树的 armor 节点、宝石的 gem_armor 词条
+   * 全部汇总到这一个字段。此前它们**只进 I-7 构筑评分**，
+   * 战斗里完全无效 —— 玩家穿上「钢鳞胸甲」后漏怪伤害一点没少。
+   *
+   * applyArmor 内部已有 MAX_ARMOR=750‰ 封顶，
+   * 所以「关卡 250‰ + 卡 600‰ + 装备 250‰」会收敛到 750‰，那是设计内的 clamp。
+   */
+  private defenseArmorPermille(): bigint {
+    return this.baseArmorPermille + this.buffs.armorPermille + this.cfg.attacker.armorPermille
+  }
+
+  /**
+   * 是否已陷入「放不出任何技能」的死区。
+   *
+   * 判据：存在至少一个已装备的主动技能（否则不算被困），
+   * 且它的热量需求放不进当前剩余额度。
+   * 冷却中的技能不参与判据 —— 冷却会自己结束，不构成永久困住。
+   */
+  private heatStuck(): boolean {
+    const costs: bigint[] = []
+    for (const s of this.skills) {
+      if (s.slot >= this.activeSlots) continue // 被动槽不消耗热量，不参与判据
+      costs.push(s.heatCost)
+    }
+    return this.heat.isStuckFor(costs)
+  }
+
+  /** 在技能列表里找下标，找不到返回 -1（仅用于事件记录） */
+  private skillIndexOf(s: EquippedSkill): number {
+    return this.skills.findIndex((x) => x.skillId === s.skillId)
+  }
+
+  /** 索敌优先级：BOSS/精英 > 最近目标；优先能命中的（溅射/穿透/高伤） */
+  private pickTarget(s: EquippedSkill): Enemy | null {
+    const live = this.enemies.filter((e) => !e.dead && e.spawnProgress >= SPAWN_PROGRESS_FULL)
+    if (live.length === 0) return null
+    // 飞行/钻地敌人只能被溅射或穿透命中，优先安排给对应技能
+    const evasive = live.filter((e) => e.flyHeight > 0 || e.burrow)
+    if ((s.aoeRadius > 0 || s.pierce > 0) && evasive.length > 0) {
+      return evasive.reduce((a, b) => (a.x <= b.x ? a : b))
+    }
+    // 其余取最靠近防线的
+    return live.reduce((a, b) => (a.x <= b.x ? a : b))
+  }
+
+  private fire(s: EquippedSkill, target: Enemy): void {
+    this.shots++
+    const speed = BigInt(s.projectileSpeed || 60000)
+    const dx = target.x - toFixed(BASE_X)
+    const dy = target.y - toFixed(BASE_Y)
+    const len = maxBig(1n, sqrtApprox(dx * dx + dy * dy))
+    // 归一化方向（定点，保持确定性）
+    const nx = (dx * speed) / len
+    const ny = (dy * speed) / len
+
+    this.projectiles.push({
+      uid: this.uidSeq++,
+      skillId: s.skillId,
+      element: s.element,
+      x: toFixed(BASE_X),
+      y: toFixed(BASE_Y),
+      vx: nx,
+      vy: ny,
+      damage: s.baseDamage,
+      applyStacks: s.applyStacks,
+      pierceLeft: s.pierce + this.buffs.pierceBonus,
+      chainLeft: s.chain + this.buffs.chainBonus,
+      hitSet: new Set(),
+      aoeRadius: s.aoeRadius + this.buffs.aoeBonus,
+      dead: false,
+      trailLen: 0,
+      slot: s.slot,
+    })
+    this.emit({ type: 'fire', slot: s.slot, skillId: s.skillId })
+    this.record(this.tick, 'fire', s.skillId, s.slot)
+  }
+
+  private updateProjectiles(): void {
+    // 每 tick 分若干等分子步进，降低高速弹丸穿透漏判
+    const SUB_STEPS = 2
+    const tickBig = BigInt(TICK_MS)
+    for (const p of this.projectiles) {
+      // `p.dead` 守卫的 true 分支**不可达**：每次 updateProjectiles 末尾都
+      // `this.projectiles = this.projectiles.filter((p) => !p.dead)`（见函数尾），
+      // 故下一 tick 进入本循环时数组里不含 dead 弹丸；本 tick 内每颗只遍历一次。
+      /* v8 ignore next -- 见上：末尾已滤除 dead，此守卫真分支不可达 */
+      if (p.dead) continue
+      for (let s = 0; s < SUB_STEPS; s++) {
+        p.x += p.vx / tickBig
+        p.y += p.vy / tickBig
+        p.trailLen = p.trailLen + 1
+
+        // 越界（用定点边界）
+        if (p.x < 0n || p.x > toFixed(FIELD_W) || p.y < 0n || p.y > toFixed(FIELD_H)) {
+          p.dead = true
+          break
+        }
+        // 被崩塌前的掩体阻挡。
+        //
+        // ⚠️ 这里**必须把弹丸的伤害喂给掩体**，否则掩体永远打不破。
+        //
+        // 曾经的写法只是 `p.dead = true; break`，于是：
+        //
+        //   掩体挡住弹丸 → 弹丸销毁 → 走不到 checkProjectileHit
+        //   → 掩体唯一的充能源（onHit，只在弹丸命中**敌人**时调用）永不触发
+        //   → 掩体永不崩塌 → 弹丸继续被挡          ← 循环依赖
+        //
+        // 实测后果：第 22/33/34 关**永远打不完**。弹丸轨迹实测显示，
+        // 从 (60,880) 射向 (884,638) 的弹丸在 (497,752) 消失，
+        // 而那里距掩体 (514,654) 恰好 99.5 < 100 —— 被挡。
+        // 命中率掉到 1%，12000 tick 只杀 3 只怪，引擎永久停在 wave 阶段。
+        //
+        // 而 `onHit` 的元素门槛又让情况更糟：掩体只吃动能，
+        // 默认构筑是 fire/fire/fire/ice，**一个动能都没有**。
+        //
+        // 现在弹丸打在掩体上等同于打在敌人身上（有伤害、有元素），
+        // 于是"用动能砸开掩体、打开弹道"这个原本的设计意图才真正成立。
+        for (const t of this.terrains) {
+          if (t.blocksProjectile() && this.withinTerrain(t.x, t.y, 100, p.x, p.y)) {
+            if (t.onHit(p.element, p.damage, p.x, p.y)) {
+              this.terrainUsed.push(t.kind)
+              this.emit({ type: 'terrain', kind: t.kind, x: t.x, y: t.y })
+              this.record(this.tick, 'terrain', terrainIndex(t.kind), t.x, t.y)
+            }
+            p.dead = true
+            break
+          }
+        }
+        if (p.dead) break
+
+        this.checkProjectileHit(p)
+        if (p.dead) break
+      }
+    }
+    this.projectiles = this.projectiles.filter((p) => !p.dead)
+  }
+
+  private checkProjectileHit(p: Projectile): void {
+    for (const e of this.enemies) {
+      if (e.dead || e.spawnProgress < SPAWN_PROGRESS_FULL) continue
+      if (p.hitSet.has(e.uid)) continue
+      if (!this.hitEnemy(p, e)) continue
+
+      this.hits++
+      p.hitSet.add(e.uid)
+
+      // 溅射
+      if (p.aoeRadius > 0) {
+        this.applyAoe(p, e, p.aoeRadius)
+      }
+      // 弹射
+      if (p.chainLeft > 0) {
+        const next = this.enemies
+          .filter((x) => !x.dead && !p.hitSet.has(x.uid))
+          .reduce<Enemy | null>((best, x) => {
+            if (!best) return x
+            const d1 = dist2(p.x, p.y, x.x, x.y)
+            const d2 = dist2(p.x, p.y, best.x, best.y)
+            return d1 < d2 ? x : best
+          }, null)
+        if (next) {
+          p.chainLeft--
+          p.x = next.x
+          p.y = next.y
+          p.hitSet.add(next.uid)
+          continue
+        }
+      }
+      // 穿透
+      if (p.pierceLeft > 0) {
+        p.pierceLeft--
+        continue
+      }
+      p.dead = true
+      return
+    }
+  }
+
+  /** 对单个敌人结算一次命中 */
+  private hitEnemy(p: Projectile, e: Enemy): boolean {
+    if (!this.withinEnemy(e, p.x, p.y)) return false
+
+    // 把敌人的运行时状态包成 Defender，复用与 Go 完全一致的结算
+    const def = new Defender(e.hp, e.shield, e.armorPermille)
+    for (const [el, v] of e.resist) def.resist.set(el, v)
+    for (const [el, v] of e.stacks) def.stacks.set(el, v)
+    // 受击伤害放大（超导/急速冻结）
+    if (e.amplifyPermille > 0n) {
+      for (const el of ELEMENT_ORDER) {
+        const cur = def.resistOf(el)
+        def.resist.set(el, cur - e.amplifyPermille / 10n)
+      }
+    }
+
+    const att = this.currentAttacker()
+    const input = {
+      skillDamage: p.damage,
+      skillElement: p.element,
+      applyStacks: p.applyStacks,
+      roll: this.rng.roll(),
+    }
+    const res: HitResult = resolveHit(att, def, input)
+    // 施加元素必须在伤害结算之后，否则会自我触发反应
+    applyElementStacks(att, def, input)
+
+    // 写回敌人状态
+    e.hp = def.hp
+    e.shield = def.shield
+    e.stacks = def.stacks
+    e.hitFlashMs = 140
+    if (res.dispelShield && e.shield === 0n) {
+      this.pushFloat(e.x, e.y, '护盾驱散', '#58a6ff', 14)
+    }
+    if (res.statusDurationMs > 0) {
+      const spec = REACTIONS[res.reaction as ReactionKey]
+      if (spec.amplifyPct > 0) {
+        e.amplifyPermille = BigInt(spec.amplifyPct)
+      }
+      const react = res.reaction
+      if (react === 'flash_freeze' || react === 'superconduct') e.frozenMs = spec.statusDurationMs
+      if (react === 'overheat') e.stunnedMs = spec.statusDurationMs
+    }
+
+    this.score += Number(damageScore(this.scoreRules, res.totalDamage))
+    this.pushFloat(
+      e.x,
+      e.y,
+      String(Number(damageScore(this.scoreRules, res.totalDamage))),
+      res.crit ? '#ffd33d' : '#e6edf3',
+      res.crit ? 20 : 16,
+    )
+    this.emit({ type: 'hit', x: p.x, y: p.y, damage: res.totalDamage, crit: res.crit })
+    this.record(this.tick, 'hit', e.uid, Number(damageScore(this.scoreRules, res.totalDamage)), res.crit ? 1 : 0)
+
+    // 元素使用统计
+    if (p.element) {
+      this.elementsUsed[p.element] = (this.elementsUsed[p.element] ?? 0) + 1
+    }
+
+    // 反应统计
+    if (res.reaction) {
+      this.reactionsCount++
+      this.reactionsUsed[res.reaction] = (this.reactionsUsed[res.reaction] ?? 0) + 1
+      const resisted = res.resistAppliedPermille < PERMILLE
+      this.emit({
+        type: 'reaction',
+        reaction: res.reaction,
+        x: e.x,
+        y: e.y,
+        damage: res.reactionDamage,
+        resisted,
+      })
+      this.pushFloat(
+        e.x,
+        e.y - 40n,
+        REACTIONS[res.reaction].name,
+        resisted ? '#8b949e' : '#7ee787',
+        15,
+      )
+      this.record(this.tick, 'reaction', e.uid, reactionIndex(res.reaction))
+    }
+
+    // 地形联动。地形自身负责判定弹丸是否经过它（updateXxx 内部已做空间判定），
+    // 因此这里只需传入元素与伤害，不需要坐标。
+    for (const t of this.terrains) {
+      // 传入命中位置：地形要判断"这一发是否真的打在地形上"，
+      // 否则站在远处的油桶会被任意位置的火焰点燃（见 Terrain.onHit 注释）。
+      if (t.onHit(p.element, res.totalDamage, p.x, p.y)) {
+        this.terrainUsed.push(t.kind)
+        this.emit({ type: 'terrain', kind: t.kind, x: t.x, y: t.y })
+        this.record(this.tick, 'terrain', terrainIndex(t.kind), t.x, t.y)
+      }
+    }
+
+    if (res.killed) {
+      e.dead = true
+      this.kills++
+      this.score += Number(killScore(this.scoreRules, e.isBoss))
+      this.emit({ type: 'kill', x: e.x, y: e.y, boss: e.isBoss })
+      this.record(this.tick, 'kill', e.uid, e.isBoss ? 1 : 0)
+      // 蓄能塔充能：满则给全场敌人上该敌人身上的主元素
+      const dom = dominantOf(e) ?? 'fire'
+      for (const t of this.terrains) {
+        if (t.onKillCharging(dom, this.currentAttacker().elementCap, this.terrainCtx())) {
+          if (!this.terrainUsed.includes(t.kind)) this.terrainUsed.push(t.kind)
+          this.emit({ type: 'terrain', kind: t.kind, x: t.x, y: t.y })
+          this.record(this.tick, 'terrain', terrainIndex(t.kind), t.x, t.y)
+        }
+      }
+    }
+    return true
+  }
+
+  private applyAoe(p: Projectile, origin: Enemy, radius: number): void {
+    const rr = toFixed(radius)
+    for (const e of this.enemies) {
+      if (e.dead || e.uid === origin.uid) continue
+      if (dist2(origin.x, origin.y, e.x, e.y) > rr * rr) continue
+      this.hitEnemy(p, e)
+    }
+  }
+
+  private currentAttacker(): Attacker {
+    const base = this.cfg.attacker
+    const lv = this.cfg.level
+    return {
+      attack: base.attack + this.buffs.attackPermille,
+      critPermille: base.critPermille + this.buffs.critPermille,
+      critMultiplierPermille: base.critMultiplierPermille,
+      reactionMultPermille: base.reactionMultPermille,
+      elementCap: (lv.element_cap ? BigInt(lv.element_cap) : base.elementCap) + this.buffs.elementCapBonus,
+      reactionTier: BigInt(lv.max_reaction_tier || 1),
+      elementCoefPermille: base.elementCoefPermille + this.buffs.elementCoefPermille,
+      // 这三项**原样透传**，不与局内 Buffs 相加 ——
+      // 因为它们的消费者不在伤害公式里：
+      //   armorPermille    → defenseArmorPermille()（防线护甲，不走 currentAttacker）
+      //   heatCapPermille  → 构造器注入 heat.capBonus
+      //   mechanicPermille → applyMechanic 放大卡面数值
+      //
+      // 在这里相加会让它们**既*被计入*攻方又*被单独消费*** 一次，
+      // 而 currentAttacker 的返回值也参与重放哈希 —— 多加一次就哈希不符。
+      heatCapPermille: base.heatCapPermille,
+      armorPermille: base.armorPermille,
+      mechanicPermille: base.mechanicPermille,
+    }
+  }
+
+  private updateTerrain(): void {
+    const ctx = this.terrainCtx()
+    for (const t of this.terrains) {
+      const eff = t.update(TICK_MS, ctx)
+      if (eff.blocked) {
+        // 潮汐闸关闭：低层敌人无法通过，被挡在闸门右侧
+        for (const e of this.enemies) {
+          if (!e.burrow && Math.abs(Number(e.y - toFixed(t.y)) / 1000) < 60) {
+            e.x = maxBig(e.x, toFixed(t.x))
+          }
+        }
+      }
+    }
+  }
+
+  private terrainCtx() {
+    return {
+      enemies: this.enemies,
+      projectiles: this.projectiles,
+      terrainTick: ELEMENT_PER_STACK_BASE / 8n,
+      within: (tx: number, ty: number, r: number, x: bigint, y: bigint) => {
+        const rr = toFixed(r)
+        return dist2(toFixed(tx), toFixed(ty), x, y) <= rr * rr
+      },
+      enemiesInRadius: (x: number, y: number, r: number) => {
+        const rr = toFixed(r)
+        return this.enemies.filter((e) => !e.dead && dist2(toFixed(x), toFixed(y), e.x, e.y) <= rr * rr)
+      },
+      onKill: (e: Enemy) => {
+        // ⚠️ 击杀分必须在这里记，与 hitEnemy 里的那条口径一致。
+        // 原先只 kills++ 不加分，于是「用油桶火区烧死」与「用弹丸打死」
+        // 同样一只怪差 500 分（BOSS 差 5000）—— 分数不再只取决于战果，
+        // 还取决于敌人怎么死，直接影响上报的 score 与星级判定。
+        this.kills++
+        this.score += Number(killScore(this.scoreRules, e.isBoss))
+        this.emit({ type: 'kill', x: e.x, y: e.y, boss: e.isBoss })
+        this.record(this.tick, 'kill', e.uid, e.isBoss ? 1 : 0)
+      },
+      onTerrainTrigger: (kind: string, t: Terrain) => {
+        this.terrainUsed.push(kind)
+        this.emit({ type: 'terrain', kind, x: t.x, y: t.y })
+        this.record(this.tick, 'terrain', terrainIndex(kind), t.x, t.y)
+      },
+    }
+  }
+
+  private withinTerrain(tx: number, ty: number, r: number, x: bigint, y: bigint): boolean {
+    // tx/ty/r 是逻辑单位，x/y 是定点；半径平方需要 ×1000² 才同量纲
+    return dist2(toFixed(tx), toFixed(ty), x, y) <= toFixed(r) * toFixed(r)
+  }
+
+  private withinEnemy(e: Enemy, x: bigint, y: bigint): boolean {
+    // 飞行与钻地：只有溅射/穿透能命中
+    const r = 28 + e.flyHeight * 0.1
+    const rr = toFixed(r)
+    return dist2(e.x, e.y, x, y) <= rr * rr
+  }
+
+  private pushFloat(x: bigint, y: bigint, text: string, color: string, size: number): void {
+    this.floats.push({ x, y, text, color, lifeMs: 900, maxLifeMs: 900, size })
+    if (this.floats.length > 60) this.floats.splice(0, this.floats.length - 60)
+  }
+
+  private updateFloats(): void {
+    for (const f of this.floats) {
+      f.lifeMs -= TICK_MS
+      f.y -= 30n
+    }
+    this.floats = this.floats.filter((f) => f.lifeMs > 0)
+  }
+
+  // ---------- 波次结束 / 结算 ----------
+
+  private checkWaveEnd(): void {
+    if (this.spawnQueue.length > 0) return
+    if (this.enemies.length > 0) return
+    this.emit({ type: 'wave_clear', index: this.waveIndex })
+    this.record(this.tick, 'wave', this.waveIndex, 1)
+
+    const next = this.waveIndex + 1
+    if (next >= this.cfg.level.waves.length) {
+      // 通关语义：**清空全部波次且防线未破**。
+      //
+      // 这里曾经是 finish(true)，后来一度改成 kills >= totalEnemies
+      // 以对齐服务端 —— 但那个口径是错的：
+      // 漏怪的敌人已经扣了 base_hp（那就是「漏怪容忍度」的设计载体，
+      // 见 stepEnemy / 抵达防线分支），若血还够却因为「漏过」而直接判负，
+      // 等于同一件事惩罚两次且第二次更严。实测第 1 关默认构筑
+      // kills=32 / leaked=7，于是永远无法通关。
+      //
+      // 现在两端统一为「清空即胜」：
+      //   引擎：波次队列空 + 场上无敌人 + 防线未破
+      //   服务端：kills + leaked >= 总怪数（两者都表示"这只怪已不再构成威胁"）
+      //
+      // totalEnemies > 0 是为了排除空关卡秒胜（见 beginWave 里的说明）。
+      this.finish(this.totalEnemies > 0)
+      return
+    }
+    this.phase = 'card_select'
+    const cards = rollWaveCards(
+      this.rng,
+      this.cfg.equipped.map((s) => ({
+        id: s.skillId,
+        name: s.name,
+        element: s.element,
+        kind: s.kind,
+      })),
+    )
+    this.deck.setHand(cards)
+    this.emit({ type: 'card_offer', cards })
+  }
+
+  /** 取牌（玩家选择） */
+  takeCard(id: string): Card | null {
+    if (this.phase !== 'card_select') return null
+    // 索引必须在 take 之前取：take 后该卡已不在 hand 里。
+    //
+    // ⚠️ 记录的是**手牌下标**（0/1/2），不是 cardIndex()。
+    // 重放脚本按手牌下标解释，两者语义必须一致 ——
+    // 混用会让重放选中完全不同的牌，且不会有任何报错。
+    const handIdx = this.deck.hand.findIndex((c) => c.id === id)
+    const card = this.deck.take(id)
+    if (!card) return null
+    this.applyCard(card)
+    this.emit({ type: 'card_taken', card })
+    this.record(this.tick, 'card', cardIndex(card))
+    this.recordPick(handIdx)
+    if (this.deck.size === 0) this.beginWave(this.waveIndex + 1)
+    return card
+  }
+
+  /**
+   * 记录本波选中的手牌下标（-1 = 整波跳过）。
+   *
+   * 语义：手牌在本次 offer 中的下标（0/1/2），对应 applyReplayDecision 的解释。
+   * 每波只记第一次有效选择 —— 玩家若先弃牌后取牌，记的是取的那次。
+   */
+  private recordPick(handIdx: number): void {
+    if (this.cardPicks.length <= this.waveIndex) {
+      this.cardPicks.push(handIdx)
+    }
+  }
+
+  /** 弃牌 */
+  discardCard(id: string): Card | null {
+    if (this.phase !== 'card_select') return null
+    const card = this.deck.hand.find((c) => c.id === id)
+    if (!card) return null
+    const r = this.deck.discard(id)
+    if (!r.ok) return null
+    this.heat.refundHeat(r.refund)
+    this.emit({ type: 'card_discarded', card })
+    this.record(this.tick, 'card', cardIndex(card), 1)
+    if (this.deck.size === 0) this.beginWave(this.waveIndex + 1)
+    return card
+  }
+
+  /** 放弃全部手牌，直接进入下一波。不消耗弃牌次数，也不返还热量 */
+  skipCards(): void {
+    if (this.phase !== 'card_select') return
+    for (const c of [...this.deck.hand]) {
+      this.deck.drop(c.id)
+      this.emit({ type: 'card_discarded', card: c })
+      this.record(this.tick, 'card', cardIndex(c), 1)
+    }
+    // -1 表示整波跳过（重放时按此原样复现）
+    this.recordPick(-1)
+    this.beginWave(this.waveIndex + 1)
+  }
+
+  /**
+   * 按重放脚本执行选牌决策。
+   *
+   * ⚠️ 必须在**单个 tick 内把本波所有决策做完**，而不是每个 tick 做一个。
+   *
+   * 原因：原局里玩家的操作是离散的、不占 tick 的 ——
+   * 「取 1 张，再跳过剩下 2 张」发生在同一个 tick 间隔内。
+   * 若重放把每次决策摊到不同 tick，后续所有事件的 tick 都会偏移，
+   * 哈希必然不同（record 里的 tick 是哈希输入）。
+   *
+   * 脚本耗尽或越界时回退为"跳过整波"，保证重放一定能跑到底
+   * （宁可哈希不符，也不要中途卡死让用户看到空白页）。
+   */
+  private applyReplayDecision(): void {
+    // guard 兜底：正常一轮 while 就会离开 card_select（skipCards → beginWave），
+    // 但若 beginWave 因波次耗尽直接 finish，仍需确保不无限循环。
+    let guard = 0
+    while (this.phase === 'card_select' && guard++ < 16) {
+      const script = this.replayScript
+      // `script === null` 的 true 分支**不可达**：applyReplayDecision 仅在
+      // step() 里 `phase==='card_select' && this.replayScript !== null` 时被调用，
+      // 且循环内无处把 replayScript 置空。保留是类型收窄（null 排除）用。
+      /* v8 ignore next -- 见上：调用点已保证 replayScript!==null，此真分支不可达 */
+      if (script === null) return
+
+      if (this.replayScriptPos >= script.length) {
+        this.skipCards()
+        continue
+      }
+      const want = script[this.replayScriptPos++]
+      // -1 或越界 → 整波跳过
+      if (want < 0 || want >= this.deck.hand.length) {
+        this.skipCards()
+        continue
+      }
+      // 手牌顺序可能与原局不同（不同 seed 的洗牌结果），
+      // 因此按**索引**取，而不是按卡牌 id —— 索引才是脚本记录的语义。
+      const target = this.deck.hand[want]
+      if (!target) {
+        this.skipCards()
+        continue
+      }
+      this.takeCard(target.id)
+      // takeCard 后手牌可能已空（已进下一波），也可能还有剩余
+      // （玩家在原局取了 1 张又跳过其余）—— 两种都由 while 继续处理。
+    }
+  }
+
+  private applyCard(card: Card): void {
+    if (card.kind === 'attribute' && card.effect) {
+      this.applyAttribute(card.effect)
+    } else if (card.kind === 'mechanic' && card.mechanic) {
+      this.applyMechanic(card.mechanic)
+    } else if (card.kind === 'skill' && card.skillId !== undefined) {
+      // ⚠️ 判据用 `!== undefined` 而不是真值判断：
+      // skillId === 0 曾经落进最后的隐式 else，卡被 consume 掉、
+      // emit 了 card_taken，但什么也没发生 —— 玩家看到"获得技能卡"却没反应。
+      // 内容表当前 id 从 1 开始所以不触发，但 id 空间没有"必须非 0"的保证。
+      //
+      // 技能卡：若已在槽内则升格，否则装入**空槽**
+      const existing = this.skills.find((s) => s.skillId === card.skillId)
+      if (existing) {
+        // 升格：更高伤害 + 更高层数 + 更高穿透
+        this.skills = this.skills.map((s) =>
+          s.skillId === card.skillId
+            ? {
+                ...s,
+                baseDamage: s.baseDamage + s.baseDamage / 5n,
+                applyStacks: s.applyStacks + 1n,
+                pierce: s.pierce + 1,
+              }
+            : s,
+        )
+      } else {
+        const def = this.cfg.skills.get(card.skillId)
+        if (def) {
+          // 找**真正空着**的主动槽。
+          //
+          // ⚠️ 原来是 `findIndex(s => s.slot < ACTIVE_SLOTS && s.slot >= 0)`，
+          // 而 skills 数组里每个元素就代表一个已占用的槽 ——
+          // 于是这个表达式命中的永远是**第一个已占用**的槽，
+          // 随后 `s.slot === slot ? {...新技能} : s` 直接把它替换掉。
+          //
+          // 后果：抽到任何**新**技能都会顶掉槽 0 的老技能，
+          // 槽位数永远不增加。实测已装 [1,2] 时抽到技能 9：
+          //   before = [1,2] slots=[0,1] → after = [9,2] slots=[0,1]
+          // 技能 1 被销毁，而玩家的三选一白白消耗了一次机会。
+          // （只有抽到**已装备**技能的卡才会"升格"，所以前期是净损失。）
+          const activeSlots = new Set(
+            this.skills.filter((s) => s.slot < this.activeSlots).map((s) => s.slot),
+          )
+          let free = -1
+          for (let i = 0; i < this.activeSlots; i++) {
+            if (!activeSlots.has(i)) {
+              free = i
+              break
+            }
+          }
+          if (free < 0) {
+            // 主动槽已满：升格一个伤害最高的技能（不消耗玩家的选牌机会）
+            //
+            // 槽满时最合理的处理不是"顶掉随机一个"，
+            // 而是明确地告诉玩家"没位置了"—— 所以这里做的是
+            // 「强化已有技能里伤害最高的那一个」，
+            // 至少不会让玩家的构筑凭空少一个技能。
+            const best = this.skills
+              .filter((s) => s.slot < this.activeSlots)
+              .reduce<(typeof this.skills)[number] | null>(
+                (acc, s) => (acc === null || s.baseDamage > acc.baseDamage ? s : acc),
+                null,
+              )
+            if (best) {
+              this.skills = this.skills.map((s) =>
+                s.slot === best.slot
+                  ? {
+                      ...s,
+                      baseDamage: s.baseDamage + s.baseDamage / 5n,
+                      applyStacks: s.applyStacks + 1n,
+                      pierce: s.pierce + 1,
+                    }
+                  : s,
+              )
+            }
+            return
+          }
+          this.skills = [
+            ...this.skills,
+            {
+              skillId: def.id,
+              name: def.name,
+              element: def.element as Element,
+              kind: def.kind,
+              heatCost: BigInt(def.heat_cost),
+              cooldownMs: def.cooldown_ms,
+              pierce: def.pierce,
+              aoeRadius: def.aoe_radius,
+              baseDamage: BigInt(def.base_damage),
+              applyElement: (def.apply_element || def.element) as Element | '',
+              applyStacks: BigInt(def.apply_stacks),
+              projectileSpeed: def.projectile_speed,
+              chain: def.chain,
+              slot: free,
+              cooldownRemaining: 0,
+            },
+          ]
+        }
+      }
+    }
+  }
+
+  private applyAttribute(e: AttributeEffect): void {
+    switch (e.kind) {
+      case 'attack':
+        this.buffs.attackPermille += e.value
+        break
+      case 'element_coef':
+        this.buffs.elementCoefPermille += e.value
+        break
+      case 'crit':
+        this.buffs.critPermille += e.value
+        break
+      case 'heat_cap':
+        // ⚠️ 这里**只**写 heat.capBonus，不要在 Buffs 里再存一份。
+        //
+        // 而真正被 `HeatMeter.cap`（`get cap() { return HEAT_MAX + this.capBonus }`）
+        // 读走的是后者 —— 前者成了**只写不读的镜像字段**。
+        //
+        // 危害不是"多占一点内存"，而是**陷阱**：
+        // 实际没人维护的值（比如从别处加了 Buffs 却没同步 HeatMeter），
+        // 而全绿的测试不会提示任何异常。
+        this.heat.capBonus += e.value
+        break
+      case 'element_cap':
+        this.buffs.elementCapBonus += e.value
+        break
+      case 'armor':
+        this.buffs.armorPermille += e.value
+        break
+    }
+  }
+
+  private applyMechanic(m: MechanicEffect): void {
+    // 机制卡强度加成（专精树第 3 层槽 1「机制改造」，8 个节点）。
+    //
+    // ⚠️ 这个 kind 此前在服务端 `EvaluateMastery` 的 switch 里**连 case 都没有**，
+    // 于是 8 系 × 1 个节点 = 8 个真实节点完全惰性 ——
+    // 玩家花点数点出「机制改造」，战斗里什么都不变。
+    //
+    // 语义：把卡面数值整体放大 (1000 + v)/1000。
+    // 选"放大卡面数值"而不是"抽到好卡的概率更高"，是因为前者是确定性的
+    // （重放时能逐位复现），后者需要改抽牌随机序列，
+    // 而卡牌是客户端选的、改序列会与 I-6 的 CardPicks 闭环冲突。
+    // 全程 bigint 运算（README 工程约束 8：禁止实数运算）。
+    //
+    // MechanicEffect.value 是 number（小整数计数），攻方是 bigint，
+    // 所以先 Math.trunc 成整数再进 bigint 域 —— 内容表的机制卡面值
+    // 全是整数，trunc 不会丢精度；真出现小数时是内容表错了，
+    // 静默四舍五入会让"卡面显示 3、实际生效 2"这类问题更难查。
+    const v = Number(
+      mulDiv(
+        BigInt(Math.trunc(m.value)),
+        PERMILLE + this.cfg.attacker.mechanicPermille,
+        PERMILLE,
+      ),
+    )
+    switch (m.kind) {
+      case 'pierce_bonus':
+        this.buffs.pierceBonus += v
+        break
+      case 'chain_bonus':
+        this.buffs.chainBonus += v
+        break
+      case 'aoe_bonus':
+        this.buffs.aoeBonus += v
+        break
+      case 'free_discard':
+        this.buffs.freeDiscard += v
+        this.deck.discardsLeft += v
+        break
+      case 'overheat_guard':
+        this.buffs.overheatGuard += v
+        break
+    }
+  }
+
+  private finish(win: boolean, stalemate = false): void {
+    this.phase = win ? 'won' : 'lost'
+    const stars = this.calcStars()
+    if (win) {
+      this.emit({ type: 'won', score: this.score, stars })
+    } else {
+      this.emit({ type: 'lost', score: this.score })
+    }
+    // 停滞必须**记进回放**：它是一个真实发生过的终局状态，
+    // 而重放方要能复现"这局是被上限截断的"而不是"这局还在跑"。
+    // 不记就等于哈希不覆盖这个结局 —— 同一场战斗，
+    // 一次跑到上限结束、一次靠玩家操作结束，哈希会不同。
+    if (stalemate) {
+      this.record(this.tick, 'stalemate', this.tick)
+    }
+  }
+
+  /**
+   * 停滞检测：到达绝对 tick 上限就强制结束。
+   *
+   * ⚠️ 这不是"防玩家卡住"的兜底，而是**防引擎挂死**的兜底。
+   *
+   * 实测踩过：第 22/33/34 关因为「掩体挡弹丸 → 弹丸打不到敌人 →
+   * 掩体永远打不破」的循环依赖，引擎**永久停在 wave 阶段** ——
+   * 12000 tick 只杀 2~17 只怪，命中率掉到 1%，战斗不会自然结束。
+   * 在真机上那意味着玩家盯着一个永远不结算的画面。
+   *
+   * 那个具体缺陷已修（见 updateProjectiles 里的注释），但：
+   *   - 循环依赖/互斥这类缺陷很难靠"读代码看出��"杜绝
+   *   - 任何未来的内容改动都可能再造一个
+   *   - 挂死的代价（玩家永久卡在一局、无法退出、体力不返还）远高于误判
+   *
+   * 所以这里加一道**兜底**：超过预算就判负结束。
+   *
+   * 预算取 30000 tick = 1500s = 25 分钟：
+   *   实测最慢的合法关卡是第 100 关 594s（11880 tick），
+   *   30000 是它的 2.5 倍余量 —— 合法对局**不可能**触碰。
+   *   而服务端对 duration_ms 的上界（1800s）比它更宽，
+   *   避免出现"客户端结束了、服务端却认为时长非法"的不一致。
+   */
+  private checkStalemate(): boolean {
+    // 终局守卫的 true 分支**不可达**：step() 开头已 `if (won||lost) return`（见 step），
+    // checkStalemate 只在其后被调用，运行到这里时 phase 必非终局。是与 step 重复的
+    // 双保险，保留但当前无法触达。
+    /* v8 ignore next -- 见上：step 已拦终局，此守卫真分支不可达 */
+    if (this.phase === 'won' || this.phase === 'lost') return false
+    if (this.tick < MAX_BATTLE_TICKS) return false
+    this.emit({ type: 'stalemate' })
+    this.finish(false, true)
+    return true
+  }
+
+  /** 星级由客户端算一遍供即时反馈；服务端会重算校验（I-6 的分工） */
+  private calcStars(): number {
+    const t = this.cfg.level.star_targets
+    let s = 0
+    for (const v of t) if (this.score >= v) s++
+    return s
+  }
+
+  /** 结算上报数据（结构与 domain.SettleInput 一致） */
+  settleInput(tokenId: number) {
+    return {
+      token_id: tokenId,
+      result: this.phase === 'won' ? 'win' : 'lose',
+      stars: this.phase === 'won' ? this.calcStars() : 0,
+      score: this.score,
+      kills: this.kills,
+      leaked: this.leaked,
+      hp_left: Number(this.baseHp),
+      wave_reached: this.waveIndex + 1,
+      duration_ms: Math.round(this.elapsedMs),
+      shots: this.shots,
+      hits: this.hits,
+      reactions: this.reactionsCount,
+      heat_max: Number(this.heat.maxHeatThisBattle),
+      elements_used: this.elementsUsed,
+      reactions_used: this.reactionsUsed,
+      terrain_used: [...new Set(this.terrainUsed)],
+      /** I-6 重放闭环：选牌决策序列，第三方据此复现原局 */
+      card_picks: [...this.cardPicks],
+      replay_hash: this.replayHash(),
+    }
+  }
+}
+
+// ---------- 工具 ----------
+
+function dist2(x1: bigint, y1: bigint, x2: bigint, y2: bigint): bigint {
+  const dx = x1 - x2
+  const dy = y1 - y2
+  return dx * dx + dy * dy
+}
+
+/** 整数平方根近似（牛顿法，避免 Math.sqrt 的浮点不确定） */
+function sqrtApprox(n: bigint): bigint {
+  if (n < 2n) return n
+  let x = n
+  let y = (x + 1n) / 2n
+  while (y < x) {
+    x = y
+    y = (x + n / x) / 2n
+  }
+  return x
+}
+
+function dominantOf(e: Enemy): Element | null {
+  let best: Element | null = null
+  let bestStacks = 0n
+  for (const el of ELEMENT_ORDER) {
+    const v = e.stacks.get(el) ?? 0n
+    if (v > bestStacks) {
+      best = el
+      bestStacks = v
+    }
+  }
+  return best
+}
+
+function reactionIndex(k: ReactionKey): number {
+  return REACTION_ORDER.indexOf(k) + 1
+}
+
+function terrainIndex(kind: string): number {
+  const order = ['oil_drum', 'tidal_gate', 'rotor_vane', 'collapse_wall', 'charge_tower']
+  return order.indexOf(kind) + 1
+}
+
+function cardIndex(c: Card): number {
+  // 三处防御性回退（`skillId ?? 0`、`effect ? :0`、`mechanic ? :0`）的落空分支**不可达**：
+  // cardIndex 只被 record() 用于牌局中的真实手牌，而手牌全部由 CardDeck 造出——
+  // skill 卡必带 skillId、attribute 卡必带 effect、mechanic 卡必带 mechanic（见 heatmap.ts）。
+  // 缺字段的卡无从经公开 API 进入本函数。分派用的 kind 判定本身由 take/discard/skip 用例覆盖，
+  // 这里整体豁免只影响这些永不触达的空值回退。
+  /* v8 ignore next 3 -- 见上：卡片恒为良构，三处空值回退分支不可达 */
+  if (c.kind === 'skill') return (c.skillId ?? 0) * 10
+  if (c.kind === 'attribute') return 500 + (c.effect ? attributeIndex(c.effect.kind) : 0)
+  return 900 + (c.mechanic ? mechanicIndex(c.mechanic.kind) : 0)
+}
+
+function attributeIndex(kind: string): number {
+  return ['attack', 'element_coef', 'crit', 'heat_cap', 'element_cap', 'armor'].indexOf(kind) + 1
+}
+
+function mechanicIndex(kind: string): number {
+  return ['pierce_bonus', 'chain_bonus', 'aoe_bonus', 'free_discard', 'overheat_guard'].indexOf(
+    kind,
+  ) + 1
+}
+
+function uidOf(v: bigint): number {
+  return Number(v % 100000n)
+}

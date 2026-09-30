@@ -309,3 +309,41 @@ class TestQualityReportExtended:
         path = tmp_path / "report.md"
         save_quality_report(report, str(path), "markdown")
         assert path.exists()
+
+
+class TestQualityReportPartialBranches:
+    """质量报告的三条可达假支（L116，A205）
+
+    to_markdown 无改进建议、一致性统计里半条记录（空 output）与自我重复条
+    （instruction==output）——都是真实数据形态，此前只走了「有建议 / 两侧非空 /
+    问答不同」那一侧（L100 终态偏支 87->96 / 217->213 / 219->213）。
+    """
+
+    def test_to_markdown_without_recommendations_skips_section(self):
+        report = QualityReport(
+            dataset_name="d", timestamp="t", total_items=1,
+            metrics=[QualityMetric("完整性", 1.0, 0.7, True, "ok")],
+            recommendations=[],
+        )
+        md = report.to_markdown()
+        assert "## 改进建议" not in md
+        assert "## 质量指标" in md
+
+    def test_to_markdown_with_recommendations_shows_section(self):
+        report = QualityReport(
+            dataset_name="d", timestamp="t", total_items=1,
+            recommendations=["多收集数据"],
+        )
+        assert "## 改进建议" in report.to_markdown()
+        assert "- 多收集数据" in report.to_markdown()
+
+    def test_consistency_counts_only_full_and_distinct_pairs(self):
+        reporter = QualityReporter()
+        items = [
+            {"instruction": "问A", "input": "", "output": "答A"},   # 计入
+            {"instruction": "问B", "input": "", "output": ""},       # output 空 ⇒ 不计（217 假支）
+            {"instruction": "重复", "input": "", "output": "重复"},   # 问答相同 ⇒ 不计（219 假支）
+        ]
+        metric = reporter._calculate_consistency(items)
+        # 3 条里只有 1 条既完整又问答不同
+        assert abs(metric.value - 1 / 3) < 1e-9

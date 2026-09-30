@@ -55,6 +55,27 @@ SECOND_ITEMS = ITEMS[:3]
 # 字段结构不同，用于迁移
 MIGRATION_ITEMS = [{"question": "q1", "answer": "a1"}, {"question": "q2", "answer": "a2"}]
 
+# 分层采样的输入：4 类 × 5 条。同类的 `instruction` 必须完全相同 ——
+# 分组键取 `instruction[:10]`（见 `dataset_ops._stratified_sample`），同类内加
+# 序号会把 20 条拆成 20 组，就测不到「类与类之间怎么分余数」。
+STRATIFIED_ITEMS = [
+    {"instruction": f"类别{cat}", "input": "", "output": f"{cat}答案{i}"}
+    for cat in ("甲", "乙", "丙", "丁")
+    for i in range(1, 6)
+]
+
+# 分层分割的输入：20 条，`instruction` 两类各 10 条（平衡），`category` 偏斜为 18 x + 2 y。
+# 两个字段故意互相错开（后两条 y 同时是「类别乙」）：按 `instruction` 分层时 val 必然
+# 两类都有，按 `category` 分层时 val 全是 x —— 「分层键有没有真的传到分组那一侧」
+# 一条断言就能分辨。`output` 每条唯一且形如 o0..o19，用来检查段内顺序。
+SPLIT_KNOB_ITEMS = [
+    {"instruction": "类别甲" if i < 10 else "类别乙",
+     "category": "y" if i >= 18 else "x",
+     "input": "", "output": f"o{i}"}
+    for i in range(20)
+]
+SPLIT_KNOB_RATIOS = {"train_ratio": 0.5, "val_ratio": 0.25, "test_ratio": 0.25}
+
 
 def _write_json(path: Path, items) -> Path:
     """写入 JSON 数据集文件
@@ -170,6 +191,22 @@ def _read_json(path: Path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _count_by(items, field):
+    """按字段值计数（只保留出现过的值）
+
+    Args:
+        items: 数据列表
+        field: 字段名
+
+    Returns:
+        字段值 -> 条数
+    """
+    out = {}
+    for item in items:
+        out[item[field]] = out.get(item[field], 0) + 1
+    return out
+
+
 # ============================================================
 # 只读分析类
 # ============================================================
@@ -267,7 +304,9 @@ class TestDatasetSearch:
             ("exact", "公租房", 0),           # 子串不匹配
             ("ngram", "交易", 1),
             ("regex", "^如何", 2),
-            ("fuzzy", "公租屋", 0),           # 编辑距离不足
+            # 「公租屋」与「公租房」只差最后一个字：3 字窗口错配 1 → 0.667 ≥ 0.6 → 命中。
+            # L25 之前这里是 0，理由是整档 Jaccard 在中文上恒 0（A27），不是「编辑距离不足」。
+            ("fuzzy", "公租屋", 2),
         ],
     )
     def test_each_method_has_its_own_semantics(self, tools_env, method, query, expected):
@@ -310,6 +349,223 @@ class TestDatasetSearch:
         assert payload["total_matches"] == 2
         assert len(payload["items"]) == 1
 
+    def test_fuzzy_threshold_is_a_request_field(self, tools_env):
+        """`fuzzy_threshold` 走得到打分代码：0.6 → 2 条，抬到 0.667 → 0 条
+
+        「公租屋」对「如何申请公租房」的最优窗口是「公租房」，错 1/3 字 = 0.6666…，
+        所以 0.6 收、0.667 已经不收。这条同时补上 L25 那格数字的来历：默认阈值下
+        命中 2 条不是「编辑距离」的功劳，是 2/3 这个分数恰好过了 0.6。
+        """
+        def total(extra):
+            response = tools_env.client.post(
+                "/api/dataset/search",
+                json={"input_file": str(tools_env.data), "query": "公租屋",
+                      "method": "fuzzy", **extra},
+            )
+            assert response.status_code == 200, response.text
+            return response.json()["total_matches"]
+
+        assert total({}) == 2
+        assert total({"fuzzy_threshold": 0.667}) == 0
+        assert total({"fuzzy_threshold": 0.5}) == 2
+
+    def test_ngram_n_is_a_request_field(self, tools_env):
+        """`ngram_n` 也是请求字段：整句查询在 n=1 下 4 条、n=2 起 2 条"""
+        def total(n):
+            response = tools_env.client.post(
+                "/api/dataset/search",
+                json={"input_file": str(tools_env.data), "query": "如何申请公租房",
+                      "method": "ngram", "ngram_n": n},
+            )
+            assert response.status_code == 200, response.text
+            return response.json()["total_matches"]
+
+        assert total(1) == 4
+        assert total(2) == 2
+
+    @pytest.mark.parametrize("extra, phrase", [
+        ({"fuzzy_threshold": 0}, "模糊阈值"),
+        ({"fuzzy_threshold": 2}, "模糊阈值"),
+        ({"ngram_n": 0}, "n-gram 长度"),
+    ])
+    def test_out_of_range_knobs_are_400(self, tools_env, extra, phrase):
+        """越界旋钮是 400，不是「查询成功、零命中」
+
+        判据在 SDK 那一处（`ValueError` → `to_http_error` → 400），路由没有第二份校验；
+        所以这条用例同时也是「字段被转发了」的证据——没转发的话 pydantic 收下就没人管。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/search",
+            json={"input_file": str(tools_env.data), "query": "公租房", **extra},
+        )
+        assert response.status_code == 400, response.text
+        assert phrase in response.json()["detail"]
+
+    def search(self, tools_env, **extra):
+        """POST 一次 `/api/dataset/search` 并返回 JSON 载荷"""
+        response = tools_env.client.post(
+            "/api/dataset/search",
+            json={"input_file": str(tools_env.data), "query": "公租屋", **extra},
+        )
+        assert response.status_code == 200, response.text
+        return response.json()
+
+    def test_the_response_echoes_the_effective_threshold(self, tools_env):
+        """响应里的 `fuzzy_threshold` 是**打分时用的那份**，没传参时是默认 0.6
+
+        回显走的是 `SearchResult` → `SearchResponse`，不是请求体回显：请求体里
+        根本没有这个键（`{}`）时也要有 0.6，用户才知道 0 条该怪谁。
+        """
+        default = self.search(tools_env, method="fuzzy")
+        loose = self.search(tools_env, method="fuzzy", fuzzy_threshold=0.5)
+
+        assert default["fuzzy_threshold"] == 0.6
+        assert default["ngram_n"] is None
+        assert loose["fuzzy_threshold"] == 0.5
+
+    def test_the_response_echoes_the_gram_length(self, tools_env):
+        payload = self.search(tools_env, method="ngram", ngram_n=1)
+
+        assert payload["ngram_n"] == 1
+        assert payload["fuzzy_threshold"] is None
+
+    @pytest.mark.parametrize("method", ["exact", "contains", "regex"])
+    def test_the_knob_keys_are_present_even_when_unused(self, tools_env, method):
+        """未被消费时是 `null`，但**键必须在**
+
+        FastAPI 按 `response_model` 过滤返回值：`SearchResponse` 少声明一键，该键就从
+        响应里消失且**不报错**。所以这里断言的是键存在，而不是值等于 None（后者在
+        键被裁掉时靠 `.get()` 也会通过）。
+        """
+        payload = self.search(tools_env, method=method, query="公租房")
+
+        assert "fuzzy_threshold" in payload and "ngram_n" in payload
+        assert payload["fuzzy_threshold"] is None and payload["ngram_n"] is None
+
+    def test_the_http_shape_matches_the_sdk_result_dict(self, tools_env):
+        """HTTP 响应键集合 ≡ SDK `to_dict()` 键集合（两边不同源，才是有效预言机）
+
+        拿 `SearchResponse.model_fields` 当预期是**恒真**的——模型漏声明字段时，
+        响应和字段集一起变小（见本文件模块 docstring 里那条预言机警告）。
+        """
+        from augmentor.search_enhanced import search_dataset
+
+        items = json.loads(tools_env.data.read_text(encoding="utf-8"))
+        sdk = search_dataset(items, "公租屋", method="fuzzy").to_dict()
+        payload = self.search(tools_env, method="fuzzy")
+
+        assert set(payload) == set(sdk)
+        assert payload["fuzzy_threshold"] == sdk["fuzzy_threshold"] == 0.6
+
+    def test_a_starved_result_names_the_threshold_that_starved_it(self, tools_env):
+        """两条 0 命中要能分辨：阈值拧太紧 vs 语料里真没有
+
+        「公租屋」最优窗口分数 0.667：阈值 0.667 → 0 条（差一点就过），contains 同查询
+        → 0 条且没有旋钮可怪。缺陷态两条响应除了 `method` 之外完全同形。
+        """
+        starved = self.search(tools_env, method="fuzzy", fuzzy_threshold=0.667)
+        absent = self.search(tools_env, method="contains")
+
+        assert (starved["total_matches"], absent["total_matches"]) == (0, 0)
+        assert starved["fuzzy_threshold"] == 0.667
+        assert absent["fuzzy_threshold"] is None
+
+    def test_filters_narrow_the_hits(self, tools_env):
+        """`filters` 是请求字段：contains「房」4 条 → 叠 `output contains 签约` 1 条"""
+        def total(*filters):
+            response = tools_env.client.post(
+                "/api/dataset/search",
+                json={"input_file": str(tools_env.data), "query": "房",
+                      "filters": list(filters)},
+            )
+            assert response.status_code == 200, response.text
+            return response.json()["total_matches"]
+
+        assert total() == 4
+        assert total({"field": "output", "operator": "contains",
+                      "value": "签约"}) == 1
+        # 两条一起是交集：`二手房交易流程` 两条判据都过，`贷款利率是多少` 那两条不过
+        assert total({"field": "output", "operator": "contains", "value": "签约"},
+                     {"field": "instruction", "operator": "not_in",
+                      "value": ["贷款利率是多少"]}) == 1
+        assert total({"field": "instruction", "operator": "not_in",
+                      "value": ["贷款利率是多少"]}) == 3
+
+    def test_a_collection_operator_reaches_the_scoring(self, tools_env):
+        """`in` 的列表值穿到 HTTP 里仍然有效（JSON 数组 → Python 列表）"""
+        def total(values):
+            response = tools_env.client.post(
+                "/api/dataset/search",
+                json={"input_file": str(tools_env.data), "query": "公租房",
+                      "filters": [{"field": "instruction", "operator": "in",
+                                   "value": values}]},
+            )
+            assert response.status_code == 200, response.text
+            return response.json()["total_matches"]
+
+        assert total(["如何申请公租房"]) == 2
+        assert total(["二手房交易流程"]) == 0
+
+    @pytest.mark.parametrize("operator", ["equals", "EQ", ""])
+    def test_an_unknown_operator_is_400(self, tools_env, operator):
+        """算子不存在是 400 并列出可选算子，不是「查询成功、零命中」"""
+        response = tools_env.client.post(
+            "/api/dataset/search",
+            json={"input_file": str(tools_env.data), "query": "公租房",
+                  "filters": [{"field": "input", "operator": operator, "value": ""}]},
+        )
+        assert response.status_code == 400, response.text
+        detail = response.json()["detail"]
+        assert "算子" in detail and "not_in" in detail
+
+    def test_a_string_value_for_a_membership_operator_is_400(self, tools_env):
+        """`in` 拿到字符串是 400
+
+        缺陷态这条是 200 + `total_matches: 0`：`_evaluate_filter` 对非集合走
+        `return False`，于是整条查询被静默清零——用户读到「语料里没有」，
+        真相是「值该写成数组」。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/search",
+            json={"input_file": str(tools_env.data), "query": "公租房",
+                  "filters": [{"field": "instruction", "operator": "in",
+                               "value": "如何申请公租房"}]},
+        )
+        assert response.status_code == 400, response.text
+        assert "列表或集合" in response.json()["detail"]
+
+    @pytest.mark.parametrize("operator, value, phrase", [
+        ("gte", "5", "数字"),
+        ("contains", 5, "字符串"),
+    ])
+    def test_a_wrongly_typed_filter_value_is_400(self, tools_env, operator, value,
+                                                 phrase):
+        """过滤值的形状不对一律 400，不留给比较时炸 TypeError
+
+        缺陷态这两条分别是：`gte` + 字符串 → 文档侧一旦有数字字段就 `30 > "5"` 抛
+        TypeError（→ 500）；`contains` + 数字 → `"x" in 5` 同样 TypeError。
+        校验只看用户传的那个值，所以字段存不存在都无所谓（这里用的就是语料里没有的
+        `views`），报错发生在扫表之前。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/search",
+            json={"input_file": str(tools_env.data), "query": "公租房",
+                  "filters": [{"field": "views", "operator": operator,
+                               "value": value}]},
+        )
+        assert response.status_code == 400, response.text
+        assert phrase in response.json()["detail"]
+
+    def test_a_filter_without_the_required_keys_is_400(self, tools_env):
+        """字典缺键由 SDK 咽喉点名（pydantic 的 `Dict[str, Any]` 不管键名）"""
+        response = tools_env.client.post(
+            "/api/dataset/search",
+            json={"input_file": str(tools_env.data), "query": "公租房",
+                  "filters": [{"field": "input"}]},
+        )
+        assert response.status_code == 400, response.text
+        assert "缺少键" in response.json()["detail"]
+
     def test_unknown_method_rejected(self, tools_env):
         """未知检索方法必须 400 —— 不能静默回退到 contains"""
         response = tools_env.client.post(
@@ -336,9 +592,120 @@ class TestDatasetSearch:
         assert "数据文件不是合法 JSON" in response.json()["detail"]
 
 
+class TestSearchFilterEcho:
+    """响应要说清「过滤器筛掉了多少」（A31 的 API 侧）
+
+    L28 接上 `filters` 之后，HTTP 侧的「找到 0 条」仍有三种读不出成因的形状：
+    ①语料里确实没有、②阈值拧太紧（L27 已治）、③**检索命中了却被筛光**。
+    第三种只在传了 `filters` 后出现，且对 API 用户更隐蔽——他们拿不到 stderr 提示，
+    只有这份 JSON。所以 `applied_filters`（用了哪些）+ `matches_before_filters`
+    （筛之前几条）两键都要进响应。口径承 L27：**没消费时是 `null` 但键必须在**，
+    因为一律回显 `[]` / `0` 会让①和③重新同形。
+    """
+
+    def search(self, tools_env, query="房", **extra):
+        """POST 一次 `/api/dataset/search` 并返回 JSON 载荷"""
+        response = tools_env.client.post(
+            "/api/dataset/search",
+            json={"input_file": str(tools_env.data), "query": query, **extra},
+        )
+        assert response.status_code == 200, response.text
+        return response.json()
+
+    def test_a_narrowing_filter_echoes_both_counts(self, tools_env):
+        """contains「房」4 条 → `output contains 签约` 后 1 条，两个数与条件都在响应里"""
+        payload = self.search(tools_env, filters=[
+            {"field": "output", "operator": "contains", "value": "签约"}])
+
+        assert payload["matches_before_filters"] == 4
+        assert payload["total_matches"] == 1
+        assert payload["applied_filters"] == [
+            {"field": "output", "operator": "contains", "value": "签约"}]
+
+    @pytest.mark.parametrize("shape", ["omitted", "empty-list"])
+    def test_the_filter_keys_are_present_and_null_when_unused(self, tools_env, shape):
+        """没过滤（含传空清单）时两键是 `null`，但**键必须在**
+
+        与 L27 的旋钮同一理由：FastAPI 按 `response_model` 裁剪未声明的键，
+        所以断言的是键存在；而一律回显 `[]` / `0` 会把「没过滤」伪装成「过滤后剩 0 条」。
+        """
+        extra = {} if shape == "omitted" else {"filters": []}
+        payload = self.search(tools_env, **extra)
+
+        assert "applied_filters" in payload and "matches_before_filters" in payload
+        assert payload["applied_filters"] is None
+        assert payload["matches_before_filters"] is None
+
+    def test_a_starved_result_reads_differently_from_a_corpus_miss(self, tools_env):
+        """本轮的全部意义：两条 0 命中在 JSON 上分得开
+
+        `output contains 过户两步` 把 4 条候选全筛掉（before=4）；换成语料里没有的查询词
+        则是检索就没命中（before=0）。缺陷态两份响应除了 `query` 外完全同形。
+        """
+        starved = self.search(tools_env, filters=[
+            {"field": "output", "operator": "contains", "value": "过户两步"}])
+        absent = self.search(tools_env, query="根本没有这个词", filters=[
+            {"field": "input", "operator": "eq", "value": ""}])
+
+        assert (starved["total_matches"], absent["total_matches"]) == (0, 0)
+        assert (starved["matches_before_filters"], absent["matches_before_filters"]) == (4, 0)
+        assert len(starved["applied_filters"]) == len(absent["applied_filters"]) == 1
+
+    def test_the_echo_counts_conditions_not_a_concatenated_string(self, tools_env):
+        """两条过滤器是**清单**（各带 field / operator / value），不是拼起来的条件串"""
+        payload = self.search(tools_env, filters=[
+            {"field": "instruction", "operator": "in", "value": ["二手房交易流程"]},
+            {"field": "input", "operator": "eq", "value": ""}])
+
+        assert payload["matches_before_filters"] == 4
+        assert payload["total_matches"] == 1
+        assert [f["operator"] for f in payload["applied_filters"]] == ["in", "eq"]
+
+    def test_the_echoed_value_keeps_its_json_type(self, tools_env):
+        """回显的是规范化后的**值本身**：成员档的数组不会被退化成字符串"""
+        payload = self.search(tools_env, filters=[
+            {"field": "instruction", "operator": "in", "value": ["物业费怎么算"]}])
+
+        assert payload["applied_filters"][0]["value"] == ["物业费怎么算"]
+        assert type(payload["applied_filters"][0]["value"]) is list
+
+    def test_the_counts_are_pre_pagination(self, tools_env):
+        """`limit` 只切条目：两键仍是全集口径，否则这句话在分页时就是假话"""
+        payload = self.search(tools_env, limit=1, offset=1, filters=[
+            {"field": "input", "operator": "eq", "value": ""}])
+
+        assert (payload["matches_before_filters"], payload["total_matches"]) == (4, 4)
+        assert len(payload["items"]) == 1
+
+    def test_the_knob_and_the_filter_sections_coexist(self, tools_env):
+        """旋钮与过滤器同时回显，互不覆盖：fuzzy「公租屋」2 条 → 筛完 0 条
+
+        这条是②与③**同时**成立的情形（阈值 0.6 收了 2 条，过滤器又把 2 条筛光），
+        只回显任一侧都会把成因说成一半。
+        """
+        payload = self.search(tools_env, query="公租屋", method="fuzzy", filters=[
+            {"field": "output", "operator": "contains", "value": "签约"}])
+
+        assert payload["fuzzy_threshold"] == 0.6
+        assert (payload["matches_before_filters"], payload["total_matches"]) == (2, 0)
+
+    def test_the_http_shape_still_matches_the_sdk_when_filtering(self, tools_env):
+        """带过滤器时两边键集仍要一致（承 L27 的预言机：拿 SDK 的 `to_dict()` 比，
+        不拿 `SearchResponse.model_fields`——后者与被测对象同源、恒真）"""
+        from augmentor.search_enhanced import search_dataset
+
+        items = json.loads(tools_env.data.read_text(encoding="utf-8"))
+        specs = [{"field": "output", "operator": "contains", "value": "签约"}]
+        sdk = search_dataset(items, "房", filters=specs).to_dict()
+        payload = self.search(tools_env, filters=specs)
+
+        assert set(payload) == set(sdk)
+        assert payload["applied_filters"] == sdk["applied_filters"]
+        assert payload["matches_before_filters"] == sdk["matches_before_filters"] == 4
+
+
 class TestDatasetCompareFeaturesAutoConfig:
     """/api/dataset/compare、features、auto-config"""
-
     def test_compare_returns_both_conclusions(self, tools_env):
         """质量向与重叠度两份结论缺一不可"""
         response = tools_env.client.post(
@@ -467,6 +834,161 @@ class TestDatasetConvert:
         )
         assert response.status_code == 400, response.text
         assert "不支持的转换" in response.json()["detail"]
+
+    def test_declared_source_format_converts_container_file(self, tools_env):
+        """`source_format` 让对话类文件（落盘也是 .json）能转回规范形再导出
+
+        用 sharegpt 而不是 alpaca：alpaca 记录本身就带 `instruction`/`output`，
+        按 json 读走也能出对的结果，测不出这条边；`conversations` 只有声明了源格式
+        才会被折叠。断言值是手写字面量。
+        """
+        src = _write_json(tools_env.tmp / "sharegpt.json", [{
+            "conversations": [
+                {"from": "system", "value": "你是租房顾问"},
+                {"from": "user", "value": "可以月付吗"},
+                {"from": "assistant", "value": "支持月付"},
+            ]}])
+        response = tools_env.client.post(
+            "/api/dataset/convert",
+            json={
+                "input_file": str(src),
+                "output_file": str(tools_env.out),
+                "target_format": "chatml",
+                "source_format": "sharegpt",
+            },
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["source_format"] == "sharegpt"
+        assert json.loads(tools_env.out.read_text(encoding="utf-8")) == [{
+            "messages": [
+                {"role": "system", "content": "你是租房顾问"},
+                {"role": "user", "content": "可以月付吗"},
+                {"role": "assistant", "content": "支持月付"},
+            ]}]
+
+    def test_undeclared_conversation_source_is_a_400_not_an_empty_dataset(self, tools_env):
+        """不声明 `source_format` 转对话类文件：400 且带可执行建议，不落半截产物
+
+        以前这一路是 **200 + 一份全空问答的数据集**（写边只认 `instruction`/`output`，
+        `conversations` 整个被忽略），调用方拿到成功状态却把空数据喂进训练。
+        """
+        src = _write_json(tools_env.tmp / "sharegpt_undeclared.json", [{
+            "conversations": [{"from": "human", "value": "可以月付吗"},
+                              {"from": "assistant", "value": "支持月付"}]}])
+        response = tools_env.client.post(
+            "/api/dataset/convert",
+            json={
+                "input_file": str(src),
+                "output_file": str(tools_env.out),
+                "target_format": "chatml",
+            },
+        )
+        assert response.status_code == 400, response.text
+        detail = response.json()["detail"]
+        assert "全空数据集" in detail and "`conversations`" in detail, detail
+        assert not tools_env.out.exists()
+
+    @pytest.mark.parametrize("target,ext", [("chatml", "json"), ("csv", "csv")])
+    def test_non_object_record_is_a_400_not_a_500(self, tools_env, target, ext):
+        """记录不是对象 → 400 带条目下标；以前是 500 + 解释器内部措辞
+
+        `DataFormatError` 走 `to_http_error()` 的 `ValueError` 分支（400），而
+        写边以前抛的是 `AttributeError: 'NoneType' object has no attribute 'get'`
+        —— 500 会把「你的数据坏了」说成「服务器坏了」，且 csv 那一侧还会先落下
+        按字符展开的半截文件（A26①）。
+        """
+        src = _write_json(tools_env.tmp / "scalars.json", [None])
+        out = tools_env.tmp / f"l22_out.{ext}"
+        out.unlink(missing_ok=True)
+
+        response = tools_env.client.post(
+            "/api/dataset/convert",
+            json={"input_file": str(src), "output_file": str(out),
+                  "target_format": target},
+        )
+        assert response.status_code == 400, response.text
+        detail = response.json()["detail"]
+        assert "第 1 条记录必须是 JSON 对象" in detail, detail
+        assert "has no attribute" not in detail, detail
+        assert not out.exists(), "报错前不得留下半截产物"
+
+    @pytest.mark.parametrize("target", ["chatml", "vicuna"])
+    def test_a_dataset_with_no_readable_qa_is_a_400_not_a_200(self, tools_env, target):
+        """整档字段名认不出 → 400；以前这一路是 200 + 一份空问答数据集
+
+        A26②：写边只认 `instruction`/`output`（`vicuna` 连 `history` 都不读），
+        `question`/`answer` 语料每条都读到 `""`，HTTP 状态好看、产物结构合法却一行
+        问答都没有。200 会把「你的数据不可用」说成「转换完成」，下游直接拿去训练。
+        """
+        src = _write_json(tools_env.tmp / "wrong_fields.json", [
+            {"question": "可以月付吗", "answer": "支持月付"},
+            {"question": "押金多少", "answer": "一个月"}])
+        out = tools_env.tmp / f"l23_{target}_out.json"
+        out.unlink(missing_ok=True)
+
+        response = tools_env.client.post(
+            "/api/dataset/convert",
+            json={"input_file": str(src), "output_file": str(out),
+                  "target_format": target},
+        )
+        assert response.status_code == 400, response.text
+        detail = response.json()["detail"]
+        assert "2 条记录里取不到任何问答" in detail, detail
+        assert not out.exists(), "报错前不得留下空问答产物"
+
+    def test_history_only_rows_still_convert_to_chatml(self, tools_env):
+        """带内容的数据集不得被整档判定砸掉：`chatml` 写边会读 `history`"""
+        src = _write_json(tools_env.tmp / "history_only.json", [{
+            "history": [{"role": "user", "content": "可以月付吗"},
+                        {"role": "assistant", "content": "支持月付"}]}])
+        out = tools_env.tmp / "l23_history_out.json"
+
+        response = tools_env.client.post(
+            "/api/dataset/convert",
+            json={"input_file": str(src), "output_file": str(out),
+                  "target_format": "chatml"},
+        )
+        assert response.status_code == 200, response.text
+        assert "可以月付吗" in out.read_text(encoding="utf-8")
+
+    def test_unknown_source_format_rejected(self, tools_env):
+        """未知源格式 → 400，而不是 500 或静默按 json 读
+
+        用 `parquet` 而不是 `tsv` 当「未知」的例子：`tsv` 一度确实不在转换图里，
+        L20 补上 `json -> tsv` / `tsv -> json` 两条边之后它是受支持格式，拿它举例
+        会把「清单收紧」误读成「回归」。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/convert",
+            json={
+                "input_file": str(tools_env.data),
+                "output_file": str(tools_env.out),
+                "target_format": "jsonl",
+                "source_format": "parquet",
+            },
+        )
+        assert response.status_code == 400, response.text
+        assert "无法从 parquet 转换到 JSON" in response.json()["detail"]
+
+    def test_dirty_container_row_reports_row_number(self, tools_env):
+        """源文件里有坏记录：400 的错误信息带条目下标，便于调用方定位"""
+        src = _write_json(tools_env.tmp / "bad_sharegpt.json", [
+            {"conversations": [{"from": "human", "value": "q"}, {"from": "gpt", "value": "a"}]},
+            {"conversations": [{"from": "tool", "value": "外部返回"},
+                               {"from": "gpt", "value": "a"}]},
+        ])
+        response = tools_env.client.post(
+            "/api/dataset/convert",
+            json={
+                "input_file": str(src),
+                "output_file": str(tools_env.out),
+                "target_format": "json",
+                "source_format": "sharegpt",
+            },
+        )
+        assert response.status_code == 400, response.text
+        assert "第 2 条 sharegpt 记录含未认识的角色: tool" in response.json()["detail"]
+        assert not tools_env.out.exists()
 
 
 class TestDatasetMerge:
@@ -598,6 +1120,157 @@ class TestDatasetSample:
         assert response.status_code == 400, response.text
         assert "不支持的采样方法" in response.json()["detail"]
 
+    def test_size_zero_is_a_request_for_no_rows(self, tools_env):
+        """`size=0` 是「一条都不要」，不是「没传 size」
+
+        缺陷态：库层 `if config.size:` 把 0 读成缺省，端点回 200 且
+        `output_count` 等于全量（5 条），并把整份数据写进了目标文件。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/sample",
+            json={
+                "input_file": str(tools_env.data),
+                "output_file": str(tools_env.out),
+                "size": 0,
+            },
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["output_count"] == 0
+        assert _read_json(tools_env.out) == []
+
+    def test_negative_size_is_a_param_error_naming_the_knob(self, tools_env):
+        """负数 size 必须是「指名参数」的 400，且不得落盘
+
+        缺陷态下 systematic 分支既不是 400 也不是 500，而是**答对数量都错**的
+        200：`min(-1, 5) = -1` → `items[::1][:-1]` 交出 4 条。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/sample",
+            json={
+                "input_file": str(tools_env.data),
+                "output_file": str(tools_env.out),
+                "size": -1,
+                "method": "systematic",
+            },
+        )
+        assert response.status_code == 400, response.text
+        assert "size" in response.json()["detail"]
+        assert not tools_env.out.exists()
+
+    def test_tiny_ratio_reaches_the_systematic_branch(self, tools_env):
+        """`ratio` 小到归零时 systematic 不得是 500
+
+        缺陷态：`len(items) // 0` → 裸 `ZeroDivisionError`，它不是 `ValueError`，
+        于是经 `to_http_error` 落进 500 分支 —— 客户端参数错被报成服务端故障。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/sample",
+            json={
+                "input_file": str(tools_env.data),
+                "output_file": str(tools_env.out),
+                "ratio": 0.0001,
+                "method": "systematic",
+            },
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["output_count"] == 0
+
+    def test_stratified_sample_delivers_the_requested_size(self, tools_env):
+        """分层采样要 7 条就给 7 条，余数按类间最大余数分
+
+        缺陷态：逐类 `int(7 * 5/20) = 1`，四类各 1 条、余下 3 条整份丢掉 →
+        `output_count` 回 4，用户要的 7 条既没补齐也没人报错。
+        """
+        src = _write_json(tools_env.tmp / "stratified.json", STRATIFIED_ITEMS)
+        response = tools_env.client.post(
+            "/api/dataset/sample",
+            json={
+                "input_file": str(src),
+                "output_file": str(tools_env.out),
+                "method": "stratified",
+                "size": 7,
+                "seed": 7,
+            },
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["output_count"] == 7
+        rows = _read_json(tools_env.out)
+        assert len(rows) == 7
+        counts = {}
+        for row in rows:
+            counts[row["instruction"]] = counts.get(row["instruction"], 0) + 1
+        # 每类都不缺席（≥1），余数也不堆到单一类（≤2）
+        assert sorted(counts.values()) == [1, 2, 2, 2]
+
+    @pytest.mark.parametrize("key,expected", [
+        ("instruction", {"类别甲": 2, "类别乙": 2, "类别丙": 2, "类别丁": 2}),
+        ("output", {"类别甲": 5, "类别乙": 3}),
+    ], ids=["by_class", "by_unique_field"])
+    def test_stratify_key_reaches_the_grouping(self, tools_env, key, expected):
+        """`stratify_key` 必须是产品面能拧的旋钮：换键就换形状
+
+        L42 前请求模型没有这个字段，`method="stratified"` 只能按出厂的 `instruction`
+        分组，换字段这条能力在产品面上完全不可达。`size=8, seed=7`（Temp `l42e.py` 实测）：
+        按 `instruction` 是 4 类各 2 条，按 `output`（20 个唯一组、每组配额 1）只覆盖到
+        前两类。硬编码键的缺陷态在第二行必红。
+        """
+        src = _write_json(tools_env.tmp / "stratified.json", STRATIFIED_ITEMS)
+        response = tools_env.client.post(
+            "/api/dataset/sample",
+            json={
+                "input_file": str(src),
+                "output_file": str(tools_env.out),
+                "method": "stratified",
+                "size": 8,
+                "seed": 7,
+                "stratify_key": key,
+            },
+        )
+        assert response.status_code == 200, response.text
+        rows = _read_json(tools_env.out)
+        assert len(rows) == 8
+        assert _count_by(rows, "instruction") == expected
+
+    def test_blank_stratify_key_is_400(self, tools_env):
+        """分层采样不给键：400，不静默退化成随机样本
+
+        退化形状实测过（Temp `l42b.py`）：空键时 4 类 × 5 条取 8 条交出 `5/2/1`，
+        正常键恒为 `2/2/2/2` —— 调用方拿到随机样本却以为是分层样本。判据在库层
+        （`_stratified_sample`），这里只钉它接得上 HTTP。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/sample",
+            json={
+                "input_file": str(tools_env.data),
+                "output_file": str(tools_env.out),
+                "method": "stratified",
+                "size": 3,
+                "stratify_key": "",
+            },
+        )
+        assert response.status_code == 400, response.text
+        assert "分层采样需要非空" in response.json()["detail"]
+
+    @pytest.mark.parametrize("method", ["random", "systematic"],
+                             ids=["random", "systematic"])
+    def test_blank_stratify_key_ignored_by_other_methods(self, tools_env, method):
+        """对照组：另外两种方法不读分组键，空键照旧可用
+
+        判据只管分层支路。缺陷形状是把校验写在 `sample()` 入口 —— 那样这两行会红。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/sample",
+            json={
+                "input_file": str(tools_env.data),
+                "output_file": str(tools_env.out),
+                "method": method,
+                "size": 3,
+                "stratify_key": "",
+            },
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["output_count"] == 3
+
 
 class TestDatasetSplit:
     """/api/dataset/split"""
@@ -635,6 +1308,159 @@ class TestDatasetSplit:
         )
         assert response.status_code == 400, response.text
         assert "分割比例之和" in response.json()["detail"]
+
+    def test_small_val_slice_is_not_rounded_away(self, tools_env):
+        """7 条按 0.8/0.1/0.1 分割：val 名义 0.7 条，不能被抹平成 0
+
+        缺陷态：`int(7 * 0.1) = 0` 且余数整份给了 test → (5, 0, 2)，
+        test 实占 28.6% 而标称 10%，用户拿不到任何验证集。
+        """
+        src = _write_json(
+            tools_env.tmp / "seven.json",
+            [{"instruction": f"条目{i}", "input": "", "output": f"结果{i}"}
+             for i in range(7)],
+        )
+        response = tools_env.client.post(
+            "/api/dataset/split",
+            json={
+                "input_file": str(src),
+                "output_dir": str(tools_env.out_dir),
+                "seed": 7,
+            },
+        )
+        assert response.status_code == 200, response.text
+        splits = response.json()["splits"]
+        counts = {name: part["count"] for name, part in splits.items()}
+        assert counts == {"train": 5, "val": 1, "test": 1}
+        assert Path(splits["val"]["file"]).is_file()
+
+
+class TestDatasetSplitContractKnobs:
+    """/api/dataset/split 的分层与保序旋钮（A56：L41 能力的产品面入口）
+
+    `SplitConfig` 的 `stratify` / `stratify_key` / `shuffle` 三个字段自 3.0 就在，分层算法
+    L41 才接上，而这个端点以前只发比例与种子 —— 于是 L41 修好的东西对 HTTP 调用方仍然
+    不可见（只有 SDK 构造 `SplitConfig` 才走得到）。本轮接旋钮，**响应形态一字不改**：
+    写盘变换类端点只回「写到哪、写了多少」（`docs/API.md` 的 dataset 分组约定），而实测
+    真实 6,902 条语料按 `instruction` 分层时 `stratify_distribution` 有 6,531 个键、
+    紧凑 JSON 404,362 字节，是四计数响应的 5,119 倍。
+
+    所有期望值来自探针（Temp `l42f.py` / `l42g.py`），语料是 `SPLIT_KNOB_ITEMS`。
+    """
+
+    @staticmethod
+    def _split(tools_env, sub, **extra):
+        """对 `SPLIT_KNOB_ITEMS` 跑一次分割请求
+
+        Args:
+            tools_env: 环境 fixture
+            sub: 本次请求的输出子目录名（同一次用例里不能复用，否则后一份盖掉前一份）
+            **extra: 追加的请求字段
+
+        Returns:
+            (响应 JSON, {段名: 落盘条目})
+        """
+        src = _write_json(tools_env.tmp / "knobs.json", SPLIT_KNOB_ITEMS)
+        out_dir = tools_env.tmp / sub
+        response = tools_env.client.post(
+            "/api/dataset/split",
+            json={"input_file": str(src), "output_dir": str(out_dir),
+                  **SPLIT_KNOB_RATIOS, **extra},
+        )
+        assert response.status_code == 200, response.text
+        payload = response.json()
+        segments = {name: _read_json(Path(payload["splits"][name]["file"]))
+                    for name in ("train", "val", "test")}
+        return payload, segments
+
+    def test_stratify_rebalances_classes_without_moving_segment_sizes(self, tools_env):
+        """分层改的是每段的类别配比，不改段尺寸
+
+        seed=0、0.5/0.25/0.25：不分层 val 是 `甲4/乙1`（输入明明 10/10 平衡），分层恒为
+        `甲3/乙2`，train 从 `甲4/乙6` 变成 `甲5/乙5`；两种口径的段尺寸都是 10/5/5。
+        缺陷态（旋钮没接上）里分层档会交出与不分层逐条同答的产物。
+        """
+        _, plain = self._split(tools_env, "plain", seed=0)
+        _, strat = self._split(tools_env, "strat", seed=0, stratify=True)
+        assert {k: len(v) for k, v in plain.items()} == \
+               {k: len(v) for k, v in strat.items()} == \
+               {"train": 10, "val": 5, "test": 5}
+        assert _count_by(plain["val"], "instruction") == {"类别甲": 4, "类别乙": 1}
+        assert _count_by(strat["val"], "instruction") == {"类别甲": 3, "类别乙": 2}
+        assert _count_by(strat["train"], "instruction") == {"类别甲": 5, "类别乙": 5}
+
+    @pytest.mark.parametrize("key,expected_val", [
+        ("instruction", {"类别甲": 3, "类别乙": 2}),
+        ("category", {"类别甲": 4, "类别乙": 1}),
+    ], ids=["balanced_field", "skewed_field"])
+    def test_stratify_key_selects_the_grouping(self, tools_env, key, expected_val):
+        """`stratify_key` 必须真的当分组字段用：换字段就换产物
+
+        语料里 `instruction` 是 10/10 平衡、`category` 是 18 x + 2 y（两条 y 恰好也是
+        「类别乙」）。按前者分层 val 两类都有；按后者分层 val 全是 x，于是 val 的
+        `instruction` 形状退回 `甲4/乙1`。把键硬编码成 `instruction` 的缺陷态在第二行必红。
+        """
+        _, strat = self._split(tools_env, f"key_{key}", seed=0,
+                               stratify=True, stratify_key=key)
+        assert _count_by(strat["val"], "instruction") == expected_val
+
+    def test_blank_stratify_key_is_400(self, tools_env):
+        """开了分层不给键：400，而不是静默按不分层跑"""
+        response = tools_env.client.post(
+            "/api/dataset/split",
+            json={
+                "input_file": str(tools_env.data),
+                "output_dir": str(tools_env.out_dir),
+                "stratify": True,
+                "stratify_key": "",
+            },
+        )
+        assert response.status_code == 400, response.text
+        assert "分层分割需要非空" in response.json()["detail"]
+
+    def test_shuffle_false_on_stratified_path_only_restores_order(self, tools_env):
+        """分层支路上 `shuffle=False` 只回排段内顺序：成员与条数都不动
+
+        同 seed 两次请求（True / False）三段尺寸一致、成员集合一致，只是 False 那份按
+        输入的 `o0..o19` 顺序排好，True 那份没排。`seed` 在这里仍然决定谁进哪段。
+        """
+        _, shuffled = self._split(tools_env, "shuf", seed=0, stratify=True)
+        _, ordered = self._split(tools_env, "ord", seed=0, stratify=True, shuffle=False)
+        for name in ("train", "val", "test"):
+            got = [row["output"] for row in ordered[name]]
+            want = [row["output"] for row in shuffled[name]]
+            assert len(got) == len(want)
+            assert sorted(got) == sorted(want), f"{name} 的成员被 shuffle 旋钮改动了"
+            assert got == sorted(got, key=lambda o: int(o[1:]))
+            assert want != sorted(want, key=lambda o: int(o[1:]))
+
+    def test_shuffle_false_on_default_path_freezes_the_seed(self, tools_env):
+        """默认支路上 `shuffle=False` 是另一套口径：成员整段换掉，且 seed 空转
+
+        这不是本轮引入的新行为，而是「先整份打乱再按位置切片」的既有形状 —— 接上旋钮就
+        必须把它钉成事实，免得日后被当成回归。两个不同 seed 的 `shuffle=False` 产物逐条
+        同答，三段就是输入的前 10 / 中 5 / 后 5 条。口径统一（另立 Backlog A60）。
+        """
+        _, first = self._split(tools_env, "d0", seed=0, shuffle=False)
+        _, second = self._split(tools_env, "d1", seed=99, shuffle=False)
+        assert first == second, "默认支路的 shuffle=False 仍随 seed 变，口径说明已失效"
+        assert [row["output"] for row in first["train"]] == [f"o{i}" for i in range(10)]
+        assert [row["output"] for row in first["val"]] == [f"o{i}" for i in range(10, 15)]
+        assert [row["output"] for row in first["test"]] == [f"o{i}" for i in range(15, 20)]
+
+    def test_new_knobs_default_to_pre_l42_behavior(self, tools_env):
+        """三个新字段全省略 == 显式默认值 == L42 之前的请求：逐字节同产物
+
+        契约只能是加法：老客户端不发新字段时，三段文件必须一个字节都不变。
+        """
+        legacy, legacy_segments = self._split(tools_env, "legacy", seed=7)
+        explicit, explicit_segments = self._split(
+            tools_env, "explicit", seed=7,
+            stratify=False, shuffle=True, stratify_key="instruction")
+        assert legacy_segments == explicit_segments
+        # 只比计数：`file` 里带着各自的输出目录名，两份产物本就写在不同子目录
+        assert {k: v["count"] for k, v in legacy["splits"].items()} == \
+               {k: v["count"] for k, v in explicit["splits"].items()}
 
 
 class TestDatasetAggregate:
@@ -683,6 +1509,62 @@ class TestDatasetAggregate:
         assert response.status_code == 200, response.text
         assert response.json()["aggregated_count"] == 3
 
+    def test_weighted_without_target_size_uses_the_default(self, tools_env):
+        """省略可选的 `target_size` 必须回落到默认 100，而不是炸
+
+        `AggregateRequest.target_size` 是 `Optional[int] = None`，路由把它原样
+        塞进 `aggregate(..., target_size=...)`。缺陷态：`kwargs.get("target_size",
+        100)` 拿到的是**存在的键 + None 值**，于是 `int(None * 占比)` 抛裸
+        TypeError → **500**。用户什么也没填，反而拿不到结果。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/aggregate",
+            json={
+                "datasets": {"a": str(tools_env.data)},
+                "output_file": str(tools_env.out),
+                "strategy": "weighted",
+            },
+        )
+        assert response.status_code == 200, response.text
+        # 默认 100 的配额大于单源条数，5 条全取；weighted 内部按 key 去重 → 4 条
+        assert response.json()["aggregated_count"] == 4
+
+    def test_negative_target_size_is_a_param_error_naming_the_knob(self, tools_env):
+        """`target_size=-1` 必须 400 并指名参数
+
+        缺陷态：实测 -1 与 -50 都是 **200 + `aggregated_count: 0`** ——
+        与「三个源都是空的」同形，调用方看不出是自己填的参数坏了。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/aggregate",
+            json={
+                "datasets": {"a": str(tools_env.data)},
+                "output_file": str(tools_env.out),
+                "strategy": "weighted",
+                "target_size": -1,
+            },
+        )
+        assert response.status_code == 400, response.text
+        assert "target_size" in response.json()["detail"]
+        assert not tools_env.out.exists()
+
+    def test_zero_target_size_delivers_an_empty_file(self, tools_env):
+        """0 条是合法请求：「只要源计数，不要条目」"""
+        response = tools_env.client.post(
+            "/api/dataset/aggregate",
+            json={
+                "datasets": {"a": str(tools_env.data)},
+                "output_file": str(tools_env.out),
+                "strategy": "weighted",
+                "target_size": 0,
+            },
+        )
+        assert response.status_code == 200, response.text
+        payload = response.json()
+        assert payload["aggregated_count"] == 0
+        assert payload["source_counts"] == {"a": len(ITEMS)}
+        assert _read_json(tools_env.out) == []
+
     def test_empty_datasets_rejected(self, tools_env):
         """空 datasets 必须 400"""
         response = tools_env.client.post(
@@ -704,6 +1586,29 @@ class TestDatasetAggregate:
         )
         assert response.status_code == 400, response.text
         assert "不支持的聚合策略" in response.json()["detail"]
+
+    def test_weighted_target_size_delivers_rows(self, tools_env):
+        """三源等权要 1 条时必须交付 1 条，而不是空数据集
+
+        缺陷态：逐源 `int(1 * 1/3) = 0` → 三源各 0 条，`aggregated_count` 回 0，
+        与「三个源本来就是空的」同形，调用方看不出区别。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/aggregate",
+            json={
+                "datasets": {
+                    "a": str(tools_env.data),
+                    "b": str(tools_env.second),
+                    "c": str(tools_env.migration),
+                },
+                "output_file": str(tools_env.out),
+                "strategy": "weighted",
+                "target_size": 1,
+            },
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["aggregated_count"] == 1
+        assert len(_read_json(tools_env.out)) == 1
 
 
 class TestDatasetRag:
@@ -823,6 +1728,35 @@ class TestSystemValidateConfig:
             json={"path": str(tools_env.tmp / "nope.yaml")},
         )
         assert response.status_code == 404, response.text
+
+    def test_unread_keys_come_back_as_warnings_not_failure(self, tools_env):
+        """「写了没人读」的键必须从 HTTP 这一侧也看得见，但不改判决（A76 / L52）
+
+        改前实测（Temp `l52q/probe1.py` NONCE-45A0C1AB9510）：节名拼错与节内键名拼错
+        两边都是 0 error / 0 warning，`load_config` 那侧读回默认值 —— 本条同时钉住
+        「出声」与「只出声不判负」两件事，因为 `is_valid` 就是这里的判决字段。
+        """
+        cfg = tools_env.tmp / "typo.yaml"
+        cfg.write_text(
+            "models:\n  default: ernie\n"
+            "augmenation:\n  variants_per_seed: 3\n"
+            "augmentation:\n  variant_per_seed: 3\n"
+            "web:\n  ports: 8080\n",
+            encoding="utf-8",
+        )
+        response = tools_env.client.post(
+            "/api/system/validate-config", json={"path": str(cfg)}
+        )
+        assert response.status_code == 200, response.text
+        payload = response.json()
+        assert payload["is_valid"] is True
+        assert payload["errors"] == []
+        unread = {w["path"]: w["message"] for w in payload["warnings"]
+                  if "没人读取" in w["message"]}
+        assert sorted(unread) == ["augmenation", "augmentation.variant_per_seed",
+                                  "web.ports"], unread
+        assert unread["augmenation"].endswith("是否想写 augmentation？")
+        assert all(w["severity"] == "warning" for w in payload["warnings"])
 
 
 class TestSystemMonitor:
@@ -975,6 +1909,41 @@ class TestSystemStream:
         assert payload["total_input"] == len(ITEMS)
         assert payload["total_output"] == len(ITEMS)
         assert payload["processed"] == len(ITEMS)
+
+    @pytest.mark.parametrize("chunk_size", [0, -1])
+    def test_out_of_range_chunk_size_is_a_param_error_naming_the_knob(self, tools_env, chunk_size):
+        """`chunk_size` 是步长不是条数：0 与 -1 都必须 400，且不得留下产物
+
+        缺陷态实测（真实 6902 条数据集）：0 与 -1 都被 `len(chunk) >= size` 读成
+        「步长 1」，7 块变 6902 块，端到端 64.0 ms → 103.2 ms（+61%），HTTP 侧
+        仍是 200 且逐条结果一模一样 —— 纯静默的性能塌陷，没有任何信号。
+        """
+        response = tools_env.client.post(
+            "/api/system/stream",
+            json={
+                "input_file": str(tools_env.jsonl),
+                "output_file": str(tools_env.out),
+                "operation": "none",
+                "chunk_size": chunk_size,
+            },
+        )
+        assert response.status_code == 400, response.text
+        assert "chunk_size" in response.json()["detail"]
+        assert not tools_env.out.exists()
+
+    def test_smallest_legal_chunk_size_still_copies_everything(self, tools_env):
+        """反向护栏：下界 1 不得把「逐条切块」一起拒掉"""
+        response = tools_env.client.post(
+            "/api/system/stream",
+            json={
+                "input_file": str(tools_env.jsonl),
+                "output_file": str(tools_env.out),
+                "operation": "none",
+                "chunk_size": 1,
+            },
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["total_output"] == len(ITEMS)
 
     def test_dedup_operation_drops_duplicate(self, tools_env):
         """去重：5 条里有一对重复 → 4 条"""
@@ -1730,3 +2699,337 @@ class TestShapeRejection:
         body = response.json()
         assert body["total_items"] == 3
         assert body["error_count"] > 0, "标量数据项必须被报成问题，而不是静默通过"
+
+
+class TestDatasetImpact:
+    """/api/dataset/impact —— 增强前后的四项增益必须可核对
+
+    断言全部来自**手算**，不是拿 `ImpactEvaluator` 再跑一遍当预期（同源预言机什么也
+    测不出来）。样本挑得能被口算：
+
+    | | before | after |
+    |---|---|---|
+    | 条数 | 2 | 4 |
+    | 唯一文本 | 1（`a` `a`） | 3（`a` `a` `b` `cc`） |
+    | 重复率 | 2/2 = 1.0 | 2/4 = 0.5 |
+    | 长度 | 1, 1 → std 0 | 1, 1, 1, 2 → std = sqrt(0.1875) |
+
+    → scale_gain = (4-2)/2 = **1.0**；diversity_gain = (3-1)/1 = **2.0**；
+    dedup_gain = 1.0-0.5 = **0.5**；length_spread_gain = **0.4330127018922193**。
+    """
+
+    BEFORE = [{"instruction": "a", "output": "x"}, {"instruction": "a", "output": "y"}]
+    AFTER = [
+        {"instruction": "a", "output": "x"},
+        {"instruction": "a", "output": "y"},
+        {"instruction": "b", "output": "z"},
+        {"instruction": "cc", "output": "w"},
+    ]
+
+    def _post(self, env, before, after, **extra):
+        """写两份数据集并打一次 impact
+
+        Args:
+            env: tools_env
+            before: 基线数据列表
+            after: 增强后数据列表
+            **extra: 透传给请求体的其它字段
+
+        Returns:
+            httpx.Response
+        """
+        _write_json(env.tmp / "before.json", before)
+        _write_json(env.tmp / "after.json", after)
+        return env.client.post(
+            "/api/dataset/impact",
+            json={
+                "before_file": str(env.tmp / "before.json"),
+                "after_file": str(env.tmp / "after.json"),
+                **extra,
+            },
+        )
+
+    def test_gains_match_hand_computed(self, tools_env):
+        """四项增益逐项对上上面那张表"""
+        response = self._post(tools_env, self.BEFORE, self.AFTER)
+        assert response.status_code == 200, response.text
+
+        body = response.json()
+        assert body["gains"] == pytest.approx(
+            {
+                "scale_gain": 1.0,
+                "diversity_gain": 2.0,
+                "dedup_gain": 0.5,
+                "length_spread_gain": 0.4330127018922193,
+            }
+        )
+        assert body["before"]["total_items"] == 2
+        assert body["after"]["unique_instructions"] == 3
+        assert body["before"]["duplicate_rate"] == pytest.approx(1.0)
+        assert body["after"]["duplicate_rate"] == pytest.approx(0.5)
+        assert body["beneficial"] is True
+
+    def test_min_scale_gain_is_not_decorative(self, tools_env):
+        """`min_scale_gain` 必须真的参与判定，而不是个装饰性参数
+
+        同一份数据只挪门槛：数字不变、结论翻转。少了这条，参数写错成「传进去但没人读」
+        也能全绿。
+        """
+        loose = self._post(tools_env, self.BEFORE, self.AFTER)
+        strict = self._post(tools_env, self.BEFORE, self.AFTER, min_scale_gain=2.0)
+
+        assert loose.json()["gains"] == strict.json()["gains"]
+        assert loose.json()["beneficial"] is True
+        assert strict.json()["beneficial"] is False
+
+    def test_empty_baseline_is_400_not_zero_gains(self, tools_env):
+        """空基线 → 400：四项增益的分母都是基线，「增益 0.0」会被读成「增强无效」"""
+        response = self._post(tools_env, [], self.AFTER)
+        assert response.status_code == 400, response.text
+        assert "基线数据集为空" in response.json()["detail"]
+
+    def test_empty_after_is_a_verdict_not_an_error(self, tools_env):
+        """增强后为空是**结论**：规模增益 -1.0、判定不划算，不能报 400"""
+        response = self._post(tools_env, self.BEFORE, [])
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["gains"]["scale_gain"] == pytest.approx(-1.0)
+        assert body["beneficial"] is False
+
+    def test_typo_text_field_rejected_instead_of_degrading(self, tools_env):
+        """字段名拼错必须 400，而不是把每条文本静默读成空串
+
+        `ImpactEvaluator.measure()` 取字段用 `item.get(field, "")`：拼错时
+        「唯一文本 = 1、重复率 = 100%」，一份**根本没被读过**的数据集会被报告成
+        「多样性极差」。静默降级比报错危险。
+        """
+        response = self._post(
+            tools_env, self.BEFORE, self.AFTER, text_field="instructionn"
+        )
+        assert response.status_code == 400, response.text
+        detail = response.json()["detail"]
+        assert "instructionn" in detail, "要回显拼错的字段名"
+        assert "instruction" in detail, "要给出该数据集实际有的字段"
+
+    def test_unexpected_compute_error_becomes_500_via_to_http_error(
+        self, tools_env, monkeypatch
+    ):
+        """计算层抛非 ValueError → 500，且把原文回出，而不是被降级成 400
+
+        `dataset_impact` 的 `except Exception as e: raise to_http_error(e)` 这一支在
+        HEAD 上是**未覆盖**的（A63）：正常数据走不到、上面几条 400 用例都在守卫里就
+        拦下了。这里逼 `ImpactEvaluator.evaluate` 抛 `RuntimeError`——它既不是
+        `FileNotFoundError` 也不是 `ValueError`，只可能落到 `to_http_error` 的最后一支
+        （500）。断言状态码 = 500 就是把「意外故障不被误报成客户端错误」钉住。
+        """
+        def boom(self, before, after):
+            raise RuntimeError("计算层内部炸了")
+
+        monkeypatch.setattr("augmentor.impact.ImpactEvaluator.evaluate", boom)
+        response = self._post(tools_env, self.BEFORE, self.AFTER)
+        assert response.status_code == 500, response.text
+        assert "计算层内部炸了" in response.json()["detail"]
+
+    def test_value_error_becomes_400_via_to_http_error(self, tools_env, monkeypatch):
+        """计算层抛 ValueError → 400（`to_http_error` 的「参数/数据不合法」那一支）
+
+        与上一条同族但落在**不同**分支：ValueError 在 `to_http_error` 里被映射成 400
+        并原样回传字符串。这条把「500 与 400 的分岔由异常类型决定」补全——只测 RuntimeError
+        会漏掉 ValueError 这一支照样未覆盖。
+        """
+        def bad(self, before, after):
+            raise ValueError("输入数据不合法")
+
+        monkeypatch.setattr("augmentor.impact.ImpactEvaluator.evaluate", bad)
+        response = self._post(tools_env, self.BEFORE, self.AFTER)
+        assert response.status_code == 400, response.text
+        assert response.json()["detail"] == "输入数据不合法"
+
+
+class TestDatasetEvaluate:
+    """/api/dataset/evaluate —— 指标数值必须能被手算复核
+
+    两条样本（全小写英文单词，分词结果就是按空格切开）：
+
+    * A：生成 == 参考 `how do i sort a list` → bleu / rouge_l / similarity 全 1.0；
+    * B：生成同上、参考 `how do i filter a list` →
+      rouge_l：LCS = `how do i a list` 共 5 个词元，P = R = 5/6 → F1 = 5/6；
+      similarity：交集 5 / 并集 7 = 5/7；
+      bleu：4 元文法**零重叠**，`compute_bleu` 对「完全无重叠」直接判 0。
+
+    均值：bleu = (1+0)/2 = 0.5；rouge_l = (1+5/6)/2 = 11/12；similarity = (1+5/7)/2 = 6/7。
+    """
+
+    GENERATED = [
+        {"output": "how do i sort a list"},
+        {"output": "how do i sort a list"},
+    ]
+    REFERENCE = [
+        {"output": "how do i sort a list"},
+        {"output": "how do i filter a list"},
+    ]
+
+    def _post(self, env, generated, reference, **extra):
+        """写两侧数据集并打一次 evaluate
+
+        Args:
+            env: tools_env
+            generated: 生成侧数据列表
+            reference: 参考侧数据列表
+            **extra: 透传给请求体的其它字段
+
+        Returns:
+            httpx.Response
+        """
+        _write_json(env.tmp / "generated.json", generated)
+        _write_json(env.tmp / "reference.json", reference)
+        return env.client.post(
+            "/api/dataset/evaluate",
+            json={
+                "generated_file": str(env.tmp / "generated.json"),
+                "reference_file": str(env.tmp / "reference.json"),
+                **extra,
+            },
+        )
+
+    def test_batch_metrics_match_hand_computed(self, tools_env):
+        """三项指标均值逐项对上注释里的推导"""
+        response = self._post(tools_env, self.GENERATED, self.REFERENCE)
+        assert response.status_code == 200, response.text
+
+        body = response.json()
+        assert body["metrics"] == pytest.approx(
+            {"bleu": 0.5, "rouge_l": 11 / 12, "similarity": 6 / 7}
+        )
+        assert body["sample_count"] == 2
+        assert [d["index"] for d in body["details"]] == [0, 1]
+        assert body["details"][1]["scores"]["rouge_l"] == pytest.approx(5 / 6)
+
+    def test_metrics_subset(self, tools_env):
+        """`metrics` 只要 rouge_l 时，产物里就只有它，均值口径不变"""
+        response = self._post(
+            tools_env, self.GENERATED, self.REFERENCE, metrics=["rouge_l"]
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["metrics"] == pytest.approx({"rouge_l": 11 / 12})
+
+    def test_unknown_metric_lists_options(self, tools_env):
+        """未知指标 400，且**在读盘之前**就拒掉
+
+        库里的 `ModelEvaluator.__init__` 也会拒绝未知指标（`DataValidationError` → 400），
+        所以只断言状态码抓不到这道路由守卫——实测撤掉守卫后本用例仍绿。这条守卫的真正
+        契约是「参数校验先于 I/O」：这里故意传一个不存在的 `generated_file`，若顺序颠倒
+        就会先撞出 404，等于为一个格式就不对的请求去读盘。
+        """
+        response = tools_env.client.post(
+            "/api/dataset/evaluate",
+            json={
+                "generated_file": str(tools_env.tmp / "never-created.json"),
+                "reference_file": str(tools_env.tmp / "never-created.json"),
+                "metrics": ["bleu", "meteor"],
+            },
+        )
+        assert response.status_code == 400, response.text
+        detail = response.json()["detail"]
+        assert "未知的评估指标" in detail, "必须是路由守卫的报错，不是透传库内异常"
+        assert "rouge_l" in detail, "可选项由 METRIC_FUNCTIONS 反推，不能手抄"
+
+    def test_length_mismatch_rejected_with_counts(self, tools_env):
+        """两侧条数不等时按索引配对没有意义 → 400，且把两个数都回出来"""
+        response = self._post(tools_env, self.GENERATED, self.REFERENCE[:1])
+        assert response.status_code == 400, response.text
+        detail = response.json()["detail"]
+        assert "生成侧 2 条" in detail and "参考侧 1 条" in detail
+
+    def test_missing_field_names_the_offending_index(self, tools_env):
+        """某一条缺字段 → 400 并带**下标**，不能静默补空串
+
+        补空串等于凭空造一条 0 分样本：均值被稀释，却完全看不出来源。
+        """
+        response = self._post(
+            tools_env, self.GENERATED, [{"output": "how do i sort a list"}, {"text": "x"}]
+        )
+        assert response.status_code == 400, response.text
+        detail = response.json()["detail"]
+        assert "参考侧 第 1 条" in detail, "必须带下标，否则调用方不知道是哪条数据坏了"
+        assert "output" in detail
+
+    def test_empty_side_rejected(self, tools_env):
+        """空数据集 → 400：空集合上「各项 0.0」会被误读成模型差，实际是没数据"""
+        response = self._post(tools_env, [], [])
+        assert response.status_code == 400, response.text
+        assert "参与评估的数据集为空" in response.json()["detail"]
+
+    def test_include_details_false_keeps_sample_count(self, tools_env):
+        """`include_details=false` 只裁 details，`sample_count` 仍是真实条数"""
+        response = self._post(
+            tools_env, self.GENERATED, self.REFERENCE, include_details=False
+        )
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["details"] == []
+        assert body["sample_count"] == 2
+        assert body["metrics"]["bleu"] == pytest.approx(0.5)
+
+    def test_two_fields_of_the_same_file(self, tools_env):
+        """两侧传同一路径、不同字段：这是最常见的「同一份语料的两个版本」用法
+
+        也是「同路径只读一遍盘」那条分支的功能证据（读取次数由
+        `test_api_event_loop_blocking.py` 从另一侧盯着）。
+        """
+        both = [
+            {
+                "output": "how do i sort a list",
+                "reference_output": "how do i sort a list",
+            },
+            {
+                "output": "how do i sort a list",
+                "reference_output": "how do i filter a list",
+            },
+        ]
+        _write_json(tools_env.tmp / "both.json", both)
+        response = tools_env.client.post(
+            "/api/dataset/evaluate",
+            json={
+                "generated_file": str(tools_env.tmp / "both.json"),
+                "reference_file": str(tools_env.tmp / "both.json"),
+                "generated_field": "output",
+                "reference_field": "reference_output",
+            },
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["metrics"] == pytest.approx(
+            {"bleu": 0.5, "rouge_l": 11 / 12, "similarity": 6 / 7}
+        )
+
+    def test_unexpected_compute_error_becomes_500_via_to_http_error(
+        self, tools_env, monkeypatch
+    ):
+        """指标计算层抛非 ValueError → 500
+
+        与 `TestDatasetImpact` 里那两条同构：`dataset_evaluate` 的
+        `except Exception as e: raise to_http_error(e)` 在 HEAD 上未覆盖（A63），
+        上面几条 400 用例全在守卫或 `_as_column` 里就返回了，从没走到 `run()`。
+        这里让 `ModelEvaluator.evaluate_batch` 抛 `RuntimeError`，逼出 500 那一支。
+        """
+        def boom(self, generated, references):
+            raise RuntimeError("指标计算炸了")
+
+        monkeypatch.setattr("augmentor.evaluation.ModelEvaluator.evaluate_batch", boom)
+        response = self._post(tools_env, self.GENERATED, self.REFERENCE)
+        assert response.status_code == 500, response.text
+        assert "指标计算炸了" in response.json()["detail"]
+
+    def test_value_error_becomes_400_via_to_http_error(self, tools_env, monkeypatch):
+        """指标计算层抛 ValueError → 400 且原样回传
+
+        补全分岔的另一侧：`to_http_error` 对 ValueError 判 400，对其它判 500，两条
+        用例各盯一支，缺任一条则那一支照样裸奔。
+        """
+        def bad(self, generated, references):
+            raise ValueError("评分输入不合法")
+
+        monkeypatch.setattr("augmentor.evaluation.ModelEvaluator.evaluate_batch", bad)
+        response = self._post(tools_env, self.GENERATED, self.REFERENCE)
+        assert response.status_code == 400, response.text
+        assert response.json()["detail"] == "评分输入不合法"

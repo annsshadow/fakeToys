@@ -101,6 +101,8 @@ class TestLoadAndList:
 
     def test_load_corrupted_experiment_returns_none(self, tmp_path):
         tracker = make_tracker(tmp_path)
+        # 目录现在由写侧按需创建（构造函数不碰盘），预置坏文件的用例自己把它建出来
+        (tmp_path / "experiments").mkdir()
         (tmp_path / "experiments" / "broken.json").write_text("{not json", encoding="utf-8")
         assert tracker.load_experiment("broken") is None
 

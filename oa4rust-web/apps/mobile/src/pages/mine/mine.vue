@@ -4,6 +4,7 @@
 <script setup lang="ts">
 import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
+import { authApi } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated, LOGIN_PAGE } from '@/utils/auth-guard'
 
@@ -25,6 +26,34 @@ onShow(async () => {
 async function logout() {
   await session.logout()
   uni.reLaunch({ url: LOGIN_PAGE })
+}
+
+// ── 修改密码（PUT /api/person/password，对齐桌面 Personal.vue） ──
+const pwdForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' })
+const pwdSaving = ref(false)
+
+async function changePassword() {
+  if (!pwdForm.value.oldPassword || !pwdForm.value.newPassword) {
+    uni.showToast({ title: '请填写完整密码', icon: 'none' })
+    return
+  }
+  if (pwdForm.value.newPassword !== pwdForm.value.confirmPassword) {
+    uni.showToast({ title: '两次密码不一致', icon: 'none' })
+    return
+  }
+  pwdSaving.value = true
+  try {
+    await authApi.changePassword({
+      oldPassword: pwdForm.value.oldPassword,
+      newPassword: pwdForm.value.newPassword,
+    })
+    uni.showToast({ title: '密码修改成功', icon: 'success' })
+    pwdForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }
+  } catch (e: unknown) {
+    uni.showToast({ title: e instanceof Error ? e.message : '修改失败', icon: 'none' })
+  } finally {
+    pwdSaving.value = false
+  }
 }
 </script>
 
@@ -51,6 +80,34 @@ async function logout() {
         <text class="k">所属部门</text>
         <text class="v">{{ groups.length ? groups.join('、') : '—' }}</text>
       </view>
+    </view>
+
+    <view class="card pwd-card">
+      <view class="pwd-title">修改密码</view>
+      <input
+        v-model="pwdForm.oldPassword"
+        class="pwd-input"
+        password
+        type="text"
+        placeholder="当前密码"
+      />
+      <input
+        v-model="pwdForm.newPassword"
+        class="pwd-input"
+        password
+        type="text"
+        placeholder="新密码（6-64 位，含字母和数字）"
+      />
+      <input
+        v-model="pwdForm.confirmPassword"
+        class="pwd-input"
+        password
+        type="text"
+        placeholder="确认新密码"
+      />
+      <button class="pwd-btn" :disabled="pwdSaving" @tap="changePassword">
+        {{ pwdSaving ? '提交中…' : '保存新密码' }}
+      </button>
     </view>
 
     <button class="logout" @tap="logout">退出登录</button>
@@ -127,5 +184,33 @@ async function logout() {
   border: 1px solid #f56c6c;
   border-radius: 12rpx;
   font-size: 30rpx;
+}
+.pwd-card {
+  display: block;
+  padding: 32rpx 40rpx;
+}
+.pwd-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #263238;
+  margin-bottom: 20rpx;
+}
+.pwd-input {
+  background: #f5f7fa;
+  border-radius: 10rpx;
+  padding: 18rpx 24rpx;
+  font-size: 28rpx;
+  margin-bottom: 18rpx;
+  color: #263238;
+}
+.pwd-btn {
+  background: #2d8cf0;
+  color: #fff;
+  border-radius: 10rpx;
+  font-size: 28rpx;
+  margin-top: 8rpx;
+}
+.pwd-btn[disabled] {
+  opacity: 0.6;
 }
 </style>

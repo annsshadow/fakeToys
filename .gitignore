@@ -125,5 +125,28 @@ augmentor/up.json
 opencode.json
 test_output.json
 
+# augmentor 的探针草稿与遗留数据集（2026-09-28 追加）。
+#   Temp/    100 轮审计循环的探针产物（现量 1.2 GB / 13214 个文件）。**不入仓，也不可清**：
+#            账本 `augmentor/OPTIMIZATION_LOOP.md` 有 262 条路径点名 Temp 下的工件（21 个目录
+#            + 241 个文件），而 `tests/unit/test_doc_line_refs_l79.py` 的
+#            `CEILING[LEDGER]["scratch_missing"] = 113` 是**精确相等**棘轮 —— 删掉被点名的工件
+#            会让「引用了但磁盘上没有」的读数上涨，守卫因与代码无关的原因当场变红。
+#            例外（本轮已删）：`Temp/l99q/roots` 583 MB 是 L99 那轮的语料副本，账本零点名 ⇒
+#            棘轮不受影响，实测全套仍 7255 passed / 3 skipped。
+#   alpaca   6901 条真实训练样本，是账本里所有「真实 6902 条」性能主张的输入；属用户数据。
+#            本轮已搬进被忽略的 `augmentor/data/`（同名的根目录模式留着，防止日后又被下载回工作树根）。
+# 只屏蔽数据集与探针目录，**不屏蔽** `x` / `o.xlsx` 这类裸名残留：它们由
+# `tests/conftest.py::fail_on_repo_residue`（A168）逐用例判红，屏蔽反而会把泄漏盖住。
+augmentor/Temp/
+augmentor/alpaca
+
+# laiyipao miniapp 的覆盖率输出（2026-09-28 实测冒出来的 `coverage-lcov/`）。
+# vitest 的 coverage 会把报告写进项目根，与 augmentor 侧 `augmentor/web/coverage/` 同一性质：
+# 生成物、每次跑都变，进 status 只会污染「工作树是否干净」这个判据。
+laiyipao/miniapp/coverage/
+laiyipao/miniapp/coverage-lcov/
+laiyipao/admin/coverage/
+
 # PR 描述草稿（内容已提交至 PR，不入库）
 PR_DESCRIPTION.md
+.vitest/

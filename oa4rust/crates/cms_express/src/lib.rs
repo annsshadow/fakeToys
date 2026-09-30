@@ -14,6 +14,7 @@ pub mod routes;
 use entities::cms_view;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

@@ -11,6 +11,7 @@ mod index;
 mod routes;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

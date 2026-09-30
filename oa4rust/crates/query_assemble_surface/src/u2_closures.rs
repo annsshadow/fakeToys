@@ -350,7 +350,11 @@ async fn execute_statement_by_flag(
         );
     }
 
-    let offset = if page > 0 { (page - 1) * size } else { 0 };
+    let offset = if page > 0 {
+        (page - 1).saturating_mul(size)
+    } else {
+        0
+    };
     let paged_sql = format!(
         "SELECT * FROM ({}) AS stmt_page_sub LIMIT ${} OFFSET ${}",
         parameterized_sql.trim().trim_end_matches(';'),
@@ -598,7 +602,7 @@ pub async fn search_post(
     if key.trim().is_empty() {
         return Ok(Json(ActionResult::error("key is required")));
     }
-    let pattern = format!("%{}%", key.trim());
+    let pattern = format!("%{}%", shared::db::escape_like(key.trim()));
 
     let designs = client
         .query(
@@ -678,7 +682,7 @@ pub async fn morelikethis_post(
     if key.trim().is_empty() {
         return Ok(Json(ActionResult::error("key is required")));
     }
-    let pattern = format!("%{}%", key.trim());
+    let pattern = format!("%{}%", shared::db::escape_like(key.trim()));
     let table_flag = body
         .get("tableFlag")
         .and_then(|v| v.as_str())
@@ -923,7 +927,7 @@ pub async fn view_bundle_v2_post(
         .and_then(|v| v.as_i64())
         .unwrap_or(20)
         .clamp(1, 500);
-    let offset = (page - 1) * size;
+    let offset = (page - 1).saturating_mul(size);
     let total = items.len() as i64;
 
     let slice: Vec<Value> = items
@@ -1229,7 +1233,11 @@ pub async fn view_execute_v2_flag_query(
     Path((flag, query_flag, page, size)): Path<(String, String, i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = if page > 0 { (page - 1) * size } else { 0 };
+    let offset = if page > 0 {
+        (page - 1).saturating_mul(size)
+    } else {
+        0
+    };
     let rows = client
         .query(
             "SELECT id, name, view_flag, query_flag, content, creator, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_query_view \
@@ -1249,7 +1257,11 @@ pub async fn view_execute_v2_id(
     Path((id, page, size)): Path<(String, i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = if page > 0 { (page - 1) * size } else { 0 };
+    let offset = if page > 0 {
+        (page - 1).saturating_mul(size)
+    } else {
+        0
+    };
     let rows = client
         .query(
             "SELECT id, name, view_flag, query_flag, content, creator, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_query_view \
@@ -1382,7 +1394,7 @@ pub async fn table_row_select_post(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let key = body_str(&body, &["where", "key", "filter"]).unwrap_or_default();
-    let pattern = format!("%{}%", key);
+    let pattern = format!("%{}%", shared::db::escape_like(key));
 
     let rows = client
         .query(

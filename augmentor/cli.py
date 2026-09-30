@@ -3,8 +3,8 @@
 
 """AI 训练数据增强工具 CLI 入口
 
-本文件只负责「解析参数 → 查分发表 → 调用 handler → 统一异常处理」。
-36 个规范命令的实现分别在 `augmentor/cli/commands/` 包里，按领域分组：
+本文件只负责「兜住 stdio 编码 → 解析参数 → 查分发表 → 调用 handler → 统一异常处理」。
+37 个规范命令的实现分别在 `augmentor/cli/commands/` 包里，按领域分组：
 `profiling` / `pipeline` / `quality` / `export` / `analysis` /
 `data_ops` / `version` / `security` / `ops`。
 
@@ -25,11 +25,13 @@ import sys
 from augmentor import load_config
 
 from augmentor.cli import COMMANDS
+from augmentor.cli.io import harden_stdio
 from augmentor.cli.parser import build_parser
 
 
 def main():
     """CLI 主入口"""
+    harden_stdio()
     parser = build_parser()
     args = parser.parse_args()
 
@@ -43,8 +45,10 @@ def main():
         print(f"错误: 未实现的子命令 {args.command!r}", file=sys.stderr)
         sys.exit(1)
 
-    config = load_config(args.config)
     try:
+        # 加载也在 try 里：配置坏到 `load_config` 拒收时（如 `web.port: 99999`）
+        # 要和 handler 的异常一样变成「错误: …」+ 退出码 1，而不是裸 traceback。
+        config = load_config(args.config)
         handler(args, config)
     except Exception as e:
         print(f"错误: {e}", file=sys.stderr)

@@ -21,8 +21,10 @@ import { REGISTERED_BACKEND_ROUTES } from './backend-registered-routes.fixture'
 // 2026-09-15：原 27 条缺口家族已在 oa4rust 各 crate 实装（handler + 迁移 093-096），
 // 并登记进 backend-registered-routes.fixture.ts，故此处清空。若日后新增未实现端点，
 // 在此显式声明（不虚构），并在 fixture 之外由本守卫拦下。
-// 2026-09-17：表单设计器数据源示例默认值指向的两条端点（后端未注册），显式声明。
-const KNOWN_BACKEND_GAPS: string[] = ['/api/users/list', '/api/departments/tree']
+// 2026-09-28（优化轮3）：最后两条缺口（表单设计器数据源示例默认值所指的
+// /api/users/list、/api/departments/tree）已在 organization_assemble_control 实装，
+// KNOWN_BACKEND_GAPS 清零；此后新增未实现端点须在此显式声明（不虚构）。
+const KNOWN_BACKEND_GAPS: string[] = []
 
 const desktopSrcRoot = resolve(import.meta.dirname, '../../apps/desktop/src')
 
@@ -61,10 +63,12 @@ function segsPattern(p: string): string[] {
 }
 const segm = (a: string, b: string) => a === '*' || b === '*' || a === b
 
+// 预计算注册路由的分段模式，避免在每个桌面端点上重复切分（端点集增长后 O(paths×routes) 会超时）。
+const REGISTERED_PATTERNS = REGISTERED_BACKEND_ROUTES.map(segsPattern)
+
 function hitsRegistered(path: string, dyn: boolean): boolean {
   const c = segsUsed(path)
-  for (const p of REGISTERED_BACKEND_ROUTES) {
-    const r = segsPattern(p)
+  for (const r of REGISTERED_PATTERNS) {
     if (r.length === c.length && r.every((s, i) => segm(s, c[i]!))) return true
     if (dyn && r.length > c.length && r.slice(0, c.length).every((s, i) => segm(s, c[i]!))) return true
   }

@@ -92,8 +92,15 @@ const cols = ref<string[]>([])
 // 视图详情：并发消费 view/{id} + viewcategory/list/view/{viewId} + viewfieldconfig/list/view/{viewId}
 const detail = ref({ open: false, loading: false, id: '', name: '', categoryCount: 0, fieldCount: 0 })
 async function viewDetail(v: ViewItem) {
-  detail.value = { open: true, loading: true, id: v.id, name: v.name || v.viewName || v.title || '', categoryCount: 0, fieldCount: 0 }
-  const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  detail.value = {
+    open: true,
+    loading: true,
+    id: v.id,
+    name: v.name || v.viewName || v.title || '',
+    categoryCount: 0,
+    fieldCount: 0,
+  }
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const [main, cats, fields] = await Promise.all([
     settle(api.get(`/api/view/${v.id}`)),
     settle(api.get(`/api/viewcategory/list/view/${v.id}`)),
@@ -115,7 +122,7 @@ async function removeView(v: ViewItem) {
     toast.success('已删除')
     loadViews()
   } catch (e: any) {
-    toast.error('删除失败: ' + (e?.message ?? ''))
+    toast.error(`删除失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -125,9 +132,9 @@ async function loadViewCategories() {
     // GET /api/viewcategory/list/all —— 视图分类
     const r: any = await api.get('/api/viewcategory/list/all')
     const n = Array.isArray(r.data) ? r.data.length : 0
-    metaText.value = '视图分类：' + n + ' 个'
+    metaText.value = `视图分类：${n} 个`
   } catch (e: any) {
-    toast.error('加载分类失败: ' + (e?.message ?? ''))
+    toast.error(`加载分类失败: ${e?.message ?? ''}`)
   }
 }
 async function loadFieldConfigs() {
@@ -135,9 +142,9 @@ async function loadFieldConfigs() {
     // GET /api/viewfieldconfig/list/all —— 视图字段配置
     const r: any = await api.get('/api/viewfieldconfig/list/all')
     const n = Array.isArray(r.data) ? r.data.length : 0
-    metaText.value = '字段配置：' + n + ' 条'
+    metaText.value = `字段配置：${n} 条`
   } catch (e: any) {
-    toast.error('加载字段配置失败: ' + (e?.message ?? ''))
+    toast.error(`加载字段配置失败: ${e?.message ?? ''}`)
   }
 }
 
