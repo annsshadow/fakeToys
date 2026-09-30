@@ -555,13 +555,35 @@ pub async fn input_person_import(
     Json(body): Json<Value>,
 ) -> HandlerResult {
     require_admin(&pool, &session).await?;
-    let client = client_of(&pool).await?;
+    let mut client = client_of(&pool).await?;
     let person_list = body
         .get("personList")
         .and_then(|v| v.as_array())
         .cloned()
         .unwrap_or_default();
     check_batch_len(person_list.len())?;
+
+    // 已存在姓名一次查回（避免逐条 SELECT 的 N+1 往返）；整批导入与批次记录
+    // 包同一事务——中途失败不得留下「部分人已导入 + 无批次记录」的半导入态。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let normalized_names: Vec<String> = person_list
+        .iter()
+        .filter_map(|item| item.get("name").and_then(|v| v.as_str()))
+        .map(normalize_key)
+        .filter(|n| !n.is_empty())
+        .collect();
+    let mut existing: std::collections::HashSet<String> = tx
+        .query(
+            "SELECT LOWER(TRIM(name)) FROM x_org_person \
+             WHERE deleted_at IS NULL AND LOWER(TRIM(name)) = ANY($1)",
+            &[&normalized_names],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .iter()
+        .filter_map(|r| r.get::<_, Option<String>>(0))
+        .collect();
+
     let mut inserted: i64 = 0;
     let mut skipped: i64 = 0;
     for item in &person_list {
@@ -572,14 +594,7 @@ pub async fn input_person_import(
         if name.is_empty() {
             continue;
         }
-        let dup = client
-            .query_opt(
-                "SELECT id FROM x_org_person WHERE LOWER(TRIM(name)) = LOWER($1) AND deleted_at IS NULL",
-                &[&name],
-            )
-            .await
-            .map_err(|_| AppError::Internal)?;
-        if dup.is_some() {
+        if existing.contains(&name) {
             skipped += 1;
             continue;
         }
@@ -595,24 +610,25 @@ pub async fn input_person_import(
             .to_string();
         let creator = session.person_unique.clone();
         let id = uuid::Uuid::new_v4().to_string();
-        client
-            .execute(
-                "INSERT INTO x_org_person (id, name, mobile, email, creator) VALUES ($1, $2, NULLIF($3,''), NULLIF($4,''), $5)",
-                &[&id, &name, &mobile, &email, &creator],
-            )
-            .await
-            .map_err(|_| AppError::Internal)?;
+        tx.execute(
+            "INSERT INTO x_org_person (id, name, mobile, email, creator) VALUES ($1, $2, NULLIF($3,''), NULLIF($4,''), $5)",
+            &[&id, &name, &mobile, &email, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+        // 同批次重复姓名与原逐条判重语义一致：第一条插入后即视为已存在
+        existing.insert(name);
         inserted += 1;
     }
     let message = format!("inserted={inserted},skipped={skipped}");
     let batch_id = uuid::Uuid::new_v4().to_string();
-    client
-        .execute(
-            "INSERT INTO x_org_import_result (id, status, message) VALUES ($1, 'done', $2)",
-            &[&batch_id, &message],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+    tx.execute(
+        "INSERT INTO x_org_import_result (id, status, message) VALUES ($1, 'done', $2)",
+        &[&batch_id, &message],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     ok(Value::Object(
         vec![
             ("id".to_string(), Value::String(batch_id)),
