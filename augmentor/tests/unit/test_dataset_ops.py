@@ -78,7 +78,15 @@ class TestDatasetOperations:
         merged = ops.merge([test_data, dataset_b], config)
         
         assert len(merged) == 5
-    
+
+    def test_merge_max_items_zero_keeps_none(self, test_data):
+        """max_items=0 语义是「一条不留」；改前 `if config.max_items` 把 0 读成「不限」而返回全量（L144，B214）"""
+        ops = DatasetOperations()
+        merged = ops.merge([test_data], MergeConfig(max_items=0, deduplicate=False))
+        assert merged == [], f"max_items=0 应保留 0 条，实际 {len(merged)} 条"
+        # 对照：None（未设置）应返回全量，避免修过头
+        assert len(ops.merge([test_data], MergeConfig(max_items=None, deduplicate=False))) == len(test_data)
+
     def test_sample_random(self, test_data):
         """测试随机采样"""
         ops = DatasetOperations()

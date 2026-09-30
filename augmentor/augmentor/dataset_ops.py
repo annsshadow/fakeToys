@@ -159,8 +159,9 @@ class DatasetOperations:
         if config.deduplicate:
             merged = self._deduplicate(merged, config.dedup_threshold)
         
-        # 限制最大条数
-        if config.max_items and len(merged) > config.max_items:
+        # 限制最大条数（`is not None` 而非 falsy：max_items=0 语义是「一条不留」，
+        # 写成 `if config.max_items` 会把 0 读成「不限」而返回全量）
+        if config.max_items is not None and len(merged) > config.max_items:
             merged = merged[:config.max_items]
         
         logger.info(f"合并完成: {len(datasets)} 个数据集, 共 {len(merged)} 条数据")
