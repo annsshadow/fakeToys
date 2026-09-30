@@ -11,6 +11,8 @@
     { "path": "pages/meeting/meeting", "style": { "navigationBarTitleText": "会议" } },
     { "path": "pages/calendar/calendar", "style": { "navigationBarTitleText": "日历" } },
     { "path": "pages/bbs/bbs", "style": { "navigationBarTitleText": "论坛", "enablePullDownRefresh": true } },
+    { "path": "pages/bbs/topic", "style": { "navigationBarTitleText": "主题详情" } },
+    { "path": "pages/bbs/new", "style": { "navigationBarTitleText": "发布主题" } },
     { "path": "pages/browse/browse", "style": { "navigationBarTitleText": "浏览" } },
     { "path": "pages/search/search", "style": { "navigationBarTitleText": "搜索" } },
     { "path": "pages/recycle/recycle", "style": { "navigationBarTitleText": "回收站" } },
