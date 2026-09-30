@@ -35,6 +35,9 @@ export const authApi = {
   who: () => mapi.get<O2User>('/api/authentication/who', { requireAuth: false }),
   refresh: () => mapi.post<never>('/api/authentication/refresh', null, { requireAuth: false, discardResponse: true }),
   captcha: () => mapi.get<{ image: string; id: string }>('/api/authentication/captcha', { requireAuth: false }),
+  // PUT /api/person/password（o2server PasswordAction 契约，desktop Personal.vue 同端点）
+  changePassword: (data: { oldPassword: string; newPassword: string }) =>
+    mapi.put<never>('/api/person/password', data, { discardResponse: true }),
 }
 
 // ─────────────────────────────────────────────────────────────
