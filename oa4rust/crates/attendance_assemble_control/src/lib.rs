@@ -8474,7 +8474,9 @@ async fn import_checkin_rows(
     default_source: &str,
 ) -> Result<(i64, Vec<String>), AppError> {
     let admin = shared::middleware::is_admin(pool, &session.person_unique).await;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 整批导入包同一事务：中途失败不得留下部分行已导入的半导入态。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let mut inserted: i64 = 0;
     let mut ids: Vec<String> = Vec::with_capacity(rows.len());
 
@@ -8503,7 +8505,7 @@ async fn import_checkin_rows(
             ));
         }
 
-        let dup = client
+        let dup = tx
             .query_opt(
                 "SELECT id FROM x_attendance_v2_checkin_record \
                  WHERE user_id = $1 AND record_date_string = $2 AND check_in_type = $3 LIMIT 1",
@@ -8534,18 +8536,18 @@ async fn import_checkin_rows(
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
 
-        client
-            .execute(
-                "INSERT INTO x_attendance_v2_checkin_record (id, user_id, record_date_string, source_type, check_in_result, check_in_type, description, creator_person, create_time, update_time) \
-                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW(),NOW())",
-                &[&id, &user_id, &date_str, &source_type, &result, &check_in_type.to_string(), &description, &session.person_unique],
-            )
-            .await
-            .map_err(|_| AppError::Internal)?;
+        tx.execute(
+            "INSERT INTO x_attendance_v2_checkin_record (id, user_id, record_date_string, source_type, check_in_result, check_in_type, description, creator_person, create_time, update_time) \
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW(),NOW())",
+            &[&id, &user_id, &date_str, &source_type, &result, &check_in_type.to_string(), &description, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
         inserted += 1;
         ids.push(id);
     }
 
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok((inserted, ids))
 }
 
