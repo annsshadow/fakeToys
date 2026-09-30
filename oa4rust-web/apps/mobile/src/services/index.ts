@@ -533,10 +533,12 @@ export const statisticsApi = {
     mapi.get<Record<string, unknown>>(
       `/api/attendance/assemble/control/attendancestatisticalcycle/cycleDetail/${year}/${month}`,
     ),
-  /** 个人月度统计。 */
-  attendancePersonMonth: (year: number, month: number) =>
-    mapi.get<Record<string, unknown>>(
-      `/api/attendance/assemble/control/dingding/statistic/person/year/${year}/month/${month}`,
+  /** 个人月度统计（dingdingstatistic_person 读端点；原错指 require_admin 触发端点，普通用户必 403）。 */
+  attendancePersonMonth: (person: string, year: number, month: number) =>
+    list(
+      mapi.get<Record<string, unknown>[]>(
+        `/api/attendance/assemble/control/dingdingstatistic/person/${person}/${year}/${month}`,
+      ),
     ),
 }
 
