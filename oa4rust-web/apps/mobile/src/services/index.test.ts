@@ -8,7 +8,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { getApiBase, setApiBase } from './http'
-import { bbsApi, fileApi, messageApi, messageConversationId, processApi } from './index'
+import { bbsApi, fileApi, messageApi, messageConversationId, processApi, statisticsApi } from './index'
 
 /** 捕获 uni.request 的最小 stub（服务方法本身只关心 method/url/data/options）。 */
 function installRequestCapture() {
@@ -118,6 +118,21 @@ describe('bbsApi 主题详情/回帖/发帖（bbs_assemble_control 既有业务�
     const calls = installRequestCapture()
     await bbsApi.forumList()
     expect(calls[0]).toEqual({ method: 'GET', url: '/api/bbs/assemble/control/forum/view/all' })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+})
+
+describe('statisticsApi 个人月度统计（用户可读读端点）', () => {
+  it('attendancePersonMonth 打 dingdingstatistic 读端点（原错指 require_admin 触发端点必 403）', async () => {
+    const calls = installRequestCapture()
+    await statisticsApi.attendancePersonMonth('u-1', 2026, 10)
+    expect(calls[0]).toEqual({
+      method: 'GET',
+      url: '/api/attendance/assemble/control/dingdingstatistic/person/u-1/2026/10',
+    })
   })
 
   afterEach(() => {
