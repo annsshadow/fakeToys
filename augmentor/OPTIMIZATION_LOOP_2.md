@@ -50,7 +50,8 @@
 | B209 | **已关闭（L139）**：`EnhancedComparator._generate_recommendations` 的 4 条字符串分支（size_diff>±100 / 相似度<0.5 / 类型不匹配 / 值差异）此前**无任何直达断言**——既有用例只 `assert "recommendations" in d`（key 存在），全分支实际盲跑 | 补 3 条字符串守卫：size_diff=150⇒「数据集A比B多 150 条数据」；similarity=0.1⇒「相似度较低」；type_mismatches=2/value_diffs=1⇒各一条「字段 X 存在 N 个…」（含「高度相似」顺带路径） | S |
 | B210 | **已关闭（L140）**：`turns_to_canonical`（chatml/vicuna/sharegpt 逆运算）末尾两轮角色检查用裸 `["role"]`，缺 role 键时抛**裸 `KeyError`** 而非契约承诺的 `DataFormatError`（函数 docstring Raises 段明写抛 DataFormatError）；且该逆运算此前**无直达单测**（只在集成 CLI 用例里被间接触发） | `["role"]` 改 `.get("role")`（缺键 → 比对 `None` ≠ "user"/"assistant" → 走既有 DataFormatError 分支，顺带把 f-string 里的裸引用一起改）；补 `TestTurnsToCanonicalContract` 2 条（缺 role 键 / 角色顺序错），实证改前 KeyError 红、改后 DataFormatError 绿 | S |
 | B211 | **已关闭（L141）**：`VersionManager.diff()` 用 `(instruction, output)` 组合键做身份 ⇒ 「原地改某条 output」被拆成「删旧+增新」两条，`modified` 分支**恒为空**（`modified_count` 永远 0），而 `DiffResult` 字段注释与 docs/API.md 示例都承诺 `modified_count` 非零；既有唯一守卫还是空转的 `assert modified_count >= 0` | 身份键改成 `instruction` 单键，同 instruction 两版都在 ⇒ 整条 dict 不等即计入 `modified`；原地修改 now 报 modified=1/added=0/removed=0。既有 4 条 diff 用例（added/removed/identical/empty）全绿无回归；强化 `test_diff_modified_items` 断言 + 新增 1 条原地修改守卫 | M |
-| B212 | 待普查后立项 | —— | — |
+| B212 | **已关闭（L142）**：`QualityTrendTracker.compare_trends()` 的 `comparison` 用「A > B else B_higher」二态判据——**平局**与「某侧根本没记过该指标」都误报 `dataset_b_higher`（缺指标被静默当 0 比，语义错）；既有唯一用例只钉了 A>B 一条 | 改成三态：双侧都有最新值且 A>B ⇒ `dataset_a_higher`，B>A ⇒ `dataset_b_higher`，其余（含平局、任一侧无记录）⇒ `tie`；补 3 条用例（平局 / 双侧缺指标 / 单侧缺指标）钉死 `tie` | S |
+| B213 | 待普查后立项 | —— | — |
 
 ## 循环日志
 
@@ -639,3 +640,18 @@
   钉死 modified=1 且 added/removed 都 0）。改前该新用例会红（modified=0、added/removed 各 1）。
 - 全量门禁：`7378 passed / 3 skipped / exit 0`（L140 的 7377 + 1 新守卫，无回归）；
   versioning 59/59、A184 21/21 绿。**B211 关闭**。
+
+### L142（2026-09-30）— B212 立项 + 关闭：compare_trends 平局/缺指标误报 dataset_b_higher → 三态 tie
+
+- **真缺陷（错误结论，非风格）**：`QualityTrendTracker.compare_trends` 的 `comparison`
+  用「A > B else B_higher」二态判据——**平局**（最新值相等）与「某侧根本没记录过该指标」
+  都被误报成 `dataset_b_higher`（缺指标被静默当 0 参与比较，语义错）。既有唯一用例
+  `test_compare_trends` 只钉了 A>B 一条，平局/缺指标路径全盲跑。
+- **修法**（结论收紧为三态）：双侧都有最新值时 A>B ⇒ `dataset_a_higher`、B>A ⇒
+  `dataset_b_higher`；其余（含平局、任一侧无记录）⇒ `tie`。严格比大小，只有 `>` 才判
+  higher。
+- **回归护栏**：`test_quality_trend.py::TestTrendComparison` 补 3 条 —— ① 相等 ⇒ `tie`；
+  ② 某指标两侧都从未记录 ⇒ `tie`（且 `dataset_*_latest` 均为 None）；③ 严格大于才判
+  a_higher、对称地 b 更大才判 b_higher。改前 ①②会红（误报 b_higher），③会绿。
+- 全量门禁：`7381 passed / 3 skipped / exit 0`（L141 的 7378 + 3 新守卫，无回归）；
+  quality_trend 13/13、A184 21/21 绿。**B212 关闭**。
