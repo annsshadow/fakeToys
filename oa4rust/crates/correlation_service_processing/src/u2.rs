@@ -119,7 +119,7 @@ fn normalized(t: &TargetWi) -> Option<(String, String, String, String)> {
 }
 
 async fn upsert_targets(
-    client: &mut deadpool_postgres::Client,
+    tx: &deadpool_postgres::tokio_postgres::Transaction<'_>,
     from_type: &str,
     from_bundle: &str,
     person: &str,
@@ -129,8 +129,7 @@ async fn upsert_targets(
     let mut failure = Vec::new();
 
     // 已存在行一次查回（按来源全量取回后客户端过滤），避免逐条 SELECT 的 2N+1 往返；
-    // 全部写入包同一事务，且 UPDATE 失败必须传播（此前 `let _ =` 吞错仍计成功）。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    // 事务由调用方开启并提交，且 UPDATE 失败必须传播（此前 `let _ =` 吞错仍计成功）。
 
     let mut existing_keys: std::collections::HashMap<(String, String, String), String> =
         std::collections::HashMap::new();
@@ -206,7 +205,6 @@ async fn upsert_targets(
         }));
     }
 
-    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok((success, failure))
 }
 
@@ -223,14 +221,10 @@ async fn create_impl(
     }
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let person = wi.person.unwrap_or_default();
-    let (success, failure) = upsert_targets(
-        &mut client,
-        from_type,
-        from_bundle,
-        &person,
-        &wi.target_list,
-    )
-    .await?;
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let (success, failure) =
+        upsert_targets(&tx, from_type, from_bundle, &person, &wi.target_list).await?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(json!({
         "successList": success,
         "failureList": failure,
@@ -285,15 +279,16 @@ async fn update_impl(
             continue;
         };
 
-        // 先删除该 site 下全部旧关联，再插入新集合（o2server ActionUpdate* 语义）
-        client
-            .execute(
-                "DELETE FROM x_correlation \
-                 WHERE from_type = $1 AND from_bundle = $2 AND COALESCE(site, '') = $3",
-                &[&from_type.to_string(), &from_bundle.to_string(), &site],
-            )
-            .await
-            .map_err(|_| AppError::Internal)?;
+        // 先删除该 site 下全部旧关联，再插入新集合（o2server ActionUpdate* 语义）；
+        // 删+插同事务：若 DELETE 已独立提交而 upsert 失败，该 site 旧关联将整体丢失。
+        let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+        tx.execute(
+            "DELETE FROM x_correlation \
+             WHERE from_type = $1 AND from_bundle = $2 AND COALESCE(site, '') = $3",
+            &[&from_type.to_string(), &from_bundle.to_string(), &site],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
         let owned: Vec<TargetWi> = site_target
             .target_list
@@ -305,7 +300,8 @@ async fn update_impl(
             .collect();
 
         let (success, failure) =
-            upsert_targets(&mut client, from_type, from_bundle, &person, &owned).await?;
+            upsert_targets(&tx, from_type, from_bundle, &person, &owned).await?;
+        tx.commit().await.map_err(|_| AppError::Internal)?;
         success_all.extend(success);
         failure_all.extend(failure);
     }
