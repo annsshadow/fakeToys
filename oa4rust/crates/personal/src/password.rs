@@ -15,7 +15,12 @@ use crate::resolve_current_person_unique;
 
 #[derive(Debug, Deserialize)]
 pub struct ChangePasswordRequest {
+    // 桌面端 Personal.vue 发 camelCase（oldPassword/newPassword）——无 alias 时
+    // 反序列化缺字段直接 422，改密实跑必败（轮73 修复）。对齐 auth LoginRequest
+    // 的 alias 兼容约定。
+    #[serde(alias = "oldPassword")]
     pub old_password: String,
+    #[serde(alias = "newPassword")]
     pub new_password: String,
 }
 
