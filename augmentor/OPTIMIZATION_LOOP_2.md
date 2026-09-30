@@ -48,7 +48,8 @@
 | B207 | **已关闭（L137）**：`AugmentorPipeline._process_single_item` 的 except 分支里 `_process_errors` 惰性「没有就建 + append」非原子——并行路径（ThreadPoolExecutor 多工作线程）并发触发时，两线程都读到 `hasattr` 为 False 各自建 `[]`，后建者吞掉先 append 的那条；而 `__init__` 里的 `self._lock` 建了却全程无人用（dead lock） | 持 `self._lock` 包住 check-then-act；补 `TestProcessErrorsThreadSafety` 2 条（并发 N 条错误一条不丢 + 源码级守卫钉死锁确实被用上，防未来把锁拿掉却因 GIL 窗口窄测不出） | S |
 | B208 | **已关闭（L138）**：`ActiveSampler.generate_report` 里 `recommended_seed_indices` 用 `items.index(seed)`（== 相等）取「seed 的下标」，内容相等的兄弟 item 会误报第一个的下标；候选「改 id(seed) 索引」优化经 A/B **证否**（真实 k 很小，O(n) 建表 > per-seed 2×O(n) 扫描，反而更慢）故不改产品，改补下标精确性守卫 | A/B：n=3000/50 seeds 下 new(id-map)/old ×3.56（变慢）；新增 1 条钉死「下标＝被选中对象本身的下标，不是内容相等里的第一个」的守卫 | S |
 | B209 | **已关闭（L139）**：`EnhancedComparator._generate_recommendations` 的 4 条字符串分支（size_diff>±100 / 相似度<0.5 / 类型不匹配 / 值差异）此前**无任何直达断言**——既有用例只 `assert "recommendations" in d`（key 存在），全分支实际盲跑 | 补 3 条字符串守卫：size_diff=150⇒「数据集A比B多 150 条数据」；similarity=0.1⇒「相似度较低」；type_mismatches=2/value_diffs=1⇒各一条「字段 X 存在 N 个…」（含「高度相似」顺带路径） | S |
-| B210 | 待普查后立项 | —— | — |
+| B210 | **已关闭（L140）**：`turns_to_canonical`（chatml/vicuna/sharegpt 逆运算）末尾两轮角色检查用裸 `["role"]`，缺 role 键时抛**裸 `KeyError`** 而非契约承诺的 `DataFormatError`（函数 docstring Raises 段明写抛 DataFormatError）；且该逆运算此前**无直达单测**（只在集成 CLI 用例里被间接触发） | `["role"]` 改 `.get("role")`（缺键 → 比对 `None` ≠ "user"/"assistant" → 走既有 DataFormatError 分支，顺带把 f-string 里的裸引用一起改）；补 `TestTurnsToCanonicalContract` 2 条（缺 role 键 / 角色顺序错），实证改前 KeyError 红、改后 DataFormatError 绿 | S |
+| B211 | 待普查后立项 | —— | — |
 
 ## 循环日志
 
@@ -598,3 +599,21 @@
   三条都是「具体文案 + 具体计数」，任一分支改文案/改阈值/漏 append 就当场红。
 - 全量门禁：`7375 passed / 3 skipped / exit 0`（L138 的 7372 + 3 新守卫，无回归）；
   compare_enhanced 22/22、A184 21/21 绿。**B209 关闭**。
+
+### L140（2026-09-30）— B210 立项 + 关闭：turns_to_canonical 裸 KeyError 违反 Raises 契约 → DataFormatError
+
+- **真缺陷（契约违反，非性能）**：`turns_to_canonical`（chatml/vicuna/sharegpt 的逆运算，
+  把多轮对话折回 instruction/output）docstring 明写 `Raises: DataFormatError: 对话不足两轮，
+  或末尾不是「用户 → 助手」`。但末尾两轮角色检查 `turns[-2]["role"]` / `turns[-1]["role"]`
+  用**裸下标**：任一末轮缺 `role` 键时抛裸 `KeyError: 'role'`，违反契约承诺的
+  `DataFormatError`（调用方按契约捕获 `DataFormatError` 做降级/重试，会被 KeyError 打穿）。
+- **修法**（行为最小化、契约归位）：`["role"]` → `.get("role")`（缺键 ⇒ `None` ≠
+  `"user"`/`"assistant"` ⇒ 落入既有的 `DataFormatError` 分支，报错文案也同步把裸引用改
+  `.get` 以防文案里再 KeyError）。正常「user→assistant」结尾路径逐字节等价（`"user".get`
+  语义不变）。
+- **缺测试佐证**：该逆运算此前**无直达单测**（只在 `test_cli_dataset_tools.py` 集成用例里
+  被完整 pipeline 间接触发，且都喂的是规整数据）。补 `test_converter.py::
+  TestTurnsToCanonicalContract` 2 条 —— ① 缺 role 键 ⇒ `DataFormatError`（改前 `KeyError`
+  红，实证可复现）；② 角色顺序错（user→user）⇒ `DataFormatError`。
+- 全量门禁：`7377 passed / 3 skipped / exit 0`（L139 的 7375 + 2 新守卫，无回归）；
+  converter 181/181、A184 21/21 绿。**B210 关闭**。
