@@ -10964,25 +10964,36 @@ pub async fn document_list_document_data_u3(
             .await
             .map_err(|_| AppError::Internal)?
     };
-    let mut data: Vec<Value> = Vec::with_capacity(docs.len());
-    for doc in &docs {
-        let doc_id: String = doc.get("id");
+    // 字段批量取回（原逐 doc N+1 → 1 次 ANY 查询），按 doc_id 分组后按文档序装配。
+    let doc_ids: Vec<String> = docs.iter().map(|d| d.get::<_, String>("id")).collect();
+    let mut fields_by_doc: HashMap<String, serde_json::Map<String, Value>> = HashMap::new();
+    if !doc_ids.is_empty() {
         let field_rows = client
             .query(
-                "SELECT field_name, field_value FROM x_cms_data_document_field \
-                 WHERE doc_id = $1 AND deleted_at IS NULL",
-                &[&doc_id],
+                "SELECT doc_id, field_name, field_value FROM x_cms_data_document_field \
+                 WHERE doc_id = ANY($1) AND deleted_at IS NULL",
+                &[&doc_ids],
             )
             .await
             .map_err(|_| AppError::Internal)?;
-        let mut map = serde_json::Map::new();
         for fr in &field_rows {
+            let doc_id: String = fr.get("doc_id");
             let name: String = fr.get("field_name");
             let value: String = fr
                 .get::<_, Option<String>>("field_value")
                 .unwrap_or_default();
-            map.insert(name, Value::String(value));
+            fields_by_doc
+                .entry(doc_id)
+                .or_default()
+                .insert(name, Value::String(value));
         }
+    }
+    let mut data: Vec<Value> = Vec::with_capacity(docs.len());
+    for doc in &docs {
+        let map = fields_by_doc
+            .get(&doc.get::<_, String>("id"))
+            .cloned()
+            .unwrap_or_default();
         let mut obj = row_to_json(doc);
         if let Some(o) = obj.as_object_mut() {
             o.insert("data".to_string(), Value::Object(map));
