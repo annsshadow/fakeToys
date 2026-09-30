@@ -179,9 +179,6 @@ importers:
       vue:
         specifier: 3.4.21
         version: 3.4.21(typescript@5.9.3)
-      vue-demi:
-        specifier: ^0.14.10
-        version: 0.14.10(vue@3.4.21(typescript@5.9.3))
     devDependencies:
       '@dcloudio/types':
         specifier: ^3.4.32
@@ -251,9 +248,9 @@ importers:
       naive-ui:
         specifier: ^2.40.3
         version: 2.45.3(vue@3.5.42(typescript@5.9.3))
-      uno-css:
-        specifier: npm:@unocss/vite@^66.0.0
-        version: '@unocss/vite@66.9.2(vite@8.3.0(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13))'
+      unocss:
+        specifier: ^66.0.0
+        version: 66.9.2(vite@8.3.0(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13))
       vue:
         specifier: ^3.5.13
         version: 3.5.42(typescript@5.9.3)
