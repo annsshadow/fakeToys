@@ -3303,9 +3303,12 @@ pub async fn task_complete(
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    // FOR UPDATE 防并发双取：两个审批人同时 complete 时各自事务都认领同一 pending
+    // 任务（后写覆盖前写）；加行锁后后者阻塞至前者提交，EvalPlanQual 重估发现
+    // task_status 已非 pending → 正确走终点分支。
     let next_row = tx
         .query_opt(
-            "SELECT id, title, activity, activity_token, person FROM x_task WHERE work = $1 AND activity_token = $2 AND task_status = $3 LIMIT 1",
+            "SELECT id, title, activity, activity_token, person FROM x_task WHERE work = $1 AND activity_token = $2 AND task_status = $3 LIMIT 1 FOR UPDATE",
             &[&work_id, &activity_token, &"pending"],
         )
         .await
@@ -3399,7 +3402,8 @@ pub async fn task_reject(
         .map_err(|_| AppError::Internal)?;
     let prev_row = tx
         .query_opt(
-            "SELECT id FROM x_task WHERE work = $1 AND activity_token = $2 AND task_status = $3 LIMIT 1",
+            // 同 task_complete：FOR UPDATE 防两并发 reject 抢同一 completed 任务
+            "SELECT id FROM x_task WHERE work = $1 AND activity_token = $2 AND task_status = $3 LIMIT 1 FOR UPDATE",
             &[&work_id, &activity_token, &"completed"],
         )
         .await
