@@ -1633,13 +1633,18 @@ pub async fn documentversion_create(
     Path(work): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    if !entity_exists(&client, "x_work", &work).await? {
-        return biz_err("work not found");
-    }
-    drop(client);
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    // 行锁父 work：MAX+1 是读-改-写序号分配，无锁时两并发创建对同一 work 读到
+    // 相同 MAX 而插入重复版本号；锁父行串行化后后者的 MAX 读到前者已提交的行。
+    // 锁同时兼作存在性检查（不存在则无行可锁）。
+    let locked = tx
+        .query_opt("SELECT id FROM x_work WHERE id = $1 FOR UPDATE", &[&work])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if locked.is_none() {
+        return biz_err("work not found");
+    }
     let next: i32 = tx
         .query_one(
             "SELECT COALESCE(MAX(version), 0) + 1 AS v FROM x_document_version WHERE work_id = $1",
