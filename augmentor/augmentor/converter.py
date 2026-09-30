@@ -182,10 +182,10 @@ def turns_to_canonical(turns: List[Dict[str, str]], format_name: str) -> Dict[st
     """
     if len(turns) < 2:
         raise DataFormatError(f"{format_name} 对话少于两轮，无法还原问答")
-    if turns[-2]["role"] != "user" or turns[-1]["role"] != "assistant":
+    if turns[-2].get("role") != "user" or turns[-1].get("role") != "assistant":
         raise DataFormatError(
             f"{format_name} 对话必须以「user → assistant」结尾，"
-            f"实际是「{turns[-2]['role']} → {turns[-1]['role']}」"
+            f"实际是「{turns[-2].get('role')} → {turns[-1].get('role')}」"
         )
 
     head = turns[:-2]
