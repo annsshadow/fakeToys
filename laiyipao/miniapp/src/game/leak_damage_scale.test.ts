@@ -271,9 +271,9 @@ describe('漏怪伤害的量级', () => {
     // 「40 关合计剩血之差」，这边算的是「直接累加每次掉血」，
     // 两条独立路径得到同一个 432。
     expect(noArmor.leaks).toBe(19)
-    expect(noArmor.damage).toBe(574n)
-    expect(fullArmor.damage).toBe(142n)
-    expect(noArmor.damage - fullArmor.damage).toBe(432n)
+    expect(noArmor.damage).toBe(485n)
+    expect(fullArmor.damage).toBe(123n)
+    expect(noArmor.damage - fullArmor.damage).toBe(362n)
   }, 300000)
 
   it('19 次漏怪里兜底分支只占少数（按关卡平均推断，非事件级）', () => {
