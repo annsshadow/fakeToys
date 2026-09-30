@@ -69,6 +69,15 @@ export default tseslint.config(
     },
   },
 
+  // 构建/运维脚本（scripts/）也是 Node 环境：用 console / process / node: 内建模块，
+  // 没有浏览器全局。不给它 Node globals 时 no-undef 会把 console/process 全报成未定义。
+  {
+    files: ['scripts/**/*.{js,mjs,cjs}'],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
+  },
+
   // 关闭所有与 Prettier 冲突的规则，必须最后一项
   prettier,
 )
