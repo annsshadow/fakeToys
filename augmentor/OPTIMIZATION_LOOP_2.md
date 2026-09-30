@@ -385,3 +385,17 @@
   A184 + L79 + markdown 结构三守卫 115/115 绿。
 - **Backlog A 全清**：A201–A208 八项全部关闭（A205 偏支审计 L114–L126、A206 前端
   L104–L113、A207 产物体检 L128、A208 文档 L129）。
+
+### L130（2026-09-30）— 回归修复：L128 新增脚本触发前端 lint 门禁转红
+
+- **自查抓到的本轮自造回归**：L128 新增的 `web/scripts/check-dist.mjs` 用了 Node 全局
+  `console` / `process`，而 `eslint.config.js` 只给 `*.config.{js,ts}` 与
+  `eslint.config.js` 配了 Node globals，`scripts/**` 落进默认（浏览器）环境 ⇒
+  `npm run lint`（`--max-warnings 0`）报 **8 处 `no-undef`**、前端 lint 门禁转红。
+  L128 当时只跑了 `build:check`（脚本能跑），漏跑 lint ⇒ 门禁红了一轮才被本轮
+  `npm run lint` 抓到。
+- **修法**：`eslint.config.js` 加一条 `scripts/**/*.{js,mjs,cjs}` 的 Node-env override
+  （与既有 `*.config` 那条同形）。lint 复零。
+- **前端三件套复验全绿**：lint exit 0 / tsc exit 0 / vitest **13 文件 112 例**通过。
+- **纪律补记**：新增任何被 `eslint .` 扫到的文件（不止 `src/`），当轮必须连
+  `npm run lint` 一起复验，不能只验「脚本能跑」——lint 环境判定与运行时是两回事。
