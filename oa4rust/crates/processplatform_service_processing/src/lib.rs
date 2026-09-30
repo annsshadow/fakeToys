@@ -440,21 +440,23 @@ pub async fn work_v2_id_retract(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
-        .execute(
-            "UPDATE x_work SET work_status = $1 WHERE id = $2",
-            &[&"retracted", &id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    client
-        .execute(
-            "UPDATE x_task SET task_status = $1 WHERE work = $2",
-            &[&"cancelled", &id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+    // 撤销 = work 置 retracted + 该 work 全部 task 置 cancelled，两写必须原子：
+    // 中途失败会留「流程已撤销但任务仍 active 可继续审批」的矛盾态。
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    tx.execute(
+        "UPDATE x_work SET work_status = $1 WHERE id = $2",
+        &[&"retracted", &id],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
+    tx.execute(
+        "UPDATE x_task SET task_status = $1 WHERE work = $2",
+        &[&"cancelled", &id],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_one(
             "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
@@ -3045,7 +3047,7 @@ pub async fn work_v3_retract(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_one(
             "SELECT id, title, process, application, work_status FROM x_work WHERE id = $1",
@@ -3053,20 +3055,21 @@ pub async fn work_v3_retract(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    client
-        .execute(
-            "UPDATE x_work SET work_status = $1 WHERE id = $2",
-            &[&"retracted", &id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    client
-        .execute(
-            "UPDATE x_task SET task_status = $1 WHERE work = $2",
-            &[&"cancelled", &id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+    // 同 work_v2_id_retract：状态对写原子化，防「已撤销但任务仍 active」。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    tx.execute(
+        "UPDATE x_work SET work_status = $1 WHERE id = $2",
+        &[&"retracted", &id],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
+    tx.execute(
+        "UPDATE x_task SET task_status = $1 WHERE work = $2",
+        &[&"cancelled", &id],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
