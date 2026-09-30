@@ -695,51 +695,62 @@ pub async fn att_copy_to_work(
     if list.is_empty() {
         return biz_err("attachmentList is required");
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     if !entity_exists(&client, "x_work", &work_id).await? {
         return biz_err("work not found");
     }
+    // 批量化：源件一次 ANY 查回、目标已有重名一次查回（原逐条 SELECT+COUNT 为 3N+1）；
+    // 写入包同一事务。同请求内重复 id/同名经 map/set 回填保持原逐条判重语义。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let sources: std::collections::HashMap<String, deadpool_postgres::tokio_postgres::Row> = tx
+        .query(
+            "SELECT id, name, content, creator FROM x_attachment \
+             WHERE id = ANY($1) AND deleted_at IS NULL",
+            &[&list],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .into_iter()
+        .map(|r| (r.get::<_, String>("id"), r))
+        .collect();
+    let existing_names: std::collections::HashSet<String> = tx
+        .query(
+            "SELECT DISTINCT COALESCE(name,'') FROM x_attachment \
+             WHERE work_id = $1 AND deleted_at IS NULL",
+            &[&work_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .iter()
+        .map(|r| r.get::<_, String>(0))
+        .collect();
+    let mut existing_names = existing_names;
+
     let mut success: Vec<Value> = Vec::new();
     for src_id in &list {
-        let Some(src) = client
-            .query_opt(
-                "SELECT name, content, creator FROM x_attachment \
-                 WHERE id = $1 AND deleted_at IS NULL",
-                &[src_id],
-            )
-            .await
-            .map_err(|_| AppError::Internal)?
-        else {
+        let Some(src) = sources.get(src_id) else {
             success.push(json!({ "id": src_id, "copied": false, "reason": "not found" }));
             continue;
         };
-        let name: String = opt_str(&src, "name");
-        let dup = client
-            .query_one(
-                "SELECT COUNT(*) AS c FROM x_attachment \
-                 WHERE work_id = $1 AND COALESCE(name,'') = $2 AND deleted_at IS NULL",
-                &[&work_id, &name],
-            )
-            .await
-            .map_err(|_| AppError::Internal)?
-            .get::<_, i64>("c");
-        if dup > 0 {
+        let name: String = opt_str(src, "name");
+        if existing_names.contains(&name) {
             success.push(json!({ "id": src_id, "copied": false, "reason": "already exist" }));
             continue;
         }
         let new_id = Uuid::new_v4().to_string();
         let content: Option<String> = src.get("content");
-        let creator: String = opt_str(&src, "creator");
-        client
-            .execute(
-                "INSERT INTO x_attachment (id, work_id, workcompleted_id, name, content, creator) \
-                 VALUES ($1, $2, NULL, $3, $4, $5)",
-                &[&new_id, &work_id, &name, &content, &creator],
-            )
-            .await
-            .map_err(|_| AppError::Internal)?;
+        let creator: String = opt_str(src, "creator");
+        tx.execute(
+            "INSERT INTO x_attachment (id, work_id, workcompleted_id, name, content, creator) \
+             VALUES ($1, $2, NULL, $3, $4, $5)",
+            &[&new_id, &work_id, &name, &content, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+        existing_names.insert(name.clone());
         success.push(json!({ "id": new_id, "name": name, "copied": true }));
     }
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     ok(json!({ "successList": success }))
 }
 
