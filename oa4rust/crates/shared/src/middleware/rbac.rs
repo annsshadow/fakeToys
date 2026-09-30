@@ -555,8 +555,10 @@ pub async fn authorize_middleware(
 // ──────────────────────────────────────────────────────────────────────────────
 // rate_limit_middleware
 //
-// 速率限制中间件：认证接口（认证 + 密码重置 + 系统初始化）10 次/分钟/IP，
-// 普通接口 100 次/分钟/IP。超限返回 429。
+// 速率限制中间件：认证接口（认证 + 密码重置 + 系统初始化 + express 枚举面）
+// 默认 30 次/分钟/IP，普通接口默认 300 次/分钟/IP（可用
+// OA4RUST_AUTH_RATE_LIMIT / OA4RUST_GENERAL_RATE_LIMIT 环境变量覆盖）。
+// 超限返回 429。
 // ──────────────────────────────────────────────────────────────────────────────
 pub async fn rate_limit_middleware(
     State(state): State<SecurityState>,
@@ -572,9 +574,9 @@ pub async fn rate_limit_middleware(
     }
 
     let max_attempts = if is_auth_rate_limited(&path) {
-        AUTH_RATE_LIMIT
+        auth_rate_limit()
     } else {
-        GENERAL_RATE_LIMIT
+        general_rate_limit()
     };
 
     if state
