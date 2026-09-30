@@ -34,7 +34,11 @@ package domain
 // 键名同样要校验：`reactions_used` 进了 GROUP BY，
 // 塞进 `"totally_fake_reaction": 999` 就会在看板里多出一行。
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"strings"
+)
 
 // maxReplayHashLen 是 replay_hash 的长度上限。
 //
@@ -213,6 +217,56 @@ func validateReportCollections(gl GeneratedLevel, in SettleInput) error {
 	if len(in.ReplayHash) > maxReplayHashLen {
 		return fmt.Errorf("%w：replay_hash 长 %d 字符，上限 %d",
 			ErrInvalidField, len(in.ReplayHash), maxReplayHashLen)
+	}
+
+	// ── replay_skills（第 56 轮）──
+	//
+	// 两条边界分开报：长度与条目数。
+	// 只查长度的话，一个塞了 1000 个空条目的字符串长度可能仍在限内；
+	// 只查条目数的话，一个超长的单条又会绕过。
+	if len(in.ReplaySkills) > ReplaySkillsMaxLen {
+		return fmt.Errorf("%w：replay_skills 长 %d 字符，上限 %d",
+			ErrInvalidField, len(in.ReplaySkills), ReplaySkillsMaxLen)
+	}
+	if in.ReplaySkills != "" {
+		n := strings.Count(in.ReplaySkills, ",") + 1
+		if n > ReplaySkillsMaxEntries {
+			return fmt.Errorf("%w：replay_skills 有 %d 条，上限 %d",
+				ErrInvalidField, n, ReplaySkillsMaxEntries)
+		}
+		// 每条必须是 slot:skillId:baseDamage:applyStacks:heatCost 五个非负整数。
+		// 形状不对就没法与重算值比对，早一步报错更容易定位。
+		for i, seg := range strings.Split(in.ReplaySkills, ",") {
+			if err := validateSkillSegment(seg); err != nil {
+				return fmt.Errorf("%w：replay_skills[%d] %v", ErrInvalidField, i, err)
+			}
+		}
+	}
+	return nil
+}
+
+/**
+ * 校验一条 `slot:skillId:baseDamage:applyStacks:heatCost`。
+ *
+ * 五个字段都必须是非负十进制整数。
+ *
+ * ⚠️ 刻意**不**校验「等于某个已知技能」—— 那是 `BuildReplaySkillsSegment`
+ * 重算比对那一层的事，形状校验与语义校验分开，失败时更好定位。
+ */
+func validateSkillSegment(seg string) error {
+	parts := strings.Split(seg, ":")
+	if len(parts) != 5 {
+		return fmt.Errorf("字段数 %d，应为 5", len(parts))
+	}
+	for _, p := range parts {
+		if p == "" {
+			return errors.New("存在空字段")
+		}
+		for _, c := range p {
+			if c < '0' || c > '9' {
+				return fmt.Errorf("字段 %q 含非数字字符", p)
+			}
+		}
 	}
 	return nil
 }
