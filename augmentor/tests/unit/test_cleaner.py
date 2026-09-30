@@ -377,3 +377,54 @@ class TestCleanDoesNotMutateInput:
         clean_batch_optimized(items, rules=["remove_urls"], batch_size=1)
 
         assert json.dumps(items, ensure_ascii=False) == snapshot
+
+
+class TestNormalizePunctuation:
+    """normalize_punctuation 规则：全角/弯引号 → 半角（L133，B203）
+
+    改前是 14 遍顺序 str.replace，改后是一次 str.translate。此前 DataCleaner 这条规则
+    没有任何直达行为用例（只有 TextNormalizer 的叠字标点合并被测），这里补上映射表
+    逐项断言 + 与「顺序 replace」参照实现的逐字符等价，任何映射漂移或级联替换当场红。
+    """
+
+    PUNCTUATION_MAP = {
+        "，": ",", "。": ".", "！": "!", "？": "?",
+        "；": ";", "：": ":", "\u201c": '"', "\u201d": '"',
+        "\u2018": "'", "\u2019": "'", "（": "(", "）": ")",
+        "【": "[", "】": "]",
+    }
+
+    def test_each_fullwidth_maps_to_ascii(self):
+        """映射表 14 项逐项走一遍 clean，各自落到约定的半角字符"""
+        for full, half in self.PUNCTUATION_MAP.items():
+            items = [{"instruction": f"a{full}b", "output": ""}]
+            cleaned, result = DatasetCleaner().clean(items, rules=["normalize_punctuation"])
+            assert cleaned[0]["instruction"] == f"a{half}b", f"{full!r} 应映射为 {half!r}"
+            assert result.modified_count == 1
+
+    def test_matches_sequential_replace_reference_l133(self):
+        """与「逐个 str.replace」参照实现逐字符等价（含混排、无全角、纯全角）"""
+        def reference(text):
+            for old, new in self.PUNCTUATION_MAP.items():
+                text = text.replace(old, new)
+            return text
+
+        samples = [
+            "你好，世界！这是（测试）：“引号”与‘单引’；【括号】。",
+            "no fullwidth punctuation at all",
+            "，。！？；：“”‘’（）【】",
+            "",
+            "混排 mix，中英 test。end",
+        ]
+        for text in samples:
+            items = [{"instruction": text, "output": text}]
+            cleaned, _ = DatasetCleaner().clean(items, rules=["normalize_punctuation"])
+            expected = reference(text)
+            assert cleaned[0]["instruction"] == expected, f"{text!r} 不一致"
+            assert cleaned[0]["output"] == expected
+
+    def test_unchanged_text_reports_no_modification(self):
+        """没有全角标点时不应误报修改"""
+        items = [{"instruction": "plain ascii text", "output": "1234"}]
+        cleaned, result = DatasetCleaner().clean(items, rules=["normalize_punctuation"])
+        assert cleaned[0]["instruction"] == "plain ascii text"

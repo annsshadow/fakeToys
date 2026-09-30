@@ -41,7 +41,8 @@
 |---|------|------|------|
 | B201 | **已关闭（L131）**：`DatasetAnalyzer.get_duplicate_candidates`（SDK 公共方法）O(n²) 里逐对重建字符集是真热点 | 实测 6000 条 **71.8 s**；预计算后 2500 条 A/B new/old ×0.36 / ×0.34（双序），等价性 5 阈值逐元素一致 | S |
 | B202 | **已关闭（L132）**：`ActiveLearningLoop._diversity_scores` 逐对调用 `compute_similarity`，每对把两侧重新 tokenize，n 条共约 2n² 次切词 | 预计算词元集合后 n=800 A/B new/old ×0.088（≈11×，双序），等价性 4 数据集（含重复/空串/单条/多词）逐元素一致 | S |
-| B203 | 待普查后立项 | —— | — |
+| B203 | **已关闭（L133）**：`DataCleaner._normalize_punctuation`（`normalize_punctuation` 规则）此前无任何直达行为用例；候选「14 道 replace → str.translate」优化经 A/B **证否**（长文本稀疏匹配 ×8.7 变慢）故不改产品，改补首个行为守卫 | A/B：重匹配 ×0.87、但真实场景（长文本少量全角）translate 逐字符查表 ×8.7 慢于 replace 的无命中短路；新增映射表 14 项 + 顺序 replace 参照逐字符等价的 3 用例 | S |
+| B204 | 待普查后立项 | —— | — |
 
 ## 循环日志
 
@@ -443,3 +444,22 @@
   漂移当场红。
 - 全量门禁：`7360 passed / 3 skipped / exit 0`（L131 的 7359 + 1 新守卫，无回归）；
   active_learning 49/49、A184 21/21 绿。**B202 关闭**。
+
+### L133（2026-09-30）— B203 立项 + 关闭：normalize_punctuation 优化证否 + 补首个行为守卫
+
+- **候选**（延续标点/字符串处理族）：`DataCleaner._normalize_punctuation` 对每个字段跑
+  **14 遍顺序 `str.replace`**，直觉上「合成一次 `str.translate`」更快。
+- **A/B 证否（诚实记录，不作提速主张）**：str.translate 逐字符查表、无命中不短路；
+  `str.replace` 在子串不存在时 C 层几乎瞬返。实测三种负载 —
+  - 50k × 80char 混排：new/old **×1.05**（基本持平）
+  - 50k × 80char 重匹配（几乎全是全角标点）：×0.87（translate 略快）
+  - 2k × 4000char 稀疏匹配（长文本、零星全角，**最贴近真实 instruction/output**）：
+    **×8.74（translate 大幅变慢）**
+  → 真实数据是「长文本 + 少量全角」，translate 是**净回归**。**保留原 14-replace 实现**，
+  不改产品代码（符合「不为风格改动能工作的代码」）。
+- **真实收获**：该规则此前**无任何直达行为用例**（仅 TextNormalizer 的叠字合并被测）。
+  补 `test_cleaner.py::TestNormalizePunctuation` 三条：① 映射表 14 项逐项断言半角落点 +
+  `modified_count==1`；② 与「顺序 replace」参照实现在混排/纯全角/无全角/空串/中英混排
+  5 样本上逐字符等价；③ 无全角时不误报修改。参照实现＝原实现语义，故对现产品代码有效。
+- 全量门禁：`7363 passed / 3 skipped / exit 0`（L132 的 7360 + 3 新守卫，无回归）；
+  cleaner 40/40、A184 21/21 绿。**B203 关闭**（产品未改，账本如实记优化证否）。
