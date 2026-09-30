@@ -227,6 +227,21 @@ describe('socket lifecycle (error / close / heartbeat / reconnect)', () => {
     vi.useRealTimers()
   })
 
+  it('close() while connected suppresses the async onclose reconnect (浏览器会异步派发 onclose)', async () => {
+    // 此前 close() 只清 reconnectTimer，但 ws.close() 异步触发的 onclose 仍会
+    // scheduleReconnect → 主动关闭后每 3s 永远重连（IMChat 卸载/登出后空转）。
+    vi.useFakeTimers()
+    const ws = await openClient()
+
+    client.close() // 主动关闭（真实浏览器随后异步触发 onclose）
+    ws.readyState = 3
+    ws.onclose?.() // 模拟异步 onclose 派发
+
+    vi.advanceTimersByTime(9000)
+    expect(FakeWebSocket.instances).toHaveLength(1) // 不重连
+    vi.useRealTimers()
+  })
+
   it('sends a ping heartbeat every 30s while the socket stays open', async () => {
     vi.useFakeTimers()
     const p = client.connect()

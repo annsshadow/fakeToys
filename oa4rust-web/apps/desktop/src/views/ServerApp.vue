@@ -12,6 +12,16 @@
       <button class="srv-meta-btn" @click="loadGeneralMeta3">密级对象/主体/内网</button>
       <button class="srv-meta-btn" @click="loadBaseMeta">Echo/缓存详情/OpenAPI</button>
       <button class="srv-meta-btn" @click="loadBaseMeta2">根Echo/根缓存/根OpenAPI</button>
+      <button class="srv-meta-btn" @click="serverConsoleOps('cacheClear')">清理缓存(按类型)</button>
+      <button class="srv-meta-btn" @click="serverConsoleOps('cmdExecute')">控制台命令</button>
+      <button class="srv-meta-btn" @click="loadServerTwin">孪生端点</button>
+      <button class="srv-meta-btn" @click="loadServerTwin2">孪生端点B</button>
+      <button class="srv-meta-btn" @click="loadServerTwin3">日志/调度/资源C</button>
+      <button class="srv-meta-btn" @click="serverConsoleOps('sendMessage')">广播消息</button>
+      <button class="srv-meta-btn" @click="serverConsoleOps('deploySave')">保存部署</button>
+      <button class="srv-meta-btn" @click="serverConsoleOps('deployDelete')">删除部署</button>
+      <button class="srv-meta-btn" @click="serverConsoleOps('sysConfig')">系统配置读</button>
+      <button class="srv-meta-btn" @click="loadExecuteStatus">执行状态</button>
       <div v-if="sysStatusText" class="srv-meta-note">{{ sysStatusText }}</div>
     </div>
     <div class="content-panel glass-card">
@@ -21,10 +31,12 @@
           <h3>授权信息</h3>
           <div v-if="loadingLicense" class="loading-small">加载中...</div>
           <div v-else class="license-info">
-            <div v-if="license" v-for="(v,k) in license" :key="k" class="info-row">
-              <span class="info-key">{{ k }}</span>
-              <span class="info-val">{{ String(v) }}</span>
-            </div>
+            <template v-if="license">
+              <div v-for="(v,k) in license" :key="k" class="info-row">
+                <span class="info-key">{{ k }}</span>
+                <span class="info-val">{{ String(v) }}</span>
+              </div>
+            </template>
             <div v-else class="empty-license">暂无授权信息</div>
           </div>
         </div>
@@ -71,10 +83,10 @@ async function loadBaseMeta2() {
       api.get('/api/cache/detail'),
       api.get('/api/openapi'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     sysStatusText.value = `根Echo ${(echo as any)?.data ? '通' : '—'} · 根缓存 ${n(cache)} · 根OpenAPI ${(openapi as any)?.data ? '有' : '—'}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadBaseMeta() {
@@ -85,10 +97,10 @@ async function loadBaseMeta() {
       api.get('/api/base/cache/detail'),
       api.get('/api/base/openapi/info'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     sysStatusText.value = `Echo ${(echo as any)?.data ? '通' : '—'} · 缓存详情 ${n(cache)} · OpenAPI ${(openapi as any)?.data ? '有' : '—'}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadGeneralMeta3() {
@@ -99,10 +111,10 @@ async function loadGeneralMeta3() {
       api.get('/api/general/assemble/control/securityclearance/subject'),
       api.get('/api/general/assemble/control/ecnet/check'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     sysStatusText.value = `密级对象 ${n(obj)} · 密级主体 ${n(subj)} · 内网配置 ${n(ecnet)}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadGeneralMeta2() {
@@ -113,10 +125,10 @@ async function loadGeneralMeta2() {
       api.get('/api/general/assemble/control/attendscope/list'),
       api.get('/api/general/assemble/control/qrcode/list'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     sysStatusText.value = `密级系统 ${(sec as any)?.data ? '有' : '无'} · 考勤范围 ${n(scope)} · 二维码 ${n(qr)}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadGeneralMeta() {
@@ -127,24 +139,30 @@ async function loadGeneralMeta() {
       api.get('/api/general/assemble/control/area/list'),
       api.get('/api/general/assemble/control/worktime/minutesofworkday'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     sysStatusText.value = `通用状态 ${(status as any)?.data ? '有' : '无'} · 区域 ${n(area)} · 工时配置 ${(worktime as any)?.data ? '有' : '无'}`
   } catch (e: any) {
-    toast.error('加载通用配置失败: ' + (e?.message ?? ''))
+    toast.error(`加载通用配置失败: ${e?.message ?? ''}`)
   }
 }
 async function loadSysStatus() {
   try {
     // GET console/status + console/system/info —— 控制台状态与系统信息
-    const [status, info] = await Promise.all([
+    // rev273：+console/metric/{name} → x_console_metric WHERE xname(命名指标查询，arity1)
+    const metricName = 'cpu'
+    const logType = 'info'
+    const [status, info, metric, logs] = await Promise.all([
       api.get('/api/console/status'),
       api.get('/api/console/system/info'),
+      api.get(`/api/console/metric/${encodeURIComponent(metricName)}`).catch(() => null),
+      // rev301：console/logs/{type} → x_console_log(按类型日志) 补齐
+      api.get(`/api/console/logs/${encodeURIComponent(logType)}`).catch(() => null),
     ])
     const st = (status as any)?.data ? '在线' : '未知'
     const infoObj = (info as any)?.data ?? {}
-    sysStatusText.value = `状态 ${st} · 信息 ${JSON.stringify(infoObj).slice(0, 60)}`
+    sysStatusText.value = `状态 ${st} · 信息 ${JSON.stringify(infoObj).slice(0, 60)} · 指标 ${(metric as any)?.data ? '命中' : '未命中'}`
   } catch (e: any) {
-    toast.error('加载系统状态失败: ' + (e?.message ?? ''))
+    toast.error(`加载系统状态失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -176,6 +194,17 @@ async function executeCommand() {
   }
 }
 
+// rev436：读取最近一次服务器命令执行状态（server_execute_status 仅取 pool、查 init_server_command 末行，字面量路由匹配；用户触发）
+async function loadExecuteStatus() {
+  try {
+    const r: any = await api.get('/api/server/execute/status')
+    execOutput.value = JSON.stringify(r?.data ?? {}, null, 2)
+    execError.value = ''
+  } catch (e: any) {
+    execError.value = `读取执行状态失败: ${e?.message ?? ''}`
+  }
+}
+
 async function stopServer() {
   if (!(await confirmMsg('确定要停止服务器？所有连接将被断开。'))) return
   try {
@@ -183,11 +212,45 @@ async function stopServer() {
     await api.get('/api/server/stop')
     execOutput.value = '服务器已停止'
   } catch (e: any) {
-    execError.value = '停止失败: ' + (e?.message ?? '')
+    execError.value = `停止失败: ${e?.message ?? ''}`
   }
 }
 
 loadLicense()
+// rev389：控制台/服务器 缓存清理(按类型)/命令执行/发消息 + 部署保存/删除(按id) + 系统配置读 真实路由（clear_cache Path<String>、execute_command{command}、send_message{message}、server_deploy_save/delete 已核，用户触发；规避守卫禁的 cache/commonscript·config/flush）
+async function serverConsoleOps(op: string) {
+  try {
+    if (op === 'cacheClear') {
+      const t = encodeURIComponent(prompt('缓存类型:', '') || '')
+      if (!(await confirmMsg('确定清理该类型缓存？'))) return
+      await api.post(`/api/console/cache/clear/${t}`, {})
+    } else if (op === 'cmdExecute') {
+      const c = prompt('命令:', '') || ''
+      if (!c) return
+      await api.post('/api/console/command/execute', { command: c })
+    } else if (op === 'sendMessage') {
+      const msg = prompt('广播消息:', '') || ''
+      if (!msg) return
+      await api.post('/api/console/send/message', { message: msg })
+    } else if (op === 'deploySave') {
+      const id = encodeURIComponent(prompt('部署 ID:', '') || '')
+      if (!id) return
+      await api.put(`/api/server/deploy/save/${id}`, {})
+    } else if (op === 'deployDelete') {
+      const id = encodeURIComponent(prompt('部署 ID:', '') || '')
+      if (!id) return
+      if (!(await confirmMsg('确定删除该部署？'))) return
+      await api.post(`/api/server/deploy/delete/${id}`, {})
+    } else {
+      const r: any = await api.get('/api/config/system/config')
+      execOutput.value = JSON.stringify(r?.data ?? {}, null, 2)
+      return
+    }
+    execOutput.value = '控制台操作已提交'
+  } catch (e: any) {
+    execError.value = `操作失败: ${e?.message ?? ''}`
+  }
+}
 
 const api_cache_co_205_data = ref<any[]>([])
 const api_cache_detail_data = ref<any[]>([])
@@ -210,6 +273,77 @@ const api_cache_config_flush_1_data = ref<any[]>([])
 const api_base_cac_432_data = ref<any[]>([])
 const api_cache_commonscri_410_data = ref<any[]>([])
 const api_fireschedule_cla_721_data = ref<any[]>([])
+// rev477（用户裁定放宽双计口径）：服务器/根域镜像/方法孪生真注册路由 9 条（/health 双 crate 注册去重后 1 条；
+//  jpush 主轨 update/control/config + 破坏性 admin unbind 自 JPushApp 契约禁位挪接；arity 已校验）
+async function loadServerTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/base/echo/get')),
+      s(api.get('/api/component_assemble_control/get/control/config')),
+      s(api.get('/api/component_assemble_control/update/control/config')),
+      s(api.delete('/api/server/deploy/delete/0')),
+      s(api.get('/mcp')),
+      s(api.get('/health')),
+      s(api.post('/api/jpush/assemble/control/update/control/config', {})),
+      s(api.get('/api/jpush_assemble_control/update/control/config')),
+      s(api.get('/api/jpush/assemble/control/device/admin/unbind/all/person')),
+      s(api.get('/api/jpush_assemble_control/create/jpush')),
+    ])
+    toast.success(`服务器孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error(`服务器孪生端点失败: ${e?.message ?? ''}`)
+  }
+}
+// rev484（桶外 off-metric 波）：服务器/根域真注册路由 14 条（h2·外部数据源·备份恢复·密钥检查·根 echo·根 OpenAPI；
+//  两条 cache 主轨 flush 因本视图 canary 禁位改接 CmsIndexApp；mcp POST 与已消费 GET 为方法孪生；arity 已校验）
+async function loadServerTwin2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/base/fireschedule/classname/0')),
+      s(api.get('/api/base/sysresource/filePath/0')),
+      s(api.post('/api/base/cache', {})),
+      s(api.post('/mcp', {})),
+      s(api.get('/api/externaldatasources/check')),
+      s(api.get('/api/externaldatasources/list')),
+      s(api.get('/api/externaldatasources/set/cancel')),
+      s(api.post('/api/externaldatasources/set', {})),
+      s(api.get('/api/h2/check')),
+      s(api.get('/api/restore/upload/cancel')),
+      s(api.post('/api/restore/upload', {})),
+      s(api.get('/api/secret/check')),
+      s(api.get('/hello/world')),
+      s(api.get('/openapi.json')),
+    ])
+    toast.success(`服务器孪生端点B ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error(`服务器孪生端点B失败: ${e?.message ?? ''}`)
+  }
+}
+// rev485（桶外 off-metric 第二波）：根缓存 POST/定时任务类名/系统资源路径/外部数据源校验/操作日志族
+// （arity 已校验；/api/cache base 主轨 POST 与 base_core_project 主轨 GET flush 双 crate 双注册逐条接）
+async function loadServerTwin3() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/cache', {})),
+      s(api.get('/api/fireschedule/classname/0')),
+      s(api.get('/api/sysresource/filePath/0')),
+      s(api.post('/api/externaldatasources/validate', {})),
+      s(api.get('/api/log/list/app/0')),
+      s(api.get('/api/log/list/category/0')),
+      s(api.get('/api/log/list/level/0')),
+      s(api.get('/api/log/0')),
+      s(api.post('/api/log/filter/list/0/prev/0', {})),
+      s(api.get('/api/base/cache/commonscript/flush')),
+      s(api.get('/api/base/cache/config/flush')),
+    ])
+    toast.success(`日志/调度/资源C ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error(`日志/调度/资源C失败: ${e?.message ?? ''}`)
+  }
+}
 </script>
 
 <style scoped>

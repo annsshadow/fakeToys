@@ -259,6 +259,40 @@ class TestHybridScores:
         assert loop._diversity_scores([]) == []
 
 
+class TestDiversityScoresReference:
+    """_diversity_scores 预计算词元集合后必须与逐对 compute_similarity 逐元素一致（L132, B202）
+
+    旧实现内层直接 compute_similarity(text, other)，每对都把两侧重新 tokenize；
+    改成先一次性切词元集合。这条把「优化实现」与「逐对朴素实现」在含重复、含空串、
+    单条、多词等数据集上逐元素对照，任何语义漂移当场红。
+    """
+
+    def test_matches_pairwise_compute_similarity_l132(self):
+        from augmentor.evaluation import compute_similarity
+
+        datasets = [
+            [{"instruction": t} for t in ["机器学习入门", "机器学习进阶", "完全无关", "机器学习入门"]],
+            [{"instruction": t} for t in ["", "有内容的文本", "", "另一段文本"]],
+            [{"instruction": "只有一条"}],
+            [{"instruction": t} for t in ["abc def", "def ghi", "abc def ghi", "xyz"]],
+        ]
+        loop = ActiveLearningLoop(score_fn=lambda item: 0.5)
+        for items in datasets:
+            texts = [it["instruction"] for it in items]
+            expected = []
+            for i, text in enumerate(texts):
+                best = 0.0
+                for j, other in enumerate(texts):
+                    if i == j:
+                        continue
+                    sim = compute_similarity(text, other)
+                    if sim > best:
+                        best = sim
+                expected.append(1.0 - best)
+            actual = loop._diversity_scores(items)
+            assert actual == pytest.approx(expected), f"数据集 {texts} 不一致"
+
+
 class TestScoreFn:
     """自定义打分函数"""
 

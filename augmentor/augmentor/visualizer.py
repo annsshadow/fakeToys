@@ -18,6 +18,14 @@ import re
 
 logger = logging.getLogger(__name__)
 
+# 中文词串切分。编译一次放在模块级：`re.findall(字面模式, text)`
+# 每次都要走一遍 `re._compile()` 的缓存查找，而 `generate_statistics` 的逐条
+# 循环对每条记录各调一次（真实语料 6902 条实测 6902 次）。
+# 本模式是 `\u4e00-\u9fa5`，与 `statistics` / `analytics` 的 `\u4e00-\u9fff`
+# 不是同一串，合并会改变词频口径（`龥` 与 `鿿` 之间的
+# 字归属不同），故各留一份常量，不共用。
+_CJK_WORD_PATTERN = re.compile(r'[\u4e00-\u9fa5]+')
+
 
 class DataVisualizer:
     """数据可视化器"""
@@ -26,10 +34,9 @@ class DataVisualizer:
         """初始化可视化器
         
         Args:
-            output_dir: 输出目录
+            output_dir: 输出目录；构造时不碰盘，首次出图才建
         """
         self.output_dir = Path(output_dir)
-        self.output_dir.mkdir(parents=True, exist_ok=True)
         
         self._wordcloud = None
         self._matplotlib = None
@@ -55,6 +62,16 @@ class DataVisualizer:
                 logger.info("加载 matplotlib 成功")
             except ImportError:
                 logger.warning("matplotlib 未安装，跳过图表生成")
+    
+    def _output_path(self, output_file: str) -> Path:
+        """出图路径，并按需建目录
+        
+        建目录排在这里而不是构造函数：`matplotlib.savefig` 不会自己建父目录，所以真写图
+        时必须有它，而「只是 new 一个可视化器」不该在盘上留下东西 —— 管道构造时会带上这
+        一族对象，用户没跑过任何一图，工作目录就已经多了三个空目录。
+        """
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        return self.output_dir / output_file
     
     def generate_wordcloud(self,
                           items: List[Dict],
@@ -89,7 +106,7 @@ class DataVisualizer:
         wc.generate(text)
         
         # 保存图片
-        output_path = self.output_dir / output_file
+        output_path = self._output_path(output_file)
         wc.to_file(str(output_path))
         
         logger.info(f"生成词云图: {output_path}")
@@ -126,7 +143,7 @@ class DataVisualizer:
         ax.set_title('文本长度分布')
         
         # 保存图片
-        output_path = self.output_dir / output_file
+        output_path = self._output_path(output_file)
         self._matplotlib.savefig(str(output_path), dpi=150, bbox_inches='tight')
         self._matplotlib.close(fig)
         
@@ -177,7 +194,7 @@ class DataVisualizer:
             ax.set_ylabel('t-SNE 维度 2')
             
             # 保存图片
-            output_path = self.output_dir / output_file
+            output_path = self._output_path(output_file)
             self._matplotlib.savefig(str(output_path), dpi=150, bbox_inches='tight')
             self._matplotlib.close(fig)
             
@@ -216,7 +233,7 @@ class DataVisualizer:
         ax.legend()
         
         # 保存图片
-        output_path = self.output_dir / output_file
+        output_path = self._output_path(output_file)
         self._matplotlib.savefig(str(output_path), dpi=150, bbox_inches='tight')
         self._matplotlib.close(fig)
         
@@ -258,7 +275,7 @@ class DataVisualizer:
         ax.set_xticklabels(timestamps, rotation=45, ha='right')
         
         # 保存图片
-        output_path = self.output_dir / output_file
+        output_path = self._output_path(output_file)
         self._matplotlib.savefig(str(output_path), dpi=150, bbox_inches='tight')
         self._matplotlib.close(fig)
         
@@ -343,7 +360,7 @@ def generate_statistics(items: List[Dict], text_key: str = "instruction") -> Dic
     # 词频统计
     all_words = []
     for text in texts:
-        words = re.findall(r'[\u4e00-\u9fa5]+', text)
+        words = _CJK_WORD_PATTERN.findall(text)
         all_words.extend(words)
 
     word_freq = Counter(all_words)

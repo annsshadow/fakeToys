@@ -145,6 +145,7 @@ pub use shared::rate_limit::RateLimiter;
 pub use shared::session::{Session, SessionManager};
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

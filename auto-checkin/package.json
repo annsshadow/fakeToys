@@ -10,20 +10,25 @@
     "run-once": "tsx src/index.ts --once",
     "run-site": "tsx src/index.ts --site",
     "login": "tsx src/login.ts",
+    "test": "tsx --test test/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "setup:browser": "playwright install chromium"
+    "setup:browser": "playwright install chromium",
+    "repair:browser": "playwright install --force chromium",
+    "verify:browser": "tsx src/verify-browser.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
     "express": "^4.21.2",
     "node-cron": "^4.6.0",
-    "playwright": "^1.49.1"
+    "playwright": "1.63.0",
+    "proper-lockfile": "^4.1.2",
+    "tsx": "^4.19.2"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^22.10.5",
     "@types/node-cron": "^3.0.11",
-    "tsx": "^4.19.2",
+    "@types/proper-lockfile": "^4.1.4",
     "typescript": "^5.7.3"
   },
   "overrides": {

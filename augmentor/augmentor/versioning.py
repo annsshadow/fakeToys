@@ -17,6 +17,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from datetime import datetime
 from .exceptions import VersionError
+from .validation import require_count
 
 logger = logging.getLogger(__name__)
 
@@ -85,11 +86,15 @@ class VersionManager:
         """获取版本操作历史
         
         Args:
-            limit: 最多返回的条数（从最新开始）
+            limit: 最多返回的条数（从最新开始）。`None` 表示「全部」，这是它特有的
+                一档语义；0 表示「一条都不要」，与 `None` 不是一回事。负数与非整数
+                报错，判据见 `augmentor.validation.require_count`
         
         Returns:
             历史记录列表（按时间倒序）
         """
+        require_count("limit", limit)
+
         if not self._history_path.exists():
             return []
         
@@ -105,7 +110,8 @@ class VersionManager:
                     logger.warning("跳过无法解析的历史记录行")
         
         entries.reverse()
-        return entries[:limit] if limit else entries
+        # 以前是 `if limit else entries`：`limit=0` 于是被读成「没传参数」而返回全部
+        return entries[:limit] if limit is not None else entries
     
     def _get_version_dir(self, version_id: str) -> Path:
         """获取版本目录路径
@@ -188,7 +194,7 @@ class VersionManager:
             self._current_symlink.symlink_to(version_dir)
         except OSError:
             # Windows 无管理员权限时，创建 .txt 文件记录当前版本
-            with open(self._current_symlink.with_suffix('.txt'), 'w') as f:
+            with open(self._current_symlink.with_suffix('.txt'), 'w', encoding='utf-8') as f:
                 f.write(version_id)
         
         logger.info(f"创建版本: {version_id}, 数据条数: {len(items)}")
@@ -272,7 +278,7 @@ class VersionManager:
         # 尝试读取 .txt 文件
         txt_path = self._current_symlink.with_suffix('.txt')
         if txt_path.exists():
-            return txt_path.read_text().strip()
+            return txt_path.read_text(encoding='utf-8').strip()
         
         return None
     
@@ -304,29 +310,39 @@ class VersionManager:
         """
         items1 = self.load_version(version1_id)
         items2 = self.load_version(version2_id)
-        
-        # 转换为可比较的格式
-        def item_to_key(item):
-            return (item.get("instruction", ""), item.get("output", ""))
-        
-        keys1 = {item_to_key(item): item for item in items1}
-        keys2 = {item_to_key(item): item for item in items2}
-        
+
+        # 身份键只用 instruction（一条 SFT 记录的自然主键）。若把 output 也算进键，
+        # 「改了某条的输出」在 diff 里就会拆成「删掉旧 (instr, out1) + 新增 (instr, out2)」
+        # 两条，而 modified 永远空——本方法承诺要能报出「修改数」（见 DiffResult 契约、
+        # docs/API.md 的 examples）。同一条 instruction 在单版本里出现多次时保留首条
+        # （与原有 dict 折叠语义一致，不在本轮扩大范围）。
+        def key_of(item):
+            return item.get("instruction", "")
+
+        keys1 = {key_of(item): item for item in items1}
+        keys2 = {key_of(item): item for item in items2}
+
         # 计算差异
         added = []
         removed = []
         modified = []
-        
-        # 新增的项
+
+        # 新增的项：instruction 只出现在 v2
         for key, item in keys2.items():
             if key not in keys1:
                 added.append(item)
-        
-        # 移除的项
+
+        # 移除的项：instruction 只出现在 v1
         for key, item in keys1.items():
             if key not in keys2:
                 removed.append(item)
-        
+
+        # 修改的项：同一 instruction 两版都有，但整条记录不同（主要是 output 变了）
+        for key, item2 in keys2.items():
+            item1 = keys1.get(key)
+            if item1 is not None and item1 != item2:
+                modified.append(item2)
+
         return DiffResult(
             version1=version1_id,
             version2=version2_id,
@@ -363,7 +379,7 @@ class VersionManager:
         try:
             self._current_symlink.symlink_to(version_dir)
         except OSError:
-            with open(self._current_symlink.with_suffix('.txt'), 'w') as f:
+            with open(self._current_symlink.with_suffix('.txt'), 'w', encoding='utf-8') as f:
                 f.write(version_id)
         
         logger.info(f"回滚到版本: {version_id}")

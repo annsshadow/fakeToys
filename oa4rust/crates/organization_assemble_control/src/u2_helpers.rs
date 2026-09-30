@@ -215,9 +215,8 @@ fn select_cols(extra_cols: &[&str]) -> String {
 pub async fn generic_list_all(pool: &Pool, table: &str, extra_cols: &[&str]) -> HandlerResult {
     let client = client_of(pool).await?;
     let cols = select_cols(extra_cols);
-    let sql = format!(
-        "SELECT {cols} FROM {table} WHERE deleted_at IS NULL ORDER BY create_time::text DESC"
-    );
+    let sql =
+        format!("SELECT {cols} FROM {table} WHERE deleted_at IS NULL ORDER BY create_time DESC");
     let rows = client
         .query(&sql, &[])
         .await
@@ -243,7 +242,7 @@ pub async fn generic_like_search(
     let key_norm = normalize_key(key);
     if key_norm.is_empty() {
         let sql = format!(
-            "SELECT {cols} FROM {table} WHERE deleted_at IS NULL ORDER BY create_time::text DESC"
+            "SELECT {cols} FROM {table} WHERE deleted_at IS NULL ORDER BY create_time DESC"
         );
         let rows = client
             .query(&sql, &[])
@@ -264,15 +263,22 @@ pub async fn generic_like_search(
         };
     }
     let (pattern, cond) = if pinyin_mode {
+        // LIKE 模式绑定值必须先转义 % _ \，防用户关键词注入通配符（shared::db::escape_like）
         (
-            format!("{}%", key_norm.to_lowercase()),
+            format!(
+                "{}%",
+                shared::db::escape_like(&key_norm.to_lowercase())
+            ),
             "(LOWER(name) LIKE $1 OR COALESCE(LOWER(pinyin_initial), '') LIKE $1)".to_string(),
         )
     } else {
-        (format!("%{}%", key_norm), "name ILIKE $1".to_string())
+        (
+            format!("%{}%", shared::db::escape_like(&key_norm)),
+            "name ILIKE $1".to_string(),
+        )
     };
     let sql = format!(
-        "SELECT {cols} FROM {table} WHERE deleted_at IS NULL AND {cond} ORDER BY create_time::text DESC"
+        "SELECT {cols} FROM {table} WHERE deleted_at IS NULL AND {cond} ORDER BY create_time DESC"
     );
     let rows = client
         .query(&sql, &[&pattern])
@@ -306,7 +312,7 @@ pub async fn generic_pinyininitial_filter(
     let cols = select_cols(extra_cols);
     if initials.is_empty() {
         let sql = format!(
-            "SELECT {cols} FROM {table} WHERE deleted_at IS NULL ORDER BY create_time::text DESC"
+            "SELECT {cols} FROM {table} WHERE deleted_at IS NULL ORDER BY create_time DESC"
         );
         let rows = client
             .query(&sql, &[])

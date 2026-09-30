@@ -33,10 +33,9 @@ class ExperimentTracker:
         """初始化实验追踪器
         
         Args:
-            storage_dir: 实验存储目录
+            storage_dir: 实验存储目录；构造时不建目录，第一次记实验才建
         """
         self.storage_dir = Path(storage_dir)
-        self.storage_dir.mkdir(parents=True, exist_ok=True)
         
         self._current_experiment: Optional[ExperimentResult] = None
     
@@ -93,6 +92,7 @@ class ExperimentTracker:
         experiment_path = self._get_experiment_path(experiment.experiment_id)
         
         try:
+            experiment_path.parent.mkdir(parents=True, exist_ok=True)
             with open(experiment_path, 'w', encoding='utf-8') as f:
                 json.dump(asdict(experiment), f, ensure_ascii=False, indent=2)
         except Exception as e:

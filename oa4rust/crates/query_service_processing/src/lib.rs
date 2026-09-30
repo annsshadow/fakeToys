@@ -385,6 +385,7 @@ pub fn query_service_processing_router(pool: Pool) -> Router {
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;

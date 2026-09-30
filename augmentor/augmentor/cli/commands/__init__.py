@@ -6,7 +6,7 @@
 键是 argparse 的 `dest="command"` 取值，值是 handler。
 每个 handler 的签名统一为 `(args, config) -> None`。
 
-这里登记的是 **36 个规范命令**。
+这里登记的是 **37 个规范命令**。
 
 3.0 起有两项破坏性变更（详见 `augmentor/cli/parser.py` 的模块 docstring）：
 
@@ -18,7 +18,10 @@
 
 from .profiling import run_profile, run_outliers, run_features, run_auto_config, run_aggregate
 from .pipeline import run_augment, run_stream
-from .quality import run_quality, run_quality_report, run_clean, run_annotate, run_rag, run_benchmark
+from .quality import (
+    run_quality, run_quality_report, run_clean, run_annotate, run_rag,
+    run_benchmark, run_health_gate,
+)
 from .export import run_preview, run_export
 from .analysis import run_analyze, run_stats, run_visualize, run_compare
 from .data_ops import run_merge, run_sample, run_split, run_validate, run_convert, run_validate_config, run_search
@@ -41,6 +44,7 @@ COMMANDS = {
     "annotate": run_annotate,
     "rag": run_rag,
     "benchmark": run_benchmark,
+    "health-gate": run_health_gate,
     "preview": run_preview,
     "export": run_export,
     "analyze": run_analyze,

@@ -10,6 +10,8 @@ from augmentor.config_validator import (
     ConfigValidator, ValidationResult, Severity,
     validate_config_file, validate_config
 )
+from augmentor.exceptions import DataValidationError
+from augmentor.validation import require_seconds
 
 
 @pytest.fixture
@@ -354,161 +356,6 @@ class TestSeverity:
 class TestConfigValidatorEdgeCases:
     """ConfigValidator 边界情况测试"""
     
-    def test_validate_dict_type_error(self):
-        """测试验证字典类型错误"""
-        validator = ConfigValidator()
-        result = ValidationResult(is_valid=True)
-        
-        validator._validate_dict("not a dict", {}, "test.path", result)
-        
-        assert len(result.errors) == 1
-        assert "期望字典类型" in result.errors[0].message
-    
-    def test_validate_list_type_error(self):
-        """测试验证列表类型错误"""
-        validator = ConfigValidator()
-        result = ValidationResult(is_valid=True)
-        
-        validator._validate_list("not a list", {}, "test.path", result)
-        
-        assert len(result.errors) == 1
-        assert "期望列表类型" in result.errors[0].message
-    
-    def test_validate_string_type_error(self):
-        """测试验证字符串类型错误"""
-        validator = ConfigValidator()
-        result = ValidationResult(is_valid=True)
-        
-        validator._validate_string(123, {}, "test.path", result)
-        
-        assert len(result.errors) == 1
-        assert "期望字符串类型" in result.errors[0].message
-    
-    def test_validate_string_enum_error(self):
-        """测试验证字符串枚举错误"""
-        validator = ConfigValidator()
-        result = ValidationResult(is_valid=True)
-        
-        validator._validate_string("invalid", {"enum": ["valid1", "valid2"]}, "test.path", result)
-        
-        assert len(result.errors) == 1
-        assert "值不在允许范围内" in result.errors[0].message
-    
-    def test_validate_int_type_error(self):
-        """测试验证整数类型错误"""
-        validator = ConfigValidator()
-        result = ValidationResult(is_valid=True)
-        
-        validator._validate_int("not an int", {}, "test.path", result)
-        
-        assert len(result.errors) == 1
-        assert "期望整数类型" in result.errors[0].message
-    
-    def test_validate_int_range_error(self):
-        """测试验证整数范围错误"""
-        validator = ConfigValidator()
-        result = ValidationResult(is_valid=True)
-        
-        validator._validate_int(10, {"min": 20}, "test.path", result)
-        
-        assert len(result.errors) == 1
-        assert "值过小" in result.errors[0].message
-    
-    def test_validate_float_type_error(self):
-        """测试验证浮点数类型错误"""
-        validator = ConfigValidator()
-        result = ValidationResult(is_valid=True)
-        
-        validator._validate_float("not a float", {}, "test.path", result)
-        
-        assert len(result.errors) == 1
-        assert "期望数值类型" in result.errors[0].message
-    
-    def test_validate_float_range_error(self):
-        """测试验证浮点数范围错误"""
-        validator = ConfigValidator()
-        result = ValidationResult(is_valid=True)
-        
-        validator._validate_float(0.5, {"min": 1.0}, "test.path", result)
-        
-        assert len(result.errors) == 1
-        assert "值过小" in result.errors[0].message
-    
-    def test_validate_bool_type_error(self):
-        """测试验证布尔类型错误"""
-        validator = ConfigValidator()
-        result = ValidationResult(is_valid=True)
-        
-        validator._validate_bool("not a bool", {}, "test.path", result)
-        
-        assert len(result.errors) == 1
-        assert "期望布尔类型" in result.errors[0].message
-
-    def test_validate_int_bool_excluded(self):
-        """bool 应被排除在 int 验证之外"""
-        validator = ConfigValidator()
-        result = ValidationResult(is_valid=True)
-        
-        validator._validate_int(True, {}, "test.path", result)
-        
-        assert len(result.errors) == 1
-        assert "期望整数类型" in result.errors[0].message
-
-    def test_validate_float_bool_excluded(self):
-        """bool 应被排除在 float 验证之外"""
-        validator = ConfigValidator()
-        result = ValidationResult(is_valid=True)
-        
-        validator._validate_float(False, {}, "test.path", result)
-        
-        assert len(result.errors) == 1
-        assert "期望数值类型" in result.errors[0].message
-
-    def test_validate_float_int_accepted(self):
-        """int 应被接受为 float"""
-        validator = ConfigValidator()
-        result = ValidationResult(is_valid=True)
-        
-        validator._validate_float(5, {"min": 0, "max": 10}, "test.path", result)
-        
-        assert len(result.errors) == 0
-
-    def test_validate_string_enum_valid(self):
-        """有效枚举值不应报错"""
-        validator = ConfigValidator()
-        result = ValidationResult(is_valid=True)
-        
-        validator._validate_string("valid1", {"enum": ["valid1", "valid2"]}, "test.path", result)
-        
-        assert len(result.errors) == 0
-
-    def test_validate_int_valid(self):
-        """有效整数不应报错"""
-        validator = ConfigValidator()
-        result = ValidationResult(is_valid=True)
-        
-        validator._validate_int(5, {"min": 0, "max": 10}, "test.path", result)
-        
-        assert len(result.errors) == 0
-
-    def test_validate_float_valid(self):
-        """有效浮点数不应报错"""
-        validator = ConfigValidator()
-        result = ValidationResult(is_valid=True)
-        
-        validator._validate_float(0.5, {"min": 0.0, "max": 1.0}, "test.path", result)
-        
-        assert len(result.errors) == 0
-
-    def test_validate_bool_valid(self):
-        """有效布尔值不应报错"""
-        validator = ConfigValidator()
-        result = ValidationResult(is_valid=True)
-        
-        validator._validate_bool(True, {}, "test.path", result)
-        
-        assert len(result.errors) == 0
-
     def test_error_to_dict(self):
         """ValidationError.to_dict 应返回正确结构"""
         from augmentor.config_validator import ValidationError
@@ -711,3 +558,816 @@ class TestConfigValidatorExtended2:
         result = ConfigValidator().validate_config(config)
         assert result.is_valid is True
         assert result.errors == []
+
+
+class TestAugmentationRetryKnobs:
+    """`augmentation.max_retries` / `retry_delay` 的校验门槛（L45 接线后才有意义）
+
+    接线前这两个字段无人读取，校验它们只是校验空气；现在它们真的决定重试行为，
+    所以 `validate-config` 必须能拒掉坏值，且**不能比运行时更严**——校验器把合法
+    写法报成非法，用户就会去改一份本来没问题的配置。
+    """
+
+    @staticmethod
+    def _errors(augmentation):
+        config = {
+            "app": {"name": "test"},
+            "models": {"default": "ernie"},
+            "augmentation": augmentation,
+        }
+        result = validate_config(config)
+        return [(e.path, e.message) for e in result.errors]
+
+    @pytest.mark.parametrize("value", [0, 1, 1.0, 30.5, 60.0])
+    def test_legal_retry_delay_values_pass(self, value):
+        """int 写法必须放行：`retry_delay: 1` 是 YAML 里最自然的写法"""
+        assert self._errors({"retry_delay": value}) == []
+
+    @pytest.mark.parametrize("value,expect", [
+        (-1, "值过小"),
+        (61.0, "值过大"),
+        ("1s", "类型错误"),
+        (float("nan"), "不是有效数值"),
+    ])
+    def test_illegal_retry_delay_values_reported(self, value, expect):
+        errors = self._errors({"retry_delay": value})
+        assert errors and errors[0][0] == "augmentation.retry_delay"
+        assert expect in errors[0][1]
+
+    @pytest.mark.parametrize("value", [0, 3, 20])
+    def test_legal_max_retries_values_pass(self, value):
+        """0 是合法档位（只调用一次），下界不能收到 1"""
+        assert self._errors({"max_retries": value}) == []
+
+    @pytest.mark.parametrize("value,expect", [
+        (-1, "值过小"),
+        (21, "值过大"),
+        (1.5, "类型错误"),
+    ])
+    def test_illegal_max_retries_values_reported(self, value, expect):
+        errors = self._errors({"max_retries": value})
+        assert errors and expect in errors[0][1]
+
+    @pytest.mark.parametrize("value", [-1, "1s", float("nan"), 0, 1, 1.0, 30.5, 60.0, 60.1])
+    def test_validator_and_runtime_use_the_same_verdict(self, value):
+        """校验器与运行时判据必须同口径，**含上界**
+
+        两侧不一致时，`validate-config` 绿灯的配置会在建管道时抛
+        `DataValidationError`，或者反过来把合法配置拦在门外。
+
+        L51 之前这条只能写成「上界除外」：`retry_delay ≤ 60` 只在校验器那一侧
+        （A77），所以这里比的是不带 `maximum` 的 `require_seconds`。本轮把
+        `config.RETRY_DELAY_RANGE` 同时接进 `AugmentationConfig.__post_init__`，
+        于是本断言补上了 `maximum`，全区间一致。
+        """
+        from augmentor.config import RETRY_DELAY_RANGE
+
+        rejected_by_validator = bool(self._errors({"retry_delay": value}))
+        try:
+            require_seconds("retry_delay", value, maximum=RETRY_DELAY_RANGE[1])
+            rejected_by_runtime = False
+        except DataValidationError:
+            rejected_by_runtime = True
+        assert rejected_by_validator == rejected_by_runtime, value
+
+class TestWaitBudgetKnobSurface:
+    """`augmentation.max_retry_wait` / `retry_jitter` 的校验规格（L49 接线）
+
+    与 `TestAugmentationRetryKnobs` 成对。L49 时两类的口径**不同**：旧两旋钮的上界
+    （`retry_delay ≤ 60`、`max_retries ≤ 20`）是校验器独有的天花板，运行时收 999；
+    新两旋钮的上界（`max_retry_wait ≤ 300`、`retry_jitter ≤ 1`）在运行时同样判。
+    L51 关闭 A77 后这个区别没了 —— 四个键的区间都住在 `config.py` 的常量里，两侧
+    同源，逐值一致由 `TestRuntimeValidatorParity` 统一常驻断言。
+    """
+
+    @staticmethod
+    def _errors(augmentation):
+        config = {
+            "app": {"name": "test"},
+            "models": {"default": "ernie"},
+            "augmentation": augmentation,
+        }
+        return [(e.path, e.message) for e in validate_config(config).errors]
+
+    @pytest.mark.parametrize("field,value", [
+        ("max_retry_wait", 0), ("max_retry_wait", 0.0), ("max_retry_wait", 45),
+        ("max_retry_wait", 300.0),
+        ("retry_jitter", 0), ("retry_jitter", 0.0), ("retry_jitter", 0.5),
+        ("retry_jitter", 1), ("retry_jitter", 1.0),
+    ])
+    def test_legal_values_pass(self, field, value):
+        assert self._errors({field: value}) == []
+
+    @pytest.mark.parametrize("field,bad,expect", [
+        ("max_retry_wait", -1.0, "值过小"),
+        ("max_retry_wait", 301.0, "值过大"),
+        ("max_retry_wait", "300", "类型错误"),
+        ("max_retry_wait", float("nan"), "不是有效数值"),
+        ("retry_jitter", -0.1, "值过小"),
+        ("retry_jitter", 1.5, "值过大"),
+        ("retry_jitter", "0.5", "类型错误"),
+        ("retry_jitter", float("nan"), "不是有效数值"),
+    ])
+    def test_illegal_values_reported(self, field, bad, expect):
+        errors = self._errors({field: bad})
+        assert errors and errors[0][0] == f"augmentation.{field}"
+        assert expect in errors[0][1]
+
+    @pytest.mark.parametrize("value", [
+        -1.0, 0, 45, 300.0, 301.0, float("inf"), True, "300", float("nan"),
+    ])
+    def test_validator_and_runtime_agree_on_every_axis(self, value):
+        """新旋钮没有「校验器独有的天花板」：两侧口径必须逐个一致
+
+        两侧不一致时，`validate-config` 绿灯的配置会在建管道时抛
+        `DataValidationError`，或者反过来把合法配置拦在门外。
+        """
+        from augmentor import MAX_RETRY_AFTER
+        from augmentor.validation import require_seconds
+
+        rejected_by_validator = bool(self._errors({"max_retry_wait": value}))
+        try:
+            require_seconds("max_retry_wait", value, maximum=MAX_RETRY_AFTER)
+            rejected_by_runtime = False
+        except Exception:
+            rejected_by_runtime = True
+        assert rejected_by_validator == rejected_by_runtime, value
+
+    @staticmethod
+    def _errors_at(path):
+        """把 `section.field = True` 塞进一份最小合法配置，返回全部报错"""
+        section, _, field = path.partition(".")
+        config = {"app": {"name": "t"}, "models": {"default": "ernie"}}
+        config.setdefault(section, {})[field] = True
+        return [(e.path, e.message) for e in validate_config(config).errors]
+
+    def test_bool_is_rejected_for_every_numeric_spec(self):
+        """`isinstance(True, int)` 恒真 ⇒ 每个数值规格键都曾有同一个洞
+
+        L49 实测（Temp `l49_probe4.py`）：7 个数值规格键填 `true`，旧校验器 7/7 判
+        合法，而运行时四道判据（`require_count` / `require_seconds` /
+        `require_positive` / `require_ratio`）4/4 拒收。本条把「bool 不算数值」从
+        一次性修复升格为对全部数值键的常驻断言，以后新增字段自动被覆盖。
+        L51 起计数从 10 变 11：新增的那个是 `augmentation.auto_save_interval`
+        （A82 给它补的规格）。L71 起 12：新增的是 `augmentation.request_timeout`
+        （A74 把六处硬编码的超时收敛成一档旋钮）。L76 起 13：新增的是
+        `dedup.threshold`（A118 补的那条**整条不存在的规格**）—— 本条当场为它红一次，
+        正是「以后新增字段自动被覆盖」这句承诺在兑现，不是这条断言写坏了。
+        L82 起 16：新增的三条是 `vector.dimension`、`rag.chunk_size`、
+        `rag.chunk_overlap`（A118 余四节收口）。**这一档的红是承诺兑现而不是断言写坏**：
+        三条新规格改前根本不在表里，所以本条对它们从没判过；改后运行时那一侧
+        （`require_count` / `require_chunk_window` 都走 `_require_number`，那里的
+        `isinstance(value, bool)` 先于类型判断）与静态面同判，故两侧一致。
+        L87 起 17：新增的是 `web.max_upload_bytes`（上传体字节闸）。同一个理由再说一遍：
+        本条对它的期待**不是**「静态面也判了这个坏值」——写面 `POST /api/config` 根本不
+        写 `web` 节，那一半的行为由 `test_upload_ceiling_l87.py` 单独钉（点名漏网，
+        A151）。本条在这里只判一件事：这条规格不许对 `true` 网开一面。
+        """
+        numeric = [p for p, s in ConfigValidator.KNOWN_FIELDS.items()
+                   if s.get("type") in (int, float)]
+        assert len(numeric) == 17, "新增数值规格键会自动进入本断言"
+        for path in numeric:
+            hits = [m for p_, m in self._errors_at(path) if p_ == path]
+            assert hits and "类型错误" in hits[0], (path, hits)
+
+    def test_declared_bool_fields_stay_acceptable(self):
+        """修 bool 洞不许顺手把 `type: bool` 的开关字段判成非法
+
+        L82 起 4 → 7：新增的是 `vector.enabled` / `rag.enabled` /
+        `multimodal.enabled`。本条在 A118 收口里是**反向档**（不许收紧过头），
+        与上一条同批改，因为同一个 `__post_init__` 里 `require_bool` 与
+        `require_choice` 挨着写，写错一侧就一侧红。
+        """
+        paths = [p for p, s in ConfigValidator.KNOWN_FIELDS.items()
+                 if s.get("type") is bool]
+        assert len(paths) == 7, "规格表里应仍有布尔开关字段"
+        for path in paths:
+            hits = [m for p_, m in self._errors_at(path) if p_ == path]
+            assert hits == [], (path, hits)
+
+
+class TestWebSectionKnobSurface:
+    """`web` 节十个字段全部要有规格（L50 补齐，L87 加到十个）
+
+    补之前实测（Temp `l50q/probe2.py` NONCE-bee0664903ff）：把整节写坏 ——
+    `port: eighty`、`data_roots: data`（YAML 标量而非列表）、`cors_origins` 写成字符串、
+    `cors_credentials: maybe`、`rate_limit_max_requests: -5`、`rate_limit_window_seconds:
+    NaN` —— `validate_config` 仍判 `is_valid=True` / 0 error / 0 warning，因为
+    `KNOWN_FIELDS` 里 `web.*` 一条都没有。后果不是「校验器不够严」而是「绿灯跑废」：
+    `data_roots: data` 会被 `api/deps._config_data_roots` 按字符拆成 `d/a/t/a` 四个根，
+    于是所有数据端点一律 403，症状长得像后端坏了。
+    """
+
+    @staticmethod
+    def _errors(web):
+        config = {
+            "app": {"name": "test"},
+            "models": {"default": "ernie"},
+            "web": web,
+        }
+        return [(e.path, e.message) for e in validate_config(config).errors]
+
+    #: 与 `WebConfig` 的字段集逐字对齐；新增字段会自动把本断言变红
+    #: `max_upload_bytes` 是 L87 的上传体字节闸，它进场时本条确实红过一次
+    FIELDS = ["port", "host", "static_dir", "cors_origins", "cors_credentials",
+              "data_roots", "rate_limit_max_requests", "rate_limit_window_seconds",
+              "rate_limit_exempt_paths", "max_upload_bytes"]
+
+    def test_every_web_field_has_a_spec(self):
+        import dataclasses
+
+        from augmentor.config import WebConfig
+
+        declared = {f.name for f in dataclasses.fields(WebConfig)}
+        specced = {p.split(".", 1)[1] for p in ConfigValidator.KNOWN_FIELDS
+                   if p.startswith("web.") and "." in p}
+        assert sorted(declared) == sorted(self.FIELDS), sorted(declared ^ set(self.FIELDS))
+        assert declared == specced, sorted(declared ^ specced)
+
+    @pytest.mark.parametrize("field,value", [
+        ("port", 8000), ("port", 1), ("port", 65535),
+        ("host", "0.0.0.0"), ("static_dir", "web/dist"),
+        ("cors_origins", []), ("cors_origins", ["https://only-me.example"]),
+        ("cors_credentials", True), ("cors_credentials", False),
+        ("data_roots", ["data"]), ("data_roots", []),
+        ("rate_limit_max_requests", 0), ("rate_limit_max_requests", 300),
+        ("rate_limit_window_seconds", 0.0), ("rate_limit_window_seconds", 60),
+        ("rate_limit_exempt_paths", ["/api/health"]),
+        # L87：判据是**只设下界 1**、不设天花板。上界由部署的内存决定，本地编一个
+        # 死上界只会把合法配置报成非法（同 `MAX_OUTPUT_TOKENS_MIN` 的理由）
+        ("max_upload_bytes", 1), ("max_upload_bytes", 268435456),
+    ])
+    def test_legal_values_pass(self, field, value):
+        assert self._errors({field: value}) == []
+
+    @pytest.mark.parametrize("field,bad,expect", [
+        ("port", "eighty", "类型错误"),
+        ("port", 0, "值过小"),
+        ("port", 65536, "值过大"),
+        ("host", 8000, "类型错误"),
+        ("cors_origins", "https://only-me.example", "类型错误"),
+        ("data_roots", "data", "类型错误"),
+        ("rate_limit_exempt_paths", "/api/health", "类型错误"),
+        ("cors_credentials", "maybe", "类型错误"),
+        ("rate_limit_max_requests", -5, "值过小"),
+        ("rate_limit_window_seconds", -1.0, "值过小"),
+        ("rate_limit_window_seconds", float("nan"), "不是有效数值"),
+        ("rate_limit_window_seconds", "60", "类型错误"),
+        ("max_upload_bytes", "256", "类型错误"),
+        ("max_upload_bytes", 0, "值过小"),
+        ("max_upload_bytes", True, "类型错误"),
+    ])
+    def test_illegal_values_reported(self, field, bad, expect):
+        errors = self._errors({field: bad})
+        assert errors and errors[0][0] == f"web.{field}", (field, errors)
+        assert expect in errors[0][1]
+
+    def test_six_broken_keys_are_no_longer_silently_valid(self):
+        """本类的立项用例：六个键同时写坏，`validate-config` 曾全绿"""
+        errors = self._errors({
+            "port": "eighty",
+            "cors_origins": "https://only-me.example",
+            "cors_credentials": "maybe",
+            "data_roots": "data",
+            "rate_limit_max_requests": -5,
+            "rate_limit_window_seconds": float("nan"),
+        })
+        assert {p for p, _ in errors} == {
+            "web.port", "web.cors_origins", "web.cors_credentials",
+            "web.data_roots", "web.rate_limit_max_requests",
+            "web.rate_limit_window_seconds"}
+
+    def test_scalar_data_roots_is_the_dangerous_shape(self):
+        """`data_roots: data` 不报错才是它危险的地方：它会让白名单按字符拆开
+
+        两侧现在都拦得住：校验器按规格判「期望 list」，运行时
+        `WebConfig.__post_init__` 走 `require_string_list`（A80 于 L51 关闭）。
+        """
+        errors = self._errors({"data_roots": "data"})
+        assert errors and "类型错误" in errors[0][1]
+        # 阳性对照：同一份配置写成列表时校验器无异议
+        assert self._errors({"data_roots": ["data"]}) == []
+
+
+class TestRuntimeValidatorParity:
+    """配置面的最终判据：同一个值在两侧得到同一个答案（L51 / A77 + A80 + A83）
+
+    A77 的根因是同一个区间在两边各抄一遍，抄完还漏；L51 的修法是把区间常量搬进
+    `config.py` 并让两个配置类带上 `__post_init__`，于是本表能做到**逐个值**一致。
+    改前实测（Temp `l51q/probe1.py` NONCE-A9C41E77）这一整列全是「校验器红、运行时
+    绿」：`AugmentationConfig(max_retries=10**6, retry_delay=10**6, retry_jitter=50.0)`
+    无判据构造成功，而校验器对同一批值报 6 条错。
+
+    形状判据（A83）是本轮探针自己撞出来的镜像症状：`data_roots: [null]` 与
+    `host: ""` 在校验器绿灯、在 `load_config` 抛。两侧现在同源，所以本表必须连
+    形状一起判，否则「校验器绿 / 加载红」会重新长回来。
+    """
+
+    #: `(path, value, 是否应被判拒)`。边界值一律取自 `config.py` 的区间常量。
+    CASES = [
+        ("augmentation.variants_per_seed", 1, False),
+        ("augmentation.variants_per_seed", 100, False),
+        ("augmentation.variants_per_seed", 0, True),
+        ("augmentation.variants_per_seed", 101, True),
+        ("augmentation.variants_per_seed", True, True),
+        ("augmentation.variants_per_seed", None, True),
+        ("augmentation.num_threads", 40, False),
+        ("augmentation.num_threads", 0, True),
+        ("augmentation.num_threads", 101, True),
+        ("augmentation.auto_save_interval", 1, False),
+        ("augmentation.auto_save_interval", 0, True),
+        ("augmentation.auto_save_interval", -1, True),
+        ("augmentation.max_retries", 0, False),
+        ("augmentation.max_retries", 20, False),
+        ("augmentation.max_retries", -1, True),
+        ("augmentation.max_retries", 21, True),
+        ("augmentation.retry_delay", 0, False),
+        ("augmentation.retry_delay", 60.0, False),
+        ("augmentation.retry_delay", 60.1, True),
+        ("augmentation.retry_delay", float("nan"), True),
+        ("augmentation.max_retry_wait", 300.0, False),
+        ("augmentation.max_retry_wait", 301.0, True),
+        ("augmentation.retry_jitter", 0.0, False),
+        ("augmentation.retry_jitter", 1.0, False),
+        ("augmentation.retry_jitter", 1.001, True),
+        # 请求超时的全局档（L71 / A74）：两侧同判，且下界 1 不是口味 ——
+        # `requests` 自己拒 `timeout=0`，判在 1 以下就是「校验绿灯、第一次真实调用
+        # 当场抛 ValueError」。空值（`request_timeout:`）走 `_reject_null_fields` 那一支。
+        ("augmentation.request_timeout", 1.0, False),
+        ("augmentation.request_timeout", 600.0, False),
+        ("augmentation.request_timeout", 0.999, True),
+        ("augmentation.request_timeout", 600.1, True),
+        ("augmentation.request_timeout", 0, True),
+        ("augmentation.request_timeout", None, True),
+        ("augmentation.request_timeout", float("nan"), True),
+        ("web.port", 1, False),
+        ("web.port", 65535, False),
+        ("web.port", 0, True),
+        ("web.port", 65536, True),
+        ("web.port", None, True),
+        ("web.host", "0.0.0.0", False),
+        ("web.host", "", True),
+        ("web.host", None, True),
+        ("web.static_dir", "web/dist", False),
+        ("web.static_dir", "", True),
+        ("web.cors_origins", [], False),
+        ("web.cors_origins", ["https://only-me.example"], False),
+        ("web.cors_origins", "https://only-me.example", True),
+        ("web.cors_origins", [None], True),
+        ("web.cors_origins", ["", "https://only-me.example"], True),
+        ("web.cors_origins", [True], True),
+        ("web.cors_credentials", True, False),
+        ("web.cors_credentials", False, False),
+        ("web.cors_credentials", 1, True),
+        ("web.cors_credentials", "maybe", True),
+        ("web.data_roots", ["data"], False),
+        ("web.data_roots", [], False),
+        ("web.data_roots", "data", True),
+        ("web.data_roots", [123], True),
+        ("web.rate_limit_max_requests", 0, False),
+        ("web.rate_limit_max_requests", -1, True),
+        ("web.rate_limit_window_seconds", 60.0, False),
+        ("web.rate_limit_window_seconds", -0.1, True),
+        ("web.rate_limit_window_seconds", float("nan"), True),
+        ("web.rate_limit_exempt_paths", ["/api/health"], False),
+        ("web.rate_limit_exempt_paths", [""], True),
+    ]
+
+    @staticmethod
+    def _validator_rejects(path, value):
+        section, _, field = path.partition(".")
+        config = {"app": {"name": "t"}, "models": {"default": "ernie"},
+                  section: {field: value}}
+        return any(e.path == path or e.path.startswith(path + "[")
+                   for e in validate_config(config).errors)
+
+    @staticmethod
+    def _runtime_rejects(path, value):
+        from augmentor.config import AugmentationConfig, WebConfig
+
+        section, _, field = path.partition(".")
+        cls = WebConfig if section == "web" else AugmentationConfig
+        try:
+            cls(**{field: value})
+            return False
+        except DataValidationError:
+            return True
+
+    @pytest.mark.parametrize("path,value,expected", CASES)
+    def test_both_sides_give_the_documented_verdict(self, path, value, expected):
+        assert self._validator_rejects(path, value) is expected, (path, value)
+        assert self._runtime_rejects(path, value) is expected, (path, value)
+
+    @pytest.mark.parametrize("path", sorted({p for p, _, _ in CASES}))
+    def test_each_field_has_both_a_rejected_and_an_accepted_case(self, path):
+        """防空表：本类若两侧同时「什么都不判」，逐值断言会全绿而缺陷没修
+
+        每条 path 至少要有一个被拒值和一个被放行值，否则它没有区分度。
+        """
+        verdicts = [v for p, _, v in self.CASES if p == path]
+        assert True in verdicts and False in verdicts, path
+
+    def test_numeric_bounds_are_read_from_the_config_constants(self):
+        """规格表里的数字必须是 `config.py` 那批常量本身，不是抄来的字面量
+
+        A77 要防的就是「抄一遍」：常量住在 `config.py`，校验器只能引用不能重打。
+        """
+        from augmentor import MAX_RETRY_AFTER
+        from augmentor.config import (AUTO_SAVE_INTERVAL_MIN, MAX_RETRIES_RANGE,
+                                      NUM_THREADS_RANGE, PORT_RANGE,
+                                      RATE_LIMIT_MIN_REQUESTS,
+                                      RATE_LIMIT_MIN_WINDOW_SECONDS,
+                                      REQUEST_TIMEOUT_RANGE,
+                                      RETRY_DELAY_RANGE, VARIANTS_PER_SEED_RANGE)
+
+        s = ConfigValidator.KNOWN_FIELDS
+        bounds = {
+            "augmentation.variants_per_seed": VARIANTS_PER_SEED_RANGE,
+            "augmentation.num_threads": NUM_THREADS_RANGE,
+            "augmentation.max_retries": MAX_RETRIES_RANGE,
+            "augmentation.retry_delay": RETRY_DELAY_RANGE,
+            "augmentation.max_retry_wait": (0.0, MAX_RETRY_AFTER),
+            "augmentation.request_timeout": REQUEST_TIMEOUT_RANGE,
+            "web.port": PORT_RANGE,
+        }
+        for path, (lo, hi) in bounds.items():
+            assert (s[path]["min"], s[path]["max"]) == (lo, hi), path
+        assert s["augmentation.auto_save_interval"]["min"] == AUTO_SAVE_INTERVAL_MIN
+        assert s["web.rate_limit_max_requests"]["min"] == RATE_LIMIT_MIN_REQUESTS
+        assert (s["web.rate_limit_window_seconds"]["min"]
+                == RATE_LIMIT_MIN_WINDOW_SECONDS)
+
+    def test_shape_flags_exist_only_where_runtime_judges(self):
+        """`items` / `non_empty` / `non_blank` / `choices` / `renderable` 只许出现在运行时真判的键上
+
+        反向不一致同样是缺陷：校验器比运行时严，合法配置会被 `validate-config` 拦在
+        门外（`quality.threshold` 是数值键、运行时不判形状，规格就不许挂
+        `items`/`non_empty`）。
+
+        L82 起三把钥匙的允许集同时变宽（A118 余四节收口，静态面与 `__post_init__`
+        同批）：`items` 加 `export.formats` / `multimodal.image_extensions` /
+        `multimodal.audio_extensions`（运行时 `require_string_list`）、`non_empty` 加
+        `vector.storage_dir` / `vector.collection`（`require_string`）、`choices` 加
+        `export.default_format` / `vector.backend` / `rag.default_format`
+        （`require_choice`）。
+        **`export.formats` 的清单挂在 `item_choices` 而不是 `choices` 上**，本条用
+        字典键成员判断，两种写法不会混进同一桶 —— 那一档的运行时判据是逐项
+        `require_choice`，与整键取值是两件事。
+        """
+        s = ConfigValidator.KNOWN_FIELDS
+        assert {p for p, spec in s.items() if "items" in spec} == {
+            "web.cors_origins", "web.data_roots", "web.rate_limit_exempt_paths",
+            "export.formats", "multimodal.image_extensions",
+            "multimodal.audio_extensions"}
+        # `logging.format` 挂在 `non_empty` 上是 L57 的正当增长：运行时那一侧走的
+        # 正是 `require_string`（空串一并拒），不是校验器独有的口味。L82 的
+        # `vector.storage_dir` / `vector.collection` 与它同式。
+        assert {p for p, spec in s.items() if spec.get("non_empty")} == {
+            "web.host", "web.static_dir", "logging.format",
+            "vector.storage_dir", "vector.collection"}
+        # 封闭清单键的每一条都必须有运行时判据兜着：L57 时只有 `logging.level` 一个，
+        # L82 之后是三份**推导**清单（`EXPORT_FORMATS` / `RAG_FORMATS` /
+        # `VECTOR_BACKENDS`），两侧共引同一个对象，所以这一桶新增三项不可能与运行时
+        # 漂 —— 漂了要红的是 `tests/unit/test_config_gates_l82.py` 里的
+        # `TestTheRangesAreOneCopyOnly`（共引结构守卫）与
+        # `TestTheRagWindowIsSharedAcrossThreeCallsites`，不是这里。
+        assert {p for p, spec in s.items() if "choices" in spec} == {
+            "logging.level", "export.default_format", "vector.backend",
+            "rag.default_format"}
+        assert {p for p, spec in s.items() if spec.get("renderable")} == {
+            "logging.format"}
+        # L83 / A142 的新维度：`non_blank` = 「空串合法、纯空白不合法」，与 `non_empty`
+        # 差一格，正是为了保住 `logging.file: ''` 那一档设计。两侧共引同一个
+        # `validation.is_blank_string`（`is` 身份的守卫在
+        # `tests/unit/test_blank_string_l83.py::TestThePredicateIsOneCopyOnly`）。
+        assert {p for p, spec in s.items() if spec.get("non_blank")} == {
+            "logging.file"}
+
+
+class TestUnreadKeyWarnings:
+    """写了没人读的键必须出声（L52 / A76）
+
+    实测改前（Temp `l52q/probe1.py`、`probe2.py`、`probe3.py`，NONCE-45A0C1AB9510）：
+    节名拼错（`augmenation.variants_per_seed: 999`）与节内键名拼错
+    （`augmentation.variant_per_seed: 999`）两边都是 `is_valid=True` / 0 error /
+    0 warning，而 `load_config` 那侧读回默认值 5；把 20 个被消费的节各塞一个假键，
+    反馈同样是 0 / 0。用户看到的事实只有「我改了数，行为没变」，症状长得像后端坏了
+    —— 这一类缺陷无法自查，所以必须让工具出声。
+
+    判据的键集**从 `AppConfig` 的字段类型推导**，不抄第三份清单：A123 之后
+    `_load_section` 直接按 `dataclasses.fields(config_class)` 取键，加载器手里那张
+    默认值表已经删除，于是「谁被消费」这件事在代码里只剩一个来源 = 节的字段类型。
+    本类推导与它同式，所以两边可以相等；相等不是同义反复，因为清单（哪一节、用哪个
+    类）在 `load_config` 里是**手写**的，而白名单是推导出来的。
+    `test_the_derived_whitelist_equals_what_load_section_reads` 把这条锚住，以后加节、
+    加字段、清单写漏都会在这里现形。
+    """
+
+    SECTION_MARKER = "顶层段落没人读取"
+    KEY_MARKER = "键没人读取"
+
+    #: 仓库根：本类要读出厂 `config.yaml`，而 pytest 的工作目录不保证是仓库根
+    REPO = Path(__file__).resolve().parent.parent.parent
+
+    @staticmethod
+    def _config(**sections):
+        base = {"models": {"default": "ernie"}}
+        base.update(sections)
+        return base
+
+    def _unread(self, config):
+        """只取本轮新增的两类警告
+
+        既有的「环境变量未设置」警告与本轮无关（出厂 `config.yaml` 就带 5 条），
+        混进来会让断言随环境变量的设置状态漂移。
+        """
+        hits = []
+        for w in validate_config(config).warnings:
+            if self.SECTION_MARKER in w.message or self.KEY_MARKER in w.message:
+                hits.append((w.path, w.message))
+        return hits
+
+    # === 判据的来源：推导，不是清单 ===
+
+    def test_the_whitelist_is_derived_from_appconfig_fields(self):
+        """`AppConfig` 里除 `models` / `default_model` 之外没有第三种字段
+
+        这条是**防空转**：如果以后新增一个非 dataclass 的顶层字段（比如又一个
+        `dict`），本类推导会静默跳过它，判据面凭空少一节；那条字段必须显式地
+        出现在这里，作者才会被逼着做一次决定。
+        """
+        import dataclasses
+
+        from augmentor.config import AppConfig
+
+        declared = {f.name for f in dataclasses.fields(AppConfig)}
+        derived = set(ConfigValidator.consumed_section_keys())
+        assert declared - derived == {"models", "default_model"}, sorted(
+            declared ^ derived | (declared - derived))
+
+    def test_the_derived_whitelist_equals_what_load_section_reads(self, tmp_path):
+        """推导出的节清单必须与 `load_config` 实际喂给加载器的 `(节名, 类)` 逐节相等
+
+        这是本轮的结构本体：判据说「没人读」的那份名单，必须就是运行时读的那份。
+        A123 之前这里拦的是第四参数 `defaults`（一张手抄默认值表），现在表没了 ⇒
+        能比的东西换成「加载器拿到的类」。两半都必需：只比节名的话，清单里把 `web`
+        配成 `WebConfig` 之外的类也照样绿，而症状是判据按一套字段报警告、运行时按
+        另一套字段取值。手法沿用 L49 的拦截（`TestSectionRegistryMatchesAppConfigFields`），
+        只是把对照物从 dataclass 换成校验器。
+        """
+        import dataclasses
+        import yaml
+
+        from augmentor import config as config_module
+        from augmentor.config import AppConfig
+
+        derived = ConfigValidator.consumed_section_keys()
+        path = tmp_path / "all_sections.yaml"
+        with open(path, "w", encoding="utf-8") as handle:
+            yaml.safe_dump({name: {} for name in derived}, handle)
+
+        seen = {}
+        real = config_module._load_section
+        monkeypatch = pytest.MonkeyPatch()
+        monkeypatch.setattr(
+            config_module, "_load_section",
+            lambda raw, key, cls: (seen.__setitem__(key, cls),
+                                   real(raw, key, cls))[1])
+        try:
+            config_module.load_config(str(path))
+        finally:
+            monkeypatch.undo()
+
+        assert set(seen) == set(derived), sorted(set(seen) ^ set(derived))
+        for name, cls in seen.items():
+            assert cls is type(getattr(AppConfig(), name)), (
+                name, getattr(cls, "__name__", cls))
+            # 推导侧的键集 = 「加载器真正会读的键集」，两侧同式（A77 的键集版）。
+            # `if f.init` 不是本方法自己加的偏好：`_load_section` 取键时就看了
+            # `names[k].init`（否则 `save_config` 写出的非 init 键会在下一趟加载里
+            # 把构造器打死），所以「只有 init 字段算有人读」才是运行时的事实。
+            # 这条等式**不看运行时**，因此两侧同时改坏时它会跟着坏 —— 兜住那一维的
+            # 是行为面用例 `test_a_non_init_key_is_dropped_instead_of_crashing_the_loader`
+            # 与注入档 m7 / m10。
+            assert derived[name] == {f.name for f in dataclasses.fields(cls)
+                                     if f.init}, name
+
+    def test_model_config_fields_are_all_read_by_load_config(self, tmp_path):
+        """`models.<名字>` 的子键判据同样不许比运行时宽
+
+        实测（Temp `l52q/probe3.py` 第 1 节）`ModelConfig` 的 8 个字段与
+        `load_config` 读走的 8 个键双向差集都为空；这里把「每个字段真的被读」钉成
+        常驻断言：字段若多出一个没人读的，本类的判据就会把合法配置报成警告。
+        L71 起 8 变 9：新增的字段是 `request_timeout`（A74 的每模型覆盖档），
+        它同时是断言的样本值 ⇒ 「声明了却没被 `load_config` 读走」当场变红。
+        """
+        import dataclasses
+
+        import yaml
+
+        from augmentor.config import ModelConfig, load_config
+
+        values = {"type": "openai", "api_key": "AK", "secret_key": "SK",
+                  "base_url": "http://example.invalid", "model": "m-1",
+                  "temperature": 0.42, "top_p": 0.43,
+                  "max_output_tokens": 42, "request_timeout": 44.0}
+        declared = {f.name for f in dataclasses.fields(ModelConfig)}
+        assert declared == set(values), sorted(declared ^ set(values))
+
+        path = tmp_path / "one_model.yaml"
+        with open(path, "w", encoding="utf-8") as handle:
+            yaml.safe_dump({"models": {"default": "probe", "probe": values}},
+                           handle, allow_unicode=True)
+
+        loaded = load_config(str(path)).models["probe"]
+        assert {f.name: getattr(loaded, f.name)
+                for f in dataclasses.fields(ModelConfig)} == values
+
+    # === 行为面：拼错就必须出声 ===
+
+    @pytest.mark.parametrize("config,expected_path", [
+        pytest.param({"models": {"default": "ernie"},
+                      "augmenation": {"variants_per_seed": 3}}, "augmenation",
+                     id="节名拼错-augmenation"),
+        pytest.param({"models": {"default": "ernie"},
+                      "augmentation": {"variant_per_seed": 3}},
+                     "augmentation.variant_per_seed", id="节内键名拼错-少个s"),
+        pytest.param({"models": {"default": "ernie"},
+                      "augmentation": {"auto_save_intervall": 5}},
+                     "augmentation.auto_save_intervall", id="节内键名拼错-双写l"),
+        pytest.param({"models": {"default": "ernie"},
+                      "web": {"ports": 8080}}, "web.ports", id="web节内键名拼错"),
+        pytest.param({"models": {"default": "ernie"},
+                      "web": {"cors_origin": ["https://only.example"]}},
+                     "web.cors_origin", id="web节内漏了复数s"),
+        pytest.param({"models": {"default": "ernie"},
+                      "logging": {"levl": "DEBUG"}}, "logging.levl",
+                     id="规格表零规格的logging节也照判"),
+        pytest.param({"models": {"default": "ernie"},
+                      "export": {"default_formt": "jsonl"}},
+                     "export.default_formt", id="export节内键名拼错"),
+        pytest.param({"models": {"default": "ernie"},
+                      "quality": {"threshhold": 0.9}}, "quality.threshhold",
+                     id="quality节内键名拼错"),
+        pytest.param({"models": {"default": "ernie"},
+                      "multimodal": {"image_extenshions": [".png"]}},
+                     "multimodal.image_extenshions", id="列表字段同样只看键名"),
+        pytest.param({"models": {"default": "ernie",
+                                 "ernie": {"temperatur": 0.7}}},
+                     "models.ernie.temperatur", id="模型条目子键拼错"),
+        pytest.param({"models": {"default": "ernie"},
+                      "output": {"export_dir": "out"}}, "output",
+                     id="幽灵节output现在出声"),
+        pytest.param({"models": {"default": "ernie"}, "default_model": "openai"},
+                     "default_model", id="顶层default_model是已知陷阱"),
+        pytest.param({"models": {"default": "ernie"}, "mycustom": {"a": 1}},
+                     "mycustom", id="用户自加的顶层段落也出声"),
+    ])
+    def test_typo_gets_exactly_one_warning(self, config, expected_path):
+        got = self._unread(config)
+        assert [p for p, _ in got] == [expected_path], got
+
+    @pytest.mark.parametrize("config,expected_path", [
+        pytest.param({"models": {"default": "ernie"},
+                      "augmenation": {"variants_per_seed": 3}}, "augmenation",
+                     id="节名拼错"),
+        pytest.param({"models": {"default": "ernie"},
+                      "augmentation": {"variant_per_seed": 3}},
+                     "augmentation.variant_per_seed", id="键名拼错"),
+    ])
+    def test_verdict_stays_valid_and_error_free(self, config, expected_path):
+        """本轮判据只许用 WARNING：多余的键不挡服务，`is_valid` 是 CLI 退出码"""
+        result = validate_config(config)
+        assert result.is_valid is True
+        assert result.errors == []
+        assert [w.severity.value for w in result.warnings] == ["warning"]
+
+    def test_suggestion_names_the_real_key(self):
+        """能确定相近项时要把真名说出来，不能只说「没人读」"""
+        messages = dict(self._unread(
+            self._config(augmenation={"variants_per_seed": 3},
+                         augmentation={"variant_per_seed": 3, "ports": 8080},
+                         web={"ports": 8080})))
+        assert "是否想写 augmentation？" in messages["augmenation"], messages
+        assert "是否想写 variants_per_seed？" in messages["augmentation.variant_per_seed"]
+        assert "是否想写 port？" in messages["web.ports"], messages
+
+    def test_no_suggestion_when_nothing_is_close(self):
+        """猜不出来就不许硬猜：把无关名写成建议比没有建议更坏"""
+        _, message = self._unread(self._config(mycustom={"a": 1}))[0]
+        assert "是否想写" not in message, message
+        _, message = self._unread(
+            self._config(augmentation={"zzz_not_a_field": 1}))[0]
+        assert "是否想写" not in message, message
+
+    def test_meta_sections_stay_exempt(self):
+        """豁免的两节要真的是那两节：`app` 是文档承认的遗留元信息，`models` 的键是模型名"""
+        assert self._unread({"app": {"name": "t", "whatever": 1},
+                             "models": {"default": "ernie",
+                                        "ernie": {"api_key": "K"}}}) == []
+
+    def test_shape_error_is_not_double_reported(self):
+        """节写成标量时规格走查已经判 ERROR，本类不重复报「没人读」"""
+        result = validate_config(self._config(augmentation="abc"))
+        assert [(e.path, "类型错误" in e.message) for e in result.errors] == [
+            ("augmentation", True)], result.errors
+        assert self._unread({"models": {"default": "ernie"}, "augmentation": "abc"}) == []
+
+    def test_full_field_sections_stay_silent(self):
+        """每个被消费的节写满它自己的字段集时必须零警告（判据不许比运行时窄）
+
+        这条是本类的反向守护：只要推导漏了某个字段、或者某节被静默跳过，写满字段
+        的配置立刻变红。值全是占位的 `1`，因为本条只看键名，类型错误由既有用例管。
+        """
+        config = self._config()
+        for name, keys in ConfigValidator.consumed_section_keys().items():
+            config[name] = {k: 1 for k in keys}
+        assert self._unread(config) == []
+
+    def test_shipped_config_has_no_unread_keys(self):
+        """出厂 `config.yaml` 一个「没人读」警告都不许多：判据不能制造疲劳
+
+        假阳性会把人训练成「忽略警告」，那比沉默更坏。
+        这里只按标记筛，**不写警告条数**：既有的「环境变量未设置」那几条是环境变量的
+        函数（同一份文件在本机 aug 下 5 条、在有 `BAIDU_API_KEY` 的会话里 2 条），
+        钉数字就是把断言绑死在进程环境上 —— 与 L51 那条「不许断言
+        `starlette.__version__ == \"1.6.0\"`」同罪。
+        """
+        result = validate_config_file(str(self.REPO / "config.yaml"))
+        assert result.errors == []
+        assert result.is_valid is True
+        unread, other = [], []
+        for w in result.warnings:
+            (unread if (self.SECTION_MARKER in w.message
+                        or self.KEY_MARKER in w.message) else other).append(w)
+        assert unread == [], unread
+        # 剩下的警告必须全是既有那一类，防止本轮判据悄悄把环境变量警告顶掉
+        assert all("环境变量未设置" in w.message for w in other), other
+
+    def test_the_shipped_file_actually_gets_walked(self):
+        """上一条只证明「出厂文件干净」，这一条才证明判据真的看了它
+
+        在出厂配置上原样加一个拼错的键，警告必须恰好那一条 —— 否则「零警告」可能
+        只是判据压根没跑。
+        """
+        raw = yaml.safe_load((self.REPO / "config.yaml").read_text(encoding="utf-8"))
+        raw["augmentation"]["variant_per_seed"] = 999
+        assert self._unread(raw) == [
+            ("augmentation.variant_per_seed",
+             "键没人读取: augmentation.variant_per_seed（值不会生效）；"
+             "是否想写 variants_per_seed？")]
+
+    def test_save_config_roundtrip_is_silent(self, tmp_path):
+        """「保存配置 → 校验配置」这条自家回路不许产生警告（否则判据与写入打架）"""
+        from augmentor.config import AppConfig, save_config
+
+        path = tmp_path / "saved.yaml"
+        save_config(AppConfig(), str(path))
+        result = validate_config_file(str(path))
+        unread = [(w.path, w.message) for w in result.warnings
+                  if (self.SECTION_MARKER in w.message or self.KEY_MARKER in w.message)]
+        assert unread == [], unread
+
+    def test_many_unread_keys_still_valid(self):
+        """一次写坏 20 个节也不判负：WARNING 是提醒不是判决"""
+        config = self._config()
+        for name in ConfigValidator.consumed_section_keys():
+            config[name] = {"zzz_not_a_field": 1}
+        result = validate_config(config)
+        assert result.is_valid is True
+        assert len(self._unread(config)) == len(ConfigValidator.consumed_section_keys())
+
+    # === 规格表自己要服从推导（A76 的反向棘轮）===
+
+    def test_every_spec_path_points_at_a_real_key(self):
+        """`KNOWN_FIELDS` 里每条路径都要指向真存在的路径，幽灵规格当场变红
+
+        `output` / `output.export_dir` 曾是这样一条规格：`load_config` 里没有 `output`
+        节（真节后是 `export`），实测 `output: {export_dir: out}` 得到绿灯，而
+        `hasattr(load_config(...), "output") == False`。表里留一条死规格等于教用户写
+        一个不生效的键 —— 那正是 A76 本尊，只不过这次是校验器自己造的。
+        """
+        sections = ConfigValidator.consumed_section_keys()
+        ghosts = []
+        for path in ConfigValidator.KNOWN_FIELDS:
+            parts = path.split(".")
+            if parts[0] in ConfigValidator.META_TOP_SECTIONS:
+                continue
+            if len(parts) == 1:
+                if parts[0] not in sections:
+                    ghosts.append(path)
+            elif parts[0] not in sections or parts[1] not in sections[parts[0]]:
+                ghosts.append(path)
+        assert ghosts == [], ghosts
+
+    def test_the_output_ghost_spec_is_gone(self):
+        """删除 `output.*` 规格这件事本身也要一条断言，否则会被顺手加回来"""
+        assert "output" not in ConfigValidator.KNOWN_FIELDS
+        assert "output.export_dir" not in ConfigValidator.KNOWN_FIELDS
+        assert [p for p, _ in self._unread(self._config(output={"export_dir": "out"}))] == [
+            "output"]
+
+    def test_exempt_list_is_exactly_the_two_meta_sections(self):
+        """豁免清单是显式的两个名字，多一项就等于承认又一处「配了不生效」"""
+        assert ConfigValidator.META_TOP_SECTIONS == {"app", "models"}
+

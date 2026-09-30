@@ -7,10 +7,14 @@
 格式转换、合并、采样、分割、搜索、对比、特征检测、聚合、自动配置推荐、
 RAG 格式转换。此前这些能力只能通过命令行使用。
 
+末尾两条（`impact` / `evaluate`）连 CLI 也没有：`ImpactEvaluator` 与
+`ModelEvaluator` 在 3.0 之前只在 `augmentor/__init__.py` 里导出，任何入口都够不到，
+属于「库里有、路上没有」。
+
 **分组约定**（与 CLI 的语义一致，不是随手定的）：
 
-* **只读分析类**（stats / validate / search / compare / features /
-  auto-config）把完整结果直接返回——结果本身就是调用方要的东西；
+* **只读分析类**（stats / validate / search / compare / features / auto-config /
+  impact / evaluate）把完整结果直接返回——结果本身就是调用方要的东西；
 * **写盘变换类**（convert / merge / sample / split / aggregate / rag）
   必须给输出路径，响应只回传「写到哪、写了多少」。产物规模与输入同量级，
   塞进 HTTP 响应既慢又容易被客户端或网关截断。
@@ -19,6 +23,10 @@ RAG 格式转换。此前这些能力只能通过命令行使用。
 
 所有路径都经 `deps.resolve_data_path` / `deps.resolve_data_dir` 做白名单校验，
 与其它路由一致；越界返回 403，参数非法返回 400。
+
+**异步约定**：这些路由是 `async def`，所以读文件一律 `await read_json_file(path)`
+（`read_items` 的异步外壳），重活一律 `await run_in_thread(...)`。直接在函数体里
+调同步版本 = 让整个服务在那几十毫秒内无法响应任何其他请求，见 A4 / A13。
 """
 
 import json
@@ -29,7 +37,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from ..deps import (
-    read_items,
+    read_json_file,
     resolve_data_dir,
     resolve_data_path,
     run_in_thread,
@@ -80,7 +88,12 @@ class ConvertRequest(BaseModel):
     """格式转换请求"""
     input_file: str
     output_file: str
+    # 写 Excel 给 `excel` / `xlsx`，且 `output_file` 必须以 `.xlsx` 结尾；两者不匹配
+    # 是 400 而不是「落一份名字与内容不符的文件」（`converter._reject_unwritable_output`）。
     target_format: str = "jsonl"
+    # alpaca/sharegpt/chatml 等容器格式落盘也是 `.json`，扩展名推不出来，
+    # 只能由请求方显式声明；为 None 时沿用「按扩展名推断」。
+    source_format: Optional[str] = None
 
 
 class MergeRequest(BaseModel):
@@ -94,6 +107,8 @@ class SampleRequest(BaseModel):
     """采样请求
 
     `size` 与 `ratio` 二选一；都给时以 `size` 为准（`SampleConfig` 的既有语义）。
+    `stratify_key` 只在 `method="stratified"` 时生效，是分组字段名；空值由库层判据
+    拦下（400），不静默退化成随机采样。
     """
     input_file: str
     output_file: str
@@ -101,12 +116,19 @@ class SampleRequest(BaseModel):
     size: Optional[int] = None
     ratio: Optional[float] = None
     seed: Optional[int] = None
+    stratify_key: str = "instruction"
 
 
 class SplitRequest(BaseModel):
     """分割请求
 
     三个比例之和必须为 1，否则 `SplitConfig` 会拒绝。
+    `stratify=True` 时走分层支路（委托 `DataSplitter`），`stratify_key` 是分组字段，
+    空值报 400；此时比例校验改用被委托方的严口径（见 `docs/ARCHITECTURE.md` §3.16）。
+    `shuffle` 在两条支路上的口径**不同**（实测，20 条语料 0.5/0.25/0.25）：分层支路只把
+    每段成员按输入的原始相对顺序回排，成员与条数都不变，`seed` 仍决定谁进哪段；默认支路
+    是「先整份打乱再按位置切片」，所以 False 会连同成员一起改变，且三段恒为输入的前
+    50%/25%/25% —— 此时 `seed` 完全空转。可复现性一律交给 `seed`。
     """
     input_file: str
     output_dir: str
@@ -114,6 +136,9 @@ class SplitRequest(BaseModel):
     val_ratio: float = 0.1
     test_ratio: float = 0.1
     seed: Optional[int] = None
+    stratify: bool = False
+    stratify_key: str = "instruction"
+    shuffle: bool = True
 
 
 class SearchRequest(BaseModel):
@@ -121,6 +146,14 @@ class SearchRequest(BaseModel):
 
     `fields` 为 None 时搜索全部字段；`method` 支持
     exact / contains / ngram / fuzzy / regex。
+    `fuzzy_threshold` / `ngram_n` 分别是 fuzzy 与 ngram 的松紧旋钮，越界由 SDK
+    的判据拦下（`ValueError` → 400）。`limit` / `offset` 同样由 SDK 那一处判据
+    拦下（负数以前会经切片换成反向窗口），所以这里不加 `ge=` 约束——一处判据，
+    不在路由里重复校验。`limit=0` 是合法请求：`total_matches` 照给，条目为空。
+    `filters` 是检索**之后**按字段值收窄的清单，每项形如
+    `{"field": ..., "operator": ..., "value": ...}`，算子取 eq / ne / contains /
+    gt / lt / gte / lte / in / not_in；算子不存在或值的形状不合该算子的要求同样由
+    SDK 那一处判据拦下（400），不在路由里重复校验。
     """
     input_file: str
     query: str
@@ -128,6 +161,9 @@ class SearchRequest(BaseModel):
     method: str = "contains"
     limit: int = 100
     offset: int = 0
+    fuzzy_threshold: float = 0.6
+    ngram_n: int = 2
+    filters: Optional[List[Dict[str, Any]]] = None
 
 
 class CompareRequest(BaseModel):
@@ -159,6 +195,34 @@ class RagRequest(BaseModel):
     input_file: str
     output_file: str
     format: str = "langchain"
+
+
+class ImpactRequest(BaseModel):
+    """增强前后影响评估请求
+
+    `text_field` 是「算多样性/重复率时看哪个字段」，默认 `instruction`，与 SDK 的
+    `ImpactEvaluator` 默认值一致。`min_scale_gain` 抬高 `beneficial` 的门槛
+    （规模增益低于它就判 False），默认 0.0 即 SDK 口径「规模不许缩水」。
+    """
+    before_file: str
+    after_file: str
+    text_field: str = "instruction"
+    min_scale_gain: float = 0.0
+
+
+class EvaluateRequest(BaseModel):
+    """生成文本指标评估请求
+
+    两侧默认都取 `output` 字段；用同一份文件的两个字段做对照时，把
+    `generated_file` 与 `reference_file` 传成同一路径即可。
+    `metrics` 留空 = 全算（`bleu` / `rouge_l` / `similarity`）。
+    """
+    generated_file: str
+    reference_file: str
+    generated_field: str = "output"
+    reference_field: str = "output"
+    metrics: Optional[List[str]] = None
+    include_details: bool = True
 
 
 # ============ 响应模型 ============
@@ -228,13 +292,25 @@ class SplitResponse(BaseModel):
 
 
 class SearchResponse(BaseModel):
-    """搜索结果（与 `SearchResult.to_dict()` 的键一一对应）"""
+    """搜索结果（与 `SearchResult.to_dict()` 的键一一对应）
+
+    `fuzzy_threshold` / `ngram_n` 只在**本次方法真的消费它**时非空：`method` 不是
+    `fuzzy` / `ngram` 时为 `null`。`applied_filters` / `matches_before_filters`
+    同理，只在**本次真的过滤了**时非空，用来把「被过滤到 0 条」与「检索本来就没命中」
+    分开（前者 `matches_before_filters > 0` 而 `total_matches == 0`）。
+    四键都必须声明在这里——FastAPI 会按模型字段过滤返回值，模型少写一键，
+    该键就从响应里**静默消失**且不报错。
+    """
     query: str
     method: str
     total_matches: int
     query_time_ms: float
     items: List[Dict[str, Any]]
     highlights: List[Dict[str, Any]]
+    fuzzy_threshold: Optional[float] = None
+    ngram_n: Optional[int] = None
+    applied_filters: Optional[List[Dict[str, Any]]] = None
+    matches_before_filters: Optional[int] = None
 
 
 class CompareResponse(BaseModel):
@@ -292,6 +368,29 @@ class RagResponse(BaseModel):
     record_count: int
 
 
+class ImpactResponse(BaseModel):
+    """增强前后对比（与 `AugmentationImpact.to_dict()` 的键一一对应）
+
+    `beneficial` 是这条路由替调用方做的判定：`AugmentationImpact` 本身只给数字，
+    「这次增强到底划不划算」取决于 `ImpactEvaluator.is_beneficial` 的口径。
+    """
+    before: Dict[str, Any]
+    after: Dict[str, Any]
+    gains: Dict[str, float]
+    beneficial: bool
+
+
+class EvaluateResponse(BaseModel):
+    """批量指标结果（与 `EvaluationResult.to_dict()` 的键一一对应）
+
+    两侧条数在门口就校验过相等，所以只回 `sample_count` 一个数。
+    `details` 在 `include_details=false` 时是空数组，`sample_count` 仍是真实条数。
+    """
+    metrics: Dict[str, float]
+    sample_count: int
+    details: List[Dict[str, Any]]
+
+
 def _dump(items: Any, path: Path) -> None:
     """写入 JSON 数据集文件"""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -308,8 +407,10 @@ async def dataset_stats(request: StatsRequest):
         from augmentor.statistics import calculate_statistics
 
         path = resolve_data_path(request.input_file)
-        items = read_items(path)
-        stats = calculate_statistics(items, Path(path).stem, request.fields)
+        items = await read_json_file(path)
+        stats = await run_in_thread(
+            calculate_statistics, items, Path(path).stem, request.fields
+        )
         return stats.to_dict()
     except HTTPException:
         raise
@@ -357,7 +458,7 @@ async def dataset_search(request: SearchRequest):
         from augmentor.search_enhanced import search_dataset
 
         path = resolve_data_path(request.input_file)
-        items = read_items(path)
+        items = await read_json_file(path)
         result = await run_in_thread(
             search_dataset,
             items,
@@ -366,6 +467,9 @@ async def dataset_search(request: SearchRequest):
             request.method,
             request.limit,
             request.offset,
+            fuzzy_threshold=request.fuzzy_threshold,
+            ngram_n=request.ngram_n,
+            filters=request.filters,
         )
         return result.to_dict()
     except HTTPException:
@@ -383,8 +487,8 @@ async def dataset_compare(request: CompareRequest):
 
         path_a = resolve_data_path(request.dataset_a)
         path_b = resolve_data_path(request.dataset_b)
-        items_a = read_items(path_a)
-        items_b = read_items(path_b)
+        items_a = await read_json_file(path_a)
+        items_b = await read_json_file(path_b)
 
         name_a = request.name_a or Path(path_a).stem
         name_b = request.name_b or Path(path_b).stem
@@ -413,7 +517,7 @@ async def dataset_features(request: DatasetFileRequest):
         from augmentor.feature_detect import FeatureDetector
 
         path = resolve_data_path(request.input_file)
-        items = read_items(path)
+        items = await read_json_file(path)
         return await run_in_thread(lambda: FeatureDetector().detect(items))
     except HTTPException:
         raise
@@ -433,12 +537,167 @@ async def dataset_auto_config(request: DatasetFileRequest):
         from augmentor.profiling import DataProfiler
 
         path = resolve_data_path(request.input_file)
-        items = read_items(path)
+        items = await read_json_file(path)
 
         def run():
             profile = DataProfiler().profile(items)
             recommendation = AutoConfig().recommend(profile, len(items))
             return recommendation.to_dict()
+
+        return await run_in_thread(run)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise to_http_error(e) from e
+
+
+def _require_any_field(items: List[dict], field_name: str, label: str) -> None:
+    """字段名整体拼错时立刻报错，而不是让统计悄悄退化成「全空」
+
+    `ImpactEvaluator.measure()` 用 `item.get(field, "")` 取文本：字段名写错时每条都
+    取到空串，于是「唯一指令数 = 1、重复率 = 100%」——一份**根本没被读过**的数据集会
+    被报告成「多样性极差」。静默降级比报错危险，所以在门口拦下。
+    """
+    if items and not any(field_name in item for item in items):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"{label} 里没有任何一条含字段 '{field_name}'（大概率是字段名拼错了）；"
+                f"首条实际字段: {', '.join(sorted(items[0])) or '（无）'}"
+            ),
+        )
+
+
+def _as_column(items: List[dict], field_name: str, label: str) -> List[str]:
+    """按字段取出一列文本；缺字段的那一条带下标报 400
+
+    与 `_require_any_field` 管「整体拼错」不同，这里管**逐条**：评估会把两侧按索引
+    配对，静默补空串等于凭空造一条 0 分样本，指标被稀释却看不出来源。
+    """
+    values: List[str] = []
+    for index, item in enumerate(items):
+        if field_name not in item:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"{label} 第 {index} 条没有字段 '{field_name}'"
+                    f"（该条实际字段: {', '.join(sorted(item)) or '（无）'}）"
+                ),
+            )
+        values.append(str(item[field_name]))
+    return values
+
+
+@router.post(
+    "/api/dataset/impact",
+    response_model=ImpactResponse,
+    summary="增强前后影响评估",
+)
+async def dataset_impact(request: ImpactRequest):
+    """量化「增强前 → 增强后」的规模 / 多样性 / 去重 / 长度分布四项增益
+
+    只读分析类，结果本身就是产物，所以整体直接返回。两条口径说明：
+
+    * `before_file` 为空 → **400**：四项增益的分母都是基线，空基线会算出「增益 0.0」，
+      那会被读成「这次增强毫无效果」，而实际是「没有可比的东西」；
+    * `after_file` 允许为空：那是一次把数据清光的增强，规模增益 -1.0、`beneficial`
+      判 False，这是有意义的结论而不是错误。
+    """
+    try:
+        from augmentor.impact import ImpactEvaluator
+
+        before = await read_json_file(resolve_data_path(request.before_file))
+        after = await read_json_file(resolve_data_path(request.after_file))
+        if not before:
+            raise HTTPException(
+                status_code=400, detail="基线数据集为空，四项增益没有定义（分母为 0）"
+            )
+        _require_any_field(before, request.text_field, "基线数据集")
+        _require_any_field(after, request.text_field, "增强后数据集")
+
+        def run():
+            evaluator = ImpactEvaluator(text_field=request.text_field)
+            impact = evaluator.evaluate(before, after)
+            return {
+                "before": impact.before,
+                "after": impact.after,
+                "gains": impact.gains,
+                "beneficial": evaluator.is_beneficial(
+                    impact, min_scale_gain=request.min_scale_gain
+                ),
+            }
+
+        return await run_in_thread(run)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise to_http_error(e) from e
+
+
+@router.post(
+    "/api/dataset/evaluate",
+    response_model=EvaluateResponse,
+    summary="生成文本指标评估",
+)
+async def dataset_evaluate(request: EvaluateRequest):
+    """把生成侧与参考侧按索引逐条配对，算 BLEU / ROUGE-L / 相似度均值
+
+    指标白名单由 `augmentor.evaluation.METRIC_FUNCTIONS` **反推**，不在这里再抄一份
+    枚举——F-04 那族缺陷的教训是：手抄的枚举会成为第二事实来源并与实现漂移。
+    """
+    try:
+        from augmentor.evaluation import METRIC_FUNCTIONS, ModelEvaluator
+
+        unknown = [m for m in (request.metrics or []) if m not in METRIC_FUNCTIONS]
+        if unknown:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"未知的评估指标: {', '.join(unknown)}"
+                    f"（可选 {' / '.join(sorted(METRIC_FUNCTIONS))}）"
+                ),
+            )
+
+        generated_path = resolve_data_path(request.generated_file)
+        reference_path = resolve_data_path(request.reference_file)
+        generated_items = await read_json_file(generated_path)
+        # 用同一份文件的两个字段做对照是常见用法（`output` vs `reference_output`），
+        # 这时不必再读一遍盘。
+        reference_items = (
+            generated_items
+            if reference_path == generated_path
+            else await read_json_file(reference_path)
+        )
+
+        if not generated_items or not reference_items:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"参与评估的数据集为空（生成侧 {len(generated_items)} 条、"
+                    f"参考侧 {len(reference_items)} 条）；空集合上「各项指标 0.0」"
+                    "会被误读成模型差，实际是没数据"
+                ),
+            )
+
+        generated = _as_column(generated_items, request.generated_field, "生成侧")
+        references = _as_column(reference_items, request.reference_field, "参考侧")
+        if len(generated) != len(references):
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"生成侧 {len(generated)} 条、参考侧 {len(references)} 条，"
+                    "无法按索引逐条配对"
+                ),
+            )
+
+        def run():
+            result = ModelEvaluator(metrics=request.metrics).evaluate_batch(
+                generated, references
+            )
+            payload = result.to_dict()
+            if not request.include_details:
+                payload["details"] = []
+            return payload
 
         return await run_in_thread(run)
     except HTTPException:
@@ -459,7 +718,8 @@ async def dataset_convert(request: ConvertRequest):
         input_path = resolve_data_path(request.input_file)
         output_path = resolve_data_path(request.output_file, for_write=True)
         return await run_in_thread(
-            convert_file, str(input_path), str(output_path), request.target_format
+            convert_file, str(input_path), str(output_path), request.target_format,
+            source_format=request.source_format
         )
     except HTTPException:
         raise
@@ -498,7 +758,11 @@ async def dataset_merge(request: MergeRequest):
 @router.post("/api/dataset/sample", response_model=SampleResponse, summary="数据集采样",
              dependencies=[Depends(verify_api_key)])
 async def dataset_sample(request: SampleRequest):
-    """按数量或比例采样并落盘"""
+    """按数量或比例采样并落盘
+
+    `method="stratified"` 时按 `stratify_key` 分组配额抽样；响应只回「写到哪、写了多少」
+    （写盘变换类端点的成文约定，见 `docs/API.md` 的 dataset 分组说明）。
+    """
     try:
         from augmentor.dataset_ops import DatasetOperations, SampleConfig
 
@@ -515,6 +779,7 @@ async def dataset_sample(request: SampleRequest):
                     size=request.size,
                     ratio=request.ratio,
                     seed=request.seed,
+                    stratify_key=request.stratify_key,
                 ),
             )
 
@@ -528,7 +793,13 @@ async def dataset_sample(request: SampleRequest):
 @router.post("/api/dataset/split", response_model=SplitResponse, summary="分割数据集",
              dependencies=[Depends(verify_api_key)])
 async def dataset_split(request: SplitRequest):
-    """按比例把数据集切成 train / val / test 三份"""
+    """按比例把数据集切成 train / val / test 三份
+
+    `stratify=True` 走分层支路（`SplitConfig` 的这两个字段自 3.0 就在，L41 才接上算法）。
+    响应**不回传** `stratify_distribution`：真实语料（6,902 条）按 `instruction` 分层时它是
+    6,531 个键、紧凑 JSON 404,362 字节，是四计数响应的 5,119 倍，也违反本组「写盘变换类只回
+    写到哪、写了多少」的约定。要看分布请落盘后自行统计，或读 `DataSplitter` 的 SDK 返回值。
+    """
     try:
         from augmentor.dataset_ops import DatasetOperations, SplitConfig
 
@@ -543,6 +814,9 @@ async def dataset_split(request: SplitRequest):
                 SplitConfig(
                     ratios=(request.train_ratio, request.val_ratio, request.test_ratio),
                     seed=request.seed,
+                    shuffle=request.shuffle,
+                    stratify=request.stratify,
+                    stratify_key=request.stratify_key,
                 ),
             )
 
@@ -563,7 +837,11 @@ async def dataset_aggregate(request: AggregateRequest):
         if not request.datasets:
             raise HTTPException(status_code=400, detail="datasets 不能为空")
 
-        datasets = {name: read_items(resolve_data_path(p)) for name, p in request.datasets.items()}
+        # 逐个 await 而不是循环里同步 read：保持原有的「按 datasets 顺序解析、
+        # 第一个坏文件先报错」语义，同时不再占着事件循环。
+        datasets: Dict[str, list] = {}
+        for name, source in request.datasets.items():
+            datasets[name] = await read_json_file(resolve_data_path(source))
         output_path = resolve_data_path(request.output_file, for_write=True)
 
         def run():
@@ -595,7 +873,7 @@ async def dataset_rag(request: RagRequest):
 
         input_path = resolve_data_path(request.input_file)
         output_path = resolve_data_path(request.output_file, for_write=True)
-        items = read_items(input_path)
+        items = await read_json_file(input_path)
 
         def run():
             from ..deps import get_pipeline

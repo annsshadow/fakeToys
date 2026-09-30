@@ -10,15 +10,18 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware import Middleware
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from augmentor import __version__
 from augmentor.config import load_config
+from api.deps import config_file_path
 from api.middleware import (
     RateLimitMiddleware,
     RequestLoggingMiddleware,
     RequestTraceMiddleware,
+    UploadBodyGate,
 )
 from api.middleware.rate_limit import RateLimiter
 from api.routes import (
@@ -82,6 +85,10 @@ AI 训练数据增强平台的 HTTP 接口。
 
 - **限流**：单客户端在时间窗口内请求数超限返回 `429`（窗口与阈值见配置）。
 - **追踪**：响应带 `X-Request-ID`，请求携带时透传，否则自动生成。
+- **上传尺寸**：声明了 `Content-Length` 的 `multipart` 请求在**解析之前**判一次整包长度，
+  超过 `web.max_upload_bytes` 加 multipart 余量直接 `413`（文案含「未解析、未落盘」）；
+  未声明长度（chunked）时这一道看不见，由解析后按实际写入字节累加的 `UploadFile.size`
+  兜底，仍是 `413`。
 """
 
 _OPENAPI_TAGS = [
@@ -101,6 +108,13 @@ _OPENAPI_TAGS = [
 ]
 
 # 版本号单一来源：augmentor.__version__（不要在别处硬编码）
+#
+# 构造参数 `middleware=[...]` 被**追加到 `app.user_middleware` 末尾**（实测 1.2.1：`app.router`
+# 上并没有 middleware 属性），而下面的 `add_middleware` 插在列表头部 ⇒ 它比所有装饰式装的层都更靠内。
+# 上传尺寸闸必须待在那一侧：实测（L90，`Temp/l90q/spool_census2.py`）把它经
+# `add_middleware` 装到 CORS 之外时，它发回的 413 不带 `Access-Control-Allow-Origin`，
+# 浏览器里的前端读不到那句可行动的文案；挂在最内（CORS 之内）时头保留，
+# 而「在解析器拿到任何字节之前拒收」这件事不受位置影响（两种位置都是 form 0 / 字节 0）。
 app = FastAPI(
     title="AI 训练数据增强平台",
     summary="数据集增强 / 质量 / 版本 / 导出的 HTTP 接口",
@@ -109,10 +123,11 @@ app = FastAPI(
     openapi_tags=_OPENAPI_TAGS,
     contact={"name": "annsshadow"},
     license_info={"name": "AGPL-3.0-or-later"},
+    middleware=[Middleware(UploadBodyGate)],
 )
 
 # CORS 配置（从配置文件读取，生产环境请显式配置 origins）
-_config = load_config("config.yaml")
+_config = load_config(str(config_file_path()))
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_config.web.cors_origins,
@@ -184,12 +199,28 @@ if not _api_key_required():
 
 
 # ============ 静态资源（构建产物存在时才挂载） ============
-
-_static_dir = Path(__file__).parent.parent / "web" / "dist"
+#
+# 目录由 `web.static_dir` 决定。相对值按**本仓根**解析，与改动前那条硬编码
+# `Path(__file__).parent.parent / "web" / "dist"` 同一锚点 ⇒ 出厂默认 `web/dist`
+# 逐字指向今天同一个目录；绝对值原样用。锚在仓库根而不是工作目录是刻意的：
+# 这条路径跟着代码走，换 cwd 启动后端不该让随包 UI 消失。
+_project_root = Path(__file__).parent.parent
+_static_dir = Path(_config.web.static_dir)
+if not _static_dir.is_absolute():
+    _static_dir = _project_root / _static_dir
 if _static_dir.is_dir():
     app.mount("/", StaticFiles(directory=str(_static_dir), html=True), name="static")
+else:
+    # 不挂载本身是既有行为（没构建就不该 500），但「配了目录却不存在」以前
+    # 与「压根没配」在日志里一模一样都是白屏，这里补一条点名路径的告警。
+    logging.getLogger(__name__).warning(
+        "web.static_dir 指向的目录不存在，未挂载前端静态界面：%s", _static_dir
+    )
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+    # 监听地址与端口取自配置。改动前是 `host="0.0.0.0", port=8000` 两个字面量，
+    # 于是 `web.host: 127.0.0.1` 这种「只想绑回环」的收紧意图无声失效。
+    uvicorn.run(app, host=_config.web.host, port=_config.web.port)

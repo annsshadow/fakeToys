@@ -18,23 +18,81 @@
     "rules": {
       "preset": "recommended",
       "correctness": {
-        "noUnusedVariables": "warn",
-        "noUnusedImports": "error"
+        "noUnusedVariables": "error",
+        "noUnusedImports": "error",
+        "noUnusedFunctionParameters": "error"
       },
       "suspicious": {
-        "noConsole": "warn",
-        "useIterableCallbackReturn": "warn",
-        "noNonNullAssertedOptionalChain": "warn"
+        "noConsole": "off",
+        "useIterableCallbackReturn": "error",
+        "noNonNullAssertedOptionalChain": "error",
+        "noGlobalIsNan": "error",
+        "noTemplateCurlyInString": "error"
+      },
+      "complexity": {
+        "noCommaOperator": "error",
+        "noBannedTypes": "error",
+        "useOptionalChain": "error"
       },
       "security": {
-        "noGlobalEval": "warn"
+        "noGlobalEval": "error"
       },
       "style": {
         "useConst": "error",
-        "noNonNullAssertion": "warn"
+        "noNonNullAssertion": "off"
       }
     }
   },
+  "overrides": [
+    {
+      "includes": ["packages/apis/**"],
+      "linter": {
+        "rules": {
+          "suspicious": { "noExplicitAny": "off" },
+          "correctness": { "noUnusedVariables": "off" }
+        }
+      }
+    },
+    {
+      "includes": ["**/*.vue"],
+      "linter": {
+        "rules": {
+          "suspicious": { "noExplicitAny": "off" },
+          "correctness": { "noUnusedVariables": "off" },
+          "style": { "useVueMultiWordComponentNames": "off" }
+        }
+      }
+    },
+    {
+      "includes": ["**/*.d.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": { "noExplicitAny": "off" },
+          "complexity": { "noBannedTypes": "off" }
+        }
+      }
+    },
+    {
+      "includes": ["**/*.test.ts", "**/*.spec.ts", "e2e/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noTemplateCurlyInString": "off",
+            "useIterableCallbackReturn": "off"
+          },
+          "correctness": { "noUnusedVariables": "off" }
+        }
+      }
+    },
+    {
+      "includes": ["**/sandbox.html"],
+      "linter": {
+        "rules": {
+          "security": { "noGlobalEval": "off" }
+        }
+      }
+    }
+  ],
   "formatter": {
     "enabled": true,
     "indentStyle": "space",

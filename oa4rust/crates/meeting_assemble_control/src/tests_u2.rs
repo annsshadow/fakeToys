@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 // ════════════ plan002 U2：meeting 模块端点全量闭合回归测试 ════════════
-// 覆盖：blob key 规范化、归一化查重键、db 占位后端上传 fail-loud（501 非假成功）、
+// 覆盖：blob key 规范化、归一化查重键、无后端上传 fail-loud（无 PG 时 Err，非假成功）、
 // 各族新路由可达性、o2server 动词修正、IDOR 门禁（缺会话拒绝 / 非 owner 拒绝）、
 // 归一化查重落库冲突、config upsert 往返、room photo 落库、附件引用生命周期。
 #[cfg(test)]
@@ -153,24 +153,40 @@ mod u2_tests {
     // ── 2. db 占位后端 fail-loud（红线：禁止假成功壳） ───────────────────────
 
     #[tokio::test]
-    async fn u2_persist_blob_verified_db_placeholder_fails_loud() {
-        let result = crate::u2_persist_blob_verified("meeting-attachment/x/a.txt", b"hello").await;
-        match result {
-            Err(shared::error::AppError::NotImplemented) => {}
-            other => panic!("db placeholder upload must be NotImplemented, got {other:?}"),
+    async fn u2_persist_blob_verified_fails_loud_without_backend() {
+        let pool = shared::testing::test_pool();
+        if shared::testing::is_db_available().await {
+            eprintln!("SKIP (PG present): PgBlobStorage would persist and succeed");
+            return;
         }
+        // 无 PG：PgBlobStorage.put 连接失败 → 显式 Err（fail loud，绝非假成功）。
+        let result =
+            crate::u2_persist_blob_verified(&pool, "meeting-attachment/x/a.txt", b"hello").await;
+        assert!(
+            result.is_err(),
+            "no-backend upload must fail loud, not fake success"
+        );
     }
 
-    /// 红线：默认（db 占位）环境下，附件上传端点必须精确 501，
-    /// 且绝不落元数据行（内容必丢 = 不写行）；fs 后端下真实上传成功。
+    /// 附件上传：迁移到 PgBlobStorage 后，默认（db）后端真实落盘 x_blob_storage +
+    /// 写元数据行，上传成功返回 200 uploaded:true（有 PG 时运行；无 PG 跳过）。
     #[tokio::test]
-    async fn u2_upload_endpoint_fails_loud_not_fake_success() {
+    async fn u2_upload_endpoint_persists_real_blob() {
         if !db_ready().await {
-            eprintln!("SKIP (no PG): u2_upload_endpoint_fails_loud_not_fake_success");
+            eprintln!("SKIP (no PG): u2_upload_endpoint_persists_real_blob");
             return;
         }
         let pool = shared::testing::test_pool();
         let client = pool.get().await.unwrap();
+        // PgBlobStorage 落盘表（迁移 099；此处 IF NOT EXISTS 兜底，不依赖迁移次序）。
+        client
+            .execute(
+                "CREATE TABLE IF NOT EXISTS x_blob_storage (storage_key TEXT PRIMARY KEY, \
+                 content BYTEA NOT NULL, create_time TIMESTAMP DEFAULT NOW())",
+                &[],
+            )
+            .await
+            .unwrap();
         let mid = format!("u2-up-{}", uuid::Uuid::new_v4());
         client
             .execute(
@@ -180,38 +196,19 @@ mod u2_tests {
             .await
             .unwrap();
 
-        let fs_env = std::env::var("STORAGE_BACKEND")
-            .map(|v| v.eq_ignore_ascii_case("fs"))
-            .unwrap_or(false);
         let path = format!("/api/meeting/assemble/control/attachment/meeting/{mid}/upload/false");
         let (status, json) =
             respond_db("POST", &path, MP, multipart_body("a.txt"), NON_ADMIN).await;
 
-        if fs_env {
-            assert_eq!(
-                status,
-                StatusCode::OK,
-                "fs backend must persist and succeed: {json}"
-            );
-            assert_eq!(json["data"]["uploaded"], true);
-        } else {
-            assert_eq!(
-                status,
-                StatusCode::NOT_IMPLEMENTED,
-                "db placeholder must fail loud with exact 501, body={json}"
-            );
-            assert_eq!(json["type"], "error", "must not fake success: {json}");
-            // 红线核心：501 时不允许残留"看起来已入库"的元数据行
-            let cnt: i64 = client
-                .query_one(
-                    "SELECT COUNT(*) AS n FROM x_meeting_attachment WHERE meeting_id = $1",
-                    &[&mid],
-                )
-                .await
-                .unwrap()
-                .get("n");
-            assert_eq!(cnt, 0, "failed upload must not leave metadata rows behind");
-        }
+        assert_eq!(
+            status,
+            StatusCode::OK,
+            "db backend must persist via PgBlobStorage and succeed: {json}"
+        );
+        assert_eq!(
+            json["data"]["uploaded"], true,
+            "must report real upload: {json}"
+        );
 
         client
             .execute("DELETE FROM x_meeting WHERE id = $1", &[&mid])

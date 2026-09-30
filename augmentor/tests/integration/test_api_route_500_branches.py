@@ -165,3 +165,88 @@ class TestVersion500:
         )
         assert response.status_code == 404
         assert response.json()["detail"] == "版本不存在"
+
+
+class TestDataExport500:
+    def test_data_export_generic_500(self, env, monkeypatch):
+        """`/api/data/export` 的 except Exception 收尾支（L102，A202）"""
+        import api.routes.export as export_routes
+
+        def boom(*args, **kwargs):
+            raise RuntimeError("data export boom")
+
+        monkeypatch.setattr(
+            export_routes, "get_pipeline",
+            lambda: SimpleNamespace(export_dataset=boom),
+        )
+        client, _ = env
+        response = client.post(
+            "/api/data/export",
+            json={"input_file": "a.json", "output_dir": "out"},
+        )
+        assert response.status_code == 500
+        assert "data export boom" in response.json()["detail"]
+
+
+class TestHealthGateErrorBranches:
+    """health-gate 的 FileNotFoundError 防御支与 500 收尾支（L102，A202）
+
+    load_items 对缺失文件抛的是 HTTPException(404)（走 except HTTPException
+    复位支），except FileNotFoundError 那一格是防御支：用假 load_items 抛原生
+    FileNotFoundError 确定性命中，证明「真有来源抛了原生异常时会被翻译成 404」
+    而不是漏到 500 收尾。
+    """
+
+    def test_native_file_not_found_translated_to_404(self, env, monkeypatch):
+        import api.routes.quality as quality_module
+
+        def fake_load_items(filename):
+            raise FileNotFoundError(filename)
+
+        monkeypatch.setattr(quality_module, "load_items", fake_load_items)
+        client, _ = env
+        response = client.post(
+            "/api/quality/health-gate", json={"input_file": "a.json"}
+        )
+        assert response.status_code == 404
+        assert "文件不存在" in response.json()["detail"]
+
+    def test_gate_dataset_health_generic_500(self, env, monkeypatch):
+        import augmentor.quality_gate as quality_gate_module
+
+        def boom(*args, **kwargs):
+            raise RuntimeError("gate boom")
+
+        monkeypatch.setattr(quality_gate_module, "gate_dataset_health", boom)
+        client, _ = env
+        response = client.post(
+            "/api/quality/health-gate", json={"input_file": "a.json"}
+        )
+        assert response.status_code == 500
+        assert "gate boom" in response.json()["detail"]
+
+
+class TestRouteHttpReraise:
+    """except HTTPException: raise 的复位支（L102，A202）
+
+    augment 与 multimodal 两支路由里这一行此前零覆盖——越界路径在 try 内抛
+    HTTPException 时必须原样透传（400），不能被 500 收尾吞成「服务器内部错误」。
+    """
+
+    def test_augment_start_rejects_dotdot_with_400(self, env):
+        client, _ = env
+        response = client.post(
+            "/api/augment/start",
+            json={"input_file": "../outside.json", "output_file": "out.json"},
+        )
+        assert response.status_code == 400
+        assert "非法组件" in response.json()["detail"]
+
+    def test_multimodal_process_rejects_dotdot_with_400(self, env):
+        client, _ = env
+        response = client.post(
+            "/api/multimodal/process",
+            json={"text": "你好", "image": "../evil.png"},
+        )
+        assert response.status_code == 400
+        assert "非法组件" in response.json()["detail"]

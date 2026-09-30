@@ -217,3 +217,87 @@ class TestCompareEnhancedExtended:
         assert "field_comparisons" in d
         assert "summary" in d
         assert "recommendations" in d
+
+
+
+class TestFieldComparisonBehavioral:
+    """_compare_fields 真实行为守卫（L136，B206）：type_mismatches / value_differences / diff_datasets 成员语义"""
+
+    def test_value_difference_detected_for_shared_instruction(self):
+        """同 instruction、同字段但值不同 ⇒ 产生一条 value_difference（不是只查 key 存在）"""
+        from augmentor.compare_enhanced import EnhancedComparator
+        a = [{"instruction": "q1", "output": "A1"}]
+        b = [{"instruction": "q1", "output": "B1"}]
+        comp = EnhancedComparator().compare(a, b)
+        fc = comp.field_comparisons["output"]
+        assert len(fc.value_differences) == 1
+        assert fc.value_differences[0]["instruction"] == "q1"
+        assert fc.value_differences[0]["value_a"] == "A1"
+        assert fc.value_differences[0]["value_b"] == "B1"
+
+    def test_type_mismatch_retyped_field(self):
+        """同字段 int vs str 应计数 type_mismatches、且不产生 value_difference（类型不同但值相等按位比较为不等仍算差异？—按实现，int(3) != "3" 为真，故两者都计入；这里只钉死 type_mismatches 命中）"""
+        from augmentor.compare_enhanced import EnhancedComparator
+        a = [{"instruction": "q1", "level": 3}]
+        b = [{"instruction": "q1", "level": "3"}]
+        comp = EnhancedComparator().compare(a, b)
+        fc = comp.field_comparisons["level"]
+        assert fc.type_mismatches == 1
+
+    def test_diff_datasets_membership_on_partial_overlap(self):
+        """部分重叠数据集的 only_in_a / only_in_b / in_both 成员须精确（现有用例只查 key 存在）"""
+        a = [{"instruction": "only_a"}, {"instruction": "shared"}]
+        b = [{"instruction": "shared"}, {"instruction": "only_b"}]
+        result = diff_datasets(a, b)
+        assert result["only_in_a"] == ["only_a"]
+        assert result["only_in_b"] == ["only_b"]
+        assert result["in_both"] == ["shared"]
+        assert result["stats"]["only_in_a_count"] == 1
+        assert result["stats"]["in_both_count"] == 1
+
+
+class TestRecommendationStrings:
+    """_generate_recommendations 的字符串分支守卫（L139，B209）"""
+
+    def test_size_diff_over_threshold_appends_count_recommendation(self):
+        """size_diff > 100 ⇒ 追加「数据集A比B多 N 条数据」建议"""
+        from augmentor.compare_enhanced import EnhancedComparator, ComparisonMetrics
+        metrics = ComparisonMetrics(
+            size_a=200, size_b=50, size_diff=150,
+            size_ratio=4.0, common_items=0, unique_a=150, unique_b=0,
+            similarity_score=0.5, field_overlap=0.0
+        )
+        recs = EnhancedComparator()._generate_recommendations(metrics, {}) 
+        assert any("数据集A比B多 150 条数据" in r for r in recs), recs
+
+    def test_low_similarity_appends_same_source_warning(self):
+        """similarity < 0.5 ⇒ 追加「相似度较低，建议确认是否同一数据源」"""
+        from augmentor.compare_enhanced import EnhancedComparator, ComparisonMetrics
+        metrics = ComparisonMetrics(
+            size_a=10, size_b=10, size_diff=0,
+            size_ratio=1.0, common_items=1, unique_a=9, unique_b=9,
+            similarity_score=0.1, field_overlap=0.0
+        )
+        recs = EnhancedComparator()._generate_recommendations(metrics, {})
+        assert any("相似度较低" in r for r in recs), recs
+
+    def test_type_mismatch_and_value_diff_append_per_field_recommendations(self):
+        """有 type_mismatches / value_differences 的字段 ⇒ 各追加一条对应建议"""
+        from augmentor.compare_enhanced import (
+            EnhancedComparator, ComparisonMetrics, FieldComparison
+        )
+        metrics = ComparisonMetrics(
+            size_a=5, size_b=5, size_diff=0,
+            size_ratio=1.0, common_items=5, unique_a=0, unique_b=0,
+            similarity_score=1.0, field_overlap=1.0
+        )
+        comps = {
+            "output": FieldComparison(
+                field_name="output", in_a_only=0, in_b_only=0, in_both=5,
+                type_mismatches=2,
+                value_differences=[{"instruction": "q1", "value_a": "A", "value_b": "B"}],
+            )
+        }
+        recs = EnhancedComparator()._generate_recommendations(metrics, comps)
+        assert any("字段" in r and "类型不匹配" in r and "2" in r for r in recs), recs
+        assert any("字段" in r and "值差异" in r and "1" in r for r in recs), recs

@@ -127,7 +127,7 @@ function createCompletionSource() {
       // Column suggestions when typing after dot
       if (word.text.endsWith('.')) {
         const tableName = word.text.slice(0, -1)
-        if (props.columns && props.columns[tableName]) {
+        if (props.columns?.[tableName]) {
           completions.push(
             ...props.columns[tableName].map((c) => ({
               label: c,

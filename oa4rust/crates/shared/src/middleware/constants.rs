@@ -408,8 +408,27 @@ pub const AUTH_RATE_LIMIT_PREFIXES: &[&str] = &[
 // 系统初始化端点：仅当系统未初始化（auth_person 无任何未删除的未锁定用户）时豁免认证
 pub const SECRET_INIT_PATHS: &[&str] = &["/api/secret/check", "/api/secret/set"];
 
-pub const AUTH_RATE_LIMIT: i32 = 10000;
-pub const GENERAL_RATE_LIMIT: i32 = 10000;
+// ── 速率限制（轮72）────────────────────────────────────────────────────
+// 历史上 AUTH/GENERAL 均为 10000/分钟（等于不设防），与注释「10 次/分钟」不符，
+// 登录暴力破解防护实际失效。现为真实限额：认证端点 30 次/分钟/IP（登录有验证码
+// 兜底，E2E/联调多次登录仍有余量），普通端点 300 次/分钟/IP。可用环境变量覆盖
+// （压测/应急放开），未设置或非法值时用默认。
+pub fn auth_rate_limit() -> i32 {
+    env_var_or("OA4RUST_AUTH_RATE_LIMIT", 30)
+}
+
+pub fn general_rate_limit() -> i32 {
+    env_var_or("OA4RUST_GENERAL_RATE_LIMIT", 300)
+}
+
+fn env_var_or(name: &str, default: i32) -> i32 {
+    std::env::var(name)
+        .ok()
+        .and_then(|v| v.trim().parse().ok())
+        .filter(|&v| v > 0)
+        .unwrap_or(default)
+}
+
 pub const RATE_LIMIT_WINDOW_MINUTES: i64 = 1;
 
 /// Deprecated: these prefixes no longer require admin writes.

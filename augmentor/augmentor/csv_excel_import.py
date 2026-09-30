@@ -163,18 +163,13 @@ def export_to_excel(items: List[Dict],
 
     Returns:
         写入的行数
-    """
-    if not HAS_PANDAS:
-        raise ImportError("需要安装 pandas 才能导出 Excel: pip install pandas openpyxl")
 
-    df = pd.DataFrame(items)
-    if columns:
-        missing = [c for c in columns if c not in df.columns]
-        if missing:
-            raise DataValidationError(f"以下列不存在: {missing}")
-        df = df[columns]
-    out = Path(file_path)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    df.to_excel(out, sheet_name=sheet_name, index=False)
-    logger.info(f"导出 {len(df)} 条数据到 Excel: {file_path}")
-    return len(df)
+    **L85 起本函数只是转接口，实现住在 `augmentor/excel_write.py`**，理由是那条路
+    不该把 pandas 拉进进程（本模块 import 时就会 `import pandas`，实测一次 371.8 ms）。
+    公开签名、返回语义与报错口径都不动，所以直接调用本函数的老代码一行都不用改；
+    真正写 xlsx 的产品调用点仍然只有一处（`converter._write_excel`，现在直接指向
+    `excel_write`），那一条由 `test_excel_write_edge_l84.py` 的调用点普查守着。
+    """
+    from .excel_write import export_table_to_excel
+    return export_table_to_excel(items, file_path,
+                                 sheet_name=sheet_name, columns=columns)

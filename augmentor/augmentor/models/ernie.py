@@ -3,14 +3,13 @@
 
 """百度 ERNIE 模型后端 - 优化版"""
 
-import json
 import time
 import logging
 import threading
 from typing import Optional
-from .base import ModelBackend
+from .base import ModelBackend, extract_json_array
 from ..config import ModelConfig
-from ..exceptions import ModelGenerateError, ModelNotConfiguredError, ModelResponseError
+from ..exceptions import ModelGenerateError, ModelNotConfiguredError
 
 logger = logging.getLogger(__name__)
 
@@ -21,12 +20,23 @@ class ERNIEBackend(ModelBackend):
     # API 端点模板
     TOKEN_URL = "https://aip.baidubce.com/oauth/2.0/token"
     CHAT_URL = "https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions"
+
+    # 换 access_token 那一支的超时（秒）。**故意不吃 `augmentation.request_timeout`
+    # 与模型条目那档**（A74 明确要求单独拍）：token 换取是一次普通的鉴权往返，
+    # 与「模型可能很慢」无关，跟着推理档走会把它从 10 s 放大到 120 s —— 于是凭据
+    # 错了也要干等两分钟才出声。推理请求的超时走 `self._request_timeout`。
+    TOKEN_REQUEST_TIMEOUT = 10.0
     
     def __init__(self,
                  config: ModelConfig,
                  response_cache_dir: Optional[str] = None,
                  response_cache_ttl: Optional[float] = None,
-                 response_cache_max_bytes: Optional[int] = None):
+                 response_cache_max_bytes: Optional[int] = None,
+                 default_attempts: Optional[int] = None,
+                 default_retry_delay: Optional[float] = None,
+                 default_max_retry_wait: Optional[float] = None,
+                 default_retry_jitter: Optional[float] = None,
+                 default_request_timeout: Optional[float] = None):
         """初始化 ERNIE 后端
 
         Args:
@@ -34,12 +44,22 @@ class ERNIEBackend(ModelBackend):
             response_cache_dir: 磁盘响应缓存目录，None 即不启用（见基类说明）
             response_cache_ttl: 磁盘缓存生存时间（秒）
             response_cache_max_bytes: 磁盘缓存容量上限（字节）
+            default_attempts: 重试默认档位（总尝试次数），见基类说明
+            default_retry_delay: 退避基数默认值（秒），见基类说明
+            default_max_retry_wait: 服务端指令一支的等待上限（秒），见基类说明
+            default_retry_jitter: 退避抖动比例（0-1），见基类说明
+            default_request_timeout: 单次请求超时（秒），见基类说明
         """
         super().__init__(
             config,
             response_cache_dir=response_cache_dir,
             response_cache_ttl=response_cache_ttl,
             response_cache_max_bytes=response_cache_max_bytes,
+            default_attempts=default_attempts,
+            default_retry_delay=default_retry_delay,
+            default_max_retry_wait=default_max_retry_wait,
+            default_retry_jitter=default_retry_jitter,
+            default_request_timeout=default_request_timeout,
         )
         if not config.api_key or not config.secret_key:
             raise ModelNotConfiguredError("ERNIE 后端需要 api_key 和 secret_key")
@@ -69,7 +89,8 @@ class ERNIEBackend(ModelBackend):
             }
             
             session = self._get_session()
-            response = session.post(self.TOKEN_URL, params=params, timeout=10)
+            response = session.post(self.TOKEN_URL, params=params,
+                                    timeout=self.TOKEN_REQUEST_TIMEOUT)
             response.raise_for_status()
             
             data = response.json()
@@ -107,7 +128,8 @@ class ERNIEBackend(ModelBackend):
         headers = {"Content-Type": "application/json"}
         
         session = self._get_session()
-        response = session.post(url, json=payload, headers=headers, timeout=60)
+        response = session.post(url, json=payload, headers=headers,
+                                timeout=self._request_timeout)
         response.raise_for_status()
         
         data = response.json()
@@ -119,21 +141,15 @@ class ERNIEBackend(ModelBackend):
     
     def extract_json_from_response(self, response: str) -> list:
         """从响应中提取 JSON 数组
-        
+
+        复用基类唯一的 robust 解析器。改前本方法只做了括号切片那一半、漏了「先直接
+        解析」那一半（A111，同族第三份拷贝）；接上 `extract_json_array` 后与其余后端
+        口径一致。
+
         Args:
             response: 模型响应文本
-        
+
         Returns:
             JSON 数组
         """
-        start = response.find('[')
-        end = response.rfind(']') + 1
-        
-        if start >= 0 and end > start:
-            json_str = response[start:end]
-            try:
-                return json.loads(json_str)
-            except json.JSONDecodeError as e:
-                raise ModelResponseError(f"响应片段无法解析为 JSON 数组: {e}") from e
-        
-        raise ModelResponseError("无法从响应中提取 JSON 数组")
+        return extract_json_array(response)

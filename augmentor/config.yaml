@@ -1,4 +1,10 @@
 # AI 训练数据增强工具配置文件
+#
+# 写了没人读的键会被 `python cli.py validate-config` 报成**警告**（不改「通过/失败」
+# 判决）：节名拼错、节内键名拼错、`models.<名字>` 的子键拼错都会出声，能确定相近项时
+# 还会附上「是否想写 X？」。判据的键集从 `AppConfig` 的字段类型推导，与 `load_config`
+# 实际读走的键集同一份来源，所以这里不需要维护清单。详见 docs/API.md「配置的「写了
+# 没人读」反馈」。
 
 # 应用配置
 app:
@@ -7,6 +13,9 @@ app:
   debug: false
 
 # 模型配置
+# 每个模型条目里这几项的区间住在 augmentor/config.py 的常量里，加载时与
+# validate-config 两侧同判（L72）：temperature 0-2.0、top_p 0-1.0、
+# max_output_tokens 大于等于 1、request_timeout 1-600（不写即吃全局档）。
 models:
   # 默认使用的模型
   default: ernie
@@ -20,6 +29,8 @@ models:
     temperature: 0.99
     top_p: 0.95
     max_output_tokens: 2048
+    # 本条目可写 `request_timeout: 30` 只改这一个后端的单次请求超时（1–600 秒）；
+    # 不写即吃下面增强配置节的 `augmentation.request_timeout`
   
   # OpenAI 配置
   openai:
@@ -60,21 +71,61 @@ models:
     max_output_tokens: 2048
 
 # 增强配置
+# 本节取值区间住在 `augmentor/config.py` 的常量里，`load_config` 加载时就逐个判
+# （L51 / A77）：写坏是抛 `DataValidationError`，不再出现「`validate-config` 报红却
+# 跑得起来」或反过来。下列注释里的边界与代码里的常量同一批。
 augmentation:
-  # 每条 seed 生成的变体数量
+  # 每条 seed 生成的变体数量（1-100）
   variants_per_seed: 5
   
-  # 并发线程数
+  # 并发线程数（1-100）
   num_threads: 40
   
-  # 自动保存间隔（每 N 条）
+  # 自动保存间隔（每 N 条，必须 ≥ 1）
+  # 0 与负数在这里不是「关闭自动保存」而是「每条都存」：实测 20 条样本触发 20 次
+  # 增量写盘，默认档 10 只 2 次 —— 10 倍静默写放大，所以要判掉（L51 / A82）
   auto_save_interval: 10
   
-  # 重试次数
+  # 模型调用的总尝试次数（含首次，不是「额外重试次数」）；0 = 只调用一次不重试
+  # 越界（负数 / 布尔 / 字符串 / >20）此前只有 `validate-config` 判得到，L51 起
+  # 加载时同样判 —— 流水线构造处仍是第二道防线
   max_retries: 3
   
-  # 重试间隔（秒）
+  # 退避基数（秒）：第 n 次等待 ≈ retry_delay × 2^(n-1)，退避计算那一支再被 30 s 夹住
+  # 0–60 之间，int 写法（如 1）与 float 写法（如 1.0）都合法；上界 60 从前只有
+  # `validate-config` 判得到，L51 起加载时也判
+  # 但限流时不等这个数：服务端回 `Retry-After` 就照它的秒数等，那一支 30 s 夹不住 ——
+  # 它的上限是下面那个 `max_retry_wait`（默认 300 s）
   retry_delay: 1
+
+  # 「服务端指令」那一支的等待上限（秒），0–300，int / float 写法都合法
+  # **只能夹小不能放大**：300 s 是 `retry.MAX_RETRY_AFTER` 对外的承诺，
+  # 写 301 在加载时即判掉（不降级为无模型模式），流水线构造处是第二道防线
+  # 调小它是「我宁可早点放弃，也不要挂住 10 分钟」的开关；0 读作
+  # 「不再尊重服务端指令、失败就立刻重发」，一般只该出现在测试里
+  max_retry_wait: 300
+
+  # 退避随机抖动比例，0–1 闭区间；默认 0 = 不抖，各档等待与接参前逐字相同
+  # 并发（`num_threads`）打同一后端时非 0 才有意义：同一档退避会让所有线程
+  # 同时醒来再撞一次 429，抖动把它们错开
+  # 代价：退避一支的最坏单次等待从 30 s 变成 30 × (1 + retry_jitter) s（0.5 ⇒ 45 s）
+  retry_jitter: 0
+
+  # 单次 HTTP 请求的超时（秒），1–600；默认 120（L71 / A74）
+  # 改前是六个互不相同的硬编码常数（claude / gemini / openai / ernie 推理各 60、
+  # ollama 120、ernie 换 token 10）；现在**推理那一支全部只读这一根旋钮**，各模型条目
+  # 可用 `models.<名字>.request_timeout` 单独覆盖（不写即吃本节值）。
+  # 默认取改前那组里的最大值 120 而不是 60，理由是对称的代价里选了较小的一边：
+  # 调小会让本来跑得完的长回答被中途掐断（新失败），调大只让「后端已经不响应」那条
+  # 路多等 60 s 才出声（旧失败晚一点）。⇒ 对 ollama 行为一字不变，其余四支只是失败
+  # 路径变慢，没有任何一支会被新掐断。
+  # 上界 600 与 docs/DEPLOYMENT.md 的 nginx `proxy_read_timeout 600s` 对齐 —— 再大就是
+  # 配了也不生效的假旋钮；下界 1 不是防手滑而是实测硬界：`requests` 对 `timeout=0` 抛
+  # `ValueError: ... the timeout cannot be set to a value less than or equal to 0`，
+  # 且崩在**第一次生成调用**上而不是加载时，不判掉就是「validate-config 绿灯、一跑就炸」。
+  # 唯一不吃本旋钮的是 ernie 换 access_token 那一支（独立常数 10 s）：凭据错时要的是
+  # 「立刻失败」，让它继承一个为长回答设的 120 s 会把一次登录失败拖成两分钟干等
+  request_timeout: 120
 
 # 质量评分配置
 quality:
@@ -296,15 +347,39 @@ frameworks:
     - llamaindex
 
 # Web UI 配置
+# 本节的形状与区间在 `load_config` 加载时就判（L51 / A80）：列表键必须写成 YAML 序列
+# （`- 项`），数值键必须在区间内。写坏的后果不再是被静默放行 —— 访问控制项被写成
+# 标量时静默放宽比静默失效更坏，见下面 `cors_origins` 与 `data_roots` 两条注释。
+# 服务启动时这份配置若判不过，进程直接不起（`api/main.py` 在 import 期加载它）。
 web:
-  # 服务端口
+  # 服务端口（1–65535）
   port: 8000
   
-  # 服务地址
+  # 服务地址（非空字符串）
   host: 0.0.0.0
   
-  # 静态文件目录
+  # 静态文件目录（非空字符串）
   static_dir: web/dist
+  
+  # 允许跨源调用本 API 的来源白名单（精确匹配 Origin 头）。
+  # 出厂默认是**空列表 = 不发任何 CORS 头**：随包 Web UI 与后端同源（axios baseURL
+  # 是相对路径 `/api`，vite 开发模式走 proxy），因此它不需要 CORS；curl / Python SDK
+  # 等非浏览器客户端也不受 CORS 约束。只有「跑在别的站点上的浏览器页面要调本 API」
+  # 这种用法才需要在这里列出来源。
+  # 旧默认 `["*"]` 配 `cors_credentials: true` 在 starlette 下会把请求方 Origin 原样
+  # 回显并回 `access-control-allow-credentials: true`（预检一并放行）⇒ 等于任意网站
+  # 都能带用户凭据读本 API，故收紧。
+  # 这是 3.x 的**破坏性默认变更**：确有跨源前端的话，改成
+  # `cors_origins: ["https://your-frontend.example"]` 即可恢复。
+  # 必须写成序列：`cors_origins: https://api.corp.example`（标量）在 starlette 下走的
+  # 是**子串**匹配（1.6.0 与 1.2.1 实测同形），于是 `https://api.corp` 与 `https://api`
+  # 两个别的主机被放行 —— 收紧意图拿到放宽结果。现在这种写法加载即拒。
+  cors_origins: []
+  
+  # 是否允许跨源请求携带凭据（cookie / Authorization）。本仓 API 不用 cookie，
+  # 鉴权走 `X-API-Key` 头，所以这一项对合法用法没有收益；仅在确实需要跨源带
+  # 凭据时显式打开，并且 `cors_origins` 必须是精确白名单（不能留空）。
+  cors_credentials: false
   
   # REST API 允许访问的目录白名单。
   # 客户端传入的文件/目录路径 resolve 后必须落在其中某个根目录内，否则返回 403。
@@ -314,14 +389,38 @@ web:
   # （配置、备份目录）对 API 不可见。放宽需谨慎：每多一个根目录，可读写的范围
   # 就多出整棵子树。
   # 环境变量 AUGMENTOR_DATA_ROOTS（os.pathsep 分隔）优先级高于此处。
+  # 必须写成序列：`data_roots: data`（标量）会被逐字符迭代成 d/a/t/a 四个根目录，
+  # 于是**所有**数据端点一律 403，症状长得像后端坏了；`- null` 这种元素则变成一个
+  # 名叫 `None` 的根。两种写法现在都在加载时判掉（服务在跑时改坏配置则回落出厂默认，
+  # 见 `api/deps.allowed_data_roots`）。
   data_roots:
     - "data"
+  
+  # 单次上传（`POST /api/data/upload` 的 multipart 文件部分）允许的最大字节数，
+  # 必须是正整数。越界当场 413，且在读取之前判：一个字节都不搬进内存、不落盘。
+  # 默认 256 MiB 的定标依据（L87 现量）：仓内最大的数据集文件 `train_data_final.json`
+  # 是 3 596 159 B（≈3.4 MiB），默认档约 70 倍余量，不会拦掉今天任何能成功的上传。
+  # 不设上限的代价也实测过：一份 8.4 MiB 的上传让进程峰值比同尺寸控制档高 34.8 MiB
+  # （≈4.1 倍），也就是「服务端为一次上传分配多少内存」由客户端决定。
+  # 只判下界不判上界：写更大的数是操作者自己的选择，与 `vector.dimension` 同形。
+  # `0` / `-1` / `true` 三种写法都判在加载时——第一种有两种人话读法（不限 / 全拒），
+  # 第二种让每个上传都被拒，第三种被 `bool ⊂ int` 当成 1 字节收下。
+  # 管不到的那一半如实记下：multipart 解析在进入本判据之前就把文件部分写进临时文件
+  # （starlette 的 `SpooledTemporaryFile`，它的 1 MiB `max_part_size` 只管非文件字段）。
+  # L90 起这一格补了**解析之前**的那一道：`api/middleware/upload_gate.py` 只看请求头，
+  # 声明了 `Content-Length` 且整包超过「本键 + 1 MiB multipart 余量」的 multipart 请求，
+  # 在解析器拿到任何字节之前回 413（文案「未解析、未落盘」）。仍管不到不声明长度的
+  # chunked 上传，那一档继续由本判据兜底；要在全网络层封住仍得配反向代理的
+  # `client_max_body_size`。本判据是权威（服务端自己累加的字节数），闸用的是客户端自报值。
+  max_upload_bytes: 268435456  # 256 MiB
   
   # 滑动窗口限流：窗口内单客户端（按 IP）最大请求数，0 表示关闭限流。
   # 超限返回 429 并带 Retry-After 头。
   rate_limit_max_requests: 300
   
-  # 限流窗口长度（秒）
+  # 限流窗口长度（秒），必须是非负数值。NaN 会让窗口永不滚动：超过阈值后永久 429，
+  # 且 `Retry-After` 计算直接抛（实测 `cannot convert float NaN to integer`）；负数则
+  # 等价于关闭限流 —— 两种都不是「写错单位」级别的可见症状，所以判在加载时。
   rate_limit_window_seconds: 60.0
   
   # 免限流路径（前缀匹配）。健康检查被容器探针高频调用，必须豁免。
@@ -331,13 +430,25 @@ web:
     - /redoc
     - /openapi.json
 
-# 日志配置
-logging:
-  # 日志级别
-  level: INFO
-  
-  # 日志文件
-  file: app.log
-  
-  # 日志格式
-  format: "%(asctime)s - %(levelname)s - %(message)s"
+# 日志配置（L57 / A97 起真的生效，但**默认整节注释掉**）
+#
+# 生效条件是「这一节写在文件里」：整节不存在时 CLI 与 API 的日志一字不变（CLI 走
+# `logging` 模块自己的兜底 handler，API 走 `api/main.py` 的 `basicConfig`）。取消
+# 注释后，**只有你写出来的那几个键**会被装配，没写的键不动今天的形状。
+#
+# - `level`：CRITICAL / ERROR / WARNING / INFO / DEBUG / NOTSET 之一，必须大写。
+#   `WARNING` 就是今天的档；想看 `[OK]` 一类的 INFO 进度日志要写 `INFO`。
+#   它同时管住「配置里写了没人读的键」那条 WARNING —— 想静音就写 `ERROR`。
+# - `file`：日志文件路径，空串 = 不落文件（默认）。相对路径按**进程工作目录**解释，
+#   父目录必须已存在（不会替你建目录）。
+# - `format`：标准 `logging` 格式串，必须能真的渲染 —— `%(asctime)s` 这类合法，
+#   拼成 `%(messge)s` 会在加载时被拒，而不是让每条日志变成一坨 traceback。
+#
+# 想要「日志同时进一个文件、控制台保持原样」，最小写法是只写一行：
+#   logging:
+#     file: data/app.log
+#
+# logging:
+#   level: WARNING
+#   file: ""
+#   format: "%(message)s"

@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use std::path::PathBuf;
-use std::process::Command;
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -272,7 +271,7 @@ impl LibreOfficePreview {
         target_format: &str,
     ) -> PreviewResult<PathBuf> {
         let output_dir = self.temp_dir.join("output");
-        std::fs::create_dir_all(&output_dir)?;
+        tokio::fs::create_dir_all(&output_dir).await?;
 
         let output_path = output_dir.join(format!(
             "{}.{}",
@@ -283,7 +282,7 @@ impl LibreOfficePreview {
             target_format
         ));
 
-        let mut cmd = Command::new("libreoffice");
+        let mut cmd = tokio::process::Command::new("libreoffice");
         cmd.arg("--headless")
             .arg("--convert-to")
             .arg(target_format)
@@ -294,6 +293,7 @@ impl LibreOfficePreview {
         info!(cmd = ?cmd, "running libreoffice conversion");
         let status = cmd
             .status()
+            .await
             .map_err(|e| PreviewError::ConversionFailed(e.to_string()))?;
         if !status.success() {
             return Err(PreviewError::ConversionFailed(
@@ -334,19 +334,19 @@ impl PreviewService for LibreOfficePreview {
         file_name: &str,
         target_format: &str,
     ) -> PreviewResult<Vec<u8>> {
-        std::fs::create_dir_all(&self.temp_dir)?;
+        tokio::fs::create_dir_all(&self.temp_dir).await?;
         let input_path = self.temp_dir.join(file_name);
-        std::fs::write(&input_path, file_data)?;
+        tokio::fs::write(&input_path, file_data).await?;
 
         let output_path = self.convert_locally(&input_path, target_format).await?;
-        let result = std::fs::read(&output_path)?;
+        let result = tokio::fs::read(&output_path).await?;
         Ok(result)
     }
 
     async fn upload(&self, file_data: &[u8], file_name: &str) -> PreviewResult<UploadedFile> {
-        std::fs::create_dir_all(&self.temp_dir)?;
+        tokio::fs::create_dir_all(&self.temp_dir).await?;
         let file_url = format!("file://{}/{}", self.temp_dir.display(), file_name);
-        std::fs::write(self.temp_dir.join(file_name), file_data)?;
+        tokio::fs::write(self.temp_dir.join(file_name), file_data).await?;
         Ok(UploadedFile {
             file_url,
             file_name: file_name.to_string(),
@@ -444,6 +444,7 @@ pub fn preview_route<S: PreviewService + 'static>(service: S) -> Router {
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests {
     use super::*;
     use axum::body::Body;

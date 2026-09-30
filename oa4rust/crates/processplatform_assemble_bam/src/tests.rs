@@ -335,3 +335,132 @@ fn test_period_count_grouped_envelope_format() {
     assert_eq!(v["data"]["count"], 2);
     assert_eq!(v["data"]["data"][1]["key"], "app2");
 }
+
+// 回归守卫：每条注册路由的 {param} 槽数必须与 handler 的 Path 提取器元数一致，
+// 否则 axum 运行时返回 500「Wrong number of path arguments」。逐条 oneshot 校验无该错误体。
+#[tokio::test]
+async fn route_path_arity_matches_handlers() {
+    let cases: &[(&str, &str)] = &[
+        ("GET", "/api/processplatform/assemble/bam/get/x"),
+        ("POST", "/api/processplatform/assemble/bam/create"),
+        ("GET", "/api/processplatform/assemble/bam/list/x"),
+        ("POST", "/api/processplatform/assemble/bam/delete/x"),
+        ("GET", "/api/processplatform/assemble/bam/status/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/completed/task/application"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/completed/task/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/completed/application/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/completed/x/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/completed/task/application/process/activity/by/x/x/x/x/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/completed/task/application/process/activity/x/x/x/x/x/x/x/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/completed/task/application/process/by/activity/x/x/x/x/x/x/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/completed/task/application/by/process/x/x/x/x/x/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/completed/task/by/application/x/x/x/x/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/completed/application/process/by/x/x/x/x/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/completed/application/process/x/x/x/x/x/x/x/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/completed/application/by/process/x/x/x/x/x/x/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/completed/by/application/x/x/x/x/x/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/expired/task/application/process/activity/by/x/x/x/x/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/expired/task/application/process/activity/x/x/x/x/x/x/x/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/expired/task/application/process/by/activity/x/x/x/x/x/x/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/expired/task/application/by/process/x/x/x/x/x/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/expired/task/by/application/x/x/x/x/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/expired/application/process/by/x/x/x/x/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/expired/application/process/x/x/x/x/x/x/x/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/expired/application/by/process/x/x/x/x/x/x/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/expired/by/application/x/x/x/x/x/x"),
+        ("POST", "/api/processplatform/assemble/bam/period/list/task/application/process/activity/by/x/x/x/x/x/x"),
+        ("POST", "/api/processplatform/assemble/bam/period/list/task/application/process/activity/x/x/x/x/x/x/x/x/x"),
+        ("POST", "/api/processplatform/assemble/bam/period/list/task/application/process/by/activity/x/x/x/x/x/x/x/x"),
+        ("POST", "/api/processplatform/assemble/bam/period/list/task/application/by/process/x/x/x/x/x/x/x"),
+        ("POST", "/api/processplatform/assemble/bam/period/list/task/by/application/x/x/x/x/x/x"),
+        ("POST", "/api/processplatform/assemble/bam/period/list/application/process/by/x/x/x/x/x/x"),
+        ("POST", "/api/processplatform/assemble/bam/period/list/application/process/x/x/x/x/x/x/x/x/x"),
+        ("POST", "/api/processplatform/assemble/bam/period/list/application/by/process/x/x/x/x/x/x/x/x"),
+        ("POST", "/api/processplatform/assemble/bam/period/list/by/application/x/x/x/x/x/x/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/expired/task/application"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/expired/task/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/expired/application/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/expired/x/x"),
+        ("POST", "/api/processplatform/assemble/bam/period/list/task/application/x"),
+        ("POST", "/api/processplatform/assemble/bam/period/list/task/x/x"),
+        ("POST", "/api/processplatform/assemble/bam/period/list/application/x/x"),
+        ("POST", "/api/processplatform/assemble/bam/period/list/x/x/x"),
+        ("POST", "/api/processplatform/assemble/bam/state/trigger/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/completed/task/applicationstubs"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/completed/task/unitstubs"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/completed/work/applicationstubs"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/completed/work/unitstubs"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/expired/task/applicationstubs"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/expired/task/unitstubs"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/expired/work/applicationstubs"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/expired/work/unitstubs"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/start/task/applicationstubs"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/start/task/unitstubs"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/start/work/applicationstubs"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/start/work/unitstubs"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/completed/task/application/x/process/x/activity/x/by/unit"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/completed/task/application/x/process/x/activity/x/unit/x/person/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/completed/task/application/x/process/x/unit/x/person/x/by/activity"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/completed/task/application/x/unit/x/person/x/by/process"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/completed/task/unit/x/person/x/by/application"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/completed/work/application/x/process/x/by/unit"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/completed/work/application/x/process/x/unit/x/person/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/completed/work/application/x/unit/x/person/x/by/process"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/completed/work/unit/x/person/x/by/application"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/expired/task/application/x/process/x/activity/x/by/unit"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/expired/task/application/x/process/x/activity/x/unit/x/person/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/expired/task/application/x/process/x/unit/x/person/x/by/activity"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/expired/task/application/x/unit/x/person/x/by/process"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/expired/task/unit/x/person/x/by/application"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/expired/work/application/x/process/x/by/unit"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/expired/work/application/x/process/x/unit/x/person/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/expired/work/application/x/unit/x/person/x/by/process"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/expired/work/unit/x/person/x/by/application"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/start/task/application/x/process/x/activity/x/by/unit"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/start/task/application/x/process/x/activity/x/unit/x/person/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/start/task/application/x/process/x/unit/x/person/x/by/activity"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/start/task/application/x/unit/x/person/x/by/process"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/start/task/unit/x/person/x/by/application"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/start/work/application/x/process/x/by/unit"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/start/work/application/x/process/x/unit/x/person/x"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/start/work/application/x/unit/x/person/x/by/process"),
+        ("GET", "/api/processplatform/assemble/bam/period/list/count/start/work/unit/x/person/x/by/application"),
+        ("GET", "/api/processplatform/assemble/bam/state/applicationtstubs/trigger"),
+        ("GET", "/api/processplatform/assemble/bam/state/category"),
+        ("GET", "/api/processplatform/assemble/bam/state/category/trigger"),
+        ("GET", "/api/processplatform/assemble/bam/state/summary"),
+        ("GET", "/api/processplatform/assemble/bam/state/running"),
+        ("GET", "/api/processplatform/assemble/bam/state/organization"),
+        ("DELETE", "/api/processplatform/assemble/bam/delete/x"),
+    ];
+    let mut bad = Vec::new();
+    for (method, path) in cases {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let m = Method::from_bytes(method.as_bytes()).unwrap();
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .method(m)
+                    .uri(*path)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let body = String::from_utf8_lossy(&bytes);
+        if body.contains("Wrong number of path arguments") {
+            bad.push((*path).to_string());
+        }
+    }
+    if !bad.is_empty() {
+        println!("ARITY-TRAP remaining: {}", bad.len());
+        for b in &bad {
+            println!("  {}", b);
+        }
+    }
+    assert!(bad.is_empty(), "{} arity traps remain", bad.len());
+}

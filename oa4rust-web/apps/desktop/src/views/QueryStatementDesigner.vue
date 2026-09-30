@@ -877,6 +877,8 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref } from 'vue'
+import { downloadBlob } from '../utils/download'
+import { toast } from '../utils/toast'
 
 interface Stmt {
   id: string
@@ -1025,7 +1027,7 @@ async function executeSQL() {
   } catch (e: any) {
     resultData.value = []
     resultHeaders.value = []
-    toast.error('执行失败: : ' + (e?.message ?? '未知错误'))
+    toast.error(`执行失败: : ${e?.message ?? '未知错误'}`)
     lastExecDuration.value = Date.now() - t0
   } finally {
     loadingResult.value = false
@@ -1049,13 +1051,10 @@ function exportCSV() {
   if (!resultData.value.length) return
   const header = resultHeaders.value.join(',')
   const rows = resultData.value.map((r) =>
-    resultHeaders.value.map((h) => '"' + String(r[h] ?? '').replace(/"/g, '""') + '"').join(','),
+    resultHeaders.value.map((h) => `"${String(r[h] ?? '').replace(/"/g, '""')}"`).join(','),
   )
-  const blob = new Blob([header + '\n' + rows.join('\n')], { type: 'text/csv;charset=utf-8' })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = 'query_result.csv'
-  a.click()
+  const blob = new Blob([`${header}\n${rows.join('\n')}`], { type: 'text/csv;charset=utf-8' })
+  downloadBlob(blob, 'query_result.csv')
 }
 
 function loadStatements() {
@@ -1157,7 +1156,7 @@ const maxDuration = computed(() =>
 const successRate = computed(() => {
   if (!execHistory.value.length) return '100%'
   const ok = execHistory.value.filter((h) => h.success).length
-  return Math.round((ok / execHistory.value.length) * 100) + '%'
+  return `${Math.round((ok / execHistory.value.length) * 100)}%`
 })
 const totalRows = computed(() => execHistory.value.reduce((a, h) => a + h.rows, 0))
 const errCount = computed(() => execHistory.value.filter((h) => !h.success).length)
@@ -1224,18 +1223,18 @@ function selectTable(t: any) {
   loadTableFields()
 }
 function insertField(name: string) {
-  sql.value += (sql.value.endsWith('\n') ? '' : '\n') + '    ' + name + ', '
+  sql.value += `${sql.value.endsWith('\n') ? '' : '\n'}    ${name}, `
   showSchemaPanel.value = false
 }
 
 function applyTemplate(t: any) {
-  sql.value = t.code + '\n'
+  sql.value = `${t.code}\n`
   showTemplatePanel.value = false
 }
 function saveNewTemplate() {
   if (!newTmpl.value.name.trim()) return
   templates.value.push({
-    id: 't' + Date.now(),
+    id: `t${Date.now()}`,
     name: newTmpl.value.name,
     category: newTmpl.value.category,
     code: newTmpl.value.code,
@@ -1245,7 +1244,7 @@ function saveNewTemplate() {
 }
 function saveAsMyTemplate(t: any) {
   if (myTemplates.value.some((m) => m.id === t.id)) return
-  myTemplates.value.push({ ...t, id: 'mt' + Date.now() })
+  myTemplates.value.push({ ...t, id: `mt${Date.now()}` })
 }
 
 function replayHistory(idx: number) {
@@ -1267,10 +1266,7 @@ function exportHistory() {
     ],
     { type: 'text/plain' },
   )
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = 'exec_history.txt'
-  a.click()
+  downloadBlob(blob, 'exec_history.txt')
 }
 
 async function runBatch() {
@@ -1345,7 +1341,7 @@ const maxChartData = computed(() => Math.max(1, ...chartData.value.map((d) => d.
 // --- Save Snapshot ---
 const snapshots = ref<Array<{ id: string; name: string; sql: string; ts: number }>>([])
 function saveSnapshot() {
-  const name = prompt('快照名称:', '快照_' + Date.now())
+  const name = prompt('快照名称:', `快照_${Date.now()}`)
   if (!name) return
   snapshots.value.unshift({ id: genId?.() ?? String(Date.now()), name, sql: sql.value, ts: Date.now() })
 }
@@ -1397,7 +1393,7 @@ const resultStats = computed(() => {
     if (!resultHeaders.value.length || !resultData.value.length) return {}
     const stats: Record<string, any> = {}
     resultHeaders.value.forEach((h) => {
-      const nums = resultData.value.map((r) => Number(r[h])).filter((v) => !isNaN(v))
+      const nums = resultData.value.map((r) => Number(r[h])).filter((v) => !Number.isNaN(v))
       if (nums.length) {
         const sorted = [...nums].sort((a: number, b: number) => a - b)
         stats[h] = {
@@ -1414,7 +1410,7 @@ const resultStats = computed(() => {
     resultHeaders.value.filter((h) => {
       if (!resultData.value.length) return false
       const v = resultData.value[0][h]
-      return typeof v === 'number' || (!isNaN(Number(v)) && v !== null && v !== undefined)
+      return typeof v === 'number' || (!Number.isNaN(Number(v)) && v !== null && v !== undefined)
     }),
   )
   const stringResultHeaders = computed(() =>
@@ -1464,23 +1460,23 @@ const showAdvancedTemplates = ref(false)
 
 // Computed
 const generatedVisualSql = computed(() => {
-  let s = 'SELECT ' + (veSelectFields.value.length ? veSelectFields.value.join(', ') : '*')
-  if (veFromTable.value) s += ' FROM ' + veFromTable.value
+  let s = `SELECT ${veSelectFields.value.length ? veSelectFields.value.join(', ') : '*'}`
+  if (veFromTable.value) s += ` FROM ${veFromTable.value}`
   if (veWhereConditions.value.length) {
     const wh = veWhereConditions.value
       .filter((c) => c.field && c.value)
-      .map((c) => c.field + ' ' + c.op + ' ' + String.fromCharCode(39) + c.value + String.fromCharCode(39))
+      .map((c) => `${c.field} ${c.op} ${String.fromCharCode(39)}${c.value}${String.fromCharCode(39)}`)
       .join(' AND ')
-    if (wh) s += '\nWHERE ' + wh
+    if (wh) s += `\nWHERE ${wh}`
   }
-  if (veOrderBy.value) s += '\nORDER BY ' + veOrderBy.value + ' ' + veOrderDir.value
-  if (veLimit.value) s += '\nLIMIT ' + veLimit.value
+  if (veOrderBy.value) s += `\nORDER BY ${veOrderBy.value} ${veOrderDir.value}`
+  if (veLimit.value) s += `\nLIMIT ${veLimit.value}`
   return s
 })
 const generatedFieldDragSql = computed(() => {
-  let s = 'SELECT ' + (fdSelectFields.value.length ? fdSelectFields.value.join(', ') : '*')
-  if (allSchemaFields.value[0]) s += ' FROM ' + allSchemaFields.value[0].split('.')[0]
-  if (fdWhereFields.value.length) s += '\nWHERE ' + fdWhereFields.value.map((f) => f + ' IS NOT NULL').join(' AND ')
+  let s = `SELECT ${fdSelectFields.value.length ? fdSelectFields.value.join(', ') : '*'}`
+  if (allSchemaFields.value[0]) s += ` FROM ${allSchemaFields.value[0].split('.')[0]}`
+  if (fdWhereFields.value.length) s += `\nWHERE ${fdWhereFields.value.map((f) => `${f} IS NOT NULL`).join(' AND ')}`
   return s
 })
 
@@ -1512,10 +1508,10 @@ function applyRuleChain() {
   const r = ruleChain.value.filter((x) => x.enabled && x.field && x.value)
   if (!r.length) return
   const w = r
-    .map((x) => x.field + ' ' + x.op + ' ' + String.fromCharCode(39) + x.value + String.fromCharCode(39))
+    .map((x) => `${x.field} ${x.op} ${String.fromCharCode(39)}${x.value}${String.fromCharCode(39)}`)
     .join(' AND ')
   if (/WHERE/i.test(sql.value)) sql.value = sql.value.replace(/WHEREs+[^;]+/i, w)
-  else sql.value += '\nWHERE ' + w
+  else sql.value += `\nWHERE ${w}`
   showRuleChain.value = false
 }
 function fdApply() {
@@ -1537,7 +1533,7 @@ function testChartLinkage() {
   if (clXAxis.value && clFilterField.value)
     clPreviewData.value = resultData.value
       .slice(0, 3)
-      .map((r) => r[clXAxis.value] + ' | ' + r[clFilterField.value])
+      .map((r) => `${r[clXAxis.value]} | ${r[clFilterField.value]}`)
       .filter(Boolean)
   else clPreviewData.value = ['请先选择X轴和过滤字段']
 }
@@ -1545,11 +1541,11 @@ function showAdvancedTemplatesFn() {
   showAdvancedTemplates.value = true
 }
 function applyAdvancedTemplate(t: any) {
-  sql.value = t.code + '\n'
+  sql.value = `${t.code}\n`
   showAdvancedTemplates.value = false
 }
 function saveAdvancedTemplate(t: any) {
-  templates.value.push({ id: 't' + Date.now(), name: t.name, category: t.category, code: t.code, icon: t.icon })
+  templates.value.push({ id: `t${Date.now()}`, name: t.name, category: t.category, code: t.code, icon: t.icon })
   showAdvancedTemplates.value = false
 }
 
@@ -1606,7 +1602,7 @@ function formatSql(raw: string): string {
   ]
   for (const k of kw) {
     const re = new RegExp(k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')
-    s = s.replace(re, '\n' + k + ' ')
+    s = s.replace(re, `\n${k} `)
   }
   s = s.replace(/\n\s*\n/g, '\n').trim()
   if (fmtIndent.value) {
@@ -1662,7 +1658,7 @@ function runValidation() {
   valResult.value = { status: hasErr ? 'error' : 'valid', message: hasErr ? '存在语法问题' : '语法验证通过' }
   valChecks.value = checks
   valSuggestions.value = sug
-  dbgLog(hasErr ? 'error' : 'info', '验证结果: ' + (hasErr ? '失败' : '通过'))
+  dbgLog(hasErr ? 'error' : 'info', `验证结果: ${hasErr ? '失败' : '通过'}`)
 }
 
 // --- Result Visualization ---
@@ -1685,7 +1681,7 @@ function renderChart() {
   const entries = [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, 20)
   const maxVal = Math.max(1, ...entries.map(([, v]) => v))
   const nums = entries.map(([, v]) => v)
-  vizBars.value = entries.map(([label, value], i) => ({ label, value, h: Math.round((value / maxVal) * 140) }))
+  vizBars.value = entries.map(([label, value], _i) => ({ label, value, h: Math.round((value / maxVal) * 140) }))
   vizStats.value = {
     count: resultData.value.length,
     max: Math.max(...nums),
@@ -1693,16 +1689,13 @@ function renderChart() {
     avg: Math.round(nums.reduce((a: number, b: number) => a + b, 0) / nums.length),
   }
   vizRendered.value = true
-  dbgLog('info', '图表已渲染: ' + entries.length + ' 个数据点')
+  dbgLog('info', `图表已渲染: ${entries.length} 个数据点`)
 }
 function exportVizData() {
   if (!vizBars.value.length) return
-  const csv = 'label,value\n' + vizBars.value.map((d) => d.label + ',' + d.value).join('\n')
+  const csv = `label,value\n${vizBars.value.map((d) => `${d.label},${d.value}`).join('\n')}`
   const blob = new Blob([csv], { type: 'text/csv' })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = 'chart_data.csv'
-  a.click()
+  downloadBlob(blob, 'chart_data.csv')
 }
 
 // --- Snippet Library ---
@@ -1813,7 +1806,7 @@ const filteredSnippets = computed(() => {
   return list
 })
 function insertSnippet(s: any) {
-  sql.value += (sql.value.endsWith('\n') ? '' : '\n') + s.code + '\n'
+  sql.value += `${(sql.value.endsWith('\n') ? '' : '\n') + s.code}\n`
   showSnippetLibrary.value = false
 }
 function copySnip(code: string) {
@@ -1848,7 +1841,7 @@ function generatePlan() {
   if (steps.length === 0) steps.push({ type: '默认', desc: '完整SQL解析', detail: '请执行SQL后查看实际执行计划' })
   planSteps.value = steps
   activeStep.value = 0
-  dbgLog('info', '执行计划已生成: ' + steps.length + ' 个步骤')
+  dbgLog('info', `执行计划已生成: ${steps.length} 个步骤`)
 }
 
 // --- SQL Diff ---
@@ -1894,28 +1887,19 @@ function doExport() {
   }))
   if (exportFmt.value === 'json') {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    downloadBlob(blob, 'statements_' + new Date().toISOString().slice(0, 10) + '.json')
+    downloadBlob(blob, `statements_${new Date().toISOString().slice(0, 10)}.json`)
   } else if (exportFmt.value === 'sql') {
     const sqlStr = data.map((d) => `-- ${d.name}\n${d.sql}`).join('\n\n')
-    downloadBlob(
-      new Blob([sqlStr], { type: 'text/plain' }),
-      'statements_' + new Date().toISOString().slice(0, 10) + '.sql',
-    )
+    downloadBlob(new Blob([sqlStr], { type: 'text/plain' }), `statements_${new Date().toISOString().slice(0, 10)}.sql`)
   } else {
     const csv =
       'name,flag,sql,category\n' +
       data
         .map((d) => `"${d.name}","${d.flag || ''}","${(d.sql || '').replace(/"/g, '""')}","${d.category || ''}"`)
         .join('\n')
-    downloadBlob(new Blob([csv], { type: 'text/csv' }), 'statements_' + new Date().toISOString().slice(0, 10) + '.csv')
+    downloadBlob(new Blob([csv], { type: 'text/csv' }), `statements_${new Date().toISOString().slice(0, 10)}.csv`)
   }
   showExportImport.value = false
-}
-function downloadBlob(blob: Blob, filename: string) {
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = filename
-  a.click()
 }
 async function doImport() {
   if (!importData.value.trim()) return
@@ -1925,16 +1909,24 @@ async function doImport() {
       importMsg.value = { ok: false, txt: '数据格式错误: 期望数组' }
       return
     }
+    let ok = 0
+    let fail = 0
     for (const stmt of data) {
       try {
         await api.post('/api/query/assemble/designer/create', stmt)
-      } catch {}
+        ok++
+      } catch {
+        fail++
+      }
     }
-    importMsg.value = { ok: true, txt: `成功导入 ${data.length} 条语句` }
+    importMsg.value = {
+      ok: fail === 0,
+      txt: fail === 0 ? `成功导入 ${ok} 条语句` : `导入完成：成功 ${ok} / 失败 ${fail}`,
+    }
     showExportImport.value = false
     queryClient.invalidateQueries({ queryKey: ['stmt', 'list'] })
   } catch (e: any) {
-    importMsg.value = { ok: false, txt: '导入失败: ' + e.message }
+    importMsg.value = { ok: false, txt: `导入失败: ${e.message}` }
   }
 }
 
@@ -1958,13 +1950,19 @@ function confirmBulkDelete() {
 }
 async function executeBulkDelete() {
   if (!bulkIds.value.length) return
+  let deleted = 0
+  let fail = 0
   for (const id of bulkIds.value) {
     try {
       await api.delete(`/api/query/assemble/designer/delete/${id}`)
-    } catch {}
+      deleted++
+    } catch {
+      fail++
+    }
   }
   bulkIds.value = []
   showBulkDelete.value = false
+  if (fail) toast.error(`批量删除完成：成功 ${deleted} / 失败 ${fail}`)
   queryClient.invalidateQueries({ queryKey: ['stmt', 'list'] })
 }
 
@@ -1974,7 +1972,7 @@ const bookmarks = ref<Array<{ id: string; name: string; sql: string; ts: number 
 const bmName = ref('')
 function addBookmark() {
   if (!bmName.value.trim() || !sql.value.trim()) return
-  bookmarks.value.unshift({ id: 'bm' + Date.now(), name: bmName.value, sql: sql.value, ts: Date.now() })
+  bookmarks.value.unshift({ id: `bm${Date.now()}`, name: bmName.value, sql: sql.value, ts: Date.now() })
   bmName.value = ''
 }
 function loadBookmark(idx: number) {
@@ -2024,7 +2022,7 @@ function saveTpl() {
     const t = templates.value.find((x) => x.id === tplEditingId.value)
     if (t) Object.assign(t, tplForm.value)
   } else {
-    templates.value.push({ id: 't' + Date.now(), ...tplForm.value })
+    templates.value.push({ id: `t${Date.now()}`, ...tplForm.value })
   }
   showTplEditor.value = false
 }
@@ -2042,7 +2040,7 @@ const detectedParams = computed(() => {
 })
 function addParamPreset(name: string) {
   if (!paramPresets.value.some((p) => p.name === name))
-    paramPresets.value.push({ id: 'p' + Date.now(), name, value: '', type: 'string', defaultValue: '' })
+    paramPresets.value.push({ id: `p${Date.now()}`, name, value: '', type: 'string', defaultValue: '' })
 }
 function addAllParams() {
   detectedParams.value.forEach(addParamPreset)
@@ -2050,7 +2048,7 @@ function addAllParams() {
 function applyParamPresets() {
   let s = sql.value
   paramPresets.value.forEach((p) => {
-    if (p.name && p.value) s = s.replace(new RegExp(':' + p.name + '|@' + p.name + '|#' + p.name, 'g'), p.value)
+    if (p.name && p.value) s = s.replace(new RegExp(`:${p.name}|@${p.name}|#${p.name}`, 'g'), p.value)
   })
   sql.value = s
   showParamPresets.value = false
@@ -2138,7 +2136,7 @@ const sqlFunctions = [
   'SQRT',
 ]
 function insertHint(text: string) {
-  sql.value += text + ' '
+  sql.value += `${text} `
   showSqlHints.value = false
 }
 

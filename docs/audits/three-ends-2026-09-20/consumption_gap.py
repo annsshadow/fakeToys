@@ -54,12 +54,16 @@ def belongs(path, keys):
 
 
 consumed = set()
+# compare.py 用 METHOD_ALIAS 把前端 upload/download 动词按 POST/GET 与后端匹配后
+# 才落 hit；此处构造 consumed 集必须用同一别名，否则 api.upload(POST 路由)/
+# api.download(GET 路由) 的真实消费会因动词字面不等而被漏计。
+METHOD_ALIAS = {"UPLOAD": "POST", "DOWNLOAD": "GET"}
 for end in rec:
     for cat in ("exact", "param-ok"):
         for c in rec[end][cat]:
             h = c.get("hit")
             if h:
-                consumed.add((c["method"], h))
+                consumed.add((METHOD_ALIAS.get(c["method"], c["method"]), h))
 
 rows = []
 for name, keys in DOMAINS:

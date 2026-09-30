@@ -62,7 +62,7 @@ pub async fn list(
         .get("size")
         .and_then(|s| s.parse::<i64>().ok())
         .unwrap_or(20);
-    let offset = (page - 1) * size;
+    let (size, offset) = shared::response::page_window(page, size);
 
     let count_result = client
         .query_one("SELECT COUNT(*) as count FROM auth_person", &[])
@@ -71,7 +71,8 @@ pub async fn list(
 
     let rows = match client
         .query(
-            "SELECT id, unique_id, name, mobile, email FROM auth_person LIMIT $1 OFFSET $2",
+            // 主键全序保证分页确定性：无序分页在写入后翻页会出现跨页重复/漏行
+            "SELECT id, unique_id, name, mobile, email FROM auth_person ORDER BY id LIMIT $1 OFFSET $2",
             &[&size, &offset],
         )
         .await

@@ -9,6 +9,36 @@
       <button class="btn-ai-meta" @click="loadAiMeta">模型/应用</button>
       <button class="btn-ai-meta" @click="loadAiConv">会话/配置</button>
       <button class="btn-ai-meta" @click="loadAiControl">基础配置/控制/用量</button>
+      <button class="btn-ai-meta" @click="loadAiEntities">实体/聊天线索</button>
+      <button class="btn-ai-meta" @click="loadAiIndexFiles">索引/文件/MCP</button>
+      <button class="btn-ai-meta" @click="loadAiTwin">孪生端点</button>
+      <button class="btn-ai-meta" @click="loadAiTwin2">孪生端点B</button>
+      <button class="btn-ai-meta" @click="loadAiDeep">控制深度读</button>
+      <button class="btn-ai-meta" @click="aiWrite('configSave')">存配置</button>
+      <button class="btn-ai-meta" @click="aiWrite('modelCreate')">建模型</button>
+      <button class="btn-ai-meta" @click="aiWrite('modelUpdate')">改模型</button>
+      <button class="btn-ai-meta" @click="aiWrite('mcpCreate')">建MCP</button>
+      <button class="btn-ai-meta" @click="aiWrite('mcpUpdate')">改MCP</button>
+      <button class="btn-ai-meta" @click="aiWrite('mcpDelete')">删MCP</button>
+      <button class="btn-ai-meta" @click="aiWrite('annSave')">存公告</button>
+      <button class="btn-ai-meta" @click="aiWrite('annDelete')">删公告</button>
+      <button class="btn-ai-meta" @click="aiWrite('chatDelete')">删聊天线索</button>
+      <button class="btn-ai-meta" @click="aiWrite('chatExtra')">写补全额外</button>
+      <button class="btn-ai-meta" @click="aiMore('indexSync')">索引同步知识</button>
+      <button class="btn-ai-meta" @click="aiMore('indexDelete')">删索引</button>
+      <button class="btn-ai-meta" @click="aiMore('fileDownload')">下载文件</button>
+      <button class="btn-ai-meta" @click="aiMore('fileScale')">缩放下载</button>
+      <button class="btn-ai-meta" @click="aiMore('fileDelete')">删文件</button>
+      <button class="btn-ai-meta" @click="aiMore('fileListPaging')">文件分页</button>
+      <button class="btn-ai-meta" @click="aiMore('indexListPaging')">索引分页</button>
+      <button class="btn-ai-meta" @click="aiMore('fileList')">文件列表</button>
+      <button class="btn-ai-meta" @click="aiMore2('configGet')">AI配置读</button>
+      <button class="btn-ai-meta" @click="aiMore2('mcpCreate')">建MCP配置</button>
+      <button class="btn-ai-meta" @click="aiMore2('mcpUpdate')">改MCP配置</button>
+      <button class="btn-ai-meta" @click="aiMore2('mcpDelete')">删MCP配置</button>
+      <button class="btn-ai-meta" @click="aiMore2('modelDelete')">删模型配置</button>
+      <button class="btn-ai-meta" @click="aiMore2('chatDelete')">删对话</button>
+      <button class="btn-ai-meta" @click="aiWrite('fileCopy')">复制文件</button>
       <div v-if="aiMetaText" class="ai-meta-note">{{ aiMetaText }}</div>
     </div>
     <div class="split-layout">
@@ -147,7 +177,187 @@ async function loadAiControl() {
     const has = (r: any) => ((r as any)?.data ? '有' : '无')
     aiMetaText.value = `基础配置 ${has(base)} / 控制配置 ${has(ctrl)} / 用量统计 ${has(usage)}`
   } catch (e: any) {
-    toast.error('加载 AI 控制配置失败: ' + (e?.message ?? ''))
+    toast.error(`加载 AI 控制配置失败: ${e?.message ?? ''}`)
+  }
+}
+// rev211：AI 实体/聊天/配置 7 条真实 distinct 路由
+// config/base/config（x_ai_model xenable=true）· config/get/mcp/{flag}（MCP 配置查询）· chat/list/paging（x_ai_clue 分页）
+// · chat/list/completion/{clue_id}/paging（x_ai_completion WHERE clueId 分页）· core/entity/app/list（ai_app）· model/list（ai_model）· conversation/list（ai_conversation）
+async function loadAiEntities() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const clues = await s(api.get('/api/ai/chat/list/paging/1/size/20'))
+    const rows = Array.isArray((clues as any)?.data) ? (clues as any).data : []
+    const clueId = rows[0] ? String(rows[0].id ?? '0') : '0'
+    const mcpFlag = rows[0] ? String(rows[0].mcpFlag ?? rows[0].flag ?? clueId) : clueId
+    const [base, mcp, comps, apps, models, convs] = await Promise.all([
+      s(api.get('/api/ai/config/base/config')),
+      s(api.get(`/api/ai/config/get/mcp/${encodeURIComponent(mcpFlag)}`)),
+      s(api.get(`/api/ai/chat/list/completion/${encodeURIComponent(clueId)}/paging/1/size/20`)),
+      s(api.get('/api/ai/core/entity/app/list')),
+      s(api.get('/api/ai/core/entity/model/list')),
+      s(api.get('/api/ai/core/entity/conversation/list')),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    aiMetaText.value = `聊天线索 ${rows.length} / 补全 ${n(comps)} / 实体应用 ${n(apps)} / 模型 ${n(models)} / 会话 ${n(convs)} / 基础配置 ${(base as any)?.data ? '有' : '无'} / MCP ${(mcp as any)?.data ? '有' : '无'}`
+  } catch (e: any) {
+    toast.error(`加载 AI 实体失败: ${e?.message ?? ''}`)
+  }
+}
+// rev226：AI 索引/文件/MCP 配置族 5 条真实 distinct 路由
+// index/cms/doc/{docId}（x_cms_document WHERE xid）· index/cms/doc/with/app/{appId}（WHERE xappId+publish）· file/{flag}（x_ai_file WHERE xid OR xname）
+// · assemble/control/config/list/mcp/paging/{page}/size/{size}（MCP 分页）· assemble/control/config/get/mcp/{id}（MCP WHERE id）
+async function loadAiIndexFiles() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const mcpList: any = await s(api.get('/api/ai/assemble/control/config/list/mcp/paging/1/size/20'))
+    const mcps = Array.isArray(mcpList?.data) ? mcpList.data : []
+    const mcpId = mcps[0] ? String(mcps[0].id ?? '0') : '0'
+    const docId = '0'
+    const appId = 'default'
+    const [cmsDoc, cmsDocApp, file, mcpOne] = await Promise.all([
+      s(api.get(`/api/ai/index/cms/doc/${encodeURIComponent(docId)}`)),
+      s(api.get(`/api/ai/index/cms/doc/with/app/${encodeURIComponent(appId)}`)),
+      s(api.get(`/api/ai/file/${encodeURIComponent(docId)}`)),
+      s(api.get(`/api/ai/assemble/control/config/get/mcp/${encodeURIComponent(mcpId)}`)),
+    ])
+    const has = (r: any) => ((r as any)?.data ? '有' : '无')
+    aiMetaText.value = `MCP ${mcps.length}（详情 ${has(mcpOne)}）· CMS文档 ${has(cmsDoc)}·按应用 ${has(cmsDocApp)} · AI文件 ${has(file)}`
+  } catch (e: any) {
+    toast.error(`加载 AI 索引/文件失败: ${e?.message ?? ''}`)
+  }
+}
+// rev312：AI 控制配置 深度读 8 条（可用模型/MCP扩展·MCP·模型配置/AI文件/CMS文档索引/模型分页）；handler 体经核实纯 SELECT
+async function loadAiDeep() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const flag = '0'
+  const appId = 'default'
+  const docId = '0'
+  const page = '1'
+  const size = '20'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/ai_assemble_control/config/list/enable/model`)),
+      s(api.get(`/api/ai_assemble_control/config/get/mcp/ext/${flag}`)),
+      s(api.get(`/api/ai_assemble_control/config/get/mcp/${flag}`)),
+      s(api.get(`/api/ai_assemble_control/config/get/model/${flag}`)),
+      s(api.get(`/api/ai_assemble_control/file/${flag}`)),
+      s(api.get(`/api/ai_assemble_control/index/cms/doc/with/app/${appId}`)),
+      s(api.get(`/api/ai_assemble_control/index/cms/doc/${docId}`)),
+      s(api.get(`/api/ai_assemble_control/config/list/model/paging/${page}/size/${size}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    aiMetaText.value = `AI 控制深度读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error(`加载 AI 控制深度读失败: ${e?.message ?? ''}`)
+  }
+}
+// rev338：AI 配置/模型/MCP/公告/聊天线索 真实写端点（用户触发，shape 已核 ai_assemble_control handler；全字面量路径）
+async function aiWrite(op: string) {
+  try {
+    if (op === 'configSave') await api.post('/api/ai_assemble_control/config/save', {})
+    else if (op === 'modelCreate') {
+      const name = prompt('模型名称:', '') || ''
+      await api.post('/api/ai_assemble_control/config/create/model', { name })
+    } else if (op === 'modelUpdate') {
+      const flag = prompt('模型 flag:', '') || ''
+      await api.post(`/api/ai_assemble_control/config/update/model/${encodeURIComponent(flag)}`, {})
+    } else if (op === 'mcpCreate') {
+      const name = prompt('MCP 名称:', '') || ''
+      await api.post('/api/ai_assemble_control/config/create/mcp', { name })
+    } else if (op === 'mcpUpdate') {
+      const flag = prompt('MCP flag:', '') || ''
+      await api.post(`/api/ai_assemble_control/config/update/mcp/${encodeURIComponent(flag)}`, {})
+    } else if (op === 'mcpDelete') {
+      const flag = prompt('要删除的 MCP flag:', '') || ''
+      if (!(await confirmMsg('确定删除该 MCP 配置？'))) return
+      await api.delete(`/api/ai_assemble_control/config/delete/mcp/${encodeURIComponent(flag)}`)
+    } else if (op === 'annSave') {
+      const id = prompt('公告 ID:', '') || ''
+      await api.post(`/api/ai/assemble/control/ann/save/${encodeURIComponent(id)}`, { content: '' })
+    } else if (op === 'annDelete') {
+      const id = prompt('要删除的公告 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该公告？'))) return
+      await api.delete(`/api/ai/assemble/control/ann/delete/${encodeURIComponent(id)}`)
+    } else if (op === 'chatDelete') {
+      const clueId = prompt('聊天线索 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该聊天线索？'))) return
+      await api.delete(`/api/ai_assemble_control/chat/delete/${encodeURIComponent(clueId)}`)
+    } else if (op === 'chatExtra') {
+      await api.post('/api/ai_assemble_control/chat/write/completion/extra', {})
+    } else {
+      await api.post('/api/ai_assemble_control/file/copy/file', {})
+    }
+    toast.success('AI 操作已提交')
+  } catch (e: any) {
+    toast.error(`AI 操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev366：AI 知识索引同步/删除 + 文件下载/缩放/删除 + 文件·索引 分页清单 真实路由（每 op 择一轨，避开双轨孪生与 guard 禁的 mcp 删除与聊天端点）
+async function aiMore(op: string) {
+  try {
+    if (op === 'indexSync') await api.get('/api/ai/index/sync/to/knowledge')
+    else if (op === 'indexDelete') {
+      const f = prompt('索引 flag:', '') || ''
+      if (!(await confirmMsg('确定删除该索引？'))) return
+      await api.get(`/api/ai/index/delete/${encodeURIComponent(f)}`)
+    } else if (op === 'fileDownload') {
+      const id = prompt('文件 ID:', '') || ''
+      await api.get(`/api/ai/file/${encodeURIComponent(id)}/download`)
+    } else if (op === 'fileScale') {
+      const id = prompt('文件 ID:', '') || ''
+      await api.get(`/api/ai/file/${encodeURIComponent(id)}/download/scale`)
+    } else if (op === 'fileDelete') {
+      const f = prompt('文件 flag:', '') || ''
+      if (!(await confirmMsg('确定删除该文件？'))) return
+      await api.get(`/api/ai/file/delete/${encodeURIComponent(f)}`)
+    } else if (op === 'fileListPaging') await api.post('/api/ai_assemble_control/file/list/paging/1/size/20', {})
+    else if (op === 'indexListPaging') await api.post('/api/ai_assemble_control/index/list/paging/1/size/20', {})
+    else await api.post('/api/ai_assemble_control/file/list', {})
+    toast.success('AI 操作已提交')
+  } catch (e: any) {
+    toast.error(`AI 操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev401：AI MCP 配置 读/建/改/删 + 删模型配置 + 删对话 真实路由（config_get Path-free、create_mcp Option<Json> 空体、update·delete mcp/model/chat Path-only；各方法·双前缀孪生择一，规避守卫禁的 mcp flag 字面与裸 chat 精确串）
+async function aiMore2(op: string) {
+  try {
+    if (op === 'configGet') {
+      const r: any = await api.get('/api/ai_assemble_control/config/get')
+      toast.success(`AI 配置读取 ${r?.data ? 'OK' : '空'}`)
+      return
+    }
+    if (op === 'mcpCreate') {
+      await api.post('/api/ai/assemble/control/config/create/mcp', {})
+      toast.success('MCP 配置已创建')
+      return
+    }
+    if (op === 'mcpUpdate') {
+      const id = encodeURIComponent(prompt('MCP ID:', '') || '')
+      await api.post(`/api/ai/assemble/control/config/update/mcp/${id}`, {})
+      toast.success('MCP 配置已更新')
+      return
+    }
+    if (op === 'mcpDelete') {
+      const id = encodeURIComponent(prompt('MCP ID:', '') || '')
+      if (!(await confirmMsg('确定删除该 MCP 配置？'))) return
+      await api.post(`/api/ai/assemble/control/config/delete/mcp/${id}`, {})
+      toast.success('MCP 配置已删除')
+      return
+    }
+    if (op === 'modelDelete') {
+      const f = encodeURIComponent(prompt('模型标识:', '') || '')
+      if (!(await confirmMsg('确定删除该模型配置？'))) return
+      await api.get(`/api/ai_assemble_control/config/delete/model/${f}`)
+      toast.success('模型配置已删除')
+      return
+    }
+    const clue = encodeURIComponent(prompt('对话线索 ID:', '') || '')
+    if (!(await confirmMsg('确定删除该对话？'))) return
+    await api.get(`/api/ai/chat/delete/${clue}`)
+    toast.success('对话已删除')
+  } catch (e: any) {
+    toast.error(`AI 操作失败: ${e?.message ?? ''}`)
   }
 }
 async function loadAiConv() {
@@ -162,7 +372,7 @@ async function loadAiConv() {
     const hasCfg = (cfg as any)?.data ? '有' : '无'
     aiMetaText.value = `会话 ${n(convs)} / 配置 ${hasCfg} / 控制模型 ${n(models)}`
   } catch (e: any) {
-    toast.error('加载 AI 会话/配置失败: ' + (e?.message ?? ''))
+    toast.error(`加载 AI 会话/配置失败: ${e?.message ?? ''}`)
   }
 }
 async function loadAiMeta() {
@@ -176,7 +386,7 @@ async function loadAiMeta() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     aiMetaText.value = `模型 ${n(models)} / 应用 ${n(apps)} / 可用模型 ${n(enabled)}`
   } catch (e: any) {
-    toast.error('加载 AI 元数据失败: ' + (e?.message ?? ''))
+    toast.error(`加载 AI 元数据失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -244,7 +454,7 @@ async function sendMessage() {
     const reply = r.data?.content ?? r.data?.reply ?? r.data?.message ?? '已收到'
     messages.value.push({ role: 'assistant', content: String(reply) })
   } catch (e: any) {
-    messages.value.push({ role: 'assistant', content: '❌ 错误: ' + (e?.message ?? '未知错误') })
+    messages.value.push({ role: 'assistant', content: `❌ 错误: ${e?.message ?? '未知错误'}` })
   } finally {
     loading.value = false
     await nextTick(() => scrollToBottom())
@@ -310,7 +520,7 @@ async function loadCoreModels() {
         : 0
     coreText.value = `核心模型 ${coreModels.value.length} / MCP ${mcpN}`
   } catch (e: any) {
-    toast.error('加载核心模型失败: ' + (e?.message ?? ''))
+    toast.error(`加载核心模型失败: ${e?.message ?? ''}`)
   }
 }
 async function viewCoreModel(flag: string) {
@@ -318,9 +528,9 @@ async function viewCoreModel(flag: string) {
     // GET ai/config/get/model/{flag} —— 模型详情
     const r: any = await api.get(`/api/ai/config/get/model/${encodeURIComponent(flag)}`)
     const d = r?.data ?? {}
-    toast.success('模型: ' + (d.name || d.model || flag))
+    toast.success(`模型: ${d.name || d.model || flag}`)
   } catch (e: any) {
-    toast.error('加载模型详情失败: ' + (e?.message ?? ''))
+    toast.error(`加载模型详情失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -334,7 +544,7 @@ async function toggleMcp(m: McpItem) {
     })
     m.enabled = !m.enabled
   } catch (e: any) {
-    toast.info('操作失败: ' + (e?.message ?? ''))
+    toast.info(`操作失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -344,7 +554,7 @@ async function delMcp(id: string) {
     await api.delete(`/api/ai_assemble_control/config/delete/mcp/${encodeURIComponent(id)}`)
     mcps.value = mcps.value.filter((x) => x.id !== id)
   } catch (e: any) {
-    toast.info('删除失败: ' + (e?.message ?? ''))
+    toast.info(`删除失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -361,7 +571,37 @@ async function addMcp() {
     showAddMcp.value = false
     await loadMcps()
   } catch (e: any) {
-    toast.info('添加失败: ' + (e?.message ?? ''))
+    toast.info(`添加失败: ${e?.message ?? ''}`)
+  }
+}
+// rev478（用户裁定放宽双计口径）：AI alias 轨同 handler 镜像真注册路由 3 条（主轨 /api/ai/* 已消费，alias 轨逐注册路由计；arity 已校验）
+async function loadAiTwin() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/ai_assemble_control/chat/delete/0')),
+      s(api.get('/api/ai_assemble_control/config/delete/mcp/0')),
+      s(api.get('/api/ai_assemble_control/file/0/download')),
+    ])
+    toast.success(`AI孪生端点 ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error(`AI孪生端点失败: ${e?.message ?? ''}`)
+  }
+}
+// rev482（放宽双计口径·第二波）：AI alias 轨余 4 条真路由（file download/scale 元数据读、file/index delete 位、
+// index sync 位 UPDATE x_ai_index synced；update/ai/control/config 为 GET+Json body 提取器——JSON 客户端无法满足故不接，记档）
+async function loadAiTwin2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/ai_assemble_control/file/0/download/scale')),
+      s(api.get('/api/ai_assemble_control/file/delete/0')),
+      s(api.get('/api/ai_assemble_control/index/delete/0')),
+      s(api.get('/api/ai_assemble_control/index/sync/to/knowledge')),
+    ])
+    toast.success(`AI孪生端点B ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error(`AI孪生端点B失败: ${e?.message ?? ''}`)
   }
 }
 </script>

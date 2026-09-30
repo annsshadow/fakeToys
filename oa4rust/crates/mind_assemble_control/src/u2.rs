@@ -353,7 +353,7 @@ pub async fn mind_save(
     session: Extension<shared::session::Session>,
     Json(body): Json<Value>,
 ) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = body
         .get("name")
@@ -388,7 +388,11 @@ pub async fn mind_save(
         .map(|s| s.to_string());
     if let Some(eid) = existing {
         if !eid.is_empty() {
-            let n = client
+            // 更新与版本记录同事务且版本 INSERT 失败必须传播（此前 `let _ =` 吞错：
+            // 版本落库失败被静默丢弃，响应仍报 fileVersion=N）。n=0（脑图不存在/已删）
+            // 时事务无写提交后落入下方新建分支，保持原语义。
+            let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+            let n = tx
                 .execute(
                     "UPDATE x_mind SET name = $2, content = COALESCE($3, content), \
                      folder_id = COALESCE($4, folder_id), description = COALESCE($5, description), \
@@ -409,7 +413,7 @@ pub async fn mind_save(
             if n > 0 {
                 // 记录版本
                 let vid = uuid::Uuid::new_v4().to_string();
-                let ver: i64 = client
+                let ver: i64 = tx
                     .query_one(
                         "SELECT COALESCE(MAX(file_version), 0) + 1 AS v FROM x_mind_version_info WHERE mind_id = $1",
                         &[&eid],
@@ -417,17 +421,19 @@ pub async fn mind_save(
                     .await
                     .map_err(|_| AppError::Internal)?
                     .get("v");
-                let _ = client
-                    .execute(
-                        "INSERT INTO x_mind_version_info (id, mind_id, name, file_version, creator, creator_unit, description, create_time) \
-                         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
-                        &[&vid, &eid, &name, &ver, &person, &body.get("creatorUnit").and_then(|v| v.as_str()).map(|s| s.to_string()), &description],
-                    )
-                    .await;
+                tx.execute(
+                    "INSERT INTO x_mind_version_info (id, mind_id, name, file_version, creator, creator_unit, description, create_time) \
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
+                    &[&vid, &eid, &name, &ver, &person, &body.get("creatorUnit").and_then(|v| v.as_str()).map(|s| s.to_string()), &description],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+                tx.commit().await.map_err(|_| AppError::Internal)?;
                 return Ok(Json(ActionResult::success(
                     json!({ "id": eid, "updated": n, "fileVersion": ver }),
                 )));
             }
+            tx.commit().await.map_err(|_| AppError::Internal)?;
         }
     }
 

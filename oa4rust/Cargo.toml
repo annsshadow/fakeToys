@@ -300,3 +300,13 @@ urlencoding = "2"
   x509-parser = "0.16"
   p256 = "0.13"
 
+# 发布构建优化：此前无 [profile.release]，二进制 125MB/未裁剪、codegen-units=16、无 LTO。
+# thin-LTO + 单 codegen 单元跨 crate 内联热路径；strip 去符号大幅缩小体积。
+# 保留默认 panic="unwind"：Web 服务需 axum 捕获 handler panic 转 500，不能 abort 整进程。
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+incremental = false
+

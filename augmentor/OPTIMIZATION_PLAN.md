@@ -38,7 +38,7 @@ augmentor/
 | 维度 | 现状 |
 |------|------|
 | 版本 | **3.0.0**（`augmentor.__version__` 是全仓唯一声明） |
-| 测试 | **3658 个**（3658 passed / 3 skipped），覆盖率 **98.55%**（门槛 80%） |
+| 测试 | **3668 个**（3668 passed / 3 skipped），覆盖率 **98.55%**（门槛 80%） |
 | 版本一致性 | FastAPI 元数据 / `web/package.json` / `docker-compose.yml` 默认 tag 三处均由测试锁定 |
 | HTTP API | **68 个端点 / 13 个 tag**，全部声明 `response_model`，无「无 schema 的 200 响应」；23 条写/删路由挂 `verify_api_key`，由动态发现的路由清单守门 |
 | 路径白名单 | 出厂默认 `web.data_roots` = **`["data"]`**（原 `["."]` 放行整个工作目录）；三处默认值由字面量钉住并交叉比对。`/api/data/list` 扫描范围与白名单同源；相对路径**先在根目录内查已存在的文件**、工作目录兜底，写入需显式 `data/x.json` |
@@ -163,10 +163,11 @@ augmentor/
 
 ### 2.9 3.0.0 复审：新缺陷与整改（本轮）
 
-对 3.0.0 重扫一遍，按「可复现实测证据」确认 8 项新缺陷（F-07 是需产品决策的出厂
-默认值，F-08 是收紧它时自己引出的前端回归）。基线：本轮开始前
-3605 passed / 98.37%，本轮结束 **3658 passed, 3 skipped / 98.55%**
-（+53 用例，全部经红→绿校验：把修复代码退回缺陷态，新测试必须失败）。
+对 3.0.0 重扫一遍，按「可复现实测证据」确认 11 项新缺陷并全部整改（F-07 是需产品决策的
+出厂默认值，F-08 是收紧它时自己引出的前端回归，F-09 / F-10 / F-11 是「端点拿自己的默认
+参数撞自己那道闸」这一族）。基线：本轮开始前 3605 passed / 98.37%，本轮结束
+**3668 passed, 3 skipped / 98.55%**
+（+63 用例，全部经红→绿校验：把修复代码退回缺陷态，新测试必须失败）。
 
 | 编号 | 缺陷 | 实测证据 | 整改 |
 |------|------|---------|------|
@@ -177,8 +178,11 @@ augmentor/
 | F-05 | **6 处 SDK 随机操作污染进程级 RNG** | `DataSplitter.split()` 之后调用方的全局随机序列被改写（参照序列对照实测：`0.9097 != 0.2929`） | `dataset_ops`（sample/split/shuffle/merge/模块级 helper）、`data_splitter`、`indexer`、`export_enhanced` 全改局部 `random.Random(seed)`；新增 `tests/unit/test_rng_hygiene.py` 门禁。CLI 侧同一坑 3.0 已修，SDK 侧当时漏了 |
 | F-06 | 文档/注释漂移 4 处 | `docs/README.md` 教用户用已删除的 `--no-url-removal`；`parser.py` 注释写「`history` 取消」而 `choices` 与实现都在；导出格式数写死 12 | 改为真实可执行命令；注释与实现对齐；文档里的**会漂移数字**改成「以枚举/清单为准」的写法 |
 | F-08 | **收紧默认值会让前端文件选择器集体 403**（收紧动作自己引出的缺陷） | 实测：把 `data_roots` 收紧后按旧解析规则跑闭环 —— 列表给出 `train_data_ui.json`，`GET /api/data/load/train_data_ui.json` 返回 **403**（相对路径只按工作目录解释，而工作目录已不在白名单内）。前端 8 处（`DataList.tsx`/`Analysis.tsx`/`AugmentForm.tsx`/…）都把 `files[].name` 原样拼回 URL，且 `{filename}` 只匹配单个路径段，改传 `data/x.json` 也走不通 | `resolve_within_roots` 对相对路径生成候选：**白名单根目录在前、工作目录兜底**，取第一个存在的解释（`_relative_candidates`）。闭环由 `TestBareNameResolvesInsideRoots::test_listed_name_can_be_loaded_back` 钉住（红→绿已验：403 → 200）。**写**一侧保持显式（`data/out.json`）：目标不存在时不替调用方猜目录，那种猜测会静默改掉产物落点，宁可 403 |
+| F-09 | **依赖端点的缺省注册表目录被自己的白名单闸拦下**，且注册表测试污染版本树 | 收紧后设 `AUGMENTOR_DATA_ROOTS=.../data`：`POST`/`GET /api/system/dependency/datasets` 与 `GET /api/system/dependency/graph` 不传 `registry_path` 时全部 **403**（`detail` 「路径超出允许的数据目录范围」）——三条端点把自己的默认值写死成 `.dependency_registry`（相对工作目录），而工作目录已不在闸内。另一侧，`tests/unit/test_round68.py` 直接 `DependencyManager()` 构造（该类在**构造时** `mkdir`），每轮全量测试都在仓库里留下一处 `.dependency_registry/` | 新增 `deps.default_registry_dir()` ＝ 白名单首个根目录下的 `.dependency_registry`（出厂默认 `data/.dependency_registry`），三条端点的 `registry_path` 改为 `Optional[str] = Query(None)`，显式传参仍走 `resolve_data_dir()` 校验；只有参数**完全缺席**才用缺省，显式空串照旧 400（否则一个可选参数就能把白名单绕成静默兜底）。`test_round68.py` 改为 `monkeypatch.chdir(tmp_path)` + 显式路径。红→绿已验：把默认值退回 `.dependency_registry` → `assert 403 == 200`。全量跑后仓库无 `.dependency_registry/` 残留。SDK/CLI 侧默认参数**不改**（离线工具以工作目录为常识落点，且不经 API 白名单），只让 `--registry-path data/.dependency_registry` 能与 API 共用同一份登记 |
+| F-10 | **备份端点的缺省 `backup_dir` 同样被自家白名单闸拦下**（与 F-09 同构） | 收紧后设 `AUGMENTOR_DATA_ROOTS=.../data`：`GET /api/system/backups` → **403**、`POST /api/system/backups` → 403；四条端点的默认值都是相对工作目录的 `.backups` | 新增 `deps.default_backup_dir()`（白名单首个根目录下的 `.backups`，出厂默认 `data/.backups`），四条端点改 `Optional[str] = Query(None)`，缺省跟白名单、显式空串仍 400。红→绿已验：退回 `backup_dir: str = ".backups"` → 生命周期用例失败。**未迁移历史数据**：仓库里旧的 `augmentor/.backups/`（`.gitignore` 忽略，内含 2026-09-23 之前测试留下的 `index.json`/`snap.json` 与一份旧进度笔记）仍在原处，需要的话自行 `mv .backups data/.backups` |
+| F-11 | **服务自身的配置文件被当成数据路径校验**：`POST /api/system/validate-config` 不传 `path` 时必 403 | 实测默认体 `{}` → **403**；显式传绝对路径 `augmentor/config.yaml` → 同样 403（配置文件根本不在数据白名单内）。同时 `POST /api/config` 里的 `save_config(p.config, "config.yaml")` 完全**不经**白名单，两处对「配置文件在哪」各写一遍字面量 | `deps.config_file_path()` 成为唯一入口（`AUGMENTOR_CONFIG_PATH` > 工作目录 `config.yaml`），`get_pipeline`、`allowed_data_roots`、`api/main.py` 的 CORS 读取、`POST /api/config` 的落盘、`validate-config` 的缺省校验全部改走它；客户端**显式**传入的 `path` 仍按数据白名单校验（越界 403 由用例钉住）。红→绿已验：退回 `request.path or "config.yaml"` → 缺省用例失败 |
 
-**方法学收获**（两条，都已写进对应用例的 docstring）：
+**方法学收获**（三条，都已写进对应用例的 docstring）：
 
 1. **守门测试自己需要守门**。`test_api_security.py` 用一份手抄的路由模块清单来
    检查「新路由有没有挂鉴权」，于是新增 `dataset_tools.py` 时它静默失明。修法是
@@ -187,6 +191,11 @@ augmentor/
 2. **判据必须先做可失败性校准**。第一版 RNG 门禁写成「seed → 取值 → 调用 → 再
    seed → 取值」，两次都重新播种所以恒等，注入缺陷后仍然绿灯。改成「同一序列中
    插入调用，比较后续值」才真正可失败。这与 §2.7 的「同源预言机是假测试」同源。
+3. **收紧一道闸，要顺着「谁拿自己的默认参数撞这道闸」再扫一遍**。F-09 不属于新代码，
+   而是收紧动作把三条本来就有问题的端点变成了「默认调用必 403」。这类回归不会让任何
+   旧用例变红 —— 既有依赖用例**全都显式传 `registry_path`**。排查手法：grep 路由签名里的
+   `: str = "` 相对路径默认值，逐条实测不传参的调用。按此扫出的三条中 `.dependency_registry`
+   已修（F-09），`.backups`（F-10）与 `config.yaml`（F-11）两条同理由维护者放行后一并收口。
 
 **3.2 出厂默认已收紧（F-07，2026-09-23 由维护者决策执行）**：`web.data_roots` 由
 `["."]` 改为 `["data"]`。**代价是破坏性的，尚未替用户迁移数据**：
@@ -194,14 +203,17 @@ augmentor/
 - **读**一侧的写法不变：裸文件名会在白名单各根目录内查找（见 F-08），所以
   `/api/data/load/train_data.json` 与前端列表都能继续用；命中不了工作目录解释时才 403。
 - **写**新文件必须显式给白名单内的路径，如 `data/out.json`；服务端不猜写入目录。
-- 工作目录（`augmentor/`）根下的 4 个 `train_data*.json`（共约 10.3 MB，
-  `train_data.json` / `train_data_final.json` / `train_data_final01.json` / `train_data_final02.json`）
-  以及 `up.json`、`test_output.json` 从此**对 API 不可见**（它们不在 `data/` 里，
-  裸文件名查找也找不到）。要继续用需自行移动：`mv train_data*.json data/`，
-  或把该目录并进 `AUGMENTOR_DATA_ROOTS`。
-  这些文件由 `.gitignore` 显式忽略（`augmentor/train_data.json` 等条目），**不在版本库里**，
-  所以移动后需同步 `.gitignore` 的路径，且换机器不会自动恢复。
-  文档示例（`docs/README.md`、`enhanceTXT.py` 等）里引用这些根路径的地方需同步。
+- 工作目录（`augmentor/`）根下的 4 个 `train_data*.json`（共约 10.3 MB；md5 现量：
+  `train_data.json` 与 `train_data_final.json` **逐字节相同**）以及 `up.json`，已于
+  **2026-09-28 按本条处方搬进 `data/`**，因此现在对 API 可见。它们全部未被跟踪，
+  搬动不产生任何提交；`.gitignore` 里 `augmentor/data/` 那条已经覆盖新落点，而根目录那几条
+  按名的规则**保留作兜底**（防止日后有代码按 CWD 裸名再落一份回根目录）。换机器不会自动恢复。
+- **`test_output.json` 不属于上面这批**：它不是数据集而是**套件产物**。原来 `tests/unit/test_export_opt.py`
+  里那句导出传的是相对裸名，每跑一次套件就在 CWD 落一份；那份既存文件会让 A168 的残留守卫
+  把 before/after 差集抵冲成空（与 `x` 那一族同形）。现已改为写 `tmp_path`，先前留在
+  工作目录根与仓库根的两份产物移进 Temp 下观察一轮，**不删**（可逆）。
+- 文档示例（`docs/README.md`、`enhanceTXT.py` 等）里那些「工作目录根下」的写法指的是**文件名**，
+  不是落点断言；真正按路径读它们的只有 `archive/enhanceTXT.py` 那份归档脚本（运行时无人调用）。
 - Docker 部署不受影响：镜像工作目录 `/app`、数据在 `/app/data`，新默认与之一致。
 - 需要旧行为时显式声明 `web.data_roots: ["."]` 或设 `AUGMENTOR_DATA_ROOTS`——
   白名单收紧后这两条是唯一的逃生阀，且都有测试覆盖。
@@ -219,6 +231,10 @@ augmentor/
 
 ### 3.2 后端
 
+- [x] **F-10 / F-11：备份目录与服务配置文件的缺省路径**（两条都是「自家默认参数撞自家
+      闸」，实测 403 证据与整改见 §2.9 的 F-10 / F-11 行）。F-10 未替用户迁移旧的
+      `augmentor/.backups/`；F-11 把「配置文件在哪」收敛到 `deps.config_file_path()`，
+      顺带堵掉 `POST /api/config` 里第二处 `"config.yaml"` 字面量
 - [x] **`web.data_roots` 出厂默认 `["."]` → `["data"]`**（旧默认放行整个工作目录子树，
       含 `config.yaml` 与备份目录）。已由维护者决策、本轮收紧并配三重钉住测试，
       迁移代价与待办见 §2.9 末「3.2 出厂默认已收紧」

@@ -3,11 +3,10 @@
 
 """Ollama 本地模型后端 - 优化版"""
 
-import json
 from typing import Optional
-from .base import ModelBackend
+from .base import ModelBackend, extract_json_array
 from ..config import ModelConfig
-from ..exceptions import ModelGenerateError, ModelNotConfiguredError, ModelResponseError
+from ..exceptions import ModelGenerateError, ModelNotConfiguredError
 
 
 class OllamaBackend(ModelBackend):
@@ -17,7 +16,12 @@ class OllamaBackend(ModelBackend):
                  config: ModelConfig,
                  response_cache_dir: Optional[str] = None,
                  response_cache_ttl: Optional[float] = None,
-                 response_cache_max_bytes: Optional[int] = None):
+                 response_cache_max_bytes: Optional[int] = None,
+                 default_attempts: Optional[int] = None,
+                 default_retry_delay: Optional[float] = None,
+                 default_max_retry_wait: Optional[float] = None,
+                 default_retry_jitter: Optional[float] = None,
+                 default_request_timeout: Optional[float] = None):
         """初始化 Ollama 后端
 
         Args:
@@ -25,12 +29,22 @@ class OllamaBackend(ModelBackend):
             response_cache_dir: 磁盘响应缓存目录，None 即不启用（见基类说明）
             response_cache_ttl: 磁盘缓存生存时间（秒）
             response_cache_max_bytes: 磁盘缓存容量上限（字节）
+            default_attempts: 重试默认档位（总尝试次数），见基类说明
+            default_retry_delay: 退避基数默认值（秒），见基类说明
+            default_max_retry_wait: 服务端指令一支的等待上限（秒），见基类说明
+            default_retry_jitter: 退避抖动比例（0-1），见基类说明
+            default_request_timeout: 单次请求超时（秒），见基类说明
         """
         super().__init__(
             config,
             response_cache_dir=response_cache_dir,
             response_cache_ttl=response_cache_ttl,
             response_cache_max_bytes=response_cache_max_bytes,
+            default_attempts=default_attempts,
+            default_retry_delay=default_retry_delay,
+            default_max_retry_wait=default_max_retry_wait,
+            default_retry_jitter=default_retry_jitter,
+            default_request_timeout=default_request_timeout,
         )
         if not config.base_url:
             raise ModelNotConfiguredError("Ollama 后端需要 base_url")
@@ -62,7 +76,8 @@ class OllamaBackend(ModelBackend):
         }
         
         session = self._get_session()
-        response = session.post(self.api_url, json=payload, headers=headers, timeout=120)
+        response = session.post(self.api_url, json=payload, headers=headers,
+                                timeout=self._request_timeout)
         response.raise_for_status()
         
         data = response.json()
@@ -74,30 +89,14 @@ class OllamaBackend(ModelBackend):
     
     def extract_json_from_response(self, response: str) -> list:
         """从响应中提取 JSON 数组
-        
+
+        复用基类唯一的 robust 解析器，删掉本方法此前逐字复制的同一段直接解析 +
+        括号切片逻辑（与 `extract_json_array` 一字不差 ⇒ 纯重复，A111）。
+
         Args:
             response: 模型响应文本
-        
+
         Returns:
             JSON 数组
         """
-        # 尝试直接解析
-        try:
-            result = json.loads(response)
-            if isinstance(result, list):
-                return result
-        except json.JSONDecodeError:
-            pass
-        
-        # 尝试从文本中提取
-        start = response.find('[')
-        end = response.rfind(']') + 1
-        
-        if start >= 0 and end > start:
-            json_str = response[start:end]
-            try:
-                return json.loads(json_str)
-            except json.JSONDecodeError as e:
-                raise ModelResponseError(f"响应片段无法解析为 JSON 数组: {e}") from e
-        
-        raise ModelResponseError("无法从响应中提取 JSON 数组")
+        return extract_json_array(response)

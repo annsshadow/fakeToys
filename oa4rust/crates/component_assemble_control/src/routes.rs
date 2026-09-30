@@ -27,14 +27,6 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
             get(list_components),
         )
         .route(
-            "/api/component_assemble_control/save/component",
-            get(save_component),
-        )
-        .route(
-            "/api/component_assemble_control/delete/component",
-            get(delete_component),
-        )
-        .route(
             "/api/component_assemble_control/get/control/config",
             get(get_control_config),
         )

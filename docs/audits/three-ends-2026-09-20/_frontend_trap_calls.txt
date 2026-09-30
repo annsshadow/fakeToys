@@ -1,0 +1,56 @@
+DELETE     /api/portal/assemble/surface/delete/layout  <- oa4rust-web\packages\apis\src\index.ts
+DELETE     /api/program_center/appstyle/image/application/top/erase  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+DELETE     /api/program_center/appstyle/image/launch/logo/erase  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+DELETE     /api/program_center/appstyle/image/login/avatar/erase  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+DELETE     /api/program_center/appstyle/image/menu/logo/blur/erase  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+DELETE     /api/program_center/appstyle/image/menu/logo/focus/erase  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+DELETE     /api/program_center/appstyle/image/process/default/erase  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+DELETE     /api/program_center/appstyle/image/setup/about/logo/erase  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+GET        /api/bbs/assemble/control/user/info  <- oa4rust-web\apps\desktop\src\views\BBSForum.vue
+GET        /api/file/list/referencetype  <- oa4rust-web\apps\desktop\src\views\FileManager.vue
+GET        /api/processplatform/assemble/surface/review/filter/create/entry  <- oa4rust-web\apps\desktop\src\views\ProcessWork.vue
+GET        /api/processplatform/service/processing/touch/deletedraft  <- oa4rust-web\apps\desktop\src\views\ProcessWork.vue
+GET        /api/processplatform/service/processing/touch/handoverjob  <- oa4rust-web\apps\desktop\src\views\ProcessWork.vue
+GET        /api/processplatform/service/processing/touch/mergeitem  <- oa4rust-web\apps\desktop\src\views\ProcessWork.vue
+GET        /api/processplatform/service/processing/touch/touchdelay  <- oa4rust-web\apps\desktop\src\views\ProcessWork.vue
+GET        /api/processplatform/service/processing/touch/urge  <- oa4rust-web\apps\desktop\src\views\ProcessWork.vue
+GET        /api/program_center/appstyle/image/application/top/erase  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+GET        /api/program_center/appstyle/image/launch/logo/erase  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+GET        /api/program_center/appstyle/image/menu/logo/blur/erase  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+GET        /api/program_center/appstyle/image/menu/logo/focus/erase  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+GET        /api/program_center/appstyle/image/process/default/erase  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+GET        /api/program_center/appstyle/image/setup/about/logo/erase  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+GET        /api/program_center/config/centerserver  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+GET        /api/program_center/config/license  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+GET        /api/program_center/config/open  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+GET        /api/program_center/config/person  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+GET        /api/program_center/config/portal  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+GET        /api/program_center/config/proxy  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+GET        /api/program_center/module/output/structure  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+GET        /api/program_center/mpweixin/menu/create/to/weixin  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+POST   BODY /api/bbs/assemble/control/shutup/delete  <- oa4rust-web\apps\desktop\src\views\BBSForum.vue
+POST   BODY /api/processplatform/assemble/surface/read/filter/attribute/filter  <- oa4rust-web\apps\desktop\src\views\ProcessWork.vue
+POST   BODY /api/processplatform/assemble/surface/readcompleted/filter/attribute/filter  <- oa4rust-web\apps\desktop\src\views\ProcessWork.vue
+POST   BODY /api/processplatform/assemble/surface/review/filter/attribute  <- oa4rust-web\apps\desktop\src\views\ProcessWork.vue
+POST   BODY /api/processplatform/assemble/surface/review/v2/search  <- oa4rust-web\apps\desktop\src\views\ProcessWork.vue
+POST   BODY /api/processplatform/assemble/surface/task/filter/attribute/filter  <- oa4rust-web\apps\desktop\src\views\ProcessWork.vue
+POST   BODY /api/processplatform/assemble/surface/taskcompleted/filter/attribute/filter  <- oa4rust-web\apps\desktop\src\views\ProcessWork.vue
+POST   BODY /api/processplatform/assemble/surface/work/v3/retract  <- oa4rust-web\apps\desktop\src\views\ProcessWork.vue
+POST   BODY /api/processplatform/assemble/surface/workcompleted/shift/time  <- oa4rust-web\apps\desktop\src\views\ProcessWork.vue
+POST   BODY /api/processplatform/service/processing/review/init/review  <- oa4rust-web\apps\desktop\src\views\ProcessWork.vue
+POST   BODY /api/processplatform/service/processing/touch/merge  <- oa4rust-web\apps\desktop\src\views\ProcessManagerApp.vue
+POST   BODY /api/processplatform/service/processing/workcompleted/shift/time  <- oa4rust-web\apps\desktop\src\views\ProcessWork.vue
+POST   BODY /api/program_center/config/open  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+POST       /api/program_center/config/open/run/time/config  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+POST   BODY /api/program_center/mpweixin/check  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+POST   BODY /api/program_center/qiyeweixin  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+POST       /api/program_center/schedule/schedule/fire  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+PUT        /api/portal/assemble/surface/save/layout  <- oa4rust-web\packages\apis\src\index.ts
+PUT    BODY /api/processplatform/assemble/surface/keylock/lock  <- oa4rust-web\apps\desktop\src\views\ProcessWork.vue
+PUT    BODY /api/program_center/collect/urlMapping  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+PUT        /api/program_center/config/centerserver  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+PUT    BODY /api/program_center/config/collect  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+PUT        /api/program_center/config/person  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+PUT    BODY /api/program_center/config/portal  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+PUT    BODY /api/program_center/config/proxy  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue
+PUT    BODY /api/program_center/module/output  <- oa4rust-web\apps\desktop\src\views\ProgramCenterApp.vue

@@ -52,6 +52,30 @@ EXPORT_FORMATS = [
     "llama_factory", "vicuna", "belle", "openai", "huggingface", "raw",
 ]
 
+# `convert --input-format` 可选的源格式（反向边 alpaca/sharegpt/chatml/… → json
+# 落盘也是 `.json`，扩展名推不出来，只能显式声明）。权威表在
+# `converter.INPUT_FORMAT_CHOICES` —— 那里同时生成「无法从扩展名推断输入格式」的
+# 报错文案；这里显式列出（而不是 import 它）与本模块的既有口径一致：`parser.py`
+# 不 import 任何 augmentor 业务模块，`EXPORT_FORMATS` 同理。两侧的一致性由
+# `tests/integration/test_excel_convert_cli_api_l80.py::TestConvertInputFormatSurface`
+# 钉（它既比两份常量，也比 `add_argument` 上真正生效的 `choices`）。
+INPUT_FORMATS = [
+    "json", "jsonl", "csv", "tsv", "alpaca", "sharegpt", "chatml",
+    "llama_factory", "vicuna", "belle", "excel", "xlsx", "xls",
+]
+
+# `convert --format` 可选的目标格式。权威表在 `converter.OUTPUT_FORMAT_CHOICES`
+# （那份常量还生成写侧报错文案里的清单）；这里按本模块口径显式列出，两侧一致性由
+# `tests/integration/test_excel_write_cli_api_l84.py::TestConvertTargetFormatSurface` 钉。
+#
+# 它与 `INPUT_FORMATS` **不互为镜像**，差的恰好只有 Excel 那一族里的 `xls`：读边认它
+# （openpyxl 读得了 BIFF 老格式），写边写不出（要 xlwt，不在依赖表里）。放行 `xls`
+# 就是让命令行收下「必然写出假容器」的参数 —— 那正是 A133 要终结的症状。
+CONVERT_TARGET_FORMATS = [
+    "json", "jsonl", "csv", "tsv", "alpaca", "sharegpt", "chatml",
+    "llama_factory", "vicuna", "belle", "excel", "xlsx",
+]
+
 # `clean --rules` 可选的规则名，与 `cleaner.DatasetCleaner._default_rules` 的键
 # 一一对应。在这里显式列出（而不是留空）是为了让拼错的规则名由 argparse 拒绝，
 # 而不是被 `cleaner.clean` 静默忽略——后者会让人以为清洗跑过了。
@@ -61,6 +85,20 @@ CLEAN_RULES = [
     "normalize_whitespace", "remove_special_chars", "trim_whitespace",
     "remove_long_texts", "remove_short_texts", "normalize_punctuation",
 ]
+
+# `search --filter` 的 OP 位可选算子，与 `search_enhanced.FILTER_OPERATORS` 同集合同顺序。
+# 抄一份而不是 import：parser 是只依赖 argparse 的叶子，帮助路径不该为了一个字符串
+# 去加载检索模块。也不能用 argparse 的 `choices=`——它逐个校验 nargs 槽位，会把
+# FIELD / VALUE 一起当成算子来比（实测 `invalid choice: 'output'` + 退出码 2）。
+# 漂移由 `TestSearchCommand::test_the_help_lists_exactly_the_operators_the_throat_accepts` 钉住。
+SEARCH_FILTER_OPERATORS = [
+    "eq", "ne", "contains", "gt", "lt", "gte", "lte", "in", "not_in",
+]
+
+SEARCH_FILTER_HELP = (
+    "检索后再按字段收窄，可重复；OP 取 " + "/".join(SEARCH_FILTER_OPERATORS) +
+    "，VALUE 先按 JSON 解析（数字/列表这样写），解析不了就是字符串"
+)
 
 # `clean` 的默认规则集。顺序即执行顺序，噪声清除必须在空白归一化之前。
 # 这个集合刻意对齐合并前「基础实现」（`data.cleaner.DataCleaner`）的默认行为：
@@ -154,6 +192,30 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_parser.add_argument("--save-baseline", action="store_true", help="将结果保存为基准")
     benchmark_parser.add_argument("--report", type=str, help="报告输出路径")
 
+    # 健康度门禁命令
+    # 与 `benchmark` / `quality` 的区别：那两个只**产出**指标，这一条把指标
+    # 组合成「放行 / 拦下」的判定，并以退出码表达（拦下 = 1），可直接当 CI 关卡。
+    health_gate_parser = subparsers.add_parser(
+        "health-gate", help="数据集健康度评分 + 质量门禁（门禁不通过时退出码为 1）"
+    )
+    health_gate_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    health_gate_parser.add_argument("--text-field", type=str, default="instruction",
+                                    help="计算重复率使用的文本字段")
+    health_gate_parser.add_argument("--weights", type=float, nargs=4,
+                                    metavar=("COMPLETENESS", "DIVERSITY", "BALANCE", "COVERAGE"),
+                                    help="健康分权重（4 个，之和须为 1.0；缺省各 0.25）")
+    health_gate_parser.add_argument("--pass-rate", type=float,
+                                    help="质量通过率，取自 `quality` 的 pass_rate；"
+                                         "不传则该规则不参与判定并出现在 skipped_rules 里")
+    health_gate_parser.add_argument("--pass-rate-min", type=float, default=0.6,
+                                    help="pass_rate 规则的最低阈值")
+    health_gate_parser.add_argument("--duplicate-rate-max", type=float, default=0.3,
+                                    help="duplicate_rate 规则的最高阈值")
+    health_gate_parser.add_argument("--completeness-min", type=float, default=0.8,
+                                    help="completeness 规则的最低阈值（warning 级）")
+    health_gate_parser.add_argument("--block-on-warning", action="store_true",
+                                    help="warning 级规则失败也阻断")
+
     # 分析命令
     analyze_parser = subparsers.add_parser("analyze", help="分析数据集")
     analyze_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
@@ -232,6 +294,8 @@ def build_parser() -> argparse.ArgumentParser:
     sample_parser.add_argument("--method", type=str, default="random",
                                choices=["random", "systematic", "stratified"], help="采样方法")
     sample_parser.add_argument("--seed", type=int, help="随机种子")
+    sample_parser.add_argument("--stratify-key", type=str, default="instruction",
+                               help="分层采样的分组字段（仅 --method stratified 生效；空值报错）")
 
     # 数据集分割命令
     split_parser = subparsers.add_parser("split", help="分割数据集")
@@ -241,6 +305,13 @@ def build_parser() -> argparse.ArgumentParser:
     split_parser.add_argument("--val-ratio", type=float, default=0.1, help="验证集比例")
     split_parser.add_argument("--test-ratio", type=float, default=0.1, help="测试集比例")
     split_parser.add_argument("--seed", type=int, help="随机种子")
+    split_parser.add_argument("--stratify", action="store_true",
+                              help="按字段分层分割（委托 DataSplitter，比例校验改用其严口径）")
+    split_parser.add_argument("--stratify-key", type=str, default="instruction",
+                              help="分层分割的分组字段（--stratify 时空值报错）")
+    split_parser.add_argument("--no-shuffle", action="store_true",
+                              help="关闭打乱：分层时只把段内成员按输入原序回排（成员不变）；"
+                                   "不分层时连成员一起改变，且 --seed 不再起作用")
 
     # 数据集统计命令
     stats_parser = subparsers.add_parser("stats", help="数据集统计信息")
@@ -249,7 +320,9 @@ def build_parser() -> argparse.ArgumentParser:
     stats_parser.add_argument("--fields", type=str, nargs="+", help="统计字段（默认全部）")
 
     # 数据集验证命令
-    validate_parser = subparsers.add_parser("validate", help="验证数据集格式")
+    validate_parser = subparsers.add_parser(
+        "validate", help="验证数据集格式（判负时退出码为 1）"
+    )
     validate_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
     validate_parser.add_argument("--preset", type=str, default="basic",
                                  choices=["basic", "strict", "chat"], help="验证规则预设")
@@ -260,9 +333,17 @@ def build_parser() -> argparse.ArgumentParser:
     convert_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
     convert_parser.add_argument("--output", type=str, required=True, help="输出文件路径")
     convert_parser.add_argument("--format", type=str, required=True,
-                                choices=["json", "jsonl", "csv", "alpaca", "sharegpt", 
-                                        "chatml", "llama_factory", "vicuna", "belle"],
-                                help="目标格式")
+                                choices=CONVERT_TARGET_FORMATS,
+                                help="目标格式（excel / xlsx 写 .xlsx 二进制表格，"
+                                     "输出名必须是 .xlsx；老 .xls 只读不写）")
+    # 反向边（alpaca/sharegpt/chatml/... → json）：这些格式落盘也是 `.json`，
+    # 扩展名推不出来，只能显式声明；不给就按扩展名当 json 原样读。
+    # excel/xlsx/xls 也在这里：`convert --input x.xlsx` 能靠扩展名自己认出来，但
+    # 无扩展名或扩展名骗人（`.txt` 里装 xlsx）时得让调用方显式声明。
+    convert_parser.add_argument("--input-format", type=str, default=None,
+                                choices=INPUT_FORMATS,
+                                help="源格式（默认从输入文件扩展名推断；"
+                                     "excel/xlsx/xls 任拼一种都读同一张表的全部列）")
 
     # 数据集搜索命令
     # `--method` 取全部方法：exact / contains / ngram / fuzzy / regex。
@@ -277,21 +358,36 @@ def build_parser() -> argparse.ArgumentParser:
                                help="搜索方法")
     search_parser.add_argument("--limit", type=int, default=None, help="返回数量")
     search_parser.add_argument("--offset", type=int, default=0, help="偏移量")
+    search_parser.add_argument("--fuzzy-threshold", type=float, default=0.6,
+                               help="fuzzy 的相似度门槛 (0, 1]，越大越严格；1.0 即要求整串出现")
+    search_parser.add_argument("--ngram-n", type=int, default=2,
+                               help="ngram 的 gram 长度（>=1），越大越严格")
+    search_parser.add_argument("--filter", type=str, nargs=3, action="append",
+                               metavar=("FIELD", "OP", "VALUE"),
+                               help=SEARCH_FILTER_HELP)
     search_parser.add_argument("--output", type=str, help="结果输出路径（.json）")
 
     # 配置验证命令
-    validate_config_parser = subparsers.add_parser("validate-config", help="验证配置文件")
+    validate_config_parser = subparsers.add_parser(
+        "validate-config", help="验证配置文件（报 ERROR 时退出码为 1）"
+    )
     # SUPPRESS：仅当子命令后显式传 --config 才写入，避免默认 None 覆盖全局 --config 的值
     validate_config_parser.add_argument(
         "--config", type=str, default=argparse.SUPPRESS, help="配置文件路径"
     )
 
     # 质量报告命令
-    quality_report_parser = subparsers.add_parser("quality-report", help="生成质量报告")
+    quality_report_parser = subparsers.add_parser(
+        "quality-report", help="生成质量报告（带 --gate 且不通过时退出码为 1）"
+    )
     quality_report_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
     quality_report_parser.add_argument("--output", type=str, help="输出报告路径")
     quality_report_parser.add_argument("--format", type=str, default="json", choices=["json", "markdown"], help="报告格式")
     quality_report_parser.add_argument("--threshold", type=float, default=0.7, help="质量阈值")
+    quality_report_parser.add_argument(
+        "--gate", action="store_true",
+        help="把报告变成门禁：总体状态未通过时退出码 1（默认只出报告，恒 0）",
+    )
 
     # 备份命令
     backup_parser = subparsers.add_parser("backup", help="数据备份")
@@ -311,30 +407,54 @@ def build_parser() -> argparse.ArgumentParser:
                                  help="启用额外模式（信用卡号/URL，误伤面较大）")
 
     # 泄漏检测命令
-    leak_parser = subparsers.add_parser("check-leakage", help="训练/测试集泄漏检测")
+    leak_parser = subparsers.add_parser(
+        "check-leakage", help="训练/测试集泄漏检测（带 --gate 且检出泄漏时退出码为 1）"
+    )
     leak_parser.add_argument("--train", type=str, required=True, help="训练集文件路径")
     leak_parser.add_argument("--test", type=str, required=True, help="测试集文件路径")
     leak_parser.add_argument("--fields", type=str, nargs="+", default=["instruction"], help="比较字段")
     leak_parser.add_argument("--fuzzy-threshold", type=float, default=0.8, help="近似匹配阈值")
     leak_parser.add_argument("--output", type=str, help="报告输出路径（.json）")
+    leak_parser.add_argument(
+        "--gate", action="store_true",
+        help="把报告变成门禁：检出泄漏时退出码 1（默认只出报告，恒 0）",
+    )
 
     # 数据集就绪审计命令
-    audit_parser = subparsers.add_parser("audit", help="数据集就绪审计")
+    audit_parser = subparsers.add_parser(
+        "audit", help="数据集就绪审计（带 --gate 且未就绪时退出码为 1）"
+    )
     audit_parser.add_argument("--input", type=str, required=True, help="数据集文件路径")
     audit_parser.add_argument("--reference", type=str, help="参考集（如测试集）路径")
     audit_parser.add_argument("--fields", type=str, nargs="+",
                               default=["instruction", "input", "output"], help="统计字段")
     audit_parser.add_argument("--output", type=str, help="报告输出路径（.json）")
+    audit_parser.add_argument(
+        "--gate", action="store_true",
+        help="把报告变成门禁：数据集未就绪时退出码 1（默认只出报告，恒 0）",
+    )
 
     # 依赖诊断命令
-    doctor_parser = subparsers.add_parser("doctor", help="运行时依赖诊断")
+    doctor_parser = subparsers.add_parser(
+        "doctor", help="运行时依赖诊断（带 --gate 且必需依赖缺失时退出码为 1）"
+    )
     doctor_parser.add_argument("--json", action="store_true", help="输出 JSON 报告")
+    doctor_parser.add_argument(
+        "--gate", action="store_true",
+        help="把报告变成门禁：必需依赖缺失时退出码 1（默认只出报告，恒 0）",
+    )
 
     # 自动化测试命令
-    auto_test_parser = subparsers.add_parser("auto-test", help="自动化测试")
+    auto_test_parser = subparsers.add_parser(
+        "auto-test", help="自动化测试（带 --gate 且有失败用例时退出码为 1）"
+    )
     auto_test_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
     auto_test_parser.add_argument("--output", type=str, help="输出报告路径")
     auto_test_parser.add_argument("--suite", type=str, help="测试套件名称")
+    auto_test_parser.add_argument(
+        "--gate", action="store_true",
+        help="把报告变成门禁：有失败用例时退出码 1（默认只出报告，恒 0）",
+    )
 
     # 质量监控命令
     monitor_parser = subparsers.add_parser("monitor", help="质量监控")
@@ -342,7 +462,9 @@ def build_parser() -> argparse.ArgumentParser:
     monitor_parser.add_argument("--output", type=str, help="输出报告路径")
 
     # 依赖管理命令
-    dependency_parser = subparsers.add_parser("dependency", help="依赖管理")
+    dependency_parser = subparsers.add_parser(
+        "dependency", help="依赖管理（--action validate 发现问题时退出码为 1）"
+    )
     dependency_parser.add_argument("--action", type=str, required=True, choices=["register", "list", "graph", "validate"], help="操作类型")
     dependency_parser.add_argument("--input", type=str, help="输入文件路径")
     dependency_parser.add_argument("--name", type=str, help="数据集名称")
@@ -350,10 +472,16 @@ def build_parser() -> argparse.ArgumentParser:
     dependency_parser.add_argument("--registry-path", type=str, default=".dependency_registry", help="注册表路径")
 
     # 迁移命令
-    migrate_parser = subparsers.add_parser("migrate", help="数据迁移")
+    migrate_parser = subparsers.add_parser(
+        "migrate", help="数据迁移（带 --gate 且有失败条目时退出码为 1）"
+    )
     migrate_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
     migrate_parser.add_argument("--output", type=str, required=True, help="输出文件路径")
     migrate_parser.add_argument("--rules", type=str, nargs="+", help="迁移规则")
+    migrate_parser.add_argument(
+        "--gate", action="store_true",
+        help="把报告变成门禁：有迁移失败条目时退出码 1（默认只出报告，恒 0）",
+    )
 
     # 数据画像命令
     profiling_parser = subparsers.add_parser("profile", help="生成数据集画像")

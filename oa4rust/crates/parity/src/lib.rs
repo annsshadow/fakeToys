@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Parity regression harness — Phase 4 U4.1.
 //!
 //! This crate provides:
@@ -281,6 +284,8 @@ macro_rules! parity_test {
 // We `include!` it so it compiles as tests in this crate.
 
 #[cfg(test)]
+// 生成代码是机械展开的路由断言，不做人工 lint
+#[allow(unreachable_code, unused_variables, non_snake_case, clippy::all)]
 mod generated_tests {
     //! AUTO-GENERATED — DO NOT EDIT. Run `python scripts/generate_parity_tests.py`.
     include!(concat!(
@@ -290,6 +295,7 @@ mod generated_tests {
 }
 
 #[cfg(test)]
+#[allow(non_snake_case)]
 mod behavior_tests {
     //! Hand-written behavior contract tests for Top 100 high-frequency routes.
     //!

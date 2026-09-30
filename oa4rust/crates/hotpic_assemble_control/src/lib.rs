@@ -14,6 +14,7 @@ pub const API_BASE: &str = "/api/hotpic_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
@@ -438,7 +439,7 @@ pub async fn cipher_hotpic_filter_list_page_page_count_count(
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = (page - 1) * count;
+    let (count, offset) = shared::response::page_window(page, count);
     let rows = client
         .query(
             "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2 OFFSET $1",
@@ -597,7 +598,7 @@ pub async fn user_hotpic_filter_list_page_page_count_count(
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = (page - 1) * count;
+    let (count, offset) = shared::response::page_window(page, count);
     let rows = client
         .query(
             "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2 OFFSET $1",

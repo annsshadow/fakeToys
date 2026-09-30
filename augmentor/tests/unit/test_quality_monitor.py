@@ -4,6 +4,7 @@
 """数据集质量监控模块测试"""
 
 import pytest
+from augmentor.exceptions import DataValidationError
 from augmentor.quality_monitor import (
     QualityMonitor, QualityThreshold, QualityAlert, QualitySnapshot,
     monitor_quality, create_monitor
@@ -373,12 +374,17 @@ class TestQualityMonitorExtended3:
         assert "value" in trend[0]
 
     def test_get_history_limit_zero(self, sample_dataset):
-        """limit=0 时历史应返回全部快照（切片行为）"""
+        """limit=0 是「一条都不要」，不是「没传参数」
+
+        这条以前叫「切片行为」并断言返回全部快照——那是把 `[-0:] == [0:]` 这个
+        切片副作用当成了契约。判据收紧后 0 被忠实读到，越界值改走报错路径。
+        """
         monitor = QualityMonitor()
         monitor.check_quality(sample_dataset)
-        history = monitor.get_history(limit=0)
-        # 切片 [-0:] 等价于全部，这是现有实现语义
-        assert len(history) == 1
+        assert monitor.get_history(limit=0) == []
+        assert len(monitor.get_history(limit=1)) == 1
+        with pytest.raises(DataValidationError):
+            monitor.get_history(limit=-1)
 
     def test_get_summary_with_data(self, sample_dataset):
         """有数据时摘要包含最新快照指标与告警数"""

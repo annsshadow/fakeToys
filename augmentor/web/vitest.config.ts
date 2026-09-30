@@ -14,6 +14,12 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    // 页面级组件测试（L104–L113）落地后，测试文件从 2 份增至 13 份。jsdom + antd
+    // 的挂载渲染很重，多文件并行时 CPU 争用会让挂载期的 `waitFor` 偶发超过默认的
+    // 5s testTimeout（单文件跑必过、13 文件并行才偶发）。抬高到 20s 给足挂载头寸，
+    // 既不掩盖真失败（真失败是断言不符、秒级即报，不会拖到 20s），也不必牺牲并行度。
+    testTimeout: 20000,
+    hookTimeout: 20000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],

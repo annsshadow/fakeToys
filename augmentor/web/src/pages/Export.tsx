@@ -15,7 +15,7 @@ import {
 } from 'antd'
 import DataList from '../components/DataList'
 import ExportDialog from '../components/ExportDialog'
-import { getExportFormats, previewExport, batchExport } from '../services/api'
+import { apiErrorDetail, bulkErrorDetail, getExportFormats, previewExport, batchExport } from '../services/api'
 import type { ExportPreviewResponse } from '../types/api'
 
 /** 批量导出表单的字段，与各 `Form.Item` 的 `name` 一一对应 */
@@ -47,7 +47,7 @@ export default function Export() {
   useEffect(() => {
     getExportFormats()
       .then(result => setFormats(result.formats || []))
-      .catch(() => message.error('加载导出格式失败'))
+      .catch((err) => message.error(apiErrorDetail(err, '加载导出格式失败')))
   }, [])
 
   const handlePreview = async () => {
@@ -58,8 +58,8 @@ export default function Export() {
     setLoading(true)
     try {
       setPreview(await previewExport(file, previewFormat))
-    } catch {
-      message.error('预览失败')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '预览失败'))
     } finally {
       setLoading(false)
     }
@@ -78,8 +78,8 @@ export default function Export() {
       const result = await batchExport(datasets, values.outputDir, values.formats)
       setBatchResult(result.results)
       message.success('批量导出完成')
-    } catch {
-      message.error('批量导出失败')
+    } catch (err) {
+      message.error(bulkErrorDetail(err, '批量导出失败'))
     } finally {
       setLoading(false)
     }

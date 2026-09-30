@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Card, Form, Select, Input, Button, Space, message, Alert } from 'antd'
-import { getDataFiles, startAugmentation, getProgress } from '../services/api'
+import { apiErrorDetail, getDataFiles, startAugmentation, getProgress } from '../services/api'
 import type { AugmentProgress } from '../types/api'
 
 interface AugmentFormProps {
@@ -37,7 +37,7 @@ export default function AugmentForm({ onSubmitted }: AugmentFormProps) {
   useEffect(() => {
     getDataFiles()
       .then(result => setFiles(result.files.map(f => f.name)))
-      .catch(() => message.error('加载数据文件列表失败'))
+      .catch((err) => message.error(apiErrorDetail(err, '加载数据文件列表失败')))
   }, [])
 
   useEffect(() => {
@@ -61,8 +61,8 @@ export default function AugmentForm({ onSubmitted }: AugmentFormProps) {
       )
       message.success('增强任务已提交，可在进度面板查看状态')
       onSubmitted?.()
-    } catch {
-      message.error('增强任务启动失败')
+    } catch (err) {
+      message.error(apiErrorDetail(err, '增强任务启动失败'))
     } finally {
       setSubmitting(false)
     }

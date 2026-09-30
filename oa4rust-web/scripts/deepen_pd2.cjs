@@ -1,4 +1,4 @@
-const fs = require('fs')
+const fs = require('node:fs')
 let content = fs.readFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/ProcessDesigner.vue', 'utf8')
 
 // === 12. Add advanced node type configurations ===
@@ -213,7 +213,7 @@ const extraStyles = `
 /* Node type badge colors */
 .node-type-badge{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:var(--radius-sm);font-size:9px;font-weight:600}
 `
-content = content.replace(styleEndMarker2, extraStyles + '</style>')
+content = content.replace(styleEndMarker2, `${extraStyles}</style>`)
 
 // Write back
 fs.writeFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/ProcessDesigner.vue', content)

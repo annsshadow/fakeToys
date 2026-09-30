@@ -5,6 +5,7 @@ import cron from "node-cron";
 import type { AppConfig } from "./types.js";
 import { runAll } from "./runner.js";
 import { createLogger } from "./logger.js";
+import { shouldFailRun } from "./run-status.js";
 import { setNextRunAt } from "./server.js";
 
 const log = createLogger("scheduler");
@@ -38,7 +39,10 @@ export function startScheduler(config: AppConfig): void {
     () => {
       log.info("定时触发：开始全部站点签到");
       runAll(config)
-        .then(() => setNextRunAt(estimateNext(expr)))
+        .then((results) => {
+          if (shouldFailRun(results)) log.error("定时触发未完成或存在失败站点");
+          setNextRunAt(estimateNext(expr));
+        })
         .catch((e) => log.error(String(e)));
     },
     { timezone },
@@ -49,6 +53,10 @@ export function startScheduler(config: AppConfig): void {
 
   if (runOnStartup) {
     log.info("启动即运行一次…");
-    runAll(config).catch((e) => log.error(String(e)));
+    runAll(config)
+      .then((results) => {
+        if (shouldFailRun(results)) log.error("启动即运行未完成或存在失败站点");
+      })
+      .catch((e) => log.error(String(e)));
   }
 }

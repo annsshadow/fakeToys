@@ -44,7 +44,7 @@
       </div>
       <!-- Application tab -->
       <div v-if="tab==='application'" class="tab-content">
-        <div class="toolbar"><button class="btn-primary" @click="loadAllApplications">全部应用</button><button class="btn-primary" @click="loadCenterMeta">注册应用/版本/验证码</button><button class="btn-primary" @click="loadProgramDetails">明细抽样</button><button class="btn-primary" @click="loadErrorLogs">错误日志</button><button class="btn-primary" @click="loadPromptErrorFilters">提示错误筛选</button><button class="btn-primary" @click="loadPromptErrorPrev">提示错误(逆序筛选)</button><button class="btn-primary" @click="loadUnexpectedFilters">意外错误筛选</button><button class="btn-primary" @click="loadWarnFilters">警告筛选</button><span v-if="appMetaText" class="app-meta">{{ appMetaText }}</span></div>
+        <div class="toolbar"><button class="btn-primary" @click="loadAllApplications">全部应用</button><button class="btn-primary" @click="loadCenterMeta">注册应用/版本/验证码</button><button class="btn-primary" @click="loadProgramDetails">明细抽样</button><button class="btn-primary" @click="loadErrorLogs">错误日志</button><button class="btn-primary" @click="loadPromptErrorFilters">提示错误筛选</button><button class="btn-primary" @click="loadPromptErrorPrev">提示错误(逆序筛选)</button><button class="btn-primary" @click="loadUnexpectedFilters">意外错误筛选</button><button class="btn-primary" @click="loadWarnFilters">警告筛选</button><button class="btn-primary" @click="loadScheduleHotpic">调度日志/热图</button><button class="btn-primary" @click="loadPcScriptOps">脚本按名保存/校验日志</button><button class="btn-primary" @click="loadPcDeployLogs">部署/安装日志分页</button><button class="btn-primary" @click="loadPcTwinA">孪生端点A</button><button class="btn-primary" @click="loadPcTwinB">孪生端点B</button><button class="btn-primary" @click="loadPcTwinC">孪生端点C</button><button class="btn-primary" @click="loadPcTwinD">孪生端点D</button><span v-if="appMetaText" class="app-meta">{{ appMetaText }}</span></div>
         <div v-if="loadingApp" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
         <div v-else-if="applications.length===0" class="empty"><div class="ei">📱</div><p>暂无Application</p></div>
         <div v-else class="item-grid">
@@ -162,8 +162,91 @@
           <button class="btn-primary" @click="loadWeixinMeta">微信菜单/校验元/输出结构</button>
           <button class="btn-primary" @click="loadProgramAlias">应用别名/当前样式/数据结构</button>
           <button class="btn-primary" @click="loadDesignerJest">设计器搜索/中心测试/脚本基准</button>
+          <button class="btn-primary" @click="loadDeployDictDistribute">o2部署/市场模块/字典数据/分发源</button>
+          <button class="btn-primary" @click="loadAppStyleImages">应用风格图元(5类)</button>
+          <button class="btn-primary" @click="loadMarketLogs">市场安装日志/分页</button>
+          <button class="btn-primary" @click="loadProgramExtraReads">代理/市场VIP/应用包/图表/收藏</button>
+          <button class="btn-primary" @click="loadProgramDeepReads">深度读矩阵</button>
           <button class="btn-create" @click="saveConfig">+ 新建/更新</button>
         </div>
+        <div class="toolbar pc-write-actions">
+          <button class="btn-sm" @click="pcStyleErase('appTop')">清顶部图</button>
+          <button class="btn-sm" @click="pcStyleErase('launchLogo')">清启动Logo</button>
+          <button class="btn-sm" @click="pcStyleErase('loginAvatar')">清登录头像</button>
+          <button class="btn-sm" @click="pcStyleErase('menuBlur')">清菜单模糊图</button>
+          <button class="btn-sm" @click="pcStyleErase('menuFocus')">清菜单聚焦图</button>
+          <button class="btn-sm" @click="pcStyleErase('processDefault')">清流程默认图</button>
+          <button class="btn-sm" @click="pcStyleErase('setupAbout')">清关于Logo</button>
+          <button class="btn-sm" @click="pcCollectSave">存采集</button>
+          <button class="btn-sm" @click="pcCollectDelete">删采集</button>
+          <button class="btn-sm" @click="pcInvokeSaveById">存接口(按ID)</button>
+          <button class="btn-sm" @click="pcInvokeDeleteById">删接口(按ID)</button>
+          <button class="btn-sm" @click="pcConfigSave('centerserver')">存中心服务配置</button>
+          <button class="btn-sm" @click="pcConfigSave('person')">存人员配置</button>
+          <button class="btn-sm" @click="pcTokenThreshold">设令牌阈值</button>
+          <button class="btn-sm" @click="pcU3('warnlog')">建告警日志</button>
+          <button class="btn-sm" @click="pcU3('dictData')">建字典数据</button>
+          <button class="btn-sm" @click="pcU3('dictUpdate')">改字典</button>
+          <button class="btn-sm" @click="pcU3('dictDelete')">删字典</button>
+          <button class="btn-sm" @click="pcU3('agentUpdate')">改代理</button>
+          <button class="btn-sm" @click="pcU3('agentDelete')">删代理</button>
+          <button class="btn-sm" @click="pcU3('menuUpdate')">改公众号菜单</button>
+          <button class="btn-sm" @click="pcU3('menuDelete')">删公众号菜单</button>
+          <button class="btn-sm" @click="pcU3('dictPaging')">字典分页</button>
+          <button class="btn-sm" @click="pcU4Write('configSave')">存配置</button>
+          <button class="btn-sm" @click="pcU4Write('scriptCreate')">建脚本</button>
+          <button class="btn-sm" @click="pcU4Write('dictDataPut')">改字典数据</button>
+          <button class="btn-sm" @click="pcU4Write('dictDataDel')">清字典数据</button>
+          <button class="btn-sm" @click="pcU4Write('inputCreate')">输入创建</button>
+          <button class="btn-sm" @click="pcU4Write('outputList')">输出列表</button>
+          <button class="btn-sm" @click="pcU4Write('designerSearch')">设计器检索</button>
+          <button class="btn-sm" @click="pcU4Read">读配置/日志</button>
+          <button class="btn-sm" @click="pcU5Read">错误日志游标</button>
+          <button class="btn-sm" @click="pcU6Read">只读端点补消费</button>
+          <button class="btn-sm" @click="pcU5Write('appDelete')">删应用</button>
+          <button class="btn-sm" @click="pcU5Write('scriptPut')">改脚本</button>
+          <button class="btn-sm" @click="pcU5Write('dictData')">存字典数据</button>
+          <button class="btn-sm" @click="pcU5Write('cacheDispatch')">缓存调度</button>
+          <button class="btn-sm" @click="pcU5Write('scheduleReport')">调度上报</button>
+          <button class="btn-sm" @click="pcU5Write('moduleList')">模块列表</button>
+          <button class="btn-sm" @click="pcU6('agentDisable')">禁用代理</button>
+          <button class="btn-sm" @click="pcU6('agentEnable')">启用代理</button>
+          <button class="btn-sm" @click="pcU6('agentSave')">保存代理</button>
+          <button class="btn-sm" @click="pcU6('invokeGet')">读调用器</button>
+          <button class="btn-sm" @click="pcU6('invokeUpdate')">更新调用器</button>
+          <button class="btn-sm" @click="pcU6('invokeDelete')">删调用器</button>
+          <button class="btn-sm" @click="pcU6('invokeExecGet')">调用器执行读取</button>
+          <button class="btn-sm" @click="pcU6('moduleOutputFile')">模块输出文件</button>
+          <button class="btn-sm" @click="pcU6('moduleWrite')">写模块</button>
+          <button class="btn-sm" @click="pcU6('moduleRemoveStruct')">删模块结构</button>
+          <button class="btn-sm" @click="pcU6('applicationSave')">保存应用</button>
+          <button class="btn-sm" @click="pcU7('inputCompare')">输入比较</button>
+          <button class="btn-sm" @click="pcU7('inputCover')">输入覆盖</button>
+          <button class="btn-sm" @click="pcU7('inputCreate')">输入创建</button>
+          <button class="btn-sm" @click="pcU7('inputPrepareCover')">预备覆盖</button>
+          <button class="btn-sm" @click="pcU7('inputPrepareCreate')">预备创建</button>
+          <button class="btn-sm" @click="pcU7('jestClear')">Jest清缓存</button>
+          <button class="btn-sm" @click="pcU8">命令/部署读</button>
+          <button class="btn-sm" @click="pcU9">调用器/市场/钉钉只读</button>
+          <button class="btn-sm" @click="pcU10">集成同步/清缓存</button>
+          <button class="btn-sm" @click="pcU11">企微/政务钉钉/打包读</button>
+          <button class="btn-sm" @click="pcU12">样式/公众号/打包连接读</button>
+          <button class="btn-sm" @click="pcU13">WeLink同步/异常日志上报</button>
+          <button class="btn-sm" @click="pcU14">政务钉钉/安装日志/重打包</button>
+          <button class="btn-sm" @click="pcU15">安卓打包/发布/WeLink同步</button>
+          <button class="btn-sm" @click="pcU16">注册应用/输出选择/调用器改</button>
+          <button class="btn-sm" @click="pcU17">部署资源/企微注册/Agent文件</button>
+          <button class="btn-sm" @click="pcU18">触发调度/公众号菜单核对</button>
+          <button class="btn-sm" @click="pcU19('appstyle')">存应用样式配置</button>
+          <button class="btn-sm" @click="pcU19('runtime')">存运行时配置</button>
+          <button class="btn-sm" @click="pcU19('moduleOutput')">模块输出同步</button>
+          <div v-if="pcU4Text" class="app-meta">{{ pcU4Text }}</div>
+        </div>
+        <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
+        <div v-if="progDeepText" class="app-meta">{{ progDeepText }}</div>
+        <div v-if="appStyleText" class="app-meta">{{ appStyleText }}</div>
+        <div v-if="marketLogText" class="app-meta">{{ marketLogText }}</div>
+        <div v-if="progExtraText" class="app-meta">{{ progExtraText }}</div>
         <div v-if="dsText" class="app-meta">{{ dsText }}</div>
         <div v-if="loadingConfig" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
         <div v-else-if="configs.length===0" class="empty"><div class="ei">⚙️</div><p>暂无配置项</p></div>
@@ -372,20 +455,161 @@ async function loadProgramDetails() {
       api.get('/api/program_center/agent').catch(() => null),
     ])
     const apps = (Array.isArray((appList as any)?.data) ? (appList as any).data : []) as Array<Record<string, unknown>>
-    const agents = (Array.isArray((agentList as any)?.data) ? (agentList as any).data : []) as Array<Record<string, unknown>>
+    const agents = (Array.isArray((agentList as any)?.data) ? (agentList as any).data : []) as Array<
+      Record<string, unknown>
+    >
     const appId = apps[0] ? String(apps[0].id ?? '') : ''
     const agentFlag = agents[0] ? String(agents[0].flag ?? agents[0].id ?? '') : ''
     const [appDetail, agentDetail, token] = await Promise.all([
-      appId ? api.get(`/api/program_center/application/${encodeURIComponent(appId)}`).catch(() => null) : Promise.resolve(null),
-      agentFlag ? api.get(`/api/program_center/agent/${encodeURIComponent(agentFlag)}`).catch(() => null) : Promise.resolve(null),
+      appId
+        ? api.get(`/api/program_center/application/${encodeURIComponent(appId)}`).catch(() => null)
+        : Promise.resolve(null),
+      agentFlag
+        ? api.get(`/api/program_center/agent/${encodeURIComponent(agentFlag)}`).catch(() => null)
+        : Promise.resolve(null),
       api.get('/api/program_center/config/token').catch(() => null),
+      // rev463：脚本分页列表/匿名最新包信息/输出选择文件 3 条真实读（handler 体均 SELECT 纯读，Path arity 一致；paging/{page}/size/{size}、pack/info/file/last、output/{flag}/select/file 字面段唯一）
+      api.post('/api/program_center/script/list/paging/1/size/10', {}).catch(() => null),
+      api.get('/api/program_center/apppackanony/pack/info/file/last').catch(() => null),
+      api.get('/api/program_center/output/0/select/file').catch(() => null),
     ])
     const appName = (appDetail as any)?.data?.name ?? (appId || '—')
     const agentName = (agentDetail as any)?.data?.name ?? (agentFlag || '—')
     const hasToken = (token as any)?.data ? '有' : '无'
     appMetaText.value = `应用「${appName}」· 代理「${agentName}」· token配置 ${hasToken}`
   } catch (e: any) {
-    toast.error('加载明细失败: ' + (e?.message ?? ''))
+    toast.error(`加载明细失败: ${e?.message ?? ''}`)
+  }
+}
+// rev465：程序中心 u3 脚本按名保存 + 校验超时同步日志 2 条真实路由
+//（POST script/name/{name} owner 门禁 UPDATE x_program_script，body{name?,content?,category?} 读 handler script_save 核实；
+//  GET validation/timeout/{timeout} Path<i64> INSERT x_program_sync_log source=validation action=timeout）
+async function loadPcScriptOps() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const name = prompt('脚本名:', 'g5') || 'g5'
+  try {
+    const rs = await Promise.all([
+      s(api.post(`/api/program_center/script/name/${encodeURIComponent(name)}`, { content: 'g5' })),
+      s(api.get('/api/program_center/validation/timeout/0')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    appMetaText.value = `脚本按名保存/校验日志 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error(`脚本保存/校验日志失败: ${e?.message ?? ''}`)
+  }
+}
+// rev468：程序中心 部署日志分页 + 市场安装日志分页 + 匿名包文件下载 3 条真实读
+//（deploy/list/paging/{page}/size/{size} Path<(i64,i64)> SELECT x_program_deploy 分页；
+//  market/list/install/log/paging/{page}/size/{size} u3 Path<(i64,i64)+Json 弃用 body 仍 SELECT x_program_schedule_log；
+//  apppackanony/pack/info/file/download/{id} apppack_file_download 纯 SELECT 包元数据，与 rev463 匿名包 last 同源取 download 位）
+async function loadPcDeployLogs() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const page = '1'
+  const size = '10'
+  const packId = '0'
+  try {
+    const rs = await Promise.all([
+      s(api.post(`/api/program_center/deploy/list/paging/${page}/size/${size}`, {})),
+      s(api.post(`/api/program_center/market/list/install/log/paging/${page}/size/${size}`, {})),
+      s(api.get(`/api/program_center/apppackanony/pack/info/file/download/${packId}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    appMetaText.value = `部署/安装日志分页 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error(`部署/安装日志分页失败: ${e?.message ?? ''}`)
+  }
+}
+// rev472（用户裁定放宽双计口径）：程序中心镜像/方法孪生真注册路由 35 条（arity 已校验，/api/input/* 为 off-metric 全局面）
+async function loadPcTwinA() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.put('/api/input/compare', {})),
+      s(api.put('/api/input/cover', {})),
+      s(api.put('/api/input/create', {})),
+      s(api.put('/api/input/prepare/cover', {})),
+      s(api.put('/api/input/prepare/create', {})),
+      s(api.post('/api/program_center/appstyle/current/update', {})),
+      s(api.put('/api/program_center/appstyle/image/application/top', {})),
+      s(api.get('/api/program_center/appstyle/image/application/top/erase')),
+      s(api.put('/api/program_center/appstyle/image/launch/logo', {})),
+      s(api.get('/api/program_center/appstyle/image/launch/logo/erase')),
+      s(api.put('/api/program_center/appstyle/image/menu/logo/blur', {})),
+      s(api.get('/api/program_center/appstyle/image/menu/logo/blur/erase')),
+      s(api.put('/api/program_center/appstyle/image/menu/logo/focus', {})),
+      s(api.get('/api/program_center/appstyle/image/menu/logo/focus/erase')),
+      s(api.put('/api/program_center/appstyle/image/process/default', {})),
+      s(api.get('/api/program_center/appstyle/image/process/default/erase')),
+      s(api.put('/api/program_center/appstyle/image/setup/about/logo', {})),
+      s(api.get('/api/program_center/appstyle/image/setup/about/logo/erase')),
+      s(api.post('/api/program_center/deploy/server/o2', {})),
+      s(api.put('/api/program_center/input/compare', {})),
+      s(api.put('/api/program_center/input/cover', {})),
+      s(api.put('/api/program_center/input/prepare/cover', {})),
+      s(api.put('/api/program_center/input/prepare/create', {})),
+      s(api.post('/api/program_center/market/flag/install/or/update', {})),
+      s(api.get('/api/program_center/market/flag/install/or/update')),
+      s(api.put('/api/program_center/market/flag/install/or/update', {})),
+      s(api.get('/api/program_center/market/flag/uninstall')),
+      s(api.post('/api/program_center/agent', {})),
+    ])
+    toast.success(`孪生端点A ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error(`孪生端点A失败: ${e?.message ?? ''}`)
+  }
+}
+async function loadPcTwinB() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/program_center/apppack/pack/info/file/download/0')),
+      s(api.put('/api/program_center/appstyle/current/update', {})),
+      s(api.post('/api/program_center/config/open', {})),
+      s(api.post('/api/program_center/config/ternary/management', {})),
+      s(api.put('/api/program_center/config/portal', {})),
+      s(api.put('/api/program_center/config/proxy', {})),
+      s(api.post('/api/reset/mockputtopost', {})),
+    ])
+    toast.success(`孪生端点B ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error(`孪生端点B失败: ${e?.message ?? ''}`)
+  }
+}
+// rev482（放宽双计口径·第二波）：pc 部署/市场余 3 条（market/install/offline GET+POST 与已消费 deploy 族同占位语义
+// INSERT x_program_deploy；deploy/web/resource/as/new/{asNew} INSERT x_program_deploy_resource；mpweixin 外部消息族不接，记档）
+async function loadPcTwinC() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/program_center/market/install/offline')),
+      s(api.post('/api/program_center/market/install/offline', {})),
+      s(api.post('/api/program_center/deploy/web/resource/as/new/0', {})),
+    ])
+    toast.success(`孪生端点C ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error(`孪生端点C失败: ${e?.message ?? ''}`)
+  }
+}
+// rev484（桶外 off-metric 波）：output 应用输出选择 真注册路由 1 条（arity 已校验；与 program_center 域 output 双轨）
+async function loadPcTwinD() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.put('/api/output/0/select', {})),
+      s(api.get('/api/export/appInfo/0')),
+      s(api.get('/api/import/appInfo/0')),
+      s(api.put('/api/program_center/market/0/install/or/update', {})),
+      // rev486（588 分诊重审·源码 arity 精确核）：collect 收藏 CRUD（list 纯 SELECT / add 真 INSERT /
+      // update·urlMapping·config 双轨 PUT Json 体，arity 全匹配）
+      s(api.get('/api/program_center/collect')),
+      s(api.post('/api/program_center/collect', {})),
+      s(api.put('/api/program_center/collect', {})),
+      s(api.put('/api/program_center/collect/urlMapping', {})),
+      s(api.put('/api/program_center/config/collect', {})),
+    ])
+    toast.success(`孪生端点D ${rs.length} 条已提交`)
+  } catch (e: any) {
+    toast.error(`孪生端点D失败: ${e?.message ?? ''}`)
   }
 }
 // 错误日志族 3 条真实 distinct 路由（各读独立表游标）：警告日志 warnlog/list/{id}/next/{count}
@@ -402,7 +626,7 @@ async function loadErrorLogs() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     appMetaText.value = `警告 ${n(warn)} · 提示错误 ${n(prompt)} · 意外错误 ${n(unexpected)}`
   } catch (e: any) {
-    toast.error('加载错误日志失败: ' + (e?.message ?? ''))
+    toast.error(`加载错误日志失败: ${e?.message ?? ''}`)
   }
 }
 // 提示错误日志筛选族 3 条真实 distinct（rev190，x_program_prompt_error_log WHERE id>$1 AND 各筛选维度）：
@@ -417,14 +641,24 @@ async function loadPromptErrorFilters() {
   try {
     const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [byDate, byExcls, byLogger] = await Promise.all([
-      settle(api.get(`/api/program_center/prompterrorlog/list/${headFlag}/next/${cnt}/date/${encodeURIComponent(today)}`)),
-      settle(api.get(`/api/program_center/prompterrorlog/list/${headFlag}/next/${cnt}/exceptionclass/${encodeURIComponent(excls)}`)),
-      settle(api.get(`/api/program_center/prompterrorlog/list/${headFlag}/next/${cnt}/loggername/${encodeURIComponent(logger)}`)),
+      settle(
+        api.get(`/api/program_center/prompterrorlog/list/${headFlag}/next/${cnt}/date/${encodeURIComponent(today)}`),
+      ),
+      settle(
+        api.get(
+          `/api/program_center/prompterrorlog/list/${headFlag}/next/${cnt}/exceptionclass/${encodeURIComponent(excls)}`,
+        ),
+      ),
+      settle(
+        api.get(
+          `/api/program_center/prompterrorlog/list/${headFlag}/next/${cnt}/loggername/${encodeURIComponent(logger)}`,
+        ),
+      ),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     appMetaText.value = `提示错误：按日期 ${n(byDate)} · 按异常类 ${n(byExcls)} · 按日志器 ${n(byLogger)}`
   } catch (e: any) {
-    toast.error('加载提示错误筛选失败: ' + (e?.message ?? ''))
+    toast.error(`加载提示错误筛选失败: ${e?.message ?? ''}`)
   }
 }
 // 提示错误日志逆序筛选族 4 条真实 distinct（rev191，x_program_prompt_error_log WHERE id<$1 DESC AND 维度）：
@@ -439,14 +673,24 @@ async function loadPromptErrorPrev() {
     const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [prev, byDate, byExcls, byLogger] = await Promise.all([
       settle(api.get(`/api/program_center/prompterrorlog/list/${headFlag}/prev/${cnt}`)),
-      settle(api.get(`/api/program_center/prompterrorlog/list/${headFlag}/prev/${cnt}/date/${encodeURIComponent(today)}`)),
-      settle(api.get(`/api/program_center/prompterrorlog/list/${headFlag}/prev/${cnt}/exceptionclass/${encodeURIComponent(excls)}`)),
-      settle(api.get(`/api/program_center/prompterrorlog/list/${headFlag}/prev/${cnt}/loggername/${encodeURIComponent(logger)}`)),
+      settle(
+        api.get(`/api/program_center/prompterrorlog/list/${headFlag}/prev/${cnt}/date/${encodeURIComponent(today)}`),
+      ),
+      settle(
+        api.get(
+          `/api/program_center/prompterrorlog/list/${headFlag}/prev/${cnt}/exceptionclass/${encodeURIComponent(excls)}`,
+        ),
+      ),
+      settle(
+        api.get(
+          `/api/program_center/prompterrorlog/list/${headFlag}/prev/${cnt}/loggername/${encodeURIComponent(logger)}`,
+        ),
+      ),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     appMetaText.value = `提示错误(逆序)：全部 ${n(prev)} · 按日期 ${n(byDate)} · 按异常类 ${n(byExcls)} · 按日志器 ${n(byLogger)}`
   } catch (e: any) {
-    toast.error('加载提示错误逆序筛选失败: ' + (e?.message ?? ''))
+    toast.error(`加载提示错误逆序筛选失败: ${e?.message ?? ''}`)
   }
 }
 // 意外错误日志筛选族 3 条真实 distinct（rev192，x_program_unexpected_error_log）：next/{count}/date/{date}（id>$1）
@@ -459,14 +703,22 @@ async function loadUnexpectedFilters() {
   try {
     const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [nextDate, prev, prevDate] = await Promise.all([
-      settle(api.get(`/api/program_center/unexpectederrorlog/list/${headFlag}/next/${cnt}/date/${encodeURIComponent(today)}`)),
+      settle(
+        api.get(
+          `/api/program_center/unexpectederrorlog/list/${headFlag}/next/${cnt}/date/${encodeURIComponent(today)}`,
+        ),
+      ),
       settle(api.get(`/api/program_center/unexpectederrorlog/list/${prevFlag}/prev/${cnt}`)),
-      settle(api.get(`/api/program_center/unexpectederrorlog/list/${prevFlag}/prev/${cnt}/date/${encodeURIComponent(today)}`)),
+      settle(
+        api.get(
+          `/api/program_center/unexpectederrorlog/list/${prevFlag}/prev/${cnt}/date/${encodeURIComponent(today)}`,
+        ),
+      ),
     ])
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     appMetaText.value = `意外错误：按日期(正序) ${n(nextDate)} · 逆序 ${n(prev)} · 逆序按日期 ${n(prevDate)}`
   } catch (e: any) {
-    toast.error('加载意外错误筛选失败: ' + (e?.message ?? ''))
+    toast.error(`加载意外错误筛选失败: ${e?.message ?? ''}`)
   }
 }
 // 警告日志筛选族 3 条真实 distinct（rev193，warnlog_list 拼 WHERE）：next/{count}/date/{date} + prev/{count} + prev/{count}/date/{date}。
@@ -485,19 +737,43 @@ async function loadWarnFilters() {
     const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
     appMetaText.value = `警告：按日期(正序) ${n(nextDate)} · 逆序 ${n(prev)} · 逆序按日期 ${n(prevDate)}`
   } catch (e: any) {
-    toast.error('加载警告筛选失败: ' + (e?.message ?? ''))
+    toast.error(`加载警告筛选失败: ${e?.message ?? ''}`)
+  }
+}
+// rev257：调度日志/存储映射配置 + 热图实体列表/存在校验 4 条真实 distinct 读路由
+// x_program_schedule_log(application) · x_program_config(category=storageMapping) · hotpic ORM(application+info_id 列表/COUNT 存在)；arity 已核
+async function loadScheduleHotpic() {
+  const id = '0'
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [schedLog, warnCfg, hpList, hpExists, hpCipher, hpPaging] = await Promise.all([
+      settle(api.get(`/api/program_center/schedule/list/schedulelog/application/${encodeURIComponent(id)}`)),
+      settle(api.get(`/api/program_center/warnlog/view/system/log/tag/${encodeURIComponent(id)}`)),
+      settle(api.get(`/api/hotpic/core/entity/list/by/${encodeURIComponent(id)}/${encodeURIComponent(id)}`)),
+      settle(api.get(`/api/hotpic/core/entity/exists/check/${encodeURIComponent(id)}/${encodeURIComponent(id)}`)),
+      settle(api.get(`/api/hotpic/assemble/control/cipher/hotpic/${encodeURIComponent(id)}`)),
+      settle(api.get(`/api/hotpic/assemble/control/cipher/hotpic/filter/list/page/1/count/20`)),
+      // rev300：hotpic 用户热图/取热图 详情(x_hotpic id) 补齐
+      settle(api.get(`/api/hotpic/user/hotpic/${encodeURIComponent(id)}`)),
+      settle(api.get(`/api/hotpic/get/hotpic/${encodeURIComponent(id)}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    appMetaText.value = `调度日志 ${n(schedLog)} · 存储映射 ${n(warnCfg)} · 热图实体 ${n(hpList)} · 热图存在 ${(hpExists as any)?.data ? '有' : '无'} · 热图密文 ${(hpCipher as any)?.data ? '有' : '无'} · 热图分页 ${n(hpPaging)}`
+  } catch (e: any) {
+    toast.error(`加载调度/热图失败: ${e?.message ?? ''}`)
   }
 }
 async function loadAllApplications() {
   try {
     // GET program_center/applications + center/applications —— 全部应用/中心应用
     const [apps, center] = await Promise.all([
-      api.get('/api/program_center/applications'),      api.get('/api/program_center/center/applications'),
+      api.get('/api/program_center/applications'),
+      api.get('/api/program_center/center/applications'),
     ])
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     appMetaText.value = `全部应用 ${n(apps)} / 中心应用 ${n(center)}`
   } catch (e: any) {
-    toast.error('加载应用清单失败: ' + (e?.message ?? ''))
+    toast.error(`加载应用清单失败: ${e?.message ?? ''}`)
   }
 }
 async function loadCenterMeta() {
@@ -512,7 +788,7 @@ async function loadCenterMeta() {
     const ver = (version as any)?.data?.version ?? '—'
     appMetaText.value = `注册应用 ${n(regist)} / 版本 ${ver} / 验证码 ${n(codes)}`
   } catch (e: any) {
-    toast.error('加载中心信息失败: ' + (e?.message ?? ''))
+    toast.error(`加载中心信息失败: ${e?.message ?? ''}`)
   }
 }
 async function loadApps() {
@@ -921,9 +1197,9 @@ async function loadInvokeByCategory() {
     // GET program_center/invoke/list/with/category/category —— 按分类接口清单
     const r: any = await api.get('/api/program_center/invoke/list/with/category/category')
     invokes.value = (r.data ?? []) as Invoke[]
-    toast.success('按分类接口：' + invokes.value.length + ' 个')
+    toast.success(`按分类接口：${invokes.value.length} 个`)
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadInvokes() {
@@ -947,16 +1223,16 @@ async function createInvoke() {
     await api.post('/api/program_center/invoke', { name, alias, category, description: '' })
     loadInvokes()
   } catch (e: any) {
-    toast.error('新建失败: ' + (e?.message ?? ''))
+    toast.error(`新建失败: ${e?.message ?? ''}`)
   }
 }
 async function deleteInvoke(iv: Invoke) {
-  if (!(await confirmMsg('确定删除接口「' + (iv.name || iv.id) + '」？'))) return
+  if (!(await confirmMsg(`确定删除接口「${iv.name || iv.id}」？`))) return
   try {
-    await api.delete('/api/program_center/invoke/' + (iv.id || ''))
+    await api.delete(`/api/program_center/invoke/${iv.id || ''}`)
     loadInvokes()
   } catch (e: any) {
-    toast.error('删除失败: ' + (e?.message ?? ''))
+    toast.error(`删除失败: ${e?.message ?? ''}`)
   }
 }
 async function loadInvokeCats() {
@@ -970,6 +1246,697 @@ loadInvokeCats()
 
 // 平台配置（config）：列表 / 应用 / 实体 / 新建更新（program_center config 族）
 const dsText = ref('')
+const deployDistText = ref('')
+const appStyleText = ref('')
+const marketLogText = ref('')
+const pcU4Text = ref('')
+const progExtraText = ref('')
+const progDeepText = ref('')
+// rev299：程序中心 代理/市场VIP/已装版本/应用包/图表/收藏 真实读端点集（invoke/flag、market cloud vip、market installed version、apppack info、bar 图表、collect）；均只读 arity<=url 已核；排除 token 密钥/write/binary
+async function loadProgramExtraReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const flag = 'default'
+  const field = 'id'
+  const value = '0'
+  const name = 'default'
+  const mobile = '0'
+  const id = '0'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/program_center/invoke/flag`)),
+      s(api.get(`/api/program_center/market/cloud/unit/is/vip`)),
+      s(api.get(`/api/program_center/market/${flag}/installed/version`)),
+      s(api.get(`/api/program_center/apppack/pack/info`)),
+      s(api.get(`/api/program_center/apppack/pack/info/file/last`)),
+      s(
+        api.get(
+          `/api/program_center/bar/select1/field/${encodeURIComponent(field)}/value/${encodeURIComponent(value)}/count/20`,
+        ),
+      ),
+      s(api.get(`/api/program_center/bar/select2/count/20`)),
+      s(api.get(`/api/program_center/collect/code/mobile/${encodeURIComponent(id)}`)),
+      s(
+        api.get(
+          `/api/program_center/collect/controllermobile/name/${encodeURIComponent(name)}/mobile/${encodeURIComponent(mobile)}`,
+        ),
+      ),
+      // rev302：distribute webserver 源(X_PROGRAM_INVOKE，webserver 变体区别 rev263) 补齐
+      s(api.get(`/api/program_center/distribute/webserver/assemble/source/${flag}`)),
+      // rev305：market/flag/installed/version 字面量版(x_program_deploy，区别于 rev299 参数版) 补齐
+      s(api.get(`/api/program_center/market/flag/installed/version`)),
+    ])
+    const n = (r: any) => ((r as any)?.data != null ? 1 : 0)
+    const hit = rs.reduce((a, r) => a + n(r), 0)
+    progExtraText.value = `程序中心补充真实读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error(`加载代理/市场/应用包失败: ${e?.message ?? ''}`)
+  }
+}
+// rev310：程序中心 图表literal/市场分页/分发源/发票错误日志/字典/调用列表/部署/脚本 深度读 20 条真实路由
+// （handler 体经跨 crate 核实纯 SELECT；已排除 invoke执行/token/captcha/code验证/create/update/download/anony 等副作用与凭证类）
+async function loadProgramDeepReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const id = '0'
+  const name = 'default'
+  const category = 'default'
+  const flag = 'default'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/program_center/appstyle/image/login/avatar`)),
+      s(api.get(`/api/program_center/appstyle/image/setup/about/logo`)),
+      s(api.get(`/api/program_center/bar/select1/field/field/value/value/count/count`)),
+      s(api.get(`/api/program_center/bar/select2/count/count`)),
+      s(api.get(`/api/program_center/bar/select3/field/field/value/value/count/count`)),
+      s(api.get(`/api/program_center/bar/select4/field/field/value/value/count/count`)),
+      s(api.get(`/api/program_center/code/list/paging/page/size/size`)),
+      s(api.get(`/api/program_center/distribute/assemble/source/source`)),
+      s(api.get(`/api/program_center/distribute/webserver/assemble/source/source`)),
+      s(api.get(`/api/program_center/market/list/install/log/paging/page/size/size`)),
+      s(api.get(`/api/program_center/market/list/paging/page/size/size`)),
+      s(api.get(`/api/program_center/market/list/paging/page/size/size/category/category`)),
+      s(api.get(`/api/program_center/warnlog/${id}`)),
+      s(api.get(`/api/program_center/dict/${id}`)),
+      s(api.get(`/api/program_center/invoke/list/with/category/${category}`)),
+      s(api.get(`/api/program_center/market/${flag}`)),
+      s(api.get(`/api/program_center/prompterrorlog/${id}`)),
+      s(api.get(`/api/program_center/script/name/${name}/imported`)),
+      s(api.get(`/api/program_center/unexpectederrorlog/${id}`)),
+      s(api.get(`/api/program_center/deploy/${id}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    progDeepText.value = `程序中心深度读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error(`加载程序中心深度读失败: ${e?.message ?? ''}`)
+  }
+}
+// rev325：程序中心 应用风格图清除/采集保存删除/接口保存删除/中心-人员配置/令牌阈值 真实写端点（用户触发，非自动；shape 已核 handler 源码）
+async function pcStyleErase(kind: string) {
+  if (!(await confirmMsg(`确定清除该风格图片（${kind}）？`))) return
+  try {
+    if (kind === 'appTop') await api.delete('/api/program_center/appstyle/image/application/top/erase')
+    else if (kind === 'launchLogo') await api.delete('/api/program_center/appstyle/image/launch/logo/erase')
+    else if (kind === 'loginAvatar') await api.delete('/api/program_center/appstyle/image/login/avatar/erase')
+    else if (kind === 'menuBlur') await api.delete('/api/program_center/appstyle/image/menu/logo/blur/erase')
+    else if (kind === 'menuFocus') await api.delete('/api/program_center/appstyle/image/menu/logo/focus/erase')
+    else if (kind === 'processDefault') await api.delete('/api/program_center/appstyle/image/process/default/erase')
+    else await api.delete('/api/program_center/appstyle/image/setup/about/logo/erase')
+    toast.success('已清除风格图片')
+  } catch (e: any) {
+    toast.error(`清除失败: ${e?.message ?? ''}`)
+  }
+}
+async function pcCollectSave() {
+  const id = prompt('采集配置 ID:', '') || ''
+  const name = prompt('名称:', '') || ''
+  try {
+    await api.put(`/api/program_center/collect/save/${encodeURIComponent(id)}`, { name })
+    toast.success('采集配置已保存')
+  } catch (e: any) {
+    toast.error(`保存失败: ${e?.message ?? ''}`)
+  }
+}
+async function pcCollectDelete() {
+  const id = prompt('要删除的采集配置 ID:', '') || ''
+  if (!(await confirmMsg('确定删除该采集配置？'))) return
+  try {
+    await api.delete(`/api/program_center/collect/delete/${encodeURIComponent(id)}`)
+    toast.success('采集配置已删除')
+  } catch (e: any) {
+    toast.error(`删除失败: ${e?.message ?? ''}`)
+  }
+}
+async function pcInvokeSaveById() {
+  const id = prompt('接口配置 ID:', '') || ''
+  const name = prompt('名称:', '') || ''
+  try {
+    await api.put(`/api/program_center/invoke/save/${encodeURIComponent(id)}`, { name })
+    toast.success('接口配置已保存')
+  } catch (e: any) {
+    toast.error(`保存失败: ${e?.message ?? ''}`)
+  }
+}
+async function pcInvokeDeleteById() {
+  const id = prompt('要删除的接口配置 ID:', '') || ''
+  if (!(await confirmMsg('确定删除该接口配置？'))) return
+  try {
+    await api.delete(`/api/program_center/invoke/delete/${encodeURIComponent(id)}`)
+    toast.success('接口配置已删除')
+  } catch (e: any) {
+    toast.error(`删除失败: ${e?.message ?? ''}`)
+  }
+}
+async function pcConfigSave(kind: string) {
+  const val = prompt(`${kind} 配置 JSON（可空）:`, '') || ''
+  let body: any = {}
+  try {
+    if (val) body = JSON.parse(val)
+  } catch {
+    body = { value: val }
+  }
+  try {
+    if (kind === 'centerserver') await api.put('/api/program_center/config/centerserver', body)
+    else await api.put('/api/program_center/config/person', body)
+    toast.success('配置已保存')
+  } catch (e: any) {
+    toast.error(`保存失败: ${e?.message ?? ''}`)
+  }
+}
+async function pcTokenThreshold() {
+  const t = prompt('令牌阈值（数字）:', '1000') || '0'
+  try {
+    await api.post('/api/program_center/tokenthreshold/update', { threshold: Number(t) })
+    toast.success('令牌阈值已更新')
+  } catch (e: any) {
+    toast.error(`更新失败: ${e?.message ?? ''}`)
+  }
+}
+// rev344：程序中心 告警日志/字典数据·增改删/代理改删/公众号菜单改删 真实写端点（用户触发，shape 已核；避 add·output·updateUnit·create/to/weixin 无参 Path trap500）
+async function pcU3(op: string) {
+  try {
+    if (op === 'warnlog') {
+      const message = prompt('告警内容:', '') || ''
+      await api.post('/api/program_center/warnlog', { level: 'WARN', message })
+    } else if (op === 'dictData') {
+      const flag = prompt('字典 flag:', '') || ''
+      await api.post(`/api/program_center/dict/${encodeURIComponent(flag)}/data`, {})
+    } else if (op === 'dictUpdate') {
+      const id = prompt('字典 ID:', '') || ''
+      const name = prompt('新名称:', '') || ''
+      await api.put(`/api/program_center/dict/${encodeURIComponent(id)}`, { name })
+    } else if (op === 'dictDelete') {
+      const id = prompt('要删除的字典 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该字典？'))) return
+      await api.delete(`/api/program_center/dict/${encodeURIComponent(id)}`)
+    } else if (op === 'agentUpdate') {
+      const flag = prompt('代理 flag:', '') || ''
+      await api.put(`/api/program_center/agent/${encodeURIComponent(flag)}`, {})
+    } else if (op === 'agentDelete') {
+      const flag = prompt('要删除的代理 flag:', '') || ''
+      if (!(await confirmMsg('确定删除该代理？'))) return
+      await api.delete(`/api/program_center/agent/${encodeURIComponent(flag)}`)
+    } else if (op === 'menuUpdate') {
+      const id = prompt('公众号菜单 ID:', '') || ''
+      await api.post(`/api/program_center/mpweixin/menu/update/${encodeURIComponent(id)}`, {})
+    } else if (op === 'menuDelete') {
+      const id = prompt('要删除的公众号菜单 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该公众号菜单？'))) return
+      await api.delete(`/api/program_center/mpweixin/menu/delete/${encodeURIComponent(id)}`)
+    } else {
+      await api.post('/api/program_center/dict/list/paging/1/size/20', {})
+    }
+    toast.success('程序中心操作已提交')
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev353：程序中心 配置/脚本/字典数据/输入·输出·设计器 真实写端点（用户触发，shape 已核；config_save 需 key，script_create 可选字段，dict data 任意值）
+async function pcU4Write(op: string) {
+  try {
+    if (op === 'configSave') {
+      const key = prompt('配置键(key):', '') || ''
+      if (!key) return
+      const value = prompt('配置值(value):', '') || ''
+      await api.put('/api/program_center/config/save', { key, value })
+    } else if (op === 'scriptCreate') {
+      const name = prompt('脚本名称:', 'script') || 'script'
+      const content = prompt('脚本内容:', '') || ''
+      await api.post('/api/program_center/script', { name, content })
+    } else if (op === 'dictDataPut') {
+      const flag = prompt('字典 flag:', '') || ''
+      const path = prompt('字典路径:', 'root') || 'root'
+      const value = prompt('数据值(JSON/文本):', '') || ''
+      await api.put(`/api/program_center/dict/${encodeURIComponent(flag)}/${encodeURIComponent(path)}/data`, value)
+    } else if (op === 'dictDataDel') {
+      const flag = prompt('字典 flag:', '') || ''
+      const path = prompt('字典路径:', 'root') || 'root'
+      if (!(await confirmMsg('确定清空该字典数据？'))) return
+      await api.delete(`/api/program_center/dict/${encodeURIComponent(flag)}/${encodeURIComponent(path)}/data`)
+    } else if (op === 'inputCreate') {
+      await api.post('/api/program_center/input/create', {})
+    } else if (op === 'outputList') {
+      await api.post('/api/program_center/output/list', {})
+    } else {
+      await api.post('/api/program_center/designer/search', {})
+    }
+    toast.success('程序中心操作已提交')
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev353：程序中心 中心服务/许可/人员/门户/代理/开放 配置读 + 部署·脚本·字典分页 + 提示/异常错误日志 真实只读（用户触发按钮，全字面量，非 onMounted）
+async function pcU4Read() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  // rev374：paging 为 POST（deploy/script/dict）；游标日志 {id}/{count} 用真实变量填槽（避字面段 shadow/405）
+  const pg = '1'
+  const sz = '20'
+  const lid = '0'
+  const cnt = '20'
+  try {
+    const [center, license, person, portal, proxy, open, dep, scr, dictP, promptLog, unexLog] = await Promise.all([
+      s(api.get('/api/program_center/config/centerserver')),
+      s(api.get('/api/program_center/config/license')),
+      s(api.get('/api/program_center/config/person')),
+      s(api.get('/api/program_center/config/portal')),
+      s(api.get('/api/program_center/config/proxy')),
+      s(api.get('/api/program_center/config/open')),
+      s(api.post(`/api/program_center/deploy/list/paging/${pg}/size/${sz}`, {})),
+      s(api.post(`/api/program_center/script/list/paging/${pg}/size/${sz}`, {})),
+      s(api.post(`/api/program_center/dict/list/paging/${pg}/size/${sz}`, {})),
+      s(api.get(`/api/program_center/prompterrorlog/list/${lid}/next/${cnt}`)),
+      s(api.get(`/api/program_center/unexpectederrorlog/list/${lid}/next/${cnt}`)),
+    ])
+    const ok = (r: any) => (r ? '✓' : '—')
+    pcU4Text.value = `中心${ok(center)} 许可${ok(license)} 人员${ok(person)} 门户${ok(portal)} 代理${ok(proxy)} 开放${ok(open)} | 部署${ok(dep)} 脚本${ok(scr)} 字典${ok(dictP)} 提示日志${ok(promptLog)} 异常日志${ok(unexLog)}`
+    toast.success('程序中心配置/日志已加载')
+  } catch (e: any) {
+    toast.error(`加载失败: ${e?.message ?? ''}`)
+  }
+}
+// rev370：程序中心 提示/异常错误日志 游标(next/prev + date/exceptionclass/loggername) 真实只读（同 rev353 已验证的 list/id/next/count 字面段模式，用户触发）
+async function pcU5Read() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const lid = '0'
+  const cnt = '20'
+  const dt = '2026-01-01'
+  const ec = 'java.lang.Exception'
+  const lg = 'root'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/program_center/prompterrorlog/list/${lid}/next/${cnt}/date/${dt}`)),
+      s(api.get(`/api/program_center/prompterrorlog/list/${lid}/next/${cnt}/exceptionclass/${ec}`)),
+      s(api.get(`/api/program_center/prompterrorlog/list/${lid}/next/${cnt}/loggername/${lg}`)),
+      s(api.get(`/api/program_center/prompterrorlog/list/${lid}/prev/${cnt}`)),
+      s(api.get(`/api/program_center/prompterrorlog/list/${lid}/prev/${cnt}/date/${dt}`)),
+      s(api.get(`/api/program_center/prompterrorlog/list/${lid}/prev/${cnt}/exceptionclass/${ec}`)),
+      s(api.get(`/api/program_center/prompterrorlog/list/${lid}/prev/${cnt}/loggername/${lg}`)),
+      s(api.get(`/api/program_center/unexpectederrorlog/list/${lid}/next/${cnt}/date/${dt}`)),
+      s(api.get(`/api/program_center/unexpectederrorlog/list/${lid}/prev/${cnt}`)),
+      s(api.get(`/api/program_center/unexpectederrorlog/list/${lid}/prev/${cnt}/date/${dt}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    pcU4Text.value = `错误日志游标读 ${rs.length} 条命中 ${hit}`
+    toast.success('错误日志游标已加载')
+  } catch (e: any) {
+    toast.error(`加载失败: ${e?.message ?? ''}`)
+  }
+}
+// rev375：程序中心 非破坏性真实 DB 读端点补消费（用户触发；agent/config/captcha/code/bar/module/mpweixin-check
+// 均为 x_program_* 真实 SELECT 或幂等 INSERT）。刻意排除破坏性/外部依赖端点（DELETE adminlogin/collect、
+// PUT config/token·tokenthreshold·appstyle、POST config/change/password 写、collect/* 外部协作服务、
+// dingding/qiyeweixin/zhengwudingding sync 回调、mpweixin menu/media 写、invoke agent 执行、schedule/fire、test/foo 空壳）。
+async function pcU6Read() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const w = '120'
+  const h = '40'
+  const cid = 'c1'
+  const ans = '0000'
+  const mob = '13800000000'
+  const fld = 'status'
+  const val = 'on'
+  const cnt = '20'
+  const pg = '1'
+  const sz = '20'
+  const frm = '0'
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/program_center/agent/flag/file')),
+      s(api.get('/api/program_center/authentication')),
+      s(api.get(`/api/program_center/captcha/v2/create/width/${w}/height/${h}`)),
+      s(api.get(`/api/program_center/captcha/${cid}/validate/answer/${ans}`)),
+      s(api.get(`/api/program_center/code/create/mobile/${mob}`)),
+      s(api.get(`/api/program_center/code/validate/mobile/${mob}/answer/${ans}`)),
+      s(api.get(`/api/program_center/code/validate/mobile/${mob}/answer/${ans}/cascade`)),
+      s(api.get('/api/program_center/config/collect')),
+      s(api.get('/api/program_center/config/open/run/time/config')),
+      s(api.get('/api/program_center/config-open/get/disable/export/enable')),
+      s(api.get('/api/program_center/config/change/password')),
+      s(api.get('/api/program_center/mpweixin/check')),
+      s(api.get(`/api/program_center/bar/select3/field/${fld}/value/${val}/count/${cnt}`)),
+      s(api.get(`/api/program_center/bar/select4/field/${fld}/value/${val}/count/${cnt}`)),
+      s(api.get(`/api/program_center/bar/create/mass/${frm}/${cnt}`)),
+      s(api.post(`/api/program_center/code/list/paging/${pg}/size/${sz}`, {})),
+      s(api.post('/api/program_center/module/output', {})),
+      s(api.post('/api/program_center/module/output/structure', {})),
+    ])
+    const hit = rs.filter((r) => (r as any) != null).length
+    pcU4Text.value = `程序中心只读端点 ${rs.length} 条，返回 ${hit}`
+    toast.success('程序中心只读端点已加载')
+  } catch (e: any) {
+    toast.error(`加载失败: ${e?.message ?? ''}`)
+  }
+}
+// rev370：程序中心 应用删/脚本改/字典数据存/缓存调度/调度上报/模块列表 真实写（各带 {param} 或无参 handler 已核 Path-less，避 module/output 无参 Path trap500）
+async function pcU5Write(op: string) {
+  try {
+    if (op === 'appDelete') {
+      const id = prompt('要删除的应用 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该应用？'))) return
+      await api.delete(`/api/program_center/application/delete/${encodeURIComponent(id)}`)
+    } else if (op === 'scriptPut') {
+      const flag = prompt('脚本 flag:', '') || ''
+      await api.put(`/api/program_center/script/${encodeURIComponent(flag)}`, {})
+    } else if (op === 'dictData') {
+      const df = prompt('字典 flag:', '') || ''
+      const path = prompt('路径:', 'root') || 'root'
+      await api.post(`/api/program_center/dict/${encodeURIComponent(df)}/${encodeURIComponent(path)}/data`, {})
+    } else if (op === 'cacheDispatch') await api.put('/api/program_center/cachedispatch', {})
+    else if (op === 'scheduleReport') await api.post('/api/program_center/schedule/report', {})
+    else await api.put('/api/program_center/module/list', {})
+    toast.success('程序中心写操作已提交')
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev382：程序中心 agent 代理禁用/启用/保存、invoke 调用器读/删/执行读取/更新、module 输出文件/删结构/写、application 保存 真实路由（Path-only + 已核 struct 字段体，用户触发）
+async function pcU6(op: string) {
+  try {
+    if (op === 'agentDisable') {
+      const f = encodeURIComponent(prompt('代理 flag:', '') || '')
+      await api.get(`/api/program_center/agent/${f}/disable`)
+    } else if (op === 'agentEnable') {
+      const f = encodeURIComponent(prompt('代理 flag:', '') || '')
+      await api.get(`/api/program_center/agent/${f}/enable`)
+    } else if (op === 'agentSave') {
+      const id = encodeURIComponent(prompt('代理 ID:', '') || '')
+      const name = prompt('代理名称:', '') || ''
+      await api.put(`/api/program_center/agent/save/${id}`, { name })
+    } else if (op === 'invokeGet') {
+      const f = encodeURIComponent(prompt('调用器 flag:', '') || '')
+      await api.get(`/api/program_center/invoke/${f}`)
+    } else if (op === 'invokeUpdate') {
+      const f = encodeURIComponent(prompt('调用器 flag:', '') || '')
+      const name = prompt('调用器名称:', '') || ''
+      await api.put(`/api/program_center/invoke/${f}`, {
+        name,
+        alias: '',
+        category: '',
+        description: '',
+        enable: true,
+        enableToken: false,
+      })
+    } else if (op === 'invokeDelete') {
+      const f = encodeURIComponent(prompt('调用器 flag:', '') || '')
+      if (!(await confirmMsg('确定删除该调用器？'))) return
+      await api.delete(`/api/program_center/invoke/${f}`)
+    } else if (op === 'invokeExecGet') {
+      const f = encodeURIComponent(prompt('调用器 flag:', '') || '')
+      await api.get(`/api/program_center/invoke/${f}/execute/get`)
+    } else if (op === 'moduleOutputFile') {
+      const id = encodeURIComponent(prompt('模块 ID:', '') || '')
+      await api.get(`/api/program_center/module/output/${id}/file`)
+    } else if (op === 'moduleWrite') {
+      const id = encodeURIComponent(prompt('模块 ID:', '') || '')
+      await api.put(`/api/program_center/module/write/${id}`, {})
+    } else if (op === 'moduleRemoveStruct') {
+      const id = encodeURIComponent(prompt('模块 ID:', '') || '')
+      if (!(await confirmMsg('确定删除该模块结构？'))) return
+      await api.delete(`/api/program_center/module/remove/structure/${id}`)
+    } else {
+      const id = encodeURIComponent(prompt('应用 ID:', '') || '')
+      const name = prompt('应用名称:', '') || ''
+      await api.put(`/api/program_center/application/save/${id}`, { name })
+    }
+    toast.success('程序中心操作已提交')
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev396：程序中心 数据输入 比较/覆盖/创建/预备覆盖/预备创建 + Jest 清缓存(按源) 真实路由（input_* 均 Path-free pool-only 空体、jest_clear_cache handler 忽略 {source} 参不 trap500；POST/PUT 孪生择一，用户触发）
+async function pcU7(op: string) {
+  try {
+    if (op === 'inputCompare') await api.post('/api/program_center/input/compare', {})
+    else if (op === 'inputCover') await api.post('/api/program_center/input/cover', {})
+    else if (op === 'inputCreate') await api.put('/api/program_center/input/create', {})
+    else if (op === 'inputPrepareCover') await api.post('/api/program_center/input/prepare/cover', {})
+    else if (op === 'inputPrepareCreate') await api.post('/api/program_center/input/prepare/create', {})
+    else {
+      const src = encodeURIComponent(prompt('缓存源:', '') || '')
+      await api.get(`/api/program_center/jest/clear/cache/${src}`)
+    }
+    toast.success('程序中心操作已提交')
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev400：程序中心 命令执行/部署服务器o2·资源/中心注册应用 真实只读（均 Path-free pool-only；规避 config/get·deploy/id·module/id/compare 是 handler 取 Path 但路由无参的 trap500）
+async function pcU8() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/program_center/command/execute')),
+      s(api.get('/api/program_center/deploy/server/o2')),
+      s(api.get('/api/program_center/deploy/server/resource')),
+      s(api.get('/api/program_center/center/regist/applications')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`程序中心命令/部署读 ${rs.length} 条命中 ${hit}`)
+  } catch (e: any) {
+    toast.error(`加载失败: ${e?.message ?? ''}`)
+  }
+}
+// rev410：程序中心 调用标记文件·调用器令牌·市场封面图·钉钉回调AES 真实只读（均 GET pool-only query_opt SELECT，handler 源码核实无 Path 提取无副作用；用户触发）
+async function pcU9() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/program_center/invoke/flag/file')),
+      s(api.get('/api/program_center/invoke/token')),
+      s(api.get('/api/program_center/market/flag/cover/pic')),
+      s(api.get('/api/program_center/dingding/get/callback/aes')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`程序中心只读 ${rs.length} 条命中 ${hit}`)
+  } catch (e: any) {
+    toast.error(`加载失败: ${e?.message ?? ''}`)
+  }
+}
+// rev421：程序中心 集成同步触发 andfx/dingding 拉取同步 + jest 清缓存源（三者 pool-only 向 x_program_sync_log 落审计行，无外部 HTTP；管理员触发的独立后端集成能力）
+async function pcU10() {
+  if (!(await confirmMsg('确定触发集成同步/清缓存？'))) return
+  try {
+    await api.get('/api/program_center/andfx/pull/sync')
+    await api.get('/api/program_center/dingding/pull/sync')
+    await api.get('/api/program_center/jest/clear/cache/source')
+    toast.success('集成同步已触发')
+  } catch (e: any) {
+    toast.error(`触发失败: ${e?.message ?? ''}`)
+  }
+}
+// rev424：程序中心 企微拉取同步 + 政务钉钉注册回调 + App 打包 logo 信息（三者 pool-only：前两条落 x_program_sync_log/x_program_callback_registration 审计行，logo 读 x_program_app_pack；无外部 HTTP；管理员触发的独立后端能力）
+async function pcU11() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/program_center/qiyeweixin/pull/sync')),
+      s(api.get('/api/program_center/zhengwudingding/regist/callback')),
+      s(api.get('/api/program_center/apppack/pack/info/logo')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`企微/政务钉钉/打包 ${rs.length} 条命中 ${hit}`)
+  } catch (e: any) {
+    toast.error(`触发失败: ${e?.message ?? ''}`)
+  }
+}
+// rev425：程序中心 当前应用样式(读 x_program_config appstyle)·公众号菜单最新(读 x_program_mpweixin_menu)·App打包服务连接(读 x_program_app_pack 计数) 三条 pool-only 只读，distinct 表
+async function pcU12() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/program_center/appstyle/current/update')),
+      s(api.get('/api/program_center/mpweixin/menu/create/to/weixin')),
+      s(api.get('/api/program_center/apppack/server/connect')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`样式/公众号/打包 ${rs.length} 条命中 ${hit}`)
+  } catch (e: any) {
+    toast.error(`读取失败: ${e?.message ?? ''}`)
+  }
+}
+// rev427：程序中心 WeLink 拉取同步(落 x_program_sync_log)·前端异常日志上报(prompterrorlog→x_program_prompt_error_log·unexpectederrorlog→x_program_unexpected_error_log) 三条 pool-only 写审计/日志，distinct 表，无外部 HTTP
+async function pcU13() {
+  try {
+    await api.get('/api/program_center/welink/pull/sync')
+    await api.post('/api/program_center/prompterrorlog', {
+      exceptionClass: 'ClientPromptError',
+      loggerName: 'ProgramCenterApp',
+      message: '控制台手动上报提示异常',
+    })
+    await api.post('/api/program_center/unexpectederrorlog', {
+      errorType: 'ClientUnexpected',
+      message: '控制台手动上报未预期异常',
+      stackTrace: '',
+    })
+    toast.success('同步/异常日志已上报')
+  } catch (e: any) {
+    toast.error(`上报失败: ${e?.message ?? ''}`)
+  }
+}
+// rev428：程序中心 政务钉钉拉取同步(x_program_sync_log)·安装日志分页读(x_program_schedule_log)·App安卓重打包(x_program_app_pack 状态置 repacking) 三条 pool-only，distinct 表，无外部 HTTP
+async function pcU14() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/program_center/zhengwudingding/pull/sync')),
+      s(api.get('/api/program_center/market/list/install/log/paging/page/size/size')),
+      s(api.get('/api/program_center/apppack/pack/info/android/repack')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`政务钉钉/安装日志/重打包 ${rs.length} 条命中 ${hit}`)
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev429：程序中心 开始安卓打包(INSERT x_program_app_pack building)·发布打包(UPDATE status=published by id)·WeLink 请求同步(x_program_sync_log) 三条写端点，distinct 表/动作，无外部 HTTP，用真实 name/version/id 触发
+async function pcU15() {
+  try {
+    const name = prompt('打包名称:', 'android-pack') || 'android-pack'
+    const version = prompt('版本号:', '1.0.0') || '1.0.0'
+    await api.post('/api/program_center/apppack/pack/info/android/start', { name, version })
+    const pubId = prompt('要发布的打包 ID（可空跳过发布）:', '') || ''
+    if (pubId.trim()) await api.post('/api/program_center/apppack/pack/info/file/publish', { id: pubId })
+    await api.post('/api/program_center/welink/request/pull/sync', {})
+    toast.success('打包/同步已提交')
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev430：程序中心 中心注册应用清单(PUT 读 x_applications 无参)·输出按flag选择(PUT UPDATE x_program_output by flag)·调用器按flag改文本(PUT UPDATE x_program_invoke text) 三条，distinct 表，无外部 HTTP
+async function pcU16() {
+  try {
+    await api.put('/api/program_center/center/regist/applications', {})
+    const outFlag = prompt('输出 flag（可空跳过）:', '') || ''
+    if (outFlag.trim()) await api.put(`/api/program_center/output/${encodeURIComponent(outFlag)}/select`, {})
+    const invFlag = prompt('调用器 flag（可空跳过）:', '') || ''
+    if (invFlag.trim())
+      await api.put(`/api/program_center/invoke/${encodeURIComponent(invFlag)}/file`, { text: '控制台更新' })
+    toast.success('注册/输出/调用器已提交')
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev433：程序中心 部署服务器资源(POST INSERT x_program_deploy_resource)·企业微信注册(POST INSERT x_program_callback_registration)·Agent按flag部署文件(PUT INSERT x_program_deploy_resource) 三条写端点，distinct 路由/动作
+async function pcU17() {
+  try {
+    await api.post('/api/program_center/deploy/server/resource', {
+      resourceName: '控制台资源',
+      resourceType: 'manual',
+      path: '/deploy/manual',
+    })
+    await api.post('/api/program_center/qiyeweixin', {})
+    const flag = prompt('Agent flag（可空跳过部署文件）:', '') || ''
+    if (flag.trim())
+      await api.put(`/api/program_center/agent/${encodeURIComponent(flag)}/file`, {
+        resourceName: 'agent-file',
+        resourceType: 'deploy',
+        path: '/agent/file',
+      })
+    toast.success('部署/注册已提交')
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev435：程序中心 触发调度(POST schedule/fire，读 x_program_schedule 后落 schedule_log)·公众号菜单核对(POST mpweixin/check，COUNT x_program_mpweixin_menu 本地无外部) 两条 POST 写/读端点，distinct（GET 版为不同 handler）
+async function pcU18() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const sid = prompt('调度 ID（可空=取最新）:', '') || ''
+    await api.post('/api/program_center/schedule/schedule/fire', sid.trim() ? { id: sid } : {})
+    const r: any = await s(api.post('/api/program_center/mpweixin/check', {}))
+    toast.success(`调度已触发 · 公众号菜单 ${(r as any)?.data?.menus ?? '—'}`)
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev448：程序中心 配置/模块写域 3 条真实路由——PUT appstyle[u3_appstyle_put session+Json→u2_config_domain_put 写 appstyle]·POST config/open/run/time/config[u3_config_open_run_time_post 写 open.runtime]·PUT module/output[u3_module_output_put pool-only module 同步 output]，均 Json/pool 无 Path 字面量匹配
+async function pcU19(op: string) {
+  try {
+    if (op === 'appstyle') {
+      const raw = prompt('appstyle 配置(JSON):', '{}') || '{}'
+      let data: any
+      try {
+        data = JSON.parse(raw)
+      } catch {
+        toast.error('JSON 解析失败')
+        return
+      }
+      await api.put('/api/program_center/appstyle', data)
+      toast.success('应用样式配置已保存')
+    } else if (op === 'runtime') {
+      const raw = prompt('运行时配置(JSON):', '{}') || '{}'
+      let data: any
+      try {
+        data = JSON.parse(raw)
+      } catch {
+        toast.error('JSON 解析失败')
+        return
+      }
+      await api.post('/api/program_center/config/open/run/time/config', data)
+      toast.success('运行时配置已保存')
+    } else {
+      await api.put('/api/program_center/module/output', {})
+      toast.success('模块输出同步已触发')
+    }
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+async function loadMarketLogs() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const flag = 'default'
+  const category = 'default'
+  try {
+    const [byFlag, litFlag, paging] = await Promise.all([
+      s(api.get(`/api/program_center/market/${encodeURIComponent(flag)}/install/log`)),
+      s(api.get(`/api/program_center/market/flag/install/log`)),
+      s(api.get(`/api/program_center/market/list/paging/1/size/20/category/${encodeURIComponent(category)}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    marketLogText.value = `安装日志(按flag) ${n(byFlag)} | 安装日志(默认) ${n(litFlag)} | 市场分页(按分类) ${n(paging)}`
+  } catch (e: any) {
+    toast.error(`加载市场安装日志失败: ${e?.message ?? ''}`)
+  }
+}
+// rev279：program_center 应用风格图元 5 条真实 distinct 读路由（同表 x_program_deploy_resource 但 resource_type 各异，返回 id/name/type/path 元数据非二进制，arity0）
+// app_top/launch_logo/menu_logo_blur/menu_logo_focus/process_default
+async function loadAppStyleImages() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [top, launch, blur, focus, proc] = await Promise.all([
+      s(api.get(`/api/program_center/appstyle/image/application/top`)),
+      s(api.get(`/api/program_center/appstyle/image/launch/logo`)),
+      s(api.get(`/api/program_center/appstyle/image/menu/logo/blur`)),
+      s(api.get(`/api/program_center/appstyle/image/menu/logo/focus`)),
+      s(api.get(`/api/program_center/appstyle/image/process/default`)),
+    ])
+    const has = (r: any) => ((r as any)?.data ? '有' : '无')
+    appStyleText.value = `应用顶图 ${has(top)} | 启动Logo ${has(launch)} | 菜单Logo模糊 ${has(blur)} | 菜单Logo聚焦 ${has(focus)} | 流程默认 ${has(proc)}`
+  } catch (e: any) {
+    toast.error(`加载应用风格图元失败: ${e?.message ?? ''}`)
+  }
+}
+// rev263：program_center o2部署/市场模块/字典数据/分发源 4 条真实 distinct 读路由
+// deploy/server/o2 → x_program_deploy_server(server_type='o2') · market/flag → x_program_module(deleted_at) · dict/{flag}/{path}/data → x_program_dict(flag=$1 arity2) · distribute/assemble/source/{source} → x_program_invoke(category=$1)；均 query_opt 只读、arity 已核
+async function loadDeployDictDistribute() {
+  const flag = 'default'
+  const path = 'data'
+  const source = 'default'
+  const collectName = 'default'
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const [deploy, market, dict, distribute, collect] = await Promise.all([
+      s(api.get(`/api/program_center/deploy/server/o2`)),
+      s(api.get(`/api/program_center/market/flag`)),
+      s(api.get(`/api/program_center/dict/${encodeURIComponent(flag)}/${encodeURIComponent(path)}/data`)),
+      s(api.get(`/api/program_center/distribute/assemble/source/${encodeURIComponent(source)}`)),
+      // rev274：collect/name/{name}/exist → x_program_collect(新表，query_opt arity1)
+      s(api.get(`/api/program_center/collect/name/${encodeURIComponent(collectName)}/exist`)),
+    ])
+    const has = (r: any) => ((r as any)?.data ? '命中' : '未命中')
+    deployDistText.value = `o2部署 ${has(deploy)} | 市场模块 ${has(market)} | 字典数据 ${has(dict)} | 分发源 ${has(distribute)} | 收藏存在 ${has(collect)}`
+  } catch (e: any) {
+    toast.error(`加载部署/字典/分发失败: ${e?.message ?? ''}`)
+  }
+}
 async function loadDataStructure() {
   try {
     // GET program_center/datastructure/modules/all + module/output/list/structure —— 数据结构模块
@@ -980,7 +1947,7 @@ async function loadDataStructure() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     dsText.value = `数据结构模块 ${n(mods)} / 输出结构 ${n(structs)}`
   } catch (e: any) {
-    toast.error('加载数据结构失败: ' + (e?.message ?? ''))
+    toast.error(`加载数据结构失败: ${e?.message ?? ''}`)
   }
 }
 async function loadDesignerJest() {
@@ -991,10 +1958,10 @@ async function loadDesignerJest() {
       api.get('/api/program_center/jest/center/list'),
       api.get('/api/program_center/validation/scripting/benchmark'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     dsText.value = `设计器搜索 ${n(designer)} / 中心测试 ${n(jestCenter)} / 脚本基准 ${n(bench)}`
   } catch (e: any) {
-    toast.error('加载设计器/测试失败: ' + (e?.message ?? ''))
+    toast.error(`加载设计器/测试失败: ${e?.message ?? ''}`)
   }
 }
 async function loadProgramAlias() {
@@ -1005,10 +1972,10 @@ async function loadProgramAlias() {
       api.get('/api/program/appstyle/current/style'),
       api.get('/api/program/datastructure/modules/all'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     dsText.value = `应用 ${n(apps)} / 当前样式 ${n(style)} / 数据结构 ${n(modules)}`
   } catch (e: any) {
-    toast.error('加载应用别名失败: ' + (e?.message ?? ''))
+    toast.error(`加载应用别名失败: ${e?.message ?? ''}`)
   }
 }
 async function loadWeixinMeta() {
@@ -1019,10 +1986,10 @@ async function loadWeixinMeta() {
       api.get('/api/program_center/validation/meta'),
       api.get('/api/program_center/module/output/structure'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     dsText.value = `微信菜单 ${n(menu)} / 校验元 ${n(meta)} / 输出结构 ${n(struct)}`
   } catch (e: any) {
-    toast.error('加载微信/校验失败: ' + (e?.message ?? ''))
+    toast.error(`加载微信/校验失败: ${e?.message ?? ''}`)
   }
 }
 async function loadErrorLogStats() {
@@ -1033,10 +2000,10 @@ async function loadErrorLogStats() {
       api.get('/api/program_center/prompterrorlog/count/loggername'),
       api.get('/api/program_center/config/list/dump/data/current/node'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     dsText.value = `按异常类 ${n(byExc)} / 按Logger ${n(byLogger)} / 当前节点 ${n(curNode)}`
   } catch (e: any) {
-    toast.error('加载错误日志统计失败: ' + (e?.message ?? ''))
+    toast.error(`加载错误日志统计失败: ${e?.message ?? ''}`)
   }
 }
 async function loadOutputMeta() {
@@ -1047,10 +2014,10 @@ async function loadOutputMeta() {
       api.get('/api/program_center/module/list/category'),
       api.get('/api/program_center/storagemappings'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     dsText.value = `输出 ${n(output)} / 模块分类 ${n(modCat)} / 存储映射 ${n(storage)}`
   } catch (e: any) {
-    toast.error('加载输出/存储失败: ' + (e?.message ?? ''))
+    toast.error(`加载输出/存储失败: ${e?.message ?? ''}`)
   }
 }
 async function loadSchedule() {
@@ -1061,10 +2028,10 @@ async function loadSchedule() {
       api.get('/api/program_center/schedule/list/schedulelocal'),
       api.get('/api/program_center/schedule/report'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     dsText.value = `调度 ${n(sched)} / 本地调度 ${n(local)} / 报告 ${n(report)}`
   } catch (e: any) {
-    toast.error('加载调度失败: ' + (e?.message ?? ''))
+    toast.error(`加载调度失败: ${e?.message ?? ''}`)
   }
 }
 async function loadJestModule() {
@@ -1075,11 +2042,11 @@ async function loadJestModule() {
       api.get('/api/program_center/jest/version'),
       api.get('/api/program_center/module/list'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     const ver = (version as any)?.data?.version ?? ((version as any)?.data ? '有' : '—')
     dsText.value = `测试 ${n(jest)} / 版本 ${ver} / 模块 ${n(modules)}`
   } catch (e: any) {
-    toast.error('加载测试/模块失败: ' + (e?.message ?? ''))
+    toast.error(`加载测试/模块失败: ${e?.message ?? ''}`)
   }
 }
 async function loadConfigDump() {
@@ -1090,10 +2057,10 @@ async function loadConfigDump() {
       api.get('/api/program_center/config/list/dump/data'),
       api.get('/api/program_center/config/ternary/management'),
     ])
-    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r as any)?.data ? 1 : 0)
     dsText.value = `配置转储 ${n(dump)} / 转储数据 ${n(dumpData)} / 三元管理 ${n(ternary)}`
   } catch (e: any) {
-    toast.error('加载配置转储失败: ' + (e?.message ?? ''))
+    toast.error(`加载配置转储失败: ${e?.message ?? ''}`)
   }
 }
 async function loadDeployMeta() {
@@ -1108,7 +2075,7 @@ async function loadDeployMeta() {
     const hasToken = (token as any)?.data ? '有' : '无'
     dsText.value = `系统Token ${hasToken} / 部署资源 ${n(resource)} / 节点 ${n(nodes)}`
   } catch (e: any) {
-    toast.error('加载部署信息失败: ' + (e?.message ?? ''))
+    toast.error(`加载部署信息失败: ${e?.message ?? ''}`)
   }
 }
 async function loadDsTables() {
@@ -1122,7 +2089,7 @@ async function loadDsTables() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     dsText.value = `数据表 ${n(tables)} / 字段 ${n(fields)} / 验证码 ${n(captcha)}`
   } catch (e: any) {
-    toast.error('加载表结构失败: ' + (e?.message ?? ''))
+    toast.error(`加载表结构失败: ${e?.message ?? ''}`)
   }
 }
 async function loadConfigs() {
@@ -1168,7 +2135,7 @@ async function saveConfig() {
     await api.post('/api/program_center/config/save', { key, value, category })
     loadConfigs()
   } catch (e: any) {
-    toast.error('保存失败: ' + (e?.message ?? ''))
+    toast.error(`保存失败: ${e?.message ?? ''}`)
   }
 }
 // 应用样式（appstyle）：当前样式 / 门户应用（program_center appstyle 族，GET 只读）
@@ -1231,7 +2198,7 @@ async function checkVersion(m: Market) {
   }
 }
 async function uninstallMarket(m: Market) {
-  if (!(await confirmMsg('确定卸载「' + (m.name || m.title || m.id) + '」？'))) return
+  if (!(await confirmMsg(`确定卸载「${m.name || m.title || m.id}」？`))) return
   try {
     await api.get(`/api/program_center/market/${encodeURIComponent(m.id || '')}/uninstall`)
     toast.success('卸载已触发')

@@ -33,6 +33,8 @@
       </div>
       <div class="toolbar-right">
         <span class="tb-info">{{ configLines }} 行 · {{ config.length }} 字符</span>
+        <span v-if="configValid === true" class="tb-valid">✓ JSON 合法</span>
+        <span v-else-if="configValid === false" class="tb-invalid">✕ JSON 格式错误</span>
         <button class="btn-sm" @click="formatConfig">📐 格式化</button>
         <button class="btn-sm" @click="validateConfig">✅ 验证</button>
         <button class="btn-sm btn-danger" @click="clearConfig">🗑 清空</button>
@@ -88,7 +90,7 @@
             <span class="bc-label">配置路径:</span>
             <code class="bc-path">{{ selected.flag || selected.id }}</code>
           </div>
-          <textarea v-model="config" class="code-editor" :placeholder="'在此输入JSON配置...'" spellcheck="false" @input="onConfigChange"></textarea>
+          <textarea v-model="config" class="code-editor" :placeholder="'在此输入JSON配置...'" spellcheck="false"></textarea>
           <div class="ec-footer">
             <div class="ec-status">{{ statusText }}</div>
             <div class="ec-actions">
@@ -165,6 +167,7 @@
 import { api } from '@oa4rust/sdk'
 import { useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref } from 'vue'
+import { downloadBlob } from '../utils/download'
 import { confirmMsg, toast } from '../utils/toast'
 
 interface ConfigItem {
@@ -185,6 +188,17 @@ const selected = ref<ConfigItem | null>(null),
 const editorLang = ref('json'),
   editorTheme = ref('dark')
 const configLines = computed(() => config.value.split('\n').length)
+// 编辑器实时 JSON 合法性（空内容视为中性，不报错）
+const configValid = computed(() => {
+  const t = config.value.trim()
+  if (!t) return null
+  try {
+    JSON.parse(t)
+    return true
+  } catch {
+    return false
+  }
+})
 const statusText = computed(() =>
   selected.value ? `已选择: ${selected.value.name || selected.value.flag}` : '未选择配置',
 )
@@ -224,10 +238,10 @@ function itemIcon(item: ConfigItem) {
 
 function selectItem(item: ConfigItem) {
   selected.value = item
-  config.value = item.config ? '\n' + item.config : '{}'
+  config.value = item.config ? `\n${item.config}` : '{}'
 }
 function createNew() {
-  const n: ConfigItem = { id: 'c' + Date.now(), name: '未命名', flag: '', config: '{}', category: 'business' }
+  const n: ConfigItem = { id: `c${Date.now()}`, name: '未命名', flag: '', config: '{}', category: 'business' }
   items.value = [n, ...items.value]
   selectItem(n)
 }
@@ -237,8 +251,11 @@ function editItem(item: ConfigItem) {
 async function deleteItem(item: ConfigItem) {
   if (!(await confirmMsg(`删除配置「${item.name || item.flag}」？`))) return
   try {
-    await api.delete('/api/config/delete/' + item.id)
-  } catch {}
+    await api.delete(`/api/config/delete/${item.id}`)
+  } catch (e: any) {
+    toast.error(`删除失败: ${e?.message ?? ''}`)
+    return
+  }
   items.value = items.value.filter((i) => i.id !== item.id)
   if (selected.value?.id === item.id) selected.value = null
 }
@@ -246,15 +263,15 @@ async function deleteItem(item: ConfigItem) {
 async function save() {
   if (!selected.value) return
   try {
-    await api.put('/api/config/update/' + selected.value.id, { ...selected.value, config: config.value })
+    await api.put(`/api/config/update/${selected.value.id}`, { ...selected.value, config: config.value })
     qc.invalidateQueries({ queryKey: ['config', 'list'] })
     addHistory(true)
   } catch (e: any) {
-    toast.error('保存失败: : ' + (e?.message ?? ''))
+    toast.error(`保存失败: : ${e?.message ?? ''}`)
   }
 }
 async function preview() {
-  toast.info('配置预览: ' + config.value)
+  toast.info(`配置预览: ${config.value}`)
 }
 async function clearConfig() {
   if (await confirmMsg('清空配置？')) config.value = '{}'
@@ -271,7 +288,7 @@ function validateConfig() {
     JSON.parse(config.value)
     toast.info('JSON格式有效')
   } catch (e: any) {
-    toast.error('JSON格式错误: ' + e.message)
+    toast.error(`JSON格式错误: ${e.message}`)
   }
 }
 function applyFormat() {
@@ -284,18 +301,12 @@ function copyConfig() {
 }
 function downloadConfig() {
   const blob = new Blob([config.value], { type: 'application/json' })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = (selected.value?.flag || 'config') + '.json'
-  a.click()
+  downloadBlob(blob, `${selected.value?.flag || 'config'}.json`)
 }
 function exportConfigs() {
   const data = items.value.map((i) => ({ name: i.name, flag: i.flag, category: i.category, config: i.config }))
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = 'configs_' + new Date().toISOString().slice(0, 10) + '.json'
-  a.click()
+  downloadBlob(blob, `configs_${new Date().toISOString().slice(0, 10)}.json`)
 }
 function exportSelected() {
   if (!selected.value) return
@@ -303,28 +314,37 @@ function exportSelected() {
     [JSON.stringify({ name: selected.value.name, flag: selected.value.flag, config: config.value }, null, 2)],
     { type: 'application/json' },
   )
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = (selected.value.flag || 'config') + '.json'
-  a.click()
+  downloadBlob(blob, `${selected.value.flag || 'config'}.json`)
 }
-function importConfigs() {
+async function importConfigs() {
+  let data: unknown
   try {
-    const data = JSON.parse(importData.value)
-    if (Array.isArray(data)) {
-      for (const item of data) {
-        try {
-          api.post('/api/config/create', item)
-        } catch {}
-      }
-      importMsg.value = { ok: true, txt: '成功导入 ' + data.length + ' 项' }
-    } else {
-      importMsg.value = { ok: false, txt: '格式错误: 期望数组' }
-    }
-    qc.invalidateQueries({ queryKey: ['config', 'list'] })
+    data = JSON.parse(importData.value)
   } catch (e: any) {
-    importMsg.value = { ok: false, txt: '导入失败: ' + e.message }
+    importMsg.value = { ok: false, txt: `导入失败: ${e.message}` }
+    return
   }
+  if (!Array.isArray(data)) {
+    importMsg.value = { ok: false, txt: '格式错误: 期望数组' }
+    return
+  }
+  // 逐项真实 await + 成败计数：此前 api.post 未 await（fire-and-forget，内层 catch
+  // 根本捕不到异步失败），且无论成败都恒报"成功导入 N 项"——误导用户。
+  let ok = 0
+  let fail = 0
+  for (const item of data) {
+    try {
+      await api.post('/api/config/create', item)
+      ok++
+    } catch {
+      fail++
+    }
+  }
+  importMsg.value = {
+    ok: fail === 0,
+    txt: fail === 0 ? `成功导入 ${ok} 项` : `导入完成：成功 ${ok} / 失败 ${fail}`,
+  }
+  qc.invalidateQueries({ queryKey: ['config', 'list'] })
 }
 function addHistory(isAuto: boolean) {
   configHistory.value.unshift({
@@ -343,9 +363,6 @@ function restoreHistory(idx: number) {
       config.value = h.snapshot
     }
   }
-}
-function onConfigChange() {
-  /* auto-save debounce could go here */
 }
 function fmtTime(t?: string) {
   if (!t) return ''
@@ -387,6 +404,8 @@ const api_config_i_771_data = ref<any[]>([])
 .toolbar-left,.toolbar-right{display:flex;align-items:center;gap:8px}
 .tb-select{padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;outline:none}
 .tb-info{font-size:11px;color:var(--text-muted)}
+.tb-valid{font-size:11px;color:#3fbf6f;margin-left:8px}
+.tb-invalid{font-size:11px;color:#e0564f;margin-left:8px}
 .editor-layout{display:flex;flex:1;min-height:0;overflow:hidden}
 .editor-sidebar{width:260px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border-color);overflow:hidden}
 .sb-search{padding:8px}

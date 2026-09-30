@@ -84,7 +84,7 @@ async function loadPortalMeta3() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     portalMetaText.value = `设计器 ${n(designer)} / 设计清单 ${n(designs)} / 门户 ${n(portals)}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadPortalMeta2() {
@@ -98,7 +98,7 @@ async function loadPortalMeta2() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     portalMetaText.value = `模板页分类 ${n(cat)} / 输出 ${n(out)} / 门户分类 ${n(portalCat)}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 async function loadPortalMeta() {
@@ -111,7 +111,7 @@ async function loadPortalMeta() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     portalMetaText.value = `模板页 ${n(tpl)} / 门户概要 ${n(summary)}`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
   }
 }
 const createEp = '/api/portal/assemble/designer/page/create'
@@ -154,7 +154,7 @@ const filtered = computed(() =>
 
 function contentPreview(content?: string): string {
   if (!content) return '—'
-  const s = content.length > 80 ? content.slice(0, 80) + '…' : content
+  const s = content.length > 80 ? `${content.slice(0, 80)}…` : content
   return s
 }
 const contentError = computed(() => {
@@ -186,7 +186,7 @@ function editItem(item: Item) {
 // 消费 page/{id} 详情 + pageversion 版本族 3 条真实 distinct 路由（x_portal_page / x_portal_page_version）
 async function loadPageMeta(id: string) {
   pageMeta.value = ''
-  const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const [detail, versions] = await Promise.all([
     settle(api.get(`/api/portal/assemble/designer/page/${encodeURIComponent(id)}`)),
     settle(api.get(`/api/portal/assemble/designer/pageversion/list/page/${encodeURIComponent(id)}`)),
@@ -195,7 +195,9 @@ async function loadPageMeta(id: string) {
   let latest = ''
   const vid = vrows[0] ? String(vrows[0].id ?? '') : ''
   if (vid) {
-    const vd: any = await api.get(`/api/portal/assemble/designer/pageversion/${encodeURIComponent(vid)}`).catch(() => null)
+    const vd: any = await api
+      .get(`/api/portal/assemble/designer/pageversion/${encodeURIComponent(vid)}`)
+      .catch(() => null)
     latest = vd?.data?.version ? ` · 最新版本 v${vd.data.version}` : ''
   }
   const cat = (detail as any)?.data?.category ?? '—'

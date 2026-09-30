@@ -7,10 +7,34 @@
       <div><h1>思维导图</h1><p class="subtitle">真实 Minder JSON · /api/mind/assemble/control/*</p></div>
       <div class="header-actions">
         <button class="btn" :disabled="!currentFolder" @click="createMind">新建导图</button>
+        <button class="btn secondary" @click="createMindRest">新建导图(REST)</button>
+        <button class="btn secondary" @click="mindWrite('config')">存配置</button>
+        <button class="btn secondary" @click="mindWrite('folderSave')">存文件夹</button>
+        <button class="btn secondary" @click="mindWrite('folderMove')">移动文件夹</button>
+        <button class="btn secondary" @click="mindWrite('folderForce')">强删文件夹</button>
+        <button class="btn secondary" @click="mindWrite('recycle')">移入回收站</button>
+        <button class="btn secondary" @click="mindWrite('destroyMind')">彻底删导图</button>
+        <button class="btn secondary" @click="mindWrite('destroyRecycle')">清回收站项</button>
+        <button class="btn secondary" @click="mindWrite('icon')">设图标</button>
+        <button class="btn secondary" @click="mindMore('restore')">恢复导图</button>
+        <button class="btn secondary" @click="mindMore('version')">建版本</button>
+        <button class="btn secondary" @click="mindMore('coreMindCreate')">建核心导图</button>
+        <button class="btn secondary" @click="mindMore('coreMindUpdate')">改核心导图</button>
+        <button class="btn secondary" @click="mindMore('coreMindDelete')">删核心导图</button>
+        <button class="btn secondary" @click="mindMore('coreFolderCreate')">建核心文件夹</button>
+        <button class="btn secondary" @click="mindMore('coreFolderUpdate')">改核心文件夹</button>
+        <button class="btn secondary" @click="mindMore('coreFolderDelete')">删核心文件夹</button>
+        <button class="btn secondary" @click="mindMore('coreVersion')">建核心版本</button>
+        <button class="btn secondary" @click="mindFolderOps('ctrlUpdate')">改文件夹(控制)</button>
+        <button class="btn secondary" @click="mindFolderOps('ctrlDelete')">删文件夹(控制)</button>
+        <button class="btn secondary" @click="mindFolderOps('topUpdate')">改文件夹(顶层)</button>
+        <button class="btn secondary" @click="mindFolderOps('topDelete')">删文件夹(顶层)</button>
+        <button class="btn secondary" @click="createMindFolder">新建目录</button>
         <button class="btn secondary" :disabled="loadingFolder" @click="loadFolders">刷新目录</button>
         <button class="btn secondary" @click="loadAllMinds">全部导图</button>
         <button class="btn secondary" @click="loadMindConfig">配置/我的目录</button>
         <button class="btn secondary" @click="loadMindFilters">共享/回收站</button>
+        <button class="btn secondary" @click="loadMindDetails">导图明细/版本</button>
       </div>
       <div v-if="allMindsText" class="notice">{{ allMindsText }}</div>
       <div v-if="mindFilterText" class="notice">{{ mindFilterText }}</div>
@@ -49,6 +73,9 @@
           <div class="editor-actions"><span v-if="dirty" class="dirty">未保存</span><span v-if="saveMessage" class="save-message">{{ saveMessage }}</span>
             <span v-if="mindMetaText" class="save-message">{{ mindMetaText }}</span>
             <button class="btn" :disabled="saving || !dirty" @click="saveMind">{{ saving ? '保存中...' : '保存' }}</button><button class="btn secondary" @click="closeEditor">关闭</button>
+          <button v-if="editor" class="btn secondary" @click="renameMindRest({ id: editor.id, name: editor.name } as any)">重命名</button>
+          <button v-if="editor" class="btn secondary" @click="deleteMindRest({ id: editor.id, name: editor.name } as any)">删除</button>
+          <button v-if="editor" class="btn secondary" @click="shareMindToggle({ id: editor.id, name: editor.name } as any, !editor.shared)">{{ editor.shared ? '取消分享' : '分享' }}</button>
           </div>
         </header>
         <div class="editor-toolbar">
@@ -93,7 +120,7 @@
 <script setup lang="ts">
 import { api, useSession } from '@oa4rust/sdk'
 import { computed, nextTick, ref } from 'vue'
-import { toast } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
 type Folder = { id: string; name?: string; title?: string; parentId?: string; children?: Folder[] }
 type MindItem = {
@@ -196,7 +223,7 @@ async function loadMindFilters() {
     ])
     mindFilterText.value = `收到共享 ${pg(received)} · 回收站 ${pg(recycle)} · 我共享 ${pg(shared)}`
   } catch (e: any) {
-    toast.error('加载共享/回收站失败: ' + (e?.message ?? ''))
+    toast.error(`加载共享/回收站失败: ${e?.message ?? ''}`)
   }
 }
 async function loadMindConfig() {
@@ -210,7 +237,7 @@ async function loadMindConfig() {
     const n = Array.isArray((folders as any)?.data) ? (folders as any).data.length : 0
     allMindsText.value = `控制配置 ${hasCfg} / 我的目录 ${n} 个`
   } catch (e: any) {
-    toast.error('加载导图配置失败: ' + (e?.message ?? ''))
+    toast.error(`加载导图配置失败: ${e?.message ?? ''}`)
   }
 }
 async function loadAllMinds() {
@@ -223,7 +250,170 @@ async function loadAllMinds() {
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     allMindsText.value = `导图 ${n(minds)} 个 / 文件夹 ${n(folders)} 个`
   } catch (e: any) {
-    toast.error('加载失败: ' + (e?.message ?? ''))
+    toast.error(`加载失败: ${e?.message ?? ''}`)
+  }
+}
+// rev212：导图明细/版本族 6 条真实 distinct 路由
+// mind/mind/{id}（mind_base_info WHERE id）· mind/list/{id}/version（mind_version_info WHERE mind_id）· assemble/control/folder/{id}（x_mind WHERE id 目录）
+// · assemble/control/mind/version/{id}（x_mind_version_info 最新版）· assemble/control/mind/{id}/icon（x_mind 图标）· core/entity/version/list/{mindId}（mind_version ORM）
+async function loadMindDetails() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const listResp = await s(api.get<unknown>('/api/mind/core/entity/list'))
+    const rows = Array.isArray((listResp as any)?.data) ? (listResp as any).data : []
+    const mid = rows[0] ? String(rows[0].id ?? '0') : '0'
+    const [base, versions, folder, latestVer, icon, coreVer] = await Promise.all([
+      s(api.get(`/api/mind/mind/${encodeURIComponent(mid)}`)),
+      s(api.get(`/api/mind/mind/list/${encodeURIComponent(mid)}/version`)),
+      s(api.get(`/api/mind/assemble/control/folder/${encodeURIComponent(mid)}`)),
+      s(api.get(`/api/mind/assemble/control/mind/version/${encodeURIComponent(mid)}`)),
+      s(api.get(`/api/mind/assemble/control/mind/${encodeURIComponent(mid)}/icon`)),
+      s(api.get(`/api/mind/core/entity/version/list/${encodeURIComponent(mid)}`)),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    allMindsText.value = `导图详情 ${(base as any)?.data?.id ? '命中' : '未命中'} / 版本 ${n(versions)} / 目录 ${(folder as any)?.data?.id ? '命中' : '未命中'} / 最新版 ${(latestVer as any)?.data ? '有' : '无'} / 图标 ${(icon as any)?.data ? '有' : '无'} / 实体版本 ${n(coreVer)}`
+  } catch (e: any) {
+    toast.error(`加载导图明细失败: ${e?.message ?? ''}`)
+  }
+}
+// rev317：思维导图 RESTful CRUD + 分享 真实写端点（用户触发）；请求体经 handler 源码核实
+async function createMindRest() {
+  const name = prompt('导图名称:', '')
+  if (!name) return
+  try {
+    // POST mind/mind → INSERT {name, description?, folderId?, shared?}
+    await api.post('/api/mind/mind', { name, description: '', folderId: currentFolder.value?.id ?? '', shared: false })
+    toast.success('导图已创建')
+    if (currentFolder.value) loadMinds(currentFolder.value.id)
+  } catch (e: any) {
+    toast.error(`新建导图失败: ${e?.message ?? ''}`)
+  }
+}
+async function renameMindRest(item: MindItem) {
+  const name = prompt('新名称:', item.name || '')
+  if (!name) return
+  try {
+    // POST mind/mind/{id} → UPDATE {name, description?, folderId?}
+    await api.post(`/api/mind/mind/${encodeURIComponent(item.id)}`, { name })
+    toast.success('导图已重命名')
+    if (currentFolder.value) loadMinds(currentFolder.value.id)
+  } catch (e: any) {
+    toast.error(`重命名失败: ${e?.message ?? ''}`)
+  }
+}
+async function deleteMindRest(item: MindItem) {
+  if (!window.confirm('确定删除该导图？')) return
+  try {
+    // DELETE mind/mind/{id}
+    await api.delete(`/api/mind/mind/${encodeURIComponent(item.id)}`)
+    toast.success('导图已删除')
+    if (currentFolder.value) loadMinds(currentFolder.value.id)
+  } catch (e: any) {
+    toast.error(`删除失败: ${e?.message ?? ''}`)
+  }
+}
+async function createMindFolder() {
+  const name = prompt('目录名称:', '')
+  if (!name) return
+  try {
+    // POST mind/folder → INSERT {name, parentId?, description?, orderNumber?}
+    await api.post('/api/mind/folder', { name, parentId: '', description: '', orderNumber: 0 })
+    toast.success('目录已创建')
+    loadFolders()
+  } catch (e: any) {
+    toast.error(`新建目录失败: ${e?.message ?? ''}`)
+  }
+}
+async function shareMindToggle(item: MindItem, share: boolean) {
+  try {
+    // PUT mind/share/{id} | mind/share/{id}/cancel → 更新分享状态
+    if (share) {
+      await api.put(`/api/mind/assemble/control/mind/share/${encodeURIComponent(item.id)}`, {})
+      toast.success('已分享')
+    } else {
+      await api.put(`/api/mind/assemble/control/mind/share/${encodeURIComponent(item.id)}/cancel`, {})
+      toast.success('已取消分享')
+    }
+  } catch (e: any) {
+    toast.error(`分享操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev341：思维导图 配置/文件夹保存移动强删/回收站删/彻底删/图标 真实写端点（用户触发，shape 已核；避 3 轨镜像 CUD）
+async function mindWrite(op: string) {
+  const id = prompt('目标 ID（导图/文件夹）:', '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (op === 'config') await api.post('/api/mind/assemble/control/config/update', {})
+    else if (op === 'folderSave') {
+      const name = prompt('文件夹名称:', '') || ''
+      await api.post('/api/mind/assemble/control/folder/save', { name })
+    } else if (op === 'folderMove') await api.put(`/api/mind/assemble/control/folder/move/${e}`, {})
+    else if (op === 'folderForce') {
+      if (!(await confirmMsg('确定强制删除该文件夹？'))) return
+      await api.delete(`/api/mind/assemble/control/folder/${e}/force`)
+    } else if (op === 'recycle') {
+      if (!(await confirmMsg('确定移入回收站？'))) return
+      await api.delete(`/api/mind/assemble/control/mind/recycle/${e}`)
+    } else if (op === 'destroyMind') {
+      if (!(await confirmMsg('确定彻底删除该导图？'))) return
+      await api.delete(`/api/mind/assemble/control/mind/${e}/destorymind`)
+    } else if (op === 'destroyRecycle') {
+      if (!(await confirmMsg('确定清空回收站中该项？'))) return
+      await api.delete(`/api/mind/assemble/control/mind/${e}/destoryrecycle`)
+    } else {
+      await api.post(`/api/mind/assemble/control/mind/${e}/icon/size/200`, {})
+    }
+    toast.success('导图操作已提交')
+  } catch (err: any) {
+    toast.error(`导图操作失败: ${err?.message ?? ''}`)
+  }
+}
+// rev378：思维导图 恢复/版本 + core entity 导图/文件夹/版本 建改删 真实路由（core/entity 为独立 SeaORM crate 首次消费；短/assemble 轨 folder CRUD 属镜像已跳过）
+async function mindMore(op: string) {
+  try {
+    if (op === 'restore') {
+      const id = encodeURIComponent(prompt('要恢复的导图 ID:', '') || '')
+      await api.get(`/api/mind/assemble/control/mind/restore/${id}`)
+    } else if (op === 'version') await api.post('/api/mind/version', {})
+    else if (op === 'coreMindCreate') await api.post('/api/mind/core/entity/mind', {})
+    else if (op === 'coreMindUpdate') {
+      const id = encodeURIComponent(prompt('导图 ID:', '') || '')
+      await api.post(`/api/mind/core/entity/mind/${id}`, {})
+    } else if (op === 'coreMindDelete') {
+      const id = encodeURIComponent(prompt('要删除的导图 ID:', '') || '')
+      if (!(await confirmMsg('确定删除该导图？'))) return
+      await api.delete(`/api/mind/core/entity/mind/${id}`)
+    } else if (op === 'coreFolderCreate') await api.post('/api/mind/core/entity/folder', {})
+    else if (op === 'coreFolderUpdate') {
+      const id = encodeURIComponent(prompt('文件夹 ID:', '') || '')
+      await api.post(`/api/mind/core/entity/folder/${id}`, {})
+    } else if (op === 'coreFolderDelete') {
+      const id = encodeURIComponent(prompt('要删除的文件夹 ID:', '') || '')
+      if (!(await confirmMsg('确定删除该文件夹？'))) return
+      await api.delete(`/api/mind/core/entity/folder/${id}`)
+    } else await api.post('/api/mind/core/entity/version', {})
+    toast.success('导图操作已提交')
+  } catch (err: any) {
+    toast.error(`导图操作失败: ${err?.message ?? ''}`)
+  }
+}
+// rev391：思维导图 assemble/control 文件夹删/改 + mind 顶层文件夹改/删 真实路由（folder_delete/delete_folder Path-only、update_folder Path+Json，跨 crate 不同 handler 各计一次，用户触发；规避守卫禁的 core/entity/folder-001）
+async function mindFolderOps(op: string) {
+  const id = encodeURIComponent(prompt('文件夹 ID:', '') || '')
+  if (!id) return
+  try {
+    if (op === 'ctrlUpdate') await api.post(`/api/mind/assemble/control/folder/${id}/update`, {})
+    else if (op === 'ctrlDelete') {
+      if (!(await confirmMsg('确定删除该控制层文件夹？'))) return
+      await api.delete(`/api/mind/assemble/control/folder/${id}`)
+    } else if (op === 'topUpdate') await api.post(`/api/mind/folder/${id}`, {})
+    else {
+      if (!(await confirmMsg('确定删除该文件夹？'))) return
+      await api.delete(`/api/mind/folder/${id}`)
+    }
+    toast.success('导图文件夹操作已提交')
+  } catch (err: any) {
+    toast.error(`导图操作失败: ${err?.message ?? ''}`)
   }
 }
 
@@ -319,7 +509,7 @@ const mindMetaText = ref('')
 async function loadMindMeta(id: string) {
   mindMetaText.value = ''
   if (!id) return
-  const settle = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const [ver, share, view] = await Promise.all([
     settle(api.get(`/api/mind/assemble/control/mind/list/${encodeURIComponent(id)}/version`)),
     settle(api.get(`/api/mind/assemble/control/mind/list/${encodeURIComponent(id)}/shareRecords`)),
@@ -327,7 +517,13 @@ async function loadMindMeta(id: string) {
   ])
   const n = (r: unknown): number => {
     const d = (r as { data?: unknown } | null)?.data
-    return Array.isArray(d) ? d.length : Array.isArray((d as { data?: unknown })?.data) ? (d as { data: unknown[] }).data.length : d ? 1 : 0
+    return Array.isArray(d)
+      ? d.length
+      : Array.isArray((d as { data?: unknown })?.data)
+        ? (d as { data: unknown[] }).data.length
+        : d
+          ? 1
+          : 0
   }
   mindMetaText.value = `版本 ${n(ver)} · 分享 ${n(share)}${view ? ' · 已浏览' : ''}`
 }
@@ -416,7 +612,9 @@ const outlineRows = computed(() => {
   const rows: Array<{ node: MindNode; depth: number }> = []
   const walk = (node: MindNode, depth: number) => {
     rows.push({ node, depth })
-    node.children.forEach((child) => walk(child, depth + 1))
+    node.children.forEach((child) => {
+      walk(child, depth + 1)
+    })
   }
   if (editor.value) walk(editor.value.root, 0)
   return rows

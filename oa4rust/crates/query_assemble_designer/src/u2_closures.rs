@@ -511,7 +511,11 @@ async fn execute_statement_by_flag(
         );
     }
 
-    let offset = if page > 0 { (page - 1) * size } else { 0 };
+    let offset = if page > 0 {
+        (page - 1).saturating_mul(size)
+    } else {
+        0
+    };
     let paged_sql = format!(
         "SELECT * FROM ({}) AS stmt_page_sub LIMIT ${} OFFSET ${}",
         parameterized_sql.trim().trim_end_matches(';'),
@@ -1255,7 +1259,7 @@ pub async fn designer_search_v2(
     if key.trim().is_empty() {
         return Ok(Json(ActionResult::error("key is required")));
     }
-    let pattern = format!("%{}%", key.trim());
+    let pattern = format!("%{}%", shared::db::escape_like(key.trim()));
 
     let rows = client
         .query(

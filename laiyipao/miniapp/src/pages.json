@@ -1,0 +1,69 @@
+{
+  "easycom": {
+    "autoscan": true
+  },
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/stage/stage",
+      "style": {
+        "navigationBarTitleText": "关卡"
+      }
+    },
+    {
+      "path": "pages/battle/battle",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/bag/bag",
+      "style": {
+        "navigationBarTitleText": "背包"
+      }
+    },
+    {
+      "path": "pages/mastery/mastery",
+      "style": {
+        "navigationBarTitleText": "专精"
+      }
+    },
+    {
+      "path": "pages/signin/signin",
+      "style": {
+        "navigationBarTitleText": "签到"
+      }
+    },
+    {
+      "path": "pages/rank/rank",
+      "style": {
+        "navigationBarTitleText": "排行榜"
+      }
+    },
+    {
+      "path": "pages/verify/verify",
+      "style": {
+        "navigationBarTitleText": "战绩验真"
+      }
+    },
+    {
+      "path": "pages/me/me",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "来一炮",
+    "navigationBarBackgroundColor": "#0d1117",
+    "backgroundColor": "#0d1117",
+    "backgroundColorTop": "#0d1117",
+    "backgroundColorBottom": "#0d1117"
+  }
+}

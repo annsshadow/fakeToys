@@ -158,7 +158,7 @@ async fn top_units(pool: &Pool, unit_type: Option<&str>, legacy_bare: bool) -> H
         Some(t) => {
             client
                 .query(
-                    "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id IS NULL AND deleted_at IS NULL AND type = $1 ORDER BY sort ASC, create_time::text DESC",
+                    "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id IS NULL AND deleted_at IS NULL AND type = $1 ORDER BY sort ASC, create_time DESC",
                     &[&t.to_string()],
                 )
                 .await
@@ -167,7 +167,7 @@ async fn top_units(pool: &Pool, unit_type: Option<&str>, legacy_bare: bool) -> H
         None => {
             client
                 .query(
-                    "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id IS NULL AND deleted_at IS NULL ORDER BY sort ASC, create_time::text DESC",
+                    "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id IS NULL AND deleted_at IS NULL ORDER BY sort ASC, create_time DESC",
                     &[],
                 )
                 .await
@@ -232,7 +232,7 @@ pub async fn unit_list_prev(
     let rows = if flag == "0" || flag == "(0)" {
         client
             .query(
-                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id IS NULL AND deleted_at IS NULL ORDER BY sort ASC, create_time::text ASC LIMIT $1",
+                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id IS NULL AND deleted_at IS NULL ORDER BY sort ASC, create_time ASC LIMIT $1",
                 &[&limit],
             )
             .await
@@ -240,7 +240,7 @@ pub async fn unit_list_prev(
     } else {
         client
             .query(
-                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 AND deleted_at IS NULL ORDER BY sort ASC, create_time::text ASC LIMIT $2",
+                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 AND deleted_at IS NULL ORDER BY sort ASC, create_time ASC LIMIT $2",
                 &[&flag, &limit],
             )
             .await
@@ -257,7 +257,7 @@ pub async fn unit_list_sub_direct(
     let client = client_of(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 AND deleted_at IS NULL ORDER BY sort ASC, create_time::text DESC",
+            "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 AND deleted_at IS NULL ORDER BY sort ASC, create_time DESC",
             &[&flag],
         )
         .await
@@ -273,7 +273,7 @@ pub async fn unit_list_sub_direct_with_type(
     let client = client_of(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 AND type = $2 AND deleted_at IS NULL ORDER BY sort ASC, create_time::text DESC",
+            "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 AND type = $2 AND deleted_at IS NULL ORDER BY sort ASC, create_time DESC",
             &[&flag, &unit_type],
         )
         .await
@@ -715,21 +715,35 @@ pub async fn group_delete(
     Path(flag): Path<String>,
 ) -> HandlerResult {
     require_admin(&pool, &session).await?;
-    let client = client_of(&pool).await?;
-    let Some(gid) = soft_delete_generic(&client, GROUP_TABLE, &flag).await? else {
+    // 软删群组 + 级联清成员/角色三写必须原子：中途失败留孤儿成员/角色。
+    let mut client = client_of(&pool).await?;
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let find_sql =
+        format!("SELECT id FROM {GROUP_TABLE} WHERE (id = $1 OR name = $1) AND deleted_at IS NULL");
+    let Some(gid) = tx
+        .query_opt(&find_sql, &[&flag])
+        .await
+        .map_err(|_| AppError::Internal)?
+        .map(|r| r.get::<_, String>(0))
+    else {
+        tx.commit().await.map_err(|_| AppError::Internal)?;
         return err("group not found");
     };
-    client
-        .execute(
-            "DELETE FROM x_org_group_member WHERE group_id = $1",
-            &[&gid],
-        )
+    let del_sql =
+        format!("UPDATE {GROUP_TABLE} SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL");
+    tx.execute(&del_sql, &[&gid])
         .await
         .map_err(|_| AppError::Internal)?;
-    client
-        .execute("DELETE FROM x_org_group_role WHERE group_id = $1", &[&gid])
+    tx.execute(
+        "DELETE FROM x_org_group_member WHERE group_id = $1",
+        &[&gid],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
+    tx.execute("DELETE FROM x_org_group_role WHERE group_id = $1", &[&gid])
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     ok(Value::Object(
         vec![("id".to_string(), Value::String(gid))]
             .into_iter()
@@ -950,14 +964,29 @@ pub async fn role_delete(
     Path(flag): Path<String>,
 ) -> HandlerResult {
     require_admin(&pool, &session).await?;
-    let client = client_of(&pool).await?;
-    let Some(rid) = soft_delete_generic(&client, ROLE_TABLE, &flag).await? else {
+    // 软删角色 + 清授权两写必须原子：中途失败留「已删角色仍在授权表生效」的权限残留。
+    let mut client = client_of(&pool).await?;
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let find_sql =
+        format!("SELECT id FROM {ROLE_TABLE} WHERE (id = $1 OR name = $1) AND deleted_at IS NULL");
+    let Some(rid) = tx
+        .query_opt(&find_sql, &[&flag])
+        .await
+        .map_err(|_| AppError::Internal)?
+        .map(|r| r.get::<_, String>(0))
+    else {
+        tx.commit().await.map_err(|_| AppError::Internal)?;
         return err("role not found");
     };
-    client
-        .execute("DELETE FROM auth_person_role WHERE role_id = $1", &[&rid])
+    let del_sql =
+        format!("UPDATE {ROLE_TABLE} SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL");
+    tx.execute(&del_sql, &[&rid])
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.execute("DELETE FROM auth_person_role WHERE role_id = $1", &[&rid])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     ok(Value::Object(
         vec![("id".to_string(), Value::String(rid))]
             .into_iter()
@@ -1163,4 +1192,124 @@ pub async fn duty_update_member(
 pub async fn duty_list_like(pool: Extension<Pool>, Json(body): Json<Value>) -> HandlerResult {
     let key = opt(&body, &["key", "name"]).unwrap_or_default();
     generic_like_search(&pool, DUTY_TABLE, key, false, DUTY_EXTRA, false).await
+}
+
+// ═══ 表单设计器数据源示例默认值所指的两条通用读端点（KNOWN_BACKEND_GAPS 最后两条，实装清零）═══
+
+/// GET /api/users/list — 人员清单（未删行）。
+#[allow(non_snake_case)]
+pub async fn users_list(pool: Extension<Pool>) -> HandlerResult {
+    let client = client_of(&pool).await?;
+    let rows = client
+        .query(
+            "SELECT id, name, mobile, email, unit_id FROM x_org_person WHERE deleted_at IS NULL ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get::<_, String>("id"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, String>("name")),
+                ),
+                (
+                    "mobile".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+                ),
+                (
+                    "email".to_string(),
+                    Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+            ]))
+        })
+        .collect();
+    list_ok(data)
+}
+
+/// GET /api/departments/tree — 部门树（未删行，按 parent_id 组装 children，
+/// 自底向上挂接避免浅拷贝丢深层节点；父不在集合内/缺失视作根）。
+#[allow(non_snake_case)]
+pub async fn departments_tree(pool: Extension<Pool>) -> HandlerResult {
+    let client = client_of(&pool).await?;
+    let rows = client
+        .query(
+            "SELECT id, name, parent_id, level, sort FROM x_org_unit WHERE deleted_at IS NULL ORDER BY level, sort, name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let mut nodes: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get::<_, String>("id"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, String>("name")),
+                ),
+                (
+                    "parentId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("parent_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "level".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i32>("level"))),
+                ),
+                ("children".to_string(), Value::Array(Vec::new())),
+            ]))
+        })
+        .collect();
+    use std::collections::HashMap;
+    let index: HashMap<String, usize> = nodes
+        .iter()
+        .enumerate()
+        .map(|(i, n)| (n["id"].as_str().unwrap_or_default().to_string(), i))
+        .collect();
+    // 自底向上：level 深的先挂进父，孙子先并入子支，再整支上挂
+    let mut order: Vec<usize> = (0..nodes.len()).collect();
+    order.sort_by_key(|&i| std::cmp::Reverse(nodes[i]["level"].as_i64().unwrap_or(0)));
+    for &c in &order {
+        let parent = nodes[c]["parentId"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string();
+        let self_id = nodes[c]["id"].as_str().unwrap_or_default().to_string();
+        if parent.is_empty() || parent == self_id {
+            continue;
+        }
+        if let Some(&p) = index.get(parent.as_str()) {
+            if p != c {
+                let child = nodes[c].clone();
+                if let Some(arr) = nodes[p].get_mut("children").and_then(Value::as_array_mut) {
+                    arr.push(child);
+                }
+            }
+        }
+    }
+    let tree: Vec<Value> = nodes
+        .iter()
+        .enumerate()
+        .filter(|(i, n)| {
+            let parent = n["parentId"].as_str().unwrap_or_default();
+            parent.is_empty() || index.get(parent).copied() != Some(*i)
+        })
+        .map(|(_, n)| n.clone())
+        .collect();
+    let count = tree.len() as i64;
+    Ok(Json(shared::response::ActionResult::legacy_success(
+        Value::Array(tree),
+        count,
+        0,
+    )))
 }

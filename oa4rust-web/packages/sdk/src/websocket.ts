@@ -37,6 +37,8 @@ export class O2WebSocketClient {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null
   private _connected = false
+  /** 主动关闭标记：close() 后 onclose 异步触发，不得再排重连（否则 3s 后永远重连）。 */
+  private intentionalClose = false
 
   constructor(url: string = '/ws/realtime') {
     this.url = url
@@ -53,6 +55,7 @@ export class O2WebSocketClient {
         resolve()
         return
       }
+      this.intentionalClose = false
 
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
       const wsUrl = `${protocol}//${window.location.host}${this.url}`
@@ -90,7 +93,7 @@ export class O2WebSocketClient {
       this.ws.onclose = () => {
         this._connected = false
         this.stopHeartbeat()
-        this.scheduleReconnect()
+        if (!this.intentionalClose) this.scheduleReconnect()
       }
     })
   }
@@ -135,6 +138,7 @@ export class O2WebSocketClient {
 
   /** 断开连接 */
   close(): void {
+    this.intentionalClose = true
     this.stopHeartbeat()
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
     this.ws?.close()
@@ -143,8 +147,12 @@ export class O2WebSocketClient {
   }
 
   private dispatch(event: string, data: unknown): void {
-    this.handlers.get(event)?.forEach((h) => h(data))
-    this.handlers.get('$all')?.forEach((h) => h({ event, data }))
+    this.handlers.get(event)?.forEach((h) => {
+      h(data)
+    })
+    this.handlers.get('$all')?.forEach((h) => {
+      h({ event, data })
+    })
   }
 
   private startHeartbeat(): void {
