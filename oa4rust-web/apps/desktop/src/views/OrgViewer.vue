@@ -149,36 +149,44 @@
           <div v-if="selected.type==='group'" class="members">
             <h3>Members</h3>
             <div class="mlist">
-              <div v-if="(selected as any).members?.length" class="mc" v-for="m in (selected as any).members" :key="m.id">
-                <div class="ma2">{{m.name?.charAt(0)}}</div>
-                <div class="mi2"><div class="mn">{{m.name}}</div><div class="mp">{{m.position||m.role||'Emp'}}</div></div>
-              </div>
+              <template v-if="(selected as any).members?.length">
+                <div v-for="m in (selected as any).members" :key="m.id" class="mc">
+                  <div class="ma2">{{m.name?.charAt(0)}}</div>
+                  <div class="mi2"><div class="mn">{{m.name}}</div><div class="mp">{{m.position||m.role||'Emp'}}</div></div>
+                </div>
+              </template>
               <div v-else class="empty-m">No members</div>
             </div>
             <h3 style="margin-top:16px">直接子群组（{{ subGroups.length }}）</h3>
             <div class="mlist">
-              <div v-if="subGroups.length" class="mc" v-for="g in subGroups" :key="g.id">
-                <div class="ma2">D</div>
-                <div class="mi2"><div class="mn">{{ g.name }}</div><div class="mp">{{ g.id }}</div></div>
-              </div>
+              <template v-if="subGroups.length">
+                <div v-for="g in subGroups" :key="g.id" class="mc">
+                  <div class="ma2">D</div>
+                  <div class="mi2"><div class="mn">{{ g.name }}</div><div class="mp">{{ g.id }}</div></div>
+                </div>
+              </template>
               <div v-else class="empty-m">无子群组</div>
             </div>
 
             <h3 style="margin-top:16px">关联角色（{{ groupRoles.length }}）</h3>
             <div class="mlist">
-              <div v-if="groupRoles.length" class="mc" v-for="r in groupRoles" :key="r.id">
-                <div class="ma2">R</div>
-                <div class="mi2"><div class="mn">{{ r.name }}</div><div class="mp">{{ r.id }}</div></div>
-              </div>
+              <template v-if="groupRoles.length">
+                <div v-for="r in groupRoles" :key="r.id" class="mc">
+                  <div class="ma2">R</div>
+                  <div class="mi2"><div class="mn">{{ r.name }}</div><div class="mp">{{ r.id }}</div></div>
+                </div>
+              </template>
               <div v-else class="empty-m">无关联角色</div>
             </div>
 
             <h3 style="margin-top:16px">上级群组（直接 {{ supDirect.length }} / 嵌套 {{ supNested.length }}）</h3>
             <div class="mlist">
-              <div v-if="supDirect.length" class="mc" v-for="g in supDirect" :key="'d'+g.id">
-                <div class="ma2">↑</div>
-                <div class="mi2"><div class="mn">{{ g.name }}</div><div class="mp">直接上级</div></div>
-              </div>
+              <template v-if="supDirect.length">
+                <div v-for="g in supDirect" :key="'d'+g.id" class="mc">
+                  <div class="ma2">↑</div>
+                  <div class="mi2"><div class="mn">{{ g.name }}</div><div class="mp">直接上级</div></div>
+                </div>
+              </template>
               <div v-for="g in supNested" :key="'n'+g.id" class="mc">
                 <div class="ma2">⇡</div>
                 <div class="mi2"><div class="mn">{{ g.name }}</div><div class="mp">嵌套上级</div></div>
