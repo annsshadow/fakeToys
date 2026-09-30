@@ -390,7 +390,7 @@ pub async fn person_list_like(pool: Extension<Pool>, Json(body): Json<Value>) ->
             .map_err(|_| AppError::Internal)?;
         return list_ok_legacy(rows.iter().map(person_row_json).collect());
     }
-    let pattern = format!("%{key}%");
+    let pattern = format!("%{}%", shared::db::escape_like(&key));
     let sql = format!(
         "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND name ILIKE $1"
     );
@@ -416,7 +416,7 @@ pub async fn person_list_like_pinyin(
             .map_err(|_| AppError::Internal)?;
         return list_ok_legacy(rows.iter().map(person_row_json).collect());
     }
-    let pattern = format!("{}%", key.to_lowercase());
+    let pattern = format!("{}%", shared::db::escape_like(&key.to_lowercase()));
     let sql = format!(
         "SELECT {PERSON_COLS} FROM {PERSON_TABLE}
           WHERE deleted_at IS NULL AND (LOWER(pinyin_initial) LIKE $1 OR LOWER(name) LIKE $1)"
@@ -688,9 +688,9 @@ pub async fn person_list_filter_paging(
     let offset = ((page - 1).saturating_mul(size)).to_string();
     let size_str = size.to_string();
 
-    let name = normalize_key(opt(&body, &["name"]).unwrap_or_default());
-    let mobile = normalize_key(opt(&body, &["mobile"]).unwrap_or_default());
-    let email = normalize_key(opt(&body, &["email"]).unwrap_or_default());
+    let name = shared::db::escape_like(&normalize_key(opt(&body, &["name"]).unwrap_or_default()));
+    let mobile = shared::db::escape_like(&normalize_key(opt(&body, &["mobile"]).unwrap_or_default()));
+    let email = shared::db::escape_like(&normalize_key(opt(&body, &["email"]).unwrap_or_default()));
     let status = normalize_key(opt(&body, &["status"]).unwrap_or_default());
     let unit_flag = normalize_key(opt(&body, &["unitFlag", "unitId"]).unwrap_or_default());
 

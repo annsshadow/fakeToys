@@ -398,10 +398,11 @@ pub async fn calendar_ismanager_calendar(
 #[allow(non_snake_case)]
 pub async fn calendar_list_filter(pool: Extension<Pool>, Json(body): Json<Value>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // LIKE 模式绑定值转义，防 % _ 通配注入
     let name: Option<String> = body
         .get("name")
         .and_then(|v| v.as_str())
-        .map(|s| s.to_string());
+        .map(shared::db::escape_like);
     let cal_type: Option<String> = body
         .get("type")
         .and_then(|v| v.as_str())
@@ -632,10 +633,11 @@ pub async fn event_list_filter(pool: Extension<Pool>, Json(body): Json<Value>) -
         .get("calendarId")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
+    // LIKE 模式绑定值转义，防 % _ 通配注入
     let title: Option<String> = body
         .get("title")
         .and_then(|v| v.as_str())
-        .map(|s| s.to_string());
+        .map(shared::db::escape_like);
     let rows = client
         .query(
             "SELECT id, calendar_id, title, content, location, start_time, end_time, \

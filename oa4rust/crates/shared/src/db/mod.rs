@@ -72,5 +72,15 @@ pub async fn create_sea_orm_pool() -> Result<DatabaseConnection, DbError> {
         .map_err(|e| DbError::PoolError(e.to_string()))
 }
 
+/// LIKE/ILIKE 通配符转义（% _ \），防关键词注入通配扫描；
+/// 转义后的值方可拼入 '%' || $1 || '%' 类模式绑定。对齐 o2server
+/// StringTools.escapeSqlLikeKey（bbs/personal/query_service 既有同型助手）。
+pub fn escape_like(input: &str) -> String {
+    input
+        .replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_")
+}
+
 pub use dialect::{dialect, MySQLDialect, PostgresDialect, SqlDialect};
 pub use rewriter::rewrite_pg_to_mysql;

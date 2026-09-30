@@ -602,7 +602,7 @@ pub async fn search_post(
     if key.trim().is_empty() {
         return Ok(Json(ActionResult::error("key is required")));
     }
-    let pattern = format!("%{}%", key.trim());
+    let pattern = format!("%{}%", shared::db::escape_like(key.trim()));
 
     let designs = client
         .query(
@@ -682,7 +682,7 @@ pub async fn morelikethis_post(
     if key.trim().is_empty() {
         return Ok(Json(ActionResult::error("key is required")));
     }
-    let pattern = format!("%{}%", key.trim());
+    let pattern = format!("%{}%", shared::db::escape_like(key.trim()));
     let table_flag = body
         .get("tableFlag")
         .and_then(|v| v.as_str())
@@ -1394,7 +1394,7 @@ pub async fn table_row_select_post(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let key = body_str(&body, &["where", "key", "filter"]).unwrap_or_default();
-    let pattern = format!("%{}%", key);
+    let pattern = format!("%{}%", shared::db::escape_like(key));
 
     let rows = client
         .query(

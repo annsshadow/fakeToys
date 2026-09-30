@@ -703,7 +703,7 @@ async fn person_of_units(
         return ok_legacy_list(0, vec![]);
     }
     let key = if like {
-        string_field(&body, "key")
+        string_field(&body, "key").map(|s| shared::db::escape_like(&s))
     } else {
         None
     };

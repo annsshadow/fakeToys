@@ -520,7 +520,7 @@ pub async fn person_list_filter_page_size(
         .get("name")
         .and_then(|v| v.as_str())
         .filter(|s| !s.is_empty())
-        .map(str::to_string);
+        .map(shared::db::escape_like);
     let unit_id = body
         .get("unitId")
         .and_then(|v| v.as_str())

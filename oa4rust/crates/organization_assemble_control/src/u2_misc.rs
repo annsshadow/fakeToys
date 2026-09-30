@@ -452,7 +452,7 @@ async fn card_page(
     let size = size.clamp(1, MAX_PAGE_SIZE);
     let offset = ((page - 1).saturating_mul(size)).to_string();
     let size_str = size.to_string();
-    let key = normalize_key(opt(body, &["key"]).unwrap_or_default());
+    let key = shared::db::escape_like(&normalize_key(opt(body, &["key"]).unwrap_or_default()));
     let group_type = normalize_key(opt(body, &["groupType", "type"]).unwrap_or_default());
     let cond = if with_group {
         "deleted_at IS NULL
