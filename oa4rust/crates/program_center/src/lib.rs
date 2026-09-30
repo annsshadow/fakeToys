@@ -23,6 +23,8 @@ mod tests_u3;
 pub struct CollectAddRequest {
     pub title: Option<String>,
     pub url: Option<String>,
+    // 桌面 CollectApp 发 personId（camel）：无 alias 则 person_id 落 None → 落库空归属。
+    #[serde(alias = "personId")]
     pub person_id: Option<String>,
     pub creator: Option<String>,
 }
