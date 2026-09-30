@@ -84,3 +84,34 @@ pub fn escape_like(input: &str) -> String {
 
 pub use dialect::{dialect, MySQLDialect, PostgresDialect, SqlDialect};
 pub use rewriter::rewrite_pg_to_mysql;
+
+#[cfg(test)]
+mod escape_like_tests {
+    use super::escape_like;
+
+    // 轮66 回归：LIKE/ILIKE 通配符注入转义。意图：用户搜索词中的 % _ \
+    // 必须变成字面量，不得改变模式匹配语义（如搜索 "_" 不得命中全表）。
+    #[test]
+    fn escapes_wildcards_and_backslash_in_order() {
+        let cases = [
+            ("plain", "plain"),
+            ("50%", "50\\%"),
+            ("under_score", "under\\_score"),
+            ("back\\slash", "back\\\\slash"),
+            ("%_\\", "\\%\\_\\\\"),
+            ("", ""),
+            ("百分号%", "百分号\\%"),
+        ];
+        for (input, expected) in cases {
+            assert_eq!(escape_like(input), expected, "input={input:?}");
+        }
+    }
+
+    #[test]
+    fn double_escape_differs_from_single() {
+        // 转义结果二次转义必须不同于一次（防双重转义接线回归，轮66 踩坑）
+        let once = escape_like("a%b_c\\d");
+        let twice = escape_like(&once);
+        assert_ne!(once, twice);
+    }
+}

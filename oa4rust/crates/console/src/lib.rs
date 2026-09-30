@@ -167,8 +167,13 @@ pub async fn get_logs(
 #[allow(non_snake_case)]
 pub async fn send_message(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     axum::extract::Json(req): Json<SendMessageRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // RBAC: 运维面写操作仅 Admin
+    if !is_admin(pool.deref(), &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let token = req.token.unwrap_or_default();
     let message = req.message.unwrap_or_default();
 
