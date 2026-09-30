@@ -11,7 +11,7 @@ import random
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional, Callable
 
-from .evaluation import compute_similarity
+from .evaluation import tokenize
 from .exceptions import DataValidationError
 from .validation import require_count
 
@@ -144,13 +144,21 @@ class ActiveLearningLoop:
         if not texts:
             return []
 
+        # 相似度是对称的词元级 Jaccard，逐对调用 compute_similarity 会把每条文本
+        # 重新 tokenize 约 2n 次（外层 n 次 + 每次内层再切一遍两侧），n 条共 2n² 次。
+        # 先一次性把每条切成词元集合（n 次 tokenize），内层只做集合运算，语义不变。
+        token_sets = [set(tokenize(text)) for text in texts]
         scores = []
-        for index, text in enumerate(texts):
+        for index, set_i in enumerate(token_sets):
             max_similarity = 0.0
-            for other_index, other_text in enumerate(texts):
+            for other_index, set_j in enumerate(token_sets):
                 if index == other_index:
                     continue
-                similarity = compute_similarity(text, other_text)
+                if not set_i or not set_j:
+                    similarity = 0.0
+                else:
+                    union = len(set_i | set_j)
+                    similarity = len(set_i & set_j) / union if union else 0.0
                 if similarity > max_similarity:
                     max_similarity = similarity
             scores.append(1.0 - max_similarity)

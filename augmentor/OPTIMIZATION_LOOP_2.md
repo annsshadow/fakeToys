@@ -40,7 +40,8 @@
 | # | 内容 | 证据 | 量级 |
 |---|------|------|------|
 | B201 | **已关闭（L131）**：`DatasetAnalyzer.get_duplicate_candidates`（SDK 公共方法）O(n²) 里逐对重建字符集是真热点 | 实测 6000 条 **71.8 s**；预计算后 2500 条 A/B new/old ×0.36 / ×0.34（双序），等价性 5 阈值逐元素一致 | S |
-| B202 | 待普查后立项 | —— | — |
+| B202 | **已关闭（L132）**：`ActiveLearningLoop._diversity_scores` 逐对调用 `compute_similarity`，每对把两侧重新 tokenize，n 条共约 2n² 次切词 | 预计算词元集合后 n=800 A/B new/old ×0.088（≈11×，双序），等价性 4 数据集（含重复/空串/单条/多词）逐元素一致 | S |
+| B203 | 待普查后立项 | —— | — |
 
 ## 循环日志
 
@@ -420,3 +421,25 @@
   不牵扯空 instruction 条目。改写只要动了「空跳过 / Jaccard / 降序」任一就红。
 - 全量门禁：`7359 passed / 3 skipped / exit 0`（L129 的 7358 + 1 新守卫，无回归）；
   analytics 三测件 75/75、A184 21/21 绿。**B201 关闭**。
+
+### L132（2026-09-30）— B202 立项 + 关闭：_diversity_scores 词元集合预计算
+
+- **热点普查**（延续 B201 的全对相似度族）：`ActiveLearningLoop._diversity_scores`
+  （`strategy="diversity"/"hybrid"` 主动学习选样的打分核）对 n 条文本两两求词元级
+  Jaccard，内层**逐对调用 `compute_similarity(text, other)`**。该函数每次都
+  `set(tokenize(generated))` + `set(tokenize(reference))`，即每对切两次词，n 条共约
+  2n² 次 tokenize —— 相似度对称、每行只取 max，切词被白算了一个数量级。
+- **修法**（行为完全不变，只把切词提到循环外）：先一次性算好每条的词元集合
+  `token_sets = [set(tokenize(t)) for t in texts]`（n 次 tokenize），内层只做
+  `len(a & b) / len(a | b)`；空集合仍返 0.0（与 `compute_similarity` 的
+  `if not gen_tokens or not ref_tokens: return 0.0` 同判）。`compute_similarity`
+  导入随之移除（不再有调用点），改导 `tokenize`。
+- **A/B（同进程双序 min-of-3，n=800）**：new 708 ms、old 8033 ms ⇒ **new/old ×0.088**
+  （≈11× 快）。等价性：4 数据集（含重复条目 / 空串 / 单条 / 多词）与「逐对
+  compute_similarity」参照实现**逐元素一致**（脚本内 `assert abs<1e-9` 全过）。
+- **回归护栏**：`test_active_learning.py::TestDiversityScoresReference::`
+  `test_matches_pairwise_compute_similarity_l132` —— 内嵌逐对 `compute_similarity`
+  参照，在含重复/空串/单条/多词的 4 数据集上逐元素对照；任何切词或 Jaccard 语义
+  漂移当场红。
+- 全量门禁：`7360 passed / 3 skipped / exit 0`（L131 的 7359 + 1 新守卫，无回归）；
+  active_learning 49/49、A184 21/21 绿。**B202 关闭**。
