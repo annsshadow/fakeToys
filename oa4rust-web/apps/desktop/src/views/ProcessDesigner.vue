@@ -3609,6 +3609,8 @@ interface ExecState {
   completedNodes: string[]
 }
 const execState = ref<ExecState>({ currentNodeIdx: null, progress: 0, status: 'idle', completedNodes: [] })
+let execAnimTimer: ReturnType<typeof setInterval> | null = null
+let execAnimDelay: ReturnType<typeof setTimeout> | null = null
 const showExecPanel = ref(false)
 // ── 模拟 / 甘特 / 分支面板状态（模板引用但从未实现的可视化面板；默认关闭，
 //    提供最小安全定义保证渲染不崩溃，不实现完整模拟引擎）──────────────
@@ -3669,17 +3671,18 @@ function simulateNext() {
   // Animate progress
   const totalNodes = processDef.value.nodes.length
   let progress = 0
-  const interval = setInterval(() => {
+  execAnimTimer = setInterval(() => {
     progress += 5
     if (progress >= 100) {
-      clearInterval(interval)
+      clearInterval(execAnimTimer)
+      execAnimTimer = null
       execState.value.currentNodeIdx = nextIdx
       execState.value.completedNodes.push(nextId)
       execState.value.progress = Math.round((execState.value.completedNodes.length / totalNodes) * 100)
       if (processDef.value!.nodes[nextIdx].type === 'end') {
         execState.value.status = 'finished'
       } else {
-        setTimeout(() => simulateNext(), 300)
+        execAnimDelay = setTimeout(() => simulateNext(), 300)
       }
     } else {
       execState.value.progress = progress
@@ -3688,6 +3691,15 @@ function simulateNext() {
 }
 function pauseExecution() {
   execState.value.status = 'paused'
+  // 真正暂停：不清定时器的话进度会继续走，且 resume 会再起一个 interval 双倍速
+  if (execAnimTimer) {
+    clearInterval(execAnimTimer)
+    execAnimTimer = null
+  }
+  if (execAnimDelay) {
+    clearTimeout(execAnimDelay)
+    execAnimDelay = null
+  }
 }
 function resumeExecution() {
   if (execState.value.status === 'paused') {
@@ -6704,6 +6716,9 @@ onUnmounted(() => {
   pausePlayback()
   stopEdgeAnimation()
   stopAnimationLoop()
+  if (execAnimTimer) clearInterval(execAnimTimer)
+  if (execAnimDelay) clearTimeout(execAnimDelay)
+  if (simTimer) clearInterval(simTimer)
   // Clean up the sandbox iframe to prevent memory leaks.
   destroySandbox()
 })
@@ -8084,6 +8099,7 @@ const showSimTimeline = ref(false)
 const simEvents = ref<SimTimelineEvent[]>([])
 const simProgress = ref(0)
 const simRunning = ref(false)
+let simTimer: ReturnType<typeof setInterval> | null = null
 const showShortcutHelp = ref(false)
 // ── Deepened Functions ─────────────────────────────────────────────
 function initFlowVars() {
@@ -8342,16 +8358,22 @@ function startSimulation() {
     simEvents.value.push({ time: t, nodeId: n.id, event: 'complete', label: n.label || n.type })
   })
   const totalDuration = t + 500
-  const interval = setInterval(() => {
+  simTimer = setInterval(() => {
     simProgress.value = Math.min(100, ((Date.now() % totalDuration) / totalDuration) * 100)
     if (simProgress.value >= 100) {
-      clearInterval(interval)
+      clearInterval(simTimer)
+      simTimer = null
       simRunning.value = false
       showToast('模拟完成', 'success')
     }
   }, 100)
 }
 function stopSimulation() {
+  // 停止须真正摘除定时器：否则稍后仍会弹「模拟完成」并复写 simRunning
+  if (simTimer) {
+    clearInterval(simTimer)
+    simTimer = null
+  }
   simRunning.value = false
   simProgress.value = 0
 }
