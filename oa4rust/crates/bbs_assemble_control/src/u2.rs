@@ -624,20 +624,24 @@ pub async fn u2_subject_accept_reply(
         U2Gate::NotFound => Ok(Json(ActionResult::error("subject not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
-            let affected = client
+            // 采纳 = topic.accept_reply_id 与 reply.accepted 的跨表不变量对，必须原子；
+            // 此前第二写 `let _ =` 吞错且两写非事务，回帖标记失败会留主题悬空指向。
+            let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+            let affected = tx
                 .execute(
                     "UPDATE x_bbs_topic SET accept_reply_id = $1 WHERE id = $2 AND deleted_at IS NULL",
                     &[&reply_id, &id],
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
-            let _ = client
-                .execute(
-                    "UPDATE x_bbs_reply SET accepted = true WHERE id = $1 AND deleted_at IS NULL",
-                    &[&reply_id],
-                )
-                .await;
+            tx.execute(
+                "UPDATE x_bbs_reply SET accepted = true WHERE id = $1 AND deleted_at IS NULL",
+                &[&reply_id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+            tx.commit().await.map_err(|_| AppError::Internal)?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
@@ -661,14 +665,42 @@ pub async fn u2_subject_unaccept_reply(
         U2Gate::NotFound => Ok(Json(ActionResult::error("subject not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
-            client
-                .execute(
-                    "UPDATE x_bbs_topic SET accept_reply_id = NULL WHERE id = $1 AND deleted_at IS NULL",
+            // 取消采纳须同步清回帖侧 accepted 标记：此前只清主题指针，
+            // 旧回帖残留 accepted=true，会与后续新采纳并存造成双采纳。
+            let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+            let prev: Option<String> = tx
+                .query_opt(
+                    "SELECT accept_reply_id FROM x_bbs_topic WHERE id = $1 AND deleted_at IS NULL",
                     &[&id],
                 )
                 .await
+                .map_err(|_| AppError::Internal)?
+                .and_then(|r| r.get::<_, Option<String>>("accept_reply_id"));
+            if prev.is_none() {
+                tx.commit().await.map_err(|_| AppError::Internal)?;
+                return Ok(Json(ActionResult::success(Value::Object(
+                    serde_json::Map::from_iter([
+                        ("id".to_string(), Value::String(id)),
+                        ("acceptReplyId".to_string(), Value::Null),
+                    ]),
+                ))));
+            }
+            tx.execute(
+                "UPDATE x_bbs_topic SET accept_reply_id = NULL WHERE id = $1 AND deleted_at IS NULL",
+                &[&id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+            if let Some(prev_id) = prev {
+                tx.execute(
+                    "UPDATE x_bbs_reply SET accepted = false WHERE id = $1",
+                    &[&prev_id],
+                )
+                .await
                 .map_err(|_| AppError::Internal)?;
+            }
+            tx.commit().await.map_err(|_| AppError::Internal)?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
@@ -1159,21 +1191,22 @@ pub async fn u2_user_reply_accept(
         U2Gate::NotFound => Ok(Json(ActionResult::error("subject not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
-            client
-                .execute(
-                    "UPDATE x_bbs_reply SET accepted = true WHERE id = $1 AND deleted_at IS NULL",
-                    &[&reply_id],
-                )
-                .await
-                .map_err(|_| AppError::Internal)?;
-            client
-                .execute(
-                    "UPDATE x_bbs_topic SET accept_reply_id = $1 WHERE id = $2 AND deleted_at IS NULL",
-                    &[&reply_id, &subject_id],
-                )
-                .await
-                .map_err(|_| AppError::Internal)?;
+            // 同 u2_subject_accept_reply：跨表不变量对原子化。
+            let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+            tx.execute(
+                "UPDATE x_bbs_reply SET accepted = true WHERE id = $1 AND deleted_at IS NULL",
+                &[&reply_id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+            tx.execute(
+                "UPDATE x_bbs_topic SET accept_reply_id = $1 WHERE id = $2 AND deleted_at IS NULL",
+                &[&reply_id, &subject_id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+            tx.commit().await.map_err(|_| AppError::Internal)?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("subjectId".to_string(), Value::String(subject_id)),
