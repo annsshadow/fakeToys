@@ -49,7 +49,8 @@
 | B208 | **已关闭（L138）**：`ActiveSampler.generate_report` 里 `recommended_seed_indices` 用 `items.index(seed)`（== 相等）取「seed 的下标」，内容相等的兄弟 item 会误报第一个的下标；候选「改 id(seed) 索引」优化经 A/B **证否**（真实 k 很小，O(n) 建表 > per-seed 2×O(n) 扫描，反而更慢）故不改产品，改补下标精确性守卫 | A/B：n=3000/50 seeds 下 new(id-map)/old ×3.56（变慢）；新增 1 条钉死「下标＝被选中对象本身的下标，不是内容相等里的第一个」的守卫 | S |
 | B209 | **已关闭（L139）**：`EnhancedComparator._generate_recommendations` 的 4 条字符串分支（size_diff>±100 / 相似度<0.5 / 类型不匹配 / 值差异）此前**无任何直达断言**——既有用例只 `assert "recommendations" in d`（key 存在），全分支实际盲跑 | 补 3 条字符串守卫：size_diff=150⇒「数据集A比B多 150 条数据」；similarity=0.1⇒「相似度较低」；type_mismatches=2/value_diffs=1⇒各一条「字段 X 存在 N 个…」（含「高度相似」顺带路径） | S |
 | B210 | **已关闭（L140）**：`turns_to_canonical`（chatml/vicuna/sharegpt 逆运算）末尾两轮角色检查用裸 `["role"]`，缺 role 键时抛**裸 `KeyError`** 而非契约承诺的 `DataFormatError`（函数 docstring Raises 段明写抛 DataFormatError）；且该逆运算此前**无直达单测**（只在集成 CLI 用例里被间接触发） | `["role"]` 改 `.get("role")`（缺键 → 比对 `None` ≠ "user"/"assistant" → 走既有 DataFormatError 分支，顺带把 f-string 里的裸引用一起改）；补 `TestTurnsToCanonicalContract` 2 条（缺 role 键 / 角色顺序错），实证改前 KeyError 红、改后 DataFormatError 绿 | S |
-| B211 | 待普查后立项 | —— | — |
+| B211 | **已关闭（L141）**：`VersionManager.diff()` 用 `(instruction, output)` 组合键做身份 ⇒ 「原地改某条 output」被拆成「删旧+增新」两条，`modified` 分支**恒为空**（`modified_count` 永远 0），而 `DiffResult` 字段注释与 docs/API.md 示例都承诺 `modified_count` 非零；既有唯一守卫还是空转的 `assert modified_count >= 0` | 身份键改成 `instruction` 单键，同 instruction 两版都在 ⇒ 整条 dict 不等即计入 `modified`；原地修改 now 报 modified=1/added=0/removed=0。既有 4 条 diff 用例（added/removed/identical/empty）全绿无回归；强化 `test_diff_modified_items` 断言 + 新增 1 条原地修改守卫 | M |
+| B212 | 待普查后立项 | —— | — |
 
 ## 循环日志
 
@@ -617,3 +618,24 @@
   红，实证可复现）；② 角色顺序错（user→user）⇒ `DataFormatError`。
 - 全量门禁：`7377 passed / 3 skipped / exit 0`（L139 的 7375 + 2 新守卫，无回归）；
   converter 181/181、A184 21/21 绿。**B210 关闭**。
+
+### L141（2026-09-30）— B211 立项 + 关闭：VersionManager.diff 死代码 modified → 真识别原地修改
+
+- **真缺陷（死分支 + 恒 0）**：`VersionManager.diff()` 用 `(instruction, output)` **组合键**
+  做记录身份——`item_to_key` 把 output 也算进 key。结果「原地改了某条 instruction 的
+  output」在新旧两版里各是一个**不同的组合键**，于是被 diff 拆成「删旧 (instr, out1)」+
+  「增新 (instr, out2)」两条，而 `modified` 列表**结构上永远空**（`modified_count` 恒 0）。
+  既有的 `test_diff_modified_items` 只 `assert diff.modified_count >= 0`（空转断言，永远真），
+  缺陷被 100% 盖住。`DiffResult` 字段注释（`modified_count  # 修改数量`）与 docs/API.md:952
+  示例（`"modified_count": 8`）都承诺非零，实现从不兑现。
+- **修法**（身份键降为 instruction）：记录身份只按 `instruction` 匹配（SFT 记录的自然主键）；
+  同一 instruction 两版都在时，整条 dict 不等即计入 `modified`。原地修改现在报
+  `modified=1 / added=0 / removed=0`；纯新增/纯移除语义不变。
+- **等价性核查**：既有 4 条 diff 用例（`added`/`removed`/`identical`/`empty`）全部继续绿，
+  说明新键在「无原地修改」场景与原组合键结果一致，只在「同 instruction 改 output」这一
+  此前误报的场景纠正了归属。
+- **回归护栏**：强化 `test_diff_modified_items` 断言（`>= 0` → `== 1`），新增
+  `test_diff_in_place_edit_is_modified_not_added_removed`（原地改 output + 混合一条不动项，
+  钉死 modified=1 且 added/removed 都 0）。改前该新用例会红（modified=0、added/removed 各 1）。
+- 全量门禁：`7378 passed / 3 skipped / exit 0`（L140 的 7377 + 1 新守卫，无回归）；
+  versioning 59/59、A184 21/21 绿。**B211 关闭**。
