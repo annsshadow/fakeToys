@@ -501,6 +501,19 @@ export const recycleApi = {
 export const bbsApi = {
   /** 移动端论坛首页：最新 20 条主题（o2 移动契约 mobile/view/all）。 */
   mobileViewAll: () => list(mapi.get<Record<string, unknown>[]>('/api/bbs/assemble/control/mobile/view/all')),
+  /** 主题详情（bbs routes.rs subject_view_id；data 为空 = 主题不存在/已删）。 */
+  subjectView: (id: string) => mapi.get<Record<string, unknown>>(`/api/bbs/assemble/control/subject/view/${id}`),
+  /** 主题回帖列表（reply_list_sub_id，create_time ASC）。 */
+  replyList: (topicId: string) =>
+    list(mapi.get<Record<string, unknown>[]>(`/api/bbs/assemble/control/reply/list/sub/${topicId}`)),
+  /** 发表回帖（create_reply：topicId/subjectId 同义，作者缺省取登录人）。 */
+  replyCreate: (data: { topicId: string; content: string }) =>
+    mapi.post<{ id: string }>('/api/bbs/assemble/control/reply/create', data),
+  /** 发表主题（create_topic：author 缺省回退 creator，section 缺省回退 forumId）。 */
+  topicCreate: (data: { forumId: string; title: string; content: string; creator: string }) =>
+    mapi.post<{ id: string }>('/api/bbs/assemble/control/topic/create', data),
+  /** 版块清单（forum_view_all，发帖选版块用）。 */
+  forumList: () => list(mapi.get<Record<string, unknown>[]>('/api/bbs/assemble/control/forum/view/all')),
 }
 
 export const searchApi = {

@@ -8,7 +8,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { getApiBase, setApiBase } from './http'
-import { fileApi, messageApi, messageConversationId, processApi } from './index'
+import { bbsApi, fileApi, messageApi, messageConversationId, processApi } from './index'
 
 /** 捕获 uni.request 的最小 stub（服务方法本身只关心 method/url/data/options）。 */
 function installRequestCapture() {
@@ -82,6 +82,46 @@ describe('fileApi download URLs (原生 App / 小程序绝对地址)', () => {
     setApiBase('')
     expect(fileApi.fileDownloadUrl('f-2')).toBe('/api/file/assemble/control/file/f-2/download')
     expect(getApiBase()).toBe('')
+  })
+})
+
+describe('bbsApi 主题详情/回帖/发帖（bbs_assemble_control 既有业务路由）', () => {
+  it('subjectView/replyList 走 GET 且路径段与后端注册一致', async () => {
+    const calls = installRequestCapture()
+    await bbsApi.subjectView('t-1')
+    await bbsApi.replyList('t-1')
+    expect(calls[0]).toEqual({ method: 'GET', url: '/api/bbs/assemble/control/subject/view/t-1' })
+    expect(calls[1]).toEqual({ method: 'GET', url: '/api/bbs/assemble/control/reply/list/sub/t-1' })
+  })
+
+  it('replyCreate 以 topicId 提交（后端 subjectId/topicId 同义归一）', async () => {
+    const calls = installRequestCapture()
+    await bbsApi.replyCreate({ topicId: 't-2', content: '赞' })
+    expect(calls[0]).toEqual({
+      method: 'POST',
+      url: '/api/bbs/assemble/control/reply/create',
+      data: { topicId: 't-2', content: '赞' },
+    })
+  })
+
+  it('topicCreate 携带版块/标题/内容/创建人（author/section 由后端缺省回退）', async () => {
+    const calls = installRequestCapture()
+    await bbsApi.topicCreate({ forumId: 'f-1', title: '标题', content: '正文', creator: 'u-1' })
+    expect(calls[0]).toEqual({
+      method: 'POST',
+      url: '/api/bbs/assemble/control/topic/create',
+      data: { forumId: 'f-1', title: '标题', content: '正文', creator: 'u-1' },
+    })
+  })
+
+  it('forumList 走 o2 契约 forum/view/all', async () => {
+    const calls = installRequestCapture()
+    await bbsApi.forumList()
+    expect(calls[0]).toEqual({ method: 'GET', url: '/api/bbs/assemble/control/forum/view/all' })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
   })
 })
 

@@ -22,7 +22,8 @@ function creatorOf(row: Record<string, unknown>): string {
   return typeof v === 'string' && v ? v : '匿名'
 }
 function timeOf(row: Record<string, unknown>): string {
-  const v = row.createTime
+  // 后端 TopicRow 序列化为 snake_case（create_time），camelCase 仅作旧形状兜底。
+  const v = row.create_time ?? row.createTime
   return typeof v === 'string' && v ? v.slice(0, 16) : ''
 }
 function excerptOf(row: Record<string, unknown>): string {
@@ -56,14 +57,28 @@ async function onPullDownRefresh() {
   await load()
   uni.stopPullDownRefresh()
 }
+
+function openTopic(row: Record<string, unknown>) {
+  const id = typeof row.id === 'string' ? row.id : ''
+  if (!id) return
+  uni.navigateTo({ url: `/pages/bbs/topic?id=${encodeURIComponent(id)}` })
+}
+
+function newTopic() {
+  uni.navigateTo({ url: '/pages/bbs/new' })
+}
 </script>
 
 <template>
   <view class="page">
+    <view class="toolbar">
+      <view class="toolbar-title">最新主题</view>
+      <view class="new-btn" @tap="newTopic">发帖</view>
+    </view>
     <view v-if="loading && !loaded" class="tip">加载中…</view>
     <view v-else-if="loaded && rows.length === 0" class="tip">论坛暂无主题</view>
     <view v-else class="topic-list">
-      <view v-for="(row, i) in rows" :key="i" class="topic">
+      <view v-for="(row, i) in rows" :key="i" class="topic" @tap="openTopic(row)">
         <view class="topic-title">{{ titleOf(row) }}</view>
         <view v-if="excerptOf(row)" class="topic-excerpt">{{ excerptOf(row) }}</view>
         <view class="topic-meta">{{ creatorOf(row) }} · {{ timeOf(row) }}</view>
@@ -76,6 +91,24 @@ async function onPullDownRefresh() {
 .page {
   padding: 12px;
   min-height: 100vh;
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.toolbar-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2733;
+}
+.new-btn {
+  padding: 5px 14px;
+  border-radius: 15px;
+  background: #2f6bff;
+  color: #ffffff;
+  font-size: 13px;
 }
 .tip {
   text-align: center;

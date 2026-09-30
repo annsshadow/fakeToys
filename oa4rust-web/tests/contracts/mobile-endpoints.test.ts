@@ -21,6 +21,8 @@ const REGISTERED_BACKEND_ROUTES: string[] = [
   '/api/authentication/who',
   '/api/authentication/refresh',
   '/api/authentication/captcha',
+  // 改密（personal crate PUT /api/person/password，mine 页与桌面 Personal 同端点）
+  '/api/person/password',
   // 流程 surface 列表（processplatform_assemble_surface/routes.rs，GET/POST 见后端注册）
   '/api/processplatform/assemble/surface/task/list/my/paging/{page}/size/{size}',
   '/api/processplatform/assemble/surface/taskcompleted/list/my/paging/{page}/size/{size}',
@@ -43,6 +45,12 @@ const REGISTERED_BACKEND_ROUTES: string[] = [
   '/api/general/dict/list',
   // 论坛（bbs_assemble_control/routes.rs，o2 移动契约）
   '/api/bbs/assemble/control/mobile/view/all',
+  // 论坛主题详情/回帖/发帖（bbs_assemble_control/routes.rs + lib.rs 既有业务路由）
+  '/api/bbs/assemble/control/subject/view/{id}',
+  '/api/bbs/assemble/control/reply/list/sub/{id}',
+  '/api/bbs/assemble/control/reply/create',
+  '/api/bbs/assemble/control/topic/create',
+  '/api/bbs/assemble/control/forum/view/all',
   // IM 发起单聊（message_assemble_communicate，创建 single 会话）
   '/api/message/assemble/communicate/im/conversation',
   // 流程发起（processplatform designer + service_processing，桌面 ProcessWork 同源端点）
