@@ -350,6 +350,12 @@ impl SessionManager {
                         ],
                     )
                     .await;
+                // 顺带清理已过期会话行（每次登录一次的廉价簿记，失败仅延迟清理不破坏
+                // 登录，属有意 best-effort）：过期行此前仅在显式登出/删人时删除，
+                // 长期运行下 auth_session 无限增长。
+                let _ = client
+                    .execute("DELETE FROM auth_session WHERE expires_at < NOW()", &[])
+                    .await;
             }
         }
     }
