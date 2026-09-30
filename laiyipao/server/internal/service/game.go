@@ -171,6 +171,29 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 		return SettleResp{}, fmt.Errorf("settle rejected: %w", err)
 	}
 
+	// ── replay_skills 语义比对（第 56 轮）──
+	//
+	// `replay_hash` 整体算不出来（它含战斗中选卡产生的 buff），
+	// 但它前缀里的 **S 段**（技能槽配置）不含 buff，可以重算比对。
+	//
+	// 抓的是：伪造底伤（等价于假报技能等级）、上报另一套技能、槽位错位。
+	//
+	// ⚠️ 空串**放行**：老客户端不上报这个字段，直接拒会把它们全部锁死。
+	// 「没上报」与「上报了但不对」要分开 —— 后者才是作弊。
+	if in.ReplaySkills != "" {
+		expect, err := s.replaySkillsSegment(ctx, userID)
+		if err != nil {
+			return SettleResp{}, fmt.Errorf("recompute replay skills: %w", err)
+		}
+		if in.ReplaySkills != expect {
+			// ⚠️ 用 %q 而不是 %s：这两个串可能含大量数字，直接打出来会
+			// 让人在日志里一眼扫过去 —— 而这正是排查这类问题最需要看清的东西。
+			return SettleResp{}, fmt.Errorf(
+				"%w：replay_skills 与构筑不符\n上报 %q\n重算 %q",
+				ErrReplaySkillsMismatch, in.ReplaySkills, expect)
+		}
+	}
+
 	// ⚠️ 三个上报集合**必须归一化 nil**，否则会写成 JSON `null`。
 	//
 	// `json.Marshal(map[string]int(nil))` 返回 `[]byte("null")`，
@@ -806,4 +829,45 @@ func periodStart(t time.Time, scope string) time.Time {
 	default:
 		return d
 	}
+}
+
+// ErrReplaySkillsMismatch 表示上报的技能槽配置与服务端按构筑重算的结果不符。
+//
+// 抓的是：伪造底伤（等价于假报技能等级 —— 等级必须烘进底伤）、
+// 上报一套与 `user_skill_slots` 不同的技能、槽位错位。
+//
+// ⚠️ 与「`replay_hash` 对不上」不同：那个算不出来（它含战斗中选卡的 buff），
+// 所以这是目前**唯一**能廉价抓到的技能侧伪造。攻方系数仍然抓不到。
+var ErrReplaySkillsMismatch = errors.New("回放技能配置与构筑不符")
+
+/**
+ * 重算本局应上报的回放前缀 S 段（第 56 轮）。
+ *
+ * 数据来源与客户端**同一套**：`user_skill_slots`（槽位）+ `user_skills.level`（等级）
+ * + `domain.SeedSkills`（底伤/叠层/热量）。
+ *
+ * ⚠️ 客户端在 `equippedFromSnapshot` 里用 `DEFAULT_SKILL_RULES` 烘等级，
+ * 而这里用 `domain.DefaultSkillRules()`。两者必须相同 ——
+ * `TestSkillRulesMatchServerContract` 守着这条。
+ * 若哪天服务端改了 `SkillLevelCoefPermille` 而客户端的默认值没跟着改，
+ * 这里会开始拒绝**所有合法对局**。
+ */
+func (s *Service) replaySkillsSegment(ctx context.Context, userID int64) (string, error) {
+	slots, err := s.Loadout(ctx, userID)
+	if err != nil {
+		return "", err
+	}
+	levels, err := s.SkillLevels(ctx, userID)
+	if err != nil {
+		return "", err
+	}
+	bySlot := make(map[int]int, len(slots))
+	for i, id := range slots {
+		if id > 0 {
+			bySlot[i] = id
+		}
+	}
+	return domain.BuildReplaySkillsSegment(
+		domain.SeedSkills, bySlot, levels, domain.DefaultSkillRules(),
+	), nil
 }
