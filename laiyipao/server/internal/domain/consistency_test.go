@@ -69,6 +69,20 @@ type ConsistencyVectors struct {
 		MaxResistPermille    int64 `json:"max_resist_permille"`
 		MaxArmorPermille     int64 `json:"max_armor_permille"`
 	} `json:"constants"`
+	ReplaySkills struct {
+		Cases []struct {
+			Name   string `json:"name"`
+			Skills []struct {
+				Slot        int   `json:"slot"`
+				SkillID     int   `json:"skill_id"`
+				Level       int   `json:"level"`
+				BaseDamage  int64 `json:"base_damage"`
+				HeatCost    int64 `json:"heat_cost"`
+				ApplyStacks int64 `json:"apply_stacks"`
+			} `json:"skills"`
+			Expected string `json:"expected"`
+		} `json:"cases"`
+	} `json:"replay_skills"`
 	Levelgen struct {
 		Levels          int `json:"levels"`
 		TerrainLevelMin int `json:"terrain_level_min"`
