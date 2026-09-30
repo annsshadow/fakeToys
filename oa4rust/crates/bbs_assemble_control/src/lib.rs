@@ -45,6 +45,8 @@ pub struct LoginRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct CreateTopicRequest {
+    // mobile/o2 前端发 camelCase（轮76 new.vue forumId），snake 同收双向兼容。
+    #[serde(alias = "forumId")]
     pub forum_id: Option<String>,
     #[serde(alias = "sectionId")]
     pub section_id: Option<String>,

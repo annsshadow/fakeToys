@@ -11,6 +11,17 @@ mod tests {
     use crate::{modules_all, router as program_center_router};
     use shared::error::AppError;
     use shared::response::ActionResult;
+    // 轮77：桌面 CollectApp 发 personId（camel），反序列化须双向兼容，
+    // 否则 person_id 落 None → collect/create 落库空归属。
+    #[test]
+    fn collect_add_request_accepts_person_id_camel_and_snake() {
+        let camel: crate::CollectAddRequest =
+            serde_json::from_value(serde_json::json!({ "personId": "p-1", "title": "t" })).unwrap();
+        assert_eq!(camel.person_id.as_deref(), Some("p-1"));
+        let snake: crate::CollectAddRequest =
+            serde_json::from_value(serde_json::json!({ "person_id": "p-2" })).unwrap();
+        assert_eq!(snake.person_id.as_deref(), Some("p-2"));
+    }
 
     #[test]
     fn test_action_result_success_structure() {
