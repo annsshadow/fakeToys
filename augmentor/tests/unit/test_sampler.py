@@ -206,6 +206,27 @@ class TestGenerateReport:
         assert report["recommended_seed_indices"] == []
 
 
+    def test_seed_index_uses_exact_object_not_first_equal_l138(self, sampler):
+        """recommended_seed_indices 取的是**被选中那个对象本身**的下标（L138，B208）
+
+        改前用 items.index(seed)（== 相等）：若 items 里有两个内容相等但对象不同的 dict，
+        会误报第一个的下标。改后用 id(seed) 建索引，精确到对象本身。这条钉死：即使存在
+        内容相等的兄弟，报的也是被真正选中的那条的下标，不是「内容相等里的第一个」。
+        """
+        import random
+        random.seed(0)
+        items = [{"instruction": "q" + str(random.randint(0, 5)), "output": "o"}
+                  for _ in range(40)]
+        result = sampler.recommend_seeds(items, top_k=3)
+        report = sampler.generate_report(items)
+        expected = [
+            next(i for i, it in enumerate(items) if it is seed)
+            for seed in result.recommended_seeds
+        ]
+        assert report["recommended_seed_indices"] == expected, (
+            "index 必须精确到被选中的对象本身，不能是内容相等里的第一个"
+        )
+
 class TestLoadModel:
     """_load_model 测试"""
 

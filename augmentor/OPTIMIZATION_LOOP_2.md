@@ -46,7 +46,8 @@
 | B205 | **已关闭（L135）**：`DataSanitizer.remove_duplicates(keep="last")` 每次遇到重复都在**全 result 上**逐条 `r.get(key)` 线性找槽位，O(n×distinct)；重复多的数据上显著热点 | N=40000/D=400 实测 new/old **×0.0235**（≈42×，双序 min-of-2）；seen 改存 result 下标、O(1) 覆盖；等价性 300 dup 密集集 + 50 keep=first 集逐元素一致；1 条新槽位不变量用例 | S |
 | B206 | **已关闭（L136）**：`EnhancedComparator._compare_fields` 的 instruction 匹配是 O(F×A×B) 逐条扫 B、每字段再各扫一遍 A/B 算 count；且 `type_mismatches`/`value_differences`/`diff_datasets` 成员语义无直达行为用例 | 双层索引 `instruction→{field:首个含该field的item_b}` + 一次 O(A+B) 字段计数，匹配变 O(A)；N=1500/F=12 A/B new/old ×0.097；等价性 200 随机数据集逐字段逐差异一致；补 3 条行为用例 | M |
 | B207 | **已关闭（L137）**：`AugmentorPipeline._process_single_item` 的 except 分支里 `_process_errors` 惰性「没有就建 + append」非原子——并行路径（ThreadPoolExecutor 多工作线程）并发触发时，两线程都读到 `hasattr` 为 False 各自建 `[]`，后建者吞掉先 append 的那条；而 `__init__` 里的 `self._lock` 建了却全程无人用（dead lock） | 持 `self._lock` 包住 check-then-act；补 `TestProcessErrorsThreadSafety` 2 条（并发 N 条错误一条不丢 + 源码级守卫钉死锁确实被用上，防未来把锁拿掉却因 GIL 窗口窄测不出） | S |
-| B208 | 待普查后立项 | —— | — |
+| B208 | **已关闭（L138）**：`ActiveSampler.generate_report` 里 `recommended_seed_indices` 用 `items.index(seed)`（== 相等）取「seed 的下标」，内容相等的兄弟 item 会误报第一个的下标；候选「改 id(seed) 索引」优化经 A/B **证否**（真实 k 很小，O(n) 建表 > per-seed 2×O(n) 扫描，反而更慢）故不改产品，改补下标精确性守卫 | A/B：n=3000/50 seeds 下 new(id-map)/old ×3.56（变慢）；新增 1 条钉死「下标＝被选中对象本身的下标，不是内容相等里的第一个」的守卫 | S |
+| B209 | 待普查后立项 | —— | — |
 
 ## 循环日志
 
@@ -556,3 +557,27 @@
   静默退化。
 - 全量门禁：`7371 passed / 3 skipped / exit 0`（L136 的 7369 + 2 新守卫，无回归）；
   pipeline 12/12、A184 21/21 绿。**B207 关闭**。
+
+### L138（2026-09-30）— B208 立项 + 关闭：generate_report 下标取法 id 化证否 + 补下标精确性守卫
+
+- **候选**（延续「一次建表替代 per-item 线性扫」族）：`ActiveSampler.generate_report`
+  里 `recommended_seed_indices = [items.index(seed) for seed in ... if seed in items]`
+  用 `==` 相等取「seed 在 items 里的下标」；`items.index` 是 **first-equal** 语义——若
+  items 里有两个内容相等但对象不同的 dict，会把「第一个」的下标当成「被选中那个」的下标
+  报出来。直觉上改成 `id(seed)` 一次建表 O(n)+O(1) 查更快更准。
+- **A/B 证否（诚实记录，不作提速主张）**：真实 `top_k` 很小（默认 10，实测多数场景
+  连 1 条 seed 都难触发），per-seed 的 `in`+`.index` 合计 2×O(n) 在 k 很小时**比**
+  建一遍 O(n) id-map 更便宜。实测 n=3000、50 seeds：new(id-map)/old **×3.56（更慢）**。
+  即 O(n) 建表的固定成本在 k 小时吃掉了 per-seed 扫描的便宜。
+- **语义改进也不成立**：`recommend_seeds` 对每个 underrepresented 类型都是「遇到第一个
+  匹配就 `break`」——所以选中的 seed 在 items 里**永远是该内容的首个对象**，first-equal
+  与 exact-object 两个下标实际**恒等**。id 化的「精确到对象」语义增益在真实选择逻辑下是
+  空的（只有人为构造「先被跳过、后被选中的同内容对象」才分得出，但 recommend_seeds 永远
+  不会那样选）。
+- **结论**：不改产品代码（保留 `items.index(seed)`，符合「不为无意义风格改能工作的代码」）。
+  真实收获是补一条守卫把「下标必须对应被选中对象本身」这层契约显式钉进用例——
+  `test_sampler.py::test_seed_index_uses_exact_object_not_first_equal_l138`，用
+  `it is seed` 取 expected，未来若有人把 `recommended_seeds` 换成新构造的同内容 dict 再
+  查下标、或改用 first-equal 的宽松实现，这条当场红。
+- 全量门禁：`7372 passed / 3 skipped / exit 0`（L137 的 7371 + 1 新守卫，无回归）；
+  sampler 58/58、A184 21/21 绿。**B208 关闭**（产品未改，账本如实记优化证否）。
