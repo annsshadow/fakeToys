@@ -396,7 +396,7 @@ pub async fn organization_assemble_control_person_list_like(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name_pattern = req.name.unwrap_or_default();
-    let like_pattern = format!("%{}%", name_pattern);
+    let like_pattern = format!("%{}%", shared::db::escape_like(&name_pattern));
 
     let rows = client
         .query(
@@ -3077,7 +3077,7 @@ pub async fn unitduty_list_name_name(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let pattern = format!("%{}%", name);
+    let pattern = format!("%{}%", shared::db::escape_like(&name));
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE name ILIKE $1 ORDER BY create_time DESC", &[&pattern])
         .await
@@ -3128,7 +3128,7 @@ pub async fn unitduty_list_like(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
-    let pattern = format!("%{}%", name);
+    let pattern = format!("%{}%", shared::db::escape_like(&name));
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE name ILIKE $1 ORDER BY create_time DESC", &[&pattern])
         .await
@@ -3227,7 +3227,7 @@ pub async fn unitduty_distinct_name_like_key(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let pattern = format!("%{}%", key);
+    let pattern = format!("%{}%", shared::db::escape_like(&key));
     let rows = client
         .query(
             "SELECT DISTINCT name FROM x_org_duty WHERE name ILIKE $1 ORDER BY name",
@@ -3523,7 +3523,7 @@ pub async fn role_list_like(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
-    let pattern = format!("%{}%", name);
+    let pattern = format!("%{}%", shared::db::escape_like(&name));
     let rows = client
         .query("SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE name ILIKE $1 ORDER BY create_time DESC", &[&pattern])
         .await
@@ -4578,7 +4578,7 @@ pub async fn identity_list_like(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
-    let pattern = format!("%{}%", name);
+    let pattern = format!("%{}%", shared::db::escape_like(&name));
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE name ILIKE $1 ORDER BY create_time DESC", &[&pattern])
         .await
@@ -4896,7 +4896,7 @@ pub async fn group_list_like(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
-    let pattern = format!("%{}%", name);
+    let pattern = format!("%{}%", shared::db::escape_like(&name));
     let rows = client
         .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE name ILIKE $1 ORDER BY create_time DESC", &[&pattern])
         .await

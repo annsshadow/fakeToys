@@ -1259,7 +1259,7 @@ pub async fn designer_search_v2(
     if key.trim().is_empty() {
         return Ok(Json(ActionResult::error("key is required")));
     }
-    let pattern = format!("%{}%", key.trim());
+    let pattern = format!("%{}%", shared::db::escape_like(key.trim()));
 
     let rows = client
         .query(
