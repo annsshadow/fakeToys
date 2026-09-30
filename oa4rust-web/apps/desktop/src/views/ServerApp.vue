@@ -31,10 +31,12 @@
           <h3>授权信息</h3>
           <div v-if="loadingLicense" class="loading-small">加载中...</div>
           <div v-else class="license-info">
-            <div v-if="license" v-for="(v,k) in license" :key="k" class="info-row">
-              <span class="info-key">{{ k }}</span>
-              <span class="info-val">{{ String(v) }}</span>
-            </div>
+            <template v-if="license">
+              <div v-for="(v,k) in license" :key="k" class="info-row">
+                <span class="info-key">{{ k }}</span>
+                <span class="info-val">{{ String(v) }}</span>
+              </div>
+            </template>
             <div v-else class="empty-license">暂无授权信息</div>
           </div>
         </div>
