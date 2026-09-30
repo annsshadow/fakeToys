@@ -119,7 +119,7 @@ fn normalized(t: &TargetWi) -> Option<(String, String, String, String)> {
 }
 
 async fn upsert_targets(
-    client: &deadpool_postgres::Client,
+    client: &mut deadpool_postgres::Client,
     from_type: &str,
     from_bundle: &str,
     person: &str,
@@ -127,6 +127,30 @@ async fn upsert_targets(
 ) -> Result<(Vec<Value>, Vec<Value>), AppError> {
     let mut success = Vec::new();
     let mut failure = Vec::new();
+
+    // 已存在行一次查回（按来源全量取回后客户端过滤），避免逐条 SELECT 的 2N+1 往返；
+    // 全部写入包同一事务，且 UPDATE 失败必须传播（此前 `let _ =` 吞错仍计成功）。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+
+    let mut existing_keys: std::collections::HashMap<(String, String, String), String> =
+        std::collections::HashMap::new();
+    {
+        let rows = tx
+            .query(
+                "SELECT id, target_type, target_bundle, COALESCE(site, '') AS site \
+                 FROM x_correlation WHERE from_type = $1 AND from_bundle = $2",
+                &[&from_type.to_string(), &from_bundle.to_string()],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        for row in rows {
+            let id: String = row.get("id");
+            let ty: String = row.get("target_type");
+            let bundle: String = row.get("target_bundle");
+            let site: String = row.get("site");
+            existing_keys.insert((ty, bundle, site), id);
+        }
+    }
 
     for t in targets {
         let Some((ty, bundle, site, view)) = normalized(t) else {
@@ -139,46 +163,38 @@ async fn upsert_targets(
             continue;
         }
 
-        let existing = client
-            .query_opt(
-                "SELECT id FROM x_correlation \
-                 WHERE from_type = $1 AND from_bundle = $2 \
-                   AND target_type = $3 AND target_bundle = $4 \
-                   AND COALESCE(site, '') = $5 LIMIT 1",
-                &[
-                    &from_type.to_string(),
-                    &from_bundle.to_string(),
-                    &ty,
-                    &bundle,
-                    &site,
-                ],
-            )
-            .await
-            .map_err(|_| AppError::Internal)?;
-
-        match existing {
-            Some(row) => {
+        match existing_keys.get(&(ty.clone(), bundle.clone(), site.clone())) {
+            Some(id) => {
                 // 已存在：合并 view 等展示字段（保留原 target_title）
-                let _ = client
-                    .execute(
-                        "UPDATE x_correlation SET view = $1, update_time = NOW() WHERE id = $2",
-                        &[&view, &row.get::<_, String>("id")],
-                    )
-                    .await;
+                tx.execute(
+                    "UPDATE x_correlation SET view = $1, update_time = NOW() WHERE id = $2",
+                    &[&view, id],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
             }
             None => {
                 let id = uuid::Uuid::new_v4().to_string();
-                client
-                    .execute(
-                        "INSERT INTO x_correlation \
-                           (id, from_type, from_bundle, target_type, target_bundle, person, \
-                            site, view, create_time, update_time) \
-                         VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, ''), NULLIF($8, ''), NOW(), NOW())",
-                        &[&id, &from_type.to_string(), &from_bundle.to_string(), &ty,
-                          &bundle, &person.to_string(), &site, &view],
-                    )
-                    .await
-                    .map_err(|_| AppError::Internal)?;
+                tx.execute(
+                    "INSERT INTO x_correlation \
+                       (id, from_type, from_bundle, target_type, target_bundle, person, \
+                        site, view, create_time, update_time) \
+                     VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, ''), NULLIF($8, ''), NOW(), NOW())",
+                    &[
+                        &id,
+                        &from_type.to_string(),
+                        &from_bundle.to_string(),
+                        &ty,
+                        &bundle,
+                        &person.to_string(),
+                        &site,
+                        &view,
+                    ],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+                // 同请求内重复目标与原逐条 SELECT 语义一致：第二条命中视为已存在
+                existing_keys.insert((ty.clone(), bundle.clone(), site.clone()), id);
             }
         }
 
@@ -190,6 +206,7 @@ async fn upsert_targets(
         }));
     }
 
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok((success, failure))
 }
 
@@ -204,10 +221,16 @@ async fn create_impl(
     if from_bundle.trim().is_empty() {
         return Ok(Json(ActionResult::error("bundle is required")));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let person = wi.person.unwrap_or_default();
-    let (success, failure) =
-        upsert_targets(&client, from_type, from_bundle, &person, &wi.target_list).await?;
+    let (success, failure) = upsert_targets(
+        &mut client,
+        from_type,
+        from_bundle,
+        &person,
+        &wi.target_list,
+    )
+    .await?;
     Ok(Json(ActionResult::success(json!({
         "successList": success,
         "failureList": failure,
@@ -245,7 +268,7 @@ async fn update_impl(
     if from_bundle.trim().is_empty() {
         return Ok(Json(ActionResult::error("bundle is required")));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let person = wi.person.unwrap_or_default();
     let mut success_all = Vec::new();
     let mut failure_all = Vec::new();
@@ -282,7 +305,7 @@ async fn update_impl(
             .collect();
 
         let (success, failure) =
-            upsert_targets(&client, from_type, from_bundle, &person, &owned).await?;
+            upsert_targets(&mut client, from_type, from_bundle, &person, &owned).await?;
         success_all.extend(success);
         failure_all.extend(failure);
     }
