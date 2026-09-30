@@ -204,17 +204,18 @@ function savePassword(): void {
   pwdMutation.mutate(
     { oldPassword: pwdForm.value.oldPassword, newPassword: pwdForm.value.newPassword },
     {
+      onSettled: () => {
+        pwdSaving.value = false
+      },
       onSuccess: () => {
         toast.success('密码修改成功')
         pwdForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }
       },
       onError: () => {
         pwdError.value = '修改失败'
-        pwdSaving.value = false
       },
     },
   )
-  pwdSaving.value = true
 }
 
 function handleAvatarUpload(e: Event): void {
