@@ -42,7 +42,8 @@
 | B201 | **已关闭（L131）**：`DatasetAnalyzer.get_duplicate_candidates`（SDK 公共方法）O(n²) 里逐对重建字符集是真热点 | 实测 6000 条 **71.8 s**；预计算后 2500 条 A/B new/old ×0.36 / ×0.34（双序），等价性 5 阈值逐元素一致 | S |
 | B202 | **已关闭（L132）**：`ActiveLearningLoop._diversity_scores` 逐对调用 `compute_similarity`，每对把两侧重新 tokenize，n 条共约 2n² 次切词 | 预计算词元集合后 n=800 A/B new/old ×0.088（≈11×，双序），等价性 4 数据集（含重复/空串/单条/多词）逐元素一致 | S |
 | B203 | **已关闭（L133）**：`DataCleaner._normalize_punctuation`（`normalize_punctuation` 规则）此前无任何直达行为用例；候选「14 道 replace → str.translate」优化经 A/B **证否**（长文本稀疏匹配 ×8.7 变慢）故不改产品，改补首个行为守卫 | A/B：重匹配 ×0.87、但真实场景（长文本少量全角）translate 逐字符查表 ×8.7 慢于 replace 的无命中短路；新增映射表 14 项 + 顺序 replace 参照逐字符等价的 3 用例 | S |
-| B204 | 待普查后立项 | —— | — |
+| B204 | **已关闭（L134）**：`ContextAugmentor.generate_multi_turn` 在「每轮 × 每条历史」里各自重建 user 问题列表再 `in` 线性查，且重复判定散在循环内不易推理；循环不变量 `existing_histories` 被反复重算 | 改为循环外一次性摊平成单一 `existing_questions` 集合（并集语义），内层 O(1) 命中；新增 2 条跨多条历史的去重用例钉死并集语义 | S |
+| B205 | 待普查后立项 | —— | — |
 
 ## 循环日志
 
@@ -463,3 +464,26 @@
   5 样本上逐字符等价；③ 无全角时不误报修改。参照实现＝原实现语义，故对现产品代码有效。
 - 全量门禁：`7363 passed / 3 skipped / exit 0`（L132 的 7360 + 3 新守卫，无回归）；
   cleaner 40/40、A184 21/21 绿。**B203 关闭**（产品未改，账本如实记优化证否）。
+
+### L134（2026-09-30）— B204 立项 + 关闭：generate_multi_turn 已有问题集合提环 + 并集语义守卫
+
+- **缺口**：`ContextAugmentor.generate_multi_turn` 的去重写在每轮循环里——对**每条**
+  `existing_histories` 各重建一遍 `[t["content"] for t in existing if t["role"]=="user"]`
+  再 `in` 线性查，而 `existing_histories` 在整个循环内是常量，等于把循环不变量反复重算
+  约 `num_turns × len(existing_histories)` 次；且「跨多条历史」的并集语义此前没有被任何
+  用例钉死（既有用例的 `existing_histories` 都只有 1 条历史，重复项恰好落在唯一那条）。
+- **修法**（语义等价、结构收紧）：循环前一次性把全部已有 user 问题摊平成单一
+  `existing_questions` 集合（并集语义），内层改成 `if follow_up in existing_questions:
+  continue`。旧写法「按条重建列表再 in」在**语义上等价**（每条历史都扫到），但把不变量
+  算在循环内、且嵌套两层更难读；新写法天然按并集判、O(1) 命中，缺 `role`/`content`
+  键的错误语义与原实现保持一致。
+- **回归护栏**（锁死等价性，非修 bug）：`test_context.py::TestGenerateMultiTurn` 新增
+  2 条 —— ① `test_duplicate_across_multiple_existing_histories`：两条历史（第二条混入
+  3 条 user/assistant 轮次），follow_up 只落在**第二条**历史即须命中；②
+  `test_cross_history_partial_accept`：部分命中不误伤、非命中项正常采纳。改写只要把
+  「摊平到单一集合」退回逐条重建就仍绿（等价），但一旦误改成「只看首条历史」这类
+  并集外的判据，①当场红——正是把「并集」这层语义显式冻进用例。
+- **A/B 不作提速主张**（真实 `existing_histories` 通常很小，循环不变量重算不构成热点）；
+  本轮价值在语义收紧 + 简化，非计时。
+- 全量门禁：`7365 passed / 3 skipped / exit 0`（L133 的 7363 + 2 新守卫，无回归）；
+  context 30/30、A184 21/21 绿。**B204 关闭**。
