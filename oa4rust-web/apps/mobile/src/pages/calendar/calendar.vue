@@ -118,13 +118,14 @@ async function load(): Promise<void> {
     const cals = await calendarApi.myCalendars()
     calendars.value = (cals.data ?? []) as CalendarRow[]
     const all: EventRow[] = []
-    // 逐个日历拉事件（后端 filter 只按 calendarId 过滤），再在客户端做时间窗筛选
-    for (const c of calendars.value) {
-      try {
-        const resp = await calendarApi.eventsFilter({ calendarId: c.id })
-        all.push(...((resp.data ?? []) as EventRow[]))
-      } catch {
-        /* 单个日历失败不影响其余 */
+    // 并行拉取各日历事件（后端 filter 只按 calendarId 过滤），再在客户端做时间窗筛选；
+    // allSettled 保持「单个日历失败不影响其余」语义且结果按日历序拼接。
+    const responses = await Promise.allSettled(
+      calendars.value.map((c) => calendarApi.eventsFilter({ calendarId: c.id })),
+    )
+    for (const r of responses) {
+      if (r.status === 'fulfilled') {
+        all.push(...((r.value.data ?? []) as EventRow[]))
       }
     }
     const { from, to } = rangeBounds()
