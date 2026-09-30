@@ -250,16 +250,21 @@ class AugmentorPipeline:
             
         except Exception as e:
             logger.error(f"处理第 {idx} 条数据失败: {e}")
-            # 错误恢复增强：记录详细错误信息以便后续分析和重试
+            # 错误恢复增强：记录详细错误信息以便后续分析和重试。
+            # 本方法会由 ThreadPoolExecutor 里多个工作线程同时调用（augment_dataset
+            # 的并行路径），而 `_process_errors` 是惰性首用才建的共享 list——
+            # 「没有就建」+「append」两步不是原子的，须持锁包住，否则并发下会
+            # 重复建 list 丢掉错误记录。__init__ 里的 self._lock 就是为此留的。
             error_info = {
                 "index": idx,
                 "error_type": type(e).__name__,
                 "message": str(e),
                 "item_preview": str(item)[:100] if item else ""
             }
-            if not hasattr(self, '_process_errors'):
-                self._process_errors = []
-            self._process_errors.append(error_info)
+            with self._lock:
+                if not hasattr(self, '_process_errors'):
+                    self._process_errors = []
+                self._process_errors.append(error_info)
             result_queue.put((idx, False, []))
     
     def augment_dataset(self,
