@@ -2435,7 +2435,7 @@ pub async fn chat_delete_clue_id(
     Extension(session): Extension<shared::session::Session>,
     Path(clue_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let owner: Option<String> = client
         .query_opt(
@@ -2459,7 +2459,9 @@ pub async fn chat_delete_clue_id(
         _ => {}
     }
 
-    let completions = client
+    // 级联软删：会话与其全部对话记录必须原子，中途失败留「会话在而记录已删」。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let completions = tx
         .execute(
             "UPDATE x_ai_chat SET deleted_at = NOW() WHERE conversation_id = $1 AND deleted_at IS NULL",
             &[&clue_id],
@@ -2467,13 +2469,14 @@ pub async fn chat_delete_clue_id(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let clue = client
+    let clue = tx
         .execute(
             "UPDATE x_ai_conversation SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
             &[&clue_id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

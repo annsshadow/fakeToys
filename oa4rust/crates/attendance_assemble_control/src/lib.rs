@@ -8410,23 +8410,26 @@ pub async fn v2_record_delete_people_date(
     // 仅本人或管理员可删除打卡记录（IDOR）
     shared::middleware::require_owner(&pool, &session, &people).await?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let pattern = format!("{}%", date);
 
-    let n_record = client
+    // 同一人同一天的两表打卡记录逻辑上是同一实体，双删必须原子防半删态。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let n_record = tx
         .execute(
             "DELETE FROM x_attendance_record WHERE user_id = $1 AND check_in_time LIKE $2",
             &[&people, &pattern],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let n_checkin = client
+    let n_checkin = tx
         .execute(
             "DELETE FROM x_attendance_v2_checkin_record WHERE user_id = $1 AND record_date_string = $2",
             &[&people, &date],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
