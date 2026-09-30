@@ -517,10 +517,22 @@ const themeProvider = createThemeProvider()
 themeProvider.init()
 
 const app = createApp({ render: () => h(NConfigProvider, null, { default: () => h(RouterView) }) })
-// 全局兜底：未捕获渲染/Promise 错误进 console 与用户可见 toast，不静默吞
-app.config.errorHandler = (err, _instance, info) => {
-  console.error('[unhandled]', info, err)
+// 全局兜底：未捕获渲染/Promise 错误进 console 与用户可见 toast，不静默吞。
+// 3s 节流防连环错误触发 toast 风暴。
+let lastUnhandledToast = 0
+function reportUnhandled(err: unknown, source: string): void {
+  console.error('[unhandled]', source, err)
+  const now = Date.now()
+  if (now - lastUnhandledToast < 3000) return
+  lastUnhandledToast = now
+  import('./utils/toast').then(({ toast }) => toast.error('页面发生意外错误，请重试'))
 }
+app.config.errorHandler = (err, _instance, info) => reportUnhandled(err, info)
+window.addEventListener('unhandledrejection', (e) => {
+  // Vue 内部的 Promise 错误已由 errorHandler 上报，这里只兜 Vue 之外的
+  if (e.reason instanceof Error && e.reason.stack?.includes('vue')) return
+  reportUnhandled(e.reason, 'unhandledrejection')
+})
 app.use(createPinia())
 app.use(router)
 app.use(VueQueryPlugin, { queryClient })
