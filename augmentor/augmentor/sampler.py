@@ -214,8 +214,12 @@ class ActiveSampler:
             if ratio < threshold:
                 underrepresented.append(f"question_type:{q_type}")
         
-        # 检查长度分布
-        for length_type, ratio in analysis["length_distribution"].items():
+        # 检查长度分布（只认 short/medium/long 三个占比桶；_analyze_length_distribution
+        # 还会额外塞一个 avg_length「均值」键，它是绝对值不是占比，混进来会在
+        # avg_length < threshold 时误产出伪桶 "length:avg_length"，污染
+        # recommend_seeds 的 underrepresented 列表并白占一个 top_k 名额，匹配循环也打不中）
+        for length_type in ("short", "medium", "long"):
+            ratio = analysis["length_distribution"].get(length_type, 0)
             if isinstance(ratio, float) and ratio < threshold:
                 underrepresented.append(f"length:{length_type}")
         
