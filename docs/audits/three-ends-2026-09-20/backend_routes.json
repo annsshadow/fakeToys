@@ -8388,6 +8388,12 @@
   },
   {
    "method": "GET",
+   "path": "/api/config/system",
+   "handler": "config_system_config",
+   "file": "crates/file_assemble_control/src/routes.rs"
+  },
+  {
+   "method": "GET",
    "path": "/api/editor/list",
    "handler": "editor_list",
    "file": "crates/file_assemble_control/src/routes.rs"
@@ -12763,6 +12769,12 @@
    "file": "crates/organization_assemble_control/src/lib.rs"
   },
   {
+   "method": "GET",
+   "path": "/api/users/list",
+   "handler": "users_list",
+   "file": "crates/organization_assemble_control/src/u2_router.rs"
+  },
+  {
    "method": "POST",
    "path": "/api/organization/assemble/control/person",
    "handler": "person_create",
@@ -13000,6 +13012,12 @@
    "method": "POST",
    "path": "/api/organization/assemble/control/unit",
    "handler": "unit_create",
+   "file": "crates/organization_assemble_control/src/u2_router.rs"
+  },
+  {
+   "method": "GET",
+   "path": "/api/departments/tree",
+   "handler": "departments_tree",
    "file": "crates/organization_assemble_control/src/u2_router.rs"
   },
   {
@@ -22855,19 +22873,19 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/attachment/batch/download/job/{job}/site/{site}",
-   "handler": "attachment_u2b_batch_download_zip",
+   "handler": "attachment_u2b_batch_download_zip_by_job",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/attachment/batch/download/work/{work}/site/{site}",
-   "handler": "attachment_u2b_batch_download_zip",
+   "handler": "attachment_u2b_batch_download_zip_by_work",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/attachment/batch/download/work/{work}/site/{site}/stream",
-   "handler": "attachment_u2b_batch_download_zip",
+   "handler": "attachment_u2b_batch_download_zip_by_work",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
