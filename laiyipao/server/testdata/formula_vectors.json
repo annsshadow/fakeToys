@@ -140,5 +140,51 @@
       "max_keys_per_battle": 3,
       "max_energy_per_battle": 15
     }
+  },
+  "replay_skills": {
+    "_comment": "回放前缀 S 段（技能槽配置）的跨端契约（第 56 轮）。Go 侧 internal/domain/replay_skills_contract_test.go 与 TS 侧 src/game/replay_skills_contract.test.ts 必须同时通过。expected 是字面串 —— 两端各自用**自己的** skillBaseDamageAtLevel / SkillBaseDamageAtLevel 算底伤再拼串，任一端的格式或排序漂移都会在这里露出来。sort 排的是**格式化后的字符串**（TS 的 Array.sort 无参 = UTF-16 码元序，Go 对应 sort.Strings），所以 slot=10 排在 slot=2 前面，这是最容易写错的一处。",
+    "cases": [
+      {
+        "name": "single_level1_no_baking",
+        "_why": "level 1 的 coef = 1000，底伤不变；这是最常见的情形，也是格式漂移最容易藏身的地方",
+        "skills": [
+          { "slot": 0, "skill_id": 1, "level": 1, "base_damage": 100, "heat_cost": 20, "apply_stacks": 1 }
+        ],
+        "expected": "0:1:100:1:20"
+      },
+      {
+        "name": "slot_ge_10_string_order",
+        "_why": "字符串序 ≠ 槽位数值序：10: 排在 2: 前面。按槽位排的实现在这里会红",
+        "skills": [
+          { "slot": 2, "skill_id": 1, "level": 1, "base_damage": 100, "heat_cost": 20, "apply_stacks": 1 },
+          { "slot": 10, "skill_id": 2, "level": 1, "base_damage": 140, "heat_cost": 30, "apply_stacks": 2 }
+        ],
+        "expected": "10:2:140:2:30,2:1:100:1:20"
+      },
+      {
+        "name": "level_baked_into_base_damage",
+        "_why": "等级必须烘进底伤：coef = 1000 + (level-1)*50。level 10 → 145，level 5 → 216",
+        "skills": [
+          { "slot": 0, "skill_id": 3, "level": 10, "base_damage": 100, "heat_cost": 40, "apply_stacks": 2 },
+          { "slot": 1, "skill_id": 4, "level": 5, "base_damage": 180, "heat_cost": 50, "apply_stacks": 3 }
+        ],
+        "expected": "0:3:145:2:40,1:4:216:3:50"
+      },
+      {
+        "name": "mixed_width_slot_and_4digit_damage",
+        "_why": "两位槽位 + 四位底伤一起出现，排错位或漏字段都在这里现形",
+        "skills": [
+          { "slot": 9, "skill_id": 5, "level": 3, "base_damage": 1000, "heat_cost": 60, "apply_stacks": 1 },
+          { "slot": 11, "skill_id": 6, "level": 1, "base_damage": 250, "heat_cost": 70, "apply_stacks": 4 }
+        ],
+        "expected": "11:6:250:4:70,9:5:1100:1:60"
+      },
+      {
+        "name": "empty_build",
+        "_why": "空构筑必须产出空串（而不是 ',,,' 之类），否则空技能玩家会被判不符",
+        "skills": [],
+        "expected": ""
+      }
+    ]
   }
 }
