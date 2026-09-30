@@ -303,7 +303,15 @@ describe('战斗流程', () => {
     // 给敌人攻击力
     const enemies = new Map(ENEMIES.map((e) => [e.id, e]))
     enemies.set(2, mkEnemy(2, '疾行者', 'normal', {
-      hp: 70, speed: 75000, attack: 500, resist: zeroResist(),
+      hp: 70, speed: 75000, attack: 7200,
+      // 第 54 轮改了漏怪公式：代价从固定 e.attack 变成
+      // 「底血 × attack / LeakAttackerDivisor」，所以这个场景的攻击力必须跟着改。
+      //
+      //   500 → 50 × 500 / 3600 = 6    （5 只只掉 30，防线不空，测不到本意）
+      //   7200 → 50 × 7200 / 3600 = 100 ≥ 50（漏一只即打空）
+      //
+      // 若改了 LeakAttackerDivisor，这里必须同步，否则这条用例会悄悄退化成
+      // 「防线打不空也通过」—— 那比红更糟，因为它不再测「打空判负」。 resist: zeroResist(),
     }))
     const skills = mkSkills()
     const e = new BattleEngine({

@@ -84,6 +84,51 @@ export const TICK_MS = 50
 export const LeakDamageDivisor = 10n
 
 /**
+ * 输出位漏怪代价的分母（第 54 轮定稿）：`底血 × attack / LeakAttackerDivisor`。
+ *
+ * ## 为什么要改这条公式
+ *
+ * 内容表里 `attack` 是**平铺值**（8/10/28/35/45/60），而底血从 1000 涨到 14000。
+ * 于是「有攻击力的敌人」只掉 6~60 点，相对底血几乎为零；
+ * 而零攻击力的杂兵走 `breachDamage`，代价恒为底血的 1/10。
+ *
+ * **一只 boss 漏进防线的代价只有杂兵的 1/4 ~ 1/40**，没有哪条设计原则支持这个不对称。
+ * 后果是护甲（只减漏怪伤害）吃满封顶 750‰ 也只多买 **3.66%** 血量 ——
+ * 护甲、装备护甲、专精 armor 节点、宝石 armor 词条**全部买不到东西**。
+ *
+ * 改成随底血等比缩放后，**每关的相对代价一致**，护甲第一次在每一关都有分量。
+ *
+ * ## 分母怎么定的（1200 / 2400 / 3600 / 6000 / 12000 实测扫描，100 关 × 2 护甲档）
+ *
+ * | 分母 | 通关 | 护甲收益 | 掉血占比 | 前 30 关失败 |
+ * |---|---|---|---|---|
+ * | 基线(无缩放) | 100/100 | 3.66% | 5.33% | 无 |
+ * | 1200 | 96/100 | 1.86% | 13.81% | 无 |
+ * | 2400 | 96/100 | 1.60% | 13.50% | 无 |
+ * | **3600** | **99/100** | **6.81%** | 12.23% | **无** |
+ * | 6000 | 100/100 | 5.70% | 8.43% | 无 |
+ * | 12000 | 100/100 | 3.48% | 5.11% | 无 |
+ *
+ * 取 **3600**：护甲收益比基线高 **86%**，前 30 关**无进度墙**，
+ * 只有第 96 关失败（第 54 轮实测）。
+ *
+ * 更小的分母会让早期关卡被压垮：
+ * | | 第 1 关（底血 1000） | 第 100 关（底血 14000） |
+ * |---|---|---|
+ * | 基线 boss 漏一次 | 60（6.0% 底血） | 60（0.4% 底血） |
+ * | 平铺 ×5 | 300（**30%**） | 300（2.1%） |
+ *
+ * **平铺放大对早期关卡的伤害最大，与难度曲线完全相反** —— 入口关卡被压垮、
+ * 终盘反而相对变轻。这是第 53 轮那次失败的核心教训。
+ *
+ * ## 与内容表的关系
+ *
+ * 隐含「最强敌人攻击力 = 60」（chalkqueen）。改内容表 `attack` 上限时
+ * **必须同步这个分母**，否则最强输出位的相对代价会漂移，且不会有任何测试报错。
+ */
+export const LeakAttackerDivisor = 3600n
+
+/**
  * 出场进度：**整数千分比** 0..SPAWN_PROGRESS_FULL。
  *
  * ⚠️ 敌人曾经用 0..1 的浮点记录出场进度、每 tick 累加 0.08，
@@ -655,7 +700,7 @@ export class BattleEngine {
           e.attackCooldown = e.attackInterval
           const dist = e.x - toFixed(BASE_X)
           if (dist <= toFixed(Number(e.attackRange))) {
-            const dmg = applyArmor(e.attack, this.defenseArmorPermille())
+            const dmg = this.leakDamageFor(e)
             this.baseHp -= dmg
             this.leaked++
             this.emit({ type: 'leak', damage: dmg })
@@ -801,8 +846,25 @@ export class BattleEngine {
    * 而不是「血量一改就变成一击必杀」的悬崖。
    */
   private leakDamage(e: Enemy): bigint {
-    if (e.attack > 0n) return applyArmor(e.attack, this.defenseArmorPermille())
-    return applyArmor(this.breachDamage, this.defenseArmorPermille())
+    return this.leakDamageFor(e)
+  }
+
+  /**
+   * 一次漏怪对防线造成的伤害（已计护甲）。
+   *
+   * 「射程内扣血」与「抵达扣血」**必须用同一个函数** ——
+   * 两处各写一份公式时，护甲的效果会被两条路径分摊，
+   * 而 leaked 又把两类混在一起计数，于是任何按关卡平均的测量都不可信
+   * （第 50 轮就栽在这里：把 19 次漏怪按关卡平均分类，得出过错的归因）。
+   *
+   * - 有攻击力：底血 × attack / LeakAttackerDivisor
+   * - 无攻击力：底血 / LeakDamageDivisor（杂兵兜底，原本就有）
+   */
+  private leakDamageFor(e: Enemy): bigint {
+    if (e.attack <= 0n) return applyArmor(this.breachDamage, this.defenseArmorPermille())
+    // 先乘后除，避免整数截断把小数吃掉
+    const scaled = (this.baseHpMax * e.attack) / LeakAttackerDivisor
+    return applyArmor(scaled, this.defenseArmorPermille())
   }
 
   /**

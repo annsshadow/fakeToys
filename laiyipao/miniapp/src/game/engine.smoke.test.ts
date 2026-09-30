@@ -24,7 +24,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import fixture from '@vectors/smoke_levels.json'
-import { BattleEngine, TICK_MS, type BattleConfig } from './engine'
+import { BattleEngine, TICK_MS, LeakAttackerDivisor, type BattleConfig } from './engine'
 import { defaultAttacker, type Attacker } from './damage'
 import type { EnemyDef, GeneratedLevel, SkillDef } from './types'
 import type { Element } from './elements'
@@ -447,7 +447,7 @@ describe('冒烟：防线护甲方向（F6 回归）', () => {
     }
     expect(e.leaked).toBe(1)
     // 抵达伤害 = e.attack（10）。若双倍触发会变成 20。
-    expect(dropAtLeak).toBe(BigInt(ranged.attack))
+    expect(dropAtLeak).toBe((e.baseHpMax * BigInt(ranged.attack)) / LeakAttackerDivisor)
   })
 })
 
