@@ -14,4 +14,10 @@ describe('mobile 全局错误兜底', () => {
     expect(source).toContain('app.config.errorHandler')
     expect(source).toContain("console.error('[unhandled]', info, err)")
   })
+
+  it('在 H5 兜底 Vue 之外的 Promise rejection，且不破坏小程序/SSR 无 window 环境', () => {
+    expect(source).toContain("typeof window !== 'undefined'")
+    expect(source).toContain("window.addEventListener('unhandledrejection'")
+    expect(source).toContain("console.error('[unhandled]', 'unhandledrejection', event.reason)")
+  })
 })
