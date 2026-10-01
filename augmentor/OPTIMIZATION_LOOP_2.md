@@ -61,6 +61,7 @@
 | B220 | **已关闭（L150）**：_deduplicate 的 threshold 形参从不被读——`MergeConfig.dedup_threshold` 文档承诺「去重阈值」、auto_config 按重复率逐条推荐数值并写理由（「上调/下调去重阈值」），但任何取值结果都相同（死旋钮，全仓 0 消费点） | threshold 分档消费：≥ 0.9 只删 instruction 完全相同（原默认行为，保守档），< 0.9 追加宽松键（大小写折叠 + 全空白删除）把近似重复一并删；字段注释与 docstring 同步改写；宽松键归一化首版用单空格 join（多 token 折叠回一个空格、与无空格形态仍不等，测试当场抓出），改全空白删除。auto_config 的推荐数值（0.85–0.98 区间）自此真有其效：高重复率→0.98 保守档、低重复率→0.85 宽松档，方向与其既有理由文字一致，零改动。补 2 条回归（宽松/保守档对照 + merge 层配置真消费），改前红 2 failed/改后绿 | M |
 | B221 | **已关闭（L151，收口第一本账 A125）**：两个组件构造器的阈值判据各缺一半——Deduplicator 的 `threshold < 0 or threshold > 1` 对 NaN 双假放行（去重整条静默零动作）、对 True/False 读成 1.0/0.0（False 实测误删 2 条真数据）、对 None/非数值延后到比较处炸 TypeError；QualityScorer 七档坏值（None/字符串/NaN/bool/越界）全放行、判负迟到 score()。配置层（DedupConfig/QualityConfig）L76 起就拒，组件层 15 轮未收 | 两组件阈值统一接 `require_ratio`（界与配置侧共引 `DEDUP_THRESHOLD_RANGE` / QUALITY_THRESHOLD_RANGE，A77 同式）+ None 显式拒；Deduplicator 仍抛 DedupError 且文案不带键名（消费侧公开契约由 L76 钉子钉住）。L76 两条「洞本体」钉子按 docstring 红字约定翻转（改前红 11 / 改后绿），新增 QualityScorer 阈值守卫 11 例 | M |
 | B222 | **已关闭（L152，收口第一本账 A46①）**：`create_stream_processor(processor_func, chunk_size=1000)` 的 `chunk_size` 形参声明了从不被读——工厂闭包逐条处理、无状态，块边界无任何可观测后果，「设了没生效」是静默的，且全仓 0 调用点 | 删除形参（结构性填不了⇒删，不发明语义）；补签名守卫（断言形参不在）；更新钉死该形参的既有调用。A46②（StreamConfig 两字段断线，产品内 0 使用者）留档后续轮 | S |
+| B223 | **已关闭（L153，收口第一本账 A124）**：`quality.weights` 的形状判据权威住组件（`QualityScorer` 两行手抄只判长度与和）——配置层只判 null，两面对同一键不同判；三档洞：`'abc'` 长度恰 3 死在 `sum()` 的 TypeError、`[-1.0, 2.0, 0.0]` 静默放行（权重符号反了排序整个反过来不出声）、`[True, True, False]` 被 sum 当 `[1,1,0]` | 判据权威搬进 validation 族（新族员 `require_ratio_list`：逐项 bool/NaN/越界 + 长度 + 和=1±0.01），配置层 / 组件层 / 静态回放三面共引同一份（A77）；`quality.weights` 进静态规格表、L76 的「唯一豁免」钉子按 docstring 红字约定翻转为「规格在场 + 坏值两面同拒 + 合法 6/6 两面放行」；`[]` 由静默回落默认改为即拒。新增 6 条组件层守卫 + 翻转 1 条，改前红/改后绿 | M |
 
 
 
@@ -869,3 +870,29 @@
   产品内 0 使用者、只算 SDK 面）留后续轮；A46③（require_count 的 None）L41 已收。
 - 全量门禁：`7404 passed / 3 skipped / exit 0`（L151 的 7403 + 1 新守卫，无回归）。
   **B222 关闭，第一本账 A46① 收口**。
+
+
+### L153（2026-10-01）— B223 立项 + 关闭：A124 收口（weights 形状判据权威搬家 + 三面共引）
+
+- **真缺陷（判据权威错位 + 三档静默洞）**：第一本账 A124（L76 立）记着
+  `quality.weights` 的形状判据住在 `QualityScorer` 两行手抄（只判长度与和），
+  配置层只判 null ⇒ 加载面与直构面对同一键**不同判**；且手抄判据有三个洞：
+  ① `'abc'` 长度恰 3 ⇒ 穿过 len 判据、死在 `sum()` 的 TypeError（与「权重写错」
+  无关的栈）；② `[-1.0, 2.0, 0.0]` 和恰为 1.0 ⇒ **两层面静默放行**，权重符号反了
+  会让排序整个反过来不出声（本仓最贵的一族症状）；③ `[True, True, False]` 被
+  `sum()` 当 `[1,1,0]`（bool 是 int 子类的老家族）。
+- **修法（按 A124 记档的「两侧同批」口径）**：新族员 `validation.require_ratio_list`
+  （逐项 bool/NaN/越界 + 长度 + 和=1±0.01；`None` 视为未传由调用点回落，字符串显式
+  挡掉）；配置层 `__post_init__`、组件层 `__init__`、静态面 `config_validator` 回放
+  **三面共引同一份判据**（A77：一条权威只住一处）；`quality.weights` 进静态规格表。
+  组件层手抄两行删除（权威搬家，不留第二份）；连带收掉 `[]` 的静默回落
+  （`weights or 默认` 的 falsy 读法 ⇒ 空列表现在即拒，fail-loud 方向）。
+- **钉子翻转（L76 约定）**：`test_weights_is_the_only_waived_field_of_quality` 按
+  docstring 红字翻转为 `test_weights_spec_exists_and_both_faces_agree`（规格在场 +
+  null 仍拒 + 6 档坏值两面同拒 + 6 档合法值两面放行——A124 记档的「容差 0.01
+  六档 6/6 不误拒」反向护栏）；对账测试的 weights 豁免移除。
+- **行引用平移记账**：config/quality 插行使 L1 账本 4 条 config.py 历史行引用换位
+  （3 条退出 code_but_no_name_match 档，config.py 原 311 行那条按先例降名锚）；L79 MEASURED
+  三格重钉（ARCH 37→34、LEDGER 155→150 / 293→292 / 1643→1644，逐格归因），A184 棘轮绿。
+- 全量门禁：`7410 passed / 3 skipped / exit 0`（L152 的 7404 + 6 新守卫，无回归）。
+  **B223 关闭，第一本账 A124 收口**。

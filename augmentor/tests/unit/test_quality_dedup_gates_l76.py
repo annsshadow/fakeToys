@@ -370,28 +370,37 @@ class TestTheRangesAreOneCopyOnly:
     def test_every_field_of_the_two_sections_has_a_spec(self, section):
         """两节的每个字段都要有静态规格 —— A118 的根之一就是「整条规格不存在」
 
-        清单从 `dataclasses.fields` 推导，不写死。唯一的豁免是 `quality.weights`，
-        由下面那条单独钉住（豁免要显式写，不能靠对账漏掉）。
+        清单从 `dataclasses.fields` 推导，不写死。原唯一的豁免 `quality.weights`
+        已在 L153（B223，收口 A124）补齐规格，此处不再跳过。
         """
         missing = []
         for f in dataclasses.fields(SECTIONS[section]):
-            if f.name == "weights":
-                continue
             if "%s.%s" % (section, f.name) not in ConfigValidator.KNOWN_FIELDS:
                 missing.append(f.name)
         assert missing == [], "%s 节有字段在 validate-config 上零反馈：%s" % (
             section, missing)
 
-    def test_weights_is_the_only_waived_field_of_quality(self):
-        """`quality.weights` 是**记下**的豁免（A124），不是对账漏掉的洞
-
-        这条看着像「把上一条例外硬编进来」，它守的是方向：A124 两侧同批补完之后，
-        这里必须跟着翻（`"weights" not in KNOWN_FIELDS` 变红），否则豁免就成了
-        永久的。与 L50 清空豁免清单同一个做法。
+    def test_weights_spec_exists_and_both_faces_agree(self):
+        """A124 收口（L153，B223）后翻转：`quality.weights` 的规格在场、null 仍拒、
+        坏形状两面同拒（原 `test_weights_is_the_only_waived_field_of_quality` 按
+        docstring 红字约定翻转，不是删豁免）。
         """
-        assert "quality.weights" not in ConfigValidator.KNOWN_FIELDS
+        assert "quality.weights" in ConfigValidator.KNOWN_FIELDS
         with pytest.raises(DataValidationError, match="weights"):
             QualityConfig(weights=None)
+        from augmentor.quality import QualityScorer
+        # 两侧共引 require_ratio_list ⇒ 同值同判；异常类型各异（DataValidationError /
+        # QualityError）但都是 ValueError，「都拒」这一格按基类断
+        for bad in ("abc", [0.5, 0.5], [-1.0, 2.0, 0.0], [True, True, False], [0.9] * 3, []):
+            with pytest.raises(DataValidationError, match="quality.weights"):
+                QualityConfig(weights=bad)
+            with pytest.raises(ValueError):
+                QualityScorer(weights=bad)
+        # 反向护栏：六档看着合法的三元组两侧都放行（A124 记档的 6/6 读数）
+        for good in ([0.1, 0.2, 0.7], [0.33, 0.33, 0.34], [1 / 3] * 3,
+                     [0.15, 0.35, 0.5], [0.7, 0.2, 0.1], [0.1, 0.1, 0.8]):
+            assert QualityConfig(weights=good).weights == good
+            assert QualityScorer(weights=good).weights == good
 
 
 class TestTheWritePathIsNowGatedToo:

@@ -438,7 +438,9 @@ FLOOR = {
 #: 「记下两笔欠账」，113 → 114 只是同一笔欠账被我重复抄了一遍，两者不该混在同一格里 —— 棘轮抬一次要有
 #: 新事实，不能只有新字数。摘掉后复量回 **113**。
 MEASURED = {
-    ARCH: {"line_refs": 42, "file_tokens": 244, "code_but_no_name_match": 37},
+    ARCH: {"line_refs": 42, "file_tokens": 244, "code_but_no_name_match": 34},
+    #: L153 面位移（37 → 34）：config/quality 接 require_ratio_list 插行后，3 条 config.py
+    #: 历史行引用的被引行换位、退出本档。案面=产品布局变更，按「数字搬进常量」条款重钉。
     #: **L100 批②（产品码插行 ⇒ 账本 A144 那一行被顶红，三格同时动）**：批② 给 `augmentor/checkpoint.py`
     #: 的 `__init__` 与两处 docstring 插了行，账本里 A144 行那两组历史落点集体搬家，其中
     #: augmentor/checkpoint.py:218（L85 落点，早已是历史）落到一个空行上 ⇒ `dead_line` 0 → 1，
@@ -462,10 +464,13 @@ MEASURED = {
     #: 引用由漂移桶搬回全绿，code_but_no_name_match 161 → **160**，line_refs 296 与
     #: file_tokens 1640 一格未动。（本注记按 A153 纪律只写裸文本行号，不套反引号，
     #: 免得记账行自己变成新 dead_line——此形此文件已复现三次。）
-    LEDGER: {"line_refs": 293, "file_tokens": 1643, "code_but_no_name_match": 155},
+    LEDGER: {"line_refs": 292, "file_tokens": 1644, "code_but_no_name_match": 150},
     #: L150 面位移（160 → 157）：dataset_ops 的 _deduplicate 插行后，3 条历史行引用
     #: 的被引行内容换位、退出本档。案面=产品布局变更，按「数字搬进常量」条款重钉。
-    #: L151 面位移（157 → 155 / line_refs 296 → 293 / file_tokens 1640 → 1643）：dedup/quality
+    #: L151 面位移（157 → 155 / line_refs 296 → 293 / file_tokens 1640 → 1643）
+    #: L153 面位移（155 → 150 / line_refs 293 → 292 / file_tokens 1643 → 1644）：config/quality
+    #: 插行使 5 条历史行引用换位（4 条退出本档、1 条 config.py:311 降名锚 ⇒ 行引用 −1、
+    #: 文件 token +1），逐格归因如上。：dedup/quality
     #: 接 require_ratio 给 dedup.py 顶部插行，账本 3 条 dedup.py 历史行引用（:111/:626/:431）
     #: 落空行被硬 0 档抓住，按 A127 先例降名锚（行引用 −3、文件 token +3），本档净 −2。
 }
@@ -1142,8 +1147,8 @@ BACKLOG_A_MISSING = {52}
 #: （`| ~~A184~~ |`），于是两档同时 +1 ⇒ 含删除线 101 → **102**、行首结案 86 → **87**，而差值
 #: 15 一格未动 —— 这正是把两个口径**分开钉**的理由：只钉一个的话，「行首结案」与「局部划掉」
 #: 两种形状谁动了看不出来，L98 那格撞到的 84/85 位移就是这么溜过去的。
-BACKLOG_A_CLOSED = 103
-#: L151 回填（102 → 103）：A125 行收口划掉 S 格（`~~S~~`），关闭数 +1。
+BACKLOG_A_CLOSED = 104
+#: L153 回填（103 → 104）：A124 行收口划掉 S 格（`~~S~~`），关闭数 +1。#: L151 回填（102 → 103）：A125 行收口划掉 S 格（`~~S~~`），关闭数 +1。
 BACKLOG_A_CLOSED_AT_HEAD = 87
 #: Backlog B 现量：11 条竖线行 = 2 表头 + 7 条可编号 + 2 条带角标（B3① / ~~B3②~~）。
 BACKLOG_B_LINES = 11
