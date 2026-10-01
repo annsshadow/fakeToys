@@ -28,6 +28,10 @@ async function logout() {
   uni.reLaunch({ url: LOGIN_PAGE })
 }
 
+function goCollect() {
+  uni.navigateTo({ url: '/pages/collect/collect' })
+}
+
 // ── 修改密码（PUT /api/person/password，对齐桌面 Personal.vue） ──
 const pwdForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' })
 const pwdSaving = ref(false)
@@ -80,6 +84,11 @@ async function changePassword() {
         <text class="k">所属部门</text>
         <text class="v">{{ groups.length ? groups.join('、') : '—' }}</text>
       </view>
+    </view>
+
+    <view class="card entry-card" @tap="goCollect">
+      <text class="entry-k">我的收藏</text>
+      <text class="entry-arrow">›</text>
     </view>
 
     <view class="card pwd-card">
@@ -177,6 +186,21 @@ async function changePassword() {
   flex: 1;
   color: #263238;
   font-size: 28rpx;
+}
+.entry-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 28rpx;
+}
+.entry-k {
+  font-size: 28rpx;
+  color: #263238;
+  font-weight: 600;
+}
+.entry-arrow {
+  color: #90979f;
+  font-size: 32rpx;
 }
 .logout {
   background: #fff;
