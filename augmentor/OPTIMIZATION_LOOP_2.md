@@ -52,7 +52,8 @@
 | B211 | **已关闭（L141）**：`VersionManager.diff()` 用 `(instruction, output)` 组合键做身份 ⇒ 「原地改某条 output」被拆成「删旧+增新」两条，`modified` 分支**恒为空**（`modified_count` 永远 0），而 `DiffResult` 字段注释与 docs/API.md 示例都承诺 `modified_count` 非零；既有唯一守卫还是空转的 `assert modified_count >= 0` | 身份键改成 `instruction` 单键，同 instruction 两版都在 ⇒ 整条 dict 不等即计入 `modified`；原地修改 now 报 modified=1/added=0/removed=0。既有 4 条 diff 用例（added/removed/identical/empty）全绿无回归；强化 `test_diff_modified_items` 断言 + 新增 1 条原地修改守卫 | M |
 | B212 | **已关闭（L142）**：`QualityTrendTracker.compare_trends()` 的 `comparison` 用「A > B else B_higher」二态判据——**平局**与「某侧根本没记过该指标」都误报 `dataset_b_higher`（缺指标被静默当 0 比，语义错）；既有唯一用例只钉了 A>B 一条 | 改成三态：双侧都有最新值且 A>B ⇒ `dataset_a_higher`，B>A ⇒ `dataset_b_higher`，其余（含平局、任一侧无记录）⇒ `tie`；补 3 条用例（平局 / 双侧缺指标 / 单侧缺指标）钉死 `tie` | S |
 | B213 | **已关闭（L143）**：`ActiveSampler.identify_underrepresented` 把 `length_distribution` 的全部键都当占比桶遍历（`.items()`），但 `_analyze_length_distribution` 会额外塞一个 `avg_length` **均值**键（绝对值，非占比）；当 `avg_length < threshold` 时会误产出伪桶 `length:avg_length`，污染 `recommend_seeds` 的 underrepresented 列表并白占一个 top_k 名额（其匹配循环因没有该 bucket 分支而永远打不中） | 长度桶改为显式只遍历 `("short","medium","long")`；`avg_length` 不再是候选。等价性 200 随机数据集 new⊆old 且排除 avg_length 全过；新增 1 条守卫（空指令 avg_length=0 < 0.1 时不产出 `length:avg_length`），改前红/改后绿 | S |
-| B214 | 待普查后立项 | —— | — |
+| B214 | **已关闭（L144）**：`DatasetOperations.merge()` 的 `max_items` 截断用 falsy 判据 `if config.max_items and ...`——`max_items=0` 语义是「一条不留」，但 0 被读成「不限」而返回全量（`merge_files` 委托 `self.merge()`，同一截断点一并覆盖） | 判据改 `is not None` 并加注释钉住 falsy 回归防护；补 `test_merge_max_items_zero_keeps_none`（改前 0 返回全量，改后 0→0 条；对照 None→全量、3→3 条防修过头） | S |
+| B215 | 待普查后立项 | —— | — |
 
 ## 循环日志
 
@@ -674,3 +675,25 @@
   short/medium/long。**改前该用例红**（实测 1 failed）、**改后绿**（sampler 59/59）。
 - 全量门禁：`7382 passed / 3 skipped / exit 0`（L142 的 7381 + 1 新守卫，无回归）；
   sampler 59/59、A184 21/21 绿。**B213 关闭**。
+
+
+### L144（2026-09-30）— B214 立项 + 关闭：merge() 的 max_items=0 被 falsy 判据读成「不限」
+
+- **真缺陷（falsy 假零）**：`DatasetOperations.merge()` 截断分支写的是
+  `if config.max_items and len(merged) > config.max_items:`——Python falsy 语义下
+  `max_items=0` 直接短路，**「一条不留」被当成「不限条数」而返回全量**。
+  单文件截断点只此一处：`merge_files` 读文件后委托 `self.merge(datasets, config)`，
+  故显式传 `max_items=0` 的 CLI/HTTP 调用同样拿回全量。
+- **修法**：判据改 `if config.max_items is not None and len(merged) > config.max_items:`，
+  并加注释钉住「`is not None` 而非 falsy」的回归防护（防止后人改回 `if config.max_items`）。
+- **回归护栏**：`test_dataset_ops.py::test_merge_max_items_zero_keeps_none`——
+  `max_items=0` ⇒ 0 条；同用例内对照 `max_items=None` ⇒ 全量（防修过头把未设置也截成 0）。
+  既有 `test_merge_max_items`（=5）与 `test_merge_max_items_truncates`（=3）保持全绿。
+- 已随 `cf35b5984` 入库（product+test）；本轮回填 B214 行 + 本条目。全量门禁复核先后受阻
+  两次：v1 双门禁并发时 `.coverage` 落进残留守卫误伤（环境问题）；v2 红在 A184 棘轮
+  `ambiguous`（336 vs 钉值 327）——根因是套件自写的运行时快照目录 `tests/.backups`
+  进了 `full_index()`，L145 修复。L145 修复后全量门禁绿，本条「无回归」结论由该绿门禁佐证。
+  **B214 关闭**。
+- **遗留（后续轮）**：`merge_files` 的 `removed_duplicates` 统计把「去重删除数 +
+  max_items 截断数」混报成一个值，需引入截断前计数变量才能拆分；改动会平移
+  `dataset_ops.py` 行号（触及历史文档行引用），留独立轮处理。
