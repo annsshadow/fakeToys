@@ -475,7 +475,7 @@ pub async fn server_deploy_list(
     let rows = client
         .query(
             "SELECT id, app_id, app_name, application, category, disable, create_time::text AS create_time \
-             FROM x_program_deploy_server ORDER BY create_time DESC",
+             FROM x_program_deploy_server ORDER BY create_time DESC WHERE deleted_at IS NULL",
             &[],
         )
         .await

@@ -3171,7 +3171,7 @@ pub async fn design_appdict_id_mockdeletetoget(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE id = $1",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
