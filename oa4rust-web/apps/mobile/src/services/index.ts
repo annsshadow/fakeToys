@@ -519,9 +519,14 @@ export const bbsApi = {
 export const searchApi = {
   /** 全局检索（queryview，后端仅注册 POST，读取键为 key）。 */
   global: (keyword: string) => list(mapi.post<Record<string, unknown>[]>('/api/queryview/search', { key: keyword })),
-  /** 论坛主题检索。 */
+  /** 论坛主题检索（x_bbs_topic 现役表；原打遗留 bbs_subject_info 表——当前无写入路径恒空）。 */
   bbsSubject: (keyword: string) =>
-    list(mapi.get<Record<string, unknown>[]>(`/api/bbs/subject/search?keyword=${encodeURIComponent(keyword)}`)),
+    list(
+      mapi.put<Record<string, unknown>[]>(
+        '/api/bbs/assemble/control/subject/search/list/page/1/count/20',
+        { keyword },
+      ),
+    ),
 }
 
 export const statisticsApi = {
