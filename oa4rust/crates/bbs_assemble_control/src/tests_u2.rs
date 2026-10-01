@@ -996,3 +996,89 @@ async fn test_section_crud_roundtrip() {
         .unwrap();
     assert_eq!(gone.get::<_, i64>(0), 0, "硬删后行必须不存在");
 }
+
+// ── 轮98：移动端论坛闭环真库往返（固化轮76 接线的四端点 + 轮93 软删语义）──
+#[tokio::test]
+async fn mobile_bbs_topic_reply_roundtrip_live() {
+    use shared::testing::{is_db_available, test_pool};
+    if !is_db_available().await {
+        eprintln!("skipping mobile bbs roundtrip: DB not reachable");
+        return;
+    }
+    let app = crate::router(test_pool());
+
+    // 发主题（topic/create 无会话门禁；author/section 由后端缺省回退）
+    let (st, created) = send_with_session(
+        app.clone(),
+        Method::POST,
+        &format!("{BASE}/topic/create"),
+        Some(json!({
+            "forumId": "u-roundtrip-forum",
+            "title": "mobile roundtrip topic",
+            "content": "roundtrip body",
+            "creator": "u-roundtrip-author"
+        })),
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "topic/create 应 200: {created}");
+    let topic_id = created["data"]["id"]
+        .as_str()
+        .expect("topic/create 应返回 id")
+        .to_string();
+
+    // 详情可读（subject_view_id）
+    let (st, view) = send_with_session(
+        app.clone(),
+        Method::GET,
+        &format!("{BASE}/subject/view/{topic_id}"),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    assert_eq!(view["data"]["title"], "mobile roundtrip topic");
+
+    // 回帖（作者缺省取登录人）
+    let (st, reply) = send_with_session(
+        app.clone(),
+        Method::POST,
+        &format!("{BASE}/reply/create"),
+        Some(json!({ "topicId": topic_id, "content": "first reply" })),
+        Some(make_session("u-roundtrip-author", "rt")),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "reply/create 应 200: {reply}");
+
+    // 回帖列表含该回帖且 topic_id 归属正确
+    let (st, replies) = send_with_session(
+        app.clone(),
+        Method::GET,
+        &format!("{BASE}/reply/list/sub/{topic_id}"),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    let arr = replies["data"].as_array().expect("回帖列表应为数组");
+    assert!(
+        arr.iter().any(|r| r["content"] == "first reply"),
+        "回帖应出现: {replies}"
+    );
+    assert!(
+        arr.iter().all(|r| r["topic_id"] == topic_id),
+        "回帖应归属该主题"
+    );
+
+    // 不存在的主题按 error 信封返回（HTTP 200 + type:error，移动端按空态处理）
+    let (st, missing) = send_with_session(
+        app,
+        Method::GET,
+        &format!("{BASE}/subject/view/nonexistent-roundtrip-id"),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    assert_eq!(missing["type"], "error");
+}
