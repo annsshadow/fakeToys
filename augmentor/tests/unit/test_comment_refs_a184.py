@@ -69,8 +69,12 @@ from tests.unit.test_doc_line_refs_l79 import LINE_REF, name_bucket, require_aut
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
-IDX_SKIP = frozenset({".git", "__pycache__", ".pytest_cache", "node_modules"})
-SCAN_SKIP = IDX_SKIP | {".backups", "bak", "htmlcov", ".venv", "venv", ".mypy_cache"}
+IDX_SKIP = frozenset({".git", "__pycache__", ".pytest_cache", "node_modules",
+                        ".backups"})
+# `.backups` = 套件自写的运行时快照目录（gitignored，不入仓）：索引收它会让测试套件
+# 每跑一次全量门禁就为下一次普查造出新的文件名候选（`index.json`/`snap.json`），
+# 引用被翻进 ambiguous 欠账档、棘轮自伤（L145，B215）。SCAN_SKIP 一直有它，索引侧对齐。
+SCAN_SKIP = IDX_SKIP | {"bak", "htmlcov", ".venv", "venv", ".mypy_cache"}
 SRC_EXT = frozenset({".py", ".ts", ".tsx", ".js", ".jsx", ".vue"})
 DOC_EXT = frozenset({".md", ".yaml", ".yml", ".toml", ".sql", ".ini", ".cfg",
                      ".json", ".txt"})
@@ -114,7 +118,10 @@ CEILING = {
     "ambiguous": 327,
     "runtime_ns": 30,
     "scratch": 729,
-    "scratch_missing": 289,
+    "scratch_missing": 302,
+# L145 面位移（289 → 302）：运行时快照目录从索引排除后，13 条只能靠该目录的
+# 文件候选落定的引用（两个散名与两条全路径）翻进本档。案面=索引口径变更，按
+# 「动案面要重跑普查再改这里」条款逐格归因；ambiguous 327 与其余各档原地未动。
 }
 
 #: 反空转下界：这三个数**不是缺陷计数**，而是「普查真的看见了多大一片」的证据。
@@ -559,6 +566,14 @@ class TestRatchetsAreExact:
         debt = sum(counts[b] for b in ("ambiguous", "runtime_ns", "scratch",
                                        "scratch_missing"))
         assert counts["live"] > debt, (counts["live"], debt)
+
+    def test_runtime_backup_dir_is_invisible_to_the_index(self):
+        """`tests/.backups` 是测试套件自写、gitignore 的运行时快照目录：进索引会让
+        `index.json`/`snap.json` 这类裸文件名在多候选化，下一次全量门禁的普查把一批
+        本活的引用翻进 `ambiguous` 欠账档（L145，B215，实测 336 vs 钉值 327）。"""
+        leaked = [parts for parts_list in full_index().values()
+                  for parts in parts_list if ".backups" in parts]
+        assert not leaked, leaked[:5]
 
 
 class TestRedCapability:

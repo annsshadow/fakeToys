@@ -53,7 +53,7 @@
 | B212 | **已关闭（L142）**：`QualityTrendTracker.compare_trends()` 的 `comparison` 用「A > B else B_higher」二态判据——**平局**与「某侧根本没记过该指标」都误报 `dataset_b_higher`（缺指标被静默当 0 比，语义错）；既有唯一用例只钉了 A>B 一条 | 改成三态：双侧都有最新值且 A>B ⇒ `dataset_a_higher`，B>A ⇒ `dataset_b_higher`，其余（含平局、任一侧无记录）⇒ `tie`；补 3 条用例（平局 / 双侧缺指标 / 单侧缺指标）钉死 `tie` | S |
 | B213 | **已关闭（L143）**：`ActiveSampler.identify_underrepresented` 把 `length_distribution` 的全部键都当占比桶遍历（`.items()`），但 `_analyze_length_distribution` 会额外塞一个 `avg_length` **均值**键（绝对值，非占比）；当 `avg_length < threshold` 时会误产出伪桶 `length:avg_length`，污染 `recommend_seeds` 的 underrepresented 列表并白占一个 top_k 名额（其匹配循环因没有该 bucket 分支而永远打不中） | 长度桶改为显式只遍历 `("short","medium","long")`；`avg_length` 不再是候选。等价性 200 随机数据集 new⊆old 且排除 avg_length 全过；新增 1 条守卫（空指令 avg_length=0 < 0.1 时不产出 `length:avg_length`），改前红/改后绿 | S |
 | B214 | **已关闭（L144）**：`DatasetOperations.merge()` 的 `max_items` 截断用 falsy 判据 `if config.max_items and ...`——`max_items=0` 语义是「一条不留」，但 0 被读成「不限」而返回全量（`merge_files` 委托 `self.merge()`，同一截断点一并覆盖） | 判据改 `is not None` 并加注释钉住 falsy 回归防护；补 `test_merge_max_items_zero_keeps_none`（改前 0 返回全量，改后 0→0 条；对照 None→全量、3→3 条防修过头） | S |
-| B215 | 待普查后立项 | —— | — |
+| B215 | **已关闭（L145）**：A184 引用普查的索引跳过集只有 .git/__pycache__/.pytest_cache/node_modules——测试套件自写的运行时快照目录 tests/.backups/（gitignored，门禁的 fixture 运行期写入 index.json、snap.json、opt100_progress.md）进索引：跑过一轮全量门禁后，index.json、snap.json 这类文件名有多候选，下一次门禁普查 9 条引用被翻 live→ambiguous（336 vs 钉值 327），棘轮测试红——门禁状态依赖、自伤 | 快照目录加入索引跳过集（语料面跳过集一直有、索引面漏配；L79 的 build_index 只收 .py 不受影响）；补 1 条守卫（改前红：3 条泄漏候选；改后绿）；按「动案面要重跑普查再改这里」条款逐格重钉：scratch_missing 289→302（排除快照目录候选后 13 条翻进本档，逐格归因），ambiguous 327 与其余各档原地未动；幂等性实证：普查含/不含快照目录逐格同读 | M |
 
 ## 循环日志
 
@@ -697,3 +697,27 @@
 - **遗留（后续轮）**：`merge_files` 的 `removed_duplicates` 统计把「去重删除数 +
   max_items 截断数」混报成一个值，需引入截断前计数变量才能拆分；改动会平移
   `dataset_ops.py` 行号（触及历史文档行引用），留独立轮处理。
+
+
+### L145（2026-10-01）— B215 立项 + 关闭：A184 普查索引收进套件运行时快照目录，全量门禁自伤
+
+- **真缺陷（门禁状态依赖）**：`full_index()`（A184 引用索引）的跳过集只有
+  .git/__pycache__/.pytest_cache/node_modules；但测试套件**自己写的**运行时快照目录
+  tests/.backups/（gitignored，门禁的 fixture 运行期写入 index.json、snap.json、
+  opt100_progress.md）未被排除。实测时序：门禁第一轮绿 → fixture 写入快照目录 →
+  下一轮门禁普查里 index.json、snap.json 等裸文件名多候选，9 条引用被翻
+  live→ambiguous（336 vs 钉值 327），`test_bucket_matches_its_ceiling`[ambiguous] 红。
+  删掉快照目录门禁恢复绿、下轮又红——状态依赖、自伤。
+- **修法**：索引跳过集加入 `.backups`（语料面跳过集一直排除了它，本次为两面对齐；
+  L79 的 `build_index` 只索引 .py、快照目录当前无 .py，不动，记档即可）。
+- **账本重钉（逐格归因，按「动案面要重跑普查再改这里」条款）**：排除快照目录候选后
+  13 条「只能靠快照目录落定」的引用翻进 scratch_missing（289→302）：裸名两条、
+  全路径两条、余为守卫文件自身引用；ambiguous 327、runtime_ns 30、scratch 729 与
+  三格硬 0 原地未动。
+- **幂等性证据**：普查「含快照目录 / 不含快照目录」两跑，读数逐格相同
+  （327/30/729/302，硬 0 三格为 0，引用共 3881 条）——全量门禁不再依赖运行时工件态。
+- **守卫**：`test_runtime_backup_dir_is_invisible_to_the_index`——断言索引里无任何
+  含快照目录段的路径（改前红：3 条泄漏；改后绿）。
+- 全量门禁：`7384 passed / 3 skipped / exit 0`（原套件 7383 + 1 新守卫，无回归；
+  首跑 1 红为性能测时用例在负载下的 flake——单跑 4/4 两次全绿、复跑全量绿，
+  非产品回归）。**B215 关闭**。
