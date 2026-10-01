@@ -21,7 +21,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 - 真实消费收官（`docs/audits/three-ends-2026-09-20/REAL_CONSUMPTION_CLOSURE.md`）：216 条未消费路由
   三类裁决（116 仅运行时可验证 / 73 仅真实用户写动作 / 27 结构不可计入），名义接桩已被用户否决并 revert。
 
-## 状态：进行中（轮 1/100）
+## 状态：已完成（轮 100/100，2026-10-01 收官）
 
 | 轮 | 维度 | 结果 | 处置 |
 |---|---|---|---|
@@ -141,6 +141,20 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 > 慢查询索引复扫）；③ desktop 死钩子清理或接线；④ mobile 业务域扩面。
 
 
+
+
+> **第六批小结（轮 71–100，2026-09-30/10-01，完整门禁收官）**：契约真缺陷 4 连修（改密 422/日历 400/收藏归属落空/统计 403 错指）+
+> camelCase 全仓系统性双向扫描收口；mobile 功能闭环三连（unhandledrejection 兜底、论坛详情/回帖/发帖全链路、我的收藏页）+
+> 论坛搜索死表真缺陷重定向现役表；后端读路径 N+1 三集群根治（express 7 端点、CMS 字段、日历并行）；数据完整性四集群
+> （角色绑定/关联先删后插/CMS 脚本导入事务化 + **软删过滤 64 处四集群全量收口**——query 27/org 10/portal 等 16/bbs 11，
+> 含轮90 自纠批量变换 8 处非法 SQL 的教训：**批量 SQL 变换必须逐条真实 DB 验证，mock 路由测试对 SQL 文本不敏感**）；
+> pg_trgm 搜索索引 10 条（本地 PG 实证）；真库往返守卫 2 例（collect/bbs 论坛全链路）。工具链坑记档：
+> rg -rn 是 --replace 会改写输出（屡犯）、Rust 转义引号截断批改正则、扁平测试模块剥尾括号追加会静默嵌套进函数体
+> （须以过滤器命中数复核）、新工具链（rustc 1.96）新 lint/rustfmt 规则使既有文件现漂移。
+> **终态完整门禁（轮100）**：cargo fmt --check --all ✓（含 openapi 生成文件工具链漂移修复）、
+> clippy --workspace --all-targets -D warnings ✓（含 doc_lazy_continuation 修复）、桌面+SDK vitest 998/998 ✓、
+> mobile vitest 114/114 ✓、desktop build ✓、mobile h5+mp-weixin build ✓、parity --ignored 6/6 ✓（live PG）、
+> workspace cargo check 0 err ✓。本批 30 轮合计：FEAT 3 / FIX 20 / PERF 6 / TEST 2 / IMPROVE·CHORE 3（含门禁修复）。
 
 ## 记账纪律
 
