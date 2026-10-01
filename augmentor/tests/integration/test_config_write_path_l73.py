@@ -243,46 +243,11 @@ class TestApplySectionUpdateSdk:
             if dataclasses.is_dataclass(getattr(config, f.name))
             and not hasattr(type(getattr(config, f.name)), "__post_init__")
         )
-        assert all_sections == [
-            "active_learning", "benchmark", "context", "evaluation", "expander",
-            "frameworks", "multilingual", "sampler", "tracker", "versioning",
-            "visualization",
-        ], "A118 现量变了：按本轮同款推导重测再改这里，别照抄"
+        # L154 / B224（A140 收口）第三次翻转：11 节全接上判据 ⇒ 名单清空。
+        # 按「按本轮同款推导重测再改这里」条款翻转，不是手抄新名单。
+        assert all_sections == [],             "全 20 节判据现量变了：按同款推导重测再改这里（A140 已收口的那一格）"
 
-    def test_sections_without_runtime_gates_still_write_through(self):
-        """设计选择 3 的行为面：没有 `__post_init__` 的节照旧写入，不抛也不吞键
-
-        为什么本轮补它：覆盖报表里 `config.py` 的 `if post_init is not None` 是本轮
-        唯一新增的偏支 —— 七节全部接上判据后，假臂只余上面那 11 节会走，而它们全在
-        `POST /api/config` 的可写清单之外，只有 SDK 直构能到这里。没有这条用例，下一轮
-        把它当死代码删掉就是一次对外行为变更（A140 接节时这一支还要继续走）。
-        """
-        from augmentor import load_config
-        from augmentor.config import apply_section_update
-
-        config = load_config(str(AI_DIR / "config.yaml"))
-        all_sections = sorted(
-            f.name for f in dataclasses.fields(config)
-            if dataclasses.is_dataclass(getattr(config, f.name))
-            and not hasattr(type(getattr(config, f.name)), "__post_init__")
-        )
-        assert all_sections, "全 20 节都接上了判据 ⇒ 假臂无来源，本用例连同设计选择 3 一起退役"
-        flipped = 0
-        for name in all_sections:
-            section = getattr(config, name)
-            assert not hasattr(type(section), "__post_init__"), \
-                "%s 节接上了判据，本用例的靶子消失，改走七节那条路" % name
-            old = getattr(section, dataclasses.fields(section)[0].name)
-            # 首字段是 bool ⇒ 写一个**不同**的值，断言才不是自等
-            new = (not old) if isinstance(old, bool) else old
-            flipped += isinstance(old, bool)
-            ignored = apply_section_update(
-                section, {dataclasses.fields(section)[0].name: new, "no_such_knob": 1}
-            )
-            assert ignored == ["no_such_knob"], name
-            assert getattr(section, dataclasses.fields(section)[0].name) == new, name
-        assert flipped == len(all_sections), \
-            "有节的首字段不再是 bool ⇒ 那一节的写入断言退化成自等，换字段选择再改这里"
+    # L154 / B224 退役：全 20 节都有 `__post_init__`，「无判据节仍照旧写入」的行为面靶子消失（本用例 docstring 的明文处方：全 20 节接上判据即连同设计选择 3 一起退役）。假臂 `if post_init is not None` 的另一半（无判据写直通）自此无来源，留档 B225 待下一轮判删。
 
 
 class TestApiRejectsOutOfRange:

@@ -72,9 +72,11 @@ TIER_OPAQUE = "opaque"              # 压根解析不到
 # 六档之和 = MEASURED_BLIND。`typed` 与 `ids-literal` 现量为 **0**，所以不在这张表里 ——
 # 它们各由一条「名册等于空集」的判据钉住（`test_typed_blind_sites_are_exactly_the_known_ones`
 # 与 `test_no_blind_site_carries_literal_ids`），而不是靠这张表缺席来表达。
+#: 第二本账 L154 回填（盲 +8）：test_config_gates_l154 的 18 处参数化里 8 处值位无 ids
+#: ⇒ 纯字面量 5 处入 plain（46 → **51**）、含 list 元素 3 处入 derived（30 → **33**）。
 MEASURED_TIERS: Dict[str, int] = {
-    TIER_PLAIN: 46,
-    TIER_DERIVED: 30,
+    TIER_PLAIN: 51,
+    TIER_DERIVED: 33,
     TIER_IDS_DERIVED: 8,
     TIER_OPAQUE: 9,
 }
@@ -111,9 +113,10 @@ MEASURED_HAZARD_ROSTER: Dict[Tuple[int, int], frozenset] = {
     (3, 14): frozenset({
         "unit/test_schema_type_spec_l96.py::test_label<-value:typing.Union:Union"}),
 }
-#: 现量：盲面用例 90 支（93 格调用压成 90 个名字），动态面两支解释器都全数采到
-MEASURED_BLIND_TESTS = 90
-MEASURED_BLIND_SEEN = 90
+#: 现量：盲面用例 96 支（L154 起 101 格调用压成 96 个名字——新守卫里 5 支用例叠两层
+#: 无 ids 参数化、同一名下两格），动态面两支解释器都全数采到
+MEASURED_BLIND_TESTS = 96
+MEASURED_BLIND_SEEN = 96
 #: 现量：整支豁免（该用例的每一支 parametrize 都写了字面 ids）的用数
 MEASURED_EXEMPT_SITES = 17
 #: 动态面至少要采到这么多条，否则「没有风险对象」只是没采到（A171 口径：数不到不判干净）

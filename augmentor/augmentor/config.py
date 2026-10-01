@@ -407,6 +407,17 @@ class ContextConfig:
     enabled: bool = False
     num_turns: int = 3
 
+    def __post_init__(self):
+        """取值判据（A140 余 11 节 / L154）：轮数取正。
+
+        改前两键四面零反馈：`num_turns: 0` 构造放行，`pipeline.py` 直读它喂给
+        `context.py` 的 `range(self.num_turns - 1)`，对 0 与负数都答「零轮」⇒ 对话上下文
+        整件静默失效（假零家族，L144 同式）。判在构造期，加载面自动吃到。
+        """
+        _reject_null_fields('context', self)
+        require_bool('context.enabled', self.enabled)
+        require_count('context.num_turns', self.num_turns, minimum=1)
+
 
 @dataclass
 class VersioningConfig:
@@ -415,12 +426,34 @@ class VersioningConfig:
     storage_dir: str = "data/versions"
     auto_snapshot: bool = True
 
+    def __post_init__(self):
+        """取值判据（A140 余 11 节 / L154）：目录名非空、两个开关是布尔。
+
+        改前 `storage_dir: ''` 构造放行，`VersionManager` 拿 `Path('')` 去 mkdir 落在当前目录；
+        `auto_snapshot: 'no'`（加引号档）在 `pipeline.py` 的 `if` 上恒真（`require_bool`
+        docstring 同档）。
+        """
+        _reject_null_fields('versioning', self)
+        require_bool('versioning.enabled', self.enabled)
+        require_string('versioning.storage_dir', self.storage_dir)
+        require_bool('versioning.auto_snapshot', self.auto_snapshot)
+
 
 @dataclass
 class SamplerConfig:
     """主动学习配置"""
     enabled: bool = False
     dimensions: list = field(default_factory=lambda: ["topic", "question_type", "length", "complexity"])
+
+    def __post_init__(self):
+        """取值判据（A140 余 11 节 / L154）：维度是字符串列表。
+
+        改前写成标量 `topic` 会逐字符拆成 4 个「维度」（`require_string_list` 的立身案例同形）。
+        本键今天没有产品消费方（属性面普查，L154 记入 B224），判据买「写时就报」不买崩溃。
+        """
+        _reject_null_fields('sampler', self)
+        require_bool('sampler.enabled', self.enabled)
+        require_string_list('sampler.dimensions', self.dimensions)
 
 
 @dataclass
@@ -429,6 +462,15 @@ class ExpanderConfig:
     enabled: bool = False
     strategies: list = field(default_factory=lambda: ["similar", "related", "scenario"])
 
+    def __post_init__(self):
+        """取值判据（A140 余 11 节 / L154）：策略是字符串列表。
+
+        改前本键四面零反馈且无产品消费方（属性面普查，L154 / B224），标量 / 空白 / 混型档全静默放行。
+        """
+        _reject_null_fields('expander', self)
+        require_bool('expander.enabled', self.enabled)
+        require_string_list('expander.strategies', self.strategies)
+
 
 @dataclass
 class TrackerConfig:
@@ -436,12 +478,31 @@ class TrackerConfig:
     enabled: bool = False
     metrics: list = field(default_factory=lambda: ["train_loss", "eval_accuracy", "perplexity"])
 
+    def __post_init__(self):
+        """取值判据（A140 余 11 节 / L154）：指标是字符串列表。
+
+        改前本键四面零反馈且无产品消费方（属性面普查，L154 / B224），形状各档全静默放行。
+        """
+        _reject_null_fields('tracker', self)
+        require_bool('tracker.enabled', self.enabled)
+        require_string_list('tracker.metrics', self.metrics)
+
 
 @dataclass
 class VisualizationConfig:
     """可视化配置"""
     enabled: bool = True
     types: list = field(default_factory=lambda: ["wordcloud", "length_distribution", "topic_cluster", "timeline", "quality_distribution"])
+
+    def __post_init__(self):
+        """取值判据（A140 余 11 节 / L154）：图表类型是字符串列表。
+
+        `visualizer` 只把本节类型当函数形参用，没有任何产品接线读 `config.visualization`
+        （属性面普查，L154 / B224），改前形状各档全静默放行。
+        """
+        _reject_null_fields('visualization', self)
+        require_bool('visualization.enabled', self.enabled)
+        require_string_list('visualization.types', self.types)
 
 
 @dataclass
@@ -451,6 +512,18 @@ class MultilingualConfig:
     default_target_lang: str = "en"
     supported_langs: list = field(default_factory=lambda: ["zh", "en"])
     translate_batch_size: int = 10
+
+    def __post_init__(self):
+        """取值判据（A140 余 11 节 / L154）：批尺寸取正、语言码与清单是字符串形状。
+
+        改前 `translate_batch_size: 0` 是假零档（L144 同式：读处 `or` 回落会当「未传」），
+        `supported_langs` 写成标量会逐字符拆成语言码，`default_target_lang: ''` 静默放行。
+        """
+        _reject_null_fields('multilingual', self)
+        require_bool('multilingual.enabled', self.enabled)
+        require_string('multilingual.default_target_lang', self.default_target_lang)
+        require_string_list('multilingual.supported_langs', self.supported_langs)
+        require_count('multilingual.translate_batch_size', self.translate_batch_size, minimum=1)
 
 
 @dataclass
@@ -489,6 +562,17 @@ class EvaluationConfig:
     enabled: bool = False
     metrics: list = field(default_factory=lambda: ["bleu", "rouge_l", "similarity"])
     reference_field: str = "output"
+
+    def __post_init__(self):
+        """取值判据（A140 余 11 节 / L154）：参考字段名非空、指标是字符串列表。
+
+        `reference_field` 写空串 ⇒ 评估器取错字段静默评分（改前四面零反馈，本键亦无
+        产品消费方，属性面普查 L154 / B224）。
+        """
+        _reject_null_fields('evaluation', self)
+        require_bool('evaluation.enabled', self.enabled)
+        require_string_list('evaluation.metrics', self.metrics)
+        require_string('evaluation.reference_field', self.reference_field)
 
 
 @dataclass
@@ -560,6 +644,17 @@ class BenchmarkConfig:
     baseline_file: str = "data/benchmark_baseline.json"
     metrics: list = field(default_factory=lambda: ["pass_rate", "avg_total_score", "diversity", "duplication_rate"])
 
+    def __post_init__(self):
+        """取值判据（A140 余 11 节 / L154）：三键是 `cli` 基准子命令直读的两半。
+
+        `metrics` 的消费方（`benchmark.py`）期待字符串列表、逐项对 `SUPPORTED_METRICS`
+        判成员；改前标量 / 空白 / null 档全静默进加载面，坏值要等 CLI 跑基准那天才出声。
+        """
+        _reject_null_fields('benchmark', self)
+        require_bool('benchmark.enabled', self.enabled)
+        require_string('benchmark.baseline_file', self.baseline_file)
+        require_string_list('benchmark.metrics', self.metrics)
+
 
 @dataclass
 class ActiveLearningConfig:
@@ -569,12 +664,33 @@ class ActiveLearningConfig:
     batch_size: int = 50
     max_iterations: int = 10
 
+    def __post_init__(self):
+        """取值判据（A140 余 11 节 / L154）：批与轮数取正、策略名非空。
+
+        本键今天没有产品消费方（属性面普查，L154 / B224），但 `batch_size: 0` 与
+        `max_iterations: 0` 是假零家族的两档（L144 同式），按「要多少轮」读法一次判掉。
+        """
+        _reject_null_fields('active_learning', self)
+        require_bool('active_learning.enabled', self.enabled)
+        require_string('active_learning.strategy', self.strategy)
+        require_count('active_learning.batch_size', self.batch_size, minimum=1)
+        require_count('active_learning.max_iterations', self.max_iterations, minimum=1)
+
 
 @dataclass
 class FrameworkConfig:
     """LLM 框架集成配置"""
     enabled: bool = False
     frameworks: list = field(default_factory=lambda: ["langchain", "llamaindex"])
+
+    def __post_init__(self):
+        """取值判据（A140 余 11 节 / L154）：框架清单是字符串列表。
+
+        改前本键四面零反馈且无产品消费方（属性面普查，L154 / B224），形状各档全静默放行。
+        """
+        _reject_null_fields('frameworks', self)
+        require_bool('frameworks.enabled', self.enabled)
+        require_string_list('frameworks.frameworks', self.frameworks)
 
 
 @dataclass

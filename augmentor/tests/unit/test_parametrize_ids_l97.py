@@ -58,9 +58,13 @@ NS_PREFIXES = frozenset({
 #: 第二本账 L151 回填（总数 +2、可读 +2，盲面不动）：test_quality_dedup_gates_l76 新增两支
 #: QualityScorer 阈值参数化（坏值 7 档 / 合法 4 档，全字面量列表）⇒ CALLS 357→359、
 #: READABLE 264→266，BLIND 93 一格未动。
-MEASURED_CALLS = 359
-MEASURED_READABLE = 266
-MEASURED_BLIND = 93
+#: 第二本账 L154 回填（总数 +18、盲 +8）：test_config_gates_l154 新增 18 处
+#: parametrize（11 节坏值 × 四面 + 独立性 19 档 + 加载面 7 档）；值位含 list 对象的 8 处
+#: 未自带 ids ⇒ 盲面 93 → **101**，CALLS 359 → **377**；READABLE 是差值口径
+#: （总数 − 盲面）⇒ 266 → **276**。
+MEASURED_CALLS = 377
+MEASURED_READABLE = 276
+MEASURED_BLIND = 101
 #: 值位含类型对象的那些档（必须全部自带 ids，否则就是本判据的违规）
 KNOWN_TYPED_SITES = frozenset({("tests/unit/test_schema_type_spec_l96.py", "test_label")})
 
