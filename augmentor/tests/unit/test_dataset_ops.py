@@ -103,6 +103,14 @@ class TestDatasetOperations:
         sampled = ops.sample(test_data, config)
         assert len(sampled) == 3  # 5 * 0.6 = 3
     
+    def test_sample_ratio_zero_samples_none(self, test_data):
+        """ratio=0 语义是「采 0 条」；改前 `elif config.ratio` 把 0 读成「未设置」而采全量（L149，B219）"""
+        ops = DatasetOperations()
+        sampled = ops.sample(test_data, SampleConfig(ratio=0.0, seed=42))
+        assert sampled == [], f"ratio=0 应采 0 条，实际 {len(sampled)} 条"
+        # 对照：None（未设置）采全量，防修过头
+        assert len(ops.sample(test_data, SampleConfig(ratio=None, seed=42))) == len(test_data)
+    
     def test_sample_systematic(self, test_data):
         """测试系统采样"""
         ops = DatasetOperations()

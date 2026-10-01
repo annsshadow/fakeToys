@@ -57,6 +57,8 @@
 | B216 | **已关闭（L146）**：QualityTrendTracker 的趋势历史文件加载失败（JSON 损坏、`trends` 非列表）时**静默置空**历史并只告警一条；随后记录指标触发的保存会用 `open` 写模式**截断覆盖原文件**成「仅含新条目」——原始数据永久丢失、零备份；且原实现不校验 `trends` 类型，它是字符串时下一步追加直接崩 | 畸形文件先备份为带时间戳的损坏副本再置空（同秒重名自动加序号；Windows 句柄被占用挡掉 rename 时自动退化成复制式备份）；两条备份路径全断才置禁写标记、保存跳过（原文件逐字保留、内存历史不丢）；`trends` 非列表改抛领域异常 DataFormatError（对齐裸内置异常 raise 守卫）；新增损坏防护测试类 3 条，改前红 3 failed（旧版文件沙盒实证）/ 改后绿 | M |
 | B217 | **已关闭（L147）**：增强导出器的条数限制分支写成 falsy 判据——max_items=0 语义是「一条不导」，但 0 被读成「不限」而导全量（与 L144 的 merge() 缺陷同族，全仓漏网的最后一处） | 判据改 `is not None` 加 `>= 0`（负数仍读「不限」维持旧行为，防修过头）；补 1 条回归（0→0 条；对照 None→全量、负数→全量），改前红（实测导了 3 条）/ 改后绿 | S |
 | B218 | **已关闭（L148）**：merge_files 的 `removed_duplicates` 统计把「去重删除数 + max_items 截断数」混报成一个值（`total_input - total_output`），用户读到的「去重数」在带截断的配置下虚高（实测 8 条入、去重 2、截 3：旧报 5 新报 2） | 在 merge_files 内部用既有 _deduplicate 复算去重删除数、截断数 = 去重后基数 - 输出数，两数分报（新增键 `truncated_by_max_items`，既有键语义改为只记去重）；实现刻意控制在 242 行参考点以下净增 8 行——历史文档对 dataset_ops.py:242/:243 的行引用平移后仍落在代码行（棘轮 58/58 绿），首版把统计逻辑放进 merge() 净增 15 行、把 :243 翻进空行致 A184 硬 0 红，已回退换点；补 1 条回归（去重+截断双开分报 + 无去重无截断全 0 对照），改前红/改后绿 | M |
+| B219 | **已关闭（L149）**：sample() 的比例分支 `elif config.ratio:` 用 falsy 判据——显式 ratio=0 语义是「采 0 条」，但 0 被读成「未设置」直接落 else 采全量（与 L144 max_items、L147 导出 max_items 同族，本处是 ratio 位） | 判据改 `is not None`（1 行替换 + 2 行注释，插入点在被历史行引用的 242/243 之下，棘轮不受扰）；补 1 条回归（ratio=0⇒0 条；对照 None⇒全量），改前红/改后绿 | S |
+
 
 
 ## 循环日志
@@ -781,3 +783,18 @@
   改前红（旧产品文件实测 1 failed）、改后绿（dataset_ops 87/87）。
 - 全量门禁：`7389 passed / 3 skipped / exit 0`（L147 的 7388 + 1 新守卫，无回归）。
   **B218 关闭**。
+
+
+### L149（2026-10-01）— B219 立项 + 关闭：sample() 的 ratio=0 被 falsy 判据读成「未设置」
+
+- **真缺陷（falsy 假零，ratio 位）**：sample() 的比例分支写的是
+  `elif config.ratio:`——显式传 ratio=0（语义「采 0 条」）被 falsy 短路当成「未设置」，
+  直接落 else 采全量。与 L144（merge max_items）、L147（导出 max_items）同族：
+  那两轮扫 `if config.x` 形状时没扫到 `elif` 形状与 ratio 这个字段。
+- **修法**：判据改 `elif config.ratio is not None:`，注释钉住 falsy 回归防护；
+  ratio=0 算出的 0 条由下方既有短路守卫（`sample_size == 0` 前置于 method 分发）接住，
+  三种 method 一律交空列表。改动插入点在 242/243 历史行引用之下，棘轮 58/58 原地绿。
+- **回归护栏**：test_sample_ratio_zero_samples_none——ratio=0 ⇒ 0 条；同用例对照
+  None ⇒ 全量。改前红（旧产品文件实测 1 failed）、改后绿（dataset_ops 88/88）。
+- 全量门禁：`7390 passed / 3 skipped / exit 0`（L148 的 7389 + 1 新守卫，无回归）。
+  **B219 关闭**。
