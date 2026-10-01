@@ -7,6 +7,7 @@
 //!   1. 时间列 `::text` 排序（`::text DESC/ASC`）——破坏 btree 索引排序；
 //!   2. `deleted_at::text IS NULL`——谓词表达式不匹配部分索引 `deleted_at IS NULL`；
 //!   3. 裸 `(page - 1) * size|count` 分页乘法——i64 溢出/下溢（须 `saturating_mul`）。
+//!
 //! 这些是「名义修好、未来易回潮」的隐患，用编译期常驻测试固化。
 
 use std::fs;
