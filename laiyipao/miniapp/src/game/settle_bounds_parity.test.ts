@@ -50,6 +50,7 @@
  */
 import { describe, it, expect, beforeAll } from 'vitest'
 import fixture from '@vectors/smoke_levels.json'
+import vectors from '@vectors/formula_vectors.json'
 import { BattleEngine, MAX_BATTLE_TICKS, type BattleConfig } from './engine'
 import { equippedFromSnapshot, type BuildSnapshot } from './replay'
 import { ACTIVE_SLOTS } from './heatmap'
@@ -130,6 +131,13 @@ interface Observation {
   ownTerrain: Set<string>
   cardPicks: number[]
   replayHash: string
+  /**
+   * 回放前缀的 S 段（第 57 轮加入观测）。
+   *
+   * 服务端对它有长度与条目数两条上限，客户端这边必须能在越界**之前**发现 ——
+   * 否则表现为「测试全绿、真机玩家结算被拒」，是最难定位的一类。
+   */
+  replaySkills: string
 }
 
 function sumRecord(m: unknown): number {
@@ -160,6 +168,7 @@ beforeAll(() => {
       ),
       cardPicks: r.card_picks,
       replayHash: r.replay_hash,
+      replaySkills: r.replay_skills,
     }
   })
 }, 900_000)
@@ -272,4 +281,50 @@ describe('引擎真实上报满足服务端的新边界', () => {
     }
     expect(reportFirst(bad)).toBe('')
   })
+
+  // ⚠️ 上限不在这里写死，而是读 `formula_vectors.json` 的 `replay_skills.limits`。
+  //
+  // 写死的话，改了服务端上限而客户端这边没跟着改，守卫就会在
+  // 「服务端已经不拒」的区间里报红 —— 假红；反过来则是一路绿到真机被拒。
+  // Go 侧 `TestReplaySkillsLimitsMatchContractVectors` 守着 Go 常量与这份契约一致。
+  it('全 100 关的 replay_skills 都在服务端上限内（长度与条目数）', () => {
+    const lim = (
+      vectors as unknown as {
+        replay_skills: { limits: { max_len: number; max_entries: number } }
+      }
+    ).replay_skills.limits
+    expect(lim).toBeTruthy()
+    expect(lim.max_len).toBeGreaterThan(0)
+    expect(lim.max_entries).toBeGreaterThan(0)
+
+    const tooLong: string[] = []
+    const tooMany: string[] = []
+    let maxLen = 0
+    let maxEntries = 0
+    for (const o of observations) {
+      const len = o.replaySkills.length
+      const n = o.replaySkills === '' ? 0 : o.replaySkills.split(',').length
+      if (len > maxLen) maxLen = len
+      if (n > maxEntries) maxEntries = n
+      if (len > lim.max_len) {
+        tooLong.push(`L${o.levelId}: replay_skills ${len} 字符 > 上限 ${lim.max_len}`)
+      }
+      if (n > lim.max_entries) {
+        tooMany.push(`L${o.levelId}: replay_skills ${n} 条 > 上限 ${lim.max_entries}`)
+      }
+      // 形状：每条必须是 5 段非负整数，段内不能有空白
+      for (const seg of o.replaySkills.split(',').filter((s) => s !== '')) {
+        if (!/^\d+:\d+:\d+:\d+:\d+$/.test(seg)) {
+          tooMany.push(`L${o.levelId}: 段形状不合法 ${JSON.stringify(seg)}`)
+        }
+      }
+    }
+    console.log(
+      `  PARITY replay_skills 实测 maxLen=${maxLen} maxEntries=${maxEntries} ` +
+        `(上限 ${lim.max_len} / ${lim.max_entries})`,
+    )
+    expect(reportFirst(tooLong)).toBe('')
+    expect(reportFirst(tooMany)).toBe('')
+  })
+
 })
