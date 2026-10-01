@@ -145,12 +145,8 @@ fn body_str(body: &Value, keys: &[&str]) -> Option<String> {
 }
 
 /// LIKE/ILIKE 通配符转义（配合 ESCAPE '\\' 使用），防关键词注入通配扫描。
-pub fn like_escape(input: &str) -> String {
-    input
-        .replace('\\', "\\\\")
-        .replace('%', "\\%")
-        .replace('_', "\\_")
-}
+// 轮95：与 shared::db::escape_like 逐字重复，统一到 canonical 实现（re-export 保持调用点不变）。
+pub use shared::db::escape_like as like_escape;
 
 // ══════════════════════════════════════════════════════════════════
 // base64（纯逻辑，无新增依赖）
