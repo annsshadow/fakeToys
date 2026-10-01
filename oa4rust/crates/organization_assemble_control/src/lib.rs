@@ -3812,7 +3812,9 @@ pub async fn personcard_createQR_cardId(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let qr_code = format!("https://api.example.com/personcard/qr/{}", card_id);
+    // QR 图像渲染未实现：落自描述校验 payload（此前误写 api.example.com 占位
+    // 假域名——外部不可解析的 URL 会被当真实数据消费）。
+    let qr_code = format!("personcard:{card_id}");
     client
         .execute(
             "UPDATE x_org_person SET qr_code = $1 WHERE id = $2",
