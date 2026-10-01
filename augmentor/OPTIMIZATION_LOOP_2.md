@@ -60,6 +60,7 @@
 | B219 | **已关闭（L149）**：sample() 的比例分支 `elif config.ratio:` 用 falsy 判据——显式 ratio=0 语义是「采 0 条」，但 0 被读成「未设置」直接落 else 采全量（与 L144 max_items、L147 导出 max_items 同族，本处是 ratio 位） | 判据改 `is not None`（1 行替换 + 2 行注释，插入点在被历史行引用的 242/243 之下，棘轮不受扰）；补 1 条回归（ratio=0⇒0 条；对照 None⇒全量），改前红/改后绿 | S |
 | B220 | **已关闭（L150）**：_deduplicate 的 threshold 形参从不被读——`MergeConfig.dedup_threshold` 文档承诺「去重阈值」、auto_config 按重复率逐条推荐数值并写理由（「上调/下调去重阈值」），但任何取值结果都相同（死旋钮，全仓 0 消费点） | threshold 分档消费：≥ 0.9 只删 instruction 完全相同（原默认行为，保守档），< 0.9 追加宽松键（大小写折叠 + 全空白删除）把近似重复一并删；字段注释与 docstring 同步改写；宽松键归一化首版用单空格 join（多 token 折叠回一个空格、与无空格形态仍不等，测试当场抓出），改全空白删除。auto_config 的推荐数值（0.85–0.98 区间）自此真有其效：高重复率→0.98 保守档、低重复率→0.85 宽松档，方向与其既有理由文字一致，零改动。补 2 条回归（宽松/保守档对照 + merge 层配置真消费），改前红 2 failed/改后绿 | M |
 | B221 | **已关闭（L151，收口第一本账 A125）**：两个组件构造器的阈值判据各缺一半——Deduplicator 的 `threshold < 0 or threshold > 1` 对 NaN 双假放行（去重整条静默零动作）、对 True/False 读成 1.0/0.0（False 实测误删 2 条真数据）、对 None/非数值延后到比较处炸 TypeError；QualityScorer 七档坏值（None/字符串/NaN/bool/越界）全放行、判负迟到 score()。配置层（DedupConfig/QualityConfig）L76 起就拒，组件层 15 轮未收 | 两组件阈值统一接 `require_ratio`（界与配置侧共引 `DEDUP_THRESHOLD_RANGE` / QUALITY_THRESHOLD_RANGE，A77 同式）+ None 显式拒；Deduplicator 仍抛 DedupError 且文案不带键名（消费侧公开契约由 L76 钉子钉住）。L76 两条「洞本体」钉子按 docstring 红字约定翻转（改前红 11 / 改后绿），新增 QualityScorer 阈值守卫 11 例 | M |
+| B222 | **已关闭（L152，收口第一本账 A46①）**：`create_stream_processor(processor_func, chunk_size=1000)` 的 `chunk_size` 形参声明了从不被读——工厂闭包逐条处理、无状态，块边界无任何可观测后果，「设了没生效」是静默的，且全仓 0 调用点 | 删除形参（结构性填不了⇒删，不发明语义）；补签名守卫（断言形参不在）；更新钉死该形参的既有调用。A46②（StreamConfig 两字段断线，产品内 0 使用者）留档后续轮 | S |
 
 
 
@@ -847,3 +848,24 @@
   296→293 / 1640→1643，逐格归因），A184 棘轮原地绿。
 - 全量门禁：`7403 passed / 3 skipped / exit 0`（L150 的 7392 + 11 新守卫，无回归）。
   **B221 关闭，第一本账 A125 收口**。
+
+
+### L152（2026-10-01）— B222 立项 + 关闭：A46① 收口（create_stream_processor 死形参删除）
+
+- **真缺口（静默死面）**：`create_stream_processor(processor_func, chunk_size=1000)` 的
+  `chunk_size` 形参声明后从不被读——工厂闭包 `stream_process(items)` 逐条调用
+  `processor_func`、无状态，块边界在结构上没有任何可观测后果（L35 记档的 A46①，
+  全仓 0 调用点，L35 给 `StreamReader` 接的 `require_count` 判据也够不到这一层）。
+- **修法拍板**：判据家族先例（L35「修法要么读签名默认、要么入口拒 None」与 L36
+  「删字段/报错」）里，唯一不发明行为的选择是**删除死形参**——把它接上「真读」
+  需要给无状态逐条处理造一个块边界语义，属新特性，超「一轮一类」边界。
+  签名改 `create_stream_processor(processor_func)`，docstring 就地记 A46① 收口。
+- **守卫**：新增 `test_dead_chunk_size_param_is_gone`（`inspect.signature` 断言
+  形参不在——死形参回来即红）；既有钉死该形参的调用（`chunk_size=10`）更新为无参
+  （改前该用例红、改后绿）。
+- **行引用平移**：改动在 streaming.py 524+ 行（全部历史行引用落点 :374 之下），
+  A184/L79 棘轮原地绿。
+- **留档**：A46②（`StreamConfig.chunk_size`/`buffer_size` 从不喂 `StreamReader`，
+  产品内 0 使用者、只算 SDK 面）留后续轮；A46③（require_count 的 None）L41 已收。
+- 全量门禁：`7404 passed / 3 skipped / exit 0`（L151 的 7403 + 1 新守卫，无回归）。
+  **B222 关闭，第一本账 A46① 收口**。

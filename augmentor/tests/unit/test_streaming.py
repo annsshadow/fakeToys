@@ -439,13 +439,23 @@ class TestCreateStreamProcessor:
         def process_item(item):
             return {"processed": True, **item}
         
-        stream_process = create_stream_processor(process_item, chunk_size=10)
+        stream_process = create_stream_processor(process_item)
         
         items = [{"instruction": "问题1"}, {"instruction": "问题2"}]
         result = stream_process(items)
         
         assert len(result) == 2
         assert all(item["processed"] is True for item in result)
+    
+    def test_dead_chunk_size_param_is_gone(self):
+        """A46① 收口（L152，B222）：`create_stream_processor` 的死形参 `chunk_size` 已删。
+
+        改前它被声明却从不被读（工厂闭包逐条处理、无状态，块边界无任何可观测后果），
+        「设了没生效」是静默的。删掉后传它会 `TypeError`——钉住死形参没有回来。
+        """
+        import inspect
+        sig = inspect.signature(create_stream_processor)
+        assert "chunk_size" not in sig.parameters, "死形参 chunk_size 又回来了"
     
     def test_create_stream_processor_with_error(self):
         """测试创建带错误处理的流式处理器"""
