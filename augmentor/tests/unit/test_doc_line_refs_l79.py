@@ -462,7 +462,9 @@ MEASURED = {
     #: 引用由漂移桶搬回全绿，code_but_no_name_match 161 → **160**，line_refs 296 与
     #: file_tokens 1640 一格未动。（本注记按 A153 纪律只写裸文本行号，不套反引号，
     #: 免得记账行自己变成新 dead_line——此形此文件已复现三次。）
-    LEDGER: {"line_refs": 296, "file_tokens": 1640, "code_but_no_name_match": 160},
+    LEDGER: {"line_refs": 296, "file_tokens": 1640, "code_but_no_name_match": 157},
+    #: L150 面位移（160 → 157）：dataset_ops 的 _deduplicate 插行后，3 条历史行引用
+    #: 的被引行内容换位、退出本档。案面=产品布局变更，按「数字搬进常量」条款重钉。
 }
 
 #: 日志块标题行上「下一轮才填得出自己哈希」的占位符。精确相等 = **只许有该填的那几条**。
