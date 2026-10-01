@@ -520,16 +520,17 @@ class StreamAugmentor:
             return self.processor.process()
 
 
-def create_stream_processor(processor_func: Callable,
-                           chunk_size: int = 1000) -> Callable:
-    """创建流式处理器工厂
-    
+def create_stream_processor(processor_func: Callable) -> Callable:
+    """创建流式处理器工厂（A46① 收口，L152，B222）
+
     Args:
         processor_func: 单条数据处理函数
-        chunk_size: 分块大小
-    
+
     Returns:
         流式处理函数
+
+    原签名的 `chunk_size` 形参从未被读（工厂闭包逐条处理、无状态，
+    块边界无任何可观测后果）——「设了没生效」的死形参，按 A46 记档口径删除。
     """
     def stream_process(items: List[Dict]) -> List[Dict]:
         results = []
