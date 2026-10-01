@@ -3802,7 +3802,7 @@ pub async fn applicationdict_create(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let dup = normalized_dup_count(
         &client,
-        "SELECT COUNT(*)::bigint FROM pp_e_applicationdict WHERE \"xname\" IS NOT NULL AND LOWER(TRIM(\"xname\")) = $1 AND xapplication = $2",
+        "SELECT COUNT(*)::bigint FROM pp_e_applicationdict WHERE \"xname\" IS NOT NULL AND LOWER(TRIM(\"xname\")) = $1 AND xapplication = $2 AND deleted_at IS NULL",
         name,
         Some(application),
     )
@@ -3843,7 +3843,10 @@ pub async fn applicationdict_paging_post(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let offset = (page - 1).saturating_mul(size);
     let total: i64 = client
-        .query_one("SELECT COUNT(*)::bigint FROM pp_e_applicationdict", &[])
+        .query_one(
+            "SELECT COUNT(*)::bigint FROM pp_e_applicationdict WHERE deleted_at IS NULL",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?
         .get(0);

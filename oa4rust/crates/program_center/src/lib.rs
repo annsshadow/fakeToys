@@ -177,7 +177,7 @@ pub async fn collect_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 
     let rows = client
         .query(
-            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect ORDER BY create_time DESC",
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect ORDER BY create_time DESC WHERE deleted_at IS NULL",
             &[],
         )
         .await
@@ -4006,7 +4006,7 @@ pub async fn deploy_server_o2(
 
     let row = client
         .query_opt(
-            "SELECT id, server_url, status, creator, create_time FROM x_program_deploy_server WHERE server_type = 'o2' LIMIT 1",
+            "SELECT id, server_url, status, creator, create_time FROM x_program_deploy_server WHERE server_type = 'o2' AND deleted_at IS NULL LIMIT 1",
             &[],
         )
         .await

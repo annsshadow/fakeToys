@@ -2271,7 +2271,7 @@ pub async fn widget_list_portal_portal(
 
     let rows = client
         .query(
-            "SELECT id, name, portal_id, category, config, creator, create_time FROM x_portal_widget WHERE portal_id = $1 ORDER BY create_time DESC",
+            "SELECT id, name, portal_id, category, config, creator, create_time FROM x_portal_widget WHERE portal_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
             &[&portal],
         )
         .await
@@ -2336,7 +2336,7 @@ pub async fn widget_flag_portal_portalFlag(
 
     let row = client
         .query_opt(
-            "SELECT id, name, portal_id, category, config, creator, create_time FROM x_portal_widget WHERE flag = $1 AND portal_id = $2 LIMIT 1",
+            "SELECT id, name, portal_id, category, config, creator, create_time FROM x_portal_widget WHERE flag = $1 AND portal_id = $2 AND deleted_at IS NULL LIMIT 1",
             &[&flag, &portal_flag],
         )
         .await
@@ -2395,7 +2395,7 @@ pub async fn widget_flag_portal_portalFlag_mobile(
 
     let row = client
         .query_opt(
-            "SELECT id, name, portal_id, mobile_config, creator, create_time FROM x_portal_widget WHERE flag = $1 AND portal_id = $2 LIMIT 1",
+            "SELECT id, name, portal_id, mobile_config, creator, create_time FROM x_portal_widget WHERE flag = $1 AND portal_id = $2 AND deleted_at IS NULL LIMIT 1",
             &[&flag, &portal_flag],
         )
         .await
@@ -2453,7 +2453,7 @@ pub async fn widget_id(
 
     let row = client
         .query_opt(
-            "SELECT id, name, portal_id, category, config, creator, create_time, update_time FROM x_portal_widget WHERE id = $1",
+            "SELECT id, name, portal_id, category, config, creator, create_time, update_time FROM x_portal_widget WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -2519,7 +2519,7 @@ pub async fn widget_id_mobile(
 
     let row = client
         .query_opt(
-            "SELECT id, name, portal_id, mobile_config, creator, create_time, update_time FROM x_portal_widget WHERE id = $1",
+            "SELECT id, name, portal_id, mobile_config, creator, create_time, update_time FROM x_portal_widget WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
