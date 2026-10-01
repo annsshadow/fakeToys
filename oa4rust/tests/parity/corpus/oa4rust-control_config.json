@@ -1,7 +1,20 @@
 {
-  "body": null,
+  "body": {
+    "count": 0,
+    "data": {
+      "allowCustomComponents": true,
+      "enabled": true,
+      "maxComponentCount": 500
+    },
+    "date": "2026-10-01 09:50:28",
+    "message": "",
+    "position": 0,
+    "size": 0,
+    "spent": 0,
+    "type": "success"
+  },
   "method": "GET",
   "name": "control_config",
   "path": "/api/component_assemble_control/get/control/config",
-  "status": 500
+  "status": 200
 }
