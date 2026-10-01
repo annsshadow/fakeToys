@@ -2893,7 +2893,7 @@ pub async fn widget_list_portal_portalId(
 
     let rows = client
         .query(
-            "SELECT id, name, portal_id, category, config, creator, create_time FROM x_portal_widget WHERE portal_id = $1 ORDER BY create_time DESC",
+            "SELECT id, name, portal_id, category, config, creator, create_time FROM x_portal_widget WHERE portal_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
             &[&portal_id],
         )
         .await
@@ -2961,7 +2961,7 @@ pub async fn widget_id(
 
     let row = client
         .query_opt(
-            "SELECT id, name, portal_id, category, config, creator, create_time, update_time FROM x_portal_widget WHERE id = $1",
+            "SELECT id, name, portal_id, category, config, creator, create_time, update_time FROM x_portal_widget WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -3343,7 +3343,7 @@ pub async fn create_widget(
 
     let existing = client
         .query_opt(
-            "SELECT id FROM x_portal_widget WHERE name = $1 AND portal_id = $2",
+            "SELECT id FROM x_portal_widget WHERE name = $1 AND portal_id = $2 AND deleted_at IS NULL",
             &[&name, &portal_id],
         )
         .await
