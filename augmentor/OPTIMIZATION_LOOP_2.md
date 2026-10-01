@@ -54,6 +54,8 @@
 | B213 | **已关闭（L143）**：`ActiveSampler.identify_underrepresented` 把 `length_distribution` 的全部键都当占比桶遍历（`.items()`），但 `_analyze_length_distribution` 会额外塞一个 `avg_length` **均值**键（绝对值，非占比）；当 `avg_length < threshold` 时会误产出伪桶 `length:avg_length`，污染 `recommend_seeds` 的 underrepresented 列表并白占一个 top_k 名额（其匹配循环因没有该 bucket 分支而永远打不中） | 长度桶改为显式只遍历 `("short","medium","long")`；`avg_length` 不再是候选。等价性 200 随机数据集 new⊆old 且排除 avg_length 全过；新增 1 条守卫（空指令 avg_length=0 < 0.1 时不产出 `length:avg_length`），改前红/改后绿 | S |
 | B214 | **已关闭（L144）**：`DatasetOperations.merge()` 的 `max_items` 截断用 falsy 判据 `if config.max_items and ...`——`max_items=0` 语义是「一条不留」，但 0 被读成「不限」而返回全量（`merge_files` 委托 `self.merge()`，同一截断点一并覆盖） | 判据改 `is not None` 并加注释钉住 falsy 回归防护；补 `test_merge_max_items_zero_keeps_none`（改前 0 返回全量，改后 0→0 条；对照 None→全量、3→3 条防修过头） | S |
 | B215 | **已关闭（L145）**：A184 引用普查的索引跳过集只有 .git/__pycache__/.pytest_cache/node_modules——测试套件自写的运行时快照目录 tests/.backups/（gitignored，门禁的 fixture 运行期写入 index.json、snap.json、opt100_progress.md）进索引：跑过一轮全量门禁后，index.json、snap.json 这类文件名有多候选，下一次门禁普查 9 条引用被翻 live→ambiguous（336 vs 钉值 327），棘轮测试红——门禁状态依赖、自伤 | 快照目录加入索引跳过集（语料面跳过集一直有、索引面漏配；L79 的 build_index 只收 .py 不受影响）；补 1 条守卫（改前红：3 条泄漏候选；改后绿）；按「动案面要重跑普查再改这里」条款逐格重钉：scratch_missing 289→302（排除快照目录候选后 13 条翻进本档，逐格归因），ambiguous 327 与其余各档原地未动；幂等性实证：普查含/不含快照目录逐格同读 | M |
+| B216 | **已关闭（L146）**：QualityTrendTracker 的趋势历史文件加载失败（JSON 损坏、`trends` 非列表）时**静默置空**历史并只告警一条；随后记录指标触发的保存会用 `open` 写模式**截断覆盖原文件**成「仅含新条目」——原始数据永久丢失、零备份；且原实现不校验 `trends` 类型，它是字符串时下一步追加直接崩 | 畸形文件先备份为带时间戳的损坏副本再置空（同秒重名自动加序号；Windows 句柄被占用挡掉 rename 时自动退化成复制式备份）；两条备份路径全断才置禁写标记、保存跳过（原文件逐字保留、内存历史不丢）；`trends` 非列表改抛领域异常 DataFormatError（对齐裸内置异常 raise 守卫）；新增损坏防护测试类 3 条，改前红 3 failed（旧版文件沙盒实证）/ 改后绿 | M |
+
 
 ## 循环日志
 
@@ -721,3 +723,23 @@
 - 全量门禁：`7384 passed / 3 skipped / exit 0`（原套件 7383 + 1 新守卫，无回归；
   首跑 1 红为性能测时用例在负载下的 flake——单跑 4/4 两次全绿、复跑全量绿，
   非产品回归）。**B215 关闭**。
+
+
+### L146（2026-10-01）— B216 立项 + 关闭：quality_trend 损坏文件被静默截断 = 历史数据永久丢失
+
+- **真缺陷（静默数据丢失）**：趋势历史文件加载失败（JSON 损坏、`trends` 不是列表）时，
+  加载器只打一条告警就把历史置空；随后任何一次记录指标触发的保存都会以写模式打开
+  原文件、**截断**成「仅含这条新条目」——用户对 JSON 手改错一行、或存储坏一块，
+  全部历史质量趋势数据永久丢失、无备份、不可恢复。原实现还有一处连带缺陷：
+  加载结果不做类型校验，`trends` 是字符串时下一步 `append` 直接 AttributeError。
+- **修法**：畸形文件先备份为带时间戳的损坏副本再置空（同秒重名自动加序号，
+  避免覆盖更早的副本；Windows 上句柄被占用会挡掉 rename——集成门禁实测
+  WinError 32——故退化成复制式备份，原文件留在原地、后续保存可写新文件）；
+  两条备份路径全断才置禁写标记，保存直接跳过、原文件逐字保留，内存历史不丢
+  只是不落盘；`trends` 非列表改抛领域异常 DataFormatError（对齐「不得再出现
+  裸内置异常 raise」守卫）；测试 3 用 monkeypatch 双阻塞（rename + 复制源）做到平台无关。
+- **守卫**：新增损坏防护测试类 3 条（损坏 JSON 备份+新文件干净 / 非列表备份 /
+  不可备份时原文件保留），改前红 3 failed（旧版文件沙盒实证）、改后绿
+  （quality_trend 16/16）。
+- 全量门禁：`7387 passed / 3 skipped / exit 0`（L145 的 7384 + 3 新守卫，无回归）。
+  **B216 关闭**。
