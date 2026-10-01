@@ -189,6 +189,13 @@ class DatasetOperations:
                 logger.info(f"加载 {file_path}: {len(data)} 条数据")
         
         merged = self.merge(datasets, config)
+        total_input = sum(len(d) for d in datasets)
+        # 去重删除与 max_items 截断分开报（旧实现混成一个数，L148，B218）
+        removed_duplicates = 0
+        if config and config.deduplicate:
+            flat = [item for dataset in datasets for item in dataset]
+            removed_duplicates = total_input - len(self._deduplicate(flat, config.dedup_threshold))
+        truncated_by_max_items = total_input - removed_duplicates - len(merged)
         
         # 保存结果
         output = Path(output_path)
@@ -199,9 +206,10 @@ class DatasetOperations:
         return {
             "input_files": len(file_paths),
             "output_file": output_path,
-            "total_input": sum(len(d) for d in datasets),
+            "total_input": total_input,
             "total_output": len(merged),
-            "removed_duplicates": sum(len(d) for d in datasets) - len(merged)
+            "removed_duplicates": removed_duplicates,
+            "truncated_by_max_items": truncated_by_max_items
         }
     
     def _deduplicate(self, items: List[Dict], threshold: float = 0.9) -> List[Dict]:
