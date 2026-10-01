@@ -163,8 +163,9 @@ class EnhancedExporter:
             # 其它调用方的随机性（`cli/commands/export.py` 里同一个坑已修过）。
             random.Random(options.seed).shuffle(processed)
         
-        # 限制数量
-        if options.max_items and options.max_items > 0:
+        # 限制数量（`is not None` 而非 falsy：max_items=0 语义是「一条不导」，
+        # 写成 `if options.max_items` 会把 0 读成「不限」而导全量；负数仍读「不限」维持旧行为）
+        if options.max_items is not None and options.max_items >= 0:
             processed = processed[:options.max_items]
         
         # 筛选字段
