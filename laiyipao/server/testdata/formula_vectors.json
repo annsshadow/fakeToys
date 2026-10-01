@@ -185,6 +185,28 @@
         "skills": [],
         "expected": ""
       }
-    ]
+    ],
+    "limits": {
+      "_comment": "replay_skills 的长度/条目数上限（第 57 轮）。两处必须一致：Go 的 domain.ReplaySkillsMaxLen / ReplaySkillsMaxEntries，以及 TS 侧 parity 测试读这里的值。measured_* 是 100 关全扫描 + 槽位递增扫描的**实测**结果，不是估计。max_entries 必须 >= BaseSkillSlots(5) + extra_slot 节点数(8) = 13，由 Go 的 TestReplaySkillsEntryCapCoversMaxPossibleSlots 守着。",
+      "max_len": 1024,
+      "max_entries": 20,
+      "measured": {
+        "_comment": "客户端真实玩家构筑（ACTIVE_SLOTS = 4）扫 100 关：最长 51 字符 / 4 条。按槽位数递增实测：4 条→51、5 条→64、10 条→130、12 条→160、20 条→280、21 条→293。max_len=1024 远大于条目上限处的 280，所以长度校验**永远不会先于条目数触发** —— 两条边界分开写是为了让「塞了太多条」与「单条离谱地长」能分开报错，而不是为了让长度成为主要闸门。",
+        "player_max_len_level1": 50,
+        "player_max_len_level99": 51,
+        "_levels_note": "两档都记：客户端 parity 扫描（settle_bounds_parity.test.ts）的 buildSnapshot 用 level 缺省即 1，实测 50；把全部技能顶到 level 99（底伤最大）实测 51。上限校验要用更大的那个，所以取 51。",
+        "player_max_entries": 4,
+        "at_entry_cap_len": 280,
+        "worst_single_entry_len": 13,
+        "slots_vs_len": {
+          "4": 51,
+          "5": 64,
+          "10": 130,
+          "12": 160,
+          "20": 280,
+          "21": 293
+        }
+      }
+    }
   }
 }

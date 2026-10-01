@@ -82,6 +82,23 @@ type ConsistencyVectors struct {
 			} `json:"skills"`
 			Expected string `json:"expected"`
 		} `json:"cases"`
+		// Limits 是上报边界（第 57 轮）。
+		//
+		// 为什么上限也要进契约：它有两个消费者 —— Go 的 ValidateSettle 按它拒，
+		// TS 侧的 parity 测试按它断言客户端产物不越界。两份漂移就会出现
+		// 「客户端全绿但真实玩家被拒」。
+		Limits struct {
+			MaxLen     int64 `json:"max_len"`
+			MaxEntries int64 `json:"max_entries"`
+			Measured   struct {
+				// 两档都记：parity 扫描用 level 1，顶满等级用 level 99。
+				// 上限校验按较大的一档判断。
+				PlayerMaxLenLevel1  int64 `json:"player_max_len_level1"`
+				PlayerMaxLenLevel99 int64 `json:"player_max_len_level99"`
+				PlayerMaxEntries    int64 `json:"player_max_entries"`
+				AtEntryCapLen       int64 `json:"at_entry_cap_len"`
+			} `json:"measured"`
+		} `json:"limits"`
 	} `json:"replay_skills"`
 	Levelgen struct {
 		Levels          int `json:"levels"`

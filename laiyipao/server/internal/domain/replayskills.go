@@ -115,14 +115,37 @@ func BuildReplaySkillsSegment(
 
 // ReplaySkillsMaxLen 是 `replay_skills` 的长度上限。
 //
-// 取值依据：一个 S 段最多 `MaxActiveSlots + 余量` 条，每条形如
-// `slot:skillId:baseDamage:applyStacks:heatCost`，其中底伤是 6 位数级别，
-// 单条不超过 40 字符。20 条即 800 字符。留到 1024 是为了让
-// 「条数超了」与「内容超长」这两个问题能分开报。
+// ## 这个值不是拍出来的（第 57 轮改成实测）
+//
+// 客户端真实玩家构筑（`ACTIVE_SLOTS = 4`，全部技能等级 99 即底伤最大）
+// 扫 100 关实测：**最长 51 字符 / 4 条**。按槽位数递增实测：
+//
+//	槽位 4 → 51 字符    槽位 5 → 64    槽位 10 → 130
+//	槽位 12 → 160      槽位 20 → 280  槽位 21 → 293（刚超条目上限）
+//
+// 最长单条实测 13 字符（`0:10:188:1:22`）。
+//
+// ⚠️ 注意：**在条目上限（20 条）处长度只有 280**，远小于 1024。
+// 也就是说长度校验**永远不会先于条目数校验触发** —— 这是有意的：
+// 两条边界分开写，是为了让「塞了太多条」与「单条离谱地长」能分开报错，
+// 而不是为了让长度成为主要闸门。真实玩家的构筑离两个上限都有两个数量级的余量。
+//
+// 上限与 `formula_vectors.json` 的 `replay_skills.limits.max_len` 必须一致，
+// `TestReplaySkillsLimitsMatchContractVectors` 守着；TS 侧的 parity 测试读的是同一份。
 const ReplaySkillsMaxLen = 1024
 
 // ReplaySkillsMaxEntries 是条目数上限。
 //
-// 与 `MaxActiveSlots`（4，另加专精额外槽位）比，
-// 留 5 倍余量仍然足以让「多塞了几条」这类问题暴露出来。
+// ## 真实上界是 13，这个值取 20
+//
+// 槽位总数 = `BaseSkillSlots`（5）+ 专精 `extra_slot` 节点数。
+// `extra_slot` 由 `masteryLayerKinds[2][0]` 决定 —— **每个族恰好 1 个**，
+// 而族数是 8，所以实测 8 个、上界 5 + 8 = **13**。
+//
+// ⚠️ 每新增一个专精族就自动多一个额外槽位，这个上界会跟着长。
+// `TestReplaySkillsEntryCapCoversMaxPossibleSlots` 按内容派生（不查库）守着，
+// 加族到 7 个以上就会红 —— 那时候该调的是这个常量，而不是让玩家被拒。
+//
+// 取 20 而不是贴着 13，是为了给内容演进留余量；
+// 同时 20 远大于客户端实测的 4 条，「多塞了几条」这类注入仍然暴露得出来。
 const ReplaySkillsMaxEntries = 20
