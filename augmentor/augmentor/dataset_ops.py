@@ -257,7 +257,9 @@ class DatasetOperations:
         require_count("size", config.size)
         if config.size is not None:
             sample_size = min(config.size, len(items))
-        elif config.ratio:
+        # `is not None` 而非 falsy：ratio=0 语义是「采 0 条」，写成 `if config.ratio`
+        # 会把 0 读成「未设置」而采全量（L149，B219；下游 0 条由下面的短路守卫接住）
+        elif config.ratio is not None:
             sample_size = int(len(items) * config.ratio)
         else:
             sample_size = len(items)
