@@ -28,7 +28,7 @@ pub async fn get_general_control_status(
 
     let row = client
         .query_one(
-            "SELECT id, system_name, maintenance_mode, allow_registration, version FROM x_general_assemble_control_config LIMIT 1 WHERE deleted_at IS NULL",
+            "SELECT id, system_name, maintenance_mode, allow_registration, version FROM x_general_assemble_control_config WHERE deleted_at IS NULL LIMIT 1",
             &[],
         )
         .await;
@@ -87,7 +87,7 @@ pub async fn general_control_list(
         .query(
             "SELECT id, system_name, maintenance_mode, allow_registration, version, \
                     create_time::text AS create_time \
-             FROM x_general_assemble_control_config ORDER BY create_time DESC WHERE deleted_at IS NULL",
+             FROM x_general_assemble_control_config WHERE deleted_at IS NULL ORDER BY create_time DESC",
             &[],
         )
         .await
