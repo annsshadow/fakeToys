@@ -48,7 +48,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { api } from '@oa4rust/sdk'
+import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 import { confirmMsg } from '../utils/toast'
@@ -80,6 +80,7 @@ const items = ref<Item[]>([]),
   form = ref<CollectForm>({}),
   editingId = ref<string | null>(null)
 const qc = useQueryClient()
+const session = useSession()
 
 const { data } = useQuery({
   queryKey: qk,
@@ -106,7 +107,8 @@ const filtered = computed(() =>
 )
 
 function openCreate() {
-  form.value = { personId: '', title: '', url: '' }
+  // 新建默认归属当前登录人（此前需手填 person UUID，几乎不可用）。
+  form.value = { personId: session.user?.unique ?? '', title: '', url: '' }
   editingId.value = null
   showCreate.value = true
 }
