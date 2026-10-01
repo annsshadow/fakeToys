@@ -23,6 +23,7 @@ from .rag import SUPPORTED_FORMATS
 from .vector import SUPPORTED_BACKENDS
 from .validation import (is_blank_string, require_bool, require_choice,
                          require_chunk_window, require_count, require_ratio,
+                         require_ratio_list,
                          require_seconds, require_string, require_string_list)
 
 # `augmentation` / `web` 两节的取值区间。**校验器与运行时判据共用这一批常量**：
@@ -324,14 +325,18 @@ class QualityConfig:
           ——报错点离笔误隔了一整个流水线。
 
         `weights` 只判 null：形状与「和为 1」那两条判据的权威住在 `quality.QualityScorer`
-        （`len != 3` / `abs(sum - 1) > 0.01` 抛 `QualityError`），在这里再抄一遍就是
-        A77 禁止的第二份权威；剩下的洞（`weights: 'abc'` 长度恰好 3、判不过的是
-        `sum()` 的 `TypeError`）记在 A124。
+        权威改前在组件层两行手抄（`len != 3` / `abs(sum - 1) > 0.01`），在此再抄就是
+        A77 禁止的第二份权威；其洞（`weights: 'abc'` / `[-1.0, 2.0, 0.0]`）记在 A124。
+        A124 已由 L153 收口：判据搬进 validation 族（`require_ratio_list`），本层与组件层
+        共引同一份。
         """
         _reject_null_fields("quality", self)
         require_bool("quality.enabled", self.enabled)
         lo, hi = QUALITY_THRESHOLD_RANGE
         require_ratio("quality.threshold", self.threshold, minimum=lo, maximum=hi)
+        # A124 收口（L153，B223）：weights 形状判据与组件层共引同一份 require_ratio_list
+        # （改前配置层只判 null：'abc' / [-1.0, 2.0, 0.0] / [True, True, False] 加载面全放行）
+        require_ratio_list("quality.weights", self.weights)
 
 
 @dataclass

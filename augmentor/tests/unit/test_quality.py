@@ -36,6 +36,39 @@ class TestScorerInit:
         scorer = QualityScorer(weights=[0.4, 0.3, 0.3])
         assert scorer.weights == [0.4, 0.3, 0.3]
 
+    def test_rejects_string_weights(self):
+        """A124 洞①（L153，B223）：'abc' 长度恰 3，改前穿过 len 判据死在 sum() 的
+        TypeError 上（与「权重写错」无关的栈）；改后构造期即拒"""
+        with pytest.raises(ValueError, match="weights"):
+            QualityScorer(weights="abc")
+
+    def test_rejects_negative_or_over_unity_weights(self):
+        """A124 洞②：[-1.0, 2.0, 0.0] 和恰为 1.0，改前两层面静默放行——权重符号反了
+        排序整个反过来不出声；改后逐项越界即拒"""
+        with pytest.raises(ValueError):
+            QualityScorer(weights=[-1.0, 2.0, 0.0])
+
+    def test_rejects_bool_weights(self):
+        """A124 洞③：[True, True, False] 被 sum() 当 [1, 1, 0]；改后逐项点名拒 bool
+        （bool 是 int 子类，isinstance(True, int) 恒真的那一族）"""
+        with pytest.raises(ValueError, match="布尔"):
+            QualityScorer(weights=[True, True, False])
+
+    def test_rejects_nan_weight(self):
+        """NaN 过不了任何比较：改前逐项 NaN 会被和为 1 的判据静默放过"""
+        import math
+        with pytest.raises(ValueError, match="NaN"):
+            QualityScorer(weights=[math.nan, 0.5, 0.5])
+
+    def test_empty_weights_no_longer_silently_default(self):
+        """改前 `weights or 默认` 把 [] 读成「未设置」而静默回落；改后空列表即拒"""
+        with pytest.raises(ValueError, match="3 个元素"):
+            QualityScorer(weights=[])
+
+    def test_none_weights_still_fall_back_to_default(self):
+        """None = 「没传参数」，回落默认（家族惯例，require_ratio_list 短路）"""
+        assert QualityScorer(weights=None).weights == [0.3, 0.4, 0.3]
+
     def test_custom_threshold(self):
         """自定义阈值应正确设置"""
         scorer = QualityScorer(threshold=0.8)

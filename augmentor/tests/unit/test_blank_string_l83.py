@@ -69,7 +69,6 @@ STILL_UNGATED = [
     "models.<名>.base_url",
     "multilingual.default_target_lang",
     "multilingual.supported_langs",
-    "quality.weights",
     "sampler.dimensions",
     "tracker.metrics",
     "versioning.storage_dir",
@@ -81,6 +80,7 @@ STILL_UNGATED = [
 ALREADY_SAFE = [
     "export.default_format",
     "export.formats",
+    "quality.weights",  # L153 / B223 起：require_ratio_list 两面全拒（null 与坏形状都挡）
     "logging.format",
     "logging.level",
     "rag.default_format",

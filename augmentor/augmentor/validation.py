@@ -229,6 +229,55 @@ def require_ratio(name: str, value: Any,
     return value
 
 
+def require_ratio_list(name: str, value: Any,
+                       length: int = 3,
+                       minimum: float = 0.0,
+                       maximum: float = 1.0,
+                       sum_tolerance: float = 0.01) -> Optional[Any]:
+    """校验「权重列表」旋钮（A124，L153）：逐项 bool/NaN/越界 + 长度 + 和为 1±容差。
+
+    `require_ratio` 的列表形：单旋钮判一道，权重族判三件套（每项、长度、总和）。
+    改前这道判据的权威住在 `QualityScorer.__init__` 的两行手抄（只判长度与和），
+    字符串 `'abc'`（长度恰 3）死在 `sum()` 的 `TypeError` 上、`[-1.0, 2.0, 0.0]`
+    两层面静默放行（权重符号反了排序整个反过来不出声）；且配置层只判 null ⇒
+    加载面与直构面对同一个键不同判。本员把三道判据收进判据族，配置层 / 组件层 /
+    静态回放三面共引同一份（A77：一条权威只住一处）。
+
+    `None` 视为「没传参数」（家族惯例，由调用点决定回落默认或拒绝）。
+    字符串是逐字符可迭代的，必须显式挡掉（`'abc'` 的 `len` 恰好等于 3）。
+    `bool` 是 `int` 的子类（`isinstance(True, int)` 恒真），逐项点名拒。
+    """
+    if value is None:
+        return None
+    if isinstance(value, (str, bytes)) or not isinstance(value, (list, tuple)):
+        raise DataValidationError(
+            f"{name} 必须是 {length} 个元素的数值列表，当前是 {type(value).__name__}"
+        )
+    if len(value) != length:
+        raise DataValidationError(
+            f"{name} 必须是 {length} 个元素，当前 {len(value)} 个"
+        )
+    for i, w in enumerate(value):
+        if isinstance(w, bool):
+            raise DataValidationError(f"{name}[{i}] 不能是布尔，当前是 {w!r}")
+        if not isinstance(w, (int, float)):
+            raise DataValidationError(
+                f"{name}[{i}] 必须是数值，当前是 {w!r}（{type(w).__name__}）"
+            )
+        if math.isnan(w):
+            raise DataValidationError(f"{name}[{i}] 不能是 NaN")
+        if not minimum <= w <= maximum:
+            raise DataValidationError(
+                f"{name}[{i}] 必须在 {minimum} 到 {maximum} 之间，当前是 {w}"
+            )
+    total = sum(float(w) for w in value)
+    if abs(total - 1.0) > sum_tolerance:
+        raise DataValidationError(
+            f"{name} 之和必须是 1.0（容差 {sum_tolerance}），当前 {total}"
+        )
+    return value
+
+
 def require_bool(name: str, value: Any) -> Optional[bool]:
     """校验「打开 / 关掉某一节」这类**开关**旋钮，返回原值。
 
