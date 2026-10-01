@@ -562,6 +562,17 @@ export const generalApi = {
   dictList: () => mapi.get('/api/general/dict/list'),
 }
 
+// ─────────────────────────────────────────────────────────────
+// 收藏（program_center collect 族；轮89 后列表已滤软删）
+// ─────────────────────────────────────────────────────────────
+export const collectApi = {
+  /** 收藏列表（返回全员，客户端按 personId 过滤，与桌面 CollectApp 同口径）。 */
+  list: () => list(mapi.get<Record<string, unknown>[]>('/api/program_center/collect/list')),
+  /** 删除收藏（collect_delete，crud 软删）。 */
+  remove: (id: string) =>
+    mapi.delete<never>(`/api/program_center/collect/delete/${id}`, { discardResponse: true }),
+}
+
 export const apis = {
   auth: authApi,
   process: processApi,
@@ -581,6 +592,7 @@ export const apis = {
   bbs: bbsApi,
   statistics: statisticsApi,
   push: pushApi,
+  collect: collectApi,
 }
 
 export default apis

@@ -51,6 +51,9 @@ const REGISTERED_BACKEND_ROUTES: string[] = [
   '/api/bbs/assemble/control/reply/create',
   '/api/bbs/assemble/control/topic/create',
   '/api/bbs/assemble/control/forum/view/all',
+  // 我的收藏（program_center collect 族：collect_list 已滤软删、collect_delete 软删）
+  '/api/program_center/collect/list',
+  '/api/program_center/collect/delete/{id}',
   // IM 发起单聊（message_assemble_communicate，创建 single 会话）
   '/api/message/assemble/communicate/im/conversation',
   // 流程发起（processplatform designer + service_processing，桌面 ProcessWork 同源端点）

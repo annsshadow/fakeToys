@@ -8,7 +8,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { getApiBase, setApiBase } from './http'
-import { bbsApi, fileApi, messageApi, messageConversationId, processApi, statisticsApi } from './index'
+import { bbsApi, collectApi, fileApi, messageApi, messageConversationId, processApi, statisticsApi } from './index'
 
 /** 捕获 uni.request 的最小 stub（服务方法本身只关心 method/url/data/options）。 */
 function installRequestCapture() {
@@ -118,6 +118,23 @@ describe('bbsApi 主题详情/回帖/发帖（bbs_assemble_control 既有业务�
     const calls = installRequestCapture()
     await bbsApi.forumList()
     expect(calls[0]).toEqual({ method: 'GET', url: '/api/bbs/assemble/control/forum/view/all' })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+})
+
+describe('collectApi 我的收藏（program_center collect 族）', () => {
+  it('list 走 GET collect/list，remove 走 DELETE collect/delete/{id}', async () => {
+    const calls = installRequestCapture()
+    await collectApi.list()
+    await collectApi.remove('c-1')
+    expect(calls[0]).toEqual({ method: 'GET', url: '/api/program_center/collect/list' })
+    expect(calls[1]).toEqual({
+      method: 'DELETE',
+      url: '/api/program_center/collect/delete/c-1',
+    })
   })
 
   afterEach(() => {
