@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 class MergeConfig:
     """合并配置"""
     deduplicate: bool = True  # 合并时是否去重
-    dedup_threshold: float = 0.9  # 去重阈值
+    dedup_threshold: float = 0.9  # 去重阈值（< 0.9 启用宽松键：大小写折叠 + 空白归一并删近似重复，L150）
     preserve_order: bool = True  # 保持原始顺序
     max_items: Optional[int] = None  # 最大保留条数
 
@@ -213,16 +213,23 @@ class DatasetOperations:
         }
     
     def _deduplicate(self, items: List[Dict], threshold: float = 0.9) -> List[Dict]:
-        """简单的基于哈希的去重
+        """基于哈希的去重，threshold 分档近似相似度口径（L150，B220）
+        
+        改前 threshold 形参从不被读（文档承诺「去重阈值」实为死旋钮，auto_config
+        逐条推荐的数值全部空转）：
+        - threshold >= 0.9：只删 instruction 完全相同（原默认行为，保守）
+        - threshold <  0.9：追加宽松键（大小写折叠 + 空白归一），近似重复一并删
         
         Args:
             items: 数据列表
-            threshold: 阈值（此处未使用，保持接口一致）
+            threshold: 去重阈值（< 0.9 启用宽松键档）
         
         Returns:
             去重后的数据列表
         """
+        loose = threshold < 0.9
         seen_hashes = set()
+        seen_loose = set()
         unique_items = []
         
         for item in items:
@@ -230,9 +237,15 @@ class DatasetOperations:
             text = item.get("instruction", "")
             item_hash = hashlib.md5(text.encode('utf-8')).hexdigest()
             
-            if item_hash not in seen_hashes:
-                seen_hashes.add(item_hash)
-                unique_items.append(item)
+            if item_hash in seen_hashes:
+                continue
+            if loose:
+                loose_hash = hashlib.md5("".join(text.casefold().split()).encode('utf-8')).hexdigest()
+                if loose_hash in seen_loose:
+                    continue
+                seen_loose.add(loose_hash)
+            seen_hashes.add(item_hash)
+            unique_items.append(item)
         
         return unique_items
     
