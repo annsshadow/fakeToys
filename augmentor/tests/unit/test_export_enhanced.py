@@ -384,6 +384,18 @@ class TestExportEnhancedExtended:
         result = exporter.export(sample_dataset, str(output_path), options)
         assert result["item_count"] == 2
 
+    def test_export_with_max_items_zero_exports_nothing(self, sample_dataset, tmp_path):
+        """max_items=0 语义是「一条不导」；改前 `if options.max_items` 把 0 读成「不限」而导全量（L147，B217）"""
+        exporter = EnhancedExporter()
+        result = exporter.export(sample_dataset, str(tmp_path / "zero.json"),
+                                 ExportOptions(max_items=0))
+        assert result["item_count"] == 0, f"max_items=0 应导 0 条，实际 {result['item_count']} 条"
+        # 对照：None（未设置）导全量、负数按旧行为读「不限」（防修过头）
+        assert exporter.export(sample_dataset, str(tmp_path / "none.json"),
+                               ExportOptions(max_items=None))["item_count"] == 3
+        assert exporter.export(sample_dataset, str(tmp_path / "neg.json"),
+                               ExportOptions(max_items=-1))["item_count"] == 3
+
     def test_export_with_shuffle(self, sample_dataset, tmp_path):
         """导出时打乱顺序：同种子可复现，且不污染进程级 RNG
 

@@ -55,6 +55,7 @@
 | B214 | **已关闭（L144）**：`DatasetOperations.merge()` 的 `max_items` 截断用 falsy 判据 `if config.max_items and ...`——`max_items=0` 语义是「一条不留」，但 0 被读成「不限」而返回全量（`merge_files` 委托 `self.merge()`，同一截断点一并覆盖） | 判据改 `is not None` 并加注释钉住 falsy 回归防护；补 `test_merge_max_items_zero_keeps_none`（改前 0 返回全量，改后 0→0 条；对照 None→全量、3→3 条防修过头） | S |
 | B215 | **已关闭（L145）**：A184 引用普查的索引跳过集只有 .git/__pycache__/.pytest_cache/node_modules——测试套件自写的运行时快照目录 tests/.backups/（gitignored，门禁的 fixture 运行期写入 index.json、snap.json、opt100_progress.md）进索引：跑过一轮全量门禁后，index.json、snap.json 这类文件名有多候选，下一次门禁普查 9 条引用被翻 live→ambiguous（336 vs 钉值 327），棘轮测试红——门禁状态依赖、自伤 | 快照目录加入索引跳过集（语料面跳过集一直有、索引面漏配；L79 的 build_index 只收 .py 不受影响）；补 1 条守卫（改前红：3 条泄漏候选；改后绿）；按「动案面要重跑普查再改这里」条款逐格重钉：scratch_missing 289→302（排除快照目录候选后 13 条翻进本档，逐格归因），ambiguous 327 与其余各档原地未动；幂等性实证：普查含/不含快照目录逐格同读 | M |
 | B216 | **已关闭（L146）**：QualityTrendTracker 的趋势历史文件加载失败（JSON 损坏、`trends` 非列表）时**静默置空**历史并只告警一条；随后记录指标触发的保存会用 `open` 写模式**截断覆盖原文件**成「仅含新条目」——原始数据永久丢失、零备份；且原实现不校验 `trends` 类型，它是字符串时下一步追加直接崩 | 畸形文件先备份为带时间戳的损坏副本再置空（同秒重名自动加序号；Windows 句柄被占用挡掉 rename 时自动退化成复制式备份）；两条备份路径全断才置禁写标记、保存跳过（原文件逐字保留、内存历史不丢）；`trends` 非列表改抛领域异常 DataFormatError（对齐裸内置异常 raise 守卫）；新增损坏防护测试类 3 条，改前红 3 failed（旧版文件沙盒实证）/ 改后绿 | M |
+| B217 | **已关闭（L147）**：增强导出器的条数限制分支写成 falsy 判据——max_items=0 语义是「一条不导」，但 0 被读成「不限」而导全量（与 L144 的 merge() 缺陷同族，全仓漏网的最后一处） | 判据改 `is not None` 加 `>= 0`（负数仍读「不限」维持旧行为，防修过头）；补 1 条回归（0→0 条；对照 None→全量、负数→全量），改前红（实测导了 3 条）/ 改后绿 | S |
 
 
 ## 循环日志
@@ -743,3 +744,18 @@
   （quality_trend 16/16）。
 - 全量门禁：`7387 passed / 3 skipped / exit 0`（L145 的 7384 + 3 新守卫，无回归）。
   **B216 关闭**。
+
+
+### L147（2026-10-01）— B217 立项 + 关闭：导出器 max_items=0 被 falsy 判据读成「不限」（L144 同族漏网点）
+
+- **真缺陷（falsy 假零，全仓最后一处）**：增强导出器 `EnhancedExporter` 的条数限制分支写的是
+  `if options.max_items and options.max_items > 0`——Python falsy 语义下 `max_items=0` 直接
+  短路，**「一条不导」被当成「不限条数」而导全量**。与 L144 修掉的 merge() 缺陷同形
+  同族：当轮只修了 dataset_ops 那处，本文件的同族点漏网。
+- **修法**：判据改 `if options.max_items is not None and options.max_items >= 0`，
+  注释钉住 falsy 回归防护；负数仍读「不限」（维持旧行为，防修过头）。
+- **回归护栏**：`test_export_with_max_items_zero_exports_nothing`——max_items=0 ⇒ 0 条；
+  同用例对照 None ⇒ 全量（3 条）、负数 ⇒ 全量（3 条）。改前红（旧代码实测 0 条断言失败、
+  实际导了 3 条）、改后绿（export_enhanced 45/45）。
+- 全量门禁：`7388 passed / 3 skipped / exit 0`（L146 的 7387 + 1 新守卫，无回归）。
+  **B217 关闭**。
