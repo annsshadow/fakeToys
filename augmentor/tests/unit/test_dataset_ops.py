@@ -402,6 +402,27 @@ class TestDatasetOpsExtended:
         assert output.exists()
         assert result["total_input"] == 6
 
+    def test_merge_files_reports_dedup_and_truncation_separately(self, tmp_path):
+        """removed_duplicates 只记去重删除，max_items 截断单独记（改前两数混报：L148，B218）"""
+        ops = DatasetOperations()
+        a = [{"instruction": f"q{i}"} for i in range(4)]
+        b = [a[0], a[1], {"instruction": "q4"}, {"instruction": "q5"}]  # 2 条重复
+        fa, fb, out = tmp_path / "a.json", tmp_path / "b.json", tmp_path / "out.json"
+        fa.write_text(json.dumps(a), encoding="utf-8")
+        fb.write_text(json.dumps(b), encoding="utf-8")
+        r = ops.merge_files([str(fa), str(fb)], str(out),
+                            MergeConfig(deduplicate=True, max_items=3))
+        assert r["total_input"] == 8
+        assert r["total_output"] == 3
+        assert r["removed_duplicates"] == 2, "应只记去重删除数（改前混入截断数会报 5）"
+        assert r["truncated_by_max_items"] == 3, "去重后 6 条截到 3 条 ⇒ 截掉 3 条"
+        # 对照：不做去重、不截断时两数皆为 0（显式关去重，避开默认配置）
+        r2 = ops.merge_files([str(fa), str(fb)], str(tmp_path / "o2.json"),
+                            MergeConfig(deduplicate=False, max_items=None))
+        assert r2["removed_duplicates"] == 0
+        assert r2["truncated_by_max_items"] == 0
+        assert r2["total_output"] == 8
+
     def test_deduplicate_empty(self):
         """空列表去重"""
         ops = DatasetOperations()
