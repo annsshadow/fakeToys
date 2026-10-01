@@ -270,7 +270,53 @@ class ConfigValidator:
         "multimodal.enabled": {"type": bool},
         "multimodal.image_extensions": {"type": list, "items": str},
         "multimodal.audio_extensions": {"type": list, "items": str},
-    }
+        # A140 余 11 节 29 键的规格（L154 / B224）：这 11 节此前**一条规格行都没有**
+        # （静态面 0 反馈，与运行时 `__post_init__` 缺席同病；A140 现量房在
+        # `Temp/l82q/ungated_census.json`，11 节名单与键数 29 都是那里推导的）。
+        # 形状键（type / items / non_empty / min）与 `web` / `export` 各行同语法；四个
+        # int 键的 `min: 1` 与运行时 `require_count(minimum=1)` 同档，`tests/unit/
+        # test_config_gates_l154.py` 钉数值相等 —— 这里没有可共引的既有常数，1 住在
+        # 调用点字面量里，本表与运行时同档，不另立第二产地。
+        "context": {"type": dict},
+        "context.enabled": {"type": bool},
+        "context.num_turns": {"type": int, "min": 1},
+        "versioning": {"type": dict},
+        "versioning.enabled": {"type": bool},
+        "versioning.storage_dir": {"type": str, "non_empty": True},
+        "versioning.auto_snapshot": {"type": bool},
+        "sampler": {"type": dict},
+        "sampler.enabled": {"type": bool},
+        "sampler.dimensions": {"type": list, "items": str},
+        "expander": {"type": dict},
+        "expander.enabled": {"type": bool},
+        "expander.strategies": {"type": list, "items": str},
+        "tracker": {"type": dict},
+        "tracker.enabled": {"type": bool},
+        "tracker.metrics": {"type": list, "items": str},
+        "visualization": {"type": dict},
+        "visualization.enabled": {"type": bool},
+        "visualization.types": {"type": list, "items": str},
+        "multilingual": {"type": dict},
+        "multilingual.enabled": {"type": bool},
+        "multilingual.default_target_lang": {"type": str, "non_empty": True},
+        "multilingual.supported_langs": {"type": list, "items": str},
+        "multilingual.translate_batch_size": {"type": int, "min": 1},
+        "evaluation": {"type": dict},
+        "evaluation.enabled": {"type": bool},
+        "evaluation.metrics": {"type": list, "items": str},
+        "evaluation.reference_field": {"type": str, "non_empty": True},
+        "benchmark": {"type": dict},
+        "benchmark.enabled": {"type": bool},
+        "benchmark.baseline_file": {"type": str, "non_empty": True},
+        "benchmark.metrics": {"type": list, "items": str},
+        "active_learning": {"type": dict},
+        "active_learning.enabled": {"type": bool},
+        "active_learning.strategy": {"type": str, "non_empty": True},
+        "active_learning.batch_size": {"type": int, "min": 1},
+        "active_learning.max_iterations": {"type": int, "min": 1},
+        "frameworks": {"type": dict},
+        "frameworks.enabled": {"type": bool},
+        "frameworks.frameworks": {"type": list, "items": str},    }
 
     # `models.<名字>.<键>` 的规格（L72 / A113，同时补掉 L71 记下的那个缺口）。
     #

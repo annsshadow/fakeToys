@@ -2372,7 +2372,7 @@ help 文案变化不进任何断言。**仓外脚本未量**（与 A89 同一条
 自己 `basicConfig(level=INFO, format="…%(name)s…")`，CLI 进程却是 root 无 handler、走
 `logging.lastResort`（WARNING + `%(message)s` 裸消息落 stderr）。同一个默认值不可能同时等于
 两个面，所以 `load_config` 只在配置文件里**真的出现 `logging` 节**时调
-`apply_logging_config(config.logging, written=set(raw_logging))`（`augmentor/config.py:1014`），
+`apply_logging_config(config.logging, written=set(raw_logging))`（`augmentor/config.py` 原 1014 行，L154 插入后降级名锚），
 `written` 里没出现的键一律不动（`logging_setup.py:132` 起）。默认三档按 CLI 今天的形状写
 （`WARNING` / 空串 / `%(message)s`），实测（Temp `l57/probe1.txt` P0/P1）装上同档 handler
 之后同一条 WARNING 的 stderr **逐字节不变**。
@@ -2427,7 +2427,7 @@ SDK 直构拒收那条）。
 §3.29 末尾的勘误（「本轮答不了」已被本轮答完，原文一字未删）。
 
 **新立四条，都不在本轮动手**：A102 = `logging` 节在 API 面生效**没有行为面用例**
-（`apply_logging_config` 的非测试调用点只有 `augmentor/config.py:1014` 一处，`api/` 与 `cli.py` 各 0 命中；
+（`apply_logging_config` 的非测试调用点只有 `augmentor/config.py` 原 1014 行，L154 插入后降级名锚、一处，`api/` 与 `cli.py` 各 0 命中；
 `tests/` 里 TestClient 与 logging 同屏的只有 `test_api_dataset_system_tools.py`）；
 A103 = `logging.file` 打不开时**整条配置被拒**（`rc=1`，集成用例 `file: nope_dir/x.log` 实测），
 「配错一个路径就连模型名都用不了」这一刀切口径未拍；A104 = `_open_file_handler`（`augmentor/logging_setup.py`）用裸 `logging.FileHandler`，**无轮转、无大小上限** ⇒ 长跑进程

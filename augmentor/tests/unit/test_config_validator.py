@@ -722,10 +722,14 @@ class TestWaitBudgetKnobSurface:
         本条对它的期待**不是**「静态面也判了这个坏值」——写面 `POST /api/config` 根本不
         写 `web` 节，那一半的行为由 `test_upload_ceiling_l87.py` 单独钉（点名漏网，
         A151）。本条在这里只判一件事：这条规格不许对 `true` 网开一面。
+        L154 起 21：新增的四条是 A140 余 11 节里的 int 键 `context.num_turns` /
+        `multilingual.translate_batch_size` / `active_learning.batch_size` /
+        `active_learning.max_iterations`（`min: 1` 与运行时 `require_count(minimum=1)`
+        同档，同「承诺兑现」口径）。
         """
         numeric = [p for p, s in ConfigValidator.KNOWN_FIELDS.items()
                    if s.get("type") in (int, float)]
-        assert len(numeric) == 17, "新增数值规格键会自动进入本断言"
+        assert len(numeric) == 21, "新增数值规格键会自动进入本断言"
         for path in numeric:
             hits = [m for p_, m in self._errors_at(path) if p_ == path]
             assert hits and "类型错误" in hits[0], (path, hits)
@@ -737,10 +741,12 @@ class TestWaitBudgetKnobSurface:
         `multimodal.enabled`。本条在 A118 收口里是**反向档**（不许收紧过头），
         与上一条同批改，因为同一个 `__post_init__` 里 `require_bool` 与
         `require_choice` 挨着写，写错一侧就一侧红。
+        L154 起 19：新增的 12 条是 A140 余 11 节每节一个 `enabled`（共 11 条）
+        加 `versioning.auto_snapshot`。
         """
         paths = [p for p, s in ConfigValidator.KNOWN_FIELDS.items()
                  if s.get("type") is bool]
-        assert len(paths) == 7, "规格表里应仍有布尔开关字段"
+        assert len(paths) == 19, "规格表里应仍有布尔开关字段"
         for path in paths:
             hits = [m for p_, m in self._errors_at(path) if p_ == path]
             assert hits == [], (path, hits)
@@ -1015,16 +1021,25 @@ class TestRuntimeValidatorParity:
         `require_choice`，与整键取值是两件事。
         """
         s = ConfigValidator.KNOWN_FIELDS
+        # L154 / B224（A140 收口）：八条清单键随 `require_string_list` 判据同时进
+        # 运行时与规格表，同批扩员（L82 三条的同一口径）。
         assert {p for p, spec in s.items() if "items" in spec} == {
             "web.cors_origins", "web.data_roots", "web.rate_limit_exempt_paths",
             "export.formats", "multimodal.image_extensions",
-            "multimodal.audio_extensions"}
+            "multimodal.audio_extensions",
+            "sampler.dimensions", "expander.strategies", "tracker.metrics",
+            "visualization.types", "multilingual.supported_langs",
+            "evaluation.metrics", "benchmark.metrics", "frameworks.frameworks"}
         # `logging.format` 挂在 `non_empty` 上是 L57 的正当增长：运行时那一侧走的
         # 正是 `require_string`（空串一并拒），不是校验器独有的口味。L82 的
         # `vector.storage_dir` / `vector.collection` 与它同式。
         assert {p for p, spec in s.items() if spec.get("non_empty")} == {
             "web.host", "web.static_dir", "logging.format",
-            "vector.storage_dir", "vector.collection"}
+            "vector.storage_dir", "vector.collection",
+            # L154 / B224：A140 一片的 5 个字符串键（`require_string` 同批）
+            "versioning.storage_dir", "multilingual.default_target_lang",
+            "evaluation.reference_field", "benchmark.baseline_file",
+            "active_learning.strategy"}
         # 封闭清单键的每一条都必须有运行时判据兜着：L57 时只有 `logging.level` 一个，
         # L82 之后是三份**推导**清单（`EXPORT_FORMATS` / `RAG_FORMATS` /
         # `VECTOR_BACKENDS`），两侧共引同一个对象，所以这一桶新增三项不可能与运行时
