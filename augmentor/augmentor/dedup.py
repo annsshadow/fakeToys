@@ -8,8 +8,9 @@ from typing import List, Dict, Optional, Tuple
 from dataclasses import dataclass
 import numpy as np
 from .model_manager import model_manager
-from .validation import require_count
-from .exceptions import DedupError
+from .validation import require_count, require_ratio
+from .exceptions import DedupError, DataValidationError
+from .config import DEDUP_THRESHOLD_RANGE
 
 logger = logging.getLogger(__name__)
 
@@ -89,8 +90,14 @@ class Deduplicator:
             threshold: 相似度阈值，高于此值被视为重复
             use_faiss: 是否使用 FAISS 加速（需要安装 faiss-cpu）
         """
-        if threshold < 0 or threshold > 1:
-            raise DedupError("阈值必须在 0-1 之间")
+        # A125 收口（L151，B221）：bool / NaN / 非数值一律拒（旧判据对 NaN 双假、True/False 冒充 1.0/0.0）。仍抛 DedupError 且文案不带键名——消费侧公开契约由
+        # test_quality_dedup_gates_l76 钉住（「两边同判不等于两边同文案」），键名只出现在配置侧文案里。
+        if threshold is None:
+            raise DedupError("阈值不能为 None")
+        try:
+            require_ratio("dedup.threshold", threshold, *DEDUP_THRESHOLD_RANGE)
+        except DataValidationError as exc:
+            raise DedupError("阈值必须在 0-1 之间") from exc
         
         self.threshold = threshold
         self.use_faiss = use_faiss
