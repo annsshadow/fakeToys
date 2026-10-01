@@ -446,6 +446,32 @@ class TestDatasetOpsExtended:
         result = ops._deduplicate(items)
         assert len(result) == 1
 
+    def test_deduplicate_loose_tier_catches_case_whitespace_duplicates(self):
+        """threshold < 0.9 启用宽松键（大小写折叠 + 空白归一）：近似重复一并删；
+        0.9 档只删完全相同（L150，B220——改前 threshold 是死旋钮，任何值结果相同）"""
+        ops = DatasetOperations()
+        items = [
+            {"instruction": " 如何申请？ ", "output": "a"},
+            {"instruction": "如何申请？", "output": "b"},
+            {"instruction": "如何 申请？", "output": "c"},
+            {"instruction": "如何租房", "output": "d"},
+        ]
+        # 宽松档：前三条归一化后同一 key ⇒ 只留第一条
+        assert len(ops._deduplicate(items, 0.5)) == 2
+        # 保守档（默认 0.9）：四个原始串各不相同 ⇒ 全留
+        assert len(ops._deduplicate(items, 0.9)) == 4
+
+    def test_merge_consumes_dedup_threshold(self):
+        """MergeConfig.dedup_threshold 真被消费（改前旋钮空转：0.5 与 0.9 结果相同）"""
+        ops = DatasetOperations()
+        data = [
+            {"instruction": "  什么是QA? "},
+            {"instruction": "什么是qa?"},
+            {"instruction": "不相关"},
+        ]
+        assert len(ops.merge([data], MergeConfig(deduplicate=True, dedup_threshold=0.5))) == 2
+        assert len(ops.merge([data], MergeConfig(deduplicate=True, dedup_threshold=0.9))) == 3
+
     def test_convenience_split_dataset(self, test_data, tmp_path):
         """便捷函数 split_dataset 应写出分割文件"""
         import json as _json
