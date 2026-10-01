@@ -79,6 +79,22 @@ func isSettleRejection(err error) bool {
 		// 上界校验类（2026-09-26 补齐，此前全部误返回 500）
 		domain.ErrTooManyReactions, domain.ErrTooManyShots,
 		domain.ErrTooManyLeaked, domain.ErrInvalidField,
+		// HPLeft / slot-budget / replay_skills（第 58 轮补）。
+		//
+		// 这三个都是「用户输入被理解后拒绝」，此前一律落到兜底的 500：
+		//   - ErrHPLeftExceedsBase      结算时上报的剩余血量超过关卡初始血量
+		//   - ErrSlotBudgetExceeded     装备件数超过槽位预算（loadout 路径）
+		//   - ErrReplaySkillsMismatch   回放 S 段与构筑不符（第 56 轮加的校验）
+		//
+		// 500 的代价是具体的：客户端只能显示「服务内部错误」，
+		// 排查会滑向「服务端坏了」而不是「这个上报被拒了」，
+		// 而且它们会混进服务故障告警，把真正的故障淹掉。
+		//
+		// `TestEverySentinelErrorIsClassified` 保证这个名单不会再漏 ——
+		// 之前那份名单是硬编码的，漏一个测试照样绿。
+		domain.ErrHPLeftExceedsBase,
+		service.ErrSlotBudgetExceeded,
+		service.ErrReplaySkillsMismatch,
 	} {
 		if errors.Is(err, target) {
 			return true
