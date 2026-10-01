@@ -55,8 +55,11 @@ NS_PREFIXES = frozenset({
 # **第二本账 L114 回填（总数 +1、可读 +1，盲面不动）**：test_export_enhanced 新增一支
 # TestConversationEmptyFieldBranches 的对话式格式空字段假支参数化，桶=plain（可读）⇒
 # MEASURED_CALLS 356→357、MEASURED_READABLE 263→264，MEASURED_BLIND 93 与 L98 六档分布一字未动。
-MEASURED_CALLS = 357
-MEASURED_READABLE = 264
+#: 第二本账 L151 回填（总数 +2、可读 +2，盲面不动）：test_quality_dedup_gates_l76 新增两支
+#: QualityScorer 阈值参数化（坏值 7 档 / 合法 4 档，全字面量列表）⇒ CALLS 357→359、
+#: READABLE 264→266，BLIND 93 一格未动。
+MEASURED_CALLS = 359
+MEASURED_READABLE = 266
 MEASURED_BLIND = 93
 #: 值位含类型对象的那些档（必须全部自带 ids，否则就是本判据的违规）
 KNOWN_TYPED_SITES = frozenset({("tests/unit/test_schema_type_spec_l96.py", "test_label")})

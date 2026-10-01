@@ -59,6 +59,7 @@
 | B218 | **已关闭（L148）**：merge_files 的 `removed_duplicates` 统计把「去重删除数 + max_items 截断数」混报成一个值（`total_input - total_output`），用户读到的「去重数」在带截断的配置下虚高（实测 8 条入、去重 2、截 3：旧报 5 新报 2） | 在 merge_files 内部用既有 _deduplicate 复算去重删除数、截断数 = 去重后基数 - 输出数，两数分报（新增键 `truncated_by_max_items`，既有键语义改为只记去重）；实现刻意控制在 242 行参考点以下净增 8 行——历史文档对 dataset_ops.py:242/:243 的行引用平移后仍落在代码行（棘轮 58/58 绿），首版把统计逻辑放进 merge() 净增 15 行、把 :243 翻进空行致 A184 硬 0 红，已回退换点；补 1 条回归（去重+截断双开分报 + 无去重无截断全 0 对照），改前红/改后绿 | M |
 | B219 | **已关闭（L149）**：sample() 的比例分支 `elif config.ratio:` 用 falsy 判据——显式 ratio=0 语义是「采 0 条」，但 0 被读成「未设置」直接落 else 采全量（与 L144 max_items、L147 导出 max_items 同族，本处是 ratio 位） | 判据改 `is not None`（1 行替换 + 2 行注释，插入点在被历史行引用的 242/243 之下，棘轮不受扰）；补 1 条回归（ratio=0⇒0 条；对照 None⇒全量），改前红/改后绿 | S |
 | B220 | **已关闭（L150）**：_deduplicate 的 threshold 形参从不被读——`MergeConfig.dedup_threshold` 文档承诺「去重阈值」、auto_config 按重复率逐条推荐数值并写理由（「上调/下调去重阈值」），但任何取值结果都相同（死旋钮，全仓 0 消费点） | threshold 分档消费：≥ 0.9 只删 instruction 完全相同（原默认行为，保守档），< 0.9 追加宽松键（大小写折叠 + 全空白删除）把近似重复一并删；字段注释与 docstring 同步改写；宽松键归一化首版用单空格 join（多 token 折叠回一个空格、与无空格形态仍不等，测试当场抓出），改全空白删除。auto_config 的推荐数值（0.85–0.98 区间）自此真有其效：高重复率→0.98 保守档、低重复率→0.85 宽松档，方向与其既有理由文字一致，零改动。补 2 条回归（宽松/保守档对照 + merge 层配置真消费），改前红 2 failed/改后绿 | M |
+| B221 | **已关闭（L151，收口第一本账 A125）**：两个组件构造器的阈值判据各缺一半——Deduplicator 的 `threshold < 0 or threshold > 1` 对 NaN 双假放行（去重整条静默零动作）、对 True/False 读成 1.0/0.0（False 实测误删 2 条真数据）、对 None/非数值延后到比较处炸 TypeError；QualityScorer 七档坏值（None/字符串/NaN/bool/越界）全放行、判负迟到 score()。配置层（DedupConfig/QualityConfig）L76 起就拒，组件层 15 轮未收 | 两组件阈值统一接 `require_ratio`（界与配置侧共引 `DEDUP_THRESHOLD_RANGE` / QUALITY_THRESHOLD_RANGE，A77 同式）+ None 显式拒；Deduplicator 仍抛 DedupError 且文案不带键名（消费侧公开契约由 L76 钉子钉住）。L76 两条「洞本体」钉子按 docstring 红字约定翻转（改前红 11 / 改后绿），新增 QualityScorer 阈值守卫 11 例 | M |
 
 
 
@@ -822,3 +823,27 @@
   冗余守卫」标记为已关闭（L126 删守卫 + O(1) 重写消退出支）。
 - 全量门禁：`7392 passed / 3 skipped / exit 0`（L149 的 7390 + 2 新守卫，无回归）。
   **B220 关闭**。
+
+
+### L151（2026-10-01）— B221 立项 + 关闭：A125 收口（两组件阈值判据补全）
+
+- **真缺陷（跨两代账本的记档待收项）**：第一本账 A125（L76 立）记着两格组件层判据缺口：
+  Deduplicator 的阈值界 `threshold < 0 or threshold > 1` 对 **NaN 双假放行**——去重
+  整条静默零动作（与 retry 负 jitter 同形）；**True/False 被算术读成 1.0/0.0**，
+  False 档实测误删 2 条互不相同的真数据。QualityScorer 的 threshold **七档全放行**
+  （None/'x'/NaN/bool/越界），判负迟到 score() 的 >= 比较（None 那档直接 TypeError）。
+  配置层 L76 起就拒这些值，组件层 15 轮未收。
+- **修法（一轮一类）**：两组件构造期统一接 `require_ratio`，界与配置侧**共引同一常数**
+  （DEDUP_THRESHOLD_RANGE / QUALITY_THRESHOLD_RANGE，A77 一条界只住一处）；None 单独
+  显式拒（require_ratio 的 None = 「没传参」语义，组件默认值在签名里，显式传 None 属
+  坏值不是缺省）。Deduplicator 仍抛 DedupError 且**文案不带键名**——消费侧公开契约
+  由 L76 的钉子（「两边同判不等于两边同文案」）钉住，改抛 DataValidationError 或带键名
+  都会拆掉它。
+- **钉子翻转（L76 docstring 红字约定）**：`TestDedupGateHasABoolNanHole` 两条按收口翻转——
+  「配置拒、组件放」的同判对用例改成「两面同拒」；NaN 静默零动作用例改成构造期拒绝。
+  改前红 11（旧产品上全组 152 里 11 failed）、改后绿。
+- **行引用平移记账**：dedup.py 顶部插行使 L1 账本 3 条 dedup.py 历史行引用（:111/:626/:431）
+  落空行，按 A127/L100 先例就地降名锚；L79 的 MEASURED 三格随现量重钉（157→155 /
+  296→293 / 1640→1643，逐格归因），A184 棘轮原地绿。
+- 全量门禁：`7403 passed / 3 skipped / exit 0`（L150 的 7392 + 11 新守卫，无回归）。
+  **B221 关闭，第一本账 A125 收口**。
