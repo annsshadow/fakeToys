@@ -39,8 +39,9 @@ from augmentor.config import (DEDUP_THRESHOLD_RANGE, QUALITY_THRESHOLD_RANGE,
                               DedupConfig, QualityConfig, apply_section_update,
                               load_config)
 from augmentor.config_validator import ConfigValidator
-from augmentor.dedup import Deduplicator
+from augmentor.dedup import Deduplicator, DedupError
 from augmentor.exceptions import DataValidationError
+from augmentor.quality import QualityScorer
 from augmentor.validation import require_bool
 
 SHIPPED_YAML = pathlib.Path(__file__).resolve().parent.parent.parent / "config.yaml"
@@ -306,20 +307,41 @@ class TestDedupGateHasABoolNanHole:
 
     @pytest.mark.parametrize("value", [True, False, float("nan")])
     def test_config_side_rejects_what_the_consumer_side_still_accepts(self, value):
+        """A125 收口（L151，B221）后按红字翻转：消费侧那道界也补上 `require_ratio`，
+        这两档从「配置面拒、组件面放」变成「两面同拒」。改前该用例红（组件面放行），
+        改后绿即收口证据。"""
         with pytest.raises(DataValidationError, match="dedup.threshold"):
             DedupConfig(threshold=value)
-        Deduplicator(threshold=value)  # 不许抛：这就是 A125 的洞本身
+        with pytest.raises(DedupError):
+            Deduplicator(threshold=value)
 
-    def test_a_nan_threshold_silently_deduplicates_nothing(self):
-        """产品面读数：NaN 穿过消费侧那道界之后，去重对逐字重复的样本零动作"""
+    def test_a_nan_threshold_now_rejected_at_construction(self):
+        """A125 收口（L151，B221）：NaN 不再「穿过界后去重整条静默失效」，而是构造即拒。
+        改前该方法是 `test_a_nan_threshold_silently_deduplicates_nothing`（钉住静默零动作），
+        收口后按 L76 docstring 的红字约定翻转成构造期拒绝。"""
         items = [{"instruction": "租房合同到期怎么办"},
                  {"instruction": "租房合同到期怎么办"},
                  {"instruction": "今天天气如何"}]
+        with pytest.raises(DedupError):
+            Deduplicator(threshold=float("nan"))
         baseline = Deduplicator(threshold=0.9).deduplicate(items)
         assert baseline.removed_count == 1, "这份样本不再是「含一组真重复」，用例失效"
-        nan_result = Deduplicator(threshold=float("nan")).deduplicate(items)
-        assert nan_result.removed_count == 0
-        assert nan_result.duplicate_groups == []
+
+
+class TestQualityScorerThresholdGateClosed:
+    """A125 后半（L151，B221）：`QualityScorer` 的 threshold 原先七档全放行
+    （含 None / 'x' / NaN / bool / 越界），判负迟到 `score()` 的 >= 比较上才炸。
+    收口后构造期即按 `require_ratio` 拒绝，界与 `QualityConfig` 共引
+    `QUALITY_THRESHOLD_RANGE`（A77 同式）。"""
+
+    @pytest.mark.parametrize("value", [True, False, float("nan"), None, "x", 5.0, -1.0])
+    def test_bad_values_rejected_at_construction(self, value):
+        with pytest.raises(DataValidationError, match="quality.threshold"):
+            QualityScorer(threshold=value)
+
+    @pytest.mark.parametrize("value", [0.0, 0.5, 0.6, 1.0])
+    def test_legal_values_still_construct(self, value):
+        assert QualityScorer(threshold=value).threshold == value
 
 
 class TestTheRangesAreOneCopyOnly:

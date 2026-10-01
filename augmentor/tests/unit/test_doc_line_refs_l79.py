@@ -462,9 +462,12 @@ MEASURED = {
     #: 引用由漂移桶搬回全绿，code_but_no_name_match 161 → **160**，line_refs 296 与
     #: file_tokens 1640 一格未动。（本注记按 A153 纪律只写裸文本行号，不套反引号，
     #: 免得记账行自己变成新 dead_line——此形此文件已复现三次。）
-    LEDGER: {"line_refs": 296, "file_tokens": 1640, "code_but_no_name_match": 157},
+    LEDGER: {"line_refs": 293, "file_tokens": 1643, "code_but_no_name_match": 155},
     #: L150 面位移（160 → 157）：dataset_ops 的 _deduplicate 插行后，3 条历史行引用
     #: 的被引行内容换位、退出本档。案面=产品布局变更，按「数字搬进常量」条款重钉。
+    #: L151 面位移（157 → 155 / line_refs 296 → 293 / file_tokens 1640 → 1643）：dedup/quality
+    #: 接 require_ratio 给 dedup.py 顶部插行，账本 3 条 dedup.py 历史行引用（:111/:626/:431）
+    #: 落空行被硬 0 档抓住，按 A127 先例降名锚（行引用 −3、文件 token +3），本档净 −2。
 }
 
 #: 日志块标题行上「下一轮才填得出自己哈希」的占位符。精确相等 = **只许有该填的那几条**。
@@ -1139,7 +1142,8 @@ BACKLOG_A_MISSING = {52}
 #: （`| ~~A184~~ |`），于是两档同时 +1 ⇒ 含删除线 101 → **102**、行首结案 86 → **87**，而差值
 #: 15 一格未动 —— 这正是把两个口径**分开钉**的理由：只钉一个的话，「行首结案」与「局部划掉」
 #: 两种形状谁动了看不出来，L98 那格撞到的 84/85 位移就是这么溜过去的。
-BACKLOG_A_CLOSED = 102
+BACKLOG_A_CLOSED = 103
+#: L151 回填（102 → 103）：A125 行收口划掉 S 格（`~~S~~`），关闭数 +1。
 BACKLOG_A_CLOSED_AT_HEAD = 87
 #: Backlog B 现量：11 条竖线行 = 2 表头 + 7 条可编号 + 2 条带角标（B3① / ~~B3②~~）。
 BACKLOG_B_LINES = 11
