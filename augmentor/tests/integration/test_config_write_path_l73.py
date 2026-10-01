@@ -443,3 +443,53 @@ class TestRouteStructure:
                                         if isinstance(elt, ast.Constant)]
                 break
         assert sections == WRITABLE_SECTIONS
+
+
+class TestTheUngatedWriteThroughIsAPinnedContract:
+    """B225 处置（L155）：无判据节的写直通是冻结契约，不是可删死代码
+
+    L154 起全 20 节都有节内判据（写面棘轮 `ungated == []` 已翻），仓内再无来源
+    走到这一支。但这个函数不是 20 节的私有件：写入路径（api 路由）拿到的是
+    「任意 dataclass 节对象」才调它，没装备节内判据的用户自定义节也是合法入参。
+    删掉这一支是对外行为变更（「写直通、不抛也不吞键」的契约悄悄破了）；留它并
+    用用例钉死是更便宜的一档——本类就是那根钉子。原先测这支的行为面用例已在
+    L154 按其 docstring 明文处方退役，这里只接它的「行为面」，不碰七节写入路径。
+    """
+
+    def test_an_ungated_section_writes_through_without_rechecking(self):
+        import dataclasses
+
+        from augmentor.config import apply_section_update
+
+        @dataclasses.dataclass
+        class UngatedSection:
+            alpha: str = "a"
+            beta: int = 1
+
+        section = UngatedSection()
+        ignored = apply_section_update(
+            section, {"alpha": "x", "beta": 9, "no_such_knob": 1})
+        assert section.alpha == "x"
+        assert section.beta == 9
+        assert ignored == ["no_such_knob"]
+
+    def test_an_ungated_section_lands_values_the_gate_would_refuse(self):
+        """写直通的全部含义：不复查 ⇒ 有判据的节会拒的值在这里照落
+
+        这条钉的是「无判据支不做判决」这一档本身——若哪一轮把判据顺手接到
+        这一支（或把这支删了让异常从 setattr 漏出），本用例当场红。
+        """
+        import dataclasses
+
+        from augmentor.config import apply_section_update
+
+        @dataclasses.dataclass
+        class UngatedCounts:
+            batch_size: int = 50
+            max_iterations: int = 10
+
+        section = UngatedCounts()
+        ignored = apply_section_update(section, {"batch_size": 0, "max_iterations": -1})
+        assert ignored == []
+        assert section.batch_size == 0
+        assert section.max_iterations == -1
