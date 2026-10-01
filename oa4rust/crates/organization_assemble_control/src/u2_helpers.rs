@@ -265,10 +265,7 @@ pub async fn generic_like_search(
     let (pattern, cond) = if pinyin_mode {
         // LIKE 模式绑定值必须先转义 % _ \，防用户关键词注入通配符（shared::db::escape_like）
         (
-            format!(
-                "{}%",
-                shared::db::escape_like(&key_norm.to_lowercase())
-            ),
+            format!("{}%", shared::db::escape_like(&key_norm.to_lowercase())),
             "(LOWER(name) LIKE $1 OR COALESCE(LOWER(pinyin_initial), '') LIKE $1)".to_string(),
         )
     } else {
