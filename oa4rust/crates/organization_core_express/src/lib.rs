@@ -13,7 +13,10 @@ pub mod routes;
 pub async fn get_status(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let person_count: i64 = client
-        .query_one("SELECT COUNT(*) FROM x_org_person", &[])
+        .query_one(
+            "SELECT COUNT(*) FROM x_org_person WHERE deleted_at IS NULL",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?
         .get("count");
@@ -54,7 +57,10 @@ pub async fn sync_organization(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let synced: i64 = client
-        .query_one("SELECT COUNT(*) FROM x_org_person", &[])
+        .query_one(
+            "SELECT COUNT(*) FROM x_org_person WHERE deleted_at IS NULL",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?
         .get("count");
