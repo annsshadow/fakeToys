@@ -177,7 +177,7 @@ pub async fn collect_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 
     let rows = client
         .query(
-            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect ORDER BY create_time DESC WHERE deleted_at IS NULL",
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC",
             &[],
         )
         .await
