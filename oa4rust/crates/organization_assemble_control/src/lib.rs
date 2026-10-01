@@ -400,7 +400,7 @@ pub async fn organization_assemble_control_person_list_like(
 
     let rows = client
         .query(
-            "SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE name ILIKE $1 ORDER BY create_time DESC",
+            "SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE name ILIKE $1 AND deleted_at IS NULL ORDER BY create_time DESC",
             &[&like_pattern],
         )
         .await
@@ -2039,7 +2039,7 @@ pub async fn personcard_listgrouptypes(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time DESC", &[])
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time DESC WHERE deleted_at IS NULL", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2186,7 +2186,7 @@ pub async fn personcard_mylist(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time DESC", &[])
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time DESC WHERE deleted_at IS NULL", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3128,7 +3128,7 @@ pub async fn unitduty_list_like(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
-    let pattern = format!("%{}%", shared::db::escape_like(&name));
+    let pattern = format!("%{}%", shared::db::escape_like(name));
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE name ILIKE $1 ORDER BY create_time DESC", &[&pattern])
         .await
@@ -3523,7 +3523,7 @@ pub async fn role_list_like(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
-    let pattern = format!("%{}%", shared::db::escape_like(&name));
+    let pattern = format!("%{}%", shared::db::escape_like(name));
     let rows = client
         .query("SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE name ILIKE $1 ORDER BY create_time DESC", &[&pattern])
         .await
@@ -3624,7 +3624,7 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size(
     let limit = size.max(1);
 
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time DESC LIMIT $1 OFFSET $2 WHERE deleted_at IS NULL", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3677,7 +3677,7 @@ pub async fn personcard_listpaging_page_page_size_size(
     let limit = size.max(1);
 
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time DESC LIMIT $1 OFFSET $2 WHERE deleted_at IS NULL", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3823,7 +3823,7 @@ pub async fn personcard_createQR_cardId(
 
     let row = client
         .query_opt(
-            "SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE id = $1",
+            "SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE id = $1 AND deleted_at IS NULL",
             &[&card_id],
         )
         .await
@@ -3879,7 +3879,7 @@ pub async fn personcard_createCode_cardId(
 
     let row = client
         .query_opt(
-            "SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE id = $1",
+            "SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE id = $1 AND deleted_at IS NULL",
             &[&card_id],
         )
         .await
@@ -4578,7 +4578,7 @@ pub async fn identity_list_like(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
-    let pattern = format!("%{}%", shared::db::escape_like(&name));
+    let pattern = format!("%{}%", shared::db::escape_like(name));
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE name ILIKE $1 ORDER BY create_time DESC", &[&pattern])
         .await
@@ -4896,7 +4896,7 @@ pub async fn group_list_like(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
-    let pattern = format!("%{}%", shared::db::escape_like(&name));
+    let pattern = format!("%{}%", shared::db::escape_like(name));
     let rows = client
         .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE name ILIKE $1 ORDER BY create_time DESC", &[&pattern])
         .await

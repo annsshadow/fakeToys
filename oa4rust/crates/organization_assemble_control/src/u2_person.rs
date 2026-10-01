@@ -512,7 +512,10 @@ pub async fn person_get_icon(pool: Extension<Pool>, Path(flag): Path<String>) ->
         return err("person not found");
     };
     match client
-        .query_opt("SELECT icon FROM x_org_person WHERE id = $1", &[&pid])
+        .query_opt(
+            "SELECT icon FROM x_org_person WHERE id = $1 AND deleted_at IS NULL",
+            &[&pid],
+        )
         .await
         .map_err(|_| AppError::Internal)?
     {
@@ -689,7 +692,8 @@ pub async fn person_list_filter_paging(
     let size_str = size.to_string();
 
     let name = shared::db::escape_like(&normalize_key(opt(&body, &["name"]).unwrap_or_default()));
-    let mobile = shared::db::escape_like(&normalize_key(opt(&body, &["mobile"]).unwrap_or_default()));
+    let mobile =
+        shared::db::escape_like(&normalize_key(opt(&body, &["mobile"]).unwrap_or_default()));
     let email = shared::db::escape_like(&normalize_key(opt(&body, &["email"]).unwrap_or_default()));
     let status = normalize_key(opt(&body, &["status"]).unwrap_or_default());
     let unit_flag = normalize_key(opt(&body, &["unitFlag", "unitId"]).unwrap_or_default());
