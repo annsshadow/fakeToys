@@ -55,36 +55,41 @@ HOLES_CLOSED_IN_L83 = [
 #: 「只拒空白」这一格。
 BLANK_ONLY_KEYS = ["logging.file"]
 
-#: 两档都照旧放行的键（A140 那一片的字符串子集）。**精确相等**棘轮：本轮一格没动，
-#: 以后谁动了 A140 就得同时改这里并在账本留一句（承 L76 / L77 的只降不升口径）。
+#: 两档都照旧放行的键。**精确相等**棘轮：谁动了这格就得同时改这里并在账本留一句
+#: （承 L76 / L77 的只降不升口径）。L154 / B224 起 15 → 2：A140 那一片 29 键的
+#: 字符串子集（13 键）接上 `require_string` / `require_string_list` 判据、两侧同拒，
+#: 整批移入 ALREADY_SAFE；余下两键属 `models.<名>` 条目（`api_key` 的空串是合法档，
+#: A113 那块另一片账），本轮不欠它账。
 STILL_UNGATED = [
+    "models.<名>.api_key",
+    "models.<名>.base_url",
+]
+
+#: 已有的安全键（`''` 与空白都拒）：四条清单键靠 membership、`logging.format` 靠
+#: require_string + renderable、`export.formats` 靠逐项清单。L154 / B224 起 A140
+#: 一片的 13 键（11 节 29 键里的字符串子集）整批移入：`require_string` /
+#: `require_string_list` 两面全拒。
+ALREADY_SAFE = [
     "active_learning.strategy",
     "benchmark.baseline_file",
     "benchmark.metrics",
     "evaluation.metrics",
     "evaluation.reference_field",
     "expander.strategies",
-    "frameworks.frameworks",
-    "models.<名>.api_key",
-    "models.<名>.base_url",
-    "multilingual.default_target_lang",
-    "multilingual.supported_langs",
-    "sampler.dimensions",
-    "tracker.metrics",
-    "versioning.storage_dir",
-    "visualization.types",
-]
-
-#: 已有的安全键（`''` 与空白都拒）：四条清单键靠 membership、`logging.format` 靠
-#: require_string + renderable、`export.formats` 靠逐项清单。
-ALREADY_SAFE = [
     "export.default_format",
     "export.formats",
-    "quality.weights",  # L153 / B223 起：require_ratio_list 两面全拒（null 与坏形状都挡）
+    "frameworks.frameworks",
     "logging.format",
     "logging.level",
+    "multilingual.default_target_lang",
+    "multilingual.supported_langs",
+    "quality.weights",  # L153 / B223 起：require_ratio_list 两面全拒（null 与坏形状都挡）
     "rag.default_format",
+    "sampler.dimensions",
+    "tracker.metrics",
     "vector.backend",
+    "versioning.storage_dir",
+    "visualization.types",
 ]
 
 BLANKS = [" ", "   ", "\t", "\n", "\r\n", "\u00a0", " \t\n "]

@@ -115,10 +115,14 @@ CEILING = {
     "dead_path": 0,
     "dead_line": 0,
     "symbol_dead": 0,
-    "ambiguous": 327,
+    "ambiguous": 328,
     "runtime_ns": 30,
-    "scratch": 729,
+    "scratch": 730,
     "scratch_missing": 302,
+# L154 面位移：config.py / config_validator.py 插行后 4 条行引用降名字锚（L1 两条 +
+# 架构文档两条），裸名形状入 ambiguous 桶（见下方实测值）；守卫 docstring 与静态面
+# 注释新引 A140 现量房那支普查脚本名，scratch 随之 +1。案面=产品布局变更，按「动
+# 案面要重跑普查再改这里」条款逐格归因；dead_line 降锚后回 0 未再动。
 # L145 面位移（289 → 302）：运行时快照目录从索引排除后，13 条只能靠该目录的
 # 文件候选落定的引用（两个散名与两条全路径）翻进本档。案面=索引口径变更，按
 # 「动案面要重跑普查再改这里」条款逐格归因；ambiguous 327 与其余各档原地未动。
