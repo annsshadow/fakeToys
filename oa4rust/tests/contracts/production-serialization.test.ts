@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-const appDir = resolve(import.meta.dirname, '../../apps/desktop/src')
+const appDir = resolve(import.meta.dirname, '../../frontend/apps/desktop/src')
 const views = resolve(appDir, 'views')
 const contracts = resolve(appDir, 'contracts')
 const readView = (name: string) => readFileSync(resolve(views, name), 'utf8')

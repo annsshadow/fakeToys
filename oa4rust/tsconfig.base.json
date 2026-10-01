@@ -14,14 +14,14 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
-      "@oa4rust/sdk": ["packages/sdk/src"],
-      "@oa4rust/sdk/*": ["packages/sdk/src/*"],
-      "@oa4rust/ui": ["packages/ui/src"],
-      "@oa4rust/ui/*": ["packages/ui/src/*"],
-      "@oa4rust/locales": ["packages/locales/src"],
-      "@oa4rust/locales/*": ["packages/locales/src/*"],
-      "@oa4rust/apis": ["packages/apis/src"],
-      "@oa4rust/apis/*": ["packages/apis/src/*"]
+      "@oa4rust/sdk": ["frontend/packages/sdk/src"],
+      "@oa4rust/sdk/*": ["frontend/packages/sdk/src/*"],
+      "@oa4rust/ui": ["frontend/packages/ui/src"],
+      "@oa4rust/ui/*": ["frontend/packages/ui/src/*"],
+      "@oa4rust/locales": ["frontend/packages/locales/src"],
+      "@oa4rust/locales/*": ["frontend/packages/locales/src/*"],
+      "@oa4rust/apis": ["frontend/packages/apis/src"],
+      "@oa4rust/apis/*": ["frontend/packages/apis/src/*"]
     }
   },
   "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts"]

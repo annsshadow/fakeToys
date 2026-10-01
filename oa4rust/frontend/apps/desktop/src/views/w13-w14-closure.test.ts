@@ -6,7 +6,7 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const viewsDir = import.meta.dirname
-const repositoryRoot = resolve(viewsDir, '../../../../..')
+const repositoryRoot = resolve(viewsDir, '../../../../../..')
 const manifestPath = resolve(repositoryRoot, 'docs/audits/w13-w14-repository-closure.manifest.json')
 const legacyRoot = resolve(repositoryRoot, 'oa/o2web/source')
 const mainPath = resolve(viewsDir, '../main.ts')
@@ -137,7 +137,7 @@ describe('W13/W14 repository closure manifest', () => {
 
   it('does not allow known thin CRUD mechanics to be relabelled as implemented', () => {
     for (const entry of manifest.entries.filter((candidate) => candidate.workItem === 'W13')) {
-      const source = readRepositoryFile(`oa4rust-web/apps/desktop/src/views/${entry.view}`)
+      const source = readRepositoryFile(`oa4rust/frontend/apps/desktop/src/views/${entry.view}`)
       const copiesAsyncQueryOnce = source.includes('items.value = data.value ?? []')
       const listEndpoint = source.match(/const ep = '([^']*\/list)'/)?.[1]
       const reusesListForWrites =

@@ -20,8 +20,8 @@ import { BACKEND_ROUTE_METHODS } from './backend-route-methods.fixture'
  */
 
 const SRC_ROOTS = [
-  resolve(import.meta.dirname, '../../apps/desktop/src'),
-  resolve(import.meta.dirname, '../../apps/mobile/src'),
+  resolve(import.meta.dirname, '../../frontend/apps/desktop/src'),
+  resolve(import.meta.dirname, '../../mobile/src'),
 ]
 
 // 经人工核实的方法契约例外（当前为空——轮10 已把两处真错配修正）。
