@@ -954,3 +954,25 @@
   各棘轮全部原地绿（全量门禁证实）。
 - 全量门禁：`7694 passed / 3 skipped / exit 0`（L154 的 7692 + 2 新例，无回归）。
   **B225 关闭**。
+
+| B226 | **已关闭（L156，收口第一本账 A46②）**：`StreamConfig` 三键（`chunk_size` / `buffer_size` / `max_memory_mb`）零判据——读侧 `StreamReader` 的 `chunk_size` 形参早接 `require_count(minimum=1)`，配置类这边 0 / 负数 / 字符串 / bool 全静默构造成功，同一档下界住两处（A77 形状） | 按「不发明语义、不删公开类」取判据档：`StreamConfig.__post_init__` 三键接 `require_count(minimum=1)`（chunk_size 与读侧形参同源同档，两侧同判由新守卫钉死；buffer / memory 无读侧权威，下界 1 按「正数量」读法记档）。本类无产品消费方（A46② 留档口径），判据买「写时就报」。A46 三子项自此全清（① L152、③ L41、② 本轮）。新增 3 例（无新参数化位，l97 / l98 原地不动） | S |
+
+### L156（2026-10-01）— B226 立项 + 关闭：A46② 收口（StreamConfig 三键接判据，第一本账 A46 三子项全清）
+
+- **真缺陷（A46② 原框，L35 立 / B222 留档）**：`StreamReader` 的 `chunk_size`
+  形参自 L51 起就按 `require_count(minimum=1)` 判负，而 `StreamConfig` 的
+  `chunk_size` 字段零判据——同一档下界住两处且配置侧全盲：
+  `StreamConfig(chunk_size=0)` 静默构造成功（假零家族 L144 同式），
+  `buffer_size` / `max_memory_mb` 同样无档。本类无产品消费方（0 使用者，
+  只算 SDK 面），缺陷形状是「配置类是死旋钮 + 判据缺面」而非现行故障。
+- **处置（三档拍一）**：① 删类 = 公开面破坏变更（SDK 导出类，跨轮不可逆），
+  不做；② 发明消费语义（把三键喂给 StreamReader）= A46 留档明文的「不发明
+  语义」红线，不做；③ 取判据档（与 L154 对无读者节同一口径）：
+  `__post_init__` 三键接 `require_count(minimum=1)`，chunk_size 与读侧形参
+  同一字面下界、两侧同判由新用例钉死，buffer / memory 的 1 按「正数量」读法
+  记档。
+- **钉子**：test_streaming 新增 3 例（坏值 0 / 负 / bool / 字符串 × 三键、
+  0 档假零专钉、两侧同档对账）；无新参数化位 ⇒ l97 / l98 / A184 / L79 各棘轮
+  仅 BACKLOG_A_CLOSED 一格 +1（A46 行收口划格，先例同 L154）。
+- 全量门禁：`7697 passed / 3 skipped / exit 0`（L155 的 7694 + 3 新例，无回归）。
+  **B226 关闭，第一本账 A46 三子项全清**。

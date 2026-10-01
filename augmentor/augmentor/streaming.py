@@ -218,6 +218,20 @@ class StreamConfig:
     buffer_size: int = 10000  # 写入缓冲区大小
     max_memory_mb: int = 512  # 最大内存使用（MB）
 
+    def __post_init__(self):
+        """取值判据（A46② / L156）：三个计数键取正。
+
+        改前三键零反馈：`StreamReader` 的 `chunk_size` 形参早在 L51 起就按
+        `require_count(minimum=1)` 判负，配置类这边却是全盲——同一档的下界住两处
+        （A77 形状），且 `StreamConfig(chunk_size=0)` 静默构造成功。本轮把配置侧
+        接到同一档（`1` 是调用点字面量，无既有常数可共引，数值相等由守卫钉死）。
+        本类今天没有产品消费方（A46② 留档口径），判据买「写时就报」不买房子；
+        `buffer_size` / `max_memory_mb` 无消费侧权威，下界 1 按「正数量」读法。
+        """
+        require_count('streaming.chunk_size', self.chunk_size, minimum=1)
+        require_count('streaming.buffer_size', self.buffer_size, minimum=1)
+        require_count('streaming.max_memory_mb', self.max_memory_mb, minimum=1)
+
 
 class StreamReader:
     """数据流读取器
