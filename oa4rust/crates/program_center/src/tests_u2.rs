@@ -331,4 +331,101 @@ mod u2_tests {
         let r = apppack_file_last(Extension(pool)).await;
         assert!(matches!(r, Err(shared::error::AppError::Internal)));
     }
+
+    // ── 轮96：collect 族真库往返（固化轮77 personId camelCase alias + 轮90 列表软删过滤）──
+    #[tokio::test]
+    async fn collect_create_list_delete_roundtrip_respects_person_alias_and_soft_delete() {
+        use shared::testing::{is_db_available, test_pool};
+        if !is_db_available().await {
+            eprintln!("skipping collect roundtrip: DB not reachable");
+            return;
+        }
+        let app = program_center_router(test_pool());
+
+        // create：camelCase personId（轮77 alias 修复的契约）
+        let create = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/program_center/collect/create")
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        r#"{"personId":"u-collect-roundtrip","title":"collect roundtrip","url":"https://internal.example/x"}"#,
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(create.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(create.into_body(), 65536)
+            .await
+            .unwrap();
+        let created: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        let id = created["data"]["id"]
+            .as_str()
+            .expect("create 应返回 id")
+            .to_string();
+
+        // list：新行在列且 personId 落库正确（若 alias 回归，person_id 落空串即失败）
+        let list = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri("/api/program_center/collect/list")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(list.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(list.into_body(), 1 << 20)
+            .await
+            .unwrap();
+        let listed: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        let rows = listed["data"].as_array().expect("list 应返回数组");
+        let mine = rows
+            .iter()
+            .find(|r| r["id"] == serde_json::Value::String(id.clone()))
+            .expect("新建收藏应出现在列表");
+        assert_eq!(
+            mine["personId"],
+            serde_json::Value::String("u-collect-roundtrip".into())
+        );
+
+        // delete（软删）后再 list：不应再出现（轮90 WHERE deleted_at 过滤）
+        let del = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("DELETE")
+                    .uri(format!("/api/program_center/collect/delete/{}", id))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(del.status(), StatusCode::OK);
+        let list2 = app
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri("/api/program_center/collect/list")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        let bytes2 = axum::body::to_bytes(list2.into_body(), 1 << 20)
+            .await
+            .unwrap();
+        let listed2: serde_json::Value = serde_json::from_slice(&bytes2).unwrap();
+        let still_there = listed2["data"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|r| r["id"] == serde_json::Value::String(id.clone()));
+        assert!(!still_there, "软删后的收藏不应再出现在列表");
+    }
 }
