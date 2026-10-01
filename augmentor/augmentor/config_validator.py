@@ -32,7 +32,7 @@ from .config import (AUTO_SAVE_INTERVAL_MIN, DEDUP_THRESHOLD_RANGE,
 from .exceptions import DataValidationError
 from .logging_setup import LOGGING_LEVELS, build_formatter
 from .retry import MAX_RETRY_AFTER
-from .validation import is_blank_string, require_chunk_window
+from .validation import is_blank_string, require_chunk_window, require_ratio_list
 
 logger = logging.getLogger(__name__)
 
@@ -181,6 +181,10 @@ class ConfigValidator:
         "quality.threshold": {
             "type": float, "min": QUALITY_THRESHOLD_RANGE[0],
             "max": QUALITY_THRESHOLD_RANGE[1]},
+        # A124 收口（L153，B223）：weights 的形状权威在 `validation.require_ratio_list`，
+        # 本表只判「是 list」这一层（非 list 交类型检查报），逐项/长度/和=1 在
+        # `_validate_quality_weights` 回放里走运行时同一份判据（rag 窗先例同形）。
+        "quality.weights": {"type": list},
         "dedup": {"type": dict},
         "dedup.enabled": {"type": bool},
         "dedup.threshold": {
@@ -448,6 +452,25 @@ class ConfigValidator:
         except DataValidationError as exc:
             result.add_error("rag", str(exc))
 
+    def _validate_quality_weights(self, config: Dict, result: ValidationResult) -> None:
+        """`quality.weights` 的形状回放（L153 / A124）：把运行时那份 `require_ratio_list`
+        原样放一遍（rag 窗先例：不重写判据，只回放，「界与判据」两侧没有第二份）。
+
+        非 list 的形状由 `KNOWN_FIELDS` 的类型检查报（本函数遇到就跳过，免报两次）；
+        `null` 由运行时的 `_reject_null_fields` 拒（YAML 面「写了键没给值」才走到这，
+        按「没给 = 用默认」放行给类型层，与出厂配置行为一致）。
+        """
+        body = config.get("quality")
+        if not isinstance(body, dict):
+            return
+        value = body.get("weights")
+        if value is None or not isinstance(value, (list, tuple)):
+            return
+        try:
+            require_ratio_list("quality.weights", list(value))
+        except DataValidationError as exc:
+            result.add_error("quality.weights", str(exc))
+
     def _warn_unread_model_keys(self, models: Dict, result: ValidationResult) -> None:
         """模型条目里的子键按**加载侧那一份键集**判（A126 / L78 起不再自己推导）
 
@@ -539,6 +562,9 @@ class ConfigValidator:
 
         # 跨键关系（L82 / A118）：规格表表达不了的那一类，单独一遍回放运行时判据
         self._validate_rag_window(config, result)
+
+        # 权重三件套（L153 / A124）：逐项 bool/NaN/越界 + 长度 + 和=1
+        self._validate_quality_weights(config, result)
 
         # 「写了没人读」的键（A76）：独立一遍走，不塞进上面那个规格走查里，
         # 因为它的权威来源是 `AppConfig` 的字段集而不是 `KNOWN_FIELDS`

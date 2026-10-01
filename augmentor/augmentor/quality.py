@@ -9,7 +9,7 @@ from dataclasses import dataclass
 import numpy as np
 from .model_manager import model_manager
 from .exceptions import QualityError, DataValidationError
-from .validation import require_count, require_ratio
+from .validation import require_count, require_ratio, require_ratio_list
 from .config import QUALITY_THRESHOLD_RANGE
 
 logger = logging.getLogger(__name__)
@@ -85,14 +85,11 @@ class QualityScorer:
             raise DataValidationError("quality.threshold 不能为 None")
         require_ratio("quality.threshold", threshold, *QUALITY_THRESHOLD_RANGE)
         self.threshold = threshold
-        self.weights = weights or [0.3, 0.4, 0.3]
+        # A124 收口（L153，B223）：形状判据权威搬进 validation 族，配置层与
+        # 静态回放共引同一份（改前两行手抄只判长度与和：'abc' 死在 sum() 的
+        # TypeError、[-1.0, 2.0, 0.0] 静默放行）；None 回落默认，[] 等坏形即拒
+        self.weights = require_ratio_list("quality.weights", weights) or [0.3, 0.4, 0.3]
         self.diversity_sample_size = diversity_sample_size
-        
-        if len(self.weights) != 3:
-            raise QualityError("权重必须包含 3 个元素")
-        
-        if abs(sum(self.weights) - 1.0) > 0.01:
-            raise QualityError("权重之和必须为 1.0")
         
         self._model = None
         self._cross_encoder = None
