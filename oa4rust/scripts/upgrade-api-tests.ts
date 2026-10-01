@@ -4,8 +4,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-const apiPath = path.join(import.meta.dirname || '.', '../packages/apis/src/index.ts')
-const outputPath = path.join(import.meta.dirname || '.', '../packages/apis/src/api-coverage-active.test.ts')
+const apiPath = path.join(import.meta.dirname || '.', '../frontend/packages/apis/src/index.ts')
+const outputPath = path.join(import.meta.dirname || '.', '../frontend/packages/apis/src/api-coverage-active.test.ts')
 
 const content = fs.readFileSync(apiPath, 'utf-8')
 const lines = content.split('\n')

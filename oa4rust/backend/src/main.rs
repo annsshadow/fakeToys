@@ -99,10 +99,12 @@ async fn main() -> anyhow::Result<()> {
     };
 
     // ── 静态文件服务（前端构建产物）─────────────────────────────────────
-    // OA4RUST_WEB_DIST 环境变量指定 dist 目录，默认相对于二进制位置向上两级再进 dist/web。
+    // OA4RUST_WEB_DIST 环境变量指定 dist 目录，默认相对于二进制位置
+    // （backend/target/{debug,release}/）向上三级到 oa4rust/，再进 frontend/dist/web。
     // SPA 深链回退：/login、/app/** 等前端路由刷新时回 index.html；/api/** 与
     // /ws/** 未知路径保持 404（API 客户端不应收到 HTML）。
-    let web_dist = env::var("OA4RUST_WEB_DIST").unwrap_or_else(|_| "../../dist/web".to_string());
+    let web_dist =
+        env::var("OA4RUST_WEB_DIST").unwrap_or_else(|_| "../../../frontend/dist/web".to_string());
     let web_dist_root = std::path::PathBuf::from(&web_dist);
     let spa = tower::service_fn(move |req: axum::http::Request<axum::body::Body>| {
         let web_dist_root = web_dist_root.clone();

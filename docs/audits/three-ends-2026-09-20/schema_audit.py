@@ -23,7 +23,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 def find_repo_root(start):
     cur = os.path.abspath(start)
     while True:
-        if os.path.isdir(os.path.join(cur, "oa4rust")) and os.path.isdir(os.path.join(cur, "oa4rust-web")):
+        if all(os.path.isdir(os.path.join(cur, "oa4rust", end)) for end in ("backend", "frontend", "mobile")):
             return cur
         parent = os.path.dirname(cur)
         if parent == cur:
@@ -32,8 +32,8 @@ def find_repo_root(start):
 
 
 ROOT = find_repo_root(HERE)
-RUST = os.path.join(ROOT, "oa4rust")
-WEB = os.path.join(ROOT, "oa4rust-web")
+RUST = os.path.join(ROOT, "oa4rust", "backend")
+WEB = os.path.join(ROOT, "oa4rust")
 OUT = os.path.join(HERE, "schema_audit.json")
 
 # ── Rust 源码工具 ───────────────────────────────────────────────────────────
@@ -703,10 +703,10 @@ def top_level_keys(obj_src):
 def scan_frontend_bodies():
     rows = []
     for app, base in (
-        ("desktop", os.path.join(WEB, "apps", "desktop", "src")),
-        ("mobile", os.path.join(WEB, "apps", "mobile", "src")),
-        ("shared-ui", os.path.join(WEB, "packages", "ui", "src")),
-        ("shared-sdk", os.path.join(WEB, "packages", "sdk", "src")),
+        ("desktop", os.path.join(WEB, "frontend", "apps", "desktop", "src")),
+        ("mobile", os.path.join(WEB, "mobile", "src")),
+        ("shared-ui", os.path.join(WEB, "frontend", "packages", "ui", "src")),
+        ("shared-sdk", os.path.join(WEB, "frontend", "packages", "sdk", "src")),
     ):
         for dp, _d, fs in os.walk(base):
             if "node_modules" in dp:

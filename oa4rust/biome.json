@@ -6,6 +6,9 @@
     "root": "..",
     "useIgnoreFile": true
   },
+  "files": {
+    "includes": ["**", "!backend"]
+  },
   "assist": {
     "actions": {
       "source": {
@@ -45,7 +48,7 @@
   },
   "overrides": [
     {
-      "includes": ["packages/apis/**"],
+      "includes": ["frontend/packages/apis/**"],
       "linter": {
         "rules": {
           "suspicious": { "noExplicitAny": "off" },

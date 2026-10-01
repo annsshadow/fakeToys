@@ -16,7 +16,7 @@ for _crate, routes in backend.items():
         if p.startswith("/"):
             paths.add(p)
 
-fxp = os.path.join(ROOT, "oa4rust-web", "tests", "contracts", "backend-registered-routes.fixture.ts")
+fxp = os.path.join(ROOT, "oa4rust", "tests", "contracts", "backend-registered-routes.fixture.ts")
 fx = open(fxp, encoding="utf-8").read()
 header = fx[: fx.index("export const REGISTERED_BACKEND_ROUTES")]
 cur = set(re.findall(r"'(/[^']+)'", fx))

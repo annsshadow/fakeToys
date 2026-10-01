@@ -34,7 +34,7 @@ def find_repo_root(start):
 
 
 ROOT = find_repo_root(HERE)
-RUST = os.path.join(ROOT, "oa4rust")
+RUST = os.path.join(ROOT, "oa4rust", "backend")
 
 # 路由路径参数名：{\"name\"}
 RE_ROUTE_PARAM = re.compile(r'\{\\"([A-Za-z_][\w]*)\\"\}')

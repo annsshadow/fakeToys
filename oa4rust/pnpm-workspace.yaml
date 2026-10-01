@@ -1,10 +1,11 @@
 packages:
-  - 'packages/*'
-  - 'apps/*'
+  - 'frontend/apps/*'
+  - 'frontend/packages/*'
+  - 'mobile'
   - '!**/test/**'
 # 安全覆盖：把传递依赖中的已知漏洞版本抬到修复版本。
 # 目标版本优先选择"依赖树中已存在的版本"，以降低兼容性风险。
-# 对应告警见 GitHub Dependabot（apps/mobile 的 uni-app 工具链）。
+# 对应告警见 GitHub Dependabot（mobile 的 uni-app 工具链）。
 overrides:
   '@babel/core@7.25.2': '7.29.6'
   '@intlify/core-base@9.1.9': '9.14.5'

@@ -144,7 +144,7 @@ const REGISTERED_BACKEND_ROUTES: string[] = [
   '/api/jpush/assemble/control/list/control/apps',
 ]
 
-const mobileSrcRoot = resolve(import.meta.dirname, '../../apps/mobile/src')
+const mobileSrcRoot = resolve(import.meta.dirname, '../../mobile/src')
 
 function collectMobileEndpointPaths(): string[] {
   const files: string[] = []

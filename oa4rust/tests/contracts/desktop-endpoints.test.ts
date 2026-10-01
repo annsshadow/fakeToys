@@ -9,7 +9,7 @@ import { REGISTERED_BACKEND_ROUTES } from './backend-registered-routes.fixture'
 /**
  * Desktop endpoint contract guard.
  *
- * Every /api literal in apps/desktop/src is OK when ANY holds:
+ * Every /api literal in frontend/apps/desktop/src is OK when ANY holds:
  *   (a) it matches a route the oa4rust backend registers (REGISTERED_BACKEND_ROUTES),
  *   (b) it is an explicitly acknowledged backend parity gap (KNOWN_BACKEND_GAPS), or
  *   (c) it is a bare base prefix (trailing /) used by a dynamic request helper.
@@ -26,7 +26,7 @@ import { REGISTERED_BACKEND_ROUTES } from './backend-registered-routes.fixture'
 // KNOWN_BACKEND_GAPS 清零；此后新增未实现端点须在此显式声明（不虚构）。
 const KNOWN_BACKEND_GAPS: string[] = []
 
-const desktopSrcRoot = resolve(import.meta.dirname, '../../apps/desktop/src')
+const desktopSrcRoot = resolve(import.meta.dirname, '../../frontend/apps/desktop/src')
 
 function collectPaths(): string[] {
   const files: string[] = []

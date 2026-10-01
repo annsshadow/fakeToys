@@ -7,7 +7,7 @@
     "types": ["@dcloudio/types", "node"],
     "paths": {
       "@/*": ["./src/*"],
-      "@oa4rust/sdk": ["../../packages/sdk/src/index.ts"]
+      "@oa4rust/sdk": ["../frontend/packages/sdk/src/index.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue", "vite.config.ts"],

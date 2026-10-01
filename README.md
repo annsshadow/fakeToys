@@ -28,8 +28,7 @@
 
 | 子项目 | 一句话 | 技术栈 | 详情 |
 | --- | --- | --- | --- |
-| 🦀 **[oa4rust](#-oa4rust--rust-重写的-oa-后端)** | 用 Rust 重写的企业级 OA 服务端（96 个 crate 的 workspace） | Rust · Axum · PostgreSQL | [README](oa4rust/README.md) |
-| 🖥️ **[oa4rust-web](#️-oa4rust-web--三端前端)** | oa4rust 的前端，桌面 Web + 移动端（uni-app）双端 | Vue3 · TS · Vite · UnoCSS | — |
+| 🦀 **[oa4rust](#-oa4rust--rust-重写的-oa-后端)** | OA 三端 monorepo：Rust 后端 + 桌面 Web 端 + 移动端（uni-app），后端为 96 个 crate 的 workspace | Rust · Axum · Vue3 · uni-app · PostgreSQL | [README](oa4rust/README.md) |
 | 💥 **[laiyipao](#-laiyipao--塔防元素反应小游戏)** | 仿《向僵尸开炮》玩法内核的塔防 + 元素反应小程序游戏 | Go · uni-app · Vue3 · PostgreSQL | [README](laiyipao/README.md) |
 | 🧪 **[augmentor](#-augmentor--ai-训练数据增强)** | 把少量种子数据扩充成多轮问答对的训练数据增强工具 | Python · FastAPI · React | [README](augmentor/README.md) |
 | ✅ **[auto-checkin](#-auto-checkin--自动签到面板)** | 给多个大模型公益站自动签到领奖，带本地统计面板 | Node · Playwright · Express | [README](auto-checkin/README.md) |
@@ -47,29 +46,29 @@
 - **安全门禁**：全路径 HttpOnly Cookie + CSRF/CORS、RustSec 供应链审计、OpenAPI 漂移门禁。
 
 ```bash
-cd oa4rust
+cd oa4rust/backend
 cp .env.example .env          # 配置数据库连接
 cargo run                     # 启动服务端
 cargo test --workspace --lib  # 运行单元测试
 ```
 
-> 更多开发环境、质量门禁与目录结构见 [oa4rust/README.md](oa4rust/README.md)。
+> 更多开发环境、质量门禁与目录结构见 [oa4rust/backend/README.md](oa4rust/backend/README.md)。
 
-## 🖥️ oa4rust-web — 三端前端
+## 🖥️ oa4rust 前端 — 桌面 Web + 移动端
 
-oa4rust 的前端，采用 pnpm workspace 组织的 monorepo，一套 SDK/类型驱动桌面与移动两端。
+oa4rust 的前端两端与共享包同住一个 pnpm workspace（`oa4rust/` 为 workspace 根），一套 SDK/类型驱动桌面与移动两端。
 
-- **apps/desktop**：Vue3 + Vite + Naive UI 的桌面 Web 端。
-- **apps/mobile**：基于 uni-app 的移动端，可编译到 H5 / 微信小程序 / 原生 App。
-- **packages**：`sdk`（类型化 API 客户端）、`apis`（覆盖后端路由的 API 模块）、`ui`、`locales` 共享包。
+- **frontend/apps/desktop**：Vue3 + Vite + Naive UI 的桌面 Web 端。
+- **mobile**：基于 uni-app 的移动端，可编译到 H5 / 微信小程序 / 原生 App。
+- **frontend/packages**：`sdk`（类型化 API 客户端）、`apis`（覆盖后端路由的 API 模块）、`ui`、`locales` 共享包。
 - **质量栈**：TypeScript 严格模式、Biome、Vitest 单测、Playwright E2E。
 
 ```bash
-cd oa4rust-web
+cd oa4rust
 pnpm install
 pnpm dev          # 启动桌面端开发服务器
-pnpm test         # Vitest
-pnpm build        # 生产构建
+pnpm test         # Vitest（pnpm test:mobile 跑移动端）
+pnpm build        # 生产构建（产物 frontend/dist/web）
 ```
 
 ## 💥 laiyipao — 塔防元素反应小游戏
@@ -130,8 +129,7 @@ Cool College（coolcollege）OA 系统的免登 Token 生成工具，支持 AES 
 
 ```
 fakeToys/
-├── oa4rust/          # 🦀 Rust OA 后端（96-crate workspace）
-├── oa4rust-web/      # 🖥️ 前端 monorepo（desktop + mobile）
+├── oa4rust/          # 🦀🖥️📱 OA 三端 monorepo（backend Rust 后端 + frontend 桌面端 + mobile 移动端）
 ├── laiyipao/         # 💥 塔防元素反应小游戏（Go server + uni-app + admin）
 ├── augmentor/        # 🧪 AI 训练数据增强工具（Python + React）
 ├── auto-checkin/     # ✅ 公益站自动签到 + 统计面板（Node）
@@ -145,8 +143,7 @@ fakeToys/
 
 各子项目环境要求不同，请进入对应目录按其 README 操作。总体上：
 
-- **oa4rust**：Rust 1.85+、PostgreSQL 14+
-- **oa4rust-web**：Node + pnpm
+- **oa4rust**：Rust 1.85+、PostgreSQL 14+；前端两端另需 Node + pnpm
 - **laiyipao**：Go 1.26+、PostgreSQL 15+、Node 20+ + pnpm
 - **augmentor**：Python 3.10+
 - **auto-checkin**：Node + Playwright

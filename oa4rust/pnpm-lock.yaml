@@ -107,7 +107,7 @@ importers:
         specifier: ^4.5.0
         version: 4.6.4(vue@3.5.42(typescript@5.9.3))
 
-  apps/desktop:
+  frontend/apps/desktop:
     dependencies:
       '@oa4rust/sdk':
         specifier: workspace:*
@@ -147,7 +147,70 @@ importers:
         specifier: ^8.3.0
         version: 8.3.0(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13)
 
-  apps/mobile:
+  frontend/packages/apis:
+    dependencies:
+      '@oa4rust/sdk':
+        specifier: workspace:*
+        version: link:../sdk
+    devDependencies:
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.3
+
+  frontend/packages/locales:
+    devDependencies:
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.3
+
+  frontend/packages/sdk:
+    dependencies:
+      pinia:
+        specifier: ^2.3.1
+        version: 2.3.1(typescript@5.9.3)(vue@3.5.42(typescript@5.9.3))
+      vue:
+        specifier: ^3.5.13
+        version: 3.5.42(typescript@5.9.3)
+      vue-i18n:
+        specifier: ^11.1.2
+        version: 11.4.10(vue@3.5.42(typescript@5.9.3))
+      vue-router:
+        specifier: ^4.5.0
+        version: 4.6.4(vue@3.5.42(typescript@5.9.3))
+    devDependencies:
+      '@vue/tsconfig':
+        specifier: ^0.7.0
+        version: 0.7.0(typescript@5.9.3)(vue@3.5.42(typescript@5.9.3))
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.3
+
+  frontend/packages/ui:
+    dependencies:
+      '@oa4rust/sdk':
+        specifier: workspace:*
+        version: link:../sdk
+      naive-ui:
+        specifier: ^2.40.3
+        version: 2.45.3(vue@3.5.42(typescript@5.9.3))
+      unocss:
+        specifier: ^66.0.0
+        version: 66.9.2(vite@8.3.0(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13))
+      vue:
+        specifier: ^3.5.13
+        version: 3.5.42(typescript@5.9.3)
+    devDependencies:
+      '@vitejs/plugin-vue':
+        specifier: ^5.2.0
+        version: 5.2.4(vite@8.3.0(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.3
+      vite:
+        specifier: ^8.3.0
+        version: 8.3.0(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13)
+
+  mobile:
     dependencies:
       '@dcloudio/uni-app':
         specifier: 3.0.0-alpha-5020620260914001
@@ -188,7 +251,7 @@ importers:
         version: 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.4.21(typescript@5.9.3))
       '@oa4rust/sdk':
         specifier: workspace:*
-        version: link:../../packages/sdk
+        version: link:../frontend/packages/sdk
       '@types/node':
         specifier: ^24.0.0
         version: 24.13.3
@@ -201,69 +264,6 @@ importers:
       vite:
         specifier: 6.4.3
         version: 6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)
-
-  packages/apis:
-    dependencies:
-      '@oa4rust/sdk':
-        specifier: workspace:*
-        version: link:../sdk
-    devDependencies:
-      typescript:
-        specifier: ^5.8.0
-        version: 5.9.3
-
-  packages/locales:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.0
-        version: 5.9.3
-
-  packages/sdk:
-    dependencies:
-      pinia:
-        specifier: ^2.3.1
-        version: 2.3.1(typescript@5.9.3)(vue@3.5.42(typescript@5.9.3))
-      vue:
-        specifier: ^3.5.13
-        version: 3.5.42(typescript@5.9.3)
-      vue-i18n:
-        specifier: ^11.1.2
-        version: 11.4.10(vue@3.5.42(typescript@5.9.3))
-      vue-router:
-        specifier: ^4.5.0
-        version: 4.6.4(vue@3.5.42(typescript@5.9.3))
-    devDependencies:
-      '@vue/tsconfig':
-        specifier: ^0.7.0
-        version: 0.7.0(typescript@5.9.3)(vue@3.5.42(typescript@5.9.3))
-      typescript:
-        specifier: ^5.8.0
-        version: 5.9.3
-
-  packages/ui:
-    dependencies:
-      '@oa4rust/sdk':
-        specifier: workspace:*
-        version: link:../sdk
-      naive-ui:
-        specifier: ^2.40.3
-        version: 2.45.3(vue@3.5.42(typescript@5.9.3))
-      unocss:
-        specifier: ^66.0.0
-        version: 66.9.2(vite@8.3.0(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13))
-      vue:
-        specifier: ^3.5.13
-        version: 3.5.42(typescript@5.9.3)
-    devDependencies:
-      '@vitejs/plugin-vue':
-        specifier: ^5.2.0
-        version: 5.2.4(vite@8.3.0(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
-      typescript:
-        specifier: ^5.8.0
-        version: 5.9.3
-      vite:
-        specifier: ^8.3.0
-        version: 8.3.0(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13)
 
 packages:
 
@@ -6468,7 +6468,7 @@ snapshots:
       '@vue/shared': 3.5.42
       estree-walker: 2.0.2
       magic-string: 0.30.21
-      postcss: 8.5.26
+      postcss: 8.5.28
       source-map-js: 1.2.1
 
   '@vue/compiler-ssr@3.4.21':
@@ -7650,7 +7650,7 @@ snapshots:
       postcss: 8.5.26
       postcss-value-parser: 4.2.0
       read-cache: 1.0.2
-      resolve: 1.22.8
+      resolve: 1.22.12
 
   postcss-load-config@3.1.4(postcss@8.5.26):
     dependencies:

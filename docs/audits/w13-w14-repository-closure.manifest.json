@@ -9,7 +9,7 @@
   },
   "discovery": {
     "crudView": {
-      "root": "oa4rust-web/apps/desktop/src/views",
+      "root": "oa4rust/frontend/apps/desktop/src/views",
       "glob": "*.vue",
       "exactMarker": "class=\"crud-view\""
     },
@@ -38,27 +38,27 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/AnnApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/AnnApp.vue",
             "contains": "const listEp = '/api/ai/assemble/control/ann/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/AnnApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/AnnApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/AnnApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/ai_assemble_control/src/routes.rs",
+            "file": "oa4rust/backend/crates/ai_assemble_control/src/routes.rs",
             "contains": "\"/api/ai/assemble/control/ann/create\""
           },
           {
-            "file": "oa4rust/migrations/096_create_ai_ann_ftsearch_tables.sql",
+            "file": "oa4rust/backend/migrations/096_create_ai_ann_ftsearch_tables.sql",
             "contains": "CREATE TABLE IF NOT EXISTS \"x_ai_ann\""
           }
         ]
@@ -78,27 +78,27 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/CmsColumnApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/CmsColumnApp.vue",
             "contains": "const listEp = '/api/cms/core/entity/column/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/CmsColumnApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/CmsColumnApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/CmsColumnApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/cms_core_entity/src/lib.rs",
+            "file": "oa4rust/backend/crates/cms_core_entity/src/lib.rs",
             "contains": "\"/api/cms/core/entity/column/create\""
           },
           {
-            "file": "oa4rust/migrations/093_create_cms_core_entity_tables.sql",
+            "file": "oa4rust/backend/migrations/093_create_cms_core_entity_tables.sql",
             "contains": "CREATE TABLE IF NOT EXISTS \"x_cms_column\""
           }
         ]
@@ -118,27 +118,27 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/CmsColumnManagerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/CmsColumnManagerApp.vue",
             "contains": "const listEp = '/api/cms/core/entity/column_manager/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/CmsColumnManagerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/CmsColumnManagerApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/CmsColumnManagerApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/cms_core_entity/src/lib.rs",
+            "file": "oa4rust/backend/crates/cms_core_entity/src/lib.rs",
             "contains": "\"/api/cms/core/entity/column_manager/create\""
           },
           {
-            "file": "oa4rust/migrations/093_create_cms_core_entity_tables.sql",
+            "file": "oa4rust/backend/migrations/093_create_cms_core_entity_tables.sql",
             "contains": "CREATE TABLE IF NOT EXISTS \"x_cms_column_manager\""
           }
         ]
@@ -157,23 +157,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/CmsDictDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/CmsDictDesignerApp.vue",
             "contains": "const listEp = '/api/cms/assemble/control/dict/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/CmsDictDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/CmsDictDesignerApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/CmsDictDesignerApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/cms_assemble_control/src/routes.rs",
+            "file": "oa4rust/backend/crates/cms_assemble_control/src/routes.rs",
             "contains": "\"/api/cms/assemble/control/dict/create\""
           }
         ]
@@ -193,23 +193,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/CmsFormDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/CmsFormDesignerApp.vue",
             "contains": "const listEp = '/api/cms/assemble/control/form/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/CmsFormDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/CmsFormDesignerApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/CmsFormDesignerApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/cms_assemble_control/src/routes.rs",
+            "file": "oa4rust/backend/crates/cms_assemble_control/src/routes.rs",
             "contains": "\"/api/cms/assemble/control/form/create\""
           }
         ]
@@ -230,27 +230,27 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/CmsIndexApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/CmsIndexApp.vue",
             "contains": "const listEp = '/api/cms/core/entity/index/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/CmsIndexApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/CmsIndexApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/CmsIndexApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/cms_core_entity/src/lib.rs",
+            "file": "oa4rust/backend/crates/cms_core_entity/src/lib.rs",
             "contains": "\"/api/cms/core/entity/index/create\""
           },
           {
-            "file": "oa4rust/migrations/093_create_cms_core_entity_tables.sql",
+            "file": "oa4rust/backend/migrations/093_create_cms_core_entity_tables.sql",
             "contains": "CREATE TABLE IF NOT EXISTS \"x_cms_index\""
           }
         ]
@@ -270,27 +270,27 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/CmsModuleApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/CmsModuleApp.vue",
             "contains": "const listEp = '/api/cms/core/entity/module/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/CmsModuleApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/CmsModuleApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/CmsModuleApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/cms_core_entity/src/lib.rs",
+            "file": "oa4rust/backend/crates/cms_core_entity/src/lib.rs",
             "contains": "\"/api/cms/core/entity/module/create\""
           },
           {
-            "file": "oa4rust/migrations/093_create_cms_core_entity_tables.sql",
+            "file": "oa4rust/backend/migrations/093_create_cms_core_entity_tables.sql",
             "contains": "CREATE TABLE IF NOT EXISTS \"x_cms_module\""
           }
         ]
@@ -309,23 +309,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/CmsViewDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/CmsViewDesignerApp.vue",
             "contains": "const listEp = '/api/cms/assemble/control/view/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/CmsViewDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/CmsViewDesignerApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/CmsViewDesignerApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/cms_assemble_control/src/routes.rs",
+            "file": "oa4rust/backend/crates/cms_assemble_control/src/routes.rs",
             "contains": "\"/api/cms/assemble/control/view/create\""
           }
         ]
@@ -345,23 +345,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/CmsXformApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/CmsXformApp.vue",
             "contains": "const listEp = '/api/cms/assemble/control/xform/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/CmsXformApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/CmsXformApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/CmsXformApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/cms_assemble_control/src/routes.rs",
+            "file": "oa4rust/backend/crates/cms_assemble_control/src/routes.rs",
             "contains": "\"/api/cms/assemble/control/xform/create\""
           }
         ]
@@ -382,23 +382,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/CollectApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/CollectApp.vue",
             "contains": "const listEp = '/api/program_center/collect/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/CollectApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/CollectApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/CollectApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/program_center/src/routes.rs",
+            "file": "oa4rust/backend/crates/program_center/src/routes.rs",
             "contains": "\"/api/program_center/collect/create\""
           }
         ]
@@ -418,23 +418,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/CommonApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/CommonApp.vue",
             "contains": "const listEp = '/api/general/assemble/control/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/CommonApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/CommonApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/CommonApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/general_assemble_control/src/routes.rs",
+            "file": "oa4rust/backend/crates/general_assemble_control/src/routes.rs",
             "contains": "\"/api/general/assemble/control/create\""
           }
         ]
@@ -454,23 +454,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/DeploymentApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/DeploymentApp.vue",
             "contains": "const listEp = '/api/server/deploy/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/DeploymentApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/DeploymentApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/DeploymentApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/console/src/routes.rs",
+            "file": "oa4rust/backend/crates/console/src/routes.rs",
             "contains": "\"/api/server/deploy/create\""
           }
         ]
@@ -490,23 +490,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/FaceSetApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/FaceSetApp.vue",
             "contains": "const listEp = '/api/personal/face/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/FaceSetApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/FaceSetApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/FaceSetApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/personal_extend/src/routes.rs",
+            "file": "oa4rust/backend/crates/personal_extend/src/routes.rs",
             "contains": "\"/api/personal/face/create\""
           }
         ]
@@ -526,27 +526,27 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/FtSearchApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/FtSearchApp.vue",
             "contains": "const listEp = '/api/ftsearch/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/FtSearchApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/FtSearchApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/FtSearchApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/search/src/lib.rs",
+            "file": "oa4rust/backend/crates/search/src/lib.rs",
             "contains": "\"/api/ftsearch/create\""
           },
           {
-            "file": "oa4rust/migrations/096_create_ai_ann_ftsearch_tables.sql",
+            "file": "oa4rust/backend/migrations/096_create_ai_ann_ftsearch_tables.sql",
             "contains": "CREATE TABLE IF NOT EXISTS \"x_ftsearch_document\""
           }
         ]
@@ -565,23 +565,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/LogViewerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/LogViewerApp.vue",
             "contains": "const listEp = '/api/log/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/LogViewerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/LogViewerApp.vue",
             "contains": "api.get(listEp)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/LogViewerApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/cms_assemble_control/src/routes.rs",
+            "file": "oa4rust/backend/crates/cms_assemble_control/src/routes.rs",
             "contains": "\"/api/log/list\""
           }
         ]
@@ -602,27 +602,27 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/NoteApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/NoteApp.vue",
             "contains": "const listEp = '/api/cms/core/entity/note/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/NoteApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/NoteApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/NoteApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/cms_core_entity/src/lib.rs",
+            "file": "oa4rust/backend/crates/cms_core_entity/src/lib.rs",
             "contains": "\"/api/cms/core/entity/note/create\""
           },
           {
-            "file": "oa4rust/migrations/093_create_cms_core_entity_tables.sql",
+            "file": "oa4rust/backend/migrations/093_create_cms_core_entity_tables.sql",
             "contains": "CREATE TABLE IF NOT EXISTS \"x_cms_note\""
           }
         ]
@@ -641,23 +641,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/PortalDictDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/PortalDictDesignerApp.vue",
             "contains": "const listEp = '/api/portal/assemble/designer/dict/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/PortalDictDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/PortalDictDesignerApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/PortalDictDesignerApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/portal_assemble_designer/src/lib.rs",
+            "file": "oa4rust/backend/crates/portal_assemble_designer/src/lib.rs",
             "contains": "\"/api/portal/assemble/designer/dict/create\""
           }
         ]
@@ -677,23 +677,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/PortalPageDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/PortalPageDesignerApp.vue",
             "contains": "const listEp = '/api/portal/assemble/designer/page/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/PortalPageDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/PortalPageDesignerApp.vue",
             "contains": "api.post(createEp, {"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/PortalPageDesignerApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/portal_assemble_designer/src/lib.rs",
+            "file": "oa4rust/backend/crates/portal_assemble_designer/src/lib.rs",
             "contains": "\"/api/portal/assemble/designer/page/create\""
           }
         ]
@@ -713,23 +713,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/PortalWidgetDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/PortalWidgetDesignerApp.vue",
             "contains": "const listEp = '/api/portal/assemble/designer/widget/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/PortalWidgetDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/PortalWidgetDesignerApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/PortalWidgetDesignerApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/portal_assemble_designer/src/lib.rs",
+            "file": "oa4rust/backend/crates/portal_assemble_designer/src/lib.rs",
             "contains": "\"/api/portal/assemble/designer/widget/create\""
           }
         ]
@@ -750,27 +750,27 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ProcessApplicationApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ProcessApplicationApp.vue",
             "contains": "const listEp = '/api/program_center/application/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ProcessApplicationApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ProcessApplicationApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/ProcessApplicationApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/program_center/src/lib.rs",
+            "file": "oa4rust/backend/crates/program_center/src/lib.rs",
             "contains": "pub async fn application_create("
           },
           {
-            "file": "oa4rust/crates/program_center/src/routes.rs",
+            "file": "oa4rust/backend/crates/program_center/src/routes.rs",
             "contains": "\"/api/program_center/application/delete/{id}\""
           }
         ]
@@ -789,23 +789,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ProcessDictDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ProcessDictDesignerApp.vue",
             "contains": "const listEp = '/api/processplatform/assemble/designer/dict/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ProcessDictDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ProcessDictDesignerApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/ProcessDictDesignerApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/processplatform_assemble_designer/src/routes.rs",
+            "file": "oa4rust/backend/crates/processplatform_assemble_designer/src/routes.rs",
             "contains": "\"/api/processplatform/assemble/designer/dict/create\""
           }
         ]
@@ -825,23 +825,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ProcessFormDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ProcessFormDesignerApp.vue",
             "contains": "const listEp = '/api/processplatform/assemble/designer/form/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ProcessFormDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ProcessFormDesignerApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/ProcessFormDesignerApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/processplatform_assemble_designer/src/routes.rs",
+            "file": "oa4rust/backend/crates/processplatform_assemble_designer/src/routes.rs",
             "contains": "\"/api/processplatform/assemble/designer/form/create\""
           }
         ]
@@ -861,23 +861,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ProcessManagerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ProcessManagerApp.vue",
             "contains": "const listEp = '/api/processplatform/assemble/surface/process_manager/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ProcessManagerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ProcessManagerApp.vue",
             "contains": "api.get(listEp)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/ProcessManagerApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/processplatform_assemble_surface/src/routes.rs",
+            "file": "oa4rust/backend/crates/processplatform_assemble_surface/src/routes.rs",
             "contains": "\"/api/processplatform/assemble/surface/process_manager/list\""
           }
         ]
@@ -897,27 +897,27 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ProcessTaskCenterApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ProcessTaskCenterApp.vue",
             "contains": "const listEp = '/api/processplatform/service/processing/task/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ProcessTaskCenterApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ProcessTaskCenterApp.vue",
             "contains": "task/processing/${id}"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ProcessTaskCenterApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ProcessTaskCenterApp.vue",
             "contains": "task/urge/${id}"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/ProcessTaskCenterApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/processplatform_service_processing/src/routes.rs",
+            "file": "oa4rust/backend/crates/processplatform_service_processing/src/routes.rs",
             "contains": "\"/api/processplatform/service/processing/task/list\""
           }
         ]
@@ -937,27 +937,27 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ProcessXformApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ProcessXformApp.vue",
             "contains": "const listEp = '/api/processplatform/assemble/designer/xform/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ProcessXformApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ProcessXformApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/ProcessXformApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/processplatform_assemble_designer/src/routes.rs",
+            "file": "oa4rust/backend/crates/processplatform_assemble_designer/src/routes.rs",
             "contains": "\"/api/processplatform/assemble/designer/xform/create\""
           },
           {
-            "file": "oa4rust/migrations/097_create_pp_xform_table.sql",
+            "file": "oa4rust/backend/migrations/097_create_pp_xform_table.sql",
             "contains": "CREATE TABLE IF NOT EXISTS"
           }
         ]
@@ -977,23 +977,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/QueryExplorerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/QueryExplorerApp.vue",
             "contains": "const listEp = '/api/query/assemble/surface/explorer/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/QueryExplorerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/QueryExplorerApp.vue",
             "contains": "api.get(listEp)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/QueryExplorerApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/query_assemble_surface/src/lib.rs",
+            "file": "oa4rust/backend/crates/query_assemble_surface/src/lib.rs",
             "contains": "\"/api/query/assemble/surface/explorer/list\""
           }
         ]
@@ -1013,23 +1013,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/QueryImporterDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/QueryImporterDesignerApp.vue",
             "contains": "const listEp = '/api/query/assemble/designer/importer/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/QueryImporterDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/QueryImporterDesignerApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/QueryImporterDesignerApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/query_assemble_designer/src/lib.rs",
+            "file": "oa4rust/backend/crates/query_assemble_designer/src/lib.rs",
             "contains": "\"/api/query/assemble/designer/importer/create\""
           }
         ]
@@ -1050,27 +1050,27 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/QueryQueryApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/QueryQueryApp.vue",
             "contains": "const listEp = '/api/query/assemble/designer/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/QueryQueryApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/QueryQueryApp.vue",
             "contains": "api.post(saveEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/QueryQueryApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/query_assemble_designer/src/lib.rs",
+            "file": "oa4rust/backend/crates/query_assemble_designer/src/lib.rs",
             "contains": "\"/api/query/assemble/designer/save\", put(save_designer_bare)"
           },
           {
-            "file": "oa4rust/crates/query_assemble_designer/src/lib.rs",
+            "file": "oa4rust/backend/crates/query_assemble_designer/src/lib.rs",
             "contains": "UPDATE x_query_design SET name = $1, category = $2, query_definition = $3"
           }
         ]
@@ -1089,23 +1089,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/QueryStatDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/QueryStatDesignerApp.vue",
             "contains": "const listEp = '/api/query/assemble/designer/stat/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/QueryStatDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/QueryStatDesignerApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/QueryStatDesignerApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/query_assemble_designer/src/lib.rs",
+            "file": "oa4rust/backend/crates/query_assemble_designer/src/lib.rs",
             "contains": "\"/api/query/assemble/designer/stat/create\""
           }
         ]
@@ -1125,23 +1125,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
             "contains": "const listEp = '/api/program_center/invoke/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/ServiceInvokeDesignerApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/program_center/src/routes.rs",
+            "file": "oa4rust/backend/crates/program_center/src/routes.rs",
             "contains": "\"/api/program_center/invoke/create\""
           }
         ]
@@ -1161,23 +1161,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/TemplateApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/TemplateApp.vue",
             "contains": "const listEp = '/api/templateform/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/TemplateApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/TemplateApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/TemplateApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/cms_assemble_control/src/routes.rs",
+            "file": "oa4rust/backend/crates/cms_assemble_control/src/routes.rs",
             "contains": "\"/api/templateform/create\""
           }
         ]
@@ -1197,23 +1197,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ThreeMemberApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ThreeMemberApp.vue",
             "contains": "const listEp = '/api/organization/assemble/control/threemember/list'"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ThreeMemberApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ThreeMemberApp.vue",
             "contains": "api.post(createEp, payload)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/ThreeMemberApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/organization_assemble_control/src/u2_router.rs",
+            "file": "oa4rust/backend/crates/organization_assemble_control/src/u2_router.rs",
             "contains": "\"/api/organization/assemble/control/threemember/create\""
           }
         ]
@@ -1238,23 +1238,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/MindApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/MindApp.vue",
             "contains": "`/api/mind/assemble/control/mind/filter/list/${encodeURIComponent(folderId)}/next/1`"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/MindApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/MindApp.vue",
             "contains": "function createMind"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/MindApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/mind_assemble_control/src/routes.rs",
+            "file": "oa4rust/backend/crates/mind_assemble_control/src/routes.rs",
             "contains": "\"/api/mind/assemble/control/mind/filter/list/{id}/next/{page}\""
           }
         ]
@@ -1279,27 +1279,27 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/MindApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/MindApp.vue",
             "contains": "data-testid=\"mind-canvas\""
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/MindApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/MindApp.vue",
             "contains": "'/api/mind/assemble/control/mind/save'"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/MindApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/mind_assemble_control/src/routes.rs",
+            "file": "oa4rust/backend/crates/mind_assemble_control/src/routes.rs",
             "contains": "\"/api/mind/assemble/control/mind/save\""
           },
           {
-            "file": "oa4rust/crates/mind_assemble_control/src/u2.rs",
+            "file": "oa4rust/backend/crates/mind_assemble_control/src/u2.rs",
             "contains": "pub async fn mind_save"
           }
         ]
@@ -1324,19 +1324,19 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ProgramCenterApp.vue",
             "contains": "`/api/program_center/agent/save/${id}`"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/ProgramCenterApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/program_center/src/routes.rs",
+            "file": "oa4rust/backend/crates/program_center/src/routes.rs",
             "contains": "\"/api/program_center/agent/save/{id}\""
           }
         ]
@@ -1361,23 +1361,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ProgramCenterApp.vue",
             "contains": "`/api/program_center/dict/${encodeURIComponent(flag)}/data`"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ProgramCenterApp.vue",
             "contains": "api.post('/api/program_center/dict', data)"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/ProgramCenterApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/program_center/src/routes.rs",
+            "file": "oa4rust/backend/crates/program_center/src/routes.rs",
             "contains": "\"/api/program_center/dict/{dictFlag}/{path}/data\""
           }
         ]
@@ -1402,23 +1402,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
             "contains": "/api/program_center/invoke/${encodeURIComponent(flag)}/execute"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
             "contains": "const listEp = '/api/program_center/invoke/list'"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/ServiceInvokeDesignerApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/program_center/src/routes.rs",
+            "file": "oa4rust/backend/crates/program_center/src/routes.rs",
             "contains": "\"/api/program_center/invoke/{flag}/execute\""
           }
         ]
@@ -1443,27 +1443,27 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ProgramCenterApp.vue",
             "contains": "`/api/scriptversion/list/script/${encodeURIComponent(scriptId)}`"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ProgramCenterApp.vue",
             "contains": "openScriptEditor"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/ProgramCenterApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/program_center/src/routes.rs",
+            "file": "oa4rust/backend/crates/program_center/src/routes.rs",
             "contains": "\"/api/program_center/script/{flag}\""
           },
           {
-            "file": "oa4rust/crates/cms_assemble_control/src/routes.rs",
+            "file": "oa4rust/backend/crates/cms_assemble_control/src/routes.rs",
             "contains": "\"/api/scriptversion/list/script/{scriptId}\""
           }
         ]
@@ -1492,19 +1492,19 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
             "contains": "const listEp = '/api/program_center/invoke/list'"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/ServiceInvokeDesignerApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/program_center/src/routes.rs",
+            "file": "oa4rust/backend/crates/program_center/src/routes.rs",
             "contains": "\"/api/program_center/invoke/{flag}/execute\""
           }
         ]
@@ -1540,13 +1540,13 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ProgramCenterApp.vue",
             "contains": "api.post('/api/program_center/market/list/paging/1/20', {})"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/program_center/src/routes.rs",
+            "file": "oa4rust/backend/crates/program_center/src/routes.rs",
             "contains": "/api/program_center/market/list/paging/{page}/size/{size}"
           }
         ]
@@ -1576,13 +1576,13 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/ProgramCenterApp.vue",
             "contains": "<button :class=\"{active:tab==='market'}\""
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/program_center/src/routes.rs",
+            "file": "oa4rust/backend/crates/program_center/src/routes.rs",
             "contains": "/api/program_center/market/{flag}/install/or/update"
           }
         ]
@@ -1607,27 +1607,27 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/BBSForum.vue",
             "contains": "api.get('/api/bbs/assemble/control/section/list')"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/BBSForum.vue",
             "contains": "`/api/bbs/assemble/control/subject/index/list/page/${page.value}/count/${pageSize}`"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/BBSForum.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
+            "file": "oa4rust/backend/crates/bbs_assemble_control/src/routes.rs",
             "contains": "\"/api/bbs/assemble/control/section/list\""
           },
           {
-            "file": "oa4rust/crates/bbs/src/routes.rs",
+            "file": "oa4rust/backend/crates/bbs/src/routes.rs",
             "contains": "\"/api/bbs/subject/list/{sectionId}\""
           }
         ]
@@ -1651,27 +1651,27 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/BBSForum.vue",
             "contains": "@click=\"openNewSection()\""
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/BBSForum.vue",
             "contains": "api.post('/api/bbs/assemble/control/section/create', { name })"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/BBSForum.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
+            "file": "oa4rust/backend/crates/bbs_assemble_control/src/routes.rs",
             "contains": "\"/api/bbs/assemble/control/section/create\""
           },
           {
-            "file": "oa4rust/crates/bbs_assemble_control/src/lib.rs",
+            "file": "oa4rust/backend/crates/bbs_assemble_control/src/lib.rs",
             "contains": "pub async fn section_create"
           }
         ]
@@ -1696,31 +1696,31 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/BBSForum.vue",
             "contains": "api.post('/api/bbs/subject/create', { ...data, authorId: session.user?.unique ?? '' })"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/BBSForum.vue",
             "contains": "`/api/bbs/subject/view/${targetId}`"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/BBSForum.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/bbs/src/routes.rs",
+            "file": "oa4rust/backend/crates/bbs/src/routes.rs",
             "contains": "\"/api/bbs/subject/create\""
           },
           {
-            "file": "oa4rust/crates/bbs/src/routes.rs",
+            "file": "oa4rust/backend/crates/bbs/src/routes.rs",
             "contains": "\"/api/bbs/subject/view/{id}\""
           },
           {
-            "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
+            "file": "oa4rust/backend/crates/bbs_assemble_control/src/routes.rs",
             "contains": "\"/api/bbs/assemble/control/reply/create\""
           }
         ]
@@ -1745,27 +1745,27 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/BBSForum.vue",
             "contains": "user/reply/my/list/page/${page.value}/count/${pageSize}"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/BBSForum.vue",
             "contains": "我的回复"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/BBSForum.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
+            "file": "oa4rust/backend/crates/bbs_assemble_control/src/routes.rs",
             "contains": "user/reply/my/list/page/{page}/count/{count}"
           },
           {
-            "file": "oa4rust/crates/bbs_assemble_control/src/u2.rs",
+            "file": "oa4rust/backend/crates/bbs_assemble_control/src/u2.rs",
             "contains": "pub async fn u2_my_reply_list"
           }
         ]
@@ -1790,23 +1790,23 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/BBSForum.vue",
             "contains": "`/api/bbs/assemble/control/subject/search/list/page/1/count/${pageSize}`"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/BBSForum.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
+            "file": "oa4rust/backend/crates/bbs_assemble_control/src/routes.rs",
             "contains": "subject/search/list/page/{page}/count/{count}"
           },
           {
-            "file": "oa4rust/crates/bbs_assemble_control/src/u2.rs",
+            "file": "oa4rust/backend/crates/bbs_assemble_control/src/u2.rs",
             "contains": "fn u2_subject_search_page"
           }
         ]
@@ -1831,39 +1831,39 @@
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/BBSForum.vue",
             "contains": "@click=\"openNewSection()\""
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/BBSForum.vue",
             "contains": "api.post('/api/bbs/assemble/control/section/create', { name })"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/BBSForum.vue",
             "contains": "`/api/bbs/assemble/control/section/save/${sectionModalTarget.value.id}`"
           },
           {
-            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "file": "oa4rust/frontend/apps/desktop/src/views/BBSForum.vue",
             "contains": "`/api/bbs/assemble/control/section/delete/${sec.id}`"
           }
         ],
         "routing": [
           {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
             "contains": "import('./views/BBSForum.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
+            "file": "oa4rust/backend/crates/bbs_assemble_control/src/routes.rs",
             "contains": "\"/api/bbs/assemble/control/section/create\""
           },
           {
-            "file": "oa4rust/crates/bbs_assemble_control/src/lib.rs",
+            "file": "oa4rust/backend/crates/bbs_assemble_control/src/lib.rs",
             "contains": "pub async fn section_create"
           },
           {
-            "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
+            "file": "oa4rust/backend/crates/bbs_assemble_control/src/routes.rs",
             "contains": "\"/api/bbs/assemble/control/section/delete/{id}\""
           }
         ]

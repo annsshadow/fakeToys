@@ -7,8 +7,8 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   resolve: {
     alias: {
-      '@oa4rust/sdk': resolve(__dirname, 'packages/sdk/src'),
-      '@oa4rust/ui': resolve(__dirname, 'packages/ui/src'),
+      '@oa4rust/sdk': resolve(__dirname, 'frontend/packages/sdk/src'),
+      '@oa4rust/ui': resolve(__dirname, 'frontend/packages/ui/src'),
     },
   },
   test: {
@@ -20,18 +20,18 @@ export default defineConfig({
     testTimeout: 15000,
     hookTimeout: 15000,
     include: ['**/*.test.ts'],
-    exclude: ['node_modules', 'dist', '**/node_modules/**', 'apps/mobile/**'],
+    exclude: ['node_modules', 'dist', '**/node_modules/**', 'mobile/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'json', 'lcov'],
       reportsDirectory: './coverage',
       // Coverage for files that can be tested with Node environment
       include: [
-        'packages/sdk/src/**/*.ts',
-        'packages/apis/src/index.ts',
-        'apps/desktop/src/views/**/*.ts',
-        'apps/desktop/src/contracts/**/*.ts',
-        'apps/desktop/src/utils/**/*.ts',
+        'frontend/packages/sdk/src/**/*.ts',
+        'frontend/packages/apis/src/index.ts',
+        'frontend/apps/desktop/src/views/**/*.ts',
+        'frontend/apps/desktop/src/contracts/**/*.ts',
+        'frontend/apps/desktop/src/utils/**/*.ts',
       ],
       exclude: [
         '**/*.test.ts',
@@ -39,10 +39,10 @@ export default defineConfig({
         '**/vite-env.d.ts',
         '**/vite.config.ts',
         '**/unocss.config.ts',
-        'packages/apis/src/export.ts',
-        'packages/apis/src/locales/**',
-        'packages/apis/src/api-coverage-generated.test.ts',
-        'packages/apis/src/api-functional-tests.test.ts',
+        'frontend/packages/apis/src/export.ts',
+        'frontend/packages/apis/src/locales/**',
+        'frontend/packages/apis/src/api-coverage-generated.test.ts',
+        'frontend/packages/apis/src/api-functional-tests.test.ts',
         'types.ts',
         'index.ts',
         'index.js',
@@ -57,7 +57,7 @@ export default defineConfig({
         // 生成的一行 HTTP 包装器（62 个 API 模块）无可测分支：api-coverage-generated.test.ts
         // 已实跑每个方法触发 V8 覆盖，剩余 ~3% 未覆盖行是生成器模板的纯转发行，
         // 属结构不可测——维持 90% floor 即豁免线（低于此说明生成测试集坏了）。
-        'packages/apis/src/index.ts': {
+        'frontend/packages/apis/src/index.ts': {
           lines: 90,
           functions: 90,
           branches: 80,
@@ -66,7 +66,7 @@ export default defineConfig({
         // SDK 模块 2026-09-18 实测 97-100%（app/widget/theme/router 已 100%）；
         // 80% floor 锁住已达成水平，防回退。session.ts 1 行（legacy storage catch）与
         // api.ts 个别超时分支属难触发路径，豁免在 audit 文档记录。
-        'packages/sdk/src/**/*.ts': {
+        'frontend/packages/sdk/src/**/*.ts': {
           lines: 80,
           functions: 80,
           branches: 50,
@@ -75,7 +75,7 @@ export default defineConfig({
         // contracts 三文件（designer/xform/process-definition）纯逻辑分支已补测
         // （designer.test.ts / xform.test.ts / xform.dom.test.ts / process-definition.test.ts）；
         // 70% floor 锁住可执行覆盖，声明/配置层（接口定义）不计入。
-        'apps/desktop/src/contracts/**/*.ts': {
+        'frontend/apps/desktop/src/contracts/**/*.ts': {
           lines: 70,
           functions: 70,
           branches: 60,
@@ -83,14 +83,14 @@ export default defineConfig({
         },
         // utils：toast.ts（showToast 管道 + confirmMsg 全路径）与 sandbox.ts 已 90%+；
         // 80% floor 锁住，防回退。
-        'apps/desktop/src/utils/**/*.ts': {
+        'frontend/apps/desktop/src/utils/**/*.ts': {
           lines: 80,
           functions: 80,
           branches: 50,
           statements: 80,
         },
         // Views: Vue single-file component logic
-        'apps/desktop/src/views/**/*.ts': {
+        'frontend/apps/desktop/src/views/**/*.ts': {
           lines: 50,
           functions: 50,
           branches: 45,
