@@ -13,7 +13,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
-      '@oa4rust/sdk': resolve(__dirname, '../../packages/sdk/src'),
+      '@oa4rust/sdk': resolve(__dirname, '../frontend/packages/sdk/src'),
     },
   },
   test: {

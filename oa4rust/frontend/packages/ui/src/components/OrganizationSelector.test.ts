@@ -22,7 +22,9 @@ async function loadComponent(): Promise<CompiledComponent> {
     logLevel: 'silent',
     plugins: [vue()],
     resolve: { alias: { '@oa4rust/sdk': sdkPath } },
-    server: { middlewareMode: true },
+    // watch 必须全禁：workspace 根 oa4rust/ 下还有 backend/target（海量 Rust 构建
+    // 产物），chokidar 递归监听会把 ssrLoadModule 拖到分钟级（实测 82s → 0.3s）。
+    server: { middlewareMode: true, watch: { ignored: ['**'] } },
   })
   try {
     const loaded = await server.ssrLoadModule(componentPath)

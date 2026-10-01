@@ -160,7 +160,7 @@ const __dirname = path.dirname(__filename)
 test.describe('main.ts source coverage', () => {
   test.use({ collectCoverage: process.env.COLLECT_COVERAGE === 'true' })
 
-  const mainPath = path.resolve(__dirname, '../apps/desktop/src/main.ts')
+  const mainPath = path.resolve(__dirname, '../frontend/apps/desktop/src/main.ts')
   let source: string
 
   test.beforeAll(() => {

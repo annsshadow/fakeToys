@@ -4,7 +4,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-const apiPath = path.join(import.meta.dirname || '.', '../packages/apis/src/index.ts')
+const apiPath = path.join(import.meta.dirname || '.', '../frontend/packages/apis/src/index.ts')
 const content = fs.readFileSync(apiPath, 'utf-8')
 const lines = content.split('\n')
 
@@ -89,7 +89,7 @@ for (const [moduleName, functions] of Object.entries(modules)) {
 
 testFile.push('})')
 
-const outputPath = path.join(import.meta.dirname || '.', '../packages/apis/src/api-coverage-generated.test.ts')
+const outputPath = path.join(import.meta.dirname || '.', '../frontend/packages/apis/src/api-coverage-generated.test.ts')
 fs.writeFileSync(outputPath, testFile.join('\n'))
 
 const totalFunctions = Object.values(modules).flat().length

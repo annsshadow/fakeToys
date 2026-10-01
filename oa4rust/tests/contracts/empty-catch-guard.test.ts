@@ -66,8 +66,8 @@ function emptyCatches(source: string): number[] {
   return bad
 }
 
-const desktopSrcRoot = resolve(import.meta.dirname, '../../apps/desktop/src')
-const mobileSrcRoot = resolve(import.meta.dirname, '../../apps/mobile/src')
+const desktopSrcRoot = resolve(import.meta.dirname, '../../frontend/apps/desktop/src')
+const mobileSrcRoot = resolve(import.meta.dirname, '../../mobile/src')
 
 describe('空 catch 必须带解释注释（不得静默吞错）', () => {
   it('全部 .vue/.ts 源文件无「纯空且无注释」的 catch 块', () => {
