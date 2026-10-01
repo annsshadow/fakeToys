@@ -346,7 +346,7 @@ pub async fn list_forums(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, name, description, sort, creator, create_time::text FROM x_bbs_forum ORDER BY sort ASC",
+            "SELECT id, name, description, sort, creator, create_time::text FROM x_bbs_forum WHERE deleted_at IS NULL ORDER BY sort ASC",
             &[],
         )
         .await
@@ -375,7 +375,7 @@ pub async fn get_forum(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, name, description, sort, creator, create_time::text FROM x_bbs_forum WHERE id = $1",
+            "SELECT id, name, description, sort, creator, create_time::text FROM x_bbs_forum WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -437,7 +437,7 @@ pub async fn list_topics_by_forum(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE forum_id = $1 ORDER BY create_time::timestamp DESC",
+            "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE forum_id = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&forum_id],
         )
         .await
@@ -510,7 +510,7 @@ pub async fn forum_view_all(pool: Extension<Pool>) -> Result<Json<ActionResult<V
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, name, description, sort, creator, create_time::text FROM x_bbs_forum ORDER BY sort ASC",
+            "SELECT id, name, description, sort, creator, create_time::text FROM x_bbs_forum WHERE deleted_at IS NULL ORDER BY sort ASC",
             &[],
         )
         .await
@@ -538,7 +538,7 @@ pub async fn forum_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, name, description, sort, creator, create_time::text FROM x_bbs_forum WHERE id = $1",
+            "SELECT id, name, description, sort, creator, create_time::text FROM x_bbs_forum WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -557,7 +557,7 @@ pub async fn mobile_view_all(pool: Extension<Pool>) -> Result<Json<ActionResult<
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic ORDER BY create_time::timestamp DESC LIMIT 20",
+            "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT 20",
             &[],
         )
         .await
@@ -629,7 +629,7 @@ pub async fn reply_filter_list_page_page_count_count(
 
     let rows = client
         .query(
-            "SELECT id, topic_id, content, creator, create_time::text FROM x_bbs_reply ORDER BY create_time::timestamp DESC LIMIT $2 OFFSET $1",
+            "SELECT id, topic_id, content, creator, create_time::text FROM x_bbs_reply WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT $2 OFFSET $1",
             &[&offset, &count],
         )
         .await
@@ -658,7 +658,7 @@ pub async fn reply_list_sub_id(
 
     let rows = client
         .query(
-            "SELECT id, topic_id, content, creator, create_time::text FROM x_bbs_reply WHERE topic_id = $1 ORDER BY create_time ASC",
+            "SELECT id, topic_id, content, creator, create_time::text FROM x_bbs_reply WHERE topic_id = $1 AND deleted_at IS NULL ORDER BY create_time ASC",
             &[&id],
         )
         .await
@@ -686,7 +686,7 @@ pub async fn subject_view_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE id = $1",
+            "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -709,7 +709,7 @@ pub async fn subject_top_sectionId(
 
     let rows = client
         .query(
-            "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE forum_id = $1 AND is_top = true ORDER BY create_time::timestamp DESC",
+            "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE forum_id = $1 AND is_top = true AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&section_id],
         )
         .await
@@ -782,7 +782,7 @@ pub async fn section_viewforum_forumId(
 
     let rows = client
         .query(
-            "SELECT id, name, forum_id, sort, description FROM x_bbs_section WHERE forum_id = $1 ORDER BY sort",
+            "SELECT id, name, forum_id, sort, description FROM x_bbs_section WHERE forum_id = $1 AND deleted_at IS NULL ORDER BY sort",
             &[&forum_id],
         )
         .await
