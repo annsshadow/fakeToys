@@ -310,23 +310,23 @@ class TestLegalValuesStayLegal:
 class TestTheRangesAreOneCopyOnly:
     """界与清单住在 `config.py` / 各自的权威模块，规格表只是**引**它们（A77）"""
 
-    @pytest.mark.parametrize("path,expected", [
-        ("vector.dimension", {"min": VECTOR_DIMENSION_MIN}),
-        ("export.default_format", {"choices": EXPORT_FORMATS}),
-        ("export.formats", {"item_choices": EXPORT_FORMATS}),
-        ("vector.backend", {"choices": VECTOR_BACKENDS}),
-        ("rag.default_format", {"choices": RAG_FORMATS}),
+    @pytest.mark.parametrize("path,dim", [
+        ("vector.dimension", "min"),
+        ("export.default_format", "choices"),
+        ("export.formats", "item_choices"),
+        ("vector.backend", "choices"),
+        ("rag.default_format", "choices"),
     ])
-    def test_the_spec_table_references_the_config_constants(self, path, expected):
-        """用 `is` 而不是 `==`：本表引用的必须**就是**那一个 tuple 对象
+    def test_the_verdict_dims_are_gone_from_the_spec_table(self, path, dim):
+        """L157 / B227 翻转：原先这条用 `is` 钉「表引用的就是那一份常数」
 
-        `==` 只判内容，改成立刻会放过「规格表另抄一份字面量」的写法 —— 而那正是
-        A77 的成因（两边各有一份、一边改了另一边不知道）。
+        判决维整批撤下后共引链移一格：清单与界住在运行时 `__post_init__` 的
+        `require_choice` / `require_count` 调用点（同一批推导常数，本类其余用例
+        钉其推导），规格表只声明类型。本条改钉「判决维不回表里」——谁给表里补
+        一份抄写就红（A77：一条界不住两处）。
         """
         spec = ConfigValidator.KNOWN_FIELDS[path]
-        for field, constant in expected.items():
-            assert field in spec, "%s 缺 %s 维度" % (path, field)
-            assert spec[field] is constant, "%s.%s 被重抄了一份" % (path, field)
+        assert dim not in spec,             "%s 的 %s 判决维回进规格表了（A139：判决权威只住运行时 + 回放）" % (path, dim)
 
     @pytest.mark.parametrize("section,key", [("rag", "chunk_size"),
                                              ("rag", "chunk_overlap")])
@@ -348,8 +348,12 @@ class TestTheRangesAreOneCopyOnly:
         assert VECTOR_BACKENDS == tuple(SUPPORTED_BACKENDS)
         # 与 `models` 那一先例（`MODEL_TYPES` 本地抄 + 测试钉两集相等）的差别：
         # 那三个模块都不 import `config`，实测无循环导入 ⇒ 这里可以只有一份。
-        assert EXPORT_FORMATS is ConfigValidator.KNOWN_FIELDS[
-            "export.default_format"]["choices"]
+        # L157 / B227：choices 维撤出规格表后，`is` 共引链的那一端移到了运行时
+        # （`ExportConfig.__post_init__` 对 `require_choice` 传的就是这份推导清单）；
+        # 表里只剩类型声明，钉「清单维不回表里 + 运行时真拒」：
+        assert "choices" not in ConfigValidator.KNOWN_FIELDS["export.default_format"]
+        with pytest.raises(DataValidationError):
+            ExportConfig(default_format="not-a-format")
 
     @pytest.mark.parametrize("section", sorted(SECTIONS))
     def test_every_field_of_the_four_sections_has_a_spec(self, section):
