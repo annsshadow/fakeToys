@@ -1119,7 +1119,13 @@ def main():
         json.dump(
             {
                 "report": report,
-                "handlers": {f"{c}::{n}": v for (c, n), v in handlers.items()},
+                # callee_calls 仅内存使用（绑定被调 helper 的参数化读取），不入快照：
+                # 其携带每个 handler 全部调用的实参源码（含 SQL 字面量），曾把本文件
+                # 撑到 8.5 万行（1.4MB）。
+                "handlers": {
+                    f"{c}::{n}": {k: v for k, v in rec.items() if k != "callee_calls"}
+                    for (c, n), rec in handlers.items()
+                },
             },
             fh,
             ensure_ascii=False,
