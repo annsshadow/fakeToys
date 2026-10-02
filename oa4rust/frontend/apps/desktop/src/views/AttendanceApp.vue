@@ -41,15 +41,12 @@
         <button class="eb" @click="attV2Write('workplaceCreate')">建打卡点</button>
         <button class="eb" @click="attV2Write('workplaceDelete')">删打卡点</button>
         <button class="eb" @click="attV2Write('workplaceListIds')">按ID查打卡点</button>
-        <button class="eb" @click="attV2Write('scheduleCreate')">建排班</button>
         <button class="eb" @click="attV2Write('scheduleListFilter')">排班筛选</button>
         <button class="eb" @click="attV2Write('shiftUpdate')">改班次</button>
         <button class="eb" @click="attV2Write('appealStart')">申诉起流程</button>
         <button class="eb" @click="attV2Write('appealEnd')">申诉结流程</button>
         <button class="eb" @click="attV2Write('detailStat')">明细统计筛选</button>
-        <button class="eb" @click="attV2Write('selfHolidayCreate')">建自定义假期</button>
         <button class="eb" @click="attV2Write('selfHolidayDelete')">删自定义假期</button>
-        <button class="eb" @click="attV2Write('holidaySimpleCreate')">建简易假期</button>
         <button class="eb" @click="attV2Write('holidaySimpleDelete')">删简易假期</button>
         <button class="eb" @click="attStatFilters">统计/明细筛选读</button>
         <button class="eb" @click="attCoreEntity('recordCreate')">建考勤记录</button>
@@ -346,9 +343,7 @@ async function archiveAppeal(a: A) {
   if (!(await confirmMsg('确定归档该申诉？'))) return
   try {
     // POST attendanceappealInfo/archive/{id} → UPDATE 归档 {id}
-    await api.post(`/api/attendance/assemble/control/attendanceappealInfo/archive/${encodeURIComponent(a.id)}`, {
-      id: a.id,
-    })
+    await api.post(`/api/attendance/assemble/control/attendanceappealInfo/archive/${encodeURIComponent(a.id)}`, {})
     toast.success('已归档申诉')
   } catch (e: any) {
     toast.error(`归档申诉失败: ${e?.message ?? ''}`)
@@ -546,9 +541,6 @@ async function attV2Write(op: string) {
         .map((s) => s.trim())
         .filter(Boolean)
       await api.post('/api/attendance/assemble/control/v2/workplace/list/ids', { ids })
-    } else if (op === 'scheduleCreate') {
-      const name = prompt('排班名称:', '') || ''
-      await api.post('/api/attendance/assemble/control/v2/groupschedule', { name })
     } else if (op === 'scheduleListFilter') {
       await api.post('/api/attendance/assemble/control/v2/groupschedule/list/filter', {})
     } else if (op === 'shiftUpdate') {
@@ -563,16 +555,10 @@ async function attV2Write(op: string) {
       await api.post(`/api/attendance/assemble/control/v2/appeal/${encodeURIComponent(id)}/end/process`, {})
     } else if (op === 'detailStat') {
       await api.post('/api/attendance/assemble/control/v2/detail/statistic/filter', {})
-    } else if (op === 'selfHolidayCreate') {
-      const name = prompt('自定义假期名称:', '') || ''
-      await api.post('/api/attendance/assemble/control/attendanceselfholiday', { name })
     } else if (op === 'selfHolidayDelete') {
       const id = prompt('要删除的自定义假期 ID:', '') || ''
       if (!(await confirmMsg('确定删除该自定义假期？'))) return
       await api.delete(`/api/attendance/assemble/control/attendanceselfholiday/${encodeURIComponent(id)}`)
-    } else if (op === 'holidaySimpleCreate') {
-      const name = prompt('简易假期名称:', '') || ''
-      await api.post('/api/attendance/assemble/control/selfholidaysimple', { name })
     } else {
       const docId = prompt('要删除的简易假期 docId:', '') || ''
       if (!(await confirmMsg('确定删除该简易假期？'))) return
@@ -952,7 +938,7 @@ async function importLeave() {
   if (!leaveType.trim()) return
   const person = prompt('人员标识:', '') || ''
   try {
-    await api.post('/api/attendance/assemble/control/v2/leave/import', { list: [{ leaveType, person }] })
+    await api.post('/api/attendance/assemble/control/v2/leave/import', { rows: [{ leaveType, person }] })
     toast.success('请假导入已提交')
   } catch (e: any) {
     toast.error(`导入失败: ${e?.message ?? ''}`)
@@ -964,7 +950,13 @@ async function importAttV2Records(mode: string) {
     if (mode === 'daily') {
       const date = prompt('导入日期(YYYY-MM-DD):', new Date().toISOString().slice(0, 10)) || ''
       if (!date.trim()) return
-      const r: any = await api.post('/api/attendance/assemble/control/v2/record/import/daily', { date })
+      const userId = prompt('人员标识(userId):', '') || ''
+      if (!userId.trim()) return
+      const checkInType = prompt('打卡类型(如 OnDuty/OffDuty):', 'OnDuty') || 'OnDuty'
+      const r: any = await api.post('/api/attendance/assemble/control/v2/record/import/daily', {
+        date,
+        records: [{ userId, checkInType }],
+      })
       toast.success(`按日导入：${(r as any)?.data?.inserted ?? 0} 条`)
     } else {
       const userId = prompt('人员标识(userId):', '') || ''

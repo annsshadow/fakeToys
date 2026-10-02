@@ -534,7 +534,7 @@ async function qvWrite(op: string) {
       await api.delete(`/api/queryview/importmodel/record/delete/${encodeURIComponent(rid)}`)
     } else {
       const kw = prompt('相似检索关键词:', '') || ''
-      await api.post('/api/queryview/morelikethis', { keyword: kw })
+      await api.post('/api/queryview/morelikethis', { key: kw })
     }
     toast.success('queryview 操作已提交')
   } catch (e: any) {

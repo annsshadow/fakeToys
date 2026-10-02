@@ -203,7 +203,7 @@ async function writePerms(item: any) {
     .filter(Boolean)
   if (!(await confirmMsg('确定写入该应用权限？'))) return
   try {
-    await api.post(`/api/appinfo/${id}/permission`, { viewerList: readers })
+    await api.post(`/api/appinfo/${id}/permission`, { personIds: readers })
     toast.success('应用权限已写入')
   } catch (e: any) {
     toast.error(`写入权限失败: ${e?.message ?? ''}`)
