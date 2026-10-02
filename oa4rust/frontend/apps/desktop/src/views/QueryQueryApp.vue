@@ -257,7 +257,7 @@ async function saveSurface(): Promise<void> {
   const payload = {
     name: sfForm.value.name ?? '',
     category: sfForm.value.category ?? 'default',
-    content: sfForm.value.content ?? '',
+    query: sfForm.value.content ?? '',
   }
   try {
     if (sfEditingId.value) {

@@ -177,7 +177,6 @@
           <button class="btn-sm" @click="pcStyleErase('menuFocus')">清菜单聚焦图</button>
           <button class="btn-sm" @click="pcStyleErase('processDefault')">清流程默认图</button>
           <button class="btn-sm" @click="pcStyleErase('setupAbout')">清关于Logo</button>
-          <button class="btn-sm" @click="pcCollectSave">存采集</button>
           <button class="btn-sm" @click="pcCollectDelete">删采集</button>
           <button class="btn-sm" @click="pcInvokeSaveById">存接口(按ID)</button>
           <button class="btn-sm" @click="pcInvokeDeleteById">删接口(按ID)</button>
@@ -1345,16 +1344,6 @@ async function pcStyleErase(kind: string) {
     toast.error(`清除失败: ${e?.message ?? ''}`)
   }
 }
-async function pcCollectSave() {
-  const id = prompt('采集配置 ID:', '') || ''
-  const name = prompt('名称:', '') || ''
-  try {
-    await api.put(`/api/program_center/collect/save/${encodeURIComponent(id)}`, { name })
-    toast.success('采集配置已保存')
-  } catch (e: any) {
-    toast.error(`保存失败: ${e?.message ?? ''}`)
-  }
-}
 async function pcCollectDelete() {
   const id = prompt('要删除的采集配置 ID:', '') || ''
   if (!(await confirmMsg('确定删除该采集配置？'))) return
@@ -1818,17 +1807,16 @@ async function pcU16() {
 async function pcU17() {
   try {
     await api.post('/api/program_center/deploy/server/resource', {
-      resourceName: '控制台资源',
-      resourceType: 'manual',
+      name: '控制台资源',
+      type: 'manual',
       path: '/deploy/manual',
     })
     await api.post('/api/program_center/qiyeweixin', {})
     const flag = prompt('Agent flag（可空跳过部署文件）:', '') || ''
     if (flag.trim())
       await api.put(`/api/program_center/agent/${encodeURIComponent(flag)}/file`, {
-        resourceName: 'agent-file',
-        resourceType: 'deploy',
-        path: '/agent/file',
+        fileName: 'agent-file',
+        filePath: '/agent/file',
       })
     toast.success('部署/注册已提交')
   } catch (e: any) {

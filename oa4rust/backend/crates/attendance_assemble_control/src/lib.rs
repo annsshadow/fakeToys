@@ -5371,25 +5371,41 @@ pub async fn v2_shift_create(
 pub async fn v2_shift_list_page_size(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
+    body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let (limit, offset) = json_page(page, size)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    // 与 v2_group_list 同款可选 name 过滤（班次名称模糊检索）。此前缺位：
+    // 前端传 {name} 被静默忽略，班次检索永不生效。
+    let filter_name = body
+        .as_ref()
+        .map(|Json(b)| {
+            b.get("name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string()
+        })
+        .unwrap_or_default();
+
     let d = dialect();
     let total: i64 = client
-        .query_one("SELECT COUNT(*) FROM x_attendance_v2_shift", &[])
+        .query_one(
+            "SELECT COUNT(*) FROM x_attendance_v2_shift WHERE ($1 = '' OR shift_name ILIKE ('%' || $1 || '%'))",
+            &[&filter_name],
+        )
         .await
         .map_err(|_| AppError::Internal)?
         .get(0);
 
     let sql = format!(
         "SELECT id, shift_name, on_duty_time, off_duty_time, work_time, serial_no \
-         FROM x_attendance_v2_shift ORDER BY serial_no ASC LIMIT {} OFFSET {}",
-        d.cast_bigint_param(1),
+         FROM x_attendance_v2_shift WHERE ($1 = '' OR shift_name ILIKE ('%' || $1 || '%')) ORDER BY serial_no ASC LIMIT {} OFFSET {}",
         d.cast_bigint_param(2),
+        d.cast_bigint_param(3),
     );
     let rows = client
-        .query(&sql, &[&limit, &offset])
+        .query(&sql, &[&filter_name, &limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
