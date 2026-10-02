@@ -736,9 +736,41 @@ cd server && go run ./cmd/vectors -check   # 只校验是否最新（CI 用）
 
 | 能抓住 | 抓不到 |
 |---|---|
-| 伪造底伤（等价于**假报技能等级** —— 等级必须烘进底伤） | 伪造 `A` 段（攻方系数），那需要模拟 |
-| 上报一套与 `user_skill_slots` 不同的技能 | `replay_hash` 本身的任何篡改 |
+| 伪造底伤（等价于**假报技能等级** —— 等级必须烘进底伤） | `replay_hash` 本身的任何篡改 |
+| 上报一套与 `user_skill_slots` 不同的技能 | |
 | 槽位错位 | |
+
+#### `A` 段（攻方系数）为什么**不该**去校验（第 59 轮实测结论）
+
+这一条之前写成「抓不到，因为需要模拟」—— 那是把一个**能力缺口**
+写成了问题，好像补上 tick 循环移植就能解决。量过之后不是。
+
+**攻方系数不参与任何收益计算**：
+
+```
+scoreCapFor(gl, sec)           只用关卡 MaxScore 与时长
+MaxKillsFor(gl)                只用关卡敌人总数
+computeLoot(gl, stars, kills…)  只用关卡、星级、击杀
+validateHPLeft(gl, hpLeft)     只用关卡初始血量
+```
+
+攻方一个都没进去。而结算能兑换的只有分数、星级、掉落、进度 —— 全都不看攻方。
+所以**伪造 `A` 段换不来任何收益**，校验它只能证明「哈希与构筑一致」，
+抓不到任何能兑现的作弊。
+
+顺带量过「能不能算出来」：`A` 段 7 个字段里 3 个不含 buff，
+其中 `critMultiplierPermille` 是硬编码常量 `1500`（`applyLoadout` 不碰它）、
+`reactionTier` 来自关卡生成的 `max_reaction_tier` —— 这两个零风险可算。
+但第三个 `reactionMultPermille` 取决于专精节点与装备，
+而 `POST /mastery/allocate` 与装备变更**独立于战局可达**，
+玩家可以在买 token 后、结算前改掉它 —— 那正是误封入口。
+
+结论：**算了也抓不到作弊，不做还少一个误封入口。**
+`TestAttackerNeverEntersRewardComputation` 把这条不变式立成了守卫：
+有人把攻方接进收益路径时它会红，并指出是哪个函数的哪一行。
+
+留着「已知边界」的描述而不立守卫，代价是将来有人为了「修」它去移植
+2,470 行 tick 循环 —— 而那件事解决不了任何问题。
 
 **格式**：`slot:skillId:baseDamage:applyStacks:heatCost`，按**字符串**升序，逗号连接。
 ⚠️ 排的是格式化后的字符串而不是槽位数值 —— TS 的 `Array.sort()` 无参时按
