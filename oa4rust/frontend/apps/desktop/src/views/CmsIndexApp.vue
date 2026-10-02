@@ -31,11 +31,6 @@
         <button class="btn-refresh" @click="createCmsArticle">📝 新建文章</button>
         <button class="btn-refresh" @click="toggleViewPublish(true)">📢 发布视图</button>
         <button class="btn-refresh" @click="toggleViewPublish(false)">🚫 取消发布</button>
-        <button class="btn-refresh" @click="cmsSave('dict')">存字典</button>
-        <button class="btn-refresh" @click="cmsSave('form')">存表单</button>
-        <button class="btn-refresh" @click="cmsSave('view')">存视图</button>
-        <button class="btn-refresh" @click="cmsSave('xform')">存xform</button>
-        <button class="btn-refresh" @click="cmsSave('templateform')">存模板表单</button>
         <button class="btn-refresh" @click="cmsDelete('dict')">删字典</button>
         <button class="btn-refresh" @click="cmsDelete('form')">删表单</button>
         <button class="btn-refresh" @click="cmsDelete('view')">删视图</button>
@@ -389,22 +384,8 @@ async function toggleViewPublish(publish: boolean) {
     toast.error(`视图发布操作失败: ${e?.message ?? ''}`)
   }
 }
-// rev321：CMS 定义 保存/删除 真实写端点（用户触发）——字典/表单/视图/xform/模板表单 + 控制配置 + 文档更新；全字面量路径
-async function cmsSave(kind: 'dict' | 'form' | 'view' | 'xform' | 'templateform') {
-  const id = prompt(`要保存的${kind} ID:`, '')
-  if (!id) return
-  const e = encodeURIComponent(id)
-  try {
-    if (kind === 'dict') await api.put(`/api/cms/assemble/control/dict/save/${e}`, { data: {} })
-    else if (kind === 'form') await api.put(`/api/cms/assemble/control/form/save/${e}`, { data: {} })
-    else if (kind === 'view') await api.put(`/api/cms/assemble/control/view/save/${e}`, { data: {} })
-    else if (kind === 'xform') await api.put(`/api/cms/assemble/control/xform/save/${e}`, { data: {} })
-    else await api.put(`/api/templateform/save/${e}`, { data: {} })
-    toast.success(`${kind} 已保存`)
-  } catch (err: any) {
-    toast.error(`保存${kind}失败: ${err?.message ?? ''}`)
-  }
-}
+// rev321：CMS 定义删除 真实写端点（用户触发）——字典/表单/视图/xform/模板表单；全字面量路径。
+// （原「存定义」假写分支已删：body{data:{}} 与各表真列不符，属名义写。）
 async function cmsDelete(kind: 'dict' | 'form' | 'view' | 'xform' | 'templateform') {
   const id = prompt(`要删除的${kind} ID:`, '')
   if (!id) return

@@ -263,7 +263,7 @@ async function deleteItem(item: ConfigItem) {
 async function save() {
   if (!selected.value) return
   try {
-    await api.put(`/api/config/update/${selected.value.id}`, { ...selected.value, config: config.value })
+    await api.put(`/api/config/update/${selected.value.id}`, { ...selected.value, value: config.value })
     qc.invalidateQueries({ queryKey: ['config', 'list'] })
     addHistory(true)
   } catch (e: any) {

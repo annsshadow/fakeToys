@@ -15,7 +15,6 @@
         <button @click="jpushWrite('jpushCreate')">建推送</button>
         <button @click="jpushWrite('jpushSave')">存推送</button>
         <button @click="jpushWrite('jpushDelete')">删推送</button>
-        <button @click="jpushWrite('deviceCreate')">建设备</button>
         <button @click="jpushWrite('deviceBind')">绑设备</button>
         <button @click="jpushWrite('deviceUnbind')">解绑设备</button>
         <button @click="jpushWrite('deviceUnbindAll')">解绑全部</button>
@@ -23,7 +22,6 @@
         <button @click="jpushCtrlWrite('ctrlBind')">控制绑设备</button>
         <button @click="jpushWrite('messageSend')">发送消息</button>
         <button @click="jpushWrite('messageTest')">测试发送</button>
-        <button @click="jpushWrite('coreDeviceCreate')">建实体设备</button>
         <button @click="jpushWrite('coreDeviceDelete')">删实体设备</button>
         <span v-if="entitiesText" class="subtitle">{{ entitiesText }}</span>
       </div>
@@ -162,9 +160,6 @@ async function jpushWrite(op: string) {
       const id = prompt('要删除的推送 ID:', '') || ''
       if (!(await confirmMsg('确定删除该推送？'))) return
       await api.post(`/api/jpush/delete/${encodeURIComponent(id)}`, {})
-    } else if (op === 'deviceCreate') {
-      const name = prompt('设备名称:', '') || ''
-      await api.post('/api/jpush/device/create', { deviceName: name })
     } else if (op === 'deviceBind') {
       const name = prompt('绑定设备名:', '') || ''
       await api.post('/api/jpush_assemble_control/device/bind', { deviceName: name })
@@ -180,9 +175,6 @@ async function jpushWrite(op: string) {
       await api.post('/api/jpush_assemble_control/message/send', {})
     } else if (op === 'messageTest') {
       await api.post('/api/jpush_assemble_control/message/test/send', {})
-    } else if (op === 'coreDeviceCreate') {
-      const name = prompt('实体设备名:', '') || ''
-      await api.post('/api/jpush/core/entity/device/create', { deviceName: name })
     } else {
       const id = prompt('要删除的实体设备 ID:', '') || ''
       if (!(await confirmMsg('确定删除该实体设备？'))) return

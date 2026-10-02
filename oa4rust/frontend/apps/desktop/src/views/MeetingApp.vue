@@ -35,7 +35,6 @@
       <button class="sb" @click="meetingWrite('confirmAllow')">确认允许</button>
       <button class="sb" @click="meetingWrite('confirmDeny')">确认拒绝</button>
       <button class="sb" @click="meetingWrite('checkin')">签到</button>
-      <button class="sb" @click="meetingWrite('save')">存会议</button>
       <button class="sb" @click="meetingWrite('delete')">删会议</button>
       <button class="sb" @click="meetingWrite('buildingEdit')">改楼栋</button>
       <button class="sb" @click="meetingWrite('buildingDelete')">删楼栋</button>
@@ -52,7 +51,6 @@
       <button class="sb" @click="meetingMore('modifyStart')">改开始时间</button>
       <button class="sb" @click="meetingMore('modifyComplete')">改结束时间</button>
       <button class="sb" @click="meetingMore('manualComplete')">手动结束</button>
-      <button class="sb" @click="meetingMore('coreCreate')">建核心会议</button>
       <button class="sb" @click="meetingMore('coreSave')">存核心会议</button>
       <button class="sb" @click="meetingMore('coreDelete')">删核心会议</button>
       <button class="sb" @click="meetingLists">会议清单读</button>
@@ -693,7 +691,6 @@ async function meetingWrite(op: string) {
     else if (op === 'confirmAllow') await api.post(`/api/meeting/assemble/control/meeting/${e}/confirm/allow`, {})
     else if (op === 'confirmDeny') await api.post(`/api/meeting/assemble/control/meeting/${e}/confirm/deny`, {})
     else if (op === 'checkin') await api.post(`/api/meeting/assemble/control/meeting/${e}/checkin`, {})
-    else if (op === 'save') await api.post(`/api/meeting/assemble/control/meeting/save/${e}`, { subject: '更新会议' })
     else if (op === 'delete') {
       if (!(await confirmMsg('确定删除该会议？'))) return
       await api.delete(`/api/meeting/assemble/control/meeting/delete/${e}`)
@@ -716,7 +713,8 @@ async function meetingWrite(op: string) {
       const title = prompt('会议主题:', '') || ''
       const startTime = prompt('开始时间(YYYY-MM-DD HH:mm):', '') || ''
       const endTime = prompt('结束时间(YYYY-MM-DD HH:mm):', '') || ''
-      await api.post('/api/meeting/create', { title, startTime, endTime })
+      const roomId = prompt('会议室 ID(必填):', '') || ''
+      await api.post('/api/meeting/create', { title, startTime, endTime, roomId })
     } else if (op === 'mtgCtrlCreate') {
       const meetingId = prompt('会议 ID:', '') || ''
       const controlType = prompt('控制类型(如 checkin/record):', '') || ''
@@ -728,7 +726,10 @@ async function meetingWrite(op: string) {
     } else if (op === 'attFromPp') {
       const meetingId = prompt('会议 ID:', '') || ''
       const fileName = prompt('附件文件名:', '') || ''
-      await api.post('/api/meeting/assemble/control/attachment/create/from/processplatform', { meetingId, fileName })
+      await api.post('/api/meeting/assemble/control/attachment/create/from/processplatform', {
+        meetingId,
+        title: fileName,
+      })
     } else await api.put(`/api/meeting/assemble/control/attachment/${e}/update`, {})
     toast.success('会议操作已提交')
   } catch (err: any) {
@@ -754,10 +755,6 @@ async function meetingMore(op: string) {
       await api.put(`/api/meeting/assemble/control/meeting/${e}/modify/completedtime`, { completedTime })
     } else if (op === 'manualComplete') {
       await api.get(`/api/meeting/assemble/control/meeting/${e}/manual/completed`)
-    } else if (op === 'coreCreate') {
-      const title = prompt('会议标题:', '') || ''
-      if (!title) return
-      await api.post('/api/meeting/core/entity/meeting/create', { title })
     } else if (op === 'coreSave') {
       await api.post(`/api/meeting/core/entity/meeting/save/${e}`, {})
     } else {

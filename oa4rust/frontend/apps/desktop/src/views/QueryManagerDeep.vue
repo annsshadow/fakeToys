@@ -23,10 +23,8 @@
         <button class="btn btn-outline" @click="qdCreate('importmodel')">建导入模型</button>
         <button class="btn btn-outline" @click="qdCreate('neural')">建神经模型</button>
         <button class="btn btn-outline" @click="qdEdit('query')">改查询</button>
-        <button class="btn btn-outline" @click="qdEdit('statement')">改语句</button>
         <button class="btn btn-outline" @click="qdEdit('stat')">改统计</button>
         <button class="btn btn-outline" @click="qdEdit('view')">改视图</button>
-        <button class="btn btn-outline" @click="qdEdit('table')">改表</button>
         <button class="btn btn-outline" @click="qdEdit('importmodel')">改导入模型</button>
         <button class="btn btn-outline" @click="qdEdit('neural')">改神经模型</button>
         <button class="btn btn-outline" @click="qdEdit('importer')">存导入器</button>
@@ -562,10 +560,8 @@ async function qdEdit(kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 
   const eid = encodeURIComponent(id)
   try {
     if (kind === 'query') await api.put(`/api/query/assemble/designer/query/${eid}`, { name: '更新查询' })
-    else if (kind === 'statement') await api.put(`/api/query/assemble/designer/statement/${eid}`, { name: '更新语句' })
     else if (kind === 'stat') await api.put(`/api/query/assemble/designer/stat/${eid}`, { name: '更新统计' })
     else if (kind === 'view') await api.put(`/api/query/assemble/designer/view/edit/${eid}`, { name: '更新视图' })
-    else if (kind === 'table') await api.put(`/api/query/assemble/designer/table/edit/${eid}`, { name: '更新表' })
     else if (kind === 'importmodel')
       await api.put(`/api/query/assemble/designer/importmodel/${eid}`, { name: '更新导入模型' })
     else if (kind === 'neural')

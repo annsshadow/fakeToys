@@ -316,7 +316,7 @@ async function onNotify(item: DocItem) {
 // rev422：记录文档浏览 POST /api/document/cipher/{id}/persist/view/record（append x_cms_viewrecord，doc_id 取行、person 会话；用户点击触发的真实浏览留痕）
 async function onViewRecord(item: DocItem) {
   try {
-    await api.post(`/api/document/cipher/${item.id}/persist/view/record`, { viewId: '', recordData: 'desktop-view' })
+    await api.post(`/api/document/cipher/${item.id}/persist/view/record`, {})
     toast.success('已记录浏览')
   } catch (e: any) {
     toast.error(`记录浏览失败: ${e?.message ?? ''}`)

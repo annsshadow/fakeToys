@@ -34,7 +34,6 @@
       <button class="org-meta-btn" @click="loadOrgObjectReads">对象投影批读</button>
       <button class="org-meta-btn" @click="loadOrgAdminOps">管理员解锁/授权日志</button>
       <button class="org-meta-btn" @click="loadOrgTwin">孪生端点</button>
-      <button class="org-meta-btn" @click="loadOrgObjectTwins">对象投影孪生</button>
       <button class="org-meta-btn" @click="loadOrgTwin2">桶外端点A</button>
       <button class="org-meta-btn" @click="loadOrgTwin3">桶外端点B</button>
       <button class="org-meta-btn" @click="loadOrgTwin4">桶外端点C</button>
@@ -72,8 +71,6 @@
       <button class="org-meta-btn" @click="orgUpdate('group')">改群组</button>
       <button class="org-meta-btn" @click="orgUpdate('role')">改角色</button>
       <button class="org-meta-btn" @click="orgUpdate('unitduty')">改职务</button>
-      <button class="org-meta-btn" @click="orgUpdate('unitattribute')">改单位属性</button>
-      <button class="org-meta-btn" @click="orgUpdate('personattribute')">改人员属性</button>
       <button class="org-meta-btn" @click="orgUpdate('permissionsetting')">改权限设置</button>
       <button class="org-meta-btn" @click="orgUpdate('personcard')">改名片</button>
       <button class="org-meta-btn" @click="orgDelete('person')">删人员</button>
@@ -84,10 +81,6 @@
       <button class="org-meta-btn" @click="orgDelete('personattribute')">删人员属性</button>
       <button class="org-meta-btn" @click="orgDelete('permissionsetting')">删权限设置</button>
       <button class="org-meta-btn" @click="orgDelete('personcard')">删名片</button>
-      <button class="org-meta-btn" @click="orgMember('groupAdd')">群组加成员</button>
-      <button class="org-meta-btn" @click="orgMember('groupDel')">群组删成员</button>
-      <button class="org-meta-btn" @click="orgMember('dutyPost')">职务成员POST</button>
-      <button class="org-meta-btn" @click="orgMember('dutyPut')">职务成员PUT</button>
       <button class="org-meta-btn" @click="orgAccount('lock')">锁定人员</button>
       <button class="org-meta-btn" @click="orgAccount('ban')">禁用人员</button>
       <button class="org-meta-btn" @click="orgAccount('unban')">解禁人员</button>
@@ -443,78 +436,6 @@ async function loadOrgTwin() {
     toast.error(`组织孪生端点失败: ${e?.message ?? ''}`)
   }
 }
-// rev481（放宽双计口径·第二波）：/object 投影族 48 条真注册纯读路由（组织/身份/角色/群组/人员/职务投影，
-// organization_assemble_express 宏生成+委派 helper 全 SELECT x_org_*，0 DML；body 用各 Wi 资源 List 超集，
-// handler 各取所需字段，缺省即空结果不 500；纯字面路径 exact 命中无影子）
-async function loadOrgObjectTwins() {
-  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
-  const ob = {
-    personList: ['0'],
-    unitList: ['0'],
-    identityList: ['0'],
-    groupList: ['0'],
-    roleList: ['0'],
-    levelList: ['0'],
-    typeList: ['0'],
-    name: '0',
-    attribute: '0',
-  }
-  try {
-    const rs = await Promise.all([
-      s(api.get('/api/person/list/all/object')),
-      s(api.post('/api/group/list/object', ob)),
-      s(api.post('/api/group/list/identity/object', ob)),
-      s(api.post('/api/group/list/person/object', ob)),
-      s(api.post('/api/group/list/group/sub/direct/object', ob)),
-      s(api.post('/api/group/list/group/sub/nested/object', ob)),
-      s(api.post('/api/group/list/group/sup/direct/object', ob)),
-      s(api.post('/api/group/list/group/sup/nested/object', ob)),
-      s(api.post('/api/identity/list/object', ob)),
-      s(api.post('/api/identity/list/group/object', ob)),
-      s(api.post('/api/identity/list/person/object', ob)),
-      s(api.post('/api/identity/list/major/person/object', ob)),
-      s(api.post('/api/identity/list/unit/person/object', ob)),
-      s(api.post('/api/identity/list/unit/sub/direct/object', ob)),
-      s(api.post('/api/identity/list/unit/sub/nested/object', ob)),
-      s(api.post('/api/person/list/object', ob)),
-      s(api.post('/api/person/list/group/object', ob)),
-      s(api.post('/api/person/list/identity/object', ob)),
-      s(api.post('/api/person/list/role/object', ob)),
-      s(api.post('/api/person/list/personattribute/object', ob)),
-      s(api.post('/api/person/list/login/after/object', ob)),
-      s(api.post('/api/person/list/login/recent/object', ob)),
-      s(api.post('/api/person/list/person/sub/direct/object', ob)),
-      s(api.post('/api/person/list/person/sub/nested/object', ob)),
-      s(api.post('/api/person/list/person/sup/direct/object', ob)),
-      s(api.post('/api/person/list/person/sup/nested/object', ob)),
-      s(api.post('/api/person/list/unit/sub/direct/object', ob)),
-      s(api.post('/api/person/list/unit/sub/nested/object', ob)),
-      s(api.post('/api/person/list/unit/sub/direct/like/object', ob)),
-      s(api.post('/api/person/list/unit/sub/nested/like/object', ob)),
-      s(api.post('/api/role/list/object', ob)),
-      s(api.post('/api/role/list/person/object', ob)),
-      s(api.post('/api/unit/list/object', ob)),
-      s(api.post('/api/unit/list/level/object', ob)),
-      s(api.post('/api/unit/list/types/object', ob)),
-      s(api.post('/api/unit/list/identity/object', ob)),
-      s(api.post('/api/unit/list/identity/sup/nested/object', ob)),
-      s(api.post('/api/unit/list/person/object', ob)),
-      s(api.post('/api/unit/list/person/sup/nested/object', ob)),
-      s(api.post('/api/unit/list/unitattribute/object', ob)),
-      s(api.post('/api/unit/list/unitduty/object', ob)),
-      s(api.post('/api/unit/list/unit/sub/direct/object', ob)),
-      s(api.post('/api/unit/list/unit/sub/nested/object', ob)),
-      s(api.post('/api/unit/list/unit/sup/direct/object', ob)),
-      s(api.post('/api/unit/list/unit/sup/nested/object', ob)),
-      s(api.post('/api/unit/identity/level/object', ob)),
-      s(api.post('/api/unit/identity/type/object', ob)),
-      s(api.post('/api/unitduty/list/identity/unit/name/object', ob)),
-    ])
-    toast.success(`对象投影孪生 ${rs.length} 条已提交`)
-  } catch (e: any) {
-    toast.error(`对象投影孪生失败: ${e?.message ?? ''}`)
-  }
-}
 // rev484（桶外 off-metric 波）：权限刷新型 2 + 快递 express 族 12 + 通用 区域/考勤范围/Excel/通用文件 控制族
 // （arity 已校验；area/invoice 等 DELETE 主轨与同路径 POST/PUT 方法孪生逐条接；param 位填 0 避影子）
 async function loadOrgTwin2() {
@@ -684,8 +605,8 @@ async function orgUnitExpress() {
       s(api.post('/api/unit/list/unit/sub/nested', ul)),
       s(api.post('/api/unit/list/unit/sup/direct', ul)),
       s(api.post('/api/unit/list/unit/sup/nested', ul)),
-      s(api.post('/api/unit/list/unitattribute', ul)),
-      s(api.post('/api/unit/list/unitduty', ul)),
+      s(api.post('/api/unit/list/unitattribute', { name: '', attribute: '' })),
+      s(api.post('/api/unit/list/unitduty', { name: '', identity: '' })),
       s(api.post('/api/unit/list/types', { typeList: [] })),
       s(api.post('/api/unit/check/unit/has/person', { unit, person: '' })),
       s(api.post('/api/unit/check/unit/has/unit', { unit, subUnit: '' })),
@@ -882,10 +803,6 @@ async function orgUpdate(
     else if (kind === 'group') await api.put(`/api/organization/assemble/control/group/${e}`, { name: '更新' })
     else if (kind === 'role') await api.put(`/api/organization/assemble/control/role/${e}`, { name: '更新' })
     else if (kind === 'unitduty') await api.put(`/api/organization/assemble/control/unitduty/${e}`, { name: '更新' })
-    else if (kind === 'unitattribute')
-      await api.put(`/api/organization/assemble/control/unitattribute/${e}`, { name: '更新' })
-    else if (kind === 'personattribute')
-      await api.put(`/api/organization/assemble/control/personattribute/${e}`, { name: '更新' })
     else if (kind === 'permissionsetting')
       await api.put(`/api/organization/assemble/control/permissionsetting/${e}`, { name: '更新' })
     else await api.put(`/api/organization/assemble/control/personcard/${e}`, { name: '更新' })
@@ -913,22 +830,6 @@ async function orgDelete(
     toast.success(`${kind} 已删除`)
   } catch (err: any) {
     toast.error(`删除${kind}失败: ${err?.message ?? ''}`)
-  }
-}
-async function orgMember(op: 'groupAdd' | 'groupDel' | 'dutyPost' | 'dutyPut') {
-  const flag = prompt('群组/职务 flag:', '')
-  if (!flag) return
-  const e = encodeURIComponent(flag)
-  try {
-    if (op === 'groupAdd') await api.put(`/api/organization/assemble/control/group/${e}/add/member`, { member: '' })
-    else if (op === 'groupDel')
-      await api.put(`/api/organization/assemble/control/group/${e}/delete/member`, { member: '' })
-    else if (op === 'dutyPost')
-      await api.post('/api/organization/assemble/control/unitduty/update/member', { member: '' })
-    else await api.put('/api/organization/assemble/control/unitduty/update/member', { member: '' })
-    toast.success('成员操作已提交')
-  } catch (err: any) {
-    toast.error(`成员操作失败: ${err?.message ?? ''}`)
   }
 }
 async function orgAccount(op: 'lock' | 'ban' | 'unban' | 'password' | 'icon' | 'reserve' | 'tmSave' | 'tmDelete') {
@@ -988,12 +889,12 @@ async function orgRelQuery(op: string) {
     else if (op === 'identityList') await api.post('/api/identity/list', { identityList: [key] })
     else if (op === 'groupList') await api.post('/api/group/list', { groupList: [key] })
     else if (op === 'roleList') await api.post('/api/role/list', { roleList: [key] })
-    else if (op === 'unitIdentityLevel') await api.post('/api/unit/identity/level', { identityList: [key] })
-    else if (op === 'unitIdentityType') await api.post('/api/unit/identity/type', { identityList: [key] })
+    else if (op === 'unitIdentityLevel') await api.post('/api/unit/identity/level', { identity: key })
+    else if (op === 'unitIdentityType') await api.post('/api/unit/identity/type', { identity: key })
     else if (op === 'unitCheckHasIdentity')
       await api.post('/api/unit/check/unit/has/identity', { unit: key, identity: key })
     else if (op === 'dutyNameIdentity') await api.post('/api/unitduty/list/name/identity', { identityList: [key] })
-    else await api.post('/api/unitduty/list/identity/unit/name', { identityList: [key] })
+    else await api.post('/api/unitduty/list/identity/unit/name', { nameList: [key] })
     toast.success('关系查询已提交')
   } catch (e: any) {
     toast.error(`查询失败: ${e?.message ?? ''}`)
@@ -1326,7 +1227,7 @@ async function loadOrgMembers() {
     const [byGroup, byRole, byLevel] = await Promise.all([
       api.post('/api/group/list/person', { groupList }).catch(() => null),
       api.post('/api/role/list/person', { roleList }).catch(() => null),
-      api.post('/api/unit/list/level', { unitList }).catch(() => null),
+      api.post('/api/unit/list/level', { levelList: [] }).catch(() => null),
     ])
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
     orgMetaText.value = `群组人员 ${n(byGroup)} · 角色人员 ${n(byRole)} · 单位层级 ${n(byLevel)}`
@@ -1466,8 +1367,8 @@ async function loadPersonLogins() {
     const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [all, after, recent, pair] = await Promise.all([
       s(api.get('/api/person/list/all')),
-      s(api.post('/api/person/list/login/after', { personList: [idv] })),
-      s(api.post('/api/person/list/login/recent', { personList: [idv] })),
+      s(api.post('/api/person/list/login/after', { date: '2026-01-01' })),
+      s(api.post('/api/person/list/login/recent', { count: 10 })),
       s(api.post('/api/person/list/pair/identity', { identityList: [idv] })),
     ])
     const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)

@@ -35,14 +35,11 @@
         <button class="new-page-btn ghost" @click="designerDelete('widget')">删组件</button>
         <button class="new-page-btn ghost" @click="designerCreate('templatepage')">建模板页</button>
         <button class="new-page-btn ghost" @click="designerDelete('templatepage')">删模板页</button>
-        <button class="new-page-btn ghost" @click="designerUpdate('dict')">存字典</button>
         <button class="new-page-btn ghost" @click="designerDelete('dict')">删字典</button>
         <button class="new-page-btn ghost" @click="designerCreate('script')">建脚本</button>
-        <button class="new-page-btn ghost" @click="designerUpdate('script')">改脚本</button>
         <button class="new-page-btn ghost" @click="designerDelete('script')">删脚本</button>
         <button class="new-page-btn ghost" @click="designerMisc('portalIcon')">门户图标</button>
         <button class="new-page-btn ghost" @click="designerMisc('portalPerm')">门户权限</button>
-        <button class="new-page-btn ghost" @click="designerMisc('widgetSave')">存组件</button>
         <button class="new-page-btn ghost" @click="designerMisc('pageSave')">存页面</button>
         <button class="new-page-btn ghost" @click="designerMisc('search')">设计器检索</button>
         <button class="new-page-btn ghost" @click="designerMisc('inputCompare')">输入比对</button>
@@ -324,9 +321,6 @@ async function designerUpdate(kind: 'portal' | 'page' | 'widget' | 'dict' | 'scr
       await api.put(`/api/portal/assemble/designer/page/${encodeURIComponent(id)}`, { content: {} })
     else if (kind === 'widget')
       await api.put(`/api/portal/assemble/designer/widget/${encodeURIComponent(id)}`, { name: '更新组件' })
-    else if (kind === 'dict')
-      await api.put(`/api/portal/assemble/designer/dict/save/${encodeURIComponent(id)}`, { data: {} })
-    else await api.put(`/api/portal/assemble/designer/script/${encodeURIComponent(id)}`, { text: '' })
     toast.success(`${kind} 已更新`)
   } catch (e: any) {
     toast.error(`更新${kind}失败: ${e?.message ?? ''}`)
@@ -358,9 +352,6 @@ async function designerMisc(op: string) {
     } else if (op === 'portalPerm') {
       const id = prompt('门户 ID:', '') || ''
       await api.post(`/api/portal/assemble/designer/portal/${encodeURIComponent(id)}/permission`, {})
-    } else if (op === 'widgetSave') {
-      const id = prompt('组件 ID:', '') || ''
-      await api.put(`/api/portal/assemble/designer/widget/save/${encodeURIComponent(id)}`, { data: {} })
     } else if (op === 'pageSave') {
       const id = prompt('页面 ID:', '') || ''
       await api.put(`/api/portal/assemble/designer/page/save/${encodeURIComponent(id)}`, { content: {} })

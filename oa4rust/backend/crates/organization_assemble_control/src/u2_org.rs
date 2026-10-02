@@ -763,10 +763,10 @@ pub async fn group_add_member(
     let Some(gid) = resolve_generic_id(&client, GROUP_TABLE, &flag).await? else {
         return err("group not found");
     };
-    let mut members = Vec::new();
-    for key in ["personList", "identityList", "unitList"] {
-        members.extend(json_str_list(&body, &[key]));
-    }
+    // 三个字面量各自调用（非变量键循环）：键名显式可见，静态契约审计可解析。
+    let mut members = json_str_list(&body, &["personList"]);
+    members.extend(json_str_list(&body, &["identityList"]));
+    members.extend(json_str_list(&body, &["unitList"]));
     check_batch_len(members.len())?;
     let mut added: i64 = 0;
     for m in &members {
@@ -814,10 +814,10 @@ pub async fn group_delete_member(
     let Some(gid) = resolve_generic_id(&client, GROUP_TABLE, &flag).await? else {
         return err("group not found");
     };
-    let mut members = Vec::new();
-    for key in ["personList", "identityList", "unitList"] {
-        members.extend(json_str_list(&body, &[key]));
-    }
+    // 三个字面量各自调用（非变量键循环）：键名显式可见，静态契约审计可解析。
+    let mut members = json_str_list(&body, &["personList"]);
+    members.extend(json_str_list(&body, &["identityList"]));
+    members.extend(json_str_list(&body, &["unitList"]));
     check_batch_len(members.len())?;
     let mut removed: i64 = 0;
     for m in &members {

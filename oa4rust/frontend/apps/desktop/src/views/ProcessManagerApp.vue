@@ -42,9 +42,6 @@
         <button class="btn-refresh" @click="pdEdit('mapping')">改映射</button>
         <button class="btn-refresh" @click="pdEdit('mergeitemplan')">改合并项计划</button>
         <button class="btn-refresh" @click="pdEdit('process')">改流程</button>
-        <button class="btn-refresh" @click="pdEdit('dict')">存字典</button>
-        <button class="btn-refresh" @click="pdEdit('form')">存表单</button>
-        <button class="btn-refresh" @click="pdEdit('xform')">存xform</button>
         <button class="btn-refresh" @click="pdDelete('applicationdict')">删应用字典</button>
         <button class="btn-refresh" @click="pdDelete('mapping')">删映射</button>
         <button class="btn-refresh" @click="pdDelete('mergeitemplan')">删合并项计划</button>
@@ -439,7 +436,7 @@ async function pdCreate(kind: 'applicationdict' | 'mapping' | 'mergeitemplan' | 
     else if (kind === 'mapping') await api.post('/api/processplatform/assemble/designer/mapping', { name })
     else if (kind === 'mergeitemplan') await api.post('/api/processplatform/assemble/designer/mergeitemplan', { name })
     else if (kind === 'itemaccess') await api.post('/api/processplatform/assemble/designer/item-access', { name })
-    else await api.post('/api/processplatform/assemble/designer/item-access/bach/save', { list: [] })
+    else await api.post('/api/processplatform/assemble/designer/item-access/bach/save', { items: [] })
     toast.success(`${kind} 已创建`)
   } catch (e: any) {
     toast.error(`新建${kind}失败: ${e?.message ?? ''}`)
@@ -462,9 +459,6 @@ async function pdEdit(
       await api.put(`/api/processplatform/assemble/designer/mergeitemplan/${e}`, { name: '更新合并项计划' })
     else if (kind === 'process')
       await api.put(`/api/processplatform/assemble/designer/process/${e}`, { name: '更新流程' })
-    else if (kind === 'dict') await api.put(`/api/processplatform/assemble/designer/dict/save/${e}`, { data: {} })
-    else if (kind === 'form') await api.put(`/api/processplatform/assemble/designer/form/save/${e}`, { data: {} })
-    else await api.put(`/api/processplatform/assemble/designer/xform/save/${e}`, { data: {} })
     toast.success(`${kind} 已更新`)
   } catch (err: any) {
     toast.error(`更新${kind}失败: ${err?.message ?? ''}`)
@@ -523,7 +517,6 @@ async function psHandover(kind: string) {
       const person = prompt('交接来源人:', '') || ''
       const targetIdentity = prompt('目标身份:', '') || ''
       await api.post('/api/processplatform/assemble/surface/handover', {
-        type: 'process',
         scheme: 'all',
         person,
         targetIdentity,

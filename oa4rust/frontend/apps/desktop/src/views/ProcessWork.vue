@@ -2456,7 +2456,7 @@ async function engineRest3(op: string): Promise<void> {
       await api.post('/api/processplatform/service/processing/snap/upload', {
         workId: w,
         snapType: 'manual',
-        snapData: {},
+        data: {},
       })
     } else {
       const j = encodeURIComponent(prompt('Job ID:', '') || '')
