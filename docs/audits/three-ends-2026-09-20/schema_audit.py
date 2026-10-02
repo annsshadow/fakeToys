@@ -140,6 +140,25 @@ def cfg_test_ranges(masked):
     return ranges
 
 
+def split_top_args(s):
+    """按顶层逗号切分实参串；返回与位置对齐的列表，元素为字符串字面量内容或 None。
+    嵌套括号/尖括号内的逗号不切分（泛型、嵌套调用、数组字面量整体保留）。"""
+    out, depth, cur = [], 0, []
+    for ch in s:
+        if ch in "(<[":
+            depth += 1
+        elif ch in ")>]":
+            depth -= 1
+        if ch == "," and depth == 0:
+            out.append("".join(cur).strip())
+            cur = []
+        else:
+            cur.append(ch)
+    if cur and "".join(cur).strip():
+        out.append("".join(cur).strip())
+    return [m.group(1) if (m := re.fullmatch(r'"([^"]*)"', a.strip())) else None for a in out]
+
+
 FN_RE = re.compile(r"(?:pub\s+)?(?:async\s+)?fn\s+([A-Za-z_]\w*)\s*\(")
 # 允许全限定写法 axum::extract::Json 与本仓惯用别名 `use axum::Json as AxumJson`
 # —— 否则会漏掉整批 crate（attendance/calendar/meeting/organization/portal core 等，实测
@@ -167,11 +186,32 @@ CRUD_PAIR_KEY_RE = re.compile(r'\(\s*"([A-Za-z_][\w]*)"\s*,')
 CRUD_ENTRY_RE = re.compile(r"\b(?:shared\s*::\s*)?(crud_create|crud_save|crud_update|crud_delete)\s*\(")
 # 形如 &section_create_spec() 的 spec 取用；或内联 CrudSpec { ... }。
 SPEC_CALL_RE = re.compile(r"&?\s*([a-z_]\w*_spec)\s*\(\s*\)")
+# 宏生成端点（organization_assemble_express 的 *_endpoint! 家族）：pub async fn 由宏展开
+# 生成，FN_RE 不可见 → 整族被误判 A（"无 Json 参数"）。各家族 scope helper 对 body 的
+# 读取键固定为单一 string_list(&body,"K")（键表为空直接返回空结果），按家族显式登记；
+# 新增宏家族时在此补一行，否则新族会再以 A 假红。
+MACRO_ENDPOINT_READS = {
+    "person_tree_endpoint": "personList",  # person_tree_scope
+    "group_tree_endpoint": "groupList",  # group_tree_scope
+    "person_unit_endpoint": "unitList",  # person_of_units
+}
+MACRO_ENDPOINT_RE = re.compile(r"\b(\w+_endpoint)!\s*\(\s*([A-Za-z_]\w*)\s*,")
+# 整体消费请求体：serde_json::to_string/to_value(&body) 直接落库/转发（schema-free 行存储、
+# 透传代理），语义为"接受任意键"——不参与 A/B/C/D 判定，缺省读不到任何具名键不是错配。
+WHOLE_BODY_RE = re.compile(r"serde_json\s*::\s*to_(?:string|value|vec)\s*\(\s*&?\s*([A-Za-z_]\w*)\s*\)")
+# fn 签名参数名（绑定名）：`mut body: Value` / `Json(body): Json<Value>` / `Path(flag): Path<String>`
+FN_PARAM_NAME_RE = re.compile(r"(?:Json\s*\(\s*|Path\s*\(\s*)?([A-Za-z_]\w*)\s*\)?\s*:")
+# receiver.get(PARAM) —— 读取键由函数参数命名（param-templated read），调用点绑定字面量后可知。
+PARAM_GET_RE = re.compile(r"\.get\s*\(\s*([A-Za-z_]\w*)\s*\)")
+# 参数化读键第二形态：string_list(&body, PARAM) / json_str(&body, PARAM) —— 键名是参数。
+HELPER_PARAM_KEY_RE = re.compile(r"\b([a-z_]\w*)\s*\(\s*&?\s*([A-Za-z_]\w*)(?:\.\w+)?\s*,\s*([A-Za-z_]\w*)\s*\)")
 
 
 def scan_crud_specs():
     """扫描全仓 `fn NAME(...) -> ... CrudSpec { columns: &[...] }`，
-    返回 {spec_fn_name: [json_key, ...]}，供委派 handler 解析读取键。"""
+    返回 {(crate, spec_fn_name): [json_key, ...]}，供委派 handler 解析读取键。
+    键必须带 crate：dict_spec/form_spec/xform_spec 等同名 spec 在 cms/portal/
+    processplatform 各有不同列集，按裸函数名去重会跨 crate 串味（后写者覆盖）。"""
     specs = {}
     for base in (os.path.join(RUST, "crates"), os.path.join(RUST, "src")):
         if not os.path.isdir(base):
@@ -182,7 +222,8 @@ def scan_crud_specs():
             for f in fs:
                 if not f.endswith(".rs"):
                     continue
-                src = open(os.path.join(dp, f), encoding="utf-8", errors="replace").read()
+                fp = os.path.join(dp, f)
+                src = open(fp, encoding="utf-8", errors="replace").read()
                 for m in re.finditer(r"\bfn\s+([a-z_]\w*)\s*\([^)]*\)\s*->\s*[^\{]*CrudSpec[^\{]*\{", src):
                     name = m.group(1)
                     body = src[m.end() : m.end() + 800]
@@ -190,7 +231,7 @@ def scan_crud_specs():
                     if cm:
                         keys = CRUD_PAIR_KEY_RE.findall(cm.group(1))
                         if keys:
-                            specs[name] = keys
+                            specs[(crate_of(fp), name)] = keys
     return specs
 STRUCT_DEF_RE = re.compile(r"#\[derive\([^)]*Deserialize[^)]*\)\][\s\S]{0,200}?pub struct\s+(\w+)\s*\{([^}]*)\}")
 STRUCT_PLAIN_RE = re.compile(r"pub struct\s+(\w+)\s*\{([^}]*)\}")
@@ -417,6 +458,32 @@ def scan_rust_index():
                             if not _is_required(get_hits[i][1]):
                                 opt_keys.add(get_hits[i][0])
                             i += 1
+                    # for-in-字面量数组循环读键：`for key in ["a","b"] { recv.get(key) }`
+                    # （键名在循环头字面量数组里，循环体经变量取键）——并集语义，逐键计可选。
+                    for fm in re.finditer(
+                        r"\bfor\s+([A-Za-z_]\w*)\s+in\s*\[([^\]]*)\]\s*\{", body_orig
+                    ):
+                        loop_var, lit_body = fm.group(1), fm.group(2)
+                        loop_src = body_orig[fm.end() : fm.end() + 1200]
+                        if not re.search(
+                            r"\.get\s*\(\s*" + re.escape(loop_var) + r"\s*\)", loop_src
+                        ):
+                            continue
+                        lits = STR_LIT_RE.findall(lit_body)
+                        if not lits:
+                            continue
+                        if not any(
+                            re.search(
+                                re.escape(rv)
+                                + r"[\s\S]{0,80}?\.get\s*\(\s*" + re.escape(loop_var) + r"\s*\)",
+                                loop_src,
+                            )
+                            for rv in receivers
+                        ):
+                            continue
+                        for k2 in lits:
+                            reads.add(k2)
+                            opt_keys.add(k2)
                     # 数组键表 helper：body_str(&body, &["process", "processId"]) —— 语义是"或"
                     for hm in HELPER_KEYS_RE.finditer(body_orig):
                         if hm.group(1) in receivers:
@@ -463,7 +530,16 @@ def scan_rust_index():
                     if CRUD_ENTRY_RE.search(body_orig):
                         spec_keys = []
                         for scm in SPEC_CALL_RE.finditer(body_orig):
-                            spec_keys.extend(CRUD_SPECS.get(scm.group(1), []))
+                            # 同名 spec 跨 crate 列集不同：先精确 (handler crate, 名)，
+                            # 再退 shared（spec 可能定义在 shared/），最后裸名兜底。
+                            spec_keys.extend(
+                                CRUD_SPECS.get(
+                                    (crate_of(p), scm.group(1)),
+                                    CRUD_SPECS.get(
+                                        ("shared", scm.group(1)), CRUD_SPECS.get(scm.group(1), [])
+                                    ),
+                                )
+                            )
                         # 内联 CrudSpec { columns: &[...] }
                         for icm in re.finditer(r"CrudSpec\s*\{[\s\S]*?columns\s*:\s*&\s*\[([\s\S]*?)\]", body_orig):
                             spec_keys.extend(CRUD_PAIR_KEY_RE.findall(icm.group(1)))
@@ -476,6 +552,7 @@ def scan_rust_index():
                     # body 被整体传给另一个函数 → 键读取可能发生在被调函数内
                     delegated = False
                     callees = set()
+                    callee_calls = []
                     ACCESSORS = {
                         "get", "as_str", "as_i64", "as_u64", "as_f64", "as_bool", "as_array",
                         "as_object", "to_string", "unwrap_or", "unwrap_or_default", "unwrap",
@@ -497,6 +574,9 @@ def scan_rust_index():
                             if re.search(r"\b" + re.escape(bp) + r"\b", args):
                                 delegated = True
                                 callees.add(callee)
+                                # 记录调用点实参（按位置标记是否字符串字面量），供
+                                # "调用点字面量绑定被调 helper 的参数化读取"用。
+                                callee_calls.append((callee, split_top_args(args)))
                     emits = set()
                     for em in re.finditer(r'\(\s*"([A-Za-z_][\w]*)"\s*\.to_string\(\)\s*,', body_orig):
                         emits.add(em.group(1))
@@ -530,6 +610,27 @@ def scan_rust_index():
                                 # serde 结构体字段是否必填无法从此处静态判定（可能有 #[serde(default)]
                                 # 或 Option<T>）——保守计为可选，避免把结构体的每个字段都当必填产生假 C。
                                 opt_keys.add(nm)
+                    # fn 签名参数名（供参数化读取绑定）+ 参数化读取 + 整体消费识别
+                    fn_params = []
+                    for pm in FN_PARAM_NAME_RE.finditer(sig):
+                        pn = pm.group(1)
+                        if pn not in fn_params and pn not in ("fn", "async"):
+                            fn_params.append(pn)
+                    param_gets = sorted(
+                        {
+                            gm.group(1)
+                            for gm in PARAM_GET_RE.finditer(body_orig)
+                            if gm.group(1) in fn_params
+                        }
+                    )
+                    # 第二形态：键读取经由 string_list(&body, 参数) 等 helper（键名是参数）。
+                    for hm in HELPER_PARAM_KEY_RE.finditer(body_orig):
+                        if hm.group(2) in receivers and hm.group(3) in fn_params:
+                            if hm.group(3) not in param_gets:
+                                param_gets.append(hm.group(3))
+                    consumes_whole = any(
+                        wm.group(1) in receivers for wm in WHOLE_BODY_RE.finditer(body_orig)
+                    )
                     handlers.setdefault(
                         (crate_of(p), name),
                         {
@@ -541,8 +642,40 @@ def scan_rust_index():
                             "delegated": delegated,
                             "crud_resolved": crud_resolved,
                             "callees": sorted(callees),
+                            "callee_calls": callee_calls,
+                            "params": fn_params,
+                            "param_gets": param_gets,
+                            "consumes_whole": consumes_whole,
                             "emits": sorted(emits),
                             "file": os.path.relpath(p, RUST).replace("\\", "/"),
+                        },
+                    )
+
+                # 宏生成端点登记（见 MACRO_ENDPOINT_READS 注释）：函数体由宏展开，FN_RE 不可见
+                for mm in MACRO_ENDPOINT_RE.finditer(masked):
+                    if skipped(mm.start()):
+                        continue
+                    mkey = MACRO_ENDPOINT_READS.get(mm.group(1))
+                    if mkey is None:
+                        continue
+                    handlers.setdefault(
+                        (crate_of(p), mm.group(2)),
+                        {
+                            "body_params": ["body"],
+                            "reads": [mkey],
+                            "opt_keys": [mkey],
+                            "alt_groups": [],
+                            "opt_alt_groups": [],
+                            "delegated": False,
+                            "crud_resolved": False,
+                            "callees": [],
+                            "callee_calls": [],
+                            "params": [],
+                            "param_gets": [],
+                            "consumes_whole": False,
+                            "emits": [],
+                            "file": os.path.relpath(p, RUST).replace("\\", "/"),
+                            "macro_family": mm.group(1),
                         },
                     )
 
@@ -562,6 +695,20 @@ def scan_rust_index():
                 extra_opt_alts.extend(target.get("opt_alt_groups", []))
                 if target.get("crud_resolved"):
                     h["crud_resolved"] = True
+                # 调用点字面量绑定：被调 helper 以 .get(参数名) 参数化读键、调用点在同
+                # 一位置传字符串字面量（如 sup_nested_of_units(pool, "identityList",
+                # .., body)）→ 该字面量即调用方读取键。位置绑定，误绑风险低。
+                for cc_name, cc_args in h.get("callee_calls", []):
+                    if cc_name != callee:
+                        continue
+                    for pg in target.get("param_gets", []):
+                        params = target.get("params", [])
+                        if pg not in params:
+                            continue
+                        idx = params.index(pg)
+                        if 0 <= idx < len(cc_args) and cc_args[idx] is not None:
+                            extra_reads.add(cc_args[idx])
+                            extra_opt.add(cc_args[idx])
             if extra_reads or extra_alts:
                 h["reads"] = sorted(set(h["reads"]) | extra_reads)
                 h["opt_keys"] = sorted(set(h.get("opt_keys", [])) | extra_opt)
@@ -851,11 +998,19 @@ def main():
     bodies = scan_frontend_bodies()
 
     # 端点 → handler 契约（按 (crate, handler) 精确查找，避免同名函数跨 crate 串味）
+    # 例外：部分路由在其 A crate 注册、handler 函数体却定义在别的 crate（如
+    # organization_assemble_authentication 挂载 auth 的 check_token/sso_encrypt）——
+    # 精确键未命中且全仓恰有一个同名定义时回退之；多名同函仍按未索引处理（不猜）。
+    by_name = {}
+    for (hc, hn), rec in handlers.items():
+        by_name.setdefault(hn, []).append(hc)
     endpoint = {}
     for crate, rs in routes.items():
         for r in rs:
             h = r.get("handler") or ""
             hi = handlers.get((crate, h))
+            if hi is None and len(by_name.get(h, [])) == 1:
+                hi = handlers[(by_name[h][0], h)]
             endpoint.setdefault((r["method"], r["path"]), []).append(
                 {
                     "crate": crate,
@@ -866,6 +1021,7 @@ def main():
                     "alt_groups": hi["alt_groups"] if hi else [],
                     "opt_alt_groups": hi.get("opt_alt_groups", []) if hi else [],
                     "delegated": hi["delegated"] if hi else False,
+                    "consumes_whole": hi.get("consumes_whole", False) if hi else False,
                     "crud_resolved": hi.get("crud_resolved", False) if hi else False,
                     "emits": hi["emits"] if hi else [],
                     "indexed": bool(hi),
@@ -922,6 +1078,9 @@ def main():
         }
         if not has_body_param:
             report["A_body_ignored"].append(rec)
+            continue
+        if any(c.get("consumes_whole") for c in cands):
+            # 整体消费请求体（schema-free 行存储/透传）：接受任意键，无具名契约可言
             continue
         if delegated and not agg_reads and not agg_alts and not crud_resolved:
             # 键读取发生在被委派的泛型 helper 内（无 CrudSpec 可解析）→ 静态不可判定
