@@ -34,7 +34,10 @@ async function load() {
   if (!topicId.value) return
   loading.value = true
   try {
-    const [subjectResp, replyResp] = await Promise.all([bbsApi.subjectView(topicId.value), bbsApi.replyList(topicId.value)])
+    const [subjectResp, replyResp] = await Promise.all([
+      bbsApi.subjectView(topicId.value),
+      bbsApi.replyList(topicId.value),
+    ])
     // subject_view_id 对不存在的主题返回 type:error + data:null（HTTP 200）。
     topic.value = (subjectResp.data as Record<string, unknown> | null) ?? null
     replies.value = replyResp.data ?? []

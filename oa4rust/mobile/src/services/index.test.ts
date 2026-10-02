@@ -8,7 +8,16 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { getApiBase, setApiBase } from './http'
-import { bbsApi, collectApi, fileApi, messageApi, messageConversationId, processApi, searchApi, statisticsApi } from './index'
+import {
+  bbsApi,
+  collectApi,
+  fileApi,
+  messageApi,
+  messageConversationId,
+  processApi,
+  searchApi,
+  statisticsApi,
+} from './index'
 
 /** 捕获 uni.request 的最小 stub（服务方法本身只关心 method/url/data/options）。 */
 function installRequestCapture() {
