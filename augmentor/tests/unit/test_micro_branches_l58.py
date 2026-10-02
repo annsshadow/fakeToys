@@ -51,17 +51,19 @@ class TestConfigValidatorBranches:
         assert result.is_valid is True
 
     def test_int_above_max_reports_error(self):
-        # L126 起 _validate_* 死方法已删：范围判据走公共入口 validate_config 的
-        # 内联 isinstance 路径（KNOWN_FIELDS 规格 max 与 config 常量同源）
+        # L126 起 _validate_* 死方法已删；L157 / B227 起规格表不再持 min/max，
+        # 越界判决由 `_validate_replay_sections` 回放 `__post_init__` 报出。
         result = validate_config({**BASE_VALID, "augmentation": {"variants_per_seed": 101}})
         assert result.is_valid is False
-        assert any("值过大" in e.message for e in result.errors)
+        assert any(e.path == "augmentation.variants_per_seed" and "不大于" in e.message
+                   for e in result.errors)
 
     def test_float_above_max_reports_error(self):
-        # 同上：质量阈值超规格上界，由内联路径报「值过大」
+        # 同上：质量阈值超上界，由回放 `require_ratio` 报「比例」界文案
         result = validate_config({**BASE_VALID, "quality": {"threshold": 1.5}})
         assert result.is_valid is False
-        assert any("值过大" in e.message for e in result.errors)
+        assert any(e.path == "quality.threshold" and "比例" in e.message
+                   for e in result.errors)
 class TestContextParallelFailure:
     def test_parallel_batch_swallows_item_failures(self):
         """并行路径下单项失败应被记录并跳过，而不是炸掉整个批处理"""

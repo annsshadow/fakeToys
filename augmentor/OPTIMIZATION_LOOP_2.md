@@ -954,6 +954,7 @@
   各棘轮全部原地绿（全量门禁证实）。
 - 全量门禁：`7694 passed / 3 skipped / exit 0`（L154 的 7692 + 2 新例，无回归）。
   **B225 关闭**。
+| B227 | **已关闭（L157，收口第一本账 A139）**：`KNOWN_FIELDS`（24 行）+ `MODEL_ENTRY_FIELDS`（5 行）的判决维（min/max/choices/item_choices）与各节 `__post_init__` 的运行时判据是**两份实现**——加一节/一键要改两处，L82 补静态面时每行都要重抄「类型·下界·上界·清单」四件事 | 判决维整批撤出两张规格表（只留类型层+形状层 type/items/non_empty/non_blank/required/nullable/renderable），改由 `_validate_replay_sections` 逐键 `dataclasses.replace(默认底, 单键覆盖)` 回放各节 `__post_init__`（判决权威只住运行时一处，A77 终极形）；类型层由规格走查先短路、按路径（含元素档 key[0]、节级同文案）去重；跨键窗口 rag + 权重由既有 `_validate_rag_window`/`_validate_quality_weights` 专管不重探。38 条既有文案断言按红字逐条重述（值过大/值过小→不大于/不小于/比例+带常量端点、choices 维→运行时真拒），测试-only 无新用例 | M |
 
 | B226 | **已关闭（L156，收口第一本账 A46②）**：`StreamConfig` 三键（`chunk_size` / `buffer_size` / `max_memory_mb`）零判据——读侧 `StreamReader` 的 `chunk_size` 形参早接 `require_count(minimum=1)`，配置类这边 0 / 负数 / 字符串 / bool 全静默构造成功，同一档下界住两处（A77 形状） | 按「不发明语义、不删公开类」取判据档：`StreamConfig.__post_init__` 三键接 `require_count(minimum=1)`（chunk_size 与读侧形参同源同档，两侧同判由新守卫钉死；buffer / memory 无读侧权威，下界 1 按「正数量」读法记档）。本类无产品消费方（A46② 留档口径），判据买「写时就报」。A46 三子项自此全清（① L152、③ L41、② 本轮）。新增 3 例（无新参数化位，l97 / l98 原地不动） | S |
 
@@ -976,3 +977,31 @@
   仅 BACKLOG_A_CLOSED 一格 +1（A46 行收口划格，先例同 L154）。
 - 全量门禁：`7697 passed / 3 skipped / exit 0`（L155 的 7694 + 3 新例，无回归）。
   **B226 关闭，第一本账 A46 三子项全清**。
+
+
+### L157（2026-10-01）— B227 立项 + 关闭：A139 收口（规格表判决维整批撤下，改逐键回放）
+
+- **真缺陷（第一本账 A139 原框，L82 立）**：`ConfigValidator.KNOWN_FIELDS`（24 行判决维）
+  与 `MODEL_ENTRY_FIELDS`（5 行）跟各节 `__post_init__` 的运行时判据是「哪几键要判、
+  按什么形状判」的**两份实现**——界本身没抄两份（A77 由 is 共引守卫钉），但判决维
+  （min/max/choices/item_choices）与运行时调用点各写一遍，加一节/一键要同改两处，
+  L82 补静态面时每行都重抄四件事（类型·下界·上界·清单）。
+- **修法（A139 记档的「候选修法」落地，三条「先拍」顾虑逐条兑现）**：判决维整批
+  撤出两张规格表（只留类型层 type + 形状层 items/non_empty/non_blank/required/
+  nullable/renderable）；新增 `_validate_replay_sections` 逐键
+  `dataclasses.replace(默认底, 单键覆盖)` 回放各节 `__post_init__`，把运行时判据
+  原样投影到静态面——判决权威只住运行时一处（A77 终极形）。
+  - 顾虑①（文案位置会变 ⇒ 既有断言要重述）：38 条文案断言按红字逐条重述
+    （值过大/值过小 → 不大于/不小于/比例、choices 维 → 运行时真拒 + 带常量端点）。
+  - 顾虑②（YAML 形状错须类型层先短路）：规格走查的「类型错误」先报，回放只对
+    「节在场且是映射」构造、值类型错时与规格层同路径去重，不叠 TypeError。
+  - 顾虑③（无 `__post_init__` 节回放等于不判 ⇒ 收益边界）：A140 已于 L154 给
+    那 11 节全补判据，回放对全 20 节都真判。
+- **坑**：① 整批构造在第一个坏键上停手（六键写坏只出五声），改 `dataclasses.replace`
+  **逐键探针**；② 跨键窗口（rag chunk_size/overlap）与权重三件套按整批终态回放，
+  单键探针会把「单独合法、跨键非法」误判 ⇒ 由既有 `_validate_rag_window` /
+  `_validate_quality_weights` 专管，通用回放 `cross_key_owned` 跳过那三键；
+  ③ 去重要含元素路径（key[0]）与节级同文案（跨键回放报在节名上）两档。
+- 全量门禁：`7697 passed / 3 skipped / exit 0`（测试-only 轮无新用例，38 条断言
+  重述；A184 / L79 棘轮绿——本轮只动 config_validator.py，config.py 零改动无行位移）。
+  **B227 关闭，第一本账 A139 收口**。

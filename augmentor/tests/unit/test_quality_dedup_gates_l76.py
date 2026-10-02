@@ -352,19 +352,29 @@ class TestTheRangesAreOneCopyOnly:
         ("dedup", "threshold", DEDUP_THRESHOLD_RANGE),
     ])
     def test_the_spec_bounds_are_the_config_constants(self, section, key, expected):
+        """L157 / B227 翻转：区间判决维撤出规格表，界的权威只住运行时
+        `require_ratio(*RANGE)` 调用点；本条改钉「判决维不回表 + 越界有反馈」。"""
         spec = ConfigValidator.KNOWN_FIELDS["%s.%s" % (section, key)]
-        assert (spec["min"], spec["max"]) == expected
+        assert "min" not in spec and "max" not in spec, \
+            "%s.%s 的区间判决维回进规格表了（A139 复发）" % (section, key)
+        lo, hi = expected
+        errs = [e for e in ConfigValidator().validate_config(
+            {"app": {"name": "t"}, "models": {"default": "ernie"},
+             section: {key: hi + 0.5}}).errors if e.path == "%s.%s" % (section, key)]
+        assert errs, "%s.%s 越界零反馈" % (section, key)
 
     @pytest.mark.parametrize("section,key", [
         ("quality", "threshold"), ("dedup", "threshold")])
     def test_one_step_outside_the_table_is_red_on_both_faces(self, section, key):
-        """拿规格表自己的界算探针，要求两边同时拒 —— 只改一边界的写法当场红"""
-        spec = ConfigValidator.KNOWN_FIELDS["%s.%s" % (section, key)]
-        for probe in (spec["min"] - 0.5, spec["max"] + 0.5):
+        """两边同时拒 —— 只改一边界当场红（L157 / B227：探针按 config 常数端点，
+        判决维已撤出规格表，不再从表取 min/max）"""
+        ranges = {"quality": QUALITY_THRESHOLD_RANGE, "dedup": DEDUP_THRESHOLD_RANGE}
+        lo, hi = ranges[section]
+        for probe in (lo - 0.5, hi + 0.5):
             with pytest.raises(DataValidationError, match=key):
                 _construct(section, key, probe)
             assert _static_errors(section, key, probe), \
-                "%s=%r 规格表拒了、运行时没拒" % (key, probe)
+                "%s=%r 运行时拒了、静态面没拒（回放没出声？）" % (key, probe)
 
     @pytest.mark.parametrize("section", sorted(SECTIONS))
     def test_every_field_of_the_two_sections_has_a_spec(self, section):

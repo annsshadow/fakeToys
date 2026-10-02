@@ -112,20 +112,25 @@ class TestTheA140CensusIsInverted:
         assert sum(counts.values()) == 29
 
     def test_every_spec_row_shapes_the_runtime_type(self):
-        """规格表与运行时判据**同档**：int 行 min=1、str 行非空、list 行逐项、
-        bool 行就是 bool（A77 口径：一条界不住两处，这里 1 无既有常数可共引，
-        数值相等由本条钉死）"""
+        """规格表与运行时判据**同档**：int 行只声明类型（L157 / B227 起判决维
+        撤出规格表，下界 1 由回放 + 运行时调用点字面量承担）、str 行非空、
+        list 行逐项、bool 行就是 bool"""
         table = ConfigValidator.KNOWN_FIELDS
         for dotted in BOOL_KEYS:
             assert table[dotted] == {"type": bool}, dotted
         for dotted in INT_KEYS:
             spec = table[dotted]
-            assert spec["type"] is int and spec.get("min") == 1, dotted
+            assert spec["type"] is int and "min" not in spec, dotted
             # 与运行时调用点字面量同档（`require_count(..., minimum=1)`）：
-            # 同一值在两侧各自判负/判正。
+            # 同一值在两侧各自判负/判正；越界由回放报出。
             with pytest.raises(DataValidationError):
                 require_count(dotted, 0, minimum=1)
             assert require_count(dotted, 1, minimum=1) == 1
+            section, key = dotted.split(".", 1)
+            errs = [e for e in validate_config(
+                {"app": {"name": "t"}, "models": {"default": "ernie"},
+                 section: {key: 0}}).errors if e.path == dotted]
+            assert errs and "不小于" in errs[0].message,                 "%s 越界一档在静态面零反馈（回放没出声？）" % dotted
         for dotted in STR_KEYS:
             spec = table[dotted]
             assert spec["type"] is str and spec.get("non_empty") is True, dotted
