@@ -116,7 +116,9 @@ class TestConfigValidator:
         result = validator.validate_config(config)
         
         assert result.is_valid is False
-        assert any("值过大" in e.message for e in result.errors)
+        # L157 / B227：规格表不再持 min/max，越界由回放 `__post_init__` 报出
+        assert any(e.path == "augmentation.variants_per_seed" and "不大于" in e.message
+                   for e in result.errors)
     
     def test_validate_env_refs(self, config_with_env_refs):
         """测试验证环境变量引用"""
@@ -199,7 +201,8 @@ class TestConfigValidator:
         result = validator.validate_config(config)
         
         assert result.is_valid is False
-        assert any("值过小" in e.message for e in result.errors)
+        assert any(e.path == "augmentation.variants_per_seed" and "不小于" in e.message
+                   for e in result.errors)
     
     def test_validate_nested_dict(self):
         """测试验证嵌套字典"""
@@ -409,7 +412,9 @@ class TestConfigValidatorEdgeCases:
         result = validator.validate_config(config)
         
         assert result.is_valid is False
-        assert any("值过大" in e.message for e in result.errors)
+        # L157 / B227：比例界改由回放 `require_ratio` 报出
+        assert any(e.path == "quality.threshold" and "比例" in e.message
+                   for e in result.errors)
 
 
 class TestConfigValidatorExtended:
@@ -584,10 +589,11 @@ class TestAugmentationRetryKnobs:
         assert self._errors({"retry_delay": value}) == []
 
     @pytest.mark.parametrize("value,expect", [
-        (-1, "值过小"),
-        (61.0, "值过大"),
+        # L157 / B227：越界 / NaN 文案随判决维撤出改由回放报出；类型层仍住规格。
+        (-1, "不小于"),
+        (61.0, "不大于"),
         ("1s", "类型错误"),
-        (float("nan"), "不是有效数值"),
+        (float("nan"), "不是有效数值"),  # L157：NaN 仍由规格层类型刀报
     ])
     def test_illegal_retry_delay_values_reported(self, value, expect):
         errors = self._errors({"retry_delay": value})
@@ -600,8 +606,9 @@ class TestAugmentationRetryKnobs:
         assert self._errors({"max_retries": value}) == []
 
     @pytest.mark.parametrize("value,expect", [
-        (-1, "值过小"),
-        (21, "值过大"),
+        # L157 / B227：越界文案改由回放 `require_count` 报出。
+        (-1, "不小于"),
+        (21, "不大于"),
         (1.5, "类型错误"),
     ])
     def test_illegal_max_retries_values_reported(self, value, expect):
@@ -659,12 +666,12 @@ class TestWaitBudgetKnobSurface:
         assert self._errors({field: value}) == []
 
     @pytest.mark.parametrize("field,bad,expect", [
-        ("max_retry_wait", -1.0, "值过小"),
-        ("max_retry_wait", 301.0, "值过大"),
+        ("max_retry_wait", -1.0, "不小于"),  # L157/B227 回放 require_seconds
+        ("max_retry_wait", 301.0, "不大于"),
         ("max_retry_wait", "300", "类型错误"),
         ("max_retry_wait", float("nan"), "不是有效数值"),
-        ("retry_jitter", -0.1, "值过小"),
-        ("retry_jitter", 1.5, "值过大"),
+        ("retry_jitter", -0.1, "比例"),  # L157/B227 回放 require_ratio
+        ("retry_jitter", 1.5, "比例"),
         ("retry_jitter", "0.5", "类型错误"),
         ("retry_jitter", float("nan"), "不是有效数值"),
     ])
@@ -808,19 +815,19 @@ class TestWebSectionKnobSurface:
 
     @pytest.mark.parametrize("field,bad,expect", [
         ("port", "eighty", "类型错误"),
-        ("port", 0, "值过小"),
-        ("port", 65536, "值过大"),
+        ("port", 0, "不小于"),  # L157/B227 回放 require_count
+        ("port", 65536, "不大于"),
         ("host", 8000, "类型错误"),
         ("cors_origins", "https://only-me.example", "类型错误"),
         ("data_roots", "data", "类型错误"),
         ("rate_limit_exempt_paths", "/api/health", "类型错误"),
         ("cors_credentials", "maybe", "类型错误"),
-        ("rate_limit_max_requests", -5, "值过小"),
-        ("rate_limit_window_seconds", -1.0, "值过小"),
+        ("rate_limit_max_requests", -5, "不小于"),
+        ("rate_limit_window_seconds", -1.0, "不小于"),
         ("rate_limit_window_seconds", float("nan"), "不是有效数值"),
         ("rate_limit_window_seconds", "60", "类型错误"),
         ("max_upload_bytes", "256", "类型错误"),
-        ("max_upload_bytes", 0, "值过小"),
+        ("max_upload_bytes", 0, "不小于"),
         ("max_upload_bytes", True, "类型错误"),
     ])
     def test_illegal_values_reported(self, field, bad, expect):
@@ -979,29 +986,36 @@ class TestRuntimeValidatorParity:
         A77 要防的就是「抄一遍」：常量住在 `config.py`，校验器只能引用不能重打。
         """
         from augmentor import MAX_RETRY_AFTER
-        from augmentor.config import (AUTO_SAVE_INTERVAL_MIN, MAX_RETRIES_RANGE,
-                                      NUM_THREADS_RANGE, PORT_RANGE,
-                                      RATE_LIMIT_MIN_REQUESTS,
-                                      RATE_LIMIT_MIN_WINDOW_SECONDS,
-                                      REQUEST_TIMEOUT_RANGE,
-                                      RETRY_DELAY_RANGE, VARIANTS_PER_SEED_RANGE)
+        from augmentor.config import (MAX_UPLOAD_BYTES_MIN, PORT_RANGE,
+                                      VARIANTS_PER_SEED_RANGE)
 
         s = ConfigValidator.KNOWN_FIELDS
-        bounds = {
-            "augmentation.variants_per_seed": VARIANTS_PER_SEED_RANGE,
-            "augmentation.num_threads": NUM_THREADS_RANGE,
-            "augmentation.max_retries": MAX_RETRIES_RANGE,
-            "augmentation.retry_delay": RETRY_DELAY_RANGE,
-            "augmentation.max_retry_wait": (0.0, MAX_RETRY_AFTER),
-            "augmentation.request_timeout": REQUEST_TIMEOUT_RANGE,
-            "web.port": PORT_RANGE,
-        }
-        for path, (lo, hi) in bounds.items():
-            assert (s[path]["min"], s[path]["max"]) == (lo, hi), path
-        assert s["augmentation.auto_save_interval"]["min"] == AUTO_SAVE_INTERVAL_MIN
-        assert s["web.rate_limit_max_requests"]["min"] == RATE_LIMIT_MIN_REQUESTS
-        assert (s["web.rate_limit_window_seconds"]["min"]
-                == RATE_LIMIT_MIN_WINDOW_SECONDS)
+        for path in ("augmentation.variants_per_seed", "augmentation.num_threads",
+                     "augmentation.max_retries", "augmentation.retry_delay",
+                     "augmentation.max_retry_wait", "augmentation.request_timeout",
+                     "web.port", "augmentation.auto_save_interval",
+                     "web.rate_limit_max_requests", "web.rate_limit_window_seconds"):
+            assert "min" not in s[path] and "max" not in s[path],                 "L157：判决维回进规格表了（A139：判决权威只住回放）: %s" % path
+        # 越界一档由回放出声，文案带常量端点（常数换字面量 ⇒ 常数动文案不动 ⇒ 红）
+        probes = [
+            ("augmentation.variants_per_seed", VARIANTS_PER_SEED_RANGE[0] - 1,
+             str(VARIANTS_PER_SEED_RANGE[0])),
+            ("augmentation.variants_per_seed", VARIANTS_PER_SEED_RANGE[1] + 1,
+             str(VARIANTS_PER_SEED_RANGE[1])),
+            ("web.port", PORT_RANGE[0] - 1, str(PORT_RANGE[0])),
+            ("web.port", PORT_RANGE[1] + 1, str(PORT_RANGE[1])),
+            ("web.max_upload_bytes", MAX_UPLOAD_BYTES_MIN - 1,
+             str(MAX_UPLOAD_BYTES_MIN)),
+            ("augmentation.max_retry_wait", MAX_RETRY_AFTER + 1,
+             str(MAX_RETRY_AFTER)),
+        ]
+        for path, bad, token in probes:
+            section, key = path.split(".", 1)
+            cfg = {"app": {"name": "t"}, "models": {"default": "ernie"}}
+            cfg[section] = {key: bad}
+            errs = [e for e in validate_config(cfg).errors if e.path == path]
+            assert errs, "%s=%r 越界无反馈" % (path, bad)
+            assert token in errs[0].message,                 "%s=%r 的文案没带常量端点 %s" % (path, bad, token)
 
     def test_shape_flags_exist_only_where_runtime_judges(self):
         """`items` / `non_empty` / `non_blank` / `choices` / `renderable` 只许出现在运行时真判的键上
@@ -1046,9 +1060,10 @@ class TestRuntimeValidatorParity:
         # 漂 —— 漂了要红的是 `tests/unit/test_config_gates_l82.py` 里的
         # `TestTheRangesAreOneCopyOnly`（共引结构守卫）与
         # `TestTheRagWindowIsSharedAcrossThreeCallsites`，不是这里。
-        assert {p for p, spec in s.items() if "choices" in spec} == {
-            "logging.level", "export.default_format", "vector.backend",
-            "rag.default_format"}
+        # L157 / B227：封闭清单判决撤出规格表（改由回放 `require_choice` 共引运行时
+        # 清单），choices / item_choices 两维清零；谁把清单抄回表里就红。
+        assert {p for p, spec in s.items() if "choices" in spec} == set(),             "L157：choices 判决维回进规格表了（A139：清单权威只住运行时共引）"
+        assert {p for p, spec in s.items() if "item_choices" in spec} == set(),             "L157：item_choices 判决维回进规格表了（同上）"
         assert {p for p, spec in s.items() if spec.get("renderable")} == {
             "logging.format"}
         # L83 / A142 的新维度：`non_blank` = 「空串合法、纯空白不合法」，与 `non_empty`
