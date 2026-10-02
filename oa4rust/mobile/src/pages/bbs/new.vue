@@ -16,7 +16,8 @@ const content = ref('')
 const submitting = ref(false)
 
 const forumName = () => (forumIndex.value >= 0 ? forums.value[forumIndex.value]?.name : '')
-const canSubmit = () => Boolean(forumIndex.value >= 0 && title.value.trim() && content.value.trim() && !submitting.value)
+const canSubmit = () =>
+  Boolean(forumIndex.value >= 0 && title.value.trim() && content.value.trim() && !submitting.value)
 
 async function loadForums() {
   try {

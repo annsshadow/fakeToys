@@ -522,10 +522,7 @@ export const searchApi = {
   /** 论坛主题检索（x_bbs_topic 现役表；原打遗留 bbs_subject_info 表——当前无写入路径恒空）。 */
   bbsSubject: (keyword: string) =>
     list(
-      mapi.put<Record<string, unknown>[]>(
-        '/api/bbs/assemble/control/subject/search/list/page/1/count/20',
-        { keyword },
-      ),
+      mapi.put<Record<string, unknown>[]>('/api/bbs/assemble/control/subject/search/list/page/1/count/20', { keyword }),
     ),
 }
 
@@ -574,8 +571,7 @@ export const collectApi = {
   /** 收藏列表（返回全员，客户端按 personId 过滤，与桌面 CollectApp 同口径）。 */
   list: () => list(mapi.get<Record<string, unknown>[]>('/api/program_center/collect/list')),
   /** 删除收藏（collect_delete，crud 软删）。 */
-  remove: (id: string) =>
-    mapi.delete<never>(`/api/program_center/collect/delete/${id}`, { discardResponse: true }),
+  remove: (id: string) => mapi.delete<never>(`/api/program_center/collect/delete/${id}`, { discardResponse: true }),
 }
 
 export const apis = {
