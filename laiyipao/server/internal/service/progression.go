@@ -93,6 +93,107 @@ func (s *Service) AllocateMastery(ctx context.Context, userID int64, nodeID int)
 	})
 }
 
+// lockChallengeStateOrdered 按**固定顺序**锁住一次挑战会触碰的全部跨用户行（第 79 轮）。
+//
+// # 缺陷：两个对向挑战必然死锁（有两处，不是��处）
+//
+// `ChallengeDefense` 会碰到**两个人的**三类行：
+//
+//  1. `user_daily_challenges`（挑战次数 / 被偷次数）
+//     挑战者一行、被挑战者一行
+//  2. `user_wallets`（窃取与发放）
+//     被挑战者一行、挑战者一行
+//  3. `defenses`（wins / losses）—— **只有被挑战者那一条**，无冲突
+//
+// 修复前的实际顺序是：
+//
+//	dailyChallengeCounters(挑战者)   ← 第 583 行，INSERT…ON CONFLICT DO UPDATE 会**拿行锁**
+//	dailyChallengeCounters(被挑战者) ← 第 592 行
+//	grantWallet(被挑战者, -take)     ← 第 702 行
+//	grantWallet(挑战者, +stolen)     ← 第 726 行
+//
+// 也就是「挑战者→被挑战者」与「被挑战者→挑战者」**同时存在**。
+// A 打 B 与 B 打 A 同时发生时：
+//
+//	Tx1  锁 counters[A] → counters[B] → wallets[B] → 等 wallets[A]
+//	Tx2  锁 counters[B] → 等 counters[A]        → ...
+//
+// → PG `40P01 deadlock_detected` → failErr → **500**。
+//
+// 这是**自伤型 500**：两个玩家各点了一次挑战，服务端回 500，
+// 而任何人看日志都得不出「是自己这边的问题」。
+//
+// 我第一版只修了钱包顺序（加 `ORDER BY user_id FOR UPDATE`），
+// 实测**仍然死锁** 12 次里的 6 次 —— 因为计数器行在更早就被锁了。
+// **只修一处并发原语，剩下那处会立刻把问题重新暴露出来。**
+//
+// # 修法：表分轮 + id 升序
+//
+//	第一轮：对**每个** id 升序 ensure+lock `user_daily_challenges`
+//	第二轮：对**每个** id 升序 lock `user_wallets`
+//
+// 关键是**表顺序也必须固定**。若按「每个用户先 counters 再 wallets」，
+// Tx1 是 `counters[A] wallets[A] counters[B] wallets[B]`，
+// Tx2 是 `counters[B] wallets[B] counters[A] wallets[A]` —— 仍然互等。
+// 分轮之后两个事务的加锁序列**逐字相同**，不可能互等。
+//
+// # 为什么不能用 pg_advisory_xact_lock
+//
+// advisory lock 与这两张表的行锁**不是同一把锁** ——
+// 后续的 `INSERT … ON CONFLICT DO UPDATE` 与 `UPDATE user_wallets`
+// 仍然按任意顺序拿行锁，死锁依旧。必须让**同一把**（行锁）有序获取。
+//
+// # 为什么 ensure 用 `ON CONFLICT DO UPDATE` 而不是 `DO NOTHING`
+//
+// `DO NOTHING` 对**已存在**的行不加锁 —— 那样预锁就漏掉了它们。
+// `DO UPDATE SET challenge_date = CURRENT_DATE` 是个无操作更新
+// （值没变），但它**确实**拿行锁。
+// 「无操作更新」这个手法要写清楚，否则后来的人会以为是脏写法。
+func lockChallengeStateOrdered(ctx context.Context, tx txType, userIDs []int64) error {
+	ids := dedupPositive(userIDs)
+	if len(ids) == 0 {
+		return nil
+	}
+	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+
+	// 第一轮：挑战计数器（**必须**先于钱包，全局固定）
+	for _, id := range ids {
+		// 无操作更新只为拿行锁 —— 见函数头的说明。
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO user_daily_challenges (user_id, challenge_date, attempts, stolen_times)
+			VALUES ($1, CURRENT_DATE, 0, 0)
+			ON CONFLICT (user_id, challenge_date)
+			DO UPDATE SET challenge_date = CURRENT_DATE`, id); err != nil {
+			return fmt.Errorf("lock challenge counters of %d: %w", id, err)
+		}
+	}
+
+	// 第二轮：钱包
+	if _, err := tx.Exec(ctx, `
+		SELECT user_id FROM user_wallets
+		 WHERE user_id = ANY($1) ORDER BY user_id FOR UPDATE`, ids); err != nil {
+		return fmt.Errorf("lock wallets: %w", err)
+	}
+	return nil
+}
+
+// dedupPositive 去重并丢弃非正 id。
+//
+// 去重的理由不是正确性（`ANY($1)` 命中重复无害）而是可观测性：
+// 「锁了几行」这件事在日志/错误信息里要说得清。
+func dedupPositive(ids []int64) []int64 {
+	seen := make(map[int64]bool, len(ids))
+	out := make([]int64, 0, len(ids))
+	for _, id := range ids {
+		if id <= 0 || seen[id] {
+			continue
+		}
+		seen[id] = true
+		out = append(out, id)
+	}
+	return out
+}
+
 func (s *Service) masterySelected(ctx context.Context, tx txType, userID int64) (map[int]bool, error) {
 	rows, err := tx.Query(ctx,
 		`SELECT node_id FROM user_mastery_nodes WHERE user_id = $1`, userID)
@@ -591,6 +692,44 @@ func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64,
 		// 判定能否实际窃取
 		_, ownerStolen, err := s.dailyChallengeCountersTx(ctx, tx, ownerID)
 		if err != nil {
+			return err
+		}
+
+		// ⚠️ 第 79 轮：**按 user_id 升序预锁**两个钱包行。
+		//
+		// # 缺陷：两个对向挑战必然死锁
+		//
+		// 下面两处会锁 `user_wallets` 的行：
+		//
+		//   608 行  grantWallet(ownerID, -take)   ← 先锁【对方】
+		//   632 行  grantWallet(userID,  stolen)  ← 后锁【自己】
+		//
+		// 于是锁顺序是「对方 → 自己」。而两个玩家同时互打时：
+		//
+		//   Tx1（A 打 B 的防线）  锁 wallets[B] → 等 wallets[A]
+		//   Tx2（B 打 A 的防线）  锁 wallets[A] → 等 wallets[B]
+		//
+		// 互等 → PG 报 `40P01 deadlock_detected` → failErr → **500**。
+		//
+		// 这是**自伤型 500**：两个玩家各点了一次挑战，服务端回 500，
+		// 而任何人看日志都得不出「是自己这边的问题」。
+		//
+		// 频率不高（要求两人同一瞬间互打），但它是**确定存在**的：
+		// 只要两人互相点，就可能发生。
+		//
+		// # 修法：升序一次锁齐
+		//
+		// `ORDER BY user_id FOR UPDATE` 让 PG **按主键顺序**加锁，
+		// 于是任意两个挑战事务的加锁序列都一致 → 不可能互等。
+		//
+		// ⚠️ 为什么不能用「先锁小的那个」这种应用层判断：
+		// 那需要把比较结果带进后续所有分支，而 `grantWallet` 内部
+		// 还会再 UPDATE 同一行。**一处有序预锁**比**处处记得有序**可靠。
+		//
+		// 只锁两个：`userID`（挑战者）与 `ownerID`（被挑战者）。
+		// 钱包是本事务唯一会跨用户触碰的资源
+		// （`user_daily_challenges` / `defenses` 的 UPDATE 不跨用户）。
+		if err := lockChallengeStateOrdered(ctx, tx, []int64{userID, ownerID}); err != nil {
 			return err
 		}
 		stolen := map[string]int64{}

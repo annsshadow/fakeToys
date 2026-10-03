@@ -102,13 +102,20 @@ func posKey(pos string) string {
 //
 // ⚠️ 每条都必须写清理由 ——「这里没问题」这种判断留给写豁免的人，
 // 不留给沉默。理由为空时本测试会红。
+//
+// ⚠️ 键是 SQL **字面量的起始行**，而多行 raw string 加上注释会把它推着走：
+// 第 79 轮给 `ChallengeDefense` 加了预锁注释，`progression.go` 的豁免键
+// 从 572 漂到 673 —— `TestOwnershipExemptionKeysAreStillPresent` 立刻报了出来。
+//
+// **这正是那条守卫存在的理由。** 若没有它，失效的豁免会静默躺着，
+// 而「守卫从未报过」会被误读成「那里一直有约束」。
 var ownershipExemptions = map[string]string{
 	"economy.go:114": "排行榜本就跨用户 —— 它返回全服前 N 名，" +
 		"而返回列里没有别人的任何私有数据（只有 nickname / avatar / level_exp）。" +
 		"这不是「第 75 轮那个洞」的同类：那里泄露的是 build_snapshot + seed。\n" +
 		"⚠️ 键是 SQL **字面量的起始行**（114），不是 FROM 所在行（116）—— " +
 		"多行 raw string 里两者差 2 行。",
-	"progression.go:572": "「挑战别人的防线」本身就是玩法：读 `defenses WHERE id = $1` " +
+	"progression.go:673": "「挑战别人的防线」本身就是玩法：读 `defenses WHERE id = $1` " +
 		"是为了拿到 owner_id 做后续判定。归属检查在**同一事务内**紧接着做：" +
 		"`if ownerID == userID { return ErrForbidden }`。" +
 		"所以这里不按 owner_id 过滤是正确的 —— 过滤了反而挑战不了任何人。",
