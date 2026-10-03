@@ -32,6 +32,7 @@
 | 💥 **[laiyipao](#-laiyipao--塔防元素反应小游戏)** | 仿《向僵尸开炮》玩法内核的塔防 + 元素反应小程序游戏 | Go · uni-app · Vue3 · PostgreSQL | [README](laiyipao/README.md) |
 | 🧪 **[augmentor](#-augmentor--ai-训练数据增强)** | 把少量种子数据扩充成多轮问答对的训练数据增强工具 | Python · FastAPI · React | [README](augmentor/README.md) |
 | ✅ **[auto-checkin](#-auto-checkin--自动签到面板)** | 给多个大模型公益站自动签到领奖，带本地统计面板 | Node · Playwright · Express | [README](auto-checkin/README.md) |
+| 🧠 **[llm-lab](#-llm-lab--从零动手学大模型训练)** | 从零手写 autograd + GPT 训练栈的大模型训练教学项目，含 11 篇中文讲义 | Python · NumPy · PyTorch | [README](llm-lab/README.md) |
 | 🔐 **[cool](#-cool--免登-token-生成)** | Cool College OA 的免登 Token 生成工具 | Java · AES/MD5 | [README](cool/README.md) |
 
 ---
@@ -117,6 +118,23 @@ npm start               # 启动定时签到 + Web 面板
 
 > 站点机制、隐私说明与配置见 [auto-checkin/README.md](auto-checkin/README.md)。
 
+## 🧠 llm-lab — 从零动手学大模型训练
+
+一个可运行、可验证、带完整中文讲义的大模型训练教学项目。目标不是堆术语，而是让你亲手把一个 GPT 从零造出来、训练起来、再优化。
+
+- **两条代码轨**：`minigrad`（纯 NumPy 手写张量级 autograd + GPT，任何环境可跑）与 `torchgpt`（PyTorch 复刻 nanoGPT，演示 AMP 混合精度、梯度累积/裁剪、LoRA、DPO、困惑度评估；未装 torch 时相关测试自动跳过）。
+- **可验证**：`tests/test_engine.py` 用中心差分对每个算子做数值梯度校验，引擎正确性有据可查；端到端冒烟测试证明 loss 真的会下降。
+- **11 篇中文讲义**：分词、嵌入与位置编码、自注意力、Transformer 结构、预训练与训练循环、规模化训练（DDP/FSDP/ZeRO）、微调（SFT/LoRA/QLoRA）、对齐（RLHF/PPO/DPO）、评估、推理优化。
+
+```bash
+cd llm-lab
+pip install -r requirements.txt   # 只需 numpy + pytest
+python -m minigrad.train          # 训练字符级 GPT：loss ~4.1 → ~0.3，并生成文本
+pytest tests/ -q                  # 19 passed, 1 skipped（含逐算子数值梯度校验）
+```
+
+> 学习路线与讲义目录见 [llm-lab/README.md](llm-lab/README.md) 与 [llm-lab/docs/00-学习路线.md](llm-lab/docs/00-学习路线.md)。
+
 ## 🔐 cool — 免登 Token 生成
 
 Cool College（coolcollege）OA 系统的免登 Token 生成工具，支持 AES 加密/解密、MD5、Base64，兼容 .NET 的 AES-CBC 解密算法，可生成用户 ID / 工号 / 手机号 / 邮箱四种免登 Token。
@@ -133,6 +151,7 @@ fakeToys/
 ├── laiyipao/         # 💥 塔防元素反应小游戏（Go server + uni-app + admin）
 ├── augmentor/        # 🧪 AI 训练数据增强工具（Python + React）
 ├── auto-checkin/     # ✅ 公益站自动签到 + 统计面板（Node）
+├── llm-lab/          # 🧠 从零学大模型训练教学项目（Python NumPy/PyTorch）
 ├── cool/             # 🔐 免登 Token 生成（Java）
 ├── docs/             # 📚 方案 / 评审 / 审计 / 已归档计划文档
 ├── scripts/          # 🛠️ 通用脚本
@@ -147,6 +166,7 @@ fakeToys/
 - **laiyipao**：Go 1.26+、PostgreSQL 15+、Node 20+ + pnpm
 - **augmentor**：Python 3.10+
 - **auto-checkin**：Node + Playwright
+- **llm-lab**：Python 3.10+（原理轨仅需 numpy；实战轨另需 torch）
 - **cool**：JDK 8+
 
 ## 📄 开源协议
