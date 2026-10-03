@@ -11,6 +11,8 @@ from pydantic import BaseModel, ConfigDict
 from augmentor.exceptions import DataValidationError
 
 from ..deps import (
+    raise_internal_error,
+
     config_file_path,
     get_pipeline,
     invalidate_config_caches,
@@ -130,7 +132,7 @@ async def get_config():
             }
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.post(
@@ -234,7 +236,7 @@ async def update_config(
         # 400 且回传原文案；必须排在下面的 `Exception` 分支之前，否则一律落 500。
         raise to_http_error(e) from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.get("/api/models", response_model=ModelsResponse, summary="列出可用模型")
@@ -245,4 +247,4 @@ async def list_models():
         models = list(p.config.models.keys())
         return {"models": models, "default": p.config.default_model}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)

@@ -12,6 +12,8 @@ from pathlib import Path
 
 import pytest
 
+from api.deps import INTERNAL_ERROR_DETAIL
+
 AI_DIR = Path(__file__).resolve().parent.parent.parent
 
 
@@ -162,7 +164,7 @@ class TestConfigErrorPaths:
         client = _client(monkeypatch)
         response = client.get("/api/config")
         assert response.status_code == 500
-        assert "pipeline broken" in response.json()["detail"]
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL  # L180/A155②: no leak of original exception text
 
     def test_models_500_when_pipeline_fails(self, monkeypatch):
         import api.routes.config as cfg_module

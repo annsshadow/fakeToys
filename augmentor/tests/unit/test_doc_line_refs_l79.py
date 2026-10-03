@@ -504,7 +504,11 @@ MEASURED = {
     #: search_enhanced.py 收方法清单判据插行后，一条 normalize_filters 调用点的
     #: grep 读数格落空行（降级名锚）；漂移桶新增两条（插入区间顶进「指向真代码行
     #: 但不是它说的那条」的既及格）。
-    LEDGER: {"line_refs": 270, "file_tokens": 1661, "code_but_no_name_match": 145},
+    #: L180 面位移（漂移 145 → 146）：A155② 给 api/routes 十个路由文件补
+    #: raise_internal_error 的 import（config/data/export 三个多行 import 块各 +1 行），
+    #: 产品行号下移使账本一条指向路由文件的行号格「指向真代码行但非所名」⇒ 漂移桶 +1。
+    #: 案面=产品布局变更，按「数字搬进常量」条款重钉；line_refs 270 / file_tokens 1661 未动。
+    LEDGER: {"line_refs": 270, "file_tokens": 1661, "code_but_no_name_match": 146},
     #: L156 面位移（290 → 285）：streaming.py 插 `StreamConfig.__post_init__` 后，账本 5 条
     #: streaming.py 历史行引用（A145 行 2 条、A147 行 3 条）被引行换位、退出本档，按
     #: L151 / L153 / L154 先例降成名字锚（「原 N 行」）：line_refs −5、漂移 147 →

@@ -960,6 +960,8 @@
 
 | B248 | **已关闭（L178，A184 索引口径变更：未入仓用户数据目录移出索引）**：A184 的定位引用索引收下顶层两个未入仓用户数据目录（data/ 与 bak/ 两个顶层目录）——data/versions/ 每跑一次全量门禁被 create_version 测试追加新版本目录、bak/ 是手动备份——磁盘态随门禁跑动漂移，ambiguous 快照不可复现（L178 实锤 ambiguous 现量 330 vs 钉值 328，train_data 与 data.json 一名多候选被这两目录的同名件灌入） | 按 L145 的 .backups 先例把两目录移出索引——但**只按「恰好是 ROOT 直接子目录」逐层判**（_walks 新增 top_skip 形参，仅 base==ROOT 时匹配），不误伤嵌套的 augmentor/data 包（其 image.py 等是入仓产品码、被 web 侧类型注释引用，必须留在索引才解析成 live；首版用任意深度同名跳法把它也抹掉、翻成 dead_path 红 2 条，已回退）；指向这两个目录的引用改判「指向不入仓工件」两档 scratch 与 scratch_missing；四桶按口径变更逐格重钉：ambiguous 328→300、runtime_ns 30→0（30 条全是 data/* 示例路径）、scratch 730→768、scratch_missing 302→339（含本条账目自身新引散名 +1/+5/+1）；自检例 data/xxx.json 期望由 runtime_ns 改 scratch_missing；三档硬 0 与 live 面（2488）未动；测试-only 轮零新用例；全量门禁 7787 passed / 3 skipped / exit 0 | M |
 
+| B250 | **已关闭（L180，A155②：路由裸 500 全面普查收边，A155 全清）**：A155 原框点名的「40 处路由里裸写 detail=str(e) 绕过归类器」实测 37 处（api/routes 十个路由文件，quality 9 / version 8 / data 5 / export 4 / augment 3 / config 3 / 余 5）——L179 只修了 to_http_error 这一份权威，这 37 处收尾分支仍把异常原文（部署路径 / 文件系统状态）直接回给客户端，修的是象征不是面 | 新增 raise_internal_error 助手（api/deps.py，与 to_http_error 500 支同一口径 A77：原文落 logger.exception、客户端拿 INTERNAL_ERROR_DETAIL）；37 处裸 500 全部改调助手（十路由 import 补齐，字节级保 CRLF/LF）；tests/integration/test_api_route_500_branches.py 8 处 + test_api_data_500_branches.py 1 处「500 回异常原文」断言按红字重述为 == 固定文案（404 版本不存在 / 文件不存在、400 非法组件等非泄漏档一字不动）；新守卫 2 例含一条**静态形状棘轮**（api/routes 下裸 500 detail=str(异常) 回流当场红）；A155 三格（to_http_error + 37 裸 500 + 404/400 非泄漏档）自此全清；A184 棘轮原地绿（全路径 live 形引用）、L79 漂移桶 145→146 逐格重钉（十路由补 import 行使产品行号下移、账本一条行号格翻漂移档）；全量 7792 passed / 3 skipped / exit 0 | M |
+
 | B249 | **已关闭（L179，A155①：to_http_error 500 档不再转发异常原文）**：api/deps.py 的 to_http_error 最后一支把未分类异常原样 str(exc) 塞进 500 响应体——OSError(13,'Permission denied','/srv/...') 实测把部署根绝对路径与文件系统状态（Errno 28 磁盘满 / Errno 13 权限缺失）一并回给客户端，是可被利用的探测信号；A155 原框两格候选拍定取①（固定文案 + 原文落服务端日志，安全收紧方向，非脱敏白名单②） | 500 支改回固定文案常量 INTERNAL_ERROR_DETAIL（api/deps.py 模块级唯一产地，A77）+ logger.exception 把原文留服务端日志；400 支（ValueError 可行动文案）一字不动防修过头；tests/unit/test_api_deps.py 新增守卫 3 例（OSError 不泄漏部署路径/errno + 原文进日志 + ValueError 仍 400 原样回传）；tests/integration/test_api_dataset_system_tools.py 两处「500 回原文」断言按红字重述为「== 固定文案 + 原文不在响应体」（TestUnexpectedFailureBecomes500 五处 + dataset_impact/evaluate 各一，docstring 同步改口径）；A184/L79 各棘轮原地绿（本轮新增引用全用全路径 live 形、零散名）；全量 7790 passed / 3 skipped / exit 0（L178 的 7787 + 3 新守卫，零回归） | M |
 
 | B246 | **已关闭（L176）**：策略旋钮「封闭清单拒」同型普查（L175 的 method 静默回落修完后沿同型全仓扫）——sample 的 method / outlier 的 method / expander 的strategy 三处**已有** else 拒（普查实证）；唯一缺口 `save_quality_report` 的 format：未知 format **静默落 JSON 支**（请求 yaml 的拿到 json 文件不出声，checkpoint 症状族语义漂移档） | 缺口收边（format 封闭清单 `QUALITY_REPORT_FORMATS` + 入口 require_choice + None 专判）；**普查结论钉成棘轮**：新守卫 6 例含一条「五旋钮 × 未知值全部出 DataValidationError」合体例——任一旋钮未来退化回静默回落当场红；变异自证 2 红（剪 format 判据）、sha256 逐字节还原；A184/L79 各棘轮原地绿（quality_report.py 插行使 0 条活行引用顶歪，全量门禁证实） | M |
@@ -1258,3 +1260,14 @@
 - **CRLF 坑**：tests/integration/test_api_dataset_system_tools.py 是 CRLF 文件，批量改写断言用字节级读写保真（LF-only 计数验零），避免文本模式翻行。
 - **棘轮**：本轮账本与测试新增引用全用全路径 live 形（api/deps.py、tests/unit/test_api_deps.py 等），零散名 ⇒ A184/L79 各棘轮原地绿（全量门禁证实）。
 - 全量门禁：7790 passed / 3 skipped / exit 0（L178 的 7787 + 3 新守卫，无回归）。**B249 关闭，A155① 收口**。
+
+
+### L180（2026-10-03）— B250 立项 + 关闭：A155② 收口（路由裸 500 全面普查收边，A155 全清）
+
+- **立项**：L179 修完 to_http_error 这一份权威后，A155 原框点名的另一半「40 处路由裸写 detail=str(e) 绕过归类器」仍未收——修的是象征不是面。实普 api/routes 十个路由文件，裸 500 detail=str(异常) 共 **37 处**（quality 9 / version 8 / data 5 / export 4 / augment 3 / config 3 / audit·leakage·multimodal·privacy 各 1），A155 记的「40」含 3 处已走 to_http_error 的旧计数，真裸写 37。
+- **修法（A77 一条 500 泄漏判据住一处）**：新增 raise_internal_error 助手（api/deps.py，与 to_http_error 500 支同一口径：原文落 logger.exception、客户端拿 INTERNAL_ERROR_DETAIL，区别是直接 raise 供 except 分支调）；37 处裸 500 全部改调助手（十路由 import 补齐，字节级保 CRLF/LF 行尾）。404（版本不存在/文件不存在）与 400（非法组件）等非泄漏档一字不动。
+- **红字重述**：tests/integration/test_api_route_500_branches.py 8 处（fuse/scan/batch export/formats/create/rollback/data export/gate boom）+ test_api_data_500_branches.py 1 处（磁盘读失败）的「500 回异常原文」断言改 == 固定文案；改前这 9 例红（断言泄漏），改后全绿。
+- **新守卫 2 例**：① raise_internal_error raise 500 + 固定文案、OSError 部署路径/errno 不进 detail、原文进 caplog；② **静态形状棘轮**——api/routes 下裸 500 detail=str(异常) 一行回流即当场红（把「37 处已清」钉成机械红线，谁改回转发原文立刻红）。
+- **A155 全清**：to_http_error（L179）+ 37 裸 500（本轮）+ 非泄漏档（404/400 不动）三格闭环；A155 自此关闭。
+- **棘轮**：全路径 live 形引用 ⇒ A184 棘轮原地绿；**L79 漂移桶 145→146 逐格重钉**（十路由补 raise_internal_error 的 import，config/data/export 三个多行块各 +1 行使产品行号下移、账本一条行号格翻「指向真代码行但非所名」，按 L175 先例重钉，line_refs 270 / file_tokens 1661 未动）；全量门禁证实。
+- 全量门禁：7792 passed / 3 skipped / exit 0（L179 的 7790 + 2 新守卫，无回归）。**B250 关闭，A155 全清**。

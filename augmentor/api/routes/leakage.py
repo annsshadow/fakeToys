@@ -6,9 +6,9 @@
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from ..deps import load_items, run_in_thread
+from ..deps import raise_internal_error, load_items, run_in_thread
 from augmentor.leakage import LeakageReport, detect_leakage
 
 router = APIRouter(tags=["leakage"])
@@ -61,4 +61,4 @@ async def check_leakage(request: LeakageRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
