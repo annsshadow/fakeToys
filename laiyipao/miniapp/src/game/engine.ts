@@ -327,6 +327,17 @@ export class BattleEngine {
   buffs: Buffs = newBuffs()
   skills: EquippedSkill[]
 
+  /**
+   * **开战前**构筑的 S 段，在构造那一刻冻结（第 64 轮）。
+   *
+   * ⚠️ 必须是字符串快照，不能靠「持有 skills 数组的旧引用」：
+   * `applyCard` 走的是 `this.skills = this.skills.map(...)` —— 整体替换数组，
+   * 元素是 `{...s, baseDamage: 新值}` 这样的**新对象**。
+   * 所以旧引用指向的旧数组不会跟着变，但新数组的内容已经是升格后的 ——
+   * 只要上报时读 `this.skills` 就一定会带上局内状态。
+   */
+  private readonly buildSnapshotSkills: string
+
   // 统计
   shots = 0
   hits = 0
@@ -384,6 +395,8 @@ export class BattleEngine {
     this.cfg = cfg
     this.rng = new BattleRng(cfg.seed)
     this.skills = cfg.equipped.map((s) => ({ ...s, cooldownRemaining: 0 }))
+    // 上报用的 S 段在这里冻结 —— 早于任何 applyCard（第 64 轮）。
+    this.buildSnapshotSkills = replaySkillsSegmentOf(this.skills)
 
     this.baseHp = BigInt(cfg.level.base_hp)
     this.baseHpMax = BigInt(cfg.level.base_hp)
@@ -513,11 +526,39 @@ export class BattleEngine {
    *
    * 抓不到的：伪造 `A` 段（攻方系数）—— 那需要模拟，已记入 README 已知边界。
    *
-   * ⚠️ 这个字符串同时用于哈希与上报，**必须是同一个来源** ——
-   * 若上报时另算一份，两处一旦漂移，服务端会以「玩家作弊」为名拒绝合法对局。
+   * ⚠️⚠️ 这里**只**服务于 `replayHash()`，不用于上报（第 64 轮修正）。
+   *
+   * 原注释写的是「这个字符串同时用于哈希与上报，必须是同一个来源」——
+   * 那条假设是**错的**，且它把一个把绝大多数玩家判成作弊的缺陷正当化了。
+   *
+   * 两个用途需要的是**相反**的口径：
+   *
+   *   | 用途   | 该含什么                     | 为什么 |
+   *   |--------|------------------------------|--------|
+   *   | 哈希   | **含**局内状态（取牌升格后） | 否则取牌不改变哈希，「同种子不同操作得同哈希」成立，验真说谎 |
+   *   | 上报   | **不含**局内状态（开战前构筑） | 服务端按 DB 重算，DB 里没有局内升格这回事 |
+   *
+   * 之前两处都调本方法（读 `this.skills`，会被 `applyCard` 就地升格），
+   * 于是取过一张技能卡的正常对局上报 `0:1:120:2:20`，
+   * 而服务端重算出 `0:1:100:1:20` → `ErrReplaySkillsMismatch` → 422。
+   * `rollWaveCards` 固定把技能卡放在手牌下标 0，5 波各取 1 张时
+   * 随机选命中技能卡的概率 ≈ 1-(2/3)^5 ≈ **86%**。
    */
   replaySkillsSegment(): string {
     return replaySkillsSegmentOf(this.skills)
+  }
+
+  /**
+   * **上报给服务端的** S 段：开战前的构筑，不含任何局内升格（第 64 轮）。
+   *
+   * 与 `replaySkillsSegment()` 读同一个数组，但必须**在构造时冻结** ——
+   * `applyCard` 会 `this.skills = this.skills.map(...)` 整体替换数组元素，
+   * 所以持有旧数组的引用并不能免疫升格，必须在构造那一刻算出字符串。
+   *
+   * 守卫：`replay_skills_build_snapshot.test.ts`。
+   */
+  buildSnapshotSegment(): string {
+    return this.buildSnapshotSkills
   }
 
   replayHash(): string {
@@ -1739,8 +1780,13 @@ export class BattleEngine {
        * 这不需要任何战斗模拟 —— 与 replay_hash 整体不同，那个算不出来。
        *
        * 抓的是：伪造 base_damage（假报技能等级）、上报另一套技能、槽位错位。
+       *
+       * ⚠️ 第 64 轮：这里用 `buildSnapshotSegment()`（开战前冻结），
+       * **不是** `replaySkillsSegment()`（读 this.skills，含局内取牌升格）。
+       * 服务端比对的是 DB，而 DB 里没有局内升格这回事 ——
+       * 用后者会让取过技能卡的正常对局被 422 判成作弊（约 86% 的真实对局）。
        */
-      replay_skills: this.replaySkillsSegment(),
+      replay_skills: this.buildSnapshotSegment(),
     }
   }
 }

@@ -171,14 +171,28 @@ function canAfford(skillId: number): boolean {
  * 后端不下发「升级后的伤害」，而这里要显示的是**当前等级下**的伤害。
  * 公式在 `game/skill.ts` 的 `skillBaseDamageAtLevel` 里，两处一致。
  */
+/**
+ * 展示用的伤害（含等级加成）。
+ *
+ * 返回 `number` 而不是 string：`skillBaseDamageAtLevel` 返回 bigint，
+ * 而模板 `{{ damageAt(s) }}` 把它当数值显示。这里显式转成 number，
+ * **不能**用 `.toString()` —— 那会把返回类型悄悄变成 string
+ * （声明写的是 number，于是 vue-tsc 报 TS2322）。
+ *
+ * bigint → number 在伤害这个量级（1e4~1e6）不会有精度问题；
+ * 真要严格的话应该保留 bigint 并在模板里显式格式化，
+ * 但那会改动模板与测试，超出本轮范围。
+ */
 function damageAt(s: SkillDef): number {
   const r = skillRules.value
   if (!r) return s.base_damage
-  return skillBaseDamageAtLevel(
-    { maxLevel: r.max_level, coefPermille: r.coef_permille, baseCost: r.base_cost },
-    BigInt(s.base_damage),
-    levelOf(s.id),
-  ).toString()
+  return Number(
+    skillBaseDamageAtLevel(
+      { maxLevel: r.max_level, coefPermille: r.coef_permille, baseCost: r.base_cost },
+      BigInt(s.base_damage),
+      levelOf(s.id),
+    ),
+  )
 }
 
 async function doUpgrade(skillId: number): Promise<void> {
