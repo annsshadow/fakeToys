@@ -954,6 +954,8 @@
   各棘轮全部原地绿（全量门禁证实）。
 - 全量门禁：`7694 passed / 3 skipped / exit 0`（L154 的 7692 + 2 新例，无回归）。
   **B225 关闭**。
+| B236 | **已关闭（L166，A182 逐面收路线第八面）**：数据集工具路由的落盘口（`_dump` helper，写盘变换类六端点 convert/merge/sample/split/aggregate/rag 共用）与 L163/L164 同判据必收——产物经白名单落数据根、list_data_files 扫描读者在写窗口内拿半份；data_ops 命令的 --output 报告边同轮分档为豁免（CLI 报告一次性写，L165 口径） | `_dump` 改调 atomic_write_json（父目录创建由工具承担）；l99 棘轮 29→28（api/routes 现量降 1）；新守卫 3 例（写中断旧文件完好 + 回环建父目录 + 静态形状）；变异自证 3 红、sha256 还原；A184/L79/docs 各棘轮原地绿（全量门禁证实） | S |
+
 | B235 | **已关闭（L165，A182 逐面收路线第七面 + 逐面分档完成）**：依赖登记两边（DependencyManager 的 _save_datasets / _save_dependencies）与 L160–L162 同构第四份——读侧 _load_file 无 except 且 __init__ 必调，半份登记表的写窗口里任何新构造实例被当场炸掉；**另一路也封死**：若有人顺手给 _load_file 加 except，截断会静默回落 default——已登记的数据集/依赖凭空消失（L99 checkpoint 症状），两条路都指向收原子 | 两边改调 atomic_write_json；l99 棘轮 31→29；新守卫 3 例（写中断旧登记完好 + 回环 + 静态形状）；变异自证 2 红、sha256 还原；**同轮完成 A182 剩余 29 处的逐面分档**：CLI 报告一次性写边（ops/analysis/quality/io 的 --output 面）按判据豁免（同步等待、任意路径、无扫描链），versioning 快照两边豁免（读侧响亮抛异常，同 L161 快照判），atomic_write.py 自身豁免（工具本体）；剩余必收候选（dataset_tools 路由边、export_enhanced 交付面、data_ops 命令输出边）已点名待下轮；A184/L79/docs 各棘轮原地绿（全量门禁证实） | M |
 
 | B234 | **已关闭（L164，A182 逐面收路线第六面）**：数据集变换三边（`DatasetOperations` 的 merge_files / sample_file / split_file）与 L163 交付面同判据——API 侧（`dataset_tools` 路由）与 CLI 侧输出路径都经白名单落进数据根，`list_data_files` 按 *.json 扫同一目录，写窗口内读者拿半份；三边输入读侧 `json.load` 裸抛（响亮失败）不属缺陷面 | 三边改调 `atomic_write_json`；l99 棘轮 34→31；新守卫 4 例（写中断旧文件完好 + 三变换回环 + 同名覆盖写 + 静态形状）；变异自证 2 红、sha256 逐字节还原；dataset_ops.py 插行使账本六条历史读数格（入参判定清单格 ×1、分配器调用方格 ×5）落漂移桶，按先例全部降级名锚 + L79 三桶逐格重钉（line_refs 283→277 / file_tokens 1648→1654 / 漂移回 142 / FLOOR 同步）；A184 / docs 各棘轮原地绿（全量门禁证实） | M |
@@ -1102,3 +1104,12 @@
 - **钉子**：新守卫 3 例；l99 棘轮 31→29；变异 2 红 + sha256 还原。
 - 全量门禁：`7740 passed / 3 skipped / exit 0`（L164 的 7737 + 3 新例，无回归）。
   **B235 关闭**。
+
+
+### L166（2026-10-03）— B236 立项 + 关闭：A182 逐面收第八面（数据集工具路由落盘口）
+
+- **侦察路径**：L165 分档点名的必收候选逐个核实——dataset_tools 的 `_dump` 是写盘变换类六端点共用落盘口（一处收口覆盖全部调用面）；data_ops 两边核实为CLI 报告面豁免；export_enhanced 交付面留给下一轮。
+- **钉子**：新守卫 3 例；l99 棘轮 29→28；变异 3 红 + sha256 还原。
+- **记账自检口径修正**（L163/L164 两次假红教训）：自检只查反引号 file:行号 形态与竖线数，「按 *.json 扫描规则」这类叙述不再误伤。
+- 全量门禁：`7743 passed / 3 skipped / exit 0`（L165 的 7740 + 3 新例，无回归）。
+  **B236 关闭**。
