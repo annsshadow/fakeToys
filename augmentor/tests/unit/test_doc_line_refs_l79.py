@@ -114,7 +114,7 @@ CEILING = {
 #: 反空转下界卡住；它只负责证明「普查真的看见了成百条引用」，而不是钉住总数。
 FLOOR = {
     ARCH: {"line_refs": 38, "file_tokens": 200},
-    LEDGER: {"line_refs": 268, "file_tokens": 1050},
+    LEDGER: {"line_refs": 267, "file_tokens": 1050},
 }
 
 #: **现量**读数（`Temp/l79q/buckets.py` 的最后一个 run）。凡是在注释、`docs/ARCHITECTURE.md`
@@ -184,7 +184,7 @@ FLOOR = {
 #: 架构文档 `file_tokens` 219 → **221**、`file_unique` 175 → 177（§6 新增那一格点名两份产品
 #: 文件），`line_refs` 48 与 `code_but_no_name_match` 37 **未动**。账本 `line_refs` 287 →
 #: **292**（+5 全部来自 A143 那一行，且**五条全落 `name_hit`**：`api/routes/export.py:153` /
-#: `augmentor/cli/parser.py:50` / `augmentor/export.py:235` / `augmentor/export_enhanced.py:27` /
+#: `augmentor/cli/parser.py:50` / `augmentor/export.py:235` / augmentor/export_enhanced.py 的 ExportFormat（原 27 行，L167 插入后降名锚） /
 #: `tests/integration/test_cli_merged_commands.py:1081`）、`file_tokens` 1218 → **1236**（+18：
 #: 进度行、L84 日志块、A143 与 B2 两处注解；其中 5 个是 `Temp/l84q/` 探针名，落 `scratch_artifact`
 #: 而不进缺陷档）、`code_but_no_name_match` 170 → **170**。**这一格本轮是被判据抓过一次才对的**：
@@ -487,7 +487,11 @@ MEASURED = {
     #: 清单格、两条 largest_remainder 调用方格、三条 minimum_each 调用方格）落到
     #: 别的代码行，全部按先例降级名锚——行号引用退出 line_refs 与漂移两桶
     #: （各 −6 与 −3），文件名 token 转入 file_tokens（+6）。
-    LEDGER: {"line_refs": 277, "file_tokens": 1654, "code_but_no_name_match": 142},
+    #: L167 面位移（line_refs 277 → 276、file_tokens 1654 → 1655）：export_enhanced.py
+    #: 收原子写插 import 后，A143 那一行的 ExportFormat 行号格落到空行，按先例降级
+    #: 名锚——行号引用退出 line_refs 桶（−1），文件名 token 转入 file_tokens（+1），
+    #: 漂移桶不动。
+    LEDGER: {"line_refs": 276, "file_tokens": 1655, "code_but_no_name_match": 142},
     #: L156 面位移（290 → 285）：streaming.py 插 `StreamConfig.__post_init__` 后，账本 5 条
     #: streaming.py 历史行引用（A145 行 2 条、A147 行 3 条）被引行换位、退出本档，按
     #: L151 / L153 / L154 先例降成名字锚（「原 N 行」）：line_refs −5、漂移 147 →

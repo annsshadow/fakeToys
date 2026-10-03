@@ -70,7 +70,12 @@ REAL_REPLACE = os.replace
 # L166（B236）：数据集工具路由的落盘口 _dump 收原子写（写盘变换类六端点共用
 # helper，产物落白名单数据根 = L163 同判据）。data_ops 命令 --output 报告边同轮
 # 分档豁免（CLI 报告一次性写）。api/routes 现量降 1。
-NON_ATOMIC_JSON_DUMP_SITES_MAX = 28
+# L167（B237）：增强导出的九格式共用落盘口 _export_json 收原子写（导出物交付
+# 面同 L163）；ensure_ascii/indent 是活选项（ExportOptions 契约），atomic_write_json
+# 参数化（默认紧凑与既有调用零变化）、选项原样透传。export_enhanced.py 现量降 1。
+# 现量 28 含 atomic_write.py 工具本体 2 处（豁免排除后 26）；L167 净收
+# export_enhanced 1 处（27 + 1 拆分 - 2 排除 = 26）。
+NON_ATOMIC_JSON_DUMP_SITES_MAX = 26
 
 
 def _legacy_write_json(file_path: Path, data):
@@ -346,6 +351,12 @@ class TestThroatsAreWired:
         sites = []
         for pkg in ("augmentor", "api"):
             for path in sorted((root / pkg).rglob("*.py")):
+                if path.name == "atomic_write.py":
+                    # L167 工具本体豁免：atomic_write_json / atomic_write_text
+                    # 写的是同目录临时件（.tmp- 中段），不是产品写边——工具自身
+                    # 的 json.dump 属实现细节（L167 参数化后单行拆两支，+1 是
+                    # 形状噪声）。
+                    continue
                 lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
                 for i, line in enumerate(lines, start=1):
                     if "json.dump(" not in line or "json.dumps(" in line:

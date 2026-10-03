@@ -16,6 +16,8 @@ import csv
 import logging
 from typing import List, Dict, Optional, Any, TextIO
 from pathlib import Path
+
+from .atomic_write import atomic_write_json
 from dataclasses import dataclass, field
 from enum import Enum
 from .exceptions import UnsupportedFormatError
@@ -183,9 +185,10 @@ class EnhancedExporter:
         return processed
     
     def _export_json(self, items: List[Dict], output: Path, options: ExportOptions):
-        """导出JSON格式"""
-        with open(output, 'w', encoding='utf-8') as f:
-            json.dump(items, f, ensure_ascii=options.ensure_ascii, indent=options.indent)
+        """导出JSON格式（L167 收原子写——九个格式分支共用的落盘口，导出物
+        交付面同 L163 判据；ensure_ascii/indent 选项原样透传）"""
+        atomic_write_json(output, items, ensure_ascii=options.ensure_ascii,
+                          indent=options.indent)
     
     def _export_jsonl(self, items: List[Dict], output: Path, options: ExportOptions):
         """导出JSONL格式"""
