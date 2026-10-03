@@ -966,6 +966,8 @@
 
 | B252 | **已关闭（L182，A147 收口：流式单值文件 total_input/processed 分叉记档钉死）**：`augmentor/streaming.py` 的 `read_chunks` 与 `_count_items` 对「整个文件是单个 JSON 值」的读数分叉——一份只写 `{"a": 1}`（单行合法 JSON 对象、非数组）的文件，`_count_items` 走单值支计 **0 条**（它数的是数据项、单值不是数据项），而 `read_chunks` 逐行 `json.loads` 成功产出 **1 条** ⇒ `process()` 报告 `total_input=0` 而 `processed=1`。这是老形状（L86 已逐形状钉住 0/1 两格），但用户看到两读数不一致会当 bug | 按 A147 候选③「原样承认并写进文档」拍定（① 单值算 1 条 / ② 读取循环拒收 都是对外读数变更、会动 API/CLI 报告文案与既有断言，留单独轮不动）：process() docstring 加「单值文件分叉」note 写明 total_input=0/processed=1 是既有契约、读到时不当 bug；tests/unit/test_stream_single_pass_l86.py 新增守卫 1 例把分叉两侧各自钉死（total_input==0、processed==1、两者不等）——谁把任一侧改了都要先翻这一格。测试-only 面（docstring + 新守卫），A184/L79/l97 各棘轮原地绿（docstring 无散名引用、新守卫非参数化位）；全量 7804 passed / 3 skipped / exit 0 | S |
 
+| B253 | **已关闭（L183，收口第一本账 A130：哈希占位符 14 条历史欠账永久记档）**：第一本账「循环日志」标题行的「哈希待 L{n+1} 回填」占位符，L58..L71 共 14 条从未回填，L79 起已钉成精确相等棘轮（PLACEHOLDER_CEILING=14，只降不升）；原框留了「只回填哈希 vs 整段重述 vs 不动」三格待拍 | 拍定取「不动、永久记档」：补那 14 条历史正文属改历史账（哈希虽可从 git log 现取，但那几轮本账的 numstat 与当时秒数已不可重算，只回填哈希会留「半条已填」新形状；整段重述又直接改历史）三格皆不可取 ⇒ 14 条钉成终态欠账。落点：tests/unit/test_doc_line_refs_l79.py 的 test_only_the_current_round_leaves_a_hash_placeholder docstring 订正（原写「加本轮=15」旧读数，现稳态恰 14）+ 记 L183 拍定；第一本账 A130 行就地标「已关闭（L183）、14 条永久记档」。测试-only/文档轮零新用例；L79/A184 各棘轮原地绿（首账改动全为散文、零新反引号引用，全量门禁证实）；全量 7804 passed / 3 skipped / exit 0 | S |
+
 | B249 | **已关闭（L179，A155①：to_http_error 500 档不再转发异常原文）**：api/deps.py 的 to_http_error 最后一支把未分类异常原样 str(exc) 塞进 500 响应体——OSError(13,'Permission denied','/srv/...') 实测把部署根绝对路径与文件系统状态（Errno 28 磁盘满 / Errno 13 权限缺失）一并回给客户端，是可被利用的探测信号；A155 原框两格候选拍定取①（固定文案 + 原文落服务端日志，安全收紧方向，非脱敏白名单②） | 500 支改回固定文案常量 INTERNAL_ERROR_DETAIL（api/deps.py 模块级唯一产地，A77）+ logger.exception 把原文留服务端日志；400 支（ValueError 可行动文案）一字不动防修过头；tests/unit/test_api_deps.py 新增守卫 3 例（OSError 不泄漏部署路径/errno + 原文进日志 + ValueError 仍 400 原样回传）；tests/integration/test_api_dataset_system_tools.py 两处「500 回原文」断言按红字重述为「== 固定文案 + 原文不在响应体」（TestUnexpectedFailureBecomes500 五处 + dataset_impact/evaluate 各一，docstring 同步改口径）；A184/L79 各棘轮原地绿（本轮新增引用全用全路径 live 形、零散名）；全量 7790 passed / 3 skipped / exit 0（L178 的 7787 + 3 新守卫，零回归） | M |
 
 | B246 | **已关闭（L176）**：策略旋钮「封闭清单拒」同型普查（L175 的 method 静默回落修完后沿同型全仓扫）——sample 的 method / outlier 的 method / expander 的strategy 三处**已有** else 拒（普查实证）；唯一缺口 `save_quality_report` 的 format：未知 format **静默落 JSON 支**（请求 yaml 的拿到 json 文件不出声，checkpoint 症状族语义漂移档） | 缺口收边（format 封闭清单 `QUALITY_REPORT_FORMATS` + 入口 require_choice + None 专判）；**普查结论钉成棘轮**：新守卫 6 例含一条「五旋钮 × 未知值全部出 DataValidationError」合体例——任一旋钮未来退化回静默回落当场红；变异自证 2 红（剪 format 判据）、sha256 逐字节还原；A184/L79 各棘轮原地绿（quality_report.py 插行使 0 条活行引用顶歪，全量门禁证实） | M |
@@ -1295,3 +1297,12 @@
 - **落点**：augmentor/streaming.py 的 process() docstring 加「单值文件分叉」note；tests/unit/test_stream_single_pass_l86.py 新增守卫 1 例（total_input==0、processed==1、两者不等，两侧各自钉死）——谁把任一侧顺手修了都要先翻这一格并重新对账。
 - **棘轮**：docstring 无散名引用、新守卫非参数化位 ⇒ A184/L79/l97 各棘轮原地绿（全量门禁证实）。
 - 全量门禁：7804 passed / 3 skipped / exit 0（L181 的 7803 + 1 新守卫，无回归）。**B252 关闭，A147 收口**。
+
+
+### L183（2026-10-04）— B253 立项 + 关闭：A130 收口（哈希占位符 14 条历史欠账永久记档，第一本账 A130 关闭）
+
+- **立项即处置**：A130 是「上一轮哈希必须当轮回填」的欠账——L58..L71 共 14 条占位符从未回填，L79 起已钉成精确相等棘轮（PLACEHOLDER_CEILING=14，只降不升）。原框留三格待拍：① 只回填哈希（哈希可从 git log 现取，但那几轮本账的 numstat 与当时秒数已不可重算 ⇒ 留「半条已填」新形状）；② 整段重述（直接改历史账）；③ 不动。
+- **拍定取 ③「不动、永久记档」**：①② 都碰历史，③ 把 14 条钉成终态欠账（棘轮只降不升，将来谁清了它要留一句「谁清的」，机械通道已在 L79）。这是「历史欠账不改写、只记档 + 用棘轮锁死不再新增」的既定纪律（同 L120 对 scratch 两档的记档口径）。
+- **落点**：tests/unit/test_doc_line_refs_l79.py 的 test_only_the_current_round_leaves_a_hash_placeholder docstring 订正（原文「加本轮 = 15」是 L79 当时读数、现稳态已回填本轮占位符故恰 14）+ 记 L183 拍定；第一本账 OPTIMIZATION_LOOP.md 的 A130 行就地标「已关闭（L183）、14 条永久记档」。
+- **零新用例**（文档 + docstring 订正），L79/A184 各棘轮原地绿（首账改动全为散文、零新反引号文件引用，全量门禁证实）。
+- 全量门禁：7804 passed / 3 skipped / exit 0（与 L182 同数，无回归）。**B253 关闭，第一本账 A130 收口**。
