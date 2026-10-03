@@ -1005,11 +1005,7 @@ def _load_section(raw_config: Dict, key: str, config_class: type) -> Any:
     # 写了节名而什么都没写 = 该节全默认；写成标量则是摆错了形状，明说。
     if conf is None:
         return config_class()
-    if not isinstance(conf, dict):
-        raise ConfigError(
-            f"{key} 必须是「键: 值」的映射，当前是 {conf!r}"
-            f"（{type(conf).__name__}）"
-        )
+    _require_mapping(conf, key)
 
     # 取键用 `__dataclass_fields__` 而不是 `fields(cls)` 再套一层 frozenset：这不是
     # 风格偏好，是同进程 A/B 量出来的差额（`Temp/l77q/perf_ab_l77.py` → `perf_ab.json`
@@ -1096,11 +1092,7 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
         def _as_mapping(value, where):
             if value is None:
                 return {}
-            if not isinstance(value, dict):
-                raise ConfigError(
-                    f"{where} 必须是「键: 值」的映射，当前是 {value!r}"
-                    f"（{type(value).__name__}）"
-                )
+            _require_mapping(value, where)
             return value
 
         if 'models' in raw_config:
@@ -1320,3 +1312,19 @@ def apply_section_update(section: Any, updates: Dict[str, Any]) -> list:
             setattr(section, key, old)
         raise
     return ignored
+
+
+def _require_mapping(value: Any, where: str) -> None:
+    """「必须是映射」判据的唯一产地（A77；L158 提升自两份逐字相同的 raise）。
+
+    `_load_section`（20 节加载面）与 `load_config` 的 `_as_mapping`（models
+    条目）原先各持一份同文案的 raise；校验面对 `models.<名字>` 条目写成
+    标量 / 列表 / 数的档**完全静默**（运行时抛 ConfigError、校验工具报
+    is_valid=True —— A85 族第三侧漏网，L158 实测）。三处共引本函数，文案
+    改一处三侧同步。
+    """
+    if not isinstance(value, dict):
+        raise ConfigError(
+            f"{where} 必须是「键: 值」的映射，当前是 {value!r}"
+            f"（{type(value).__name__}）"
+        )

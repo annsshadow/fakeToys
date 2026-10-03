@@ -954,6 +954,8 @@
   各棘轮全部原地绿（全量门禁证实）。
 - 全量门禁：`7694 passed / 3 skipped / exit 0`（L154 的 7692 + 2 新例，无回归）。
   **B225 关闭**。
+| B228 | **已关闭（L158，A85 族第三侧漏网）**：`models.<名字>` 条目写成标量 / 列表 / 数的档在**校验面完全静默**——`validate_config` 对 `models` 条目给 `[1]` / `'x'` / `None` / `42` 报 is_valid=True（回放段 `not isinstance(entry, dict)` 直接 continue），而运行时 `load_config` 抛 ConfigError「必须是映射」；同一份配置校验工具说好、应用启动才炸。A85 / A101 当年补的是运行时两侧（`_load_section` 与 models 条目），校验面这一侧漏网；HEAD~1 复跑同盲——不是 L157 回归，是被 L157 回放重写之后的系统面普查撞出的长期欠账 | 「必须是映射」判据提升为 `_require_mapping` 唯一产地（A77 终极形），运行时两侧与校验面回放段**三处共引**（运行时行为与文案零变化，实测逐字相同）；校验面对非 dict 条目真调产地取文案、不再静默。新守卫 6 例：四档判决 + 两面文案逐字同源 + default 豁免不叠报 + 合法条目零噪声 + 产地唯一计数（config 源里该文案恰 1 处）+ 校验面不抄文案；变异自证：删新分支 2 红（分支承重被证）、sha256 逐字节还原；既有一条按旧口径钉「零错误」的用例按红字重述（立意不变：不叠噪声，收紧为一条对的错）。config.py 末尾追加零位移、validator 插行区间在全部活行引用之后 ⇒ A184 / L79 / l97 / l98 各棘轮全部原地绿（全量门禁证实） | S |
+
 | B227 | **已关闭（L157，收口第一本账 A139）**：`KNOWN_FIELDS`（24 行）+ `MODEL_ENTRY_FIELDS`（5 行）的判决维（min/max/choices/item_choices）与各节 `__post_init__` 的运行时判据是**两份实现**——加一节/一键要改两处，L82 补静态面时每行都要重抄「类型·下界·上界·清单」四件事 | 判决维整批撤出两张规格表（只留类型层+形状层 type/items/non_empty/non_blank/required/nullable/renderable），改由 `_validate_replay_sections` 逐键 `dataclasses.replace(默认底, 单键覆盖)` 回放各节 `__post_init__`（判决权威只住运行时一处，A77 终极形）；类型层由规格走查先短路、按路径（含元素档 key[0]、节级同文案）去重；跨键窗口 rag + 权重由既有 `_validate_rag_window`/`_validate_quality_weights` 专管不重探。38 条既有文案断言按红字逐条重述（值过大/值过小→不大于/不小于/比例+带常量端点、choices 维→运行时真拒），测试-only 无新用例 | M |
 
 | B226 | **已关闭（L156，收口第一本账 A46②）**：`StreamConfig` 三键（`chunk_size` / `buffer_size` / `max_memory_mb`）零判据——读侧 `StreamReader` 的 `chunk_size` 形参早接 `require_count(minimum=1)`，配置类这边 0 / 负数 / 字符串 / bool 全静默构造成功，同一档下界住两处（A77 形状） | 按「不发明语义、不删公开类」取判据档：`StreamConfig.__post_init__` 三键接 `require_count(minimum=1)`（chunk_size 与读侧形参同源同档，两侧同判由新守卫钉死；buffer / memory 无读侧权威，下界 1 按「正数量」读法记档）。本类无产品消费方（A46② 留档口径），判据买「写时就报」。A46 三子项自此全清（① L152、③ L41、② 本轮）。新增 3 例（无新参数化位，l97 / l98 原地不动） | S |
@@ -1005,3 +1007,13 @@
 - 全量门禁：`7697 passed / 3 skipped / exit 0`（测试-only 轮无新用例，38 条断言
   重述；A184 / L79 棘轮绿——本轮只动 config_validator.py，config.py 零改动无行位移）。
   **B227 关闭，第一本账 A139 收口**。
+
+
+### L158（2026-10-03）— B228 立项 + 关闭：A85 族第三侧漏网（models 条目非映射档，判据提升为唯一产地三处共引）
+
+- **真缺陷（新侦察撞出）**：`models` 条目写成标量 / 列表 / 数（`m1: [1]` / `m1: 'x'` / `m1:` / `m1: 42`）时，校验面 `validate_config` **零报错**——回放段的 models 循环对非 dict 条目静默 continue；同一份配置运行时 `load_config` 抛 ConfigError「必须是「键: 值」的映射」。症状 = 校验工具（CLI validate-config）报 is_valid=True、应用启动时才炸，A85 / A101 族「两侧不同判」的第三侧（A85 当年补运行时两侧时校验面未同步）。侦察排除了同族假嫌疑：非法 type / type 缺席 / 非 str type / 顶层 models 非映射 / 未知节未知键五档都已判（探针逐档实证）；HEAD~1 复跑同盲 ⇒ 长期欠账非回归。
+- **修法（A77 终极形）**：判据提升为 `_require_mapping` 唯一产地（config 模块级，放文件末尾使既有行引用零位移），运行时两侧改调它（行为与文案零变化）、校验面回放段对非 dict 条目真调它取文案（try/except ConfigError 转 add_error）——三处共引后文案改一处三侧同步，校验面源码里该文案计数为 0（投影不抄）。
+- **钉子**：新守卫 6 例（四面判决 / 文案同源 / default 豁免 / 合法零噪声 / 产地唯一 / 校验面不抄）；l75 一条旧口径用例按红字重述（零错误 → 恰一条对的错，立意「不叠噪声」保留）。变异自证 2 红 + sha256 还原（Temp 的 l158q 工件）。
+- **棘轮**：config.py 末尾追加 + validator 插行区间在全部活行引用之后 ⇒ A184 census、L79 两桶 MEASURED 与 BACKLOG_A_CLOSED、l97 / l98 全部原地绿（无新参数化位、无行号位移、记账文本零 token 形状）。
+- 全量门禁：`7703 passed / 3 skipped / exit 0`（L157 的 7697 + 6 新例，无回归）。
+  **B228 关闭**。

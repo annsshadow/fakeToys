@@ -252,11 +252,21 @@ class TestStaticFaceSeesAbsentKeys:
             {"models": {"default": None}, "augmentation": {}}), "models.default.type")
         assert errors == []
 
-    def test_non_mapping_entry_gets_no_required_noise(self):
-        """条目正文写成标量时不叠一条「缺少必填字段」噪声（形状那一层管）"""
+    def test_non_mapping_entry_gets_exactly_one_actionable_verdict(self):
+        """条目正文写成标量：恰一条「映射」判决、无「缺少必填字段」叠报
+
+        L75 时点这一档在校验面零报错，当时的立意是「形状那层管，静态面不
+        叠噪声」。L158 把「必须是映射」判据升为 _require_mapping 唯一产地
+        （A77）后，校验面同源投影出恰一条准确错（与运行时 load_config
+        同判）：零报错的旧口径是 A85 族第三侧漏网（校验工具说好、启动时
+        才炸），不是需要保护的行为。本条守的立意不变——不叠噪声——只是
+        从「零错误」收紧为「一条对的错误」。
+        """
         result = ConfigValidator().validate_config(
             {"models": {"default": "m", "m": "abc"}, "augmentation": {}})
-        assert [e.path for e in result.errors] == []
+        assert [e.path for e in result.errors] == ["models.m"]
+        assert len(result.errors) == 1
+        assert "缺少必填字段" not in result.errors[0].message
 
     def test_only_type_is_required_in_the_entry_table(self):
         """必填只有 `type` 一根：其余八键「不在场」是合法状态（由字段默认回答）
