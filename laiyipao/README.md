@@ -1209,6 +1209,6 @@ miniapp/src/
 |---|---|---|
 | `ADDR` | `:8080` | 监听地址 |
 | `DATABASE_URL` | — | PG 连接串 |
-| `BOOTSTRAP_ADMIN_PASS` | — | 首次引导的管理员密码，**<10 位会 panic 拒绝** |
+| `BOOTSTRAP_ADMIN_PASS` | `admin12345` | 首次引导的管理员密码，**<10 位会 panic 拒绝**；**`APP_ENV=prod` 时必须显式设置**，否则 panic（默认值是公开的，第 67 轮） |
 | `WECHAT_ENABLED` | `false` | 是否启用微信登录 |
 | `ACCESS_TTL` / `REFRESH_TTL` | `2h` / `720h` | 令牌有效期 |

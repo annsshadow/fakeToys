@@ -207,12 +207,17 @@ func TestProdGuardsPanic(t *testing.T) {
 		mustPanic(t, "sslmode", func() { _ = Load() })
 	})
 
-	// 对照组：prod + 显式密钥 + sslmode → 必须正常通过
+	// 对照组：prod + 显式密钥 + sslmode + 显式口令 → 必须正常通过
+	//
+	// ⚠️ 第 67 轮补上 BOOTSTRAP_ADMIN_PASS：它也是「有公开默认值」的敏感项，
+	// prod 守卫新增了对应检查。不设它时这里会 panic —— 那正是守卫在起作用，
+	// 不是这条对照组坏了。
 	t.Run("prod合法配置放行", func(t *testing.T) {
 		clearEnv(t)
 		t.Setenv("APP_ENV", "prod")
 		t.Setenv("JWT_SECRET", "real-secret-from-vault")
 		t.Setenv("DATABASE_URL", "postgres://u:p@h:5432/db?sslmode=require")
+		t.Setenv("BOOTSTRAP_ADMIN_PASS", "a-real-long-production-password")
 		cfg := Load()
 		if cfg.Env != "prod" {
 			t.Errorf("Env = %q", cfg.Env)
