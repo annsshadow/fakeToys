@@ -11,6 +11,8 @@ import logging
 from typing import List, Dict, Optional, Any, Set
 from dataclasses import dataclass, field
 from pathlib import Path
+
+from .atomic_write import atomic_write_json
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -116,14 +118,12 @@ class DependencyManager:
     def _save_datasets(self):
         """保存数据集信息"""
         data = {k: v.to_dict() for k, v in self._datasets.items()}
-        with open(self._datasets_file, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        atomic_write_json(self._datasets_file, data)
     
     def _save_dependencies(self):
         """保存依赖关系"""
         data = [dep.to_dict() for dep in self._dependencies]
-        with open(self._dependencies_file, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        atomic_write_json(self._dependencies_file, data)
     
     def register_dataset(self, name: str, path: str, item_count: int,
                         description: str = "", tags: List[str] = None,
