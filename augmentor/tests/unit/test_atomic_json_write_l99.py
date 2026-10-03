@@ -56,7 +56,12 @@ REAL_REPLACE = os.replace
 # L162（B232）：BackupManager 索引两边收原子写（同 L160/L161 形状）；快照与
 # 恢复输出两边豁免（读侧响亮抛异常），其「同名覆盖写中途崩毁既有」窗口是判据
 # 口径未覆盖的另一档，记档待裁。backup.py 的 4 处计数边现量降 2。
-NON_ATOMIC_JSON_DUMP_SITES_MAX = 38
+# L163（B233）：导出物交付面收边——export.py 的四条 JSON 边收原子写（输出落
+# web.data_roots 白名单目录，数据管理端点按 *.json 扫同一目录 = 写窗口内读者
+# 拿半份「文件不是合法 JSON」错误答案）；JSONL 文本边同收（工具面新增
+# atomic_write_text，临时件命名同口径避开两种扫描）。四条边写盘字节从
+# indent=2 变紧凑序列化，读侧只解析不读格式，既有测试面无格式断言（实证）。
+NON_ATOMIC_JSON_DUMP_SITES_MAX = 34
 
 
 def _legacy_write_json(file_path: Path, data):

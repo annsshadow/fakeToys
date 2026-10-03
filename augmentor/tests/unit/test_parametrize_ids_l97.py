@@ -62,8 +62,11 @@ NS_PREFIXES = frozenset({
 #: parametrize（11 节坏值 × 四面 + 独立性 19 档 + 加载面 7 档）；值位含 list 对象的 8 处
 #: 未自带 ids ⇒ 盲面 93 → **101**，CALLS 359 → **377**；READABLE 是差值口径
 #: （总数 − 盲面）⇒ 266 → **276**。
-MEASURED_CALLS = 377
-MEASURED_READABLE = 276
+#: L163（B233）：新增导出原子写守卫文件，两支 parametrize（字面格式清单，
+#: 自带 literal-list）⇒ CALLS 377 → 379、READABLE 276 → 278，盲面（no-literal-list
+#: 桶）101 一格未动。
+MEASURED_CALLS = 379
+MEASURED_READABLE = 278
 MEASURED_BLIND = 101
 #: 值位含类型对象的那些档（必须全部自带 ids，否则就是本判据的违规）
 KNOWN_TYPED_SITES = frozenset({("tests/unit/test_schema_type_spec_l96.py", "test_label")})

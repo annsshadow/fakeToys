@@ -86,3 +86,22 @@ def atomic_write_json(file_path: Path, data: Union[List, Any]):
     finally:
         if tmp.exists():
             tmp.unlink()
+
+
+def atomic_write_text(file_path: Path, text: str):
+    """把一段文本原子地替换到 `file_path`（L163 为 JSONL 导出边而加）
+
+    与 `atomic_write_json` 同一替换语义：失败时目标保持原样、临时件清掉、
+    异常原样上抛。临时件命名同样以「前导点 + `.tmp-` 中段」避开 `*.json`
+    与 `*.jsonl` 的目录扫描。
+    """
+    file_path = Path(file_path)
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = file_path.with_name(f".{file_path.name}.tmp-{secrets.token_hex(4)}")
+    try:
+        with open(tmp, "w", encoding="utf-8", newline="") as f:
+            f.write(text)
+        _replace_with_retry(tmp, file_path)
+    finally:
+        if tmp.exists():
+            tmp.unlink()
