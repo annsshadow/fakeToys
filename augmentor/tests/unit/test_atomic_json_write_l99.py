@@ -79,7 +79,11 @@ REAL_REPLACE = os.replace
 # 写（API 链白名单数据根 = L163 同判据必收）；tracker/quality_trend 的「历史记录 +
 # 静默吞」复合形状记档待单独轮裁；benchmark/comparison/faiss 等读侧响亮档有据豁免。
 # migration.py 现量降 1、pipeline.py 现量降 2。
-NON_ATOMIC_JSON_DUMP_SITES_MAX = 23
+# L169（B239）：实验记录与趋势历史两写边收原子写——这两处读侧契约本来就是静默
+# 的（损坏→None / 不应崩溃 / L146 检疫），收原子不翻案：半份窗口消失后损坏只剩
+# 磁盘故障一途，写失败仍被 except 吞（契约保持），检疫保留为纵深防御。
+# tracker.py 与 quality_trend.py 现量各降 1。
+NON_ATOMIC_JSON_DUMP_SITES_MAX = 21
 
 
 def _legacy_write_json(file_path: Path, data):

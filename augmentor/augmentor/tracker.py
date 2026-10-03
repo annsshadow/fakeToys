@@ -8,6 +8,8 @@ import logging
 from typing import List, Dict, Optional
 from dataclasses import dataclass, asdict
 from pathlib import Path
+
+from .atomic_write import atomic_write_json
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -92,9 +94,10 @@ class ExperimentTracker:
         experiment_path = self._get_experiment_path(experiment.experiment_id)
         
         try:
-            experiment_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(experiment_path, 'w', encoding='utf-8') as f:
-                json.dump(asdict(experiment), f, ensure_ascii=False, indent=2)
+            # L169 收原子写：写窗口内的半份实验文件会被读侧的「损坏 → None」
+            # 静默吞掉（实验凭空消失，checkpoint 症状）——原子替换让损坏只
+            # 剩磁盘故障一途。写失败仍被 except 吞住（「不应崩溃」契约保持）。
+            atomic_write_json(experiment_path, asdict(experiment))
         except Exception as e:
             logger.error(f"保存实验失败: {e}")
     

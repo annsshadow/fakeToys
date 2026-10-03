@@ -17,6 +17,8 @@ import logging
 from typing import List, Dict, Optional
 from datetime import datetime
 from pathlib import Path
+
+from .atomic_write import atomic_write_json
 import json
 
 from augmentor.exceptions import DataFormatError
@@ -83,8 +85,9 @@ class QualityTrendTracker:
             return
         self.storage_path.parent.mkdir(parents=True, exist_ok=True)
         try:
-            with open(self.storage_path, 'w', encoding='utf-8') as f:
-                json.dump({"trends": self._trend_history}, f, ensure_ascii=False)
+            # L169 收原子写：趋势历史是累积记录，半份会让下次加载走检疫路径
+            # （备份+重置）——原子替换让检疫只留给真正的磁盘故障（纵深防御）。
+            atomic_write_json(self.storage_path, {"trends": self._trend_history})
         except Exception as e:
             logger.error(f"保存趋势历史失败: {e}")
     
