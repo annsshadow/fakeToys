@@ -954,6 +954,8 @@
   各棘轮全部原地绿（全量门禁证实）。
 - 全量门禁：`7694 passed / 3 skipped / exit 0`（L154 的 7692 + 2 新例，无回归）。
   **B225 关闭**。
+| B235 | **已关闭（L165，A182 逐面收路线第七面 + 逐面分档完成）**：依赖登记两边（DependencyManager 的 _save_datasets / _save_dependencies）与 L160–L162 同构第四份——读侧 _load_file 无 except 且 __init__ 必调，半份登记表的写窗口里任何新构造实例被当场炸掉；**另一路也封死**：若有人顺手给 _load_file 加 except，截断会静默回落 default——已登记的数据集/依赖凭空消失（L99 checkpoint 症状），两条路都指向收原子 | 两边改调 atomic_write_json；l99 棘轮 31→29；新守卫 3 例（写中断旧登记完好 + 回环 + 静态形状）；变异自证 2 红、sha256 还原；**同轮完成 A182 剩余 29 处的逐面分档**：CLI 报告一次性写边（ops/analysis/quality/io 的 --output 面）按判据豁免（同步等待、任意路径、无扫描链），versioning 快照两边豁免（读侧响亮抛异常，同 L161 快照判），atomic_write.py 自身豁免（工具本体）；剩余必收候选（dataset_tools 路由边、export_enhanced 交付面、data_ops 命令输出边）已点名待下轮；A184/L79/docs 各棘轮原地绿（全量门禁证实） | M |
+
 | B234 | **已关闭（L164，A182 逐面收路线第六面）**：数据集变换三边（`DatasetOperations` 的 merge_files / sample_file / split_file）与 L163 交付面同判据——API 侧（`dataset_tools` 路由）与 CLI 侧输出路径都经白名单落进数据根，`list_data_files` 按 *.json 扫同一目录，写窗口内读者拿半份；三边输入读侧 `json.load` 裸抛（响亮失败）不属缺陷面 | 三边改调 `atomic_write_json`；l99 棘轮 34→31；新守卫 4 例（写中断旧文件完好 + 三变换回环 + 同名覆盖写 + 静态形状）；变异自证 2 红、sha256 逐字节还原；dataset_ops.py 插行使账本六条历史读数格（入参判定清单格 ×1、分配器调用方格 ×5）落漂移桶，按先例全部降级名锚 + L79 三桶逐格重钉（line_refs 283→277 / file_tokens 1648→1654 / 漂移回 142 / FLOOR 同步）；A184 / docs 各棘轮原地绿（全量门禁证实） | M |
 
 | B233 | **已关闭（L163，A182 逐面收路线第五面）**：导出五边（JSONL 文本边 + LLAMA_FACTORY / ALPACA / SHAREGPT / CHATML 四条 JSON 边）是**导出物交付面**——输出落 `web.data_roots` 白名单目录，数据管理端点按 *.json 扫同一目录，文件在写窗口一开始就出现在列表里，预览 / 下载在窗口内读到的就是半份「文件不是合法 JSON」（atomic_write 模块 docstring 点名的读者形状），必收 | 工具面新增 `atomic_write_text`（JSONL 是文本写，替换语义与临时件命名与 JSON 版逐字同口径——临时件名避开两种扫描）；四条 JSON 边改调 `atomic_write_json`、文本边改调新工具；写盘字节从 indent=2 变紧凑序列化（读侧只解析不读格式，既有测试面无格式断言，实证于全量门禁）；l99 棘轮 38→34；新守卫 12 例（五格式写中断旧文件完好 + 回环 + 临时件不残留 + 工具口径 + 静态形状）；l97 重钉（CALLS 377→379、READABLE 276→278，盲面 101 不动）；两份活文档三条历史行号格按先例降级名锚 + L79 三桶逐格重钉（ARCH line_refs 40→39/file_tokens 246→247、LEDGER line_refs 284→283/file_tokens 1647→1648、漂移回 145；FLOOR 下界同步）；变异自证由写中断行为面承担（每格式断言旧文件完好 + 临时件清掉）；A184 / docs 各棘轮原地绿（全量门禁证实） | M |
@@ -1090,3 +1092,13 @@
 - **钉子**：新守卫 4 例；l99 棘轮 34→31；变异 2 红 + sha256 还原。
 - 全量门禁：`7737 passed / 3 skipped / exit 0`（L163 的 7733 + 4 新例，无回归）。
   **B234 关闭**。
+
+
+### L165（2026-10-03）— B235 立项 + 关闭：A182 逐面收第七面（依赖登记两边）+ 剩余 29 处逐面分档完成
+
+- **侦察路径**：全量普查 31 处现量分布后逐面分档。dependency.py 两边必收（同构第四份）；ops.py 3 处与 cli/io.py 2 处核实为 CLI 报告一次性写（--output 面同步等待，无并发读者）豁免；versioning.py 2 处快照响亮档豁免。
+- **分档结论**：剩余必收候选已点名（dataset_tools.py 路由边、export_enhanced.py 交付面、data_ops.py 命令输出边、pipeline/tracker/quality_report 等面待逐面核），豁免档全部有据记档——A182 的「哪些边算有并发读者按面分别判」从口径变成清单。
+- **坑**：混合行尾文件（dependency.py CRLF 361+LF 3）变异脚本单形态锚点没命中（assert 变异 != 原文挡住），双形态探测重跑——变异自证不得因脚本笔误跳过。
+- **钉子**：新守卫 3 例；l99 棘轮 31→29；变异 2 红 + sha256 还原。
+- 全量门禁：`7740 passed / 3 skipped / exit 0`（L164 的 7737 + 3 新例，无回归）。
+  **B235 关闭**。
