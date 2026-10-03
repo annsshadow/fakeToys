@@ -29,7 +29,8 @@ from .config import (AUTO_SAVE_INTERVAL_MIN, DEDUP_THRESHOLD_RANGE,
                      TEMPERATURE_RANGE, TOP_P_RANGE, VECTOR_BACKENDS,
                      VECTOR_DIMENSION_MIN, VARIANTS_PER_SEED_RANGE,
                      AppConfig, MODEL_ENTRY_KEYS, MODEL_ENTRY_PLACEHOLDER,
-                     ModelConfig, RAGConfig, _require_mapping)
+                     ModelConfig, RAGConfig, _missing_model_message,
+                     _require_mapping)
 from .exceptions import ConfigError, DataValidationError
 from .logging_setup import LOGGING_LEVELS, build_formatter
 from .retry import MAX_RETRY_AFTER
@@ -885,6 +886,18 @@ class ConfigValidator:
                                 or same_msg_at_entry):
                             result.add_error(path, str(exc))
                             err_paths.add(path)
+
+            # 悬空 models.default：消费点 get_model_config 在「要建默认后端」
+            # 时才 ConfigError（显式按名取模型的调用方不受影响），故此档不是
+            # 必炸——校验面按「值不会生效」族先例报 **warning**（文案仍同源
+            # 投影产地，L159；ERROR 档实测过度收紧，56 例既有测试面实证）。
+            default_value = models_raw.get("default")
+            entry_names = [n for n in models_raw if n != "default"]
+            if isinstance(default_value, str) and default_value not in entry_names:
+                result.add_warning(
+                    "models.default",
+                    _missing_model_message(default_value, entry_names),
+                )
 
 
     def _validate_env_refs(self, config: Dict, prefix: str, result: ValidationResult):

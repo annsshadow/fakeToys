@@ -1270,7 +1270,10 @@ class TestUnreadKeyWarnings:
         result = validate_config(config)
         assert result.is_valid is True
         assert result.errors == []
-        assert [w.severity.value for w in result.warnings] == ["warning"]
+        # L159 起悬空 models.default 也产一条 warning（底座只带 default 无
+        # 条目），所以断言「全是 warning 档 + 期望路径在场」，不数总数。
+        assert all(w.severity.value == "warning" for w in result.warnings)
+        assert any(w.path == expected_path for w in result.warnings)
 
     def test_suggestion_names_the_real_key(self):
         """能确定相近项时要把真名说出来，不能只说「没人读」"""
