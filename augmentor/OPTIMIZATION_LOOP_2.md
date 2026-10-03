@@ -976,6 +976,8 @@
 
 | B257 | **已关闭（L187，benchmark delta_ratio 除零档自相矛盾收口）**：augmentor/benchmark.py 的 compare_with_baseline（:240）对基准读数为 0.0 的指标（pass_rate / diversity 合法读成 0）用 `if reference else 0.0` 记 delta_ratio=0.0——把「相对变化未定义（除零）」读成「无相对变化」，与同条目 improved/regressed 状态自相矛盾（baseline=0、current=0.5 判 improved，delta_ratio 却 0.0） | 改 `if reference != 0.0 else None`：reference==0.0 时记 None（与 :217 no_baseline 哨兵同口径），非 0 照旧相除；下游 Markdown 报告只读 current/baseline/delta/status（delta_ratio 不进表格）、无测试面读 delta_ratio ⇒ 零回归。tests/unit/test_benchmark.py 新增守卫 3 例（零基准 improved→None、零基准零当前 unchanged→None、非零基准照旧 0.8 防修过头）；A184/L79/l97 各棘轮原地绿；全量 7824 passed / 3 skipped / exit 0 | S |
 
+| B258 | **已关闭（L188，PiiSanitizer 构造器 falsy 假零收口：fields/patterns/placeholders 三处）**：augmentor/privacy.py 的 PiiSanitizer.__init__ 三处 `x or default`——显式空容器（fields=[] / patterns={} / placeholders={}）本是「零元素」的合法意图，却被 falsy 读成「没传」而悄悄套上默认（脱敏范围 / 字段面 / 占位符表被无声放大）；最典型 patterns={}（「我只要这几条自定义规则、其余不脱」）被读成「用全量 DEFAULT_PATTERNS」 | 三处改 `x if x is not None else default`（空容器保留为「零元素」、None 才回落默认）；tests/unit/test_privacy.py 新增守卫 4 例（patterns={} 零模式不脱敏 + None 回落默认全量防修过头 + fields=[] 零字段 + placeholders={} 保留空表）。CRLF/LF 保真；A184/L79/l97 各棘轮原地绿（无散名引用、非参数化位）；全量 7828 passed / 3 skipped / exit 0 | S |
+
 | B249 | **已关闭（L179，A155①：to_http_error 500 档不再转发异常原文）**：api/deps.py 的 to_http_error 最后一支把未分类异常原样 str(exc) 塞进 500 响应体——OSError(13,'Permission denied','/srv/...') 实测把部署根绝对路径与文件系统状态（Errno 28 磁盘满 / Errno 13 权限缺失）一并回给客户端，是可被利用的探测信号；A155 原框两格候选拍定取①（固定文案 + 原文落服务端日志，安全收紧方向，非脱敏白名单②） | 500 支改回固定文案常量 INTERNAL_ERROR_DETAIL（api/deps.py 模块级唯一产地，A77）+ logger.exception 把原文留服务端日志；400 支（ValueError 可行动文案）一字不动防修过头；tests/unit/test_api_deps.py 新增守卫 3 例（OSError 不泄漏部署路径/errno + 原文进日志 + ValueError 仍 400 原样回传）；tests/integration/test_api_dataset_system_tools.py 两处「500 回原文」断言按红字重述为「== 固定文案 + 原文不在响应体」（TestUnexpectedFailureBecomes500 五处 + dataset_impact/evaluate 各一，docstring 同步改口径）；A184/L79 各棘轮原地绿（本轮新增引用全用全路径 live 形、零散名）；全量 7790 passed / 3 skipped / exit 0（L178 的 7787 + 3 新守卫，零回归） | M |
 
 | B246 | **已关闭（L176）**：策略旋钮「封闭清单拒」同型普查（L175 的 method 静默回落修完后沿同型全仓扫）——sample 的 method / outlier 的 method / expander 的strategy 三处**已有** else 拒（普查实证）；唯一缺口 `save_quality_report` 的 format：未知 format **静默落 JSON 支**（请求 yaml 的拿到 json 文件不出声，checkpoint 症状族语义漂移档） | 缺口收边（format 封闭清单 `QUALITY_REPORT_FORMATS` + 入口 require_choice + None 专判）；**普查结论钉成棘轮**：新守卫 6 例含一条「五旋钮 × 未知值全部出 DataValidationError」合体例——任一旋钮未来退化回静默回落当场红；变异自证 2 红（剪 format 判据）、sha256 逐字节还原；A184/L79 各棘轮原地绿（quality_report.py 插行使 0 条活行引用顶歪，全量门禁证实） | M |
@@ -1349,3 +1351,12 @@
 - **守卫**：tests/unit/test_benchmark.py 新增 TestDeltaRatioZeroBaselineL187 3 例（零基准 improved→None、零基准零当前 unchanged→None、非零基准照旧 0.8 防修过头）。
 - **棘轮**：无散名引用、非参数化位 ⇒ A184/L79/l97 各棘轮原地绿（全量门禁证实）。
 - 全量门禁：7824 passed / 3 skipped / exit 0（L186 的 7821 + 3 新守卫，无回归）。**B257 关闭**。
+
+
+### L188（2026-10-04）— B258 立项 + 关闭：PiiSanitizer 构造器 falsy 假零收口（fields/patterns/placeholders 三处）
+
+- **真缺陷（falsy 假零，构造器三处同型）**：privacy.py 的 PiiSanitizer.__init__ 三处 `x or default`（fields / patterns / placeholders）。显式空容器（`fields=[]` / `patterns={}` / `placeholders={}`）本是「零元素」的合法意图，却被 falsy 读成「没传」而悄悄套上默认：`patterns={}`（「我只要这几条自定义规则、其余不脱」）被读成「用全量 DEFAULT_PATTERNS」，脱敏范围被无声放大；`fields=[]` 被读成默认三字。
+- **修法（判据 `is not None`）**：三处改 `x if x is not None else default`——空容器保留为「零元素」、None 才回落默认。与 L186 cache TTL 同族（falsy 假零收口）。
+- **守卫**：tests/unit/test_privacy.py 新增 TestPiiSanitizerFalsyZeroL188 4 例（patterns={} 零模式不脱敏 + None 回落默认全量防修过头 + fields=[] 零字段 + placeholders={} 保留空表）。
+- **棘轮**：无散名引用、非参数化位 ⇒ A184/L79/l97 各棘轮原地绿（全量门禁证实）。
+- 全量门禁：7828 passed / 3 skipped / exit 0（L187 的 7824 + 4 新守卫，无回归）。**B258 关闭**。
