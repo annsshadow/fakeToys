@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from ..deps import load_items, resolve_data_path, run_in_thread, verify_api_key
+from ..deps import raise_internal_error, load_items, resolve_data_path, run_in_thread, verify_api_key
 
 router = APIRouter(tags=["quality"])
 
@@ -171,7 +171,7 @@ async def evaluate_quality(request: QualityRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.post(
@@ -203,7 +203,7 @@ async def deduplicate(request: DedupRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.post(
@@ -239,7 +239,7 @@ async def generate_report(request: QualityRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.post(
@@ -271,7 +271,7 @@ async def clean_data(request: QualityRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.post(
@@ -295,7 +295,7 @@ async def annotate_data(request: QualityRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.post(
@@ -320,7 +320,7 @@ async def run_benchmark(request: QualityRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 class OutlierRequest(BaseModel):
@@ -391,7 +391,7 @@ async def detect_outliers_endpoint(request: OutlierRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.post("/api/quality/profiling", response_model=ProfilingResponse, summary="数据集画像")
@@ -422,7 +422,7 @@ async def profile_dataset(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 class HealthGateRequest(BaseModel):
@@ -539,4 +539,4 @@ async def health_gate(request: HealthGateRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)

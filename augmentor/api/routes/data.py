@@ -18,6 +18,8 @@ from augmentor.converter import (
     read_records,
 )
 from ..deps import (
+    raise_internal_error,
+
     allowed_data_roots,
     assert_dataset_shape,
     get_pipeline,
@@ -173,7 +175,7 @@ async def load_data(filename: str, page: int = 1, page_size: int = 20, search: s
             "items": items[start:end]
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.put(
@@ -205,7 +207,7 @@ async def update_data_item(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.delete(
@@ -234,7 +236,7 @@ async def delete_data_item(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 def _upload_source_format(filename: str, declared: str) -> Optional[str]:
@@ -528,7 +530,7 @@ async def analyze_data(filename: str):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.get(
@@ -549,7 +551,7 @@ async def visualize_data(filename: str):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 # ============ 演示数据 ============

@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from ..deps import load_items, run_in_thread
+from ..deps import raise_internal_error, load_items, run_in_thread
 from augmentor.privacy import PiiSanitizer, DEFAULT_PATTERNS, EXTRA_PATTERNS
 
 router = APIRouter(tags=["privacy"])
@@ -68,7 +68,7 @@ async def sanitize_items(request: SanitizeRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.get("/api/privacy/patterns", response_model=PiiPatternsResponse, summary="PII 模式清单")

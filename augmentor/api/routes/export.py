@@ -10,6 +10,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from ..deps import (
+    raise_internal_error,
+
     get_pipeline,
     load_items,
     resolve_data_path,
@@ -88,7 +90,7 @@ async def export_data(request: ExportRequest, _auth: None = Depends(verify_api_k
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.post(
@@ -118,7 +120,7 @@ async def batch_export(request: BatchExportRequest, _auth: None = Depends(verify
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.post(
@@ -142,7 +144,7 @@ async def preview_export(request: PreviewRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.get(
@@ -157,4 +159,4 @@ async def list_export_formats():
 
         return {"formats": Exporter().get_supported_formats()}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)

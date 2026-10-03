@@ -14,6 +14,8 @@ from typing import Callable
 
 import pytest
 
+from api.deps import INTERNAL_ERROR_DETAIL
+
 AI_DIR = Path(__file__).resolve().parent.parent.parent
 
 
@@ -96,7 +98,8 @@ class TestGenericExceptionBranches:
         _patch_load_items(monkeypatch, _raise)
         response = quality_client.post(endpoint, json=payload)
         assert response.status_code == 500
-        assert "boom" in response.json()["detail"]
+        # L180/A155②：500 档回固定文案，异常原文「boom」不外泄、只进服务端日志
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL
 
     def test_outliers_value_error_maps_to_400(self, quality_client, monkeypatch):
         """outliers 专属 except ValueError → 400（与通用 500 区分）"""
