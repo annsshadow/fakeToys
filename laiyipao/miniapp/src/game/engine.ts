@@ -867,7 +867,30 @@ export class BattleEngine {
             this.baseHp -= dmg
             this.leaked++
             this.emit({ type: 'leak', damage: dmg })
-            this.record(this.tick, 'leak', uidOf(dmg))
+            // ⚠️ 第 70 轮：`a` 从 `uidOf(dmg)` 改成 `e.uid`。
+            //
+            // 两条漏怪路径此前**语义不一致**：
+            //   射程内扣血  →  `record(tick, 'leak', uidOf(dmg))`
+            //   抵达防线    →  `record(tick, 'leak', e.uid)`
+            //
+            // `uidOf(v) = Number(v % 100000n)` —— 传进去的是**伤害值**，
+            // 于是 `a` 变成了「漏怪伤害 mod 100000」，与任何 uid 无关。
+            //
+            // 判定它是接线错误而非约定的证据：`uidOf` 全仓**只有一个调用点**，
+            // 函数名说「取 uid」而实参是伤害值 —— 名字与实参对不上，
+            // 说明写的时候想的是别的东西。
+            //
+            // 后果：
+            //  1. **语义错位** —— 这条事件不记录是哪只怪漏的，
+            //     事后无法从回放定位责任目标
+            //  2. **信息损失** —— 伤害相差 100000 的两次漏怪在哈希里
+            //     不可区分（`leakDamageFor` 的量级是
+            //     `baseHpMax × attack / 3600`，当前几百到几千，
+            //     尚未跨过 10^5，但随 base_hp 增长会跨过）
+            //
+            // 现在 `a` 统一是敌人 uid，伤害值放进 `b`
+            // —— `b` 此前在 leak 事件上恒为 0，没被别的类型占用。
+            this.record(this.tick, 'leak', e.uid, Number(dmg))
             if (this.baseHp <= 0n) {
               this.baseHp = 0n
               this.finish(false)
@@ -884,7 +907,12 @@ export class BattleEngine {
         this.baseHp -= dmg
         this.leaked++
         this.emit({ type: 'leak', damage: dmg })
-        this.record(this.tick, 'leak', e.uid)
+        // ⚠️ 第 70 轮：`b` 补上伤害值，与射程内那条对齐。
+        //
+        // 两条路径此前一处写 uid 一处写伤害，且都没有记录另一项 ——
+        // 也就是说无论走哪条路，都**丢掉了**一个信息。
+        // 现在约定：`a` = 敌人 uid，`b` = 漏掉的伤害值。
+        this.record(this.tick, 'leak', e.uid, Number(dmg))
         if (this.baseHp <= 0n) {
           this.baseHp = 0n
           this.finish(false)
@@ -2137,6 +2165,17 @@ function mechanicIndex(kind: string): number {
   ) + 1
 }
 
-function uidOf(v: bigint): number {
-  return Number(v % 100000n)
-}
+/**
+ * ⚠️ 第 70 轮删除：`uidOf(v) = Number(v % 100000n)`。
+ *
+ * 它唯一的调用点是射程内漏怪那一条，传入的是**伤害值**：
+ * `record(tick, 'leak', uidOf(dmg))` —— 于是 `a` 变成了
+ * 「漏怪伤害 mod 100000」，与敌人 uid 无关。
+ *
+ * 函数名说「取 uid」而实参是伤害值，说明写的时候想的是别的东西；
+ * 且抵达防线那条路径写的是 `e.uid` —— 两条路径语义不一致。
+ *
+ * 留着它会让人以为「取 uid」是个通用工具而去复用它。
+ * 需要「把大整数压进 number」时应该显式写 `Number(v % 100000n)`，
+ * 让「为什么要取模」摆在现场。
+ */
