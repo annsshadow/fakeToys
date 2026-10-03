@@ -321,7 +321,16 @@ func TestSettleRejectsAbsurdReactions(t *testing.T) {
 	in.Shots = 1
 	in.Hits = 1
 	in.Reactions = 1_000_000_000
-	in.DurationMs = 1_000_000_000 // 给足时长，排除被时长上界先拒
+	// 给足时长以排除被时长上界先拒。
+	//
+	// ⚠️ 这里用 MaxPlausibleDurationMs（24h 上界本身，合法）而不是
+	// 随便一个很大的数：1e9ms ≈ 11.6 天，已超 MaxPlausibleDurationMs，
+	// 会被新增的时长上界判据先拒 —— 于是这条测试测到的
+	// 就不再是 ErrTooManyReactions，而是时长那条分支。
+	//
+	// 这就是「守卫被无关的早退路径满足」：它照样是绿的，
+	// 但它守的东西已经悄悄换了。
+	in.DurationMs = MaxPlausibleDurationMs
 	settleErr(t, gl, in, ErrTooManyReactions)
 }
 
@@ -370,7 +379,9 @@ func TestSettleRejectsReactionsAboveShotsBound(t *testing.T) {
 func TestReactionsBoundSurvivesShotsInflation(t *testing.T) {
 	gl := testLevel()
 	in := baseInput(gl)
-	in.DurationMs = 1_000_000_000 // 极长时长，排除被时长上界先拒
+	// 极长但**合法**的时长（24h 上界本身），排除被时长上界先拒。
+	// 用 1e9ms 会被时长判据截胡，那这条测试守的就换成了别的分支。
+	in.DurationMs = MaxPlausibleDurationMs
 	in.Shots = 125_000_000
 	in.Hits = 125_000_000
 	in.Reactions = 1_000_000_000
