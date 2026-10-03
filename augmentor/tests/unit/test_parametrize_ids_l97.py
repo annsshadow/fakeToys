@@ -65,8 +65,11 @@ NS_PREFIXES = frozenset({
 #: L163（B233）：新增导出原子写守卫文件，两支 parametrize（字面格式清单，
 #: 自带 literal-list）⇒ CALLS 377 → 379、READABLE 276 → 278，盲面（no-literal-list
 #: 桶）101 一格未动。
-MEASURED_CALLS = 379
-MEASURED_READABLE = 278
+MEASURED_CALLS = 381
+#: （字面化后：CALLS 381 - 盲面 101 = 280；两支 parametrize 全是字面清单值位，盲面回稳）
+MEASURED_READABLE = 280
+#: L175：搜索方法封闭清单守卫两支 parametrize（坏值 6 档 / 合法 5 档，全是字面
+#: 清单）⇒ CALLS 379 → 381、READABLE 278 → 279，盲面（no-literal-list 桶）101 不动。
 MEASURED_BLIND = 101
 #: 值位含类型对象的那些档（必须全部自带 ids，否则就是本判据的违规）
 KNOWN_TYPED_SITES = frozenset({("tests/unit/test_schema_type_spec_l96.py", "test_label")})
