@@ -492,3 +492,29 @@ class TestDiskCacheBounded:
 
         assert "key1" not in cache._metadata
         assert cache.get("key1") is None
+
+
+class TestCacheTtlFalsyZeroL186:
+    """L186：ttl=0.0 是「立即过期」的合法值，不是「未传」——falsy 假零收口。
+
+    改前 `ttl or self._default_ttl` 把显式 0.0 读成没传、落到默认 TTL；改后
+    `ttl if ttl is not None else default`，0.0 保留为「立即过期」、None 才回落默认。
+    MemoryCache 与 DiskCache 两处同式，各钉一格。
+    """
+
+    def test_memory_ttl_zero_means_expire_now_not_default(self):
+        from augmentor.cache import MemoryCache
+        cache = MemoryCache(default_ttl=100.0)
+        cache.set("k", "v", ttl=0.0)
+        time.sleep(0.01)
+        assert cache.get("k") is None, "ttl=0.0 应立即过期，而不是落到 100s 默认"
+        # None 档仍是默认（反修过头护栏）
+        cache.set("m", "v")
+        assert cache.get("m") == "v"
+
+    def test_disk_ttl_zero_means_expire_now_not_default(self, tmp_path):
+        from augmentor.cache import DiskCache
+        cache = DiskCache(str(tmp_path / "c"), default_ttl=100.0)
+        cache.set("k", "v", ttl=0.0)
+        time.sleep(0.01)
+        assert cache.get("k") is None, "ttl=0.0 应立即过期，而不是落到 100s 默认"

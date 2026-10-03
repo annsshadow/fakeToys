@@ -118,7 +118,7 @@ class MemoryCache:
             key=key,
             value=value,
             created_at=time.time(),
-            ttl=ttl or self._default_ttl
+            ttl=ttl if ttl is not None else self._default_ttl  # L186: falsy-zero guard — ttl=0.0 means "expire now", not "unset"
         )
     
     def delete(self, key: str) -> bool:
@@ -237,7 +237,9 @@ class DiskCache:
         if meta:
             created_at = meta.get("created_at", 0)
             ttl = meta.get("ttl")
-            if ttl and time.time() - created_at > ttl:
+            # L186: falsy-zero guard — ttl=0.0 是「立即过期」，None 才是「不过期」；
+            # 旧写法 `if ttl and ...` 把 0.0 读成「不过期」，与 set 侧同族假零。
+            if ttl is not None and time.time() - created_at > ttl:
                 # 过期，删除
                 self.delete(key)
                 return None
@@ -265,7 +267,7 @@ class DiskCache:
         # 更新元数据
         self._metadata[key] = {
             "created_at": time.time(),
-            "ttl": ttl or self._default_ttl
+            "ttl": ttl if ttl is not None else self._default_ttl  # L186: falsy-zero guard — ttl=0.0 means "expire now", not "unset"
         }
         self._save_metadata()
         self._enforce_size_limit()
