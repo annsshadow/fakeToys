@@ -71,9 +71,11 @@ class PiiSanitizer:
             patterns: 自定义模式映射（类型名 -> 正则），缺省为 DEFAULT_PATTERNS
             placeholders: 各类型占位符，缺省为 [TYPE] 形式（大写类型名）
         """
-        self.fields = fields or ["instruction", "input", "output"]
-        self.patterns = patterns or DEFAULT_PATTERNS
-        self.placeholders = placeholders or {
+        # L188: falsy-zero guard — 显式空容器（[] / {}）是「零元素」的合法意图，不是「没传」；
+        # 旧写法 `x or default` 把空容器读成没传而悄悄套上默认，脱敏范围/字段面被无声放大。
+        self.fields = fields if fields is not None else ["instruction", "input", "output"]
+        self.patterns = patterns if patterns is not None else DEFAULT_PATTERNS
+        self.placeholders = placeholders if placeholders is not None else {
             name: f"[{name.upper()}]" for name in self.patterns
         }
 
