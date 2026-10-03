@@ -69,7 +69,7 @@ def estimate_loss(model, data, tc, block_size, device):
     return losses.mean().item()
 
 
-def train(train_data, val_data, cfg: GPTConfig, tc: TrainConfig, device="cpu"):
+def train(train_data, val_data, cfg: GPTConfig, tc: TrainConfig, device="cpu", meta=None):
     torch.manual_seed(tc.seed)
     model = GPT(cfg).to(device)
     opt = configure_optimizer(model, tc)
@@ -97,7 +97,7 @@ def train(train_data, val_data, cfg: GPTConfig, tc: TrainConfig, device="cpu"):
             print(f"step {step:5d} | val loss {val:.4f}")
             os.makedirs(tc.out_dir, exist_ok=True)
             torch.save(
-                {"model": model.state_dict(), "cfg": cfg, "step": step},
+                {"model": model.state_dict(), "cfg": cfg, "step": step, "meta": meta},
                 os.path.join(tc.out_dir, "ckpt.pt"),
             )
     return model
