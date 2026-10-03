@@ -974,6 +974,8 @@
 
 | B256 | **已关闭（L186，cache TTL falsy 假零收口）**：augmentor/cache.py 的 MemoryCache.set（:121）与 DiskCache.set（:268）用 `ttl or self._default_ttl` 把显式 0.0 读成「没传」而落到默认 TTL——但 0.0 本是合法「立即过期」值（CacheEntry.is_expired 对 ttl=0 恒真）；同族第三处在 DiskCache.get（:235）`if ttl and ...` 把读侧 ttl=0.0 读成「不过期」。三处 falsy 假零让「立即过期」这个档位静默失效 | 三处改 `is not None` 判型（set×2 + get×1，零值保留为「立即过期」、None 才回落默认/不过期）；tests/unit/test_cache.py 新增守卫 2 例（MemoryCache 与 DiskCache 各钉「ttl=0.0 立即过期 + None 回落默认」两侧对照）。CRLF 文件全程二进制写保真；A184/L79/l97 各棘轮原地绿（无散名引用、非参数化位、cache.py 插行使 0 条活行引用顶歪）；全量 7821 passed / 3 skipped / exit 0 | S |
 
+| B257 | **已关闭（L187，benchmark delta_ratio 除零档自相矛盾收口）**：augmentor/benchmark.py 的 compare_with_baseline（:240）对基准读数为 0.0 的指标（pass_rate / diversity 合法读成 0）用 `if reference else 0.0` 记 delta_ratio=0.0——把「相对变化未定义（除零）」读成「无相对变化」，与同条目 improved/regressed 状态自相矛盾（baseline=0、current=0.5 判 improved，delta_ratio 却 0.0） | 改 `if reference != 0.0 else None`：reference==0.0 时记 None（与 :217 no_baseline 哨兵同口径），非 0 照旧相除；下游 Markdown 报告只读 current/baseline/delta/status（delta_ratio 不进表格）、无测试面读 delta_ratio ⇒ 零回归。tests/unit/test_benchmark.py 新增守卫 3 例（零基准 improved→None、零基准零当前 unchanged→None、非零基准照旧 0.8 防修过头）；A184/L79/l97 各棘轮原地绿；全量 7824 passed / 3 skipped / exit 0 | S |
+
 | B249 | **已关闭（L179，A155①：to_http_error 500 档不再转发异常原文）**：api/deps.py 的 to_http_error 最后一支把未分类异常原样 str(exc) 塞进 500 响应体——OSError(13,'Permission denied','/srv/...') 实测把部署根绝对路径与文件系统状态（Errno 28 磁盘满 / Errno 13 权限缺失）一并回给客户端，是可被利用的探测信号；A155 原框两格候选拍定取①（固定文案 + 原文落服务端日志，安全收紧方向，非脱敏白名单②） | 500 支改回固定文案常量 INTERNAL_ERROR_DETAIL（api/deps.py 模块级唯一产地，A77）+ logger.exception 把原文留服务端日志；400 支（ValueError 可行动文案）一字不动防修过头；tests/unit/test_api_deps.py 新增守卫 3 例（OSError 不泄漏部署路径/errno + 原文进日志 + ValueError 仍 400 原样回传）；tests/integration/test_api_dataset_system_tools.py 两处「500 回原文」断言按红字重述为「== 固定文案 + 原文不在响应体」（TestUnexpectedFailureBecomes500 五处 + dataset_impact/evaluate 各一，docstring 同步改口径）；A184/L79 各棘轮原地绿（本轮新增引用全用全路径 live 形、零散名）；全量 7790 passed / 3 skipped / exit 0（L178 的 7787 + 3 新守卫，零回归） | M |
 
 | B246 | **已关闭（L176）**：策略旋钮「封闭清单拒」同型普查（L175 的 method 静默回落修完后沿同型全仓扫）——sample 的 method / outlier 的 method / expander 的strategy 三处**已有** else 拒（普查实证）；唯一缺口 `save_quality_report` 的 format：未知 format **静默落 JSON 支**（请求 yaml 的拿到 json 文件不出声，checkpoint 症状族语义漂移档） | 缺口收边（format 封闭清单 `QUALITY_REPORT_FORMATS` + 入口 require_choice + None 专判）；**普查结论钉成棘轮**：新守卫 6 例含一条「五旋钮 × 未知值全部出 DataValidationError」合体例——任一旋钮未来退化回静默回落当场红；变异自证 2 红（剪 format 判据）、sha256 逐字节还原；A184/L79 各棘轮原地绿（quality_report.py 插行使 0 条活行引用顶歪，全量门禁证实） | M |
@@ -1338,3 +1340,12 @@
 - **守卫**：tests/unit/test_cache.py 新增 TestCacheTtlFalsyZeroL186 2 例（MemoryCache 与 DiskCache 各钉「ttl=0.0 立即过期 + None 回落默认」两侧对照，防修过头把 None 也当成 0）。
 - **棘轮**：cache.py 为 CRLF 全程二进制写保真；无散名引用、非参数化位 ⇒ A184/L79/l97 各棘轮原地绿（全量门禁证实）。
 - 全量门禁：7821 passed / 3 skipped / exit 0（L185 的 7819 + 2 新守卫，无回归）。**B256 关闭**。
+
+
+### L187（2026-10-04）— B257 立项 + 关闭：benchmark delta_ratio 除零档自相矛盾收口
+
+- **真缺陷（除零档自相矛盾）**：benchmark.py 的 compare_with_baseline（:240）写 `"delta_ratio": (delta / reference) if reference else 0.0`。当基准读数 reference=0.0（pass_rate / diversity 合法读成 0）且当前 current>0 时，delta/reference 是除零，`if reference else 0.0` 把它记成 0.0（「无相对变化」），但同条目状态已判 improved（delta>0 且 higher_is_better）⇒ 同一格自相矛盾：说「改善了」又说「相对变化 0」。
+- **修法**：`if reference != 0.0 else None`——reference==0.0 时相对变化未定义（除零），记 None（与 :217 no_baseline 档的 None 哨兵同口径），机器面读到 None 即知「无相对基准」；非 0 照旧相除。下游 Markdown 报告只读 current/baseline/delta/status（delta_ratio 不进表格），无测试面读 delta_ratio ⇒ 零回归。
+- **守卫**：tests/unit/test_benchmark.py 新增 TestDeltaRatioZeroBaselineL187 3 例（零基准 improved→None、零基准零当前 unchanged→None、非零基准照旧 0.8 防修过头）。
+- **棘轮**：无散名引用、非参数化位 ⇒ A184/L79/l97 各棘轮原地绿（全量门禁证实）。
+- 全量门禁：7824 passed / 3 skipped / exit 0（L186 的 7821 + 3 新守卫，无回归）。**B257 关闭**。
