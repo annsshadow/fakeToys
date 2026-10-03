@@ -16,6 +16,7 @@ import {
   ELEMENT_PER_STACK_BASE,
   mulDiv,
   maxBig,
+  minBig,
   clampInt64,
   applyArmor,
   MAX_RESIST,
@@ -1409,7 +1410,45 @@ export class BattleEngine {
     const lv = this.cfg.level
     return {
       attack: base.attack + this.buffs.attackPermille,
-      critPermille: base.critPermille + this.buffs.critPermille,
+      // ⚠️ 第 73 轮：这里夹一层 `min(PERMILLE)`。
+      //
+      // 消费侧的判据是 `roll >= PERMILLE - critPermille`
+      // （damage.ts:348，与 Go 的 damage.go:359 同式）。
+      // 当 critPermille > 1000 时右边变成**负数**，而 roll 是 0..9999 ——
+      // 于是判据恒真，**每一发都暴击**。
+      //
+      // # 为什么能超过 1000
+      //
+      // `Attacker.CritPermille` 的文档写着「**0..1000 约定**」
+      // （Go 侧 damage.go:63 同样写着），但**两端都不执行它**：
+      //
+      //   装备侧  loadout_attacker.go 把词缀和夹到 MaxLoadoutCritPermille=500
+      //   基础值  defaultAttacker() = 50
+      //           → base.critPermille ≤ 550
+      //   局内卡  applyAttribute 的 crit 卡 value: 80n，**无夹取**
+      //
+      // 每波恰好 1 张属性卡（`rollWaveCards` 的固定构成），
+      // 最难关卡 10 波（levelgen.go 的 chapter 6），
+      // 6 张 crit 卡 = 550 + 480 = **1030 > 1000**。
+      //
+      // 概率不高（每波 1/6 命中，最多 10 波，P(≥6) ≈ 0.2%），
+      // 但这是**确定性**的：种子给定后必然如此。
+      //
+      // # 为什么是夹而不是「报错」
+      //
+      // 这是客户端的局内计算，服务端**不重算 replay_hash**
+      // （只校验长度，battle_collections.go:318），
+      // 所以夹取不会造成跨端哈希分歧。
+      //
+      // 而「报错」在这里无从谈起 —— 玩家无法选择抽到哪张卡，
+      // 卡池是种子决定的。夹取是唯一能把越界值变成合法值的地方。
+      //
+      // # 为什么只夹 crit，不夹 attack / elementCoefPermille
+      //
+      // 那两个是**线性**消费（`d = skillDamage * (1000 + attack) / 1000`），
+      // 越界只是数值变大，没有行为**悬崖**。
+      // crit 是唯一有悬崖的：`permille - critPermille` 会变号。
+      critPermille: minBig(base.critPermille + this.buffs.critPermille, PERMILLE),
       critMultiplierPermille: base.critMultiplierPermille,
       reactionMultPermille: base.reactionMultPermille,
       elementCap: (lv.element_cap ? BigInt(lv.element_cap) : base.elementCap) + this.buffs.elementCapBonus,
