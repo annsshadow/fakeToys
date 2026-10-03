@@ -152,12 +152,6 @@ class DataFormat(Enum):
     BELLE = "belle"
 
 
-# 「字段映射类」格式：与规范形（instruction/input/output）共用字段名，逆向只是补默认值
-FLAT_FORMATS = ("alpaca", "belle", "llama_factory")
-
-# 「对话类」格式：正文存在对话数组里，逆向要把它折回 instruction/output/history
-CONVERSATION_FORMATS = ("sharegpt", "vicuna", "chatml")
-
 # 对话容器字段名与其中「角色」的写法差异
 _CONVERSATION_KEY = {"sharegpt": "conversations", "vicuna": "conversations",
                      "chatml": "messages"}
