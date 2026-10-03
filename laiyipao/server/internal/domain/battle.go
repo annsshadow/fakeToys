@@ -99,17 +99,46 @@ func fullStarTarget(gl GeneratedLevel) int64 {
 	return gl.StarTargets[len(gl.StarTargets)-1]
 }
 
+// MaxPlausibleDurationMs 是战斗时长的可信上界：24 小时。
+//
+// # 为什么必须有它
+//
+// `battle_records.duration_ms` 是 PG 的 **INTEGER**（int32，上限 2147483647），
+// 而 SettleInput.DurationMs 是 Go 的 `int`（64 位）。此前 ValidateSettle 只判
+// `DurationMs <= 0`，**没有上界**，于是上报 `duration_ms: 2147483648` 时：
+//
+//   - maxShotsFor 内部把它夹到 24h，所以发射数校验通过（那一层夹了）
+//   - 而 game.go 的 INSERT 用的是**原始未夹紧**的值
+//     → PG `ERROR 22003 integer out of range`
+//     → failErr 兜底成 500
+//
+// 即：**校验过的值与入库的值不是同一个**。任何持有合法 token 的玩家
+// 都能稳定把结算打成 500，而 500 的代价是客户端只会显示「服务内部错误」，
+// 排查会滑向「服务端坏了」，同时混进服务故障告警把真正的故障淹掉
+// （这正是 middleware.go 注释里描述过的代价）。
+//
+// # 为什么不静默夹紧
+//
+// 夹紧能让写入不报错，但战报里会记着一个**假的**时长 ——
+// 而 duration 是分析「关卡耗时分布」的维度，写假值比写失败更糟。
+// 数据不可信就该拒，这也是 ValidateSettle 开头写明的原则：
+// 「静默修正会让刷子以为自己在正常游戏」。
+const MaxPlausibleDurationMs = 24 * 60 * 60 * 1000
+
 // maxShotsFor 返回给定时长下的物理发射数上界。
 //
 // ⚠️ 必须对 int64 溢出保持 fail-closed。
-// 时长来自客户端上报，DurationMs 已经过 `> 0` 校验但没有上界，
+// 时长来自客户端上报，DurationMs 已经过 `> 0` 校验，
 // durationMs = 2^62 时除法结果仍很大，再乘 8 会溢出成负数 ——
 // 负数比较会让所有上报都通过，那比没有校验更糟。
-// 这里先夹到 24 小时（远超任何真实对局），保证后续运算不溢出。
+// 这里先夹到 MaxPlausibleDurationMs（远超任何真实对局），保证后续运算不溢出。
+//
+// ⚠️ 本函数**只用于算上界**，不再承担「防御超出范围的值」的职责 ——
+// 那是 ValidateSettle 里 MaxPlausibleDurationMs 判据的事。
+// 留着夹取是为了 fail-closed：即使判据被移除也不会溢出成负数放行一切。
 func maxShotsFor(durationMs int) int64 {
-	const maxPlausibleMs = 24 * 60 * 60 * 1000
-	if durationMs > maxPlausibleMs {
-		durationMs = maxPlausibleMs
+	if durationMs > MaxPlausibleDurationMs {
+		durationMs = MaxPlausibleDurationMs
 	}
 	if durationMs <= 0 {
 		return 0
@@ -339,6 +368,26 @@ func ValidateSettle(
 	// 0 会让整段裁剪逻辑被跳过，任意大的分数都能通过。
 	if in.DurationMs <= 0 {
 		return SettleResult{}, fmt.Errorf("%w：%dms", ErrTooShort, in.DurationMs)
+	}
+
+	// 4b) 时长上界。
+	//
+	// ⚠️ 缺了这条，`duration_ms` 就是一个「校验过但写不进去」的字段：
+	// battle_records.duration_ms 是 PG INTEGER（int32），
+	// 上报 2147483648 会让 INSERT 报 `22003 integer out of range`，
+	// 经 failErr 兜底成 500 —— 一次合法 token 就能稳定制造假 500，
+	// 而假 500 会把真正的服务故障淹掉（middleware.go 注释里记着这个代价）。
+	//
+	// 这与 `shots` 那条是同一族的第三个缺口：
+	//   - reactions 的上界由 shots 界定，而 shots 当时无上界 → 漏了控制量
+	//   - 本条：shots 的上界由 durationMs 算，而 durationMs 当时无上界
+	//     → **判据自己也是从一个无界的量算出来的**
+	//
+	// 判成 ErrInvalidField 而不是 ErrTooShort：两者都是 422，
+	// 但「超出可信范围」与「太短」是不同的诊断，混在一起会让排查误方向。
+	if in.DurationMs > MaxPlausibleDurationMs {
+		return SettleResult{}, fmt.Errorf("%w：时长 %dms 超过可信上界 %dms（24 小时）",
+			ErrInvalidField, in.DurationMs, MaxPlausibleDurationMs)
 	}
 
 	// 5) 秒通关检查。
