@@ -234,6 +234,17 @@ export interface ReplayEvent {
   type: ReplayEventType
   /** 紧凑数值：敌 uid / 技能 id / 反应序号 / 波次 */
   a: number
+  /**
+   * 第二载荷。逐 type 的语义（第 70 轮补全）：
+   *
+   * - `leak`：漏掉的伤害值（`a` 是**敌人 uid**）
+   * - `card`：1 = 丢弃 / 0 = 取牌
+   * - `wave`：1（恒定）
+   * - 其他：恒为 0
+   *
+   * ⚠️ 此前 `leak` 的两条路径一处把伤害写进 `a`、一处写 uid，
+   * 无论走哪条都丢掉一个信息。现在约定 `a` = uid、`b` = 伤害。
+   */
   b: number
   c: number
 }
