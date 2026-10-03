@@ -100,6 +100,25 @@ type ConsistencyVectors struct {
 			} `json:"measured"`
 		} `json:"limits"`
 	} `json:"replay_skills"`
+	// CardPicks 是 card_picks 的取值域（第 66 轮）。
+	//
+	// 为什么要跨端锁：Go 侧按 CardPickMin 拒，TS 侧按 PICK_MIN 生成。
+	// 两份漂移的后果是**静默**的 —— 客户端正常对局被服务端 422 拒掉，
+	// 而客户端测试、Go 测试、e2e 全绿（它们都不跑真实结算）。
+	//
+	// 这与 replay_skills 同机制：只导数据、不导期望值之外的语义，
+	// 期望值由两侧各自用同一份字面值断言。
+	CardPicks struct {
+		Min             int64 `json:"min"`
+		DiscardTakeBase int64 `json:"discard_take_base"`
+		DiscardSkipBase int64 `json:"discard_skip_base"`
+		Skip            int64 `json:"skip"`
+		HandSlots       int64 `json:"hand_slots"`
+		Cases           []struct {
+			Name     string `json:"name"`
+			Expected int64  `json:"expected"`
+		} `json:"cases"`
+	} `json:"card_picks"`
 	Levelgen struct {
 		Levels          int `json:"levels"`
 		TerrainLevelMin int `json:"terrain_level_min"`

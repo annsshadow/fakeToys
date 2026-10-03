@@ -4,14 +4,27 @@
   "lcg": {
     "_comment": "PCG-XSH-RR 变体，Go uint64 与 TS BigInt 必须逐位相同。64 位值必须用字符串承载：JSON number 超过 2^53 后 JS 解析即失精，断言会变成假通过。",
     "seed": 12345,
-    "expected": ["6917529027818027904", "1269031133", "9223372037807892195"]
+    "expected": [
+      "6917529027818027904",
+      "1269031133",
+      "9223372037807892195"
+    ]
   },
   "fnv1a64": {
     "_comment": "Go hash/fnv 与 TS 手写实现必须一致（回放哈希的基础）",
     "vectors": [
-      { "input": "", "expected": "cbf29ce484222325" },
-      { "input": "a", "expected": "af63dc4c8601ec8c" },
-      { "input": "foobar", "expected": "85944171f73967e8" }
+      {
+        "input": "",
+        "expected": "cbf29ce484222325"
+      },
+      {
+        "input": "a",
+        "expected": "af63dc4c8601ec8c"
+      },
+      {
+        "input": "foobar",
+        "expected": "85944171f73967e8"
+      }
     ]
   },
   "damage": {
@@ -30,7 +43,12 @@
           "hp": 1000000000,
           "armor_permille": 0,
           "stacks_per_element": 4,
-          "resist": { "fire": 500, "ice": -300, "lightning": 500, "corrosion": -300 }
+          "resist": {
+            "fire": 500,
+            "ice": -300,
+            "lightning": 500,
+            "corrosion": -300
+          }
         },
         "hit": {
           "skill_damage": 1000,
@@ -63,7 +81,12 @@
           "hp": 1000000000,
           "armor_permille": 0,
           "stacks_per_element": 4,
-          "resist": { "fire": 500, "ice": -300, "lightning": 500, "corrosion": -300 }
+          "resist": {
+            "fire": 500,
+            "ice": -300,
+            "lightning": 500,
+            "corrosion": -300
+          }
         },
         "hit": {
           "skill_damage": 1000,
@@ -96,7 +119,12 @@
           "hp": 1000000000,
           "armor_permille": 0,
           "stacks_per_element": 4,
-          "resist": { "fire": 500, "ice": -300, "lightning": 500, "corrosion": -300 }
+          "resist": {
+            "fire": 500,
+            "ice": -300,
+            "lightning": 500,
+            "corrosion": -300
+          }
         },
         "hit": {
           "skill_damage": 1000,
@@ -148,7 +176,14 @@
         "name": "single_level1_no_baking",
         "_why": "level 1 的 coef = 1000，底伤不变；这是最常见的情形，也是格式漂移最容易藏身的地方",
         "skills": [
-          { "slot": 0, "skill_id": 1, "level": 1, "base_damage": 100, "heat_cost": 20, "apply_stacks": 1 }
+          {
+            "slot": 0,
+            "skill_id": 1,
+            "level": 1,
+            "base_damage": 100,
+            "heat_cost": 20,
+            "apply_stacks": 1
+          }
         ],
         "expected": "0:1:100:1:20"
       },
@@ -156,8 +191,22 @@
         "name": "slot_ge_10_string_order",
         "_why": "字符串序 ≠ 槽位数值序：10: 排在 2: 前面。按槽位排的实现在这里会红",
         "skills": [
-          { "slot": 2, "skill_id": 1, "level": 1, "base_damage": 100, "heat_cost": 20, "apply_stacks": 1 },
-          { "slot": 10, "skill_id": 2, "level": 1, "base_damage": 140, "heat_cost": 30, "apply_stacks": 2 }
+          {
+            "slot": 2,
+            "skill_id": 1,
+            "level": 1,
+            "base_damage": 100,
+            "heat_cost": 20,
+            "apply_stacks": 1
+          },
+          {
+            "slot": 10,
+            "skill_id": 2,
+            "level": 1,
+            "base_damage": 140,
+            "heat_cost": 30,
+            "apply_stacks": 2
+          }
         ],
         "expected": "10:2:140:2:30,2:1:100:1:20"
       },
@@ -165,8 +214,22 @@
         "name": "level_baked_into_base_damage",
         "_why": "等级必须烘进底伤：coef = 1000 + (level-1)*50。level 10 → 145，level 5 → 216",
         "skills": [
-          { "slot": 0, "skill_id": 3, "level": 10, "base_damage": 100, "heat_cost": 40, "apply_stacks": 2 },
-          { "slot": 1, "skill_id": 4, "level": 5, "base_damage": 180, "heat_cost": 50, "apply_stacks": 3 }
+          {
+            "slot": 0,
+            "skill_id": 3,
+            "level": 10,
+            "base_damage": 100,
+            "heat_cost": 40,
+            "apply_stacks": 2
+          },
+          {
+            "slot": 1,
+            "skill_id": 4,
+            "level": 5,
+            "base_damage": 180,
+            "heat_cost": 50,
+            "apply_stacks": 3
+          }
         ],
         "expected": "0:3:145:2:40,1:4:216:3:50"
       },
@@ -174,8 +237,22 @@
         "name": "mixed_width_slot_and_4digit_damage",
         "_why": "两位槽位 + 四位底伤一起出现，排错位或漏字段都在这里现形",
         "skills": [
-          { "slot": 9, "skill_id": 5, "level": 3, "base_damage": 1000, "heat_cost": 60, "apply_stacks": 1 },
-          { "slot": 11, "skill_id": 6, "level": 1, "base_damage": 250, "heat_cost": 70, "apply_stacks": 4 }
+          {
+            "slot": 9,
+            "skill_id": 5,
+            "level": 3,
+            "base_damage": 1000,
+            "heat_cost": 60,
+            "apply_stacks": 1
+          },
+          {
+            "slot": 11,
+            "skill_id": 6,
+            "level": 1,
+            "base_damage": 250,
+            "heat_cost": 70,
+            "apply_stacks": 4
+          }
         ],
         "expected": "11:6:250:4:70,9:5:1100:1:60"
       },
@@ -208,5 +285,31 @@
         }
       }
     }
+  },
+  "card_picks": {
+    "_comment": "card_picks 的取值域（第 66 轮）。两端各有一份边界：Go 是 CardPickMin（internal/domain/battle_collections.go），TS 是 PICK_MIN（src/game/engine.ts）。它们必须逐位一致 —— 漂了的后果是静默的：客户端正常对局被服务端 422 拒掉，而客户端测试、Go 测试、e2e 全绿（它们都不跑真实结算）。编码：-1 整波跳过；-(3+handIdx) 弃一张取第 handIdx 张；-(6+handIdx) 弃一张整波跳过。两个负区间不相交，靠 BASE 相差 3（> 每波最大手牌数 2）。",
+    "min": -8,
+    "discard_take_base": 3,
+    "discard_skip_base": 6,
+    "skip": -1,
+    "hand_slots": 3,
+    "cases": [
+      {
+        "name": "plain_pick_first",
+        "expected": 0
+      },
+      {
+        "name": "plain_skip",
+        "expected": -1
+      },
+      {
+        "name": "discard_then_take_first",
+        "expected": -3
+      },
+      {
+        "name": "discard_then_skip",
+        "expected": -6
+      }
+    ]
   }
 }
