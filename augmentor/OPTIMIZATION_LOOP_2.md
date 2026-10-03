@@ -972,6 +972,8 @@
 
 | B255 | **已关闭（L185，A95/A122 合轮收口：模型凭证 ${ENV} 占位符展开语义钉成契约）**：模型条目三凭证键（api_key/secret_key/base_url）经 _resolve_env 解析 ${ENV} 占位符，**未设置的环境变量静默回落 ''**（与 None 等价，都是「这条没配凭据」的合法状态，由后端 ModelNotConfiguredError 在建后端时判）；A122 原框把「${ENV} 展开失败静默」与「三键零判据」留待拍，与 A95（展开出声口径）是同一件事的两半 | 拍定取**非破坏面收口（记档 + 机器钉死，不改加载期行为）**：加载期「环境变量未设置」条数随本机 shell 而变、接进加载声会让同一份配置不同机器行数不同（docs/API.md 3.x 既定口径），故静默 '' 是**刻意契约**、出声归 validate-config 的 warning 通道；本轮把该语义钉死——augmentor/config.py 的 _resolve_env docstring 写明四档（已设置/未设置静默''/非 ${...} 完整形状原样/非串原样）；tests/unit/test_model_entry_defaults_l75.py 新增守卫 13 例（已设置取值 + 未设置静默'' + 坏形状 5 档原样 + 非串 4 档原样 + 合法占位未设置'' + MODEL_CREDENTIAL_KEYS 权威清单 == 三键）。l97 普查 CALLS 382→384 / READABLE 281→283 逐格重钉（两支 parametrize 字面清单进可读桶、盲面 101 不动、l98 随之回稳）；A184/L79 各棘轮原地绿（全路径 live 形引用）；全量 7819 passed / 3 skipped / exit 0 | M |
 
+| B256 | **已关闭（L186，cache TTL falsy 假零收口）**：augmentor/cache.py 的 MemoryCache.set（:121）与 DiskCache.set（:268）用 `ttl or self._default_ttl` 把显式 0.0 读成「没传」而落到默认 TTL——但 0.0 本是合法「立即过期」值（CacheEntry.is_expired 对 ttl=0 恒真）；同族第三处在 DiskCache.get（:235）`if ttl and ...` 把读侧 ttl=0.0 读成「不过期」。三处 falsy 假零让「立即过期」这个档位静默失效 | 三处改 `is not None` 判型（set×2 + get×1，零值保留为「立即过期」、None 才回落默认/不过期）；tests/unit/test_cache.py 新增守卫 2 例（MemoryCache 与 DiskCache 各钉「ttl=0.0 立即过期 + None 回落默认」两侧对照）。CRLF 文件全程二进制写保真；A184/L79/l97 各棘轮原地绿（无散名引用、非参数化位、cache.py 插行使 0 条活行引用顶歪）；全量 7821 passed / 3 skipped / exit 0 | S |
+
 | B249 | **已关闭（L179，A155①：to_http_error 500 档不再转发异常原文）**：api/deps.py 的 to_http_error 最后一支把未分类异常原样 str(exc) 塞进 500 响应体——OSError(13,'Permission denied','/srv/...') 实测把部署根绝对路径与文件系统状态（Errno 28 磁盘满 / Errno 13 权限缺失）一并回给客户端，是可被利用的探测信号；A155 原框两格候选拍定取①（固定文案 + 原文落服务端日志，安全收紧方向，非脱敏白名单②） | 500 支改回固定文案常量 INTERNAL_ERROR_DETAIL（api/deps.py 模块级唯一产地，A77）+ logger.exception 把原文留服务端日志；400 支（ValueError 可行动文案）一字不动防修过头；tests/unit/test_api_deps.py 新增守卫 3 例（OSError 不泄漏部署路径/errno + 原文进日志 + ValueError 仍 400 原样回传）；tests/integration/test_api_dataset_system_tools.py 两处「500 回原文」断言按红字重述为「== 固定文案 + 原文不在响应体」（TestUnexpectedFailureBecomes500 五处 + dataset_impact/evaluate 各一，docstring 同步改口径）；A184/L79 各棘轮原地绿（本轮新增引用全用全路径 live 形、零散名）；全量 7790 passed / 3 skipped / exit 0（L178 的 7787 + 3 新守卫，零回归） | M |
 
 | B246 | **已关闭（L176）**：策略旋钮「封闭清单拒」同型普查（L175 的 method 静默回落修完后沿同型全仓扫）——sample 的 method / outlier 的 method / expander 的strategy 三处**已有** else 拒（普查实证）；唯一缺口 `save_quality_report` 的 format：未知 format **静默落 JSON 支**（请求 yaml 的拿到 json 文件不出声，checkpoint 症状族语义漂移档） | 缺口收边（format 封闭清单 `QUALITY_REPORT_FORMATS` + 入口 require_choice + None 专判）；**普查结论钉成棘轮**：新守卫 6 例含一条「五旋钮 × 未知值全部出 DataValidationError」合体例——任一旋钮未来退化回静默回落当场红；变异自证 2 红（剪 format 判据）、sha256 逐字节还原；A184/L79 各棘轮原地绿（quality_report.py 插行使 0 条活行引用顶歪，全量门禁证实） | M |
@@ -1327,3 +1329,12 @@
 - **定档（非破坏面收口）**：加载期「环境变量未设置」的条数随本机 shell 而变，接进加载声会让同一份配置在不同机器上行数不同（docs/API.md 3.x 既定口径），故**静默 '' 是刻意契约**、出声归 validate-config 的 warning 通道（A76/A84）。本轮不改加载期行为，把该语义**钉死**：_resolve_env docstring 写明四档；新增守卫 13 例钉「已设置取值 / 未设置静默'' / 坏形状原样 / 非串原样 / 合法占位未设置'' / 权威清单 == 三键」——谁把静默改成加载期 fail-loud（或把 '' 换成报错）都要先翻这一格并重新对账对外契约。
 - **棘轮**：l97 普查 CALLS 382→384、READABLE 281→283 逐格重钉（两支 parametrize 字面清单进可读桶、盲面 101 不动、l98 随之回稳）；A184/L79 各棘轮原地绿（全路径 live 形引用，config.py 插行 0 条活行引用顶歪）。
 - 全量门禁：7819 passed / 3 skipped / exit 0（L184 的 7806 + 13 新守卫，无回归）。**B255 关闭，A122/A95 合轮收口**。
+
+
+### L186（2026-10-04）— B256 立项 + 关闭：cache TTL falsy 假零收口（set×2 + get×1 三处）
+
+- **真缺陷（falsy 假零，L144/L147/L149 同族漏网点）**：cache.py 的 `MemoryCache.set`（:121）与 `DiskCache.set`（:268）写 `ttl or self._default_ttl`——显式 `ttl=0.0` 语义是「立即过期」，但被 falsy 读成「没传」而落到默认 TTL；`CacheEntry.is_expired`（:33）对 ttl=0 恒真，0.0 本是合法的「立即过期」档。同族第三处漏网在 `DiskCache.get`（:235）`if ttl and ...`——读侧把 ttl=0.0 读成「不过期」。三处一起让「立即过期」档位静默失效。
+- **修法（判据 `is not None`）**：set×2 + get×1 共三处改 `ttl if/… is not None else`，零值保留为「立即过期」、None 才回落默认（set）/不过期（get）；与 L144 merge / L147 导出 / L149 sample 的假零修法同式。
+- **守卫**：tests/unit/test_cache.py 新增 TestCacheTtlFalsyZeroL186 2 例（MemoryCache 与 DiskCache 各钉「ttl=0.0 立即过期 + None 回落默认」两侧对照，防修过头把 None 也当成 0）。
+- **棘轮**：cache.py 为 CRLF 全程二进制写保真；无散名引用、非参数化位 ⇒ A184/L79/l97 各棘轮原地绿（全量门禁证实）。
+- 全量门禁：7821 passed / 3 skipped / exit 0（L185 的 7819 + 2 新守卫，无回归）。**B256 关闭**。
