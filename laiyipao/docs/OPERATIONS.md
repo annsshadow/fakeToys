@@ -88,7 +88,7 @@ cd laiyipao/admin   && pnpm install && pnpm dev          # :5175
 | `DATABASE_URL` | PostgreSQL 连接串 |
 | `JWT_SECRET` | **生产必须覆盖**。`APP_ENV=prod` 时若仍以 `dev-only` 开头，**进程直接 panic 拒绝启动** |
 | `BOOTSTRAP_ADMIN_USER` | `admin` | 首次启动创建的后台**用户名** |
-| `BOOTSTRAP_ADMIN_PASS` | `admin12345` | 首次启动创建的后台**密码**，**至少 10 位**，缺省则拒绝引导 |
+| `BOOTSTRAP_ADMIN_PASS` | `admin12345` | 首次启动创建的后台**密码**，**至少 10 位**，缺省则拒绝引导 | ⚠️ **第 67 轮**：`APP_ENV=prod` 时**必须显式设置**，未设直接 panic —— 默认值 `admin12345` 写在 README 与源码里是**公开的**，且恰好 10 位**正好通过**长度门槛
 
 ### 服务
 
