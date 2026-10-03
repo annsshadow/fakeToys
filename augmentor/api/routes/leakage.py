@@ -19,7 +19,9 @@ class LeakageRequest(BaseModel):
     train_file: str
     test_file: str
     fields: Optional[List[str]] = None
-    fuzzy_threshold: float = 0.8
+    # A172（L181）：fuzzy_threshold 可用区间 (0, 1]（0 档假零报 100% 泄漏、>1 静默关闭），
+    # 边界 422 拒在请求面，与 SDK 构造器判据（augmentor/leakage.py，权威）同档。
+    fuzzy_threshold: float = Field(0.8, gt=0, le=1)
 
 
 class LeakageResponse(BaseModel):

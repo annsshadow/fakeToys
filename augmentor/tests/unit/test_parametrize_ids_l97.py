@@ -65,9 +65,10 @@ NS_PREFIXES = frozenset({
 #: L163（B233）：新增导出原子写守卫文件，两支 parametrize（字面格式清单，
 #: 自带 literal-list）⇒ CALLS 377 → 379、READABLE 276 → 278，盲面（no-literal-list
 #: 桶）101 一格未动。
-MEASURED_CALLS = 381
-#: （字面化后：CALLS 381 - 盲面 101 = 280；两支 parametrize 全是字面清单值位，盲面回稳）
-MEASURED_READABLE = 280
+MEASURED_CALLS = 382
+#: （L181：leakage fuzzy_threshold 坏形状 9 档 parametrize 字面清单 ⇒ CALLS 381 → 382、
+#: READABLE 280 → 281，盲面 101 一格未动）
+MEASURED_READABLE = 281
 #: L175：搜索方法封闭清单守卫两支 parametrize（坏值 6 档 / 合法 5 档，全是字面
 #: 清单）⇒ CALLS 379 → 381、READABLE 278 → 279，盲面（no-literal-list 桶）101 不动。
 MEASURED_BLIND = 101

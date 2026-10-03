@@ -23,6 +23,8 @@ from dataclasses import dataclass, field
 from itertools import chain
 from typing import Any, Dict, List, Optional, Set
 
+from augmentor.validation import DataValidationError, require_ratio
+
 logger = logging.getLogger(__name__)
 
 # 归一化用：仅保留字母数字与中文，丢弃空白与标点
@@ -140,9 +142,28 @@ class LeakageDetector:
 
         Args:
             fields: 参与比较的字段名，缺省为 instruction
-            fuzzy_threshold: 近似匹配的 Jaccard 阈值（>= 判定为泄漏）
+            fuzzy_threshold: 近似匹配的 Jaccard 阈值（>= 判定为泄漏）。可用区间 (0, 1]：
+                0 档是「假零」（Jaccard 下界 0 ⇒ 任何 token 相交即判泄漏，干净数据也报
+                100% 泄漏），> 1 档「静默关闭」（Jaccard 永不超过 1，永远报不出近似泄漏）。
+                两方向都能造出假读数，故构造期即拒（A172，L181；fail-loud 方向）。
             min_examples: 报告中最多保留的泄漏示例条数
+
+        Raises:
+            DataValidationError: fuzzy_threshold 为 None / 非数值 / bool / NaN / 越界（(0,1] 之外）
         """
+        # fuzzy_threshold 权威判据住构造器（A77 一条判据一处）：API/CLI 面经 detect_leakage
+        # 委托到本构造器，自动吃到同一档；下界取开（0 档是假零家族 L144 同式），上界取闭。
+        if fuzzy_threshold is None:
+            raise DataValidationError(
+                "fuzzy_threshold 不能为 None（必填比例旋钮，显式 None 属坏值非缺省）"
+            )
+        fuzzy_threshold = require_ratio(
+            "fuzzy_threshold", fuzzy_threshold, minimum=0.0, maximum=1.0
+        )
+        if fuzzy_threshold <= 0:
+            raise DataValidationError(
+                "fuzzy_threshold 必须大于 0（0 档会把干净数据全判为泄漏，假零家族 L144 同式）"
+            )
         self.fields = fields or ["instruction"]
         self.fuzzy_threshold = fuzzy_threshold
         self.min_examples = min_examples

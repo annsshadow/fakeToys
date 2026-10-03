@@ -113,3 +113,31 @@ class TestPackageExports:
         assert augmentor.LeakageDetector is LeakageDetector
         assert augmentor.LeakageReport is LeakageReport
         assert augmentor.detect_leakage is detect_leakage
+
+
+class TestFuzzyThresholdGuardL181:
+    """L181（A172）：fuzzy_threshold 构造期判 (0, 1]——假零/越界/坏形状全拒，正区间放行。
+
+    判据权威住 LeakageDetector 构造器（A77）：detect_leakage 与 API/CLI 面经它吃到同一档。
+    """
+
+    def test_valid_open_upper_interval_passes(self):
+        for ok in (0.1, 0.8, 1.0, 1):
+            assert LeakageDetector(fuzzy_threshold=ok).fuzzy_threshold == ok
+
+    @pytest.mark.parametrize("bad", [0.0, -0.5, 1.5, 2.0, None, True, False,
+                                     float("nan"), "0.8"])
+    def test_bad_shapes_rejected(self, bad):
+        from augmentor.exceptions import DataValidationError
+
+        with pytest.raises(DataValidationError):
+            LeakageDetector(fuzzy_threshold=bad)
+
+    def test_detect_leakage_delegates_guard(self):
+        from augmentor.exceptions import DataValidationError
+
+        train, test = [{"instruction": "a"}], [{"instruction": "b"}]
+        with pytest.raises(DataValidationError):
+            detect_leakage(train, test, fuzzy_threshold=0.0)
+        # 合法值仍正常出报告（拒判据没有修过头）
+        assert detect_leakage(train, test, fuzzy_threshold=0.5).total_leaks == 0
