@@ -321,7 +321,11 @@ func (s *Server) getReplay(c *fiber.Ctx) error {
 	if err != nil {
 		return fail(c, fiber.StatusBadRequest, "bad_input", "battle id 非法")
 	}
-	info, err := s.Svc.GetReplay(c.Context(), id)
+	// ⚠️ 第 75 轮：把 caller 传进去做归属校验。
+	//
+	// 原来只有 battleID，于是任何注册用户都能遍历连续 BIGSERIAL
+	// 读到别人的完整构筑快照。详见 service.GetReplay 的注释。
+	info, err := s.Svc.GetReplay(c.Context(), userIDFrom(c), id)
 	if err != nil {
 		return failErr(c, err)
 	}
