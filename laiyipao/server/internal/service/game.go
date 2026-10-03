@@ -756,20 +756,47 @@ func (s *Service) bumpTasks(ctx context.Context, tx pgx.Tx, userID int64, deltas
 }
 
 // ClaimTask 领取任务奖励。
+//
+// # ⚠️ 第 76 轮：周任务此前**永远领不到**
+//
+// 原来的 JOIN 把 `task_date` 写死成 `periodStart(now, "daily")`：
+//
+//	LEFT JOIN user_tasks ut
+//	       ON ut.task_id = t.id AND ut.user_id = $1
+//	      AND ut.task_date = periodStart(time.Now(), "daily")   ← 写死 daily
+//
+// 而 `bumpTasks` 记进度时用的是**任务自己的 scope**：
+//
+//	day := periodStart(now, t.scope)     ← weekly 就是本周一
+//
+// 于是周任务的进度行 `task_date = 本周一`，
+// 而 ClaimTask 去找 `task_date = 今天零点` → 找不到 → `COALESCE(progress,0) = 0`
+// → `progress < target` → 报「任务未完成（0/N）」，**一次都领不到**。
+//
+// 更坏的是它**看起来是能领的**：`LoadTasks(ctx, uid, "weekly")`
+// 用的是 `periodStart(now, scope)`（正确），所以 UI 上那个周任务
+// 显示 progress = target、可领取 —— 点下去报「未完成」。
+//
+// # 为什么改成两步查，而不是把 scope 塞进 SQL
+//
+// SQL 里算周期起点就要复制一份「周日是 0、转成 1..7」的规则 ——
+// 那是 Go 的 `periodStart`，复制过去就是**第二份实现**。
+// 而本项目已经吃过一次同型的亏：
+// `fixed.ts` 与 `damage.go` 的「逐行等价」声明（README 记的跨端一致 ≠ 两端都对）。
+//
+// 所以周期起点仍然只在 Go 里算一次：
+// 先查任务定义（拿到 scope），再按 scope 算 `day`，最后查玩家进度。
+// 两步在同一个事务里，互斥点仍是下面那个条件 UPDATE 的 RowsAffected。
 func (s *Service) ClaimTask(ctx context.Context, userID int64, taskID int) (map[string]int64, error) {
 	var out map[string]int64
 	err := s.DB.Tx(ctx, func(tx pgx.Tx) error {
+		// 第一步：任务定义。scope 必须在 Go 里先拿到才能算周期起点。
 		var scope string
-		var target, progress int
-		var claimedAt *time.Time
+		var target int
 		var rewardRaw []byte
 		err := tx.QueryRow(ctx,
-			`SELECT t.scope, t.target, t.reward, COALESCE(ut.progress,0), ut.claimed_at
-			 FROM tasks t
-			 LEFT JOIN user_tasks ut
-			        ON ut.task_id = t.id AND ut.user_id = $1 AND ut.task_date = $2
-			 WHERE t.id = $3 AND t.enabled`, userID, periodStart(time.Now(), "daily"), taskID).
-			Scan(&scope, &target, &rewardRaw, &progress, &claimedAt)
+			`SELECT scope, target, reward FROM tasks WHERE id = $1 AND enabled`, taskID).
+			Scan(&scope, &target, &rewardRaw)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return fmt.Errorf("%w: task %d", ErrNotFound, taskID)
 		}
@@ -777,6 +804,23 @@ func (s *Service) ClaimTask(ctx context.Context, userID int64, taskID int) (map[
 			return err
 		}
 		day := periodStart(time.Now(), scope)
+
+		// 第二步：玩家在本周期的进度。
+		// 没有行 = 还没开始做（progress 0，未领取）——
+		// 原来的 LEFT JOIN + COALESCE 表达的就是这件事，这里显式处理。
+		var progress int
+		var claimedAt *time.Time
+		err = tx.QueryRow(ctx,
+			`SELECT progress, claimed_at FROM user_tasks
+			  WHERE user_id = $1 AND task_id = $2 AND task_date = $3`,
+			userID, taskID, day).Scan(&progress, &claimedAt)
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+			progress, claimedAt = 0, nil
+		case err != nil:
+			return err
+		}
+
 		if claimedAt != nil {
 			return fmt.Errorf("%w: 奖励已领取", ErrForbidden)
 		}
