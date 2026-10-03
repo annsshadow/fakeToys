@@ -1,0 +1,28 @@
+To be, or not to be, that is the question:
+Whether 'tis nobler in the mind to suffer
+The slings and arrows of outrageous fortune,
+Or to take arms against a sea of troubles
+And by opposing end them. To die, to sleep,
+No more; and by a sleep to say we end
+The heart-ache and the thousand natural shocks
+That flesh is heir to: 'tis a consummation
+Devoutly to be wish'd. To die, to sleep;
+To sleep, perchance to dream, ay, there's the rub:
+For in that sleep of death what dreams may come,
+When we have shuffled off this mortal coil,
+Must give us pause, there's the respect
+That makes calamity of so long life.
+
+A language model learns to predict the next token.
+Given a sequence of tokens, it outputs a probability
+over the vocabulary for what comes next. We train it
+by minimizing the cross entropy between its prediction
+and the true next token. Attention lets each position
+look back at every earlier position and decide what to
+copy. Many such layers, stacked, turn raw text into a
+model of language. The more it reads, the better it
+predicts, and the better it predicts, the more it seems
+to understand. This is the simple loop behind the magic:
+read, predict, compare, adjust, repeat, and repeat again.
+Little by little, the loss goes down, and the words that
+come out begin to sound a little more like us.

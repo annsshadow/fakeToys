@@ -86,6 +86,11 @@ oa4rust/backend/deploy/.backups/
 !augmentor/requirements.txt
 !augmentor/requirements-core.txt
 !augmentor/requirements-dev.txt
+# llm-lab 子项目的语料与依赖清单必须入库：tiny_corpus.txt 是 python -m
+# minigrad.train 的默认语料，requirements*.txt 是 README 的安装入口。
+!llm-lab/requirements.txt
+!llm-lab/requirements-torch.txt
+!llm-lab/data/tiny_corpus.txt
 scripts/cleanup_*.js
 
 # Environment secrets
