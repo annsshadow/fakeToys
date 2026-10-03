@@ -67,7 +67,10 @@ REAL_REPLACE = os.replace
 # L160 同构第四份；截断静默回落 default 的另一路也封死——登记凭空消失是 checkpoint
 # 症状）。dependency.py 的 2 处计数边现量降 2。ops/io/analysis/quality 等 CLI 报告
 # 一次性写边按判据豁免（同步等待、任意路径、无扫描链），A182 逐面分档记档。
-NON_ATOMIC_JSON_DUMP_SITES_MAX = 29
+# L166（B236）：数据集工具路由的落盘口 _dump 收原子写（写盘变换类六端点共用
+# helper，产物落白名单数据根 = L163 同判据）。data_ops 命令 --output 报告边同轮
+# 分档豁免（CLI 报告一次性写）。api/routes 现量降 1。
+NON_ATOMIC_JSON_DUMP_SITES_MAX = 28
 
 
 def _legacy_write_json(file_path: Path, data):

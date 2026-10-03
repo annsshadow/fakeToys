@@ -392,10 +392,10 @@ class EvaluateResponse(BaseModel):
 
 
 def _dump(items: Any, path: Path) -> None:
-    """写入 JSON 数据集文件"""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(items, f, ensure_ascii=False, indent=2)
+    """写入 JSON 数据集文件（L166 收原子写——本 helper 是写盘变换类的落盘口，
+    产物落白名单数据根、list_data_files 按扫描目录在写窗口内就能列到，
+    读者拿半份）"""
+    atomic_write_json(path, items)
 
 
 # ============ 只读分析 ============
@@ -896,4 +896,5 @@ async def dataset_rag(request: RagRequest):
         raise
     except Exception as e:
         raise to_http_error(e) from e
+from augmentor.atomic_write import atomic_write_json
 
