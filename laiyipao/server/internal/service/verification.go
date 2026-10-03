@@ -77,19 +77,77 @@ func (s *Service) recordVerification(ctx context.Context, v verifier, battleID i
 //
 // 流程刻意与旧实现逐字一致（读同一批列、同一个比较、同一张表），
 // 这样玩家侧的行为**不会因为这次抽取而发生任何变化**。
+//
+// # ⚠️ 第 75 轮：补上归属校验
+//
+// 原来只有 `WHERE br.id = $1` —— 没有 `user_id` 过滤。
+// `v.userID` 只被用来**记录**「谁验的」，不参与**授权**读哪条战报。
+//
+// `battle_records.id` 是连续 BIGSERIAL，任何注册用户都能遍历，
+// 于是任何人都能：读到任意一局的 level_id / seed / expected_hash，
+// 并往 `replay_verifications` 里写进自己发的 actual_hash。
+//
+// 后果不是理论问题：`GetReplay` 与本函数读的是**同一批列**，
+// 而 `GetReplay` 还多返回一个完整的 `build_snapshot`
+// （别人的装备、词缀、技能等级）。
+//
+// # 为什么运营侧不受影响
+//
+// 运营本来就需要跨玩家查战报（`adm.Post("/battles/:id/verify")`），
+// 所以 `isAdmin` 时**不加** user_id 过滤——
+// 归属校验的语义是「玩家只能验自己的」，不是「只有管理员能查」。
+//
+// # 为什么这不破坏「验真要公开数据」的设计
+//
+// `GetReplay` 的注释说「这些都是服务端权威数据，公开是设计使然
+// （否则无人能验真）」—— 那句话说的是**数据内容**，
+// 不是**谁的**。你验证自己的对局本来就不需要读别人的。
 func (s *Service) compareAndRecord(ctx context.Context, v verifier, battleID int64, actualHash string) (VerifyResult, error) {
+	// actual_hash 的长度上界（第 75 轮）。
+	//
+	// 结算面早就有这道校验（`maxReplayHashLen = 64`，
+	// battle_collections.go 的 validateReportCollections），
+	// 而验真面**没有** —— 同一个语义的字段，两条路径两道不同的规矩。
+	//
+	// BodyLimit 是 1MB，而 `replay_verifications.actual_hash` 是 TEXT，
+	// 所以一个合法 token 就能写近 1MB 进来，且每次验真一条。
+	//
+	// 上界取 64：引擎产出的是 `hex16(fnv1a64(...))` = 16 个十六进制字符，
+	// 64 是给「将来换哈希算法」留的余量，与结算面同值。
+	const maxVerifyHashLen = 64
+	if len(actualHash) > maxVerifyHashLen {
+		return VerifyResult{}, fmt.Errorf("%w: replay_hash 长 %d 字符，上限 %d",
+			ErrBadInput, len(actualHash), maxVerifyHashLen)
+	}
+
+	// 归属过滤：玩家侧限定 `br.user_id = 验真人`。
+	//
+	// ⚠️ 用 `AND br.user_id = $2` 而不是「先查再比」——
+	// 后者会先告诉攻击者「这局存在」再告诉他「不是你的」，
+	// 变成一个可用来**探测他人战报是否存在**的预言机。
+	sql := `SELECT br.level_id, COALESCE(bt.seed, 0), br.replay_hash, br.created_at
+	          FROM battle_records br
+	          LEFT JOIN battle_tokens bt ON bt.id = br.battle_token_id
+	          WHERE br.id = $1`
+	args := []any{battleID}
+	if !v.isAdmin {
+		sql += ` AND br.user_id = $2`
+		args = append(args, v.userID)
+	}
 	var r VerifyResult
 	var createdAt time.Time
 	var seed int64
 	// created_at 是 timestamptz 而非 text —— 扫 string 失败会得到
 	// 「扫到零值」而不是「扫不到战报」，两者必须区分。
-	err := s.pool.QueryRow(ctx,
-		`SELECT br.level_id, COALESCE(bt.seed, 0), br.replay_hash, br.created_at
-		 FROM battle_records br
-		 LEFT JOIN battle_tokens bt ON bt.id = br.battle_token_id
-		 WHERE br.id = $1`, battleID).
+	err := s.pool.QueryRow(ctx, sql, args...).
 		Scan(&r.LevelID, &seed, &r.Expected, &createdAt)
 	if errors.Is(err, pgx.ErrNoRows) {
+		// 「不存在」与「不是你的」返回**同一个**错误（第 75 轮）。
+		//
+		// 分开报错就等于给攻击者一个预言机：
+		// `ErrNotFound` = 这局存在，`ErrForbidden` = 这局存在且属于别人。
+		// 有了后者就能二分/顺序遍历出「某个 id 是否存在」，
+		// 在连续 BIGSERIAL 上那是一条 O(1) 的信息。
 		return VerifyResult{}, fmt.Errorf("%w: battle %d", ErrNotFound, battleID)
 	}
 	if err != nil {

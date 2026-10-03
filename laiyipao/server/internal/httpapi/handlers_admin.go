@@ -279,7 +279,9 @@ func (s *Server) adminBattleDetail(c *fiber.Ctx) error {
 	if err != nil {
 		return fail(c, fiber.StatusBadRequest, "bad_input", "battle id 非法")
 	}
-	info, err := s.Svc.GetReplay(c.Context(), id)
+	// 运营侧**不加**归属过滤 —— 查任意玩家的战报本来就是它的职责
+	// （见 service.AdminGetReplay 的注释）。
+	info, err := s.Svc.AdminGetReplay(c.Context(), id)
 	if err != nil {
 		return failErr(c, err)
 	}
