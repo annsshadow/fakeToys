@@ -11,6 +11,8 @@ import random
 import logging
 from typing import Any, List, Dict, Optional, Tuple, Union
 from pathlib import Path
+
+from .atomic_write import atomic_write_json
 from dataclasses import dataclass
 import hashlib
 from .exceptions import DataValidationError
@@ -200,8 +202,7 @@ class DatasetOperations:
         # 保存结果
         output = Path(output_path)
         output.parent.mkdir(parents=True, exist_ok=True)
-        with open(output, 'w', encoding='utf-8') as f:
-            json.dump(merged, f, ensure_ascii=False, indent=2)
+        atomic_write_json(output, merged)
         
         return {
             "input_files": len(file_paths),
@@ -375,8 +376,7 @@ class DatasetOperations:
         # 保存结果
         output = Path(output_path)
         output.parent.mkdir(parents=True, exist_ok=True)
-        with open(output, 'w', encoding='utf-8') as f:
-            json.dump(sampled, f, ensure_ascii=False, indent=2)
+        atomic_write_json(output, sampled)
         
         return {
             "input_file": input_path,
@@ -485,8 +485,7 @@ class DatasetOperations:
         results = {}
         for prefix, data in zip(prefixes, [train, val, test]):
             file_path = output_path / f"{prefix}.json"
-            with open(file_path, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
+            atomic_write_json(file_path, data)
             results[prefix] = {
                 "file": str(file_path),
                 "count": len(data)

@@ -61,7 +61,9 @@ REAL_REPLACE = os.replace
 # 拿半份「文件不是合法 JSON」错误答案）；JSONL 文本边同收（工具面新增
 # atomic_write_text，临时件命名同口径避开两种扫描）。四条边写盘字节从
 # indent=2 变紧凑序列化，读侧只解析不读格式，既有测试面无格式断言（实证）。
-NON_ATOMIC_JSON_DUMP_SITES_MAX = 34
+# L164（B234）：数据集变换三边（merge/sample/split）收原子写——API 与 CLI 两链
+# 输出经白名单落数据根，同 L163 判据必收。dataset_ops.py 的 3 处计数边现量降 3。
+NON_ATOMIC_JSON_DUMP_SITES_MAX = 31
 
 
 def _legacy_write_json(file_path: Path, data):
