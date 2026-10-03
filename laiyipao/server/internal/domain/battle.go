@@ -430,7 +430,20 @@ func ValidateSettle(
 		return SettleResult{}, fmt.Errorf("%w：命中 %d > 发射 %d", ErrInvalidHitRate, in.Hits, in.Shots)
 	}
 	if in.Reactions < 0 {
-		return SettleResult{}, errors.New("反应次数不能为负")
+		// ⚠️ 第 68 轮：这条原本是**匿名** errors.New，而
+		// `isSettleRejection` 遍历的是一份硬编码的哨兵清单 ——
+		// 匿名错误不在其中，于是语义上的「上报被拒」变成 500。
+		//
+		// 代价与 README 记的三个哨兵完全相同：
+		// 客户端只显示「服务内部错误」，排查会滑向「服务端坏了」
+		// 而不是「这个上报不可信」；且它混进服务故障告警，把真故障淹掉。
+		//
+		// 完备性守卫（sentinel_classification_test.go）此前没抓到，
+		// 因为它用 go/ast 只认**顶层 var GenDecl** ——
+		// 函数体里的 `errors.New(...)` 位于 ReturnStmt 的 CallExpr，
+		// 根本扫不到。
+		return SettleResult{}, fmt.Errorf("%w：反应次数 %d 不能为负",
+			ErrTooManyReactions, in.Reactions)
 	}
 	// 反应次数上界。取两个上界的较小者：
 	// ① Shots * MaxReactionsPerHit —— 一次开火最多触发 N 次反应
