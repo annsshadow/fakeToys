@@ -57,7 +57,8 @@ router = APIRouter(tags=["dataset"])
 # 状态码用 400 而非 422：与本项目既有约定一致（`/api/quality/outliers` 的
 # 未知 method 也是 400，见 tests/integration/test_api.py）。
 VALIDATION_PRESETS = ("basic", "strict", "chat")
-SEARCH_METHODS = ("exact", "contains", "ngram", "fuzzy", "regex")
+from augmentor.search_enhanced import SEARCH_METHODS
+# L175: 清单权威住 SDK 层，本路由的 400 判据共引同一份（A77）
 
 
 # ============ 请求模型 ============

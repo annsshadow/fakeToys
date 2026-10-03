@@ -1290,7 +1290,7 @@
     回显在 `if normalized_filters` 分支内、`for filter_item` 循环外，所以真正的护栏是**计数式**
     （承 L12/L14）——`SearchFilter.to_dict` 每次查询的调用数 == 过滤器条数而不是候选条数，
     同一用例先用「带 1 个过滤器时计数非 0」自证探针是响的，再断言无过滤路径调用数为 0。
-    （顺带把该调用点 grep 了一遍确认全库只有 `search_enhanced.py:387` 一处，否则计数无意义。）
+    （顺带把该调用点 grep 了一遍确认全库只有 `search_enhanced.py`（原 387 行，L175 插入后降级名锚） 一处，否则计数无意义。）
   - **改写既有例 2 处 + 契约期望 1 处**（承 L19「放宽判据会让上一轮护栏失效，必须挪进 NEW 侧」）：
     L27 的 `TestTheResultEchoesTheKnobsItUsed` 里 `to_dict()` 键集合 8→10、
     「不带新字段构造仍可用」那条扩两字段；`test_api_openapi_contract.py` 的 search 契约
