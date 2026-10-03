@@ -311,5 +311,106 @@
         "expected": -6
       }
     ]
+  },
+  "apply_armor": {
+    "_comment": "applyArmor 的跨端绝对值用例（第 71 轮）。两端各有一份实现，文件头都声明「必须与对方逐行等价」：Go 是 internal/domain/damage.go 的 applyArmor，TS 是 src/game/fixed.ts 的。漂了的后果是同一场战斗算出不同伤害 → replayHash 不同 → I-6 判伪造。这里锁的是**绝对值**而不是比值 —— 因为公式_vectors.json 的 damage.cases 里armor_permille 三个取值全是 0，而 applyArmor 第一行就 return，所以那个向量从未执行到第二行（README armor_test.go 记录了这个空洞）。特别地：**负伤害**的语义只在这里被锁住 —— 两端的单测都不覆盖，而 Go 侧注释说它表示「反伤/异常」，是将来会用到的路径。",
+    "cases": [
+      {
+        "name": "zero_armor",
+        "dmg": 1000,
+        "armor": 0,
+        "expected": 1000
+      },
+      {
+        "name": "armor_100",
+        "dmg": 1000,
+        "armor": 100,
+        "expected": 900
+      },
+      {
+        "name": "armor_250",
+        "dmg": 1000,
+        "armor": 250,
+        "expected": 750
+      },
+      {
+        "name": "armor_250_bigger_dmg",
+        "dmg": 2000,
+        "armor": 250,
+        "expected": 1500
+      },
+      {
+        "name": "armor_750_within_cap",
+        "dmg": 2000,
+        "armor": 750,
+        "expected": 500
+      },
+      {
+        "name": "armor_1000_capped",
+        "dmg": 1000,
+        "armor": 1000,
+        "expected": 250
+      },
+      {
+        "name": "huge_armor_capped",
+        "dmg": 2000,
+        "armor": 100000,
+        "expected": 500
+      },
+      {
+        "name": "negative_armor_unchanged",
+        "dmg": 1000,
+        "armor": -500,
+        "expected": 1000
+      },
+      {
+        "name": "negative_armor_minus_one",
+        "dmg": 1000,
+        "armor": -1,
+        "expected": 1000
+      },
+      {
+        "name": "zero_damage",
+        "dmg": 0,
+        "armor": 500,
+        "expected": 0
+      },
+      {
+        "name": "trunc_down",
+        "dmg": 999,
+        "armor": 250,
+        "expected": 749
+      },
+      {
+        "name": "trunc_up",
+        "dmg": 1001,
+        "armor": 250,
+        "expected": 750
+      },
+      {
+        "name": "negative_damage_unchanged",
+        "dmg": -1000,
+        "armor": 500,
+        "expected": -1000
+      },
+      {
+        "name": "negative_damage_minus_one",
+        "dmg": -1,
+        "armor": 750,
+        "expected": -1
+      },
+      {
+        "name": "negative_damage_zero_armor",
+        "dmg": -5000,
+        "armor": 0,
+        "expected": -5000
+      },
+      {
+        "name": "negative_damage_huge_armor",
+        "dmg": -12345,
+        "armor": 999999,
+        "expected": -12345
+      }
+    ]
   }
 }

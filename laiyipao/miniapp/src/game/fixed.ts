@@ -62,7 +62,47 @@ export function maxBig(a: bigint, b: bigint): bigint {
 }
 
 /** 应用护甲减伤，上限 75% */
+/**
+ * 应用护甲减伤，最高减 75%。
+ *
+ * ⚠️ 第 71 轮：补上 `dmg <= 0` 早退，与 Go 侧 `damage.go:469` 对齐。
+ *
+ * Go 侧的注释解释了它为什么在：
+ *
+ * ```go
+ * if dmg <= 0 {
+ *     // 负伤害原样返回：负数在结算里表示「反伤/异常」，不该被护甲改写。
+ *     return dmg
+ * }
+ * ```
+ *
+ * 缺了它两端**不等价**：dmg=-1000、armor=500 时 TS 得 -500、Go 得 -1000。
+ *
+ * ## 当前不可达，但契约应当先于实现正确
+ *
+ * 三个调用点都传非负值：
+ *   - `damage.ts:261` —— 上一行有 `if (d < 0n) d = 0n` 夹紧
+ *   - `engine.ts` 的 `breachDamage` 分支 —— `baseHpMax / LeakDamageDivisor`，非负
+ *   - `engine.ts` 的 `e.attack > 0n` 分支
+ *
+ * 所以这不是**当前**的缺陷，而是「文件头声明的『逐行等价』与实现不符」。
+ *
+ * ## 为什么仍然要改
+ *
+ * 1. 文件头写着「本文件的 applyArmor 必须与 damage.go 逐行等价」——
+ *    声明与实现不符时，**下一个读声明的人**（人或模型）会按声明推理，
+ *    而声明是错的。
+ * 2. Go 侧的注释说明负伤害**将来会有语义**（反伤/异常）。
+ *    那天 TS 侧会以不同的值参与哈希，而
+ *    `formula_vectors.json` 的 damage 用例全是正伤害 —— **抓不到**。
+ *
+ * 这与 README 记的「跨端一致 ≠ 两端都对」是同一件事：
+ * 契约向量只覆盖「两端都传了同一个合法值」时的比对，
+ * 分歧恰好在**非法输入路径**上
+ * （README 第 9.3 节记的就是 `reactionElement` 的空串分歧）。
+ */
 export function applyArmor(dmg: bigint, armorPermille: bigint): bigint {
+  if (dmg <= 0n) return dmg
   if (armorPermille <= 0n) return dmg
   const capped = armorPermille > MAX_ARMOR ? MAX_ARMOR : armorPermille
   return mulDiv(dmg, PERMILLE - capped, PERMILLE)
