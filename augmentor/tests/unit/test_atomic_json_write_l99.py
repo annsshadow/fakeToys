@@ -49,7 +49,11 @@ REAL_REPLACE = os.replace
 # L160（B230）：DiskCache 元数据写边收原子写（读侧无 except 且构造必调，
 # 半份窗口 = 第二实例构造当场崩）；其缓存值写边按判据口径豁免（get 按未命中
 # 重算，条件豁免已机器化进 l160 守卫）。cache.py 的 2 处里现量只降这 1 处。
-NON_ATOMIC_JSON_DUMP_SITES_MAX = 42
+# L161（B231）：VersionControl 索引两边（默认索引写 + _save_index）收原子写
+# （读侧 _load_index 无 except 且 __init__ 必调，同 L160 形状）；其 data/version
+# 快照两边豁免（读侧 get_version_data 响亮抛异常，条件豁免机器化进 l161 守卫）。
+# version_control.py 的 4 处计数边现量降 2。
+NON_ATOMIC_JSON_DUMP_SITES_MAX = 40
 
 
 def _legacy_write_json(file_path: Path, data):

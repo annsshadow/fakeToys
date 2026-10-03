@@ -26,6 +26,8 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from datetime import datetime
 
+from .atomic_write import atomic_write_json
+
 logger = logging.getLogger(__name__)
 
 
@@ -122,16 +124,17 @@ class DatasetVersionManager:
         if self._index_file.exists():
             with open(self._index_file, 'r', encoding='utf-8') as f:
                 return json.load(f)
-        # 创建默认索引
+        # 创建默认索引（L161 收原子写：本方法无 except 且在 __init__ 必调，
+        # 旧写法的半份索引窗口会让第二个实例构造当场崩）
         default_index = {"versions": [], "current_version": None}
-        with open(self._index_file, 'w', encoding='utf-8') as f:
-            json.dump(default_index, f, ensure_ascii=False, indent=2)
+        atomic_write_json(self._index_file, default_index)
         return default_index
     
     def _save_index(self):
-        """保存索引文件"""
-        with open(self._index_file, 'w', encoding='utf-8') as f:
-            json.dump(self._index, f, ensure_ascii=False, indent=2)
+        """保存索引文件（L161 收原子写——读侧 _load_index 无 except，
+        坏索引 = 构造崩，错误答案档；版本快照 data/version 两边不收：读侧
+        get_version_data 响亮抛异常，按 l99 判据属可恢复代价）"""
+        atomic_write_json(self._index_file, self._index)
     
     def _calculate_checksum(self, file_path: str) -> str:
         """计算文件校验和
