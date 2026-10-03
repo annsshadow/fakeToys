@@ -956,6 +956,8 @@
   **B225 关闭**。
 | B242 | **已关闭（L172，全仓未覆盖语句清零）**：死码删后 coverage 余 4 处**真**未覆盖语句——atomic_write 两个写工具的 finally 清理（写失败时临时件不残留，旧半份窗口防护的半边）、quality_trend 检疫备份名碰撞（同秒双损坏不覆盖第一份备份）、require_ratio_list 非数值元素档（`[1, "abc"]` 逐元素拒）、validate_config 面 quality.weights 坏清单由专项回放承接（非已删死码）——全部补成行为面用例 | 新守卫 5 例；终态全仓未覆盖语句 **0 条**（语句级全覆盖，余豁免全是不可构造异常路径记档）；全量 7763 零回归 | S |
 
+| B246 | **已关闭（L176）**：策略旋钮「封闭清单拒」同型普查（L175 的 method 静默回落修完后沿同型全仓扫）——sample 的 method / outlier 的 method / expander 的strategy 三处**已有** else 拒（普查实证）；唯一缺口 `save_quality_report` 的 format：未知 format **静默落 JSON 支**（请求 yaml 的拿到 json 文件不出声，checkpoint 症状族语义漂移档） | 缺口收边（format 封闭清单 `QUALITY_REPORT_FORMATS` + 入口 require_choice + None 专判）；**普查结论钉成棘轮**：新守卫 6 例含一条「五旋钮 × 未知值全部出 DataValidationError」合体例——任一旋钮未来退化回静默回落当场红；变异自证 2 红（剪 format 判据）、sha256 逐字节还原；A184/L79 各棘轮原地绿（quality_report.py 插行使 0 条活行引用顶歪，全量门禁证实） | M |
+
 | B245 | **已关闭（L175）**：搜索方法封闭清单只住 API 面（dataset_tools 路由的 400 判据）、CLI 面靠 argparse choices——但 **SDK 直构面静默**：`search_dataset(method='regex_typo')` 不进分支落 contains，请求 regex 的拿到 contains 结果与分数，不出任何声（checkpoint 症状族的语义漂移档；L174 探针九档里唯一真缺口） | 清单权威下沉 SDK 层（search_enhanced.SEARCH_METHODS），API 路由改共引（is 钉）；search 入口 require_choice 判封闭清单 + None 单独判（必填参数不适用「未传回落」语义）+ 空串走 require_string 那刀；新守卫 14 例（未知/形状错/None 三档 + 五合法值parametrize + API 共引 is）；parametrize 值位全部字面清单（动态 list() 调用进盲面桶，同轮字面化 + l97 重钉）；变异自证 7 红、sha256 逐字节还原；A184/L79/l97/l98 各棘轮逐格重钉（全量门禁证实） | M |
 
 | B244 | **已关闭（L174）**：ngram 热路径的**相对**性能形状棘轮缺失——L 轮性能工作把 `_search_ngram` 从「每条文档物化整串 gram 集合」（O(文档长度×gram) 对象创建）换成「查询侧 k 个 gram × 子串判定」（约 6 倍提速）后，只有**同分**有守卫，**形状**没有：谁把实现换回朴素形状不会红（结果逐条同分，同分用例拦不住慢实现）。绝对毫秒预算又是 A157 记过的环境性假红 ⇒ 要的是**同机 A/B 相对比** | 新守卫 2 例：同进程交替量当前实现与朴素物化实现的耗时比（≤ 0.7 系数，形状回退时比值 → ≈1 当场红；系数留环境余量，小语料保棘轮便宜）+ 小语料同分护栏（不与既有全量同分用例重复付账）；变异自证：把 `_search_ngram` 真换回朴素形状 → 棘轮 1 红（形状可检测被实证）、sha256 逐字节还原；A184/L79/docs 各棘轮原地绿（全量门禁证实） | M |
@@ -1212,3 +1214,11 @@
 - **坑两记**：① parametrize 值位写 `list(SEARCH_METHODS)` 动态调用进 l97 盲面桶，字面化后 l97/l98 读数各自回稳（同轮修）；② 字面化前后各量了一次数读（381/279/102 对 381/280/101），混用会钉错——重钉前必须按**当前文件状态**复算。
 - 全量门禁：`7779 passed / 3 skipped / exit 0`（L174 的 7765 + 14 新例，无回归）。
   **B245 关闭**。
+
+
+### L176（2026-10-03）— B246 立项 + 关闭：策略旋钮封闭清单普查 + 质量报告 format下沉判据
+
+- **普查方法**：L175 的 method 静默回落修完后，同型全仓扫「用户可见的字符串策略旋钮」——判据形状是「if/elif 匹配 + else 拒（列全合法取值）」。五个旋钮实探：search（L175 已修）/ sample / outlier / expander 四处的 else 拒实锤在场，save_quality_report 的 format 双分支**无拒**（唯一真缺口）。
+- **普查棘轮形态**：修完缺口后把普查结论本身钉成守卫（五旋钮合体例）——普查不是做完就蒸发的，它变成「未来新增旋钮忘拒未知值 / 既有旋钮退化」的机械红线。
+- 全量门禁：`7785 passed / 3 skipped / exit 0`（L175 的 7779 + 6 新例，无回归）。
+  **B246 关闭**。

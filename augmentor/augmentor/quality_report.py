@@ -7,6 +7,9 @@
 """
 
 import json
+
+from augmentor.validation import require_choice
+from augmentor.exceptions import DataValidationError
 import logging
 from typing import List, Dict, Optional, Any
 from dataclasses import dataclass, field
@@ -415,6 +418,12 @@ def generate_quality_report(items: List[Dict], dataset_name: str = "unknown",
     return reporter.generate_report(items, dataset_name)
 
 
+
+# 质量报告输出格式的**封闭清单**（L176 / B246）：改前未知 format 静默落 JSON 支
+# （请求 markdown 之外的任何拼写都拿到 json 文件，不出声——checkpoint 症状族的
+# 语义漂移档，与 L175 的搜索 method 同型）。
+QUALITY_REPORT_FORMATS = ("json", "markdown")
+
 def save_quality_report(report: QualityReport, output_path: str, format: str = "json"):
     """保存质量报告
     
@@ -423,6 +432,12 @@ def save_quality_report(report: QualityReport, output_path: str, format: str = "
         output_path: 输出路径
         format: 输出格式 (json/markdown)
     """
+    # 判据先于落盘：None 专判（必填参数不适用「未传回落默认」），未知值列全合法取值。
+    if format is None:
+        raise DataValidationError(
+            f"format 不能为 null，合法取值: {' / '.join(QUALITY_REPORT_FORMATS)}"
+        )
+    require_choice("format", format, choices=QUALITY_REPORT_FORMATS)
     output = Path(output_path)
     output.parent.mkdir(parents=True, exist_ok=True)
     
