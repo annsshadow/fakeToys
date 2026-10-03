@@ -29,8 +29,8 @@ from .config import (AUTO_SAVE_INTERVAL_MIN, DEDUP_THRESHOLD_RANGE,
                      TEMPERATURE_RANGE, TOP_P_RANGE, VECTOR_BACKENDS,
                      VECTOR_DIMENSION_MIN, VARIANTS_PER_SEED_RANGE,
                      AppConfig, MODEL_ENTRY_KEYS, MODEL_ENTRY_PLACEHOLDER,
-                     ModelConfig, RAGConfig)
-from .exceptions import DataValidationError
+                     ModelConfig, RAGConfig, _require_mapping)
+from .exceptions import ConfigError, DataValidationError
 from .logging_setup import LOGGING_LEVELS, build_formatter
 from .retry import MAX_RETRY_AFTER
 from .validation import is_blank_string, require_chunk_window, require_ratio_list
@@ -845,7 +845,20 @@ class ConfigValidator:
         if isinstance(models_raw, dict):
             err_paths = {e.path for e in result.errors}
             for name, entry in models_raw.items():
-                if name == "default" or not isinstance(entry, dict):
+                if name == "default":
+                    continue
+                if not isinstance(entry, dict):
+                    # 条目写成标量 / 列表 / 数：运行时 `_require_mapping` 抛
+                    # ConfigError，这里同源调它取文案（A77 投影，L158）——
+                    # 改前这一档静默 continue，校验工具报 is_valid=True 而
+                    # 启动时 load_config 才拒（A85 族第三侧）。
+                    try:
+                        _require_mapping(entry, "models.%s" % name)
+                    except ConfigError as exc:
+                        where = "models.%s" % name
+                        if where not in err_paths:
+                            result.add_error(where, str(exc))
+                            err_paths.add(where)
                     continue
                 kwargs = {k: v for k, v in entry.items() if k in model_entry_names}
                 if "type" not in kwargs:
